@@ -3,14 +3,13 @@
 // Runtime stays industry-ignorant: all voice/psychology comes from `blueprint`.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { HublyAI, extractJson } from "../_shared/hubly_ai.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-const MODEL = "claude-haiku-4-5-20251001";
 
 const JSON_SHAPE = `Respond with ONLY valid JSON, no markdown fences, no preamble, matching
 exactly this shape:
@@ -98,14 +97,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }),
-        { status: 500, headers: { ...CORS, "content-type": "application/json" } },
-      );
-    }
-
     const industryLabel = blueprint?.name || business_type || "local service";
     const facts = {
       business_name,
@@ -118,41 +109,28 @@ Deno.serve(async (req: Request) => {
       recommended_services: (blueprint?.serviceCatalog || []).map((s: any) => s.name).filter(Boolean),
     };
 
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 2000,
+    let rawText = "";
+    try {
+      const ai = await HublyAI.complete({
+        feature: "generate-site",
+        task: "website_builder",
         system: buildSystemPrompt(blueprint),
         messages: [{ role: "user", content: `BUSINESS FACTS:\n${JSON.stringify(facts, null, 2)}` }],
-      }),
-    });
-
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text();
-      console.error("Anthropic API error:", anthropicRes.status, errText);
+        maxTokens: 2000,
+        jsonMode: true,
+      });
+      rawText = String(ai.text || "").trim();
+    } catch (err) {
+      console.error("generate-site HublyAI error:", err);
       return new Response(JSON.stringify({ error: "AI generation is temporarily unavailable." }), {
         status: 502,
         headers: { ...CORS, "content-type": "application/json" },
       });
     }
 
-    const data = await anthropicRes.json();
-    const rawText = (data.content || [])
-      .filter((c: any) => c.type === "text")
-      .map((c: any) => c.text)
-      .join("\n")
-      .trim();
-
     let generated;
     try {
-      const cleaned = rawText.replace(/^```(json)?/i, "").replace(/```$/, "").trim();
-      generated = JSON.parse(cleaned);
+      generated = JSON.parse(extractJson(rawText));
     } catch (e) {
       console.error("Failed to parse AI JSON:", rawText);
       return new Response(JSON.stringify({ error: "AI returned an unexpected format. Try again." }), {

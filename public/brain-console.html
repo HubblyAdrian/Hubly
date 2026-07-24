@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hubly Mission Control · Internal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b1020; --panel:#121a2f; --ink:#e8eefc; --muted:#8b9bb8; --brand:#D9632D; --line:rgba(255,255,255,.08);
+  --ok:#34d399; --warn:#fbbf24; --bad:#f87171;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; background:radial-gradient(1200px 600px at 10% -10%,rgba(217,99,45,.18),transparent 50%), var(--bg);
+  color:var(--ink); font-family:"Plus Jakarta Sans",system-ui,sans-serif;
+}
+header{
+  display:flex; justify-content:space-between; align-items:center; gap:12px;
+  padding:18px 22px; border-bottom:1px solid var(--line);
+}
+.brand{display:flex; align-items:center; gap:10px}
+.brand strong{font-size:15px; letter-spacing:.02em}
+.badge{
+  font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+  color:#fff; background:var(--brand); padding:5px 8px; border-radius:999px;
+}
+main{display:grid; grid-template-columns:1.1fr .9fr; gap:16px; padding:18px; max-width:1280px; margin:0 auto}
+@media(max-width:960px){main{grid-template-columns:1fr}}
+.card{
+  background:rgba(18,26,47,.92); border:1px solid var(--line); border-radius:16px; padding:16px;
+}
+h2{margin:0 0 10px; font-size:14px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted)}
+textarea,input,select{
+  width:100%; background:#0b1224; color:var(--ink); border:1px solid var(--line);
+  border-radius:12px; padding:12px; font:inherit; font-size:14px;
+}
+textarea{min-height:120px; resize:vertical}
+.row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+button{
+  appearance:none; border:0; border-radius:12px; padding:10px 14px; font:inherit; font-weight:750;
+  cursor:pointer; background:var(--brand); color:#fff;
+}
+button.secondary{background:#1a2440; color:var(--ink); border:1px solid var(--line)}
+pre,code,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+pre{
+  margin:0; white-space:pre-wrap; word-break:break-word; font-size:12px; line-height:1.45;
+  max-height:62vh; overflow:auto; color:#d7e3ff;
+}
+.kv{display:grid; gap:8px; margin-bottom:12px}
+.kv div{display:flex; justify-content:space-between; gap:10px; font-size:13px; border-bottom:1px solid var(--line); padding:6px 0}
+.kv span{color:var(--muted)}
+.pill{display:inline-flex; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:750}
+.pill.auto{background:rgba(52,211,153,.15); color:var(--ok)}
+.pill.explain{background:rgba(251,191,36,.15); color:var(--warn)}
+.pill.ask,.pill.research_more{background:rgba(248,113,113,.15); color:var(--bad)}
+.note{font-size:12px; color:var(--muted); margin-top:10px; line-height:1.4}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img src="assets/hubly-wordmark-on-dark.png" alt="hubly" height="26" onerror="this.style.display='none'">
+    <strong>Mission Control</strong>
+    <span class="badge">AI Headquarters</span>
+  </div>
+  <a href="/" style="color:var(--muted);font-size:13px;text-decoration:none">← Hubly home</a>
+</header>
+<main>
+  <section class="card">
+    <h2>Request</h2>
+    <textarea id="request" placeholder="Build me a luxury website for my lawn care company.">Build me a luxury website for my lawn care company.</textarea>
+    <div class="row">
+      <select id="intent">
+        <option value="">Auto intent</option>
+        <option value="build_business">build_business</option>
+        <option value="website">website</option>
+        <option value="workspace">workspace</option>
+        <option value="research">research</option>
+        <option value="weather">weather</option>
+        <option value="general">general</option>
+      </select>
+      <input id="industry" placeholder="Industry (optional)" value="Lawn care">
+    </div>
+    <div class="row">
+      <button type="button" id="run">Run Hubly Brain</button>
+      <button type="button" class="secondary" id="status">Load experts</button>
+    </div>
+    <p class="note">Never exposed to customers. Inspect intent, experts, reasoning, confidence, and the final Hubly response. All model traffic must flow through Hubly Brain.</p>
+  </section>
+  <section class="card">
+    <h2>Inspection</h2>
+    <div class="kv" id="meta"></div>
+    <pre id="out">Waiting for a request…</pre>
+  </section>
+</main>
+<script>
+(function(){
+  const out = document.getElementById('out');
+  const meta = document.getElementById('meta');
+  function supabaseUrl(){
+    return (window.HUBLY_SUPABASE_URL || localStorage.getItem('hubly_supabase_url') || '').replace(/\/$/,'');
+  }
+  function anonKey(){
+    return window.HUBLY_SUPABASE_ANON || localStorage.getItem('hubly_supabase_anon') || '';
+  }
+  async function invoke(body){
+    const base = supabaseUrl();
+    const key = anonKey();
+    if(!base || !key){
+      throw new Error('Set HUBLY_SUPABASE_URL + HUBLY_SUPABASE_ANON (or localStorage keys) to call hubly-brain.');
+    }
+    const res = await fetch(base + '/functions/v1/hubly-brain', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'apikey': key,
+        'authorization': 'Bearer ' + key,
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(json.error || ('HTTP '+res.status));
+    return json;
+  }
+  function renderMeta(json){
+    const band = json.confidenceBand || '—';
+    meta.innerHTML = [
+      ['Intent', json.intent || '—'],
+      ['Confidence', (json.confidence != null ? json.confidence + '%' : '—') + ' <span class="pill '+band+'">'+band+'</span>'],
+      ['Experts', (json.expertsRun||[]).join(' → ') || '—'],
+      ['Latency', json.console && json.console.latencyMs != null ? json.console.latencyMs+'ms' : '—'],
+    ].map(function(row){
+      return '<div><span>'+row[0]+'</span><strong>'+row[1]+'</strong></div>';
+    }).join('');
+  }
+  document.getElementById('run').onclick = async function(){
+    out.textContent = 'Running…';
+    try{
+      const industry = document.getElementById('industry').value.trim();
+      const json = await invoke({
+        action: 'think',
+        request: document.getElementById('request').value.trim(),
+        intent: document.getElementById('intent').value || null,
+        debug: true,
+        memory: industry ? { industry: industry, name: 'Demo Co' } : { name: 'Demo Co' },
+        blueprintKnowledge: industry ? {
+          customerPsychology: 'Customers hire for trust and response time before price.',
+          buyingBehavior: 'Decide quickly on mobile when the next step is obvious.',
+          homepageGoals: ['Prove trust fast', 'Make booking obvious'],
+          decisionFactors: ['Trust', 'Price'],
+        } : null,
+      });
+      renderMeta(json);
+      out.textContent = JSON.stringify(json, null, 2);
+    }catch(e){
+      meta.innerHTML = '';
+      out.textContent = String(e.message || e);
+    }
+  };
+  document.getElementById('status').onclick = async function(){
+    out.textContent = 'Loading experts…';
+    try{
+      const json = await invoke({ action: 'status' });
+      const experts = (json.brain && json.brain.experts) || [];
+      renderMeta({ intent: 'status', confidence: null, expertsRun: experts.map(function(e){return e.id;}), console: null });
+      out.textContent = JSON.stringify({
+        section1: json.section1 || null,
+        recentExecutions: json.recentExecutions || [],
+        brain: json.brain,
+      }, null, 2);
+    }catch(e){
+      out.textContent = String(e.message || e);
+    }
+  };
+})();
+</script>
+</body>
+</html>

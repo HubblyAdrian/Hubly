@@ -29,7 +29,7 @@
  *
  * Public API: Hubly.buildBusiness(prompt) — every future feature funnels here.
  * Never import this from the browser; secrets stay in Deno.env.
- * Do not swap Claude out of existing edge functions until each feature migrates.
+ * Milestone 1: Expert Framework + think() pipeline. Edge features migrate to HublyAI.complete — never call providers directly.
  */
 
 import {
@@ -151,6 +151,69 @@ import {
   type HublyConversationTurn,
   HublyUnderstanding,
 } from "./hubly_brain_understanding.ts";
+import {
+  think as runThinkPipeline,
+  brainStatus as thinkBrainStatus,
+  HublyThink,
+  type HublyThinkRequest,
+  type HublyThinkResult,
+} from "./hubly_brain_think.ts";
+import { ensureExpertsRegistered, HublyExperts } from "./hubly_brain_experts.ts";
+import { HublyExpertFramework, listExperts, listExpertCapabilities, discoverExperts, selectExpertsFromRegistry, unregisterExpert } from "./hubly_brain_expert_framework.ts";
+import {
+  HublyWorkspaceMemoryApi,
+} from "./hubly_brain_workspace_memory.ts";
+import {
+  appendConversationTurn,
+  HublyConversationMemoryApi,
+  type HublyConversationMemory,
+  type HublyConversationMemoryInput,
+} from "./hubly_brain_conversation_memory.ts";
+import {
+  HublyConversationIntelligenceApi,
+  type HublyConversationIntelligence,
+  type HublyConversationIntelligenceInput,
+} from "./hubly_brain_conversation_intelligence.ts";
+import { HublyReasoning } from "./hubly_brain_reasoning.ts";
+import { HublyDecisionEngine } from "./hubly_brain_decision.ts";
+import {
+  HublyRegistries,
+  HublyToolRegistry,
+  HublyKnowledgeRegistry,
+} from "./hubly_brain_registries.ts";
+import { HublyMissionControl } from "./hubly_brain_mission_control.ts";
+import { HublyIdentitySystem, hublyIdentityPreamble } from "./hubly_brain_identity_system.ts";
+import { HublyReliability } from "./hubly_brain_reliability.ts";
+import { HublyPlatform } from "./hubly_brain_platform.ts";
+import { HublyQuality } from "./hubly_brain_quality.ts";
+import { HublyDocs } from "./hubly_brain_docs.ts";
+import { HublyCertification } from "./hubly_brain_certification.ts";
+import { HublyBuilderExpert } from "./hubly_brain_builder_expert.ts";
+import { HublyChangePlanEngine } from "./hubly_brain_change_plan.ts";
+import { HublyPreviewEngine } from "./hubly_brain_preview_engine.ts";
+import { HublyCollaborationEngine } from "./hubly_brain_collaboration.ts";
+import { HublyVersionEngine } from "./hubly_brain_version_engine.ts";
+import { HublyBusinessBuilder } from "./hubly_brain_business_builder.ts";
+import { HublyBookingIntelligence } from "./hubly_brain_booking_intelligence.ts";
+import { HublyWorkspaceIntelligence } from "./hubly_brain_workspace_intelligence.ts";
+import { HublyAutomationIntelligence } from "./hubly_brain_automation_intelligence.ts";
+import { HublyMediaIntelligence } from "./hubly_brain_media_intelligence.ts";
+import { HublyChatOs } from "./hubly_brain_chat_os.ts";
+import { HublyBusinessDeployment } from "./hubly_brain_business_deployment.ts";
+import { HublyPersonality } from "./hubly_brain_personality.ts";
+import { HublyExperienceLayer } from "./hubly_brain_experience_layer.ts";
+import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
+import {
+  logBrainExecution,
+  listBrainExecutions,
+  persistBrainExecution,
+  HublyBrainExecutionLog,
+} from "./hubly_brain_execution_log.ts";
+import {
+  reviewCustomerFacingText,
+  listExperienceInterceptions,
+  HublyExperienceDirector,
+} from "./hubly_brain_experience_director.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export type {
@@ -205,8 +268,50 @@ export {
   HublyExecutors,
   HublyConfidence,
   HublyWeeklyLearning,
+  HublyThink,
+  HublyExperts,
+  HublyExpertFramework,
+  HublyWorkspaceMemoryApi,
+  HublyConversationMemoryApi,
+  HublyConversationIntelligenceApi,
+  HublyReasoning,
+  HublyDecisionEngine,
+  HublyRegistries,
+  HublyToolRegistry,
+  HublyKnowledgeRegistry,
+  HublyMissionControl,
+  HublyIdentitySystem,
+  HublyReliability,
+  HublyPlatform,
+  HublyQuality,
+  HublyDocs,
+  HublyCertification,
+  HublyBuilderExpert,
+  HublyChangePlanEngine,
+  HublyPreviewEngine,
+  HublyCollaborationEngine,
+  HublyVersionEngine,
+  HublyBusinessBuilder,
+  HublyBookingIntelligence,
+  HublyWorkspaceIntelligence,
+  HublyAutomationIntelligence,
+  HublyMediaIntelligence,
+  HublyChatOs,
+  HublyBusinessDeployment,
+  HublyPersonality,
+  HublyExperienceLayer,
+  HublyConfidencePolicy,
+  HublyBrainExecutionLog,
+  HublyExperienceDirector,
   listHublySkills as listSkills,
   listHublyCapabilities as listCapabilities,
+  listExperts,
+  listExpertCapabilities,
+  discoverExperts,
+  selectExpertsFromRegistry,
+  unregisterExpert,
+  listBrainExecutions,
+  runThinkPipeline as think,
   getSkill,
   normalizeBusinessMemory,
   mergeBusinessMemory,
@@ -264,7 +369,13 @@ export type HublyImagePart = {
   /** raw base64 (no data: prefix) */
   data: string;
 };
-export type HublyContentPart = HublyTextPart | HublyImagePart;
+/** Claude document block (PDF). Prefer images when possible. */
+export type HublyDocumentPart = {
+  type: "document";
+  mediaType: string;
+  data: string;
+};
+export type HublyContentPart = HublyTextPart | HublyImagePart | HublyDocumentPart;
 
 export type HublyMessage = {
   role: "user" | "assistant" | "system";
@@ -290,6 +401,10 @@ export type HublyAICallOpts = {
   memory?: HublyBusinessMemoryInput | null;
   /** Phase 7.6 — Business DNA (identity). Injected separately — never merged into Memory. */
   dna?: HublyBusinessDNAInput | null;
+  /** Conversation Memory — Brain updates after every interaction when provided. */
+  conversation?: HublyConversationMemoryInput | null;
+  /** Optional business id for durable Brain execution + memory persistence. */
+  businessId?: string | null;
   /** Phase 7.2 — requested skills (planning only until executors land). */
   skills?: HublySkillId[] | string[];
   /** @deprecated use skills */
@@ -306,6 +421,13 @@ export type HublyAIResult = {
   task: HublyAITask;
   /** Echo of memory keys present (not full payload) for debugging. */
   memoryKeys?: string[];
+  /** Section 1 — Brain execution id for this call. */
+  executionId?: string;
+  /** Experts Brain selected (empty = direct model completion). */
+  expertsSelected?: string[];
+  /** Conversation Memory after Brain updated it. */
+  conversation?: HublyConversationMemory | null;
+  memoryUpdated?: boolean;
 };
 
 /** @deprecated use HublySkillId */
@@ -376,13 +498,9 @@ export function extractJson(rawText: string): string {
   return cleaned.slice(start, end + 1);
 }
 
-/** Short voice reminder — capabilities still own richer system prompts. */
+/** Short voice reminder — Hubly Identity System (Section 13) is the source of truth. */
 export function personalityPreamble(): string {
-  return [
-    "You are Hubly AI — the operating intelligence for service businesses.",
-    "Adapt to the owner's business; never force them into a fixed industry list.",
-    "Prefer concrete action over generic advice. Never say you are an AI model.",
-  ].join(" ");
+  return hublyIdentityPreamble();
 }
 
 function claudeFallbackModel(): string {
@@ -441,6 +559,16 @@ function toClaudeContent(content: string | HublyContentPart[]): string | Record<
   if (typeof content === "string") return content;
   return content.map((part) => {
     if (part.type === "text") return { type: "text", text: part.text };
+    if (part.type === "document") {
+      return {
+        type: "document",
+        source: {
+          type: "base64",
+          media_type: part.mediaType || "application/pdf",
+          data: part.data,
+        },
+      };
+    }
     return {
       type: "image",
       source: {
@@ -458,6 +586,12 @@ function toOpenAIContent(
   if (typeof content === "string") return content;
   return content.map((part) => {
     if (part.type === "text") return { type: "text", text: part.text };
+    if (part.type === "document") {
+      return {
+        type: "text",
+        text: `[Attached PDF document — ${part.mediaType || "application/pdf"}; ask the owner for a screenshot if text extraction is required.]`,
+      };
+    }
     const mediaType = part.mediaType || "image/jpeg";
     return {
       type: "image_url",
@@ -624,16 +758,109 @@ function resolveInternal(opts: HublyAICallOpts, fallbackTask: HublyAITask): Inte
   };
 }
 
+const CUSTOMER_FACING_TASKS: Set<HublyAITask> = new Set([
+  "chat",
+  "customer_support",
+  "customer_concierge",
+  "business_coach",
+]);
+
 async function run(opts: InternalCall): Promise<HublyAIResult> {
-  console.log("HublyAI.run", {
-    feature: opts.feature,
-    task: opts.task,
-    provider: opts.provider,
-    model: opts.model,
-    memoryKeys: memoryKeys(opts.memory),
-  });
-  if (opts.provider === "openai") return callOpenAI(opts);
-  return callClaude(opts);
+  const started = Date.now();
+  // Section 1: Brain alone decides experts. Direct complete = empty expert set until ED.
+  const expertsSelected: string[] = [];
+  let conversation = opts.conversation
+    ? appendConversationTurn(opts.conversation, {
+      role: "owner",
+      text: lastUserText(opts.messages),
+    })
+    : null;
+
+  try {
+    console.log("HublyBrain.run", {
+      feature: opts.feature,
+      task: opts.task,
+      provider: opts.provider,
+      model: opts.model,
+      memoryKeys: memoryKeys(opts.memory),
+      expertsSelected,
+    });
+    let result = opts.provider === "openai" ? await callOpenAI(opts) : await callClaude(opts);
+
+    // Section 2: every customer-facing freeform reply passes Experience Director.
+    if (CUSTOMER_FACING_TASKS.has(opts.task) && !opts.jsonMode) {
+      const ed = reviewCustomerFacingText(String(result.text || ""), {
+        request: lastUserText(opts.messages),
+        confidence: 80,
+      });
+      result = { ...result, text: ed.ownerResponse };
+      expertsSelected.push("experience_director");
+    }
+
+    if (conversation) {
+      conversation = appendConversationTurn(conversation, {
+        role: "hubly",
+        text: String(result.text || "").slice(0, 4000),
+      });
+    }
+
+    const execution = logBrainExecution({
+      kind: "complete",
+      feature: opts.feature,
+      task: opts.task,
+      expertsSelected,
+      mergedResponse: true, // single Brain-owned response
+      memoryUpdated: !!conversation || !!opts.memory,
+      ok: true,
+      latencyMs: Date.now() - started,
+      provider: result.provider,
+      model: result.model,
+      businessId: opts.businessId || null,
+    });
+    persistBrainExecution(execution).catch(() => {});
+
+    return {
+      ...result,
+      executionId: execution.id,
+      expertsSelected,
+      conversation,
+      memoryUpdated: execution.memoryUpdated,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const execution = logBrainExecution({
+      kind: "complete",
+      feature: opts.feature,
+      task: opts.task,
+      expertsSelected,
+      mergedResponse: false,
+      memoryUpdated: false,
+      ok: false,
+      latencyMs: Date.now() - started,
+      provider: opts.provider,
+      model: opts.model,
+      error: msg,
+      businessId: opts.businessId || null,
+    });
+    persistBrainExecution(execution).catch(() => {});
+    throw err;
+  }
+}
+
+function lastUserText(messages: HublyMessage[] | undefined): string {
+  if (!messages?.length) return "";
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role !== "user") continue;
+    if (typeof m.content === "string") return m.content.slice(0, 2000);
+    const text = (m.content || [])
+      .filter((p): p is { type: "text"; text: string } => p.type === "text")
+      .map((p) => p.text)
+      .join(" ")
+      .trim();
+    if (text) return text.slice(0, 2000);
+  }
+  return "";
 }
 
 export const HublyAI = {
@@ -729,7 +956,26 @@ export const HublyAI = {
         productionFirstProviders: true,
         businessLaunch: true,
         architectureFrozenAfterDna: true,
+        // Milestone 1 — Hubly Brain Foundation
+        hublyBrainThinkPipeline: true,
+        expertFramework: true,
+        aiCapabilityRegistry: true,
+        experienceDirector: true,
+        workspaceMemory: true,
+        conversationMemory: true,
+        reasoningEngine: true,
+        confidencePolicy: true,
+        brainConsole: true,
+        section1OnlyBrainEntry: true,
+        section1ExecutionLog: true,
+        section1MemoryAfterEveryInteraction: true,
       },
+      personality: "Hubly",
+      experts: (() => {
+        ensureExpertsRegistered();
+        return listExperts().map((e) => ({ id: e.id, name: e.name, version: e.version }));
+      })(),
+      recentExecutions: listBrainExecutions(10),
       providers: {
         domain: ["cloudflare", "porkbun"],
         payments: ["stripe"],
@@ -802,7 +1048,8 @@ export const HublyAI = {
   },
 
   /**
-   * Phase 7.1 — Business Memory SSOT (facts).
+   * Phase 7.1 / Section 5 — Business Memory SSOT (facts).
+   * Experts suggest; only Hubly Brain commits (see HublyBusinessMemoryApi.commit).
    */
   memory(input?: HublyBusinessMemoryInput | null): HublyBusinessMemory {
     return normalizeBusinessMemory(input);
@@ -815,8 +1062,15 @@ export const HublyAI = {
     return mergeBusinessMemory(base, patch);
   },
 
+  /** Section 5 — Brain-owned memory API (commit / query / importance). */
+  businessMemory: HublyBusinessMemoryApi,
+
+  /** Section 6 — Brain-owned workspace preferences (how the owner likes to work). */
+  workspaceMemory: HublyWorkspaceMemoryApi,
+
   /**
-   * Phase 7.6 — Business DNA (identity). Never merge into Memory.
+   * Phase 7.6 / Section 7 — Business DNA (identity + knowledge). Never merge into Memory.
+   * Experts read DNA; Hubly Brain loads knowledge packs.
    */
   dna(input?: HublyBusinessDNAInput | null): HublyBusinessDNA {
     return normalizeBusinessDNA(input);
@@ -828,6 +1082,9 @@ export const HublyAI = {
   ): HublyBusinessDNA {
     return evolveBusinessDNA(base, patch);
   },
+
+  /** Section 7 — structured DNA knowledge API (evidenced, versioned, read-only for experts). */
+  businessDna: HublyBusinessDNAApi,
 
   /** Phase 7.2 — skills Hubly can eventually execute (Capability Registry). */
   listSkills(): HublySkill[] {
@@ -1317,7 +1574,66 @@ export const HublyAI = {
   },
 
   /**
-   * Low-level provider call. Prefer skills via plan() + skill methods.
+   * Section 1 — Hubly Brain think pipeline (primary AI entry for owner conversations).
+   * Brain selects experts, merges outputs into one Hubly response, updates memory, logs execution.
+   */
+  async think(req: HublyThinkRequest & { businessId?: string | null }): Promise<HublyThinkResult> {
+    ensureExpertsRegistered();
+    const started = Date.now();
+    try {
+      const result = await runThinkPipeline(req);
+      const execution = logBrainExecution({
+        kind: "think",
+        feature: "hubly-brain-think",
+        task: "reason",
+        intent: result.intent,
+        expertsSelected: result.expertsRun || [],
+        mergedResponse: true,
+        memoryUpdated: true,
+        confidence: result.confidence,
+        ok: result.ok,
+        latencyMs: Date.now() - started,
+        businessId: req.businessId || null,
+      });
+      persistBrainExecution(execution).catch(() => {});
+      return {
+        ...result,
+        console: result.console
+          ? { ...result.console, latencyMs: result.console.latencyMs ?? Date.now() - started }
+          : {
+            intent: result.intent,
+            expertsSelected: result.expertsRun,
+            memoriesLoaded: ["business_memory", "business_dna", "workspace_memory", "conversation_memory"],
+            latencyMs: Date.now() - started,
+          },
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const execution = logBrainExecution({
+        kind: "think",
+        feature: "hubly-brain-think",
+        task: "reason",
+        expertsSelected: [],
+        mergedResponse: false,
+        memoryUpdated: false,
+        ok: false,
+        latencyMs: Date.now() - started,
+        error: msg,
+        businessId: req.businessId || null,
+      });
+      persistBrainExecution(execution).catch(() => {});
+      throw err;
+    }
+  },
+
+  /** Registered experts + AI Capability Registry (never customer-facing). */
+  experts() {
+    return thinkBrainStatus();
+  },
+
+  /**
+   * Low-level Brain model call. Prefer think() for multi-expert work.
+   * Still Hubly Brain — the only code path allowed to reach providers.
    * Without `task`, defaults provider to Claude (safe for unmigrated callers).
    */
   async complete(opts: HublyAICompleteOpts): Promise<HublyAIResult> {
@@ -1432,6 +1748,26 @@ export const HublyAI = {
         skills: opts.skills || ["analyzePhotos"],
       }, "photo_analysis"),
     );
+  },
+
+  expertCapabilities() {
+    ensureExpertsRegistered();
+    return listExpertCapabilities();
+  },
+
+  /** Section 1 — recent Brain executions (in-memory ring; Brain Console / status). */
+  executions(limit = 50) {
+    return listBrainExecutions(limit);
+  },
+
+  /** Section 2 — Experience Director interception log. */
+  experienceInterceptions(limit = 40) {
+    return listExperienceInterceptions(limit);
+  },
+
+  /** Section 2 — review freeform customer-facing text through Experience Director. */
+  reviewForCustomer(text: string, opts?: { request?: string | null; confidence?: number | null }) {
+    return reviewCustomerFacingText(text, opts);
   },
 };
 

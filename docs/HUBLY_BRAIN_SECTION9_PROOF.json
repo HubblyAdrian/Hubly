@@ -1,0 +1,336 @@
+{
+  "section": 9,
+  "title": "AI Decision & Confidence Engine",
+  "passed": true,
+  "version": "1.0.0",
+  "owner": "hubly_brain",
+  "checkedAt": "2026-07-24T17:35:17.299Z",
+  "proofs": [
+    "AI Decision Engine module exists",
+    "Decision Object type exists",
+    "Multi-dimension scores exist (beyond confidence alone)",
+    "Approval + final decision fields exist",
+    "Decision matrix states exist",
+    "Why-didn't-you retrieval from Decision Objects exists",
+    "Think pipeline uses Decision Engine",
+    "Think answers Why didn't you? from Decision Engine",
+    "Confidence policy notes Decision Engine ownership",
+    "HublyAI exposes Decision Engine",
+    "Decision Engine owned by Hubly Brain",
+    "Decision Engine versioned",
+    "Homepage rewrite generates a Decision Object",
+    "Confidence is calculated",
+    "Evidence Quality is calculated",
+    "Business Alignment is calculated",
+    "Customer Impact is calculated",
+    "Experience Impact is calculated",
+    "Risk is calculated",
+    "Approval requirement is calculated",
+    "Final decision is one of four matrix states",
+    "Homepage rewrite routes to Recommend (approval required)",
+    "Homepage rewrite requires owner approval",
+    "Homepage rewrite has a strong overall Decision Score",
+    "Ask vs Proceed: Move Reviews Higher → Proceed Automatically",
+    "Proceed path does not require approval",
+    "Proceed example has low risk",
+    "Ask vs Proceed: missing info → Ask",
+    "Ask example records missing information",
+    "Research More example routes correctly",
+    "Research More has weak Evidence Quality",
+    "Brand change routes to Recommend",
+    "Recommend path requires approval",
+    "Decision history is stored and retrievable",
+    "Detects Why didn't you? question",
+    "Why didn't you? answers from stored Decision Object",
+    "Why didn't you? retrieves a Decision Object",
+    "Why answer includes Decision Score dimensions",
+    "Why prefers explaining non-automatic routing",
+    "Think generates a primary Decision Object for homepage rewrite",
+    "Think Decision Object has confidence",
+    "Think Decision Object has evidence quality",
+    "Think Decision Object has business alignment",
+    "Think Decision Object has customer impact",
+    "Think Decision Object has risk",
+    "Think chooses Proceed, Recommend, Ask, or Research",
+    "Think Experience Director records Decision Engine action",
+    "Confidence band maps from Decision Engine action",
+    "Think Why didn't you? uses stored Decision Object",
+    "Think Why didn't you? does not regenerate",
+    "Think Why response grounded in Decision Object",
+    "All Section 9 release-gate claims proven",
+    "Routing covers Proceed, Recommend, Ask, and Research More"
+  ],
+  "evidence": {
+    "decisionObjects": [
+      {
+        "decisionId": "dec_mrz80nx2_a8hbhj",
+        "recommendation": "Rewrite homepage — lead with proof, then packages, then a single Book CTA",
+        "decisionScore": 83,
+        "confidence": 90,
+        "evidenceQuality": 78,
+        "businessAlignment": 100,
+        "customerImpact": 72,
+        "experienceImpact": 75,
+        "risk": "medium",
+        "requiresApproval": true,
+        "finalDecision": "recommend",
+        "explanation": "I recommend \"Rewrite homepage — lead with proof, then packages, then a single Book CTA\" but I'm waiting for your approval before changing anything. Confidence 90%, Evidence Quality 78%, Business Alignment 100%, Customer Impact 72%, Experience Impact 75%, Risk medium, Requires Approval Yes, Overall Decision Score 83%.",
+        "missingInfo": [],
+        "timestamp": "2026-07-24T17:35:17.270Z"
+      },
+      {
+        "decisionId": "dec_mrz80nx3_c329xl",
+        "recommendation": "Move Reviews Higher",
+        "decisionScore": 88,
+        "confidence": 96,
+        "evidenceQuality": 88,
+        "businessAlignment": 100,
+        "customerImpact": 72,
+        "experienceImpact": 75,
+        "risk": "low",
+        "requiresApproval": false,
+        "finalDecision": "proceed",
+        "explanation": "I can proceed with \"Move Reviews Higher\" automatically. Confidence 96%, Evidence Quality 88%, Business Alignment 100%, Customer Impact 72%, Experience Impact 75%, Risk low, Requires Approval No, Overall Decision Score 88%.",
+        "missingInfo": [],
+        "timestamp": "2026-07-24T17:35:17.271Z"
+      },
+      {
+        "decisionId": "dec_mrz80nx3_duh1xk",
+        "recommendation": "Rewrite homepage for luxury branding",
+        "decisionScore": 52,
+        "confidence": 68,
+        "evidenceQuality": 35,
+        "businessAlignment": 15,
+        "customerImpact": 67,
+        "experienceImpact": 75,
+        "risk": "medium",
+        "requiresApproval": true,
+        "finalDecision": "ask",
+        "explanation": "I paused on \"Rewrite homepage for luxury branding\" because I need a bit more information. Missing: industry, target_customer, business_name. Confidence 68%, Evidence Quality 35%, Business Alignment 15%, Customer Impact 67%, Experience Impact 75%, Risk medium, Requires Approval Yes, Overall Decision Score 52%.",
+        "missingInfo": [
+          "industry",
+          "target_customer",
+          "business_name"
+        ],
+        "timestamp": "2026-07-24T17:35:17.271Z"
+      },
+      {
+        "decisionId": "dec_mrz80nx3_s2wa8s",
+        "recommendation": "Change pricing to premium packages only",
+        "decisionScore": 49,
+        "confidence": 42,
+        "evidenceQuality": 25,
+        "businessAlignment": 57,
+        "customerImpact": 63,
+        "experienceImpact": 70,
+        "risk": "high",
+        "requiresApproval": true,
+        "finalDecision": "research_more",
+        "explanation": "I want to research more before committing to \"Change pricing to premium packages only\" — evidence isn't strong enough yet. Confidence 42%, Evidence Quality 25%, Business Alignment 57%, Customer Impact 63%, Experience Impact 70%, Risk high, Requires Approval Yes, Overall Decision Score 49%.",
+        "missingInfo": [],
+        "timestamp": "2026-07-24T17:35:17.271Z"
+      },
+      {
+        "decisionId": "dec_mrz80nx3_yp1wua",
+        "recommendation": "Use Family-Owned Branding",
+        "decisionScore": 83,
+        "confidence": 88,
+        "evidenceQuality": 88,
+        "businessAlignment": 100,
+        "customerImpact": 68,
+        "experienceImpact": 70,
+        "risk": "medium",
+        "requiresApproval": true,
+        "finalDecision": "recommend",
+        "explanation": "I recommend \"Use Family-Owned Branding\" but I'm waiting for your approval before changing anything. Confidence 88%, Evidence Quality 88%, Business Alignment 100%, Customer Impact 68%, Experience Impact 70%, Risk medium, Requires Approval Yes, Overall Decision Score 83%.",
+        "missingInfo": [],
+        "timestamp": "2026-07-24T17:35:17.271Z"
+      }
+    ],
+    "decisionScores": [
+      {
+        "recommendation": "Rewrite homepage — lead with proof, then packages, then a single Book CTA",
+        "decisionScore": 83,
+        "dimensions": {
+          "confidence": 90,
+          "evidenceQuality": 78,
+          "businessAlignment": 100,
+          "customerImpact": 72,
+          "experienceImpact": 75,
+          "riskScore": 70,
+          "risk": "medium",
+          "requiresApproval": true
+        }
+      }
+    ],
+    "routingDecisions": {
+      "homepageRewrite": "recommend",
+      "moveReviews": "proceed",
+      "luxuryAsk": "ask",
+      "premiumPricing": "research_more",
+      "familyOwned": "recommend"
+    },
+    "approvalDecisions": [
+      {
+        "recommendation": "Rewrite homepage — lead with proof, then packages, then a single Book CTA",
+        "requiresApproval": true,
+        "finalDecision": "recommend"
+      },
+      {
+        "recommendation": "Use Family-Owned Branding",
+        "requiresApproval": true,
+        "finalDecision": "recommend"
+      }
+    ],
+    "askVsProceed": {
+      "proceed": {
+        "decisionId": "dec_mrz80nx3_c329xl",
+        "recommendation": "Move Reviews Higher",
+        "decisionScore": 88,
+        "confidence": 96,
+        "evidenceQuality": 88,
+        "businessAlignment": 100,
+        "customerImpact": 72,
+        "experienceImpact": 75,
+        "risk": "low",
+        "requiresApproval": false,
+        "finalDecision": "proceed",
+        "explanation": "I can proceed with \"Move Reviews Higher\" automatically. Confidence 96%, Evidence Quality 88%, Business Alignment 100%, Customer Impact 72%, Experience Impact 75%, Risk low, Requires Approval No, Overall Decision Score 88%.",
+        "missingInfo": [],
+        "timestamp": "2026-07-24T17:35:17.271Z"
+      },
+      "ask": {
+        "decisionId": "dec_mrz80nx3_duh1xk",
+        "recommendation": "Rewrite homepage for luxury branding",
+        "decisionScore": 52,
+        "confidence": 68,
+        "evidenceQuality": 35,
+        "businessAlignment": 15,
+        "customerImpact": 67,
+        "experienceImpact": 75,
+        "risk": "medium",
+        "requiresApproval": true,
+        "finalDecision": "ask",
+        "explanation": "I paused on \"Rewrite homepage for luxury branding\" because I need a bit more information. Missing: industry, target_customer, business_name. Confidence 68%, Evidence Quality 35%, Business Alignment 15%, Customer Impact 67%, Experience Impact 75%, Risk medium, Requires Approval Yes, Overall Decision Score 52%.",
+        "missingInfo": [
+          "industry",
+          "target_customer",
+          "business_name"
+        ],
+        "timestamp": "2026-07-24T17:35:17.271Z"
+      }
+    },
+    "researchMoreExample": {
+      "decisionId": "dec_mrz80nx3_s2wa8s",
+      "recommendation": "Change pricing to premium packages only",
+      "decisionScore": 49,
+      "confidence": 42,
+      "evidenceQuality": 25,
+      "businessAlignment": 57,
+      "customerImpact": 63,
+      "experienceImpact": 70,
+      "risk": "high",
+      "requiresApproval": true,
+      "finalDecision": "research_more",
+      "explanation": "I want to research more before committing to \"Change pricing to premium packages only\" — evidence isn't strong enough yet. Confidence 42%, Evidence Quality 25%, Business Alignment 57%, Customer Impact 63%, Experience Impact 70%, Risk high, Requires Approval Yes, Overall Decision Score 49%.",
+      "missingInfo": [],
+      "timestamp": "2026-07-24T17:35:17.271Z"
+    },
+    "storedDecisionHistory": [
+      {
+        "decisionId": "dec_mrz80nx2_a8hbhj",
+        "recommendation": "Rewrite homepage — lead with proof, then packages, then a single Book CTA",
+        "finalDecision": "recommend",
+        "decisionScore": 83,
+        "timestamp": "2026-07-24T17:35:17.270Z"
+      },
+      {
+        "decisionId": "dec_mrz80nx3_c329xl",
+        "recommendation": "Move Reviews Higher",
+        "finalDecision": "proceed",
+        "decisionScore": 88,
+        "timestamp": "2026-07-24T17:35:17.271Z"
+      },
+      {
+        "decisionId": "dec_mrz80nx3_duh1xk",
+        "recommendation": "Rewrite homepage for luxury branding",
+        "finalDecision": "ask",
+        "decisionScore": 52,
+        "timestamp": "2026-07-24T17:35:17.271Z"
+      },
+      {
+        "decisionId": "dec_mrz80nx3_s2wa8s",
+        "recommendation": "Change pricing to premium packages only",
+        "finalDecision": "research_more",
+        "decisionScore": 49,
+        "timestamp": "2026-07-24T17:35:17.271Z"
+      },
+      {
+        "decisionId": "dec_mrz80nx3_yp1wua",
+        "recommendation": "Use Family-Owned Branding",
+        "finalDecision": "recommend",
+        "decisionScore": 83,
+        "timestamp": "2026-07-24T17:35:17.271Z"
+      }
+    ],
+    "whyDidntYou": {
+      "question": "Why didn't you make that change?",
+      "fromStoredDecision": true,
+      "regenerated": false,
+      "answer": "I didn't make that change automatically because my Decision Engine routed to \"recommend\". I recommend \"Use Family-Owned Branding\" but I'm waiting for your approval before changing anything. Confidence 88%, Evidence Quality 88%, Business Alignment 100%, Customer Impact 68%, Experience Impact 70%, Risk medium, Requires Approval Yes, Overall Decision Score 83%.",
+      "decisionId": "dec_mrz80nx3_yp1wua",
+      "finalDecision": "recommend"
+    },
+    "demo": {
+      "request": "Rewrite my homepage.",
+      "homepageDecisionId": "dec_mrz80nx2_a8hbhj",
+      "think": {
+        "finalDecision": "recommend",
+        "decisionScore": 82,
+        "dimensions": {
+          "confidence": 89,
+          "evidenceQuality": 78,
+          "businessAlignment": 100,
+          "customerImpact": 72,
+          "experienceImpact": 75,
+          "riskScore": 70,
+          "risk": "medium",
+          "requiresApproval": true
+        },
+        "requiresApproval": true,
+        "actions": [
+          "reviewed",
+          "identity_evaluated_constitution",
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_explain",
+          "injected_visible_moment",
+          "decision_engine_recommend",
+          "requires_owner_approval"
+        ],
+        "responseSnippet": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instea"
+      },
+      "thinkWhy": {
+        "response": "I didn't make that change automatically because my Decision Engine routed to \"recommend\". I recommend \"Rewrite homepage — lead with proof, then packages, then a single Book Book button\" but I'm waiting for your approval before changing anything. Confidence 89%, Evidence Quality 78%, Business Alignment 100%, Customer Impact 72%, Experience Impact 75%, Risk medium, Requires Approval Yes, Overall Decision Score 82%.",
+        "fromStored": true,
+        "finalDecision": "recommend"
+      }
+    },
+    "releaseGate": {
+      "everyRecommendationGeneratesDecisionObject": true,
+      "confidenceCalculated": true,
+      "evidenceQualityCalculated": true,
+      "businessAlignmentCalculated": true,
+      "customerImpactCalculated": true,
+      "experienceImpactCalculated": true,
+      "riskCalculated": true,
+      "approvalRequirementsCalculated": true,
+      "choosesProceedRecommendAskOrResearch": true,
+      "decisionHistoryStored": true,
+      "ownerCanAskWhyDidntAct": true,
+      "automatedEvidence": true
+    }
+  },
+  "failures": null
+}

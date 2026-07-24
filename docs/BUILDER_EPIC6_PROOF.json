@@ -1,0 +1,285 @@
+{
+  "milestone": "1.5",
+  "epic": 6,
+  "name": "Business Builder",
+  "title": "Business Builder",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:20.892Z",
+  "proofs": {
+    "businessBuilderExists": true,
+    "websiteIsOneCanvas": true,
+    "customerFacingName": "Business Builder",
+    "internalWebsiteModule": "website_builder",
+    "creativeDirectionsMultiSurface": true,
+    "explainsEveryDecision": true,
+    "businessScore": true,
+    "creativeMemory": true,
+    "multiSurfaceChanges": true,
+    "creativeNegotiation": true,
+    "creativeWorkspace": true,
+    "missionControlCreativeSessions": true,
+    "requiresApprovalBeforeApply": true,
+    "noApply": true,
+    "demos": {
+      "premium": {
+        "request": "Make my business feel premium.",
+        "direction": {
+          "id": "luxury_brand",
+          "label": "Luxury Brand",
+          "vibe": "Quiet luxury, proof-first, refined type",
+          "affects": [
+            "website",
+            "booking",
+            "portfolio",
+            "packages"
+          ],
+          "summary": "Premium buyers decide fast — optimize for trust first."
+        },
+        "decisions": [
+          {
+            "surface": "website",
+            "title": "Homepage feels more premium",
+            "detail": "Hero rewritten, typography refined, spacing tightened.",
+            "why": "Premium buyers usually decide in under 10 seconds — lead with trust.",
+            "moduleOwner": "Website module",
+            "id": "cdec_mrz80qpi_rnjaiu"
+          },
+          {
+            "surface": "trust",
+            "title": "Reviews moved higher",
+            "detail": "Proof sits before pricing.",
+            "why": "Reviews are often the strongest trust signal.",
+            "moduleOwner": "Website module",
+            "id": "cdec_mrz80qpi_9pb8s9"
+          },
+          {
+            "surface": "booking",
+            "title": "Booking asks fewer questions",
+            "detail": "Simplified flow; fewer fields before confirmation.",
+            "why": "Friction kills premium conversion.",
+            "moduleOwner": "Booking Intelligence Builder",
+            "id": "cdec_mrz80qpi_qpw7oe"
+          },
+          {
+            "surface": "portfolio",
+            "title": "Portfolio starts with luxury work",
+            "detail": "Hero images reordered toward elevated jobs.",
+            "why": "Visual proof should match the positioning.",
+            "moduleOwner": "Portfolio Builder",
+            "id": "cdec_mrz80qpi_zza8k3"
+          },
+          {
+            "surface": "packages",
+            "title": "Package names updated",
+            "detail": "Clearer tier language; pricing presentation strengthened.",
+            "why": "Premium packaging is positioning, not just a price list.",
+            "moduleOwner": "Packages Builder",
+            "id": "cdec_mrz80qpi_pfhzsx"
+          },
+          {
+            "surface": "cta",
+            "title": "Button style modernized",
+            "detail": "Stronger primary CTA hierarchy.",
+            "why": "One clear next step reduces hesitation.",
+            "moduleOwner": "Website module",
+            "id": "cdec_mrz80qpi_pehnjb"
+          },
+          {
+            "surface": "website",
+            "title": "Owner asked for a more premium website feel.",
+            "detail": "website.premium_feel → true",
+            "why": "Owner asked for a more premium website feel.",
+            "moduleOwner": "Website Builder",
+            "id": "cdec_mrz80qpi_m7v1ay"
+          },
+          {
+            "surface": "website",
+            "title": "Premium feel usually starts with hero headline tone.",
+            "detail": "website.hero.headline_tone → \"premium\"",
+            "why": "Premium feel usually starts with hero headline tone.",
+            "moduleOwner": "Website Builder",
+            "id": "cdec_mrz80qpi_ghtd2h"
+          }
+        ],
+        "score": {
+          "trust": 100,
+          "professionalism": 91,
+          "clarity": 89,
+          "bookingExperience": 95,
+          "visualQuality": 92,
+          "consistency": 95,
+          "overall": 94,
+          "note": "Business quality — not SEO, not Lighthouse."
+        },
+        "surfacesTouched": [
+          "website",
+          "booking",
+          "portfolio",
+          "packages"
+        ]
+      },
+      "conversation": [
+        {
+          "role": "owner",
+          "message": "I don't like the new typography.",
+          "at": "2026-07-24T17:35:20.889Z"
+        },
+        {
+          "role": "hubly",
+          "message": "Got it — I updated typography and remembered that preference for next builds.",
+          "at": "2026-07-24T17:35:20.889Z"
+        },
+        {
+          "role": "owner",
+          "message": "Keep the luxury layout but use brighter photography.",
+          "at": "2026-07-24T17:35:20.889Z"
+        },
+        {
+          "role": "hubly",
+          "message": "Combined — luxury layout with brighter photography. Preferences saved.",
+          "at": "2026-07-24T17:35:20.889Z"
+        },
+        {
+          "role": "owner",
+          "message": "Remove reviews.",
+          "at": "2026-07-24T17:35:20.889Z"
+        },
+        {
+          "role": "hubly",
+          "message": "I can do that.\n\nI don't recommend it because Reviews are your strongest trust signal — removing them usually hurts conversion.\n\nWould you still like to continue?",
+          "at": "2026-07-24T17:35:20.889Z"
+        },
+        {
+          "role": "owner",
+          "message": "Keep reviews",
+          "at": "2026-07-24T17:35:20.889Z"
+        },
+        {
+          "role": "hubly",
+          "message": "We'll keep reviews — trust stays front and center.",
+          "at": "2026-07-24T17:35:20.889Z"
+        }
+      ],
+      "memory": {
+        "businessId": "biz_epic6_premium",
+        "preferences": [
+          {
+            "key": "tone",
+            "value": "friendlier",
+            "learnedAt": "2026-07-24T17:35:20.889Z",
+            "source": "Make it more friendly."
+          },
+          {
+            "key": "direction",
+            "value": "neighborhood_favorite",
+            "learnedAt": "2026-07-24T17:35:20.889Z",
+            "source": "Make it more friendly."
+          },
+          {
+            "key": "positioning",
+            "value": "premium",
+            "learnedAt": "2026-07-24T17:35:20.889Z",
+            "source": "Actually keep it premium."
+          },
+          {
+            "key": "typography",
+            "value": "avoid_last_proposal",
+            "learnedAt": "2026-07-24T17:35:20.889Z",
+            "source": "I don't like the new typography."
+          },
+          {
+            "key": "layout",
+            "value": "luxury",
+            "learnedAt": "2026-07-24T17:35:20.889Z",
+            "source": "Keep the luxury layout but use brighter photography."
+          },
+          {
+            "key": "photography",
+            "value": "brighter",
+            "learnedAt": "2026-07-24T17:35:20.889Z",
+            "source": "Keep the luxury layout but use brighter photography."
+          }
+        ]
+      },
+      "workspace": {
+        "conversation": [
+          {
+            "role": "hubly",
+            "message": "Here's what I changed across your business — not just the website.\n\n✓ Homepage feels more premium\n✓ Reviews moved higher\n✓ Booking asks fewer questions\n✓ Portfolio starts with luxury work\n✓ Package names updated\n✓ Button style modernized\n✓ Owner asked for a more premium website feel.\n✓ Premium feel usually starts with hero headline tone.\n\nWhy?\nPremium buyers decide fast — optimize for trust first.\n\nWhat do you think?",
+            "at": "2026-07-24T17:35:20.886Z"
+          },
+          {
+            "role": "owner",
+            "message": "Make it more friendly.",
+            "at": "2026-07-24T17:35:20.889Z"
+          },
+          {
+            "role": "hubly",
+            "message": "I think that means warmer language and softer proof — without dropping the craft. I updated the Creative Direction toward Friendly Premium.\n\nWhat do you think?",
+            "at": "2026-07-24T17:35:20.889Z"
+          },
+          {
+            "role": "owner",
+            "message": "Actually keep it premium.",
+            "at": "2026-07-24T17:35:20.889Z"
+          },
+          {
+            "role": "hubly",
+            "message": "I'll combine both — friendly where it helps, premium where it converts. Preview updated.",
+            "at": "2026-07-24T17:35:20.889Z"
+          },
+          {
+            "role": "owner",
+            "message": "I don't like the new typography.",
+            "at": "2026-07-24T17:35:20.889Z"
+          },
+          {
+            "role": "hubly",
+            "message": "Got it — I updated typography and remembered that preference for next builds.",
+            "at": "2026-07-24T17:35:20.889Z"
+          },
+          {
+            "role": "owner",
+            "message": "Keep the luxury layout but use brighter photography.",
+            "at": "2026-07-24T17:35:20.889Z"
+          },
+          {
+            "role": "hubly",
+            "message": "Combined — luxury layout with brighter photography. Preferences saved.",
+            "at": "2026-07-24T17:35:20.889Z"
+          },
+          {
+            "role": "owner",
+            "message": "Remove reviews.",
+            "at": "2026-07-24T17:35:20.889Z"
+          },
+          {
+            "role": "hubly",
+            "message": "I can do that.\n\nI don't recommend it because Reviews are your strongest trust signal — removing them usually hurts conversion.\n\nWould you still like to continue?",
+            "at": "2026-07-24T17:35:20.889Z"
+          },
+          {
+            "role": "owner",
+            "message": "Keep reviews",
+            "at": "2026-07-24T17:35:20.889Z"
+          },
+          {
+            "role": "hubly",
+            "message": "We'll keep reviews — trust stays front and center.",
+            "at": "2026-07-24T17:35:20.889Z"
+          }
+        ],
+        "liveViews": [
+          "website",
+          "booking",
+          "packages",
+          "portfolio"
+        ],
+        "activeView": "website",
+        "split": "conversation_left_preview_right",
+        "feeling": "co_creating_with_creative_director"
+      }
+    }
+  },
+  "failures": null
+}

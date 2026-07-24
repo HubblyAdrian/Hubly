@@ -1,0 +1,209 @@
+{
+  "milestone": "1.5",
+  "epic": 8,
+  "name": "Workspace Intelligence Builder",
+  "title": "Workspace Intelligence Builder",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:21.987Z",
+  "proofs": {
+    "workspaceIntelligenceExists": true,
+    "customerFacingName": "Workspace Intelligence Builder",
+    "conversationAdaptation": true,
+    "learnsBehavior": true,
+    "adaptiveHomepage": true,
+    "adaptiveNavigation": true,
+    "contextualQuickActions": true,
+    "workspaceHealth": true,
+    "multiDevice": true,
+    "recommendationsExplained": true,
+    "focusMode": true,
+    "missionControlWorkspaceIntelligence": true,
+    "requiresApprovalBeforeApply": true,
+    "noApply": true,
+    "demos": {
+      "jobs_above": {
+        "request": "Move Jobs above Customers.",
+        "changeCount": 1,
+        "concepts": [
+          "sidebar_order"
+        ],
+        "health": 78,
+        "homepage": "Jobs",
+        "focusMode": null
+      },
+      "hide_revenue": {
+        "request": "Hide Revenue.",
+        "changeCount": 1,
+        "concepts": [
+          "hide_module"
+        ],
+        "health": 92,
+        "homepage": "Jobs",
+        "focusMode": null
+      },
+      "calendar_home": {
+        "request": "Make Calendar my homepage.",
+        "changeCount": 1,
+        "concepts": [
+          "homepage"
+        ],
+        "health": 86,
+        "homepage": "Calendar",
+        "focusMode": null
+      },
+      "pin_quote": {
+        "request": "Pin Quick Quote.",
+        "changeCount": 1,
+        "concepts": [
+          "pin_action"
+        ],
+        "health": 80,
+        "homepage": "Jobs",
+        "focusMode": null
+      },
+      "never_marketing": {
+        "request": "I never use Marketing.",
+        "changeCount": 2,
+        "concepts": [
+          "hide_module",
+          "hide_module"
+        ],
+        "health": 92,
+        "homepage": "Jobs",
+        "focusMode": null
+      },
+      "mobile": {
+        "request": "Build me a workspace for mobile.",
+        "changeCount": 1,
+        "concepts": [
+          "device_layout"
+        ],
+        "health": 80,
+        "homepage": "Jobs",
+        "focusMode": null
+      },
+      "recommend": {
+        "request": "What do you think I should change?",
+        "changeCount": 1,
+        "concepts": [
+          "learned_behavior"
+        ],
+        "health": 80,
+        "homepage": "Jobs",
+        "focusMode": "job_day"
+      },
+      "focus": {
+        "request": "Today is a Job Day — enable Focus Mode.",
+        "changeCount": 1,
+        "concepts": [
+          "focus_mode"
+        ],
+        "health": 80,
+        "homepage": "Jobs",
+        "focusMode": "job_day"
+      }
+    },
+    "healthSample": {
+      "overall": 80,
+      "navigation": 90,
+      "efficiency": 85,
+      "personalization": 75,
+      "unusedFeatures": 70,
+      "note": "Workspace Health — how well the workspace matches how you actually work."
+    },
+    "recommendationsSample": [
+      {
+        "id": "wrec_mrz80rjy_v9bl3v",
+        "title": "Pin Quick Quote",
+        "detail": "I think Quick Quote should be on your sidebar.",
+        "why": "You create quotes often — pinning saves taps every day.",
+        "conceptId": "pin_action",
+        "confidence": 88,
+        "requiresOwnerApproval": true
+      },
+      {
+        "id": "wrec_mrz80rjy_lqz0ys",
+        "title": "Make Calendar your homepage",
+        "detail": "You're constantly opening Calendar first. Would you like it as your homepage?",
+        "why": "I noticed you open Calendar first every morning. Moving it higher would save you time.",
+        "conceptId": "homepage",
+        "confidence": 90,
+        "requiresOwnerApproval": true
+      },
+      {
+        "id": "wrec_mrz80rjy_5fok0j",
+        "title": "Hide Inventory",
+        "detail": "You haven't opened Inventory in 4 months. Should I hide it?",
+        "why": "Unused tools clutter navigation — hiding keeps focus on what you use.",
+        "conceptId": "hide_module",
+        "confidence": 84,
+        "requiresOwnerApproval": true
+      }
+    ],
+    "focusModeSample": {
+      "mode": "job_day",
+      "label": "Job Day",
+      "inferred": false,
+      "surfaces": [
+        "Jobs",
+        "Route",
+        "Customers",
+        "Weather",
+        "Arrival Windows"
+      ],
+      "quickActions": [
+        "Start Today's Route",
+        "Open Today's Jobs"
+      ],
+      "why": "Focus Mode reorganizes the workspace around today's priority.",
+      "note": "Focus Mode — the software adapts to what you're trying to accomplish today."
+    },
+    "devicesSample": [
+      {
+        "device": "phone",
+        "navigation": [
+          "Today's Jobs",
+          "Maps",
+          "Customer Calls"
+        ],
+        "homepage": "Today's Jobs",
+        "quickActions": [
+          "Call Customer",
+          "Open Maps",
+          "Next Job"
+        ],
+        "why": "Phone prioritizes today's jobs, maps, and calls."
+      },
+      {
+        "device": "desktop",
+        "navigation": [
+          "Quotes",
+          "Revenue",
+          "Website"
+        ],
+        "homepage": "Jobs",
+        "quickActions": [
+          "Quick Quote",
+          "Open Revenue",
+          "Edit Website"
+        ],
+        "why": "Desktop prioritizes quotes, revenue, and website work."
+      },
+      {
+        "device": "tablet",
+        "navigation": [
+          "Jobs",
+          "Calendar",
+          "Customers"
+        ],
+        "homepage": "Jobs",
+        "quickActions": [
+          "Today's Schedule",
+          "Pin Note"
+        ],
+        "why": "Tablet balances field and office surfaces."
+      }
+    ]
+  },
+  "failures": null
+}

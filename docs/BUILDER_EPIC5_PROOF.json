@@ -1,0 +1,437 @@
+{
+  "milestone": "1.5",
+  "epic": 5,
+  "name": "Version & Rollback Engine",
+  "title": "Version & Rollback Engine",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:20.439Z",
+  "proofs": {
+    "versionEngineExists": true,
+    "everyApprovedChangeCreatesVersion": true,
+    "websiteVersions": true,
+    "bookingVersions": true,
+    "workspaceVersions": true,
+    "automationVersions": true,
+    "portfolioVersions": true,
+    "versionComparison": true,
+    "rollbackPlans": true,
+    "partialRollback": true,
+    "singleChangeRollback": true,
+    "aiRestoreSuggestions": true,
+    "businessTimeline": true,
+    "missionControlVersionHistory": true,
+    "noDirectRollbackExecution": true,
+    "noApply": true,
+    "demos": {
+      "v1": {
+        "id": "bver_mrz80qc6_iy8wu7",
+        "label": "v1.1",
+        "surfaces": [
+          "website"
+        ],
+        "changes": [
+          {
+            "path": "website.premium_feel",
+            "surface": "website",
+            "before": false,
+            "after": true,
+            "builderOwner": "Website Builder",
+            "summary": "Owner asked for a more premium website feel."
+          },
+          {
+            "path": "website.hero.headline_tone",
+            "surface": "website",
+            "before": "clear",
+            "after": "premium",
+            "builderOwner": "Website Builder",
+            "summary": "Premium feel usually starts with hero headline tone."
+          }
+        ]
+      },
+      "v2": {
+        "id": "bver_mrz80qcd_3euehc",
+        "label": "v1.2",
+        "surfaces": []
+      },
+      "diff": {
+        "fromVersionId": "bver_mrz80qc6_iy8wu7",
+        "toVersionId": "bver_mrz80qcd_3euehc",
+        "fromLabel": "v1.1",
+        "toLabel": "v1.2",
+        "surfaces": [
+          {
+            "surface": "website",
+            "added": [],
+            "removed": [
+              {
+                "path": "website.premium_feel",
+                "surface": "website",
+                "before": false,
+                "after": true,
+                "builderOwner": "Website Builder",
+                "summary": "Owner asked for a more premium website feel."
+              },
+              {
+                "path": "website.hero.headline_tone",
+                "surface": "website",
+                "before": "clear",
+                "after": "premium",
+                "builderOwner": "Website Builder",
+                "summary": "Premium feel usually starts with hero headline tone."
+              }
+            ],
+            "changed": []
+          }
+        ],
+        "summary": "Compare v1.1 → v1.2: 2 diff(s)"
+      },
+      "fullRollback": {
+        "id": "rb_mrz80qcf_roiroy",
+        "scope": "full",
+        "targetVersionId": "bver_mrz80qc6_iy8wu7",
+        "targetLabel": "v1.1",
+        "fromVersionId": "bver_mrz80qcd_3euehc",
+        "surfaces": [
+          "website"
+        ],
+        "paths": [
+          "website.premium_feel",
+          "website.hero.headline_tone"
+        ],
+        "reason": "Go back to the first premium version.",
+        "steps": [
+          {
+            "surface": "website",
+            "path": "website.premium_feel",
+            "restoreTo": true,
+            "summary": "Restore website.premium_feel to v1.1"
+          },
+          {
+            "surface": "website",
+            "path": "website.hero.headline_tone",
+            "restoreTo": "premium",
+            "summary": "Restore website.hero.headline_tone to v1.1"
+          }
+        ],
+        "requiresOwnerApproval": true,
+        "executed": false,
+        "applied": false,
+        "status": "rollback_plan_ready",
+        "waitingFor": "apply_engine",
+        "createdAt": "2026-07-24T17:35:20.415Z"
+      },
+      "partialRollback": {
+        "id": "rb_mrz80qcf_32baux",
+        "scope": "partial",
+        "targetVersionId": "bver_mrz80qc6_iy8wu7",
+        "targetLabel": "v1.1",
+        "fromVersionId": "bver_mrz80qcd_3euehc",
+        "surfaces": [
+          "booking"
+        ],
+        "paths": [],
+        "reason": "Restore only the booking changes.",
+        "steps": [],
+        "requiresOwnerApproval": true,
+        "executed": false,
+        "applied": false,
+        "status": "rollback_plan_ready",
+        "waitingFor": "apply_engine",
+        "createdAt": "2026-07-24T17:35:20.415Z"
+      },
+      "singleRollback": {
+        "id": "rb_mrz80qcf_9qlyt9",
+        "scope": "single",
+        "targetVersionId": "bver_mrz80qc6_iy8wu7",
+        "targetLabel": "v1.1",
+        "fromVersionId": "bver_mrz80qcd_3euehc",
+        "surfaces": [
+          "website"
+        ],
+        "paths": [
+          "website.premium_feel"
+        ],
+        "reason": "Undo only one change.",
+        "steps": [
+          {
+            "surface": "website",
+            "path": "website.premium_feel",
+            "restoreTo": true,
+            "summary": "Single-change rollback: website.premium_feel"
+          }
+        ],
+        "requiresOwnerApproval": true,
+        "executed": false,
+        "applied": false,
+        "status": "rollback_plan_ready",
+        "waitingFor": "apply_engine",
+        "createdAt": "2026-07-24T17:35:20.415Z"
+      },
+      "restoreSuggestions": [
+        {
+          "id": "restore_mrz80qcf_kbj5g8",
+          "suggestedVersionId": "bver_mrz80qc6_iy8wu7",
+          "suggestedLabel": "v1.1",
+          "currentVersionId": "bver_mrz80qcd_3euehc",
+          "reason": "I think v1.1 may have performed better for trust signals.",
+          "signal": "Conversions / trust may have softened after the latest homepage change.",
+          "confidence": 90,
+          "requiresOwnerApproval": true,
+          "autoApplied": false
+        }
+      ],
+      "timeline": {
+        "businessId": "biz_epic5_founder",
+        "title": "Business Timeline",
+        "events": [
+          {
+            "id": "tl_mrz80qc6_o5jkdp",
+            "at": "2026-07-12T17:35:20.406Z",
+            "kind": "milestone",
+            "emoji": "🎉",
+            "title": "Website launched",
+            "detail": "First public Hubly site went live.",
+            "versionId": null,
+            "versionLabel": null
+          },
+          {
+            "id": "tl_mrz80qc6_n6fofc",
+            "at": "2026-07-13T17:35:20.406Z",
+            "kind": "integration",
+            "emoji": "💳",
+            "title": "Stripe connected",
+            "detail": "Card pay on booking enabled.",
+            "versionId": null,
+            "versionLabel": null
+          },
+          {
+            "id": "tl_mrz80qc6_nmwqbt",
+            "at": "2026-07-14T17:35:20.406Z",
+            "kind": "builder_change",
+            "emoji": "📅",
+            "title": "Arrival windows enabled",
+            "detail": "Booking rules updated for clearer ETAs.",
+            "versionId": null,
+            "versionLabel": null
+          },
+          {
+            "id": "tl_mrz80qc6_zzimhf",
+            "at": "2026-07-16T17:35:20.406Z",
+            "kind": "achievement",
+            "emoji": "⭐",
+            "title": "First 5-star review",
+            "detail": "Proof that trust is compounding.",
+            "versionId": null,
+            "versionLabel": null
+          },
+          {
+            "id": "tl_mrz80qc6_wd3pei",
+            "at": "2026-07-22T17:35:20.406Z",
+            "kind": "growth",
+            "emoji": "🏆",
+            "title": "100th booking",
+            "detail": "A growth moment worth celebrating.",
+            "versionId": null,
+            "versionLabel": null
+          },
+          {
+            "id": "tl_mrz80qc6_in8xwl",
+            "at": "2026-07-24T17:35:20.406Z",
+            "kind": "ai_recommendation",
+            "emoji": "🧠",
+            "title": "Hubly recommends launching memberships",
+            "detail": "Next chapter for biz_epic5_founder — owner decides.",
+            "versionId": null,
+            "versionLabel": null
+          },
+          {
+            "id": "tl_mrz80qc6_8ubzri",
+            "at": "2026-07-24T17:35:20.406Z",
+            "kind": "builder_change",
+            "emoji": "📈",
+            "title": "v1.1 — Website Improvement",
+            "detail": "Owner asked for a more premium website feel.; Premium feel usually starts with hero headline tone.",
+            "versionId": "bver_mrz80qc6_iy8wu7",
+            "versionLabel": "v1.1"
+          },
+          {
+            "id": "tl_mrz80qcd_kzhek8",
+            "at": "2026-07-24T17:35:20.413Z",
+            "kind": "builder_change",
+            "emoji": "📈",
+            "title": "v1.2 — Business Change",
+            "detail": "",
+            "versionId": "bver_mrz80qcd_3euehc",
+            "versionLabel": "v1.2"
+          }
+        ],
+        "storyNote": "Not just what changed — how the business evolved. Builder changes, milestones, achievements, and Hubly recommendations."
+      },
+      "surfaces": [
+        {
+          "id": "booking",
+          "request": "Add arrival windows.",
+          "version": {
+            "id": "bver_mrz80qcn_iq9czk",
+            "label": "v1.1",
+            "surfaces": [
+              "booking"
+            ],
+            "changes": [
+              {
+                "path": "booking.arrival_window",
+                "surface": "booking",
+                "before": {
+                  "enabled": false,
+                  "before_minutes": 0,
+                  "after_minutes": 0
+                },
+                "after": {
+                  "enabled": true,
+                  "before_minutes": 60,
+                  "after_minutes": 60
+                },
+                "builderOwner": "Booking Intelligence Builder",
+                "summary": "Owner wants appointment arrival windows."
+              }
+            ],
+            "reason": "Approved direction: Booking Intelligence",
+            "builders": [
+              "Booking Intelligence Builder"
+            ],
+            "applied": false
+          },
+          "passed": true
+        },
+        {
+          "id": "workspace",
+          "request": "Move Jobs above Customers.",
+          "version": {
+            "id": "bver_mrz80qcr_08jaw1",
+            "label": "v1.1",
+            "surfaces": [
+              "workspace"
+            ],
+            "changes": [
+              {
+                "path": "workspace.sidebar_order",
+                "surface": "workspace",
+                "before": [
+                  "Customers",
+                  "Jobs",
+                  "Calendar"
+                ],
+                "after": [
+                  "Jobs",
+                  "Customers"
+                ],
+                "builderOwner": "Workspace Intelligence Builder",
+                "summary": "Owner wants Jobs above Customers in navigation."
+              }
+            ],
+            "reason": "Approved direction: Workspace Intelligence",
+            "builders": [
+              "Workspace Intelligence Builder"
+            ],
+            "applied": false
+          },
+          "passed": true
+        },
+        {
+          "id": "portfolio",
+          "request": "Organize my portfolio.",
+          "version": {
+            "id": "bver_mrz80qct_4kq1g8",
+            "label": "v1.1",
+            "surfaces": [
+              "portfolio"
+            ],
+            "changes": [
+              {
+                "path": "portfolio.gallery",
+                "surface": "portfolio",
+                "before": null,
+                "after": {
+                  "organize": true
+                },
+                "builderOwner": "Media Intelligence Engine",
+                "summary": "Build / organize portfolio gallery."
+              }
+            ],
+            "reason": "Approved direction: Media Intelligence",
+            "builders": [
+              "Media Intelligence Engine"
+            ],
+            "applied": false
+          },
+          "passed": true
+        },
+        {
+          "id": "automation",
+          "request": "Send prep instructions after ceramic coating bookings.",
+          "version": {
+            "id": "bver_mrz80qcx_m6gr4x",
+            "label": "v1.1",
+            "surfaces": [
+              "automations"
+            ],
+            "changes": [
+              {
+                "path": "automations.workflows.prep_after_ceramic",
+                "surface": "automations",
+                "before": [],
+                "after": [
+                  {
+                    "id": "prep_after_ceramic",
+                    "trigger": "booking.created.service:ceramic_coating",
+                    "steps": [
+                      {
+                        "type": "createWorkflow",
+                        "config": {
+                          "name": "Ceramic coating prep"
+                        }
+                      },
+                      {
+                        "type": "wait",
+                        "config": {
+                          "minutes": 5
+                        }
+                      },
+                      {
+                        "type": "sendEmail",
+                        "config": {
+                          "template": "prep_instructions"
+                        }
+                      },
+                      {
+                        "type": "wait",
+                        "config": {
+                          "until": "day_before"
+                        }
+                      },
+                      {
+                        "type": "sendReminder",
+                        "config": {
+                          "channel": "sms"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "builderOwner": "Automation Intelligence Builder",
+                "summary": "Send prep instructions after ceramic coating bookings."
+              }
+            ],
+            "reason": "Approved direction: Automation Intelligence",
+            "builders": [
+              "Automation Intelligence Builder"
+            ],
+            "applied": false
+          },
+          "passed": true
+        }
+      ]
+    }
+  },
+  "failures": null
+}

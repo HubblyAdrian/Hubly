@@ -1,0 +1,77 @@
+{
+  "epic": 4,
+  "title": "Creative Build Experience",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:25.269Z",
+  "version": "1.0.0",
+  "transition": "I think we built something you're going to be proud of.",
+  "industries": {
+    "pressure_washing": {
+      "sequence": [
+        "structure",
+        "hero",
+        "brand",
+        "packages",
+        "booking",
+        "portfolio",
+        "workspace"
+      ],
+      "confidence": 93
+    },
+    "photography": {
+      "sequence": [
+        "structure",
+        "portfolio",
+        "hero",
+        "brand",
+        "packages",
+        "booking",
+        "workspace"
+      ],
+      "confidence": 93
+    },
+    "cleaning": {
+      "sequence": [
+        "structure",
+        "packages",
+        "booking",
+        "hero",
+        "brand",
+        "portfolio",
+        "workspace"
+      ],
+      "confidence": 92
+    },
+    "hvac": {
+      "sequence": [
+        "structure",
+        "hero",
+        "booking",
+        "packages",
+        "brand",
+        "portfolio",
+        "workspace"
+      ],
+      "confidence": 93
+    }
+  },
+  "failures": [],
+  "htmlChecks": {
+    "creativeCanvas": true,
+    "conversationLive": true,
+    "progressiveStages": true,
+    "liveExplanations": true,
+    "beforeAfter": true,
+    "confidenceMeter": true,
+    "decisionsPanel": true,
+    "dualChoice": true,
+    "liveInterrupt": true,
+    "industrySpecific": true,
+    "behindScenes": true,
+    "transition": true,
+    "noBuildComplete": true,
+    "thinkingHandoff": true,
+    "revealShell": true,
+    "wordmark": true
+  }
+}

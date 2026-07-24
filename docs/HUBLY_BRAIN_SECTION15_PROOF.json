@@ -1,0 +1,547 @@
+{
+  "section": 15,
+  "name": "Platform Extensibility",
+  "title": "Platform Extensibility",
+  "status": "pass",
+  "passed": true,
+  "provenAt": "2026-07-24T17:35:17.931Z",
+  "summary": "Hubly grows by registering Feature Manifests — experts, builders, industries, capabilities, knowledge, integrations, and workflows — without modifying Hubly Brain. Validation, version compatibility, clean unregister, and Mission Control inventory are proven.",
+  "proofs": {
+    "featureManifest": true,
+    "validation": true,
+    "versionCompatibility": true,
+    "uiExtensionPoints": [
+      {
+        "id": "ui.dashboard_card",
+        "surface": "dashboard_card",
+        "description": "Future dashboard cards contributed by modules",
+        "status": "reserved"
+      },
+      {
+        "id": "ui.business_home_card",
+        "surface": "business_home_card",
+        "description": "Future Business Home cards contributed by modules",
+        "status": "reserved"
+      },
+      {
+        "id": "ui.workspace_widget",
+        "surface": "workspace_widget",
+        "description": "Future Workspace widgets contributed by modules",
+        "status": "reserved"
+      },
+      {
+        "id": "ui.ai_action",
+        "surface": "ai_action",
+        "description": "Future AI action chips / commands contributed by modules",
+        "status": "reserved"
+      }
+    ],
+    "demo": {
+      "registered": [
+        "expert.seo_expert",
+        "builder.scheduling_builder",
+        "industry.pool_cleaning",
+        "knowledge.google_business_profile",
+        "capability.maps_travel",
+        "integration.mock_quickbooks",
+        "workflow.new_review_followup"
+      ],
+      "discovered": [
+        "research",
+        "strategy",
+        "creative_director",
+        "critic",
+        "builder",
+        "seo_expert",
+        "experience_director"
+      ],
+      "executed": {
+        "expertId": "seo_expert",
+        "ok": true,
+        "summary": "I recommend tightening your homepage title around your main service and city."
+      },
+      "whoOwns": {
+        "capabilityId": "estimate_travel_time",
+        "toolId": "scheduling_builder"
+      },
+      "industryLoaded": "Pool Cleaning",
+      "knowledgeFound": true,
+      "integrationFound": true,
+      "workflowFound": true,
+      "validationRejected": true,
+      "unregistered": [
+        "workflow.new_review_followup",
+        "integration.mock_quickbooks",
+        "capability.maps_travel",
+        "knowledge.google_business_profile",
+        "industry.pool_cleaning",
+        "builder.scheduling_builder",
+        "expert.seo_expert"
+      ],
+      "brainUntouched": true
+    },
+    "registrationLogs": [
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "register",
+        "kind": "expert",
+        "id": "expert.seo_expert",
+        "detail": "SEO Expert@1.0.0"
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "register",
+        "kind": "builder_module",
+        "id": "builder.scheduling_builder",
+        "detail": "milestone=1.5"
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "register",
+        "kind": "industry_dna",
+        "id": "industry.pool_cleaning",
+        "detail": "pool cleaning"
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "register",
+        "kind": "knowledge_source",
+        "id": "knowledge.google_business_profile",
+        "detail": "read"
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "register",
+        "kind": "capability",
+        "id": "capability.maps_travel",
+        "detail": "read_maps"
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "register",
+        "kind": "integration",
+        "id": "integration.mock_quickbooks",
+        "detail": "oauth2"
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "register",
+        "kind": "workflow",
+        "id": "workflow.new_review_followup",
+        "detail": "review.created"
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "register",
+        "kind": "expert",
+        "id": "expert.seo_expert",
+        "detail": "SEO Expert@1.0.0"
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "register",
+        "kind": "builder_module",
+        "id": "builder.scheduling_builder",
+        "detail": "milestone=1.5"
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "register",
+        "kind": "industry_dna",
+        "id": "industry.pool_cleaning",
+        "detail": "pool cleaning"
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "register",
+        "kind": "knowledge_source",
+        "id": "knowledge.google_business_profile",
+        "detail": "read"
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "register",
+        "kind": "capability",
+        "id": "capability.maps_travel",
+        "detail": "read_maps"
+      },
+      {
+        "at": "2026-07-24T17:35:17.931Z",
+        "event": "register",
+        "kind": "integration",
+        "id": "integration.mock_quickbooks",
+        "detail": "oauth2"
+      },
+      {
+        "at": "2026-07-24T17:35:17.931Z",
+        "event": "register",
+        "kind": "workflow",
+        "id": "workflow.new_review_followup",
+        "detail": "review.created"
+      }
+    ],
+    "validationLogs": [
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "validate",
+        "kind": "expert",
+        "id": "expert.seo_expert",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "validate",
+        "kind": "builder_module",
+        "id": "builder.scheduling_builder",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "validate",
+        "kind": "industry_dna",
+        "id": "industry.pool_cleaning",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "validate",
+        "kind": "knowledge_source",
+        "id": "knowledge.google_business_profile",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "validate",
+        "kind": "capability",
+        "id": "capability.maps_travel",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "validate",
+        "kind": "integration",
+        "id": "integration.mock_quickbooks",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "validate",
+        "kind": "workflow",
+        "id": "workflow.new_review_followup",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "validate_reject",
+        "kind": "expert",
+        "id": "?",
+        "detail": "rejected",
+        "meta": {
+          "issueCount": 6
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "validate_reject",
+        "kind": "expert",
+        "id": "expert.too_new",
+        "detail": "rejected",
+        "meta": {
+          "issueCount": 1
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.928Z",
+        "event": "validate_reject",
+        "kind": "expert",
+        "id": "expert.too_new_expert",
+        "detail": "rejected",
+        "meta": {
+          "issueCount": 1
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "validate",
+        "kind": "expert",
+        "id": "expert.seo_expert",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "validate",
+        "kind": "builder_module",
+        "id": "builder.scheduling_builder",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "validate",
+        "kind": "industry_dna",
+        "id": "industry.pool_cleaning",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "validate",
+        "kind": "knowledge_source",
+        "id": "knowledge.google_business_profile",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "validate",
+        "kind": "capability",
+        "id": "capability.maps_travel",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.931Z",
+        "event": "validate",
+        "kind": "integration",
+        "id": "integration.mock_quickbooks",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.931Z",
+        "event": "validate",
+        "kind": "workflow",
+        "id": "workflow.new_review_followup",
+        "detail": "ok",
+        "meta": {
+          "issueCount": 0
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.931Z",
+        "event": "validate_reject",
+        "kind": "expert",
+        "id": "?",
+        "detail": "rejected",
+        "meta": {
+          "issueCount": 6
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.931Z",
+        "event": "validate_reject",
+        "kind": "expert",
+        "id": "expert.too_new",
+        "detail": "rejected",
+        "meta": {
+          "issueCount": 1
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.931Z",
+        "event": "validate_reject",
+        "kind": "expert",
+        "id": "expert.too_new_expert",
+        "detail": "rejected",
+        "meta": {
+          "issueCount": 1
+        }
+      }
+    ],
+    "compatibilityChecks": [
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "compat_check",
+        "kind": "expert",
+        "id": "expert.seo_expert",
+        "detail": "compatible",
+        "meta": {
+          "min": "1.0.0",
+          "platform": "1.0.0"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "compat_check",
+        "kind": "builder_module",
+        "id": "builder.scheduling_builder",
+        "detail": "compatible",
+        "meta": {
+          "min": "1.0.0",
+          "platform": "1.0.0"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "compat_check",
+        "kind": "industry_dna",
+        "id": "industry.pool_cleaning",
+        "detail": "compatible",
+        "meta": {
+          "min": "1.0.0",
+          "platform": "1.0.0"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "compat_check",
+        "kind": "knowledge_source",
+        "id": "knowledge.google_business_profile",
+        "detail": "compatible",
+        "meta": {
+          "min": "1.0.0",
+          "platform": "1.0.0"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.930Z",
+        "event": "compat_check",
+        "kind": "capability",
+        "id": "capability.maps_travel",
+        "detail": "compatible",
+        "meta": {
+          "min": "1.0.0",
+          "platform": "1.0.0"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.931Z",
+        "event": "compat_check",
+        "kind": "integration",
+        "id": "integration.mock_quickbooks",
+        "detail": "compatible",
+        "meta": {
+          "min": "1.0.0",
+          "platform": "1.0.0"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.931Z",
+        "event": "compat_check",
+        "kind": "workflow",
+        "id": "workflow.new_review_followup",
+        "detail": "compatible",
+        "meta": {
+          "min": "1.0.0",
+          "platform": "1.0.0"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.931Z",
+        "event": "compat_check",
+        "kind": "expert",
+        "id": "",
+        "detail": "incompatible",
+        "meta": {
+          "platform": "1.0.0"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.931Z",
+        "event": "compat_check",
+        "kind": "expert",
+        "id": "expert.too_new",
+        "detail": "incompatible",
+        "meta": {
+          "min": "99.0.0",
+          "platform": "1.0.0"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.931Z",
+        "event": "compat_check",
+        "kind": "expert",
+        "id": "expert.too_new_expert",
+        "detail": "incompatible",
+        "meta": {
+          "min": "99.0.0",
+          "platform": "1.0.0"
+        }
+      }
+    ],
+    "discoveryResults": {
+      "experts": [
+        "research",
+        "strategy",
+        "creative_director",
+        "critic",
+        "builder",
+        "seo_expert",
+        "experience_director"
+      ],
+      "whoOwns": {
+        "capabilityId": "estimate_travel_time",
+        "toolId": "scheduling_builder"
+      },
+      "industry": "Pool Cleaning"
+    },
+    "executionProof": {
+      "expertId": "seo_expert",
+      "ok": true,
+      "summary": "I recommend tightening your homepage title around your main service and city."
+    },
+    "cleanRemoval": [
+      "workflow.new_review_followup",
+      "integration.mock_quickbooks",
+      "capability.maps_travel",
+      "knowledge.google_business_profile",
+      "industry.pool_cleaning",
+      "builder.scheduling_builder",
+      "expert.seo_expert"
+    ],
+    "platformInventory": {
+      "title": "Hubly Platform Inventory",
+      "totals": {
+        "manifests": 0,
+        "experts": 0,
+        "builders": 0,
+        "industries": 0,
+        "capabilities": 0,
+        "knowledge": 0,
+        "integrations": 0,
+        "workflows": 0
+      },
+      "health": {
+        "healthy": 0,
+        "degraded": 0,
+        "unknown": 0
+      }
+    },
+    "hublyAiExportsPlatform": true,
+    "brainUntouched": true
+  }
+}

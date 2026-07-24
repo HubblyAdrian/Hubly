@@ -1,0 +1,94 @@
+{
+  "epic": 2,
+  "title": "Business Discovery Conversation",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:25.193Z",
+  "version": "1.0.0",
+  "maxClarifications": 3,
+  "founderTests": {
+    "distinctConversations": true,
+    "maxClarificationsOk": true,
+    "consultantTone": true,
+    "accuracy": [
+      {
+        "id": "pressure_washing",
+        "accuracy": 1,
+        "pass": true
+      },
+      {
+        "id": "photography",
+        "accuracy": 1,
+        "pass": true
+      },
+      {
+        "id": "lawn_care",
+        "accuracy": 1,
+        "pass": true
+      },
+      {
+        "id": "hvac",
+        "accuracy": 1,
+        "pass": true
+      },
+      {
+        "id": "spa",
+        "accuracy": 1,
+        "pass": true
+      }
+    ]
+  },
+  "industries": [
+    {
+      "id": "pressure_washing",
+      "industry": "Pressure Washing",
+      "clarificationCount": 1,
+      "confidence": 79,
+      "accuracy": 1
+    },
+    {
+      "id": "photography",
+      "industry": "Photography",
+      "clarificationCount": 1,
+      "confidence": 79,
+      "accuracy": 1
+    },
+    {
+      "id": "lawn_care",
+      "industry": "Lawn Care",
+      "clarificationCount": 1,
+      "confidence": 79,
+      "accuracy": 1
+    },
+    {
+      "id": "hvac",
+      "industry": "HVAC",
+      "clarificationCount": 0,
+      "confidence": 80,
+      "accuracy": 1
+    },
+    {
+      "id": "spa",
+      "industry": "Spa",
+      "clarificationCount": 1,
+      "confidence": 79,
+      "accuracy": 1
+    }
+  ],
+  "failures": [],
+  "htmlChecks": {
+    "discoveryShell": true,
+    "understandingPanel": true,
+    "learningSummary": true,
+    "completionLine": true,
+    "discoveryMoment": true,
+    "clarificationSoft": true,
+    "naturalAreaQ": true,
+    "thinkingTransition": true,
+    "adaptiveEngine": true,
+    "confidenceDriven": true,
+    "emotionAware": true,
+    "memoryAwareness": true,
+    "noSurveyTitles": true,
+    "maxThree": true
+  }
+}

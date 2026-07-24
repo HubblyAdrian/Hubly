@@ -1,0 +1,211 @@
+{
+  "section": 18,
+  "name": "Founder Acceptance & Brain Certification",
+  "title": "Founder Acceptance & Brain Certification",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:18.557Z",
+  "version": "1.0.0",
+  "proofs": {
+    "scenarios": [
+      {
+        "id": "s1_build",
+        "title": "Build My Business",
+        "passed": true,
+        "checks": 15,
+        "failures": []
+      },
+      {
+        "id": "s2_continue",
+        "title": "Continue the Conversation",
+        "passed": true,
+        "checks": 8,
+        "failures": []
+      },
+      {
+        "id": "s3_why",
+        "title": "Explain Yourself",
+        "passed": true,
+        "checks": 6,
+        "failures": []
+      },
+      {
+        "id": "s4_workspace",
+        "title": "Workspace",
+        "passed": true,
+        "checks": 5,
+        "failures": []
+      },
+      {
+        "id": "s5_website",
+        "title": "Website Recommendation",
+        "passed": true,
+        "checks": 7,
+        "failures": []
+      },
+      {
+        "id": "s6_coach",
+        "title": "Business Coaching",
+        "passed": true,
+        "checks": 4,
+        "failures": []
+      },
+      {
+        "id": "s7_capabilities",
+        "title": "Capability Discovery",
+        "passed": true,
+        "checks": 8,
+        "failures": [],
+        "builderPlan": {
+          "milestone": "1.5",
+          "implemented": false,
+          "domain": "booking",
+          "summary": "Structured Builder Plan (preview only) for arrival windows + no same-day bookings",
+          "capabilities": [
+            {
+              "toolId": "booking",
+              "toolName": "Booking",
+              "capabilityId": "arrival_windows",
+              "capabilityLabel": "Arrival Windows",
+              "score": 90
+            },
+            {
+              "toolId": "booking",
+              "toolName": "Booking",
+              "capabilityId": "no_same_day_bookings",
+              "capabilityLabel": "No Same-Day Bookings",
+              "score": 90
+            }
+          ],
+          "requiresApproval": true,
+          "status": "pending_approval"
+        }
+      },
+      {
+        "id": "s8_failure",
+        "title": "Failure Recovery",
+        "passed": true,
+        "checks": 7,
+        "failures": []
+      },
+      {
+        "id": "s9_identity",
+        "title": "Identity",
+        "passed": true,
+        "checks": 16,
+        "failures": []
+      },
+      {
+        "id": "s10_replay",
+        "title": "Replay",
+        "passed": true,
+        "checks": 11,
+        "failures": []
+      }
+    ],
+    "scorecard": {
+      "version": "1.0.0",
+      "overall": 100,
+      "dimensions": {
+        "thinking": {
+          "id": "thinking",
+          "label": "Thinking",
+          "score": 100,
+          "passed": true,
+          "detail": "18/18"
+        },
+        "memory": {
+          "id": "memory",
+          "label": "Memory",
+          "score": 100,
+          "passed": true,
+          "detail": "15/15"
+        },
+        "reasoning": {
+          "id": "reasoning",
+          "label": "Reasoning",
+          "score": 100,
+          "passed": true,
+          "detail": "8/8"
+        },
+        "identity": {
+          "id": "identity",
+          "label": "Identity",
+          "score": 100,
+          "passed": true,
+          "detail": "24/24"
+        },
+        "decisionMaking": {
+          "id": "decisionMaking",
+          "label": "Decision Making",
+          "score": 100,
+          "passed": true,
+          "detail": "7/7"
+        },
+        "capabilityDiscovery": {
+          "id": "capabilityDiscovery",
+          "label": "Capability Discovery",
+          "score": 100,
+          "passed": true,
+          "detail": "8/8"
+        },
+        "missionControl": {
+          "id": "missionControl",
+          "label": "Mission Control",
+          "score": 100,
+          "passed": true,
+          "detail": "12/12"
+        },
+        "reliability": {
+          "id": "reliability",
+          "label": "Reliability",
+          "score": 100,
+          "passed": true,
+          "detail": "6/6"
+        },
+        "businessKnowledge": {
+          "id": "businessKnowledge",
+          "label": "Business Knowledge",
+          "score": 100,
+          "passed": true,
+          "detail": "8/8"
+        }
+      },
+      "scenariosPassed": 10,
+      "scenariosTotal": 10,
+      "founderBenchmarksOk": true,
+      "validationSuitesOk": true,
+      "documentationOk": true,
+      "certified": true,
+      "checkedAt": "2026-07-24T17:35:18.541Z"
+    },
+    "certificate": {
+      "title": "Milestone 1 Completion Certificate",
+      "product": "Hubly Brain",
+      "version": "1.0",
+      "status": "Certified",
+      "date": "2026-07-24",
+      "release": "Milestone 1",
+      "pr": "https://github.com/HubblyAdrian/Hubly/pull/196",
+      "validationSuite": "npm run milestone1 · npm run check:section16 · npm run check:section18",
+      "founderApproval": "Pending Founder Sign-Off",
+      "nextMilestone": "1.5 — Builder Engine",
+      "certificationScore": 100,
+      "scorecardPath": "docs/HUBLY_BRAIN_SECTION18_PROOF.json",
+      "certificatePath": "docs/releases/MILESTONE1_CERTIFIED.md"
+    },
+    "missionControlLinked": true,
+    "qualityGate": {
+      "ok": true,
+      "qualityScore": 100,
+      "founderBenchmarks": {
+        "passed": 10,
+        "total": 10
+      },
+      "founderBenchmarkCount": 10
+    },
+    "documentationOk": true,
+    "primaryExecutionId": "flt_mrz80osw_3hbm0w",
+    "certificatePath": "docs/releases/MILESTONE1_CERTIFIED.md"
+  },
+  "failures": null
+}

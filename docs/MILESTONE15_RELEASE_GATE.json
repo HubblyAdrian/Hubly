@@ -1,0 +1,83 @@
+{
+  "milestone": "1.5",
+  "passed": 12,
+  "total": 12,
+  "unlocked": 12,
+  "percent": 100,
+  "ready": true,
+  "checkedAt": "2026-07-24T17:35:24.629Z",
+  "epics": [
+    {
+      "n": 1,
+      "title": "Builder Expert",
+      "status": "pass",
+      "script": "scripts/check-builder-epic1.mjs"
+    },
+    {
+      "n": 2,
+      "title": "Change Plan DSL",
+      "status": "pass",
+      "script": "scripts/check-builder-epic2.mjs"
+    },
+    {
+      "n": 3,
+      "title": "Preview Engine",
+      "status": "pass",
+      "script": "scripts/check-builder-epic3.mjs"
+    },
+    {
+      "n": 4,
+      "title": "Collaboration & Approval",
+      "status": "pass",
+      "script": "scripts/check-builder-epic4.mjs"
+    },
+    {
+      "n": 5,
+      "title": "Version & Rollback",
+      "status": "pass",
+      "script": "scripts/check-builder-epic5.mjs"
+    },
+    {
+      "n": 6,
+      "title": "Business Builder",
+      "status": "pass",
+      "script": "scripts/check-builder-epic6.mjs"
+    },
+    {
+      "n": 7,
+      "title": "Booking Intelligence Builder",
+      "status": "pass",
+      "script": "scripts/check-builder-epic7.mjs"
+    },
+    {
+      "n": 8,
+      "title": "Workspace Intelligence Builder",
+      "status": "pass",
+      "script": "scripts/check-builder-epic8.mjs"
+    },
+    {
+      "n": 9,
+      "title": "Automation Intelligence Builder",
+      "status": "pass",
+      "script": "scripts/check-builder-epic9.mjs"
+    },
+    {
+      "n": 10,
+      "title": "Media Intelligence Engine",
+      "status": "pass",
+      "script": "scripts/check-builder-epic10.mjs"
+    },
+    {
+      "n": 11,
+      "title": "Hubly Chat OS",
+      "status": "pass",
+      "script": "scripts/check-builder-epic11.mjs"
+    },
+    {
+      "n": 12,
+      "title": "Business Deployment Engine",
+      "status": "pass",
+      "script": "scripts/check-builder-epic12.mjs"
+    }
+  ]
+}

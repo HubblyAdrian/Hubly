@@ -1,0 +1,278 @@
+{
+  "section": 10,
+  "title": "Conversation Intelligence",
+  "passed": true,
+  "version": "1.0.0",
+  "owner": "hubly_brain",
+  "checkedAt": "2026-07-24T17:35:17.374Z",
+  "proofs": [
+    "Conversation Intelligence exists",
+    "Goal / Project / Topic fields exist",
+    "Pending Decisions and Open Questions exist",
+    "Commitments and Deferred Ideas exist",
+    "Follow-up Queue exists",
+    "Emotional + AI Context exist",
+    "Conversation Threads exist",
+    "Retrieval from structured CI (not chat history)",
+    "Think updates Conversation Intelligence",
+    "Think routes CI retrieval questions",
+    "HublyAI exposes Conversation Intelligence",
+    "Turn logs clarified as distinct from CI",
+    "CI owned by Hubly Brain",
+    "CI versioned",
+    "Conversation 1 stores Current Project: Website Redesign",
+    "Active Goal is tracked",
+    "Active Topic is tracked",
+    "Website Redesign thread created",
+    "Thread includes Homepage / Booking / Portfolio children",
+    "Pending Decisions seeded for website redesign",
+    "AI Context stores expert activity",
+    "Emotional Context is stored",
+    "Open Questions are tracked",
+    "Conversation 2 stores Deferred Idea: Memberships",
+    "Business Growth thread created for deferred memberships",
+    "Conversation Intelligence persists across sessions",
+    "Intelligence version increments on commits",
+    "Detects left-to-do retrieval question",
+    "Retrieval comes from structured CI — not chat history",
+    "What's left includes Approve homepage",
+    "What's left includes Connect Stripe",
+    "What's left includes Publish website",
+    "Conversation 4 deferred revisit message from CI",
+    "Conversation 5 stores Commitment",
+    "Follow-up Queue records reminder",
+    "Promised-me retrieval answers from Commitments",
+    "Hubly resumes conversations naturally",
+    "Continue-where-we-left-off uses active thread/project",
+    "CI does not store chat turns",
+    "CI does not store business facts",
+    "CI does not store workspace prefs",
+    "Business + Workspace Memory remain distinct systems",
+    "CI object has no Business/Workspace fields",
+    "CI object has no chat turns field",
+    "Business Memory module remains separate",
+    "Workspace Memory module remains separate",
+    "Operations thread with Stripe/Calendar/Scheduling",
+    "Think stores Website Redesign in CI",
+    "Think CI commits owned by Hubly Brain",
+    "Think stores deferred memberships",
+    "Think routes What's left to CI intent",
+    "Think retrieval not from chat history",
+    "Think What's left answers from CI pending decisions",
+    "Experience Director marks CI retrieval",
+    "Think stores remind-me commitment",
+    "All Section 10 release-gate claims proven"
+  ],
+  "evidence": {
+    "activeGoal": "Building website",
+    "activeProject": "Website Redesign",
+    "activeTopic": "Website",
+    "pendingDecisions": [
+      {
+        "id": "pd_mrz80nz1_739xxx",
+        "text": "Approve homepage",
+        "status": "pending",
+        "at": "2026-07-24T17:35:17.341Z",
+        "threadId": null
+      },
+      {
+        "id": "pd_mrz80nz1_9ym86y",
+        "text": "Connect Stripe",
+        "status": "pending",
+        "at": "2026-07-24T17:35:17.341Z",
+        "threadId": null
+      },
+      {
+        "id": "pd_mrz80nz1_inc4p7",
+        "text": "Publish website",
+        "status": "pending",
+        "at": "2026-07-24T17:35:17.341Z",
+        "threadId": null
+      }
+    ],
+    "deferredIdeas": [
+      {
+        "id": "def_mrz80nz2_26v4tq",
+        "idea": "Memberships",
+        "status": "deferred",
+        "at": "2026-07-24T17:35:17.342Z",
+        "revisitHint": "Revisit when customer volume supports recurring revenue",
+        "context": "I want memberships later."
+      }
+    ],
+    "commitments": [
+      {
+        "id": "cmt_mrz80nz3_ll7d7u",
+        "promise": "Remind owner tomorrow",
+        "dueAt": "2026-07-25T17:35:17.343Z",
+        "status": "open",
+        "at": "2026-07-24T17:35:17.343Z"
+      }
+    ],
+    "openQuestions": [
+      {
+        "id": "oq_mrz80nz2_4aztsr",
+        "question": "Should recurring mowing be your primary package?",
+        "status": "open",
+        "at": "2026-07-24T17:35:17.342Z"
+      }
+    ],
+    "followUpQueue": [
+      {
+        "id": "fu_mrz80nz3_bvxp8y",
+        "type": "reminder",
+        "text": "Remind owner tomorrow",
+        "dueAt": "2026-07-25T17:35:17.343Z",
+        "status": "queued",
+        "at": "2026-07-24T17:35:17.343Z"
+      }
+    ],
+    "emotionalContext": {
+      "state": "neutral",
+      "confidence": 55,
+      "updatedAt": "2026-07-24T17:35:17.341Z"
+    },
+    "aiContext": {
+      "experts": [
+        {
+          "expertId": "research",
+          "status": "complete"
+        },
+        {
+          "expertId": "strategy",
+          "status": "complete"
+        },
+        {
+          "expertId": "creative_director",
+          "status": "complete"
+        },
+        {
+          "expertId": "critic",
+          "status": "complete"
+        },
+        {
+          "expertId": "experience_director",
+          "status": "complete"
+        }
+      ],
+      "phase": "experts_complete",
+      "updatedAt": "2026-07-24T17:35:17.341Z"
+    },
+    "threads": [
+      {
+        "threadId": "thr_mrz80nz1_o0ldol",
+        "name": "Website Redesign",
+        "status": "active",
+        "children": [
+          {
+            "name": "Homepage",
+            "status": "active"
+          },
+          {
+            "name": "Booking Flow",
+            "status": "active"
+          },
+          {
+            "name": "Portfolio",
+            "status": "active"
+          }
+        ],
+        "updatedAt": "2026-07-24T17:35:17.341Z"
+      }
+    ],
+    "retrieval": [
+      {
+        "q": "What's left to do?",
+        "answer": "Here's what's left:\n• Approve homepage\n• Connect Stripe\n• Publish website",
+        "paths": [
+          "pendingDecisions"
+        ]
+      },
+      {
+        "q": "What have you promised me?",
+        "answer": "I've promised: Remind owner tomorrow."
+      },
+      {
+        "q": "Let's continue where we left off.",
+        "answer": "We were working on Website Redesign (Building website). Ready to continue?"
+      }
+    ],
+    "persistence": {
+      "businessId": "biz_section10_demo",
+      "intelligenceVersion": 3,
+      "currentProject": "Website Redesign",
+      "deferredCount": 1
+    },
+    "memorySeparation": {
+      "conversationIntelligence": {
+        "owner": "hubly_brain",
+        "answers": "What are we currently working on?",
+        "storesTurns": false,
+        "storesBusinessFacts": false,
+        "storesWorkspacePrefs": false
+      },
+      "businessMemory": {
+        "answers": "What do I know about the business?",
+        "distinct": true
+      },
+      "workspaceMemory": {
+        "answers": "How does this owner work?",
+        "distinct": true
+      },
+      "conversationMemoryTurns": {
+        "answers": "Raw chat turns (logs) — not Conversation Intelligence",
+        "distinct": true
+      }
+    },
+    "resume": "We were improving your website. Ready to continue?",
+    "demo": {
+      "conversation1": {
+        "project": "Website Redesign",
+        "threadId": "thr_mrz80nz1_o0ldol"
+      },
+      "conversation2": {
+        "deferred": [
+          "Memberships"
+        ]
+      },
+      "conversation3": {
+        "answer": "Here's what's left:\n• Approve homepage\n• Connect Stripe\n• Publish website"
+      },
+      "conversation4": {
+        "revisit": "We talked about memberships. You're averaging 35 jobs now. Want to revisit that?"
+      },
+      "conversation5": {
+        "commitments": [
+          "Remind owner tomorrow"
+        ]
+      },
+      "think": {
+        "project": "Website Redesign",
+        "leftResponse": "Here's what's left:\n• Approve homepage\n• Connect Stripe\n• Publish website Here's why I'm recommending this: it should move the business forward without adding busywork.",
+        "commitments": [
+          "Remind owner tomorrow"
+        ]
+      }
+    },
+    "releaseGate": {
+      "conversationIntelligenceExists": true,
+      "activeGoalTracked": true,
+      "currentProjectTracked": true,
+      "activeTopicTracked": true,
+      "pendingDecisionsTracked": true,
+      "openQuestionsTracked": true,
+      "commitmentsTracked": true,
+      "deferredIdeasTracked": true,
+      "followUpQueueExists": true,
+      "emotionalContextStored": true,
+      "aiContextStored": true,
+      "resumesNaturally": true,
+      "separateFromBusinessMemory": true,
+      "separateFromWorkspaceMemory": true,
+      "retrievalFromStructuredMemory": true,
+      "conversationThreads": true,
+      "automatedEvidence": true
+    }
+  },
+  "failures": null
+}

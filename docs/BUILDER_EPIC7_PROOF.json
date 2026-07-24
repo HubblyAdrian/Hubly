@@ -1,0 +1,150 @@
+{
+  "milestone": "1.5",
+  "epic": 7,
+  "name": "Booking Intelligence Builder",
+  "title": "Booking Intelligence Builder",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:21.425Z",
+  "proofs": {
+    "bookingIntelligenceExists": true,
+    "customerFacingName": "Booking Intelligence Builder",
+    "naturalLanguageRules": true,
+    "arrivalWindows": true,
+    "travelBuffers": true,
+    "minimumNotice": true,
+    "serviceSpecificScheduling": true,
+    "capacityRules": true,
+    "seasonalRules": true,
+    "weatherAware": true,
+    "bookingHealth": true,
+    "aiRecommendations": true,
+    "industryAware": true,
+    "scheduleSimulator": true,
+    "missionControlBookingIntelligence": true,
+    "requiresApprovalBeforeApply": true,
+    "noApply": true,
+    "demos": {
+      "no_same_day": {
+        "request": "No same-day bookings.",
+        "ruleCount": 2,
+        "concepts": [
+          "same_day",
+          "minimum_notice"
+        ],
+        "health": 68,
+        "simulatorDays": 7
+      },
+      "arrival": {
+        "request": "Customers can arrive between 1–3 PM. Add arrival windows.",
+        "ruleCount": 1,
+        "concepts": [
+          "arrival_window"
+        ],
+        "health": 72,
+        "simulatorDays": 7
+      },
+      "travel": {
+        "request": "I need 30-minute travel buffers between jobs.",
+        "ruleCount": 1,
+        "concepts": [
+          "travel_buffer"
+        ],
+        "health": 83,
+        "simulatorDays": 7
+      },
+      "weather": {
+        "request": "If it's raining, reschedule exterior work.",
+        "ruleCount": 1,
+        "concepts": [
+          "weather"
+        ],
+        "health": 70,
+        "simulatorDays": 7
+      },
+      "ceramic_friday": {
+        "request": "Fridays are ceramic coating only.",
+        "ruleCount": 1,
+        "concepts": [
+          "service_schedule"
+        ],
+        "health": 69,
+        "simulatorDays": 7
+      },
+      "capacity": {
+        "request": "Two jobs maximum per day.",
+        "ruleCount": 1,
+        "concepts": [
+          "daily_capacity"
+        ],
+        "health": 74,
+        "simulatorDays": 7
+      },
+      "optimize": {
+        "request": "Optimize tomorrow's schedule — I'm driving across town too much.",
+        "ruleCount": 1,
+        "concepts": [
+          "optimize_route"
+        ],
+        "health": 70,
+        "simulatorDays": 7
+      },
+      "estimates": {
+        "request": "Tuesdays are estimate days only.",
+        "ruleCount": 1,
+        "concepts": [
+          "estimate_days"
+        ],
+        "health": 68,
+        "simulatorDays": 7
+      }
+    },
+    "healthSample": {
+      "overall": 68,
+      "travelEfficiency": 70,
+      "customerFlexibility": 70,
+      "bufferTime": 60,
+      "automation": 70,
+      "conflicts": 1,
+      "note": "Booking Health — how well scheduling matches how you actually work."
+    },
+    "recommendationsSample": [
+      {
+        "id": "brec_mrz80r46_xqyacr",
+        "title": "Add travel buffers",
+        "detail": "You don't have travel buffers. I recommend adding 20 minutes between jobs.",
+        "conceptId": "travel_buffer",
+        "confidence": 88,
+        "requiresOwnerApproval": true
+      },
+      {
+        "id": "brec_mrz80r46_25qi16",
+        "title": "Consider 24-hour notice",
+        "detail": "Customers may be booking too late. A 24-hour notice policy protects prep time.",
+        "conceptId": "minimum_notice",
+        "confidence": 84,
+        "requiresOwnerApproval": true
+      },
+      {
+        "id": "brec_mrz80r46_dz8tid",
+        "title": "Weather-aware exterior work",
+        "detail": "For exterior work, I recommend rain → reschedule automation.",
+        "conceptId": "weather",
+        "confidence": 90,
+        "requiresOwnerApproval": true
+      }
+    ],
+    "simulatorSample": {
+      "headline": "Here's how next week would look if we enabled these booking rules.",
+      "totals": {
+        "jobsMoved": 0,
+        "drivingMinutesSaved": 0,
+        "conflictsAvoided": 0,
+        "slotsGained": 0,
+        "slotsLost": 0,
+        "estimatedRevenueImpactUsd": 70
+      },
+      "dayCount": 7
+    }
+  },
+  "failures": null
+}

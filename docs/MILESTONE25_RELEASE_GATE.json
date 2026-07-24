@@ -1,0 +1,25 @@
+{
+  "milestone": "2.5",
+  "name": "Production Cutover",
+  "passed": true,
+  "results": [
+    {
+      "name": "Milestone 1",
+      "ok": true
+    },
+    {
+      "name": "Milestone 1.5",
+      "ok": true
+    },
+    {
+      "name": "Milestone 2",
+      "ok": true
+    },
+    {
+      "name": "Cutover wiring",
+      "ok": true
+    }
+  ],
+  "checkedAt": "2026-07-24T17:35:25.738Z",
+  "note": "Live stranger walkthrough on hubly.app still required after merge to main."
+}

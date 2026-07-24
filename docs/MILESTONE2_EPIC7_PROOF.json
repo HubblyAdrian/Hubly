@@ -1,0 +1,136 @@
+{
+  "epic": 7,
+  "title": "Business Launch Experience",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:25.378Z",
+  "version": "1.0.0",
+  "celebration": "Today your business officially launched.",
+  "homeTransition": "Ready? Let's get to work.",
+  "sample": {
+    "full": {
+      "industryKey": "pressure_washing",
+      "summary": [
+        {
+          "id": "website",
+          "label": "Website Live",
+          "ok": true,
+          "required": true
+        },
+        {
+          "id": "booking",
+          "label": "Booking Live",
+          "ok": true,
+          "required": true,
+          "detail": null
+        },
+        {
+          "id": "payments",
+          "label": "Payments Connected",
+          "ok": true,
+          "required": false,
+          "connectedOnly": true,
+          "detail": null
+        },
+        {
+          "id": "gcal",
+          "label": "Google Calendar Connected",
+          "ok": true,
+          "required": false,
+          "connectedOnly": true
+        },
+        {
+          "id": "memory",
+          "label": "Business Memory Active",
+          "ok": true,
+          "required": true
+        },
+        {
+          "id": "v1",
+          "label": "Version 1.0 Protected",
+          "ok": true,
+          "required": true
+        }
+      ],
+      "advice": [
+        {
+          "title": "Share your booking page with three previous customers.",
+          "estimated": "Estimated: 2 bookings.",
+          "source": "growth_expert",
+          "industryKey": "pressure_washing"
+        },
+        {
+          "title": "Add five finished job photos.",
+          "estimated": "Estimated: +18% trust.",
+          "source": "business_dna",
+          "industryKey": "pressure_washing"
+        },
+        {
+          "title": "Let's build your recurring maintenance package.",
+          "estimated": "Estimated: Higher repeat revenue.",
+          "source": "business_memory",
+          "industryKey": "pressure_washing"
+        }
+      ],
+      "certificate": {
+        "businessName": "ABC Pressure Washing",
+        "owner": "Adrian",
+        "launchDate": "2026-07-24",
+        "version": "1.0",
+        "firstStrategy": "Trust-first local brand",
+        "positioning": "Premium & Reliable"
+      }
+    },
+    "partial": {
+      "issues": [
+        "Booking couldn't be fully activated because Stripe isn't connected yet.",
+        "Stripe isn't connected yet — let's finish that together."
+      ],
+      "summary": [
+        {
+          "id": "website",
+          "label": "Website Live",
+          "ok": true,
+          "required": true
+        },
+        {
+          "id": "booking",
+          "label": "Booking Live",
+          "ok": false,
+          "required": true,
+          "detail": "Booking couldn't be fully activated because Stripe isn't connected yet."
+        },
+        {
+          "id": "memory",
+          "label": "Business Memory Active",
+          "ok": true,
+          "required": true
+        },
+        {
+          "id": "v1",
+          "label": "Version 1.0 Protected",
+          "ok": true,
+          "required": true
+        }
+      ]
+    }
+  },
+  "failures": [],
+  "htmlChecks": {
+    "launchCanvas": true,
+    "animation": true,
+    "noSpinner": true,
+    "celebration": true,
+    "summary": true,
+    "advice": true,
+    "nextSteps": true,
+    "timeline": true,
+    "futureTimeline": true,
+    "certificate": true,
+    "founderLetter": true,
+    "honestDeploy": true,
+    "homeTransition": true,
+    "founderHandoff": true,
+    "industryAdvice": true,
+    "wordmark": true
+  }
+}

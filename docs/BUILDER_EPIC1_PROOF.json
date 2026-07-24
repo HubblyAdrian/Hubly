@@ -1,0 +1,400 @@
+{
+  "milestone": "1.5",
+  "epic": 1,
+  "name": "Builder Expert",
+  "title": "Builder Expert",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:18.928Z",
+  "proofs": {
+    "builderExpertExists": true,
+    "executesThroughHublyBrain": true,
+    "builderIntentForEveryRequest": true,
+    "multiSystemSupported": true,
+    "noDatabaseBuilderApply": true,
+    "noUiChanges": true,
+    "noChangePlans": true,
+    "missionControlDisplaysIntents": true,
+    "demos": [
+      {
+        "id": "website",
+        "request": "Make my homepage feel more premium.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80p5x_19cjlh",
+          "intentCategory": "Website",
+          "intentLabel": "Website Improvement",
+          "ownerGoal": "Premium Branding",
+          "affectedSystems": [
+            "Website"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "website_builder",
+              "toolName": "Website Builder",
+              "capabilityId": "update_homepage",
+              "capabilityLabel": "Update Homepage"
+            }
+          ],
+          "estimatedRisk": "medium",
+          "confidence": 95,
+          "confidenceExplanation": {
+            "reasons": [
+              "I've seen this request pattern before.",
+              "Website Builder supports it.",
+              "No conflicting rules exist in this Intent-only pass.",
+              "Business Memory aligns with this change (pressure washing).",
+              "No additional clarification is required."
+            ],
+            "summary": "I've seen this request pattern before. Website Builder supports it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
+          },
+          "requiresChangePlan": true,
+          "reasoning": [
+            {
+              "reason": "Classified as Website Improvement toward Premium Branding.",
+              "evidence": [
+                "category:Website",
+                "system:Website",
+                "cap:website_builder/update_homepage"
+              ],
+              "confidence": 95
+            }
+          ],
+          "applied": false,
+          "changePlanGenerated": false,
+          "timestamp": "2026-07-24T17:35:18.885Z"
+        },
+        "missionControlExecutionId": "flt_mrz80p6c_hw9iuk",
+        "expertsRun": [
+          "research",
+          "strategy",
+          "creative_director",
+          "critic",
+          "builder",
+          "experience_director"
+        ]
+      },
+      {
+        "id": "booking",
+        "request": "Don't allow same-day bookings.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80p6e_7utwnk",
+          "intentCategory": "Booking",
+          "intentLabel": "Booking Intelligence",
+          "ownerGoal": "Minimum Notice",
+          "affectedSystems": [
+            "Booking"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "booking",
+              "toolName": "Booking Intelligence Builder",
+              "capabilityId": "no_same_day_bookings",
+              "capabilityLabel": "Minimum Notice"
+            }
+          ],
+          "estimatedRisk": "medium",
+          "confidence": 95,
+          "confidenceExplanation": {
+            "reasons": [
+              "I've seen this request pattern before.",
+              "Booking Intelligence Builder supports it.",
+              "No conflicting rules exist in this Intent-only pass.",
+              "Business Memory aligns with this change (pressure washing).",
+              "No additional clarification is required."
+            ],
+            "summary": "I've seen this request pattern before. Booking Intelligence Builder supports it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
+          },
+          "requiresChangePlan": true,
+          "reasoning": [
+            {
+              "reason": "Classified as Booking Intelligence toward Minimum Notice.",
+              "evidence": [
+                "category:Booking",
+                "system:Booking",
+                "cap:booking/no_same_day_bookings"
+              ],
+              "confidence": 95
+            }
+          ],
+          "applied": false,
+          "changePlanGenerated": false,
+          "timestamp": "2026-07-24T17:35:18.902Z"
+        },
+        "missionControlExecutionId": "flt_mrz80p6i_ellyue",
+        "expertsRun": [
+          "research",
+          "strategy",
+          "creative_director",
+          "critic",
+          "builder",
+          "experience_director"
+        ]
+      },
+      {
+        "id": "workspace",
+        "request": "Move Jobs above Customers.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80p6l_ny1n5m",
+          "intentCategory": "Workspace",
+          "intentLabel": "Workspace Intelligence",
+          "ownerGoal": "Navigation Order",
+          "affectedSystems": [
+            "Workspace"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "workspace_builder",
+              "toolName": "Workspace Intelligence Builder",
+              "capabilityId": "sidebar_order",
+              "capabilityLabel": "Sidebar Order"
+            }
+          ],
+          "estimatedRisk": "low",
+          "confidence": 95,
+          "confidenceExplanation": {
+            "reasons": [
+              "I've seen this request pattern before.",
+              "Workspace Intelligence Builder supports it.",
+              "No conflicting rules exist in this Intent-only pass.",
+              "Business Memory aligns with this change (pressure washing).",
+              "No additional clarification is required."
+            ],
+            "summary": "I've seen this request pattern before. Workspace Intelligence Builder supports it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
+          },
+          "requiresChangePlan": true,
+          "reasoning": [
+            {
+              "reason": "Classified as Workspace Intelligence toward Navigation Order.",
+              "evidence": [
+                "category:Workspace",
+                "system:Workspace",
+                "cap:workspace_builder/sidebar_order"
+              ],
+              "confidence": 95
+            }
+          ],
+          "applied": false,
+          "changePlanGenerated": false,
+          "timestamp": "2026-07-24T17:35:18.909Z"
+        },
+        "missionControlExecutionId": "flt_mrz80p6n_d2nqt3",
+        "expertsRun": [
+          "builder",
+          "experience_director"
+        ]
+      },
+      {
+        "id": "portfolio",
+        "request": "Put these 12 photos into my portfolio.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80p6o_4acg6r",
+          "intentCategory": "Portfolio",
+          "intentLabel": "Media Intelligence",
+          "ownerGoal": "Gallery Organization",
+          "affectedSystems": [
+            "Portfolio"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "portfolio_builder",
+              "toolName": "Media Intelligence Engine",
+              "capabilityId": "upload_photos",
+              "capabilityLabel": "Upload Photos"
+            },
+            {
+              "toolId": "image_processor",
+              "toolName": "Image Processor",
+              "capabilityId": "process_images",
+              "capabilityLabel": "Process Images"
+            },
+            {
+              "toolId": "website_builder",
+              "toolName": "Website Builder",
+              "capabilityId": "update_homepage",
+              "capabilityLabel": "Update Homepage"
+            }
+          ],
+          "estimatedRisk": "low",
+          "confidence": 95,
+          "confidenceExplanation": {
+            "reasons": [
+              "I've seen this request pattern before.",
+              "Media Intelligence Engine, Image Processor, Website Builder support it.",
+              "No conflicting rules exist in this Intent-only pass.",
+              "Business Memory aligns with this change (pressure washing).",
+              "No additional clarification is required."
+            ],
+            "summary": "I've seen this request pattern before. Media Intelligence Engine, Image Processor, Website Builder support it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
+          },
+          "requiresChangePlan": true,
+          "reasoning": [
+            {
+              "reason": "Classified as Media Intelligence toward Gallery Organization.",
+              "evidence": [
+                "category:Portfolio",
+                "system:Portfolio",
+                "cap:portfolio_builder/upload_photos",
+                "cap:image_processor/process_images",
+                "cap:website_builder/update_homepage"
+              ],
+              "confidence": 95
+            }
+          ],
+          "applied": false,
+          "changePlanGenerated": false,
+          "timestamp": "2026-07-24T17:35:18.912Z"
+        },
+        "missionControlExecutionId": "flt_mrz80p6r_a9ob8s",
+        "expertsRun": [
+          "research",
+          "strategy",
+          "creative_director",
+          "critic",
+          "builder",
+          "experience_director"
+        ]
+      },
+      {
+        "id": "automation",
+        "request": "Send prep instructions after ceramic coating bookings.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80p6s_y2lpae",
+          "intentCategory": "Automations",
+          "intentLabel": "Automation Intelligence",
+          "ownerGoal": "Post-Booking Prep Instructions",
+          "affectedSystems": [
+            "Automations"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "automation",
+              "toolName": "Automation Intelligence Builder",
+              "capabilityId": "create_workflow",
+              "capabilityLabel": "Create Workflow"
+            },
+            {
+              "toolId": "automation",
+              "toolName": "Automation Intelligence Builder",
+              "capabilityId": "prep_instructions",
+              "capabilityLabel": "Prep Instructions"
+            }
+          ],
+          "estimatedRisk": "medium",
+          "confidence": 95,
+          "confidenceExplanation": {
+            "reasons": [
+              "I've seen this request pattern before.",
+              "Automation Intelligence Builder supports it.",
+              "No conflicting rules exist in this Intent-only pass.",
+              "Business Memory aligns with this change (pressure washing).",
+              "No additional clarification is required."
+            ],
+            "summary": "I've seen this request pattern before. Automation Intelligence Builder supports it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
+          },
+          "requiresChangePlan": true,
+          "reasoning": [
+            {
+              "reason": "Classified as Automation Intelligence toward Post-Booking Prep Instructions.",
+              "evidence": [
+                "category:Automations",
+                "system:Automations",
+                "cap:automation/create_workflow",
+                "cap:automation/prep_instructions"
+              ],
+              "confidence": 95
+            }
+          ],
+          "applied": false,
+          "changePlanGenerated": false,
+          "timestamp": "2026-07-24T17:35:18.916Z"
+        },
+        "missionControlExecutionId": "flt_mrz80p6v_sdi8nm",
+        "expertsRun": [
+          "research",
+          "strategy",
+          "creative_director",
+          "critic",
+          "builder",
+          "experience_director"
+        ]
+      },
+      {
+        "id": "multi",
+        "request": "Add arrival windows and update my website to explain them.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80p6x_5eul0w",
+          "intentCategory": "Multiple Systems",
+          "intentLabel": "Multi-System: Website + Booking",
+          "ownerGoal": "Arrival Windows · Website Update",
+          "affectedSystems": [
+            "Website",
+            "Booking"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "booking",
+              "toolName": "Booking Intelligence Builder",
+              "capabilityId": "arrival_windows",
+              "capabilityLabel": "Arrival Windows"
+            },
+            {
+              "toolId": "website_builder",
+              "toolName": "Website Builder",
+              "capabilityId": "update_homepage",
+              "capabilityLabel": "Update Homepage"
+            }
+          ],
+          "estimatedRisk": "medium",
+          "confidence": 99,
+          "confidenceExplanation": {
+            "reasons": [
+              "I've seen this request pattern before.",
+              "Booking Intelligence Builder, Website Builder support it.",
+              "No conflicting rules exist in this Intent-only pass.",
+              "Business Memory aligns with this change (pressure washing).",
+              "No additional clarification is required."
+            ],
+            "summary": "I've seen this request pattern before. Booking Intelligence Builder, Website Builder support it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
+          },
+          "requiresChangePlan": true,
+          "reasoning": [
+            {
+              "reason": "Owner described changes spanning multiple systems — kept as one Builder Intent (not split).",
+              "evidence": [
+                "category:Multiple Systems",
+                "system:Website",
+                "system:Booking",
+                "cap:booking/arrival_windows",
+                "cap:website_builder/update_homepage"
+              ],
+              "confidence": 99
+            }
+          ],
+          "applied": false,
+          "changePlanGenerated": false,
+          "timestamp": "2026-07-24T17:35:18.921Z"
+        },
+        "missionControlExecutionId": "flt_mrz80p6z_ag3tct",
+        "expertsRun": [
+          "research",
+          "strategy",
+          "creative_director",
+          "critic",
+          "builder",
+          "experience_director"
+        ]
+      }
+    ],
+    "missionControl": {
+      "available": false,
+      "epic": "11 — Hubly Chat OS",
+      "intentCount": 6
+    }
+  },
+  "failures": null
+}

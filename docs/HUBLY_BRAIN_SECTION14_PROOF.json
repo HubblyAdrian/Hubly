@@ -1,0 +1,164 @@
+{
+  "section": 14,
+  "name": "Performance, Reliability & Resilience",
+  "title": "Performance, Reliability & Resilience",
+  "status": "pass",
+  "passed": true,
+  "provenAt": "2026-07-24T17:35:17.740Z",
+  "summary": "Hubly is dependable under real-world conditions: retries, timeouts, circuit breakers, graceful degradation, parallel experts, memory/DNA caching, latency + cost observability, security boundaries, and an engineering Trust Score in Mission Control. Owners never see raw system errors.",
+  "proofs": {
+    "timeouts": {
+      "expert": 8000,
+      "tool": 5000,
+      "weather": 3000,
+      "stripe": 5000,
+      "calendar": 5000,
+      "memory": 2000,
+      "dna": 2000,
+      "ai": 20000,
+      "decision": 3000,
+      "builder": 15000
+    },
+    "retryPolicy": {
+      "maxRetries": 1,
+      "baseDelayMs": 40,
+      "maxDelayMs": 400,
+      "retryOnTimeout": true
+    },
+    "demos": {
+      "researchRetry": {
+        "ok": true,
+        "retries": 1,
+        "ownerMessage": "That took longer than expected — I'll keep going with what I have.",
+        "exposedRawError": false
+      },
+      "weatherTimeout": {
+        "ok": true,
+        "continued": true,
+        "ownerMessage": "Weather data is unavailable right now — I'll continue without it.",
+        "safeDefaults": {
+          "weatherAvailable": false,
+          "suggestion": "continue_without_weather"
+        }
+      },
+      "stripeQueue": {
+        "ok": true,
+        "queued": true,
+        "ownerMessage": "I couldn't reach payments just now — I queued that and will retry.",
+        "queueSize": 2
+      },
+      "parallelExperts": {
+        "ok": true,
+        "wallMs": 119,
+        "slowestMs": 119,
+        "order": [
+          "research",
+          "strategy",
+          "creative_director"
+        ],
+        "parallelFasterThanSerial": true
+      }
+    },
+    "observability": {
+      "aiLatencyMs": {
+        "avg": 105,
+        "p95": 120,
+        "samples": 2
+      },
+      "toolLatencyMs": {
+        "avg": 40,
+        "p95": 40,
+        "samples": 1
+      },
+      "expertExecutionMs": {
+        "avg": 0,
+        "p95": 0,
+        "samples": 0
+      },
+      "memoryLoadMs": {
+        "avg": 12,
+        "p95": 12,
+        "samples": 1
+      },
+      "decisionTimeMs": {
+        "avg": 18,
+        "p95": 18,
+        "samples": 1
+      },
+      "builderExecutionMs": {
+        "avg": 0,
+        "p95": 0,
+        "samples": 1
+      },
+      "failureRate": 0,
+      "retryRate": 0,
+      "cacheHitRate": 83,
+      "samples": 13
+    },
+    "costAwareness": {
+      "totalTokens": 156,
+      "estimatedCostUsd": 0.001083,
+      "mostExpensiveExperts": [
+        {
+          "expertId": "research",
+          "tokens": 150,
+          "costUsd": 0.00105,
+          "calls": 1,
+          "reused": 0
+        },
+        {
+          "expertId": "creative_director",
+          "tokens": 3,
+          "costUsd": 0.000033,
+          "calls": 1,
+          "reused": 0
+        },
+        {
+          "expertId": "strategy",
+          "tokens": 3,
+          "costUsd": 0,
+          "calls": 1,
+          "reused": 1
+        }
+      ]
+    },
+    "trustScore": {
+      "overall": 98,
+      "dimensions": {
+        "aiReliability": 99,
+        "memoryIntegrity": 100,
+        "decisionQuality": 97,
+        "performance": 99,
+        "expertSuccess": 99,
+        "providerHealth": 96
+      },
+      "checkedAt": "2026-07-24T17:35:17.740Z",
+      "note": "Engineering Trust Score — Mission Control only. Not shown to customers."
+    },
+    "security": {
+      "memoryIsolation": {
+        "ok": true,
+        "detail": "Memory caches are isolated per businessId"
+      },
+      "expertPermissionDenied": {
+        "ok": false,
+        "detail": "critic cannot use website"
+      },
+      "toolWriteDenied": {
+        "ok": false,
+        "detail": "Weather is read-only"
+      },
+      "auditEntries": 5
+    },
+    "missionControl": {
+      "surfaces": [
+        "performance",
+        "costAwareness",
+        "reliability",
+        "trustScore"
+      ],
+      "version": "1.5.0"
+    },
+    "hublyAiExportsReliability": true
+  }
+}

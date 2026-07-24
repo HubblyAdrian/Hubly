@@ -1,7 +1,7 @@
 {
   "name": "Google Calendar blocks are not Hubly jobs",
   "passed": true,
-  "checkedAt": "2026-07-24T01:46:37.837Z",
+  "checkedAt": "2026-07-24T17:27:35.618Z",
   "rule": "Google Calendar events Hubly did not create stay busy blocks (things) — they block booking and never count as Jobs in Reports.",
   "proofs": {
     "reportJobsCount": 1,

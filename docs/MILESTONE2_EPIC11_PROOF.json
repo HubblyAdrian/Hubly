@@ -1,0 +1,214 @@
+{
+  "epic": 11,
+  "title": "Living Business",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:25.543Z",
+  "version": "1.0.0",
+  "sample": {
+    "center": {
+      "label": "Business Evolution",
+      "thisWeek": "3 opportunities found."
+    },
+    "score": {
+      "label": "Business Evolution",
+      "score": 95,
+      "recommended": 3,
+      "completed": 14,
+      "impact": "+18%"
+    },
+    "opportunities": [
+      {
+        "preview": true,
+        "neverAutoApply": true,
+        "id": "pw-hero",
+        "category": "brand",
+        "title": "Homepage Hero",
+        "whatChanged": "New portfolio photos available.",
+        "why": "I found a stronger hero layout based on your latest portfolio photos.",
+        "impact": "+9% trust",
+        "confidence": 94,
+        "effort": "15 min",
+        "current": "Generic hero with stock driveway",
+        "recommended": "Before/after hero using your last five jobs",
+        "reasoning": "Finished work outperforms stock for local trust.",
+        "seasonal": false,
+        "hasWhy": true,
+        "hasConfidence": true,
+        "hasImpact": true,
+        "hasPreview": true
+      },
+      {
+        "preview": true,
+        "neverAutoApply": true,
+        "id": "pw-windows",
+        "category": "booking",
+        "title": "Arrival Windows",
+        "whatChanged": "Abandoned bookings rose on all-day holds.",
+        "why": "2-hour arrival windows cut no-shows for driveway jobs.",
+        "impact": "-18% abandoned bookings",
+        "confidence": 91,
+        "effort": "10 min",
+        "current": "All-day arrival holds",
+        "recommended": "2-hour arrival windows",
+        "reasoning": "Homeowners hate waiting all day.",
+        "seasonal": false,
+        "hasWhy": true,
+        "hasConfidence": true,
+        "hasImpact": true,
+        "hasPreview": true
+      },
+      {
+        "preview": true,
+        "neverAutoApply": true,
+        "id": "pw-member",
+        "category": "growth",
+        "title": "Memberships",
+        "whatChanged": "Repeat neighbors asking about next wash.",
+        "why": "Quarterly soft-wash memberships lock route density.",
+        "impact": "+$1,200/mo potential",
+        "confidence": 88,
+        "effort": "30 min",
+        "current": "One-off packages only",
+        "recommended": "Quarterly soft-wash membership",
+        "reasoning": "Repeat yards beat windshield chasing.",
+        "seasonal": false,
+        "hasWhy": true,
+        "hasConfidence": true,
+        "hasImpact": true,
+        "hasPreview": true
+      }
+    ],
+    "journal": {
+      "label": "What I've learned about your business",
+      "lines": [
+        "Your customers respond better to before-and-after photos than close-up detail shots.",
+        "Saturday mornings consistently produce your highest booking rate.",
+        "Quotes sent within 15 minutes convert 22% better.",
+        "Customers tend to choose your middle package 68% of the time.",
+        "Premium messaging performs better than discount messaging for your audience."
+      ],
+      "notRecommendations": true,
+      "accumulates": true
+    }
+  },
+  "month": [
+    {
+      "weekIndex": 0,
+      "opportunityIds": [
+        "pw-hero",
+        "pw-windows",
+        "pw-member"
+      ],
+      "titles": [
+        "Homepage Hero",
+        "Arrival Windows",
+        "Memberships"
+      ],
+      "signature": "pw-hero|pw-windows|pw-member"
+    },
+    {
+      "weekIndex": 1,
+      "opportunityIds": [
+        "pw-spring",
+        "pw-price",
+        "pw-follow"
+      ],
+      "titles": [
+        "House Wash Campaign",
+        "Raise Package Floor",
+        "Quote Follow-up Automation"
+      ],
+      "signature": "pw-spring|pw-price|pw-follow"
+    },
+    {
+      "weekIndex": 2,
+      "opportunityIds": [
+        "pw-gutter",
+        "pw-colors",
+        "pw-referral"
+      ],
+      "titles": [
+        "Gutter Add-on",
+        "Calmer Palette",
+        "Neighbor Referral Offer"
+      ],
+      "signature": "pw-gutter|pw-colors|pw-referral"
+    },
+    {
+      "weekIndex": 3,
+      "opportunityIds": [
+        "pw-seo",
+        "pw-deposit",
+        "pw-schedule"
+      ],
+      "titles": [
+        "Local SEO Proof Block",
+        "Increase Deposits",
+        "Weather Reschedule Assist"
+      ],
+      "signature": "pw-seo|pw-deposit|pw-schedule"
+    }
+  ],
+  "industries": [
+    {
+      "industryKey": "pressure_washing",
+      "titles": [
+        "Homepage Hero",
+        "Arrival Windows",
+        "Memberships"
+      ]
+    },
+    {
+      "industryKey": "photography",
+      "titles": [
+        "Atmosphere Hero",
+        "Default Weekend Package",
+        "Wedding Landing Page"
+      ]
+    },
+    {
+      "industryKey": "hvac",
+      "titles": [
+        "Licensed & Insured Above Fold",
+        "Tune-up Plans",
+        "Same-Day Windows"
+      ]
+    },
+    {
+      "industryKey": "lawn_care",
+      "titles": [
+        "Neighborhood Route Fill",
+        "Before/After Yard Proof",
+        "Pause / Resume"
+      ]
+    },
+    {
+      "industryKey": "cleaning",
+      "titles": [
+        "Host Turnover Link",
+        "Feature Weekly Plans",
+        "Supplies Checklist"
+      ]
+    }
+  ],
+  "failures": [],
+  "htmlChecks": {
+    "livingCanvas": true,
+    "evolutionEngine": true,
+    "evolutionCenter": true,
+    "opportunityCards": true,
+    "categories": true,
+    "compare": true,
+    "timeline": true,
+    "askHubly": true,
+    "seasonal": true,
+    "approval": true,
+    "evolutionScore": true,
+    "dailyLink": true,
+    "creativeMemory": true,
+    "learningJournal": true,
+    "homeCenter": true,
+    "polishShell": true,
+    "wordmark": true
+  }
+}

@@ -1,28 +1,36 @@
 /**
- * Hubly Brain — Business DNA (Phase 7.6)
+ * Hubly Brain — Business DNA (Phase 7.6 + Milestone 1 · Section 7)
  *
  * PERMANENT RULE:
  *   Business Memory is factual.     → "What is true?"
- *   Business DNA is interpretive.   → "What kind of business is this?"
+ *   Business DNA is interpretive.   → "What kind of business is this?" + industry knowledge
  *   Never combine them.
  *
+ * Section 7 — Business DNA Knowledge Engine:
+ *   Structured knowledge (psychology, trust, pricing, services, website, growth,
+ *   seasonality, regional) with evidence quality on every claim.
+ *   Experts READ DNA. Experts never modify DNA. Hubly Brain loads / versions it.
+ *   Community learning model exists; automatic learning is NOT implemented yet.
+ *
  * Memory: name, city, services, prices, hours (facts).
- * DNA: personality, ideal customer, sales style, growth goals, tone (identity).
- *
- * Every planner decision reads DNA.
- * Every capability receives DNA.
- * DNA evolves over time (conversation + weekly learning).
- *
- * Website Builder / Marketing / Coach / Marketplace / Quotes / CRM must share DNA
- * so output stays consistent — no feature invents its own personality prompts.
+ * DNA: identity + structured industry knowledge used as evidence for recommendations.
  */
 
 import {
   normalizeBusinessMemory,
   type HublyBusinessMemoryInput,
 } from "./hubly_brain_memory.ts";
+import {
+  loadBusinessDnaKnowledge,
+  detectDnaLoadHints,
+  type HublyDnaKnowledgePack,
+  HublyDnaKnowledgeApi,
+  HUBLY_DNA_KNOWLEDGE_VERSION,
+} from "./hubly_brain_dna_knowledge.ts";
 
-export const HUBLY_BUSINESS_DNA_VERSION = 1 as const;
+export const HUBLY_BUSINESS_DNA_VERSION = 2 as const;
+export { HUBLY_DNA_KNOWLEDGE_VERSION, HublyDnaKnowledgeApi, loadBusinessDnaKnowledge, detectDnaLoadHints };
+export type { HublyDnaKnowledgePack };
 
 export type HublyBusinessGoal = {
   id: string;
@@ -81,9 +89,34 @@ export type HublyBusinessDNA = {
     channels?: string[] | null;
     themes?: string[] | null;
   };
+  /**
+   * Legacy flat knowledge fields (compat) — prefer knowledgePack.
+   * Sourced from Living Blueprints / research — never raw conversation dumps.
+   */
+  knowledge?: {
+    customerPsychology?: string | null;
+    buyingBehavior?: string | null;
+    trustSignals?: string[] | null;
+    competitorPositioning?: string | null;
+    seasonality?: string | null;
+    pricingNorms?: string | null;
+    commonObjections?: string[] | null;
+    highConvertingLayouts?: string[] | null;
+    upsells?: string[] | null;
+    crossSells?: string[] | null;
+    industryVocabulary?: string[] | null;
+    regionalDifferences?: string | null;
+    homepageGoals?: string[] | null;
+    decisionFactors?: string[] | null;
+  } | null;
+  /**
+   * Section 7 — structured Business DNA Knowledge Pack (versioned, evidenced).
+   * Experts may read; only Hubly Brain attaches/loads this.
+   */
+  knowledgePack?: HublyDnaKnowledgePack | null;
   growthStage?: string | null;
   /** Provenance — never store raw conversation here */
-  source?: "understanding" | "client" | "weekly_learning" | "system" | null;
+  source?: "understanding" | "client" | "weekly_learning" | "system" | "blueprint" | null;
   updatedAt?: string | null;
 };
 
@@ -253,10 +286,105 @@ export function normalizeBusinessDNA(input?: HublyBusinessDNAInput | null): Hubl
       channels: asStringList(mktIn.channels),
       themes: asStringList(mktIn.themes),
     }),
+    knowledge: (() => {
+      const k = (stripped.knowledge && typeof stripped.knowledge === "object")
+        ? stripped.knowledge as Record<string, unknown>
+        : null;
+      if (!k) return null;
+      const arr = (v: unknown) =>
+        Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : null;
+      return {
+        customerPsychology: asString(k.customerPsychology),
+        buyingBehavior: asString(k.buyingBehavior),
+        trustSignals: arr(k.trustSignals),
+        competitorPositioning: asString(k.competitorPositioning),
+        seasonality: asString(k.seasonality),
+        pricingNorms: asString(k.pricingNorms),
+        commonObjections: arr(k.commonObjections),
+        highConvertingLayouts: arr(k.highConvertingLayouts),
+        upsells: arr(k.upsells),
+        crossSells: arr(k.crossSells),
+        industryVocabulary: arr(k.industryVocabulary),
+        regionalDifferences: asString(k.regionalDifferences),
+        homepageGoals: arr(k.homepageGoals),
+        decisionFactors: arr(k.decisionFactors),
+      };
+    })(),
+    knowledgePack: stripped.knowledgePack && typeof stripped.knowledgePack === "object"
+      ? stripped.knowledgePack as HublyDnaKnowledgePack
+      : null,
     growthStage: asString(stripped.growthStage),
     source: (asString(stripped.source) as HublyBusinessDNA["source"]) || null,
     updatedAt: asString(stripped.updatedAt) || new Date().toISOString(),
   };
+}
+
+/**
+ * Hubly Brain attaches a knowledge pack for experts to read.
+ * Experts must never call this to invent or overwrite DNA knowledge.
+ */
+export function attachDnaKnowledgePack(
+  dna: HublyBusinessDNAInput | null | undefined,
+  pack: HublyDnaKnowledgePack,
+): HublyBusinessDNA {
+  const base = normalizeBusinessDNA(dna);
+  const knowledge = {
+    customerPsychology: pack.customerPsychology.buyingTriggers.join("; ") +
+      " — " + pack.customerPsychology.buyingFears.join("; "),
+    buyingBehavior: pack.customerPsychology.decisionSpeed,
+    trustSignals: pack.trustSignals.rankedByImportance,
+    competitorPositioning: null,
+    seasonality: [
+      ...pack.seasonality.busySeasons.map((s) => `busy: ${s}`),
+      ...pack.seasonality.regionalSeasonality,
+    ].join("; "),
+    pricingNorms: pack.pricingIntelligence.typicalPricingModels.join("; "),
+    commonObjections: pack.customerPsychology.commonObjections,
+    highConvertingLayouts: pack.websiteIntelligence.highConvertingLayouts,
+    upsells: pack.serviceRelationships.upsells,
+    crossSells: pack.serviceRelationships.crossSells,
+    industryVocabulary: pack.regionalIntelligence.localTerminology,
+    regionalDifferences: pack.regionalIntelligence.regionalBuyingBehavior.join("; ") || null,
+    homepageGoals: pack.websiteIntelligence.recommendedHomepageOrder,
+    decisionFactors: pack.customerPsychology.trustBuilders,
+  };
+  return normalizeBusinessDNA({
+    ...base,
+    knowledge,
+    knowledgePack: pack,
+    source: "blueprint",
+    growthStage: base.growthStage || "starting",
+    customerProfile: {
+      ...base.customerProfile,
+      idealCustomer: base.customerProfile.idealCustomer ||
+        "Local homeowners who value curb appeal and reliable crews",
+    },
+    pricing: {
+      ...base.pricing,
+      strategy: base.pricing.strategy || pack.pricingIntelligence.valuePositioning[0] || null,
+      notes: pack.pricingIntelligence.typicalPricingModels.join("; "),
+    },
+    operations: {
+      ...base.operations,
+      seasonality: knowledge.seasonality,
+    },
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+/** Brain helper: detect hints from request/memory and load + attach knowledge. */
+export function loadAndAttachDnaKnowledge(
+  dna: HublyBusinessDNAInput | null | undefined,
+  opts: {
+    request?: string | null;
+    industry?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+  },
+): HublyBusinessDNA {
+  const pack = loadBusinessDnaKnowledge(opts);
+  return attachDnaKnowledgePack(dna, pack);
 }
 
 /** Deep-ish merge — patch wins on defined interpretive fields. Never merges Memory. */
@@ -298,6 +426,8 @@ export function evolveBusinessDNA(
     ),
     operations: mergeObj(a.operations as Record<string, unknown>, b.operations as Record<string, unknown>),
     marketing: mergeObj(a.marketing as Record<string, unknown>, b.marketing as Record<string, unknown>),
+    knowledge: b.knowledge || a.knowledge || null,
+    knowledgePack: b.knowledgePack || a.knowledgePack || null,
     growthStage: b.growthStage || a.growthStage,
     source: b.source || a.source || "system",
     updatedAt: new Date().toISOString(),
@@ -505,6 +635,13 @@ export function formatBusinessDNA(dnaInput?: HublyBusinessDNAInput | null): stri
   if (dna.goals.length) {
     lines.push(`Goals: ${dna.goals.map((g) => g.label).join("; ")}`);
   }
+  if (dna.knowledgePack) {
+    lines.push(
+      `DNA Knowledge Pack v${dna.knowledgePack.knowledgeVersion} (${dna.knowledgePack.industryProfile.industryName})`,
+      `Evidence claims: ${dna.knowledgePack.evidence.length}`,
+      `Region: ${[dna.knowledgePack.regionalIntelligence.city, dna.knowledgePack.regionalIntelligence.state].filter(Boolean).join(", ") || "global"}`,
+    );
+  }
   lines.push("", "STRUCTURED DNA JSON:", JSON.stringify(dna, null, 2));
   return lines.join("\n");
 }
@@ -542,6 +679,10 @@ export const HublyBusinessDNAApi = {
   inferFromConversation: inferDNAFromConversation,
   format: formatBusinessDNA,
   completeness: dnaCompleteness,
+  loadKnowledge: loadBusinessDnaKnowledge,
+  attachKnowledge: attachDnaKnowledgePack,
+  loadAndAttach: loadAndAttachDnaKnowledge,
+  knowledge: HublyDnaKnowledgeApi,
   empty(): HublyBusinessDNA {
     return normalizeBusinessDNA({});
   },

@@ -1,0 +1,458 @@
+{
+  "section": 2,
+  "title": "Experience Director",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:16.940Z",
+  "version": "1.2.0",
+  "implementationSummary": {
+    "module": "supabase/functions/_shared/hubly_brain_experience_director.ts",
+    "registeredExpert": "experience_director",
+    "thinkInvariant": "Experience Director always last; throws if missing",
+    "completeGate": "CUSTOMER_FACING_TASKS text reviewed via reviewCustomerFacingText",
+    "authority": "veto power over complexity, settings dumps, widget sprawl",
+    "personality": {
+      "voice": "one_business_partner",
+      "identityVersion": "1.0.0",
+      "traits": [
+        "calm",
+        "confident",
+        "curious",
+        "helpful",
+        "honest",
+        "professional",
+        "optimistic"
+      ],
+      "never": [
+        "pushy",
+        "arrogant",
+        "robotic",
+        "overly casual",
+        "salesy",
+        "overly_technical",
+        "multi_ai",
+        "settings_dump"
+      ],
+      "constitution": true
+    }
+  },
+  "proofs": [
+    "Experience Director exists (v1.2.0)",
+    "ED registered through AI Expert Framework",
+    "ED capability declares veto + personality actions",
+    "think() throws if ED did not review",
+    "experience_director alwaysInclude + priority 100 (runs last via registry)",
+    "think routes experts via registry while keeping ED gate",
+    "weather path reviewed by ED",
+    "workspace path reviewed by ED",
+    "customer-facing complete() text passes ED",
+    "chat/support/coach marked customer-facing",
+    "runtime max questions = 3 (Release Gate example)",
+    "Node evidence caps match Release Gate",
+    "Hubly personality: one business partner",
+    "evaluation rules: complexity/clarity/tone/UI/questions",
+    "Fixture A: Research 10 questions → ED reduces to 3 (veto complexity of questioning)",
+    "Fixture B: 25 website settings → ED converts to conversation (veto settings dump)",
+    "Fixture C: 18 dashboard widgets → ED shows 1, hides rest (veto)",
+    "Fixture D: enforces one Hubly personality (never robotic / multi-AI / technical)",
+    "Fixture E: evaluation rules score complexity / questions / UI / software-feel",
+    "Fixture F: celebrate milestone moments",
+    "Fixture G: reviewCustomerFacingText intercepts complete()-style replies",
+    "Fixture H: settingsToConversation helper",
+    "Execution logs: at least one ED interception modified a response",
+    "Execution logs: multiple ED reviews recorded this run",
+    "Section 2 documentation covers Release Gate"
+  ],
+  "evidence": {
+    "fixtures": [
+      {
+        "id": "A_reduce_questions_10_to_3",
+        "claim": "Experience Director reduced unnecessary questions",
+        "before": {
+          "questionCount": 10
+        },
+        "after": {
+          "questionCount": 3,
+          "delayed": 7,
+          "questions": [
+            "Question 1 about the business?",
+            "Question 2 about the business?",
+            "Question 3 about the business?"
+          ]
+        },
+        "actions": [
+          "reviewed",
+          "identity_evaluated_constitution",
+          "limited_questions_to_3",
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_explain",
+          "injected_visible_moment"
+        ],
+        "interception": {
+          "before": {
+            "response": "I researched businesses like yours.",
+            "questionCount": 10,
+            "settingCount": 0,
+            "widgetCount": 0,
+            "sectionCount": 0
+          },
+          "after": {
+            "response": "I researched businesses like yours. Here's why I'm recommending this: it should move the business forward without adding busywork.",
+            "questionCount": 3,
+            "settingCount": 0,
+            "widgetCount": 0,
+            "sectionCount": 0
+          },
+          "modified": true
+        },
+        "pass": true
+      },
+      {
+        "id": "B_settings_to_conversation",
+        "claim": "Experience Director intercepted and modified a settings dump into conversation",
+        "before": {
+          "settingCount": 25,
+          "response": "Here are all your website settings."
+        },
+        "after": {
+          "settingCount": 0,
+          "response": "Here are all your website settings. I noticed there are a lot of site options (25). Instead of a settings wall, let's pick the one that matters most right now — starting with Setting 1, Setting 2, Setting 3, and the rest when you're ready. Nice work — this is a real milestone.",
+          "vetoed": true,
+          "vetoReason": "Overly complex customer-facing interaction — simplified to one Hubly conversation."
+        },
+        "actions": [
+          "reviewed",
+          "vetoed_complexity",
+          "identity_evaluated_constitution",
+          "converted_25_settings_to_conversation",
+          "celebrate",
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_celebrate"
+        ],
+        "interception": {
+          "before": {
+            "response": "Here are all your website settings.",
+            "questionCount": 0,
+            "settingCount": 25,
+            "widgetCount": 0,
+            "sectionCount": 0
+          },
+          "after": {
+            "response": "Here are all your website settings. I noticed there are a lot of site options (25). Instead of a settings wall, let's pick the one that matters most right now — starting with Setting 1, Setting 2, Setting 3, and the rest when you're ready. Nice work — this is a real milestone.",
+            "questionCount": 0,
+            "settingCount": 0,
+            "widgetCount": 0,
+            "sectionCount": 0
+          },
+          "modified": true
+        },
+        "pass": true
+      },
+      {
+        "id": "C_dashboard_one_recommendation",
+        "claim": "Experience Director reduced unnecessary UI exposure",
+        "before": {
+          "widgetCount": 18
+        },
+        "after": {
+          "shown": [
+            "Widget 1"
+          ],
+          "delayedCount": 17,
+          "vetoed": true
+        },
+        "actions": [
+          "reviewed",
+          "vetoed_complexity",
+          "identity_evaluated_constitution",
+          "show_1_of_18_dashboard_widgets",
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_explain",
+          "injected_visible_moment"
+        ],
+        "pass": true
+      },
+      {
+        "id": "D_hubly_personality",
+        "claim": "Experience Director enforced one Hubly personality",
+        "before": {
+          "response": "As an AI, the Research Expert and Creative Director used an OpenAI LLM API JSON prompt for the hero CTA."
+        },
+        "after": {
+          "response": ", the Research Hubly and Hubly used an Hubly connection details note for the first screen Book button.",
+          "actions": [
+            "reviewed",
+            "enforced_hubly_personality",
+            "identity_evaluated_constitution",
+            "rewrote_technical_language",
+            "modified_response",
+            "experience_layer",
+            "identity_evaluated_constitution",
+            "personality_explain",
+            "injected_visible_moment"
+          ],
+          "personality": {
+            "voice": "one_business_partner",
+            "identityVersion": "1.0.0",
+            "traits": [
+              "calm",
+              "confident",
+              "curious",
+              "helpful",
+              "honest",
+              "professional",
+              "optimistic"
+            ],
+            "never": [
+              "pushy",
+              "arrogant",
+              "robotic",
+              "overly casual",
+              "salesy",
+              "overly_technical",
+              "multi_ai",
+              "settings_dump"
+            ],
+            "constitution": true
+          }
+        },
+        "interception": {
+          "before": {
+            "response": "As an AI, the Research Expert and Creative Director used an OpenAI LLM API JSON prompt for the hero CTA.",
+            "questionCount": 0,
+            "settingCount": 0,
+            "widgetCount": 0,
+            "sectionCount": 0
+          },
+          "after": {
+            "response": ", the Research Hubly and Hubly used an Hubly connection details note for the first screen Book button.",
+            "questionCount": 0,
+            "settingCount": 0,
+            "widgetCount": 0,
+            "sectionCount": 0
+          },
+          "modified": true
+        },
+        "pass": true
+      },
+      {
+        "id": "E_evaluation_rules",
+        "evaluation": {
+          "complexity": 100,
+          "clarity": 85,
+          "conversationalQuality": 0,
+          "emotionalTone": 50,
+          "unnecessaryQuestions": 100,
+          "unnecessaryUiExposure": 100,
+          "softwareFeelRisk": 100
+        },
+        "pass": true
+      },
+      {
+        "id": "F_celebrate",
+        "after": {
+          "celebrate": true,
+          "response": "Your site is ready to go live. Nice work — this is a real milestone."
+        },
+        "pass": true
+      },
+      {
+        "id": "G_review_customer_facing_text",
+        "before": "As an AI, here is your LLM API response.",
+        "after": "Hey — what are we building today? , here is your Hubly connection response.",
+        "interception": {
+          "before": {
+            "response": "As an AI, here is your LLM API response.",
+            "questionCount": 0,
+            "settingCount": 0,
+            "widgetCount": 0,
+            "sectionCount": 0
+          },
+          "after": {
+            "response": "Hey — what are we building today? , here is your Hubly connection response.",
+            "questionCount": 0,
+            "settingCount": 0,
+            "widgetCount": 0,
+            "sectionCount": 0
+          },
+          "modified": true
+        },
+        "pass": true
+      },
+      {
+        "id": "H_settings_helper",
+        "line": "I noticed there are a lot of site options (25). Instead of a settings wall, let's pick the one that matters most right now — starting with S0, S1, S2, and the rest when you're ready.",
+        "pass": true
+      }
+    ],
+    "interceptionLogs": [
+      {
+        "id": "ed_mrz80nnt_28laj",
+        "at": "2026-07-24T17:35:16.937Z",
+        "modified": true,
+        "vetoed": false,
+        "before": {
+          "response": "I researched businesses like yours.",
+          "questionCount": 10,
+          "settingCount": 0,
+          "widgetCount": 0,
+          "sectionCount": 0
+        },
+        "after": {
+          "response": "I researched businesses like yours. Here's why I'm recommending this: it should move the business forward without adding busywork.",
+          "questionCount": 3,
+          "settingCount": 0,
+          "widgetCount": 0,
+          "sectionCount": 0
+        },
+        "actions": [
+          "reviewed",
+          "identity_evaluated_constitution",
+          "limited_questions_to_3",
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_explain",
+          "injected_visible_moment"
+        ]
+      },
+      {
+        "id": "ed_mrz80nnu_sgd1e",
+        "at": "2026-07-24T17:35:16.938Z",
+        "modified": true,
+        "vetoed": true,
+        "before": {
+          "response": "Here are all your website settings.",
+          "questionCount": 0,
+          "settingCount": 25,
+          "widgetCount": 0,
+          "sectionCount": 0
+        },
+        "after": {
+          "response": "Here are all your website settings. I noticed there are a lot of site options (25). Instead of a settings wall, let's pick the one that matters most right now — starting with Setting 1, Setting 2, Setting 3, and the rest when you're ready. Nice work — this is a real milestone.",
+          "questionCount": 0,
+          "settingCount": 0,
+          "widgetCount": 0,
+          "sectionCount": 0
+        },
+        "actions": [
+          "reviewed",
+          "vetoed_complexity",
+          "identity_evaluated_constitution",
+          "converted_25_settings_to_conversation",
+          "celebrate",
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_celebrate"
+        ]
+      },
+      {
+        "id": "ed_mrz80nnv_sf2i1",
+        "at": "2026-07-24T17:35:16.939Z",
+        "modified": true,
+        "vetoed": true,
+        "before": {
+          "response": "Here is your operations overview.",
+          "questionCount": 0,
+          "settingCount": 0,
+          "widgetCount": 18,
+          "sectionCount": 0
+        },
+        "after": {
+          "response": "Here is your operations overview. Here's why I'm recommending this: it should move the business forward without adding busywork.",
+          "questionCount": 0,
+          "settingCount": 0,
+          "widgetCount": 1,
+          "sectionCount": 0
+        },
+        "actions": [
+          "reviewed",
+          "vetoed_complexity",
+          "identity_evaluated_constitution",
+          "show_1_of_18_dashboard_widgets",
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_explain",
+          "injected_visible_moment"
+        ]
+      },
+      {
+        "id": "ed_mrz80nnv_tjj91",
+        "at": "2026-07-24T17:35:16.939Z",
+        "modified": true,
+        "vetoed": false,
+        "before": {
+          "response": "As an AI, the Research Expert and Creative Director used an OpenAI LLM API JSON prompt for the hero CTA.",
+          "questionCount": 0,
+          "settingCount": 0,
+          "widgetCount": 0,
+          "sectionCount": 0
+        },
+        "after": {
+          "response": ", the Research Hubly and Hubly used an Hubly connection details note for the first screen Book button.",
+          "questionCount": 0,
+          "settingCount": 0,
+          "widgetCount": 0,
+          "sectionCount": 0
+        },
+        "actions": [
+          "reviewed",
+          "enforced_hubly_personality",
+          "identity_evaluated_constitution",
+          "rewrote_technical_language",
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_explain",
+          "injected_visible_moment"
+        ]
+      },
+      {
+        "id": "ed_mrz80nnv_ogkzu",
+        "at": "2026-07-24T17:35:16.939Z",
+        "modified": true,
+        "vetoed": false,
+        "before": {
+          "response": "Your site is ready to go live.",
+          "questionCount": 0,
+          "settingCount": 0,
+          "widgetCount": 0,
+          "sectionCount": 0
+        },
+        "after": {
+          "response": "Your site is ready to go live. Nice work — this is a real milestone.",
+          "questionCount": 0,
+          "settingCount": 0,
+          "widgetCount": 0,
+          "sectionCount": 0
+        },
+        "actions": [
+          "reviewed",
+          "identity_evaluated_constitution",
+          "celebrate",
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_celebrate"
+        ]
+      }
+    ],
+    "releaseGate": {
+      "experienceDirectorExists": true,
+      "everyCustomerFacingResponsePassesThrough": true,
+      "canSimplifyResponses": true,
+      "canReduceUnnecessaryQuestions": true,
+      "canVetoOverlyComplexInteractions": true,
+      "enforcesOneHublyPersonality": true,
+      "provenWithAutomatedEvidence": true
+    }
+  },
+  "failures": null
+}

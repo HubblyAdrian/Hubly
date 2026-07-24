@@ -1,0 +1,882 @@
+{
+  "milestone": "1.5",
+  "epic": 2,
+  "name": "Change Plan DSL",
+  "title": "Change Plan DSL",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:19.240Z",
+  "proofs": {
+    "changePlanEngineExists": true,
+    "universalDsl": true,
+    "declarativeDesiredState": true,
+    "websitePlans": true,
+    "bookingPlans": true,
+    "crmPlans": true,
+    "workspacePlans": true,
+    "portfolioPlans": true,
+    "automationPlans": true,
+    "multiSystemOnePlan": true,
+    "noBuilderExecution": true,
+    "noDatabaseMutations": true,
+    "noUiMutations": true,
+    "missionControlDisplaysChangePlans": true,
+    "demos": [
+      {
+        "id": "website",
+        "request": "Make my website feel premium.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80pei_fkhozl",
+          "category": "Website",
+          "goal": "Premium Branding"
+        },
+        "changePlan": {
+          "id": "cpl_mrz80peq_5tf7oo",
+          "version": "1.0.0",
+          "builderType": "website_builder",
+          "intentId": "bint_mrz80pei_fkhozl",
+          "title": "Website Improvement",
+          "description": "Declarative Change Plan for: Premium Branding",
+          "affectedSystems": [
+            "Website"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "website_builder",
+              "toolName": "Website Builder",
+              "capabilityId": "update_homepage",
+              "capabilityLabel": "Update Homepage"
+            }
+          ],
+          "desiredState": {
+            "website": {
+              "premium_feel": true,
+              "hero": {
+                "headline_tone": "premium"
+              }
+            }
+          },
+          "changes": [
+            {
+              "actionId": "act_mrz80peq_mz5gj2",
+              "path": "website.premium_feel",
+              "desired": true,
+              "builderOwner": "Website Builder",
+              "builderType": "website_builder",
+              "risk": "medium",
+              "confidence": 93,
+              "dependencies": [],
+              "estimatedImpact": {
+                "trustPct": 12,
+                "conversionPct": 4,
+                "complexity": "low",
+                "summary": "Premium branding cues tend to lift trust and conversion modestly."
+              },
+              "capabilityId": "update_homepage",
+              "reason": "Owner asked for a more premium website feel."
+            },
+            {
+              "actionId": "act_mrz80peq_dcpk1n",
+              "path": "website.hero.headline_tone",
+              "desired": "premium",
+              "builderOwner": "Website Builder",
+              "builderType": "website_builder",
+              "risk": "low",
+              "confidence": 91,
+              "dependencies": [
+                "website.premium_feel"
+              ],
+              "estimatedImpact": {
+                "trustPct": 8,
+                "conversionPct": 3,
+                "complexity": "low",
+                "summary": "Clearer premium positioning on first impression."
+              },
+              "capabilityId": "update_hero",
+              "reason": "Premium feel usually starts with hero headline tone."
+            }
+          ],
+          "dependencies": [
+            "website.premium_feel"
+          ],
+          "risk": "medium",
+          "confidence": 92,
+          "requiresApproval": true,
+          "estimatedImpact": {
+            "trustPct": 20,
+            "conversionPct": 7,
+            "schedulingFlexibility": null,
+            "complexity": "low",
+            "summary": "Premium branding cues tend to lift trust and conversion modestly. Clearer premium positioning on first impression."
+          },
+          "rollbackStrategy": {
+            "mode": "restore_previous_desired_state",
+            "note": "Epic 5 will restore the prior desired-state snapshot. Epic 2 only describes desired state."
+          },
+          "validation": {
+            "ok": true,
+            "issues": [],
+            "checked": {
+              "noConflicts": true,
+              "noDuplicates": true,
+              "validCapabilities": true,
+              "validPermissions": true,
+              "supportedBuilders": true
+            }
+          },
+          "applied": false,
+          "executed": false,
+          "missionControlExecutionId": "flt_mrz80pev_z621tl"
+        }
+      },
+      {
+        "id": "booking",
+        "request": "Don't allow same-day bookings.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80pey_1tbr7k",
+          "category": "Booking",
+          "goal": "Minimum Notice"
+        },
+        "changePlan": {
+          "id": "cpl_mrz80pf0_p9av5e",
+          "version": "1.0.0",
+          "builderType": "booking",
+          "intentId": "bint_mrz80pey_1tbr7k",
+          "title": "Booking Intelligence",
+          "description": "Declarative Change Plan for: Minimum Notice",
+          "affectedSystems": [
+            "Booking"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "booking",
+              "toolName": "Booking Intelligence Builder",
+              "capabilityId": "no_same_day_bookings",
+              "capabilityLabel": "Minimum Notice"
+            }
+          ],
+          "desiredState": {
+            "booking": {
+              "same_day_bookings": {
+                "allowed": false
+              },
+              "minimum_notice": {
+                "hours": 24
+              }
+            }
+          },
+          "changes": [
+            {
+              "actionId": "act_mrz80pf0_p8z66d",
+              "path": "booking.same_day_bookings.allowed",
+              "desired": false,
+              "builderOwner": "Booking Intelligence Builder",
+              "builderType": "booking",
+              "risk": "medium",
+              "confidence": 94,
+              "dependencies": [],
+              "estimatedImpact": {
+                "schedulingFlexibility": "medium",
+                "complexity": "low",
+                "summary": "Protects schedule; slightly less last-minute flexibility."
+              },
+              "capabilityId": "no_same_day_bookings",
+              "reason": "Owner does not want same-day bookings."
+            },
+            {
+              "actionId": "act_mrz80pf0_zl52n5",
+              "path": "booking.minimum_notice.hours",
+              "desired": 24,
+              "builderOwner": "Booking Intelligence Builder",
+              "builderType": "booking",
+              "risk": "medium",
+              "confidence": 93,
+              "dependencies": [
+                "booking.same_day_bookings.allowed"
+              ],
+              "estimatedImpact": {
+                "schedulingFlexibility": "high",
+                "complexity": "low",
+                "summary": "24h notice improves prep time and route planning."
+              },
+              "capabilityId": "booking_rules",
+              "reason": "Minimum notice of 24 hours enforces no same-day bookings."
+            }
+          ],
+          "dependencies": [
+            "booking.same_day_bookings.allowed"
+          ],
+          "risk": "medium",
+          "confidence": 94,
+          "requiresApproval": true,
+          "estimatedImpact": {
+            "trustPct": null,
+            "conversionPct": null,
+            "schedulingFlexibility": "medium",
+            "complexity": "low",
+            "summary": "Protects schedule; slightly less last-minute flexibility. 24h notice improves prep time and route planning."
+          },
+          "rollbackStrategy": {
+            "mode": "restore_previous_desired_state",
+            "note": "Epic 5 will restore the prior desired-state snapshot. Epic 2 only describes desired state."
+          },
+          "validation": {
+            "ok": true,
+            "issues": [],
+            "checked": {
+              "noConflicts": true,
+              "noDuplicates": true,
+              "validCapabilities": true,
+              "validPermissions": true,
+              "supportedBuilders": true
+            }
+          },
+          "applied": false,
+          "executed": false,
+          "missionControlExecutionId": "flt_mrz80pf2_r3yzkn"
+        }
+      },
+      {
+        "id": "workspace",
+        "request": "Move Jobs above Customers.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80pf5_b28arm",
+          "category": "Workspace",
+          "goal": "Navigation Order"
+        },
+        "changePlan": {
+          "id": "cpl_mrz80pf6_1954zv",
+          "version": "1.0.0",
+          "builderType": "workspace_builder",
+          "intentId": "bint_mrz80pf5_b28arm",
+          "title": "Workspace Intelligence",
+          "description": "Declarative Change Plan for: Navigation Order",
+          "affectedSystems": [
+            "Workspace"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "workspace_builder",
+              "toolName": "Workspace Intelligence Builder",
+              "capabilityId": "sidebar_order",
+              "capabilityLabel": "Sidebar Order"
+            }
+          ],
+          "desiredState": {
+            "workspace": {
+              "sidebar_order": [
+                "Jobs",
+                "Customers"
+              ]
+            }
+          },
+          "changes": [
+            {
+              "actionId": "act_mrz80pf6_xn513x",
+              "path": "workspace.sidebar_order",
+              "desired": [
+                "Jobs",
+                "Customers"
+              ],
+              "builderOwner": "Workspace Intelligence Builder",
+              "builderType": "workspace_builder",
+              "risk": "low",
+              "confidence": 95,
+              "dependencies": [],
+              "estimatedImpact": {
+                "complexity": "low",
+                "summary": "Navigation matches how the owner works day to day."
+              },
+              "capabilityId": "sidebar_order",
+              "reason": "Owner wants Jobs above Customers in navigation."
+            }
+          ],
+          "dependencies": [],
+          "risk": "low",
+          "confidence": 95,
+          "requiresApproval": true,
+          "estimatedImpact": {
+            "trustPct": null,
+            "conversionPct": null,
+            "schedulingFlexibility": null,
+            "complexity": "low",
+            "summary": "Navigation matches how the owner works day to day."
+          },
+          "rollbackStrategy": {
+            "mode": "restore_previous_desired_state",
+            "note": "Epic 5 will restore the prior desired-state snapshot. Epic 2 only describes desired state."
+          },
+          "validation": {
+            "ok": true,
+            "issues": [],
+            "checked": {
+              "noConflicts": true,
+              "noDuplicates": true,
+              "validCapabilities": true,
+              "validPermissions": true,
+              "supportedBuilders": true
+            }
+          },
+          "applied": false,
+          "executed": false,
+          "missionControlExecutionId": "flt_mrz80pf7_tjmhpd"
+        }
+      },
+      {
+        "id": "crm",
+        "request": "Hide the unused CRM module and pin my leads widget.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80pf9_rm5ax2",
+          "category": "CRM",
+          "goal": "Hide Module"
+        },
+        "changePlan": {
+          "id": "cpl_mrz80pf9_ixyfat",
+          "version": "1.0.0",
+          "builderType": "crm",
+          "intentId": "bint_mrz80pf9_rm5ax2",
+          "title": "CRM Change",
+          "description": "Declarative Change Plan for: Hide Module",
+          "affectedSystems": [
+            "CRM"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "crm",
+              "toolName": "CRM",
+              "capabilityId": "update_customer",
+              "capabilityLabel": "Update Customer"
+            }
+          ],
+          "desiredState": {
+            "crm": {
+              "modules": {
+                "hide": [
+                  "unused"
+                ]
+              },
+              "widgets": {
+                "pin": [
+                  "priority"
+                ]
+              }
+            }
+          },
+          "changes": [
+            {
+              "actionId": "act_mrz80pf9_n7apm6",
+              "path": "crm.modules.hide",
+              "desired": [
+                "unused"
+              ],
+              "builderOwner": "CRM Builder",
+              "builderType": "crm",
+              "risk": "low",
+              "confidence": 80,
+              "dependencies": [],
+              "estimatedImpact": {
+                "complexity": "low",
+                "summary": "Less clutter in CRM."
+              },
+              "capabilityId": "update_customer",
+              "reason": "Owner wants to hide a CRM module."
+            },
+            {
+              "actionId": "act_mrz80pf9_gndbco",
+              "path": "crm.widgets.pin",
+              "desired": [
+                "priority"
+              ],
+              "builderOwner": "CRM Builder",
+              "builderType": "crm",
+              "risk": "low",
+              "confidence": 80,
+              "dependencies": [],
+              "estimatedImpact": {
+                "complexity": "low",
+                "summary": "Faster access to pinned work."
+              },
+              "capabilityId": "update_customer",
+              "reason": "Owner wants a CRM widget pinned."
+            }
+          ],
+          "dependencies": [],
+          "risk": "low",
+          "confidence": 80,
+          "requiresApproval": true,
+          "estimatedImpact": {
+            "trustPct": null,
+            "conversionPct": null,
+            "schedulingFlexibility": null,
+            "complexity": "low",
+            "summary": "Less clutter in CRM. Faster access to pinned work."
+          },
+          "rollbackStrategy": {
+            "mode": "restore_previous_desired_state",
+            "note": "Epic 5 will restore the prior desired-state snapshot. Epic 2 only describes desired state."
+          },
+          "validation": {
+            "ok": true,
+            "issues": [],
+            "checked": {
+              "noConflicts": true,
+              "noDuplicates": true,
+              "validCapabilities": true,
+              "validPermissions": true,
+              "supportedBuilders": true
+            }
+          },
+          "applied": false,
+          "executed": false,
+          "missionControlExecutionId": "flt_mrz80pfa_vqvtxv"
+        }
+      },
+      {
+        "id": "portfolio",
+        "request": "Put these 12 photos into my portfolio.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80pfb_nfah10",
+          "category": "Portfolio",
+          "goal": "Gallery Organization"
+        },
+        "changePlan": {
+          "id": "cpl_mrz80pfd_xgsfda",
+          "version": "1.0.0",
+          "builderType": "portfolio_builder",
+          "intentId": "bint_mrz80pfb_nfah10",
+          "title": "Media Intelligence",
+          "description": "Declarative Change Plan for: Gallery Organization",
+          "affectedSystems": [
+            "Portfolio"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "portfolio_builder",
+              "toolName": "Media Intelligence Engine",
+              "capabilityId": "upload_photos",
+              "capabilityLabel": "Upload Photos"
+            },
+            {
+              "toolId": "image_processor",
+              "toolName": "Image Processor",
+              "capabilityId": "process_images",
+              "capabilityLabel": "Process Images"
+            },
+            {
+              "toolId": "website_builder",
+              "toolName": "Website Builder",
+              "capabilityId": "update_homepage",
+              "capabilityLabel": "Update Homepage"
+            }
+          ],
+          "desiredState": {
+            "portfolio": {
+              "gallery": {
+                "organize": true
+              },
+              "publish": {
+                "surfaces": {
+                  "surfaces": [
+                    "website_gallery",
+                    "marketplace_profile",
+                    "portfolio",
+                    "quote_library",
+                    "instagram_carousel",
+                    "google_business",
+                    "hero_candidate"
+                  ]
+                }
+              }
+            }
+          },
+          "changes": [
+            {
+              "actionId": "act_mrz80pfd_qtk8nn",
+              "path": "portfolio.gallery.organize",
+              "desired": true,
+              "builderOwner": "Media Intelligence Engine",
+              "builderType": "portfolio_builder",
+              "risk": "low",
+              "confidence": 93,
+              "dependencies": [],
+              "estimatedImpact": {
+                "trustPct": 11,
+                "conversionPct": 5,
+                "complexity": "medium",
+                "summary": "Organized gallery strengthens proof of work."
+              },
+              "capabilityId": "upload_photos",
+              "reason": "Organize uploaded photos with Media Intelligence."
+            },
+            {
+              "actionId": "act_mrz80pfd_qz257i",
+              "path": "portfolio.gallery",
+              "desired": {
+                "organize": true
+              },
+              "builderOwner": "Media Intelligence Engine",
+              "builderType": "portfolio_builder",
+              "risk": "low",
+              "confidence": 95,
+              "dependencies": [],
+              "estimatedImpact": {
+                "trustPct": 12,
+                "complexity": "medium",
+                "summary": "Curated service gallery."
+              },
+              "capabilityId": "manage_gallery",
+              "reason": "Build / organize portfolio gallery."
+            },
+            {
+              "actionId": "act_mrz80pfd_5zcd7h",
+              "path": "portfolio.publish.surfaces",
+              "desired": {
+                "surfaces": [
+                  "website_gallery",
+                  "marketplace_profile",
+                  "portfolio",
+                  "quote_library",
+                  "instagram_carousel",
+                  "google_business",
+                  "hero_candidate"
+                ]
+              },
+              "builderOwner": "Media Intelligence Engine",
+              "builderType": "portfolio_builder",
+              "risk": "medium",
+              "confidence": 95,
+              "dependencies": [],
+              "estimatedImpact": {
+                "complexity": "medium",
+                "summary": "One approval → many destinations."
+              },
+              "capabilityId": "manage_gallery",
+              "reason": "Multi-surface publishing proposal from one upload."
+            }
+          ],
+          "dependencies": [],
+          "risk": "medium",
+          "confidence": 94,
+          "requiresApproval": true,
+          "estimatedImpact": {
+            "trustPct": 23,
+            "conversionPct": 5,
+            "schedulingFlexibility": null,
+            "complexity": "medium",
+            "summary": "Organized gallery strengthens proof of work. Curated service gallery. One approval → many destinations."
+          },
+          "rollbackStrategy": {
+            "mode": "restore_previous_desired_state",
+            "note": "Epic 5 will restore the prior desired-state snapshot. Epic 2 only describes desired state."
+          },
+          "validation": {
+            "ok": true,
+            "issues": [],
+            "checked": {
+              "noConflicts": true,
+              "noDuplicates": true,
+              "validCapabilities": true,
+              "validPermissions": true,
+              "supportedBuilders": true
+            }
+          },
+          "applied": false,
+          "executed": false,
+          "missionControlExecutionId": "flt_mrz80pfe_zqpdhe"
+        }
+      },
+      {
+        "id": "automation",
+        "request": "Send prep instructions after ceramic coating bookings.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80pfh_6cphyy",
+          "category": "Automations",
+          "goal": "Post-Booking Prep Instructions"
+        },
+        "changePlan": {
+          "id": "cpl_mrz80pfi_y4p6ud",
+          "version": "1.0.0",
+          "builderType": "automation",
+          "intentId": "bint_mrz80pfh_6cphyy",
+          "title": "Automation Intelligence",
+          "description": "Declarative Change Plan for: Post-Booking Prep Instructions",
+          "affectedSystems": [
+            "Automations"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "automation",
+              "toolName": "Automation Intelligence Builder",
+              "capabilityId": "create_workflow",
+              "capabilityLabel": "Create Workflow"
+            },
+            {
+              "toolId": "automation",
+              "toolName": "Automation Intelligence Builder",
+              "capabilityId": "prep_instructions",
+              "capabilityLabel": "Prep Instructions"
+            }
+          ],
+          "desiredState": {
+            "automations": {
+              "workflows": {
+                "prep_after_ceramic": [
+                  {
+                    "id": "prep_after_ceramic",
+                    "trigger": "booking.created.service:ceramic_coating",
+                    "steps": [
+                      {
+                        "type": "createWorkflow",
+                        "config": {
+                          "name": "Ceramic coating prep"
+                        }
+                      },
+                      {
+                        "type": "wait",
+                        "config": {
+                          "minutes": 5
+                        }
+                      },
+                      {
+                        "type": "sendEmail",
+                        "config": {
+                          "template": "prep_instructions"
+                        }
+                      },
+                      {
+                        "type": "wait",
+                        "config": {
+                          "until": "day_before"
+                        }
+                      },
+                      {
+                        "type": "sendReminder",
+                        "config": {
+                          "channel": "sms"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "changes": [
+            {
+              "actionId": "act_mrz80pfi_y4zk35",
+              "path": "automations.workflows.prep_after_ceramic",
+              "desired": [
+                {
+                  "id": "prep_after_ceramic",
+                  "trigger": "booking.created.service:ceramic_coating",
+                  "steps": [
+                    {
+                      "type": "createWorkflow",
+                      "config": {
+                        "name": "Ceramic coating prep"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "config": {
+                        "minutes": 5
+                      }
+                    },
+                    {
+                      "type": "sendEmail",
+                      "config": {
+                        "template": "prep_instructions"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "config": {
+                        "until": "day_before"
+                      }
+                    },
+                    {
+                      "type": "sendReminder",
+                      "config": {
+                        "channel": "sms"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "builderOwner": "Automation Intelligence Builder",
+              "builderType": "automation",
+              "risk": "medium",
+              "confidence": 92,
+              "dependencies": [],
+              "estimatedImpact": {
+                "trustPct": 10,
+                "complexity": "medium",
+                "summary": "Automated prep instructions reduce day-of questions."
+              },
+              "capabilityId": "create_workflow",
+              "reason": "Send prep instructions after ceramic coating bookings."
+            }
+          ],
+          "dependencies": [],
+          "risk": "medium",
+          "confidence": 92,
+          "requiresApproval": true,
+          "estimatedImpact": {
+            "trustPct": 10,
+            "conversionPct": null,
+            "schedulingFlexibility": null,
+            "complexity": "medium",
+            "summary": "Automated prep instructions reduce day-of questions."
+          },
+          "rollbackStrategy": {
+            "mode": "restore_previous_desired_state",
+            "note": "Epic 5 will restore the prior desired-state snapshot. Epic 2 only describes desired state."
+          },
+          "validation": {
+            "ok": true,
+            "issues": [],
+            "checked": {
+              "noConflicts": true,
+              "noDuplicates": true,
+              "validCapabilities": true,
+              "validPermissions": true,
+              "supportedBuilders": true
+            }
+          },
+          "applied": false,
+          "executed": false,
+          "missionControlExecutionId": "flt_mrz80pfj_106rfs"
+        }
+      },
+      {
+        "id": "multi",
+        "request": "Add arrival windows and update my website to explain them.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrz80pfk_wha4xd",
+          "category": "Multiple Systems",
+          "goal": "Arrival Windows · Website Update"
+        },
+        "changePlan": {
+          "id": "cpl_mrz80pfl_9ahxa5",
+          "version": "1.0.0",
+          "builderType": "multi",
+          "intentId": "bint_mrz80pfk_wha4xd",
+          "title": "Multi-System: Website + Booking",
+          "description": "Declarative Change Plan for: Arrival Windows · Website Update",
+          "affectedSystems": [
+            "Website",
+            "Booking"
+          ],
+          "requiredCapabilities": [
+            {
+              "toolId": "booking",
+              "toolName": "Booking Intelligence Builder",
+              "capabilityId": "arrival_windows",
+              "capabilityLabel": "Arrival Windows"
+            },
+            {
+              "toolId": "website_builder",
+              "toolName": "Website Builder",
+              "capabilityId": "update_homepage",
+              "capabilityLabel": "Update Homepage"
+            }
+          ],
+          "desiredState": {
+            "website": {
+              "explain_arrival_windows": true
+            },
+            "booking": {
+              "arrival_window": {
+                "enabled": true,
+                "before_minutes": 60,
+                "after_minutes": 60
+              }
+            }
+          },
+          "changes": [
+            {
+              "actionId": "act_mrz80pfl_8rb6d7",
+              "path": "website.explain_arrival_windows",
+              "desired": true,
+              "builderOwner": "Website Builder",
+              "builderType": "website_builder",
+              "risk": "low",
+              "confidence": 96,
+              "dependencies": [
+                "booking.arrival_window.enabled"
+              ],
+              "estimatedImpact": {
+                "trustPct": 10,
+                "conversionPct": 3,
+                "complexity": "low",
+                "summary": "Explaining arrival windows reduces confusion and no-shows."
+              },
+              "capabilityId": "update_homepage",
+              "reason": "Website should explain arrival windows so customers know what to expect."
+            },
+            {
+              "actionId": "act_mrz80pfl_torkdh",
+              "path": "booking.arrival_window",
+              "desired": {
+                "enabled": true,
+                "before_minutes": 60,
+                "after_minutes": 60
+              },
+              "builderOwner": "Booking Intelligence Builder",
+              "builderType": "booking",
+              "risk": "medium",
+              "confidence": 99,
+              "dependencies": [],
+              "estimatedImpact": {
+                "trustPct": 9,
+                "schedulingFlexibility": "high",
+                "complexity": "low",
+                "summary": "Arrival windows set clear expectations for customers."
+              },
+              "capabilityId": "arrival_windows",
+              "reason": "Owner wants appointment arrival windows."
+            }
+          ],
+          "dependencies": [
+            "booking.arrival_window.enabled"
+          ],
+          "risk": "medium",
+          "confidence": 98,
+          "requiresApproval": true,
+          "estimatedImpact": {
+            "trustPct": 19,
+            "conversionPct": 3,
+            "schedulingFlexibility": "high",
+            "complexity": "low",
+            "summary": "Explaining arrival windows reduces confusion and no-shows. Arrival windows set clear expectations for customers."
+          },
+          "rollbackStrategy": {
+            "mode": "restore_previous_desired_state",
+            "note": "Epic 5 will restore the prior desired-state snapshot. Epic 2 only describes desired state."
+          },
+          "validation": {
+            "ok": true,
+            "issues": [],
+            "checked": {
+              "noConflicts": true,
+              "noDuplicates": true,
+              "validCapabilities": true,
+              "validPermissions": true,
+              "supportedBuilders": true
+            }
+          },
+          "applied": false,
+          "executed": false,
+          "missionControlExecutionId": "flt_mrz80pfm_ezha3s"
+        }
+      }
+    ]
+  },
+  "failures": null
+}

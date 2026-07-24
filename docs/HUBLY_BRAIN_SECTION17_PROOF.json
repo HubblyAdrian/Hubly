@@ -1,0 +1,37 @@
+{
+  "section": 17,
+  "name": "Architecture Documentation & Developer Experience",
+  "title": "Architecture Documentation & Developer Experience",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:18.220Z",
+  "proofs": {
+    "docsVersion": "1.1.0",
+    "missionControlVersion": "1.5.0",
+    "guideCount": 11,
+    "adrCount": 5,
+    "guides": [
+      "docs/architecture/SYSTEM_ARCHITECTURE.md",
+      "docs/architecture/AI_LIFECYCLE.md",
+      "docs/architecture/BUILDER_ENGINE_SPEC.md",
+      "docs/architecture/MEMORY_GUIDE.md",
+      "docs/architecture/EXPERT_DEVELOPMENT.md",
+      "docs/architecture/BUSINESS_DNA_GUIDE.md",
+      "docs/architecture/CAPABILITY_GUIDE.md",
+      "docs/architecture/MISSION_CONTROL_GUIDE.md",
+      "docs/architecture/CODING_STANDARDS.md",
+      "docs/architecture/CONSTITUTION_GUIDE.md",
+      "docs/architecture/DEVELOPER_ONBOARDING.md"
+    ],
+    "adrs": [
+      "docs/adr/0001-hubly-brain-sole-ai-entry.md",
+      "docs/adr/0002-memory-separation.md",
+      "docs/adr/0003-experts-cannot-write-memory.md",
+      "docs/adr/0004-registry-driven-capabilities.md",
+      "docs/adr/0005-experience-director-gate.md"
+    ],
+    "missionControlLinked": true,
+    "onboardingPath": "docs/architecture/DEVELOPER_ONBOARDING.md",
+    "builderSpecOnly": true
+  },
+  "failures": null
+}

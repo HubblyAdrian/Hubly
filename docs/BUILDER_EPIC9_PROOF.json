@@ -1,0 +1,169 @@
+{
+  "milestone": "1.5",
+  "epic": 9,
+  "name": "Automation Intelligence Builder",
+  "title": "Automation Intelligence Builder",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:22.589Z",
+  "proofs": {
+    "automationIntelligenceExists": true,
+    "customerFacingName": "Automation Intelligence Builder",
+    "naturalLanguageWorkflows": true,
+    "workflowPreviews": true,
+    "workflowSimulation": true,
+    "multiSystemAutomations": true,
+    "automationHealth": true,
+    "aiRecommendations": true,
+    "automationDiscovery": true,
+    "everyAutomationExplained": true,
+    "estimatedTimeSaved": true,
+    "missionControlAutomationIntelligence": true,
+    "requiresApprovalBeforeApply": true,
+    "noExecute": true,
+    "noApply": true,
+    "demos": {
+      "prep": {
+        "request": "Send prep instructions after ceramic coating bookings.",
+        "workflowCount": 1,
+        "outcomes": [
+          "prep_instructions"
+        ],
+        "health": 87,
+        "timeSavedHours": 1.5,
+        "simBookings": 112
+      },
+      "reviews": {
+        "request": "Ask for reviews after every completed job.",
+        "workflowCount": 1,
+        "outcomes": [
+          "review_request"
+        ],
+        "health": 87,
+        "timeSavedHours": 1.5,
+        "simBookings": 112
+      },
+      "quotes": {
+        "request": "Follow up on quotes after 5 days.",
+        "workflowCount": 1,
+        "outcomes": [
+          "quote_followup"
+        ],
+        "health": 86,
+        "timeSavedHours": 1.5,
+        "simBookings": 112
+      },
+      "weather": {
+        "request": "Reschedule exterior work if it rains.",
+        "workflowCount": 1,
+        "outcomes": [
+          "weather_reschedule"
+        ],
+        "health": 85,
+        "timeSavedHours": 1.5,
+        "simBookings": 112
+      },
+      "membership": {
+        "request": "Charge memberships every month.",
+        "workflowCount": 1,
+        "outcomes": [
+          "membership_billing"
+        ],
+        "health": 85,
+        "timeSavedHours": 1.5,
+        "simBookings": 112
+      },
+      "friday": {
+        "request": "Send me a Friday business summary.",
+        "workflowCount": 1,
+        "outcomes": [
+          "friday_summary"
+        ],
+        "health": 85,
+        "timeSavedHours": 1.5,
+        "simBookings": 112
+      },
+      "recurring": {
+        "request": "Automate my recurring customers.",
+        "workflowCount": 1,
+        "outcomes": [
+          "recurring_customers"
+        ],
+        "health": 85,
+        "timeSavedHours": 1.5,
+        "simBookings": 112
+      },
+      "multisystem": {
+        "request": "When someone books a ceramic coating, handle prep, CRM, portal, review, and upsell.",
+        "workflowCount": 3,
+        "outcomes": [
+          "prep_instructions",
+          "prep_instructions",
+          "prep_instructions"
+        ],
+        "health": 94,
+        "timeSavedHours": 5.5,
+        "simBookings": 112
+      }
+    },
+    "healthSample": {
+      "overall": 94,
+      "coverage": 94,
+      "reliability": 100,
+      "failures": 0,
+      "timeSavedHoursPerMonth": 5.5,
+      "customerExperience": 80,
+      "note": "Automation Health — coverage, reliability, time saved, and customer experience."
+    },
+    "simulationSample": {
+      "horizonDays": 30,
+      "headline": "Here's how next month would look if these automations ran.",
+      "totals": {
+        "bookings": 112,
+        "prepEmails": 112,
+        "reminderTexts": 96,
+        "reviewRequests": 0,
+        "quoteFollowups": 0,
+        "weatherReschedules": 0,
+        "membershipCharges": 0,
+        "summaries": 0
+      },
+      "note": "Simulation only — nothing has been sent yet."
+    },
+    "discoverySample": [
+      {
+        "id": "disc_mrz80s0n_04xekk",
+        "observation": "I noticed you've done this manually 14 times this week.",
+        "manualCount": 14,
+        "period": "this_week",
+        "proposedWorkflowTitle": "Ask for reviews after completed jobs",
+        "why": "Manual review asks are repetitive and easy to miss.",
+        "estimatedMinutesSavedPerMonth": 150,
+        "customerImpact": "More consistent review volume; customers hear from you while the job is fresh.",
+        "requiresOwnerApproval": true
+      }
+    ],
+    "recommendationsSample": [
+      {
+        "id": "arec_mrz80s0n_0g05e5",
+        "title": "Automate review requests",
+        "detail": "I noticed you're manually sending review requests. I can automate that.",
+        "why": "Estimated time saved: ~2.5 hours per month. Businesses like yours get more reviews sending after 24 hours (+18% expected).",
+        "outcomeId": "review_request",
+        "estimatedMinutesSavedPerMonth": 150,
+        "confidence": 90,
+        "requiresOwnerApproval": true
+      },
+      {
+        "id": "arec_mrz80s0n_eeq0jw",
+        "title": "Quote follow-up automation",
+        "detail": "Silent quotes lose deals. A 5-day follow-up recovers opportunity.",
+        "why": "Sales outcome — lost opportunity recovery without manual chasing.",
+        "outcomeId": "quote_followup",
+        "estimatedMinutesSavedPerMonth": 100,
+        "confidence": 84,
+        "requiresOwnerApproval": true
+      }
+    ]
+  },
+  "failures": null
+}

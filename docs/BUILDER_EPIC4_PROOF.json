@@ -1,0 +1,731 @@
+{
+  "milestone": "1.5",
+  "epic": 4,
+  "name": "Collaboration & Approval Engine",
+  "title": "Collaboration & Approval Engine",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:19.995Z",
+  "proofs": {
+    "collaborationLoop": true,
+    "hublyRecommends": true,
+    "multipleRefinementRounds": true,
+    "alternatives": true,
+    "partialApproval": true,
+    "approvalLevels": true,
+    "aiNegotiation": true,
+    "approvalSummary": true,
+    "ownerConfidence": true,
+    "launchCta": true,
+    "noExecution": true,
+    "noApply": true,
+    "missionControlCollaborationHistory": true,
+    "demos": [
+      {
+        "id": "website",
+        "request": "Make my homepage more premium.",
+        "passed": true,
+        "preview": {
+          "id": "prv_mrz80pzo_da8vby",
+          "primarySurface": "website"
+        },
+        "collaboration": {
+          "id": "collab_mrz80pzs_i5ji1v",
+          "openingPrompt": "What do you think?",
+          "iterations": 4,
+          "recommendation": {
+            "optionId": "opt_a",
+            "label": "Luxury",
+            "why": [
+              "Strongest trust signals",
+              "Clearest booking path",
+              "Better alignment with your Business DNA",
+              "Highest projected conversion"
+            ],
+            "confidence": 92,
+            "alignedWithDna": true,
+            "projectedConversion": "high"
+          },
+          "alternatives": [
+            {
+              "id": "alt_a",
+              "label": "Warmer premium",
+              "vibe": "Soft contrast, hospitality-forward",
+              "summary": "Keeps trust cues with a warmer palette."
+            },
+            {
+              "id": "alt_b",
+              "label": "Bold modern",
+              "vibe": "Stronger type, sharper CTAs",
+              "summary": "Pushes conversion without losing clarity."
+            }
+          ],
+          "negotiation": null,
+          "partialApprovals": [],
+          "approvalLevels": [
+            {
+              "path": "website.premium_feel",
+              "surface": "website",
+              "level": "recommend",
+              "reason": "Risk medium → recommend"
+            },
+            {
+              "path": "website.hero.headline_tone",
+              "surface": "website",
+              "level": "recommend",
+              "reason": "Risk low → recommend"
+            }
+          ],
+          "summary": {
+            "headline": "Today we'll make:",
+            "items": [
+              {
+                "surface": "website",
+                "label": "Website",
+                "approved": true,
+                "approvalLevel": "recommend"
+              }
+            ],
+            "expectedResults": {
+              "trustPct": 20,
+              "conversionPct": 7,
+              "schedulingFlexibility": null,
+              "complexity": "low",
+              "summary": "Premium branding cues tend to lift trust and conversion modestly. Clearer premium positioning on first impression."
+            },
+            "risk": "medium",
+            "rollbackAvailable": true,
+            "launchCta": "Let's launch this."
+          },
+          "launchCta": "Let's launch this.",
+          "ownerConfidence": "very",
+          "turns": [
+            {
+              "role": "hubly",
+              "kind": "open",
+              "message": "I built 3 directions. I recommend Luxury — strongest trust signals.\n\nWhat do you think?"
+            },
+            {
+              "role": "hubly",
+              "kind": "recommendation",
+              "message": "I recommend Luxury."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "I like Option 2."
+            },
+            {
+              "role": "hubly",
+              "kind": "refinement",
+              "message": "Great — I updated the preview. We can keep refining, or when you're ready we'll summarize and launch together."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Make the buttons larger."
+            },
+            {
+              "role": "hubly",
+              "kind": "refinement",
+              "message": "Great — I updated the preview. We can keep refining, or when you're ready we'll summarize and launch together."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "I don't like the hero image."
+            },
+            {
+              "role": "hubly",
+              "kind": "alternatives",
+              "message": "No problem. Here are two more directions — Warmer premium and Bold modern — instead of restarting."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Looks good."
+            },
+            {
+              "role": "hubly",
+              "kind": "approval_summary",
+              "message": "Today we'll make:\n✓ Website\n\nExpected results: +20% Trust · +7% Conversion · medium risk · Rollback available"
+            },
+            {
+              "role": "hubly",
+              "kind": "launch_cta",
+              "message": "Let's launch this."
+            },
+            {
+              "role": "owner",
+              "kind": "launch_cta",
+              "message": "Let's launch this."
+            },
+            {
+              "role": "hubly",
+              "kind": "confidence",
+              "message": "How confident do you feel about these changes?\n🙂 Very   😐 Somewhat   🤔 Not yet"
+            },
+            {
+              "role": "hubly",
+              "kind": "confidence",
+              "message": "Love that. Ready for Apply when you are — nothing has gone live yet."
+            }
+          ],
+          "applied": false,
+          "executed": false,
+          "waitingFor": "apply_engine",
+          "status": "ready_for_apply"
+        }
+      },
+      {
+        "id": "booking",
+        "request": "I want arrival windows.",
+        "passed": true,
+        "preview": {
+          "id": "prv_mrz80pzy_y9i0pc",
+          "primarySurface": "booking"
+        },
+        "collaboration": {
+          "id": "collab_mrz80q00_kzeeqg",
+          "openingPrompt": "What do you think?",
+          "iterations": 3,
+          "recommendation": {
+            "optionId": null,
+            "label": "Booking Intelligence",
+            "why": [
+              "Matches the Change Plan desired state",
+              "Balanced risk vs impact",
+              "Aligned with how you already work"
+            ],
+            "confidence": 95,
+            "alignedWithDna": true,
+            "projectedConversion": "high"
+          },
+          "alternatives": [],
+          "negotiation": null,
+          "partialApprovals": [],
+          "approvalLevels": [
+            {
+              "path": "booking.arrival_window",
+              "surface": "booking",
+              "level": "confirm",
+              "reason": "Risk medium → confirm"
+            }
+          ],
+          "summary": {
+            "headline": "Today we'll make:",
+            "items": [
+              {
+                "surface": "booking",
+                "label": "Booking",
+                "approved": true,
+                "approvalLevel": "confirm"
+              }
+            ],
+            "expectedResults": {
+              "trustPct": 9,
+              "conversionPct": null,
+              "schedulingFlexibility": "high",
+              "complexity": "low",
+              "summary": "Arrival windows set clear expectations for customers."
+            },
+            "risk": "medium",
+            "rollbackAvailable": true,
+            "launchCta": "Let's update your booking."
+          },
+          "launchCta": "Let's update your booking.",
+          "ownerConfidence": "very",
+          "turns": [
+            {
+              "role": "hubly",
+              "kind": "open",
+              "message": "Here's what I built for Booking Intelligence.\n\nWhat do you think?"
+            },
+            {
+              "role": "hubly",
+              "kind": "recommendation",
+              "message": "I recommend Booking Intelligence."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Looks clear."
+            },
+            {
+              "role": "hubly",
+              "kind": "refinement",
+              "message": "Great — I updated the preview. We can keep refining, or when you're ready we'll summarize and launch together."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Can we widen the window a bit?"
+            },
+            {
+              "role": "hubly",
+              "kind": "refinement",
+              "message": "Great — I updated the preview. We can keep refining, or when you're ready we'll summarize and launch together."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Looks good."
+            },
+            {
+              "role": "hubly",
+              "kind": "approval_summary",
+              "message": "Today we'll make:\n✓ Booking\n\nExpected results: +9% Trust · medium risk · Rollback available"
+            },
+            {
+              "role": "hubly",
+              "kind": "launch_cta",
+              "message": "Let's update your booking."
+            },
+            {
+              "role": "owner",
+              "kind": "launch_cta",
+              "message": "Let's update your booking."
+            },
+            {
+              "role": "hubly",
+              "kind": "confidence",
+              "message": "How confident do you feel about these changes?\n🙂 Very   😐 Somewhat   🤔 Not yet"
+            },
+            {
+              "role": "hubly",
+              "kind": "confidence",
+              "message": "Love that. Ready for Apply when you are — nothing has gone live yet."
+            }
+          ],
+          "applied": false,
+          "executed": false,
+          "waitingFor": "apply_engine",
+          "status": "ready_for_apply"
+        }
+      },
+      {
+        "id": "workspace",
+        "request": "Move Jobs above Customers.",
+        "passed": true,
+        "preview": {
+          "id": "prv_mrz80q04_yfzl7x",
+          "primarySurface": "workspace"
+        },
+        "collaboration": {
+          "id": "collab_mrz80q05_p61dju",
+          "openingPrompt": "What do you think?",
+          "iterations": 3,
+          "recommendation": {
+            "optionId": null,
+            "label": "Workspace Intelligence",
+            "why": [
+              "Matches the Change Plan desired state",
+              "Balanced risk vs impact",
+              "Aligned with how you already work"
+            ],
+            "confidence": 95,
+            "alignedWithDna": true,
+            "projectedConversion": "high"
+          },
+          "alternatives": [],
+          "negotiation": null,
+          "partialApprovals": [],
+          "approvalLevels": [
+            {
+              "path": "workspace.sidebar_order",
+              "surface": "workspace",
+              "level": "recommend",
+              "reason": "Risk low → recommend"
+            }
+          ],
+          "summary": {
+            "headline": "Today we'll make:",
+            "items": [
+              {
+                "surface": "workspace",
+                "label": "Workspace",
+                "approved": true,
+                "approvalLevel": "recommend"
+              }
+            ],
+            "expectedResults": {
+              "trustPct": null,
+              "conversionPct": null,
+              "schedulingFlexibility": null,
+              "complexity": "low",
+              "summary": "Navigation matches how the owner works day to day."
+            },
+            "risk": "low",
+            "rollbackAvailable": true,
+            "launchCta": "Let's update your business."
+          },
+          "launchCta": "Let's update your business.",
+          "ownerConfidence": "very",
+          "turns": [
+            {
+              "role": "hubly",
+              "kind": "open",
+              "message": "Here's what I built for Workspace Intelligence.\n\nWhat do you think?"
+            },
+            {
+              "role": "hubly",
+              "kind": "recommendation",
+              "message": "I recommend Workspace Intelligence."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Nice."
+            },
+            {
+              "role": "hubly",
+              "kind": "refinement",
+              "message": "Great — I updated the preview. We can keep refining, or when you're ready we'll summarize and launch together."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Highlight the drag a bit more."
+            },
+            {
+              "role": "hubly",
+              "kind": "refinement",
+              "message": "Great — I updated the preview. We can keep refining, or when you're ready we'll summarize and launch together."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Looks good."
+            },
+            {
+              "role": "hubly",
+              "kind": "approval_summary",
+              "message": "Today we'll make:\n✓ Workspace\n\nExpected results: low risk · Rollback available"
+            },
+            {
+              "role": "hubly",
+              "kind": "launch_cta",
+              "message": "Let's update your business."
+            },
+            {
+              "role": "owner",
+              "kind": "launch_cta",
+              "message": "Let's update your business."
+            },
+            {
+              "role": "hubly",
+              "kind": "confidence",
+              "message": "How confident do you feel about these changes?\n🙂 Very   😐 Somewhat   🤔 Not yet"
+            },
+            {
+              "role": "hubly",
+              "kind": "confidence",
+              "message": "Love that. Ready for Apply when you are — nothing has gone live yet."
+            }
+          ],
+          "applied": false,
+          "executed": false,
+          "waitingFor": "apply_engine",
+          "status": "ready_for_apply"
+        }
+      },
+      {
+        "id": "portfolio",
+        "request": "Organize my portfolio.",
+        "passed": true,
+        "preview": {
+          "id": "prv_mrz80q07_nzj1y2",
+          "primarySurface": "portfolio"
+        },
+        "collaboration": {
+          "id": "collab_mrz80q09_tbavxa",
+          "openingPrompt": "What do you think?",
+          "iterations": 3,
+          "recommendation": {
+            "optionId": null,
+            "label": "Media Intelligence",
+            "why": [
+              "Matches the Change Plan desired state",
+              "Balanced risk vs impact",
+              "Aligned with how you already work"
+            ],
+            "confidence": 95,
+            "alignedWithDna": true,
+            "projectedConversion": "high"
+          },
+          "alternatives": [],
+          "negotiation": null,
+          "partialApprovals": [],
+          "approvalLevels": [
+            {
+              "path": "portfolio.gallery",
+              "surface": "portfolio",
+              "level": "recommend",
+              "reason": "Risk low → recommend"
+            }
+          ],
+          "summary": {
+            "headline": "Today we'll make:",
+            "items": [
+              {
+                "surface": "portfolio",
+                "label": "Portfolio",
+                "approved": true,
+                "approvalLevel": "recommend"
+              }
+            ],
+            "expectedResults": {
+              "trustPct": 12,
+              "conversionPct": null,
+              "schedulingFlexibility": null,
+              "complexity": "medium",
+              "summary": "Curated service gallery."
+            },
+            "risk": "low",
+            "rollbackAvailable": true,
+            "launchCta": "Let's use this version."
+          },
+          "launchCta": "Let's use this version.",
+          "ownerConfidence": "very",
+          "turns": [
+            {
+              "role": "hubly",
+              "kind": "open",
+              "message": "Here's what I built for Media Intelligence.\n\nWhat do you think?"
+            },
+            {
+              "role": "hubly",
+              "kind": "recommendation",
+              "message": "I recommend Media Intelligence."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Love the order."
+            },
+            {
+              "role": "hubly",
+              "kind": "refinement",
+              "message": "Great — I updated the preview. We can keep refining, or when you're ready we'll summarize and launch together."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Stronger captions."
+            },
+            {
+              "role": "hubly",
+              "kind": "refinement",
+              "message": "Great — I updated the preview. We can keep refining, or when you're ready we'll summarize and launch together."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Looks good."
+            },
+            {
+              "role": "hubly",
+              "kind": "approval_summary",
+              "message": "Today we'll make:\n✓ Portfolio\n\nExpected results: +12% Trust · low risk · Rollback available"
+            },
+            {
+              "role": "hubly",
+              "kind": "launch_cta",
+              "message": "Let's use this version."
+            },
+            {
+              "role": "owner",
+              "kind": "launch_cta",
+              "message": "Let's use this version."
+            },
+            {
+              "role": "hubly",
+              "kind": "confidence",
+              "message": "How confident do you feel about these changes?\n🙂 Very   😐 Somewhat   🤔 Not yet"
+            },
+            {
+              "role": "hubly",
+              "kind": "confidence",
+              "message": "Love that. Ready for Apply when you are — nothing has gone live yet."
+            }
+          ],
+          "applied": false,
+          "executed": false,
+          "waitingFor": "apply_engine",
+          "status": "ready_for_apply"
+        }
+      },
+      {
+        "id": "multi",
+        "request": "Add arrival windows and update my website.",
+        "passed": true,
+        "preview": {
+          "id": "prv_mrz80q0b_wr73af",
+          "primarySurface": "multi"
+        },
+        "collaboration": {
+          "id": "collab_mrz80q0d_gulwow",
+          "openingPrompt": "What do you think?",
+          "iterations": 2,
+          "recommendation": {
+            "optionId": null,
+            "label": "Multi-System: Website + Booking",
+            "why": [
+              "Matches the Change Plan desired state",
+              "Balanced risk vs impact",
+              "Aligned with how you already work"
+            ],
+            "confidence": 98,
+            "alignedWithDna": true,
+            "projectedConversion": "high"
+          },
+          "alternatives": [],
+          "negotiation": null,
+          "partialApprovals": [
+            {
+              "surface": "website",
+              "decision": "approve",
+              "label": "Website preview"
+            },
+            {
+              "surface": "booking",
+              "decision": "approve",
+              "label": "Booking preview"
+            }
+          ],
+          "approvalLevels": [
+            {
+              "path": "website.explain_arrival_windows",
+              "surface": "website",
+              "level": "recommend",
+              "reason": "Risk low → recommend"
+            },
+            {
+              "path": "booking.arrival_window",
+              "surface": "booking",
+              "level": "confirm",
+              "reason": "Risk medium → confirm"
+            }
+          ],
+          "summary": {
+            "headline": "Today we'll make:",
+            "items": [
+              {
+                "surface": "website",
+                "label": "Website",
+                "approved": true,
+                "approvalLevel": "recommend"
+              },
+              {
+                "surface": "booking",
+                "label": "Booking",
+                "approved": true,
+                "approvalLevel": "confirm"
+              }
+            ],
+            "expectedResults": {
+              "trustPct": 19,
+              "conversionPct": 3,
+              "schedulingFlexibility": "high",
+              "complexity": "low",
+              "summary": "Explaining arrival windows reduces confusion and no-shows. Arrival windows set clear expectations for customers."
+            },
+            "risk": "medium",
+            "rollbackAvailable": true,
+            "launchCta": "Let's launch this."
+          },
+          "launchCta": "Let's launch this.",
+          "ownerConfidence": "very",
+          "turns": [
+            {
+              "role": "hubly",
+              "kind": "open",
+              "message": "Here's what I built for Multi-System: Website + Booking.\n\nWhat do you think?"
+            },
+            {
+              "role": "hubly",
+              "kind": "recommendation",
+              "message": "I recommend Multi-System: Website + Booking."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Approve homepage, reject packages, approve booking."
+            },
+            {
+              "role": "hubly",
+              "kind": "partial_approval",
+              "message": "Got it — partial approval. Keeping website, booking; holding back none. I updated the Change Plan scope."
+            },
+            {
+              "role": "owner",
+              "kind": "feedback",
+              "message": "Looks good."
+            },
+            {
+              "role": "hubly",
+              "kind": "approval_summary",
+              "message": "Today we'll make:\n✓ Website\n✓ Booking\n\nExpected results: +19% Trust · +3% Conversion · medium risk · Rollback available"
+            },
+            {
+              "role": "hubly",
+              "kind": "launch_cta",
+              "message": "Let's launch this."
+            },
+            {
+              "role": "owner",
+              "kind": "launch_cta",
+              "message": "Let's launch this."
+            },
+            {
+              "role": "hubly",
+              "kind": "confidence",
+              "message": "How confident do you feel about these changes?\n🙂 Very   😐 Somewhat   🤔 Not yet"
+            },
+            {
+              "role": "hubly",
+              "kind": "confidence",
+              "message": "Love that. Ready for Apply when you are — nothing has gone live yet."
+            }
+          ],
+          "applied": false,
+          "executed": false,
+          "waitingFor": "apply_engine",
+          "status": "ready_for_apply"
+        }
+      },
+      {
+        "id": "alternatives",
+        "request": "I don't like it.",
+        "passed": true,
+        "collaboration": {
+          "alternatives": [
+            {
+              "id": "alt_a",
+              "label": "Warmer premium",
+              "vibe": "Soft contrast, hospitality-forward",
+              "summary": "Keeps trust cues with a warmer palette."
+            },
+            {
+              "id": "alt_b",
+              "label": "Bold modern",
+              "vibe": "Stronger type, sharper CTAs",
+              "summary": "Pushes conversion without losing clarity."
+            }
+          ],
+          "phase": "alternatives",
+          "applied": false
+        }
+      },
+      {
+        "id": "negotiation",
+        "request": "Make everything bright red.",
+        "passed": true,
+        "collaboration": {
+          "negotiationExample": "bright red discouraged with keep / force / compromise",
+          "applied": false
+        }
+      }
+    ]
+  },
+  "failures": null
+}

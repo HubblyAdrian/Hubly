@@ -1,0 +1,76 @@
+{
+  "milestone": "1.5",
+  "epic": 12,
+  "name": "Business Deployment Engine",
+  "title": "Business Deployment Engine",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:24.626Z",
+  "proofs": {
+    "deploymentEngineExists": true,
+    "onlyApprovedPlansDeploy": true,
+    "validationAlwaysFirst": true,
+    "dryRun": true,
+    "multiBuilderDeployment": true,
+    "progressiveDeployment": true,
+    "verificationAutomatic": true,
+    "rollbackFunctional": true,
+    "deploymentHealth": {
+      "overall": 100,
+      "validation": 100,
+      "builders": 100,
+      "verification": 100,
+      "rollbackReady": 100,
+      "label": "Deployment Health"
+    },
+    "missionControlLifecycle": true,
+    "businessVersion": "v1.2",
+    "founderEndToEnd": true,
+    "founderRequest": "I want arrival windows, a more premium website, and these 12 photos in my portfolio.",
+    "stages": [
+      {
+        "builder": "Booking Builder",
+        "surface": "booking",
+        "status": "ok"
+      },
+      {
+        "builder": "Website Builder",
+        "surface": "website",
+        "status": "ok"
+      },
+      {
+        "builder": "Media Builder",
+        "surface": "portfolio",
+        "status": "ok"
+      }
+    ],
+    "feed": [
+      "🧠 Validating · ok",
+      "🔎 Dry run · ok",
+      "📅 Updating booking · ok",
+      "🎨 Deploying website · ok",
+      "🖼 Publishing portfolio · ok",
+      "📚 Updating Business Memory · ok",
+      "✅ Verification · ok",
+      "🎉 Complete · ok"
+    ],
+    "summary": {
+      "headline": "Your business has been updated.",
+      "todaysChanges": [
+        "Owner asked for a more premium website feel.",
+        "Premium feel usually starts with hero headline tone.",
+        "Owner wants appointment arrival windows.",
+        "Organize uploaded photos with Media Intelligence.",
+        "Build / organize portfolio gallery.",
+        "Premium creative pass on portfolio media.",
+        "Multi-surface publishing proposal from one upload."
+      ],
+      "expectedResults": [
+        "+61% Trust",
+        "+12% Conversion"
+      ],
+      "businessVersion": "v1.2"
+    },
+    "rollbackTo": "v1.1"
+  },
+  "failures": null
+}

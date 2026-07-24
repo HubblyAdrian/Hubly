@@ -1,0 +1,105 @@
+{
+  "milestone": "2",
+  "epic": 0,
+  "name": "Hubly Experience Layer",
+  "title": "Hubly Experience Layer",
+  "passed": true,
+  "checkedAt": "2026-07-24T17:35:25.107Z",
+  "proofs": {
+    "experienceLanguageSystem": true,
+    "greetingSystem": true,
+    "thinkingLanguage": true,
+    "conversationRules": true,
+    "celebrationSystem": true,
+    "coachingLanguage": true,
+    "honestDisagreement": true,
+    "errorExperience": true,
+    "emptyStates": true,
+    "transitions": true,
+    "visualPersonality": {
+      "navy": "#141B2B",
+      "orange": "#D9632D",
+      "cream": "#F7F4F0",
+      "ink": "#1A1F2E",
+      "success": "#2F6B4F",
+      "caution": "#B4532A",
+      "motion": {
+        "greetingMs": 420,
+        "thinkingPulseMs": 900,
+        "revealMs": 640,
+        "celebrationMs": 1100,
+        "transitionMs": 380
+      },
+      "radius": "14px",
+      "wordmark": "assets/hubly-wordmark.png",
+      "wordmarkOnDark": "assets/hubly-wordmark-on-dark.png"
+    },
+    "emotionalTimeline": [
+      "curiosity",
+      "discovery",
+      "confidence",
+      "excitement",
+      "pride",
+      "momentum",
+      "trust",
+      "partnership"
+    ],
+    "founderTests": {
+      "multiTopicConsistency": true,
+      "stateSuite": [
+        "launch",
+        "error",
+        "warning",
+        "celebration",
+        "thinking",
+        "empty",
+        "recommendation"
+      ],
+      "textOnlyFingerprint": true,
+      "moreInvestedThanGenericAi": true
+    },
+    "transcript": [
+      {
+        "owner": "Hey Hubly",
+        "hubly": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "layer": "greeting"
+      },
+      {
+        "owner": "I'm starting a pressure washing business",
+        "hubly": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "layer": "explanation"
+      },
+      {
+        "owner": "How's business doing?",
+        "hubly": "You've got this. We don't have to fix everything today — just the next right move. Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "layer": "coaching"
+      },
+      {
+        "owner": "What would you do if this were your business?",
+        "hubly": "I hear you — and I'd gently push a different direction. Want the short why? Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "layer": "disagreement"
+      },
+      {
+        "owner": "Make my homepage more premium",
+        "hubly": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "layer": "explanation"
+      },
+      {
+        "owner": "I don't like it — undo that",
+        "hubly": "You're right to call that out. I looked again — here's the better take. Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "layer": "error"
+      },
+      {
+        "owner": "Continue where we left off",
+        "hubly": "We were working on your last project (moving the business forward). Ready to continue?",
+        "layer": "question"
+      },
+      {
+        "owner": "Which quotes need follow-up?",
+        "hubly": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "layer": "explanation"
+      }
+    ]
+  },
+  "failures": null
+}

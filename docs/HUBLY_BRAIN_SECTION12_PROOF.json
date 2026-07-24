@@ -1,0 +1,922 @@
+{
+  "section": 12,
+  "title": "Hubly Mission Control",
+  "passed": true,
+  "version": "1.5.0",
+  "owner": "hubly_brain",
+  "checkedAt": "2026-07-24T17:35:17.506Z",
+  "proofs": [
+    "Hubly Mission Control module exists",
+    "AI Replay / flight recorder exists",
+    "Mission Control snapshot API exists",
+    "Live AI Activity modeled",
+    "Expert Activity modeled",
+    "Decision Graph surface exists",
+    "Builder Actions placeholder for Milestone 1.5",
+    "Registries surfaced in Mission Control",
+    "AI Health modeled",
+    "Think records Mission Control flights",
+    "HublyAI exposes Mission Control",
+    "Mission Control owned by Hubly Brain",
+    "Mission Control versioned",
+    "Think returns Mission Control execution id",
+    "Think attaches flight recorder snapshot",
+    "Flight records memories loaded",
+    "Flight records Business DNA loaded",
+    "Flight records expert execution order",
+    "Flight records Reasoning Objects",
+    "Flight records Decision Objects",
+    "Flight records selected capabilities (arrival windows)",
+    "Flight records final response",
+    "Flight records memory writes",
+    "Flight timeline has multiple phases",
+    "Replay Execution API available",
+    "Replay shows step-by-step timeline",
+    "Replay includes original request",
+    "Replay includes memories loaded",
+    "Replay includes expert order",
+    "Replay includes reasoning count",
+    "Replay includes decision count",
+    "Replay includes capabilities selected",
+    "Replay includes final response",
+    "Replay includes memory writes",
+    "Snapshot titled Hubly Mission Control (not Admin/Dashboard)",
+    "Snapshot advertises Replay",
+    "Live AI Activity present",
+    "Expert Activity present",
+    "Memory surfaces inspectable",
+    "Conversation Intelligence surface present",
+    "Decision Graph present",
+    "Builder Actions reserved for Milestone 1.5",
+    "Capability Registry listed in Mission Control",
+    "Knowledge Registry listed in Mission Control",
+    "Brain Timeline present",
+    "AI Health metrics present",
+    "Recent executions listed",
+    "Internal Mission Control / console HTML surface exists",
+    "All Section 12 release-gate claims proven"
+  ],
+  "evidence": {
+    "snapshot": {
+      "title": "Hubly Mission Control",
+      "version": "1.5.0",
+      "replayAvailable": true
+    },
+    "liveAiActivity": {
+      "hubly_brain": "finished",
+      "research": "finished",
+      "strategy": "finished",
+      "creative": "finished",
+      "critic": "finished",
+      "decision": "recommend",
+      "builder": "finished"
+    },
+    "expertActivity": [
+      {
+        "expertId": "research",
+        "name": "Research Expert",
+        "runs": 1,
+        "successes": 1,
+        "failures": 0,
+        "avgLatencyMs": 0,
+        "avgConfidence": 90,
+        "failureRate": 0,
+        "successRate": 100,
+        "avgDecisionScore": 82
+      },
+      {
+        "expertId": "strategy",
+        "name": "Strategy Expert",
+        "runs": 1,
+        "successes": 1,
+        "failures": 0,
+        "avgLatencyMs": 0,
+        "avgConfidence": 88,
+        "failureRate": 0,
+        "successRate": 100,
+        "avgDecisionScore": 82
+      },
+      {
+        "expertId": "creative_director",
+        "name": "Creative Director",
+        "runs": 1,
+        "successes": 1,
+        "failures": 0,
+        "avgLatencyMs": 0,
+        "avgConfidence": 84,
+        "failureRate": 0,
+        "successRate": 100,
+        "avgDecisionScore": 82
+      },
+      {
+        "expertId": "critic",
+        "name": "Critic",
+        "runs": 1,
+        "successes": 1,
+        "failures": 0,
+        "avgLatencyMs": 1,
+        "avgConfidence": 87,
+        "failureRate": 0,
+        "successRate": 100,
+        "avgDecisionScore": 82
+      },
+      {
+        "expertId": "builder",
+        "name": "Builder Expert",
+        "runs": 1,
+        "successes": 1,
+        "failures": 0,
+        "avgLatencyMs": 1,
+        "avgConfidence": 99,
+        "failureRate": 0,
+        "successRate": 100,
+        "avgDecisionScore": 82
+      },
+      {
+        "expertId": "experience_director",
+        "name": "Experience Director",
+        "runs": 1,
+        "successes": 1,
+        "failures": 0,
+        "avgLatencyMs": 5,
+        "avgConfidence": 87,
+        "failureRate": 0,
+        "successRate": 100,
+        "avgDecisionScore": 82
+      }
+    ],
+    "decisionGraph": {
+      "nodes": [
+        {
+          "key": "industry_selection",
+          "label": "Focus on pressure washing"
+        },
+        {
+          "key": "brand_positioning",
+          "label": "pressure washing that earns trust with before/af"
+        },
+        {
+          "key": "homepage_strategy",
+          "label": "Lead with proof, then packages, then a single Bo"
+        },
+        {
+          "key": "booking_strategy",
+          "label": "One primary Book / Get quote CTA — avoid multi-s"
+        },
+        {
+          "key": "pricing_direction",
+          "label": "Package tiers (driveway / house / full property)"
+        },
+        {
+          "key": "trust_recommendations",
+          "label": "Lead with before/after photos and insured langua"
+        }
+      ],
+      "edges": [
+        {
+          "from": "industry_selection",
+          "to": "brand_positioning"
+        },
+        {
+          "from": "brand_positioning",
+          "to": "homepage_strategy"
+        },
+        {
+          "from": "homepage_strategy",
+          "to": "booking_strategy"
+        },
+        {
+          "from": "booking_strategy",
+          "to": "pricing_direction"
+        },
+        {
+          "from": "pricing_direction",
+          "to": "trust_recommendations"
+        }
+      ]
+    },
+    "builderActions": {
+      "milestone": "1.5",
+      "available": false,
+      "epic": "11 — Hubly Chat OS",
+      "note": "Epic 11 — Hubly Chat OS. One conversation. One personality. Conversation Canvas. Waiting for Approval/Apply. No apply.",
+      "recent": [
+        {
+          "id": "chatos_mrz80o3i_8e3ba2",
+          "status": "chat_os",
+          "summary": "Hubly Chat OS: 2 route(s) · Website Redesign · canvas booking_simulation"
+        }
+      ],
+      "intents": [
+        {
+          "intentId": "bint_mrz80o35_706aj7",
+          "category": "Multiple Systems",
+          "label": "Multi-System: Website + Booking",
+          "goal": "Arrival Windows · Website Update",
+          "affectedSystems": [
+            "Website",
+            "Booking"
+          ],
+          "capabilities": [
+            "Booking Intelligence Builder:arrival_windows",
+            "Website Builder:update_homepage"
+          ],
+          "risk": "medium",
+          "confidence": 99,
+          "confidenceExplanation": "I've seen this request pattern before. Booking Intelligence Builder, Website Builder support it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required.",
+          "requiresChangePlan": true,
+          "applied": false,
+          "changePlanGenerated": false
+        }
+      ],
+      "changePlans": [
+        {
+          "id": "cpl_mrz80o3e_modsc3",
+          "intentId": "bint_mrz80o35_706aj7",
+          "title": "Multi-System: Website + Booking",
+          "builderType": "booking",
+          "affectedSystems": [
+            "Website",
+            "Booking"
+          ],
+          "actionCount": 1,
+          "actions": [
+            {
+              "path": "booking.arrival_window",
+              "builderOwner": "Booking Intelligence Builder",
+              "risk": "medium"
+            }
+          ],
+          "risk": "medium",
+          "confidence": 99,
+          "requiresApproval": true,
+          "validationOk": true,
+          "estimatedImpact": "Arrival windows set clear expectations for customers.",
+          "applied": false,
+          "executed": false,
+          "previewGenerated": true
+        }
+      ],
+      "previews": [
+        {
+          "id": "prv_mrz80o3e_yruphv",
+          "changePlanId": "cpl_mrz80o3e_modsc3",
+          "intentId": "bint_mrz80o35_706aj7",
+          "title": "Multi-System: Website + Booking",
+          "headline": "Here's what I built.",
+          "primarySurface": "booking",
+          "optionCount": 0,
+          "versionCount": 1,
+          "currentVersion": 1,
+          "lifecycle": "waiting_for_approval",
+          "progressiveComplete": true,
+          "stageCount": 4,
+          "compareModes": [
+            "side_by_side"
+          ],
+          "applied": false,
+          "executed": false,
+          "published": false,
+          "mutatedLiveState": false,
+          "waitingFor": "approval_engine"
+        }
+      ],
+      "collaborations": [
+        {
+          "id": "collab_mrz80o3f_3ubgue",
+          "previewId": "prv_mrz80o3e_yruphv",
+          "changePlanId": "cpl_mrz80o3e_modsc3",
+          "phase": "recommending",
+          "openingPrompt": "What do you think?",
+          "iterations": 0,
+          "recommendationLabel": "Multi-System: Website + Booking",
+          "recommendationConfidence": 99,
+          "alternativeCount": 0,
+          "hasNegotiation": false,
+          "partialApprovalCount": 0,
+          "hasSummary": false,
+          "launchCta": null,
+          "ownerConfidence": null,
+          "status": "collaborating",
+          "applied": false,
+          "executed": false,
+          "waitingFor": "apply_engine"
+        }
+      ],
+      "versions": [
+        {
+          "id": "bver_mrz80o3f_f7nn93",
+          "label": "v1.1",
+          "status": "proposed",
+          "changePlanId": "cpl_mrz80o3e_modsc3",
+          "surfaces": [
+            "booking"
+          ],
+          "changeCount": 1,
+          "parentVersionId": null,
+          "rollbackAvailable": true,
+          "applied": false,
+          "rollbackExecuted": false
+        }
+      ],
+      "versionHistoryNote": "Current → History → Diff → Rollback availability → AI restore suggestions. Try it — you can always go back.",
+      "creativeSessions": [
+        {
+          "id": "csess_mrz80o3f_1upcvn",
+          "label": "Business Builder",
+          "direction": "Modern Professional",
+          "decisionCount": 1,
+          "surfacesTouched": [
+            "booking"
+          ],
+          "businessScoreOverall": 89,
+          "preferenceCount": 0,
+          "hasChallenge": false,
+          "requiresApproval": true,
+          "applied": false,
+          "executed": false,
+          "waitingFor": "collaboration_or_approval"
+        }
+      ],
+      "bookingIntelligence": [
+        {
+          "id": "bintel_mrz80o3g_3dnzog",
+          "label": "Booking Intelligence Builder",
+          "ruleCount": 1,
+          "concepts": [
+            "arrival_window"
+          ],
+          "healthOverall": 72,
+          "recommendationCount": 4,
+          "simulatorHorizonDays": 7,
+          "industry": "pressure_washing",
+          "requiresApproval": true,
+          "applied": false,
+          "executed": false,
+          "waitingFor": "collaboration_or_approval"
+        }
+      ],
+      "workspaceIntelligence": [],
+      "automationIntelligence": [],
+      "mediaIntelligence": [],
+      "chatOs": [
+        {
+          "id": "chatos_mrz80o3i_8e3ba2",
+          "label": "Hubly Chat OS",
+          "channel": "typing",
+          "voiceReady": true,
+          "routeCount": 2,
+          "routes": [
+            "business_builder",
+            "booking_intelligence"
+          ],
+          "builderCount": 3,
+          "toolCount": 0,
+          "memoryCount": 4,
+          "activeProject": "Website Redesign",
+          "canvasSurface": "booking_simulation",
+          "proactiveCount": 5,
+          "singlePersonality": true,
+          "requiresApproval": true,
+          "applied": false,
+          "executed": false,
+          "waitingFor": "collaboration_or_approval"
+        }
+      ],
+      "deployments": []
+    },
+    "capabilityRegistry": [
+      {
+        "toolId": "website_builder",
+        "name": "Website Builder",
+        "capabilityCount": 6
+      },
+      {
+        "toolId": "booking",
+        "name": "Booking",
+        "capabilityCount": 5
+      },
+      {
+        "toolId": "crm",
+        "name": "CRM",
+        "capabilityCount": 7
+      },
+      {
+        "toolId": "marketplace",
+        "name": "Marketplace",
+        "capabilityCount": 4
+      },
+      {
+        "toolId": "automation",
+        "name": "Automation Intelligence Builder",
+        "capabilityCount": 6
+      },
+      {
+        "toolId": "portfolio_builder",
+        "name": "Media Intelligence Engine",
+        "capabilityCount": 2
+      },
+      {
+        "toolId": "image_processor",
+        "name": "Image Processor",
+        "capabilityCount": 2
+      },
+      {
+        "toolId": "workspace_builder",
+        "name": "Workspace Intelligence Builder",
+        "capabilityCount": 3
+      },
+      {
+        "toolId": "packages_builder",
+        "name": "Packages Builder",
+        "capabilityCount": 2
+      }
+    ],
+    "knowledgeRegistry": [
+      {
+        "id": "weather",
+        "name": "Weather",
+        "access": "Read Only"
+      },
+      {
+        "id": "stripe",
+        "name": "Stripe",
+        "access": "Read + Write"
+      },
+      {
+        "id": "business_memory",
+        "name": "Business Memory",
+        "access": "Read + Write"
+      },
+      {
+        "id": "workspace_memory",
+        "name": "Workspace Memory",
+        "access": "Read + Write"
+      },
+      {
+        "id": "business_dna",
+        "name": "Business DNA",
+        "access": "Read Only"
+      },
+      {
+        "id": "marketplace_knowledge",
+        "name": "Marketplace",
+        "access": "Read + Write"
+      },
+      {
+        "id": "website_knowledge",
+        "name": "Website",
+        "access": "Read + Write"
+      },
+      {
+        "id": "crm_knowledge",
+        "name": "CRM",
+        "access": "Read + Write"
+      },
+      {
+        "id": "conversation_intelligence",
+        "name": "Conversation Intelligence",
+        "access": "Read + Write"
+      }
+    ],
+    "brainTimeline": [
+      {
+        "at": "2026-07-24T17:35:17.483Z",
+        "t": 0,
+        "phase": "request",
+        "detail": "Owner: I'm redesigning my website and I want arrival windows.",
+        "meta": {
+          "intent": "build_business"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.503Z",
+        "t": 20,
+        "phase": "hubly_brain",
+        "detail": "Thinking…",
+        "meta": {
+          "status": "thinking"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.533Z",
+        "t": 50,
+        "phase": "memory_loaded",
+        "detail": "Loaded business_memory",
+        "meta": {
+          "memory": "business_memory"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.563Z",
+        "t": 80,
+        "phase": "memory_loaded",
+        "detail": "Loaded business_dna",
+        "meta": {
+          "memory": "business_dna"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.593Z",
+        "t": 110,
+        "phase": "memory_loaded",
+        "detail": "Loaded workspace_memory",
+        "meta": {
+          "memory": "workspace_memory"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.623Z",
+        "t": 140,
+        "phase": "memory_loaded",
+        "detail": "Loaded conversation_intelligence",
+        "meta": {
+          "memory": "conversation_intelligence"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.663Z",
+        "t": 180,
+        "phase": "business_dna",
+        "detail": "Business DNA loaded (8 facts)",
+        "meta": {
+          "facts": [
+            "pw_psych_curb",
+            "pw_trust_before_after",
+            "pw_trust_insured",
+            "pw_price_packages",
+            "pw_web_homepage",
+            "pw_web_booking",
+            "pw_season_spring",
+            "pw_services_bundle"
+          ]
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.713Z",
+        "t": 230,
+        "phase": "research",
+        "detail": "research: finished",
+        "meta": {
+          "confidence": 90,
+          "ms": 0,
+          "summary": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more t"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.763Z",
+        "t": 280,
+        "phase": "strategy",
+        "detail": "strategy: finished",
+        "meta": {
+          "confidence": 88,
+          "ms": 0,
+          "summary": "I'm positioning around visible proof and clear next step instead of generic price competition."
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.813Z",
+        "t": 330,
+        "phase": "creative_director",
+        "detail": "creative_director: finished",
+        "meta": {
+          "confidence": 84,
+          "ms": 0,
+          "summary": "Clean driveways. Clear pricing. Easy booking."
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.823Z",
+        "t": 340,
+        "phase": "critic",
+        "detail": "critic: finished",
+        "meta": {
+          "confidence": 87,
+          "ms": 1,
+          "summary": "Quality Report: recommendation is coherent enough to show the owner."
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.833Z",
+        "t": 350,
+        "phase": "builder",
+        "detail": "builder: finished",
+        "meta": {
+          "confidence": 99,
+          "ms": 1,
+          "summary": "I understand you want: Arrival Windows · Website Update (Multiple Systems). Affected: Website, Booking. Capabilities: Arrival Windows, Update Homepage. No chang"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.843Z",
+        "t": 360,
+        "phase": "experience_director",
+        "detail": "experience_director: finished",
+        "meta": {
+          "confidence": 87,
+          "ms": 5,
+          "summary": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more t"
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.858Z",
+        "t": 375,
+        "phase": "reasoning",
+        "detail": "Reasoning Object: industry_selection",
+        "meta": {
+          "reasoningId": "rsn_mrz80o3c_qy4pj3",
+          "decision": "Focus on pressure washing",
+          "confidence": 95
+        }
+      },
+      {
+        "at": "2026-07-24T17:35:17.873Z",
+        "t": 390,
+        "phase": "reasoning",
+        "detail": "Reasoning Object: brand_positioning",
+        "meta": {
+          "reasoningId": "rsn_mrz80o3c_xon1f4",
+          "decision": "pressure washing that earns trust with before/after proof before asking for a booking",
+          "confidence": 88
+        }
+      }
+    ],
+    "aiHealth": {
+      "executions": 1,
+      "okRate": 100,
+      "avgLatencyMs": 19,
+      "avgConfidence": 89,
+      "avgDecisionScore": 82,
+      "errors": 0,
+      "providerStatus": "ready",
+      "reasoningObjectsRecorded": 6,
+      "decisionObjectsRecorded": 1
+    },
+    "replay": {
+      "executionId": "flt_mrz80o3i_mtmle9",
+      "stepCount": 33,
+      "summary": {
+        "request": "I'm redesigning my website and I want arrival windows.",
+        "memoriesLoaded": [
+          "business_memory",
+          "business_dna",
+          "workspace_memory",
+          "conversation_intelligence"
+        ],
+        "dnaFactsUsed": [
+          "pw_psych_curb",
+          "pw_trust_before_after",
+          "pw_trust_insured",
+          "pw_price_packages",
+          "pw_web_homepage",
+          "pw_web_booking",
+          "pw_season_spring",
+          "pw_services_bundle"
+        ],
+        "expertOrder": [
+          "research",
+          "strategy",
+          "creative_director",
+          "critic",
+          "builder",
+          "experience_director"
+        ],
+        "reasoningCount": 6,
+        "decisionCount": 1,
+        "capabilities": [
+          "Arrival Windows→booking"
+        ],
+        "knowledge": [
+          "Website"
+        ],
+        "finalResponse": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition. Nice work — this is a real milestone. I can set up Arrival Windows for your booking flow — I'll show a preview and wait for your approval before anything goes live.",
+        "memoryWrites": [
+          "conversation_intelligence: Website Redesign"
+        ]
+      },
+      "steps": [
+        {
+          "at": "2026-07-24T17:35:17.483Z",
+          "t": 0,
+          "phase": "request",
+          "detail": "Owner: I'm redesigning my website and I want arrival windows.",
+          "meta": {
+            "intent": "build_business"
+          }
+        },
+        {
+          "at": "2026-07-24T17:35:17.503Z",
+          "t": 20,
+          "phase": "hubly_brain",
+          "detail": "Thinking…",
+          "meta": {
+            "status": "thinking"
+          }
+        },
+        {
+          "at": "2026-07-24T17:35:17.533Z",
+          "t": 50,
+          "phase": "memory_loaded",
+          "detail": "Loaded business_memory",
+          "meta": {
+            "memory": "business_memory"
+          }
+        },
+        {
+          "at": "2026-07-24T17:35:17.563Z",
+          "t": 80,
+          "phase": "memory_loaded",
+          "detail": "Loaded business_dna",
+          "meta": {
+            "memory": "business_dna"
+          }
+        },
+        {
+          "at": "2026-07-24T17:35:17.593Z",
+          "t": 110,
+          "phase": "memory_loaded",
+          "detail": "Loaded workspace_memory",
+          "meta": {
+            "memory": "workspace_memory"
+          }
+        },
+        {
+          "at": "2026-07-24T17:35:17.623Z",
+          "t": 140,
+          "phase": "memory_loaded",
+          "detail": "Loaded conversation_intelligence",
+          "meta": {
+            "memory": "conversation_intelligence"
+          }
+        },
+        {
+          "at": "2026-07-24T17:35:17.663Z",
+          "t": 180,
+          "phase": "business_dna",
+          "detail": "Business DNA loaded (8 facts)",
+          "meta": {
+            "facts": [
+              "pw_psych_curb",
+              "pw_trust_before_after",
+              "pw_trust_insured",
+              "pw_price_packages",
+              "pw_web_homepage",
+              "pw_web_booking",
+              "pw_season_spring",
+              "pw_services_bundle"
+            ]
+          }
+        },
+        {
+          "at": "2026-07-24T17:35:17.713Z",
+          "t": 230,
+          "phase": "research",
+          "detail": "research: finished",
+          "meta": {
+            "confidence": 90,
+            "ms": 0,
+            "summary": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more t"
+          }
+        },
+        {
+          "at": "2026-07-24T17:35:17.763Z",
+          "t": 280,
+          "phase": "strategy",
+          "detail": "strategy: finished",
+          "meta": {
+            "confidence": 88,
+            "ms": 0,
+            "summary": "I'm positioning around visible proof and clear next step instead of generic price competition."
+          }
+        },
+        {
+          "at": "2026-07-24T17:35:17.813Z",
+          "t": 330,
+          "phase": "creative_director",
+          "detail": "creative_director: finished",
+          "meta": {
+            "confidence": 84,
+            "ms": 0,
+            "summary": "Clean driveways. Clear pricing. Easy booking."
+          }
+        },
+        {
+          "at": "2026-07-24T17:35:17.823Z",
+          "t": 340,
+          "phase": "critic",
+          "detail": "critic: finished",
+          "meta": {
+            "confidence": 87,
+            "ms": 1,
+            "summary": "Quality Report: recommendation is coherent enough to show the owner."
+          }
+        },
+        {
+          "at": "2026-07-24T17:35:17.833Z",
+          "t": 350,
+          "phase": "builder",
+          "detail": "builder: finished",
+          "meta": {
+            "confidence": 99,
+            "ms": 1,
+            "summary": "I understand you want: Arrival Windows · Website Update (Multiple Systems). Affected: Website, Booking. Capabilities: Arrival Windows, Update Homepage. No chang"
+          }
+        }
+      ]
+    },
+    "thinkFlight": {
+      "executionId": "flt_mrz80o3i_mtmle9",
+      "memoriesLoaded": [
+        "business_memory",
+        "business_dna",
+        "workspace_memory",
+        "conversation_intelligence"
+      ],
+      "expertOrder": [
+        "research",
+        "strategy",
+        "creative_director",
+        "critic",
+        "builder",
+        "experience_director"
+      ],
+      "reasoningCount": 6,
+      "decisionCount": 1,
+      "capabilities": [
+        {
+          "toolId": "booking",
+          "capabilityId": "arrival_windows",
+          "label": "Arrival Windows"
+        }
+      ],
+      "knowledge": [
+        {
+          "knowledgeId": "website_knowledge",
+          "name": "Website",
+          "access": "read_write"
+        }
+      ],
+      "timelinePhases": [
+        "request",
+        "hubly_brain",
+        "memory_loaded",
+        "memory_loaded",
+        "memory_loaded",
+        "memory_loaded",
+        "business_dna",
+        "research",
+        "strategy",
+        "creative_director",
+        "critic",
+        "builder",
+        "experience_director",
+        "reasoning",
+        "reasoning",
+        "reasoning",
+        "reasoning",
+        "reasoning",
+        "reasoning",
+        "decision",
+        "capability",
+        "knowledge",
+        "builder_intent",
+        "change_plan",
+        "preview",
+        "collaboration",
+        "recommendation",
+        "version_created",
+        "creative_session",
+        "booking_intelligence",
+        "chat_os",
+        "memory_write",
+        "response"
+      ],
+      "liveActivity": {
+        "hubly_brain": "finished",
+        "research": "finished",
+        "strategy": "finished",
+        "creative": "finished",
+        "critic": "finished",
+        "decision": "recommend",
+        "builder": "finished"
+      }
+    },
+    "releaseGate": {
+      "missionControlExists": true,
+      "liveAiActivity": true,
+      "expertActivity": true,
+      "memorySurfaces": true,
+      "conversationIntelligence": true,
+      "decisionGraph": true,
+      "builderActionsPlaceholder": true,
+      "capabilityRegistry": true,
+      "knowledgeRegistry": true,
+      "brainTimeline": true,
+      "aiHealth": true,
+      "aiReplay": true,
+      "flightRecorderFromThink": true,
+      "automatedEvidence": true
+    }
+  },
+  "failures": null
+}
