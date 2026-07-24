@@ -146,6 +146,16 @@ function recordFlightRecorder(opts) {
       ...opts.creativeSession
     }, 12);
   }
+  if (opts.bookingIntelligence) {
+    push(
+      "booking_intelligence",
+      `Booking Intelligence: ${opts.bookingIntelligence.ruleCount} rule(s) \xB7 health ${opts.bookingIntelligence.healthOverall}`,
+      {
+        ...opts.bookingIntelligence
+      },
+      12
+    );
+  }
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -193,7 +203,8 @@ function recordFlightRecorder(opts) {
     preview: opts.preview ? { ...opts.preview } : null,
     collaboration: opts.collaboration ? { ...opts.collaboration } : null,
     businessVersion: opts.businessVersion ? { ...opts.businessVersion } : null,
-    creativeSession: opts.creativeSession ? { ...opts.creativeSession } : null
+    creativeSession: opts.creativeSession ? { ...opts.creativeSession } : null,
+    bookingIntelligence: opts.bookingIntelligence ? { ...opts.bookingIntelligence } : null
   };
   FLIGHTS.set(flight.executionId, flight);
   FLIGHT_ORDER.push(flight.executionId);
@@ -370,12 +381,17 @@ function getMissionControlSnapshot() {
       const collaborations = flights.map((f) => f.collaboration).filter((x) => !!x).slice(-10).reverse();
       const versions = flights.map((f) => f.businessVersion).filter((x) => !!x).slice(-10).reverse();
       const creativeSessions = flights.map((f) => f.creativeSession).filter((x) => !!x).slice(-10).reverse();
+      const bookingIntelligencePlans = flights.map((f) => f.bookingIntelligence).filter((x) => !!x).slice(-10).reverse();
       return {
         milestone: "1.5",
         available: false,
-        epic: "6 \u2014 Business Builder",
-        note: "Epic 6 \u2014 Business Builder Creative Sessions. Website is one canvas. Waiting for Approval/Apply. No apply.",
-        recent: creativeSessions.length ? creativeSessions.map((c) => ({
+        epic: "7 \u2014 Booking Intelligence Builder",
+        note: "Epic 7 \u2014 Booking Intelligence Builder. Owners describe how they operate. Schedule Simulator. Waiting for Approval/Apply. No apply.",
+        recent: bookingIntelligencePlans.length ? bookingIntelligencePlans.map((b) => ({
+          id: b.id,
+          status: "booking_intelligence",
+          summary: `${b.label}: ${b.ruleCount} rule(s) \xB7 health ${b.healthOverall} \xB7 sim ${b.simulatorHorizonDays}d`
+        })) : creativeSessions.length ? creativeSessions.map((c) => ({
           id: c.id,
           status: "creative_session",
           summary: `${c.label}: ${c.direction} \xB7 score ${c.businessScoreOverall} \xB7 ${c.decisionCount} decisions`
@@ -422,7 +438,8 @@ function getMissionControlSnapshot() {
         collaborations,
         versions,
         versionHistoryNote: "Current \u2192 History \u2192 Diff \u2192 Rollback availability \u2192 AI restore suggestions. Try it \u2014 you can always go back.",
-        creativeSessions
+        creativeSessions,
+        bookingIntelligence: bookingIntelligencePlans
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

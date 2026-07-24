@@ -210,6 +210,21 @@ export type HublyFlightRecorder = {
     executed: false;
     waitingFor: string;
   } | null;
+  /** Milestone 1.5 · Epic 7 — Booking Intelligence (not applied). */
+  bookingIntelligence: {
+    id: string;
+    label: string;
+    ruleCount: number;
+    concepts: string[];
+    healthOverall: number;
+    recommendationCount: number;
+    simulatorHorizonDays: number;
+    industry: string | null;
+    requiresApproval: true;
+    applied: false;
+    executed: false;
+    waitingFor: string;
+  } | null;
 };
 
 export type HublyExpertActivityStats = {
@@ -278,6 +293,8 @@ export type HublyMissionControlSnapshot = {
     versionHistoryNote: string;
     /** Latest Creative Sessions (Epic 6 — Business Builder). */
     creativeSessions: Array<NonNullable<HublyFlightRecorder["creativeSession"]>>;
+    /** Latest Booking Intelligence plans (Epic 7). */
+    bookingIntelligence: Array<NonNullable<HublyFlightRecorder["bookingIntelligence"]>>;
   };
   capabilityRegistry: Array<{ toolId: string; name: string; capabilityCount: number }>;
   knowledgeRegistry: Array<{ id: string; name: string; access: string }>;
@@ -372,6 +389,7 @@ export type RecordFlightOpts = {
   collaboration?: HublyFlightRecorder["collaboration"];
   businessVersion?: HublyFlightRecorder["businessVersion"];
   creativeSession?: HublyFlightRecorder["creativeSession"];
+  bookingIntelligence?: HublyFlightRecorder["bookingIntelligence"];
 };
 
 /**
@@ -492,6 +510,17 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     }, 12);
   }
 
+  if (opts.bookingIntelligence) {
+    push(
+      "booking_intelligence",
+      `Booking Intelligence: ${opts.bookingIntelligence.ruleCount} rule(s) · health ${opts.bookingIntelligence.healthOverall}`,
+      {
+        ...opts.bookingIntelligence,
+      },
+      12,
+    );
+  }
+
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -551,6 +580,7 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     collaboration: opts.collaboration ? { ...opts.collaboration } : null,
     businessVersion: opts.businessVersion ? { ...opts.businessVersion } : null,
     creativeSession: opts.creativeSession ? { ...opts.creativeSession } : null,
+    bookingIntelligence: opts.bookingIntelligence ? { ...opts.bookingIntelligence } : null,
   };
 
   FLIGHTS.set(flight.executionId, flight);
@@ -794,12 +824,23 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         .filter((x): x is NonNullable<typeof x> => !!x)
         .slice(-10)
         .reverse();
+      const bookingIntelligencePlans = flights
+        .map((f) => f.bookingIntelligence)
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .slice(-10)
+        .reverse();
       return {
         milestone: "1.5" as const,
         available: false as const,
-        epic: "6 — Business Builder",
-        note: "Epic 6 — Business Builder Creative Sessions. Website is one canvas. Waiting for Approval/Apply. No apply.",
-        recent: creativeSessions.length
+        epic: "7 — Booking Intelligence Builder",
+        note: "Epic 7 — Booking Intelligence Builder. Owners describe how they operate. Schedule Simulator. Waiting for Approval/Apply. No apply.",
+        recent: bookingIntelligencePlans.length
+          ? bookingIntelligencePlans.map((b) => ({
+            id: b.id,
+            status: "booking_intelligence",
+            summary: `${b.label}: ${b.ruleCount} rule(s) · health ${b.healthOverall} · sim ${b.simulatorHorizonDays}d`,
+          }))
+          : creativeSessions.length
           ? creativeSessions.map((c) => ({
             id: c.id,
             status: "creative_session",
@@ -857,6 +898,7 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         versions,
         versionHistoryNote: "Current → History → Diff → Rollback availability → AI restore suggestions. Try it — you can always go back.",
         creativeSessions,
+        bookingIntelligence: bookingIntelligencePlans,
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

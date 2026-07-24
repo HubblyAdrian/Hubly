@@ -4,7 +4,7 @@
   "name": "Collaboration & Approval Engine",
   "title": "Collaboration & Approval Engine",
   "passed": true,
-  "checkedAt": "2026-07-24T02:45:53.527Z",
+  "checkedAt": "2026-07-24T03:36:34.868Z",
   "proofs": {
     "collaborationLoop": true,
     "hublyRecommends": true,
@@ -25,11 +25,11 @@
         "request": "Make my homepage more premium.",
         "passed": true,
         "preview": {
-          "id": "prv_mryc8w61_uloin4",
+          "id": "prv_mrye22vp_fuxssj",
           "primarySurface": "website"
         },
         "collaboration": {
-          "id": "collab_mryc8w63_yukgsd",
+          "id": "collab_mrye22vr_38n5m0",
           "openingPrompt": "What do you think?",
           "iterations": 4,
           "recommendation": {
@@ -181,16 +181,16 @@
         "request": "I want arrival windows.",
         "passed": true,
         "preview": {
-          "id": "prv_mryc8w68_c47x8b",
+          "id": "prv_mrye22vx_o7x9uj",
           "primarySurface": "booking"
         },
         "collaboration": {
-          "id": "collab_mryc8w69_vusm4w",
+          "id": "collab_mrye22vz_cu0yk7",
           "openingPrompt": "What do you think?",
           "iterations": 3,
           "recommendation": {
             "optionId": null,
-            "label": "Booking Rule",
+            "label": "Booking Intelligence",
             "why": [
               "Matches the Change Plan desired state",
               "Balanced risk vs impact",
@@ -238,12 +238,12 @@
             {
               "role": "hubly",
               "kind": "open",
-              "message": "Here's what I built for Booking Rule.\n\nWhat do you think?"
+              "message": "Here's what I built for Booking Intelligence.\n\nWhat do you think?"
             },
             {
               "role": "hubly",
               "kind": "recommendation",
-              "message": "I recommend Booking Rule."
+              "message": "I recommend Booking Intelligence."
             },
             {
               "role": "owner",
@@ -307,11 +307,11 @@
         "request": "Move Jobs above Customers.",
         "passed": true,
         "preview": {
-          "id": "prv_mryc8w6c_uoa7si",
+          "id": "prv_mrye22w1_rhup8y",
           "primarySurface": "workspace"
         },
         "collaboration": {
-          "id": "collab_mryc8w6c_a110uu",
+          "id": "collab_mrye22w1_w5lvcz",
           "openingPrompt": "What do you think?",
           "iterations": 3,
           "recommendation": {
@@ -433,11 +433,11 @@
         "request": "Organize my portfolio.",
         "passed": true,
         "preview": {
-          "id": "prv_mryc8w6e_90okda",
+          "id": "prv_mrye22w3_ro9viu",
           "primarySurface": "portfolio"
         },
         "collaboration": {
-          "id": "collab_mryc8w6f_4dyfhw",
+          "id": "collab_mrye22w4_iikebg",
           "openingPrompt": "What do you think?",
           "iterations": 3,
           "recommendation": {
@@ -559,11 +559,11 @@
         "request": "Add arrival windows and update my website.",
         "passed": true,
         "preview": {
-          "id": "prv_mryc8w6h_st2tr0",
+          "id": "prv_mrye22w6_ifumhc",
           "primarySurface": "multi"
         },
         "collaboration": {
-          "id": "collab_mryc8w6i_t0yk1u",
+          "id": "collab_mrye22w7_yynvva",
           "openingPrompt": "What do you think?",
           "iterations": 2,
           "recommendation": {

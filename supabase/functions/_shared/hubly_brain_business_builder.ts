@@ -278,7 +278,7 @@ function buildDecisions(
       title: "Booking asks fewer questions",
       detail: "Simplified flow; fewer fields before confirmation.",
       why: "Friction kills premium conversion.",
-      moduleOwner: "Booking Builder",
+      moduleOwner: "Booking Intelligence Builder",
     });
     push({
       surface: "portfolio",

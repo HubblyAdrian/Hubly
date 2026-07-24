@@ -43,6 +43,7 @@ import { generatePreview } from './preview-engine.mjs';
 import { startCollaboration } from './collaboration.mjs';
 import { proposeVersionFromPlan } from './version-engine.mjs';
 import { startCreativeSession } from './business-builder.mjs';
+import { buildBookingIntelligence } from './booking-intelligence.mjs';
 import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
@@ -60,7 +61,13 @@ export function detectIntent(request, explicit) {
   if (/weather|forecast|temperature/.test(r)) return 'weather';
   if (/move |sidebar|dashboard|pin |hide |workspace|jobs above|put .+ above/.test(r)) return 'workspace';
   // Capability / Builder prep — before coach (which matches "booking")
-  if (/arrival window|same-?day|no same.?day/.test(r)) return 'build_business';
+  if (
+    /arrival window|same-?day|no same.?day|travel buffer|minimum notice|daily capacity|two jobs|2 jobs|maximum per day|weather|rain(ing)?|reschedule exterior|estimate.?only|tuesdays? are estimate|optimiz(e|ing).*schedule|fridays? (are|only).*ceramic|ceramic.*(friday|only|after 2)|coating.?only|seasonal|snow removal/.test(
+      r,
+    )
+  ) {
+    return 'build_business';
+  }
   if (
     /portfolio|upload.*(photo|image)|these \d+ photos|prep instruction|automation|workflow|after .+ booking/
       .test(r)
@@ -694,6 +701,28 @@ export async function think(req) {
       missionControlReplayId: null,
     }).session
     : null;
+  const bookingRequest = String(req.request || '');
+  const wantsBookingIntelligence = !!(
+    changePlan &&
+    (changePlan.affectedSystems.includes('Booking') ||
+      changePlan.changes.some((c) => c.path.startsWith('booking.')) ||
+      /same-?day|arrival window|travel|buffer|capacity|weather|ceramic.*(friday|only)|fridays? (are|only).*ceramic|estimate|optimiz|seasonal|minimum notice|skill rout|emergency.?only/.test(
+        bookingRequest.toLowerCase(),
+      ))
+  );
+  const bookingIntelligence =
+    wantsBookingIntelligence && changePlan
+      ? buildBookingIntelligence({
+        businessId: businessId || `biz_${Date.now().toString(36)}`,
+        plan: changePlan,
+        industry:
+          req.memory?.industry ||
+          req.memory?.business?.industry ||
+          dna?.knowledgePack?.industryProfile?.industryName ||
+          null,
+        missionControlReplayId: null,
+      })
+      : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ''),
     intent,
@@ -860,6 +889,22 @@ export async function think(req) {
         waitingFor: creativeSession.waitingFor,
       }
       : null,
+    bookingIntelligence: bookingIntelligence
+      ? {
+        id: bookingIntelligence.id,
+        label: bookingIntelligence.label,
+        ruleCount: bookingIntelligence.rules.length,
+        concepts: [...new Set(bookingIntelligence.rules.map((r) => r.conceptId))],
+        healthOverall: bookingIntelligence.health.overall,
+        recommendationCount: bookingIntelligence.recommendations.length,
+        simulatorHorizonDays: bookingIntelligence.simulator.horizonDays,
+        industry: bookingIntelligence.industry,
+        requiresApproval: true,
+        applied: false,
+        executed: false,
+        waitingFor: bookingIntelligence.waitingFor,
+      }
+      : null,
   });
 
   if (changePlan && flightRecorder.executionId) {
@@ -878,6 +923,9 @@ export async function think(req) {
   }
   if (creativeSession && flightRecorder.executionId) {
     creativeSession.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (bookingIntelligence && flightRecorder.executionId) {
+    bookingIntelligence.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -910,6 +958,7 @@ export async function think(req) {
     collaboration,
     businessVersion,
     creativeSession,
+    bookingIntelligence,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     experienceDirector: {

@@ -18,12 +18,12 @@ const EPICS = [
   { n: 4, title: 'Collaboration & Approval', script: 'scripts/check-builder-epic4.mjs', unlocked: true },
   { n: 5, title: 'Version & Rollback', script: 'scripts/check-builder-epic5.mjs', unlocked: true },
   { n: 6, title: 'Business Builder', script: 'scripts/check-builder-epic6.mjs', unlocked: true },
-  { n: 7, title: 'Booking Builder', script: null, unlocked: false },
-  { n: 8, title: 'CRM Builder', script: null, unlocked: false },
+  { n: 7, title: 'Booking Intelligence Builder', script: 'scripts/check-builder-epic7.mjs', unlocked: true },
+  { n: 8, title: 'Workspace Builder', script: null, unlocked: false },
   { n: 9, title: 'Automation Builder', script: null, unlocked: false },
   { n: 10, title: 'Portfolio Builder', script: null, unlocked: false },
   { n: 11, title: 'Hubly Chat', script: null, unlocked: false },
-  { n: 12, title: 'Builder Validation', script: null, unlocked: false },
+  { n: 12, title: 'Builder Validation & Apply Engine', script: null, unlocked: false },
 ];
 
 console.log('\n🏔️  Milestone 1.5 — Builder Engine Release Gate\n');

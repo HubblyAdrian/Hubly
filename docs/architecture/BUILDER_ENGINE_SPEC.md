@@ -1,10 +1,10 @@
 # Builder Engine Specification
 
-**Version:** 1.6.0  
-**Status:** Milestone 1.5 — Epic 1–5 ✅ · Epic 6 ✅ (Business Builder) · Epic 7+ locked  
+**Version:** 1.7.0  
+**Status:** Milestone 1.5 — Epic 1–6 ✅ · Epic 7 ✅ (Booking Intelligence Builder) · Epic 8+ locked  
 **Target:** Milestone 1.5 (12 epics · one release gate each)
 
-Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6 is **Business Builder** — Creative Sessions across the whole business. The website is one canvas; `website_builder` remains an internal module. Customer-facing language is always Business Builder. Apply / remaining surface builders are later. Do not implement them ahead of Founder Approval.
+Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6 is **Business Builder**. Epic 7 is **Booking Intelligence Builder** — owners describe how they operate; Hubly builds scheduling concepts (not a settings page), scores Booking Health, recommends improvements, and simulates the next 7 days before approval. Apply / remaining surface builders are later. Do not implement them ahead of Founder Approval.
 
 ## Purpose
 
@@ -25,8 +25,7 @@ Builder modules register via Platform Extensibility (`builder.*` Feature Manifes
 
 - Business Builder (orchestrates creative sessions; owns the customer promise)  
 - Website module (`website_builder`) — one canvas inside Business Builder  
-- CRM Builder  
-- Booking Builder  
+- Booking Intelligence Builder (`booking`) — scheduling concepts, health, simulator  
 - Automation Builder  
 - Portfolio Builder  
 - Package Builder  
@@ -41,6 +40,17 @@ Builder modules register via Platform Extensibility (`builder.*` Feature Manifes
 5. Creative Memory learns preferences for the next build  
 6. Creative Workspace: conversation left · live business right  
 7. Still requires Collaboration/Approval — no silent apply  
+
+## Booking Intelligence Builder (Epic 7)
+
+1. Owner describes how they operate (no settings page)  
+2. Concepts: travel buffers, arrival windows, notice, capacity, service rules, seasonal, weather, skills  
+3. Industry DNA influences scheduling defaults  
+4. Booking Health scores the experience  
+5. AI recommendations suggest improvements  
+6. **AI Schedule Simulator** — next 7 days before approve (jobs moved, drive saved, conflicts, slots, revenue)  
+7. Mission Control records rules, health, recommendations, versions/timeline  
+8. Still requires Collaboration/Approval — no silent apply  
 
 ## Change Plans
 

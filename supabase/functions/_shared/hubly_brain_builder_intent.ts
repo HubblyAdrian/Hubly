@@ -144,18 +144,45 @@ function collectSignals(request: string): CategorySignal[] {
     });
   }
 
-  if (/same-?day|no same.?day|arrival window|booking rule|minimum notice|appointments? are scheduled/.test(r)) {
+  if (
+    /same-?day|no same.?day|arrival window|booking rule|minimum notice|appointments? are scheduled|travel buffer|minutes to drive|drive between|daily capacity|two jobs|2 jobs|maximum per day|weather|raining|reschedule exterior|fridays? (are|only).*ceramic|ceramic.*(friday|only|after 2)|coating.?only|never.*after 2|estimate.?only|estimates on|tuesdays? are estimate|optimiz(e|ing).*schedule|driving across town|seasonal|snow removal|skill rout|emergency.?only/.test(
+      r,
+    )
+  ) {
+    const goal = /same-?day/.test(r)
+      ? "Minimum Notice"
+      : /arrival/.test(r)
+      ? "Arrival Windows"
+      : /travel|drive/.test(r)
+      ? "Travel Buffers"
+      : /capacity|two jobs|2 jobs/.test(r)
+      ? "Daily Capacity"
+      : /weather|rain/.test(r)
+      ? "Weather-Aware Scheduling"
+      : /ceramic|friday|coating|after 2/.test(r)
+      ? "Service-Specific Schedule"
+      : /estimate/.test(r)
+      ? "Estimate-Only Days"
+      : /optimiz|route|driving across/.test(r)
+      ? "Route Optimization"
+      : /seasonal|snow/.test(r)
+      ? "Seasonal Availability"
+      : "Booking Intelligence";
     signals.push({
       category: "Booking",
       system: "Booking",
-      label: "Booking Rule",
-      goal: /same-?day/.test(r) ? "Minimum Notice" : (/arrival/.test(r) ? "Arrival Windows" : "Booking Rules"),
+      label: "Booking Intelligence",
+      goal,
       risk: "medium",
       defaultCaps: [{
         toolId: "booking",
-        toolName: "Booking",
-        capabilityId: /same-?day/.test(r) ? "no_same_day_bookings" : "arrival_windows",
-        capabilityLabel: /same-?day/.test(r) ? "No Same-Day Bookings" : "Arrival Windows",
+        toolName: "Booking Intelligence Builder",
+        capabilityId: /same-?day/.test(r)
+          ? "no_same_day_bookings"
+          : /arrival/.test(r)
+          ? "arrival_windows"
+          : "booking_rules",
+        capabilityLabel: goal,
       }],
       weight: 3,
     });
@@ -346,7 +373,7 @@ function buildConfidenceExplanation(opts: {
   const reasons: string[] = [];
   const r = opts.request.toLowerCase();
 
-  if (/premium|same-?day|arrival|jobs above|portfolio|prep instruction/.test(r)) {
+  if (/premium|same-?day|arrival|travel|capacity|weather|ceramic|estimate|optimiz|seasonal|jobs above|portfolio|prep instruction/.test(r)) {
     reasons.push("I've seen this request pattern before.");
   } else {
     reasons.push("The request maps cleanly to a known builder category.");

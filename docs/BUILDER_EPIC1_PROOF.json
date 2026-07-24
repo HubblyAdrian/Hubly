@@ -4,7 +4,7 @@
   "name": "Builder Expert",
   "title": "Builder Expert",
   "passed": true,
-  "checkedAt": "2026-07-24T02:45:52.521Z",
+  "checkedAt": "2026-07-24T03:36:33.840Z",
   "proofs": {
     "builderExpertExists": true,
     "executesThroughHublyBrain": true,
@@ -20,7 +20,7 @@
         "request": "Make my homepage feel more premium.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryc8ve4_jc1xkq",
+          "intentId": "bint_mrye2235_dtvb5m",
           "intentCategory": "Website",
           "intentLabel": "Website Improvement",
           "ownerGoal": "Premium Branding",
@@ -61,9 +61,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T02:45:52.492Z"
+          "timestamp": "2026-07-24T03:36:33.809Z"
         },
-        "missionControlExecutionId": "flt_mryc8ved_wzovr1",
+        "missionControlExecutionId": "flt_mrye223e_1kz4qq",
         "expertsRun": [
           "research",
           "strategy",
@@ -78,9 +78,9 @@
         "request": "Don't allow same-day bookings.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryc8veg_j52yrr",
+          "intentId": "bint_mrye223h_pxdfy1",
           "intentCategory": "Booking",
-          "intentLabel": "Booking Rule",
+          "intentLabel": "Booking Intelligence",
           "ownerGoal": "Minimum Notice",
           "affectedSystems": [
             "Booking"
@@ -88,9 +88,9 @@
           "requiredCapabilities": [
             {
               "toolId": "booking",
-              "toolName": "Booking",
+              "toolName": "Booking Intelligence Builder",
               "capabilityId": "no_same_day_bookings",
-              "capabilityLabel": "No Same-Day Bookings"
+              "capabilityLabel": "Minimum Notice"
             }
           ],
           "estimatedRisk": "medium",
@@ -98,17 +98,17 @@
           "confidenceExplanation": {
             "reasons": [
               "I've seen this request pattern before.",
-              "Booking supports it.",
+              "Booking Intelligence Builder supports it.",
               "No conflicting rules exist in this Intent-only pass.",
               "Business Memory aligns with this change (pressure washing).",
               "No additional clarification is required."
             ],
-            "summary": "I've seen this request pattern before. Booking supports it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
+            "summary": "I've seen this request pattern before. Booking Intelligence Builder supports it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
           },
           "requiresChangePlan": true,
           "reasoning": [
             {
-              "reason": "Classified as Booking Rule toward Minimum Notice.",
+              "reason": "Classified as Booking Intelligence toward Minimum Notice.",
               "evidence": [
                 "category:Booking",
                 "system:Booking",
@@ -119,9 +119,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T02:45:52.504Z"
+          "timestamp": "2026-07-24T03:36:33.821Z"
         },
-        "missionControlExecutionId": "flt_mryc8vei_4qrmsu",
+        "missionControlExecutionId": "flt_mrye223k_2qjax1",
         "expertsRun": [
           "research",
           "strategy",
@@ -136,7 +136,7 @@
         "request": "Move Jobs above Customers.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryc8vej_iy3r6i",
+          "intentId": "bint_mrye223m_ed2793",
           "intentCategory": "Workspace",
           "intentLabel": "Workspace Layout",
           "ownerGoal": "Navigation Order",
@@ -177,9 +177,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T02:45:52.507Z"
+          "timestamp": "2026-07-24T03:36:33.826Z"
         },
-        "missionControlExecutionId": "flt_mryc8vel_2ftsce",
+        "missionControlExecutionId": "flt_mrye223n_rebcim",
         "expertsRun": [
           "builder",
           "experience_director"
@@ -190,7 +190,7 @@
         "request": "Put these 12 photos into my portfolio.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryc8vem_87bw6p",
+          "intentId": "bint_mrye223o_vwbkse",
           "intentCategory": "Portfolio",
           "intentLabel": "Portfolio Update",
           "ownerGoal": "Gallery Organization",
@@ -245,9 +245,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T02:45:52.510Z"
+          "timestamp": "2026-07-24T03:36:33.828Z"
         },
-        "missionControlExecutionId": "flt_mryc8ven_ul1uhs",
+        "missionControlExecutionId": "flt_mrye223p_dlv53f",
         "expertsRun": [
           "research",
           "strategy",
@@ -262,7 +262,7 @@
         "request": "Send prep instructions after ceramic coating bookings.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryc8veo_w4shyr",
+          "intentId": "bint_mrye223r_lenpqo",
           "intentCategory": "Automations",
           "intentLabel": "Automation Setup",
           "ownerGoal": "Post-Booking Prep Instructions",
@@ -310,9 +310,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T02:45:52.512Z"
+          "timestamp": "2026-07-24T03:36:33.831Z"
         },
-        "missionControlExecutionId": "flt_mryc8veq_3065ww",
+        "missionControlExecutionId": "flt_mrye223s_o6m2yh",
         "expertsRun": [
           "research",
           "strategy",
@@ -327,7 +327,7 @@
         "request": "Add arrival windows and update my website to explain them.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryc8ver_d8739r",
+          "intentId": "bint_mrye223u_wnd2ck",
           "intentCategory": "Multiple Systems",
           "intentLabel": "Multi-System: Website + Booking",
           "ownerGoal": "Arrival Windows · Website Update",
@@ -338,7 +338,7 @@
           "requiredCapabilities": [
             {
               "toolId": "booking",
-              "toolName": "Booking",
+              "toolName": "Booking Intelligence Builder",
               "capabilityId": "arrival_windows",
               "capabilityLabel": "Arrival Windows"
             },
@@ -354,12 +354,12 @@
           "confidenceExplanation": {
             "reasons": [
               "I've seen this request pattern before.",
-              "Booking, Website Builder support it.",
+              "Booking Intelligence Builder, Website Builder support it.",
               "No conflicting rules exist in this Intent-only pass.",
               "Business Memory aligns with this change (pressure washing).",
               "No additional clarification is required."
             ],
-            "summary": "I've seen this request pattern before. Booking, Website Builder support it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
+            "summary": "I've seen this request pattern before. Booking Intelligence Builder, Website Builder support it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
           },
           "requiresChangePlan": true,
           "reasoning": [
@@ -377,9 +377,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T02:45:52.515Z"
+          "timestamp": "2026-07-24T03:36:33.834Z"
         },
-        "missionControlExecutionId": "flt_mryc8ves_e0j8mk",
+        "missionControlExecutionId": "flt_mrye223v_ue9ggm",
         "expertsRun": [
           "research",
           "strategy",
@@ -392,7 +392,7 @@
     ],
     "missionControl": {
       "available": false,
-      "epic": "6 — Business Builder",
+      "epic": "7 — Booking Intelligence Builder",
       "intentCount": 6
     }
   },

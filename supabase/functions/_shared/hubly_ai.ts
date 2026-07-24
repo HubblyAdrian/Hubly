@@ -194,6 +194,7 @@ import { HublyPreviewEngine } from "./hubly_brain_preview_engine.ts";
 import { HublyCollaborationEngine } from "./hubly_brain_collaboration.ts";
 import { HublyVersionEngine } from "./hubly_brain_version_engine.ts";
 import { HublyBusinessBuilder } from "./hubly_brain_business_builder.ts";
+import { HublyBookingIntelligence } from "./hubly_brain_booking_intelligence.ts";
 import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
 import {
   logBrainExecution,
@@ -284,6 +285,7 @@ export {
   HublyCollaborationEngine,
   HublyVersionEngine,
   HublyBusinessBuilder,
+  HublyBookingIntelligence,
   HublyConfidencePolicy,
   HublyBrainExecutionLog,
   HublyExperienceDirector,
