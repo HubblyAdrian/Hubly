@@ -11,14 +11,34 @@ function ok(cond, msg) {
   }
 }
 
-// Conversational Instant Site — consultant onboarding
+// EPIC 1 — Business conversation (not signup wizard)
 ok(html.includes('isTalkIntro'), 'intro opener key');
-ok(html.includes("Hi! I’m Hubly. Before we build anything"), 'consultant intro copy');
+ok(html.includes('id="is-convo-home"'), 'conversation home screen');
+ok(html.includes("Let's build"), 'conversation headline');
+ok(html.includes('What kind of business are we building?'), 'business conversation prompt');
+ok(html.includes('What should I call you?'), 'conversational name question');
+ok(html.includes("What's the name of the business we're building?"), 'conversational biz question');
 ok(html.includes('Tell me about your business'), 'free-form business question');
+ok(html.includes('function isTalkHandleAbout'), 'about beat handler');
+ok(html.includes('function isConvoHomeSend'), 'conversation home send');
+ok(html.includes('function isTalkAfterBizName'), 'infer-trade after biz name');
+ok(html.includes("talkBeat:'about'"), 'starts on about beat');
+ok(html.includes('id="is-step-brain"'), 'Hubly Brain research step');
+ok(html.includes('function isEnterHublyBrain'), 'Hubly Brain entry');
+ok(html.includes('function hublyBlueprintDiscoveryLines'), 'blueprint discovery lines');
+ok(html.includes('function hublyBuildResearchPlan'), 'research plan from DNA');
+ok(html.includes("I'm researching"), 'research narration');
+ok(html.includes('I noticed something'), 'noticed insight narration');
+ok(html.includes("I'm changing direction"), 'direction-change narration');
+ok(html.includes("Here's why") || html.includes('Here\'s why'), 'why narration');
+ok(html.includes('function isTalkFastTrackToBuild'), 'skips interview gauntlet after strategy');
+ok(html.includes('is-talk-progress') && html.includes('el.hidden=true'), 'step counter hidden');
+ok(!/Step \$\{n\} of \$\{total\}/.test(html), 'no Step N of M renderer');
+ok(html.includes('No email/password until after value') || html.includes('no email/password until after value'), 'auth deferred comment');
+ok(html.includes("searchParams.get('q')"), 'consumes platform-home ?q= seed');
 ok(html.includes('function isTalkPriorityChips'), 'priority chips helper');
 ok(html.includes('function isTalkPickPriority'), 'priority pick helper');
 ok(html.includes("core.push('priority')"), 'priority in progress beats');
-ok(html.includes("isTalkGo('priority'"), 'flow advances to priority');
 ok(html.includes('Get more bookings'), 'bookings chip');
 ok(html.includes('Run my business'), 'run chip');
 ok(html.includes('Grow my business'), 'grow chip');
@@ -31,7 +51,7 @@ ok(html.includes('coachWelcomeBookings'), 'coach personalized for bookings');
 ok(html.includes('coachWelcomeRun'), 'coach personalized for run');
 ok(html.includes('coachWelcomeGrow'), 'coach personalized for grow');
 ok(html.includes('function isTalkAcceptCustomBusiness'), 'custom business path accepted');
-ok(html.includes('Something unique — let’s build it') || html.includes("Something unique"), 'unique business chip');
+ok(html.includes('Something unique — let’s build it') || html.includes('Something unique'), 'unique business chip');
 ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro in Instant Site UI strings');
 ok(!/\bMarketplace Lite\b/i.test(html), 'no Marketplace Lite in Instant Site UI strings');
 
@@ -40,8 +60,9 @@ ok(home.includes('One AI.') && home.includes('Two experiences.'), 'bridge connec
 ok(home.includes('Most software makes you learn how it works.'), 'brand why sentence');
 ok(home.includes('Hubly learns how you work'), 'brand why payoff');
 ok(home.includes('Ask Hubly'), 'Ask Hubly interface');
-ok(home.includes('Tell Hubly about your business'), 'business-primary hero');
-ok(home.includes('Build My Business'), 'business CTA');
+ok(home.includes("Let's build") || home.includes('Tell Hubly about your business'), 'business-primary hero');
+ok(home.includes('Build my business') || home.includes('Build My Business'), 'business CTA');
+ok(home.includes('What kind of business are we building?'), 'conversation-first hero prompt');
 ok(home.includes('journey-dest-primary'), 'build path primary');
 ok(home.includes('id="transform"') && home.includes('Everything changes'), 'transformation section');
 ok(home.includes('After one conversation'), 'after-conversation payoff');

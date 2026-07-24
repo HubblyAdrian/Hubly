@@ -890,6 +890,167 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
     padding:7px 11px;
   }
 }
+
+/* EPIC 1 — Business conversation home (no signup wizard) */
+#is-shell.is-convo-landing{
+  background:#f6f7fb;color:#141B2B;
+  padding:calc(28px + env(safe-area-inset-top,0px)) 20px calc(28px + env(safe-area-inset-bottom,0px));
+  justify-content:flex-start;align-items:stretch;
+}
+#is-shell.is-convo-landing #is-atmos{display:none!important}
+#is-shell.is-convo-landing .is-home-exit{
+  background:rgba(255,255,255,.9);border-color:rgba(20,27,43,.12);color:#141B2B;
+}
+#is-shell.is-convo-landing .is-home-exit:hover{color:var(--brand,#D9632D);border-color:var(--brand,#D9632D)}
+#is-shell.is-convo-landing .is-wrap{
+  max-width:min(1180px,100%);width:100%;margin:0 auto;padding:0;border:0;border-radius:0;
+  background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+.is-convo-home{display:block}
+.is-convo-home[hidden]{display:none!important}
+.is-convo-continue[hidden]{display:none!important}
+.is-convo-home-grid{
+  display:grid;grid-template-columns:1fr;gap:28px;align-items:start;
+}
+@media(min-width:980px){
+  .is-convo-home-grid{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:36px;padding-top:8px}
+}
+.is-convo-brand{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 18px;flex-wrap:wrap;
+}
+.is-convo-brand .hubly-mark{height:28px;width:auto;display:block}
+.is-convo-badge{
+  font-size:11px;font-weight:700;color:#475569;background:#fff;border:1px solid rgba(20,27,43,.1);
+  border-radius:999px;padding:7px 12px;box-shadow:0 4px 14px rgba(20,27,43,.06);
+}
+.is-convo-headline{
+  font-family:'Plus Jakarta Sans',var(--font-d,var(--font));font-size:clamp(34px,5vw,52px);
+  font-weight:800;letter-spacing:-.04em;line-height:1.05;margin:0 0 10px;color:#141B2B;
+}
+.is-convo-headline em{
+  font-style:normal;
+  background:linear-gradient(115deg,#7c3aed 0%,#D9632D 85%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.is-convo-lead{font-size:17px;line-height:1.45;color:#475569;margin:0 0 18px;max-width:36ch}
+.is-convo-greet{
+  display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid rgba(124,58,237,.18);
+  border-radius:16px;padding:12px 14px;margin:0 0 16px;box-shadow:0 10px 28px rgba(124,58,237,.08);
+  max-width:520px;
+}
+.is-convo-greet-ico{
+  width:36px;height:36px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;
+  background:linear-gradient(135deg,#7c3aed,#D9632D);color:#fff;font-size:18px;
+}
+.is-convo-greet p{margin:0;font-size:13.5px;line-height:1.45;color:#334155}
+.is-convo-card{
+  background:#fff;border:1px solid rgba(20,27,43,.1);border-radius:20px;padding:16px 16px 14px;
+  box-shadow:0 18px 40px rgba(20,27,43,.08);max-width:560px;
+}
+.is-convo-card > label{
+  display:block;font-size:14px;font-weight:750;color:#141B2B;margin:0 0 10px;
+}
+.is-convo-compose{display:flex;gap:10px;align-items:flex-end}
+.is-convo-compose textarea{
+  flex:1;min-height:88px;resize:vertical;border:1px solid rgba(20,27,43,.12);border-radius:14px;
+  padding:12px 14px;font:inherit;font-size:14.5px;line-height:1.45;color:#141B2B;background:#fbfbfd;
+}
+.is-convo-compose textarea:focus{outline:2px solid color-mix(in srgb,#7c3aed 35%,transparent);border-color:transparent}
+.is-convo-send{
+  width:48px;height:48px;border:0;border-radius:50%;cursor:pointer;flex-shrink:0;
+  background:linear-gradient(135deg,#7c3aed,#D9632D);color:#fff;font-size:20px;font-weight:800;
+  box-shadow:0 10px 22px rgba(124,58,237,.28);
+}
+.is-convo-send:hover{filter:brightness(1.05)}
+.is-convo-examples{margin-top:12px}
+.is-convo-examples > span{display:block;font-size:12px;font-weight:650;color:#64748b;margin:0 0 8px}
+.is-convo-example-chips{display:flex;flex-wrap:wrap;gap:8px}
+.is-convo-example-chips .is-chip{
+  background:#fff;color:#141B2B;border:1px solid rgba(20,27,43,.12);
+}
+.is-convo-example-chips .is-chip:hover{border-color:#D9632D;color:#D9632D}
+.is-convo-builds{margin-top:22px;max-width:640px}
+.is-convo-builds h3{font-size:15px;font-weight:750;margin:0 0 12px;color:#141B2B}
+.is-convo-builds-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+}
+@media(min-width:700px){.is-convo-builds-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.is-convo-build{
+  background:#fff;border:1px solid rgba(20,27,43,.08);border-radius:14px;padding:12px 10px;text-align:center;
+}
+.is-convo-build .ico{font-size:20px;display:block;margin-bottom:6px}
+.is-convo-build strong{display:block;font-size:11.5px;font-weight:750;color:#141B2B;line-height:1.25}
+.is-convo-proof{
+  background:#fff;border:1px solid rgba(20,27,43,.08);border-radius:22px;padding:18px 16px 14px;
+  box-shadow:0 18px 44px rgba(20,27,43,.07);
+}
+.is-convo-proof h3{font-size:16px;font-weight:750;margin:0 0 14px;color:#141B2B;letter-spacing:-.02em}
+.is-convo-proof-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+}
+.is-convo-proof-card{
+  border-radius:14px;overflow:hidden;border:1px solid rgba(20,27,43,.08);background:#0f172a;aspect-ratio:9/14;
+  position:relative;min-height:140px;
+}
+.is-convo-proof-card img{width:100%;height:100%;object-fit:cover;display:block;opacity:.92}
+.is-convo-proof-card span{
+  position:absolute;left:8px;right:8px;bottom:8px;font-size:11px;font-weight:750;color:#fff;
+  text-shadow:0 1px 8px rgba(0,0,0,.55);
+}
+.is-convo-trust{font-size:12px;color:#64748b;margin:12px 2px 0;line-height:1.4}
+.is-convo-foot{
+  margin-top:28px;padding:18px 16px;border-radius:18px;
+  background:linear-gradient(115deg,rgba(124,58,237,.08),rgba(217,99,45,.1));
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;
+}
+.is-convo-foot p{margin:0;font-size:14px;line-height:1.45;color:#334155;max-width:52ch}
+.is-convo-foot .btn{white-space:nowrap}
+.is-talk-progress{display:none!important}
+
+/* Hubly Brain — visible research & strategy (not a form) */
+#is-step-brain.is-on{display:block}
+.is-brain-kicker{
+  font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:#fdba74;margin:0 0 10px;display:flex;align-items:center;gap:8px;
+}
+.is-brain-kicker .pulse{
+  width:8px;height:8px;border-radius:50%;background:#fdba74;
+  box-shadow:0 0 0 0 rgba(253,186,116,.55);animation:isBrainPulse 1.4s ease infinite;
+}
+@keyframes isBrainPulse{
+  0%{box-shadow:0 0 0 0 rgba(253,186,116,.55)}
+  70%{box-shadow:0 0 0 10px rgba(253,186,116,0)}
+  100%{box-shadow:0 0 0 0 rgba(253,186,116,0)}
+}
+.is-brain-log{
+  list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:10px;
+  min-height:220px;
+}
+.is-brain-line{
+  opacity:0;transform:translateY(8px);
+  padding:12px 14px;border-radius:14px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+  color:rgba(255,255,255,.92);font-size:14px;line-height:1.45;
+  transition:opacity .35s ease,transform .35s ease,border-color .25s ease,background .25s ease;
+}
+.is-brain-line.on{opacity:1;transform:none}
+.is-brain-line.active{
+  border-color:rgba(253,186,116,.55);background:rgba(253,186,116,.12);
+}
+.is-brain-line.done{border-color:rgba(34,197,94,.35)}
+.is-brain-line strong{
+  display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:#fdba74;margin:0 0 4px;
+}
+.is-brain-line p{margin:0;color:rgba(255,255,255,.9)}
+.is-brain-why{
+  margin:0;padding:12px 14px;border-radius:14px;
+  background:rgba(15,23,42,.45);border:1px dashed rgba(253,186,116,.4);
+  font-size:13.5px;line-height:1.5;color:rgba(255,255,255,.88);
+}
+.is-brain-why[hidden]{display:none!important}
+
+
 .is-talk-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;min-height:28px}
 .is-talk-progress{
   display:flex;align-items:center;gap:6px;margin-left:auto;
@@ -7882,7 +8043,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 
-  <!-- Instant Site: talk → vibe → soft email → build → confirm → photos → live -->
+  <!-- Instant Site: business conversation → vibe → build → reveal → claim login → live -->
   <div class="is-shell" id="is-shell">
     <div id="is-atmos" aria-hidden="true"></div>
     <button type="button" class="is-home-exit" onclick="isExitToLanding()" data-i18n="isHomeExit">← Hubly home</button>
@@ -7899,44 +8060,97 @@ document.addEventListener('DOMContentLoaded', function() {
         <p class="is-sub" style="margin-top:14px;font-size:12px;opacity:.72;max-width:42ch">Progress saves automatically as you go — even before you create a login.</p>
       </div>
       <div class="is-step" data-is="talk" id="is-step-talk">
-        <div class="is-talk-bar">
-          <button type="button" class="is-step-back" id="is-talk-back" onclick="isTalkBack()" hidden data-i18n="isBack">← Back</button>
-          <div class="is-talk-progress" id="is-talk-progress" data-i18n-title="isTalkProgress" aria-label="Progress"></div>
-        </div>
-        <div class="is-kicker">Hubly</div>
-        <h1 class="is-title" id="is-talk-ask">What’s your first and last name?</h1>
-        <p class="is-sub" id="is-talk-hint">Type it below and hit Continue — a few quick answers, then we draft your site.</p>
-        <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
-        <div class="is-talk-chips" id="is-talk-chips"></div>
-        <div id="is-pkg-wrap" class="is-pkg-wrap" aria-live="polite">
-          <div id="is-pkg-panel" class="is-pkg-panel"></div>
-          <div class="is-pkg-mid">
-            <div class="is-pkg-device-toggle" id="is-pkg-device-toggle" aria-label="Preview device"></div>
-            <aside class="is-pkg-preview" id="is-pkg-preview" aria-label="Customer package preview"></aside>
-            <aside class="is-pkg-why" id="is-pkg-why" aria-label="Why this works"></aside>
-            <aside class="is-addons-preview" id="is-pkg-addons-preview" aria-label="Add-ons preview" hidden></aside>
+        <!-- EPIC 1: one conversation screen (no step wizard) -->
+        <div id="is-convo-home" class="is-convo-home">
+          <div class="is-convo-home-grid">
+            <div class="is-convo-main">
+              <div class="is-convo-brand">
+                <img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly" width="96" height="28">
+                <span class="is-convo-badge">No signup. No credit card. Just results.</span>
+              </div>
+              <h1 class="is-convo-headline">Let's build <em>your business.</em></h1>
+              <p class="is-convo-lead">Tell me about your business once. I'll build the company.</p>
+              <div class="is-convo-greet" role="status">
+                <div class="is-convo-greet-ico" aria-hidden="true">✦</div>
+                <p>Hi, I'm Hubly AI. I'll build your website, services, booking, brand, and help you grow — all customized for your business.</p>
+              </div>
+              <div class="is-convo-card">
+                <label for="is-convo-about">What kind of business are we building?</label>
+                <div class="is-convo-compose">
+                  <textarea id="is-convo-about" rows="3" placeholder="Describe your business in your own words… Example: “I run a house cleaning business that helps busy families keep their homes spotless.”" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();isConvoHomeSend();}"></textarea>
+                  <button type="button" class="is-convo-send" onclick="isConvoHomeSend()" aria-label="Continue">→</button>
+                </div>
+                <div class="is-convo-examples">
+                  <span>Or try an example</span>
+                  <div class="is-convo-example-chips" id="is-convo-example-chips"></div>
+                </div>
+              </div>
+              <div class="is-convo-builds">
+                <h3>Everything Hubly builds for you ✦</h3>
+                <div class="is-convo-builds-grid">
+                  <div class="is-convo-build"><span class="ico" aria-hidden="true">🖥</span><strong>Custom Website</strong></div>
+                  <div class="is-convo-build"><span class="ico" aria-hidden="true">📋</span><strong>Services &amp; Packages</strong></div>
+                  <div class="is-convo-build"><span class="ico" aria-hidden="true">📅</span><strong>Online Booking</strong></div>
+                  <div class="is-convo-build"><span class="ico" aria-hidden="true">✎</span><strong>Brand &amp; Copy</strong></div>
+                  <div class="is-convo-build"><span class="ico" aria-hidden="true">📈</span><strong>Growth Partner</strong></div>
+                </div>
+              </div>
+            </div>
+            <aside class="is-convo-proof" aria-label="Example businesses">
+              <h3>Businesses Hubly has built for many industries</h3>
+              <div class="is-convo-proof-grid" id="is-convo-proof-grid"></div>
+              <p class="is-convo-trust">Trusted by business owners across every industry — each site built for its trade, not a generic template.</p>
+            </aside>
+          </div>
+          <div class="is-convo-foot">
+            <p>In just a few minutes, I'll create the first version of your business. Then you can personalize, refine, and launch.</p>
+            <div style="text-align:right">
+              <button type="button" class="btn btn-brand" onclick="document.getElementById('is-convo-about')?.focus()">Build my business</button>
+              <div style="font-size:12px;color:#64748b;margin-top:6px">Takes about 2 minutes. No account yet.</div>
+            </div>
           </div>
         </div>
-        <div id="is-addons-wrap" class="is-addons-wrap" aria-live="polite">
-          <div id="is-addons-panel" class="is-addons-panel"></div>
-          <aside class="is-addons-preview" id="is-addons-preview" aria-label="Add-ons preview"></aside>
-        </div>
-        <div class="is-area-panel hidden" id="is-area-panel">
-          <p class="is-area-hint" style="margin:0 0 10px" data-i18n="isAreaHint">Pick your state, then tap the cities you serve. Add any city we don’t list.</p>
-          <div class="is-area-lbl" data-i18n="isAreaStateLbl">State you work in</div>
-          <div class="is-area-states" id="is-area-states"></div>
-          <div class="is-area-lbl" data-i18n="isAreaCitiesLbl">Cities you serve</div>
-          <div class="is-area-cities" id="is-area-cities"></div>
-          <div class="is-area-add-city" id="is-area-add-city">
-            <input type="text" id="is-area-city-custom" class="is-area-select" placeholder="Add a city not listed…" data-i18n-placeholder="isAddCityPh" autocomplete="address-level2" onkeydown="if(event.key==='Enter'){event.preventDefault();isAddCustomAreaCity();}">
-            <button type="button" class="is-chip" onclick="isAddCustomAreaCity()" data-i18n="isAddCityBtn">+ Add city</button>
+
+        <div id="is-convo-continue" class="is-convo-continue" hidden>
+          <div class="is-talk-bar">
+            <button type="button" class="is-step-back" id="is-talk-back" onclick="isTalkBack()" hidden data-i18n="isBack">← Back</button>
+            <div class="is-talk-progress" id="is-talk-progress" hidden aria-hidden="true"></div>
           </div>
-          <p class="is-area-hint" data-i18n="isAreaRefine">You can refine this later in Website editor → Business &amp; hours.</p>
+          <div class="is-kicker">Hubly</div>
+          <h1 class="is-title" id="is-talk-ask">What should I call you?</h1>
+          <p class="is-sub" id="is-talk-hint">I'm getting to know your business — not filling out a form.</p>
+          <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
+          <div class="is-talk-chips" id="is-talk-chips"></div>
+          <div id="is-pkg-wrap" class="is-pkg-wrap" aria-live="polite">
+            <div id="is-pkg-panel" class="is-pkg-panel"></div>
+            <div class="is-pkg-mid">
+              <div class="is-pkg-device-toggle" id="is-pkg-device-toggle" aria-label="Preview device"></div>
+              <aside class="is-pkg-preview" id="is-pkg-preview" aria-label="Customer package preview"></aside>
+              <aside class="is-pkg-why" id="is-pkg-why" aria-label="Why this works"></aside>
+              <aside class="is-addons-preview" id="is-pkg-addons-preview" aria-label="Add-ons preview" hidden></aside>
+            </div>
+          </div>
+          <div id="is-addons-wrap" class="is-addons-wrap" aria-live="polite">
+            <div id="is-addons-panel" class="is-addons-panel"></div>
+            <aside class="is-addons-preview" id="is-addons-preview" aria-label="Add-ons preview"></aside>
+          </div>
+          <div class="is-area-panel hidden" id="is-area-panel">
+            <p class="is-area-hint" style="margin:0 0 10px" data-i18n="isAreaHint">Pick your state, then tap the cities you serve. Add any city we don’t list.</p>
+            <div class="is-area-lbl" data-i18n="isAreaStateLbl">State you work in</div>
+            <div class="is-area-states" id="is-area-states"></div>
+            <div class="is-area-lbl" data-i18n="isAreaCitiesLbl">Cities you serve</div>
+            <div class="is-area-cities" id="is-area-cities"></div>
+            <div class="is-area-add-city" id="is-area-add-city">
+              <input type="text" id="is-area-city-custom" class="is-area-select" placeholder="Add a city not listed…" data-i18n-placeholder="isAddCityPh" autocomplete="address-level2" onkeydown="if(event.key==='Enter'){event.preventDefault();isAddCustomAreaCity();}">
+              <button type="button" class="is-chip" onclick="isAddCustomAreaCity()" data-i18n="isAddCityBtn">+ Add city</button>
+            </div>
+            <p class="is-area-hint" data-i18n="isAreaRefine">You can refine this later in Website editor → Business &amp; hours.</p>
+          </div>
+          <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
+            <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
+            <button type="submit" class="btn btn-brand" id="is-talk-send" data-i18n="isContinue">Continue</button>
+          </form>
         </div>
-        <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
-          <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome Smith" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
-          <button type="submit" class="btn btn-brand" id="is-talk-send" data-i18n="isContinue">Continue</button>
-        </form>
       </div>
 
       <div class="is-step" data-is="vibe" id="is-step-vibe">
@@ -7968,17 +8182,27 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
+
+      <div class="is-step" data-is="brain" id="is-step-brain">
+        <div class="is-brain-kicker"><span class="pulse" aria-hidden="true"></span> Hubly Brain</div>
+        <h1 class="is-title" id="is-brain-title">I'm researching businesses like yours</h1>
+        <p class="is-sub" id="is-brain-sub">Not a questionnaire — I'm forming a strategy before I build anything.</p>
+        <ul class="is-brain-log" id="is-brain-log" aria-live="polite"></ul>
+        <p class="is-brain-why" id="is-brain-why" hidden></p>
+        <p class="is-fine" id="is-brain-status">Starting research…</p>
+      </div>
+
       <div class="is-step" data-is="build" id="is-step-build">
-        <div class="is-kicker" data-i18n="isBuildKicker">Nice to meet you</div>
-        <h1 class="is-title" data-i18n="isBuildTitle">Launching your company</h1>
-        <p class="is-sub" data-i18n="isBuildSub">Watch Hubly build around your business — no setup wizard.</p>
+        <div class="is-kicker" data-i18n="isBuildKicker">Hubly Brain</div>
+        <h1 class="is-title" data-i18n="isBuildTitle">Building from the strategy</h1>
+        <p class="is-sub" data-i18n="isBuildSub">I'm applying what I found — not walking you through settings.</p>
         <ul class="is-check" id="is-check-list">
-          <li data-check="trade"><span class="is-check-ico">1</span><span data-i18n="isBuildTrade">Understanding who you are</span></li>
-          <li data-check="services"><span class="is-check-ico">2</span><span data-i18n="isBuildServices">Creating your services</span></li>
-          <li data-check="media"><span class="is-check-ico">3</span><span data-i18n="isBuildMedia">Writing your website</span></li>
-          <li data-check="layout"><span class="is-check-ico">4</span><span data-i18n="isBuildLayout">Preparing booking &amp; brand</span></li>
+          <li data-check="trade"><span class="is-check-ico">1</span><span data-i18n="isBuildTrade">Locking your positioning</span></li>
+          <li data-check="services"><span class="is-check-ico">2</span><span data-i18n="isBuildServices">Choosing what belongs on the menu</span></li>
+          <li data-check="media"><span class="is-check-ico">3</span><span data-i18n="isBuildMedia">Writing the site in your voice</span></li>
+          <li data-check="layout"><span class="is-check-ico">4</span><span data-i18n="isBuildLayout">Setting booking &amp; brand hierarchy</span></li>
         </ul>
-        <p class="is-fine" id="is-build-status" data-i18n="isBuildWorking">Learning about your business…</p>
+        <p class="is-fine" id="is-build-status" data-i18n="isBuildWorking">I'm researching businesses like yours…</p>
       </div>
 
       <div class="is-step" data-is="discover" id="is-step-discover">
@@ -7993,7 +8217,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-card-row"><label for="is-disc-phone-inp" data-i18n="isDiscoverPhone">Phone</label><input type="tel" id="is-disc-phone-inp" autocomplete="tel" oninput="isSyncDiscoverField('phone',this.value)"></div>
         </div>
         <div class="is-cd-brief" id="is-cd-brief" hidden>
-          <h3 id="is-cd-headline">How I designed this</h3>
+          <h3 id="is-cd-headline">Here's what I was thinking</h3>
           <p id="is-cd-intro"></p>
           <ul id="is-cd-list"></ul>
         </div>
@@ -14894,8 +15118,11 @@ async function startCreativeDirector(seedText){
 
 async function startInstantSite(seedText,opts){
   opts=opts||{};
-  const seed=String(seedText!=null?seedText:(S._mktSeedPrompt||'')).trim();
+  let urlQ='';
+  try{urlQ=String(new URL(location.href).searchParams.get('q')||'').trim();}catch(e){}
+  const seed=String(seedText!=null?seedText:(S._mktSeedPrompt||urlQ||'')).trim();
   S._mktSeedPrompt=null;
+  try{if(urlQ){const u=new URL(location.href);u.searchParams.delete('q');history.replaceState(null,'',u.pathname+u.search+u.hash);}}catch(e){}
   // Fresh marketing seed starts clean; otherwise offer resume of in-browser progress.
   if(seed||opts.forceFresh)clearInstantSiteDraft();
   const pendingDraft=(!seed&&!opts.forceFresh)?readInstantSiteDraft():null;
@@ -14934,7 +15161,7 @@ async function startInstantSite(seedText,opts){
       prompt:seed,
       seed,
       step:'talk',
-      talkBeat:'owner',
+      talkBeat:'about',
       messages:[],
       ownerName:'',
       ownerFirst:'',
@@ -14943,6 +15170,7 @@ async function startInstantSite(seedText,opts){
       city:'',
       bizNamedByOwner:false,
       locked:null,
+      _aboutDone:false,
     };
     onboard?.classList.add('is-active');
     onboard?.classList.remove('cd-active','cd-building');
@@ -14981,16 +15209,11 @@ async function startInstantSite(seedText,opts){
     document.getElementById('is-shell')&&(document.getElementById('is-shell').style.display='flex');
     showP('p-onboard',{replaceRoute:true});
     try{
-      S._is=S._is||{step:'talk',talkBeat:'owner',messages:[],ownerName:'',ownerFirst:'',ownerLast:'',phone:'',city:'',bizNamedByOwner:false,locked:null};
+      S._is=S._is||{step:'talk',talkBeat:'about',messages:[],ownerName:'',ownerFirst:'',ownerLast:'',phone:'',city:'',bizNamedByOwner:false,locked:null,_aboutDone:false};
       isTalkBoot();
     }catch(e2){
       isShowStep('talk');
-      isTalkSetPrompt({
-        title:'What’s your first and last name?',
-        hint:'Type it below and hit Continue.',
-        placeholder:'e.g. Jerome Smith',
-        autocomplete:'name',
-      });
+      try{isSyncConvoHome();}catch(err){}
     }
     toast('Setup hiccup — answer the question below to keep going');
   }
@@ -15047,19 +15270,36 @@ function isTalkBoot(){
   S._is.messages=[];
   S._is._askedBeat=null;
   isTalkRender();
-  // Skip ahead only when marketing already collected answers — order: name → biz → phone → trade → priority → city.
-  if(S._is.ownerName)S._is.talkBeat='biz';
-  else S._is.talkBeat='owner';
-  if(S._is.talkBeat==='biz'&&S._is.bizNamedByOwner&&isAcceptableBizName(S.biz))S._is.talkBeat='phone';
-  if(S._is.talkBeat==='phone'&&(S.phone||S._is.phone))S._is.talkBeat='trade';
-  if(S._is.talkBeat==='trade'&&S._blueprintConfirmed&&S.businessType){
+  // Business conversation: about → name → business name → (trade only if unsure) → priority → city.
+  // Never show a step counter. Never ask for email until after value.
+  const seed=String(S._is.seed||S._is.prompt||'').trim();
+  if(seed&&!S._is._aboutDone){
+    S._is.workLove=S._is.workLove||seed;
+    S._is._aboutDone=true;
+    if(S._blueprintConfirmed&&S.businessType){
+      /* trade inferred from marketing prompt */
+    }else{
+      S._is._needTradeAsk=true;
+    }
+  }
+  if(!S._is._aboutDone)S._is.talkBeat='about';
+  else if(!S._is.ownerName)S._is.talkBeat='owner';
+  else if(!(S._is.bizNamedByOwner&&isAcceptableBizName(S.biz)))S._is.talkBeat='biz';
+  else if((S._is._needTradeAsk||!S._blueprintConfirmed||!S.businessType))S._is.talkBeat='trade';
+  else{
     const specs=blueprintSpecialtyList();
     if(specs.length>1)S._is.talkBeat='specialty';
     else if(S._is.onboardingPriority)S._is.talkBeat='city';
     else S._is.talkBeat='priority';
   }
   isShowStep('talk');
-  // Consultant opener — feel like Hubly is getting to know the business, not a form.
+  isSyncConvoHome();
+  if(S._is.talkBeat==='about'){
+    const ta=document.getElementById('is-convo-about');
+    if(ta&&seed)ta.value=seed;
+    setTimeout(()=>document.getElementById('is-convo-about')?.focus(),80);
+    return;
+  }
   if(S._is.talkBeat==='owner'&&!(S._is.messages||[]).length){
     isTalkPush('hubly',t('isTalkIntro'));
   }
@@ -15335,7 +15575,8 @@ function isTalkGo(beat,opts={}){
   isTalkAskCurrent();
 }
 function isTalkProgressBeats(){
-  const core=['owner','biz','phone','trade'];
+  // Kept for back-navigation ordering helpers — never rendered as "Step N of M".
+  const core=['about','owner','biz','trade'];
   if(blueprintSpecialtyList().length>1)core.push('specialty');
   core.push('priority');
   core.push('city');
@@ -15344,22 +15585,9 @@ function isTalkProgressBeats(){
 function isTalkRenderProgress(){
   const el=document.getElementById('is-talk-progress');
   if(!el)return;
-  const raw=S._is?.talkBeat||'owner';
-  if(['services','services_count','services_edit','addons_edit','media'].includes(raw)){
-    el.hidden=true;
-    el.innerHTML='';
-    return;
-  }
-  el.hidden=false;
-  const beats=isTalkProgressBeats();
-  const idx=Math.max(0,beats.indexOf(raw));
-  const n=idx+1;
-  const total=beats.length;
-  el.innerHTML=`<span>${n} of ${total}</span>`+beats.map((_,i)=>{
-    const cls=i<idx?'done':(i===idx?'on':'');
-    return `<span class="dot ${cls}" aria-hidden="true"></span>`;
-  }).join('');
-  el.setAttribute('aria-label',`Step ${n} of ${total}`);
+  el.hidden=true;
+  el.innerHTML='';
+  el.removeAttribute('aria-label');
 }
 function isToggleAreaExtra(){
   // Legacy no-op — area panel is always expanded (state → cities).
@@ -15504,6 +15732,126 @@ function isCommitServiceArea(primaryRaw){
   return S.city;
 }
 
+function isSyncConvoHome(){
+  const shell=document.getElementById('is-shell');
+  const home=document.getElementById('is-convo-home');
+  const cont=document.getElementById('is-convo-continue');
+  const showHome=!!(S._is&&S._is.talkBeat==='about'&&!S._is._aboutDone);
+  shell?.classList.toggle('is-convo-landing',!!showHome);
+  if(home)home.hidden=!showHome;
+  if(cont)cont.hidden=!!showHome;
+  if(showHome){
+    try{isRenderConvoHomeChips();}catch(e){}
+    try{isRenderConvoProof();}catch(e){}
+  }
+}
+function isRenderConvoHomeChips(){
+  const chips=document.getElementById('is-convo-example-chips');
+  if(!chips)return;
+  const preferred=['lawn-care','house-cleaning','photography','hvac','spa'];
+  let list=[];
+  try{if(typeof HublyBlueprints!=='undefined')list=HublyBlueprints.listForPicker?.()||[];}catch(e){}
+  const byId=new Map(list.map(t=>[String(t.id||''),t]));
+  let picks=preferred.map(id=>byId.get(id)).filter(Boolean);
+  if(!picks.length)picks=list.slice(0,5);
+  const samples={
+    'lawn-care':'I run a lawn care business that keeps yards looking sharp every week.',
+    'house-cleaning':'I run a house cleaning business that helps busy families keep their homes spotless.',
+    'photography':'I photograph families and brands — portfolio-first, easy to inquire.',
+    'hvac':'I own an HVAC company — installs, repairs, and maintenance plans.',
+    'spa':'I run a spa and wellness studio with packages and memberships.',
+  };
+  chips.innerHTML=picks.map(t=>{
+    const id=String(t.id||'');
+    const label=String(t.label||t.id||'');
+    const sample=samples[id]||`I run a ${label.toLowerCase()} business.`;
+    return `<button type="button" class="is-chip" onclick='isConvoPickExample(${JSON.stringify(id)},${JSON.stringify(label)},${JSON.stringify(sample)})'>${escPeHtml(label)}</button>`;
+  }).join('');
+}
+function isRenderConvoProof(){
+  const grid=document.getElementById('is-convo-proof-grid');
+  if(!grid)return;
+  const cards=[
+    {id:'window-cleaning',label:'Window Cleaning',img:'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=400&q=80'},
+    {id:'house-cleaning',label:'House Cleaning',img:'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80'},
+    {id:'photography',label:'Photography',img:'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=400&q=80'},
+    {id:'hvac',label:'HVAC Services',img:'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=400&q=80'},
+    {id:'lawn-care',label:'Lawn Care',img:'https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=400&q=80'},
+    {id:'pressure-washing',label:'Pressure Washing',img:'https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=400&q=80'},
+    {id:'spa',label:'Spa & Wellness',img:'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=400&q=80'},
+    {id:'detailing',label:'Mobile Detailing',img:'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=400&q=80'},
+  ];
+  try{
+    if(typeof HublyBlueprints!=='undefined'){
+      cards.forEach(c=>{
+        const bp=HublyBlueprints.get?.(c.id);
+        const pic=bp?.identity?.pickerImage||bp?.website?.heroImage;
+        if(pic)c.img=pic;
+        if(bp?.identity?.name)c.label=bp.identity.name;
+      });
+    }
+  }catch(e){}
+  grid.innerHTML=cards.map(c=>`<div class="is-convo-proof-card"><img src="${escPeHtml(c.img)}" alt=""><span>${escPeHtml(c.label)}</span></div>`).join('');
+}
+function isConvoHomeSend(){
+  const ta=document.getElementById('is-convo-about');
+  const text=String(ta?.value||'').trim();
+  if(!text){toast('Tell me about your business');ta?.focus();return;}
+  S._is=S._is||{};
+  S._is.talkBeat='about';
+  isTalkHandleAbout(text);
+}
+function isConvoPickExample(id,label,sample){
+  S._is=S._is||{};
+  const text=String(sample||`I run a ${label||id} business.`).trim();
+  if(id){
+    S.businessType=id;
+    S.businessSpecialty=null;
+    S.businessSpecialties=[];
+    S._blueprintConfirmed=true;
+    S._blueprintSource='talk';
+    if(S._cd)S._cd.inferredType=id;
+    S._is._needTradeAsk=false;
+  }
+  S._is.workLove=String(label||text);
+  isTalkHandleAbout(text,{tradeKnown:!!id,label:label||id});
+}
+function isTalkHandleAbout(text,opts={}){
+  const raw=String(text||'').trim();
+  if(!raw)return;
+  S._is=S._is||{};
+  S._is._aboutDone=true;
+  S._is.workLove=S._is.workLove||raw;
+  S._is.prompt=raw;
+  S._is.seed=S._is.seed||raw;
+  if(S._cd)S._cd.whoText=raw;
+  isTalkPush('owner',raw);
+  if(opts.tradeKnown){
+    S._is._needTradeAsk=false;
+  }else{
+    const match=typeof inferBlueprintMatch==='function'?inferBlueprintMatch(raw):null;
+    if(match?.id&&match.score>=28){
+      S.businessType=match.id;
+      S.businessSpecialty=null;
+      S.businessSpecialties=[];
+      S._blueprintConfirmed=true;
+      S._blueprintSource='talk';
+      if(S._cd)S._cd.inferredType=match.id;
+      S._is._needTradeAsk=false;
+    }else if(match?.id&&match.score>=18){
+      S.businessType=match.id;
+      if(S._cd)S._cd.inferredType=match.id;
+      S._blueprintConfirmed=false;
+      S._is._needTradeAsk=true;
+      S._is._tradeGuess=match;
+    }else{
+      S._is._needTradeAsk=true;
+    }
+  }
+  isSyncConvoHome();
+  // Visible thinking first — not another interview question.
+  isEnterHublyBrain({from:'about'});
+}
 function isTalkTradeChips(){
   const chips=document.getElementById('is-talk-chips');
   if(!chips)return;
@@ -15541,8 +15889,12 @@ function isTalkAcceptCustomBusiness(desc,opts={}){
     const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
   }
   isTalkClearChips();
-  // Skip curated specialty chips — this business is being built collaboratively.
-  isTalkGo('priority',{ack:opts.ack||"Great. Let’s build Hubly around your business."});
+  S._is._needTradeAsk=false;
+  if(!S._is?._brainDone){
+    isEnterHublyBrain({from:'custom',label:text});
+    return true;
+  }
+  isTalkFastTrackToBuild({ack:opts.ack||"Great. I'm building Hubly around your business."});
   return true;
 }
 function isTalkClearChips(){
@@ -16628,8 +16980,8 @@ function isTalkSetPrompt({title,hint,placeholder,autocomplete,type='text',value=
 function isTalkUpdateBackBtn(){
   const btn=document.getElementById('is-talk-back');
   if(!btn)return;
-  const beat=S._is?.talkBeat||'owner';
-  btn.hidden=beat==='owner'&&!(S._is?.messages||[]).length;
+  const beat=S._is?.talkBeat||'about';
+  btn.hidden=beat==='about'||(beat==='owner'&&!(S._is?.messages||[]).length);
 }
 function isTalkBack(){
   const beat=S._is?.talkBeat||'owner';
@@ -16654,9 +17006,21 @@ function isTalkBack(){
     isEnterMediaBeforePackages();
     return;
   }
-  const order=['owner','biz','phone','trade','specialty','priority','city','services','services_count','services_edit'];
+  const order=['about','owner','biz','trade','specialty','priority','city','services','services_count','services_edit'];
   const i=order.indexOf(beat);
-  if(i<=0){isExitToLanding();return;}
+  if(i<=0){
+    if(beat==='owner'||beat==='about'){
+      S._is._aboutDone=false;
+      S._is.talkBeat='about';
+      S._is.messages=[];
+      isTalkRender();
+      isSyncConvoHome();
+      setTimeout(()=>document.getElementById('is-convo-about')?.focus(),60);
+      return;
+    }
+    isExitToLanding();
+    return;
+  }
   let prev=order[i-1];
   // Skip specialty if trade has no multi specialties
   if(prev==='specialty'&&blueprintSpecialtyList().length<=1)prev='trade';
@@ -16732,7 +17096,14 @@ function isTalkAskCurrent(){
   if(beat!=='services_edit')isShowPkgPanel(false);
   isShowAddonsPanel(false);
 
+  isSyncConvoHome();
+  if(beat==='about'&&!S._is?._aboutDone){
+    isTalkRenderProgress();
+    isTalkUpdateBackBtn();
+    return;
+  }
   const prompts={
+    about:{title:t('isTalkAboutTitle'),chat:t('isTalkAboutChat'),hint:t('isTalkAboutHint'),placeholder:t('isTalkAboutPh'),autocomplete:'off',type:'text'},
     owner:{title:t('isTalkOwnerTitle'),chat:t('isTalkOwnerTitle'),hint:t('isTalkOwnerHint'),placeholder:t('isTalkOwnerPh'),autocomplete:'name',type:'text'},
     biz:{title:t('isTalkBizTitle'),chat:t('isTalkBizTitle'),hint:t('isTalkBizHint'),placeholder:S._is?.ownerFirst?`${S._is.ownerFirst}'s …`:'e.g. Jerome’s Detailing',autocomplete:'organization',type:'text',value:isAcceptableBizName(S.biz)?S.biz:''},
     phone:{title:t('isTalkPhoneTitle'),chat:t('isTalkPhoneChat'),hint:t('isTalkPhoneHint'),placeholder:'888-888-8888',autocomplete:'tel',type:'tel',value:S._is?.phone||S.phone||''},
@@ -16842,6 +17213,7 @@ function isTalkPickTrade(id,label){
   S._is.workLove=String(label||id||'').trim();
   isTalkPush('owner',label||id);
   isTalkClearChips();
+  S._is._needTradeAsk=false;
   // Don't overwrite an owner-typed shop name when they only tapped a trade chip.
   if(!S._is?.bizNamedByOwner&&(/^My\s+/i.test(S.biz||'')||!isAcceptableBizName(S.biz))){
     const trade=label||id||'Business';
@@ -16849,7 +17221,20 @@ function isTalkPickTrade(id,label){
     const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
   }
   S._is._askedBeat=null;
-  isTalkAdvanceAfterTrade({ack:`Got it — ${label||id}.`});
+  // Trade clarified mid-flow — run (or finish) Hubly Brain before more questions.
+  if(!S._is?._brainDone){
+    isEnterHublyBrain({from:'trade',label:label||id});
+    return;
+  }
+  if(!S._is?.ownerName){
+    isTalkGo('owner',{ack:`Got it — ${label||id}.`});
+    return;
+  }
+  if(!(S._is?.bizNamedByOwner&&isAcceptableBizName(S.biz))){
+    isTalkGo('biz',{ack:`Got it — ${label||id}.`});
+    return;
+  }
+  isTalkFastTrackToBuild({ack:`Got it — ${label||id}.`});
 }
 function isTalkSend(){
   if(S._is?._talkBusy)return;
@@ -16929,23 +17314,27 @@ function isTalkSend(){
         S.biz=text.trim();
         S._is.bizNamedByOwner=true;
         const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
-        isTalkGo('phone',{ack:`“${S.biz}” it is — we’ll get your name for the About section later.`});
+        isTalkPush('hubly',`“${S.biz}” — locked in. And what should I call you?`);
         return;
       }
     }
     const parts=text.split(/\s+/).map(p=>p.replace(/[^A-Za-z'’-]/g,'')).filter(Boolean);
     const first=parts[0]||'';
     const last=parts.slice(1).join(' ');
-    if(!first||first.length<2){isTalkPush('hubly','First and last name — both help customers recognize you.');return;}
-    if(!last){isTalkPush('hubly','And your last name?');return;}
+    if(!first||first.length<2){isTalkPush('hubly','What should I call you? First name is perfect — last name helps customers recognize you.');return;}
+    // Last name optional — conversation, not a form.
     S._is.ownerFirst=first.charAt(0).toUpperCase()+first.slice(1);
-    S._is.ownerLast=last.split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
-    S._is.ownerName=`${S._is.ownerFirst} ${S._is.ownerLast}`;
+    S._is.ownerLast=last?last.split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '):'';
+    S._is.ownerName=S._is.ownerLast?`${S._is.ownerFirst} ${S._is.ownerLast}`:S._is.ownerFirst;
     if(S.website)S.website.ownerName=S._is.ownerName;
     if(/just started|brand new|starting out|getting started/.test(text.toLowerCase())){
       S._is.businessStage='just_started';
     }
-    isTalkGo('biz',{ack:`Nice, ${S._is.ownerFirst}.`});
+    isTalkGo('biz',{ack:`Nice, ${S._is.ownerFirst}. What's the name of the business we're building?`});
+    return;
+  }
+  if(beat==='about'){
+    isTalkHandleAbout(text);
     return;
   }
   if(beat==='biz'){
@@ -16961,18 +17350,18 @@ function isTalkSend(){
       S.biz=S._is.ownerFirst?`${S._is.ownerFirst}'s ${tradeName}`:`My ${tradeName}`;
       S._is.bizNamedByOwner=false;
       const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
-      isTalkGo('phone',{ack:`We’ll start with “${S.biz}” — you can rename anytime.`});
+      isTalkAfterBizName(`We’ll start with “${S.biz}” — you can rename anytime.`);
       return;
     }else if(isAcceptableBizName(text)){
       S.biz=text;
       S._is.bizNamedByOwner=true;
     }else{
-      isTalkPush('hubly','Give me the shop name customers will see (a few words).');
+      isTalkPush('hubly','What’s the name of the business we’re building? A few words customers will see.');
       return;
     }
     const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
     const celebrate=S._is.businessStage==='just_started'?t('isTalkCelebrateStarted'):`“${S.biz}” it is.`;
-    isTalkGo('phone',{ack:celebrate});
+    isTalkAfterBizName(celebrate);
     return;
   }
   if(beat==='trade'){
@@ -17028,7 +17417,7 @@ function isTalkSend(){
     S._is.phone=formatted;
     S.phone=formatted;
     const pel=document.getElementById('ob-phone');if(pel){pel.value=formatted;formatPhone(pel);}
-    isTalkGo('trade',{ack:`Got it — ${formatted}.`});
+    isTalkAfterBizName(`Got it — ${formatted}.`);
     return;
   }
   if(beat==='city'){
@@ -17167,9 +17556,247 @@ function isRestoreTalkLocks(){
     S._is.pkgDraft=L.pkgDraft.map(s=>({...s}));
   }
 }
+function isTalkAfterBizName(ack){
+  S._is=S._is||{};
+  // Infer trade when possible — only ask when confidence is low.
+  if(S._blueprintConfirmed&&S.businessType&&!S._is._needTradeAsk){
+    isTalkFastTrackToBuild({ack});
+    return;
+  }
+  const corpus=[S._is.workLove,S._is.prompt,S._is.seed,S.biz].filter(Boolean).join(' ');
+  const match=typeof inferBlueprintMatch==='function'?inferBlueprintMatch(corpus):null;
+  if(match?.id&&match.score>=28){
+    S.businessType=match.id;
+    S._blueprintConfirmed=true;
+    S._blueprintSource=S._blueprintSource||'talk';
+    if(S._cd)S._cd.inferredType=match.id;
+    S._is._needTradeAsk=false;
+    let label=match.id;
+    try{label=HublyBlueprints.get?.(match.id)?.identity?.name||match.id;}catch(e){}
+    isTalkFastTrackToBuild({ack:`${ack} I'm building this as ${label}.`});
+    return;
+  }
+  isTalkGo('trade',{ack:`${ack} What kind of work do you do?`});
+}
+
+function creativeDirectionLabel(layoutId){
+  const map={
+    'warm-local':'Neighborhood Favorite','estate-green':'Premium Residential','premium-dark':'Luxury Brand',
+    'minimal-pro':'Modern Professional','classic-trust':'Family Owned Trust','lawn-day':'High-End Outdoor Living',
+    'field-crew':'Neighborhood Crew','obsidian-gold':'Luxury Brand','clean-modern':'Modern Professional',
+    'calm-service':'Quiet Trust','editorial':'Boutique Studio','spark-home':'Neighborhood Favorite',
+    'bold-impact':'High-Energy Local','simple-profile':'Simple Local',
+  };
+  if(layoutId&&map[layoutId])return map[layoutId];
+  try{
+    const layout=(typeof HublyLayouts!=='undefined'&&layoutId)?HublyLayouts.getLayout(layoutId):null;
+    return layout?.outcomeName||layout?.name||'this direction';
+  }catch(e){return 'this direction';}
+}
+function creativeDirectionWhy(layoutId){
+  const map={
+    'warm-local':'Feels familiar and trustworthy — like the neighbor everyone recommends.',
+    'estate-green':'Signals careful outdoor craft without looking corporate.',
+    'premium-dark':'Makes booking feel high-end and intentional on mobile.',
+    'minimal-pro':'Quiet confidence — lets your work and reviews do the talking.',
+    'classic-trust':'Old-school credibility for homeowners who hire carefully.',
+    'lawn-day':'Puts curb appeal and recurring plans up front.',
+    'editorial':'Portfolio-first — right for style-led trades.',
+    'calm-service':'Low anxiety. Clear next step. Easy to book.',
+    'clean-modern':'Clear hierarchy so customers book without hunting.',
+  };
+  return map[layoutId]||'Built for bookings, trust, and how your customers actually decide.';
+}
+/** Real blueprint-backed discovery — never fake progress filler. */
+function hublyBlueprintDiscoveryLines(bp){
+  const b=bp||(typeof getActiveBlueprint==='function'?getActiveBlueprint():null);
+  const trade=(b?.identity?.name||'local service').toLowerCase();
+  const psych=String(b?.knowledge?.customerPsychology||'').trim();
+  const buy=String(b?.knowledge?.buyingBehavior||'').trim();
+  const goals=b?.knowledge?.homepageGoals||[];
+  const factors=b?.decisionFactors||[];
+  const lines=[];
+  if(psych)lines.push('I noticed something: '+psych.replace(/\.$/,'')+'.');
+  else if(factors[0])lines.push('Most '+trade+' brands compete on '+String(factors[1]||'price').toLowerCase()+'. I\'m positioning you around '+String(factors[0]).toLowerCase()+'.');
+  if(buy)lines.push('Customers usually '+buy.charAt(0).toLowerCase()+buy.slice(1).replace(/\.$/,'')+'. I\'m designing for that.');
+  else if(goals[0])lines.push('I\'m leading with this: '+String(goals[0]).replace(/\.$/,'')+'.');
+  if(goals[1])lines.push('I\'m also emphasizing '+String(goals[1]).replace(/\.$/,'').toLowerCase()+' — I think it\'ll convert better.');
+  else if(factors[0]&&factors[1])lines.push('I\'m changing direction away from '+String(factors[1]).toLowerCase()+' toward '+String(factors[0]).toLowerCase()+'.');
+  else lines.push('I\'m simplifying the homepage so '+trade+' customers can decide fast.');
+  return lines.slice(0,4);
+}
+function hublyBuildResearchPlan(opts){
+  opts=opts||{};
+  const bp=typeof getActiveBlueprint==='function'?getActiveBlueprint():null;
+  const trade=(bp?.identity?.name||opts.label||'your trade');
+  const desc=String(S._is?.workLove||S._is?.prompt||S._is?.seed||'').trim();
+  const discovery=hublyBlueprintDiscoveryLines(bp);
+  const goals=bp?.knowledge?.homepageGoals||[];
+  const factors=bp?.decisionFactors||[];
+  const layoutId=bp?.website?.defaultLayout||S._preferredLayout||null;
+  const direction=layoutId?creativeDirectionLabel(layoutId):'a trust-first direction';
+  const whyDir=layoutId?creativeDirectionWhy(layoutId):'Booking and trust first — how customers actually hire.';
+  const steps=[];
+  steps.push({
+    tag:"I'm researching",
+    text:bp
+      ?("I'm researching how customers hire "+String(trade).toLowerCase()+" businesses"+(desc?" — starting from what you told me":"")+".")
+      :"I'm studying what you described before I lock a trade playbook.",
+  });
+  if(discovery[0])steps.push({tag:'I noticed something',text:discovery[0].replace(/^I noticed something:\s*/i,'')});
+  else steps.push({tag:'I noticed something',text:'Owners in '+String(trade).toLowerCase()+' win when the first screen makes the next step obvious.'});
+  if(factors[0]&&factors[1]){
+    steps.push({
+      tag:"I'm changing direction",
+      text:'Most '+String(trade).toLowerCase()+' sites lean on '+String(factors[1]).toLowerCase()+'. I think that\'s a mistake for you — I\'m leading with '+String(factors[0]).toLowerCase()+'.',
+    });
+  }else if(discovery[1]){
+    steps.push({tag:"I'm changing direction",text:discovery[1]});
+  }else{
+    steps.push({
+      tag:"I'm changing direction",
+      text:"I'm skipping generic template order and building a "+String(trade).toLowerCase()+"-specific hierarchy.",
+    });
+  }
+  steps.push({
+    tag:"Here's why",
+    text:goals[0]
+      ?(String(goals[0]).replace(/\.$/,'')+". That's why I'm choosing "+direction+": "+whyDir)
+      :("I'm choosing "+direction+": "+whyDir),
+  });
+  return {
+    trade:trade,
+    layoutId:layoutId,
+    direction:direction,
+    whyDir:whyDir,
+    discovery:discovery,
+    factors:factors,
+    goals:goals,
+    steps:steps,
+    closing:'Strategy locked for '+trade+'. Next I\'ll put your name on it — then build.',
+  };
+}
+function isApplyBrainCreativeDirection(){
+  const plan=S._is&&S._is.brain;
+  const bp=typeof getActiveBlueprint==='function'?getActiveBlueprint():null;
+  const layoutId=(plan&&plan.layoutId)||(bp&&bp.website&&bp.website.defaultLayout)||S._preferredLayout;
+  if(layoutId){
+    S._preferredLayout=layoutId;
+    S._layoutPickedInEditor=true;
+    S._is=S._is||{};
+    S._is.vibeLayoutId=layoutId;
+    try{if(typeof selectWebsiteLayout==='function')selectWebsiteLayout(layoutId);}catch(e){}
+  }
+  const accent=typeof isTradeDefaultAccent==='function'?isTradeDefaultAccent():(S.color||'#D9632D');
+  if(accent){
+    S.color=typeof isNormalizeTradeAccent==='function'?isNormalizeTradeAccent(accent):accent;
+    S._accentPickedInEditor=true;
+    S._is=S._is||{};
+    S._is.vibeAccent=S.color;
+  }
+}
+async function isEnterHublyBrain(opts){
+  opts=opts||{};
+  S._is=S._is||{};
+  if(S._is._brainRunning)return;
+  S._is._brainRunning=true;
+  try{
+    isTalkClearChips();
+    try{isShowAreaPanel(false);}catch(e){}
+    try{isShowPkgPanel(false);}catch(e){}
+    try{isShowAddonsPanel(false);}catch(e){}
+    document.querySelector('.is-wrap')&&document.querySelector('.is-wrap').classList.remove('is-wide');
+    if((S._is._needTradeAsk||!S.businessType)&&opts.from!=='trade'&&opts.from!=='custom'){
+      isShowStep('talk');
+      isSyncConvoHome();
+      isTalkGo('trade',{ack:"I'm starting research — one quick check so I use the right playbook."});
+      return;
+    }
+    const plan=hublyBuildResearchPlan(opts);
+    S._is.brain=plan;
+    isApplyBrainCreativeDirection();
+    isShowStep('brain');
+    isSyncConvoHome();
+    await isPlayResearchPlan(plan);
+    S._is._brainDone=true;
+    if(!S._is.ownerName){
+      isShowStep('talk');
+      isTalkGo('owner',{ack:"I've got a direction.",replaceAsk:false});
+      return;
+    }
+    if(!(S._is.bizNamedByOwner&&isAcceptableBizName(S.biz))){
+      isShowStep('talk');
+      isTalkGo('biz',{ack:'Nice, '+(S._is.ownerFirst||'there')+'.'});
+      return;
+    }
+    isTalkFastTrackToBuild({ack:'Names are set. Building from the strategy now.'});
+  }finally{
+    S._is._brainRunning=false;
+  }
+}
+async function isPlayResearchPlan(plan){
+  const log=document.getElementById('is-brain-log');
+  const status=document.getElementById('is-brain-status');
+  const why=document.getElementById('is-brain-why');
+  const title=document.getElementById('is-brain-title');
+  const sub=document.getElementById('is-brain-sub');
+  if(title)title.textContent="I'm researching businesses like yours";
+  if(sub)sub.textContent='Watch my reasoning — this is strategy, not a setup wizard.';
+  if(log)log.innerHTML='';
+  if(why){why.hidden=true;why.textContent='';}
+  const steps=(plan&&plan.steps)||[];
+  for(let i=0;i<steps.length;i++){
+    const step=steps[i];
+    if(status)status.textContent=step.tag+'…';
+    if(log){
+      const li=document.createElement('li');
+      li.className='is-brain-line active';
+      li.innerHTML='<strong>'+escPeHtml(step.tag)+'</strong><p>'+escPeHtml(step.text)+'</p>';
+      log.appendChild(li);
+      requestAnimationFrame(function(){li.classList.add('on');});
+      await isSleep(i===0?520:720);
+      li.classList.remove('active');
+      li.classList.add('done');
+    }else{
+      await isSleep(500);
+    }
+  }
+  if(why&&plan&&plan.closing){
+    why.hidden=false;
+    why.textContent=plan.closing;
+  }
+  if(status)status.textContent='Strategy ready.';
+  await isSleep(420);
+}
+
+/** Skip interview gauntlet — Hubly Brain already chose a direction. */
+function isTalkFastTrackToBuild(opts={}){
+  S._is=S._is||{};
+  isTalkClearChips();
+  // Soft defaults so we don't interview for priority/city/specialty/vibe.
+  if(!S._is.onboardingPriority){
+    S._is.onboardingPriority='grow';
+    S._is.onboardingPriorityLabel=t('isTalkPriorityGrow');
+    S.onboardingPriority='grow';
+  }
+  const specs=blueprintSpecialtyList();
+  if(specs.length===1){
+    S.businessSpecialties=[specs[0].id];
+    S.businessSpecialty=specs[0].id;
+  }else if(specs.length>1&&!(S.businessSpecialties||[]).length){
+    const def=isDefaultSpecialty();
+    if(def){S.businessSpecialties=[def.id];S.businessSpecialty=def.id;}
+  }
+  if(!S._is.servicesMode){
+    S._is.servicesMode='draft';
+    S._servicesDraft=true;
+  }
+  try{seedOnboardServicesFromType(true);}catch(e){}
+  if(opts.ack)isTalkPush('hubly',String(opts.ack));
+  return isTalkFinishIntake();
+}
 async function isTalkFinishIntake(){
   isTalkClearChips();
-  isTalkPush('hubly','Nice — pick a vibe, then we’ll build your first draft.');
   // Freeze what the owner just told us — Claude / seed heuristics must not clobber.
   isLockTalkAnswers();
   const parts=[];
@@ -17194,12 +17821,13 @@ async function isTalkFinishIntake(){
   const seed=parts.join('. ')||(S._is?.seed)||S.biz||'local service business';
   S._is.prompt=seed;
   if(S._cd)S._cd.whoText=seed;
-  // Default travel: mobile for home services; studio trades stay put
   const mobileTrades=['detailing','windows','pressure_washing','landscaping','cleaning','hvac'];
   isSetTravel(mobileTrades.includes(normalizeBlueprintId(S.businessType)));
-  // Trade-aware vibe before build so layout/color direct what we generate.
-  isRenderVibe();
-  isShowStep('vibe');
+  // Apply creative direction Hubly Brain already chose — no vibe form gate.
+  isApplyBrainCreativeDirection();
+  isTalkPush('hubly',"I've got enough to build. Watch my thinking as I put the company together.");
+  persistInstantSiteDraft();
+  return isSoftEmailProceed();
 }
 function isSetCheck(id,state){
   const li=document.querySelector(`#is-check-list [data-check="${id}"]`);
@@ -17349,9 +17977,11 @@ async function isRunBuild(seed){
       if(ico)ico.textContent={trade:'1',services:'2',media:'3',layout:'4'}[id];
     }
   });
-  setStatus('Learning about your business…');
+  const plan=S._is?.brain||(typeof hublyBuildResearchPlan==='function'?hublyBuildResearchPlan():{discovery:[]});
+  const discovery=plan.discovery||(typeof hublyBlueprintDiscoveryLines==='function'?hublyBlueprintDiscoveryLines():[]);
+  setStatus(discovery[0]||"I'm researching businesses like yours…");
   isSetCheck('trade','run');
-  await isSleep(280);
+  await isSleep(320);
   await isInvokeClaudeOnce(seed);
   isRestoreTalkLocks();
   // Keep imported Instant Site packages even if Continue left them in pkgDraft only.
@@ -17404,8 +18034,8 @@ async function isRunBuild(seed){
   if(S._cd)S._cd.whoText=seed;
   isSetCheck('trade','done');
   isSetCheck('services','run');
-  setStatus('Creating your services…');
-  await isSleep(260);
+  setStatus((discovery&&discovery[1])||"I'm choosing what belongs on your menu — and what distracts…");
+  await isSleep(280);
   if(keepOwnerPkgs||shouldKeepOwnerPackages()){
     try{syncServicesToEditor();}catch(e){}
   }else{
@@ -17418,8 +18048,8 @@ async function isRunBuild(seed){
   }
   isSetCheck('services','done');
   isSetCheck('media','run');
-  setStatus('Writing your website…');
-  await isSleep(260);
+  setStatus((discovery&&discovery[2])||"I'm writing the homepage for how customers hire you…");
+  await isSleep(280);
   try{seedGalleryFromBlueprint(true);}catch(e){}
   try{refreshWebsiteCopyFromBlueprint(true);}catch(e){}
   ensureWebsiteCopy();
@@ -17438,16 +18068,17 @@ async function isRunBuild(seed){
   isUpdateAtmosphere();
   isSetCheck('media','done');
   isSetCheck('layout','run');
-  setStatus('Preparing booking & brand…');
-  await isSleep(240);
+  const dirLabel=(plan&&plan.direction)||(S._preferredLayout?creativeDirectionLabel(S._preferredLayout):'your direction');
+  setStatus("I'm locking "+dirLabel+" — booking first, trust close behind…");
+  await isSleep(280);
   if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
   ensureWebsiteCopy();
   S.website.composition=inferWebsiteComposition();
   try{applyComposition(S.website.composition,{force:true});}catch(e){}
   isSetCheck('layout','done');
   isSetCheck('layout','done');
-  setStatus('🎉 Your business is taking shape');
-  await isSleep(180);
+  setStatus("I think we built something you'll be proud of.");
+  await isSleep(220);
   isRestoreTalkLocks();
   isApplyPersonalCopy({force:true});
   try{await isAttachRuntimeBuildSurfaces(seed);}catch(e){console.warn('isAttachRuntimeBuildSurfaces',e);}
@@ -17480,18 +18111,32 @@ async function isAttachRuntimeBuildSurfaces(seed){
   isRenderDomainLaunch();
 }
 function isLocalCreativeDirectorBrief(){
+  const bp=typeof getActiveBlueprint==='function'?getActiveBlueprint():null;
+  const trade=(bp?.identity?.name||'local service').toLowerCase();
   const ideal=S._is?.workLove||'local homeowners';
-  const accent=S.brandColor||S.website?.accentColor||'#D9632D';
+  const accent=S.brandColor||S.website?.accentColor||S.color||'#D9632D';
   const svc=(S.services||S.editorSvcs||[]).find(s=>s&&s.popular)||(S.services||S.editorSvcs||[])[0];
+  const layoutId=S._preferredLayout||S.website?.layout||(S._is&&S._is.brain&&S._is.brain.layoutId);
+  const direction=typeof creativeDirectionLabel==='function'?creativeDirectionLabel(layoutId):'this direction';
+  const discovery=hublyBlueprintDiscoveryLines(bp);
+  const factors=bp?.decisionFactors||[];
+  const goals=bp?.knowledge?.homepageGoals||[];
+  const rationales=[];
+  if(discovery[0])rationales.push({title:'I noticed something',detail:discovery[0].replace(/^I noticed something:\s*/i,'')});
+  rationales.push({title:'Creative direction: '+direction,detail:(typeof creativeDirectionWhy==='function'?creativeDirectionWhy(layoutId):'Built for bookings and trust.')});
+  if(factors[0]&&factors[1]){
+    rationales.push({title:"How I'm positioning you",detail:'Most '+trade+' businesses lean on '+String(factors[1]).toLowerCase()+'. I think that\'s a mistake for you — I\'m leading with '+String(factors[0]).toLowerCase()+'.'});
+  }else{
+    rationales.push({title:"Who you're speaking to",detail:'Every screen is written for '+ideal+' — not a generic audience.'});
+  }
+  if(svc&&svc.name)rationales.push({title:'What I highlighted',detail:'I put '+svc.name+' forward because it\'s central to how you win work.'});
+  else if(goals[0])rationales.push({title:'Homepage priority',detail:'I built the first screen to '+String(goals[0]).charAt(0).toLowerCase()+String(goals[0]).slice(1).replace(/\.$/,'')+'.'});
+  rationales.push({title:'Color & presence',detail:"I'm using "+accent+" so the brand feels intentional — not template-default."});
   return {
-    headline:'How I designed this',
-    intro:`Here's my creative direction for ${S.biz||'your business'} — based on who you are, not a template.`,
-    rationales:[
-      {title:'Who you\'re speaking to',detail:`I noticed you're targeting ${ideal}. Every screen is written for them.`},
-      {title:'Color & presence',detail:`I'm using ${accent} so the brand feels intentional and trustworthy.`},
-      {title:'What I highlighted',detail:svc&&svc.name?`I highlighted ${svc.name} because it's central to how you win work.`:'I led with your core services so visitors know what to book.'},
-    ],
-    closing:'Tell me what to change in plain English — I\'ll restyle from there.',
+    headline:"Here's what I was thinking",
+    intro:'I built '+(S.biz||'your business')+' like a partner — from your trade DNA, not a blank template.',
+    rationales:rationales.slice(0,5),
+    closing:"Tell me what to change in plain English — make it more premium, more local, bigger booking button — and I'll restyle.",
   };
 }
 function isLocalDomainLaunch(){
@@ -17764,15 +18409,9 @@ function isConfirmVibe(){
   if(!S._is.vibeLayoutId){toast('Pick a vibe to continue');return;}
   S._preferredLayout=S._is.vibeLayoutId;
   if(S._is.vibeAccent)S.color=isNormalizeTradeAccent(S._is.vibeAccent);
-  const soft=readSoftEmail();
-  const input=document.getElementById('is-soft-email');
-  if(input&&!input.value&&soft)input.value=soft;
-  const draft=readDraftLogin();
-  const pw=document.getElementById('is-soft-password');
-  if(pw&&!pw.value&&draft?.password&&draft.email===soft)pw.value=draft.password;
-  isShowStep('email');
+  // EPIC 1: no email/password until after value (reveal / publish).
   persistInstantSiteDraft();
-  setTimeout(()=>document.getElementById('is-soft-email')?.focus(),80);
+  return isSoftEmailProceed();
 }
 function isSoftEmailProceed(){
   const seed=S._is?.prompt||S._is?.seed||S.biz||'local service business';
@@ -39181,18 +39820,22 @@ const T = {
     isPhotosSkip:'Skip for now',
     isPhotosShow:'Show my site →',
     isPhotosFine:'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.',
-    isTalkIntro:"Hi! I’m Hubly. Before we build anything, I’d love to learn about your business.",
-    isTalkOwnerTitle:"What’s your first and last name?",
-    isTalkOwnerHint:'A few quick answers — then we start building with you.',
-    isTalkOwnerPh:'e.g. Jerome Smith',
-    isTalkBizTitle:'What’s the business called?',
-    isTalkBizHint:'This shows on your site. Say “not sure yet” if you want a suggestion.',
+    isTalkIntro:"Hi — I'm Hubly. Tell me about your business and I'll start researching immediately.",
+    isTalkAboutTitle:'What kind of business are we building?',
+    isTalkAboutChat:'Tell me about your business.',
+    isTalkAboutHint:"Describe it in your own words — I'll figure out the rest.",
+    isTalkAboutPh:"e.g. I run a house cleaning business for busy families…",
+    isTalkOwnerTitle:'What should I call you?',
+    isTalkOwnerHint:"First name is perfect — I'll use it when we introduce you on the site.",
+    isTalkOwnerPh:'e.g. Jerome',
+    isTalkBizTitle:"What's the name of the business we're building?",
+    isTalkBizHint:'This shows on your site. Say “not sure yet” if you want me to suggest one.',
     isTalkPhoneTitle:'Best phone for customers?',
     isTalkPhoneChat:'What’s the best phone for customers?',
     isTalkPhoneHint:'Shows on your site so people can reach you.',
-    isTalkTradeTitle:'Tell me about your business.',
-    isTalkTradeChat:'Tell me about your business. Type it in your words — or tap a blueprint if you see one.',
-    isTalkTradeHint:'Examples: “I own a Christmas light company.” “I sharpen knives.” “I repair golf carts.” “I clean boats.”',
+    isTalkTradeTitle:'What kind of work do you do?',
+    isTalkTradeChat:'What kind of work do you do? Tell me in your words — or tap one if you see yours.',
+    isTalkTradeHint:'I only ask when I’m not sure yet. Examples: “Christmas lights.” “Knife sharpening.” “Golf cart repair.”',
     isTalkTradePh:'e.g. I install Christmas lights…',
     isTalkSpecTitle:'What’s your specialty?',
     isTalkSpecChat:'Any specialties? Tap all that fit — then Continue.',
