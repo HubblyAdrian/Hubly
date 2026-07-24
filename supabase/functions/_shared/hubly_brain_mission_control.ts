@@ -32,8 +32,12 @@ import {
   getQualityManifest,
   type QualityScore,
 } from "./hubly_brain_quality.ts";
+import {
+  getHublyDocumentationCatalog,
+  type HublyDocumentationCatalog,
+} from "./hubly_brain_docs.ts";
 
-export const MISSION_CONTROL_VERSION = "1.3.0" as const;
+export const MISSION_CONTROL_VERSION = "1.4.0" as const;
 export const MISSION_CONTROL_OWNER = "hubly_brain" as const;
 
 export type HublyLiveExpertStatus =
@@ -170,6 +174,8 @@ export type HublyMissionControlSnapshot = {
     identityComplianceRate: number | null;
     manifest: ReturnType<typeof getQualityManifest>;
   };
+  /** Section 17 — Architecture Documentation & Developer Experience (versioned). */
+  documentation: HublyDocumentationCatalog;
 };
 
 const FLIGHTS = new Map<string, HublyFlightRecorder>();
@@ -612,6 +618,7 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         manifest: getQualityManifest(),
       };
     })(),
+    documentation: getHublyDocumentationCatalog(),
   };
 }
 
@@ -644,6 +651,7 @@ export const HublyMissionControl = {
   costAwareness: getCostReport,
   platformInventory: getPlatformInventory,
   qualityScore: getQualityScoreSnapshot,
+  documentation: getHublyDocumentationCatalog,
   clearForTests: clearMissionControlForTests,
 };
 

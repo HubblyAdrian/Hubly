@@ -42,8 +42,8 @@ Each section must ship:
 | 13 | Hubly Identity System | ✅ Proven |
 | 14 | Performance, Reliability & Resilience | ✅ Proven |
 | 15 | Platform Extensibility | ✅ Proven |
-| 16 | Validation & Quality Assurance | ⏳ Pass — pending Founder Approval |
-| 17 | Documentation | ⬜ Not proven |
+| 16 | Validation & Quality Assurance | ✅ Accepted |
+| 17 | Architecture Documentation & Developer Experience | ⏳ Pass — pending Founder Approval |
 | 18 | Founder Demo | ⬜ Not proven |
 
 
@@ -77,6 +77,16 @@ Intelligence validation — not unit tests. Scenario Library, Founder Benchmark 
 
 ```bash
 npm run check:section16
+```
+
+**Accepted** — proceeded to Section 17.
+
+## Section 17 — Architecture Documentation & Developer Experience
+
+Definitive platform docs + ADRs: architecture, AI lifecycle, Builder Engine spec (1.5), memory, experts, DNA, capabilities, Mission Control, coding standards, Constitution, onboarding. Versioned catalog linked from Mission Control.
+
+```bash
+npm run check:section17
 ```
 
 Live summary after `npm run milestone1`: `docs/MILESTONE1_RELEASE_GATE.json`

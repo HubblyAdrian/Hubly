@@ -21,8 +21,8 @@ Live automation: `npm run milestone1` → `docs/MILESTONE1_RELEASE_GATE.json`
 | 13 | Hubly Identity System | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section13-identity-system.mjs` | `docs/HUBLY_BRAIN_SECTION13_PROOF.json` | Accepted |
 | 14 | Performance, Reliability & Resilience | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section14-reliability.mjs` | `docs/HUBLY_BRAIN_SECTION14_PROOF.json` | Accepted |
 | 15 | Platform Extensibility | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section15-platform-extensibility.mjs` | `docs/HUBLY_BRAIN_SECTION15_PROOF.json` | Accepted |
-| 16 | Validation & Quality Assurance | Pass (pending Founder Approval) | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section16-quality.mjs` | `docs/HUBLY_BRAIN_SECTION16_PROOF.json` | — |
-| 17 | Documentation | Not Started | — | `scripts/check-section17-documentation.mjs` | `docs/HUBLY_BRAIN_SECTION17_PROOF.json` | — |
+| 16 | Validation & Quality Assurance | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section16-quality.mjs` | `docs/HUBLY_BRAIN_SECTION16_PROOF.json` | Accepted |
+| 17 | Architecture Documentation & Developer Experience | Pass (pending Founder Approval) | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section17-architecture-docs.mjs` | `docs/HUBLY_BRAIN_SECTION17_PROOF.json` | — |
 | 18 | Founder Demo | Not Started | — | `scripts/check-section18-founder-demo.mjs` | `docs/HUBLY_BRAIN_SECTION18_PROOF.json` | — |
 
 ## Status legend
@@ -113,4 +113,25 @@ npm run check:section15
 npm run check:section16
 ```
 
-**Stop.** Do not start Section 17 until Founder Approval.
+**Accepted** — proceeded to Section 17.
+
+
+### Section 17 — Architecture Documentation & Developer Experience (Pass — pending Founder Approval)
+
+**Renamed** from Documentation → **Architecture Documentation & Developer Experience**. How the system thinks — not just where code lives.
+
+| Deliverable | Proven |
+|-------------|--------|
+| Architecture + AI Lifecycle | System map + every request stage |
+| Builder Engine Spec | Milestone 1.5 blueprint only (not implemented) |
+| Memory / Experts / DNA / Capabilities | Extension guides |
+| Mission Control / Coding Standards / Constitution | Ops + engineering contract |
+| Developer Onboarding | Clone → validate → extend → release gates |
+| ADR folder | Five foundational “why” decisions |
+| Versioned catalog | `HublyDocs` + Mission Control `documentation` |
+
+```bash
+npm run check:section17
+```
+
+**Stop.** Do not start Section 18 until Founder Approval.

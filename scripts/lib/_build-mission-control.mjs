@@ -14,6 +14,7 @@ const plugin = {
       'hubly_brain_platform.ts': './platform.mjs',
       'hubly_brain_dna_knowledge.ts': './dna-knowledge.mjs',
       'hubly_brain_quality.ts': './quality-core.mjs',
+      'hubly_brain_docs.ts': './docs.mjs',
     };
     for (const [file, ext] of Object.entries(map)) {
       const re = new RegExp(file.replace(/\./g, '\\.') + '$');
@@ -30,7 +31,7 @@ await esbuild.build({
   platform: 'neutral',
   plugins: [plugin],
   banner: {
-    js: '/** Node mirror of hubly_brain_mission_control.ts — Sections 12/14/15/16 (esbuild). */\n',
+    js: '/** Node mirror of hubly_brain_mission_control.ts — Sections 12/14/15/16/17 (esbuild). */\n',
   },
 });
 

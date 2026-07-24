@@ -339,3 +339,22 @@ test('Section 16 — Validation & Quality Assurance + Quality Score', () => {
   assert.ok(proof.proofs.scenarioLibrary.passed >= 8);
   assert.ok(proof.proofs.founderBenchmarks.passed >= 8);
 });
+
+test('Section 17 — Architecture Documentation & Developer Experience', () => {
+  const r = run('scripts/check-section17-architecture-docs.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 17 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION17_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 17);
+  assert.match(proof.name, /Architecture Documentation/i);
+  assert.ok(proof.proofs.guideCount >= 11);
+  assert.ok(proof.proofs.adrCount >= 5);
+  assert.equal(proof.proofs.missionControlLinked, true);
+  assert.equal(proof.proofs.builderSpecOnly, true);
+});

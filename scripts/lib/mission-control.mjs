@@ -1,4 +1,4 @@
-/** Node mirror of hubly_brain_mission_control.ts — Sections 12/14/15/16 (esbuild). */
+/** Node mirror of hubly_brain_mission_control.ts — Sections 12/14/15/16/17 (esbuild). */
 
 
 // supabase/functions/_shared/hubly_brain_mission_control.ts
@@ -18,7 +18,10 @@ import {
   getLastQualityReport,
   getQualityManifest
 } from "./quality-core.mjs";
-var MISSION_CONTROL_VERSION = "1.3.0";
+import {
+  getHublyDocumentationCatalog
+} from "./docs.mjs";
+var MISSION_CONTROL_VERSION = "1.4.0";
 var MISSION_CONTROL_OWNER = "hubly_brain";
 var FLIGHTS = /* @__PURE__ */ new Map();
 var FLIGHT_ORDER = [];
@@ -356,7 +359,8 @@ function getMissionControlSnapshot() {
         identityComplianceRate: last?.identityCompliance.rate ?? null,
         manifest: getQualityManifest()
       };
-    })()
+    })(),
+    documentation: getHublyDocumentationCatalog()
   };
 }
 function clearMissionControlForTests() {
@@ -387,6 +391,7 @@ var HublyMissionControl = {
   costAwareness: getCostReport,
   platformInventory: getPlatformInventory,
   qualityScore: getQualityScoreSnapshot,
+  documentation: getHublyDocumentationCatalog,
   clearForTests: clearMissionControlForTests
 };
 var hubly_brain_mission_control_default = HublyMissionControl;
