@@ -23,7 +23,7 @@ const SECTIONS = [
   { n: 11, title: 'AI Capability Registry & Tool Registry', script: 'scripts/check-section11-registries.mjs' },
   { n: 12, title: 'Hubly Mission Control', script: 'scripts/check-section12-mission-control.mjs' },
   { n: 13, title: 'Hubly Identity System', script: 'scripts/check-section13-identity-system.mjs' },
-  { n: 14, title: 'Performance', script: 'scripts/check-section14-performance.mjs' },
+  { n: 14, title: 'Performance, Reliability & Resilience', script: 'scripts/check-section14-reliability.mjs' },
   { n: 15, title: 'Extensibility', script: 'scripts/check-section15-extensibility.mjs' },
   { n: 16, title: 'Tests', script: 'scripts/check-section16-tests.mjs' },
   { n: 17, title: 'Documentation', script: 'scripts/check-section17-documentation.mjs' },

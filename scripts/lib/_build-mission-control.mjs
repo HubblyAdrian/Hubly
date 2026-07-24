@@ -13,6 +13,9 @@ const plugin = {
     build.onResolve({ filter: /hubly_brain_expert_framework\.ts$/ }, () => ({
       path: path.join(root, 'scripts/lib/expert-framework.mjs'),
     }));
+    build.onResolve({ filter: /hubly_brain_reliability\.ts$/ }, () => ({
+      path: path.join(root, 'scripts/lib/reliability.mjs'),
+    }));
   },
 };
 
@@ -24,7 +27,7 @@ await esbuild.build({
   platform: 'neutral',
   plugins: [plugin],
   banner: {
-    js: '/** Node mirror of hubly_brain_mission_control.ts — Section 12 (esbuild). */\n',
+    js: '/** Node mirror of hubly_brain_mission_control.ts — Section 12 + 14 (esbuild). */\n',
   },
 });
 

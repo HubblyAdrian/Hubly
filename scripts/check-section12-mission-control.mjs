@@ -76,7 +76,7 @@ ok(mcSrc.includes('aiHealth') || mcSrc.includes('computeAiHealth'), 'AI Health m
 ok(thinkSrc.includes('recordFlightRecorder'), 'Think records Mission Control flights');
 ok(aiSrc.includes('HublyMissionControl'), 'HublyAI exposes Mission Control');
 ok(MISSION_CONTROL_OWNER === 'hubly_brain', 'Mission Control owned by Hubly Brain');
-ok(MISSION_CONTROL_VERSION === '1.0.0', 'Mission Control versioned');
+ok(typeof MISSION_CONTROL_VERSION === 'string' && Number(MISSION_CONTROL_VERSION.split('.')[0]) >= 1, 'Mission Control versioned');
 
 // End-to-end think → flight → replay
 const result = await think({

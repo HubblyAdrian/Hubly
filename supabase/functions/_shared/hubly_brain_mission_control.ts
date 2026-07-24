@@ -15,8 +15,18 @@
 
 import { listExperts } from "./hubly_brain_expert_framework.ts";
 import { listTools, listKnowledgeSources, ensureRegistriesBootstrapped } from "./hubly_brain_registries.ts";
+import {
+  getObservabilityDashboard,
+  getCostReport,
+  computeTrustScore,
+  getCircuitSnapshot,
+  listQueuedWork,
+  getReliabilityManifest,
+  type HublyTrustScore,
+  type ObservabilityDashboard,
+} from "./hubly_brain_reliability.ts";
 
-export const MISSION_CONTROL_VERSION = "1.0.0" as const;
+export const MISSION_CONTROL_VERSION = "1.1.0" as const;
 export const MISSION_CONTROL_OWNER = "hubly_brain" as const;
 
 export type HublyLiveExpertStatus =
@@ -131,6 +141,16 @@ export type HublyMissionControlSnapshot = {
   aiHealth: HublyAiHealth;
   recentExecutions: Array<{ executionId: string; request: string; at: string; ok: boolean; latencyMs: number }>;
   replayAvailable: true;
+  /** Section 14 — Performance, Reliability & Resilience */
+  performance: ObservabilityDashboard;
+  costAwareness: ReturnType<typeof getCostReport>;
+  reliability: {
+    circuits: ReturnType<typeof getCircuitSnapshot>;
+    queuedWork: ReturnType<typeof listQueuedWork>;
+    manifest: ReturnType<typeof getReliabilityManifest>;
+  };
+  /** Engineering Trust Score (not customer-facing). */
+  trustScore: HublyTrustScore;
 };
 
 const FLIGHTS = new Map<string, HublyFlightRecorder>();
@@ -414,7 +434,7 @@ function computeAiHealth(): HublyAiHealth {
       ? Math.round(scores.reduce((a, f) => a + (f.decisionScore || 0), 0) / scores.length)
       : null,
     errors: flights.length - ok,
-    providerStatus: "ready",
+    providerStatus: getCircuitSnapshot().some((c) => c.state === "open") ? "degraded" : "ready",
     reasoningObjectsRecorded: flights.reduce((a, f) => a + f.reasoningObjects.length, 0),
     decisionObjectsRecorded: flights.reduce((a, f) => a + f.decisionObjects.length, 0),
   };
@@ -543,6 +563,18 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
       latencyMs: f.latencyMs,
     })),
     replayAvailable: true,
+    performance: getObservabilityDashboard(),
+    costAwareness: getCostReport(),
+    reliability: {
+      circuits: getCircuitSnapshot(),
+      queuedWork: listQueuedWork(),
+      manifest: getReliabilityManifest(),
+    },
+    trustScore: computeTrustScore({
+      aiHealthOkRate: computeAiHealth().okRate,
+      avgDecisionScore: computeAiHealth().avgDecisionScore,
+      avgLatencyMs: computeAiHealth().avgLatencyMs,
+    }),
   };
 }
 
@@ -570,6 +602,9 @@ export const HublyMissionControl = {
   replay: replayExecution,
   snapshot: getMissionControlSnapshot,
   expertActivity: getExpertActivity,
+  trustScore: computeTrustScore,
+  performance: getObservabilityDashboard,
+  costAwareness: getCostReport,
   clearForTests: clearMissionControlForTests,
 };
 

@@ -39,8 +39,8 @@ Each section must ship:
 | 10 | Conversation Intelligence | ✅ Proven (`check:section10`) |
 | 11 | AI Capability Registry & Tool Registry | ✅ Proven (`check:section11`) |
 | 12 | Hubly Mission Control | ✅ Proven (`check:section12`) |
-| 13 | Hubly Identity System | ⏳ Pass — pending Founder Approval |
-| 14 | Performance | ⬜ Not proven |
+| 13 | Hubly Identity System | ✅ Proven |
+| 14 | Performance, Reliability & Resilience | ⏳ Pass — pending Founder Approval |
 | 15 | Extensibility | ⬜ Not proven |
 | 16 | Tests | ⬜ Not proven |
 | 17 | Documentation | ⬜ Not proven |
@@ -53,6 +53,14 @@ Character, not tone. Core identity, philosophy, communication & behavioral rules
 
 ```bash
 npm run check:section13
+```
+
+## Section 14 — Performance, Reliability & Resilience
+
+Not just speed — trustworthiness. Retries, timeouts, circuit breakers, graceful degradation, parallel experts, caching, cost awareness, security boundaries, and an engineering **Trust Score** in Mission Control.
+
+```bash
+npm run check:section14
 ```
 
 Live summary after `npm run milestone1`: `docs/MILESTONE1_RELEASE_GATE.json`

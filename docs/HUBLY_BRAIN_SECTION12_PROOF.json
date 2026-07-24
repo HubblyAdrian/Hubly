@@ -2,9 +2,9 @@
   "section": 12,
   "title": "Hubly Mission Control",
   "passed": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "owner": "hubly_brain",
-  "checkedAt": "2026-07-24T00:49:57.892Z",
+  "checkedAt": "2026-07-24T00:55:08.058Z",
   "proofs": [
     "Hubly Mission Control module exists",
     "AI Replay / flight recorder exists",
@@ -59,7 +59,7 @@
   "evidence": {
     "snapshot": {
       "title": "Hubly Mission Control",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "replayAvailable": true
     },
     "liveAiActivity": {
@@ -78,7 +78,7 @@
         "runs": 1,
         "successes": 1,
         "failures": 0,
-        "avgLatencyMs": 1,
+        "avgLatencyMs": 0,
         "avgConfidence": 90,
         "failureRate": 0,
         "successRate": 100,
@@ -90,7 +90,7 @@
         "runs": 1,
         "successes": 1,
         "failures": 0,
-        "avgLatencyMs": 0,
+        "avgLatencyMs": 1,
         "avgConfidence": 88,
         "failureRate": 0,
         "successRate": 100,
@@ -126,7 +126,7 @@
         "runs": 1,
         "successes": 1,
         "failures": 0,
-        "avgLatencyMs": 4,
+        "avgLatencyMs": 5,
         "avgConfidence": 87,
         "failureRate": 0,
         "successRate": 100,
@@ -275,7 +275,7 @@
     ],
     "brainTimeline": [
       {
-        "at": "2026-07-24T00:49:57.880Z",
+        "at": "2026-07-24T00:55:08.045Z",
         "t": 0,
         "phase": "request",
         "detail": "Owner: I'm redesigning my website and I want arrival windows.",
@@ -284,7 +284,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:49:57.900Z",
+        "at": "2026-07-24T00:55:08.065Z",
         "t": 20,
         "phase": "hubly_brain",
         "detail": "Thinking…",
@@ -293,7 +293,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:49:57.930Z",
+        "at": "2026-07-24T00:55:08.095Z",
         "t": 50,
         "phase": "memory_loaded",
         "detail": "Loaded business_memory",
@@ -302,7 +302,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:49:57.960Z",
+        "at": "2026-07-24T00:55:08.125Z",
         "t": 80,
         "phase": "memory_loaded",
         "detail": "Loaded business_dna",
@@ -311,7 +311,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:49:57.990Z",
+        "at": "2026-07-24T00:55:08.155Z",
         "t": 110,
         "phase": "memory_loaded",
         "detail": "Loaded workspace_memory",
@@ -320,7 +320,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:49:58.020Z",
+        "at": "2026-07-24T00:55:08.185Z",
         "t": 140,
         "phase": "memory_loaded",
         "detail": "Loaded conversation_intelligence",
@@ -329,7 +329,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:49:58.060Z",
+        "at": "2026-07-24T00:55:08.225Z",
         "t": 180,
         "phase": "business_dna",
         "detail": "Business DNA loaded (8 facts)",
@@ -347,29 +347,29 @@
         }
       },
       {
-        "at": "2026-07-24T00:49:58.070Z",
-        "t": 190,
+        "at": "2026-07-24T00:55:08.275Z",
+        "t": 230,
         "phase": "research",
         "detail": "research: finished",
         "meta": {
           "confidence": 90,
-          "ms": 1,
+          "ms": 0,
           "summary": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more t"
         }
       },
       {
-        "at": "2026-07-24T00:49:58.120Z",
+        "at": "2026-07-24T00:55:08.285Z",
         "t": 240,
         "phase": "strategy",
         "detail": "strategy: finished",
         "meta": {
           "confidence": 88,
-          "ms": 0,
+          "ms": 1,
           "summary": "I'm positioning around visible proof and clear next step instead of generic price competition."
         }
       },
       {
-        "at": "2026-07-24T00:49:58.170Z",
+        "at": "2026-07-24T00:55:08.335Z",
         "t": 290,
         "phase": "creative_director",
         "detail": "creative_director: finished",
@@ -380,7 +380,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:49:58.220Z",
+        "at": "2026-07-24T00:55:08.385Z",
         "t": 340,
         "phase": "critic",
         "detail": "critic: finished",
@@ -391,45 +391,45 @@
         }
       },
       {
-        "at": "2026-07-24T00:49:58.230Z",
+        "at": "2026-07-24T00:55:08.395Z",
         "t": 350,
         "phase": "experience_director",
         "detail": "experience_director: finished",
         "meta": {
           "confidence": 87,
-          "ms": 4,
+          "ms": 5,
           "summary": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more t"
         }
       },
       {
-        "at": "2026-07-24T00:49:58.245Z",
+        "at": "2026-07-24T00:55:08.410Z",
         "t": 365,
         "phase": "reasoning",
         "detail": "Reasoning Object: industry_selection",
         "meta": {
-          "reasoningId": "rsn_mry83t6p_ldmg44",
+          "reasoningId": "rsn_mry8agif_wwj6rw",
           "decision": "Focus on pressure washing",
           "confidence": 95
         }
       },
       {
-        "at": "2026-07-24T00:49:58.260Z",
+        "at": "2026-07-24T00:55:08.425Z",
         "t": 380,
         "phase": "reasoning",
         "detail": "Reasoning Object: brand_positioning",
         "meta": {
-          "reasoningId": "rsn_mry83t6p_4l3tu4",
+          "reasoningId": "rsn_mry8agif_v30hbw",
           "decision": "pressure washing that earns trust with before/after proof before asking for a booking",
           "confidence": 88
         }
       },
       {
-        "at": "2026-07-24T00:49:58.275Z",
+        "at": "2026-07-24T00:55:08.440Z",
         "t": 395,
         "phase": "reasoning",
         "detail": "Reasoning Object: homepage_strategy",
         "meta": {
-          "reasoningId": "rsn_mry83t6p_5kplpj",
+          "reasoningId": "rsn_mry8agif_m18qmx",
           "decision": "Lead with proof, then packages, then a single Book CTA",
           "confidence": 90
         }
@@ -438,7 +438,7 @@
     "aiHealth": {
       "executions": 1,
       "okRate": 100,
-      "avgLatencyMs": 9,
+      "avgLatencyMs": 10,
       "avgConfidence": 87,
       "avgDecisionScore": 82,
       "errors": 0,
@@ -447,7 +447,7 @@
       "decisionObjectsRecorded": 1
     },
     "replay": {
-      "executionId": "flt_mry83t6q_5wly4z",
+      "executionId": "flt_mry8agig_377sx3",
       "stepCount": 23,
       "summary": {
         "request": "I'm redesigning my website and I want arrival windows.",
@@ -489,7 +489,7 @@
       },
       "steps": [
         {
-          "at": "2026-07-24T00:49:57.880Z",
+          "at": "2026-07-24T00:55:08.045Z",
           "t": 0,
           "phase": "request",
           "detail": "Owner: I'm redesigning my website and I want arrival windows.",
@@ -498,7 +498,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:49:57.900Z",
+          "at": "2026-07-24T00:55:08.065Z",
           "t": 20,
           "phase": "hubly_brain",
           "detail": "Thinking…",
@@ -507,7 +507,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:49:57.930Z",
+          "at": "2026-07-24T00:55:08.095Z",
           "t": 50,
           "phase": "memory_loaded",
           "detail": "Loaded business_memory",
@@ -516,7 +516,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:49:57.960Z",
+          "at": "2026-07-24T00:55:08.125Z",
           "t": 80,
           "phase": "memory_loaded",
           "detail": "Loaded business_dna",
@@ -525,7 +525,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:49:57.990Z",
+          "at": "2026-07-24T00:55:08.155Z",
           "t": 110,
           "phase": "memory_loaded",
           "detail": "Loaded workspace_memory",
@@ -534,7 +534,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:49:58.020Z",
+          "at": "2026-07-24T00:55:08.185Z",
           "t": 140,
           "phase": "memory_loaded",
           "detail": "Loaded conversation_intelligence",
@@ -543,7 +543,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:49:58.060Z",
+          "at": "2026-07-24T00:55:08.225Z",
           "t": 180,
           "phase": "business_dna",
           "detail": "Business DNA loaded (8 facts)",
@@ -561,29 +561,29 @@
           }
         },
         {
-          "at": "2026-07-24T00:49:58.070Z",
-          "t": 190,
+          "at": "2026-07-24T00:55:08.275Z",
+          "t": 230,
           "phase": "research",
           "detail": "research: finished",
           "meta": {
             "confidence": 90,
-            "ms": 1,
+            "ms": 0,
             "summary": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more t"
           }
         },
         {
-          "at": "2026-07-24T00:49:58.120Z",
+          "at": "2026-07-24T00:55:08.285Z",
           "t": 240,
           "phase": "strategy",
           "detail": "strategy: finished",
           "meta": {
             "confidence": 88,
-            "ms": 0,
+            "ms": 1,
             "summary": "I'm positioning around visible proof and clear next step instead of generic price competition."
           }
         },
         {
-          "at": "2026-07-24T00:49:58.170Z",
+          "at": "2026-07-24T00:55:08.335Z",
           "t": 290,
           "phase": "creative_director",
           "detail": "creative_director: finished",
@@ -594,7 +594,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:49:58.220Z",
+          "at": "2026-07-24T00:55:08.385Z",
           "t": 340,
           "phase": "critic",
           "detail": "critic: finished",
@@ -605,20 +605,20 @@
           }
         },
         {
-          "at": "2026-07-24T00:49:58.230Z",
+          "at": "2026-07-24T00:55:08.395Z",
           "t": 350,
           "phase": "experience_director",
           "detail": "experience_director: finished",
           "meta": {
             "confidence": 87,
-            "ms": 4,
+            "ms": 5,
             "summary": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more t"
           }
         }
       ]
     },
     "thinkFlight": {
-      "executionId": "flt_mry83t6q_5wly4z",
+      "executionId": "flt_mry8agig_377sx3",
       "memoriesLoaded": [
         "business_memory",
         "business_dna",

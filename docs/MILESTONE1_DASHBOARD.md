@@ -18,8 +18,8 @@ Live automation: `npm run milestone1` → `docs/MILESTONE1_RELEASE_GATE.json`
 | 10 | Conversation Intelligence | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section10-conversation-intelligence.mjs` | `docs/HUBLY_BRAIN_SECTION10_PROOF.json` | Accepted |
 | 11 | AI Capability Registry & Tool Registry | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section11-registries.mjs` | `docs/HUBLY_BRAIN_SECTION11_PROOF.json` | Accepted |
 | 12 | Hubly Mission Control | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section12-mission-control.mjs` | `docs/HUBLY_BRAIN_SECTION12_PROOF.json` | Accepted |
-| 13 | Hubly Identity System | Pass (pending Founder Approval) | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section13-identity-system.mjs` | `docs/HUBLY_BRAIN_SECTION13_PROOF.json` | — |
-| 14 | Performance | Not Started | — | `scripts/check-section14-performance.mjs` | `docs/HUBLY_BRAIN_SECTION14_PROOF.json` | — |
+| 13 | Hubly Identity System | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section13-identity-system.mjs` | `docs/HUBLY_BRAIN_SECTION13_PROOF.json` | Accepted |
+| 14 | Performance, Reliability & Resilience | Pass (pending Founder Approval) | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section14-reliability.mjs` | `docs/HUBLY_BRAIN_SECTION14_PROOF.json` | — |
 | 15 | Extensibility | Not Started | — | `scripts/check-section15-extensibility.mjs` | `docs/HUBLY_BRAIN_SECTION15_PROOF.json` | — |
 | 16 | Tests | Not Started | — | `scripts/check-section16-tests.mjs` | `docs/HUBLY_BRAIN_SECTION16_PROOF.json` | — |
 | 17 | Documentation | Not Started | — | `scripts/check-section17-documentation.mjs` | `docs/HUBLY_BRAIN_SECTION17_PROOF.json` | — |
@@ -54,4 +54,25 @@ After each section Pass: set Status → Pass, link PR, confirm script + proof pa
 npm run check:section13
 ```
 
-**Stop.** Do not start Section 14 until Founder Approval.
+**Accepted** — proceeded to Section 14.
+
+
+### Section 14 — Performance, Reliability & Resilience (Pass — pending Founder Approval)
+
+**Renamed** from Performance → **Performance, Reliability & Resilience**. Trustworthiness, not just speed.
+
+| Pillar | Delivered |
+|--------|-----------|
+| Reliability | Retries, timeouts, circuit breakers, graceful degradation, safe defaults |
+| Performance | Parallel experts, memory/DNA caching, latency tracking |
+| Resilience | Weather/Stripe/OpenAI failure demos — continue, explain, queue |
+| Observability | AI/tool/expert/memory/decision/builder metrics in Mission Control |
+| Cost awareness | Tokens, cost/request, expensive experts, reuse opportunity |
+| Security | Memory isolation, expert/tool/capability permissions, audit log |
+| Trust Score | Live engineering score in Mission Control (not customer-facing) |
+
+```bash
+npm run check:section14
+```
+
+**Stop.** Do not start Section 15 until Founder Approval.

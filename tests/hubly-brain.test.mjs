@@ -287,3 +287,20 @@ test('Section 13 — Hubly Identity System defines character + Constitution', ()
   assert.equal(proof.proofs.constitution.length, 10);
   assert.match(proof.proofs.builderVoice, /I built that for you/i);
 });
+
+test('Section 14 — Performance, Reliability & Resilience + Trust Score', () => {
+  const r = run('scripts/check-section14-reliability.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 14 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION14_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 14);
+  assert.match(proof.name, /Reliability/i);
+  assert.ok(proof.proofs.trustScore.overall >= 80);
+  assert.ok(proof.proofs.demos.weatherTimeout.continued);
+});

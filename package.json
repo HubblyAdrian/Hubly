@@ -17,7 +17,8 @@
     "check:section10": "node scripts/check-section10-conversation-intelligence.mjs",
     "check:section11": "node scripts/check-section11-registries.mjs",
     "check:section12": "node scripts/check-section12-mission-control.mjs",
-    "check:section13": "node scripts/check-section13-identity-system.mjs"
+    "check:section13": "node scripts/check-section13-identity-system.mjs",
+    "check:section14": "node scripts/check-section14-reliability.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

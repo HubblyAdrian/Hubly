@@ -1,10 +1,10 @@
 {
   "milestone": 1,
-  "passed": 13,
+  "passed": 14,
   "total": 18,
-  "percent": 72,
+  "percent": 78,
   "ready": false,
-  "checkedAt": "2026-07-24T00:49:58.027Z",
+  "checkedAt": "2026-07-24T00:55:08.511Z",
   "sections": [
     {
       "n": 1,
@@ -86,9 +86,9 @@
     },
     {
       "n": 14,
-      "title": "Performance",
-      "status": "fail",
-      "script": "scripts/check-section14-performance.mjs"
+      "title": "Performance, Reliability & Resilience",
+      "status": "pass",
+      "script": "scripts/check-section14-reliability.mjs"
     },
     {
       "n": 15,

@@ -11,6 +11,15 @@
  * - Experts never talk to each other — everything routes through Hubly Brain.
  * - Adding an expert = register() only.
  */
+import {
+  withTimeout,
+  DEFAULT_TIMEOUTS,
+  recordMetric,
+  circuitSuccess,
+  circuitFailure,
+  ownerSafeError as reliabilitySafeError,
+} from "./reliability.mjs";
+
 export const EXPERT_FRAMEWORK_VERSION = "1.0.0";
 const REGISTRY = new Map();
 const DISCOVERY_LOG = [];
@@ -255,9 +264,16 @@ export async function runExpert(id, ctx) {
         logDiscovery(attempt === 0 ? "execute" : "execute_retry", id, `${name}${attempt ? `@${attempt}` : ""}`);
         try {
             const t0 = Date.now();
-            const out = await entry.handler(ctx);
+            // Section 14 — every expert call is bounded by timeout (Reliability).
+            const out = await withTimeout(
+                () => entry.handler(ctx),
+                DEFAULT_TIMEOUTS.expert,
+                `expert:${id}`,
+            );
             const ms = Date.now() - t0;
             const status = attempt > 0 ? "retried" : "ok";
+            circuitSuccess("expert");
+            recordMetric("expert_execution", id, ms, true, { retries: attempt });
             logDiscovery("execute_ok", id, `confidence=${out.confidence};retries=${attempt}`);
             return finalizeExpertOutput(id, name, out, {
                 executionTimeMs: ms,
@@ -267,6 +283,10 @@ export async function runExpert(id, ctx) {
         }
         catch (err) {
             lastErr = err;
+            circuitFailure("expert", err);
+            recordMetric("expert_execution", id, Date.now() - started, false, {
+                error: reliabilitySafeError(err),
+            });
             const msg = sanitizeExpertError(err);
             logDiscovery("execute_fail", id, msg);
             if (attempt < maxRetries)

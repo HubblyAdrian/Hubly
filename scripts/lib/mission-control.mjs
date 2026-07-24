@@ -1,5 +1,202 @@
-/** Node mirror of hubly_brain_mission_control.ts — Section 12 (esbuild). */
+/** Node mirror of hubly_brain_mission_control.ts — Section 12 + 14 (esbuild). */
 
+
+// scripts/lib/reliability.mjs
+var RELIABILITY_VERSION = "1.0.0";
+var RELIABILITY_OWNER = "hubly_brain";
+var DEFAULT_TIMEOUTS = {
+  expert: 8e3,
+  tool: 5e3,
+  weather: 3e3,
+  stripe: 5e3,
+  calendar: 5e3,
+  memory: 2e3,
+  dna: 2e3,
+  ai: 2e4,
+  decision: 3e3,
+  builder: 15e3
+};
+var DEFAULT_RETRY_POLICY = {
+  maxRetries: 1,
+  baseDelayMs: 40,
+  maxDelayMs: 400,
+  retryOnTimeout: true
+};
+var CIRCUIT_FAILURE_THRESHOLD = 3;
+var CIRCUIT_COOLDOWN_MS = 15e3;
+var metrics = [];
+var costs = [];
+var audits = [];
+var circuits = /* @__PURE__ */ new Map();
+var queue = [];
+function nowIso() {
+  return (/* @__PURE__ */ new Date()).toISOString();
+}
+function clampPct(n) {
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+function getCircuitInternal(provider) {
+  let c = circuits.get(provider);
+  if (!c) {
+    c = {
+      failures: 0,
+      successes: 0,
+      state: "closed",
+      openedAt: null,
+      lastFailureAt: null,
+      lastError: null
+    };
+    circuits.set(provider, c);
+  }
+  if (c.state === "open" && c.openedAt && Date.now() - c.openedAt >= CIRCUIT_COOLDOWN_MS) {
+    c.state = "half_open";
+  }
+  return c;
+}
+function getCircuitSnapshot(provider) {
+  const ids = provider ? [provider] : [...circuits.keys()];
+  return ids.map((id) => {
+    const c = getCircuitInternal(id);
+    return {
+      provider: id,
+      state: c.state,
+      failures: c.failures,
+      successes: c.successes,
+      openedAt: c.openedAt ? new Date(c.openedAt).toISOString() : null,
+      lastFailureAt: c.lastFailureAt ? new Date(c.lastFailureAt).toISOString() : null,
+      lastError: c.lastError
+    };
+  });
+}
+function listQueuedWork() {
+  return queue.map((q) => ({ ...q }));
+}
+function avg(nums) {
+  if (!nums.length) return 0;
+  return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
+}
+function p95(nums) {
+  if (!nums.length) return 0;
+  const s = [...nums].sort((a, b) => a - b);
+  return s[Math.min(s.length - 1, Math.floor(s.length * 0.95))];
+}
+function kindStats(kind) {
+  const rows = metrics.filter((m) => m.kind === kind);
+  const ms = rows.map((r) => r.ms);
+  return { avg: avg(ms), p95: p95(ms), samples: rows.length };
+}
+function getObservabilityDashboard() {
+  const retries = metrics.filter((m) => m.kind === "retry").length;
+  const failures = metrics.filter((m) => m.kind === "failure" || m.kind === "expert_execution" && !m.ok).length;
+  const cacheHits = metrics.filter((m) => m.kind === "cache_hit").length;
+  const cacheMiss = metrics.filter((m) => m.kind === "cache_miss").length;
+  const ops = Math.max(1, metrics.filter(
+    (m) => ["expert_execution", "tool_latency", "ai_latency", "failure", "retry"].includes(m.kind)
+  ).length);
+  return {
+    aiLatencyMs: kindStats("ai_latency"),
+    toolLatencyMs: kindStats("tool_latency"),
+    expertExecutionMs: kindStats("expert_execution"),
+    memoryLoadMs: kindStats("memory_load"),
+    decisionTimeMs: kindStats("decision_time"),
+    builderExecutionMs: kindStats("builder_execution"),
+    failureRate: clampPct(failures / ops * 100),
+    retryRate: clampPct(retries / ops * 100),
+    cacheHitRate: clampPct(cacheHits / Math.max(1, cacheHits + cacheMiss) * 100),
+    samples: metrics.length
+  };
+}
+function getCostReport() {
+  const totalTokens = costs.reduce((a, c) => a + c.totalTokens, 0);
+  const totalCost = costs.reduce((a, c) => a + c.estimatedCostUsd, 0);
+  const byExpert = /* @__PURE__ */ new Map();
+  for (const c of costs) {
+    const cur = byExpert.get(c.expertId) || {
+      expertId: c.expertId,
+      tokens: 0,
+      costUsd: 0,
+      calls: 0,
+      reused: 0
+    };
+    cur.tokens += c.totalTokens;
+    cur.costUsd += c.estimatedCostUsd;
+    cur.calls += 1;
+    if (c.reusedReasoning) cur.reused += 1;
+    byExpert.set(c.expertId, cur);
+  }
+  const expensive = [...byExpert.values()].sort((a, b) => b.costUsd - a.costUsd);
+  return {
+    requests: costs.length,
+    totalTokens,
+    estimatedCostUsd: Math.round(totalCost * 1e6) / 1e6,
+    avgCostPerRequest: costs.length ? Math.round(totalCost / costs.length * 1e6) / 1e6 : 0,
+    mostExpensiveExperts: expensive.slice(0, 5),
+    reuseOpportunity: expensive.filter((e) => e.reused === 0 && e.calls >= 1).map((e) => e.expertId),
+    recent: costs.slice(-10).map((c) => ({ ...c }))
+  };
+}
+function computeTrustScore(opts) {
+  const obs = getObservabilityDashboard();
+  const circuitRows = getCircuitSnapshot();
+  const openCircuits = circuitRows.filter((c) => c.state === "open").length;
+  const providerHealth = circuitRows.length ? clampPct(100 - openCircuits / circuitRows.length * 100) : 96;
+  const expertRows = metrics.filter((m) => m.kind === "expert_execution");
+  const expertOk = expertRows.filter((m) => m.ok).length;
+  const expertSuccess = expertRows.length ? clampPct(expertOk / expertRows.length * 100) : 99;
+  const aiReliability = clampPct(
+    opts?.aiHealthOkRate != null ? opts.aiHealthOkRate : 100 - obs.failureRate * 0.6
+  );
+  const memAudits = audits.filter((a) => a.action === "memory_isolation_check");
+  const memoryIntegrity = memAudits.length ? clampPct(memAudits.filter((a) => a.allowed).length / memAudits.length * 100) : 100;
+  const decisionQuality = clampPct(opts?.avgDecisionScore ?? 97);
+  const latencyPenalty = Math.min(25, Math.round((obs.expertExecutionMs.avg || 0) / 200));
+  const performance = clampPct(95 - latencyPenalty + Math.min(5, Math.round(obs.cacheHitRate / 20)));
+  const dimensions = {
+    aiReliability,
+    memoryIntegrity,
+    decisionQuality,
+    performance,
+    expertSuccess,
+    providerHealth
+  };
+  const values = Object.values(dimensions);
+  const overall = clampPct(values.reduce((a, b) => a + b, 0) / values.length);
+  return {
+    overall,
+    dimensions,
+    checkedAt: nowIso(),
+    note: "Engineering Trust Score \u2014 Mission Control only. Not shown to customers."
+  };
+}
+function getReliabilityManifest() {
+  return {
+    version: RELIABILITY_VERSION,
+    owner: RELIABILITY_OWNER,
+    name: "Performance, Reliability & Resilience",
+    timeouts: { ...DEFAULT_TIMEOUTS },
+    retryPolicy: { ...DEFAULT_RETRY_POLICY },
+    circuitBreaker: {
+      failureThreshold: CIRCUIT_FAILURE_THRESHOLD,
+      cooldownMs: CIRCUIT_COOLDOWN_MS
+    },
+    features: [
+      "retry_logic",
+      "timeouts",
+      "circuit_breakers",
+      "graceful_degradation",
+      "provider_failover_ready",
+      "safe_defaults",
+      "parallel_experts",
+      "memory_caching",
+      "dna_caching",
+      "latency_tracking",
+      "cost_awareness",
+      "security_boundaries",
+      "trust_score",
+      "mission_control_metrics"
+    ]
+  };
+}
 
 // scripts/lib/expert-framework.mjs
 var REGISTRY = /* @__PURE__ */ new Map();
@@ -308,7 +505,7 @@ function ensureRegistriesBootstrapped() {
 }
 
 // supabase/functions/_shared/hubly_brain_mission_control.ts
-var MISSION_CONTROL_VERSION = "1.0.0";
+var MISSION_CONTROL_VERSION = "1.1.0";
 var MISSION_CONTROL_OWNER = "hubly_brain";
 var FLIGHTS = /* @__PURE__ */ new Map();
 var FLIGHT_ORDER = [];
@@ -503,7 +700,7 @@ function computeAiHealth() {
     avgConfidence: conf.length ? Math.round(conf.reduce((a, f) => a + (f.confidence || 0), 0) / conf.length) : 0,
     avgDecisionScore: scores.length ? Math.round(scores.reduce((a, f) => a + (f.decisionScore || 0), 0) / scores.length) : null,
     errors: flights.length - ok,
-    providerStatus: "ready",
+    providerStatus: getCircuitSnapshot().some((c) => c.state === "open") ? "degraded" : "ready",
     reasoningObjectsRecorded: flights.reduce((a, f) => a + f.reasoningObjects.length, 0),
     decisionObjectsRecorded: flights.reduce((a, f) => a + f.decisionObjects.length, 0)
   };
@@ -620,7 +817,19 @@ function getMissionControlSnapshot() {
       ok: f.ok,
       latencyMs: f.latencyMs
     })),
-    replayAvailable: true
+    replayAvailable: true,
+    performance: getObservabilityDashboard(),
+    costAwareness: getCostReport(),
+    reliability: {
+      circuits: getCircuitSnapshot(),
+      queuedWork: listQueuedWork(),
+      manifest: getReliabilityManifest()
+    },
+    trustScore: computeTrustScore({
+      aiHealthOkRate: computeAiHealth().okRate,
+      avgDecisionScore: computeAiHealth().avgDecisionScore,
+      avgLatencyMs: computeAiHealth().avgLatencyMs
+    })
   };
 }
 function clearMissionControlForTests() {
@@ -646,6 +855,9 @@ var HublyMissionControl = {
   replay: replayExecution,
   snapshot: getMissionControlSnapshot,
   expertActivity: getExpertActivity,
+  trustScore: computeTrustScore,
+  performance: getObservabilityDashboard,
+  costAwareness: getCostReport,
   clearForTests: clearMissionControlForTests
 };
 var hubly_brain_mission_control_default = HublyMissionControl;
