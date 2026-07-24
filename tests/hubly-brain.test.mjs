@@ -216,6 +216,26 @@ test('Section 10 — Conversation Intelligence is proven with threads and struct
   assert.equal(proof.evidence.releaseGate.retrievalFromStructuredMemory, true);
 });
 
+test('Section 11 — Tool/Capability + Knowledge registries route without guessing', () => {
+  const r = run('scripts/check-section11-registries.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 11 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION11_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 11);
+  assert.equal(proof.evidence.whoOwns.arrivalWindows.toolId, 'booking');
+  assert.ok(proof.evidence.tools.length >= 7);
+  assert.ok(proof.evidence.knowledgeRegistry.some((k) => k.id === 'weather' && k.accessMode === 'read'));
+  assert.ok(proof.evidence.orchestrationExample.knowledge.some((k) => k.knowledgeId === 'weather'));
+  assert.equal(proof.evidence.releaseGate.whoOwnsCapabilityExact, true);
+  assert.equal(proof.evidence.releaseGate.foundationForBuilderEngine, true);
+});
+
 test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => {
   const r = run('scripts/milestone1.mjs');
   assert.notEqual(r.status, 0);

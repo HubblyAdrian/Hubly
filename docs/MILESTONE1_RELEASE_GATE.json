@@ -1,10 +1,10 @@
 {
   "milestone": 1,
-  "passed": 10,
+  "passed": 11,
   "total": 18,
-  "percent": 56,
+  "percent": 61,
   "ready": false,
-  "checkedAt": "2026-07-24T00:36:10.629Z",
+  "checkedAt": "2026-07-24T00:39:11.855Z",
   "sections": [
     {
       "n": 1,
@@ -68,9 +68,9 @@
     },
     {
       "n": 11,
-      "title": "AI Capability Registry",
-      "status": "fail",
-      "script": "scripts/check-section11-capability-registry.mjs"
+      "title": "AI Capability Registry & Tool Registry",
+      "status": "pass",
+      "script": "scripts/check-section11-registries.mjs"
     },
     {
       "n": 12,

@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-07-24T00:36:10.245Z",
+  "checkedAt": "2026-07-24T00:39:11.447Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -268,11 +268,11 @@
       },
       {
         "expertId": "research",
-        "executionTimeMs": 0
+        "executionTimeMs": 1
       },
       {
         "expertId": "strategy",
-        "executionTimeMs": 1
+        "executionTimeMs": 0
       },
       {
         "expertId": "creative_director",
@@ -314,7 +314,7 @@
         {
           "expertName": "Research Expert",
           "expertId": "research",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "reasoning": [
             {
               "reason": "Used Business DNA knowledge (pressure washing v1) as evidence.",
@@ -612,7 +612,7 @@
         {
           "expertName": "Strategy Expert",
           "expertId": "strategy",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "reasoning": [
             {
               "reason": "I'm positioning around visible proof and clear next step instead of generic price competition. Strategy used Business DNA website/pricing evidence (read-only).",
@@ -1770,7 +1770,7 @@
           "changedFromPrevious": "First expert in this run — established the baseline.",
           "confidence": 90,
           "status": "ok",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "outputType": "Research Report",
           "retries": 0
         },
@@ -1793,7 +1793,7 @@
           "changedFromPrevious": "Research Expert produced Research Report; Strategy Expert advanced that into Business Strategy (confidence 90 → 88).",
           "confidence": 88,
           "status": "ok",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "outputType": "Business Strategy",
           "retries": 0
         },

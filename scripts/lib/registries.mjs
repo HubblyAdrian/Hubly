@@ -1,0 +1,521 @@
+/**
+ * Node mirror of hubly_brain_registries.ts — Section 11 (esbuild).
+ */
+const REGISTRIES_VERSION = "1.0.0";
+const REGISTRIES_OWNER = "hubly_brain";
+const TOOLS = /* @__PURE__ */ new Map();
+const CAP_INDEX = /* @__PURE__ */ new Map();
+const KNOWLEDGE = /* @__PURE__ */ new Map();
+let BOOTSTRAPPED = false;
+function cloneTool(t) {
+  return {
+    ...t,
+    responsibilities: [...t.responsibilities],
+    capabilities: t.capabilities.map((c) => ({ ...c, aliases: [...c.aliases] })),
+    experts: t.experts ? [...t.experts] : []
+  };
+}
+function cloneKnowledge(k) {
+  return { ...k, domains: [...k.domains], aliases: [...k.aliases] };
+}
+function indexTool(tool) {
+  for (const cap of tool.capabilities) {
+    CAP_INDEX.set(cap.id, { toolId: tool.id, capabilityId: cap.id });
+    for (const a of cap.aliases) {
+      CAP_INDEX.set(normalizeKey(a), { toolId: tool.id, capabilityId: cap.id });
+    }
+  }
+}
+function normalizeKey(s) {
+  return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+function registerTool(def) {
+  if (!def?.id) throw new Error("Tool registration requires id");
+  if (!def.capabilities?.length) throw new Error(`Tool ${def.id} requires capabilities`);
+  const normalized = {
+    id: String(def.id),
+    name: String(def.name || def.id),
+    version: String(def.version || "1.0.0"),
+    purpose: String(def.purpose || ""),
+    responsibilities: [...def.responsibilities || []],
+    capabilities: def.capabilities.map((c) => ({
+      id: String(c.id),
+      label: String(c.label || c.id),
+      aliases: [...c.aliases || [], c.label, c.id].map(String)
+    })),
+    experts: def.experts ? [...def.experts] : [],
+    category: def.category || "general"
+  };
+  TOOLS.set(normalized.id, normalized);
+  indexTool(normalized);
+  return cloneTool(normalized);
+}
+function unregisterTool(id) {
+  const t = TOOLS.get(id);
+  if (!t) return false;
+  TOOLS.delete(id);
+  CAP_INDEX.clear();
+  for (const tool of TOOLS.values()) indexTool(tool);
+  return true;
+}
+function listTools() {
+  return [...TOOLS.values()].map(cloneTool);
+}
+function getTool(id) {
+  const t = TOOLS.get(String(id));
+  return t ? cloneTool(t) : null;
+}
+function registerKnowledgeSource(def) {
+  if (!def?.id) throw new Error("Knowledge source requires id");
+  const normalized = {
+    id: String(def.id),
+    name: String(def.name || def.id),
+    purpose: String(def.purpose || ""),
+    source: String(def.source || def.name || def.id),
+    access: def.access === "read" || def.access === "write" ? def.access : "read_write",
+    domains: [...def.domains || []],
+    aliases: [...def.aliases || [], def.name, def.id].map(String)
+  };
+  KNOWLEDGE.set(normalized.id, normalized);
+  return cloneKnowledge(normalized);
+}
+function listKnowledgeSources() {
+  return [...KNOWLEDGE.values()].map(cloneKnowledge);
+}
+function getKnowledgeSource(id) {
+  const k = KNOWLEDGE.get(String(id));
+  return k ? cloneKnowledge(k) : null;
+}
+function whoOwnsCapability(capabilityOrPhrase) {
+  ensureRegistriesBootstrapped();
+  const key = normalizeKey(capabilityOrPhrase);
+  const direct = CAP_INDEX.get(key) || CAP_INDEX.get(String(capabilityOrPhrase));
+  if (direct) {
+    const tool = TOOLS.get(direct.toolId);
+    const cap = tool.capabilities.find((c) => c.id === direct.capabilityId);
+    return {
+      toolId: tool.id,
+      toolName: tool.name,
+      capabilityId: cap.id,
+      capabilityLabel: cap.label,
+      score: 100
+    };
+  }
+  const low = String(capabilityOrPhrase || "").toLowerCase();
+  let best = null;
+  for (const tool of TOOLS.values()) {
+    for (const cap of tool.capabilities) {
+      const hit = [cap.id, cap.label, ...cap.aliases].some((a) => {
+        const al = String(a).toLowerCase();
+        return low.includes(al) || al.includes(low) || normalizeKey(al) === key;
+      });
+      if (hit) {
+        const score = low === cap.label.toLowerCase() || key === cap.id ? 95 : 80;
+        if (!best || score > best.score) {
+          best = {
+            toolId: tool.id,
+            toolName: tool.name,
+            capabilityId: cap.id,
+            capabilityLabel: cap.label,
+            score
+          };
+        }
+      }
+    }
+  }
+  return best;
+}
+function resolveCapabilitiesForRequest(request) {
+  ensureRegistriesBootstrapped();
+  const low = String(request || "").toLowerCase();
+  const matches = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const tool of TOOLS.values()) {
+    for (const cap of tool.capabilities) {
+      const phrases = [cap.id.replace(/_/g, " "), cap.label, ...cap.aliases];
+      for (const p of phrases) {
+        const pl = String(p).toLowerCase();
+        if (pl.length < 3) continue;
+        if (low.includes(pl) || pl.includes(" ") && low.includes(pl)) {
+          const k = `${tool.id}:${cap.id}`;
+          if (seen.has(k)) continue;
+          seen.add(k);
+          matches.push({
+            toolId: tool.id,
+            toolName: tool.name,
+            capabilityId: cap.id,
+            capabilityLabel: cap.label,
+            score: pl.length > 12 ? 90 : 75
+          });
+          break;
+        }
+      }
+    }
+  }
+  if (/upload.*(photo|image)|photo.*(upload|portfolio)/i.test(low)) {
+    for (const id of ["portfolio_builder", "image_processor", "website_builder"]) {
+      const tool = TOOLS.get(id);
+      if (!tool) continue;
+      const cap = tool.capabilities[0];
+      const k = `${tool.id}:${cap.id}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      matches.push({
+        toolId: tool.id,
+        toolName: tool.name,
+        capabilityId: cap.id,
+        capabilityLabel: cap.label,
+        score: 88
+      });
+    }
+  }
+  return matches.sort((a, b) => b.score - a.score);
+}
+function resolveKnowledgeForRequest(request) {
+  ensureRegistriesBootstrapped();
+  const low = String(request || "").toLowerCase();
+  const matches = [];
+  for (const k of KNOWLEDGE.values()) {
+    const phrases = [k.id, k.name, ...k.aliases, ...k.domains];
+    if (phrases.some((p) => low.includes(String(p).toLowerCase()))) {
+      matches.push({
+        knowledgeId: k.id,
+        name: k.name,
+        access: k.access,
+        source: k.source,
+        score: 85
+      });
+    }
+  }
+  if (/weather|rain|forecast|temperature/i.test(low) && !matches.some((m) => m.knowledgeId === "weather")) {
+    const w = KNOWLEDGE.get("weather");
+    if (w) {
+      matches.push({
+        knowledgeId: w.id,
+        name: w.name,
+        access: w.access,
+        source: w.source,
+        score: 95
+      });
+    }
+  }
+  if (/reschedule|job|customer|text|sms|notify/i.test(low)) {
+    for (const id of ["business_memory", "crm_knowledge"]) {
+      const src = KNOWLEDGE.get(id);
+      if (src && !matches.some((m) => m.knowledgeId === id)) {
+        matches.push({
+          knowledgeId: src.id,
+          name: src.name,
+          access: src.access,
+          source: src.source,
+          score: 80
+        });
+      }
+    }
+  }
+  return matches.sort((a, b) => b.score - a.score);
+}
+function planRegistryRoute(request) {
+  ensureRegistriesBootstrapped();
+  const capabilities = resolveCapabilitiesForRequest(request);
+  const knowledge = resolveKnowledgeForRequest(request);
+  const primary = capabilities[0] || null;
+  const parts = [];
+  if (knowledge.length) {
+    parts.push(
+      `Knowledge: ${knowledge.map((k) => `${k.name} (${k.access === "read" ? "read only" : "read + write"})`).join(", ")}`
+    );
+  }
+  if (capabilities.length) {
+    parts.push(
+      `Capabilities: ${capabilities.map((c) => `${c.capabilityLabel} \u2192 ${c.toolName}`).join("; ")}`
+    );
+  }
+  if (!parts.length) {
+    parts.push("No registered capability or knowledge source matched.");
+  }
+  return {
+    request: String(request || ""),
+    capabilities,
+    knowledge,
+    primaryToolId: primary?.toolId || null,
+    summary: parts.join(" \xB7 ")
+  };
+}
+function bootstrapDefaultRegistries() {
+  if (BOOTSTRAPPED && TOOLS.size > 0 && KNOWLEDGE.size > 0) return;
+  BOOTSTRAPPED = true;
+  registerTool({
+    id: "website_builder",
+    name: "Website Builder",
+    version: "1.0.0",
+    purpose: "Own website structure, content, and publish actions",
+    responsibilities: [
+      "Update homepage layout and copy",
+      "Change theme colors",
+      "Add and remove sections",
+      "Update hero",
+      "Publish the live site"
+    ],
+    experts: ["creative_director", "strategy"],
+    category: "builder",
+    capabilities: [
+      { id: "update_homepage", label: "Update Homepage", aliases: ["homepage", "rewrite homepage"] },
+      { id: "change_colors", label: "Change Colors", aliases: ["colors", "theme colors"] },
+      { id: "add_sections", label: "Add Sections", aliases: ["add section"] },
+      { id: "remove_sections", label: "Remove Sections", aliases: ["remove section"] },
+      { id: "update_hero", label: "Update Hero", aliases: ["hero", "hero image"] },
+      { id: "publish_website", label: "Publish", aliases: ["publish", "go live", "publish website"] }
+    ]
+  });
+  registerTool({
+    id: "booking",
+    name: "Booking",
+    version: "1.0.0",
+    purpose: "Own booking rules, availability, and calendar sync",
+    responsibilities: [
+      "Configure arrival windows",
+      "Enforce booking rules",
+      "Manage availability",
+      "Sync calendars"
+    ],
+    experts: ["strategy"],
+    category: "builder",
+    capabilities: [
+      { id: "arrival_windows", label: "Arrival Windows", aliases: ["arrival window", "arrival windows", "time windows"] },
+      { id: "no_same_day_bookings", label: "No Same-Day Bookings", aliases: ["same-day", "same day bookings"] },
+      { id: "booking_rules", label: "Booking Rules", aliases: ["booking rule"] },
+      { id: "booking_availability", label: "Availability", aliases: ["booking availability"] },
+      { id: "calendar_sync", label: "Calendar Sync", aliases: ["google calendar", "calendar sync"] }
+    ]
+  });
+  registerTool({
+    id: "crm",
+    name: "CRM",
+    version: "1.0.0",
+    purpose: "Own customers, jobs, and CRM communications",
+    responsibilities: [
+      "Create and update jobs",
+      "Update and merge customers",
+      "Send email",
+      "Archive customers"
+    ],
+    category: "builder",
+    capabilities: [
+      { id: "create_job", label: "Create Job", aliases: ["create job", "new job"] },
+      { id: "update_customer", label: "Update Customer", aliases: ["update customer"] },
+      { id: "send_email", label: "Send Email", aliases: ["email customer", "send email"] },
+      { id: "merge_customers", label: "Merge Customers", aliases: ["merge customers"] },
+      { id: "archive_customer", label: "Archive Customer", aliases: ["archive customer"] },
+      { id: "reschedule_jobs", label: "Reschedule Jobs", aliases: ["reschedule", "reschedule jobs"] },
+      { id: "send_text", label: "Send Text", aliases: ["text customers", "sms", "text the customers"] }
+    ]
+  });
+  registerTool({
+    id: "marketplace",
+    name: "Marketplace",
+    version: "1.0.0",
+    purpose: "Own marketplace listing settings",
+    responsibilities: ["Radius", "Pricing", "Availability", "Categories"],
+    category: "builder",
+    capabilities: [
+      { id: "marketplace_radius", label: "Radius", aliases: ["service radius", "radius"] },
+      { id: "marketplace_pricing", label: "Pricing", aliases: ["marketplace pricing"] },
+      { id: "marketplace_availability", label: "Availability", aliases: ["marketplace availability"] },
+      { id: "marketplace_categories", label: "Categories", aliases: ["marketplace categories"] }
+    ]
+  });
+  registerTool({
+    id: "automation",
+    name: "Automation",
+    version: "1.0.0",
+    purpose: "Own workflows and automated reminders",
+    responsibilities: [
+      "Create / pause / delete workflows",
+      "Send automated email and reminders"
+    ],
+    category: "builder",
+    capabilities: [
+      { id: "create_workflow", label: "Create Workflow", aliases: ["create workflow"] },
+      { id: "delete_workflow", label: "Delete Workflow", aliases: ["delete workflow"] },
+      { id: "pause_workflow", label: "Pause Workflow", aliases: ["pause workflow"] },
+      { id: "automation_send_email", label: "Send Email", aliases: ["automation email"] },
+      { id: "send_reminder", label: "Send Reminder", aliases: ["send reminder", "reminder"] }
+    ]
+  });
+  registerTool({
+    id: "portfolio_builder",
+    name: "Portfolio Builder",
+    version: "1.0.0",
+    purpose: "Own portfolio galleries and photo placement",
+    responsibilities: ["Upload portfolio photos", "Organize gallery"],
+    category: "builder",
+    capabilities: [
+      { id: "upload_photos", label: "Upload Photos", aliases: ["upload photos", "portfolio photos"] },
+      { id: "manage_gallery", label: "Manage Gallery", aliases: ["gallery"] }
+    ]
+  });
+  registerTool({
+    id: "image_processor",
+    name: "Image Processor",
+    version: "1.0.0",
+    purpose: "Process and optimize images before publish",
+    responsibilities: ["Process images", "Optimize photos"],
+    category: "builder",
+    capabilities: [
+      { id: "process_images", label: "Process Images", aliases: ["process images", "image processor"] },
+      { id: "optimize_photos", label: "Optimize Photos", aliases: ["optimize photos"] }
+    ]
+  });
+  registerKnowledgeSource({
+    id: "weather",
+    name: "Weather",
+    purpose: "Forecast and conditions for scheduling decisions",
+    source: "Weather Provider",
+    access: "read",
+    domains: ["weather", "forecast", "rain"],
+    aliases: ["weather", "forecast", "rain"]
+  });
+  registerKnowledgeSource({
+    id: "stripe",
+    name: "Stripe",
+    purpose: "Payments and payouts",
+    source: "Payments",
+    access: "read_write",
+    domains: ["payments", "stripe", "invoices"],
+    aliases: ["stripe", "payments"]
+  });
+  registerKnowledgeSource({
+    id: "business_memory",
+    name: "Business Memory",
+    purpose: "Permanent facts about this business",
+    source: "Hubly Brain",
+    access: "read_write",
+    domains: ["business", "customers", "jobs"],
+    aliases: ["business memory", "memory"]
+  });
+  registerKnowledgeSource({
+    id: "workspace_memory",
+    name: "Workspace Memory",
+    purpose: "How the owner likes to work",
+    source: "Hubly Brain",
+    access: "read_write",
+    domains: ["workspace", "sidebar", "dashboard"],
+    aliases: ["workspace memory", "workspace"]
+  });
+  registerKnowledgeSource({
+    id: "business_dna",
+    name: "Business DNA",
+    purpose: "Industry knowledge packs (read-only for experts)",
+    source: "Hubly Brain",
+    access: "read",
+    domains: ["dna", "industry", "blueprints"],
+    aliases: ["business dna", "dna"]
+  });
+  registerKnowledgeSource({
+    id: "marketplace_knowledge",
+    name: "Marketplace",
+    purpose: "Marketplace listing and demand data",
+    source: "Marketplace",
+    access: "read_write",
+    domains: ["marketplace"],
+    aliases: ["marketplace"]
+  });
+  registerKnowledgeSource({
+    id: "website_knowledge",
+    name: "Website",
+    purpose: "Live website content and structure",
+    source: "Website",
+    access: "read_write",
+    domains: ["website", "homepage"],
+    aliases: ["website", "site"]
+  });
+  registerKnowledgeSource({
+    id: "crm_knowledge",
+    name: "CRM",
+    purpose: "Customers, jobs, and communications",
+    source: "CRM",
+    access: "read_write",
+    domains: ["crm", "customers", "jobs"],
+    aliases: ["crm", "customers", "jobs"]
+  });
+  registerKnowledgeSource({
+    id: "conversation_intelligence",
+    name: "Conversation Intelligence",
+    purpose: "What we are currently working on",
+    source: "Hubly Brain",
+    access: "read_write",
+    domains: ["conversation", "projects", "commitments"],
+    aliases: ["conversation intelligence", "working memory"]
+  });
+}
+function ensureRegistriesBootstrapped() {
+  bootstrapDefaultRegistries();
+}
+function clearRegistriesForTests() {
+  TOOLS.clear();
+  CAP_INDEX.clear();
+  KNOWLEDGE.clear();
+  BOOTSTRAPPED = false;
+}
+function formatAccess(access) {
+  if (access === "read") return "Read Only";
+  if (access === "write") return "Write Only";
+  return "Read + Write";
+}
+const HublyToolRegistry = {
+  version: REGISTRIES_VERSION,
+  owner: REGISTRIES_OWNER,
+  register: registerTool,
+  unregister: unregisterTool,
+  list: listTools,
+  get: getTool,
+  whoOwns: whoOwnsCapability,
+  resolveCapabilities: resolveCapabilitiesForRequest,
+  plan: planRegistryRoute,
+  bootstrap: bootstrapDefaultRegistries,
+  clearForTests: clearRegistriesForTests
+};
+const HublyKnowledgeRegistry = {
+  version: REGISTRIES_VERSION,
+  owner: REGISTRIES_OWNER,
+  register: registerKnowledgeSource,
+  list: listKnowledgeSources,
+  get: getKnowledgeSource,
+  resolve: resolveKnowledgeForRequest,
+  formatAccess,
+  bootstrap: bootstrapDefaultRegistries
+};
+const HublyRegistries = {
+  version: REGISTRIES_VERSION,
+  owner: REGISTRIES_OWNER,
+  tools: HublyToolRegistry,
+  knowledge: HublyKnowledgeRegistry,
+  ensure: ensureRegistriesBootstrapped,
+  plan: planRegistryRoute,
+  whoOwnsCapability
+};
+var hubly_brain_registries_default = HublyRegistries;
+export {
+  HublyKnowledgeRegistry,
+  HublyRegistries,
+  HublyToolRegistry,
+  REGISTRIES_OWNER,
+  REGISTRIES_VERSION,
+  bootstrapDefaultRegistries,
+  clearRegistriesForTests,
+  hubly_brain_registries_default as default,
+  ensureRegistriesBootstrapped,
+  formatAccess,
+  getKnowledgeSource,
+  getTool,
+  listKnowledgeSources,
+  listTools,
+  planRegistryRoute,
+  registerKnowledgeSource,
+  registerTool,
+  resolveCapabilitiesForRequest,
+  resolveKnowledgeForRequest,
+  unregisterTool,
+  whoOwnsCapability
+};

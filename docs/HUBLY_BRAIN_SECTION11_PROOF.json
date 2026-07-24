@@ -1,8 +1,446 @@
 {
   "section": 11,
-  "title": "AI Capability Registry",
-  "passed": false,
-  "checkedAt": "2026-07-24T00:36:10.481Z",
-  "proofs": [],
-  "failures": "Section 11 not yet proven. Implement code + behavioral checks, then flip this script to pass."
+  "title": "AI Capability Registry & Tool Registry + Knowledge Registry",
+  "passed": true,
+  "version": "1.0.0",
+  "owner": "hubly_brain",
+  "checkedAt": "2026-07-24T00:39:11.712Z",
+  "proofs": [
+    "Registries module exists",
+    "Tool / Capability Registry APIs exist",
+    "Knowledge Registry exists",
+    "Experts declare purpose + responsibilities",
+    "Think uses registries",
+    "HublyAI exposes both registries",
+    "Registries owned by Hubly Brain",
+    "Registries versioned",
+    "Initial experts are registered",
+    "Expert research declares name, version, purpose, responsibilities",
+    "Expert strategy declares name, version, purpose, responsibilities",
+    "Expert creative_director declares name, version, purpose, responsibilities",
+    "Expert critic declares name, version, purpose, responsibilities",
+    "Expert experience_director declares name, version, purpose, responsibilities",
+    "Tool registered: website_builder",
+    "Tool registered: booking",
+    "Tool registered: crm",
+    "Tool registered: marketplace",
+    "Tool registered: automation",
+    "Tool registered: portfolio_builder",
+    "Tool registered: image_processor",
+    "Website Builder declares homepage/colors/sections/hero/publish capabilities",
+    "Booking declares Arrival Windows capability",
+    "Who owns Arrival Windows? → Booking (not a guess)",
+    "Who owns Publish? → Website Builder",
+    "Upload photos routes to Portfolio Builder",
+    "Upload photos routes to Image Processor",
+    "Upload photos routes to Website Builder",
+    "Knowledge source registered: weather",
+    "Knowledge source registered: stripe",
+    "Knowledge source registered: business_memory",
+    "Knowledge source registered: workspace_memory",
+    "Knowledge source registered: business_dna",
+    "Knowledge source registered: marketplace_knowledge",
+    "Knowledge source registered: website_knowledge",
+    "Weather is Read Only",
+    "Business DNA is Read Only",
+    "Stripe is Read + Write",
+    "Orchestration needs Weather knowledge",
+    "Orchestration finds reschedule capability (CRM)",
+    "Orchestration finds text customers capability",
+    "Route plan summarizes knowledge + capabilities",
+    "New tool registers without Brain rewrite",
+    "Think routes arrival windows to Booking tool",
+    "Think registry plan includes Arrival Windows capability",
+    "Think weather+reschedule plan loads Weather from Knowledge Registry",
+    "All Section 11 release-gate claims proven"
+  ],
+  "evidence": {
+    "experts": [
+      {
+        "id": "research",
+        "name": "Research Expert",
+        "version": "1.1.0",
+        "purpose": "Understand the business before anything is created.",
+        "responsibilities": [
+          "Industry",
+          "Customer psychology",
+          "Competitors",
+          "Trust signals",
+          "Business DNA",
+          "Business memory"
+        ]
+      },
+      {
+        "id": "strategy",
+        "name": "Strategy Expert",
+        "version": "1.1.0",
+        "purpose": "Convert research into decisions.",
+        "responsibilities": [
+          "Positioning",
+          "Target audience",
+          "Messaging",
+          "Pricing",
+          "Homepage",
+          "Booking",
+          "Priorities"
+        ]
+      },
+      {
+        "id": "creative_director",
+        "name": "Creative Director",
+        "version": "1.1.0",
+        "purpose": "Transform strategy into customer-facing assets.",
+        "responsibilities": [
+          "Website direction",
+          "Brand",
+          "Homepage",
+          "Booking",
+          "Packages",
+          "Voice"
+        ]
+      },
+      {
+        "id": "critic",
+        "name": "Critic",
+        "version": "1.1.0",
+        "purpose": "Protect quality.",
+        "responsibilities": [
+          "Review prior outputs",
+          "Reject or request regeneration"
+        ]
+      },
+      {
+        "id": "experience_director",
+        "name": "Experience Director",
+        "version": "1.2.0",
+        "purpose": "Protect the customer experience — simplify, remove complexity, protect Hubly personality, enforce conversational UX.",
+        "responsibilities": [
+          "Simplify",
+          "Remove unnecessary complexity",
+          "Protect Hubly personality",
+          "Enforce conversational UX"
+        ]
+      }
+    ],
+    "tools": [
+      {
+        "id": "website_builder",
+        "name": "Website Builder",
+        "version": "1.0.0",
+        "purpose": "Own website structure, content, and publish actions",
+        "responsibilities": [
+          "Update homepage layout and copy",
+          "Change theme colors",
+          "Add and remove sections",
+          "Update hero",
+          "Publish the live site"
+        ],
+        "capabilities": [
+          "Update Homepage",
+          "Change Colors",
+          "Add Sections",
+          "Remove Sections",
+          "Update Hero",
+          "Publish"
+        ]
+      },
+      {
+        "id": "booking",
+        "name": "Booking",
+        "version": "1.0.0",
+        "purpose": "Own booking rules, availability, and calendar sync",
+        "responsibilities": [
+          "Configure arrival windows",
+          "Enforce booking rules",
+          "Manage availability",
+          "Sync calendars"
+        ],
+        "capabilities": [
+          "Arrival Windows",
+          "No Same-Day Bookings",
+          "Booking Rules",
+          "Availability",
+          "Calendar Sync"
+        ]
+      },
+      {
+        "id": "crm",
+        "name": "CRM",
+        "version": "1.0.0",
+        "purpose": "Own customers, jobs, and CRM communications",
+        "responsibilities": [
+          "Create and update jobs",
+          "Update and merge customers",
+          "Send email",
+          "Archive customers"
+        ],
+        "capabilities": [
+          "Create Job",
+          "Update Customer",
+          "Send Email",
+          "Merge Customers",
+          "Archive Customer",
+          "Reschedule Jobs",
+          "Send Text"
+        ]
+      },
+      {
+        "id": "marketplace",
+        "name": "Marketplace",
+        "version": "1.0.0",
+        "purpose": "Own marketplace listing settings",
+        "responsibilities": [
+          "Radius",
+          "Pricing",
+          "Availability",
+          "Categories"
+        ],
+        "capabilities": [
+          "Radius",
+          "Pricing",
+          "Availability",
+          "Categories"
+        ]
+      },
+      {
+        "id": "automation",
+        "name": "Automation",
+        "version": "1.0.0",
+        "purpose": "Own workflows and automated reminders",
+        "responsibilities": [
+          "Create / pause / delete workflows",
+          "Send automated email and reminders"
+        ],
+        "capabilities": [
+          "Create Workflow",
+          "Delete Workflow",
+          "Pause Workflow",
+          "Send Email",
+          "Send Reminder"
+        ]
+      },
+      {
+        "id": "portfolio_builder",
+        "name": "Portfolio Builder",
+        "version": "1.0.0",
+        "purpose": "Own portfolio galleries and photo placement",
+        "responsibilities": [
+          "Upload portfolio photos",
+          "Organize gallery"
+        ],
+        "capabilities": [
+          "Upload Photos",
+          "Manage Gallery"
+        ]
+      },
+      {
+        "id": "image_processor",
+        "name": "Image Processor",
+        "version": "1.0.0",
+        "purpose": "Process and optimize images before publish",
+        "responsibilities": [
+          "Process images",
+          "Optimize photos"
+        ],
+        "capabilities": [
+          "Process Images",
+          "Optimize Photos"
+        ]
+      }
+    ],
+    "capabilities": {
+      "website": [
+        "Update Homepage",
+        "Change Colors",
+        "Add Sections",
+        "Remove Sections",
+        "Update Hero",
+        "Publish"
+      ],
+      "booking": [
+        "Arrival Windows",
+        "No Same-Day Bookings",
+        "Booking Rules",
+        "Availability",
+        "Calendar Sync"
+      ]
+    },
+    "whoOwns": {
+      "arrivalWindows": {
+        "toolId": "booking",
+        "toolName": "Booking",
+        "capabilityId": "arrival_windows",
+        "capabilityLabel": "Arrival Windows",
+        "score": 100
+      },
+      "publish": {
+        "toolId": "website_builder",
+        "toolName": "Website Builder",
+        "capabilityId": "publish_website",
+        "capabilityLabel": "Publish",
+        "score": 100
+      },
+      "uploadPhotos": [
+        {
+          "toolId": "portfolio_builder",
+          "toolName": "Portfolio Builder",
+          "capabilityId": "upload_photos",
+          "capabilityLabel": "Upload Photos",
+          "score": 88
+        },
+        {
+          "toolId": "image_processor",
+          "toolName": "Image Processor",
+          "capabilityId": "process_images",
+          "capabilityLabel": "Process Images",
+          "score": 88
+        },
+        {
+          "toolId": "website_builder",
+          "toolName": "Website Builder",
+          "capabilityId": "update_homepage",
+          "capabilityLabel": "Update Homepage",
+          "score": 88
+        }
+      ]
+    },
+    "knowledgeRegistry": [
+      {
+        "id": "weather",
+        "name": "Weather",
+        "source": "Weather Provider",
+        "access": "Read Only",
+        "accessMode": "read"
+      },
+      {
+        "id": "stripe",
+        "name": "Stripe",
+        "source": "Payments",
+        "access": "Read + Write",
+        "accessMode": "read_write"
+      },
+      {
+        "id": "business_memory",
+        "name": "Business Memory",
+        "source": "Hubly Brain",
+        "access": "Read + Write",
+        "accessMode": "read_write"
+      },
+      {
+        "id": "workspace_memory",
+        "name": "Workspace Memory",
+        "source": "Hubly Brain",
+        "access": "Read + Write",
+        "accessMode": "read_write"
+      },
+      {
+        "id": "business_dna",
+        "name": "Business DNA",
+        "source": "Hubly Brain",
+        "access": "Read Only",
+        "accessMode": "read"
+      },
+      {
+        "id": "marketplace_knowledge",
+        "name": "Marketplace",
+        "source": "Marketplace",
+        "access": "Read + Write",
+        "accessMode": "read_write"
+      },
+      {
+        "id": "website_knowledge",
+        "name": "Website",
+        "source": "Website",
+        "access": "Read + Write",
+        "accessMode": "read_write"
+      },
+      {
+        "id": "crm_knowledge",
+        "name": "CRM",
+        "source": "CRM",
+        "access": "Read + Write",
+        "accessMode": "read_write"
+      },
+      {
+        "id": "conversation_intelligence",
+        "name": "Conversation Intelligence",
+        "source": "Hubly Brain",
+        "access": "Read + Write",
+        "accessMode": "read_write"
+      }
+    ],
+    "orchestrationExample": {
+      "request": "How's the weather tomorrow, and if it's going to rain, reschedule my exterior jobs and text the customers.",
+      "knowledge": [
+        {
+          "knowledgeId": "weather",
+          "name": "Weather",
+          "access": "read",
+          "source": "Weather Provider",
+          "score": 85
+        },
+        {
+          "knowledgeId": "business_memory",
+          "name": "Business Memory",
+          "access": "read_write",
+          "source": "Hubly Brain",
+          "score": 85
+        },
+        {
+          "knowledgeId": "crm_knowledge",
+          "name": "CRM",
+          "access": "read_write",
+          "source": "CRM",
+          "score": 85
+        }
+      ],
+      "capabilities": [
+        {
+          "toolId": "crm",
+          "toolName": "CRM",
+          "capabilityId": "send_text",
+          "capabilityLabel": "Send Text",
+          "score": 90
+        },
+        {
+          "toolId": "crm",
+          "toolName": "CRM",
+          "capabilityId": "reschedule_jobs",
+          "capabilityLabel": "Reschedule Jobs",
+          "score": 75
+        }
+      ],
+      "summary": "Knowledge: Weather (read only), Business Memory (read + write), CRM (read + write) · Capabilities: Send Text → CRM; Reschedule Jobs → CRM",
+      "primaryToolId": "crm"
+    },
+    "thinkRouting": {
+      "request": "I want arrival windows like my old software.",
+      "capabilities": [
+        {
+          "toolId": "booking",
+          "toolName": "Booking",
+          "capabilityId": "arrival_windows",
+          "capabilityLabel": "Arrival Windows",
+          "score": 90
+        }
+      ],
+      "knowledge": [],
+      "primaryToolId": "booking",
+      "summary": "Capabilities: Arrival Windows → Booking"
+    },
+    "releaseGate": {
+      "capabilityToolRegistryExists": true,
+      "expertsDeclareNameVersionPurposeResponsibilities": true,
+      "toolsRegisterCapabilities": true,
+      "whoOwnsCapabilityExact": true,
+      "multiToolRouting": true,
+      "knowledgeRegistryExists": true,
+      "knowledgeAccessModes": true,
+      "brainCombinesKnowledgeAndCapabilities": true,
+      "thinkUsesRegistries": true,
+      "foundationForBuilderEngine": true,
+      "automatedEvidence": true
+    }
+  },
+  "failures": null
 }

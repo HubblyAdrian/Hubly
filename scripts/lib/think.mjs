@@ -32,6 +32,10 @@ import {
   queryConversationIntelligence,
   CONVERSATION_INTELLIGENCE_OWNER,
 } from './conversation-intelligence.mjs';
+import {
+  ensureRegistriesBootstrapped,
+  planRegistryRoute,
+} from './registries.mjs';
 
 export function detectIntent(request, explicit) {
   if (explicit) return String(explicit);
@@ -115,6 +119,8 @@ export async function think(req) {
   const started = Date.now();
   ensureExpertsRegistered();
   discoverExperts();
+  ensureRegistriesBootstrapped();
+  const registryRouting = planRegistryRoute(String(req.request || ''));
 
   const intent = detectIntent(req.request, req.intent);
   const businessId = req.businessId || req.memory?.businessId || null;
@@ -533,6 +539,7 @@ export async function think(req) {
     conversationIntelligence,
     conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
     conversationIntelligenceRetrieval: null,
+    registryRouting,
     experienceDirector: {
       reviewedBy: 'experience_director',
       actions: edActions,

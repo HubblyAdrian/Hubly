@@ -20,7 +20,7 @@ const SECTIONS = [
   { n: 8, title: 'Reasoning Engine', script: 'scripts/check-section8-reasoning-engine.mjs' },
   { n: 9, title: 'AI Decision & Confidence Engine', script: 'scripts/check-section9-decision-engine.mjs' },
   { n: 10, title: 'Conversation Intelligence', script: 'scripts/check-section10-conversation-intelligence.mjs' },
-  { n: 11, title: 'AI Capability Registry', script: 'scripts/check-section11-capability-registry.mjs' },
+  { n: 11, title: 'AI Capability Registry & Tool Registry', script: 'scripts/check-section11-registries.mjs' },
   { n: 12, title: 'Brain Console', script: 'scripts/check-section12-brain-console.mjs' },
   { n: 13, title: 'Hubly Personality', script: 'scripts/check-section13-hubly-personality.mjs' },
   { n: 14, title: 'Performance', script: 'scripts/check-section14-performance.mjs' },

@@ -2,7 +2,7 @@
 
 **Status: Proven only when `node scripts/check-section10-conversation-intelligence.mjs` exits 0.**
 
-Do not begin Section 11 until this section passes. Do not begin Milestone 2.
+Section 10 accepted. Do not begin Milestone 2.
 
 ## Objective
 

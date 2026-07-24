@@ -176,6 +176,11 @@ import {
 } from "./hubly_brain_conversation_intelligence.ts";
 import { HublyReasoning } from "./hubly_brain_reasoning.ts";
 import { HublyDecisionEngine } from "./hubly_brain_decision.ts";
+import {
+  HublyRegistries,
+  HublyToolRegistry,
+  HublyKnowledgeRegistry,
+} from "./hubly_brain_registries.ts";
 import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
 import {
   logBrainExecution,
@@ -250,6 +255,9 @@ export {
   HublyConversationIntelligenceApi,
   HublyReasoning,
   HublyDecisionEngine,
+  HublyRegistries,
+  HublyToolRegistry,
+  HublyKnowledgeRegistry,
   HublyConfidencePolicy,
   HublyBrainExecutionLog,
   HublyExperienceDirector,

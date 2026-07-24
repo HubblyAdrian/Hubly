@@ -84,6 +84,11 @@ import {
   decisionActionToConfidenceBand,
   type HublyDecisionObject,
 } from "./hubly_brain_decision.ts";
+import {
+  ensureRegistriesBootstrapped,
+  planRegistryRoute,
+  type HublyRegistryRoutePlan,
+} from "./hubly_brain_registries.ts";
 import { confidenceBand, type HublyConfidenceBand } from "./hubly_brain_confidence_policy.ts";
 import { applyExperienceDirector } from "./hubly_brain_experience_director.ts";
 
@@ -201,6 +206,8 @@ export type HublyThinkResult = {
   conversationIntelligence: HublyConversationIntelligence;
   conversationIntelligenceCommittedBy: typeof CONVERSATION_INTELLIGENCE_OWNER;
   conversationIntelligenceRetrieval?: ReturnType<typeof queryConversationIntelligence> | null;
+  /** Section 11 — Tool/Capability + Knowledge Registry route plan. */
+  registryRouting?: HublyRegistryRoutePlan | null;
   timeline: Array<{ expertId: string; ms: number; confidence: number; summary: string }>;
   experienceDirector?: {
     reviewedBy: "experience_director";
@@ -318,6 +325,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   const started = Date.now();
   ensureExpertsRegistered();
   discoverExperts();
+  // Section 11 — Tool / Capability + Knowledge registries (Brain never guesses).
+  ensureRegistriesBootstrapped();
+  const registryRouting = planRegistryRoute(String(req.request || ""));
 
   const intent = detectIntent(req.request, req.intent);
   const businessId = req.businessId ? String(req.businessId) : null;
@@ -476,6 +486,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       conversationIntelligence,
       conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
       conversationIntelligenceRetrieval: retrieval,
+      registryRouting,
       timeline: [{
         expertId: "experience_director",
         ms: Date.now() - started,
@@ -624,6 +635,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       conversationIntelligence,
       conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
       conversationIntelligenceRetrieval: null,
+      registryRouting,
       timeline: [{
         expertId: "experience_director",
         ms: Date.now() - started,
@@ -735,6 +747,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       conversationIntelligence,
       conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
       conversationIntelligenceRetrieval: null,
+      registryRouting,
       timeline: [{
         expertId: "experience_director",
         ms: Date.now() - started,
@@ -843,6 +856,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       conversationIntelligence,
       conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
       conversationIntelligenceRetrieval: null,
+      registryRouting,
       timeline: [{
         expertId: "experience_director",
         ms: Date.now() - started,
@@ -968,6 +982,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       conversationIntelligence,
       conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
       conversationIntelligenceRetrieval: null,
+      registryRouting,
       timeline: [{ expertId: "experience_director", ms: Date.now() - started, confidence: ed.confidence, summary: ed.ownerResponse }],
       experienceDirector: {
         reviewedBy: "experience_director",
@@ -1326,6 +1341,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     conversationIntelligence,
     conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
     conversationIntelligenceRetrieval: null,
+      registryRouting,
     timeline,
     experienceDirector: {
       reviewedBy: "experience_director",
