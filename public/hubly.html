@@ -1210,6 +1210,99 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   font-size:15px;font-weight:700;line-height:1.4;color:#fff;
   animation:isAhaIn .5s ease both;
 }
+/* Milestone 2 · Epic 4 — Creative Build Experience */
+.is-wrap.is-creative-wide{max-width:min(1180px,97vw)}
+.is-creative-canvas{color:rgba(255,255,255,.92);animation:isThinkCanvasIn .45s ease both}
+.is-creative-brand{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.is-creative-brand .hubly-mark{height:26px;width:auto;display:block}
+.is-creative-grid{
+  display:grid;gap:14px;align-items:start;
+}
+@media(min-width:960px){
+  .is-creative-grid{grid-template-columns:minmax(0,.95fr) minmax(0,1.15fr) minmax(220px,.75fr)}
+}
+.is-creative-stage-rail{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.is-creative-stage-rail .st{
+  font-size:11px;font-weight:700;padding:6px 10px;border-radius:999px;
+  background:rgba(15,23,42,.4);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.65);
+}
+.is-creative-stage-rail .st.is-on{border-color:#d9632d;color:#fff;background:rgba(217,99,45,.22)}
+.is-creative-stage-rail .st.is-done{border-color:rgba(253,186,116,.4);color:#fdba74}
+.is-creative-conversation{
+  padding:12px;border-radius:16px;background:rgba(15,23,42,.42);border:1px solid rgba(255,255,255,.14);
+  max-height:min(58vh,560px);overflow:auto;
+}
+.is-creative-msg{margin:0 0 10px;font-size:13px;line-height:1.45}
+.is-creative-msg .who{display:block;font-size:11px;font-weight:800;color:#fdba74;margin-bottom:2px}
+.is-creative-msg.owner .who{color:rgba(255,255,255,.55)}
+.is-creative-bts{
+  margin:8px 0;padding:10px 12px;border-radius:12px;background:rgba(217,99,45,.1);border:1px solid rgba(217,99,45,.25);
+  font-size:12px;line-height:1.4;
+}
+.is-creative-bts .line{margin:0 0 6px}
+.is-creative-ba{
+  margin:8px 0;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  font-size:12px;
+}
+.is-creative-ba .ba-lbl{font-weight:800;color:#fdba74;font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+.is-creative-ba .ba-arrow{text-align:center;color:rgba(253,186,116,.75);margin:4px 0;font-size:11px}
+.is-creative-live{
+  padding:12px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
+  min-height:280px;
+}
+.is-creative-live .live-kicker{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;margin:0 0 8px}
+.is-creative-preview-card{
+  border-radius:14px;overflow:hidden;background:#0f172a;border:1px solid rgba(255,255,255,.12);
+  animation:isUnderstandIn .4s ease both;
+}
+.is-creative-preview-card .hero{
+  padding:28px 18px 22px;background:linear-gradient(145deg,#141b2b,#1e293b 55%,#0f172a);
+}
+.is-creative-preview-card .hero.is-premium{background:linear-gradient(145deg,#0b1020,#141b2b 50%,#1a1520)}
+.is-creative-preview-card .hero.is-friendly{background:linear-gradient(145deg,#1a2333,#243044 55%,#1e293b)}
+.is-creative-preview-card h3{margin:0 0 6px;font-size:18px;color:#fff}
+.is-creative-preview-card p{margin:0 0 12px;font-size:12px;color:rgba(255,255,255,.72);line-height:1.4}
+.is-creative-preview-card .cta{
+  display:inline-block;padding:8px 12px;border-radius:10px;background:#d9632d;color:#fff;font-size:12px;font-weight:800;
+}
+.is-creative-preview-card .body{padding:12px 14px;display:grid;gap:8px}
+.is-creative-preview-card .chip{
+  font-size:11px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.85);
+}
+.is-creative-preview-card .chip.is-on{border-color:rgba(253,186,116,.45);color:#fdba74}
+.is-creative-side{
+  padding:12px;border-radius:16px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.14);
+}
+.is-creative-side .sk{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;margin:0 0 8px}
+.is-creative-decisions .dec{font-size:12px;font-weight:650;margin:0 0 6px;display:flex;gap:6px}
+.is-creative-decisions .dec::before{content:"✓";color:#fdba74;font-weight:800}
+.is-creative-confidence .row{display:flex;justify-content:space-between;font-size:12px;margin:0 0 6px;color:rgba(255,255,255,.85)}
+.is-creative-confidence .row strong{color:#fdba74}
+.is-creative-choice{
+  margin:10px 0;padding:12px;border-radius:14px;background:rgba(217,99,45,.14);border:1px solid rgba(217,99,45,.3);
+}
+.is-creative-choice .cq{font-size:13px;font-weight:700;margin:0 0 10px}
+.is-creative-choice .opts{display:flex;flex-wrap:wrap;gap:8px}
+.is-creative-choice button{
+  appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(15,23,42,.45);color:#fff;
+  font:inherit;font-size:12px;font-weight:700;padding:8px 12px;border-radius:10px;cursor:pointer;
+}
+.is-creative-choice button:hover{border-color:#fdba74;color:#fdba74}
+.is-creative-interrupt{display:flex;gap:8px;margin-top:10px}
+.is-creative-interrupt input{
+  flex:1;min-width:0;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(15,23,42,.5);
+  color:#fff;font:inherit;font-size:13px;padding:10px 12px;
+}
+.is-creative-interrupt button{
+  appearance:none;border:none;border-radius:12px;background:#d9632d;color:#fff;font:inherit;font-weight:800;font-size:12px;padding:10px 14px;cursor:pointer;
+}
+.is-creative-transition{
+  margin-top:12px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(253,186,116,.35);
+  font-size:15px;font-weight:700;line-height:1.4;color:#fff;
+}
+#is-step-reveal-shell .is-reveal-soft{
+  padding:18px;border-radius:18px;background:rgba(15,23,42,.45);border:1px solid rgba(255,255,255,.16);color:#fff;
+}
 .is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
 .is-area-panel.hidden{display:none!important}
 .is-area-panel.is-compact .is-area-extra{display:none}
@@ -8284,6 +8377,47 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="is-think-why" id="is-think-why" hidden></div>
             </aside>
           </div>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="creative-build" id="is-step-creative-build" data-creative-build-experience="1">
+        <div class="is-creative-canvas" id="is-creative-canvas">
+          <div class="is-creative-brand">
+            <img class="hubly-mark is-creative-brand" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="110" height="26">
+          </div>
+          <h1 class="is-title" id="is-creative-title" style="margin:0 0 4px;font-size:clamp(20px,2.8vw,26px)">I'm building this live so you can watch it take shape</h1>
+          <p class="is-sub" id="is-creative-sub" style="margin:0 0 12px">Conversation on the left. Your business on the right. No silent generating.</p>
+          <div class="is-creative-stage-rail" id="is-creative-stage-rail" aria-label="Build stages"></div>
+          <div class="is-creative-grid">
+            <section class="is-creative-conversation" id="is-creative-conversation" aria-live="polite"></section>
+            <section class="is-creative-live" id="is-creative-live">
+              <div class="live-kicker">Live Business</div>
+              <div id="is-creative-preview"></div>
+            </section>
+            <aside class="is-creative-side">
+              <div class="sk">Creative Decisions</div>
+              <div class="is-creative-decisions" id="is-creative-decisions"></div>
+              <div class="sk" style="margin-top:14px">Design confidence</div>
+              <div class="is-creative-confidence" id="is-creative-confidence"></div>
+            </aside>
+          </div>
+          <div class="is-creative-choice" id="is-creative-choice" hidden></div>
+          <form class="is-creative-interrupt" onsubmit="event.preventDefault();isCreativeBuildInterruptSend();">
+            <input type="text" id="is-creative-interrupt-input" placeholder="Make it feel more premium…" autocomplete="off">
+            <button type="submit">Update</button>
+          </form>
+          <div class="is-creative-transition" id="is-creative-transition" hidden></div>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="reveal-shell" id="is-step-reveal-shell" data-reveal-shell="1">
+        <div class="is-reveal-soft">
+          <div class="is-creative-brand" style="margin-bottom:12px">
+            <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="110" height="26">
+          </div>
+          <h1 class="is-title" style="margin:0 0 8px;font-size:clamp(22px,3vw,28px)">I think we built something you're going to be proud of.</h1>
+          <p class="is-sub" style="margin:0 0 14px">Your business is ready to reveal — Epic 5 will own the full reveal moment.</p>
+          <p class="is-fine" id="is-reveal-shell-note" style="opacity:.8">readyForReveal</p>
         </div>
       </div>
 
@@ -16133,9 +16267,356 @@ async function isDiscoveryCompleteToThinking(){
   // Epic 3 — visible intelligence; fakeDelayMs = 0 (no artificial isSleep).
   await isRunThinkingExperience(seed);
 
-  isRenderVibe();
+  // Epic 4 — Creative Build Experience (not vibe checklist).
   document.querySelector('#is-shell .is-wrap')?.classList.remove('is-thinking-wide');
-  isShowStep('vibe');
+  await isRunCreativeBuildExperience(seed);
+}
+/* ── Milestone 2 · Epic 4 — Creative Build Experience ── */
+const HUBLY_CREATIVE_BUILD = (function(){
+  const CREATIVE_BUILD_TRANSITION = "I think we built something you're going to be proud of.";
+  const CREATIVE_BUILD_CHOICE_PROMPT = "I have two directions. Can I show you both?";
+  const PACKS = {
+    pressure_washing:{
+      label:'Pressure Washing',sequence:['structure','hero','brand','packages','booking','portfolio','workspace'],focus:['trust','services','booking','reviews'],
+      directions:[{id:'luxury',label:'Luxury',hint:'High contrast, premium proof-first'},{id:'friendly',label:'Friendly',hint:'Warm, approachable neighborhood brand'}],
+      stages:{
+        structure:{title:'Website structure',explain:"I'm laying out a proof-first homepage because Strategy said trust beats price for pressure washing.",surface:'website',confidence:94,before:'Generic three-column template',after:'Proof → Packages → Book path',decision:'Premium positioning',bts:[{expert:'creative',text:"I'm trying a brighter hero image."},{expert:'critic',text:'I think the darker version feels more premium.'},{expert:'creative',text:'Good point. Switching back.'},{expert:'hubly',text:'I kept the darker version because it better supports the premium positioning we chose.'}]},
+        hero:{title:'Hero comes alive',explain:'I moved booking above the fold because your customers usually want a quick quote.',surface:'website',confidence:97,before:'Booking buried below the fold',after:'Book / Get quote in the hero',decision:'Strong call-to-action'},
+        brand:{title:'Brand colors & type',explain:"I'm using darker colors because premium home service brands tend to convert better with higher contrast.",surface:'brand',confidence:91,before:'Default bright palette',after:'Navy + warm accent, high contrast',decision:'Residential focus'},
+        packages:{title:'Packages',explain:'I simplified your packages to reduce decision fatigue.',surface:'packages',confidence:96,before:'Long à-la-carte list',after:'Driveway / House / Full property tiers',decision:'Recurring services highlighted'},
+        booking:{title:'Booking experience',explain:'One primary quote path — Critic rejected multi-step quizzes as friction.',surface:'booking',confidence:94,before:'Multi-step preference form',after:'Single Book / Get quote CTA',decision:'High-trust booking'},
+        portfolio:{title:'Before & after proof',explain:'Visible proof reduces damage fears — Research ranked before/after photos first.',surface:'portfolio',confidence:93,before:'Stock lifestyle photos only',after:'Before/after curb-appeal strip',decision:'Trust proof first'},
+        workspace:{title:'Workspace draft',explain:"A quiet home for jobs and follow-ups — you'll see it after we reveal the business.",surface:'workspace',confidence:88,before:'Empty dashboard shell',after:'Draft workspace for day-to-day',decision:'Business home ready'},
+      }
+    },
+    photography:{
+      label:'Photography',sequence:['structure','portfolio','hero','brand','packages','booking','workspace'],focus:['portfolio','gallery','packages','booking'],
+      directions:[{id:'luxury',label:'Luxury',hint:'Editorial, quiet luxury'},{id:'friendly',label:'Friendly',hint:'Warm documentary feel'}],
+      stages:{
+        structure:{title:'Website structure',explain:"I'm leading with portfolio because wedding clients buy emotion before packages.",surface:'website',confidence:95,before:'Service-first template',after:'Gallery-led homepage',decision:'Premium positioning',bts:[{expert:'creative',text:"I'm trying a finished-gallery-only hero."},{expert:'critic',text:'That feels interchangeable with every other photographer.'},{expert:'creative',text:'Switching to behind-the-scenes + finished work.'},{expert:'hubly',text:'I kept the story-led hero because it supports the premium brand we chose.'}]},
+        portfolio:{title:'Portfolio gallery',explain:'Behind-the-scenes photos convert better than finished galleries alone.',surface:'portfolio',confidence:96,before:'Finished shots only',after:'BTS + finished gallery mix',decision:'Story-first portfolio'},
+        hero:{title:'Hero comes alive',explain:'Quiet luxury hero — Creative wanted polish without looking stock.',surface:'website',confidence:94,before:'Busy collage hero',after:'Single editorial frame + soft CTA',decision:'Strong call-to-action'},
+        brand:{title:'Brand colors & type',explain:'Soft neutrals and refined type for a premium wedding brand.',surface:'brand',confidence:92,before:'Generic bright theme',after:'Muted editorial palette',decision:'Wedding client focus'},
+        packages:{title:'Packages',explain:'I simplified packages so couples choose an experience, not a spreadsheet.',surface:'packages',confidence:95,before:'Hourly add-on maze',after:'Clear day / weekend / full-weekend tiers',decision:'Clear package story'},
+        booking:{title:'Booking experience',explain:'Inquiry-first booking fits premium photography — not same-day open slots.',surface:'booking',confidence:93,before:'Instant book calendar',after:'Inquiry with date + vision',decision:'High-trust booking'},
+        workspace:{title:'Workspace draft',explain:'A quiet place for inquiries and shoots — reveal comes next.',surface:'workspace',confidence:87,before:'Empty shell',after:'Draft creative workspace',decision:'Business home ready'},
+      }
+    },
+    cleaning:{
+      label:'Cleaning',sequence:['structure','packages','booking','hero','brand','portfolio','workspace'],focus:['recurring','reviews','booking','trust'],
+      directions:[{id:'luxury',label:'Luxury',hint:'Hotel-clean reliability'},{id:'friendly',label:'Friendly',hint:'Neighborhood trusted cleaner'}],
+      stages:{
+        structure:{title:'Website structure',explain:"I'm leading with recurring plans because hosts punish missed turnovers harder than price.",surface:'website',confidence:93,before:'Hourly-rate homepage',after:'Recurring plans → Reviews → Book',decision:'Recurring services highlighted',bts:[{expert:'strategy',text:'Lead with lowest hourly rate.'},{expert:'critic',text:'That attracts the wrong clients.'},{expert:'creative',text:'Switching to reliability-first.'},{expert:'hubly',text:'I kept reliability first because it wins recurring property work.'}]},
+        packages:{title:'Recurring plans',explain:'Turnover packages and recurring schedules — not open-ended hourly quotes.',surface:'packages',confidence:96,before:'Hourly only',after:'Turnover + recurring plans',decision:'Recurring services highlighted'},
+        booking:{title:'Booking experience',explain:"Easy recurring booking so hosts don't chase you every turnover.",surface:'booking',confidence:94,before:'Call-only scheduling',after:'Recurring book path',decision:'High-trust booking'},
+        hero:{title:'Hero comes alive',explain:'Reliability message above the fold — Strategy ranked trust over cheapest.',surface:'website',confidence:95,before:'Cheap & fast headline',after:'Reliable turnovers, on time',decision:'Strong call-to-action'},
+        brand:{title:'Brand colors & type',explain:'Clean, calm palette that feels dependable — not discount-flyer loud.',surface:'brand',confidence:90,before:'Neon promo colors',after:'Calm, trustworthy palette',decision:'Trust-first brand'},
+        portfolio:{title:'Proof & reviews',explain:'Reviews and tidy proof shots build host confidence fast.',surface:'portfolio',confidence:92,before:'No social proof',after:'Reviews + tidy proof strip',decision:'Trust proof first'},
+        workspace:{title:'Workspace draft',explain:'A home for schedules and turnovers — next we reveal the business.',surface:'workspace',confidence:86,before:'Empty shell',after:'Draft ops workspace',decision:'Business home ready'},
+      }
+    },
+    hvac:{
+      label:'HVAC',sequence:['structure','hero','booking','packages','brand','portfolio','workspace'],focus:['trust','maintenance','booking','plans'],
+      directions:[{id:'luxury',label:'Luxury',hint:'Peace-of-mind premium'},{id:'friendly',label:'Friendly',hint:'Neighborhood technician'}],
+      stages:{
+        structure:{title:'Website structure',explain:'Trust-first layout — homeowners buy peace of mind, not the cheapest call-out.',surface:'website',confidence:94,before:'Coupon-first template',after:'Trust → Plans → Book',decision:'Premium positioning',bts:[{expert:'strategy',text:"I'm leaning toward discount coupons."},{expert:'critic',text:'Plans beat coupons for recurring revenue.'},{expert:'creative',text:'Putting maintenance plans near the top.'},{expert:'hubly',text:'I kept the plan-led path because it matches the trust strategy.'}]},
+        hero:{title:'Hero comes alive',explain:'Peace-of-mind hero with clear same-day / next-day booking.',surface:'website',confidence:96,before:"Vague 'call us' hero",after:'Trust headline + book path',decision:'Strong call-to-action'},
+        booking:{title:'Booking experience',explain:'Fast service booking without burying the maintenance plan option.',surface:'booking',confidence:95,before:'Phone-only',after:'Book + plan signup',decision:'High-trust booking'},
+        packages:{title:'Maintenance plans',explain:'Plans grow steadier than emergency-only shops — Research was clear.',surface:'packages',confidence:97,before:'Emergency call-outs only',after:'Maintenance plan cards',decision:'Recurring services highlighted'},
+        brand:{title:'Brand colors & type',explain:'Solid, trustworthy contrast — not flashy promo colors.',surface:'brand',confidence:91,before:'Bright sale theme',after:'Steady professional palette',decision:'Trust-first brand'},
+        portfolio:{title:'Proof & reviews',explain:'Reviews and licensed language reduce emergency fear.',surface:'portfolio',confidence:92,before:'No proof',after:'Reviews + credentials strip',decision:'Trust proof first'},
+        workspace:{title:'Workspace draft',explain:'A home for jobs and plans — reveal is next.',surface:'workspace',confidence:87,before:'Empty shell',after:'Draft service workspace',decision:'Business home ready'},
+      }
+    },
+    lawn_care:{
+      label:'Lawn Care',sequence:['structure','packages','booking','hero','brand','portfolio','workspace'],focus:['routes','recurring','booking','reliability'],
+      directions:[{id:'luxury',label:'Luxury',hint:'Estate-level consistency'},{id:'friendly',label:'Friendly',hint:'Neighborhood route care'}],
+      stages:{
+        structure:{title:'Website structure',explain:'Recurring routes first — missed weeks kill trust faster than price wins it.',surface:'website',confidence:93,before:'One-off cut promo',after:'Route reliability → Packages → Book',decision:'Recurring services highlighted',bts:[{expert:'strategy',text:"I'm leaning toward one-off promotions."},{expert:'critic',text:'Recurring routes win.'},{expert:'creative',text:'Leading with weekly/biweekly reliability.'},{expert:'hubly',text:'I kept the route-first story because reliability is the brand.'}]},
+        packages:{title:'Route packages',explain:'Weekly and biweekly routes as the default offer.',surface:'packages',confidence:96,before:'One-off only',after:'Recurring route tiers',decision:'Recurring services highlighted'},
+        booking:{title:'Booking experience',explain:'Easy pause/resume booking for seasonal routes.',surface:'booking',confidence:94,before:'Call to schedule',after:'Route booking with pause/resume',decision:'High-trust booking'},
+        hero:{title:'Hero comes alive',explain:'Reliability message — your lawn, on schedule.',surface:'website',confidence:95,before:'Cheap cut headline',after:'On-schedule route promise',decision:'Strong call-to-action'},
+        brand:{title:'Brand colors & type',explain:'Fresh outdoor greens with solid contrast for local trust.',surface:'brand',confidence:90,before:'Default theme',after:'Outdoor trust palette',decision:'Local brand'},
+        portfolio:{title:'Yard proof',explain:'Before/after lawns make reliability visible.',surface:'portfolio',confidence:91,before:'No proof',after:'Yard before/after strip',decision:'Trust proof first'},
+        workspace:{title:'Workspace draft',explain:'A home for routes and days — reveal next.',surface:'workspace',confidence:86,before:'Empty shell',after:'Draft route workspace',decision:'Business home ready'},
+      }
+    },
+    spa:{
+      label:'Spa',sequence:['structure','brand','booking','packages','hero','portfolio','workspace'],focus:['calm','booking','menu','atmosphere'],
+      directions:[{id:'luxury',label:'Luxury',hint:'Quiet luxury spa'},{id:'friendly',label:'Friendly',hint:'Warm neighborhood wellness'}],
+      stages:{
+        structure:{title:'Website structure',explain:'Booking-first calm layout — spa clients punish friction.',surface:'website',confidence:94,before:'Phone-only menu site',after:'Atmosphere → Book → Simple menu',decision:'Premium positioning',bts:[{expert:'strategy',text:"I'm leaning toward heavy promotions."},{expert:'critic',text:'Ease beats constant discounts.'},{expert:'creative',text:'Keeping the menu calm and book-online first.'},{expert:'hubly',text:'I kept booking effortless because rebooking depends on it.'}]},
+        brand:{title:'Brand colors & type',explain:'Soft spa atmosphere — never cluttered or loud.',surface:'brand',confidence:93,before:'Busy promo theme',after:'Calm spa palette',decision:'Calm brand'},
+        booking:{title:'Booking experience',explain:'One-tap book at the top — Research said friction kills rebooking.',surface:'booking',confidence:97,before:'Call to book',after:'One-tap online book',decision:'High-trust booking'},
+        packages:{title:'Service menu',explain:'I simplified services with durations to reduce decision fatigue.',surface:'packages',confidence:95,before:'Endless menu',after:'Clear duration-based services',decision:'Clear package story'},
+        hero:{title:'Hero comes alive',explain:'Full-bleed calm hero that feels like the room, not an ad.',surface:'website',confidence:94,before:'Coupon banner hero',after:'Atmosphere-led hero + book',decision:'Strong call-to-action'},
+        portfolio:{title:'Atmosphere gallery',explain:'Space and treatment photos that sell the feeling.',surface:'portfolio',confidence:91,before:'No gallery',after:'Calm atmosphere strip',decision:'Story-first portfolio'},
+        workspace:{title:'Workspace draft',explain:'A quiet home for appointments — reveal is next.',surface:'workspace',confidence:87,before:'Empty shell',after:'Draft spa workspace',decision:'Business home ready'},
+      }
+    },
+  };
+  function resolveKey(ctx){
+    const raw=String(ctx.industryId||ctx.facts?.industryId?.value||ctx.facts?.industry?.value||ctx.seed||'').toLowerCase();
+    if(/pressure|power\s*wash|soft\s*wash/.test(raw))return'pressure_washing';
+    if(/photo|wedding/.test(raw))return'photography';
+    if(/lawn|landscap|mow/.test(raw))return'lawn_care';
+    if(/hvac|heating|furnace|air\s*condition/.test(raw))return'hvac';
+    if(/\bspa\b|massage|facial|wellness/.test(raw))return'spa';
+    if(/clean|maid|airbnb|turnover|short.?term/.test(raw))return'cleaning';
+    return'pressure_washing';
+  }
+  function orchestrateCreativeBuildExperience(ctx){
+    const key=resolveKey(ctx);const pack=PACKS[key]||PACKS.pressure_washing;
+    const sequence=[...(pack.sequence||[])];
+    const stages=sequence.map(id=>{
+      const s=pack.stages[id]||{title:id,explain:'Building '+id,surface:id,confidence:85,before:'Earlier',after:'Improved',decision:id};
+      return{id,title:s.title,explain:s.explain,surface:s.surface,confidence:s.confidence,before:s.before,after:s.after,decision:s.decision,bts:s.bts||null,source:'strategy_creative_critic'};
+    });
+    const decisions=[];
+    stages.forEach(s=>{if(s.decision&&!decisions.includes(s.decision))decisions.push(s.decision);});
+    const designConfidence=Math.round(stages.reduce((a,s)=>a+s.confidence,0)/stages.length);
+    const surfaceConfidence={};
+    stages.forEach(s=>{surfaceConfidence[s.surface]=Math.max(surfaceConfidence[s.surface]||0,s.confidence);});
+    return{
+      version:'1.0.0',industryKey:key,industryLabel:pack.label,sequence,stages,decisions,designConfidence,surfaceConfidence,
+      directions:pack.directions,choicePrompt:CREATIVE_BUILD_CHOICE_PROMPT,transition:CREATIVE_BUILD_TRANSITION,
+      focus:pack.focus,signature:[key,sequence.join('>'),pack.focus.join(',')].join('::'),fakeInstantReveal:false,source:'hubly_brain_reasoning',
+      chosenDirection:null,live:{heroTitle:'',heroSub:'',cta:'Book now',chips:[],theme:'premium',surfaces:{}},
+    };
+  }
+  function applyInterruptToBuild(experience,text){
+    const t=String(text||'').toLowerCase();
+    const updates=[];let direction=experience.chosenDirection||null;
+    if(/premium|luxury|darker|more premium|high.?end/.test(t)){direction='luxury';updates.push({kind:'interrupt',text:'Got it — shifting toward a more premium feel.',surface:'brand',confidenceDelta:2});}
+    if(/friendly|warmer|brighter|less formal/.test(t)){direction='friendly';updates.push({kind:'interrupt',text:'Understood — warming the brand up.',surface:'brand',confidenceDelta:1});}
+    if(/don'?t like blue|no blue|change (the )?color|not blue/.test(t)){updates.push({kind:'interrupt',text:"I'll move away from blue and refresh the accent.",surface:'brand',confidenceDelta:1});}
+    if(/booking higher|move booking|book(ing)? (up|higher|top)/.test(t)){updates.push({kind:'interrupt',text:'Moving booking higher — it\'s already a priority in the hero.',surface:'booking',confidenceDelta:2});}
+    if(/membership|recurring|subscription/.test(t)){updates.push({kind:'interrupt',text:'Highlighting memberships / recurring plans in packages.',surface:'packages',confidenceDelta:2,decision:'Recurring services highlighted'});}
+    if(!updates.length)updates.push({kind:'interrupt',text:"I heard you — I'll fold that into the next pass.",surface:'website',confidenceDelta:0});
+    return{direction,updates};
+  }
+  return{CREATIVE_BUILD_TRANSITION,CREATIVE_BUILD_CHOICE_PROMPT,orchestrateCreativeBuildExperience,applyInterruptToBuild,PACKS};
+})();
+
+function isCreativeFrame(){return new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));}
+function isCreativePush(side,text,extraHtml){
+  const log=document.getElementById('is-creative-conversation');
+  if(!log)return;
+  const div=document.createElement('div');
+  div.className='is-creative-msg '+side;
+  div.innerHTML=`<span class="who">${side==='owner'?'You':'Hubly'}</span>${escPeHtml(text||'')}${extraHtml||''}`;
+  log.appendChild(div);
+  log.scrollTop=log.scrollHeight;
+}
+function isCreativeRenderStages(experience,activeId){
+  const rail=document.getElementById('is-creative-stage-rail');
+  if(!rail||!experience)return;
+  const done=new Set();
+  let hit=false;
+  rail.innerHTML=(experience.sequence||[]).map(id=>{
+    const s=(experience.stages||[]).find(x=>x.id===id);
+    let cls='st';
+    if(id===activeId){cls+=' is-on';hit=true;}
+    else if(!hit){cls+=' is-done';done.add(id);}
+    return `<span class="${cls}" data-stage="${escPeHtml(id)}">${escPeHtml(s?.title||id)}</span>`;
+  }).join('');
+}
+function isCreativeRenderDecisions(experience){
+  const el=document.getElementById('is-creative-decisions');
+  if(!el)return;
+  el.innerHTML=(experience.decisions||[]).map(d=>`<div class="dec">${escPeHtml(d)}</div>`).join('');
+}
+function isCreativeRenderConfidence(experience){
+  const el=document.getElementById('is-creative-confidence');
+  if(!el||!experience)return;
+  const rows=Object.entries(experience.surfaceConfidence||{}).map(([k,v])=>{
+    const label=k.charAt(0).toUpperCase()+k.slice(1);
+    return `<div class="row"><span>${escPeHtml(label)}</span><strong>${v}%</strong></div>`;
+  });
+  rows.unshift(`<div class="row"><span>Overall</span><strong>${experience.designConfidence}%</strong></div>`);
+  el.innerHTML=rows.join('');
+}
+function isCreativeRenderPreview(experience){
+  const el=document.getElementById('is-creative-preview');
+  if(!el||!experience)return;
+  const live=experience.live||{};
+  const theme=live.theme==='friendly'?'is-friendly':'is-premium';
+  const chips=(live.chips||[]).map(c=>`<div class="chip${c.on?' is-on':''}">${escPeHtml(c.label)}</div>`).join('');
+  const biz=S.biz||experience.industryLabel||'Your business';
+  el.innerHTML=`<div class="is-creative-preview-card"><div class="hero ${theme}"><h3>${escPeHtml(live.heroTitle||biz)}</h3><p>${escPeHtml(live.heroSub||'Taking shape…')}</p><span class="cta">${escPeHtml(live.cta||'Book now')}</span></div><div class="body">${chips||'<div class="chip">Website structure arriving…</div>'}</div></div>`;
+}
+function isCreativeApplyStage(experience,stage){
+  if(!experience.live)experience.live={chips:[],surfaces:{},theme:experience.chosenDirection==='friendly'?'friendly':'premium'};
+  const live=experience.live;
+  const biz=S.biz||experience.industryLabel||'Your business';
+  const area=S.city||S._is?.discovery?.facts?.area?.value||'';
+  if(stage.id==='structure'||stage.surface==='website'){
+    live.heroTitle=live.heroTitle||biz;
+    live.heroSub=live.heroSub||(area?`Trusted ${experience.industryLabel||'service'} in ${area}`:`${experience.industryLabel||'Local'} — built with care`);
+    live.surfaces.website=true;
+  }
+  if(stage.id==='hero'){
+    live.heroTitle=biz;
+    live.cta=experience.industryKey==='photography'?'Inquire':'Get a quote';
+    live.chips=live.chips||[];
+    if(!live.chips.some(c=>c.label==='Hero live'))live.chips.push({label:'Hero live',on:true});
+  }
+  if(stage.id==='brand'||stage.surface==='brand'){
+    live.theme=experience.chosenDirection==='friendly'?'friendly':'premium';
+    if(!live.chips.some(c=>/Brand/.test(c.label)))live.chips.push({label:'Brand applied',on:true});
+  }
+  if(stage.id==='packages'||stage.surface==='packages'){
+    const pkgs=experience.industryKey==='photography'
+      ?['Day coverage','Weekend','Full weekend']
+      :experience.industryKey==='hvac'
+      ?['Tune-up plan','Seasonal plan','Priority plan']
+      :experience.industryKey==='cleaning'
+      ?['Turnover','Weekly','Biweekly']
+      :['Essentials','Most popular','Full property'];
+    pkgs.forEach(p=>{if(!live.chips.some(c=>c.label===p))live.chips.push({label:p,on:true});});
+  }
+  if(stage.id==='booking'||stage.surface==='booking'){
+    live.cta=experience.industryKey==='spa'?'Book online':(experience.industryKey==='photography'?'Inquire':'Book / Get quote');
+    if(!live.chips.some(c=>/Booking/.test(c.label)))live.chips.push({label:'Booking ready',on:true});
+  }
+  if(stage.id==='portfolio'||stage.surface==='portfolio'){
+    if(!live.chips.some(c=>/Portfolio|Proof|Gallery/.test(c.label)))live.chips.push({label:experience.industryKey==='photography'?'Gallery live':'Proof live',on:true});
+  }
+  if(stage.id==='workspace'||stage.surface==='workspace'){
+    if(!live.chips.some(c=>/Workspace/.test(c.label)))live.chips.push({label:'Workspace draft',on:true});
+  }
+  if(stage.decision&&!experience.decisions.includes(stage.decision))experience.decisions.push(stage.decision);
+}
+async function isCreativeShowChoice(experience){
+  const box=document.getElementById('is-creative-choice');
+  if(!box)return experience.chosenDirection||'luxury';
+  return new Promise(resolve=>{
+    let done=false;
+    const finish=(id,label)=>{
+      if(done)return;done=true;
+      experience.chosenDirection=id;
+      box.hidden=true;
+      isCreativePush('owner',label||id);
+      isCreativePush('hubly',id==='luxury'?"Luxury it is — I'll keep the contrast high and the proof front.":"Friendly it is — warmer, still intentional.");
+      resolve(id);
+    };
+    box.hidden=false;
+    const opts=(experience.directions||[]).map(d=>`<button type="button" data-dir="${escPeHtml(d.id)}"><strong>${escPeHtml(d.label)}</strong><br><span style="font-weight:500;opacity:.8">${escPeHtml(d.hint||'')}</span></button>`).join('');
+    box.innerHTML=`<div class="cq">${escPeHtml(experience.choicePrompt||HUBLY_CREATIVE_BUILD.CREATIVE_BUILD_CHOICE_PROMPT)}</div><div class="opts">${opts}</div>`;
+    isCreativePush('hubly',experience.choicePrompt||"I have two directions. Can I show you both?");
+    box.querySelectorAll('button[data-dir]').forEach(btn=>{
+      btn.onclick=()=>finish(btn.getAttribute('data-dir'),btn.querySelector('strong')?.textContent||'');
+    });
+    // If the owner doesn't choose, continue with the recommended direction (no hung build).
+    setTimeout(()=>{
+      const rec=(experience.directions&&experience.directions[0]&&experience.directions[0].id)||'luxury';
+      finish(rec,experience.directions?.[0]?.label||'Luxury');
+    },7000);
+  });
+}
+async function isCreativeBuildInterruptSend(){
+  const input=document.getElementById('is-creative-interrupt-input');
+  const text=(input?.value||'').trim();
+  if(!text||!S._is?.creativeBuild)return;
+  if(input)input.value='';
+  isCreativePush('owner',text);
+  const result=HUBLY_CREATIVE_BUILD.applyInterruptToBuild(S._is.creativeBuild,text);
+  if(result.direction){
+    S._is.creativeBuild.chosenDirection=result.direction;
+    S._is.creativeBuild.live=S._is.creativeBuild.live||{};
+    S._is.creativeBuild.live.theme=result.direction==='friendly'?'friendly':'premium';
+  }
+  for(const u of result.updates||[]){
+    isCreativePush('hubly',u.text);
+    if(u.decision&&!S._is.creativeBuild.decisions.includes(u.decision))S._is.creativeBuild.decisions.push(u.decision);
+    if(u.confidenceDelta){
+      S._is.creativeBuild.designConfidence=Math.min(99,S._is.creativeBuild.designConfidence+u.confidenceDelta);
+      if(u.surface&&S._is.creativeBuild.surfaceConfidence[u.surface]!=null){
+        S._is.creativeBuild.surfaceConfidence[u.surface]=Math.min(99,S._is.creativeBuild.surfaceConfidence[u.surface]+u.confidenceDelta);
+      }
+    }
+  }
+  isCreativeRenderDecisions(S._is.creativeBuild);
+  isCreativeRenderConfidence(S._is.creativeBuild);
+  isCreativeRenderPreview(S._is.creativeBuild);
+}
+async function isRunCreativeBuildExperience(seed){
+  document.querySelector('#is-shell .is-wrap')?.classList.add('is-creative-wide');
+  isShowStep('creative-build');
+  const d=S._is?.discovery||{};
+  const ctx={
+    seed:seed||S._is?.seed||'',
+    industryId:d.facts?.industryId?.value||d.facts?.industry?.value||S._is?.thinkingExperience?.industryKey,
+    facts:d.facts||{},
+  };
+  const experience=HUBLY_CREATIVE_BUILD.orchestrateCreativeBuildExperience(ctx);
+  // Fold Thinking reasoning into explanations when present
+  const thinkWhy=S._is?.thinkingExperience?.primaryWhy?.explanation;
+  if(thinkWhy&&experience.stages[0])experience.stages[0].explain=thinkWhy+' '+experience.stages[0].explain;
+  S._is.creativeBuild=experience;
+  experience.live={heroTitle:S.biz||experience.industryLabel,heroSub:'Taking shape…',cta:'Book now',chips:[],theme:'premium',surfaces:{}};
+
+  const convo=document.getElementById('is-creative-conversation');
+  const trans=document.getElementById('is-creative-transition');
+  const choice=document.getElementById('is-creative-choice');
+  if(convo)convo.innerHTML='';
+  if(trans){trans.hidden=true;trans.textContent='';}
+  if(choice)choice.hidden=true;
+
+  isCreativeRenderStages(experience,null);
+  isCreativeRenderDecisions(experience);
+  isCreativeRenderConfidence(experience);
+  isCreativeRenderPreview(experience);
+  isCreativePush('hubly',"I'm building this live so you can watch it take shape.");
+  await isCreativeFrame();
+
+  let showedChoice=false;
+  for(let i=0;i<experience.stages.length;i++){
+    const stage=experience.stages[i];
+    isCreativeRenderStages(experience,stage.id);
+    isCreativePush('hubly',stage.explain,'');
+    // Before & After
+    const ba=`<div class="is-creative-ba"><div class="ba-lbl">Original Idea</div><div>${escPeHtml(stage.before)}</div><div class="ba-arrow">↓ Improved Version</div><div class="ba-lbl">Improved Version</div><div>${escPeHtml(stage.after)}</div><div style="margin-top:6px;opacity:.85">I found something stronger.</div></div>`;
+    const last=document.querySelector('#is-creative-conversation .is-creative-msg:last-child');
+    if(last)last.insertAdjacentHTML('beforeend',ba);
+
+    if(stage.bts&&stage.bts.length){
+      const btsHtml=`<div class="is-creative-bts">${stage.bts.map(b=>{
+        const who=b.expert==='creative'?'🎨 Creative Director':b.expert==='critic'?'🧐 Critic':b.expert==='strategy'?'📈 Strategy':'🧠 Hubly';
+        return `<div class="line"><strong>${who}:</strong> ${escPeHtml(b.text)}</div>`;
+      }).join('')}</div>`;
+      if(last)last.insertAdjacentHTML('beforeend',btsHtml);
+    }
+
+    isCreativeApplyStage(experience,stage);
+    isCreativeRenderDecisions(experience);
+    isCreativeRenderConfidence(experience);
+    isCreativeRenderPreview(experience);
+    await isCreativeFrame();
+
+    // Dual direction mid-build (after brand or second stage)
+    if(!showedChoice&&(stage.id==='brand'||i===1)){
+      showedChoice=true;
+      await isCreativeShowChoice(experience);
+      isCreativeApplyStage(experience,{id:'brand',surface:'brand',decision:experience.chosenDirection==='luxury'?'Premium positioning':'Friendly local brand'});
+      isCreativeRenderPreview(experience);
+      isCreativeRenderDecisions(experience);
+    }
+  }
+
+  isCreativeRenderStages(experience,null);
+  if(trans){
+    trans.hidden=false;
+    trans.textContent=experience.transition||HUBLY_CREATIVE_BUILD.CREATIVE_BUILD_TRANSITION;
+  }
+  isCreativePush('hubly',experience.transition||HUBLY_CREATIVE_BUILD.CREATIVE_BUILD_TRANSITION);
+  await isCreativeFrame();
+
+  // Soft Epic 5 handoff — do not implement full Reveal
+  S._is.readyForReveal=true;
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-creative-wide');
+  isShowStep('reveal-shell');
+  return experience;
 }
 function isTalkBoot(){
   S._is=S._is||{};

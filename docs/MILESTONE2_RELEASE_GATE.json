@@ -1,12 +1,12 @@
 {
   "milestone": "2",
   "name": "The Hubly Experience",
-  "passed": 4,
+  "passed": 5,
   "total": 13,
-  "unlocked": 4,
-  "percent": 31,
+  "unlocked": 5,
+  "percent": 38,
   "ready": false,
-  "checkedAt": "2026-07-24T06:51:44.320Z",
+  "checkedAt": "2026-07-24T07:04:07.302Z",
   "epics": [
     {
       "n": 0,
@@ -35,8 +35,8 @@
     {
       "n": 4,
       "title": "Creative Build Experience",
-      "status": "locked",
-      "script": null
+      "status": "pass",
+      "script": "scripts/check-m2-epic4.mjs"
     },
     {
       "n": 5,
