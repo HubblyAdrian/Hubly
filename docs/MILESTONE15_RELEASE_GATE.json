@@ -1,11 +1,11 @@
 {
   "milestone": "1.5",
-  "passed": 2,
+  "passed": 3,
   "total": 12,
-  "unlocked": 2,
-  "percent": 17,
+  "unlocked": 3,
+  "percent": 25,
   "ready": false,
-  "checkedAt": "2026-07-24T01:57:39.383Z",
+  "checkedAt": "2026-07-24T02:24:05.185Z",
   "epics": [
     {
       "n": 1,
@@ -22,8 +22,8 @@
     {
       "n": 3,
       "title": "Preview Engine",
-      "status": "locked",
-      "script": null
+      "status": "pass",
+      "script": "scripts/check-builder-epic3.mjs"
     },
     {
       "n": 4,

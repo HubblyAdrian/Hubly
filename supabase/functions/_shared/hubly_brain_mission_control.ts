@@ -138,7 +138,28 @@ export type HublyFlightRecorder = {
     estimatedImpact: string;
     applied: false;
     executed: false;
-    previewGenerated: false;
+    previewGenerated: boolean;
+  } | null;
+  /** Milestone 1.5 · Epic 3 — Preview summary (not applied). */
+  preview: {
+    id: string;
+    changePlanId: string;
+    intentId: string;
+    title: string;
+    headline: string;
+    primarySurface: string;
+    optionCount: number;
+    versionCount: number;
+    currentVersion: number;
+    lifecycle: string;
+    progressiveComplete: boolean;
+    stageCount: number;
+    compareModes: string[];
+    applied: false;
+    executed: false;
+    published: false;
+    mutatedLiveState: false;
+    waitingFor: string;
   } | null;
 };
 
@@ -199,6 +220,8 @@ export type HublyMissionControlSnapshot = {
     intents: Array<NonNullable<HublyFlightRecorder["builderIntent"]>>;
     /** Latest Change Plans (Epic 2). */
     changePlans: Array<NonNullable<HublyFlightRecorder["changePlan"]>>;
+    /** Latest Previews (Epic 3). */
+    previews: Array<NonNullable<HublyFlightRecorder["preview"]>>;
   };
   capabilityRegistry: Array<{ toolId: string; name: string; capabilityCount: number }>;
   knowledgeRegistry: Array<{ id: string; name: string; access: string }>;
@@ -289,6 +312,7 @@ export type RecordFlightOpts = {
   executionId?: string;
   builderIntent?: HublyFlightRecorder["builderIntent"];
   changePlan?: HublyFlightRecorder["changePlan"];
+  preview?: HublyFlightRecorder["preview"];
 };
 
 /**
@@ -369,6 +393,12 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     }, 15);
   }
 
+  if (opts.preview) {
+    push("preview", `Preview: ${opts.preview.headline} (${opts.preview.title})`, {
+      ...opts.preview,
+    }, 15);
+  }
+
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -424,6 +454,7 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     decisionAction: opts.decisionAction ?? null,
     builderIntent: opts.builderIntent ? { ...opts.builderIntent } : null,
     changePlan: opts.changePlan ? { ...opts.changePlan } : null,
+    preview: opts.preview ? { ...opts.preview } : null,
   };
 
   FLIGHTS.set(flight.executionId, flight);
@@ -647,12 +678,27 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         .filter((x): x is NonNullable<typeof x> => !!x)
         .slice(-10)
         .reverse();
+      const previews = flights
+        .map((f) => f.preview)
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .slice(-10)
+        .reverse();
       return {
         milestone: "1.5" as const,
         available: false as const,
-        epic: "2 — Change Plan DSL",
-        note: "Epic 2 — Builder Intent → declarative Change Plan. Waiting for Preview Engine. No apply.",
-        recent: changePlans.length
+        epic: "3 — Preview Engine",
+        note: "Epic 3 — Builder Intent → Change Plan → Preview. Waiting for Approval Engine. No apply.",
+        recent: previews.length
+          ? previews.map((p) => ({
+            id: p.id,
+            status: "preview_ready",
+            summary: `${p.headline} · ${p.title} (v${p.currentVersion})`,
+            risk: undefined,
+            confidence: undefined,
+            affectedSystems: undefined,
+            changePlanId: p.changePlanId,
+          }))
+          : changePlans.length
           ? changePlans.map((p) => ({
             id: p.id,
             status: "change_plan_draft",
@@ -675,6 +721,7 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
           })),
         intents,
         changePlans,
+        previews,
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

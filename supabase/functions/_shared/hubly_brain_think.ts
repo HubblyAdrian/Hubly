@@ -14,6 +14,7 @@ import {
   type BuilderIntent,
 } from "./hubly_brain_builder_expert.ts";
 import { generateChangePlan, type ChangePlan } from "./hubly_brain_change_plan.ts";
+import { generatePreview, type BuilderPreview } from "./hubly_brain_preview_engine.ts";
 import {
   listExpertCapabilities,
   listExperts,
@@ -221,6 +222,8 @@ export type HublyThinkResult = {
   builderIntent?: BuilderIntent | null;
   /** Milestone 1.5 · Epic 2 — declarative Change Plan (not executed). */
   changePlan?: ChangePlan | null;
+  /** Milestone 1.5 · Epic 3 — living Preview (not applied). */
+  preview?: BuilderPreview | null;
   /** Section 12 — Mission Control flight recorder id (AI Replay). */
   missionControlExecutionId?: string | null;
   flightRecorder?: HublyFlightRecorder | null;
@@ -1344,6 +1347,10 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   const changePlan = builderIntent
     ? generateChangePlan(builderIntent, { missionControlReplayId: null }).changePlan
     : null;
+  // Milestone 1.5 · Epic 3 — Preview Engine (living preview; not applied)
+  const preview = changePlan
+    ? generatePreview(changePlan, { missionControlReplayId: null }).preview
+    : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ""),
     intent,
@@ -1443,16 +1450,41 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
         estimatedImpact: changePlan.estimatedImpact.summary,
         applied: false as const,
         executed: false as const,
-        previewGenerated: false as const,
+        previewGenerated: !!preview,
+      }
+      : null,
+    preview: preview
+      ? {
+        id: preview.id,
+        changePlanId: preview.changePlanId,
+        intentId: preview.intentId,
+        title: preview.title,
+        headline: preview.headline,
+        primarySurface: preview.primarySurface,
+        optionCount: preview.options.length,
+        versionCount: preview.versions.length,
+        currentVersion: preview.currentVersion,
+        lifecycle: preview.lifecycle,
+        progressiveComplete: preview.progressiveComplete,
+        stageCount: preview.stages.length,
+        compareModes: [...new Set(preview.surfaces.map((s) => s.compareMode))],
+        applied: false as const,
+        executed: false as const,
+        published: false as const,
+        mutatedLiveState: false as const,
+        waitingFor: preview.waitingFor,
       }
       : null,
   });
 
-  // Attach replay id onto plan actions for Mission Control correlation
+  // Attach replay id onto plan actions + preview for Mission Control correlation
   if (changePlan && flightRecorder.executionId) {
     for (const a of changePlan.changes) {
       a.missionControlReplayId = flightRecorder.executionId;
     }
+  }
+  if (preview && flightRecorder.executionId) {
+    preview.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -1490,6 +1522,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     registryRouting,
     builderIntent,
     changePlan,
+    preview,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     timeline,

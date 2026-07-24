@@ -190,6 +190,7 @@ import { HublyDocs } from "./hubly_brain_docs.ts";
 import { HublyCertification } from "./hubly_brain_certification.ts";
 import { HublyBuilderExpert } from "./hubly_brain_builder_expert.ts";
 import { HublyChangePlanEngine } from "./hubly_brain_change_plan.ts";
+import { HublyPreviewEngine } from "./hubly_brain_preview_engine.ts";
 import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
 import {
   logBrainExecution,
@@ -276,6 +277,7 @@ export {
   HublyCertification,
   HublyBuilderExpert,
   HublyChangePlanEngine,
+  HublyPreviewEngine,
   HublyConfidencePolicy,
   HublyBrainExecutionLog,
   HublyExperienceDirector,
