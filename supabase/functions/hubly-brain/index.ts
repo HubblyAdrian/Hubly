@@ -167,6 +167,19 @@ Deno.serve(async (req) => {
       runId,
       recentExecutions: typeof Hubly.executions === "function" ? Hubly.executions(8) : [],
       expertOutputs: body.debug ? result.expertOutputs : undefined,
+      // Milestone 2 · Epic 3 — Thinking Experience payload (visible intelligence)
+      thinkingExperience: body.thinking_experience === true || body.thinkingExperience === true
+        ? {
+            reasoningObjects: result.reasoningObjects || [],
+            decisionObjects: result.decisionObjects || [],
+            mergedExpertRecords: result.mergedExpertRecords || [],
+            flightRecorder: result.flightRecorder || null,
+            collaboration: result.collaboration || null,
+            expertsRun: result.expertsRun || [],
+            confidenceBand: result.confidenceBand || null,
+            source: "hubly_brain",
+          }
+        : undefined,
     });
   } catch (e) {
     console.error("hubly-brain error", e);

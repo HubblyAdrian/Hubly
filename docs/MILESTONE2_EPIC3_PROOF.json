@@ -1,0 +1,63 @@
+{
+  "epic": 3,
+  "title": "Hubly Thinking Experience",
+  "passed": true,
+  "checkedAt": "2026-07-24T06:51:44.318Z",
+  "version": "1.0.0",
+  "transition": "I think I have a really strong direction. Let me start building.",
+  "distinctIndustries": true,
+  "samples": {
+    "pressure_washing": {
+      "signature": "pressure_washing::412::Homeowners hire pressure washing for cur::I found that most pressure washing busin::Researching pressure washing businesses around Salt Lake City…|Most competitors compete on price.|Drafting homepage concepts…|The first version feels generic if we lead with price language.",
+      "aha": {
+        "kind": "aha",
+        "title": "💡 Aha!",
+        "body": "I found that most pressure washing businesses in your area bury their booking button below the fold.",
+        "why": "I'm putting yours at the top because I think it'll increase conversions.",
+        "decisionKey": "aha_insight",
+        "fromReasoning": true,
+        "reasoningId": "r_mryl11z1_oqgf7"
+      },
+      "why": {
+        "decision": "Pressure Washing with premium trust-first positioning",
+        "explanation": "I'm recommending premium positioning because homeowners tend to value trust over the lowest price.",
+        "decisionKey": "brand_positioning"
+      }
+    },
+    "photography": {
+      "signature": "photography::286::Wedding clients hire photographers for e::Wedding photographers with strong behind::Researching photography businesses…|Many photographers lead with finished galleries only.|Drafting homepage concepts…|A stock-looking gallery homepage will feel interchangeable.",
+      "aha": {
+        "kind": "aha",
+        "title": "💡 Aha!",
+        "body": "Wedding photographers with strong behind-the-scenes photos tend to convert better than those with only finished galleries.",
+        "why": "I'm featuring that early so clients feel the experience, not just the portfolio.",
+        "decisionKey": "aha_insight",
+        "fromReasoning": true,
+        "reasoningId": "r_mryl11z1_1fid7"
+      },
+      "why": {
+        "decision": "Photography with premium trust-first positioning",
+        "explanation": "I'm recommending premium positioning because wedding clients choose photographers who feel trustworthy and distinctive — not the cheapest.",
+        "decisionKey": "brand_positioning"
+      }
+    }
+  },
+  "failures": [],
+  "htmlChecks": {
+    "thinkingCanvas": true,
+    "expertTimeline": true,
+    "ahaCards": true,
+    "collaboration": true,
+    "understandingPanel": true,
+    "stageProgress": true,
+    "whyExplain": true,
+    "noPercent": true,
+    "noSpinner": true,
+    "transition": true,
+    "orchestrator": true,
+    "noFakeSleep": true,
+    "brainDriven": true,
+    "emotionPacing": true,
+    "wordmark": true
+  }
+}
