@@ -1,0 +1,98 @@
+{
+  "epic": 9,
+  "title": "Creative Workspace",
+  "passed": true,
+  "checkedAt": "2026-07-24T16:28:00.745Z",
+  "version": "1.0.0",
+  "sample": {
+    "direction": {
+      "id": "premium",
+      "label": "Premium",
+      "feel": "Refined materials, elevated service cues."
+    },
+    "health": {
+      "overall": 91,
+      "label": "Website Health",
+      "dimensions": [
+        {
+          "id": "trust",
+          "label": "Trust",
+          "score": 95,
+          "why": "Trust affects how visitors decide to trust and book.",
+          "nextStep": "Improve trust with one focused creative change.",
+          "ask": "Why is Trust at 95?"
+        },
+        {
+          "id": "conversion",
+          "label": "Conversion",
+          "score": 91,
+          "why": "Conversion affects how visitors decide to trust and book.",
+          "nextStep": "Improve conversion with one focused creative change.",
+          "ask": "Why is Conversion at 91?"
+        },
+        {
+          "id": "seo",
+          "label": "SEO",
+          "score": 89,
+          "why": "SEO affects how visitors decide to trust and book.",
+          "nextStep": "Improve seo with one focused creative change.",
+          "ask": "Why is SEO at 89?"
+        },
+        {
+          "id": "accessibility",
+          "label": "Accessibility",
+          "score": 97,
+          "why": "Accessibility affects how visitors decide to trust and book.",
+          "nextStep": "Improve accessibility with one focused creative change.",
+          "ask": "Why is Accessibility at 97?"
+        },
+        {
+          "id": "photography",
+          "label": "Photography",
+          "score": 82,
+          "why": "Photography affects how visitors decide to trust and book.",
+          "nextStep": "Improve photography with one focused creative change.",
+          "ask": "Why is Photography at 82?"
+        }
+      ]
+    },
+    "memory": {
+      "preferences": [
+        "Prefers darker colors"
+      ],
+      "remembers": true,
+      "line": "I remember you like darker colors — I'll keep that in mind."
+    },
+    "playgrounds": [
+      "Modern Premium",
+      "Local & Friendly",
+      "Luxury Service",
+      "Bold & High Energy"
+    ],
+    "suggestions": [
+      "I think this hero image is hurting trust.",
+      "Your booking flow has one unnecessary step.",
+      "I found a stronger headline.",
+      "Your gallery needs more before-and-after photos."
+    ]
+  },
+  "failures": [],
+  "htmlChecks": {
+    "workspaceCanvas": true,
+    "conversationFirst": true,
+    "livePreview": true,
+    "sectionAsk": true,
+    "directions": true,
+    "compareMode": true,
+    "websiteHealth": true,
+    "creativeMemory": true,
+    "versionTimeline": true,
+    "advancedStudio": true,
+    "aiSuggestions": true,
+    "builderTransparency": true,
+    "playgrounds": true,
+    "mobileFirst": true,
+    "homeHandoff": true,
+    "wordmark": true
+  }
+}

@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 1 — Welcome Experience
 
 **Status:** PASS  
-**Checked:** 2026-07-24T16:05:12.057Z  
+**Checked:** 2026-07-24T16:28:00.439Z  
 **Gate:** `npm run check:m2-epic1`
 
 > The front door to Hubly. Not a signup page — the beginning of a conversation.
