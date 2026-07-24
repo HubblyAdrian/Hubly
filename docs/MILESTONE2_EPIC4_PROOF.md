@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 4 — Creative Build Experience
 
 **Status:** PASS  
-**Checked:** 2026-07-24T07:04:07.298Z  
+**Checked:** 2026-07-24T15:51:06.003Z  
 **Gate:** `npm run check:m2-epic4`
 
 > Watching Hubly build a business — not generate a website.  

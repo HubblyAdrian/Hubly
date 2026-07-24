@@ -22,7 +22,7 @@ const EPICS = [
   { n: 4, title: 'Creative Build Experience', script: 'scripts/check-m2-epic4.mjs', unlocked: true },
   { n: 5, title: 'Business Reveal', script: 'scripts/check-m2-epic5.mjs', unlocked: true },
   { n: 6, title: 'Delayed Account Creation', script: 'scripts/check-m2-epic6.mjs', unlocked: true },
-  { n: 7, title: 'Business Launch', script: null, unlocked: false },
+  { n: 7, title: 'Business Launch', script: 'scripts/check-m2-epic7.mjs', unlocked: true },
   { n: 8, title: 'Business Home', script: null, unlocked: false },
   { n: 9, title: 'Creative Workspace', script: null, unlocked: false },
   { n: 10, title: 'Hubly Daily', script: null, unlocked: false },
