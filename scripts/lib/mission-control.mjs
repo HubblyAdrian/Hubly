@@ -110,6 +110,11 @@ function recordFlightRecorder(opts) {
       ...opts.changePlan
     }, 15);
   }
+  if (opts.preview) {
+    push("preview", `Preview: ${opts.preview.headline} (${opts.preview.title})`, {
+      ...opts.preview
+    }, 15);
+  }
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -153,7 +158,8 @@ function recordFlightRecorder(opts) {
     decisionScore: opts.decisionScore ?? null,
     decisionAction: opts.decisionAction ?? null,
     builderIntent: opts.builderIntent ? { ...opts.builderIntent } : null,
-    changePlan: opts.changePlan ? { ...opts.changePlan } : null
+    changePlan: opts.changePlan ? { ...opts.changePlan } : null,
+    preview: opts.preview ? { ...opts.preview } : null
   };
   FLIGHTS.set(flight.executionId, flight);
   FLIGHT_ORDER.push(flight.executionId);
@@ -326,12 +332,21 @@ function getMissionControlSnapshot() {
     builderActions: (() => {
       const intents = flights.map((f) => f.builderIntent).filter((x) => !!x).slice(-10).reverse();
       const changePlans = flights.map((f) => f.changePlan).filter((x) => !!x).slice(-10).reverse();
+      const previews = flights.map((f) => f.preview).filter((x) => !!x).slice(-10).reverse();
       return {
         milestone: "1.5",
         available: false,
-        epic: "2 \u2014 Change Plan DSL",
-        note: "Epic 2 \u2014 Builder Intent \u2192 declarative Change Plan. Waiting for Preview Engine. No apply.",
-        recent: changePlans.length ? changePlans.map((p) => ({
+        epic: "3 \u2014 Preview Engine",
+        note: "Epic 3 \u2014 Builder Intent \u2192 Change Plan \u2192 Preview. Waiting for Approval Engine. No apply.",
+        recent: previews.length ? previews.map((p) => ({
+          id: p.id,
+          status: "preview_ready",
+          summary: `${p.headline} \xB7 ${p.title} (v${p.currentVersion})`,
+          risk: void 0,
+          confidence: void 0,
+          affectedSystems: void 0,
+          changePlanId: p.changePlanId
+        })) : changePlans.length ? changePlans.map((p) => ({
           id: p.id,
           status: "change_plan_draft",
           summary: `${p.title} (${p.actionCount} actions)`,
@@ -351,7 +366,8 @@ function getMissionControlSnapshot() {
           confidenceExplanation: i.confidenceExplanation
         })),
         intents,
-        changePlans
+        changePlans,
+        previews
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

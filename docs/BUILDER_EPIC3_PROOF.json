@@ -1,0 +1,1140 @@
+{
+  "milestone": "1.5",
+  "epic": 3,
+  "name": "Preview Engine",
+  "title": "Preview Engine",
+  "passed": true,
+  "checkedAt": "2026-07-24T02:24:05.182Z",
+  "proofs": {
+    "previewEngineExists": true,
+    "everyBuilderSupportsPreviews": true,
+    "websitePreviews": true,
+    "bookingPreviews": true,
+    "crmWorkspacePreviews": true,
+    "portfolioPreviews": true,
+    "automationPreviews": true,
+    "multiSystemPreviews": true,
+    "compareMode": true,
+    "multipleOptions": true,
+    "previewConversation": true,
+    "progressivePreview": true,
+    "noExecution": true,
+    "noApply": true,
+    "noPublish": true,
+    "noLiveMutation": true,
+    "missionControlStoresPreviews": true,
+    "missionControlReplay": true,
+    "waitingForApprovalEngine": true,
+    "demos": [
+      {
+        "id": "website",
+        "request": "Make my homepage feel premium.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrybgun6_b9d2pe",
+          "category": "Website",
+          "goal": "Premium Branding"
+        },
+        "changePlan": {
+          "id": "cpl_mrybgund_qygv8x",
+          "builderType": "website_builder",
+          "title": "Website Improvement",
+          "actionCount": 2
+        },
+        "preview": {
+          "id": "prv_mrybgund_tlmtg1",
+          "version": "1.0.0",
+          "changePlanId": "cpl_mrybgund_qygv8x",
+          "intentId": "bint_mrybgun6_b9d2pe",
+          "headline": "Here's what I built.",
+          "primarySurface": "website",
+          "surfaces": [
+            {
+              "surface": "website",
+              "title": "Website preview",
+              "compareMode": "slider",
+              "builderOwner": "Website Builder",
+              "before": {
+                "hero": "Default headline",
+                "feel": "Standard",
+                "sections": [
+                  "Services",
+                  "Pricing",
+                  "Reviews"
+                ],
+                "snapshot": "clear"
+              },
+              "after": {
+                "hero": "Premium headline tone",
+                "feel": "Luxury",
+                "sections": [
+                  "Hero",
+                  "Proof",
+                  "Services",
+                  "Booking"
+                ],
+                "colors": "Ink + warm gold",
+                "typography": "Editorial serif accents",
+                "snapshot": "premium",
+                "option": "Luxury"
+              },
+              "highlights": [
+                "Website Builder: website.premium_feel",
+                "Website Builder: website.hero.headline_tone",
+                "Option Luxury"
+              ],
+              "changes": [
+                {
+                  "path": "website.premium_feel",
+                  "why": "Owner asked for a more premium website feel.",
+                  "expectedImpact": {
+                    "trustPct": 12,
+                    "conversionPct": 4,
+                    "complexity": "low",
+                    "summary": "Premium branding cues tend to lift trust and conversion modestly."
+                  },
+                  "risk": "medium",
+                  "builderOwner": "Website Builder",
+                  "before": false,
+                  "after": true
+                },
+                {
+                  "path": "website.hero.headline_tone",
+                  "why": "Premium feel usually starts with hero headline tone.",
+                  "expectedImpact": {
+                    "trustPct": 8,
+                    "conversionPct": 3,
+                    "complexity": "low",
+                    "summary": "Clearer premium positioning on first impression."
+                  },
+                  "risk": "low",
+                  "builderOwner": "Website Builder",
+                  "before": "clear",
+                  "after": "premium"
+                }
+              ]
+            }
+          ],
+          "options": [
+            {
+              "id": "opt_a",
+              "label": "Luxury",
+              "vibe": "Deep contrast, quiet luxury, proof-first",
+              "recommended": true
+            },
+            {
+              "id": "opt_b",
+              "label": "Modern",
+              "vibe": "Clean grids, bold type, crisp CTAs",
+              "recommended": false
+            },
+            {
+              "id": "opt_c",
+              "label": "Minimal",
+              "vibe": "Whitespace, fewer sections, sharper hierarchy",
+              "recommended": false
+            }
+          ],
+          "stages": [
+            {
+              "id": "research",
+              "label": "Researching how the best service businesses present this…",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.161Z"
+            },
+            {
+              "id": "build_website",
+              "label": "Building homepage…",
+              "status": "complete",
+              "surface": "website",
+              "completedAt": "2026-07-24T02:24:05.161Z"
+            },
+            {
+              "id": "review",
+              "label": "Reviewing everything…",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.161Z"
+            },
+            {
+              "id": "recommend",
+              "label": "I think this version is stronger.",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.161Z"
+            }
+          ],
+          "versions": [
+            {
+              "version": 1,
+              "summary": "Initial preview from Change Plan",
+              "selectedOptionId": "opt_a"
+            }
+          ],
+          "conversationSample": [
+            {
+              "turnId": "pturn_mrybgunf_jgrtl6",
+              "role": "owner",
+              "message": "I like Option 2.",
+              "at": "2026-07-24T02:24:05.163Z",
+              "resultingVersion": 2
+            },
+            {
+              "turnId": "pturn_mrybgunf_uaodne",
+              "role": "hubly",
+              "message": "I switched to Option Modern. Here's the updated preview.",
+              "at": "2026-07-24T02:24:05.163Z",
+              "resultingVersion": 2
+            },
+            {
+              "turnId": "pturn_mrybgunf_dtovjd",
+              "role": "owner",
+              "message": "Make it darker.",
+              "at": "2026-07-24T02:24:05.163Z",
+              "resultingVersion": 3
+            },
+            {
+              "turnId": "pturn_mrybgunf_rei0w1",
+              "role": "hubly",
+              "message": "Made it darker — preview updated.",
+              "at": "2026-07-24T02:24:05.163Z",
+              "resultingVersion": 3
+            }
+          ],
+          "lifecycle": "waiting_for_approval",
+          "lifecycleLog": [
+            {
+              "at": "2026-07-24T02:24:05.161Z",
+              "state": "created",
+              "note": "Preview created from Change Plan"
+            },
+            {
+              "at": "2026-07-24T02:24:05.161Z",
+              "state": "waiting_for_approval",
+              "note": "Waiting for Approval Engine (Epic 4)"
+            }
+          ],
+          "applied": false,
+          "executed": false,
+          "published": false,
+          "mutatedLiveState": false,
+          "waitingFor": "approval_engine",
+          "missionControlExecutionId": "flt_mrybgune_16byyh"
+        }
+      },
+      {
+        "id": "booking",
+        "request": "Add arrival windows.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrybgunh_wgs3pi",
+          "category": "Booking",
+          "goal": "Arrival Windows"
+        },
+        "changePlan": {
+          "id": "cpl_mrybgunj_mkpylo",
+          "builderType": "booking",
+          "title": "Booking Rule",
+          "actionCount": 1
+        },
+        "preview": {
+          "id": "prv_mrybgunj_hdqzy8",
+          "version": "1.0.0",
+          "changePlanId": "cpl_mrybgunj_mkpylo",
+          "intentId": "bint_mrybgunh_wgs3pi",
+          "headline": "Here's what I built.",
+          "primarySurface": "booking",
+          "surfaces": [
+            {
+              "surface": "booking",
+              "title": "Booking preview",
+              "compareMode": "side_by_side",
+              "builderOwner": "Booking Builder",
+              "before": {
+                "appointments": "Fixed 2:00 PM slots",
+                "sameDay": "Allowed",
+                "minimumNotice": "None",
+                "arrivalWindow": "Off",
+                "snapshot": {
+                  "enabled": false,
+                  "before_minutes": 0,
+                  "after_minutes": 0
+                }
+              },
+              "after": {
+                "appointments": "Arrival window",
+                "window": "60–60 min around start",
+                "example": "1:00 PM – 3:00 PM",
+                "snapshot": {
+                  "enabled": true,
+                  "before_minutes": 60,
+                  "after_minutes": 60
+                },
+                "minimumNotice": {
+                  "enabled": true,
+                  "before_minutes": 60,
+                  "after_minutes": 60
+                }
+              },
+              "highlights": [
+                "Booking Builder: booking.arrival_window"
+              ],
+              "changes": [
+                {
+                  "path": "booking.arrival_window",
+                  "why": "Owner wants appointment arrival windows.",
+                  "expectedImpact": {
+                    "trustPct": 9,
+                    "schedulingFlexibility": "high",
+                    "complexity": "low",
+                    "summary": "Arrival windows set clear expectations for customers."
+                  },
+                  "risk": "medium",
+                  "builderOwner": "Booking Builder",
+                  "before": {
+                    "enabled": false,
+                    "before_minutes": 0,
+                    "after_minutes": 0
+                  },
+                  "after": {
+                    "enabled": true,
+                    "before_minutes": 60,
+                    "after_minutes": 60
+                  }
+                }
+              ]
+            }
+          ],
+          "options": [],
+          "stages": [
+            {
+              "id": "research",
+              "label": "Researching how the best service businesses present this…",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.167Z"
+            },
+            {
+              "id": "build_booking",
+              "label": "Updating booking experience…",
+              "status": "complete",
+              "surface": "booking",
+              "completedAt": "2026-07-24T02:24:05.167Z"
+            },
+            {
+              "id": "review",
+              "label": "Reviewing everything…",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.167Z"
+            },
+            {
+              "id": "recommend",
+              "label": "I think this version is stronger.",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.167Z"
+            }
+          ],
+          "versions": [
+            {
+              "version": 1,
+              "summary": "Initial preview from Change Plan",
+              "selectedOptionId": null
+            }
+          ],
+          "conversationSample": [
+            {
+              "turnId": "pturn_mrybgunk_n5wwdo",
+              "role": "owner",
+              "message": "Looks good — keep going.",
+              "at": "2026-07-24T02:24:05.168Z",
+              "resultingVersion": 2
+            },
+            {
+              "turnId": "pturn_mrybgunk_zab3kl",
+              "role": "hubly",
+              "message": "Got it — I updated the preview.",
+              "at": "2026-07-24T02:24:05.168Z",
+              "resultingVersion": 2
+            }
+          ],
+          "lifecycle": "waiting_for_approval",
+          "lifecycleLog": [
+            {
+              "at": "2026-07-24T02:24:05.167Z",
+              "state": "created",
+              "note": "Preview created from Change Plan"
+            },
+            {
+              "at": "2026-07-24T02:24:05.167Z",
+              "state": "waiting_for_approval",
+              "note": "Waiting for Approval Engine (Epic 4)"
+            }
+          ],
+          "applied": false,
+          "executed": false,
+          "published": false,
+          "mutatedLiveState": false,
+          "waitingFor": "approval_engine",
+          "missionControlExecutionId": "flt_mrybgunj_9uk3sh"
+        }
+      },
+      {
+        "id": "workspace",
+        "request": "Move Jobs above Customers.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrybgunl_fy6bxc",
+          "category": "Workspace",
+          "goal": "Navigation Order"
+        },
+        "changePlan": {
+          "id": "cpl_mrybgunl_f9yu0d",
+          "builderType": "workspace_builder",
+          "title": "Workspace Layout",
+          "actionCount": 1
+        },
+        "preview": {
+          "id": "prv_mrybgunm_9ovjqz",
+          "version": "1.0.0",
+          "changePlanId": "cpl_mrybgunl_f9yu0d",
+          "intentId": "bint_mrybgunl_fy6bxc",
+          "headline": "Here's what I built.",
+          "primarySurface": "workspace",
+          "surfaces": [
+            {
+              "surface": "workspace",
+              "title": "Workspace preview",
+              "compareMode": "side_by_side",
+              "builderOwner": "Workspace Builder",
+              "before": {
+                "sidebar": [
+                  "Customers",
+                  "Jobs",
+                  "Calendar"
+                ],
+                "modules": "All visible",
+                "snapshot": [
+                  "Customers",
+                  "Jobs",
+                  "Calendar"
+                ]
+              },
+              "after": {
+                "sidebar": [
+                  "Jobs",
+                  "Customers"
+                ],
+                "animation": "Drag highlight Jobs above Customers",
+                "snapshot": [
+                  "Jobs",
+                  "Customers"
+                ]
+              },
+              "highlights": [
+                "Workspace Builder: workspace.sidebar_order"
+              ],
+              "changes": [
+                {
+                  "path": "workspace.sidebar_order",
+                  "why": "Owner wants Jobs above Customers in navigation.",
+                  "expectedImpact": {
+                    "complexity": "low",
+                    "summary": "Navigation matches how the owner works day to day."
+                  },
+                  "risk": "low",
+                  "builderOwner": "Workspace Builder",
+                  "before": [
+                    "Customers",
+                    "Jobs",
+                    "Calendar"
+                  ],
+                  "after": [
+                    "Jobs",
+                    "Customers"
+                  ]
+                }
+              ]
+            }
+          ],
+          "options": [],
+          "stages": [
+            {
+              "id": "research",
+              "label": "Researching how the best service businesses present this…",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.170Z"
+            },
+            {
+              "id": "build_workspace",
+              "label": "Adjusting workspace layout…",
+              "status": "complete",
+              "surface": "workspace",
+              "completedAt": "2026-07-24T02:24:05.170Z"
+            },
+            {
+              "id": "review",
+              "label": "Reviewing everything…",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.170Z"
+            },
+            {
+              "id": "recommend",
+              "label": "I think this version is stronger.",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.170Z"
+            }
+          ],
+          "versions": [
+            {
+              "version": 1,
+              "summary": "Initial preview from Change Plan",
+              "selectedOptionId": null
+            }
+          ],
+          "conversationSample": [
+            {
+              "turnId": "pturn_mrybgunm_xwx13q",
+              "role": "owner",
+              "message": "Looks good — keep going.",
+              "at": "2026-07-24T02:24:05.170Z",
+              "resultingVersion": 2
+            },
+            {
+              "turnId": "pturn_mrybgunm_xh7qjf",
+              "role": "hubly",
+              "message": "Got it — I updated the preview.",
+              "at": "2026-07-24T02:24:05.170Z",
+              "resultingVersion": 2
+            }
+          ],
+          "lifecycle": "waiting_for_approval",
+          "lifecycleLog": [
+            {
+              "at": "2026-07-24T02:24:05.170Z",
+              "state": "created",
+              "note": "Preview created from Change Plan"
+            },
+            {
+              "at": "2026-07-24T02:24:05.170Z",
+              "state": "waiting_for_approval",
+              "note": "Waiting for Approval Engine (Epic 4)"
+            }
+          ],
+          "applied": false,
+          "executed": false,
+          "published": false,
+          "mutatedLiveState": false,
+          "waitingFor": "approval_engine",
+          "missionControlExecutionId": "flt_mrybgunm_m07qcd"
+        }
+      },
+      {
+        "id": "portfolio",
+        "request": "Organize these portfolio photos.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrybgunn_8swgum",
+          "category": "Portfolio",
+          "goal": "Gallery Organization"
+        },
+        "changePlan": {
+          "id": "cpl_mrybguno_iz1stw",
+          "builderType": "portfolio_builder",
+          "title": "Portfolio Update",
+          "actionCount": 3
+        },
+        "preview": {
+          "id": "prv_mrybguno_4k1vwg",
+          "version": "1.0.0",
+          "changePlanId": "cpl_mrybguno_iz1stw",
+          "intentId": "bint_mrybgunn_8swgum",
+          "headline": "Here's what I built.",
+          "primarySurface": "portfolio",
+          "surfaces": [
+            {
+              "surface": "portfolio",
+              "title": "Portfolio preview",
+              "compareMode": "slider",
+              "builderOwner": "Portfolio Builder",
+              "before": {
+                "gallery": "Unsorted uploads",
+                "hero": "First photo",
+                "captions": "Missing",
+                "snapshot": false
+              },
+              "after": {
+                "gallery": "Organized categories",
+                "hero": "Selected hero images",
+                "captions": "Generated captions",
+                "order": "Story-first",
+                "snapshot": true
+              },
+              "highlights": [
+                "Portfolio Builder: portfolio.gallery.organize",
+                "Portfolio Builder: portfolio.hero_images.select",
+                "Portfolio Builder: portfolio.captions.generate"
+              ],
+              "changes": [
+                {
+                  "path": "portfolio.gallery.organize",
+                  "why": "Owner wants portfolio photos organized in the gallery.",
+                  "expectedImpact": {
+                    "trustPct": 11,
+                    "conversionPct": 5,
+                    "complexity": "medium",
+                    "summary": "Organized gallery strengthens proof of work."
+                  },
+                  "risk": "low",
+                  "builderOwner": "Portfolio Builder",
+                  "before": false,
+                  "after": true
+                },
+                {
+                  "path": "portfolio.hero_images.select",
+                  "why": "Choose hero images among uploaded portfolio photos.",
+                  "expectedImpact": {
+                    "trustPct": 7,
+                    "conversionPct": 3,
+                    "complexity": "low",
+                    "summary": "Stronger first impression."
+                  },
+                  "risk": "low",
+                  "builderOwner": "Portfolio Builder",
+                  "before": false,
+                  "after": true
+                },
+                {
+                  "path": "portfolio.captions.generate",
+                  "why": "Generate captions for portfolio images.",
+                  "expectedImpact": {
+                    "trustPct": 5,
+                    "complexity": "low",
+                    "summary": "Captions add context for visitors."
+                  },
+                  "risk": "low",
+                  "builderOwner": "Portfolio Builder",
+                  "before": false,
+                  "after": true
+                }
+              ]
+            }
+          ],
+          "options": [],
+          "stages": [
+            {
+              "id": "research",
+              "label": "Researching how the best service businesses present this…",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.172Z"
+            },
+            {
+              "id": "build_portfolio",
+              "label": "Organizing portfolio photos…",
+              "status": "complete",
+              "surface": "portfolio",
+              "completedAt": "2026-07-24T02:24:05.172Z"
+            },
+            {
+              "id": "review",
+              "label": "Reviewing everything…",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.172Z"
+            },
+            {
+              "id": "recommend",
+              "label": "I think this version is stronger.",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.172Z"
+            }
+          ],
+          "versions": [
+            {
+              "version": 1,
+              "summary": "Initial preview from Change Plan",
+              "selectedOptionId": null
+            }
+          ],
+          "conversationSample": [
+            {
+              "turnId": "pturn_mrybguno_svy1zb",
+              "role": "owner",
+              "message": "Looks good — keep going.",
+              "at": "2026-07-24T02:24:05.172Z",
+              "resultingVersion": 2
+            },
+            {
+              "turnId": "pturn_mrybgunp_foctyo",
+              "role": "hubly",
+              "message": "Got it — I updated the preview.",
+              "at": "2026-07-24T02:24:05.172Z",
+              "resultingVersion": 2
+            }
+          ],
+          "lifecycle": "waiting_for_approval",
+          "lifecycleLog": [
+            {
+              "at": "2026-07-24T02:24:05.172Z",
+              "state": "created",
+              "note": "Preview created from Change Plan"
+            },
+            {
+              "at": "2026-07-24T02:24:05.172Z",
+              "state": "waiting_for_approval",
+              "note": "Waiting for Approval Engine (Epic 4)"
+            }
+          ],
+          "applied": false,
+          "executed": false,
+          "published": false,
+          "mutatedLiveState": false,
+          "waitingFor": "approval_engine",
+          "missionControlExecutionId": "flt_mrybguno_h36bzs"
+        }
+      },
+      {
+        "id": "automation",
+        "request": "Build an automation that sends prep instructions after ceramic coating bookings.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrybgunq_br29la",
+          "category": "Automations",
+          "goal": "Post-Booking Prep Instructions"
+        },
+        "changePlan": {
+          "id": "cpl_mrybgunr_z03ta0",
+          "builderType": "automation",
+          "title": "Automation Setup",
+          "actionCount": 1
+        },
+        "preview": {
+          "id": "prv_mrybgunr_97unqf",
+          "version": "1.0.0",
+          "changePlanId": "cpl_mrybgunr_z03ta0",
+          "intentId": "bint_mrybgunq_br29la",
+          "headline": "Here's what I built.",
+          "primarySurface": "automations",
+          "surfaces": [
+            {
+              "surface": "automations",
+              "title": "Automation preview",
+              "compareMode": "diff",
+              "builderOwner": "Automation Builder",
+              "before": {
+                "workflow": "None",
+                "steps": [],
+                "snapshot": []
+              },
+              "after": {
+                "workflow": "Booked → Prep Email → Wait → Reminder",
+                "steps": [
+                  {
+                    "type": "createWorkflow",
+                    "config": {
+                      "name": "Ceramic coating prep"
+                    }
+                  },
+                  {
+                    "type": "sendEmail",
+                    "config": {
+                      "template": "prep_instructions"
+                    }
+                  },
+                  {
+                    "type": "wait",
+                    "config": {
+                      "hours": 0
+                    }
+                  },
+                  {
+                    "type": "sendReminder",
+                    "config": {
+                      "channel": "email"
+                    }
+                  }
+                ],
+                "snapshot": [
+                  {
+                    "id": "prep_after_ceramic",
+                    "trigger": "booking.completed.service:ceramic_coating",
+                    "steps": [
+                      {
+                        "type": "createWorkflow",
+                        "config": {
+                          "name": "Ceramic coating prep"
+                        }
+                      },
+                      {
+                        "type": "sendEmail",
+                        "config": {
+                          "template": "prep_instructions"
+                        }
+                      },
+                      {
+                        "type": "wait",
+                        "config": {
+                          "hours": 0
+                        }
+                      },
+                      {
+                        "type": "sendReminder",
+                        "config": {
+                          "channel": "email"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "highlights": [
+                "Automation Builder: automations.workflows"
+              ],
+              "changes": [
+                {
+                  "path": "automations.workflows",
+                  "why": "Send prep instructions after ceramic coating bookings.",
+                  "expectedImpact": {
+                    "trustPct": 10,
+                    "complexity": "medium",
+                    "summary": "Automated prep instructions reduce day-of questions."
+                  },
+                  "risk": "medium",
+                  "builderOwner": "Automation Builder",
+                  "before": [],
+                  "after": [
+                    {
+                      "id": "prep_after_ceramic",
+                      "trigger": "booking.completed.service:ceramic_coating",
+                      "steps": [
+                        {
+                          "type": "createWorkflow",
+                          "config": {
+                            "name": "Ceramic coating prep"
+                          }
+                        },
+                        {
+                          "type": "sendEmail",
+                          "config": {
+                            "template": "prep_instructions"
+                          }
+                        },
+                        {
+                          "type": "wait",
+                          "config": {
+                            "hours": 0
+                          }
+                        },
+                        {
+                          "type": "sendReminder",
+                          "config": {
+                            "channel": "email"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "options": [],
+          "stages": [
+            {
+              "id": "research",
+              "label": "Researching how the best service businesses present this…",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.175Z"
+            },
+            {
+              "id": "build_automations",
+              "label": "Sketching the automation flow…",
+              "status": "complete",
+              "surface": "automations",
+              "completedAt": "2026-07-24T02:24:05.175Z"
+            },
+            {
+              "id": "review",
+              "label": "Reviewing everything…",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.175Z"
+            },
+            {
+              "id": "recommend",
+              "label": "I think this version is stronger.",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.175Z"
+            }
+          ],
+          "versions": [
+            {
+              "version": 1,
+              "summary": "Initial preview from Change Plan",
+              "selectedOptionId": null
+            }
+          ],
+          "conversationSample": [
+            {
+              "turnId": "pturn_mrybguns_3a0fd8",
+              "role": "owner",
+              "message": "Looks good — keep going.",
+              "at": "2026-07-24T02:24:05.176Z",
+              "resultingVersion": 2
+            },
+            {
+              "turnId": "pturn_mrybguns_9s1lha",
+              "role": "hubly",
+              "message": "Got it — I updated the preview.",
+              "at": "2026-07-24T02:24:05.176Z",
+              "resultingVersion": 2
+            }
+          ],
+          "lifecycle": "waiting_for_approval",
+          "lifecycleLog": [
+            {
+              "at": "2026-07-24T02:24:05.175Z",
+              "state": "created",
+              "note": "Preview created from Change Plan"
+            },
+            {
+              "at": "2026-07-24T02:24:05.175Z",
+              "state": "waiting_for_approval",
+              "note": "Waiting for Approval Engine (Epic 4)"
+            }
+          ],
+          "applied": false,
+          "executed": false,
+          "published": false,
+          "mutatedLiveState": false,
+          "waitingFor": "approval_engine",
+          "missionControlExecutionId": "flt_mrybgunr_hzglyu"
+        }
+      },
+      {
+        "id": "multi",
+        "request": "Add arrival windows and update my homepage.",
+        "passed": true,
+        "builderIntent": {
+          "intentId": "bint_mrybguns_yjgabj",
+          "category": "Multiple Systems",
+          "goal": "Arrival Windows · Website Update"
+        },
+        "changePlan": {
+          "id": "cpl_mrybgunt_97eqhp",
+          "builderType": "multi",
+          "title": "Multi-System: Website + Booking",
+          "actionCount": 2
+        },
+        "preview": {
+          "id": "prv_mrybgunt_gyyeq8",
+          "version": "1.0.0",
+          "changePlanId": "cpl_mrybgunt_97eqhp",
+          "intentId": "bint_mrybguns_yjgabj",
+          "headline": "Here's what I built.",
+          "primarySurface": "multi",
+          "surfaces": [
+            {
+              "surface": "website",
+              "title": "Website preview",
+              "compareMode": "slider",
+              "builderOwner": "Website Builder",
+              "before": {
+                "hero": "Default headline",
+                "feel": "Standard",
+                "sections": [
+                  "Services",
+                  "Pricing",
+                  "Reviews"
+                ],
+                "snapshot": {
+                  "enabled": false,
+                  "before_minutes": 0,
+                  "after_minutes": 0
+                }
+              },
+              "after": {
+                "appointments": "Arrival window",
+                "window": "60–60 min around start",
+                "example": "1:00 PM – 3:00 PM",
+                "snapshot": true
+              },
+              "highlights": [
+                "Website Builder: website.explain_arrival_windows"
+              ],
+              "changes": [
+                {
+                  "path": "website.explain_arrival_windows",
+                  "why": "Website should explain arrival windows so customers know what to expect.",
+                  "expectedImpact": {
+                    "trustPct": 10,
+                    "conversionPct": 3,
+                    "complexity": "low",
+                    "summary": "Explaining arrival windows reduces confusion and no-shows."
+                  },
+                  "risk": "low",
+                  "builderOwner": "Website Builder",
+                  "before": {
+                    "enabled": false,
+                    "before_minutes": 0,
+                    "after_minutes": 0
+                  },
+                  "after": true
+                }
+              ]
+            },
+            {
+              "surface": "booking",
+              "title": "Booking preview",
+              "compareMode": "side_by_side",
+              "builderOwner": "Booking Builder",
+              "before": {
+                "appointments": "Fixed 2:00 PM slots",
+                "sameDay": "Allowed",
+                "minimumNotice": "None",
+                "arrivalWindow": "Off",
+                "snapshot": {
+                  "enabled": false,
+                  "before_minutes": 0,
+                  "after_minutes": 0
+                }
+              },
+              "after": {
+                "appointments": "Arrival window",
+                "window": "60–60 min around start",
+                "example": "1:00 PM – 3:00 PM",
+                "snapshot": {
+                  "enabled": true,
+                  "before_minutes": 60,
+                  "after_minutes": 60
+                },
+                "minimumNotice": {
+                  "enabled": true,
+                  "before_minutes": 60,
+                  "after_minutes": 60
+                }
+              },
+              "highlights": [
+                "Booking Builder: booking.arrival_window"
+              ],
+              "changes": [
+                {
+                  "path": "booking.arrival_window",
+                  "why": "Owner wants appointment arrival windows.",
+                  "expectedImpact": {
+                    "trustPct": 9,
+                    "schedulingFlexibility": "high",
+                    "complexity": "low",
+                    "summary": "Arrival windows set clear expectations for customers."
+                  },
+                  "risk": "medium",
+                  "builderOwner": "Booking Builder",
+                  "before": {
+                    "enabled": false,
+                    "before_minutes": 0,
+                    "after_minutes": 0
+                  },
+                  "after": {
+                    "enabled": true,
+                    "before_minutes": 60,
+                    "after_minutes": 60
+                  }
+                }
+              ]
+            }
+          ],
+          "options": [],
+          "stages": [
+            {
+              "id": "research",
+              "label": "Researching how the best service businesses present this…",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.177Z"
+            },
+            {
+              "id": "build_website",
+              "label": "Building homepage…",
+              "status": "complete",
+              "surface": "website",
+              "completedAt": "2026-07-24T02:24:05.177Z"
+            },
+            {
+              "id": "build_booking",
+              "label": "Updating booking experience…",
+              "status": "complete",
+              "surface": "booking",
+              "completedAt": "2026-07-24T02:24:05.177Z"
+            },
+            {
+              "id": "review",
+              "label": "Reviewing everything…",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.177Z"
+            },
+            {
+              "id": "recommend",
+              "label": "I think this version is stronger.",
+              "status": "complete",
+              "surface": null,
+              "completedAt": "2026-07-24T02:24:05.177Z"
+            }
+          ],
+          "versions": [
+            {
+              "version": 1,
+              "summary": "Initial preview from Change Plan",
+              "selectedOptionId": null
+            }
+          ],
+          "conversationSample": [
+            {
+              "turnId": "pturn_mrybgunu_p2xglx",
+              "role": "owner",
+              "message": "Looks good — keep going.",
+              "at": "2026-07-24T02:24:05.178Z",
+              "resultingVersion": 2
+            },
+            {
+              "turnId": "pturn_mrybgunu_o5hmf7",
+              "role": "hubly",
+              "message": "Got it — I updated the preview.",
+              "at": "2026-07-24T02:24:05.178Z",
+              "resultingVersion": 2
+            }
+          ],
+          "lifecycle": "waiting_for_approval",
+          "lifecycleLog": [
+            {
+              "at": "2026-07-24T02:24:05.177Z",
+              "state": "created",
+              "note": "Preview created from Change Plan"
+            },
+            {
+              "at": "2026-07-24T02:24:05.177Z",
+              "state": "waiting_for_approval",
+              "note": "Waiting for Approval Engine (Epic 4)"
+            }
+          ],
+          "applied": false,
+          "executed": false,
+          "published": false,
+          "mutatedLiveState": false,
+          "waitingFor": "approval_engine",
+          "missionControlExecutionId": "flt_mrybgunt_4z75k6"
+        }
+      }
+    ]
+  },
+  "failures": null
+}

@@ -270,7 +270,7 @@ function draftActionsFromIntent(intent: BuilderIntent): {
         capabilityId: "add_sections",
       });
     }
-    if (/explain.*(arrival|window)|website to explain|update my website/.test(req)) {
+    if (/explain.*(arrival|window)|website to explain|update my website|update my homepage|update.*(homepage|website)/.test(req)) {
       push({
         builderOwner: "Website Builder",
         builderType: "website_builder",

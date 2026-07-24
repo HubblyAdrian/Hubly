@@ -1,10 +1,10 @@
 # Builder Engine Specification
 
-**Version:** 1.2.0  
-**Status:** Milestone 1.5 — Epic 1 ✅ · Epic 2 ✅ (Change Plan DSL) · Epic 3+ locked  
+**Version:** 1.3.0  
+**Status:** Milestone 1.5 — Epic 1 ✅ · Epic 2 ✅ · Epic 3 ✅ (Preview Engine) · Epic 4+ locked  
 **Target:** Milestone 1.5 (12 epics · one release gate each)
 
-Epic 1 produces **Builder Intent**. Epic 2 turns Intent into a **declarative Change Plan** (desired end state). Preview / Approval / Rollback / surface builders are later epics. Do not implement them ahead of Founder Approval.
+Epic 1 produces **Builder Intent**. Epic 2 turns Intent into a **declarative Change Plan**. Epic 3 turns the Plan into a **living Preview** (“Here’s what I built.”). Approval / Rollback / surface builders are later epics. Do not implement them ahead of Founder Approval.
 
 ## Purpose
 
@@ -59,10 +59,12 @@ Rules:
 
 ## Preview Engine
 
-1. Builder produces Change Plan  
-2. Preview Engine renders owner-readable before/after  
-3. Experience Director reviews preview copy (Identity + Constitution)  
-4. Mission Control logs `builder: pending_approval`  
+1. Change Plan Engine produces declarative desired state  
+2. Preview Engine renders owner-readable before/after (Compare Mode)  
+3. Progressive stages let the owner watch Hubly build  
+4. Multiple options when the request is open-ended  
+5. Preview conversation updates versions — still no apply  
+6. Mission Control logs Intent → Change Plan → Preview → waiting for Approval  
 
 Preview must never mutate live business state.
 

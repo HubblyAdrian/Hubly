@@ -9,8 +9,8 @@ npm run milestone15
 | Epic | Name | Status |
 |-----:|------|--------|
 | 1 | Builder Expert | ✅ Accepted |
-| 2 | Change Plan DSL | ⏳ Pass — pending Founder Approval |
-| 3 | Preview Engine | 🔒 Locked |
+| 2 | Change Plan DSL | ✅ Accepted |
+| 3 | Preview Engine | ⏳ Pass — pending Founder Approval |
 | 4 | Approval Engine | 🔒 Locked |
 | 5 | Rollback Engine | 🔒 Locked |
 | 6 | Website Builder | 🔒 Locked |
@@ -21,12 +21,12 @@ npm run milestone15
 | 11 | Hubly Chat | 🔒 Locked |
 | 12 | Builder Validation | 🔒 Locked |
 
-## Epic 2 — Change Plan DSL
+## Epic 3 — Preview Engine
 
-Declarative desired-state plans. Builders execute later.
+Living previews from Change Plans. No apply.
 
 ```bash
-npm run check:builder-epic2
+npm run check:builder-epic3
 ```
 
-Evidence: `docs/BUILDER_EPIC2.md` · `docs/BUILDER_EPIC2_PROOF.json`
+Evidence: `docs/BUILDER_EPIC3.md` · `docs/BUILDER_EPIC3_PROOF.json`

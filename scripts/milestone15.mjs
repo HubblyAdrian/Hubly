@@ -14,7 +14,7 @@ const verbose = !!process.env.MILESTONE15_VERBOSE;
 const EPICS = [
   { n: 1, title: 'Builder Expert', script: 'scripts/check-builder-epic1.mjs', unlocked: true },
   { n: 2, title: 'Change Plan DSL', script: 'scripts/check-builder-epic2.mjs', unlocked: true },
-  { n: 3, title: 'Preview Engine', script: null, unlocked: false },
+  { n: 3, title: 'Preview Engine', script: 'scripts/check-builder-epic3.mjs', unlocked: true },
   { n: 4, title: 'Approval Engine', script: null, unlocked: false },
   { n: 5, title: 'Rollback Engine', script: null, unlocked: false },
   { n: 6, title: 'Website Builder', script: null, unlocked: false },

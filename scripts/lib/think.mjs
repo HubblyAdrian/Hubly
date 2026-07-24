@@ -39,6 +39,7 @@ import {
 import { recordFlightRecorder } from './mission-control.mjs';
 import { extractBuilderIntentFromOutput } from './builder-expert.mjs';
 import { generateChangePlan } from './change-plan.mjs';
+import { generatePreview } from './preview-engine.mjs';
 import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
@@ -666,6 +667,9 @@ export async function think(req) {
   const changePlan = builderIntent
     ? generateChangePlan(builderIntent, { missionControlReplayId: null }).changePlan
     : null;
+  const preview = changePlan
+    ? generatePreview(changePlan, { missionControlReplayId: null }).preview
+    : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ''),
     intent,
@@ -755,7 +759,29 @@ export async function think(req) {
         estimatedImpact: changePlan.estimatedImpact.summary,
         applied: false,
         executed: false,
-        previewGenerated: false,
+        previewGenerated: !!preview,
+      }
+      : null,
+    preview: preview
+      ? {
+        id: preview.id,
+        changePlanId: preview.changePlanId,
+        intentId: preview.intentId,
+        title: preview.title,
+        headline: preview.headline,
+        primarySurface: preview.primarySurface,
+        optionCount: preview.options.length,
+        versionCount: preview.versions.length,
+        currentVersion: preview.currentVersion,
+        lifecycle: preview.lifecycle,
+        progressiveComplete: preview.progressiveComplete,
+        stageCount: preview.stages.length,
+        compareModes: [...new Set(preview.surfaces.map((s) => s.compareMode))],
+        applied: false,
+        executed: false,
+        published: false,
+        mutatedLiveState: false,
+        waitingFor: preview.waitingFor,
       }
       : null,
   });
@@ -764,6 +790,9 @@ export async function think(req) {
     for (const a of changePlan.changes) {
       a.missionControlReplayId = flightRecorder.executionId;
     }
+  }
+  if (preview && flightRecorder.executionId) {
+    preview.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -792,6 +821,7 @@ export async function think(req) {
     registryRouting,
     builderIntent,
     changePlan,
+    preview,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     experienceDirector: {
