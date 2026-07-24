@@ -1084,6 +1084,61 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 }
 .is-talk-progress .dot.on{background:#fdba74;box-shadow:0 0 0 2px rgba(253,186,116,.28)}
 .is-talk-progress .dot.done{background:rgba(253,186,116,.7)}
+/* Milestone 2 · Epic 2 — Business Discovery */
+#is-step-talk.is-discovery .is-talk-progress{display:none!important}
+#is-step-talk.is-discovery .is-talk-bar{margin-bottom:8px}
+.is-discovery-layout{
+  display:grid;gap:14px;align-items:start;
+}
+@media(min-width:900px){
+  .is-wrap.is-discovery-wide{max-width:min(920px,96vw)}
+  #is-step-talk.is-discovery .is-discovery-layout{
+    grid-template-columns:minmax(0,1.25fr) minmax(240px,.85fr);
+  }
+}
+.is-understanding-panel{
+  margin:0 0 12px;padding:14px 14px 12px;border-radius:16px;
+  background:rgba(15,23,42,.42);border:1px solid rgba(255,255,255,.16);
+  color:rgba(255,255,255,.9);
+  animation:isUnderstandIn .45s ease both;
+}
+@keyframes isUnderstandIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.is-understanding-panel .is-learn-kicker{
+  font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:#fdba74;margin:0 0 8px;
+}
+.is-understanding-facts{display:flex;flex-direction:column;gap:6px;margin:0 0 10px}
+.is-understanding-facts .fact{
+  display:flex;align-items:flex-start;gap:8px;font-size:13px;font-weight:600;line-height:1.35;
+}
+.is-understanding-facts .fact::before{content:"✓";color:#fdba74;font-weight:800;flex:0 0 auto}
+.is-understanding-facts .fact.is-soft{opacity:.78;font-weight:550}
+.is-understanding-facts .fact.is-soft::before{content:"·";color:rgba(253,186,116,.75)}
+.is-learning-summary{
+  margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12);
+  font-size:13px;line-height:1.45;color:rgba(255,255,255,.88);
+}
+.is-learning-summary strong{display:block;margin:0 0 6px;color:#fff;font-size:13px}
+.is-learning-summary ul{margin:0;padding:0 0 0 16px}
+.is-learning-summary li{margin:0 0 4px}
+.is-discovery-typing{
+  display:none;align-items:center;gap:8px;margin:0 0 10px;
+  font-size:12px;font-weight:650;color:rgba(255,255,255,.7);
+}
+.is-discovery-typing.is-on{display:flex}
+.is-discovery-typing .dots span{
+  display:inline-block;width:5px;height:5px;margin-right:3px;border-radius:50%;
+  background:#fdba74;opacity:.35;animation:isDiscDot 1s ease-in-out infinite;
+}
+.is-discovery-typing .dots span:nth-child(2){animation-delay:.15s}
+.is-discovery-typing .dots span:nth-child(3){animation-delay:.3s}
+@keyframes isDiscDot{0%,80%,100%{opacity:.28;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
+#is-step-thinking .is-think-pulse{
+  width:48px;height:48px;border-radius:50%;margin:8px 0 16px;
+  background:radial-gradient(circle at 35% 30%,#fdba74,#d9632d 55%,transparent 70%);
+  animation:isThinkPulse 1.6s ease-in-out infinite;
+}
+@keyframes isThinkPulse{0%,100%{transform:scale(.92);opacity:.75}50%{transform:scale(1.05);opacity:1}}
 .is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
 .is-area-panel.hidden{display:none!important}
 .is-area-panel.is-compact .is-area-extra{display:none}
@@ -8080,16 +8135,26 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <p class="is-sub" style="margin-top:14px;font-size:12px;opacity:.72;max-width:42ch">Progress saves automatically as you go — even before you create a login.</p>
       </div>
-      <div class="is-step" data-is="talk" id="is-step-talk">
+      <div class="is-step" data-is="talk" id="is-step-talk" data-discovery-experience="1">
         <div class="is-talk-bar">
           <button type="button" class="is-step-back" id="is-talk-back" onclick="isTalkBack()" hidden data-i18n="isBack">← Back</button>
           <div class="is-talk-progress" id="is-talk-progress" data-i18n-title="isTalkProgress" aria-label="Progress"></div>
         </div>
         <div class="is-kicker">Hubly</div>
-        <h1 class="is-title" id="is-talk-ask">What’s your first and last name?</h1>
-        <p class="is-sub" id="is-talk-hint">Type it below and hit Continue — a few quick answers, then we draft your site.</p>
-        <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
-        <div class="is-talk-chips" id="is-talk-chips"></div>
+        <h1 class="is-title" id="is-talk-ask">Tell me about the business you’re building</h1>
+        <p class="is-sub" id="is-talk-hint">This isn’t a form — just a conversation. I’ll listen, then ask only what I still need.</p>
+        <div class="is-discovery-layout is-discovery">
+          <div class="is-discovery-main">
+            <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
+            <div class="is-discovery-typing" id="is-discovery-typing" aria-hidden="true"><span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Hubly is listening…</div>
+            <div class="is-talk-chips" id="is-talk-chips"></div>
+          </div>
+          <aside class="is-understanding-panel" id="is-understanding-panel" aria-live="polite" hidden>
+            <div class="is-learn-kicker">What I’m learning about you</div>
+            <div class="is-understanding-facts" id="is-understanding-facts"></div>
+            <div class="is-learning-summary" id="is-learning-summary" hidden></div>
+          </aside>
+        </div>
         <div id="is-pkg-wrap" class="is-pkg-wrap" aria-live="polite">
           <div id="is-pkg-panel" class="is-pkg-panel"></div>
           <div class="is-pkg-mid">
@@ -8116,9 +8181,16 @@ document.addEventListener('DOMContentLoaded', function() {
           <p class="is-area-hint" data-i18n="isAreaRefine">You can refine this later in Website editor → Business &amp; hours.</p>
         </div>
         <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
-          <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome Smith" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
+          <input type="text" id="is-talk-input" autocomplete="off" placeholder="Tell me what you’re working on…" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
           <button type="submit" class="btn btn-brand" id="is-talk-send" data-i18n="isContinue">Continue</button>
         </form>
+      </div>
+
+      <div class="is-step" data-is="thinking" id="is-step-thinking">
+        <div class="is-kicker">Hubly</div>
+        <div class="is-think-pulse" aria-hidden="true"></div>
+        <h1 class="is-title" id="is-thinking-title">Let me show you what I’m thinking</h1>
+        <p class="is-sub" id="is-thinking-sub">I think I understand your business now. I’m lining up the next moves — not a loading spinner.</p>
       </div>
 
       <div class="is-step" data-is="vibe" id="is-step-vibe">
@@ -15261,31 +15333,402 @@ function isTalkPrefillFromSeed(seed){
 }
 function isTalkRestart(){
   isShowStep('talk');
+  if(S._is?.discovery && !S._is.discovery.complete){
+    isDiscoveryBoot({restart:true});
+    return;
+  }
   isTalkAskCurrent();
+}
+/* ── Milestone 2 · Epic 2 — Business Discovery (adaptive, confidence-driven) ── */
+const HUBLY_DISCOVERY = (function(){
+  const MAX_CLARIFICATION_QUESTIONS = 3;
+  const ASK_CONFIDENCE = 70;
+  const READY_CONFIDENCE = 78;
+  const COMPLETION = "I think I understand your business now. Let me show you what I'm thinking.";
+  const LEARNING_HEADER = "Here's what I'm learning...";
+  // Natural follow-ups — never ask twice (previouslyAsked / skipped_repeat).
+  const GAPS = {
+    industry: "What kind of work do you do day to day — the thing customers actually hire you for?",
+    area: "Are you mostly working around one city, or do you travel quite a bit?",
+    stage: "Is this something you're just getting off the ground, or have you been doing it for a while?",
+    positioning: "When customers choose you, what do you hope they remember?",
+    customer: "I might be wrong here... Are you mostly working with homeowners, or more commercial properties?",
+    goal: "If we made one thing better in the next few weeks, what would help you most?",
+    operations: "Are you mostly flying solo right now, or do you already have people helping?",
+  };
+  const MOMENTS = {
+    pressure_washing: "I noticed something. Most pressure washing companies compete on price. I think that's a mistake.",
+    photography: "I noticed something. Wedding photographers who lead with polish book differently than those who lead with price.",
+    lawn_care: "I noticed something. Recurring routes usually beat one-off jobs for lawn care — reliability becomes the brand.",
+    hvac: "I noticed something. HVAC shops that win on trust and maintenance plans grow steadier than ones that only chase emergency calls.",
+    spa: "I noticed something. Spas that make booking effortless keep clients coming back without constant promotion.",
+    cleaning: "I noticed something. Cleaning businesses that feel reliable — not cheapest — keep the best recurring work.",
+    default: "I noticed something. The businesses that win in your space usually lead with trust, not just a lower price.",
+  };
+  const INDUSTRIES = [
+    {id:'pressure_washing',label:'Pressure Washing',re:/pressure\s*wash|power\s*wash|soft\s*wash/i,mobile:true},
+    {id:'photography',label:'Photography',re:/photograph|wedding\s*photo|portraits?/i,mobile:false,positioningHint:'premium'},
+    {id:'lawn_care',label:'Lawn Care',re:/lawn|mow|landscap|yard\s*care/i,mobile:true},
+    {id:'hvac',label:'HVAC',re:/\bhvac\b|heating|air\s*condition|furnace/i,mobile:true},
+    {id:'spa',label:'Spa',re:/\bspa\b|massage|facial|wellness\s*studio/i,mobile:false},
+    {id:'cleaning',label:'Cleaning',re:/clean|maid|airbnb|short.?term\s*rental|vacation\s*rental|turnovers?/i,mobile:true,customerHint:'short_term_rentals'},
+    {id:'detailing',label:'Auto Detailing',re:/detail|car\s*wash|auto\s*detail/i,mobile:true},
+  ];
+  function low(s){return String(s||'').toLowerCase().trim();}
+  function clamp(n,a,b){return Math.max(a,Math.min(b,n));}
+  function detectEmotion(text){
+    const t=low(text);
+    if(/overwhelm|stressed|anxious|too much|burned?\s*out/.test(t))return{state:'overwhelmed',response:"We'll take this one step at a time — no rush."};
+    if(/excit|can't wait|pumped|ready to go|finally|love this/.test(t))return{state:'excited',response:"I love that energy — let's put it to work."};
+    if(/don'?t know|not sure|idk|no idea|unsure/.test(t))return{state:'uncertain',response:"That's completely okay. We can figure it out together."};
+    if(/confus|lost|stuck/.test(t))return{state:'confused',response:"No problem — I'll keep this simple."};
+    return{state:'neutral',response:null};
+  }
+  function labelFact(key,value){
+    const maps={
+      industry:(v)=>v,
+      area:(v)=>typeof v==='string'?v:(v&&v.travel?'Travels for work':(v&&v.local?'Local focus':null)),
+      stage:(v)=>v==='early'?'Just getting started':v==='established'?'Established':v,
+      positioning:(v)=>({premium:'Premium positioning',affordable:'Affordable',fast:'Speed-focused',local:'Local brand'}[v]||v),
+      customer:(v)=>({residential:'Residential focus',commercial:'Commercial focus',short_term_rentals:'Short-term rentals',wedding_clients:'Wedding clients'}[v]||v),
+      goal:(v)=>({recurring_customers:'Wants more recurring customers',more_bookings:'Wants more bookings',grow_revenue:'Wants to grow revenue',save_time:'Wants to save time',build_brand:'Building the brand',hire_team:'Thinking about hiring'}[v]||v),
+      operations:(v)=>({solo:'Solo operator',team:'Has a team',mobile:'Mobile business',storefront:'Storefront'}[v]||v),
+    };
+    return maps[key]?maps[key](value):value;
+  }
+  function setFact(session,key,value,confidence,inferred){
+    if(value==null||value==='')return;
+    const prev=session.facts[key];
+    if(prev&&prev.value===value&&prev.confidence>=confidence)return;
+    const changed=!!(prev&&prev.value!==value);
+    session.facts[key]={value,confidence,inferred:!!inferred,label:labelFact(key,value),updatedAt:Date.now()};
+    if(changed)session.memoryNotes.push('Updated '+key+': now '+labelFact(key,value)+'.');
+  }
+  function inferAll(session,text,source){
+    const t=String(text||'');
+    const tl=low(t);
+    for(const p of INDUSTRIES){
+      if(p.re.test(t)){
+        setFact(session,'industry',p.label,source==='seed'?92:88,true);
+        setFact(session,'industryId',p.id,90,true);
+        if(p.mobile)setFact(session,'operations','mobile',75,true);
+        if(p.customerHint)setFact(session,'customer',p.customerHint,82,true);
+        if(p.positioningHint)setFact(session,'positioning',p.positioningHint,70,true);
+        break;
+      }
+    }
+    const inM=t.match(/\bin\s+([A-Z][A-Za-z.\s-]{1,40}?)(?:\s*[—,\.]|\s+I\b|\s+we\b|\s+and\b|$)/);
+    if(inM)setFact(session,'area',inM[1].trim().replace(/\s+/g,' '),85,true);
+    else if(/travel|on the road|mobile|come to (them|you|clients)/i.test(t))setFact(session,'operations','mobile',80,true);
+    else if(/one city|mostly local|around (here|town)|nearby/i.test(t))setFact(session,'area','Local / one-city focus',72,true);
+    if(/just (start|launch|began|getting)|brand new|off the ground|starting out/.test(tl))setFact(session,'stage','early',86,false);
+    if(/been (doing|running|at) (this|it) for|for (a )?(few |several )?(years|yrs)|established/.test(tl))setFact(session,'stage','established',86,false);
+    if(/premium|luxury|high.?end|quality|not the cheapest|reliable|trust|remember/.test(tl))setFact(session,'positioning','premium',84,false);
+    else if(/affordable|budget|cheap|lowest price/.test(tl))setFact(session,'positioning','affordable',84,false);
+    else if(/family.?owned|local|neighborhood/.test(tl))setFact(session,'positioning','local',80,false);
+    if(/airbnb|short.?term|vacation\s*rental|turnovers?/.test(tl))setFact(session,'customer','short_term_rentals',86,true);
+    else if(/homeowner|residential|homes?|houses?/.test(tl))setFact(session,'customer','residential',86,true);
+    else if(/commercial|offices|property\s*manag|hoa/.test(tl))setFact(session,'customer','commercial',86,true);
+    else if(/wedding|bride|couples/.test(tl))setFact(session,'customer','wedding_clients',86,true);
+    if(/recurring|repeat|retain|maintenance\s*plan/.test(tl))setFact(session,'goal','recurring_customers',88,false);
+    else if(/book|online\s*book|more customers|get (more )?clients|first customers|leads/.test(tl))setFact(session,'goal','more_bookings',88,false);
+    else if(/grow|revenue|scale/.test(tl))setFact(session,'goal','grow_revenue',84,false);
+    else if(/save time|automat|less admin|overwhelm/.test(tl))setFact(session,'goal','save_time',84,false);
+    else if(/brand|website|redesign|look professional/.test(tl))setFact(session,'goal','build_brand',84,false);
+    else if(/\bhire\b|build (a |my )?team|employees?|staff up/.test(tl))setFact(session,'goal','hire_team',84,false);
+    if(/solo|just me|by myself|on my own/.test(tl))setFact(session,'operations','solo',84,false);
+    else if(/team|employees|crew|staff/.test(tl))setFact(session,'operations','team',84,false);
+    else if(/storefront|studio|shop|salon/.test(tl))setFact(session,'operations','storefront',80,false);
+  }
+  function catConf(session,key){return clamp(Number(session.facts[key]?.confidence)||0,0,100);}
+  function overall(session){
+    const keys=['industry','customer','goal','positioning','area','operations','stage'];
+    const scores=keys.map(k=>catConf(session,k)).filter(s=>s>0);
+    if(!scores.length)return 0;
+    const avg=scores.reduce((a,b)=>a+b,0)/scores.length;
+    return Math.round(avg*(0.55+0.45*(scores.length/keys.length)));
+  }
+  function openGaps(session){
+    return ['industry','customer','goal','area','positioning','stage','operations'].filter(k=>catConf(session,k)<ASK_CONFIDENCE);
+  }
+  function enforceConversationRules(opts){
+    // Mirror Experience Layer: never ask twice, skip known facts, ASK_CONFIDENCE threshold, cap at 3.
+    let qs=[...(opts.questions||[])].map(q=>String(q||'').trim()).filter(Boolean);
+    const known=(opts.knownFacts||[]).map(low);
+    const prev=new Set((opts.previouslyAsked||[]).map(low));
+    const actions=[];
+    qs=qs.filter(q=>{
+      const l=low(q);
+      if(known.some(k=>k&&l.includes(k))){actions.push('skipped_known_fact');return false;}
+      if(prev.has(l)){actions.push('skipped_repeat');return false;}
+      return true;
+    });
+    const conf=opts.confidence==null?80:Number(opts.confidence);
+    if(conf>=ASK_CONFIDENCE&&qs.length){actions.push('suppressed_questions_high_confidence');return{shown:[],delayed:qs,actions};}
+    const shown=qs.slice(0,MAX_CLARIFICATION_QUESTIONS);
+    if(qs.length>MAX_CLARIFICATION_QUESTIONS)actions.push('capped_questions_at_3');
+    return{shown,delayed:qs.slice(MAX_CLARIFICATION_QUESTIONS),actions};
+  }
+  function pickNext(session){
+    if(session.clarificationCount>=MAX_CLARIFICATION_QUESTIONS)return null;
+    if(overall(session)>=READY_CONFIDENCE)return null;
+    const gaps=openGaps(session);
+    if(!gaps.length)return null;
+    const candidates=gaps.map(g=>GAPS[g]).filter(q=>q&&!session.previouslyAsked.includes(low(q)));
+    const knownFacts=Object.values(session.facts).map(f=>f.label||f.value).filter(Boolean).map(String);
+    const minGap=Math.min(...gaps.map(g=>catConf(session,g)).concat([0]));
+    const ruled=enforceConversationRules({questions:candidates,confidence:minGap,knownFacts,previouslyAsked:session.previouslyAsked});
+    return ruled.shown[0]||null;
+  }
+  function panelFacts(session){
+    return ['industry','area','operations','positioning','customer','goal','stage']
+      .map(k=>session.facts[k]).filter(f=>f&&f.label&&f.confidence>=55)
+      .map(f=>({label:f.label,confidence:f.confidence,inferred:!!f.inferred}));
+  }
+  function buildLearning(session){
+    const lines=[];
+    const pos=session.facts.positioning?.value;
+    const goal=session.facts.goal?.value;
+    const ops=session.facts.operations?.value;
+    const cust=session.facts.customer?.value;
+    const ind=session.facts.industry?.value;
+    if(pos==='premium')lines.push('You care more about reliability than being the cheapest.');
+    if(pos==='premium'||ind)lines.push(pos==='premium'?"You're trying to build a premium local brand.":"You're trying to build a strong local brand.");
+    if(ops==='solo'||goal==='save_time')lines.push("You'd rather automate repetitive work than hire someone right now.");
+    else if(ops==='team')lines.push("You've already got help — so systems matter as much as hustle.");
+    if(goal==='recurring_customers')lines.push('I think recurring customers will be the biggest growth opportunity for you.');
+    else if(goal==='more_bookings')lines.push('I think making it easier to book you will unlock the next wave of growth.');
+    else if(goal==='build_brand')lines.push('I think a sharper brand presence will do more for you than another ad right now.');
+    if(cust==='short_term_rentals')lines.push('Your work fits a recurring property rhythm — consistency is your edge.');
+    const uniq=[...new Set(lines)].slice(0,4);
+    if(!uniq.length&&ind)uniq.push("You're building a "+ind+" business, and I want the next moves to match how you actually work.");
+    return{header:LEARNING_HEADER,lines:uniq};
+  }
+  function createDiscoverySession(seed){
+    const session={
+      version:'1.0.0',seed:String(seed||'').trim(),turns:0,clarificationCount:0,
+      previouslyAsked:[],facts:{},moments:[],momentsFired:0,memoryNotes:[],messages:[],
+      emotion:{state:'neutral'},complete:false,readyForThinking:false,learningSummary:null,
+      ASK_CONFIDENCE,READY_CONFIDENCE,MAX_CLARIFICATION_QUESTIONS,
+    };
+    if(session.seed)inferAll(session,session.seed,'seed');
+    return session;
+  }
+  function discoveryOpener(session){
+    const ind=session.facts.industry?.value;
+    if(ind)return 'Got it — '+ind+". Tell me a little more about how you work, and I'll fill in the rest.";
+    if(session.seed)return "I heard you. Tell me a little more about what you're building — I'll connect the dots.";
+    return "Tell me about the business you're building. I'll listen, then ask only what I still need.";
+  }
+  function ingestDiscoveryTurn(session,ownerText){
+    const text=String(ownerText||'').trim();
+    if(!text)return{ok:false,replies:[],session};
+    session.turns+=1;
+    session.messages.push({role:'owner',text});
+    const emotion=detectEmotion(text);
+    session.emotion=emotion;
+    inferAll(session,text,'owner');
+    const replies=[];
+    if(emotion.response)replies.push({kind:'emotion',text:emotion.response});
+    if(session.momentsFired<1&&session.facts.industryId&&catConf(session,'industry')>=80&&session.turns>=1){
+      const id=session.facts.industryId.value;
+      const line=MOMENTS[id]||MOMENTS.default;
+      session.momentsFired+=1;session.moments.push(line);
+      replies.push({kind:'moment',text:line});
+    }
+    const note=session.memoryNotes.pop();
+    if(note)replies.push({kind:'memory',text:"Got it — I'll remember "+note.replace(/^Updated /,'')});
+    const conf=overall(session);
+    const nextQ=pickNext(session);
+    if(nextQ){
+      session.clarificationCount+=1;
+      session.previouslyAsked.push(low(nextQ));
+      replies.push({kind:'question',text:nextQ});
+    }else if(conf>=READY_CONFIDENCE||session.clarificationCount>=MAX_CLARIFICATION_QUESTIONS){
+      session.learningSummary=buildLearning(session);
+      session.complete=true;session.readyForThinking=true;
+      replies.push({kind:'learning',text:session.learningSummary.header,lines:session.learningSummary.lines});
+      replies.push({kind:'complete',text:COMPLETION});
+    }else{
+      replies.push({kind:'nudge',text:'Keep going — anything about who you serve or what you want more of helps me get this right.'});
+    }
+    replies.forEach(r=>{if(r.text)session.messages.push({role:'hubly',text:r.text,kind:r.kind});});
+    return{ok:true,session,replies,confidence:conf,panel:panelFacts(session),complete:session.complete,clarificationCount:session.clarificationCount,emotion:emotion.state};
+  }
+  return{
+    MAX_CLARIFICATION_QUESTIONS,ASK_CONFIDENCE,READY_CONFIDENCE,COMPLETION,LEARNING_HEADER,
+    createDiscoverySession,discoveryOpener,ingestDiscoveryTurn,detectEmotion,panelFacts,buildLearning,
+  };
+})();
+
+function isDiscoveryActive(){
+  return !!(S._is?.discovery && !S._is.discovery.complete && !['services','services_count','services_edit','addons_edit','media'].includes(S._is?.talkBeat));
+}
+function isDiscoveryBoot(opts){
+  opts=opts||{};
+  const step=document.getElementById('is-step-talk');
+  step?.classList.add('is-discovery');
+  document.querySelector('#is-shell .is-wrap')?.classList.add('is-discovery-wide');
+  S._is=S._is||{};
+  S._is.talkBeat='discovery';
+  const seed=S._is.seed||S._is.prompt||'';
+  const fresh=!S._is.discovery||!!opts.restart;
+  if(fresh){
+    S._is.discovery=HUBLY_DISCOVERY.createDiscoverySession(seed);
+    S._is.messages=[];
+    S._is._askedBeat='discovery';
+    isTalkRender();
+    isShowAreaPanel(false);
+    isTalkClearChips();
+    isShowStep('talk');
+    const opener=HUBLY_DISCOVERY.discoveryOpener(S._is.discovery);
+    isTalkPush('hubly',opener);
+  }else{
+    isShowStep('talk');
+    isTalkRender();
+  }
+  step?.classList.toggle('is-convo',!!(S._is.messages||[]).length);
+  isTalkSetPrompt({
+    title:"What are we building together?",
+    hint:"Just talk — I’ll infer what I can. We can always change it later.",
+    placeholder:"Tell me what you’re working on…",
+    autocomplete:'off',
+    type:'text',
+    value:'',
+  });
+  isRenderUnderstandingPanel();
+  const send=document.getElementById('is-talk-send');
+  if(send)send.textContent='Continue';
+  const prog=document.getElementById('is-talk-progress');
+  if(prog){prog.hidden=true;prog.innerHTML='';}
+  isTalkUpdateBackBtn();
+  setTimeout(()=>document.getElementById('is-talk-input')?.focus(),80);
+}
+function isRenderUnderstandingPanel(){
+  const panel=document.getElementById('is-understanding-panel');
+  const factsEl=document.getElementById('is-understanding-facts');
+  const learnEl=document.getElementById('is-learning-summary');
+  if(!panel||!factsEl)return;
+  const session=S._is?.discovery;
+  if(!session){panel.hidden=true;return;}
+  const facts=HUBLY_DISCOVERY.panelFacts(session);
+  if(!facts.length){panel.hidden=true;factsEl.innerHTML='';return;}
+  panel.hidden=false;
+  factsEl.innerHTML=facts.map(f=>{
+    const soft=f.inferred&&f.confidence<80?' is-soft':'';
+    return `<div class="fact${soft}">${escPeHtml(f.label)}</div>`;
+  }).join('');
+  if(session.learningSummary&&learnEl){
+    learnEl.hidden=false;
+    learnEl.innerHTML=`<strong>${escPeHtml(session.learningSummary.header||"Here's what I'm learning...")}</strong><ul>${(session.learningSummary.lines||[]).map(l=>`<li>${escPeHtml(l)}</li>`).join('')}</ul>`;
+  }else if(learnEl){
+    learnEl.hidden=true;learnEl.innerHTML='';
+  }
+}
+function isDiscoverySetTyping(on){
+  const el=document.getElementById('is-discovery-typing');
+  if(el){el.classList.toggle('is-on',!!on);el.setAttribute('aria-hidden',on?'false':'true');}
+}
+async function isDiscoverySend(text){
+  if(S._is?._talkBusy)return;
+  S._is._talkBusy=true;
+  const input=document.getElementById('is-talk-input');
+  isTalkPush('owner',text);
+  if(input)input.value='';
+  isDiscoverySetTyping(true);
+  await isSleep(280+Math.min(420,String(text).length*4));
+  const result=HUBLY_DISCOVERY.ingestDiscoveryTurn(S._is.discovery,text);
+  isDiscoverySetTyping(false);
+  for(const r of (result.replies||[])){
+    if(r.kind==='learning'){
+      S._is.discovery.learningSummary={header:r.text,lines:r.lines||[]};
+      isRenderUnderstandingPanel();
+      const preview=(r.lines||[]).slice(0,3).map(l=>'• '+l).join('\n');
+      isTalkPush('hubly',r.text+(preview?'\n'+preview:''));
+    }else if(r.text){
+      isTalkPush('hubly',r.text);
+    }
+    if(r.kind==='question'||r.kind==='moment'||r.kind==='emotion')await isSleep(160);
+  }
+  isRenderUnderstandingPanel();
+  schedulePersistInstantSiteDraft();
+  S._is._talkBusy=false;
+  if(result.complete||S._is.discovery.readyForThinking){
+    await isSleep(600);
+    await isDiscoveryCompleteToThinking();
+  }else{
+    setTimeout(()=>document.getElementById('is-talk-input')?.focus(),40);
+  }
+}
+function isDiscoveryApplyToState(){
+  const d=S._is?.discovery;
+  if(!d)return;
+  const ind=d.facts.industry?.value;
+  const indId=d.facts.industryId?.value;
+  if(indId&&typeof inferBlueprintMatch==='function'){
+    const match=inferBlueprintMatch(ind||indId);
+    if(match?.id){S.businessType=match.id;S._blueprintConfirmed=true;if(S._cd)S._cd.inferredType=match.id;}
+  }else if(ind){
+    const match=typeof inferBlueprintMatch==='function'?inferBlueprintMatch(ind):null;
+    if(match?.id){S.businessType=match.id;S._blueprintConfirmed=true;}
+  }
+  if(ind)S._is.workLove=ind;
+  const area=d.facts.area?.value;
+  if(typeof area==='string'&&area&&!/local \/ one-city/i.test(area)){S._is.city=area;S.city=area;}
+  const goal=d.facts.goal?.value;
+  if(goal==='more_bookings'||goal==='recurring_customers')S._is.onboardingPriority='bookings';
+  else if(goal==='save_time')S._is.onboardingPriority='run';
+  else S._is.onboardingPriority='grow';
+  S.onboardingPriority=S._is.onboardingPriority;
+  if(!isAcceptableBizName(S.biz)){
+    const city=S.city||'';
+    S.biz=city&&ind?`${ind} — ${city}`:(ind?`My ${ind}`:'My Business');
+  }
+  const pos=d.facts.positioning?.value;
+  if(pos)S._is.positioning=pos;
+  S._is.discoveryComplete=true;
+}
+async function isDiscoveryCompleteToThinking(){
+  isDiscoveryApplyToState();
+  isLockTalkAnswers();
+  const step=document.getElementById('is-step-talk');
+  step?.classList.remove('is-discovery');
+  isShowStep('thinking');
+  const title=document.getElementById('is-thinking-title');
+  const sub=document.getElementById('is-thinking-sub');
+  if(title)title.textContent="Let me show you what I'm thinking";
+  if(sub)sub.textContent="I think I understand your business now. Give me a moment — I'm deciding what your business needs first.";
+  await isSleep(1600);
+  // Epic 3 will own the full Thinking Experience; for now hand off into vibe → build.
+  isTalkClearChips();
+  const parts=[];
+  if(S._is?.ownerName)parts.push(`My name is ${S._is.ownerName}`);
+  if(S.biz)parts.push(`My business is called ${S.biz}`);
+  if(S.businessType){
+    const label=getActiveBlueprint()?.identity?.name||S.businessType;
+    parts.push(`I do ${label}`);
+  }
+  if(S._is?.workLove)parts.push(`I love doing ${S._is.workLove}`);
+  if(S._is?.onboardingPriority)parts.push(`My first priority with Hubly is ${S._is.onboardingPriorityLabel||S._is.onboardingPriority}`);
+  if(S.city||(S.serviceAreaCities||[]).length){
+    const areas=(S.serviceAreaCities&&S.serviceAreaCities.length)?S.serviceAreaCities:(S.city?[S.city]:[]);
+    parts.push(`I serve ${areas.join(', ')}`);
+  }
+  const seed=parts.join('. ')||(S._is?.seed)||S.biz||'local service business';
+  S._is.prompt=seed;
+  if(S._cd)S._cd.whoText=seed;
+  const mobileTrades=['detailing','windows','pressure_washing','landscaping','cleaning','hvac'];
+  isSetTravel(mobileTrades.includes(normalizeBlueprintId(S.businessType)));
+  isRenderVibe();
+  isShowStep('vibe');
 }
 function isTalkBoot(){
   S._is=S._is||{};
   S._is.messages=[];
   S._is._askedBeat=null;
-  isTalkRender();
-  // Skip ahead only when marketing already collected answers — order: name → biz → phone → trade → priority → city.
-  if(S._is.ownerName)S._is.talkBeat='biz';
-  else S._is.talkBeat='owner';
-  if(S._is.talkBeat==='biz'&&S._is.bizNamedByOwner&&isAcceptableBizName(S.biz))S._is.talkBeat='phone';
-  if(S._is.talkBeat==='phone'&&(S.phone||S._is.phone))S._is.talkBeat='trade';
-  if(S._is.talkBeat==='trade'&&S._blueprintConfirmed&&S.businessType){
-    const specs=blueprintSpecialtyList();
-    if(specs.length>1)S._is.talkBeat='specialty';
-    else if(S._is.onboardingPriority)S._is.talkBeat='city';
-    else S._is.talkBeat='priority';
-  }
-  isShowStep('talk');
-  // Consultant opener — feel like Hubly is getting to know the business, not a form.
-  if(S._is.talkBeat==='owner'&&!(S._is.messages||[]).length){
-    isTalkPush('hubly',t('isTalkIntro'));
-  }
-  isTalkAskCurrent();
-  setTimeout(()=>document.getElementById('is-talk-input')?.focus(),80);
+  // Milestone 2 · Epic 2 — adaptive discovery replaces the fixed talkBeat questionnaire.
+  isDiscoveryBoot();
+  return;
 }
 function isTalkPush(side,text){
   S._is=S._is||{};
@@ -16946,8 +17389,13 @@ function isInferPriorityFromText(text){
 }
 function isTalkAskCurrent(){
   const beat=S._is?.talkBeat||'owner';
+  if(beat==='discovery'){
+    isDiscoveryBoot();
+    return;
+  }
   const input=document.getElementById('is-talk-input');
   const step=document.getElementById('is-step-talk');
+  step?.classList.remove('is-discovery');
   isTalkClearChips();
   if(beat!=='city')isShowAreaPanel(false);
   if(beat!=='services_edit')isShowPkgPanel(false);
@@ -17077,6 +17525,12 @@ function isTalkSend(){
   const input=document.getElementById('is-talk-input');
   const text=(input?.value||'').trim();
   const beat=S._is?.talkBeat||'owner';
+  // Milestone 2 · Epic 2 — adaptive discovery path (no fixed questionnaire).
+  if(beat==='discovery'||isDiscoveryActive()){
+    if(!text){toast('Tell me a little about your business');return;}
+    isDiscoverySend(text);
+    return;
+  }
   if(!text){
     if(beat==='specialty'){
       isTalkCommitSpecialties();
