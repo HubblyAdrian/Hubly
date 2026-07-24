@@ -10,6 +10,9 @@ const plugin = {
     for (const [re, ext] of [
       [/hubly_brain_change_plan\.ts$/, "./change-plan.mjs"],
       [/hubly_brain_builder_intent\.ts$/, "./builder-intent.mjs"],
+      [/hubly_brain_personality\.ts$/, "./personality.mjs"],
+      [/hubly_brain_experience_layer\.ts$/, "./experience-layer.mjs"],
+      [/hubly_brain_identity_system\.ts$/, "./identity-system.mjs"],
     ]) {
       build.onResolve({ filter: re }, () => ({ path: ext, external: true }));
     }
