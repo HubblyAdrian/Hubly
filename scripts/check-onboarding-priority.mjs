@@ -11,10 +11,23 @@ function ok(cond, msg) {
   }
 }
 
-// Conversational Instant Site — consultant onboarding
+// Conversational Instant Site — partner onboarding (not SaaS signup)
 ok(html.includes('isTalkIntro'), 'intro opener key');
-ok(html.includes("Hi! I’m Hubly. Before we build anything"), 'consultant intro copy');
+ok(
+  html.includes("Hi — I'm Hubly. Before we build anything") ||
+    html.includes("Hi! I'm Hubly. Before we build anything") ||
+    html.includes("Hi! I’m Hubly. Before we build anything"),
+  'partner intro copy'
+);
 ok(html.includes('Tell me about your business'), 'free-form business question');
+ok(html.includes('What should I call you?'), 'conversational name question');
+ok(html.includes("What's the name of the business we're building?"), 'conversational biz question');
+ok(html.includes('What kind of work do you do?'), 'conversational trade question');
+ok(html.includes('function creativeDirectionLabel'), 'creative directions (not templates)');
+ok(html.includes('function hublyBlueprintDiscoveryLines'), 'blueprint discovery moments');
+ok(html.includes('id="ed-ai-mode"') || html.includes("id='ed-ai-mode'"), 'AI Mode partner shell');
+ok(html.includes('function enterEdAiMode'), 'AI Mode entry');
+ok(html.includes('function enterEdAdvancedMode'), 'Advanced Mode entry');
 ok(html.includes('function isTalkPriorityChips'), 'priority chips helper');
 ok(html.includes('function isTalkPickPriority'), 'priority pick helper');
 ok(html.includes("core.push('priority')"), 'priority in progress beats');
@@ -34,6 +47,8 @@ ok(html.includes('function isTalkAcceptCustomBusiness'), 'custom business path a
 ok(html.includes('Something unique — let’s build it') || html.includes("Something unique"), 'unique business chip');
 ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro in Instant Site UI strings');
 ok(!/\bMarketplace Lite\b/i.test(html), 'no Marketplace Lite in Instant Site UI strings');
+ok(html.includes("I think we built something you'll be proud of"), 'proud reveal celebration');
+ok(html.includes("Here's what I was thinking"), 'Creative Director reveal reasoning');
 
 // Homepage identity — signature wow + brand freeze
 ok(home.includes('One AI.') && home.includes('Two experiences.'), 'bridge connects audiences');
