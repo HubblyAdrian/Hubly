@@ -1,12 +1,12 @@
 {
   "milestone": "2",
   "name": "The Hubly Experience",
-  "passed": 12,
+  "passed": 13,
   "total": 13,
-  "unlocked": 12,
-  "percent": 92,
-  "ready": false,
-  "checkedAt": "2026-07-24T16:50:56.868Z",
+  "unlocked": 13,
+  "percent": 100,
+  "ready": true,
+  "checkedAt": "2026-07-24T16:59:56.691Z",
   "epics": [
     {
       "n": 0,
@@ -83,8 +83,8 @@
     {
       "n": 12,
       "title": "Polish & Delight",
-      "status": "locked",
-      "script": null
+      "status": "pass",
+      "script": "scripts/check-m2-epic12.mjs"
     }
   ]
 }

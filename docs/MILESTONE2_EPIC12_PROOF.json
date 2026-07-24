@@ -1,0 +1,286 @@
+{
+  "epic": 12,
+  "title": "Polish & Delight",
+  "passed": true,
+  "checkedAt": "2026-07-24T16:59:56.686Z",
+  "version": "1.0.0",
+  "milestone2Complete": true,
+  "sample": {
+    "center": {
+      "label": "Polish & Delight",
+      "line": "Alex, this is where Hubly becomes a product people tell their friends about."
+    },
+    "motion": [
+      {
+        "id": "rise",
+        "label": "Cards rise",
+        "purpose": "Cards rise naturally into place.",
+        "css": "is-motion-rise"
+      },
+      {
+        "id": "fade",
+        "label": "Conversations fade",
+        "purpose": "Conversations fade smoothly between turns.",
+        "css": "is-motion-fade"
+      },
+      {
+        "id": "grow",
+        "label": "Previews grow",
+        "purpose": "Website previews grow into place.",
+        "css": "is-motion-grow"
+      },
+      {
+        "id": "flow",
+        "label": "Builder stages flow",
+        "purpose": "Builder stages flow instead of snap.",
+        "css": "is-motion-flow"
+      },
+      {
+        "id": "modal",
+        "label": "Modals ease in",
+        "purpose": "Modals never abruptly appear.",
+        "css": "is-motion-modal"
+      },
+      {
+        "id": "notify",
+        "label": "Notifications slide",
+        "purpose": "Notifications gently slide in.",
+        "css": "is-motion-notify"
+      },
+      {
+        "id": "success",
+        "label": "Success reward",
+        "purpose": "Success states feel rewarding.",
+        "css": "is-motion-success"
+      }
+    ],
+    "emptyStates": [
+      {
+        "id": "bookings",
+        "surface": "No bookings",
+        "teach": "Let's get your first customer.",
+        "cta": "Share your booking page",
+        "teaches": true,
+        "noDeadEnd": true,
+        "voice": "No bookings.\n\nLet's get your first customer.",
+        "industryKey": "pressure_washing"
+      },
+      {
+        "id": "portfolio",
+        "surface": "No portfolio",
+        "teach": "Upload a few finished jobs and I'll organize everything.",
+        "cta": "Add finished jobs",
+        "teaches": true,
+        "noDeadEnd": true,
+        "voice": "No portfolio.\n\nUpload a few finished jobs and I'll organize everything.",
+        "industryKey": "pressure_washing"
+      },
+      {
+        "id": "reviews",
+        "surface": "No reviews",
+        "teach": "I'll remind you after your next completed job.",
+        "cta": "Set a review reminder",
+        "teaches": true,
+        "noDeadEnd": true,
+        "voice": "No reviews.\n\nI'll remind you after your next completed job.",
+        "industryKey": "pressure_washing"
+      },
+      {
+        "id": "automations",
+        "surface": "No automations",
+        "teach": "Tell me an outcome — I'll draft a workflow you can preview.",
+        "cta": "Describe an outcome",
+        "teaches": true,
+        "noDeadEnd": true,
+        "voice": "No automations.\n\nTell me an outcome — I'll draft a workflow you can preview.",
+        "industryKey": "pressure_washing"
+      },
+      {
+        "id": "quotes",
+        "surface": "No open quotes",
+        "teach": "When a lead comes in, I'll help you follow up fast.",
+        "cta": "Open follow-ups",
+        "teaches": true,
+        "noDeadEnd": true,
+        "voice": "No open quotes.\n\nWhen a lead comes in, I'll help you follow up fast.",
+        "industryKey": "pressure_washing"
+      }
+    ],
+    "smartLoading": [
+      {
+        "id": "booking",
+        "line": "I'm comparing booking strategies..."
+      },
+      {
+        "id": "headline",
+        "line": "I found a stronger headline..."
+      },
+      {
+        "id": "portfolio",
+        "line": "Looking at your portfolio..."
+      },
+      {
+        "id": "research",
+        "line": "I'm researching businesses like yours..."
+      },
+      {
+        "id": "evolve",
+        "line": "I'm reviewing what changed overnight..."
+      }
+    ],
+    "success": [
+      {
+        "id": "first_booking",
+        "label": "First booking",
+        "line": "First customer booked — that's the start of something real, Alex.",
+        "restrained": true
+      },
+      {
+        "id": "first_review",
+        "label": "First review",
+        "line": "First five-star review. Customers are noticing, Alex.",
+        "restrained": true
+      },
+      {
+        "id": "hundredth",
+        "label": "100th customer",
+        "line": "100th booking. You're building a machine, Alex.",
+        "restrained": true
+      },
+      {
+        "id": "website_accepted",
+        "label": "Website improvement accepted",
+        "line": "That improvement is live — your site just got stronger, Alex.",
+        "restrained": true
+      },
+      {
+        "id": "automation_deployed",
+        "label": "Automation deployed",
+        "line": "Automation is running. One less thing to chase by hand, Alex.",
+        "restrained": true
+      }
+    ],
+    "delight": [
+      {
+        "id": "anniversary",
+        "label": "Business anniversary",
+        "line": "Happy one-year business anniversary. Hubly noticed before you did.",
+        "surprise": true,
+        "noticedBeforeOwner": true,
+        "industryKey": "pressure_washing"
+      },
+      {
+        "id": "thousand",
+        "label": "1,000 customers",
+        "line": "You've officially helped 1,000 customers.",
+        "surprise": true,
+        "noticedBeforeOwner": true,
+        "industryKey": "pressure_washing"
+      },
+      {
+        "id": "best_month",
+        "label": "Highest revenue month",
+        "line": "This is your highest revenue month ever.",
+        "surprise": true,
+        "noticedBeforeOwner": true,
+        "industryKey": "pressure_washing"
+      }
+    ],
+    "error": {
+      "what": "I couldn't publish that headline yet.",
+      "why": "The live preview needed one more check before customers see it.",
+      "hublyDoing": "I'm holding the draft and verifying the preview.",
+      "ownerDo": "Stay here — or say 'try again' and I'll resume.",
+      "shape": [
+        "what",
+        "why",
+        "hublyDoing",
+        "ownerDo"
+      ],
+      "voice": "I couldn't publish that headline yet.\n\nWhy: The live preview needed one more check before customers see it.\n\nWhat I'm doing: I'm holding the draft and verifying the preview.\n\nWhat you can do: Stay here — or say 'try again' and I'll resume.",
+      "neverConfused": true
+    },
+    "walkthrough": [
+      {
+        "step": 1,
+        "label": "Arrive at Hubly",
+        "noJarring": true
+      },
+      {
+        "step": 2,
+        "label": "Describe a business",
+        "noJarring": true
+      },
+      {
+        "step": 3,
+        "label": "Watch Hubly think",
+        "noJarring": true
+      },
+      {
+        "step": 4,
+        "label": "Watch it build",
+        "noJarring": true
+      },
+      {
+        "step": 5,
+        "label": "Experience the reveal",
+        "noJarring": true
+      },
+      {
+        "step": 6,
+        "label": "Save the business",
+        "noJarring": true
+      },
+      {
+        "step": 7,
+        "label": "Launch",
+        "noJarring": true
+      },
+      {
+        "step": 8,
+        "label": "Enter Business Home",
+        "noJarring": true
+      },
+      {
+        "step": 9,
+        "label": "Read Hubly Daily",
+        "noJarring": true
+      },
+      {
+        "step": 10,
+        "label": "Edit the website",
+        "noJarring": true
+      },
+      {
+        "step": 11,
+        "label": "Accept an evolution",
+        "noJarring": true
+      },
+      {
+        "step": 12,
+        "label": "Return the next day",
+        "noJarring": true
+      }
+    ]
+  },
+  "failures": [],
+  "htmlChecks": {
+    "polishCanvas": true,
+    "motionSystem": true,
+    "microinteractions": true,
+    "emptyLibrary": true,
+    "smartLoading": true,
+    "noGenericLoad": true,
+    "successMoments": true,
+    "delightMoments": true,
+    "intelligentErrors": true,
+    "a11y": true,
+    "performance": true,
+    "crossDevice": true,
+    "personality": true,
+    "walkthrough": true,
+    "reducedMotion": true,
+    "wordmark": true,
+    "entry": true
+  }
+}
