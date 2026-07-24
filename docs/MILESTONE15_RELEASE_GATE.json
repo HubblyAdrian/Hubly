@@ -1,11 +1,11 @@
 {
   "milestone": "1.5",
-  "passed": 10,
+  "passed": 11,
   "total": 12,
-  "unlocked": 10,
-  "percent": 83,
+  "unlocked": 11,
+  "percent": 92,
   "ready": false,
-  "checkedAt": "2026-07-24T04:13:52.683Z",
+  "checkedAt": "2026-07-24T04:22:59.436Z",
   "epics": [
     {
       "n": 1,
@@ -70,8 +70,8 @@
     {
       "n": 11,
       "title": "Hubly Chat OS",
-      "status": "locked",
-      "script": null
+      "status": "pass",
+      "script": "scripts/check-builder-epic11.mjs"
     },
     {
       "n": 12,

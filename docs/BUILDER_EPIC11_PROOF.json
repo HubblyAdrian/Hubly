@@ -4,7 +4,7 @@
   "name": "Hubly Chat OS",
   "title": "Hubly Chat OS",
   "passed": true,
-  "checkedAt": "2026-07-24T04:22:42.401Z",
+  "checkedAt": "2026-07-24T04:22:59.433Z",
   "proofs": {
     "chatOsExists": true,
     "askHublyCta": "Ask Hubly",
@@ -358,28 +358,28 @@
     },
     "proactiveSample": [
       {
-        "id": "ps_mryfpecb_9n6lhx",
+        "id": "ps_mryfprhf_p365bn",
         "title": "Good morning Adrian",
         "detail": "I reviewed your business. I have four ideas.",
         "route": "coaching",
         "why": "Proactive conversation starter — not a notification dump."
       },
       {
-        "id": "ps_mryfpecb_b3q4lv",
+        "id": "ps_mryfprhf_5elbrq",
         "title": "Optimize tomorrow's route",
         "detail": "You're driving across town more than needed.",
         "route": "booking_intelligence",
         "why": "Booking Intelligence pattern detected."
       },
       {
-        "id": "ps_mryfpecb_qc8d72",
+        "id": "ps_mryfprhf_0215vx",
         "title": "Replace your homepage hero",
         "detail": "Media Intelligence found stronger trust shots.",
         "route": "media_intelligence",
         "why": "Fresh media outscores current hero."
       },
       {
-        "id": "ps_mryfpecb_bg0fkt",
+        "id": "ps_mryfprhf_ly7xms",
         "title": "Add arrival windows",
         "detail": "Customers will know when to expect you.",
         "route": "booking_intelligence",
