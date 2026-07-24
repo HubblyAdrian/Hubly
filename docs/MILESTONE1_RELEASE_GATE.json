@@ -1,10 +1,10 @@
 {
   "milestone": 1,
-  "passed": 12,
+  "passed": 13,
   "total": 18,
-  "percent": 67,
+  "percent": 72,
   "ready": false,
-  "checkedAt": "2026-07-24T00:44:03.432Z",
+  "checkedAt": "2026-07-24T00:49:58.027Z",
   "sections": [
     {
       "n": 1,
@@ -80,9 +80,9 @@
     },
     {
       "n": 13,
-      "title": "Hubly Personality",
-      "status": "fail",
-      "script": "scripts/check-section13-hubly-personality.mjs"
+      "title": "Hubly Identity System",
+      "status": "pass",
+      "script": "scripts/check-section13-identity-system.mjs"
     },
     {
       "n": 14,

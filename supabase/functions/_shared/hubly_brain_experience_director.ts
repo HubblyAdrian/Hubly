@@ -6,8 +6,17 @@
  * Every customer-facing Hubly response must pass through here before return.
  *
  * Authority: veto power over customer-facing complexity.
- * Personality: one Hubly — calm, confident, proactive, conversational, never robotic.
+ * Identity: one Hubly — guarded via Hubly Identity System (Section 13).
  */
+
+import {
+  applyHublyIdentity,
+  evaluateAgainstConstitution,
+  HUBLY_IS,
+  HUBLY_NEVER,
+  HUBLY_IDENTITY_VERSION,
+  type HublyIdentityApplyResult,
+} from "./hubly_brain_identity_system.ts";
 
 export const EXPERIENCE_DIRECTOR_VERSION = "1.2.0" as const;
 
@@ -20,11 +29,13 @@ export const ED_MAX_WEBSITE_SETTINGS_EXPOSED = 0; // settings become conversatio
 export const ED_MAX_RESPONSE_CHARS = 520;
 export const ED_COMPLEXITY_VETO_THRESHOLD = 70;
 
-/** Hubly personality — Experience Director is the guardian. */
+/** Hubly Identity — Experience Director is the guardian (Section 13). */
 export const HUBLY_PERSONALITY = {
   voice: "one_business_partner",
-  traits: ["calm", "confident", "proactive", "conversational", "helpful"] as const,
-  never: ["robotic", "overly_technical", "multi_ai", "settings_dump"] as const,
+  identityVersion: HUBLY_IDENTITY_VERSION,
+  traits: [...HUBLY_IS],
+  never: [...HUBLY_NEVER, "overly_technical", "multi_ai", "settings_dump"],
+  constitution: true as const,
 };
 
 const TECHNICAL_PATTERNS: Array<{ re: RegExp; replace: string }> = [
@@ -111,6 +122,12 @@ export type ExperienceDirectorResult = {
   confidence: number;
   reviewedBy: "experience_director";
   personality: typeof HUBLY_PERSONALITY;
+  /** Section 13 — Identity System + Constitution evaluation. */
+  identity: HublyIdentityApplyResult;
+  /** Gate checks for Mission Control / proofs (includes Identity + Constitution). */
+  checks: Array<{ name: string; ok: boolean; detail?: string }>;
+  /** Alias of ownerResponse for Identity System proofs. */
+  finalResponse: string;
   /** Before → after for proof / Brain Console. */
   interception: {
     before: {
@@ -322,6 +339,15 @@ export function applyExperienceDirector(input: ExperienceDirectorInput): Experie
     actions.push("fallback_response");
   }
 
+  // Section 13 — Hubly Identity System + Constitution (one character everywhere).
+  let identity = applyHublyIdentity(response, {
+    request: input.request,
+    celebrate: shouldCelebrate(input.request, input.criticOk),
+  });
+  response = identity.text;
+  actions.push(...identity.actions.map((a) => `identity_${a}`));
+  if (!identity.constitution.ok) actions.push("constitution_violations_detected");
+
   // Website settings dump → conversation (never expose settings panel to owner)
   const allSettings = (input.websiteSettings || []).map((s) => String(s || "").trim()).filter(Boolean);
   let delayedSettings: string[] = [];
@@ -392,9 +418,30 @@ export function applyExperienceDirector(input: ExperienceDirectorInput): Experie
 
   if (modified) actions.push("modified_response");
 
+  // Re-evaluate Identity on the final owner-facing string (post-celebrate / caps).
+  identity = applyHublyIdentity(response, {
+    request: input.request,
+    celebrate,
+  });
+  response = identity.text;
+  after.response = response;
+
+  const constitution = evaluateAgainstConstitution(response);
+  const checks: ExperienceDirectorResult["checks"] = [
+    { name: "identity_system", ok: true, detail: `v${HUBLY_IDENTITY_VERSION}` },
+    {
+      name: "hubly_constitution",
+      ok: constitution.ok,
+      detail: constitution.ok
+        ? "all principles satisfied"
+        : constitution.violations.map((v) => v.principleId).join(","),
+    },
+  ];
+
   const result: ExperienceDirectorResult = {
     version: EXPERIENCE_DIRECTOR_VERSION,
     ownerResponse: response,
+    finalResponse: response,
     questions: q.shown,
     celebrate,
     hideDetails: true,
@@ -417,6 +464,14 @@ export function applyExperienceDirector(input: ExperienceDirectorInput): Experie
     confidence: clamp(input.confidence != null ? Number(input.confidence) : 78),
     reviewedBy: "experience_director",
     personality: HUBLY_PERSONALITY,
+    identity: {
+      ...identity,
+      constitution: {
+        ...constitution,
+        principlesChecked: constitution.principlesChecked,
+      },
+    },
+    checks,
     interception: { before, after, modified },
   };
 
@@ -448,9 +503,18 @@ export function reviewCustomerFacingText(
   });
 }
 
+/** Convenience API for Identity System proofs — evaluate() → full ED pass. */
+export const ExperienceDirector = {
+  version: EXPERIENCE_DIRECTOR_VERSION,
+  evaluate: applyExperienceDirector,
+  apply: applyExperienceDirector,
+  reviewText: reviewCustomerFacingText,
+};
+
 export const HublyExperienceDirector = {
   version: EXPERIENCE_DIRECTOR_VERSION,
   apply: applyExperienceDirector,
+  evaluate: applyExperienceDirector,
   reviewText: reviewCustomerFacingText,
   stripTechnicalLanguage,
   enforceHublyPersonality,

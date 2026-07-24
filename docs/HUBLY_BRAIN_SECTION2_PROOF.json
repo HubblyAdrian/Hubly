@@ -2,7 +2,7 @@
   "section": 2,
   "title": "Experience Director",
   "passed": true,
-  "checkedAt": "2026-07-24T00:44:02.936Z",
+  "checkedAt": "2026-07-24T00:49:57.490Z",
   "version": "1.2.0",
   "implementationSummary": {
     "module": "supabase/functions/_shared/hubly_brain_experience_director.ts",
@@ -12,19 +12,27 @@
     "authority": "veto power over complexity, settings dumps, widget sprawl",
     "personality": {
       "voice": "one_business_partner",
+      "identityVersion": "1.0.0",
       "traits": [
         "calm",
         "confident",
-        "proactive",
-        "conversational",
-        "helpful"
+        "curious",
+        "helpful",
+        "honest",
+        "professional",
+        "optimistic"
       ],
       "never": [
+        "pushy",
+        "arrogant",
         "robotic",
+        "overly casual",
+        "salesy",
         "overly_technical",
         "multi_ai",
         "settings_dump"
-      ]
+      ],
+      "constitution": true
     }
   },
   "proofs": [
@@ -73,6 +81,7 @@
         },
         "actions": [
           "reviewed",
+          "identity_evaluated_constitution",
           "limited_questions_to_3",
           "modified_response"
         ],
@@ -111,6 +120,7 @@
         "actions": [
           "reviewed",
           "vetoed_complexity",
+          "identity_evaluated_constitution",
           "converted_25_settings_to_conversation",
           "celebrate",
           "modified_response"
@@ -150,6 +160,7 @@
         "actions": [
           "reviewed",
           "vetoed_complexity",
+          "identity_evaluated_constitution",
           "show_1_of_18_dashboard_widgets",
           "modified_response"
         ],
@@ -166,24 +177,33 @@
           "actions": [
             "reviewed",
             "enforced_hubly_personality",
+            "identity_evaluated_constitution",
             "rewrote_technical_language",
             "modified_response"
           ],
           "personality": {
             "voice": "one_business_partner",
+            "identityVersion": "1.0.0",
             "traits": [
               "calm",
               "confident",
-              "proactive",
-              "conversational",
-              "helpful"
+              "curious",
+              "helpful",
+              "honest",
+              "professional",
+              "optimistic"
             ],
             "never": [
+              "pushy",
+              "arrogant",
               "robotic",
+              "overly casual",
+              "salesy",
               "overly_technical",
               "multi_ai",
               "settings_dump"
-            ]
+            ],
+            "constitution": true
           }
         },
         "interception": {
@@ -257,8 +277,8 @@
     ],
     "interceptionLogs": [
       {
-        "id": "ed_mry7w7av_o2vzd",
-        "at": "2026-07-24T00:44:02.935Z",
+        "id": "ed_mry83svj_5al8b",
+        "at": "2026-07-24T00:49:57.487Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -277,13 +297,14 @@
         },
         "actions": [
           "reviewed",
+          "identity_evaluated_constitution",
           "limited_questions_to_3",
           "modified_response"
         ]
       },
       {
-        "id": "ed_mry7w7av_0mt6g",
-        "at": "2026-07-24T00:44:02.935Z",
+        "id": "ed_mry83svl_asc0d",
+        "at": "2026-07-24T00:49:57.489Z",
         "modified": true,
         "vetoed": true,
         "before": {
@@ -303,14 +324,15 @@
         "actions": [
           "reviewed",
           "vetoed_complexity",
+          "identity_evaluated_constitution",
           "converted_25_settings_to_conversation",
           "celebrate",
           "modified_response"
         ]
       },
       {
-        "id": "ed_mry7w7av_dgfih",
-        "at": "2026-07-24T00:44:02.935Z",
+        "id": "ed_mry83svl_5jl1e",
+        "at": "2026-07-24T00:49:57.489Z",
         "modified": true,
         "vetoed": true,
         "before": {
@@ -330,13 +352,14 @@
         "actions": [
           "reviewed",
           "vetoed_complexity",
+          "identity_evaluated_constitution",
           "show_1_of_18_dashboard_widgets",
           "modified_response"
         ]
       },
       {
-        "id": "ed_mry7w7av_rba8m",
-        "at": "2026-07-24T00:44:02.935Z",
+        "id": "ed_mry83svl_f8kl2",
+        "at": "2026-07-24T00:49:57.489Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -356,13 +379,14 @@
         "actions": [
           "reviewed",
           "enforced_hubly_personality",
+          "identity_evaluated_constitution",
           "rewrote_technical_language",
           "modified_response"
         ]
       },
       {
-        "id": "ed_mry7w7aw_r51bu",
-        "at": "2026-07-24T00:44:02.936Z",
+        "id": "ed_mry83svm_squhy",
+        "at": "2026-07-24T00:49:57.490Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -381,6 +405,7 @@
         },
         "actions": [
           "reviewed",
+          "identity_evaluated_constitution",
           "celebrate",
           "modified_response"
         ]

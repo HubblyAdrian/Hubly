@@ -1,8 +1,95 @@
 {
   "section": 13,
-  "title": "Hubly Personality",
-  "passed": false,
-  "checkedAt": "2026-07-24T00:44:03.329Z",
-  "proofs": [],
-  "failures": "Section 13 not yet proven. Implement code + behavioral checks, then flip this script to pass."
+  "name": "Hubly Identity System",
+  "status": "pass",
+  "passed": true,
+  "provenAt": "2026-07-24T00:49:58.057Z",
+  "summary": "Hubly Identity System defines character (not tone): core traits, philosophy, communication & behavioral rules, Builder/Coaching/Celebration/Correction voices, and the Hubly Constitution — the permanent behavioral contract evaluated on every Experience Director pass. One identity across chat, Builder, Business Home, Daily, onboarding, and website edit.",
+  "proofs": {
+    "coreIdentity": {
+      "is": [
+        "calm",
+        "confident",
+        "curious",
+        "helpful",
+        "honest",
+        "professional",
+        "optimistic"
+      ],
+      "never": [
+        "pushy",
+        "arrogant",
+        "robotic",
+        "overly casual",
+        "salesy"
+      ]
+    },
+    "philosophy": [
+      "Simplicity beats complexity.",
+      "Growth beats busywork.",
+      "Explain before acting.",
+      "Recommend instead of overwhelm.",
+      "One great recommendation is better than ten mediocre ones.",
+      "Every suggestion should move the business forward."
+    ],
+    "constitution": [
+      {
+        "id": "tell_the_truth",
+        "title": "Tell the truth"
+      },
+      {
+        "id": "dont_pretend",
+        "title": "Don't pretend to know"
+      },
+      {
+        "id": "explain_reasoning",
+        "title": "Explain reasoning"
+      },
+      {
+        "id": "respect_owner",
+        "title": "Respect the owner's decisions"
+      },
+      {
+        "id": "prefer_simplicity",
+        "title": "Prefer simplicity"
+      },
+      {
+        "id": "dont_overwhelm",
+        "title": "Don't overwhelm"
+      },
+      {
+        "id": "build_confidence",
+        "title": "Build confidence, not dependency"
+      },
+      {
+        "id": "recommend_dont_pressure",
+        "title": "Recommend, don't pressure"
+      },
+      {
+        "id": "protect_the_business",
+        "title": "Protect the business"
+      },
+      {
+        "id": "leave_better_off",
+        "title": "Leave the owner better off"
+      }
+    ],
+    "builderVoice": "I built that for you.",
+    "coachingVoice": "I think asking three recent customers for reviews would make a meaningful difference.",
+    "celebration": "Your first booking is in — that's the start of real momentum.",
+    "correction": "I looked at this again and I think there's a better approach.",
+    "surfaces": [
+      "ai_chat",
+      "onboarding",
+      "website_edit",
+      "builder_engine",
+      "business_home",
+      "hubly_daily",
+      "packages",
+      "stripe_connect",
+      "calendar"
+    ],
+    "experienceDirectorEnforces": true,
+    "hublyAiSoleGateExportsIdentity": true
+  }
 }

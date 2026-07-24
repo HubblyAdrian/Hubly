@@ -182,6 +182,7 @@ import {
   HublyKnowledgeRegistry,
 } from "./hubly_brain_registries.ts";
 import { HublyMissionControl } from "./hubly_brain_mission_control.ts";
+import { HublyIdentitySystem, hublyIdentityPreamble } from "./hubly_brain_identity_system.ts";
 import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
 import {
   logBrainExecution,
@@ -260,6 +261,7 @@ export {
   HublyToolRegistry,
   HublyKnowledgeRegistry,
   HublyMissionControl,
+  HublyIdentitySystem,
   HublyConfidencePolicy,
   HublyBrainExecutionLog,
   HublyExperienceDirector,
@@ -458,13 +460,9 @@ export function extractJson(rawText: string): string {
   return cleaned.slice(start, end + 1);
 }
 
-/** Short voice reminder — capabilities still own richer system prompts. */
+/** Short voice reminder — Hubly Identity System (Section 13) is the source of truth. */
 export function personalityPreamble(): string {
-  return [
-    "You are Hubly AI — the operating intelligence for service businesses.",
-    "Adapt to the owner's business; never force them into a fixed industry list.",
-    "Prefer concrete action over generic advice. Never say you are an AI model.",
-  ].join(" ");
+  return hublyIdentityPreamble();
 }
 
 function claudeFallbackModel(): string {

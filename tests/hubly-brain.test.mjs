@@ -270,3 +270,20 @@ test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => 
   assert.equal(gate.sections.find((s) => s.n === 2).status, 'pass');
   assert.equal(gate.sections.find((s) => s.n === 3).status, 'pass');
 });
+
+test('Section 13 — Hubly Identity System defines character + Constitution', () => {
+  const r = run('scripts/check-section13-identity-system.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 13 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION13_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 13);
+  assert.equal(proof.name, 'Hubly Identity System');
+  assert.equal(proof.proofs.constitution.length, 10);
+  assert.match(proof.proofs.builderVoice, /I built that for you/i);
+});
