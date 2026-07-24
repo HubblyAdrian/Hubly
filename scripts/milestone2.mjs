@@ -16,18 +16,18 @@ const verbose = !!process.env.MILESTONE2_VERBOSE;
 
 const EPICS = [
   { n: 0, title: 'Hubly Experience Layer', script: 'scripts/check-m2-epic0.mjs', unlocked: true },
-  { n: 1, title: 'Welcome to Hubly', script: null, unlocked: false },
+  { n: 1, title: 'Welcome Experience', script: 'scripts/check-m2-epic1.mjs', unlocked: true },
   { n: 2, title: 'Business Discovery Conversation', script: null, unlocked: false },
-  { n: 3, title: 'Hubly Thinks Out Loud', script: null, unlocked: false },
-  { n: 4, title: 'Creative Build Session', script: null, unlocked: false },
-  { n: 5, title: 'The Reveal', script: null, unlocked: false },
+  { n: 3, title: 'Hubly Thinking Experience', script: null, unlocked: false },
+  { n: 4, title: 'Creative Build Experience', script: null, unlocked: false },
+  { n: 5, title: 'Business Reveal', script: null, unlocked: false },
   { n: 6, title: 'Delayed Account Creation', script: null, unlocked: false },
-  { n: 7, title: 'Business Launch Celebration', script: null, unlocked: false },
+  { n: 7, title: 'Business Launch', script: null, unlocked: false },
   { n: 8, title: 'Business Home', script: null, unlocked: false },
   { n: 9, title: 'Creative Workspace', script: null, unlocked: false },
   { n: 10, title: 'Hubly Daily', script: null, unlocked: false },
   { n: 11, title: 'Living Business', script: null, unlocked: false },
-  { n: 12, title: 'Polish', script: null, unlocked: false },
+  { n: 12, title: 'Polish & Delight', script: null, unlocked: false },
 ];
 
 console.log('\n🏔️  Milestone 2 — The Hubly Experience Release Gate\n');

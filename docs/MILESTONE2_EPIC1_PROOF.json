@@ -1,0 +1,46 @@
+{
+  "milestone": "2",
+  "epic": 1,
+  "name": "Welcome Experience",
+  "passed": true,
+  "checkedAt": "2026-07-24T06:25:03.726Z",
+  "proofs": {
+    "welcomeShell": true,
+    "heroConversation": true,
+    "largeInput": true,
+    "zeroAccountFields": true,
+    "noClassicSignupCta": true,
+    "trustOutcomes": true,
+    "inspiration": true,
+    "firstImpressionTimer": true,
+    "noCrmInWelcome": true,
+    "microinteractions": true,
+    "brandMark": true,
+    "prompts": [
+      "I'm starting a pressure washing company.",
+      "I want to grow my photography business.",
+      "I clean Airbnb properties.",
+      "I just launched my HVAC company.",
+      "Help me redesign my website.",
+      "I want more recurring customers."
+    ],
+    "trust": [
+      "Website built with AI",
+      "Booking ready",
+      "Business partner included",
+      "Takes about 3 minutes"
+    ],
+    "businesses": [
+      "Pressure Washing",
+      "Photography",
+      "Lawn Care",
+      "Spa",
+      "Cleaning",
+      "HVAC"
+    ],
+    "firstImpressionWindowMs": 15000,
+    "timeToFirstConversationTargetMs": 10000,
+    "accountFieldsRequired": 0
+  },
+  "failures": null
+}

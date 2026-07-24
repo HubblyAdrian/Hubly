@@ -1,12 +1,12 @@
 {
   "milestone": "2",
   "name": "The Hubly Experience",
-  "passed": 1,
+  "passed": 2,
   "total": 13,
-  "unlocked": 1,
-  "percent": 8,
+  "unlocked": 2,
+  "percent": 15,
   "ready": false,
-  "checkedAt": "2026-07-24T05:21:40.538Z",
+  "checkedAt": "2026-07-24T06:25:03.728Z",
   "epics": [
     {
       "n": 0,
@@ -16,9 +16,9 @@
     },
     {
       "n": 1,
-      "title": "Welcome to Hubly",
-      "status": "locked",
-      "script": null
+      "title": "Welcome Experience",
+      "status": "pass",
+      "script": "scripts/check-m2-epic1.mjs"
     },
     {
       "n": 2,
@@ -28,19 +28,19 @@
     },
     {
       "n": 3,
-      "title": "Hubly Thinks Out Loud",
+      "title": "Hubly Thinking Experience",
       "status": "locked",
       "script": null
     },
     {
       "n": 4,
-      "title": "Creative Build Session",
+      "title": "Creative Build Experience",
       "status": "locked",
       "script": null
     },
     {
       "n": 5,
-      "title": "The Reveal",
+      "title": "Business Reveal",
       "status": "locked",
       "script": null
     },
@@ -52,7 +52,7 @@
     },
     {
       "n": 7,
-      "title": "Business Launch Celebration",
+      "title": "Business Launch",
       "status": "locked",
       "script": null
     },
@@ -82,7 +82,7 @@
     },
     {
       "n": 12,
-      "title": "Polish",
+      "title": "Polish & Delight",
       "status": "locked",
       "script": null
     }
