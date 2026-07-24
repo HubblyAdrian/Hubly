@@ -2941,7 +2941,6 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .money-sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 12px;flex-wrap:wrap}
 .money-sec-h h3{margin:0;font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
 .money-sec-h p{margin:2px 0 0;font-size:12px;color:var(--ink-3)}
-.money-stripe-wrap{margin-top:22px}
 .money-reports-wrap{margin-top:18px}
 .inv-list{display:flex;flex-direction:column;gap:10px}
 .inv-row{
@@ -8469,33 +8468,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="empty"><div class="empty-ico">🧾</div><div class="empty-msg" data-i18n="invEmptyAll">Invoice payments will show up here.</div></div>
         </div>
 
-        <div class="money-stripe-wrap">
-          <div class="stripe-conn-card" id="money-stripe-card" data-stripe-root data-state="unknown">
-            <div class="stripe-conn-top">
-              <div class="stripe-conn-logo" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
-              </div>
-              <div style="min-width:0;flex:1">
-                <div style="font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Get paid with Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
-                <div class="stripe-conn-sub" data-stripe="sub">Connect once — clients pay deposits &amp; full amounts by card when they book</div>
-              </div>
-              <span class="cal-conn-badge off" data-stripe="badge">Not connected</span>
-            </div>
-            <div data-stripe="body" style="display:none;margin-top:12px;">
-              <div style="font-size:12px;color:var(--ink-2);line-height:1.45;margin-bottom:10px;" data-stripe="email">—</div>
-              <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                <button type="button" class="btn btn-out btn-sm" data-stripe="dashboard" onclick="openStripeDashboard()">Stripe dashboard</button>
-                <button type="button" class="btn btn-out btn-sm" data-stripe="reconnect" onclick="connectStripe()">Finish setup</button>
-                <button type="button" class="btn btn-out btn-sm" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
-              </div>
-            </div>
-            <div data-stripe="cta" style="margin-top:12px;">
-              <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()" style="width:100%;justify-content:center;">Connect Stripe</button>
-            </div>
-            <p data-stripe="hint" style="font-size:11px;color:var(--ink-3);margin:10px 0 0;line-height:1.4;">You’ll finish setup on Stripe, then return here. Clients pay you directly — Hubly never holds the funds.</p>
-          </div>
-        </div>
-
         <div class="sc money-reports-wrap">
           <div class="sc-h">
             <div class="sc-t" data-i18n="reportsTitle">Reports</div>
@@ -8936,11 +8908,11 @@ document.addEventListener('DOMContentLoaded', function() {
                   <div data-stripe="cta" style="margin-top:12px;">
                     <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()" style="width:100%;justify-content:center;">Connect Stripe</button>
                   </div>
-                  <p data-stripe="hint" style="font-size:11px;color:var(--ink-3);margin:10px 0 0;line-height:1.4;">Primary place to connect is <button type="button" class="linkish" onclick="goToStripeRevenue()" style="background:none;border:0;padding:0;color:var(--brand);font:inherit;font-weight:650;cursor:pointer;text-decoration:underline;">Revenue</button>. Clients pay you directly — Hubly never holds the funds.</p>
+                  <p data-stripe="hint" style="font-size:11px;color:var(--ink-3);margin:10px 0 0;line-height:1.4;">You’ll finish setup on Stripe, then return here. Clients pay you directly — Hubly never holds the funds.</p>
                 </div>
                 <div id="ed-stripe-pay-warn" class="hidden" style="margin:12px 0 0;padding:10px 12px;border-radius:10px;background:var(--brand-light);border:1px solid color-mix(in srgb,var(--brand) 28%,var(--border));font-size:12px;color:var(--ink-2);line-height:1.45;">
                   Online deposits &amp; full payment need Stripe ready.
-                  <button type="button" onclick="goToStripeRevenue()" style="display:inline;margin-left:4px;background:none;border:0;padding:0;color:var(--brand-dark);font:inherit;font-weight:700;cursor:pointer;text-decoration:underline;">Connect in Revenue →</button>
+                  <button type="button" onclick="goToStripeSettings()" style="display:inline;margin-left:4px;background:none;border:0;padding:0;color:var(--brand-dark);font:inherit;font-weight:700;cursor:pointer;text-decoration:underline;">Connect Stripe →</button>
                 </div>
 
                 <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin:16px 0 8px;">Default payment</div>
@@ -20581,14 +20553,26 @@ function stripeIsReady(st){
   const s=st||_stripeStatusCache;
   return !!s?.ready_to_charge||(!!s?.charges_enabled&&!!s?.connected);
 }
-function goToStripeRevenue(){
-  try{closeEdSheet();}catch(e){}
-  const nav=document.querySelector('[data-v="money"]');
+function goToStripeSettings(){
+  const nav=document.querySelector('[data-v="editor"]');
   if(nav)switchV(nav);
   setTimeout(()=>{
-    document.getElementById('money-stripe-card')?.scrollIntoView({behavior:'smooth',block:'start'});
-  },80);
+    try{openEdSheet('account');}catch(e){}
+    setTimeout(()=>{
+      const card=document.getElementById('ed-stripe-card');
+      const acc=card?.closest('.bk-acc-item');
+      if(acc){
+        try{
+          document.querySelectorAll('#ed-tab-sf .bk-acc-item').forEach(el=>el.classList.remove('open'));
+          acc.classList.add('open');
+        }catch(e){}
+      }
+      try{card?.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}
+    },120);
+  },100);
 }
+/** @deprecated Stripe lives in Website editor — keep alias for older call sites */
+function goToStripeRevenue(){goToStripeSettings();}
 function updateStripePayWarn(){
   const warn=document.getElementById('ed-stripe-pay-warn');
   if(!warn)return;
@@ -34731,6 +34715,10 @@ function reportPeriodBounds(period){
 function jobsBetween(jobs,start,end){
   return jobs.filter(j=>j.date&&parseDayDate(j.date)>=start&&parseDayDate(j.date)<=end);
 }
+/** Reports / KPIs: Hubly jobs only — never Google Calendar appointments or time blocks. */
+function reportableJobs(start,end){
+  return jobsBetween(S.jobs||[],start,end).filter(isHublyOwnedJob);
+}
 function customersBetween(start,end){
   return S.customers.filter(c=>{
     const created=c.createdAt||c.created_at;
@@ -34773,7 +34761,7 @@ function resolveJobServiceBucket(j){
   return {service_id:sid?String(sid):null,name:j.service||j.service_name||'Unknown'};
 }
 function reportServicesBreakdown(start,end){
-  const jobs=jobsBetween(S.jobs,start,end);
+  const jobs=reportableJobs(start,end);
   const buckets=new Map();
   for(const j of jobs){
     const b=resolveJobServiceBucket(j);
@@ -34786,7 +34774,7 @@ function reportServicesBreakdown(start,end){
   return Array.from(buckets.values()).sort((a,b)=>b.revenue-a.revenue||b.jobs-a.jobs||String(a.name).localeCompare(String(b.name)));
 }
 function reportMetricValue(metric,start,end){
-  const jobs=jobsBetween(S.jobs,start,end);
+  const jobs=reportableJobs(start,end);
   if(metric==='revenue')return jobs.filter(j=>j.status==='completed'&&j.paid).reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   if(metric==='jobs')return jobs.length;
   if(metric==='customers')return customersBetween(start,end).length;
@@ -34883,12 +34871,12 @@ function openReportMetricDrill(metric){
       <div class="kpi-drill-right"></div>
     </div>`;
   if(metric==='revenue'){
-    const jobs=jobsBetween(S.jobs,start,end).filter(j=>j.status==='completed'&&j.paid).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const jobs=reportableJobs(start,end).filter(j=>j.status==='completed'&&j.paid).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     const total=jobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
     title.textContent=t('reportsRevenue');
     body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">${t('reportsRevenue')}</div><div class="kpi-drill-sum-val">$${total.toFixed(2)}</div></div>`+(jobs.length?jobs.map(jobRow).join(''):`<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">${t('noCompletedRevenue')}</div>`);
   }else if(metric==='jobs'){
-    const jobs=jobsBetween(S.jobs,start,end).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const jobs=reportableJobs(start,end).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     title.textContent=t('reportsJobs');
     body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">${t('reportsJobs')}</div><div class="kpi-drill-sum-val">${jobs.length}</div></div>`+(jobs.length?jobs.map(jobRow).join(''):`<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">${t('noJobsInPeriod')}</div>`);
   }else if(metric==='customers'){

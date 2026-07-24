@@ -27,6 +27,8 @@
     "milestone15:verbose": "MILESTONE15_VERBOSE=1 node scripts/milestone15.mjs",
     "milestone2": "node scripts/milestone2.mjs",
     "milestone2:verbose": "MILESTONE2_VERBOSE=1 node scripts/milestone2.mjs",
+    "milestone25": "node scripts/milestone25.mjs",
+    "check:m25-cutover": "node scripts/check-m25-cutover.mjs",
     "check:experience-epic0": "node scripts/check-experience-epic0.mjs",
     "check:m2-epic0": "node scripts/check-m2-epic0.mjs",
     "check:m2-epic1": "node scripts/check-m2-epic1.mjs",
@@ -52,7 +54,8 @@
     "check:builder-epic9": "node scripts/check-builder-epic9.mjs",
     "check:builder-epic10": "node scripts/check-builder-epic10.mjs",
     "check:builder-epic11": "node scripts/check-builder-epic11.mjs",
-    "check:builder-epic12": "node scripts/check-builder-epic12.mjs"
+    "check:builder-epic12": "node scripts/check-builder-epic12.mjs",
+    "check:gcal-blocks-not-jobs": "node scripts/check-google-calendar-blocks-not-jobs.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
