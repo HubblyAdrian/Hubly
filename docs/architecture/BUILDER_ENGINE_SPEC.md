@@ -1,10 +1,10 @@
 # Builder Engine Specification
 
-**Version:** 1.3.0  
-**Status:** Milestone 1.5 — Epic 1 ✅ · Epic 2 ✅ · Epic 3 ✅ (Preview Engine) · Epic 4+ locked  
+**Version:** 1.4.0  
+**Status:** Milestone 1.5 — Epic 1–3 ✅ · Epic 4 ✅ (Collaboration & Approval) · Epic 5+ locked  
 **Target:** Milestone 1.5 (12 epics · one release gate each)
 
-Epic 1 produces **Builder Intent**. Epic 2 turns Intent into a **declarative Change Plan**. Epic 3 turns the Plan into a **living Preview** (“Here’s what I built.”). Approval / Rollback / surface builders are later epics. Do not implement them ahead of Founder Approval.
+Epic 1–3: Intent → Change Plan → Preview. Epic 4 turns Preview into a **collaboration** (“What do you think?” → “Let's launch this.”). Apply / Rollback / surface builders are later. Do not implement them ahead of Founder Approval.
 
 ## Purpose
 
@@ -68,21 +68,18 @@ Rules:
 
 Preview must never mutate live business state.
 
-## Approval Flow
+## Collaboration & Approval (Epic 4)
 
-```
-Preview → Owner Approve | Reject | Edit
-              ↓ Approve
-         Brain applies via owning capability
-              ↓
-         Memory / surface updates
-              ↓
-         Mission Control: applied
-```
+1. Preview opens collaboration with **What do you think?**  
+2. Hubly recommends (never neutral)  
+3. Owner refines; Hubly updates the living preview  
+4. Alternatives + AI negotiation when needed  
+5. Partial approval updates Change Plan scope  
+6. Approval summary + partner CTA (**Let's launch this.**)  
+7. Owner confidence captured for Experience Director  
+8. Mission Control records the full collaboration history  
 
-- Reject → plan stored as rejected; no side effects  
-- Edit → return to Builder with owner constraints  
-- Approve → Brain (not Builder) executes tool writes  
+Nothing is applied until a later Apply epic. Preview must never mutate live business state.
 
 ## Rollback Flow
 

@@ -40,6 +40,7 @@ import { recordFlightRecorder } from './mission-control.mjs';
 import { extractBuilderIntentFromOutput } from './builder-expert.mjs';
 import { generateChangePlan } from './change-plan.mjs';
 import { generatePreview } from './preview-engine.mjs';
+import { startCollaboration } from './collaboration.mjs';
 import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
@@ -670,6 +671,9 @@ export async function think(req) {
   const preview = changePlan
     ? generatePreview(changePlan, { missionControlReplayId: null }).preview
     : null;
+  const collaboration = preview && changePlan
+    ? startCollaboration(preview, changePlan, { missionControlReplayId: null }).session
+    : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ''),
     intent,
@@ -784,6 +788,28 @@ export async function think(req) {
         waitingFor: preview.waitingFor,
       }
       : null,
+    collaboration: collaboration
+      ? {
+        id: collaboration.id,
+        previewId: collaboration.previewId,
+        changePlanId: collaboration.changePlanId,
+        phase: collaboration.phase,
+        openingPrompt: collaboration.openingPrompt,
+        iterations: collaboration.iterations,
+        recommendationLabel: collaboration.recommendation?.label || null,
+        recommendationConfidence: collaboration.recommendation?.confidence ?? null,
+        alternativeCount: collaboration.alternatives.length,
+        hasNegotiation: !!collaboration.negotiation,
+        partialApprovalCount: collaboration.partialApprovals.length,
+        hasSummary: !!collaboration.summary,
+        launchCta: collaboration.launchCta,
+        ownerConfidence: collaboration.ownerConfidence,
+        status: collaboration.status,
+        applied: false,
+        executed: false,
+        waitingFor: collaboration.waitingFor,
+      }
+      : null,
   });
 
   if (changePlan && flightRecorder.executionId) {
@@ -793,6 +819,9 @@ export async function think(req) {
   }
   if (preview && flightRecorder.executionId) {
     preview.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (collaboration && flightRecorder.executionId) {
+    collaboration.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -822,6 +851,7 @@ export async function think(req) {
     builderIntent,
     changePlan,
     preview,
+    collaboration,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     experienceDirector: {

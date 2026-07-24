@@ -115,6 +115,27 @@ function recordFlightRecorder(opts) {
       ...opts.preview
     }, 15);
   }
+  if (opts.collaboration) {
+    push("collaboration", `Collaboration: ${opts.collaboration.openingPrompt}`, {
+      ...opts.collaboration
+    }, 12);
+    if (opts.collaboration.recommendationLabel) {
+      push("recommendation", `Recommend: ${opts.collaboration.recommendationLabel}`, {
+        confidence: opts.collaboration.recommendationConfidence
+      }, 8);
+    }
+    if (opts.collaboration.iterations > 0) {
+      push("refinement", `Iterations: ${opts.collaboration.iterations}`, {
+        iterations: opts.collaboration.iterations
+      }, 5);
+    }
+    if (opts.collaboration.hasSummary) {
+      push("approval_summary", `Launch CTA: ${opts.collaboration.launchCta || "Let's launch this."}`, {
+        launchCta: opts.collaboration.launchCta,
+        ownerConfidence: opts.collaboration.ownerConfidence
+      }, 8);
+    }
+  }
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -159,7 +180,8 @@ function recordFlightRecorder(opts) {
     decisionAction: opts.decisionAction ?? null,
     builderIntent: opts.builderIntent ? { ...opts.builderIntent } : null,
     changePlan: opts.changePlan ? { ...opts.changePlan } : null,
-    preview: opts.preview ? { ...opts.preview } : null
+    preview: opts.preview ? { ...opts.preview } : null,
+    collaboration: opts.collaboration ? { ...opts.collaboration } : null
   };
   FLIGHTS.set(flight.executionId, flight);
   FLIGHT_ORDER.push(flight.executionId);
@@ -333,12 +355,18 @@ function getMissionControlSnapshot() {
       const intents = flights.map((f) => f.builderIntent).filter((x) => !!x).slice(-10).reverse();
       const changePlans = flights.map((f) => f.changePlan).filter((x) => !!x).slice(-10).reverse();
       const previews = flights.map((f) => f.preview).filter((x) => !!x).slice(-10).reverse();
+      const collaborations = flights.map((f) => f.collaboration).filter((x) => !!x).slice(-10).reverse();
       return {
         milestone: "1.5",
         available: false,
-        epic: "3 \u2014 Preview Engine",
-        note: "Epic 3 \u2014 Builder Intent \u2192 Change Plan \u2192 Preview. Waiting for Approval Engine. No apply.",
-        recent: previews.length ? previews.map((p) => ({
+        epic: "4 \u2014 Collaboration & Approval",
+        note: "Epic 4 \u2014 Preview \u2192 Conversation \u2192 Recommendation \u2192 Approval. Waiting for Apply Engine. No apply.",
+        recent: collaborations.length ? collaborations.map((c) => ({
+          id: c.id,
+          status: c.status,
+          summary: `${c.openingPrompt} \xB7 ${c.iterations} iteration(s)${c.launchCta ? ` \xB7 ${c.launchCta}` : ""}`,
+          changePlanId: c.changePlanId
+        })) : previews.length ? previews.map((p) => ({
           id: p.id,
           status: "preview_ready",
           summary: `${p.headline} \xB7 ${p.title} (v${p.currentVersion})`,
@@ -367,7 +395,8 @@ function getMissionControlSnapshot() {
         })),
         intents,
         changePlans,
-        previews
+        previews,
+        collaborations
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({
