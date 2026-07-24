@@ -4,7 +4,7 @@
   "name": "Version & Rollback Engine",
   "title": "Version & Rollback Engine",
   "passed": true,
-  "checkedAt": "2026-07-24T02:45:53.957Z",
+  "checkedAt": "2026-07-24T03:36:35.305Z",
   "proofs": {
     "versionEngineExists": true,
     "everyApprovedChangeCreatesVersion": true,
@@ -24,7 +24,7 @@
     "noApply": true,
     "demos": {
       "v1": {
-        "id": "bver_mryc8wi4_1uf2gu",
+        "id": "bver_mrye237x_uvetkq",
         "label": "v1.1",
         "surfaces": [
           "website"
@@ -49,13 +49,13 @@
         ]
       },
       "v2": {
-        "id": "bver_mryc8wi8_6s9wkq",
+        "id": "bver_mrye2382_0d1faq",
         "label": "v1.2",
         "surfaces": []
       },
       "diff": {
-        "fromVersionId": "bver_mryc8wi4_1uf2gu",
-        "toVersionId": "bver_mryc8wi8_6s9wkq",
+        "fromVersionId": "bver_mrye237x_uvetkq",
+        "toVersionId": "bver_mrye2382_0d1faq",
         "fromLabel": "v1.1",
         "toLabel": "v1.2",
         "surfaces": [
@@ -86,11 +86,11 @@
         "summary": "Compare v1.1 → v1.2: 2 diff(s)"
       },
       "fullRollback": {
-        "id": "rb_mryc8wi9_ibuihk",
+        "id": "rb_mrye2383_7w55g9",
         "scope": "full",
-        "targetVersionId": "bver_mryc8wi4_1uf2gu",
+        "targetVersionId": "bver_mrye237x_uvetkq",
         "targetLabel": "v1.1",
-        "fromVersionId": "bver_mryc8wi8_6s9wkq",
+        "fromVersionId": "bver_mrye2382_0d1faq",
         "surfaces": [
           "website"
         ],
@@ -118,14 +118,14 @@
         "applied": false,
         "status": "rollback_plan_ready",
         "waitingFor": "apply_engine",
-        "createdAt": "2026-07-24T02:45:53.937Z"
+        "createdAt": "2026-07-24T03:36:35.283Z"
       },
       "partialRollback": {
-        "id": "rb_mryc8wi9_h0vo59",
+        "id": "rb_mrye2383_xsadkv",
         "scope": "partial",
-        "targetVersionId": "bver_mryc8wi4_1uf2gu",
+        "targetVersionId": "bver_mrye237x_uvetkq",
         "targetLabel": "v1.1",
-        "fromVersionId": "bver_mryc8wi8_6s9wkq",
+        "fromVersionId": "bver_mrye2382_0d1faq",
         "surfaces": [
           "booking"
         ],
@@ -137,14 +137,14 @@
         "applied": false,
         "status": "rollback_plan_ready",
         "waitingFor": "apply_engine",
-        "createdAt": "2026-07-24T02:45:53.937Z"
+        "createdAt": "2026-07-24T03:36:35.283Z"
       },
       "singleRollback": {
-        "id": "rb_mryc8wi9_0byv37",
+        "id": "rb_mrye2383_fbvqfh",
         "scope": "single",
-        "targetVersionId": "bver_mryc8wi4_1uf2gu",
+        "targetVersionId": "bver_mrye237x_uvetkq",
         "targetLabel": "v1.1",
-        "fromVersionId": "bver_mryc8wi8_6s9wkq",
+        "fromVersionId": "bver_mrye2382_0d1faq",
         "surfaces": [
           "website"
         ],
@@ -165,14 +165,14 @@
         "applied": false,
         "status": "rollback_plan_ready",
         "waitingFor": "apply_engine",
-        "createdAt": "2026-07-24T02:45:53.937Z"
+        "createdAt": "2026-07-24T03:36:35.283Z"
       },
       "restoreSuggestions": [
         {
-          "id": "restore_mryc8wi9_9rpr5s",
-          "suggestedVersionId": "bver_mryc8wi4_1uf2gu",
+          "id": "restore_mrye2383_578htz",
+          "suggestedVersionId": "bver_mrye237x_uvetkq",
           "suggestedLabel": "v1.1",
-          "currentVersionId": "bver_mryc8wi8_6s9wkq",
+          "currentVersionId": "bver_mrye2382_0d1faq",
           "reason": "I think v1.1 may have performed better for trust signals.",
           "signal": "Conversions / trust may have softened after the latest homepage change.",
           "confidence": 90,
@@ -185,8 +185,8 @@
         "title": "Business Timeline",
         "events": [
           {
-            "id": "tl_mryc8wi3_yooj0x",
-            "at": "2026-07-12T02:45:53.931Z",
+            "id": "tl_mrye237x_vk5kok",
+            "at": "2026-07-12T03:36:35.277Z",
             "kind": "milestone",
             "emoji": "🎉",
             "title": "Website launched",
@@ -195,8 +195,8 @@
             "versionLabel": null
           },
           {
-            "id": "tl_mryc8wi3_fs7lnh",
-            "at": "2026-07-13T02:45:53.931Z",
+            "id": "tl_mrye237x_ngs8lv",
+            "at": "2026-07-13T03:36:35.277Z",
             "kind": "integration",
             "emoji": "💳",
             "title": "Stripe connected",
@@ -205,8 +205,8 @@
             "versionLabel": null
           },
           {
-            "id": "tl_mryc8wi3_mro8yy",
-            "at": "2026-07-14T02:45:53.931Z",
+            "id": "tl_mrye237x_0j59ua",
+            "at": "2026-07-14T03:36:35.277Z",
             "kind": "builder_change",
             "emoji": "📅",
             "title": "Arrival windows enabled",
@@ -215,8 +215,8 @@
             "versionLabel": null
           },
           {
-            "id": "tl_mryc8wi3_gkv26g",
-            "at": "2026-07-16T02:45:53.931Z",
+            "id": "tl_mrye237x_wnwrbk",
+            "at": "2026-07-16T03:36:35.277Z",
             "kind": "achievement",
             "emoji": "⭐",
             "title": "First 5-star review",
@@ -225,8 +225,8 @@
             "versionLabel": null
           },
           {
-            "id": "tl_mryc8wi3_vai2nc",
-            "at": "2026-07-22T02:45:53.931Z",
+            "id": "tl_mrye237x_ggj4ud",
+            "at": "2026-07-22T03:36:35.277Z",
             "kind": "growth",
             "emoji": "🏆",
             "title": "100th booking",
@@ -235,8 +235,8 @@
             "versionLabel": null
           },
           {
-            "id": "tl_mryc8wi3_8c4z8e",
-            "at": "2026-07-24T02:45:53.931Z",
+            "id": "tl_mrye237x_c3w647",
+            "at": "2026-07-24T03:36:35.277Z",
             "kind": "ai_recommendation",
             "emoji": "🧠",
             "title": "Hubly recommends launching memberships",
@@ -245,23 +245,23 @@
             "versionLabel": null
           },
           {
-            "id": "tl_mryc8wi4_bvs76h",
-            "at": "2026-07-24T02:45:53.932Z",
+            "id": "tl_mrye237y_x7five",
+            "at": "2026-07-24T03:36:35.277Z",
             "kind": "builder_change",
             "emoji": "📈",
             "title": "v1.1 — Website Improvement",
             "detail": "Owner asked for a more premium website feel.; Premium feel usually starts with hero headline tone.",
-            "versionId": "bver_mryc8wi4_1uf2gu",
+            "versionId": "bver_mrye237x_uvetkq",
             "versionLabel": "v1.1"
           },
           {
-            "id": "tl_mryc8wi8_ckv3gn",
-            "at": "2026-07-24T02:45:53.936Z",
+            "id": "tl_mrye2382_1rjnvo",
+            "at": "2026-07-24T03:36:35.282Z",
             "kind": "builder_change",
             "emoji": "📈",
             "title": "v1.2 — Business Change",
             "detail": "",
-            "versionId": "bver_mryc8wi8_6s9wkq",
+            "versionId": "bver_mrye2382_0d1faq",
             "versionLabel": "v1.2"
           }
         ],
@@ -272,7 +272,7 @@
           "id": "booking",
           "request": "Add arrival windows.",
           "version": {
-            "id": "bver_mryc8wii_8ajli7",
+            "id": "bver_mrye238c_4henkf",
             "label": "v1.1",
             "surfaces": [
               "booking"
@@ -291,13 +291,13 @@
                   "before_minutes": 60,
                   "after_minutes": 60
                 },
-                "builderOwner": "Booking Builder",
+                "builderOwner": "Booking Intelligence Builder",
                 "summary": "Owner wants appointment arrival windows."
               }
             ],
-            "reason": "Approved direction: Booking Rule",
+            "reason": "Approved direction: Booking Intelligence",
             "builders": [
-              "Booking Builder"
+              "Booking Intelligence Builder"
             ],
             "applied": false
           },
@@ -307,7 +307,7 @@
           "id": "workspace",
           "request": "Move Jobs above Customers.",
           "version": {
-            "id": "bver_mryc8wik_0vfoi7",
+            "id": "bver_mrye238f_wq6ikx",
             "label": "v1.1",
             "surfaces": [
               "workspace"
@@ -341,7 +341,7 @@
           "id": "portfolio",
           "request": "Organize my portfolio.",
           "version": {
-            "id": "bver_mryc8wim_smyur4",
+            "id": "bver_mrye238h_8znmoe",
             "label": "v1.1",
             "surfaces": [
               "portfolio"
@@ -368,7 +368,7 @@
           "id": "automation",
           "request": "Send prep instructions after ceramic coating bookings.",
           "version": {
-            "id": "bver_mryc8wio_rlkhxx",
+            "id": "bver_mrye238j_naisj9",
             "label": "v1.1",
             "surfaces": [
               "automations"

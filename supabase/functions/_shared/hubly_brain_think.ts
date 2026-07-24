@@ -19,6 +19,10 @@ import { startCollaboration, type CollaborationSession } from "./hubly_brain_col
 import { proposeVersionFromPlan, type BusinessVersion } from "./hubly_brain_version_engine.ts";
 import { startCreativeSession, type CreativeSession } from "./hubly_brain_business_builder.ts";
 import {
+  buildBookingIntelligence,
+  type BookingIntelligencePlan,
+} from "./hubly_brain_booking_intelligence.ts";
+import {
   listExpertCapabilities,
   listExperts,
   runExpert,
@@ -233,6 +237,8 @@ export type HublyThinkResult = {
   businessVersion?: BusinessVersion | null;
   /** Milestone 1.5 · Epic 6 — Business Builder Creative Session (not applied). */
   creativeSession?: CreativeSession | null;
+  /** Milestone 1.5 · Epic 7 — Booking Intelligence plan (not applied). */
+  bookingIntelligence?: BookingIntelligencePlan | null;
   /** Section 12 — Mission Control flight recorder id (AI Replay). */
   missionControlExecutionId?: string | null;
   flightRecorder?: HublyFlightRecorder | null;
@@ -268,7 +274,13 @@ export function detectIntent(request: string, explicit?: string | null): string 
     return "workspace";
   }
   // Capability / Builder prep — before coach (which matches "booking")
-  if (/arrival window|same-?day|no same.?day/.test(r)) return "build_business";
+  if (
+    /arrival window|same-?day|no same.?day|travel buffer|minimum notice|daily capacity|two jobs|2 jobs|maximum per day|weather|rain(ing)?|reschedule exterior|estimate.?only|tuesdays? are estimate|optimiz(e|ing).*schedule|fridays? (are|only).*ceramic|ceramic.*(friday|only|after 2)|coating.?only|seasonal|snow removal/.test(
+      r,
+    )
+  ) {
+    return "build_business";
+  }
   if (
     /portfolio|upload.*(photo|image)|these \d+ photos|prep instruction|automation|workflow|after .+ booking/
       .test(r)
@@ -1384,6 +1396,26 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       missionControlReplayId: null,
     }).session
     : null;
+  // Milestone 1.5 · Epic 7 — Booking Intelligence (owners describe how they operate)
+  const bookingRequest = String(req.request || "");
+  const wantsBookingIntelligence = !!(
+    changePlan &&
+    (changePlan.affectedSystems.includes("Booking") ||
+      changePlan.changes.some((c) => c.path.startsWith("booking.")) ||
+      /same-?day|arrival window|travel|buffer|capacity|weather|ceramic.*(friday|only)|fridays? (are|only).*ceramic|estimate|optimiz|seasonal|minimum notice|skill rout|emergency.?only/.test(
+        bookingRequest.toLowerCase(),
+      ))
+  );
+  const bookingIntelligence = wantsBookingIntelligence && changePlan
+    ? buildBookingIntelligence({
+      businessId: businessId || `biz_${Date.now().toString(36)}`,
+      plan: changePlan,
+      industry: memory.industry || memory.business?.industry ||
+        dna.knowledgePack?.industryProfile?.industryName ||
+        null,
+      missionControlReplayId: null,
+    })
+    : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ""),
     intent,
@@ -1560,9 +1592,25 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
         waitingFor: creativeSession.waitingFor,
       }
       : null,
+    bookingIntelligence: bookingIntelligence
+      ? {
+        id: bookingIntelligence.id,
+        label: bookingIntelligence.label,
+        ruleCount: bookingIntelligence.rules.length,
+        concepts: [...new Set(bookingIntelligence.rules.map((r) => r.conceptId))],
+        healthOverall: bookingIntelligence.health.overall,
+        recommendationCount: bookingIntelligence.recommendations.length,
+        simulatorHorizonDays: bookingIntelligence.simulator.horizonDays,
+        industry: bookingIntelligence.industry,
+        requiresApproval: true as const,
+        applied: false as const,
+        executed: false as const,
+        waitingFor: bookingIntelligence.waitingFor,
+      }
+      : null,
   });
 
-  // Attach replay id onto plan actions + preview + collaboration + version + creative session
+  // Attach replay id onto plan actions + preview + collaboration + version + creative session + booking intel
   if (changePlan && flightRecorder.executionId) {
     for (const a of changePlan.changes) {
       a.missionControlReplayId = flightRecorder.executionId;
@@ -1579,6 +1627,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   }
   if (creativeSession && flightRecorder.executionId) {
     creativeSession.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (bookingIntelligence && flightRecorder.executionId) {
+    bookingIntelligence.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -1620,6 +1671,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     collaboration,
     businessVersion,
     creativeSession,
+    bookingIntelligence,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     timeline,

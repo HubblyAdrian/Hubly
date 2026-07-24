@@ -1,11 +1,11 @@
 {
   "milestone": "1.5",
-  "passed": 6,
+  "passed": 7,
   "total": 12,
-  "unlocked": 6,
-  "percent": 50,
+  "unlocked": 7,
+  "percent": 58,
   "ready": false,
-  "checkedAt": "2026-07-24T02:45:54.395Z",
+  "checkedAt": "2026-07-24T03:36:36.288Z",
   "epics": [
     {
       "n": 1,
@@ -45,13 +45,13 @@
     },
     {
       "n": 7,
-      "title": "Booking Builder",
-      "status": "locked",
-      "script": null
+      "title": "Booking Intelligence Builder",
+      "status": "pass",
+      "script": "scripts/check-builder-epic7.mjs"
     },
     {
       "n": 8,
-      "title": "CRM Builder",
+      "title": "Workspace Builder",
       "status": "locked",
       "script": null
     },
@@ -75,7 +75,7 @@
     },
     {
       "n": 12,
-      "title": "Builder Validation",
+      "title": "Builder Validation & Apply Engine",
       "status": "locked",
       "script": null
     }

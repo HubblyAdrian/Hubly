@@ -229,7 +229,7 @@ check(
 );
 check(
   "Mission Control still surfaces Builder Intent",
-  /Builder Intent|Builder Expert|Change Plan|Preview|Collaboration|Version|Rollback|Business Builder|Epic [1-6]/i.test(
+  /Builder Intent|Builder Expert|Change Plan|Preview|Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Epic [1-7]/i.test(
     `${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`,
   ) || (snap.builderActions?.intents || []).length >= 1,
 );

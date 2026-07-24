@@ -72,7 +72,7 @@ const demos = [
   {
     id: "booking",
     request: "Don't allow same-day bookings.",
-    builders: ["Booking Builder"],
+    builders: ["Booking Intelligence Builder"],
     builderTypes: ["booking"],
     pathHint: /booking\./,
   },
@@ -107,7 +107,7 @@ const demos = [
   {
     id: "multi",
     request: "Add arrival windows and update my website to explain them.",
-    builders: ["Booking Builder", "Website Builder"],
+    builders: ["Booking Intelligence Builder", "Website Builder"],
     builderTypes: ["multi"],
     pathHint: /booking\.|website\./,
   },
@@ -238,7 +238,7 @@ check("MC builderActions.available === false", snap.builderActions?.available ==
 check("MC displays Change Plans", (snap.builderActions?.changePlans || []).length >= 1);
 check(
   "MC epic mentions Builder pipeline",
-  /Change Plan|Preview|Collaboration|Version|Rollback|Business Builder|Epic [2-6]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Change Plan|Preview|Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Epic [2-7]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check(
   "MC still blocks apply",
@@ -249,7 +249,7 @@ const multi = proofDemos.find((d) => d.id === "multi");
 check("Multi-system one plan", multi?.changePlan?.builderType === "multi");
 check(
   "Multi-system two builders",
-  multi?.changePlan?.changes?.some((a) => a.builderOwner === "Booking Builder") &&
+  multi?.changePlan?.changes?.some((a) => a.builderOwner === "Booking Intelligence Builder") &&
     multi?.changePlan?.changes?.some((a) => a.builderOwner === "Website Builder"),
 );
 

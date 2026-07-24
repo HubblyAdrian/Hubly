@@ -18,15 +18,15 @@ var SUPPORTED_BUILDERS = /* @__PURE__ */ new Set([
 var SYSTEM_TO_BUILDER = {
   Website: { type: "website_builder", owner: "Website Builder" },
   Branding: { type: "website_builder", owner: "Website Builder" },
-  Booking: { type: "booking", owner: "Booking Builder" },
+  Booking: { type: "booking", owner: "Booking Intelligence Builder" },
+  Integrations: { type: "booking", owner: "Booking Intelligence Builder" },
   CRM: { type: "crm", owner: "CRM Builder" },
   Workspace: { type: "workspace_builder", owner: "Workspace Builder" },
   Portfolio: { type: "portfolio_builder", owner: "Portfolio Builder" },
   Packages: { type: "packages_builder", owner: "Packages Builder" },
   Automations: { type: "automation", owner: "Automation Builder" },
   Marketplace: { type: "marketplace", owner: "Marketplace Builder" },
-  Integrations: { type: "booking", owner: "Booking Builder" },
-  Business: { type: "website_builder", owner: "Website Builder" }
+  Business: { type: "website_builder", owner: "Business Builder" }
 };
 function uid(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -128,10 +128,13 @@ function draftActionsFromIntent(intent) {
       });
     }
   }
-  if (systems.has("Booking") || /same-?day|arrival window|minimum notice/.test(req)) {
+  if (systems.has("Booking") || /same-?day|arrival window|minimum notice|travel buffer|minutes to drive|daily capacity|two jobs|weather|raining|reschedule exterior|fridays? (are|only).*ceramic|ceramic.*(friday|only|after 2)|coating.?only|estimate.?only|tuesdays? are estimate|optimiz(e|ing).*schedule|seasonal|snow removal|skill rout/.test(
+    req
+  )) {
+    const bookingOwner = "Booking Intelligence Builder";
     if (/same-?day|no same.?day|minimum notice/.test(req)) {
       push({
-        builderOwner: "Booking Builder",
+        builderOwner: bookingOwner,
         builderType: "booking",
         system: "Booking",
         path: "booking.same_day_bookings.allowed",
@@ -148,7 +151,7 @@ function draftActionsFromIntent(intent) {
         capabilityId: "no_same_day_bookings"
       });
       push({
-        builderOwner: "Booking Builder",
+        builderOwner: bookingOwner,
         builderType: "booking",
         system: "Booking",
         path: "booking.minimum_notice.hours",
@@ -167,7 +170,7 @@ function draftActionsFromIntent(intent) {
     }
     if (/arrival window|arrival windows/.test(req)) {
       push({
-        builderOwner: "Booking Builder",
+        builderOwner: bookingOwner,
         builderType: "booking",
         system: "Booking",
         path: "booking.arrival_window",
@@ -183,6 +186,162 @@ function draftActionsFromIntent(intent) {
         },
         confidence: Math.max(90, intent.confidence),
         capabilityId: "arrival_windows"
+      });
+    }
+    if (/travel|drive between|buffer between|minutes to drive|30.?minute travel|45.?minute/.test(req)) {
+      const mins = /45/.test(req) ? 45 : /20/.test(req) ? 20 : 30;
+      push({
+        builderOwner: bookingOwner,
+        builderType: "booking",
+        system: "Booking",
+        path: "booking.travel_buffer.minutes",
+        desired: { enabled: true, minutes: mins },
+        reason: `Owner needs ${mins}-minute travel buffers between jobs.`,
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: {
+          schedulingFlexibility: "medium",
+          complexity: "low",
+          summary: "Travel buffers protect drive time and reduce late arrivals."
+        },
+        confidence: Math.max(90, intent.confidence),
+        capabilityId: "booking_rules"
+      });
+    }
+    if (/two jobs|2 jobs|only two|maximum per day|daily capacity|capacity/.test(req)) {
+      push({
+        builderOwner: bookingOwner,
+        builderType: "booking",
+        system: "Booking",
+        path: "booking.daily_capacity.max_jobs",
+        desired: { max_jobs: 2 },
+        reason: "Owner wants a daily job capacity limit.",
+        risk: "medium",
+        dependencies: [],
+        estimatedImpact: {
+          schedulingFlexibility: "medium",
+          complexity: "low",
+          summary: "Daily capacity protects quality and travel."
+        },
+        confidence: Math.max(88, intent.confidence),
+        capabilityId: "booking_rules"
+      });
+    }
+    if (/weather|raining|rain|reschedule exterior/.test(req)) {
+      push({
+        builderOwner: bookingOwner,
+        builderType: "booking",
+        system: "Booking",
+        path: "booking.weather.exterior_delay",
+        desired: { enabled: true, condition: "rain", action: "reschedule_exterior" },
+        reason: "Weather should delay exterior work.",
+        risk: "medium",
+        dependencies: [],
+        estimatedImpact: {
+          trustPct: 8,
+          complexity: "medium",
+          summary: "Rain-aware scheduling protects exterior jobs."
+        },
+        confidence: Math.max(87, intent.confidence),
+        capabilityId: "booking_rules"
+      });
+    }
+    if (/winter|seasonal|snow removal|summer only/.test(req)) {
+      push({
+        builderOwner: bookingOwner,
+        builderType: "booking",
+        system: "Booking",
+        path: "booking.seasonal.rules",
+        desired: { service: "snow_removal", seasons: ["winter"] },
+        reason: "Seasonal availability for weather-dependent services.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: {
+          complexity: "low",
+          summary: "Seasonal rules match how the business actually operates."
+        },
+        confidence: Math.max(85, intent.confidence),
+        capabilityId: "booking_rules"
+      });
+    }
+    if (/fridays? (are|only).*ceramic|ceramic.*(friday|only|after 2)|coating.?only|never.*after 2|after 2\s*pm/.test(
+      req
+    )) {
+      push({
+        builderOwner: bookingOwner,
+        builderType: "booking",
+        system: "Booking",
+        path: "booking.service_rules.ceramic_coating",
+        desired: {
+          service: "ceramic_coating",
+          days: /friday/.test(req) ? ["friday"] : void 0,
+          latest_start: /after 2|after 14|2\s*pm/.test(req) ? "14:00" : null
+        },
+        reason: "Service-specific scheduling for ceramic coatings.",
+        risk: "medium",
+        dependencies: [],
+        estimatedImpact: {
+          schedulingFlexibility: "medium",
+          complexity: "medium",
+          summary: "Ceramic coatings get dedicated schedule rules."
+        },
+        confidence: Math.max(88, intent.confidence),
+        capabilityId: "booking_rules"
+      });
+    }
+    if (/estimate.?only|estimates on tuesday|tuesdays? are estimate/.test(req)) {
+      push({
+        builderOwner: bookingOwner,
+        builderType: "booking",
+        system: "Booking",
+        path: "booking.estimate_days",
+        desired: { days: ["tuesday"], mode: "estimates_only" },
+        reason: "Tuesdays are estimate-only availability.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: {
+          complexity: "low",
+          summary: "Estimate days keep sales work from competing with installs."
+        },
+        confidence: Math.max(90, intent.confidence),
+        capabilityId: "booking_rules"
+      });
+    }
+    if (/employee|skill|interiors|team/.test(req) && /book|schedul|rout|handle/.test(req)) {
+      push({
+        builderOwner: bookingOwner,
+        builderType: "booking",
+        system: "Booking",
+        path: "booking.team.skill_routing",
+        desired: { skill: "interiors", assignee: "employee" },
+        reason: "Skill routing for team scheduling.",
+        risk: "medium",
+        dependencies: [],
+        estimatedImpact: {
+          complexity: "medium",
+          summary: "Jobs route to the teammate with the right skill."
+        },
+        confidence: Math.max(84, intent.confidence),
+        capabilityId: "booking_rules"
+      });
+    }
+    if (/optimiz(e|ing).*schedule|route|driving across town/.test(req)) {
+      push({
+        builderOwner: bookingOwner,
+        builderType: "booking",
+        system: "Booking",
+        path: "booking.optimization.route",
+        desired: { enabled: true, horizon_days: 1 },
+        reason: "Optimize tomorrow's schedule / route.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: {
+          schedulingFlexibility: "high",
+          complexity: "medium",
+          summary: "Route optimization cuts cross-town driving."
+        },
+        confidence: Math.max(86, intent.confidence),
+        capabilityId: "booking_rules"
       });
     }
   }
