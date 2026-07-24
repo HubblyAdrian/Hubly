@@ -28,6 +28,8 @@
     "milestone2": "node scripts/milestone2.mjs",
     "milestone2:verbose": "MILESTONE2_VERBOSE=1 node scripts/milestone2.mjs",
     "milestone25": "node scripts/milestone25.mjs",
+    "milestone3": "node scripts/check-m3-v3-os.mjs",
+    "check:m3-v3-os": "node scripts/check-m3-v3-os.mjs",
     "check:m25-cutover": "node scripts/check-m25-cutover.mjs",
     "check:experience-epic0": "node scripts/check-experience-epic0.mjs",
     "check:m2-epic0": "node scripts/check-m2-epic0.mjs",

@@ -1,26 +1,21 @@
 # Milestone 2 · Epic 5 — Business Reveal
 
 **Status:** PASS  
-**Checked:** 2026-07-24T17:35:25.301Z  
+**Checked:** 2026-07-24T21:12:16.477Z  
 **Gate:** `npm run check:m2-epic5`
 
 > Unveil a new business — not "website finished."  
-> End: *When you're ready, I'll help you launch it.*
+> End: *Continue to My Workspace*
 
 ## Proven
 
 | Requirement | Status |
 |-------------|--------|
-| Cinematic guided reveal | ✅ |
-| No dashboard first | ✅ |
-| Sections introduced intentionally | ✅ |
-| Why? from stored reasoning | ✅ |
-| Business Snapshot | ✅ |
-| Overall Business Confidence | ✅ |
-| Alternative concepts | ✅ |
-| Pride Moment | ✅ |
-| Business Time Capsule | ✅ |
-| Transition to Delayed Account Creation | ✅ |
+| Visual ready cards (v3) | ✅ |
+| No dashboard first on Reveal | ✅ |
+| Continue → Operate Home | ✅ |
+| Why? from stored reasoning (behind build) | ✅ |
+| No report chrome primary | ✅ |
 | Founder acceptance tests | ✅ |
 
 ## Samples
@@ -31,7 +26,7 @@
 
 ## Pride
 
-> Six minutes ago, this business only existed as an idea. Now it has a brand, a website, a booking experience, and a strategy.
+> Website, booking, CRM, packages, and calendar — built while we talked.
 
 ## Time Capsule
 

@@ -651,8 +651,9 @@ export function evaluateHomeHtml(html) {
     adaptiveStage: ok(/STAGE_EMPHASIS|Share your booking page|is-home-stage/.test(h), "Missing adaptive empty states"),
     thirtySecond: ok(/thirtySecond|30.Second|is-home-30s|What needs my attention/.test(h), "Missing 30-Second Rule"),
     launchHandoff: ok(
-      /function isEnterBusinessHome[\s\S]{0,600}isRunBusinessHome|isEnterBusinessHome[\s\S]{0,400}isRunBusinessHome/.test(h),
-      "Launch not handing off to Business Home",
+      // Hubly v3: Create exits into Operate Home (OS chassis). M2 Business Home shell may remain archived.
+      /function isEnterBusinessHome[\s\S]{0,400}openOperateHome|function goDash\(\)[\s\S]{0,240}openOperateHome|isEnterBusinessHome[\s\S]{0,400}isRunBusinessHome/.test(h),
+      "Launch not handing off to Operate / Business Home",
     ),
     continuousAsk: ok(/isHomeAsk|continuous|homeAskThread/.test(h), "Missing continuous Ask Hubly conversation"),
     wordmark: ok(/hubly-wordmark/.test(slice) || /is-home-brand/.test(h), "Missing Hubly brand"),

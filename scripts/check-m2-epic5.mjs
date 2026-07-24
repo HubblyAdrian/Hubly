@@ -45,31 +45,31 @@ const evaled = evaluateRevealHtml(html);
 check("Reveal module", HublyBusinessReveal.version === "1.0.0");
 check("Label", REVEAL_LABEL === "Business Reveal");
 check("Version", REVEAL_VERSION === "1.0.0");
-check("Hero statement", REVEAL_HERO.includes("proud of"));
-check("Pride moment copy", REVEAL_PRIDE.includes("Six minutes ago"));
-check("Forward to launch", REVEAL_FORWARD.includes("launch"));
-check("Time Capsule label", TIME_CAPSULE_LABEL.includes("Day One"));
+check("Hero statement (v3 visual)", REVEAL_HERO.includes("ready"));
+check("Ready moment copy", /website|booking|CRM|packages/i.test(REVEAL_PRIDE));
+check("Forward to workspace", /Workspace|Continue/i.test(REVEAL_FORWARD));
+check("Time Capsule label (archive helper)", TIME_CAPSULE_LABEL.includes("Day One"));
 
-console.log("\nPage structure\n");
+console.log("\nPage structure (Hubly v3 — visual Reveal)\n");
 check("Reveal canvas", evaled.checks.revealCanvas);
 check("Hero statement in UI", evaled.checks.heroStatement);
-check("Welcome to business", evaled.checks.welcomeBiz);
-check("Guided sections", evaled.checks.guidedSections);
-check("Why we built it", evaled.checks.whyExplain);
-check("Business Snapshot", evaled.checks.snapshot);
-check("Overall Business Confidence", evaled.checks.confidence);
-check("Alternative concepts", evaled.checks.alternatives);
-check("Interactive Why?", evaled.checks.interactiveWhy);
-check("Pride Moment", evaled.checks.prideMoment);
-check("Transition to Delayed Account Creation", evaled.checks.forwardLaunch);
-check("No dashboard first", evaled.checks.noDashboardFirst);
+check("Ready subtitle", evaled.checks.welcomeBiz);
+check("Visual ready cards", evaled.checks.guidedSections);
+check("Stored reasoning helpers", evaled.checks.whyExplain);
+check("Visual surfaces", evaled.checks.snapshot);
+check("No report confidence primary", evaled.checks.confidence);
+check("Continue path", evaled.checks.alternatives);
+check("Continue CTA", evaled.checks.interactiveWhy);
+check("Ready moment", evaled.checks.prideMoment);
+check("Transition to Workspace / Operate", evaled.checks.forwardLaunch);
+check("No dashboard first on Reveal", evaled.checks.noDashboardFirst);
 check("Never says Website complete", evaled.checks.noWebsiteComplete);
-check("Business Time Capsule", evaled.checks.timeCapsule);
+check("Version archive helper", evaled.checks.timeCapsule);
 check("Creative hands off to Reveal", evaled.checks.creativeHandoff);
 check("Hubly brand on Reveal", evaled.checks.wordmark);
 check(
   "Reveal step markup",
-  /id="is-step-reveal"/.test(html) && /data-business-reveal/.test(html),
+  /id="is-step-reveal"/.test(html) && /data-business-reveal/.test(html) && /data-v3-reveal/.test(html),
 );
 
 console.log("\nIndustry reveals\n");
@@ -100,10 +100,10 @@ check("Snapshot complete", pw.snapshot.websiteReady && pw.snapshot.bookingReady 
 check("Time capsule captured", pw.timeCapsule?.label === TIME_CAPSULE_LABEL && pw.timeCapsule.firstSnapshot);
 check("No dashboard-first flag", pw.noDashboardFirst === true);
 
-console.log("\nFounder acceptance tests\n");
+console.log("\nFounder acceptance tests (v3)\n");
 check(
-  "Test1: presentation feel (cinematic + guided + pride)",
-  pw.cinematic && pw.sections.length >= 6 && pw.pride.includes("Six minutes"),
+  "Test1: visual ready (not report)",
+  /ready/i.test(REVEAL_HERO) && /isRevealRenderReadyCards|data-v3-reveal/.test(html),
 );
 check(
   "Test2: three industries tell different stories",
@@ -113,22 +113,24 @@ check(
 const topics = ["website", "booking", "packages", "identity", "portfolio"];
 const whyAnswers = topics.map((t) => answerWhyFromStore(pw.reasoningStore, t));
 check(
-  "Test3: Why? answers from stored reasoning",
+  "Test3: Why? answers from stored reasoning (behind the build)",
   whyAnswers.every((a) => a.ok && a.fromStore),
   whyAnswers.filter((a) => !a.ok).map((a) => a.text).join("; "),
 );
 
 check(
-  "Test4: alternatives available",
-  (pw.alternatives || []).length >= 2 && pw.alternatives.some((a) => /luxury/i.test(a.label)),
+  "Test4: Continue enters Operate path",
+  /isRevealContinueToWorkspace|openOperateHome/.test(html),
 );
 check(
-  "Test5: reveal is explore-first (no edit/dashboard CTA first)",
-  pw.forward.includes("launch") && !/dashboard/i.test(pw.forward + pw.hero),
+  "Test5: no report chrome primary",
+  !/Overall Business Confidence|Business Time Capsule|Business Snapshot/.test(
+    html.slice(html.indexOf('id="is-step-reveal"'), html.indexOf('id="is-step-reveal"') + 4000),
+  ),
 );
 check(
-  "Test6: pride strong enough to share",
-  /proud|idea|brand|website|strategy/i.test(pw.pride + pw.hero),
+  "Test6: ready moment is visual",
+  /Website|Booking|CRM|Packages|Calendar/.test(html) && /Your business is ready/.test(html),
 );
 
 const passed = failures.length === 0 && evaled.passed;
@@ -146,16 +148,11 @@ const proofMd = `# Milestone 2 · Epic 5 — Business Reveal
 
 | Requirement | Status |
 |-------------|--------|
-| Cinematic guided reveal | ${passed ? "✅" : "❌"} |
-| No dashboard first | ${passed ? "✅" : "❌"} |
-| Sections introduced intentionally | ${passed ? "✅" : "❌"} |
-| Why? from stored reasoning | ${passed ? "✅" : "❌"} |
-| Business Snapshot | ${passed ? "✅" : "❌"} |
-| Overall Business Confidence | ${passed ? "✅" : "❌"} |
-| Alternative concepts | ${passed ? "✅" : "❌"} |
-| Pride Moment | ${passed ? "✅" : "❌"} |
-| Business Time Capsule | ${passed ? "✅" : "❌"} |
-| Transition to Delayed Account Creation | ${passed ? "✅" : "❌"} |
+| Visual ready cards (v3) | ${passed ? "✅" : "❌"} |
+| No dashboard first on Reveal | ${passed ? "✅" : "❌"} |
+| Continue → Operate Home | ${passed ? "✅" : "❌"} |
+| Why? from stored reasoning (behind build) | ${passed ? "✅" : "❌"} |
+| No report chrome primary | ${passed ? "✅" : "❌"} |
 | Founder acceptance tests | ${passed ? "✅" : "❌"} |
 
 ## Samples

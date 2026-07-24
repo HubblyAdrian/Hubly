@@ -1375,6 +1375,99 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   font-size:16px;font-weight:750;color:#fff;
 }
 .is-reveal-forward .hint{display:block;margin-top:8px;font-weight:550;font-size:12px;color:rgba(255,255,255,.7)}
+/* Hubly v3 — visual Reveal (show, don't tell) */
+#is-step-reveal[data-v3-reveal="1"] .is-reveal-rail,
+#is-step-reveal[data-v3-reveal="1"] .is-reveal-side,
+#is-step-reveal[data-v3-reveal="1"] .is-reveal-ask,
+#is-step-reveal[data-v3-reveal="1"] .is-reveal-pride{display:none!important}
+#is-step-reveal[data-v3-reveal="1"] .is-reveal-grid{display:block}
+#is-step-reveal[data-v3-reveal="1"] .is-reveal-stage{background:transparent;border:0;padding:0;box-shadow:none}
+.is-reveal-ready-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:8px 0 4px
+}
+@media(min-width:820px){
+  .is-reveal-ready-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+}
+.is-reveal-ready-card{
+  border-radius:16px;padding:14px 14px 16px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);min-height:120px;display:flex;flex-direction:column;gap:8px;
+  animation:isThinkCanvasIn .5s ease both
+}
+.is-reveal-ready-card .sk{
+  font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:750;margin:0
+}
+.is-reveal-ready-card .viz{
+  flex:1;border-radius:12px;background:linear-gradient(145deg,#0b1020,#141b2b 55%,#1a1520);
+  border:1px solid rgba(255,255,255,.08);padding:12px;min-height:72px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px
+}
+.is-reveal-ready-card .viz.phone{
+  max-width:140px;margin:0 auto;min-height:160px;border-radius:22px;padding:14px 12px
+}
+.is-reveal-ready-card .viz .bar{height:8px;border-radius:99px;background:rgba(255,255,255,.14);width:72%}
+.is-reveal-ready-card .viz .bar.short{width:48%}
+.is-reveal-ready-card .viz .cta-chip{
+  display:inline-flex;align-self:flex-start;margin-top:4px;padding:5px 10px;border-radius:999px;
+  background:#D9632D;color:#fff;font-size:11px;font-weight:750
+}
+.is-reveal-ready-card .lbl{margin:0;font-size:15px;font-weight:750;color:#fff}
+.is-reveal-continue{
+  margin-top:18px;display:flex;flex-direction:column;gap:8px;align-items:stretch
+}
+.is-reveal-continue .btn{width:100%;min-height:48px;font-size:16px;font-weight:750}
+.is-reveal-continue .hint{font-size:12px;color:rgba(255,255,255,.65);text-align:center;margin:0}
+/* Hubly v3 — Operate Home */
+.dash-ops-hero{margin:0 0 18px}
+.dash-ops-hero .dash-greeting h1{font-size:clamp(22px,3vw,28px)}
+.dash-ops-hero .dash-ready{font-size:14px;color:var(--ink-3);margin:4px 0 0}
+.dash-site-hero{display:grid;gap:14px;margin:0 0 18px}
+@media(min-width:900px){
+  .dash-site-hero{grid-template-columns:minmax(0,1.4fr) minmax(220px,.7fr);align-items:stretch}
+}
+.dash-website-preview{
+  border-radius:18px;overflow:hidden;border:1px solid var(--border);
+  background:linear-gradient(160deg,#141B2B,#1c273d 60%,#243044);min-height:240px;
+  box-shadow:0 10px 28px rgba(20,27,43,.1);position:relative
+}
+.dash-website-preview .site-frame{padding:18px 18px 22px;color:#fff;min-height:240px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
+.dash-website-preview .site-kicker{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55);font-weight:700}
+.dash-website-preview .site-title{font-family:var(--font-d);font-size:clamp(22px,2.6vw,30px);font-weight:800;margin:0;line-height:1.15}
+.dash-website-preview .site-sub{margin:0;font-size:13px;color:rgba(255,255,255,.75);max-width:36ch;line-height:1.4}
+.dash-website-preview .site-cta{
+  margin-top:8px;align-self:flex-start;padding:9px 14px;border-radius:999px;background:#D9632D;color:#fff;font-size:13px;font-weight:750;border:0;cursor:pointer
+}
+.dash-site-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.dash-booking-phone{
+  border-radius:22px;border:1px solid var(--border);background:var(--surface);padding:14px 12px 16px;
+  display:flex;flex-direction:column;gap:10px;min-height:240px
+}
+.dash-booking-phone .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:750}
+.dash-booking-phone .phone-viz{
+  flex:1;border-radius:18px;background:linear-gradient(180deg,#f8fafc,#eef2ff);border:1px solid var(--border);
+  padding:14px;display:flex;flex-direction:column;gap:8px;justify-content:flex-end
+}
+.dash-booking-phone .phone-viz .line{height:8px;border-radius:99px;background:rgba(20,27,43,.12)}
+.dash-booking-phone .phone-viz .line.w2{width:70%}
+.dash-booking-phone .phone-viz .line.w3{width:45%}
+.dash-booking-phone .phone-viz .book{
+  margin-top:4px;padding:10px;border-radius:12px;background:#141B2B;color:#fff;text-align:center;font-size:13px;font-weight:750
+}
+.dash-focus-row{display:grid;gap:10px;margin:0 0 16px}
+@media(min-width:720px){.dash-focus-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.dash-focus-card{
+  border:1px solid var(--border);border-radius:14px;padding:14px;background:var(--surface);cursor:pointer
+}
+.dash-focus-card:hover{border-color:rgba(217,99,45,.45)}
+.dash-focus-card .t{font-size:14px;font-weight:750;margin:0 0 4px}
+.dash-focus-card .s{font-size:12px;color:var(--ink-3);margin:0;line-height:1.35}
+.dash-one-rec{
+  margin:0 0 16px;padding:14px 16px;border-radius:14px;border:1px solid rgba(217,99,45,.35);
+  background:rgba(217,99,45,.08);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between
+}
+.dash-one-rec .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#D9632D;font-weight:750;margin:0 0 4px}
+.dash-one-rec .t{font-size:15px;font-weight:750;margin:0;max-width:48ch;line-height:1.35}
+.dash-one-rec .actions{display:flex;gap:8px;flex-wrap:wrap}
+.dash-ask-dock{margin:0 0 18px;padding:14px;border-radius:14px;border:1px solid var(--border);background:var(--surface)}
+.dash-ask-dock .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:750;margin:0 0 8px}
 /* Milestone 2 · Epic 6 — Delayed Account Creation */
 .is-wrap.is-save-wide{max-width:min(640px,94vw)}
 .is-save-canvas,.is-founder-canvas{color:#fff;animation:isThinkCanvasIn .5s ease both}
@@ -8844,44 +8937,21 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <div class="is-step" data-is="reveal" id="is-step-reveal" data-business-reveal="1" data-reveal-shell="1">
+      <div class="is-step" data-is="reveal" id="is-step-reveal" data-business-reveal="1" data-reveal-shell="1" data-v3-reveal="1">
         <div class="is-reveal-canvas" id="is-reveal-canvas">
           <div class="is-reveal-brand">
             <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
           </div>
-          <h1 class="is-reveal-hero" id="is-reveal-hero">I think we built something you're going to be proud of.</h1>
-          <p class="is-reveal-welcome" id="is-reveal-welcome">Welcome to your business.</p>
-          <div class="is-reveal-rail" id="is-reveal-rail" aria-label="Reveal sections"></div>
+          <h1 class="is-reveal-hero" id="is-reveal-hero">Your business is ready.</h1>
+          <p class="is-reveal-welcome" id="is-reveal-welcome">Website, booking, CRM, packages, and calendar — built live while we talked.</p>
+          <div class="is-reveal-rail" id="is-reveal-rail" aria-hidden="true" hidden></div>
           <div class="is-reveal-grid">
             <div>
               <div class="is-reveal-stage" id="is-reveal-stage" aria-live="polite"></div>
-              <div class="is-reveal-ask" id="is-reveal-ask">
-                <button type="button" onclick="isRevealAskWhy()">Why did you do this?</button>
-                <button type="button" onclick="isRevealShowAlternative('luxury')">Show me the luxury version</button>
-                <button type="button" onclick="isRevealShowAlternative('friendly')">Show me the version you almost picked</button>
-              </div>
+              <div class="is-reveal-ask" id="is-reveal-ask" hidden></div>
               <div class="is-reveal-pride" id="is-reveal-pride" hidden></div>
               <div class="is-reveal-forward" id="is-reveal-forward" hidden></div>
             </div>
-            <aside class="is-reveal-side">
-              <div class="is-reveal-snapshot" id="is-reveal-snapshot">
-                <div class="sk">Business Snapshot</div>
-                <div id="is-reveal-snapshot-body"></div>
-              </div>
-              <div class="is-reveal-confidence" id="is-reveal-confidence">
-                <div class="sk">Overall Business Confidence</div>
-                <div class="big" id="is-reveal-confidence-val">—</div>
-                <p class="refine" id="is-reveal-refine"></p>
-              </div>
-              <div class="is-reveal-alts" id="is-reveal-alts">
-                <div class="sk">Alternatives explored</div>
-                <div id="is-reveal-alts-body"></div>
-              </div>
-              <div class="is-reveal-capsule" id="is-reveal-capsule">
-                <div class="sk">The Business Time Capsule</div>
-                <div id="is-reveal-capsule-body"></div>
-              </div>
-            </aside>
           </div>
         </div>
       </div>
@@ -9600,14 +9670,14 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <!-- DASHBOARD -->
-      <div id="v-dashboard" class="body">
-        <div class="dash-hero">
+      <!-- DASHBOARD — Hubly v3 Operate Home -->
+      <div id="v-dashboard" class="body" data-v3-operate-home="1">
+        <div class="dash-hero dash-ops-hero">
           <div class="dash-greeting">
-            <h1 id="dash-greet-title"><span id="dash-greet-line1">Good morning</span><span id="dash-greet-line2">Your Business 👋</span></h1>
+            <h1 id="dash-greet-title"><span id="dash-greet-line1">Good morning</span><span id="dash-greet-line2">Your Business</span></h1>
+            <p class="dash-ready" id="dash-ready-line">Your business is ready.</p>
             <div class="dash-greet-time" id="dash-greet-time"></div>
-            <p data-i18n="dashSubtitle">Here's what I'd work on today.</p>
-            <button type="button" class="dash-site-link" id="dash-site-link" onclick="copyDashSiteLink()" title="Copy your Hubly website link">
+            <button type="button" class="dash-site-link" id="dash-site-link" onclick="copyDashSiteLink()" title="Copy your Hubly website link" hidden>
               <span class="dash-site-link-lbl">Website</span>
               <span class="dash-site-link-url" id="dash-site-url">yourname.myhubly.app</span>
               <span class="dash-site-link-copy" id="dash-site-copy">Copy</span>
@@ -9618,7 +9688,76 @@ document.addEventListener('DOMContentLoaded', function() {
             <button type="button" class="btn btn-out btn-sm" onclick="goDashToday()" data-i18n="todayBtn">Today</button>
           </div>
         </div>
-        <div class="hubly-daily" id="hubly-daily" aria-live="polite">
+
+        <div class="dash-site-hero" id="dash-site-hero">
+          <div>
+            <div class="dash-website-preview" id="dash-website-preview" aria-label="Website preview">
+              <div class="site-frame">
+                <div class="site-kicker">Your website</div>
+                <h2 class="site-title" id="dash-site-preview-title">Your Business</h2>
+                <p class="site-sub" id="dash-site-preview-sub">Live preview of what customers see first.</p>
+                <button type="button" class="site-cta" onclick="previewProfile()">Open Website</button>
+              </div>
+            </div>
+            <div class="dash-site-actions">
+              <button type="button" class="btn btn-brand btn-sm" onclick="previewProfile()">Open Website</button>
+              <button type="button" class="btn btn-out btn-sm" onclick="copyDashSiteLink()">Share Website</button>
+              <button type="button" class="btn btn-out btn-sm" onclick="previewProfile()">Preview Booking</button>
+            </div>
+          </div>
+          <div class="dash-booking-phone" aria-label="Booking preview">
+            <div class="sk">Booking</div>
+            <div class="phone-viz">
+              <div class="line"></div>
+              <div class="line w2"></div>
+              <div class="line w3"></div>
+              <div class="book">Book now</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-focus-row" id="dash-focus-row">
+          <div class="dash-focus-card" onclick="typeof goStripeConnect==='function'?goStripeConnect():askAI('Connect Stripe')">
+            <p class="t">Connect Stripe</p>
+            <p class="s">Get paid when jobs book.</p>
+          </div>
+          <div class="dash-focus-card" onclick="typeof goCustomers==='function'?document.querySelector('[data-v=customers]')?.click():askAI('Import customers')">
+            <p class="t">Import Customers</p>
+            <p class="s">Bring your list into CRM.</p>
+          </div>
+          <div class="dash-focus-card" onclick="copyDashSiteLink()">
+            <p class="t">Share Booking Link</p>
+            <p class="s">Start getting customers today.</p>
+          </div>
+        </div>
+
+        <div class="dash-one-rec" id="dash-one-rec" aria-live="polite">
+          <div>
+            <p class="sk">Today's Recommendation</p>
+            <p class="t" id="dash-one-rec-t">Share your booking link with three past customers.</p>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-brand btn-sm" id="dash-one-rec-apply" onclick="applyDashOneRec()">Apply</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="dash-one-rec-dismiss" onclick="dismissDashOneRec()">Dismiss</button>
+          </div>
+        </div>
+
+        <div class="dash-ask-dock">
+          <div class="sk">Ask Hubly</div>
+          <div class="ai-chip-row" id="ai-suggestions">
+            <button type="button" class="ai-chip" onclick="askAI(this.textContent)">Make my website feel more premium</button>
+            <button type="button" class="ai-chip" onclick="askAI(this.textContent)">Who should I follow up with?</button>
+            <button type="button" class="ai-chip" onclick="askAI(this.textContent)">Optimize tomorrow</button>
+          </div>
+          <div class="ai-input-row">
+            <input type="text" id="ai-question-input" data-i18n-placeholder="aiQuestionPh" placeholder="How would you like to improve your business…" onkeydown="if(event.key==='Enter')askAI()">
+            <button type="button" class="btn btn-ink" id="ai-ask-btn" data-i18n="aiAskBtn" onclick="askAI()">Ask</button>
+          </div>
+          <div id="ai-answer-area"></div>
+        </div>
+
+        <!-- Legacy Daily hooks kept for script compatibility (hidden) -->
+        <div class="hubly-daily" id="hubly-daily" aria-hidden="true" hidden>
           <div class="hubly-daily-top">
             <div>
               <div class="hubly-daily-kicker">Hubly Daily</div>
@@ -9638,20 +9777,6 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="hubly-daily-handle-t" id="hubly-daily-handle-t"></div>
               <p class="hubly-daily-handle-d" id="hubly-daily-handle-d"></p>
             </div>
-          </div>
-          <div class="hubly-daily-ask">
-            <div class="hubly-daily-ask-lbl">Ask Hubly</div>
-            <div class="ai-chip-row" id="ai-suggestions">
-              <button type="button" class="ai-chip" data-i18n="aiSuggestion1" onclick="askAI(this.textContent)">How is my week looking?</button>
-              <button type="button" class="ai-chip" data-i18n="aiSuggestion2" onclick="askAI(this.textContent)">Customers to re-engage</button>
-              <button type="button" class="ai-chip" data-i18n="aiSuggestion3" onclick="askAI(this.textContent)">What should I focus on today?</button>
-              <button type="button" class="ai-chip" data-i18n="aiSuggestionWeather" onclick="askAI(this.textContent)">Any weather risk this week?</button>
-            </div>
-            <div class="ai-input-row">
-              <input type="text" id="ai-question-input" data-i18n-placeholder="aiQuestionPh" placeholder="Ask about your business…" onkeydown="if(event.key==='Enter')askAI()">
-              <button type="button" class="btn btn-ink" id="ai-ask-btn" data-i18n="aiAskBtn" onclick="askAI()">Ask</button>
-            </div>
-            <div id="ai-answer-area"></div>
           </div>
         </div>
         <div class="dash-kpi-grid">
@@ -11985,14 +12110,46 @@ window.addEventListener('popstate',()=>{
   }
   showP(dest,{skipRoute:true});
 });
-/** Milestone 2.5 Cutover — the new product is the only product. */
+/**
+ * Hubly v3 — Operate Home is the existing OS chassis (#p-app dashboard).
+ * M2 Business Home / Daily are Create-adjacent archives, not login home.
+ */
 function preferM2ExperienceHome(){
-  // Production Cutover: Business Home is always the owner home.
-  // Advanced Studio is an intentional escape hatch — never the default.
+  return false;
+}
+
+/** Mode 2 — Operate: enter the business OS (dashboard = Home). */
+function openOperateHome(opts){
+  opts=opts||{};
+  try{S._hublyMode='operate';}catch(e){}
+  S._forceAdvancedStudio=false;
+  S._advancedStudio=false;
+  clearOnboardOverlays();
+  setObPreviewMode('phone');
+  setOwnerPreview(false);
+  // Leave Instant Site Create shell
   try{
-    if(S._forceAdvancedStudio)return false;
+    const shell=document.getElementById('is-shell');
+    if(shell)shell.style.display='none';
+    document.getElementById('p-onboard')?.classList.remove('is-active');
   }catch(e){}
-  return true;
+  showP('p-app',{replaceRoute:opts.replaceRoute!==false});
+  try{
+    history.replaceState({page:'p-app'},'', '/app');
+    document.title='Hubly · Home';
+  }catch(e){}
+  const dashNav=document.querySelector('#p-app [data-v="dashboard"]')||document.querySelector('[data-v="dashboard"]');
+  if(dashNav)switchV(dashNav);
+  setTimeout(()=>{
+    try{
+      updateDashGreeting?.();
+      renderOperateHome?.();
+      renderDashToday?.();
+      updateKPIs?.();
+      renderDashNewBookings?.();
+      applyTranslations?.();
+    }catch(e){}
+  },60);
 }
 
 function markM2ExperienceHome(){
@@ -12016,29 +12173,9 @@ function markM2ExperienceHome(){
   }catch(e){}
 }
 
-/** Open Instant Site Business Home under /app (production home). */
+/** @deprecated Hubly v3 — Business Home archived; Operate Home is the OS dashboard. */
 function openProductionBusinessHome(opts){
-  clearOnboardOverlays();
-  setObPreviewMode('phone');
-  setOwnerPreview(false);
-  S._instantSite=true;
-  S._forceAdvancedStudio=false;
-  markM2ExperienceHome();
-  const onboard=document.getElementById('p-onboard');
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('is-active'));
-  onboard?.classList.add('is-active');
-  onboard?.classList.remove('cd-active','cd-building');
-  const cd=document.getElementById('cd-shell');
-  if(cd)cd.style.display='none';
-  const shell=document.getElementById('is-shell');
-  if(shell)shell.style.display='flex';
-  try{
-    history[opts?.replaceRoute===false?'pushState':'replaceState']({page:'p-app'},'', '/app');
-    document.title='Hubly · Home';
-  }catch(e){}
-  if(typeof isEnterBusinessHome==='function'){
-    isEnterBusinessHome({skipDaily:!!opts?.skipDaily,fromDaily:!!opts?.fromDaily,...opts});
-  }
+  openOperateHome(opts);
 }
 
 /**
@@ -12076,14 +12213,14 @@ function openAdvancedStudio(opts){
   },100);
 }
 
-/** @deprecated Cutover — old dashboard is not a product surface. Use openAdvancedStudio. */
+/** @deprecated — use openOperateHome (v3) or openAdvancedStudio for pixel editor. */
 function goClassicDashboard(){
-  openAdvancedStudio({openPixelEditor:true,pixelOnly:true});
+  openOperateHome({pixelOnly:true});
 }
 
 function goDash(){
-  // Milestone 2.5 Cutover — returning owners always land in Business Home.
-  openProductionBusinessHome({skipDaily:false});
+  // Hubly v3 — login / Home always enters Operate mode (OS chassis).
+  openOperateHome();
 }
 function setOwnerPreview(on){
   S.ownerPreview=!!on;
@@ -17615,6 +17752,42 @@ function isRevealShowTimeCapsule(){
     ${vision?`<ul style="margin:10px 0;padding-left:18px;font-size:13px">${vision}</ul>`:''}
     <p style="font-size:12px;opacity:.75;margin-top:12px">Years from now, you can always come back to Day One.</p>`;
 }
+function isRevealRenderReadyCards(creativeExperience){
+  const stage=document.getElementById('is-reveal-stage');
+  if(!stage)return;
+  const live=creativeExperience?.live||{};
+  const biz=S.biz||live.heroTitle||'Your business';
+  const theme=live.theme==='friendly'?'is-friendly':'is-premium';
+  const cards=[
+    {id:'website',label:'Website',viz:`<div class="viz ${theme}"><div class="bar"></div><div class="bar short"></div><span class="cta-chip">${escPeHtml(live.cta||'Book now')}</span></div>`},
+    {id:'booking',label:'Booking',viz:`<div class="viz phone"><div class="bar"></div><div class="bar short"></div><span class="cta-chip">Book</span></div>`},
+    {id:'crm',label:'CRM',viz:`<div class="viz"><div class="bar"></div><div class="bar short"></div><div class="bar" style="width:58%"></div></div>`},
+    {id:'packages',label:'Packages',viz:`<div class="viz"><div class="bar"></div><div class="bar short"></div><span class="cta-chip">3 packages</span></div>`},
+    {id:'calendar',label:'Calendar',viz:`<div class="viz"><div class="bar short"></div><div class="bar"></div><div class="bar short"></div></div>`},
+  ];
+  stage.innerHTML=`<div class="is-reveal-ready-grid" data-v3-reveal-cards="1">
+    ${cards.map((c,i)=>`<div class="is-reveal-ready-card" style="animation-delay:${i*60}ms">${c.viz}<p class="lbl">${escPeHtml(c.label)}</p></div>`).join('')}
+  </div>
+  <div class="is-reveal-continue">
+    <button type="button" class="btn btn-brand" onclick="isRevealContinueToWorkspace()">Continue to My Workspace</button>
+    <p class="hint">Enter Hubly — your operating system is ready.</p>
+  </div>`;
+}
+
+/** Reveal → save if needed → Operate Home (v3). */
+function isRevealContinueToWorkspace(){
+  try{S._hublyMode='create-exit';}catch(e){}
+  S._is=S._is||{};
+  S._is.readyForAccount=true;
+  try{persistInstantSiteDraft();}catch(e){}
+  // Already claimed / signed in → Operate immediately
+  if(S._accountClaimed||S._is.businessSaved||(typeof currentUser!=='undefined'&&currentUser)||(typeof currentBusiness!=='undefined'&&currentBusiness?.id)){
+    openOperateHome();
+    return;
+  }
+  isStartDelayedAccountCreation();
+}
+
 async function isRunBusinessRevealExperience(seed, creativeExperience){
   document.querySelector('#is-shell .is-wrap')?.classList.add('is-reveal-wide');
   isShowStep('reveal');
@@ -17634,41 +17807,20 @@ async function isRunBusinessRevealExperience(seed, creativeExperience){
   const reveal=HUBLY_REVEAL.orchestrateBusinessReveal(ctx);
   S._is.reveal=reveal;
   S._is.timeCapsule=reveal.timeCapsule;
+  S._is.creativeExperience=creativeExperience||S._is.creativeExperience;
 
   const hero=document.getElementById('is-reveal-hero');
   const welcome=document.getElementById('is-reveal-welcome');
-  const pride=document.getElementById('is-reveal-pride');
   const forward=document.getElementById('is-reveal-forward');
-  if(hero)hero.textContent=reveal.hero;
-  if(welcome)welcome.textContent=reveal.welcome;
-  if(pride){pride.hidden=true;pride.textContent='';}
+  if(hero)hero.textContent='Your business is ready.';
+  if(welcome)welcome.textContent='Website, booking, CRM, packages, and calendar — built while we talked.';
   if(forward){forward.hidden=true;forward.innerHTML='';}
 
-  isRevealRenderSnapshot(reveal);
-  isRevealRenderConfidence(reveal);
-  isRevealRenderAlts(reveal);
-  isRevealRenderCapsule(reveal);
+  // Hubly v3 — visual ready cards only (no report chrome)
+  isRevealRenderReadyCards(creativeExperience||S._is.creativeExperience);
   await isRevealFrame();
 
-  // Guided reveal — one section at a time
-  for(const sec of reveal.sections){
-    isRevealShowSection(reveal,sec.id);
-    await isRevealFrame();
-  }
-
-  if(pride){
-    pride.hidden=false;
-    pride.textContent=reveal.pride;
-  }
-  await isRevealFrame();
-
-  if(forward){
-    forward.hidden=false;
-    forward.innerHTML=`${escPeHtml(reveal.forward)}
-      <span class="hint">No dashboard yet — next we'll save everything we've built together.</span>
-      <button type="button" class="btn btn-brand f1" style="margin-top:14px;width:100%" onclick="isStartDelayedAccountCreation()">Let's save your business</button>`;
-  }
-  S._is.readyForAccount=true; // Epic 6 — Delayed Account Creation
+  S._is.readyForAccount=true;
   try{persistInstantSiteDraft();}catch(e){}
   return reveal;
 }
@@ -17850,8 +18002,9 @@ async function isDelayedAccountCompleteSave(opts){
   }
   if(welcome)welcome.textContent=flow.personalWelcome+' '+flow.ownershipLine;
 
-  await new Promise(r=>setTimeout(r,700));
-  isShowFounderMoment();
+  // Hubly v3 — skip Launch / certificates / Daily. Create ends → Operate.
+  await new Promise(r=>setTimeout(r,450));
+  openOperateHome();
 }
 
 function isShowFounderMoment(){
@@ -18194,16 +18347,8 @@ function isLaunchChooseNext(id){
 }
 
 function isEnterBusinessHome(opts){
-  S._is=S._is||{};
-  S._is.readyForBusinessHome=true;
-  try{markM2ExperienceHome();}catch(e){}
-  try{persistInstantSiteDraft();}catch(e){}
-  // Epic 10 — every morning / login begins with a fresh Daily Brief
-  if(!opts?.skipDaily && !opts?.fromDaily){
-    isRunHublyDaily(opts);
-    return;
-  }
-  isRunBusinessHome(opts);
+  // Hubly v3 — Create ends; Operate begins on the OS dashboard.
+  openOperateHome(opts);
 }
 
 /* ── Milestone 2 · Epic 8 — Business Home ── */
@@ -41865,19 +42010,24 @@ function updateDashGreeting(){
   const line1=document.getElementById('dash-greet-line1');
   const line2=document.getElementById('dash-greet-line2');
   const timeEl=document.getElementById('dash-greet-time');
+  const ready=document.getElementById('dash-ready-line');
   const lbl=document.getElementById('today-lbl');
   const biz=dashGreetingBiz();
   const shortBiz=shortBizForGreeting(biz);
-  if(line1)line1.textContent=dashGreetingWord();
+  const owner=(S._is&&S._is.ownerName)||(typeof currentUser!=='undefined'&&(currentUser?.user_metadata?.full_name||currentUser?.email?.split?.('@')?.[0]))||'';
+  const first=String(owner||'').trim().split(/\s+/)[0];
+  if(line1)line1.textContent=first?`${dashGreetingWord()} ${first}.`:dashGreetingWord();
   if(line2){
-    line2.textContent=shortBiz?`${shortBiz} 👋`:'👋';
+    line2.textContent=shortBiz||biz||'Your business';
     line2.title=biz||'';
   }
+  if(ready)ready.textContent='Your business is ready.';
   if(timeEl){
     const tz=businessTimezone();
     timeEl.textContent=tz?`${businessTimeNowLabel()} · ${tz}`:businessTimeNowLabel();
   }
   if(lbl)lbl.textContent=businessTodayLabel();
+  try{renderOperateHome();}catch(e){}
   try{
     if(!window._hublyDailyTimer){
       window._hublyDailyTimer=setTimeout(()=>{
@@ -41886,6 +42036,46 @@ function updateDashGreeting(){
       },80);
     }
   }catch(e){console.warn('renderHublyDaily',e);}
+}
+
+/** Hubly v3 Operate Home — website hero + one recommendation. */
+function renderOperateHome(){
+  const biz=dashGreetingBiz()||S.biz||'Your Business';
+  const title=document.getElementById('dash-site-preview-title');
+  const sub=document.getElementById('dash-site-preview-sub');
+  if(title)title.textContent=biz;
+  if(sub){
+    const area=S.city||'';
+    sub.textContent=area?`Trusted locally in ${area}.`:'What customers see when they find you.';
+  }
+  const recEl=document.getElementById('dash-one-rec');
+  const recT=document.getElementById('dash-one-rec-t');
+  if(recEl&&recEl.dataset.dismissed==='1'){recEl.hidden=true;return;}
+  if(recT&&!recEl?.dataset.locked){
+    const industry=String(S.industry||S._is?.discovery?.facts?.industryId?.value||'').toLowerCase();
+    if(/airbnb|cleaning|turnover/.test(industry)){
+      recT.textContent='Airbnb businesses convert better with recurring packages.';
+    }else if(!S.website){
+      recT.textContent='Share your booking link — get your first customer today.';
+    }else{
+      recT.textContent='Share your booking link with three past customers.';
+    }
+  }
+  try{
+    const urlEl=document.getElementById('dash-site-url');
+    if(urlEl&&typeof publicSiteUrl==='function')urlEl.textContent=publicSiteUrl()||urlEl.textContent;
+  }catch(e){}
+}
+function applyDashOneRec(){
+  const t=document.getElementById('dash-one-rec-t')?.textContent||'';
+  const rec=document.getElementById('dash-one-rec');
+  if(rec)rec.dataset.locked='1';
+  if(/package/i.test(t))askAI('Add recurring packages that convert for my business');
+  else copyDashSiteLink();
+}
+function dismissDashOneRec(){
+  const rec=document.getElementById('dash-one-rec');
+  if(rec){rec.dataset.dismissed='1';rec.hidden=true;}
 }
 
 /** Phase 8 — Hubly Daily: advice-first homepage surface */
