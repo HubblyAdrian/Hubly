@@ -1,10 +1,10 @@
 {
   "milestone": 1,
-  "passed": 17,
+  "passed": 18,
   "total": 18,
-  "percent": 94,
-  "ready": false,
-  "checkedAt": "2026-07-24T01:17:42.351Z",
+  "percent": 100,
+  "ready": true,
+  "checkedAt": "2026-07-24T01:24:44.764Z",
   "sections": [
     {
       "n": 1,
@@ -110,9 +110,9 @@
     },
     {
       "n": 18,
-      "title": "Founder Demo",
-      "status": "fail",
-      "script": "scripts/check-section18-founder-demo.mjs"
+      "title": "Founder Acceptance & Brain Certification",
+      "status": "pass",
+      "script": "scripts/check-section18-founder-certification.mjs"
     }
   ]
 }
