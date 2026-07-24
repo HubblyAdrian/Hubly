@@ -2,7 +2,7 @@
   "section": 2,
   "title": "Experience Director",
   "passed": true,
-  "checkedAt": "2026-07-24T00:49:57.490Z",
+  "checkedAt": "2026-07-24T17:35:16.940Z",
   "version": "1.2.0",
   "implementationSummary": {
     "module": "supabase/functions/_shared/hubly_brain_experience_director.ts",
@@ -83,7 +83,11 @@
           "reviewed",
           "identity_evaluated_constitution",
           "limited_questions_to_3",
-          "modified_response"
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_explain",
+          "injected_visible_moment"
         ],
         "interception": {
           "before": {
@@ -94,7 +98,7 @@
             "sectionCount": 0
           },
           "after": {
-            "response": "I researched businesses like yours.",
+            "response": "I researched businesses like yours. Here's why I'm recommending this: it should move the business forward without adding busywork.",
             "questionCount": 3,
             "settingCount": 0,
             "widgetCount": 0,
@@ -123,7 +127,10 @@
           "identity_evaluated_constitution",
           "converted_25_settings_to_conversation",
           "celebrate",
-          "modified_response"
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_celebrate"
         ],
         "interception": {
           "before": {
@@ -162,7 +169,11 @@
           "vetoed_complexity",
           "identity_evaluated_constitution",
           "show_1_of_18_dashboard_widgets",
-          "modified_response"
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_explain",
+          "injected_visible_moment"
         ],
         "pass": true
       },
@@ -179,7 +190,11 @@
             "enforced_hubly_personality",
             "identity_evaluated_constitution",
             "rewrote_technical_language",
-            "modified_response"
+            "modified_response",
+            "experience_layer",
+            "identity_evaluated_constitution",
+            "personality_explain",
+            "injected_visible_moment"
           ],
           "personality": {
             "voice": "one_business_partner",
@@ -249,7 +264,7 @@
       {
         "id": "G_review_customer_facing_text",
         "before": "As an AI, here is your LLM API response.",
-        "after": ", here is your Hubly connection response.",
+        "after": "Hey — what are we building today? , here is your Hubly connection response.",
         "interception": {
           "before": {
             "response": "As an AI, here is your LLM API response.",
@@ -259,7 +274,7 @@
             "sectionCount": 0
           },
           "after": {
-            "response": ", here is your Hubly connection response.",
+            "response": "Hey — what are we building today? , here is your Hubly connection response.",
             "questionCount": 0,
             "settingCount": 0,
             "widgetCount": 0,
@@ -277,8 +292,8 @@
     ],
     "interceptionLogs": [
       {
-        "id": "ed_mry83svj_5al8b",
-        "at": "2026-07-24T00:49:57.487Z",
+        "id": "ed_mrz80nnt_28laj",
+        "at": "2026-07-24T17:35:16.937Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -289,7 +304,7 @@
           "sectionCount": 0
         },
         "after": {
-          "response": "I researched businesses like yours.",
+          "response": "I researched businesses like yours. Here's why I'm recommending this: it should move the business forward without adding busywork.",
           "questionCount": 3,
           "settingCount": 0,
           "widgetCount": 0,
@@ -299,12 +314,16 @@
           "reviewed",
           "identity_evaluated_constitution",
           "limited_questions_to_3",
-          "modified_response"
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_explain",
+          "injected_visible_moment"
         ]
       },
       {
-        "id": "ed_mry83svl_asc0d",
-        "at": "2026-07-24T00:49:57.489Z",
+        "id": "ed_mrz80nnu_sgd1e",
+        "at": "2026-07-24T17:35:16.938Z",
         "modified": true,
         "vetoed": true,
         "before": {
@@ -327,12 +346,15 @@
           "identity_evaluated_constitution",
           "converted_25_settings_to_conversation",
           "celebrate",
-          "modified_response"
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_celebrate"
         ]
       },
       {
-        "id": "ed_mry83svl_5jl1e",
-        "at": "2026-07-24T00:49:57.489Z",
+        "id": "ed_mrz80nnv_sf2i1",
+        "at": "2026-07-24T17:35:16.939Z",
         "modified": true,
         "vetoed": true,
         "before": {
@@ -343,7 +365,7 @@
           "sectionCount": 0
         },
         "after": {
-          "response": "Here is your operations overview.",
+          "response": "Here is your operations overview. Here's why I'm recommending this: it should move the business forward without adding busywork.",
           "questionCount": 0,
           "settingCount": 0,
           "widgetCount": 1,
@@ -354,12 +376,16 @@
           "vetoed_complexity",
           "identity_evaluated_constitution",
           "show_1_of_18_dashboard_widgets",
-          "modified_response"
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_explain",
+          "injected_visible_moment"
         ]
       },
       {
-        "id": "ed_mry83svl_f8kl2",
-        "at": "2026-07-24T00:49:57.489Z",
+        "id": "ed_mrz80nnv_tjj91",
+        "at": "2026-07-24T17:35:16.939Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -381,12 +407,16 @@
           "enforced_hubly_personality",
           "identity_evaluated_constitution",
           "rewrote_technical_language",
-          "modified_response"
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_explain",
+          "injected_visible_moment"
         ]
       },
       {
-        "id": "ed_mry83svm_squhy",
-        "at": "2026-07-24T00:49:57.490Z",
+        "id": "ed_mrz80nnv_ogkzu",
+        "at": "2026-07-24T17:35:16.939Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -407,7 +437,10 @@
           "reviewed",
           "identity_evaluated_constitution",
           "celebrate",
-          "modified_response"
+          "modified_response",
+          "experience_layer",
+          "identity_evaluated_constitution",
+          "personality_celebrate"
         ]
       }
     ],

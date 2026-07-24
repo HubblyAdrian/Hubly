@@ -4,7 +4,7 @@
   "name": "Workspace Intelligence Builder",
   "title": "Workspace Intelligence Builder",
   "passed": true,
-  "checkedAt": "2026-07-24T04:33:33.180Z",
+  "checkedAt": "2026-07-24T17:35:21.987Z",
   "proofs": {
     "workspaceIntelligenceExists": true,
     "customerFacingName": "Workspace Intelligence Builder",
@@ -113,7 +113,7 @@
     },
     "recommendationsSample": [
       {
-        "id": "wrec_mryg3chj_auccbz",
+        "id": "wrec_mrz80rjy_v9bl3v",
         "title": "Pin Quick Quote",
         "detail": "I think Quick Quote should be on your sidebar.",
         "why": "You create quotes often — pinning saves taps every day.",
@@ -122,7 +122,7 @@
         "requiresOwnerApproval": true
       },
       {
-        "id": "wrec_mryg3chj_pyerd5",
+        "id": "wrec_mrz80rjy_lqz0ys",
         "title": "Make Calendar your homepage",
         "detail": "You're constantly opening Calendar first. Would you like it as your homepage?",
         "why": "I noticed you open Calendar first every morning. Moving it higher would save you time.",
@@ -131,7 +131,7 @@
         "requiresOwnerApproval": true
       },
       {
-        "id": "wrec_mryg3chj_d6sud0",
+        "id": "wrec_mrz80rjy_5fok0j",
         "title": "Hide Inventory",
         "detail": "You haven't opened Inventory in 4 months. Should I hide it?",
         "why": "Unused tools clutter navigation — hiding keeps focus on what you use.",

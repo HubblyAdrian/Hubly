@@ -91,7 +91,9 @@ assert(hublySrc.includes('function getSlugFromHost'), 'client still resolves slu
 assert(hublySrc.includes('function publicProfileHref'), 'copy link still builds subdomain URL');
 assert(hublySrc.includes("return 'https://'+publicProfileHost(slug)"), 'copied link is https subdomain');
 assert(hublySrc.includes('function openProductionBusinessHome'), 'M2.5 production Business Home wiring');
+assert(hublySrc.includes('function openAdvancedStudio'), 'M2.5 Advanced Studio escape hatch');
 assert(hublySrc.includes('function preferM2ExperienceHome'), 'M2.5 prefers Business Home over classic Dashboard');
+assert(!hublySrc.includes('Classic workspace'), 'Cutover: no Classic workspace escape on Home');
 
 if (failed) process.exit(1);
 console.log('OK booking link subdomain + M2.5 production routing checks passed');

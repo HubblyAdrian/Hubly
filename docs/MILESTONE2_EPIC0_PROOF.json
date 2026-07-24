@@ -4,7 +4,7 @@
   "name": "Hubly Experience Layer",
   "title": "Hubly Experience Layer",
   "passed": true,
-  "checkedAt": "2026-07-24T16:59:56.192Z",
+  "checkedAt": "2026-07-24T17:35:25.107Z",
   "proofs": {
     "experienceLanguageSystem": true,
     "greetingSystem": true,
@@ -81,8 +81,8 @@
       },
       {
         "owner": "Make my homepage more premium",
-        "hubly": "I want to research a bit more before I commit — the evidence isn't strong enough yet. One thing before I go further — what matters more to you here?",
-        "layer": "question"
+        "hubly": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "layer": "explanation"
       },
       {
         "owner": "I don't like it — undo that",

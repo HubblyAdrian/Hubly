@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 3 — Hubly Thinking Experience
 
 **Status:** PASS  
-**Checked:** 2026-07-24T16:59:56.323Z  
+**Checked:** 2026-07-24T17:35:25.231Z  
 **Gate:** `npm run check:m2-epic3`
 
 > Replace every loading state with visible intelligence.  

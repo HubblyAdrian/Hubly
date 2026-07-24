@@ -78,8 +78,8 @@ assert.equal(isHublyOwnedJob(S_jobs[1]), false);
 assert.equal(isHublyOwnedJob(S_jobs[2]), false);
 assert.equal(isHublyOwnedJob(S_jobs[3]), false);
 
-// Source wiring — both shipped HTML surfaces use reportableJobs
-for (const rel of ['hubly.html', 'public/hubly.html']) {
+// Source wiring — production SPA surface
+for (const rel of ['public/hubly.html']) {
   const src = fs.readFileSync(path.join(root, rel), 'utf8');
   assert.match(src, /function reportableJobs/);
   assert.match(src, /reportableJobs\(start,end\)/);

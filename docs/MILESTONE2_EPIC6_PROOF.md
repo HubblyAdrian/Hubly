@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 6 — Delayed Account Creation
 
 **Status:** PASS  
-**Checked:** 2026-07-24T16:59:56.432Z  
+**Checked:** 2026-07-24T17:35:25.339Z  
 **Gate:** `npm run check:m2-epic6`
 
 > Account creation after value — saving the business, not signing up.  

@@ -9034,7 +9034,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="is-save-brand is-home-brand">
               <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
             </div>
-            <button type="button" class="is-evo-back" onclick="goClassicDashboard()" title="Jobs, customers, and the classic workspace">Classic workspace</button>
+            <button type="button" class="is-evo-back" onclick="isEnterCreativeWorkspace()" title="Edit your website with Hubly">Edit with Hubly</button>
           </div>
           <div class="is-home-30s" id="is-home-30s" aria-label="30-Second Rule">
             <div>What's happening today · What needs attention · Highest-impact action · How you're performing · Ask Hubly</div>
@@ -9125,11 +9125,12 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="is-cw-playground-grid" id="is-cw-playground-grid"></div>
             <p style="margin:12px 0 0;font-size:12px;color:rgba(255,255,255,.7)">Or ask: Mix the typography from Concept A with the layout from Concept C.</p>
           </div>
-          <div class="is-cw-card is-cw-advanced" id="is-cw-advanced" hidden style="margin-top:12px">
+          <div class="is-cw-card is-cw-advanced" id="is-cw-advanced" data-advanced-studio="1" hidden style="margin-top:12px">
             <div class="sk">Advanced Studio</div>
-            <p style="margin:0 0 10px;font-size:12px;color:rgba(255,255,255,.75)">Traditional controls live only here — conversation stays the default.</p>
+            <p style="margin:0 0 10px;font-size:12px;color:rgba(255,255,255,.75)">Pixel-perfect controls when Conversation Mode isn't enough. Escape hatch — not a second product.</p>
             <div id="is-cw-advanced-controls" style="display:flex;flex-wrap:wrap;gap:6px"></div>
             <button type="button" style="margin-top:10px" onclick="isCwSyncFromAdvanced()">Sync back to Conversation Mode</button>
+            <button type="button" style="margin-top:8px;width:100%;appearance:none;border:none;border-radius:10px;background:#d9632d;color:#fff;font:inherit;font-size:12px;font-weight:800;padding:10px 12px;cursor:pointer" onclick="openAdvancedStudio({openPixelEditor:true,pixelOnly:true})">Need pixel-perfect control? Open pixel editor →</button>
           </div>
         </div>
       </div>
@@ -11984,16 +11985,14 @@ window.addEventListener('popstate',()=>{
   }
   showP(dest,{skipRoute:true});
 });
-/** Milestone 2.5 — prefer Business Home over classic Dashboard when the M2 journey owns this business. */
+/** Milestone 2.5 Cutover — the new product is the only product. */
 function preferM2ExperienceHome(){
+  // Production Cutover: Business Home is always the owner home.
+  // Advanced Studio is an intentional escape hatch — never the default.
   try{
-    if(S._forceClassicDash)return false;
-    if(S._is?.readyForBusinessHome)return true;
-    const meta=typeof parseBizMeta==='function'?parseBizMeta(currentBusiness?.meta):null;
-    if(meta?.m2Experience||meta?.experienceHome==='business-home')return true;
-    if(localStorage.getItem('hubly_m2_home')==='1')return true;
+    if(S._forceAdvancedStudio)return false;
   }catch(e){}
-  return false;
+  return true;
 }
 
 function markM2ExperienceHome(){
@@ -12023,6 +12022,7 @@ function openProductionBusinessHome(opts){
   setObPreviewMode('phone');
   setOwnerPreview(false);
   S._instantSite=true;
+  S._forceAdvancedStudio=false;
   markM2ExperienceHome();
   const onboard=document.getElementById('p-onboard');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('is-active'));
@@ -12041,24 +12041,49 @@ function openProductionBusinessHome(opts){
   }
 }
 
-function goClassicDashboard(){
-  S._forceClassicDash=true;
+/**
+ * Advanced Studio — pixel-perfect / ops escape hatch.
+ * Never the post-login home. Path: Business Home → Creative Workspace → Advanced Studio.
+ */
+function openAdvancedStudio(opts){
+  S._forceAdvancedStudio=true;
+  S._advancedStudio=true;
+  // Always arrive via Creative Workspace framing when possible.
+  try{
+    if(typeof isEnterCreativeWorkspace==='function' && !opts?.pixelOnly){
+      isEnterCreativeWorkspace({openAdvanced:true});
+      const el=document.getElementById('is-cw-advanced');
+      if(el)el.hidden=false;
+      if(!opts?.openPixelEditor)return;
+    }
+  }catch(e){}
   clearOnboardOverlays();
   setObPreviewMode('phone');
   setOwnerPreview(false);
   showP('p-app',{replaceRoute:true});
-  const dashNav=document.querySelector('[data-v="dashboard"]');
-  if(dashNav)switchV(dashNav);
-  setTimeout(()=>{applyTranslations();maybeResumeHublyCoach();renderHublyCoach();},100);
+  try{
+    const brand=document.querySelector('#p-app .nav-brand, #p-app .dash-brand, #p-app [data-i18n="dashboard"]');
+    document.title='Hubly · Advanced Studio';
+  }catch(e){}
+  const edNav=document.querySelector('[data-v="editor"]');
+  if(edNav)switchV(edNav);
+  else{
+    const dashNav=document.querySelector('[data-v="dashboard"]');
+    if(dashNav)switchV(dashNav);
+  }
+  setTimeout(()=>{
+    try{applyTranslations();renderWebsitePreview?.();maybeResumeHublyCoach();renderHublyCoach();}catch(e){}
+  },100);
+}
+
+/** @deprecated Cutover — old dashboard is not a product surface. Use openAdvancedStudio. */
+function goClassicDashboard(){
+  openAdvancedStudio({openPixelEditor:true,pixelOnly:true});
 }
 
 function goDash(){
-  // Milestone 2.5 — returning owners live in Business Home, not the old dashboard.
-  if(preferM2ExperienceHome()&&typeof isEnterBusinessHome==='function'){
-    openProductionBusinessHome({skipDaily:false});
-    return;
-  }
-  goClassicDashboard();
+  // Milestone 2.5 Cutover — returning owners always land in Business Home.
+  openProductionBusinessHome({skipDaily:false});
 }
 function setOwnerPreview(on){
   S.ownerPreview=!!on;
@@ -12600,14 +12625,11 @@ async function loadBusiness(opts={}){
           if(detected){S.timezone=detected;await db.from('businesses').update({timezone:detected}).eq('id',currentBusiness.id);const tzSel=document.getElementById('ed-timezone');if(tzSel)tzSel.value=detected;}
         }catch(e){}
       }
-      // App shell on resume. Dashboard is home — only deep-link to editor when asked.
+      // App shell on resume. Business Home is the product — editor opens Creative Workspace.
       setOwnerPreview(false);
       if(opts.openEditor){
-        showP('p-app',{replaceRoute:true});
-        const edNav=document.querySelector('[data-v="editor"]');
-        if(edNav)switchV(edNav);
-        else goDash();
-        setTimeout(()=>{try{renderWebsitePreview();maybeResumeHublyCoach();renderHublyCoach();}catch(e){}},120);
+        openProductionBusinessHome({skipDaily:true,fromDaily:true});
+        setTimeout(()=>{try{isEnterCreativeWorkspace();}catch(e){}},80);
       }else{
         goDash();
       }
@@ -18792,6 +18814,10 @@ function isEnterCreativeWorkspace(opts){
   S._is=S._is||{};
   S._is.readyForCreativeWorkspace=true;
   isRunCreativeWorkspace(opts);
+  if(opts?.openAdvanced){
+    const el=document.getElementById('is-cw-advanced');
+    if(el)el.hidden=false;
+  }
 }
 
 function isCwAskButtons(prompts, prefix){
@@ -45604,9 +45630,19 @@ function mktFillPrompt(btn){
   el.focus();
 }
 function mktStartFromPrompt(){
+  // Milestone 2.5 Cutover — never skip Welcome for a parallel Instant Site path.
   const text=(document.getElementById('mkt-prompt-input')?.value||'').trim();
   S._mktSeedPrompt=text||null;
-  startCreativeDirector(text||undefined);
+  try{
+    if(text){
+      const u=new URL(location.href);
+      u.pathname='/';
+      u.searchParams.set('q',text);
+      history.replaceState(null,'',u.pathname+u.search);
+    }
+  }catch(e){}
+  showP('p-signup',{replaceRoute:true});
+  try{welcomeExperienceMount();}catch(e){}
 }
 
 /* ========== Milestone 2 · Epic 1 — Welcome Experience ========== */

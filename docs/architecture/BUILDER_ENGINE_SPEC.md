@@ -4,6 +4,8 @@
 **Status:** Milestone 1.5 — Epic 1–12 ✅ (Business Deployment Engine completes the platform)  
 **Target:** Milestone 1.5 (12 epics · one release gate each)
 
+**Specification only** — do not implement Builder mutations outside this engine and its epics.
+
 Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6–10: Business / Booking / Workspace / Automation / Media Intelligence. Epic 11: **Hubly Chat OS**. Epic 12: **Business Deployment Engine** — the only path that mutates the business (validate → dry run → progressive deploy → verify → version → memory → Mission Control), with real rollback.
 
 ## Purpose
@@ -160,6 +162,8 @@ Preview must never mutate live business state.
 
 ## Collaboration & Approval (Epic 4)
 
+### Approval Flow
+
 1. Preview opens collaboration with **What do you think?**  
 2. Hubly recommends (never neutral)  
 3. Owner refines; Hubly updates the living preview  
@@ -169,9 +173,11 @@ Preview must never mutate live business state.
 7. Owner confidence captured for Experience Director  
 8. Mission Control records the full collaboration history  
 
-Nothing is applied until a later Apply epic. Preview must never mutate live business state.
+Nothing is applied until a later Apply epic. Preview must never mutate live business state. Explicit approval is required — never silent apply. Rejection returns to the Change Plan without mutation.
 
 ## Version & Rollback (Epic 5)
+
+### Rollback Flow
 
 1. Approved collaboration proposes a **Business Version** (Git for a business)  
 2. Surface versions: Website, Booking, Workspace, Automations, Portfolio, Packages  
@@ -181,7 +187,7 @@ Nothing is applied until a later Apply epic. Preview must never mutate live busi
 6. **Business Timeline** — milestones + builder changes + achievements + recommendations  
 7. Mission Control: Current → History → Diff → Rollback availability → Restore suggestions  
 
-Try it. You can always go back. Apply / execute is a later epic.
+Rollback is real (restore prior Business Version live) — not a soft undo toast. Try it. You can always go back. Apply / execute is a later epic.
 
 ## Supported builders (1.5)
 

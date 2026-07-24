@@ -4,7 +4,7 @@
   "name": "Hubly Chat OS",
   "title": "Hubly Chat OS",
   "passed": true,
-  "checkedAt": "2026-07-24T04:33:35.068Z",
+  "checkedAt": "2026-07-24T17:35:23.915Z",
   "proofs": {
     "chatOsExists": true,
     "askHublyCta": "Ask Hubly",
@@ -104,7 +104,7 @@
       {
         "id": "business",
         "owner": "How's business doing?",
-        "hubly": "Research on auto detailing: need + trust I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "hubly": "You've got this. We don't have to fix everything today — just the next right move. Research on auto detailing: need + trust I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
         "routes": [
           "coaching"
         ],
@@ -131,7 +131,7 @@
       {
         "id": "partner",
         "owner": "What would you do if this were your business?",
-        "hubly": "Research on auto detailing: need + trust I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "hubly": "I hear you — and I'd gently push a different direction. Want the short why? Research on auto detailing: need + trust I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
         "routes": [
           "coaching"
         ],
@@ -358,28 +358,28 @@
     },
     "proactiveSample": [
       {
-        "id": "ps_mryg3dxy_5lb6p9",
+        "id": "ps_mrz80t1i_osuxg6",
         "title": "Good morning Adrian",
         "detail": "I reviewed your business. I have four ideas.",
         "route": "coaching",
         "why": "Proactive conversation starter — not a notification dump."
       },
       {
-        "id": "ps_mryg3dxy_40z1r1",
+        "id": "ps_mrz80t1i_5jw0y9",
         "title": "Optimize tomorrow's route",
         "detail": "You're driving across town more than needed.",
         "route": "booking_intelligence",
         "why": "Booking Intelligence pattern detected."
       },
       {
-        "id": "ps_mryg3dxy_uudq91",
+        "id": "ps_mrz80t1i_qqm7bd",
         "title": "Replace your homepage hero",
         "detail": "Media Intelligence found stronger trust shots.",
         "route": "media_intelligence",
         "why": "Fresh media outscores current hero."
       },
       {
-        "id": "ps_mryg3dxy_y6mnvy",
+        "id": "ps_mrz80t1i_iz0leq",
         "title": "Add arrival windows",
         "detail": "Customers will know when to expect you.",
         "route": "booking_intelligence",

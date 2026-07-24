@@ -3,7 +3,7 @@
   "epic": 1,
   "name": "Welcome Experience",
   "passed": true,
-  "checkedAt": "2026-07-24T16:59:56.234Z",
+  "checkedAt": "2026-07-24T17:35:25.149Z",
   "proofs": {
     "welcomeShell": true,
     "heroConversation": true,

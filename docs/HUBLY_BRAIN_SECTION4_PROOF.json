@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-07-24T00:49:57.563Z",
+  "checkedAt": "2026-07-24T17:35:17.039Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -118,6 +118,7 @@
       "strategy",
       "creative_director",
       "critic",
+      "builder",
       "experience_director"
     ],
     "routing": {
@@ -127,6 +128,7 @@
         "strategy",
         "creative_director",
         "critic",
+        "builder",
         "experience_director"
       ]
     },
@@ -176,7 +178,11 @@
             "evidence": [
               "reviewed",
               "identity_evaluated_constitution",
-              "modified_response"
+              "modified_response",
+              "experience_layer",
+              "identity_evaluated_constitution",
+              "personality_explain",
+              "injected_visible_moment"
             ],
             "confidence": 87,
             "expectedImpact": "Owner feels understood — not interviewed"
@@ -266,7 +272,7 @@
     "timing": [
       {
         "expertId": "experience_director",
-        "executionTimeMs": 4
+        "executionTimeMs": 6
       },
       {
         "expertId": "research",
@@ -304,12 +310,13 @@
     "mergedResponse": {
       "response": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
       "questions": [],
-      "confidence": 87,
+      "confidence": 86,
       "expertsRun": [
         "research",
         "strategy",
         "creative_director",
         "critic",
+        "builder",
         "experience_director"
       ],
       "mergedExpertRecords": [
@@ -1640,16 +1647,79 @@
           "retries": 0
         },
         {
+          "expertName": "Builder Expert",
+          "expertId": "builder",
+          "executionTimeMs": 1,
+          "reasoning": [
+            {
+              "reason": "Classified as Business Change toward Understand Owner Request.",
+              "evidence": [
+                "category:Business Strategy"
+              ],
+              "confidence": 81,
+              "expectedImpact": "Clear Builder Intent for a future Change Plan (Epic 2+) — nothing applied now."
+            }
+          ],
+          "confidence": 81,
+          "output": {
+            "type": "Builder Intent",
+            "builderIntent": {
+              "intentId": "bint_mrz80nq1_tl1o81",
+              "version": "1.0.0",
+              "originalRequest": "I'm starting a pressure washing company.",
+              "intentCategory": "Business Strategy",
+              "intentLabel": "Business Change",
+              "ownerGoal": "Understand Owner Request",
+              "affectedSystems": [
+                "Business"
+              ],
+              "requiredCapabilities": [],
+              "estimatedRisk": "low",
+              "confidence": 81,
+              "confidenceExplanation": {
+                "reasons": [
+                  "The request maps cleanly to a known builder category.",
+                  "No conflicting rules exist in this Intent-only pass.",
+                  "Business Memory aligns with this change (pressure washing).",
+                  "No additional clarification is required."
+                ],
+                "summary": "The request maps cleanly to a known builder category. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
+              },
+              "requiresChangePlan": true,
+              "reasoning": [
+                {
+                  "reason": "Classified as Business Change toward Understand Owner Request.",
+                  "evidence": [
+                    "category:Business Strategy"
+                  ],
+                  "confidence": 81
+                }
+              ],
+              "timestamp": "2026-07-24T17:35:17.017Z",
+              "applied": false,
+              "changePlanGenerated": false
+            },
+            "applied": false,
+            "changePlanGenerated": false
+          },
+          "status": "ok",
+          "retries": 0
+        },
+        {
           "expertName": "Experience Director",
           "expertId": "experience_director",
-          "executionTimeMs": 4,
+          "executionTimeMs": 6,
           "reasoning": [
             {
               "reason": "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
               "evidence": [
                 "reviewed",
                 "identity_evaluated_constitution",
-                "modified_response"
+                "modified_response",
+                "experience_layer",
+                "identity_evaluated_constitution",
+                "personality_explain",
+                "injected_visible_moment"
               ],
               "confidence": 87,
               "expectedImpact": "Owner feels understood — not interviewed"
@@ -1696,7 +1766,11 @@
             "actions": [
               "reviewed",
               "identity_evaluated_constitution",
-              "modified_response"
+              "modified_response",
+              "experience_layer",
+              "identity_evaluated_constitution",
+              "personality_explain",
+              "injected_visible_moment"
             ],
             "interception": {
               "before": {
@@ -1743,7 +1817,8 @@
               "research",
               "strategy",
               "creative_director",
-              "critic"
+              "critic",
+              "builder"
             ],
             "experienceDirectorVersion": "1.2.0",
             "reviewedBy": "experience_director",
@@ -1754,7 +1829,11 @@
                 "evidence": [
                   "reviewed",
                   "identity_evaluated_constitution",
-                  "modified_response"
+                  "modified_response",
+                  "experience_layer",
+                  "identity_evaluated_constitution",
+                  "personality_explain",
+                  "injected_visible_moment"
                 ],
                 "confidence": 87,
                 "expectedImpact": "Owner feels understood — not interviewed"
@@ -1863,8 +1942,8 @@
           "retries": 0
         },
         {
-          "expertId": "experience_director",
-          "expertName": "Experience Director",
+          "expertId": "builder",
+          "expertName": "Builder Expert",
           "received": {
             "request": "I'm starting a pressure washing company.",
             "intent": "build_business",
@@ -1879,12 +1958,39 @@
               "blueprints"
             ]
           },
+          "concluded": "I understand you want: Understand Owner Request (Business Strategy). Affected: Business. Capabilities: to be confirmed. No changes applied — Change Plan comes next.",
+          "why": "Classified as Business Change toward Understand Owner Request.",
+          "changedFromPrevious": "Critic produced Quality Report; Builder Expert advanced that into Builder Intent (confidence 87 → 81).",
+          "confidence": 81,
+          "status": "ok",
+          "executionTimeMs": 1,
+          "outputType": "Builder Intent",
+          "retries": 0
+        },
+        {
+          "expertId": "experience_director",
+          "expertName": "Experience Director",
+          "received": {
+            "request": "I'm starting a pressure washing company.",
+            "intent": "build_business",
+            "priorExpertIds": [
+              "research",
+              "strategy",
+              "creative_director",
+              "critic",
+              "builder"
+            ],
+            "memorySurfaces": [
+              "business_memory",
+              "blueprints"
+            ]
+          },
           "concluded": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
           "why": "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
-          "changedFromPrevious": "Critic produced Quality Report; Experience Director advanced that into Experience Review (confidence 87 → 87).",
+          "changedFromPrevious": "Builder Expert produced Builder Intent; Experience Director advanced that into Experience Review (confidence 81 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 4,
+          "executionTimeMs": 6,
           "outputType": "Experience Review",
           "retries": 0
         }
@@ -1895,6 +2001,7 @@
           "strategy",
           "creative_director",
           "critic",
+          "builder",
           "experience_director"
         ],
         "finalResponseSource": "experience_director",
@@ -1903,6 +2010,7 @@
           "strategy",
           "creative_director",
           "critic",
+          "builder",
           "experience_director"
         ],
         "howAssembled": "Hubly Brain ran registry-selected experts in priority order, collected structured outputs (Research Report → Business Strategy → Creative Plan → Quality Report → Experience Review), then Experience Director produced the single customer-facing response."

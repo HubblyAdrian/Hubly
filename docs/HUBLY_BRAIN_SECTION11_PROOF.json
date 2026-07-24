@@ -4,7 +4,7 @@
   "passed": true,
   "version": "1.0.0",
   "owner": "hubly_brain",
-  "checkedAt": "2026-07-24T01:00:07.013Z",
+  "checkedAt": "2026-07-24T17:35:17.440Z",
   "proofs": [
     "Registries module exists",
     "Tool / Capability Registry APIs exist",
@@ -19,6 +19,7 @@
     "Expert strategy declares name, version, purpose, responsibilities",
     "Expert creative_director declares name, version, purpose, responsibilities",
     "Expert critic declares name, version, purpose, responsibilities",
+    "Expert builder declares name, version, purpose, responsibilities",
     "Expert experience_director declares name, version, purpose, responsibilities",
     "Tool registered: website_builder",
     "Tool registered: booking",
@@ -107,6 +108,20 @@
         "responsibilities": [
           "Review prior outputs",
           "Reject or request regeneration"
+        ]
+      },
+      {
+        "id": "builder",
+        "name": "Builder Expert",
+        "version": "1.0.0",
+        "purpose": "Understand what the owner wants to build — produce a Builder Intent only. Never apply changes.",
+        "responsibilities": [
+          "Classify build requests",
+          "Identify affected systems",
+          "Map required capabilities via Capability Registry",
+          "Estimate risk and confidence with explanation",
+          "Produce one Builder Intent (including multi-system)",
+          "Never write memory, UI, or Change Plans"
         ]
       },
       {
@@ -204,7 +219,7 @@
       },
       {
         "id": "automation",
-        "name": "Automation",
+        "name": "Automation Intelligence Builder",
         "version": "1.0.0",
         "purpose": "Own workflows and automated reminders",
         "responsibilities": [
@@ -216,12 +231,13 @@
           "Delete Workflow",
           "Pause Workflow",
           "Send Email",
-          "Send Reminder"
+          "Send Reminder",
+          "Prep Instructions"
         ]
       },
       {
         "id": "portfolio_builder",
-        "name": "Portfolio Builder",
+        "name": "Media Intelligence Engine",
         "version": "1.0.0",
         "purpose": "Own portfolio galleries and photo placement",
         "responsibilities": [
@@ -245,6 +261,36 @@
         "capabilities": [
           "Process Images",
           "Optimize Photos"
+        ]
+      },
+      {
+        "id": "workspace_builder",
+        "name": "Workspace Intelligence Builder",
+        "version": "1.0.0",
+        "purpose": "Own workspace layout and navigation preferences (Builder Engine)",
+        "responsibilities": [
+          "Sidebar order",
+          "Dashboard layout",
+          "Pinned actions"
+        ],
+        "capabilities": [
+          "Sidebar Order",
+          "Dashboard Layout",
+          "Pin Actions"
+        ]
+      },
+      {
+        "id": "packages_builder",
+        "name": "Packages Builder",
+        "version": "1.0.0",
+        "purpose": "Own packages and pricing tiers",
+        "responsibilities": [
+          "Create packages",
+          "Pricing tiers"
+        ],
+        "capabilities": [
+          "Create Package",
+          "Pricing Tiers"
         ]
       }
     ],
@@ -283,7 +329,7 @@
       "uploadPhotos": [
         {
           "toolId": "portfolio_builder",
-          "toolName": "Portfolio Builder",
+          "toolName": "Media Intelligence Engine",
           "capabilityId": "upload_photos",
           "capabilityLabel": "Upload Photos",
           "score": 88

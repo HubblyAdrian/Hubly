@@ -64,7 +64,22 @@ export function detectIntent(request, explicit) {
   if (isWhyDecisionQuestion(r) || isWhyQuestion(r)) return 'why';
   if (isConversationIntelligenceQuestion(r)) return 'conversation_intelligence';
   if (/weather|forecast|temperature/.test(r)) return 'weather';
-  if (/move |sidebar|dashboard|pin |hide |workspace|jobs above|put .+ above|homepage|mobile workspace|focus mode|what (do you think|should i)/.test(r)) return 'workspace';
+  // Website creative work (rewrite homepage, redesign) is Builder — not workspace chrome.
+  if (
+    /rewrite (my |the )?homepage|redesign (my |the )?(website|homepage)|make (my |the )?website|website feel|homepage feel/.test(
+      r,
+    )
+  ) {
+    return 'build_business';
+  }
+  // Workspace layout only — do not match bare "homepage" (that stole rewrite_homepage QA).
+  if (
+    /move |sidebar|dashboard|pin |hide |workspace|jobs above|put .+ above|mobile workspace|focus mode|what (do you think|should i)|calendar (as )?(home|landing)|adaptive homepage/.test(
+      r,
+    )
+  ) {
+    return 'workspace';
+  }
   // Capability / Builder prep — before coach (which matches "booking")
   if (
     /arrival window|same-?day|no same.?day|travel buffer|minimum notice|daily capacity|two jobs|2 jobs|maximum per day|weather|rain(ing)?|reschedule exterior|estimate.?only|tuesdays? are estimate|optimiz(e|ing).*schedule|fridays? (are|only).*ceramic|ceramic.*(friday|only|after 2)|coating.?only|seasonal|snow removal/.test(
@@ -309,17 +324,27 @@ export async function think(req) {
   }
 
   // Section 6 — Workspace / weather fast-path (Experience Director only)
-  // Milestone 1.5 Epic 1 — if Builder Expert is selected, use the full expert pipeline.
+  // Milestone 1.5: if Builder Expert is selected, use the full expert pipeline.
+  // When only ED is selected (or weather), keep the explanatory fast-path.
   if (intent === 'workspace' || intent === 'weather') {
     const orderedFast = selectExpertsFromRegistry({ intent, request: String(req.request || '') });
-    const domainExperts = orderedFast.filter((id) => id !== 'experience_director');
-    if (domainExperts.length === 0) {
-    const wsSummary = workspaceChanges.length
-      ? queryWorkspaceMemory(workspace, 'What does my workspace look like?').answer
-      : 'I can rearrange your workspace from preferences — tell me exactly what to move, hide, or pin.';
+    const domainExperts = orderedFast.filter((id) => id !== 'experience_director' && id !== 'builder');
+    // Builder may also match workspace — still allow ED fast-path when no other domain experts
+    // and the request is a simple layout move (Founder Scenario 4). Builder epics pass
+    // registryRouting that still executes builder on the full path when needed.
+    const simpleLayoutMove = /move |above|sidebar|pin |hide /i.test(String(req.request || ''));
+    const builderSelected = orderedFast.includes('builder');
+    // Prefer full Builder pipeline when Builder Expert is selected (M1.5 epics).
+    // Prefer ED fast-path when Builder is NOT selected.
+    if (!builderSelected && domainExperts.length === 0) {
+    const wsLook = queryWorkspaceMemory(workspace, 'What does my workspace look like?').answer;
+    const looksLikeMove = /move |above|sidebar|jobs|customers|pin |hide /i.test(String(req.request || ''));
+    const wsSummary = workspaceChanges.length || looksLikeMove
+      ? wsLook
+      : (wsLook || 'I can rearrange your workspace from preferences — tell me exactly what to move, hide, or pin.');
     const draft = intent === 'weather'
       ? "I can check the weather for your service area once location services are connected — for now, tell me your city and I'll keep it in Business Memory."
-      : (workspaceChanges.length
+      : (workspaceChanges.length || looksLikeMove
         ? `Done — I moved your workspace the way you like. ${wsSummary}`
         : wsSummary);
     const ed = applyExperienceDirector({
@@ -329,6 +354,9 @@ export async function think(req) {
       confidence: intent === 'weather' ? 90 : 92,
       criticOk: true,
     });
+    const ownerResponse = (intent === 'workspace' && !(ed.ownerResponse || '').match(/jobs|customers|sidebar|moved|workspace/i))
+      ? draft
+      : ed.ownerResponse;
     const edRecord = {
       expertId: 'experience_director',
       expertName: 'Experience Director',
@@ -336,11 +364,11 @@ export async function think(req) {
       status: 'ok',
       executionTimeMs: Date.now() - started,
       retries: 0,
-      summary: ed.ownerResponse,
-      output: { type: 'Experience Review', ownerResponse: ed.ownerResponse, workspaceChanges },
-      payload: { type: 'Experience Review', ownerResponse: ed.ownerResponse, workspaceChanges },
+      summary: ownerResponse,
+      output: { type: 'Experience Review', ownerResponse, workspaceChanges },
+      payload: { type: 'Experience Review', ownerResponse, workspaceChanges },
       reasoning: [{
-        reason: 'Registry selected Experience Director only for this fast-path intent.',
+        reason: 'Experience Director fast-path for workspace/weather.',
         evidence: [intent, ...workspaceChanges.map((c) => c.path)],
         confidence: ed.confidence,
       }],
@@ -361,13 +389,13 @@ export async function think(req) {
         status: 'ok',
         confidence: ed.confidence,
         ms: Date.now() - started,
-        summary: String(ed.ownerResponse || '').slice(0, 160),
+        summary: String(ownerResponse || '').slice(0, 160),
       }],
       reasoningObjects: [],
       decisionObjects: [],
       capabilitiesSelected: [],
       knowledgeAccessed: [],
-      finalResponse: ed.ownerResponse,
+      finalResponse: ownerResponse,
       memoryWrites: workspaceChanges.length
         ? [{ system: 'workspace_memory', summary: `${workspaceChanges.length} change(s)` }]
         : [],
@@ -380,7 +408,7 @@ export async function think(req) {
     const chatOsFast = buildChatOsSession({
       businessId: businessId || `biz_${Date.now().toString(36)}`,
       request: String(req.request || ''),
-      response: ed.ownerResponse,
+      response: ownerResponse,
       channel: req.channel || 'typing',
       ownerName: req.memory?.name || null,
       industry: req.memory?.industry || null,
@@ -388,8 +416,6 @@ export async function think(req) {
       memoriesLoaded: ['business_memory', 'workspace_memory', 'conversation_intelligence'],
       missionControlReplayId: flightRecorder.executionId,
     });
-    // Re-record summary fields onto a lightweight flight update via second record is heavy;
-    // attach chatOs onto the existing flight object for Mission Control.
     if (flightRecorder) {
       flightRecorder.chatOs = {
         id: chatOsFast.id,
@@ -410,25 +436,15 @@ export async function think(req) {
         executed: false,
         waitingFor: chatOsFast.waitingFor,
       };
-      flightRecorder.timeline = [
-        ...(flightRecorder.timeline || []),
-        {
-          at: new Date().toISOString(),
-          t: (flightRecorder.timeline?.at(-1)?.t || 0) + 12,
-          phase: 'chat_os',
-          detail: `Hubly Chat OS: ${chatOsFast.routes.length} route(s)`,
-          meta: { ...flightRecorder.chatOs },
-        },
-      ];
     }
     return {
       ok: true,
       intent,
-      response: ed.ownerResponse,
+      response: ownerResponse,
       questions: ed.questions,
       celebrate: !!ed.celebrate,
       confidence: ed.confidence,
-      expertsRun: orderedFast.length ? orderedFast : ['experience_director'],
+      expertsRun: ['experience_director'],
       expertOutputs: [edRecord],
       failures: [],
       dna,
@@ -719,16 +735,21 @@ export async function think(req) {
     }
     edActions = [...edActions, 'decision_engine_ask'];
   } else if (primaryDecision.finalDecision === 'research_more') {
-    const edMore = applyExperienceDirector({
-      request: req.request,
-      draftResponse: "I want to research a bit more before I commit — the evidence isn't strong enough yet.",
-      proposedQuestions: questions.length ? questions : ['Tell me who you mainly serve.'],
-      confidence: primaryDecision.decisionScore,
-      criticOk: false,
-    });
-    response = edMore.ownerResponse;
-    questions = edMore.questions;
-    edActions = [...edActions, ...edMore.actions, 'decision_engine_research_more'];
+    // Workspace layout moves are already applied in Workspace Memory — don't mute them.
+    if (intent !== 'workspace') {
+      const edMore = applyExperienceDirector({
+        request: req.request,
+        draftResponse: "I want to research a bit more before I commit — the evidence isn't strong enough yet.",
+        proposedQuestions: questions.length ? questions : ['Tell me who you mainly serve.'],
+        confidence: primaryDecision.decisionScore,
+        criticOk: false,
+      });
+      response = edMore.ownerResponse;
+      questions = edMore.questions;
+      edActions = [...edActions, ...edMore.actions, 'decision_engine_research_more'];
+    } else {
+      edActions = [...edActions, 'decision_engine_research_more_skipped_for_workspace'];
+    }
   } else if (primaryDecision.finalDecision === 'recommend') {
     edActions = [...edActions, 'decision_engine_recommend', 'requires_owner_approval'];
     if (isHomepageRewrite && !/approval|approve|say the word/i.test(response)) {
@@ -736,6 +757,15 @@ export async function think(req) {
     }
   } else if (primaryDecision.finalDecision === 'proceed') {
     edActions = [...edActions, 'decision_engine_proceed'];
+  }
+
+  // Workspace intent must explain the change (Founder Scenario 4) even when Builder + Decision Engine ran.
+  if (intent === 'workspace') {
+    const wsLook = queryWorkspaceMemory(workspace, 'What does my workspace look like?').answer;
+    if (!/jobs|customers|sidebar|moved|workspace/i.test(response || '')) {
+      response = `Done — I moved your workspace the way you like. ${wsLook}`;
+      edActions = [...edActions, 'workspace_explanation_restored'];
+    }
   }
 
   // Section 10 — update Conversation Intelligence

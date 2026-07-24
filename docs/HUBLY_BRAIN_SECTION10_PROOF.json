@@ -4,7 +4,7 @@
   "passed": true,
   "version": "1.0.0",
   "owner": "hubly_brain",
-  "checkedAt": "2026-07-24T00:49:57.805Z",
+  "checkedAt": "2026-07-24T17:35:17.374Z",
   "proofs": [
     "Conversation Intelligence exists",
     "Goal / Project / Topic fields exist",
@@ -69,68 +69,68 @@
     "activeTopic": "Website",
     "pendingDecisions": [
       {
-        "id": "pd_mry83t3w_ln3q5b",
+        "id": "pd_mrz80nz1_739xxx",
         "text": "Approve homepage",
         "status": "pending",
-        "at": "2026-07-24T00:49:57.788Z",
+        "at": "2026-07-24T17:35:17.341Z",
         "threadId": null
       },
       {
-        "id": "pd_mry83t3w_tql215",
+        "id": "pd_mrz80nz1_9ym86y",
         "text": "Connect Stripe",
         "status": "pending",
-        "at": "2026-07-24T00:49:57.788Z",
+        "at": "2026-07-24T17:35:17.341Z",
         "threadId": null
       },
       {
-        "id": "pd_mry83t3w_5a3qd7",
+        "id": "pd_mrz80nz1_inc4p7",
         "text": "Publish website",
         "status": "pending",
-        "at": "2026-07-24T00:49:57.788Z",
+        "at": "2026-07-24T17:35:17.341Z",
         "threadId": null
       }
     ],
     "deferredIdeas": [
       {
-        "id": "def_mry83t3x_i6j0g4",
+        "id": "def_mrz80nz2_26v4tq",
         "idea": "Memberships",
         "status": "deferred",
-        "at": "2026-07-24T00:49:57.789Z",
+        "at": "2026-07-24T17:35:17.342Z",
         "revisitHint": "Revisit when customer volume supports recurring revenue",
         "context": "I want memberships later."
       }
     ],
     "commitments": [
       {
-        "id": "cmt_mry83t3y_y82ja3",
+        "id": "cmt_mrz80nz3_ll7d7u",
         "promise": "Remind owner tomorrow",
-        "dueAt": "2026-07-25T00:49:57.790Z",
+        "dueAt": "2026-07-25T17:35:17.343Z",
         "status": "open",
-        "at": "2026-07-24T00:49:57.790Z"
+        "at": "2026-07-24T17:35:17.343Z"
       }
     ],
     "openQuestions": [
       {
-        "id": "oq_mry83t3x_s95s1g",
+        "id": "oq_mrz80nz2_4aztsr",
         "question": "Should recurring mowing be your primary package?",
         "status": "open",
-        "at": "2026-07-24T00:49:57.789Z"
+        "at": "2026-07-24T17:35:17.342Z"
       }
     ],
     "followUpQueue": [
       {
-        "id": "fu_mry83t3y_zakjej",
+        "id": "fu_mrz80nz3_bvxp8y",
         "type": "reminder",
         "text": "Remind owner tomorrow",
-        "dueAt": "2026-07-25T00:49:57.790Z",
+        "dueAt": "2026-07-25T17:35:17.343Z",
         "status": "queued",
-        "at": "2026-07-24T00:49:57.790Z"
+        "at": "2026-07-24T17:35:17.343Z"
       }
     ],
     "emotionalContext": {
       "state": "neutral",
       "confidence": 55,
-      "updatedAt": "2026-07-24T00:49:57.788Z"
+      "updatedAt": "2026-07-24T17:35:17.341Z"
     },
     "aiContext": {
       "experts": [
@@ -156,11 +156,11 @@
         }
       ],
       "phase": "experts_complete",
-      "updatedAt": "2026-07-24T00:49:57.788Z"
+      "updatedAt": "2026-07-24T17:35:17.341Z"
     },
     "threads": [
       {
-        "threadId": "thr_mry83t3w_t2e9zp",
+        "threadId": "thr_mrz80nz1_o0ldol",
         "name": "Website Redesign",
         "status": "active",
         "children": [
@@ -177,7 +177,7 @@
             "status": "active"
           }
         ],
-        "updatedAt": "2026-07-24T00:49:57.788Z"
+        "updatedAt": "2026-07-24T17:35:17.341Z"
       }
     ],
     "retrieval": [
@@ -228,7 +228,7 @@
     "demo": {
       "conversation1": {
         "project": "Website Redesign",
-        "threadId": "thr_mry83t3w_t2e9zp"
+        "threadId": "thr_mrz80nz1_o0ldol"
       },
       "conversation2": {
         "deferred": [
@@ -248,7 +248,7 @@
       },
       "think": {
         "project": "Website Redesign",
-        "leftResponse": "Here's what's left:\n• Approve homepage\n• Connect Stripe\n• Publish website",
+        "leftResponse": "Here's what's left:\n• Approve homepage\n• Connect Stripe\n• Publish website Here's why I'm recommending this: it should move the business forward without adding busywork.",
         "commitments": [
           "Remind owner tomorrow"
         ]

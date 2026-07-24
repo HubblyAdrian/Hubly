@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 0 — Hubly Experience Layer
 
 **Status:** PASS  
-**Checked:** 2026-07-24T16:59:56.191Z  
+**Checked:** 2026-07-24T17:35:25.106Z  
 **Gate:** `npm run check:m2-epic0` → this file + `docs/MILESTONE2_EPIC0_PROOF.json`
 
 > This Epic is about the customer's emotional experience, not infrastructure.
@@ -54,7 +54,7 @@ conversation → thinking → building → preview → approval → deployment �
 **Hubly:** I hear you — and I'd gently push a different direction. Want the short why? Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, …
 
 **Owner:** Make my homepage more premium
-**Hubly:** I want to research a bit more before I commit — the evidence isn't strong enough yet. One thing before I go further — what matters more to you here?
+**Hubly:** Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm…
 
 **Owner:** I don't like it — undo that
 **Hubly:** You're right to call that out. I looked again — here's the better take. Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or s…
