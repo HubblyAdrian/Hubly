@@ -1,10 +1,10 @@
 {
   "milestone": 1,
-  "passed": 16,
+  "passed": 17,
   "total": 18,
-  "percent": 89,
+  "percent": 94,
   "ready": false,
-  "checkedAt": "2026-07-24T01:05:01.371Z",
+  "checkedAt": "2026-07-24T01:17:42.351Z",
   "sections": [
     {
       "n": 1,
@@ -104,9 +104,9 @@
     },
     {
       "n": 17,
-      "title": "Documentation",
-      "status": "fail",
-      "script": "scripts/check-section17-documentation.mjs"
+      "title": "Architecture Documentation & Developer Experience",
+      "status": "pass",
+      "script": "scripts/check-section17-architecture-docs.mjs"
     },
     {
       "n": 18,
