@@ -33,6 +33,7 @@
     "check:m2-epic2": "node scripts/check-m2-epic2.mjs",
     "check:m2-epic3": "node scripts/check-m2-epic3.mjs",
     "check:m2-epic4": "node scripts/check-m2-epic4.mjs",
+    "check:m2-epic5": "node scripts/check-m2-epic5.mjs",
     "check:builder-epic1": "node scripts/check-builder-epic1.mjs",
     "check:builder-epic2": "node scripts/check-builder-epic2.mjs",
     "check:builder-epic3": "node scripts/check-builder-epic3.mjs",
