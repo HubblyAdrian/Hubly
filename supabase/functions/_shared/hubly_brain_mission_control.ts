@@ -25,8 +25,9 @@ import {
   type HublyTrustScore,
   type ObservabilityDashboard,
 } from "./hubly_brain_reliability.ts";
+import { getPlatformInventory } from "./hubly_brain_platform.ts";
 
-export const MISSION_CONTROL_VERSION = "1.1.0" as const;
+export const MISSION_CONTROL_VERSION = "1.2.0" as const;
 export const MISSION_CONTROL_OWNER = "hubly_brain" as const;
 
 export type HublyLiveExpertStatus =
@@ -151,6 +152,8 @@ export type HublyMissionControlSnapshot = {
   };
   /** Engineering Trust Score (not customer-facing). */
   trustScore: HublyTrustScore;
+  /** Section 15 — live Feature Manifest inventory (platform extensibility). */
+  platformInventory: ReturnType<typeof getPlatformInventory>;
 };
 
 const FLIGHTS = new Map<string, HublyFlightRecorder>();
@@ -575,6 +578,7 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
       avgDecisionScore: computeAiHealth().avgDecisionScore,
       avgLatencyMs: computeAiHealth().avgLatencyMs,
     }),
+    platformInventory: getPlatformInventory(),
   };
 }
 
@@ -605,6 +609,7 @@ export const HublyMissionControl = {
   trustScore: computeTrustScore,
   performance: getObservabilityDashboard,
   costAwareness: getCostReport,
+  platformInventory: getPlatformInventory,
   clearForTests: clearMissionControlForTests,
 };
 

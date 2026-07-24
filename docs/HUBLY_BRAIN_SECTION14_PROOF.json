@@ -4,7 +4,7 @@
   "title": "Performance, Reliability & Resilience",
   "status": "pass",
   "passed": true,
-  "provenAt": "2026-07-24T00:55:08.738Z",
+  "provenAt": "2026-07-24T01:00:07.767Z",
   "summary": "Hubly is dependable under real-world conditions: retries, timeouts, circuit breakers, graceful degradation, parallel experts, memory/DNA caching, latency + cost observability, security boundaries, and an engineering Trust Score in Mission Control. Owners never see raw system errors.",
   "proofs": {
     "timeouts": {
@@ -132,7 +132,7 @@
         "expertSuccess": 99,
         "providerHealth": 96
       },
-      "checkedAt": "2026-07-24T00:55:08.738Z",
+      "checkedAt": "2026-07-24T01:00:07.767Z",
       "note": "Engineering Trust Score — Mission Control only. Not shown to customers."
     },
     "security": {
@@ -157,7 +157,7 @@
         "reliability",
         "trustScore"
       ],
-      "version": "1.1.0"
+      "version": "1.2.0"
     },
     "hublyAiExportsReliability": true
   }

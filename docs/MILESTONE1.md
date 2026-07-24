@@ -40,8 +40,8 @@ Each section must ship:
 | 11 | AI Capability Registry & Tool Registry | ✅ Proven (`check:section11`) |
 | 12 | Hubly Mission Control | ✅ Proven (`check:section12`) |
 | 13 | Hubly Identity System | ✅ Proven |
-| 14 | Performance, Reliability & Resilience | ⏳ Pass — pending Founder Approval |
-| 15 | Extensibility | ⬜ Not proven |
+| 14 | Performance, Reliability & Resilience | ✅ Proven |
+| 15 | Platform Extensibility | ⏳ Pass — pending Founder Approval |
 | 16 | Tests | ⬜ Not proven |
 | 17 | Documentation | ⬜ Not proven |
 | 18 | Founder Demo | ⬜ Not proven |
@@ -61,6 +61,14 @@ Not just speed — trustworthiness. Retries, timeouts, circuit breakers, gracefu
 
 ```bash
 npm run check:section14
+```
+
+## Section 15 — Platform Extensibility
+
+Hubly grows by registering Feature Manifests — not rewriting Brain. Experts, builders, industries, capabilities, knowledge, integrations, workflows — with validation, version compatibility, and Mission Control inventory.
+
+```bash
+npm run check:section15
 ```
 
 Live summary after `npm run milestone1`: `docs/MILESTONE1_RELEASE_GATE.json`

@@ -1,10 +1,10 @@
 {
   "milestone": 1,
-  "passed": 14,
+  "passed": 15,
   "total": 18,
-  "percent": 78,
+  "percent": 83,
   "ready": false,
-  "checkedAt": "2026-07-24T00:55:08.511Z",
+  "checkedAt": "2026-07-24T01:00:07.537Z",
   "sections": [
     {
       "n": 1,
@@ -92,9 +92,9 @@
     },
     {
       "n": 15,
-      "title": "Extensibility",
-      "status": "fail",
-      "script": "scripts/check-section15-extensibility.mjs"
+      "title": "Platform Extensibility",
+      "status": "pass",
+      "script": "scripts/check-section15-platform-extensibility.mjs"
     },
     {
       "n": 16,

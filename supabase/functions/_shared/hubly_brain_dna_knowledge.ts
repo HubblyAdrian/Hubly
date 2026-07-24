@@ -438,6 +438,39 @@ export type LoadDnaKnowledgeOpts = {
   request?: string | null;
 };
 
+/** Platform Extensibility (Section 15) — industry packs register here; Brain loads them. */
+const INDUSTRY_PACKS = new Map<string, HublyDnaKnowledgePack>();
+
+function normalizeIndustryKey(industry: string): string {
+  return String(industry || "").toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+export function registerDnaIndustryPack(industry: string, pack: HublyDnaKnowledgePack): void {
+  const key = normalizeIndustryKey(industry);
+  if (!key) throw new Error("DNA industry pack requires industry key");
+  INDUSTRY_PACKS.set(key, pack);
+}
+
+export function unregisterDnaIndustryPack(industry: string): boolean {
+  return INDUSTRY_PACKS.delete(normalizeIndustryKey(industry));
+}
+
+export function getDnaIndustryPack(industry: string): HublyDnaKnowledgePack | null {
+  return INDUSTRY_PACKS.get(normalizeIndustryKey(industry)) || null;
+}
+
+export function listDnaIndustryPacks(): Array<{ industry: string; industryName: string; knowledgeVersion: number }> {
+  return [...INDUSTRY_PACKS.entries()].map(([industry, pack]) => ({
+    industry,
+    industryName: pack.industryProfile?.industryName || industry,
+    knowledgeVersion: pack.knowledgeVersion,
+  }));
+}
+
+export function clearDnaIndustryPacksForTests(): void {
+  INDUSTRY_PACKS.clear();
+}
+
 /** Infer industry + region from owner request / memory hints. */
 export function detectDnaLoadHints(opts: LoadDnaKnowledgeOpts): {
   industry: string;
@@ -450,8 +483,17 @@ export function detectDnaLoadHints(opts: LoadDnaKnowledgeOpts): {
   let industry = "local service";
   if (/pressure\s*wash/.test(industryHint) || /pressure\s*wash/.test(req)) {
     industry = "pressure washing";
+  } else if (/pool\s*clean/.test(industryHint) || /pool\s*clean/.test(req)) {
+    industry = "pool cleaning";
   } else if (industryHint) {
     industry = industryHint;
+  }
+  // Prefer exact registered pack keys when present
+  for (const key of INDUSTRY_PACKS.keys()) {
+    if (industryHint.includes(key) || req.toLowerCase().includes(key) || industry === key) {
+      industry = key;
+      break;
+    }
   }
 
   let city = opts.city || null;
@@ -471,6 +513,21 @@ export function detectDnaLoadHints(opts: LoadDnaKnowledgeOpts): {
  */
 export function loadBusinessDnaKnowledge(opts: LoadDnaKnowledgeOpts = {}): HublyDnaKnowledgePack {
   const hints = detectDnaLoadHints(opts);
+  // Section 15 — registered industry packs win (no Brain rewrite to add industries).
+  const registered = getDnaIndustryPack(hints.industry);
+  if (registered) {
+    return {
+      ...registered,
+      loadedAt: new Date().toISOString(),
+      loadedBy: DNA_KNOWLEDGE_OWNER,
+      regionalIntelligence: {
+        ...registered.regionalIntelligence,
+        city: hints.city ?? registered.regionalIntelligence.city,
+        state: hints.state ?? registered.regionalIntelligence.state,
+        country: hints.country ?? registered.regionalIntelligence.country,
+      },
+    };
+  }
   if (hints.industry === "pressure washing") {
     return buildPressureWashingPack({
       city: hints.city,
@@ -614,4 +671,9 @@ export const HublyDnaKnowledgeApi = {
   detectHints: detectDnaLoadHints,
   byCategory: evidenceByCategory,
   format: formatDnaKnowledgeForExperts,
+  registerIndustryPack: registerDnaIndustryPack,
+  unregisterIndustryPack: unregisterDnaIndustryPack,
+  getIndustryPack: getDnaIndustryPack,
+  listIndustryPacks: listDnaIndustryPacks,
+  clearIndustryPacksForTests: clearDnaIndustryPacksForTests,
 };

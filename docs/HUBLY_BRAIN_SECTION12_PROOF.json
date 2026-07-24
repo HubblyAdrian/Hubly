@@ -2,9 +2,9 @@
   "section": 12,
   "title": "Hubly Mission Control",
   "passed": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "owner": "hubly_brain",
-  "checkedAt": "2026-07-24T00:55:08.058Z",
+  "checkedAt": "2026-07-24T01:00:07.059Z",
   "proofs": [
     "Hubly Mission Control module exists",
     "AI Replay / flight recorder exists",
@@ -59,7 +59,7 @@
   "evidence": {
     "snapshot": {
       "title": "Hubly Mission Control",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "replayAvailable": true
     },
     "liveAiActivity": {
@@ -74,7 +74,7 @@
     "expertActivity": [
       {
         "expertId": "research",
-        "name": "research",
+        "name": "Research Expert",
         "runs": 1,
         "successes": 1,
         "failures": 0,
@@ -86,11 +86,11 @@
       },
       {
         "expertId": "strategy",
-        "name": "strategy",
+        "name": "Strategy Expert",
         "runs": 1,
         "successes": 1,
         "failures": 0,
-        "avgLatencyMs": 1,
+        "avgLatencyMs": 0,
         "avgConfidence": 88,
         "failureRate": 0,
         "successRate": 100,
@@ -98,11 +98,11 @@
       },
       {
         "expertId": "creative_director",
-        "name": "creative_director",
+        "name": "Creative Director",
         "runs": 1,
         "successes": 1,
         "failures": 0,
-        "avgLatencyMs": 0,
+        "avgLatencyMs": 1,
         "avgConfidence": 84,
         "failureRate": 0,
         "successRate": 100,
@@ -110,7 +110,7 @@
       },
       {
         "expertId": "critic",
-        "name": "critic",
+        "name": "Critic",
         "runs": 1,
         "successes": 1,
         "failures": 0,
@@ -122,11 +122,11 @@
       },
       {
         "expertId": "experience_director",
-        "name": "experience_director",
+        "name": "Experience Director",
         "runs": 1,
         "successes": 1,
         "failures": 0,
-        "avgLatencyMs": 5,
+        "avgLatencyMs": 4,
         "avgConfidence": 87,
         "failureRate": 0,
         "successRate": 100,
@@ -275,7 +275,7 @@
     ],
     "brainTimeline": [
       {
-        "at": "2026-07-24T00:55:08.045Z",
+        "at": "2026-07-24T01:00:07.046Z",
         "t": 0,
         "phase": "request",
         "detail": "Owner: I'm redesigning my website and I want arrival windows.",
@@ -284,7 +284,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:55:08.065Z",
+        "at": "2026-07-24T01:00:07.066Z",
         "t": 20,
         "phase": "hubly_brain",
         "detail": "Thinking…",
@@ -293,7 +293,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:55:08.095Z",
+        "at": "2026-07-24T01:00:07.096Z",
         "t": 50,
         "phase": "memory_loaded",
         "detail": "Loaded business_memory",
@@ -302,7 +302,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:55:08.125Z",
+        "at": "2026-07-24T01:00:07.126Z",
         "t": 80,
         "phase": "memory_loaded",
         "detail": "Loaded business_dna",
@@ -311,7 +311,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:55:08.155Z",
+        "at": "2026-07-24T01:00:07.156Z",
         "t": 110,
         "phase": "memory_loaded",
         "detail": "Loaded workspace_memory",
@@ -320,7 +320,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:55:08.185Z",
+        "at": "2026-07-24T01:00:07.186Z",
         "t": 140,
         "phase": "memory_loaded",
         "detail": "Loaded conversation_intelligence",
@@ -329,7 +329,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:55:08.225Z",
+        "at": "2026-07-24T01:00:07.226Z",
         "t": 180,
         "phase": "business_dna",
         "detail": "Business DNA loaded (8 facts)",
@@ -347,7 +347,7 @@
         }
       },
       {
-        "at": "2026-07-24T00:55:08.275Z",
+        "at": "2026-07-24T01:00:07.276Z",
         "t": 230,
         "phase": "research",
         "detail": "research: finished",
@@ -358,29 +358,29 @@
         }
       },
       {
-        "at": "2026-07-24T00:55:08.285Z",
-        "t": 240,
+        "at": "2026-07-24T01:00:07.326Z",
+        "t": 280,
         "phase": "strategy",
         "detail": "strategy: finished",
         "meta": {
           "confidence": 88,
-          "ms": 1,
+          "ms": 0,
           "summary": "I'm positioning around visible proof and clear next step instead of generic price competition."
         }
       },
       {
-        "at": "2026-07-24T00:55:08.335Z",
+        "at": "2026-07-24T01:00:07.336Z",
         "t": 290,
         "phase": "creative_director",
         "detail": "creative_director: finished",
         "meta": {
           "confidence": 84,
-          "ms": 0,
+          "ms": 1,
           "summary": "Clean driveways. Clear pricing. Easy booking."
         }
       },
       {
-        "at": "2026-07-24T00:55:08.385Z",
+        "at": "2026-07-24T01:00:07.386Z",
         "t": 340,
         "phase": "critic",
         "detail": "critic: finished",
@@ -391,45 +391,45 @@
         }
       },
       {
-        "at": "2026-07-24T00:55:08.395Z",
+        "at": "2026-07-24T01:00:07.396Z",
         "t": 350,
         "phase": "experience_director",
         "detail": "experience_director: finished",
         "meta": {
           "confidence": 87,
-          "ms": 5,
+          "ms": 4,
           "summary": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more t"
         }
       },
       {
-        "at": "2026-07-24T00:55:08.410Z",
+        "at": "2026-07-24T01:00:07.411Z",
         "t": 365,
         "phase": "reasoning",
         "detail": "Reasoning Object: industry_selection",
         "meta": {
-          "reasoningId": "rsn_mry8agif_wwj6rw",
+          "reasoningId": "rsn_mry8gv80_6g7zlu",
           "decision": "Focus on pressure washing",
           "confidence": 95
         }
       },
       {
-        "at": "2026-07-24T00:55:08.425Z",
+        "at": "2026-07-24T01:00:07.426Z",
         "t": 380,
         "phase": "reasoning",
         "detail": "Reasoning Object: brand_positioning",
         "meta": {
-          "reasoningId": "rsn_mry8agif_v30hbw",
+          "reasoningId": "rsn_mry8gv80_22ylfw",
           "decision": "pressure washing that earns trust with before/after proof before asking for a booking",
           "confidence": 88
         }
       },
       {
-        "at": "2026-07-24T00:55:08.440Z",
+        "at": "2026-07-24T01:00:07.441Z",
         "t": 395,
         "phase": "reasoning",
         "detail": "Reasoning Object: homepage_strategy",
         "meta": {
-          "reasoningId": "rsn_mry8agif_m18qmx",
+          "reasoningId": "rsn_mry8gv80_uzqtik",
           "decision": "Lead with proof, then packages, then a single Book CTA",
           "confidence": 90
         }
@@ -447,7 +447,7 @@
       "decisionObjectsRecorded": 1
     },
     "replay": {
-      "executionId": "flt_mry8agig_377sx3",
+      "executionId": "flt_mry8gv81_62c1of",
       "stepCount": 23,
       "summary": {
         "request": "I'm redesigning my website and I want arrival windows.",
@@ -489,7 +489,7 @@
       },
       "steps": [
         {
-          "at": "2026-07-24T00:55:08.045Z",
+          "at": "2026-07-24T01:00:07.046Z",
           "t": 0,
           "phase": "request",
           "detail": "Owner: I'm redesigning my website and I want arrival windows.",
@@ -498,7 +498,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:55:08.065Z",
+          "at": "2026-07-24T01:00:07.066Z",
           "t": 20,
           "phase": "hubly_brain",
           "detail": "Thinking…",
@@ -507,7 +507,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:55:08.095Z",
+          "at": "2026-07-24T01:00:07.096Z",
           "t": 50,
           "phase": "memory_loaded",
           "detail": "Loaded business_memory",
@@ -516,7 +516,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:55:08.125Z",
+          "at": "2026-07-24T01:00:07.126Z",
           "t": 80,
           "phase": "memory_loaded",
           "detail": "Loaded business_dna",
@@ -525,7 +525,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:55:08.155Z",
+          "at": "2026-07-24T01:00:07.156Z",
           "t": 110,
           "phase": "memory_loaded",
           "detail": "Loaded workspace_memory",
@@ -534,7 +534,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:55:08.185Z",
+          "at": "2026-07-24T01:00:07.186Z",
           "t": 140,
           "phase": "memory_loaded",
           "detail": "Loaded conversation_intelligence",
@@ -543,7 +543,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:55:08.225Z",
+          "at": "2026-07-24T01:00:07.226Z",
           "t": 180,
           "phase": "business_dna",
           "detail": "Business DNA loaded (8 facts)",
@@ -561,7 +561,7 @@
           }
         },
         {
-          "at": "2026-07-24T00:55:08.275Z",
+          "at": "2026-07-24T01:00:07.276Z",
           "t": 230,
           "phase": "research",
           "detail": "research: finished",
@@ -572,29 +572,29 @@
           }
         },
         {
-          "at": "2026-07-24T00:55:08.285Z",
-          "t": 240,
+          "at": "2026-07-24T01:00:07.326Z",
+          "t": 280,
           "phase": "strategy",
           "detail": "strategy: finished",
           "meta": {
             "confidence": 88,
-            "ms": 1,
+            "ms": 0,
             "summary": "I'm positioning around visible proof and clear next step instead of generic price competition."
           }
         },
         {
-          "at": "2026-07-24T00:55:08.335Z",
+          "at": "2026-07-24T01:00:07.336Z",
           "t": 290,
           "phase": "creative_director",
           "detail": "creative_director: finished",
           "meta": {
             "confidence": 84,
-            "ms": 0,
+            "ms": 1,
             "summary": "Clean driveways. Clear pricing. Easy booking."
           }
         },
         {
-          "at": "2026-07-24T00:55:08.385Z",
+          "at": "2026-07-24T01:00:07.386Z",
           "t": 340,
           "phase": "critic",
           "detail": "critic: finished",
@@ -605,20 +605,20 @@
           }
         },
         {
-          "at": "2026-07-24T00:55:08.395Z",
+          "at": "2026-07-24T01:00:07.396Z",
           "t": 350,
           "phase": "experience_director",
           "detail": "experience_director: finished",
           "meta": {
             "confidence": 87,
-            "ms": 5,
+            "ms": 4,
             "summary": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more t"
           }
         }
       ]
     },
     "thinkFlight": {
-      "executionId": "flt_mry8agig_377sx3",
+      "executionId": "flt_mry8gv81_62c1of",
       "memoriesLoaded": [
         "business_memory",
         "business_dna",

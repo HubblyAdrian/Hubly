@@ -19,8 +19,8 @@ Live automation: `npm run milestone1` → `docs/MILESTONE1_RELEASE_GATE.json`
 | 11 | AI Capability Registry & Tool Registry | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section11-registries.mjs` | `docs/HUBLY_BRAIN_SECTION11_PROOF.json` | Accepted |
 | 12 | Hubly Mission Control | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section12-mission-control.mjs` | `docs/HUBLY_BRAIN_SECTION12_PROOF.json` | Accepted |
 | 13 | Hubly Identity System | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section13-identity-system.mjs` | `docs/HUBLY_BRAIN_SECTION13_PROOF.json` | Accepted |
-| 14 | Performance, Reliability & Resilience | Pass (pending Founder Approval) | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section14-reliability.mjs` | `docs/HUBLY_BRAIN_SECTION14_PROOF.json` | — |
-| 15 | Extensibility | Not Started | — | `scripts/check-section15-extensibility.mjs` | `docs/HUBLY_BRAIN_SECTION15_PROOF.json` | — |
+| 14 | Performance, Reliability & Resilience | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section14-reliability.mjs` | `docs/HUBLY_BRAIN_SECTION14_PROOF.json` | Accepted |
+| 15 | Platform Extensibility | Pass (pending Founder Approval) | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section15-platform-extensibility.mjs` | `docs/HUBLY_BRAIN_SECTION15_PROOF.json` | — |
 | 16 | Tests | Not Started | — | `scripts/check-section16-tests.mjs` | `docs/HUBLY_BRAIN_SECTION16_PROOF.json` | — |
 | 17 | Documentation | Not Started | — | `scripts/check-section17-documentation.mjs` | `docs/HUBLY_BRAIN_SECTION17_PROOF.json` | — |
 | 18 | Founder Demo | Not Started | — | `scripts/check-section18-founder-demo.mjs` | `docs/HUBLY_BRAIN_SECTION18_PROOF.json` | — |
@@ -75,4 +75,23 @@ npm run check:section13
 npm run check:section14
 ```
 
-**Stop.** Do not start Section 15 until Founder Approval.
+**Accepted** — proceeded to Section 15.
+
+
+### Section 15 — Platform Extensibility (Pass — pending Founder Approval)
+
+**Renamed** from Extensibility → **Platform Extensibility**. Register modules — don't rewrite Brain.
+
+| Extension | Proven |
+|-----------|--------|
+| Experts / Builders / Industries | Register + unregister via Feature Manifest |
+| Capabilities / Knowledge / Integrations / Workflows | Discoverable through existing registries |
+| Validation + version compatibility | Invalid / incompatible modules rejected |
+| UI extension points | Reserved (not implemented) |
+| Mission Control | Live Feature Manifest inventory |
+
+```bash
+npm run check:section15
+```
+
+**Stop.** Do not start Section 16 until Founder Approval.

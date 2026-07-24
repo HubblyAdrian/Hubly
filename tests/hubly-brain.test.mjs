@@ -304,3 +304,20 @@ test('Section 14 — Performance, Reliability & Resilience + Trust Score', () =>
   assert.ok(proof.proofs.trustScore.overall >= 80);
   assert.ok(proof.proofs.demos.weatherTimeout.continued);
 });
+
+test('Section 15 — Platform Extensibility via Feature Manifests', () => {
+  const r = run('scripts/check-section15-platform-extensibility.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 15 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION15_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 15);
+  assert.match(proof.name, /Platform Extensibility/i);
+  assert.ok(proof.proofs.demo.registered.length >= 6);
+  assert.equal(proof.proofs.brainUntouched, true);
+});

@@ -200,12 +200,52 @@ function buildPressureWashingPack({ city, state, country }) {
   };
 }
 
+/** Platform Extensibility (Section 15) — industry packs register here. */
+const INDUSTRY_PACKS = new Map();
+
+function normalizeIndustryKey(industry) {
+  return String(industry || '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+export function registerDnaIndustryPack(industry, pack) {
+  const key = normalizeIndustryKey(industry);
+  if (!key) throw new Error('DNA industry pack requires industry key');
+  INDUSTRY_PACKS.set(key, pack);
+}
+
+export function unregisterDnaIndustryPack(industry) {
+  return INDUSTRY_PACKS.delete(normalizeIndustryKey(industry));
+}
+
+export function getDnaIndustryPack(industry) {
+  return INDUSTRY_PACKS.get(normalizeIndustryKey(industry)) || null;
+}
+
+export function listDnaIndustryPacks() {
+  return [...INDUSTRY_PACKS.entries()].map(([industry, pack]) => ({
+    industry,
+    industryName: pack.industryProfile?.industryName || industry,
+    knowledgeVersion: pack.knowledgeVersion,
+  }));
+}
+
+export function clearDnaIndustryPacksForTests() {
+  INDUSTRY_PACKS.clear();
+}
+
 export function detectDnaLoadHints(opts = {}) {
   const req = String(opts.request || '');
   const industryHint = String(opts.industry || '').toLowerCase();
   let industry = 'local service';
   if (/pressure\s*wash/.test(industryHint) || /pressure\s*wash/.test(req)) industry = 'pressure washing';
+  else if (/pool\s*clean/.test(industryHint) || /pool\s*clean/.test(req)) industry = 'pool cleaning';
   else if (industryHint) industry = industryHint;
+  for (const key of INDUSTRY_PACKS.keys()) {
+    if (industryHint.includes(key) || req.toLowerCase().includes(key) || industry === key) {
+      industry = key;
+      break;
+    }
+  }
   let city = opts.city || null;
   let state = opts.state || null;
   if (/salt lake city/i.test(req)) {
@@ -217,6 +257,20 @@ export function detectDnaLoadHints(opts = {}) {
 
 export function loadBusinessDnaKnowledge(opts = {}) {
   const hints = detectDnaLoadHints(opts);
+  const registered = getDnaIndustryPack(hints.industry);
+  if (registered) {
+    return {
+      ...registered,
+      loadedAt: new Date().toISOString(),
+      loadedBy: DNA_KNOWLEDGE_OWNER,
+      regionalIntelligence: {
+        ...registered.regionalIntelligence,
+        city: hints.city ?? registered.regionalIntelligence.city,
+        state: hints.state ?? registered.regionalIntelligence.state,
+        country: hints.country ?? registered.regionalIntelligence.country,
+      },
+    };
+  }
   if (hints.industry === 'pressure washing') {
     return buildPressureWashingPack({
       city: hints.city,
@@ -224,7 +278,87 @@ export function loadBusinessDnaKnowledge(opts = {}) {
       country: hints.country,
     });
   }
-  return buildPressureWashingPack({ city: hints.city, state: hints.state, country: hints.country });
+  // Generic structured pack for unknown industries (registered packs handled above).
+  return {
+    schemaVersion: HUBLY_DNA_KNOWLEDGE_VERSION,
+    knowledgeVersion: 1,
+    loadedAt: new Date().toISOString(),
+    loadedBy: DNA_KNOWLEDGE_OWNER,
+    industryProfile: {
+      industryName: hints.industry,
+      businessCategories: ['local service'],
+      typicalBusinessStages: ['starting', 'growing'],
+      commonBusinessModels: ['mobile / on-site'],
+      serviceDeliveryMethods: ['on-site'],
+    },
+    customerPsychology: {
+      buyingTriggers: ['need + trust'],
+      buyingFears: ['wasted money'],
+      trustBuilders: ['reviews'],
+      decisionSpeed: 'moderate',
+      priceSensitivity: 'moderate',
+      emotionalMotivations: ['relief'],
+      commonObjections: ['price'],
+    },
+    trustSignals: { signals: ['Reviews'], rankedByImportance: ['Reviews'] },
+    serviceRelationships: {
+      primaryServices: [],
+      upsells: [],
+      crossSells: [],
+      seasonalServices: [],
+      serviceBundles: [],
+      membershipOpportunities: [],
+    },
+    pricingIntelligence: {
+      typicalPricingModels: ['packages'],
+      customerExpectations: ['clarity'],
+      premiumPositioningOpportunities: [],
+      valuePositioning: ['proof first'],
+      discountRisks: [],
+    },
+    websiteIntelligence: {
+      recommendedHomepageOrder: ['Hero', 'Offers', 'Trust', 'Book'],
+      highConvertingLayouts: ['proof-led'],
+      bookingBestPractices: ['one CTA'],
+      galleryRecommendations: [],
+      ctaStrategy: ['single primary CTA'],
+      contentPriorities: ['clarity'],
+    },
+    growthIntelligence: {
+      growthOpportunities: [],
+      referralIdeas: [],
+      membershipIdeas: [],
+      reviewStrategies: [],
+      customerRetentionIdeas: [],
+      expansionOpportunities: [],
+    },
+    seasonality: {
+      busySeasons: [],
+      slowSeasons: [],
+      weatherImpact: [],
+      holidayOpportunities: [],
+      regionalSeasonality: [],
+    },
+    regionalIntelligence: {
+      country: hints.country,
+      state: hints.state,
+      city: hints.city,
+      climate: null,
+      regionalBuyingBehavior: [],
+      localTerminology: [],
+    },
+    communityLearning: {
+      enabled: false,
+      automaticLearning: false,
+      version: 0,
+      evidence: [],
+      confidence: 0,
+      source: 'generic',
+      communityLearnings: [],
+      validationHistory: [],
+    },
+    evidence: [],
+  };
 }
 
 export function attachDnaKnowledgePack(dna, pack) {

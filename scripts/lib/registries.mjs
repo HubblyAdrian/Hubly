@@ -79,6 +79,9 @@ function registerKnowledgeSource(def) {
   KNOWLEDGE.set(normalized.id, normalized);
   return cloneKnowledge(normalized);
 }
+function unregisterKnowledgeSource(id) {
+  return KNOWLEDGE.delete(String(id));
+}
 function listKnowledgeSources() {
   return [...KNOWLEDGE.values()].map(cloneKnowledge);
 }
@@ -480,6 +483,7 @@ const HublyKnowledgeRegistry = {
   version: REGISTRIES_VERSION,
   owner: REGISTRIES_OWNER,
   register: registerKnowledgeSource,
+  unregister: unregisterKnowledgeSource,
   list: listKnowledgeSources,
   get: getKnowledgeSource,
   resolve: resolveKnowledgeForRequest,
@@ -516,6 +520,7 @@ export {
   registerTool,
   resolveCapabilitiesForRequest,
   resolveKnowledgeForRequest,
+  unregisterKnowledgeSource,
   unregisterTool,
   whoOwnsCapability
 };
