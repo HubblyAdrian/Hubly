@@ -5,10 +5,15 @@ import { fileURLToPath } from "url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 const plugin = {
-  name: "alias-identity",
+  name: "alias-identity-personality",
   setup(build) {
     build.onResolve({ filter: /hubly_brain_identity_system\.ts$/ }, () => ({
       path: path.join(root, "scripts/lib/identity-system.mjs"),
+      external: true,
+    }));
+    build.onResolve({ filter: /hubly_brain_personality\.ts$/ }, () => ({
+      path: path.join(root, "scripts/lib/personality.mjs"),
+      external: true,
     }));
   },
 };

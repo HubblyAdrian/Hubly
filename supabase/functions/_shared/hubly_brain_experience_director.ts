@@ -17,6 +17,10 @@ import {
   HUBLY_IDENTITY_VERSION,
   type HublyIdentityApplyResult,
 } from "./hubly_brain_identity_system.ts";
+import {
+  applyPersonalityExpression,
+  type PersonalityExpression,
+} from "./hubly_brain_personality.ts";
 
 export const EXPERIENCE_DIRECTOR_VERSION = "1.2.0" as const;
 
@@ -83,6 +87,8 @@ export type ExperienceDirectorInput = {
   criticOk?: boolean | null;
   confidence?: number | null;
   draftResponse?: string | null;
+  /** Milestone 2 · Epic 0 — owner name for visible personality. */
+  ownerName?: string | null;
 };
 
 export type ExperienceEvaluation = {
@@ -122,6 +128,8 @@ export type ExperienceDirectorResult = {
   confidence: number;
   reviewedBy: "experience_director";
   personality: typeof HUBLY_PERSONALITY;
+  /** Milestone 2 · Epic 0 — visible personality expression for this turn. */
+  personalityExpression?: PersonalityExpression | null;
   /** Section 13 — Identity System + Constitution evaluation. */
   identity: HublyIdentityApplyResult;
   /** Gate checks for Mission Control / proofs (includes Identity + Constitution). */
@@ -424,6 +432,20 @@ export function applyExperienceDirector(input: ExperienceDirectorInput): Experie
     celebrate,
   });
   response = identity.text;
+
+  // Milestone 2 · Epic 0 — make Identity visible (greeting, celebrate, apologize, …).
+  const personalityExpression = applyPersonalityExpression({
+    text: response,
+    request: input.request,
+    ownerName: input.ownerName || null,
+    celebrate,
+    lowConfidence: (input.confidence != null ? Number(input.confidence) : 78) < 55,
+    correcting: /wrong|undo|don'?t like|mistake/i.test(String(input.request || "")),
+    transitioning: /continue where|where we left|pick up/i.test(String(input.request || "")),
+    opening: /^(hi|hello|hey)\b/i.test(String(input.request || "").trim()),
+  });
+  response = personalityExpression.text;
+  actions.push(...personalityExpression.actions);
   after.response = response;
 
   const constitution = evaluateAgainstConstitution(response);
@@ -435,6 +457,11 @@ export function applyExperienceDirector(input: ExperienceDirectorInput): Experie
       detail: constitution.ok
         ? "all principles satisfied"
         : constitution.violations.map((v) => v.principleId).join(","),
+    },
+    {
+      name: "visible_personality",
+      ok: !!personalityExpression.mode,
+      detail: `${personalityExpression.mode} · remembered as ${personalityExpression.rememberedAs}`,
     },
   ];
 
@@ -464,6 +491,7 @@ export function applyExperienceDirector(input: ExperienceDirectorInput): Experie
     confidence: clamp(input.confidence != null ? Number(input.confidence) : 78),
     reviewedBy: "experience_director",
     personality: HUBLY_PERSONALITY,
+    personalityExpression,
     identity: {
       ...identity,
       constitution: {

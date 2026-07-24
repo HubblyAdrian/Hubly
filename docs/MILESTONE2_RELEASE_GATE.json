@@ -1,0 +1,90 @@
+{
+  "milestone": "2",
+  "name": "The Hubly Experience",
+  "passed": 1,
+  "total": 13,
+  "unlocked": 1,
+  "percent": 8,
+  "ready": false,
+  "checkedAt": "2026-07-24T05:14:42.749Z",
+  "epics": [
+    {
+      "n": 0,
+      "title": "Hubly Identity & Personality",
+      "status": "pass",
+      "script": "scripts/check-experience-epic0.mjs"
+    },
+    {
+      "n": 1,
+      "title": "Welcome to Hubly",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 2,
+      "title": "Business Discovery Conversation",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 3,
+      "title": "Hubly Thinks Out Loud",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 4,
+      "title": "Creative Build Session",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 5,
+      "title": "The Reveal",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 6,
+      "title": "Delayed Account Creation",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 7,
+      "title": "Business Launch Celebration",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 8,
+      "title": "Business Home",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 9,
+      "title": "Creative Workspace",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 10,
+      "title": "Hubly Daily",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 11,
+      "title": "Living Business",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 12,
+      "title": "Polish",
+      "status": "locked",
+      "script": null
+    }
+  ]
+}
