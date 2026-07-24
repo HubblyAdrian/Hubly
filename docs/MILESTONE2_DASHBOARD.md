@@ -13,19 +13,19 @@ Live automation: `npm run milestone2` → `docs/MILESTONE2_RELEASE_GATE.json`
 | 4 | Creative Build Experience | Pass | `scripts/check-m2-epic4.mjs` | [`MILESTONE2_EPIC4_PROOF.md`](./MILESTONE2_EPIC4_PROOF.md) | Accepted |
 | 5 | Business Reveal | Pass | `scripts/check-m2-epic5.mjs` | [`MILESTONE2_EPIC5_PROOF.md`](./MILESTONE2_EPIC5_PROOF.md) | Accepted |
 | 6 | Delayed Account Creation | Pass | `scripts/check-m2-epic6.mjs` | [`MILESTONE2_EPIC6_PROOF.md`](./MILESTONE2_EPIC6_PROOF.md) | Accepted |
-| 7 | Business Launch | Pass (pending Founder Approval) | `scripts/check-m2-epic7.mjs` | [`MILESTONE2_EPIC7_PROOF.md`](./MILESTONE2_EPIC7_PROOF.md) | — |
-| 8 | Business Home | Locked | — | — | — |
+| 7 | Business Launch | Pass | `scripts/check-m2-epic7.mjs` | [`MILESTONE2_EPIC7_PROOF.md`](./MILESTONE2_EPIC7_PROOF.md) | Accepted |
+| 8 | Business Home | Pass (pending Founder Approval) | `scripts/check-m2-epic8.mjs` | [`MILESTONE2_EPIC8_PROOF.md`](./MILESTONE2_EPIC8_PROOF.md) | — |
 | 9 | Creative Workspace | Locked | — | — | — |
 | 10 | Hubly Daily | Locked | — | — | — |
 | 11 | Living Business | Locked | — | — | — |
 | 12 | Polish & Delight | Locked | — | — | — |
 
-## Epic 7 — Business Launch Experience
+## Epic 8 — Business Home
 
-Opening a business — not publishing a website. Celebrate first. Coach second. Dashboard last.
+Personalized business briefing — not a dashboard. **30-Second Rule** keeps it focused.
 
 ```bash
-npm run check:m2-epic7
+npm run check:m2-epic8
 ```
 
-**Stop.** Do not start Epic 8 until Founder Approval.
+**Stop.** Do not start Epic 9 until Founder Approval.

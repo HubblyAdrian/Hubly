@@ -1,12 +1,12 @@
 {
   "milestone": "2",
   "name": "The Hubly Experience",
-  "passed": 8,
+  "passed": 9,
   "total": 13,
-  "unlocked": 8,
-  "percent": 62,
+  "unlocked": 9,
+  "percent": 69,
   "ready": false,
-  "checkedAt": "2026-07-24T15:51:06.120Z",
+  "checkedAt": "2026-07-24T16:05:12.330Z",
   "epics": [
     {
       "n": 0,
@@ -59,8 +59,8 @@
     {
       "n": 8,
       "title": "Business Home",
-      "status": "locked",
-      "script": null
+      "status": "pass",
+      "script": "scripts/check-m2-epic8.mjs"
     },
     {
       "n": 9,

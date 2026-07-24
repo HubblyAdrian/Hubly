@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 7 — Business Launch Experience
 
 **Status:** PASS  
-**Checked:** 2026-07-24T15:51:06.117Z  
+**Checked:** 2026-07-24T16:05:12.288Z  
 **Gate:** `npm run check:m2-epic7`
 
 > Opening a business — not publishing a website.  
