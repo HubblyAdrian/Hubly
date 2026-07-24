@@ -2,8 +2,7 @@
 
 **Not integration. Cutover.**
 
-Retire the old product. Launch the one we designed.  
-Until a stranger can complete the full journey on hubly.app without seeing old onboarding, old dashboard, or old editor — Milestones 1 / 1.5 / 2 are **not** finished.
+Retire the old product. Launch the one we designed.
 
 ```
 Pretend you've never seen Hubly before.
@@ -12,118 +11,99 @@ Your job is not to preserve the old UX.
 Your job is to make the designed product the only product users experience.
 ```
 
+### Definition of done (founder, not engineer)
+
+> Milestone 2.5 is complete **only** when a brand-new customer can go from **hubly.app** to a fully launched business **without ever realizing there was an old product**.
+
+Merge passed and gates green are **necessary but not sufficient**.  
+**Phase E — Founder Certification** is the finish line.
+
 ---
 
-## Four phases
+## Five phases
 
 ### Phase A — Merge Everything ✅
-
-Merge onto `main` (not cherry-pick, not copy):
 
 ```
 Milestone 1 → Milestone 1.5 → Milestone 2 → Milestone 2.5
 ```
 
-**Release Gate**
-
 | Check | Command |
 |-------|---------|
-| No merge conflicts | This branch merges `origin/main` cleanly |
+| No merge conflicts | Branch merges with `main` |
 | Milestone 1 | `npm run milestone1` |
 | Milestone 1.5 | `npm run milestone15` |
 | Milestone 2 | `npm run milestone2` |
 | Cutover wiring | `npm run check:m25-cutover` |
-| Production build | Vercel serves `public/hubly.html` |
 
-### Phase B — Replace Every Old Experience
+### Phase B — Replace Every Old Experience ✅
 
-Do not add the new experience beside the old one.
-
-| Old | New | Cutover action |
-|-----|-----|----------------|
-| Landing (`platform-home` at `/`) | Welcome Experience | `/` → Welcome; brochure at `/platform` only |
-| Signup auth shell | Conversation (Welcome) | `#p-signup` is Welcome only |
-| Old onboarding / CD wizard | Discovery → Thinking → Build | Instant Site M2 path; CD is not primary |
-| Success / claim screen | Reveal → Save → Launch | M2 steps |
-| Dashboard as home | Business Home | `goDash()` → Business Home always |
-| Website editor as primary | Creative Workspace | Home “Edit with Hubly” → CW |
-| Classic dashboard escape | **Advanced Studio** | CW → Advanced Studio → optional pixel editor |
-
-**Escape hatch (intentional only):**
+| Old | New |
+|-----|-----|
+| Landing | Welcome Experience |
+| Signup | Conversation (Welcome) |
+| Onboarding | Discovery → Thinking → Build |
+| Success | Reveal → Save → Launch |
+| Dashboard home | Business Home |
+| Website editor default | Creative Workspace |
+| Classic dashboard escape | **Advanced Studio** only |
 
 ```
-Business Home
-  → Edit with Hubly
-  → Creative Workspace
-  → Need pixel-perfect control?
-  → Advanced Studio
+Business Home → Edit with Hubly → Creative Workspace
+  → Need pixel-perfect control? → Advanced Studio
 ```
 
-Users must never accidentally fall into the old experience.
+### Phase C — Production Walkthrough (wiring) 🟡
 
-### Phase C — Production Walkthrough
+Code path supports the stranger journey. **Live verification is Phase E.**
 
-Gates can pass and still fail cutover.
+### Phase D — Dead Code Discipline 🟡
 
-A stranger visits hubly.app and completes:
+Inventory produced — **no mass delete until founder asks**:
 
-1. Visit hubly.app  
-2. Describe business  
-3. Discovery  
-4. Thinking  
-5. Creative Build  
-6. Reveal  
-7. Save Business  
-8. Launch  
-9. Business Home  
-10. Edit Website (Creative Workspace)  
-11. Hubly Daily  
-12. Living Business  
+- [`MILESTONE25_DEAD_CODE_INVENTORY.md`](./MILESTONE25_DEAD_CODE_INVENTORY.md) — Delete / Archive / Still Required
 
-If any step falls back to the old product → **Milestone 2.5 fails.**
+### Phase E — Founder Certification ⬜ **THE ONLY THING THAT MATTERS**
 
-### Phase D — Delete Dead Code
+Live production tests on hubly.app:
 
-No dual products:
+1. Brand new user (incognito) — full journey, zero old surfaces  
+2. Returning user → Business Home + morning voice  
+3. Edit Website → Creative Workspace (not old editor)  
+4. Ask Hubly — one thread  
+5. “Add arrival windows” → Plan → Preview → Approval → Deploy  
+6. Refresh mid-flow — resume  
+7. Mobile — same product  
+8. Speed — conversation / preview / home  
 
-- ❌ Old Dashboard + New Home  
-- ❌ Old Signup + New Welcome  
-- ❌ Old Editor + Creative Workspace as equals  
+**Docs:**
 
-Yes:
+| Doc | Role |
+|-----|------|
+| [`MILESTONE25_FOUNDER_CERTIFICATION.md`](./MILESTONE25_FOUNDER_CERTIFICATION.md) | Tests 1–8 + signature |
+| [`MILESTONE25_CUTOVER_REPORT.md`](./MILESTONE25_CUTOVER_REPORT.md) | Sign-off matrix (Old Removed / New Live / Verified) |
 
-- Business Home  
-- Creative Workspace  
-- Conversation  
-- Hubly Daily  
-- Living Business  
-- Advanced Studio (escape hatch only)
-
-Archived / removed:
-
-- Root stale `hubly.html` twin (router never served it)  
-- Classic dashboard as post-login home  
-- Marketing Instant Site skip past Welcome  
-
----
-
-## Cutover status on this branch
-
-| Phase | Status |
-|-------|--------|
-| A Merge main into stack | Done on `cursor/milestone25-production-cutover-2662` |
-| B Replace experiences | Done in wiring (Welcome `/`, Business Home `/app`, Advanced Studio hatch) |
-| C Walkthrough on live hubly.app | **Blocked until this PR merges to `main` and deploys** |
-| D Dead code | Root twin removed; old home path retired |
+Until Phase E is signed on **live hubly.app**, do **not** begin Milestone 3.
 
 ---
 
 ## Commands
 
 ```bash
-npm run milestone1
-npm run milestone15
-npm run milestone2
-npm run check:m25-cutover
-npm run milestone25
+npm run milestone25          # A–D wiring gates
+npm run check:m25-cutover    # cutover wiring only
 ```
+
+Phase E has no substitute script. It requires a human on production.
+
+---
+
+## Cutover status
+
+| Phase | Status |
+|-------|--------|
+| A Merge | ✅ |
+| B Replace experiences | ✅ |
+| C Walkthrough wiring | 🟡 |
+| D Dead-code inventory | 🟡 (report ready; deletes pending) |
+| E Founder Certification | ⬜ **blocked on live hubly.app** |

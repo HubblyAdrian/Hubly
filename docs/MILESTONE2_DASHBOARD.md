@@ -10,12 +10,17 @@ Live automation: `npm run milestone2` → `docs/MILESTONE2_RELEASE_GATE.json`
 
 ## Next — Milestone 2.5 Production Cutover
 
-Gates on feature branches are not enough. See:
+**Done ≠ gates green.** Done = a customer can use the new product on live hubly.app.
 
-**[`MILESTONE25_PRODUCTION_CUTOVER.md`](./MILESTONE25_PRODUCTION_CUTOVER.md)**
+| Doc | Role |
+|-----|------|
+| [`MILESTONE25_PRODUCTION_CUTOVER.md`](./MILESTONE25_PRODUCTION_CUTOVER.md) | Phases A–E |
+| [`MILESTONE25_FOUNDER_CERTIFICATION.md`](./MILESTONE25_FOUNDER_CERTIFICATION.md) | Phase E Tests 1–8 |
+| [`MILESTONE25_CUTOVER_REPORT.md`](./MILESTONE25_CUTOVER_REPORT.md) | Founder sign-off matrix |
+| [`MILESTONE25_DEAD_CODE_INVENTORY.md`](./MILESTONE25_DEAD_CODE_INVENTORY.md) | Delete / Archive / Still Required |
 
 ```bash
 npm run milestone25
 ```
 
-Do **not** start Milestone 3 until a stranger can complete the full new journey on production hubly.app with no old signup, dashboard, or editor as the primary path.
+Do **not** start Milestone 3 until Phase E is signed on production.

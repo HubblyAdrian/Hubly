@@ -2,6 +2,9 @@
   "milestone": "2.5",
   "title": "Production Cutover",
   "passed": true,
+  "wiringOnly": true,
+  "phaseE": "pending_founder_live",
+  "definitionOfDone": "A brand-new customer can go from hubly.app to a fully launched business without ever realizing there was an old product.",
   "failures": [],
-  "checkedAt": "2026-07-24T17:35:25.733Z"
+  "checkedAt": "2026-07-24T17:54:45.942Z"
 }

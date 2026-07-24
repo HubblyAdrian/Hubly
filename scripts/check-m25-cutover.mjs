@@ -109,11 +109,12 @@ check("Live router: /platform is legacy brochure", /Get Done|Build My Business/i
 const passed = failures.length === 0;
 const proof = `# Milestone 2.5 — Production Cutover
 
-**Status:** ${passed ? "PASS (wiring)" : "FAIL"}  
+**Status:** ${passed ? "PASS (wiring A–D)" : "FAIL"}  
 **Checked:** ${new Date().toISOString()}  
 **Gate:** \`npm run check:m25-cutover\`
 
-> Cutover ≠ integration. The designed product must be the only product.
+> Engineer green ≠ done.  
+> **Phase E Founder Certification** on live hubly.app is the finish line.
 
 ## Phases
 
@@ -121,20 +122,44 @@ const proof = `# Milestone 2.5 — Production Cutover
 |-------|--------|
 | A Merge Everything | ${passed ? "✅" : "❌"} |
 | B Replace Every Old Experience | ${passed ? "✅" : "❌"} |
-| C Production Walkthrough (live hubly.app) | ⬜ Requires deploy to main |
-| D Delete Dead Code | ${passed ? "✅ wiring" : "❌"} |
+| C Production Walkthrough (wiring) | ${passed ? "🟡" : "❌"} |
+| D Dead Code Inventory | ${passed ? "🟡 report ready" : "❌"} |
+| E Founder Certification (live hubly.app) | ⬜ |
 
 ## Founder rule
 
-If a stranger on hubly.app hits old signup, old dashboard, or old editor as the primary path — this milestone fails even if scripts pass.
+Milestone 2.5 is complete only when a brand-new customer can go from hubly.app to a fully launched business without ever realizing there was an old product.
+
+See:
+
+- \`docs/MILESTONE25_FOUNDER_CERTIFICATION.md\` — Tests 1–8
+- \`docs/MILESTONE25_CUTOVER_REPORT.md\` — sign-off matrix
+- \`docs/MILESTONE25_DEAD_CODE_INVENTORY.md\` — Delete / Archive / Still Required
 `;
 
 fs.writeFileSync(path.join(root, "docs/MILESTONE25_CUTOVER_PROOF.md"), proof);
 fs.writeFileSync(
   path.join(root, "docs/MILESTONE25_CUTOVER_PROOF.json"),
-  JSON.stringify({ milestone: "2.5", title: "Production Cutover", passed, failures, checkedAt: new Date().toISOString() }, null, 2) + "\n",
+  JSON.stringify(
+    {
+      milestone: "2.5",
+      title: "Production Cutover",
+      passed,
+      wiringOnly: true,
+      phaseE: "pending_founder_live",
+      definitionOfDone:
+        "A brand-new customer can go from hubly.app to a fully launched business without ever realizing there was an old product.",
+      failures,
+      checkedAt: new Date().toISOString(),
+    },
+    null,
+    2,
+  ) + "\n",
 );
 
-console.log(passed ? "\nM2.5 CUTOVER PASS (wiring)\n" : "\nM2.5 CUTOVER FAIL\n");
-console.log("Proof → docs/MILESTONE25_CUTOVER_PROOF.md\n");
+console.log(passed ? "\nM2.5 CUTOVER PASS (wiring A–D)\n" : "\nM2.5 CUTOVER FAIL\n");
+console.log("Phase E Founder Certification: ⬜ pending live hubly.app\n");
+console.log("Proof → docs/MILESTONE25_CUTOVER_PROOF.md");
+console.log("Sign-off → docs/MILESTONE25_CUTOVER_REPORT.md");
+console.log("Tests → docs/MILESTONE25_FOUNDER_CERTIFICATION.md\n");
 if (!passed) process.exit(1);

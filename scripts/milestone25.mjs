@@ -37,13 +37,19 @@ const gate = {
   milestone: "2.5",
   name: "Production Cutover",
   passed,
+  wiringOnly: true,
+  phaseE: "pending_founder_live",
+  definitionOfDone:
+    "A brand-new customer can go from hubly.app to a fully launched business without ever realizing there was an old product.",
   results,
   checkedAt: new Date().toISOString(),
-  note: "Live stranger walkthrough on hubly.app still required after merge to main.",
+  note: "Phase E Founder Certification on live hubly.app is required before Milestone 3. See docs/MILESTONE25_CUTOVER_REPORT.md",
 };
 fs.writeFileSync(path.join(root, "docs/MILESTONE25_RELEASE_GATE.json"), JSON.stringify(gate, null, 2) + "\n");
 
 console.log("\nOverall");
-console.log(passed ? "Ready (wiring)" : "Not ready");
+console.log(passed ? "Ready (wiring A–D)" : "Not ready");
 console.log(`(${results.filter((r) => r.ok).length}/${steps.length} gates)\n`);
+console.log("Phase E Founder Certification: ⬜ pending live hubly.app");
+console.log("Sign-off doc → docs/MILESTONE25_CUTOVER_REPORT.md\n");
 process.exit(passed ? 0 : 1);

@@ -1,10 +1,11 @@
 # Milestone 2.5 — Production Cutover
 
-**Status:** PASS (wiring)  
-**Checked:** 2026-07-24T17:35:25.732Z  
+**Status:** PASS (wiring A–D)  
+**Checked:** 2026-07-24T17:54:45.942Z  
 **Gate:** `npm run check:m25-cutover`
 
-> Cutover ≠ integration. The designed product must be the only product.
+> Engineer green ≠ done.  
+> **Phase E Founder Certification** on live hubly.app is the finish line.
 
 ## Phases
 
@@ -12,9 +13,16 @@
 |-------|--------|
 | A Merge Everything | ✅ |
 | B Replace Every Old Experience | ✅ |
-| C Production Walkthrough (live hubly.app) | ⬜ Requires deploy to main |
-| D Delete Dead Code | ✅ wiring |
+| C Production Walkthrough (wiring) | 🟡 |
+| D Dead Code Inventory | 🟡 report ready |
+| E Founder Certification (live hubly.app) | ⬜ |
 
 ## Founder rule
 
-If a stranger on hubly.app hits old signup, old dashboard, or old editor as the primary path — this milestone fails even if scripts pass.
+Milestone 2.5 is complete only when a brand-new customer can go from hubly.app to a fully launched business without ever realizing there was an old product.
+
+See:
+
+- `docs/MILESTONE25_FOUNDER_CERTIFICATION.md` — Tests 1–8
+- `docs/MILESTONE25_CUTOVER_REPORT.md` — sign-off matrix
+- `docs/MILESTONE25_DEAD_CODE_INVENTORY.md` — Delete / Archive / Still Required
