@@ -225,6 +225,22 @@ export type HublyFlightRecorder = {
     executed: false;
     waitingFor: string;
   } | null;
+  /** Milestone 1.5 · Epic 8 — Workspace Intelligence (not applied). */
+  workspaceIntelligence: {
+    id: string;
+    label: string;
+    changeCount: number;
+    concepts: string[];
+    healthOverall: number;
+    recommendationCount: number;
+    homepage: string;
+    focusMode: string | null;
+    deviceCount: number;
+    requiresApproval: true;
+    applied: false;
+    executed: false;
+    waitingFor: string;
+  } | null;
 };
 
 export type HublyExpertActivityStats = {
@@ -295,6 +311,8 @@ export type HublyMissionControlSnapshot = {
     creativeSessions: Array<NonNullable<HublyFlightRecorder["creativeSession"]>>;
     /** Latest Booking Intelligence plans (Epic 7). */
     bookingIntelligence: Array<NonNullable<HublyFlightRecorder["bookingIntelligence"]>>;
+    /** Latest Workspace Intelligence plans (Epic 8). */
+    workspaceIntelligence: Array<NonNullable<HublyFlightRecorder["workspaceIntelligence"]>>;
   };
   capabilityRegistry: Array<{ toolId: string; name: string; capabilityCount: number }>;
   knowledgeRegistry: Array<{ id: string; name: string; access: string }>;
@@ -390,6 +408,7 @@ export type RecordFlightOpts = {
   businessVersion?: HublyFlightRecorder["businessVersion"];
   creativeSession?: HublyFlightRecorder["creativeSession"];
   bookingIntelligence?: HublyFlightRecorder["bookingIntelligence"];
+  workspaceIntelligence?: HublyFlightRecorder["workspaceIntelligence"];
 };
 
 /**
@@ -521,6 +540,17 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     );
   }
 
+  if (opts.workspaceIntelligence) {
+    push(
+      "workspace_intelligence",
+      `Workspace Intelligence: ${opts.workspaceIntelligence.changeCount} change(s) · health ${opts.workspaceIntelligence.healthOverall}`,
+      {
+        ...opts.workspaceIntelligence,
+      },
+      12,
+    );
+  }
+
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -581,6 +611,7 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     businessVersion: opts.businessVersion ? { ...opts.businessVersion } : null,
     creativeSession: opts.creativeSession ? { ...opts.creativeSession } : null,
     bookingIntelligence: opts.bookingIntelligence ? { ...opts.bookingIntelligence } : null,
+    workspaceIntelligence: opts.workspaceIntelligence ? { ...opts.workspaceIntelligence } : null,
   };
 
   FLIGHTS.set(flight.executionId, flight);
@@ -829,12 +860,23 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         .filter((x): x is NonNullable<typeof x> => !!x)
         .slice(-10)
         .reverse();
+      const workspaceIntelligencePlans = flights
+        .map((f) => f.workspaceIntelligence)
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .slice(-10)
+        .reverse();
       return {
         milestone: "1.5" as const,
         available: false as const,
-        epic: "7 — Booking Intelligence Builder",
-        note: "Epic 7 — Booking Intelligence Builder. Owners describe how they operate. Schedule Simulator. Waiting for Approval/Apply. No apply.",
-        recent: bookingIntelligencePlans.length
+        epic: "8 — Workspace Intelligence Builder",
+        note: "Epic 8 — Workspace Intelligence Builder. Workspace evolves around how the owner works. Focus Mode. Waiting for Approval/Apply. No apply.",
+        recent: workspaceIntelligencePlans.length
+          ? workspaceIntelligencePlans.map((w) => ({
+            id: w.id,
+            status: "workspace_intelligence",
+            summary: `${w.label}: ${w.changeCount} change(s) · health ${w.healthOverall} · home ${w.homepage}`,
+          }))
+          : bookingIntelligencePlans.length
           ? bookingIntelligencePlans.map((b) => ({
             id: b.id,
             status: "booking_intelligence",
@@ -899,6 +941,7 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         versionHistoryNote: "Current → History → Diff → Rollback availability → AI restore suggestions. Try it — you can always go back.",
         creativeSessions,
         bookingIntelligence: bookingIntelligencePlans,
+        workspaceIntelligence: workspaceIntelligencePlans,
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

@@ -1,11 +1,11 @@
 {
   "milestone": "1.5",
-  "passed": 7,
+  "passed": 8,
   "total": 12,
-  "unlocked": 7,
-  "percent": 58,
+  "unlocked": 8,
+  "percent": 67,
   "ready": false,
-  "checkedAt": "2026-07-24T03:36:36.288Z",
+  "checkedAt": "2026-07-24T03:47:09.589Z",
   "epics": [
     {
       "n": 1,
@@ -51,9 +51,9 @@
     },
     {
       "n": 8,
-      "title": "Workspace Builder",
-      "status": "locked",
-      "script": null
+      "title": "Workspace Intelligence Builder",
+      "status": "pass",
+      "script": "scripts/check-builder-epic8.mjs"
     },
     {
       "n": 9,

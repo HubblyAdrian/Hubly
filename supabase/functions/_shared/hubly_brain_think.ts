@@ -23,6 +23,10 @@ import {
   type BookingIntelligencePlan,
 } from "./hubly_brain_booking_intelligence.ts";
 import {
+  buildWorkspaceIntelligence,
+  type WorkspaceIntelligencePlan,
+} from "./hubly_brain_workspace_intelligence.ts";
+import {
   listExpertCapabilities,
   listExperts,
   runExpert,
@@ -239,6 +243,8 @@ export type HublyThinkResult = {
   creativeSession?: CreativeSession | null;
   /** Milestone 1.5 · Epic 7 — Booking Intelligence plan (not applied). */
   bookingIntelligence?: BookingIntelligencePlan | null;
+  /** Milestone 1.5 · Epic 8 — Workspace Intelligence plan (not applied). */
+  workspaceIntelligence?: WorkspaceIntelligencePlan | null;
   /** Section 12 — Mission Control flight recorder id (AI Replay). */
   missionControlExecutionId?: string | null;
   flightRecorder?: HublyFlightRecorder | null;
@@ -268,7 +274,7 @@ export function detectIntent(request: string, explicit?: string | null): string 
   if (isMemoryRetrievalQuestion(r)) return "memory";
   if (/weather|forecast|temperature/.test(r)) return "weather";
   if (
-    /move |sidebar|dashboard|pin |hide |workspace|jobs above|put .+ above|favorite |favourite |star the|land on|start on/
+    /move |sidebar|dashboard|pin |hide |workspace|jobs above|put .+ above|favorite |favourite |star the|land on|start on|homepage|mobile workspace|focus mode|what (do you think|should i)/
       .test(r)
   ) {
     return "workspace";
@@ -1416,6 +1422,26 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       missionControlReplayId: null,
     })
     : null;
+  // Milestone 1.5 · Epic 8 — Workspace Intelligence (adapts around how the owner works)
+  const workspaceRequest = String(req.request || "");
+  const wantsWorkspaceIntelligence = !!(
+    changePlan &&
+    (changePlan.affectedSystems.includes("Workspace") ||
+      changePlan.changes.some((c) => c.path.startsWith("workspace.")) ||
+      /jobs above|sidebar|hide |pin |homepage|calendar.*(home|landing)|mobile|phone workspace|never use|what (do you think|should i)|focus mode|job day/.test(
+        workspaceRequest.toLowerCase(),
+      ))
+  );
+  const workspaceIntelligence = wantsWorkspaceIntelligence && changePlan
+    ? buildWorkspaceIntelligence({
+      businessId: businessId || `biz_${Date.now().toString(36)}`,
+      plan: changePlan,
+      industry: memory.industry || memory.business?.industry ||
+        dna.knowledgePack?.industryProfile?.industryName ||
+        null,
+      missionControlReplayId: null,
+    })
+    : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ""),
     intent,
@@ -1608,9 +1634,26 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
         waitingFor: bookingIntelligence.waitingFor,
       }
       : null,
+    workspaceIntelligence: workspaceIntelligence
+      ? {
+        id: workspaceIntelligence.id,
+        label: workspaceIntelligence.label,
+        changeCount: workspaceIntelligence.changes.length,
+        concepts: [...new Set(workspaceIntelligence.changes.map((c) => c.conceptId))],
+        healthOverall: workspaceIntelligence.health.overall,
+        recommendationCount: workspaceIntelligence.recommendations.length,
+        homepage: workspaceIntelligence.homepage.landing,
+        focusMode: workspaceIntelligence.focusMode?.mode ?? null,
+        deviceCount: workspaceIntelligence.devices.length,
+        requiresApproval: true as const,
+        applied: false as const,
+        executed: false as const,
+        waitingFor: workspaceIntelligence.waitingFor,
+      }
+      : null,
   });
 
-  // Attach replay id onto plan actions + preview + collaboration + version + creative session + booking intel
+  // Attach replay id onto plan actions + preview + collaboration + version + creative session + booking intel + workspace intel
   if (changePlan && flightRecorder.executionId) {
     for (const a of changePlan.changes) {
       a.missionControlReplayId = flightRecorder.executionId;
@@ -1630,6 +1673,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   }
   if (bookingIntelligence && flightRecorder.executionId) {
     bookingIntelligence.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (workspaceIntelligence && flightRecorder.executionId) {
+    workspaceIntelligence.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -1672,6 +1718,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     businessVersion,
     creativeSession,
     bookingIntelligence,
+    workspaceIntelligence,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     timeline,

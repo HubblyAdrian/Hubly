@@ -12,8 +12,8 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 | 4 | Collaboration & Approval | Pass | `scripts/check-builder-epic4.mjs` | `docs/BUILDER_EPIC4_PROOF.json` | Accepted |
 | 5 | Version & Rollback | Pass | `scripts/check-builder-epic5.mjs` | `docs/BUILDER_EPIC5_PROOF.json` | Accepted |
 | 6 | Business Builder | Pass | `scripts/check-builder-epic6.mjs` | `docs/BUILDER_EPIC6_PROOF.json` | Accepted |
-| 7 | Booking Intelligence Builder | Pass (pending Founder Approval) | `scripts/check-builder-epic7.mjs` | `docs/BUILDER_EPIC7_PROOF.json` | — |
-| 8 | Workspace Builder | Locked | — | — | — |
+| 7 | Booking Intelligence Builder | Pass | `scripts/check-builder-epic7.mjs` | `docs/BUILDER_EPIC7_PROOF.json` | Accepted |
+| 8 | Workspace Intelligence Builder | Pass (pending Founder Approval) | `scripts/check-builder-epic8.mjs` | `docs/BUILDER_EPIC8_PROOF.json` | — |
 | 9 | Automation Builder | Locked | — | — | — |
 | 10 | Portfolio Builder | Locked | — | — | — |
 | 11 | Hubly Chat | Locked | — | — | — |
@@ -25,23 +25,25 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 - **Pass (pending Founder Approval)** — automated gate green  
 - **Accepted** — founder signed off; next epic may start  
 
-## Epic 1–6
+## Epic 1–7
 
-**Accepted.** Intent → Plan → Preview → Collaboration → Versions → Business Builder.
+**Accepted.** Intent → Plan → Preview → Collaboration → Versions → Business Builder → Booking Intelligence.
 
-## Epic 7 — Booking Intelligence Builder
+## Epic 8 — Workspace Intelligence Builder
 
-Not a Booking settings page. Owners describe how they operate; Hubly builds scheduling intelligence.
+Not a layout editor. The workspace evolves around how the owner works — conversation, not settings.
 
-- Concepts: travel, arrival windows, notice, capacity, service rules, seasonal, weather, skills  
-- Booking Health + AI recommendations  
-- **AI Schedule Simulator** (next 7 days before approve)  
-- Industry DNA influence  
+- Adaptive homepage + navigation  
+- Contextual quick actions  
+- Workspace Memory / learned behaviors  
+- Workspace Health + explained recommendations  
+- Multi-device (desktop / tablet / phone)  
+- **Focus Mode** (Job / Sales / Admin / Growth Day)  
 - Mission Control replay  
 - Still requires approval — **no apply**
 
 ```bash
-npm run check:builder-epic7
+npm run check:builder-epic8
 ```
 
-**Stop.** Do not start Epic 8 until Founder Approval.
+**Stop.** Do not start Epic 9 until Founder Approval.
