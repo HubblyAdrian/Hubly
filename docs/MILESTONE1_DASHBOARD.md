@@ -22,8 +22,8 @@ Live automation: `npm run milestone1` → `docs/MILESTONE1_RELEASE_GATE.json`
 | 14 | Performance, Reliability & Resilience | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section14-reliability.mjs` | `docs/HUBLY_BRAIN_SECTION14_PROOF.json` | Accepted |
 | 15 | Platform Extensibility | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section15-platform-extensibility.mjs` | `docs/HUBLY_BRAIN_SECTION15_PROOF.json` | Accepted |
 | 16 | Validation & Quality Assurance | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section16-quality.mjs` | `docs/HUBLY_BRAIN_SECTION16_PROOF.json` | Accepted |
-| 17 | Architecture Documentation & Developer Experience | Pass (pending Founder Approval) | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section17-architecture-docs.mjs` | `docs/HUBLY_BRAIN_SECTION17_PROOF.json` | — |
-| 18 | Founder Demo | Not Started | — | `scripts/check-section18-founder-demo.mjs` | `docs/HUBLY_BRAIN_SECTION18_PROOF.json` | — |
+| 17 | Architecture Documentation & Developer Experience | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section17-architecture-docs.mjs` | `docs/HUBLY_BRAIN_SECTION17_PROOF.json` | Accepted |
+| 18 | Founder Acceptance & Brain Certification | Pass (pending Founder Sign-Off) | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section18-founder-certification.mjs` | `docs/HUBLY_BRAIN_SECTION18_PROOF.json` | — |
 
 ## Status legend
 
@@ -134,4 +134,25 @@ npm run check:section16
 npm run check:section17
 ```
 
-**Stop.** Do not start Section 18 until Founder Approval.
+**Accepted** — proceeded to Section 18.
+
+
+### Section 18 — Founder Acceptance & Brain Certification (Pass — pending Founder Sign-Off)
+
+**Renamed** from Founder Demo → **Founder Acceptance & Brain Certification**. Graduation exam — not a slideshow.
+
+| Pillar | Proven |
+|--------|--------|
+| 10 founder scenarios | Build → continue → why → workspace → website → coach → capabilities → failure → identity → replay |
+| Brain Certification Score | 100% across Thinking, Memory, Reasoning, Identity, Decision, Capabilities, Mission Control, Reliability, Business Knowledge |
+| Validation + Benchmarks | Quality gate + Founder Benchmark Suite remain green |
+| Certificate | `docs/releases/MILESTONE1_CERTIFIED.md` |
+| Mission Control | `brainCertification` snapshot |
+
+```bash
+npm run check:section18
+npm run milestone1
+```
+
+**Stop.** Do not start Milestone 1.5 / Milestone 2 until Founder Sign-Off.  
+Next visible product step after certification: **1.5 — Builder Engine**.

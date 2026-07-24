@@ -36,8 +36,12 @@ import {
   getHublyDocumentationCatalog,
   type HublyDocumentationCatalog,
 } from "./hubly_brain_docs.ts";
+import {
+  getBrainCertificationSnapshot,
+  type BrainCertificationSnapshot,
+} from "./hubly_brain_certification.ts";
 
-export const MISSION_CONTROL_VERSION = "1.4.0" as const;
+export const MISSION_CONTROL_VERSION = "1.5.0" as const;
 export const MISSION_CONTROL_OWNER = "hubly_brain" as const;
 
 export type HublyLiveExpertStatus =
@@ -176,6 +180,8 @@ export type HublyMissionControlSnapshot = {
   };
   /** Section 17 — Architecture Documentation & Developer Experience (versioned). */
   documentation: HublyDocumentationCatalog;
+  /** Section 18 — Founder Acceptance & Brain Certification. */
+  brainCertification: BrainCertificationSnapshot;
 };
 
 const FLIGHTS = new Map<string, HublyFlightRecorder>();
@@ -619,6 +625,7 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
       };
     })(),
     documentation: getHublyDocumentationCatalog(),
+    brainCertification: getBrainCertificationSnapshot(),
   };
 }
 
@@ -652,6 +659,7 @@ export const HublyMissionControl = {
   platformInventory: getPlatformInventory,
   qualityScore: getQualityScoreSnapshot,
   documentation: getHublyDocumentationCatalog,
+  brainCertification: getBrainCertificationSnapshot,
   clearForTests: clearMissionControlForTests,
 };
 

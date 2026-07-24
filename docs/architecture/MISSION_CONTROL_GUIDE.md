@@ -21,6 +21,7 @@
 | Quality Score | Section 16 intelligence validation health |
 | Platform Inventory | Feature Manifests |
 | **Documentation** | Versioned architecture docs index (Section 17) |
+| **Brain Certification** | Founder Acceptance scorecard + Milestone 1 certificate (Section 18) |
 
 ## Replay
 

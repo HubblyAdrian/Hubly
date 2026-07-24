@@ -27,7 +27,7 @@ const SECTIONS = [
   { n: 15, title: 'Platform Extensibility', script: 'scripts/check-section15-platform-extensibility.mjs' },
   { n: 16, title: 'Validation & Quality Assurance', script: 'scripts/check-section16-quality.mjs' },
   { n: 17, title: 'Architecture Documentation & Developer Experience', script: 'scripts/check-section17-architecture-docs.mjs' },
-  { n: 18, title: 'Founder Demo', script: 'scripts/check-section18-founder-demo.mjs' },
+  { n: 18, title: 'Founder Acceptance & Brain Certification', script: 'scripts/check-section18-founder-certification.mjs' },
 ];
 
 const results = [];

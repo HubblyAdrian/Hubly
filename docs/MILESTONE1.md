@@ -43,8 +43,8 @@ Each section must ship:
 | 14 | Performance, Reliability & Resilience | ✅ Proven |
 | 15 | Platform Extensibility | ✅ Proven |
 | 16 | Validation & Quality Assurance | ✅ Accepted |
-| 17 | Architecture Documentation & Developer Experience | ⏳ Pass — pending Founder Approval |
-| 18 | Founder Demo | ⬜ Not proven |
+| 17 | Architecture Documentation & Developer Experience | ✅ Accepted |
+| 18 | Founder Acceptance & Brain Certification | ⏳ Pass — pending Founder Sign-Off |
 
 
 ## Section 13 — Hubly Identity System
@@ -88,5 +88,17 @@ Definitive platform docs + ADRs: architecture, AI lifecycle, Builder Engine spec
 ```bash
 npm run check:section17
 ```
+
+**Accepted** — proceeded to Section 18.
+
+## Section 18 — Founder Acceptance & Brain Certification
+
+Graduation exam for Hubly Brain. Ten founder scenarios, Brain Certification Scorecard, Mission Control replay, and `docs/releases/MILESTONE1_CERTIFIED.md`. Not a demo.
+
+```bash
+npm run check:section18
+```
+
+**Pause after Founder Sign-Off** — next is Milestone **1.5 — Builder Engine** (visible owner changes), not an immediate Milestone 2 coding sprint.
 
 Live summary after `npm run milestone1`: `docs/MILESTONE1_RELEASE_GATE.json`

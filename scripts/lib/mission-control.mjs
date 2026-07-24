@@ -21,7 +21,10 @@ import {
 import {
   getHublyDocumentationCatalog
 } from "./docs.mjs";
-var MISSION_CONTROL_VERSION = "1.4.0";
+import {
+  getBrainCertificationSnapshot
+} from "./certification.mjs";
+var MISSION_CONTROL_VERSION = "1.5.0";
 var MISSION_CONTROL_OWNER = "hubly_brain";
 var FLIGHTS = /* @__PURE__ */ new Map();
 var FLIGHT_ORDER = [];
@@ -360,7 +363,8 @@ function getMissionControlSnapshot() {
         manifest: getQualityManifest()
       };
     })(),
-    documentation: getHublyDocumentationCatalog()
+    documentation: getHublyDocumentationCatalog(),
+    brainCertification: getBrainCertificationSnapshot()
   };
 }
 function clearMissionControlForTests() {
@@ -392,6 +396,7 @@ var HublyMissionControl = {
   platformInventory: getPlatformInventory,
   qualityScore: getQualityScoreSnapshot,
   documentation: getHublyDocumentationCatalog,
+  brainCertification: getBrainCertificationSnapshot,
   clearForTests: clearMissionControlForTests
 };
 var hubly_brain_mission_control_default = HublyMissionControl;

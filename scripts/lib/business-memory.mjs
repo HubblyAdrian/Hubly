@@ -270,6 +270,21 @@ export function extractMemorySuggestionsFromRequest(request) {
     }));
   }
 
+  const inCity = text.match(/\bin\s+([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){0,3})\.?$/);
+  if (inCity) {
+    const city = inCity[1].trim();
+    out.push(suggestMemoryUpdate({
+      path: 'city', value: city,
+      reason: `Owner named their city: ${city}`,
+      expertId, importance: 'high', confidence: 92, source: 'user',
+    }));
+    out.push(suggestMemoryUpdate({
+      path: 'serviceArea', value: city,
+      reason: `Service area inferred from city: ${city}`,
+      expertId, importance: 'high', confidence: 88, source: 'user',
+    }));
+  }
+
   if (/apartment complex|target customers are/i.test(text)) {
     out.push(suggestMemoryUpdate({
       path: 'brand.targetAudience',

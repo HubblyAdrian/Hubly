@@ -70,6 +70,7 @@ Follow [BUSINESS_DNA_GUIDE.md](./BUSINESS_DNA_GUIDE.md):
 | Registries / Platform | section 11, 15 |
 | Mission Control | section 12 |
 | Docs | section 17 |
+| Founder certification | section 18 |
 
 ```bash
 npm run milestone1

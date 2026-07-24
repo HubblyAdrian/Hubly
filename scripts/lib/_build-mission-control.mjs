@@ -15,6 +15,7 @@ const plugin = {
       'hubly_brain_dna_knowledge.ts': './dna-knowledge.mjs',
       'hubly_brain_quality.ts': './quality-core.mjs',
       'hubly_brain_docs.ts': './docs.mjs',
+      'hubly_brain_certification.ts': './certification.mjs',
     };
     for (const [file, ext] of Object.entries(map)) {
       const re = new RegExp(file.replace(/\./g, '\\.') + '$');

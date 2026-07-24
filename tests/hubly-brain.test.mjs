@@ -358,3 +358,26 @@ test('Section 17 — Architecture Documentation & Developer Experience', () => {
   assert.equal(proof.proofs.missionControlLinked, true);
   assert.equal(proof.proofs.builderSpecOnly, true);
 });
+
+test('Section 18 — Founder Acceptance & Brain Certification', () => {
+  const r = run('scripts/check-section18-founder-certification.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 18 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION18_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 18);
+  assert.match(proof.name, /Brain Certification/i);
+  assert.equal(proof.proofs.scorecard.overall, 100);
+  assert.equal(proof.proofs.scorecard.certified, true);
+  assert.ok(proof.proofs.scenarios.filter((s) => s.passed).length >= 10);
+  assert.equal(proof.proofs.missionControlLinked, true);
+  assert.ok(
+    fs.existsSync(path.join(root, 'docs/releases/MILESTONE1_CERTIFIED.md')),
+    'Milestone 1 certificate missing',
+  );
+});

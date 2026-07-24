@@ -37,6 +37,14 @@ import {
   planRegistryRoute,
 } from './registries.mjs';
 import { recordFlightRecorder } from './mission-control.mjs';
+import {
+  normalizeWorkspaceMemory,
+  extractWorkspaceSuggestionsFromRequest,
+  commitWorkspaceUpdates,
+  queryWorkspaceMemory,
+  persistWorkspaceMemoryLocal,
+  loadWorkspaceMemoryLocal,
+} from './workspace-memory.mjs';
 
 export function detectIntent(request, explicit) {
   if (explicit) return String(explicit);
@@ -44,7 +52,9 @@ export function detectIntent(request, explicit) {
   if (isWhyDecisionQuestion(r) || isWhyQuestion(r)) return 'why';
   if (isConversationIntelligenceQuestion(r)) return 'conversation_intelligence';
   if (/weather|forecast|temperature/.test(r)) return 'weather';
-  if (/move |sidebar|dashboard|pin |hide |workspace/.test(r)) return 'workspace';
+  if (/move |sidebar|dashboard|pin |hide |workspace|jobs above|put .+ above/.test(r)) return 'workspace';
+  // Capability / Builder prep — before coach (which matches "booking")
+  if (/arrival window|same-?day|no same.?day/.test(r)) return 'build_business';
   if (
     /rewrite (my |the )?homepage|website|homepage|luxury|premium|layout|brand|build me|build my|start(?:ing)?\s+(?:a\s+)?(?:new\s+)?(?:business|company)|pressure\s*wash|new company|redesign/
       .test(r)
@@ -52,7 +62,7 @@ export function detectIntent(request, explicit) {
     return 'build_business';
   }
   if (/research|competitor|industry/.test(r)) return 'research';
-  if (/coach|grow|booking|revenue/.test(r)) return 'coach';
+  if (/coach|grow|booking|revenue|how'?s my business|how is my business/.test(r)) return 'coach';
   return 'general';
 }
 
@@ -137,6 +147,21 @@ export async function think(req) {
     dna = attachDnaKnowledgePack(dna, pack);
   }
 
+  // Section 6 — Workspace Memory commits (Brain-owned)
+  const seededWs = businessId ? loadWorkspaceMemoryLocal(businessId) : null;
+  let workspace = normalizeWorkspaceMemory(seededWs || req.workspace || { businessId });
+  if (businessId) workspace.businessId = businessId;
+  let workspaceChanges = [];
+  const wsExtracted = extractWorkspaceSuggestionsFromRequest(String(req.request || ''), workspace);
+  if (wsExtracted.length) {
+    const wsCommitted = commitWorkspaceUpdates(workspace, wsExtracted, {
+      summary: `Owner workspace: ${String(req.request || '').slice(0, 120)}`,
+    });
+    workspace = wsCommitted.workspace;
+    workspaceChanges = wsCommitted.changes;
+    if (businessId) persistWorkspaceMemoryLocal(businessId, workspace);
+  }
+
   // Section 10 — Conversation Intelligence working memory
   const seededCi = businessId ? loadConversationIntelligenceLocal(businessId) : null;
   let conversationIntelligence = normalizeConversationIntelligence(
@@ -179,6 +204,97 @@ export async function think(req) {
       experienceDirector: {
         reviewedBy: 'experience_director',
         actions: [...(ed.actions || []), 'answered_from_conversation_intelligence'],
+        questionsShown: ed.questions?.length || 0,
+        celebrate: !!ed.celebrate,
+        hideDetails: true,
+      },
+    };
+  }
+
+  // Section 6 — Workspace / weather fast-path (Experience Director only)
+  if (intent === 'workspace' || intent === 'weather') {
+    const orderedFast = selectExpertsFromRegistry({ intent, request: String(req.request || '') });
+    const wsSummary = workspaceChanges.length
+      ? queryWorkspaceMemory(workspace, 'What does my workspace look like?').answer
+      : 'I can rearrange your workspace from preferences — tell me exactly what to move, hide, or pin.';
+    const draft = intent === 'weather'
+      ? "I can check the weather for your service area once location services are connected — for now, tell me your city and I'll keep it in Business Memory."
+      : (workspaceChanges.length
+        ? `Done — I moved your workspace the way you like. ${wsSummary}`
+        : wsSummary);
+    const ed = applyExperienceDirector({
+      request: req.request,
+      draftResponse: draft,
+      proposedQuestions: [],
+      confidence: intent === 'weather' ? 90 : 92,
+      criticOk: true,
+    });
+    const edRecord = {
+      expertId: 'experience_director',
+      expertName: 'Experience Director',
+      ok: true,
+      status: 'ok',
+      executionTimeMs: Date.now() - started,
+      retries: 0,
+      summary: ed.ownerResponse,
+      output: { type: 'Experience Review', ownerResponse: ed.ownerResponse, workspaceChanges },
+      payload: { type: 'Experience Review', ownerResponse: ed.ownerResponse, workspaceChanges },
+      reasoning: [{
+        reason: 'Registry selected Experience Director only for this fast-path intent.',
+        evidence: [intent, ...workspaceChanges.map((c) => c.path)],
+        confidence: ed.confidence,
+      }],
+      confidence: ed.confidence,
+      questions: ed.questions,
+    };
+    const flightRecorder = recordFlightRecorder({
+      request: String(req.request || ''),
+      intent,
+      businessId,
+      startedAt: new Date(started).toISOString(),
+      latencyMs: Date.now() - started,
+      ok: true,
+      memoriesLoaded: ['business_memory', 'workspace_memory', 'conversation_intelligence'],
+      dnaFactsUsed: [],
+      expertsExecuted: [{
+        expertId: 'experience_director',
+        status: 'ok',
+        confidence: ed.confidence,
+        ms: Date.now() - started,
+        summary: String(ed.ownerResponse || '').slice(0, 160),
+      }],
+      reasoningObjects: [],
+      decisionObjects: [],
+      capabilitiesSelected: [],
+      knowledgeAccessed: [],
+      finalResponse: ed.ownerResponse,
+      memoryWrites: workspaceChanges.length
+        ? [{ system: 'workspace_memory', summary: `${workspaceChanges.length} change(s)` }]
+        : [],
+      confidence: ed.confidence,
+      decisionScore: null,
+      decisionAction: 'workspace_preferences',
+    });
+    return {
+      ok: true,
+      intent,
+      response: ed.ownerResponse,
+      questions: ed.questions,
+      celebrate: !!ed.celebrate,
+      confidence: ed.confidence,
+      expertsRun: orderedFast.length ? orderedFast : ['experience_director'],
+      expertOutputs: [edRecord],
+      failures: [],
+      dna,
+      workspace,
+      workspaceChanges,
+      conversationIntelligence,
+      registryRouting,
+      missionControlExecutionId: flightRecorder.executionId,
+      flightRecorder,
+      experienceDirector: {
+        reviewedBy: 'experience_director',
+        actions: [...(ed.actions || []), 'workspace_fast_path'],
         questionsShown: ed.questions?.length || 0,
         celebrate: !!ed.celebrate,
         hideDetails: true,
@@ -495,6 +611,19 @@ export async function think(req) {
     edActions = [...edActions, 'conversation_intelligence_resume'];
   }
   if (businessId) persistConversationIntelligenceLocal(businessId, conversationIntelligence);
+
+  // Milestone 1.5 prep — surface Builder Plan language for discovered booking capabilities
+  const bookingCaps = (registryRouting?.capabilities || []).filter((c) =>
+    c.capabilityId === 'arrival_windows' || c.capabilityId === 'no_same_day_bookings'
+  );
+  if (bookingCaps.length && !/arrival|same.?day/i.test(response)) {
+    const labels = bookingCaps
+      .map((c) => c.capabilityLabel || c.label || c.capabilityId)
+      .join(' and ');
+    response =
+      `${response} I can set up ${labels} for your booking flow — I'll show a preview and wait for your approval before anything goes live.`;
+    edActions = [...edActions, 'builder_plan_preview', 'requires_owner_approval'];
+  }
 
   // Section 8 — persist structured Reasoning Objects + Decision Graph for build flows.
   let reasoningObjects = [];

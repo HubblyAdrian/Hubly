@@ -1,6 +1,6 @@
 # Section 17 — Architecture Documentation & Developer Experience
 
-**Status:** Pass (pending Founder Approval)  
+**Status:** Accepted  
 **Release Gate:** Milestone 1 · Section 17 of 18
 
 ## Rename

@@ -246,6 +246,8 @@ export function detectIntent(request: string, explicit?: string | null): string 
   ) {
     return "workspace";
   }
+  // Capability / Builder prep — before coach (which matches "booking")
+  if (/arrival window|same-?day|no same.?day/.test(r)) return "build_business";
   if (
     /rewrite (my |the )?homepage|website|homepage|luxury|premium|layout|brand|build me|build my|start(?:ing)?\s+(?:a\s+)?(?:new\s+)?(?:business|company)|pressure\s*wash|new company/
       .test(r)

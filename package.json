@@ -21,7 +21,8 @@
     "check:section14": "node scripts/check-section14-reliability.mjs",
     "check:section15": "node scripts/check-section15-platform-extensibility.mjs",
     "check:section16": "node scripts/check-section16-quality.mjs",
-    "check:section17": "node scripts/check-section17-architecture-docs.mjs"
+    "check:section17": "node scripts/check-section17-architecture-docs.mjs",
+    "check:section18": "node scripts/check-section18-founder-certification.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
