@@ -181,6 +181,7 @@ import {
   HublyToolRegistry,
   HublyKnowledgeRegistry,
 } from "./hubly_brain_registries.ts";
+import { HublyMissionControl } from "./hubly_brain_mission_control.ts";
 import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
 import {
   logBrainExecution,
@@ -258,6 +259,7 @@ export {
   HublyRegistries,
   HublyToolRegistry,
   HublyKnowledgeRegistry,
+  HublyMissionControl,
   HublyConfidencePolicy,
   HublyBrainExecutionLog,
   HublyExperienceDirector,

@@ -2,7 +2,7 @@
   "section": 18,
   "title": "Founder Demo",
   "passed": false,
-  "checkedAt": "2026-07-24T00:39:11.851Z",
+  "checkedAt": "2026-07-24T00:44:03.428Z",
   "proofs": [],
   "failures": "Section 18 not yet proven. Implement code + behavioral checks, then flip this script to pass."
 }

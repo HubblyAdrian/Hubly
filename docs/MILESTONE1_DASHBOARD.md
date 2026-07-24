@@ -16,8 +16,8 @@ Live automation: `npm run milestone1` → `docs/MILESTONE1_RELEASE_GATE.json`
 | 8 | Reasoning Engine | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section8-reasoning-engine.mjs` | `docs/HUBLY_BRAIN_SECTION8_PROOF.json` | Accepted |
 | 9 | AI Decision & Confidence Engine | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section9-decision-engine.mjs` | `docs/HUBLY_BRAIN_SECTION9_PROOF.json` | Accepted |
 | 10 | Conversation Intelligence | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section10-conversation-intelligence.mjs` | `docs/HUBLY_BRAIN_SECTION10_PROOF.json` | Accepted |
-| 11 | AI Capability Registry & Tool Registry | Pass (pending Founder Approval) | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section11-registries.mjs` | `docs/HUBLY_BRAIN_SECTION11_PROOF.json` | — |
-| 12 | Brain Console | Not Started | — | `scripts/check-section12-brain-console.mjs` | `docs/HUBLY_BRAIN_SECTION12_PROOF.json` | — |
+| 11 | AI Capability Registry & Tool Registry | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section11-registries.mjs` | `docs/HUBLY_BRAIN_SECTION11_PROOF.json` | Accepted |
+| 12 | Hubly Mission Control | Pass (pending Founder Approval) | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section12-mission-control.mjs` | `docs/HUBLY_BRAIN_SECTION12_PROOF.json` | — |
 | 13 | Hubly Personality | Not Started | — | `scripts/check-section13-hubly-personality.mjs` | `docs/HUBLY_BRAIN_SECTION13_PROOF.json` | — |
 | 14 | Performance | Not Started | — | `scripts/check-section14-performance.mjs` | `docs/HUBLY_BRAIN_SECTION14_PROOF.json` | — |
 | 15 | Extensibility | Not Started | — | `scripts/check-section15-extensibility.mjs` | `docs/HUBLY_BRAIN_SECTION15_PROOF.json` | — |

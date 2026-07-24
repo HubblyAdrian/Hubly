@@ -38,7 +38,7 @@ Each section must ship:
 | 9 | AI Decision & Confidence Engine | ✅ Proven (`check:section9`) |
 | 10 | Conversation Intelligence | ✅ Proven (`check:section10`) |
 | 11 | AI Capability Registry & Tool Registry | ✅ Proven (`check:section11`) |
-| 12 | Brain Console | ⬜ Not proven |
+| 12 | Hubly Mission Control | ✅ Proven (`check:section12`) |
 | 13 | Hubly Personality | ⬜ Not proven |
 | 14 | Performance | ⬜ Not proven |
 | 15 | Extensibility | ⬜ Not proven |

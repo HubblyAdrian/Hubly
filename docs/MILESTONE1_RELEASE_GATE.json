@@ -1,10 +1,10 @@
 {
   "milestone": 1,
-  "passed": 11,
+  "passed": 12,
   "total": 18,
-  "percent": 61,
+  "percent": 67,
   "ready": false,
-  "checkedAt": "2026-07-24T00:39:11.855Z",
+  "checkedAt": "2026-07-24T00:44:03.432Z",
   "sections": [
     {
       "n": 1,
@@ -74,9 +74,9 @@
     },
     {
       "n": 12,
-      "title": "Brain Console",
-      "status": "fail",
-      "script": "scripts/check-section12-brain-console.mjs"
+      "title": "Hubly Mission Control",
+      "status": "pass",
+      "script": "scripts/check-section12-mission-control.mjs"
     },
     {
       "n": 13,

@@ -15,7 +15,8 @@
     "check:section8": "node scripts/check-section8-reasoning-engine.mjs",
     "check:section9": "node scripts/check-section9-decision-engine.mjs",
     "check:section10": "node scripts/check-section10-conversation-intelligence.mjs",
-    "check:section11": "node scripts/check-section11-registries.mjs"
+    "check:section11": "node scripts/check-section11-registries.mjs",
+    "check:section12": "node scripts/check-section12-mission-control.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

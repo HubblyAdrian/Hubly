@@ -36,6 +36,7 @@ import {
   ensureRegistriesBootstrapped,
   planRegistryRoute,
 } from './registries.mjs';
+import { recordFlightRecorder } from './mission-control.mjs';
 
 export function detectIntent(request, explicit) {
   if (explicit) return String(explicit);
@@ -516,6 +517,60 @@ export async function think(req) {
     });
   }
 
+  // Section 12 — Mission Control flight recorder (AI Replay)
+  const flightRecorder = recordFlightRecorder({
+    request: String(req.request || ''),
+    intent,
+    businessId,
+    startedAt: new Date(started).toISOString(),
+    latencyMs: Date.now() - started,
+    ok: critic ? critic.ok !== false : true,
+    memoriesLoaded: [
+      'business_memory',
+      'business_dna',
+      'workspace_memory',
+      'conversation_intelligence',
+    ],
+    dnaFactsUsed: (dna.knowledgePack?.evidence || []).slice(0, 8).map((e) => e.id || e.claim).filter(Boolean),
+    expertsExecuted: expertOutputs.map((o) => ({
+      expertId: o.expertId,
+      status: o.status || (o.ok ? 'ok' : 'failed'),
+      confidence: o.confidence ?? 0,
+      ms: o.executionTimeMs ?? 0,
+      summary: String(o.summary || '').slice(0, 160),
+    })),
+    reasoningObjects: (reasoningObjects || []).map((r) => ({
+      reasoningId: r.reasoningId,
+      decisionKey: r.decisionKey,
+      decision: r.decision,
+      confidence: r.confidence,
+    })),
+    decisionObjects: [primaryDecision].filter(Boolean).map((d) => ({
+      decisionId: d.decisionId,
+      recommendation: d.recommendation,
+      finalDecision: d.finalDecision,
+      decisionScore: d.decisionScore,
+      requiresApproval: d.requiresApproval,
+    })),
+    capabilitiesSelected: (registryRouting?.capabilities || []).map((c) => ({
+      toolId: c.toolId,
+      capabilityId: c.capabilityId,
+      label: c.capabilityLabel,
+    })),
+    knowledgeAccessed: (registryRouting?.knowledge || []).map((k) => ({
+      knowledgeId: k.knowledgeId,
+      name: k.name,
+      access: k.access,
+    })),
+    finalResponse: response,
+    memoryWrites: [
+      { system: 'conversation_intelligence', summary: conversationIntelligence.currentProject || 'updated' },
+    ],
+    confidence,
+    decisionScore: primaryDecision?.decisionScore ?? null,
+    decisionAction: primaryDecision?.finalDecision ?? null,
+  });
+
   return {
     ok: critic ? critic.ok !== false : true,
     intent,
@@ -540,6 +595,8 @@ export async function think(req) {
     conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
     conversationIntelligenceRetrieval: null,
     registryRouting,
+    missionControlExecutionId: flightRecorder.executionId,
+    flightRecorder,
     experienceDirector: {
       reviewedBy: 'experience_director',
       actions: edActions,

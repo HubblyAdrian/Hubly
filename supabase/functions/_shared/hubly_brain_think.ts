@@ -89,6 +89,10 @@ import {
   planRegistryRoute,
   type HublyRegistryRoutePlan,
 } from "./hubly_brain_registries.ts";
+import {
+  recordFlightRecorder,
+  type HublyFlightRecorder,
+} from "./hubly_brain_mission_control.ts";
 import { confidenceBand, type HublyConfidenceBand } from "./hubly_brain_confidence_policy.ts";
 import { applyExperienceDirector } from "./hubly_brain_experience_director.ts";
 
@@ -208,6 +212,9 @@ export type HublyThinkResult = {
   conversationIntelligenceRetrieval?: ReturnType<typeof queryConversationIntelligence> | null;
   /** Section 11 — Tool/Capability + Knowledge Registry route plan. */
   registryRouting?: HublyRegistryRoutePlan | null;
+  /** Section 12 — Mission Control flight recorder id (AI Replay). */
+  missionControlExecutionId?: string | null;
+  flightRecorder?: HublyFlightRecorder | null;
   timeline: Array<{ expertId: string; ms: number; confidence: number; summary: string }>;
   experienceDirector?: {
     reviewedBy: "experience_director";
@@ -1309,6 +1316,74 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     },
   };
 
+  // Section 12 — Mission Control flight recorder (AI Replay).
+  const dnaFactsUsed = (dna.knowledgePack?.evidence || [])
+    .slice(0, 8)
+    .map((e: { id?: string; claim?: string }) => e.id || e.claim || "dna_fact")
+    .filter(Boolean) as string[];
+  const flightRecorder = recordFlightRecorder({
+    request: String(req.request || ""),
+    intent,
+    businessId,
+    startedAt: new Date(started).toISOString(),
+    latencyMs: Date.now() - started,
+    ok: critic ? critic.ok !== false : true,
+    memoriesLoaded: [
+      "business_memory",
+      "business_dna",
+      "workspace_memory",
+      "conversation_memory",
+      "conversation_intelligence",
+    ],
+    dnaFactsUsed,
+    expertsExecuted: expertOutputs.map((o) => ({
+      expertId: o.expertId,
+      status: o.status || (o.ok ? "ok" : "failed"),
+      confidence: o.confidence ?? 0,
+      ms: o.executionTimeMs ?? 0,
+      summary: String(o.summary || "").slice(0, 160),
+    })),
+    reasoningObjects: reasoningObjects.map((r) => ({
+      reasoningId: r.reasoningId,
+      decisionKey: r.decisionKey,
+      decision: r.decision,
+      confidence: r.confidence,
+    })),
+    decisionObjects: decisionObjects.map((d) => ({
+      decisionId: d.decisionId,
+      recommendation: d.recommendation,
+      finalDecision: d.finalDecision,
+      decisionScore: d.decisionScore,
+      requiresApproval: d.requiresApproval,
+    })),
+    capabilitiesSelected: (registryRouting?.capabilities || []).map((c) => ({
+      toolId: c.toolId,
+      capabilityId: c.capabilityId,
+      label: c.capabilityLabel,
+    })),
+    knowledgeAccessed: (registryRouting?.knowledge || []).map((k) => ({
+      knowledgeId: k.knowledgeId,
+      name: k.name,
+      access: k.access,
+    })),
+    finalResponse: response,
+    memoryWrites: [
+      ...(memoryChanges.length
+        ? [{ system: "business_memory", summary: `${memoryChanges.length} change(s)` }]
+        : []),
+      ...(workspaceChanges.length
+        ? [{ system: "workspace_memory", summary: `${workspaceChanges.length} change(s)` }]
+        : []),
+      {
+        system: "conversation_intelligence",
+        summary: conversationIntelligence.currentProject || "updated",
+      },
+    ],
+    confidence,
+    decisionScore: primaryDecision?.decisionScore ?? null,
+    decisionAction: primaryDecision?.finalDecision ?? null,
+  });
+
   return {
     ok: critic ? critic.ok !== false : true,
     intent,
@@ -1341,7 +1416,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     conversationIntelligence,
     conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
     conversationIntelligenceRetrieval: null,
-      registryRouting,
+    registryRouting,
+    missionControlExecutionId: flightRecorder.executionId,
+    flightRecorder,
     timeline,
     experienceDirector: {
       reviewedBy: "experience_director",

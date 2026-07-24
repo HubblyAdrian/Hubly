@@ -2,7 +2,7 @@
   "section": 3,
   "title": "AI Expert Framework",
   "passed": true,
-  "checkedAt": "2026-07-24T00:39:11.405Z",
+  "checkedAt": "2026-07-24T00:44:02.961Z",
   "version": "1.0.0",
   "architectureSummary": {
     "module": "supabase/functions/_shared/hubly_brain_expert_framework.ts",
@@ -131,58 +131,58 @@
     ],
     "discoveryLogs": [
       {
-        "at": "2026-07-24T00:39:11.403Z",
+        "at": "2026-07-24T00:44:02.959Z",
         "event": "register",
         "expertId": "experience_director",
         "detail": "Experience Director@1.2.0"
       },
       {
-        "at": "2026-07-24T00:39:11.403Z",
+        "at": "2026-07-24T00:44:02.960Z",
         "event": "register",
         "expertId": "research",
         "detail": "Research Expert@1.0.0"
       },
       {
-        "at": "2026-07-24T00:39:11.403Z",
+        "at": "2026-07-24T00:44:02.960Z",
         "event": "register",
         "expertId": "demo_expert",
         "detail": "Demo Expert@0.0.1-temp"
       },
       {
-        "at": "2026-07-24T00:39:11.403Z",
+        "at": "2026-07-24T00:44:02.960Z",
         "event": "discover",
         "detail": "3_experts"
       },
       {
-        "at": "2026-07-24T00:39:11.404Z",
+        "at": "2026-07-24T00:44:02.960Z",
         "event": "route",
         "detail": "demo → demo_expert,experience_director"
       },
       {
-        "at": "2026-07-24T00:39:11.404Z",
+        "at": "2026-07-24T00:44:02.960Z",
         "event": "route",
         "detail": "build_business → research,demo_expert,experience_director"
       },
       {
-        "at": "2026-07-24T00:39:11.404Z",
+        "at": "2026-07-24T00:44:02.960Z",
         "event": "execute",
         "expertId": "demo_expert",
         "detail": "Demo Expert"
       },
       {
-        "at": "2026-07-24T00:39:11.404Z",
+        "at": "2026-07-24T00:44:02.960Z",
         "event": "execute_ok",
         "expertId": "demo_expert",
         "detail": "confidence=99;retries=0"
       },
       {
-        "at": "2026-07-24T00:39:11.404Z",
+        "at": "2026-07-24T00:44:02.961Z",
         "event": "unregister",
         "expertId": "demo_expert",
         "detail": "removed"
       },
       {
-        "at": "2026-07-24T00:39:11.405Z",
+        "at": "2026-07-24T00:44:02.961Z",
         "event": "discover",
         "detail": "2_experts"
       }

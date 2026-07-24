@@ -236,6 +236,26 @@ test('Section 11 — Tool/Capability + Knowledge registries route without guessi
   assert.equal(proof.evidence.releaseGate.foundationForBuilderEngine, true);
 });
 
+test('Section 12 — Hubly Mission Control proves AI Replay flight recorder', () => {
+  const r = run('scripts/check-section12-mission-control.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 12 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION12_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 12);
+  assert.equal(proof.evidence.snapshot.title, 'Hubly Mission Control');
+  assert.equal(proof.evidence.snapshot.replayAvailable, true);
+  assert.ok(proof.evidence.replay.stepCount >= 5);
+  assert.ok(proof.evidence.thinkFlight.expertOrder.length >= 3);
+  assert.equal(proof.evidence.builderActions.milestone, '1.5');
+  assert.equal(proof.evidence.releaseGate.aiReplay, true);
+});
+
 test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => {
   const r = run('scripts/milestone1.mjs');
   assert.notEqual(r.status, 0);

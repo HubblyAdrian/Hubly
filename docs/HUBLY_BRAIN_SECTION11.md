@@ -2,7 +2,7 @@
 
 **Status: Proven only when `node scripts/check-section11-registries.mjs` exits 0.**
 
-Do not begin Section 12 until this section passes. Do not begin Milestone 2.
+Section 11 accepted. Do not begin Milestone 2.
 
 ## Objective
 
