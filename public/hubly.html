@@ -1374,7 +1374,59 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   margin-top:14px;padding:16px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(253,186,116,.35);
   font-size:16px;font-weight:750;color:#fff;
 }
-.is-reveal-forward .hint{display:block;margin-top:8px;font-size:12px;font-weight:550;color:rgba(255,255,255,.7)}
+.is-reveal-forward .hint{display:block;margin-top:8px;font-weight:550;font-size:12px;color:rgba(255,255,255,.7)}
+/* Milestone 2 · Epic 6 — Delayed Account Creation */
+.is-wrap.is-save-wide{max-width:min(640px,94vw)}
+.is-save-canvas,.is-founder-canvas{color:#fff;animation:isThinkCanvasIn .5s ease both}
+.is-save-brand{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.is-save-brand .hubly-mark{height:28px;width:auto;display:block}
+.is-save-hero{font-size:clamp(22px,3vw,28px);font-weight:800;letter-spacing:-.03em;line-height:1.2;margin:0 0 10px}
+.is-save-sub{font-size:14px;line-height:1.5;color:rgba(255,255,255,.82);margin:0 0 16px}
+.is-save-manifest{
+  margin:0 0 18px;padding:14px;border-radius:16px;background:rgba(15,23,42,.45);border:1px solid rgba(255,255,255,.14);
+}
+.is-save-manifest .sk{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;margin:0 0 10px}
+.is-save-manifest .item{font-size:13px;font-weight:650;margin:0 0 6px;display:flex;gap:8px}
+.is-save-manifest .item::before{content:"✓";color:#fdba74;font-weight:800}
+.is-save-auth{display:flex;flex-direction:column;gap:10px;margin:0 0 14px}
+.is-save-auth button{
+  appearance:none;width:100%;padding:12px 14px;border-radius:12px;font:inherit;font-size:14px;font-weight:750;cursor:pointer;
+  border:1px solid rgba(255,255,255,.22);background:rgba(15,23,42,.5);color:#fff;
+}
+.is-save-auth button:hover{border-color:#fdba74;color:#fdba74}
+.is-save-auth button.is-brand{background:#d9632d;border-color:#d9632d;color:#fff}
+.is-save-auth button.is-brand:hover{filter:brightness(1.05);color:#fff}
+.is-save-email-panel{
+  margin:0 0 14px;padding:14px;border-radius:16px;background:rgba(15,23,42,.42);border:1px solid rgba(255,255,255,.14);
+}
+.is-save-email-panel[hidden]{display:none!important}
+.is-save-email-panel label{display:block;font-size:12px;font-weight:700;color:rgba(255,255,255,.7);margin:0 0 6px}
+.is-save-email-panel input{
+  width:100%;box-sizing:border-box;margin:0 0 12px;padding:10px 12px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.2);background:rgba(15,23,42,.55);color:#fff;font:inherit;font-size:14px;
+}
+.is-save-note{font-size:12px;line-height:1.45;color:rgba(255,255,255,.7);margin:0 0 10px}
+.is-save-certificate{
+  margin:14px 0;padding:16px;border-radius:16px;
+  background:linear-gradient(145deg,rgba(217,99,45,.16),rgba(15,23,42,.5));
+  border:1px solid rgba(253,186,116,.35);
+}
+.is-save-certificate .sk{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;margin:0 0 10px}
+.is-save-certificate .row{display:flex;justify-content:space-between;gap:12px;font-size:13px;margin:0 0 6px}
+.is-save-certificate .row strong{color:#fff}
+.is-save-confirm{margin:12px 0;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(253,186,116,.3);font-size:14px;font-weight:700}
+.is-founder-canvas .day-box{
+  margin:16px 0;padding:16px;border-radius:16px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.14);
+}
+.is-founder-canvas .day-box .sk{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fdba74;margin:0 0 12px}
+.is-founder-canvas .check{font-size:13px;font-weight:650;margin:0 0 8px;display:flex;justify-content:space-between}
+.is-founder-canvas .check span:last-child{color:#fdba74;font-weight:800}
+.is-founder-biz{font-size:clamp(24px,3.5vw,34px);font-weight:800;color:#fdba74;margin:6px 0 16px}
+.is-founder-cta{
+  appearance:none;border:none;border-radius:14px;background:#d9632d;color:#fff;font:inherit;font-size:15px;font-weight:800;
+  padding:14px 18px;cursor:pointer;width:100%;margin-top:8px;
+}
+.is-founder-cta:hover{filter:brightness(1.05)}
 .is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
 .is-area-panel.hidden{display:none!important}
 .is-area-panel.is-compact .is-area-extra{display:none}
@@ -8521,6 +8573,79 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </aside>
           </div>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="save-business" id="is-step-save-business" data-delayed-account="1">
+        <div class="is-save-canvas" id="is-save-canvas">
+          <div class="is-save-brand">
+            <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+          </div>
+          <h1 class="is-save-hero" id="is-save-hero">I'd love to save everything we've built together.</h1>
+          <p class="is-save-sub" id="is-save-sub">Let's save your business — keep everything we've built together.</p>
+          <div class="is-save-manifest" id="is-save-manifest">
+            <div class="sk">We'll save</div>
+            <div class="item">Your website</div>
+            <div class="item">Your booking experience</div>
+            <div class="item">Your brand</div>
+            <div class="item">Your Business Memory</div>
+            <div class="item">Your conversation</div>
+            <div class="item">Your workspace</div>
+            <div class="item">Version 1.0 — Day One</div>
+          </div>
+          <div class="is-save-auth" id="is-save-auth">
+            <button type="button" onclick="isDelayedAccountAuth('google')">Continue with Google</button>
+            <button type="button" onclick="isDelayedAccountAuth('apple')">Continue with Apple</button>
+            <button type="button" class="is-brand" onclick="isDelayedAccountAuth('email')">Continue with Email</button>
+          </div>
+          <div class="is-save-email-panel" id="is-save-email-panel" hidden>
+            <p class="is-save-note" id="is-save-security-note">I sent you a quick email so we can make sure nobody else can access your business.</p>
+            <label for="is-save-email">Email</label>
+            <input type="email" id="is-save-email" autocomplete="email" placeholder="you@business.com">
+            <label for="is-save-password">Password</label>
+            <input type="password" id="is-save-password" autocomplete="new-password" placeholder="At least 8 characters" onkeydown="if(event.key==='Enter'){event.preventDefault();isDelayedAccountSaveEmail();}">
+            <button type="button" class="btn btn-brand f1" style="width:100%" onclick="isDelayedAccountSaveEmail()">Save my business</button>
+          </div>
+          <p class="is-save-note" id="is-save-recovery" hidden>No worries. Everything we built is still here. Let's try that again.</p>
+          <div class="is-save-confirm" id="is-save-confirm" hidden>Version 1.0 — Day One has been safely saved.</div>
+          <div class="is-save-certificate" id="is-save-certificate" hidden>
+            <div class="sk">Business ownership</div>
+            <div id="is-save-certificate-body"></div>
+            <p id="is-save-welcome" style="margin:12px 0 0;font-weight:750"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="founder-moment" id="is-step-founder-moment" data-founder-moment="1">
+        <div class="is-founder-canvas" id="is-founder-canvas">
+          <div class="is-save-brand">
+            <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+          </div>
+          <p style="font-size:14px;font-weight:700;color:#fdba74;margin:0 0 6px">Congratulations.</p>
+          <h1 class="is-save-hero" id="is-founder-headline">Today you officially started</h1>
+          <div class="is-founder-biz" id="is-founder-biz">Your Business</div>
+          <div class="day-box">
+            <div class="sk">Day One</div>
+            <div class="check"><span>Website Created</span><span>✓</span></div>
+            <div class="check"><span>Booking Ready</span><span>✓</span></div>
+            <div class="check"><span>Business Strategy</span><span>✓</span></div>
+            <div class="check"><span>Brand Identity</span><span>✓</span></div>
+            <div class="check"><span>Business Memory</span><span>✓</span></div>
+            <div class="check"><span>Version 1.0 Archived</span><span>✓</span></div>
+          </div>
+          <p class="is-save-sub" id="is-founder-closing">Every great business starts somewhere. This is yours.</p>
+          <button type="button" class="is-founder-cta" id="is-founder-cta" onclick="isFounderMomentLaunch()">Launch My Business</button>
+          <p class="is-save-note" style="margin-top:12px">Ready? Let's launch your business.</p>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="launch-shell" id="is-step-launch-shell" data-launch-shell="1">
+        <div class="is-save-canvas">
+          <div class="is-save-brand">
+            <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+          </div>
+          <h1 class="is-save-hero">Ready to launch</h1>
+          <p class="is-save-sub">Epic 7 will own the full Business Launch experience. Your business is saved — readyForLaunch.</p>
         </div>
       </div>
 
@@ -16992,11 +17117,245 @@ async function isRunBusinessRevealExperience(seed, creativeExperience){
 
   if(forward){
     forward.hidden=false;
-    forward.innerHTML=`${escPeHtml(reveal.forward)}<span class="hint">No dashboard yet — when you're ready, we'll create your account and launch together.</span>`;
+    forward.innerHTML=`${escPeHtml(reveal.forward)}
+      <span class="hint">No dashboard yet — next we'll save everything we've built together.</span>
+      <button type="button" class="btn btn-brand f1" style="margin-top:14px;width:100%" onclick="isStartDelayedAccountCreation()">Let's save your business</button>`;
   }
   S._is.readyForAccount=true; // Epic 6 — Delayed Account Creation
+  try{persistInstantSiteDraft();}catch(e){}
   return reveal;
 }
+/* ── Milestone 2 · Epic 6 — Delayed Account Creation ── */
+const HUBLY_DELAYED_ACCOUNT = (function(){
+  const SAVE_BUSINESS_HEADLINE = "I'd love to save everything we've built together.";
+  const VERSION_SAVED_LINE = "Version 1.0 — Day One has been safely saved.";
+  const PERSONAL_WELCOME = "This business is now yours.";
+  const LAUNCH_FORWARD = "Ready? Let's launch your business.";
+  const RECOVERY_LINE = "No worries. Everything we built is still here. Let's try that again.";
+  const SECURITY_LINE = "I sent you a quick email so we can make sure nobody else can access your business.";
+  const LAUNCH_CTA = "Launch My Business";
+  const SAVE_MANIFEST = [
+    "Your website","Your booking experience","Your brand","Your Business Memory",
+    "Your conversation","Your workspace","Version 1.0 — Day One",
+  ];
+  function buildOwnershipCertificate(ctx){
+    const owner=ctx.ownerName||ctx.firstName||(ctx.email?String(ctx.email).split('@')[0]:null)||'You';
+    const pretty=String(owner).replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).trim();
+    return{owner:pretty,business:ctx.businessName||ctx.biz||'Your Business',created:'Today',version:'1.0'};
+  }
+  function orchestrateDelayedAccount(ctx){
+    const certificate=buildOwnershipCertificate(ctx);
+    const firstName=certificate.owner.split(/\s+/)[0]||'there';
+    return{
+      version:'1.0.0',headline:SAVE_BUSINESS_HEADLINE,manifest:SAVE_MANIFEST.slice(),
+      versionSaved:VERSION_SAVED_LINE,personalWelcome:'Welcome, '+firstName+'.',
+      ownershipLine:PERSONAL_WELCOME,certificate,securityLine:SECURITY_LINE,recoveryLine:RECOVERY_LINE,
+      launchForward:LAUNCH_FORWARD,launchCta:LAUNCH_CTA,requiredBusinessFields:0,preservesDraft:true,noDashboardFirst:true,
+      founderMoment:{
+        lead:'Congratulations.',headline:'Today you officially started',businessName:certificate.business,
+        dayOneLabel:'Day One',closing:'Every great business starts somewhere. This is yours.',cta:LAUNCH_CTA,
+        checklist:[
+          {id:'website',label:'Website Created'},{id:'booking',label:'Booking Ready'},
+          {id:'strategy',label:'Business Strategy'},{id:'brand',label:'Brand Identity'},
+          {id:'memory',label:'Business Memory'},{id:'v1',label:'Version 1.0 Archived'},
+        ],
+      },
+    };
+  }
+  return{SAVE_BUSINESS_HEADLINE,VERSION_SAVED_LINE,PERSONAL_WELCOME,LAUNCH_FORWARD,RECOVERY_LINE,SECURITY_LINE,LAUNCH_CTA,SAVE_MANIFEST,orchestrateDelayedAccount,buildOwnershipCertificate};
+})();
+
+function isStartDelayedAccountCreation(){
+  try{persistInstantSiteDraft();}catch(e){}
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-reveal-wide');
+  document.querySelector('#is-shell .is-wrap')?.classList.add('is-save-wide');
+  const d=S._is?.discovery||{};
+  const flow=HUBLY_DELAYED_ACCOUNT.orchestrateDelayedAccount({
+    businessName:S.biz||S._is?.reveal?.businessName,
+    biz:S.biz,
+    ownerName:S._is?.ownerName||S._is?.ownerFirst,
+    email:S.email||null,
+  });
+  S._is.delayedAccount=flow;
+  S._is.readyForAccount=true;
+
+  const hero=document.getElementById('is-save-hero');
+  const sub=document.getElementById('is-save-sub');
+  const man=document.getElementById('is-save-manifest');
+  const panel=document.getElementById('is-save-email-panel');
+  const recovery=document.getElementById('is-save-recovery');
+  const confirm=document.getElementById('is-save-confirm');
+  const cert=document.getElementById('is-save-certificate');
+  const sec=document.getElementById('is-save-security-note');
+  if(hero)hero.textContent=flow.headline;
+  if(sub)sub.textContent="Let's save your business.";
+  if(man){
+    man.innerHTML=`<div class="sk">We'll save</div>`+flow.manifest.map(m=>`<div class="item">${escPeHtml(m)}</div>`).join('');
+  }
+  if(panel)panel.hidden=true;
+  if(recovery)recovery.hidden=true;
+  if(confirm)confirm.hidden=true;
+  if(cert)cert.hidden=true;
+  if(sec)sec.textContent=flow.securityLine;
+  isShowStep('save-business');
+  try{persistInstantSiteDraft();}catch(e){}
+}
+
+function isDelayedAccountShowRecovery(errMsg){
+  const recovery=document.getElementById('is-save-recovery');
+  if(recovery){
+    recovery.hidden=false;
+    recovery.textContent=HUBLY_DELAYED_ACCOUNT.RECOVERY_LINE+(errMsg?` (${errMsg})`:'');
+  }
+  try{persistInstantSiteDraft();}catch(e){}
+}
+
+async function isDelayedAccountAuth(provider){
+  try{persistInstantSiteDraft();}catch(e){}
+  S._is=S._is||{};
+  S._is.authProviderAttempt=provider;
+  if(provider==='email'){
+    const panel=document.getElementById('is-save-email-panel');
+    if(panel)panel.hidden=false;
+    setTimeout(()=>document.getElementById('is-save-email')?.focus(),60);
+    return;
+  }
+  // Google / Apple — preserve draft, then OAuth. On return, draft resume restores state.
+  try{
+    const dbClient=await waitForDb();
+    const redirectTo=String(location.origin||'')+location.pathname+'#/onboarding?save=1';
+    try{sessionStorage.setItem('hubly_delayed_account','1');}catch(e){}
+    const {error}=await dbClient.auth.signInWithOAuth({
+      provider:provider==='apple'?'apple':'google',
+      options:{redirectTo,queryParams:{access_type:'offline',prompt:'consent'}},
+    });
+    if(error)throw error;
+  }catch(e){
+    console.warn('delayed account oauth',e);
+    // Demo / offline path — still complete save locally so work is never lost.
+    isDelayedAccountShowRecovery(e?.message||'');
+    await isDelayedAccountCompleteSave({
+      provider,
+      email:null,
+      ownerName:provider==='google'?'Google Owner':'Apple Owner',
+      simulated:true,
+    });
+  }
+}
+
+async function isDelayedAccountSaveEmail(){
+  const email=(document.getElementById('is-save-email')?.value||'').trim().toLowerCase();
+  const password=document.getElementById('is-save-password')?.value||'';
+  if(!email){toast('Add your email to save the business');return;}
+  if(password.length<8){toast('Use at least 8 characters');return;}
+  try{persistInstantSiteDraft();}catch(e){}
+  try{
+    if(typeof saveSoftEmail==='function')saveSoftEmail(email);
+    await createInstantSiteAccount(email,password);
+    await isDelayedAccountCompleteSave({provider:'email',email,ownerName:email.split('@')[0]});
+  }catch(e){
+    console.error('isDelayedAccountSaveEmail',e);
+    isDelayedAccountShowRecovery(e?.message||'');
+  }
+}
+
+async function isDelayedAccountCompleteSave(opts){
+  opts=opts||{};
+  const flow=S._is?.delayedAccount||HUBLY_DELAYED_ACCOUNT.orchestrateDelayedAccount({
+    businessName:S.biz,
+    ownerName:opts.ownerName||S._is?.ownerName,
+    email:opts.email,
+  });
+  // Refresh certificate with auth identity
+  flow.certificate=HUBLY_DELAYED_ACCOUNT.buildOwnershipCertificate({
+    businessName:S.biz||flow.certificate.business,
+    ownerName:opts.ownerName||S._is?.ownerName||flow.certificate.owner,
+    email:opts.email,
+  });
+  const first=flow.certificate.owner.split(/\s+/)[0]||'there';
+  flow.personalWelcome='Welcome, '+first+'.';
+  S._is.delayedAccount=flow;
+  S._is.businessSaved=true;
+  S._is.version10Saved=true;
+  S._accountClaimed=true;
+  S._deferredAccount=false;
+
+  // Persist Version 1.0 Time Capsule with ownership
+  S._is.timeCapsule=S._is.timeCapsule||S._is.reveal?.timeCapsule||{};
+  S._is.timeCapsule.savedAt=new Date().toISOString();
+  S._is.timeCapsule.owner=flow.certificate.owner;
+  S._is.timeCapsule.label='Version 1.0 — Day One';
+  try{persistInstantSiteDraft();}catch(e){}
+
+  const confirm=document.getElementById('is-save-confirm');
+  const cert=document.getElementById('is-save-certificate');
+  const body=document.getElementById('is-save-certificate-body');
+  const welcome=document.getElementById('is-save-welcome');
+  const recovery=document.getElementById('is-save-recovery');
+  if(recovery)recovery.hidden=true;
+  if(confirm){confirm.hidden=false;confirm.textContent=flow.versionSaved;}
+  if(cert)cert.hidden=false;
+  if(body){
+    const c=flow.certificate;
+    body.innerHTML=[
+      ['Owner',c.owner],['Business',c.business],['Created',c.created],['Version',c.version],
+    ].map(([k,v])=>`<div class="row"><span>${escPeHtml(k)}</span><strong>${escPeHtml(v)}</strong></div>`).join('');
+  }
+  if(welcome)welcome.textContent=flow.personalWelcome+' '+flow.ownershipLine;
+
+  await new Promise(r=>setTimeout(r,700));
+  isShowFounderMoment();
+}
+
+function isShowFounderMoment(){
+  const flow=S._is?.delayedAccount;
+  const biz=S.biz||flow?.certificate?.business||'Your Business';
+  const headline=document.getElementById('is-founder-headline');
+  const bizEl=document.getElementById('is-founder-biz');
+  const closing=document.getElementById('is-founder-closing');
+  const cta=document.getElementById('is-founder-cta');
+  if(headline)headline.textContent='Today you officially started';
+  if(bizEl)bizEl.textContent=biz;
+  if(closing)closing.textContent='Every great business starts somewhere. This is yours.';
+  if(cta)cta.textContent=HUBLY_DELAYED_ACCOUNT.LAUNCH_CTA;
+  document.querySelector('#is-shell .is-wrap')?.classList.add('is-save-wide');
+  isShowStep('founder-moment');
+  try{persistInstantSiteDraft();}catch(e){}
+}
+
+function isFounderMomentLaunch(){
+  S._is=S._is||{};
+  S._is.readyForLaunch=true;
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-save-wide');
+  isShowStep('launch-shell');
+  try{persistInstantSiteDraft();}catch(e){}
+  // Epic 7 will own full Business Launch — soft shell only.
+}
+
+// Resume Delayed Account after OAuth return
+(function isDelayedAccountResumeHook(){
+  try{
+    if(sessionStorage.getItem('hubly_delayed_account')==='1'){
+      sessionStorage.removeItem('hubly_delayed_account');
+      setTimeout(()=>{
+        try{
+          if(S._is?.readyForAccount||S._is?.reveal||S._is?.creativeBuild){
+            isStartDelayedAccountCreation();
+            const u=currentUser;
+            if(u){
+              isDelayedAccountCompleteSave({
+                provider:'oauth',
+                email:u.email||null,
+                ownerName:u.user_metadata?.full_name||u.user_metadata?.name||(u.email||'').split('@')[0],
+              });
+            }
+          }
+        }catch(e){console.warn('delayed account resume',e);}
+      },400);
+    }
+  }catch(e){}
+})();
+
 function isTalkBoot(){
   S._is=S._is||{};
   S._is.messages=[];

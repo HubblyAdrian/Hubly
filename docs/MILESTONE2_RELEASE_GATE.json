@@ -1,12 +1,12 @@
 {
   "milestone": "2",
   "name": "The Hubly Experience",
-  "passed": 6,
+  "passed": 7,
   "total": 13,
-  "unlocked": 6,
-  "percent": 46,
+  "unlocked": 7,
+  "percent": 54,
   "ready": false,
-  "checkedAt": "2026-07-24T07:13:54.568Z",
+  "checkedAt": "2026-07-24T07:53:26.977Z",
   "epics": [
     {
       "n": 0,
@@ -47,8 +47,8 @@
     {
       "n": 6,
       "title": "Delayed Account Creation",
-      "status": "locked",
-      "script": null
+      "status": "pass",
+      "script": "scripts/check-m2-epic6.mjs"
     },
     {
       "n": 7,
