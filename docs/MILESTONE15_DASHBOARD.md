@@ -9,8 +9,8 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 | 1 | Builder Expert | Pass | `scripts/check-builder-epic1.mjs` | `docs/BUILDER_EPIC1_PROOF.json` | Accepted |
 | 2 | Change Plan DSL | Pass | `scripts/check-builder-epic2.mjs` | `docs/BUILDER_EPIC2_PROOF.json` | Accepted |
 | 3 | Preview Engine | Pass | `scripts/check-builder-epic3.mjs` | `docs/BUILDER_EPIC3_PROOF.json` | Accepted |
-| 4 | Collaboration & Approval | Pass (pending Founder Approval) | `scripts/check-builder-epic4.mjs` | `docs/BUILDER_EPIC4_PROOF.json` | — |
-| 5 | Rollback Engine | Locked | — | — | — |
+| 4 | Collaboration & Approval | Pass | `scripts/check-builder-epic4.mjs` | `docs/BUILDER_EPIC4_PROOF.json` | Accepted |
+| 5 | Version & Rollback | Pass (pending Founder Approval) | `scripts/check-builder-epic5.mjs` | `docs/BUILDER_EPIC5_PROOF.json` | — |
 | 6 | Website Builder | Locked | — | — | — |
 | 7 | Booking Builder | Locked | — | — | — |
 | 8 | CRM Builder | Locked | — | — | — |
@@ -25,25 +25,24 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 - **Pass (pending Founder Approval)** — automated gate green  
 - **Accepted** — founder signed off; next epic may start  
 
-## Epic 1–3
+## Epic 1–4
 
-**Accepted.** Intent → Change Plan → Preview.
+**Accepted.** Intent → Change Plan → Preview → Collaboration (“What do you think?”).
 
-## Epic 4 — Collaboration & Approval Engine
+## Epic 5 — Version & Rollback Engine
 
-Preview → conversation → recommendation → approval. Hubly is a design partner — not a Save dialog.
+Git for a business. Every approved change becomes a Business Version.
 
-- Opens with **What do you think?** (never Approve? first)
-- Recommends with confidence + DNA alignment
-- Refinement rounds, alternatives, AI negotiation
-- Partial approval + risk-tiered approval levels
-- Approval summary + **Let's launch this.**
-- Owner confidence for Experience Director
-- Mission Control: full collaboration history
-- **No** apply — waiting for Apply Engine
+- Website / Booking / Workspace / Automation / Portfolio versions  
+- Compare + diffs  
+- Full / partial / single-change **rollback plans** (not executed)  
+- AI restore suggestions (owner-approved only)  
+- **Business Timeline** — the story of the business  
+- Mission Control: Current → History → Diff → Rollback → Restore suggestions  
+- **No** apply / execute  
 
 ```bash
-npm run check:builder-epic4
+npm run check:builder-epic5
 ```
 
-**Stop.** Do not start Epic 5 until Founder Approval.
+**Stop.** Do not start Epic 6 until Founder Approval.

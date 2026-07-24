@@ -238,7 +238,7 @@ check("MC builderActions.available === false", snap.builderActions?.available ==
 check("MC displays Change Plans", (snap.builderActions?.changePlans || []).length >= 1);
 check(
   "MC epic mentions Builder pipeline",
-  /Change Plan|Preview|Epic [23]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Change Plan|Preview|Collaboration|Version|Rollback|Epic [2-5]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check(
   "MC still blocks apply",

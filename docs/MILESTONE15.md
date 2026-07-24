@@ -11,8 +11,8 @@ npm run milestone15
 | 1 | Builder Expert | ✅ Accepted |
 | 2 | Change Plan DSL | ✅ Accepted |
 | 3 | Preview Engine | ✅ Accepted |
-| 4 | Collaboration & Approval | ⏳ Pass — pending Founder Approval |
-| 5 | Rollback Engine | 🔒 Locked |
+| 4 | Collaboration & Approval | ✅ Accepted |
+| 5 | Version & Rollback | ⏳ Pass — pending Founder Approval |
 | 6 | Website Builder | 🔒 Locked |
 | 7 | Booking Builder | 🔒 Locked |
 | 8 | CRM Builder | 🔒 Locked |
@@ -21,12 +21,12 @@ npm run milestone15
 | 11 | Hubly Chat | 🔒 Locked |
 | 12 | Builder Validation | 🔒 Locked |
 
-## Epic 4 — Collaboration & Approval
+## Epic 5 — Version & Rollback
 
-Partner loop over previews. No apply.
+Git for a business. Rollback plans only — no execute.
 
 ```bash
-npm run check:builder-epic4
+npm run check:builder-epic5
 ```
 
-Evidence: `docs/BUILDER_EPIC4.md` · `docs/BUILDER_EPIC4_PROOF.json`
+Evidence: `docs/BUILDER_EPIC5.md` · `docs/BUILDER_EPIC5_PROOF.json`
