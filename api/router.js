@@ -158,11 +158,13 @@ module.exports = async (req, res) => {
       }
     }
 
-    // Phase 6.5 — Platform Entry Experience (apex / www only).
+    // Milestone 2.5 — Production Integration (apex / www only).
+    // Front door is Welcome inside hubly.html — not the old platform brochure.
     // Business subdomains ({slug}.myhubly.app) must get hubly.html so copied
     // booking links open the owner's site — not the Hubly landing page.
+    // Legacy Phase 6.5 marketing lives at /platform (and /home alias).
     if (!businessSite) {
-      if (urlPath === '/' || urlPath === '/index.html' || urlPath === '/home') {
+      if (urlPath === '/platform' || urlPath === '/home' || urlPath === '/platform-home') {
         const home = path.join(__dirname, '../public/platform-home.html');
         if (fs.existsSync(home)) {
           res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -170,6 +172,7 @@ module.exports = async (req, res) => {
           return res.status(200).send(fs.readFileSync(home, 'utf8'));
         }
       }
+      // `/` and `/index.html` fall through to serveHublyHtml → Welcome Experience.
       if (
         urlPath === '/marketplace' ||
         urlPath === '/marketplace.html' ||

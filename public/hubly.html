@@ -8503,7 +8503,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var land=document.getElementById('p-landing');
     var boot=document.getElementById('p-boot');
     // Owner routes: never flash the Hubly marketing page while auth restores.
-    var ownerPaths={'/app':1,'/dashboard':1,'/login':1,'/onboarding':1,'/signup':1};
+    var ownerPaths={'/':1,'/app':1,'/dashboard':1,'/login':1,'/onboarding':1,'/signup':1,'/welcome':1};
     if(ownerPaths[path]){
       if(land)land.classList.remove('active');
       if(boot)boot.classList.add('active');
@@ -9063,8 +9063,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <div class="is-step" data-is="business-home" id="is-step-business-home" data-business-home="1" data-ready-for-business-home="1">
         <div class="is-home-canvas is-business-home" id="is-home-canvas" data-thirty-second="1">
-          <div class="is-save-brand is-home-brand">
-            <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+          <div class="is-cw-top" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 12px;flex-wrap:wrap">
+            <div class="is-save-brand is-home-brand">
+              <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+            </div>
+            <button type="button" class="is-evo-back" onclick="goClassicDashboard()" title="Jobs, customers, and the classic workspace">Classic workspace</button>
           </div>
           <div class="is-home-30s" id="is-home-30s" aria-label="30-Second Rule">
             <div>What's happening today · What needs attention · Highest-impact action · How you're performing · Ask Hubly</div>
@@ -11970,16 +11973,21 @@ function setHublyDocTitle(label){
   document.title=bit?('Hubly · '+bit):'Hubly · Book more jobs';
 }
 const HUBLY_PAGE_ROUTES={
-  'p-landing':{path:'/',title:'Hubly · Book more jobs'},
-  'p-signup':{path:'/signup',title:"Hubly · Let's build your business"},
+  // Milestone 2.5 — apex `/` is Welcome, not the old marketing brochure.
+  'p-landing':{path:'/platform',title:'Hubly · Book more jobs'},
+  'p-signup':{path:'/',title:"Hubly · Let's build your business"},
   'p-signin':{path:'/login',title:'Hubly · Sign in'},
   'p-reset-password':{path:'/reset-password',title:'Hubly · Reset password'},
   'p-onboard':{path:'/onboarding',title:'Hubly · Setup'},
-  'p-app':{path:'/app',title:'Hubly · Dashboard'},
+  'p-app':{path:'/app',title:'Hubly · Home'},
 };
 const HUBLY_PATH_TO_PAGE={
-  '/':'p-landing',
+  '/':'p-signup',
+  '/index.html':'p-signup',
   '/signup':'p-signup',
+  '/welcome':'p-signup',
+  '/platform':'p-landing',
+  '/home':'p-landing',
   '/login':'p-signin',
   '/signin':'p-signin',
   '/reset-password':'p-reset-password',
@@ -12082,7 +12090,65 @@ window.addEventListener('popstate',()=>{
   }
   showP(dest,{skipRoute:true});
 });
-function goDash(){
+/** Milestone 2.5 — prefer Business Home over classic Dashboard when the M2 journey owns this business. */
+function preferM2ExperienceHome(){
+  try{
+    if(S._forceClassicDash)return false;
+    if(S._is?.readyForBusinessHome)return true;
+    const meta=typeof parseBizMeta==='function'?parseBizMeta(currentBusiness?.meta):null;
+    if(meta?.m2Experience||meta?.experienceHome==='business-home')return true;
+    if(localStorage.getItem('hubly_m2_home')==='1')return true;
+  }catch(e){}
+  return false;
+}
+
+function markM2ExperienceHome(){
+  try{
+    S._is=S._is||{};
+    S._is.readyForBusinessHome=true;
+    localStorage.setItem('hubly_m2_home','1');
+    if(currentBusiness){
+      const meta=typeof parseBizMeta==='function'?parseBizMeta(currentBusiness.meta)||{}:{};
+      if(!meta.m2Experience){
+        meta.m2Experience=true;
+        meta.experienceHome='business-home';
+        currentBusiness.meta=meta;
+        try{
+          if(typeof db!=='undefined'&&db?.from&&currentBusiness.id){
+            db.from('businesses').update({meta}).eq('id',currentBusiness.id).then(()=>{}).catch(()=>{});
+          }
+        }catch(e){}
+      }
+    }
+  }catch(e){}
+}
+
+/** Open Instant Site Business Home under /app (production home). */
+function openProductionBusinessHome(opts){
+  clearOnboardOverlays();
+  setObPreviewMode('phone');
+  setOwnerPreview(false);
+  S._instantSite=true;
+  markM2ExperienceHome();
+  const onboard=document.getElementById('p-onboard');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('is-active'));
+  onboard?.classList.add('is-active');
+  onboard?.classList.remove('cd-active','cd-building');
+  const cd=document.getElementById('cd-shell');
+  if(cd)cd.style.display='none';
+  const shell=document.getElementById('is-shell');
+  if(shell)shell.style.display='flex';
+  try{
+    history[opts?.replaceRoute===false?'pushState':'replaceState']({page:'p-app'},'', '/app');
+    document.title='Hubly · Home';
+  }catch(e){}
+  if(typeof isEnterBusinessHome==='function'){
+    isEnterBusinessHome({skipDaily:!!opts?.skipDaily,fromDaily:!!opts?.fromDaily,...opts});
+  }
+}
+
+function goClassicDashboard(){
+  S._forceClassicDash=true;
   clearOnboardOverlays();
   setObPreviewMode('phone');
   setOwnerPreview(false);
@@ -12090,6 +12156,15 @@ function goDash(){
   const dashNav=document.querySelector('[data-v="dashboard"]');
   if(dashNav)switchV(dashNav);
   setTimeout(()=>{applyTranslations();maybeResumeHublyCoach();renderHublyCoach();},100);
+}
+
+function goDash(){
+  // Milestone 2.5 — returning owners live in Business Home, not the old dashboard.
+  if(preferM2ExperienceHome()&&typeof isEnterBusinessHome==='function'){
+    openProductionBusinessHome({skipDaily:false});
+    return;
+  }
+  goClassicDashboard();
 }
 function setOwnerPreview(on){
   S.ownerPreview=!!on;
@@ -14867,11 +14942,7 @@ async function submitNewPassword(btn){
 async function checkSession(){
   const dest=pageForHublyPath(hublyPath());
   const marketing=!dest||dest==='p-landing';
-  // Milestone 2 · Epic 1 — /signup shows Welcome Experience (not Instant Site yet).
-  if(dest==='p-signup'){
-    showP('p-signup',{replaceRoute:true});
-    return;
-  }
+  const welcomeDoor=dest==='p-signup'; // `/`, `/signup`, `/welcome`
   try{
     const dbClient=await waitForDb();
     let session=null;
@@ -14879,15 +14950,17 @@ async function checkSession(){
       session=await waitForAuthSession(dbClient);
     }catch(e){console.warn('getSession failed',e);}
 
-    // Marketing home must stay marketing. Leftover Instant Site draft sessions
-    // used to yank / → app → (fail) → /login every refresh.
-    if(marketing){
+    // Milestone 2.5 — Welcome is the front door for logged-out visitors.
+    // Signed-in owners hitting `/` or `/signup` go to Business Home / app.
+    if(welcomeDoor||marketing){
       if(session?.user){
         currentUser=session.user;
         if(isDraftAuthEmail(currentUser.email))S._deferredAccount=true;
         else S._deferredAccount=false;
+        await loadBusiness({preferApp:true});
+        return;
       }
-      showP('p-landing',{replaceRoute:true});
+      showP(welcomeDoor||!dest||dest==='p-landing'?'p-signup':'p-landing',{replaceRoute:true});
       return;
     }
 
@@ -18207,6 +18280,7 @@ function isLaunchChooseNext(id){
 function isEnterBusinessHome(opts){
   S._is=S._is||{};
   S._is.readyForBusinessHome=true;
+  try{markM2ExperienceHome();}catch(e){}
   try{persistInstantSiteDraft();}catch(e){}
   // Epic 10 — every morning / login begins with a fresh Daily Brief
   if(!opts?.skipDaily && !opts?.fromDaily){
@@ -45704,9 +45778,19 @@ function welcomeExperienceMount(){
       if(line)line.innerHTML="Voice is ready in the architecture — <strong>type for now</strong>, same conversation.";
     });
   }
-  input.value='';
-  send.disabled=true;
-  input.focus({preventScroll:true});
+  // Milestone 2.5 — consume ?q= from platform-home / marketing CTAs.
+  let seededFromQuery='';
+  try{seededFromQuery=(new URLSearchParams(location.search).get('q')||'').trim();}catch(e){}
+  if(seededFromQuery){
+    input.value=seededFromQuery;
+    try{welcomeOnInput();}catch(e){}
+    send.disabled=false;
+    setTimeout(()=>{try{welcomeSubmit();}catch(e){}},280);
+  }else{
+    input.value='';
+    send.disabled=true;
+    input.focus({preventScroll:true});
+  }
   const soft=document.getElementById('welcome-hubly-line');
   if(soft)soft.innerHTML=WELCOME_SOFT_LINES[0];
 }

@@ -18,14 +18,12 @@ Live automation: `npm run milestone2` → `docs/MILESTONE2_RELEASE_GATE.json`
 | 9 | Creative Workspace | Pass | `scripts/check-m2-epic9.mjs` | [`MILESTONE2_EPIC9_PROOF.md`](./MILESTONE2_EPIC9_PROOF.md) | Accepted |
 | 10 | Hubly Daily | Pass | `scripts/check-m2-epic10.mjs` | [`MILESTONE2_EPIC10_PROOF.md`](./MILESTONE2_EPIC10_PROOF.md) | Accepted |
 | 11 | Living Business | Pass | `scripts/check-m2-epic11.mjs` | [`MILESTONE2_EPIC11_PROOF.md`](./MILESTONE2_EPIC11_PROOF.md) | Accepted |
-| 12 | Polish & Delight | Pass (pending Founder Approval) | `scripts/check-m2-epic12.mjs` | [`MILESTONE2_EPIC12_PROOF.md`](./MILESTONE2_EPIC12_PROOF.md) | — |
+| 12 | Polish & Delight | Pass | `scripts/check-m2-epic12.mjs` | [`MILESTONE2_EPIC12_PROOF.md`](./MILESTONE2_EPIC12_PROOF.md) | Pending |
 
-## Epic 12 — Polish & Delight
+## Next — Milestone 2.5 Production Integration
 
-Craftsmanship — motion, microinteractions, empty states, smart loading, success & delight, intelligent errors, accessibility, performance, personality, founder walkthrough.
+Gates can pass while hubly.app still shows the old car. See:
 
-```bash
-npm run check:m2-epic12
-```
+**[`MILESTONE25_PRODUCTION_INTEGRATION.md`](./MILESTONE25_PRODUCTION_INTEGRATION.md)**
 
-When Epic 12 is accepted, **Milestone 2 is complete**.
+Do **not** start Milestone 3 until a stranger can complete the full new journey on production.

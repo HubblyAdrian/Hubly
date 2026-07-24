@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Booking / profile links are https://{slug}.myhubly.app
- * Phase 6.5 made `/` always serve platform-home.html — that broke subdomains.
- * Assert business subdomains get hubly.html, apex still gets the platform home.
+ * Milestone 2.5 — apex `/` serves Welcome (hubly.html); legacy marketing at /platform.
+ * Business subdomains must still get hubly.html storefront — never platform marketing.
  */
 import fs from 'fs';
 import path from 'path';
@@ -61,17 +61,22 @@ async function hit(host, url = '/') {
 }
 
 const hublyMarker = 'id="p-storefront"';
-const platformMarker = 'platform-home';
+const welcomeMarker = 'data-welcome-experience';
 
 const apex = await hit('myhubly.app', '/');
 assert(
-  String(apex.body || '').includes('Get Done') ||
-    String(apex.body || '').toLowerCase().includes('marketplace') ||
-    fs.readFileSync(path.join(root, 'public/platform-home.html'), 'utf8').slice(0, 200) ===
-      String(apex.body || '').slice(0, 200),
-  'apex / should serve platform-home.html'
+  String(apex.body || '').includes(welcomeMarker) || String(apex.body || '').includes(hublyMarker),
+  'apex / should serve hubly.html Welcome (M2.5)'
 );
-assert(!String(apex.body || '').includes(hublyMarker) || String(apex.body || '').includes('Get Done'), 'apex should not be owner SPA only');
+
+const platform = await hit('myhubly.app', '/platform');
+assert(
+  String(platform.body || '').includes('Get Done') ||
+    String(platform.body || '').toLowerCase().includes('marketplace') ||
+    fs.readFileSync(path.join(root, 'public/platform-home.html'), 'utf8').slice(0, 200) ===
+      String(platform.body || '').slice(0, 200),
+  '/platform should serve legacy platform-home.html'
+);
 
 const sub = await hit('bucket-mobile-detailing.myhubly.app', '/');
 assert(String(sub.body || '').includes(hublyMarker), 'business subdomain / must serve hubly.html (p-storefront)');
@@ -85,6 +90,8 @@ const hublySrc = fs.readFileSync(path.join(root, 'public/hubly.html'), 'utf8');
 assert(hublySrc.includes('function getSlugFromHost'), 'client still resolves slug from host');
 assert(hublySrc.includes('function publicProfileHref'), 'copy link still builds subdomain URL');
 assert(hublySrc.includes("return 'https://'+publicProfileHost(slug)"), 'copied link is https subdomain');
+assert(hublySrc.includes('function openProductionBusinessHome'), 'M2.5 production Business Home wiring');
+assert(hublySrc.includes('function preferM2ExperienceHome'), 'M2.5 prefers Business Home over classic Dashboard');
 
 if (failed) process.exit(1);
-console.log('OK booking link subdomain routing checks passed');
+console.log('OK booking link subdomain + M2.5 production routing checks passed');
