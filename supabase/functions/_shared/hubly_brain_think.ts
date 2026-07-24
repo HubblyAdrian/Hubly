@@ -128,6 +128,10 @@ import {
 } from "./hubly_brain_mission_control.ts";
 import { confidenceBand, type HublyConfidenceBand } from "./hubly_brain_confidence_policy.ts";
 import { applyExperienceDirector } from "./hubly_brain_experience_director.ts";
+import {
+  runDiscoveryConversationTurn,
+  type DiscoveryTurnResult,
+} from "./hubly_brain_discovery_conversation.ts";
 
 export type HublyThinkIntent =
   | "build_business"
@@ -138,6 +142,7 @@ export type HublyThinkIntent =
   | "weather"
   | "memory"
   | "conversation_intelligence"
+  | "discovery"
   | "why"
   | "general";
 
@@ -150,6 +155,14 @@ export type HublyThinkRequest = {
   conversation?: HublyConversationMemoryInput | null;
   /** Section 10 — Conversation Intelligence (working memory, not chat logs). */
   conversationIntelligence?: HublyConversationIntelligenceInput;
+  /** Create-mode Discovery — OpenAI decides next question from conversation. */
+  discovery?: {
+    seed?: string | null;
+    facts?: Record<string, unknown> | null;
+    history?: Array<{ role: string; text: string }> | null;
+    turns?: number;
+    clarificationCount?: number;
+  } | null;
   blueprintKnowledge?: Record<string, unknown> | null;
   /** Force expert set (Brain still runs Experience Director last). */
   experts?: HublyExpertId[] | null;
@@ -287,6 +300,8 @@ export type HublyThinkResult = {
     memoriesLoaded: string[];
     latencyMs: number;
   };
+  /** Create-mode Discovery turn (OpenAI-powered when configured). */
+  discovery?: DiscoveryTurnResult | null;
 };
 
 export function detectIntent(request: string, explicit?: string | null): string {
@@ -412,6 +427,120 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   const seeded = businessId ? loadBusinessMemoryLocal(businessId) : null;
   let memory = normalizeBusinessMemory(seeded || req.memory);
   let memoryChanges: HublyMemoryChange[] = [];
+
+  // Create-mode Discovery — every onboarding message → OpenAI (not gap trees).
+  if (intent === "discovery") {
+    const discCtx = req.discovery || {};
+    const disc = await runDiscoveryConversationTurn({
+      request: String(req.request || ""),
+      seed: discCtx.seed || null,
+      facts: (discCtx.facts || null) as DiscoveryTurnResult["facts"],
+      history: discCtx.history || null,
+      turns: discCtx.turns,
+      clarificationCount: discCtx.clarificationCount,
+    });
+    let conversation = normalizeConversationMemory(req.conversation);
+    conversation = appendConversationTurn(conversation, {
+      role: "owner",
+      text: String(req.request || "").trim(),
+      at: new Date().toISOString(),
+    });
+    const ed = applyExperienceDirector({
+      request: req.request,
+      draftResponse: disc.reply,
+      proposedQuestions: disc.question ? [disc.question] : [],
+      confidence: disc.confidence,
+      criticOk: true,
+    });
+    conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
+    const questions = ed.questions.length ? ed.questions : (disc.question ? [disc.question] : []);
+    const conversationIntelligence = normalizeConversationIntelligence(
+      req.conversationIntelligence || null,
+    );
+    const dna = normalizeBusinessDNA(req.dna);
+    const workspace = normalizeWorkspaceMemory(req.workspace);
+    return {
+      ok: disc.ok,
+      intent: "discovery",
+      response: ed.ownerResponse,
+      questions,
+      celebrate: !!disc.readyForThinking,
+      confidence: disc.confidence,
+      confidenceBand: confidenceBand(disc.confidence),
+      expertsRun: ["experience_director"],
+      expertOutputs: [],
+      mergedExpertRecords: [],
+      expertTranscript: {
+        customerVisible: false,
+        entries: [],
+        assembly: {
+          expertsInOrder: ["openai_discovery", "experience_director"],
+          finalResponseSource: "experience_director",
+          mergedFrom: ["discovery", disc.source],
+          howAssembled: disc.source === "openai"
+            ? "OpenAI decided the next discovery turn; Experience Director phrased the owner reply."
+            : "Fallback discovery used because OpenAI was unavailable; Experience Director phrased the reply.",
+        },
+      },
+      failures: disc.source === "fallback" && disc.error
+        ? [{ expertId: "experience_director", status: "failed", error: disc.error, retries: 0 }]
+        : [],
+      decisions: [
+        makeDecision({
+          domain: "discovery",
+          decision: disc.readyForThinking ? "ready_for_thinking" : "ask_next",
+          reason: disc.source === "openai"
+            ? "OpenAI discovery conversation chose the next step"
+            : "Fallback discovery (OpenAI unavailable)",
+          evidence: [disc.source, disc.provider || "none", disc.model || "none"],
+          confidence: disc.confidence,
+          expertId: "experience_director",
+        }),
+      ],
+      reasoningObjects: [],
+      whyAnswer: null,
+      decisionObjects: [],
+      whyDecisionAnswer: null,
+      primaryDecision: null,
+      memory,
+      memoryChanges: [],
+      memoryCommittedBy: BUSINESS_MEMORY_OWNER,
+      memoryRetrieval: null,
+      dna,
+      workspace,
+      workspaceChanges: [],
+      workspaceCommittedBy: WORKSPACE_MEMORY_OWNER,
+      workspaceRetrieval: null,
+      conversation,
+      conversationIntelligence,
+      conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
+      conversationIntelligenceRetrieval: null,
+      registryRouting,
+      timeline: [{
+        expertId: "experience_director",
+        ms: Date.now() - started,
+        confidence: disc.confidence,
+        summary: ed.ownerResponse,
+      }],
+      experienceDirector: {
+        reviewedBy: "experience_director",
+        actions: [...ed.actions, disc.source === "openai" ? "openai_discovery" : "fallback_discovery"],
+        questionsShown: questions.length,
+        questionsDelayed: ed.delayed.extraQuestions.length,
+        celebrate: ed.celebrate,
+        hideDetails: ed.hideDetails,
+      },
+      discovery: disc,
+      console: req.debug
+        ? {
+          intent: "discovery",
+          expertsSelected: ["experience_director"],
+          memoriesLoaded: ["discovery_context"],
+          latencyMs: Date.now() - started,
+        }
+        : undefined,
+    };
+  }
 
   // Section 5 — Brain extracts owner facts and commits (experts never write).
   const extracted = extractMemorySuggestionsFromRequest(String(req.request || ""), memory);
