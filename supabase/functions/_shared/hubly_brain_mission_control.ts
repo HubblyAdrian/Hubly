@@ -195,6 +195,21 @@ export type HublyFlightRecorder = {
     applied: false;
     rollbackExecuted: false;
   } | null;
+  /** Milestone 1.5 · Epic 6 — Creative Session (Business Builder; not applied). */
+  creativeSession: {
+    id: string;
+    label: string;
+    direction: string;
+    decisionCount: number;
+    surfacesTouched: string[];
+    businessScoreOverall: number;
+    preferenceCount: number;
+    hasChallenge: boolean;
+    requiresApproval: true;
+    applied: false;
+    executed: false;
+    waitingFor: string;
+  } | null;
 };
 
 export type HublyExpertActivityStats = {
@@ -261,6 +276,8 @@ export type HublyMissionControlSnapshot = {
     /** Latest Business Versions (Epic 5). */
     versions: Array<NonNullable<HublyFlightRecorder["businessVersion"]>>;
     versionHistoryNote: string;
+    /** Latest Creative Sessions (Epic 6 — Business Builder). */
+    creativeSessions: Array<NonNullable<HublyFlightRecorder["creativeSession"]>>;
   };
   capabilityRegistry: Array<{ toolId: string; name: string; capabilityCount: number }>;
   knowledgeRegistry: Array<{ id: string; name: string; access: string }>;
@@ -354,6 +371,7 @@ export type RecordFlightOpts = {
   preview?: HublyFlightRecorder["preview"];
   collaboration?: HublyFlightRecorder["collaboration"];
   businessVersion?: HublyFlightRecorder["businessVersion"];
+  creativeSession?: HublyFlightRecorder["creativeSession"];
 };
 
 /**
@@ -468,6 +486,12 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     }, 12);
   }
 
+  if (opts.creativeSession) {
+    push("creative_session", `Business Builder: ${opts.creativeSession.direction}`, {
+      ...opts.creativeSession,
+    }, 12);
+  }
+
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -526,6 +550,7 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     preview: opts.preview ? { ...opts.preview } : null,
     collaboration: opts.collaboration ? { ...opts.collaboration } : null,
     businessVersion: opts.businessVersion ? { ...opts.businessVersion } : null,
+    creativeSession: opts.creativeSession ? { ...opts.creativeSession } : null,
   };
 
   FLIGHTS.set(flight.executionId, flight);
@@ -764,12 +789,23 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         .filter((x): x is NonNullable<typeof x> => !!x)
         .slice(-10)
         .reverse();
+      const creativeSessions = flights
+        .map((f) => f.creativeSession)
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .slice(-10)
+        .reverse();
       return {
         milestone: "1.5" as const,
         available: false as const,
-        epic: "5 — Version & Rollback",
-        note: "Epic 5 — Versions + rollback plans. Business Timeline. Waiting for Apply Engine. No execute.",
-        recent: versions.length
+        epic: "6 — Business Builder",
+        note: "Epic 6 — Business Builder Creative Sessions. Website is one canvas. Waiting for Approval/Apply. No apply.",
+        recent: creativeSessions.length
+          ? creativeSessions.map((c) => ({
+            id: c.id,
+            status: "creative_session",
+            summary: `${c.label}: ${c.direction} · score ${c.businessScoreOverall} · ${c.decisionCount} decisions`,
+          }))
+          : versions.length
           ? versions.map((v) => ({
             id: v.id,
             status: v.status,
@@ -820,6 +856,7 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         collaborations,
         versions,
         versionHistoryNote: "Current → History → Diff → Rollback availability → AI restore suggestions. Try it — you can always go back.",
+        creativeSessions,
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

@@ -141,6 +141,11 @@ function recordFlightRecorder(opts) {
       ...opts.businessVersion
     }, 12);
   }
+  if (opts.creativeSession) {
+    push("creative_session", `Business Builder: ${opts.creativeSession.direction}`, {
+      ...opts.creativeSession
+    }, 12);
+  }
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -187,7 +192,8 @@ function recordFlightRecorder(opts) {
     changePlan: opts.changePlan ? { ...opts.changePlan } : null,
     preview: opts.preview ? { ...opts.preview } : null,
     collaboration: opts.collaboration ? { ...opts.collaboration } : null,
-    businessVersion: opts.businessVersion ? { ...opts.businessVersion } : null
+    businessVersion: opts.businessVersion ? { ...opts.businessVersion } : null,
+    creativeSession: opts.creativeSession ? { ...opts.creativeSession } : null
   };
   FLIGHTS.set(flight.executionId, flight);
   FLIGHT_ORDER.push(flight.executionId);
@@ -363,12 +369,17 @@ function getMissionControlSnapshot() {
       const previews = flights.map((f) => f.preview).filter((x) => !!x).slice(-10).reverse();
       const collaborations = flights.map((f) => f.collaboration).filter((x) => !!x).slice(-10).reverse();
       const versions = flights.map((f) => f.businessVersion).filter((x) => !!x).slice(-10).reverse();
+      const creativeSessions = flights.map((f) => f.creativeSession).filter((x) => !!x).slice(-10).reverse();
       return {
         milestone: "1.5",
         available: false,
-        epic: "5 \u2014 Version & Rollback",
-        note: "Epic 5 \u2014 Versions + rollback plans. Business Timeline. Waiting for Apply Engine. No execute.",
-        recent: versions.length ? versions.map((v) => ({
+        epic: "6 \u2014 Business Builder",
+        note: "Epic 6 \u2014 Business Builder Creative Sessions. Website is one canvas. Waiting for Approval/Apply. No apply.",
+        recent: creativeSessions.length ? creativeSessions.map((c) => ({
+          id: c.id,
+          status: "creative_session",
+          summary: `${c.label}: ${c.direction} \xB7 score ${c.businessScoreOverall} \xB7 ${c.decisionCount} decisions`
+        })) : versions.length ? versions.map((v) => ({
           id: v.id,
           status: v.status,
           summary: `${v.label} \xB7 ${v.changeCount} change(s) \xB7 rollback available`,
@@ -410,7 +421,8 @@ function getMissionControlSnapshot() {
         previews,
         collaborations,
         versions,
-        versionHistoryNote: "Current \u2192 History \u2192 Diff \u2192 Rollback availability \u2192 AI restore suggestions. Try it \u2014 you can always go back."
+        versionHistoryNote: "Current \u2192 History \u2192 Diff \u2192 Rollback availability \u2192 AI restore suggestions. Try it \u2014 you can always go back.",
+        creativeSessions
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

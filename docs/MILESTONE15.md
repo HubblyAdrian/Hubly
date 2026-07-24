@@ -12,8 +12,8 @@ npm run milestone15
 | 2 | Change Plan DSL | ✅ Accepted |
 | 3 | Preview Engine | ✅ Accepted |
 | 4 | Collaboration & Approval | ✅ Accepted |
-| 5 | Version & Rollback | ⏳ Pass — pending Founder Approval |
-| 6 | Website Builder | 🔒 Locked |
+| 5 | Version & Rollback | ✅ Accepted |
+| 6 | Business Builder | ⏳ Pass — pending Founder Approval |
 | 7 | Booking Builder | 🔒 Locked |
 | 8 | CRM Builder | 🔒 Locked |
 | 9 | Automation Builder | 🔒 Locked |
@@ -21,12 +21,12 @@ npm run milestone15
 | 11 | Hubly Chat | 🔒 Locked |
 | 12 | Builder Validation | 🔒 Locked |
 
-## Epic 5 — Version & Rollback
+## Epic 6 — Business Builder
 
-Git for a business. Rollback plans only — no execute.
+Build the business with Hubly. Website is one canvas.
 
 ```bash
-npm run check:builder-epic5
+npm run check:builder-epic6
 ```
 
-Evidence: `docs/BUILDER_EPIC5.md` · `docs/BUILDER_EPIC5_PROOF.json`
+Evidence: `docs/BUILDER_EPIC6.md` · `docs/BUILDER_EPIC6_PROOF.json`
