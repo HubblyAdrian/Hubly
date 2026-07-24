@@ -1483,9 +1483,86 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   padding:14px 18px;cursor:pointer;width:100%;margin-top:4px;
 }
 .is-launch-home-cta:hover{filter:brightness(1.05)}
-.is-home-soft{color:#fff;animation:isThinkCanvasIn .5s ease both}
-.is-home-soft h1{font-size:clamp(22px,3vw,28px);font-weight:800;margin:0 0 10px}
-.is-home-soft p{font-size:14px;line-height:1.5;color:rgba(255,255,255,.82);margin:0}
+/* Milestone 2 · Epic 8 — Business Home (briefing, not dashboard) */
+.is-wrap.is-home-wide{max-width:min(860px,96vw)}
+.is-home-canvas{color:#fff;animation:isThinkCanvasIn .55s ease both;padding-bottom:88px}
+.is-home-30s{
+  display:grid;grid-template-columns:1fr;gap:6px;margin:0 0 16px;padding:12px 14px;border-radius:14px;
+  background:rgba(217,99,45,.14);border:1px solid rgba(253,186,116,.35);font-size:12px;font-weight:650;line-height:1.4;
+}
+.is-home-section{margin:0 0 16px;padding:16px;border-radius:16px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.14)}
+.is-home-section .sk{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#fdba74;margin:0 0 10px}
+.is-home-brief .greet{font-size:clamp(24px,3.5vw,32px);font-weight:800;letter-spacing:-.03em;margin:0 0 8px}
+.is-home-brief .line{font-size:14px;line-height:1.5;color:rgba(255,255,255,.85);margin:0 0 6px}
+.is-home-focus .action{font-size:18px;font-weight:800;margin:0 0 8px;letter-spacing:-.02em}
+.is-home-focus .why,.is-home-focus .next{font-size:13px;line-height:1.45;color:rgba(255,255,255,.78);margin:0 0 6px}
+.is-home-focus .impact{font-size:14px;font-weight:750;color:#fdba74;margin:8px 0 0}
+.is-home-health-overall{display:flex;align-items:baseline;gap:12px;margin:0 0 12px}
+.is-home-health-overall .score{font-size:42px;font-weight:800;letter-spacing:-.04em;color:#fdba74}
+.is-home-health-dims{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.is-home-health-dims button{
+  appearance:none;text-align:left;padding:10px 12px;border-radius:12px;font:inherit;cursor:pointer;
+  border:1px solid rgba(255,255,255,.16);background:rgba(15,23,42,.4);color:#fff;
+}
+.is-home-health-dims button:hover,.is-home-health-dims button.is-on{border-color:#fdba74}
+.is-home-health-dims .lbl{display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.7)}
+.is-home-health-dims .num{display:block;font-size:20px;font-weight:800;margin-top:2px}
+.is-home-health-explain{margin-top:10px;font-size:12px;line-height:1.45;color:rgba(255,255,255,.75)}
+.is-home-website-preview{
+  margin:0 0 12px;padding:18px;border-radius:14px;min-height:110px;
+  background:linear-gradient(145deg,rgba(217,99,45,.22),rgba(15,23,42,.65));
+  border:1px solid rgba(253,186,116,.35);
+}
+.is-home-website-preview .biz{font-size:18px;font-weight:800;margin:0 0 4px}
+.is-home-website-preview .live{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74}
+.is-home-website-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+.is-home-website-actions button,.is-home-card-ask button,.is-home-ask-chips button{
+  appearance:none;border:1px solid rgba(255,255,255,.18);background:rgba(15,23,42,.45);color:#fff;
+  font:inherit;font-size:12px;font-weight:700;padding:8px 11px;border-radius:10px;cursor:pointer;
+}
+.is-home-website-actions button:hover,.is-home-card-ask button:hover,.is-home-ask-chips button:hover{border-color:#fdba74;color:#fdba74}
+.is-home-today-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.is-home-today-grid .panel{
+  padding:12px;border-radius:12px;background:rgba(15,23,42,.4);border:1px solid rgba(255,255,255,.12);
+}
+.is-home-today-grid .panel strong{display:block;font-size:13px;font-weight:800;margin:0 0 4px}
+.is-home-today-grid .panel span{font-size:12px;line-height:1.4;color:rgba(255,255,255,.72)}
+.is-home-timeline .row{display:flex;gap:12px;margin:0 0 10px;font-size:13px}
+.is-home-timeline .when{flex:0 0 88px;font-weight:800;color:#fdba74}
+.is-home-timeline .event{font-weight:700}
+.is-home-timeline .why{display:block;font-weight:550;color:rgba(255,255,255,.68);margin-top:2px}
+.is-home-growth .item{margin:0 0 14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.1)}
+.is-home-growth .item:last-child{margin:0;padding:0;border:0}
+.is-home-growth .title{font-size:14px;font-weight:800;margin:0 0 4px}
+.is-home-growth .meta{font-size:12px;line-height:1.45;color:rgba(255,255,255,.75);margin:0 0 2px}
+.is-home-growth .impact{font-size:13px;font-weight:750;color:#fdba74}
+.is-home-snapshot{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.is-home-snapshot .cell{padding:10px;border-radius:12px;background:rgba(15,23,42,.35);border:1px solid rgba(255,255,255,.1)}
+.is-home-snapshot .cell .lbl{font-size:11px;font-weight:700;color:rgba(255,255,255,.65)}
+.is-home-snapshot .cell .val{font-size:16px;font-weight:800;margin-top:2px}
+.is-home-card-ask{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.is-home-workspace{font-size:13px;line-height:1.45;color:rgba(255,255,255,.82)}
+.is-home-stage .emphasis{font-size:16px;font-weight:800;margin:0 0 6px}
+.is-home-return{border-color:rgba(253,186,116,.4)}
+.is-home-ask-dock{
+  position:sticky;bottom:0;margin:18px -4px 0;padding:12px 14px;border-radius:16px 16px 0 0;
+  background:rgba(20,27,43,.96);border:1px solid rgba(255,255,255,.16);border-bottom:0;
+  backdrop-filter:blur(10px);
+}
+.is-home-ask-dock .sk{margin-bottom:8px}
+.is-home-ask-thread{max-height:140px;overflow:auto;margin:0 0 8px;font-size:12px;line-height:1.4}
+.is-home-ask-thread .msg{margin:0 0 6px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.06)}
+.is-home-ask-thread .msg.is-you{border-left:2px solid #fdba74}
+.is-home-ask-row{display:flex;gap:8px}
+.is-home-ask-row input{
+  flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);
+  background:rgba(15,23,42,.55);color:#fff;font:inherit;font-size:13px;
+}
+.is-home-ask-row button{
+  appearance:none;border:none;border-radius:10px;background:#d9632d;color:#fff;font:inherit;font-size:13px;font-weight:800;
+  padding:10px 14px;cursor:pointer;flex:0 0 auto;
+}
+.is-home-ask-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
 .is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
 .is-area-panel.hidden{display:none!important}
 .is-area-panel.is-compact .is-area-extra{display:none}
@@ -8778,12 +8855,23 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
 
       <div class="is-step" data-is="business-home" id="is-step-business-home" data-business-home="1" data-ready-for-business-home="1">
-        <div class="is-home-soft">
-          <div class="is-save-brand">
+        <div class="is-home-canvas is-business-home" id="is-home-canvas" data-thirty-second="1">
+          <div class="is-save-brand is-home-brand">
             <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
           </div>
-          <h1>Your business is open</h1>
-          <p>Epic 8 will own the full Business Home. For now — you're launched. readyForBusinessHome.</p>
+          <div class="is-home-30s" id="is-home-30s" aria-label="30-Second Rule">
+            <div>What's happening today · What needs attention · Highest-impact action · How you're performing · Ask Hubly</div>
+          </div>
+          <div id="is-home-sections"></div>
+          <div class="is-home-ask-dock is-home-ask" id="is-home-ask-dock">
+            <div class="sk">Ask Hubly</div>
+            <div class="is-home-ask-thread" id="is-home-ask-thread" data-home-ask-thread="1"></div>
+            <div class="is-home-ask-row">
+              <input type="text" id="is-home-ask-input" placeholder="Ask about anything on Business Home…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();isHomeAskSubmit();}">
+              <button type="button" onclick="isHomeAskSubmit()">Ask</button>
+            </div>
+            <div class="is-home-ask-chips is-home-card-ask" id="is-home-ask-chips"></div>
+          </div>
         </div>
       </div>
 
@@ -17784,13 +17872,461 @@ function isLaunchChooseNext(id){
   // Ask / Marketplace / Team stay on launch — intentional calm choices for Epic 8+
 }
 
-function isEnterBusinessHome(){
+function isEnterBusinessHome(opts){
   S._is=S._is||{};
   S._is.readyForBusinessHome=true;
-  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-launch-wide');
+  try{persistInstantSiteDraft();}catch(e){}
+  isRunBusinessHome(opts);
+}
+
+/* ── Milestone 2 · Epic 8 — Business Home ── */
+const HUBLY_BUSINESS_HOME = (function(){
+  const MORNING_REVIEW_LINE = "Last night I reviewed your business.";
+  const MORNING_FOCUS_LINE = "Here's what I'd focus on today.";
+  const HEALTH_DIMENSIONS = [
+    {id:"trust",label:"Trust"},{id:"bookings",label:"Bookings"},{id:"growth",label:"Growth"},
+    {id:"operations",label:"Operations"},{id:"brand",label:"Brand"},
+  ];
+  const WEBSITE_ACTIONS = [
+    {id:"view",label:"View Site"},{id:"edit",label:"Edit with Hubly"},
+    {id:"preview",label:"Preview Changes"},{id:"recent",label:"Recent Improvements"},
+  ];
+  const SNAPSHOT_METRICS = [
+    {id:"revenue",label:"Revenue"},{id:"bookings",label:"Bookings"},{id:"reviews",label:"Reviews"},
+    {id:"response",label:"Response Time"},{id:"repeat",label:"Repeat Customers"},{id:"conversion",label:"Website Conversion"},
+  ];
+  const CARD_ASK_PROMPTS = ["Why should I care?","Explain this.","Improve this.","What would you do?","Build this."];
+  const INDUSTRY_TODAY = {
+    pressure_washing:{title:"Today's Business",panels:[
+      {id:"jobs",label:"Today's Jobs",why:"Know which driveways and homes are on the route."},
+      {id:"route",label:"Route",why:"Cut drive time between jobs."},
+      {id:"weather",label:"Weather",why:"Wash quality depends on dry windows."},
+      {id:"travel",label:"Travel",why:"Protect margins on long hops."},
+    ]},
+    photography:{title:"Today's Business",panels:[
+      {id:"shoots",label:"Today's Shoots",why:"See who's in front of the camera today."},
+      {id:"albums",label:"Albums",why:"Deliver finished galleries on time."},
+      {id:"editing",label:"Editing Queue",why:"Clear the backlog before new shoots pile up."},
+      {id:"portfolio",label:"Portfolio",why:"Keep the site converting inquiries."},
+    ]},
+    hvac:{title:"Today's Business",panels:[
+      {id:"calls",label:"Service Calls",why:"Prioritize emergencies vs tune-ups."},
+      {id:"parts",label:"Parts & Van",why:"Avoid a second trip mid-job."},
+      {id:"sla",label:"Response Windows",why:"Same-day promises need coverage."},
+      {id:"maintenance",label:"Maintenance Plans",why:"Grow recurring revenue."},
+    ]},
+    lawn_care:{title:"Today's Business",panels:[
+      {id:"route",label:"Today's Route",why:"Density beats scattered one-offs."},
+      {id:"weather",label:"Weather",why:"Mowing windows shift with rain."},
+      {id:"pause",label:"Pause / Resume",why:"Seasonal customers churn without it."},
+      {id:"crew",label:"Crew Load",why:"Balance yards across the team."},
+    ]},
+    cleaning:{title:"Today's Business",panels:[
+      {id:"homes",label:"Recurring Homes",why:"Protect the weekly backbone."},
+      {id:"supplies",label:"Supplies",why:"Never start a turnover short."},
+      {id:"route",label:"Route",why:"Cluster cleanings by neighborhood."},
+      {id:"schedule",label:"Today's Schedule",why:"Hosts expect on-time turnovers."},
+    ]},
+    spa:{title:"Today's Business",panels:[
+      {id:"bookings",label:"Today's Bookings",why:"Protect chair time and atmosphere."},
+      {id:"rooms",label:"Rooms",why:"Turn rooms without rushing guests."},
+      {id:"retail",label:"Retail",why:"Quiet add-on revenue after treatments."},
+      {id:"rebook",label:"Rebook Queue",why:"Regulars drive stability."},
+    ]},
+  };
+  const STAGE_EMPHASIS = {
+    new:{id:"new",label:"New business",emphasis:"Share your booking page.",why:"Day-one owners need first customers, not optimization.",emptyHint:"Your first bookings start when someone can book you."},
+    growing:{id:"growing",label:"Growing business",emphasis:"Growth.",why:"Momentum is here — double down on what converts.",emptyHint:"Keep feeding the channel that already works."},
+    established:{id:"established",label:"Established business",emphasis:"Optimization.",why:"Protect margins and systems while you scale.",emptyHint:"Fine-tune the engine — small lifts compound."},
+  };
+  const WORKSPACE_MODES = {
+    jobs:{id:"jobs",label:"Jobs-first",highlight:"today",line:"You've been deep in Jobs — I led with today's route and schedule."},
+    sales:{id:"sales",label:"Sales-first",highlight:"growth",line:"You've been in Sales — I led with growth opportunities and conversion."},
+    website:{id:"website",label:"Website-first",highlight:"website",line:"You've been editing the site — I led with live website and brand health."},
+    balanced:{id:"balanced",label:"Balanced",highlight:"brief",line:"I balanced the briefing across attention, health, and growth."},
+  };
+  const INDUSTRY_HOME_FOCUS = {
+    pressure_washing:{
+      focus:{action:"Upload five completed job photos.",why:"Finished work is your strongest trust signal for driveways and homes.",impact:"+18% customer trust.",nextStep:"Add photos from your last five jobs to the gallery."},
+      growth:[
+        {title:"Launch Memberships",why:"Neighbors buy recurring soft-wash plans when the offer is simple.",impact:"+$1,200/mo",nextStep:"Create a quarterly soft-wash membership."},
+        {title:"Upload Portfolio",why:"Before/after photos convert cold traffic on the booking page.",impact:"+16% trust",nextStep:"Publish five before/after pairs."},
+        {title:"Enable Arrival Windows",why:"Homeowners hate all-day holds — windows cut no-shows.",impact:"-30% scheduling conflicts",nextStep:"Turn on 2-hour arrival windows."},
+      ],
+    },
+    photography:{
+      focus:{action:"Send your inquiry link to two couples who already asked about dates.",why:"Warm leads convert faster than cold portfolio traffic.",impact:"1–2 premium inquiries.",nextStep:"Text the inquiry link with available weekend dates."},
+      growth:[
+        {title:"Clarify Weekend Packages",why:"Decision fatigue kills wedding inquiries.",impact:"Less decision fatigue",nextStep:"Make one weekend package the default."},
+        {title:"Deliver One Album Early",why:"Speed of delivery drives referrals and reviews.",impact:"+referral rate",nextStep:"Ship the oldest album in the queue today."},
+        {title:"Feature Atmosphere Shots",why:"Emotion converts better than gear lists.",impact:"+emotional conversion",nextStep:"Pin three atmosphere photos above the fold."},
+      ],
+    },
+    hvac:{
+      focus:{action:"Offer a tune-up plan to five past emergency customers.",why:"Emergency callers already trust you — convert them to maintenance.",impact:"Recurring maintenance starts.",nextStep:"Send a one-tap tune-up offer to five past jobs."},
+      growth:[
+        {title:"Publish Licensed & Insured",why:"Emergency fear drops when proof is above the fold.",impact:"Lower emergency fear",nextStep:"Add licensed & insured language to the hero."},
+        {title:"Open Same-Day Windows",why:"HVAC buyers book the first available trusted tech.",impact:"Faster first bookings",nextStep:"Open two same-day slots this week."},
+        {title:"Parts Checklist on Van",why:"Second trips destroy margins on service calls.",impact:"-return trips",nextStep:"Attach a parts checklist to today's jobs."},
+      ],
+    },
+    lawn_care:{
+      focus:{action:"Invite ten neighbors onto a weekly or biweekly route.",why:"Route density is the difference between profit and windshield time.",impact:"Route density grows.",nextStep:"Share a neighborhood booking link on one street."},
+      growth:[
+        {title:"Add Before/After Yard Photos",why:"Reliability proof beats generic lawn stock photos.",impact:"+reliability proof",nextStep:"Upload three recent yard transformations."},
+        {title:"Turn On Pause/Resume",why:"Seasonal customers cancel instead of pausing without it.",impact:"Fewer cancellations",nextStep:"Enable pause/resume on recurring plans."},
+        {title:"Cluster Today's Route",why:"Scattered yards burn fuel and crew time.",impact:"-drive time",nextStep:"Reorder today's stops by neighborhood."},
+      ],
+    },
+    cleaning:{
+      focus:{action:"Share your turnover booking link with three Airbnb hosts.",why:"Hosts need reliable turnovers more than one-off cleans.",impact:"Recurring turnovers.",nextStep:"Text the turnover link to three local hosts."},
+      growth:[
+        {title:"Collect Two Host Reviews",why:"Host trust compounds faster with recent reviews.",impact:"Faster host trust",nextStep:"Ask two hosts for a short review this week."},
+        {title:"Highlight Weekly Plans",why:"Repeat revenue beats one-time deep cleans.",impact:"Higher repeat revenue",nextStep:"Feature weekly/biweekly on the homepage."},
+        {title:"Supplies Checklist",why:"Starting a turnover short creates host complaints.",impact:"-supply misses",nextStep:"Attach a supplies list to today's schedule."},
+      ],
+    },
+    spa:{
+      focus:{action:"Text your one-tap book link to five regular clients.",why:"Regulars rebook when the path is effortless.",impact:"Faster rebooking.",nextStep:"Send the book link to five clients due for a visit."},
+      growth:[
+        {title:"Simplify the Menu",why:"Too many services create decision fatigue.",impact:"Less decision fatigue",nextStep:"Keep the top six services with durations."},
+        {title:"Feature Atmosphere Photos",why:"Calm imagery converts better than promotions.",impact:"Calmer conversion",nextStep:"Pin atmosphere photos above promos."},
+        {title:"Protect Chair Time",why:"Gaps between bookings erode daily revenue.",impact:"+utilization",nextStep:"Fill two open slots with waitlist clients."},
+      ],
+    },
+  };
+  function resolveKey(ctx){
+    const raw=String(ctx.industryId||ctx.industryKey||ctx.industry||ctx.businessType||ctx.facts?.industryId?.value||ctx.seed||'').toLowerCase();
+    if(/pressure|power\s*wash|soft\s*wash/.test(raw))return'pressure_washing';
+    if(/photo|wedding/.test(raw))return'photography';
+    if(/hvac|heating|furnace|air\s*condition/.test(raw))return'hvac';
+    if(/lawn|landscap|mow/.test(raw))return'lawn_care';
+    if(/clean|maid|airbnb|turnover|short.?term/.test(raw))return'cleaning';
+    if(/\bspa\b|massage|facial|wellness/.test(raw))return'spa';
+    return'pressure_washing';
+  }
+  function resolveStage(ctx){
+    const raw=String(ctx.businessStage||ctx.stage||'').toLowerCase();
+    if(/establish|mature|scale|optim/.test(raw))return'established';
+    if(/grow|scaling|momentum/.test(raw))return'growing';
+    if(ctx.daysSinceLaunch!=null&&Number(ctx.daysSinceLaunch)>365)return'established';
+    if(ctx.daysSinceLaunch!=null&&Number(ctx.daysSinceLaunch)>90)return'growing';
+    if(ctx.bookingCount!=null&&Number(ctx.bookingCount)>=50)return'established';
+    if(ctx.bookingCount!=null&&Number(ctx.bookingCount)>=5)return'growing';
+    return'new';
+  }
+  function resolveWorkspace(ctx){
+    const raw=String(ctx.workspaceMode||ctx.recentWorkspace||ctx.focusArea||'').toLowerCase();
+    if(/job|route|schedule|field/.test(raw))return'jobs';
+    if(/sale|lead|inquir|pipeline|crm/.test(raw))return'sales';
+    if(/web|site|brand|edit|design/.test(raw))return'website';
+    return'balanced';
+  }
+  function firstNameOf(ctx){
+    const owner=ctx.ownerName||ctx.firstName||(ctx.email?String(ctx.email).split('@')[0]:null)||'there';
+    return String(owner).replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).trim().split(/\s+/)[0]||'there';
+  }
+  function clampScore(n,fallback){
+    const v=Number(n);if(!Number.isFinite(v))return fallback;return Math.max(0,Math.min(100,Math.round(v)));
+  }
+  function buildBusinessHealth(ctx){
+    const scores={trust:clampScore(ctx.trustScore,95),bookings:clampScore(ctx.bookingsScore,90),growth:clampScore(ctx.growthScore,88),operations:clampScore(ctx.operationsScore,94),brand:clampScore(ctx.brandScore,91)};
+    if(ctx.stripeConnected===false)scores.bookings=Math.min(scores.bookings,72);
+    if(ctx.hasPortfolio===false)scores.trust=Math.min(scores.trust,78);
+    const values=Object.values(scores);
+    const overall=clampScore(values.reduce((a,b)=>a+b,0)/values.length,90);
+    return{
+      overall,label:'Overall Business Health',
+      dimensions:HEALTH_DIMENSIONS.map(d=>({...d,score:scores[d.id],why:`Your ${d.label} score reflects how customers experience this part of the business.`,recommendation:`Improve ${d.label.toLowerCase()} with one focused action this week.`,ask:`Why is my ${d.label} Score ${scores[d.id]}?`})),
+      explain:'One unified health score — every dimension is clickable and explainable.',
+    };
+  }
+  function buildMorningBrief(ctx){
+    return{greeting:'Good morning, '+firstNameOf(ctx),review:MORNING_REVIEW_LINE,focusLine:MORNING_FOCUS_LINE,thirtySecond:true};
+  }
+  function buildWeekReturnSummary(ctx){
+    const days=Number(ctx.daysAway);
+    if(!Number.isFinite(days)||days<7)return null;
+    return{
+      headline:"Welcome back — here's what changed while you were away.",
+      bullets:[
+        ctx.awayBookings!=null?`${ctx.awayBookings} new booking${ctx.awayBookings===1?'':'s'}.`:'Booking activity continued.',
+        ctx.awaySiteChanges!=null?`${ctx.awaySiteChanges} website improvement${ctx.awaySiteChanges===1?'':'s'}.`:'Your site stayed live.',
+        "I refreshed Today's Focus for where you are now.",
+      ],
+      daysAway:days,
+    };
+  }
+  function buildBusinessTimeline(ctx){
+    const stage=resolveStage(ctx);
+    if(stage==='new')return[
+      {when:'Yesterday',event:'Business launched.',why:'Day One is on the record.'},
+      {when:'Today',event:'Share your booking page.',why:'First customers need a path in.'},
+      {when:'Next Week',event:'First review push recommended.',why:'Social proof unlocks trust.'},
+      {when:'Next Month',event:'Membership or package design.',why:'Repeat revenue starts early.'},
+    ];
+    if(stage==='established')return[
+      {when:'Yesterday',event:'Operations stayed steady.',why:'Systems are carrying the load.'},
+      {when:'Today',event:'Optimization opportunities ready.',why:'Small lifts compound at scale.'},
+      {when:'Next Week',event:'Margin review recommended.',why:'Protect profit while busy.'},
+      {when:'Next Month',event:'Peak season capacity plan.',why:"Don't leave demand on the table."},
+    ];
+    return[
+      {when:'Yesterday',event:'Website improved.',why:'Recent edits are live for visitors.'},
+      {when:'Today',event:ctx.todayBookings!=null?`${ctx.todayBookings} new bookings.`:'3 new bookings.',why:'Demand is showing up — respond fast.'},
+      {when:'Next Week',event:'Membership launch recommended.',why:'Lock in recurring revenue.'},
+      {when:'Next Month',event:'Peak season begins.',why:'Prep capacity before the rush.'},
+    ];
+  }
+  function buildSnapshot(ctx){
+    const stage=resolveStage(ctx);
+    const defaults={
+      new:{revenue:'—',bookings:'0',reviews:'0',response:'—',repeat:'—',conversion:'—'},
+      growing:{revenue:ctx.revenueLabel||'$4,200',bookings:String(ctx.bookingCount??12),reviews:String(ctx.reviewCount??8),response:ctx.responseTime||'12m',repeat:ctx.repeatRate||'34%',conversion:ctx.conversionRate||'3.2%'},
+      established:{revenue:ctx.revenueLabel||'$18,400',bookings:String(ctx.bookingCount??64),reviews:String(ctx.reviewCount??41),response:ctx.responseTime||'8m',repeat:ctx.repeatRate||'52%',conversion:ctx.conversionRate||'4.1%'},
+    };
+    const vals=defaults[stage]||defaults.new;
+    return SNAPSHOT_METRICS.map(m=>({...m,value:vals[m.id]??'—',why:`Quick pulse on ${m.label.toLowerCase()} — no clutter.`,ask:`Explain my ${m.label}.`}));
+  }
+  function orchestrateBusinessHome(ctx){
+    const industryKey=resolveKey(ctx);
+    const stageKey=resolveStage(ctx);
+    const workspaceKey=resolveWorkspace(ctx);
+    const pack=INDUSTRY_HOME_FOCUS[industryKey]||INDUSTRY_HOME_FOCUS.pressure_washing;
+    const todayPack=INDUSTRY_TODAY[industryKey]||INDUSTRY_TODAY.pressure_washing;
+    const stage=STAGE_EMPHASIS[stageKey];
+    const workspace=WORKSPACE_MODES[workspaceKey];
+    const focus={...pack.focus,label:"Today's Focus",impactLabel:'Expected Impact'};
+    const growth=pack.growth.map(g=>({...g,source:'growth_expert',impactLabel:/^[-+]/.test(g.impact)?'Expected':'Estimated'}));
+    const orderByWorkspace={
+      jobs:['brief','focus','today','health','growth','website','timeline','snapshot'],
+      sales:['brief','focus','growth','health','website','today','timeline','snapshot'],
+      website:['brief','focus','website','health','growth','today','timeline','snapshot'],
+      balanced:['brief','focus','health','website','today','growth','timeline','snapshot'],
+    };
+    return{
+      version:'1.0.0',label:'Business Home',notADashboard:true,thirtySecondRule:true,
+      industryKey,stageKey,workspaceKey,brief:buildMorningBrief(ctx),focus,health:buildBusinessHealth(ctx),
+      website:{title:'Live Website',businessName:ctx.businessName||ctx.biz||'Your Business',previewLabel:'Live preview',alive:true,actions:WEBSITE_ACTIONS.map(a=>({...a})),recent:ctx.recentImprovement||'Homepage trust signals refreshed.',ask:'Improve this website.',why:'Your site is the front door — it should feel alive, not like a screenshot.'},
+      todayBusiness:{...todayPack,industryKey,ask:"What should I do with today's business?"},
+      timeline:buildBusinessTimeline(ctx),growth,workspace,
+      sectionOrder:orderByWorkspace[workspaceKey]||orderByWorkspace.balanced,
+      snapshot:buildSnapshot(ctx),stage,weekReturn:buildWeekReturnSummary(ctx),
+      askDock:{label:'Ask Hubly',placeholder:'Ask about anything on Business Home…',continuous:true,prompts:CARD_ASK_PROMPTS.slice()},
+      cardAsk:CARD_ASK_PROMPTS.slice(),
+      answersFourQuestions:['What needs my attention?','How is my business doing?','What should I do next?','What can Hubly do for me?'],
+      signature:[industryKey,stageKey,workspaceKey,focus.action.slice(0,36)].join('::'),
+    };
+  }
+  return{MORNING_REVIEW_LINE,MORNING_FOCUS_LINE,INDUSTRY_TODAY,STAGE_EMPHASIS,WORKSPACE_MODES,INDUSTRY_HOME_FOCUS,orchestrateBusinessHome,buildBusinessHealth,buildMorningBrief};
+})();
+
+function isHomeCardAskHtml(prompts, contextLabel){
+  const list=(prompts&&prompts.length?prompts:['Why should I care?','Explain this.','Improve this.','What would you do?']).slice(0,5);
+  return `<div class="is-home-card-ask">${list.map(p=>
+    `<button type="button" onclick="isHomeAsk(${JSON.stringify(p+(contextLabel?' ('+contextLabel+')':''))})">${escPeHtml(p)}</button>`
+  ).join('')}</div>`;
+}
+
+function isHomeRenderSection(id, flow){
+  if(id==='brief'){
+    return `<section class="is-home-section is-home-brief" data-home-section="brief">
+      <div class="sk">Morning Brief</div>
+      <h1 class="greet">${escPeHtml(flow.brief.greeting)}</h1>
+      <p class="line">${escPeHtml(flow.brief.review)}</p>
+      <p class="line">${escPeHtml(flow.brief.focusLine)}</p>
+      ${isHomeCardAskHtml(flow.cardAsk,'Morning Brief')}
+    </section>`;
+  }
+  if(id==='focus'){
+    const f=flow.focus;
+    return `<section class="is-home-section is-home-focus" data-home-section="focus">
+      <div class="sk">${escPeHtml(f.label)}</div>
+      <p class="action">${escPeHtml(f.action)}</p>
+      <p class="why"><strong>Why:</strong> ${escPeHtml(f.why)}</p>
+      <p class="impact">${escPeHtml(f.impactLabel)} · ${escPeHtml(f.impact)}</p>
+      <p class="next"><strong>Next:</strong> ${escPeHtml(f.nextStep)}</p>
+      ${isHomeCardAskHtml(flow.cardAsk,"Today's Focus")}
+    </section>`;
+  }
+  if(id==='health'){
+    const h=flow.health;
+    return `<section class="is-home-section is-home-health" data-home-section="health">
+      <div class="sk">${escPeHtml(h.label)}</div>
+      <div class="is-home-health-overall"><span class="score">${escPeHtml(String(h.overall))}</span><span>${escPeHtml(h.explain)}</span></div>
+      <div class="is-home-health-dims" id="is-home-health-dims">${h.dimensions.map(d=>
+        `<button type="button" data-health="${escPeHtml(d.id)}" onclick="isHomeExplainHealth('${escPeHtml(d.id)}')"><span class="lbl">${escPeHtml(d.label)}</span><span class="num">${escPeHtml(String(d.score))}</span></button>`
+      ).join('')}</div>
+      <div class="is-home-health-explain" id="is-home-health-explain">Tap a score to see why it matters and what to do next.</div>
+      ${isHomeCardAskHtml(flow.cardAsk,'Business Health')}
+    </section>`;
+  }
+  if(id==='website'){
+    const w=flow.website;
+    return `<section class="is-home-section is-home-website" data-home-section="website">
+      <div class="sk">${escPeHtml(w.title)}</div>
+      <div class="is-home-website-preview"><div class="live">${escPeHtml(w.previewLabel)}</div><div class="biz">${escPeHtml(w.businessName)}</div><p style="margin:6px 0 0;font-size:12px;opacity:.8">${escPeHtml(w.recent)}</p></div>
+      <div class="is-home-website-actions">${w.actions.map(a=>
+        `<button type="button" onclick="isHomeWebsiteAction('${escPeHtml(a.id)}')">${escPeHtml(a.label)}</button>`
+      ).join('')}</div>
+      <p class="why" style="font-size:12px;color:rgba(255,255,255,.75);margin:0 0 6px">${escPeHtml(w.why)}</p>
+      ${isHomeCardAskHtml(flow.cardAsk,'Live Website')}
+    </section>`;
+  }
+  if(id==='today'){
+    const t=flow.todayBusiness;
+    return `<section class="is-home-section is-home-today" data-home-section="today">
+      <div class="sk">${escPeHtml(t.title)}</div>
+      <div class="is-home-today-grid">${t.panels.map(p=>
+        `<div class="panel"><strong>${escPeHtml(p.label)}</strong><span>${escPeHtml(p.why)}</span></div>`
+      ).join('')}</div>
+      ${isHomeCardAskHtml(flow.cardAsk,"Today's Business")}
+    </section>`;
+  }
+  if(id==='timeline'){
+    return `<section class="is-home-section is-home-timeline" data-home-section="timeline">
+      <div class="sk">Business Timeline</div>
+      ${flow.timeline.map(row=>
+        `<div class="row"><div class="when">${escPeHtml(row.when)}</div><div><div class="event">${escPeHtml(row.event)}</div><span class="why">${escPeHtml(row.why)}</span></div></div>`
+      ).join('')}
+      ${isHomeCardAskHtml(flow.cardAsk,'Business Timeline')}
+    </section>`;
+  }
+  if(id==='growth'){
+    return `<section class="is-home-section is-home-growth" data-home-section="growth">
+      <div class="sk">Growth Opportunities</div>
+      ${flow.growth.map(g=>
+        `<div class="item"><div class="title">${escPeHtml(g.title)}</div>
+          <p class="meta"><strong>Why:</strong> ${escPeHtml(g.why)}</p>
+          <p class="impact">${escPeHtml(g.impactLabel)}: ${escPeHtml(g.impact)}</p>
+          <p class="meta"><strong>Next:</strong> ${escPeHtml(g.nextStep)}</p></div>`
+      ).join('')}
+      ${isHomeCardAskHtml(flow.cardAsk,'Growth Opportunities')}
+    </section>`;
+  }
+  if(id==='snapshot'){
+    return `<section class="is-home-section is-home-snapshot-wrap" data-home-section="snapshot">
+      <div class="sk">Business Snapshot</div>
+      <div class="is-home-snapshot">${flow.snapshot.map(m=>
+        `<button type="button" class="cell" style="width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer" onclick="isHomeAsk(${JSON.stringify(m.ask)})"><div class="lbl">${escPeHtml(m.label)}</div><div class="val">${escPeHtml(m.value)}</div></button>`
+      ).join('')}</div>
+      ${isHomeCardAskHtml(flow.cardAsk,'Business Snapshot')}
+    </section>`;
+  }
+  return '';
+}
+
+function isRunBusinessHome(opts){
+  S._is=S._is||{};
+  S._is.readyForBusinessHome=true;
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-launch-wide','is-save-wide');
+  document.querySelector('#is-shell .is-wrap')?.classList.add('is-home-wide');
+
+  const d=S._is.discovery||{};
+  const ownerName=S._is.ownerName||S._is.ownerFirst||S._is.delayedAccount?.certificate?.owner||null;
+  const industry=S.businessType||d.facts?.industryId?.value||d.facts?.industry?.value||S._is.reveal?.industryKey||'';
+  const flow=HUBLY_BUSINESS_HOME.orchestrateBusinessHome({
+    businessName:S.biz||S._is.reveal?.businessName||S._is.delayedAccount?.certificate?.business,
+    biz:S.biz,ownerName,firstName:ownerName?String(ownerName).split(/\s+/)[0]:null,
+    email:S.email||null,industryId:industry,industry,businessType:S.businessType,
+    businessStage:opts?.businessStage||S._is.businessStage||d.facts?.businessStage?.value,
+    workspaceMode:opts?.workspaceMode||S._is.workspaceMode||S._is.recentWorkspace||'balanced',
+    bookingCount:opts?.bookingCount??S._is.bookingCount,
+    daysSinceLaunch:opts?.daysSinceLaunch??S._is.daysSinceLaunch,
+    daysAway:opts?.daysAway??S._is.daysAway,
+    awayBookings:opts?.awayBookings,awaySiteChanges:opts?.awaySiteChanges,
+    todayBookings:opts?.todayBookings,stripeConnected:!!(S._stripeConnected||S.stripeConnectAccountId),
+    hasPortfolio:!!((S.portfolioUrls||[]).length||S._is.hasPortfolio),
+    ...opts,
+  });
+  S._is.businessHome=flow;
+  if(!Array.isArray(S._is.homeAskThread))S._is.homeAskThread=[];
+
+  const host=document.getElementById('is-home-sections');
+  if(host){
+    const stageBlock=`<section class="is-home-section is-home-stage" data-home-section="stage">
+      <div class="sk">${escPeHtml(flow.stage.label)}</div>
+      <p class="emphasis">${escPeHtml(flow.stage.emphasis)}</p>
+      <p style="margin:0;font-size:13px;color:rgba(255,255,255,.78)">${escPeHtml(flow.stage.why)}</p>
+      <p style="margin:8px 0 0;font-size:12px;color:rgba(255,255,255,.65)">${escPeHtml(flow.stage.emptyHint)}</p>
+      ${isHomeCardAskHtml(flow.cardAsk,'Stage')}
+    </section>`;
+    const workspaceBlock=`<section class="is-home-section is-home-workspace" data-home-section="workspace">
+      <div class="sk">Workspace Intelligence</div>
+      <p style="margin:0">${escPeHtml(flow.workspace.line)}</p>
+      ${isHomeCardAskHtml(flow.cardAsk,'Workspace Intelligence')}
+    </section>`;
+    const returnBlock=flow.weekReturn?`<section class="is-home-section is-home-return" data-home-section="return">
+      <div class="sk">While you were away</div>
+      <p class="emphasis" style="font-size:15px;font-weight:800;margin:0 0 8px">${escPeHtml(flow.weekReturn.headline)}</p>
+      ${flow.weekReturn.bullets.map(b=>`<p style="margin:0 0 6px;font-size:13px">${escPeHtml(b)}</p>`).join('')}
+      ${isHomeCardAskHtml(flow.cardAsk,'Week return')}
+    </section>`:'';
+    const main=flow.sectionOrder.map(id=>isHomeRenderSection(id,flow)).join('');
+    host.innerHTML=returnBlock+workspaceBlock+stageBlock+main;
+  }
+
+  const chips=document.getElementById('is-home-ask-chips');
+  if(chips){
+    chips.innerHTML=flow.askDock.prompts.map(p=>
+      `<button type="button" onclick="isHomeAsk(${JSON.stringify(p)})">${escPeHtml(p)}</button>`
+    ).join('');
+  }
+  isHomeRenderAskThread();
   isShowStep('business-home');
   try{persistInstantSiteDraft();}catch(e){}
-  // Epic 8 will own full Business Home — soft shell only.
+  return flow;
+}
+
+function isHomeExplainHealth(id){
+  const flow=S._is?.businessHome;
+  const dim=flow?.health?.dimensions?.find(d=>d.id===id);
+  const el=document.getElementById('is-home-health-explain');
+  document.querySelectorAll('#is-home-health-dims button').forEach(b=>b.classList.toggle('is-on',b.getAttribute('data-health')===id));
+  if(!dim||!el)return;
+  el.innerHTML=`<strong>${escPeHtml(dim.label)} · ${escPeHtml(String(dim.score))}</strong><br>${escPeHtml(dim.why)}<br><strong>Next:</strong> ${escPeHtml(dim.recommendation)}`;
+  isHomeAsk(dim.ask);
+}
+
+function isHomeWebsiteAction(id){
+  const labels={view:'View Site',edit:'Edit with Hubly',preview:'Preview Changes',recent:'Recent Improvements'};
+  isHomeAsk(`${labels[id]||id} — what should I know?`);
+}
+
+function isHomeRenderAskThread(){
+  const thread=document.getElementById('is-home-ask-thread');
+  if(!thread)return;
+  const msgs=S._is?.homeAskThread||[];
+  thread.innerHTML=msgs.slice(-12).map(m=>
+    `<div class="msg ${m.role==='you'?'is-you':''}"><strong>${m.role==='you'?'You':'Hubly'}:</strong> ${escPeHtml(m.text)}</div>`
+  ).join('');
+  thread.scrollTop=thread.scrollHeight;
+}
+
+function isHomeAsk(text){
+  const q=String(text||'').trim();
+  if(!q)return;
+  S._is=S._is||{};
+  S._is.homeAskThread=S._is.homeAskThread||[];
+  S._is.homeAskThread.push({role:'you',text:q});
+  const flow=S._is.businessHome;
+  let reply='I hear you. Let\'s keep this one conversation — tell me more about what you want to improve.';
+  if(/trust/i.test(q))reply=`Your Trust score is ${flow?.health?.dimensions?.find(d=>d.id==='trust')?.score??'—'}. ${flow?.focus?.why||''} Next: ${flow?.focus?.nextStep||'Add proof customers can feel.'}`;
+  else if(/care|why should/i.test(q))reply=`Because it changes outcomes. Highest impact today: ${flow?.focus?.action||'Stay focused on one action.'} Expected: ${flow?.focus?.impact||''}`;
+  else if(/improve|build|would you do/i.test(q))reply=`I'd start with Today's Focus: ${flow?.focus?.action||''} Then: ${flow?.focus?.nextStep||''}`;
+  else if(/explain/i.test(q))reply=`Here's the story: ${flow?.brief?.review||''} Focus: ${flow?.focus?.action||''} Health: ${flow?.health?.overall??''}.`;
+  else if(/website|site/i.test(q))reply=`Your live site for ${flow?.website?.businessName||'your business'} should feel alive. Recent: ${flow?.website?.recent||''}`;
+  else reply=`Got it — still one continuous conversation. For ${flow?.industryKey?.replace(/_/g,' ')||'your business'}, I'd focus on: ${flow?.focus?.action||''}`;
+  S._is.homeAskThread.push({role:'hubly',text:reply});
+  isHomeRenderAskThread();
+  try{persistInstantSiteDraft();}catch(e){}
+}
+
+function isHomeAskSubmit(){
+  const input=document.getElementById('is-home-ask-input');
+  const q=input?.value||'';
+  if(input)input.value='';
+  isHomeAsk(q);
 }
 
 // Resume Delayed Account after OAuth return

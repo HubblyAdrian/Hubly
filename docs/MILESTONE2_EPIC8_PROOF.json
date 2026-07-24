@@ -1,0 +1,183 @@
+{
+  "epic": 8,
+  "title": "Business Home",
+  "passed": true,
+  "checkedAt": "2026-07-24T16:05:12.327Z",
+  "version": "1.0.0",
+  "sample": {
+    "industryKey": "pressure_washing",
+    "brief": {
+      "greeting": "Good morning, Adrian",
+      "review": "Last night I reviewed your business.",
+      "focusLine": "Here's what I'd focus on today.",
+      "thirtySecond": true
+    },
+    "focus": {
+      "action": "Upload five completed job photos.",
+      "why": "Finished work is your strongest trust signal for driveways and homes.",
+      "impact": "+18% customer trust.",
+      "nextStep": "Add photos from your last five jobs to the gallery.",
+      "label": "Today's Focus",
+      "impactLabel": "Expected Impact"
+    },
+    "health": {
+      "overall": 92,
+      "label": "Overall Business Health",
+      "dimensions": [
+        {
+          "id": "trust",
+          "label": "Trust",
+          "score": 95,
+          "why": "Your Trust score reflects how customers experience this part of the business.",
+          "recommendation": "Improve trust with one focused action this week.",
+          "ask": "Why is my Trust Score 95?"
+        },
+        {
+          "id": "bookings",
+          "label": "Bookings",
+          "score": 90,
+          "why": "Your Bookings score reflects how customers experience this part of the business.",
+          "recommendation": "Improve bookings with one focused action this week.",
+          "ask": "Why is my Bookings Score 90?"
+        },
+        {
+          "id": "growth",
+          "label": "Growth",
+          "score": 88,
+          "why": "Your Growth score reflects how customers experience this part of the business.",
+          "recommendation": "Improve growth with one focused action this week.",
+          "ask": "Why is my Growth Score 88?"
+        },
+        {
+          "id": "operations",
+          "label": "Operations",
+          "score": 94,
+          "why": "Your Operations score reflects how customers experience this part of the business.",
+          "recommendation": "Improve operations with one focused action this week.",
+          "ask": "Why is my Operations Score 94?"
+        },
+        {
+          "id": "brand",
+          "label": "Brand",
+          "score": 91,
+          "why": "Your Brand score reflects how customers experience this part of the business.",
+          "recommendation": "Improve brand with one focused action this week.",
+          "ask": "Why is my Brand Score 91?"
+        }
+      ],
+      "explain": "One unified health score — every dimension is clickable and explainable."
+    },
+    "growth": [
+      {
+        "title": "Launch Memberships",
+        "why": "Neighbors buy recurring soft-wash plans when the offer is simple.",
+        "impact": "+$1,200/mo",
+        "nextStep": "Create a quarterly soft-wash membership.",
+        "source": "growth_expert",
+        "impactLabel": "Expected"
+      },
+      {
+        "title": "Upload Portfolio",
+        "why": "Before/after photos convert cold traffic on the booking page.",
+        "impact": "+16% trust",
+        "nextStep": "Publish five before/after pairs.",
+        "source": "growth_expert",
+        "impactLabel": "Expected"
+      },
+      {
+        "title": "Enable Arrival Windows",
+        "why": "Homeowners hate all-day holds — windows cut no-shows.",
+        "impact": "-30% scheduling conflicts",
+        "nextStep": "Turn on 2-hour arrival windows.",
+        "source": "growth_expert",
+        "impactLabel": "Expected"
+      }
+    ],
+    "stage": {
+      "id": "growing",
+      "label": "Growing business",
+      "emphasis": "Growth.",
+      "why": "Momentum is here — double down on what converts.",
+      "emptyHint": "Keep feeding the channel that already works."
+    },
+    "workspace": {
+      "id": "balanced",
+      "label": "Balanced",
+      "highlight": "brief",
+      "line": "I balanced the briefing across attention, health, and growth."
+    }
+  },
+  "industries": [
+    {
+      "industryKey": "pressure_washing",
+      "focus": "Upload five completed job photos.",
+      "today": [
+        "Today's Jobs",
+        "Route",
+        "Weather",
+        "Travel"
+      ]
+    },
+    {
+      "industryKey": "photography",
+      "focus": "Send your inquiry link to two couples who already asked about dates.",
+      "today": [
+        "Today's Shoots",
+        "Albums",
+        "Editing Queue",
+        "Portfolio"
+      ]
+    },
+    {
+      "industryKey": "hvac",
+      "focus": "Offer a tune-up plan to five past emergency customers.",
+      "today": [
+        "Service Calls",
+        "Parts & Van",
+        "Response Windows",
+        "Maintenance Plans"
+      ]
+    },
+    {
+      "industryKey": "lawn_care",
+      "focus": "Invite ten neighbors onto a weekly or biweekly route.",
+      "today": [
+        "Today's Route",
+        "Weather",
+        "Pause / Resume",
+        "Crew Load"
+      ]
+    },
+    {
+      "industryKey": "cleaning",
+      "focus": "Share your turnover booking link with three Airbnb hosts.",
+      "today": [
+        "Recurring Homes",
+        "Supplies",
+        "Route",
+        "Today's Schedule"
+      ]
+    }
+  ],
+  "failures": [],
+  "htmlChecks": {
+    "homeCanvas": true,
+    "notDashboard": true,
+    "morningBrief": true,
+    "todaysFocus": true,
+    "businessHealth": true,
+    "liveWebsite": true,
+    "industryToday": true,
+    "askHubly": true,
+    "timeline": true,
+    "growth": true,
+    "workspaceIntel": true,
+    "snapshot": true,
+    "cardAsk": true,
+    "adaptiveStage": true,
+    "thirtySecond": true,
+    "launchHandoff": true,
+    "continuousAsk": true,
+    "wordmark": true
+  }
+}
