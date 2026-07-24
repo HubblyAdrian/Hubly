@@ -26,7 +26,7 @@ const EPICS = [
   { n: 8, title: 'Business Home', script: 'scripts/check-m2-epic8.mjs', unlocked: true },
   { n: 9, title: 'Creative Workspace', script: 'scripts/check-m2-epic9.mjs', unlocked: true },
   { n: 10, title: 'Hubly Daily', script: 'scripts/check-m2-epic10.mjs', unlocked: true },
-  { n: 11, title: 'Living Business', script: null, unlocked: false },
+  { n: 11, title: 'Living Business', script: 'scripts/check-m2-epic11.mjs', unlocked: true },
   { n: 12, title: 'Polish & Delight', script: null, unlocked: false },
 ];
 
