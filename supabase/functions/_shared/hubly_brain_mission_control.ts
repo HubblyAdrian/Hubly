@@ -107,6 +107,21 @@ export type HublyFlightRecorder = {
   confidence: number | null;
   decisionScore: number | null;
   decisionAction: string | null;
+  /** Milestone 1.5 · Epic 1 — Builder Intent summary (no apply). */
+  builderIntent: {
+    intentId: string;
+    category: string;
+    label: string;
+    goal: string;
+    affectedSystems: string[];
+    capabilities: string[];
+    risk: string;
+    confidence: number;
+    confidenceExplanation: string;
+    requiresChangePlan: boolean;
+    applied: false;
+    changePlanGenerated: false;
+  } | null;
 };
 
 export type HublyExpertActivityStats = {
@@ -146,9 +161,23 @@ export type HublyMissionControlSnapshot = {
   decisionGraph: { nodes: Array<{ key: string; label: string }>; edges: Array<{ from: string; to: string }> };
   builderActions: {
     milestone: "1.5";
+    /** Epic 1 — Intent understanding only; apply stays locked. */
     available: false;
+    epic: "1 — Builder Expert";
     note: string;
-    recent: Array<{ id: string; status: string; summary: string }>;
+    recent: Array<{
+      id: string;
+      status: string;
+      summary: string;
+      category?: string;
+      risk?: string;
+      confidence?: number;
+      affectedSystems?: string[];
+      capabilities?: string[];
+      confidenceExplanation?: string;
+    }>;
+    /** Latest Builder Intents (Epic 1). */
+    intents: Array<NonNullable<HublyFlightRecorder["builderIntent"]>>;
   };
   capabilityRegistry: Array<{ toolId: string; name: string; capabilityCount: number }>;
   knowledgeRegistry: Array<{ id: string; name: string; access: string }>;
@@ -237,6 +266,7 @@ export type RecordFlightOpts = {
   decisionScore?: number | null;
   decisionAction?: string | null;
   executionId?: string;
+  builderIntent?: HublyFlightRecorder["builderIntent"];
 };
 
 /**
@@ -305,6 +335,12 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     push("knowledge", `Knowledge: ${k.name} (${k.access})`, k, 10);
   }
 
+  if (opts.builderIntent) {
+    push("builder_intent", `Builder Intent: ${opts.builderIntent.label}`, {
+      ...opts.builderIntent,
+    }, 15);
+  }
+
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -322,9 +358,11 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     creative: experts.some((e) => e.expertId === "creative_director") ? "running" : "idle",
     critic: experts.some((e) => e.expertId === "critic") ? "waiting" : "idle",
     decision: opts.decisionAction || "idle",
-    builder: opts.decisionAction === "recommend" || opts.decisionAction === "proceed"
-      ? "pending_approval"
-      : "idle",
+    builder: experts.some((e) => e.expertId === "builder")
+      ? "finished"
+      : (opts.decisionAction === "recommend" || opts.decisionAction === "proceed"
+        ? "pending_approval"
+        : "idle"),
   };
   // Normalize creative/critic after pipeline complete
   if (experts.some((e) => e.expertId === "creative_director")) liveActivity.creative = "finished";
@@ -356,6 +394,7 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     confidence: opts.confidence ?? null,
     decisionScore: opts.decisionScore ?? null,
     decisionAction: opts.decisionAction ?? null,
+    builderIntent: opts.builderIntent ? { ...opts.builderIntent } : null,
   };
 
   FLIGHTS.set(flight.executionId, flight);
@@ -568,12 +607,31 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
       note: "Active conversations, projects, threads, deferred ideas, promises.",
     },
     decisionGraph,
-    builderActions: {
-      milestone: "1.5",
-      available: false,
-      note: "Builder Engine (Milestone 1.5) — preview / applied / rejected / rollback.",
-      recent: [],
-    },
+    builderActions: (() => {
+      const intents = flights
+        .map((f) => f.builderIntent)
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .slice(-10)
+        .reverse();
+      return {
+        milestone: "1.5" as const,
+        available: false as const,
+        epic: "1 — Builder Expert",
+        note: "Epic 1 — Builder Intent only. No Change Plans, preview, approval, or apply yet.",
+        recent: intents.map((i) => ({
+          id: i.intentId,
+          status: "intent_only",
+          summary: `${i.label}: ${i.goal}`,
+          category: i.category,
+          risk: i.risk,
+          confidence: i.confidence,
+          affectedSystems: i.affectedSystems,
+          capabilities: i.capabilities,
+          confidenceExplanation: i.confidenceExplanation,
+        })),
+        intents,
+      };
+    })(),
     capabilityRegistry: listTools().map((t) => ({
       toolId: t.id,
       name: t.name,

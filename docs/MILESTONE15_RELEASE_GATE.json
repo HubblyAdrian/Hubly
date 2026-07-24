@@ -1,0 +1,83 @@
+{
+  "milestone": "1.5",
+  "passed": 1,
+  "total": 12,
+  "unlocked": 1,
+  "percent": 8,
+  "ready": false,
+  "checkedAt": "2026-07-24T01:40:50.587Z",
+  "epics": [
+    {
+      "n": 1,
+      "title": "Builder Expert",
+      "status": "pass",
+      "script": "scripts/check-builder-epic1.mjs"
+    },
+    {
+      "n": 2,
+      "title": "Change Plan DSL",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 3,
+      "title": "Preview Engine",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 4,
+      "title": "Approval Engine",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 5,
+      "title": "Rollback Engine",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 6,
+      "title": "Website Builder",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 7,
+      "title": "Booking Builder",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 8,
+      "title": "CRM Builder",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 9,
+      "title": "Automation Builder",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 10,
+      "title": "Portfolio Builder",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 11,
+      "title": "Hubly Chat",
+      "status": "locked",
+      "script": null
+    },
+    {
+      "n": 12,
+      "title": "Builder Validation",
+      "status": "locked",
+      "script": null
+    }
+  ]
+}

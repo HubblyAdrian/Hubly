@@ -10,6 +10,10 @@
 
 import { ensureExpertsRegistered } from "./hubly_brain_experts.ts";
 import {
+  extractBuilderIntentFromOutput,
+  type BuilderIntent,
+} from "./hubly_brain_builder_expert.ts";
+import {
   listExpertCapabilities,
   listExperts,
   runExpert,
@@ -212,6 +216,8 @@ export type HublyThinkResult = {
   conversationIntelligenceRetrieval?: ReturnType<typeof queryConversationIntelligence> | null;
   /** Section 11 — Tool/Capability + Knowledge Registry route plan. */
   registryRouting?: HublyRegistryRoutePlan | null;
+  /** Milestone 1.5 · Epic 1 — Builder Intent (understand only; never applied here). */
+  builderIntent?: BuilderIntent | null;
   /** Section 12 — Mission Control flight recorder id (AI Replay). */
   missionControlExecutionId?: string | null;
   flightRecorder?: HublyFlightRecorder | null;
@@ -248,6 +254,12 @@ export function detectIntent(request: string, explicit?: string | null): string 
   }
   // Capability / Builder prep — before coach (which matches "booking")
   if (/arrival window|same-?day|no same.?day/.test(r)) return "build_business";
+  if (
+    /portfolio|upload.*(photo|image)|these \d+ photos|prep instruction|automation|workflow|after .+ booking/
+      .test(r)
+  ) {
+    return "build_business";
+  }
   if (
     /rewrite (my |the )?homepage|website|homepage|luxury|premium|layout|brand|build me|build my|start(?:ing)?\s+(?:a\s+)?(?:new\s+)?(?:business|company)|pressure\s*wash|new company/
       .test(r)
@@ -1323,6 +1335,8 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     .slice(0, 8)
     .map((e: { id?: string; claim?: string }) => e.id || e.claim || "dna_fact")
     .filter(Boolean) as string[];
+  const builderOut = expertOutputs.find((o) => o.expertId === "builder") || null;
+  const builderIntent = extractBuilderIntentFromOutput(builderOut);
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ""),
     intent,
@@ -1384,6 +1398,24 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     confidence,
     decisionScore: primaryDecision?.decisionScore ?? null,
     decisionAction: primaryDecision?.finalDecision ?? null,
+    builderIntent: builderIntent
+      ? {
+        intentId: builderIntent.intentId,
+        category: builderIntent.intentCategory,
+        label: builderIntent.intentLabel,
+        goal: builderIntent.ownerGoal,
+        affectedSystems: [...builderIntent.affectedSystems],
+        capabilities: builderIntent.requiredCapabilities.map(
+          (c) => `${c.toolName}:${c.capabilityId}`,
+        ),
+        risk: builderIntent.estimatedRisk,
+        confidence: builderIntent.confidence,
+        confidenceExplanation: builderIntent.confidenceExplanation.summary,
+        requiresChangePlan: builderIntent.requiresChangePlan,
+        applied: false as const,
+        changePlanGenerated: false as const,
+      }
+      : null,
   });
 
   return {
@@ -1419,6 +1451,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
     conversationIntelligenceRetrieval: null,
     registryRouting,
+    builderIntent,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     timeline,

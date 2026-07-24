@@ -1,10 +1,10 @@
 # Builder Engine Specification
 
-**Version:** 1.0.0  
-**Status:** Specification only — **do not implement in Milestone 1**  
-**Target:** Milestone 1.5
+**Version:** 1.1.0  
+**Status:** Milestone 1.5 in progress — **Epic 1 (Builder Expert / Intent) only**  
+**Target:** Milestone 1.5 (12 epics · one release gate each)
 
-This document is the implementation blueprint for Builder Engine. Milestone 1 prepares registries, Mission Control placeholders, Platform Feature Manifests, and Identity/Constitution — not Builder execution.
+Epic 1 produces **Builder Intent** only. Change Plans, Preview, Approval, Rollback, and surface builders are later epics. Do not implement them ahead of Founder Approval.
 
 ## Purpose
 

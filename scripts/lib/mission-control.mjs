@@ -100,6 +100,11 @@ function recordFlightRecorder(opts) {
   for (const k of opts.knowledgeAccessed || []) {
     push("knowledge", `Knowledge: ${k.name} (${k.access})`, k, 10);
   }
+  if (opts.builderIntent) {
+    push("builder_intent", `Builder Intent: ${opts.builderIntent.label}`, {
+      ...opts.builderIntent
+    }, 15);
+  }
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -113,7 +118,7 @@ function recordFlightRecorder(opts) {
     creative: experts.some((e) => e.expertId === "creative_director") ? "running" : "idle",
     critic: experts.some((e) => e.expertId === "critic") ? "waiting" : "idle",
     decision: opts.decisionAction || "idle",
-    builder: opts.decisionAction === "recommend" || opts.decisionAction === "proceed" ? "pending_approval" : "idle"
+    builder: experts.some((e) => e.expertId === "builder") ? "finished" : opts.decisionAction === "recommend" || opts.decisionAction === "proceed" ? "pending_approval" : "idle"
   };
   if (experts.some((e) => e.expertId === "creative_director")) liveActivity.creative = "finished";
   if (experts.some((e) => e.expertId === "critic")) liveActivity.critic = "finished";
@@ -141,7 +146,8 @@ function recordFlightRecorder(opts) {
     liveActivity,
     confidence: opts.confidence ?? null,
     decisionScore: opts.decisionScore ?? null,
-    decisionAction: opts.decisionAction ?? null
+    decisionAction: opts.decisionAction ?? null,
+    builderIntent: opts.builderIntent ? { ...opts.builderIntent } : null
   };
   FLIGHTS.set(flight.executionId, flight);
   FLIGHT_ORDER.push(flight.executionId);
@@ -311,12 +317,27 @@ function getMissionControlSnapshot() {
       note: "Active conversations, projects, threads, deferred ideas, promises."
     },
     decisionGraph,
-    builderActions: {
-      milestone: "1.5",
-      available: false,
-      note: "Builder Engine (Milestone 1.5) \u2014 preview / applied / rejected / rollback.",
-      recent: []
-    },
+    builderActions: (() => {
+      const intents = flights.map((f) => f.builderIntent).filter((x) => !!x).slice(-10).reverse();
+      return {
+        milestone: "1.5",
+        available: false,
+        epic: "1 \u2014 Builder Expert",
+        note: "Epic 1 \u2014 Builder Intent only. No Change Plans, preview, approval, or apply yet.",
+        recent: intents.map((i) => ({
+          id: i.intentId,
+          status: "intent_only",
+          summary: `${i.label}: ${i.goal}`,
+          category: i.category,
+          risk: i.risk,
+          confidence: i.confidence,
+          affectedSystems: i.affectedSystems,
+          capabilities: i.capabilities,
+          confidenceExplanation: i.confidenceExplanation
+        })),
+        intents
+      };
+    })(),
     capabilityRegistry: listTools().map((t) => ({
       toolId: t.id,
       name: t.name,
