@@ -1,0 +1,82 @@
+{
+  "epic": 10,
+  "title": "Hubly Daily",
+  "passed": true,
+  "checkedAt": "2026-07-24T16:40:28.592Z",
+  "version": "1.0.0",
+  "sample": {
+    "greeting": "Good morning, Adrian",
+    "headline": "Your biggest opportunity today is following up with yesterday's three quotes.",
+    "opportunity": {
+      "title": "Follow up on three open quotes.",
+      "why": "Warm quotes go cold after 24 hours in this trade.",
+      "impact": "+2 expected bookings this week.",
+      "action": "Send follow-ups",
+      "hasWhy": true,
+      "hasImpact": true,
+      "hasAction": true
+    },
+    "forecast": {
+      "label": "Looking Ahead",
+      "tomorrow": "Heavy rain may affect two jobs.",
+      "weekend": "Demand for pressure washing is expected to increase.",
+      "nextWeek": "You're on pace for your highest revenue week this month.",
+      "nextMonth": "Gutter cleaning demand typically rises in your area."
+    },
+    "ifMine": {
+      "label": "If this were my business...",
+      "recommendation": "I'd text those three quotes before noon — pressure washing buyers decide fast when the driveway is still dirty."
+    }
+  },
+  "weekHeadlines": [
+    "Your biggest opportunity today is following up with yesterday's three quotes.",
+    "Tomorrow's weather will likely affect two jobs — act before customers ask.",
+    "Three customers haven't left reviews yet — I drafted messages.",
+    "Upload today's before-and-after photos while the jobs are fresh.",
+    "Your membership pitch is ready for five past customers.",
+    "Open quotes are aging — two need a same-day nudge.",
+    "Your gallery is converting — double down with one more proof set."
+  ],
+  "industries": [
+    {
+      "industryKey": "pressure_washing",
+      "headline": "Your biggest opportunity today is following up with yesterday's three quotes."
+    },
+    {
+      "industryKey": "photography",
+      "headline": "Two couples asked about dates — your inquiry link should go out today."
+    },
+    {
+      "industryKey": "hvac",
+      "headline": "Five past emergency customers are ready for a tune-up plan offer."
+    },
+    {
+      "industryKey": "lawn_care",
+      "headline": "Invite ten neighbors onto a weekly route — density beats windshield time."
+    },
+    {
+      "industryKey": "cleaning",
+      "headline": "Share your turnover booking link with three Airbnb hosts."
+    }
+  ],
+  "failures": [],
+  "htmlChecks": {
+    "dailyCanvas": true,
+    "morningBrief": true,
+    "overnight": true,
+    "headline": true,
+    "oneVoice": true,
+    "opportunities": true,
+    "wins": true,
+    "healthChanges": true,
+    "ifMine": true,
+    "askContinue": true,
+    "wrapUps": true,
+    "archive": true,
+    "cadence": true,
+    "forecast": true,
+    "homeHandoff": true,
+    "livingShell": true,
+    "wordmark": true
+  }
+}

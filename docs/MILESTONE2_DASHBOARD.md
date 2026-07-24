@@ -15,17 +15,17 @@ Live automation: `npm run milestone2` → `docs/MILESTONE2_RELEASE_GATE.json`
 | 6 | Delayed Account Creation | Pass | `scripts/check-m2-epic6.mjs` | [`MILESTONE2_EPIC6_PROOF.md`](./MILESTONE2_EPIC6_PROOF.md) | Accepted |
 | 7 | Business Launch | Pass | `scripts/check-m2-epic7.mjs` | [`MILESTONE2_EPIC7_PROOF.md`](./MILESTONE2_EPIC7_PROOF.md) | Accepted |
 | 8 | Business Home | Pass | `scripts/check-m2-epic8.mjs` | [`MILESTONE2_EPIC8_PROOF.md`](./MILESTONE2_EPIC8_PROOF.md) | Accepted |
-| 9 | Creative Workspace | Pass (pending Founder Approval) | `scripts/check-m2-epic9.mjs` | [`MILESTONE2_EPIC9_PROOF.md`](./MILESTONE2_EPIC9_PROOF.md) | — |
-| 10 | Hubly Daily | Locked | — | — | — |
+| 9 | Creative Workspace | Pass | `scripts/check-m2-epic9.mjs` | [`MILESTONE2_EPIC9_PROOF.md`](./MILESTONE2_EPIC9_PROOF.md) | Accepted |
+| 10 | Hubly Daily | Pass (pending Founder Approval) | `scripts/check-m2-epic10.mjs` | [`MILESTONE2_EPIC10_PROOF.md`](./MILESTONE2_EPIC10_PROOF.md) | — |
 | 11 | Living Business | Locked | — | — | — |
 | 12 | Polish & Delight | Locked | — | — | — |
 
-## Epic 9 — Creative Workspace
+## Epic 10 — Hubly Daily
 
-Conversation-first creation — not a website editor. **Explore Ideas** opens Creative Playgrounds.
+Morning business partner with Overnight Review, one headline, and **Hubly Forecast**.
 
 ```bash
-npm run check:m2-epic9
+npm run check:m2-epic10
 ```
 
-**Stop.** Do not start Epic 10 until Founder Approval.
+**Stop.** Do not start Epic 11 until Founder Approval.

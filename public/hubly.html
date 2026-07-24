@@ -1634,6 +1634,53 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-cw-advanced[hidden],.is-cw-playground-panel[hidden],.is-cw-compare-panel[hidden]{display:none!important}
 .is-cw-back{appearance:none;border:none;background:transparent;color:rgba(255,255,255,.78);font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0}
 .is-cw-back:hover{color:#fdba74}
+/* Milestone 2 · Epic 10 — Hubly Daily */
+.is-wrap.is-daily-wide{max-width:min(780px,96vw)}
+.is-daily-canvas{color:#fff;animation:isThinkCanvasIn .55s ease both;padding-bottom:72px}
+.is-daily-section{margin:0 0 14px;padding:16px;border-radius:16px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.14)}
+.is-daily-section .sk{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#fdba74;margin:0 0 10px}
+.is-daily-brief .greet{font-size:clamp(24px,3.5vw,32px);font-weight:800;letter-spacing:-.03em;margin:0 0 8px}
+.is-daily-brief .line{font-size:14px;line-height:1.5;color:rgba(255,255,255,.85);margin:0 0 6px}
+.is-daily-headline{font-size:clamp(18px,2.6vw,24px);font-weight:800;letter-spacing:-.02em;line-height:1.25;margin:0}
+.is-daily-opportunity .title{font-size:16px;font-weight:800;margin:0 0 8px}
+.is-daily-opportunity .meta{font-size:13px;line-height:1.45;color:rgba(255,255,255,.78);margin:0 0 4px}
+.is-daily-opportunity .impact{font-size:14px;font-weight:750;color:#fdba74;margin:8px 0}
+.is-daily-opportunity .act{
+  appearance:none;border:none;border-radius:12px;background:#d9632d;color:#fff;font:inherit;font-size:13px;font-weight:800;
+  padding:10px 14px;cursor:pointer;
+}
+.is-daily-systems{display:flex;flex-wrap:wrap;gap:6px}
+.is-daily-systems span{
+  font-size:11px;font-weight:700;padding:5px 8px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+}
+.is-daily-systems span.is-limited{border-color:rgba(251,191,36,.45);color:#fbbf24}
+.is-daily-voice .note{font-size:13px;line-height:1.45;margin:0 0 8px}
+.is-daily-voice .note strong{color:#fdba74}
+.is-daily-wins{font-size:14px;font-weight:700;margin:0}
+.is-daily-health .change{font-size:15px;font-weight:800;margin:0 0 6px}
+.is-daily-ifmine .rec{font-size:15px;font-weight:700;line-height:1.45;margin:0}
+.is-daily-forecast .row{font-size:13px;line-height:1.45;margin:0 0 8px}
+.is-daily-forecast .when{font-weight:800;color:#fdba74}
+.is-daily-ask-thread{max-height:120px;overflow:auto;margin:0 0 8px;font-size:12px;line-height:1.4}
+.is-daily-ask-thread .msg{margin:0 0 6px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.06)}
+.is-daily-ask-thread .msg.is-you{border-left:2px solid #fdba74}
+.is-daily-ask-row{display:flex;gap:8px}
+.is-daily-ask-row input{
+  flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);
+  background:rgba(15,23,42,.55);color:#fff;font:inherit;font-size:13px;
+}
+.is-daily-ask-row button,.is-daily-chips button,.is-daily-archive button{
+  appearance:none;border:1px solid rgba(255,255,255,.18);background:rgba(15,23,42,.45);color:#fff;
+  font:inherit;font-size:12px;font-weight:700;padding:8px 11px;border-radius:10px;cursor:pointer;
+}
+.is-daily-ask-row button{border:none;background:#d9632d;font-size:13px;font-weight:800;padding:10px 14px}
+.is-daily-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.is-daily-continue{
+  appearance:none;border:none;border-radius:14px;background:#d9632d;color:#fff;font:inherit;font-size:15px;font-weight:800;
+  padding:14px 18px;cursor:pointer;width:100%;margin-top:8px;
+}
+.is-daily-archive-list{max-height:140px;overflow:auto;font-size:12px;line-height:1.4}
+.is-daily-archive-list .item{margin:0 0 8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.1)}
 .is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
 .is-area-panel.hidden{display:none!important}
 .is-area-panel.is-compact .is-area-extra{display:none}
@@ -9028,14 +9075,33 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <div class="is-step" data-is="hubly-daily-shell" id="is-step-hubly-daily-shell" data-hubly-daily-shell="1">
+      <div class="is-step" data-is="hubly-daily" id="is-step-hubly-daily" data-hubly-daily="1" data-hubly-daily-shell="1">
+        <div class="is-daily-canvas is-hubly-daily" id="is-daily-canvas">
+          <div class="is-save-brand is-daily-brand">
+            <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+          </div>
+          <div id="is-daily-body"></div>
+          <div class="is-daily-section is-daily-ask" id="is-daily-ask">
+            <div class="sk">Ask Hubly</div>
+            <div class="is-daily-ask-thread" id="is-daily-ask-thread" data-daily-ask-thread="1"></div>
+            <div class="is-daily-ask-row">
+              <input type="text" id="is-daily-ask-input" placeholder="Why do you think that?" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();isDailyAskSubmit();}">
+              <button type="button" onclick="isDailyAskSubmit()">Ask</button>
+            </div>
+            <div class="is-daily-chips" id="is-daily-ask-chips"></div>
+          </div>
+          <button type="button" class="is-daily-continue" onclick="isDailyContinueToHome()">Continue to Business Home</button>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="living-business" id="is-step-living-business" data-living-business="1">
         <div class="is-home-canvas">
           <div class="is-save-brand">
             <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
           </div>
-          <h1 class="is-save-hero" style="font-size:clamp(22px,3vw,28px);font-weight:800">Hubly Daily</h1>
-          <p class="is-save-sub">Epic 10 will own the full Hubly Daily experience. Creative Workspace is ready.</p>
-          <button type="button" class="is-launch-home-cta" onclick="isEnterBusinessHome()">Back to Business Home</button>
+          <h1 class="is-save-hero" style="font-size:clamp(22px,3vw,28px);font-weight:800">Living Business</h1>
+          <p class="is-save-sub">Epic 11 will own the full Living Business experience. Hubly Daily is ready.</p>
+          <button type="button" class="is-launch-home-cta" onclick="isEnterHublyDaily({skipHome:false})">Back to Hubly Daily</button>
         </div>
       </div>
 
@@ -18040,6 +18106,11 @@ function isEnterBusinessHome(opts){
   S._is=S._is||{};
   S._is.readyForBusinessHome=true;
   try{persistInstantSiteDraft();}catch(e){}
+  // Epic 10 — every morning / login begins with a fresh Daily Brief
+  if(!opts?.skipDaily && !opts?.fromDaily){
+    isRunHublyDaily(opts);
+    return;
+  }
   isRunBusinessHome(opts);
 }
 
@@ -18916,7 +18987,302 @@ function isCwSyncFromAdvanced(){
 
 function isCwBackToHome(){
   document.querySelector('#is-shell .is-wrap')?.classList.remove('is-cw-wide');
-  isEnterBusinessHome();
+  isEnterBusinessHome({skipDaily:true,fromDaily:true});
+}
+
+/* ── Milestone 2 · Epic 10 — Hubly Daily ── */
+const HUBLY_DAILY_M2 = (function(){
+  const OVERNIGHT_SYSTEMS = ["Website","Bookings","Calendar","CRM","Reviews","Revenue","Business Health","Marketplace demand","Weather","Automations","Portfolio","Open quotes","Follow-ups"];
+  const STAGE_CADENCE = {
+    new:{id:"new",focus:"setup",line:"You're early — today's Daily focuses on setup and first customers."},
+    growing:{id:"growing",focus:"customers",line:"You're growing — today's Daily focuses on customers and conversion."},
+    established:{id:"established",focus:"optimization",line:"You're established — today's Daily focuses on optimization and margins."},
+  };
+  const WRAP_UP_KINDS = [
+    {id:"friday",label:"Week in Review"},{id:"month",label:"Month in Review"},
+    {id:"quarter",label:"Business Evolution"},{id:"anniversary",label:"Business Story"},
+  ];
+  function resolveKey(ctx){
+    const raw=String(ctx.industryId||ctx.industryKey||ctx.industry||ctx.businessType||'').toLowerCase();
+    if(/pressure|power\s*wash|soft\s*wash/.test(raw))return'pressure_washing';
+    if(/photo|wedding/.test(raw))return'photography';
+    if(/hvac|heating|furnace|air\s*condition/.test(raw))return'hvac';
+    if(/lawn|landscap|mow/.test(raw))return'lawn_care';
+    if(/clean|maid|airbnb|turnover|short.?term/.test(raw))return'cleaning';
+    return'pressure_washing';
+  }
+  function resolveStage(ctx){
+    const raw=String(ctx.businessStage||ctx.stage||'').toLowerCase();
+    if(/establish|mature|scale|optim/.test(raw))return'established';
+    if(/grow|scaling|momentum/.test(raw))return'growing';
+    if(ctx.bookingCount!=null&&Number(ctx.bookingCount)>=50)return'established';
+    if(ctx.bookingCount!=null&&Number(ctx.bookingCount)>=5)return'growing';
+    return'new';
+  }
+  function firstNameOf(ctx){
+    const owner=ctx.ownerName||ctx.firstName||(ctx.email?String(ctx.email).split('@')[0]:null)||'there';
+    return String(owner).replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).trim().split(/\s+/)[0]||'there';
+  }
+  function dayIndex(ctx){
+    if(ctx.dayIndex!=null&&Number.isFinite(Number(ctx.dayIndex)))return Math.abs(Math.floor(Number(ctx.dayIndex)))%7;
+    if(ctx.date){const d=new Date(ctx.date);if(!Number.isNaN(d.getTime()))return d.getDay()%7;}
+    return new Date().getDay()%7;
+  }
+  function dp(headline,title,why,impact,action,win,metric,from,to,reason,ifMine,forecast){
+    return{headline,opportunity:{title,why,impact,action},win,healthChange:{metric,from,to,reason},ifMine,forecast};
+  }
+  const INDUSTRY_DAILY_DAYS = {
+    pressure_washing:[
+      dp("Your biggest opportunity today is following up with yesterday's three quotes.","Follow up on three open quotes.","Warm quotes go cold after 24 hours.","+2 expected bookings this week.","Send follow-ups","Your average booking value increased 11%.","Trust",91,94,"Five new portfolio photos.","I'd text those three quotes before noon.",{tomorrow:"Heavy rain may affect two jobs.",weekend:"Demand for pressure washing is expected to increase.",nextWeek:"You're on pace for your highest revenue week this month.",nextMonth:"Gutter cleaning demand typically rises in your area."}),
+      dp("Tomorrow's weather will likely affect two jobs — act before customers ask.","Reschedule weather-sensitive jobs.","Proactive reschedules protect reviews.","-customer chase messages.","Reschedule before they ask","You've completed 12 jobs this week.","Operations",88,92,"Route density improved.","I'd lock alternate dry windows tonight.",{tomorrow:"Rain window midday.",weekend:"Clear skies for house washes.",nextWeek:"Three neighborhood clusters look bookable.",nextMonth:"Spring algae season lifts soft-wash demand."}),
+      dp("Three customers haven't left reviews yet — I drafted messages.","Send review drafts to three customers.","Recent jobs convert reviews fastest.","+trust proof on the homepage.","Ready to send?","Homepage conversion improved.","Growth",86,89,"Quote follow-ups landed.","I'd send drafts while the work is fresh.",{tomorrow:"Two quote replies likely.",weekend:"Local search spikes Saturday.",nextWeek:"Membership pitch timing looks strong.",nextMonth:"HOA season brings multi-home jobs."}),
+      dp("Upload today's before-and-after photos while the jobs are fresh.","Upload today's before-and-after photos.","Finished work is your strongest trust signal.","+14% trust.","Add photos","You've reached 40 completed jobs.","Brand",90,93,"Gallery refresh.","I'd pin the strongest before/after above book.",{tomorrow:"One open quote may close.",weekend:"Driveway inquiries after dry weather.",nextWeek:"Route fill looks 70% full.",nextMonth:"Commercial lots open budgets mid-month."}),
+      dp("Your membership pitch is ready for five past customers.","Offer quarterly soft-wash memberships.","Repeat yards beat one-off chasing.","+$1,200/mo potential.","Send membership offer","Repeat customer rate ticked up.","Growth",89,91,"Membership interest.","I'd start with five neighbors on your route.",{tomorrow:"Two membership replies expected.",weekend:"Neighborhood density can climb.",nextWeek:"Soft-wash window looks favorable.",nextMonth:"Pre-summer packages convert well."}),
+      dp("Open quotes are aging — two need a same-day nudge.","Nudge two aging quotes today.","Quotes older than 48 hours rarely close cold.","Recover stalled revenue.","Send nudges","Response time stayed under 15 minutes.","Bookings",84,87,"Faster quote replies.","I'd call the larger quote and text the smaller.",{tomorrow:"One quote likely converts.",weekend:"Weather looks wash-friendly.",nextWeek:"Crew has two open slots.",nextMonth:"Commercial interest rises after month-end."}),
+      dp("Your gallery is converting — double down with one more proof set.","Add one more before/after set to the hero gallery.","Proof compounds when trust exists.","+conversion on cold traffic.","Publish proof set","Website visitors booked without a phone call.","Trust",94,95,"Consistent portfolio.","I'd keep publishing proof weekly.",{tomorrow:"Organic booking interest steady.",weekend:"Demand rises after rain clears.",nextWeek:"Highest-pace week still in reach.",nextMonth:"Gutter + soft-wash bundles lift AOV."}),
+    ],
+    photography:[
+      dp("Two couples asked about dates — your inquiry link should go out today.","Send inquiry links to two warm couples.","Warm wedding leads cool fast.","1–2 premium inquiries.","Send inquiry links","Your average package value held premium.","Growth",88,91,"Faster inquiry replies.","I'd lead with available Saturday dates.",{tomorrow:"One couple likely books a consult.",weekend:"Engagement-session demand rises.",nextWeek:"Editing queue can clear.",nextMonth:"Peak proposal season lifts inquiries."}),
+      dp("Your editing queue is the bottleneck — clear one album early.","Deliver the oldest album today.","Speed of delivery drives referrals.","+referral rate.","Ship album","A client left a 5-star review unprompted.","Operations",82,86,"Queue movement.","I'd ship the oldest gallery first.",{tomorrow:"One referral ask becomes natural.",weekend:"Two shoots look solid.",nextWeek:"Portfolio refresh timing is strong.",nextMonth:"Holiday mini-sessions open soon."}),
+      dp("Atmosphere photos convert better than gear — feature three above the fold.","Pin three atmosphere photos above packages.","Emotion converts wedding inquiries.","+emotional conversion.","Update hero gallery","Homepage time-on-page improved.","Brand",90,94,"Stronger hero story.","I'd lead with a real couple moment.",{tomorrow:"Inquiry quality should rise.",weekend:"Consults cluster Saturday morning.",nextWeek:"One full-weekend package in reach.",nextMonth:"Venue partnerships open mid-season."}),
+      dp("Clarify your weekend package as the default — decision fatigue is real.","Make one weekend package the default.","Too many options stall premium buyers.","Less decision fatigue.","Simplify packages","Two consults booked without discounting.","Conversion",85,89,"Clearer offer.","I'd hide add-ons until core package chosen.",{tomorrow:"One stalled inquiry may reopen.",weekend:"Peak shoot day — protect buffer.",nextWeek:"Editing SLA stays healthy.",nextMonth:"Engagement season accelerates."}),
+      dp("Three past clients haven't been asked for a referral yet.","Ask three happy clients for referrals.","Warm social proof beats cold ads.","+qualified intros.","Send referral asks","You've booked 8 shoots this month.","Growth",91,93,"Referral loop starting.","I'd ask right after album delivery.",{tomorrow:"One intro likely tonight.",weekend:"Second shooter availability open.",nextWeek:"Portfolio can absorb two heroes.",nextMonth:"Wedding fairs open registrations."}),
+      dp("Your About page still sounds like a template — rewrite in your voice.","Rewrite About in your voice.","Couples buy the person behind the lens.","+trust on about visits.","Rewrite About","Brand consistency score rose.","Brand",94,96,"Voice alignment.","I'd tell one real story instead of listing gear.",{tomorrow:"About dwell time should improve.",weekend:"Consults fully booked — protect rest.",nextWeek:"Mini-session test could fill a gap.",nextMonth:"Peak season deposits start landing."}),
+      dp("A stronger headline is ready for your homepage hero.","Ship the stronger homepage headline.","Outcome-first headlines outperform feature lists.","+cold traffic conversion.","Update headline","Inquiry form completion improved.","Conversion",89,92,"Clearer promise.","I'd ship the clearer line and watch replies.",{tomorrow:"Organic inquiries should tick up.",weekend:"Two full-day shoots need confirmations.",nextWeek:"Editing backlog manageable.",nextMonth:"Premium packages outsell add-ons."}),
+    ],
+    hvac:[
+      dp("Five past emergency customers are ready for a tune-up plan offer.","Offer tune-up plans to five past emergency jobs.","Emergency callers already trust you.","Recurring maintenance starts.","Send tune-up offers","Same-day booking windows filled twice.","Growth",84,88,"Maintenance interest.","I'd text the five hottest emergency jobs first.",{tomorrow:"Heat advisory may spike calls.",weekend:"Emergency demand rises after Friday.",nextWeek:"Parts cover common failures.",nextMonth:"Pre-season tune-ups convert well."}),
+      dp("Licensed & insured proof still isn't above the fold.","Publish licensed & insured language above the fold.","Emergency fear drops with visible credentials.","Lower emergency fear.","Update hero proof","Call-to-book conversion improved.","Trust",87,92,"Credential visibility.","I'd put proof chips under the headline.",{tomorrow:"Two diagnostic calls likely.",weekend:"After-hours demand may rise.",nextWeek:"Maintenance closes look promising.",nextMonth:"Cooling season load climbs."}),
+      dp("Open two same-day windows — HVAC buyers book the first trusted tech.","Open same-day / next-day windows.","Speed wins emergency and comfort calls.","Faster first bookings.","Open windows","Average response time dropped.","Operations",90,94,"Window coverage.","I'd open two slots before lunch.",{tomorrow:"Temperature swing may drive calls.",weekend:"Keep one tech on standby.",nextWeek:"Tune-up route can densify.",nextMonth:"Filter + maintenance bundles lift AOV."}),
+      dp("Parts checklist gaps caused a return trip — fix the van list.","Attach parts checklists to today's jobs.","Second trips destroy margins.","-return trips.","Add checklists","First-time fix rate improved.","Operations",94,96,"Fewer callbacks.","I'd standardize the van list tonight.",{tomorrow:"Three calls look parts-heavy.",weekend:"Stock capacitors for emergencies.",nextWeek:"Maintenance density north looks strong.",nextMonth:"Commercial PM contracts renew."}),
+      dp("Two open quotes need a same-day call — not another email.","Call two open quotes today.","HVAC decisions move with live answers.","Recover stalled jobs.","Call quotes","Quote-to-book rate rose this week.","Bookings",86,90,"Live follow-up.","I'd call before 10am.",{tomorrow:"One install estimate may close.",weekend:"After-hours triage may rise.",nextWeek:"Crew capacity open Thursday.",nextMonth:"Heat-wave weeks max capacity."}),
+      dp("Memberships aren't on the homepage — recurring revenue is waiting.","Feature maintenance memberships on the homepage.","Recurring plans stabilize seasonal swings.","+predictable revenue.","Feature memberships","Two members renewed automatically.","Growth",88,91,"Membership visibility.","I'd put memberships next to emergency booking.",{tomorrow:"Membership page visits should rise.",weekend:"Keep member emergency SLA clear.",nextWeek:"PM route can add three homes.",nextMonth:"Fall heating tune-ups open early."}),
+      dp("Your review ask after emergency jobs is still silent.","Ask two emergency customers for reviews.","Emergency wins create the strongest trust proof.","+local trust signals.","Send review asks","You've closed 25 service calls this month.","Trust",92,95,"Fresh reviews.","I'd ask the day after a successful fix.",{tomorrow:"One review likely if you ask tonight.",weekend:"Standby coverage adequate.",nextWeek:"Install pipeline has one open slot.",nextMonth:"Pre-season campaigns lift plan sales."}),
+    ],
+    lawn_care:[
+      dp("Invite ten neighbors onto a weekly route — density beats windshield time.","Share a neighborhood booking link on one street.","Route density is the profit lever.","Route density grows.","Share neighborhood link","Drive time per job dropped.","Operations",85,90,"Tighter clustering.","I'd fill gaps on one street you're already on.",{tomorrow:"Rain may shift two mows.",weekend:"Catch-up demand after wet days.",nextWeek:"Biweekly may request weekly.",nextMonth:"Peak growing season lifts frequency."}),
+      dp("Add before/after yard photos from your last three jobs.","Upload three yard transformations.","Reliability proof beats stock lawn photos.","+reliability proof.","Upload photos","New inquiries mentioned your gallery.","Trust",88,92,"Real yard proof.","I'd lead with the messiest before shot.",{tomorrow:"One neighbor referral likely.",weekend:"Mowing windows clear Saturday.",nextWeek:"Route can absorb four more homes.",nextMonth:"Aeration demand rises seasonally."}),
+      dp("Pause/resume still isn't on — seasonal customers cancel instead.","Turn on pause/resume for seasonal customers.","Pausing beats churn.","Fewer cancellations.","Enable pause/resume","Two customers paused instead of canceling.","Growth",86,89,"Retention tooling.","I'd message seasonal folks before they ghost.",{tomorrow:"Two pause requests after rain.",weekend:"Catch-up mows look profitable.",nextWeek:"Densify east to balance crew.",nextMonth:"Leaf season needs capacity planning."}),
+      dp("Today's route is scattered — reorder by neighborhood.","Cluster today's stops by neighborhood.","Scattered yards burn fuel and crew time.","-drive time.","Reorder route","On-time arrival rate improved.","Operations",90,94,"Smarter sequencing.","I'd rebuild around densest cluster.",{tomorrow:"Mow-friendly after 10am.",weekend:"Edging add-ons often appear.",nextWeek:"One HOA proposal is ripe.",nextMonth:"Fertility plans upsell well."}),
+      dp("Five weekly customers are due for a check-in text.","Check in with five weekly customers.","Quiet satisfaction prevents surprise cancellations.","+retention.","Send check-ins","You hit 60 recurring stops.","Bookings",91,93,"Stable recurring base.","I'd ask: anything you want adjusted?",{tomorrow:"One edging upsell likely.",weekend:"Skip requests if rain hits.",nextWeek:"East route takes three more.",nextMonth:"Fall cleanup interest starts."}),
+      dp("Your booking page still hides biweekly — make frequency obvious.","Highlight weekly and biweekly on the homepage.","Clear frequency choices convert faster.","Higher repeat revenue.","Update frequency CTAs","Biweekly conversions improved.","Conversion",84,88,"Clearer plans.","I'd default weekly for dense streets.",{tomorrow:"Plan-page visits should rise.",weekend:"New neighborhood interest strong.",nextWeek:"Overtime risk drops with density.",nextMonth:"Seasonal packages lift AOV."}),
+      dp("Two reviews from last week's yards are still unasked.","Ask two recent customers for reviews.","Fresh lawn photos + reviews compound trust.","+local proof.","Send review asks","You've completed 100 lawn visits.","Trust",92,95,"Review momentum.","I'd attach a before/after when asking.",{tomorrow:"One review likely.",weekend:"Growth street still has gaps.",nextWeek:"Highest-density week achievable.",nextMonth:"Leaf + cleanup demand rises."}),
+    ],
+    cleaning:[
+      dp("Share your turnover booking link with three Airbnb hosts.","Text the turnover link to three local hosts.","Hosts need reliable turnovers.","Recurring turnovers.","Share with hosts","Two hosts booked repeat turnovers.","Growth",85,90,"Host channel opening.","I'd start with hosts asking for same-day help.",{tomorrow:"One new host inquiry likely.",weekend:"Checkout turnover demand spikes.",nextWeek:"Supplies reorder before Friday.",nextMonth:"Shoulder-season midweek cleans."}),
+      dp("Collect two host reviews this week — trust compounds fast.","Ask two hosts for short reviews.","Host trust compounds with recent proof.","Faster host trust.","Request reviews","On-time turnover rate stayed perfect.","Trust",89,93,"Host reviews.","I'd ask right after a smooth checkout turn.",{tomorrow:"Two turnovers need supply checks.",weekend:"Peak checkout — protect buffers.",nextWeek:"One weekly can go biweekly.",nextMonth:"Events lift short-term demand."}),
+      dp("Highlight weekly and biweekly plans — repeat revenue beats deep cleans.","Feature weekly/biweekly on the homepage.","Repeat plans stabilize the calendar.","Higher repeat revenue.","Feature plans","Recurring revenue share increased.","Growth",90,92,"Plan visibility.","I'd put weekly first; deep cleans as add-ons.",{tomorrow:"Deep-clean may convert to weekly.",weekend:"Host turnovers fully booked.",nextWeek:"Route west absorbs two homes.",nextMonth:"Spring clean interest rises."}),
+      dp("Supplies checklist gaps risk a host complaint today.","Attach supplies lists to today's schedule.","Starting short creates host complaints.","-supply misses.","Attach supplies list","Zero supply misses this week.","Operations",91,95,"Checklist discipline.","I'd standardize kits per property type.",{tomorrow:"Three turnovers back-to-back — kit twice.",weekend:"Checkout wave heavy Saturday.",nextWeek:"One host wants midweek holds.",nextMonth:"Linen partner pricing review."}),
+      dp("Two recurring homes haven't had a quality check-in.","Quality check-in with two recurring homes.","Silent dissatisfaction becomes cancellation.","+retention.","Send check-ins","You've locked 18 recurring homes.","Bookings",92,94,"Stable recurring base.","I'd ask what to improve — then fix one thing.",{tomorrow:"One fridge/oven upsell likely.",weekend:"Host same-day asks may appear.",nextWeek:"East cluster has gap homes.",nextMonth:"Move-out cleans rise."}),
+      dp("Your booking flow still has one extra step for turnovers.","Collapse one step in the turnover book flow.","Hosts book under time pressure.","+same-session conversion.","Simplify booking","Mobile booking completion improved.","Conversion",86,90,"Fewer steps.","I'd prefill details for returning hosts.",{tomorrow:"Host bookings feel faster.",weekend:"Protect buffer between checkouts.",nextWeek:"Commercial office clean pending.",nextMonth:"Event weekends spike turnovers."}),
+      dp("Draft messages for three customers who haven't left reviews.","Send drafted review messages.","Finished cleans convert reviews while fresh.","+social proof.","Ready to send?","Five-star streak continued.","Trust",93,96,"Review velocity.","I'd send drafts before adding new hosts.",{tomorrow:"Two reviews likely.",weekend:"Checkout volume above average.",nextWeek:"Supplies restock before Thursday.",nextMonth:"Summer travel lifts turnovers."}),
+    ],
+  };
+  function buildOvernightReview(ctx){
+    const stripeConnected=ctx.stripeConnected!==false;
+    return{label:'Overnight Review',line:'Last night I reviewed your business.',systems:OVERNIGHT_SYSTEMS.map(name=>({name,status:!stripeConnected&&(name==='Revenue'||name==='Bookings')?'limited':'reviewed',note:!stripeConnected&&name==='Revenue'?"Stripe isn't connected — revenue insights are limited.":null})),surfacedOnlyWhatMatters:true};
+  }
+  function buildReturnSummary(ctx){
+    const days=Number(ctx.daysAway);if(!Number.isFinite(days)||days<14)return null;
+    return{headline:"Welcome back — here's what changed while you were away.",bullets:[ctx.awayBookings!=null?`${ctx.awayBookings} bookings happened without you watching.`:'Booking activity continued.',ctx.awayReviews!=null?`${ctx.awayReviews} new review signals.`:'Reviews and follow-ups kept moving.',"I refreshed today's opportunity for where you are now — before the advice."],daysAway:days};
+  }
+  function buildWrapUps(ctx){
+    const date=ctx.date?new Date(ctx.date):new Date();const wraps=[];
+    if(date.getDay()===5||ctx.forceFriday)wraps.push({kind:'friday',label:'Week in Review',summary:'This week: momentum on follow-ups, healthier trust, and one clear growth lever.'});
+    if(date.getDate()===1||ctx.forceMonthStart)wraps.push({kind:'month',label:'Month in Review',summary:'Last month closed with stronger conversion and a clearer customer rhythm.'});
+    if(([0,3,6,9].includes(date.getMonth())&&date.getDate()<=7)||ctx.forceQuarter)wraps.push({kind:'quarter',label:'Business Evolution',summary:'This quarter: the business got sharper — less noise, more repeatable wins.'});
+    if(ctx.isAnniversary||ctx.forceAnniversary)wraps.push({kind:'anniversary',label:'Business Story',summary:'A year of building in public — from idea to a living business.'});
+    return wraps;
+  }
+  function searchDailyArchive(archive,query){
+    const q=String(query||'').toLowerCase().trim();const list=Array.isArray(archive)?archive:[];
+    if(!q)return list.slice();
+    return list.filter(d=>{
+      const blob=[d.date,d.headline,d.opportunity?.title,d.ifMine,d.greeting,d.weekday].join(' ').toLowerCase();
+      return blob.includes(q)||(/last tuesday|tuesday/i.test(q)&&/tue/i.test(d.weekday||''));
+    });
+  }
+  function buildArchiveSeed(ctx){
+    const key=resolveKey(ctx);const days=INDUSTRY_DAILY_DAYS[key]||INDUSTRY_DAILY_DAYS.pressure_washing;
+    const weekdays=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    return days.map((d,i)=>({id:'day-'+i,date:`2026-07-${String(13+i).padStart(2,'0')}`,weekday:weekdays[i%7],headline:d.headline,opportunity:d.opportunity,ifMine:d.ifMine,greeting:'Good morning — archive day '+(i+1)}));
+  }
+  function orchestrateHublyDaily(ctx){
+    const industryKey=resolveKey(ctx);const stageKey=resolveStage(ctx);const idx=dayIndex(ctx);
+    const pack=(INDUSTRY_DAILY_DAYS[industryKey]||INDUSTRY_DAILY_DAYS.pressure_washing)[idx];
+    const stripeConnected=ctx.stripeConnected!==false;
+    let opportunity={...pack.opportunity};let headline=pack.headline;
+    if(!stripeConnected&&/membership|payment|stripe|checkout|\$1,200/i.test(opportunity.title+headline+opportunity.impact)){
+      opportunity={title:"Connect Stripe so booking and payments can fully activate.",why:"Without Stripe, payment-backed recommendations aren't available yet.",impact:'Unlock booking + payments.',action:'Connect Stripe'};
+      headline:"Stripe isn't connected — I'll focus on what we can do without payments today.";
+    }
+    const archive=Array.isArray(ctx.archive)?ctx.archive:buildArchiveSeed(ctx);
+    return{
+      version:'1.0.0',label:'Hubly Daily',notAFeed:true,notAReport:true,industryKey,stageKey,dayIndex:idx,
+      greeting:'Good morning, '+firstNameOf(ctx),reviewLine:'Last night I reviewed your business.',foundLine:"Here's what I found.",
+      overnight:buildOvernightReview(ctx),headline,
+      opportunity:{...opportunity,hasWhy:true,hasImpact:true,hasAction:true},opportunities:[opportunity],
+      wins:[pack.win],healthChange:pack.healthChange,
+      ifMine:{label:'If this were my business...',recommendation:pack.ifMine},
+      expertNotes:[{lead:'I noticed',text:pack.healthChange.reason},{lead:'I recommend',text:opportunity.title},{lead:'I found',text:pack.win}],
+      oneVoice:true,neverShowAgents:true,forecast:{label:'Looking Ahead',...pack.forecast},
+      wrapUps:buildWrapUps(ctx),archive,stage:STAGE_CADENCE[stageKey],returnSummary:buildReturnSummary(ctx),
+      askContinuation:{label:'Ask Hubly',prompts:['Why do you think that?','What would you do next?','Explain the health change.'],continuous:true},
+      freshDaily:true,WRAP_UP_KINDS,OVERNIGHT_SYSTEMS,STAGE_CADENCE,
+      signature:[industryKey,stageKey,idx,opportunity.title.slice(0,40)].join('::'),
+    };
+  }
+  return{OVERNIGHT_SYSTEMS,STAGE_CADENCE,WRAP_UP_KINDS,INDUSTRY_DAILY_DAYS,orchestrateHublyDaily,searchDailyArchive,buildArchiveSeed,buildWrapUps};
+})();
+
+function isEnterHublyDaily(opts){
+  isRunHublyDaily(opts);
+}
+
+function isDailyRenderAsk(){
+  const thread=document.getElementById('is-daily-ask-thread');
+  if(!thread)return;
+  const msgs=S._is?.dailyAskThread||[];
+  thread.innerHTML=msgs.slice(-10).map(m=>
+    `<div class="msg ${m.role==='you'?'is-you':''}"><strong>${m.role==='you'?'You':'Hubly'}:</strong> ${escPeHtml(m.text)}</div>`
+  ).join('');
+  thread.scrollTop=thread.scrollHeight;
+}
+
+function isRunHublyDaily(opts){
+  S._is=S._is||{};
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-home-wide','is-launch-wide','is-cw-wide','is-save-wide');
+  document.querySelector('#is-shell .is-wrap')?.classList.add('is-daily-wide');
+  const d=S._is.discovery||{};
+  const industry=S.businessType||d.facts?.industryId?.value||S._is.reveal?.industryKey||'';
+  const ownerName=S._is.ownerName||S._is.ownerFirst||S._is.delayedAccount?.certificate?.owner||null;
+  const flow=HUBLY_DAILY_M2.orchestrateHublyDaily({
+    businessName:S.biz,ownerName,firstName:ownerName?String(ownerName).split(/\s+/)[0]:null,
+    email:S.email||null,industryId:industry,industry,businessType:S.businessType,
+    businessStage:opts?.businessStage||S._is.businessStage,bookingCount:opts?.bookingCount??S._is.bookingCount,
+    dayIndex:opts?.dayIndex,date:opts?.date,daysAway:opts?.daysAway??S._is.daysAway,
+    awayBookings:opts?.awayBookings,awayReviews:opts?.awayReviews,
+    stripeConnected:opts?.stripeConnected!=null?!!opts.stripeConnected:!!(S._stripeConnected||S.stripeConnectAccountId),
+    forceFriday:opts?.forceFriday,forceMonthStart:opts?.forceMonthStart,forceQuarter:opts?.forceQuarter,
+    forceAnniversary:opts?.forceAnniversary,isAnniversary:opts?.isAnniversary,...opts,
+  });
+  S._is.hublyDaily=flow;
+  S._is.dailyAskThread=S._is.dailyAskThread||[];
+  // Persist into archive (fresh each day by signature)
+  S._is.dailyArchive=S._is.dailyArchive||flow.archive.slice();
+  if(!S._is.dailyArchive.some(a=>a.headline===flow.headline)){
+    S._is.dailyArchive.unshift({id:'live-'+Date.now(),date:new Date().toISOString().slice(0,10),weekday:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()],headline:flow.headline,opportunity:flow.opportunity,ifMine:flow.ifMine.recommendation,greeting:flow.greeting});
+  }
+
+  const body=document.getElementById('is-daily-body');
+  if(body){
+    const hc=flow.healthChange;
+    const healthLine=`${escPeHtml(hc.metric)} increased from ${escPeHtml(String(hc.from))} → ${escPeHtml(String(hc.to))}.`;
+    const returnBlock=flow.returnSummary?`<div class="is-daily-section is-daily-return"><div class="sk">While you were away</div><p class="is-daily-headline" style="font-size:16px">${escPeHtml(flow.returnSummary.headline)}</p>${flow.returnSummary.bullets.map(b=>`<p class="meta" style="margin:6px 0;font-size:13px">${escPeHtml(b)}</p>`).join('')}</div>`:'';
+    const wrapBlock=flow.wrapUps.length?`<div class="is-daily-section is-daily-wrap"><div class="sk">Business Timeline</div>${flow.wrapUps.map(w=>`<div style="margin:0 0 10px"><strong>${escPeHtml(w.label)}</strong><div style="font-size:13px;opacity:.85;margin-top:4px">${escPeHtml(w.summary)}</div></div>`).join('')}</div>`:'';
+    body.innerHTML=`
+      ${returnBlock}
+      <div class="is-daily-section is-daily-brief">
+        <div class="sk">Daily Brief</div>
+        <h1 class="greet">${escPeHtml(flow.greeting)}</h1>
+        <p class="line">${escPeHtml(flow.reviewLine)}</p>
+        <p class="line">${escPeHtml(flow.foundLine)}</p>
+      </div>
+      <div class="is-daily-section is-daily-cadence"><div class="sk">Adaptive Cadence</div><p style="margin:0;font-size:13px">${escPeHtml(flow.stage.line)}</p></div>
+      <div class="is-daily-section is-daily-overnight"><div class="sk">Overnight Review</div>
+        <div class="is-daily-systems">${flow.overnight.systems.map(s=>`<span class="${s.status==='limited'?'is-limited':''}">${escPeHtml(s.name)}${s.note?'*':''}</span>`).join('')}</div>
+        ${flow.overnight.systems.some(s=>s.note)?`<p style="margin:8px 0 0;font-size:12px;color:#fbbf24">${escPeHtml(flow.overnight.systems.find(s=>s.note).note)}</p>`:''}
+      </div>
+      <div class="is-daily-section"><div class="sk">Today's Headline</div><p class="is-daily-headline">${escPeHtml(flow.headline)}</p></div>
+      <div class="is-daily-section is-daily-voice"><div class="sk">What I noticed</div>
+        ${flow.expertNotes.map(n=>`<p class="note"><strong>${escPeHtml(n.lead)}…</strong> ${escPeHtml(n.text)}</p>`).join('')}
+      </div>
+      <div class="is-daily-section is-daily-opportunity"><div class="sk">Daily Opportunity</div>
+        <p class="title">${escPeHtml(flow.opportunity.title)}</p>
+        <p class="meta"><strong>Why:</strong> ${escPeHtml(flow.opportunity.why)}</p>
+        <p class="impact">Expected Impact · ${escPeHtml(flow.opportunity.impact)}</p>
+        <button type="button" class="act" onclick="isDailyAsk(${JSON.stringify('Do this: '+flow.opportunity.action)})">${escPeHtml(flow.opportunity.action)}</button>
+      </div>
+      <div class="is-daily-section is-daily-wins"><div class="sk">Wins</div><p class="is-daily-wins">🎉 ${escPeHtml(flow.wins[0])}</p></div>
+      <div class="is-daily-section is-daily-health"><div class="sk">Business Health Changes</div>
+        <p class="change">${healthLine}</p>
+        <p class="meta" style="font-size:13px;opacity:.8"><strong>Reason:</strong> ${escPeHtml(hc.reason)}</p>
+      </div>
+      <div class="is-daily-section is-daily-ifmine"><div class="sk">${escPeHtml(flow.ifMine.label)}</div>
+        <p class="rec">${escPeHtml(flow.ifMine.recommendation)}</p>
+      </div>
+      <div class="is-daily-section is-daily-forecast"><div class="sk">Hubly Forecast · Looking Ahead</div>
+        <p class="row"><span class="when">Tomorrow</span> — ${escPeHtml(flow.forecast.tomorrow)}</p>
+        <p class="row"><span class="when">This Weekend</span> — ${escPeHtml(flow.forecast.weekend)}</p>
+        <p class="row"><span class="when">Next Week</span> — ${escPeHtml(flow.forecast.nextWeek)}</p>
+        <p class="row"><span class="when">Next Month</span> — ${escPeHtml(flow.forecast.nextMonth)}</p>
+      </div>
+      ${wrapBlock}
+      <div class="is-daily-section is-daily-archive"><div class="sk">Daily Archive</div>
+        <div class="is-daily-ask-row" style="margin-bottom:8px">
+          <input type="text" id="is-daily-archive-q" placeholder="What did you recommend last Tuesday?" onkeydown="if(event.key==='Enter'){event.preventDefault();isDailySearchArchive();}">
+          <button type="button" onclick="isDailySearchArchive()">Search</button>
+        </div>
+        <div class="is-daily-archive-list" id="is-daily-archive-list"></div>
+      </div>`;
+    isDailySearchArchive('');
+  }
+  const chips=document.getElementById('is-daily-ask-chips');
+  if(chips){
+    chips.innerHTML=flow.askContinuation.prompts.map(p=>
+      `<button type="button" onclick="isDailyAsk(${JSON.stringify(p)})">${escPeHtml(p)}</button>`
+    ).join('');
+  }
+  isDailyRenderAsk();
+  isShowStep('hubly-daily');
+  try{persistInstantSiteDraft();}catch(e){}
+  return flow;
+}
+
+function isDailyAsk(text){
+  const q=String(text||'').trim();
+  if(!q)return;
+  S._is=S._is||{};
+  S._is.dailyAskThread=S._is.dailyAskThread||[];
+  S._is.dailyAskThread.push({role:'you',text:q});
+  const flow=S._is.hublyDaily;
+  let reply=`Still one continuous conversation. ${flow?.ifMine?.recommendation||''}`;
+  if(/why do you think|why/i.test(q))reply=`Because ${flow?.opportunity?.why||'it changes outcomes today.'} Expected impact: ${flow?.opportunity?.impact||''}`;
+  else if(/health/i.test(q))reply=`${flow?.healthChange?.metric} moved ${flow?.healthChange?.from} → ${flow?.healthChange?.to}. Reason: ${flow?.healthChange?.reason}`;
+  else if(/next|would you do/i.test(q))reply=`If this were my business: ${flow?.ifMine?.recommendation||''}`;
+  else if(/tuesday|archive|last/i.test(q)){
+    const hits=HUBLY_DAILY_M2.searchDailyArchive(S._is.dailyArchive||flow?.archive||[],q);
+    reply=hits[0]?`From the archive (${hits[0].weekday||hits[0].date}): ${hits[0].headline}`:`I searched the Daily Archive — ask me about a day or topic.`;
+  }
+  else if(/connect stripe|do this/i.test(q))reply=`On it — ${flow?.opportunity?.action||'let\'s take the next step'}. ${flow?.opportunity?.why||''}`;
+  S._is.dailyAskThread.push({role:'hubly',text:reply});
+  isDailyRenderAsk();
+  try{persistInstantSiteDraft();}catch(e){}
+}
+
+function isDailyAskSubmit(){
+  const input=document.getElementById('is-daily-ask-input');
+  const q=input?.value||'';
+  if(input)input.value='';
+  isDailyAsk(q);
+}
+
+function isDailySearchArchive(forced){
+  const input=document.getElementById('is-daily-archive-q');
+  const q=forced!=null?forced:(input?.value||'');
+  const flow=S._is?.hublyDaily;
+  const hits=HUBLY_DAILY_M2.searchDailyArchive(S._is?.dailyArchive||flow?.archive||[],q);
+  const list=document.getElementById('is-daily-archive-list');
+  if(!list)return;
+  list.innerHTML=hits.slice(0,6).map(h=>
+    `<div class="item"><strong>${escPeHtml(h.weekday||'')} ${escPeHtml(h.date||'')}</strong><div>${escPeHtml(h.headline)}</div></div>`
+  ).join('')||`<div class="item">No archive matches — try “last Tuesday”.</div>`;
+  if(q&&forced==null)isDailyAsk(`What did you recommend ${q}?`);
+}
+
+function isDailyContinueToHome(){
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-daily-wide');
+  isEnterBusinessHome({skipDaily:true,fromDaily:true});
 }
 
 // Resume Delayed Account after OAuth return
