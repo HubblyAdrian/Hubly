@@ -2,7 +2,8 @@
   "name": "hubly",
   "version": "1.0.0",
   "scripts": {
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "check:gcal-blocks-not-jobs": "node scripts/check-google-calendar-blocks-not-jobs.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

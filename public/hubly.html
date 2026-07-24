@@ -36448,6 +36448,10 @@ function reportPeriodBounds(period){
 function jobsBetween(jobs,start,end){
   return jobs.filter(j=>j.date&&parseDayDate(j.date)>=start&&parseDayDate(j.date)<=end);
 }
+/** Reports / KPIs: Hubly jobs only — never Google Calendar appointments or time blocks. */
+function reportableJobs(start,end){
+  return jobsBetween(S.jobs||[],start,end).filter(isHublyOwnedJob);
+}
 function customersBetween(start,end){
   return S.customers.filter(c=>{
     const created=c.createdAt||c.created_at;
@@ -36490,7 +36494,7 @@ function resolveJobServiceBucket(j){
   return {service_id:sid?String(sid):null,name:j.service||j.service_name||'Unknown'};
 }
 function reportServicesBreakdown(start,end){
-  const jobs=jobsBetween(S.jobs,start,end);
+  const jobs=reportableJobs(start,end);
   const buckets=new Map();
   for(const j of jobs){
     const b=resolveJobServiceBucket(j);
@@ -36503,7 +36507,7 @@ function reportServicesBreakdown(start,end){
   return Array.from(buckets.values()).sort((a,b)=>b.revenue-a.revenue||b.jobs-a.jobs||String(a.name).localeCompare(String(b.name)));
 }
 function reportMetricValue(metric,start,end){
-  const jobs=jobsBetween(S.jobs,start,end);
+  const jobs=reportableJobs(start,end);
   if(metric==='revenue')return jobs.filter(j=>j.status==='completed'&&j.paid).reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   if(metric==='jobs')return jobs.length;
   if(metric==='customers')return customersBetween(start,end).length;
@@ -36600,12 +36604,12 @@ function openReportMetricDrill(metric){
       <div class="kpi-drill-right"></div>
     </div>`;
   if(metric==='revenue'){
-    const jobs=jobsBetween(S.jobs,start,end).filter(j=>j.status==='completed'&&j.paid).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const jobs=reportableJobs(start,end).filter(j=>j.status==='completed'&&j.paid).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     const total=jobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
     title.textContent=t('reportsRevenue');
     body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">${t('reportsRevenue')}</div><div class="kpi-drill-sum-val">$${total.toFixed(2)}</div></div>`+(jobs.length?jobs.map(jobRow).join(''):`<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">${t('noCompletedRevenue')}</div>`);
   }else if(metric==='jobs'){
-    const jobs=jobsBetween(S.jobs,start,end).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const jobs=reportableJobs(start,end).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     title.textContent=t('reportsJobs');
     body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">${t('reportsJobs')}</div><div class="kpi-drill-sum-val">${jobs.length}</div></div>`+(jobs.length?jobs.map(jobRow).join(''):`<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">${t('noJobsInPeriod')}</div>`);
   }else if(metric==='customers'){
