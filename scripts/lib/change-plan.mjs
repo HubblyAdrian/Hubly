@@ -24,7 +24,7 @@ var SYSTEM_TO_BUILDER = {
   Workspace: { type: "workspace_builder", owner: "Workspace Intelligence Builder" },
   Portfolio: { type: "portfolio_builder", owner: "Portfolio Builder" },
   Packages: { type: "packages_builder", owner: "Packages Builder" },
-  Automations: { type: "automation", owner: "Automation Builder" },
+  Automations: { type: "automation", owner: "Automation Intelligence Builder" },
   Marketplace: { type: "marketplace", owner: "Marketplace Builder" },
   Business: { type: "website_builder", owner: "Business Builder" }
 };
@@ -557,35 +557,215 @@ function draftActionsFromIntent(intent) {
       });
     }
   }
-  if (systems.has("Automations") || /prep instruction|automation|workflow|reminder/.test(req)) {
-    push({
-      builderOwner: "Automation Builder",
-      builderType: "automation",
-      system: "Automations",
-      path: "automations.workflows",
-      desired: [
-        {
-          id: "prep_after_ceramic",
-          trigger: "booking.completed.service:ceramic_coating",
-          steps: [
-            { type: "createWorkflow", config: { name: "Ceramic coating prep" } },
-            { type: "sendEmail", config: { template: "prep_instructions" } },
-            { type: "wait", config: { hours: 0 } },
-            { type: "sendReminder", config: { channel: "email" } }
-          ]
-        }
-      ],
-      reason: "Send prep instructions after ceramic coating bookings.",
-      risk: "medium",
-      dependencies: [],
-      estimatedImpact: {
-        trustPct: 10,
-        complexity: "medium",
-        summary: "Automated prep instructions reduce day-of questions."
-      },
-      confidence: Math.max(85, intent.confidence - 3),
-      capabilityId: "create_workflow"
-    });
+  if (systems.has("Automations") || /prep instruction|automation|workflow|reminder|review request|ask for (a )?review|quote.*(follow|5 day)|rain|reschedule exterior|membership|friday.*(summary|report)|recurring customer|when someone books/.test(
+    req
+  )) {
+    const autoOwner = "Automation Intelligence Builder";
+    if (/prep instruction|prep (email|message)|ceramic.*prep|prep.*ceramic|after ceramic|when someone books.*ceramic|books a ceramic/.test(req)) {
+      const multi = /when someone books|books a ceramic|ceramic coating\.\.\./.test(req);
+      push({
+        builderOwner: autoOwner,
+        builderType: "automation",
+        system: "Automations",
+        path: multi ? "automations.workflows.multisystem_ceramic" : "automations.workflows.prep_after_ceramic",
+        desired: [
+          {
+            id: multi ? "multisystem_ceramic" : "prep_after_ceramic",
+            trigger: "booking.created.service:ceramic_coating",
+            steps: multi ? [
+              { type: "updateBooking", config: { calendar_reminder: true } },
+              { type: "sendEmail", config: { template: "prep_instructions" } },
+              { type: "tagCrm", config: { tag: "ceramic" } },
+              { type: "portalMessage", config: { template: "prep" } },
+              { type: "wait", config: { days: 1 } },
+              { type: "sendEmail", config: { template: "review_request" } },
+              { type: "upsell", config: { offer: "maintenance" } }
+            ] : [
+              { type: "createWorkflow", config: { name: "Ceramic coating prep" } },
+              { type: "wait", config: { minutes: 5 } },
+              { type: "sendEmail", config: { template: "prep_instructions" } },
+              { type: "wait", config: { until: "day_before" } },
+              { type: "sendReminder", config: { channel: "sms" } }
+            ]
+          }
+        ],
+        reason: multi ? "Multi-system ceramic booking workflow from one conversation." : "Send prep instructions after ceramic coating bookings.",
+        risk: "medium",
+        dependencies: [],
+        estimatedImpact: {
+          trustPct: 10,
+          complexity: "medium",
+          summary: multi ? "Booking, CRM, portal, review, and upsell from one ask." : "Automated prep instructions reduce day-of questions."
+        },
+        confidence: Math.max(85, intent.confidence - 3),
+        capabilityId: "create_workflow"
+      });
+    }
+    if (/review|ask for (a )?review|review request/.test(req)) {
+      push({
+        builderOwner: autoOwner,
+        builderType: "automation",
+        system: "Automations",
+        path: "automations.workflows.review_after_job",
+        desired: [
+          {
+            id: "review_after_job",
+            trigger: "booking.completed",
+            steps: [
+              { type: "wait", config: { days: 3 } },
+              { type: "sendEmail", config: { template: "review_request" } }
+            ]
+          }
+        ],
+        reason: "Ask for reviews after every completed job.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { trustPct: 12, complexity: "low", summary: "Consistent review asks without manual work." },
+        confidence: Math.max(88, intent.confidence),
+        capabilityId: "create_workflow"
+      });
+    }
+    if (/quote.*(follow|5 day|five day)|follow up on quotes|haven'?t responded/.test(req)) {
+      push({
+        builderOwner: autoOwner,
+        builderType: "automation",
+        system: "Automations",
+        path: "automations.workflows.quote_followup",
+        desired: [
+          {
+            id: "quote_followup_5d",
+            trigger: "quote.no_response.days:5",
+            steps: [{ type: "sendEmail", config: { template: "quote_followup" } }]
+          }
+        ],
+        reason: "Follow up on quotes after 5 days.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { conversionPct: 5, complexity: "low", summary: "Recover silent quotes automatically." },
+        confidence: Math.max(87, intent.confidence),
+        capabilityId: "create_workflow"
+      });
+    }
+    if (/reschedule exterior.*rain|rain.*reschedule exterior|if it rains/.test(req)) {
+      push({
+        builderOwner: autoOwner,
+        builderType: "automation",
+        system: "Automations",
+        path: "automations.workflows.weather_exterior",
+        desired: [
+          {
+            id: "weather_exterior",
+            trigger: "weather.rain.forecast",
+            steps: [
+              { type: "updateBooking", config: { action: "reschedule_exterior" } },
+              { type: "sendEmail", config: { template: "weather_reschedule" } }
+            ]
+          }
+        ],
+        reason: "Reschedule exterior work if it rains.",
+        risk: "medium",
+        dependencies: [],
+        estimatedImpact: { complexity: "medium", summary: "Weather-aware operations automation." },
+        confidence: Math.max(86, intent.confidence),
+        capabilityId: "create_workflow"
+      });
+    }
+    if (/membership|charge.*month|monthly billing|bill.*membership/.test(req)) {
+      push({
+        builderOwner: autoOwner,
+        builderType: "automation",
+        system: "Automations",
+        path: "automations.workflows.membership_billing",
+        desired: [
+          {
+            id: "membership_monthly",
+            trigger: "schedule.monthly",
+            steps: [
+              { type: "charge", config: { product: "membership" } },
+              { type: "sendEmail", config: { template: "receipt" } }
+            ]
+          }
+        ],
+        reason: "Charge memberships every month.",
+        risk: "high",
+        dependencies: [],
+        estimatedImpact: { complexity: "medium", summary: "Hands-off membership renewals." },
+        confidence: Math.max(84, intent.confidence),
+        capabilityId: "create_workflow"
+      });
+    }
+    if (/friday.*(summary|report)|business summary|weekly summary|send me a friday/.test(req)) {
+      push({
+        builderOwner: autoOwner,
+        builderType: "automation",
+        system: "Automations",
+        path: "automations.workflows.friday_summary",
+        desired: [
+          {
+            id: "friday_summary",
+            trigger: "schedule.friday",
+            steps: [
+              { type: "report", config: { type: "weekly_summary" } },
+              { type: "sendEmail", config: { template: "owner_summary" } }
+            ]
+          }
+        ],
+        reason: "Send a Friday business summary.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { complexity: "low", summary: "Owner gets a weekly ops snapshot automatically." },
+        confidence: Math.max(90, intent.confidence),
+        capabilityId: "create_workflow"
+      });
+    }
+    if (/recurring customer|automate.*recurring|repeat customer/.test(req)) {
+      push({
+        builderOwner: autoOwner,
+        builderType: "automation",
+        system: "Automations",
+        path: "automations.workflows.recurring_customers",
+        desired: [
+          {
+            id: "recurring_customers",
+            trigger: "customer.recurring.due",
+            steps: [
+              { type: "updateBooking", config: { propose_next: true } },
+              { type: "sendEmail", config: { template: "recurring_confirm" } }
+            ]
+          }
+        ],
+        reason: "Automate recurring customers.",
+        risk: "medium",
+        dependencies: [],
+        estimatedImpact: { complexity: "medium", summary: "Repeat customers rebook with less chase." },
+        confidence: Math.max(85, intent.confidence),
+        capabilityId: "create_workflow"
+      });
+    }
+    if (!actions.some((a) => a.path.startsWith("automations."))) {
+      push({
+        builderOwner: autoOwner,
+        builderType: "automation",
+        system: "Automations",
+        path: "automations.workflows",
+        desired: [
+          {
+            id: "generic_workflow",
+            trigger: "booking.created",
+            steps: [
+              { type: "createWorkflow", config: { name: "Owner-requested automation" } },
+              { type: "sendEmail", config: { template: "notification" } }
+            ]
+          }
+        ],
+        reason: "Owner wants an automation workflow.",
+        risk: "medium",
+        dependencies: [],
+        estimatedImpact: { complexity: "medium", summary: "Automation from natural language." },
+        confidence: Math.max(80, intent.confidence - 5),
+        capabilityId: "create_workflow"
+      });
+    }
   }
   if (systems.has("Packages") || /package|membership|pricing tier/.test(req)) {
     push({

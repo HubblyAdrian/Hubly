@@ -236,7 +236,7 @@ check("MC builderActions.available === false", snap.builderActions?.available ==
 check("MC displays versions", (snap.builderActions?.versions || []).length >= 1);
 check(
   "MC epic is Version & Rollback",
-  /Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Epic [5-8]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Epic [5-9]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check("MC version history note", /History|Diff|Rollback|restore/i.test(snap.builderActions?.versionHistoryNote || ""));
 

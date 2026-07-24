@@ -4,7 +4,7 @@
   "name": "Version & Rollback Engine",
   "title": "Version & Rollback Engine",
   "passed": true,
-  "checkedAt": "2026-07-24T03:47:08.104Z",
+  "checkedAt": "2026-07-24T04:04:57.477Z",
   "proofs": {
     "versionEngineExists": true,
     "everyApprovedChangeCreatesVersion": true,
@@ -24,7 +24,7 @@
     "noApply": true,
     "demos": {
       "v1": {
-        "id": "bver_mryefnhp_h27y4l",
+        "id": "bver_mryf2kmf_y9fpk5",
         "label": "v1.1",
         "surfaces": [
           "website"
@@ -49,13 +49,13 @@
         ]
       },
       "v2": {
-        "id": "bver_mryefnhv_y4d9oj",
+        "id": "bver_mryf2kml_i97rgf",
         "label": "v1.2",
         "surfaces": []
       },
       "diff": {
-        "fromVersionId": "bver_mryefnhp_h27y4l",
-        "toVersionId": "bver_mryefnhv_y4d9oj",
+        "fromVersionId": "bver_mryf2kmf_y9fpk5",
+        "toVersionId": "bver_mryf2kml_i97rgf",
         "fromLabel": "v1.1",
         "toLabel": "v1.2",
         "surfaces": [
@@ -86,11 +86,11 @@
         "summary": "Compare v1.1 → v1.2: 2 diff(s)"
       },
       "fullRollback": {
-        "id": "rb_mryefnhw_ffhkjb",
+        "id": "rb_mryf2kmn_b07akz",
         "scope": "full",
-        "targetVersionId": "bver_mryefnhp_h27y4l",
+        "targetVersionId": "bver_mryf2kmf_y9fpk5",
         "targetLabel": "v1.1",
-        "fromVersionId": "bver_mryefnhv_y4d9oj",
+        "fromVersionId": "bver_mryf2kml_i97rgf",
         "surfaces": [
           "website"
         ],
@@ -118,14 +118,14 @@
         "applied": false,
         "status": "rollback_plan_ready",
         "waitingFor": "apply_engine",
-        "createdAt": "2026-07-24T03:47:08.084Z"
+        "createdAt": "2026-07-24T04:04:57.455Z"
       },
       "partialRollback": {
-        "id": "rb_mryefnhw_yfp4ks",
+        "id": "rb_mryf2kmn_qx5oaq",
         "scope": "partial",
-        "targetVersionId": "bver_mryefnhp_h27y4l",
+        "targetVersionId": "bver_mryf2kmf_y9fpk5",
         "targetLabel": "v1.1",
-        "fromVersionId": "bver_mryefnhv_y4d9oj",
+        "fromVersionId": "bver_mryf2kml_i97rgf",
         "surfaces": [
           "booking"
         ],
@@ -137,14 +137,14 @@
         "applied": false,
         "status": "rollback_plan_ready",
         "waitingFor": "apply_engine",
-        "createdAt": "2026-07-24T03:47:08.084Z"
+        "createdAt": "2026-07-24T04:04:57.455Z"
       },
       "singleRollback": {
-        "id": "rb_mryefnhw_1cuab0",
+        "id": "rb_mryf2kmn_2yker0",
         "scope": "single",
-        "targetVersionId": "bver_mryefnhp_h27y4l",
+        "targetVersionId": "bver_mryf2kmf_y9fpk5",
         "targetLabel": "v1.1",
-        "fromVersionId": "bver_mryefnhv_y4d9oj",
+        "fromVersionId": "bver_mryf2kml_i97rgf",
         "surfaces": [
           "website"
         ],
@@ -165,14 +165,14 @@
         "applied": false,
         "status": "rollback_plan_ready",
         "waitingFor": "apply_engine",
-        "createdAt": "2026-07-24T03:47:08.084Z"
+        "createdAt": "2026-07-24T04:04:57.455Z"
       },
       "restoreSuggestions": [
         {
-          "id": "restore_mryefnhw_a85qov",
-          "suggestedVersionId": "bver_mryefnhp_h27y4l",
+          "id": "restore_mryf2kmn_ap9ucf",
+          "suggestedVersionId": "bver_mryf2kmf_y9fpk5",
           "suggestedLabel": "v1.1",
-          "currentVersionId": "bver_mryefnhv_y4d9oj",
+          "currentVersionId": "bver_mryf2kml_i97rgf",
           "reason": "I think v1.1 may have performed better for trust signals.",
           "signal": "Conversions / trust may have softened after the latest homepage change.",
           "confidence": 90,
@@ -185,8 +185,8 @@
         "title": "Business Timeline",
         "events": [
           {
-            "id": "tl_mryefnhp_8br17q",
-            "at": "2026-07-12T03:47:08.077Z",
+            "id": "tl_mryf2kmf_pg95y5",
+            "at": "2026-07-12T04:04:57.447Z",
             "kind": "milestone",
             "emoji": "🎉",
             "title": "Website launched",
@@ -195,8 +195,8 @@
             "versionLabel": null
           },
           {
-            "id": "tl_mryefnhp_2z8gwb",
-            "at": "2026-07-13T03:47:08.077Z",
+            "id": "tl_mryf2kmf_lobylf",
+            "at": "2026-07-13T04:04:57.447Z",
             "kind": "integration",
             "emoji": "💳",
             "title": "Stripe connected",
@@ -205,8 +205,8 @@
             "versionLabel": null
           },
           {
-            "id": "tl_mryefnhp_s29lin",
-            "at": "2026-07-14T03:47:08.077Z",
+            "id": "tl_mryf2kmf_s6g20w",
+            "at": "2026-07-14T04:04:57.447Z",
             "kind": "builder_change",
             "emoji": "📅",
             "title": "Arrival windows enabled",
@@ -215,8 +215,8 @@
             "versionLabel": null
           },
           {
-            "id": "tl_mryefnhp_rnxjsr",
-            "at": "2026-07-16T03:47:08.077Z",
+            "id": "tl_mryf2kmf_2u44io",
+            "at": "2026-07-16T04:04:57.447Z",
             "kind": "achievement",
             "emoji": "⭐",
             "title": "First 5-star review",
@@ -225,8 +225,8 @@
             "versionLabel": null
           },
           {
-            "id": "tl_mryefnhp_tgwox9",
-            "at": "2026-07-22T03:47:08.077Z",
+            "id": "tl_mryf2kmf_nxy1tm",
+            "at": "2026-07-22T04:04:57.447Z",
             "kind": "growth",
             "emoji": "🏆",
             "title": "100th booking",
@@ -235,8 +235,8 @@
             "versionLabel": null
           },
           {
-            "id": "tl_mryefnhp_68kppo",
-            "at": "2026-07-24T03:47:08.077Z",
+            "id": "tl_mryf2kmf_cd9x1y",
+            "at": "2026-07-24T04:04:57.447Z",
             "kind": "ai_recommendation",
             "emoji": "🧠",
             "title": "Hubly recommends launching memberships",
@@ -245,23 +245,23 @@
             "versionLabel": null
           },
           {
-            "id": "tl_mryefnhp_x25kty",
-            "at": "2026-07-24T03:47:08.077Z",
+            "id": "tl_mryf2kmf_8mbkxb",
+            "at": "2026-07-24T04:04:57.447Z",
             "kind": "builder_change",
             "emoji": "📈",
             "title": "v1.1 — Website Improvement",
             "detail": "Owner asked for a more premium website feel.; Premium feel usually starts with hero headline tone.",
-            "versionId": "bver_mryefnhp_h27y4l",
+            "versionId": "bver_mryf2kmf_y9fpk5",
             "versionLabel": "v1.1"
           },
           {
-            "id": "tl_mryefnhv_9w9t49",
-            "at": "2026-07-24T03:47:08.083Z",
+            "id": "tl_mryf2kml_woxoue",
+            "at": "2026-07-24T04:04:57.453Z",
             "kind": "builder_change",
             "emoji": "📈",
             "title": "v1.2 — Business Change",
             "detail": "",
-            "versionId": "bver_mryefnhv_y4d9oj",
+            "versionId": "bver_mryf2kml_i97rgf",
             "versionLabel": "v1.2"
           }
         ],
@@ -272,7 +272,7 @@
           "id": "booking",
           "request": "Add arrival windows.",
           "version": {
-            "id": "bver_mryefni4_z4baym",
+            "id": "bver_mryf2kmv_ompqoc",
             "label": "v1.1",
             "surfaces": [
               "booking"
@@ -307,7 +307,7 @@
           "id": "workspace",
           "request": "Move Jobs above Customers.",
           "version": {
-            "id": "bver_mryefni7_05s4ru",
+            "id": "bver_mryf2kmy_712npe",
             "label": "v1.1",
             "surfaces": [
               "workspace"
@@ -341,7 +341,7 @@
           "id": "portfolio",
           "request": "Organize my portfolio.",
           "version": {
-            "id": "bver_mryefni9_m04plf",
+            "id": "bver_mryf2kn0_m7s172",
             "label": "v1.1",
             "surfaces": [
               "portfolio"
@@ -368,25 +368,31 @@
           "id": "automation",
           "request": "Send prep instructions after ceramic coating bookings.",
           "version": {
-            "id": "bver_mryefnib_i8dgnl",
+            "id": "bver_mryf2kn3_0gavix",
             "label": "v1.1",
             "surfaces": [
               "automations"
             ],
             "changes": [
               {
-                "path": "automations.workflows",
+                "path": "automations.workflows.prep_after_ceramic",
                 "surface": "automations",
                 "before": [],
                 "after": [
                   {
                     "id": "prep_after_ceramic",
-                    "trigger": "booking.completed.service:ceramic_coating",
+                    "trigger": "booking.created.service:ceramic_coating",
                     "steps": [
                       {
                         "type": "createWorkflow",
                         "config": {
                           "name": "Ceramic coating prep"
+                        }
+                      },
+                      {
+                        "type": "wait",
+                        "config": {
+                          "minutes": 5
                         }
                       },
                       {
@@ -398,25 +404,25 @@
                       {
                         "type": "wait",
                         "config": {
-                          "hours": 0
+                          "until": "day_before"
                         }
                       },
                       {
                         "type": "sendReminder",
                         "config": {
-                          "channel": "email"
+                          "channel": "sms"
                         }
                       }
                     ]
                   }
                 ],
-                "builderOwner": "Automation Builder",
+                "builderOwner": "Automation Intelligence Builder",
                 "summary": "Send prep instructions after ceramic coating bookings."
               }
             ],
-            "reason": "Approved direction: Automation Setup",
+            "reason": "Approved direction: Automation Intelligence",
             "builders": [
-              "Automation Builder"
+              "Automation Intelligence Builder"
             ],
             "applied": false
           },

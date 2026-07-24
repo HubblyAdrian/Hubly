@@ -196,6 +196,7 @@ import { HublyVersionEngine } from "./hubly_brain_version_engine.ts";
 import { HublyBusinessBuilder } from "./hubly_brain_business_builder.ts";
 import { HublyBookingIntelligence } from "./hubly_brain_booking_intelligence.ts";
 import { HublyWorkspaceIntelligence } from "./hubly_brain_workspace_intelligence.ts";
+import { HublyAutomationIntelligence } from "./hubly_brain_automation_intelligence.ts";
 import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
 import {
   logBrainExecution,
@@ -288,6 +289,7 @@ export {
   HublyBusinessBuilder,
   HublyBookingIntelligence,
   HublyWorkspaceIntelligence,
+  HublyAutomationIntelligence,
   HublyConfidencePolicy,
   HublyBrainExecutionLog,
   HublyExperienceDirector,
