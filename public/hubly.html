@@ -1133,12 +1133,83 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-discovery-typing .dots span:nth-child(2){animation-delay:.15s}
 .is-discovery-typing .dots span:nth-child(3){animation-delay:.3s}
 @keyframes isDiscDot{0%,80%,100%{opacity:.28;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
-#is-step-thinking .is-think-pulse{
-  width:48px;height:48px;border-radius:50%;margin:8px 0 16px;
-  background:radial-gradient(circle at 35% 30%,#fdba74,#d9632d 55%,transparent 70%);
-  animation:isThinkPulse 1.6s ease-in-out infinite;
+/* Milestone 2 · Epic 3 — Hubly Thinking Experience */
+.is-wrap.is-thinking-wide{max-width:min(1080px,96vw)}
+#is-step-thinking.is-on{display:block}
+.is-thinking-canvas{
+  color:rgba(255,255,255,.92);
+  animation:isThinkCanvasIn .5s ease both;
 }
-@keyframes isThinkPulse{0%,100%{transform:scale(.92);opacity:.75}50%{transform:scale(1.05);opacity:1}}
+@keyframes isThinkCanvasIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.is-think-brand{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.is-think-brand .hubly-mark{height:28px;width:auto;display:block}
+.is-think-emotion{
+  font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:#fdba74;margin:0 0 10px;
+}
+.is-think-grid{
+  display:grid;gap:16px;align-items:start;
+}
+@media(min-width:900px){
+  .is-think-grid{grid-template-columns:minmax(0,1.35fr) minmax(260px,.85fr)}
+}
+.is-think-stages{
+  display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;
+}
+.is-think-stages .stage{
+  flex:1 1 110px;min-width:100px;padding:10px 12px;border-radius:12px;
+  background:rgba(15,23,42,.4);border:1px solid rgba(255,255,255,.14);
+  font-size:12px;font-weight:700;
+}
+.is-think-stages .stage .lbl{display:block;color:rgba(255,255,255,.55);font-size:10px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
+.is-think-stages .stage.is-complete{border-color:rgba(253,186,116,.45)}
+.is-think-stages .stage.is-complete .st{color:#fdba74}
+.is-think-stages .stage.is-in_progress{border-color:#d9632d;box-shadow:0 0 0 1px rgba(217,99,45,.25)}
+.is-think-stages .stage.is-in_progress .st{color:#fff}
+.is-think-timeline{display:flex;flex-direction:column;gap:12px;margin:0 0 14px;max-height:min(48vh,520px);overflow:auto;padding-right:4px}
+.is-think-expert{
+  padding:12px 14px;border-radius:14px;background:rgba(15,23,42,.45);border:1px solid rgba(255,255,255,.14);
+  animation:isUnderstandIn .4s ease both;
+}
+.is-think-expert .who{font-size:12px;font-weight:800;color:#fdba74;margin:0 0 6px}
+.is-think-expert .line{font-size:13px;line-height:1.45;margin:0 0 4px;color:rgba(255,255,255,.9)}
+.is-think-expert .line.is-done::before{content:"✓ ";color:#fdba74;font-weight:800}
+.is-think-collab{
+  margin:0 0 14px;padding:12px 14px;border-radius:14px;
+  background:rgba(217,99,45,.12);border:1px solid rgba(217,99,45,.28);
+}
+.is-think-collab .ck{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;margin:0 0 8px}
+.is-think-collab .beat{font-size:13px;line-height:1.4;margin:0 0 8px}
+.is-think-collab .beat strong{color:#fff}
+.is-think-collab .beat .arrow{display:block;color:rgba(253,186,116,.7);margin:2px 0;font-size:11px}
+.is-aha-card{
+  margin:0 0 12px;padding:14px 14px 12px;border-radius:16px;
+  background:linear-gradient(145deg,rgba(217,99,45,.22),rgba(15,23,42,.5));
+  border:1px solid rgba(253,186,116,.35);
+  animation:isAhaIn .55s ease both;
+}
+@keyframes isAhaIn{from{opacity:0;transform:scale(.98) translateY(6px)}to{opacity:1;transform:none}}
+.is-aha-card .aha-title{font-size:14px;font-weight:800;margin:0 0 6px;color:#fff}
+.is-aha-card .aha-body{font-size:13px;line-height:1.45;margin:0 0 8px}
+.is-aha-card .aha-why{font-size:12px;line-height:1.4;color:rgba(255,255,255,.78);margin:0;font-style:italic}
+.is-think-understanding{
+  padding:14px;border-radius:16px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.14);
+  position:sticky;top:0;
+}
+.is-think-understanding .uk{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;margin:0 0 10px}
+.is-think-understanding .fact{font-size:13px;font-weight:650;margin:0 0 6px;display:flex;gap:8px}
+.is-think-understanding .fact::before{content:"✓";color:#fdba74;font-weight:800}
+.is-think-why{
+  margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12);
+  font-size:13px;line-height:1.45;color:rgba(255,255,255,.88);
+}
+.is-think-why strong{display:block;margin:0 0 6px;color:#fff;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.is-think-transition{
+  margin:14px 0 0;padding:14px 16px;border-radius:14px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(253,186,116,.35);
+  font-size:15px;font-weight:700;line-height:1.4;color:#fff;
+  animation:isAhaIn .5s ease both;
+}
 .is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
 .is-area-panel.hidden{display:none!important}
 .is-area-panel.is-compact .is-area-extra{display:none}
@@ -8186,11 +8257,34 @@ document.addEventListener('DOMContentLoaded', function() {
         </form>
       </div>
 
-      <div class="is-step" data-is="thinking" id="is-step-thinking">
-        <div class="is-kicker">Hubly</div>
-        <div class="is-think-pulse" aria-hidden="true"></div>
-        <h1 class="is-title" id="is-thinking-title">Let me show you what I’m thinking</h1>
-        <p class="is-sub" id="is-thinking-sub">I think I understand your business now. I’m lining up the next moves — not a loading spinner.</p>
+      <div class="is-step" data-is="thinking" id="is-step-thinking" data-thinking-experience="1">
+        <div class="is-thinking-canvas" id="is-thinking-canvas">
+          <div class="is-think-brand">
+            <img class="hubly-mark is-think-brand" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+          </div>
+          <div class="is-think-emotion" id="is-think-emotion">Curiosity</div>
+          <h1 class="is-title" id="is-thinking-title" style="margin:0 0 6px;font-size:clamp(22px,3vw,28px)">Let me show you what I’m thinking</h1>
+          <p class="is-sub" id="is-thinking-sub" style="margin:0 0 14px">Not a loading screen — a window into how Hubly decides.</p>
+          <div class="is-think-stages" id="is-think-stages" aria-label="Thinking stages">
+            <div class="stage is-in_progress" data-stage="research"><span class="lbl">Research</span><span class="st">In Progress</span></div>
+            <div class="stage" data-stage="strategy"><span class="lbl">Strategy</span><span class="st">Waiting</span></div>
+            <div class="stage" data-stage="creative"><span class="lbl">Creative</span><span class="st">Waiting</span></div>
+            <div class="stage" data-stage="review"><span class="lbl">Review</span><span class="st">Pending</span></div>
+          </div>
+          <div class="is-think-grid">
+            <div class="is-think-main">
+              <div class="is-think-timeline" id="is-think-timeline" aria-live="polite"></div>
+              <div class="is-think-collab" id="is-think-collab" hidden></div>
+              <div id="is-aha-cards"></div>
+              <div class="is-think-transition" id="is-think-transition" hidden></div>
+            </div>
+            <aside class="is-think-understanding" id="is-think-understanding">
+              <div class="uk">Understanding</div>
+              <div id="is-think-facts"></div>
+              <div class="is-think-why" id="is-think-why" hidden></div>
+            </aside>
+          </div>
+        </div>
       </div>
 
       <div class="is-step" data-is="vibe" id="is-step-vibe">
@@ -12101,6 +12195,7 @@ const HublyAI={
         blueprintKnowledge:(opts&&opts.blueprintKnowledge)||(opts&&opts.blueprint)||null,
         experts:(opts&&opts.experts)||null,
         debug:!!(opts&&opts.debug),
+        thinking_experience:!!(opts&&(opts.thinking_experience||opts.thinkingExperience)),
         business_id:(opts&&opts.businessId)||(typeof currentBusiness!=='undefined'&&currentBusiness&&currentBusiness.id)||null,
       };
       const headers={'Content-Type':'application/json'};
@@ -15688,18 +15783,332 @@ function isDiscoveryApplyToState(){
   if(pos)S._is.positioning=pos;
   S._is.discoveryComplete=true;
 }
+/* ── Milestone 2 · Epic 3 — Hubly Thinking Experience ── */
+const HUBLY_THINKING = (function(){
+  const THINKING_TRANSITION = "I think I have a really strong direction. Let me start building.";
+  const PACKS = {
+    pressure_washing:{
+      label:'Pressure Washing',comparableCount:412,
+      researchLead:'Homeowners hire pressure washing for curb appeal — they fear damage and no-shows more than price alone.',
+      competitorPattern:'Most competitors compete on price.',
+      strategyPivot:"I'm exploring a premium positioning instead — trust before the quote.",
+      creativeDrafts:['Hero with before/after proof above the fold','Package tiers (driveway / house / full property)','Single Book / Get quote CTA'],
+      criticIssue:'The first version feels generic if we lead with price language.',
+      criticResolve:'Rebuild around reliability and visible proof.',
+      collaboration:[
+        {expert:'research',text:'I think reliability matters most.'},
+        {expert:'strategy',text:"I'm leaning toward convenience instead."},
+        {expert:'critic',text:"I agree with Research. Let's rebuild around reliability."},
+      ],
+      aha:{title:'Aha!',body:'I found that most pressure washing businesses in your area bury their booking button below the fold.',why:"I'm putting yours at the top because I think it'll increase conversions."},
+      brandWhy:"I'm recommending premium positioning because homeowners tend to value trust over the lowest price.",
+      homepageWhy:'Lead with before/after proof, then packages, then one Book CTA — proof before price reduces damage fears.',
+    },
+    photography:{
+      label:'Photography',comparableCount:286,
+      researchLead:'Wedding clients hire photographers for emotion and trust — they compare galleries, then personalities, then price.',
+      competitorPattern:'Many photographers lead with finished galleries only.',
+      strategyPivot:"I'm exploring a premium brand that leads with story and behind-the-scenes trust.",
+      creativeDrafts:['Editorial hero with a quiet luxury feel','Behind-the-scenes strip before packages','Inquiry-first booking for premium clients'],
+      criticIssue:'A stock-looking gallery homepage will feel interchangeable.',
+      criticResolve:'Rebuild around narrative and behind-the-scenes proof.',
+      collaboration:[
+        {expert:'research',text:'Couples buy emotion and trust first.'},
+        {expert:'strategy',text:"I'm leaning toward volume packages."},
+        {expert:'critic',text:'I agree with Research. Premium story beats volume.'},
+      ],
+      aha:{title:'Aha!',body:'Wedding photographers with strong behind-the-scenes photos tend to convert better than those with only finished galleries.',why:"I'm featuring that early so clients feel the experience, not just the portfolio."},
+      brandWhy:"I'm recommending premium positioning because wedding clients choose photographers who feel trustworthy and distinctive — not the cheapest.",
+      homepageWhy:'Lead with narrative and behind-the-scenes, then packages — finished-only galleries read as generic.',
+    },
+    lawn_care:{
+      label:'Lawn Care',comparableCount:358,
+      researchLead:'Homeowners hire lawn care for consistency — they fear missed weeks more than a slightly higher route price.',
+      competitorPattern:'Most lawn services sell one-off cuts.',
+      strategyPivot:"I'm exploring recurring routes as the growth engine.",
+      creativeDrafts:['Route reliability hero','Seasonal packages','Easy pause/resume booking'],
+      criticIssue:'One-off pricing language undersells the real offer.',
+      criticResolve:'Rebuild around recurring reliability.',
+      collaboration:[
+        {expert:'research',text:'Reliability on the route matters most.'},
+        {expert:'strategy',text:"I'm leaning toward one-off promotions."},
+        {expert:'critic',text:'I agree with Research. Recurring routes win.'},
+      ],
+      aha:{title:'Aha!',body:'Recurring lawn routes usually beat one-off jobs for lifetime value.',why:"I'm structuring your offer around a weekly/biweekly route from day one."},
+      brandWhy:"I'm recommending a reliability-first brand because missed weeks kill trust faster than price wins it.",
+      homepageWhy:'Lead with route consistency and seasonal packages, then booking.',
+    },
+    hvac:{
+      label:'HVAC',comparableCount:401,
+      researchLead:'Homeowners hire HVAC for peace of mind — emergency fear and maintenance plans outweigh pure price shopping.',
+      competitorPattern:'Many shops only chase emergency calls.',
+      strategyPivot:"I'm exploring trust + maintenance plans for recurring revenue.",
+      creativeDrafts:['Trust-first hero','Maintenance plan cards','Same-day / next-day booking'],
+      criticIssue:'Emergency-only messaging feels reactive and forgettable.',
+      criticResolve:'Rebuild around planned care and trust.',
+      collaboration:[
+        {expert:'research',text:'Trust and response time matter most.'},
+        {expert:'strategy',text:"I'm leaning toward discount coupons."},
+        {expert:'critic',text:'I agree with Research. Plans beat coupons.'},
+      ],
+      aha:{title:'Aha!',body:'HVAC shops that win on maintenance plans grow steadier than ones that only chase emergencies.',why:"I'm putting a clear maintenance plan path near the top of your site."},
+      brandWhy:"I'm recommending trust-led positioning because homeowners buy peace of mind, not the cheapest call-out.",
+      homepageWhy:'Lead with trust signals and maintenance plans, then emergency booking.',
+    },
+    spa:{
+      label:'Spa',comparableCount:274,
+      researchLead:'Spa clients book for calm and convenience — friction in booking kills rebooking more than price.',
+      competitorPattern:'Many spas hide booking behind phone calls.',
+      strategyPivot:"I'm exploring effortless online booking as the differentiator.",
+      creativeDrafts:['Calm full-bleed hero','Service menu with durations','One-tap book'],
+      criticIssue:'A cluttered menu reads stressful, not spa-like.',
+      criticResolve:'Simplify services and put booking first.',
+      collaboration:[
+        {expert:'research',text:'Booking ease drives rebooking.'},
+        {expert:'strategy',text:"I'm leaning toward heavy promotions."},
+        {expert:'critic',text:'I agree with Research. Ease beats constant discounts.'},
+      ],
+      aha:{title:'Aha!',body:'Spas that make booking effortless keep clients coming back without constant promotion.',why:"I'm putting book-online at the top and keeping the menu calm."},
+      brandWhy:"I'm recommending a calm, booking-first brand because spa clients punish friction.",
+      homepageWhy:'Lead with atmosphere and one-tap booking, then a simple service menu.',
+    },
+    cleaning:{
+      label:'Cleaning',comparableCount:390,
+      researchLead:'Property managers and hosts hire cleaning for reliability on turnovers — missed keys and late cleans burn trust.',
+      competitorPattern:'Many cleaners compete only on hourly rate.',
+      strategyPivot:"I'm exploring reliability + recurring turnover schedules.",
+      creativeDrafts:['Reliability hero','Turnover packages','Recurring schedule booking'],
+      criticIssue:'Hourly-rate-first messaging attracts the wrong clients.',
+      criticResolve:'Rebuild around reliability and recurring property rhythm.',
+      collaboration:[
+        {expert:'research',text:'Reliability on turnovers matters most.'},
+        {expert:'strategy',text:"I'm leaning toward lowest hourly rate."},
+        {expert:'critic',text:'I agree with Research. Reliability wins recurring work.'},
+      ],
+      aha:{title:'Aha!',body:'Cleaning businesses that feel reliable — not cheapest — keep the best recurring work.',why:"I'm leading with consistency and turnover packages, not hourly rates."},
+      brandWhy:"I'm recommending reliability positioning because short-term rental hosts punish no-shows harder than price.",
+      homepageWhy:'Lead with proof of reliability, then turnover packages and recurring booking.',
+    },
+  };
+  function resolveKey(ctx){
+    const raw=String(ctx.industryId||ctx.facts?.industryId?.value||ctx.facts?.industry?.value||ctx.seed||'').toLowerCase();
+    if(/pressure|power\s*wash|soft\s*wash/.test(raw))return'pressure_washing';
+    if(/photo|wedding/.test(raw))return'photography';
+    if(/lawn|landscap|mow/.test(raw))return'lawn_care';
+    if(/hvac|heating|furnace|air\s*condition/.test(raw))return'hvac';
+    if(/\bspa\b|massage|facial|wellness/.test(raw))return'spa';
+    if(/clean|maid|airbnb|turnover|short.?term/.test(raw))return'cleaning';
+    return'pressure_washing';
+  }
+  function uid(p){return p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);}
+  function buildThinkingReasoningObjects(ctx){
+    const key=resolveKey(ctx);const pack=PACKS[key]||PACKS.pressure_washing;
+    const area=ctx.area||ctx.facts?.area?.value||'your area';
+    const positioning=ctx.positioning||ctx.facts?.positioning?.value||'premium';
+    const customer=ctx.customer||ctx.facts?.customer?.value||'residential';
+    const now=new Date().toISOString();
+    return [
+      {reasoningId:uid('r'),decisionKey:'brand_positioning',decision:pack.label+' with '+positioning+' trust-first positioning',explanation:pack.brandWhy,evidence:[pack.researchLead,pack.competitorPattern],confidence:90,expectedOutcome:'higher_trust',expertsInvolved:['research','strategy'],timestamp:now,domain:'brand'},
+      {reasoningId:uid('r'),decisionKey:'homepage_strategy',decision:pack.creativeDrafts[0],explanation:pack.homepageWhy,evidence:pack.creativeDrafts,confidence:88,expectedOutcome:'higher_conversion',expertsInvolved:['strategy','creative_director','critic'],timestamp:now,domain:'website'},
+      {reasoningId:uid('r'),decisionKey:'aha_insight',decision:pack.aha.body,explanation:pack.aha.body+' '+pack.aha.why,evidence:['area='+area,'customer='+customer,pack.competitorPattern],confidence:86,expectedOutcome:'clearer_positioning',expertsInvolved:['research','strategy','creative_director'],timestamp:now,domain:'insight'},
+    ];
+  }
+  function orchestrateThinkingExperience(ctx){
+    const key=resolveKey(ctx);const pack=PACKS[key]||PACKS.pressure_washing;
+    const reasoningObjects=buildThinkingReasoningObjects(ctx);
+    const area=ctx.area||ctx.facts?.area?.value||'your area';
+    const timeline=[
+      {expertId:'research',expertName:'Research Expert',emoji:'🧠',status:'complete',lines:[`Researching ${pack.label.toLowerCase()} businesses${area&&area!=='your area'?` around ${area}`:''}…`,`Found ${pack.comparableCount} comparable businesses.`,pack.researchLead]},
+      {expertId:'strategy',expertName:'Strategy Expert',emoji:'📈',status:'complete',lines:[pack.competitorPattern,pack.strategyPivot]},
+      {expertId:'creative_director',expertName:'Creative Director',emoji:'🎨',status:'complete',lines:['Drafting homepage concepts…',`Testing: ${pack.creativeDrafts.join(' · ')}`]},
+      {expertId:'critic',expertName:'Critic',emoji:'🧐',status:'complete',lines:[pack.criticIssue,"I'm asking Creative Director to try again.",pack.criticResolve]},
+    ];
+    const ahaCards=[
+      {kind:'aha',title:'💡 Aha!',body:pack.aha.body,why:pack.aha.why,decisionKey:'aha_insight',fromReasoning:true,reasoningId:reasoningObjects[2]?.reasoningId},
+      {kind:'why',title:'I found a stronger positioning',body:reasoningObjects[0].explanation,why:reasoningObjects[0].decision,decisionKey:'brand_positioning',fromReasoning:true,reasoningId:reasoningObjects[0].reasoningId},
+    ];
+    const collaboration=pack.collaboration.map(c=>({expertId:c.expert,expertName:c.expert==='research'?'Research':c.expert==='strategy'?'Strategy':c.expert==='critic'?'Critic':c.expert,text:c.text}));
+    const understanding=[];
+    const facts=ctx.facts||{};
+    ['industry','area','operations','positioning','customer','goal','stage'].forEach(k=>{
+      const f=facts[k];if(f&&f.label&&(f.confidence==null||f.confidence>=55))understanding.push({label:f.label,key:k});
+    });
+    if(!understanding.length)understanding.push({label:pack.label,key:'industry'});
+    const primaryWhy={decision:reasoningObjects[0].decision,explanation:reasoningObjects[0].explanation,decisionKey:'brand_positioning'};
+    const signature=[key,pack.comparableCount,pack.researchLead.slice(0,40),pack.aha.body.slice(0,40)].join('::');
+    return{
+      version:'1.0.0',industryKey:key,industryLabel:pack.label,
+      stages:[{id:'research',label:'Research',status:'complete'},{id:'strategy',label:'Strategy',status:'complete'},{id:'creative',label:'Creative',status:'complete'},{id:'review',label:'Review',status:'complete'}],
+      timeline,ahaCards,collaboration,understanding,
+      discoveryMoments:[
+        {kind:'discovery',text:'I noticed something interesting…',fromReasoning:true},
+        {kind:'discovery',text:"I'm changing direction.",fromReasoning:true},
+        {kind:'discovery',text:"I don't think we should copy everyone else.",fromReasoning:true},
+        {kind:'discovery',text:pack.strategyPivot,fromReasoning:true},
+      ],
+      reasoningObjects,primaryWhy,emotionArc:['curiosity','discovery','confidence','excitement'],
+      transition:THINKING_TRANSITION,signature,fakeDelayMs:0,source:'hubly_brain_reasoning',
+    };
+  }
+  return{THINKING_TRANSITION,orchestrateThinkingExperience,buildThinkingReasoningObjects,PACKS};
+})();
+
+function isThinkingSetEmotion(label){
+  const el=document.getElementById('is-think-emotion');
+  if(el)el.textContent=label;
+}
+function isThinkingRenderStages(activeIndex){
+  const labels={complete:'Complete',in_progress:'In Progress',waiting:'Waiting',pending:'Pending'};
+  const stages=['research','strategy','creative','review'];
+  stages.forEach((id,i)=>{
+    const el=document.querySelector(`#is-think-stages [data-stage="${id}"]`);
+    if(!el)return;
+    let status='pending';
+    if(i<activeIndex)status='complete';
+    else if(i===activeIndex)status='in_progress';
+    else if(i===activeIndex+1)status='waiting';
+    el.className='stage is-'+status;
+    const st=el.querySelector('.st');
+    if(st)st.textContent=labels[status]||status;
+  });
+}
+function isThinkingRenderUnderstanding(facts,why){
+  const box=document.getElementById('is-think-facts');
+  if(box)box.innerHTML=(facts||[]).map(f=>`<div class="fact">${escPeHtml(f.label)}</div>`).join('');
+  const whyEl=document.getElementById('is-think-why');
+  if(whyEl&&why?.explanation){
+    whyEl.hidden=false;
+    whyEl.innerHTML=`<strong>Why this direction</strong>${escPeHtml(why.explanation)}`;
+  }
+}
+function isThinkingAppendExpert(entry){
+  const log=document.getElementById('is-think-timeline');
+  if(!log||!entry)return;
+  const lines=(entry.lines||[]).map((l,i)=>`<div class="line${i? ' is-done':''}">${escPeHtml(l)}</div>`).join('');
+  const div=document.createElement('div');
+  div.className='is-think-expert';
+  div.innerHTML=`<div class="who">${escPeHtml((entry.emoji||'')+' '+entry.expertName)}</div>${lines}`;
+  log.appendChild(div);
+  log.scrollTop=log.scrollHeight;
+}
+function isThinkingRenderCollab(beats){
+  const el=document.getElementById('is-think-collab');
+  if(!el||!(beats||[]).length){if(el)el.hidden=true;return;}
+  el.hidden=false;
+  el.innerHTML=`<div class="ck">Experts collaborating</div>`+beats.map((b,i)=>{
+    const arrow=i<beats.length-1?'<span class="arrow">↓</span>':'';
+    return `<div class="beat"><strong>${escPeHtml(b.expertName)}</strong> — ${escPeHtml(b.text)}${arrow}</div>`;
+  }).join('');
+}
+function isThinkingAppendAha(card){
+  const wrap=document.getElementById('is-aha-cards');
+  if(!wrap||!card)return;
+  const div=document.createElement('div');
+  div.className='is-aha-card';
+  div.setAttribute('data-decision-key',card.decisionKey||'aha_insight');
+  div.innerHTML=`<div class="aha-title">${escPeHtml(card.title||'💡 Aha!')}</div><p class="aha-body">${escPeHtml(card.body||'')}</p><p class="aha-why">${escPeHtml(card.why||'')}</p>`;
+  wrap.appendChild(div);
+}
+function isThinkingFrame(){
+  return new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+}
+async function isRunThinkingExperience(seed){
+  document.querySelector('#is-shell .is-wrap')?.classList.add('is-thinking-wide');
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-discovery-wide');
+  const timelineEl=document.getElementById('is-think-timeline');
+  const ahaWrap=document.getElementById('is-aha-cards');
+  const trans=document.getElementById('is-think-transition');
+  const collab=document.getElementById('is-think-collab');
+  if(timelineEl)timelineEl.innerHTML='';
+  if(ahaWrap)ahaWrap.innerHTML='';
+  if(trans){trans.hidden=true;trans.textContent='';}
+  if(collab){collab.hidden=true;collab.innerHTML='';}
+
+  const d=S._is?.discovery||{};
+  const ctx={
+    seed:seed||S._is?.seed||'',
+    industryId:d.facts?.industryId?.value||d.facts?.industry?.value,
+    area:d.facts?.area?.value||S.city,
+    positioning:d.facts?.positioning?.value||S._is?.positioning,
+    customer:d.facts?.customer?.value,
+    facts:d.facts||{},
+    moments:d.moments||[],
+  };
+
+  // Orchestrate immediately from discovery + industry reasoning (no spinner, no fake delay).
+  let experience=HUBLY_THINKING.orchestrateThinkingExperience(ctx);
+
+  // Best-effort Brain enrichment — if fast, merge; never block on artificial waits.
+  let brainPromise=null;
+  try{
+    if(typeof HublyAI!=='undefined'&&HublyAI.think){
+      brainPromise=HublyAI.think(seed||ctx.seed||'Build this business',{
+        intent:'build_business',
+        thinking_experience:true,
+        debug:false,
+        memory:typeof HublyAI.buildBusinessMemory==='function'?HublyAI.buildBusinessMemory():null,
+      });
+    }
+  }catch(e){}
+
+  isThinkingSetEmotion('Curiosity');
+  isThinkingRenderStages(0);
+  isThinkingRenderUnderstanding(experience.understanding,null);
+  await isThinkingFrame();
+
+  // Reveal expert timeline as real reasoning — paced by frames, not fake sleeps.
+  for(let i=0;i<experience.timeline.length;i++){
+    isThinkingRenderStages(i);
+    isThinkingSetEmotion((experience.emotionArc||[])[Math.min(i,3)]||'Discovery');
+    isThinkingAppendExpert(experience.timeline[i]);
+    if(i===1&&experience.discoveryMoments?.[0]){
+      /* interrupt moment — visible in timeline via strategy pivot already */
+    }
+    await isThinkingFrame();
+  }
+
+  isThinkingRenderStages(4);
+  isThinkingSetEmotion('Confidence');
+  isThinkingRenderCollab(experience.collaboration);
+  await isThinkingFrame();
+
+  for(const card of (experience.ahaCards||[])){
+    isThinkingAppendAha(card);
+    await isThinkingFrame();
+  }
+  isThinkingRenderUnderstanding(experience.understanding,experience.primaryWhy);
+  isThinkingSetEmotion('Excitement');
+
+  // Merge Brain reasoningObjects if they arrived (no waiting beyond what's already done).
+  if(brainPromise){
+    try{
+      const raced=await Promise.race([
+        brainPromise.then(r=>({ok:true,r})),
+        Promise.resolve({ok:false}),
+      ]);
+      const brain=raced.ok?raced.r:null;
+      const objs=brain?.thinkingExperience?.reasoningObjects||brain?.reasoningObjects||[];
+      if(objs.length){
+        S._is.thinkingReasoningObjects=objs;
+        experience.brainEnriched=true;
+        experience.source='hubly_brain';
+      }
+    }catch(e){}
+  }
+
+  S._is.thinkingExperience=experience;
+  if(trans){
+    trans.hidden=false;
+    trans.textContent=experience.transition||HUBLY_THINKING.THINKING_TRANSITION;
+  }
+  await isThinkingFrame();
+  return experience;
+}
 async function isDiscoveryCompleteToThinking(){
   isDiscoveryApplyToState();
   isLockTalkAnswers();
   const step=document.getElementById('is-step-talk');
   step?.classList.remove('is-discovery');
-  isShowStep('thinking');
-  const title=document.getElementById('is-thinking-title');
-  const sub=document.getElementById('is-thinking-sub');
-  if(title)title.textContent="Let me show you what I'm thinking";
-  if(sub)sub.textContent="I think I understand your business now. Give me a moment — I'm deciding what your business needs first.";
-  await isSleep(1600);
-  // Epic 3 will own the full Thinking Experience; for now hand off into vibe → build.
   isTalkClearChips();
   const parts=[];
   if(S._is?.ownerName)parts.push(`My name is ${S._is.ownerName}`);
@@ -15719,7 +16128,13 @@ async function isDiscoveryCompleteToThinking(){
   if(S._cd)S._cd.whoText=seed;
   const mobileTrades=['detailing','windows','pressure_washing','landscaping','cleaning','hvac'];
   isSetTravel(mobileTrades.includes(normalizeBlueprintId(S.businessType)));
+
+  isShowStep('thinking');
+  // Epic 3 — visible intelligence; fakeDelayMs = 0 (no artificial isSleep).
+  await isRunThinkingExperience(seed);
+
   isRenderVibe();
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-thinking-wide');
   isShowStep('vibe');
 }
 function isTalkBoot(){

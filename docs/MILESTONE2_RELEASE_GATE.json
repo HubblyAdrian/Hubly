@@ -1,12 +1,12 @@
 {
   "milestone": "2",
   "name": "The Hubly Experience",
-  "passed": 3,
+  "passed": 4,
   "total": 13,
-  "unlocked": 3,
-  "percent": 23,
+  "unlocked": 4,
+  "percent": 31,
   "ready": false,
-  "checkedAt": "2026-07-24T06:39:54.873Z",
+  "checkedAt": "2026-07-24T06:51:44.320Z",
   "epics": [
     {
       "n": 0,
@@ -29,8 +29,8 @@
     {
       "n": 3,
       "title": "Hubly Thinking Experience",
-      "status": "locked",
-      "script": null
+      "status": "pass",
+      "script": "scripts/check-m2-epic3.mjs"
     },
     {
       "n": 4,
