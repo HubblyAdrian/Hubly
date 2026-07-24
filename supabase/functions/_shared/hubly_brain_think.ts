@@ -35,6 +35,10 @@ import {
   type MediaIntelligencePlan,
 } from "./hubly_brain_media_intelligence.ts";
 import {
+  buildChatOsSession,
+  type ChatOsSession,
+} from "./hubly_brain_chat_os.ts";
+import {
   listExpertCapabilities,
   listExperts,
   runExpert,
@@ -257,6 +261,8 @@ export type HublyThinkResult = {
   automationIntelligence?: AutomationIntelligencePlan | null;
   /** Milestone 1.5 · Epic 10 — Media Intelligence plan (not published). */
   mediaIntelligence?: MediaIntelligencePlan | null;
+  /** Milestone 1.5 · Epic 11 — Hubly Chat OS session (orchestration; not apply). */
+  chatOs?: ChatOsSession | null;
   /** Section 12 — Mission Control flight recorder id (AI Replay). */
   missionControlExecutionId?: string | null;
   flightRecorder?: HublyFlightRecorder | null;
@@ -501,6 +507,21 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       confidence: ed.confidence,
       questions: ed.questions,
     };
+    const chatOsFast = buildChatOsSession({
+      businessId: businessId || `biz_${Date.now().toString(36)}`,
+      request: String(req.request || ""),
+      response: ed.ownerResponse,
+      channel: (req as { channel?: "typing" | "voice" | "phone" | "receptionist" }).channel || "typing",
+      ownerName: (memory as { name?: string }).name || null,
+      industry: (memory as { industry?: string }).industry || null,
+      conversationIntelligence,
+      memoriesLoaded: [
+        "conversation_intelligence",
+        "business_memory",
+        "workspace_memory",
+        "business_dna",
+      ],
+    });
     return {
       ok: true,
       intent: "conversation_intelligence",
@@ -553,6 +574,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
       conversationIntelligenceRetrieval: retrieval,
       registryRouting,
+      chatOs: chatOsFast,
       timeline: [{
         expertId: "experience_director",
         ms: Date.now() - started,
@@ -1007,6 +1029,18 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
         howAssembled: "Fast-path: Experience Director alone produced the customer response.",
       },
     };
+    const chatOsFast = buildChatOsSession({
+      businessId: businessId || `biz_${Date.now().toString(36)}`,
+      request: String(req.request || ""),
+      response: ed.ownerResponse,
+      channel: (req as { channel?: "typing" | "voice" | "phone" | "receptionist" }).channel || "typing",
+      ownerName: (memory as { name?: string }).name || null,
+      industry: (memory as { industry?: string }).industry || null,
+      conversationIntelligence,
+      memoriesLoaded: intent === "weather"
+        ? ["business_memory", "conversation_intelligence"]
+        : ["workspace_memory", "conversation_intelligence"],
+    });
     return {
       ok: true,
       intent,
@@ -1049,6 +1083,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
       conversationIntelligenceRetrieval: null,
       registryRouting,
+      chatOs: chatOsFast,
       timeline: [{ expertId: "experience_director", ms: Date.now() - started, confidence: ed.confidence, summary: ed.ownerResponse }],
       experienceDirector: {
         reviewedBy: "experience_director",
@@ -1494,6 +1529,34 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       missionControlReplayId: null,
     })
     : null;
+  // Milestone 1.5 · Epic 11 — Hubly Chat OS (one conversation over the whole business)
+  const chatOs = buildChatOsSession({
+    businessId: businessId || `biz_${Date.now().toString(36)}`,
+    request: String(req.request || ""),
+    response,
+    channel: (req as { channel?: "typing" | "voice" | "phone" | "receptionist" }).channel || "typing",
+    ownerName: (memory as { name?: string }).name || null,
+    industry: memory.industry || memory.business?.industry ||
+      dna.knowledgePack?.industryProfile?.industryName ||
+      null,
+    conversationIntelligence,
+    builderIntent,
+    changePlan,
+    preview,
+    creativeSession,
+    bookingIntelligence,
+    workspaceIntelligence,
+    automationIntelligence,
+    mediaIntelligence,
+    memoriesLoaded: [
+      "business_memory",
+      "business_dna",
+      "workspace_memory",
+      "conversation_memory",
+      "conversation_intelligence",
+    ],
+    missionControlReplayId: null,
+  });
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ""),
     intent,
@@ -1738,6 +1801,25 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
         waitingFor: mediaIntelligence.waitingFor,
       }
       : null,
+    chatOs: {
+      id: chatOs.id,
+      label: chatOs.label,
+      channel: chatOs.channel,
+      voiceReady: true as const,
+      routeCount: chatOs.routes.length,
+      routes: [...chatOs.routes],
+      builderCount: chatOs.buildersInvoked.length,
+      toolCount: chatOs.toolsUsed.length,
+      memoryCount: chatOs.memoriesRead.length,
+      activeProject: chatOs.activeProject?.name ?? null,
+      canvasSurface: chatOs.canvas.activeSurface,
+      proactiveCount: chatOs.proactiveStarters.length,
+      singlePersonality: true as const,
+      requiresApproval: true as const,
+      applied: false as const,
+      executed: false as const,
+      waitingFor: chatOs.waitingFor,
+    },
   });
 
   // Attach replay ids
@@ -1769,6 +1851,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   }
   if (mediaIntelligence && flightRecorder.executionId) {
     mediaIntelligence.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (flightRecorder.executionId) {
+    chatOs.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -1814,6 +1899,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     workspaceIntelligence,
     automationIntelligence,
     mediaIntelligence,
+    chatOs,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     timeline,

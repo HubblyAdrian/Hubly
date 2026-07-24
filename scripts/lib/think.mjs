@@ -47,6 +47,7 @@ import { buildBookingIntelligence } from './booking-intelligence.mjs';
 import { buildWorkspaceIntelligence } from './workspace-intelligence.mjs';
 import { buildAutomationIntelligence } from './automation-intelligence.mjs';
 import { buildMediaIntelligence } from './media-intelligence.mjs';
+import { buildChatOsSession } from './chat-os.mjs';
 import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
@@ -209,6 +210,76 @@ export async function think(req) {
       { businessId, phase: 'retrieval', expertsRun: ['experience_director'] },
     );
     if (businessId) persistConversationIntelligenceLocal(businessId, conversationIntelligence);
+    const flightRecorder = recordFlightRecorder({
+      request: String(req.request || ''),
+      intent: 'conversation_intelligence',
+      businessId,
+      startedAt: new Date(started).toISOString(),
+      latencyMs: Date.now() - started,
+      ok: true,
+      memoriesLoaded: ['conversation_intelligence', 'business_memory'],
+      dnaFactsUsed: [],
+      expertsExecuted: [{
+        expertId: 'experience_director',
+        status: 'ok',
+        confidence: ed.confidence,
+        ms: Date.now() - started,
+        summary: String(ed.ownerResponse || '').slice(0, 160),
+      }],
+      reasoningObjects: [],
+      decisionObjects: [],
+      capabilitiesSelected: [],
+      knowledgeAccessed: [],
+      finalResponse: ed.ownerResponse,
+      memoryWrites: [{ system: 'conversation_intelligence', summary: 'retrieval / resume' }],
+      confidence: ed.confidence,
+      decisionScore: null,
+      decisionAction: 'conversation_intelligence',
+      builderIntent: null,
+      chatOs: null,
+    });
+    const chatOsFast = buildChatOsSession({
+      businessId: businessId || `biz_${Date.now().toString(36)}`,
+      request: String(req.request || ''),
+      response: ed.ownerResponse,
+      channel: req.channel || 'typing',
+      ownerName: req.memory?.name || null,
+      industry: req.memory?.industry || null,
+      conversationIntelligence,
+      memoriesLoaded: ['conversation_intelligence', 'business_memory', 'workspace_memory', 'business_dna'],
+      missionControlReplayId: flightRecorder.executionId,
+    });
+    if (flightRecorder) {
+      flightRecorder.chatOs = {
+        id: chatOsFast.id,
+        label: chatOsFast.label,
+        channel: chatOsFast.channel,
+        voiceReady: true,
+        routeCount: chatOsFast.routes.length,
+        routes: [...chatOsFast.routes],
+        builderCount: chatOsFast.buildersInvoked.length,
+        toolCount: chatOsFast.toolsUsed.length,
+        memoryCount: chatOsFast.memoriesRead.length,
+        activeProject: chatOsFast.activeProject?.name ?? null,
+        canvasSurface: chatOsFast.canvas.activeSurface,
+        proactiveCount: chatOsFast.proactiveStarters.length,
+        singlePersonality: true,
+        requiresApproval: true,
+        applied: false,
+        executed: false,
+        waitingFor: chatOsFast.waitingFor,
+      };
+      flightRecorder.timeline = [
+        ...(flightRecorder.timeline || []),
+        {
+          at: new Date().toISOString(),
+          t: (flightRecorder.timeline?.at(-1)?.t || 0) + 12,
+          phase: 'chat_os',
+          detail: `Hubly Chat OS: ${chatOsFast.routes.length} route(s)`,
+          meta: { ...flightRecorder.chatOs },
+        },
+      ];
+    }
     return {
       ok: true,
       intent: 'conversation_intelligence',
@@ -223,6 +294,9 @@ export async function think(req) {
       conversationIntelligence,
       conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
       conversationIntelligenceRetrieval: retrieval,
+      chatOs: chatOsFast,
+      missionControlExecutionId: flightRecorder.executionId,
+      flightRecorder,
       experienceDirector: {
         reviewedBy: 'experience_director',
         actions: [...(ed.actions || []), 'answered_from_conversation_intelligence'],
@@ -300,7 +374,52 @@ export async function think(req) {
       decisionScore: null,
       decisionAction: 'workspace_preferences',
       builderIntent: null,
+      chatOs: null,
     });
+    const chatOsFast = buildChatOsSession({
+      businessId: businessId || `biz_${Date.now().toString(36)}`,
+      request: String(req.request || ''),
+      response: ed.ownerResponse,
+      channel: req.channel || 'typing',
+      ownerName: req.memory?.name || null,
+      industry: req.memory?.industry || null,
+      conversationIntelligence,
+      memoriesLoaded: ['business_memory', 'workspace_memory', 'conversation_intelligence'],
+      missionControlReplayId: flightRecorder.executionId,
+    });
+    // Re-record summary fields onto a lightweight flight update via second record is heavy;
+    // attach chatOs onto the existing flight object for Mission Control.
+    if (flightRecorder) {
+      flightRecorder.chatOs = {
+        id: chatOsFast.id,
+        label: chatOsFast.label,
+        channel: chatOsFast.channel,
+        voiceReady: true,
+        routeCount: chatOsFast.routes.length,
+        routes: [...chatOsFast.routes],
+        builderCount: chatOsFast.buildersInvoked.length,
+        toolCount: chatOsFast.toolsUsed.length,
+        memoryCount: chatOsFast.memoriesRead.length,
+        activeProject: chatOsFast.activeProject?.name ?? null,
+        canvasSurface: chatOsFast.canvas.activeSurface,
+        proactiveCount: chatOsFast.proactiveStarters.length,
+        singlePersonality: true,
+        requiresApproval: true,
+        applied: false,
+        executed: false,
+        waitingFor: chatOsFast.waitingFor,
+      };
+      flightRecorder.timeline = [
+        ...(flightRecorder.timeline || []),
+        {
+          at: new Date().toISOString(),
+          t: (flightRecorder.timeline?.at(-1)?.t || 0) + 12,
+          phase: 'chat_os',
+          detail: `Hubly Chat OS: ${chatOsFast.routes.length} route(s)`,
+          meta: { ...flightRecorder.chatOs },
+        },
+      ];
+    }
     return {
       ok: true,
       intent,
@@ -317,6 +436,7 @@ export async function think(req) {
       conversationIntelligence,
       registryRouting,
       builderIntent: null,
+      chatOs: chatOsFast,
       missionControlExecutionId: flightRecorder.executionId,
       flightRecorder,
       experienceDirector: {
@@ -792,6 +912,34 @@ export async function think(req) {
         missionControlReplayId: null,
       })
       : null;
+  const chatOs = buildChatOsSession({
+    businessId: businessId || `biz_${Date.now().toString(36)}`,
+    request: String(req.request || ''),
+    response,
+    channel: req.channel || 'typing',
+    ownerName: req.memory?.name || null,
+    industry:
+      req.memory?.industry ||
+      req.memory?.business?.industry ||
+      dna?.knowledgePack?.industryProfile?.industryName ||
+      null,
+    conversationIntelligence,
+    builderIntent,
+    changePlan,
+    preview,
+    creativeSession,
+    bookingIntelligence,
+    workspaceIntelligence,
+    automationIntelligence,
+    mediaIntelligence,
+    memoriesLoaded: [
+      'business_memory',
+      'business_dna',
+      'workspace_memory',
+      'conversation_intelligence',
+    ],
+    missionControlReplayId: null,
+  });
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ''),
     intent,
@@ -1026,6 +1174,25 @@ export async function think(req) {
         waitingFor: mediaIntelligence.waitingFor,
       }
       : null,
+    chatOs: {
+      id: chatOs.id,
+      label: chatOs.label,
+      channel: chatOs.channel,
+      voiceReady: true,
+      routeCount: chatOs.routes.length,
+      routes: [...chatOs.routes],
+      builderCount: chatOs.buildersInvoked.length,
+      toolCount: chatOs.toolsUsed.length,
+      memoryCount: chatOs.memoriesRead.length,
+      activeProject: chatOs.activeProject?.name ?? null,
+      canvasSurface: chatOs.canvas.activeSurface,
+      proactiveCount: chatOs.proactiveStarters.length,
+      singlePersonality: true,
+      requiresApproval: true,
+      applied: false,
+      executed: false,
+      waitingFor: chatOs.waitingFor,
+    },
   });
 
   if (changePlan && flightRecorder.executionId) {
@@ -1056,6 +1223,9 @@ export async function think(req) {
   }
   if (mediaIntelligence && flightRecorder.executionId) {
     mediaIntelligence.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (flightRecorder.executionId) {
+    chatOs.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -1092,6 +1262,7 @@ export async function think(req) {
     workspaceIntelligence,
     automationIntelligence,
     mediaIntelligence,
+    chatOs,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     experienceDirector: {

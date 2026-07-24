@@ -1,10 +1,10 @@
 # Builder Engine Specification
 
-**Version:** 1.10.0  
-**Status:** Milestone 1.5 — Epic 1–9 ✅ · Epic 10 ✅ (Media Intelligence Engine) · Epic 11+ locked  
+**Version:** 1.11.0  
+**Status:** Milestone 1.5 — Epic 1–10 ✅ · Epic 11 ✅ (Hubly Chat OS) · Epic 12 locked  
 **Target:** Milestone 1.5 (12 epics · one release gate each)
 
-Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6–9: Business / Booking / Workspace / Automation Intelligence. Epic 10 is **Media Intelligence Engine** — uploads understood (not just stored), multi-surface publishing proposals, Portfolio Health, missing content, and Business Memory Through Media. No publish until approval. Apply / Chat OS are later. Do not implement them ahead of Founder Approval.
+Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6–10: Business / Booking / Workspace / Automation / Media Intelligence. Epic 11 is **Hubly Chat OS** — one conversation, one personality, Conversation Canvas; every builder and trusted tool routes through one thread. Apply remains Epic 12. Do not implement apply ahead of Founder Approval.
 
 ## Purpose
 
@@ -29,6 +29,7 @@ Builder modules register via Platform Extensibility (`builder.*` Feature Manifes
 - Workspace Intelligence Builder (`workspace_builder`) — adapts around how the owner works  
 - Automation Intelligence Builder (`automation`) — conversation → workflow, simulation, discovery  
 - Media Intelligence Engine (`portfolio_builder`) — understand + organize + multi-surface media  
+- Hubly Chat OS — single conversation OS (Ask Hubly); Conversation Canvas  
 - Package Builder  
 
 ## Business Builder (Epic 6)
@@ -87,6 +88,22 @@ Builder modules register via Platform Extensibility (`builder.*` Feature Manifes
 7. **Business Memory Through Media** — visual timeline of the business story  
 8. Mission Control tracks media lifecycle  
 9. Still requires Collaboration/Approval — **no publish / no apply**  
+
+## Hubly Chat OS (Epic 11)
+
+Not support. Not Copilot. Not “Website AI / Booking AI / CRM AI.”
+
+1. **Ask Hubly** — single entry on every screen  
+2. One personality (`separateAIs: false`) — one memory, one business partner  
+3. Routes every builder (Business, Booking, Workspace, Automation, Media) through one thread  
+4. Trusted external tools (weather, Stripe, calendar, CRM, documents) when appropriate  
+5. Conversation Intelligence keeps multi-turn projects; owners return weeks later  
+6. Proactive starters open with business ideas (not notification dumps)  
+7. Coaching lives in the same conversation  
+8. **Conversation Canvas** — talk left · live surface right (preview, booking sim, automation, portfolio, workspace, revenue, calendar)  
+9. Voice-ready architecture: typing | voice | phone | receptionist share one session model  
+10. Mission Control records Chat OS orchestration  
+11. Still **no apply** — Epic 12 owns Validation & Apply  
 
 ## Change Plans
 

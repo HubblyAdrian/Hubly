@@ -163,10 +163,15 @@ const snap = getMissionControlSnapshot();
 check("MC displays Workspace Intelligence", (snap.builderActions?.workspaceIntelligence || []).length >= 1);
 check(
   "MC epic is Workspace Intelligence",
-  /Workspace Intelligence|Automation Intelligence|Media Intelligence|Epic [89]|Epic 10/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Workspace Intelligence|Automation Intelligence|Media Intelligence|Chat OS|Hubly Chat|Epic [89]|Epic 10|Epic 11/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check("MC still blocks apply", snap.builderActions?.available === false);
-check("MC recent is workspace intelligence", (snap.builderActions?.recent || [])[0]?.status === "workspace_intelligence");
+check(
+  "MC recent surfaces intelligence",
+  ["workspace_intelligence", "automation_intelligence", "media_intelligence", "chat_os"].includes(
+    (snap.builderActions?.recent || [])[0]?.status,
+  ),
+);
 
 const flight = lastThink?.missionControlExecutionId
   ? getFlightRecorder(lastThink.missionControlExecutionId)

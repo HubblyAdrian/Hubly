@@ -286,7 +286,7 @@ check("MC builderActions.available === false", snap.builderActions?.available ==
 check("MC displays Collaborations", (snap.builderActions?.collaborations || []).length >= 1);
 check(
   "MC epic mentions Collaboration or Version",
-  /Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Epic [4-9]|Epic 10/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Chat OS|Hubly Chat|Epic [4-9]|Epic 10|Epic 11/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check("MC still blocks apply/execute", /No apply|No execute/i.test(snap.builderActions?.note || "") || snap.builderActions?.available === false);
 check("Collaboration loop exists", proofDemos.filter((d) => d.collaboration?.iterations >= 2 || d.id === "alternatives").length >= 1);

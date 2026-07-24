@@ -198,6 +198,7 @@ import { HublyBookingIntelligence } from "./hubly_brain_booking_intelligence.ts"
 import { HublyWorkspaceIntelligence } from "./hubly_brain_workspace_intelligence.ts";
 import { HublyAutomationIntelligence } from "./hubly_brain_automation_intelligence.ts";
 import { HublyMediaIntelligence } from "./hubly_brain_media_intelligence.ts";
+import { HublyChatOs } from "./hubly_brain_chat_os.ts";
 import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
 import {
   logBrainExecution,
@@ -292,6 +293,7 @@ export {
   HublyWorkspaceIntelligence,
   HublyAutomationIntelligence,
   HublyMediaIntelligence,
+  HublyChatOs,
   HublyConfidencePolicy,
   HublyBrainExecutionLog,
   HublyExperienceDirector,

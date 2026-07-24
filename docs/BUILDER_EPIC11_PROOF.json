@@ -1,0 +1,391 @@
+{
+  "milestone": "1.5",
+  "epic": 11,
+  "name": "Hubly Chat OS",
+  "title": "Hubly Chat OS",
+  "passed": true,
+  "checkedAt": "2026-07-24T04:22:42.401Z",
+  "proofs": {
+    "chatOsExists": true,
+    "askHublyCta": "Ask Hubly",
+    "singlePersonality": true,
+    "everyBuilderViaConversation": true,
+    "externalToolsRouted": true,
+    "multiTurnContinuity": true,
+    "projectsPersist": true,
+    "proactiveStarters": true,
+    "businessCoachingIntegrated": true,
+    "conversationCanvas": true,
+    "voiceReadyArchitecture": true,
+    "missionControlOrchestration": true,
+    "noSeparatePersonalities": true,
+    "noApply": true,
+    "transcript": [
+      {
+        "id": "premium",
+        "owner": "Make my business feel premium.",
+        "hubly": "Research on auto detailing: need + trust I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "routes": [
+          "business_builder"
+        ],
+        "builders": [
+          "Business Builder",
+          "Change Plan"
+        ],
+        "tools": [],
+        "project": "Website Redesign",
+        "canvas": "website_preview"
+      },
+      {
+        "id": "weather",
+        "owner": "Show me tomorrow's weather.",
+        "hubly": "I can check the weather for your service area once location services are connected — for now, tell me your city and I'll keep it in Business Memory.",
+        "routes": [
+          "calendar",
+          "weather"
+        ],
+        "builders": [],
+        "tools": [
+          "weather"
+        ],
+        "project": "General",
+        "canvas": "calendar"
+      },
+      {
+        "id": "photos",
+        "owner": "Upload these photos.",
+        "hubly": "Research on auto detailing: need + trust I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "routes": [
+          "media_intelligence"
+        ],
+        "builders": [
+          "Business Builder",
+          "Media Intelligence Engine",
+          "Change Plan"
+        ],
+        "tools": [],
+        "project": "Marketing",
+        "canvas": "portfolio_gallery"
+      },
+      {
+        "id": "memberships",
+        "owner": "Build memberships.",
+        "hubly": "Research on auto detailing: need + trust I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition. Nice work — this is a real milestone.",
+        "routes": [
+          "business_builder"
+        ],
+        "builders": [
+          "Business Builder",
+          "Automation Intelligence Builder",
+          "Change Plan"
+        ],
+        "tools": [],
+        "project": "Memberships",
+        "canvas": "automation_flow"
+      },
+      {
+        "id": "quotes",
+        "owner": "Which quotes need follow-up?",
+        "hubly": "Research on auto detailing: need + trust I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "routes": [
+          "crm"
+        ],
+        "builders": [
+          "Business Builder",
+          "Automation Intelligence Builder",
+          "Change Plan"
+        ],
+        "tools": [
+          "crm_quotes"
+        ],
+        "project": "General",
+        "canvas": "automation_flow"
+      },
+      {
+        "id": "business",
+        "owner": "How's business doing?",
+        "hubly": "Research on auto detailing: need + trust I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "routes": [
+          "coaching"
+        ],
+        "builders": [
+          "Business Builder",
+          "Change Plan"
+        ],
+        "tools": [],
+        "project": "Business Growth",
+        "canvas": "website_preview"
+      },
+      {
+        "id": "continue",
+        "owner": "Continue where we left off.",
+        "hubly": "I don't have an active project stored yet — what should we focus on?",
+        "routes": [
+          "continue_project"
+        ],
+        "builders": [],
+        "tools": [],
+        "project": "General",
+        "canvas": "recommendations"
+      },
+      {
+        "id": "partner",
+        "owner": "What would you do if this were your business?",
+        "hubly": "Research on auto detailing: need + trust I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
+        "routes": [
+          "coaching"
+        ],
+        "builders": [
+          "Business Builder",
+          "Change Plan"
+        ],
+        "tools": [],
+        "project": "General",
+        "canvas": "website_preview"
+      }
+    ],
+    "demos": {
+      "premium": {
+        "request": "Make my business feel premium.",
+        "routes": [
+          "business_builder"
+        ],
+        "builders": [
+          "Business Builder",
+          "Change Plan"
+        ],
+        "tools": [],
+        "project": "Website Redesign",
+        "canvas": "website_preview",
+        "memories": [
+          "business_memory",
+          "business_dna",
+          "workspace_memory",
+          "conversation_intelligence"
+        ]
+      },
+      "weather": {
+        "request": "Show me tomorrow's weather.",
+        "routes": [
+          "calendar",
+          "weather"
+        ],
+        "builders": [],
+        "tools": [
+          "weather"
+        ],
+        "project": "General",
+        "canvas": "calendar",
+        "memories": [
+          "business_memory",
+          "workspace_memory",
+          "conversation_intelligence"
+        ]
+      },
+      "photos": {
+        "request": "Upload these photos.",
+        "routes": [
+          "media_intelligence"
+        ],
+        "builders": [
+          "Business Builder",
+          "Media Intelligence Engine",
+          "Change Plan"
+        ],
+        "tools": [],
+        "project": "Marketing",
+        "canvas": "portfolio_gallery",
+        "memories": [
+          "business_memory",
+          "business_dna",
+          "workspace_memory",
+          "conversation_intelligence"
+        ]
+      },
+      "memberships": {
+        "request": "Build memberships.",
+        "routes": [
+          "business_builder"
+        ],
+        "builders": [
+          "Business Builder",
+          "Automation Intelligence Builder",
+          "Change Plan"
+        ],
+        "tools": [],
+        "project": "Memberships",
+        "canvas": "automation_flow",
+        "memories": [
+          "business_memory",
+          "business_dna",
+          "workspace_memory",
+          "conversation_intelligence"
+        ]
+      },
+      "quotes": {
+        "request": "Which quotes need follow-up?",
+        "routes": [
+          "crm"
+        ],
+        "builders": [
+          "Business Builder",
+          "Automation Intelligence Builder",
+          "Change Plan"
+        ],
+        "tools": [
+          "crm_quotes"
+        ],
+        "project": "General",
+        "canvas": "automation_flow",
+        "memories": [
+          "business_memory",
+          "business_dna",
+          "workspace_memory",
+          "conversation_intelligence"
+        ]
+      },
+      "business": {
+        "request": "How's business doing?",
+        "routes": [
+          "coaching"
+        ],
+        "builders": [
+          "Business Builder",
+          "Change Plan"
+        ],
+        "tools": [],
+        "project": "Business Growth",
+        "canvas": "website_preview",
+        "memories": [
+          "business_memory",
+          "business_dna",
+          "workspace_memory",
+          "conversation_intelligence"
+        ]
+      },
+      "continue": {
+        "request": "Continue where we left off.",
+        "routes": [
+          "continue_project"
+        ],
+        "builders": [],
+        "tools": [],
+        "project": "General",
+        "canvas": "recommendations",
+        "memories": [
+          "conversation_intelligence",
+          "business_memory",
+          "workspace_memory",
+          "business_dna"
+        ]
+      },
+      "partner": {
+        "request": "What would you do if this were your business?",
+        "routes": [
+          "coaching"
+        ],
+        "builders": [
+          "Business Builder",
+          "Change Plan"
+        ],
+        "tools": [],
+        "project": "General",
+        "canvas": "website_preview",
+        "memories": [
+          "business_memory",
+          "business_dna",
+          "workspace_memory",
+          "conversation_intelligence"
+        ]
+      }
+    },
+    "canvasSample": {
+      "split": "conversation_left_canvas_right",
+      "conversationSide": "left",
+      "canvasSide": "right",
+      "activeSurface": "website_preview",
+      "surfaces": [
+        {
+          "id": "website_preview",
+          "label": "Website preview",
+          "summary": "Living Business Builder preview",
+          "active": true
+        },
+        {
+          "id": "booking_simulation",
+          "label": "Booking simulation",
+          "summary": "Scheduling intelligence preview",
+          "active": false
+        },
+        {
+          "id": "automation_flow",
+          "label": "Automation flow",
+          "summary": "Workflow graph preview",
+          "active": false
+        },
+        {
+          "id": "portfolio_gallery",
+          "label": "Portfolio gallery",
+          "summary": "Media Intelligence canvas",
+          "active": false
+        },
+        {
+          "id": "workspace_mockup",
+          "label": "Workspace mockup",
+          "summary": "Adaptive workspace preview",
+          "active": false
+        },
+        {
+          "id": "revenue_chart",
+          "label": "Revenue chart",
+          "summary": "Business performance",
+          "active": false
+        },
+        {
+          "id": "calendar",
+          "label": "Calendar",
+          "summary": "Jobs and schedule",
+          "active": false
+        },
+        {
+          "id": "recommendations",
+          "label": "Recommendations",
+          "summary": "Proactive business ideas",
+          "active": false
+        }
+      ],
+      "note": "Conversation Canvas — talk on the left; the live business updates on the right. Never leave the chat to hunt menus."
+    },
+    "proactiveSample": [
+      {
+        "id": "ps_mryfpecb_9n6lhx",
+        "title": "Good morning Adrian",
+        "detail": "I reviewed your business. I have four ideas.",
+        "route": "coaching",
+        "why": "Proactive conversation starter — not a notification dump."
+      },
+      {
+        "id": "ps_mryfpecb_b3q4lv",
+        "title": "Optimize tomorrow's route",
+        "detail": "You're driving across town more than needed.",
+        "route": "booking_intelligence",
+        "why": "Booking Intelligence pattern detected."
+      },
+      {
+        "id": "ps_mryfpecb_qc8d72",
+        "title": "Replace your homepage hero",
+        "detail": "Media Intelligence found stronger trust shots.",
+        "route": "media_intelligence",
+        "why": "Fresh media outscores current hero."
+      },
+      {
+        "id": "ps_mryfpecb_bg0fkt",
+        "title": "Add arrival windows",
+        "detail": "Customers will know when to expect you.",
+        "route": "booking_intelligence",
+        "why": "Common service-business win."
+      }
+    ]
+  },
+  "failures": null
+}

@@ -274,6 +274,26 @@ export type HublyFlightRecorder = {
     published: false;
     waitingFor: string;
   } | null;
+  /** Milestone 1.5 · Epic 11 — Hubly Chat OS (orchestration; not apply). */
+  chatOs: {
+    id: string;
+    label: string;
+    channel: string;
+    voiceReady: true;
+    routeCount: number;
+    routes: string[];
+    builderCount: number;
+    toolCount: number;
+    memoryCount: number;
+    activeProject: string | null;
+    canvasSurface: string;
+    proactiveCount: number;
+    singlePersonality: true;
+    requiresApproval: true;
+    applied: false;
+    executed: false;
+    waitingFor: string;
+  } | null;
 };
 
 export type HublyExpertActivityStats = {
@@ -350,6 +370,8 @@ export type HublyMissionControlSnapshot = {
     automationIntelligence: Array<NonNullable<HublyFlightRecorder["automationIntelligence"]>>;
     /** Latest Media Intelligence plans (Epic 10). */
     mediaIntelligence: Array<NonNullable<HublyFlightRecorder["mediaIntelligence"]>>;
+    /** Latest Hubly Chat OS sessions (Epic 11). */
+    chatOs: Array<NonNullable<HublyFlightRecorder["chatOs"]>>;
   };
   capabilityRegistry: Array<{ toolId: string; name: string; capabilityCount: number }>;
   knowledgeRegistry: Array<{ id: string; name: string; access: string }>;
@@ -448,6 +470,7 @@ export type RecordFlightOpts = {
   workspaceIntelligence?: HublyFlightRecorder["workspaceIntelligence"];
   automationIntelligence?: HublyFlightRecorder["automationIntelligence"];
   mediaIntelligence?: HublyFlightRecorder["mediaIntelligence"];
+  chatOs?: HublyFlightRecorder["chatOs"];
 };
 
 /**
@@ -612,6 +635,17 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     );
   }
 
+  if (opts.chatOs) {
+    push(
+      "chat_os",
+      `Hubly Chat OS: ${opts.chatOs.routeCount} route(s) · project ${opts.chatOs.activeProject || "—"} · canvas ${opts.chatOs.canvasSurface}`,
+      {
+        ...opts.chatOs,
+      },
+      12,
+    );
+  }
+
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -675,6 +709,7 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     workspaceIntelligence: opts.workspaceIntelligence ? { ...opts.workspaceIntelligence } : null,
     automationIntelligence: opts.automationIntelligence ? { ...opts.automationIntelligence } : null,
     mediaIntelligence: opts.mediaIntelligence ? { ...opts.mediaIntelligence } : null,
+    chatOs: opts.chatOs ? { ...opts.chatOs } : null,
   };
 
   FLIGHTS.set(flight.executionId, flight);
@@ -938,12 +973,23 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         .filter((x): x is NonNullable<typeof x> => !!x)
         .slice(-10)
         .reverse();
+      const chatOsSessions = flights
+        .map((f) => f.chatOs)
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .slice(-10)
+        .reverse();
       return {
         milestone: "1.5" as const,
         available: false as const,
-        epic: "10 — Media Intelligence Engine",
-        note: "Epic 10 — Media Intelligence Engine. Uploads understood, not just stored. Multi-surface publishing. Waiting for Approval/Apply. No publish. No apply.",
-        recent: mediaIntelligencePlans.length
+        epic: "11 — Hubly Chat OS",
+        note: "Epic 11 — Hubly Chat OS. One conversation. One personality. Conversation Canvas. Waiting for Approval/Apply. No apply.",
+        recent: chatOsSessions.length
+          ? chatOsSessions.map((c) => ({
+            id: c.id,
+            status: "chat_os",
+            summary: `${c.label}: ${c.routeCount} route(s) · ${c.activeProject || "general"} · canvas ${c.canvasSurface}`,
+          }))
+          : mediaIntelligencePlans.length
           ? mediaIntelligencePlans.map((m) => ({
             id: m.id,
             status: "media_intelligence",
@@ -1029,6 +1075,7 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         workspaceIntelligence: workspaceIntelligencePlans,
         automationIntelligence: automationIntelligencePlans,
         mediaIntelligence: mediaIntelligencePlans,
+        chatOs: chatOsSessions,
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({
