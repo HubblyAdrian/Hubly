@@ -238,7 +238,7 @@ check("MC builderActions.available === false", snap.builderActions?.available ==
 check("MC displays Change Plans", (snap.builderActions?.changePlans || []).length >= 1);
 check(
   "MC epic mentions Builder pipeline",
-  /Change Plan|Preview|Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Epic [2-9]|Epic 10/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Change Plan|Preview|Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Chat OS|Hubly Chat|Epic [2-9]|Epic 10|Epic 11/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check(
   "MC still blocks apply",

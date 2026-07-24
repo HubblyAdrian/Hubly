@@ -15,8 +15,8 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 | 7 | Booking Intelligence Builder | Pass | `scripts/check-builder-epic7.mjs` | `docs/BUILDER_EPIC7_PROOF.json` | Accepted |
 | 8 | Workspace Intelligence Builder | Pass | `scripts/check-builder-epic8.mjs` | `docs/BUILDER_EPIC8_PROOF.json` | Accepted |
 | 9 | Automation Intelligence Builder | Pass | `scripts/check-builder-epic9.mjs` | `docs/BUILDER_EPIC9_PROOF.json` | Accepted |
-| 10 | Media Intelligence Engine | Pass (pending Founder Approval) | `scripts/check-builder-epic10.mjs` | `docs/BUILDER_EPIC10_PROOF.json` | — |
-| 11 | Hubly Chat OS | Locked | — | — | — |
+| 10 | Media Intelligence Engine | Pass | `scripts/check-builder-epic10.mjs` | `docs/BUILDER_EPIC10_PROOF.json` | Accepted |
+| 11 | Hubly Chat OS | Pass (pending Founder Approval) | `scripts/check-builder-epic11.mjs` | `docs/BUILDER_EPIC11_PROOF.json` | — |
 | 12 | Builder Validation & Apply Engine | Locked | — | — | — |
 
 ## Status legend
@@ -25,25 +25,27 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 - **Pass (pending Founder Approval)** — automated gate green  
 - **Accepted** — founder signed off; next epic may start  
 
-## Epic 1–9
+## Epic 1–10
 
-**Accepted.** Through Automation Intelligence.
+**Accepted.** Through Media Intelligence Engine.
 
-## Epic 10 — Media Intelligence Engine
+## Epic 11 — Hubly Chat OS
 
-Not a portfolio folder. Uploads are understood; Hubly proposes galleries, heroes, social, and multi-surface publishing.
+Not “adding chat.” This **is** Hubly — one conversation, one personality, one business partner.
 
-- AI analysis + auto-organization  
-- Multi-surface publishing proposals  
-- Portfolio Health + missing content  
-- **Business Memory Through Media** (visual timeline)  
-- Mission Control replay  
-- Still requires approval — **no publish / no apply**
+- **Ask Hubly** on every screen  
+- Every builder + trusted tools in one thread  
+- Multi-turn projects + proactive starters  
+- Business coaching in the same conversation  
+- **Conversation Canvas** (talk left · live business right)  
+- Voice-ready channels (typing / voice / phone / receptionist)  
+- Mission Control orchestration  
+- Still **no apply**
 
 ```bash
-npm run check:builder-epic10
+npm run check:builder-epic11
 ```
 
-**Stop.** Do not start Epic 11 until Founder Approval.
+**Stop.** Do not start Epic 12 until Founder Approval.
 
-> Note for Epic 11: Hubly Chat OS should reveal that everything built so far was preparing for one conversation where the owner can ask Hubly anything about their business — not “another chat feature.”
+> Note for Epic 12: Chat OS reveals that everything so far was preparing for one conversation. Apply is the gate that makes proposals real — only after founder acceptance.

@@ -22,7 +22,7 @@ const EPICS = [
   { n: 8, title: 'Workspace Intelligence Builder', script: 'scripts/check-builder-epic8.mjs', unlocked: true },
   { n: 9, title: 'Automation Intelligence Builder', script: 'scripts/check-builder-epic9.mjs', unlocked: true },
   { n: 10, title: 'Media Intelligence Engine', script: 'scripts/check-builder-epic10.mjs', unlocked: true },
-  { n: 11, title: 'Hubly Chat OS', script: null, unlocked: false },
+  { n: 11, title: 'Hubly Chat OS', script: 'scripts/check-builder-epic11.mjs', unlocked: true },
   { n: 12, title: 'Builder Validation & Apply Engine', script: null, unlocked: false },
 ];
 

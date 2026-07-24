@@ -186,6 +186,16 @@ function recordFlightRecorder(opts) {
       12
     );
   }
+  if (opts.chatOs) {
+    push(
+      "chat_os",
+      `Hubly Chat OS: ${opts.chatOs.routeCount} route(s) \xB7 project ${opts.chatOs.activeProject || "\u2014"} \xB7 canvas ${opts.chatOs.canvasSurface}`,
+      {
+        ...opts.chatOs
+      },
+      12
+    );
+  }
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -237,7 +247,8 @@ function recordFlightRecorder(opts) {
     bookingIntelligence: opts.bookingIntelligence ? { ...opts.bookingIntelligence } : null,
     workspaceIntelligence: opts.workspaceIntelligence ? { ...opts.workspaceIntelligence } : null,
     automationIntelligence: opts.automationIntelligence ? { ...opts.automationIntelligence } : null,
-    mediaIntelligence: opts.mediaIntelligence ? { ...opts.mediaIntelligence } : null
+    mediaIntelligence: opts.mediaIntelligence ? { ...opts.mediaIntelligence } : null,
+    chatOs: opts.chatOs ? { ...opts.chatOs } : null
   };
   FLIGHTS.set(flight.executionId, flight);
   FLIGHT_ORDER.push(flight.executionId);
@@ -418,12 +429,17 @@ function getMissionControlSnapshot() {
       const workspaceIntelligencePlans = flights.map((f) => f.workspaceIntelligence).filter((x) => !!x).slice(-10).reverse();
       const automationIntelligencePlans = flights.map((f) => f.automationIntelligence).filter((x) => !!x).slice(-10).reverse();
       const mediaIntelligencePlans = flights.map((f) => f.mediaIntelligence).filter((x) => !!x).slice(-10).reverse();
+      const chatOsSessions = flights.map((f) => f.chatOs).filter((x) => !!x).slice(-10).reverse();
       return {
         milestone: "1.5",
         available: false,
-        epic: "10 \u2014 Media Intelligence Engine",
-        note: "Epic 10 \u2014 Media Intelligence Engine. Uploads understood, not just stored. Multi-surface publishing. Waiting for Approval/Apply. No publish. No apply.",
-        recent: mediaIntelligencePlans.length ? mediaIntelligencePlans.map((m) => ({
+        epic: "11 \u2014 Hubly Chat OS",
+        note: "Epic 11 \u2014 Hubly Chat OS. One conversation. One personality. Conversation Canvas. Waiting for Approval/Apply. No apply.",
+        recent: chatOsSessions.length ? chatOsSessions.map((c) => ({
+          id: c.id,
+          status: "chat_os",
+          summary: `${c.label}: ${c.routeCount} route(s) \xB7 ${c.activeProject || "general"} \xB7 canvas ${c.canvasSurface}`
+        })) : mediaIntelligencePlans.length ? mediaIntelligencePlans.map((m) => ({
           id: m.id,
           status: "media_intelligence",
           summary: `${m.label}: ${m.assetCount} asset(s) \xB7 health ${m.healthOverall} \xB7 ${m.surfaceCount} surfaces`
@@ -490,7 +506,8 @@ function getMissionControlSnapshot() {
         bookingIntelligence: bookingIntelligencePlans,
         workspaceIntelligence: workspaceIntelligencePlans,
         automationIntelligence: automationIntelligencePlans,
-        mediaIntelligence: mediaIntelligencePlans
+        mediaIntelligence: mediaIntelligencePlans,
+        chatOs: chatOsSessions
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

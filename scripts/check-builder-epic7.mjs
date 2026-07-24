@@ -162,12 +162,12 @@ const snap = getMissionControlSnapshot();
 check("MC displays Booking Intelligence", (snap.builderActions?.bookingIntelligence || []).length >= 1);
 check(
   "MC epic is Booking Intelligence",
-  /Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Epic [7-9]|Epic 10/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Chat OS|Hubly Chat|Epic [7-9]|Epic 10|Epic 11/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check("MC still blocks apply", snap.builderActions?.available === false);
 check(
   "MC recent surfaces intelligence",
-  ["booking_intelligence", "automation_intelligence", "workspace_intelligence", "media_intelligence"].includes(
+  ["booking_intelligence", "automation_intelligence", "workspace_intelligence", "media_intelligence", "chat_os"].includes(
     (snap.builderActions?.recent || [])[0]?.status,
   ),
 );
