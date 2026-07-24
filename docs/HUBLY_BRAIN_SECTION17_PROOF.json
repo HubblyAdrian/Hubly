@@ -3,10 +3,10 @@
   "name": "Architecture Documentation & Developer Experience",
   "title": "Architecture Documentation & Developer Experience",
   "passed": true,
-  "checkedAt": "2026-07-24T01:17:42.328Z",
+  "checkedAt": "2026-07-24T01:30:02.457Z",
   "proofs": {
-    "docsVersion": "1.0.0",
-    "missionControlVersion": "1.4.0",
+    "docsVersion": "1.1.0",
+    "missionControlVersion": "1.5.0",
     "guideCount": 11,
     "adrCount": 5,
     "guides": [

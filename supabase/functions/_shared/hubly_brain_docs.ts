@@ -5,7 +5,7 @@
  * Paths are repo-relative from the Hubly root.
  */
 
-export const HUBLY_DOCS_VERSION = "1.0.0";
+export const HUBLY_DOCS_VERSION = "1.1.0";
 
 export type HublyDocEntry = {
   id: string;
@@ -20,6 +20,16 @@ export type HublyAdrEntry = {
   path: string;
   status: "accepted" | "proposed" | "superseded";
 };
+
+/** Product constitution — every engineer reads this first (not the AI Constitution). */
+export const HUBLY_PRODUCT_CONSTITUTION = {
+  id: "product-constitution",
+  title: "Hubly Constitution v1.0",
+  path: "docs/HUBLY_CONSTITUTION.md",
+  version: "1.0",
+  summary:
+    "Product contract: one AI, think before build, sacred memory, partner filter, remove software.",
+} as const;
 
 /** Required Section 17 deliverables — single source of truth for the catalog. */
 export const HUBLY_ARCHITECTURE_GUIDES: readonly HublyDocEntry[] = [
@@ -128,6 +138,7 @@ export type HublyDocumentationCatalog = {
   version: string;
   indexPath: string;
   adrIndexPath: string;
+  productConstitution: typeof HUBLY_PRODUCT_CONSTITUTION;
   guides: HublyDocEntry[];
   adrs: HublyAdrEntry[];
   guideCount: number;
@@ -140,6 +151,7 @@ export function getHublyDocumentationCatalog(): HublyDocumentationCatalog {
     version: HUBLY_DOCS_VERSION,
     indexPath: "docs/architecture/README.md",
     adrIndexPath: "docs/adr/README.md",
+    productConstitution: HUBLY_PRODUCT_CONSTITUTION,
     guides: [...HUBLY_ARCHITECTURE_GUIDES],
     adrs: [...HUBLY_ADRS],
     guideCount: HUBLY_ARCHITECTURE_GUIDES.length,
@@ -151,6 +163,7 @@ export const HublyDocs = {
   version: HUBLY_DOCS_VERSION,
   owner: "hubly_brain" as const,
   catalog: getHublyDocumentationCatalog,
+  productConstitution: () => HUBLY_PRODUCT_CONSTITUTION,
   guides: () => [...HUBLY_ARCHITECTURE_GUIDES],
   adrs: () => [...HUBLY_ADRS],
 };

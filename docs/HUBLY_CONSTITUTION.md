@@ -1,345 +1,200 @@
-# Hubly Constitution
+# Hubly Constitution v1.0
 
-This is not code. These are the permanent rules of Hubly.
+**Product constitution** — not the AI Constitution.  
+**Audience:** every future engineer, designer, and founder working on Hubly.  
+**Status:** Accepted · Milestone 1 complete  
+**Version:** 1.0
 
-When adding features months from now, check this document first.
-Do not invent new Brain layers unless absolutely required.
+This is the permanent product contract.
+
+When you are unsure what to build, what to refuse, or how Hubly should feel — start here.
 
 ---
 
-## Production-First Principle
+## The sentence
 
-Hubly does **not** build demo features.
+Every release should move Hubly closer to this:
 
-Every completed capability should be deployable to a production customer.
+> **“I can’t believe software understood my business.”**
 
-- Real provider interfaces  
-- Real data models  
-- Real execution flow  
-- Real error handling, retries, logging  
-- Real ownership / security  
-- Real progress events  
+That is the guiding principle for every future decision.
 
-Provider integrations may require credentials, but **no capability should rely on fake implementations or temporary “success” logic**.
+If a change makes Hubly feel more like software and less like a partner who *gets* the business — it violates this constitution.
 
-Capabilities should **fail honestly** rather than simulate success:
+---
 
-> Provider not configured.
+## Not the AI Constitution
 
-The Runtime should always reflect **real system state**.
+Two different documents. Do not conflate them.
 
-Done means: *if credentials were added today, a paying customer could rely on this* — not “the feature exists.”
+| Document | What it is |
+|----------|------------|
+| **This file — Hubly Constitution v1.0** | The **product** contract: how Hubly behaves as a company, platform, and partner |
+| [Architecture · Constitution Guide](./architecture/CONSTITUTION_GUIDE.md) | How experts/builders are evaluated against the **Identity System** principles at runtime |
+| Identity System (Section 13) | Character + ten behavioral principles on every owner-facing response |
 
-### Providers
+Product constitution decides *what Hubly is allowed to become*.  
+AI Constitution decides *how Hubly speaks and behaves in a turn*.
+
+Both are mandatory. This document is the one you read on day one.
+
+---
+
+## Hubly Principles
+
+### 1. There is only one AI
+
+The customer never chooses experts.  
+They never pick Research, Strategy, Creative, Critic, or Builder.  
+They only talk to **Hubly**.
+
+Experts are internal. Hubly is the product.
+
+### 2. Hubly thinks before it builds
+
+Order is not optional:
 
 ```
-Capability → Provider interface → Vendor provider (Stripe / Cloudflare / Google / …)
+Research
+  → Strategy
+  → Creative
+  → Critic
+  → Builder
 ```
 
-Hubly Runtime never embeds vendor-specific calls outside Providers.
+Do not skip straight to building.  
+Thinking is part of the product.
+
+### 3. Every recommendation has reasoning
+
+Never act without explanation.  
+“Why?” must come from stored Reasoning Objects and Decision Objects — not improvised after the fact.
+
+If Hubly cannot explain it, Hubly should not recommend it.
+
+### 4. Memory is sacred
+
+Three systems. Never mix them.
+
+| Memory | Question it answers |
+|--------|---------------------|
+| **Business Memory** | What is true about the business? |
+| **Workspace Memory** | How does this owner like to work? |
+| **Conversation Intelligence** | What are we working on right now? |
+
+Facts are not preferences. Preferences are not chat. Chat is not truth.
+
+### 5. Every action requires ownership
+
+Everything Hubly changes can be explained.  
+Who decided. Why. What changed. How to undo.
+
+Silent mutations are forbidden.  
+Ownership is part of trust.
+
+### 6. Hubly builds with owners
+
+Never replace them.  
+Always collaborate.
+
+Hubly is a partner — not an autopilot that hijacks the business.  
+Recommend. Preview. Approve. Build together.
+
+### 7. Simplicity wins
+
+One recommendation is better than ten.  
+One clear next step beats a dashboard of options.  
+Overwhelm is a product failure.
+
+### 8. AI should remove software
+
+The owner should not learn menus.  
+The owner should describe what they want.  
+Hubly builds it.
+
+Configuration is our problem. Conversation is theirs.
 
 ---
 
-## Business stages (not software modules)
+## The partner filter
 
-| Stage | Jobs |
-|---|---|
-| **Build** | Website · Booking · CRM · Dashboard |
-| **Launch** | Domain · DNS · SSL · Publishing · (email / GBP later) |
-| **Operate** | Jobs · Customers · Payments · Calendar |
-| **Grow** | Customer Runtime · Marketing · Reviews · Coach |
-| **Optimize** | Weekly Learning · Living Business · Living Marketplace |
+Every feature must answer:
 
-**Business Launch** (not “domain purchase”) is the complete go-live job: availability → purchase → DNS → SSL → publish.
+> **Does this make Hubly feel more like a business partner?**
 
----
+If not — **don’t build it.**
 
-## Guiding principle
+Also ask:
 
-> **Hubly should make owning a business feel as simple as describing one.**
+1. Does this reduce work for the business owner?  
+2. Does this move us toward *“I can’t believe software understood my business”*?  
+3. Does this keep one Hubly voice (no expert picker, no settings maze)?  
+4. Can we explain and own every change?  
+5. Will this still feel right two years from now?
 
-Conversation instead of configuration.
-AI instead of manual setup.
-Business understanding instead of disconnected features.
-Continuous improvement instead of static software.
-Production-ready providers instead of demos.
+If any answer is **no**, redesign before writing code.
 
 ---
 
-## Product truth (post Phase 7)
-
-We are **no longer building infrastructure**.
-The Hubly Brain architecture is **complete**.
-We are **no longer optimizing for architecture**.
-We are **optimizing for experience**.
+## How Hubly works (product truth)
 
 Hubly is **not** a CRM, website builder, marketplace, or chatbot.
 
 Hubly is an **AI that starts, runs, and grows local service businesses**.
 
-Everything else is simply a **capability**.
+Everything else is a **capability**.
 
-### Permanent philosophy
-
-Business owners should never think about software.
-They describe what they want.
-Hubly decides how to make it happen.
-
-If a user says *“I want more customers,”* Hubly determines Website, Marketplace profile, Marketing, Pricing, Reviews, Email, Ads, Booking, CRM — without the user choosing tools.
-
-### Product rule
-
-Every new feature must answer:
-
-> **Does this reduce work for the business owner?**
-
-If not — do not build it.
-
-### Partner test
-
-> Does this make Hubly feel more like an AI business partner?
-
-### Final sprint filter
-
-Before building any feature, ask:
-
-1. Does this reduce work for the business owner?
-2. Does this make Hubly feel more like a business partner?
-3. Does this fit the existing Runtime?
-4. Can this become a reusable capability?
-5. Will this still make sense two years from now?
-
-If any answer is **no**, redesign before building.
+Owners describe outcomes.  
+Hubly decides which capabilities matter.  
+Hubly Brain is the only AI entry point.  
+Experience Director is the last gate before the owner sees a response.
 
 ---
 
-## Architecture (frozen)
+## Production-first (non-negotiable)
 
-```
-Conversation
-    ↓
-Understanding
-    ↓
-Business Memory          ← What is true?
-Business DNA             ← What kind of business is this? (evolves)
-    ↓
-Planner                  ← WHAT should happen?
-    ↓
-Execution Plan
-    ↓
-Orchestrator             ← HOW should it happen?
-    ↓
-Capabilities             ← reusable
-    ↓
-Executors                ← never reason; model never writes DB
-    ↓
-Platform
-```
+Hubly does not ship demo theater.
 
-**Future work builds capabilities, not architecture.**
-
-| Business | Customer |
-|---|---|
-| Business Memory (facts) | Customer Memory (facts) |
-| Business DNA (identity — evolves) | Customer Profile (identity — evolves) |
-
-**Never combine Memory and DNA / Profile.**
-
-### Permanent role rules
-
-| Layer | Answers / owns |
-|---|---|
-| Memory | What is true? |
-| DNA | What kind of business is this? |
-| Planner | What should happen? |
-| Orchestrator | How should it happen? |
-| Executors | Perform work — never reason about strategy |
-| Capabilities | Stay reusable |
-
-- The AI never writes directly to the database.
-- Business owners describe outcomes, not software.
-- Hubly builds around the business, not the other way around.
-- Capability Confidence: low confidence → ask one question; never fabricate business data.
+- Real providers · real data · real failure modes  
+- Fail honestly (“Provider not configured”) — never fake success  
+- Done means a paying customer could rely on it when credentials exist  
 
 ---
 
-## Public APIs
+## Before Milestone 1.5 — Founder review (mandatory)
 
-```
-Hubly.buildBusiness(prompt)   → company from conversation
-Hubly.findPro(prompt)         → customer journey from conversation
-```
+**Do not write a single line of Builder Engine code yet.**
 
----
+Milestone 1 certified the Brain. Milestone 1.5 layers Builder on top.  
+Weaknesses are cheap to fix now and expensive after Builder ships.
 
-## The Four Magical Moments
+Spend deliberate time reviewing everything:
 
-Every feature should support one of these:
+1. Open **Mission Control**  
+2. Run every **Founder Acceptance Scenario** (`npm run check:section18`)  
+3. Try to **break** it  
+4. Ask weird questions  
+5. Give contradictory instructions  
+6. Change your mind mid-conversation  
+7. Stress the Brain  
 
-1. **Hubly built my business** — owner describes; Hubly builds.
-2. **Hubly got me my first customer** — homeowner describes a project; Hubly matches, books, pays.
-3. **Hubly helped me grow** — proactive recommendations (pricing, reviews, marketing, website, SEO, revenue).
-4. **Hubly runs my business** — continuous work: site, marketing, follow-up, booking, communication, growth.
+Fix what you find. Then — and only then — start Builder Engine.
 
----
-
-## Magical Build
-
-User types: `I own Acme Home Cleaning.`
-
-```
-👋 Nice to meet you.
-Learning about your business…
-✓ Understanding who you are
-✓ Learning who your customers are
-✓ Creating your brand
-✓ Writing your website
-✓ Building your booking system
-✓ Creating your CRM
-✓ Setting up your dashboard
-✓ Preparing your marketplace profile
-✓ Checking domain availability
-🎉 Your business is live.
-```
-
-Then **Business Identity**: Name · Logo · Colors · Fonts · Voice · Domain · Website · Booking · CRM · Marketplace Profile · Health · Timeline · Status: **Ready**.
-
-Feels like launching a company — not finishing a wizard.
-
-### Website Runtime
-
-Never ask “Build a website.”
-Ask: Who is this business? Who are they serving? Why hire them? What emotions? What’s different? What actions?
-
-The website is an expression of **Business DNA**.
-
-Quietly generate: homepage, about, services, contact, SEO, social share, schema, booking, lead forms.
-
-### Domain / Business Launch
-
-Celebrate `yourbusiness.com`, not only `business.hubly.app`.
-
-Business Launch capability:
-
-Domain availability (real DomainProvider) → purchase → DNS → SSL → website publishing → (email / GBP later).
-
-If Cloudflare / Porkbun credentials are missing → **Provider not configured** — never invent `available: true`.
-
-### Customer Runtime
-
-Customers only describe problems:
-
-`“I need my driveway pressure washed.”`
-
-→ Understanding → Customer Memory → Customer Profile → Planner → Matching → Booking → Payment → Confirmation.
-
-No categories. No marketplace language. Conversation only.
+Spec only until then: [`docs/architecture/BUILDER_ENGINE_SPEC.md`](./architecture/BUILDER_ENGINE_SPEC.md)
 
 ---
 
-## Living layers
+## Related reading (after this)
 
-### Living Business
-
-A business should never go stale. Photos, reviews, pricing, services, hours, SEO, promotions — Hubly continuously improves.
-
-### Living Customer
-
-Customer Memory · Profile · booking history · preferences · property · communication · lifetime value — deepen matching over time.
-
-### Living Marketplace
-
-The marketplace is **invisible infrastructure**.
-Customers never browse. They talk to Hubly. Hubly understands, matches, books, pays.
-
----
-
-## Signature surfaces
-
-### Hubly Daily (login homepage)
-
-Owners land on a morning briefing — not charts.
-
-```
-Good morning, Adrian.
-
-Here's what's happening today:
-3 jobs scheduled · 2 new leads · 1 review request · Health 91 (+3)
-
-My recommendation
-Raise your premium package by $25.
-
-One thing I'll handle today
-Update homepage photos + SEO.
-```
-
-That's an employee briefing. Advice first.
-
-### Business Timeline
-
-Story of what Hubly did and recommends next.
-
-### Business Health (single AI metric)
-
-Revenue · Bookings · Reviews · Retention · Marketing · Operations · Growth → one overall score.
-**AI Coach / Hubly Daily optimize Business Health.**
-
-### Business Maturity
-
-Idea → Launching → Growing → Scaling → Multi-location → Enterprise.
-Stored as DNA `growthStage` — not a new Brain layer.
-
-### AI Creative Director
-
-Website Runtime explains its thinking from DNA:
-who you're targeting · palette · headline emphasis · highlighted services · voice.
-
-### Capability Confidence
-
-Every capability reports confidence. Missing pricing → ask — never guess.
-
----
-
-## AI Coach
-
-Proactive daily OS:
-
-> Revenue is down. Raise pricing. You haven’t posted recently. These customers need review requests.
-
-Fed by Business Health + Timeline + evolving DNA (Weekly Learning).
-
----
-
-## Roadmap (experience, not architecture)
-
-| Focus | Proof |
-|---|---|
-| ✅ Runtime + DNA | Architecture frozen |
-| ✅ Website Runtime | Magical moment 1 |
-| ✅ Customer Runtime foundation | Magical moment 2 |
-| ✅ Phase 8 surfaces | Daily · Creative Director · Launch UI |
-| **Production-First providers** | DomainProvider · StripeProvider · CalendarProvider |
-| **Business Launch** | Real availability → purchase → DNS → SSL → publish |
-| Living Business | Magical moments 3–4 |
-| Living Customer | Richer matching |
-| Living Marketplace | Invisible perfect match |
-| Weekly Learning | DNA evolves automatically |
-
-### Jobs Hubly performs (not software categories)
-
-1. Build my business  
-2. Get me customers  
-3. Help me grow  
-4. Run my business  
-
-We no longer ask *“What feature should we build?”*  
-We ask *“What job should Hubly do for the owner?”*  
-and *“Can a paying customer rely on this?”*
-
-Priorities: perfect Build + Launch (real providers) · Hubly Daily · Find a Pro · Living layers · polish until effortless.
+1. [Developer Onboarding](./architecture/DEVELOPER_ONBOARDING.md)  
+2. [System Architecture](./architecture/SYSTEM_ARCHITECTURE.md)  
+3. [AI Lifecycle](./architecture/AI_LIFECYCLE.md)  
+4. [ADRs](./adr/README.md) — *why* we designed it this way  
+5. [Constitution Guide (engineering / AI)](./architecture/CONSTITUTION_GUIDE.md)  
+6. [Milestone 1 Certificate](./releases/MILESTONE1_CERTIFIED.md)  
 
 ---
 
 ## One-line test
 
-If a change invents a new core Brain layer, lets a model write the DB, merges Memory with DNA, bypasses Planner → Orchestrator → Executors, fails the partner / work-reduction tests, or makes owning a business feel *harder* than describing one — it violates this constitution.
+If a change invents a second AI face, mixes memories, skips thinking before building, acts without reasoning, replaces the owner, adds menus the owner must learn, or moves Hubly away from *“I can’t believe software understood my business”* — it violates **Hubly Constitution v1.0**.

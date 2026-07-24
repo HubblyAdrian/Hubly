@@ -2,7 +2,14 @@
 
 
 // supabase/functions/_shared/hubly_brain_docs.ts
-var HUBLY_DOCS_VERSION = "1.0.0";
+var HUBLY_DOCS_VERSION = "1.1.0";
+var HUBLY_PRODUCT_CONSTITUTION = {
+  id: "product-constitution",
+  title: "Hubly Constitution v1.0",
+  path: "docs/HUBLY_CONSTITUTION.md",
+  version: "1.0",
+  summary: "Product contract: one AI, think before build, sacred memory, partner filter, remove software."
+};
 var HUBLY_ARCHITECTURE_GUIDES = [
   {
     id: "system-architecture",
@@ -108,6 +115,7 @@ function getHublyDocumentationCatalog() {
     version: HUBLY_DOCS_VERSION,
     indexPath: "docs/architecture/README.md",
     adrIndexPath: "docs/adr/README.md",
+    productConstitution: HUBLY_PRODUCT_CONSTITUTION,
     guides: [...HUBLY_ARCHITECTURE_GUIDES],
     adrs: [...HUBLY_ADRS],
     guideCount: HUBLY_ARCHITECTURE_GUIDES.length,
@@ -118,6 +126,7 @@ var HublyDocs = {
   version: HUBLY_DOCS_VERSION,
   owner: "hubly_brain",
   catalog: getHublyDocumentationCatalog,
+  productConstitution: () => HUBLY_PRODUCT_CONSTITUTION,
   guides: () => [...HUBLY_ARCHITECTURE_GUIDES],
   adrs: () => [...HUBLY_ADRS]
 };
@@ -125,6 +134,7 @@ export {
   HUBLY_ADRS,
   HUBLY_ARCHITECTURE_GUIDES,
   HUBLY_DOCS_VERSION,
+  HUBLY_PRODUCT_CONSTITUTION,
   HublyDocs,
   getHublyDocumentationCatalog
 };

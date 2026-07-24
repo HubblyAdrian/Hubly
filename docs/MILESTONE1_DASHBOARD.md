@@ -155,4 +155,5 @@ npm run milestone1
 ```
 
 **Stop.** Do not start Milestone 1.5 / Milestone 2 until Founder Sign-Off.  
-Next visible product step after certification: **1.5 — Builder Engine**.
+**Before Builder Engine:** read [`docs/HUBLY_CONSTITUTION.md`](./HUBLY_CONSTITUTION.md) and stress-test Mission Control — do not write Builder code yet.  
+Next visible product step after certification + review: **1.5 — Builder Engine**.

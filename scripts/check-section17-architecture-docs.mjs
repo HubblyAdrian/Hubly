@@ -48,13 +48,26 @@ function check(name, cond, detail = "") {
   }
 }
 
-check("docs module versioned", HUBLY_DOCS_VERSION === "1.0.0");
+check("docs module versioned", HUBLY_DOCS_VERSION === "1.1.0");
 check("HublyDocs API", typeof HublyDocs.catalog === "function" && HublyDocs.owner === "hubly_brain");
 
 const catalog = getHublyDocumentationCatalog();
 check("catalog guide count ≥ 11", catalog.guideCount >= 11, `n=${catalog.guideCount}`);
 check("catalog ADR count ≥ 5", catalog.adrCount >= 5, `n=${catalog.adrCount}`);
 check("catalog version matches", catalog.version === HUBLY_DOCS_VERSION);
+check(
+  "product constitution in catalog",
+  catalog.productConstitution?.path === "docs/HUBLY_CONSTITUTION.md",
+);
+check("product constitution file exists", exists("docs/HUBLY_CONSTITUTION.md"));
+const productConst = read("docs/HUBLY_CONSTITUTION.md");
+check("product constitution is v1.0", /Hubly Constitution v1\.0/.test(productConst));
+check("product constitution: one AI", /only one AI|only talk to \*\*Hubly\*\*/i.test(productConst));
+check("product constitution: memory sacred", /Memory is sacred/i.test(productConst));
+check("product constitution: partner filter", /business partner/i.test(productConst));
+check("product constitution: guiding sentence", /understood my business/i.test(productConst));
+check("product constitution: before 1.5 review", /Before Milestone 1\.5/i.test(productConst));
+check("product constitution: no Builder code yet", /Do not write a single line of Builder/i.test(productConst));
 
 const requiredGuides = [
   ["system-architecture", "docs/architecture/SYSTEM_ARCHITECTURE.md"],

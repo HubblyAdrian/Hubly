@@ -1,14 +1,17 @@
 # Hubly Constitution Guide (Engineering)
 
 **Version:** 1.0.0  
-**Purpose:** How every expert, builder, and future module is evaluated against Hubly’s behavioral contract.
+**Purpose:** How every expert, builder, and future module is evaluated against Hubly’s behavioral contract at runtime.
 
-## Two layers
+## Two constitutions (read carefully)
 
 | Document | Role |
 |----------|------|
-| [`docs/HUBLY_CONSTITUTION.md`](../HUBLY_CONSTITUTION.md) | Permanent product rules (production-first, stages, partner tests) |
-| **Hubly Identity System · Constitution** (Section 13) | Ten principles evaluated on every owner-facing response |
+| **[`docs/HUBLY_CONSTITUTION.md`](../HUBLY_CONSTITUTION.md) — Product Constitution v1.0** | What Hubly *is*. Every engineer reads this first. Partner filter, one AI, memory sacred, think-before-build. |
+| **This guide + Identity System (Section 13)** | How owner-facing responses are evaluated against ten behavioral principles |
+
+Product constitution governs product decisions.  
+AI Constitution governs a single turn’s voice and honesty.
 
 ## The ten principles (runtime)
 

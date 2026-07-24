@@ -1,6 +1,6 @@
 # Developer Onboarding
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Purpose:** A new engineer can extend Hubly without tribal knowledge.
 
 ## Day-one path
@@ -13,7 +13,13 @@ cd Hubly
 npm install
 ```
 
-### 2. Understand the architecture (30–45 min)
+### 2. Read the Product Constitution (required)
+
+**[Hubly Constitution v1.0](../HUBLY_CONSTITUTION.md)** — the entire product contract.
+
+Not the AI Constitution. This is what Hubly *is*. Read it before any code.
+
+### 3. Understand the architecture (30–45 min)
 
 Read in order:
 
@@ -21,18 +27,20 @@ Read in order:
 2. [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md)  
 3. [AI_LIFECYCLE.md](./AI_LIFECYCLE.md)  
 4. [ADR index](../adr/README.md) — especially sole AI entry + memory separation  
+5. [CONSTITUTION_GUIDE.md](./CONSTITUTION_GUIDE.md) — how Identity evaluates responses  
 
-### 3. Run the validation suite
+### 4. Run the validation suite
 
 ```bash
 npm run milestone1          # all release gates
 npm run check:section16     # intelligence validation + Quality Score
+npm run check:section18     # Founder Acceptance & Brain Certification
 npm test -- tests/hubly-brain.test.mjs
 ```
 
-Milestone 2 is blocked until 18/18 Pass + Founder Approval (`docs/MILESTONE1_DASHBOARD.md`).
+Do **not** start Builder Engine (Milestone 1.5) until Founder review stress-tests the Brain. See Constitution § Before Milestone 1.5.
 
-### 4. Build a new expert
+### 5. Build a new expert
 
 Follow [EXPERT_DEVELOPMENT.md](./EXPERT_DEVELOPMENT.md):
 
@@ -41,7 +49,7 @@ Follow [EXPERT_DEVELOPMENT.md](./EXPERT_DEVELOPMENT.md):
 - Prove discover → execute → unregister  
 - **Do not** edit `hubly_brain_think.ts` to hardcode the expert  
 
-### 5. Register a capability
+### 6. Register a capability
 
 Follow [CAPABILITY_GUIDE.md](./CAPABILITY_GUIDE.md):
 
@@ -50,7 +58,7 @@ npm run check:section11
 npm run check:section15
 ```
 
-### 6. Add a Business DNA package
+### 7. Add a Business DNA package
 
 Follow [BUSINESS_DNA_GUIDE.md](./BUSINESS_DNA_GUIDE.md):
 
@@ -59,7 +67,7 @@ Follow [BUSINESS_DNA_GUIDE.md](./BUSINESS_DNA_GUIDE.md):
 - Confirm `loadBusinessDnaKnowledge({ industry: "pest control" })`  
 - Re-run multi-industry checks in Section 16  
 
-### 7. Pass release gates before you merge
+### 8. Pass release gates before you merge
 
 | You changed… | Re-run |
 |--------------|--------|
@@ -80,6 +88,7 @@ npm run milestone1
 
 | Need | Location |
 |------|----------|
+| Product Constitution | `docs/HUBLY_CONSTITUTION.md` |
 | Sole AI gate | `supabase/functions/_shared/hubly_ai.ts` |
 | Think pipeline | `hubly_brain_think.ts` |
 | Section proofs | `scripts/check-section*.mjs` |
@@ -91,6 +100,7 @@ npm run milestone1
 
 You can:
 
+- [ ] Quote the guiding sentence from Constitution v1.0  
 - [ ] Explain why Brain is the only AI entry  
 - [ ] Add an expert without touching `think`  
 - [ ] Add an industry DNA pack without app UI changes  
