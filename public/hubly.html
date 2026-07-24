@@ -1427,6 +1427,65 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   padding:14px 18px;cursor:pointer;width:100%;margin-top:8px;
 }
 .is-founder-cta:hover{filter:brightness(1.05)}
+/* Milestone 2 · Epic 7 — Business Launch Experience */
+.is-wrap.is-launch-wide{max-width:min(720px,94vw)}
+.is-launch-canvas{color:#fff;animation:isThinkCanvasIn .55s ease both}
+.is-launch-phase{margin:0 0 22px}
+.is-launch-phase[hidden]{display:none!important}
+.is-launch-anim-title{
+  font-size:clamp(22px,3.2vw,30px);font-weight:800;letter-spacing:-.03em;line-height:1.2;margin:0 0 16px;
+}
+.is-launch-steps{margin:0;padding:0;list-style:none}
+.is-launch-steps li{
+  display:flex;align-items:flex-start;gap:10px;font-size:14px;font-weight:650;margin:0 0 10px;
+  opacity:.35;transform:translateY(4px);transition:opacity .35s ease,transform .35s ease;
+}
+.is-launch-steps li.is-on{opacity:1;transform:none}
+.is-launch-steps li.is-ok::before{content:"✓";color:#fdba74;font-weight:800;flex:0 0 auto}
+.is-launch-steps li.is-warn::before{content:"•";color:#fbbf24;font-weight:800;flex:0 0 auto}
+.is-launch-steps li .detail{display:block;font-size:12px;font-weight:550;color:rgba(255,255,255,.68);margin-top:2px}
+.is-launch-celebrate{text-align:center;padding:18px 8px 8px}
+.is-launch-celebrate .mark{font-size:28px;margin:0 0 10px;opacity:.9}
+.is-launch-celebrate .lead{font-size:15px;font-weight:700;color:#fdba74;margin:0 0 8px}
+.is-launch-celebrate .hero{
+  font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-.035em;line-height:1.15;margin:0 0 8px;
+}
+.is-launch-summary,.is-launch-advice,.is-launch-timeline,.is-launch-journey,.is-launch-certificate,.is-launch-letter,.is-launch-issues{
+  margin:0 0 18px;padding:16px;border-radius:16px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.14);
+}
+.is-launch-summary .sk,.is-launch-advice .sk,.is-launch-timeline .sk,.is-launch-journey .sk,.is-launch-certificate .sk,.is-launch-letter .sk,.is-launch-issues .sk,.is-launch-next .sk{
+  font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#fdba74;margin:0 0 12px;
+}
+.is-launch-summary .row,.is-launch-timeline .row,.is-launch-journey .row{
+  display:flex;justify-content:space-between;gap:12px;font-size:13px;font-weight:650;margin:0 0 8px;
+}
+.is-launch-summary .row span:last-child,.is-launch-timeline .row.is-done span:last-child,.is-launch-journey .row.is-done span:last-child{color:#fdba74;font-weight:800}
+.is-launch-journey .row.is-todo span:last-child,.is-launch-timeline .row.is-todo span:last-child{color:rgba(255,255,255,.45);font-weight:700}
+.is-launch-advice .item{margin:0 0 14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.1)}
+.is-launch-advice .item:last-child{margin:0;padding:0;border:0}
+.is-launch-advice .title{font-size:14px;font-weight:750;margin:0 0 4px}
+.is-launch-advice .est{font-size:12px;font-weight:600;color:rgba(255,255,255,.72)}
+.is-launch-issues{border-color:rgba(251,191,36,.4);background:rgba(120,53,15,.28)}
+.is-launch-issues p{margin:0 0 8px;font-size:13px;line-height:1.45;font-weight:600}
+.is-launch-issues p:last-child{margin:0}
+.is-launch-next{margin:0 0 18px}
+.is-launch-next-list{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.is-launch-next-list button{
+  appearance:none;text-align:left;width:100%;padding:11px 14px;border-radius:12px;font:inherit;font-size:14px;font-weight:700;
+  cursor:pointer;border:1px solid rgba(255,255,255,.16);background:transparent;color:rgba(255,255,255,.92);
+}
+.is-launch-next-list button:hover{border-color:#fdba74;color:#fdba74}
+.is-launch-certificate .row strong{color:#fff}
+.is-launch-letter p{margin:0 0 10px;font-size:15px;line-height:1.55;font-weight:600}
+.is-launch-letter .sig{margin-top:12px;font-weight:800;color:#fdba74}
+.is-launch-home-cta{
+  appearance:none;border:none;border-radius:14px;background:#d9632d;color:#fff;font:inherit;font-size:15px;font-weight:800;
+  padding:14px 18px;cursor:pointer;width:100%;margin-top:4px;
+}
+.is-launch-home-cta:hover{filter:brightness(1.05)}
+.is-home-soft{color:#fff;animation:isThinkCanvasIn .5s ease both}
+.is-home-soft h1{font-size:clamp(22px,3vw,28px);font-weight:800;margin:0 0 10px}
+.is-home-soft p{font-size:14px;line-height:1.5;color:rgba(255,255,255,.82);margin:0}
 .is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
 .is-area-panel.hidden{display:none!important}
 .is-area-panel.is-compact .is-area-extra{display:none}
@@ -8639,13 +8698,92 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <div class="is-step" data-is="launch-shell" id="is-step-launch-shell" data-launch-shell="1">
-        <div class="is-save-canvas">
+      <div class="is-step" data-is="business-launch" id="is-step-business-launch" data-business-launch="1" data-launch-shell="1">
+        <div class="is-launch-canvas is-business-launch" id="is-launch-canvas">
+          <div class="is-save-brand is-launch-brand">
+            <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+          </div>
+
+          <div class="is-launch-phase" id="is-launch-phase-anim">
+            <h1 class="is-launch-anim-title" id="is-launch-anim-title">Launching your business...</h1>
+            <ul class="is-launch-steps" id="is-launch-steps" aria-live="polite"></ul>
+          </div>
+
+          <div class="is-launch-phase" id="is-launch-phase-celebrate" hidden>
+            <div class="is-launch-celebrate">
+              <div class="mark" aria-hidden="true">🎉</div>
+              <p class="lead" id="is-launch-celebrate-lead">Congratulations.</p>
+              <h2 class="hero" id="is-launch-celebrate-hero">Today your business officially launched.</h2>
+            </div>
+          </div>
+
+          <div class="is-launch-phase" id="is-launch-phase-summary" hidden>
+            <div class="is-launch-summary" id="is-launch-summary">
+              <div class="sk">Launch Summary</div>
+              <div id="is-launch-summary-body"></div>
+            </div>
+            <div class="is-launch-issues" id="is-launch-issues" hidden>
+              <div class="sk">Still needs attention</div>
+              <div id="is-launch-issues-body"></div>
+            </div>
+          </div>
+
+          <div class="is-launch-phase" id="is-launch-phase-advice" hidden>
+            <div class="is-launch-advice" id="is-launch-advice">
+              <div class="sk">Here's what I'd do next...</div>
+              <div id="is-launch-advice-body"></div>
+            </div>
+          </div>
+
+          <div class="is-launch-phase" id="is-launch-phase-next" hidden>
+            <div class="is-launch-next">
+              <div class="sk">What would you like to do?</div>
+              <ul class="is-launch-next-list" id="is-launch-next-list"></ul>
+            </div>
+          </div>
+
+          <div class="is-launch-phase" id="is-launch-phase-timeline" hidden>
+            <div class="is-launch-timeline" id="is-launch-timeline">
+              <div class="sk">Business Timeline</div>
+              <div id="is-launch-timeline-body"></div>
+            </div>
+          </div>
+
+          <div class="is-launch-phase" id="is-launch-phase-certificate" hidden>
+            <div class="is-launch-certificate" id="is-launch-certificate">
+              <div class="sk">Day One Certificate</div>
+              <div id="is-launch-certificate-body"></div>
+            </div>
+          </div>
+
+          <div class="is-launch-phase" id="is-launch-phase-letter" hidden>
+            <div class="is-launch-letter" id="is-launch-letter">
+              <div class="sk">A note from Hubly</div>
+              <div id="is-launch-letter-body"></div>
+            </div>
+          </div>
+
+          <div class="is-launch-phase" id="is-launch-phase-journey" hidden>
+            <div class="is-launch-journey" id="is-launch-journey">
+              <div class="sk">Your Journey</div>
+              <div id="is-launch-journey-body"></div>
+            </div>
+          </div>
+
+          <div class="is-launch-phase" id="is-launch-phase-home" hidden>
+            <p class="is-save-sub" id="is-launch-home-prompt">Ready? Let's get to work.</p>
+            <button type="button" class="is-launch-home-cta" id="is-launch-home-cta" onclick="isEnterBusinessHome()">Let's get to work</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="business-home" id="is-step-business-home" data-business-home="1" data-ready-for-business-home="1">
+        <div class="is-home-soft">
           <div class="is-save-brand">
             <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
           </div>
-          <h1 class="is-save-hero">Ready to launch</h1>
-          <p class="is-save-sub">Epic 7 will own the full Business Launch experience. Your business is saved — readyForLaunch.</p>
+          <h1>Your business is open</h1>
+          <p>Epic 8 will own the full Business Home. For now — you're launched. readyForBusinessHome.</p>
         </div>
       </div>
 
@@ -17326,10 +17464,333 @@ function isShowFounderMoment(){
 function isFounderMomentLaunch(){
   S._is=S._is||{};
   S._is.readyForLaunch=true;
-  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-save-wide');
-  isShowStep('launch-shell');
   try{persistInstantSiteDraft();}catch(e){}
-  // Epic 7 will own full Business Launch — soft shell only.
+  isRunBusinessLaunchExperience();
+}
+
+/* ── Milestone 2 · Epic 7 — Business Launch Experience ── */
+const HUBLY_BUSINESS_LAUNCH = (function(){
+  const LAUNCH_ANIMATION_TITLE = "Launching your business...";
+  const LAUNCH_CELEBRATION = "Today your business officially launched.";
+  const FOUNDER_LETTER_TEMPLATE = "Six minutes ago this business existed only as an idea.\n\nToday it's real.\n\nI'll keep helping you grow it.\n\n— Hubly";
+  const HOME_TRANSITION = "Ready? Let's get to work.";
+  const LAUNCH_DEPLOY_STEPS = [
+    {id:"website",label:"Website is going live"},
+    {id:"booking",label:"Booking is opening"},
+    {id:"profile",label:"Business profile is activating"},
+    {id:"memory",label:"Business Memory is being secured"},
+    {id:"archive",label:"Your first version is archived"},
+    {id:"ready",label:"Everything is ready"},
+  ];
+  const NEXT_STEPS = [
+    {id:"explore",label:"Explore My Business"},
+    {id:"ask",label:"Ask Hubly"},
+    {id:"marketplace",label:"Launch Marketplace"},
+    {id:"team",label:"Invite My Team"},
+  ];
+  const FUTURE_TIMELINE = [
+    {id:"created",label:"Business Created",done:true},
+    {id:"launched",label:"Business Launched",done:true},
+    {id:"first_booking",label:"First Booking",done:false},
+    {id:"first_review",label:"First 5-Star Review",done:false},
+    {id:"first_1k",label:"First $1,000",done:false},
+    {id:"customers_100",label:"100 Customers",done:false},
+    {id:"first_employee",label:"First Employee",done:false},
+    {id:"revenue_100k",label:"$100,000 Revenue",done:false},
+    {id:"year_one",label:"1 Year in Business",done:false},
+  ];
+  const INDUSTRY_LAUNCH_ADVICE = {
+    pressure_washing:[
+      {title:"Share your booking page with three previous customers.",estimated:"Estimated: 2 bookings.",source:"growth_expert"},
+      {title:"Add five finished job photos.",estimated:"Estimated: +18% trust.",source:"business_dna"},
+      {title:"Let's build your recurring maintenance package.",estimated:"Estimated: Higher repeat revenue.",source:"business_memory"},
+    ],
+    photography:[
+      {title:"Send your inquiry link to two couples who already asked about dates.",estimated:"Estimated: 1–2 premium inquiries.",source:"growth_expert"},
+      {title:"Add three behind-the-scenes photos to the gallery.",estimated:"Estimated: Stronger emotional conversion.",source:"business_dna"},
+      {title:"Clarify your weekend package as the default experience.",estimated:"Estimated: Less decision fatigue.",source:"business_memory"},
+    ],
+    hvac:[
+      {title:"Offer a tune-up plan to five past emergency customers.",estimated:"Estimated: Recurring maintenance starts.",source:"growth_expert"},
+      {title:"Publish licensed & insured language above the fold.",estimated:"Estimated: Lower emergency fear.",source:"business_dna"},
+      {title:"Open same-day / next-day booking windows for this week.",estimated:"Estimated: Faster first bookings.",source:"business_memory"},
+    ],
+    lawn_care:[
+      {title:"Invite ten neighbors onto a weekly or biweekly route.",estimated:"Estimated: Route density grows.",source:"growth_expert"},
+      {title:"Add before/after yard photos from your last three jobs.",estimated:"Estimated: +reliability proof.",source:"business_dna"},
+      {title:"Turn on pause/resume for seasonal customers.",estimated:"Estimated: Fewer cancellations.",source:"business_memory"},
+    ],
+    cleaning:[
+      {title:"Share your turnover booking link with three Airbnb hosts.",estimated:"Estimated: Recurring turnovers.",source:"growth_expert"},
+      {title:"Collect two host reviews this week.",estimated:"Estimated: Faster host trust.",source:"business_dna"},
+      {title:"Highlight weekly and biweekly plans on the homepage.",estimated:"Estimated: Higher repeat revenue.",source:"business_memory"},
+    ],
+    spa:[
+      {title:"Text your one-tap book link to five regular clients.",estimated:"Estimated: Faster rebooking.",source:"growth_expert"},
+      {title:"Keep the menu to your top six services with durations.",estimated:"Estimated: Less decision fatigue.",source:"business_dna"},
+      {title:"Feature atmosphere photos above promotions.",estimated:"Estimated: Calmer conversion.",source:"business_memory"},
+    ],
+  };
+  function resolveKey(ctx){
+    const raw=String(ctx.industryId||ctx.industryKey||ctx.industry||ctx.facts?.industryId?.value||ctx.facts?.industry?.value||ctx.seed||ctx.businessType||'').toLowerCase();
+    if(/pressure|power\s*wash|soft\s*wash/.test(raw))return'pressure_washing';
+    if(/photo|wedding/.test(raw))return'photography';
+    if(/hvac|heating|furnace|air\s*condition/.test(raw))return'hvac';
+    if(/lawn|landscap|mow/.test(raw))return'lawn_care';
+    if(/clean|maid|airbnb|turnover|short.?term/.test(raw))return'cleaning';
+    if(/\bspa\b|massage|facial|wellness/.test(raw))return'spa';
+    return'pressure_washing';
+  }
+  function assessLaunchDeployment(ctx){
+    const stripeConnected=!!ctx.stripeConnected;
+    const googleCalendarConnected=!!ctx.googleCalendarConnected;
+    const websiteLive=ctx.websiteLive!==false;
+    const bookingLive=ctx.bookingLive!==false&&(stripeConnected||ctx.bookingWithoutPayments===true);
+    const memoryActive=ctx.memoryActive!==false;
+    const versionProtected=ctx.versionProtected!==false;
+    const summary=[
+      {id:"website",label:"Website Live",ok:websiteLive,required:true},
+      {id:"booking",label:"Booking Live",ok:bookingLive,required:true,detail:!stripeConnected&&ctx.bookingWithoutPayments!==true?"Booking couldn't be activated because Stripe isn't connected yet.":null},
+      {id:"payments",label:"Payments Connected",ok:stripeConnected,required:false,connectedOnly:true,detail:!stripeConnected?"Stripe isn't connected yet — let's finish that together.":null},
+      {id:"gcal",label:"Google Calendar Connected",ok:googleCalendarConnected,required:false,connectedOnly:true},
+      {id:"memory",label:"Business Memory Active",ok:memoryActive,required:true},
+      {id:"v1",label:"Version 1.0 Protected",ok:versionProtected,required:true},
+    ];
+    const visibleSummary=summary.filter(s=>s.connectedOnly?s.ok:true);
+    const issues=summary.filter(s=>!s.ok&&(s.required||s.detail)).map(s=>s.detail||(s.label+' still needs attention.'));
+    const deploySteps=LAUNCH_DEPLOY_STEPS.map(step=>{
+      if(step.id==='booking'&&!bookingLive)return{...step,ok:false,detail:"Booking needs Stripe before it's fully open."};
+      if(step.id==='ready'&&issues.length)return{...step,ok:true,label:"Core launch ready — a few items still need you",partial:true};
+      return{...step,ok:true};
+    });
+    return{summary:visibleSummary,allSummary:summary,issues,deploySteps,partial:issues.length>0,ok:websiteLive&&memoryActive&&versionProtected};
+  }
+  function buildLaunchAdvice(ctx){
+    const key=resolveKey(ctx);
+    return(INDUSTRY_LAUNCH_ADVICE[key]||INDUSTRY_LAUNCH_ADVICE.pressure_washing).map(a=>({...a,industryKey:key}));
+  }
+  function buildDayOneCertificate(ctx){
+    const owner=ctx.ownerName||ctx.firstName||(ctx.email?String(ctx.email).split('@')[0]:null)||'You';
+    const pretty=String(owner).replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).trim();
+    return{
+      businessName:ctx.businessName||ctx.biz||'Your Business',owner:pretty,
+      launchDate:ctx.launchDate||new Date().toISOString().slice(0,10),version:'1.0',
+      firstStrategy:ctx.firstStrategy||ctx.story||'Trust-first local brand',
+      positioning:ctx.positioning||'Premium & Reliable',
+    };
+  }
+  function buildBusinessTimeline(){
+    return[
+      {id:'created',label:'Day One',detail:'Business Created',done:true},
+      {id:'launched',label:'Day One',detail:'Business Launched',done:true},
+      {id:'first_booking',label:'Next',detail:'First Booking',done:false},
+    ];
+  }
+  function buildFounderLetter(ctx){
+    const name=ctx.firstName||(ctx.ownerName?String(ctx.ownerName).split(/\s+/)[0]:null)||null;
+    return{lead:name?('Congratulations, '+name+'.'):'Congratulations.',body:FOUNDER_LETTER_TEMPLATE,celebration:LAUNCH_CELEBRATION};
+  }
+  function orchestrateBusinessLaunch(ctx){
+    const key=resolveKey(ctx);
+    const deployment=assessLaunchDeployment(ctx);
+    const advice=buildLaunchAdvice(ctx);
+    const certificate=buildDayOneCertificate(ctx);
+    const timeline=buildBusinessTimeline(ctx);
+    const futureTimeline=FUTURE_TIMELINE.map(m=>({...m,done:m.id==='created'||m.id==='launched'?true:!!m.done}));
+    const letter=buildFounderLetter(ctx);
+    const firstName=certificate.owner.split(/\s+/)[0]||'there';
+    return{
+      version:'1.0.0',industryKey:key,animationTitle:LAUNCH_ANIMATION_TITLE,deploySteps:deployment.deploySteps,
+      celebrationLead:'Congratulations, '+firstName+'.',celebration:LAUNCH_CELEBRATION,
+      summary:deployment.summary,issues:deployment.issues,partial:deployment.partial,advice,
+      nextSteps:NEXT_STEPS.map(n=>({...n})),timeline,futureTimeline,certificate,founderLetter:letter,
+      homeTransition:HOME_TRANSITION,noFakeSuccess:true,
+      signature:[key,advice[0]?.title?.slice(0,40),certificate.businessName].join('::'),
+    };
+  }
+  return{
+    LAUNCH_ANIMATION_TITLE,LAUNCH_CELEBRATION,FOUNDER_LETTER_TEMPLATE,HOME_TRANSITION,LAUNCH_DEPLOY_STEPS,NEXT_STEPS,FUTURE_TIMELINE,
+    INDUSTRY_LAUNCH_ADVICE,assessLaunchDeployment,buildLaunchAdvice,buildDayOneCertificate,orchestrateBusinessLaunch,
+  };
+})();
+
+function isLaunchWait(ms){return new Promise(r=>setTimeout(r,ms));}
+
+function isLaunchShowPhase(id){
+  const el=document.getElementById(id);
+  if(el)el.hidden=false;
+}
+
+async function isRunBusinessLaunchExperience(opts){
+  S._is=S._is||{};
+  S._is.readyForLaunch=true;
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-save-wide');
+  document.querySelector('#is-shell .is-wrap')?.classList.add('is-launch-wide');
+
+  const d=S._is.discovery||{};
+  const reveal=S._is.reveal||{};
+  const stripeConnected=!!(S._stripeConnected||S.stripeConnectAccountId||opts?.stripeConnected);
+  const googleCalendarConnected=!!(S._googleCalendarConnected||opts?.googleCalendarConnected);
+  const ownerName=S._is.ownerName||S._is.ownerFirst||S._is.delayedAccount?.certificate?.owner||null;
+  const firstName=(ownerName?String(ownerName).split(/\s+/)[0]:null)||null;
+  const industry=S.businessType||d.facts?.industryId?.value||d.facts?.industry?.value||reveal.industryKey||'';
+  const flow=HUBLY_BUSINESS_LAUNCH.orchestrateBusinessLaunch({
+    businessName:S.biz||reveal.businessName||S._is.delayedAccount?.certificate?.business,
+    biz:S.biz,
+    ownerName,firstName,email:S.email||null,
+    industryId:industry,industry,businessType:S.businessType,
+    story:reveal.story||reveal.pride||d.learningSummary?.lines?.[0],
+    positioning:reveal.positioning||reveal.chosenDirection||'Premium & Reliable',
+    firstStrategy:reveal.strategy||reveal.story||null,
+    stripeConnected,googleCalendarConnected,
+    bookingWithoutPayments:!!opts?.bookingWithoutPayments,
+    websiteLive:opts?.websiteLive!==false,
+    memoryActive:opts?.memoryActive!==false,
+    versionProtected:opts?.versionProtected!==false,
+  });
+  S._is.businessLaunch=flow;
+  S._is.launchPartial=!!flow.partial;
+
+  // Reset phases
+  ['is-launch-phase-celebrate','is-launch-phase-summary','is-launch-phase-advice','is-launch-phase-next',
+   'is-launch-phase-timeline','is-launch-phase-certificate','is-launch-phase-letter','is-launch-phase-journey','is-launch-phase-home'
+  ].forEach(id=>{const el=document.getElementById(id);if(el)el.hidden=true;});
+  const animPhase=document.getElementById('is-launch-phase-anim');
+  if(animPhase)animPhase.hidden=false;
+
+  const title=document.getElementById('is-launch-anim-title');
+  if(title)title.textContent=flow.animationTitle;
+  const stepsEl=document.getElementById('is-launch-steps');
+  if(stepsEl){
+    stepsEl.innerHTML=flow.deploySteps.map((s,i)=>
+      `<li id="is-launch-step-${i}" class="${s.ok?'is-ok':'is-warn'}"><span>${escPeHtml(s.label)}${s.detail?`<span class="detail">${escPeHtml(s.detail)}</span>`:''}</span></li>`
+    ).join('');
+  }
+
+  isShowStep('business-launch');
+  try{persistInstantSiteDraft();}catch(e){}
+
+  // Animation — real deploy steps, never Loading/Publishing/spinner
+  for(let i=0;i<flow.deploySteps.length;i++){
+    const li=document.getElementById('is-launch-step-'+i);
+    if(li)li.classList.add('is-on');
+    await isLaunchWait(420);
+  }
+
+  // Celebration — quiet, business is the hero
+  const lead=document.getElementById('is-launch-celebrate-lead');
+  const hero=document.getElementById('is-launch-celebrate-hero');
+  if(lead)lead.textContent=flow.celebrationLead;
+  if(hero)hero.textContent=flow.celebration;
+  isLaunchShowPhase('is-launch-phase-celebrate');
+  await isLaunchWait(700);
+
+  // Launch Summary — only real status
+  const sumBody=document.getElementById('is-launch-summary-body');
+  if(sumBody){
+    sumBody.innerHTML=flow.summary.map(s=>
+      `<div class="row"><span>${escPeHtml(s.label)}</span><span>${s.ok?'✓':'—'}</span></div>`
+    ).join('');
+  }
+  const issuesWrap=document.getElementById('is-launch-issues');
+  const issuesBody=document.getElementById('is-launch-issues-body');
+  if(flow.issues.length){
+    if(issuesWrap)issuesWrap.hidden=false;
+    if(issuesBody){
+      const celebrateOk=flow.summary.filter(s=>s.ok).map(s=>s.label);
+      issuesBody.innerHTML=
+        (celebrateOk.length?`<p>Your ${escPeHtml(celebrateOk[0].replace(/ Live$/,'').toLowerCase())} is live.</p>`:'')+
+        flow.issues.map(msg=>`<p>${escPeHtml(msg)}</p>`).join('')+
+        `<p>Let's finish that together.</p>`;
+    }
+  }else if(issuesWrap){
+    issuesWrap.hidden=true;
+  }
+  isLaunchShowPhase('is-launch-phase-summary');
+  await isLaunchWait(500);
+
+  // Hubly's first advice — industry-shaped
+  const adviceBody=document.getElementById('is-launch-advice-body');
+  if(adviceBody){
+    adviceBody.innerHTML=flow.advice.map((a,i)=>
+      `<div class="item"><div class="title">${i+1}. ${escPeHtml(a.title)}</div><div class="est">${escPeHtml(a.estimated)}</div></div>`
+    ).join('');
+  }
+  isLaunchShowPhase('is-launch-phase-advice');
+  await isLaunchWait(400);
+
+  // Next steps — calm choices
+  const nextList=document.getElementById('is-launch-next-list');
+  if(nextList){
+    nextList.innerHTML=flow.nextSteps.map(n=>
+      `<li><button type="button" data-launch-next="${escPeHtml(n.id)}" onclick="isLaunchChooseNext('${escPeHtml(n.id)}')">${escPeHtml(n.label)}</button></li>`
+    ).join('');
+  }
+  isLaunchShowPhase('is-launch-phase-next');
+
+  // Business Timeline
+  const tlBody=document.getElementById('is-launch-timeline-body');
+  if(tlBody){
+    tlBody.innerHTML=flow.timeline.map(t=>
+      `<div class="row ${t.done?'is-done':'is-todo'}"><span>${escPeHtml(t.label)} · ${escPeHtml(t.detail)}</span><span>${t.done?'✓':'Next'}</span></div>`
+    ).join('');
+  }
+  isLaunchShowPhase('is-launch-phase-timeline');
+
+  // Day One certificate
+  const certBody=document.getElementById('is-launch-certificate-body');
+  if(certBody){
+    const c=flow.certificate;
+    certBody.innerHTML=[
+      ['Business',c.businessName],['Owner',c.owner],['Launch date',c.launchDate],
+      ['Version',c.version],['First strategy',c.firstStrategy],['Positioning',c.positioning],
+    ].map(([k,v])=>`<div class="row"><span>${escPeHtml(k)}</span><strong>${escPeHtml(v)}</strong></div>`).join('');
+  }
+  isLaunchShowPhase('is-launch-phase-certificate');
+
+  // Founder Letter
+  const letterBody=document.getElementById('is-launch-letter-body');
+  if(letterBody){
+    const parts=String(flow.founderLetter.body).split('\n\n');
+    letterBody.innerHTML=parts.map((p,i)=>{
+      if(i===parts.length-1)return`<p class="sig">${escPeHtml(p)}</p>`;
+      return`<p>${escPeHtml(p)}</p>`;
+    }).join('');
+  }
+  isLaunchShowPhase('is-launch-phase-letter');
+
+  // Future Timeline / Your Journey
+  const journeyBody=document.getElementById('is-launch-journey-body');
+  if(journeyBody){
+    journeyBody.innerHTML=flow.futureTimeline.map(m=>
+      `<div class="row ${m.done?'is-done':'is-todo'}"><span>${escPeHtml(m.label)}</span><span>${m.done?'✓':'⬜'}</span></div>`
+    ).join('');
+  }
+  isLaunchShowPhase('is-launch-phase-journey');
+  await isLaunchWait(350);
+
+  const homePrompt=document.getElementById('is-launch-home-prompt');
+  if(homePrompt)homePrompt.textContent=flow.homeTransition;
+  isLaunchShowPhase('is-launch-phase-home');
+  try{persistInstantSiteDraft();}catch(e){}
+  return flow;
+}
+
+function isLaunchChooseNext(id){
+  S._is=S._is||{};
+  S._is.launchNextStep=id;
+  try{persistInstantSiteDraft();}catch(e){}
+  if(id==='explore')isEnterBusinessHome();
+  // Ask / Marketplace / Team stay on launch — intentional calm choices for Epic 8+
+}
+
+function isEnterBusinessHome(){
+  S._is=S._is||{};
+  S._is.readyForBusinessHome=true;
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-launch-wide');
+  isShowStep('business-home');
+  try{persistInstantSiteDraft();}catch(e){}
+  // Epic 8 will own full Business Home — soft shell only.
 }
 
 // Resume Delayed Account after OAuth return
