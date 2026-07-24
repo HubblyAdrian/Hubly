@@ -1,4 +1,4 @@
-/** Node mirror of hubly_brain_mission_control.ts — Sections 12/14/15 (esbuild). */
+/** Node mirror of hubly_brain_mission_control.ts — Sections 12/14/15/16 (esbuild). */
 
 
 // supabase/functions/_shared/hubly_brain_mission_control.ts
@@ -13,7 +13,12 @@ import {
   getReliabilityManifest
 } from "./reliability.mjs";
 import { getPlatformInventory } from "./platform.mjs";
-var MISSION_CONTROL_VERSION = "1.2.0";
+import {
+  getQualityScoreSnapshot,
+  getLastQualityReport,
+  getQualityManifest
+} from "./quality-core.mjs";
+var MISSION_CONTROL_VERSION = "1.3.0";
 var MISSION_CONTROL_OWNER = "hubly_brain";
 var FLIGHTS = /* @__PURE__ */ new Map();
 var FLIGHT_ORDER = [];
@@ -338,7 +343,20 @@ function getMissionControlSnapshot() {
       avgDecisionScore: computeAiHealth().avgDecisionScore,
       avgLatencyMs: computeAiHealth().avgLatencyMs
     }),
-    platformInventory: getPlatformInventory()
+    platformInventory: getPlatformInventory(),
+    qualityAssurance: (() => {
+      const last = getLastQualityReport();
+      const score = getQualityScoreSnapshot();
+      return {
+        score,
+        lastRunAt: last?.checkedAt || null,
+        ok: last ? last.ok : null,
+        scenarioPassRate: last ? Math.round(last.scenarioLibrary.passed / Math.max(1, last.scenarioLibrary.total) * 100) : null,
+        founderBenchmarkPassRate: last ? Math.round(last.founderBenchmarks.passed / Math.max(1, last.founderBenchmarks.total) * 100) : null,
+        identityComplianceRate: last?.identityCompliance.rate ?? null,
+        manifest: getQualityManifest()
+      };
+    })()
   };
 }
 function clearMissionControlForTests() {
@@ -368,6 +386,7 @@ var HublyMissionControl = {
   performance: getObservabilityDashboard,
   costAwareness: getCostReport,
   platformInventory: getPlatformInventory,
+  qualityScore: getQualityScoreSnapshot,
   clearForTests: clearMissionControlForTests
 };
 var hubly_brain_mission_control_default = HublyMissionControl;

@@ -1,10 +1,10 @@
 {
   "milestone": 1,
-  "passed": 15,
+  "passed": 16,
   "total": 18,
-  "percent": 83,
+  "percent": 89,
   "ready": false,
-  "checkedAt": "2026-07-24T01:00:07.537Z",
+  "checkedAt": "2026-07-24T01:05:01.371Z",
   "sections": [
     {
       "n": 1,
@@ -98,9 +98,9 @@
     },
     {
       "n": 16,
-      "title": "Tests",
-      "status": "fail",
-      "script": "scripts/check-section16-tests.mjs"
+      "title": "Validation & Quality Assurance",
+      "status": "pass",
+      "script": "scripts/check-section16-quality.mjs"
     },
     {
       "n": 17,

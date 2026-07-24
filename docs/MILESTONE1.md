@@ -41,8 +41,8 @@ Each section must ship:
 | 12 | Hubly Mission Control | ✅ Proven (`check:section12`) |
 | 13 | Hubly Identity System | ✅ Proven |
 | 14 | Performance, Reliability & Resilience | ✅ Proven |
-| 15 | Platform Extensibility | ⏳ Pass — pending Founder Approval |
-| 16 | Tests | ⬜ Not proven |
+| 15 | Platform Extensibility | ✅ Proven |
+| 16 | Validation & Quality Assurance | ⏳ Pass — pending Founder Approval |
 | 17 | Documentation | ⬜ Not proven |
 | 18 | Founder Demo | ⬜ Not proven |
 
@@ -69,6 +69,14 @@ Hubly grows by registering Feature Manifests — not rewriting Brain. Experts, b
 
 ```bash
 npm run check:section15
+```
+
+## Section 16 — Validation & Quality Assurance
+
+Intelligence validation — not unit tests. Scenario Library, Founder Benchmark Suite, and Mission Control Quality Score.
+
+```bash
+npm run check:section16
 ```
 
 Live summary after `npm run milestone1`: `docs/MILESTONE1_RELEASE_GATE.json`

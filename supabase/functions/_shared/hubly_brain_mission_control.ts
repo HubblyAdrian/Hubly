@@ -26,8 +26,14 @@ import {
   type ObservabilityDashboard,
 } from "./hubly_brain_reliability.ts";
 import { getPlatformInventory } from "./hubly_brain_platform.ts";
+import {
+  getQualityScoreSnapshot,
+  getLastQualityReport,
+  getQualityManifest,
+  type QualityScore,
+} from "./hubly_brain_quality.ts";
 
-export const MISSION_CONTROL_VERSION = "1.2.0" as const;
+export const MISSION_CONTROL_VERSION = "1.3.0" as const;
 export const MISSION_CONTROL_OWNER = "hubly_brain" as const;
 
 export type HublyLiveExpertStatus =
@@ -154,6 +160,16 @@ export type HublyMissionControlSnapshot = {
   trustScore: HublyTrustScore;
   /** Section 15 — live Feature Manifest inventory (platform extensibility). */
   platformInventory: ReturnType<typeof getPlatformInventory>;
+  /** Section 16 — Validation & Quality Assurance score (engineering). */
+  qualityAssurance: {
+    score: QualityScore;
+    lastRunAt: string | null;
+    ok: boolean | null;
+    scenarioPassRate: number | null;
+    founderBenchmarkPassRate: number | null;
+    identityComplianceRate: number | null;
+    manifest: ReturnType<typeof getQualityManifest>;
+  };
 };
 
 const FLIGHTS = new Map<string, HublyFlightRecorder>();
@@ -579,6 +595,23 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
       avgLatencyMs: computeAiHealth().avgLatencyMs,
     }),
     platformInventory: getPlatformInventory(),
+    qualityAssurance: (() => {
+      const last = getLastQualityReport();
+      const score = getQualityScoreSnapshot();
+      return {
+        score,
+        lastRunAt: last?.checkedAt || null,
+        ok: last ? last.ok : null,
+        scenarioPassRate: last
+          ? Math.round((last.scenarioLibrary.passed / Math.max(1, last.scenarioLibrary.total)) * 100)
+          : null,
+        founderBenchmarkPassRate: last
+          ? Math.round((last.founderBenchmarks.passed / Math.max(1, last.founderBenchmarks.total)) * 100)
+          : null,
+        identityComplianceRate: last?.identityCompliance.rate ?? null,
+        manifest: getQualityManifest(),
+      };
+    })(),
   };
 }
 
@@ -610,6 +643,7 @@ export const HublyMissionControl = {
   performance: getObservabilityDashboard,
   costAwareness: getCostReport,
   platformInventory: getPlatformInventory,
+  qualityScore: getQualityScoreSnapshot,
   clearForTests: clearMissionControlForTests,
 };
 

@@ -185,6 +185,7 @@ import { HublyMissionControl } from "./hubly_brain_mission_control.ts";
 import { HublyIdentitySystem, hublyIdentityPreamble } from "./hubly_brain_identity_system.ts";
 import { HublyReliability } from "./hubly_brain_reliability.ts";
 import { HublyPlatform } from "./hubly_brain_platform.ts";
+import { HublyQuality } from "./hubly_brain_quality.ts";
 import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
 import {
   logBrainExecution,
@@ -266,6 +267,7 @@ export {
   HublyIdentitySystem,
   HublyReliability,
   HublyPlatform,
+  HublyQuality,
   HublyConfidencePolicy,
   HublyBrainExecutionLog,
   HublyExperienceDirector,

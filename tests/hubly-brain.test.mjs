@@ -321,3 +321,21 @@ test('Section 15 — Platform Extensibility via Feature Manifests', () => {
   assert.ok(proof.proofs.demo.registered.length >= 6);
   assert.equal(proof.proofs.brainUntouched, true);
 });
+
+test('Section 16 — Validation & Quality Assurance + Quality Score', () => {
+  const r = run('scripts/check-section16-quality.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 16 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION16_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 16);
+  assert.match(proof.name, /Quality Assurance/i);
+  assert.ok(proof.proofs.qualityScore.overall >= 85);
+  assert.ok(proof.proofs.scenarioLibrary.passed >= 8);
+  assert.ok(proof.proofs.founderBenchmarks.passed >= 8);
+});

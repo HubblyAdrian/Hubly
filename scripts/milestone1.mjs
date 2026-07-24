@@ -25,7 +25,7 @@ const SECTIONS = [
   { n: 13, title: 'Hubly Identity System', script: 'scripts/check-section13-identity-system.mjs' },
   { n: 14, title: 'Performance, Reliability & Resilience', script: 'scripts/check-section14-reliability.mjs' },
   { n: 15, title: 'Platform Extensibility', script: 'scripts/check-section15-platform-extensibility.mjs' },
-  { n: 16, title: 'Tests', script: 'scripts/check-section16-tests.mjs' },
+  { n: 16, title: 'Validation & Quality Assurance', script: 'scripts/check-section16-quality.mjs' },
   { n: 17, title: 'Documentation', script: 'scripts/check-section17-documentation.mjs' },
   { n: 18, title: 'Founder Demo', script: 'scripts/check-section18-founder-demo.mjs' },
 ];
