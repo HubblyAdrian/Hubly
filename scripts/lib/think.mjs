@@ -42,6 +42,7 @@ import { generateChangePlan } from './change-plan.mjs';
 import { generatePreview } from './preview-engine.mjs';
 import { startCollaboration } from './collaboration.mjs';
 import { proposeVersionFromPlan } from './version-engine.mjs';
+import { startCreativeSession } from './business-builder.mjs';
 import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
@@ -683,6 +684,16 @@ export async function think(req) {
       collaboration,
     )
     : null;
+  const creativeSession = changePlan
+    ? startCreativeSession({
+      businessId: businessId || `biz_${Date.now().toString(36)}`,
+      plan: changePlan,
+      preview,
+      collaboration,
+      businessVersion,
+      missionControlReplayId: null,
+    }).session
+    : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ''),
     intent,
@@ -833,6 +844,22 @@ export async function think(req) {
         rollbackExecuted: false,
       }
       : null,
+    creativeSession: creativeSession
+      ? {
+        id: creativeSession.id,
+        label: creativeSession.label,
+        direction: creativeSession.direction.label,
+        decisionCount: creativeSession.decisions.length,
+        surfacesTouched: [...creativeSession.surfacesTouched],
+        businessScoreOverall: creativeSession.score.overall,
+        preferenceCount: creativeSession.memory.preferences.length,
+        hasChallenge: !!creativeSession.challenge,
+        requiresApproval: true,
+        applied: false,
+        executed: false,
+        waitingFor: creativeSession.waitingFor,
+      }
+      : null,
   });
 
   if (changePlan && flightRecorder.executionId) {
@@ -848,6 +875,9 @@ export async function think(req) {
   }
   if (businessVersion && flightRecorder.executionId) {
     businessVersion.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (creativeSession && flightRecorder.executionId) {
+    creativeSession.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -879,6 +909,7 @@ export async function think(req) {
     preview,
     collaboration,
     businessVersion,
+    creativeSession,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     experienceDirector: {

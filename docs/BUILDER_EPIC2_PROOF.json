@@ -4,7 +4,7 @@
   "name": "Change Plan DSL",
   "title": "Change Plan DSL",
   "passed": true,
-  "checkedAt": "2026-07-24T02:37:43.531Z",
+  "checkedAt": "2026-07-24T02:45:52.818Z",
   "proofs": {
     "changePlanEngineExists": true,
     "universalDsl": true,
@@ -26,15 +26,15 @@
         "request": "Make my website feel premium.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mrybye31_8ml2rc",
+          "intentId": "bint_mryc8vmb_tpz7ag",
           "category": "Website",
           "goal": "Premium Branding"
         },
         "changePlan": {
-          "id": "cpl_mrybye37_ywdwca",
+          "id": "cpl_mryc8vmi_mo9on3",
           "version": "1.0.0",
           "builderType": "website_builder",
-          "intentId": "bint_mrybye31_8ml2rc",
+          "intentId": "bint_mryc8vmb_tpz7ag",
           "title": "Website Improvement",
           "description": "Declarative Change Plan for: Premium Branding",
           "affectedSystems": [
@@ -58,7 +58,7 @@
           },
           "changes": [
             {
-              "actionId": "act_mrybye37_b9jfj9",
+              "actionId": "act_mryc8vmh_946z5h",
               "path": "website.premium_feel",
               "desired": true,
               "builderOwner": "Website Builder",
@@ -76,7 +76,7 @@
               "reason": "Owner asked for a more premium website feel."
             },
             {
-              "actionId": "act_mrybye37_krjt8b",
+              "actionId": "act_mryc8vmh_icnvus",
               "path": "website.hero.headline_tone",
               "desired": "premium",
               "builderOwner": "Website Builder",
@@ -126,7 +126,7 @@
           },
           "applied": false,
           "executed": false,
-          "missionControlExecutionId": "flt_mrybye39_cnsu9y"
+          "missionControlExecutionId": "flt_mryc8vmk_lsogvp"
         }
       },
       {
@@ -134,15 +134,15 @@
         "request": "Don't allow same-day bookings.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mrybye3c_uarhmg",
+          "intentId": "bint_mryc8vmn_rzst12",
           "category": "Booking",
           "goal": "Minimum Notice"
         },
         "changePlan": {
-          "id": "cpl_mrybye3d_nhdmp3",
+          "id": "cpl_mryc8vmo_ygfleo",
           "version": "1.0.0",
           "builderType": "booking",
-          "intentId": "bint_mrybye3c_uarhmg",
+          "intentId": "bint_mryc8vmn_rzst12",
           "title": "Booking Rule",
           "description": "Declarative Change Plan for: Minimum Notice",
           "affectedSystems": [
@@ -168,7 +168,7 @@
           },
           "changes": [
             {
-              "actionId": "act_mrybye3d_ofuclk",
+              "actionId": "act_mryc8vmo_76u25d",
               "path": "booking.same_day_bookings.allowed",
               "desired": false,
               "builderOwner": "Booking Builder",
@@ -185,7 +185,7 @@
               "reason": "Owner does not want same-day bookings."
             },
             {
-              "actionId": "act_mrybye3d_vrx2lu",
+              "actionId": "act_mryc8vmo_vrzdjz",
               "path": "booking.minimum_notice.hours",
               "desired": 24,
               "builderOwner": "Booking Builder",
@@ -234,7 +234,7 @@
           },
           "applied": false,
           "executed": false,
-          "missionControlExecutionId": "flt_mrybye3e_hhcsff"
+          "missionControlExecutionId": "flt_mryc8vmp_jo7h35"
         }
       },
       {
@@ -242,15 +242,15 @@
         "request": "Move Jobs above Customers.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mrybye3g_rnwczq",
+          "intentId": "bint_mryc8vmr_qrgwt1",
           "category": "Workspace",
           "goal": "Navigation Order"
         },
         "changePlan": {
-          "id": "cpl_mrybye3h_bpamww",
+          "id": "cpl_mryc8vmr_1hcwwy",
           "version": "1.0.0",
           "builderType": "workspace_builder",
-          "intentId": "bint_mrybye3g_rnwczq",
+          "intentId": "bint_mryc8vmr_qrgwt1",
           "title": "Workspace Layout",
           "description": "Declarative Change Plan for: Navigation Order",
           "affectedSystems": [
@@ -274,7 +274,7 @@
           },
           "changes": [
             {
-              "actionId": "act_mrybye3h_8rdc26",
+              "actionId": "act_mryc8vmr_1bzjif",
               "path": "workspace.sidebar_order",
               "desired": [
                 "Jobs",
@@ -321,7 +321,7 @@
           },
           "applied": false,
           "executed": false,
-          "missionControlExecutionId": "flt_mrybye3h_3xbl96"
+          "missionControlExecutionId": "flt_mryc8vms_uq3qlf"
         }
       },
       {
@@ -329,15 +329,15 @@
         "request": "Hide the unused CRM module and pin my leads widget.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mrybye3i_r2tjh5",
+          "intentId": "bint_mryc8vmt_t8x6ye",
           "category": "CRM",
           "goal": "Hide Module"
         },
         "changePlan": {
-          "id": "cpl_mrybye3j_xg2xl8",
+          "id": "cpl_mryc8vmu_vfyw8a",
           "version": "1.0.0",
           "builderType": "crm",
-          "intentId": "bint_mrybye3i_r2tjh5",
+          "intentId": "bint_mryc8vmt_t8x6ye",
           "title": "CRM Change",
           "description": "Declarative Change Plan for: Hide Module",
           "affectedSystems": [
@@ -367,7 +367,7 @@
           },
           "changes": [
             {
-              "actionId": "act_mrybye3j_9qf1yt",
+              "actionId": "act_mryc8vmu_hrwlvm",
               "path": "crm.modules.hide",
               "desired": [
                 "unused"
@@ -385,7 +385,7 @@
               "reason": "Owner wants to hide a CRM module."
             },
             {
-              "actionId": "act_mrybye3j_3brar8",
+              "actionId": "act_mryc8vmu_df3iy7",
               "path": "crm.widgets.pin",
               "desired": [
                 "priority"
@@ -431,7 +431,7 @@
           },
           "applied": false,
           "executed": false,
-          "missionControlExecutionId": "flt_mrybye3j_l5zgr0"
+          "missionControlExecutionId": "flt_mryc8vmu_yjst9n"
         }
       },
       {
@@ -439,15 +439,15 @@
         "request": "Put these 12 photos into my portfolio.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mrybye3k_ldzotz",
+          "intentId": "bint_mryc8vmv_q5hazz",
           "category": "Portfolio",
           "goal": "Gallery Organization"
         },
         "changePlan": {
-          "id": "cpl_mrybye3l_oxjrg2",
+          "id": "cpl_mryc8vmw_x1w9nx",
           "version": "1.0.0",
           "builderType": "portfolio_builder",
-          "intentId": "bint_mrybye3k_ldzotz",
+          "intentId": "bint_mryc8vmv_q5hazz",
           "title": "Portfolio Update",
           "description": "Declarative Change Plan for: Gallery Organization",
           "affectedSystems": [
@@ -488,7 +488,7 @@
           },
           "changes": [
             {
-              "actionId": "act_mrybye3l_2ebgzd",
+              "actionId": "act_mryc8vmw_gt4j3m",
               "path": "portfolio.gallery.organize",
               "desired": true,
               "builderOwner": "Portfolio Builder",
@@ -506,7 +506,7 @@
               "reason": "Owner wants portfolio photos organized in the gallery."
             },
             {
-              "actionId": "act_mrybye3l_j0aaqa",
+              "actionId": "act_mryc8vmw_9rxbos",
               "path": "portfolio.hero_images.select",
               "desired": true,
               "builderOwner": "Portfolio Builder",
@@ -526,7 +526,7 @@
               "reason": "Choose hero images among uploaded portfolio photos."
             },
             {
-              "actionId": "act_mrybye3l_erajek",
+              "actionId": "act_mryc8vmw_dw0dqq",
               "path": "portfolio.captions.generate",
               "desired": true,
               "builderOwner": "Portfolio Builder",
@@ -575,7 +575,7 @@
           },
           "applied": false,
           "executed": false,
-          "missionControlExecutionId": "flt_mrybye3l_uqdxbq"
+          "missionControlExecutionId": "flt_mryc8vmw_5q49u8"
         }
       },
       {
@@ -583,15 +583,15 @@
         "request": "Send prep instructions after ceramic coating bookings.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mrybye3n_ebg1jh",
+          "intentId": "bint_mryc8vmy_0eej9m",
           "category": "Automations",
           "goal": "Post-Booking Prep Instructions"
         },
         "changePlan": {
-          "id": "cpl_mrybye3o_uuv3nh",
+          "id": "cpl_mryc8vmz_gaxd81",
           "version": "1.0.0",
           "builderType": "automation",
-          "intentId": "bint_mrybye3n_ebg1jh",
+          "intentId": "bint_mryc8vmy_0eej9m",
           "title": "Automation Setup",
           "description": "Declarative Change Plan for: Post-Booking Prep Instructions",
           "affectedSystems": [
@@ -649,7 +649,7 @@
           },
           "changes": [
             {
-              "actionId": "act_mrybye3o_tbqwox",
+              "actionId": "act_mryc8vmz_o6rq8j",
               "path": "automations.workflows",
               "desired": [
                 {
@@ -725,7 +725,7 @@
           },
           "applied": false,
           "executed": false,
-          "missionControlExecutionId": "flt_mrybye3o_s7dbc9"
+          "missionControlExecutionId": "flt_mryc8vmz_14z5iz"
         }
       },
       {
@@ -733,15 +733,15 @@
         "request": "Add arrival windows and update my website to explain them.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mrybye3p_rvmzyx",
+          "intentId": "bint_mryc8vn0_pozf0o",
           "category": "Multiple Systems",
           "goal": "Arrival Windows · Website Update"
         },
         "changePlan": {
-          "id": "cpl_mrybye3q_ogyed5",
+          "id": "cpl_mryc8vn1_doboju",
           "version": "1.0.0",
           "builderType": "multi",
-          "intentId": "bint_mrybye3p_rvmzyx",
+          "intentId": "bint_mryc8vn0_pozf0o",
           "title": "Multi-System: Website + Booking",
           "description": "Declarative Change Plan for: Arrival Windows · Website Update",
           "affectedSystems": [
@@ -776,7 +776,7 @@
           },
           "changes": [
             {
-              "actionId": "act_mrybye3q_tnacvh",
+              "actionId": "act_mryc8vn1_er84e1",
               "path": "website.explain_arrival_windows",
               "desired": true,
               "builderOwner": "Website Builder",
@@ -796,7 +796,7 @@
               "reason": "Website should explain arrival windows so customers know what to expect."
             },
             {
-              "actionId": "act_mrybye3q_997pei",
+              "actionId": "act_mryc8vn1_itmyey",
               "path": "booking.arrival_window",
               "desired": {
                 "enabled": true,
@@ -848,7 +848,7 @@
           },
           "applied": false,
           "executed": false,
-          "missionControlExecutionId": "flt_mrybye3q_l8n4x3"
+          "missionControlExecutionId": "flt_mryc8vn2_g75f1l"
         }
       }
     ]

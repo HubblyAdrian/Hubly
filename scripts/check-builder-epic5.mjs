@@ -236,7 +236,7 @@ check("MC builderActions.available === false", snap.builderActions?.available ==
 check("MC displays versions", (snap.builderActions?.versions || []).length >= 1);
 check(
   "MC epic is Version & Rollback",
-  /Version|Rollback|Epic 5/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Version|Rollback|Business Builder|Epic [56]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check("MC version history note", /History|Diff|Rollback|restore/i.test(snap.builderActions?.versionHistoryNote || ""));
 
@@ -324,7 +324,7 @@ npm run check:builder-epic5
 
 ## Stop
 
-Do **not** begin Epic 6 until Founder Approval.
+Do **not** begin the next epic until Founder Approval of Epic 5.
 `;
 
 fs.writeFileSync(path.join(root, "docs/BUILDER_EPIC5.md"), md);
@@ -335,6 +335,5 @@ if (!passed) {
 }
 
 console.log("\nEPIC 5 PASS — Version & Rollback (plans only, not executed)\n");
-console.log("  Proof → docs/BUILDER_EPIC5_PROOF.json");
-console.log("  Stop before Epic 6 until Founder Approval.\n");
+console.log("  Proof → docs/BUILDER_EPIC5_PROOF.json\n");
 process.exit(0);

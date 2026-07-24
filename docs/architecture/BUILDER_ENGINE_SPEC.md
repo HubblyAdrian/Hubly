@@ -1,10 +1,10 @@
 # Builder Engine Specification
 
-**Version:** 1.5.0  
-**Status:** Milestone 1.5 — Epic 1–4 ✅ · Epic 5 ✅ (Version & Rollback) · Epic 6+ locked  
+**Version:** 1.6.0  
+**Status:** Milestone 1.5 — Epic 1–5 ✅ · Epic 6 ✅ (Business Builder) · Epic 7+ locked  
 **Target:** Milestone 1.5 (12 epics · one release gate each)
 
-Epic 1–4: Intent → Change Plan → Preview → Collaboration. Epic 5 is **Git for a business** — versions, diffs, rollback plans, and Business Timeline. Apply / surface builders are later. Do not implement them ahead of Founder Approval.
+Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6 is **Business Builder** — Creative Sessions across the whole business. The website is one canvas; `website_builder` remains an internal module. Customer-facing language is always Business Builder. Apply / remaining surface builders are later. Do not implement them ahead of Founder Approval.
 
 ## Purpose
 
@@ -21,15 +21,26 @@ Turn Hubly conversations into **real business changes** — with preview, owner 
 | Respect approval | No silent writes to production surfaces |
 | Support rollback | Every applied plan has a reverse path |
 
-Builder modules register via Platform Extensibility (`builder.*` Feature Manifests). Examples reserved for 1.5:
+Builder modules register via Platform Extensibility (`builder.*` Feature Manifests). Customer-facing experience is always **Business Builder**. Internal modules reserved for 1.5:
 
-- Website Builder  
+- Business Builder (orchestrates creative sessions; owns the customer promise)  
+- Website module (`website_builder`) — one canvas inside Business Builder  
 - CRM Builder  
 - Booking Builder  
 - Automation Builder  
 - Portfolio Builder  
 - Package Builder  
 - Workspace Builder  
+
+## Business Builder (Epic 6)
+
+1. Owner describes the business in plain English  
+2. Creative Session explains multi-surface changes + why  
+3. Creative Directions shape Website + Booking + Packages + Portfolio  
+4. Business Score measures business quality (not SEO/Lighthouse)  
+5. Creative Memory learns preferences for the next build  
+6. Creative Workspace: conversation left · live business right  
+7. Still requires Collaboration/Approval — no silent apply  
 
 ## Change Plans
 

@@ -1,11 +1,11 @@
 {
   "milestone": "1.5",
-  "passed": 5,
+  "passed": 6,
   "total": 12,
-  "unlocked": 5,
-  "percent": 42,
+  "unlocked": 6,
+  "percent": 50,
   "ready": false,
-  "checkedAt": "2026-07-24T02:37:44.637Z",
+  "checkedAt": "2026-07-24T02:45:54.395Z",
   "epics": [
     {
       "n": 1,
@@ -39,9 +39,9 @@
     },
     {
       "n": 6,
-      "title": "Website Builder",
-      "status": "locked",
-      "script": null
+      "title": "Business Builder",
+      "status": "pass",
+      "script": "scripts/check-builder-epic6.mjs"
     },
     {
       "n": 7,

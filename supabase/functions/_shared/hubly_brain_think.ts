@@ -17,6 +17,7 @@ import { generateChangePlan, type ChangePlan } from "./hubly_brain_change_plan.t
 import { generatePreview, type BuilderPreview } from "./hubly_brain_preview_engine.ts";
 import { startCollaboration, type CollaborationSession } from "./hubly_brain_collaboration.ts";
 import { proposeVersionFromPlan, type BusinessVersion } from "./hubly_brain_version_engine.ts";
+import { startCreativeSession, type CreativeSession } from "./hubly_brain_business_builder.ts";
 import {
   listExpertCapabilities,
   listExperts,
@@ -230,6 +231,8 @@ export type HublyThinkResult = {
   collaboration?: CollaborationSession | null;
   /** Milestone 1.5 · Epic 5 — proposed/approved Business Version (not applied). */
   businessVersion?: BusinessVersion | null;
+  /** Milestone 1.5 · Epic 6 — Business Builder Creative Session (not applied). */
+  creativeSession?: CreativeSession | null;
   /** Section 12 — Mission Control flight recorder id (AI Replay). */
   missionControlExecutionId?: string | null;
   flightRecorder?: HublyFlightRecorder | null;
@@ -1370,6 +1373,17 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       collaboration,
     )
     : null;
+  // Milestone 1.5 · Epic 6 — Business Builder Creative Session (website is one canvas)
+  const creativeSession = changePlan
+    ? startCreativeSession({
+      businessId: businessId || `biz_${Date.now().toString(36)}`,
+      plan: changePlan,
+      preview,
+      collaboration,
+      businessVersion,
+      missionControlReplayId: null,
+    }).session
+    : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ""),
     intent,
@@ -1530,9 +1544,25 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
         rollbackExecuted: false as const,
       }
       : null,
+    creativeSession: creativeSession
+      ? {
+        id: creativeSession.id,
+        label: creativeSession.label,
+        direction: creativeSession.direction.label,
+        decisionCount: creativeSession.decisions.length,
+        surfacesTouched: [...creativeSession.surfacesTouched],
+        businessScoreOverall: creativeSession.score.overall,
+        preferenceCount: creativeSession.memory.preferences.length,
+        hasChallenge: !!creativeSession.challenge,
+        requiresApproval: true as const,
+        applied: false as const,
+        executed: false as const,
+        waitingFor: creativeSession.waitingFor,
+      }
+      : null,
   });
 
-  // Attach replay id onto plan actions + preview + collaboration + version
+  // Attach replay id onto plan actions + preview + collaboration + version + creative session
   if (changePlan && flightRecorder.executionId) {
     for (const a of changePlan.changes) {
       a.missionControlReplayId = flightRecorder.executionId;
@@ -1546,6 +1576,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   }
   if (businessVersion && flightRecorder.executionId) {
     businessVersion.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (creativeSession && flightRecorder.executionId) {
+    creativeSession.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -1586,6 +1619,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     preview,
     collaboration,
     businessVersion,
+    creativeSession,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     timeline,

@@ -293,7 +293,7 @@ check("MC builderActions.available === false", snap.builderActions?.available ==
 check("MC displays Previews", (snap.builderActions?.previews || []).length >= 1);
 check(
   "MC epic mentions Preview or Collaboration",
-  /Preview|Collaboration|Version|Rollback|Epic [3-5]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Preview|Collaboration|Version|Rollback|Business Builder|Epic [3-6]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check("MC still blocks apply", /No apply/i.test(snap.builderActions?.note || "") || snap.builderActions?.available === false);
 check("MC still has Change Plans", (snap.builderActions?.changePlans || []).length >= 1);

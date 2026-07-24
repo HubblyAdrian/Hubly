@@ -10,8 +10,8 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 | 2 | Change Plan DSL | Pass | `scripts/check-builder-epic2.mjs` | `docs/BUILDER_EPIC2_PROOF.json` | Accepted |
 | 3 | Preview Engine | Pass | `scripts/check-builder-epic3.mjs` | `docs/BUILDER_EPIC3_PROOF.json` | Accepted |
 | 4 | Collaboration & Approval | Pass | `scripts/check-builder-epic4.mjs` | `docs/BUILDER_EPIC4_PROOF.json` | Accepted |
-| 5 | Version & Rollback | Pass (pending Founder Approval) | `scripts/check-builder-epic5.mjs` | `docs/BUILDER_EPIC5_PROOF.json` | — |
-| 6 | Website Builder | Locked | — | — | — |
+| 5 | Version & Rollback | Pass | `scripts/check-builder-epic5.mjs` | `docs/BUILDER_EPIC5_PROOF.json` | Accepted |
+| 6 | Business Builder | Pass (pending Founder Approval) | `scripts/check-builder-epic6.mjs` | `docs/BUILDER_EPIC6_PROOF.json` | — |
 | 7 | Booking Builder | Locked | — | — | — |
 | 8 | CRM Builder | Locked | — | — | — |
 | 9 | Automation Builder | Locked | — | — | — |
@@ -25,24 +25,23 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 - **Pass (pending Founder Approval)** — automated gate green  
 - **Accepted** — founder signed off; next epic may start  
 
-## Epic 1–4
+## Epic 1–5
 
-**Accepted.** Intent → Change Plan → Preview → Collaboration (“What do you think?”).
+**Accepted.** Intent → Plan → Preview → Collaboration → Versions.
 
-## Epic 5 — Version & Rollback Engine
+## Epic 6 — Business Builder
 
-Git for a business. Every approved change becomes a Business Version.
+Not a Website Builder. Hubly builds the **business**. Website is one canvas / internal module.
 
-- Website / Booking / Workspace / Automation / Portfolio versions  
-- Compare + diffs  
-- Full / partial / single-change **rollback plans** (not executed)  
-- AI restore suggestions (owner-approved only)  
-- **Business Timeline** — the story of the business  
-- Mission Control: Current → History → Diff → Rollback → Restore suggestions  
-- **No** apply / execute  
+- Creative Sessions across Website, Booking, Packages, Portfolio  
+- Creative Directions (Luxury, Friendly Premium, Minimal, …)  
+- Business Score (trust, clarity, booking experience — not SEO)  
+- Creative Memory + negotiation  
+- Creative Workspace (conversation + live business)  
+- Still requires approval — **no apply**
 
 ```bash
-npm run check:builder-epic5
+npm run check:builder-epic6
 ```
 
-**Stop.** Do not start Epic 6 until Founder Approval.
+**Stop.** Do not start Epic 7 until Founder Approval.
