@@ -17,15 +17,15 @@ Live automation: `npm run milestone2` → `docs/MILESTONE2_RELEASE_GATE.json`
 | 8 | Business Home | Pass | `scripts/check-m2-epic8.mjs` | [`MILESTONE2_EPIC8_PROOF.md`](./MILESTONE2_EPIC8_PROOF.md) | Accepted |
 | 9 | Creative Workspace | Pass | `scripts/check-m2-epic9.mjs` | [`MILESTONE2_EPIC9_PROOF.md`](./MILESTONE2_EPIC9_PROOF.md) | Accepted |
 | 10 | Hubly Daily | Pass | `scripts/check-m2-epic10.mjs` | [`MILESTONE2_EPIC10_PROOF.md`](./MILESTONE2_EPIC10_PROOF.md) | Accepted |
-| 11 | Living Business | Pass (pending Founder Approval) | `scripts/check-m2-epic11.mjs` | [`MILESTONE2_EPIC11_PROOF.md`](./MILESTONE2_EPIC11_PROOF.md) | — |
-| 12 | Polish & Delight | Locked | — | — | — |
+| 11 | Living Business | Pass | `scripts/check-m2-epic11.mjs` | [`MILESTONE2_EPIC11_PROOF.md`](./MILESTONE2_EPIC11_PROOF.md) | Accepted |
+| 12 | Polish & Delight | Pass (pending Founder Approval) | `scripts/check-m2-epic12.mjs` | [`MILESTONE2_EPIC12_PROOF.md`](./MILESTONE2_EPIC12_PROOF.md) | — |
 
-## Epic 11 — Living Business
+## Epic 12 — Polish & Delight
 
-Continuous evolution with approval. **What I've learned** journal accumulates business intelligence.
+Craftsmanship — motion, microinteractions, empty states, smart loading, success & delight, intelligent errors, accessibility, performance, personality, founder walkthrough.
 
 ```bash
-npm run check:m2-epic11
+npm run check:m2-epic12
 ```
 
-**Stop.** Do not start Epic 12 until Founder Approval.
+When Epic 12 is accepted, **Milestone 2 is complete**.

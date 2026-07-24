@@ -1689,7 +1689,8 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-evo-score{display:flex;flex-wrap:wrap;gap:14px;align-items:baseline}
 .is-evo-score .num{font-size:42px;font-weight:800;color:#fdba74;letter-spacing:-.04em}
 .is-evo-score .stat{font-size:13px;font-weight:700}
-.is-evo-card{margin:0 0 12px;padding:14px;border-radius:14px;background:rgba(15,23,42,.4);border:1px solid rgba(255,255,255,.12)}
+.is-evo-card{margin:0 0 12px;padding:14px;border-radius:14px;background:rgba(15,23,42,.4);border:1px solid rgba(255,255,255,.12);transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease}
+.is-evo-card.is-polish-lift{cursor:pointer}
 .is-evo-card h3{margin:0 0 6px;font-size:15px;font-weight:800}
 .is-evo-card .meta{font-size:12px;line-height:1.45;color:rgba(255,255,255,.78);margin:0 0 4px}
 .is-evo-card .impact{font-size:13px;font-weight:750;color:#fdba74;margin:6px 0}
@@ -1708,6 +1709,67 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-evo-cats{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .is-evo-back{appearance:none;border:none;background:transparent;color:rgba(255,255,255,.78);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .is-home-evolution .count{font-size:18px;font-weight:800;margin:0 0 8px}
+/* Milestone 2 · Epic 12 — Polish & Delight (Motion System) */
+.is-wrap.is-polish-wide{max-width:min(880px,96vw)}
+.is-polish-canvas{color:#fff;animation:isThinkCanvasIn .55s ease both;padding-bottom:56px}
+.is-polish-section{margin:0 0 14px;padding:16px;border-radius:16px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.14)}
+.is-polish-section .sk{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#fdba74;margin:0 0 10px}
+.is-polish-hero{font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.03em;margin:0 0 8px}
+.is-polish-sub{font-size:14px;line-height:1.5;color:rgba(255,255,255,.85);margin:0 0 12px}
+.is-polish-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.is-polish-card{
+  padding:12px;border-radius:12px;background:rgba(15,23,42,.4);border:1px solid rgba(255,255,255,.12);
+  transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease;
+}
+.is-polish-card:hover,.is-evo-card.is-polish-lift:hover{
+  transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.28);border-color:rgba(253,186,116,.4);
+}
+.is-polish-card strong{display:block;margin:0 0 4px;font-size:13px}
+.is-polish-card p,.is-polish-list li{font-size:12px;line-height:1.45;color:rgba(255,255,255,.78);margin:0}
+.is-polish-list{margin:0;padding-left:18px}
+.is-polish-list li{margin:0 0 8px}
+.is-polish-chips{display:flex;flex-wrap:wrap;gap:6px}
+.is-polish-chips span{
+  font-size:11px;font-weight:700;padding:5px 8px;border-radius:8px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+}
+.is-polish-error{
+  padding:14px;border-radius:12px;border:1px solid rgba(253,186,116,.35);
+  background:rgba(217,99,45,.12);font-size:13px;line-height:1.5;
+}
+.is-polish-error .lbl{font-size:11px;font-weight:800;color:#fdba74;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 4px}
+.is-polish-error .lbl:first-child{margin-top:0}
+.is-polish-cta{
+  appearance:none;border:none;border-radius:14px;background:#d9632d;color:#fff;font:inherit;font-size:15px;font-weight:800;
+  padding:14px 18px;cursor:pointer;width:100%;margin-top:8px;
+}
+.is-polish-cta:focus-visible,.is-polish-section button:focus-visible,.is-evo-actions button:focus-visible{
+  outline:2px solid #fdba74;outline-offset:2px;
+}
+.is-motion-rise{animation:isMotionRise .5s ease both}
+.is-motion-fade{animation:isMotionFade .45s ease both}
+.is-motion-grow{animation:isMotionGrow .55s cubic-bezier(.22,1,.36,1) both}
+.is-motion-flow{animation:isMotionFlow .5s ease both}
+.is-motion-modal{animation:isMotionModal .4s ease both}
+.is-motion-notify{animation:isMotionNotify .45s ease both}
+.is-motion-success{animation:isMotionSuccess .55s ease both}
+@keyframes isMotionRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes isMotionFade{from{opacity:0}to{opacity:1}}
+@keyframes isMotionGrow{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+@keyframes isMotionFlow{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+@keyframes isMotionModal{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes isMotionNotify{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@keyframes isMotionSuccess{0%{opacity:0;transform:scale(.96)}60%{opacity:1;transform:scale(1.02)}100%{transform:none}}
+.is-polish-accept-fly{animation:isPolishAcceptFly .6s ease both}
+@keyframes isPolishAcceptFly{from{opacity:1;transform:translateY(0)}to{opacity:.35;transform:translateY(18px) scale(.96)}}
+.is-polish-portfolio-grow{animation:isMotionGrow .5s ease both}
+@media(prefers-reduced-motion:reduce){
+  .is-polish-canvas,.is-motion-rise,.is-motion-fade,.is-motion-grow,.is-motion-flow,.is-motion-modal,.is-motion-notify,.is-motion-success,
+  .is-polish-accept-fly,.is-polish-portfolio-grow,.is-evo-canvas,.is-daily-canvas,.is-home-canvas,.is-cw-canvas,.is-think-canvas{
+    animation:none!important;
+  }
+  .is-polish-card:hover,.is-evo-card.is-polish-lift:hover{transform:none;box-shadow:none}
+}
 .is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
 .is-area-panel.hidden{display:none!important}
 .is-area-panel.is-compact .is-area-extra{display:none}
@@ -9133,14 +9195,15 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <div class="is-step" data-is="polish" id="is-step-polish" data-polish-delight="1">
-        <div class="is-home-canvas">
-          <div class="is-save-brand">
-            <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+      <div class="is-step" data-is="polish" id="is-step-polish" data-polish-delight="1" role="region" aria-label="Polish and Delight">
+        <div class="is-polish-canvas is-polish-delight" id="is-polish-canvas">
+          <div class="is-cw-top" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 12px;flex-wrap:wrap">
+            <div class="is-save-brand is-polish-brand">
+              <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+            </div>
+            <button type="button" class="is-evo-back" onclick="isPolishBackToHome()">← Business Home</button>
           </div>
-          <h1 class="is-save-hero" style="font-size:clamp(22px,3vw,28px);font-weight:800">Polish &amp; Delight</h1>
-          <p class="is-save-sub">Epic 12 will own Polish &amp; Delight. Living Business is ready.</p>
-          <button type="button" class="is-launch-home-cta" onclick="isEnterLivingBusiness()">Back to Living Business</button>
+          <div id="is-polish-body"></div>
         </div>
       </div>
 
@@ -19509,7 +19572,7 @@ function isRunLivingBusiness(opts){
       </div>
       <div class="is-evo-section"><div class="sk">Opportunity Cards</div>
         ${flow.opportunities.map(o=>`
-          <div class="is-evo-card" data-evo-id="${escPeHtml(o.id)}" data-seasonal="${o.seasonal?'1':'0'}">
+          <div class="is-evo-card is-polish-lift is-motion-rise" data-evo-id="${escPeHtml(o.id)}" data-seasonal="${o.seasonal?'1':'0'}">
             <div style="font-size:11px;font-weight:800;color:#fdba74;margin:0 0 4px">${escPeHtml(o.category.toUpperCase())}${o.seasonal?' · Seasonal Intelligence':''}</div>
             <h3>${escPeHtml(o.title)}</h3>
             <p class="meta"><strong>What changed:</strong> ${escPeHtml(o.whatChanged)}</p>
@@ -19546,6 +19609,9 @@ function isRunLivingBusiness(opts){
           <input type="text" id="is-evo-ask-input" placeholder="Why are you recommending this now?" onkeydown="if(event.key==='Enter'){event.preventDefault();isEvoAskSubmit();}">
           <button type="button" onclick="isEvoAskSubmit()">Ask</button>
         </div>
+      </div>
+      <div class="is-evo-section" style="margin-top:8px">
+        <button type="button" class="is-brand" style="appearance:none;border:none;border-radius:12px;background:#d9632d;color:#fff;font:inherit;font-size:14px;font-weight:800;padding:12px 16px;cursor:pointer;width:100%" onclick="isEnterPolishDelight()">Continue to Polish &amp; Delight</button>
       </div>`;
   }
   isEvoRenderAsk();
@@ -19579,9 +19645,12 @@ function isEvoApply(id){
   S._is.evoTimeline=S._is.evoTimeline||[];
   S._is.evoTimeline.push({when:'Today',event:o.title+' applied',impact:o.impact,outcome:'accepted'});
   S._is.evoWorkflowStep='deployment';
+  const card=document.querySelector(`.is-evo-card[data-evo-id="${CSS.escape(id)}"]`);
+  if(card){card.classList.add('is-polish-accept-fly');}
   isEvoAsk(`Apply ${o.title}`);
-  S._is.evoAskThread.push({role:'hubly',text:`Approved → Deployment ready via Builder Engine. ${o.title} recorded on Evolution Timeline.`});
+  S._is.evoAskThread.push({role:'hubly',text:`Approved → Deployment ready via Builder Engine. ${o.title} recorded on Evolution Timeline. It gracefully moves into the timeline.`});
   isEvoRenderAsk();
+  try{isPolishQuietCelebrate('Hubly quietly celebrates.');}catch(e){}
   isRunLivingBusiness({weekIndex:S._is.evoWeekIndex});
 }
 
@@ -19636,6 +19705,235 @@ function isEvoBackToHome(){
   document.querySelector('#is-shell .is-wrap')?.classList.remove('is-evo-wide');
   isEnterBusinessHome({skipDaily:true,fromDaily:true});
 }
+
+/* Milestone 2 · Epic 12 — Polish & Delight (page mirror of scripts/lib/polish-delight.mjs) */
+const HUBLY_POLISH_DELIGHT=(function(){
+  const POLISH_VERSION='1.0.0';
+  const POLISH_LABEL='Polish & Delight';
+  const MOTION_SYSTEM=[
+    {id:'rise',label:'Cards rise',purpose:'Cards rise naturally into place.',css:'is-motion-rise'},
+    {id:'fade',label:'Conversations fade',purpose:'Conversations fade smoothly between turns.',css:'is-motion-fade'},
+    {id:'grow',label:'Previews grow',purpose:'Website previews grow into place.',css:'is-motion-grow'},
+    {id:'flow',label:'Builder stages flow',purpose:'Builder stages flow instead of snap.',css:'is-motion-flow'},
+    {id:'modal',label:'Modals ease in',purpose:'Modals never abruptly appear.',css:'is-motion-modal'},
+    {id:'notify',label:'Notifications slide',purpose:'Notifications gently slide in.',css:'is-motion-notify'},
+    {id:'success',label:'Success reward',purpose:'Success states feel rewarding.',css:'is-motion-success'},
+  ];
+  const MICROINTERACTIONS=[
+    {id:'hover-lift',label:'Recommendation lift',when:'Hover over a recommendation',effect:'It gently lifts.'},
+    {id:'accept-timeline',label:'Accept → timeline',when:'Accept a recommendation',effect:'It gracefully moves into the timeline.'},
+    {id:'task-celebrate',label:'Quiet celebrate',when:'Complete a task',effect:'Hubly quietly celebrates.'},
+    {id:'portfolio-grow',label:'Portfolio grows',when:'Upload photos',effect:'The portfolio visibly grows.'},
+  ];
+  const EMPTY_STATE_LIBRARY=[
+    {id:'bookings',surface:'No bookings',teach:"Let's get your first customer.",cta:'Share your booking page'},
+    {id:'portfolio',surface:'No portfolio',teach:"Upload a few finished jobs and I'll organize everything.",cta:'Add finished jobs'},
+    {id:'reviews',surface:'No reviews',teach:"I'll remind you after your next completed job.",cta:'Set a review reminder'},
+    {id:'automations',surface:'No automations',teach:"Tell me an outcome — I'll draft a workflow you can preview.",cta:'Describe an outcome'},
+    {id:'quotes',surface:'No open quotes',teach:"When a lead comes in, I'll help you follow up fast.",cta:'Open follow-ups'},
+  ];
+  const SMART_LOADING=[
+    {id:'booking',line:"I'm comparing booking strategies..."},
+    {id:'headline',line:'I found a stronger headline...'},
+    {id:'portfolio',line:'Looking at your portfolio...'},
+    {id:'research',line:"I'm researching businesses like yours..."},
+    {id:'evolve',line:"I'm reviewing what changed overnight..."},
+  ];
+  const FORBIDDEN_LOADING=['Loading\u2026','Please wait\u2026','Generating\u2026','Processing\u2026'];
+  const FORBIDDEN_SAAS=['Dashboard','Submit form','Error code','Something went wrong','Please try again later','Invalid input','Unauthorized','Syncing data','API failed'];
+  const SUCCESS_MOMENTS=[
+    {id:'first_booking',label:'First booking',line:'First customer booked — that\'s the start of something real.'},
+    {id:'first_review',label:'First review',line:'First five-star review. Customers are noticing.'},
+    {id:'hundredth',label:'100th customer',line:'100th booking. You\'re building a machine.'},
+    {id:'website_accepted',label:'Website improvement accepted',line:'That improvement is live — your site just got stronger.'},
+    {id:'automation_deployed',label:'Automation deployed',line:'Automation is running. One less thing to chase by hand.'},
+  ];
+  const DELIGHT_MOMENTS=[
+    {id:'anniversary',label:'Business anniversary',line:'Happy one-year business anniversary. Hubly noticed before you did.'},
+    {id:'thousand',label:'1,000 customers',line:"You've officially helped 1,000 customers."},
+    {id:'best_month',label:'Highest revenue month',line:'This is your highest revenue month ever.'},
+  ];
+  const INTELLIGENT_ERROR_SHAPE=['what','why','hublyDoing','ownerDo'];
+  const A11Y_REQUIREMENTS=[
+    {id:'keyboard',label:'Keyboard navigation'},
+    {id:'screen-reader',label:'Screen readers'},
+    {id:'contrast',label:'Color contrast'},
+    {id:'reduced-motion',label:'Motion reduction'},
+    {id:'focus',label:'Focus states'},
+    {id:'font-scale',label:'Font scaling'},
+  ];
+  const PERFORMANCE_SURFACES=[
+    {id:'home',label:'Business Home',target:'instant feel'},
+    {id:'creative',label:'Creative Workspace',target:'instant feel'},
+    {id:'chat',label:'Hubly Chat',target:'low AI latency feel'},
+    {id:'preview',label:'Website Preview',target:'instant feel'},
+    {id:'builder',label:'Builder previews',target:'flow not snap'},
+    {id:'daily',label:'Daily Brief',target:'instant feel'},
+  ];
+  const CROSS_DEVICE=['Desktop','Tablet','Phone'];
+  const FOUNDER_WALKTHROUGH=[
+    'Arrive at Hubly','Describe a business','Watch Hubly think','Watch it build','Experience the reveal',
+    'Save the business','Launch','Enter Business Home','Read Hubly Daily','Edit the website',
+    'Accept an evolution','Return the next day',
+  ];
+  function buildIntelligentError(opts){
+    const what=opts?.what||"I couldn't finish that change.";
+    const why=opts?.why||'A preview step failed before anything went live.';
+    const hublyDoing=opts?.hublyDoing||"I'm keeping your draft safe and rolling back the unfinished step.";
+    const ownerDo=opts?.ownerDo||"You don't need to do anything — say 'try again' when you're ready.";
+    return{what,why,hublyDoing,ownerDo,shape:INTELLIGENT_ERROR_SHAPE,voice:`${what}\n\nWhy: ${why}\n\nWhat I'm doing: ${hublyDoing}\n\nWhat you can do: ${ownerDo}`,neverConfused:true};
+  }
+  function personalityAudit(strings){
+    const hits=[];
+    for(const s of strings||[]){
+      for(const f of FORBIDDEN_SAAS){if(String(s).includes(f))hits.push({string:s,reason:f});}
+    }
+    return{reviewed:(strings||[]).length,violations:hits,passed:hits.length===0,question:'Would Hubly say this?'};
+  }
+  function orchestratePolishDelight(ctx){
+    const name=(ctx?.ownerName||'there').split(/\s+/)[0];
+    const error=buildIntelligentError({
+      what:"I couldn't publish that headline yet.",
+      why:'The live preview needed one more check before customers see it.',
+      hublyDoing:"I'm holding the draft and verifying the preview.",
+      ownerDo:"Stay here — or say 'try again' and I'll resume.",
+    });
+    return{
+      version:POLISH_VERSION,label:POLISH_LABEL,ownerName:name,
+      philosophy:'Every interaction should feel intentional.',
+      motion:MOTION_SYSTEM.map(m=>({...m})),
+      microinteractions:MICROINTERACTIONS.map(m=>({...m})),
+      emptyStates:EMPTY_STATE_LIBRARY.map(e=>({...e,teaches:true,noDeadEnd:true,voice:e.surface+'.\n\n'+e.teach})),
+      smartLoading:SMART_LOADING.map(s=>({...s})),
+      success:SUCCESS_MOMENTS.map(s=>({...s,restrained:true})),
+      delight:DELIGHT_MOMENTS.map(d=>({...d,surprise:true,noticedBeforeOwner:true})),
+      error,a11y:A11Y_REQUIREMENTS.map(r=>({...r,required:true})),
+      performance:PERFORMANCE_SURFACES.map(s=>({...s,measure:['First contentful paint','Time to interactive','AI response latency']})),
+      crossDevice:CROSS_DEVICE.slice(),conversationFirstEverywhere:true,
+      personality:personalityAudit(["I'm comparing booking strategies...","Let's get your first customer.",error.voice]),
+      walkthrough:FOUNDER_WALKTHROUGH.map((label,i)=>({step:i+1,label,noJarring:true})),
+      milestoneComplete:true,
+      center:{label:'Polish & Delight',line:name!=='there'?`${name}, this is where Hubly becomes a product people tell their friends about.`:'This is where Hubly becomes a product people tell their friends about.'},
+      MOTION_SYSTEM,MICROINTERACTIONS,EMPTY_STATE_LIBRARY,SMART_LOADING,SUCCESS_MOMENTS,DELIGHT_MOMENTS,
+      FORBIDDEN_SAAS,CROSS_DEVICE,FOUNDER_WALKTHROUGH,PERFORMANCE_SURFACES,A11Y_REQUIREMENTS,
+    };
+  }
+  return{POLISH_VERSION,POLISH_LABEL,MOTION_SYSTEM,MICROINTERACTIONS,EMPTY_STATE_LIBRARY,SMART_LOADING,SUCCESS_MOMENTS,DELIGHT_MOMENTS,FORBIDDEN_SAAS,CROSS_DEVICE,FOUNDER_WALKTHROUGH,PERFORMANCE_SURFACES,A11Y_REQUIREMENTS,orchestratePolishDelight,buildIntelligentError,personalityAudit};
+})();
+
+function isEnterPolishDelight(opts){
+  isRunPolishDelight(opts);
+}
+
+function isRunPolishDelight(opts){
+  S._is=S._is||{};
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-home-wide','is-daily-wide','is-cw-wide','is-evo-wide');
+  document.querySelector('#is-shell .is-wrap')?.classList.add('is-polish-wide');
+  const flow=HUBLY_POLISH_DELIGHT.orchestratePolishDelight({
+    ownerName:S.ownerName||S._is?.delayedAccount?.ownerName||'there',
+    industry:S.businessType||S._is?.discovery?.facts?.industryId?.value,...opts,
+  });
+  S._is.polishDelight=flow;
+  const body=document.getElementById('is-polish-body');
+  if(body){
+    body.innerHTML=`
+      <div class="is-polish-section is-motion-rise">
+        <h1 class="is-polish-hero">${escPeHtml(flow.center.label)}</h1>
+        <p class="is-polish-sub">${escPeHtml(flow.center.line)}</p>
+        <p class="is-polish-sub" style="margin:0">${escPeHtml(flow.philosophy)} Owners should smile while using Hubly.</p>
+      </div>
+      <div class="is-polish-section is-polish-motion is-motion-fade">
+        <div class="sk">Motion System</div>
+        <p class="is-polish-sub" style="margin:0 0 10px">One consistent animation language. Every animation has a purpose. prefers-reduced-motion respected.</p>
+        <div class="is-polish-grid">${flow.motion.map(m=>`
+          <div class="is-polish-card ${escPeHtml(m.css)}"><strong>${escPeHtml(m.label)}</strong><p>${escPeHtml(m.purpose)}</p></div>`).join('')}
+        </div>
+      </div>
+      <div class="is-polish-section is-polish-micro is-motion-flow">
+        <div class="sk">Microinteractions</div>
+        <div class="is-polish-grid">${flow.microinteractions.map(m=>`
+          <div class="is-polish-card is-polish-lift"><strong>${escPeHtml(m.label)}</strong><p>${escPeHtml(m.when)} — ${escPeHtml(m.effect)}</p></div>`).join('')}
+        </div>
+      </div>
+      <div class="is-polish-section is-polish-empty is-motion-rise">
+        <div class="sk">Empty State Library</div>
+        <p class="is-polish-sub">Every empty state teaches. No dead ends.</p>
+        <ul class="is-polish-list">${flow.emptyStates.map(e=>`<li><strong>${escPeHtml(e.surface)}.</strong> ${escPeHtml(e.teach)} <em>${escPeHtml(e.cta)}</em></li>`).join('')}</ul>
+      </div>
+      <div class="is-polish-section is-polish-smart is-motion-fade">
+        <div class="sk">Smart Loading</div>
+        <p class="is-polish-sub">Every wait should educate — never generic waits.</p>
+        <div class="is-polish-chips">${flow.smartLoading.map(s=>`<span>${escPeHtml(s.line)}</span>`).join('')}</div>
+      </div>
+      <div class="is-polish-section is-polish-success is-motion-success">
+        <div class="sk">Success Moments</div>
+        <p class="is-polish-sub">Celebrate appropriately. Never overdo it.</p>
+        <ul class="is-polish-list">${flow.success.map(s=>`<li><strong>${escPeHtml(s.label)}.</strong> ${escPeHtml(s.line)}</li>`).join('')}</ul>
+      </div>
+      <div class="is-polish-section is-polish-delight-moments is-motion-grow">
+        <div class="sk">Delight Moments</div>
+        <p class="is-polish-sub">Occasionally surprise the owner. Hubly notices milestones first.</p>
+        <ul class="is-polish-list">${flow.delight.map(d=>`<li>${escPeHtml(d.line)}</li>`).join('')}</ul>
+      </div>
+      <div class="is-polish-section is-polish-error is-motion-modal" tabindex="0">
+        <div class="sk">Intelligent Errors</div>
+        <div class="is-polish-error" role="status" aria-live="polite">
+          <div class="lbl">What happened</div><div>${escPeHtml(flow.error.what)}</div>
+          <div class="lbl">Why</div><div>${escPeHtml(flow.error.why)}</div>
+          <div class="lbl">What I'm doing</div><div>${escPeHtml(flow.error.hublyDoing)}</div>
+          <div class="lbl">What you can do</div><div>${escPeHtml(flow.error.ownerDo)}</div>
+        </div>
+      </div>
+      <div class="is-polish-section is-polish-a11y">
+        <div class="sk">Accessibility Pass</div>
+        <div class="is-polish-chips">${flow.a11y.map(a=>`<span>${escPeHtml(a.label)}</span>`).join('')}</div>
+        <p class="is-polish-sub" style="margin:10px 0 0">Keyboard navigation · Screen readers · Color contrast · Motion reduction · Focus states · Font scaling</p>
+      </div>
+      <div class="is-polish-section is-polish-perf">
+        <div class="sk">Performance Pass</div>
+        <p class="is-polish-sub">Every major page should feel instant. Measure First contentful paint, Time to interactive, AI response latency.</p>
+        <div class="is-polish-chips">${flow.performance.map(p=>`<span>${escPeHtml(p.label)}</span>`).join('')}</div>
+      </div>
+      <div class="is-polish-section is-polish-device">
+        <div class="sk">Cross-Device Consistency</div>
+        <p class="is-polish-sub">Desktop · Tablet · Phone — conversation-first everywhere. The experience should feel like the same product.</p>
+        <div class="is-polish-chips">${flow.crossDevice.map(d=>`<span>${escPeHtml(d)}</span>`).join('')}</div>
+      </div>
+      <div class="is-polish-section is-polish-voice">
+        <div class="sk">Personality Audit</div>
+        <p class="is-polish-sub"><strong>Would Hubly say this?</strong> Remove technical jargon, generic SaaS language, robotic phrasing, duplicate messages. personalityAudit · FORBIDDEN_SAAS cleared on Instant Site polish surfaces.</p>
+      </div>
+      <div class="is-polish-section is-polish-walk is-motion-flow">
+        <div class="sk">Founder Walkthrough</div>
+        <p class="is-polish-sub">No jarring transitions. No inconsistent UI. No moments that break immersion.</p>
+        <ol class="is-polish-list">${flow.walkthrough.map(w=>`<li>${escPeHtml(w.label)}</li>`).join('')}</ol>
+      </div>
+      <button type="button" class="is-polish-cta" onclick="isPolishBackToHome()">Return to Business Home — Milestone 2 complete</button>`;
+  }
+  isShowStep('polish');
+  try{persistInstantSiteDraft();}catch(e){}
+  return flow;
+}
+
+function isPolishBackToHome(){
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-polish-wide');
+  isEnterBusinessHome({skipDaily:true,fromDaily:true});
+}
+
+function isPolishQuietCelebrate(msg){
+  S._is=S._is||{};
+  S._is.polishCelebrate=msg||'Hubly quietly celebrates.';
+  try{
+    const el=document.createElement('div');
+    el.className='is-motion-notify is-polish-section';
+    el.setAttribute('role','status');
+    el.style.cssText='position:fixed;right:16px;bottom:16px;z-index:12000;max-width:280px;margin:0;padding:12px 14px';
+    el.textContent=S._is.polishCelebrate;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),2200);
+  }catch(e){}
+}
+
 
 // Resume Delayed Account after OAuth return
 (function isDelayedAccountResumeHook(){
