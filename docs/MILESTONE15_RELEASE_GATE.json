@@ -1,11 +1,11 @@
 {
   "milestone": "1.5",
-  "passed": 9,
+  "passed": 10,
   "total": 12,
-  "unlocked": 9,
-  "percent": 75,
+  "unlocked": 10,
+  "percent": 83,
   "ready": false,
-  "checkedAt": "2026-07-24T04:04:59.644Z",
+  "checkedAt": "2026-07-24T04:13:52.683Z",
   "epics": [
     {
       "n": 1,
@@ -63,9 +63,9 @@
     },
     {
       "n": 10,
-      "title": "Portfolio Intelligence Builder",
-      "status": "locked",
-      "script": null
+      "title": "Media Intelligence Engine",
+      "status": "pass",
+      "script": "scripts/check-builder-epic10.mjs"
     },
     {
       "n": 11,

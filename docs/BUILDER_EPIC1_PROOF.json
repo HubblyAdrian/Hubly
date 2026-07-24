@@ -4,7 +4,7 @@
   "name": "Builder Expert",
   "title": "Builder Expert",
   "passed": true,
-  "checkedAt": "2026-07-24T04:04:56.018Z",
+  "checkedAt": "2026-07-24T04:13:48.547Z",
   "proofs": {
     "builderExpertExists": true,
     "executesThroughHublyBrain": true,
@@ -20,7 +20,7 @@
         "request": "Make my homepage feel more premium.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryf2jhq_x2rjpj",
+          "intentId": "bint_mryfdye6_uzlo50",
           "intentCategory": "Website",
           "intentLabel": "Website Improvement",
           "ownerGoal": "Premium Branding",
@@ -61,9 +61,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T04:04:55.982Z"
+          "timestamp": "2026-07-24T04:13:48.510Z"
         },
-        "missionControlExecutionId": "flt_mryf2ji1_ntwctk",
+        "missionControlExecutionId": "flt_mryfdyeh_7qedid",
         "expertsRun": [
           "builder",
           "experience_director"
@@ -74,7 +74,7 @@
         "request": "Don't allow same-day bookings.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryf2ji4_tfs7r9",
+          "intentId": "bint_mryfdyel_lbeel3",
           "intentCategory": "Booking",
           "intentLabel": "Booking Intelligence",
           "ownerGoal": "Minimum Notice",
@@ -115,9 +115,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T04:04:55.996Z"
+          "timestamp": "2026-07-24T04:13:48.525Z"
         },
-        "missionControlExecutionId": "flt_mryf2ji8_5tt9yw",
+        "missionControlExecutionId": "flt_mryfdyeo_wwpcsa",
         "expertsRun": [
           "research",
           "strategy",
@@ -132,7 +132,7 @@
         "request": "Move Jobs above Customers.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryf2ji9_3nzqpx",
+          "intentId": "bint_mryfdyeq_2afhle",
           "intentCategory": "Workspace",
           "intentLabel": "Workspace Intelligence",
           "ownerGoal": "Navigation Order",
@@ -173,9 +173,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T04:04:56.001Z"
+          "timestamp": "2026-07-24T04:13:48.530Z"
         },
-        "missionControlExecutionId": "flt_mryf2jib_puids9",
+        "missionControlExecutionId": "flt_mryfdyer_jmb6t8",
         "expertsRun": [
           "builder",
           "experience_director"
@@ -186,9 +186,9 @@
         "request": "Put these 12 photos into my portfolio.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryf2jic_40wnj9",
+          "intentId": "bint_mryfdyet_aa5zbb",
           "intentCategory": "Portfolio",
-          "intentLabel": "Portfolio Update",
+          "intentLabel": "Media Intelligence",
           "ownerGoal": "Gallery Organization",
           "affectedSystems": [
             "Portfolio"
@@ -196,7 +196,7 @@
           "requiredCapabilities": [
             {
               "toolId": "portfolio_builder",
-              "toolName": "Portfolio Builder",
+              "toolName": "Media Intelligence Engine",
               "capabilityId": "upload_photos",
               "capabilityLabel": "Upload Photos"
             },
@@ -218,17 +218,17 @@
           "confidenceExplanation": {
             "reasons": [
               "I've seen this request pattern before.",
-              "Portfolio Builder, Image Processor, Website Builder support it.",
+              "Media Intelligence Engine, Image Processor, Website Builder support it.",
               "No conflicting rules exist in this Intent-only pass.",
               "Business Memory aligns with this change (pressure washing).",
               "No additional clarification is required."
             ],
-            "summary": "I've seen this request pattern before. Portfolio Builder, Image Processor, Website Builder support it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
+            "summary": "I've seen this request pattern before. Media Intelligence Engine, Image Processor, Website Builder support it. No conflicting rules exist in this Intent-only pass. Business Memory aligns with this change (pressure washing). No additional clarification is required."
           },
           "requiresChangePlan": true,
           "reasoning": [
             {
-              "reason": "Classified as Portfolio Update toward Gallery Organization.",
+              "reason": "Classified as Media Intelligence toward Gallery Organization.",
               "evidence": [
                 "category:Portfolio",
                 "system:Portfolio",
@@ -241,9 +241,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T04:04:56.004Z"
+          "timestamp": "2026-07-24T04:13:48.533Z"
         },
-        "missionControlExecutionId": "flt_mryf2jie_ms9bst",
+        "missionControlExecutionId": "flt_mryfdyew_kmermq",
         "expertsRun": [
           "research",
           "strategy",
@@ -258,7 +258,7 @@
         "request": "Send prep instructions after ceramic coating bookings.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryf2jig_fx9ox9",
+          "intentId": "bint_mryfdyex_5jxz9e",
           "intentCategory": "Automations",
           "intentLabel": "Automation Intelligence",
           "ownerGoal": "Post-Booking Prep Instructions",
@@ -306,9 +306,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T04:04:56.008Z"
+          "timestamp": "2026-07-24T04:13:48.537Z"
         },
-        "missionControlExecutionId": "flt_mryf2jii_2fmn0p",
+        "missionControlExecutionId": "flt_mryfdyf0_9lcofb",
         "expertsRun": [
           "research",
           "strategy",
@@ -323,7 +323,7 @@
         "request": "Add arrival windows and update my website to explain them.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryf2jij_9q0oco",
+          "intentId": "bint_mryfdyf1_c5xqxr",
           "intentCategory": "Multiple Systems",
           "intentLabel": "Multi-System: Website + Booking",
           "ownerGoal": "Arrival Windows · Website Update",
@@ -373,9 +373,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T04:04:56.011Z"
+          "timestamp": "2026-07-24T04:13:48.541Z"
         },
-        "missionControlExecutionId": "flt_mryf2jil_e0u2kd",
+        "missionControlExecutionId": "flt_mryfdyf2_rd8do1",
         "expertsRun": [
           "research",
           "strategy",
@@ -388,7 +388,7 @@
     ],
     "missionControl": {
       "available": false,
-      "epic": "9 — Automation Intelligence Builder",
+      "epic": "10 — Media Intelligence Engine",
       "intentCount": 6
     }
   },

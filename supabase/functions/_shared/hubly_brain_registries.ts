@@ -459,7 +459,7 @@ export function bootstrapDefaultRegistries(): void {
 
   registerTool({
     id: "portfolio_builder",
-    name: "Portfolio Builder",
+    name: "Media Intelligence Engine",
     version: "1.0.0",
     purpose: "Own portfolio galleries and photo placement",
     responsibilities: ["Upload portfolio photos", "Organize gallery"],

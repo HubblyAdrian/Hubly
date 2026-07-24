@@ -176,6 +176,16 @@ function recordFlightRecorder(opts) {
       12
     );
   }
+  if (opts.mediaIntelligence) {
+    push(
+      "media_intelligence",
+      `Media Intelligence: ${opts.mediaIntelligence.assetCount} asset(s) \xB7 health ${opts.mediaIntelligence.healthOverall}`,
+      {
+        ...opts.mediaIntelligence
+      },
+      12
+    );
+  }
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -226,7 +236,8 @@ function recordFlightRecorder(opts) {
     creativeSession: opts.creativeSession ? { ...opts.creativeSession } : null,
     bookingIntelligence: opts.bookingIntelligence ? { ...opts.bookingIntelligence } : null,
     workspaceIntelligence: opts.workspaceIntelligence ? { ...opts.workspaceIntelligence } : null,
-    automationIntelligence: opts.automationIntelligence ? { ...opts.automationIntelligence } : null
+    automationIntelligence: opts.automationIntelligence ? { ...opts.automationIntelligence } : null,
+    mediaIntelligence: opts.mediaIntelligence ? { ...opts.mediaIntelligence } : null
   };
   FLIGHTS.set(flight.executionId, flight);
   FLIGHT_ORDER.push(flight.executionId);
@@ -406,12 +417,17 @@ function getMissionControlSnapshot() {
       const bookingIntelligencePlans = flights.map((f) => f.bookingIntelligence).filter((x) => !!x).slice(-10).reverse();
       const workspaceIntelligencePlans = flights.map((f) => f.workspaceIntelligence).filter((x) => !!x).slice(-10).reverse();
       const automationIntelligencePlans = flights.map((f) => f.automationIntelligence).filter((x) => !!x).slice(-10).reverse();
+      const mediaIntelligencePlans = flights.map((f) => f.mediaIntelligence).filter((x) => !!x).slice(-10).reverse();
       return {
         milestone: "1.5",
         available: false,
-        epic: "9 \u2014 Automation Intelligence Builder",
-        note: "Epic 9 \u2014 Automation Intelligence Builder. Conversation \u2192 workflow. Simulation + Discovery. Waiting for Approval/Apply. No apply. No execute.",
-        recent: automationIntelligencePlans.length ? automationIntelligencePlans.map((a) => ({
+        epic: "10 \u2014 Media Intelligence Engine",
+        note: "Epic 10 \u2014 Media Intelligence Engine. Uploads understood, not just stored. Multi-surface publishing. Waiting for Approval/Apply. No publish. No apply.",
+        recent: mediaIntelligencePlans.length ? mediaIntelligencePlans.map((m) => ({
+          id: m.id,
+          status: "media_intelligence",
+          summary: `${m.label}: ${m.assetCount} asset(s) \xB7 health ${m.healthOverall} \xB7 ${m.surfaceCount} surfaces`
+        })) : automationIntelligencePlans.length ? automationIntelligencePlans.map((a) => ({
           id: a.id,
           status: "automation_intelligence",
           summary: `${a.label}: ${a.workflowCount} workflow(s) \xB7 health ${a.healthOverall} \xB7 ~${a.timeSavedHoursPerMonth}h/mo`
@@ -473,7 +489,8 @@ function getMissionControlSnapshot() {
         creativeSessions,
         bookingIntelligence: bookingIntelligencePlans,
         workspaceIntelligence: workspaceIntelligencePlans,
-        automationIntelligence: automationIntelligencePlans
+        automationIntelligence: automationIntelligencePlans,
+        mediaIntelligence: mediaIntelligencePlans
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

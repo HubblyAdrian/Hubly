@@ -1,0 +1,273 @@
+{
+  "milestone": "1.5",
+  "epic": 10,
+  "name": "Media Intelligence Engine",
+  "title": "Media Intelligence Engine",
+  "passed": true,
+  "checkedAt": "2026-07-24T04:13:52.681Z",
+  "proofs": {
+    "mediaIntelligenceExists": true,
+    "customerFacingName": "Media Intelligence Engine",
+    "uploadsUnderstood": true,
+    "aiOrganizesMedia": true,
+    "multiSurfacePublishing": true,
+    "aiRecommendsMedia": true,
+    "portfolioHealth": true,
+    "missingContentDetection": true,
+    "creativeMediaEditing": true,
+    "businessMemoryThroughMedia": true,
+    "missionControlMediaLifecycle": true,
+    "requiresApprovalBeforePublish": true,
+    "noPublish": true,
+    "noApply": true,
+    "demos": {
+      "upload": {
+        "request": "Upload these 12 photos.",
+        "assetCount": 12,
+        "concepts": [
+          "gallery_build",
+          "premium_creative",
+          "multi_surface",
+          "upload_organize"
+        ],
+        "health": 95,
+        "surfaces": [
+          "website_gallery",
+          "marketplace_profile",
+          "portfolio",
+          "quote_library",
+          "instagram_carousel",
+          "google_business",
+          "hero_candidate"
+        ]
+      },
+      "ceramic_gallery": {
+        "request": "Build a ceramic coating gallery.",
+        "assetCount": 8,
+        "concepts": [
+          "gallery_build",
+          "multi_surface",
+          "gallery_build"
+        ],
+        "health": 92,
+        "surfaces": [
+          "website_gallery",
+          "marketplace_profile",
+          "portfolio",
+          "quote_library",
+          "instagram_carousel",
+          "google_business",
+          "hero_candidate"
+        ]
+      },
+      "hero": {
+        "request": "Replace my homepage hero.",
+        "assetCount": 8,
+        "concepts": [
+          "hero_replace",
+          "hero_replace",
+          "multi_surface"
+        ],
+        "health": 91,
+        "surfaces": [
+          "website_gallery",
+          "marketplace_profile",
+          "portfolio",
+          "quote_library",
+          "instagram_carousel",
+          "google_business"
+        ]
+      },
+      "before_after": {
+        "request": "Create before/after pairs.",
+        "assetCount": 8,
+        "concepts": [
+          "before_after",
+          "before_after",
+          "multi_surface"
+        ],
+        "health": 91,
+        "surfaces": [
+          "website_gallery",
+          "marketplace_profile",
+          "portfolio",
+          "quote_library",
+          "instagram_carousel",
+          "google_business"
+        ]
+      },
+      "instagram": {
+        "request": "Build Instagram content.",
+        "assetCount": 8,
+        "concepts": [
+          "instagram_carousel",
+          "instagram_carousel",
+          "multi_surface"
+        ],
+        "health": 91,
+        "surfaces": [
+          "website_gallery",
+          "marketplace_profile",
+          "portfolio",
+          "quote_library",
+          "instagram_carousel",
+          "google_business"
+        ]
+      },
+      "weak": {
+        "request": "Show me weak photos.",
+        "assetCount": 8,
+        "concepts": [
+          "gallery_build",
+          "upload_organize",
+          "weak_photos"
+        ],
+        "health": 94,
+        "surfaces": [
+          "website_gallery",
+          "marketplace_profile",
+          "portfolio",
+          "quote_library",
+          "instagram_carousel",
+          "google_business",
+          "hero_candidate"
+        ]
+      },
+      "organize": {
+        "request": "Organize everything.",
+        "assetCount": 12,
+        "concepts": [
+          "gallery_build",
+          "upload_organize"
+        ],
+        "health": 95,
+        "surfaces": [
+          "website_gallery",
+          "marketplace_profile",
+          "portfolio",
+          "quote_library",
+          "instagram_carousel",
+          "google_business",
+          "hero_candidate"
+        ]
+      },
+      "timeline": {
+        "request": "Show me how my business has evolved over the last year.",
+        "assetCount": 8,
+        "concepts": [
+          "visual_timeline",
+          "visual_timeline",
+          "multi_surface"
+        ],
+        "health": 91,
+        "surfaces": [
+          "website_gallery",
+          "marketplace_profile",
+          "portfolio",
+          "quote_library",
+          "instagram_carousel",
+          "google_business"
+        ]
+      }
+    },
+    "healthSample": {
+      "overall": 91,
+      "coverage": 94,
+      "photoQuality": 91,
+      "trust": 89,
+      "diversity": 97,
+      "recentWork": 85,
+      "note": "Portfolio Health — coverage, quality, trust, diversity, and recency."
+    },
+    "recommendationsSample": [
+      {
+        "id": "mrec_mryfe1lv_t69jr8",
+        "title": "Stronger homepage photos",
+        "detail": "These 3 photos would make a stronger homepage.",
+        "why": "Highest website quality + trust scores among this upload.",
+        "conceptId": "hero_replace",
+        "confidence": 90,
+        "requiresOwnerApproval": true
+      },
+      {
+        "id": "mrec_mryfe1lv_1yq0ue",
+        "title": "Before/after pairs found",
+        "detail": "I found 2 before/after pair(s).",
+        "why": "Paired transformations convert better than isolated shots.",
+        "conceptId": "before_after",
+        "confidence": 88,
+        "requiresOwnerApproval": true
+      }
+    ],
+    "missingSample": [
+      {
+        "id": "miss_mryfe1lv_bnps0u",
+        "gap": "Gallery freshness",
+        "detail": "Your gallery hasn't been updated in 43 days (simulated).",
+        "why": "Fresh work signals an active, trustworthy business.",
+        "captureSuggestion": "Upload this week's best finished jobs."
+      }
+    ],
+    "timelineSample": {
+      "headline": "How your business has evolved — told through media.",
+      "events": [
+        {
+          "at": "2025-03",
+          "milestone": "First completed job",
+          "detail": "First documented finish.",
+          "mediaHint": "after #1"
+        },
+        {
+          "at": "2025-05",
+          "milestone": "First five-star review",
+          "detail": "Review paired with job photos.",
+          "mediaHint": "finished_work"
+        },
+        {
+          "at": "2025-08",
+          "milestone": "First premium project",
+          "detail": "Ceramic / luxury package gallery born.",
+          "mediaHint": "hero_candidate"
+        },
+        {
+          "at": "2025-11",
+          "milestone": "Website evolution",
+          "detail": "Hero replaced with stronger trust shot.",
+          "mediaHint": "homepage hero v2"
+        },
+        {
+          "at": "2026-01",
+          "milestone": "Best-performing hero",
+          "detail": "Highest website quality score to date.",
+          "mediaHint": "hero_candidate"
+        },
+        {
+          "at": "2026-03",
+          "milestone": "Most-viewed portfolio",
+          "detail": "Ceramic gallery leads views.",
+          "mediaHint": "portfolio"
+        },
+        {
+          "at": "2026-05",
+          "milestone": "Milestone jobs",
+          "detail": "100th documented job.",
+          "mediaHint": "timeline highlight"
+        },
+        {
+          "at": "2026-06",
+          "milestone": "Team growth",
+          "detail": "First team photo in the library.",
+          "mediaHint": "team"
+        },
+        {
+          "at": "2026-07",
+          "milestone": "AI-selected highlights",
+          "detail": "Curated year-in-review reel.",
+          "mediaHint": "highlights"
+        }
+      ],
+      "note": "Business Memory Through Media — living visual history, not a folder."
+    }
+  },
+  "failures": null
+}

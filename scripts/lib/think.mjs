@@ -46,6 +46,7 @@ import { startCreativeSession } from './business-builder.mjs';
 import { buildBookingIntelligence } from './booking-intelligence.mjs';
 import { buildWorkspaceIntelligence } from './workspace-intelligence.mjs';
 import { buildAutomationIntelligence } from './automation-intelligence.mjs';
+import { buildMediaIntelligence } from './media-intelligence.mjs';
 import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
@@ -71,7 +72,7 @@ export function detectIntent(request, explicit) {
     return 'build_business';
   }
   if (
-    /portfolio|upload.*(photo|image)|these \d+ photos|prep instruction|automation|workflow|after .+ booking|review request|ask for (a )?review|follow up on quotes|membership.*month|friday.*(summary|report)|recurring customer/
+    /portfolio|upload.*(photo|image)|these \d+ photos|prep instruction|automation|workflow|after .+ booking|review request|ask for (a )?review|follow up on quotes|membership.*month|friday.*(summary|report)|recurring customer|instagram|before.?after|organize everything|visual timeline/
       .test(r)
   ) {
     return 'build_business';
@@ -769,6 +770,28 @@ export async function think(req) {
         missionControlReplayId: null,
       })
       : null;
+  const mediaRequest = String(req.request || '');
+  const wantsMediaIntelligence = !!(
+    changePlan &&
+    (changePlan.affectedSystems.includes('Portfolio') ||
+      changePlan.changes.some((c) => c.path.startsWith('portfolio.') || c.path.startsWith('media.')) ||
+      /upload|photos|gallery|portfolio|instagram|before.?after|hero|weak photo|organize everything|visual timeline|evolved over/.test(
+        mediaRequest.toLowerCase(),
+      ))
+  );
+  const mediaIntelligence =
+    wantsMediaIntelligence && changePlan
+      ? buildMediaIntelligence({
+        businessId: businessId || `biz_${Date.now().toString(36)}`,
+        plan: changePlan,
+        industry:
+          req.memory?.industry ||
+          req.memory?.business?.industry ||
+          dna?.knowledgePack?.industryProfile?.industryName ||
+          null,
+        missionControlReplayId: null,
+      })
+      : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ''),
     intent,
@@ -985,6 +1008,24 @@ export async function think(req) {
         waitingFor: automationIntelligence.waitingFor,
       }
       : null,
+    mediaIntelligence: mediaIntelligence
+      ? {
+        id: mediaIntelligence.id,
+        label: mediaIntelligence.label,
+        assetCount: mediaIntelligence.assets.length,
+        changeCount: mediaIntelligence.changes.length,
+        concepts: [...new Set(mediaIntelligence.changes.map((c) => c.conceptId))],
+        healthOverall: mediaIntelligence.health.overall,
+        recommendationCount: mediaIntelligence.recommendations.length,
+        missingContentCount: mediaIntelligence.missingContent.length,
+        surfaceCount: mediaIntelligence.multiSurface.surfaces.filter((s) => s.selected).length,
+        requiresApproval: true,
+        applied: false,
+        executed: false,
+        published: false,
+        waitingFor: mediaIntelligence.waitingFor,
+      }
+      : null,
   });
 
   if (changePlan && flightRecorder.executionId) {
@@ -1012,6 +1053,9 @@ export async function think(req) {
   }
   if (automationIntelligence && flightRecorder.executionId) {
     automationIntelligence.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (mediaIntelligence && flightRecorder.executionId) {
+    mediaIntelligence.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -1047,6 +1091,7 @@ export async function think(req) {
     bookingIntelligence,
     workspaceIntelligence,
     automationIntelligence,
+    mediaIntelligence,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     experienceDirector: {

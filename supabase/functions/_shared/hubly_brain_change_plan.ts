@@ -102,9 +102,14 @@ export type ChangePlanDesiredState = {
     widgets?: { pin?: string[] };
   };
   portfolio?: {
-    gallery?: { organize?: boolean };
+    gallery?: { organize?: boolean; service?: string };
     hero_images?: { select?: boolean };
     captions?: { generate?: boolean };
+    before_after?: { pair?: boolean };
+    social?: { instagram_carousel?: { options: number } };
+    publish?: { surfaces?: string[] };
+    creative?: { premium?: boolean };
+    memory?: { visual_timeline?: boolean };
   };
   automations?: {
     workflows?: Array<{
@@ -191,7 +196,7 @@ const SYSTEM_TO_BUILDER: Record<string, { type: BuilderTypeId; owner: string }> 
   Integrations: { type: "booking", owner: "Booking Intelligence Builder" },
   CRM: { type: "crm", owner: "CRM Builder" },
   Workspace: { type: "workspace_builder", owner: "Workspace Intelligence Builder" },
-  Portfolio: { type: "portfolio_builder", owner: "Portfolio Builder" },
+  Portfolio: { type: "portfolio_builder", owner: "Media Intelligence Engine" },
   Packages: { type: "packages_builder", owner: "Packages Builder" },
   Automations: { type: "automation", owner: "Automation Intelligence Builder" },
   Marketplace: { type: "marketplace", owner: "Marketplace Builder" },
@@ -707,41 +712,128 @@ function draftActionsFromIntent(intent: BuilderIntent): {
     }
   }
 
-  if (systems.has("Portfolio") || /portfolio|photos|gallery/.test(req)) {
-    push({
-      builderOwner: "Portfolio Builder",
-      builderType: "portfolio_builder",
-      system: "Portfolio",
-      path: "portfolio.gallery.organize",
-      desired: true,
-      reason: "Owner wants portfolio photos organized in the gallery.",
-      risk: "low",
-      dependencies: [],
-      estimatedImpact: {
-        trustPct: 11,
-        conversionPct: 5,
-        complexity: "medium",
-        summary: "Organized gallery strengthens proof of work.",
-      },
-      confidence: Math.max(84, intent.confidence - 2),
-      capabilityId: "upload_photos",
-    });
-    if (/hero|caption/.test(req) || /12 photos|photos/.test(req)) {
+  if (
+    systems.has("Portfolio") ||
+    /portfolio|photos|gallery|upload|instagram|before.?after|hero|homepage.*(photo|image)|weak photo|organize everything|visual timeline|evolved over/.test(
+      req,
+    )
+  ) {
+    const mediaOwner = "Media Intelligence Engine";
+    if (/upload|here are|today'?s photos|these \d+ photos|organize everything|photos/.test(req)) {
       push({
-        builderOwner: "Portfolio Builder",
+        builderOwner: mediaOwner,
+        builderType: "portfolio_builder",
+        system: "Portfolio",
+        path: "portfolio.gallery.organize",
+        desired: true,
+        reason: "Organize uploaded photos with Media Intelligence.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: {
+          trustPct: 11,
+          conversionPct: 5,
+          complexity: "medium",
+          summary: "Organized gallery strengthens proof of work.",
+        },
+        confidence: Math.max(84, intent.confidence - 2),
+        capabilityId: "upload_photos",
+      });
+    }
+    if (/ceramic.*galler|galler.*ceramic|build.*(galler|portfolio)|portfolio/.test(req)) {
+      push({
+        builderOwner: mediaOwner,
+        builderType: "portfolio_builder",
+        system: "Portfolio",
+        path: "portfolio.gallery",
+        desired: { organize: true, service: /ceramic/.test(req) ? "ceramic_coating" : undefined },
+        reason: /ceramic/.test(req)
+          ? "Build a ceramic coating gallery."
+          : "Build / organize portfolio gallery.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { trustPct: 12, complexity: "medium", summary: "Curated service gallery." },
+        confidence: Math.max(86, intent.confidence),
+        capabilityId: "manage_gallery",
+      });
+    }
+    if (/hero|homepage.*(photo|image|hero)|replace.*(homepage|hero|weak)/.test(req)) {
+      push({
+        builderOwner: mediaOwner,
         builderType: "portfolio_builder",
         system: "Portfolio",
         path: "portfolio.hero_images.select",
         desired: true,
-        reason: "Choose hero images among uploaded portfolio photos.",
-        risk: "low",
+        reason: "Replace homepage hero with stronger media.",
+        risk: "medium",
         dependencies: ["portfolio.gallery.organize"],
         estimatedImpact: { trustPct: 7, conversionPct: 3, complexity: "low", summary: "Stronger first impression." },
         confidence: 82,
         capabilityId: "manage_gallery",
       });
+    }
+    if (/before.?after|before and after|pairs/.test(req)) {
       push({
-        builderOwner: "Portfolio Builder",
+        builderOwner: mediaOwner,
+        builderType: "portfolio_builder",
+        system: "Portfolio",
+        path: "portfolio.before_after",
+        desired: { pair: true },
+        reason: "Create before/after pairs.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { trustPct: 10, complexity: "low", summary: "Transformation pairs build trust." },
+        confidence: Math.max(88, intent.confidence),
+        capabilityId: "manage_gallery",
+      });
+    }
+    if (/instagram|carousel|social content/.test(req)) {
+      push({
+        builderOwner: mediaOwner,
+        builderType: "portfolio_builder",
+        system: "Portfolio",
+        path: "portfolio.social.instagram_carousel",
+        desired: { options: 3 },
+        reason: "Build Instagram carousel content.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { complexity: "low", summary: "Social-ready carousels from uploads." },
+        confidence: Math.max(85, intent.confidence),
+        capabilityId: "manage_gallery",
+      });
+    }
+    if (/weak photo|show me weak|remove weak|weaker image/.test(req)) {
+      push({
+        builderOwner: mediaOwner,
+        builderType: "portfolio_builder",
+        system: "Portfolio",
+        path: "portfolio.quality.weak",
+        desired: { flag_weak: true },
+        reason: "Identify weak photos.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { complexity: "low", summary: "Drop weak shots that hurt trust." },
+        confidence: Math.max(87, intent.confidence),
+        capabilityId: "manage_gallery",
+      });
+    }
+    if (/premium|more premium|luxury/.test(req) && /portfolio|gallery|media|photo/.test(req)) {
+      push({
+        builderOwner: mediaOwner,
+        builderType: "portfolio_builder",
+        system: "Portfolio",
+        path: "portfolio.creative",
+        desired: { premium: true },
+        reason: "Premium creative pass on portfolio media.",
+        risk: "medium",
+        dependencies: [],
+        estimatedImpact: { trustPct: 9, complexity: "medium", summary: "Reorder, captions, hero for premium feel." },
+        confidence: Math.max(84, intent.confidence),
+        capabilityId: "manage_gallery",
+      });
+    }
+    if (/caption/.test(req) || (/12 photos|photos/.test(req) && /hero|upload/.test(req))) {
+      push({
+        builderOwner: mediaOwner,
         builderType: "portfolio_builder",
         system: "Portfolio",
         path: "portfolio.captions.generate",
@@ -751,6 +843,46 @@ function draftActionsFromIntent(intent: BuilderIntent): {
         dependencies: ["portfolio.gallery.organize"],
         estimatedImpact: { trustPct: 5, complexity: "low", summary: "Captions add context for visitors." },
         confidence: 78,
+        capabilityId: "manage_gallery",
+      });
+    }
+    if (/evolved|visual timeline|how my business|over the last year|business memory/.test(req)) {
+      push({
+        builderOwner: mediaOwner,
+        builderType: "portfolio_builder",
+        system: "Portfolio",
+        path: "portfolio.memory.visual_timeline",
+        desired: true,
+        reason: "Business Memory Through Media — visual timeline.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { trustPct: 8, complexity: "low", summary: "Living visual history of the business." },
+        confidence: Math.max(90, intent.confidence),
+        capabilityId: "manage_gallery",
+      });
+    }
+    if (/upload|ceramic|12 photo|multi.?surface|publish/.test(req)) {
+      push({
+        builderOwner: mediaOwner,
+        builderType: "portfolio_builder",
+        system: "Portfolio",
+        path: "portfolio.publish.surfaces",
+        desired: {
+          surfaces: [
+            "website_gallery",
+            "marketplace_profile",
+            "portfolio",
+            "quote_library",
+            "instagram_carousel",
+            "google_business",
+            "hero_candidate",
+          ],
+        },
+        reason: "Multi-surface publishing proposal from one upload.",
+        risk: "medium",
+        dependencies: [],
+        estimatedImpact: { complexity: "medium", summary: "One approval → many destinations." },
+        confidence: Math.max(83, intent.confidence),
         capabilityId: "manage_gallery",
       });
     }

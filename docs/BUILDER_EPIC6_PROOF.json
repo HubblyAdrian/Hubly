@@ -4,7 +4,7 @@
   "name": "Business Builder",
   "title": "Business Builder",
   "passed": true,
-  "checkedAt": "2026-07-24T04:04:57.919Z",
+  "checkedAt": "2026-07-24T04:13:50.415Z",
   "proofs": {
     "businessBuilderExists": true,
     "websiteIsOneCanvas": true,
@@ -42,7 +42,7 @@
             "detail": "Hero rewritten, typography refined, spacing tightened.",
             "why": "Premium buyers usually decide in under 10 seconds — lead with trust.",
             "moduleOwner": "Website module",
-            "id": "cdec_mryf2kze_c2n1j2"
+            "id": "cdec_mryfdzuy_8nu7kn"
           },
           {
             "surface": "trust",
@@ -50,7 +50,7 @@
             "detail": "Proof sits before pricing.",
             "why": "Reviews are often the strongest trust signal.",
             "moduleOwner": "Website module",
-            "id": "cdec_mryf2kze_g4utvs"
+            "id": "cdec_mryfdzuy_25adg5"
           },
           {
             "surface": "booking",
@@ -58,7 +58,7 @@
             "detail": "Simplified flow; fewer fields before confirmation.",
             "why": "Friction kills premium conversion.",
             "moduleOwner": "Booking Intelligence Builder",
-            "id": "cdec_mryf2kze_ppq0va"
+            "id": "cdec_mryfdzuy_a4fyt4"
           },
           {
             "surface": "portfolio",
@@ -66,7 +66,7 @@
             "detail": "Hero images reordered toward elevated jobs.",
             "why": "Visual proof should match the positioning.",
             "moduleOwner": "Portfolio Builder",
-            "id": "cdec_mryf2kze_pre12y"
+            "id": "cdec_mryfdzuy_fajj66"
           },
           {
             "surface": "packages",
@@ -74,7 +74,7 @@
             "detail": "Clearer tier language; pricing presentation strengthened.",
             "why": "Premium packaging is positioning, not just a price list.",
             "moduleOwner": "Packages Builder",
-            "id": "cdec_mryf2kze_y6qb6m"
+            "id": "cdec_mryfdzuy_65cg5c"
           },
           {
             "surface": "cta",
@@ -82,7 +82,7 @@
             "detail": "Stronger primary CTA hierarchy.",
             "why": "One clear next step reduces hesitation.",
             "moduleOwner": "Website module",
-            "id": "cdec_mryf2kze_qlopve"
+            "id": "cdec_mryfdzuy_xy1f8d"
           },
           {
             "surface": "website",
@@ -90,7 +90,7 @@
             "detail": "website.premium_feel → true",
             "why": "Owner asked for a more premium website feel.",
             "moduleOwner": "Website Builder",
-            "id": "cdec_mryf2kze_kmxbj0"
+            "id": "cdec_mryfdzuy_2mezrn"
           },
           {
             "surface": "website",
@@ -98,7 +98,7 @@
             "detail": "website.hero.headline_tone → \"premium\"",
             "why": "Premium feel usually starts with hero headline tone.",
             "moduleOwner": "Website Builder",
-            "id": "cdec_mryf2kze_2o7qor"
+            "id": "cdec_mryfdzuy_qb73m4"
           }
         ],
         "score": {
@@ -122,42 +122,42 @@
         {
           "role": "owner",
           "message": "I don't like the new typography.",
-          "at": "2026-07-24T04:04:57.916Z"
+          "at": "2026-07-24T04:13:50.412Z"
         },
         {
           "role": "hubly",
           "message": "Got it — I updated typography and remembered that preference for next builds.",
-          "at": "2026-07-24T04:04:57.916Z"
+          "at": "2026-07-24T04:13:50.412Z"
         },
         {
           "role": "owner",
           "message": "Keep the luxury layout but use brighter photography.",
-          "at": "2026-07-24T04:04:57.916Z"
+          "at": "2026-07-24T04:13:50.412Z"
         },
         {
           "role": "hubly",
           "message": "Combined — luxury layout with brighter photography. Preferences saved.",
-          "at": "2026-07-24T04:04:57.916Z"
+          "at": "2026-07-24T04:13:50.412Z"
         },
         {
           "role": "owner",
           "message": "Remove reviews.",
-          "at": "2026-07-24T04:04:57.916Z"
+          "at": "2026-07-24T04:13:50.412Z"
         },
         {
           "role": "hubly",
           "message": "I can do that.\n\nI don't recommend it because Reviews are your strongest trust signal — removing them usually hurts conversion.\n\nWould you still like to continue?",
-          "at": "2026-07-24T04:04:57.916Z"
+          "at": "2026-07-24T04:13:50.412Z"
         },
         {
           "role": "owner",
           "message": "Keep reviews",
-          "at": "2026-07-24T04:04:57.916Z"
+          "at": "2026-07-24T04:13:50.412Z"
         },
         {
           "role": "hubly",
           "message": "We'll keep reviews — trust stays front and center.",
-          "at": "2026-07-24T04:04:57.916Z"
+          "at": "2026-07-24T04:13:50.412Z"
         }
       ],
       "memory": {
@@ -166,37 +166,37 @@
           {
             "key": "tone",
             "value": "friendlier",
-            "learnedAt": "2026-07-24T04:04:57.915Z",
+            "learnedAt": "2026-07-24T04:13:50.411Z",
             "source": "Make it more friendly."
           },
           {
             "key": "direction",
             "value": "neighborhood_favorite",
-            "learnedAt": "2026-07-24T04:04:57.915Z",
+            "learnedAt": "2026-07-24T04:13:50.411Z",
             "source": "Make it more friendly."
           },
           {
             "key": "positioning",
             "value": "premium",
-            "learnedAt": "2026-07-24T04:04:57.916Z",
+            "learnedAt": "2026-07-24T04:13:50.412Z",
             "source": "Actually keep it premium."
           },
           {
             "key": "typography",
             "value": "avoid_last_proposal",
-            "learnedAt": "2026-07-24T04:04:57.916Z",
+            "learnedAt": "2026-07-24T04:13:50.412Z",
             "source": "I don't like the new typography."
           },
           {
             "key": "layout",
             "value": "luxury",
-            "learnedAt": "2026-07-24T04:04:57.916Z",
+            "learnedAt": "2026-07-24T04:13:50.412Z",
             "source": "Keep the luxury layout but use brighter photography."
           },
           {
             "key": "photography",
             "value": "brighter",
-            "learnedAt": "2026-07-24T04:04:57.916Z",
+            "learnedAt": "2026-07-24T04:13:50.412Z",
             "source": "Keep the luxury layout but use brighter photography."
           }
         ]
@@ -206,67 +206,67 @@
           {
             "role": "hubly",
             "message": "Here's what I changed across your business — not just the website.\n\n✓ Homepage feels more premium\n✓ Reviews moved higher\n✓ Booking asks fewer questions\n✓ Portfolio starts with luxury work\n✓ Package names updated\n✓ Button style modernized\n✓ Owner asked for a more premium website feel.\n✓ Premium feel usually starts with hero headline tone.\n\nWhy?\nPremium buyers decide fast — optimize for trust first.\n\nWhat do you think?",
-            "at": "2026-07-24T04:04:57.914Z"
+            "at": "2026-07-24T04:13:50.410Z"
           },
           {
             "role": "owner",
             "message": "Make it more friendly.",
-            "at": "2026-07-24T04:04:57.915Z"
+            "at": "2026-07-24T04:13:50.411Z"
           },
           {
             "role": "hubly",
             "message": "I think that means warmer language and softer proof — without dropping the craft. I updated the Creative Direction toward Friendly Premium.\n\nWhat do you think?",
-            "at": "2026-07-24T04:04:57.916Z"
+            "at": "2026-07-24T04:13:50.411Z"
           },
           {
             "role": "owner",
             "message": "Actually keep it premium.",
-            "at": "2026-07-24T04:04:57.916Z"
+            "at": "2026-07-24T04:13:50.412Z"
           },
           {
             "role": "hubly",
             "message": "I'll combine both — friendly where it helps, premium where it converts. Preview updated.",
-            "at": "2026-07-24T04:04:57.916Z"
+            "at": "2026-07-24T04:13:50.412Z"
           },
           {
             "role": "owner",
             "message": "I don't like the new typography.",
-            "at": "2026-07-24T04:04:57.916Z"
+            "at": "2026-07-24T04:13:50.412Z"
           },
           {
             "role": "hubly",
             "message": "Got it — I updated typography and remembered that preference for next builds.",
-            "at": "2026-07-24T04:04:57.916Z"
+            "at": "2026-07-24T04:13:50.412Z"
           },
           {
             "role": "owner",
             "message": "Keep the luxury layout but use brighter photography.",
-            "at": "2026-07-24T04:04:57.916Z"
+            "at": "2026-07-24T04:13:50.412Z"
           },
           {
             "role": "hubly",
             "message": "Combined — luxury layout with brighter photography. Preferences saved.",
-            "at": "2026-07-24T04:04:57.916Z"
+            "at": "2026-07-24T04:13:50.412Z"
           },
           {
             "role": "owner",
             "message": "Remove reviews.",
-            "at": "2026-07-24T04:04:57.916Z"
+            "at": "2026-07-24T04:13:50.412Z"
           },
           {
             "role": "hubly",
             "message": "I can do that.\n\nI don't recommend it because Reviews are your strongest trust signal — removing them usually hurts conversion.\n\nWould you still like to continue?",
-            "at": "2026-07-24T04:04:57.916Z"
+            "at": "2026-07-24T04:13:50.412Z"
           },
           {
             "role": "owner",
             "message": "Keep reviews",
-            "at": "2026-07-24T04:04:57.916Z"
+            "at": "2026-07-24T04:13:50.412Z"
           },
           {
             "role": "hubly",
             "message": "We'll keep reviews — trust stays front and center.",
-            "at": "2026-07-24T04:04:57.916Z"
+            "at": "2026-07-24T04:13:50.412Z"
           }
         ],
         "liveViews": [

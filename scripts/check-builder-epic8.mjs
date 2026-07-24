@@ -163,7 +163,7 @@ const snap = getMissionControlSnapshot();
 check("MC displays Workspace Intelligence", (snap.builderActions?.workspaceIntelligence || []).length >= 1);
 check(
   "MC epic is Workspace Intelligence",
-  /Workspace Intelligence|Automation Intelligence|Epic [89]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Workspace Intelligence|Automation Intelligence|Media Intelligence|Epic [89]|Epic 10/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check("MC still blocks apply", snap.builderActions?.available === false);
 check("MC recent is workspace intelligence", (snap.builderActions?.recent || [])[0]?.status === "workspace_intelligence");

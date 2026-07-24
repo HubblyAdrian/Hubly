@@ -33,7 +33,8 @@
     "check:builder-epic6": "node scripts/check-builder-epic6.mjs",
     "check:builder-epic7": "node scripts/check-builder-epic7.mjs",
     "check:builder-epic8": "node scripts/check-builder-epic8.mjs",
-    "check:builder-epic9": "node scripts/check-builder-epic9.mjs"
+    "check:builder-epic9": "node scripts/check-builder-epic9.mjs",
+    "check:builder-epic10": "node scripts/check-builder-epic10.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

@@ -14,8 +14,8 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 | 6 | Business Builder | Pass | `scripts/check-builder-epic6.mjs` | `docs/BUILDER_EPIC6_PROOF.json` | Accepted |
 | 7 | Booking Intelligence Builder | Pass | `scripts/check-builder-epic7.mjs` | `docs/BUILDER_EPIC7_PROOF.json` | Accepted |
 | 8 | Workspace Intelligence Builder | Pass | `scripts/check-builder-epic8.mjs` | `docs/BUILDER_EPIC8_PROOF.json` | Accepted |
-| 9 | Automation Intelligence Builder | Pass (pending Founder Approval) | `scripts/check-builder-epic9.mjs` | `docs/BUILDER_EPIC9_PROOF.json` | — |
-| 10 | Portfolio Intelligence Builder | Locked | — | — | — |
+| 9 | Automation Intelligence Builder | Pass | `scripts/check-builder-epic9.mjs` | `docs/BUILDER_EPIC9_PROOF.json` | Accepted |
+| 10 | Media Intelligence Engine | Pass (pending Founder Approval) | `scripts/check-builder-epic10.mjs` | `docs/BUILDER_EPIC10_PROOF.json` | — |
 | 11 | Hubly Chat OS | Locked | — | — | — |
 | 12 | Builder Validation & Apply Engine | Locked | — | — | — |
 
@@ -25,24 +25,25 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 - **Pass (pending Founder Approval)** — automated gate green  
 - **Accepted** — founder signed off; next epic may start  
 
-## Epic 1–8
+## Epic 1–9
 
-**Accepted.** Through Workspace Intelligence.
+**Accepted.** Through Automation Intelligence.
 
-## Epic 9 — Automation Intelligence Builder
+## Epic 10 — Media Intelligence Engine
 
-Not an automation settings UI. Conversation → workflow. Hubly acts as operations manager.
+Not a portfolio folder. Uploads are understood; Hubly proposes galleries, heroes, social, and multi-surface publishing.
 
-- Natural-language workflows + explained steps  
-- Preview graph + 30-day simulation  
-- Multi-system automations  
-- Automation Health + time saved  
-- AI recommendations + **Automation Discovery**  
+- AI analysis + auto-organization  
+- Multi-surface publishing proposals  
+- Portfolio Health + missing content  
+- **Business Memory Through Media** (visual timeline)  
 - Mission Control replay  
-- Still requires approval — **no apply / no execute**
+- Still requires approval — **no publish / no apply**
 
 ```bash
-npm run check:builder-epic9
+npm run check:builder-epic10
 ```
 
-**Stop.** Do not start Epic 10 until Founder Approval.
+**Stop.** Do not start Epic 11 until Founder Approval.
+
+> Note for Epic 11: Hubly Chat OS should reveal that everything built so far was preparing for one conversation where the owner can ask Hubly anything about their business — not “another chat feature.”
