@@ -1,10 +1,10 @@
 # Builder Engine Specification
 
-**Version:** 1.9.0  
-**Status:** Milestone 1.5 — Epic 1–8 ✅ · Epic 9 ✅ (Automation Intelligence Builder) · Epic 10+ locked  
+**Version:** 1.10.0  
+**Status:** Milestone 1.5 — Epic 1–9 ✅ · Epic 10 ✅ (Media Intelligence Engine) · Epic 11+ locked  
 **Target:** Milestone 1.5 (12 epics · one release gate each)
 
-Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6–8: Business / Booking / Workspace Intelligence. Epic 9 is **Automation Intelligence Builder** — conversation → workflow (preview, 30-day simulation, health, discovery). No execute until approval. Apply / remaining builders are later. Do not implement them ahead of Founder Approval.
+Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6–9: Business / Booking / Workspace / Automation Intelligence. Epic 10 is **Media Intelligence Engine** — uploads understood (not just stored), multi-surface publishing proposals, Portfolio Health, missing content, and Business Memory Through Media. No publish until approval. Apply / Chat OS are later. Do not implement them ahead of Founder Approval.
 
 ## Purpose
 
@@ -28,7 +28,7 @@ Builder modules register via Platform Extensibility (`builder.*` Feature Manifes
 - Booking Intelligence Builder (`booking`) — scheduling concepts, health, simulator  
 - Workspace Intelligence Builder (`workspace_builder`) — adapts around how the owner works  
 - Automation Intelligence Builder (`automation`) — conversation → workflow, simulation, discovery  
-- Portfolio Intelligence Builder  
+- Media Intelligence Engine (`portfolio_builder`) — understand + organize + multi-surface media  
 - Package Builder  
 
 ## Business Builder (Epic 6)
@@ -75,6 +75,18 @@ Builder modules register via Platform Extensibility (`builder.*` Feature Manifes
 7. Multi-system workflows from one conversation  
 8. Mission Control records workflow evolution  
 9. Still requires Collaboration/Approval — **no execute / no apply**  
+
+## Media Intelligence Engine (Epic 10)
+
+1. Owner uploads media in conversation (never “where do I put this?”)  
+2. AI analyzes quality, kind, and business context  
+3. Auto-organization into gallery / before-after / archive candidates  
+4. Multi-surface publishing proposals (website, marketplace, portfolio, quotes, social, Google, hero)  
+5. Portfolio Health + missing content detection  
+6. Creative premium pass (reorder, captions, hero)  
+7. **Business Memory Through Media** — visual timeline of the business story  
+8. Mission Control tracks media lifecycle  
+9. Still requires Collaboration/Approval — **no publish / no apply**  
 
 ## Change Plans
 

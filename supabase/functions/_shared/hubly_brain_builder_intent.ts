@@ -221,17 +221,25 @@ function collectSignals(request: string): CategorySignal[] {
     });
   }
 
-  if (/portfolio|upload.*(photo|image)|these \d+ photos|gallery/.test(r)) {
+  if (/portfolio|upload.*(photo|image)|these \d+ photos|gallery|instagram|before.?after|hero.*photo|weak photo|organize everything|visual timeline/.test(r)) {
     signals.push({
       category: "Portfolio",
       system: "Portfolio",
-      label: "Portfolio Update",
-      goal: "Gallery Organization",
+      label: "Media Intelligence",
+      goal: /hero/.test(r)
+        ? "Hero Replacement"
+        : /instagram|carousel/.test(r)
+        ? "Social Content"
+        : /before.?after/.test(r)
+        ? "Before/After Pairs"
+        : /timeline|evolved/.test(r)
+        ? "Visual Timeline"
+        : "Gallery Organization",
       risk: "low",
       defaultCaps: [
         {
           toolId: "portfolio_builder",
-          toolName: "Portfolio Builder",
+          toolName: "Media Intelligence Engine",
           capabilityId: "upload_photos",
           capabilityLabel: "Upload Photos",
         },

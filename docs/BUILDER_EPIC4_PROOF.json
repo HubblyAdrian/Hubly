@@ -4,7 +4,7 @@
   "name": "Collaboration & Approval Engine",
   "title": "Collaboration & Approval Engine",
   "passed": true,
-  "checkedAt": "2026-07-24T04:04:57.049Z",
+  "checkedAt": "2026-07-24T04:13:49.559Z",
   "proofs": {
     "collaborationLoop": true,
     "hublyRecommends": true,
@@ -25,11 +25,11 @@
         "request": "Make my homepage more premium.",
         "passed": true,
         "preview": {
-          "id": "prv_mryf2kag_6fym2t",
+          "id": "prv_mryfdz6d_dgau5k",
           "primarySurface": "website"
         },
         "collaboration": {
-          "id": "collab_mryf2kak_qx2idk",
+          "id": "collab_mryfdz6g_ip7cie",
           "openingPrompt": "What do you think?",
           "iterations": 4,
           "recommendation": {
@@ -181,11 +181,11 @@
         "request": "I want arrival windows.",
         "passed": true,
         "preview": {
-          "id": "prv_mryf2kaq_iat8sf",
+          "id": "prv_mryfdz6n_jzee34",
           "primarySurface": "booking"
         },
         "collaboration": {
-          "id": "collab_mryf2kas_44c3g4",
+          "id": "collab_mryfdz6o_4znpzu",
           "openingPrompt": "What do you think?",
           "iterations": 3,
           "recommendation": {
@@ -307,11 +307,11 @@
         "request": "Move Jobs above Customers.",
         "passed": true,
         "preview": {
-          "id": "prv_mryf2kau_4n0k8i",
+          "id": "prv_mryfdz6q_2biobd",
           "primarySurface": "workspace"
         },
         "collaboration": {
-          "id": "collab_mryf2kav_prt518",
+          "id": "collab_mryfdz6r_i39jx0",
           "openingPrompt": "What do you think?",
           "iterations": 3,
           "recommendation": {
@@ -433,22 +433,22 @@
         "request": "Organize my portfolio.",
         "passed": true,
         "preview": {
-          "id": "prv_mryf2kax_75nw8x",
+          "id": "prv_mryfdz6u_vgkbq8",
           "primarySurface": "portfolio"
         },
         "collaboration": {
-          "id": "collab_mryf2kay_aq3mm1",
+          "id": "collab_mryfdz6w_4l0so9",
           "openingPrompt": "What do you think?",
           "iterations": 3,
           "recommendation": {
             "optionId": null,
-            "label": "Portfolio Update",
+            "label": "Media Intelligence",
             "why": [
               "Matches the Change Plan desired state",
               "Balanced risk vs impact",
               "Aligned with how you already work"
             ],
-            "confidence": 93,
+            "confidence": 95,
             "alignedWithDna": true,
             "projectedConversion": "high"
           },
@@ -457,7 +457,7 @@
           "partialApprovals": [],
           "approvalLevels": [
             {
-              "path": "portfolio.gallery.organize",
+              "path": "portfolio.gallery",
               "surface": "portfolio",
               "level": "recommend",
               "reason": "Risk low → recommend"
@@ -474,11 +474,11 @@
               }
             ],
             "expectedResults": {
-              "trustPct": 11,
-              "conversionPct": 5,
+              "trustPct": 12,
+              "conversionPct": null,
               "schedulingFlexibility": null,
               "complexity": "medium",
-              "summary": "Organized gallery strengthens proof of work."
+              "summary": "Curated service gallery."
             },
             "risk": "low",
             "rollbackAvailable": true,
@@ -490,12 +490,12 @@
             {
               "role": "hubly",
               "kind": "open",
-              "message": "Here's what I built for Portfolio Update.\n\nWhat do you think?"
+              "message": "Here's what I built for Media Intelligence.\n\nWhat do you think?"
             },
             {
               "role": "hubly",
               "kind": "recommendation",
-              "message": "I recommend Portfolio Update."
+              "message": "I recommend Media Intelligence."
             },
             {
               "role": "owner",
@@ -525,7 +525,7 @@
             {
               "role": "hubly",
               "kind": "approval_summary",
-              "message": "Today we'll make:\n✓ Portfolio\n\nExpected results: +11% Trust · +5% Conversion · low risk · Rollback available"
+              "message": "Today we'll make:\n✓ Portfolio\n\nExpected results: +12% Trust · low risk · Rollback available"
             },
             {
               "role": "hubly",
@@ -559,11 +559,11 @@
         "request": "Add arrival windows and update my website.",
         "passed": true,
         "preview": {
-          "id": "prv_mryf2kb0_2hp7nn",
+          "id": "prv_mryfdz6y_7sn5eo",
           "primarySurface": "multi"
         },
         "collaboration": {
-          "id": "collab_mryf2kb1_0lb5sl",
+          "id": "collab_mryfdz6z_lfrell",
           "openingPrompt": "What do you think?",
           "iterations": 2,
           "recommendation": {

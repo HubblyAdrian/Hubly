@@ -164,7 +164,7 @@ const snap = getMissionControlSnapshot();
 check("MC displays Automation Intelligence", (snap.builderActions?.automationIntelligence || []).length >= 1);
 check(
   "MC epic is Automation Intelligence",
-  /Automation Intelligence|Epic 9/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Automation Intelligence|Media Intelligence|Epic [9]|Epic 10/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check("MC still blocks apply/execute", snap.builderActions?.available === false);
 check("MC recent is automation intelligence", (snap.builderActions?.recent || [])[0]?.status === "automation_intelligence");
