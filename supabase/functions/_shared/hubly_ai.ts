@@ -169,6 +169,11 @@ import {
   type HublyConversationMemory,
   type HublyConversationMemoryInput,
 } from "./hubly_brain_conversation_memory.ts";
+import {
+  HublyConversationIntelligenceApi,
+  type HublyConversationIntelligence,
+  type HublyConversationIntelligenceInput,
+} from "./hubly_brain_conversation_intelligence.ts";
 import { HublyReasoning } from "./hubly_brain_reasoning.ts";
 import { HublyDecisionEngine } from "./hubly_brain_decision.ts";
 import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
@@ -242,6 +247,7 @@ export {
   HublyExpertFramework,
   HublyWorkspaceMemoryApi,
   HublyConversationMemoryApi,
+  HublyConversationIntelligenceApi,
   HublyReasoning,
   HublyDecisionEngine,
   HublyConfidencePolicy,

@@ -45,6 +45,18 @@ import {
   type HublyConversationMemoryInput,
 } from "./hubly_brain_conversation_memory.ts";
 import {
+  applyConversationIntelligenceTurn,
+  buildResumeGreeting,
+  isConversationIntelligenceQuestion,
+  loadConversationIntelligenceLocal,
+  normalizeConversationIntelligence,
+  persistConversationIntelligenceLocal,
+  queryConversationIntelligence,
+  CONVERSATION_INTELLIGENCE_OWNER,
+  type HublyConversationIntelligence,
+  type HublyConversationIntelligenceInput,
+} from "./hubly_brain_conversation_intelligence.ts";
+import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
   commitWorkspaceUpdates,
@@ -83,6 +95,7 @@ export type HublyThinkIntent =
   | "coach"
   | "weather"
   | "memory"
+  | "conversation_intelligence"
   | "why"
   | "general";
 
@@ -93,6 +106,8 @@ export type HublyThinkRequest = {
   dna?: HublyBusinessDNAInput | null;
   workspace?: HublyWorkspaceMemoryInput | null;
   conversation?: HublyConversationMemoryInput | null;
+  /** Section 10 — Conversation Intelligence (working memory, not chat logs). */
+  conversationIntelligence?: HublyConversationIntelligenceInput;
   blueprintKnowledge?: Record<string, unknown> | null;
   /** Force expert set (Brain still runs Experience Director last). */
   experts?: HublyExpertId[] | null;
@@ -182,6 +197,10 @@ export type HublyThinkResult = {
   workspaceCommittedBy: typeof WORKSPACE_MEMORY_OWNER;
   workspaceRetrieval?: ReturnType<typeof queryWorkspaceMemory> | null;
   conversation: ReturnType<typeof normalizeConversationMemory>;
+  /** Section 10 — structured working memory (separate from Business/Workspace Memory). */
+  conversationIntelligence: HublyConversationIntelligence;
+  conversationIntelligenceCommittedBy: typeof CONVERSATION_INTELLIGENCE_OWNER;
+  conversationIntelligenceRetrieval?: ReturnType<typeof queryConversationIntelligence> | null;
   timeline: Array<{ expertId: string; ms: number; confidence: number; summary: string }>;
   experienceDirector?: {
     reviewedBy: "experience_director";
@@ -203,6 +222,7 @@ export function detectIntent(request: string, explicit?: string | null): string 
   if (explicit) return String(explicit);
   const r = String(request || "").toLowerCase();
   if (isWhyDecisionQuestion(r) || isWhyQuestion(r)) return "why";
+  if (isConversationIntelligenceQuestion(r)) return "conversation_intelligence";
   if (isWorkspaceRetrievalQuestion(r)) return "workspace";
   if (isMemoryRetrievalQuestion(r)) return "memory";
   if (/weather|forecast|temperature/.test(r)) return "weather";
@@ -348,6 +368,139 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     at: new Date().toISOString(),
   });
 
+  // Section 10 — Conversation Intelligence (working memory — not chat logs).
+  const seededCi = businessId ? loadConversationIntelligenceLocal(businessId) : null;
+  let conversationIntelligence = normalizeConversationIntelligence(
+    seededCi || req.conversationIntelligence || null,
+  );
+  if (businessId) conversationIntelligence.businessId = businessId;
+
+  // Section 10 — retrieval from structured Conversation Intelligence (never chat history).
+  if (
+    intent === "conversation_intelligence" ||
+    isConversationIntelligenceQuestion(String(req.request || ""))
+  ) {
+    const retrieval = queryConversationIntelligence(String(req.request || ""), conversationIntelligence);
+    const ed = applyExperienceDirector({
+      request: req.request,
+      draftResponse: retrieval.answer,
+      proposedQuestions: [],
+      confidence: retrieval.confidence,
+      criticOk: true,
+    });
+    conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
+    conversationIntelligence = applyConversationIntelligenceTurn(
+      conversationIntelligence,
+      String(req.request || ""),
+      { businessId, phase: "retrieval", expertsRun: ["experience_director"] },
+    );
+    if (businessId) {
+      persistBusinessMemoryLocal(businessId, memory);
+      persistWorkspaceMemoryLocal(businessId, workspace);
+      persistConversationIntelligenceLocal(businessId, conversationIntelligence);
+    }
+    const edRecord: HublyExpertOutput = {
+      expertId: "experience_director",
+      expertName: "Experience Director",
+      ok: true,
+      status: "ok",
+      executionTimeMs: Date.now() - started,
+      retries: 0,
+      summary: ed.ownerResponse,
+      output: {
+        type: "Experience Review",
+        ownerResponse: ed.ownerResponse,
+        fromConversationIntelligence: true,
+      },
+      payload: {
+        type: "Experience Review",
+        ownerResponse: ed.ownerResponse,
+        fromConversationIntelligence: true,
+      },
+      reasoning: [{
+        reason: "Answered from Conversation Intelligence (structured working memory — not chat history).",
+        evidence: retrieval.paths,
+        confidence: retrieval.confidence,
+      }],
+      confidence: ed.confidence,
+      questions: ed.questions,
+    };
+    return {
+      ok: true,
+      intent: "conversation_intelligence",
+      response: ed.ownerResponse,
+      questions: ed.questions,
+      celebrate: ed.celebrate,
+      confidence: ed.confidence,
+      confidenceBand: confidenceBand(ed.confidence),
+      expertsRun: ["experience_director"],
+      expertOutputs: [edRecord],
+      mergedExpertRecords: [toMergedRecord(edRecord)],
+      expertTranscript: {
+        customerVisible: false,
+        entries: [buildTranscriptEntry(edRecord, 0, ["experience_director"], req, "conversation_intelligence", [])],
+        assembly: {
+          expertsInOrder: ["experience_director"],
+          finalResponseSource: "experience_director",
+          mergedFrom: ["experience_director", "conversation_intelligence"],
+          howAssembled:
+            "Hubly Brain queried Conversation Intelligence and Experience Director phrased the answer.",
+        },
+      },
+      failures: [],
+      decisions: [
+        makeDecision({
+          domain: "conversation_intelligence",
+          decision: "ci_retrieval",
+          reason: "Retrieved answer from Conversation Intelligence SSOT",
+          evidence: retrieval.paths,
+          confidence: retrieval.confidence,
+          expertId: CONVERSATION_INTELLIGENCE_OWNER,
+        }),
+      ],
+      reasoningObjects: [],
+      whyAnswer: null,
+      decisionObjects: [],
+      whyDecisionAnswer: null,
+      primaryDecision: null,
+      memory,
+      memoryChanges,
+      memoryCommittedBy: BUSINESS_MEMORY_OWNER,
+      memoryRetrieval: null,
+      dna,
+      workspace,
+      workspaceChanges,
+      workspaceCommittedBy: WORKSPACE_MEMORY_OWNER,
+      workspaceRetrieval: null,
+      conversation,
+      conversationIntelligence,
+      conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
+      conversationIntelligenceRetrieval: retrieval,
+      timeline: [{
+        expertId: "experience_director",
+        ms: Date.now() - started,
+        confidence: ed.confidence,
+        summary: ed.ownerResponse,
+      }],
+      experienceDirector: {
+        reviewedBy: "experience_director",
+        actions: [...ed.actions, "answered_from_conversation_intelligence"],
+        questionsShown: ed.questions.length,
+        questionsDelayed: ed.delayed.extraQuestions.length,
+        celebrate: ed.celebrate,
+        hideDetails: ed.hideDetails,
+      },
+      console: req.debug
+        ? {
+          intent: "conversation_intelligence",
+          expertsSelected: ["experience_director"],
+          memoriesLoaded: ["conversation_intelligence"],
+          latencyMs: Date.now() - started,
+        }
+        : undefined,
+    };
+  }
+
   // Section 9 — "Why didn't you…?" from stored Decision Objects (never regenerate).
   // Section 8 — other "Why?" from stored Reasoning Objects.
   if (
@@ -468,6 +621,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       workspaceCommittedBy: WORKSPACE_MEMORY_OWNER,
       workspaceRetrieval: null,
       conversation,
+      conversationIntelligence,
+      conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
+      conversationIntelligenceRetrieval: null,
       timeline: [{
         expertId: "experience_director",
         ms: Date.now() - started,
@@ -576,6 +732,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       workspaceCommittedBy: WORKSPACE_MEMORY_OWNER,
       workspaceRetrieval: retrieval,
       conversation,
+      conversationIntelligence,
+      conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
+      conversationIntelligenceRetrieval: null,
       timeline: [{
         expertId: "experience_director",
         ms: Date.now() - started,
@@ -681,6 +840,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       workspaceCommittedBy: WORKSPACE_MEMORY_OWNER,
       workspaceRetrieval: null,
       conversation,
+      conversationIntelligence,
+      conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
+      conversationIntelligenceRetrieval: null,
       timeline: [{
         expertId: "experience_director",
         ms: Date.now() - started,
@@ -803,6 +965,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       workspaceCommittedBy: WORKSPACE_MEMORY_OWNER,
       workspaceRetrieval: null,
       conversation,
+      conversationIntelligence,
+      conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
+      conversationIntelligenceRetrieval: null,
       timeline: [{ expertId: "experience_director", ms: Date.now() - started, confidence: ed.confidence, summary: ed.ownerResponse }],
       experienceDirector: {
         reviewedBy: "experience_director",
@@ -1060,10 +1225,35 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     edActions = [...edActions, "decision_engine_proceed"];
   }
 
+  // Section 10 — update Conversation Intelligence working memory (Brain-owned).
+  conversationIntelligence = applyConversationIntelligenceTurn(
+    conversationIntelligence,
+    String(req.request || ""),
+    {
+      businessId,
+      expertsRun: ordered,
+      expertStatuses: expertOutputs.map((o) => ({
+        expertId: o.expertId,
+        status: o.status || (o.ok ? "complete" : "failed"),
+      })),
+      phase: "experts_complete",
+    },
+  );
+  // Natural resume: if owner just says hello and we have an active project, prefer continuity.
+  if (
+    /^(hi|hello|hey)\b/i.test(String(req.request || "").trim()) &&
+    conversationIntelligence.currentProject
+  ) {
+    response = buildResumeGreeting(conversationIntelligence);
+    edActions = [...edActions, "conversation_intelligence_resume"];
+  }
+
   conversation = appendConversationTurn(conversation, { role: "hubly", text: response });
+
   if (businessId) {
     persistBusinessMemoryLocal(businessId, memory);
     persistWorkspaceMemoryLocal(businessId, workspace);
+    persistConversationIntelligenceLocal(businessId, conversationIntelligence);
   }
 
   // Section 8 — persist structured Reasoning Objects + Decision Graph for build flows.
@@ -1133,6 +1323,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     workspaceCommittedBy: WORKSPACE_MEMORY_OWNER,
     workspaceRetrieval: null,
     conversation,
+    conversationIntelligence,
+    conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
+    conversationIntelligenceRetrieval: null,
     timeline,
     experienceDirector: {
       reviewedBy: "experience_director",
@@ -1151,6 +1344,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
           "business_dna",
           "workspace_memory",
           "conversation_memory",
+          "conversation_intelligence",
           req.blueprintKnowledge ? "blueprints" : "",
         ].filter(Boolean),
         latencyMs: Date.now() - started,

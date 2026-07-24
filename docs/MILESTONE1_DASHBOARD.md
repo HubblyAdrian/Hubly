@@ -14,8 +14,8 @@ Live automation: `npm run milestone1` → `docs/MILESTONE1_RELEASE_GATE.json`
 | 6 | Workspace Memory | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section6-workspace-memory.mjs` | `docs/HUBLY_BRAIN_SECTION6_PROOF.json` | Accepted |
 | 7 | Business DNA | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section7-business-dna.mjs` | `docs/HUBLY_BRAIN_SECTION7_PROOF.json` | Accepted |
 | 8 | Reasoning Engine | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section8-reasoning-engine.mjs` | `docs/HUBLY_BRAIN_SECTION8_PROOF.json` | Accepted |
-| 9 | AI Decision & Confidence Engine | Pass (pending Founder Approval) | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section9-decision-engine.mjs` | `docs/HUBLY_BRAIN_SECTION9_PROOF.json` | — |
-| 10 | Conversation Memory | Not Started | — | `scripts/check-section10-conversation-memory.mjs` | `docs/HUBLY_BRAIN_SECTION10_PROOF.json` | — |
+| 9 | AI Decision & Confidence Engine | Pass | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section9-decision-engine.mjs` | `docs/HUBLY_BRAIN_SECTION9_PROOF.json` | Accepted |
+| 10 | Conversation Intelligence | Pass (pending Founder Approval) | [#196](https://github.com/HubblyAdrian/Hubly/pull/196) | `scripts/check-section10-conversation-intelligence.mjs` | `docs/HUBLY_BRAIN_SECTION10_PROOF.json` | — |
 | 11 | AI Capability Registry | Not Started | — | `scripts/check-section11-capability-registry.mjs` | `docs/HUBLY_BRAIN_SECTION11_PROOF.json` | — |
 | 12 | Brain Console | Not Started | — | `scripts/check-section12-brain-console.mjs` | `docs/HUBLY_BRAIN_SECTION12_PROOF.json` | — |
 | 13 | Hubly Personality | Not Started | — | `scripts/check-section13-hubly-personality.mjs` | `docs/HUBLY_BRAIN_SECTION13_PROOF.json` | — |

@@ -1,7 +1,9 @@
 /**
- * Hubly Brain — Conversation Memory (Milestone 1)
+ * Hubly Brain — Conversation Memory turns (chat log surface)
  *
- * Remembers conversations across sessions: questions, answers, tone, pending tasks, goals.
+ * Stores raw conversation turns for session continuity.
+ * Section 10 working memory lives in `hubly_brain_conversation_intelligence.ts`
+ * (goals, projects, threads, commitments) — not here.
  */
 
 export const HUBLY_CONVERSATION_MEMORY_VERSION = 1 as const;

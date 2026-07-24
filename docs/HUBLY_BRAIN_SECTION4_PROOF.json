@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-07-24T00:27:35.936Z",
+  "checkedAt": "2026-07-24T00:36:10.245Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -264,7 +264,7 @@
     "timing": [
       {
         "expertId": "experience_director",
-        "executionTimeMs": 3
+        "executionTimeMs": 2
       },
       {
         "expertId": "research",
@@ -272,7 +272,7 @@
       },
       {
         "expertId": "strategy",
-        "executionTimeMs": 0
+        "executionTimeMs": 1
       },
       {
         "expertId": "creative_director",
@@ -612,7 +612,7 @@
         {
           "expertName": "Strategy Expert",
           "expertId": "strategy",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "reasoning": [
             {
               "reason": "I'm positioning around visible proof and clear next step instead of generic price competition. Strategy used Business DNA website/pricing evidence (read-only).",
@@ -1640,7 +1640,7 @@
         {
           "expertName": "Experience Director",
           "expertId": "experience_director",
-          "executionTimeMs": 3,
+          "executionTimeMs": 2,
           "reasoning": [
             {
               "reason": "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
@@ -1793,7 +1793,7 @@
           "changedFromPrevious": "Research Expert produced Research Report; Strategy Expert advanced that into Business Strategy (confidence 90 → 88).",
           "confidence": 88,
           "status": "ok",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "outputType": "Business Strategy",
           "retries": 0
         },
@@ -1868,7 +1868,7 @@
           "changedFromPrevious": "Critic produced Quality Report; Experience Director advanced that into Experience Review (confidence 87 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 3,
+          "executionTimeMs": 2,
           "outputType": "Experience Review",
           "retries": 0
         }

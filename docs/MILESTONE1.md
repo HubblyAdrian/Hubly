@@ -36,7 +36,7 @@ Each section must ship:
 | 7 | Business DNA | ✅ Proven (Release Gate) |
 | 8 | Reasoning Engine | ✅ Proven (`check:section8`) |
 | 9 | AI Decision & Confidence Engine | ✅ Proven (`check:section9`) |
-| 10 | Conversation Memory | ⬜ Not proven |
+| 10 | Conversation Intelligence | ✅ Proven (`check:section10`) |
 | 11 | AI Capability Registry | ⬜ Not proven |
 | 12 | Brain Console | ⬜ Not proven |
 | 13 | Hubly Personality | ⬜ Not proven |

@@ -195,6 +195,27 @@ test('Section 9 — AI Decision Engine is proven with multi-dimension scores and
   assert.equal(proof.evidence.releaseGate.choosesProceedRecommendAskOrResearch, true);
 });
 
+test('Section 10 — Conversation Intelligence is proven with threads and structured retrieval', () => {
+  const r = run('scripts/check-section10-conversation-intelligence.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 10 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION10_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 10);
+  assert.equal(proof.version, '1.0.0');
+  assert.equal(proof.evidence.activeProject, 'Website Redesign');
+  assert.ok(proof.evidence.deferredIdeas.some((d) => /membership/i.test(d.idea)));
+  assert.ok(proof.evidence.pendingDecisions.length >= 3);
+  assert.ok(proof.evidence.commitments.some((c) => /remind/i.test(c.promise)));
+  assert.equal(proof.evidence.memorySeparation.conversationIntelligence.storesTurns, false);
+  assert.equal(proof.evidence.releaseGate.retrievalFromStructuredMemory, true);
+});
+
 test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => {
   const r = run('scripts/milestone1.mjs');
   assert.notEqual(r.status, 0);

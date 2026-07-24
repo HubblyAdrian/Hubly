@@ -2,7 +2,7 @@
 
 **Status: Proven only when `node scripts/check-section9-decision-engine.mjs` exits 0.**
 
-Do not begin Section 10 until this section passes. Do not begin Milestone 2.
+Section 9 accepted. Do not begin Milestone 2.
 
 ## Objective
 

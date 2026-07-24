@@ -2,7 +2,7 @@
   "section": 7,
   "title": "Business DNA",
   "passed": true,
-  "checkedAt": "2026-07-24T00:27:36.024Z",
+  "checkedAt": "2026-07-24T00:36:10.335Z",
   "version": "1.0.0",
   "architectureSummary": {
     "dnaModule": "supabase/functions/_shared/hubly_brain_dna.ts",

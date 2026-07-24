@@ -1,5 +1,5 @@
 /**
- * Node mirror of hubly_brain_think.ts — Sections 4–9 behavioral proofs.
+ * Node mirror of hubly_brain_think.ts — Sections 4–10 behavioral proofs.
  */
 import {
   discoverExperts,
@@ -22,15 +22,26 @@ import {
   isWhyDecisionQuestion,
   decisionActionToConfidenceBand,
 } from './decision-engine.mjs';
+import {
+  applyConversationIntelligenceTurn,
+  buildResumeGreeting,
+  isConversationIntelligenceQuestion,
+  loadConversationIntelligenceLocal,
+  normalizeConversationIntelligence,
+  persistConversationIntelligenceLocal,
+  queryConversationIntelligence,
+  CONVERSATION_INTELLIGENCE_OWNER,
+} from './conversation-intelligence.mjs';
 
 export function detectIntent(request, explicit) {
   if (explicit) return String(explicit);
   const r = String(request || '').toLowerCase();
   if (isWhyDecisionQuestion(r) || isWhyQuestion(r)) return 'why';
+  if (isConversationIntelligenceQuestion(r)) return 'conversation_intelligence';
   if (/weather|forecast|temperature/.test(r)) return 'weather';
   if (/move |sidebar|dashboard|pin |hide |workspace/.test(r)) return 'workspace';
   if (
-    /rewrite (my |the )?homepage|website|homepage|luxury|premium|layout|brand|build me|build my|start(?:ing)?\s+(?:a\s+)?(?:new\s+)?(?:business|company)|pressure\s*wash|new company/
+    /rewrite (my |the )?homepage|website|homepage|luxury|premium|layout|brand|build me|build my|start(?:ing)?\s+(?:a\s+)?(?:new\s+)?(?:business|company)|pressure\s*wash|new company|redesign/
       .test(r)
   ) {
     return 'build_business';
@@ -117,6 +128,55 @@ export async function think(req) {
       city: req.memory?.city || null,
     });
     dna = attachDnaKnowledgePack(dna, pack);
+  }
+
+  // Section 10 — Conversation Intelligence working memory
+  const seededCi = businessId ? loadConversationIntelligenceLocal(businessId) : null;
+  let conversationIntelligence = normalizeConversationIntelligence(
+    seededCi || req.conversationIntelligence || null,
+  );
+  if (businessId) conversationIntelligence.businessId = businessId;
+
+  if (
+    intent === 'conversation_intelligence' ||
+    isConversationIntelligenceQuestion(String(req.request || ''))
+  ) {
+    const retrieval = queryConversationIntelligence(String(req.request || ''), conversationIntelligence);
+    const ed = applyExperienceDirector({
+      request: req.request,
+      draftResponse: retrieval.answer,
+      proposedQuestions: [],
+      confidence: retrieval.confidence,
+      criticOk: true,
+    });
+    conversationIntelligence = applyConversationIntelligenceTurn(
+      conversationIntelligence,
+      String(req.request || ''),
+      { businessId, phase: 'retrieval', expertsRun: ['experience_director'] },
+    );
+    if (businessId) persistConversationIntelligenceLocal(businessId, conversationIntelligence);
+    return {
+      ok: true,
+      intent: 'conversation_intelligence',
+      response: ed.ownerResponse,
+      questions: ed.questions,
+      celebrate: !!ed.celebrate,
+      confidence: ed.confidence,
+      expertsRun: ['experience_director'],
+      expertOutputs: [],
+      failures: [],
+      dna,
+      conversationIntelligence,
+      conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
+      conversationIntelligenceRetrieval: retrieval,
+      experienceDirector: {
+        reviewedBy: 'experience_director',
+        actions: [...(ed.actions || []), 'answered_from_conversation_intelligence'],
+        questionsShown: ed.questions?.length || 0,
+        celebrate: !!ed.celebrate,
+        hideDetails: true,
+      },
+    };
   }
 
   // Section 9 / 8 — Why? from Decision Objects or Reasoning Objects (never regenerate).
@@ -406,6 +466,29 @@ export async function think(req) {
     edActions = [...edActions, 'decision_engine_proceed'];
   }
 
+  // Section 10 — update Conversation Intelligence
+  conversationIntelligence = applyConversationIntelligenceTurn(
+    conversationIntelligence,
+    String(req.request || ''),
+    {
+      businessId,
+      expertsRun: ordered,
+      expertStatuses: expertOutputs.map((o) => ({
+        expertId: o.expertId,
+        status: o.status || (o.ok ? 'complete' : 'failed'),
+      })),
+      phase: 'experts_complete',
+    },
+  );
+  if (
+    /^(hi|hello|hey)\b/i.test(String(req.request || '').trim()) &&
+    conversationIntelligence.currentProject
+  ) {
+    response = buildResumeGreeting(conversationIntelligence);
+    edActions = [...edActions, 'conversation_intelligence_resume'];
+  }
+  if (businessId) persistConversationIntelligenceLocal(businessId, conversationIntelligence);
+
   // Section 8 — persist structured Reasoning Objects + Decision Graph for build flows.
   let reasoningObjects = [];
   if (
@@ -447,6 +530,9 @@ export async function think(req) {
     decisionObjects: [primaryDecision],
     whyDecisionAnswer: null,
     primaryDecision,
+    conversationIntelligence,
+    conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
+    conversationIntelligenceRetrieval: null,
     experienceDirector: {
       reviewedBy: 'experience_director',
       actions: edActions,
