@@ -11,8 +11,8 @@ Live automation: `npm run milestone2` → `docs/MILESTONE2_RELEASE_GATE.json`
 | 2 | Business Discovery Conversation | Pass | `scripts/check-m2-epic2.mjs` | [`MILESTONE2_EPIC2_PROOF.md`](./MILESTONE2_EPIC2_PROOF.md) | Accepted |
 | 3 | Hubly Thinking Experience | Pass | `scripts/check-m2-epic3.mjs` | [`MILESTONE2_EPIC3_PROOF.md`](./MILESTONE2_EPIC3_PROOF.md) | Accepted |
 | 4 | Creative Build Experience | Pass | `scripts/check-m2-epic4.mjs` | [`MILESTONE2_EPIC4_PROOF.md`](./MILESTONE2_EPIC4_PROOF.md) | Accepted |
-| 5 | Business Reveal | Pass (pending Founder Approval) | `scripts/check-m2-epic5.mjs` | [`MILESTONE2_EPIC5_PROOF.md`](./MILESTONE2_EPIC5_PROOF.md) | — |
-| 6 | Delayed Account Creation | Locked | — | — | — |
+| 5 | Business Reveal | Pass | `scripts/check-m2-epic5.mjs` | [`MILESTONE2_EPIC5_PROOF.md`](./MILESTONE2_EPIC5_PROOF.md) | Accepted |
+| 6 | Delayed Account Creation | Pass (pending Founder Approval) | `scripts/check-m2-epic6.mjs` | [`MILESTONE2_EPIC6_PROOF.md`](./MILESTONE2_EPIC6_PROOF.md) | — |
 | 7 | Business Launch | Locked | — | — | — |
 | 8 | Business Home | Locked | — | — | — |
 | 9 | Creative Workspace | Locked | — | — | — |
@@ -20,12 +20,12 @@ Live automation: `npm run milestone2` → `docs/MILESTONE2_RELEASE_GATE.json`
 | 11 | Living Business | Locked | — | — | — |
 | 12 | Polish & Delight | Locked | — | — | — |
 
-## Epic 5 — Business Reveal
+## Epic 6 — Delayed Account Creation
 
-Cinematic unveil. Guided sections. Why? from stored reasoning. Time Capsule. No dashboard first.
+Save the business after love — not sign up before value. Founder Moment → Launch My Business.
 
 ```bash
-npm run check:m2-epic5
+npm run check:m2-epic6
 ```
 
-**Stop.** Do not start Epic 6 until Founder Approval.
+**Stop.** Do not start Epic 7 until Founder Approval.

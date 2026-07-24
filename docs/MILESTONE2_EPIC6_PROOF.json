@@ -1,0 +1,79 @@
+{
+  "epic": 6,
+  "title": "Delayed Account Creation",
+  "passed": true,
+  "checkedAt": "2026-07-24T07:53:26.974Z",
+  "version": "1.0.0",
+  "headline": "I'd love to save everything we've built together.",
+  "versionSaved": "Version 1.0 — Day One has been safely saved.",
+  "launchForward": "Ready? Let's launch your business.",
+  "launchCta": "Launch My Business",
+  "sample": {
+    "certificate": {
+      "owner": "Adrian",
+      "business": "ABC Pressure Washing",
+      "created": "Today",
+      "version": "1.0"
+    },
+    "founderMoment": {
+      "lead": "Congratulations.",
+      "headline": "Today you officially started",
+      "businessName": "ABC Pressure Washing",
+      "dayOneLabel": "Day One",
+      "checklist": [
+        {
+          "id": "website",
+          "label": "Website Created",
+          "done": true
+        },
+        {
+          "id": "booking",
+          "label": "Booking Ready",
+          "done": true
+        },
+        {
+          "id": "strategy",
+          "label": "Business Strategy",
+          "done": true
+        },
+        {
+          "id": "brand",
+          "label": "Brand Identity",
+          "done": true
+        },
+        {
+          "id": "memory",
+          "label": "Business Memory",
+          "done": true
+        },
+        {
+          "id": "v1",
+          "label": "Version 1.0 Archived",
+          "done": true
+        }
+      ],
+      "closing": "Every great business starts somewhere. This is yours.",
+      "cta": "Launch My Business"
+    }
+  },
+  "failures": [],
+  "htmlChecks": {
+    "saveCanvas": true,
+    "saveLanguage": true,
+    "noSignupCopy": true,
+    "manifest": true,
+    "authGoogle": true,
+    "authApple": true,
+    "authEmail": true,
+    "versionSaved": true,
+    "ownershipCert": true,
+    "personalWelcome": true,
+    "founderMoment": true,
+    "recovery": true,
+    "security": true,
+    "launchForward": true,
+    "revealHandoff": true,
+    "draftPersist": true,
+    "wordmark": true
+  }
+}
