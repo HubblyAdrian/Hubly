@@ -196,6 +196,16 @@ function recordFlightRecorder(opts) {
       12
     );
   }
+  if (opts.deployment) {
+    push(
+      "deployment",
+      `Business Deployment: ${opts.deployment.status} \xB7 ${opts.deployment.businessVersionLabel} \xB7 health ${opts.deployment.healthOverall}`,
+      {
+        ...opts.deployment
+      },
+      14
+    );
+  }
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -248,7 +258,8 @@ function recordFlightRecorder(opts) {
     workspaceIntelligence: opts.workspaceIntelligence ? { ...opts.workspaceIntelligence } : null,
     automationIntelligence: opts.automationIntelligence ? { ...opts.automationIntelligence } : null,
     mediaIntelligence: opts.mediaIntelligence ? { ...opts.mediaIntelligence } : null,
-    chatOs: opts.chatOs ? { ...opts.chatOs } : null
+    chatOs: opts.chatOs ? { ...opts.chatOs } : null,
+    deployment: opts.deployment ? { ...opts.deployment } : null
   };
   FLIGHTS.set(flight.executionId, flight);
   FLIGHT_ORDER.push(flight.executionId);
@@ -430,12 +441,19 @@ function getMissionControlSnapshot() {
       const automationIntelligencePlans = flights.map((f) => f.automationIntelligence).filter((x) => !!x).slice(-10).reverse();
       const mediaIntelligencePlans = flights.map((f) => f.mediaIntelligence).filter((x) => !!x).slice(-10).reverse();
       const chatOsSessions = flights.map((f) => f.chatOs).filter((x) => !!x).slice(-10).reverse();
+      const deployments = flights.map((f) => f.deployment).filter((x) => !!x).slice(-10).reverse();
+      const deploymentAvailable = deployments.length > 0;
       return {
         milestone: "1.5",
-        available: false,
-        epic: "11 \u2014 Hubly Chat OS",
-        note: "Epic 11 \u2014 Hubly Chat OS. One conversation. One personality. Conversation Canvas. Waiting for Approval/Apply. No apply.",
-        recent: chatOsSessions.length ? chatOsSessions.map((c) => ({
+        available: deploymentAvailable,
+        epic: deploymentAvailable ? "12 \u2014 Business Deployment Engine" : "11 \u2014 Hubly Chat OS",
+        note: deploymentAvailable ? "Epic 12 \u2014 Business Deployment Engine. Approved Change Plans validate, dry-run, deploy, verify, and rollback. Full lifecycle recorded." : "Epic 11 \u2014 Hubly Chat OS. One conversation. One personality. Conversation Canvas. Waiting for Approval/Apply. No apply.",
+        recent: deployments.length ? deployments.map((d) => ({
+          id: d.id,
+          status: "deployment",
+          summary: `${d.label}: ${d.status} \xB7 ${d.businessVersionLabel} \xB7 health ${d.healthOverall}`,
+          changePlanId: d.changePlanId
+        })) : chatOsSessions.length ? chatOsSessions.map((c) => ({
           id: c.id,
           status: "chat_os",
           summary: `${c.label}: ${c.routeCount} route(s) \xB7 ${c.activeProject || "general"} \xB7 canvas ${c.canvasSurface}`
@@ -507,7 +525,8 @@ function getMissionControlSnapshot() {
         workspaceIntelligence: workspaceIntelligencePlans,
         automationIntelligence: automationIntelligencePlans,
         mediaIntelligence: mediaIntelligencePlans,
-        chatOs: chatOsSessions
+        chatOs: chatOsSessions,
+        deployments
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

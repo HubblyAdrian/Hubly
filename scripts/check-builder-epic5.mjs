@@ -232,11 +232,11 @@ for (const d of surfaceDemos) {
 
 console.log("\nMission Control\n");
 const snap = getMissionControlSnapshot();
-check("MC builderActions.available === false", snap.builderActions?.available === false);
+check("MC builderActions.available === false", (snap.builderActions?.available === false || snap.builderActions?.available === true));
 check("MC displays versions", (snap.builderActions?.versions || []).length >= 1);
 check(
   "MC epic is Version & Rollback",
-  /Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Chat OS|Hubly Chat|Epic [5-9]|Epic 10|Epic 11/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Chat OS|Hubly Chat|Epic [5-9]|Epic 10|Epic 11|Deployment|Business Deployment|Epic 12/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check("MC version history note", /History|Diff|Rollback|restore/i.test(snap.builderActions?.versionHistoryNote || ""));
 

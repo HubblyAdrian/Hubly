@@ -48,6 +48,7 @@ import { buildWorkspaceIntelligence } from './workspace-intelligence.mjs';
 import { buildAutomationIntelligence } from './automation-intelligence.mjs';
 import { buildMediaIntelligence } from './media-intelligence.mjs';
 import { buildChatOsSession } from './chat-os.mjs';
+import { deployApprovedChangePlan } from './business-deployment.mjs';
 import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
@@ -940,6 +941,19 @@ export async function think(req) {
     ],
     missionControlReplayId: null,
   });
+  // Epic 12 — only when caller supplies an approved collaboration + deployApproved.
+  const approvedCollab = req.approvedCollaboration || null;
+  const deployment =
+    req.deployApproved && changePlan && preview && approvedCollab
+      ? deployApprovedChangePlan({
+        businessId: businessId || `biz_${Date.now().toString(36)}`,
+        plan: changePlan,
+        preview,
+        collaboration: approvedCollab,
+        businessVersion,
+        missionControlReplayId: null,
+      })
+      : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ''),
     intent,
@@ -1193,6 +1207,24 @@ export async function think(req) {
       executed: false,
       waitingFor: chatOs.waitingFor,
     },
+    deployment: deployment
+      ? {
+        id: deployment.id,
+        label: deployment.label,
+        status: deployment.status,
+        changePlanId: deployment.changePlanId,
+        businessVersionLabel: deployment.businessVersionLabel,
+        stageCount: deployment.stages.length,
+        builders: deployment.stages.map((s) => s.ownerLabel),
+        validationScore: deployment.validation.score,
+        healthOverall: deployment.health.overall,
+        dryRunOk: deployment.dryRun.ok,
+        verified: deployment.verified,
+        deployed: deployment.deployed,
+        rolledBack: deployment.rolledBack,
+        feedCount: deployment.feed.length,
+      }
+      : null,
   });
 
   if (changePlan && flightRecorder.executionId) {
@@ -1226,6 +1258,9 @@ export async function think(req) {
   }
   if (flightRecorder.executionId) {
     chatOs.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (deployment && flightRecorder.executionId) {
+    deployment.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -1263,6 +1298,7 @@ export async function think(req) {
     automationIntelligence,
     mediaIntelligence,
     chatOs,
+    deployment,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     experienceDirector: {

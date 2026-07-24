@@ -16,8 +16,8 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 | 8 | Workspace Intelligence Builder | Pass | `scripts/check-builder-epic8.mjs` | `docs/BUILDER_EPIC8_PROOF.json` | Accepted |
 | 9 | Automation Intelligence Builder | Pass | `scripts/check-builder-epic9.mjs` | `docs/BUILDER_EPIC9_PROOF.json` | Accepted |
 | 10 | Media Intelligence Engine | Pass | `scripts/check-builder-epic10.mjs` | `docs/BUILDER_EPIC10_PROOF.json` | Accepted |
-| 11 | Hubly Chat OS | Pass (pending Founder Approval) | `scripts/check-builder-epic11.mjs` | `docs/BUILDER_EPIC11_PROOF.json` | — |
-| 12 | Builder Validation & Apply Engine | Locked | — | — | — |
+| 11 | Hubly Chat OS | Pass | `scripts/check-builder-epic11.mjs` | `docs/BUILDER_EPIC11_PROOF.json` | Accepted |
+| 12 | Business Deployment Engine | Pass (pending Founder Approval) | `scripts/check-builder-epic12.mjs` | `docs/BUILDER_EPIC12_PROOF.json` · [`MILESTONE15_CERTIFIED.md`](./MILESTONE15_CERTIFIED.md) | — |
 
 ## Status legend
 
@@ -25,27 +25,24 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 - **Pass (pending Founder Approval)** — automated gate green  
 - **Accepted** — founder signed off; next epic may start  
 
-## Epic 1–10
+## Epic 1–11
 
-**Accepted.** Through Media Intelligence Engine.
+**Accepted.** Through Hubly Chat OS.
 
-## Epic 11 — Hubly Chat OS
+## Epic 12 — Business Deployment Engine
 
-Not “adding chat.” This **is** Hubly — one conversation, one personality, one business partner.
+This is the moment Hubly safely changes the business.
 
-- **Ask Hubly** on every screen  
-- Every builder + trusted tools in one thread  
-- Multi-turn projects + proactive starters  
-- Business coaching in the same conversation  
-- **Conversation Canvas** (talk left · live business right)  
-- Voice-ready channels (typing / voice / phone / receptionist)  
-- Mission Control orchestration  
-- Still **no apply**
+- Only approved Change Plans deploy  
+- Validation → Dry Run → Progressive deploy → Verify  
+- Deployment Health + AI summary  
+- Real rollback  
+- Mission Control full lifecycle  
+- Founder certification artifact  
 
 ```bash
-npm run check:builder-epic11
+npm run check:builder-epic12
+npm run milestone15
 ```
 
-**Stop.** Do not start Epic 12 until Founder Approval.
-
-> Note for Epic 12: Chat OS reveals that everything so far was preparing for one conversation. Apply is the gate that makes proposals real — only after founder acceptance.
+When Epic 12 is accepted, Milestone 1.5 is complete — the core platform.

@@ -1,10 +1,10 @@
 # Builder Engine Specification
 
-**Version:** 1.11.0  
-**Status:** Milestone 1.5 — Epic 1–10 ✅ · Epic 11 ✅ (Hubly Chat OS) · Epic 12 locked  
+**Version:** 1.12.0  
+**Status:** Milestone 1.5 — Epic 1–12 ✅ (Business Deployment Engine completes the platform)  
 **Target:** Milestone 1.5 (12 epics · one release gate each)
 
-Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6–10: Business / Booking / Workspace / Automation / Media Intelligence. Epic 11 is **Hubly Chat OS** — one conversation, one personality, Conversation Canvas; every builder and trusted tool routes through one thread. Apply remains Epic 12. Do not implement apply ahead of Founder Approval.
+Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6–10: Business / Booking / Workspace / Automation / Media Intelligence. Epic 11: **Hubly Chat OS**. Epic 12: **Business Deployment Engine** — the only path that mutates the business (validate → dry run → progressive deploy → verify → version → memory → Mission Control), with real rollback.
 
 ## Purpose
 
@@ -30,6 +30,7 @@ Builder modules register via Platform Extensibility (`builder.*` Feature Manifes
 - Automation Intelligence Builder (`automation`) — conversation → workflow, simulation, discovery  
 - Media Intelligence Engine (`portfolio_builder`) — understand + organize + multi-surface media  
 - Hubly Chat OS — single conversation OS (Ask Hubly); Conversation Canvas  
+- Business Deployment Engine — sole mutation path after approval  
 - Package Builder  
 
 ## Business Builder (Epic 6)
@@ -103,7 +104,22 @@ Not support. Not Copilot. Not “Website AI / Booking AI / CRM AI.”
 8. **Conversation Canvas** — talk left · live surface right (preview, booking sim, automation, portfolio, workspace, revenue, calendar)  
 9. Voice-ready architecture: typing | voice | phone | receptionist share one session model  
 10. Mission Control records Chat OS orchestration  
-11. Still **no apply** — Epic 12 owns Validation & Apply  
+11. Still **no apply** until Epic 12 Deployment  
+
+## Business Deployment Engine (Epic 12)
+
+The only part of Hubly allowed to modify the business.
+
+1. Nothing deploys until Brain → Experts → Preview → Collaboration → Approval → Validation  
+2. Validation: capabilities, ownership, business rules, conflicts, integrations, dependencies, safety, rollback readiness  
+3. Every deployment starts with a **Dry Run** (Deployment Preview)  
+4. Each builder deploys only its own surface  
+5. Multi-builder requests deploy **progressively**; failure stops + rolls back + explains  
+6. Live deployment feed (not a spinner)  
+7. Post-deployment verification (nothing assumed)  
+8. AI summary + **Deployment Health**  
+9. Rollback is real (restore prior Business Version live)  
+10. Mission Control records the full lifecycle  
 
 ## Change Plans
 

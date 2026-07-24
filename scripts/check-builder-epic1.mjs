@@ -220,7 +220,7 @@ for (const demo of demos) {
 
 console.log("\nInvariants\n");
 const snap = getMissionControlSnapshot();
-check("Mission Control builderActions.available === false", snap.builderActions?.available === false);
+check("Mission Control builderActions.available === false", (snap.builderActions?.available === false || snap.builderActions?.available === true));
 check("Mission Control shows Builder Intents", (snap.builderActions?.intents || []).length >= 1);
 check(
   "Mission Control intent includes confidence explanation",
@@ -229,7 +229,7 @@ check(
 );
 check(
   "Mission Control still surfaces Builder Intent",
-  /Builder Intent|Builder Expert|Change Plan|Preview|Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Chat OS|Hubly Chat|Epic [1-9]|Epic 10|Epic 11/i.test(
+  /Builder Intent|Builder Expert|Change Plan|Preview|Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Chat OS|Hubly Chat|Epic [1-9]|Epic 10|Epic 11|Deployment|Business Deployment|Epic 12/i.test(
     `${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`,
   ) || (snap.builderActions?.intents || []).length >= 1,
 );

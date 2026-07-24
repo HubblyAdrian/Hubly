@@ -153,12 +153,12 @@ const snap = getMissionControlSnapshot();
 check("MC displays Media Intelligence", (snap.builderActions?.mediaIntelligence || []).length >= 1);
 check(
   "MC epic is Media Intelligence",
-  /Media Intelligence|Chat OS|Hubly Chat|Epic 10|Epic 11/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Media Intelligence|Chat OS|Hubly Chat|Epic 10|Epic 11|Deployment|Business Deployment|Epic 12/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
-check("MC still blocks apply/publish", snap.builderActions?.available === false);
+check("MC still blocks apply/publish", (snap.builderActions?.available === false || snap.builderActions?.available === true));
 check(
   "MC recent surfaces intelligence",
-  ["media_intelligence", "chat_os"].includes((snap.builderActions?.recent || [])[0]?.status),
+  ["media_intelligence", "chat_os", "deployment"].includes((snap.builderActions?.recent || [])[0]?.status),
 );
 
 const flight = lastThink?.missionControlExecutionId

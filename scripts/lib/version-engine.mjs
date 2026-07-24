@@ -335,6 +335,50 @@ function getBusinessTimeline(businessId) {
 function clearVersionStoreForTests() {
   STORES.clear();
 }
+function markVersionApplied(businessId, versionId) {
+  const v = getVersion(businessId, versionId);
+  if (!v) return null;
+  v.applied = true;
+  v.status = "applied";
+  v.rollbackExecuted = false;
+  const store = ensureStore(businessId);
+  store.currentVersionId = v.id;
+  store.timeline.push({
+    id: uid("tl"),
+    at: nowIso(),
+    kind: "builder_change",
+    emoji: "\u2705",
+    title: `${v.label} deployed`,
+    detail: "Business Deployment Engine applied this version.",
+    versionId: v.id,
+    versionLabel: v.label
+  });
+  return v;
+}
+function markVersionRolledBack(businessId, fromVersionId, targetVersionId) {
+  const from = getVersion(businessId, fromVersionId);
+  const target = getVersion(businessId, targetVersionId);
+  if (!from || !target) return null;
+  from.status = "rolled_back";
+  from.rollbackExecuted = true;
+  from.applied = false;
+  target.status = "applied";
+  target.applied = true;
+  target.rollbackExecuted = false;
+  const store = ensureStore(businessId);
+  store.currentVersionId = target.id;
+  store.timeline.push({
+    id: uid("tl"),
+    at: nowIso(),
+    kind: "builder_change",
+    emoji: "\u21A9\uFE0F",
+    title: `Restored ${target.label}`,
+    detail: `Rolled back from ${from.label} via Business Deployment Engine.`,
+    versionId: target.id,
+    versionLabel: target.label
+  });
+  return target;
+}
 var HublyVersionEngine = {
   version: VERSION_ENGINE_VERSION,
   owner: VERSION_ENGINE_OWNER,
@@ -347,6 +391,8 @@ var HublyVersionEngine = {
   rollbackPlan: createRollbackPlan,
   suggestRestore,
   timeline: getBusinessTimeline,
+  markApplied: markVersionApplied,
+  markRolledBack: markVersionRolledBack,
   clearForTests: clearVersionStoreForTests
 };
 export {
@@ -361,6 +407,8 @@ export {
   getCurrentVersion,
   getVersion,
   listBusinessVersions,
+  markVersionApplied,
+  markVersionRolledBack,
   proposeVersionFromPlan,
   suggestRestore
 };
