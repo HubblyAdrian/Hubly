@@ -38,6 +38,7 @@ import {
 } from './registries.mjs';
 import { recordFlightRecorder } from './mission-control.mjs';
 import { extractBuilderIntentFromOutput } from './builder-expert.mjs';
+import { generateChangePlan } from './change-plan.mjs';
 import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
@@ -662,6 +663,9 @@ export async function think(req) {
   // Section 12 — Mission Control flight recorder (AI Replay)
   const builderOut = expertOutputs.find((o) => o.expertId === 'builder') || null;
   const builderIntent = extractBuilderIntentFromOutput(builderOut);
+  const changePlan = builderIntent
+    ? generateChangePlan(builderIntent, { missionControlReplayId: null }).changePlan
+    : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ''),
     intent,
@@ -731,7 +735,36 @@ export async function think(req) {
         changePlanGenerated: false,
       }
       : null,
+    changePlan: changePlan
+      ? {
+        id: changePlan.id,
+        intentId: changePlan.intentId,
+        title: changePlan.title,
+        builderType: changePlan.builderType,
+        affectedSystems: [...changePlan.affectedSystems],
+        actionCount: changePlan.changes.length,
+        actions: changePlan.changes.map((a) => ({
+          path: a.path,
+          builderOwner: a.builderOwner,
+          risk: a.risk,
+        })),
+        risk: changePlan.risk,
+        confidence: changePlan.confidence,
+        requiresApproval: changePlan.requiresApproval,
+        validationOk: changePlan.validation.ok,
+        estimatedImpact: changePlan.estimatedImpact.summary,
+        applied: false,
+        executed: false,
+        previewGenerated: false,
+      }
+      : null,
   });
+
+  if (changePlan && flightRecorder.executionId) {
+    for (const a of changePlan.changes) {
+      a.missionControlReplayId = flightRecorder.executionId;
+    }
+  }
 
   return {
     ok: critic ? critic.ok !== false : true,
@@ -758,6 +791,7 @@ export async function think(req) {
     conversationIntelligenceRetrieval: null,
     registryRouting,
     builderIntent,
+    changePlan,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     experienceDirector: {

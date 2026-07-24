@@ -56,7 +56,7 @@ function collectSignals(request) {
       weight: 3
     });
   }
-  if (/move |sidebar|jobs above|customers|workspace|pin |hide |dashboard/.test(r)) {
+  if (/move .*above|jobs above|sidebar order|workspace|dashboard layout|put .+ above/.test(r)) {
     signals.push({
       category: "Workspace",
       system: "Workspace",
@@ -118,20 +118,20 @@ function collectSignals(request) {
       weight: 3
     });
   }
-  if (/crm|pipeline|lead|customer record/.test(r) && !/jobs above/.test(r)) {
+  if (/crm|pipeline|lead|customer record|hide module|pin widget|pin the/.test(r) && !/jobs above/.test(r)) {
     signals.push({
       category: "CRM",
       system: "CRM",
       label: "CRM Change",
-      goal: "CRM Update",
-      risk: "medium",
+      goal: /hide/.test(r) ? "Hide Module" : /pin/.test(r) ? "Pin Widget" : "CRM Update",
+      risk: "low",
       defaultCaps: [{
         toolId: "crm",
         toolName: "CRM",
         capabilityId: "update_customer",
         capabilityLabel: "Update Customer"
       }],
-      weight: 2
+      weight: 3
     });
   }
   if (/package|pricing tier|membership/.test(r)) {

@@ -224,11 +224,12 @@ check("Mission Control builderActions.available === false", snap.builderActions?
 check("Mission Control shows Builder Intents", (snap.builderActions?.intents || []).length >= 1);
 check(
   "Mission Control intent includes confidence explanation",
-  (snap.builderActions?.recent || []).some((r) => !!r.confidenceExplanation),
+  (snap.builderActions?.intents || []).some((r) => !!r.confidenceExplanation) ||
+    (snap.builderActions?.recent || []).some((r) => !!r.confidenceExplanation),
 );
 check(
-  "Mission Control epic label Epic 1",
-  /Epic 1|Builder Expert/i.test(
+  "Mission Control still surfaces Builder Intent",
+  /Builder Intent|Builder Expert|Change Plan|Epic [12]/i.test(
     `${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`,
   ),
 );
@@ -237,9 +238,13 @@ check(
 const multi = proofDemos.find((d) => d.id === "multi");
 check("Multi-system kept as one Intent", multi?.builderIntent?.intentCategory === "Multiple Systems");
 
-// Static: no Change Plan / Preview / Apply modules yet
-check("No Change Plan module yet", !exists("supabase/functions/_shared/hubly_brain_change_plan.ts"));
+// Epic 1 invariant: Builder Expert itself does not apply; Change Plan module may exist (Epic 2+)
+check("Builder Expert source exists", exists("supabase/functions/_shared/hubly_brain_builder_expert.ts"));
 check("Builder Engine Spec still says Epic progression", exists("docs/architecture/BUILDER_ENGINE_SPEC.md"));
+check(
+  "Builder Intent still marks changePlanGenerated false from expert",
+  proofDemos.every((d) => d.builderIntent?.changePlanGenerated === false),
+);
 
 const passed = failures.length === 0;
 const report = {

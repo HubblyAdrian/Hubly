@@ -1,11 +1,11 @@
 {
   "milestone": "1.5",
-  "passed": 1,
+  "passed": 2,
   "total": 12,
-  "unlocked": 1,
-  "percent": 8,
+  "unlocked": 2,
+  "percent": 17,
   "ready": false,
-  "checkedAt": "2026-07-24T01:40:50.587Z",
+  "checkedAt": "2026-07-24T01:57:39.383Z",
   "epics": [
     {
       "n": 1,
@@ -16,8 +16,8 @@
     {
       "n": 2,
       "title": "Change Plan DSL",
-      "status": "locked",
-      "script": null
+      "status": "pass",
+      "script": "scripts/check-builder-epic2.mjs"
     },
     {
       "n": 3,

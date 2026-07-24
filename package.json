@@ -25,7 +25,8 @@
     "check:section18": "node scripts/check-section18-founder-certification.mjs",
     "milestone15": "node scripts/milestone15.mjs",
     "milestone15:verbose": "MILESTONE15_VERBOSE=1 node scripts/milestone15.mjs",
-    "check:builder-epic1": "node scripts/check-builder-epic1.mjs"
+    "check:builder-epic1": "node scripts/check-builder-epic1.mjs",
+    "check:builder-epic2": "node scripts/check-builder-epic2.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
