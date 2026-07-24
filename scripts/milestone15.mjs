@@ -20,9 +20,9 @@ const EPICS = [
   { n: 6, title: 'Business Builder', script: 'scripts/check-builder-epic6.mjs', unlocked: true },
   { n: 7, title: 'Booking Intelligence Builder', script: 'scripts/check-builder-epic7.mjs', unlocked: true },
   { n: 8, title: 'Workspace Intelligence Builder', script: 'scripts/check-builder-epic8.mjs', unlocked: true },
-  { n: 9, title: 'Automation Builder', script: null, unlocked: false },
-  { n: 10, title: 'Portfolio Builder', script: null, unlocked: false },
-  { n: 11, title: 'Hubly Chat', script: null, unlocked: false },
+  { n: 9, title: 'Automation Intelligence Builder', script: 'scripts/check-builder-epic9.mjs', unlocked: true },
+  { n: 10, title: 'Portfolio Intelligence Builder', script: null, unlocked: false },
+  { n: 11, title: 'Hubly Chat OS', script: null, unlocked: false },
   { n: 12, title: 'Builder Validation & Apply Engine', script: null, unlocked: false },
 ];
 

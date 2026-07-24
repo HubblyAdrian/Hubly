@@ -252,16 +252,34 @@ function collectSignals(request: string): CategorySignal[] {
     });
   }
 
-  if (/prep instruction|after .+ booking|send .+ after|automation|workflow|reminder/.test(r)) {
+  if (
+    /prep instruction|after .+ booking|send .+ after|automation|workflow|reminder|review request|ask for (a )?review|follow up on quotes|quote.*5 day|membership.*month|friday.*(summary|report)|recurring customer|reschedule exterior.*rain|if it rains/.test(
+      r,
+    )
+  ) {
     signals.push({
       category: "Automations",
       system: "Automations",
-      label: "Automation Setup",
-      goal: /prep/.test(r) ? "Post-Booking Prep Instructions" : "Automated Workflow",
+      label: "Automation Intelligence",
+      goal: /prep/.test(r)
+        ? "Post-Booking Prep Instructions"
+        : /review/.test(r)
+        ? "Review Requests"
+        : /quote/.test(r)
+        ? "Quote Follow-Up"
+        : /rain|weather/.test(r)
+        ? "Weather Reschedule"
+        : /membership/.test(r)
+        ? "Membership Billing"
+        : /friday|summary/.test(r)
+        ? "Friday Summary"
+        : /recurring/.test(r)
+        ? "Recurring Customers"
+        : "Automated Workflow",
       risk: "medium",
       defaultCaps: [{
         toolId: "automation",
-        toolName: "Automation",
+        toolName: "Automation Intelligence Builder",
         capabilityId: "create_workflow",
         capabilityLabel: "Create Workflow",
       }],

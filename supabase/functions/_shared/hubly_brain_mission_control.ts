@@ -241,6 +241,22 @@ export type HublyFlightRecorder = {
     executed: false;
     waitingFor: string;
   } | null;
+  /** Milestone 1.5 · Epic 9 — Automation Intelligence (not applied / not executed). */
+  automationIntelligence: {
+    id: string;
+    label: string;
+    workflowCount: number;
+    outcomes: string[];
+    healthOverall: number;
+    timeSavedHoursPerMonth: number;
+    recommendationCount: number;
+    discoveryCount: number;
+    simulationHorizonDays: number;
+    requiresApproval: true;
+    applied: false;
+    executed: false;
+    waitingFor: string;
+  } | null;
 };
 
 export type HublyExpertActivityStats = {
@@ -313,6 +329,8 @@ export type HublyMissionControlSnapshot = {
     bookingIntelligence: Array<NonNullable<HublyFlightRecorder["bookingIntelligence"]>>;
     /** Latest Workspace Intelligence plans (Epic 8). */
     workspaceIntelligence: Array<NonNullable<HublyFlightRecorder["workspaceIntelligence"]>>;
+    /** Latest Automation Intelligence plans (Epic 9). */
+    automationIntelligence: Array<NonNullable<HublyFlightRecorder["automationIntelligence"]>>;
   };
   capabilityRegistry: Array<{ toolId: string; name: string; capabilityCount: number }>;
   knowledgeRegistry: Array<{ id: string; name: string; access: string }>;
@@ -409,6 +427,7 @@ export type RecordFlightOpts = {
   creativeSession?: HublyFlightRecorder["creativeSession"];
   bookingIntelligence?: HublyFlightRecorder["bookingIntelligence"];
   workspaceIntelligence?: HublyFlightRecorder["workspaceIntelligence"];
+  automationIntelligence?: HublyFlightRecorder["automationIntelligence"];
 };
 
 /**
@@ -551,6 +570,17 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     );
   }
 
+  if (opts.automationIntelligence) {
+    push(
+      "automation_intelligence",
+      `Automation Intelligence: ${opts.automationIntelligence.workflowCount} workflow(s) · health ${opts.automationIntelligence.healthOverall}`,
+      {
+        ...opts.automationIntelligence,
+      },
+      12,
+    );
+  }
+
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -612,6 +642,7 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     creativeSession: opts.creativeSession ? { ...opts.creativeSession } : null,
     bookingIntelligence: opts.bookingIntelligence ? { ...opts.bookingIntelligence } : null,
     workspaceIntelligence: opts.workspaceIntelligence ? { ...opts.workspaceIntelligence } : null,
+    automationIntelligence: opts.automationIntelligence ? { ...opts.automationIntelligence } : null,
   };
 
   FLIGHTS.set(flight.executionId, flight);
@@ -865,12 +896,23 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         .filter((x): x is NonNullable<typeof x> => !!x)
         .slice(-10)
         .reverse();
+      const automationIntelligencePlans = flights
+        .map((f) => f.automationIntelligence)
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .slice(-10)
+        .reverse();
       return {
         milestone: "1.5" as const,
         available: false as const,
-        epic: "8 — Workspace Intelligence Builder",
-        note: "Epic 8 — Workspace Intelligence Builder. Workspace evolves around how the owner works. Focus Mode. Waiting for Approval/Apply. No apply.",
-        recent: workspaceIntelligencePlans.length
+        epic: "9 — Automation Intelligence Builder",
+        note: "Epic 9 — Automation Intelligence Builder. Conversation → workflow. Simulation + Discovery. Waiting for Approval/Apply. No apply. No execute.",
+        recent: automationIntelligencePlans.length
+          ? automationIntelligencePlans.map((a) => ({
+            id: a.id,
+            status: "automation_intelligence",
+            summary: `${a.label}: ${a.workflowCount} workflow(s) · health ${a.healthOverall} · ~${a.timeSavedHoursPerMonth}h/mo`,
+          }))
+          : workspaceIntelligencePlans.length
           ? workspaceIntelligencePlans.map((w) => ({
             id: w.id,
             status: "workspace_intelligence",
@@ -942,6 +984,7 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         creativeSessions,
         bookingIntelligence: bookingIntelligencePlans,
         workspaceIntelligence: workspaceIntelligencePlans,
+        automationIntelligence: automationIntelligencePlans,
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

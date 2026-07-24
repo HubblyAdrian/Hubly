@@ -166,6 +166,16 @@ function recordFlightRecorder(opts) {
       12
     );
   }
+  if (opts.automationIntelligence) {
+    push(
+      "automation_intelligence",
+      `Automation Intelligence: ${opts.automationIntelligence.workflowCount} workflow(s) \xB7 health ${opts.automationIntelligence.healthOverall}`,
+      {
+        ...opts.automationIntelligence
+      },
+      12
+    );
+  }
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -215,7 +225,8 @@ function recordFlightRecorder(opts) {
     businessVersion: opts.businessVersion ? { ...opts.businessVersion } : null,
     creativeSession: opts.creativeSession ? { ...opts.creativeSession } : null,
     bookingIntelligence: opts.bookingIntelligence ? { ...opts.bookingIntelligence } : null,
-    workspaceIntelligence: opts.workspaceIntelligence ? { ...opts.workspaceIntelligence } : null
+    workspaceIntelligence: opts.workspaceIntelligence ? { ...opts.workspaceIntelligence } : null,
+    automationIntelligence: opts.automationIntelligence ? { ...opts.automationIntelligence } : null
   };
   FLIGHTS.set(flight.executionId, flight);
   FLIGHT_ORDER.push(flight.executionId);
@@ -394,12 +405,17 @@ function getMissionControlSnapshot() {
       const creativeSessions = flights.map((f) => f.creativeSession).filter((x) => !!x).slice(-10).reverse();
       const bookingIntelligencePlans = flights.map((f) => f.bookingIntelligence).filter((x) => !!x).slice(-10).reverse();
       const workspaceIntelligencePlans = flights.map((f) => f.workspaceIntelligence).filter((x) => !!x).slice(-10).reverse();
+      const automationIntelligencePlans = flights.map((f) => f.automationIntelligence).filter((x) => !!x).slice(-10).reverse();
       return {
         milestone: "1.5",
         available: false,
-        epic: "8 \u2014 Workspace Intelligence Builder",
-        note: "Epic 8 \u2014 Workspace Intelligence Builder. Workspace evolves around how the owner works. Focus Mode. Waiting for Approval/Apply. No apply.",
-        recent: workspaceIntelligencePlans.length ? workspaceIntelligencePlans.map((w) => ({
+        epic: "9 \u2014 Automation Intelligence Builder",
+        note: "Epic 9 \u2014 Automation Intelligence Builder. Conversation \u2192 workflow. Simulation + Discovery. Waiting for Approval/Apply. No apply. No execute.",
+        recent: automationIntelligencePlans.length ? automationIntelligencePlans.map((a) => ({
+          id: a.id,
+          status: "automation_intelligence",
+          summary: `${a.label}: ${a.workflowCount} workflow(s) \xB7 health ${a.healthOverall} \xB7 ~${a.timeSavedHoursPerMonth}h/mo`
+        })) : workspaceIntelligencePlans.length ? workspaceIntelligencePlans.map((w) => ({
           id: w.id,
           status: "workspace_intelligence",
           summary: `${w.label}: ${w.changeCount} change(s) \xB7 health ${w.healthOverall} \xB7 home ${w.homepage}`
@@ -456,7 +472,8 @@ function getMissionControlSnapshot() {
         versionHistoryNote: "Current \u2192 History \u2192 Diff \u2192 Rollback availability \u2192 AI restore suggestions. Try it \u2014 you can always go back.",
         creativeSessions,
         bookingIntelligence: bookingIntelligencePlans,
-        workspaceIntelligence: workspaceIntelligencePlans
+        workspaceIntelligence: workspaceIntelligencePlans,
+        automationIntelligence: automationIntelligencePlans
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

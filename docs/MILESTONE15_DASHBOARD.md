@@ -13,10 +13,10 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 | 5 | Version & Rollback | Pass | `scripts/check-builder-epic5.mjs` | `docs/BUILDER_EPIC5_PROOF.json` | Accepted |
 | 6 | Business Builder | Pass | `scripts/check-builder-epic6.mjs` | `docs/BUILDER_EPIC6_PROOF.json` | Accepted |
 | 7 | Booking Intelligence Builder | Pass | `scripts/check-builder-epic7.mjs` | `docs/BUILDER_EPIC7_PROOF.json` | Accepted |
-| 8 | Workspace Intelligence Builder | Pass (pending Founder Approval) | `scripts/check-builder-epic8.mjs` | `docs/BUILDER_EPIC8_PROOF.json` | — |
-| 9 | Automation Builder | Locked | — | — | — |
-| 10 | Portfolio Builder | Locked | — | — | — |
-| 11 | Hubly Chat | Locked | — | — | — |
+| 8 | Workspace Intelligence Builder | Pass | `scripts/check-builder-epic8.mjs` | `docs/BUILDER_EPIC8_PROOF.json` | Accepted |
+| 9 | Automation Intelligence Builder | Pass (pending Founder Approval) | `scripts/check-builder-epic9.mjs` | `docs/BUILDER_EPIC9_PROOF.json` | — |
+| 10 | Portfolio Intelligence Builder | Locked | — | — | — |
+| 11 | Hubly Chat OS | Locked | — | — | — |
 | 12 | Builder Validation & Apply Engine | Locked | — | — | — |
 
 ## Status legend
@@ -25,25 +25,24 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 - **Pass (pending Founder Approval)** — automated gate green  
 - **Accepted** — founder signed off; next epic may start  
 
-## Epic 1–7
+## Epic 1–8
 
-**Accepted.** Intent → Plan → Preview → Collaboration → Versions → Business Builder → Booking Intelligence.
+**Accepted.** Through Workspace Intelligence.
 
-## Epic 8 — Workspace Intelligence Builder
+## Epic 9 — Automation Intelligence Builder
 
-Not a layout editor. The workspace evolves around how the owner works — conversation, not settings.
+Not an automation settings UI. Conversation → workflow. Hubly acts as operations manager.
 
-- Adaptive homepage + navigation  
-- Contextual quick actions  
-- Workspace Memory / learned behaviors  
-- Workspace Health + explained recommendations  
-- Multi-device (desktop / tablet / phone)  
-- **Focus Mode** (Job / Sales / Admin / Growth Day)  
+- Natural-language workflows + explained steps  
+- Preview graph + 30-day simulation  
+- Multi-system automations  
+- Automation Health + time saved  
+- AI recommendations + **Automation Discovery**  
 - Mission Control replay  
-- Still requires approval — **no apply**
+- Still requires approval — **no apply / no execute**
 
 ```bash
-npm run check:builder-epic8
+npm run check:builder-epic9
 ```
 
-**Stop.** Do not start Epic 9 until Founder Approval.
+**Stop.** Do not start Epic 10 until Founder Approval.

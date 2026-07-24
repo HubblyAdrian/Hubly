@@ -45,6 +45,7 @@ import { proposeVersionFromPlan } from './version-engine.mjs';
 import { startCreativeSession } from './business-builder.mjs';
 import { buildBookingIntelligence } from './booking-intelligence.mjs';
 import { buildWorkspaceIntelligence } from './workspace-intelligence.mjs';
+import { buildAutomationIntelligence } from './automation-intelligence.mjs';
 import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
@@ -70,7 +71,7 @@ export function detectIntent(request, explicit) {
     return 'build_business';
   }
   if (
-    /portfolio|upload.*(photo|image)|these \d+ photos|prep instruction|automation|workflow|after .+ booking/
+    /portfolio|upload.*(photo|image)|these \d+ photos|prep instruction|automation|workflow|after .+ booking|review request|ask for (a )?review|follow up on quotes|membership.*month|friday.*(summary|report)|recurring customer/
       .test(r)
   ) {
     return 'build_business';
@@ -746,6 +747,28 @@ export async function think(req) {
         missionControlReplayId: null,
       })
       : null;
+  const automationRequest = String(req.request || '');
+  const wantsAutomationIntelligence = !!(
+    changePlan &&
+    (changePlan.affectedSystems.includes('Automations') ||
+      changePlan.changes.some((c) => c.path.startsWith('automations.')) ||
+      /prep instruction|automat|workflow|review request|ask for (a )?review|quote.*follow|if it rains|membership|friday.*(summary|report)|recurring customer/.test(
+        automationRequest.toLowerCase(),
+      ))
+  );
+  const automationIntelligence =
+    wantsAutomationIntelligence && changePlan
+      ? buildAutomationIntelligence({
+        businessId: businessId || `biz_${Date.now().toString(36)}`,
+        plan: changePlan,
+        industry:
+          req.memory?.industry ||
+          req.memory?.business?.industry ||
+          dna?.knowledgePack?.industryProfile?.industryName ||
+          null,
+        missionControlReplayId: null,
+      })
+      : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ''),
     intent,
@@ -945,6 +968,23 @@ export async function think(req) {
         waitingFor: workspaceIntelligence.waitingFor,
       }
       : null,
+    automationIntelligence: automationIntelligence
+      ? {
+        id: automationIntelligence.id,
+        label: automationIntelligence.label,
+        workflowCount: automationIntelligence.workflows.length,
+        outcomes: [...new Set(automationIntelligence.workflows.map((w) => w.outcomeId))],
+        healthOverall: automationIntelligence.health.overall,
+        timeSavedHoursPerMonth: automationIntelligence.health.timeSavedHoursPerMonth,
+        recommendationCount: automationIntelligence.recommendations.length,
+        discoveryCount: automationIntelligence.discovery.length,
+        simulationHorizonDays: automationIntelligence.simulation.horizonDays,
+        requiresApproval: true,
+        applied: false,
+        executed: false,
+        waitingFor: automationIntelligence.waitingFor,
+      }
+      : null,
   });
 
   if (changePlan && flightRecorder.executionId) {
@@ -969,6 +1009,9 @@ export async function think(req) {
   }
   if (workspaceIntelligence && flightRecorder.executionId) {
     workspaceIntelligence.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (automationIntelligence && flightRecorder.executionId) {
+    automationIntelligence.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -1003,6 +1046,7 @@ export async function think(req) {
     creativeSession,
     bookingIntelligence,
     workspaceIntelligence,
+    automationIntelligence,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     experienceDirector: {

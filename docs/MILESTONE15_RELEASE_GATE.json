@@ -1,11 +1,11 @@
 {
   "milestone": "1.5",
-  "passed": 8,
+  "passed": 9,
   "total": 12,
-  "unlocked": 8,
-  "percent": 67,
+  "unlocked": 9,
+  "percent": 75,
   "ready": false,
-  "checkedAt": "2026-07-24T03:47:09.589Z",
+  "checkedAt": "2026-07-24T04:04:59.644Z",
   "epics": [
     {
       "n": 1,
@@ -57,19 +57,19 @@
     },
     {
       "n": 9,
-      "title": "Automation Builder",
-      "status": "locked",
-      "script": null
+      "title": "Automation Intelligence Builder",
+      "status": "pass",
+      "script": "scripts/check-builder-epic9.mjs"
     },
     {
       "n": 10,
-      "title": "Portfolio Builder",
+      "title": "Portfolio Intelligence Builder",
       "status": "locked",
       "script": null
     },
     {
       "n": 11,
-      "title": "Hubly Chat",
+      "title": "Hubly Chat OS",
       "status": "locked",
       "script": null
     },

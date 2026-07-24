@@ -145,7 +145,7 @@ const snap = getMissionControlSnapshot();
 check("MC displays Creative Sessions", (snap.builderActions?.creativeSessions || []).length >= 1);
 check(
   "MC epic is Business Builder",
-  /Business Builder|Booking Intelligence|Workspace Intelligence|Epic [6-8]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Epic [6-9]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check("MC still blocks apply", snap.builderActions?.available === false);
 

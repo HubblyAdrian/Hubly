@@ -1,10 +1,10 @@
 # Builder Engine Specification
 
-**Version:** 1.8.0  
-**Status:** Milestone 1.5 — Epic 1–7 ✅ · Epic 8 ✅ (Workspace Intelligence Builder) · Epic 9+ locked  
+**Version:** 1.9.0  
+**Status:** Milestone 1.5 — Epic 1–8 ✅ · Epic 9 ✅ (Automation Intelligence Builder) · Epic 10+ locked  
 **Target:** Milestone 1.5 (12 epics · one release gate each)
 
-Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6 is **Business Builder**. Epic 7 is **Booking Intelligence Builder**. Epic 8 is **Workspace Intelligence Builder** — the workspace evolves around how each owner works (conversation, not settings), with adaptive homepage/nav, contextual quick actions, Workspace Health, multi-device layouts, and Focus Mode. Apply / remaining builders are later. Do not implement them ahead of Founder Approval.
+Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6–8: Business / Booking / Workspace Intelligence. Epic 9 is **Automation Intelligence Builder** — conversation → workflow (preview, 30-day simulation, health, discovery). No execute until approval. Apply / remaining builders are later. Do not implement them ahead of Founder Approval.
 
 ## Purpose
 
@@ -27,8 +27,8 @@ Builder modules register via Platform Extensibility (`builder.*` Feature Manifes
 - Website module (`website_builder`) — one canvas inside Business Builder  
 - Booking Intelligence Builder (`booking`) — scheduling concepts, health, simulator  
 - Workspace Intelligence Builder (`workspace_builder`) — adapts around how the owner works  
-- Automation Builder  
-- Portfolio Builder  
+- Automation Intelligence Builder (`automation`) — conversation → workflow, simulation, discovery  
+- Portfolio Intelligence Builder  
 - Package Builder  
 
 ## Business Builder (Epic 6)
@@ -63,6 +63,18 @@ Builder modules register via Platform Extensibility (`builder.*` Feature Manifes
 7. **Focus Mode** — Job / Sales / Admin / Growth Day reorganizes the day  
 8. Mission Control records workspace evolution  
 9. Still requires Collaboration/Approval — no silent apply  
+
+## Automation Intelligence Builder (Epic 9)
+
+1. Owner describes an outcome in plain English (never trigger/action settings)  
+2. Hubly builds workflows with explained steps  
+3. Workflow preview graph before activation  
+4. 30-day simulation (volumes, nothing sent yet)  
+5. Automation Health + estimated time saved  
+6. AI recommendations + **Automation Discovery** (proactive)  
+7. Multi-system workflows from one conversation  
+8. Mission Control records workflow evolution  
+9. Still requires Collaboration/Approval — **no execute / no apply**  
 
 ## Change Plans
 

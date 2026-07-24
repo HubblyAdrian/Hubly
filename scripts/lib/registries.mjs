@@ -331,7 +331,7 @@ function bootstrapDefaultRegistries() {
   });
   registerTool({
     id: "automation",
-    name: "Automation",
+    name: "Automation Intelligence Builder",
     version: "1.0.0",
     purpose: "Own workflows and automated reminders",
     responsibilities: [
