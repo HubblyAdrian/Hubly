@@ -4,7 +4,7 @@
   "name": "Builder Expert",
   "title": "Builder Expert",
   "passed": true,
-  "checkedAt": "2026-07-24T04:22:54.534Z",
+  "checkedAt": "2026-07-24T04:33:30.185Z",
   "proofs": {
     "builderExpertExists": true,
     "executesThroughHublyBrain": true,
@@ -20,7 +20,7 @@
         "request": "Make my homepage feel more premium.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryfpnof_cnhqmw",
+          "intentId": "bint_mryg3a5e_wzj10u",
           "intentCategory": "Website",
           "intentLabel": "Website Improvement",
           "ownerGoal": "Premium Branding",
@@ -61,9 +61,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T04:22:54.495Z"
+          "timestamp": "2026-07-24T04:33:30.146Z"
         },
-        "missionControlExecutionId": "flt_mryfpnor_di2ynn",
+        "missionControlExecutionId": "flt_mryg3a5q_vynuxg",
         "expertsRun": [
           "builder",
           "experience_director"
@@ -74,7 +74,7 @@
         "request": "Don't allow same-day bookings.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryfpnov_cfldxg",
+          "intentId": "bint_mryg3a5t_bwyq2r",
           "intentCategory": "Booking",
           "intentLabel": "Booking Intelligence",
           "ownerGoal": "Minimum Notice",
@@ -115,9 +115,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T04:22:54.511Z"
+          "timestamp": "2026-07-24T04:33:30.161Z"
         },
-        "missionControlExecutionId": "flt_mryfpnoy_as73bg",
+        "missionControlExecutionId": "flt_mryg3a5x_8ix21i",
         "expertsRun": [
           "research",
           "strategy",
@@ -132,7 +132,7 @@
         "request": "Move Jobs above Customers.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryfpnp0_ih3wcq",
+          "intentId": "bint_mryg3a5y_s8ag7z",
           "intentCategory": "Workspace",
           "intentLabel": "Workspace Intelligence",
           "ownerGoal": "Navigation Order",
@@ -173,9 +173,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T04:22:54.516Z"
+          "timestamp": "2026-07-24T04:33:30.166Z"
         },
-        "missionControlExecutionId": "flt_mryfpnp2_r86uk7",
+        "missionControlExecutionId": "flt_mryg3a60_0rj6ey",
         "expertsRun": [
           "builder",
           "experience_director"
@@ -186,7 +186,7 @@
         "request": "Put these 12 photos into my portfolio.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryfpnp4_8whwc6",
+          "intentId": "bint_mryg3a62_fo0l27",
           "intentCategory": "Portfolio",
           "intentLabel": "Media Intelligence",
           "ownerGoal": "Gallery Organization",
@@ -241,9 +241,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T04:22:54.520Z"
+          "timestamp": "2026-07-24T04:33:30.170Z"
         },
-        "missionControlExecutionId": "flt_mryfpnp6_gslktj",
+        "missionControlExecutionId": "flt_mryg3a65_kbo4i9",
         "expertsRun": [
           "research",
           "strategy",
@@ -258,7 +258,7 @@
         "request": "Send prep instructions after ceramic coating bookings.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryfpnp8_20lvpy",
+          "intentId": "bint_mryg3a66_0y3lz7",
           "intentCategory": "Automations",
           "intentLabel": "Automation Intelligence",
           "ownerGoal": "Post-Booking Prep Instructions",
@@ -306,9 +306,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T04:22:54.524Z"
+          "timestamp": "2026-07-24T04:33:30.174Z"
         },
-        "missionControlExecutionId": "flt_mryfpnpa_pm9n6d",
+        "missionControlExecutionId": "flt_mryg3a68_jb0uz8",
         "expertsRun": [
           "research",
           "strategy",
@@ -323,7 +323,7 @@
         "request": "Add arrival windows and update my website to explain them.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mryfpnpb_weervv",
+          "intentId": "bint_mryg3a6a_qrsnf7",
           "intentCategory": "Multiple Systems",
           "intentLabel": "Multi-System: Website + Booking",
           "ownerGoal": "Arrival Windows · Website Update",
@@ -373,9 +373,9 @@
           ],
           "applied": false,
           "changePlanGenerated": false,
-          "timestamp": "2026-07-24T04:22:54.527Z"
+          "timestamp": "2026-07-24T04:33:30.178Z"
         },
-        "missionControlExecutionId": "flt_mryfpnpd_610t58",
+        "missionControlExecutionId": "flt_mryg3a6c_fomf1i",
         "expertsRun": [
           "research",
           "strategy",
