@@ -1420,9 +1420,6 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .dash-ops-hero .dash-greeting h1{font-size:clamp(22px,3vw,28px)}
 .dash-ops-hero .dash-ready{font-size:14px;color:var(--ink-3);margin:4px 0 0}
 .dash-site-hero{display:grid;gap:14px;margin:0 0 18px}
-@media(min-width:900px){
-  .dash-site-hero{grid-template-columns:minmax(0,1.4fr) minmax(220px,.7fr);align-items:stretch}
-}
 .dash-website-preview{
   border-radius:18px;overflow:hidden;border:1px solid var(--border);
   background:linear-gradient(160deg,#141B2B,#1c273d 60%,#243044);min-height:240px;
@@ -1436,21 +1433,6 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   margin-top:8px;align-self:flex-start;padding:9px 14px;border-radius:999px;background:#D9632D;color:#fff;font-size:13px;font-weight:750;border:0;cursor:pointer
 }
 .dash-site-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.dash-booking-phone{
-  border-radius:22px;border:1px solid var(--border);background:var(--surface);padding:14px 12px 16px;
-  display:flex;flex-direction:column;gap:10px;min-height:240px
-}
-.dash-booking-phone .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:750}
-.dash-booking-phone .phone-viz{
-  flex:1;border-radius:18px;background:linear-gradient(180deg,#f8fafc,#eef2ff);border:1px solid var(--border);
-  padding:14px;display:flex;flex-direction:column;gap:8px;justify-content:flex-end
-}
-.dash-booking-phone .phone-viz .line{height:8px;border-radius:99px;background:rgba(20,27,43,.12)}
-.dash-booking-phone .phone-viz .line.w2{width:70%}
-.dash-booking-phone .phone-viz .line.w3{width:45%}
-.dash-booking-phone .phone-viz .book{
-  margin-top:4px;padding:10px;border-radius:12px;background:#141B2B;color:#fff;text-align:center;font-size:13px;font-weight:750
-}
 .dash-focus-row{display:grid;gap:10px;margin:0 0 16px}
 @media(min-width:720px){.dash-focus-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .dash-focus-card{
@@ -9690,29 +9672,17 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         <div class="dash-site-hero" id="dash-site-hero">
-          <div>
-            <div class="dash-website-preview" id="dash-website-preview" aria-label="Website preview">
-              <div class="site-frame">
-                <div class="site-kicker">Your website</div>
-                <h2 class="site-title" id="dash-site-preview-title">Your Business</h2>
-                <p class="site-sub" id="dash-site-preview-sub">Live preview of what customers see first.</p>
-                <button type="button" class="site-cta" onclick="previewProfile()">Open Website</button>
-              </div>
-            </div>
-            <div class="dash-site-actions">
-              <button type="button" class="btn btn-brand btn-sm" onclick="previewProfile()">Open Website</button>
-              <button type="button" class="btn btn-out btn-sm" onclick="copyDashSiteLink()">Share Website</button>
-              <button type="button" class="btn btn-out btn-sm" onclick="previewProfile()">Preview Booking</button>
+          <div class="dash-website-preview" id="dash-website-preview" aria-label="Website preview">
+            <div class="site-frame">
+              <div class="site-kicker">Your website</div>
+              <h2 class="site-title" id="dash-site-preview-title">Your Business</h2>
+              <p class="site-sub" id="dash-site-preview-sub">Live preview of what customers see first.</p>
+              <button type="button" class="site-cta" onclick="previewProfile()">Open Website</button>
             </div>
           </div>
-          <div class="dash-booking-phone" aria-label="Booking preview">
-            <div class="sk">Booking</div>
-            <div class="phone-viz">
-              <div class="line"></div>
-              <div class="line w2"></div>
-              <div class="line w3"></div>
-              <div class="book">Book now</div>
-            </div>
+          <div class="dash-site-actions">
+            <button type="button" class="btn btn-brand btn-sm" onclick="previewProfile()">Open Website</button>
+            <button type="button" class="btn btn-out btn-sm" onclick="copyDashSiteLink()">Share Website</button>
           </div>
         </div>
 
