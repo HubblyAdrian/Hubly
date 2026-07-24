@@ -1,12 +1,12 @@
 {
   "milestone": "2",
   "name": "The Hubly Experience",
-  "passed": 9,
+  "passed": 10,
   "total": 13,
-  "unlocked": 9,
-  "percent": 69,
+  "unlocked": 10,
+  "percent": 77,
   "ready": false,
-  "checkedAt": "2026-07-24T16:05:12.330Z",
+  "checkedAt": "2026-07-24T16:28:00.747Z",
   "epics": [
     {
       "n": 0,
@@ -65,8 +65,8 @@
     {
       "n": 9,
       "title": "Creative Workspace",
-      "status": "locked",
-      "script": null
+      "status": "pass",
+      "script": "scripts/check-m2-epic9.mjs"
     },
     {
       "n": 10,

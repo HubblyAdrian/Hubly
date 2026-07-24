@@ -1563,6 +1563,77 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   padding:10px 14px;cursor:pointer;flex:0 0 auto;
 }
 .is-home-ask-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+/* Milestone 2 · Epic 9 — Creative Workspace (conversation-first, not an editor) */
+.is-wrap.is-cw-wide{max-width:min(1100px,98vw)}
+.is-cw-canvas{color:#fff;animation:isThinkCanvasIn .55s ease both}
+.is-cw-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px}
+.is-cw-top .sk{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#fdba74;margin:0}
+.is-cw-actions{display:flex;flex-wrap:wrap;gap:8px}
+.is-cw-actions button,.is-cw-chip,.is-cw-section-ask button,.is-cw-dirs button,.is-cw-versions button,.is-cw-playground .pick,.is-cw-advanced button{
+  appearance:none;border:1px solid rgba(255,255,255,.18);background:rgba(15,23,42,.45);color:#fff;
+  font:inherit;font-size:12px;font-weight:700;padding:8px 11px;border-radius:10px;cursor:pointer;
+}
+.is-cw-actions button:hover,.is-cw-chip:hover,.is-cw-section-ask button:hover,.is-cw-dirs button:hover,.is-cw-versions button:hover,.is-cw-playground .pick:hover,.is-cw-advanced button:hover{border-color:#fdba74;color:#fdba74}
+.is-cw-actions button.is-brand{background:#d9632d;border-color:#d9632d;color:#fff}
+.is-cw-layout{display:grid;grid-template-columns:minmax(280px,1fr) minmax(280px,1.1fr);gap:14px;align-items:stretch}
+@media (max-width:820px){
+  .is-cw-layout{grid-template-columns:1fr}
+  .is-cw-mobile-note{display:block!important}
+}
+.is-cw-mobile-note{display:none;margin:0 0 10px;font-size:12px;color:rgba(255,255,255,.75)}
+.is-cw-pane{padding:14px;border-radius:16px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.14);min-height:280px}
+.is-cw-pane .sk{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#fdba74;margin:0 0 10px}
+.is-cw-chat-thread{max-height:260px;overflow:auto;margin:0 0 10px}
+.is-cw-chat-thread .msg{margin:0 0 8px;padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.06);font-size:13px;line-height:1.45}
+.is-cw-chat-thread .msg.is-you{border-left:2px solid #fdba74}
+.is-cw-chat-row{display:flex;gap:8px}
+.is-cw-chat-row input{
+  flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);
+  background:rgba(15,23,42,.55);color:#fff;font:inherit;font-size:13px;
+}
+.is-cw-chat-row button{
+  appearance:none;border:none;border-radius:10px;background:#d9632d;color:#fff;font:inherit;font-size:13px;font-weight:800;
+  padding:10px 14px;cursor:pointer;
+}
+.is-cw-starters{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
+.is-cw-preview-stage{
+  margin:0 0 10px;padding:18px;border-radius:14px;min-height:160px;
+  background:linear-gradient(145deg,rgba(217,99,45,.2),rgba(15,23,42,.7));
+  border:1px solid rgba(253,186,116,.35);transition:background .45s ease,border-color .45s ease;
+}
+.is-cw-preview-stage[data-direction="luxury"]{background:linear-gradient(145deg,rgba(201,168,106,.25),rgba(11,15,20,.85))}
+.is-cw-preview-stage[data-direction="warm"],.is-cw-preview-stage[data-direction="friendly"]{background:linear-gradient(145deg,rgba(232,168,124,.28),rgba(31,58,46,.75))}
+.is-cw-preview-stage[data-direction="minimal"],.is-cw-preview-stage[data-direction="modern"]{background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(15,23,42,.8))}
+.is-cw-preview-stage[data-direction="bold"],.is-cw-preview-stage[data-direction="playful"]{background:linear-gradient(145deg,rgba(217,99,45,.35),rgba(17,24,39,.85))}
+.is-cw-preview-stage .live{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74}
+.is-cw-preview-stage .biz{font-size:22px;font-weight:800;margin:6px 0 4px;letter-spacing:-.02em}
+.is-cw-preview-stage .change{font-size:13px;line-height:1.45;color:rgba(255,255,255,.82);margin:0}
+.is-cw-preview-stage.is-updating{outline:1px solid rgba(253,186,116,.55)}
+.is-cw-rail{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:14px 0 0}
+.is-cw-card{padding:14px;border-radius:16px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.14)}
+.is-cw-card .sk{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#fdba74;margin:0 0 10px}
+.is-cw-health .overall{font-size:36px;font-weight:800;color:#fdba74;margin:0 0 8px}
+.is-cw-health .dims{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px}
+.is-cw-health .dims button{width:100%;text-align:left}
+.is-cw-dirs{display:flex;flex-wrap:wrap;gap:6px}
+.is-cw-dirs button.is-on{border-color:#d9632d;background:rgba(217,99,45,.22)}
+.is-cw-compare .row{margin:0 0 8px;font-size:13px;line-height:1.45}
+.is-cw-versions{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow:auto}
+.is-cw-versions button{text-align:left;width:100%}
+.is-cw-versions button.is-on{border-color:#fdba74}
+.is-cw-suggest .item{margin:0 0 10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1);font-size:13px}
+.is-cw-suggest .item:last-child{border:0;margin:0;padding:0}
+.is-cw-builder .step{font-size:13px;margin:0 0 8px;display:flex;justify-content:space-between;gap:8px}
+.is-cw-builder .step span:last-child{color:#fdba74;font-weight:800}
+.is-cw-playground-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.is-cw-playground .concept{padding:12px;border-radius:12px;background:rgba(15,23,42,.4);border:1px solid rgba(255,255,255,.12)}
+.is-cw-playground .concept strong{display:block;margin:0 0 6px;font-size:13px}
+.is-cw-playground .swatches{display:flex;gap:4px;margin:0 0 8px}
+.is-cw-playground .swatches i{width:16px;height:16px;border-radius:4px;display:block;border:1px solid rgba(255,255,255,.2)}
+.is-cw-playground .meta{font-size:11px;line-height:1.4;color:rgba(255,255,255,.72);margin:0 0 4px}
+.is-cw-advanced[hidden],.is-cw-playground-panel[hidden],.is-cw-compare-panel[hidden]{display:none!important}
+.is-cw-back{appearance:none;border:none;background:transparent;color:rgba(255,255,255,.78);font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0}
+.is-cw-back:hover{color:#fdba74}
 .is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
 .is-area-panel.hidden{display:none!important}
 .is-area-panel.is-compact .is-area-extra{display:none}
@@ -8872,6 +8943,99 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="is-home-ask-chips is-home-card-ask" id="is-home-ask-chips"></div>
           </div>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="creative-workspace" id="is-step-creative-workspace" data-creative-workspace="1" data-conversation-first="1" data-mobile-conversation-first="1">
+        <div class="is-cw-canvas is-creative-workspace" id="is-cw-canvas">
+          <div class="is-cw-top">
+            <div class="is-save-brand is-cw-brand">
+              <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+            </div>
+            <div class="is-cw-actions">
+              <button type="button" class="is-brand" id="is-cw-explore" onclick="isCwExploreIdeas()">Explore Ideas</button>
+              <button type="button" onclick="isCwCompareMode()">Show me another version</button>
+              <button type="button" onclick="isCwToggleAdvanced()">Advanced Studio</button>
+              <button type="button" class="is-cw-back" onclick="isCwBackToHome()">← Business Home</button>
+            </div>
+          </div>
+          <p class="is-cw-mobile-note is-cw-mobile">Mobile stays conversation-first — chat leads, live preview follows. No tiny inspector panels.</p>
+          <div class="is-cw-layout">
+            <div class="is-cw-pane is-cw-chat" id="is-cw-chat-pane">
+              <div class="sk">Conversation</div>
+              <div class="is-cw-chat-thread" id="is-cw-chat-thread"></div>
+              <div class="is-cw-chat-row">
+                <input type="text" id="is-cw-chat-input" placeholder="Make this feel more premium…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();isCwChatSubmit();}">
+                <button type="button" onclick="isCwChatSubmit()">Ask Hubly</button>
+              </div>
+              <div class="is-cw-starters" id="is-cw-starters"></div>
+              <div class="is-cw-section-ask" id="is-cw-section-ask" style="margin-top:12px"></div>
+            </div>
+            <div class="is-cw-pane is-cw-preview" id="is-cw-preview-pane">
+              <div class="sk">Live Business</div>
+              <div class="is-cw-preview-stage" id="is-cw-preview-stage" data-live-editing="1">
+                <div class="live">Live · no refresh · no publish · no reload</div>
+                <div class="biz" id="is-cw-preview-biz">Your Business</div>
+                <p class="change" id="is-cw-preview-change">Watch your business evolve as we create together.</p>
+              </div>
+              <div class="is-cw-builder" id="is-cw-builder">
+                <div class="sk">Builder Activity</div>
+                <div id="is-cw-builder-body"></div>
+              </div>
+            </div>
+          </div>
+          <div class="is-cw-rail">
+            <div class="is-cw-card is-cw-dirs-card">
+              <div class="sk">Creative Directions</div>
+              <div class="is-cw-dirs" id="is-cw-dirs"></div>
+            </div>
+            <div class="is-cw-card is-cw-health">
+              <div class="sk">Website Health</div>
+              <div class="overall" id="is-cw-health-overall">94</div>
+              <div class="dims" id="is-cw-health-dims"></div>
+              <div id="is-cw-health-explain" style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.75)"></div>
+              <div class="is-cw-section-ask" id="is-cw-health-ask" style="margin-top:8px"></div>
+            </div>
+            <div class="is-cw-card is-cw-memory">
+              <div class="sk">Creative Memory</div>
+              <p id="is-cw-memory-line" style="margin:0;font-size:13px;line-height:1.45"></p>
+            </div>
+            <div class="is-cw-card is-cw-versions-card">
+              <div class="sk">Version Timeline</div>
+              <div class="is-cw-versions" id="is-cw-versions"></div>
+            </div>
+            <div class="is-cw-card is-cw-suggest">
+              <div class="sk">AI Suggestions</div>
+              <div id="is-cw-suggest-body"></div>
+            </div>
+            <div class="is-cw-card is-cw-compare-panel" id="is-cw-compare-panel" hidden>
+              <div class="sk">Compare Mode</div>
+              <div class="is-cw-compare" id="is-cw-compare-body"></div>
+            </div>
+          </div>
+          <div class="is-cw-card is-cw-playground-panel is-cw-playground" id="is-cw-playground-panel" hidden style="margin-top:12px">
+            <div class="sk">Creative Playgrounds</div>
+            <p id="is-cw-playground-intro" style="margin:0 0 12px;font-size:14px;line-height:1.45"></p>
+            <div class="is-cw-playground-grid" id="is-cw-playground-grid"></div>
+            <p style="margin:12px 0 0;font-size:12px;color:rgba(255,255,255,.7)">Or ask: Mix the typography from Concept A with the layout from Concept C.</p>
+          </div>
+          <div class="is-cw-card is-cw-advanced" id="is-cw-advanced" hidden style="margin-top:12px">
+            <div class="sk">Advanced Studio</div>
+            <p style="margin:0 0 10px;font-size:12px;color:rgba(255,255,255,.75)">Traditional controls live only here — conversation stays the default.</p>
+            <div id="is-cw-advanced-controls" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+            <button type="button" style="margin-top:10px" onclick="isCwSyncFromAdvanced()">Sync back to Conversation Mode</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="hubly-daily-shell" id="is-step-hubly-daily-shell" data-hubly-daily-shell="1">
+        <div class="is-home-canvas">
+          <div class="is-save-brand">
+            <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+          </div>
+          <h1 class="is-save-hero" style="font-size:clamp(22px,3vw,28px);font-weight:800">Hubly Daily</h1>
+          <p class="is-save-sub">Epic 10 will own the full Hubly Daily experience. Creative Workspace is ready.</p>
+          <button type="button" class="is-launch-home-cta" onclick="isEnterBusinessHome()">Back to Business Home</button>
         </div>
       </div>
 
@@ -18289,6 +18453,10 @@ function isHomeExplainHealth(id){
 }
 
 function isHomeWebsiteAction(id){
+  if(id==='edit'){
+    isEnterCreativeWorkspace();
+    return;
+  }
   const labels={view:'View Site',edit:'Edit with Hubly',preview:'Preview Changes',recent:'Recent Improvements'};
   isHomeAsk(`${labels[id]||id} — what should I know?`);
 }
@@ -18315,7 +18483,9 @@ function isHomeAsk(text){
   else if(/care|why should/i.test(q))reply=`Because it changes outcomes. Highest impact today: ${flow?.focus?.action||'Stay focused on one action.'} Expected: ${flow?.focus?.impact||''}`;
   else if(/improve|build|would you do/i.test(q))reply=`I'd start with Today's Focus: ${flow?.focus?.action||''} Then: ${flow?.focus?.nextStep||''}`;
   else if(/explain/i.test(q))reply=`Here's the story: ${flow?.brief?.review||''} Focus: ${flow?.focus?.action||''} Health: ${flow?.health?.overall??''}.`;
-  else if(/website|site/i.test(q))reply=`Your live site for ${flow?.website?.businessName||'your business'} should feel alive. Recent: ${flow?.website?.recent||''}`;
+  else if(/website|site|edit with hubly/i.test(q)){
+    reply=`Your live site for ${flow?.website?.businessName||'your business'} should feel alive. Open Creative Workspace to create together — conversation first.`;
+  }
   else reply=`Got it — still one continuous conversation. For ${flow?.industryKey?.replace(/_/g,' ')||'your business'}, I'd focus on: ${flow?.focus?.action||''}`;
   S._is.homeAskThread.push({role:'hubly',text:reply});
   isHomeRenderAskThread();
@@ -18327,6 +18497,426 @@ function isHomeAskSubmit(){
   const q=input?.value||'';
   if(input)input.value='';
   isHomeAsk(q);
+}
+
+/* ── Milestone 2 · Epic 9 — Creative Workspace ── */
+const HUBLY_CREATIVE_WORKSPACE = (function(){
+  const CONVERSATION_STARTERS = [
+    "Make my website feel more luxurious.","Add memberships.","Move booking higher.",
+    "I don't like these colors.","Rewrite my About page.","Make it look like Apple.",
+  ];
+  const CREATIVE_DIRECTIONS = [
+    {id:"luxury",label:"Luxury",feel:"Quiet confidence, deep contrast, sparse type."},
+    {id:"friendly",label:"Friendly",feel:"Warm, approachable, neighborhood trust."},
+    {id:"modern",label:"Modern",feel:"Clean geometry, crisp hierarchy."},
+    {id:"minimal",label:"Minimal",feel:"Breathing room, fewer words, stronger photos."},
+    {id:"bold",label:"Bold",feel:"High energy, strong CTAs, punchy headlines."},
+    {id:"premium",label:"Premium",feel:"Refined materials, elevated service cues."},
+    {id:"warm",label:"Warm",feel:"Soft light, human tone, inviting color."},
+    {id:"playful",label:"Playful",feel:"Light motion cues, friendly voice."},
+  ];
+  const WEBSITE_HEALTH_DIMS = [
+    {id:"trust",label:"Trust"},{id:"conversion",label:"Conversion"},{id:"seo",label:"SEO"},
+    {id:"accessibility",label:"Accessibility"},{id:"photography",label:"Photography"},
+  ];
+  const VERSION_SURFACES = ["Homepage","Booking","Brand","Portfolio","Packages","Workspace"];
+  const ADVANCED_CONTROLS = ["Colors","Typography","Spacing","Padding","Buttons","Layout","Packages","Booking"];
+  const SECTION_ASKS = ["Why is this section here?","Can we improve this?","Is this converting well?","Make this shorter.","Add more trust."];
+  const BUILDER_PIPELINE = [
+    {id:"director",agent:"Creative Director",action:"Updated Hero"},
+    {id:"builder",agent:"Website Builder",action:"Applied"},
+    {id:"critic",agent:"Critic",action:"Approved"},
+    {id:"deploy",agent:"Deployment",action:"Ready"},
+  ];
+  const PLAYGROUND_CONCEPTS = [
+    {id:"modern_premium",label:"Modern Premium",palette:["#141B2B","#D9632D","#F7F4EF"],typography:"Plus Jakarta Sans / tight tracking",booking:"One-tap book above the fold",personality:"Confident local specialist",why:"Balances trust with a polished first impression."},
+    {id:"local_friendly",label:"Local & Friendly",palette:["#1F3A2E","#E8A87C","#FFF8F0"],typography:"Rounded sans / open leading",booking:"Neighborhood booking CTA mid-page",personality:"Neighbor you already trust",why:"Fits owners who win on relationships and referrals."},
+    {id:"luxury_service",label:"Luxury Service",palette:["#0B0F14","#C9A86A","#EDE8E1"],typography:"Editorial display + quiet body",booking:"Inquiry-first with calm availability",personality:"Quiet, elevated craft",why:"For premium positioning without looking corporate."},
+    {id:"bold_energy",label:"Bold & High Energy",palette:["#111827","#D9632D","#FDE68A"],typography:"Heavy headlines / short lines",booking:"Urgent book CTA + same-day windows",personality:"Fast, decisive, high demand",why:"When speed and visibility are the growth lever."},
+  ];
+  const PLAYGROUND_INTRO = "I spent a few minutes exploring different directions for your business.";
+  function resolveKey(ctx){
+    const raw=String(ctx.industryId||ctx.industryKey||ctx.industry||ctx.businessType||'').toLowerCase();
+    if(/pressure|power\s*wash|soft\s*wash/.test(raw))return'pressure_washing';
+    if(/photo|wedding/.test(raw))return'photography';
+    if(/hvac|heating|furnace|air\s*condition/.test(raw))return'hvac';
+    if(/lawn|landscap|mow/.test(raw))return'lawn_care';
+    if(/clean|maid|airbnb|turnover|short.?term/.test(raw))return'cleaning';
+    if(/\bspa\b|massage|facial|wellness/.test(raw))return'spa';
+    return'pressure_washing';
+  }
+  function clampScore(n,fb){const v=Number(n);if(!Number.isFinite(v))return fb;return Math.max(0,Math.min(100,Math.round(v)));}
+  function buildWebsiteHealth(ctx){
+    const scores={trust:clampScore(ctx.trustScore,95),conversion:clampScore(ctx.conversionScore,91),seo:clampScore(ctx.seoScore,89),accessibility:clampScore(ctx.a11yScore,97),photography:clampScore(ctx.photoScore,82)};
+    if(ctx.hasPortfolio===false)scores.photography=Math.min(scores.photography,70);
+    const values=Object.values(scores);
+    const overall=clampScore(values.reduce((a,b)=>a+b,0)/values.length,90);
+    return{overall,label:'Website Health',dimensions:WEBSITE_HEALTH_DIMS.map(d=>({...d,score:scores[d.id],why:`${d.label} affects how visitors decide to trust and book.`,nextStep:`Improve ${d.label.toLowerCase()} with one focused creative change.`,ask:`Why is ${d.label} at ${scores[d.id]}?`}))};
+  }
+  function buildAiSuggestions(ctx){
+    const key=resolveKey(ctx);
+    const base=[
+      {id:'hero',text:'I think this hero image is hurting trust.',why:'Generic stock reads as temporary, not established.',nextStep:'Swap in a finished job photo from your work.'},
+      {id:'booking',text:'Your booking flow has one unnecessary step.',why:'Extra friction drops same-session conversions.',nextStep:'Collapse contact details into the first book screen.'},
+      {id:'headline',text:'I found a stronger headline.',why:'Outcome-first headlines outperform feature lists.',nextStep:'Lead with the result customers buy.'},
+      {id:'gallery',text:'Your gallery needs more before-and-after photos.',why:'Proof converts better than atmosphere alone.',nextStep:'Add three before/after pairs above the fold.'},
+    ];
+    if(key==='photography')base[0]={id:'hero',text:'I think the hero should feature a real couple, not gear.',why:'Emotion converts wedding inquiries.',nextStep:'Pin an atmosphere shot above packages.'};
+    else if(key==='hvac')base[3]={id:'gallery',text:'Add licensed & insured proof near the hero.',why:'Emergency fear drops with visible credentials.',nextStep:'Place proof chips under the headline.'};
+    return base;
+  }
+  function buildVersionTimeline(ctx){
+    const versions=Array.isArray(ctx.versions)&&ctx.versions.length?ctx.versions:[
+      {id:1,label:'Version 1',surface:'Homepage',note:'Day One launch',active:false},
+      {id:2,label:'Version 2',surface:'Brand',note:'Direction: Premium',active:false},
+      {id:3,label:'Version 3',surface:'Booking',note:'Booking moved higher',active:false},
+      {id:4,label:'Version 4',surface:'Portfolio',note:'Gallery trust lift',active:false},
+      {id:5,label:'Version 5',surface:'Packages',note:'Memberships draft',active:false},
+      {id:6,label:'Version 6',surface:'Homepage',note:'Warmer palette',active:false},
+      {id:7,label:'Version 7',surface:'Workspace',note:'Creative memory applied',active:false},
+      {id:8,label:'Version 8',surface:'Homepage',note:'Current live',active:true},
+    ];
+    return versions.map(v=>({...v,reversible:true,surfaces:VERSION_SURFACES.slice()}));
+  }
+  function buildCreativeMemory(ctx){
+    const prefs=Array.isArray(ctx.creativePreferences)?ctx.creativePreferences.slice():[];
+    if(ctx.preferDarkerColors||/dark/i.test(String(ctx.lastPreference||''))){if(!prefs.some(p=>/dark/i.test(p)))prefs.push('Prefers darker colors');}
+    if(!prefs.length)prefs.push("No strong preferences stored yet — I'll learn as we create.");
+    return{preferences:prefs,remembers:true,line:prefs[0]?.includes('darker')?"I remember you like darker colors — I'll keep that in mind.":"I'll remember what you like so you never repeat yourself."};
+  }
+  function buildCompareAlternative(currentDirection,requested){
+    const cur=CREATIVE_DIRECTIONS.find(d=>d.id===currentDirection)||CREATIVE_DIRECTIONS[5];
+    const alt=CREATIVE_DIRECTIONS.find(d=>d.id===requested)||CREATIVE_DIRECTIONS.find(d=>d.id!==cur.id)||CREATIVE_DIRECTIONS[0];
+    return{current:{id:cur.id,label:cur.label,feel:cur.feel},alternative:{id:alt.id,label:alt.label,feel:alt.feel},reasoning:`${alt.label} shifts the business toward ${alt.feel.toLowerCase()} without rebuilding from scratch.`,recommendation:`Try ${alt.label} if you want ${alt.feel.split(',')[0].toLowerCase()}; keep ${cur.label} if the current voice already converts.`};
+  }
+  function buildPlaygrounds(ctx){
+    const key=resolveKey(ctx);const biz=ctx.businessName||ctx.biz||'Your Business';
+    return{intro:PLAYGROUND_INTRO,cta:'Explore Ideas',concepts:PLAYGROUND_CONCEPTS.map(c=>({...c,homepagePreview:`${c.label} homepage for ${biz}`,industryFit:key,why:c.why})),mixPrompt:'Mix the typography from Concept A with the layout from Concept C.'};
+  }
+  function interpretCreativeIntent(message,ctx){
+    const m=String(message||'').toLowerCase();
+    const memory=buildCreativeMemory(ctx);
+    let direction=ctx.currentDirection||'premium';
+    let liveChange='Listening — tell me what to change.';
+    let reasoning='Waiting for clear creative intent.';
+    if(/why did you|why change|reasoning/.test(m)){liveChange='No visual change — explaining the last decision.';reasoning=ctx.lastReasoning||'Stored reasoning from the last creative decision.';}
+    else if(/interrupt|actually|make it warmer|warmer/.test(m)){direction='warm';liveChange='Adapting mid-stream — shifting toward warmer without losing prior context.';reasoning='Interruptions keep prior decisions; only the active direction pivots.';}
+    else if(/luxur|apple|premium|elegant/.test(m)){direction=/apple|luxur/.test(m)?'luxury':'premium';liveChange='Elevating contrast, tightening type, refining the hero.';reasoning='Luxury/premium cues request quieter confidence and stronger materials.';}
+    else if(/\bwarm\b|friend|neighbor/.test(m)){direction='warm';liveChange='Softening palette and humanizing the voice.';reasoning='Warmth requests approachability without losing professionalism.';}
+    else if(/minimal|simple|clean|less/.test(m)){direction='minimal';liveChange='Removing clutter and giving photos more room.';reasoning='Minimal intent reduces noise so proof can convert.';}
+    else if(/bold|energy|loud/.test(m)){direction='bold';liveChange='Punching up the headline and CTA weight.';reasoning='Bold intent increases visibility and urgency.';}
+    else if(/membership|package/.test(m)){liveChange='Adding a memberships block near booking.';reasoning='Memberships create recurring revenue surfaces.';}
+    else if(/booking|book higher|move booking/.test(m)){liveChange='Moving booking higher on the homepage.';reasoning='Earlier booking reduces scroll friction.';}
+    else if(/color|don't like|dont like/.test(m)){direction=memory.preferences.some(p=>/dark/i.test(p))?'luxury':'modern';liveChange='Exploring a new palette while keeping your brand orange accent.';reasoning='Color dislike triggers a directed palette rewrite, not a random theme swap.';}
+    else if(/about|rewrite/.test(m)){liveChange='Rewriting the About page in your voice.';reasoning='About copy should sound like the owner, not a template.';}
+    else if(/mix.*typography|concept a.*concept c/i.test(m)){liveChange='Mixing typography from Concept A with layout from Concept C.';reasoning='Playground mixes are intentional hybrids — not template swaps.';}
+    return{message:String(message||''),direction,liveChange,reasoning,memoryNote:memory.line,pipeline:BUILDER_PIPELINE.map(p=>({...p}))};
+  }
+  function orchestrateCreativeWorkspace(ctx){
+    const industryKey=resolveKey(ctx);
+    const direction=CREATIVE_DIRECTIONS.find(d=>d.id===(ctx.currentDirection||'premium'))||CREATIVE_DIRECTIONS[5];
+    const health=buildWebsiteHealth(ctx);
+    const memory=buildCreativeMemory(ctx);
+    const versions=buildVersionTimeline(ctx);
+    const suggestions=buildAiSuggestions(ctx);
+    const playgrounds=buildPlaygrounds(ctx);
+    const compare=buildCompareAlternative(direction.id,ctx.compareTo||'minimal');
+    const biz=ctx.businessName||ctx.biz||'Your Business';
+    return{
+      version:'1.0.0',label:'Creative Workspace',notAnEditor:true,conversationFirst:true,liveEditing:true,mobileConversationFirst:true,
+      industryKey,businessName:biz,direction,directions:CREATIVE_DIRECTIONS.map(d=>({...d})),starters:CONVERSATION_STARTERS.slice(),
+      sectionAsks:SECTION_ASKS.slice(),health,memory,versions,suggestions,playgrounds,compare,
+      advancedStudio:{available:true,controls:ADVANCED_CONTROLS.slice(),note:'Traditional controls live only here — conversation stays the default.'},
+      builderTransparency:BUILDER_PIPELINE.map(p=>({...p})),
+      livePreview:{title:'Live Business',headline:biz,directionLabel:direction.label,updating:false,noRefresh:true,noPublish:true,noReload:true},
+      signature:[industryKey,direction.id,(memory.preferences[0]||'').slice(0,24)||'none'].join('::'),
+    };
+  }
+  return{CREATIVE_DIRECTIONS,CONVERSATION_STARTERS,SECTION_ASKS,BUILDER_PIPELINE,PLAYGROUND_CONCEPTS,PLAYGROUND_INTRO,ADVANCED_CONTROLS,orchestrateCreativeWorkspace,interpretCreativeIntent,buildCompareAlternative,buildCreativeMemory,buildAiSuggestions,buildWebsiteHealth,buildPlaygrounds,buildVersionTimeline};
+})();
+
+function isEnterCreativeWorkspace(opts){
+  S._is=S._is||{};
+  S._is.readyForCreativeWorkspace=true;
+  isRunCreativeWorkspace(opts);
+}
+
+function isCwAskButtons(prompts, prefix){
+  return `<div class="is-cw-section-ask">${(prompts||[]).map(p=>
+    `<button type="button" type-ask="1" onclick="isCwChat(${JSON.stringify((prefix?prefix+' — ':'')+p)})">${escPeHtml(p)}</button>`
+  ).join('')}</div>`;
+}
+
+function isCwRenderChat(){
+  const thread=document.getElementById('is-cw-chat-thread');
+  if(!thread)return;
+  const msgs=S._is?.cwChat||[];
+  thread.innerHTML=msgs.slice(-20).map(m=>
+    `<div class="msg ${m.role==='you'?'is-you':''}"><strong>${m.role==='you'?'You':'Hubly'}:</strong> ${escPeHtml(m.text)}</div>`
+  ).join('');
+  thread.scrollTop=thread.scrollHeight;
+}
+
+function isCwUpdatePreview(change, directionId){
+  const stage=document.getElementById('is-cw-preview-stage');
+  const changeEl=document.getElementById('is-cw-preview-change');
+  const biz=document.getElementById('is-cw-preview-biz');
+  const flow=S._is?.creativeWorkspace;
+  if(biz)biz.textContent=flow?.businessName||S.biz||'Your Business';
+  if(changeEl)changeEl.textContent=change||flow?.livePreview?.directionLabel||'Live updates as we create.';
+  if(stage){
+    stage.classList.add('is-updating');
+    if(directionId)stage.setAttribute('data-direction',directionId);
+    setTimeout(()=>stage.classList.remove('is-updating'),450);
+  }
+  const body=document.getElementById('is-cw-builder-body');
+  if(body&&flow){
+    body.innerHTML=flow.builderTransparency.map(s=>
+      `<div class="step"><span>${escPeHtml(s.agent)}</span><span>${escPeHtml(s.action)}</span></div>`
+    ).join('');
+  }
+}
+
+function isCwPushVersion(note, surface){
+  S._is=S._is||{};
+  const flow=S._is.creativeWorkspace;
+  if(!flow)return;
+  flow.versions.forEach(v=>v.active=false);
+  const nextId=(flow.versions[flow.versions.length-1]?.id||0)+1;
+  flow.versions.push({id:nextId,label:'Version '+nextId,surface:surface||'Homepage',note:note||'Creative decision',active:true,reversible:true});
+  isCwRenderVersions();
+}
+
+function isCwRenderVersions(){
+  const el=document.getElementById('is-cw-versions');
+  const flow=S._is?.creativeWorkspace;
+  if(!el||!flow)return;
+  el.innerHTML=flow.versions.slice().reverse().map(v=>
+    `<button type="button" class="${v.active?'is-on':''}" onclick="isCwRestoreVersion(${v.id})">${escPeHtml(v.label)} · ${escPeHtml(v.surface)} — ${escPeHtml(v.note)}</button>`
+  ).join('');
+}
+
+function isRunCreativeWorkspace(opts){
+  S._is=S._is||{};
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-home-wide','is-launch-wide','is-save-wide');
+  document.querySelector('#is-shell .is-wrap')?.classList.add('is-cw-wide');
+  const d=S._is.discovery||{};
+  const industry=S.businessType||d.facts?.industryId?.value||S._is.reveal?.industryKey||'';
+  const flow=HUBLY_CREATIVE_WORKSPACE.orchestrateCreativeWorkspace({
+    businessName:S.biz||S._is.reveal?.businessName||S._is.businessHome?.website?.businessName,
+    biz:S.biz,industryId:industry,industry,businessType:S.businessType,
+    currentDirection:opts?.currentDirection||S._is.cwDirection||'premium',
+    preferDarkerColors:!!(opts?.preferDarkerColors||S._is.preferDarkerColors),
+    creativePreferences:S._is.creativePreferences||opts?.creativePreferences,
+    lastPreference:S._is.lastPreference,hasPortfolio:!!((S.portfolioUrls||[]).length),
+    compareTo:opts?.compareTo||'minimal',...opts,
+  });
+  S._is.creativeWorkspace=flow;
+  S._is.cwDirection=flow.direction.id;
+  S._is.cwChat=S._is.cwChat||[
+    {role:'hubly',text:"This isn't an editor — tell me what you want to change and I'll implement it live."},
+  ];
+  S._is.lastReasoning=S._is.lastReasoning||null;
+
+  const starters=document.getElementById('is-cw-starters');
+  if(starters){
+    starters.innerHTML=flow.starters.map(s=>
+      `<button type="button" class="is-cw-chip" onclick="isCwChat(${JSON.stringify(s)})">${escPeHtml(s)}</button>`
+    ).join('');
+  }
+  const sectionAsk=document.getElementById('is-cw-section-ask');
+  if(sectionAsk)sectionAsk.innerHTML=isCwAskButtons(flow.sectionAsks,'This section');
+  const dirs=document.getElementById('is-cw-dirs');
+  if(dirs){
+    dirs.innerHTML=flow.directions.map(dir=>
+      `<button type="button" class="${dir.id===flow.direction.id?'is-on':''}" data-dir="${escPeHtml(dir.id)}" onclick="isCwSetDirection('${escPeHtml(dir.id)}')">${escPeHtml(dir.label)}</button>`
+    ).join('');
+  }
+  const overall=document.getElementById('is-cw-health-overall');
+  if(overall)overall.textContent=String(flow.health.overall);
+  const dims=document.getElementById('is-cw-health-dims');
+  if(dims){
+    dims.innerHTML=flow.health.dimensions.map(d=>
+      `<button type="button" onclick="isCwExplainHealth('${escPeHtml(d.id)}')"><span style="display:block;font-size:11px;opacity:.75">${escPeHtml(d.label)}</span><strong>${escPeHtml(String(d.score))}</strong></button>`
+    ).join('');
+  }
+  const healthAsk=document.getElementById('is-cw-health-ask');
+  if(healthAsk)healthAsk.innerHTML=isCwAskButtons(['Why is this score low?','Improve this.','Explain this.'],'Website Health');
+  const mem=document.getElementById('is-cw-memory-line');
+  if(mem)mem.textContent=flow.memory.line;
+  const suggest=document.getElementById('is-cw-suggest-body');
+  if(suggest){
+    suggest.innerHTML=flow.suggestions.map(s=>
+      `<div class="item"><strong>${escPeHtml(s.text)}</strong><div style="opacity:.8;margin-top:4px">${escPeHtml(s.why)}</div>
+        <button type="button" class="is-cw-chip" style="margin-top:6px" onclick="isCwChat(${JSON.stringify(s.nextStep)})">${escPeHtml(s.nextStep)}</button></div>`
+    ).join('');
+  }
+  const adv=document.getElementById('is-cw-advanced-controls');
+  if(adv){
+    adv.innerHTML=flow.advancedStudio.controls.map(c=>
+      `<button type="button" onclick="isCwAdvancedEdit(${JSON.stringify(c)})">${escPeHtml(c)}</button>`
+    ).join('');
+  }
+  isCwRenderVersions();
+  isCwRenderChat();
+  isCwUpdatePreview(`Direction: ${flow.direction.label}. ${flow.direction.feel}`, flow.direction.id);
+  document.getElementById('is-cw-playground-panel')?.setAttribute('hidden','');
+  document.getElementById('is-cw-compare-panel')?.setAttribute('hidden','');
+  document.getElementById('is-cw-advanced')?.setAttribute('hidden','');
+  isShowStep('creative-workspace');
+  try{persistInstantSiteDraft();}catch(e){}
+  return flow;
+}
+
+function isCwChat(text){
+  const q=String(text||'').trim();
+  if(!q)return;
+  S._is=S._is||{};
+  S._is.cwChat=S._is.cwChat||[];
+  S._is.cwChat.push({role:'you',text:q});
+  const flow=S._is.creativeWorkspace||HUBLY_CREATIVE_WORKSPACE.orchestrateCreativeWorkspace({});
+  const intent=HUBLY_CREATIVE_WORKSPACE.interpretCreativeIntent(q,{
+    currentDirection:S._is.cwDirection||flow.direction.id,
+    lastReasoning:S._is.lastReasoning,
+    preferDarkerColors:S._is.preferDarkerColors,
+    creativePreferences:S._is.creativePreferences,
+  });
+  S._is.cwDirection=intent.direction;
+  S._is.lastReasoning=intent.reasoning;
+  if(/dark/i.test(q)){
+    S._is.preferDarkerColors=true;
+    S._is.creativePreferences=S._is.creativePreferences||[];
+    if(!S._is.creativePreferences.some(p=>/dark/i.test(p)))S._is.creativePreferences.push('Prefers darker colors');
+  }
+  flow.direction=flow.directions.find(d=>d.id===intent.direction)||flow.direction;
+  flow.builderTransparency=intent.pipeline;
+  S._is.creativeWorkspace=flow;
+  document.querySelectorAll('#is-cw-dirs button').forEach(b=>b.classList.toggle('is-on',b.getAttribute('data-dir')===intent.direction));
+  const mem=document.getElementById('is-cw-memory-line');
+  if(mem)mem.textContent=intent.memoryNote;
+  S._is.cwChat.push({role:'hubly',text:`${intent.liveChange}\n\nWhy: ${intent.reasoning}`});
+  isCwUpdatePreview(intent.liveChange, intent.direction);
+  if(!/why did you|why change|no visual/i.test(intent.liveChange)){
+    isCwPushVersion(intent.liveChange.slice(0,48), /booking/i.test(q)?'Booking':/about/i.test(q)?'Brand':'Homepage');
+  }
+  isCwRenderChat();
+  try{persistInstantSiteDraft();}catch(e){}
+}
+
+function isCwChatSubmit(){
+  const input=document.getElementById('is-cw-chat-input');
+  const q=input?.value||'';
+  if(input)input.value='';
+  isCwChat(q);
+}
+
+function isCwSetDirection(id){
+  isCwChat(`Make it feel more ${id}.`);
+}
+
+function isCwExplainHealth(id){
+  const dim=S._is?.creativeWorkspace?.health?.dimensions?.find(d=>d.id===id);
+  const el=document.getElementById('is-cw-health-explain');
+  if(!dim||!el)return;
+  el.innerHTML=`<strong>${escPeHtml(dim.label)} · ${escPeHtml(String(dim.score))}</strong><br>${escPeHtml(dim.why)}<br><strong>Next:</strong> ${escPeHtml(dim.nextStep)}`;
+  isCwChat(dim.ask);
+}
+
+function isCwCompareMode(){
+  const flow=S._is?.creativeWorkspace;
+  if(!flow)return;
+  const compare=HUBLY_CREATIVE_WORKSPACE.buildCompareAlternative(S._is.cwDirection||flow.direction.id,'minimal');
+  flow.compare=compare;
+  const panel=document.getElementById('is-cw-compare-panel');
+  const body=document.getElementById('is-cw-compare-body');
+  if(panel)panel.hidden=false;
+  if(body){
+    body.innerHTML=`
+      <div class="row"><strong>Current</strong> — ${escPeHtml(compare.current.label)}: ${escPeHtml(compare.current.feel)}</div>
+      <div class="row">↓</div>
+      <div class="row"><strong>Alternative</strong> — ${escPeHtml(compare.alternative.label)}: ${escPeHtml(compare.alternative.feel)}</div>
+      <div class="row">↓</div>
+      <div class="row"><strong>Reasoning</strong> — ${escPeHtml(compare.reasoning)}</div>
+      <div class="row">↓</div>
+      <div class="row"><strong>Recommendation</strong> — ${escPeHtml(compare.recommendation)}</div>
+      <button type="button" class="is-cw-chip" style="margin-top:8px" onclick="isCwSetDirection('${escPeHtml(compare.alternative.id)}')">Apply ${escPeHtml(compare.alternative.label)}</button>`;
+  }
+  isCwChat('Show me another version.');
+}
+
+function isCwExploreIdeas(){
+  const flow=S._is?.creativeWorkspace;
+  if(!flow)return;
+  const panel=document.getElementById('is-cw-playground-panel');
+  const intro=document.getElementById('is-cw-playground-intro');
+  const grid=document.getElementById('is-cw-playground-grid');
+  if(intro)intro.textContent=flow.playgrounds.intro;
+  if(grid){
+    grid.innerHTML=flow.playgrounds.concepts.map((c,i)=>
+      `<div class="concept">
+        <strong>${escPeHtml(c.label)}</strong>
+        <div class="swatches">${c.palette.map(col=>`<i style="background:${escPeHtml(col)}"></i>`).join('')}</div>
+        <p class="meta">${escPeHtml(c.homepagePreview)}</p>
+        <p class="meta">Type: ${escPeHtml(c.typography)}</p>
+        <p class="meta">Booking: ${escPeHtml(c.booking)}</p>
+        <p class="meta">Personality: ${escPeHtml(c.personality)}</p>
+        <p class="meta">Why: ${escPeHtml(c.why)}</p>
+        <button type="button" class="pick" onclick="isCwApplyPlayground('${escPeHtml(c.id)}')">Use this concept</button>
+      </div>`
+    ).join('');
+  }
+  if(panel)panel.hidden=false;
+  S._is.cwChat=S._is.cwChat||[];
+  S._is.cwChat.push({role:'hubly',text:flow.playgrounds.intro});
+  isCwRenderChat();
+}
+
+function isCwApplyPlayground(id){
+  const c=S._is?.creativeWorkspace?.playgrounds?.concepts?.find(x=>x.id===id);
+  if(!c)return;
+  const map={modern_premium:'premium',local_friendly:'friendly',luxury_service:'luxury',bold_energy:'bold'};
+  isCwChat(`Apply Creative Playground: ${c.label}. ${c.personality}`);
+  isCwSetDirection(map[id]||'premium');
+}
+
+function isCwRestoreVersion(id){
+  const flow=S._is?.creativeWorkspace;
+  if(!flow)return;
+  const v=flow.versions.find(x=>x.id===id);
+  if(!v)return;
+  flow.versions.forEach(x=>x.active=false);
+  v.active=true;
+  isCwRenderVersions();
+  isCwUpdatePreview(`Restored ${v.label} — ${v.note}. Everything restored perfectly.`, S._is.cwDirection);
+  S._is.cwChat.push({role:'hubly',text:`Restored ${v.label} (${v.surface}). ${v.note}`});
+  isCwRenderChat();
+}
+
+function isCwToggleAdvanced(){
+  const el=document.getElementById('is-cw-advanced');
+  if(!el)return;
+  el.hidden=!el.hidden;
+}
+
+function isCwAdvancedEdit(control){
+  S._is=S._is||{};
+  S._is.cwManualEdits=S._is.cwManualEdits||[];
+  S._is.cwManualEdits.push(control);
+  isCwUpdatePreview(`Advanced Studio: adjusted ${control}. Still synchronized with Conversation Mode.`, S._is.cwDirection);
+  isCwPushVersion(`Manual: ${control}`,'Workspace');
+  S._is.cwChat.push({role:'hubly',text:`Applied ${control} in Advanced Studio. Conversation Mode stays in sync.`});
+  isCwRenderChat();
+}
+
+function isCwSyncFromAdvanced(){
+  document.getElementById('is-cw-advanced')?.setAttribute('hidden','');
+  S._is.cwChat.push({role:'hubly',text:'Back in Conversation Mode — manual edits stay synchronized.'});
+  isCwRenderChat();
+}
+
+function isCwBackToHome(){
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-cw-wide');
+  isEnterBusinessHome();
 }
 
 // Resume Delayed Account after OAuth return

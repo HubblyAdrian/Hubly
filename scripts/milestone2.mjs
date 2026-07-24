@@ -24,7 +24,7 @@ const EPICS = [
   { n: 6, title: 'Delayed Account Creation', script: 'scripts/check-m2-epic6.mjs', unlocked: true },
   { n: 7, title: 'Business Launch', script: 'scripts/check-m2-epic7.mjs', unlocked: true },
   { n: 8, title: 'Business Home', script: 'scripts/check-m2-epic8.mjs', unlocked: true },
-  { n: 9, title: 'Creative Workspace', script: null, unlocked: false },
+  { n: 9, title: 'Creative Workspace', script: 'scripts/check-m2-epic9.mjs', unlocked: true },
   { n: 10, title: 'Hubly Daily', script: null, unlocked: false },
   { n: 11, title: 'Living Business', script: null, unlocked: false },
   { n: 12, title: 'Polish & Delight', script: null, unlocked: false },
