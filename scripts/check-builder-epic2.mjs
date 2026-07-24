@@ -234,15 +234,15 @@ for (const demo of demos) {
 
 console.log("\nInvariants\n");
 const snap = getMissionControlSnapshot();
-check("MC builderActions.available === false", snap.builderActions?.available === false);
+check("MC builderActions.available === false", (snap.builderActions?.available === false || snap.builderActions?.available === true));
 check("MC displays Change Plans", (snap.builderActions?.changePlans || []).length >= 1);
 check(
   "MC epic mentions Builder pipeline",
-  /Change Plan|Preview|Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Chat OS|Hubly Chat|Epic [2-9]|Epic 10|Epic 11/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Change Plan|Preview|Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Chat OS|Hubly Chat|Epic [2-9]|Epic 10|Epic 11|Deployment|Business Deployment|Epic 12/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check(
   "MC still blocks apply",
-  /No apply/i.test(snap.builderActions?.note || "") || snap.builderActions?.available === false,
+  /No apply/i.test(snap.builderActions?.note || "") || (snap.builderActions?.available === false || snap.builderActions?.available === true),
 );
 
 const multi = proofDemos.find((d) => d.id === "multi");

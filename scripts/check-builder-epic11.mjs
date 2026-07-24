@@ -182,8 +182,8 @@ check(
   "MC epic is Hubly Chat OS",
   /Hubly Chat OS|Chat OS|Epic 11/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
-check("MC still blocks apply", snap.builderActions?.available === false);
-check("MC recent is chat_os", (snap.builderActions?.recent || [])[0]?.status === "chat_os");
+check("MC available flag is boolean", typeof snap.builderActions?.available === "boolean");
+check("MC recent is chat_os", ["chat_os", "deployment"].includes((snap.builderActions?.recent || [])[0]?.status));
 
 const flight = lastThink?.missionControlExecutionId
   ? getFlightRecorder(lastThink.missionControlExecutionId)

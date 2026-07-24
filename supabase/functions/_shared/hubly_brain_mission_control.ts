@@ -294,6 +294,23 @@ export type HublyFlightRecorder = {
     executed: false;
     waitingFor: string;
   } | null;
+  /** Milestone 1.5 · Epic 12 — Business Deployment Engine (real mutations). */
+  deployment: {
+    id: string;
+    label: string;
+    status: string;
+    changePlanId: string;
+    businessVersionLabel: string;
+    stageCount: number;
+    builders: string[];
+    validationScore: number;
+    healthOverall: number;
+    dryRunOk: boolean;
+    verified: boolean;
+    deployed: boolean;
+    rolledBack: boolean;
+    feedCount: number;
+  } | null;
 };
 
 export type HublyExpertActivityStats = {
@@ -333,8 +350,8 @@ export type HublyMissionControlSnapshot = {
   decisionGraph: { nodes: Array<{ key: string; label: string }>; edges: Array<{ from: string; to: string }> };
   builderActions: {
     milestone: "1.5";
-    /** Apply still locked until later epics. */
-    available: false;
+    /** True once Business Deployment Engine can deploy approved plans. */
+    available: boolean;
     epic: string;
     note: string;
     recent: Array<{
@@ -372,6 +389,8 @@ export type HublyMissionControlSnapshot = {
     mediaIntelligence: Array<NonNullable<HublyFlightRecorder["mediaIntelligence"]>>;
     /** Latest Hubly Chat OS sessions (Epic 11). */
     chatOs: Array<NonNullable<HublyFlightRecorder["chatOs"]>>;
+    /** Latest Business Deployments (Epic 12). */
+    deployments: Array<NonNullable<HublyFlightRecorder["deployment"]>>;
   };
   capabilityRegistry: Array<{ toolId: string; name: string; capabilityCount: number }>;
   knowledgeRegistry: Array<{ id: string; name: string; access: string }>;
@@ -471,6 +490,7 @@ export type RecordFlightOpts = {
   automationIntelligence?: HublyFlightRecorder["automationIntelligence"];
   mediaIntelligence?: HublyFlightRecorder["mediaIntelligence"];
   chatOs?: HublyFlightRecorder["chatOs"];
+  deployment?: HublyFlightRecorder["deployment"];
 };
 
 /**
@@ -646,6 +666,17 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     );
   }
 
+  if (opts.deployment) {
+    push(
+      "deployment",
+      `Business Deployment: ${opts.deployment.status} · ${opts.deployment.businessVersionLabel} · health ${opts.deployment.healthOverall}`,
+      {
+        ...opts.deployment,
+      },
+      14,
+    );
+  }
+
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -710,6 +741,7 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     automationIntelligence: opts.automationIntelligence ? { ...opts.automationIntelligence } : null,
     mediaIntelligence: opts.mediaIntelligence ? { ...opts.mediaIntelligence } : null,
     chatOs: opts.chatOs ? { ...opts.chatOs } : null,
+    deployment: opts.deployment ? { ...opts.deployment } : null,
   };
 
   FLIGHTS.set(flight.executionId, flight);
@@ -978,12 +1010,29 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         .filter((x): x is NonNullable<typeof x> => !!x)
         .slice(-10)
         .reverse();
+      const deployments = flights
+        .map((f) => f.deployment)
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .slice(-10)
+        .reverse();
+      const deploymentAvailable = deployments.length > 0;
       return {
         milestone: "1.5" as const,
-        available: false as const,
-        epic: "11 — Hubly Chat OS",
-        note: "Epic 11 — Hubly Chat OS. One conversation. One personality. Conversation Canvas. Waiting for Approval/Apply. No apply.",
-        recent: chatOsSessions.length
+        available: deploymentAvailable,
+        epic: deploymentAvailable
+          ? "12 — Business Deployment Engine"
+          : "11 — Hubly Chat OS",
+        note: deploymentAvailable
+          ? "Epic 12 — Business Deployment Engine. Approved Change Plans validate, dry-run, deploy, verify, and rollback. Full lifecycle recorded."
+          : "Epic 11 — Hubly Chat OS. One conversation. One personality. Conversation Canvas. Waiting for Approval/Apply. No apply.",
+        recent: deployments.length
+          ? deployments.map((d) => ({
+            id: d.id,
+            status: "deployment",
+            summary: `${d.label}: ${d.status} · ${d.businessVersionLabel} · health ${d.healthOverall}`,
+            changePlanId: d.changePlanId,
+          }))
+          : chatOsSessions.length
           ? chatOsSessions.map((c) => ({
             id: c.id,
             status: "chat_os",
@@ -1076,6 +1125,7 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         automationIntelligence: automationIntelligencePlans,
         mediaIntelligence: mediaIntelligencePlans,
         chatOs: chatOsSessions,
+        deployments,
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

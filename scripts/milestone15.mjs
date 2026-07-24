@@ -23,7 +23,7 @@ const EPICS = [
   { n: 9, title: 'Automation Intelligence Builder', script: 'scripts/check-builder-epic9.mjs', unlocked: true },
   { n: 10, title: 'Media Intelligence Engine', script: 'scripts/check-builder-epic10.mjs', unlocked: true },
   { n: 11, title: 'Hubly Chat OS', script: 'scripts/check-builder-epic11.mjs', unlocked: true },
-  { n: 12, title: 'Builder Validation & Apply Engine', script: null, unlocked: false },
+  { n: 12, title: 'Business Deployment Engine', script: 'scripts/check-builder-epic12.mjs', unlocked: true },
 ];
 
 console.log('\n🏔️  Milestone 1.5 — Builder Engine Release Gate\n');

@@ -39,6 +39,10 @@ import {
   type ChatOsSession,
 } from "./hubly_brain_chat_os.ts";
 import {
+  deployApprovedChangePlan,
+  type BusinessDeployment,
+} from "./hubly_brain_business_deployment.ts";
+import {
   listExpertCapabilities,
   listExperts,
   runExpert,
@@ -263,6 +267,8 @@ export type HublyThinkResult = {
   mediaIntelligence?: MediaIntelligencePlan | null;
   /** Milestone 1.5 · Epic 11 — Hubly Chat OS session (orchestration; not apply). */
   chatOs?: ChatOsSession | null;
+  /** Milestone 1.5 · Epic 12 — Business Deployment (real mutations when approved). */
+  deployment?: BusinessDeployment | null;
   /** Section 12 — Mission Control flight recorder id (AI Replay). */
   missionControlExecutionId?: string | null;
   flightRecorder?: HublyFlightRecorder | null;
@@ -1557,6 +1563,19 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     ],
     missionControlReplayId: null,
   });
+  const approvedCollab =
+    (req as { approvedCollaboration?: CollaborationSession | null }).approvedCollaboration || null;
+  const deployment: BusinessDeployment | null =
+    (req as { deployApproved?: boolean }).deployApproved && changePlan && preview && approvedCollab
+      ? deployApprovedChangePlan({
+        businessId: businessId || `biz_${Date.now().toString(36)}`,
+        plan: changePlan,
+        preview,
+        collaboration: approvedCollab,
+        businessVersion,
+        missionControlReplayId: null,
+      })
+      : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ""),
     intent,
@@ -1820,6 +1839,24 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       executed: false as const,
       waitingFor: chatOs.waitingFor,
     },
+    deployment: deployment
+      ? {
+        id: deployment.id,
+        label: deployment.label,
+        status: deployment.status,
+        changePlanId: deployment.changePlanId,
+        businessVersionLabel: deployment.businessVersionLabel,
+        stageCount: deployment.stages.length,
+        builders: deployment.stages.map((s) => s.ownerLabel),
+        validationScore: deployment.validation.score,
+        healthOverall: deployment.health.overall,
+        dryRunOk: deployment.dryRun.ok,
+        verified: deployment.verified,
+        deployed: deployment.deployed,
+        rolledBack: deployment.rolledBack,
+        feedCount: deployment.feed.length,
+      }
+      : null,
   });
 
   // Attach replay ids
@@ -1854,6 +1891,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   }
   if (flightRecorder.executionId) {
     chatOs.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (deployment && flightRecorder.executionId) {
+    deployment.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -1900,6 +1940,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     automationIntelligence,
     mediaIntelligence,
     chatOs,
+    deployment,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     timeline,

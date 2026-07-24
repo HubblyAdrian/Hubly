@@ -2,7 +2,7 @@
  * Milestone 1.5 · Epic 5 — Version & Rollback Engine
  *
  * Git for a business. Every approved change becomes a Business Version.
- * Rollback plans are generated — never executed here (Apply is later).
+ * Rollback plans are generated here; Epic 12 (Business Deployment Engine) executes them.
  *
  * Also: Business Timeline — the story of the business, not just diffs.
  */
@@ -70,9 +70,9 @@ export type BusinessVersion = {
   expertsContributed: string[];
   whyApproved: string;
   rollbackAvailable: true;
-  /** Epic 5 invariants — versioning is propose-only until Apply */
-  applied: false;
-  rollbackExecuted: false;
+  /** False until Business Deployment Engine applies this version */
+  applied: boolean;
+  rollbackExecuted: boolean;
   missionControlReplayId: string | null;
 };
 
@@ -104,11 +104,11 @@ export type RollbackPlan = {
   reason: string;
   steps: Array<{ surface: VersionSurface; path: string; restoreTo: unknown; summary: string }>;
   requiresOwnerApproval: true;
-  /** Never executed in Epic 5 */
-  executed: false;
-  applied: false;
-  status: "rollback_plan_ready";
-  waitingFor: "apply_engine";
+  /** True after Business Deployment Engine executes the rollback */
+  executed: boolean;
+  applied: boolean;
+  status: "rollback_plan_ready" | "rolled_back" | "failed";
+  waitingFor: "apply_engine" | "none";
   createdAt: string;
 };
 
@@ -567,6 +567,58 @@ export function clearVersionStoreForTests(): void {
   STORES.clear();
 }
 
+/** Epic 12 — mark a version as live after successful deployment. */
+export function markVersionApplied(businessId: string, versionId: string): BusinessVersion | null {
+  const v = getVersion(businessId, versionId);
+  if (!v) return null;
+  v.applied = true;
+  v.status = "applied";
+  v.rollbackExecuted = false;
+  const store = ensureStore(businessId);
+  store.currentVersionId = v.id;
+  store.timeline.push({
+    id: uid("tl"),
+    at: nowIso(),
+    kind: "builder_change",
+    emoji: "✅",
+    title: `${v.label} deployed`,
+    detail: "Business Deployment Engine applied this version.",
+    versionId: v.id,
+    versionLabel: v.label,
+  });
+  return v;
+}
+
+/** Epic 12 — mark current as rolled back and restore target as current. */
+export function markVersionRolledBack(
+  businessId: string,
+  fromVersionId: string,
+  targetVersionId: string,
+): BusinessVersion | null {
+  const from = getVersion(businessId, fromVersionId);
+  const target = getVersion(businessId, targetVersionId);
+  if (!from || !target) return null;
+  from.status = "rolled_back";
+  from.rollbackExecuted = true;
+  from.applied = false;
+  target.status = "applied";
+  target.applied = true;
+  target.rollbackExecuted = false;
+  const store = ensureStore(businessId);
+  store.currentVersionId = target.id;
+  store.timeline.push({
+    id: uid("tl"),
+    at: nowIso(),
+    kind: "builder_change",
+    emoji: "↩️",
+    title: `Restored ${target.label}`,
+    detail: `Rolled back from ${from.label} via Business Deployment Engine.`,
+    versionId: target.id,
+    versionLabel: target.label,
+  });
+  return target;
+}
+
 export const HublyVersionEngine = {
   version: VERSION_ENGINE_VERSION,
   owner: VERSION_ENGINE_OWNER,
@@ -579,5 +631,7 @@ export const HublyVersionEngine = {
   rollbackPlan: createRollbackPlan,
   suggestRestore,
   timeline: getBusinessTimeline,
+  markApplied: markVersionApplied,
+  markRolledBack: markVersionRolledBack,
   clearForTests: clearVersionStoreForTests,
 };

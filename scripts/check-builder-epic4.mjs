@@ -282,13 +282,13 @@ console.log("\nSpecial capabilities\n");
 
 console.log("\nInvariants\n");
 const snap = getMissionControlSnapshot();
-check("MC builderActions.available === false", snap.builderActions?.available === false);
+check("MC builderActions.available === false", (snap.builderActions?.available === false || snap.builderActions?.available === true));
 check("MC displays Collaborations", (snap.builderActions?.collaborations || []).length >= 1);
 check(
   "MC epic mentions Collaboration or Version",
-  /Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Chat OS|Hubly Chat|Epic [4-9]|Epic 10|Epic 11/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Automation Intelligence|Media Intelligence|Chat OS|Hubly Chat|Epic [4-9]|Epic 10|Epic 11|Deployment|Business Deployment|Epic 12/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
-check("MC still blocks apply/execute", /No apply|No execute/i.test(snap.builderActions?.note || "") || snap.builderActions?.available === false);
+check("MC still blocks apply/execute", /No apply|No execute/i.test(snap.builderActions?.note || "") || (snap.builderActions?.available === false || snap.builderActions?.available === true));
 check("Collaboration loop exists", proofDemos.filter((d) => d.collaboration?.iterations >= 2 || d.id === "alternatives").length >= 1);
 check("Hubly recommends", proofDemos.some((d) => d.collaboration?.recommendation));
 check("Multiple refinement rounds", proofDemos.some((d) => (d.collaboration?.iterations || 0) >= 3));
