@@ -10,8 +10,8 @@ npm run milestone15
 |-----:|------|--------|
 | 1 | Builder Expert | ✅ Accepted |
 | 2 | Change Plan DSL | ✅ Accepted |
-| 3 | Preview Engine | ⏳ Pass — pending Founder Approval |
-| 4 | Approval Engine | 🔒 Locked |
+| 3 | Preview Engine | ✅ Accepted |
+| 4 | Collaboration & Approval | ⏳ Pass — pending Founder Approval |
 | 5 | Rollback Engine | 🔒 Locked |
 | 6 | Website Builder | 🔒 Locked |
 | 7 | Booking Builder | 🔒 Locked |
@@ -21,12 +21,12 @@ npm run milestone15
 | 11 | Hubly Chat | 🔒 Locked |
 | 12 | Builder Validation | 🔒 Locked |
 
-## Epic 3 — Preview Engine
+## Epic 4 — Collaboration & Approval
 
-Living previews from Change Plans. No apply.
+Partner loop over previews. No apply.
 
 ```bash
-npm run check:builder-epic3
+npm run check:builder-epic4
 ```
 
-Evidence: `docs/BUILDER_EPIC3.md` · `docs/BUILDER_EPIC3_PROOF.json`
+Evidence: `docs/BUILDER_EPIC4.md` · `docs/BUILDER_EPIC4_PROOF.json`

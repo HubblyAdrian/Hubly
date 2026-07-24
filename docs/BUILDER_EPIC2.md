@@ -33,4 +33,4 @@ npm run check:builder-epic2
 
 ## Stop
 
-Do **not** begin Epic 3 (Preview Engine) until Founder Approval.
+Epic 2 is the Change Plan foundation. Preview Engine (Epic 3) consumes these plans.

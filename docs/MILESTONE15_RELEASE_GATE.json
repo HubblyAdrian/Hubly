@@ -1,11 +1,11 @@
 {
   "milestone": "1.5",
-  "passed": 3,
+  "passed": 4,
   "total": 12,
-  "unlocked": 3,
-  "percent": 25,
+  "unlocked": 4,
+  "percent": 33,
   "ready": false,
-  "checkedAt": "2026-07-24T02:24:05.185Z",
+  "checkedAt": "2026-07-24T02:30:19.539Z",
   "epics": [
     {
       "n": 1,
@@ -27,9 +27,9 @@
     },
     {
       "n": 4,
-      "title": "Approval Engine",
-      "status": "locked",
-      "script": null
+      "title": "Collaboration & Approval",
+      "status": "pass",
+      "script": "scripts/check-builder-epic4.mjs"
     },
     {
       "n": 5,

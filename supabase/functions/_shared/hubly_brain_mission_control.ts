@@ -161,6 +161,27 @@ export type HublyFlightRecorder = {
     mutatedLiveState: false;
     waitingFor: string;
   } | null;
+  /** Milestone 1.5 · Epic 4 — Collaboration & Approval summary (not applied). */
+  collaboration: {
+    id: string;
+    previewId: string;
+    changePlanId: string;
+    phase: string;
+    openingPrompt: string;
+    iterations: number;
+    recommendationLabel: string | null;
+    recommendationConfidence: number | null;
+    alternativeCount: number;
+    hasNegotiation: boolean;
+    partialApprovalCount: number;
+    hasSummary: boolean;
+    launchCta: string | null;
+    ownerConfidence: string | null;
+    status: string;
+    applied: false;
+    executed: false;
+    waitingFor: string;
+  } | null;
 };
 
 export type HublyExpertActivityStats = {
@@ -222,6 +243,8 @@ export type HublyMissionControlSnapshot = {
     changePlans: Array<NonNullable<HublyFlightRecorder["changePlan"]>>;
     /** Latest Previews (Epic 3). */
     previews: Array<NonNullable<HublyFlightRecorder["preview"]>>;
+    /** Latest Collaboration sessions (Epic 4). */
+    collaborations: Array<NonNullable<HublyFlightRecorder["collaboration"]>>;
   };
   capabilityRegistry: Array<{ toolId: string; name: string; capabilityCount: number }>;
   knowledgeRegistry: Array<{ id: string; name: string; access: string }>;
@@ -313,6 +336,7 @@ export type RecordFlightOpts = {
   builderIntent?: HublyFlightRecorder["builderIntent"];
   changePlan?: HublyFlightRecorder["changePlan"];
   preview?: HublyFlightRecorder["preview"];
+  collaboration?: HublyFlightRecorder["collaboration"];
 };
 
 /**
@@ -399,6 +423,28 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     }, 15);
   }
 
+  if (opts.collaboration) {
+    push("collaboration", `Collaboration: ${opts.collaboration.openingPrompt}`, {
+      ...opts.collaboration,
+    }, 12);
+    if (opts.collaboration.recommendationLabel) {
+      push("recommendation", `Recommend: ${opts.collaboration.recommendationLabel}`, {
+        confidence: opts.collaboration.recommendationConfidence,
+      }, 8);
+    }
+    if (opts.collaboration.iterations > 0) {
+      push("refinement", `Iterations: ${opts.collaboration.iterations}`, {
+        iterations: opts.collaboration.iterations,
+      }, 5);
+    }
+    if (opts.collaboration.hasSummary) {
+      push("approval_summary", `Launch CTA: ${opts.collaboration.launchCta || "Let's launch this."}`, {
+        launchCta: opts.collaboration.launchCta,
+        ownerConfidence: opts.collaboration.ownerConfidence,
+      }, 8);
+    }
+  }
+
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -455,6 +501,7 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     builderIntent: opts.builderIntent ? { ...opts.builderIntent } : null,
     changePlan: opts.changePlan ? { ...opts.changePlan } : null,
     preview: opts.preview ? { ...opts.preview } : null,
+    collaboration: opts.collaboration ? { ...opts.collaboration } : null,
   };
 
   FLIGHTS.set(flight.executionId, flight);
@@ -683,12 +730,24 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         .filter((x): x is NonNullable<typeof x> => !!x)
         .slice(-10)
         .reverse();
+      const collaborations = flights
+        .map((f) => f.collaboration)
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .slice(-10)
+        .reverse();
       return {
         milestone: "1.5" as const,
         available: false as const,
-        epic: "3 — Preview Engine",
-        note: "Epic 3 — Builder Intent → Change Plan → Preview. Waiting for Approval Engine. No apply.",
-        recent: previews.length
+        epic: "4 — Collaboration & Approval",
+        note: "Epic 4 — Preview → Conversation → Recommendation → Approval. Waiting for Apply Engine. No apply.",
+        recent: collaborations.length
+          ? collaborations.map((c) => ({
+            id: c.id,
+            status: c.status,
+            summary: `${c.openingPrompt} · ${c.iterations} iteration(s)${c.launchCta ? ` · ${c.launchCta}` : ""}`,
+            changePlanId: c.changePlanId,
+          }))
+          : previews.length
           ? previews.map((p) => ({
             id: p.id,
             status: "preview_ready",
@@ -722,6 +781,7 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         intents,
         changePlans,
         previews,
+        collaborations,
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

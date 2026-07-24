@@ -32,4 +32,4 @@ npm run check:builder-epic3
 
 ## Stop
 
-Do **not** begin Epic 4 (Approval Engine) until Founder Approval.
+Do **not** begin the next epic until Founder Approval of Epic 3.

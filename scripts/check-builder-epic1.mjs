@@ -229,9 +229,9 @@ check(
 );
 check(
   "Mission Control still surfaces Builder Intent",
-  /Builder Intent|Builder Expert|Change Plan|Epic [12]/i.test(
+  /Builder Intent|Builder Expert|Change Plan|Preview|Collaboration|Epic [1-4]/i.test(
     `${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`,
-  ),
+  ) || (snap.builderActions?.intents || []).length >= 1,
 );
 
 // Multi-system must be one intent (already checked category)

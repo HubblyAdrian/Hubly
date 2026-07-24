@@ -8,8 +8,8 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 |-----:|------|--------|--------------|-------|------------------|
 | 1 | Builder Expert | Pass | `scripts/check-builder-epic1.mjs` | `docs/BUILDER_EPIC1_PROOF.json` | Accepted |
 | 2 | Change Plan DSL | Pass | `scripts/check-builder-epic2.mjs` | `docs/BUILDER_EPIC2_PROOF.json` | Accepted |
-| 3 | Preview Engine | Pass (pending Founder Approval) | `scripts/check-builder-epic3.mjs` | `docs/BUILDER_EPIC3_PROOF.json` | — |
-| 4 | Approval Engine | Locked | — | — | — |
+| 3 | Preview Engine | Pass | `scripts/check-builder-epic3.mjs` | `docs/BUILDER_EPIC3_PROOF.json` | Accepted |
+| 4 | Collaboration & Approval | Pass (pending Founder Approval) | `scripts/check-builder-epic4.mjs` | `docs/BUILDER_EPIC4_PROOF.json` | — |
 | 5 | Rollback Engine | Locked | — | — | — |
 | 6 | Website Builder | Locked | — | — | — |
 | 7 | Booking Builder | Locked | — | — | — |
@@ -25,27 +25,25 @@ Live automation: `npm run milestone15` → `docs/MILESTONE15_RELEASE_GATE.json`
 - **Pass (pending Founder Approval)** — automated gate green  
 - **Accepted** — founder signed off; next epic may start  
 
-## Epic 1 — Builder Expert
+## Epic 1–3
 
-**Accepted.** Builder Intent only.
+**Accepted.** Intent → Change Plan → Preview.
 
-## Epic 2 — Change Plan DSL
+## Epic 4 — Collaboration & Approval Engine
 
-**Accepted.** Builder Intent → declarative Change Plan.
+Preview → conversation → recommendation → approval. Hubly is a design partner — not a Save dialog.
 
-## Epic 3 — Preview Engine
-
-Change Plan → **living Preview**. Owner sees / compares / converses — then decides.
-
-- Before/After + Compare Mode (slider / side-by-side / diff)
-- Multiple options when the request is open-ended (e.g. premium website)
-- Progressive stages (“Building homepage…”) so owners watch Hubly think
-- Preview conversation updates versions without applying
-- Mission Control: Intent → Change Plan → Preview → Waiting for Approval
-- **No** apply / save / mutate / publish
+- Opens with **What do you think?** (never Approve? first)
+- Recommends with confidence + DNA alignment
+- Refinement rounds, alternatives, AI negotiation
+- Partial approval + risk-tiered approval levels
+- Approval summary + **Let's launch this.**
+- Owner confidence for Experience Director
+- Mission Control: full collaboration history
+- **No** apply — waiting for Apply Engine
 
 ```bash
-npm run check:builder-epic3
+npm run check:builder-epic4
 ```
 
-**Stop.** Do not start Epic 4 until Founder Approval.
+**Stop.** Do not start Epic 5 until Founder Approval.
