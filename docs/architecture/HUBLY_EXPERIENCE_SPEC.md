@@ -1,12 +1,16 @@
 # Hubly Experience Specification (Milestone 2)
 
 **Version:** 0.1.0  
-**Status:** Epic 0 ✅ (pending Founder Approval) · Epics 1–12 locked  
+**Status:** Epic 0 Experience Layer ✅ (pending Founder Approval) · Epics 1–12 locked  
 **Goal:** Make people fall in love with Hubly.
 
 Nothing new unless it improves the customer experience.
 
-## Epic 0 — Hubly Identity & Personality
+## Epic 0 — Hubly Experience Layer
+
+Sole customer-copy path. Greetings, thinking, coaching, celebrations, errors, empty states, transitions, emotional timeline. Reuses Brain / ED / Identity / Chat OS — no new AI systems.
+
+### Also: Identity & Personality
 
 Infrastructure already exists (Section 13 Identity System). Epic 0 makes character **visible**.
 

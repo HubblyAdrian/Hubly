@@ -10,8 +10,9 @@ import {
   HUBLY_IDENTITY_VERSION
 } from "/workspace/scripts/lib/identity-system.mjs";
 import {
-  applyPersonalityExpression
-} from "/workspace/scripts/lib/personality.mjs";
+  applyExperienceLayer,
+  isForbiddenLoading
+} from "/workspace/scripts/lib/experience-layer.mjs";
 var EXPERIENCE_DIRECTOR_VERSION = "1.2.0";
 var ED_MAX_QUESTIONS = 3;
 var ED_MAX_OWNER_LINES = 3;
@@ -259,7 +260,11 @@ function applyExperienceDirector(input) {
     celebrate
   });
   response = identity.text;
-  const personalityExpression = applyPersonalityExpression({
+  if (isForbiddenLoading(response)) {
+    response = "I'm researching businesses like yours.";
+    actions.push("replaced_forbidden_loading");
+  }
+  const experienceLayer = applyExperienceLayer({
     text: response,
     request: input.request,
     ownerName: input.ownerName || null,
@@ -267,10 +272,11 @@ function applyExperienceDirector(input) {
     lowConfidence: (input.confidence != null ? Number(input.confidence) : 78) < 55,
     correcting: /wrong|undo|don'?t like|mistake/i.test(String(input.request || "")),
     transitioning: /continue where|where we left|pick up/i.test(String(input.request || "")),
-    opening: /^(hi|hello|hey)\b/i.test(String(input.request || "").trim())
+    opening: /^(hi|hello|hey|good morning)\b/i.test(String(input.request || "").trim())
   });
-  response = personalityExpression.text;
-  actions.push(...personalityExpression.actions);
+  response = experienceLayer.text;
+  const personalityExpression = experienceLayer.personality;
+  actions.push(...experienceLayer.actions);
   after.response = response;
   const constitution = evaluateAgainstConstitution(response);
   const checks = [
@@ -284,6 +290,11 @@ function applyExperienceDirector(input) {
       name: "visible_personality",
       ok: !!personalityExpression.mode,
       detail: `${personalityExpression.mode} \xB7 remembered as ${personalityExpression.rememberedAs}`
+    },
+    {
+      name: "experience_layer",
+      ok: experienceLayer.message.source === "experience_layer",
+      detail: `${experienceLayer.message.kind} \xB7 ${experienceLayer.message.emotion}`
     }
   ];
   const result = {
@@ -313,6 +324,7 @@ function applyExperienceDirector(input) {
     reviewedBy: "experience_director",
     personality: HUBLY_PERSONALITY,
     personalityExpression,
+    experienceLayer,
     identity: {
       ...identity,
       constitution: {

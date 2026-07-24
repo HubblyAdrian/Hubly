@@ -15,6 +15,10 @@ const plugin = {
       path: path.join(root, "scripts/lib/personality.mjs"),
       external: true,
     }));
+    build.onResolve({ filter: /hubly_brain_experience_layer\.ts$/ }, () => ({
+      path: path.join(root, "scripts/lib/experience-layer.mjs"),
+      external: true,
+    }));
   },
 };
 

@@ -13,9 +13,12 @@ import type { ChangePlan } from "./hubly_brain_change_plan.ts";
 import type { BuilderIntent } from "./hubly_brain_builder_intent.ts";
 import type { HublyConversationIntelligence } from "./hubly_brain_conversation_intelligence.ts";
 import {
-  applyPersonalityExpression,
   type PersonalityExpression,
 } from "./hubly_brain_personality.ts";
+import {
+  applyExperienceLayer,
+  type ExperienceMessage,
+} from "./hubly_brain_experience_layer.ts";
 
 export const CHAT_OS_VERSION = "1.0.0" as const;
 export const CHAT_OS_OWNER = "hubly_brain" as const;
@@ -129,6 +132,8 @@ export type ChatOsSession = {
   coachingNote: string | null;
   /** Milestone 2 · Epic 0 — visible personality for this turn. */
   personalityExpression: PersonalityExpression | null;
+  /** Milestone 2 · Epic 0 — Experience Layer message. */
+  experienceMessage: ExperienceMessage | null;
   continuity: {
     resumed: boolean;
     resumeLine: string | null;
@@ -450,17 +455,17 @@ export function buildChatOsSession(opts: {
     hasCoaching: routes.includes("coaching"),
   });
   const rawReply = opts.response?.trim() || hublyReply(opts.request, routes, tools);
-  const personalityExpression = applyPersonalityExpression({
+  const experience = applyExperienceLayer({
     text: rawReply,
     request: opts.request,
     ownerName: opts.ownerName,
-    topic: opts.conversationIntelligence?.currentProject || null,
     celebrate: /nice work|launched|deployed|milestone/i.test(rawReply),
     transitioning: resumed,
-    opening: /^(hi|hello|hey)\b/i.test(opts.request.trim()),
+    opening: /^(hi|hello|hey|good morning)\b/i.test(opts.request.trim()),
     correcting: /don'?t like|wrong|undo/i.test(opts.request),
   });
-  const reply = personalityExpression.text;
+  const personalityExpression = experience.personality;
+  const reply = experience.text;
   const starters = buildProactiveStarters({
     ownerName: opts.ownerName,
     industry: opts.industry,
@@ -556,6 +561,7 @@ export function buildChatOsSession(opts: {
       ? "Business coaching is in the same conversation — not a separate coach bot."
       : null,
     personalityExpression,
+    experienceMessage: experience.message,
     continuity: {
       resumed,
       resumeLine: resumed

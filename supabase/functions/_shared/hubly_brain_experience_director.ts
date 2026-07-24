@@ -18,9 +18,13 @@ import {
   type HublyIdentityApplyResult,
 } from "./hubly_brain_identity_system.ts";
 import {
-  applyPersonalityExpression,
   type PersonalityExpression,
 } from "./hubly_brain_personality.ts";
+import {
+  applyExperienceLayer,
+  type ExperienceLayerResult,
+  isForbiddenLoading,
+} from "./hubly_brain_experience_layer.ts";
 
 export const EXPERIENCE_DIRECTOR_VERSION = "1.2.0" as const;
 
@@ -130,6 +134,8 @@ export type ExperienceDirectorResult = {
   personality: typeof HUBLY_PERSONALITY;
   /** Milestone 2 · Epic 0 — visible personality expression for this turn. */
   personalityExpression?: PersonalityExpression | null;
+  /** Milestone 2 · Epic 0 — Experience Layer result (sole customer-copy path). */
+  experienceLayer?: ExperienceLayerResult | null;
   /** Section 13 — Identity System + Constitution evaluation. */
   identity: HublyIdentityApplyResult;
   /** Gate checks for Mission Control / proofs (includes Identity + Constitution). */
@@ -433,8 +439,12 @@ export function applyExperienceDirector(input: ExperienceDirectorInput): Experie
   });
   response = identity.text;
 
-  // Milestone 2 · Epic 0 — make Identity visible (greeting, celebrate, apologize, …).
-  const personalityExpression = applyPersonalityExpression({
+  // Milestone 2 · Epic 0 — Experience Layer is the sole customer-copy path.
+  if (isForbiddenLoading(response)) {
+    response = "I'm researching businesses like yours.";
+    actions.push("replaced_forbidden_loading");
+  }
+  const experienceLayer = applyExperienceLayer({
     text: response,
     request: input.request,
     ownerName: input.ownerName || null,
@@ -442,10 +452,11 @@ export function applyExperienceDirector(input: ExperienceDirectorInput): Experie
     lowConfidence: (input.confidence != null ? Number(input.confidence) : 78) < 55,
     correcting: /wrong|undo|don'?t like|mistake/i.test(String(input.request || "")),
     transitioning: /continue where|where we left|pick up/i.test(String(input.request || "")),
-    opening: /^(hi|hello|hey)\b/i.test(String(input.request || "").trim()),
+    opening: /^(hi|hello|hey|good morning)\b/i.test(String(input.request || "").trim()),
   });
-  response = personalityExpression.text;
-  actions.push(...personalityExpression.actions);
+  response = experienceLayer.text;
+  const personalityExpression = experienceLayer.personality;
+  actions.push(...experienceLayer.actions);
   after.response = response;
 
   const constitution = evaluateAgainstConstitution(response);
@@ -462,6 +473,11 @@ export function applyExperienceDirector(input: ExperienceDirectorInput): Experie
       name: "visible_personality",
       ok: !!personalityExpression.mode,
       detail: `${personalityExpression.mode} · remembered as ${personalityExpression.rememberedAs}`,
+    },
+    {
+      name: "experience_layer",
+      ok: experienceLayer.message.source === "experience_layer",
+      detail: `${experienceLayer.message.kind} · ${experienceLayer.message.emotion}`,
     },
   ];
 
@@ -492,6 +508,7 @@ export function applyExperienceDirector(input: ExperienceDirectorInput): Experie
     reviewedBy: "experience_director",
     personality: HUBLY_PERSONALITY,
     personalityExpression,
+    experienceLayer,
     identity: {
       ...identity,
       constitution: {

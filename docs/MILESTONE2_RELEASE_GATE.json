@@ -6,13 +6,13 @@
   "unlocked": 1,
   "percent": 8,
   "ready": false,
-  "checkedAt": "2026-07-24T05:14:42.749Z",
+  "checkedAt": "2026-07-24T05:21:40.538Z",
   "epics": [
     {
       "n": 0,
-      "title": "Hubly Identity & Personality",
+      "title": "Hubly Experience Layer",
       "status": "pass",
-      "script": "scripts/check-experience-epic0.mjs"
+      "script": "scripts/check-m2-epic0.mjs"
     },
     {
       "n": 1,

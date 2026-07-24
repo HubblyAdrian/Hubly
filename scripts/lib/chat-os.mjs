@@ -3,8 +3,8 @@
 
 // supabase/functions/_shared/hubly_brain_chat_os.ts
 import {
-  applyPersonalityExpression
-} from "./personality.mjs";
+  applyExperienceLayer
+} from "./experience-layer.mjs";
 var CHAT_OS_VERSION = "1.0.0";
 var CHAT_OS_OWNER = "hubly_brain";
 var CHAT_OS_LABEL = "Hubly Chat OS";
@@ -272,17 +272,17 @@ function buildChatOsSession(opts) {
     hasCoaching: routes.includes("coaching")
   });
   const rawReply = opts.response?.trim() || hublyReply(opts.request, routes, tools);
-  const personalityExpression = applyPersonalityExpression({
+  const experience = applyExperienceLayer({
     text: rawReply,
     request: opts.request,
     ownerName: opts.ownerName,
-    topic: opts.conversationIntelligence?.currentProject || null,
     celebrate: /nice work|launched|deployed|milestone/i.test(rawReply),
     transitioning: resumed,
-    opening: /^(hi|hello|hey)\b/i.test(opts.request.trim()),
+    opening: /^(hi|hello|hey|good morning)\b/i.test(opts.request.trim()),
     correcting: /don'?t like|wrong|undo/i.test(opts.request)
   });
-  const reply = personalityExpression.text;
+  const personalityExpression = experience.personality;
+  const reply = experience.text;
   const starters = buildProactiveStarters({
     ownerName: opts.ownerName,
     industry: opts.industry
@@ -372,6 +372,7 @@ function buildChatOsSession(opts) {
     proactiveStarters: starters,
     coachingNote: routes.includes("coaching") ? "Business coaching is in the same conversation \u2014 not a separate coach bot." : null,
     personalityExpression,
+    experienceMessage: experience.message,
     continuity: {
       resumed,
       resumeLine: resumed ? opts.conversationIntelligence?.currentProject ? `Continuing: ${opts.conversationIntelligence.currentProject}` : "Continuing your active project." : null,

@@ -15,7 +15,7 @@ const root = path.resolve(__dirname, '..');
 const verbose = !!process.env.MILESTONE2_VERBOSE;
 
 const EPICS = [
-  { n: 0, title: 'Hubly Identity & Personality', script: 'scripts/check-experience-epic0.mjs', unlocked: true },
+  { n: 0, title: 'Hubly Experience Layer', script: 'scripts/check-m2-epic0.mjs', unlocked: true },
   { n: 1, title: 'Welcome to Hubly', script: null, unlocked: false },
   { n: 2, title: 'Business Discovery Conversation', script: null, unlocked: false },
   { n: 3, title: 'Hubly Thinks Out Loud', script: null, unlocked: false },

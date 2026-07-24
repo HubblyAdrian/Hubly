@@ -7,7 +7,7 @@ Live automation: `npm run milestone2` → `docs/MILESTONE2_RELEASE_GATE.json`
 
 | Epic | Name | Status | Verification | Proof | Founder Approval |
 |-----:|------|--------|--------------|-------|------------------|
-| 0 | Hubly Identity & Personality | Pass (pending Founder Approval) | `scripts/check-experience-epic0.mjs` | `docs/EXPERIENCE_EPIC0_PROOF.json` | — |
+| 0 | Hubly Experience Layer | Pass (pending Founder Approval) | `scripts/check-m2-epic0.mjs` | [`MILESTONE2_EPIC0_PROOF.md`](./MILESTONE2_EPIC0_PROOF.md) | — |
 | 1 | Welcome to Hubly | Locked | — | — | — |
 | 2 | Business Discovery Conversation | Locked | — | — | — |
 | 3 | Hubly Thinks Out Loud | Locked | — | — | — |
@@ -21,16 +21,12 @@ Live automation: `npm run milestone2` → `docs/MILESTONE2_RELEASE_GATE.json`
 | 11 | Living Business | Locked | — | — | — |
 | 12 | Polish | Locked | — | — | — |
 
-## Epic 0 — Hubly Identity & Personality
+## Epic 0 — Hubly Experience Layer
 
-Section 13 defined who Hubly is. Epic 0 makes it **visible** in the first 30 seconds.
-
-- Greeting · celebrate · apologize · explain · ask · disagree · encourage · uncertainty · transition  
-- Experience Director + Chat OS wire the expression layer  
-- Remembered as teammate, not interface  
+Every customer-facing message goes through one layer. Partner energy — not software.
 
 ```bash
-npm run check:experience-epic0
+npm run check:m2-epic0
 ```
 
 **Stop.** Do not start Epic 1 until Founder Approval.
