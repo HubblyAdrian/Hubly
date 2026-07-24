@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-07-24T00:15:46.669Z",
+  "checkedAt": "2026-07-24T00:27:35.936Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -264,7 +264,7 @@
     "timing": [
       {
         "expertId": "experience_director",
-        "executionTimeMs": 2
+        "executionTimeMs": 3
       },
       {
         "expertId": "research",
@@ -1640,7 +1640,7 @@
         {
           "expertName": "Experience Director",
           "expertId": "experience_director",
-          "executionTimeMs": 2,
+          "executionTimeMs": 3,
           "reasoning": [
             {
               "reason": "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
@@ -1868,7 +1868,7 @@
           "changedFromPrevious": "Critic produced Quality Report; Experience Director advanced that into Experience Review (confidence 87 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 2,
+          "executionTimeMs": 3,
           "outputType": "Experience Review",
           "retries": 0
         }

@@ -2,6 +2,8 @@
 
 Hubly Brain Foundation. **Milestone 2 is blocked** until every section below is proven.
 
+Founder audit trail: [`docs/MILESTONE1_DASHBOARD.md`](./MILESTONE1_DASHBOARD.md)
+
 ## How to run
 
 ```bash
@@ -33,7 +35,7 @@ Each section must ship:
 | 6 | Workspace Memory | ✅ Proven (Release Gate) |
 | 7 | Business DNA | ✅ Proven (Release Gate) |
 | 8 | Reasoning Engine | ✅ Proven (`check:section8`) |
-| 9 | Confidence Engine | ⬜ Not proven |
+| 9 | AI Decision & Confidence Engine | ✅ Proven (`check:section9`) |
 | 10 | Conversation Memory | ⬜ Not proven |
 | 11 | AI Capability Registry | ⬜ Not proven |
 | 12 | Brain Console | ⬜ Not proven |

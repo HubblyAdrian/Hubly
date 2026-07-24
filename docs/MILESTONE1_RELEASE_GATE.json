@@ -1,10 +1,10 @@
 {
   "milestone": 1,
-  "passed": 8,
+  "passed": 9,
   "total": 18,
-  "percent": 44,
+  "percent": 50,
   "ready": false,
-  "checkedAt": "2026-07-24T00:15:47.003Z",
+  "checkedAt": "2026-07-24T00:27:36.297Z",
   "sections": [
     {
       "n": 1,
@@ -56,9 +56,9 @@
     },
     {
       "n": 9,
-      "title": "Confidence Engine",
-      "status": "fail",
-      "script": "scripts/check-section9-confidence-engine.mjs"
+      "title": "AI Decision & Confidence Engine",
+      "status": "pass",
+      "script": "scripts/check-section9-decision-engine.mjs"
     },
     {
       "n": 10,

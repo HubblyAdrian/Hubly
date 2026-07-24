@@ -18,7 +18,7 @@ const SECTIONS = [
   { n: 6, title: 'Workspace Memory', script: 'scripts/check-section6-workspace-memory.mjs' },
   { n: 7, title: 'Business DNA', script: 'scripts/check-section7-business-dna.mjs' },
   { n: 8, title: 'Reasoning Engine', script: 'scripts/check-section8-reasoning-engine.mjs' },
-  { n: 9, title: 'Confidence Engine', script: 'scripts/check-section9-confidence-engine.mjs' },
+  { n: 9, title: 'AI Decision & Confidence Engine', script: 'scripts/check-section9-decision-engine.mjs' },
   { n: 10, title: 'Conversation Memory', script: 'scripts/check-section10-conversation-memory.mjs' },
   { n: 11, title: 'AI Capability Registry', script: 'scripts/check-section11-capability-registry.mjs' },
   { n: 12, title: 'Brain Console', script: 'scripts/check-section12-brain-console.mjs' },

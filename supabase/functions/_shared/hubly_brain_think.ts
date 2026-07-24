@@ -64,6 +64,14 @@ import {
   type HublyDecisionRecord,
   type HublyReasoningObject,
 } from "./hubly_brain_reasoning.ts";
+import {
+  assessDecision,
+  assessHomepageRewrite,
+  answerWhyFromDecision,
+  isWhyDecisionQuestion,
+  decisionActionToConfidenceBand,
+  type HublyDecisionObject,
+} from "./hubly_brain_decision.ts";
 import { confidenceBand, type HublyConfidenceBand } from "./hubly_brain_confidence_policy.ts";
 import { applyExperienceDirector } from "./hubly_brain_experience_director.ts";
 
@@ -158,6 +166,10 @@ export type HublyThinkResult = {
   /** Section 8 — structured Reasoning Objects + Decision Graph. */
   reasoningObjects: HublyReasoningObject[];
   whyAnswer?: ReturnType<typeof answerWhyFromReasoning> | null;
+  /** Section 9 — AI Decision Objects (multi-dimension scores + routing). */
+  decisionObjects: HublyDecisionObject[];
+  whyDecisionAnswer?: ReturnType<typeof answerWhyFromDecision> | null;
+  primaryDecision?: HublyDecisionObject | null;
   memory: ReturnType<typeof normalizeBusinessMemory>;
   /** Section 5 — changelog entries committed this turn (Brain-owned). */
   memoryChanges: HublyMemoryChange[];
@@ -190,7 +202,7 @@ export type HublyThinkResult = {
 export function detectIntent(request: string, explicit?: string | null): string {
   if (explicit) return String(explicit);
   const r = String(request || "").toLowerCase();
-  if (isWhyQuestion(r)) return "why";
+  if (isWhyDecisionQuestion(r) || isWhyQuestion(r)) return "why";
   if (isWorkspaceRetrievalQuestion(r)) return "workspace";
   if (isMemoryRetrievalQuestion(r)) return "memory";
   if (/weather|forecast|temperature/.test(r)) return "weather";
@@ -201,7 +213,7 @@ export function detectIntent(request: string, explicit?: string | null): string 
     return "workspace";
   }
   if (
-    /website|homepage|luxury|premium|layout|brand|build me|build my|start(?:ing)?\s+(?:a\s+)?(?:new\s+)?(?:business|company)|pressure\s*wash|new company/
+    /rewrite (my |the )?homepage|website|homepage|luxury|premium|layout|brand|build me|build my|start(?:ing)?\s+(?:a\s+)?(?:new\s+)?(?:business|company)|pressure\s*wash|new company/
       .test(r)
   ) {
     return "build_business";
@@ -336,14 +348,26 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     at: new Date().toISOString(),
   });
 
-  // Section 8 — answer "Why?" from stored Reasoning Objects (never regenerate).
-  if (intent === "why" || isWhyQuestion(String(req.request || ""))) {
-    const why = answerWhyFromReasoning(String(req.request || ""), { businessId });
+  // Section 9 — "Why didn't you…?" from stored Decision Objects (never regenerate).
+  // Section 8 — other "Why?" from stored Reasoning Objects.
+  if (
+    intent === "why" ||
+    isWhyDecisionQuestion(String(req.request || "")) ||
+    isWhyQuestion(String(req.request || ""))
+  ) {
+    const whyDecision = isWhyDecisionQuestion(String(req.request || ""))
+      ? answerWhyFromDecision(String(req.request || ""), { businessId })
+      : null;
+    const why = whyDecision
+      ? null
+      : answerWhyFromReasoning(String(req.request || ""), { businessId });
+    const draft = whyDecision?.answer || why?.answer || "I don't have stored reasoning for that yet.";
+    const conf = whyDecision?.decision?.decisionScore ?? why?.confidence ?? 50;
     const ed = applyExperienceDirector({
       request: req.request,
-      draftResponse: why.answer,
+      draftResponse: draft,
       proposedQuestions: [],
-      confidence: why.confidence,
+      confidence: conf,
       criticOk: true,
     });
     conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
@@ -359,12 +383,28 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       executionTimeMs: Date.now() - started,
       retries: 0,
       summary: ed.ownerResponse,
-      output: { type: "Experience Review", ownerResponse: ed.ownerResponse, fromStoredReasoning: true },
-      payload: { type: "Experience Review", ownerResponse: ed.ownerResponse, fromStoredReasoning: true },
+      output: {
+        type: "Experience Review",
+        ownerResponse: ed.ownerResponse,
+        fromStoredReasoning: !whyDecision,
+        fromStoredDecision: !!whyDecision,
+      },
+      payload: {
+        type: "Experience Review",
+        ownerResponse: ed.ownerResponse,
+        fromStoredReasoning: !whyDecision,
+        fromStoredDecision: !!whyDecision,
+      },
       reasoning: [{
-        reason: "Answered Why? from stored Reasoning Object — not regenerated.",
-        evidence: why.reasoning ? [why.reasoning.reasoningId, why.reasoning.decisionKey] : [],
-        confidence: why.confidence,
+        reason: whyDecision
+          ? "Answered Why? from stored Decision Object — not regenerated."
+          : "Answered Why? from stored Reasoning Object — not regenerated.",
+        evidence: whyDecision?.decision
+          ? [whyDecision.decision.decisionId, whyDecision.decision.finalDecision]
+          : why?.reasoning
+          ? [why.reasoning.reasoningId, why.reasoning.decisionKey]
+          : [],
+        confidence: conf,
       }],
       confidence: ed.confidence,
       questions: ed.questions,
@@ -386,25 +426,38 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
         assembly: {
           expertsInOrder: ["experience_director"],
           finalResponseSource: "experience_director",
-          mergedFrom: ["experience_director", "reasoning_engine"],
-          howAssembled: "Hubly Brain retrieved stored Reasoning Object(s) and Experience Director phrased the answer.",
+          mergedFrom: whyDecision
+            ? ["experience_director", "decision_engine"]
+            : ["experience_director", "reasoning_engine"],
+          howAssembled: whyDecision
+            ? "Hubly Brain retrieved stored Decision Object(s) and Experience Director phrased the answer."
+            : "Hubly Brain retrieved stored Reasoning Object(s) and Experience Director phrased the answer.",
         },
       },
       failures: [],
       decisions: [
         makeDecision({
-          domain: "reasoning",
-          decision: "why_retrieval",
-          reason: "Retrieved stored reasoning for Why? question",
-          evidence: why.decisionGraph.map((c) => c.reasoningId),
-          confidence: why.confidence,
+          domain: whyDecision ? "decision" : "reasoning",
+          decision: whyDecision ? "why_decision_retrieval" : "why_retrieval",
+          reason: whyDecision
+            ? "Retrieved stored Decision Object for Why didn't you? question"
+            : "Retrieved stored reasoning for Why? question",
+          evidence: whyDecision?.decision
+            ? [whyDecision.decision.decisionId]
+            : (why?.decisionGraph || []).map((c) => c.reasoningId),
+          confidence: conf,
           expertId: "hubly_brain",
-          decisionKey: "why_retrieval",
+          decisionKey: whyDecision ? "why_decision_retrieval" : "why_retrieval",
           expectedOutcome: "clearer_positioning",
         }),
       ],
-      reasoningObjects: why.reasoning ? [why.reasoning, ...why.history.filter((h) => h.reasoningId !== why.reasoning?.reasoningId)] : [],
+      reasoningObjects: why?.reasoning
+        ? [why.reasoning, ...why.history.filter((h) => h.reasoningId !== why.reasoning?.reasoningId)]
+        : [],
       whyAnswer: why,
+      decisionObjects: whyDecision?.decision ? [whyDecision.decision] : [],
+      whyDecisionAnswer: whyDecision,
+      primaryDecision: whyDecision?.decision || null,
       memory,
       memoryChanges,
       memoryCommittedBy: BUSINESS_MEMORY_OWNER,
@@ -423,7 +476,10 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       }],
       experienceDirector: {
         reviewedBy: "experience_director",
-        actions: [...ed.actions, "answered_from_stored_reasoning"],
+        actions: [
+          ...ed.actions,
+          whyDecision ? "answered_from_stored_decision" : "answered_from_stored_reasoning",
+        ],
         questionsShown: ed.questions.length,
         questionsDelayed: ed.delayed.extraQuestions.length,
         celebrate: ed.celebrate,
@@ -433,7 +489,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
         ? {
           intent: "why",
           expertsSelected: ["experience_director"],
-          memoriesLoaded: ["reasoning_engine"],
+          memoriesLoaded: whyDecision ? ["decision_engine"] : ["reasoning_engine"],
           latencyMs: Date.now() - started,
         }
         : undefined,
@@ -507,6 +563,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       ],
       reasoningObjects: [],
       whyAnswer: null,
+      decisionObjects: [],
+      whyDecisionAnswer: null,
+      primaryDecision: null,
       memory,
       memoryChanges,
       memoryCommittedBy: BUSINESS_MEMORY_OWNER,
@@ -609,6 +668,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       ],
       reasoningObjects: [],
       whyAnswer: null,
+      decisionObjects: [],
+      whyDecisionAnswer: null,
+      primaryDecision: null,
       memory,
       memoryChanges,
       memoryCommittedBy: BUSINESS_MEMORY_OWNER,
@@ -728,6 +790,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       ],
       reasoningObjects: [],
       whyAnswer: null,
+      decisionObjects: [],
+      whyDecisionAnswer: null,
+      primaryDecision: null,
       memory,
       memoryChanges,
       memoryCommittedBy: BUSINESS_MEMORY_OWNER,
@@ -878,7 +943,6 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     delayed?: { extraQuestions?: string[] };
   };
   const confidence = clampAvg(expertOutputs.map((o) => o.confidence));
-  const band = confidenceBand(confidence);
   let response = payload.ownerResponse || experience?.summary || "I'm thinking about your business.";
   let questions = (payload.questions || experience?.questions || []).slice(0, 3);
   let edActions = [...(payload.actions || ["reviewed"])];
@@ -897,22 +961,103 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     edActions = [...edActions, ...safe.actions, "sanitized_customer_response"];
   }
 
-  if (band === "ask" && !questions.length) {
-    questions = ["What matters most right now — more bookings, or a more premium feel?"];
-  }
-  if (band === "research_more") {
+  // Section 9 — AI Decision Engine (confidence is one dimension, not the only signal).
+  const requestText = String(req.request || "");
+  const isHomepageRewrite = /rewrite (my |the )?homepage/i.test(requestText);
+  const homepageReasoning = null as string | null;
+  const decisionObjects: HublyDecisionObject[] = [];
+  const primaryDecision = isHomepageRewrite
+    ? assessHomepageRewrite({
+      request: requestText,
+      businessId,
+      confidence,
+      hasBusinessMemory: !!(memory.industry || memory.name || memory.business),
+      hasBusinessDna: !!(dna.knowledgePack || (dna as { knowledge?: unknown }).knowledge),
+      hasStrategy: !!(strategyPayload.homepageStrategy || strategyPayload.positioning),
+      industryKnown: !!(memory.industry || dna.knowledgePack?.industryProfile?.industryName),
+      evidence: [
+        strategyPayload.homepageStrategy || "strategy homepage guidance",
+        dna.knowledgePack ? "Business DNA knowledge pack" : "limited DNA",
+      ].filter(Boolean) as string[],
+      evidenceSourceKinds: [
+        dna.knowledgePack ? "business_dna" : "system",
+        "strategy_expert",
+        "research_expert",
+        "creative_director",
+      ],
+      missingInfo: [
+        ...(memory.industry ? [] : ["industry"]),
+        ...(memory.name ? [] : ["business_name"]),
+      ],
+      reasoningId: homepageReasoning,
+    })
+    : assessDecision({
+      recommendation: strategyPayload.homepageStrategy ||
+        strategyPayload.positioning ||
+        strategyOut?.summary ||
+        "Apply expert recommendation",
+      request: requestText,
+      confidence,
+      evidence: (strategyOut?.reasoning || []).flatMap((r) => r.evidence || []).slice(0, 5),
+      evidenceSourceKinds: [
+        dna.knowledgePack ? "business_dna" : "system",
+        "strategy_expert",
+        "research_expert",
+      ],
+      reasoningExplanation: strategyOut?.reasoning?.[0]?.reason || critic?.summary || null,
+      hasBusinessMemory: !!(memory.industry || memory.name),
+      hasBusinessDna: !!(dna.knowledgePack || (dna as { knowledge?: unknown }).knowledge),
+      hasStrategy: !!(strategyPayload.homepageStrategy || strategyPayload.positioning),
+      industryKnown: !!memory.industry,
+      goalsKnown: !!(memory.goals && (Array.isArray(memory.goals) ? memory.goals.length : String(memory.goals).length)),
+      missingInfo: [
+        ...(memory.industry ? [] : ["industry"]),
+        ...(memory.name ? [] : ["business_name"]),
+      ],
+      expectedOutcome: "higher_conversion",
+      touchesWebsite: /website|homepage|layout|brand/i.test(requestText) || intent === "build_business",
+      businessId,
+      reasoningKey: intent,
+    });
+  decisionObjects.push(primaryDecision);
+  const band = decisionActionToConfidenceBand(primaryDecision.finalDecision);
+
+  if (primaryDecision.finalDecision === "ask") {
+    if (!questions.length) {
+      questions = primaryDecision.missingInfo.length
+        ? [`Quick one — what's your ${primaryDecision.missingInfo[0].replace(/_/g, " ")}?`]
+        : ["What matters most right now — more bookings, or a more premium feel?"];
+    }
+    const edAsk = applyExperienceDirector({
+      request: req.request,
+      draftResponse: `I have a direction, but I need one detail before I change anything. ${response}`,
+      proposedQuestions: questions,
+      confidence: primaryDecision.decisionScore,
+      criticOk: true,
+    });
+    response = edAsk.ownerResponse;
+    questions = edAsk.questions;
+    edActions = [...edActions, ...edAsk.actions, "decision_engine_ask"];
+  } else if (primaryDecision.finalDecision === "research_more") {
     const edMore = applyExperienceDirector({
       request: req.request,
-      draftResponse: "I want to research a bit more before I commit.",
+      draftResponse: "I want to research a bit more before I commit — the evidence isn't strong enough yet.",
       proposedQuestions: questions.length
         ? questions
         : ["Tell me who you mainly serve."],
-      confidence,
+      confidence: primaryDecision.decisionScore,
       criticOk: false,
     });
     response = edMore.ownerResponse;
     questions = edMore.questions;
-    edActions = [...edActions, ...edMore.actions, "research_more_gate"];
+    edActions = [...edActions, ...edMore.actions, "decision_engine_research_more"];
+  } else if (primaryDecision.finalDecision === "recommend") {
+    edActions = [...edActions, "decision_engine_recommend", "requires_owner_approval"];
+    if (isHomepageRewrite && !/approval|approve|when you're ready/i.test(response)) {
+      response = `${response} I recommend this homepage rewrite — say the word and I'll apply it.`;
+    }
+  } else if (primaryDecision.finalDecision === "proceed") {
+    edActions = [...edActions, "decision_engine_proceed"];
   }
 
   conversation = appendConversationTurn(conversation, { role: "hubly", text: response });
@@ -975,6 +1120,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     decisions,
     reasoningObjects,
     whyAnswer: null,
+    decisionObjects,
+    whyDecisionAnswer: null,
+    primaryDecision,
     memory,
     memoryChanges,
     memoryCommittedBy: BUSINESS_MEMORY_OWNER,

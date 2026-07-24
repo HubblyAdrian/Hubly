@@ -1,6 +1,10 @@
 /**
  * Hubly Brain — Confidence policy (Milestone 1)
  *
+ * Section 9: Confidence is one dimension of the AI Decision Engine
+ * (`hubly_brain_decision.ts`). Prefer Decision Objects for act/ask/research routing.
+ *
+ * Legacy single-score bands (still used as a fallback mapping):
  * 95%+  → proceed automatically (where appropriate)
  * 80–95 → proceed but explain
  * 60–80 → ask one clarifying question

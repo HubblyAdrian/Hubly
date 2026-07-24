@@ -12,7 +12,8 @@
     "check:section5": "node scripts/check-section5-business-memory.mjs",
     "check:section6": "node scripts/check-section6-workspace-memory.mjs",
     "check:section7": "node scripts/check-section7-business-dna.mjs",
-    "check:section8": "node scripts/check-section8-reasoning-engine.mjs"
+    "check:section8": "node scripts/check-section8-reasoning-engine.mjs",
+    "check:section9": "node scripts/check-section9-decision-engine.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

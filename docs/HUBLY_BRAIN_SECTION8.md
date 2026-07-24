@@ -2,7 +2,7 @@
 
 **Status: Proven only when `node scripts/check-section8-reasoning-engine.mjs` exits 0.**
 
-Do not begin Section 9 until this section passes. Do not begin Milestone 2.
+Section 8 accepted. Do not begin Milestone 2.
 
 ## Objective
 

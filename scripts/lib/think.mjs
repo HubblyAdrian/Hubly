@@ -1,5 +1,5 @@
 /**
- * Node mirror of hubly_brain_think.ts — Sections 4–8 behavioral proofs.
+ * Node mirror of hubly_brain_think.ts — Sections 4–9 behavioral proofs.
  */
 import {
   discoverExperts,
@@ -15,15 +15,22 @@ import {
   answerWhyFromReasoning,
   recordBuildBusinessReasoningChain,
 } from './reasoning-engine.mjs';
+import {
+  assessDecision,
+  assessHomepageRewrite,
+  answerWhyFromDecision,
+  isWhyDecisionQuestion,
+  decisionActionToConfidenceBand,
+} from './decision-engine.mjs';
 
 export function detectIntent(request, explicit) {
   if (explicit) return String(explicit);
   const r = String(request || '').toLowerCase();
-  if (isWhyQuestion(r)) return 'why';
+  if (isWhyDecisionQuestion(r) || isWhyQuestion(r)) return 'why';
   if (/weather|forecast|temperature/.test(r)) return 'weather';
   if (/move |sidebar|dashboard|pin |hide |workspace/.test(r)) return 'workspace';
   if (
-    /website|homepage|luxury|premium|layout|brand|build me|build my|start(?:ing)?\s+(?:a\s+)?(?:new\s+)?(?:business|company)|pressure\s*wash|new company/
+    /rewrite (my |the )?homepage|website|homepage|luxury|premium|layout|brand|build me|build my|start(?:ing)?\s+(?:a\s+)?(?:new\s+)?(?:business|company)|pressure\s*wash|new company/
       .test(r)
   ) {
     return 'build_business';
@@ -112,14 +119,25 @@ export async function think(req) {
     dna = attachDnaKnowledgePack(dna, pack);
   }
 
-  // Section 8 — answer "Why?" from stored Reasoning Objects (never regenerate).
-  if (intent === 'why' || isWhyQuestion(String(req.request || ''))) {
-    const why = answerWhyFromReasoning(String(req.request || ''), { businessId });
+  // Section 9 / 8 — Why? from Decision Objects or Reasoning Objects (never regenerate).
+  if (
+    intent === 'why' ||
+    isWhyDecisionQuestion(String(req.request || '')) ||
+    isWhyQuestion(String(req.request || ''))
+  ) {
+    const whyDecision = isWhyDecisionQuestion(String(req.request || ''))
+      ? answerWhyFromDecision(String(req.request || ''), { businessId })
+      : null;
+    const why = whyDecision
+      ? null
+      : answerWhyFromReasoning(String(req.request || ''), { businessId });
+    const draft = whyDecision?.answer || why?.answer || "I don't have stored reasoning for that yet.";
+    const conf = whyDecision?.decision?.decisionScore ?? why?.confidence ?? 50;
     const ed = applyExperienceDirector({
       request: req.request,
-      draftResponse: why.answer,
+      draftResponse: draft,
       proposedQuestions: [],
-      confidence: why.confidence,
+      confidence: conf,
       criticOk: true,
     });
     const edRecord = {
@@ -130,12 +148,28 @@ export async function think(req) {
       executionTimeMs: Date.now() - started,
       retries: 0,
       summary: ed.ownerResponse,
-      output: { type: 'Experience Review', ownerResponse: ed.ownerResponse, fromStoredReasoning: true },
-      payload: { type: 'Experience Review', ownerResponse: ed.ownerResponse, fromStoredReasoning: true },
+      output: {
+        type: 'Experience Review',
+        ownerResponse: ed.ownerResponse,
+        fromStoredReasoning: !whyDecision,
+        fromStoredDecision: !!whyDecision,
+      },
+      payload: {
+        type: 'Experience Review',
+        ownerResponse: ed.ownerResponse,
+        fromStoredReasoning: !whyDecision,
+        fromStoredDecision: !!whyDecision,
+      },
       reasoning: [{
-        reason: 'Answered Why? from stored Reasoning Object — not regenerated.',
-        evidence: why.reasoning ? [why.reasoning.reasoningId, why.reasoning.decisionKey] : [],
-        confidence: why.confidence,
+        reason: whyDecision
+          ? 'Answered Why? from stored Decision Object — not regenerated.'
+          : 'Answered Why? from stored Reasoning Object — not regenerated.',
+        evidence: whyDecision?.decision
+          ? [whyDecision.decision.decisionId, whyDecision.decision.finalDecision]
+          : why?.reasoning
+          ? [why.reasoning.reasoningId, why.reasoning.decisionKey]
+          : [],
+        confidence: conf,
       }],
       confidence: ed.confidence,
       questions: ed.questions,
@@ -147,6 +181,7 @@ export async function think(req) {
       questions: ed.questions,
       celebrate: !!ed.celebrate,
       confidence: ed.confidence,
+      confidenceBand: decisionActionToConfidenceBand(whyDecision?.decision?.finalDecision || 'ask'),
       expertsRun: ['experience_director'],
       expertOutputs: [edRecord],
       mergedExpertRecords: [toMergedRecord(edRecord)],
@@ -156,9 +191,12 @@ export async function think(req) {
         assembly: {
           expertsInOrder: ['experience_director'],
           finalResponseSource: 'experience_director',
-          mergedFrom: ['experience_director', 'reasoning_engine'],
-          howAssembled:
-            'Hubly Brain retrieved stored Reasoning Object(s) and Experience Director phrased the answer.',
+          mergedFrom: whyDecision
+            ? ['experience_director', 'decision_engine']
+            : ['experience_director', 'reasoning_engine'],
+          howAssembled: whyDecision
+            ? 'Hubly Brain retrieved stored Decision Object(s) and Experience Director phrased the answer.'
+            : 'Hubly Brain retrieved stored Reasoning Object(s) and Experience Director phrased the answer.',
         },
       },
       failures: [],
@@ -169,13 +207,19 @@ export async function think(req) {
         confidence: ed.confidence,
         summary: ed.ownerResponse,
       }],
-      reasoningObjects: why.reasoning
+      reasoningObjects: why?.reasoning
         ? [why.reasoning, ...why.history.filter((h) => h.reasoningId !== why.reasoning.reasoningId)]
         : [],
       whyAnswer: why,
+      decisionObjects: whyDecision?.decision ? [whyDecision.decision] : [],
+      whyDecisionAnswer: whyDecision,
+      primaryDecision: whyDecision?.decision || null,
       experienceDirector: {
         reviewedBy: 'experience_director',
-        actions: [...(ed.actions || []), 'answered_from_stored_reasoning'],
+        actions: [
+          ...(ed.actions || []),
+          whyDecision ? 'answered_from_stored_decision' : 'answered_from_stored_reasoning',
+        ],
         questionsShown: ed.questions?.length || 0,
         celebrate: !!ed.celebrate,
         hideDetails: true,
@@ -292,6 +336,76 @@ export async function think(req) {
     },
   };
 
+  // Section 9 — AI Decision Engine
+  const requestText = String(req.request || '');
+  const isHomepageRewrite = /rewrite (my |the )?homepage/i.test(requestText);
+  const strategyOut = expertOutputs.find((o) => o.expertId === 'strategy');
+  const strategyPayload = strategyOut?.output || strategyOut?.payload || {};
+  const primaryDecision = isHomepageRewrite
+    ? assessHomepageRewrite({
+      request: requestText,
+      businessId,
+      confidence,
+      hasBusinessMemory: !!(req.memory?.industry || req.memory?.name),
+      hasBusinessDna: !!dna.knowledgePack,
+      hasStrategy: !!(strategyPayload.homepageStrategy || strategyPayload.positioning),
+      industryKnown: !!(req.memory?.industry || dna.knowledgePack?.industryProfile?.industryName),
+      missingInfo: [
+        ...(req.memory?.industry ? [] : ['industry']),
+        ...(req.memory?.name ? [] : ['business_name']),
+      ],
+    })
+    : assessDecision({
+      recommendation:
+        strategyPayload.homepageStrategy ||
+        strategyPayload.positioning ||
+        strategyOut?.summary ||
+        'Apply expert recommendation',
+      request: requestText,
+      confidence,
+      evidence: (strategyOut?.reasoning || []).flatMap((r) => r.evidence || []).slice(0, 5),
+      evidenceSourceKinds: [
+        dna.knowledgePack ? 'business_dna' : 'system',
+        'strategy_expert',
+        'research_expert',
+      ],
+      hasBusinessMemory: !!(req.memory?.industry || req.memory?.name),
+      hasBusinessDna: !!dna.knowledgePack,
+      hasStrategy: !!(strategyPayload.homepageStrategy || strategyPayload.positioning),
+      industryKnown: !!req.memory?.industry,
+      expectedOutcome: 'higher_conversion',
+      touchesWebsite: /website|homepage|layout|brand/i.test(requestText) || intent === 'build_business',
+      businessId,
+      reasoningKey: intent,
+    });
+
+  if (primaryDecision.finalDecision === 'ask') {
+    if (!questions.length) {
+      questions = primaryDecision.missingInfo.length
+        ? [`Quick one — what's your ${primaryDecision.missingInfo[0].replace(/_/g, ' ')}?`]
+        : ['What matters most right now — more bookings, or a more premium feel?'];
+    }
+    edActions = [...edActions, 'decision_engine_ask'];
+  } else if (primaryDecision.finalDecision === 'research_more') {
+    const edMore = applyExperienceDirector({
+      request: req.request,
+      draftResponse: "I want to research a bit more before I commit — the evidence isn't strong enough yet.",
+      proposedQuestions: questions.length ? questions : ['Tell me who you mainly serve.'],
+      confidence: primaryDecision.decisionScore,
+      criticOk: false,
+    });
+    response = edMore.ownerResponse;
+    questions = edMore.questions;
+    edActions = [...edActions, ...edMore.actions, 'decision_engine_research_more'];
+  } else if (primaryDecision.finalDecision === 'recommend') {
+    edActions = [...edActions, 'decision_engine_recommend', 'requires_owner_approval'];
+    if (isHomepageRewrite && !/approval|approve|say the word/i.test(response)) {
+      response = `${response} I recommend this homepage rewrite — say the word and I'll apply it.`;
+    }
+  } else if (primaryDecision.finalDecision === 'proceed') {
+    edActions = [...edActions, 'decision_engine_proceed'];
+  }
+
   // Section 8 — persist structured Reasoning Objects + Decision Graph for build flows.
   let reasoningObjects = [];
   if (
@@ -320,6 +434,7 @@ export async function think(req) {
     questions,
     celebrate: !!payload.celebrate,
     confidence,
+    confidenceBand: decisionActionToConfidenceBand(primaryDecision.finalDecision),
     expertsRun: ordered,
     expertOutputs,
     mergedExpertRecords: expertOutputs.map(toMergedRecord),
@@ -329,6 +444,9 @@ export async function think(req) {
     timeline,
     reasoningObjects,
     whyAnswer: null,
+    decisionObjects: [primaryDecision],
+    whyDecisionAnswer: null,
+    primaryDecision,
     experienceDirector: {
       reviewedBy: 'experience_director',
       actions: edActions,

@@ -170,6 +170,7 @@ import {
   type HublyConversationMemoryInput,
 } from "./hubly_brain_conversation_memory.ts";
 import { HublyReasoning } from "./hubly_brain_reasoning.ts";
+import { HublyDecisionEngine } from "./hubly_brain_decision.ts";
 import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
 import {
   logBrainExecution,
@@ -242,6 +243,7 @@ export {
   HublyWorkspaceMemoryApi,
   HublyConversationMemoryApi,
   HublyReasoning,
+  HublyDecisionEngine,
   HublyConfidencePolicy,
   HublyBrainExecutionLog,
   HublyExperienceDirector,
