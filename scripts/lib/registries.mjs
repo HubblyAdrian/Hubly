@@ -1,12 +1,13 @@
-/**
- * Node mirror of hubly_brain_registries.ts — Section 11 (esbuild).
- */
-const REGISTRIES_VERSION = "1.0.0";
-const REGISTRIES_OWNER = "hubly_brain";
-const TOOLS = /* @__PURE__ */ new Map();
-const CAP_INDEX = /* @__PURE__ */ new Map();
-const KNOWLEDGE = /* @__PURE__ */ new Map();
-let BOOTSTRAPPED = false;
+/** Node mirror of hubly_brain_registries.ts — Section 11/15 (esbuild). */
+
+
+// supabase/functions/_shared/hubly_brain_registries.ts
+var REGISTRIES_VERSION = "1.0.0";
+var REGISTRIES_OWNER = "hubly_brain";
+var TOOLS = /* @__PURE__ */ new Map();
+var CAP_INDEX = /* @__PURE__ */ new Map();
+var KNOWLEDGE = /* @__PURE__ */ new Map();
+var BOOTSTRAPPED = false;
 function cloneTool(t) {
   return {
     ...t,
@@ -339,11 +340,12 @@ function bootstrapDefaultRegistries() {
     ],
     category: "builder",
     capabilities: [
-      { id: "create_workflow", label: "Create Workflow", aliases: ["create workflow"] },
+      { id: "create_workflow", label: "Create Workflow", aliases: ["create workflow", "prep instructions", "after booking", "send prep"] },
       { id: "delete_workflow", label: "Delete Workflow", aliases: ["delete workflow"] },
       { id: "pause_workflow", label: "Pause Workflow", aliases: ["pause workflow"] },
       { id: "automation_send_email", label: "Send Email", aliases: ["automation email"] },
-      { id: "send_reminder", label: "Send Reminder", aliases: ["send reminder", "reminder"] }
+      { id: "send_reminder", label: "Send Reminder", aliases: ["send reminder", "reminder"] },
+      { id: "prep_instructions", label: "Prep Instructions", aliases: ["prep instruction", "prep instructions", "ceramic coating"] }
     ]
   });
   registerTool({
@@ -368,6 +370,33 @@ function bootstrapDefaultRegistries() {
     capabilities: [
       { id: "process_images", label: "Process Images", aliases: ["process images", "image processor"] },
       { id: "optimize_photos", label: "Optimize Photos", aliases: ["optimize photos"] }
+    ]
+  });
+  registerTool({
+    id: "workspace_builder",
+    name: "Workspace Builder",
+    version: "1.0.0",
+    purpose: "Own workspace layout and navigation preferences (Builder Engine)",
+    responsibilities: ["Sidebar order", "Dashboard layout", "Pinned actions"],
+    experts: ["builder"],
+    category: "builder",
+    capabilities: [
+      { id: "sidebar_order", label: "Sidebar Order", aliases: ["sidebar", "move jobs", "jobs above", "jobs above customers"] },
+      { id: "dashboard_layout", label: "Dashboard Layout", aliases: ["dashboard layout"] },
+      { id: "pin_actions", label: "Pin Actions", aliases: ["pin", "pinned actions"] }
+    ]
+  });
+  registerTool({
+    id: "packages_builder",
+    name: "Packages Builder",
+    version: "1.0.0",
+    purpose: "Own packages and pricing tiers",
+    responsibilities: ["Create packages", "Pricing tiers"],
+    experts: ["builder"],
+    category: "builder",
+    capabilities: [
+      { id: "package_create", label: "Create Package", aliases: ["create package", "new package"] },
+      { id: "pricing_tiers", label: "Pricing Tiers", aliases: ["pricing tier", "membership"] }
     ]
   });
   registerKnowledgeSource({
@@ -466,7 +495,7 @@ function formatAccess(access) {
   if (access === "write") return "Write Only";
   return "Read + Write";
 }
-const HublyToolRegistry = {
+var HublyToolRegistry = {
   version: REGISTRIES_VERSION,
   owner: REGISTRIES_OWNER,
   register: registerTool,
@@ -479,7 +508,7 @@ const HublyToolRegistry = {
   bootstrap: bootstrapDefaultRegistries,
   clearForTests: clearRegistriesForTests
 };
-const HublyKnowledgeRegistry = {
+var HublyKnowledgeRegistry = {
   version: REGISTRIES_VERSION,
   owner: REGISTRIES_OWNER,
   register: registerKnowledgeSource,
@@ -490,7 +519,7 @@ const HublyKnowledgeRegistry = {
   formatAccess,
   bootstrap: bootstrapDefaultRegistries
 };
-const HublyRegistries = {
+var HublyRegistries = {
   version: REGISTRIES_VERSION,
   owner: REGISTRIES_OWNER,
   tools: HublyToolRegistry,

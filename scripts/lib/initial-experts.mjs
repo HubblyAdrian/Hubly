@@ -3,6 +3,7 @@
  */
 import { registerExpert, listExperts, clearRegistryForTests } from './expert-framework.mjs';
 import { applyExperienceDirector } from './experience-director.mjs';
+import { ensureBuilderExpertRegistered } from './builder-expert.mjs';
 
 function clamp(n) {
   return Math.max(0, Math.min(100, Math.round(n)));
@@ -439,6 +440,9 @@ export function ensureExpertsRegistered() {
     dependencies: [],
     intents: ['build_business', 'website', 'research', 'coach', 'general'],
   }, criticExpert);
+
+  // Milestone 1.5 · Epic 1 — Builder Expert (Intent only)
+  ensureBuilderExpertRegistered();
 }
 
 export function listRegisteredExperts() {

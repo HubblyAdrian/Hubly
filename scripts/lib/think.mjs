@@ -37,6 +37,7 @@ import {
   planRegistryRoute,
 } from './registries.mjs';
 import { recordFlightRecorder } from './mission-control.mjs';
+import { extractBuilderIntentFromOutput } from './builder-expert.mjs';
 import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
@@ -55,6 +56,12 @@ export function detectIntent(request, explicit) {
   if (/move |sidebar|dashboard|pin |hide |workspace|jobs above|put .+ above/.test(r)) return 'workspace';
   // Capability / Builder prep — before coach (which matches "booking")
   if (/arrival window|same-?day|no same.?day/.test(r)) return 'build_business';
+  if (
+    /portfolio|upload.*(photo|image)|these \d+ photos|prep instruction|automation|workflow|after .+ booking/
+      .test(r)
+  ) {
+    return 'build_business';
+  }
   if (
     /rewrite (my |the )?homepage|website|homepage|luxury|premium|layout|brand|build me|build my|start(?:ing)?\s+(?:a\s+)?(?:new\s+)?(?:business|company)|pressure\s*wash|new company|redesign/
       .test(r)
@@ -212,8 +219,11 @@ export async function think(req) {
   }
 
   // Section 6 — Workspace / weather fast-path (Experience Director only)
+  // Milestone 1.5 Epic 1 — if Builder Expert is selected, use the full expert pipeline.
   if (intent === 'workspace' || intent === 'weather') {
     const orderedFast = selectExpertsFromRegistry({ intent, request: String(req.request || '') });
+    const domainExperts = orderedFast.filter((id) => id !== 'experience_director');
+    if (domainExperts.length === 0) {
     const wsSummary = workspaceChanges.length
       ? queryWorkspaceMemory(workspace, 'What does my workspace look like?').answer
       : 'I can rearrange your workspace from preferences — tell me exactly what to move, hide, or pin.';
@@ -274,6 +284,7 @@ export async function think(req) {
       confidence: ed.confidence,
       decisionScore: null,
       decisionAction: 'workspace_preferences',
+      builderIntent: null,
     });
     return {
       ok: true,
@@ -290,6 +301,7 @@ export async function think(req) {
       workspaceChanges,
       conversationIntelligence,
       registryRouting,
+      builderIntent: null,
       missionControlExecutionId: flightRecorder.executionId,
       flightRecorder,
       experienceDirector: {
@@ -300,6 +312,7 @@ export async function think(req) {
         hideDetails: true,
       },
     };
+    }
   }
 
   // Section 9 / 8 — Why? from Decision Objects or Reasoning Objects (never regenerate).
@@ -647,6 +660,8 @@ export async function think(req) {
   }
 
   // Section 12 — Mission Control flight recorder (AI Replay)
+  const builderOut = expertOutputs.find((o) => o.expertId === 'builder') || null;
+  const builderIntent = extractBuilderIntentFromOutput(builderOut);
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ''),
     intent,
@@ -698,6 +713,24 @@ export async function think(req) {
     confidence,
     decisionScore: primaryDecision?.decisionScore ?? null,
     decisionAction: primaryDecision?.finalDecision ?? null,
+    builderIntent: builderIntent
+      ? {
+        intentId: builderIntent.intentId,
+        category: builderIntent.intentCategory,
+        label: builderIntent.intentLabel,
+        goal: builderIntent.ownerGoal,
+        affectedSystems: [...builderIntent.affectedSystems],
+        capabilities: builderIntent.requiredCapabilities.map(
+          (c) => `${c.toolName}:${c.capabilityId}`,
+        ),
+        risk: builderIntent.estimatedRisk,
+        confidence: builderIntent.confidence,
+        confidenceExplanation: builderIntent.confidenceExplanation.summary,
+        requiresChangePlan: builderIntent.requiresChangePlan,
+        applied: false,
+        changePlanGenerated: false,
+      }
+      : null,
   });
 
   return {
@@ -724,6 +757,7 @@ export async function think(req) {
     conversationIntelligenceCommittedBy: CONVERSATION_INTELLIGENCE_OWNER,
     conversationIntelligenceRetrieval: null,
     registryRouting,
+    builderIntent,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     experienceDirector: {

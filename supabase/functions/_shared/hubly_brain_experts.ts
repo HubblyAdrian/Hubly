@@ -18,6 +18,7 @@ import { buildCreativeDirectorBrief } from "./hubly_brain_creative_director.ts";
 import { normalizeBusinessMemory } from "./hubly_brain_memory.ts";
 import { normalizeBusinessDNA } from "./hubly_brain_dna.ts";
 import { applyExperienceDirector } from "./hubly_brain_experience_director.ts";
+import { ensureBuilderExpertRegistered } from "./hubly_brain_builder_expert.ts";
 
 function clamp(n: number): number {
   return Math.max(0, Math.min(100, Math.round(n)));
@@ -699,6 +700,9 @@ export function ensureExpertsRegistered(): void {
     dependencies: [],
     intents: ["build_business", "website", "research", "coach", "general"],
   }, criticExpert);
+
+  // Milestone 1.5 · Epic 1 — Builder Expert (Intent only; no Change Plans / apply)
+  ensureBuilderExpertRegistered();
 }
 
 export const HublyExperts = {
