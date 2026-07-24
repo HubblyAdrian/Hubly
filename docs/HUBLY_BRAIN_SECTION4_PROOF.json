@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-07-23T22:17:35.625Z",
+  "checkedAt": "2026-07-24T00:15:46.669Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -268,7 +268,7 @@
       },
       {
         "expertId": "research",
-        "executionTimeMs": 1
+        "executionTimeMs": 0
       },
       {
         "expertId": "strategy",
@@ -314,7 +314,7 @@
         {
           "expertName": "Research Expert",
           "expertId": "research",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "reasoning": [
             {
               "reason": "Used Business DNA knowledge (pressure washing v1) as evidence.",
@@ -1770,7 +1770,7 @@
           "changedFromPrevious": "First expert in this run — established the baseline.",
           "confidence": 90,
           "status": "ok",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "outputType": "Research Report",
           "retries": 0
         },

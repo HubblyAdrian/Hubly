@@ -2,7 +2,7 @@
 
 **Status: Proven only when `node scripts/check-section7-business-dna.mjs` exits 0.**
 
-Do not begin Section 8 until this section passes.
+Section 7 accepted. Proceed only when the next section’s release gate is ready.
 
 ## Objective
 

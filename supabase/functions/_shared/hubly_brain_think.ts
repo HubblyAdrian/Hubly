@@ -56,7 +56,14 @@ import {
   type HublyWorkspaceMemoryInput,
   type HublyWorkspaceChange,
 } from "./hubly_brain_workspace_memory.ts";
-import { makeDecision, type HublyDecisionRecord } from "./hubly_brain_reasoning.ts";
+import {
+  makeDecision,
+  isWhyQuestion,
+  answerWhyFromReasoning,
+  recordBuildBusinessReasoningChain,
+  type HublyDecisionRecord,
+  type HublyReasoningObject,
+} from "./hubly_brain_reasoning.ts";
 import { confidenceBand, type HublyConfidenceBand } from "./hubly_brain_confidence_policy.ts";
 import { applyExperienceDirector } from "./hubly_brain_experience_director.ts";
 
@@ -68,6 +75,7 @@ export type HublyThinkIntent =
   | "coach"
   | "weather"
   | "memory"
+  | "why"
   | "general";
 
 export type HublyThinkRequest = {
@@ -147,6 +155,9 @@ export type HublyThinkResult = {
   expertTranscript: HublyExpertTranscript;
   failures: Array<{ expertId: string; status: HublyExpertStatus; error: string | null; retries: number }>;
   decisions: HublyDecisionRecord[];
+  /** Section 8 — structured Reasoning Objects + Decision Graph. */
+  reasoningObjects: HublyReasoningObject[];
+  whyAnswer?: ReturnType<typeof answerWhyFromReasoning> | null;
   memory: ReturnType<typeof normalizeBusinessMemory>;
   /** Section 5 — changelog entries committed this turn (Brain-owned). */
   memoryChanges: HublyMemoryChange[];
@@ -179,6 +190,7 @@ export type HublyThinkResult = {
 export function detectIntent(request: string, explicit?: string | null): string {
   if (explicit) return String(explicit);
   const r = String(request || "").toLowerCase();
+  if (isWhyQuestion(r)) return "why";
   if (isWorkspaceRetrievalQuestion(r)) return "workspace";
   if (isMemoryRetrievalQuestion(r)) return "memory";
   if (/weather|forecast|temperature/.test(r)) return "weather";
@@ -324,6 +336,110 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     at: new Date().toISOString(),
   });
 
+  // Section 8 — answer "Why?" from stored Reasoning Objects (never regenerate).
+  if (intent === "why" || isWhyQuestion(String(req.request || ""))) {
+    const why = answerWhyFromReasoning(String(req.request || ""), { businessId });
+    const ed = applyExperienceDirector({
+      request: req.request,
+      draftResponse: why.answer,
+      proposedQuestions: [],
+      confidence: why.confidence,
+      criticOk: true,
+    });
+    conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
+    if (businessId) {
+      persistBusinessMemoryLocal(businessId, memory);
+      persistWorkspaceMemoryLocal(businessId, workspace);
+    }
+    const edRecord: HublyExpertOutput = {
+      expertId: "experience_director",
+      expertName: "Experience Director",
+      ok: true,
+      status: "ok",
+      executionTimeMs: Date.now() - started,
+      retries: 0,
+      summary: ed.ownerResponse,
+      output: { type: "Experience Review", ownerResponse: ed.ownerResponse, fromStoredReasoning: true },
+      payload: { type: "Experience Review", ownerResponse: ed.ownerResponse, fromStoredReasoning: true },
+      reasoning: [{
+        reason: "Answered Why? from stored Reasoning Object — not regenerated.",
+        evidence: why.reasoning ? [why.reasoning.reasoningId, why.reasoning.decisionKey] : [],
+        confidence: why.confidence,
+      }],
+      confidence: ed.confidence,
+      questions: ed.questions,
+    };
+    return {
+      ok: true,
+      intent: "why",
+      response: ed.ownerResponse,
+      questions: ed.questions,
+      celebrate: ed.celebrate,
+      confidence: ed.confidence,
+      confidenceBand: confidenceBand(ed.confidence),
+      expertsRun: ["experience_director"],
+      expertOutputs: [edRecord],
+      mergedExpertRecords: [toMergedRecord(edRecord)],
+      expertTranscript: {
+        customerVisible: false,
+        entries: [buildTranscriptEntry(edRecord, 0, ["experience_director"], req, "why", [])],
+        assembly: {
+          expertsInOrder: ["experience_director"],
+          finalResponseSource: "experience_director",
+          mergedFrom: ["experience_director", "reasoning_engine"],
+          howAssembled: "Hubly Brain retrieved stored Reasoning Object(s) and Experience Director phrased the answer.",
+        },
+      },
+      failures: [],
+      decisions: [
+        makeDecision({
+          domain: "reasoning",
+          decision: "why_retrieval",
+          reason: "Retrieved stored reasoning for Why? question",
+          evidence: why.decisionGraph.map((c) => c.reasoningId),
+          confidence: why.confidence,
+          expertId: "hubly_brain",
+          decisionKey: "why_retrieval",
+          expectedOutcome: "clearer_positioning",
+        }),
+      ],
+      reasoningObjects: why.reasoning ? [why.reasoning, ...why.history.filter((h) => h.reasoningId !== why.reasoning?.reasoningId)] : [],
+      whyAnswer: why,
+      memory,
+      memoryChanges,
+      memoryCommittedBy: BUSINESS_MEMORY_OWNER,
+      memoryRetrieval: null,
+      dna,
+      workspace,
+      workspaceChanges,
+      workspaceCommittedBy: WORKSPACE_MEMORY_OWNER,
+      workspaceRetrieval: null,
+      conversation,
+      timeline: [{
+        expertId: "experience_director",
+        ms: Date.now() - started,
+        confidence: ed.confidence,
+        summary: ed.ownerResponse,
+      }],
+      experienceDirector: {
+        reviewedBy: "experience_director",
+        actions: [...ed.actions, "answered_from_stored_reasoning"],
+        questionsShown: ed.questions.length,
+        questionsDelayed: ed.delayed.extraQuestions.length,
+        celebrate: ed.celebrate,
+        hideDetails: ed.hideDetails,
+      },
+      console: req.debug
+        ? {
+          intent: "why",
+          expertsSelected: ["experience_director"],
+          memoriesLoaded: ["reasoning_engine"],
+          latencyMs: Date.now() - started,
+        }
+        : undefined,
+    };
+  }
+
   // Section 6 — answer workspace questions from Workspace Memory (not chat, not Business Memory).
   if (isWorkspaceRetrievalQuestion(String(req.request || ""))) {
     const retrieval = queryWorkspaceMemory(workspace, String(req.request || ""));
@@ -389,6 +505,8 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
           expertId: WORKSPACE_MEMORY_OWNER,
         }),
       ],
+      reasoningObjects: [],
+      whyAnswer: null,
       memory,
       memoryChanges,
       memoryCommittedBy: BUSINESS_MEMORY_OWNER,
@@ -489,6 +607,8 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
           expertId: BUSINESS_MEMORY_OWNER,
         }),
       ],
+      reasoningObjects: [],
+      whyAnswer: null,
       memory,
       memoryChanges,
       memoryCommittedBy: BUSINESS_MEMORY_OWNER,
@@ -606,6 +726,8 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
           expertId: "experience_director",
         }),
       ],
+      reasoningObjects: [],
+      whyAnswer: null,
       memory,
       memoryChanges,
       memoryCommittedBy: BUSINESS_MEMORY_OWNER,
@@ -799,6 +921,27 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     persistWorkspaceMemoryLocal(businessId, workspace);
   }
 
+  // Section 8 — persist structured Reasoning Objects + Decision Graph for build flows.
+  let reasoningObjects: HublyReasoningObject[] = [];
+  if (intent === "build_business" || /pressure\s*wash|starting a|homepage|booking|pricing/i.test(String(req.request || ""))) {
+    reasoningObjects = recordBuildBusinessReasoningChain({
+      request: String(req.request || ""),
+      businessId,
+      businessVersion: memory.memoryVersion,
+      workspaceVersion: workspace.memoryVersion,
+      dnaVersion: dna.knowledgePack?.knowledgeVersion ?? dna.version,
+      industry: memory.industry || memory.business?.industry || dna.knowledgePack?.industryProfile?.industryName || null,
+      experts: ordered,
+    });
+    // Also map expert decisions into the graph tip for this turn
+    for (const d of decisions) {
+      if (d.reasoningId) {
+        const found = reasoningObjects.find((r) => r.reasoningId === d.reasoningId);
+        if (found) continue;
+      }
+    }
+  }
+
   const transcriptEntries = expertOutputs.map((out, idx) =>
     buildTranscriptEntry(out, idx, ordered, req, intent, expertOutputs)
   );
@@ -830,6 +973,8 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     expertTranscript,
     failures,
     decisions,
+    reasoningObjects,
+    whyAnswer: null,
     memory,
     memoryChanges,
     memoryCommittedBy: BUSINESS_MEMORY_OWNER,

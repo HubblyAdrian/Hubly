@@ -32,7 +32,7 @@ Each section must ship:
 | 5 | Business Memory | ✅ Proven (Release Gate) |
 | 6 | Workspace Memory | ✅ Proven (Release Gate) |
 | 7 | Business DNA | ✅ Proven (Release Gate) |
-| 8 | Reasoning Engine | ⬜ Not proven |
+| 8 | Reasoning Engine | ✅ Proven (`check:section8`) |
 | 9 | Confidence Engine | ⬜ Not proven |
 | 10 | Conversation Memory | ⬜ Not proven |
 | 11 | AI Capability Registry | ⬜ Not proven |

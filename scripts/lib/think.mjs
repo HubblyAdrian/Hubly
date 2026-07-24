@@ -1,5 +1,5 @@
 /**
- * Node mirror of hubly_brain_think.ts — Section 4 behavioral proofs.
+ * Node mirror of hubly_brain_think.ts — Sections 4–8 behavioral proofs.
  */
 import {
   discoverExperts,
@@ -10,10 +10,16 @@ import {
 import { ensureExpertsRegistered } from './initial-experts.mjs';
 import { applyExperienceDirector } from './experience-director.mjs';
 import { loadBusinessDnaKnowledge, attachDnaKnowledgePack } from './dna-knowledge.mjs';
+import {
+  isWhyQuestion,
+  answerWhyFromReasoning,
+  recordBuildBusinessReasoningChain,
+} from './reasoning-engine.mjs';
 
 export function detectIntent(request, explicit) {
   if (explicit) return String(explicit);
   const r = String(request || '').toLowerCase();
+  if (isWhyQuestion(r)) return 'why';
   if (/weather|forecast|temperature/.test(r)) return 'weather';
   if (/move |sidebar|dashboard|pin |hide |workspace/.test(r)) return 'workspace';
   if (
@@ -93,6 +99,8 @@ export async function think(req) {
   discoverExperts();
 
   const intent = detectIntent(req.request, req.intent);
+  const businessId = req.businessId || req.memory?.businessId || null;
+
   // Section 7 — Brain loads DNA knowledge for experts to read
   let dna = req.dna || {};
   if (!dna.knowledgePack) {
@@ -102,6 +110,82 @@ export async function think(req) {
       city: req.memory?.city || null,
     });
     dna = attachDnaKnowledgePack(dna, pack);
+  }
+
+  // Section 8 — answer "Why?" from stored Reasoning Objects (never regenerate).
+  if (intent === 'why' || isWhyQuestion(String(req.request || ''))) {
+    const why = answerWhyFromReasoning(String(req.request || ''), { businessId });
+    const ed = applyExperienceDirector({
+      request: req.request,
+      draftResponse: why.answer,
+      proposedQuestions: [],
+      confidence: why.confidence,
+      criticOk: true,
+    });
+    const edRecord = {
+      expertId: 'experience_director',
+      expertName: 'Experience Director',
+      ok: true,
+      status: 'ok',
+      executionTimeMs: Date.now() - started,
+      retries: 0,
+      summary: ed.ownerResponse,
+      output: { type: 'Experience Review', ownerResponse: ed.ownerResponse, fromStoredReasoning: true },
+      payload: { type: 'Experience Review', ownerResponse: ed.ownerResponse, fromStoredReasoning: true },
+      reasoning: [{
+        reason: 'Answered Why? from stored Reasoning Object — not regenerated.',
+        evidence: why.reasoning ? [why.reasoning.reasoningId, why.reasoning.decisionKey] : [],
+        confidence: why.confidence,
+      }],
+      confidence: ed.confidence,
+      questions: ed.questions,
+    };
+    return {
+      ok: true,
+      intent: 'why',
+      response: ed.ownerResponse,
+      questions: ed.questions,
+      celebrate: !!ed.celebrate,
+      confidence: ed.confidence,
+      expertsRun: ['experience_director'],
+      expertOutputs: [edRecord],
+      mergedExpertRecords: [toMergedRecord(edRecord)],
+      expertTranscript: {
+        customerVisible: false,
+        entries: [buildTranscriptEntry(edRecord, 0, req, 'why', [])],
+        assembly: {
+          expertsInOrder: ['experience_director'],
+          finalResponseSource: 'experience_director',
+          mergedFrom: ['experience_director', 'reasoning_engine'],
+          howAssembled:
+            'Hubly Brain retrieved stored Reasoning Object(s) and Experience Director phrased the answer.',
+        },
+      },
+      failures: [],
+      dna,
+      timeline: [{
+        expertId: 'experience_director',
+        ms: Date.now() - started,
+        confidence: ed.confidence,
+        summary: ed.ownerResponse,
+      }],
+      reasoningObjects: why.reasoning
+        ? [why.reasoning, ...why.history.filter((h) => h.reasoningId !== why.reasoning.reasoningId)]
+        : [],
+      whyAnswer: why,
+      experienceDirector: {
+        reviewedBy: 'experience_director',
+        actions: [...(ed.actions || []), 'answered_from_stored_reasoning'],
+        questionsShown: ed.questions?.length || 0,
+        celebrate: !!ed.celebrate,
+        hideDetails: true,
+      },
+      console: {
+        intent: 'why',
+        expertsSelected: ['experience_director'],
+        latencyMs: Date.now() - started,
+      },
+    };
   }
 
   const ordered = selectExpertsFromRegistry({
@@ -208,6 +292,27 @@ export async function think(req) {
     },
   };
 
+  // Section 8 — persist structured Reasoning Objects + Decision Graph for build flows.
+  let reasoningObjects = [];
+  if (
+    intent === 'build_business' ||
+    /pressure\s*wash|starting a|homepage|booking|pricing/i.test(String(req.request || ''))
+  ) {
+    reasoningObjects = recordBuildBusinessReasoningChain({
+      request: String(req.request || ''),
+      businessId,
+      businessVersion: req.memory?.memoryVersion ?? null,
+      workspaceVersion: req.workspace?.memoryVersion ?? null,
+      dnaVersion: dna.knowledgePack?.knowledgeVersion ?? dna.version ?? null,
+      industry:
+        req.memory?.industry ||
+        req.memory?.business?.industry ||
+        dna.knowledgePack?.industryProfile?.industryName ||
+        null,
+      experts: ordered,
+    });
+  }
+
   return {
     ok: critic ? critic.ok !== false : true,
     intent,
@@ -222,6 +327,8 @@ export async function think(req) {
     failures,
     dna,
     timeline,
+    reasoningObjects,
+    whyAnswer: null,
     experienceDirector: {
       reviewedBy: 'experience_director',
       actions: edActions,

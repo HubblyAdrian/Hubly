@@ -151,6 +151,28 @@ test('Section 7 — Business DNA is proven with Salt Lake City pressure washing 
   assert.equal(proof.evidence.releaseGate.evidenceQuality, true);
 });
 
+test('Section 8 — Reasoning Engine is proven with Why? retrieval and Decision Graph', () => {
+  const r = run('scripts/check-section8-reasoning-engine.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 8 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION8_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 8);
+  assert.equal(proof.version, '1.0.0');
+  assert.ok(proof.evidence.reasoningObjects.length >= 6);
+  assert.equal(proof.evidence.storedReasoningRetrieval.fromStoredReasoning, true);
+  assert.equal(proof.evidence.storedReasoningRetrieval.regenerated, false);
+  assert.equal(proof.evidence.versionComparison.changed, true);
+  assert.ok(proof.evidence.decisionGraph.chain.length >= 3);
+  assert.equal(proof.evidence.releaseGate.whyAnsweredFromStoredReasoning, true);
+  assert.equal(proof.evidence.releaseGate.decisionGraphLinked, true);
+});
+
 test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => {
   const r = run('scripts/milestone1.mjs');
   assert.notEqual(r.status, 0);
