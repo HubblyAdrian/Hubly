@@ -182,6 +182,19 @@ export type HublyFlightRecorder = {
     executed: false;
     waitingFor: string;
   } | null;
+  /** Milestone 1.5 · Epic 5 — Business Version summary (not applied / not rolled back). */
+  businessVersion: {
+    id: string;
+    label: string;
+    status: string;
+    changePlanId: string | null;
+    surfaces: string[];
+    changeCount: number;
+    parentVersionId: string | null;
+    rollbackAvailable: true;
+    applied: false;
+    rollbackExecuted: false;
+  } | null;
 };
 
 export type HublyExpertActivityStats = {
@@ -245,6 +258,9 @@ export type HublyMissionControlSnapshot = {
     previews: Array<NonNullable<HublyFlightRecorder["preview"]>>;
     /** Latest Collaboration sessions (Epic 4). */
     collaborations: Array<NonNullable<HublyFlightRecorder["collaboration"]>>;
+    /** Latest Business Versions (Epic 5). */
+    versions: Array<NonNullable<HublyFlightRecorder["businessVersion"]>>;
+    versionHistoryNote: string;
   };
   capabilityRegistry: Array<{ toolId: string; name: string; capabilityCount: number }>;
   knowledgeRegistry: Array<{ id: string; name: string; access: string }>;
@@ -337,6 +353,7 @@ export type RecordFlightOpts = {
   changePlan?: HublyFlightRecorder["changePlan"];
   preview?: HublyFlightRecorder["preview"];
   collaboration?: HublyFlightRecorder["collaboration"];
+  businessVersion?: HublyFlightRecorder["businessVersion"];
 };
 
 /**
@@ -445,6 +462,12 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     }
   }
 
+  if (opts.businessVersion) {
+    push("version_created", `Business Version ${opts.businessVersion.label}`, {
+      ...opts.businessVersion,
+    }, 12);
+  }
+
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -502,6 +525,7 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     changePlan: opts.changePlan ? { ...opts.changePlan } : null,
     preview: opts.preview ? { ...opts.preview } : null,
     collaboration: opts.collaboration ? { ...opts.collaboration } : null,
+    businessVersion: opts.businessVersion ? { ...opts.businessVersion } : null,
   };
 
   FLIGHTS.set(flight.executionId, flight);
@@ -735,12 +759,24 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         .filter((x): x is NonNullable<typeof x> => !!x)
         .slice(-10)
         .reverse();
+      const versions = flights
+        .map((f) => f.businessVersion)
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .slice(-10)
+        .reverse();
       return {
         milestone: "1.5" as const,
         available: false as const,
-        epic: "4 — Collaboration & Approval",
-        note: "Epic 4 — Preview → Conversation → Recommendation → Approval. Waiting for Apply Engine. No apply.",
-        recent: collaborations.length
+        epic: "5 — Version & Rollback",
+        note: "Epic 5 — Versions + rollback plans. Business Timeline. Waiting for Apply Engine. No execute.",
+        recent: versions.length
+          ? versions.map((v) => ({
+            id: v.id,
+            status: v.status,
+            summary: `${v.label} · ${v.changeCount} change(s) · rollback available`,
+            changePlanId: v.changePlanId || undefined,
+          }))
+          : collaborations.length
           ? collaborations.map((c) => ({
             id: c.id,
             status: c.status,
@@ -782,6 +818,8 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         changePlans,
         previews,
         collaborations,
+        versions,
+        versionHistoryNote: "Current → History → Diff → Rollback availability → AI restore suggestions. Try it — you can always go back.",
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

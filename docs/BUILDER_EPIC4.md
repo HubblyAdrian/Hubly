@@ -34,4 +34,4 @@ npm run check:builder-epic4
 
 ## Stop
 
-Do **not** begin Epic 5 until Founder Approval.
+Do **not** begin the next epic until Founder Approval of Epic 4.

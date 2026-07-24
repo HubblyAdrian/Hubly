@@ -1,10 +1,10 @@
 # Builder Engine Specification
 
-**Version:** 1.4.0  
-**Status:** Milestone 1.5 — Epic 1–3 ✅ · Epic 4 ✅ (Collaboration & Approval) · Epic 5+ locked  
+**Version:** 1.5.0  
+**Status:** Milestone 1.5 — Epic 1–4 ✅ · Epic 5 ✅ (Version & Rollback) · Epic 6+ locked  
 **Target:** Milestone 1.5 (12 epics · one release gate each)
 
-Epic 1–3: Intent → Change Plan → Preview. Epic 4 turns Preview into a **collaboration** (“What do you think?” → “Let's launch this.”). Apply / Rollback / surface builders are later. Do not implement them ahead of Founder Approval.
+Epic 1–4: Intent → Change Plan → Preview → Collaboration. Epic 5 is **Git for a business** — versions, diffs, rollback plans, and Business Timeline. Apply / surface builders are later. Do not implement them ahead of Founder Approval.
 
 ## Purpose
 
@@ -81,19 +81,17 @@ Preview must never mutate live business state.
 
 Nothing is applied until a later Apply epic. Preview must never mutate live business state.
 
-## Rollback Flow
+## Version & Rollback (Epic 5)
 
-```
-Applied plan → Owner “undo” / Brain safety trigger
-      ↓
-Rebuild reverse operations from `before` snapshots
-      ↓
-Apply reverse → status rolled_back
-      ↓
-Mission Control Replay shows rollback flight
-```
+1. Approved collaboration proposes a **Business Version** (Git for a business)  
+2. Surface versions: Website, Booking, Workspace, Automations, Portfolio, Packages  
+3. Compare versions with diffs  
+4. Generate full / partial / single-change **rollback plans** (never executed here)  
+5. AI restore suggestions — always owner-approved, never auto  
+6. **Business Timeline** — milestones + builder changes + achievements + recommendations  
+7. Mission Control: Current → History → Diff → Rollback availability → Restore suggestions  
 
-If rollback is unsafe, Hubly explains and queues a human-safe recovery path (Reliability queue).
+Try it. You can always go back. Apply / execute is a later epic.
 
 ## Supported builders (1.5)
 

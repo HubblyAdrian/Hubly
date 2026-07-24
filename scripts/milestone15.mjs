@@ -16,7 +16,7 @@ const EPICS = [
   { n: 2, title: 'Change Plan DSL', script: 'scripts/check-builder-epic2.mjs', unlocked: true },
   { n: 3, title: 'Preview Engine', script: 'scripts/check-builder-epic3.mjs', unlocked: true },
   { n: 4, title: 'Collaboration & Approval', script: 'scripts/check-builder-epic4.mjs', unlocked: true },
-  { n: 5, title: 'Rollback Engine', script: null, unlocked: false },
+  { n: 5, title: 'Version & Rollback', script: 'scripts/check-builder-epic5.mjs', unlocked: true },
   { n: 6, title: 'Website Builder', script: null, unlocked: false },
   { n: 7, title: 'Booking Builder', script: null, unlocked: false },
   { n: 8, title: 'CRM Builder', script: null, unlocked: false },

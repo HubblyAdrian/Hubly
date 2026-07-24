@@ -1,11 +1,11 @@
 {
   "milestone": "1.5",
-  "passed": 4,
+  "passed": 5,
   "total": 12,
-  "unlocked": 4,
-  "percent": 33,
+  "unlocked": 5,
+  "percent": 42,
   "ready": false,
-  "checkedAt": "2026-07-24T02:30:19.539Z",
+  "checkedAt": "2026-07-24T02:37:44.637Z",
   "epics": [
     {
       "n": 1,
@@ -33,9 +33,9 @@
     },
     {
       "n": 5,
-      "title": "Rollback Engine",
-      "status": "locked",
-      "script": null
+      "title": "Version & Rollback",
+      "status": "pass",
+      "script": "scripts/check-builder-epic5.mjs"
     },
     {
       "n": 6,

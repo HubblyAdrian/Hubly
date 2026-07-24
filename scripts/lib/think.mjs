@@ -41,6 +41,7 @@ import { extractBuilderIntentFromOutput } from './builder-expert.mjs';
 import { generateChangePlan } from './change-plan.mjs';
 import { generatePreview } from './preview-engine.mjs';
 import { startCollaboration } from './collaboration.mjs';
+import { proposeVersionFromPlan } from './version-engine.mjs';
 import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
@@ -674,6 +675,14 @@ export async function think(req) {
   const collaboration = preview && changePlan
     ? startCollaboration(preview, changePlan, { missionControlReplayId: null }).session
     : null;
+  const businessVersion = changePlan
+    ? proposeVersionFromPlan(
+      businessId || `biz_${Date.now().toString(36)}`,
+      changePlan,
+      preview,
+      collaboration,
+    )
+    : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ''),
     intent,
@@ -810,6 +819,20 @@ export async function think(req) {
         waitingFor: collaboration.waitingFor,
       }
       : null,
+    businessVersion: businessVersion
+      ? {
+        id: businessVersion.id,
+        label: businessVersion.label,
+        status: businessVersion.status,
+        changePlanId: businessVersion.changePlanId,
+        surfaces: [...businessVersion.surfaces],
+        changeCount: businessVersion.changes.length,
+        parentVersionId: businessVersion.parentVersionId,
+        rollbackAvailable: true,
+        applied: false,
+        rollbackExecuted: false,
+      }
+      : null,
   });
 
   if (changePlan && flightRecorder.executionId) {
@@ -822,6 +845,9 @@ export async function think(req) {
   }
   if (collaboration && flightRecorder.executionId) {
     collaboration.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (businessVersion && flightRecorder.executionId) {
+    businessVersion.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -852,6 +878,7 @@ export async function think(req) {
     changePlan,
     preview,
     collaboration,
+    businessVersion,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     experienceDirector: {

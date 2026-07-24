@@ -136,6 +136,11 @@ function recordFlightRecorder(opts) {
       }, 8);
     }
   }
+  if (opts.businessVersion) {
+    push("version_created", `Business Version ${opts.businessVersion.label}`, {
+      ...opts.businessVersion
+    }, 12);
+  }
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -181,7 +186,8 @@ function recordFlightRecorder(opts) {
     builderIntent: opts.builderIntent ? { ...opts.builderIntent } : null,
     changePlan: opts.changePlan ? { ...opts.changePlan } : null,
     preview: opts.preview ? { ...opts.preview } : null,
-    collaboration: opts.collaboration ? { ...opts.collaboration } : null
+    collaboration: opts.collaboration ? { ...opts.collaboration } : null,
+    businessVersion: opts.businessVersion ? { ...opts.businessVersion } : null
   };
   FLIGHTS.set(flight.executionId, flight);
   FLIGHT_ORDER.push(flight.executionId);
@@ -356,12 +362,18 @@ function getMissionControlSnapshot() {
       const changePlans = flights.map((f) => f.changePlan).filter((x) => !!x).slice(-10).reverse();
       const previews = flights.map((f) => f.preview).filter((x) => !!x).slice(-10).reverse();
       const collaborations = flights.map((f) => f.collaboration).filter((x) => !!x).slice(-10).reverse();
+      const versions = flights.map((f) => f.businessVersion).filter((x) => !!x).slice(-10).reverse();
       return {
         milestone: "1.5",
         available: false,
-        epic: "4 \u2014 Collaboration & Approval",
-        note: "Epic 4 \u2014 Preview \u2192 Conversation \u2192 Recommendation \u2192 Approval. Waiting for Apply Engine. No apply.",
-        recent: collaborations.length ? collaborations.map((c) => ({
+        epic: "5 \u2014 Version & Rollback",
+        note: "Epic 5 \u2014 Versions + rollback plans. Business Timeline. Waiting for Apply Engine. No execute.",
+        recent: versions.length ? versions.map((v) => ({
+          id: v.id,
+          status: v.status,
+          summary: `${v.label} \xB7 ${v.changeCount} change(s) \xB7 rollback available`,
+          changePlanId: v.changePlanId || void 0
+        })) : collaborations.length ? collaborations.map((c) => ({
           id: c.id,
           status: c.status,
           summary: `${c.openingPrompt} \xB7 ${c.iterations} iteration(s)${c.launchCta ? ` \xB7 ${c.launchCta}` : ""}`,
@@ -396,7 +408,9 @@ function getMissionControlSnapshot() {
         intents,
         changePlans,
         previews,
-        collaborations
+        collaborations,
+        versions,
+        versionHistoryNote: "Current \u2192 History \u2192 Diff \u2192 Rollback availability \u2192 AI restore suggestions. Try it \u2014 you can always go back."
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({
