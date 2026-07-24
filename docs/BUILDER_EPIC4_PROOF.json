@@ -4,7 +4,7 @@
   "name": "Collaboration & Approval Engine",
   "title": "Collaboration & Approval Engine",
   "passed": true,
-  "checkedAt": "2026-07-24T03:36:34.868Z",
+  "checkedAt": "2026-07-24T03:47:07.688Z",
   "proofs": {
     "collaborationLoop": true,
     "hublyRecommends": true,
@@ -25,11 +25,11 @@
         "request": "Make my homepage more premium.",
         "passed": true,
         "preview": {
-          "id": "prv_mrye22vp_fuxssj",
+          "id": "prv_mryefn60_nj6a1h",
           "primarySurface": "website"
         },
         "collaboration": {
-          "id": "collab_mrye22vr_38n5m0",
+          "id": "collab_mryefn63_ss5fkf",
           "openingPrompt": "What do you think?",
           "iterations": 4,
           "recommendation": {
@@ -181,11 +181,11 @@
         "request": "I want arrival windows.",
         "passed": true,
         "preview": {
-          "id": "prv_mrye22vx_o7x9uj",
+          "id": "prv_mryefn69_wfwlb8",
           "primarySurface": "booking"
         },
         "collaboration": {
-          "id": "collab_mrye22vz_cu0yk7",
+          "id": "collab_mryefn6b_vzpesc",
           "openingPrompt": "What do you think?",
           "iterations": 3,
           "recommendation": {
@@ -307,16 +307,16 @@
         "request": "Move Jobs above Customers.",
         "passed": true,
         "preview": {
-          "id": "prv_mrye22w1_rhup8y",
+          "id": "prv_mryefn6d_qjhx2k",
           "primarySurface": "workspace"
         },
         "collaboration": {
-          "id": "collab_mrye22w1_w5lvcz",
+          "id": "collab_mryefn6e_gwnc4b",
           "openingPrompt": "What do you think?",
           "iterations": 3,
           "recommendation": {
             "optionId": null,
-            "label": "Workspace Layout",
+            "label": "Workspace Intelligence",
             "why": [
               "Matches the Change Plan desired state",
               "Balanced risk vs impact",
@@ -364,12 +364,12 @@
             {
               "role": "hubly",
               "kind": "open",
-              "message": "Here's what I built for Workspace Layout.\n\nWhat do you think?"
+              "message": "Here's what I built for Workspace Intelligence.\n\nWhat do you think?"
             },
             {
               "role": "hubly",
               "kind": "recommendation",
-              "message": "I recommend Workspace Layout."
+              "message": "I recommend Workspace Intelligence."
             },
             {
               "role": "owner",
@@ -433,11 +433,11 @@
         "request": "Organize my portfolio.",
         "passed": true,
         "preview": {
-          "id": "prv_mrye22w3_ro9viu",
+          "id": "prv_mryefn6g_ol6q1x",
           "primarySurface": "portfolio"
         },
         "collaboration": {
-          "id": "collab_mrye22w4_iikebg",
+          "id": "collab_mryefn6g_xvig8p",
           "openingPrompt": "What do you think?",
           "iterations": 3,
           "recommendation": {
@@ -559,11 +559,11 @@
         "request": "Add arrival windows and update my website.",
         "passed": true,
         "preview": {
-          "id": "prv_mrye22w6_ifumhc",
+          "id": "prv_mryefn6j_b294vd",
           "primarySurface": "multi"
         },
         "collaboration": {
-          "id": "collab_mrye22w7_yynvva",
+          "id": "collab_mryefn6k_q5v79k",
           "openingPrompt": "What do you think?",
           "iterations": 2,
           "recommendation": {

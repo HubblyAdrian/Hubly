@@ -1,10 +1,10 @@
 # Builder Engine Specification
 
-**Version:** 1.7.0  
-**Status:** Milestone 1.5 — Epic 1–6 ✅ · Epic 7 ✅ (Booking Intelligence Builder) · Epic 8+ locked  
+**Version:** 1.8.0  
+**Status:** Milestone 1.5 — Epic 1–7 ✅ · Epic 8 ✅ (Workspace Intelligence Builder) · Epic 9+ locked  
 **Target:** Milestone 1.5 (12 epics · one release gate each)
 
-Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6 is **Business Builder**. Epic 7 is **Booking Intelligence Builder** — owners describe how they operate; Hubly builds scheduling concepts (not a settings page), scores Booking Health, recommends improvements, and simulates the next 7 days before approval. Apply / remaining surface builders are later. Do not implement them ahead of Founder Approval.
+Epic 1–5: Intent → Change Plan → Preview → Collaboration → Versions. Epic 6 is **Business Builder**. Epic 7 is **Booking Intelligence Builder**. Epic 8 is **Workspace Intelligence Builder** — the workspace evolves around how each owner works (conversation, not settings), with adaptive homepage/nav, contextual quick actions, Workspace Health, multi-device layouts, and Focus Mode. Apply / remaining builders are later. Do not implement them ahead of Founder Approval.
 
 ## Purpose
 
@@ -26,10 +26,10 @@ Builder modules register via Platform Extensibility (`builder.*` Feature Manifes
 - Business Builder (orchestrates creative sessions; owns the customer promise)  
 - Website module (`website_builder`) — one canvas inside Business Builder  
 - Booking Intelligence Builder (`booking`) — scheduling concepts, health, simulator  
+- Workspace Intelligence Builder (`workspace_builder`) — adapts around how the owner works  
 - Automation Builder  
 - Portfolio Builder  
 - Package Builder  
-- Workspace Builder  
 
 ## Business Builder (Epic 6)
 
@@ -51,6 +51,18 @@ Builder modules register via Platform Extensibility (`builder.*` Feature Manifes
 6. **AI Schedule Simulator** — next 7 days before approve (jobs moved, drive saved, conflicts, slots, revenue)  
 7. Mission Control records rules, health, recommendations, versions/timeline  
 8. Still requires Collaboration/Approval — no silent apply  
+
+## Workspace Intelligence Builder (Epic 8)
+
+1. Owner describes how they work (no settings / drag-and-drop)  
+2. Workspace Memory: favorites, workflows, time-of-day patterns, hidden tools, landing page  
+3. Adaptive homepage + navigation from behavior and industry  
+4. Contextual quick actions (morning / afternoon / Friday / rainy day)  
+5. Workspace Health + explained AI recommendations (never silent moves)  
+6. Multi-device: desktop / tablet / phone adapt independently  
+7. **Focus Mode** — Job / Sales / Admin / Growth Day reorganizes the day  
+8. Mission Control records workspace evolution  
+9. Still requires Collaboration/Approval — no silent apply  
 
 ## Change Plans
 

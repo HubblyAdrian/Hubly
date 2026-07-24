@@ -19,7 +19,7 @@ const EPICS = [
   { n: 5, title: 'Version & Rollback', script: 'scripts/check-builder-epic5.mjs', unlocked: true },
   { n: 6, title: 'Business Builder', script: 'scripts/check-builder-epic6.mjs', unlocked: true },
   { n: 7, title: 'Booking Intelligence Builder', script: 'scripts/check-builder-epic7.mjs', unlocked: true },
-  { n: 8, title: 'Workspace Builder', script: null, unlocked: false },
+  { n: 8, title: 'Workspace Intelligence Builder', script: 'scripts/check-builder-epic8.mjs', unlocked: true },
   { n: 9, title: 'Automation Builder', script: null, unlocked: false },
   { n: 10, title: 'Portfolio Builder', script: null, unlocked: false },
   { n: 11, title: 'Hubly Chat', script: null, unlocked: false },

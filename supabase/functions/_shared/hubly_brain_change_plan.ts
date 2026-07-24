@@ -87,6 +87,14 @@ export type ChangePlanDesiredState = {
     sidebar_order?: string[];
     pinned?: string[];
     hidden_modules?: string[];
+    homepage?: string;
+    focus_mode?: { mode: string };
+    devices?: {
+      phone?: { navigation?: string[]; homepage?: string };
+      desktop?: { navigation?: string[]; homepage?: string };
+      tablet?: { navigation?: string[]; homepage?: string };
+    };
+    recommendations?: { generate?: boolean };
   };
   crm?: {
     sidebar?: { move?: Array<{ item: string; above: string }> };
@@ -182,7 +190,7 @@ const SYSTEM_TO_BUILDER: Record<string, { type: BuilderTypeId; owner: string }> 
   Booking: { type: "booking", owner: "Booking Intelligence Builder" },
   Integrations: { type: "booking", owner: "Booking Intelligence Builder" },
   CRM: { type: "crm", owner: "CRM Builder" },
-  Workspace: { type: "workspace_builder", owner: "Workspace Builder" },
+  Workspace: { type: "workspace_builder", owner: "Workspace Intelligence Builder" },
   Portfolio: { type: "portfolio_builder", owner: "Portfolio Builder" },
   Packages: { type: "packages_builder", owner: "Packages Builder" },
   Automations: { type: "automation", owner: "Automation Builder" },
@@ -524,23 +532,146 @@ function draftActionsFromIntent(intent: BuilderIntent): {
     }
   }
 
-  if (systems.has("Workspace") || /jobs above|sidebar|move /.test(req)) {
-    push({
-      builderOwner: "Workspace Builder",
-      builderType: "workspace_builder",
-      system: "Workspace",
-      path: "workspace.sidebar_order",
-      desired: ["Jobs", "Customers"],
-      reason: "Owner wants Jobs above Customers in navigation.",
-      risk: "low",
-      dependencies: [],
-      estimatedImpact: {
-        complexity: "low",
-        summary: "Navigation matches how the owner works day to day.",
-      },
-      confidence: Math.max(92, intent.confidence),
-      capabilityId: "sidebar_order",
-    });
+  if (
+    systems.has("Workspace") ||
+    /jobs above|sidebar|move |hide revenue|hide marketing|never.*(use|look)|pin quick|calendar.*(home|landing)|homepage|mobile|phone workspace|what (do you think|should i)|focus mode|job day/.test(
+      req,
+    )
+  ) {
+    const workspaceOwner = "Workspace Intelligence Builder";
+    if (/(?:put|move|place).+above|jobs above|sidebar/.test(req)) {
+      push({
+        builderOwner: workspaceOwner,
+        builderType: "workspace_builder",
+        system: "Workspace",
+        path: "workspace.sidebar_order",
+        desired: ["Jobs", "Customers"],
+        reason: "Owner wants Jobs above Customers in navigation.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: {
+          complexity: "low",
+          summary: "Navigation matches how the owner works day to day.",
+        },
+        confidence: Math.max(92, intent.confidence),
+        capabilityId: "sidebar_order",
+      });
+    }
+    if (/hide revenue|never.*(look at|use) revenue|don'?t (need|use) revenue/.test(req)) {
+      push({
+        builderOwner: workspaceOwner,
+        builderType: "workspace_builder",
+        system: "Workspace",
+        path: "workspace.hidden_modules",
+        desired: ["Revenue"],
+        reason: "Owner never looks at Revenue — hide it.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { complexity: "low", summary: "Less clutter; focus on used surfaces." },
+        confidence: Math.max(90, intent.confidence),
+        capabilityId: "dashboard_layout",
+      });
+    }
+    if (/never.*(use|open|look).*marketing|hide marketing|don'?t (need|use) marketing/.test(req)) {
+      push({
+        builderOwner: workspaceOwner,
+        builderType: "workspace_builder",
+        system: "Workspace",
+        path: "workspace.hidden_modules",
+        desired: ["Marketing"],
+        reason: "Owner never uses Marketing — hide it.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { complexity: "low", summary: "Hide unused Marketing module." },
+        confidence: Math.max(90, intent.confidence),
+        capabilityId: "dashboard_layout",
+      });
+    }
+    if (/calendar.*(home|landing|start)|make calendar|land on calendar|homepage.*calendar/.test(req)) {
+      push({
+        builderOwner: workspaceOwner,
+        builderType: "workspace_builder",
+        system: "Workspace",
+        path: "workspace.homepage",
+        desired: "Calendar",
+        reason: "Make Calendar the adaptive homepage.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { complexity: "low", summary: "Homepage matches morning habits." },
+        confidence: Math.max(91, intent.confidence),
+        capabilityId: "dashboard_layout",
+      });
+    }
+    if (/pin quick quote|quick quote|pin .+quote/.test(req)) {
+      push({
+        builderOwner: workspaceOwner,
+        builderType: "workspace_builder",
+        system: "Workspace",
+        path: "workspace.pinned",
+        desired: ["Quick Quote"],
+        reason: "Pin Quick Quote for constant quote creation.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { complexity: "low", summary: "Faster access to Quick Quote." },
+        confidence: Math.max(92, intent.confidence),
+        capabilityId: "pin_actions",
+      });
+    }
+    if (/mobile|phone workspace|for (my )?phone|build me a workspace for mobile/.test(req)) {
+      push({
+        builderOwner: workspaceOwner,
+        builderType: "workspace_builder",
+        system: "Workspace",
+        path: "workspace.devices.phone",
+        desired: {
+          navigation: ["Today's Jobs", "Maps", "Customer Calls"],
+          homepage: "Today's Jobs",
+        },
+        reason: "Build a mobile-first workspace.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { complexity: "medium", summary: "Phone prioritizes jobs, maps, calls." },
+        confidence: Math.max(88, intent.confidence),
+        capabilityId: "dashboard_layout",
+      });
+    }
+    if (/what (do you think|should i)|recommend|suggest.*(change|workspace)|should change/.test(req)) {
+      push({
+        builderOwner: workspaceOwner,
+        builderType: "workspace_builder",
+        system: "Workspace",
+        path: "workspace.recommendations",
+        desired: { generate: true },
+        reason: "Owner asked what to change — generate explained recommendations.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { complexity: "low", summary: "AI recommendations with explanations." },
+        confidence: Math.max(85, intent.confidence),
+        capabilityId: "dashboard_layout",
+      });
+    }
+    if (/focus mode|job day|sales day|admin day|growth day|what kind of day/.test(req)) {
+      const mode = /sales/.test(req)
+        ? "sales_day"
+        : /admin|invoice/.test(req)
+        ? "admin_day"
+        : /growth|marketing|review/.test(req)
+        ? "growth_day"
+        : "job_day";
+      push({
+        builderOwner: workspaceOwner,
+        builderType: "workspace_builder",
+        system: "Workspace",
+        path: "workspace.focus_mode",
+        desired: { mode },
+        reason: "Focus Mode reorganizes the workspace around today's priority.",
+        risk: "low",
+        dependencies: [],
+        estimatedImpact: { complexity: "medium", summary: "Day-type Focus Mode." },
+        confidence: Math.max(87, intent.confidence),
+        capabilityId: "dashboard_layout",
+      });
+    }
   }
 
   if (systems.has("CRM") && !systems.has("Workspace")) {

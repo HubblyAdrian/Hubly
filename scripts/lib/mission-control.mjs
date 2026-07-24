@@ -156,6 +156,16 @@ function recordFlightRecorder(opts) {
       12
     );
   }
+  if (opts.workspaceIntelligence) {
+    push(
+      "workspace_intelligence",
+      `Workspace Intelligence: ${opts.workspaceIntelligence.changeCount} change(s) \xB7 health ${opts.workspaceIntelligence.healthOverall}`,
+      {
+        ...opts.workspaceIntelligence
+      },
+      12
+    );
+  }
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -204,7 +214,8 @@ function recordFlightRecorder(opts) {
     collaboration: opts.collaboration ? { ...opts.collaboration } : null,
     businessVersion: opts.businessVersion ? { ...opts.businessVersion } : null,
     creativeSession: opts.creativeSession ? { ...opts.creativeSession } : null,
-    bookingIntelligence: opts.bookingIntelligence ? { ...opts.bookingIntelligence } : null
+    bookingIntelligence: opts.bookingIntelligence ? { ...opts.bookingIntelligence } : null,
+    workspaceIntelligence: opts.workspaceIntelligence ? { ...opts.workspaceIntelligence } : null
   };
   FLIGHTS.set(flight.executionId, flight);
   FLIGHT_ORDER.push(flight.executionId);
@@ -382,12 +393,17 @@ function getMissionControlSnapshot() {
       const versions = flights.map((f) => f.businessVersion).filter((x) => !!x).slice(-10).reverse();
       const creativeSessions = flights.map((f) => f.creativeSession).filter((x) => !!x).slice(-10).reverse();
       const bookingIntelligencePlans = flights.map((f) => f.bookingIntelligence).filter((x) => !!x).slice(-10).reverse();
+      const workspaceIntelligencePlans = flights.map((f) => f.workspaceIntelligence).filter((x) => !!x).slice(-10).reverse();
       return {
         milestone: "1.5",
         available: false,
-        epic: "7 \u2014 Booking Intelligence Builder",
-        note: "Epic 7 \u2014 Booking Intelligence Builder. Owners describe how they operate. Schedule Simulator. Waiting for Approval/Apply. No apply.",
-        recent: bookingIntelligencePlans.length ? bookingIntelligencePlans.map((b) => ({
+        epic: "8 \u2014 Workspace Intelligence Builder",
+        note: "Epic 8 \u2014 Workspace Intelligence Builder. Workspace evolves around how the owner works. Focus Mode. Waiting for Approval/Apply. No apply.",
+        recent: workspaceIntelligencePlans.length ? workspaceIntelligencePlans.map((w) => ({
+          id: w.id,
+          status: "workspace_intelligence",
+          summary: `${w.label}: ${w.changeCount} change(s) \xB7 health ${w.healthOverall} \xB7 home ${w.homepage}`
+        })) : bookingIntelligencePlans.length ? bookingIntelligencePlans.map((b) => ({
           id: b.id,
           status: "booking_intelligence",
           summary: `${b.label}: ${b.ruleCount} rule(s) \xB7 health ${b.healthOverall} \xB7 sim ${b.simulatorHorizonDays}d`
@@ -439,7 +455,8 @@ function getMissionControlSnapshot() {
         versions,
         versionHistoryNote: "Current \u2192 History \u2192 Diff \u2192 Rollback availability \u2192 AI restore suggestions. Try it \u2014 you can always go back.",
         creativeSessions,
-        bookingIntelligence: bookingIntelligencePlans
+        bookingIntelligence: bookingIntelligencePlans,
+        workspaceIntelligence: workspaceIntelligencePlans
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

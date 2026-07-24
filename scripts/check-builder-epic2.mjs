@@ -79,7 +79,7 @@ const demos = [
   {
     id: "workspace",
     request: "Move Jobs above Customers.",
-    builders: ["Workspace Builder"],
+    builders: ["Workspace Intelligence Builder"],
     builderTypes: ["workspace_builder"],
     pathHint: /workspace\./,
   },
@@ -238,7 +238,7 @@ check("MC builderActions.available === false", snap.builderActions?.available ==
 check("MC displays Change Plans", (snap.builderActions?.changePlans || []).length >= 1);
 check(
   "MC epic mentions Builder pipeline",
-  /Change Plan|Preview|Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Epic [2-7]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
+  /Change Plan|Preview|Collaboration|Version|Rollback|Business Builder|Booking Intelligence|Workspace Intelligence|Epic [2-8]/i.test(`${snap.builderActions?.epic || ""} ${snap.builderActions?.note || ""}`),
 );
 check(
   "MC still blocks apply",

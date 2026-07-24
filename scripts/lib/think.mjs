@@ -44,6 +44,7 @@ import { startCollaboration } from './collaboration.mjs';
 import { proposeVersionFromPlan } from './version-engine.mjs';
 import { startCreativeSession } from './business-builder.mjs';
 import { buildBookingIntelligence } from './booking-intelligence.mjs';
+import { buildWorkspaceIntelligence } from './workspace-intelligence.mjs';
 import {
   normalizeWorkspaceMemory,
   extractWorkspaceSuggestionsFromRequest,
@@ -59,7 +60,7 @@ export function detectIntent(request, explicit) {
   if (isWhyDecisionQuestion(r) || isWhyQuestion(r)) return 'why';
   if (isConversationIntelligenceQuestion(r)) return 'conversation_intelligence';
   if (/weather|forecast|temperature/.test(r)) return 'weather';
-  if (/move |sidebar|dashboard|pin |hide |workspace|jobs above|put .+ above/.test(r)) return 'workspace';
+  if (/move |sidebar|dashboard|pin |hide |workspace|jobs above|put .+ above|homepage|mobile workspace|focus mode|what (do you think|should i)/.test(r)) return 'workspace';
   // Capability / Builder prep — before coach (which matches "booking")
   if (
     /arrival window|same-?day|no same.?day|travel buffer|minimum notice|daily capacity|two jobs|2 jobs|maximum per day|weather|rain(ing)?|reschedule exterior|estimate.?only|tuesdays? are estimate|optimiz(e|ing).*schedule|fridays? (are|only).*ceramic|ceramic.*(friday|only|after 2)|coating.?only|seasonal|snow removal/.test(
@@ -723,6 +724,28 @@ export async function think(req) {
         missionControlReplayId: null,
       })
       : null;
+  const workspaceRequest = String(req.request || '');
+  const wantsWorkspaceIntelligence = !!(
+    changePlan &&
+    (changePlan.affectedSystems.includes('Workspace') ||
+      changePlan.changes.some((c) => c.path.startsWith('workspace.')) ||
+      /jobs above|sidebar|hide |pin |homepage|calendar.*(home|landing)|mobile|phone workspace|never use|what (do you think|should i)|focus mode|job day/.test(
+        workspaceRequest.toLowerCase(),
+      ))
+  );
+  const workspaceIntelligence =
+    wantsWorkspaceIntelligence && changePlan
+      ? buildWorkspaceIntelligence({
+        businessId: businessId || `biz_${Date.now().toString(36)}`,
+        plan: changePlan,
+        industry:
+          req.memory?.industry ||
+          req.memory?.business?.industry ||
+          dna?.knowledgePack?.industryProfile?.industryName ||
+          null,
+        missionControlReplayId: null,
+      })
+      : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ''),
     intent,
@@ -905,6 +928,23 @@ export async function think(req) {
         waitingFor: bookingIntelligence.waitingFor,
       }
       : null,
+    workspaceIntelligence: workspaceIntelligence
+      ? {
+        id: workspaceIntelligence.id,
+        label: workspaceIntelligence.label,
+        changeCount: workspaceIntelligence.changes.length,
+        concepts: [...new Set(workspaceIntelligence.changes.map((c) => c.conceptId))],
+        healthOverall: workspaceIntelligence.health.overall,
+        recommendationCount: workspaceIntelligence.recommendations.length,
+        homepage: workspaceIntelligence.homepage.landing,
+        focusMode: workspaceIntelligence.focusMode?.mode ?? null,
+        deviceCount: workspaceIntelligence.devices.length,
+        requiresApproval: true,
+        applied: false,
+        executed: false,
+        waitingFor: workspaceIntelligence.waitingFor,
+      }
+      : null,
   });
 
   if (changePlan && flightRecorder.executionId) {
@@ -926,6 +966,9 @@ export async function think(req) {
   }
   if (bookingIntelligence && flightRecorder.executionId) {
     bookingIntelligence.missionControlReplayId = flightRecorder.executionId;
+  }
+  if (workspaceIntelligence && flightRecorder.executionId) {
+    workspaceIntelligence.missionControlReplayId = flightRecorder.executionId;
   }
 
   return {
@@ -959,6 +1002,7 @@ export async function think(req) {
     businessVersion,
     creativeSession,
     bookingIntelligence,
+    workspaceIntelligence,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     experienceDirector: {

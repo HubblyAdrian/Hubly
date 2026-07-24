@@ -374,7 +374,7 @@ function bootstrapDefaultRegistries() {
   });
   registerTool({
     id: "workspace_builder",
-    name: "Workspace Builder",
+    name: "Workspace Intelligence Builder",
     version: "1.0.0",
     purpose: "Own workspace layout and navigation preferences (Builder Engine)",
     responsibilities: ["Sidebar order", "Dashboard layout", "Pinned actions"],

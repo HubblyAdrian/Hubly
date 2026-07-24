@@ -59,18 +59,20 @@ function collectSignals(request) {
       weight: 3
     });
   }
-  if (/move .*above|jobs above|sidebar order|workspace|dashboard layout|put .+ above/.test(r)) {
+  if (/move .*above|jobs above|sidebar order|workspace|dashboard layout|put .+ above|hide revenue|hide marketing|never.*(use|look)|pin quick|calendar.*(home|landing)|make calendar|mobile workspace|phone workspace|what (do you think|should i)|focus mode|job day/.test(
+    r
+  )) {
     signals.push({
       category: "Workspace",
       system: "Workspace",
-      label: "Workspace Layout",
-      goal: "Navigation Order",
+      label: "Workspace Intelligence",
+      goal: /hide/.test(r) ? "Hide Module" : /pin/.test(r) ? "Pin Action" : /calendar|homepage|landing|home/.test(r) ? "Adaptive Homepage" : /mobile|phone/.test(r) ? "Mobile Workspace" : /recommend|what (do you think|should i)/.test(r) ? "Workspace Recommendations" : /focus|job day|sales day/.test(r) ? "Focus Mode" : "Navigation Order",
       risk: "low",
       defaultCaps: [{
         toolId: "workspace_builder",
-        toolName: "Workspace Builder",
-        capabilityId: "sidebar_order",
-        capabilityLabel: "Sidebar Order"
+        toolName: "Workspace Intelligence Builder",
+        capabilityId: /pin/.test(r) ? "pin_actions" : "sidebar_order",
+        capabilityLabel: /pin/.test(r) ? "Pin Actions" : "Sidebar Order"
       }],
       weight: 3
     });
