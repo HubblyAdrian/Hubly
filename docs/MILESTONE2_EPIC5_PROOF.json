@@ -2,11 +2,11 @@
   "epic": 5,
   "title": "Business Reveal",
   "passed": true,
-  "checkedAt": "2026-07-24T17:35:25.302Z",
+  "checkedAt": "2026-07-24T21:12:16.477Z",
   "version": "1.0.0",
-  "hero": "I think we built something you're going to be proud of.",
-  "pride": "Six minutes ago, this business only existed as an idea. Now it has a brand, a website, a booking experience, and a strategy.",
-  "forward": "When you're ready, I'll help you launch it.",
+  "hero": "Your business is ready.",
+  "pride": "Website, booking, CRM, packages, and calendar — built while we talked.",
+  "forward": "Continue to My Workspace",
   "timeCapsule": "Version 1.0 — Day One",
   "industries": {
     "pressure_washing": {

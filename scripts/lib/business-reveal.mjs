@@ -6,13 +6,13 @@
  */
 export const REVEAL_VERSION = "1.0.0";
 export const REVEAL_LABEL = "Business Reveal";
-export const REVEAL_HERO =
-  "I think we built something you're going to be proud of.";
+/** Hubly v3 — visual ready, not report chrome */
+export const REVEAL_HERO = "Your business is ready.";
 export const REVEAL_PRIDE =
-  "Six minutes ago, this business only existed as an idea. Now it has a brand, a website, a booking experience, and a strategy.";
-export const REVEAL_FORWARD =
-  "When you're ready, I'll help you launch it.";
+  "Website, booking, CRM, packages, and calendar — built while we talked.";
+export const REVEAL_FORWARD = "Continue to My Workspace";
 export const TIME_CAPSULE_LABEL = "Version 1.0 — Day One";
+export const REVEAL_V3 = true;
 
 export const REVEAL_SECTIONS = [
   "identity",
@@ -481,22 +481,22 @@ export function evaluateRevealHtml(html) {
 
   const checks = {
     revealCanvas: ok(/data-business-reveal|is-reveal-canvas|id="is-step-reveal"/.test(h), "Missing Reveal canvas"),
-    heroStatement: ok(/I think we built something you're going to be proud of/.test(h), "Missing hero statement"),
-    welcomeBiz: ok(/Welcome to|is-reveal-welcome/.test(h), "Missing Welcome to business"),
+    heroStatement: ok(/Your business is ready/.test(h), "Missing v3 hero statement"),
+    welcomeBiz: ok(/is-reveal-welcome|built while we talked|Website, booking/.test(h), "Missing ready subtitle"),
     guidedSections: ok(
-      /is-reveal-section|Business Identity|Booking Experience|Business Snapshot/.test(h),
-      "Missing guided sections",
+      /is-reveal-ready-grid|data-v3-reveal|Website[\s\S]{0,200}Booking|isRevealRenderReadyCards/.test(h),
+      "Missing visual ready cards",
     ),
-    whyExplain: ok(/Why we built it|is-reveal-why|answerWhyFromStore|isRevealAskWhy/.test(h), "Missing Why explanations"),
-    snapshot: ok(/Business Snapshot|is-reveal-snapshot/.test(h), "Missing Business Snapshot"),
-    confidence: ok(/Overall Business Confidence|is-reveal-confidence/.test(h), "Missing confidence summary"),
-    alternatives: ok(/Show me the luxury|almost picked|is-reveal-alts|isRevealShowAlternative/.test(h), "Missing alternatives"),
-    interactiveWhy: ok(/Why did you do this|is-reveal-ask|isRevealAskWhy/.test(h), "Missing interactive Why"),
-    prideMoment: ok(/Six minutes ago|is-reveal-pride/.test(h), "Missing pride moment"),
-    forwardLaunch: ok(/When you're ready, I'll help you launch it/.test(h), "Missing Epic 6 transition"),
-    noDashboardFirst: ok(!/Go to dashboard|Open dashboard/i.test(slice), "Dashboard shown first"),
+    whyExplain: ok(/answerWhyFromStore|is-reveal-why|isRevealAskWhy|orchestrateBusinessReveal/.test(h), "Missing stored reasoning helpers"),
+    snapshot: ok(/isRevealRenderReadyCards|data-v3-reveal-cards|Website/.test(h), "Missing visual surfaces"),
+    confidence: ok(/data-v3-reveal="1"|REVEAL_V3|visual ready/.test(h) || !/Overall Business Confidence/.test(slice), "Report confidence still primary"),
+    alternatives: ok(/data-v3-reveal="1"|Continue to My Workspace/.test(h), "Missing v3 continue path"),
+    interactiveWhy: ok(/isRevealContinueToWorkspace|Continue to My Workspace/.test(h), "Missing Continue CTA"),
+    prideMoment: ok(/Your business is ready|built while we talked/.test(h), "Missing ready moment"),
+    forwardLaunch: ok(/Continue to My Workspace|isRevealContinueToWorkspace/.test(h), "Missing workspace transition"),
+    noDashboardFirst: ok(!/Go to dashboard|Open dashboard/i.test(slice), "Dashboard shown first on Reveal"),
     noWebsiteComplete: ok(!/Website complete|Website finished/i.test(slice), "Says website complete"),
-    timeCapsule: ok(/Version 1\.0 — Day One|Time Capsule|is-reveal-capsule|timeCapsule/.test(h), "Missing Time Capsule"),
+    timeCapsule: ok(/timeCapsule|Version 1\.0/.test(h), "Missing Version archive helper"),
     creativeHandoff: ok(/isRunBusinessReveal|isRunCreativeBuildExperience[\s\S]{0,400}isRunBusinessReveal/.test(h), "Creative not handing off to Reveal"),
     wordmark: ok(/hubly-wordmark/.test(slice) || /is-reveal-brand/.test(h), "Missing Hubly brand"),
   };

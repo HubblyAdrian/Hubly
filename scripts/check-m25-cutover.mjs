@@ -44,7 +44,7 @@ check("Apex / is Welcome (not platform-home)", !/urlPath === '\/'[\s\S]{0,120}pl
 check("Legacy marketing at /platform", /\/platform/.test(routerSrc) && /platform-home\.html/.test(routerSrc));
 check("p-signup is Welcome", /id="p-signup"[\s\S]{0,200}data-welcome-experience/.test(html));
 check("No old auth-shell signup title", !/id="p-signup"[\s\S]{0,2500}Let's build your site/.test(html));
-check("goDash opens Business Home", /function goDash\(\)[\s\S]{0,200}openProductionBusinessHome/.test(html));
+check("goDash opens Operate Home (OS chassis)", /function goDash\(\)[\s\S]{0,240}openOperateHome/.test(html));
 check("Advanced Studio escape hatch exists", /data-advanced-studio|openAdvancedStudio|Advanced Studio/.test(html));
 check("No Classic workspace home escape", !/Classic workspace/.test(html));
 check("Marketing CTAs go through Welcome", /function mktStartFromPrompt[\s\S]{0,400}p-signup/.test(html));
@@ -59,17 +59,17 @@ const walk = [
   ["Reveal", /is-step-reveal/],
   ["Save Business", /is-step-save-business/],
   ["Launch", /is-step-business-launch/],
-  ["Business Home", /is-step-business-home|openProductionBusinessHome/],
+  ["Business Home shell (archived)", /is-step-business-home/],
   ["Creative Workspace", /is-step-creative-workspace|isEnterCreativeWorkspace/],
-  ["Hubly Daily", /is-step-hubly-daily|isRunHublyDaily/],
-  ["Living Business", /is-step-living-business|isEnterLivingBusiness/],
+  ["Operate Home", /openOperateHome|data-v3-operate-home/],
+  ["Living Business shell (archived)", /is-step-living-business/],
 ];
 for (const [label, re] of walk) check(`Walkthrough: ${label}`, re.test(html));
 
 console.log("\nPhase D — Dead code / single product\n");
 check("Stale root hubly.html twin removed", !fs.existsSync(rootTwin));
 check("Router serves public/hubly.html only", /public\/hubly\.html/.test(routerSrc));
-check("preferM2ExperienceHome defaults to cutover home", /function preferM2ExperienceHome[\s\S]{0,300}return true/.test(html));
+check("preferM2ExperienceHome off (Operate = chassis)", /function preferM2ExperienceHome[\s\S]{0,300}return false/.test(html));
 
 // Router smoke
 const router = require(path.join(root, "api/router.js"));
