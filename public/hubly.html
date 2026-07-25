@@ -17964,12 +17964,9 @@ async function isDiscoverySend(text){
   isRenderLiveBuild();
   schedulePersistInstantSiteDraft();
   S._is._talkBusy=false;
-  if(ready||session.readyForThinking){
-    await isSleep(500);
-    await isCreateContinueToReveal();
-  }else{
-    setTimeout(()=>document.getElementById('is-talk-input')?.focus(),40);
-  }
+  // Never auto-advance to Reveal — owners must choose “Show me what you built”.
+  if(session.holyShitComplete)isShowCreateRevealChip();
+  setTimeout(()=>document.getElementById('is-talk-input')?.focus(),40);
 }
 /** Light up studio surfaces the Brain asked for. */
 function isDiscoveryApplyBuildActions(session){
