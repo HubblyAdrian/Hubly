@@ -1198,25 +1198,36 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-hubly-thinking .th-line{flex:1;min-width:0}
 .is-hubly-thinking.is-pulse .th-line{animation:isThinkFade 1.2s ease}
 @keyframes isThinkFade{0%{opacity:.45}40%{opacity:1}100%{opacity:.9}}
-.is-hubly-team{
-  margin:0 0 10px;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.14);
+/* One intelligent system — not a cast of fake employees */
+.is-hubly-workspace{
+  margin:0 0 10px;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.14);
   background:rgba(15,23,42,.35)
 }
-.is-hubly-team .sk{
-  font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;margin:0 0 8px
+.is-hubly-workspace .ws-status{
+  font-size:13px;font-weight:750;color:#fff;margin:0 0 10px
 }
-.is-hubly-team-list{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
-.is-hubly-team-list li{
-  display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;
-  font-size:12px;line-height:1.3;color:rgba(255,255,255,.55);opacity:.55;transition:opacity .25s ease,color .25s ease
+.is-hubly-workspace .ws-status em{font-style:normal;color:#fdba74}
+.is-workspace-list{display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
+.is-workspace-list li{
+  font-size:12.5px;font-weight:600;line-height:1.35;color:rgba(255,255,255,.42);
+  display:flex;gap:8px;align-items:flex-start;transition:color .25s ease,opacity .25s ease
 }
-.is-hubly-team-list li.is-busy{opacity:1;color:rgba(255,255,255,.92)}
-.is-hubly-team-list li.is-done{opacity:.9;color:rgba(255,255,255,.78)}
-.is-hubly-team-list li .ico{font-size:14px;line-height:1.2}
-.is-hubly-team-list li .role{font-weight:750;display:block}
-.is-hubly-team-list li .task{font-weight:550;color:rgba(255,255,255,.62);display:block;margin-top:1px}
-.is-hubly-team-list li.is-busy .task{color:#fdba74}
+.is-workspace-list li::before{content:"";width:14px;flex:0 0 auto;text-align:center;color:rgba(255,255,255,.35)}
+.is-workspace-list li.is-working{color:rgba(255,255,255,.92)}
+.is-workspace-list li.is-working::before{content:"·";color:#fdba74;font-weight:900}
+.is-workspace-list li.is-done{color:rgba(255,255,255,.78)}
+.is-workspace-list li.is-done::before{content:"✓";color:#fdba74;font-weight:800}
 .is-pkg-appear{animation:isLivePop .4s ease both}
+.dash-discover{
+  margin:0 0 16px;padding:14px 16px;border-radius:16px;
+  border:1px solid rgba(217,99,45,.35);background:rgba(217,99,45,.06)
+}
+.dash-discover .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#D9632D;font-weight:750;margin:0 0 6px}
+.dash-discover .t{font-size:15px;font-weight:750;margin:0 0 6px;line-height:1.35}
+.dash-discover .s{font-size:13px;color:var(--ink-3);margin:0 0 12px;line-height:1.45;max-width:52ch}
+.dash-discover .actions{display:flex;flex-wrap:wrap;gap:8px}
+.dash-work-empty{font-size:13px;color:var(--ink-3);line-height:1.5;margin:0}
+.dash-work-empty strong{display:block;color:var(--ink);font-weight:750;margin:0 0 6px}
 /* Milestone 2 · Epic 3 — Hubly Thinking Experience */
 .is-wrap.is-thinking-wide{max-width:min(1080px,96vw)}
 #is-step-thinking.is-on{display:block}
@@ -1525,12 +1536,12 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   margin-top:8px;align-self:flex-start;padding:9px 14px;border-radius:999px;background:#D9632D;color:#fff;font-size:13px;font-weight:750;border:0;cursor:pointer
 }
 .dash-site-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.dash-activity-feed,.dash-todays-work{
+.dash-activity-feed,.dash-todays-work,.dash-recent-work{
   margin:0 0 16px;padding:14px 16px;border-radius:16px;border:1px solid var(--border);background:var(--surface)
 }
-.dash-todays-work .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:750;margin:0 0 4px}
-.dash-todays-work .day{font-size:13px;font-weight:800;color:var(--ink);margin:0 0 12px}
-.dash-todays-work .work-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.dash-recent-work .sk,.dash-todays-work .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:750;margin:0 0 4px}
+.dash-recent-work .day,.dash-todays-work .day{font-size:13px;font-weight:800;color:var(--ink);margin:0 0 12px}
+.dash-recent-work .work-list,.dash-todays-work .work-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
 .dash-work-item{
   padding:0 0 12px;border-bottom:1px solid rgba(20,27,43,.08)
 }
@@ -8930,30 +8941,30 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div class="is-kicker">Hubly</div>
         <h1 class="is-title" id="is-talk-ask">Tell me about the business you’re building</h1>
-        <p class="is-sub" id="is-talk-hint">You just hired Hubly. Tell us what you do — we’ll get to work.</p>
+        <p class="is-sub" id="is-talk-hint">You hired Hubly. Say what you do — then watch it understand and build.</p>
         <div class="is-discovery-layout is-discovery">
           <div class="is-discovery-main">
             <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
             <div class="is-hubly-thinking" id="is-hubly-thinking" data-hubly-thinking="1" aria-live="polite" aria-hidden="true">
               <span class="th-k">Thinking</span>
-              <span class="th-line" id="is-hubly-thinking-line">Comparing several homepage layouts…</span>
+              <span class="th-line" id="is-hubly-thinking-line"></span>
             </div>
             <div class="is-discovery-typing" id="is-discovery-typing" hidden aria-hidden="true"></div>
             <div class="is-talk-chips" id="is-talk-chips"></div>
           </div>
-          <aside class="is-live-studio" id="is-live-studio" aria-live="polite" data-experience-live-studio="1" data-holy-shit-studio="1" data-hired-team="1">
-            <div class="is-learn-kicker">Hubly Team</div>
-            <div class="is-hubly-team" id="is-hubly-team" aria-label="Hubly team at work">
-              <ul class="is-hubly-team-list" id="is-hubly-team-list">
-                <li data-role="creative" class=""><span class="ico">🧠</span><span><span class="role">Creative Director</span><span class="task" data-task>Waiting</span></span></li>
-                <li data-role="brand" class=""><span class="ico">🎨</span><span><span class="role">Brand Designer</span><span class="task" data-task>Waiting</span></span></li>
-                <li data-role="website" class=""><span class="ico">🌐</span><span><span class="role">Website Builder</span><span class="task" data-task>Waiting</span></span></li>
-                <li data-role="booking" class=""><span class="ico">📅</span><span><span class="role">Booking Specialist</span><span class="task" data-task>Waiting</span></span></li>
-                <li data-role="payments" class=""><span class="ico">💳</span><span><span class="role">Payments</span><span class="task" data-task>Waiting</span></span></li>
-                <li data-role="crm" class=""><span class="ico">👥</span><span><span class="role">CRM Specialist</span><span class="task" data-task>Waiting</span></span></li>
+          <aside class="is-live-studio" id="is-live-studio" aria-live="polite" data-experience-live-studio="1" data-holy-shit-studio="1" data-hubly-workspace="1">
+            <div class="is-learn-kicker">Hubly Workspace</div>
+            <div class="is-hubly-workspace" id="is-hubly-workspace" aria-label="Hubly is working">
+              <p class="ws-status" id="is-workspace-status">Hubly is working…</p>
+              <ul class="is-workspace-list" id="is-workspace-list">
+                <li data-step="understand">Understanding your business</li>
+                <li data-step="website">Designing your website</li>
+                <li data-step="booking">Building your booking experience</li>
+                <li data-step="packages">Creating packages</li>
+                <li data-step="crm">Creating your customer workspace</li>
               </ul>
             </div>
-            <p class="is-live-status" id="is-live-status">Got it. Give us a few minutes.</p>
+            <p class="is-live-status" id="is-live-status">Got it. Give me a few minutes.</p>
             <div class="is-live-moment-tag" id="is-live-moment-tag">Rewriting homepage</div>
             <div class="is-live-logo" id="is-live-logo" hidden>
               <div class="mark" id="is-live-logo-mark">HB</div>
@@ -9849,20 +9860,30 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
-        <div class="dash-one-rec" id="dash-one-rec" aria-live="polite">
-          <div>
-            <p class="sk">Today's Recommendation</p>
-            <p class="t" id="dash-one-rec-t">Raise your consultation price by $10.</p>
-          </div>
+        <div class="dash-discover" id="dash-discover" data-hubly-discover="1" aria-live="polite" hidden>
+          <p class="sk" id="dash-discover-sk">I found something</p>
+          <p class="t" id="dash-discover-t"></p>
+          <p class="s" id="dash-discover-s"></p>
           <div class="actions">
-            <button type="button" class="btn btn-brand btn-sm" id="dash-one-rec-apply" onclick="applyDashOneRec()">Apply</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="dash-one-rec-dismiss" onclick="dismissDashOneRec()">Dismiss</button>
+            <button type="button" class="btn btn-brand btn-sm" id="dash-discover-apply" onclick="applyDashDiscover()">Do it</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="dash-discover-dismiss" onclick="dismissDashDiscover()">Not now</button>
           </div>
         </div>
 
-        <div class="dash-todays-work" id="dash-todays-work" data-todays-work="1" aria-live="polite">
-          <p class="sk">Today’s Work</p>
-          <p class="day" id="dash-activity-day">What Hubly shipped for you</p>
+        <div class="dash-one-rec" id="dash-one-rec" aria-live="polite">
+          <div>
+            <p class="sk">Recommendation</p>
+            <p class="t" id="dash-one-rec-t">Raise your consultation price by $10.</p>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-brand btn-sm" id="dash-one-rec-apply" onclick="applyDashOneRec()">Keep</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="dash-one-rec-dismiss" onclick="dismissDashOneRec()">Undo</button>
+          </div>
+        </div>
+
+        <div class="dash-recent-work" id="dash-todays-work" data-recent-work="1" aria-live="polite">
+          <p class="sk">Recent Work</p>
+          <p class="day" id="dash-activity-day">Latest changes Hubly made</p>
           <ul class="work-list" id="dash-activity-list"></ul>
         </div>
 
@@ -16870,23 +16891,9 @@ const HUBLY_DISCOVERY = (function(){
 function isDiscoveryActive(){
   return !!(S._is?.discovery && !S._is.discovery.complete && !['services','services_count','services_edit','addons_edit','media'].includes(S._is?.talkBeat));
 }
-/* ── Hired Hubly — feel like you hired a team, not opened software ── */
+/* ── Quiet competent Hubly — one intelligent system, visible results ── */
 const HUBLY_HOLY_SHIT = (function(){
-  const TEAM_TASKS={
-    creative:{busy:'Writing your homepage…',done:'Homepage direction locked'},
-    brand:{busy:'Building your colors…',done:'Brand palette set'},
-    website:{busy:'Creating your homepage…',done:'Homepage live in studio'},
-    booking:{busy:'Building your booking flow…',done:'Booking flow ready'},
-    payments:{busy:'Preparing Stripe integration…',done:'Payments prepped'},
-    crm:{busy:'Setting up your customer pipeline…',done:'CRM pipeline ready'},
-  };
-  const THOUGHTS=[
-    'Comparing several homepage layouts…',
-    'Choosing the highest-converting booking flow…',
-    'Looking for places customers might hesitate…',
-    'Simplifying your pricing…',
-    'Picking a brand direction that feels premium…',
-  ];
+  const WORKSPACE_STEPS=['understand','website','booking','packages','crm'];
   const INSIGHTS={
     fitness:{
       industry:'Personal Training',industryId:'fitness',
@@ -16894,16 +16901,15 @@ const HUBLY_HOLY_SHIT = (function(){
       rewrite:'Transformations that stick — not another gym pitch.',
       rewritePrev:'Certified personal training for your goals.',
       assumption:'I assumed you\'re an owner-operator running one-on-one coaching — that\'s the most common setup. If that\'s wrong, I\'ll rebuild everything.',
-      alreadyDid:'I noticed the booking button was too low on the fold.\n\nI already moved it higher.\n\nYou can undo it if you don\'t like it.',
+      alreadyDid:'Your homepage needed a stronger call to action.\n\nI already moved Book now higher.\n\nView it, keep it, or undo.',
       packages:['1:1 Coaching','Transformation Plan','Accountability'],
       booking:['Consult','Book session'],
       logo:'PT',
+      discover:{sk:'I found something',title:'Nearby trainers are pushing monthly memberships.',body:'I can add a simple membership package that matches how your customers already think about coaching.',cta:'Create membership',ask:'Create a monthly membership package for my training business'},
       work:[
         {what:'Rewrote hero headline',reason:'Visitors respond better to outcome-focused messaging.',surface:'website'},
-        {what:'Added FAQ',reason:'Fitness businesses get recurring pricing questions.',surface:'website'},
         {what:'Improved booking CTA',reason:'More visible above the fold.',surface:'booking'},
         {what:'Created coaching packages',reason:'Clear offers convert better than “inquire for rates.”',surface:'packages'},
-        {what:'Set brand palette',reason:'Navy + energy accent reads premium without gym-cliché neon.',surface:'brand'},
       ],
     },
     pressure_washing:{
@@ -16912,16 +16918,15 @@ const HUBLY_HOLY_SHIT = (function(){
       rewrite:'Homes that look freshly new — booked in two taps.',
       rewritePrev:'Professional pressure washing services.',
       assumption:'I assumed you\'re an owner-operator focused on residential — that\'s the most common setup. If that\'s wrong, I\'ll rebuild everything.',
-      alreadyDid:'I noticed the primary CTA was buried under services.\n\nI already moved Book now above the fold.\n\nUndo anytime.',
+      alreadyDid:'Your homepage needed a stronger call to action.\n\nI already moved Book now above the fold.\n\nView it, keep it, or undo.',
       packages:['Driveway','House Wash','Soft Wash'],
       booking:['Get quote','Book wash'],
       logo:'PW',
+      discover:{sk:'I noticed something',title:'Your most-viewed service has no customer photos.',body:'I prepared a photo strip layout for House Wash — adding three real jobs would likely increase trust.',cta:'Show layout',ask:'Add a customer photo strip to my house wash service'},
       work:[
         {what:'Rewrote hero headline',reason:'Curb-appeal outcomes outperform equipment lists.',surface:'website'},
-        {what:'Added FAQ',reason:'Homeowners ask about soft wash vs pressure.',surface:'website'},
         {what:'Improved booking CTA',reason:'More visible above the fold.',surface:'booking'},
         {what:'Created wash packages',reason:'Named packages reduce quote friction.',surface:'packages'},
-        {what:'Set brand palette',reason:'Clean contrast for outdoor service brands.',surface:'brand'},
       ],
     },
     lawn_care:{
@@ -16930,16 +16935,15 @@ const HUBLY_HOLY_SHIT = (function(){
       rewrite:'A lawn that looks managed — without you chasing it.',
       rewritePrev:'Reliable lawn mowing and yard care.',
       assumption:'I assumed you\'re an owner-operator on weekly residential routes — the most common setup. If that\'s wrong, I\'ll rebuild everything.',
-      alreadyDid:'I noticed weekly plans were buried.\n\nI already featured recurring as the default package.\n\nUndo if you prefer one-offs first.',
+      alreadyDid:'Weekly plans were buried.\n\nI already made recurring the featured package.\n\nView it, keep it, or undo.',
       packages:['Weekly','Bi-weekly','Seasonal'],
       booking:['Book mow','Get plan'],
       logo:'LC',
+      discover:{sk:'I discovered an opportunity',title:'People searching “spring cleanup” are landing on your homepage.',body:'I can create a dedicated landing page for that search in about 20 seconds.',cta:'Build landing page',ask:'Create a spring cleanup landing page for my lawn care business'},
       work:[
         {what:'Rewrote hero headline',reason:'Pride-of-yard messaging beats “we mow.”',surface:'website'},
-        {what:'Added FAQ',reason:'Homeowners ask about schedules and rain days.',surface:'website'},
         {what:'Improved booking CTA',reason:'Faster path to a recurring plan.',surface:'booking'},
         {what:'Created route packages',reason:'Recurring plans create habit revenue.',surface:'packages'},
-        {what:'Set brand palette',reason:'Fresh, outdoor-credible without looking generic.',surface:'brand'},
       ],
     },
     cleaning:{
@@ -16948,16 +16952,15 @@ const HUBLY_HOLY_SHIT = (function(){
       rewrite:'A spotless home you can trust — booked without the back-and-forth.',
       rewritePrev:'Professional home cleaning services.',
       assumption:'I assumed you\'re an owner-operator offering recurring home cleans — the most common setup. If that\'s wrong, I\'ll rebuild everything.',
-      alreadyDid:'I noticed trust signals were missing near the book button.\n\nI already added a short “bonded & consistent” line.\n\nUndo if you want it quieter.',
+      alreadyDid:'Your homepage needed a stronger call to action.\n\nI already moved Book now higher.\n\nView it, keep it, or undo.',
       packages:['Standard','Deep Clean','Recurring'],
       booking:['Book clean','Recurring'],
       logo:'CL',
+      discover:{sk:'I discovered an opportunity',title:'Customers searching “move-out cleaning” are landing on your homepage.',body:'I can create a dedicated landing page for that search in about 20 seconds.',cta:'Build landing page',ask:'Create a move-out cleaning landing page'},
       work:[
         {what:'Rewrote hero headline',reason:'Trust + outcome beats a task checklist.',surface:'website'},
-        {what:'Added FAQ',reason:'Clients ask about keys, supplies, and recurrence.',surface:'website'},
         {what:'Improved booking CTA',reason:'More visible above the fold.',surface:'booking'},
         {what:'Created clean packages',reason:'Named tiers reduce back-and-forth.',surface:'packages'},
-        {what:'Set brand palette',reason:'Calm, trustworthy service feel.',surface:'brand'},
       ],
     },
     photography:{
@@ -16966,16 +16969,15 @@ const HUBLY_HOLY_SHIT = (function(){
       rewrite:'Photos that feel like the day — not a catalog.',
       rewritePrev:'Professional photography for every occasion.',
       assumption:'I assumed you\'re a solo shooter offering clear session packages — the most common setup. If that\'s wrong, I\'ll rebuild everything.',
-      alreadyDid:'I noticed “inquire for rates” kills conversion.\n\nI already put packages on the homepage.\n\nUndo if you prefer custom quotes only.',
+      alreadyDid:'“Inquire for rates” was killing conversion.\n\nI already put packages on the homepage.\n\nView it, keep it, or undo.',
       packages:['Mini Session','Standard','Full Day'],
       booking:['Book session','Check date'],
       logo:'PH',
+      discover:{sk:'I noticed something',title:'Your most-viewed package has no sample gallery.',body:'I prepared a three-image layout so visitors can feel the work before they book.',cta:'Show layout',ask:'Add a sample gallery to my most popular photography package'},
       work:[
         {what:'Rewrote hero headline',reason:'Feeling beats gear lists on first glance.',surface:'website'},
-        {what:'Added FAQ',reason:'Clients ask about timelines and deliverables.',surface:'website'},
         {what:'Improved booking CTA',reason:'Date-check above the fold.',surface:'booking'},
         {what:'Created session packages',reason:'Clear pricing beats inquire-for-rates.',surface:'packages'},
-        {what:'Set brand palette',reason:'Editorial contrast without looking cold.',surface:'brand'},
       ],
     },
     default:{
@@ -16984,16 +16986,15 @@ const HUBLY_HOLY_SHIT = (function(){
       rewrite:'Results people can feel — booked without the chase.',
       rewritePrev:'Quality local service you can count on.',
       assumption:'I assumed you\'re an owner-operator with one core offer — that\'s the most common setup. If that\'s wrong, I\'ll rebuild everything.',
-      alreadyDid:'I noticed the booking button was too low.\n\nI already moved it higher.\n\nYou can undo it if you don\'t like it.',
+      alreadyDid:'Your homepage needed a stronger call to action.\n\nI already moved Book now higher.\n\nView it, keep it, or undo.',
       packages:['Starter','Popular','Pro'],
       booking:['Book now','Get quote'],
       logo:'HB',
+      discover:{sk:'I found something',title:'A clearer offer page would reduce quote back-and-forth.',body:'I can draft a simple package landing section from what we already built.',cta:'Draft it',ask:'Create a clear packages section on my homepage'},
       work:[
         {what:'Rewrote hero headline',reason:'Outcome-focused messaging converts better.',surface:'website'},
-        {what:'Added FAQ',reason:'Customers hesitate on price and process.',surface:'website'},
         {what:'Improved booking CTA',reason:'More visible above the fold.',surface:'booking'},
         {what:'Created starter packages',reason:'Named offers reduce quote friction.',surface:'packages'},
-        {what:'Set brand palette',reason:'Clear Hubly accent with navy base.',surface:'brand'},
       ],
     },
   };
@@ -17032,33 +17033,41 @@ const HUBLY_HOLY_SHIT = (function(){
     tag.textContent=text;
     tag.classList.add('is-on');
   }
-  function setTeam(role,state,taskOverride){
-    const li=document.querySelector(`#is-hubly-team-list li[data-role="${role}"]`);
+  function setWorkspaceStatus(text){
+    const el=document.getElementById('is-workspace-status');
+    if(el)el.innerHTML=text||'Hubly is working…';
+  }
+  function setWorkspaceStep(step,state){
+    const li=document.querySelector(`#is-workspace-list li[data-step="${step}"]`);
     if(!li)return;
-    li.classList.remove('is-busy','is-done');
-    if(state==='busy')li.classList.add('is-busy');
+    li.classList.remove('is-working','is-done');
+    if(state==='working')li.classList.add('is-working');
     if(state==='done')li.classList.add('is-done');
-    const task=li.querySelector('[data-task]');
-    const def=TEAM_TASKS[role]||{};
-    if(task)task.textContent=taskOverride||(state==='busy'?def.busy:(state==='done'?def.done:'Waiting'));
   }
-  function setTeamMany(map){
-    Object.keys(map||{}).forEach(role=>setTeam(role,map[role]));
+  function resetWorkspace(){
+    WORKSPACE_STEPS.forEach(s=>setWorkspaceStep(s,'pending'));
+    setWorkspaceStatus('Hubly is working…');
   }
+  /** Thinking line ONLY when a visible result follows immediately. */
   function think(line){
+    if(!line)return;
     const wrap=document.getElementById('is-hubly-thinking');
     const el=document.getElementById('is-hubly-thinking-line');
-    if(el&&line)el.textContent=line;
+    if(el)el.textContent=line;
     if(wrap){
       wrap.classList.add('is-on','is-pulse');
       wrap.setAttribute('aria-hidden','false');
-      void wrap.offsetWidth;
-      wrap.classList.add('is-pulse');
     }
   }
   function thinkOff(){
     const wrap=document.getElementById('is-hubly-thinking');
     if(wrap){wrap.classList.remove('is-on','is-pulse');wrap.setAttribute('aria-hidden','true');}
+  }
+  async function thoughtThenResult(token,thought,applyFn,waitMs){
+    think(thought);
+    await wait(waitMs==null?700:waitMs,token);
+    if(typeof applyFn==='function')applyFn();
+    thinkOff();
   }
   function fmtTime(ts){
     try{
@@ -17077,13 +17086,15 @@ const HUBLY_HOLY_SHIT = (function(){
         label:w.what,
         at,
         when:fmtTime(at),
-        status:'accepted',
+        status:'kept',
         source:'create',
       };
     });
     S._aiActivity=items;
     S._todaysWork=items;
+    S._hublyDiscover=pack.discover||null;
     try{localStorage.setItem('hubly_ai_activity',JSON.stringify(items));}catch(e){}
+    try{if(pack.discover)localStorage.setItem('hubly_discover',JSON.stringify(pack.discover));}catch(e){}
   }
   async function wait(ms,token){
     const step=80;let left=ms;
@@ -17102,86 +17113,84 @@ const HUBLY_HOLY_SHIT = (function(){
     const biz=bizName(pack,session);
     if(!S.biz||S.biz==='Your Business')S.biz=biz;
 
-    // Agency hire — not a questionnaire
-    const m1="Got it. Give us a few minutes.\n\nI'm putting the Hubly team on your website, booking, CRM, pricing, and brand.\n\nI'll only interrupt if I genuinely need your opinion.";
+    resetWorkspace();
+    const m1="Got it. Give me a few minutes.\n\nI'll build your website, booking, packages, and customer workspace.\n\nI'll only interrupt if I genuinely need your opinion.";
     isTalkPush('hubly',m1);
     session.messages.push({role:'hubly',text:m1,kind:'moment1'});
-    think(THOUGHTS[0]);
-    setTeamMany({creative:'busy',brand:'busy',website:'busy',booking:'busy',payments:'busy',crm:'busy'});
+    setWorkspaceStatus('Working…');
+    setWorkspaceStep('understand','working');
     session.studio={phase:'website',heroTitle:biz,heroSub:pack.rewritePrev||'Building your homepage…',cta:'Book now',rewrite:false,logo:false,bookingOn:false,packagesOn:false,brandOn:true,pkgChips:[]};
     session.buildingActions=['website','brand'];
-    session.liveStatus='Hubly Team is on it…';
-    setMomentTag('Team working');
+    session.liveStatus='Understanding your business…';
     isRenderLiveBuild({pulse:'website'});
-    await wait(1400,token);
+    await wait(900,token);
+    setWorkspaceStep('understand','done');
 
-    think(THOUGHTS[1]);
-    setTeam('creative','done');
-    setTeam('website','busy','Drafting homepage…');
-    await wait(700,token);
-
-    // Proactive surprise + rewrite
-    const m2=`I found something interesting.\n\n${pack.insight}\n\nI already rewrote your homepage around that.`;
+    // Thought → homepage rewrite (must be visible)
+    setWorkspaceStep('website','working');
+    const m2=`I found something.\n\n${pack.insight}\n\nI already rewrote your homepage around that.`;
     isTalkPush('hubly',m2);
     session.messages.push({role:'hubly',text:m2,kind:'moment2'});
-    think(THOUGHTS[2]);
-    session.studio.heroSub=pack.rewrite;
-    session.studio.rewrite=true;
-    session.liveStatus='Creative Director rewrote the homepage…';
-    setMomentTag('I already did');
-    setTeam('website','done');
-    setTeam('brand','done');
-    isRenderLiveBuild({rewrite:true,pulse:'website'});
-    await wait(1600,token);
+    await thoughtThenResult(token,'Your homepage needs a stronger outcome message.',()=>{
+      session.studio.heroSub=pack.rewrite;
+      session.studio.rewrite=true;
+      session.liveStatus='Homepage updated.';
+      setMomentTag('Homepage updated');
+      isRenderLiveBuild({rewrite:true,pulse:'website'});
+    },800);
+    setWorkspaceStep('website','done');
+    await wait(700,token);
 
-    // Surfaces animate in — packages one by one
-    think(THOUGHTS[3]);
-    session.studio.logo=true;
-    session.studio.logoMark=pack.logo;
-    session.studio.logoName=biz;
-    session.studio.bookingOn=true;
-    session.studio.bookingChips=pack.booking.slice();
-    setTeam('booking','busy');
-    setTeam('payments','busy');
-    isRenderLiveBuild({pulse:'booking'});
-    await wait(600,token);
+    // Thought → booking preview
+    setWorkspaceStep('booking','working');
+    await thoughtThenResult(token,'I found a clearer booking flow.',()=>{
+      session.studio.bookingOn=true;
+      session.studio.bookingChips=pack.booking.slice();
+      session.studio.logo=true;
+      session.studio.logoMark=pack.logo;
+      session.studio.logoName=biz;
+      session.liveStatus='Booking experience updated.';
+      isRenderLiveBuild({pulse:'booking'});
+    },750);
+    setWorkspaceStep('booking','done');
 
+    // Packages appear one by one (visible)
+    setWorkspaceStep('packages','working');
     session.studio.packagesOn=true;
     session.studio.pkgChips=[];
     isRenderLiveBuild();
     for(const pkg of pack.packages){
       session.studio.pkgChips=[...(session.studio.pkgChips||[]),pkg];
       isRenderLiveBuild({pulse:'packages'});
-      await wait(380,token);
+      await wait(320,token);
     }
-    setTeam('booking','done');
-    setTeam('payments','done');
-    setTeam('crm','done');
+    setWorkspaceStep('packages','done');
     session.buildingActions=['website','booking','packages','brand','crm'];
-    session.liveStatus='Booking, packages, and CRM just landed…';
-    await wait(900,token);
+    await wait(500,token);
 
-    // I already did — confidence, not permission
+    // I already did — CTA move with View/Keep/Undo personality
+    await thoughtThenResult(token,'Your homepage needs a stronger call to action.',()=>{
+      session.studio.cta='Book now';
+      setMomentTag('CTA moved');
+      isRenderLiveBuild({pulse:'website'});
+    },650);
     const m3=pack.alreadyDid;
     isTalkPush('hubly',m3);
     session.messages.push({role:'hubly',text:m3,kind:'already_did'});
-    session.studio.cta='Book now';
-    setMomentTag('CTA moved');
-    isRenderLiveBuild({pulse:'website'});
-    await wait(1100,token);
+    await wait(900,token);
 
-    // Transparent assumption
-    think(THOUGHTS[4]);
+    // CRM workspace + transparent assumption
+    setWorkspaceStep('crm','working');
     const m4=pack.assumption;
     isTalkPush('hubly',m4);
     session.messages.push({role:'hubly',text:m4,kind:'assumption'});
-    session.liveStatus='Finishing your business…';
-    setMomentTag('Assumption');
+    session.liveStatus='Customer workspace ready.';
     isRenderLiveBuild({pulse:'all'});
-    await wait(1000,token);
-
-    thinkOff();
+    await wait(700,token);
+    setWorkspaceStep('crm','done');
+    setWorkspaceStatus('Ready.');
     setMomentTag('');
+
     seedActivity(pack);
     session.holyShitComplete=true;
     session.complete=true;
@@ -17189,7 +17198,7 @@ const HUBLY_HOLY_SHIT = (function(){
     session.learningSummary={header:'Built',lines:(pack.work||[]).slice(0,3).map(w=>w.what)};
     return{pack,token};
   }
-  return{INSIGHTS,TEAM_TASKS,THOUGHTS,inferPack,applyPackFacts,playOpeningSequence,seedActivity,setMomentTag,setTeam,setTeamMany,think,thinkOff,flash,fmtTime};
+  return{INSIGHTS,WORKSPACE_STEPS,inferPack,applyPackFacts,playOpeningSequence,seedActivity,setMomentTag,setWorkspaceStep,resetWorkspace,think,thinkOff,thoughtThenResult,flash,fmtTime};
 })();
 
 function isDiscoveryBoot(opts){
@@ -17212,7 +17221,7 @@ function isDiscoveryBoot(opts){
     if(seed){
       setTimeout(()=>{ isDiscoverySend(seed).catch(e=>console.error('discovery boot AI',e)); }, 40);
     }else{
-      isTalkPush('hubly',"Tell me what you do — like you just walked into an agency. We'll get to work.");
+      isTalkPush('hubly',"Tell me what you do. I'll understand it, then build.");
     }
   }else{
     isShowStep('talk');
@@ -17221,7 +17230,7 @@ function isDiscoveryBoot(opts){
   step?.classList.toggle('is-convo',!!(S._is.messages||[]).length);
   isTalkSetPrompt({
     title:"What are we building together?",
-    hint:"You're hiring Hubly — not filling out software. Say what you do.",
+    hint:"Quiet and competent — say what you do, then watch Hubly work.",
     placeholder:"e.g. I’m an independent fitness trainer…",
     autocomplete:'off',
     type:'text',
@@ -17315,13 +17324,13 @@ function isRenderLiveBuild(opts){
 /** @deprecated Experience-first uses live studio; kept as alias for any stray callers. */
 function isRenderUnderstandingPanel(){isRenderLiveBuild();}
 function isDiscoverySetTyping(on){
-  // "Hubly is Thinking" — real thoughts, not fake dots
+  // Never show random thoughts. Only grounded waiting — sequence owns thought→result pairs.
   if(on){
-    const line=(typeof HUBLY_HOLY_SHIT!=='undefined'&&HUBLY_HOLY_SHIT.THOUGHTS)
-      ? HUBLY_HOLY_SHIT.THOUGHTS[Math.floor(Math.random()*HUBLY_HOLY_SHIT.THOUGHTS.length)]
-      : 'Comparing several homepage layouts…';
-    HUBLY_HOLY_SHIT.think(line);
-  }else{
+    const wrap=document.getElementById('is-hubly-thinking');
+    const el=document.getElementById('is-hubly-thinking-line');
+    if(el)el.textContent='Understanding what you shared…';
+    if(wrap){wrap.classList.add('is-on');wrap.setAttribute('aria-hidden','false');}
+  }else if(typeof HUBLY_HOLY_SHIT!=='undefined'){
     HUBLY_HOLY_SHIT.thinkOff();
   }
 }
@@ -42736,10 +42745,10 @@ function updateDashGreeting(){
     line2.title=shortBiz||biz||'';
   }
   if(ready){
-    const h=new Date().getHours();
-    ready.textContent=h<12
-      ?'Curious what Hubly did overnight?'
-      :'While you were away… the team kept working.';
+    const items=typeof loadAiActivityFeed==='function'?loadAiActivityFeed().filter(it=>it.status!=='undone'):[];
+    ready.textContent=items.length
+      ?'While you were away, Hubly improved a few things.'
+      :'No new improvements since your last visit — everything looks healthy.';
   }
   if(timeEl){
     const tz=businessTimezone();
@@ -42757,24 +42766,14 @@ function updateDashGreeting(){
   }catch(e){console.warn('renderHublyDaily',e);}
 }
 
-/** Today's Work — business commits with reason + View / Accept / Undo. */
+/** Recent Work — event-driven commits with reason + View / Keep / Undo. */
 function loadAiActivityFeed(){
   let items=S._todaysWork||S._aiActivity;
   if(!items||!items.length){
     try{items=JSON.parse(localStorage.getItem('hubly_ai_activity')||'[]');}catch(e){items=[];}
   }
-  if(!items||!items.length){
-    const base=Date.now();
-    items=[
-      {id:'d1',what:'Rewrote hero headline',reason:'Visitors respond better to outcome-focused messaging.',surface:'website',at:base-3600000,status:'accepted'},
-      {id:'d2',what:'Added FAQ',reason:'Customers ask recurring pricing questions.',surface:'website',at:base-3480000,status:'accepted'},
-      {id:'d3',what:'Improved booking CTA',reason:'More visible above the fold.',surface:'booking',at:base-3360000,status:'accepted'},
-      {id:'d4',what:'Suggested a recurring package',reason:'Retention beats one-off jobs for local services.',surface:'packages',at:base-3240000,status:'accepted'},
-      {id:'d5',what:'Updated service descriptions',reason:'Clearer offers reduce back-and-forth.',surface:'website',at:base-3120000,status:'accepted'},
-    ].map(it=>({...it,label:it.what,when:(typeof HUBLY_HOLY_SHIT!=='undefined'?HUBLY_HOLY_SHIT.fmtTime(it.at):'')}));
-    S._aiActivity=items;
-    S._todaysWork=items;
-  }
+  if(!items)items=[];
+  // After Create we seed real work. Don't invent theatrical overnight commits.
   return items;
 }
 function persistTodaysWork(items){
@@ -42787,23 +42786,24 @@ function renderAiActivityFeed(){
   const day=document.getElementById('dash-activity-day');
   if(!list)return;
   const items=loadAiActivityFeed().slice(0,8);
-  if(day){
-    const h=new Date().getHours();
-    day.textContent=h<12?'What Hubly did overnight':'What Hubly shipped for you';
+  if(day)day.textContent='Latest changes';
+  if(!items.length){
+    list.innerHTML=`<li class="dash-work-empty"><strong>No new improvements since your last visit.</strong>Everything looks healthy. I’ll keep monitoring your business.</li>`;
+    return;
   }
   list.innerHTML=items.map(it=>{
     const when=it.when||(typeof HUBLY_HOLY_SHIT!=='undefined'?HUBLY_HOLY_SHIT.fmtTime(it.at):'');
     const what=it.what||it.label||it.text||'Update';
-    const why=it.reason||'Hubly improved this for conversion.';
+    const why=it.reason||'';
     const undone=it.status==='undone';
     const id=escPeHtml(it.id);
     return `<li class="dash-work-item${undone?' is-undone':''}" data-work-id="${id}">
       <p class="when">${escPeHtml(when)}</p>
       <p class="what">${escPeHtml(what)}</p>
-      <p class="why"><strong>Reason:</strong> ${escPeHtml(why)}</p>
+      ${why?`<p class="why"><strong>Reason:</strong> ${escPeHtml(why)}</p>`:''}
       <div class="dash-work-actions">
         <button type="button" onclick="todaysWorkView('${id}')">View</button>
-        <button type="button" class="primary" onclick="todaysWorkAccept('${id}')"${undone?'':' disabled'}>Accept</button>
+        <button type="button" class="primary" onclick="todaysWorkAccept('${id}')"${undone?'':' disabled'}>Keep</button>
         <button type="button" onclick="todaysWorkUndo('${id}')"${undone?' disabled':''}>Undo</button>
       </div>
     </li>`;
@@ -42830,30 +42830,69 @@ function todaysWorkView(id){
   }catch(e){try{previewProfile?.();}catch(e2){}}
 }
 function todaysWorkAccept(id){
-  const items=loadAiActivityFeed().map(it=>it.id===id?{...it,status:'accepted'}:it);
+  const items=loadAiActivityFeed().map(it=>it.id===id?{...it,status:'kept'}:it);
   persistTodaysWork(items);
   renderAiActivityFeed();
   renderDashAway();
-  try{toast?.('Kept — Hubly’s change stays.');}catch(e){}
+  try{toast?.('Kept.');}catch(e){}
 }
 function todaysWorkUndo(id){
   const items=loadAiActivityFeed().map(it=>it.id===id?{...it,status:'undone'}:it);
   persistTodaysWork(items);
   renderAiActivityFeed();
   renderDashAway();
-  try{toast?.('Undone. You’re always in control.');}catch(e){}
+  try{toast?.('Undone. You’re in control.');}catch(e){}
+}
+function loadHublyDiscover(){
+  if(S._hublyDiscover)return S._hublyDiscover;
+  try{
+    const raw=localStorage.getItem('hubly_discover');
+    if(raw){S._hublyDiscover=JSON.parse(raw);return S._hublyDiscover;}
+  }catch(e){}
+  const pack=S._is?.discovery?.holyPack||(typeof HUBLY_HOLY_SHIT!=='undefined'?HUBLY_HOLY_SHIT.inferPack(String(S.industry||S.biz||'')):null);
+  return pack?.discover||null;
+}
+function renderDashDiscover(){
+  const el=document.getElementById('dash-discover');
+  if(!el)return;
+  if(el.dataset.dismissed==='1'){el.hidden=true;return;}
+  const d=loadHublyDiscover();
+  if(!d||!d.title){el.hidden=true;return;}
+  el.hidden=false;
+  const sk=document.getElementById('dash-discover-sk');
+  const t=document.getElementById('dash-discover-t');
+  const s=document.getElementById('dash-discover-s');
+  const btn=document.getElementById('dash-discover-apply');
+  if(sk)sk.textContent=d.sk||'I found something';
+  if(t)t.textContent=d.title;
+  if(s)s.textContent=d.body||'';
+  if(btn)btn.textContent=d.cta||'Do it';
+}
+function applyDashDiscover(){
+  const d=loadHublyDiscover();
+  const el=document.getElementById('dash-discover');
+  if(el){el.dataset.dismissed='1';el.hidden=true;}
+  if(d?.ask)askAI(d.ask);
+  else askAI('Act on the opportunity you found for my business');
+}
+function dismissDashDiscover(){
+  const el=document.getElementById('dash-discover');
+  if(el){el.dataset.dismissed='1';el.hidden=true;}
 }
 function renderDashAway(){
   const ul=document.getElementById('dash-away-list');
   const sk=document.getElementById('dash-away-sk');
+  const block=document.getElementById('dash-away');
   if(!ul)return;
-  const h=new Date().getHours();
-  if(sk)sk.textContent=h<12?'What did Hubly do overnight?':'While you were away';
   const items=loadAiActivityFeed().filter(it=>it.status!=='undone').slice(0,4);
-  const lines=items.length
-    ? items.map(it=>(it.what||it.label||'').replace(/\.$/, '')+'.')
-    : ['Improved your homepage.','Optimized your booking page.','Added FAQs customers usually ask.','Created a recurring package.'];
-  ul.innerHTML=lines.map(l=>`<li>${escPeHtml(l)}</li>`).join('');
+  if(!items.length){
+    if(sk)sk.textContent='Since your last visit';
+    ul.innerHTML='<li>No new improvements yet — everything looks healthy.</li>';
+    return;
+  }
+  if(sk)sk.textContent='While you were away';
+  ul.innerHTML=items.map(it=>`<li>${escPeHtml((it.what||it.label||'').replace(/\.$/, '')+'.')}</li>`).join('');
+  if(block)block.hidden=false;
 }
 function renderOperateHome(){
   const biz=dashGreetingBiz()||S.biz||'Your Business';
@@ -42866,19 +42905,20 @@ function renderOperateHome(){
   }
   renderDashAway();
   renderAiActivityFeed();
+  renderDashDiscover();
   const recEl=document.getElementById('dash-one-rec');
   const recT=document.getElementById('dash-one-rec-t');
   if(recEl&&recEl.dataset.dismissed==='1'){recEl.hidden=true;}
   else if(recT&&!recEl?.dataset.locked){
     const industry=String(S.industry||S._is?.discovery?.facts?.industryId?.value||pack?.industryId||'').toLowerCase();
     if(/fitness|train/.test(industry)||/fitness|train/i.test(biz)){
-      recT.textContent='Raise your consultation price by $10.';
+      recT.textContent='I already prepared a $10 consultation price increase — keep or undo.';
     }else if(/clean|airbnb/.test(industry)){
-      recT.textContent='Add a recurring package — retention beats one-off cleans.';
+      recT.textContent='I already drafted a recurring package — keep or undo.';
     }else if(/pressure|lawn/.test(industry)){
-      recT.textContent='Raise your starter package by $10 — you\'re underpriced for the area.';
+      recT.textContent='I already drafted a $10 starter-package increase — keep or undo.';
     }else{
-      recT.textContent='Raise your consultation price by $10.';
+      recT.textContent='I already prepared a $10 consultation price increase — keep or undo.';
     }
   }
   try{
@@ -42889,13 +42929,15 @@ function renderOperateHome(){
 function applyDashOneRec(){
   const t=document.getElementById('dash-one-rec-t')?.textContent||'';
   const rec=document.getElementById('dash-one-rec');
-  if(rec)rec.dataset.locked='1';
-  // Log as AI activity — partner who just did something
+  if(rec){rec.dataset.locked='1';rec.dataset.dismissed='1';rec.hidden=true;}
   try{
     const items=loadAiActivityFeed();
-    items.unshift({id:'rec_'+Date.now(),label:'Applied today\'s recommendation',at:Date.now(),source:'home'});
-    S._aiActivity=items.slice(0,12);
-    localStorage.setItem('hubly_ai_activity',JSON.stringify(S._aiActivity));
+    const at=Date.now();
+    items.unshift({
+      id:'rec_'+at,what:'Applied recommendation',reason:'You kept Hubly’s suggestion.',
+      surface:'website',at,when:(typeof HUBLY_HOLY_SHIT!=='undefined'?HUBLY_HOLY_SHIT.fmtTime(at):''),status:'kept',label:'Applied recommendation',
+    });
+    persistTodaysWork(items.slice(0,12));
     renderAiActivityFeed();
     renderDashAway();
   }catch(e){}
@@ -42906,6 +42948,7 @@ function applyDashOneRec(){
 function dismissDashOneRec(){
   const rec=document.getElementById('dash-one-rec');
   if(rec){rec.dataset.dismissed='1';rec.hidden=true;}
+  try{toast?.('Undone.');}catch(e){}
 }
 
 /** Phase 8 — Hubly Daily: advice-first homepage surface */

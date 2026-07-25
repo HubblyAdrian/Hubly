@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Gate: Hired Hubly — team, thinking, Today's Work. */
+/** Gate: Hired Hubly — hire energy (refined: one system, not cast). */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,16 +23,16 @@ const disc = fs.readFileSync(
 );
 const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 
-check("HIRED_HUBLY.md", /hiring Hubly|Today.s Work/i.test(doc) && /I already did/i.test(doc));
+check("HIRED_HUBLY.md", /hiring Hubly|I already did/i.test(doc));
 check("npm script", pkg.scripts?.["check:hired-hubly"] === "node scripts/check-hired-hubly.mjs");
-check("Hubly Team markup", /data-hired-team/.test(hubly) && /Creative Director/.test(hubly) && /CRM Specialist/.test(hubly));
-check("Hubly Is Thinking", /data-hubly-thinking/.test(hubly) && /Comparing several homepage layouts/.test(hubly));
-check("Agency hire copy", /Give us a few minutes/.test(hubly));
+check("Hire energy / workspace", /data-hubly-workspace/.test(hubly) || /data-hired-team/.test(hubly));
+check("Hubly Is Thinking", /data-hubly-thinking/.test(hubly));
+check("Agency hire copy", /Give me a few minutes|Give us a few minutes/.test(hubly));
 check("I already did", /I already moved|I already did|alreadyDid/.test(hubly));
-check("Today's Work surface", /data-todays-work/.test(hubly) && /Today.s Work/.test(hubly));
-check("View Accept Undo", /todaysWorkView/.test(hubly) && /todaysWorkAccept/.test(hubly) && /todaysWorkUndo/.test(hubly));
+check("Recent Work surface", /data-recent-work/.test(hubly) || /data-todays-work/.test(hubly));
+check("View Keep Undo", /todaysWorkView/.test(hubly) && /todaysWorkAccept/.test(hubly) && /todaysWorkUndo/.test(hubly));
 check("Work commit reason", /Reason:/.test(hubly) || /reason:/.test(hubly));
-check("Prompt: hired / I already did", /HIRED Hubly|hired Hubly/i.test(disc) && /I already did/i.test(disc));
+check("Prompt: hired / I already did", /HIRED Hubly|hired Hubly|one intelligent Hubly/i.test(disc) && /I already did/i.test(disc));
 
 const passed = failures.length === 0;
 fs.writeFileSync(

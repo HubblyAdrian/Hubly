@@ -26,12 +26,12 @@ const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"))
 check("HOLY_SHIT_SPRINT.md", /silent video test|no audio/i.test(doc) && /While you were away/i.test(doc));
 check("npm script", pkg.scripts?.["check:holy-shit"] === "node scripts/check-holy-shit.mjs");
 check("Moment engine", /HUBLY_HOLY_SHIT/.test(hubly) && /playOpeningSequence/.test(hubly));
-check("Moment 1 copy", /Give us a few minutes/.test(hubly) || /I.?ll build your business/.test(hubly));
+check("Moment 1 copy", /Give me a few minutes/.test(hubly) || /Give us a few minutes/.test(hubly) || /I.?ll build your business/.test(hubly));
 check("Moment 2 insight", /I found something/.test(hubly) && /is-rewriting/.test(hubly));
 check("Logo + packages surfaces", /id="is-live-logo"/.test(hubly) && /data-holy-shit-studio/.test(hubly));
 check("Reveal ready", /Your business is ready/.test(hubly));
 check("Alive Home away block", /data-holy-shit-away/.test(hubly) && /dash-away/.test(hubly));
-check("Today's Work feed", (/data-todays-work/.test(hubly) || /data-ai-activity-feed/.test(hubly)) && /renderAiActivityFeed/.test(hubly));
+check("Recent Work feed", (/data-recent-work/.test(hubly) || /data-todays-work/.test(hubly) || /data-ai-activity-feed/.test(hubly)) && /renderAiActivityFeed/.test(hubly));
 check("Prompt: holy shit / assumptions", /holy shit/i.test(disc) && /Prefer assumptions/.test(disc));
 
 const passed = failures.length === 0;

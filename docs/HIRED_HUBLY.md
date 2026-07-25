@@ -12,47 +12,43 @@ Not: *“Question 1…”*
 
 ---
 
-## Signature surface: Today’s Work
+## Signature surface: Recent Work
 
-Not “AI Activity Feed.”
+Not “AI Activity Feed.” Not date-forced “Today’s Work.”
 
-**Today’s Work** — like Git commits for the business:
+**Recent Work** — event-driven commits:
 
 ```
 8:14 AM
 Rewrote hero headline.
 Reason: Visitors respond better to outcome-focused messaging.
-[View] [Accept] [Undo]
+[View] [Keep] [Undo]
 ```
 
-Every improvement is clickable. The owner stays in control.
+Empty state (honest): *No new improvements since your last visit.*
 
 ---
 
-## Hubly Team (simultaneous work)
+## Hubly Workspace (one system)
 
-During Create, show specialists working at once:
+Not a cast of fake employees.
 
-- Creative Director  
-- Brand Designer  
-- Website Builder  
-- Booking Specialist  
-- Payments  
-- CRM Specialist  
+```
+Hubly is working…
+✓ Understanding your business
+✓ Designing your website
+· Building your booking experience
+```
 
-Feels like six people — not one chatbot.
+See also: [`QUIET_COMPETENT.md`](./QUIET_COMPETENT.md)
 
 ---
 
 ## Hubly Is Thinking
 
-Not a spinner. Not fake dots.
+Not a spinner. Not random lines.
 
-Real thoughts → immediate result:
-
-- Comparing several homepage layouts…  
-- Choosing the highest-converting booking flow…  
-- Looking for places customers might hesitate…  
+**Only** when a visible result follows immediately.
 
 ---
 
@@ -60,11 +56,10 @@ Real thoughts → immediate result:
 
 | Do | Don’t |
 |----|--------|
-| I already did | Should I…? |
-| I found something interesting | Waiting for the next form field |
-| Transparent assumptions | Hidden guesses |
-| Animate surfaces into existence | Static “done” checklists |
-| “What did Hubly do overnight?” | “Any bookings?” as the only habit |
+| I already did + View/Keep/Undo | Should I…? |
+| Thought → visible change | Random “thinking…” theater |
+| Transparent assumptions | Fake specialist roles |
+| Quiet, competent results | Stage-play busy-ness |
 
 ---
 

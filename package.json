@@ -35,6 +35,7 @@
     "check:experience-first": "node scripts/check-experience-first.mjs",
     "check:holy-shit": "node scripts/check-holy-shit.mjs",
     "check:hired-hubly": "node scripts/check-hired-hubly.mjs",
+    "check:quiet-competent": "node scripts/check-quiet-competent.mjs",
     "check:m25-cutover": "node scripts/check-m25-cutover.mjs",
     "check:experience-epic0": "node scripts/check-experience-epic0.mjs",
     "check:m2-epic0": "node scripts/check-m2-epic0.mjs",
