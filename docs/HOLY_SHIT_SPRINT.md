@@ -41,4 +41,4 @@ Morning variant: *Since yesterday I…* improved SEO, keywords, pricing, landing
 npm run check:holy-shit
 ```
 
-Related: [`EXPERIENCE_FIRST.md`](./EXPERIENCE_FIRST.md) · [`LIVING_PROTOTYPE.md`](./LIVING_PROTOTYPE.md)
+Related: [`HIRED_HUBLY.md`](./HIRED_HUBLY.md) · [`EXPERIENCE_FIRST.md`](./EXPERIENCE_FIRST.md) · [`LIVING_PROTOTYPE.md`](./LIVING_PROTOTYPE.md)

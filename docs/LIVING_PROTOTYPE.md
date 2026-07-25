@@ -16,7 +16,7 @@ Reveal — “Your business is ready” + clickable surfaces
   ↓ Continue
 Save (account if needed)
   ↓
-Alive Hubly Home — greeting · while away · website · recommendation · AI activity
+Alive Hubly Home — greeting · while away · website · recommendation · **Today’s Work**
   ↓
 Website · CRM · Jobs · Revenue  (same OS, personalized content)
 ```
@@ -27,9 +27,9 @@ Website · CRM · Jobs · Revenue  (same OS, personalized content)
 
 1. Incognito → **hubly.app** (classic landing)  
 2. **/signup** → type: *I'm an independent fitness trainer.*  
-3. Watch Moments 1–4 in under ~10s of talk (website builds, rewrites, packages land)  
+3. Watch **Hubly Team** work in parallel + **Hubly Is Thinking** + surfaces rewrite  
 4. Reveal: **Your business is ready** — click a surface  
-5. Alive Home: While you were away · AI Activity · recommendation  
+5. Alive Home: While you were away · **Today’s Work** (View / Accept / Undo)  
 6. Open Website / Customers / Jobs — same OS nav  
 
 ---
