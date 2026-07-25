@@ -1,0 +1,408 @@
+{
+  "version": "1.0",
+  "runtimeMinVersion": "1.0",
+  "identity": {
+    "name": "Dog Grooming",
+    "slug": "dog_grooming",
+    "description": "Dog grooming for calm pets and happy owners",
+    "hint": "Bath, groom & puppy intro",
+    "pickerImage": "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&w=800&q=80",
+    "specialties": [
+      {
+        "id": "full_groom",
+        "name": "Dog Grooming",
+        "default": true,
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Bath & Brush",
+                "category": "Grooming",
+                "defaultPrice": "55",
+                "dur": "1",
+                "desc": "Wash, dry, and brush for a fresh coat.",
+                "image": "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Full Groom",
+                "category": "Grooming",
+                "defaultPrice": "85",
+                "dur": "1.5",
+                "desc": "Haircut, nails, ears \u2014 breed-aware styling.",
+                "image": "https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Puppy Intro",
+                "category": "Grooming",
+                "defaultPrice": "45",
+                "dur": "0.75",
+                "desc": "Gentle first visit so pups learn calm.",
+                "image": "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "synonyms": [
+      "dog groomer",
+      "pet grooming",
+      "grooming salon"
+    ],
+    "defaultSpecialty": "full_groom"
+  },
+  "knowledge": {
+    "brandVoice": "Warm, gentle, trustworthy \u2014 pet-parent calm.",
+    "customerPsychology": "Owners book handlers they trust with anxious dogs, not the cheapest clip.",
+    "homepageGoals": [
+      "Sell atmosphere",
+      "Easy online booking",
+      "Memberships and gift cards"
+    ],
+    "buyingBehavior": "Chooses by breed/size package and reviews, then books a slot online.",
+    "trustSignals": [
+      "Licensed practitioners",
+      "Clean space",
+      "Client reviews"
+    ],
+    "faq": [],
+    "copyRules": [
+      "Sensory but not vague",
+      "Never invent medical claims"
+    ],
+    "galleryRules": [
+      "Soft lighting interiors and treatment atmosphere"
+    ]
+  },
+  "capabilities": {
+    "appointments": true,
+    "estimates": false,
+    "memberships": true,
+    "inventory": false,
+    "portfolio": true,
+    "vehicleDetails": false,
+    "dirtySurcharge": false,
+    "clientGalleries": false,
+    "contracts": false,
+    "printStore": false,
+    "staffScheduling": true,
+    "giftCards": true,
+    "emergencyBanner": false,
+    "stickyPhone": false
+  },
+  "customerJourney": [
+    "Discover",
+    "Browse menu",
+    "Book",
+    "Visit",
+    "Payment",
+    "Membership",
+    "Return"
+  ],
+  "decisionFactors": [
+    "Atmosphere",
+    "Reviews",
+    "Practitioner",
+    "Convenience"
+  ],
+  "customerExpectations": [
+    "Atmosphere",
+    "Online booking",
+    "Memberships",
+    "Gift cards"
+  ],
+  "successMetrics": [
+    "bookings",
+    "memberships",
+    "rebookingRate",
+    "averageTicket",
+    "giftCardSales"
+  ],
+  "businessLifecycle": [
+    {
+      "id": "new",
+      "name": "New"
+    },
+    {
+      "id": "growing",
+      "name": "Growing"
+    },
+    {
+      "id": "established",
+      "name": "Established"
+    }
+  ],
+  "homepage": {
+    "priority": [
+      "hero",
+      "services",
+      "reviews",
+      "about",
+      "booking",
+      "contact"
+    ]
+  },
+  "website": {
+    "defaultLayout": "aurora-gradient",
+    "recommendedStyles": [
+      "aurora-gradient",
+      "editorial",
+      "sunset-coastal",
+      "warm-local"
+    ],
+    "sections": {
+      "required": [
+        "hero",
+        "services",
+        "about",
+        "contact"
+      ],
+      "optional": [
+        "faq",
+        "pricing",
+        "gallery"
+      ],
+      "recommended": [
+        "reviews",
+        "membership"
+      ]
+    },
+    "sectionConfig": {},
+    "trustSignals": [
+      "Gentle handling",
+      "Breed-aware",
+      "Easy booking"
+    ],
+    "emptyIcon": "\u2726",
+    "sectionCopy": {
+      "servicesTitle": "Grooming packages",
+      "servicesSub": "Gentle care sized for your dog.",
+      "galleryTitle": "Happy dogs",
+      "gallerySub": "Fresh coats, calm visits.",
+      "reviewsTitle": "Pet parent reviews",
+      "reviewsSub": "What a visit feels like.",
+      "whyTitle": "Why book with us",
+      "whySub": "Gentle handling, clear packages, easy booking.",
+      "reviewPlaceholder": "My anxious pup actually stayed calm \u2014 booking was easy too.",
+      "heroSubFallback": "Happy dogs. Calm parents. Easy booking.",
+      "footerCtaTitle": "Book a groom"
+    }
+  },
+  "booking": {
+    "mode": "appointments",
+    "steps": [
+      {
+        "id": "service",
+        "fields": [
+          "serviceType",
+          "practitionerPref",
+          "duration"
+        ]
+      },
+      {
+        "id": "schedule",
+        "fields": [
+          "date",
+          "time"
+        ]
+      },
+      {
+        "id": "contact",
+        "fields": [
+          "name",
+          "phone",
+          "email",
+          "notes"
+        ]
+      },
+      {
+        "id": "review",
+        "fields": [
+          "payment",
+          "confirm"
+        ]
+      }
+    ],
+    "defaultAddons": [
+      {
+        "name": "Nail grind",
+        "price": 15
+      },
+      {
+        "name": "Teeth brush",
+        "price": 12
+      },
+      {
+        "name": "Deshed treatment",
+        "price": 25
+      }
+    ]
+  },
+  "services": {
+    "catalog": [
+      {
+        "name": "Bath & Brush",
+        "category": "Grooming",
+        "defaultPrice": "55",
+        "dur": "1",
+        "desc": "Wash, dry, and brush for a fresh coat.",
+        "image": "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        "name": "Full Groom",
+        "category": "Grooming",
+        "defaultPrice": "85",
+        "dur": "1.5",
+        "desc": "Haircut, nails, ears \u2014 breed-aware styling.",
+        "image": "https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        "name": "Puppy Intro",
+        "category": "Grooming",
+        "defaultPrice": "45",
+        "dur": "0.75",
+        "desc": "Gentle first visit so pups learn calm.",
+        "image": "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80"
+      }
+    ]
+  },
+  "gallery": {
+    "mode": "portfolio",
+    "buckets": [
+      "Space",
+      "Treatments",
+      "Team"
+    ],
+    "seedImages": [
+      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1507652313519-d4e9174996dd?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=80"
+    ]
+  },
+  "growth": {
+    "weeklyGoals": [
+      "Fill open Thursday slots",
+      "Sell gift cards",
+      "Ask for reviews"
+    ],
+    "businessHealth": [
+      "rebookingRate",
+      "openSlotRate",
+      "membershipCount"
+    ],
+    "seasonalCampaigns": [
+      "Mother\u2019s Day gift cards",
+      "Holiday spa packages"
+    ],
+    "byLifecycle": {},
+    "todaysSpecial": {
+      "defaultPercent": 20,
+      "codePrefix": "SPA",
+      "label": "Fill open chairs \u2014 {pct}% off facials & massage",
+      "shareText": "Spa special today: {pct}% off with code {code}. Book: {url}",
+      "serviceHint": "Signature Facial"
+    }
+  },
+  "decisionRules": [
+    {
+      "id": "empty_thursday",
+      "if": {
+        "openSlotsDay": {
+          "gt": 5
+        }
+      },
+      "then": {
+        "recommend": "Offer a facial promotion for open slots"
+      }
+    },
+    {
+      "id": "winback",
+      "if": {
+        "daysSinceVisit": {
+          "gt": 60
+        }
+      },
+      "then": {
+        "recommend": "Send return promo to lapsed clients"
+      }
+    }
+  ],
+  "playbooks": [
+    {
+      "id": "visit_complete",
+      "trigger": "jobComplete",
+      "actions": [
+        "Request Review",
+        "Offer Membership",
+        "Suggest rebook"
+      ]
+    }
+  ],
+  "automation": {
+    "enabledTriggers": [
+      "jobComplete"
+    ]
+  },
+  "dashboard": {
+    "widgets": [
+      "todays_jobs",
+      "open_slots",
+      "memberships",
+      "gift_cards"
+    ]
+  },
+  "performance": {
+    "prioritize": [
+      "booking"
+    ],
+    "flags": {
+      "progressiveGalleries": true,
+      "lazyLoad": true,
+      "stickyPhone": false,
+      "emergencyBanner": false,
+      "prioritizeBooking": true,
+      "prioritizeCta": true
+    }
+  },
+  "id": "dog_grooming",
+  "quickQuote": {
+    "title": "Quick Quote",
+    "tagline": "Fast. Simple. Mobile.",
+    "tileArt": false,
+    "chromeSteps": [
+      {
+        "id": "subject",
+        "label": "Treatment",
+        "hint": "What are they looking for?",
+        "mapsTo": "subject"
+      },
+      {
+        "id": "service",
+        "label": "Menu",
+        "hint": "Which service?",
+        "mapsTo": "packages"
+      },
+      {
+        "id": "addons",
+        "label": "Extras",
+        "hint": "Anything extra?",
+        "mapsTo": "modifiers"
+      },
+      {
+        "id": "review",
+        "label": "Review",
+        "hint": "See your price.",
+        "mapsTo": "customer"
+      }
+    ]
+  }
+}

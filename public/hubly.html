@@ -17953,13 +17953,59 @@ function isDiscoveryApplyBuildActions(session){
   if(acts.includes('brand'))session.studio.brandOn=true;
   if(acts.includes('website'))session.studio.phase='website';
 }
-/** Turn owner follow-ups into visible live-website proof — show, don't tell. */
+/** Turn owner follow-ups + AI facts into visible live-website proof — show, don't tell. */
 function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
   if(!session)return;
   session.studio=session.studio||{};
   session.studio.sections=session.studio.sections||{about:true,services:true,reviews:false};
   const t=String(ownerText||'').toLowerCase();
+  const facts=(disc&&disc.facts)||session.facts||{};
   let pulsed=false;
+  // AI-directed surfaces from Brain buildingActions
+  isDiscoveryApplyBuildActions(session);
+  const acts=session.buildingActions||[];
+  if(acts.includes('website')||acts.includes('brand')){
+    session.studio.sections.about=true;
+    session.studio.rewrite=true;
+    pulsed=true;
+  }
+  if(acts.includes('packages')){
+    session.studio.packagesOn=true;
+    session.studio.sections.services=true;
+    pulsed=true;
+  }
+  if(acts.includes('booking')){
+    session.studio.bookingOn=true;
+    pulsed=true;
+  }
+  // Fact-driven brand / CTA / customer voice
+  const pos=String(facts.positioning||'').toLowerCase();
+  if(pos==='premium'||pos==='luxury'){
+    let base=(session.studio.heroSub||'').replace(/\s*[—.]\s*quietly premium\.?/i,'').replace(/\s*Warm, local, easy to book\.?/i,'').trim();
+    base=base.replace(/\.\s*$/,'');
+    session.studio.heroSub=(base||'Results that last')+' — quietly premium.';
+    session.studio.ctaElevated=true;
+    session.studio.brandOn=true;
+    pulsed=true;
+  }else if(pos==='local'||pos==='affordable'||pos==='fast'){
+    let base=(session.studio.heroSub||'').replace(/\s*[—.]\s*quietly premium\.?/i,'').replace(/\s*Warm, local, easy to book\.?/i,'').trim();
+    base=base.replace(/\.\s*$/,'');
+    session.studio.heroSub=(base||'Trusted nearby')+' — warm, local, easy to book.';
+    session.studio.brandOn=true;
+    pulsed=true;
+  }
+  if(facts.businessName&&String(facts.businessName).trim()){
+    const bn=String(facts.businessName).trim();
+    session.studio.logoName=bn;
+    session.studio.heroTitle=bn;
+    session.studio.logo=true;
+    pulsed=true;
+  }
+  if(facts.area&&String(facts.area).trim()&&session.studio.heroSub&&!new RegExp(String(facts.area).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(session.studio.heroSub)){
+    session.studio.heroSub=String(session.studio.heroSub).replace(/\.\s*$/,'')+` in ${String(facts.area).trim()}.`;
+    if(!S.city)S.city=String(facts.area).trim();
+    pulsed=true;
+  }
   if(/premium|luxury|high.?end|upscale/.test(t)){
     let base=(session.studio.heroSub||'').replace(/\s*[—.]\s*quietly premium\.?/i,'').replace(/\s*Warm, local, easy to book\.?/i,'').trim();
     base=base.replace(/\.\s*$/,'');
@@ -17998,6 +18044,14 @@ function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
     session.studio.sections.reviews=true;
     pulsed=true;
   }
+  if(/about|story|who we are|bio/.test(t)){
+    session.studio.sections.about=true;
+    pulsed=true;
+  }
+  if(/contact|phone|email|reach/.test(t)){
+    session.studio.sections.contact=true;
+    pulsed=true;
+  }
   if(/logo|brand|color|colour/.test(t)){
     session.studio.logo=true;
     session.studio.brandOn=true;
@@ -18010,13 +18064,11 @@ function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
   // Every meaningful turn should move something on the website.
   if(!pulsed&&session.holyShitComplete){
     session.studio.sections.about=true;
+    session.studio.sections.contact=true;
     session.studio.rewrite=true;
-    const tip=disc?.liveStatus?String(disc.liveStatus):'';
-    if(tip&&session.studio.heroSub&&!/updated/i.test(session.studio.heroSub)){
-      // keep hero; flash rewrite below
-    }
     pulsed=true;
   }
+  if(disc?.liveStatus)session.liveStatus=String(disc.liveStatus).slice(0,120);
 }
 function isShowCreateRevealChip(){
   const chips=document.getElementById('is-talk-chips');
@@ -19042,8 +19094,10 @@ function isCreateBlueprintId(rawId, corpus){
   const id=String(rawId||'').toLowerCase().trim();
   const text=String(corpus||'').toLowerCase();
   const aliases={
-    fitness:'spa',personal_training:'spa',coaching:'spa',wellness:'spa',trainer:'spa',
-    flight_instruction:'spa',dog_grooming:'spa',
+    personal_training:'fitness',coaching:'fitness',trainer:'fitness',
+    wellness:'spa',
+    flight:'flight_instruction',cfi:'flight_instruction',pilot_training:'flight_instruction',
+    dog_groomer:'dog_grooming',pet_grooming:'dog_grooming',grooming:'dog_grooming',
     lawn_care:'landscaping','lawn-care':'landscaping',
     house_cleaning:'cleaning','house-cleaning':'cleaning',
     'window-cleaning':'windows',window_cleaning:'windows',
@@ -19052,7 +19106,9 @@ function isCreateBlueprintId(rawId, corpus){
   try{
     if(id&&typeof HublyBlueprints!=='undefined'&&HublyBlueprints.get?.(id))return id;
   }catch(e){}
-  if(/fitness|trainer|personal\s*train|coach(ing)?|gym|wellness|flight\s*instruct|dog\s*groom|groomer/.test(text)||/fitness|trainer|coach|flight|groom/.test(id))return 'spa';
+  if(/flight\s*instruct|pilot\s*train|\bcfi\b|aviation/.test(text)||/flight/.test(id))return 'flight_instruction';
+  if(/dog\s*groom|pet\s*groom|groomer/.test(text)||/groom/.test(id))return 'dog_grooming';
+  if(/fitness|personal\s*train|trainer|coach(ing)?|\bgym\b/.test(text)||/fitness|trainer|coach/.test(id))return 'fitness';
   if(/photo|wedding\s*shoot/.test(text))return 'photography';
   if(/pressure|power\s*wash|soft\s*wash/.test(text))return 'pressure_washing';
   if(/lawn|mow|landscap/.test(text))return 'landscaping';
@@ -19067,10 +19123,26 @@ function isCreateBlueprintId(rawId, corpus){
 function isCreatePkgMeta(name, index, trade){
   const n=String(name||'');
   const key=n.toLowerCase();
-  if(trade==='spa'||/coach|train|transform|account/.test(key)){
+  const t=String(trade||'').toLowerCase();
+  if(t==='fitness'||/coach|train|transform|account/.test(key)){
     if(/1:1|one.?on.?one|coach/.test(key))return{price:120,dur:'60 min',desc:'Focused session built around your goals.'};
     if(/transform|plan|program/.test(key))return{price:299,dur:'4 weeks',desc:'Training plan + check-ins so progress sticks.'};
     if(/account|check.?in/.test(key))return{price:79,dur:'30 min',desc:'Quick progress review and next-week plan.'};
+  }
+  if(t==='flight_instruction'||/discovery\s*flight|checkride|lesson/.test(key)){
+    if(/discovery/.test(key))return{price:149,dur:'60 min',desc:'First lesson in the air — see if flying clicks.'};
+    if(/block|5/.test(key))return{price:675,dur:'5 lessons',desc:'Five dual lessons toward solo confidence.'};
+    if(/checkride|prep/.test(key))return{price:225,dur:'2 hrs',desc:'Focused prep for oral + flight test readiness.'};
+  }
+  if(t==='dog_grooming'||/groom|bath|puppy/.test(key)){
+    if(/bath/.test(key))return{price:55,dur:'60 min',desc:'Wash, dry, and brush for a fresh coat.'};
+    if(/full/.test(key))return{price:85,dur:'90 min',desc:'Haircut, nails, ears — breed-aware styling.'};
+    if(/puppy/.test(key))return{price:45,dur:'45 min',desc:'Gentle first visit so pups learn calm.'};
+  }
+  if(t==='spa'){
+    if(/facial/.test(key))return{price:115,dur:'60 min',desc:'Custom facial paced for glow without rush.'};
+    if(/massage/.test(key))return{price:110,dur:'60 min',desc:'Classic flowing massage for full-body calm.'};
+    if(/wellness|package/.test(key))return{price:199,dur:'90 min',desc:'A longer reset with preferred booking.'};
   }
   const defaults=[
     {price:99,dur:'45 min',desc:'A clear starting offer for new clients.'},
@@ -19116,40 +19188,108 @@ function isApplyCreateStudioToBusiness(){
       :(studioSub||S.tag||'Clear packages. Easy booking.'));
   const cta=studio.cta||'Book now';
   const corpus=[bizName,pack?.industry,outcome,studioSub,(studio.pkgChips||[]).join(' '),S.createGoal,S.createBrief].filter(Boolean).join(' ');
-  const bpId=isCreateBlueprintId(pack?.industryId||S.businessType,corpus)||'spa';
+  const tradeId=String(pack?.industryId||'').toLowerCase();
+  const bpId=isCreateBlueprintId(tradeId||S.businessType,corpus)||'spa';
   S.biz=bizName;
   S.tag=outcome||heroSub;
   S.industry=pack?.industry||S.industry||'';
   S.businessType=bpId;
-  S._createTradeId=pack?.industryId||bpId;
+  S._createTradeId=tradeId||bpId;
   S.website=S.website&&typeof S.website==='object'?S.website:{};
   S.website.heroHeadline=heroHeadline;
   S.website.heroSub=heroSub;
   S.website.customHeroHeadline=true;
   S.website.customHeroSub=true;
   S.website.ctaLabel=cta;
-  // Session booking chrome — never “ride dialed in” / spa “quiet rooms” for Create.
-  const createIncludes=(bpId==='spa'||/fitness|train|coach/i.test(corpus))
-    ?['Clear packages','Flexible scheduling','Progress that sticks']
-    :['Clear packages','Easy online booking','Real updates'];
-  const createTrust=(bpId==='spa'||/fitness|train|coach/i.test(corpus))
-    ?['Results-focused','1:1 coaching','Easy booking']
-    :['Clear packages','Easy booking','Local & ready'];
+  const tradeChrome={
+    fitness:{
+      includes:['Clear packages','Flexible scheduling','Progress that sticks'],
+      trust:['Results-focused','1:1 coaching','Easy booking'],
+      why:'Clear packages, careful coaching, easy booking.',
+      bookHead:"Let's book your session",
+      bookBlurb:'Pick a coaching package — then choose a time that works.',
+      about:`${bizName} is built for people who want real progress — not another membership pitch. Coaching is personal, clear, and easy to book.`,
+      banner:'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1600&q=80',
+      pay:'later',
+    },
+    flight_instruction:{
+      includes:['Clear lesson path','Calm instruction','Easy booking'],
+      trust:['Certified instruction','Path to solo','Easy booking'],
+      why:'Clear lesson blocks, calm instruction, easy booking.',
+      bookHead:'Book a lesson',
+      bookBlurb:'Start with a discovery flight or grab a lesson block.',
+      about:`${bizName} helps new pilots go from first lesson to checkride with a clear path and patient instruction.`,
+      banner:'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1600&q=80',
+      pay:'deposit',
+    },
+    dog_grooming:{
+      includes:['Gentle handling','Breed-aware care','Easy booking'],
+      trust:['Gentle handling','Calm visits','Easy booking'],
+      why:'Gentle handling, clear packages, easy booking.',
+      bookHead:'Book a groom',
+      bookBlurb:'Choose a package sized for your dog — then pick a time.',
+      about:`${bizName} is for pet parents who want a calm, trustworthy groom — clear packages, gentle handling, easy booking.`,
+      banner:'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&w=1600&q=80',
+      pay:'later',
+    },
+    spa:{
+      includes:['Clear menu','Calm rooms','Easy booking'],
+      trust:['Quiet luxury','Skilled hands','Easy booking'],
+      why:'Clear packages, careful work, easy booking.',
+      bookHead:"Let's book your visit",
+      bookBlurb:'Pick a treatment — then choose a time that works.',
+      about:`${bizName} is a calm place to reset — clear treatments, careful hands, easy booking.`,
+      pay:'later',
+    },
+    detailing:{
+      includes:['Showroom results','Mobile-ready','Easy booking'],
+      trust:['Mobile service','Clear packages','Insured'],
+      why:'Showroom results without the drop-off hassle.',
+      bookHead:'Book your detail',
+      bookBlurb:'Pick a package — we come to you.',
+      about:`${bizName} brings showroom-clean results to your driveway — clear packages, easy booking.`,
+      pay:'deposit',
+      banner:'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1600&q=80',
+    },
+    hvac:{
+      includes:['Honest diagnostics','Clear packages','Easy booking'],
+      trust:['Licensed techs','Clear pricing','Fast response'],
+      why:'Comfort you can count on — booked without the runaround.',
+      bookHead:'Book service',
+      bookBlurb:'Request a visit or book a tune-up online.',
+      about:`${bizName} keeps homes comfortable with clear diagnostics and honest packages.`,
+      pay:'later',
+    },
+  };
+  const chrome=tradeChrome[bpId]||tradeChrome[tradeId]||{
+    includes:['Clear packages','Easy online booking','Real updates'],
+    trust:['Clear packages','Easy booking','Local & ready'],
+    why:'Clear packages, careful work, easy booking.',
+    bookHead:"Let's book your session",
+    bookBlurb:'Pick a package — then choose a time that works.',
+    about:`${bizName} is ready for customers — clear packages and easy online booking.`,
+    pay:'later',
+  };
+  const factStrategy=String(S._is?.discovery?.facts?.bookingStrategy||'').trim();
   S.bookingWizard=Object.assign({},S.bookingWizard||{},{
-    headline:"Let's book your session",
-    blurb:'Pick a package — then choose a time that works.',
+    headline:chrome.bookHead,
+    blurb:factStrategy||chrome.bookBlurb,
     helpBlurb:'Questions before you book? We’re here.',
-    sidebarIncludes:createIncludes,
+    sidebarIncludes:chrome.includes,
   });
-  S.website.trustBadges=createTrust.slice();
-  S.website.trustStats=createTrust.map(s=>({value:String(s),label:''}));
+  S.website.trustBadges=chrome.trust.slice();
+  S.website.trustStats=chrome.trust.map(s=>({value:String(s),label:''}));
   S.website._trustClearedByOwner=false;
-  S.website.whySub=(bpId==='spa'||/fitness|train|coach/i.test(corpus))
-    ?'Clear packages, careful coaching, easy booking.'
-    :'Clear packages, careful work, easy booking.';
+  S.website.whySub=chrome.why;
+  S.website.ownerBio=chrome.about;
+  S.website.aboutText=chrome.about;
+  S.website.contactBlurb=(S.city||'').trim()
+    ?`Serving ${S.city}. Book online or leave a message — we’ll follow up.`
+    :'Book online or leave a message — we’ll follow up.';
+  S.website.phone=S.website.phone||S.phone||'';
+  S.website.email=S.website.email||S.email||'';
   // Lock section copy so spa blueprint defaults don’t overwrite Create.
   S.website._bpSectionId=bpId;
-  // Avoid spa SEO (“Spa & Wellness”) on a training business.
   if(pack?.industry){
     S.website.seoTitle=`${bizName} | ${pack.industry}`;
     S.website.seoDescription=`Book ${bizName} for ${String(pack.industry).toLowerCase()}. ${heroSub}`.slice(0,160);
@@ -19174,11 +19314,24 @@ function isApplyCreateStudioToBusiness(){
     S.services=priced;
     S.editorSvcs=priced.map(s=>({...s}));
   }
-  // Fitness Create: real training atmosphere, not spa stock.
-  if(bpId==='spa'&&(/fitness|train|coach/i.test(corpus)||pack?.industryId==='fitness')){
-    if(!S._ownerUploadedMedia){
-      S.bannerUrl=S.bannerUrl||'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1600&q=80';
+  // Trade-specific hero media when owner hasn’t uploaded.
+  if(chrome.banner&&!S._ownerUploadedMedia){
+    S.bannerUrl=S.bannerUrl||chrome.banner;
+  }
+  // Seed add-ons + payment from blueprint / trade defaults.
+  try{
+    const addons=(typeof getTradeDefaultAddons==='function'?getTradeDefaultAddons():[])||[];
+    if(addons.length){
+      S.editorAddons=addons.map((a,i)=>({id:a.id||('create_addon_'+i),name:a.name||'',price:Number(a.price)||0}));
+      S._is=S._is||{};
+      S._is.addonDraft=S.editorAddons.slice();
     }
+  }catch(e){}
+  const pay=String(chrome.pay||'later');
+  S.paymentSetting=pay==='deposit'?'deposit':(S.paymentSetting||'later');
+  if(S.paymentSetting==='deposit'&&!S.depositAmount){
+    S.depositAmount=bpId==='flight_instruction'?50:25;
+    S.depositType=S.depositType||'percent';
   }
   // Drop any prior detailing Smart Quote answers before preview.
   try{delete S._bkSq;}catch(e){}
@@ -36681,8 +36834,12 @@ function getDefaultBookingService(){
 /** If type was stuck as detailing (DB default) but packages clearly aren’t cars, heal before booking. */
 function maybeHealBusinessTypeFromServices(){
   const type=(S.businessType||'').toLowerCase();
-  // Unknown Create ids (fitness) also need healing onto a real blueprint file.
-  if(type&&type!=='detailing'&&type!=='fitness'&&type!=='personal_training'&&type!=='coaching'&&type!=='trainer')return false;
+  // Real Create blueprints — do not remap.
+  if(type&&['fitness','flight_instruction','dog_grooming','spa','photography','hvac','cleaning','pressure_washing','landscaping','windows','detailing'].includes(type)){
+    if(type!=='detailing')return false;
+  }
+  // Legacy aliases that still need healing onto a real blueprint file.
+  if(type&&type!=='detailing'&&type!=='personal_training'&&type!=='coaching'&&type!=='trainer')return false;
   const blob=[
     S.biz||'',S.tag||'',S.about||'',
     ...(S.services||[]).map(s=>s.name||''),
@@ -36695,7 +36852,10 @@ function maybeHealBusinessTypeFromServices(){
     {id:'landscaping',re:/\b(lawn|mow|yard|turf|landscap)\b/},
     {id:'cleaning',re:/\b(house clean|maid|residential clean|home clean)\b/},
     {id:'pressure_washing',re:/\b(pressure wash|power wash|soft wash)\b/},
-    {id:'spa',re:/\b(spa|massage|facial|esthetic|coach|coaching|fitness|trainer|training|transformation|1:1)\b/},
+    {id:'flight_instruction',re:/\b(flight|pilot|checkride|discovery flight|cfi)\b/},
+    {id:'dog_grooming',re:/\b(dog groom|pet groom|puppy|bath & brush|full groom)\b/},
+    {id:'fitness',re:/\b(coach|coaching|fitness|trainer|training|transformation|1:1)\b/},
+    {id:'spa',re:/\b(spa|massage|facial|esthetic)\b/},
     {id:'hvac',re:/\b(hvac|furnace|ac repair|air condition)\b/},
   ];
   for(const g of guesses){

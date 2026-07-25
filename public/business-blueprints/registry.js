@@ -20,6 +20,9 @@
     'photography.json',
     'hvac.json',
     'spa.json',
+    'fitness.json',
+    'flight-instruction.json',
+    'dog-grooming.json',
   ];
 
   const byId = {};

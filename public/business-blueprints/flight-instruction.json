@@ -1,0 +1,409 @@
+{
+  "version": "1.0",
+  "runtimeMinVersion": "1.0",
+  "identity": {
+    "name": "Flight Instruction",
+    "slug": "flight_instruction",
+    "description": "Independent flight instruction and discovery flights",
+    "hint": "Lessons toward solo & checkride",
+    "pickerImage": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80",
+    "specialties": [
+      {
+        "id": "cfi",
+        "name": "Flight Instruction",
+        "default": true,
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Discovery Flight",
+                "category": "Lessons",
+                "defaultPrice": "149",
+                "dur": "1",
+                "desc": "First lesson in the air \u2014 see if flying clicks.",
+                "image": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Block of 5 Lessons",
+                "category": "Packages",
+                "defaultPrice": "675",
+                "dur": "5",
+                "desc": "Five dual lessons toward solo confidence.",
+                "image": "https://images.unsplash.com/photo-1540962351504-03099fad4a4a?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Checkride Prep",
+                "category": "Advanced",
+                "defaultPrice": "225",
+                "dur": "2",
+                "desc": "Focused prep for oral + flight test readiness.",
+                "image": "https://images.unsplash.com/photo-1474302770737-173ee21bab00?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "synonyms": [
+      "flight instructor",
+      "CFI",
+      "pilot training",
+      "discovery flight"
+    ],
+    "defaultSpecialty": "cfi"
+  },
+  "knowledge": {
+    "brandVoice": "Calm, precise, confidence-building \u2014 aviation without intimidation.",
+    "customerPsychology": "Students fear cost and complexity; they book a clear path and a patient instructor.",
+    "homepageGoals": [
+      "Sell atmosphere",
+      "Easy online booking",
+      "Memberships and gift cards"
+    ],
+    "buyingBehavior": "Starts with discovery flight, then buys lesson blocks once trust is there.",
+    "trustSignals": [
+      "Licensed practitioners",
+      "Clean space",
+      "Client reviews"
+    ],
+    "faq": [],
+    "copyRules": [
+      "Sensory but not vague",
+      "Never invent medical claims"
+    ],
+    "galleryRules": [
+      "Soft lighting interiors and treatment atmosphere"
+    ]
+  },
+  "capabilities": {
+    "appointments": true,
+    "estimates": true,
+    "memberships": false,
+    "inventory": false,
+    "portfolio": true,
+    "vehicleDetails": false,
+    "dirtySurcharge": false,
+    "clientGalleries": false,
+    "contracts": false,
+    "printStore": false,
+    "staffScheduling": true,
+    "giftCards": true,
+    "emergencyBanner": false,
+    "stickyPhone": false
+  },
+  "customerJourney": [
+    "Discover",
+    "Browse menu",
+    "Book",
+    "Visit",
+    "Payment",
+    "Membership",
+    "Return"
+  ],
+  "decisionFactors": [
+    "Atmosphere",
+    "Reviews",
+    "Practitioner",
+    "Convenience"
+  ],
+  "customerExpectations": [
+    "Atmosphere",
+    "Online booking",
+    "Memberships",
+    "Gift cards"
+  ],
+  "successMetrics": [
+    "bookings",
+    "memberships",
+    "rebookingRate",
+    "averageTicket",
+    "giftCardSales"
+  ],
+  "businessLifecycle": [
+    {
+      "id": "new",
+      "name": "New"
+    },
+    {
+      "id": "growing",
+      "name": "Growing"
+    },
+    {
+      "id": "established",
+      "name": "Established"
+    }
+  ],
+  "homepage": {
+    "priority": [
+      "hero",
+      "services",
+      "reviews",
+      "about",
+      "booking",
+      "contact"
+    ]
+  },
+  "website": {
+    "defaultLayout": "aurora-gradient",
+    "recommendedStyles": [
+      "aurora-gradient",
+      "editorial",
+      "sunset-coastal",
+      "warm-local"
+    ],
+    "sections": {
+      "required": [
+        "hero",
+        "services",
+        "about",
+        "contact"
+      ],
+      "optional": [
+        "faq",
+        "pricing",
+        "gallery"
+      ],
+      "recommended": [
+        "reviews",
+        "membership"
+      ]
+    },
+    "sectionConfig": {},
+    "trustSignals": [
+      "Certified instruction",
+      "Clear lesson path",
+      "Easy booking"
+    ],
+    "emptyIcon": "\u2726",
+    "sectionCopy": {
+      "servicesTitle": "Lesson packages",
+      "servicesSub": "A clear path from first lesson to checkride.",
+      "galleryTitle": "In the air",
+      "gallerySub": "Training that builds real confidence.",
+      "reviewsTitle": "Student stories",
+      "reviewsSub": "What instruction feels like here.",
+      "whyTitle": "Why fly with me",
+      "whySub": "Clear lesson blocks, calm instruction, easy booking.",
+      "reviewPlaceholder": "I went from nervous to confident \u2014 lessons were clear every time.",
+      "heroSubFallback": "From first lesson to checkride \u2014 clear, calm instruction.",
+      "footerCtaTitle": "Book a lesson"
+    }
+  },
+  "booking": {
+    "mode": "appointments",
+    "steps": [
+      {
+        "id": "service",
+        "fields": [
+          "serviceType",
+          "practitionerPref",
+          "duration"
+        ]
+      },
+      {
+        "id": "schedule",
+        "fields": [
+          "date",
+          "time"
+        ]
+      },
+      {
+        "id": "contact",
+        "fields": [
+          "name",
+          "phone",
+          "email",
+          "notes"
+        ]
+      },
+      {
+        "id": "review",
+        "fields": [
+          "payment",
+          "confirm"
+        ]
+      }
+    ],
+    "defaultAddons": [
+      {
+        "name": "Pre-flight ground briefing",
+        "price": 40
+      },
+      {
+        "name": "Headset rental",
+        "price": 15
+      },
+      {
+        "name": "Oral exam prep hour",
+        "price": 75
+      }
+    ]
+  },
+  "services": {
+    "catalog": [
+      {
+        "name": "Discovery Flight",
+        "category": "Lessons",
+        "defaultPrice": "149",
+        "dur": "1",
+        "desc": "First lesson in the air \u2014 see if flying clicks.",
+        "image": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        "name": "Block of 5 Lessons",
+        "category": "Packages",
+        "defaultPrice": "675",
+        "dur": "5",
+        "desc": "Five dual lessons toward solo confidence.",
+        "image": "https://images.unsplash.com/photo-1540962351504-03099fad4a4a?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        "name": "Checkride Prep",
+        "category": "Advanced",
+        "defaultPrice": "225",
+        "dur": "2",
+        "desc": "Focused prep for oral + flight test readiness.",
+        "image": "https://images.unsplash.com/photo-1474302770737-173ee21bab00?auto=format&fit=crop&w=800&q=80"
+      }
+    ]
+  },
+  "gallery": {
+    "mode": "portfolio",
+    "buckets": [
+      "Space",
+      "Treatments",
+      "Team"
+    ],
+    "seedImages": [
+      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1507652313519-d4e9174996dd?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=80"
+    ]
+  },
+  "growth": {
+    "weeklyGoals": [
+      "Fill open Thursday slots",
+      "Sell gift cards",
+      "Ask for reviews"
+    ],
+    "businessHealth": [
+      "rebookingRate",
+      "openSlotRate",
+      "membershipCount"
+    ],
+    "seasonalCampaigns": [
+      "Mother\u2019s Day gift cards",
+      "Holiday spa packages"
+    ],
+    "byLifecycle": {},
+    "todaysSpecial": {
+      "defaultPercent": 20,
+      "codePrefix": "SPA",
+      "label": "Fill open chairs \u2014 {pct}% off facials & massage",
+      "shareText": "Spa special today: {pct}% off with code {code}. Book: {url}",
+      "serviceHint": "Signature Facial"
+    }
+  },
+  "decisionRules": [
+    {
+      "id": "empty_thursday",
+      "if": {
+        "openSlotsDay": {
+          "gt": 5
+        }
+      },
+      "then": {
+        "recommend": "Offer a facial promotion for open slots"
+      }
+    },
+    {
+      "id": "winback",
+      "if": {
+        "daysSinceVisit": {
+          "gt": 60
+        }
+      },
+      "then": {
+        "recommend": "Send return promo to lapsed clients"
+      }
+    }
+  ],
+  "playbooks": [
+    {
+      "id": "visit_complete",
+      "trigger": "jobComplete",
+      "actions": [
+        "Request Review",
+        "Offer Membership",
+        "Suggest rebook"
+      ]
+    }
+  ],
+  "automation": {
+    "enabledTriggers": [
+      "jobComplete"
+    ]
+  },
+  "dashboard": {
+    "widgets": [
+      "todays_jobs",
+      "open_slots",
+      "memberships",
+      "gift_cards"
+    ]
+  },
+  "performance": {
+    "prioritize": [
+      "booking"
+    ],
+    "flags": {
+      "progressiveGalleries": true,
+      "lazyLoad": true,
+      "stickyPhone": false,
+      "emergencyBanner": false,
+      "prioritizeBooking": true,
+      "prioritizeCta": true
+    }
+  },
+  "id": "flight_instruction",
+  "quickQuote": {
+    "title": "Quick Quote",
+    "tagline": "Fast. Simple. Mobile.",
+    "tileArt": false,
+    "chromeSteps": [
+      {
+        "id": "subject",
+        "label": "Treatment",
+        "hint": "What are they looking for?",
+        "mapsTo": "subject"
+      },
+      {
+        "id": "service",
+        "label": "Menu",
+        "hint": "Which service?",
+        "mapsTo": "packages"
+      },
+      {
+        "id": "addons",
+        "label": "Extras",
+        "hint": "Anything extra?",
+        "mapsTo": "modifiers"
+      },
+      {
+        "id": "review",
+        "label": "Review",
+        "hint": "See your price.",
+        "mapsTo": "customer"
+      }
+    ]
+  }
+}

@@ -54,6 +54,27 @@ check(
     /hvac:/.test(hubly) &&
     /spa:/.test(hubly),
 );
+const registry = fs.readFileSync(path.join(root, "public/business-blueprints/registry.js"), "utf8");
+check(
+  "dedicated blueprints registered",
+  /fitness\.json/.test(registry) &&
+    /flight-instruction\.json/.test(registry) &&
+    /dog-grooming\.json/.test(registry),
+);
+for (const f of ["fitness.json", "flight-instruction.json", "dog-grooming.json"]) {
+  check(
+    `blueprint file ${f}`,
+    fs.existsSync(path.join(root, "public/business-blueprints", f)),
+  );
+}
+check(
+  "fitness not aliased to spa",
+  !/fitness\s*:\s*['"]spa['"]/.test(hubly) &&
+    !/flight_instruction\s*:\s*['"]spa['"]/.test(hubly) &&
+    !/dog_grooming\s*:\s*['"]spa['"]/.test(hubly),
+);
+check("Create seeds trade add-ons", /getTradeDefaultAddons/.test(hubly) && /editorAddons/.test(hubly));
+check("Create seeds about copy", /ownerBio/.test(hubly) && /tradeChrome/.test(hubly));
 
 const passed = failures.length === 0;
 fs.mkdirSync(path.join(root, "docs"), { recursive: true });

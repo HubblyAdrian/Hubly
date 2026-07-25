@@ -15,6 +15,9 @@ export type DiscoveryFacts = {
   goal?: string | null;
   operations?: string | null;
   businessName?: string | null;
+  brandVoice?: string | null;
+  visualStyle?: string | null;
+  bookingStrategy?: string | null;
 };
 
 export type DiscoveryTurnInput = {
@@ -82,7 +85,10 @@ Return ONLY valid JSON:
     "customer": "residential|commercial|short_term_rentals|wedding_clients|clients|null",
     "goal": "recurring_customers|more_bookings|grow_revenue|save_time|build_brand|hire_team|null",
     "operations": "solo|team|mobile|storefront|null",
-    "businessName": "string|null"
+    "businessName": "string|null",
+    "brandVoice": "string|null — short voice note e.g. confident coach / calm luxury",
+    "visualStyle": "string|null — short style note e.g. bold athletic / quiet spa",
+    "bookingStrategy": "string|null — e.g. consult-first / book-session / quote-then-book"
   },
   "confidence": 0-100,
   "readyForThinking": boolean,
