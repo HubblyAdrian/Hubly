@@ -65,6 +65,28 @@ html[data-theme="night"]{
 button.hubly-mark-btn,a.hubly-mark-btn{
   appearance:none;border:none;background:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;line-height:0;
 }
+/* CEO Demo Mode — daily review chrome (not a product feature) */
+#ceo-demo-bar{
+  position:fixed;top:0;left:0;right:0;z-index:10050;
+  display:none;align-items:center;justify-content:space-between;gap:12px;
+  padding:8px 14px;background:rgba(255,255,255,.92);
+  border-bottom:1px solid rgba(20,27,43,.08);
+  backdrop-filter:blur(10px);font-family:inherit;
+}
+#ceo-demo-bar.is-on{display:flex}
+body.ceo-demo-on{padding-top:48px}
+#ceo-demo-bar .ceo-demo-left{display:flex;align-items:center;gap:10px;min-width:0}
+#ceo-demo-bar .hubly-mark{height:22px}
+#ceo-demo-bar .ceo-demo-label{
+  font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:#141B2B;opacity:.72;white-space:nowrap;
+}
+#ceo-demo-bar .ceo-demo-restart{
+  appearance:none;border:1px solid rgba(20,27,43,.14);background:#fff;
+  color:#141B2B;font:inherit;font-size:13px;font-weight:700;
+  padding:7px 12px;border-radius:10px;cursor:pointer;
+}
+#ceo-demo-bar .ceo-demo-restart:hover{border-color:#D9632D;color:#D9632D}
 *{box-sizing:border-box;margin:0;padding:0}
 /* LANGUAGE TOGGLE */
 .lang-toggle{position:fixed;top:12px;right:16px;z-index:9999;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 10px;cursor:pointer;backdrop-filter:blur(8px);transition:background .15s;font-family:inherit;font-size:12px;font-weight:600;color:#fff;letter-spacing:.04em}
@@ -8692,6 +8714,15 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<!-- CEO Demo Mode — always starts Create → Reveal → Home without login -->
+<div id="ceo-demo-bar" role="banner" aria-label="CEO Demo">
+  <div class="ceo-demo-left">
+    <img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly">
+    <span class="ceo-demo-label">CEO Demo</span>
+  </div>
+  <button type="button" class="ceo-demo-restart" onclick="restartCeoDemo()">Restart</button>
+</div>
+
 <!-- Boot: inactive on marketing. Only used for public-slug first paint (blank, no wordmark). -->
 <div id="p-boot" class="page" style="background:var(--surface-2,#F7F7F5);">
   <div class="ob-boot-splash" style="min-height:100vh;" aria-hidden="true"></div>
@@ -8704,7 +8735,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var land=document.getElementById('p-landing');
     var boot=document.getElementById('p-boot');
     // Owner routes: never flash the Hubly marketing page while auth restores.
-    var ownerPaths={'/':1,'/app':1,'/dashboard':1,'/login':1,'/onboarding':1,'/signup':1,'/welcome':1};
+    var ownerPaths={'/':1,'/app':1,'/dashboard':1,'/login':1,'/onboarding':1,'/signup':1,'/welcome':1,'/demo':1,'/experience':1};
     if(ownerPaths[path]){
       if(land)land.classList.remove('active');
       if(boot)boot.classList.add('active');
@@ -12223,16 +12254,37 @@ const HUBLY_PATH_TO_PAGE={
   '/onboarding':'p-onboard',
   '/app':'p-app',
   '/dashboard':'p-app',
+  '/demo':'p-ceo-demo',
+  '/experience':'p-ceo-demo',
 };
 function hublyPath(){
   const p=(location.pathname||'/').replace(/\/+$/,'');
   return p||'/';
+}
+function isCeoDemoPath(path){
+  const p=path||hublyPath();
+  return p==='/demo'||p==='/experience';
 }
 function pageForHublyPath(path){
   return HUBLY_PATH_TO_PAGE[path||hublyPath()]||null;
 }
 function syncHublyRoute(id,{replace}={}){
   if(typeof getSlugFromHost==='function'&&getSlugFromHost())return;
+  // CEO Demo Mode keeps a single review URL for the whole journey.
+  if(typeof S!=='undefined'&&S._ceoDemo){
+    try{
+      const base=isCeoDemoPath()?hublyPath():'/demo';
+      const hash=id==='p-app'?'#home':(id==='p-onboard'?'#create':'');
+      const next=base+hash;
+      const cur=(location.pathname||'')+(location.hash||'');
+      if(cur!==next){
+        if(replace)history.replaceState({page:id,ceoDemo:true},'',next);
+        else history.pushState({page:id,ceoDemo:true},'',next);
+      }
+      document.title=id==='p-app'?'Hubly · CEO Demo · Home':'Hubly · CEO Demo';
+    }catch(e){}
+    return;
+  }
   const route=HUBLY_PAGE_ROUTES[id];
   if(!route)return;
   try{
@@ -12298,6 +12350,12 @@ function showP(id,opts){
 }
 window.addEventListener('popstate',()=>{
   if(typeof getSlugFromHost==='function'&&getSlugFromHost())return;
+  if(isCeoDemoPath()||(typeof S!=='undefined'&&S._ceoDemo)){
+    // Stay inside the demo journey — never bounce to login.
+    if(location.hash==='#home'&&document.getElementById('p-app')?.classList.contains('active'))return;
+    try{startCeoDemoMode();}catch(e){}
+    return;
+  }
   const dest=pageForHublyPath(hublyPath())||'p-landing';
   if((dest==='p-app')&&!currentUser){
     // Instant Site draft / claimed owner — try silent resume before forcing login.
@@ -12344,8 +12402,14 @@ function openOperateHome(opts){
   }catch(e){}
   showP('p-app',{replaceRoute:opts.replaceRoute!==false});
   try{
-    history.replaceState({page:'p-app'},'', '/app');
-    document.title='Hubly · Home';
+    if(S._ceoDemo){
+      const base=isCeoDemoPath()?hublyPath():'/demo';
+      history.replaceState({page:'p-app',ceoDemo:true},'', base+'#home');
+      document.title='Hubly · CEO Demo · Home';
+    }else{
+      history.replaceState({page:'p-app'},'', '/app');
+      document.title='Hubly · Home';
+    }
   }catch(e){}
   const dashNav=document.querySelector('#p-app [data-v="dashboard"]')||document.querySelector('[data-v="dashboard"]');
   if(dashNav)switchV(dashNav);
@@ -15212,6 +15276,11 @@ async function submitNewPassword(btn){
   }
 }
 async function checkSession(){
+  // CEO Demo Mode — always start the customer journey; no login / no setup.
+  if(isCeoDemoPath()){
+    await startCeoDemoMode();
+    return;
+  }
   const dest=pageForHublyPath(hublyPath());
   const marketing=!dest||dest==='p-landing';
   const welcomeDoor=dest==='p-signup'; // `/`, `/signup`, `/welcome`
@@ -16544,6 +16613,49 @@ async function startCreativeDirector(seedText){
   // Cold start uses Instant Site (prompt → build → discover), not multi-beat chat.
   return startInstantSite(seedText);
 }
+
+/** CEO Demo Mode — /demo · /experience — latest Create → Reveal → Home, no login. */
+function showCeoDemoChrome(){
+  try{
+    document.body.classList.add('ceo-demo-on');
+    const bar=document.getElementById('ceo-demo-bar');
+    if(bar)bar.classList.add('is-on');
+  }catch(e){}
+}
+function hideCeoDemoChrome(){
+  try{
+    document.body.classList.remove('ceo-demo-on');
+    const bar=document.getElementById('ceo-demo-bar');
+    if(bar)bar.classList.remove('is-on');
+  }catch(e){}
+}
+function restartCeoDemo(){
+  const base=isCeoDemoPath()?hublyPath():'/demo';
+  const params=new URLSearchParams(location.search||'');
+  // Preserve optional seed / auto flags when restarting.
+  const q=params.toString();
+  location.href=base+(q?'?'+q:'');
+}
+async function startCeoDemoMode(){
+  const params=new URLSearchParams(location.search||'');
+  const seed=(params.get('seed')||"I'm an independent fitness trainer.").trim();
+  const auto=params.get('auto')!=='0';
+  S._ceoDemo=true;
+  S._ceoDemoSeed=seed;
+  S._accountClaimed=false;
+  S._deferredAccount=true;
+  showCeoDemoChrome();
+  try{
+    const base=isCeoDemoPath()?hublyPath():'/demo';
+    history.replaceState({page:'p-ceo-demo',ceoDemo:true},'',base+(auto?'#create':''));
+    document.title='Hubly · CEO Demo';
+  }catch(e){}
+  // Fresh customer journey every time — ignore prior drafts / claim walls.
+  if(auto)await startInstantSite(seed,{forceFresh:true});
+  else await startInstantSite('',{forceFresh:true});
+}
+window.restartCeoDemo=restartCeoDemo;
+window.startCeoDemoMode=startCeoDemoMode;
 
 async function startInstantSite(seedText,opts){
   opts=opts||{};
@@ -18553,6 +18665,14 @@ function isRevealContinueToWorkspace(){
   S._is=S._is||{};
   S._is.readyForAccount=true;
   try{persistInstantSiteDraft();}catch(e){}
+  // CEO Demo — no claim wall; go straight into Home with what was built.
+  if(S._ceoDemo){
+    S._accountClaimed=true;
+    S._is.businessSaved=true;
+    S._deferredAccount=false;
+    openOperateHome();
+    return;
+  }
   // Already claimed / signed in → Operate immediately
   if(S._accountClaimed||S._is.businessSaved||(typeof currentUser!=='undefined'&&currentUser)||(typeof currentBusiness!=='undefined'&&currentBusiness?.id)){
     openOperateHome();
