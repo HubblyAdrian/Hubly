@@ -18569,6 +18569,7 @@ async function isDiscoverySend(text){
           HublyCreateAssemble.assemble(disc.businessBlueprint,{facts:disc.facts||session.aiFacts||{}});
           try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.applySectionDom(S.website);}catch(e){}
         }catch(e){console.warn('systems reassemble',e);}
+      }
       isDiscoverySetTyping(false);
       isRenderLiveBuild({pulse:'website',rewrite:true});
       try{

@@ -3,5 +3,5 @@
   "passed": true,
   "failures": [],
   "note": "Static wiring only. Live OpenAI must be verified with OPENAI_API_KEY on Edge + a real /signup or /demo turn.",
-  "checkedAt": "2026-07-25T22:42:39.754Z"
+  "checkedAt": "2026-07-25T22:54:27.842Z"
 }
