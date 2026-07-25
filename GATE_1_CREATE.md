@@ -49,3 +49,27 @@ Open `/demo` (or `/signup`).
 
 Nothing is checked because code merged.
 Items check only when the customer experience is true.
+
+## Refinement rule (rest of Gate 1)
+
+Do not add features. Improve the experience.
+
+Every revision should make Create smoother, more visual, more intelligent, or more trustworthy.
+
+For every major revision, answer:
+
+1. What should the customer feel at this point?
+2. What changed visually since the last version?
+3. What still feels awkward?
+
+## Acceptance demo
+
+```
+Open /demo
+Type: I'm an independent fitness trainer.
+Go through the experience naturally.
+```
+
+At the end you should have a website you'd publish, a booking page you'd use, a configured CRM, and a workspace that feels ready.
+
+If you wouldn't put a real customer on that flow tomorrow — Gate 1 is not complete.

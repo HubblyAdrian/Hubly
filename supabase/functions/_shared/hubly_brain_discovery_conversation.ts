@@ -44,40 +44,39 @@ export type DiscoveryTurnResult = {
   error?: string | null;
 };
 
-const SYSTEM = `You are Hubly — an AI business consultant the owner just hired.
+const SYSTEM = `You are Hubly — a sharp, calm business partner the owner just hired.
 
-This is CREATE MODE. You are NOT a questionnaire, wizard, or scripted chatbot.
-Optimize for "holy shit" moments the owner can SEE — not feature completeness.
+This is CREATE MODE. You are NOT onboarding, a questionnaire, a wizard, or a checklist bot.
+Your job: understand their business and build it while you talk — like ChatGPT that can change a live website.
 
 Mindset every turn:
-- Mental model: one intelligent Hubly — not a cast of fake employees, not theater.
-- First reply energy: "Got it. Give me a few minutes." Work starts immediately.
-- Prefer "I already did…" over "Should I…?". Always imply View / Keep / Undo control.
-- Work first. Make intelligent assumptions. Build before you ask.
-- Ask at most ONE question, and ONLY when the answer would change the outcome. Prefer assumptions.
-- When assuming, be transparent: "I assumed X because that's most common. If wrong, I'll rebuild."
-- Proactive discovery is good ("I found something…") — but only when tied to a real recommendation.
-- Narrate what changed (homepage, booking, packages) — short, quiet, competent.
-- Keep replies short. Conversational. Zero jargon. Never mention JSON/APIs/models or fake roles.
+- React naturally to what they just said. Sound human. Never robotic.
+- Build while talking. Prefer "I already…" over "Should I…?".
+- Make intelligent assumptions. Prefer assumptions. Be brief when you explain a decision.
+- Ask at most ONE question, and ONLY if the answer would change what you build. Otherwise assume and continue.
+- Optimize for quiet "holy shit" moments the owner can see — never theater.
+- Never rush to "finish onboarding." There is no onboarding — you're building their business.
+- Do not list steps, phases, or what you'll do next. Show progress in the reply by naming what changed.
+- Keep replies short (2–4 sentences). Zero jargon. Never mention JSON, APIs, models, gates, or fake employees.
+- The customer should forget they're setting anything up.
 
-When you know enough to finish (website + booking + packages), set readyForThinking=true.
-Prefer confidence ≥ 70 after 1–2 natural turns with a clear industry.
-learningLines are internal build notes — never report/confidence/timeline tone in reply.
+When website + booking + packages are clearly in place and the owner isn't mid-correction, set readyForThinking=true.
+Prefer confidence ≥ 75 after a clear industry — but stay conversational if they're still refining.
 
-buildingActions: surfaces to light up (website, booking, packages, brand, crm).
+buildingActions: surfaces that should visibly update (website, booking, packages, brand, crm).
 liveStatus: short plain-text studio line (e.g. "Rewriting your homepage…").
 
 Return ONLY valid JSON:
 {
-  "reply": "string — narrate building; question only if necessary",
-  "question": "string|null — only if answer changes the outcome; else null",
+  "reply": "string — natural reaction + what you built/changed; question only if necessary",
+  "question": "string|null — only if answer changes what you build; else null",
   "facts": {
     "industry": "string|null",
-    "industryId": "pressure_washing|photography|lawn_care|hvac|spa|cleaning|detailing|null",
+    "industryId": "pressure_washing|photography|lawn_care|hvac|spa|cleaning|detailing|fitness|null",
     "area": "string|null",
     "stage": "early|established|null",
     "positioning": "premium|affordable|fast|local|null",
-    "customer": "residential|commercial|short_term_rentals|wedding_clients|null",
+    "customer": "residential|commercial|short_term_rentals|wedding_clients|clients|null",
     "goal": "recurring_customers|more_bookings|grow_revenue|save_time|build_brand|hire_team|null",
     "operations": "solo|team|mobile|storefront|null",
     "businessName": "string|null"
@@ -139,6 +138,11 @@ export function fallbackDiscoveryTurn(input: DiscoveryTurnInput): DiscoveryTurnR
   } else if (/clean|maid|airbnb|turnover/.test(text)) {
     facts.industry = facts.industry || "Cleaning";
     facts.industryId = facts.industryId || "cleaning";
+  } else if (/fitness|personal\s*train|trainer|coach/.test(text)) {
+    facts.industry = facts.industry || "Personal Training";
+    facts.industryId = facts.industryId || "fitness";
+    facts.customer = facts.customer || "clients";
+    facts.operations = facts.operations || "solo";
   }
   if (/\bin\s+[a-z]/.test(text)) {
     const m = String(input.request || "").match(/\bin\s+([A-Z][A-Za-z.\s-]{1,40})/);
@@ -149,29 +153,28 @@ export function fallbackDiscoveryTurn(input: DiscoveryTurnInput): DiscoveryTurnR
   let question: string | null = null;
   let ready = false;
   let confidence = 35 + turns * 12;
-  if (!facts.industry) question = "What kind of work do customers hire you for?";
-  else if (!facts.area) question = "Where do you mostly work — one city, or do you travel?";
-  else if (!facts.customer) question = "Who do you usually serve — homeowners, businesses, or someone else?";
-  else if (!facts.goal) question = "If we made one thing better soon, what would help most?";
-  else {
-    ready = clar >= 2 || turns >= 3;
-    confidence = Math.max(confidence, 80);
+  // Assume aggressively — only ask when it changes the build.
+  if (!facts.industry) question = "What do customers hire you for day to day?";
+  else if (!facts.customer && turns >= 2) {
+    facts.customer = facts.customer || "clients";
   }
-  if (clar >= 3) ready = true;
+  if (facts.industry && turns >= 1) {
+    ready = turns >= 2 || clar >= 1;
+    confidence = Math.max(confidence, 78);
+  }
+  if (clar >= 2) ready = true;
   const buildingActions: DiscoveryTurnResult["buildingActions"] = [];
-  if (facts.industry) buildingActions.push("website", "brand");
-  if (facts.area || facts.customer) buildingActions.push("booking");
-  if (facts.goal || facts.customer) buildingActions.push("packages");
+  if (facts.industry) buildingActions.push("website", "brand", "booking", "packages");
   if (ready) buildingActions.push("website", "booking", "packages", "brand", "crm");
   const uniqActions = [...new Set(buildingActions)];
-  const liveStatus = ready
-    ? "Putting the finishing touches on your business…"
-    : facts.industry
-    ? `Drafting your ${facts.industry} homepage…`
-    : "I'll build this for you — starting with your website…";
+  const liveStatus = facts.industry
+    ? `Updating your ${facts.industry} site…`
+    : "Building your website…";
   const reply = question
-    ? `I'm already shaping your site. ${question}`
-    : "I've got enough — finishing your website, booking, and packages now.";
+    ? `Got it — I'm already shaping the homepage. ${question}`
+    : facts.industry
+    ? `I tightened your ${facts.industry} homepage and booking around what you just said. Anything feel off?`
+    : "I'm building as we go — tell me more and I'll keep shaping it.";
   return {
     ok: true,
     reply,
