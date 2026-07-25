@@ -1151,52 +1151,61 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 }
 @media(max-width:860px){
   .is-aw-shell{grid-template-columns:1fr;grid-template-rows:auto minmax(40vh,1fr) minmax(38vh,1fr)}
-  .is-aw-nav{flex-direction:row;flex-wrap:wrap;gap:6px;padding:10px;border-right:0;border-bottom:1px solid rgba(255,255,255,.1)}
-  .is-aw-nav .is-aw-brand{width:100%}
+  .is-aw-nav{padding:10px;border-right:0;border-bottom:1px solid rgba(255,255,255,.1)}
+  .is-aw-progress{flex-direction:row;flex-wrap:wrap;gap:4px}
+  .is-aw-progress li{padding:6px 8px;font-size:11px}
   .is-aw-nav .is-aw-check{display:none}
-  .is-aw-nav button span{display:inline}
+  .is-aw-creating{display:none}
 }
 .is-aw-nav{
-  display:flex;flex-direction:column;gap:6px;padding:14px 10px;
+  display:flex;flex-direction:column;gap:8px;padding:14px 12px;
   background:#141B2B;border-right:1px solid rgba(255,255,255,.1);min-height:0;
 }
-.is-aw-nav .is-aw-brand{padding:4px 6px 12px}
+.is-aw-nav .is-aw-brand{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 4px 10px}
 .is-aw-nav .is-aw-brand .hubly-mark{height:24px;width:auto;display:block}
-.is-aw-nav button{
-  appearance:none;border:1px solid transparent;background:transparent;color:rgba(255,255,255,.72);
-  border-radius:10px;padding:10px 10px;font:inherit;font-size:12px;font-weight:700;
-  cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;
+.is-aw-restart{
+  appearance:none;border:1px solid rgba(255,255,255,.16);background:transparent;color:rgba(255,255,255,.65);
+  border-radius:8px;padding:5px 8px;font:inherit;font-size:10px;font-weight:700;cursor:pointer
 }
-.is-aw-nav button:hover{background:rgba(255,255,255,.06);color:#fff}
-.is-aw-nav button.on{background:rgba(217,99,45,.18);border-color:rgba(217,99,45,.45);color:#fff}
-.is-aw-nav button .ic{width:18px;text-align:center;opacity:.85;flex:0 0 auto}
+.is-aw-restart:hover{border-color:#fdba74;color:#fdba74}
+.is-aw-nav-label{margin:0 4px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#fdba74;font-weight:800}
+.is-aw-progress{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.is-aw-progress li{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;
+  font-size:12px;font-weight:650;color:rgba(255,255,255,.45)
+}
+.is-aw-progress li .st{width:16px;text-align:center;font-weight:800;flex:0 0 auto}
+.is-aw-progress li.is-working{color:#fdba74;background:rgba(217,99,45,.12)}
+.is-aw-progress li.is-working .st{animation:isAwPulse 1.2s ease-in-out infinite}
+.is-aw-progress li.is-done{color:rgba(255,255,255,.92)}
+.is-aw-progress li.is-done .st{color:#D9632D;font-size:12px}
 @media(max-width:1099px){
-  .is-aw-nav button span:not(.ic){display:none}
-  .is-aw-nav button{justify-content:center;padding:10px}
+  .is-aw-progress .lbl{font-size:11px}
 }
 .is-aw-check{
-  margin-top:auto;padding:12px 8px 4px;border-top:1px solid rgba(255,255,255,.1);
+  margin-top:auto;padding:12px 4px 4px;border-top:1px solid rgba(255,255,255,.1);
 }
 .is-aw-check .sk{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:800;margin:0 0 8px}
-.is-aw-check ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
-.is-aw-check li{font-size:11px;font-weight:650;color:rgba(255,255,255,.55);display:flex;gap:6px;align-items:center}
-.is-aw-check li.is-done{color:rgba(255,255,255,.9)}
-.is-aw-check li.is-done::before{content:"✓";color:#D9632D;font-weight:800}
-.is-aw-check li:not(.is-done)::before{content:"·";color:rgba(255,255,255,.35);font-weight:800}
+.is-aw-check ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.is-aw-check li{margin:0}
+.is-aw-check li button{
+  appearance:none;border:0;background:transparent;color:rgba(255,255,255,.5);
+  font:inherit;font-size:11px;font-weight:650;padding:6px 8px;border-radius:8px;cursor:pointer;width:100%;text-align:left
+}
+.is-aw-check li.is-done button{color:rgba(255,255,255,.9)}
+.is-aw-check li button:hover{background:rgba(255,255,255,.06);color:#fff}
 .is-aw-main{display:flex;flex-direction:column;min-width:0;min-height:0;background:#0f172a}
 .is-aw-top{
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.1);
+  display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;
+  padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.1);
   background:rgba(15,23,42,.92);
 }
-.is-aw-tabs{display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:0}
-.is-aw-tabs button{
-  appearance:none;border:0;background:transparent;color:rgba(255,255,255,.6);
-  font:inherit;font-size:12px;font-weight:750;padding:8px 10px;border-radius:8px;cursor:pointer
+.is-aw-life-head{flex:1;min-width:200px}
+.is-aw-life-kicker{
+  margin:0 0 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fdba74;font-weight:800
 }
-.is-aw-tabs button:hover{color:#fff;background:rgba(255,255,255,.06)}
-.is-aw-tabs button.on{color:#fff;background:rgba(217,99,45,.22)}
-.is-aw-devices{display:flex;gap:4px}
+.is-aw-life-status{margin:0;font-size:13px;line-height:1.4;color:rgba(255,255,255,.78);font-weight:650;max-width:62ch}
+.is-aw-devices{display:flex;gap:4px;margin-left:auto}
 .is-aw-devices button{
   appearance:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);
   color:rgba(255,255,255,.7);border-radius:8px;padding:6px 10px;font:inherit;font-size:11px;font-weight:700;cursor:pointer
@@ -1209,28 +1218,72 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-aw-publish:hover{filter:brightness(1.05)}
 .is-aw-canvas{flex:1;min-height:0;overflow:auto;padding:14px;background:linear-gradient(180deg,#0f172a,#111827)}
 .is-aw-canvas.is-phone .is-aw-preview{max-width:390px;margin:0 auto}
+.is-aw-creating{
+  margin:0 0 12px;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(15,23,42,.55)
+}
+.is-aw-creating .sk{margin:0 0 8px;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#fdba74;font-weight:800}
+.is-aw-creating ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.is-aw-creating li{
+  font-size:11px;font-weight:700;padding:6px 10px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.45);background:rgba(0,0,0,.15)
+}
+.is-aw-creating li.is-on{border-color:rgba(217,99,45,.5);color:#fdba74;background:rgba(217,99,45,.15)}
+.is-aw-creating li.is-done{border-color:rgba(253,186,116,.35);color:#fff}
+.is-aw-creating li.is-done::before{content:"✓ ";color:#D9632D}
 .is-aw-preview{
   background:#fff;border-radius:14px;overflow:hidden;min-height:280px;
   border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 40px rgba(0,0,0,.35);
-  color:#0f172a;
+  color:#0f172a;animation:isLivePop .4s ease both;
 }
 .is-aw-preview .ws-site{min-height:280px}
+/* Progressive grow — site sections appear as Hubly builds (Cursor-like) */
+.is-aw-preview[data-create-grow="seed"] .ws-header,
+.is-aw-preview[data-create-grow="seed"] #ws-sec-services,
+.is-aw-preview[data-create-grow="seed"] #ws-sec-reviews,
+.is-aw-preview[data-create-grow="seed"] #ws-sec-gallery,
+.is-aw-preview[data-create-grow="seed"] #ws-sec-owner,
+.is-aw-preview[data-create-grow="seed"] #ws-sec-faq,
+.is-aw-preview[data-create-grow="seed"] .ws-footer,
+.is-aw-preview[data-create-grow="seed"] .ws-footer-cta{display:none!important}
+.is-aw-preview[data-create-grow="hero"] #ws-sec-services,
+.is-aw-preview[data-create-grow="hero"] #ws-sec-reviews,
+.is-aw-preview[data-create-grow="hero"] #ws-sec-gallery,
+.is-aw-preview[data-create-grow="hero"] #ws-sec-owner,
+.is-aw-preview[data-create-grow="hero"] #ws-sec-faq,
+.is-aw-preview[data-create-grow="hero"] .ws-footer,
+.is-aw-preview[data-create-grow="hero"] .ws-footer-cta{opacity:.18;filter:grayscale(.3);pointer-events:none}
+.is-aw-preview[data-create-grow="hero"] .ws-header-nav,
+.is-aw-preview[data-create-grow="hero"] .ws-header-cta{opacity:.25}
+.is-aw-preview[data-create-grow="nav"] #ws-sec-services,
+.is-aw-preview[data-create-grow="nav"] #ws-sec-reviews,
+.is-aw-preview[data-create-grow="nav"] #ws-sec-gallery,
+.is-aw-preview[data-create-grow="nav"] #ws-sec-owner,
+.is-aw-preview[data-create-grow="nav"] #ws-sec-faq{opacity:.22;pointer-events:none}
+.is-aw-preview[data-create-grow="cta"] #ws-sec-services,
+.is-aw-preview[data-create-grow="cta"] #ws-sec-reviews,
+.is-aw-preview[data-create-grow="cta"] #ws-sec-gallery{opacity:.35;pointer-events:none}
+.is-aw-preview[data-create-grow="services"] #ws-sec-reviews,
+.is-aw-preview[data-create-grow="services"] #ws-sec-gallery{opacity:.4;pointer-events:none}
 .is-aw-empty{
-  display:none;min-height:320px;align-items:center;justify-content:center;text-align:center;
-  padding:36px 28px;color:rgba(255,255,255,.78);font-size:14px;line-height:1.45;
+  display:none;min-height:320px;align-items:stretch;justify-content:flex-start;text-align:left;
+  padding:18px;color:rgba(255,255,255,.78);font-size:14px;line-height:1.45;
   border:1px dashed rgba(255,255,255,.18);border-radius:14px;background:rgba(15,23,42,.35);
   flex-direction:column;gap:14px
 }
 .is-aw-empty.is-on{display:flex}
-.is-aw-empty .aw-empty-title{margin:0;font-size:18px;font-weight:800;color:#fff;letter-spacing:-.02em}
-.is-aw-empty .aw-empty-sub{margin:0;max-width:36ch;font-size:13px;color:rgba(255,255,255,.65)}
-.is-aw-build-stages{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:420px}
-.is-aw-build-stages span{
-  font-size:11px;font-weight:700;padding:6px 10px;border-radius:999px;
-  border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.45);background:rgba(0,0,0,.15)
+.is-aw-empty .aw-empty-title{margin:0;font-size:16px;font-weight:800;color:#fff;letter-spacing:-.02em}
+.is-aw-empty .aw-empty-sub{margin:0;max-width:48ch;font-size:13px;color:rgba(255,255,255,.65)}
+.is-aw-skeleton{border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:#0b1220}
+.is-aw-skeleton .sk-nav{height:42px;background:rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
+.is-aw-skeleton .sk-hero{
+  min-height:180px;display:flex;align-items:flex-end;padding:20px;
+  background:linear-gradient(135deg,rgba(217,99,45,.25),rgba(15,23,42,.9) 55%,#0b1220)
 }
-.is-aw-build-stages span.is-on{border-color:rgba(217,99,45,.5);color:#fdba74;background:rgba(217,99,45,.15)}
-.is-aw-build-stages span.is-done{border-color:rgba(253,186,116,.35);color:#fff}
+.is-aw-skeleton .sk-pulse{font-size:13px;font-weight:700;color:rgba(255,255,255,.75);animation:isAwPulse 1.4s ease-in-out infinite}
+.is-aw-skeleton .sk-rows{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px}
+.is-aw-skeleton .sk-rows i{display:block;height:64px;border-radius:10px;background:rgba(255,255,255,.06)}
+@keyframes isAwPulse{0%,100%{opacity:.55}50%{opacity:1}}
 .is-aw-suggest{display:none;flex-wrap:wrap;gap:6px;margin:4px 0 0}
 .is-aw-suggest.is-on{display:flex}
 .is-aw-suggest button{
@@ -9322,37 +9375,40 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-talk-progress" id="is-talk-progress" data-i18n-title="isTalkProgress" aria-label="Progress"></div>
         </div>
         <div class="is-kicker">Hubly</div>
-        <h1 class="is-title" id="is-talk-ask-legacy">What do you do?</h1>
-        <p class="is-sub" id="is-talk-hint-legacy">I’ll build your website while we talk.</p>
+        <h1 class="is-title" id="is-talk-ask-legacy">Tell me about the business you want to build.</h1>
+        <p class="is-sub" id="is-talk-hint-legacy">Talk naturally. I’ll research your market and build while we chat.</p>
 
-        <!-- Create AI Workspace: left nav · center canvas · right chat -->
+        <!-- Create AI Workspace: progress · growing website · ChatGPT chat -->
         <div class="is-aw-shell" id="is-aw-shell" data-create-ai-workspace="1">
-          <aside class="is-aw-nav" aria-label="Create workspace">
+          <aside class="is-aw-nav" aria-label="Create progress">
             <div class="is-aw-brand">
               <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="100" height="24">
+              <button type="button" class="is-aw-restart" onclick="isDiscoveryBoot({restart:true})" title="Restart">Restart</button>
             </div>
-            <button type="button" class="on" data-aw-nav="build" onclick="isCreateAwSetSurface('website')"><span class="ic">✦</span><span>Build</span></button>
-            <button type="button" data-aw-nav="website" onclick="isCreateAwSetSurface('website')"><span class="ic">◎</span><span>Website</span></button>
-            <button type="button" data-aw-nav="booking" onclick="isCreateAwSetSurface('booking')"><span class="ic">▦</span><span>Booking</span></button>
-            <button type="button" data-aw-nav="packages" onclick="isCreateAwSetSurface('packages')"><span class="ic">▣</span><span>Packages</span></button>
-            <button type="button" data-aw-nav="brand" onclick="isCreateAwSetSurface('brand')"><span class="ic">◇</span><span>Brand</span></button>
+            <p class="is-aw-nav-label">Workspace</p>
+            <ul class="is-aw-progress" id="is-aw-progress" aria-label="Build progress">
+              <li data-aw-progress="research"><span class="st">○</span><span class="lbl">Research</span></li>
+              <li data-aw-progress="strategy"><span class="st">○</span><span class="lbl">Business strategy</span></li>
+              <li data-aw-progress="website"><span class="st">○</span><span class="lbl">Building website</span></li>
+              <li data-aw-progress="booking"><span class="st">○</span><span class="lbl">Creating booking</span></li>
+              <li data-aw-progress="packages"><span class="st">○</span><span class="lbl">Designing packages</span></li>
+              <li data-aw-progress="crm"><span class="st">○</span><span class="lbl">Setting up CRM</span></li>
+            </ul>
             <div class="is-aw-check">
-              <p class="sk">Coming to life</p>
+              <p class="sk">Open when ready</p>
               <ul id="is-aw-checklist">
-                <li data-aw-check="website">Website</li>
-                <li data-aw-check="booking">Booking</li>
-                <li data-aw-check="packages">Packages</li>
-                <li data-aw-check="brand">Brand</li>
+                <li data-aw-check="website"><button type="button" onclick="isCreateAwSetSurface('website')">Website</button></li>
+                <li data-aw-check="booking"><button type="button" onclick="isCreateAwSetSurface('booking')">Booking</button></li>
+                <li data-aw-check="packages"><button type="button" onclick="isCreateAwSetSurface('packages')">Packages</button></li>
+                <li data-aw-check="brand"><button type="button" onclick="isCreateAwSetSurface('brand')">Brand</button></li>
               </ul>
             </div>
           </aside>
           <section class="is-aw-main">
             <div class="is-aw-top">
-              <div class="is-aw-tabs" role="tablist" aria-label="Workspace surfaces">
-                <button type="button" class="on" data-aw-tab="website" onclick="isCreateAwSetSurface('website')">Website</button>
-                <button type="button" data-aw-tab="booking" onclick="isCreateAwSetSurface('booking')">Booking</button>
-                <button type="button" data-aw-tab="packages" onclick="isCreateAwSetSurface('packages')">Packages</button>
-                <button type="button" data-aw-tab="brand" onclick="isCreateAwSetSurface('brand')">Brand</button>
+              <div class="is-aw-life-head">
+                <p class="is-aw-life-kicker">Your business is coming to life</p>
+                <p class="is-aw-life-status" id="is-aw-life-status">Tell me about your business — I’ll start researching and building.</p>
               </div>
               <div class="is-aw-devices" aria-label="Preview device">
                 <button type="button" class="on" id="is-aw-device-desk" onclick="isCreateAwSetDevice('desktop')">Desktop</button>
@@ -9362,18 +9418,29 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="is-aw-canvas" id="is-aw-canvas">
               <div class="is-aw-panel on" data-aw-panel="website">
-                <div class="is-aw-empty is-on" id="is-aw-empty">
-                  <p class="aw-empty-title" id="is-aw-empty-title">Your website builds here</p>
-                  <p class="aw-empty-sub" id="is-aw-empty-sub">Tell me what you do — I won’t flash a template until I’ve shaped something for you.</p>
-                  <div class="is-aw-build-stages" id="is-aw-build-stages" aria-hidden="true">
-                    <span data-aw-stage="understand">Business</span>
-                    <span data-aw-stage="website">Website</span>
-                    <span data-aw-stage="booking">Booking</span>
-                    <span data-aw-stage="packages">Packages</span>
-                    <span data-aw-stage="brand">Brand</span>
-                  </div>
+                <div class="is-aw-creating" id="is-aw-creating" aria-live="polite">
+                  <p class="sk">Things I’m creating</p>
+                  <ul id="is-aw-creating-list">
+                    <li data-aw-create="position">Brand position</li>
+                    <li data-aw-create="homepage">Homepage strategy</li>
+                    <li data-aw-create="hero">Hero</li>
+                    <li data-aw-create="booking">Booking experience</li>
+                    <li data-aw-create="packages">Packages</li>
+                    <li data-aw-create="crm">CRM</li>
+                  </ul>
                 </div>
-                <div class="is-aw-preview ed-ws-preview" id="is-aw-preview" hidden></div>
+                <div class="is-aw-empty is-on" id="is-aw-empty">
+                  <div class="is-aw-skeleton" aria-hidden="true">
+                    <div class="sk-nav"></div>
+                    <div class="sk-hero">
+                      <span class="sk-pulse">Your homepage is taking shape…</span>
+                    </div>
+                    <div class="sk-rows"><i></i><i></i><i></i></div>
+                  </div>
+                  <p class="aw-empty-title" id="is-aw-empty-title">Researching your market</p>
+                  <p class="aw-empty-sub" id="is-aw-empty-sub">Looking at positioning, offers, trust signals, pricing, booking flow, and branding.</p>
+                </div>
+                <div class="is-aw-preview ed-ws-preview" id="is-aw-preview" hidden data-create-grow="seed"></div>
               </div>
               <div class="is-aw-panel" data-aw-panel="booking" hidden>
                 <div id="is-aw-booking-live" class="is-aw-live-frame" aria-label="Customer booking preview"></div>
@@ -9391,12 +9458,12 @@ document.addEventListener('DOMContentLoaded', function() {
               <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="90" height="22">
               <div class="meta">
                 <strong>Hubly AI</strong>
-                <span>Your AI business partner</span>
+                <span>Thinks out loud while it builds</span>
               </div>
             </div>
             <div class="is-aw-chat-ask" id="is-aw-chat-ask">
-              <h1 class="is-title" id="is-talk-ask">What do you do?</h1>
-              <p class="is-sub" id="is-talk-hint">Talk naturally — I’m building your business while we talk.</p>
+              <h1 class="is-title" id="is-talk-ask">Tell me about the business you want to build.</h1>
+              <p class="is-sub" id="is-talk-hint">Talk naturally. I’ll research your market and build your website, booking, packages, and CRM while we chat.</p>
             </div>
             <div class="is-discovery-main">
               <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
@@ -17979,7 +18046,7 @@ function isDiscoveryBoot(opts){
     if(seed){
       setTimeout(()=>{ isDiscoverySend(seed).catch(e=>console.error('discovery boot AI',e)); }, 40);
     }else{
-      isTalkPush('hubly',"Tell me what you do. I'll understand it, then build.");
+      isTalkPush('hubly',"Tell me about the business you want to build — I’ll research the market and start shaping the site while we talk.");
     }
   }else{
     isShowStep('talk');
@@ -17988,13 +18055,15 @@ function isDiscoveryBoot(opts){
   }
   step?.classList.toggle('is-convo',!!(S._is.messages||[]).length);
   isTalkSetPrompt({
-    title:"What do you do?",
-    hint:"Talk naturally — like ChatGPT. I’m building your business while we talk.",
-    placeholder:"e.g. I’m an independent fitness trainer…",
+    title:"Tell me about the business you want to build.",
+    hint:"Talk naturally. I’ll research your market and build your website, booking, packages, and CRM while we chat.",
+    placeholder:"e.g. I’m an independent fitness trainer for busy professionals…",
     autocomplete:'off',
     type:'text',
     value:'',
   });
+  try{isCreateSetLifeStatus('Tell me about your business — I’ll start researching and building.');}catch(e){}
+  try{isCreateSyncProgress();}catch(e){}
   isRenderLiveBuild();
   const send=document.getElementById('is-talk-send');
   if(send)send.textContent='Send';
@@ -18378,65 +18447,212 @@ async function isWaitForCreateAssemble(ms){
   return typeof HublyCreateAssemble!=='undefined';
 }
 window.isWaitForCreateAssemble=isWaitForCreateAssemble;
-/**
- * Create Systems build — OpenAI Business Blueprint → Design → Layout → Components.
- * Assembles Website + Booking + Packages + Brand + CRM plan. No industry templates.
- */
-async function isCreateSystemsBuildSequence(session,rawBlueprint,facts){
-  const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
-  const setStep=(id,state)=>{
-    try{
-      const li=document.querySelector('#is-workspace-list [data-step="'+id+'"]');
-      if(!li)return;
+function isCreateSetLifeStatus(line){
+  const el=document.getElementById('is-aw-life-status');
+  if(el)el.textContent=String(line||'');
+  try{
+    const session=S._is?.discovery;
+    if(session)session.liveStatus=String(line||'').slice(0,140);
+  }catch(e){}
+}
+function isCreateThinkAloud(text){
+  const msg=String(text||'').trim();
+  if(!msg)return;
+  try{
+    isTalkPush('hubly',msg);
+    const session=S._is?.discovery;
+    if(session)session.messages.push({role:'hubly',text:msg,kind:'think_aloud'});
+    const log=document.getElementById('is-talk-log');
+    if(log)log.scrollTop=log.scrollHeight;
+  }catch(e){}
+}
+function isCreateSetProgress(id,state){
+  S._is=S._is||{};
+  S._is.createProgress=S._is.createProgress||{};
+  if(state)S._is.createProgress[id]=state;
+  isCreateSyncProgress();
+  // Mirror legacy workspace list for any remaining callers
+  try{
+    const li=document.querySelector('#is-workspace-list [data-step="'+id+'"]');
+    if(li){
       li.classList.remove('is-working','is-done');
       if(state==='working')li.classList.add('is-working');
       if(state==='done')li.classList.add('is-done');
-    }catch(e){}
-    try{HUBLY_HOLY_SHIT.setWorkspaceStep?.(id,state);}catch(e){}
+    }
+  }catch(e){}
+  try{HUBLY_HOLY_SHIT.setWorkspaceStep?.(id,state);}catch(e){}
+}
+function isCreateSyncProgress(){
+  const prog=S._is?.createProgress||{};
+  const labels={
+    research:{idle:'Research',working:'Researching…',done:'Research complete'},
+    strategy:{idle:'Business strategy',working:'Business strategy',done:'Business strategy'},
+    website:{idle:'Building website',working:'Building website',done:'Website ready'},
+    booking:{idle:'Creating booking',working:'Creating booking',done:'Booking ready'},
+    packages:{idle:'Designing packages',working:'Designing packages',done:'Packages ready'},
+    crm:{idle:'Setting up CRM',working:'Setting up CRM',done:'CRM ready'},
   };
-  session.liveStatus='Thinking through your business…';
-  setStep('understand','working');
-  isRenderLiveBuild({pulse:'website'});
-  await sleep(420);
+  document.querySelectorAll('#is-aw-progress [data-aw-progress]').forEach(li=>{
+    const k=li.getAttribute('data-aw-progress');
+    const st=prog[k]||'';
+    li.classList.toggle('is-working',st==='working');
+    li.classList.toggle('is-done',st==='done');
+    const mark=li.querySelector('.st');
+    if(mark)mark.textContent=st==='done'?'✓':(st==='working'?'⏳':'○');
+    const lbl=li.querySelector('.lbl');
+    const L=labels[k];
+    if(lbl&&L)lbl.textContent=st==='done'?L.done:(st==='working'?L.working:L.idle);
+  });
+  document.querySelectorAll('#is-aw-creating-list [data-aw-create]').forEach(li=>{
+    const k=li.getAttribute('data-aw-create');
+    const map={position:'strategy',homepage:'website',hero:'website',booking:'booking',packages:'packages',crm:'crm'};
+    const st=prog[map[k]||k]||'';
+    // finer create chips
+    const fine=S._is?.createBits||{};
+    const bit=fine[k]||st;
+    li.classList.toggle('is-on',bit==='working');
+    li.classList.toggle('is-done',bit==='done');
+  });
+}
+function isCreateSetBit(id,state){
+  S._is=S._is||{};
+  S._is.createBits=S._is.createBits||{};
+  S._is.createBits[id]=state;
+  isCreateSyncProgress();
+}
+function isCreateSetGrow(level){
+  S._is=S._is||{};
+  S._is.createGrowLevel=level||'seed';
+  const preview=document.getElementById('is-aw-preview');
+  if(preview)preview.setAttribute('data-create-grow',S._is.createGrowLevel);
+  try{isRenderCreateWorkspacePreview();}catch(e){}
+}
+/** Kick research UI immediately so the first seconds feel alive while OpenAI thinks. */
+function isCreateBeginLifeSequence(session,ownerText){
+  session=session||S._is?.discovery;
+  if(!session)return;
+  S._is=S._is||{};
+  S._is.createProgress={research:'working',strategy:'',website:'',booking:'',packages:'',crm:''};
+  S._is.createBits={position:'',homepage:'',hero:'',booking:'',packages:'',crm:''};
+  S._is.createGrowLevel='seed';
+  session.studio=session.studio||{};
+  session.studio.rewrite=false;
+  session.studio.bookingOn=false;
+  session.studio.packagesOn=false;
+  const industryGuess=/fitness|train|coach/i.test(ownerText||'')?'fitness'
+    :/photo|wedding/i.test(ownerText||'')?'photography'
+    :/clean|maid/i.test(ownerText||'')?'cleaning'
+    :'your market';
+  isCreateSetLifeStatus(`Researching successful ${industryGuess==='your market'?industryGuess:industryGuess+' businesses'}…`);
+  isCreateSyncProgress();
+  const empty=document.getElementById('is-aw-empty');
+  const title=document.getElementById('is-aw-empty-title');
+  const sub=document.getElementById('is-aw-empty-sub');
+  const preview=document.getElementById('is-aw-preview');
+  const ask=document.getElementById('is-aw-chat-ask');
+  if(ask)ask.hidden=true;
+  if(title)title.textContent=`Researching ${industryGuess==='your market'?'your market':industryGuess+' businesses'}`;
+  if(sub)sub.textContent='Looking at positioning, offers, trust signals, pricing, booking flow, and branding.';
+  empty?.classList.add('is-on');
+  if(empty)empty.hidden=false;
+  if(preview){preview.hidden=true;preview.setAttribute('data-create-grow','seed');}
+  try{isCreateAwSetSurface('website',{quiet:true});}catch(e){}
+}
+window.isCreateBeginLifeSequence=isCreateBeginLifeSequence;
+
+/**
+ * Create Systems build — OpenAI Blueprint → progressive live site growth (Cursor-like).
+ * Never flash a finished template; grow hero → nav → CTA → services → booking → packages.
+ */
+async function isCreateSystemsBuildSequence(session,rawBlueprint,facts){
+  const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+  facts=facts||{};
+  const industry=String(facts.industry||rawBlueprint?.industry||S.industry||'your market');
+  const customer=String(facts.customer||rawBlueprint?.idealCustomer||'clients');
+
+  isCreateSetProgress('research','working');
+  isCreateSetLifeStatus(`Researching successful ${industry} businesses…`);
+  isCreateThinkAloud(`I'm researching how strong ${industry} brands position themselves — offers, trust, and how they get booked.`);
+  await sleep(700);
+  isCreateSetProgress('research','done');
+
+  isCreateSetProgress('strategy','working');
+  isCreateSetBit('position','working');
+  isCreateSetLifeStatus('Writing business strategy & brand position…');
+  isCreateThinkAloud(`I'm noticing the winners emphasize results and accountability over generic pitches. I'm leaning into that for ${customer}.`);
+  await sleep(550);
 
   const bp=rawBlueprint||(typeof HublyCreateAssemble!=='undefined'
     ?HublyCreateAssemble.blueprintFromFacts(facts||{})
     :facts);
   const plan=HublyCreateAssemble.assemble(bp,{facts:facts||{}});
-  setStep('understand','done');
-  setStep('website','working');
-  session.liveStatus='Assembling homepage from components…';
-  // Progressive studio — canvas waits until packages land (isCreateCanvasShouldShowSite).
   session.studio=session.studio||{};
   session.studio.packagesOn=false;
   session.studio.pkgChips=[];
-  isRenderLiveBuild({pulse:'website',rewrite:true});
-  await sleep(500);
-  setStep('website','done');
+  session.studio.bookingOn=false;
+  session.studio.rewrite=true;
+  session.studio.heroTitle=S.biz||session.studio.heroTitle;
+  session.studio.heroSub=S.website?.heroSub||session.studio.heroSub;
+  isCreateSetBit('position','done');
+  isCreateSetBit('homepage','working');
+  isCreateSetProgress('strategy','done');
 
-  setStep('booking','working');
+  isCreateSetProgress('website','working');
+  isCreateSetLifeStatus('Writing homepage…');
+  isCreateThinkAloud(`Drafting the homepage around “${String(S.website?.heroHeadline||plan?.copy?.headline||'your offer').slice(0,72)}”. Watch the hero come in.`);
+  isCreateSetBit('hero','working');
+  isCreateSetGrow('hero');
+  await sleep(650);
+  isCreateSetBit('hero','done');
+  isCreateSetBit('homepage','done');
+
+  isCreateSetLifeStatus('Adding navigation & booking CTA…');
+  isCreateThinkAloud(`Your audience is probably ${customer} — I'm keeping the path short: clear CTA, consult-first if it fits.`);
+  isCreateSetGrow('nav');
+  await sleep(420);
+  isCreateSetGrow('cta');
+  await sleep(380);
   session.studio.bookingOn=true;
   session.studio.bookingChips=(plan&&plan.bookingChips)||['Consult','Book session'];
-  session.liveStatus='Wiring your booking experience…';
+  isCreateSetProgress('website','done');
+
+  isCreateSetProgress('booking','working');
+  isCreateSetBit('booking','working');
+  isCreateSetLifeStatus('Designing booking experience…');
+  isCreateThinkAloud(`Most ${industry} sites bury the next step. I'm wiring a booking path customers can finish in under a minute.`);
   isRenderLiveBuild({pulse:'booking'});
-  await sleep(380);
-  setStep('booking','done');
+  await sleep(520);
+  isCreateSetBit('booking','done');
+  isCreateSetProgress('booking','done');
 
-  setStep('packages','working');
+  isCreateSetProgress('packages','working');
+  isCreateSetBit('packages','working');
+  isCreateSetLifeStatus('Generating packages…');
+  const pkgNames=(plan?.packages||[]).map(p=>typeof p==='string'?p:(p.name||'Package')).slice(0,3);
+  isCreateThinkAloud(pkgNames.length
+    ?`I'm laying out packages: ${pkgNames.join(' · ')}. ${/high|luxury|premium|consult/i.test(String(plan?.business?.priceLevel||''))?'Leading with a consult instead of commodity prices.':'Clear offers so people know what to book.'}`
+    :`I'm shaping clear packages so people know what to book.`);
   session.studio.packagesOn=true;
-  session.studio.pkgChips=(plan&&plan.packages)||[];
-  session.liveStatus='Laying out packages…';
+  session.studio.pkgChips=plan?.packages||[];
+  isCreateSetGrow('services');
   isRenderLiveBuild({pulse:'packages'});
-  await sleep(420);
-  setStep('packages','done');
+  await sleep(580);
+  isCreateSetBit('packages','done');
+  isCreateSetProgress('packages','done');
 
-  setStep('brand','working');
-  session.buildingActions=['website','booking','packages','brand'];
+  isCreateThinkAloud(`Adding social proof next — then I'll prep CRM so leads don't get lost.`);
+  await sleep(360);
+  isCreateSetGrow('full');
+
+  isCreateSetProgress('crm','working');
+  isCreateSetBit('crm','working');
+  isCreateSetLifeStatus('Preparing CRM…');
+  session.buildingActions=['website','booking','packages','brand','crm'];
   session.studio.brandOn=true;
-  session.liveStatus='';
-  isRenderLiveBuild({pulse:'all'});
-  await sleep(280);
-  setStep('brand','done');
+  await sleep(420);
+  isCreateSetBit('crm','done');
+  isCreateSetProgress('crm','done');
+  isCreateSetLifeStatus('First version ready — keep talking to refine anything.');
   try{HUBLY_HOLY_SHIT.setWorkspaceStatus?.('Ready');}catch(e){}
 
   session.holyShitComplete=true;
@@ -18452,10 +18668,13 @@ async function isCreateSystemsBuildSequence(session,rawBlueprint,facts){
   };
   try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.applySectionDom(S.website);}catch(e){}
   isRenderLiveBuild({pulse:'all'});
+  try{isRenderCreateWorkspacePreview();}catch(e){}
   try{isShowCreateSuggestionChips();}catch(e){}
   return plan;
 }
 window.isCreateSystemsBuildSequence=isCreateSystemsBuildSequence;
+window.isCreateSetLifeStatus=isCreateSetLifeStatus;
+window.isCreateSetGrow=isCreateSetGrow;
 
 async function isDiscoverySend(text){
   if(S._is?._talkBusy)return;
@@ -18475,6 +18694,8 @@ async function isDiscoverySend(text){
   // AI Connect — OpenAI Business Blueprint → systems assemble (not industry templates).
   if(!session.holyShitComplete&&session.turns<=2){
     isDiscoverySetTyping(true);
+    // First seconds: research UI + skeleton site while OpenAI thinks (never a blank canvas).
+    try{isCreateBeginLifeSequence(session,text);}catch(e){}
     const brainPromise=isDiscoveryThinkTurn(text).catch(e=>({ok:false,error:e&&e.message?e:{message:String(e)}}));
     let aiReply='';
     let usedOpenAi=false;
@@ -18913,24 +19134,16 @@ function isCreateAwSetSurface(surfaceId,opts){
   S._is=S._is||{};
   S._is.createAwSurface=id;
   if(!isCreateAiWorkspaceOn())isEnterCreateAiWorkspace();
-  document.querySelectorAll('#is-aw-shell [data-aw-tab]').forEach(btn=>{
-    btn.classList.toggle('on',btn.getAttribute('data-aw-tab')===id);
-  });
-  document.querySelectorAll('#is-aw-shell [data-aw-nav]').forEach(btn=>{
-    const nav=btn.getAttribute('data-aw-nav');
-    let on=false;
-    if(nav==='build')on=(id==='website'||id==='brand');
-    else if(nav==='website')on=(id==='website'||id==='brand');
-    else on=(nav===id);
-    btn.classList.toggle('on',on);
-  });
   document.querySelectorAll('#is-aw-canvas [data-aw-panel]').forEach(panel=>{
     const match=panel.getAttribute('data-aw-panel')===id;
     panel.classList.toggle('on',match);
     panel.hidden=!match;
   });
-  // Don't re-seed business on every tab click — that fights the locked design.
-  if(isCreateCanvasShouldShowSite()){
+  document.querySelectorAll('#is-aw-checklist [data-aw-check]').forEach(li=>{
+    li.classList.toggle('is-open',li.getAttribute('data-aw-check')===id);
+  });
+  // Don't re-seed business on every surface open — that fights the locked design.
+  if(id==='website'&&isCreateCanvasShouldShowSite()){
     try{isApplyCreateStudioToBusiness();}catch(e){}
   }
   if(id==='website')isRenderCreateWorkspacePreview();
@@ -18940,8 +19153,7 @@ function isCreateAwSetSurface(surfaceId,opts){
   if(!opts.quiet){
     try{
       const labels={website:'Website',booking:'Booking',packages:'Packages',brand:'Brand'};
-      const el=document.getElementById('is-live-status');
-      if(el)el.textContent='Showing '+(labels[id]||id);
+      isCreateSetLifeStatus('Showing '+(labels[id]||id));
     }catch(e){}
   }
 }
@@ -18957,54 +19169,40 @@ function isCreateAwPublish(){
 }
 window.isCreateAwPublish=isCreateAwPublish;
 
-/** Full site only after packages start — never flash a hard-coded template on first message. */
+/** Show the site as soon as strategy/homepage exists — grow in place, never wait for "full template". */
 function isCreateCanvasShouldShowSite(){
   const session=S._is?.discovery;
   if(!session)return false;
   if(session.holyShitComplete)return true;
+  const grow=S._is?.createGrowLevel||'seed';
+  if(grow&&grow!=='seed')return true;
   const st=session.studio||{};
-  return !!(st.rewrite&&st.packagesOn&&(st.pkgChips||[]).length>=1);
+  return !!(st.rewrite||S.website?.heroHeadline||S._is?.createSystemsPlan);
 }
 
 function isUpdateCreateAwBuildingEmpty(){
   const empty=document.getElementById('is-aw-empty');
   const title=document.getElementById('is-aw-empty-title');
   const sub=document.getElementById('is-aw-empty-sub');
-  const stages=document.getElementById('is-aw-build-stages');
   const session=S._is?.discovery;
-  const studio=session?.studio||{};
-  const list=document.getElementById('is-workspace-list');
-  const stepState={};
-  list?.querySelectorAll('[data-step]').forEach(li=>{
-    stepState[li.getAttribute('data-step')]=li.classList.contains('is-done')?'done':(li.classList.contains('is-working')?'on':'');
-  });
-  // Fall back to studio flags when workspace list classes aren't set.
-  if(studio.heroTitle||studio.rewrite)stepState.understand=stepState.understand||'done';
-  if(studio.rewrite)stepState.website=stepState.website||(studio.packagesOn?'done':'on');
-  if(studio.bookingOn)stepState.booking=stepState.booking||((studio.bookingChips||[]).length?'done':'on');
-  if(studio.packagesOn)stepState.packages=stepState.packages||((studio.pkgChips||[]).length?'done':'on');
-  if(studio.brandOn||session?.holyShitComplete)stepState.brand=stepState.brand||'done';
-  stages?.querySelectorAll('[data-aw-stage]').forEach(el=>{
-    const k=el.getAttribute('data-aw-stage');
-    el.classList.toggle('is-on',stepState[k]==='on');
-    el.classList.toggle('is-done',stepState[k]==='done');
-  });
-  if(!session||!(session.turns||studio.heroTitle)){
-    if(title)title.textContent='Your website builds here';
-    if(sub)sub.textContent='Tell me what you do — I won’t flash a template until I’ve shaped something for you.';
-  }else if(!studio.rewrite){
-    if(title)title.textContent='Understanding your business…';
-    if(sub)sub.textContent='I’m shaping direction first — the live site appears once the homepage is ready.';
-  }else if(!(studio.packagesOn&&(studio.pkgChips||[]).length)){
-    if(title)title.textContent='Building booking & packages…';
-    if(sub)sub.textContent='Homepage direction is set. Next I’m wiring the offers customers will see.';
+  const prog=S._is?.createProgress||{};
+  if(!session||!(session.turns||prog.research)){
+    if(title)title.textContent='Your business builds here';
+    if(sub)sub.textContent='Tell me about the business you want to build — I’ll research and grow the site live.';
+  }else if(prog.research==='working'){
+    if(title)title.textContent='Researching your market…';
+    if(sub)sub.textContent='Looking at positioning, offers, trust signals, pricing, booking flow, and branding.';
+  }else if(prog.strategy==='working'||prog.website==='working'){
+    if(title)title.textContent='Homepage taking shape…';
+    if(sub)sub.textContent='Hero, navigation, and CTA are coming online next.';
   }else{
-    if(title)title.textContent='Almost ready…';
-    if(sub)sub.textContent='Putting the first version on the canvas.';
+    if(title)title.textContent='Building…';
+    if(sub)sub.textContent='Watch the site grow as Hubly finishes each piece.';
   }
   empty?.classList.add('is-on');
   if(empty)empty.hidden=false;
   isSyncCreateAwChecklist();
+  isCreateSyncProgress();
 }
 
 function isRenderCreateWorkspacePreview(){
@@ -19012,9 +19210,9 @@ function isRenderCreateWorkspacePreview(){
   const empty=document.getElementById('is-aw-empty');
   if(!preview)return;
   isSyncCreateAwChecklist();
+  isCreateSyncProgress();
   if(!isCreateCanvasShouldShowSite()){
     preview.hidden=true;
-    preview.innerHTML='';
     isUpdateCreateAwBuildingEmpty();
     return;
   }
@@ -19031,6 +19229,8 @@ function isRenderCreateWorkspacePreview(){
   empty?.classList.remove('is-on');
   if(empty)empty.hidden=true;
   preview.hidden=false;
+  const grow=S._is?.createGrowLevel||(S._is?.discovery?.holyShitComplete?'full':'hero');
+  preview.setAttribute('data-create-grow',grow);
   const themeId=typeof getWebsiteThemeId==='function'?getWebsiteThemeId():'classic';
   preview.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${html}</div></div>`;
   try{if(typeof stripPreviewCloneIds==='function')stripPreviewCloneIds(preview);}catch(e){}
@@ -19040,6 +19240,7 @@ function isRenderCreateWorkspacePreview(){
   try{applyHeroMediaPlacement?.();}catch(e){}
   try{applyProfileCardThemeVars?.(site);}catch(e){}
   try{applyHeroFocus?.(site);}catch(e){}
+  try{if(typeof HublyCreateAssemble!=='undefined'&&S._is?.createSystemsPlan)HublyCreateAssemble.applyComponentClasses(S._is.createSystemsPlan);}catch(e){}
   preview.querySelectorAll('[data-pe],.ws-pe-target').forEach(el=>{
     el.removeAttribute('data-pe');
     el.classList.remove('ws-pe-target');
@@ -19050,10 +19251,11 @@ window.isRenderCreateWorkspacePreview=isRenderCreateWorkspacePreview;
 function isSyncCreateAwChecklist(){
   const session=S._is?.discovery;
   const studio=session?.studio||{};
+  const prog=S._is?.createProgress||{};
   const done={
-    website:!!(studio.heroTitle||studio.phase==='website'||session?.holyShitComplete),
-    booking:!!(studio.bookingOn||session?.holyShitComplete),
-    packages:!!(studio.packagesOn||session?.holyShitComplete),
+    website:!!(prog.website==='done'||studio.heroTitle||studio.rewrite||session?.holyShitComplete),
+    booking:!!(prog.booking==='done'||studio.bookingOn||session?.holyShitComplete),
+    packages:!!(prog.packages==='done'||studio.packagesOn||session?.holyShitComplete),
     brand:!!(studio.brandOn||studio.logo||session?.holyShitComplete),
   };
   document.querySelectorAll('#is-aw-checklist [data-aw-check]').forEach(li=>{
@@ -19062,6 +19264,7 @@ function isSyncCreateAwChecklist(){
   });
   const pub=document.getElementById('is-aw-publish');
   if(pub)pub.textContent=session?.holyShitComplete?'Enter Hubly Home':'Keep building…';
+  try{isCreateSyncProgress();}catch(e){}
 }
 
 /** Real customer booking landing inside Create canvas — not a summary card. */

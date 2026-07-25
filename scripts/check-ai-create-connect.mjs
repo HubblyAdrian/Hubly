@@ -86,6 +86,15 @@ check(
     /isCreateAwSetSurface/.test(hubly) &&
     /is-aw-preview/.test(hubly),
 );
+check(
+  "Create first-10s life UX",
+  /Tell me about the business you want to build/.test(hubly) &&
+    /Your business is coming to life/.test(hubly) &&
+    /isCreateBeginLifeSequence/.test(hubly) &&
+    /isCreateThinkAloud/.test(hubly) &&
+    /data-create-grow/.test(hubly) &&
+    /is-aw-progress/.test(hubly),
+);
 const systemsDoc = fs.readFileSync(path.join(root, "CREATE_SYSTEMS.md"), "utf8");
 const createRegistry = fs.readFileSync(path.join(root, "public/create-systems/registry.js"), "utf8");
 const assemble = fs.readFileSync(path.join(root, "public/create-systems/assemble.js"), "utf8");
