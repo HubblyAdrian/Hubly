@@ -55,6 +55,8 @@ Create is polished enough that we'd confidently show it to a paying customer.
 
 Nothing ships because code merged. Things ship because the experience improved.
 
+Launch checklist: [`HUBLY_MVP.md`](./HUBLY_MVP.md)
+
 ## Create — still rough
 
 - AI conversation should feel indistinguishable from ChatGPT
