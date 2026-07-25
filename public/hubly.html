@@ -65,6 +65,28 @@ html[data-theme="night"]{
 button.hubly-mark-btn,a.hubly-mark-btn{
   appearance:none;border:none;background:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;line-height:0;
 }
+/* CEO Demo Mode — daily review chrome (not a product feature) */
+#ceo-demo-bar{
+  position:fixed;top:0;left:0;right:0;z-index:10050;
+  display:none;align-items:center;justify-content:space-between;gap:12px;
+  padding:8px 14px;background:rgba(255,255,255,.92);
+  border-bottom:1px solid rgba(20,27,43,.08);
+  backdrop-filter:blur(10px);font-family:inherit;
+}
+#ceo-demo-bar.is-on{display:flex}
+body.ceo-demo-on{padding-top:48px}
+#ceo-demo-bar .ceo-demo-left{display:flex;align-items:center;gap:10px;min-width:0}
+#ceo-demo-bar .hubly-mark{height:22px}
+#ceo-demo-bar .ceo-demo-label{
+  font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:#141B2B;opacity:.72;white-space:nowrap;
+}
+#ceo-demo-bar .ceo-demo-restart{
+  appearance:none;border:1px solid rgba(20,27,43,.14);background:#fff;
+  color:#141B2B;font:inherit;font-size:13px;font-weight:700;
+  padding:7px 12px;border-radius:10px;cursor:pointer;
+}
+#ceo-demo-bar .ceo-demo-restart:hover{border-color:#D9632D;color:#D9632D}
 *{box-sizing:border-box;margin:0;padding:0}
 /* LANGUAGE TOGGLE */
 .lang-toggle{position:fixed;top:12px;right:16px;z-index:9999;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 10px;cursor:pointer;backdrop-filter:blur(8px);transition:background .15s;font-family:inherit;font-size:12px;font-weight:600;color:#fff;letter-spacing:.04em}
@@ -1090,20 +1112,30 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-discovery-layout{
   display:grid;gap:14px;align-items:start;
 }
+/* Delight: Create hero = live website (always visible) */
 @media(min-width:900px){
-  .is-wrap.is-discovery-wide{max-width:min(920px,96vw)}
+  .is-wrap.is-discovery-wide{max-width:min(1180px,96vw)}
   #is-step-talk.is-discovery .is-discovery-layout{
-    grid-template-columns:minmax(0,1.25fr) minmax(240px,.85fr);
+    grid-template-columns:minmax(360px,1.25fr) minmax(280px,.85fr);
   }
+  #is-step-talk.is-discovery .is-live-studio{order:-1;position:sticky;top:12px}
 }
-.is-understanding-panel{
+#is-step-talk.is-discovery .is-title{
+  font-size:clamp(20px,2.4vw,26px);margin:0 0 4px
+}
+#is-step-talk.is-discovery .is-sub{font-size:13px;max-width:40ch;margin:0 0 12px}
+#is-step-talk.is-discovery.is-convo .is-kicker,
+#is-step-talk.is-discovery.is-convo .is-title,
+#is-step-talk.is-discovery.is-convo .is-sub{display:none}
+#is-step-talk.is-discovery .is-talk-log{max-height:min(42vh,420px);overflow:auto}
+.is-understanding-panel,.is-live-studio{
   margin:0 0 12px;padding:14px 14px 12px;border-radius:16px;
   background:rgba(15,23,42,.42);border:1px solid rgba(255,255,255,.16);
   color:rgba(255,255,255,.9);
   animation:isUnderstandIn .45s ease both;
 }
 @keyframes isUnderstandIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.is-understanding-panel .is-learn-kicker{
+.is-understanding-panel .is-learn-kicker,.is-live-studio .is-learn-kicker{
   font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
   color:#fdba74;margin:0 0 8px;
 }
@@ -1121,18 +1153,143 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-learning-summary strong{display:block;margin:0 0 6px;color:#fff;font-size:13px}
 .is-learning-summary ul{margin:0;padding:0 0 0 16px}
 .is-learning-summary li{margin:0 0 4px}
-.is-discovery-typing{
-  display:none;align-items:center;gap:8px;margin:0 0 10px;
-  font-size:12px;font-weight:650;color:rgba(255,255,255,.7);
+/* Create studio — website is the product; process stays quiet */
+.is-live-studio{display:flex;flex-direction:column;gap:10px;min-height:320px}
+.is-live-studio .is-live-status{
+  font-size:12px;font-weight:650;color:rgba(255,255,255,.72);margin:0;line-height:1.35;
+  min-height:1.2em;
 }
-.is-discovery-typing.is-on{display:flex}
-.is-discovery-typing .dots span{
-  display:inline-block;width:5px;height:5px;margin-right:3px;border-radius:50%;
-  background:#fdba74;opacity:.35;animation:isDiscDot 1s ease-in-out infinite;
+.is-live-studio .is-live-status em{font-style:normal;color:#fdba74}
+.is-live-preview-card{
+  border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(145deg,#0b1020,#141b2b 55%,#1a1520);min-height:200px;
+  transition:transform .28s ease,border-color .2s ease,box-shadow .28s ease;cursor:default;
+  order:-1
 }
-.is-discovery-typing .dots span:nth-child(2){animation-delay:.15s}
-.is-discovery-typing .dots span:nth-child(3){animation-delay:.3s}
-@keyframes isDiscDot{0%,80%,100%{opacity:.28;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
+.is-live-preview-card.is-on{
+  border-color:rgba(217,99,45,.55);box-shadow:0 12px 32px rgba(0,0,0,.28),0 0 0 1px rgba(217,99,45,.2)
+}
+.is-live-preview-card .hero{padding:22px 18px 18px;color:#fff;min-height:200px;display:flex;flex-direction:column;justify-content:flex-end}
+.is-live-preview-card .hero .sk{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);font-weight:750;margin:0 0 6px}
+.is-live-preview-card .hero h3{margin:0 0 6px;font-size:17px;font-weight:800;line-height:1.2}
+.is-live-preview-card .hero p{margin:0 0 10px;font-size:12px;color:rgba(255,255,255,.72);line-height:1.35}
+.is-live-preview-card .hero .cta{
+  display:inline-flex;padding:6px 11px;border-radius:999px;background:#D9632D;color:#fff;font-size:11px;font-weight:750
+}
+.is-live-sections{
+  display:none;gap:6px;flex-wrap:wrap;padding:8px 12px 12px;border-top:1px solid rgba(255,255,255,.08)
+}
+.is-live-sections.is-on{display:flex;animation:isLivePop .4s ease both}
+.is-live-sections span{
+  font-size:10px;font-weight:700;padding:4px 8px;border-radius:8px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.55)
+}
+.is-live-sections span.is-on{
+  color:#fff;border-color:rgba(217,99,45,.45);background:rgba(217,99,45,.18)
+}
+.is-live-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;order:1}
+.is-live-mini{
+  border-radius:12px;padding:10px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.04);min-height:72px
+}
+.is-live-mini.is-on{border-color:rgba(253,186,116,.4)}
+.is-live-mini .sk{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:750;margin:0 0 6px}
+.is-live-mini .line{height:6px;border-radius:99px;background:rgba(255,255,255,.14);margin:0 0 5px;width:80%}
+.is-live-mini .line.s{width:55%}
+.is-live-mini .chip-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.is-live-mini .chip{
+  font-size:10px;font-weight:700;padding:3px 7px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.85)
+}
+.is-live-brand{display:flex;gap:6px;align-items:center;margin-top:4px}
+.is-live-brand i{width:18px;height:18px;border-radius:50%;display:block;border:1px solid rgba(255,255,255,.2)}
+.is-live-logo{
+  display:none;align-items:center;gap:8px;margin:0 0 8px;padding:8px 10px;border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05)
+}
+.is-live-logo.is-on{display:flex;animation:isLivePop .45s ease both}
+.is-live-logo .mark{
+  width:36px;height:36px;border-radius:10px;display:grid;place-items:center;
+  font-size:12px;font-weight:800;color:#fff;background:linear-gradient(135deg,#141B2B,#D9632D)
+}
+.is-live-logo .nm{font-size:13px;font-weight:750;color:#fff;line-height:1.2}
+.is-live-logo .nm small{display:block;font-size:10px;font-weight:600;color:rgba(255,255,255,.55);letter-spacing:.04em;text-transform:uppercase}
+.is-live-preview-card.is-rewriting{animation:isLiveRewrite .9s ease}
+.is-live-preview-card.is-pulse,.is-live-mini.is-pulse{animation:isLivePulse .7s ease}
+@keyframes isLiveRewrite{
+  0%{filter:brightness(1)}25%{filter:brightness(1.35);transform:scale(1.01)}
+  55%{filter:brightness(.92)}100%{filter:brightness(1);transform:none}
+}
+@keyframes isLivePulse{
+  0%{box-shadow:0 0 0 0 rgba(217,99,45,.45)}70%{box-shadow:0 0 0 10px rgba(217,99,45,0)}100%{box-shadow:none}
+}
+@keyframes isLivePop{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
+.is-live-moment-tag{
+  display:none;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:#141B2B;background:#fdba74;padding:3px 7px;border-radius:999px;margin:0 0 8px;width:fit-content
+}
+.is-live-moment-tag.is-on{display:inline-flex;animation:isLivePop .35s ease both}
+.is-reveal-ready-card{cursor:pointer}
+.is-reveal-ready-card:hover{border-color:rgba(217,99,45,.55);transform:translateY(-2px)}
+.is-reveal-ready-card:focus-visible{outline:2px solid #D9632D;outline-offset:2px}
+.is-discovery-typing,.is-hubly-thinking{
+  display:none;align-items:flex-start;gap:8px;margin:0 0 10px;
+  font-size:13px;font-weight:650;color:rgba(255,255,255,.82);line-height:1.4;
+}
+.is-discovery-typing.is-on,.is-hubly-thinking.is-on{display:flex}
+.is-hubly-thinking .th-k{
+  flex:0 0 auto;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:#fdba74;padding-top:2px
+}
+.is-hubly-thinking .th-line{flex:1;min-width:0}
+.is-hubly-thinking.is-pulse .th-line{animation:isThinkFade 1.2s ease}
+@keyframes isThinkFade{0%{opacity:.45}40%{opacity:1}100%{opacity:.9}}
+/* Quiet process strip — output (website) stays the hero */
+.is-hubly-workspace{
+  margin:0;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(15,23,42,.28);order:2
+}
+.is-hubly-workspace .ws-status{
+  font-size:11px;font-weight:750;color:rgba(255,255,255,.7);margin:0 0 6px
+}
+.is-hubly-workspace .ws-status em{font-style:normal;color:#fdba74}
+.is-workspace-list{
+  display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none
+}
+.is-workspace-list li{
+  font-size:10px;font-weight:700;line-height:1.2;color:rgba(255,255,255,.4);
+  padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.1);
+  transition:color .25s ease,border-color .25s ease,background .25s ease
+}
+.is-workspace-list li.is-working{
+  color:#fff;border-color:rgba(217,99,45,.45);background:rgba(217,99,45,.15)
+}
+.is-workspace-list li.is-done{
+  color:rgba(255,255,255,.75);border-color:rgba(253,186,116,.35)
+}
+.is-workspace-list li.is-done::before{content:"✓ ";color:#fdba74}
+.is-live-logo{order:0}
+.is-live-brand{order:3}
+.is-live-status,.is-live-moment-tag{order:4}
+.is-milestone-toast{
+  position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);
+  z-index:12000;padding:12px 16px;border-radius:14px;background:#141B2B;color:#fff;
+  border:1px solid rgba(217,99,45,.45);box-shadow:0 12px 32px rgba(20,27,43,.28);
+  font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;
+  max-width:min(420px,92vw);text-align:center
+}
+.is-milestone-toast.is-on{opacity:1;transform:translateX(-50%) translateY(0)}
+.is-pkg-appear{animation:isLivePop .4s ease both}
+.dash-discover{
+  margin:0 0 16px;padding:14px 16px;border-radius:16px;
+  border:1px solid rgba(217,99,45,.35);background:rgba(217,99,45,.06)
+}
+.dash-discover .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#D9632D;font-weight:750;margin:0 0 6px}
+.dash-discover .t{font-size:15px;font-weight:750;margin:0 0 6px;line-height:1.35}
+.dash-discover .s{font-size:13px;color:var(--ink-3);margin:0 0 12px;line-height:1.45;max-width:52ch}
+.dash-discover .actions{display:flex;flex-wrap:wrap;gap:8px}
+.dash-work-empty{font-size:13px;color:var(--ink-3);line-height:1.5;margin:0}
+.dash-work-empty strong{display:block;color:var(--ink);font-weight:750;margin:0 0 6px}
 /* Milestone 2 · Epic 3 — Hubly Thinking Experience */
 .is-wrap.is-thinking-wide{max-width:min(1080px,96vw)}
 #is-step-thinking.is-on{display:block}
@@ -1315,6 +1472,12 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-reveal-welcome{
   font-size:clamp(18px,2.4vw,24px);font-weight:700;color:#fdba74;margin:0 0 18px;
 }
+.is-reveal-welcome .is-reveal-pride-line{
+  display:block;margin-top:10px;font-size:14px;font-weight:600;line-height:1.45;color:rgba(255,255,255,.84)
+}
+.is-reveal-welcome .is-reveal-open-line{
+  display:block;margin-top:8px;font-size:13px;font-weight:650;color:rgba(255,255,255,.7)
+}
 .is-reveal-rail{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
 .is-reveal-rail .sec{
   font-size:11px;font-weight:700;padding:6px 10px;border-radius:999px;
@@ -1389,9 +1552,12 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   .is-reveal-ready-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 }
 .is-reveal-ready-card{
-  border-radius:16px;padding:14px 14px 16px;background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.12);min-height:120px;display:flex;flex-direction:column;gap:8px;
-  animation:isThinkCanvasIn .5s ease both
+  border-radius:18px;padding:16px 16px 18px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);min-height:148px;display:flex;flex-direction:column;gap:10px;
+  animation:isThinkCanvasIn .5s ease both;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease
+}
+.is-reveal-ready-card:hover{
+  box-shadow:0 12px 28px rgba(0,0,0,.28),0 0 0 1px rgba(217,99,45,.25)
 }
 .is-reveal-ready-card .sk{
   font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:750;margin:0
@@ -1409,38 +1575,110 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   display:inline-flex;align-self:flex-start;margin-top:4px;padding:5px 10px;border-radius:999px;
   background:#D9632D;color:#fff;font-size:11px;font-weight:750
 }
+.is-reveal-ready-card .viz.live-site{min-height:110px}
+.is-reveal-ready-card .viz.live-site .ht{margin:0;font-size:15px;font-weight:800;color:#fff;line-height:1.2}
+.is-reveal-ready-card .viz.live-site .hs{margin:0;font-size:12px;color:rgba(255,255,255,.74);line-height:1.35}
+.is-reveal-ready-card .viz.live-book .chip-row,
+.is-reveal-ready-card .viz.live-pkg .chip-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.is-reveal-ready-card .viz.live-book .chip,
+.is-reveal-ready-card .viz.live-pkg .chip{
+  font-size:10px;font-weight:700;padding:3px 7px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.9)
+}
+.is-reveal-ready-card .viz.live-crm .crm-line{font-size:12px;font-weight:650;color:rgba(255,255,255,.85);margin:0}
 .is-reveal-ready-card .lbl{margin:0;font-size:15px;font-weight:750;color:#fff}
 .is-reveal-continue{
   margin-top:18px;display:flex;flex-direction:column;gap:8px;align-items:stretch
 }
 .is-reveal-continue .btn{width:100%;min-height:48px;font-size:16px;font-weight:750}
 .is-reveal-continue .hint{font-size:12px;color:rgba(255,255,255,.65);text-align:center;margin:0}
-/* Hubly v3 — Operate Home */
-.dash-ops-hero{margin:0 0 18px}
+#is-step-reveal.is-unveil .is-reveal-hero{animation:isLivePop .55s ease both}
+#is-step-reveal.is-unveil .is-reveal-welcome{animation:isLivePop .55s ease both;animation-delay:.08s}
+#is-step-reveal.is-unveil .is-reveal-forward{animation:isLivePop .55s ease both;animation-delay:.14s}
+.is-create-decision{
+  display:none;gap:8px;flex-wrap:wrap;margin:8px 0 4px;padding:10px 12px;border-radius:14px;
+  border:1px solid rgba(253,186,116,.35);background:rgba(217,99,45,.12)
+}
+.is-create-decision.is-on{display:flex;animation:isLivePop .35s ease both}
+.is-create-decision .cd-label{width:100%;font-size:12px;font-weight:700;color:rgba(255,255,255,.85);margin:0 0 2px}
+.is-create-decision button{
+  appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(15,23,42,.45);color:#fff;
+  font:inherit;font-size:12px;font-weight:750;padding:8px 12px;border-radius:10px;cursor:pointer
+}
+.is-create-decision button:hover{border-color:#fdba74;color:#fdba74}
+.is-create-decision button.is-keep{background:#D9632D;border-color:#D9632D;color:#fff}
+.is-create-decision button.is-keep:hover{filter:brightness(1.05);color:#fff}
+.is-live-preview-card .hero .cta.is-elevated{
+  box-shadow:0 0 0 3px rgba(217,99,45,.35);transform:scale(1.04);transition:transform .25s ease,box-shadow .25s ease
+}
+.is-live-logo.is-pulse{animation:isLivePulse .7s ease}
+#is-reveal-back-bar{
+  position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(12px);
+  z-index:10060;display:none;padding:0;opacity:0;transition:opacity .2s ease,transform .2s ease
+}
+#is-reveal-back-bar.is-on{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
+#is-reveal-back-bar .btn{box-shadow:0 8px 28px rgba(0,0,0,.28)}
+/* Home — one hero (website), office-calm, no clutter */
+#v-dashboard[data-v3-operate-home="1"] .dash-ask-dock{display:none}
+#v-dashboard[data-v3-operate-home="1"] .dash-kpi-grid{display:none}
+#v-dashboard[data-v3-operate-home="1"] .hubly-daily{display:none!important}
+.dash-ops-hero{margin:0 0 10px}
 .dash-ops-hero .dash-greeting h1{font-size:clamp(22px,3vw,28px)}
 .dash-ops-hero .dash-ready{font-size:14px;color:var(--ink-3);margin:4px 0 0}
-.dash-site-hero{display:grid;gap:14px;margin:0 0 18px}
+.dash-stand{font-size:13px;color:var(--ink-3);margin:0 0 14px;font-weight:600}
+.dash-away{
+  margin:0 0 16px;padding:14px 16px;border-radius:16px;border:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(217,99,45,.07),rgba(20,27,43,.03))
+}
+.dash-away .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#D9632D;font-weight:750;margin:0 0 8px}
+.dash-away ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.dash-away li{font-size:14px;font-weight:650;color:var(--ink);display:flex;gap:8px;line-height:1.35}
+.dash-away li::before{content:"✓";color:#D9632D;font-weight:800;flex:0 0 auto}
+.dash-site-hero{display:grid;gap:14px;margin:0 0 16px}
 .dash-website-preview{
   border-radius:18px;overflow:hidden;border:1px solid var(--border);
-  background:linear-gradient(160deg,#141B2B,#1c273d 60%,#243044);min-height:240px;
+  background:linear-gradient(160deg,#141B2B,#1c273d 60%,#243044);min-height:280px;
   box-shadow:0 10px 28px rgba(20,27,43,.1);position:relative
 }
-.dash-website-preview .site-frame{padding:18px 18px 22px;color:#fff;min-height:240px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
+.dash-website-preview .site-frame{padding:22px 20px 24px;color:#fff;min-height:280px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
 .dash-website-preview .site-kicker{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55);font-weight:700}
-.dash-website-preview .site-title{font-family:var(--font-d);font-size:clamp(22px,2.6vw,30px);font-weight:800;margin:0;line-height:1.15}
-.dash-website-preview .site-sub{margin:0;font-size:13px;color:rgba(255,255,255,.75);max-width:36ch;line-height:1.4}
+.dash-website-preview .site-title{font-family:var(--font-d);font-size:clamp(24px,3vw,34px);font-weight:800;margin:0;line-height:1.15}
+.dash-website-preview .site-sub{margin:0;font-size:14px;color:rgba(255,255,255,.75);max-width:40ch;line-height:1.4}
 .dash-website-preview .site-cta{
   margin-top:8px;align-self:flex-start;padding:9px 14px;border-radius:999px;background:#D9632D;color:#fff;font-size:13px;font-weight:750;border:0;cursor:pointer
 }
 .dash-site-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.dash-focus-row{display:grid;gap:10px;margin:0 0 16px}
-@media(min-width:720px){.dash-focus-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.dash-focus-card{
-  border:1px solid var(--border);border-radius:14px;padding:14px;background:var(--surface);cursor:pointer
+.dash-activity-feed,.dash-todays-work,.dash-recent-work{
+  margin:0 0 16px;padding:14px 16px;border-radius:16px;border:1px solid var(--border);background:var(--surface)
 }
-.dash-focus-card:hover{border-color:rgba(217,99,45,.45)}
-.dash-focus-card .t{font-size:14px;font-weight:750;margin:0 0 4px}
-.dash-focus-card .s{font-size:12px;color:var(--ink-3);margin:0;line-height:1.35}
+.dash-recent-work .sk,.dash-todays-work .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:750;margin:0 0 4px}
+.dash-recent-work .day,.dash-todays-work .day{font-size:13px;font-weight:800;color:var(--ink);margin:0 0 12px}
+.dash-recent-work .work-list,.dash-todays-work .work-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.dash-work-item{
+  padding:0 0 12px;border-bottom:1px solid rgba(20,27,43,.08)
+}
+.dash-work-item:last-child{border-bottom:0;padding-bottom:0}
+.dash-work-item.is-undone{opacity:.45}
+.dash-work-item .when{font-size:11px;font-weight:800;color:#D9632D;margin:0 0 4px}
+.dash-work-item .what{font-size:14px;font-weight:750;color:var(--ink);margin:0 0 4px;line-height:1.3}
+.dash-work-item .why{font-size:12px;color:var(--ink-3);margin:0 0 8px;line-height:1.4}
+.dash-work-item .why strong{color:var(--ink-2);font-weight:700}
+.dash-work-actions{display:flex;flex-wrap:wrap;gap:6px}
+.dash-work-actions button{
+  appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--ink);
+  font:inherit;font-size:12px;font-weight:700;padding:6px 10px;border-radius:9px;cursor:pointer
+}
+.dash-work-actions button.primary{background:#D9632D;border-color:#D9632D;color:#fff}
+.dash-work-actions button:hover{border-color:rgba(217,99,45,.45)}
+.dash-ops-modules{display:grid;gap:10px;margin:0 0 16px;grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:640px){.dash-ops-modules{grid-template-columns:1fr}}
+.dash-ops-mod{
+  border:1px solid var(--border);border-radius:14px;padding:14px;background:var(--surface);cursor:pointer;text-align:left;font:inherit;color:inherit
+}
+.dash-ops-mod:hover{border-color:rgba(217,99,45,.45)}
+.dash-ops-mod .t{font-size:14px;font-weight:750;margin:0 0 4px}
+.dash-ops-mod .s{font-size:12px;color:var(--ink-3);margin:0;line-height:1.35}
+.dash-focus-row{display:none}
 .dash-one-rec{
   margin:0 0 16px;padding:14px 16px;border-radius:14px;border:1px solid rgba(217,99,45,.35);
   background:rgba(217,99,45,.08);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between
@@ -1893,6 +2131,10 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-chip-priority:hover{transform:translateY(-1px);}
 .is-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
 .is-chip.sel{border-color:#fdba74;background:rgba(217,99,45,.42);box-shadow:0 0 0 2px rgba(253,186,116,.28)}
+.is-chip.is-chip-brand{
+  border-color:#D9632D;background:#D9632D;color:#fff;font-weight:750
+}
+.is-chip.is-chip-brand:hover{filter:brightness(1.05);border-color:#D9632D;background:#D9632D;color:#fff}
 .is-import-banner{
   display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;
   margin:0 0 12px;padding:10px 12px;border-radius:12px;
@@ -8533,6 +8775,15 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<!-- CEO Demo Mode — always starts Create → Reveal → Home without login -->
+<div id="ceo-demo-bar" role="banner" aria-label="CEO Demo">
+  <div class="ceo-demo-left">
+    <img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly">
+    <span class="ceo-demo-label">CEO Demo</span>
+  </div>
+  <button type="button" class="ceo-demo-restart" onclick="restartCeoDemo()">Restart</button>
+</div>
+
 <!-- Boot: inactive on marketing. Only used for public-slug first paint (blank, no wordmark). -->
 <div id="p-boot" class="page" style="background:var(--surface-2,#F7F7F5);">
   <div class="ob-boot-splash" style="min-height:100vh;" aria-hidden="true"></div>
@@ -8545,7 +8796,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var land=document.getElementById('p-landing');
     var boot=document.getElementById('p-boot');
     // Owner routes: never flash the Hubly marketing page while auth restores.
-    var ownerPaths={'/':1,'/app':1,'/dashboard':1,'/login':1,'/onboarding':1,'/signup':1,'/welcome':1};
+    var ownerPaths={'/':1,'/app':1,'/dashboard':1,'/login':1,'/onboarding':1,'/signup':1,'/welcome':1,'/demo':1,'/experience':1};
     if(ownerPaths[path]){
       if(land)land.classList.remove('active');
       if(boot)boot.classList.add('active');
@@ -8814,19 +9065,67 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-talk-progress" id="is-talk-progress" data-i18n-title="isTalkProgress" aria-label="Progress"></div>
         </div>
         <div class="is-kicker">Hubly</div>
-        <h1 class="is-title" id="is-talk-ask">Tell me about the business you’re building</h1>
-        <p class="is-sub" id="is-talk-hint">This isn’t a form — just a conversation. I’ll listen, then ask only what I still need.</p>
-        <div class="is-discovery-layout is-discovery">
+        <h1 class="is-title" id="is-talk-ask">What do you do?</h1>
+        <p class="is-sub" id="is-talk-hint">I’ll build your website while we talk.</p>
+        <div class="is-discovery-layout is-discovery" data-delight-create="1">
+          <aside class="is-live-studio" id="is-live-studio" aria-live="polite" data-experience-live-studio="1" data-holy-shit-studio="1" data-hubly-workspace="1" data-create-hero="website">
+            <div class="is-live-preview-card is-on" id="is-live-website" data-surface="website">
+              <div class="hero">
+                <p class="sk">Your website</p>
+                <h3 id="is-live-website-title">Your homepage</h3>
+                <p id="is-live-website-sub">Takes shape as we talk…</p>
+                <span class="cta" id="is-live-website-cta">Book now</span>
+              </div>
+              <div class="is-live-sections" id="is-live-sections" hidden aria-label="Page sections">
+                <span data-sec="about">About</span>
+                <span data-sec="services">Services</span>
+                <span data-sec="reviews">Reviews</span>
+              </div>
+            </div>
+            <div class="is-live-logo" id="is-live-logo" hidden>
+              <div class="mark" id="is-live-logo-mark">HB</div>
+              <div class="nm" id="is-live-logo-name">Your brand<small>Logo</small></div>
+            </div>
+            <div class="is-live-row">
+              <div class="is-live-mini" id="is-live-booking" data-surface="booking">
+                <p class="sk">Booking</p>
+                <div class="line"></div><div class="line s"></div>
+                <div class="chip-row" id="is-live-booking-chips"></div>
+              </div>
+              <div class="is-live-mini" id="is-live-packages" data-surface="packages">
+                <p class="sk">Packages</p>
+                <div class="line"></div><div class="line s"></div>
+                <div class="chip-row" id="is-live-pkg-chips"></div>
+              </div>
+            </div>
+            <div class="is-hubly-workspace" id="is-hubly-workspace" aria-label="Hubly is working">
+              <p class="ws-status" id="is-workspace-status">Working…</p>
+              <ul class="is-workspace-list" id="is-workspace-list">
+                <li data-step="understand">Business</li>
+                <li data-step="website">Website</li>
+                <li data-step="booking">Booking</li>
+                <li data-step="packages">Packages</li>
+                <li data-step="crm">CRM</li>
+              </ul>
+            </div>
+            <div class="is-live-brand" id="is-live-brand" aria-label="Brand colors" hidden>
+              <i id="is-live-swatch-a" style="background:#141B2B"></i>
+              <i id="is-live-swatch-b" style="background:#D9632D"></i>
+              <i id="is-live-swatch-c" style="background:#f8fafc"></i>
+            </div>
+            <p class="is-live-status" id="is-live-status" hidden>Got it.</p>
+            <div class="is-live-moment-tag" id="is-live-moment-tag">Updated</div>
+          </aside>
           <div class="is-discovery-main">
             <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
-            <div class="is-discovery-typing" id="is-discovery-typing" aria-hidden="true"><span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Hubly is listening…</div>
+            <div class="is-hubly-thinking" id="is-hubly-thinking" data-hubly-thinking="1" aria-live="polite" aria-hidden="true">
+              <span class="th-k">Thinking</span>
+              <span class="th-line" id="is-hubly-thinking-line"></span>
+            </div>
+            <div class="is-create-decision" id="is-create-decision" data-create-decision="1" hidden aria-live="polite"></div>
+            <div class="is-discovery-typing" id="is-discovery-typing" hidden aria-hidden="true"></div>
             <div class="is-talk-chips" id="is-talk-chips"></div>
           </div>
-          <aside class="is-understanding-panel" id="is-understanding-panel" aria-live="polite" hidden>
-            <div class="is-learn-kicker">What I’m learning about you</div>
-            <div class="is-understanding-facts" id="is-understanding-facts"></div>
-            <div class="is-learning-summary" id="is-learning-summary" hidden></div>
-          </aside>
         </div>
         <div id="is-pkg-wrap" class="is-pkg-wrap" aria-live="polite">
           <div id="is-pkg-panel" class="is-pkg-panel"></div>
@@ -8925,7 +9224,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
           </div>
           <h1 class="is-reveal-hero" id="is-reveal-hero">Your business is ready.</h1>
-          <p class="is-reveal-welcome" id="is-reveal-welcome">Website, booking, CRM, packages, and calendar — built live while we talked.</p>
+          <p class="is-reveal-welcome" id="is-reveal-welcome">I think we built something you're going to be proud of.</p>
           <div class="is-reveal-rail" id="is-reveal-rail" aria-hidden="true" hidden></div>
           <div class="is-reveal-grid">
             <div>
@@ -9654,10 +9953,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- DASHBOARD — Hubly v3 Operate Home -->
       <div id="v-dashboard" class="body" data-v3-operate-home="1">
-        <div class="dash-hero dash-ops-hero">
+        <div class="dash-hero dash-ops-hero" data-alive-home="1" data-delight-home="1">
           <div class="dash-greeting">
-            <h1 id="dash-greet-title"><span id="dash-greet-line1">Good morning</span><span id="dash-greet-line2">Your Business</span></h1>
-            <p class="dash-ready" id="dash-ready-line">Your business is ready.</p>
+            <h1 id="dash-greet-title"><span id="dash-greet-line1">Good morning</span><span id="dash-greet-line2" hidden></span></h1>
+            <p class="dash-ready" id="dash-ready-line">Here’s where your business stands.</p>
             <div class="dash-greet-time" id="dash-greet-time"></div>
             <button type="button" class="dash-site-link" id="dash-site-link" onclick="copyDashSiteLink()" title="Copy your Hubly website link" hidden>
               <span class="dash-site-link-lbl">Website</span>
@@ -9671,22 +9970,71 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
-        <div class="dash-site-hero" id="dash-site-hero">
+        <p class="dash-stand" id="dash-stand-line">Website · Bookings · Revenue</p>
+
+        <div class="dash-site-hero" id="dash-site-hero" data-home-hero="website">
           <div class="dash-website-preview" id="dash-website-preview" aria-label="Website preview">
             <div class="site-frame">
-              <div class="site-kicker">Your website</div>
+              <div class="site-kicker">Website</div>
               <h2 class="site-title" id="dash-site-preview-title">Your Business</h2>
-              <p class="site-sub" id="dash-site-preview-sub">Live preview of what customers see first.</p>
-              <button type="button" class="site-cta" onclick="previewProfile()">Open Website</button>
+              <p class="site-sub" id="dash-site-preview-sub">What customers see first.</p>
+              <button type="button" class="site-cta" onclick="previewProfile()">Open</button>
             </div>
           </div>
           <div class="dash-site-actions">
             <button type="button" class="btn btn-brand btn-sm" onclick="previewProfile()">Open Website</button>
-            <button type="button" class="btn btn-out btn-sm" onclick="copyDashSiteLink()">Share Website</button>
+            <button type="button" class="btn btn-out btn-sm" onclick="copyDashSiteLink()">Share</button>
           </div>
         </div>
 
-        <div class="dash-focus-row" id="dash-focus-row">
+        <div class="dash-ops-modules" id="dash-ops-modules">
+          <button type="button" class="dash-ops-mod" onclick="document.querySelector('[data-v=jobs]')?.click()">
+            <p class="t">Bookings</p>
+            <p class="s">Today’s schedule</p>
+          </button>
+          <button type="button" class="dash-ops-mod" onclick="document.querySelector('[data-v=money]')?.click()">
+            <p class="t">Revenue</p>
+            <p class="s">What’s coming in</p>
+          </button>
+          <button type="button" class="dash-ops-mod" onclick="document.querySelector('[data-v=customers]')?.click()">
+            <p class="t">Customers</p>
+            <p class="s">Your CRM</p>
+          </button>
+        </div>
+
+        <div class="dash-recent-work" id="dash-todays-work" data-recent-work="1" aria-live="polite">
+          <p class="sk">Recent Work</p>
+          <p class="day" id="dash-activity-day" hidden>Latest changes</p>
+          <ul class="work-list" id="dash-activity-list"></ul>
+        </div>
+
+        <div class="dash-one-rec" id="dash-one-rec" aria-live="polite">
+          <div>
+            <p class="sk">Recommendation</p>
+            <p class="t" id="dash-one-rec-t">Raise your consultation price by $10.</p>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-brand btn-sm" id="dash-one-rec-apply" onclick="applyDashOneRec()">Keep</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="dash-one-rec-dismiss" onclick="dismissDashOneRec()">Undo</button>
+          </div>
+        </div>
+
+        <div class="dash-discover" id="dash-discover" data-hubly-discover="1" aria-live="polite" hidden>
+          <p class="sk" id="dash-discover-sk">I found something</p>
+          <p class="t" id="dash-discover-t"></p>
+          <p class="s" id="dash-discover-s"></p>
+          <div class="actions">
+            <button type="button" class="btn btn-brand btn-sm" id="dash-discover-apply" onclick="applyDashDiscover()">Do it</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="dash-discover-dismiss" onclick="dismissDashDiscover()">Not now</button>
+          </div>
+        </div>
+
+        <div class="dash-away" id="dash-away" data-holy-shit-away="1" aria-live="polite" hidden>
+          <p class="sk" id="dash-away-sk">While you were away</p>
+          <ul id="dash-away-list"></ul>
+        </div>
+
+        <div class="dash-focus-row" id="dash-focus-row" hidden aria-hidden="true">
           <div class="dash-focus-card" onclick="typeof goStripeConnect==='function'?goStripeConnect():askAI('Connect Stripe')">
             <p class="t">Connect Stripe</p>
             <p class="s">Get paid when jobs book.</p>
@@ -9698,17 +10046,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="dash-focus-card" onclick="copyDashSiteLink()">
             <p class="t">Share Booking Link</p>
             <p class="s">Start getting customers today.</p>
-          </div>
-        </div>
-
-        <div class="dash-one-rec" id="dash-one-rec" aria-live="polite">
-          <div>
-            <p class="sk">Today's Recommendation</p>
-            <p class="t" id="dash-one-rec-t">Share your booking link with three past customers.</p>
-          </div>
-          <div class="actions">
-            <button type="button" class="btn btn-brand btn-sm" id="dash-one-rec-apply" onclick="applyDashOneRec()">Apply</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="dash-one-rec-dismiss" onclick="dismissDashOneRec()">Dismiss</button>
           </div>
         </div>
 
@@ -11984,16 +12321,37 @@ const HUBLY_PATH_TO_PAGE={
   '/onboarding':'p-onboard',
   '/app':'p-app',
   '/dashboard':'p-app',
+  '/demo':'p-ceo-demo',
+  '/experience':'p-ceo-demo',
 };
 function hublyPath(){
   const p=(location.pathname||'/').replace(/\/+$/,'');
   return p||'/';
+}
+function isCeoDemoPath(path){
+  const p=path||hublyPath();
+  return p==='/demo'||p==='/experience';
 }
 function pageForHublyPath(path){
   return HUBLY_PATH_TO_PAGE[path||hublyPath()]||null;
 }
 function syncHublyRoute(id,{replace}={}){
   if(typeof getSlugFromHost==='function'&&getSlugFromHost())return;
+  // CEO Demo Mode keeps a single review URL for the whole journey.
+  if(typeof S!=='undefined'&&S._ceoDemo){
+    try{
+      const base=isCeoDemoPath()?hublyPath():'/demo';
+      const hash=id==='p-app'?'#home':(id==='p-onboard'?'#create':'');
+      const next=base+hash;
+      const cur=(location.pathname||'')+(location.hash||'');
+      if(cur!==next){
+        if(replace)history.replaceState({page:id,ceoDemo:true},'',next);
+        else history.pushState({page:id,ceoDemo:true},'',next);
+      }
+      document.title=id==='p-app'?'Hubly · CEO Demo · Home':'Hubly · CEO Demo';
+    }catch(e){}
+    return;
+  }
   const route=HUBLY_PAGE_ROUTES[id];
   if(!route)return;
   try{
@@ -12059,6 +12417,12 @@ function showP(id,opts){
 }
 window.addEventListener('popstate',()=>{
   if(typeof getSlugFromHost==='function'&&getSlugFromHost())return;
+  if(isCeoDemoPath()||(typeof S!=='undefined'&&S._ceoDemo)){
+    // Stay inside the demo journey — never bounce to login.
+    if(location.hash==='#home'&&document.getElementById('p-app')?.classList.contains('active'))return;
+    try{startCeoDemoMode();}catch(e){}
+    return;
+  }
   const dest=pageForHublyPath(hublyPath())||'p-landing';
   if((dest==='p-app')&&!currentUser){
     // Instant Site draft / claimed owner — try silent resume before forcing login.
@@ -12105,8 +12469,14 @@ function openOperateHome(opts){
   }catch(e){}
   showP('p-app',{replaceRoute:opts.replaceRoute!==false});
   try{
-    history.replaceState({page:'p-app'},'', '/app');
-    document.title='Hubly · Home';
+    if(S._ceoDemo){
+      const base=isCeoDemoPath()?hublyPath():'/demo';
+      history.replaceState({page:'p-app',ceoDemo:true},'', base+'#home');
+      document.title='Hubly · CEO Demo · Home';
+    }else{
+      history.replaceState({page:'p-app'},'', '/app');
+      document.title='Hubly · Home';
+    }
   }catch(e){}
   const dashNav=document.querySelector('#p-app [data-v="dashboard"]')||document.querySelector('[data-v="dashboard"]');
   if(dashNav)switchV(dashNav);
@@ -12118,6 +12488,7 @@ function openOperateHome(opts){
       updateKPIs?.();
       renderDashNewBookings?.();
       applyTranslations?.();
+      if(typeof isOpenPreferredOperateSurface==='function')isOpenPreferredOperateSurface();
     }catch(e){}
   },60);
 }
@@ -12206,6 +12577,9 @@ function updateOwnerPreviewBars(){
   });
 }
 function previewProfile(){
+  try{
+    if(S._createReadyHome||S._ceoDemo||S._is?.discovery?.holyShitComplete)isApplyCreateStudioToBusiness();
+  }catch(e){}
   setOwnerPreview(true);
   // Leave editor chrome behind so the live site is clickable (Book Now, tabs, etc.).
   // Editing Packages → Preview used to keep PE reorder/add controls with no handlers.
@@ -12218,6 +12592,9 @@ function previewProfile(){
   showP('p-storefront');
 }
 function previewBookingPage(svcName){
+  try{
+    if(S._createReadyHome||S._ceoDemo||S._is?.discovery?.holyShitComplete)isApplyCreateStudioToBusiness();
+  }catch(e){}
   setOwnerPreview(true);
   S._editorBookingPreview=true;
   openBookingPage(svcName);
@@ -13210,6 +13587,7 @@ const HublyAI={
         dna:(opts&&opts.dna)||null,
         workspace:(opts&&opts.workspace)||null,
         conversation:(opts&&opts.conversation)||null,
+        discovery:(opts&&opts.discovery)||null,
         blueprintKnowledge:(opts&&opts.blueprintKnowledge)||(opts&&opts.blueprint)||null,
         experts:(opts&&opts.experts)||null,
         debug:!!(opts&&opts.debug),
@@ -13218,19 +13596,27 @@ const HublyAI={
       };
       const headers={'Content-Type':'application/json'};
       try{
+        if(typeof SUPA_KEY!=='undefined'&&SUPA_KEY){
+          headers.apikey=SUPA_KEY;
+          if(!headers.Authorization)headers.Authorization='Bearer '+SUPA_KEY;
+        }
+      }catch(e){}
+      try{
         if(db&&db.auth&&typeof db.auth.getSession==='function'){
           const {data}=await db.auth.getSession();
           const token=data&&data.session&&data.session.access_token;
           if(token)headers.Authorization='Bearer '+token;
         }
       }catch(e){}
-      const base=(typeof supabaseUrl!=='undefined'&&supabaseUrl)||'';
+      const base=(typeof supabaseUrl!=='undefined'&&supabaseUrl)||(typeof SUPA_URL!=='undefined'&&SUPA_URL)||'';
       const res=await fetch(base.replace(/\/$/,'')+'/functions/v1/hubly-brain',{
         method:'POST',
         headers,
         body:JSON.stringify(body),
       });
-      return await res.json().catch(()=>({ok:false,error:'Bad response'}));
+      const json=await res.json().catch(()=>({ok:false,error:'Bad response'}));
+      if(!res.ok&&!json.error)json.error='hubly-brain HTTP '+res.status;
+      return json;
     }catch(e){
       console.warn('Hubly.think',e);
       return {ok:false,error:e&&e.message?e.message:'think failed'};
@@ -14963,6 +15349,11 @@ async function submitNewPassword(btn){
   }
 }
 async function checkSession(){
+  // CEO Demo Mode — always start the customer journey; no login / no setup.
+  if(isCeoDemoPath()){
+    await startCeoDemoMode();
+    return;
+  }
   const dest=pageForHublyPath(hublyPath());
   const marketing=!dest||dest==='p-landing';
   const welcomeDoor=dest==='p-signup'; // `/`, `/signup`, `/welcome`
@@ -16296,6 +16687,49 @@ async function startCreativeDirector(seedText){
   return startInstantSite(seedText);
 }
 
+/** CEO Demo Mode — /demo · /experience — latest Create → Reveal → Home, no login. */
+function showCeoDemoChrome(){
+  try{
+    document.body.classList.add('ceo-demo-on');
+    const bar=document.getElementById('ceo-demo-bar');
+    if(bar)bar.classList.add('is-on');
+  }catch(e){}
+}
+function hideCeoDemoChrome(){
+  try{
+    document.body.classList.remove('ceo-demo-on');
+    const bar=document.getElementById('ceo-demo-bar');
+    if(bar)bar.classList.remove('is-on');
+  }catch(e){}
+}
+function restartCeoDemo(){
+  const base=isCeoDemoPath()?hublyPath():'/demo';
+  const params=new URLSearchParams(location.search||'');
+  // Preserve optional seed / auto flags when restarting.
+  const q=params.toString();
+  location.href=base+(q?'?'+q:'');
+}
+async function startCeoDemoMode(){
+  const params=new URLSearchParams(location.search||'');
+  const seed=(params.get('seed')||"I'm an independent fitness trainer.").trim();
+  const auto=params.get('auto')!=='0';
+  S._ceoDemo=true;
+  S._ceoDemoSeed=seed;
+  S._accountClaimed=false;
+  S._deferredAccount=true;
+  showCeoDemoChrome();
+  try{
+    const base=isCeoDemoPath()?hublyPath():'/demo';
+    history.replaceState({page:'p-ceo-demo',ceoDemo:true},'',base+(auto?'#create':''));
+    document.title='Hubly · CEO Demo';
+  }catch(e){}
+  // Fresh customer journey every time — ignore prior drafts / claim walls.
+  if(auto)await startInstantSite(seed,{forceFresh:true});
+  else await startInstantSite('',{forceFresh:true});
+}
+window.restartCeoDemo=restartCeoDemo;
+window.startCeoDemoMode=startCeoDemoMode;
+
 async function startInstantSite(seedText,opts){
   opts=opts||{};
   const seed=String(seedText!=null?seedText:(S._mktSeedPrompt||'')).trim();
@@ -16620,6 +17054,7 @@ const HUBLY_DISCOVERY = (function(){
       version:'1.0.0',seed:String(seed||'').trim(),turns:0,clarificationCount:0,
       previouslyAsked:[],facts:{},moments:[],momentsFired:0,memoryNotes:[],messages:[],
       emotion:{state:'neutral'},complete:false,readyForThinking:false,learningSummary:null,
+      buildingActions:[],liveStatus:null,
       ASK_CONFIDENCE,READY_CONFIDENCE,MAX_CLARIFICATION_QUESTIONS,
     };
     if(session.seed)inferAll(session,session.seed,'seed');
@@ -16627,9 +17062,9 @@ const HUBLY_DISCOVERY = (function(){
   }
   function discoveryOpener(session){
     const ind=session.facts.industry?.value;
-    if(ind)return 'Got it — '+ind+". Tell me a little more about how you work, and I'll fill in the rest.";
-    if(session.seed)return "I heard you. Tell me a little more about what you're building — I'll connect the dots.";
-    return "Tell me about the business you're building. I'll listen, then ask only what I still need.";
+    if(ind)return "I'll start shaping your "+ind+" website now — tell me who you serve and where, and I'll keep building.";
+    if(session.seed)return "I'm already sketching this — tell me a bit more and I'll keep building while we talk.";
+    return "Tell me about the business you're building — I'll start shaping your website and booking as we talk.";
   }
   function ingestDiscoveryTurn(session,ownerText){
     const text=String(ownerText||'').trim();
@@ -16675,6 +17110,340 @@ const HUBLY_DISCOVERY = (function(){
 function isDiscoveryActive(){
   return !!(S._is?.discovery && !S._is.discovery.complete && !['services','services_count','services_edit','addons_edit','media'].includes(S._is?.talkBeat));
 }
+/* ── Quiet competent Hubly — one intelligent system, visible results ── */
+const HUBLY_HOLY_SHIT = (function(){
+  const WORKSPACE_STEPS=['understand','website','booking','packages','crm'];
+  const INSIGHTS={
+    fitness:{
+      industry:'Personal Training',industryId:'fitness',
+      insight:'Most independent trainers lose clients because they talk about certifications instead of results.',
+      rewrite:'Transformations that stick — not another gym pitch.',
+      rewritePrev:'Certified personal training for your goals.',
+      assumption:'I assumed you\'re an owner-operator running one-on-one coaching — that\'s the most common setup. If that\'s wrong, I\'ll rebuild everything.',
+      alreadyDid:'Your homepage needed a stronger call to action.\n\nI already moved Book now higher.\n\nView it, keep it, or undo.',
+      packages:['1:1 Coaching','Transformation Plan','Accountability'],
+      booking:['Consult','Book session'],
+      logo:'PT',
+      discover:{sk:'I found something',title:'Nearby trainers are pushing monthly memberships.',body:'I can add a simple membership package that matches how your customers already think about coaching.',cta:'Create membership',ask:'Create a monthly membership package for my training business'},
+      work:[
+        {what:'Rewrote hero headline',reason:'Visitors respond better to outcome-focused messaging.',surface:'website'},
+        {what:'Improved booking CTA',reason:'More visible above the fold.',surface:'booking'},
+        {what:'Created coaching packages',reason:'Clear offers convert better than “inquire for rates.”',surface:'packages'},
+      ],
+    },
+    pressure_washing:{
+      industry:'Pressure Washing',industryId:'pressure_washing',
+      insight:'Most washers lead with equipment. Customers book the ones who sell curb appeal.',
+      rewrite:'Homes that look freshly new — booked in two taps.',
+      rewritePrev:'Professional pressure washing services.',
+      assumption:'I assumed you\'re an owner-operator focused on residential — that\'s the most common setup. If that\'s wrong, I\'ll rebuild everything.',
+      alreadyDid:'Your homepage needed a stronger call to action.\n\nI already moved Book now above the fold.\n\nView it, keep it, or undo.',
+      packages:['Driveway','House Wash','Soft Wash'],
+      booking:['Get quote','Book wash'],
+      logo:'PW',
+      discover:{sk:'I noticed something',title:'Your most-viewed service has no customer photos.',body:'I prepared a photo strip layout for House Wash — adding three real jobs would likely increase trust.',cta:'Show layout',ask:'Add a customer photo strip to my house wash service'},
+      work:[
+        {what:'Rewrote hero headline',reason:'Curb-appeal outcomes outperform equipment lists.',surface:'website'},
+        {what:'Improved booking CTA',reason:'More visible above the fold.',surface:'booking'},
+        {what:'Created wash packages',reason:'Named packages reduce quote friction.',surface:'packages'},
+      ],
+    },
+    lawn_care:{
+      industry:'Lawn Care',industryId:'lawn_care',
+      insight:'Most lawn businesses sell mowing. The winners sell a yard you\'re proud of every week.',
+      rewrite:'A lawn that looks managed — without you chasing it.',
+      rewritePrev:'Reliable lawn mowing and yard care.',
+      assumption:'I assumed you\'re an owner-operator on weekly residential routes — the most common setup. If that\'s wrong, I\'ll rebuild everything.',
+      alreadyDid:'Weekly plans were buried.\n\nI already made recurring the featured package.\n\nView it, keep it, or undo.',
+      packages:['Weekly','Bi-weekly','Seasonal'],
+      booking:['Book mow','Get plan'],
+      logo:'LC',
+      discover:{sk:'I discovered an opportunity',title:'People searching “spring cleanup” are landing on your homepage.',body:'I can create a dedicated landing page for that search in about 20 seconds.',cta:'Build landing page',ask:'Create a spring cleanup landing page for my lawn care business'},
+      work:[
+        {what:'Rewrote hero headline',reason:'Pride-of-yard messaging beats “we mow.”',surface:'website'},
+        {what:'Improved booking CTA',reason:'Faster path to a recurring plan.',surface:'booking'},
+        {what:'Created route packages',reason:'Recurring plans create habit revenue.',surface:'packages'},
+      ],
+    },
+    cleaning:{
+      industry:'Cleaning',industryId:'cleaning',
+      insight:'Most cleaners list tasks. Clients hire trust — the ones who feel safe handing over keys.',
+      rewrite:'A spotless home you can trust — booked without the back-and-forth.',
+      rewritePrev:'Professional home cleaning services.',
+      assumption:'I assumed you\'re an owner-operator offering recurring home cleans — the most common setup. If that\'s wrong, I\'ll rebuild everything.',
+      alreadyDid:'Your homepage needed a stronger call to action.\n\nI already moved Book now higher.\n\nView it, keep it, or undo.',
+      packages:['Standard','Deep Clean','Recurring'],
+      booking:['Book clean','Recurring'],
+      logo:'CL',
+      discover:{sk:'I discovered an opportunity',title:'Customers searching “move-out cleaning” are landing on your homepage.',body:'I can create a dedicated landing page for that search in about 20 seconds.',cta:'Build landing page',ask:'Create a move-out cleaning landing page'},
+      work:[
+        {what:'Rewrote hero headline',reason:'Trust + outcome beats a task checklist.',surface:'website'},
+        {what:'Improved booking CTA',reason:'More visible above the fold.',surface:'booking'},
+        {what:'Created clean packages',reason:'Named tiers reduce back-and-forth.',surface:'packages'},
+      ],
+    },
+    photography:{
+      industry:'Photography',industryId:'photography',
+      insight:'Most photographers lead with gear. Couples book the story they feel in the first three photos.',
+      rewrite:'Photos that feel like the day — not a catalog.',
+      rewritePrev:'Professional photography for every occasion.',
+      assumption:'I assumed you\'re a solo shooter offering clear session packages — the most common setup. If that\'s wrong, I\'ll rebuild everything.',
+      alreadyDid:'“Inquire for rates” was killing conversion.\n\nI already put packages on the homepage.\n\nView it, keep it, or undo.',
+      packages:['Mini Session','Standard','Full Day'],
+      booking:['Book session','Check date'],
+      logo:'PH',
+      discover:{sk:'I noticed something',title:'Your most-viewed package has no sample gallery.',body:'I prepared a three-image layout so visitors can feel the work before they book.',cta:'Show layout',ask:'Add a sample gallery to my most popular photography package'},
+      work:[
+        {what:'Rewrote hero headline',reason:'Feeling beats gear lists on first glance.',surface:'website'},
+        {what:'Improved booking CTA',reason:'Date-check above the fold.',surface:'booking'},
+        {what:'Created session packages',reason:'Clear pricing beats inquire-for-rates.',surface:'packages'},
+      ],
+    },
+    default:{
+      industry:'Local Service',industryId:null,
+      insight:'Most local businesses talk about what they do. Winners talk about the outcome customers want.',
+      rewrite:'Results people can feel — booked without the chase.',
+      rewritePrev:'Quality local service you can count on.',
+      assumption:'I assumed you\'re an owner-operator with one core offer — that\'s the most common setup. If that\'s wrong, I\'ll rebuild everything.',
+      alreadyDid:'Your homepage needed a stronger call to action.\n\nI already moved Book now higher.\n\nView it, keep it, or undo.',
+      packages:['Starter','Popular','Pro'],
+      booking:['Book now','Get quote'],
+      logo:'HB',
+      discover:{sk:'I found something',title:'A clearer offer page would reduce quote back-and-forth.',body:'I can draft a simple package landing section from what we already built.',cta:'Draft it',ask:'Create a clear packages section on my homepage'},
+      work:[
+        {what:'Rewrote hero headline',reason:'Outcome-focused messaging converts better.',surface:'website'},
+        {what:'Improved booking CTA',reason:'More visible above the fold.',surface:'booking'},
+        {what:'Created starter packages',reason:'Named offers reduce quote friction.',surface:'packages'},
+      ],
+    },
+  };
+  function inferPack(text){
+    const t=String(text||'').toLowerCase();
+    if(/fitness|trainer|personal\s*train|coach(ing)?|gym/.test(t))return INSIGHTS.fitness;
+    if(/pressure|power\s*wash|soft\s*wash/.test(t))return INSIGHTS.pressure_washing;
+    if(/lawn|mow|yard\s*care|landscap/.test(t))return INSIGHTS.lawn_care;
+    if(/clean|maid|airbnb|turnover|housekeep/.test(t))return INSIGHTS.cleaning;
+    if(/photo|photog|wedding\s*shoot/.test(t))return INSIGHTS.photography;
+    return INSIGHTS.default;
+  }
+  function bizName(pack,session){
+    const named=session?.facts?.businessName?.value||S.biz;
+    if(named&&!/^my\s/i.test(named)&&named!=='Your Business')return String(named);
+    return pack.industry==='Local Service'?'Your Business':pack.industry;
+  }
+  function applyPackFacts(session,pack){
+    if(!session||!pack)return;
+    session.facts=session.facts||{};
+    if(pack.industry)session.facts.industry={value:pack.industry,confidence:90,inferred:true,label:pack.industry,updatedAt:Date.now()};
+    if(pack.industryId)session.facts.industryId={value:pack.industryId,confidence:90,inferred:true,label:pack.industryId,updatedAt:Date.now()};
+    session.holyPack=pack;
+  }
+  function flash(el,cls){
+    if(!el)return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+    setTimeout(()=>el.classList.remove(cls),900);
+  }
+  /** Celebrate outcomes — never architecture. */
+  function celebrate(message){
+    let el=document.getElementById('is-milestone-toast');
+    if(!el){
+      el=document.createElement('div');
+      el.id='is-milestone-toast';
+      el.className='is-milestone-toast';
+      el.setAttribute('role','status');
+      document.body.appendChild(el);
+    }
+    el.textContent=message;
+    el.classList.add('is-on');
+    clearTimeout(el._hide);
+    el._hide=setTimeout(()=>el.classList.remove('is-on'),2200);
+  }
+  function setMomentTag(text){
+    const tag=document.getElementById('is-live-moment-tag');
+    if(!tag)return;
+    if(!text){tag.classList.remove('is-on');tag.textContent='';return;}
+    tag.textContent=text;
+    tag.classList.add('is-on');
+  }
+  function setWorkspaceStatus(text){
+    const el=document.getElementById('is-workspace-status');
+    if(el)el.innerHTML=text||'Hubly is working…';
+  }
+  function setWorkspaceStep(step,state){
+    const li=document.querySelector(`#is-workspace-list li[data-step="${step}"]`);
+    if(!li)return;
+    li.classList.remove('is-working','is-done');
+    if(state==='working')li.classList.add('is-working');
+    if(state==='done')li.classList.add('is-done');
+  }
+  function resetWorkspace(){
+    WORKSPACE_STEPS.forEach(s=>setWorkspaceStep(s,'pending'));
+    setWorkspaceStatus('Hubly is working…');
+  }
+  /** Thinking line ONLY when a visible result follows immediately. */
+  function think(line){
+    if(!line)return;
+    const wrap=document.getElementById('is-hubly-thinking');
+    const el=document.getElementById('is-hubly-thinking-line');
+    if(el)el.textContent=line;
+    if(wrap){
+      wrap.classList.add('is-on','is-pulse');
+      wrap.setAttribute('aria-hidden','false');
+    }
+  }
+  function thinkOff(){
+    const wrap=document.getElementById('is-hubly-thinking');
+    if(wrap){wrap.classList.remove('is-on','is-pulse');wrap.setAttribute('aria-hidden','true');}
+  }
+  async function thoughtThenResult(token,thought,applyFn,waitMs){
+    think(thought);
+    await wait(waitMs==null?700:waitMs,token);
+    if(typeof applyFn==='function')applyFn();
+    thinkOff();
+  }
+  function fmtTime(ts){
+    try{
+      return new Date(ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    }catch(e){return '';}
+  }
+  function seedActivity(pack){
+    const base=Date.now();
+    const items=(pack.work||[]).map((w,i)=>{
+      const at=base-(i*120000);
+      return{
+        id:'work_'+i+'_'+at,
+        what:w.what,
+        reason:w.reason,
+        surface:w.surface||'website',
+        label:w.what,
+        at,
+        when:fmtTime(at),
+        status:'kept',
+        source:'create',
+      };
+    });
+    S._aiActivity=items;
+    S._todaysWork=items;
+    S._hublyDiscover=pack.discover||null;
+    try{localStorage.setItem('hubly_ai_activity',JSON.stringify(items));}catch(e){}
+    try{if(pack.discover)localStorage.setItem('hubly_discover',JSON.stringify(pack.discover));}catch(e){}
+  }
+  async function wait(ms,token){
+    const step=80;let left=ms;
+    while(left>0){
+      if(token.cancelled)throw new Error('holy_shit_cancelled');
+      await isSleep(Math.min(step,left));
+      left-=step;
+    }
+  }
+  async function playOpeningSequence(session,ownerText){
+    const pack=inferPack(ownerText);
+    applyPackFacts(session,pack);
+    const token={cancelled:false,id:Date.now()};
+    session._holyToken=token;
+    session.cancelHolyShit=()=>{token.cancelled=true;};
+    const biz=bizName(pack,session);
+    if(!S.biz||S.biz==='Your Business')S.biz=biz;
+
+    resetWorkspace();
+    // Gate 1 refine — one natural opener; visuals carry the proof (ChatGPT feel, not a script).
+    const m1="Got it. Give me a few minutes — I'm building while we talk.";
+    isTalkPush('hubly',m1);
+    session.messages.push({role:'hubly',text:m1,kind:'moment1'});
+    setWorkspaceStatus('Working…');
+    setWorkspaceStep('understand','working');
+    // Start with a weaker CTA so the later “Book now” move is visibly different.
+    session.studio={phase:'website',heroTitle:biz,heroSub:pack.rewritePrev||'Building your homepage…',cta:'Get a free consult',ctaElevated:false,rewrite:false,logo:false,bookingOn:false,packagesOn:false,brandOn:true,pkgChips:[],bookingChips:[],sections:{about:false,services:false,reviews:false}};
+    session.buildingActions=['website','brand'];
+    session.liveStatus='Understanding your business…';
+    isRenderLiveBuild({pulse:'website'});
+    await wait(700,token);
+    setWorkspaceStep('understand','done');
+
+    // Homepage rewrite — visible, minimal talk
+    setWorkspaceStep('website','working');
+    await thoughtThenResult(token,'Stronger outcome message on the homepage.',()=>{
+      session.studio.heroSub=pack.rewrite;
+      session.studio.rewrite=true;
+      session.studio.sections={about:true,services:false,reviews:false};
+      session.liveStatus='';
+      isRenderLiveBuild({rewrite:true,pulse:'website'});
+    },700);
+    setWorkspaceStep('website','done');
+    await wait(450,token);
+
+    // Booking + logo appear (proof on screen)
+    setWorkspaceStep('booking','working');
+    await thoughtThenResult(token,'Clearer booking path.',()=>{
+      session.studio.bookingOn=true;
+      session.studio.bookingChips=[];
+      session.liveStatus='';
+      isRenderLiveBuild({pulse:'booking'});
+    },400);
+    for(const chip of (pack.booking||[])){
+      session.studio.bookingChips=[...(session.studio.bookingChips||[]),chip];
+      isRenderLiveBuild({pulse:'booking'});
+      await wait(200,token);
+    }
+    session.studio.logo=true;
+    session.studio.logoMark=pack.logo;
+    session.studio.logoName=biz;
+    session.studio.brandOn=true;
+    isRenderLiveBuild({pulse:'logo'});
+    celebrate('Your logo is in.');
+    setWorkspaceStep('booking','done');
+
+    // Packages + services section
+    setWorkspaceStep('packages','working');
+    session.studio.packagesOn=true;
+    session.studio.pkgChips=[];
+    session.studio.sections={...(session.studio.sections||{}),services:true};
+    isRenderLiveBuild();
+    for(const pkg of pack.packages){
+      session.studio.pkgChips=[...(session.studio.pkgChips||[]),pkg];
+      isRenderLiveBuild({pulse:'packages'});
+      await wait(240,token);
+    }
+    setWorkspaceStep('packages','done');
+    session.buildingActions=['website','booking','packages','brand','crm'];
+    await wait(350,token);
+
+    // Visible CTA move + View / Keep / Undo
+    const prevCta=session.studio.cta||'Get a free consult';
+    await thoughtThenResult(token,'Stronger call to action.',()=>{
+      session.studio.cta='Book now';
+      session.studio.ctaElevated=true;
+      session.studio.sections={...(session.studio.sections||{}),reviews:true};
+      isRenderLiveBuild({pulse:'website',rewrite:true});
+    },500);
+    isShowCreateDecision({prevCta,nextCta:'Book now'});
+    await wait(700,token);
+
+    // One brief decision + assumption (not a script dump)
+    const summary=`I found something.\n\n${pack.insight}\n\nI already rewrote your homepage around that and moved Book now higher.\n\n${pack.assumption}`;
+    isTalkPush('hubly',summary);
+    session.messages.push({role:'hubly',text:summary,kind:'build_summary'});
+    setWorkspaceStep('crm','working');
+    session.liveStatus='';
+    isRenderLiveBuild({pulse:'all'});
+    await wait(500,token);
+    setWorkspaceStep('crm','done');
+    setWorkspaceStatus('Ready');
+    setMomentTag('');
+
+    seedActivity(pack);
+    // Keep talking before Reveal — don't auto-jump.
+    session.holyShitComplete=true;
+    session.complete=false;
+    session.readyForThinking=false;
+    session.learningSummary={header:'Built',lines:(pack.work||[]).slice(0,3).map(w=>w.what)};
+    return{pack,token};
+  }
+  return{INSIGHTS,WORKSPACE_STEPS,inferPack,applyPackFacts,playOpeningSequence,seedActivity,setMomentTag,setWorkspaceStep,resetWorkspace,think,thinkOff,thoughtThenResult,flash,celebrate,fmtTime};
+})();
+
 function isDiscoveryBoot(opts){
   opts=opts||{};
   const step=document.getElementById('is-step-talk');
@@ -16692,53 +17461,252 @@ function isDiscoveryBoot(opts){
     isShowAreaPanel(false);
     isTalkClearChips();
     isShowStep('talk');
-    const opener=HUBLY_DISCOVERY.discoveryOpener(S._is.discovery);
-    isTalkPush('hubly',opener);
+    if(seed){
+      setTimeout(()=>{ isDiscoverySend(seed).catch(e=>console.error('discovery boot AI',e)); }, 40);
+    }else{
+      isTalkPush('hubly',"Tell me what you do. I'll understand it, then build.");
+    }
   }else{
     isShowStep('talk');
     isTalkRender();
   }
   step?.classList.toggle('is-convo',!!(S._is.messages||[]).length);
   isTalkSetPrompt({
-    title:"What are we building together?",
-    hint:"Just talk — I’ll infer what I can. We can always change it later.",
-    placeholder:"Tell me what you’re working on…",
+    title:"What do you do?",
+    hint:"I’ll build your website while we talk.",
+    placeholder:"e.g. I’m an independent fitness trainer…",
     autocomplete:'off',
     type:'text',
     value:'',
   });
-  isRenderUnderstandingPanel();
+  isRenderLiveBuild();
   const send=document.getElementById('is-talk-send');
-  if(send)send.textContent='Continue';
+  if(send)send.textContent='Send';
   const prog=document.getElementById('is-talk-progress');
   if(prog){prog.hidden=true;prog.innerHTML='';}
   isTalkUpdateBackBtn();
   setTimeout(()=>document.getElementById('is-talk-input')?.focus(),80);
 }
-function isRenderUnderstandingPanel(){
-  const panel=document.getElementById('is-understanding-panel');
-  const factsEl=document.getElementById('is-understanding-facts');
-  const learnEl=document.getElementById('is-learning-summary');
-  if(!panel||!factsEl)return;
+/** Live studio — driven by holy-shit studio state + facts. */
+function isLiveBuildFromFacts(session){
+  const st=session?.studio||{};
+  const f=session?.facts||{};
+  const g=k=>(f[k]&&f[k].value!=null)?f[k].value:null;
+  const industry=g('industry')||g('industryId');
+  const pack=session?.holyPack||HUBLY_HOLY_SHIT.inferPack(industry||'');
+  const biz=st.heroTitle||S.biz||g('businessName')||(industry?String(industry):'Your business');
+  const websiteOn=st.phase==='website'||!!st.heroTitle||!!industry||(session?.turns||0)>=1;
+  const bookingOn=!!st.bookingOn;
+  const packagesOn=!!st.packagesOn;
+  const brandOn=st.brandOn!==false&&websiteOn;
+  const logoOn=!!st.logo;
+  const heroTitle=biz;
+  const heroSub=st.heroSub||(industry?`${industry} — booking-ready from day one.`:'A clean homepage that books customers.');
+  const cta=st.cta||'Book now';
+  const bookingChips=st.bookingChips||pack.booking||['Pick a time','Confirm'];
+  const pkgChips=st.pkgChips||pack.packages||['Starter','Popular','Pro'];
+  const palette=['#141B2B','#D9632D','#f8fafc'];
+  let status='I’ll build this for you — watch it take shape.';
+  if(session?.liveStatus)status=escPeHtml(String(session.liveStatus));
+  const sections=st.sections||{about:false,services:false,reviews:false};
+  return{websiteOn,bookingOn,packagesOn,brandOn,logoOn,heroTitle,heroSub,cta,ctaElevated:!!st.ctaElevated,bookingChips,pkgChips,palette,status,logoMark:st.logoMark||pack.logo||'HB',logoName:st.logoName||biz,sections};
+}
+function isShowCreateDecision(opts){
+  opts=opts||{};
+  S._is=S._is||{};
+  S._is.createDecision={prevCta:opts.prevCta||'Get a free consult',nextCta:opts.nextCta||'Book now',status:'open'};
+  const el=document.getElementById('is-create-decision');
+  if(!el)return;
+  el.hidden=false;
+  el.classList.add('is-on');
+  el.innerHTML=`<p class="cd-label">I already moved your call to action.</p>
+    <button type="button" onclick="isCreateDecisionView()">View</button>
+    <button type="button" class="is-keep" onclick="isCreateDecisionKeep()">Keep</button>
+    <button type="button" onclick="isCreateDecisionUndo()">Undo</button>`;
+}
+function isHideCreateDecision(){
+  const el=document.getElementById('is-create-decision');
+  if(!el)return;
+  el.classList.remove('is-on');
+  el.hidden=true;
+  el.innerHTML='';
+}
+function isCreateDecisionView(){
   const session=S._is?.discovery;
-  if(!session){panel.hidden=true;return;}
-  const facts=HUBLY_DISCOVERY.panelFacts(session);
-  if(!facts.length){panel.hidden=true;factsEl.innerHTML='';return;}
-  panel.hidden=false;
-  factsEl.innerHTML=facts.map(f=>{
-    const soft=f.inferred&&f.confidence<80?' is-soft':'';
-    return `<div class="fact${soft}">${escPeHtml(f.label)}</div>`;
-  }).join('');
-  if(session.learningSummary&&learnEl){
-    learnEl.hidden=false;
-    learnEl.innerHTML=`<strong>${escPeHtml(session.learningSummary.header||"Here's what I'm learning...")}</strong><ul>${(session.learningSummary.lines||[]).map(l=>`<li>${escPeHtml(l)}</li>`).join('')}</ul>`;
-  }else if(learnEl){
-    learnEl.hidden=true;learnEl.innerHTML='';
+  if(!session?.studio)return;
+  session.studio.cta=S._is.createDecision?.nextCta||'Book now';
+  session.studio.ctaElevated=true;
+  isRenderLiveBuild({pulse:'website',rewrite:true});
+  try{HUBLY_HOLY_SHIT.celebrate('Book now is above the fold.');}catch(e){}
+}
+function isCreateDecisionKeep(){
+  const session=S._is?.discovery;
+  if(session?.studio){
+    session.studio.cta=S._is.createDecision?.nextCta||'Book now';
+    session.studio.ctaElevated=true;
+    isRenderLiveBuild({pulse:'website'});
+  }
+  if(S._is?.createDecision)S._is.createDecision.status='kept';
+  isHideCreateDecision();
+  try{HUBLY_HOLY_SHIT.celebrate('Kept.');}catch(e){}
+}
+function isCreateDecisionUndo(){
+  const session=S._is?.discovery;
+  if(session?.studio){
+    session.studio.cta=S._is.createDecision?.prevCta||'Get a free consult';
+    session.studio.ctaElevated=false;
+    isRenderLiveBuild({pulse:'website',rewrite:true});
+  }
+  if(S._is?.createDecision)S._is.createDecision.status='undone';
+  isHideCreateDecision();
+  try{HUBLY_HOLY_SHIT.celebrate('Undone — I can put Book now back anytime.');}catch(e){}
+}
+window.isCreateDecisionView=isCreateDecisionView;
+window.isCreateDecisionKeep=isCreateDecisionKeep;
+window.isCreateDecisionUndo=isCreateDecisionUndo;
+function isRenderLiveBuild(opts){
+  opts=opts||{};
+  const studio=document.getElementById('is-live-studio');
+  if(!studio)return;
+  const session=S._is?.discovery;
+  if(!session){studio.hidden=true;return;}
+  studio.hidden=false;
+  const live=isLiveBuildFromFacts(session);
+  const statusEl=document.getElementById('is-live-status');
+  if(statusEl)statusEl.innerHTML=live.status;
+  const web=document.getElementById('is-live-website');
+  const book=document.getElementById('is-live-booking');
+  const pkgs=document.getElementById('is-live-packages');
+  const brand=document.getElementById('is-live-brand');
+  const logo=document.getElementById('is-live-logo');
+  // Website never disappears during Create — it's what they bought.
+  web?.classList.add('is-on');
+  book?.classList.toggle('is-on',!!live.bookingOn);
+  pkgs?.classList.toggle('is-on',!!live.packagesOn);
+  const title=document.getElementById('is-live-website-title');
+  const sub=document.getElementById('is-live-website-sub');
+  const cta=document.getElementById('is-live-website-cta');
+  if(title)title.textContent=live.heroTitle;
+  if(sub)sub.textContent=live.heroSub;
+  if(cta)cta.textContent=live.cta;
+  const bChips=document.getElementById('is-live-booking-chips');
+  if(bChips)bChips.innerHTML=(live.bookingChips||[]).slice(0,3).map(c=>`<span class="chip">${escPeHtml(c)}</span>`).join('');
+  const pChips=document.getElementById('is-live-pkg-chips');
+  if(pChips){
+    const chips=live.pkgChips||[];
+    pChips.innerHTML=chips.slice(0,4).map((c,i)=>`<span class="chip is-pkg-appear" style="animation-delay:${i*60}ms">${escPeHtml(c)}</span>`).join('');
+  }
+  if(logo){
+    logo.hidden=!live.logoOn;
+    logo.classList.toggle('is-on',!!live.logoOn);
+    const mark=document.getElementById('is-live-logo-mark');
+    const nm=document.getElementById('is-live-logo-name');
+    if(mark)mark.textContent=live.logoMark||'HB';
+    if(nm)nm.innerHTML=`${escPeHtml(live.logoName||'Your brand')}<small>Logo direction</small>`;
+  }
+  if(brand){
+    brand.hidden=!live.brandOn;
+    const [a,b,c]=live.palette;
+    const sa=document.getElementById('is-live-swatch-a');
+    const sb=document.getElementById('is-live-swatch-b');
+    const sc=document.getElementById('is-live-swatch-c');
+    if(sa)sa.style.background=a;
+    if(sb)sb.style.background=b;
+    if(sc)sc.style.background=c;
+  }
+  const ctaEl=document.getElementById('is-live-website-cta');
+  if(ctaEl)ctaEl.classList.toggle('is-elevated',!!live.ctaElevated||!!session?.studio?.ctaElevated);
+  const secs=document.getElementById('is-live-sections');
+  if(secs){
+    const s=live.sections||{};
+    const any=!!(s.about||s.services||s.reviews);
+    secs.hidden=!any;
+    secs.classList.toggle('is-on',any);
+    secs.querySelectorAll('[data-sec]').forEach(el=>{
+      const key=el.getAttribute('data-sec');
+      el.classList.toggle('is-on',!!s[key]);
+    });
+  }
+  // Brand colors stay visible once the site is forming.
+  if(brand&&live.brandOn)brand.hidden=false;
+  if(opts.rewrite)HUBLY_HOLY_SHIT.flash(web,'is-rewriting');
+  if(opts.pulse==='website'||opts.pulse==='all')HUBLY_HOLY_SHIT.flash(web,'is-pulse');
+  if(opts.pulse==='booking'||opts.pulse==='all')HUBLY_HOLY_SHIT.flash(book,'is-pulse');
+  if(opts.pulse==='packages'||opts.pulse==='all')HUBLY_HOLY_SHIT.flash(pkgs,'is-pulse');
+  if(opts.pulse==='logo'||opts.pulse==='all')HUBLY_HOLY_SHIT.flash(logo,'is-pulse');
+  if(opts.pulse==='brand'&&brand)HUBLY_HOLY_SHIT.flash(brand,'is-pulse');
+}
+/** @deprecated Experience-first uses live studio; kept as alias for any stray callers. */
+function isRenderUnderstandingPanel(){isRenderLiveBuild();}
+function isDiscoverySetTyping(on){
+  // Never show random thoughts. Only grounded waiting — sequence owns thought→result pairs.
+  if(on){
+    const wrap=document.getElementById('is-hubly-thinking');
+    const el=document.getElementById('is-hubly-thinking-line');
+    if(el)el.textContent='Understanding what you shared…';
+    if(wrap){wrap.classList.add('is-on');wrap.setAttribute('aria-hidden','false');}
+  }else if(typeof HUBLY_HOLY_SHIT!=='undefined'){
+    HUBLY_HOLY_SHIT.thinkOff();
   }
 }
-function isDiscoverySetTyping(on){
-  const el=document.getElementById('is-discovery-typing');
-  if(el){el.classList.toggle('is-on',!!on);el.setAttribute('aria-hidden',on?'false':'true');}
+function isDiscoveryApplyAiFacts(session,facts){
+  if(!session||!facts)return;
+  session.aiFacts=session.aiFacts||{};
+  Object.keys(facts).forEach(k=>{
+    const v=facts[k];
+    if(v==null||v==='')return;
+    session.aiFacts[k]=v;
+    const conf=88;
+    if(typeof HUBLY_DISCOVERY.setFact==='function'){
+      // setFact not exported — mirror into facts map used by panel
+    }
+    const label=typeof v==='string'?v:String(v);
+    session.facts[k]={value:v,confidence:conf,inferred:true,label,updatedAt:Date.now()};
+  });
+  // Friendly labels for understanding panel
+  if(facts.industry)session.facts.industry={value:facts.industry,confidence:90,inferred:true,label:facts.industry,updatedAt:Date.now()};
+  if(facts.industryId)session.facts.industryId={value:facts.industryId,confidence:90,inferred:true,label:facts.industryId,updatedAt:Date.now()};
+  if(facts.area)session.facts.area={value:facts.area,confidence:88,inferred:true,label:facts.area,updatedAt:Date.now()};
+  if(facts.stage)session.facts.stage={value:facts.stage,confidence:86,inferred:false,label:facts.stage==='early'?'Just getting started':facts.stage==='established'?'Established':facts.stage,updatedAt:Date.now()};
+  if(facts.positioning)session.facts.positioning={value:facts.positioning,confidence:84,inferred:false,label:facts.positioning,updatedAt:Date.now()};
+  if(facts.customer)session.facts.customer={value:facts.customer,confidence:86,inferred:true,label:facts.customer,updatedAt:Date.now()};
+  if(facts.goal)session.facts.goal={value:facts.goal,confidence:86,inferred:false,label:facts.goal,updatedAt:Date.now()};
+  if(facts.operations)session.facts.operations={value:facts.operations,confidence:84,inferred:false,label:facts.operations,updatedAt:Date.now()};
+  if(facts.businessName&&!S.biz){S.biz=String(facts.businessName);session.facts.businessName={value:facts.businessName,confidence:90,inferred:false,label:facts.businessName,updatedAt:Date.now()};}
+}
+function isDiscoveryBuildHistory(session){
+  const msgs=(S._is?.messages||[]).map(m=>({
+    role:(m.side==='owner'||m.role==='owner'||m.who==='owner')?'owner':'hubly',
+    text:m.text||m.body||'',
+  })).filter(m=>m.text);
+  if(msgs.length)return msgs;
+  return (session?.messages||[]).map(m=>({role:m.role,text:m.text})).filter(m=>m.text);
+}
+/** Call Hubly Brain → OpenAI for the next discovery turn. Local gap tree is FALLBACK only. */
+async function isDiscoveryThinkTurn(ownerText){
+  const session=S._is.discovery;
+  const history=isDiscoveryBuildHistory(session);
+  const factSnap={};
+  Object.keys(session.facts||{}).forEach(k=>{
+    const f=session.facts[k];
+    if(f&&f.value!=null)factSnap[k]=f.value;
+  });
+  const brain=await HublyAI.think(ownerText,{
+    intent:'discovery',
+    discovery:{
+      seed:session.seed||S._is.seed||'',
+      facts:factSnap,
+      history,
+      turns:session.turns||0,
+      clarificationCount:session.clarificationCount||0,
+    },
+    conversation:{
+      sessionId:session.sessionId||('disc_'+Date.now().toString(36)),
+      messages:history,
+    },
+    debug:true,
+  });
+  return brain;
 }
 async function isDiscoverySend(text){
   if(S._is?._talkBusy)return;
@@ -16746,31 +17714,236 @@ async function isDiscoverySend(text){
   const input=document.getElementById('is-talk-input');
   isTalkPush('owner',text);
   if(input)input.value='';
-  isDiscoverySetTyping(true);
-  await isSleep(280+Math.min(420,String(text).length*4));
-  const result=HUBLY_DISCOVERY.ingestDiscoveryTurn(S._is.discovery,text);
-  isDiscoverySetTyping(false);
-  for(const r of (result.replies||[])){
-    if(r.kind==='learning'){
-      S._is.discovery.learningSummary={header:r.text,lines:r.lines||[]};
-      isRenderUnderstandingPanel();
-      const preview=(r.lines||[]).slice(0,3).map(l=>'• '+l).join('\n');
-      isTalkPush('hubly',r.text+(preview?'\n'+preview:''));
-    }else if(r.text){
-      isTalkPush('hubly',r.text);
+  const session=S._is.discovery;
+  session.turns=(session.turns||0)+1;
+  session.messages.push({role:'owner',text});
+
+  // Cancel any in-flight holy-shit choreography if the owner speaks again.
+  try{session.cancelHolyShit?.();}catch(e){}
+
+  let ready=false;
+
+  // First substantial turn → Live build Moments 1–4 (visible, immediate), then real conversation.
+  if(!session.holyShitComplete&&session.turns<=2){
+    isDiscoverySetTyping(true);
+    // Enrich facts from Brain in parallel (non-blocking for the visual sequence).
+    const brainPromise=isDiscoveryThinkTurn(text).catch(e=>({ok:false,error:e}));
+    try{
+      // Tiny beat so typing indicator shows, then Moment 1 lands in <1s.
+      await isSleep(280);
+      isDiscoverySetTyping(false);
+      await HUBLY_HOLY_SHIT.playOpeningSequence(session,text);
+    }catch(e){
+      if(String(e?.message||e)!=='holy_shit_cancelled'){
+        console.error('[Hubly Holy Shit] sequence failed',e);
+        isDiscoverySetTyping(false);
+      }
     }
-    if(r.kind==='question'||r.kind==='moment'||r.kind==='emotion')await isSleep(160);
+    // Gate 1 Conversation — weave real OpenAI after the live build (ChatGPT feel).
+    let aiReply='';
+    try{
+      const brain=await brainPromise;
+      const disc=brain&&brain.discovery;
+      if(disc&&disc.facts)isDiscoveryApplyAiFacts(session,disc.facts);
+      if(Array.isArray(disc?.buildingActions)&&disc.buildingActions.length){
+        session.buildingActions=disc.buildingActions.map(a=>typeof a==='string'?a:(a?.surface||a?.id||'')).filter(Boolean);
+        isDiscoveryApplyBuildActions(session);
+      }
+      aiReply=String((disc&&disc.reply)||(brain&&brain.response)||'').trim();
+      session.lastAi={
+        source:(disc&&disc.source)||brain?.aiSource||'unknown',
+        provider:disc?.provider||brain?.aiProvider||null,
+        model:disc?.model||brain?.aiModel||null,
+        ok:!!(brain&&brain.ok),
+        error:brain?.error||disc?.error||null,
+        at:new Date().toISOString(),
+      };
+      S._is.discoveryAiSource=session.lastAi.source;
+    }catch(e){}
+    if(!aiReply){
+      aiReply="I've got your website, booking, and packages up. Tell me what to change — or I'll show you what I built.";
+    }
+    isTalkPush('hubly',aiReply);
+    session.messages.push({role:'hubly',text:aiReply,kind:'ai'});
+    isRenderLiveBuild({pulse:'website'});
+    isShowCreateRevealChip();
+    isScheduleCreateRevealAuto();
+    ready=false;
+  }else{
+    // Follow-up turns — conversation + live studio (OpenAI when available).
+    isDiscoverySetTyping(true);
+    try{clearTimeout(session._revealAutoTimer);}catch(e){}
+    try{
+      const brain=await isDiscoveryThinkTurn(text);
+      const disc=brain&&brain.discovery;
+      const source=(disc&&disc.source)||brain?.aiSource||null;
+      const reply=(brain&&brain.response)||(disc&&disc.reply)||'';
+      const usedAi=source==='openai'&&!!reply;
+      session.lastAi={
+        source:source||'unknown',
+        provider:disc?.provider||brain?.aiProvider||null,
+        model:disc?.model||brain?.aiModel||null,
+        ok:!!(brain&&brain.ok),
+        error:brain?.error||disc?.error||null,
+        at:new Date().toISOString(),
+      };
+      S._is.discoveryAiSource=session.lastAi.source;
+      if(disc&&disc.facts)isDiscoveryApplyAiFacts(session,disc.facts);
+      if(Array.isArray(disc?.buildingActions)&&disc.buildingActions.length){
+        session.buildingActions=disc.buildingActions.map(a=>typeof a==='string'?a:(a?.surface||a?.id||'')).filter(Boolean);
+        isDiscoveryApplyBuildActions(session);
+      }
+      if(disc?.liveStatus)session.liveStatus=String(disc.liveStatus);
+      // Apply conversational edits to the live website when the owner asks for changes.
+      isDiscoveryApplyConversationToStudio(session,text,disc);
+      isDiscoverySetTyping(false);
+      isRenderLiveBuild({pulse:'website',rewrite:true});
+      if(usedAi||(reply&&brain&&brain.ok)){
+        if(reply){
+          isTalkPush('hubly',reply);
+          session.messages.push({role:'hubly',text:reply,kind:'ai'});
+        }
+        ready=!!(disc&&disc.readyForThinking)||!!(brain&&brain.celebrate);
+      }else{
+        const local=HUBLY_DISCOVERY.ingestDiscoveryTurn(session,text);
+        for(const r of (local.replies||[])){if(r.text)isTalkPush('hubly',r.text);}
+        ready=!!(local.complete||session.readyForThinking);
+      }
+      if(session.holyShitComplete&&!ready){
+        isShowCreateRevealChip();
+        isScheduleCreateRevealAuto();
+      }
+    }catch(e){
+      console.error('[Hubly Discovery] AI turn failed',e);
+      isDiscoverySetTyping(false);
+      const local=HUBLY_DISCOVERY.ingestDiscoveryTurn(session,text);
+      for(const r of (local.replies||[])){if(r.text)isTalkPush('hubly',r.text);}
+      ready=!!(local.complete||session.readyForThinking);
+      if(session.holyShitComplete&&!ready)isShowCreateRevealChip();
+    }
   }
-  isRenderUnderstandingPanel();
+
+  isRenderLiveBuild();
   schedulePersistInstantSiteDraft();
   S._is._talkBusy=false;
-  if(result.complete||S._is.discovery.readyForThinking){
-    await isSleep(600);
-    await isDiscoveryCompleteToThinking();
+  if(ready||session.readyForThinking){
+    await isSleep(500);
+    await isCreateContinueToReveal();
   }else{
     setTimeout(()=>document.getElementById('is-talk-input')?.focus(),40);
   }
 }
+/** Light up studio surfaces the Brain asked for. */
+function isDiscoveryApplyBuildActions(session){
+  if(!session)return;
+  session.studio=session.studio||{};
+  const acts=session.buildingActions||[];
+  if(acts.includes('booking'))session.studio.bookingOn=true;
+  if(acts.includes('packages'))session.studio.packagesOn=true;
+  if(acts.includes('brand'))session.studio.brandOn=true;
+  if(acts.includes('website'))session.studio.phase='website';
+}
+/** Turn owner follow-ups into visible live-website proof — show, don't tell. */
+function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
+  if(!session)return;
+  session.studio=session.studio||{};
+  session.studio.sections=session.studio.sections||{about:true,services:true,reviews:false};
+  const t=String(ownerText||'').toLowerCase();
+  let pulsed=false;
+  if(/premium|luxury|high.?end|upscale/.test(t)){
+    let base=(session.studio.heroSub||'').replace(/\s*[—.]\s*quietly premium\.?/i,'').replace(/\s*Warm, local, easy to book\.?/i,'').trim();
+    base=base.replace(/\.\s*$/,'');
+    session.studio.heroSub=(base||'Results that last')+' — quietly premium.';
+    session.studio.ctaElevated=true;
+    session.studio.brandOn=true;
+    pulsed=true;
+  }
+  if(/friendlier|warmer|friendly|approachable|neighborhood|local/.test(t)){
+    let base=(session.studio.heroSub||'').replace(/\s*[—.]\s*quietly premium\.?/i,'').replace(/\s*Warm, local, easy to book\.?/i,'').trim();
+    base=base.replace(/\.\s*$/,'');
+    session.studio.heroSub=(base||'Trusted nearby')+' — warm, local, easy to book.';
+    session.studio.brandOn=true;
+    pulsed=true;
+  }
+  if(/book now|stronger cta|call to action|\bcta\b/.test(t)){
+    session.studio.cta='Book now';
+    session.studio.ctaElevated=true;
+    pulsed=true;
+  }
+  if(/consult|consultation|free call/.test(t)&&!/book now/.test(t)){
+    session.studio.cta='Book a consult';
+    session.studio.ctaElevated=true;
+    pulsed=true;
+  }
+  if(/package|pricing|offer|membership|plan/.test(t)){
+    session.studio.packagesOn=true;
+    session.studio.sections.services=true;
+    if(!(session.studio.pkgChips||[]).length){
+      const pack=session.holyPack;
+      session.studio.pkgChips=(pack&&pack.packages)?pack.packages.slice():['Starter','Popular','Pro'];
+    }
+    pulsed=true;
+  }
+  if(/review|testimonial|social proof/.test(t)){
+    session.studio.sections.reviews=true;
+    pulsed=true;
+  }
+  if(/logo|brand|color|colour/.test(t)){
+    session.studio.logo=true;
+    session.studio.brandOn=true;
+    pulsed=true;
+  }
+  if(/book|schedule|calendar|appointment/.test(t)){
+    session.studio.bookingOn=true;
+    pulsed=true;
+  }
+  // Every meaningful turn should move something on the website.
+  if(!pulsed&&session.holyShitComplete){
+    session.studio.sections.about=true;
+    session.studio.rewrite=true;
+    const tip=disc?.liveStatus?String(disc.liveStatus):'';
+    if(tip&&session.studio.heroSub&&!/updated/i.test(session.studio.heroSub)){
+      // keep hero; flash rewrite below
+    }
+    pulsed=true;
+  }
+}
+function isShowCreateRevealChip(){
+  const chips=document.getElementById('is-talk-chips');
+  if(!chips)return;
+  chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="isCreateContinueToReveal()">Show me what you built →</button>
+    <button type="button" class="is-chip" onclick="document.getElementById('is-talk-input')?.focus()">Keep talking</button>`;
+}
+function isScheduleCreateRevealAuto(){
+  const session=S._is?.discovery;
+  if(!session)return;
+  try{clearTimeout(session._revealAutoTimer);}catch(e){}
+  // Demo stays moving; real signup gives more time to converse.
+  const waitMs=S._ceoDemo?3500:9000;
+  session._revealAutoTimer=setTimeout(()=>{
+    if(!S._is?.discovery?.holyShitComplete)return;
+    if(S._is?.discovery?.readyForThinking)return;
+    if(S._is?._talkBusy)return;
+    isCreateContinueToReveal();
+  },waitMs);
+}
+async function isCreateContinueToReveal(){
+  const session=S._is?.discovery;
+  if(!session)return;
+  try{clearTimeout(session._revealAutoTimer);}catch(e){}
+  if(session.readyForThinking&&S._is._enteringReveal)return;
+  S._is._enteringReveal=true;
+  session.readyForThinking=true;
+  session.complete=true;
+  isTalkClearChips();
+  isHideCreateDecision();
+  try{
+    await isDiscoveryCompleteToThinking();
+  }finally{
+    S._is._enteringReveal=false;
+  }
+}
+window.isCreateContinueToReveal=isCreateContinueToReveal;
 function isDiscoveryApplyToState(){
   const d=S._is?.discovery;
   if(!d)return;
@@ -17126,6 +18299,7 @@ async function isDiscoveryCompleteToThinking(){
   const step=document.getElementById('is-step-talk');
   step?.classList.remove('is-discovery');
   isTalkClearChips();
+  isHideCreateDecision();
   const parts=[];
   if(S._is?.ownerName)parts.push(`My name is ${S._is.ownerName}`);
   if(S.biz)parts.push(`My business is called ${S.biz}`);
@@ -17144,6 +18318,34 @@ async function isDiscoveryCompleteToThinking(){
   if(S._cd)S._cd.whoText=seed;
   const mobileTrades=['detailing','windows','pressure_washing','landscaping','cleaning','hvac'];
   isSetTravel(mobileTrades.includes(normalizeBlueprintId(S.businessType)));
+
+  // Output over process: if Create already built the business on screen, go to Reveal.
+  // Don't make the customer watch a second “creative build” theater.
+  if(S._is?.discovery?.holyShitComplete){
+    const pack=S._is.discovery.holyPack||{};
+    const studio=S._is.discovery.studio||{};
+    const experience={
+      industryKey:pack.industryId||S.businessType||'local',
+      industryLabel:pack.industry||S.biz||'Your business',
+      designConfidence:96,
+      chosenDirection:'luxury',
+      stages:[],
+      live:{
+        heroTitle:studio.heroTitle||S.biz,
+        heroSub:studio.heroSub||pack.rewrite||'',
+        cta:studio.cta||'Book now',
+        theme:'premium',
+        bookingChips:studio.bookingChips||pack.booking||[],
+        pkgChips:studio.pkgChips||pack.packages||[],
+        logoMark:studio.logoMark||pack.logo||'HB',
+        logoName:studio.logoName||S.biz,
+      },
+    };
+    S._is.creativeExperience=experience;
+    await isSleep(450);
+    await isRunBusinessRevealExperience(seed,experience);
+    return;
+  }
 
   isShowStep('thinking');
   // Epic 3 — visible intelligence; fakeDelayMs = 0 (no artificial isSleep).
@@ -17390,10 +18592,13 @@ async function isCreativeShowChoice(experience){
       btn.onclick=()=>finish(btn.getAttribute('data-dir'),btn.querySelector('strong')?.textContent||'');
     });
     // If the owner doesn't choose, continue with the recommended direction (no hung build).
+    const waitMs=S._ceoDemo?900:1800;
+    const cq=box.querySelector('.cq');
+    if(cq)cq.insertAdjacentHTML('beforeend',`<div style="margin-top:8px;font-size:12px;opacity:.75">I’ll pick the strongest direction in a moment…</div>`);
     setTimeout(()=>{
       const rec=(experience.directions&&experience.directions[0]&&experience.directions[0].id)||'luxury';
       finish(rec,experience.directions?.[0]?.label||'Luxury');
-    },7000);
+    },waitMs);
   });
 }
 async function isCreativeBuildInterruptSend(){
@@ -17722,26 +18927,269 @@ function isRevealShowTimeCapsule(){
     ${vision?`<ul style="margin:10px 0;padding-left:18px;font-size:13px">${vision}</ul>`:''}
     <p style="font-size:12px;opacity:.75;margin-top:12px">Years from now, you can always come back to Day One.</p>`;
 }
+/** Map Create/holy-shit industry ids onto real blueprints (never leave unknown → detailing). */
+function isCreateBlueprintId(rawId, corpus){
+  const id=String(rawId||'').toLowerCase().trim();
+  const text=String(corpus||'').toLowerCase();
+  const aliases={
+    fitness:'spa',personal_training:'spa',coaching:'spa',wellness:'spa',trainer:'spa',
+    lawn_care:'landscaping','lawn-care':'landscaping',
+    house_cleaning:'cleaning','house-cleaning':'cleaning',
+    'window-cleaning':'windows',window_cleaning:'windows',
+  };
+  if(id&&aliases[id])return aliases[id];
+  try{
+    if(id&&typeof HublyBlueprints!=='undefined'&&HublyBlueprints.get?.(id))return id;
+  }catch(e){}
+  if(/fitness|trainer|personal\s*train|coach(ing)?|gym|wellness/.test(text)||/fitness|trainer|coach/.test(id))return 'spa';
+  if(/photo|wedding\s*shoot/.test(text))return 'photography';
+  if(/pressure|power\s*wash|soft\s*wash/.test(text))return 'pressure_washing';
+  if(/lawn|mow|landscap/.test(text))return 'landscaping';
+  if(/clean|maid|airbnb|housekeep/.test(text))return 'cleaning';
+  if(/window/.test(text))return 'windows';
+  if(/hvac|heat|air\s*cond/.test(text))return 'hvac';
+  if(id)return id;
+  return null;
+}
+function isCreatePkgMeta(name, index, trade){
+  const n=String(name||'');
+  const key=n.toLowerCase();
+  if(trade==='spa'||/coach|train|transform|account/.test(key)){
+    if(/1:1|one.?on.?one|coach/.test(key))return{price:120,dur:'60 min',desc:'Focused session built around your goals.'};
+    if(/transform|plan|program/.test(key))return{price:299,dur:'4 weeks',desc:'Training plan + check-ins so progress sticks.'};
+    if(/account|check.?in/.test(key))return{price:79,dur:'30 min',desc:'Quick progress review and next-week plan.'};
+  }
+  const defaults=[
+    {price:99,dur:'45 min',desc:'A clear starting offer for new clients.'},
+    {price:179,dur:'60 min',desc:'Most popular with new clients.'},
+    {price:249,dur:'90 min',desc:'Deeper work for clients ready to commit.'},
+    {price:129,dur:'60 min',desc:''},
+  ];
+  return defaults[Math.min(index,defaults.length-1)];
+}
+/** When Create only knows the industry, assume a real brand name (owner can rename). */
+function isCreateAssumedBrand(pack, current){
+  const cur=String(current||'').trim();
+  const industry=String(pack?.industry||'').trim();
+  if(cur&&industry&&cur.toLowerCase()!==industry.toLowerCase()&&!/^your business$/i.test(cur)&&!/^my\s/i.test(cur))return cur;
+  const id=String(pack?.industryId||'').toLowerCase();
+  if(id==='fitness'||/personal\s*train|fitness|coach/i.test(industry))return 'FitFocus Training';
+  if(id==='pressure_washing'||/pressure|power\s*wash/i.test(industry))return 'BrightWash Co.';
+  if(id==='photography'||/photo/i.test(industry))return 'Northlight Studio';
+  if(id==='lawn_care'||/lawn|landscap/i.test(industry))return 'Greenlane Care';
+  if(id==='cleaning'||/clean/i.test(industry))return 'ClearSpace Cleaning';
+  if(industry&&industry!=='Local Service')return industry;
+  return cur||'Your Business';
+}
+/** Push Create studio into real business state so previews are not placeholders. */
+function isApplyCreateStudioToBusiness(){
+  const studio=S._is?.discovery?.studio||{};
+  const pack=S._is?.discovery?.holyPack||null;
+  const bizName=isCreateAssumedBrand(pack,studio.logoName||studio.heroTitle||S.biz||pack?.industry||'Your Business');
+  if(studio&&typeof studio==='object'){
+    if(!studio.logoName||studio.logoName===pack?.industry)studio.logoName=bizName;
+    if(!studio.heroTitle||studio.heroTitle===pack?.industry)studio.heroTitle=bizName;
+  }
+  const outcome=String(pack?.rewrite||'').trim();
+  const studioSub=String(studio.heroSub||'').trim();
+  const heroHeadline=outcome||studioSub||bizName;
+  const tradeLabel=String(pack?.industry||'').replace(/\s+services$/i,'').trim()||'your business';
+  const heroSub=(outcome&&studioSub&&studioSub!==outcome)
+    ?studioSub
+    :(outcome
+      ?((S.city||'').trim()
+        ?`${tradeLabel} in ${S.city}. Book online in minutes.`
+        :'Clear packages. Easy booking. Built for results.')
+      :(studioSub||S.tag||'Clear packages. Easy booking.'));
+  const cta=studio.cta||'Book now';
+  const corpus=[bizName,pack?.industry,outcome,studioSub,(studio.pkgChips||[]).join(' '),S.createGoal,S.createBrief].filter(Boolean).join(' ');
+  const bpId=isCreateBlueprintId(pack?.industryId||S.businessType,corpus)||'spa';
+  S.biz=bizName;
+  S.tag=outcome||heroSub;
+  S.industry=pack?.industry||S.industry||'';
+  S.businessType=bpId;
+  S._createTradeId=pack?.industryId||bpId;
+  S.website=S.website&&typeof S.website==='object'?S.website:{};
+  S.website.heroHeadline=heroHeadline;
+  S.website.heroSub=heroSub;
+  S.website.customHeroHeadline=true;
+  S.website.customHeroSub=true;
+  S.website.ctaLabel=cta;
+  // Session booking chrome — never “ride dialed in” / spa “quiet rooms” for Create.
+  const createIncludes=(bpId==='spa'||/fitness|train|coach/i.test(corpus))
+    ?['Clear packages','Flexible scheduling','Progress that sticks']
+    :['Clear packages','Easy online booking','Real updates'];
+  const createTrust=(bpId==='spa'||/fitness|train|coach/i.test(corpus))
+    ?['Results-focused','1:1 coaching','Easy booking']
+    :['Clear packages','Easy booking','Local & ready'];
+  S.bookingWizard=Object.assign({},S.bookingWizard||{},{
+    headline:"Let's book your session",
+    blurb:'Pick a package — then choose a time that works.',
+    helpBlurb:'Questions before you book? We’re here.',
+    sidebarIncludes:createIncludes,
+  });
+  S.website.trustBadges=createTrust.slice();
+  S.website.trustStats=createTrust.map(s=>({value:String(s),label:''}));
+  S.website._trustClearedByOwner=false;
+  S.website.whySub=(bpId==='spa'||/fitness|train|coach/i.test(corpus))
+    ?'Clear packages, careful coaching, easy booking.'
+    :'Clear packages, careful work, easy booking.';
+  // Lock section copy so spa blueprint defaults don’t overwrite Create.
+  S.website._bpSectionId=bpId;
+  // Avoid spa SEO (“Spa & Wellness”) on a training business.
+  if(pack?.industry){
+    S.website.seoTitle=`${bizName} | ${pack.industry}`;
+    S.website.seoDescription=`Book ${bizName} for ${String(pack.industry).toLowerCase()}. ${heroSub}`.slice(0,160);
+  }
+  const pkgs=(studio.pkgChips&&studio.pkgChips.length)?studio.pkgChips:(pack?.packages||[]);
+  if(pkgs.length){
+    const priced=pkgs.slice(0,4).map((name,i)=>{
+      const meta=isCreatePkgMeta(name,i,bpId);
+      return{
+        id:'create_svc_'+i,
+        name:String(name),
+        price:meta.price,
+        dur:meta.dur,
+        desc:meta.desc,
+        showPrice:true,
+        pricingType:'flat',
+        status:'active',
+        website:true,
+        popular:i===1,
+      };
+    });
+    S.services=priced;
+    S.editorSvcs=priced.map(s=>({...s}));
+  }
+  // Fitness Create: real training atmosphere, not spa stock.
+  if(bpId==='spa'&&(/fitness|train|coach/i.test(corpus)||pack?.industryId==='fitness')){
+    if(!S._ownerUploadedMedia){
+      S.bannerUrl=S.bannerUrl||'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1600&q=80';
+    }
+  }
+  // Drop any prior detailing Smart Quote answers before preview.
+  try{delete S._bkSq;}catch(e){}
+  try{if(typeof clearBookingVehicleState==='function')clearBookingVehicleState();}catch(e){}
+  S.websiteReady=true;
+  try{
+    const slug=String(bizName).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,28)||'your-business';
+    S._publicSlug=slug;
+  }catch(e){}
+}
+function isEnsureRevealBackBar(){
+  let bar=document.getElementById('is-reveal-back-bar');
+  if(!bar){
+    bar=document.createElement('div');
+    bar.id='is-reveal-back-bar';
+    bar.innerHTML=`<button type="button" class="btn btn-brand btn-sm" onclick="isReturnToRevealFromPreview()">← Back to what Hubly built</button>`;
+    document.body.appendChild(bar);
+  }
+  bar.classList.add('is-on');
+}
+function isHideRevealBackBar(){
+  document.getElementById('is-reveal-back-bar')?.classList.remove('is-on');
+}
+function isReturnToRevealFromPreview(){
+  isHideRevealBackBar();
+  try{setOwnerPreview(false);}catch(e){}
+  document.body.classList.remove('ws-booking-open');
+  document.getElementById('p-booking-landing')?.classList.remove('active');
+  document.getElementById('p-booking')?.classList.remove('active');
+  document.getElementById('p-storefront')?.classList.remove('active');
+  const onboard=document.getElementById('p-onboard');
+  const shell=document.getElementById('is-shell');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  onboard?.classList.add('active','is-active');
+  if(shell)shell.style.display='flex';
+  isShowStep('reveal');
+  try{history.replaceState({page:'p-onboard',ceoDemo:!!S._ceoDemo},'', (isCeoDemoPath()?hublyPath():'/demo')+'#reveal');}catch(e){}
+}
+window.isReturnToRevealFromPreview=isReturnToRevealFromPreview;
+
 function isRevealRenderReadyCards(creativeExperience){
   const stage=document.getElementById('is-reveal-stage');
   if(!stage)return;
+  isApplyCreateStudioToBusiness();
   const live=creativeExperience?.live||{};
-  const biz=S.biz||live.heroTitle||'Your business';
+  const studio=S._is?.discovery?.studio||{};
   const theme=live.theme==='friendly'?'is-friendly':'is-premium';
+  const pack=S._is?.discovery?.holyPack||null;
+  const title=S.website?.heroHeadline||pack?.rewrite||live.heroTitle||studio.heroTitle||S.biz||'Your business';
+  const sub=S.website?.heroSub||live.heroSub||studio.heroSub||'Built while we talked.';
+  const cta=S.website?.ctaLabel||live.cta||studio.cta||'Book now';
+  const booking=(live.bookingChips||studio.bookingChips||[]).slice(0,3);
+  const pkgs=(S.services?.map(s=>s.name)||live.pkgChips||studio.pkgChips||[]).slice(0,3);
+  const bookChips=booking.length
+    ? booking.map(c=>`<span class="chip">${escPeHtml(c)}</span>`).join('')
+    : `<span class="cta-chip">Book</span>`;
+  const pkgChips=pkgs.length
+    ? pkgs.map(c=>`<span class="chip">${escPeHtml(typeof c==='string'?c:c.name)}</span>`).join('')
+    : `<span class="chip" style="opacity:.7">Still generating…</span>`;
+  // Honest CRM — don't fake a populated pipeline.
+  const crmViz=`<div class="viz live-crm"><p class="crm-line">Pipeline ready</p><p class="crm-line" style="opacity:.75">Waiting for your first customer</p><p class="crm-line" style="opacity:.55;font-size:11px">Not faking contacts</p></div>`;
   const cards=[
-    {id:'website',label:'Website',viz:`<div class="viz ${theme}"><div class="bar"></div><div class="bar short"></div><span class="cta-chip">${escPeHtml(live.cta||'Book now')}</span></div>`},
-    {id:'booking',label:'Booking',viz:`<div class="viz phone"><div class="bar"></div><div class="bar short"></div><span class="cta-chip">Book</span></div>`},
-    {id:'crm',label:'CRM',viz:`<div class="viz"><div class="bar"></div><div class="bar short"></div><div class="bar" style="width:58%"></div></div>`},
-    {id:'packages',label:'Packages',viz:`<div class="viz"><div class="bar"></div><div class="bar short"></div><span class="cta-chip">3 packages</span></div>`},
-    {id:'calendar',label:'Calendar',viz:`<div class="viz"><div class="bar short"></div><div class="bar"></div><div class="bar short"></div></div>`},
+    {id:'website',label:'Website',viz:`<div class="viz live-site ${theme}"><p class="ht">${escPeHtml(title)}</p><p class="hs">${escPeHtml(sub)}</p><span class="cta-chip">${escPeHtml(cta)}</span></div>`,lbl:'Open your website'},
+    {id:'booking',label:'Booking',viz:`<div class="viz phone live-book"><p class="sk" style="margin:0 0 6px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:750">Customer booking</p><div class="chip-row">${bookChips}</div></div>`,lbl:'Try the booking flow'},
+    {id:'packages',label:'Packages',viz:`<div class="viz live-pkg"><p class="sk" style="margin:0 0 6px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:750">Your offers</p><div class="chip-row">${pkgChips}</div></div>`,lbl:'See your packages'},
+    {id:'crm',label:'CRM',viz:crmViz,lbl:'Open CRM'},
   ];
-  stage.innerHTML=`<div class="is-reveal-ready-grid" data-v3-reveal-cards="1">
-    ${cards.map((c,i)=>`<div class="is-reveal-ready-card" style="animation-delay:${i*60}ms">${c.viz}<p class="lbl">${escPeHtml(c.label)}</p></div>`).join('')}
+  stage.innerHTML=`<div class="is-reveal-ready-grid" data-v3-reveal-cards="1" data-experience-reveal="1" data-create-magical-reveal="1">
+    ${cards.map((c,i)=>`<button type="button" class="is-reveal-ready-card" style="animation-delay:${i*90}ms;text-align:left;width:100%;font:inherit;color:inherit" onclick="isRevealOpenSurface('${c.id}')"><p class="sk">${escPeHtml(c.label)}</p>${c.viz}<p class="lbl">${escPeHtml(c.lbl||('Open '+c.label))}</p></button>`).join('')}
   </div>
   <div class="is-reveal-continue">
-    <button type="button" class="btn btn-brand" onclick="isRevealContinueToWorkspace()">Continue to My Workspace</button>
-    <p class="hint">Enter Hubly — your operating system is ready.</p>
+    <button type="button" class="btn btn-brand" onclick="isRevealContinueToWorkspace()">Enter Hubly Home</button>
+    <p class="hint">Open anything above first — then enter Home when you’re ready.</p>
   </div>`;
+}
+
+/** Reveal cards open the real surface (show, don’t tell). */
+function isRevealOpenSurface(surfaceId){
+  S._is=S._is||{};
+  isApplyCreateStudioToBusiness();
+  const id=surfaceId||'website';
+  if(id==='crm'){
+    S._is.revealPreferredSurface='crm';
+    isRevealContinueToWorkspace();
+    return;
+  }
+  S._is._previewFromReveal=true;
+  try{
+    if(id==='booking'){
+      isEnsureRevealBackBar();
+      previewBookingPage();
+      return;
+    }
+    // website + packages → live storefront
+    isEnsureRevealBackBar();
+    previewProfile();
+  }catch(e){
+    console.warn('reveal open surface',e);
+    S._is.revealPreferredSurface=id;
+    isRevealContinueToWorkspace();
+  }
+}
+
+function isOpenPreferredOperateSurface(){
+  const surface=S._is?.revealPreferredSurface;
+  if(!surface)return;
+  try{delete S._is.revealPreferredSurface;}catch(e){}
+  setTimeout(()=>{
+    try{
+      isApplyCreateStudioToBusiness();
+      if(surface==='booking'){previewBookingPage();return;}
+      if(surface==='website'||surface==='packages'){previewProfile();return;}
+      if(surface==='crm'){
+        const nav=document.querySelector('#p-app [data-v="customers"]')||document.querySelector('[data-v="customers"]');
+        if(nav)switchV(nav);
+      }else if(surface==='jobs'||surface==='calendar'){
+        const nav=document.querySelector('#p-app [data-v="jobs"]')||document.querySelector('[data-v="jobs"]');
+        if(nav)switchV(nav);
+      }else if(surface==='revenue'){
+        const nav=document.querySelector('#p-app [data-v="money"]')||document.querySelector('[data-v="money"]');
+        if(nav)switchV(nav);
+      }
+    }catch(e){}
+  },120);
 }
 
 /** Reveal → save if needed → Operate Home (v3). */
@@ -17749,9 +19197,21 @@ function isRevealContinueToWorkspace(){
   try{S._hublyMode='create-exit';}catch(e){}
   S._is=S._is||{};
   S._is.readyForAccount=true;
+  isHideRevealBackBar();
   try{persistInstantSiteDraft();}catch(e){}
+  isApplyCreateStudioToBusiness();
+  // CEO Demo — no claim wall; go straight into Home with what was built.
+  if(S._ceoDemo){
+    S._accountClaimed=true;
+    S._is.businessSaved=true;
+    S._deferredAccount=false;
+    isSeedCreateReadyHome();
+    openOperateHome();
+    return;
+  }
   // Already claimed / signed in → Operate immediately
   if(S._accountClaimed||S._is.businessSaved||(typeof currentUser!=='undefined'&&currentUser)||(typeof currentBusiness!=='undefined'&&currentBusiness?.id)){
+    if(S._is?.discovery?.holyShitComplete)isSeedCreateReadyHome();
     openOperateHome();
     return;
   }
@@ -17782,13 +19242,23 @@ async function isRunBusinessRevealExperience(seed, creativeExperience){
   const hero=document.getElementById('is-reveal-hero');
   const welcome=document.getElementById('is-reveal-welcome');
   const forward=document.getElementById('is-reveal-forward');
+  const revealStep=document.getElementById('is-step-reveal');
+  const bizName=reveal.businessName||S.biz||'Your business';
+  // Keep "Your business is ready" as the emotional beat; name makes it theirs.
   if(hero)hero.textContent='Your business is ready.';
-  if(welcome)welcome.textContent='Website, booking, CRM, packages, and calendar — built while we talked.';
+  if(welcome){
+    welcome.innerHTML=`${escPeHtml(HUBLY_REVEAL.REVEAL_HERO||`I think we built something you're going to be proud of.`)}
+      <span class="is-reveal-pride-line">${escPeHtml(HUBLY_REVEAL.REVEAL_PRIDE||'Six minutes ago, this business only existed as an idea.')}</span>
+      <span class="is-reveal-open-line">Open ${escPeHtml(bizName)} below — or enter Home.</span>`;
+  }
   if(forward){forward.hidden=true;forward.innerHTML='';}
+  revealStep?.classList.add('is-unveil');
 
-  // Hubly v3 — visual ready cards only (no report chrome)
+  // Hubly v3 — ready cards show what was actually built (not skeleton bars)
   isRevealRenderReadyCards(creativeExperience||S._is.creativeExperience);
+  try{HUBLY_HOLY_SHIT.celebrate(`${bizName} is live.`);}catch(e){}
   await isRevealFrame();
+  await isSleep(280);
 
   S._is.readyForAccount=true;
   try{persistInstantSiteDraft();}catch(e){}
@@ -35098,7 +36568,8 @@ function getDefaultBookingService(){
 /** If type was stuck as detailing (DB default) but packages clearly aren’t cars, heal before booking. */
 function maybeHealBusinessTypeFromServices(){
   const type=(S.businessType||'').toLowerCase();
-  if(type&&type!=='detailing')return false;
+  // Unknown Create ids (fitness) also need healing onto a real blueprint file.
+  if(type&&type!=='detailing'&&type!=='fitness'&&type!=='personal_training'&&type!=='coaching'&&type!=='trainer')return false;
   const blob=[
     S.biz||'',S.tag||'',S.about||'',
     ...(S.services||[]).map(s=>s.name||''),
@@ -35111,7 +36582,7 @@ function maybeHealBusinessTypeFromServices(){
     {id:'landscaping',re:/\b(lawn|mow|yard|turf|landscap)\b/},
     {id:'cleaning',re:/\b(house clean|maid|residential clean|home clean)\b/},
     {id:'pressure_washing',re:/\b(pressure wash|power wash|soft wash)\b/},
-    {id:'spa',re:/\b(spa|massage|facial|esthetic)\b/},
+    {id:'spa',re:/\b(spa|massage|facial|esthetic|coach|coaching|fitness|trainer|training|transformation|1:1)\b/},
     {id:'hvac',re:/\b(hvac|furnace|ac repair|air condition)\b/},
   ];
   for(const g of guesses){
@@ -41986,12 +43457,16 @@ function updateDashGreeting(){
   const shortBiz=shortBizForGreeting(biz);
   const owner=(S._is&&S._is.ownerName)||(typeof currentUser!=='undefined'&&(currentUser?.user_metadata?.full_name||currentUser?.email?.split?.('@')?.[0]))||'';
   const first=String(owner||'').trim().split(/\s+/)[0];
-  if(line1)line1.textContent=first?`${dashGreetingWord()} ${first}.`:dashGreetingWord();
+  if(line1)line1.textContent=first?`${dashGreetingWord()} ${first}.`:`${dashGreetingWord()}.`;
   if(line2){
-    line2.textContent=shortBiz||biz||'Your business';
-    line2.title=biz||'';
+    // Alive Home: greeting is the hero — business name doesn't compete.
+    line2.hidden=true;
+    line2.textContent='';
+    line2.title=shortBiz||biz||'';
   }
-  if(ready)ready.textContent='Your business is ready.';
+  if(ready){
+    ready.textContent='Here’s where your business stands.';
+  }
   if(timeEl){
     const tz=businessTimezone();
     timeEl.textContent=tz?`${businessTimeNowLabel()} · ${tz}`:businessTimeNowLabel();
@@ -42008,44 +43483,226 @@ function updateDashGreeting(){
   }catch(e){console.warn('renderHublyDaily',e);}
 }
 
-/** Hubly v3 Operate Home — website hero + one recommendation. */
+/** Recent Work — event-driven commits with reason + View / Keep / Undo. */
+function loadAiActivityFeed(){
+  let items=S._todaysWork||S._aiActivity;
+  if(!items||!items.length){
+    try{items=JSON.parse(localStorage.getItem('hubly_ai_activity')||'[]');}catch(e){items=[];}
+  }
+  if(!items)items=[];
+  // After Create we seed real work. Don't invent theatrical overnight commits.
+  return items;
+}
+function persistTodaysWork(items){
+  S._aiActivity=items;
+  S._todaysWork=items;
+  try{localStorage.setItem('hubly_ai_activity',JSON.stringify(items));}catch(e){}
+}
+function renderAiActivityFeed(){
+  const list=document.getElementById('dash-activity-list');
+  const day=document.getElementById('dash-activity-day');
+  if(!list)return;
+  const items=loadAiActivityFeed().slice(0,8);
+  if(day)day.textContent='Latest changes';
+  if(!items.length){
+    list.innerHTML=`<li class="dash-work-empty"><strong>No new improvements since your last visit.</strong>Everything looks healthy. I’ll keep monitoring your business.</li>`;
+    return;
+  }
+  list.innerHTML=items.map(it=>{
+    const when=it.when||(typeof HUBLY_HOLY_SHIT!=='undefined'?HUBLY_HOLY_SHIT.fmtTime(it.at):'');
+    const what=it.what||it.label||it.text||'Update';
+    const why=it.reason||'';
+    const undone=it.status==='undone';
+    const id=escPeHtml(it.id);
+    return `<li class="dash-work-item${undone?' is-undone':''}" data-work-id="${id}">
+      <p class="when">${escPeHtml(when)}</p>
+      <p class="what">${escPeHtml(what)}</p>
+      ${why?`<p class="why"><strong>Reason:</strong> ${escPeHtml(why)}</p>`:''}
+      <div class="dash-work-actions">
+        <button type="button" onclick="todaysWorkView('${id}')">View</button>
+        <button type="button" class="primary" onclick="todaysWorkAccept('${id}')"${undone?'':' disabled'}>Keep</button>
+        <button type="button" onclick="todaysWorkUndo('${id}')"${undone?' disabled':''}>Undo</button>
+      </div>
+    </li>`;
+  }).join('');
+}
+function todaysWorkFind(id){
+  return loadAiActivityFeed().find(it=>it.id===id)||null;
+}
+function todaysWorkView(id){
+  const it=todaysWorkFind(id);
+  if(!it)return;
+  const surface=it.surface||'website';
+  S._is=S._is||{};
+  S._is.revealPreferredSurface=surface;
+  try{
+    if(surface==='website'||surface==='packages'||surface==='booking'||surface==='brand'){
+      const tab=surface==='packages'?'packages':surface==='booking'?'book':'site';
+      openWebsiteEditorHub(tab);
+    }else if(surface==='crm'){
+      document.querySelector('[data-v="customers"]')?.click();
+    }else{
+      previewProfile?.();
+    }
+  }catch(e){try{previewProfile?.();}catch(e2){}}
+}
+function todaysWorkAccept(id){
+  const items=loadAiActivityFeed().map(it=>it.id===id?{...it,status:'kept'}:it);
+  persistTodaysWork(items);
+  renderAiActivityFeed();
+  renderDashAway();
+  try{toast?.('Kept.');}catch(e){}
+}
+function todaysWorkUndo(id){
+  const items=loadAiActivityFeed().map(it=>it.id===id?{...it,status:'undone'}:it);
+  persistTodaysWork(items);
+  renderAiActivityFeed();
+  renderDashAway();
+  try{toast?.('Undone. You’re in control.');}catch(e){}
+}
+function loadHublyDiscover(){
+  if(S._hublyDiscover)return S._hublyDiscover;
+  try{
+    const raw=localStorage.getItem('hubly_discover');
+    if(raw){S._hublyDiscover=JSON.parse(raw);return S._hublyDiscover;}
+  }catch(e){}
+  const pack=S._is?.discovery?.holyPack||(typeof HUBLY_HOLY_SHIT!=='undefined'?HUBLY_HOLY_SHIT.inferPack(String(S.industry||S.biz||'')):null);
+  return pack?.discover||null;
+}
+function renderDashDiscover(){
+  const el=document.getElementById('dash-discover');
+  if(!el)return;
+  if(el.dataset.dismissed==='1'){el.hidden=true;return;}
+  const d=loadHublyDiscover();
+  if(!d||!d.title){el.hidden=true;return;}
+  el.hidden=false;
+  const sk=document.getElementById('dash-discover-sk');
+  const t=document.getElementById('dash-discover-t');
+  const s=document.getElementById('dash-discover-s');
+  const btn=document.getElementById('dash-discover-apply');
+  if(sk)sk.textContent=d.sk||'I found something';
+  if(t)t.textContent=d.title;
+  if(s)s.textContent=d.body||'';
+  if(btn)btn.textContent=d.cta||'Do it';
+}
+function applyDashDiscover(){
+  const d=loadHublyDiscover();
+  const el=document.getElementById('dash-discover');
+  if(el){el.dataset.dismissed='1';el.hidden=true;}
+  if(d?.ask)askAI(d.ask);
+  else askAI('Act on the opportunity you found for my business');
+}
+function dismissDashDiscover(){
+  const el=document.getElementById('dash-discover');
+  if(el){el.dataset.dismissed='1';el.hidden=true;}
+}
+function renderDashAway(){
+  const ul=document.getElementById('dash-away-list');
+  const sk=document.getElementById('dash-away-sk');
+  const block=document.getElementById('dash-away');
+  if(!ul)return;
+  const items=loadAiActivityFeed().filter(it=>it.status!=='undone').slice(0,4);
+  if(!items.length){
+    if(sk)sk.textContent='Since your last visit';
+    ul.innerHTML='<li>No new improvements yet — everything looks healthy.</li>';
+    return;
+  }
+  if(sk)sk.textContent='While you were away';
+  ul.innerHTML=items.map(it=>`<li>${escPeHtml((it.what||it.label||'').replace(/\.$/, '')+'.')}</li>`).join('');
+  if(block)block.hidden=false;
+}
+/** After Create — sync real surfaces into Home. Never invent fake customers. */
+function isSeedCreateReadyHome(){
+  isApplyCreateStudioToBusiness();
+  S._createReadyHome=true;
+  // Honest CRM: empty until a real booking/lead arrives.
+  if(!Array.isArray(S.customers))S.customers=[];
+  try{
+    const slug=String(S.biz||'your-business').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,28)||'your-business';
+    S._publicSlug=S._publicSlug||slug;
+  }catch(e){}
+}
 function renderOperateHome(){
   const biz=dashGreetingBiz()||S.biz||'Your Business';
+  const pack=S._is?.discovery?.holyPack||(typeof HUBLY_HOLY_SHIT!=='undefined'?HUBLY_HOLY_SHIT.inferPack(String(S.industry||biz||'')):null);
+  const studio=S._is?.discovery?.studio||{};
   const title=document.getElementById('dash-site-preview-title');
   const sub=document.getElementById('dash-site-preview-sub');
-  if(title)title.textContent=biz;
+  if(title)title.textContent=studio.heroTitle||S.website?.heroHeadline||biz;
   if(sub){
-    const area=S.city||'';
-    sub.textContent=area?`Trusted locally in ${area}.`:'What customers see when they find you.';
+    sub.textContent=studio.heroSub||S.website?.heroSub||(pack&&pack.rewrite)||(S.city?`Trusted locally in ${S.city}.`:'What customers see when they find you.');
   }
+  const ready=document.getElementById('dash-ready-line');
+  const stand=document.getElementById('dash-stand-line');
+  if(S._createReadyHome||S._ceoDemo||S._is?.discovery?.holyShitComplete){
+    if(ready)ready.textContent='Here’s your business — open anything below.';
+    if(stand){
+      const pkgNames=(S.services||[]).slice(0,3).map(s=>s.name).filter(Boolean);
+      stand.textContent=pkgNames.length?pkgNames.join(' · '):'Open your website or booking to see what Hubly built.';
+    }
+  }
+  const mods=document.getElementById('dash-ops-modules');
+  if(mods&&(S._createReadyHome||S._ceoDemo)){
+    const pkgN=(S.services||[]).length;
+    const custN=(S.customers||[]).length;
+    const pkgLabel=pkgN?`${pkgN} packages on your site`:'Packages still generating…';
+    const crmLabel=custN?`${custN} in your CRM`:'Waiting for first customer';
+    mods.innerHTML=`
+      <button type="button" class="dash-ops-mod" onclick="previewBookingPage()">
+        <p class="t">Booking</p>
+        <p class="s">Open the customer booking flow</p>
+      </button>
+      <button type="button" class="dash-ops-mod" onclick="previewProfile()">
+        <p class="t">Website</p>
+        <p class="s">${escPeHtml(pkgLabel)}</p>
+      </button>
+      <button type="button" class="dash-ops-mod" onclick="(function(){const n=document.querySelector('#p-app [data-v=customers]');if(n&&typeof switchV==='function')switchV(n);else n?.click();})()">
+        <p class="t">CRM</p>
+        <p class="s">${escPeHtml(crmLabel)}</p>
+      </button>`;
+  }
+  const siteLink=document.getElementById('dash-site-link');
+  if(siteLink)siteLink.hidden=false;
+  renderDashAway();
+  renderAiActivityFeed();
+  renderDashDiscover();
   const recEl=document.getElementById('dash-one-rec');
   const recT=document.getElementById('dash-one-rec-t');
-  if(recEl&&recEl.dataset.dismissed==='1'){recEl.hidden=true;return;}
-  if(recT&&!recEl?.dataset.locked){
-    const industry=String(S.industry||S._is?.discovery?.facts?.industryId?.value||'').toLowerCase();
-    if(/airbnb|cleaning|turnover/.test(industry)){
-      recT.textContent='Airbnb businesses convert better with recurring packages.';
-    }else if(!S.website){
-      recT.textContent='Share your booking link — get your first customer today.';
-    }else{
-      recT.textContent='Share your booking link with three past customers.';
-    }
+  if(recEl&&recEl.dataset.dismissed==='1'){recEl.hidden=true;}
+  else if(recT&&!recEl?.dataset.locked){
+    recT.textContent='Open your website or try the booking flow — that’s the real proof.';
   }
   try{
     const urlEl=document.getElementById('dash-site-url');
-    if(urlEl&&typeof publicSiteUrl==='function')urlEl.textContent=publicSiteUrl()||urlEl.textContent;
+    if(urlEl){
+      const slug=S._publicSlug||String(biz).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,28)||'your-business';
+      urlEl.textContent=(typeof publicSiteUrl==='function'&&publicSiteUrl())||(slug+'.myhubly.app');
+    }
   }catch(e){}
 }
 function applyDashOneRec(){
   const t=document.getElementById('dash-one-rec-t')?.textContent||'';
   const rec=document.getElementById('dash-one-rec');
-  if(rec)rec.dataset.locked='1';
+  if(rec){rec.dataset.locked='1';rec.dataset.dismissed='1';rec.hidden=true;}
+  try{
+    const items=loadAiActivityFeed();
+    const at=Date.now();
+    items.unshift({
+      id:'rec_'+at,what:'Applied recommendation',reason:'You kept Hubly’s suggestion.',
+      surface:'website',at,when:(typeof HUBLY_HOLY_SHIT!=='undefined'?HUBLY_HOLY_SHIT.fmtTime(at):''),status:'kept',label:'Applied recommendation',
+    });
+    persistTodaysWork(items.slice(0,12));
+    renderAiActivityFeed();
+    renderDashAway();
+  }catch(e){}
   if(/package/i.test(t))askAI('Add recurring packages that convert for my business');
+  else if(/price|\$10/i.test(t))askAI('Raise my consultation price by $10 and update the website');
   else copyDashSiteLink();
 }
 function dismissDashOneRec(){
   const rec=document.getElementById('dash-one-rec');
   if(rec){rec.dataset.dismissed='1';rec.hidden=true;}
+  try{toast?.('Undone.');}catch(e){}
 }
 
 /** Phase 8 — Hubly Daily: advice-first homepage surface */

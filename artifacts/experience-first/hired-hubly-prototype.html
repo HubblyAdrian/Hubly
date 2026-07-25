@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hubly · Hired Hubly</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--brand:#D9632D;--navy:#141B2B}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Plus Jakarta Sans",system-ui,sans-serif}
+.scene{padding:28px 20px 48px;min-height:100vh}
+.dark{color:#fff;background:radial-gradient(1200px 600px at 20% -10%,#2a3348 0%,#141B2B 45%,#0b1020 100%)}
+.light{color:#141B2B;background:linear-gradient(180deg,#f8fafc,#fff 45%,#fff7ed)}
+.mark{height:28px;margin:0 0 16px}
+.kicker{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fdba74;margin:0 0 8px}
+.light .kicker{color:var(--brand)}
+h1{margin:0 0 8px;font-size:clamp(22px,3vw,30px);font-weight:800}
+.sub{margin:0 0 18px;opacity:.75;font-size:14px;max-width:50ch;line-height:1.45}
+.layout{display:grid;gap:14px;max-width:1000px}
+@media(min-width:860px){.layout{grid-template-columns:1.05fr .95fr}}
+.panel{border-radius:18px;border:1px solid rgba(255,255,255,.14);background:rgba(15,23,42,.42);padding:14px}
+.bubble{border-radius:14px;padding:10px 12px;margin:0 0 8px;font-size:13px;line-height:1.4;white-space:pre-wrap;max-width:95%}
+.hubly{background:rgba(255,255,255,.08)}
+.owner{background:rgba(217,99,45,.22);margin-left:auto}
+.think{display:flex;gap:8px;margin:10px 0 0;font-size:13px}
+.think .k{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;padding-top:2px}
+.team .sk{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;margin:0 0 8px}
+.team ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.team li{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:12px}
+.team .role{font-weight:750;display:block}
+.team .task{color:#fdba74;display:block;margin-top:1px}
+.team li.done .task{color:rgba(255,255,255,.55)}
+.card{margin-top:10px;border-radius:14px;border:1px solid rgba(217,99,45,.55);background:linear-gradient(145deg,#0b1020,#141b2b);padding:14px}
+.card .sk{font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.5;font-weight:750}
+.card h3{margin:6px 0;font-size:17px;font-weight:800}
+.card p{margin:0 0 10px;font-size:12px;opacity:.72}
+.cta{display:inline-flex;padding:6px 11px;border-radius:999px;background:var(--brand);font-size:11px;font-weight:750}
+.home{max-width:720px;margin:0 auto}
+.work{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px 16px;margin:0 0 16px}
+.work .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#64748b;font-weight:750;margin:0 0 4px}
+.work .day{font-size:13px;font-weight:800;margin:0 0 12px}
+.item{padding:0 0 12px;margin:0 0 12px;border-bottom:1px solid rgba(20,27,43,.08)}
+.item:last-child{border:0;margin:0;padding:0}
+.when{font-size:11px;font-weight:800;color:var(--brand);margin:0 0 4px}
+.what{font-size:14px;font-weight:750;margin:0 0 4px}
+.why{font-size:12px;color:#64748b;margin:0 0 8px;line-height:1.4}
+.why strong{color:#334155}
+.actions{display:flex;gap:6px}
+.actions button{border:1px solid #e2e8f0;background:#fff;border-radius:9px;padding:6px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.actions button.p{background:var(--brand);border-color:var(--brand);color:#fff}
+</style>
+</head>
+<body>
+  <div class="scene dark" id="scene-team" data-shot="team">
+    <img class="mark" src="../../public/assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+    <p class="kicker">Hired Hubly · Create</p>
+    <h1>You didn’t open software. You hired a team.</h1>
+    <p class="sub">Got it. Give us a few minutes — six specialists working at once.</p>
+    <div class="layout">
+      <div class="panel">
+        <div class="bubble owner">I'm an independent fitness trainer.</div>
+        <div class="bubble hubly">Got it. Give us a few minutes.
+
+I'm putting the Hubly team on your website, booking, CRM, pricing, and brand.
+
+I'll only interrupt if I genuinely need your opinion.</div>
+        <div class="bubble hubly">I found something interesting.
+
+Most independent trainers lose clients because they talk about certifications instead of results.
+
+I already rewrote your homepage around that.</div>
+        <div class="bubble hubly">I noticed the booking button was too low on the fold.
+
+I already moved it higher.
+
+You can undo it if you don't like it.</div>
+        <div class="think"><span class="k">Thinking</span><span>Choosing the highest-converting booking flow…</span></div>
+      </div>
+      <div class="panel team">
+        <p class="sk">Hubly Team</p>
+        <ul>
+          <li class="done"><span>🧠</span><span><span class="role">Creative Director</span><span class="task">Homepage direction locked</span></span></li>
+          <li class="done"><span>🎨</span><span><span class="role">Brand Designer</span><span class="task">Brand palette set</span></span></li>
+          <li><span>🌐</span><span><span class="role">Website Builder</span><span class="task">Creating your homepage…</span></span></li>
+          <li><span>📅</span><span><span class="role">Booking Specialist</span><span class="task">Building your booking flow…</span></span></li>
+          <li><span>💳</span><span><span class="role">Payments</span><span class="task">Preparing Stripe integration…</span></span></li>
+          <li><span>👥</span><span><span class="role">CRM Specialist</span><span class="task">Setting up your customer pipeline…</span></span></li>
+        </ul>
+        <div class="card">
+          <div class="sk">Website</div>
+          <h3>Personal Training</h3>
+          <p>Transformations that stick — not another gym pitch.</p>
+          <span class="cta">Book now</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene light" id="scene-work" data-shot="work">
+    <div class="home">
+      <img class="mark" src="../../public/assets/hubly-wordmark.png" alt="hubly" width="120" height="28" onerror="this.src='../../public/assets/hubly-wordmark-on-dark.png'">
+      <p class="kicker">Signature · Today’s Work</p>
+      <h1>Good morning Adrian.</h1>
+      <p class="sub">Curious what Hubly did overnight?</p>
+      <div class="work">
+        <p class="sk">Today’s Work</p>
+        <p class="day">What Hubly did overnight</p>
+        <div class="item">
+          <p class="when">8:14 AM</p>
+          <p class="what">Rewrote hero headline.</p>
+          <p class="why"><strong>Reason:</strong> Visitors respond better to outcome-focused messaging.</p>
+          <div class="actions"><button>View</button><button class="p">Accept</button><button>Undo</button></div>
+        </div>
+        <div class="item">
+          <p class="when">8:16 AM</p>
+          <p class="what">Added FAQ.</p>
+          <p class="why"><strong>Reason:</strong> Fitness businesses receive recurring pricing questions.</p>
+          <div class="actions"><button>View</button><button class="p">Accept</button><button>Undo</button></div>
+        </div>
+        <div class="item">
+          <p class="when">8:18 AM</p>
+          <p class="what">Improved booking CTA.</p>
+          <p class="why"><strong>Reason:</strong> More visible above the fold.</p>
+          <div class="actions"><button>View</button><button class="p">Accept</button><button>Undo</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

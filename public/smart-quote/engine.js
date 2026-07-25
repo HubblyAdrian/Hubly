@@ -385,6 +385,12 @@
     'lawn-care': 'landscaping',
     pressure_washing: 'pressure_washing',
     'pressure-washing': 'pressure_washing',
+    // Session-style Create trades (no vehicle) — never fall through to detailing.
+    fitness: 'spa',
+    personal_training: 'spa',
+    coaching: 'spa',
+    wellness: 'spa',
+    trainer: 'spa',
   };
 
   function recipeId(businessType) {
@@ -565,6 +571,10 @@
     detailing: {
       title: "Let's get your ride dialed in",
       blurb: 'Tell us about the vehicle — we’ll tailor the service.',
+    },
+    spa: {
+      title: "Let's book your session",
+      blurb: 'Pick a package — we’ll lock in the details next.',
     },
     windows: {
       title: 'Clear glass starts here',
@@ -839,6 +849,19 @@
     const hasPkgs = Array.isArray(packages) && packages.length > 0;
     if (cfg.trade === 'photography' && hasPkgs && cfg.fields.sessionType && !cfg.fields.sessionType.disabled) {
       cfg.fields.sessionType = Object.assign({}, cfg.fields.sessionType, { disabled: true });
+    }
+    // Spa/wellness/fitness Create: packages are the offer — hide facial/massage/duration tiles.
+    if (cfg.trade === 'spa' && hasPkgs) {
+      ['serviceType', 'duration', 'practitionerPref'].forEach((fid) => {
+        if (cfg.fields[fid] && !cfg.fields[fid].disabled) {
+          cfg.fields[fid] = Object.assign({}, cfg.fields[fid], { disabled: true });
+        }
+      });
+      const subj = (cfg.steps || []).find((s) => s && s.id === 'subject');
+      if (subj) {
+        subj.title = 'Choose your package';
+        subj.blurb = 'Clear offers — pick what fits, then pick a time.';
+      }
     }
     return cfg;
   }

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hubly · Delight Sprint</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--brand:#D9632D}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Plus Jakarta Sans",system-ui,sans-serif}
+.scene{padding:28px 20px 40px;min-height:100vh}
+.dark{color:#fff;background:radial-gradient(1200px 600px at 20% -10%,#2a3348 0%,#141B2B 45%,#0b1020 100%)}
+.light{color:#141B2B;background:linear-gradient(180deg,#f8fafc,#fff)}
+.mark{height:28px;margin:0 0 14px}
+.kicker{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fdba74;margin:0 0 8px}
+.light .kicker{color:var(--brand)}
+h1{margin:0 0 6px;font-size:clamp(22px,3vw,28px);font-weight:800}
+.sub{margin:0 0 16px;opacity:.72;font-size:14px}
+.layout{display:grid;gap:14px;max-width:1100px}
+@media(min-width:900px){.layout{grid-template-columns:1.25fr .85fr}}
+.site{
+  border-radius:16px;min-height:240px;padding:22px 18px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;
+  background:linear-gradient(145deg,#0b1020,#141b2b);border:1px solid rgba(217,99,45,.5);
+  box-shadow:0 12px 32px rgba(0,0,0,.25)
+}
+.site .sk{font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.5;font-weight:750}
+.site h3{margin:0;font-size:22px;font-weight:800}
+.site p{margin:0;font-size:13px;opacity:.72;max-width:32ch}
+.cta{align-self:flex-start;padding:7px 12px;border-radius:999px;background:var(--brand);font-size:12px;font-weight:750}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.mini{border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px;font-size:11px}
+.mini .sk{color:#fdba74;font-weight:750;margin:0 0 6px}
+.chips span{display:inline-block;border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:3px 7px;margin:2px 3px 0 0;font-size:10px;font-weight:700}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pills i{font-style:normal;font-size:10px;font-weight:700;padding:4px 8px;border-radius:999px;border:1px solid rgba(253,186,116,.35);color:rgba(255,255,255,.75)}
+.chat{border-radius:16px;border:1px solid rgba(255,255,255,.14);background:rgba(15,23,42,.4);padding:12px}
+.b{border-radius:12px;padding:10px;margin:0 0 8px;font-size:13px;line-height:1.4}
+.o{background:rgba(217,99,45,.22);margin-left:18%}
+.h{background:rgba(255,255,255,.08)}
+.home{max-width:720px;margin:0 auto}
+.preview{border-radius:18px;min-height:260px;background:linear-gradient(160deg,#141B2B,#1c273d);color:#fff;padding:22px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;margin:0 0 14px}
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 14px}
+.mod{border:1px solid #e2e8f0;border-radius:14px;padding:12px;background:#fff}
+.mod .t{font-weight:750;margin:0 0 4px;font-size:14px}
+.mod .s{margin:0;font-size:12px;color:#64748b}
+.box{border:1px solid #e2e8f0;border-radius:14px;padding:14px;background:#fff;margin:0 0 12px}
+.box .sk{font-size:11px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin:0 0 8px}
+</style>
+</head>
+<body>
+  <div class="scene dark" id="scene-create" data-shot="create">
+    <img class="mark" src="../../public/assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+    <p class="kicker">Delight · Create hero = website</p>
+    <h1>What do you do?</h1>
+    <p class="sub">I’ll build your website while we talk.</p>
+    <div class="layout">
+      <div>
+        <div class="site">
+          <div class="sk">Your website</div>
+          <h3>Personal Training</h3>
+          <p>Transformations that stick — not another gym pitch.</p>
+          <span class="cta">Book now</span>
+        </div>
+        <div class="row">
+          <div class="mini"><p class="sk">Booking</p><div class="chips"><span>Consult</span><span>Book session</span></div></div>
+          <div class="mini"><p class="sk">Packages</p><div class="chips"><span>1:1</span><span>Transformation</span></div></div>
+        </div>
+        <div class="pills"><i>✓ Business</i><i>✓ Website</i><i>· Booking</i><i>Packages</i><i>CRM</i></div>
+      </div>
+      <div class="chat">
+        <div class="b o">I'm an independent fitness trainer.</div>
+        <div class="b h">Got it. Give me a few minutes — watch your website take shape.</div>
+        <div class="b h">I found something.
+
+Most independent trainers lose clients because they talk about certifications instead of results.
+
+I already rewrote your homepage around that.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene light" id="scene-home" data-shot="home">
+    <div class="home">
+      <img class="mark" src="../../public/assets/hubly-wordmark.png" alt="hubly" width="120" height="28" onerror="this.src='../../public/assets/hubly-wordmark-on-dark.png'">
+      <p class="kicker">Delight · Home hero = business</p>
+      <h1>Good morning Adrian.</h1>
+      <p class="sub">Here’s where your business stands.</p>
+      <div class="preview">
+        <div class="sk" style="opacity:.55;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700">Website</div>
+        <h2 style="margin:0;font-size:28px;font-weight:800">Personal Training</h2>
+        <p style="margin:0;opacity:.75;font-size:14px">Transformations that stick — not another gym pitch.</p>
+        <span class="cta">Open</span>
+      </div>
+      <div class="mods">
+        <div class="mod"><p class="t">Bookings</p><p class="s">Today’s schedule</p></div>
+        <div class="mod"><p class="t">Revenue</p><p class="s">What’s coming in</p></div>
+        <div class="mod"><p class="t">Customers</p><p class="s">Your CRM</p></div>
+      </div>
+      <div class="box">
+        <p class="sk">Recent Work</p>
+        <p style="margin:0;font-size:14px;font-weight:750">Rewrote hero headline</p>
+        <p style="margin:4px 0 0;font-size:12px;color:#64748b">Reason: Visitors respond better to outcomes.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
