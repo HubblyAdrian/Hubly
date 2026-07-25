@@ -94,6 +94,14 @@ check("component registry", /HublyCreateSystems/.test(createRegistry) && /hero_1
 check("assemble engine", /HublyCreateAssemble/.test(assemble) && /normalizeBlueprint/.test(assemble));
 check("client systems build sequence", /isCreateSystemsBuildSequence/.test(hubly) && /create-systems\/assemble/.test(hubly));
 check(
+  "router serves create-systems",
+  /create-systems\//.test(fs.readFileSync(path.join(root, "api/router.js"), "utf8")),
+);
+check(
+  "systems plan not overwritten by packs",
+  /systemsLocked/.test(hubly) && /discoveryBuildPath/.test(hubly) && /isWaitForCreateAssemble/.test(hubly),
+);
+check(
   "discovery returns businessBlueprint",
   /businessBlueprint/.test(disc) && /designDirection/.test(disc) && /NEVER pick an industry template/.test(disc),
 );

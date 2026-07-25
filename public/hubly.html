@@ -17940,11 +17940,9 @@ const HUBLY_HOLY_SHIT = (function(){
       await isCreateDesignWithAi();
     }catch(e){}
     isRenderLiveBuild({pulse:'all'});
+    // AI Connect: OpenAI owns chat. Never inject a scripted "I built the first version…"
+    // summary here — that made demos look like hardcoded packs even when ChatGPT replied.
     if(silentChat){
-      const bizLabel=biz||S.biz||'your business';
-      const summary=`I built the first version of ${bizLabel}:\n\n• Homepage with a clear offer\n• Booking path customers can use\n• Packages ready to edit\n• Brand direction on the canvas\n\nWhat would you like to change?`;
-      isTalkPush('hubly',summary);
-      session.messages.push({role:'hubly',text:summary,kind:'build_ready'});
       try{isShowCreateSuggestionChips();}catch(e){}
     }
     return{pack,token};
@@ -18369,6 +18367,17 @@ async function isDiscoveryThinkTurn(ownerText){
   });
   return brain;
 }
+/** Wait for /create-systems/assemble.js — required for ChatGPT → Blueprint builds. */
+async function isWaitForCreateAssemble(ms){
+  const budget=Math.max(0,Number(ms)||2000);
+  if(typeof HublyCreateAssemble!=='undefined')return true;
+  const t0=Date.now();
+  while(typeof HublyCreateAssemble==='undefined'&&(Date.now()-t0)<budget){
+    await new Promise(r=>setTimeout(r,40));
+  }
+  return typeof HublyCreateAssemble!=='undefined';
+}
+window.isWaitForCreateAssemble=isWaitForCreateAssemble;
 /**
  * Create Systems build — OpenAI Business Blueprint → Design → Layout → Components.
  * Assembles Website + Booking + Packages + Brand + CRM plan. No industry templates.
@@ -18471,21 +18480,36 @@ async function isDiscoverySend(text){
     let usedOpenAi=false;
     let systemsBuilt=false;
     try{
+      // Wait for create-systems scripts (router must serve /create-systems/*).
+      try{await isWaitForCreateAssemble(2800);}catch(e){}
       const brain=await brainPromise;
       const disc=brain&&brain.discovery;
       if(disc&&disc.facts)isDiscoveryApplyAiFacts(session,disc.facts);
       usedOpenAi=!!(disc&&disc.source==='openai'&&disc.ok!==false);
-      // Systems path: AI blueprint → Design/Layout/Components → Website+Booking+Packages+CRM
-      if(usedOpenAi&&typeof HublyCreateAssemble!=='undefined'&&(disc.businessBlueprint||disc.facts?.industry)){
+      const hasBlueprint=!!(disc&&disc.businessBlueprint);
+      const hasIndustry=!!(disc?.facts?.industry||disc?.facts?.industryId||session.aiFacts?.industry);
+      // Systems path: AI blueprint → Design/Layout/Components → Website+Booking+Packages
+      // Prefer this whenever OpenAI answered OR we at least have industry + assemble loaded.
+      if(typeof HublyCreateAssemble!=='undefined'&&(hasBlueprint||(usedOpenAi&&hasIndustry)||hasIndustry)){
         try{
-          await isCreateSystemsBuildSequence(session,disc.businessBlueprint,disc.facts||session.aiFacts||{});
+          await isCreateSystemsBuildSequence(
+            session,
+            disc?.businessBlueprint||null,
+            disc?.facts||session.aiFacts||{}
+          );
           systemsBuilt=true;
+          S._is.discoveryBuildPath='systems';
         }catch(e){
           console.warn('[Hubly Create Systems] assemble failed, falling back',e);
+          S._is.discoveryBuildPath='systems_error';
         }
+      }else if(typeof HublyCreateAssemble==='undefined'){
+        console.warn('[Hubly Create Systems] HublyCreateAssemble missing — /create-systems scripts did not load');
+        S._is.discoveryBuildPath='assemble_missing';
       }
       if(!systemsBuilt){
         try{
+          S._is.discoveryBuildPath=S._is.discoveryBuildPath||'pack_fallback';
           await HUBLY_HOLY_SHIT.playOpeningSequence(session,text,{silentChat:true});
         }catch(e){
           if(String(e?.message||e)!=='holy_shit_cancelled'){
@@ -20491,28 +20515,52 @@ function isCreateAssumedBrand(pack, current){
 function isApplyCreateStudioToBusiness(){
   const studio=S._is?.discovery?.studio||{};
   const pack=S._is?.discovery?.holyPack||null;
+  const systemsPlan=S._is?.createSystemsPlan||null;
+  const systemsLocked=!!(systemsPlan&&(S._is?.createAiDesigned||S._is?.discoveryBuildPath==='systems'));
+  // Systems / ChatGPT blueprint already wrote the live site — do not re-skin with industry pack chrome.
+  if(systemsLocked){
+    const bizName=S.biz||systemsPlan.business?.name||studio.logoName||studio.heroTitle||'Your Business';
+    S.biz=bizName;
+    if(studio&&typeof studio==='object'){
+      studio.logoName=studio.logoName||bizName;
+      studio.heroTitle=studio.heroTitle||bizName;
+      studio.heroSub=studio.heroSub||S.website?.heroSub||'';
+      studio.cta=studio.cta||S.website?.ctaLabel||'Book now';
+      studio.rewrite=true;
+      studio.bookingOn=true;
+      studio.packagesOn=true;
+      studio.brandOn=true;
+    }
+    S.website=S.website&&typeof S.website==='object'?S.website:{};
+    S.websiteReady=true;
+    try{
+      const slug=String(bizName).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,28)||'your-business';
+      S._publicSlug=slug;
+    }catch(e){}
+    return;
+  }
   const bizName=isCreateAssumedBrand(pack,studio.logoName||studio.heroTitle||S.biz||pack?.industry||'Your Business');
   if(studio&&typeof studio==='object'){
     if(!studio.logoName||studio.logoName===pack?.industry)studio.logoName=bizName;
     if(!studio.heroTitle||studio.heroTitle===pack?.industry)studio.heroTitle=bizName;
   }
-  const outcome=String(pack?.rewrite||'').trim();
-  const studioSub=String(studio.heroSub||'').trim();
-  const heroHeadline=outcome||studioSub||bizName;
-  const tradeLabel=String(pack?.industry||'').replace(/\s+services$/i,'').trim()||'your business';
-  const heroSub=(outcome&&studioSub&&studioSub!==outcome)
-    ?studioSub
-    :(outcome
+  // Prefer live studio / website copy over hardcoded pack.rewrite (fitness "Transformations that stick…").
+  const studioSub=String(studio.heroSub||S.website?.heroSub||'').trim();
+  const websiteHeadline=String(S.website?.heroHeadline||'').trim();
+  const outcome=(!websiteHeadline&&!studioSub)?String(pack?.rewrite||'').trim():'';
+  const heroHeadline=websiteHeadline||studioSub||outcome||bizName;
+  const tradeLabel=String(pack?.industry||S.industry||'').replace(/\s+services$/i,'').trim()||'your business';
+  const heroSub=studioSub||(outcome
       ?((S.city||'').trim()
         ?`${tradeLabel} in ${S.city}. Book online in minutes.`
         :'Clear packages. Easy booking. Built for results.')
-      :(studioSub||S.tag||'Clear packages. Easy booking.'));
-  const cta=studio.cta||'Book now';
+      :(S.tag||'Clear packages. Easy booking.'));
+  const cta=studio.cta||S.website?.ctaLabel||'Book now';
   const corpus=[bizName,pack?.industry,outcome,studioSub,(studio.pkgChips||[]).join(' '),S.createGoal,S.createBrief].filter(Boolean).join(' ');
   const tradeId=String(pack?.industryId||'').toLowerCase();
   const bpId=isCreateBlueprintId(tradeId||S.businessType,corpus)||'spa';
   S.biz=bizName;
-  S.tag=outcome||heroSub;
+  S.tag=heroSub;
   S.industry=pack?.industry||S.industry||'';
   S.businessType=bpId;
   S._createTradeId=tradeId||bpId;
