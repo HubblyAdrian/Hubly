@@ -52,7 +52,21 @@
       );
     }
     if (typeof SQ.applyPackageDrivenFieldGuards === 'function') {
-      SQ.applyPackageDrivenFieldGuards(cfg, serviceAsPackage());
+      // Prefer full Create package list so spa facial/massage tiles stay hidden
+      // even before a single service is selected.
+      let guardPkgs = serviceAsPackage();
+      try {
+        if ((!guardPkgs || !guardPkgs.length) && typeof global.getBookingServices === 'function') {
+          const list = global.getBookingServices() || [];
+          if (list.length && SQ.packagesFromServices) {
+            guardPkgs = SQ.packagesFromServices(list, cfg);
+          }
+        }
+        if ((!guardPkgs || !guardPkgs.length) && Array.isArray(st.services) && st.services.length && SQ.packagesFromServices) {
+          guardPkgs = SQ.packagesFromServices(st.services, cfg);
+        }
+      } catch (e) {}
+      SQ.applyPackageDrivenFieldGuards(cfg, guardPkgs);
     }
     return cfg;
   }

@@ -56,11 +56,15 @@ Do not add features. Improve the experience.
 
 Every revision should make Create smoother, more visual, more intelligent, or more trustworthy.
 
+**Show, don’t tell. Never fake completeness.**  
+If something isn’t built yet, say so — “Still generating…” / “Waiting for your first customer” beats a placeholder that looks done.
+
 For every major revision, answer:
 
-1. What should the customer feel at this point?
-2. What changed visually since the last version?
-3. What still feels awkward?
+1. What customer experience improved?
+2. What still doesn’t meet our quality bar?
+3. What are the remaining blockers before Gate 1 can close?
+4. If you had to launch Gate 1 tomorrow, what are the three reasons you’d still hesitate?
 
 ## Acceptance demo
 

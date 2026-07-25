@@ -31,6 +31,21 @@ check("keep /demo URL on Home", /ceoDemo:true/.test(hubly) && /#home/.test(hubly
 check("boot flash includes demo paths", /'\/demo':1/.test(hubly) && /'\/experience':1/.test(hubly));
 check("router serves hubly for demo", /CEO Demo Mode \(\/demo, \/experience\)/.test(router));
 check("no login required comment", /no login/.test(hubly));
+check(
+  "Create maps unknown trades off detailing",
+  /function isCreateBlueprintId\(/.test(hubly) && /fitness:'spa'/.test(hubly),
+);
+check(
+  "Create apply sets session booking chrome",
+  /Let's book your session/.test(hubly) && /isApplyCreateStudioToBusiness/.test(hubly),
+);
+
+const sqEngine = fs.readFileSync(path.join(root, "public/smart-quote/engine.js"), "utf8");
+check("Smart Quote aliases fitness → spa", /fitness:\s*'spa'/.test(sqEngine));
+check("Smart Quote spa booking headline", /Let's book your session/.test(sqEngine));
+
+const registry = fs.readFileSync(path.join(root, "public/business-blueprints/registry.js"), "utf8");
+check("Blueprint registry aliases fitness → spa", /fitness:\s*'spa'/.test(registry));
 
 const passed = failures.length === 0;
 fs.writeFileSync(

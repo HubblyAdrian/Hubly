@@ -1612,6 +1612,12 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   box-shadow:0 0 0 3px rgba(217,99,45,.35);transform:scale(1.04);transition:transform .25s ease,box-shadow .25s ease
 }
 .is-live-logo.is-pulse{animation:isLivePulse .7s ease}
+#is-reveal-back-bar{
+  position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(12px);
+  z-index:10060;display:none;padding:0;opacity:0;transition:opacity .2s ease,transform .2s ease
+}
+#is-reveal-back-bar.is-on{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
+#is-reveal-back-bar .btn{box-shadow:0 8px 28px rgba(0,0,0,.28)}
 /* Home — one hero (website), office-calm, no clutter */
 #v-dashboard[data-v3-operate-home="1"] .dash-ask-dock{display:none}
 #v-dashboard[data-v3-operate-home="1"] .dash-kpi-grid{display:none}
@@ -12571,6 +12577,9 @@ function updateOwnerPreviewBars(){
   });
 }
 function previewProfile(){
+  try{
+    if(S._createReadyHome||S._ceoDemo||S._is?.discovery?.holyShitComplete)isApplyCreateStudioToBusiness();
+  }catch(e){}
   setOwnerPreview(true);
   // Leave editor chrome behind so the live site is clickable (Book Now, tabs, etc.).
   // Editing Packages → Preview used to keep PE reorder/add controls with no handlers.
@@ -12583,6 +12592,9 @@ function previewProfile(){
   showP('p-storefront');
 }
 function previewBookingPage(svcName){
+  try{
+    if(S._createReadyHome||S._ceoDemo||S._is?.discovery?.holyShitComplete)isApplyCreateStudioToBusiness();
+  }catch(e){}
   setOwnerPreview(true);
   S._editorBookingPreview=true;
   openBookingPage(svcName);
@@ -18915,43 +18927,246 @@ function isRevealShowTimeCapsule(){
     ${vision?`<ul style="margin:10px 0;padding-left:18px;font-size:13px">${vision}</ul>`:''}
     <p style="font-size:12px;opacity:.75;margin-top:12px">Years from now, you can always come back to Day One.</p>`;
 }
+/** Map Create/holy-shit industry ids onto real blueprints (never leave unknown → detailing). */
+function isCreateBlueprintId(rawId, corpus){
+  const id=String(rawId||'').toLowerCase().trim();
+  const text=String(corpus||'').toLowerCase();
+  const aliases={
+    fitness:'spa',personal_training:'spa',coaching:'spa',wellness:'spa',trainer:'spa',
+    lawn_care:'landscaping','lawn-care':'landscaping',
+    house_cleaning:'cleaning','house-cleaning':'cleaning',
+    'window-cleaning':'windows',window_cleaning:'windows',
+  };
+  if(id&&aliases[id])return aliases[id];
+  try{
+    if(id&&typeof HublyBlueprints!=='undefined'&&HublyBlueprints.get?.(id))return id;
+  }catch(e){}
+  if(/fitness|trainer|personal\s*train|coach(ing)?|gym|wellness/.test(text)||/fitness|trainer|coach/.test(id))return 'spa';
+  if(/photo|wedding\s*shoot/.test(text))return 'photography';
+  if(/pressure|power\s*wash|soft\s*wash/.test(text))return 'pressure_washing';
+  if(/lawn|mow|landscap/.test(text))return 'landscaping';
+  if(/clean|maid|airbnb|housekeep/.test(text))return 'cleaning';
+  if(/window/.test(text))return 'windows';
+  if(/hvac|heat|air\s*cond/.test(text))return 'hvac';
+  if(id)return id;
+  return null;
+}
+function isCreatePkgMeta(name, index, trade){
+  const n=String(name||'');
+  const key=n.toLowerCase();
+  if(trade==='spa'||/coach|train|transform|account/.test(key)){
+    if(/1:1|one.?on.?one|coach/.test(key))return{price:120,dur:'60 min',desc:'Focused session built around your goals.'};
+    if(/transform|plan|program/.test(key))return{price:299,dur:'4 weeks',desc:'Training plan + check-ins so progress sticks.'};
+    if(/account|check.?in/.test(key))return{price:79,dur:'30 min',desc:'Quick progress review and next-week plan.'};
+  }
+  const defaults=[
+    {price:99,dur:'45 min',desc:'A clear starting offer for new clients.'},
+    {price:179,dur:'60 min',desc:'Most popular with new clients.'},
+    {price:249,dur:'90 min',desc:'Deeper work for clients ready to commit.'},
+    {price:129,dur:'60 min',desc:''},
+  ];
+  return defaults[Math.min(index,defaults.length-1)];
+}
+/** When Create only knows the industry, assume a real brand name (owner can rename). */
+function isCreateAssumedBrand(pack, current){
+  const cur=String(current||'').trim();
+  const industry=String(pack?.industry||'').trim();
+  if(cur&&industry&&cur.toLowerCase()!==industry.toLowerCase()&&!/^your business$/i.test(cur)&&!/^my\s/i.test(cur))return cur;
+  const id=String(pack?.industryId||'').toLowerCase();
+  if(id==='fitness'||/personal\s*train|fitness|coach/i.test(industry))return 'FitFocus Training';
+  if(id==='pressure_washing'||/pressure|power\s*wash/i.test(industry))return 'BrightWash Co.';
+  if(id==='photography'||/photo/i.test(industry))return 'Northlight Studio';
+  if(id==='lawn_care'||/lawn|landscap/i.test(industry))return 'Greenlane Care';
+  if(id==='cleaning'||/clean/i.test(industry))return 'ClearSpace Cleaning';
+  if(industry&&industry!=='Local Service')return industry;
+  return cur||'Your Business';
+}
+/** Push Create studio into real business state so previews are not placeholders. */
+function isApplyCreateStudioToBusiness(){
+  const studio=S._is?.discovery?.studio||{};
+  const pack=S._is?.discovery?.holyPack||null;
+  const bizName=isCreateAssumedBrand(pack,studio.logoName||studio.heroTitle||S.biz||pack?.industry||'Your Business');
+  if(studio&&typeof studio==='object'){
+    if(!studio.logoName||studio.logoName===pack?.industry)studio.logoName=bizName;
+    if(!studio.heroTitle||studio.heroTitle===pack?.industry)studio.heroTitle=bizName;
+  }
+  const outcome=String(pack?.rewrite||'').trim();
+  const studioSub=String(studio.heroSub||'').trim();
+  const heroHeadline=outcome||studioSub||bizName;
+  const tradeLabel=String(pack?.industry||'').replace(/\s+services$/i,'').trim()||'your business';
+  const heroSub=(outcome&&studioSub&&studioSub!==outcome)
+    ?studioSub
+    :(outcome
+      ?((S.city||'').trim()
+        ?`${tradeLabel} in ${S.city}. Book online in minutes.`
+        :'Clear packages. Easy booking. Built for results.')
+      :(studioSub||S.tag||'Clear packages. Easy booking.'));
+  const cta=studio.cta||'Book now';
+  const corpus=[bizName,pack?.industry,outcome,studioSub,(studio.pkgChips||[]).join(' '),S.createGoal,S.createBrief].filter(Boolean).join(' ');
+  const bpId=isCreateBlueprintId(pack?.industryId||S.businessType,corpus)||'spa';
+  S.biz=bizName;
+  S.tag=outcome||heroSub;
+  S.industry=pack?.industry||S.industry||'';
+  S.businessType=bpId;
+  S._createTradeId=pack?.industryId||bpId;
+  S.website=S.website&&typeof S.website==='object'?S.website:{};
+  S.website.heroHeadline=heroHeadline;
+  S.website.heroSub=heroSub;
+  S.website.customHeroHeadline=true;
+  S.website.customHeroSub=true;
+  S.website.ctaLabel=cta;
+  // Session booking chrome — never “ride dialed in” / spa “quiet rooms” for Create.
+  const createIncludes=(bpId==='spa'||/fitness|train|coach/i.test(corpus))
+    ?['Clear packages','Flexible scheduling','Progress that sticks']
+    :['Clear packages','Easy online booking','Real updates'];
+  const createTrust=(bpId==='spa'||/fitness|train|coach/i.test(corpus))
+    ?['Results-focused','1:1 coaching','Easy booking']
+    :['Clear packages','Easy booking','Local & ready'];
+  S.bookingWizard=Object.assign({},S.bookingWizard||{},{
+    headline:"Let's book your session",
+    blurb:'Pick a package — then choose a time that works.',
+    helpBlurb:'Questions before you book? We’re here.',
+    sidebarIncludes:createIncludes,
+  });
+  S.website.trustBadges=createTrust.slice();
+  S.website.trustStats=createTrust.map(s=>({value:String(s),label:''}));
+  S.website._trustClearedByOwner=false;
+  S.website.whySub=(bpId==='spa'||/fitness|train|coach/i.test(corpus))
+    ?'Clear packages, careful coaching, easy booking.'
+    :'Clear packages, careful work, easy booking.';
+  // Lock section copy so spa blueprint defaults don’t overwrite Create.
+  S.website._bpSectionId=bpId;
+  // Avoid spa SEO (“Spa & Wellness”) on a training business.
+  if(pack?.industry){
+    S.website.seoTitle=`${bizName} | ${pack.industry}`;
+    S.website.seoDescription=`Book ${bizName} for ${String(pack.industry).toLowerCase()}. ${heroSub}`.slice(0,160);
+  }
+  const pkgs=(studio.pkgChips&&studio.pkgChips.length)?studio.pkgChips:(pack?.packages||[]);
+  if(pkgs.length){
+    const priced=pkgs.slice(0,4).map((name,i)=>{
+      const meta=isCreatePkgMeta(name,i,bpId);
+      return{
+        id:'create_svc_'+i,
+        name:String(name),
+        price:meta.price,
+        dur:meta.dur,
+        desc:meta.desc,
+        showPrice:true,
+        pricingType:'flat',
+        status:'active',
+        website:true,
+        popular:i===1,
+      };
+    });
+    S.services=priced;
+    S.editorSvcs=priced.map(s=>({...s}));
+  }
+  // Fitness Create: real training atmosphere, not spa stock.
+  if(bpId==='spa'&&(/fitness|train|coach/i.test(corpus)||pack?.industryId==='fitness')){
+    if(!S._ownerUploadedMedia){
+      S.bannerUrl=S.bannerUrl||'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1600&q=80';
+    }
+  }
+  // Drop any prior detailing Smart Quote answers before preview.
+  try{delete S._bkSq;}catch(e){}
+  try{if(typeof clearBookingVehicleState==='function')clearBookingVehicleState();}catch(e){}
+  S.websiteReady=true;
+  try{
+    const slug=String(bizName).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,28)||'your-business';
+    S._publicSlug=slug;
+  }catch(e){}
+}
+function isEnsureRevealBackBar(){
+  let bar=document.getElementById('is-reveal-back-bar');
+  if(!bar){
+    bar=document.createElement('div');
+    bar.id='is-reveal-back-bar';
+    bar.innerHTML=`<button type="button" class="btn btn-brand btn-sm" onclick="isReturnToRevealFromPreview()">← Back to what Hubly built</button>`;
+    document.body.appendChild(bar);
+  }
+  bar.classList.add('is-on');
+}
+function isHideRevealBackBar(){
+  document.getElementById('is-reveal-back-bar')?.classList.remove('is-on');
+}
+function isReturnToRevealFromPreview(){
+  isHideRevealBackBar();
+  try{setOwnerPreview(false);}catch(e){}
+  document.body.classList.remove('ws-booking-open');
+  document.getElementById('p-booking-landing')?.classList.remove('active');
+  document.getElementById('p-booking')?.classList.remove('active');
+  document.getElementById('p-storefront')?.classList.remove('active');
+  const onboard=document.getElementById('p-onboard');
+  const shell=document.getElementById('is-shell');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  onboard?.classList.add('active','is-active');
+  if(shell)shell.style.display='flex';
+  isShowStep('reveal');
+  try{history.replaceState({page:'p-onboard',ceoDemo:!!S._ceoDemo},'', (isCeoDemoPath()?hublyPath():'/demo')+'#reveal');}catch(e){}
+}
+window.isReturnToRevealFromPreview=isReturnToRevealFromPreview;
+
 function isRevealRenderReadyCards(creativeExperience){
   const stage=document.getElementById('is-reveal-stage');
   if(!stage)return;
+  isApplyCreateStudioToBusiness();
   const live=creativeExperience?.live||{};
   const studio=S._is?.discovery?.studio||{};
   const theme=live.theme==='friendly'?'is-friendly':'is-premium';
-  const title=live.heroTitle||studio.heroTitle||S.biz||'Your business';
-  const sub=live.heroSub||studio.heroSub||'Built while we talked.';
-  const cta=live.cta||studio.cta||'Book now';
+  const pack=S._is?.discovery?.holyPack||null;
+  const title=S.website?.heroHeadline||pack?.rewrite||live.heroTitle||studio.heroTitle||S.biz||'Your business';
+  const sub=S.website?.heroSub||live.heroSub||studio.heroSub||'Built while we talked.';
+  const cta=S.website?.ctaLabel||live.cta||studio.cta||'Book now';
   const booking=(live.bookingChips||studio.bookingChips||[]).slice(0,3);
-  const pkgs=(live.pkgChips||studio.pkgChips||[]).slice(0,3);
+  const pkgs=(S.services?.map(s=>s.name)||live.pkgChips||studio.pkgChips||[]).slice(0,3);
   const bookChips=booking.length
     ? booking.map(c=>`<span class="chip">${escPeHtml(c)}</span>`).join('')
     : `<span class="cta-chip">Book</span>`;
   const pkgChips=pkgs.length
-    ? pkgs.map(c=>`<span class="chip">${escPeHtml(c)}</span>`).join('')
-    : `<span class="cta-chip">3 packages</span>`;
+    ? pkgs.map(c=>`<span class="chip">${escPeHtml(typeof c==='string'?c:c.name)}</span>`).join('')
+    : `<span class="chip" style="opacity:.7">Still generating…</span>`;
+  // Honest CRM — don't fake a populated pipeline.
+  const crmViz=`<div class="viz live-crm"><p class="crm-line">Pipeline ready</p><p class="crm-line" style="opacity:.75">Waiting for your first customer</p><p class="crm-line" style="opacity:.55;font-size:11px">Not faking contacts</p></div>`;
   const cards=[
-    {id:'website',label:'Website',viz:`<div class="viz live-site ${theme}"><p class="ht">${escPeHtml(title)}</p><p class="hs">${escPeHtml(sub)}</p><span class="cta-chip">${escPeHtml(cta)}</span></div>`},
-    {id:'booking',label:'Booking',viz:`<div class="viz phone live-book"><p class="sk" style="margin:0 0 6px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:750">Ready to book</p><div class="chip-row">${bookChips}</div></div>`},
-    {id:'packages',label:'Packages',viz:`<div class="viz live-pkg"><p class="sk" style="margin:0 0 6px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:750">Your offers</p><div class="chip-row">${pkgChips}</div></div>`},
-    {id:'crm',label:'CRM',viz:`<div class="viz live-crm"><p class="crm-line">Customers</p><p class="crm-line">Leads</p><p class="crm-line" style="opacity:.75">Follow-ups ready</p></div>`},
+    {id:'website',label:'Website',viz:`<div class="viz live-site ${theme}"><p class="ht">${escPeHtml(title)}</p><p class="hs">${escPeHtml(sub)}</p><span class="cta-chip">${escPeHtml(cta)}</span></div>`,lbl:'Open your website'},
+    {id:'booking',label:'Booking',viz:`<div class="viz phone live-book"><p class="sk" style="margin:0 0 6px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:750">Customer booking</p><div class="chip-row">${bookChips}</div></div>`,lbl:'Try the booking flow'},
+    {id:'packages',label:'Packages',viz:`<div class="viz live-pkg"><p class="sk" style="margin:0 0 6px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:750">Your offers</p><div class="chip-row">${pkgChips}</div></div>`,lbl:'See your packages'},
+    {id:'crm',label:'CRM',viz:crmViz,lbl:'Open CRM'},
   ];
   stage.innerHTML=`<div class="is-reveal-ready-grid" data-v3-reveal-cards="1" data-experience-reveal="1" data-create-magical-reveal="1">
-    ${cards.map((c,i)=>`<button type="button" class="is-reveal-ready-card" style="animation-delay:${i*90}ms;text-align:left;width:100%;font:inherit;color:inherit" onclick="isRevealOpenSurface('${c.id}')"><p class="sk">${escPeHtml(c.label)}</p>${c.viz}<p class="lbl">Open ${escPeHtml(c.label)}</p></button>`).join('')}
+    ${cards.map((c,i)=>`<button type="button" class="is-reveal-ready-card" style="animation-delay:${i*90}ms;text-align:left;width:100%;font:inherit;color:inherit" onclick="isRevealOpenSurface('${c.id}')"><p class="sk">${escPeHtml(c.label)}</p>${c.viz}<p class="lbl">${escPeHtml(c.lbl||('Open '+c.label))}</p></button>`).join('')}
   </div>
   <div class="is-reveal-continue">
     <button type="button" class="btn btn-brand" onclick="isRevealContinueToWorkspace()">Enter Hubly Home</button>
-    <p class="hint">Same operating system — personalized for your business.</p>
+    <p class="hint">Open anything above first — then enter Home when you’re ready.</p>
   </div>`;
 }
 
-/** Clickable Reveal surface → remember destination, then continue into OS. */
+/** Reveal cards open the real surface (show, don’t tell). */
 function isRevealOpenSurface(surfaceId){
   S._is=S._is||{};
-  S._is.revealPreferredSurface=surfaceId||'website';
-  isRevealContinueToWorkspace();
+  isApplyCreateStudioToBusiness();
+  const id=surfaceId||'website';
+  if(id==='crm'){
+    S._is.revealPreferredSurface='crm';
+    isRevealContinueToWorkspace();
+    return;
+  }
+  S._is._previewFromReveal=true;
+  try{
+    if(id==='booking'){
+      isEnsureRevealBackBar();
+      previewBookingPage();
+      return;
+    }
+    // website + packages → live storefront
+    isEnsureRevealBackBar();
+    previewProfile();
+  }catch(e){
+    console.warn('reveal open surface',e);
+    S._is.revealPreferredSurface=id;
+    isRevealContinueToWorkspace();
+  }
 }
 
 function isOpenPreferredOperateSurface(){
@@ -18960,10 +19175,10 @@ function isOpenPreferredOperateSurface(){
   try{delete S._is.revealPreferredSurface;}catch(e){}
   setTimeout(()=>{
     try{
-      if(surface==='website'||surface==='packages'||surface==='booking'){
-        const tab=surface==='packages'?'packages':surface==='booking'?'book':'site';
-        openWebsiteEditorHub(tab);
-      }else if(surface==='crm'){
+      isApplyCreateStudioToBusiness();
+      if(surface==='booking'){previewBookingPage();return;}
+      if(surface==='website'||surface==='packages'){previewProfile();return;}
+      if(surface==='crm'){
         const nav=document.querySelector('#p-app [data-v="customers"]')||document.querySelector('[data-v="customers"]');
         if(nav)switchV(nav);
       }else if(surface==='jobs'||surface==='calendar'){
@@ -18982,7 +19197,9 @@ function isRevealContinueToWorkspace(){
   try{S._hublyMode='create-exit';}catch(e){}
   S._is=S._is||{};
   S._is.readyForAccount=true;
+  isHideRevealBackBar();
   try{persistInstantSiteDraft();}catch(e){}
+  isApplyCreateStudioToBusiness();
   // CEO Demo — no claim wall; go straight into Home with what was built.
   if(S._ceoDemo){
     S._accountClaimed=true;
@@ -36351,7 +36568,8 @@ function getDefaultBookingService(){
 /** If type was stuck as detailing (DB default) but packages clearly aren’t cars, heal before booking. */
 function maybeHealBusinessTypeFromServices(){
   const type=(S.businessType||'').toLowerCase();
-  if(type&&type!=='detailing')return false;
+  // Unknown Create ids (fitness) also need healing onto a real blueprint file.
+  if(type&&type!=='detailing'&&type!=='fitness'&&type!=='personal_training'&&type!=='coaching'&&type!=='trainer')return false;
   const blob=[
     S.biz||'',S.tag||'',S.about||'',
     ...(S.services||[]).map(s=>s.name||''),
@@ -36364,7 +36582,7 @@ function maybeHealBusinessTypeFromServices(){
     {id:'landscaping',re:/\b(lawn|mow|yard|turf|landscap)\b/},
     {id:'cleaning',re:/\b(house clean|maid|residential clean|home clean)\b/},
     {id:'pressure_washing',re:/\b(pressure wash|power wash|soft wash)\b/},
-    {id:'spa',re:/\b(spa|massage|facial|esthetic)\b/},
+    {id:'spa',re:/\b(spa|massage|facial|esthetic|coach|coaching|fitness|trainer|training|transformation|1:1)\b/},
     {id:'hvac',re:/\b(hvac|furnace|ac repair|air condition)\b/},
   ];
   for(const g of guesses){
@@ -43393,37 +43611,14 @@ function renderDashAway(){
   ul.innerHTML=items.map(it=>`<li>${escPeHtml((it.what||it.label||'').replace(/\.$/, '')+'.')}</li>`).join('');
   if(block)block.hidden=false;
 }
-/** After Create — Home should feel ready, not empty. */
+/** After Create — sync real surfaces into Home. Never invent fake customers. */
 function isSeedCreateReadyHome(){
-  const studio=S._is?.discovery?.studio||{};
-  const pack=S._is?.discovery?.holyPack||null;
-  const biz=studio.heroTitle||S.biz||'Your Business';
-  S.biz=biz;
-  S.website=true;
+  isApplyCreateStudioToBusiness();
   S._createReadyHome=true;
-  // Configured CRM — starter pipeline Hubly prepared (not fake paid bookings).
-  if(!Array.isArray(S.customers)||!S.customers.length){
-    const industry=String(pack?.industry||biz||'').toLowerCase();
-    if(/fitness|train/.test(industry)){
-      S.customers=[
-        {id:'c_seed_1',name:'Jordan Lee',status:'lead',note:'Asked about Transformation Plan',source:'create'},
-        {id:'c_seed_2',name:'Sam Ortiz',status:'lead',note:'Wants a consult this week',source:'create'},
-        {id:'c_seed_3',name:'Riley Chen',status:'customer',note:'Ready for 1:1 Coaching',source:'create'},
-      ];
-    }else{
-      S.customers=[
-        {id:'c_seed_1',name:'Alex Morgan',status:'lead',note:'New inquiry from your site',source:'create'},
-        {id:'c_seed_2',name:'Casey Brooks',status:'lead',note:'Asked about packages',source:'create'},
-        {id:'c_seed_3',name:'Taylor Quinn',status:'customer',note:'Ready to book',source:'create'},
-      ];
-    }
-  }
-  if(!Array.isArray(S.services)||!S.services.length){
-    const pkgs=studio.pkgChips||pack?.packages||['Starter','Popular','Pro'];
-    S.services=pkgs.slice(0,3).map((name,i)=>({id:'svc_seed_'+i,name,price:i===1?149:i===0?79:229}));
-  }
+  // Honest CRM: empty until a real booking/lead arrives.
+  if(!Array.isArray(S.customers))S.customers=[];
   try{
-    const slug=String(biz).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,28)||'your-business';
+    const slug=String(S.biz||'your-business').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,28)||'your-business';
     S._publicSlug=S._publicSlug||slug;
   }catch(e){}
 }
@@ -43433,32 +43628,37 @@ function renderOperateHome(){
   const studio=S._is?.discovery?.studio||{};
   const title=document.getElementById('dash-site-preview-title');
   const sub=document.getElementById('dash-site-preview-sub');
-  if(title)title.textContent=studio.heroTitle||biz;
+  if(title)title.textContent=studio.heroTitle||S.website?.heroHeadline||biz;
   if(sub){
-    sub.textContent=studio.heroSub||(pack&&pack.rewrite)||(S.city?`Trusted locally in ${S.city}.`:'What customers see when they find you.');
+    sub.textContent=studio.heroSub||S.website?.heroSub||(pack&&pack.rewrite)||(S.city?`Trusted locally in ${S.city}.`:'What customers see when they find you.');
   }
   const ready=document.getElementById('dash-ready-line');
   const stand=document.getElementById('dash-stand-line');
   if(S._createReadyHome||S._ceoDemo||S._is?.discovery?.holyShitComplete){
-    if(ready)ready.textContent='Your website, booking, and CRM are ready.';
-    if(stand)stand.textContent='Website live · Booking ready · CRM configured';
+    if(ready)ready.textContent='Here’s your business — open anything below.';
+    if(stand){
+      const pkgNames=(S.services||[]).slice(0,3).map(s=>s.name).filter(Boolean);
+      stand.textContent=pkgNames.length?pkgNames.join(' · '):'Open your website or booking to see what Hubly built.';
+    }
   }
   const mods=document.getElementById('dash-ops-modules');
   if(mods&&(S._createReadyHome||S._ceoDemo)){
+    const pkgN=(S.services||[]).length;
     const custN=(S.customers||[]).length;
-    const pkgN=(studio.pkgChips||S.services||[]).length||3;
+    const pkgLabel=pkgN?`${pkgN} packages on your site`:'Packages still generating…';
+    const crmLabel=custN?`${custN} in your CRM`:'Waiting for first customer';
     mods.innerHTML=`
-      <button type="button" class="dash-ops-mod" onclick="document.querySelector('[data-v=jobs]')?.click()">
+      <button type="button" class="dash-ops-mod" onclick="previewBookingPage()">
         <p class="t">Booking</p>
-        <p class="s">Ready — share your link</p>
+        <p class="s">Open the customer booking flow</p>
       </button>
-      <button type="button" class="dash-ops-mod" onclick="document.querySelector('[data-v=money]')?.click()">
-        <p class="t">Packages</p>
-        <p class="s">${pkgN} offers live on your site</p>
+      <button type="button" class="dash-ops-mod" onclick="previewProfile()">
+        <p class="t">Website</p>
+        <p class="s">${escPeHtml(pkgLabel)}</p>
       </button>
-      <button type="button" class="dash-ops-mod" onclick="document.querySelector('[data-v=customers]')?.click()">
+      <button type="button" class="dash-ops-mod" onclick="(function(){const n=document.querySelector('#p-app [data-v=customers]');if(n&&typeof switchV==='function')switchV(n);else n?.click();})()">
         <p class="t">CRM</p>
-        <p class="s">${custN?custN+' people ready':'Pipeline ready'}</p>
+        <p class="s">${escPeHtml(crmLabel)}</p>
       </button>`;
   }
   const siteLink=document.getElementById('dash-site-link');
@@ -43470,16 +43670,7 @@ function renderOperateHome(){
   const recT=document.getElementById('dash-one-rec-t');
   if(recEl&&recEl.dataset.dismissed==='1'){recEl.hidden=true;}
   else if(recT&&!recEl?.dataset.locked){
-    const industry=String(S.industry||S._is?.discovery?.facts?.industryId?.value||pack?.industryId||'').toLowerCase();
-    if(/fitness|train/.test(industry)||/fitness|train/i.test(biz)){
-      recT.textContent='Share your booking link with 3 past clients — I already made it ready.';
-    }else if(/clean|airbnb/.test(industry)){
-      recT.textContent='Share your booking link with hosts you already work with.';
-    }else if(/pressure|lawn/.test(industry)){
-      recT.textContent='Share your booking link with last season’s customers.';
-    }else{
-      recT.textContent='Share your booking link — your site is ready for the first customer.';
-    }
+    recT.textContent='Open your website or try the booking flow — that’s the real proof.';
   }
   try{
     const urlEl=document.getElementById('dash-site-url');
