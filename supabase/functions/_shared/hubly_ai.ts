@@ -29,7 +29,11 @@
  *
  * Public API: Hubly.buildBusiness(prompt) — every future feature funnels here.
  * Never import this from the browser; secrets stay in Deno.env.
- * Milestone 1: Expert Framework + think() pipeline. Edge features migrate to HublyAI.complete — never call providers directly.
+ * OpenAI transport: Responses API by default (OPENAI_TRANSPORT=responses).
+ * Rollback: OPENAI_TRANSPORT=chat → Chat Completions without product changes.
+ * Adapters: OpenAIProvider | ClaudeProvider — product code never sees HTTP shapes.
+ * Production provider: OpenAI only (GPT-5.5). Anthropic is not on the production path.
+ * Emergency only: HUBLY_AI_ALLOW_CLAUDE=1 re-enables Claude for explicit provider=claude.
  */
 
 import {
@@ -151,69 +155,6 @@ import {
   type HublyConversationTurn,
   HublyUnderstanding,
 } from "./hubly_brain_understanding.ts";
-import {
-  think as runThinkPipeline,
-  brainStatus as thinkBrainStatus,
-  HublyThink,
-  type HublyThinkRequest,
-  type HublyThinkResult,
-} from "./hubly_brain_think.ts";
-import { ensureExpertsRegistered, HublyExperts } from "./hubly_brain_experts.ts";
-import { HublyExpertFramework, listExperts, listExpertCapabilities, discoverExperts, selectExpertsFromRegistry, unregisterExpert } from "./hubly_brain_expert_framework.ts";
-import {
-  HublyWorkspaceMemoryApi,
-} from "./hubly_brain_workspace_memory.ts";
-import {
-  appendConversationTurn,
-  HublyConversationMemoryApi,
-  type HublyConversationMemory,
-  type HublyConversationMemoryInput,
-} from "./hubly_brain_conversation_memory.ts";
-import {
-  HublyConversationIntelligenceApi,
-  type HublyConversationIntelligence,
-  type HublyConversationIntelligenceInput,
-} from "./hubly_brain_conversation_intelligence.ts";
-import { HublyReasoning } from "./hubly_brain_reasoning.ts";
-import { HublyDecisionEngine } from "./hubly_brain_decision.ts";
-import {
-  HublyRegistries,
-  HublyToolRegistry,
-  HublyKnowledgeRegistry,
-} from "./hubly_brain_registries.ts";
-import { HublyMissionControl } from "./hubly_brain_mission_control.ts";
-import { HublyIdentitySystem, hublyIdentityPreamble } from "./hubly_brain_identity_system.ts";
-import { HublyReliability } from "./hubly_brain_reliability.ts";
-import { HublyPlatform } from "./hubly_brain_platform.ts";
-import { HublyQuality } from "./hubly_brain_quality.ts";
-import { HublyDocs } from "./hubly_brain_docs.ts";
-import { HublyCertification } from "./hubly_brain_certification.ts";
-import { HublyBuilderExpert } from "./hubly_brain_builder_expert.ts";
-import { HublyChangePlanEngine } from "./hubly_brain_change_plan.ts";
-import { HublyPreviewEngine } from "./hubly_brain_preview_engine.ts";
-import { HublyCollaborationEngine } from "./hubly_brain_collaboration.ts";
-import { HublyVersionEngine } from "./hubly_brain_version_engine.ts";
-import { HublyBusinessBuilder } from "./hubly_brain_business_builder.ts";
-import { HublyBookingIntelligence } from "./hubly_brain_booking_intelligence.ts";
-import { HublyWorkspaceIntelligence } from "./hubly_brain_workspace_intelligence.ts";
-import { HublyAutomationIntelligence } from "./hubly_brain_automation_intelligence.ts";
-import { HublyMediaIntelligence } from "./hubly_brain_media_intelligence.ts";
-import { HublyChatOs } from "./hubly_brain_chat_os.ts";
-import { HublyBusinessDeployment } from "./hubly_brain_business_deployment.ts";
-import { HublyPersonality } from "./hubly_brain_personality.ts";
-import { HublyExperienceLayer } from "./hubly_brain_experience_layer.ts";
-import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
-import {
-  logBrainExecution,
-  listBrainExecutions,
-  persistBrainExecution,
-  HublyBrainExecutionLog,
-} from "./hubly_brain_execution_log.ts";
-import {
-  reviewCustomerFacingText,
-  listExperienceInterceptions,
-  HublyExperienceDirector,
-} from "./hubly_brain_experience_director.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export type {
@@ -268,50 +209,8 @@ export {
   HublyExecutors,
   HublyConfidence,
   HublyWeeklyLearning,
-  HublyThink,
-  HublyExperts,
-  HublyExpertFramework,
-  HublyWorkspaceMemoryApi,
-  HublyConversationMemoryApi,
-  HublyConversationIntelligenceApi,
-  HublyReasoning,
-  HublyDecisionEngine,
-  HublyRegistries,
-  HublyToolRegistry,
-  HublyKnowledgeRegistry,
-  HublyMissionControl,
-  HublyIdentitySystem,
-  HublyReliability,
-  HublyPlatform,
-  HublyQuality,
-  HublyDocs,
-  HublyCertification,
-  HublyBuilderExpert,
-  HublyChangePlanEngine,
-  HublyPreviewEngine,
-  HublyCollaborationEngine,
-  HublyVersionEngine,
-  HublyBusinessBuilder,
-  HublyBookingIntelligence,
-  HublyWorkspaceIntelligence,
-  HublyAutomationIntelligence,
-  HublyMediaIntelligence,
-  HublyChatOs,
-  HublyBusinessDeployment,
-  HublyPersonality,
-  HublyExperienceLayer,
-  HublyConfidencePolicy,
-  HublyBrainExecutionLog,
-  HublyExperienceDirector,
   listHublySkills as listSkills,
   listHublyCapabilities as listCapabilities,
-  listExperts,
-  listExpertCapabilities,
-  discoverExperts,
-  selectExpertsFromRegistry,
-  unregisterExpert,
-  listBrainExecutions,
-  runThinkPipeline as think,
   getSkill,
   normalizeBusinessMemory,
   mergeBusinessMemory,
@@ -369,13 +268,7 @@ export type HublyImagePart = {
   /** raw base64 (no data: prefix) */
   data: string;
 };
-/** Claude document block (PDF). Prefer images when possible. */
-export type HublyDocumentPart = {
-  type: "document";
-  mediaType: string;
-  data: string;
-};
-export type HublyContentPart = HublyTextPart | HublyImagePart | HublyDocumentPart;
+export type HublyContentPart = HublyTextPart | HublyImagePart;
 
 export type HublyMessage = {
   role: "user" | "assistant" | "system";
@@ -401,10 +294,6 @@ export type HublyAICallOpts = {
   memory?: HublyBusinessMemoryInput | null;
   /** Phase 7.6 — Business DNA (identity). Injected separately — never merged into Memory. */
   dna?: HublyBusinessDNAInput | null;
-  /** Conversation Memory — Brain updates after every interaction when provided. */
-  conversation?: HublyConversationMemoryInput | null;
-  /** Optional business id for durable Brain execution + memory persistence. */
-  businessId?: string | null;
   /** Phase 7.2 — requested skills (planning only until executors land). */
   skills?: HublySkillId[] | string[];
   /** @deprecated use skills */
@@ -421,13 +310,6 @@ export type HublyAIResult = {
   task: HublyAITask;
   /** Echo of memory keys present (not full payload) for debugging. */
   memoryKeys?: string[];
-  /** Section 1 — Brain execution id for this call. */
-  executionId?: string;
-  /** Experts Brain selected (empty = direct model completion). */
-  expertsSelected?: string[];
-  /** Conversation Memory after Brain updated it. */
-  conversation?: HublyConversationMemory | null;
-  memoryUpdated?: boolean;
 };
 
 /** @deprecated use HublySkillId */
@@ -452,21 +334,42 @@ type TaskRoute = {
  * Per-task model registry.
  * Business-building / reasoning tasks → GPT-5.5.
  * Lightweight reserved for future cheap/fast work — not the Hubly default.
+ *
+ * maxTokens = max_output_tokens on Responses (visible text + reasoning).
+ * Budgets sized so GPT-5.5 reasoning cannot consume the entire allowance.
+ * See docs/OPENAI_RESPONSES_MIGRATION.md for recommended limits.
  */
 const TASK_ROUTES: Record<HublyAITask, TaskRoute> = {
-  chat: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 1200 },
-  reason: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2200 },
-  website_builder: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 3500, jsonMode: true },
-  creative_director: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 1600, jsonMode: true },
-  business_coach: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2000 },
-  customer_concierge: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 1400 },
-  customer_support: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 1400 },
-  marketing: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2500 },
-  quote: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 1800, jsonMode: true },
-  photo_analysis: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2000, jsonMode: true },
-  memory: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 800 },
-  lightweight: { provider: "openai", model: DEFAULT_LIGHTWEIGHT_MODEL, maxTokens: 600 },
-  planner: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2000, jsonMode: true },
+  chat: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2400 },
+  reason: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 4000 },
+  website_builder: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 6000, jsonMode: true },
+  creative_director: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 3200, jsonMode: true },
+  business_coach: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 3500 },
+  customer_concierge: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2800 },
+  customer_support: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2800 },
+  marketing: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 4000 },
+  quote: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 3200, jsonMode: true },
+  photo_analysis: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 4000, jsonMode: true },
+  memory: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 1600 },
+  lightweight: { provider: "openai", model: DEFAULT_LIGHTWEIGHT_MODEL, maxTokens: 1200 },
+  planner: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 3500, jsonMode: true },
+};
+
+/** Documented ceilings — keep in sync with TASK_ROUTES. */
+export const HUBLY_AI_OUTPUT_BUDGETS: Record<HublyAITask, number> = {
+  chat: 2400,
+  reason: 4000,
+  website_builder: 6000,
+  creative_director: 3200,
+  business_coach: 3500,
+  customer_concierge: 2800,
+  customer_support: 2800,
+  marketing: 4000,
+  quote: 3200,
+  photo_analysis: 4000,
+  memory: 1600,
+  lightweight: 1200,
+  planner: 3500,
 };
 
 function env(name: string): string {
@@ -498,9 +401,17 @@ export function extractJson(rawText: string): string {
   return cleaned.slice(start, end + 1);
 }
 
-/** Short voice reminder — Hubly Identity System (Section 13) is the source of truth. */
+/** Short voice reminder — capabilities still own richer system prompts. */
 export function personalityPreamble(): string {
-  return hublyIdentityPreamble();
+  return [
+    "You are Hubly AI — the operating intelligence for service businesses.",
+    "Adapt to the owner's business; never force them into a fixed industry list.",
+    "Prefer concrete action over generic advice. Never say you are an AI model.",
+  ].join(" ");
+}
+
+function claudeAllowed(): boolean {
+  return env("HUBLY_AI_ALLOW_CLAUDE") === "1" || env("HUBLY_AI_ALLOW_CLAUDE").toLowerCase() === "true";
 }
 
 function claudeFallbackModel(): string {
@@ -559,16 +470,6 @@ function toClaudeContent(content: string | HublyContentPart[]): string | Record<
   if (typeof content === "string") return content;
   return content.map((part) => {
     if (part.type === "text") return { type: "text", text: part.text };
-    if (part.type === "document") {
-      return {
-        type: "document",
-        source: {
-          type: "base64",
-          media_type: part.mediaType || "application/pdf",
-          data: part.data,
-        },
-      };
-    }
     return {
       type: "image",
       source: {
@@ -580,18 +481,13 @@ function toClaudeContent(content: string | HublyContentPart[]): string | Record<
   });
 }
 
-function toOpenAIContent(
+/** Chat Completions multimodal parts (rollback transport). */
+function toOpenAIChatContent(
   content: string | HublyContentPart[],
 ): string | Record<string, unknown>[] {
   if (typeof content === "string") return content;
   return content.map((part) => {
     if (part.type === "text") return { type: "text", text: part.text };
-    if (part.type === "document") {
-      return {
-        type: "text",
-        text: `[Attached PDF document — ${part.mediaType || "application/pdf"}; ask the owner for a screenshot if text extraction is required.]`,
-      };
-    }
     const mediaType = part.mediaType || "image/jpeg";
     return {
       type: "image_url",
@@ -600,122 +496,31 @@ function toOpenAIContent(
   });
 }
 
+/** Responses API multimodal parts (default transport). */
+function toOpenAIResponsesContent(
+  content: string | HublyContentPart[],
+): string | Record<string, unknown>[] {
+  if (typeof content === "string") return content;
+  return content.map((part) => {
+    if (part.type === "text") return { type: "input_text", text: part.text };
+    const mediaType = part.mediaType || "image/jpeg";
+    return {
+      type: "input_image",
+      detail: "auto",
+      image_url: `data:${mediaType};base64,${part.data}`,
+    };
+  });
+}
+
+/** @deprecated use toOpenAIChatContent — kept for internal alias clarity */
+const toOpenAIContent = toOpenAIChatContent;
+
 type InternalCall = HublyAICallOpts & {
   feature: string;
   task: HublyAITask;
   provider: HublyAIProvider;
   model: string;
 };
-
-async function callClaude(opts: InternalCall): Promise<HublyAIResult> {
-  const apiKey = env("ANTHROPIC_API_KEY");
-  if (!apiKey) {
-    throw new HublyAIConfigError(
-      "claude",
-      "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret.",
-    );
-  }
-  const messages = (opts.messages || [])
-    .filter((m) => m.role === "user" || m.role === "assistant")
-    .map((m) => ({
-      role: m.role as "user" | "assistant",
-      content: toClaudeContent(m.content),
-    }));
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: opts.model,
-      max_tokens: opts.maxTokens ?? 700,
-      temperature: opts.temperature,
-      system: composeSystem(opts) || undefined,
-      messages: messages.length ? messages : [{ role: "user", content: "Hello" }],
-    }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error("HublyAI claude error", opts.feature, opts.task, res.status, errText);
-    throw new HublyAIProviderError("claude", res.status, "Claude is temporarily unavailable.");
-  }
-
-  const data = await res.json();
-  const text = (data.content || [])
-    .filter((c: { type: string }) => c.type === "text")
-    .map((c: { text: string }) => c.text)
-    .join("\n")
-    .trim();
-
-  return {
-    text,
-    provider: "claude",
-    model: opts.model,
-    task: opts.task,
-    memoryKeys: memoryKeys(opts.memory),
-  };
-}
-
-async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
-  const apiKey = env("OPENAI_API_KEY");
-  if (!apiKey) {
-    throw new HublyAIConfigError(
-      "openai",
-      "OpenAI isn't configured yet. Add an OPENAI_API_KEY secret.",
-    );
-  }
-  const messages: Record<string, unknown>[] = [];
-  const system = composeSystem(opts);
-  if (system) messages.push({ role: "system", content: system });
-  for (const m of opts.messages || []) {
-    if (m.role === "system") {
-      messages.push({ role: "system", content: typeof m.content === "string" ? m.content : "" });
-      continue;
-    }
-    messages.push({
-      role: m.role,
-      content: toOpenAIContent(m.content),
-    });
-  }
-  if (!messages.length) messages.push({ role: "user", content: "Hello" });
-
-  const body: Record<string, unknown> = {
-    model: opts.model,
-    max_tokens: opts.maxTokens ?? 700,
-    messages,
-  };
-  if (typeof opts.temperature === "number") body.temperature = opts.temperature;
-  if (opts.jsonMode) body.response_format = { type: "json_object" };
-
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error("HublyAI openai error", opts.feature, opts.task, res.status, errText);
-    throw new HublyAIProviderError("openai", res.status, "OpenAI is temporarily unavailable.");
-  }
-
-  const data = await res.json();
-  const text = String(data?.choices?.[0]?.message?.content || "").trim();
-  return {
-    text,
-    provider: "openai",
-    model: opts.model,
-    task: opts.task,
-    memoryKeys: memoryKeys(opts.memory),
-  };
-}
 
 export class HublyAIConfigError extends Error {
   provider: HublyAIProvider;
@@ -729,20 +534,360 @@ export class HublyAIConfigError extends Error {
 export class HublyAIProviderError extends Error {
   provider: HublyAIProvider;
   status: number;
-  constructor(provider: HublyAIProvider, status: number, message: string) {
+  /** Raw provider error body (truncated) — never includes API keys. */
+  providerBody: string;
+  constructor(
+    provider: HublyAIProvider,
+    status: number,
+    message: string,
+    providerBody = "",
+  ) {
     super(message);
     this.name = "HublyAIProviderError";
     this.provider = provider;
     this.status = status;
+    this.providerBody = String(providerBody || "").slice(0, 2000);
   }
 }
+
+/**
+ * Provider adapter surface — HublyAI.complete() → OpenAIProvider | ClaudeProvider.
+ * Product code never sees transport details (Responses vs Chat Completions).
+ */
+export type HublyModelProvider = {
+  id: HublyAIProvider;
+  isConfigured(): boolean;
+  complete(opts: InternalCall): Promise<HublyAIResult>;
+};
+
+/** OpenAI transport. Default `responses`. Set OPENAI_TRANSPORT=chat to roll back. */
+export type OpenAITransport = "responses" | "chat";
+
+export function resolveOpenAITransport(raw?: string | null): OpenAITransport {
+  const v = String(raw ?? env("OPENAI_TRANSPORT") ?? "").trim().toLowerCase();
+  if (v === "chat" || v === "chat_completions" || v === "completions" || v === "chat-completions") {
+    return "chat";
+  }
+  return "responses";
+}
+
+function buildOpenAIChatMessages(opts: InternalCall): Record<string, unknown>[] {
+  const messages: Record<string, unknown>[] = [];
+  const system = composeSystem(opts);
+  if (system) messages.push({ role: "system", content: system });
+  for (const m of opts.messages || []) {
+    if (m.role === "system") {
+      messages.push({ role: "system", content: typeof m.content === "string" ? m.content : "" });
+      continue;
+    }
+    messages.push({
+      role: m.role,
+      content: toOpenAIChatContent(m.content),
+    });
+  }
+  if (!messages.length) messages.push({ role: "user", content: "Hello" });
+  return messages;
+}
+
+function openaiChatUsesMaxCompletionTokens(model: string): boolean {
+  // GPT-5 / o-series reasoning models reject max_tokens on Chat Completions.
+  return /^(gpt-5|o[0-9])/i.test(String(model || "").trim());
+}
+
+function buildOpenAIChatBody(opts: InternalCall): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    model: opts.model,
+    messages: buildOpenAIChatMessages(opts),
+  };
+  const budget = opts.maxTokens ?? 700;
+  if (openaiChatUsesMaxCompletionTokens(opts.model)) {
+    body.max_completion_tokens = budget;
+  } else {
+    body.max_tokens = budget;
+  }
+  if (typeof opts.temperature === "number") body.temperature = opts.temperature;
+  if (opts.jsonMode) body.response_format = { type: "json_object" };
+  return body;
+}
+
+function buildOpenAIResponsesInput(opts: InternalCall): Record<string, unknown>[] {
+  const input: Record<string, unknown>[] = [];
+  for (const m of opts.messages || []) {
+    if (m.role === "system") continue; // folded into instructions
+    input.push({
+      role: m.role,
+      content: toOpenAIResponsesContent(m.content),
+    });
+  }
+  if (!input.length) input.push({ role: "user", content: "Hello" });
+  return input;
+}
+
+/**
+ * Responses API rejects text.format=json_object unless the word "json"
+ * appears in an input message (instructions alone are not enough).
+ */
+function ensureJsonKeywordInResponsesInput(
+  input: Record<string, unknown>[],
+): Record<string, unknown>[] {
+  if (JSON.stringify(input).toLowerCase().includes("json")) return input;
+  const out = input.map((row) => ({ ...row }));
+  const suffix = "Return a JSON object.";
+  for (let i = out.length - 1; i >= 0; i--) {
+    if (out[i].role !== "user") continue;
+    const content = out[i].content;
+    if (typeof content === "string") {
+      out[i] = { ...out[i], content: `${content}\n\n${suffix}` };
+      return out;
+    }
+    if (Array.isArray(content)) {
+      out[i] = {
+        ...out[i],
+        content: [...content, { type: "input_text", text: suffix }],
+      };
+      return out;
+    }
+  }
+  out.push({ role: "user", content: suffix });
+  return out;
+}
+
+function buildOpenAIResponsesBody(opts: InternalCall): Record<string, unknown> {
+  // Privacy: Hubly owns conversation state. Never store Responses unless a
+  // future feature opts in explicitly (not exposed today).
+  let input = buildOpenAIResponsesInput(opts);
+  if (opts.jsonMode) input = ensureJsonKeywordInResponsesInput(input);
+  const body: Record<string, unknown> = {
+    model: opts.model,
+    store: false,
+    max_output_tokens: opts.maxTokens ?? 700,
+    input,
+  };
+  const system = composeSystem(opts);
+  const extraSystem = (opts.messages || [])
+    .filter((m) => m.role === "system")
+    .map((m) => (typeof m.content === "string" ? m.content : ""))
+    .filter(Boolean);
+  const instructions = [system, ...extraSystem].filter(Boolean).join("\n\n");
+  if (instructions) body.instructions = instructions;
+  if (typeof opts.temperature === "number") body.temperature = opts.temperature;
+  if (opts.jsonMode) body.text = { format: { type: "json_object" } };
+  return body;
+}
+
+function extractOpenAIChatText(data: Record<string, unknown>): string {
+  const choices = data?.choices as Array<{ message?: { content?: string } }> | undefined;
+  return String(choices?.[0]?.message?.content || "").trim();
+}
+
+function extractOpenAIResponsesText(data: Record<string, unknown>): string {
+  if (typeof data?.output_text === "string" && data.output_text.trim()) {
+    return data.output_text.trim();
+  }
+  const output = Array.isArray(data?.output) ? data.output : [];
+  const chunks: string[] = [];
+  for (const item of output) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as Record<string, unknown>;
+    if (row.type === "message" && Array.isArray(row.content)) {
+      for (const part of row.content) {
+        if (!part || typeof part !== "object") continue;
+        const p = part as Record<string, unknown>;
+        if ((p.type === "output_text" || p.type === "text") && typeof p.text === "string") {
+          chunks.push(p.text);
+        }
+      }
+    }
+  }
+  return chunks.join("\n").trim();
+}
+
+async function callOpenAIChat(opts: InternalCall, apiKey: string): Promise<HublyAIResult> {
+  const body = buildOpenAIChatBody(opts);
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("HublyAI openai chat error", opts.feature, opts.task, res.status, errText);
+    throw new HublyAIProviderError(
+      "openai",
+      res.status,
+      "OpenAI is temporarily unavailable.",
+      errText,
+    );
+  }
+  const data = await res.json();
+  return {
+    text: extractOpenAIChatText(data),
+    provider: "openai",
+    model: opts.model,
+    task: opts.task,
+    memoryKeys: memoryKeys(opts.memory),
+  };
+}
+
+async function callOpenAIResponses(opts: InternalCall, apiKey: string): Promise<HublyAIResult> {
+  const body = buildOpenAIResponsesBody(opts);
+  const res = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("HublyAI openai responses error", opts.feature, opts.task, res.status, errText);
+    throw new HublyAIProviderError(
+      "openai",
+      res.status,
+      "OpenAI is temporarily unavailable.",
+      errText,
+    );
+  }
+  const data = await res.json();
+  if (data?.status === "incomplete") {
+    console.warn("HublyAI openai responses incomplete", {
+      feature: opts.feature,
+      task: opts.task,
+      reason: data?.incomplete_details || null,
+    });
+  }
+  return {
+    text: extractOpenAIResponsesText(data),
+    provider: "openai",
+    model: opts.model,
+    task: opts.task,
+    memoryKeys: memoryKeys(opts.memory),
+  };
+}
+
+const ClaudeProvider: HublyModelProvider = {
+  id: "claude",
+  isConfigured() {
+    return claudeAllowed() && !!env("ANTHROPIC_API_KEY");
+  },
+  async complete(opts: InternalCall): Promise<HublyAIResult> {
+    const apiKey = env("ANTHROPIC_API_KEY");
+    if (!apiKey) {
+      throw new HublyAIConfigError(
+        "claude",
+        "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret.",
+      );
+    }
+    const messages = (opts.messages || [])
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: toClaudeContent(m.content),
+      }));
+
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: opts.model,
+        max_tokens: opts.maxTokens ?? 700,
+        temperature: opts.temperature,
+        system: composeSystem(opts) || undefined,
+        messages: messages.length ? messages : [{ role: "user", content: "Hello" }],
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("HublyAI claude error", opts.feature, opts.task, res.status, errText);
+      throw new HublyAIProviderError("claude", res.status, "Claude is temporarily unavailable.");
+    }
+
+    const data = await res.json();
+    const text = (data.content || [])
+      .filter((c: { type: string }) => c.type === "text")
+      .map((c: { text: string }) => c.text)
+      .join("\n")
+      .trim();
+
+    return {
+      text,
+      provider: "claude",
+      model: opts.model,
+      task: opts.task,
+      memoryKeys: memoryKeys(opts.memory),
+    };
+  },
+};
+
+const OpenAIProvider: HublyModelProvider = {
+  id: "openai",
+  isConfigured() {
+    return !!env("OPENAI_API_KEY");
+  },
+  async complete(opts: InternalCall): Promise<HublyAIResult> {
+    const apiKey = env("OPENAI_API_KEY");
+    if (!apiKey) {
+      throw new HublyAIConfigError(
+        "openai",
+        "OpenAI isn't configured yet. Add an OPENAI_API_KEY secret.",
+      );
+    }
+    const transport = resolveOpenAITransport();
+    console.log("HublyAI.openai.transport", {
+      feature: opts.feature,
+      task: opts.task,
+      transport,
+      model: opts.model,
+      store: transport === "responses" ? false : undefined,
+    });
+    if (transport === "chat") return callOpenAIChat(opts, apiKey);
+    return callOpenAIResponses(opts, apiKey);
+  },
+};
+
+/** Registry of model providers — extend here for a future provider. */
+export const HublyModelProviders: Record<HublyAIProvider, HublyModelProvider> = {
+  openai: OpenAIProvider,
+  claude: ClaudeProvider,
+};
+
+function getModelProvider(id: HublyAIProvider): HublyModelProvider {
+  if (id === "claude" && !claudeAllowed()) return OpenAIProvider;
+  return HublyModelProviders[id] || OpenAIProvider;
+}
+
+/** Test/ops helpers — request builders stay inside the gateway. */
+export const HublyAIOpenAITransport = {
+  resolve: resolveOpenAITransport,
+  buildChatBody: buildOpenAIChatBody,
+  buildResponsesBody: buildOpenAIResponsesBody,
+  extractChatText: extractOpenAIChatText,
+  extractResponsesText: extractOpenAIResponsesText,
+  toChatContent: toOpenAIChatContent,
+  toResponsesContent: toOpenAIResponsesContent,
+};
 
 function resolveInternal(opts: HublyAICallOpts, fallbackTask: HublyAITask): InternalCall {
   const task = normalizeTask(opts.task) || fallbackTask;
   const route = resolveTaskRoute(task);
-  // Low-level complete() without task may still prefer Claude for unmigrated features
-  // when HUBLY_AI_PROVIDER is unset and caller didn't set task — handled by callers.
-  const provider = normalizeProvider(opts.provider) || route.provider;
+  // Production path is OpenAI. Claude only when explicitly allowed + requested.
+  let provider = normalizeProvider(opts.provider) || route.provider || "openai";
+  if (provider === "claude" && !claudeAllowed()) {
+    console.warn("HublyAI: Claude requested but not on production path — using OpenAI", {
+      feature: opts.feature,
+      task,
+    });
+    provider = "openai";
+  }
   const model = (opts.model || "").trim() ||
     (provider === "openai"
       ? (task === "lightweight" ? openaiLightweightModel() : openaiReasoningModel())
@@ -758,109 +903,20 @@ function resolveInternal(opts: HublyAICallOpts, fallbackTask: HublyAITask): Inte
   };
 }
 
-const CUSTOMER_FACING_TASKS: Set<HublyAITask> = new Set([
-  "chat",
-  "customer_support",
-  "customer_concierge",
-  "business_coach",
-]);
-
 async function run(opts: InternalCall): Promise<HublyAIResult> {
-  const started = Date.now();
-  // Section 1: Brain alone decides experts. Direct complete = empty expert set until ED.
-  const expertsSelected: string[] = [];
-  let conversation = opts.conversation
-    ? appendConversationTurn(opts.conversation, {
-      role: "owner",
-      text: lastUserText(opts.messages),
-    })
-    : null;
-
-  try {
-    console.log("HublyBrain.run", {
-      feature: opts.feature,
-      task: opts.task,
-      provider: opts.provider,
-      model: opts.model,
-      memoryKeys: memoryKeys(opts.memory),
-      expertsSelected,
-    });
-    let result = opts.provider === "openai" ? await callOpenAI(opts) : await callClaude(opts);
-
-    // Section 2: every customer-facing freeform reply passes Experience Director.
-    if (CUSTOMER_FACING_TASKS.has(opts.task) && !opts.jsonMode) {
-      const ed = reviewCustomerFacingText(String(result.text || ""), {
-        request: lastUserText(opts.messages),
-        confidence: 80,
-      });
-      result = { ...result, text: ed.ownerResponse };
-      expertsSelected.push("experience_director");
-    }
-
-    if (conversation) {
-      conversation = appendConversationTurn(conversation, {
-        role: "hubly",
-        text: String(result.text || "").slice(0, 4000),
-      });
-    }
-
-    const execution = logBrainExecution({
-      kind: "complete",
-      feature: opts.feature,
-      task: opts.task,
-      expertsSelected,
-      mergedResponse: true, // single Brain-owned response
-      memoryUpdated: !!conversation || !!opts.memory,
-      ok: true,
-      latencyMs: Date.now() - started,
-      provider: result.provider,
-      model: result.model,
-      businessId: opts.businessId || null,
-    });
-    persistBrainExecution(execution).catch(() => {});
-
-    return {
-      ...result,
-      executionId: execution.id,
-      expertsSelected,
-      conversation,
-      memoryUpdated: execution.memoryUpdated,
-    };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const execution = logBrainExecution({
-      kind: "complete",
-      feature: opts.feature,
-      task: opts.task,
-      expertsSelected,
-      mergedResponse: false,
-      memoryUpdated: false,
-      ok: false,
-      latencyMs: Date.now() - started,
-      provider: opts.provider,
-      model: opts.model,
-      error: msg,
-      businessId: opts.businessId || null,
-    });
-    persistBrainExecution(execution).catch(() => {});
-    throw err;
+  console.log("HublyAI.run", {
+    feature: opts.feature,
+    task: opts.task,
+    provider: opts.provider,
+    model: opts.model,
+    openaiTransport: opts.provider === "openai" ? resolveOpenAITransport() : null,
+    memoryKeys: memoryKeys(opts.memory),
+  });
+  if (opts.provider === "claude" && !claudeAllowed()) {
+    return OpenAIProvider.complete({ ...opts, provider: "openai", model: openaiReasoningModel() });
   }
-}
-
-function lastUserText(messages: HublyMessage[] | undefined): string {
-  if (!messages?.length) return "";
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i];
-    if (m.role !== "user") continue;
-    if (typeof m.content === "string") return m.content.slice(0, 2000);
-    const text = (m.content || [])
-      .filter((p): p is { type: "text"; text: string } => p.type === "text")
-      .map((p) => p.text)
-      .join(" ")
-      .trim();
-    if (text) return text.slice(0, 2000);
-  }
-  return "";
+  if (opts.provider === "claude" && claudeAllowed()) return ClaudeProvider.complete(opts);
+  return OpenAIProvider.complete(opts);
 }
 
 export const HublyAI = {
@@ -868,12 +924,18 @@ export const HublyAI = {
   name: "Hubly Brain" as const,
 
   /**
-   * Provider default for low-level complete() when no task is given.
-   * Remains Claude so unmigrated edge functions are not swapped by accident.
-   * Skill methods use the per-task registry (GPT-5.5).
+   * Production default provider — OpenAI (GPT-5.5).
+   * Override only via HUBLY_AI_PROVIDER=openai (or emergency Claude with ALLOW flag).
    */
   defaultProvider(): HublyAIProvider {
-    return normalizeProvider(env("HUBLY_AI_PROVIDER")) || "claude";
+    const fromEnv = normalizeProvider(env("HUBLY_AI_PROVIDER"));
+    if (fromEnv === "claude" && !claudeAllowed()) return "openai";
+    return fromEnv || "openai";
+  },
+
+  /** Production OpenAI transport — responses (default) or chat (rollback). */
+  openaiTransport(): OpenAITransport {
+    return resolveOpenAITransport();
   },
 
   /** Primary reasoning model for business-building tasks. */
@@ -882,7 +944,9 @@ export const HublyAI = {
   },
 
   resolveProvider(override?: HublyAIProvider | string | null): HublyAIProvider {
-    return normalizeProvider(override) || this.defaultProvider();
+    const p = normalizeProvider(override) || this.defaultProvider();
+    if (p === "claude" && !claudeAllowed()) return "openai";
+    return p;
   },
 
   /** Resolve provider + model for a named task (extensible per-task selection). */
@@ -893,9 +957,13 @@ export const HublyAI = {
 
   models() {
     return {
-      claude: claudeFallbackModel(),
+      production: "openai",
       openaiReasoning: openaiReasoningModel(),
       openaiLightweight: openaiLightweightModel(),
+      openaiTransport: resolveOpenAITransport(),
+      outputBudgets: { ...HUBLY_AI_OUTPUT_BUDGETS },
+      claudeEmergencyOnly: claudeAllowed() ? claudeFallbackModel() : null,
+      anthropicOnProductionPath: false,
       tasks: Object.fromEntries(
         (Object.keys(TASK_ROUTES) as HublyAITask[]).map((t) => [t, resolveTaskRoute(t)]),
       ),
@@ -903,9 +971,141 @@ export const HublyAI = {
   },
 
   isConfigured(provider?: HublyAIProvider | string | null): boolean {
-    const p = normalizeProvider(provider) || this.defaultProvider();
+    // Production readiness = OpenAI. Claude alone does not count as configured.
+    if (!provider || String(provider).trim() === "") {
+      return !!env("OPENAI_API_KEY");
+    }
+    const p = normalizeProvider(provider);
     if (p === "openai") return !!env("OPENAI_API_KEY");
-    return !!env("ANTHROPIC_API_KEY");
+    if (p === "claude") return claudeAllowed() && !!env("ANTHROPIC_API_KEY");
+    return !!env("OPENAI_API_KEY");
+  },
+
+  /**
+   * Ops-only: one live OpenAI round-trip with full request/response evidence.
+   * Never returns the API key. Used to locate production 502 root causes.
+   */
+  async diagnoseOpenAI(opts?: {
+    transport?: OpenAITransport | string | null;
+    model?: string | null;
+    jsonMode?: boolean;
+    prompt?: string;
+  }): Promise<Record<string, unknown>> {
+    const apiKey = env("OPENAI_API_KEY");
+    const keyMeta = apiKey
+      ? {
+        present: true,
+        length: apiKey.length,
+        prefix: apiKey.slice(0, 7),
+        suffix: apiKey.slice(-4),
+      }
+      : { present: false, length: 0, prefix: "", suffix: "" };
+    const transport = resolveOpenAITransport(opts?.transport);
+    const model = String(opts?.model || openaiReasoningModel()).trim();
+    const jsonMode = opts?.jsonMode === true;
+    const prompt = String(opts?.prompt || "Reply with exactly: hubly-ok").trim().slice(0, 200);
+    const call: InternalCall = {
+      feature: "diagnose-openai",
+      task: "lightweight",
+      provider: "openai",
+      model,
+      maxTokens: 64,
+      jsonMode,
+      messages: [{ role: "user", content: prompt }],
+      system: jsonMode
+        ? 'Return JSON only: {"ok":true,"ping":"hubly-ok"}'
+        : "You are a connectivity probe. Reply briefly.",
+    };
+    const requestBody = transport === "chat"
+      ? buildOpenAIChatBody(call)
+      : buildOpenAIResponsesBody(call);
+    const url = transport === "chat"
+      ? "https://api.openai.com/v1/chat/completions"
+      : "https://api.openai.com/v1/responses";
+    const started = Date.now();
+    if (!apiKey) {
+      return {
+        ok: false,
+        stage: "config",
+        transport,
+        model,
+        url,
+        key: keyMeta,
+        requestBody,
+        httpStatus: null,
+        errorBody: "OPENAI_API_KEY missing in edge runtime",
+        responseHeaders: {},
+        parsedText: null,
+        latencyMs: Date.now() - started,
+      };
+    }
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+    } catch (e) {
+      return {
+        ok: false,
+        stage: "fetch",
+        transport,
+        model,
+        url,
+        key: keyMeta,
+        requestBody,
+        httpStatus: null,
+        errorBody: e instanceof Error ? e.message : String(e),
+        responseHeaders: {},
+        parsedText: null,
+        latencyMs: Date.now() - started,
+      };
+    }
+    const headers: Record<string, string> = {};
+    for (const name of [
+      "content-type",
+      "x-request-id",
+      "openai-processing-ms",
+      "openai-version",
+      "x-ratelimit-remaining-requests",
+      "x-ratelimit-remaining-tokens",
+    ]) {
+      const v = res.headers.get(name);
+      if (v) headers[name] = v;
+    }
+    const raw = await res.text();
+    let parsedText: string | null = null;
+    let parseError: string | null = null;
+    if (res.ok) {
+      try {
+        const data = JSON.parse(raw) as Record<string, unknown>;
+        parsedText = transport === "chat"
+          ? extractOpenAIChatText(data)
+          : extractOpenAIResponsesText(data);
+      } catch (e) {
+        parseError = e instanceof Error ? e.message : String(e);
+      }
+    }
+    return {
+      ok: res.ok && !!parsedText,
+      stage: res.ok ? (parsedText ? "success" : "parse") : "provider_http",
+      transport,
+      model,
+      url,
+      key: keyMeta,
+      requestBody,
+      httpStatus: res.status,
+      errorBody: res.ok ? null : raw.slice(0, 2000),
+      responseBodyPreview: res.ok ? raw.slice(0, 1500) : null,
+      responseHeaders: headers,
+      parsedText,
+      parseError,
+      latencyMs: Date.now() - started,
+    };
   },
 
   status() {
@@ -913,15 +1113,19 @@ export const HublyAI = {
     const capabilities = listHublyCapabilities();
     const executableCaps = capabilities.filter((c) => c.executable);
     const openaiModel = this.reasoningModel();
+    const transport = resolveOpenAITransport();
     return {
       layer: "Hubly Runtime + Business DNA",
       vision: "Conversation → Understanding → Memory (facts) + DNA (identity) → Planner → Execution Plan → Orchestrator → Executors → Platform",
       defaultProvider: this.defaultProvider(),
       reasoningModel: openaiModel,
+      openaiTransport: transport,
+      openaiTransportRollback: "Set OPENAI_TRANSPORT=chat to revert to Chat Completions without redeploying product logic.",
+      anthropicOnProductionPath: false,
       models: this.models(),
       configured: {
-        claude: !!env("ANTHROPIC_API_KEY"),
-        openai: !!env("OPENAI_API_KEY"),
+        openai: OpenAIProvider.isConfigured(),
+        claudeEmergency: claudeAllowed() && !!env("ANTHROPIC_API_KEY"),
       },
       skills: skills.map((s) => ({ id: s.id, label: s.label, executable: s.executable })),
       capabilities: capabilities.map((c) => ({
@@ -932,6 +1136,8 @@ export const HublyAI = {
       })),
       foundationChecklist: {
         gpt55Connected: openaiModel === "gpt-5.5" || openaiModel.startsWith("gpt-5.5"),
+        openaiResponsesTransport: transport === "responses",
+        openaiOnlyProduction: true,
         aiAbstractionLayer: true,
         businessMemorySsot: true,
         businessDna: true,
@@ -956,30 +1162,12 @@ export const HublyAI = {
         productionFirstProviders: true,
         businessLaunch: true,
         architectureFrozenAfterDna: true,
-        // Milestone 1 — Hubly Brain Foundation
-        hublyBrainThinkPipeline: true,
-        expertFramework: true,
-        aiCapabilityRegistry: true,
-        experienceDirector: true,
-        workspaceMemory: true,
-        conversationMemory: true,
-        reasoningEngine: true,
-        confidencePolicy: true,
-        brainConsole: true,
-        section1OnlyBrainEntry: true,
-        section1ExecutionLog: true,
-        section1MemoryAfterEveryInteraction: true,
       },
-      personality: "Hubly",
-      experts: (() => {
-        ensureExpertsRegistered();
-        return listExperts().map((e) => ({ id: e.id, name: e.name, version: e.version }));
-      })(),
-      recentExecutions: listBrainExecutions(10),
       providers: {
         domain: ["cloudflare", "porkbun"],
         payments: ["stripe"],
         calendar: ["google_calendar"],
+        model: ["openai"],
         rule: "Provider not configured — never simulate success",
       },
       phases: {
@@ -1027,7 +1215,7 @@ export const HublyAI = {
         "Hubly runs my business",
       ],
       executableCapabilities: executableCaps.map((c) => c.id),
-      note: "Phase 8: prove the product. Hubly Daily is the homepage. Creative Director explains DNA. Jobs > features.",
+      note: "Phase 8: prove the product. Hubly Daily is the homepage. Creative Director explains DNA. Jobs > features. Production AI = OpenAI only.",
     };
   },
 
@@ -1048,8 +1236,7 @@ export const HublyAI = {
   },
 
   /**
-   * Phase 7.1 / Section 5 — Business Memory SSOT (facts).
-   * Experts suggest; only Hubly Brain commits (see HublyBusinessMemoryApi.commit).
+   * Phase 7.1 — Business Memory SSOT (facts).
    */
   memory(input?: HublyBusinessMemoryInput | null): HublyBusinessMemory {
     return normalizeBusinessMemory(input);
@@ -1062,15 +1249,8 @@ export const HublyAI = {
     return mergeBusinessMemory(base, patch);
   },
 
-  /** Section 5 — Brain-owned memory API (commit / query / importance). */
-  businessMemory: HublyBusinessMemoryApi,
-
-  /** Section 6 — Brain-owned workspace preferences (how the owner likes to work). */
-  workspaceMemory: HublyWorkspaceMemoryApi,
-
   /**
-   * Phase 7.6 / Section 7 — Business DNA (identity + knowledge). Never merge into Memory.
-   * Experts read DNA; Hubly Brain loads knowledge packs.
+   * Phase 7.6 — Business DNA (identity). Never merge into Memory.
    */
   dna(input?: HublyBusinessDNAInput | null): HublyBusinessDNA {
     return normalizeBusinessDNA(input);
@@ -1082,9 +1262,6 @@ export const HublyAI = {
   ): HublyBusinessDNA {
     return evolveBusinessDNA(base, patch);
   },
-
-  /** Section 7 — structured DNA knowledge API (evidenced, versioned, read-only for experts). */
-  businessDna: HublyBusinessDNAApi,
 
   /** Phase 7.2 — skills Hubly can eventually execute (Capability Registry). */
   listSkills(): HublySkill[] {
@@ -1423,12 +1600,16 @@ export const HublyAI = {
       newLeads?: number;
       reviewRequestsReady?: number;
       visitorsYesterday?: number;
+      paymentsWaiting?: number;
+      followUpsWaiting?: number;
+      outcomes?: import("./hubly_brain_health.ts").HublyHealthOutcomes | null;
     } | null;
   }): HublyDailyBriefing {
     const memory = normalizeBusinessMemory(opts?.memory);
     const dna = normalizeBusinessDNA(opts?.dna);
     const maturity = inferMaturity({ memory, dna });
-    const health = assessBusinessHealth({ memory, dna });
+    const outcomes = opts?.stats?.outcomes || null;
+    const health = assessBusinessHealth({ memory, dna, outcomes });
     return buildHublyDaily({
       memory,
       dna,
@@ -1574,75 +1755,16 @@ export const HublyAI = {
   },
 
   /**
-   * Section 1 — Hubly Brain think pipeline (primary AI entry for owner conversations).
-   * Brain selects experts, merges outputs into one Hubly response, updates memory, logs execution.
-   */
-  async think(req: HublyThinkRequest & { businessId?: string | null }): Promise<HublyThinkResult> {
-    ensureExpertsRegistered();
-    const started = Date.now();
-    try {
-      const result = await runThinkPipeline(req);
-      const execution = logBrainExecution({
-        kind: "think",
-        feature: "hubly-brain-think",
-        task: "reason",
-        intent: result.intent,
-        expertsSelected: result.expertsRun || [],
-        mergedResponse: true,
-        memoryUpdated: true,
-        confidence: result.confidence,
-        ok: result.ok,
-        latencyMs: Date.now() - started,
-        businessId: req.businessId || null,
-      });
-      persistBrainExecution(execution).catch(() => {});
-      return {
-        ...result,
-        console: result.console
-          ? { ...result.console, latencyMs: result.console.latencyMs ?? Date.now() - started }
-          : {
-            intent: result.intent,
-            expertsSelected: result.expertsRun,
-            memoriesLoaded: ["business_memory", "business_dna", "workspace_memory", "conversation_memory"],
-            latencyMs: Date.now() - started,
-          },
-      };
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const execution = logBrainExecution({
-        kind: "think",
-        feature: "hubly-brain-think",
-        task: "reason",
-        expertsSelected: [],
-        mergedResponse: false,
-        memoryUpdated: false,
-        ok: false,
-        latencyMs: Date.now() - started,
-        error: msg,
-        businessId: req.businessId || null,
-      });
-      persistBrainExecution(execution).catch(() => {});
-      throw err;
-    }
-  },
-
-  /** Registered experts + AI Capability Registry (never customer-facing). */
-  experts() {
-    return thinkBrainStatus();
-  },
-
-  /**
-   * Low-level Brain model call. Prefer think() for multi-expert work.
-   * Still Hubly Brain — the only code path allowed to reach providers.
-   * Without `task`, defaults provider to Claude (safe for unmigrated callers).
+   * Low-level provider call. Prefer skills via plan() + skill methods.
+   * Production default: OpenAI. Anthropic is not on the production path.
    */
   async complete(opts: HublyAICompleteOpts): Promise<HublyAIResult> {
     const task = normalizeTask(opts.task) || "chat";
     const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
     const next = { ...opts, memory };
     if (!opts.task && !opts.provider && !opts.model) {
-      const provider = this.defaultProvider();
-      const model = provider === "openai" ? openaiReasoningModel() : claudeFallbackModel();
+      const provider = this.defaultProvider(); // openai
+      const model = openaiReasoningModel();
       return run({
         ...next,
         feature: String(opts.feature || "complete"),
@@ -1748,26 +1870,6 @@ export const HublyAI = {
         skills: opts.skills || ["analyzePhotos"],
       }, "photo_analysis"),
     );
-  },
-
-  expertCapabilities() {
-    ensureExpertsRegistered();
-    return listExpertCapabilities();
-  },
-
-  /** Section 1 — recent Brain executions (in-memory ring; Brain Console / status). */
-  executions(limit = 50) {
-    return listBrainExecutions(limit);
-  },
-
-  /** Section 2 — Experience Director interception log. */
-  experienceInterceptions(limit = 40) {
-    return listExperienceInterceptions(limit);
-  },
-
-  /** Section 2 — review freeform customer-facing text through Experience Director. */
-  reviewForCustomer(text: string, opts?: { request?: string | null; confidence?: number | null }) {
-    return reviewCustomerFacingText(text, opts);
   },
 };
 
