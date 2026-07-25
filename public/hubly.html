@@ -13210,6 +13210,7 @@ const HublyAI={
         dna:(opts&&opts.dna)||null,
         workspace:(opts&&opts.workspace)||null,
         conversation:(opts&&opts.conversation)||null,
+        discovery:(opts&&opts.discovery)||null,
         blueprintKnowledge:(opts&&opts.blueprintKnowledge)||(opts&&opts.blueprint)||null,
         experts:(opts&&opts.experts)||null,
         debug:!!(opts&&opts.debug),
@@ -13218,19 +13219,27 @@ const HublyAI={
       };
       const headers={'Content-Type':'application/json'};
       try{
+        if(typeof SUPA_KEY!=='undefined'&&SUPA_KEY){
+          headers.apikey=SUPA_KEY;
+          if(!headers.Authorization)headers.Authorization='Bearer '+SUPA_KEY;
+        }
+      }catch(e){}
+      try{
         if(db&&db.auth&&typeof db.auth.getSession==='function'){
           const {data}=await db.auth.getSession();
           const token=data&&data.session&&data.session.access_token;
           if(token)headers.Authorization='Bearer '+token;
         }
       }catch(e){}
-      const base=(typeof supabaseUrl!=='undefined'&&supabaseUrl)||'';
+      const base=(typeof supabaseUrl!=='undefined'&&supabaseUrl)||(typeof SUPA_URL!=='undefined'&&SUPA_URL)||'';
       const res=await fetch(base.replace(/\/$/,'')+'/functions/v1/hubly-brain',{
         method:'POST',
         headers,
         body:JSON.stringify(body),
       });
-      return await res.json().catch(()=>({ok:false,error:'Bad response'}));
+      const json=await res.json().catch(()=>({ok:false,error:'Bad response'}));
+      if(!res.ok&&!json.error)json.error='hubly-brain HTTP '+res.status;
+      return json;
     }catch(e){
       console.warn('Hubly.think',e);
       return {ok:false,error:e&&e.message?e.message:'think failed'};
@@ -16692,8 +16701,12 @@ function isDiscoveryBoot(opts){
     isShowAreaPanel(false);
     isTalkClearChips();
     isShowStep('talk');
-    const opener=HUBLY_DISCOVERY.discoveryOpener(S._is.discovery);
-    isTalkPush('hubly',opener);
+    if(seed){
+      // First turn is AI-driven from the landing seed (not a canned opener / gap tree).
+      setTimeout(()=>{ isDiscoverySend(seed).catch(e=>console.error('discovery boot AI',e)); }, 40);
+    }else{
+      isTalkPush('hubly',"Tell me about the business you're building. I'll listen, then ask only what I still need.");
+    }
   }else{
     isShowStep('talk');
     isTalkRender();
@@ -16740,6 +16753,65 @@ function isDiscoverySetTyping(on){
   const el=document.getElementById('is-discovery-typing');
   if(el){el.classList.toggle('is-on',!!on);el.setAttribute('aria-hidden',on?'false':'true');}
 }
+function isDiscoveryApplyAiFacts(session,facts){
+  if(!session||!facts)return;
+  session.aiFacts=session.aiFacts||{};
+  Object.keys(facts).forEach(k=>{
+    const v=facts[k];
+    if(v==null||v==='')return;
+    session.aiFacts[k]=v;
+    const conf=88;
+    if(typeof HUBLY_DISCOVERY.setFact==='function'){
+      // setFact not exported — mirror into facts map used by panel
+    }
+    const label=typeof v==='string'?v:String(v);
+    session.facts[k]={value:v,confidence:conf,inferred:true,label,updatedAt:Date.now()};
+  });
+  // Friendly labels for understanding panel
+  if(facts.industry)session.facts.industry={value:facts.industry,confidence:90,inferred:true,label:facts.industry,updatedAt:Date.now()};
+  if(facts.industryId)session.facts.industryId={value:facts.industryId,confidence:90,inferred:true,label:facts.industryId,updatedAt:Date.now()};
+  if(facts.area)session.facts.area={value:facts.area,confidence:88,inferred:true,label:facts.area,updatedAt:Date.now()};
+  if(facts.stage)session.facts.stage={value:facts.stage,confidence:86,inferred:false,label:facts.stage==='early'?'Just getting started':facts.stage==='established'?'Established':facts.stage,updatedAt:Date.now()};
+  if(facts.positioning)session.facts.positioning={value:facts.positioning,confidence:84,inferred:false,label:facts.positioning,updatedAt:Date.now()};
+  if(facts.customer)session.facts.customer={value:facts.customer,confidence:86,inferred:true,label:facts.customer,updatedAt:Date.now()};
+  if(facts.goal)session.facts.goal={value:facts.goal,confidence:86,inferred:false,label:facts.goal,updatedAt:Date.now()};
+  if(facts.operations)session.facts.operations={value:facts.operations,confidence:84,inferred:false,label:facts.operations,updatedAt:Date.now()};
+  if(facts.businessName&&!S.biz){S.biz=String(facts.businessName);session.facts.businessName={value:facts.businessName,confidence:90,inferred:false,label:facts.businessName,updatedAt:Date.now()};}
+}
+function isDiscoveryBuildHistory(session){
+  const msgs=(S._is?.messages||[]).map(m=>({
+    role:(m.side==='owner'||m.role==='owner'||m.who==='owner')?'owner':'hubly',
+    text:m.text||m.body||'',
+  })).filter(m=>m.text);
+  if(msgs.length)return msgs;
+  return (session?.messages||[]).map(m=>({role:m.role,text:m.text})).filter(m=>m.text);
+}
+/** Call Hubly Brain → OpenAI for the next discovery turn. Local gap tree is FALLBACK only. */
+async function isDiscoveryThinkTurn(ownerText){
+  const session=S._is.discovery;
+  const history=isDiscoveryBuildHistory(session);
+  const factSnap={};
+  Object.keys(session.facts||{}).forEach(k=>{
+    const f=session.facts[k];
+    if(f&&f.value!=null)factSnap[k]=f.value;
+  });
+  const brain=await HublyAI.think(ownerText,{
+    intent:'discovery',
+    discovery:{
+      seed:session.seed||S._is.seed||'',
+      facts:factSnap,
+      history,
+      turns:session.turns||0,
+      clarificationCount:session.clarificationCount||0,
+    },
+    conversation:{
+      sessionId:session.sessionId||('disc_'+Date.now().toString(36)),
+      messages:history,
+    },
+    debug:true,
+  });
+  return brain;
+}
 async function isDiscoverySend(text){
   if(S._is?._talkBusy)return;
   S._is._talkBusy=true;
@@ -16747,24 +16819,89 @@ async function isDiscoverySend(text){
   isTalkPush('owner',text);
   if(input)input.value='';
   isDiscoverySetTyping(true);
-  await isSleep(280+Math.min(420,String(text).length*4));
-  const result=HUBLY_DISCOVERY.ingestDiscoveryTurn(S._is.discovery,text);
-  isDiscoverySetTyping(false);
-  for(const r of (result.replies||[])){
-    if(r.kind==='learning'){
-      S._is.discovery.learningSummary={header:r.text,lines:r.lines||[]};
-      isRenderUnderstandingPanel();
-      const preview=(r.lines||[]).slice(0,3).map(l=>'• '+l).join('\n');
-      isTalkPush('hubly',r.text+(preview?'\n'+preview:''));
-    }else if(r.text){
-      isTalkPush('hubly',r.text);
+  const session=S._is.discovery;
+  session.turns=(session.turns||0)+1;
+
+  let usedAi=false;
+  let ready=false;
+  try{
+    const brain=await isDiscoveryThinkTurn(text);
+    const disc=brain&&brain.discovery;
+    const source=(disc&&disc.source)||brain?.aiSource||null;
+    const reply=(brain&&brain.response)||(disc&&disc.reply)||'';
+    usedAi=source==='openai'&&!!reply;
+    session.lastAi={
+      source:source||'unknown',
+      provider:disc?.provider||brain?.aiProvider||null,
+      model:disc?.model||brain?.aiModel||null,
+      ok:!!(brain&&brain.ok),
+      error:brain?.error||disc?.error||null,
+      at:new Date().toISOString(),
+    };
+    S._is.discoveryAiSource=session.lastAi.source;
+    if(disc&&disc.facts)isDiscoveryApplyAiFacts(session,disc.facts);
+    if(typeof disc?.confidence==='number')session.aiConfidence=disc.confidence;
+    isDiscoverySetTyping(false);
+
+    if(usedAi||(reply&&source==='fallback'&&brain&&brain.ok)){
+      session.messages.push({role:'owner',text});
+      if(reply){
+        isTalkPush('hubly',reply);
+        session.messages.push({role:'hubly',text:reply,kind:'ai'});
+      }
+      const q=(brain?.questions&&brain.questions[0])||disc?.question||null;
+      if(q&&reply&&!reply.toLowerCase().includes(String(q).slice(0,24).toLowerCase())){
+        session.clarificationCount=(session.clarificationCount||0)+1;
+        isTalkPush('hubly',q);
+        session.messages.push({role:'hubly',text:q,kind:'question'});
+      }else if(q&&!reply){
+        session.clarificationCount=(session.clarificationCount||0)+1;
+        isTalkPush('hubly',q);
+        session.messages.push({role:'hubly',text:q,kind:'question'});
+      }
+      ready=!!(disc&&disc.readyForThinking)||!!(brain&&brain.celebrate);
+      if(ready){
+        const lines=(disc&&disc.learningLines)||[];
+        session.learningSummary={header:HUBLY_DISCOVERY.LEARNING_HEADER,lines};
+        session.complete=true;
+        session.readyForThinking=true;
+        if(lines.length){
+          const preview=lines.slice(0,3).map(l=>'• '+l).join('\n');
+          isTalkPush('hubly',HUBLY_DISCOVERY.LEARNING_HEADER+(preview?'\n'+preview:''));
+        }
+      }
+      if(!usedAi){
+        console.warn('[Hubly Discovery] Brain responded via FALLBACK (OpenAI not used). Check OPENAI_API_KEY on hubly-brain.',session.lastAi);
+      }else{
+        console.info('[Hubly Discovery] OpenAI turn',session.lastAi.model||'', 'confidence='+session.aiConfidence);
+      }
+    }else{
+      console.warn('[Hubly Discovery] OpenAI/Brain failed — local fallback',session.lastAi,brain?.error);
+      const local=HUBLY_DISCOVERY.ingestDiscoveryTurn(session,text);
+      for(const r of (local.replies||[])){
+        if(r.kind==='learning'){
+          session.learningSummary={header:r.text,lines:r.lines||[]};
+          const preview=(r.lines||[]).slice(0,3).map(l=>'• '+l).join('\n');
+          isTalkPush('hubly',r.text+(preview?'\n'+preview:''));
+        }else if(r.text)isTalkPush('hubly',r.text);
+      }
+      ready=!!(local.complete||session.readyForThinking);
     }
-    if(r.kind==='question'||r.kind==='moment'||r.kind==='emotion')await isSleep(160);
+  }catch(e){
+    console.error('[Hubly Discovery] AI turn failed',e);
+    isDiscoverySetTyping(false);
+    const local=HUBLY_DISCOVERY.ingestDiscoveryTurn(session,text);
+    session.lastAi={source:'fallback',provider:null,model:null,ok:false,error:e?.message||'exception',at:new Date().toISOString()};
+    for(const r of (local.replies||[])){
+      if(r.text)isTalkPush('hubly',r.text);
+    }
+    ready=!!(local.complete||session.readyForThinking);
   }
+
   isRenderUnderstandingPanel();
   schedulePersistInstantSiteDraft();
   S._is._talkBusy=false;
-  if(result.complete||S._is.discovery.readyForThinking){
+  if(ready||session.readyForThinking){
     await isSleep(600);
     await isDiscoveryCompleteToThinking();
   }else{
