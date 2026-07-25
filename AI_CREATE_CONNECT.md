@@ -197,6 +197,11 @@ Cursor can check off AI Create only when:
 - **View website** opens the real scrollable site (not the left studio card)
 - **Enter Hubly Home** is high-contrast (white button)
 - OpenAI Creative Director designs layout/accent/copy on Create — not Soft Aurora by default
+- Create stays in **chat**: Keep talking focuses the composer and replies in-thread (never a dead chip)
+- Ready state is **chat-first** (compact strip + open chips) — no takeover wall without Back
+- Left studio is a **smaller proof rail**; conversation is the main column
+- Left cards open **real Website / Booking / Packages** (customer layout + Edit packages)
+- From those surfaces, **← Back to chat** returns to Create (not a dead-end into Home/editor)
 
 ---
 
