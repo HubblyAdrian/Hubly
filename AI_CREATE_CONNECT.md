@@ -203,6 +203,8 @@ Cursor can check off AI Create only when:
 - Left cards open **real Website / Booking / Packages** (customer layout + Edit packages)
 - From those surfaces, **← Back to chat** returns to Create (not a dead-end into Home/editor)
 - **Create AI Workspace** (mock target): left Build/Website/Booking/Packages/CRM/Dashboard · center live website canvas with surface tabs · right Hubly AI chat — booking & packages visible in-canvas, not only as chips
+- Canvas stays empty / “building…” until packages land — no hard-coded site on first message
+- **One locked design** per Create session (AI pass once); tabs/clicks don’t reshuffle layout; redesign only when the owner asks
 
 ---
 

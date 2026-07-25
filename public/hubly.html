@@ -1216,11 +1216,27 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 }
 .is-aw-preview .ws-site{min-height:280px}
 .is-aw-empty{
-  display:none;min-height:280px;align-items:center;justify-content:center;text-align:center;
-  padding:40px 24px;color:rgba(255,255,255,.7);font-size:14px;line-height:1.45;
-  border:1px dashed rgba(255,255,255,.18);border-radius:14px;background:rgba(15,23,42,.35)
+  display:none;min-height:320px;align-items:center;justify-content:center;text-align:center;
+  padding:36px 28px;color:rgba(255,255,255,.78);font-size:14px;line-height:1.45;
+  border:1px dashed rgba(255,255,255,.18);border-radius:14px;background:rgba(15,23,42,.35);
+  flex-direction:column;gap:14px
 }
 .is-aw-empty.is-on{display:flex}
+.is-aw-empty .aw-empty-title{margin:0;font-size:18px;font-weight:800;color:#fff;letter-spacing:-.02em}
+.is-aw-empty .aw-empty-sub{margin:0;max-width:36ch;font-size:13px;color:rgba(255,255,255,.65)}
+.is-aw-build-stages{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:420px}
+.is-aw-build-stages span{
+  font-size:11px;font-weight:700;padding:6px 10px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.45);background:rgba(0,0,0,.15)
+}
+.is-aw-build-stages span.is-on{border-color:rgba(217,99,45,.5);color:#fdba74;background:rgba(217,99,45,.15)}
+.is-aw-build-stages span.is-done{border-color:rgba(253,186,116,.35);color:#fff}
+.is-aw-suggest{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0}
+.is-aw-suggest button{
+  appearance:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);color:rgba(255,255,255,.85);
+  border-radius:999px;padding:7px 11px;font:inherit;font-size:11px;font-weight:700;cursor:pointer
+}
+.is-aw-suggest button:hover{border-color:#fdba74;color:#fdba74}
 .is-aw-panel{display:none;min-height:0}
 .is-aw-panel.on{display:block;animation:isLivePop .35s ease both}
 .is-aw-surface-card{
@@ -9309,7 +9325,17 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="is-aw-canvas" id="is-aw-canvas">
               <div class="is-aw-panel on" data-aw-panel="website">
-                <div class="is-aw-empty is-on" id="is-aw-empty">Tell me what you do — your website builds here live.</div>
+                <div class="is-aw-empty is-on" id="is-aw-empty">
+                  <p class="aw-empty-title" id="is-aw-empty-title">Your website builds here</p>
+                  <p class="aw-empty-sub" id="is-aw-empty-sub">Tell me what you do — I won’t flash a template until I’ve shaped something for you.</p>
+                  <div class="is-aw-build-stages" id="is-aw-build-stages" aria-hidden="true">
+                    <span data-aw-stage="understand">Business</span>
+                    <span data-aw-stage="website">Website</span>
+                    <span data-aw-stage="booking">Booking</span>
+                    <span data-aw-stage="packages">Packages</span>
+                    <span data-aw-stage="crm">CRM</span>
+                  </div>
+                </div>
                 <div class="is-aw-preview ed-ws-preview" id="is-aw-preview" hidden></div>
               </div>
               <div class="is-aw-panel" data-aw-panel="booking" hidden>
@@ -9350,6 +9376,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="is-create-decision" id="is-create-decision" data-create-decision="1" hidden aria-live="polite"></div>
               <div class="is-discovery-typing" id="is-discovery-typing" hidden aria-hidden="true"></div>
               <div class="is-talk-chips" id="is-talk-chips"></div>
+              <div class="is-aw-suggest" id="is-aw-suggest" hidden></div>
             </div>
             <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
               <input type="text" id="is-talk-input" autocomplete="off" placeholder="Ask Hubly anything about your business…" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
@@ -17873,8 +17900,19 @@ const HUBLY_HOLY_SHIT = (function(){
     session.complete=false;
     session.readyForThinking=false;
     session.learningSummary={header:'Built',lines:(pack.work||[]).slice(0,3).map(w=>w.what)};
-    // Kick OpenAI design pass (layout/accent/copy) so View isn't stuck on Soft Aurora defaults.
-    try{if(typeof isCreateDesignWithAi==='function')isCreateDesignWithAi();}catch(e){}
+    // One design pass + mock-style summary (not a template flash mid-build).
+    try{
+      isApplyCreateStudioToBusiness();
+      await isCreateDesignWithAi();
+    }catch(e){}
+    isRenderLiveBuild({pulse:'all'});
+    if(silentChat){
+      const bizLabel=biz||S.biz||'your business';
+      const summary=`I built the first version of ${bizLabel}:\n\n• Homepage with a clear offer\n• Booking path customers can use\n• Packages ready to edit\n• Brand direction on the canvas\n\nWhat would you like to change?`;
+      isTalkPush('hubly',summary);
+      session.messages.push({role:'hubly',text:summary,kind:'build_ready'});
+      try{isShowCreateSuggestionChips();}catch(e){}
+    }
     return{pack,token};
   }
   return{INSIGHTS,WORKSPACE_STEPS,inferPack,applyPackFacts,playOpeningSequence,seedActivity,setMomentTag,setWorkspaceStep,resetWorkspace,think,thinkOff,thoughtThenResult,flash,celebrate,fmtTime};
@@ -17893,9 +17931,17 @@ function isDiscoveryBoot(opts){
     S._is.discovery=HUBLY_DISCOVERY.createDiscoverySession(seed);
     S._is.messages=[];
     S._is._askedBeat='discovery';
+    // Fresh Create — unlock design/media so a new conversation gets one clean pass.
+    delete S._is.createAiDesigned;
+    delete S._is._createLayoutLocked;
+    delete S._is._createMediaSeeded;
+    delete S._is._createAiDesigning;
+    delete S._is._createAiDesignPromise;
     isTalkRender();
     isShowAreaPanel(false);
     isTalkClearChips();
+    const sug=document.getElementById('is-aw-suggest');
+    if(sug){sug.hidden=true;sug.innerHTML='';}
     isShowStep('talk');
     try{isEnterCreateAiWorkspace();}catch(e){}
     if(seed){
@@ -17969,9 +18015,12 @@ function isHideCreateDecision(){
   el.hidden=true;
   el.innerHTML='';
 }
-/** OpenAI Creative Director designs look/layout for this conversation — not Soft Aurora picker. */
-async function isCreateDesignWithAi(){
+/** OpenAI Creative Director — runs once per Create session unless force:true (owner asked for a redesign). */
+async function isCreateDesignWithAi(opts){
+  opts=opts||{};
   S._is=S._is||{};
+  // Lock: every click/tab must NOT reshuffle layout/accent.
+  if(S._is.createAiDesigned&&!opts.force)return true;
   if(S._is._createAiDesigning)return S._is._createAiDesignPromise;
   S._is._createAiDesigning=true;
   S._is._createAiDesignPromise=(async()=>{
@@ -17985,12 +18034,14 @@ async function isCreateDesignWithAi(){
       const industry=pack?.industry||S.industry||S.businessType||'local service';
       const msg=[
         ownerBits||`I run a ${industry} business.`,
+        opts.force?`Redesign based on: ${String(opts.reason||ownerBits||'make it more premium').slice(0,280)}`:'',
         `Design a distinctive one-page website for ${industry}.`,
         'Pick layout_id, accent_color, composition, headline, and hero_sub that fit THIS trade.',
         'Do NOT default to spa/wellness looks for trainers, flight instructors, or dog groomers.',
         'Feel like a custom design for this owner — not a template picker (avoid Soft Aurora unless it truly fits).',
         'Prefer layouts: bold-impact, clean-modern, chrome-velocity, garage-industrial, estate-green, premium-dark, clear-view, neon-nights.',
-      ].join('\n');
+        'Keep Hubly brand accent family around #D9632D when it fits; never purple-on-white defaults.',
+      ].filter(Boolean).join('\n');
       const dbClient=await waitForDb();
       const blueprintIds=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.isReady())
         ?HublyBlueprints.list().map(bp=>bp.id)
@@ -18015,17 +18066,18 @@ async function isCreateDesignWithAi(){
       }});
       if(error||data?.error){
         console.warn('Create AI design failed',error||data?.error);
+        // Stable trade fallback so we never thrash Soft Aurora on retries.
+        isCreateLockTradeLayout(S.businessType);
         return false;
       }
       const actions=typeof edAiActionsFromClaude==='function'?edAiActionsFromClaude(data):[];
-      // Always push AI headline/sub when provided even if pack already set copy.
       if(typeof edAiApplyActions==='function'&&actions.length)edAiApplyActions(actions);
       const apply=data?.apply||{};
       if(apply.headline){
         ensureWebsiteCopy();
         S.website.heroHeadline=String(apply.headline);
         S.website.customHeroHeadline=true;
-        if(session?.studio)session.studio.heroSub=String(apply.headline);
+        if(session?.studio)session.studio.heroTitle=session.studio.heroTitle||S.biz;
       }
       if(apply.hero_sub||apply.heroSub||apply.story){
         const sub=String(apply.hero_sub||apply.heroSub||apply.story||'');
@@ -18036,29 +18088,17 @@ async function isCreateDesignWithAi(){
           if(session?.studio)session.studio.heroSub=sub;
         }
       }
-      // Unsplash keyword hero when AI implies a mood and we still have stock/spa media.
       try{
         const mood=String(apply.mood||industry||'').toLowerCase();
-        const q=encodeURIComponent(
-          /train|fitness|coach/.test(mood)?'personal trainer gym fitness workout'
-          :/flight|pilot|aviation/.test(mood)?'airplane cockpit flight training aviation'
-          :/dog|groom|pet/.test(mood)?'dog grooming pet salon happy dog'
-          :/detail|car|auto/.test(mood)?'car detailing clean vehicle shine'
-          :/photo|wedding/.test(mood)?'photography portrait studio'
-          :/hvac|heat|cool/.test(mood)?'home hvac technician comfort'
-          :String(industry).slice(0,48)
-        );
-        if(q&&!S._ownerUploadedMedia){
-          // Deterministic Unsplash Source-style query via images.unsplash featured search redirect isn't available;
-          // use curated trade banners already set, but mark AI-designed.
-          S._is.createAiMood=mood||industry;
-        }
+        S._is.createAiMood=mood||industry;
       }catch(e){}
       S._is.createAiDesigned=true;
+      S._is._createLayoutLocked=true;
       isRenderLiveBuild({pulse:'website',rewrite:true});
       return true;
     }catch(e){
       console.warn('isCreateDesignWithAi',e);
+      isCreateLockTradeLayout(S.businessType);
       return false;
     }finally{
       S._is._createAiDesigning=false;
@@ -18067,6 +18107,29 @@ async function isCreateDesignWithAi(){
   return S._is._createAiDesignPromise;
 }
 window.isCreateDesignWithAi=isCreateDesignWithAi;
+
+/** One stable trade layout until AI designs (or owner forces redesign). */
+function isCreateLockTradeLayout(bpId){
+  S._is=S._is||{};
+  if(S._is.createAiDesigned||S._is._createLayoutLocked)return;
+  ensureWebsiteCopy();
+  const id=String(bpId||S.businessType||'').toLowerCase();
+  const map={
+    fitness:'bold-impact',
+    flight_instruction:'clear-view',
+    dog_grooming:'clean-modern',
+    detailing:'chrome-velocity',
+    hvac:'clean-modern',
+    photography:'premium-dark',
+    spa:'premium-dark',
+    cleaning:'clean-modern',
+    pressure_washing:'bold-impact',
+    landscaping:'estate-green',
+  };
+  S.website.layout=map[id]||'bold-impact';
+  if(!S.color||S.color==='#1a3a6e')S.color='#D9632D';
+  S._is._createLayoutLocked=true;
+}
 async function isCreateDecisionView(){
   const session=S._is?.discovery;
   if(session?.studio){
@@ -18526,6 +18589,14 @@ function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
     pulsed=true;
   }
   if(disc?.liveStatus)session.liveStatus=String(disc.liveStatus).slice(0,120);
+  // Owner asked for a redesign — only then unlock AI design (otherwise layout stays locked).
+  if(/premium|redesign|different look|color scheme|colours?|colors?|layout|make it more|look more|feel more|update the design/.test(t)){
+    try{
+      isCreateDesignWithAi({force:true,reason:String(ownerText||'').slice(0,240)}).then(()=>{
+        try{isRenderCreateWorkspacePreview();}catch(e){}
+      });
+    }catch(e){}
+  }
 }
 function isCreateAiWorkspaceOn(){
   return !!document.getElementById('is-step-talk')?.classList.contains('is-ai-workspace');
@@ -18583,7 +18654,10 @@ function isCreateAwSetSurface(surfaceId,opts){
     panel.classList.toggle('on',match);
     panel.hidden=!match;
   });
-  isApplyCreateStudioToBusiness();
+  // Don't re-seed business on every tab click — that fights the locked design.
+  if(isCreateCanvasShouldShowSite()){
+    try{isApplyCreateStudioToBusiness();}catch(e){}
+  }
   if(id==='website')isRenderCreateWorkspacePreview();
   else if(id==='booking')isRenderCreateAwBooking();
   else if(id==='packages')isRenderCreateAwPackages();
@@ -18610,21 +18684,75 @@ function isCreateAwPublish(){
 }
 window.isCreateAwPublish=isCreateAwPublish;
 
+/** Full site only after packages start — never flash a hard-coded template on first message. */
+function isCreateCanvasShouldShowSite(){
+  const session=S._is?.discovery;
+  if(!session)return false;
+  if(session.holyShitComplete)return true;
+  const st=session.studio||{};
+  return !!(st.rewrite&&st.packagesOn&&(st.pkgChips||[]).length>=1);
+}
+
+function isUpdateCreateAwBuildingEmpty(){
+  const empty=document.getElementById('is-aw-empty');
+  const title=document.getElementById('is-aw-empty-title');
+  const sub=document.getElementById('is-aw-empty-sub');
+  const stages=document.getElementById('is-aw-build-stages');
+  const session=S._is?.discovery;
+  const studio=session?.studio||{};
+  const list=document.getElementById('is-workspace-list');
+  const stepState={};
+  list?.querySelectorAll('[data-step]').forEach(li=>{
+    stepState[li.getAttribute('data-step')]=li.classList.contains('is-done')?'done':(li.classList.contains('is-working')?'on':'');
+  });
+  // Fall back to studio flags when workspace list classes aren't set.
+  if(studio.heroTitle||studio.rewrite)stepState.understand=stepState.understand||'done';
+  if(studio.rewrite)stepState.website=stepState.website||(studio.packagesOn?'done':'on');
+  if(studio.bookingOn)stepState.booking=stepState.booking||((studio.bookingChips||[]).length?'done':'on');
+  if(studio.packagesOn)stepState.packages=stepState.packages||((studio.pkgChips||[]).length?'done':'on');
+  if(session?.holyShitComplete)stepState.crm='done';
+  stages?.querySelectorAll('[data-aw-stage]').forEach(el=>{
+    const k=el.getAttribute('data-aw-stage');
+    el.classList.toggle('is-on',stepState[k]==='on');
+    el.classList.toggle('is-done',stepState[k]==='done');
+  });
+  if(!session||!(session.turns||studio.heroTitle)){
+    if(title)title.textContent='Your website builds here';
+    if(sub)sub.textContent='Tell me what you do — I won’t flash a template until I’ve shaped something for you.';
+  }else if(!studio.rewrite){
+    if(title)title.textContent='Understanding your business…';
+    if(sub)sub.textContent='I’m shaping direction first — the live site appears once the homepage is ready.';
+  }else if(!(studio.packagesOn&&(studio.pkgChips||[]).length)){
+    if(title)title.textContent='Building booking & packages…';
+    if(sub)sub.textContent='Homepage direction is set. Next I’m wiring the offers customers will see.';
+  }else{
+    if(title)title.textContent='Almost ready…';
+    if(sub)sub.textContent='Putting the first version on the canvas.';
+  }
+  empty?.classList.add('is-on');
+  if(empty)empty.hidden=false;
+  isSyncCreateAwChecklist();
+}
+
 function isRenderCreateWorkspacePreview(){
   const preview=document.getElementById('is-aw-preview');
   const empty=document.getElementById('is-aw-empty');
   if(!preview)return;
+  isSyncCreateAwChecklist();
+  if(!isCreateCanvasShouldShowSite()){
+    preview.hidden=true;
+    preview.innerHTML='';
+    isUpdateCreateAwBuildingEmpty();
+    return;
+  }
   try{isApplyCreateStudioToBusiness();}catch(e){}
+  try{isCreateLockTradeLayout(S.businessType);}catch(e){}
   try{if(typeof renderWebsite==='function')renderWebsite();}catch(e){}
   const src=document.getElementById('ws-page');
   const html=(src&&src.innerHTML&&src.innerHTML.trim())?src.innerHTML:'';
-  const hasBiz=!!(S.biz&&S.biz!=='My Business')||!!S._is?.discovery?.studio?.heroTitle||!!S.website?.heroHeadline;
-  const ready=!!html&&(hasBiz||!!S._is?.discovery?.holyShitComplete||(S._is?.discovery?.turns||0)>=1);
-  if(!ready){
+  if(!html){
     preview.hidden=true;
-    preview.innerHTML='';
-    empty?.classList.add('is-on');
-    if(empty)empty.hidden=false;
+    isUpdateCreateAwBuildingEmpty();
     return;
   }
   empty?.classList.remove('is-on');
@@ -18639,12 +18767,10 @@ function isRenderCreateWorkspacePreview(){
   try{applyHeroMediaPlacement?.();}catch(e){}
   try{applyProfileCardThemeVars?.(site);}catch(e){}
   try{applyHeroFocus?.(site);}catch(e){}
-  // Disable pe targets in Create canvas — chat drives edits.
   preview.querySelectorAll('[data-pe],.ws-pe-target').forEach(el=>{
     el.removeAttribute('data-pe');
     el.classList.remove('ws-pe-target');
   });
-  isSyncCreateAwChecklist();
 }
 window.isRenderCreateWorkspacePreview=isRenderCreateWorkspacePreview;
 
@@ -18797,7 +18923,6 @@ window.isKeepTalkingCreate=isKeepTalkingCreate;
 async function isCreateOpenSurface(surfaceId,opts){
   opts=opts||{};
   S._is=S._is||{};
-  isApplyCreateStudioToBusiness();
   const id=surfaceId||'website';
   // In Create AI Workspace: stay in the shell and switch the center canvas.
   if(isCreateAiWorkspaceOn()&&!opts.forceFull&&['website','booking','packages','brand','crm','dashboard'].includes(id)){
@@ -18808,6 +18933,8 @@ async function isCreateOpenSurface(surfaceId,opts){
     isCreateOpenPackagesEditor();
     return;
   }
+  // Never redesign on open — locked design only (or prior one-shot AI pass).
+  isApplyCreateStudioToBusiness();
   S._is._previewFromReveal=true;
   isEnsureRevealBackBar();
   try{
@@ -18816,7 +18943,6 @@ async function isCreateOpenSurface(surfaceId,opts){
       return;
     }
     if(id==='packages'){
-      try{await isCreateDesignWithAi();}catch(e){}
       previewProfile();
       setTimeout(()=>{
         try{
@@ -18833,13 +18959,29 @@ async function isCreateOpenSurface(surfaceId,opts){
       isRevealContinueToWorkspace();
       return;
     }
-    try{await isCreateDesignWithAi();}catch(e){}
     previewProfile();
   }catch(e){
     console.warn('create open surface',e);
   }
 }
 window.isCreateOpenSurface=isCreateOpenSurface;
+
+function isShowCreateSuggestionChips(){
+  const el=document.getElementById('is-aw-suggest');
+  if(!el)return;
+  el.hidden=false;
+  el.innerHTML=`<button type="button" onclick="isCreateSuggest('Change the headline')">Change the headline</button>
+    <button type="button" onclick="isCreateSuggest('Update the color scheme')">Update the color scheme</button>
+    <button type="button" onclick="isCreateSuggest('Add testimonials')">Add testimonials</button>
+    <button type="button" onclick="isCreateSuggest('Improve the packages')">Improve the packages</button>`;
+}
+function isCreateSuggest(text){
+  const inp=document.getElementById('is-talk-input');
+  if(inp){inp.value=text;inp.focus();}
+  try{isTalkSend();}catch(e){}
+}
+window.isCreateSuggest=isCreateSuggest;
+window.isShowCreateSuggestionChips=isShowCreateSuggestionChips;
 
 /** Open Website editor Packages hub from Create — edit real SaaS offers. */
 function isCreateOpenPackagesEditor(){
@@ -18921,6 +19063,7 @@ function isShowCreateRevealChip(){
     <button type="button" class="is-chip" onclick="isCreateAwSetSurface('packages')">Packages</button>
     <button type="button" class="is-chip" onclick="isCreateOpenSurface('packages-edit')">Edit packages</button>
     <button type="button" class="is-chip" onclick="isCreateShowReadySummary()">Show what you built →</button>`;
+  try{isShowCreateSuggestionChips();}catch(e){}
   setTimeout(()=>{
     try{
       const inp=document.getElementById('is-talk-input');
@@ -20192,10 +20335,13 @@ function isApplyCreateStudioToBusiness(){
     S.services=priced;
     S.editorSvcs=priced.map(s=>({...s}));
   }
-  // Trade-specific hero media — always reseed on Create so spa stock never sticks on fitness/etc.
-  if(!S._ownerUploadedMedia){
+  // Trade media once — re-seeding every tab click made the site feel like it was redesigning.
+  S._is=S._is||{};
+  try{isCreateLockTradeLayout(bpId);}catch(e){}
+  if(!S._ownerUploadedMedia&&!S._is._createMediaSeeded){
     if(chrome.banner)S.bannerUrl=chrome.banner;
     S._seededBannerFromBp=true;
+    S._is._createMediaSeeded=true;
     try{if(typeof setHeaderMode==='function')setHeaderMode('banner');}catch(e){}
     try{if(typeof seedGalleryFromBlueprint==='function')seedGalleryFromBlueprint(true);}catch(e){}
   }
@@ -20331,10 +20477,7 @@ async function isRevealOpenSurface(surfaceId){
       previewBookingPage();
       return;
     }
-    // AI-designed look before opening the full site (not Soft Aurora default).
-    if(id==='website'||id==='packages'){
-      try{await isCreateDesignWithAi();}catch(e){}
-    }
+    // Design is locked after the one Create pass — don't reshuffle on open.
     isEnsureRevealBackBar();
     previewProfile();
   }catch(e){
