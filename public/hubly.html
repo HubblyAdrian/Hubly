@@ -1231,12 +1231,33 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 }
 .is-aw-build-stages span.is-on{border-color:rgba(217,99,45,.5);color:#fdba74;background:rgba(217,99,45,.15)}
 .is-aw-build-stages span.is-done{border-color:rgba(253,186,116,.35);color:#fff}
-.is-aw-suggest{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0}
+.is-aw-suggest{display:none;flex-wrap:wrap;gap:6px;margin:4px 0 0}
+.is-aw-suggest.is-on{display:flex}
 .is-aw-suggest button{
   appearance:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);color:rgba(255,255,255,.85);
   border-radius:999px;padding:7px 11px;font:inherit;font-size:11px;font-weight:700;cursor:pointer
 }
 .is-aw-suggest button:hover{border-color:#fdba74;color:#fdba74}
+/* Create chat: one chip row max — decision strip stays quiet in AI Workspace */
+#is-step-talk.is-ai-workspace .is-create-decision{display:none!important}
+#is-step-talk.is-ai-workspace .is-talk-chips{
+  display:flex;flex-wrap:wrap;gap:6px;max-height:44px;overflow:hidden;margin:6px 0 0
+}
+#is-step-talk.is-ai-workspace .is-talk-chips:hover,
+#is-step-talk.is-ai-workspace .is-talk-chips:focus-within{max-height:none;overflow:visible}
+.is-aw-live-frame{
+  background:#fff;border-radius:14px;overflow:auto;min-height:360px;max-height:min(70vh,720px);
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 40px rgba(0,0,0,.35);color:#0f172a
+}
+.is-aw-live-frame .bk-land-wrap,
+.is-aw-live-frame .bk-landing,
+.is-aw-live-frame .ws-site{min-height:0}
+.is-aw-live-toolbar{
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  padding:10px 12px;border-bottom:1px solid #e2e8f0;background:#f8fafc;position:sticky;top:0;z-index:2
+}
+.is-aw-live-toolbar .sk{margin:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#D9632D;font-weight:800}
+.is-aw-live-toolbar .btn{min-height:36px;font-size:12px}
 .is-aw-panel{display:none;min-height:0}
 .is-aw-panel.on{display:block;animation:isLivePop .35s ease both}
 .is-aw-surface-card{
@@ -9314,15 +9335,14 @@ document.addEventListener('DOMContentLoaded', function() {
             <button type="button" data-aw-nav="website" onclick="isCreateAwSetSurface('website')"><span class="ic">◎</span><span>Website</span></button>
             <button type="button" data-aw-nav="booking" onclick="isCreateAwSetSurface('booking')"><span class="ic">▦</span><span>Booking</span></button>
             <button type="button" data-aw-nav="packages" onclick="isCreateAwSetSurface('packages')"><span class="ic">▣</span><span>Packages</span></button>
-            <button type="button" data-aw-nav="crm" onclick="isCreateAwSetSurface('crm')"><span class="ic">☺</span><span>CRM</span></button>
-            <button type="button" data-aw-nav="dashboard" onclick="isCreateAwSetSurface('dashboard')"><span class="ic">▤</span><span>Dashboard</span></button>
+            <button type="button" data-aw-nav="brand" onclick="isCreateAwSetSurface('brand')"><span class="ic">◇</span><span>Brand</span></button>
             <div class="is-aw-check">
               <p class="sk">Coming to life</p>
               <ul id="is-aw-checklist">
                 <li data-aw-check="website">Website</li>
                 <li data-aw-check="booking">Booking</li>
                 <li data-aw-check="packages">Packages</li>
-                <li data-aw-check="crm">CRM</li>
+                <li data-aw-check="brand">Brand</li>
               </ul>
             </div>
           </aside>
@@ -9333,8 +9353,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" data-aw-tab="booking" onclick="isCreateAwSetSurface('booking')">Booking</button>
                 <button type="button" data-aw-tab="packages" onclick="isCreateAwSetSurface('packages')">Packages</button>
                 <button type="button" data-aw-tab="brand" onclick="isCreateAwSetSurface('brand')">Brand</button>
-                <button type="button" data-aw-tab="crm" onclick="isCreateAwSetSurface('crm')">CRM</button>
-                <button type="button" data-aw-tab="dashboard" onclick="isCreateAwSetSurface('dashboard')">Dashboard</button>
               </div>
               <div class="is-aw-devices" aria-label="Preview device">
                 <button type="button" class="on" id="is-aw-device-desk" onclick="isCreateAwSetDevice('desktop')">Desktop</button>
@@ -9352,25 +9370,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span data-aw-stage="website">Website</span>
                     <span data-aw-stage="booking">Booking</span>
                     <span data-aw-stage="packages">Packages</span>
-                    <span data-aw-stage="crm">CRM</span>
+                    <span data-aw-stage="brand">Brand</span>
                   </div>
                 </div>
                 <div class="is-aw-preview ed-ws-preview" id="is-aw-preview" hidden></div>
               </div>
               <div class="is-aw-panel" data-aw-panel="booking" hidden>
-                <div class="is-aw-surface-card" id="is-aw-booking-card"></div>
+                <div id="is-aw-booking-live" class="is-aw-live-frame" aria-label="Customer booking preview"></div>
               </div>
               <div class="is-aw-panel" data-aw-panel="packages" hidden>
-                <div class="is-aw-surface-card" id="is-aw-packages-card"></div>
+                <div id="is-aw-packages-live" class="is-aw-live-frame" aria-label="Packages preview"></div>
               </div>
               <div class="is-aw-panel" data-aw-panel="brand" hidden>
                 <div class="is-aw-surface-card" id="is-aw-brand-card"></div>
-              </div>
-              <div class="is-aw-panel" data-aw-panel="crm" hidden>
-                <div class="is-aw-surface-card" id="is-aw-crm-card"></div>
-              </div>
-              <div class="is-aw-panel" data-aw-panel="dashboard" hidden>
-                <div class="is-aw-surface-card" id="is-aw-dash-card"></div>
               </div>
             </div>
           </section>
@@ -9453,7 +9465,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <li data-step="website">Website</li>
                 <li data-step="booking">Booking</li>
                 <li data-step="packages">Packages</li>
-                <li data-step="crm">CRM</li>
+                <li data-step="brand">Brand</li>
               </ul>
             </div>
             <div class="is-live-brand" id="is-live-brand" aria-label="Brand colors" hidden>
@@ -17492,7 +17504,7 @@ function isDiscoveryActive(){
 }
 /* ── Quiet competent Hubly — one intelligent system, visible results ── */
 const HUBLY_HOLY_SHIT = (function(){
-  const WORKSPACE_STEPS=['understand','website','booking','packages','crm'];
+  const WORKSPACE_STEPS=['understand','website','booking','packages','brand'];
   const INSIGHTS={
     fitness:{
       industry:'Personal Training',industryId:'fitness',
@@ -17887,7 +17899,7 @@ const HUBLY_HOLY_SHIT = (function(){
       await beat(420);
     }
     setWorkspaceStep('packages','done');
-    session.buildingActions=['website','booking','packages','brand','crm'];
+    session.buildingActions=['website','booking','packages','brand'];
     await beat(600);
 
     // Visible CTA move + View / Keep / Undo
@@ -17907,11 +17919,12 @@ const HUBLY_HOLY_SHIT = (function(){
       isTalkPush('hubly',summary);
       session.messages.push({role:'hubly',text:summary,kind:'build_summary'});
     }
-    setWorkspaceStep('crm','working');
+    setWorkspaceStep('brand','working');
+    session.studio.brandOn=true;
     session.liveStatus='';
     isRenderLiveBuild({pulse:'all'});
     await wait(500,token);
-    setWorkspaceStep('crm','done');
+    setWorkspaceStep('brand','done');
     setWorkspaceStatus('Ready');
     setMomentTag('');
 
@@ -18020,6 +18033,11 @@ function isShowCreateDecision(opts){
   opts=opts||{};
   S._is=S._is||{};
   S._is.createDecision={prevCta:opts.prevCta||'Get a free consult',nextCta:opts.nextCta||'Book now',status:'open'};
+  // AI Workspace: never interrupt chat with View/Keep/Undo — apply Keep quietly.
+  if(isCreateAiWorkspaceOn()){
+    isCreateDecisionKeep();
+    return;
+  }
   const el=document.getElementById('is-create-decision');
   if(!el)return;
   el.hidden=false;
@@ -18403,12 +18421,13 @@ async function isCreateSystemsBuildSequence(session,rawBlueprint,facts){
   await sleep(420);
   setStep('packages','done');
 
-  setStep('crm','working');
-  session.buildingActions=['website','booking','packages','brand','crm'];
+  setStep('brand','working');
+  session.buildingActions=['website','booking','packages','brand'];
+  session.studio.brandOn=true;
   session.liveStatus='';
   isRenderLiveBuild({pulse:'all'});
   await sleep(280);
-  setStep('crm','done');
+  setStep('brand','done');
   try{HUBLY_HOLY_SHIT.setWorkspaceStatus?.('Ready');}catch(e){}
 
   session.holyShitComplete=true;
@@ -18535,11 +18554,14 @@ async function isDiscoverySend(text){
       }
       if(disc?.liveStatus)session.liveStatus=String(disc.liveStatus);
       // Apply conversational edits to the live website when the owner asks for changes.
+      const ownerLower=String(text||'').toLowerCase();
+      const wantsLuxury=/premium|luxury|high.?end|upscale/.test(ownerLower);
+      const wantsRedesign=/premium|luxury|redesign|different look|color scheme|colours?|colors?|layout|make it more|look more|feel more|update the design/.test(ownerLower);
       isDiscoveryApplyConversationToStudio(session,text,disc);
-      // If OpenAI returned an updated businessBlueprint, reassemble from systems (still not a template).
-      if(usedAi&&disc?.businessBlueprint&&typeof HublyCreateAssemble!=='undefined'){
+      // If OpenAI returned an updated businessBlueprint, reassemble — unless owner forced luxury
+      // (AI often returns the same mid-tier look and would undo the visible redesign).
+      if(usedAi&&disc?.businessBlueprint&&typeof HublyCreateAssemble!=='undefined'&&!wantsLuxury){
         try{
-          const wantsRedesign=/premium|redesign|different look|color scheme|colours?|colors?|layout|make it more|look more|feel more|update the design/.test(String(text||'').toLowerCase());
           if(wantsRedesign){
             delete S._is.createAiDesigned;
             delete S._is._createLayoutLocked;
@@ -18547,9 +18569,16 @@ async function isDiscoverySend(text){
           HublyCreateAssemble.assemble(disc.businessBlueprint,{facts:disc.facts||session.aiFacts||{}});
           try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.applySectionDom(S.website);}catch(e){}
         }catch(e){console.warn('systems reassemble',e);}
-      }
       isDiscoverySetTyping(false);
       isRenderLiveBuild({pulse:'website',rewrite:true});
+      try{
+        if(isCreateAiWorkspaceOn()){
+          const surf=S._is.createAwSurface||'website';
+          if(surf==='website')isRenderCreateWorkspacePreview();
+          else if(surf==='booking')isRenderCreateAwBooking();
+          else if(surf==='packages')isRenderCreateAwPackages();
+        }
+      }catch(e){}
       if(usedAi||(reply&&brain&&brain.ok)){
         if(reply){
           isTalkPush('hubly',reply);
@@ -18646,12 +18675,11 @@ function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
     pulsed=true;
   }
   if(/premium|luxury|high.?end|upscale/.test(t)){
-    let base=(session.studio.heroSub||'').replace(/\s*[—.]\s*quietly premium\.?/i,'').replace(/\s*Warm, local, easy to book\.?/i,'').trim();
-    base=base.replace(/\.\s*$/,'');
-    session.studio.heroSub=(base||'Results that last')+' — quietly premium.';
     session.studio.ctaElevated=true;
     session.studio.brandOn=true;
+    session.studio.cta='Book a consult';
     pulsed=true;
+    // Visual redesign happens in the redesign block via isCreateForceLuxuryLook.
   }
   if(/friendlier|warmer|friendly|approachable|neighborhood|local/.test(t)){
     let base=(session.studio.heroSub||'').replace(/\s*[—.]\s*quietly premium\.?/i,'').replace(/\s*Warm, local, easy to book\.?/i,'').trim();
@@ -18708,20 +18736,19 @@ function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
     pulsed=true;
   }
   if(disc?.liveStatus)session.liveStatus=String(disc.liveStatus).slice(0,120);
-  // Owner asked for a redesign — unlock so the next AI blueprint / design pass can reassemble.
-  if(/premium|redesign|different look|color scheme|colours?|colors?|layout|make it more|look more|feel more|update the design/.test(t)){
+  // Owner asked for a redesign — unlock and reassemble with a visible layout change.
+  if(/premium|luxury|redesign|different look|color scheme|colours?|colors?|layout|make it more|look more|feel more|update the design/.test(t)){
     try{
-      delete S._is.createAiDesigned;
-      delete S._is._createLayoutLocked;
-      // Prefer systems reassemble when we already have a plan; else one Creative Director pass.
-      if(S._is.createSystemsPlan&&typeof HublyCreateAssemble!=='undefined'){
-        const next=Object.assign({},S._is.createSystemsPlan,{
-          designDirection:/premium|luxury/.test(t)?'luxury':(/minimal|simple/.test(t)?'minimal':(/dark/.test(t)?'dark':S._is.createSystemsPlan.design?.direction||'modern')),
+      if(/premium|luxury|high.?end|upscale/.test(t)){
+        isCreateForceLuxuryLook(ownerText);
+      }else if(S._is.createSystemsPlan&&typeof HublyCreateAssemble!=='undefined'){
+        delete S._is.createAiDesigned;
+        delete S._is._createLayoutLocked;
+        const dir=/minimal|simple/.test(t)?'minimal':(/dark/.test(t)?'dark':(/bold|punchy|louder/.test(t)?'bold':'modern'));
+        const next=S._is.createSystemsPlan;
+        HublyCreateAssemble.assemble({
+          designDirection:dir,
           source:'owner_redesign',
-        });
-        // Flatten nested plan back to raw-ish shape for assemble
-        const raw={
-          designDirection:next.designDirection,
           idealCustomer:next.business?.idealCustomer,
           brandVoice:next.business?.brandVoice,
           offer:next.business?.offer,
@@ -18732,22 +18759,13 @@ function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
           heroSub:next.copy?.sub,
           ctaLabel:next.copy?.ctaLabel,
           packages:next.packages,
-          components:{
-            hero:next.components?.hero?.id,
-            nav:next.components?.nav?.id,
-            cta:next.components?.cta?.id,
-            services:next.components?.services?.id,
-            gallery:next.components?.gallery?.id,
-            testimonials:next.components?.testimonials?.id,
-            pricing:next.components?.pricing?.id,
-            faq:next.components?.faq?.id,
-            footer:next.components?.footer?.id,
-            booking:next.components?.booking?.id,
-          },
-        };
-        HublyCreateAssemble.assemble(raw,{facts:session.aiFacts||{}});
+          components:{},
+        },{facts:session.aiFacts||{}});
+        try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.applySectionDom(S.website);}catch(e){}
         isRenderCreateWorkspacePreview();
       }else{
+        delete S._is.createAiDesigned;
+        delete S._is._createLayoutLocked;
         isCreateDesignWithAi({force:true,reason:String(ownerText||'').slice(0,240)}).then(()=>{
           try{isRenderCreateWorkspacePreview();}catch(e){}
         });
@@ -18755,6 +18773,81 @@ function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
     }catch(e){}
   }
 }
+
+/** Hard luxury redesign — layout, components, consult pricing. Not copy-only. */
+function isCreateForceLuxuryLook(reason){
+  S._is=S._is||{};
+  delete S._is.createAiDesigned;
+  delete S._is._createLayoutLocked;
+  if(typeof HublyCreateAssemble==='undefined'){
+    ensureWebsiteCopy();
+    S.website.layout='obsidian-gold';
+    S.website.composition='classic';
+    S.color='#D9632D';
+    S._is.createAiDesigned=true;
+    S._is._createLayoutLocked=true;
+    try{if(typeof selectWebsiteLayout==='function')selectWebsiteLayout('obsidian-gold');}catch(e){}
+    isRenderCreateWorkspacePreview();
+    return;
+  }
+  const prev=S._is.createSystemsPlan||{};
+  const biz=prev.business||{};
+  const industry=String(biz.industry||S.industry||S.businessType||'coaching');
+  const name=S.biz||biz.name||'Your Business';
+  const pkgs=(prev.packages&&prev.packages.length)?prev.packages:[
+    {name:'Private Coaching',price:0,desc:'One-to-one sessions shaped around your goals.',showPrice:false},
+    {name:'Transformation Program',price:0,desc:'A structured plan with check-ins — progress that sticks.',showPrice:false},
+    {name:'Ongoing Membership',price:0,desc:'Continuous coaching and accountability.',showPrice:false},
+  ].map(p=>typeof p==='string'?{name:p,showPrice:false}:Object.assign({},p,{showPrice:false,price:0}));
+  const luxuryHeadline=/fit|train|coach/i.test(industry)
+    ?'Private coaching. Quietly serious results.'
+    :'Crafted for clients who expect more.';
+  const luxurySub='Consult-first. No commodity pricing. A premium experience from the first click.';
+  HublyCreateAssemble.assemble({
+    source:'owner_luxury',
+    designDirection:'luxury',
+    layoutId:'obsidian-gold',
+    composition:'classic',
+    accent:'#D9632D',
+    priceLevel:'high',
+    businessName:name,
+    industry:biz.industry||S.industry,
+    industryId:biz.industryId||S.businessType,
+    idealCustomer:biz.idealCustomer||'discerning clients',
+    brandVoice:'quiet, confident, premium',
+    offer:'high-end private '+industry,
+    trustSignals:['Private access','Consult-first','Results that last'],
+    desiredFeeling:'quiet luxury',
+    competitivePosition:'premium, not volume',
+    headline:luxuryHeadline,
+    heroSub:luxurySub,
+    ctaLabel:'Book a consult',
+    packages:pkgs,
+    bookingHeadline:"Let's find the right fit",
+    bookingBlurb:'Start with a consult — then choose a program that fits.',
+    components:{
+      hero:'hero_12',nav:'nav_05',cta:'cta_08',services:'svc_05',gallery:'gal_06',
+      testimonials:'tst_02',pricing:'prc_04',faq:'faq_03',footer:'ftr_03',booking:'bk_05',
+    },
+    reason:String(reason||'').slice(0,200),
+  },{facts:S._is.discovery?.aiFacts||{}});
+  try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.applySectionDom(S.website);}catch(e){}
+  // Hide commodity dollar amounts on services for luxury feel.
+  (S.services||[]).forEach(s=>{if(s){s.showPrice=false;}});
+  (S.editorSvcs||[]).forEach(s=>{if(s){s.showPrice=false;}});
+  try{isCreateAwSetSurface('website',{quiet:true});}catch(e){}
+  isRenderCreateWorkspacePreview();
+  const session=S._is.discovery;
+  if(session){
+    session.liveStatus='Moved to a luxury private-coaching feel.';
+    session.studio=session.studio||{};
+    session.studio.rewrite=true;
+    session.studio.cta='Book a consult';
+    session.studio.ctaElevated=true;
+  }
+  isRenderLiveBuild({pulse:'website',rewrite:true});
+}
+window.isCreateForceLuxuryLook=isCreateForceLuxuryLook;
 function isCreateAiWorkspaceOn(){
   return !!document.getElementById('is-step-talk')?.classList.contains('is-ai-workspace');
 }
@@ -18819,11 +18912,9 @@ function isCreateAwSetSurface(surfaceId,opts){
   else if(id==='booking')isRenderCreateAwBooking();
   else if(id==='packages')isRenderCreateAwPackages();
   else if(id==='brand')isRenderCreateAwBrand();
-  else if(id==='crm')isRenderCreateAwCrm();
-  else if(id==='dashboard')isRenderCreateAwDashboard();
   if(!opts.quiet){
     try{
-      const labels={website:'Website',booking:'Booking',packages:'Packages',brand:'Brand',crm:'CRM',dashboard:'Dashboard'};
+      const labels={website:'Website',booking:'Booking',packages:'Packages',brand:'Brand'};
       const el=document.getElementById('is-live-status');
       if(el)el.textContent='Showing '+(labels[id]||id);
     }catch(e){}
@@ -18867,7 +18958,7 @@ function isUpdateCreateAwBuildingEmpty(){
   if(studio.rewrite)stepState.website=stepState.website||(studio.packagesOn?'done':'on');
   if(studio.bookingOn)stepState.booking=stepState.booking||((studio.bookingChips||[]).length?'done':'on');
   if(studio.packagesOn)stepState.packages=stepState.packages||((studio.pkgChips||[]).length?'done':'on');
-  if(session?.holyShitComplete)stepState.crm='done';
+  if(studio.brandOn||session?.holyShitComplete)stepState.brand=stepState.brand||'done';
   stages?.querySelectorAll('[data-aw-stage]').forEach(el=>{
     const k=el.getAttribute('data-aw-stage');
     el.classList.toggle('is-on',stepState[k]==='on');
@@ -18938,7 +19029,7 @@ function isSyncCreateAwChecklist(){
     website:!!(studio.heroTitle||studio.phase==='website'||session?.holyShitComplete),
     booking:!!(studio.bookingOn||session?.holyShitComplete),
     packages:!!(studio.packagesOn||session?.holyShitComplete),
-    crm:!!(session?.holyShitComplete||(session?.buildingActions||[]).includes('crm')),
+    brand:!!(studio.brandOn||studio.logo||session?.holyShitComplete),
   };
   document.querySelectorAll('#is-aw-checklist [data-aw-check]').forEach(li=>{
     const k=li.getAttribute('data-aw-check');
@@ -18948,41 +19039,91 @@ function isSyncCreateAwChecklist(){
   if(pub)pub.textContent=session?.holyShitComplete?'Enter Hubly Home':'Keep building…';
 }
 
+/** Real customer booking landing inside Create canvas — not a summary card. */
 function isRenderCreateAwBooking(){
-  const card=document.getElementById('is-aw-booking-card');
-  if(!card)return;
-  isApplyCreateStudioToBusiness();
+  const frame=document.getElementById('is-aw-booking-live');
+  if(!frame)return;
+  try{isApplyCreateStudioToBusiness();}catch(e){}
   const biz=S.biz||S._is?.discovery?.studio?.heroTitle||'Your business';
-  const chips=(S._is?.discovery?.studio?.bookingChips||['Consult','Book session']).slice(0,4);
-  const svcs=(typeof getBookingServices==='function'?getBookingServices():(S.services||[])).filter(s=>s&&s.name).slice(0,4);
-  card.innerHTML=`<p class="sk" style="margin:0 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#D9632D;font-weight:800">Customer booking</p>
-    <h2>${escPeHtml(biz)}</h2>
-    <p class="sub">This is the booking flow customers get — already wired in Hubly. Try it, or keep chatting to change it.</p>
-    <div class="chip-row">${chips.map(c=>`<span class="chip">${escPeHtml(c)}</span>`).join('')}</div>
-    ${svcs.length?`<div class="is-aw-pkg-grid" style="margin-bottom:12px">${svcs.map(s=>`<div class="is-aw-pkg"><p class="nm">${escPeHtml(s.name)}</p><p class="pr">${s.showPrice===false?'':('$'+(Number(s.price)||0))}</p><p class="ds">${escPeHtml(s.desc||s.dur||'Book this')}</p></div>`).join('')}</div>`:''}
-    <div class="actions">
-      <button type="button" class="btn btn-brand" onclick="isCreateOpenSurface('booking',{forceFull:true})">Open full booking page</button>
-      <button type="button" class="btn btn-out" onclick="isKeepTalkingCreate()">Change via chat</button>
+  const city=S.city||'';
+  const phone=S.phone||'';
+  const email=S.email||'';
+  const accent=(typeof getAccentColor==='function'?getAccentColor():null)||S.color||'#D9632D';
+  const init=String(biz).split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'HB';
+  const svcs=(typeof getBookingServices==='function'?getBookingServices():(S.services||[])).filter(s=>s&&s.name);
+  const bannerUrl=(typeof getBkBanner==='function'?getBkBanner():null)||S.bannerUrl||'';
+  const logoUrl=(typeof getBkLogo==='function'?getBkLogo():null)||S.logoUrl||'';
+  const blurb=S.bookingWizard?.blurb||S._is?.discovery?.studio?.heroSub||'Pick a package — then choose a time.';
+  const title=S.bookingWizard?.headline||'Book with '+biz;
+  const cards=svcs.length
+    ?(typeof bookingLandCardHtml==='function'?svcs.map(s=>bookingLandCardHtml(s,false)).join('')
+      :svcs.map(s=>`<div class="bk-land-card"><div class="bk-land-card-b"><h3>${escPeHtml(s.name)}</h3><p>${escPeHtml(s.desc||'')}</p>${s.showPrice===false?'':`<div class="bk-land-price">$${Number(s.price)||0}</div>`}</div></div>`).join(''))
+    :`<div style="padding:20px;color:#64748b;font-size:13px;grid-column:1/-1">Packages appear as we finish building…</div>`;
+  let meta='';
+  if(phone)meta+=`<span>📞 ${escPeHtml(phone)}</span>`;
+  if(email)meta+=`<span>✉ ${escPeHtml(email)}</span>`;
+  if(city)meta+=`<span>📍 ${escPeHtml(city)}</span>`;
+  frame.innerHTML=`<div class="is-aw-live-toolbar">
+      <p class="sk">Customer booking</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn btn-brand btn-sm" onclick="isCreateOpenSurface('booking',{forceFull:true})">Open full page</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="isKeepTalkingCreate()">Change via chat</button>
+      </div>
+    </div>
+    <div class="bk-landing" style="max-width:none;border:0;border-radius:0;box-shadow:none">
+      <div class="bk-land-hero-wrap">
+        <div class="bk-land-hero-bg" style="height:140px;${bannerUrl?'':'background:'+escPeHtml(typeof getProfileGradient==='function'?getProfileGradient():'#141B2B')}">${bannerUrl?`<img src="${escPeHtml(bannerUrl)}" alt="">`:''}</div>
+        <div class="bk-land-hero-content">
+          <div class="bk-land-logo" style="background:${escPeHtml(accent)}">${logoUrl?`<img src="${escPeHtml(logoUrl)}" alt="">`:escPeHtml(init)}</div>
+          <h1>${escPeHtml(biz)}</h1>
+          <div class="bk-land-copy-row">${meta||`<span>${escPeHtml(blurb)}</span>`}</div>
+        </div>
+      </div>
+      <div class="bk-landing-body">
+        <h2>${escPeHtml(title)}</h2>
+        <div class="bk-landing-sub">${escPeHtml(blurb)}</div>
+        <div class="bk-landing-grid">${cards}</div>
+      </div>
     </div>`;
   isSyncCreateAwChecklist();
 }
 
+/** Real packages layout — website services section, not a stub grid. */
 function isRenderCreateAwPackages(){
-  const card=document.getElementById('is-aw-packages-card');
-  if(!card)return;
-  isApplyCreateStudioToBusiness();
-  const svcs=(typeof getBookingServices==='function'?getBookingServices():(S.services||S.editorSvcs||[])).filter(s=>s&&s.name);
-  const chips=(S._is?.discovery?.studio?.pkgChips||[]).slice(0,6);
-  const list=svcs.length?svcs:chips.map((n,i)=>({name:n,price:'',desc:'',popular:i===1}));
-  card.innerHTML=`<p class="sk" style="margin:0 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#D9632D;font-weight:800">Your offers</p>
-    <h2>Packages</h2>
-    <p class="sub">How customers see your offers on the website. Edit anytime — Hubly already seeded these for your trade.</p>
-    <div class="is-aw-pkg-grid">${list.length?list.map((s,i)=>`<div class="is-aw-pkg${s.popular||i===1?' is-pop':''}"><p class="nm">${escPeHtml(s.name||s)}</p><p class="pr">${s.price===''||s.price==null?'':('$'+(Number(s.price)||0))}</p><p class="ds">${escPeHtml(s.desc||(s.popular||i===1?'Popular':'Package'))}</p></div>`).join(''):'<p class="sub">Packages appear as we talk…</p>'}</div>
-    <div class="actions">
-      <button type="button" class="btn btn-brand" onclick="isCreateOpenSurface('packages',{forceFull:true})">See on website</button>
-      <button type="button" class="btn btn-out" onclick="isCreateOpenSurface('packages-edit')">Edit packages</button>
-      <button type="button" class="btn btn-out" onclick="isKeepTalkingCreate()">Change via chat</button>
+  const frame=document.getElementById('is-aw-packages-live');
+  if(!frame)return;
+  try{isApplyCreateStudioToBusiness();}catch(e){}
+  try{if(typeof renderWebsite==='function')renderWebsite();}catch(e){}
+  const src=document.getElementById('ws-sec-services')
+    ||document.getElementById('ws-sec-packages')
+    ||document.querySelector('#ws-page .ws-sec-services, #ws-page [data-sec="services"]');
+  const themeId=typeof getWebsiteThemeId==='function'?getWebsiteThemeId():'classic';
+  const layoutId=typeof getWebsiteLayoutId==='function'?getWebsiteLayoutId():(S.website?.layout||'');
+  let body='';
+  if(src&&src.innerHTML&&src.innerHTML.trim()){
+    body=`<section class="ws-sec ws-sec-services">${src.innerHTML}</section>`;
+  }else{
+    const svcs=(typeof getBookingServices==='function'?getBookingServices():(S.services||[])).filter(s=>s&&s.name);
+    body=svcs.length
+      ?`<section class="ws-sec ws-sec-services"><div class="ws-section-hdr"><h2>Packages</h2></div><div class="ws-svc-grid">${svcs.map(s=>{
+          const price=s.showPrice===false?'':(`<div class="ws-svc-price">$${Number(s.price)||0}</div>`);
+          return `<div class="ws-svc-card${s.popular?' is-pop':''}"><h3>${escPeHtml(s.name)}</h3>${price}<p class="ws-svc-desc">${escPeHtml(s.desc||'')}</p><button type="button" class="ws-svc-book">Book</button></div>`;
+        }).join('')}</div></section>`
+      :`<p style="padding:28px;color:#64748b">Packages appear as we talk…</p>`;
+  }
+  frame.innerHTML=`<div class="is-aw-live-toolbar">
+      <p class="sk">Your packages</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn btn-brand btn-sm" onclick="isCreateOpenSurface('packages-edit')">Edit packages</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="isCreateAwSetSurface('website')">See on website</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="isKeepTalkingCreate()">Change via chat</button>
+      </div>
+    </div>
+    <div class="ws-site ws-theme-${escPeHtml(themeId)} ${layoutId?('ws-layout-'+escPeHtml(layoutId)):''}" data-create-systems="1">
+      <div class="ws-page" style="padding:8px 0 24px">${body}</div>
     </div>`;
+  try{if(typeof stripPreviewCloneIds==='function')stripPreviewCloneIds(frame);}catch(e){}
+  try{if(typeof HublyCreateAssemble!=='undefined'&&S._is?.createSystemsPlan)HublyCreateAssemble.applyComponentClasses(S._is.createSystemsPlan);}catch(e){}
   isSyncCreateAwChecklist();
 }
 
@@ -19061,15 +19202,10 @@ function isKeepTalkingCreate(){
     try{inp.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
   }
   const chips=document.getElementById('is-talk-chips');
-  if(chips){
-    chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="document.getElementById('is-talk-input')?.focus()">Type below ↓</button>
-      <button type="button" class="is-chip" onclick="isCreateAwSetSurface('website')">Website</button>
-      <button type="button" class="is-chip" onclick="isCreateAwSetSurface('booking')">Booking</button>
-      <button type="button" class="is-chip" onclick="isCreateAwSetSurface('packages')">Packages</button>
-      <button type="button" class="is-chip" onclick="isCreateShowReadySummary()">Show what you built →</button>`;
-  }
+  if(chips)chips.innerHTML='';
+  try{isHideCreateSuggestionChips();}catch(e){}
   try{
-    isTalkPush('hubly','I’m here — tell me what to change. Use the Website / Booking / Packages tabs to see the real surfaces while we talk.');
+    isTalkPush('hubly','I’m here — type below. Use the left nav or center tabs for Website, Booking, and Packages.');
     const log=document.getElementById('is-talk-log');
     if(log)log.scrollTop=log.scrollHeight;
   }catch(e){}
@@ -19123,13 +19259,24 @@ async function isCreateOpenSurface(surfaceId,opts){
 }
 window.isCreateOpenSurface=isCreateOpenSurface;
 
+function isHideCreateSuggestionChips(){
+  const el=document.getElementById('is-aw-suggest');
+  if(!el)return;
+  el.classList.remove('is-on');
+  el.hidden=true;
+  el.innerHTML='';
+}
 function isShowCreateSuggestionChips(){
+  // Create AI Workspace: suggestions clutter chat — keep them off. Tabs already expose surfaces.
+  if(isCreateAiWorkspaceOn()){
+    isHideCreateSuggestionChips();
+    return;
+  }
   const el=document.getElementById('is-aw-suggest');
   if(!el)return;
   el.hidden=false;
-  el.innerHTML=`<button type="button" onclick="isCreateSuggest('Change the headline')">Change the headline</button>
-    <button type="button" onclick="isCreateSuggest('Update the color scheme')">Update the color scheme</button>
-    <button type="button" onclick="isCreateSuggest('Add testimonials')">Add testimonials</button>
+  el.classList.add('is-on');
+  el.innerHTML=`<button type="button" onclick="isCreateSuggest('Make my website more luxury')">Make it more luxury</button>
     <button type="button" onclick="isCreateSuggest('Improve the packages')">Improve the packages</button>`;
 }
 function isCreateSuggest(text){
@@ -19139,6 +19286,7 @@ function isCreateSuggest(text){
 }
 window.isCreateSuggest=isCreateSuggest;
 window.isShowCreateSuggestionChips=isShowCreateSuggestionChips;
+window.isHideCreateSuggestionChips=isHideCreateSuggestionChips;
 
 /** Open Website editor Packages hub from Create — edit real SaaS offers. */
 function isCreateOpenPackagesEditor(){
@@ -19214,13 +19362,10 @@ function isShowCreateRevealChip(){
   const chips=document.getElementById('is-talk-chips');
   if(!chips)return;
   try{isEnterCreateAiWorkspace();}catch(e){}
-  chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="isKeepTalkingCreate()">Keep talking</button>
-    <button type="button" class="is-chip" onclick="isCreateAwSetSurface('website')">Website</button>
-    <button type="button" class="is-chip" onclick="isCreateAwSetSurface('booking')">Booking</button>
-    <button type="button" class="is-chip" onclick="isCreateAwSetSurface('packages')">Packages</button>
-    <button type="button" class="is-chip" onclick="isCreateOpenSurface('packages-edit')">Edit packages</button>
+  // Surfaces live in left nav / center tabs — chat stays for conversation.
+  chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="document.getElementById('is-talk-input')?.focus()">Keep talking</button>
     <button type="button" class="is-chip" onclick="isCreateShowReadySummary()">Show what you built →</button>`;
-  try{isShowCreateSuggestionChips();}catch(e){}
+  try{isHideCreateSuggestionChips();}catch(e){}
   setTimeout(()=>{
     try{
       const inp=document.getElementById('is-talk-input');
@@ -19266,13 +19411,10 @@ async function isCreateShowReadySummary(){
   isTalkPush('hubly','Here’s what we built — use the Website / Booking / Packages tabs to see the real surfaces. Keep talking anytime, or enter Hubly Home when you’re ready.');
   const chips=document.getElementById('is-talk-chips');
   if(chips){
-    chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="isCreateAwSetSurface('website')">Website</button>
-      <button type="button" class="is-chip is-chip-brand" onclick="isCreateAwSetSurface('booking')">Booking</button>
-      <button type="button" class="is-chip is-chip-brand" onclick="isCreateAwSetSurface('packages')">Packages</button>
-      <button type="button" class="is-chip" onclick="isCreateOpenSurface('packages-edit')">Edit packages</button>
-      <button type="button" class="is-chip" onclick="isKeepTalkingCreate()">Keep talking</button>
+    chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="isKeepTalkingCreate()">Keep talking</button>
       <button type="button" class="is-chip" onclick="isRevealContinueToWorkspace()">Enter Hubly Home</button>`;
   }
+  try{isHideCreateSuggestionChips();}catch(e){}
   isRenderLiveBuild({pulse:'all'});
   try{isCreateAwSetSurface('website',{quiet:true});}catch(e){}
   try{document.getElementById('is-talk-log')?.scrollTo({top:99999,behavior:'smooth'});}catch(e){}

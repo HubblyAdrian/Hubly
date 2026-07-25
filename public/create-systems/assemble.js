@@ -43,6 +43,30 @@
     }
 
     var priceLevel = String(raw.priceLevel || facts.positioning || 'mid').toLowerCase();
+    // Luxury / premium directions must not keep commodity pricing or mid-tier components.
+    if (direction.id === 'luxury' || /luxury|premium|high.?end/.test(String(raw.designDirection || ''))) {
+      if (!/high|luxury|premium|consult/.test(priceLevel)) priceLevel = 'high';
+      if (!raw.layoutId && !raw.layout_id) {
+        raw.layoutId = (direction.layoutIds && direction.layoutIds[0]) || 'obsidian-gold';
+      }
+      var luxuryDefaults = {
+        hero: 'hero_12',
+        nav: 'nav_05',
+        cta: 'cta_08',
+        services: 'svc_05',
+        gallery: 'gal_06',
+        testimonials: 'tst_02',
+        pricing: 'prc_04',
+        faq: 'faq_03',
+        footer: 'ftr_03',
+        booking: 'bk_05',
+      };
+      var commodityRe = /^(hero_01|hero_05|svc_01|svc_03|prc_01|prc_02|bk_01|cta_01|nav_03)$/;
+      Object.keys(luxuryDefaults).forEach(function (slot) {
+        var cur = components[slot] || raw[slot];
+        if (!cur || commodityRe.test(String(cur))) components[slot] = luxuryDefaults[slot];
+      });
+    }
     var showPrice = !/high|luxury|premium|consult/.test(priceLevel);
     var pricing = comp('pricing', showPrice ? 'prc_02' : 'prc_04');
     if (pricing && pricing.showPrice === false) showPrice = false;
@@ -50,7 +74,7 @@
     var packages = Array.isArray(raw.packages) ? raw.packages.filter(Boolean).slice(0, 5) : [];
     if (!packages.length && Array.isArray(raw.offers)) packages = raw.offers.slice(0, 5);
     if (!packages.length) {
-      packages = ['Starter', 'Popular', 'Pro'];
+      packages = showPrice ? ['Starter', 'Popular', 'Pro'] : ['Private Coaching', 'Transformation', 'Membership'];
     }
 
     var booking = comp('booking', /consult|high|luxury/.test(priceLevel) ? 'bk_02' : 'bk_01');
