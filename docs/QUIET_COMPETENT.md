@@ -70,3 +70,5 @@ Quiet, useful, optional.
 ```bash
 npm run check:quiet-competent
 ```
+
+Next: [`DELIGHT_SPRINT.md`](./DELIGHT_SPRINT.md) — polish without new concepts.

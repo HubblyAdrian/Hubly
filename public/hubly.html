@@ -1090,12 +1090,22 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-discovery-layout{
   display:grid;gap:14px;align-items:start;
 }
+/* Delight: Create hero = live website (always visible) */
 @media(min-width:900px){
-  .is-wrap.is-discovery-wide{max-width:min(1100px,96vw)}
+  .is-wrap.is-discovery-wide{max-width:min(1180px,96vw)}
   #is-step-talk.is-discovery .is-discovery-layout{
-    grid-template-columns:minmax(0,1fr) minmax(300px,1fr);
+    grid-template-columns:minmax(360px,1.25fr) minmax(280px,.85fr);
   }
+  #is-step-talk.is-discovery .is-live-studio{order:-1;position:sticky;top:12px}
 }
+#is-step-talk.is-discovery .is-title{
+  font-size:clamp(20px,2.4vw,26px);margin:0 0 4px
+}
+#is-step-talk.is-discovery .is-sub{font-size:13px;max-width:40ch;margin:0 0 12px}
+#is-step-talk.is-discovery.is-convo .is-kicker,
+#is-step-talk.is-discovery.is-convo .is-title,
+#is-step-talk.is-discovery.is-convo .is-sub{display:none}
+#is-step-talk.is-discovery .is-talk-log{max-height:min(42vh,420px);overflow:auto}
 .is-understanding-panel,.is-live-studio{
   margin:0 0 12px;padding:14px 14px 12px;border-radius:16px;
   background:rgba(15,23,42,.42);border:1px solid rgba(255,255,255,.16);
@@ -1121,27 +1131,30 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-learning-summary strong{display:block;margin:0 0 6px;color:#fff;font-size:13px}
 .is-learning-summary ul{margin:0;padding:0 0 0 16px}
 .is-learning-summary li{margin:0 0 4px}
-/* Experience-first — live build studio beside conversation */
-.is-live-studio{display:flex;flex-direction:column;gap:10px;min-height:280px}
+/* Create studio — website is the product; process stays quiet */
+.is-live-studio{display:flex;flex-direction:column;gap:10px;min-height:320px}
 .is-live-studio .is-live-status{
-  font-size:13px;font-weight:700;color:#fff;margin:0;line-height:1.35;
-  min-height:1.35em;
+  font-size:12px;font-weight:650;color:rgba(255,255,255,.72);margin:0;line-height:1.35;
+  min-height:1.2em;
 }
 .is-live-studio .is-live-status em{font-style:normal;color:#fdba74}
 .is-live-preview-card{
-  border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);
-  background:linear-gradient(145deg,#0b1020,#141b2b 55%,#1a1520);min-height:120px;
-  transition:transform .25s ease,border-color .2s ease;cursor:default
+  border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(145deg,#0b1020,#141b2b 55%,#1a1520);min-height:200px;
+  transition:transform .28s ease,border-color .2s ease,box-shadow .28s ease;cursor:default;
+  order:-1
 }
-.is-live-preview-card.is-on{border-color:rgba(217,99,45,.55);box-shadow:0 0 0 1px rgba(217,99,45,.2)}
-.is-live-preview-card .hero{padding:16px 14px 14px;color:#fff}
+.is-live-preview-card.is-on{
+  border-color:rgba(217,99,45,.55);box-shadow:0 12px 32px rgba(0,0,0,.28),0 0 0 1px rgba(217,99,45,.2)
+}
+.is-live-preview-card .hero{padding:22px 18px 18px;color:#fff;min-height:200px;display:flex;flex-direction:column;justify-content:flex-end}
 .is-live-preview-card .hero .sk{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);font-weight:750;margin:0 0 6px}
 .is-live-preview-card .hero h3{margin:0 0 6px;font-size:17px;font-weight:800;line-height:1.2}
 .is-live-preview-card .hero p{margin:0 0 10px;font-size:12px;color:rgba(255,255,255,.72);line-height:1.35}
 .is-live-preview-card .hero .cta{
   display:inline-flex;padding:6px 11px;border-radius:999px;background:#D9632D;color:#fff;font-size:11px;font-weight:750
 }
-.is-live-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.is-live-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;order:1}
 .is-live-mini{
   border-radius:12px;padding:10px;border:1px solid rgba(255,255,255,.12);
   background:rgba(255,255,255,.04);min-height:72px
@@ -1198,25 +1211,41 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-hubly-thinking .th-line{flex:1;min-width:0}
 .is-hubly-thinking.is-pulse .th-line{animation:isThinkFade 1.2s ease}
 @keyframes isThinkFade{0%{opacity:.45}40%{opacity:1}100%{opacity:.9}}
-/* One intelligent system — not a cast of fake employees */
+/* Quiet process strip — output (website) stays the hero */
 .is-hubly-workspace{
-  margin:0 0 10px;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.14);
-  background:rgba(15,23,42,.35)
+  margin:0;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(15,23,42,.28);order:2
 }
 .is-hubly-workspace .ws-status{
-  font-size:13px;font-weight:750;color:#fff;margin:0 0 10px
+  font-size:11px;font-weight:750;color:rgba(255,255,255,.7);margin:0 0 6px
 }
 .is-hubly-workspace .ws-status em{font-style:normal;color:#fdba74}
-.is-workspace-list{display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
-.is-workspace-list li{
-  font-size:12.5px;font-weight:600;line-height:1.35;color:rgba(255,255,255,.42);
-  display:flex;gap:8px;align-items:flex-start;transition:color .25s ease,opacity .25s ease
+.is-workspace-list{
+  display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none
 }
-.is-workspace-list li::before{content:"";width:14px;flex:0 0 auto;text-align:center;color:rgba(255,255,255,.35)}
-.is-workspace-list li.is-working{color:rgba(255,255,255,.92)}
-.is-workspace-list li.is-working::before{content:"·";color:#fdba74;font-weight:900}
-.is-workspace-list li.is-done{color:rgba(255,255,255,.78)}
-.is-workspace-list li.is-done::before{content:"✓";color:#fdba74;font-weight:800}
+.is-workspace-list li{
+  font-size:10px;font-weight:700;line-height:1.2;color:rgba(255,255,255,.4);
+  padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.1);
+  transition:color .25s ease,border-color .25s ease,background .25s ease
+}
+.is-workspace-list li.is-working{
+  color:#fff;border-color:rgba(217,99,45,.45);background:rgba(217,99,45,.15)
+}
+.is-workspace-list li.is-done{
+  color:rgba(255,255,255,.75);border-color:rgba(253,186,116,.35)
+}
+.is-workspace-list li.is-done::before{content:"✓ ";color:#fdba74}
+.is-live-logo{order:0}
+.is-live-brand{order:3}
+.is-live-status,.is-live-moment-tag{order:4}
+.is-milestone-toast{
+  position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);
+  z-index:12000;padding:12px 16px;border-radius:14px;background:#141B2B;color:#fff;
+  border:1px solid rgba(217,99,45,.45);box-shadow:0 12px 32px rgba(20,27,43,.28);
+  font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;
+  max-width:min(420px,92vw);text-align:center
+}
+.is-milestone-toast.is-on{opacity:1;transform:translateX(-50%) translateY(0)}
 .is-pkg-appear{animation:isLivePop .4s ease both}
 .dash-discover{
   margin:0 0 16px;padding:14px 16px;border-radius:16px;
@@ -1510,10 +1539,14 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 }
 .is-reveal-continue .btn{width:100%;min-height:48px;font-size:16px;font-weight:750}
 .is-reveal-continue .hint{font-size:12px;color:rgba(255,255,255,.65);text-align:center;margin:0}
-/* Hubly v3 — Operate Home (alive partner, not software dashboard) */
-.dash-ops-hero{margin:0 0 14px}
+/* Home — one hero (website), office-calm, no clutter */
+#v-dashboard[data-v3-operate-home="1"] .dash-ask-dock{display:none}
+#v-dashboard[data-v3-operate-home="1"] .dash-kpi-grid{display:none}
+#v-dashboard[data-v3-operate-home="1"] .hubly-daily{display:none!important}
+.dash-ops-hero{margin:0 0 10px}
 .dash-ops-hero .dash-greeting h1{font-size:clamp(22px,3vw,28px)}
 .dash-ops-hero .dash-ready{font-size:14px;color:var(--ink-3);margin:4px 0 0}
+.dash-stand{font-size:13px;color:var(--ink-3);margin:0 0 14px;font-weight:600}
 .dash-away{
   margin:0 0 16px;padding:14px 16px;border-radius:16px;border:1px solid var(--border);
   background:linear-gradient(135deg,rgba(217,99,45,.07),rgba(20,27,43,.03))
@@ -8940,43 +8973,21 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-talk-progress" id="is-talk-progress" data-i18n-title="isTalkProgress" aria-label="Progress"></div>
         </div>
         <div class="is-kicker">Hubly</div>
-        <h1 class="is-title" id="is-talk-ask">Tell me about the business you’re building</h1>
-        <p class="is-sub" id="is-talk-hint">You hired Hubly. Say what you do — then watch it understand and build.</p>
-        <div class="is-discovery-layout is-discovery">
-          <div class="is-discovery-main">
-            <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
-            <div class="is-hubly-thinking" id="is-hubly-thinking" data-hubly-thinking="1" aria-live="polite" aria-hidden="true">
-              <span class="th-k">Thinking</span>
-              <span class="th-line" id="is-hubly-thinking-line"></span>
-            </div>
-            <div class="is-discovery-typing" id="is-discovery-typing" hidden aria-hidden="true"></div>
-            <div class="is-talk-chips" id="is-talk-chips"></div>
-          </div>
-          <aside class="is-live-studio" id="is-live-studio" aria-live="polite" data-experience-live-studio="1" data-holy-shit-studio="1" data-hubly-workspace="1">
-            <div class="is-learn-kicker">Hubly Workspace</div>
-            <div class="is-hubly-workspace" id="is-hubly-workspace" aria-label="Hubly is working">
-              <p class="ws-status" id="is-workspace-status">Hubly is working…</p>
-              <ul class="is-workspace-list" id="is-workspace-list">
-                <li data-step="understand">Understanding your business</li>
-                <li data-step="website">Designing your website</li>
-                <li data-step="booking">Building your booking experience</li>
-                <li data-step="packages">Creating packages</li>
-                <li data-step="crm">Creating your customer workspace</li>
-              </ul>
-            </div>
-            <p class="is-live-status" id="is-live-status">Got it. Give me a few minutes.</p>
-            <div class="is-live-moment-tag" id="is-live-moment-tag">Rewriting homepage</div>
-            <div class="is-live-logo" id="is-live-logo" hidden>
-              <div class="mark" id="is-live-logo-mark">HB</div>
-              <div class="nm" id="is-live-logo-name">Your brand<small>Logo direction</small></div>
-            </div>
-            <div class="is-live-preview-card" id="is-live-website" data-surface="website">
+        <h1 class="is-title" id="is-talk-ask">What do you do?</h1>
+        <p class="is-sub" id="is-talk-hint">I’ll build your website while we talk.</p>
+        <div class="is-discovery-layout is-discovery" data-delight-create="1">
+          <aside class="is-live-studio" id="is-live-studio" aria-live="polite" data-experience-live-studio="1" data-holy-shit-studio="1" data-hubly-workspace="1" data-create-hero="website">
+            <div class="is-live-preview-card is-on" id="is-live-website" data-surface="website">
               <div class="hero">
-                <p class="sk">Website</p>
+                <p class="sk">Your website</p>
                 <h3 id="is-live-website-title">Your homepage</h3>
-                <p id="is-live-website-sub">Waiting for a few details…</p>
+                <p id="is-live-website-sub">Takes shape as we talk…</p>
                 <span class="cta" id="is-live-website-cta">Book now</span>
               </div>
+            </div>
+            <div class="is-live-logo" id="is-live-logo" hidden>
+              <div class="mark" id="is-live-logo-mark">HB</div>
+              <div class="nm" id="is-live-logo-name">Your brand<small>Logo</small></div>
             </div>
             <div class="is-live-row">
               <div class="is-live-mini" id="is-live-booking" data-surface="booking">
@@ -8990,12 +9001,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="chip-row" id="is-live-pkg-chips"></div>
               </div>
             </div>
+            <div class="is-hubly-workspace" id="is-hubly-workspace" aria-label="Hubly is working">
+              <p class="ws-status" id="is-workspace-status">Working…</p>
+              <ul class="is-workspace-list" id="is-workspace-list">
+                <li data-step="understand">Business</li>
+                <li data-step="website">Website</li>
+                <li data-step="booking">Booking</li>
+                <li data-step="packages">Packages</li>
+                <li data-step="crm">CRM</li>
+              </ul>
+            </div>
             <div class="is-live-brand" id="is-live-brand" aria-label="Brand colors" hidden>
               <i id="is-live-swatch-a" style="background:#141B2B"></i>
               <i id="is-live-swatch-b" style="background:#D9632D"></i>
               <i id="is-live-swatch-c" style="background:#f8fafc"></i>
             </div>
+            <p class="is-live-status" id="is-live-status" hidden>Got it.</p>
+            <div class="is-live-moment-tag" id="is-live-moment-tag">Updated</div>
           </aside>
+          <div class="is-discovery-main">
+            <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
+            <div class="is-hubly-thinking" id="is-hubly-thinking" data-hubly-thinking="1" aria-live="polite" aria-hidden="true">
+              <span class="th-k">Thinking</span>
+              <span class="th-line" id="is-hubly-thinking-line"></span>
+            </div>
+            <div class="is-discovery-typing" id="is-discovery-typing" hidden aria-hidden="true"></div>
+            <div class="is-talk-chips" id="is-talk-chips"></div>
+          </div>
         </div>
         <div id="is-pkg-wrap" class="is-pkg-wrap" aria-live="polite">
           <div id="is-pkg-panel" class="is-pkg-panel"></div>
@@ -9823,10 +9855,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- DASHBOARD — Hubly v3 Operate Home -->
       <div id="v-dashboard" class="body" data-v3-operate-home="1">
-        <div class="dash-hero dash-ops-hero" data-alive-home="1">
+        <div class="dash-hero dash-ops-hero" data-alive-home="1" data-delight-home="1">
           <div class="dash-greeting">
             <h1 id="dash-greet-title"><span id="dash-greet-line1">Good morning</span><span id="dash-greet-line2" hidden></span></h1>
-            <p class="dash-ready" id="dash-ready-line">While you were away, I kept working.</p>
+            <p class="dash-ready" id="dash-ready-line">Here’s where your business stands.</p>
             <div class="dash-greet-time" id="dash-greet-time"></div>
             <button type="button" class="dash-site-link" id="dash-site-link" onclick="copyDashSiteLink()" title="Copy your Hubly website link" hidden>
               <span class="dash-site-link-lbl">Website</span>
@@ -9840,34 +9872,42 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
-        <div class="dash-away" id="dash-away" data-holy-shit-away="1" aria-live="polite">
-          <p class="sk" id="dash-away-sk">While you were away</p>
-          <ul id="dash-away-list"></ul>
-        </div>
+        <p class="dash-stand" id="dash-stand-line">Website · Bookings · Revenue</p>
 
-        <div class="dash-site-hero" id="dash-site-hero">
+        <div class="dash-site-hero" id="dash-site-hero" data-home-hero="website">
           <div class="dash-website-preview" id="dash-website-preview" aria-label="Website preview">
             <div class="site-frame">
-              <div class="site-kicker">Website preview</div>
+              <div class="site-kicker">Website</div>
               <h2 class="site-title" id="dash-site-preview-title">Your Business</h2>
-              <p class="site-sub" id="dash-site-preview-sub">Live preview of what customers see first.</p>
-              <button type="button" class="site-cta" onclick="previewProfile()">Open Website</button>
+              <p class="site-sub" id="dash-site-preview-sub">What customers see first.</p>
+              <button type="button" class="site-cta" onclick="previewProfile()">Open</button>
             </div>
           </div>
           <div class="dash-site-actions">
             <button type="button" class="btn btn-brand btn-sm" onclick="previewProfile()">Open Website</button>
-            <button type="button" class="btn btn-out btn-sm" onclick="copyDashSiteLink()">Share Website</button>
+            <button type="button" class="btn btn-out btn-sm" onclick="copyDashSiteLink()">Share</button>
           </div>
         </div>
 
-        <div class="dash-discover" id="dash-discover" data-hubly-discover="1" aria-live="polite" hidden>
-          <p class="sk" id="dash-discover-sk">I found something</p>
-          <p class="t" id="dash-discover-t"></p>
-          <p class="s" id="dash-discover-s"></p>
-          <div class="actions">
-            <button type="button" class="btn btn-brand btn-sm" id="dash-discover-apply" onclick="applyDashDiscover()">Do it</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="dash-discover-dismiss" onclick="dismissDashDiscover()">Not now</button>
-          </div>
+        <div class="dash-ops-modules" id="dash-ops-modules">
+          <button type="button" class="dash-ops-mod" onclick="document.querySelector('[data-v=jobs]')?.click()">
+            <p class="t">Bookings</p>
+            <p class="s">Today’s schedule</p>
+          </button>
+          <button type="button" class="dash-ops-mod" onclick="document.querySelector('[data-v=money]')?.click()">
+            <p class="t">Revenue</p>
+            <p class="s">What’s coming in</p>
+          </button>
+          <button type="button" class="dash-ops-mod" onclick="document.querySelector('[data-v=customers]')?.click()">
+            <p class="t">Customers</p>
+            <p class="s">Your CRM</p>
+          </button>
+        </div>
+
+        <div class="dash-recent-work" id="dash-todays-work" data-recent-work="1" aria-live="polite">
+          <p class="sk">Recent Work</p>
+          <p class="day" id="dash-activity-day" hidden>Latest changes</p>
+          <ul class="work-list" id="dash-activity-list"></ul>
         </div>
 
         <div class="dash-one-rec" id="dash-one-rec" aria-live="polite">
@@ -9881,25 +9921,19 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
-        <div class="dash-recent-work" id="dash-todays-work" data-recent-work="1" aria-live="polite">
-          <p class="sk">Recent Work</p>
-          <p class="day" id="dash-activity-day">Latest changes Hubly made</p>
-          <ul class="work-list" id="dash-activity-list"></ul>
+        <div class="dash-discover" id="dash-discover" data-hubly-discover="1" aria-live="polite" hidden>
+          <p class="sk" id="dash-discover-sk">I found something</p>
+          <p class="t" id="dash-discover-t"></p>
+          <p class="s" id="dash-discover-s"></p>
+          <div class="actions">
+            <button type="button" class="btn btn-brand btn-sm" id="dash-discover-apply" onclick="applyDashDiscover()">Do it</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="dash-discover-dismiss" onclick="dismissDashDiscover()">Not now</button>
+          </div>
         </div>
 
-        <div class="dash-ops-modules" id="dash-ops-modules">
-          <button type="button" class="dash-ops-mod" onclick="document.querySelector('[data-v=money]')?.click()">
-            <p class="t">Revenue</p>
-            <p class="s">See what’s coming in.</p>
-          </button>
-          <button type="button" class="dash-ops-mod" onclick="document.querySelector('[data-v=customers]')?.click()">
-            <p class="t">Customers</p>
-            <p class="s">Your CRM, ready.</p>
-          </button>
-          <button type="button" class="dash-ops-mod" onclick="document.querySelector('[data-v=jobs]')?.click()">
-            <p class="t">Jobs</p>
-            <p class="s">Calendar &amp; work.</p>
-          </button>
+        <div class="dash-away" id="dash-away" data-holy-shit-away="1" aria-live="polite" hidden>
+          <p class="sk" id="dash-away-sk">While you were away</p>
+          <ul id="dash-away-list"></ul>
         </div>
 
         <div class="dash-focus-row" id="dash-focus-row" hidden aria-hidden="true">
@@ -17026,6 +17060,21 @@ const HUBLY_HOLY_SHIT = (function(){
     el.classList.add(cls);
     setTimeout(()=>el.classList.remove(cls),900);
   }
+  /** Celebrate outcomes — never architecture. */
+  function celebrate(message){
+    let el=document.getElementById('is-milestone-toast');
+    if(!el){
+      el=document.createElement('div');
+      el.id='is-milestone-toast';
+      el.className='is-milestone-toast';
+      el.setAttribute('role','status');
+      document.body.appendChild(el);
+    }
+    el.textContent=message;
+    el.classList.add('is-on');
+    clearTimeout(el._hide);
+    el._hide=setTimeout(()=>el.classList.remove('is-on'),2200);
+  }
   function setMomentTag(text){
     const tag=document.getElementById('is-live-moment-tag');
     if(!tag)return;
@@ -17114,7 +17163,7 @@ const HUBLY_HOLY_SHIT = (function(){
     if(!S.biz||S.biz==='Your Business')S.biz=biz;
 
     resetWorkspace();
-    const m1="Got it. Give me a few minutes.\n\nI'll build your website, booking, packages, and customer workspace.\n\nI'll only interrupt if I genuinely need your opinion.";
+    const m1="Got it. Give me a few minutes — watch your website take shape.";
     isTalkPush('hubly',m1);
     session.messages.push({role:'hubly',text:m1,kind:'moment1'});
     setWorkspaceStatus('Working…');
@@ -17134,14 +17183,14 @@ const HUBLY_HOLY_SHIT = (function(){
     await thoughtThenResult(token,'Your homepage needs a stronger outcome message.',()=>{
       session.studio.heroSub=pack.rewrite;
       session.studio.rewrite=true;
-      session.liveStatus='Homepage updated.';
-      setMomentTag('Homepage updated');
+      session.liveStatus='';
       isRenderLiveBuild({rewrite:true,pulse:'website'});
+      celebrate('Your website just got sharper.');
     },800);
     setWorkspaceStep('website','done');
     await wait(700,token);
 
-    // Thought → booking preview
+    // Thought → booking preview + logo (proof on screen)
     setWorkspaceStep('booking','working');
     await thoughtThenResult(token,'I found a clearer booking flow.',()=>{
       session.studio.bookingOn=true;
@@ -17149,12 +17198,13 @@ const HUBLY_HOLY_SHIT = (function(){
       session.studio.logo=true;
       session.studio.logoMark=pack.logo;
       session.studio.logoName=biz;
-      session.liveStatus='Booking experience updated.';
+      session.liveStatus='';
       isRenderLiveBuild({pulse:'booking'});
+      celebrate('Your logo is in.');
     },750);
     setWorkspaceStep('booking','done');
 
-    // Packages appear one by one (visible)
+    // Packages appear one by one (visible proof)
     setWorkspaceStep('packages','working');
     session.studio.packagesOn=true;
     session.studio.pkgChips=[];
@@ -17162,34 +17212,35 @@ const HUBLY_HOLY_SHIT = (function(){
     for(const pkg of pack.packages){
       session.studio.pkgChips=[...(session.studio.pkgChips||[]),pkg];
       isRenderLiveBuild({pulse:'packages'});
-      await wait(320,token);
+      await wait(280,token);
     }
+    celebrate('Packages are ready.');
     setWorkspaceStep('packages','done');
     session.buildingActions=['website','booking','packages','brand','crm'];
-    await wait(500,token);
+    await wait(450,token);
 
     // I already did — CTA move with View/Keep/Undo personality
     await thoughtThenResult(token,'Your homepage needs a stronger call to action.',()=>{
       session.studio.cta='Book now';
-      setMomentTag('CTA moved');
       isRenderLiveBuild({pulse:'website'});
     },650);
     const m3=pack.alreadyDid;
     isTalkPush('hubly',m3);
     session.messages.push({role:'hubly',text:m3,kind:'already_did'});
-    await wait(900,token);
+    await wait(800,token);
 
     // CRM workspace + transparent assumption
     setWorkspaceStep('crm','working');
     const m4=pack.assumption;
     isTalkPush('hubly',m4);
     session.messages.push({role:'hubly',text:m4,kind:'assumption'});
-    session.liveStatus='Customer workspace ready.';
+    session.liveStatus='';
     isRenderLiveBuild({pulse:'all'});
-    await wait(700,token);
+    await wait(600,token);
     setWorkspaceStep('crm','done');
-    setWorkspaceStatus('Ready.');
+    setWorkspaceStatus('Ready');
     setMomentTag('');
+    celebrate('Your business is ready to open.');
 
     seedActivity(pack);
     session.holyShitComplete=true;
@@ -17198,7 +17249,7 @@ const HUBLY_HOLY_SHIT = (function(){
     session.learningSummary={header:'Built',lines:(pack.work||[]).slice(0,3).map(w=>w.what)};
     return{pack,token};
   }
-  return{INSIGHTS,WORKSPACE_STEPS,inferPack,applyPackFacts,playOpeningSequence,seedActivity,setMomentTag,setWorkspaceStep,resetWorkspace,think,thinkOff,thoughtThenResult,flash,fmtTime};
+  return{INSIGHTS,WORKSPACE_STEPS,inferPack,applyPackFacts,playOpeningSequence,seedActivity,setMomentTag,setWorkspaceStep,resetWorkspace,think,thinkOff,thoughtThenResult,flash,celebrate,fmtTime};
 })();
 
 function isDiscoveryBoot(opts){
@@ -17229,8 +17280,8 @@ function isDiscoveryBoot(opts){
   }
   step?.classList.toggle('is-convo',!!(S._is.messages||[]).length);
   isTalkSetPrompt({
-    title:"What are we building together?",
-    hint:"Quiet and competent — say what you do, then watch Hubly work.",
+    title:"What do you do?",
+    hint:"I’ll build your website while we talk.",
     placeholder:"e.g. I’m an independent fitness trainer…",
     autocomplete:'off',
     type:'text',
@@ -17238,7 +17289,7 @@ function isDiscoveryBoot(opts){
   });
   isRenderLiveBuild();
   const send=document.getElementById('is-talk-send');
-  if(send)send.textContent='Continue';
+  if(send)send.textContent='Send';
   const prog=document.getElementById('is-talk-progress');
   if(prog){prog.hidden=true;prog.innerHTML='';}
   isTalkUpdateBackBtn();
@@ -17282,7 +17333,8 @@ function isRenderLiveBuild(opts){
   const pkgs=document.getElementById('is-live-packages');
   const brand=document.getElementById('is-live-brand');
   const logo=document.getElementById('is-live-logo');
-  web?.classList.toggle('is-on',!!live.websiteOn);
+  // Website never disappears during Create — it's what they bought.
+  web?.classList.add('is-on');
   book?.classList.toggle('is-on',!!live.bookingOn);
   pkgs?.classList.toggle('is-on',!!live.packagesOn);
   const title=document.getElementById('is-live-website-title');
@@ -18534,11 +18586,12 @@ async function isRunBusinessRevealExperience(seed, creativeExperience){
   const welcome=document.getElementById('is-reveal-welcome');
   const forward=document.getElementById('is-reveal-forward');
   if(hero)hero.textContent='🎉 Your business is ready.';
-  if(welcome)welcome.textContent='Website · Booking · CRM · Packages — everything clickable.';
+  if(welcome)welcome.textContent='Open anything below.';
   if(forward){forward.hidden=true;forward.innerHTML='';}
 
   // Hubly v3 — visual ready cards only (no report chrome)
   isRevealRenderReadyCards(creativeExperience||S._is.creativeExperience);
+  try{HUBLY_HOLY_SHIT.celebrate('Your website is live.');}catch(e){}
   await isRevealFrame();
 
   S._is.readyForAccount=true;
@@ -42745,10 +42798,7 @@ function updateDashGreeting(){
     line2.title=shortBiz||biz||'';
   }
   if(ready){
-    const items=typeof loadAiActivityFeed==='function'?loadAiActivityFeed().filter(it=>it.status!=='undone'):[];
-    ready.textContent=items.length
-      ?'While you were away, Hubly improved a few things.'
-      :'No new improvements since your last visit — everything looks healthy.';
+    ready.textContent='Here’s where your business stands.';
   }
   if(timeEl){
     const tz=businessTimezone();
