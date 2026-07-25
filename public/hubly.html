@@ -1612,6 +1612,11 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   box-shadow:0 0 0 3px rgba(217,99,45,.35);transform:scale(1.04);transition:transform .25s ease,box-shadow .25s ease
 }
 .is-live-logo.is-pulse{animation:isLivePulse .7s ease}
+body.ed-owner-preview-open{overflow:auto!important;height:auto!important}
+body.ed-owner-preview-open #p-storefront.page.active{
+  display:block!important;min-height:100vh;overflow:visible;height:auto;
+}
+body.ed-owner-preview-open #p-storefront .ws-page{overflow:visible;height:auto}
 #is-reveal-back-bar{
   position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(12px);
   z-index:10060;display:none;padding:0;opacity:0;transition:opacity .2s ease,transform .2s ease
@@ -12581,6 +12586,13 @@ function previewProfile(){
     if(S._createReadyHome||S._ceoDemo||S._is?.discovery?.holyShitComplete)isApplyCreateStudioToBusiness();
   }catch(e){}
   setOwnerPreview(true);
+  // Leave Create / editor chrome so the live site is fully scrollable.
+  try{
+    const shell=document.getElementById('is-shell');
+    if(shell)shell.style.display='none';
+    document.getElementById('p-onboard')?.classList.remove('is-active','active');
+  }catch(e){}
+  try{document.body.style.overflow='auto';document.documentElement.style.overflow='auto';}catch(e){}
   // Leave editor chrome behind so the live site is clickable (Book Now, tabs, etc.).
   // Editing Packages → Preview used to keep PE reorder/add controls with no handlers.
   try{syncEditorFieldsToState();}catch(e){}
@@ -12590,6 +12602,16 @@ function previewProfile(){
   try{document.getElementById('v-editor')?.classList.add('hidden');}catch(e){}
   try{syncEdAiFab();}catch(e){}
   showP('p-storefront');
+  // Create flow: owner bar offers Edit, not only “back to editor”
+  try{
+    const fromCreate=!!(S._is?._previewFromReveal||S._is?.discovery?.holyShitComplete||S._ceoDemo);
+    const back=document.querySelector('#sf-top-bar .sf-prev-back');
+    if(fromCreate&&back){
+      back.textContent='← Edit website';
+      back.setAttribute('onclick','isCreateOpenWebsiteEditor()');
+    }
+  }catch(e){}
+  try{window.scrollTo(0,0);}catch(e){}
 }
 function previewBookingPage(svcName){
   try{
@@ -16134,6 +16156,9 @@ function normalizeBlueprintId(id){
     landscaping:'landscaping','lawn-care':'landscaping',lawn_care:'landscaping',
     cleaning:'cleaning','house-cleaning':'cleaning',house_cleaning:'cleaning',
     detailing:'detailing',photography:'photography',hvac:'hvac',spa:'spa',
+    fitness:'fitness',personal_training:'fitness',coaching:'fitness',trainer:'fitness',
+    flight_instruction:'flight_instruction','flight-instruction':'flight_instruction',
+    dog_grooming:'dog_grooming','dog-grooming':'dog_grooming',
   };
   return aliases[k]||aliases[k.replace(/_/g,'-')]||k;
 }
@@ -17452,11 +17477,14 @@ const HUBLY_HOLY_SHIT = (function(){
     setWorkspaceStatus('Working…');
     setWorkspaceStep('understand','working');
     // Start with a weaker CTA so the later “Book now” move is visibly different.
+    // Pace for reading + typing — Create used to finish before owners could respond.
+    const pace=silentChat?1.65:1;
+    const beat=async(ms)=>{await wait(Math.round(ms*pace),token);};
     session.studio={phase:'website',heroTitle:biz,heroSub:pack.rewritePrev||'Building your homepage…',cta:'Get a free consult',ctaElevated:false,rewrite:false,logo:false,bookingOn:false,packagesOn:false,brandOn:true,pkgChips:[],bookingChips:[],sections:{about:false,services:false,reviews:false}};
     session.buildingActions=['website','brand'];
     session.liveStatus='Understanding your business…';
     isRenderLiveBuild({pulse:'website'});
-    await wait(700,token);
+    await beat(1100);
     setWorkspaceStep('understand','done');
 
     // Homepage rewrite — visible, minimal talk
@@ -17467,9 +17495,9 @@ const HUBLY_HOLY_SHIT = (function(){
       session.studio.sections={about:true,services:false,reviews:false};
       session.liveStatus='';
       isRenderLiveBuild({rewrite:true,pulse:'website'});
-    },700);
+    },Math.round(1100*pace));
     setWorkspaceStep('website','done');
-    await wait(450,token);
+    await beat(700);
 
     // Booking + logo appear (proof on screen)
     setWorkspaceStep('booking','working');
@@ -17478,11 +17506,11 @@ const HUBLY_HOLY_SHIT = (function(){
       session.studio.bookingChips=[];
       session.liveStatus='';
       isRenderLiveBuild({pulse:'booking'});
-    },400);
+    },Math.round(700*pace));
     for(const chip of (pack.booking||[])){
       session.studio.bookingChips=[...(session.studio.bookingChips||[]),chip];
       isRenderLiveBuild({pulse:'booking'});
-      await wait(200,token);
+      await beat(380);
     }
     session.studio.logo=true;
     session.studio.logoMark=pack.logo;
@@ -17501,11 +17529,11 @@ const HUBLY_HOLY_SHIT = (function(){
     for(const pkg of pack.packages){
       session.studio.pkgChips=[...(session.studio.pkgChips||[]),pkg];
       isRenderLiveBuild({pulse:'packages'});
-      await wait(240,token);
+      await beat(420);
     }
     setWorkspaceStep('packages','done');
     session.buildingActions=['website','booking','packages','brand','crm'];
-    await wait(350,token);
+    await beat(600);
 
     // Visible CTA move + View / Keep / Undo
     const prevCta=session.studio.cta||'Get a free consult';
@@ -17514,9 +17542,9 @@ const HUBLY_HOLY_SHIT = (function(){
       session.studio.ctaElevated=true;
       session.studio.sections={...(session.studio.sections||{}),reviews:true};
       isRenderLiveBuild({pulse:'website',rewrite:true});
-    },500);
+    },Math.round(900*pace));
     isShowCreateDecision({prevCta,nextCta:'Book now'});
-    await wait(500,token);
+    await beat(900);
 
     // AI Connect: do NOT dump scripted insight/assumption into chat — OpenAI already spoke.
     if(!silentChat){
@@ -18073,21 +18101,21 @@ function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
 function isShowCreateRevealChip(){
   const chips=document.getElementById('is-talk-chips');
   if(!chips)return;
-  chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="isCreateContinueToReveal()">Show me what you built →</button>
-    <button type="button" class="is-chip" onclick="document.getElementById('is-talk-input')?.focus()">Keep talking</button>`;
+  chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="document.getElementById('is-talk-input')?.focus()">Keep talking</button>
+    <button type="button" class="is-chip" onclick="isCreateContinueToReveal()">Show me what you built →</button>`;
+  setTimeout(()=>{
+    try{
+      const inp=document.getElementById('is-talk-input');
+      if(inp){inp.focus();inp.placeholder='Change anything — name, vibe, packages, booking…';}
+    }catch(e){}
+  },80);
 }
 function isScheduleCreateRevealAuto(){
   const session=S._is?.discovery;
   if(!session)return;
   try{clearTimeout(session._revealAutoTimer);}catch(e){}
-  // Demo stays moving; real signup gives more time to converse.
-  const waitMs=S._ceoDemo?3500:9000;
-  session._revealAutoTimer=setTimeout(()=>{
-    if(!S._is?.discovery?.holyShitComplete)return;
-    if(S._is?.discovery?.readyForThinking)return;
-    if(S._is?._talkBusy)return;
-    isCreateContinueToReveal();
-  },waitMs);
+  // Never auto-jump — owners need time to talk and steer. Reveal is opt-in only.
+  session._revealAutoTimer=null;
 }
 async function isCreateContinueToReveal(){
   const session=S._is?.discovery;
@@ -19314,9 +19342,12 @@ function isApplyCreateStudioToBusiness(){
     S.services=priced;
     S.editorSvcs=priced.map(s=>({...s}));
   }
-  // Trade-specific hero media when owner hasn’t uploaded.
-  if(chrome.banner&&!S._ownerUploadedMedia){
-    S.bannerUrl=S.bannerUrl||chrome.banner;
+  // Trade-specific hero media — always reseed on Create so spa stock never sticks on fitness/etc.
+  if(!S._ownerUploadedMedia){
+    if(chrome.banner)S.bannerUrl=chrome.banner;
+    S._seededBannerFromBp=true;
+    try{if(typeof setHeaderMode==='function')setHeaderMode('banner');}catch(e){}
+    try{if(typeof seedGalleryFromBlueprint==='function')seedGalleryFromBlueprint(true);}catch(e){}
   }
   // Seed add-ons + payment from blueprint / trade defaults.
   try{
@@ -19347,17 +19378,48 @@ function isEnsureRevealBackBar(){
   if(!bar){
     bar=document.createElement('div');
     bar.id='is-reveal-back-bar';
-    bar.innerHTML=`<button type="button" class="btn btn-brand btn-sm" onclick="isReturnToRevealFromPreview()">← Back to what Hubly built</button>`;
     document.body.appendChild(bar);
   }
+  bar.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center">
+      <button type="button" class="btn btn-out btn-sm" onclick="isReturnToRevealFromPreview()">← Back</button>
+      <button type="button" class="btn btn-brand btn-sm" onclick="isCreateOpenWebsiteEditor()">Edit website</button>
+      <button type="button" class="btn btn-out btn-sm" onclick="isRevealContinueToWorkspace()">Enter Hubly Home</button>
+    </div>`;
   bar.classList.add('is-on');
 }
+/** From Create preview → real website editor so owners can change copy/media before Home. */
+function isCreateOpenWebsiteEditor(){
+  isHideRevealBackBar();
+  try{setOwnerPreview(false);}catch(e){}
+  try{
+    const shell=document.getElementById('is-shell');
+    if(shell)shell.style.display='none';
+    document.getElementById('p-onboard')?.classList.remove('is-active','active');
+  }catch(e){}
+  isApplyCreateStudioToBusiness();
+  S._createReadyHome=true;
+  S._accountClaimed=S._accountClaimed||!!S._ceoDemo;
+  try{
+    showP('p-app',{replaceRoute:true});
+    const edNav=document.querySelector('#p-app [data-v="editor"]')||document.querySelector('[data-v="editor"]');
+    if(edNav&&typeof switchV==='function')switchV(edNav);
+    else openAdvancedStudio({openPixelEditor:true});
+    setTimeout(()=>{
+      try{renderWebsitePreview?.();applyTranslations?.();}catch(e){}
+    },120);
+  }catch(e){
+    console.warn('create open editor',e);
+    openOperateHome();
+  }
+}
+window.isCreateOpenWebsiteEditor=isCreateOpenWebsiteEditor;
 function isHideRevealBackBar(){
   document.getElementById('is-reveal-back-bar')?.classList.remove('is-on');
 }
 function isReturnToRevealFromPreview(){
   isHideRevealBackBar();
   try{setOwnerPreview(false);}catch(e){}
+  try{document.body.style.overflow='';document.documentElement.style.overflow='';}catch(e){}
   document.body.classList.remove('ws-booking-open');
   document.getElementById('p-booking-landing')?.classList.remove('active');
   document.getElementById('p-booking')?.classList.remove('active');
@@ -19403,8 +19465,9 @@ function isRevealRenderReadyCards(creativeExperience){
     ${cards.map((c,i)=>`<button type="button" class="is-reveal-ready-card" style="animation-delay:${i*90}ms;text-align:left;width:100%;font:inherit;color:inherit" onclick="isRevealOpenSurface('${c.id}')"><p class="sk">${escPeHtml(c.label)}</p>${c.viz}<p class="lbl">${escPeHtml(c.lbl||('Open '+c.label))}</p></button>`).join('')}
   </div>
   <div class="is-reveal-continue">
-    <button type="button" class="btn btn-brand" onclick="isRevealContinueToWorkspace()">Enter Hubly Home</button>
-    <p class="hint">Open anything above first — then enter Home when you’re ready.</p>
+    <button type="button" class="btn btn-brand" onclick="isRevealOpenSurface('website')">Preview &amp; edit your website</button>
+    <button type="button" class="btn btn-out" style="width:100%;min-height:44px;margin-top:8px" onclick="isRevealContinueToWorkspace()">Enter Hubly Home</button>
+    <p class="hint">Scroll the full site, tweak what you want — then enter Home when you’re ready.</p>
   </div>`;
 }
 
@@ -43913,21 +43976,27 @@ function renderOperateHome(){
       const pkgNames=(S.services||[]).slice(0,3).map(s=>s.name).filter(Boolean);
       stand.textContent=pkgNames.length?pkgNames.join(' · '):'Open your website or booking to see what Hubly built.';
     }
+    // Link already shows the site URL above — hide the duplicate FitFocus card.
+    const hero=document.getElementById('dash-site-hero');
+    if(hero)hero.hidden=true;
+  }else{
+    const hero=document.getElementById('dash-site-hero');
+    if(hero)hero.hidden=false;
   }
   const mods=document.getElementById('dash-ops-modules');
   if(mods&&(S._createReadyHome||S._ceoDemo)){
     const pkgN=(S.services||[]).length;
     const custN=(S.customers||[]).length;
-    const pkgLabel=pkgN?`${pkgN} packages on your site`:'Packages still generating…';
+    const pkgLabel=pkgN?`${pkgN} packages on your site`:'Open website to finish packages';
     const crmLabel=custN?`${custN} in your CRM`:'Waiting for first customer';
     mods.innerHTML=`
       <button type="button" class="dash-ops-mod" onclick="previewBookingPage()">
         <p class="t">Booking</p>
         <p class="s">Open the customer booking flow</p>
       </button>
-      <button type="button" class="dash-ops-mod" onclick="previewProfile()">
+      <button type="button" class="dash-ops-mod" onclick="isCreateOpenWebsiteEditor()">
         <p class="t">Website</p>
-        <p class="s">${escPeHtml(pkgLabel)}</p>
+        <p class="s">${escPeHtml(pkgLabel)} · Edit</p>
       </button>
       <button type="button" class="dash-ops-mod" onclick="(function(){const n=document.querySelector('#p-app [data-v=customers]');if(n&&typeof switchV==='function')switchV(n);else n?.click();})()">
         <p class="t">CRM</p>

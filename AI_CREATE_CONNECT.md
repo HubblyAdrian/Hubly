@@ -185,7 +185,15 @@ Cursor can check off AI Create only when:
 4. AI Create works across supported industries.
 5. The Create flow ends in a ready-to-use Hubly workspace.
 
-**Current gap to DoD:** streaming replies, AI-driven (not pack-only) studio mutations, frontend `/demo` proof of `discoveryAiSource`, then 5 unassisted validation sessions (`GATE_1_VALIDATION.md`).
+**Current gap to DoD:** streaming replies, fully AI-driven studio (less pack theater), stranger validation sessions (`GATE_1_VALIDATION.md`).
+
+### Create UX fixes (2026-07-25)
+
+- No auto-jump to Reveal — **Keep talking** is primary; “Show me what you built” is opt-in
+- Live build paced slower so owners can type
+- Fitness / flight / dog groomer use **real trade media** (not spa stock)
+- Full-site preview scrollable; **Preview & edit** before Enter Hubly Home
+- Home no longer duplicates the website card when the link is already on top
 
 ---
 
@@ -193,5 +201,5 @@ Cursor can check off AI Create only when:
 
 1. Stream discovery replies (ChatGPT feel)
 2. Drive live studio from `buildingActions` / fact deltas; retire scripted stages when `aiSource==="openai"`
-3. CEO `/demo` pass + log sessions
-4. Polish only what strangers stumble on
+3. Deeper editor-first Create (closer to Website Editor mock) without rushing into Home
+4. CEO `/demo` pass + log sessions
