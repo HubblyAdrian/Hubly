@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hubly · Quiet & Competent</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--brand:#D9632D}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Plus Jakarta Sans",system-ui,sans-serif}
+.scene{padding:28px 20px 48px;min-height:100vh}
+.dark{color:#fff;background:radial-gradient(1200px 600px at 20% -10%,#2a3348 0%,#141B2B 45%,#0b1020 100%)}
+.light{color:#141B2B;background:linear-gradient(180deg,#f8fafc,#fff 45%,#fff7ed)}
+.mark{height:28px;margin:0 0 16px}
+.kicker{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fdba74;margin:0 0 8px}
+.light .kicker{color:var(--brand)}
+h1{margin:0 0 8px;font-size:clamp(22px,3vw,30px);font-weight:800}
+.sub{margin:0 0 18px;opacity:.75;font-size:14px;max-width:48ch;line-height:1.45}
+.layout{display:grid;gap:14px;max-width:980px}
+@media(min-width:860px){.layout{grid-template-columns:1.05fr .95fr}}
+.panel{border-radius:18px;border:1px solid rgba(255,255,255,.14);background:rgba(15,23,42,.42);padding:14px}
+.bubble{border-radius:14px;padding:10px 12px;margin:0 0 8px;font-size:13px;line-height:1.4;white-space:pre-wrap;max-width:95%}
+.hubly{background:rgba(255,255,255,.08)}
+.owner{background:rgba(217,99,45,.22);margin-left:auto}
+.think{display:flex;gap:8px;margin-top:10px;font-size:13px}
+.think .k{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74}
+.ws .sk{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;margin:0 0 8px}
+.ws .st{font-size:13px;font-weight:750;margin:0 0 10px}
+.ws ul{list-style:none;margin:0;padding:0}
+.ws li{font-size:13px;margin:0 0 7px;opacity:.45}
+.ws li.done{opacity:.85}
+.ws li.done::before{content:"✓ ";color:#fdba74;font-weight:800}
+.ws li.work{opacity:1}
+.ws li.work::before{content:"· ";color:#fdba74;font-weight:900}
+.card{margin-top:12px;border-radius:14px;border:1px solid rgba(217,99,45,.55);padding:14px;background:linear-gradient(145deg,#0b1020,#141b2b)}
+.card .sk{font-size:10px;opacity:.5;letter-spacing:.08em;text-transform:uppercase}
+.card h3{margin:6px 0;font-size:17px}
+.card p{margin:0 0 10px;font-size:12px;opacity:.72}
+.cta{display:inline-flex;padding:6px 11px;border-radius:999px;background:var(--brand);font-size:11px;font-weight:750}
+.home{max-width:720px;margin:0 auto}
+.box{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px 16px;margin:0 0 14px}
+.box .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#64748b;font-weight:750;margin:0 0 6px}
+.disc{border-color:rgba(217,99,45,.35);background:rgba(217,99,45,.06)}
+.disc .sk{color:var(--brand)}
+.t{font-size:15px;font-weight:750;margin:0 0 6px}
+.s{font-size:13px;color:#64748b;margin:0 0 10px;line-height:1.45}
+.when{font-size:11px;font-weight:800;color:var(--brand);margin:0 0 4px}
+.what{font-size:14px;font-weight:750;margin:0 0 4px}
+.why{font-size:12px;color:#64748b;margin:0 0 8px}
+.actions button{border:1px solid #e2e8f0;background:#fff;border-radius:9px;padding:6px 10px;font:inherit;font-size:12px;font-weight:700;margin-right:6px}
+.actions button.p{background:var(--brand);border-color:var(--brand);color:#fff}
+.empty{font-size:13px;color:#64748b;line-height:1.5}
+.empty strong{display:block;color:#141B2B;margin:0 0 6px}
+</style>
+</head>
+<body>
+  <div class="scene dark" id="scene-workspace" data-shot="workspace">
+    <img class="mark" src="../../public/assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+    <p class="kicker">Quiet &amp; competent</p>
+    <h1>One intelligent system. Visible results.</h1>
+    <p class="sub">No fake employees. Every thought corresponds to something you can see.</p>
+    <div class="layout">
+      <div class="panel">
+        <div class="bubble owner">I'm an independent fitness trainer.</div>
+        <div class="bubble hubly">Got it. Give me a few minutes.
+
+I'll build your website, booking, packages, and customer workspace.
+
+I'll only interrupt if I genuinely need your opinion.</div>
+        <div class="bubble hubly">I found something.
+
+Most independent trainers lose clients because they talk about certifications instead of results.
+
+I already rewrote your homepage around that.</div>
+        <div class="think"><span class="k">Thinking</span><span>Your homepage needs a stronger call to action.</span></div>
+      </div>
+      <div class="panel ws">
+        <p class="sk">Hubly Workspace</p>
+        <p class="st">Working…</p>
+        <ul>
+          <li class="done">Understanding your business</li>
+          <li class="done">Designing your website</li>
+          <li class="work">Building your booking experience</li>
+          <li>Creating packages</li>
+          <li>Creating your customer workspace</li>
+        </ul>
+        <div class="card">
+          <div class="sk">Website</div>
+          <h3>Personal Training</h3>
+          <p>Transformations that stick — not another gym pitch.</p>
+          <span class="cta">Book now</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene light" id="scene-recent" data-shot="recent">
+    <div class="home">
+      <img class="mark" src="../../public/assets/hubly-wordmark.png" alt="hubly" width="120" height="28" onerror="this.src='../../public/assets/hubly-wordmark-on-dark.png'">
+      <p class="kicker">Recent Work · Discover</p>
+      <h1>Good morning Adrian.</h1>
+      <p class="sub">While you were away, Hubly improved a few things.</p>
+      <div class="box disc">
+        <p class="sk">I found something</p>
+        <p class="t">Nearby trainers are pushing monthly memberships.</p>
+        <p class="s">I can add a simple membership package that matches how your customers already think about coaching.</p>
+        <div class="actions"><button class="p">Create membership</button><button>Not now</button></div>
+      </div>
+      <div class="box">
+        <p class="sk">Recent Work</p>
+        <div style="margin-bottom:14px">
+          <p class="when">8:14 AM</p>
+          <p class="what">Rewrote hero headline.</p>
+          <p class="why"><strong>Reason:</strong> Visitors respond better to outcome-focused messaging.</p>
+          <div class="actions"><button>View</button><button class="p">Keep</button><button>Undo</button></div>
+        </div>
+        <div>
+          <p class="when">8:18 AM</p>
+          <p class="what">Improved booking CTA.</p>
+          <p class="why"><strong>Reason:</strong> More visible above the fold.</p>
+          <div class="actions"><button>View</button><button class="p">Keep</button><button>Undo</button></div>
+        </div>
+      </div>
+      <div class="box">
+        <p class="sk">When nothing changed</p>
+        <p class="empty"><strong>No new improvements since your last visit.</strong>Everything looks healthy. I’ll keep monitoring your business.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

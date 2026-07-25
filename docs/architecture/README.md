@@ -9,6 +9,7 @@ This is the **single source of truth** for how Hubly thinks, how modules connect
 ## Start here
 
 0. **[Hubly Constitution v1.0](../HUBLY_CONSTITUTION.md)** — product contract (read first)  
+0b. **[Hubly OS — Locked](../HUBLY_OS.md)** — one OS; AI personalizes experience  
 1. [Developer Onboarding](./DEVELOPER_ONBOARDING.md) — clone → validate → extend  
 2. [System Architecture Guide](./SYSTEM_ARCHITECTURE.md) — the map  
 3. [AI Lifecycle Guide](./AI_LIFECYCLE.md) — one request end-to-end  
