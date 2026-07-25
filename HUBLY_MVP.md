@@ -3,6 +3,8 @@
 Living launch checklist. Check items only when a customer can experience them in `/demo` (or production) — not when code exists.
 
 ## Create
+Gate detail: [`GATE_1_CREATE.md`](./GATE_1_CREATE.md)
+
 - [ ] AI conversation
 - [ ] Website generation
 - [ ] Booking generation

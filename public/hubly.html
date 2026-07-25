@@ -2110,6 +2110,10 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-chip-priority:hover{transform:translateY(-1px);}
 .is-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
 .is-chip.sel{border-color:#fdba74;background:rgba(217,99,45,.42);box-shadow:0 0 0 2px rgba(253,186,116,.28)}
+.is-chip.is-chip-brand{
+  border-color:#D9632D;background:#D9632D;color:#fff;font-weight:750
+}
+.is-chip.is-chip-brand:hover{filter:brightness(1.05);border-color:#D9632D;background:#D9632D;color:#fff}
 .is-import-banner{
   display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;
   margin:0 0 12px;padding:10px 12px;border-radius:12px;
@@ -17399,12 +17403,13 @@ const HUBLY_HOLY_SHIT = (function(){
     setWorkspaceStep('crm','done');
     setWorkspaceStatus('Ready');
     setMomentTag('');
-    celebrate('Your business is ready to open.');
+    celebrate('Your business is taking shape.');
 
     seedActivity(pack);
+    // Gate 1 — keep talking (OpenAI) before Reveal. Don't auto-jump yet.
     session.holyShitComplete=true;
-    session.complete=true;
-    session.readyForThinking=true;
+    session.complete=false;
+    session.readyForThinking=false;
     session.learningSummary={header:'Built',lines:(pack.work||[]).slice(0,3).map(w=>w.what)};
     return{pack,token};
   }
@@ -17675,7 +17680,7 @@ async function isDiscoverySend(text){
 
   let ready=false;
 
-  // First substantial turn → Holy Shit Moments 1–4 (visible, immediate — not waiting on AI).
+  // First substantial turn → Live build Moments 1–4 (visible, immediate), then real conversation.
   if(!session.holyShitComplete&&session.turns<=2){
     isDiscoverySetTyping(true);
     // Enrich facts from Brain in parallel (non-blocking for the visual sequence).
@@ -17685,17 +17690,23 @@ async function isDiscoverySend(text){
       await isSleep(280);
       isDiscoverySetTyping(false);
       await HUBLY_HOLY_SHIT.playOpeningSequence(session,text);
-      ready=true;
     }catch(e){
       if(String(e?.message||e)!=='holy_shit_cancelled'){
         console.error('[Hubly Holy Shit] sequence failed',e);
         isDiscoverySetTyping(false);
       }
     }
+    // Gate 1 Conversation — weave real OpenAI after the live build (ChatGPT feel).
+    let aiReply='';
     try{
       const brain=await brainPromise;
       const disc=brain&&brain.discovery;
       if(disc&&disc.facts)isDiscoveryApplyAiFacts(session,disc.facts);
+      if(Array.isArray(disc?.buildingActions)&&disc.buildingActions.length){
+        session.buildingActions=disc.buildingActions.map(a=>typeof a==='string'?a:(a?.surface||a?.id||'')).filter(Boolean);
+        isDiscoveryApplyBuildActions(session);
+      }
+      aiReply=String((disc&&disc.reply)||(brain&&brain.response)||'').trim();
       session.lastAi={
         source:(disc&&disc.source)||brain?.aiSource||'unknown',
         provider:disc?.provider||brain?.aiProvider||null,
@@ -17706,9 +17717,19 @@ async function isDiscoverySend(text){
       };
       S._is.discoveryAiSource=session.lastAi.source;
     }catch(e){}
+    if(!aiReply){
+      aiReply="I've got your website, booking, and packages up. Tell me what to change — or I'll show you what I built.";
+    }
+    isTalkPush('hubly',aiReply);
+    session.messages.push({role:'hubly',text:aiReply,kind:'ai'});
+    isRenderLiveBuild({pulse:'website'});
+    isShowCreateRevealChip();
+    isScheduleCreateRevealAuto();
+    ready=false;
   }else{
     // Follow-up turns — conversation + live studio (OpenAI when available).
     isDiscoverySetTyping(true);
+    try{clearTimeout(session._revealAutoTimer);}catch(e){}
     try{
       const brain=await isDiscoveryThinkTurn(text);
       const disc=brain&&brain.discovery;
@@ -17727,10 +17748,13 @@ async function isDiscoverySend(text){
       if(disc&&disc.facts)isDiscoveryApplyAiFacts(session,disc.facts);
       if(Array.isArray(disc?.buildingActions)&&disc.buildingActions.length){
         session.buildingActions=disc.buildingActions.map(a=>typeof a==='string'?a:(a?.surface||a?.id||'')).filter(Boolean);
+        isDiscoveryApplyBuildActions(session);
       }
       if(disc?.liveStatus)session.liveStatus=String(disc.liveStatus);
+      // Apply conversational edits to the live website when the owner asks for changes.
+      isDiscoveryApplyConversationToStudio(session,text,disc);
       isDiscoverySetTyping(false);
-      isRenderLiveBuild({pulse:'website'});
+      isRenderLiveBuild({pulse:'website',rewrite:true});
       if(usedAi||(reply&&brain&&brain.ok)){
         if(reply){
           isTalkPush('hubly',reply);
@@ -17742,12 +17766,17 @@ async function isDiscoverySend(text){
         for(const r of (local.replies||[])){if(r.text)isTalkPush('hubly',r.text);}
         ready=!!(local.complete||session.readyForThinking);
       }
+      if(session.holyShitComplete&&!ready){
+        isShowCreateRevealChip();
+        isScheduleCreateRevealAuto();
+      }
     }catch(e){
       console.error('[Hubly Discovery] AI turn failed',e);
       isDiscoverySetTyping(false);
       const local=HUBLY_DISCOVERY.ingestDiscoveryTurn(session,text);
       for(const r of (local.replies||[])){if(r.text)isTalkPush('hubly',r.text);}
       ready=!!(local.complete||session.readyForThinking);
+      if(session.holyShitComplete&&!ready)isShowCreateRevealChip();
     }
   }
 
@@ -17756,11 +17785,85 @@ async function isDiscoverySend(text){
   S._is._talkBusy=false;
   if(ready||session.readyForThinking){
     await isSleep(500);
-    await isDiscoveryCompleteToThinking();
+    await isCreateContinueToReveal();
   }else{
     setTimeout(()=>document.getElementById('is-talk-input')?.focus(),40);
   }
 }
+/** Light up studio surfaces the Brain asked for. */
+function isDiscoveryApplyBuildActions(session){
+  if(!session)return;
+  session.studio=session.studio||{};
+  const acts=session.buildingActions||[];
+  if(acts.includes('booking'))session.studio.bookingOn=true;
+  if(acts.includes('packages'))session.studio.packagesOn=true;
+  if(acts.includes('brand'))session.studio.brandOn=true;
+  if(acts.includes('website'))session.studio.phase='website';
+}
+/** Turn owner follow-ups into visible live-website proof. */
+function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
+  if(!session)return;
+  session.studio=session.studio||{};
+  const t=String(ownerText||'').toLowerCase();
+  if(/premium|luxury|high.?end|upscale/.test(t)){
+    session.studio.heroSub=session.studio.heroSub||'';
+    if(session.studio.heroSub)session.studio.heroSub=session.studio.heroSub.replace(/\.$/,'')+' — quietly premium.';
+    session.studio.ctaElevated=true;
+    try{HUBLY_HOLY_SHIT.celebrate('Brand tone updated.');}catch(e){}
+  }
+  if(/friendlier|warmer|friendly|approachable|neighborhood/.test(t)){
+    if(session.studio.heroSub)session.studio.heroSub=session.studio.heroSub.replace(/— quietly premium\.?/,'')+' Warm, local, easy to book.';
+    try{HUBLY_HOLY_SHIT.celebrate('Tone feels warmer.');}catch(e){}
+  }
+  if(/book now|stronger cta|call to action|cta/.test(t)){
+    session.studio.cta='Book now';
+    session.studio.ctaElevated=true;
+  }
+  if(/consult|consultation/.test(t)&&!/book now/.test(t)){
+    session.studio.cta='Book a consult';
+    session.studio.ctaElevated=true;
+  }
+  const area=disc?.facts?.area?.value||session.facts?.area?.value;
+  if(typeof area==='string'&&area&&session.studio.heroSub&&!session.studio.heroSub.includes(area)){
+    // keep sub; city lands in state via facts
+  }
+}
+function isShowCreateRevealChip(){
+  const chips=document.getElementById('is-talk-chips');
+  if(!chips)return;
+  chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="isCreateContinueToReveal()">Show me what you built →</button>
+    <button type="button" class="is-chip" onclick="document.getElementById('is-talk-input')?.focus()">Keep talking</button>`;
+}
+function isScheduleCreateRevealAuto(){
+  const session=S._is?.discovery;
+  if(!session)return;
+  try{clearTimeout(session._revealAutoTimer);}catch(e){}
+  // Demo stays moving; real signup gives more time to converse.
+  const waitMs=S._ceoDemo?3500:9000;
+  session._revealAutoTimer=setTimeout(()=>{
+    if(!S._is?.discovery?.holyShitComplete)return;
+    if(S._is?.discovery?.readyForThinking)return;
+    if(S._is?._talkBusy)return;
+    isCreateContinueToReveal();
+  },waitMs);
+}
+async function isCreateContinueToReveal(){
+  const session=S._is?.discovery;
+  if(!session)return;
+  try{clearTimeout(session._revealAutoTimer);}catch(e){}
+  if(session.readyForThinking&&S._is._enteringReveal)return;
+  S._is._enteringReveal=true;
+  session.readyForThinking=true;
+  session.complete=true;
+  isTalkClearChips();
+  isHideCreateDecision();
+  try{
+    await isDiscoveryCompleteToThinking();
+  }finally{
+    S._is._enteringReveal=false;
+  }
+}
+window.isCreateContinueToReveal=isCreateContinueToReveal;
 function isDiscoveryApplyToState(){
   const d=S._is?.discovery;
   if(!d)return;

@@ -32,8 +32,10 @@ Create is polished enough that we'd confidently show it to a paying customer.
 
 - CTA change is visible (consult → Book now) with real View / Keep / Undo
 - Booking chips + logo appear live, one beat at a time
-- No second “build theater” after Create already built on screen — straight to Reveal
+- After live build: real conversation beat + **Show me what you built** (not an instant cut to Reveal)
+- Follow-up turns can change the live website (tone / CTA)
 - Reveal shows the actual website / booking / packages that were built
+- Landing promise clarified: “Tell Hubly what you do. We’ll build your business.”
 
 ## Roadmap (one experience at a time)
 
@@ -55,7 +57,8 @@ Create is polished enough that we'd confidently show it to a paying customer.
 
 Nothing ships because code merged. Things ship because the experience improved.
 
-Launch checklist: [`HUBLY_MVP.md`](./HUBLY_MVP.md)
+Launch checklist: [`HUBLY_MVP.md`](./HUBLY_MVP.md)  
+Current gate: [`GATE_1_CREATE.md`](./GATE_1_CREATE.md)
 
 ## Create — still rough
 
