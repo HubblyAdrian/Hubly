@@ -202,13 +202,14 @@ Spec only until then: [`docs/architecture/BUILDER_ENGINE_SPEC.md`](./architectur
 ## Related reading (after this)
 
 1. [Hubly OS — Locked](./HUBLY_OS.md) — one OS, AI personalizes experience  
-2. [Hubly v3 Business OS](./HUBLY_V3_BUSINESS_OS.md) — Create vs Operate  
-3. [Developer Onboarding](./architecture/DEVELOPER_ONBOARDING.md)  
-4. [System Architecture](./architecture/SYSTEM_ARCHITECTURE.md)  
-5. [AI Lifecycle](./architecture/AI_LIFECYCLE.md)  
-6. [ADRs](./adr/README.md) — *why* we designed it this way  
-7. [Constitution Guide (engineering / AI)](./architecture/CONSTITUTION_GUIDE.md)  
-8. [Milestone 1 Certificate](./releases/MILESTONE1_CERTIFIED.md)  
+2. [Experience First](./EXPERIENCE_FIRST.md) — customer-visible delight; living prototype  
+3. [Hubly v3 Business OS](./HUBLY_V3_BUSINESS_OS.md) — Create vs Operate  
+4. [Developer Onboarding](./architecture/DEVELOPER_ONBOARDING.md)  
+5. [System Architecture](./architecture/SYSTEM_ARCHITECTURE.md)  
+6. [AI Lifecycle](./architecture/AI_LIFECYCLE.md)  
+7. [ADRs](./adr/README.md) — *why* we designed it this way  
+8. [Constitution Guide (engineering / AI)](./architecture/CONSTITUTION_GUIDE.md)  
+9. [Milestone 1 Certificate](./releases/MILESTONE1_CERTIFIED.md)  
 
 ---
 

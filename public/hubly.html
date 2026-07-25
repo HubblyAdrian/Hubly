@@ -1091,19 +1091,19 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   display:grid;gap:14px;align-items:start;
 }
 @media(min-width:900px){
-  .is-wrap.is-discovery-wide{max-width:min(920px,96vw)}
+  .is-wrap.is-discovery-wide{max-width:min(1100px,96vw)}
   #is-step-talk.is-discovery .is-discovery-layout{
-    grid-template-columns:minmax(0,1.25fr) minmax(240px,.85fr);
+    grid-template-columns:minmax(0,1fr) minmax(300px,1fr);
   }
 }
-.is-understanding-panel{
+.is-understanding-panel,.is-live-studio{
   margin:0 0 12px;padding:14px 14px 12px;border-radius:16px;
   background:rgba(15,23,42,.42);border:1px solid rgba(255,255,255,.16);
   color:rgba(255,255,255,.9);
   animation:isUnderstandIn .45s ease both;
 }
 @keyframes isUnderstandIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.is-understanding-panel .is-learn-kicker{
+.is-understanding-panel .is-learn-kicker,.is-live-studio .is-learn-kicker{
   font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
   color:#fdba74;margin:0 0 8px;
 }
@@ -1121,6 +1121,45 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-learning-summary strong{display:block;margin:0 0 6px;color:#fff;font-size:13px}
 .is-learning-summary ul{margin:0;padding:0 0 0 16px}
 .is-learning-summary li{margin:0 0 4px}
+/* Experience-first — live build studio beside conversation */
+.is-live-studio{display:flex;flex-direction:column;gap:10px;min-height:280px}
+.is-live-studio .is-live-status{
+  font-size:13px;font-weight:700;color:#fff;margin:0;line-height:1.35;
+  min-height:1.35em;
+}
+.is-live-studio .is-live-status em{font-style:normal;color:#fdba74}
+.is-live-preview-card{
+  border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(145deg,#0b1020,#141b2b 55%,#1a1520);min-height:120px;
+  transition:transform .25s ease,border-color .2s ease;cursor:default
+}
+.is-live-preview-card.is-on{border-color:rgba(217,99,45,.55);box-shadow:0 0 0 1px rgba(217,99,45,.2)}
+.is-live-preview-card .hero{padding:16px 14px 14px;color:#fff}
+.is-live-preview-card .hero .sk{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);font-weight:750;margin:0 0 6px}
+.is-live-preview-card .hero h3{margin:0 0 6px;font-size:17px;font-weight:800;line-height:1.2}
+.is-live-preview-card .hero p{margin:0 0 10px;font-size:12px;color:rgba(255,255,255,.72);line-height:1.35}
+.is-live-preview-card .hero .cta{
+  display:inline-flex;padding:6px 11px;border-radius:999px;background:#D9632D;color:#fff;font-size:11px;font-weight:750
+}
+.is-live-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.is-live-mini{
+  border-radius:12px;padding:10px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.04);min-height:72px
+}
+.is-live-mini.is-on{border-color:rgba(253,186,116,.4)}
+.is-live-mini .sk{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:750;margin:0 0 6px}
+.is-live-mini .line{height:6px;border-radius:99px;background:rgba(255,255,255,.14);margin:0 0 5px;width:80%}
+.is-live-mini .line.s{width:55%}
+.is-live-mini .chip-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.is-live-mini .chip{
+  font-size:10px;font-weight:700;padding:3px 7px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.85)
+}
+.is-live-brand{display:flex;gap:6px;align-items:center;margin-top:4px}
+.is-live-brand i{width:18px;height:18px;border-radius:50%;display:block;border:1px solid rgba(255,255,255,.2)}
+.is-reveal-ready-card{cursor:pointer}
+.is-reveal-ready-card:hover{border-color:rgba(217,99,45,.55);transform:translateY(-2px)}
+.is-reveal-ready-card:focus-visible{outline:2px solid #D9632D;outline-offset:2px}
 .is-discovery-typing{
   display:none;align-items:center;gap:8px;margin:0 0 10px;
   font-size:12px;font-weight:650;color:rgba(255,255,255,.7);
@@ -8815,17 +8854,41 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div class="is-kicker">Hubly</div>
         <h1 class="is-title" id="is-talk-ask">Tell me about the business you’re building</h1>
-        <p class="is-sub" id="is-talk-hint">This isn’t a form — just a conversation. I’ll listen, then ask only what I still need.</p>
+        <p class="is-sub" id="is-talk-hint">You just hired me. I’ll start building — and only ask when the answer changes what I make.</p>
         <div class="is-discovery-layout is-discovery">
           <div class="is-discovery-main">
             <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
-            <div class="is-discovery-typing" id="is-discovery-typing" aria-hidden="true"><span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Hubly is listening…</div>
+            <div class="is-discovery-typing" id="is-discovery-typing" aria-hidden="true"><span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Hubly is building…</div>
             <div class="is-talk-chips" id="is-talk-chips"></div>
           </div>
-          <aside class="is-understanding-panel" id="is-understanding-panel" aria-live="polite" hidden>
-            <div class="is-learn-kicker">What I’m learning about you</div>
-            <div class="is-understanding-facts" id="is-understanding-facts"></div>
-            <div class="is-learning-summary" id="is-learning-summary" hidden></div>
+          <aside class="is-live-studio" id="is-live-studio" aria-live="polite" data-experience-live-studio="1">
+            <div class="is-learn-kicker">Live studio</div>
+            <p class="is-live-status" id="is-live-status">I’ll build this for you — watch it take shape.</p>
+            <div class="is-live-preview-card" id="is-live-website" data-surface="website">
+              <div class="hero">
+                <p class="sk">Website</p>
+                <h3 id="is-live-website-title">Your homepage</h3>
+                <p id="is-live-website-sub">Waiting for a few details…</p>
+                <span class="cta" id="is-live-website-cta">Book now</span>
+              </div>
+            </div>
+            <div class="is-live-row">
+              <div class="is-live-mini" id="is-live-booking" data-surface="booking">
+                <p class="sk">Booking</p>
+                <div class="line"></div><div class="line s"></div>
+                <div class="chip-row" id="is-live-booking-chips"></div>
+              </div>
+              <div class="is-live-mini" id="is-live-packages" data-surface="packages">
+                <p class="sk">Packages</p>
+                <div class="line"></div><div class="line s"></div>
+                <div class="chip-row" id="is-live-pkg-chips"></div>
+              </div>
+            </div>
+            <div class="is-live-brand" id="is-live-brand" aria-label="Brand colors" hidden>
+              <i id="is-live-swatch-a" style="background:#141B2B"></i>
+              <i id="is-live-swatch-b" style="background:#D9632D"></i>
+              <i id="is-live-swatch-c" style="background:#f8fafc"></i>
+            </div>
           </aside>
         </div>
         <div id="is-pkg-wrap" class="is-pkg-wrap" aria-live="polite">
@@ -8924,8 +8987,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-reveal-brand">
             <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
           </div>
-          <h1 class="is-reveal-hero" id="is-reveal-hero">Your business is ready.</h1>
-          <p class="is-reveal-welcome" id="is-reveal-welcome">Website, booking, CRM, packages, and calendar — built live while we talked.</p>
+          <h1 class="is-reveal-hero" id="is-reveal-hero">🎉 I built your business.</h1>
+          <p class="is-reveal-welcome" id="is-reveal-welcome">Website, booking, CRM, and packages — tap any to open it.</p>
           <div class="is-reveal-rail" id="is-reveal-rail" aria-hidden="true" hidden></div>
           <div class="is-reveal-grid">
             <div>
@@ -12118,6 +12181,7 @@ function openOperateHome(opts){
       updateKPIs?.();
       renderDashNewBookings?.();
       applyTranslations?.();
+      if(typeof isOpenPreferredOperateSurface==='function')isOpenPreferredOperateSurface();
     }catch(e){}
   },60);
 }
@@ -16629,6 +16693,7 @@ const HUBLY_DISCOVERY = (function(){
       version:'1.0.0',seed:String(seed||'').trim(),turns:0,clarificationCount:0,
       previouslyAsked:[],facts:{},moments:[],momentsFired:0,memoryNotes:[],messages:[],
       emotion:{state:'neutral'},complete:false,readyForThinking:false,learningSummary:null,
+      buildingActions:[],liveStatus:null,
       ASK_CONFIDENCE,READY_CONFIDENCE,MAX_CLARIFICATION_QUESTIONS,
     };
     if(session.seed)inferAll(session,session.seed,'seed');
@@ -16636,9 +16701,9 @@ const HUBLY_DISCOVERY = (function(){
   }
   function discoveryOpener(session){
     const ind=session.facts.industry?.value;
-    if(ind)return 'Got it — '+ind+". Tell me a little more about how you work, and I'll fill in the rest.";
-    if(session.seed)return "I heard you. Tell me a little more about what you're building — I'll connect the dots.";
-    return "Tell me about the business you're building. I'll listen, then ask only what I still need.";
+    if(ind)return "I'll start shaping your "+ind+" website now — tell me who you serve and where, and I'll keep building.";
+    if(session.seed)return "I'm already sketching this — tell me a bit more and I'll keep building while we talk.";
+    return "Tell me about the business you're building — I'll start shaping your website and booking as we talk.";
   }
   function ingestDiscoveryTurn(session,ownerText){
     const text=String(ownerText||'').trim();
@@ -16705,7 +16770,7 @@ function isDiscoveryBoot(opts){
       // First turn is AI-driven from the landing seed (not a canned opener / gap tree).
       setTimeout(()=>{ isDiscoverySend(seed).catch(e=>console.error('discovery boot AI',e)); }, 40);
     }else{
-      isTalkPush('hubly',"Tell me about the business you're building. I'll listen, then ask only what I still need.");
+      isTalkPush('hubly',"Tell me about the business you're building — I'll start shaping your website and booking as we talk.");
     }
   }else{
     isShowStep('talk');
@@ -16714,13 +16779,13 @@ function isDiscoveryBoot(opts){
   step?.classList.toggle('is-convo',!!(S._is.messages||[]).length);
   isTalkSetPrompt({
     title:"What are we building together?",
-    hint:"Just talk — I’ll infer what I can. We can always change it later.",
+    hint:"Talk naturally — I’ll start building and only interrupt when I need you.",
     placeholder:"Tell me what you’re working on…",
     autocomplete:'off',
     type:'text',
     value:'',
   });
-  isRenderUnderstandingPanel();
+  isRenderLiveBuild();
   const send=document.getElementById('is-talk-send');
   if(send)send.textContent='Continue';
   const prog=document.getElementById('is-talk-progress');
@@ -16728,27 +16793,89 @@ function isDiscoveryBoot(opts){
   isTalkUpdateBackBtn();
   setTimeout(()=>document.getElementById('is-talk-input')?.focus(),80);
 }
-function isRenderUnderstandingPanel(){
-  const panel=document.getElementById('is-understanding-panel');
-  const factsEl=document.getElementById('is-understanding-facts');
-  const learnEl=document.getElementById('is-learning-summary');
-  if(!panel||!factsEl)return;
+/** Experience-first — progressive website / booking / packages while Discovery talks. */
+function isLiveBuildFromFacts(session){
+  const f=session?.facts||{};
+  const g=k=>(f[k]&&f[k].value!=null)?f[k].value:null;
+  const industry=g('industry')||g('industryId');
+  const area=g('area');
+  const customer=g('customer');
+  const goal=g('goal');
+  const positioning=g('positioning');
+  const biz=S.biz||g('businessName')||(industry?String(industry):'Your business');
+  const actions=session?.buildingActions||[];
+  const has=(id)=>actions.some(a=>a==id||a?.surface==id||a?.id==id)||false;
+  const websiteOn=has('website')||!!industry||(session?.turns||0)>=1;
+  const bookingOn=has('booking')||!!area||!!customer||(session?.turns||0)>=2;
+  const packagesOn=has('packages')||!!goal||!!customer||(session?.turns||0)>=3;
+  const brandOn=has('brand')||!!positioning||websiteOn;
+  const heroTitle=biz;
+  let heroSub='A clean homepage that books customers.';
+  if(industry&&area)heroSub=`${industry} · ${area}`;
+  else if(industry)heroSub=`${industry} — booking-ready from day one.`;
+  else if(area)heroSub=`Serving ${area}.`;
+  const cta=positioning==='premium'?'Request a quote':positioning==='fast'?'Book today':'Book now';
+  const bookingChips=[];
+  if(area)bookingChips.push(String(area));
+  if(customer)bookingChips.push(String(customer).replace(/_/g,' '));
+  if(!bookingChips.length&&bookingOn)bookingChips.push('Pick a time','Confirm');
+  const pkgChips=[];
+  if(goal)pkgChips.push(String(goal).replace(/_/g,' '));
+  if(packagesOn){
+    if(positioning==='premium')pkgChips.push('Signature','Complete');
+    else pkgChips.push('Starter','Popular','Pro');
+  }
+  const palette=positioning==='premium'
+    ?['#0f172a','#c9a227','#f8fafc']
+    :positioning==='friendly'||positioning==='affordable'
+      ?['#141B2B','#D9632D','#fff7ed']
+      :['#141B2B','#D9632D','#f8fafc'];
+  let status='I’ll build this for you — watch it take shape.';
+  if(session?.liveStatus)status=escPeHtml(String(session.liveStatus));
+  else if(packagesOn)status=`Putting packages together for <em>${escPeHtml(String(biz))}</em>…`;
+  else if(bookingOn)status=`Shaping booking for <em>${escPeHtml(String(area||biz))}</em>…`;
+  else if(websiteOn)status=`Drafting your homepage for <em>${escPeHtml(String(biz))}</em>…`;
+  return{websiteOn,bookingOn,packagesOn,brandOn,heroTitle,heroSub,cta,bookingChips,pkgChips,palette,status};
+}
+function isRenderLiveBuild(){
+  const studio=document.getElementById('is-live-studio');
+  if(!studio)return;
   const session=S._is?.discovery;
-  if(!session){panel.hidden=true;return;}
-  const facts=HUBLY_DISCOVERY.panelFacts(session);
-  if(!facts.length){panel.hidden=true;factsEl.innerHTML='';return;}
-  panel.hidden=false;
-  factsEl.innerHTML=facts.map(f=>{
-    const soft=f.inferred&&f.confidence<80?' is-soft':'';
-    return `<div class="fact${soft}">${escPeHtml(f.label)}</div>`;
-  }).join('');
-  if(session.learningSummary&&learnEl){
-    learnEl.hidden=false;
-    learnEl.innerHTML=`<strong>${escPeHtml(session.learningSummary.header||"Here's what I'm learning...")}</strong><ul>${(session.learningSummary.lines||[]).map(l=>`<li>${escPeHtml(l)}</li>`).join('')}</ul>`;
-  }else if(learnEl){
-    learnEl.hidden=true;learnEl.innerHTML='';
+  if(!session){studio.hidden=true;return;}
+  studio.hidden=false;
+  const live=isLiveBuildFromFacts(session);
+  const statusEl=document.getElementById('is-live-status');
+  if(statusEl)statusEl.innerHTML=live.status;
+  const web=document.getElementById('is-live-website');
+  const book=document.getElementById('is-live-booking');
+  const pkgs=document.getElementById('is-live-packages');
+  const brand=document.getElementById('is-live-brand');
+  web?.classList.toggle('is-on',!!live.websiteOn);
+  book?.classList.toggle('is-on',!!live.bookingOn);
+  pkgs?.classList.toggle('is-on',!!live.packagesOn);
+  const title=document.getElementById('is-live-website-title');
+  const sub=document.getElementById('is-live-website-sub');
+  const cta=document.getElementById('is-live-website-cta');
+  if(title)title.textContent=live.heroTitle;
+  if(sub)sub.textContent=live.heroSub;
+  if(cta)cta.textContent=live.cta;
+  const bChips=document.getElementById('is-live-booking-chips');
+  if(bChips)bChips.innerHTML=(live.bookingChips||[]).slice(0,3).map(c=>`<span class="chip">${escPeHtml(c)}</span>`).join('');
+  const pChips=document.getElementById('is-live-pkg-chips');
+  if(pChips)pChips.innerHTML=(live.pkgChips||[]).slice(0,3).map(c=>`<span class="chip">${escPeHtml(c)}</span>`).join('');
+  if(brand){
+    brand.hidden=!live.brandOn;
+    const [a,b,c]=live.palette;
+    const sa=document.getElementById('is-live-swatch-a');
+    const sb=document.getElementById('is-live-swatch-b');
+    const sc=document.getElementById('is-live-swatch-c');
+    if(sa)sa.style.background=a;
+    if(sb)sb.style.background=b;
+    if(sc)sc.style.background=c;
   }
 }
+/** @deprecated Experience-first uses live studio; kept as alias for any stray callers. */
+function isRenderUnderstandingPanel(){isRenderLiveBuild();}
 function isDiscoverySetTyping(on){
   const el=document.getElementById('is-discovery-typing');
   if(el){el.classList.toggle('is-on',!!on);el.setAttribute('aria-hidden',on?'false':'true');}
@@ -16841,7 +16968,12 @@ async function isDiscoverySend(text){
     S._is.discoveryAiSource=session.lastAi.source;
     if(disc&&disc.facts)isDiscoveryApplyAiFacts(session,disc.facts);
     if(typeof disc?.confidence==='number')session.aiConfidence=disc.confidence;
+    if(Array.isArray(disc?.buildingActions)&&disc.buildingActions.length){
+      session.buildingActions=disc.buildingActions.map(a=>typeof a==='string'?a:(a?.surface||a?.id||'')).filter(Boolean);
+    }
+    if(disc?.liveStatus)session.liveStatus=String(disc.liveStatus);
     isDiscoverySetTyping(false);
+    isRenderLiveBuild();
 
     if(usedAi||(reply&&source==='fallback'&&brain&&brain.ok)){
       session.messages.push({role:'owner',text});
@@ -16862,13 +16994,13 @@ async function isDiscoverySend(text){
       ready=!!(disc&&disc.readyForThinking)||!!(brain&&brain.celebrate);
       if(ready){
         const lines=(disc&&disc.learningLines)||[];
-        session.learningSummary={header:HUBLY_DISCOVERY.LEARNING_HEADER,lines};
+        session.learningSummary={header:'Finishing your build…',lines};
         session.complete=true;
         session.readyForThinking=true;
-        if(lines.length){
-          const preview=lines.slice(0,3).map(l=>'• '+l).join('\n');
-          isTalkPush('hubly',HUBLY_DISCOVERY.LEARNING_HEADER+(preview?'\n'+preview:''));
-        }
+        session.liveStatus='Putting the finishing touches on your business…';
+        session.buildingActions=['website','booking','packages','brand'];
+        isTalkPush('hubly',"I've got enough — finishing your website, booking, and packages now.");
+        isRenderLiveBuild();
       }
       if(!usedAi){
         console.warn('[Hubly Discovery] Brain responded via FALLBACK (OpenAI not used). Check OPENAI_API_KEY on hubly-brain.',session.lastAi);
@@ -16898,7 +17030,7 @@ async function isDiscoverySend(text){
     ready=!!(local.complete||session.readyForThinking);
   }
 
-  isRenderUnderstandingPanel();
+  isRenderLiveBuild();
   schedulePersistInstantSiteDraft();
   S._is._talkBusy=false;
   if(ready||session.readyForThinking){
@@ -17863,22 +17995,50 @@ function isRevealRenderReadyCards(creativeExperience){
   const stage=document.getElementById('is-reveal-stage');
   if(!stage)return;
   const live=creativeExperience?.live||{};
-  const biz=S.biz||live.heroTitle||'Your business';
   const theme=live.theme==='friendly'?'is-friendly':'is-premium';
   const cards=[
     {id:'website',label:'Website',viz:`<div class="viz ${theme}"><div class="bar"></div><div class="bar short"></div><span class="cta-chip">${escPeHtml(live.cta||'Book now')}</span></div>`},
     {id:'booking',label:'Booking',viz:`<div class="viz phone"><div class="bar"></div><div class="bar short"></div><span class="cta-chip">Book</span></div>`},
     {id:'crm',label:'CRM',viz:`<div class="viz"><div class="bar"></div><div class="bar short"></div><div class="bar" style="width:58%"></div></div>`},
     {id:'packages',label:'Packages',viz:`<div class="viz"><div class="bar"></div><div class="bar short"></div><span class="cta-chip">3 packages</span></div>`},
-    {id:'calendar',label:'Calendar',viz:`<div class="viz"><div class="bar short"></div><div class="bar"></div><div class="bar short"></div></div>`},
   ];
-  stage.innerHTML=`<div class="is-reveal-ready-grid" data-v3-reveal-cards="1">
-    ${cards.map((c,i)=>`<div class="is-reveal-ready-card" style="animation-delay:${i*60}ms">${c.viz}<p class="lbl">${escPeHtml(c.label)}</p></div>`).join('')}
+  stage.innerHTML=`<div class="is-reveal-ready-grid" data-v3-reveal-cards="1" data-experience-reveal="1">
+    ${cards.map((c,i)=>`<button type="button" class="is-reveal-ready-card" style="animation-delay:${i*60}ms;text-align:left;width:100%;font:inherit;color:inherit" onclick="isRevealOpenSurface('${c.id}')">${c.viz}<p class="lbl">${escPeHtml(c.label)}</p></button>`).join('')}
   </div>
   <div class="is-reveal-continue">
-    <button type="button" class="btn btn-brand" onclick="isRevealContinueToWorkspace()">Continue to My Workspace</button>
-    <p class="hint">Enter Hubly — your operating system is ready.</p>
+    <button type="button" class="btn btn-brand" onclick="isRevealContinueToWorkspace()">Enter Hubly Home</button>
+    <p class="hint">Same operating system — personalized for your business.</p>
   </div>`;
+}
+
+/** Clickable Reveal surface → remember destination, then continue into OS. */
+function isRevealOpenSurface(surfaceId){
+  S._is=S._is||{};
+  S._is.revealPreferredSurface=surfaceId||'website';
+  isRevealContinueToWorkspace();
+}
+
+function isOpenPreferredOperateSurface(){
+  const surface=S._is?.revealPreferredSurface;
+  if(!surface)return;
+  try{delete S._is.revealPreferredSurface;}catch(e){}
+  setTimeout(()=>{
+    try{
+      if(surface==='website'||surface==='packages'||surface==='booking'){
+        const tab=surface==='packages'?'packages':surface==='booking'?'book':'site';
+        openWebsiteEditorHub(tab);
+      }else if(surface==='crm'){
+        const nav=document.querySelector('#p-app [data-v="customers"]')||document.querySelector('[data-v="customers"]');
+        if(nav)switchV(nav);
+      }else if(surface==='jobs'||surface==='calendar'){
+        const nav=document.querySelector('#p-app [data-v="jobs"]')||document.querySelector('[data-v="jobs"]');
+        if(nav)switchV(nav);
+      }else if(surface==='revenue'){
+        const nav=document.querySelector('#p-app [data-v="money"]')||document.querySelector('[data-v="money"]');
+        if(nav)switchV(nav);
+      }
+    }catch(e){}
+  },120);
 }
 
 /** Reveal → save if needed → Operate Home (v3). */
@@ -17919,8 +18079,8 @@ async function isRunBusinessRevealExperience(seed, creativeExperience){
   const hero=document.getElementById('is-reveal-hero');
   const welcome=document.getElementById('is-reveal-welcome');
   const forward=document.getElementById('is-reveal-forward');
-  if(hero)hero.textContent='Your business is ready.';
-  if(welcome)welcome.textContent='Website, booking, CRM, packages, and calendar — built while we talked.';
+  if(hero)hero.textContent='🎉 I built your business.';
+  if(welcome)welcome.textContent='Website, booking, CRM, and packages — tap any to open it.';
   if(forward){forward.hidden=true;forward.innerHTML='';}
 
   // Hubly v3 — visual ready cards only (no report chrome)

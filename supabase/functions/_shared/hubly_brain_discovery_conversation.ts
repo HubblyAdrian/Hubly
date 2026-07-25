@@ -34,31 +34,41 @@ export type DiscoveryTurnResult = {
   confidence: number;
   readyForThinking: boolean;
   learningLines: string[];
+  /** Surfaces Hubly is actively building this turn (customer-visible studio). */
+  buildingActions: Array<"website" | "booking" | "packages" | "brand" | "crm">;
+  /** Short status line for the live studio (plain text). */
+  liveStatus: string | null;
   provider: string | null;
   model: string | null;
   source: "openai" | "fallback";
   error?: string | null;
 };
 
-const SYSTEM = `You are Hubly — a warm, sharp business partner helping someone create their business in conversation.
+const SYSTEM = `You are Hubly — an AI business consultant the owner just hired.
 
-This is CREATE MODE (Business Creation). You are consulting, not filling a form.
+This is CREATE MODE. You are NOT a questionnaire, wizard, or scripted chatbot.
+You feel like ChatGPT: natural conversation — AND you build while you talk.
 
-Rules:
-- Decide the next question yourself from the conversation. Do NOT follow a fixed question tree.
-- Ask at most ONE clarifying question per turn.
+Mindset every turn:
+- "I'll build this for you." — not "Answer my questions."
+- Work first. Make intelligent assumptions. Begin building immediately.
+- Ask at most ONE question, and only when the answer would change the outcome.
 - Never re-ask something already answered.
-- Infer industry, area, customers, goals, positioning, and operations from natural language.
-- Keep replies short (1–3 sentences). Conversational, not corporate.
-- When you understand enough to build (website + booking + packages), set readyForThinking=true and summarize what you learned in learningLines (2–4 short bullets). Completion line should feel like: you understand their business and you're ready to think/build — not "form complete".
-- Prefer confidence ≥ 75 before readyForThinking, unless they've clearly described the business and answered 2–3 natural follow-ups.
-- Never mention JSON, APIs, prompts, or that you are an AI model.
-- Brand voice: Hubly navy + orange personality — practical, encouraging, zero jargon.
+- Narrate what you're building in the reply (homepage, booking, packages, brand) — short, concrete, human.
+- Keep replies 1–3 sentences. Conversational. Zero jargon. Never mention JSON/APIs/models.
+
+When you know enough to finish (website + booking + packages), set readyForThinking=true.
+Prefer confidence ≥ 75, unless they've clearly described the business in 2–3 natural turns.
+learningLines are internal build notes (2–4 short bullets) — do NOT write a report tone in reply.
+Completion reply should feel like finishing the build — not "form complete".
+
+buildingActions: which visual surfaces to light up this turn (subset of website, booking, packages, brand, crm).
+liveStatus: one short plain-text line for the live studio (e.g. "Drafting your homepage…").
 
 Return ONLY valid JSON:
 {
-  "reply": "string — what Hubly says this turn (may include the question naturally)",
-  "question": "string|null — explicit next question if not fully embedded in reply",
+  "reply": "string — narrate building; question only if necessary",
+  "question": "string|null — only if answer changes the outcome; else null",
   "facts": {
     "industry": "string|null",
     "industryId": "pressure_washing|photography|lawn_care|hvac|spa|cleaning|detailing|null",
@@ -72,7 +82,9 @@ Return ONLY valid JSON:
   },
   "confidence": 0-100,
   "readyForThinking": boolean,
-  "learningLines": ["string"]
+  "learningLines": ["string"],
+  "buildingActions": ["website","booking","packages","brand","crm"],
+  "liveStatus": "string|null"
 }`;
 
 function extractJson(text: string): string {
@@ -144,9 +156,20 @@ export function fallbackDiscoveryTurn(input: DiscoveryTurnInput): DiscoveryTurnR
     confidence = Math.max(confidence, 80);
   }
   if (clar >= 3) ready = true;
+  const buildingActions: DiscoveryTurnResult["buildingActions"] = [];
+  if (facts.industry) buildingActions.push("website", "brand");
+  if (facts.area || facts.customer) buildingActions.push("booking");
+  if (facts.goal || facts.customer) buildingActions.push("packages");
+  if (ready) buildingActions.push("website", "booking", "packages", "brand", "crm");
+  const uniqActions = [...new Set(buildingActions)];
+  const liveStatus = ready
+    ? "Putting the finishing touches on your business…"
+    : facts.industry
+    ? `Drafting your ${facts.industry} homepage…`
+    : "I'll build this for you — starting with your website…";
   const reply = question
-    ? `Got it. ${question}`
-    : "I think I understand your business now. Let me show you what I'm thinking.";
+    ? `I'm already shaping your site. ${question}`
+    : "I've got enough — finishing your website, booking, and packages now.";
   return {
     ok: true,
     reply,
@@ -161,6 +184,8 @@ export function fallbackDiscoveryTurn(input: DiscoveryTurnInput): DiscoveryTurnR
         facts.goal ? "We'll aim the site and booking at that goal." : "We'll make booking you effortless.",
       ]
       : [],
+    buildingActions: uniqActions,
+    liveStatus,
     provider: null,
     model: null,
     source: "fallback",
@@ -175,12 +200,14 @@ export async function runDiscoveryConversationTurn(
   if (!request) {
     return {
       ok: false,
-      reply: "Tell me a little about the business you're building.",
+      reply: "Tell me a little about the business you're building — I'll start building as soon as you do.",
       question: null,
       facts: input.facts || {},
       confidence: 0,
       readyForThinking: false,
       learningLines: [],
+      buildingActions: ["website"],
+      liveStatus: "Waiting for your first details…",
       provider: null,
       model: null,
       source: "fallback",
@@ -224,6 +251,18 @@ export async function runDiscoveryConversationTurn(
     const learningLines = Array.isArray(parsed.learningLines)
       ? parsed.learningLines.map((l) => String(l || "").trim()).filter(Boolean).slice(0, 5)
       : [];
+    const allowed = new Set(["website", "booking", "packages", "brand", "crm"]);
+    const buildingActions = (Array.isArray(parsed.buildingActions) ? parsed.buildingActions : [])
+      .map((a) => String(a || "").trim().toLowerCase())
+      .filter((a): a is DiscoveryTurnResult["buildingActions"][number] => allowed.has(a));
+    if (!buildingActions.length && facts.industry) buildingActions.push("website", "brand");
+    if (readyForThinking) {
+      for (const s of ["website", "booking", "packages", "brand", "crm"] as const) {
+        if (!buildingActions.includes(s)) buildingActions.push(s);
+      }
+    }
+    const liveStatusRaw = parsed.liveStatus == null ? null : String(parsed.liveStatus).trim();
+    const liveStatus = liveStatusRaw && liveStatusRaw !== "null" ? liveStatusRaw.slice(0, 120) : null;
 
     return {
       ok: true,
@@ -233,6 +272,8 @@ export async function runDiscoveryConversationTurn(
       confidence,
       readyForThinking,
       learningLines,
+      buildingActions,
+      liveStatus,
       provider: ai.provider || "openai",
       model: ai.model || null,
       source: "openai",

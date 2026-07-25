@@ -41,6 +41,16 @@ export const HUBLY_OS_LOCK = {
     "One OS for every industry. AI personalizes website, booking, packages, recommendations — never forks CRM/nav.",
 } as const;
 
+/** Experience-first product standard — visible customer delight over invisible architecture. */
+export const HUBLY_EXPERIENCE_FIRST = {
+  id: "experience-first",
+  title: "Experience First",
+  path: "docs/EXPERIENCE_FIRST.md",
+  version: "1.0.0",
+  summary:
+    "Every major change must be customer-visible. Discovery builds while talking. Living prototype is CX source of truth.",
+} as const;
+
 /** Required Section 17 deliverables — single source of truth for the catalog. */
 export const HUBLY_ARCHITECTURE_GUIDES: readonly HublyDocEntry[] = [
   {
@@ -156,6 +166,7 @@ export type HublyDocumentationCatalog = {
   adrIndexPath: string;
   productConstitution: typeof HUBLY_PRODUCT_CONSTITUTION;
   hublyOs?: typeof HUBLY_OS_LOCK;
+  experienceFirst?: typeof HUBLY_EXPERIENCE_FIRST;
   guides: HublyDocEntry[];
   adrs: HublyAdrEntry[];
   guideCount: number;
@@ -170,6 +181,7 @@ export function getHublyDocumentationCatalog(): HublyDocumentationCatalog {
     adrIndexPath: "docs/adr/README.md",
     productConstitution: HUBLY_PRODUCT_CONSTITUTION,
     hublyOs: HUBLY_OS_LOCK,
+    experienceFirst: HUBLY_EXPERIENCE_FIRST,
     guides: [...HUBLY_ARCHITECTURE_GUIDES],
     adrs: [...HUBLY_ADRS],
     guideCount: HUBLY_ARCHITECTURE_GUIDES.length,
@@ -183,6 +195,7 @@ export const HublyDocs = {
   catalog: getHublyDocumentationCatalog,
   productConstitution: () => HUBLY_PRODUCT_CONSTITUTION,
   hublyOs: () => HUBLY_OS_LOCK,
+  experienceFirst: () => HUBLY_EXPERIENCE_FIRST,
   guides: () => [...HUBLY_ARCHITECTURE_GUIDES],
   adrs: () => [...HUBLY_ADRS],
 };
