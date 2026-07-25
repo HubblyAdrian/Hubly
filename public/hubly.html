@@ -8950,11 +8950,11 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <main class="welcome-hero" id="welcome-hero">
       <p class="welcome-kicker">Your business partner</p>
-      <h1 class="welcome-title">Let's build your business.</h1>
-      <p class="welcome-ask">What are we building today?</p>
+      <h1 class="welcome-title">Tell Hubly what you do.<br><span style="color:var(--brand,#D9632D)">We'll build your business.</span></h1>
+      <p class="welcome-ask">Type naturally — like ChatGPT. Hubly builds while you talk.</p>
       <div class="welcome-composer">
         <div class="welcome-input-wrap" id="welcome-input-wrap">
-          <textarea id="welcome-input" rows="2" placeholder="Type anything..." aria-label="What are we building today?" autocomplete="off" data-lpignore="true" data-form-type="other"></textarea>
+          <textarea id="welcome-input" rows="2" placeholder="e.g. I'm an independent fitness trainer…" aria-label="Tell Hubly what you do" autocomplete="off" data-lpignore="true" data-form-type="other"></textarea>
           <button type="button" class="welcome-mic" id="welcome-mic" title="Voice ready" aria-label="Voice input coming soon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v3"/></svg>
           </button>
@@ -8964,7 +8964,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div class="welcome-chips" id="welcome-chips" aria-label="Example prompts"></div>
         <div class="welcome-typing" id="welcome-typing" aria-hidden="true"><span></span><span></span><span></span></div>
-        <p class="welcome-hubly-line" id="welcome-hubly-line">Tell me what you're working on. <strong>I'll take care of the rest.</strong></p>
+        <p class="welcome-hubly-line" id="welcome-hubly-line">One step: start talking. <strong>I'll build your website, booking, and packages.</strong></p>
       </div>
     </main>
     <div class="welcome-trust" id="welcome-trust" aria-label="Outcomes">
@@ -17199,6 +17199,91 @@ const HUBLY_HOLY_SHIT = (function(){
         {what:'Created session packages',reason:'Clear pricing beats inquire-for-rates.',surface:'packages'},
       ],
     },
+    detailing:{
+      industry:'Mobile Detailing',industryId:'detailing',
+      insight:'Most detailers lead with packages. Customers book the ones who promise showroom results at their driveway.',
+      rewrite:'Showroom-clean results that come to you.',
+      rewritePrev:'Professional mobile detailing.',
+      assumption:'I assumed mobile residential detailing — the most common setup. If that\'s wrong, I\'ll rebuild everything.',
+      alreadyDid:'I moved Book now higher and clarified packages.\n\nView it, keep it, or undo.',
+      packages:['Interior','Exterior','Full Detail'],
+      booking:['Book detail','Get quote'],
+      logo:'MD',
+      discover:{sk:'I found something',title:'Ceramic add-ons convert when shown next to Full Detail.',body:'I can feature a ceramic upsell on your booking page.',cta:'Add upsell',ask:'Add a ceramic coating add-on to my detailing packages'},
+      work:[
+        {what:'Rewrote hero headline',reason:'Outcome at the driveway beats equipment talk.',surface:'website'},
+        {what:'Improved booking CTA',reason:'Faster path to a booked slot.',surface:'booking'},
+        {what:'Created detail packages',reason:'Clear tiers reduce quote friction.',surface:'packages'},
+      ],
+    },
+    hvac:{
+      industry:'HVAC',industryId:'hvac',
+      insight:'Homeowners fear being upsold. Clear diagnostics and honest packages win trust.',
+      rewrite:'Comfort you can count on — booked without the runaround.',
+      rewritePrev:'Heating and cooling service.',
+      assumption:'I assumed residential service + maintenance plans — the most common setup. If that\'s wrong, I\'ll rebuild everything.',
+      alreadyDid:'I featured maintenance and made Book / Request service obvious.\n\nView it, keep it, or undo.',
+      packages:['Tune-up','Repair Visit','Maintenance Plan'],
+      booking:['Book service','Request visit'],
+      logo:'HV',
+      discover:{sk:'I noticed something',title:'Pre-season tune-ups are searching now.',body:'I can feature a seasonal tune-up package on your homepage.',cta:'Feature it',ask:'Feature a seasonal HVAC tune-up package on my homepage'},
+      work:[
+        {what:'Rewrote hero headline',reason:'Trust beats jargon for homeowners.',surface:'website'},
+        {what:'Improved booking CTA',reason:'Clear path to a tech visit.',surface:'booking'},
+        {what:'Created service packages',reason:'Named offers reduce phone tag.',surface:'packages'},
+      ],
+    },
+    spa:{
+      industry:'Spa & Wellness',industryId:'spa',
+      insight:'Most spas list treatments. Guests book the feeling of calm they see in the first screen.',
+      rewrite:'Quiet luxury — treatments that feel like an escape.',
+      rewritePrev:'Spa and wellness services.',
+      assumption:'I assumed a solo or small studio with session packages — the most common setup. If that\'s wrong, I\'ll rebuild everything.',
+      alreadyDid:'I elevated Book now and clarified your menu.\n\nView it, keep it, or undo.',
+      packages:['Signature Facial','Massage','Wellness Package'],
+      booking:['Book treatment','Gift card'],
+      logo:'SP',
+      discover:{sk:'I found something',title:'Memberships stabilize quiet midweek slots.',body:'I can draft a simple membership offer next to booking.',cta:'Draft membership',ask:'Create a spa membership package for midweek bookings'},
+      work:[
+        {what:'Rewrote hero headline',reason:'Feeling beats menu lists.',surface:'website'},
+        {what:'Improved booking CTA',reason:'Faster path to a reserved chair.',surface:'booking'},
+        {what:'Created treatment packages',reason:'Clear menu converts better than inquire.',surface:'packages'},
+      ],
+    },
+    flight_instruction:{
+      industry:'Flight Instruction',industryId:'flight_instruction',
+      insight:'Students book confidence and a clear path to the checkride — not a list of ratings.',
+      rewrite:'From first lesson to checkride — clear, calm instruction.',
+      rewritePrev:'Professional flight training.',
+      assumption:'I assumed independent CFI / part-time instruction with lesson packages — common for solo instructors. If that\'s wrong, I\'ll rebuild everything.',
+      alreadyDid:'I put Book a lesson above the fold and named clear packages.\n\nView it, keep it, or undo.',
+      packages:['Discovery Flight','Block of 5','Checkride Prep'],
+      booking:['Book lesson','Discovery flight'],
+      logo:'FI',
+      discover:{sk:'I noticed something',title:'Discovery flights convert when the path to solo is visible.',body:'I can add a simple “path to solo” section under packages.',cta:'Add path',ask:'Add a path-to-solo section to my flight instruction website'},
+      work:[
+        {what:'Rewrote hero headline',reason:'Outcome path beats rating laundry lists.',surface:'website'},
+        {what:'Improved booking CTA',reason:'Lesson booking above the fold.',surface:'booking'},
+        {what:'Created lesson packages',reason:'Named blocks reduce scheduling friction.',surface:'packages'},
+      ],
+    },
+    dog_grooming:{
+      industry:'Dog Grooming',industryId:'dog_grooming',
+      insight:'Pet parents book trust and gentle handling — not a price grid alone.',
+      rewrite:'Happy dogs. Calm parents. Easy booking.',
+      rewritePrev:'Professional dog grooming.',
+      assumption:'I assumed a solo or small shop with breed-size packages — the most common setup. If that\'s wrong, I\'ll rebuild everything.',
+      alreadyDid:'I clarified packages and moved Book now higher.\n\nView it, keep it, or undo.',
+      packages:['Bath & Brush','Full Groom','Puppy Intro'],
+      booking:['Book groom','Ask about breed'],
+      logo:'DG',
+      discover:{sk:'I found something',title:'Puppy intro packages reduce first-visit anxiety.',body:'I can feature a puppy intro offer on your booking page.',cta:'Feature it',ask:'Feature a puppy intro package on my dog grooming booking page'},
+      work:[
+        {what:'Rewrote hero headline',reason:'Trust + calm beats generic pet copy.',surface:'website'},
+        {what:'Improved booking CTA',reason:'Faster path to a reserved slot.',surface:'booking'},
+        {what:'Created groom packages',reason:'Clear size/breed tiers reduce phone calls.',surface:'packages'},
+      ],
+    },
     default:{
       industry:'Local Service',industryId:null,
       insight:'Most local businesses talk about what they do. Winners talk about the outcome customers want.',
@@ -17222,8 +17307,13 @@ const HUBLY_HOLY_SHIT = (function(){
     if(/fitness|trainer|personal\s*train|coach(ing)?|gym/.test(t))return INSIGHTS.fitness;
     if(/pressure|power\s*wash|soft\s*wash/.test(t))return INSIGHTS.pressure_washing;
     if(/lawn|mow|yard\s*care|landscap/.test(t))return INSIGHTS.lawn_care;
-    if(/clean|maid|airbnb|turnover|housekeep/.test(t))return INSIGHTS.cleaning;
+    if(/airbnb|turnover|short.?term|housekeep|maid|clean/.test(t))return INSIGHTS.cleaning;
     if(/photo|photog|wedding\s*shoot/.test(t))return INSIGHTS.photography;
+    if(/detail|mobile\s*detail|car\s*wash|auto\s*detail/.test(t))return INSIGHTS.detailing;
+    if(/hvac|heat(?:ing)?|air\s*cond|furnace|cooling/.test(t))return INSIGHTS.hvac;
+    if(/spa|massage|facial|wellness/.test(t))return INSIGHTS.spa;
+    if(/flight\s*instruct|pilot\s*train|\bcfi\b|aviation\s*instruct/.test(t))return INSIGHTS.flight_instruction;
+    if(/dog\s*groom|pet\s*groom|groomer/.test(t))return INSIGHTS.dog_grooming;
     return INSIGHTS.default;
   }
   function bizName(pack,session){
@@ -17338,7 +17428,13 @@ const HUBLY_HOLY_SHIT = (function(){
       left-=step;
     }
   }
-  async function playOpeningSequence(session,ownerText){
+  /**
+   * Live studio choreography. AI Connect: OpenAI owns the chat.
+   * When silentChat=true, no scripted Hubly bubbles — only visible website/booking/packages.
+   */
+  async function playOpeningSequence(session,ownerText,opts){
+    opts=opts||{};
+    const silentChat=opts.silentChat!==false; // default silent — ChatGPT voice comes from OpenAI
     const pack=inferPack(ownerText);
     applyPackFacts(session,pack);
     const token={cancelled:false,id:Date.now()};
@@ -17348,10 +17444,11 @@ const HUBLY_HOLY_SHIT = (function(){
     if(!S.biz||S.biz==='Your Business')S.biz=biz;
 
     resetWorkspace();
-    // Gate 1 refine — one natural opener; visuals carry the proof (ChatGPT feel, not a script).
-    const m1="Got it. Give me a few minutes — I'm building while we talk.";
-    isTalkPush('hubly',m1);
-    session.messages.push({role:'hubly',text:m1,kind:'moment1'});
+    if(!silentChat){
+      const m1="Got it — I'm building while we talk.";
+      isTalkPush('hubly',m1);
+      session.messages.push({role:'hubly',text:m1,kind:'moment1'});
+    }
     setWorkspaceStatus('Working…');
     setWorkspaceStep('understand','working');
     // Start with a weaker CTA so the later “Book now” move is visibly different.
@@ -17419,12 +17516,14 @@ const HUBLY_HOLY_SHIT = (function(){
       isRenderLiveBuild({pulse:'website',rewrite:true});
     },500);
     isShowCreateDecision({prevCta,nextCta:'Book now'});
-    await wait(700,token);
+    await wait(500,token);
 
-    // One brief decision + assumption (not a script dump)
-    const summary=`I found something.\n\n${pack.insight}\n\nI already rewrote your homepage around that and moved Book now higher.\n\n${pack.assumption}`;
-    isTalkPush('hubly',summary);
-    session.messages.push({role:'hubly',text:summary,kind:'build_summary'});
+    // AI Connect: do NOT dump scripted insight/assumption into chat — OpenAI already spoke.
+    if(!silentChat){
+      const summary=`I found something.\n\n${pack.insight}\n\nI already rewrote your homepage around that and moved Book now higher.\n\n${pack.assumption}`;
+      isTalkPush('hubly',summary);
+      session.messages.push({role:'hubly',text:summary,kind:'build_summary'});
+    }
     setWorkspaceStep('crm','working');
     session.liveStatus='';
     isRenderLiveBuild({pulse:'all'});
@@ -17473,7 +17572,7 @@ function isDiscoveryBoot(opts){
   step?.classList.toggle('is-convo',!!(S._is.messages||[]).length);
   isTalkSetPrompt({
     title:"What do you do?",
-    hint:"I’ll build your website while we talk.",
+    hint:"Talk naturally — like ChatGPT. I’m building your business while we talk.",
     placeholder:"e.g. I’m an independent fitness trainer…",
     autocomplete:'off',
     type:'text',
@@ -17723,24 +17822,22 @@ async function isDiscoverySend(text){
 
   let ready=false;
 
-  // First substantial turn → Live build Moments 1–4 (visible, immediate), then real conversation.
+  // AI Connect — first turns: OpenAI speaks first (ChatGPT voice), live build runs silently beside it.
   if(!session.holyShitComplete&&session.turns<=2){
     isDiscoverySetTyping(true);
-    // Enrich facts from Brain in parallel (non-blocking for the visual sequence).
-    const brainPromise=isDiscoveryThinkTurn(text).catch(e=>({ok:false,error:e}));
-    try{
-      // Tiny beat so typing indicator shows, then Moment 1 lands in <1s.
-      await isSleep(280);
-      isDiscoverySetTyping(false);
-      await HUBLY_HOLY_SHIT.playOpeningSequence(session,text);
-    }catch(e){
-      if(String(e?.message||e)!=='holy_shit_cancelled'){
-        console.error('[Hubly Holy Shit] sequence failed',e);
-        isDiscoverySetTyping(false);
+    const brainPromise=isDiscoveryThinkTurn(text).catch(e=>({ok:false,error:e&&e.message?e:{message:String(e)}}));
+    // Start silent studio build in parallel — no scripted chat bubbles.
+    const buildPromise=(async()=>{
+      try{
+        await HUBLY_HOLY_SHIT.playOpeningSequence(session,text,{silentChat:true});
+      }catch(e){
+        if(String(e?.message||e)!=='holy_shit_cancelled'){
+          console.error('[Hubly Live Build] sequence failed',e);
+        }
       }
-    }
-    // Gate 1 Conversation — weave real OpenAI after the live build (ChatGPT feel).
+    })();
     let aiReply='';
+    let usedOpenAi=false;
     try{
       const brain=await brainPromise;
       const disc=brain&&brain.discovery;
@@ -17749,7 +17846,9 @@ async function isDiscoverySend(text){
         session.buildingActions=disc.buildingActions.map(a=>typeof a==='string'?a:(a?.surface||a?.id||'')).filter(Boolean);
         isDiscoveryApplyBuildActions(session);
       }
-      aiReply=String((disc&&disc.reply)||(brain&&brain.response)||'').trim();
+      if(disc?.liveStatus)session.liveStatus=String(disc.liveStatus);
+      aiReply=String((brain&&brain.response)||(disc&&disc.reply)||'').trim();
+      usedOpenAi=((disc&&disc.source)||brain?.aiSource)==='openai'&&!!aiReply;
       session.lastAi={
         source:(disc&&disc.source)||brain?.aiSource||'unknown',
         provider:disc?.provider||brain?.aiProvider||null,
@@ -17759,12 +17858,23 @@ async function isDiscoverySend(text){
         at:new Date().toISOString(),
       };
       S._is.discoveryAiSource=session.lastAi.source;
-    }catch(e){}
-    if(!aiReply){
-      aiReply="I've got your website, booking, and packages up. Tell me what to change — or I'll show you what I built.";
+    }catch(e){
+      session.lastAi={source:'error',ok:false,error:String(e&&e.message||e),at:new Date().toISOString()};
+      S._is.discoveryAiSource='error';
     }
-    isTalkPush('hubly',aiReply);
-    session.messages.push({role:'hubly',text:aiReply,kind:'ai'});
+    isDiscoverySetTyping(false);
+    // OpenAI reply is the conversation. Fallback only if Brain/OpenAI failed.
+    if(!aiReply){
+      aiReply=usedOpenAi
+        ?''
+        :"I'm already shaping your website and booking from what you said — tell me anything to change.";
+    }
+    if(aiReply){
+      isTalkPush('hubly',aiReply);
+      session.messages.push({role:'hubly',text:aiReply,kind:usedOpenAi?'openai':'fallback'});
+    }
+    // Let the silent live build finish (website / booking / packages on screen).
+    try{await buildPromise;}catch(e){}
     isRenderLiveBuild({pulse:'website'});
     isShowCreateRevealChip();
     isScheduleCreateRevealAuto();
@@ -18933,6 +19043,7 @@ function isCreateBlueprintId(rawId, corpus){
   const text=String(corpus||'').toLowerCase();
   const aliases={
     fitness:'spa',personal_training:'spa',coaching:'spa',wellness:'spa',trainer:'spa',
+    flight_instruction:'spa',dog_grooming:'spa',
     lawn_care:'landscaping','lawn-care':'landscaping',
     house_cleaning:'cleaning','house-cleaning':'cleaning',
     'window-cleaning':'windows',window_cleaning:'windows',
@@ -18941,13 +19052,15 @@ function isCreateBlueprintId(rawId, corpus){
   try{
     if(id&&typeof HublyBlueprints!=='undefined'&&HublyBlueprints.get?.(id))return id;
   }catch(e){}
-  if(/fitness|trainer|personal\s*train|coach(ing)?|gym|wellness/.test(text)||/fitness|trainer|coach/.test(id))return 'spa';
+  if(/fitness|trainer|personal\s*train|coach(ing)?|gym|wellness|flight\s*instruct|dog\s*groom|groomer/.test(text)||/fitness|trainer|coach|flight|groom/.test(id))return 'spa';
   if(/photo|wedding\s*shoot/.test(text))return 'photography';
   if(/pressure|power\s*wash|soft\s*wash/.test(text))return 'pressure_washing';
   if(/lawn|mow|landscap/.test(text))return 'landscaping';
   if(/clean|maid|airbnb|housekeep/.test(text))return 'cleaning';
   if(/window/.test(text))return 'windows';
   if(/hvac|heat|air\s*cond/.test(text))return 'hvac';
+  if(/detail|car\s*wash/.test(text)||id==='detailing')return 'detailing';
+  if(/spa|massage|facial/.test(text))return 'spa';
   if(id)return id;
   return null;
 }

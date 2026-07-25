@@ -452,7 +452,15 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       confidence: disc.confidence,
       criticOk: true,
     });
-    conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
+    // AI Connect: OpenAI owns the conversational voice (ChatGPT white-label).
+    // Experience Director still strips model/tech leaks, but we prefer the OpenAI prose
+    // when it survived scrubbing — never replace a natural reply with a canned line.
+    const scrubbed = String(ed.ownerResponse || "").trim();
+    const openaiReply = String(disc.reply || "").trim();
+    const ownerFacing = disc.source === "openai" && openaiReply
+      ? (scrubbed && scrubbed.length >= Math.min(40, openaiReply.length * 0.5) ? scrubbed : openaiReply)
+      : (scrubbed || openaiReply);
+    conversation = appendConversationTurn(conversation, { role: "hubly", text: ownerFacing });
     const questions = ed.questions.length ? ed.questions : (disc.question ? [disc.question] : []);
     const conversationIntelligence = normalizeConversationIntelligence(
       req.conversationIntelligence || null,
@@ -462,7 +470,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     return {
       ok: disc.ok,
       intent: "discovery",
-      response: ed.ownerResponse,
+      response: ownerFacing,
       questions,
       celebrate: !!disc.readyForThinking,
       confidence: disc.confidence,
@@ -475,10 +483,10 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
         entries: [],
         assembly: {
           expertsInOrder: ["openai_discovery", "experience_director"],
-          finalResponseSource: "experience_director",
+          finalResponseSource: disc.source === "openai" ? "openai_discovery" : "experience_director",
           mergedFrom: ["discovery", disc.source],
           howAssembled: disc.source === "openai"
-            ? "OpenAI decided the next discovery turn; Experience Director phrased the owner reply."
+            ? "OpenAI wrote the Create turn (ChatGPT voice); Experience Director only scrubbed tech leaks."
             : "Fallback discovery used because OpenAI was unavailable; Experience Director phrased the reply.",
         },
       },

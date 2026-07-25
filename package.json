@@ -38,6 +38,7 @@
     "check:quiet-competent": "node scripts/check-quiet-competent.mjs",
     "check:delight": "node scripts/check-delight.mjs",
     "check:ceo-demo": "node scripts/check-ceo-demo.mjs",
+    "check:ai-create-connect": "node scripts/check-ai-create-connect.mjs",
     "check:m25-cutover": "node scripts/check-m25-cutover.mjs",
     "check:experience-epic0": "node scripts/check-experience-epic0.mjs",
     "check:m2-epic0": "node scripts/check-m2-epic0.mjs",

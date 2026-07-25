@@ -1,0 +1,75 @@
+#!/usr/bin/env node
+/** Gate: AI Create Connect — OpenAI discovery wiring (ChatGPT white-label). */
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const failures = [];
+function check(name, cond, detail = "") {
+  if (!cond) {
+    console.error(`  ✗ ${name}${detail ? `: ${detail}` : ""}`);
+    failures.push({ name, detail });
+  } else console.log(`  ✓ ${name}`);
+}
+
+console.log("\nAI Create Connect\n");
+
+const hubly = fs.readFileSync(path.join(root, "public/hubly.html"), "utf8");
+const disc = fs.readFileSync(
+  path.join(root, "supabase/functions/_shared/hubly_brain_discovery_conversation.ts"),
+  "utf8",
+);
+const think = fs.readFileSync(
+  path.join(root, "supabase/functions/_shared/hubly_brain_think.ts"),
+  "utf8",
+);
+const brain = fs.readFileSync(path.join(root, "supabase/functions/hubly-brain/index.ts"), "utf8");
+const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+const checklist = fs.readFileSync(path.join(root, "AI_CREATE_CONNECT.md"), "utf8");
+
+check("npm script", pkg.scripts?.["check:ai-create-connect"] === "node scripts/check-ai-create-connect.mjs");
+check(
+  "checklist doc",
+  /North Star/.test(checklist) &&
+    /OpenAI/.test(checklist) &&
+    /first message/i.test(checklist) &&
+    /ChatGPT/.test(checklist),
+);
+check("discovery conversation module", /runDiscoveryConversationTurn/.test(disc));
+check("ChatGPT white-label system prompt", /ChatGPT, white-labeled as Hubly/.test(disc));
+check("no onboarding mindset in prompt", /NOT onboarding software/.test(disc));
+check("brain routes intent discovery", /intent === "discovery"/.test(think) && /runDiscoveryConversationTurn/.test(think));
+check("hubly-brain accepts discovery payload", /discovery:\s*body\.discovery/.test(brain));
+check("client isDiscoveryThinkTurn", /async function isDiscoveryThinkTurn\(/.test(hubly) && /intent:'discovery'/.test(hubly));
+check("OpenAI-first first message", /AI Connect — first turns: OpenAI speaks first/.test(hubly));
+check("silent live build (no scripted chat)", /silentChat:\s*true/.test(hubly) && /silentChat!==false/.test(hubly));
+check("tracks discoveryAiSource", /discoveryAiSource/.test(hubly));
+check("landing promises natural talk", /Talk naturally|type naturally|ChatGPT/i.test(hubly));
+check(
+  "industry packs for CEO test set",
+  /flight_instruction/.test(hubly) &&
+    /dog_grooming/.test(hubly) &&
+    /detailing:/.test(hubly) &&
+    /hvac:/.test(hubly) &&
+    /spa:/.test(hubly),
+);
+
+const passed = failures.length === 0;
+fs.mkdirSync(path.join(root, "docs"), { recursive: true });
+fs.writeFileSync(
+  path.join(root, "docs/AI_CREATE_CONNECT_PROOF.json"),
+  JSON.stringify(
+    {
+      title: "AI Create Connect",
+      passed,
+      failures,
+      note: "Static wiring only. Live OpenAI must be verified with OPENAI_API_KEY on Edge + a real /signup or /demo turn.",
+      checkedAt: new Date().toISOString(),
+    },
+    null,
+    2,
+  ) + "\n",
+);
+console.log(passed ? "\nAI CREATE CONNECT PASS (wiring)\n" : "\nAI CREATE CONNECT FAIL\n");
+if (!passed) process.exit(1);
