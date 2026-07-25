@@ -6,7 +6,7 @@ Living page. Not a blueprint. Update when the customer experience actually moves
 🟢 Operating System      95%
 🟢 AI Foundation         95%
 
-🟡 Create               80%
+🟡 Create               88%
 ⬜ Website              20%
 🟨 Booking             45%
 🟨 Home                55%
@@ -16,57 +16,66 @@ Living page. Not a blueprint. Update when the customer experience actually moves
 
 ## Current Focus
 
-🎯 **Create**
+🎯 **Create — validate with real users** (not more isolated polish)
+
+Gate 1 is ~85–90% complete on product feel.  
+The remaining gap is **proof from strangers**, not another internal taste pass.
 
 ## Success Criteria
 
-A new customer finishes onboarding and says:
+A new customer finishes Create and says:
 
 > "Holy shit… Hubly built my business."
 
+**Gate 1 closes when:** 3 of 5 people who go through `/demo` unassisted would actually use it for their business.
+
+Protocol + session log: [`GATE_1_VALIDATION.md`](./GATE_1_VALIDATION.md)  
+Gate detail: [`GATE_1_CREATE.md`](./GATE_1_CREATE.md)
+
 ## Next Milestone
 
-Create is polished enough that we'd confidently show it to a paying customer.
+Run **5 unassisted `/demo` sessions**. Fix the biggest confusion patterns. Then decide Gate 1 close / Gate 2.
 
-## Latest Create polish (today)
+## What counts (and what doesn’t)
 
-- Conversation compressed — less script, more ChatGPT (build while talking)
-- Page sections appear live (About / Services / Reviews)
-- Follow-ups visibly change the website (tone, CTA, packages, brand)
-- Reveal cards are the finished business (screenshot-worthy target)
-- Home after Create: website live · booking ready · CRM configured (no empty modules)
-- Still Gate 1 — not done until a paying customer would trust the flow
+| Counts | Does not count as a blocker |
+|--------|-----------------------------|
+| AI works with OpenAI | Logo is initials |
+| Website feels professional enough to publish | Perfect motion / pixel polish |
+| Booking usable enough to send customers | Internal “feels magical” opinions |
+| Home ready; user understands what Hubly built | Vacuum refinement without users |
 
 ## Roadmap (one experience at a time)
 
 | Order | Experience | Status | Done when |
 |-------|------------|--------|-----------|
-| 1 | **Create** | 🟡 In progress (~80%) | Feels magical — people want to show friends |
+| 1 | **Create** | 🟡 Validate (~88%) | 3/5 unassisted users would use it |
 | 2 | Website | ⬜ Next | Best AI website editor in the industry (design first) |
 | 3 | Booking | 🟨 Later | One engine, industry-specific experiences |
 | 4 | Home | 🟨 Later | Feels like your business, not software |
 | 5 | Operate | 🟩 Polish later | CRM / Jobs / Revenue / Customers / Calendar — fewer clicks |
 | 6 | Grow | ⬜ Future | AI grows the business |
 
-## Daily loop
+## Daily loop (Gate 1)
 
-1. Open `/demo`
-2. Go through the customer journey
-3. Critique what felt awkward
-4. Improve Create until it feels effortless
+1. Book or run a real-person `/demo` session (no helping)
+2. Ask only the five validation questions
+3. Log in [`GATE_1_VALIDATION.md`](./GATE_1_VALIDATION.md)
+4. Fix the biggest pattern — not a grab-bag of opinions
 
-Nothing ships because code merged. Things ship because the experience improved.
+Internal `/demo` smoke still matters. It does **not** close the gate.
 
-Launch checklist: [`HUBLY_MVP.md`](./HUBLY_MVP.md)  
-Current gate: [`GATE_1_CREATE.md`](./GATE_1_CREATE.md)
+## Create — remaining (evidence-driven)
 
-## Create — still rough
-
-- AI conversation should feel indistinguishable from ChatGPT
-- Website generation can feel even more alive (sections, imagery)
-- Reveal can go further (motion, pride beat)
-- Follow-up turns after the first build still need the same proof standard
+- Confirm OpenAI path in real sessions (not just local smoke)
+- Website “professional enough to publish” — measured by user Q2
+- Booking “send to customers” — measured by user Q3
+- Confusion hotspots — measured by user Q4; fix top patterns only
 
 ## Rule
 
-If we're discussing implementation before agreeing on the customer experience — stop. Design the experience first. Then build it.
+Stop building Hubly only in a vacuum.  
+You already know how it works. Real customers don’t.  
+Their behavior beats another week of internal refinement.
+
+Launch checklist: [`HUBLY_MVP.md`](./HUBLY_MVP.md)
