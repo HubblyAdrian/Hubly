@@ -16,26 +16,55 @@ cd "$ROOT"
 PROJECT_REF="${SUPABASE_PROJECT_REF:-rtwxxkxpkqdrhclkozma}"
 
 # Trim whitespace / accidental quotes from copy-paste
-TOKEN="$(printf '%s' "${SUPABASE_ACCESS_TOKEN:-}" | tr -d '[:space:]"'"'")"
+TOKEN="${SUPABASE_ACCESS_TOKEN:-}"
+TOKEN="${TOKEN//[$'\t\r\n ']/}"
+TOKEN="${TOKEN//\"/}"
+TOKEN="${TOKEN//\'/}"
+# CLI only accepts lowercase hex (see supabase/cli AccessTokenPattern)
+TOKEN="$(printf '%s' "$TOKEN" | tr 'A-F' 'a-f')"
 
-if [[ -z "$TOKEN" ]]; then
-  echo "Set SUPABASE_ACCESS_TOKEN (sbp_… from https://supabase.com/dashboard/account/tokens)" >&2
-  echo "  Do NOT use the anon key, service_role JWT, or OpenAI sk- key here." >&2
-  exit 1
+# Exact CLI shape: sbp_ + 40 hex, or sbp_oauth_ + 40 hex
+token_ok() {
+  [[ "$1" =~ ^sbp_[a-f0-9]{40}$ ]] || [[ "$1" =~ ^sbp_oauth_[a-f0-9]{40}$ ]]
+}
+
+if [[ -n "$TOKEN" ]]; then
+  if ! token_ok "$TOKEN"; then
+    echo "SUPABASE_ACCESS_TOKEN rejected (CLI requires sbp_ + 40 lowercase hex)." >&2
+    echo "  length: ${#TOKEN}" >&2
+    echo "  prefix: ${TOKEN:0:10}…" >&2
+    echo "  suffix: …$(printf '%s' "$TOKEN" | tail -c 4)" >&2
+    if [[ "$TOKEN" == sbp_v0_* ]]; then
+      echo "  This looks experimental (sbp_v0_). Create a classic token instead." >&2
+    elif [[ "$TOKEN" == sk-* ]]; then
+      echo "  This is an OpenAI key. Use a Supabase account token." >&2
+    elif [[ "$TOKEN" == eyJ* ]]; then
+      echo "  This is a JWT (anon/service). Use a Supabase account token." >&2
+    fi
+    echo "" >&2
+    echo "Clear the bad env var and use browser login:" >&2
+    echo "  unset SUPABASE_ACCESS_TOKEN" >&2
+    echo "  npx supabase login" >&2
+    echo "  ./scripts/deploy-hubly-brain.sh" >&2
+    exit 1
+  fi
+  export SUPABASE_ACCESS_TOKEN="$TOKEN"
+  echo "=== Project: $PROJECT_REF ==="
+  echo "=== Access token: sbp_…$(printf '%s' "$TOKEN" | tail -c 4) (len ${#TOKEN}) ==="
+else
+  echo "=== Project: $PROJECT_REF ==="
+  echo "=== Auth: no SUPABASE_ACCESS_TOKEN — using supabase login / stored credentials ==="
+  if ! npx --yes supabase projects list >/dev/null 2>&1; then
+    echo "Not logged in to Supabase CLI." >&2
+    echo "  npx supabase login" >&2
+    echo "  ./scripts/deploy-hubly-brain.sh" >&2
+    echo "" >&2
+    echo "Or classic PAT from https://supabase.com/dashboard/account/tokens" >&2
+    echo "  (Generate new token — classic, NOT experimental sbp_v0_)" >&2
+    echo "  export SUPABASE_ACCESS_TOKEN=sbp_…   # exactly 40 hex chars after sbp_" >&2
+    exit 1
+  fi
 fi
-
-if [[ "$TOKEN" != sbp_* ]]; then
-  echo "SUPABASE_ACCESS_TOKEN has the wrong shape." >&2
-  echo "  Expected: sbp_… (Account → Access Tokens)" >&2
-  echo "  Got prefix: ${TOKEN:0:12}…" >&2
-  echo "  Common mixups: sk-… (OpenAI), eyJ… (JWT anon/service), sbp with quotes/spaces." >&2
-  exit 1
-fi
-
-export SUPABASE_ACCESS_TOKEN="$TOKEN"
-
-echo "=== Project: $PROJECT_REF ==="
-echo "=== Access token: sbp_…$(printf '%s' "$TOKEN" | tail -c 4) ==="
 
 # OpenAI is already configured on this project (hubly-ai-status). Only rotate when asked.
 if [[ "${SET_OPENAI_SECRET:-}" == "1" ]]; then
