@@ -13,6 +13,7 @@ When someone asks *“Why was this designed this way?”*, the answer lives here
 | [0003](./0003-experts-cannot-write-memory.md) | Experts cannot write directly to memory |
 | [0004](./0004-registry-driven-capabilities.md) | Capabilities are registry-driven |
 | [0005](./0005-experience-director-gate.md) | All owner-facing AI passes through Experience Director |
+| [0006](./0006-one-os-ai-personalizes-experience.md) | One OS; AI personalizes experience |
 
 ## Format
 
