@@ -8,6 +8,7 @@
 | Document | Role |
 |----------|------|
 | **[`docs/HUBLY_CONSTITUTION.md`](../HUBLY_CONSTITUTION.md) — Product Constitution v1.0** | What Hubly *is*. Every engineer reads this first. Partner filter, one AI, memory sacred, think-before-build. |
+| **[`docs/HUBLY_OS.md`](../HUBLY_OS.md) — Hubly OS Locked** | One operating system for every industry. AI personalizes experience above the OS — never forks CRM/nav/software. |
 | **This guide + Identity System (Section 13)** | How owner-facing responses are evaluated against ten behavioral principles |
 
 Product constitution governs product decisions.  

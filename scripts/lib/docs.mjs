@@ -8,7 +8,14 @@ var HUBLY_PRODUCT_CONSTITUTION = {
   title: "Hubly Constitution v1.0",
   path: "docs/HUBLY_CONSTITUTION.md",
   version: "1.0",
-  summary: "Product contract: one AI, think before build, sacred memory, partner filter, remove software."
+  summary: "Product contract: one AI, think before build, sacred memory, partner filter, remove software, one OS."
+};
+var HUBLY_OS_LOCK = {
+  id: "hubly-os",
+  title: "Hubly OS \u2014 Locked",
+  path: "docs/HUBLY_OS.md",
+  version: "1.0.0",
+  summary: "One OS for every industry. AI personalizes website, booking, packages, recommendations \u2014 never forks CRM/nav."
 };
 var HUBLY_ARCHITECTURE_GUIDES = [
   {
@@ -108,6 +115,12 @@ var HUBLY_ADRS = [
     title: "All AI must pass through the Experience Director",
     path: "docs/adr/0005-experience-director-gate.md",
     status: "accepted"
+  },
+  {
+    id: "0006",
+    title: "One OS; AI personalizes experience",
+    path: "docs/adr/0006-one-os-ai-personalizes-experience.md",
+    status: "accepted"
   }
 ];
 function getHublyDocumentationCatalog() {
@@ -116,6 +129,7 @@ function getHublyDocumentationCatalog() {
     indexPath: "docs/architecture/README.md",
     adrIndexPath: "docs/adr/README.md",
     productConstitution: HUBLY_PRODUCT_CONSTITUTION,
+    hublyOs: HUBLY_OS_LOCK,
     guides: [...HUBLY_ARCHITECTURE_GUIDES],
     adrs: [...HUBLY_ADRS],
     guideCount: HUBLY_ARCHITECTURE_GUIDES.length,
@@ -127,6 +141,7 @@ var HublyDocs = {
   owner: "hubly_brain",
   catalog: getHublyDocumentationCatalog,
   productConstitution: () => HUBLY_PRODUCT_CONSTITUTION,
+  hublyOs: () => HUBLY_OS_LOCK,
   guides: () => [...HUBLY_ARCHITECTURE_GUIDES],
   adrs: () => [...HUBLY_ADRS]
 };
@@ -134,6 +149,7 @@ export {
   HUBLY_ADRS,
   HUBLY_ARCHITECTURE_GUIDES,
   HUBLY_DOCS_VERSION,
+  HUBLY_OS_LOCK,
   HUBLY_PRODUCT_CONSTITUTION,
   HublyDocs,
   getHublyDocumentationCatalog
