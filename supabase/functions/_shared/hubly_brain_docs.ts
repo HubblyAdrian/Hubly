@@ -28,7 +28,17 @@ export const HUBLY_PRODUCT_CONSTITUTION = {
   path: "docs/HUBLY_CONSTITUTION.md",
   version: "1.0",
   summary:
-    "Product contract: one AI, think before build, sacred memory, partner filter, remove software.",
+    "Product contract: one AI, think before build, sacred memory, partner filter, remove software, one OS.",
+} as const;
+
+/** Locked operating system — AI personalizes experience above it. */
+export const HUBLY_OS_LOCK = {
+  id: "hubly-os",
+  title: "Hubly OS — Locked",
+  path: "docs/HUBLY_OS.md",
+  version: "1.0.0",
+  summary:
+    "One OS for every industry. AI personalizes website, booking, packages, recommendations — never forks CRM/nav.",
 } as const;
 
 /** Required Section 17 deliverables — single source of truth for the catalog. */
@@ -132,6 +142,12 @@ export const HUBLY_ADRS: readonly HublyAdrEntry[] = [
     path: "docs/adr/0005-experience-director-gate.md",
     status: "accepted",
   },
+  {
+    id: "0006",
+    title: "One OS; AI personalizes experience",
+    path: "docs/adr/0006-one-os-ai-personalizes-experience.md",
+    status: "accepted",
+  },
 ] as const;
 
 export type HublyDocumentationCatalog = {
@@ -139,6 +155,7 @@ export type HublyDocumentationCatalog = {
   indexPath: string;
   adrIndexPath: string;
   productConstitution: typeof HUBLY_PRODUCT_CONSTITUTION;
+  hublyOs?: typeof HUBLY_OS_LOCK;
   guides: HublyDocEntry[];
   adrs: HublyAdrEntry[];
   guideCount: number;
@@ -152,6 +169,7 @@ export function getHublyDocumentationCatalog(): HublyDocumentationCatalog {
     indexPath: "docs/architecture/README.md",
     adrIndexPath: "docs/adr/README.md",
     productConstitution: HUBLY_PRODUCT_CONSTITUTION,
+    hublyOs: HUBLY_OS_LOCK,
     guides: [...HUBLY_ARCHITECTURE_GUIDES],
     adrs: [...HUBLY_ADRS],
     guideCount: HUBLY_ARCHITECTURE_GUIDES.length,
@@ -164,6 +182,7 @@ export const HublyDocs = {
   owner: "hubly_brain" as const,
   catalog: getHublyDocumentationCatalog,
   productConstitution: () => HUBLY_PRODUCT_CONSTITUTION,
+  hublyOs: () => HUBLY_OS_LOCK,
   guides: () => [...HUBLY_ARCHITECTURE_GUIDES],
   adrs: () => [...HUBLY_ADRS],
 };

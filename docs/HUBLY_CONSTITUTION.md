@@ -114,6 +114,21 @@ Hubly builds it.
 
 Configuration is our problem. Conversation is theirs.
 
+### 9. One OS — AI personalizes the experience
+
+The Hubly operating system is **locked and stable**.
+
+Every industry shares the same OS: Dashboard, Leads, Jobs & Calendar, Customers, Quick Quote, Revenue, Chats, Marketplace, Website, Stripe, Google Calendar, CRM, Payments, Messaging.
+
+- Do **not** create different CRMs  
+- Do **not** create different software per industry  
+- Do **not** create industry-specific navigation  
+
+AI personalizes **above** the OS: website, theme, booking, packages, brand voice, recommendations, dashboard focus, automations.
+
+Same platform. Different experience.  
+Full contract: [`docs/HUBLY_OS.md`](./HUBLY_OS.md)
+
 ---
 
 ## The partner filter
@@ -186,12 +201,14 @@ Spec only until then: [`docs/architecture/BUILDER_ENGINE_SPEC.md`](./architectur
 
 ## Related reading (after this)
 
-1. [Developer Onboarding](./architecture/DEVELOPER_ONBOARDING.md)  
-2. [System Architecture](./architecture/SYSTEM_ARCHITECTURE.md)  
-3. [AI Lifecycle](./architecture/AI_LIFECYCLE.md)  
-4. [ADRs](./adr/README.md) — *why* we designed it this way  
-5. [Constitution Guide (engineering / AI)](./architecture/CONSTITUTION_GUIDE.md)  
-6. [Milestone 1 Certificate](./releases/MILESTONE1_CERTIFIED.md)  
+1. [Hubly OS — Locked](./HUBLY_OS.md) — one OS, AI personalizes experience  
+2. [Hubly v3 Business OS](./HUBLY_V3_BUSINESS_OS.md) — Create vs Operate  
+3. [Developer Onboarding](./architecture/DEVELOPER_ONBOARDING.md)  
+4. [System Architecture](./architecture/SYSTEM_ARCHITECTURE.md)  
+5. [AI Lifecycle](./architecture/AI_LIFECYCLE.md)  
+6. [ADRs](./adr/README.md) — *why* we designed it this way  
+7. [Constitution Guide (engineering / AI)](./architecture/CONSTITUTION_GUIDE.md)  
+8. [Milestone 1 Certificate](./releases/MILESTONE1_CERTIFIED.md)  
 
 ---
 
