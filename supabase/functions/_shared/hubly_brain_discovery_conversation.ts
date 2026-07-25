@@ -29,11 +29,50 @@ export type DiscoveryTurnInput = {
   clarificationCount?: number;
 };
 
+/** AI Business Blueprint — systems assembly plan (not an industry template). */
+export type DiscoveryBusinessBlueprint = {
+  designDirection?: string | null;
+  idealCustomer?: string | null;
+  brandVoice?: string | null;
+  offer?: string | null;
+  trustSignals?: string[] | null;
+  competitivePosition?: string | null;
+  priceLevel?: string | null;
+  desiredFeeling?: string | null;
+  layoutId?: string | null;
+  composition?: string | null;
+  accent?: string | null;
+  headline?: string | null;
+  heroSub?: string | null;
+  ctaLabel?: string | null;
+  about?: string | null;
+  packages?: Array<string | { name?: string; price?: number; desc?: string }> | null;
+  bookingChips?: string[] | null;
+  bookingStrategy?: string | null;
+  components?: {
+    hero?: string | null;
+    nav?: string | null;
+    cta?: string | null;
+    services?: string | null;
+    gallery?: string | null;
+    testimonials?: string | null;
+    pricing?: string | null;
+    faq?: string | null;
+    footer?: string | null;
+    booking?: string | null;
+  } | null;
+  sectionOrder?: string[] | null;
+  strategySummary?: string | null;
+  automations?: string[] | null;
+};
+
 export type DiscoveryTurnResult = {
   ok: boolean;
   reply: string;
   question: string | null;
   facts: DiscoveryFacts;
+  /** Systems plan — Assemble from this; never map industry → template. */
+  businessBlueprint: DiscoveryBusinessBlueprint | null;
   confidence: number;
   readyForThinking: boolean;
   learningLines: string[];
@@ -64,13 +103,29 @@ Voice (non-negotiable):
 - Never say you are an AI model, mention OpenAI/GPT, JSON, APIs, gates, or "onboarding."
 - Name what you changed on the live site so they can see progress ("homepage," "booking," "packages").
 
-Build while talking:
-- As soon as you know the trade, assume the common case and start building.
+Build while talking — SYSTEMS, not templates:
+- NEVER pick an industry template (no "fitness theme", "spa theme").
+- First think: Ideal customer → Brand voice → Offer → Trust → Position → Price level → Desired feeling.
+- Then choose a designDirection: luxury|minimal|editorial|bold|playful|corporate|modern|dark|light.
+- Then pick component IDs from the catalogs below (combinations, not templates).
 - buildingActions must list surfaces updating this turn: website, booking, packages, brand, crm.
-- liveStatus: short studio line (e.g. "Rewriting your homepage…").
+- liveStatus: short studio line (e.g. "Assembling your booking + packages…").
+
+Component catalogs (pick by id):
+- hero: hero_01…hero_12 (outcome, proof, split, center, bold, editorial, consult, results, dark, light, social, quiet)
+- nav: nav_01…nav_06
+- cta: cta_01…cta_08
+- services: svc_01…svc_06
+- gallery: gal_01…gal_08
+- testimonials: tst_01…tst_06
+- pricing: prc_01…prc_06 (prc_03/prc_04 hide prices — high-ticket)
+- faq: faq_01…faq_04
+- footer: ftr_01…ftr_04
+- booking: bk_01 instant | bk_02 consult-first | bk_03 quote | bk_04 package | bk_05 apply | bk_06 mobile
 
 When website + booking + packages are clearly in place and they aren't mid-correction, set readyForThinking=true.
 Prefer confidence ≥ 75 after a clear industry — stay conversational if they're refining.
+As soon as industry is clear (even turn 1), return a full businessBlueprint so Hubly can assemble.
 
 Return ONLY valid JSON:
 {
@@ -89,6 +144,40 @@ Return ONLY valid JSON:
     "brandVoice": "string|null — short voice note e.g. confident coach / calm luxury",
     "visualStyle": "string|null — short style note e.g. bold athletic / quiet spa",
     "bookingStrategy": "string|null — e.g. consult-first / book-session / quote-then-book"
+  },
+  "businessBlueprint": {
+    "designDirection": "luxury|minimal|editorial|bold|playful|corporate|modern|dark|light",
+    "idealCustomer": "string",
+    "brandVoice": "string",
+    "offer": "string — one-line offer",
+    "trustSignals": ["string","string","string"],
+    "competitivePosition": "string",
+    "priceLevel": "low|mid|high",
+    "desiredFeeling": "string",
+    "layoutId": "string|null — optional Hubly layout id if you know one",
+    "composition": "classic|portfolio|services|minimal|null",
+    "accent": "#D9632D or fitting hex — avoid purple defaults",
+    "headline": "string",
+    "heroSub": "string",
+    "ctaLabel": "string",
+    "about": "string",
+    "packages": ["string","string","string"],
+    "bookingChips": ["string","string"],
+    "components": {
+      "hero": "hero_XX",
+      "nav": "nav_XX",
+      "cta": "cta_XX",
+      "services": "svc_XX",
+      "gallery": "gal_XX",
+      "testimonials": "tst_XX",
+      "pricing": "prc_XX",
+      "faq": "faq_XX",
+      "footer": "ftr_XX",
+      "booking": "bk_XX"
+    },
+    "sectionOrder": ["services","reviews","gallery","about","faq"],
+    "strategySummary": "string — one sentence business strategy",
+    "automations": ["Booking confirmation","No-show follow-up"]
   },
   "confidence": 0-100,
   "readyForThinking": boolean,
@@ -204,11 +293,49 @@ export function fallbackDiscoveryTurn(input: DiscoveryTurnInput): DiscoveryTurnR
     : facts.industry
     ? `I tightened your ${facts.industry} homepage and booking around what you just said. Anything feel off?`
     : "I'm building as we go — tell me more and I'll keep shaping it.";
+  const businessBlueprint: DiscoveryBusinessBlueprint | null = facts.industry
+    ? {
+      designDirection: /premium|luxury/.test(String(facts.positioning || ""))
+        ? "luxury"
+        : /fitness|train|coach/.test(String(facts.industryId || facts.industry || ""))
+        ? "bold"
+        : "modern",
+      idealCustomer: facts.customer || "clients",
+      brandVoice: facts.brandVoice || "clear and confident",
+      offer: facts.positioning || facts.industry || "results-first service",
+      trustSignals: ["Clear packages", "Easy booking", "Real results"],
+      competitivePosition: facts.positioning || "local favorite",
+      priceLevel: /premium|luxury/.test(String(facts.positioning || "")) ? "high" : "mid",
+      desiredFeeling: "trust and momentum",
+      headline: null,
+      heroSub: null,
+      ctaLabel: /consult/i.test(String(facts.bookingStrategy || "")) ? "Book a free consult" : "Book now",
+      packages: ["Starter", "Popular", "Pro"],
+      bookingChips: ["Consult", "Book session"],
+      components: {
+        hero: "hero_01",
+        nav: "nav_03",
+        cta: "cta_01",
+        services: "svc_03",
+        gallery: "gal_05",
+        testimonials: "tst_01",
+        pricing: "prc_02",
+        faq: "faq_01",
+        footer: "ftr_01",
+        booking: "bk_01",
+      },
+      strategySummary: facts.industry
+        ? `Position ${facts.industry} around clear packages and effortless booking.`
+        : null,
+      automations: ["Booking confirmation", "No-show follow-up"],
+    }
+    : null;
   return {
     ok: true,
     reply,
     question,
     facts,
+    businessBlueprint,
     confidence: Math.min(100, confidence),
     readyForThinking: ready && !question,
     learningLines: ready
@@ -237,6 +364,7 @@ export async function runDiscoveryConversationTurn(
       reply: "Tell me a little about the business you're building — I'll start building as soon as you do.",
       question: null,
       facts: input.facts || {},
+      businessBlueprint: null,
       confidence: 0,
       readyForThinking: false,
       learningLines: [],
@@ -263,7 +391,7 @@ export async function runDiscoveryConversationTurn(
       system: SYSTEM,
       messages: [{ role: "user", content: buildUserPayload(input) }],
       // GPT-5.5 rejects custom temperature; leave default.
-      maxTokens: 1600,
+      maxTokens: 2400,
       jsonMode: true,
     });
 
@@ -298,11 +426,28 @@ export async function runDiscoveryConversationTurn(
     const liveStatusRaw = parsed.liveStatus == null ? null : String(parsed.liveStatus).trim();
     const liveStatus = liveStatusRaw && liveStatusRaw !== "null" ? liveStatusRaw.slice(0, 120) : null;
 
+    let businessBlueprint: DiscoveryBusinessBlueprint | null = null;
+    const bpRaw = parsed.businessBlueprint;
+    if (bpRaw && typeof bpRaw === "object") {
+      businessBlueprint = bpRaw as DiscoveryBusinessBlueprint;
+    } else if (facts.industry) {
+      // OpenAI omitted blueprint — still assemble from facts (systems path, not template).
+      businessBlueprint = {
+        designDirection: facts.visualStyle || facts.positioning || "modern",
+        idealCustomer: facts.customer || "clients",
+        brandVoice: facts.brandVoice || null,
+        offer: facts.positioning || facts.industry,
+        priceLevel: /premium|luxury/i.test(String(facts.positioning || "")) ? "high" : "mid",
+        bookingStrategy: facts.bookingStrategy || null,
+      };
+    }
+
     return {
       ok: true,
       reply,
       question: readyForThinking ? null : question,
       facts,
+      businessBlueprint,
       confidence,
       readyForThinking,
       learningLines,

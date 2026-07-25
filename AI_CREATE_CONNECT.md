@@ -208,9 +208,24 @@ Cursor can check off AI Create only when:
 
 ---
 
+## Create Systems (anti-template)
+
+See **`CREATE_SYSTEMS.md`**. Durable generates websites. Hubly generates businesses.
+
+```
+Conversation → OpenAI → Business Blueprint → Design Engine → Layout Engine
+  → Component Picker → Copy → Website → Booking → Packages → Brand → CRM → Strategy
+```
+
+- No `industry == fitness → fitness-theme`
+- AI returns `businessBlueprint` with designDirection + component IDs
+- Client: `HublyCreateAssemble.assemble()` via `public/create-systems/`
+- Pack theater (`playOpeningSequence`) is **fallback only** when OpenAI/systems fail
+
 ## Next implementation order
 
 1. Stream discovery replies (ChatGPT feel)
-2. Drive live studio from `buildingActions` / fact deltas; retire scripted stages when `aiSource==="openai"`
-3. ~~Deeper editor-first Create (Website Editor mock)~~ → **Create AI Workspace** shipped (left nav · center live canvas · right chat)
+2. Grow component library toward 40/25/30/… variants
+3. Automations from blueprint strategy
 4. CEO `/demo` pass + log sessions
+5. Redeploy `hubly-brain` after pull so Edge returns `businessBlueprint`

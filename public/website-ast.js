@@ -303,6 +303,12 @@
       if (!el) return;
       el.style.order = String(order++);
       used[id] = true;
+      // Component picker — variant id from Create Systems / AI blueprint
+      if (b.variant && b.variant !== 'default') {
+        el.setAttribute('data-comp-variant', String(b.variant));
+      } else {
+        el.removeAttribute('data-comp-variant');
+      }
       if (b.visible === false) {
         el.classList.add('ws-sec-omitted');
         el.style.display = 'none';
@@ -311,6 +317,10 @@
         if (el.style.display === 'none') el.style.removeProperty('display');
       }
     });
+    if (page.hero && page.hero.variant && page.hero.variant !== 'default') {
+      var hero = global.document.getElementById('ws-hero') || root.querySelector('.ws-hero');
+      if (hero) hero.setAttribute('data-comp-variant', String(page.hero.variant));
+    }
     Object.keys(SECTION_DOM).forEach(function (k) {
       var id = SECTION_DOM[k];
       if (used[id]) return;

@@ -1289,6 +1289,25 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 #is-step-talk.is-ai-workspace #is-pkg-wrap,
 #is-step-talk.is-ai-workspace #is-addons-wrap,
 #is-step-talk.is-ai-workspace #is-area-panel{display:none!important}
+/* Create Systems — component variant hooks (AI-assembled, not industry templates) */
+.is-comp-hero-bold .ws-hero-inner h1,
+[data-comp-variant="hero_05"] .ws-hero-inner h1{letter-spacing:-.04em;text-transform:uppercase}
+.is-comp-hero-quiet .ws-hero-inner h1,
+[data-comp-variant="hero_12"] .ws-hero-inner h1{font-weight:650;max-width:16ch}
+.is-comp-hero-center .ws-hero-inner,
+[data-comp-variant="hero_04"] .ws-hero-inner{text-align:center;align-items:center}
+.is-comp-hero-editorial .ws-hero-inner h1,
+[data-comp-variant="hero_06"] .ws-hero-inner h1{font-family:Georgia,serif;font-weight:600}
+.is-comp-cta-dual .ws-hero-ctas{gap:12px}
+.is-comp-svc-popular .ws-svc-card.is-popular,
+.is-comp-prc-popular .ws-svc-card.is-popular{border-color:var(--brand,#D9632D);box-shadow:0 0 0 1px rgba(217,99,45,.25)}
+.is-comp-gal-hidden #ws-sec-gallery,
+.is-comp-tst-hidden #ws-sec-reviews,
+.is-comp-faq-hidden #ws-sec-faq{display:none!important}
+.is-design-luxury{--ws-radius:10px}
+.is-design-minimal{--ws-radius:6px}
+.is-design-bold{--ws-btn-radius:8px}
+.is-design-editorial .ws-section-hdr h2{font-family:Georgia,serif}
 #is-step-talk.is-discovery .is-title{
   font-size:clamp(20px,2.4vw,26px);margin:0 0 4px
 }
@@ -12542,6 +12561,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/layouts/clear-view.js"></script>
 <script defer src="/layouts/simple-profile.js"></script>
 <script defer src="/website-ast.js"></script>
+<script defer src="/create-systems/registry.js"></script>
+<script defer src="/create-systems/assemble.js"></script>
 <script>
 const S={
   color:'#1a3a6e',biz:'',tag:'',
@@ -18330,6 +18351,84 @@ async function isDiscoveryThinkTurn(ownerText){
   });
   return brain;
 }
+/**
+ * Create Systems build — OpenAI Business Blueprint → Design → Layout → Components.
+ * Assembles Website + Booking + Packages + Brand + CRM plan. No industry templates.
+ */
+async function isCreateSystemsBuildSequence(session,rawBlueprint,facts){
+  const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+  const setStep=(id,state)=>{
+    try{
+      const li=document.querySelector('#is-workspace-list [data-step="'+id+'"]');
+      if(!li)return;
+      li.classList.remove('is-working','is-done');
+      if(state==='working')li.classList.add('is-working');
+      if(state==='done')li.classList.add('is-done');
+    }catch(e){}
+    try{HUBLY_HOLY_SHIT.setWorkspaceStep?.(id,state);}catch(e){}
+  };
+  session.liveStatus='Thinking through your business…';
+  setStep('understand','working');
+  isRenderLiveBuild({pulse:'website'});
+  await sleep(420);
+
+  const bp=rawBlueprint||(typeof HublyCreateAssemble!=='undefined'
+    ?HublyCreateAssemble.blueprintFromFacts(facts||{})
+    :facts);
+  const plan=HublyCreateAssemble.assemble(bp,{facts:facts||{}});
+  setStep('understand','done');
+  setStep('website','working');
+  session.liveStatus='Assembling homepage from components…';
+  // Progressive studio — canvas waits until packages land (isCreateCanvasShouldShowSite).
+  session.studio=session.studio||{};
+  session.studio.packagesOn=false;
+  session.studio.pkgChips=[];
+  isRenderLiveBuild({pulse:'website',rewrite:true});
+  await sleep(500);
+  setStep('website','done');
+
+  setStep('booking','working');
+  session.studio.bookingOn=true;
+  session.studio.bookingChips=(plan&&plan.bookingChips)||['Consult','Book session'];
+  session.liveStatus='Wiring your booking experience…';
+  isRenderLiveBuild({pulse:'booking'});
+  await sleep(380);
+  setStep('booking','done');
+
+  setStep('packages','working');
+  session.studio.packagesOn=true;
+  session.studio.pkgChips=(plan&&plan.packages)||[];
+  session.liveStatus='Laying out packages…';
+  isRenderLiveBuild({pulse:'packages'});
+  await sleep(420);
+  setStep('packages','done');
+
+  setStep('crm','working');
+  session.buildingActions=['website','booking','packages','brand','crm'];
+  session.liveStatus='';
+  isRenderLiveBuild({pulse:'all'});
+  await sleep(280);
+  setStep('crm','done');
+  try{HUBLY_HOLY_SHIT.setWorkspaceStatus?.('Ready');}catch(e){}
+
+  session.holyShitComplete=true;
+  session.complete=false;
+  session.readyForThinking=false;
+  session.learningSummary={
+    header:'Built from systems',
+    lines:[
+      plan?.design?.direction?`Design direction: ${plan.design.direction}`:'Design assembled',
+      plan?.components?.hero?`Hero ${plan.components.hero.id}`:'Homepage assembled',
+      plan?.components?.booking?`Booking ${plan.components.booking.id}`:'Booking ready',
+    ],
+  };
+  try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.applySectionDom(S.website);}catch(e){}
+  isRenderLiveBuild({pulse:'all'});
+  try{isShowCreateSuggestionChips();}catch(e){}
+  return plan;
+}
+window.isCreateSystemsBuildSequence=isCreateSystemsBuildSequence;
+
 async function isDiscoverySend(text){
   if(S._is?._talkBusy)return;
   S._is._talkBusy=true;
@@ -18345,26 +18444,36 @@ async function isDiscoverySend(text){
 
   let ready=false;
 
-  // AI Connect — first turns: OpenAI speaks first (ChatGPT voice), live build runs silently beside it.
+  // AI Connect — OpenAI Business Blueprint → systems assemble (not industry templates).
   if(!session.holyShitComplete&&session.turns<=2){
     isDiscoverySetTyping(true);
     const brainPromise=isDiscoveryThinkTurn(text).catch(e=>({ok:false,error:e&&e.message?e:{message:String(e)}}));
-    // Start silent studio build in parallel — no scripted chat bubbles.
-    const buildPromise=(async()=>{
-      try{
-        await HUBLY_HOLY_SHIT.playOpeningSequence(session,text,{silentChat:true});
-      }catch(e){
-        if(String(e?.message||e)!=='holy_shit_cancelled'){
-          console.error('[Hubly Live Build] sequence failed',e);
-        }
-      }
-    })();
     let aiReply='';
     let usedOpenAi=false;
+    let systemsBuilt=false;
     try{
       const brain=await brainPromise;
       const disc=brain&&brain.discovery;
       if(disc&&disc.facts)isDiscoveryApplyAiFacts(session,disc.facts);
+      usedOpenAi=!!(disc&&disc.source==='openai'&&disc.ok!==false);
+      // Systems path: AI blueprint → Design/Layout/Components → Website+Booking+Packages+CRM
+      if(usedOpenAi&&typeof HublyCreateAssemble!=='undefined'&&(disc.businessBlueprint||disc.facts?.industry)){
+        try{
+          await isCreateSystemsBuildSequence(session,disc.businessBlueprint,disc.facts||session.aiFacts||{});
+          systemsBuilt=true;
+        }catch(e){
+          console.warn('[Hubly Create Systems] assemble failed, falling back',e);
+        }
+      }
+      if(!systemsBuilt){
+        try{
+          await HUBLY_HOLY_SHIT.playOpeningSequence(session,text,{silentChat:true});
+        }catch(e){
+          if(String(e?.message||e)!=='holy_shit_cancelled'){
+            console.error('[Hubly Live Build] sequence failed',e);
+          }
+        }
+      }
       if(Array.isArray(disc?.buildingActions)&&disc.buildingActions.length){
         session.buildingActions=disc.buildingActions.map(a=>typeof a==='string'?a:(a?.surface||a?.id||'')).filter(Boolean);
         isDiscoveryApplyBuildActions(session);
@@ -18396,8 +18505,6 @@ async function isDiscoverySend(text){
       isTalkPush('hubly',aiReply);
       session.messages.push({role:'hubly',text:aiReply,kind:usedOpenAi?'openai':'fallback'});
     }
-    // Let the silent live build finish (website / booking / packages on screen).
-    try{await buildPromise;}catch(e){}
     isRenderLiveBuild({pulse:'website'});
     isShowCreateRevealChip();
     isScheduleCreateRevealAuto();
@@ -18429,6 +18536,18 @@ async function isDiscoverySend(text){
       if(disc?.liveStatus)session.liveStatus=String(disc.liveStatus);
       // Apply conversational edits to the live website when the owner asks for changes.
       isDiscoveryApplyConversationToStudio(session,text,disc);
+      // If OpenAI returned an updated businessBlueprint, reassemble from systems (still not a template).
+      if(usedAi&&disc?.businessBlueprint&&typeof HublyCreateAssemble!=='undefined'){
+        try{
+          const wantsRedesign=/premium|redesign|different look|color scheme|colours?|colors?|layout|make it more|look more|feel more|update the design/.test(String(text||'').toLowerCase());
+          if(wantsRedesign){
+            delete S._is.createAiDesigned;
+            delete S._is._createLayoutLocked;
+          }
+          HublyCreateAssemble.assemble(disc.businessBlueprint,{facts:disc.facts||session.aiFacts||{}});
+          try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.applySectionDom(S.website);}catch(e){}
+        }catch(e){console.warn('systems reassemble',e);}
+      }
       isDiscoverySetTyping(false);
       isRenderLiveBuild({pulse:'website',rewrite:true});
       if(usedAi||(reply&&brain&&brain.ok)){
@@ -18589,12 +18708,50 @@ function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
     pulsed=true;
   }
   if(disc?.liveStatus)session.liveStatus=String(disc.liveStatus).slice(0,120);
-  // Owner asked for a redesign — only then unlock AI design (otherwise layout stays locked).
+  // Owner asked for a redesign — unlock so the next AI blueprint / design pass can reassemble.
   if(/premium|redesign|different look|color scheme|colours?|colors?|layout|make it more|look more|feel more|update the design/.test(t)){
     try{
-      isCreateDesignWithAi({force:true,reason:String(ownerText||'').slice(0,240)}).then(()=>{
-        try{isRenderCreateWorkspacePreview();}catch(e){}
-      });
+      delete S._is.createAiDesigned;
+      delete S._is._createLayoutLocked;
+      // Prefer systems reassemble when we already have a plan; else one Creative Director pass.
+      if(S._is.createSystemsPlan&&typeof HublyCreateAssemble!=='undefined'){
+        const next=Object.assign({},S._is.createSystemsPlan,{
+          designDirection:/premium|luxury/.test(t)?'luxury':(/minimal|simple/.test(t)?'minimal':(/dark/.test(t)?'dark':S._is.createSystemsPlan.design?.direction||'modern')),
+          source:'owner_redesign',
+        });
+        // Flatten nested plan back to raw-ish shape for assemble
+        const raw={
+          designDirection:next.designDirection,
+          idealCustomer:next.business?.idealCustomer,
+          brandVoice:next.business?.brandVoice,
+          offer:next.business?.offer,
+          trustSignals:next.business?.trustSignals,
+          priceLevel:next.business?.priceLevel,
+          desiredFeeling:next.business?.desiredFeeling,
+          headline:next.copy?.headline,
+          heroSub:next.copy?.sub,
+          ctaLabel:next.copy?.ctaLabel,
+          packages:next.packages,
+          components:{
+            hero:next.components?.hero?.id,
+            nav:next.components?.nav?.id,
+            cta:next.components?.cta?.id,
+            services:next.components?.services?.id,
+            gallery:next.components?.gallery?.id,
+            testimonials:next.components?.testimonials?.id,
+            pricing:next.components?.pricing?.id,
+            faq:next.components?.faq?.id,
+            footer:next.components?.footer?.id,
+            booking:next.components?.booking?.id,
+          },
+        };
+        HublyCreateAssemble.assemble(raw,{facts:session.aiFacts||{}});
+        isRenderCreateWorkspacePreview();
+      }else{
+        isCreateDesignWithAi({force:true,reason:String(ownerText||'').slice(0,240)}).then(()=>{
+          try{isRenderCreateWorkspacePreview();}catch(e){}
+        });
+      }
     }catch(e){}
   }
 }

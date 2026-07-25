@@ -42,7 +42,11 @@ check("no onboarding mindset in prompt", /NOT onboarding software/.test(disc));
 check("brain routes intent discovery", /intent === "discovery"/.test(think) && /runDiscoveryConversationTurn/.test(think));
 check("hubly-brain accepts discovery payload", /discovery:\s*body\.discovery/.test(brain));
 check("client isDiscoveryThinkTurn", /async function isDiscoveryThinkTurn\(/.test(hubly) && /intent:'discovery'/.test(hubly));
-check("OpenAI-first first message", /AI Connect — first turns: OpenAI speaks first/.test(hubly));
+check(
+  "OpenAI-first first message",
+  /AI Connect — OpenAI Business Blueprint/.test(hubly) ||
+    /AI Connect — first turns: OpenAI speaks first/.test(hubly),
+);
 check("silent live build (no scripted chat)", /silentChat:\s*true/.test(hubly) && /silentChat!==false/.test(hubly));
 check("tracks discoveryAiSource", /discoveryAiSource/.test(hubly));
 check("landing promises natural talk", /Talk naturally|type naturally|ChatGPT/i.test(hubly));
@@ -81,6 +85,17 @@ check(
     /isEnterCreateAiWorkspace/.test(hubly) &&
     /isCreateAwSetSurface/.test(hubly) &&
     /is-aw-preview/.test(hubly),
+);
+const systemsDoc = fs.readFileSync(path.join(root, "CREATE_SYSTEMS.md"), "utf8");
+const createRegistry = fs.readFileSync(path.join(root, "public/create-systems/registry.js"), "utf8");
+const assemble = fs.readFileSync(path.join(root, "public/create-systems/assemble.js"), "utf8");
+check("CREATE_SYSTEMS north star", /Never ask/.test(systemsDoc) && /Business Blueprint/.test(systemsDoc));
+check("component registry", /HublyCreateSystems/.test(createRegistry) && /hero_12/.test(createRegistry) && /DESIGN_DIRECTIONS/.test(createRegistry));
+check("assemble engine", /HublyCreateAssemble/.test(assemble) && /normalizeBlueprint/.test(assemble));
+check("client systems build sequence", /isCreateSystemsBuildSequence/.test(hubly) && /create-systems\/assemble/.test(hubly));
+check(
+  "discovery returns businessBlueprint",
+  /businessBlueprint/.test(disc) && /designDirection/.test(disc) && /NEVER pick an industry template/.test(disc),
 );
 
 const passed = failures.length === 0;
