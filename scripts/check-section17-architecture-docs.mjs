@@ -65,7 +65,9 @@ check("product constitution is v1.0", /Hubly Constitution v1\.0/.test(productCon
 check("product constitution: one AI", /only one AI|only talk to \*\*Hubly\*\*/i.test(productConst));
 check("product constitution: memory sacred", /Memory is sacred/i.test(productConst));
 check("product constitution: partner filter", /business partner/i.test(productConst));
+check("product constitution: one OS", /One OS — AI personalizes/i.test(productConst));
 check("product constitution: guiding sentence", /understood my business/i.test(productConst));
+check("Hubly OS lock doc exists", exists("docs/HUBLY_OS.md"));
 check("product constitution: before 1.5 review", /Before Milestone 1\.5/i.test(productConst));
 check("product constitution: no Builder code yet", /Do not write a single line of Builder/i.test(productConst));
 
@@ -98,6 +100,7 @@ const requiredAdrs = [
   "docs/adr/0003-experts-cannot-write-memory.md",
   "docs/adr/0004-registry-driven-capabilities.md",
   "docs/adr/0005-experience-director-gate.md",
+  "docs/adr/0006-one-os-ai-personalizes-experience.md",
 ];
 for (const p of requiredAdrs) {
   check(`ADR exists: ${path.basename(p)}`, exists(p));

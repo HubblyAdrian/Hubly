@@ -3,12 +3,12 @@
   "name": "Architecture Documentation & Developer Experience",
   "title": "Architecture Documentation & Developer Experience",
   "passed": true,
-  "checkedAt": "2026-07-24T17:35:18.220Z",
+  "checkedAt": "2026-07-25T00:38:12.291Z",
   "proofs": {
     "docsVersion": "1.1.0",
     "missionControlVersion": "1.5.0",
     "guideCount": 11,
-    "adrCount": 5,
+    "adrCount": 6,
     "guides": [
       "docs/architecture/SYSTEM_ARCHITECTURE.md",
       "docs/architecture/AI_LIFECYCLE.md",
@@ -27,7 +27,8 @@
       "docs/adr/0002-memory-separation.md",
       "docs/adr/0003-experts-cannot-write-memory.md",
       "docs/adr/0004-registry-driven-capabilities.md",
-      "docs/adr/0005-experience-director-gate.md"
+      "docs/adr/0005-experience-director-gate.md",
+      "docs/adr/0006-one-os-ai-personalizes-experience.md"
     ],
     "missionControlLinked": true,
     "onboardingPath": "docs/architecture/DEVELOPER_ONBOARDING.md",
