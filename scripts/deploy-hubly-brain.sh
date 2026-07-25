@@ -7,25 +7,46 @@
 #
 # Optional:
 #   export SUPABASE_PROJECT_REF=rtwxxkxpkqdrhclkozma
-#   export OPENAI_API_KEY=sk-...          # only if secret not already set
+#   export SET_OPENAI_SECRET=1             # only if you must rotate OPENAI_API_KEY
+#   export OPENAI_API_KEY=sk-...           # used only when SET_OPENAI_SECRET=1
 #
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 PROJECT_REF="${SUPABASE_PROJECT_REF:-rtwxxkxpkqdrhclkozma}"
 
-if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
+# Trim whitespace / accidental quotes from copy-paste
+TOKEN="$(printf '%s' "${SUPABASE_ACCESS_TOKEN:-}" | tr -d '[:space:]"'"'")"
+
+if [[ -z "$TOKEN" ]]; then
   echo "Set SUPABASE_ACCESS_TOKEN (sbp_… from https://supabase.com/dashboard/account/tokens)" >&2
+  echo "  Do NOT use the anon key, service_role JWT, or OpenAI sk- key here." >&2
   exit 1
 fi
 
-echo "=== Project: $PROJECT_REF ==="
+if [[ "$TOKEN" != sbp_* ]]; then
+  echo "SUPABASE_ACCESS_TOKEN has the wrong shape." >&2
+  echo "  Expected: sbp_… (Account → Access Tokens)" >&2
+  echo "  Got prefix: ${TOKEN:0:12}…" >&2
+  echo "  Common mixups: sk-… (OpenAI), eyJ… (JWT anon/service), sbp with quotes/spaces." >&2
+  exit 1
+fi
 
-if [[ -n "${OPENAI_API_KEY:-}" ]]; then
-  echo "=== Set OPENAI_API_KEY secret ==="
-  npx --yes supabase secrets set OPENAI_API_KEY="$OPENAI_API_KEY" --project-ref "$PROJECT_REF"
+export SUPABASE_ACCESS_TOKEN="$TOKEN"
+
+echo "=== Project: $PROJECT_REF ==="
+echo "=== Access token: sbp_…$(printf '%s' "$TOKEN" | tail -c 4) ==="
+
+# OpenAI is already configured on this project (hubly-ai-status). Only rotate when asked.
+if [[ "${SET_OPENAI_SECRET:-}" == "1" ]]; then
+  if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+    echo "SET_OPENAI_SECRET=1 but OPENAI_API_KEY is empty." >&2
+    exit 1
+  fi
+  echo "=== Set OPENAI_API_KEY secret (explicit) ==="
+  npx --yes supabase secrets set "OPENAI_API_KEY=${OPENAI_API_KEY}" --project-ref "$PROJECT_REF"
 else
-  echo "(Skipping secrets set — OPENAI_API_KEY env not provided. Status already shows openai configured on this project.)"
+  echo "(Skipping OpenAI secret — already configured. To rotate: SET_OPENAI_SECRET=1 OPENAI_API_KEY=sk-…)"
 fi
 
 echo "=== Deploy hubly-brain ==="
@@ -79,6 +100,7 @@ print("ok:", d.get("ok"))
 print("aiSource:", src)
 print("provider:", d.get("aiProvider") or disc.get("provider"))
 print("model:", d.get("aiModel") or disc.get("model"))
+print("discovery.error:", disc.get("error"))
 print("reply:", (d.get("response") or disc.get("reply") or "")[:280])
 if src != "openai":
   print("FAIL: expected aiSource=openai (got %r)" % (src,))
