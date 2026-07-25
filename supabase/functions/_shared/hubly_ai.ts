@@ -611,6 +611,11 @@ function openaiChatUsesMaxCompletionTokens(model: string): boolean {
   return /^(gpt-5|o[0-9])/i.test(String(model || "").trim());
 }
 
+/** GPT-5 / o-series reject custom temperature on both Chat Completions and Responses. */
+function openaiSupportsTemperature(model: string): boolean {
+  return !/^(gpt-5|o[0-9])/i.test(String(model || "").trim());
+}
+
 function buildOpenAIChatBody(opts: InternalCall): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: opts.model,
@@ -622,7 +627,9 @@ function buildOpenAIChatBody(opts: InternalCall): Record<string, unknown> {
   } else {
     body.max_tokens = budget;
   }
-  if (typeof opts.temperature === "number") body.temperature = opts.temperature;
+  if (typeof opts.temperature === "number" && openaiSupportsTemperature(opts.model)) {
+    body.temperature = opts.temperature;
+  }
   if (opts.jsonMode) body.response_format = { type: "json_object" };
   return body;
 }
@@ -687,7 +694,9 @@ function buildOpenAIResponsesBody(opts: InternalCall): Record<string, unknown> {
     .filter(Boolean);
   const instructions = [system, ...extraSystem].filter(Boolean).join("\n\n");
   if (instructions) body.instructions = instructions;
-  if (typeof opts.temperature === "number") body.temperature = opts.temperature;
+  if (typeof opts.temperature === "number" && openaiSupportsTemperature(opts.model)) {
+    body.temperature = opts.temperature;
+  }
   if (opts.jsonMode) body.text = { format: { type: "json_object" } };
   return body;
 }

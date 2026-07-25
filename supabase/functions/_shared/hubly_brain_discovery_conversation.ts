@@ -256,8 +256,8 @@ export async function runDiscoveryConversationTurn(
       provider: "openai",
       system: SYSTEM,
       messages: [{ role: "user", content: buildUserPayload(input) }],
-      maxTokens: 900,
-      temperature: 0.6,
+      // GPT-5.5 rejects custom temperature; leave default.
+      maxTokens: 1600,
       jsonMode: true,
     });
 
@@ -310,7 +310,14 @@ export async function runDiscoveryConversationTurn(
   } catch (e) {
     console.error("discovery conversation OpenAI failed", e);
     const fb = fallbackDiscoveryTurn(input);
-    fb.error = e instanceof Error ? e.message : "openai_error";
+    const msg = e instanceof Error ? e.message : "openai_error";
+    const detail = e && typeof e === "object" && "providerBody" in e
+      ? String((e as { providerBody?: unknown }).providerBody || "").slice(0, 280)
+      : "";
+    const status = e && typeof e === "object" && "status" in e
+      ? String((e as { status?: unknown }).status || "")
+      : "";
+    fb.error = [msg, status && `status=${status}`, detail].filter(Boolean).join(" | ");
     return fb;
   }
 }

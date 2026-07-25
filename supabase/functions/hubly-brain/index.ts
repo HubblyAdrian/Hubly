@@ -95,6 +95,20 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || "think");
 
+    if (action === "diagnose_openai" || action === "diagnoseOpenAI") {
+      if (typeof (Hubly as { diagnoseOpenAI?: () => Promise<unknown> }).diagnoseOpenAI !== "function") {
+        return jsonRes({ error: "diagnoseOpenAI unavailable" }, 501);
+      }
+      const diag = await (Hubly as { diagnoseOpenAI: (o?: Record<string, unknown>) => Promise<unknown> })
+        .diagnoseOpenAI({
+          jsonMode: body.jsonMode === true,
+          prompt: body.prompt || body.request || null,
+          transport: body.transport || null,
+          model: body.model || null,
+        });
+      return jsonRes({ ok: true, diagnose: diag });
+    }
+
     if (action === "status" || action === "experts" || action === "executions") {
       return jsonRes({
         ok: true,
