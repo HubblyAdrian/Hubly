@@ -155,6 +155,23 @@ import {
   type HublyConversationTurn,
   HublyUnderstanding,
 } from "./hubly_brain_understanding.ts";
+import {
+  think as runThinkPipeline,
+  brainStatus as thinkBrainStatus,
+  type HublyThinkRequest,
+  type HublyThinkResult,
+} from "./hubly_brain_think.ts";
+import { ensureExpertsRegistered } from "./hubly_brain_experts.ts";
+import { listExpertCapabilities } from "./hubly_brain_expert_framework.ts";
+import {
+  logBrainExecution,
+  listBrainExecutions,
+  persistBrainExecution,
+} from "./hubly_brain_execution_log.ts";
+import {
+  reviewCustomerFacingText,
+  listExperienceInterceptions,
+} from "./hubly_brain_experience_director.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export type {
@@ -1870,6 +1887,84 @@ export const HublyAI = {
         skills: opts.skills || ["analyzePhotos"],
       }, "photo_analysis"),
     );
+  },
+
+  /**
+   * Section 1 — Hubly Brain think pipeline (primary AI entry for owner conversations).
+   * Brain selects experts, merges outputs into one Hubly response, updates memory, logs execution.
+   */
+  async think(req: HublyThinkRequest & { businessId?: string | null }): Promise<HublyThinkResult> {
+    ensureExpertsRegistered();
+    const started = Date.now();
+    try {
+      const result = await runThinkPipeline(req);
+      const execution = logBrainExecution({
+        kind: "think",
+        feature: "hubly-brain-think",
+        task: "reason",
+        intent: result.intent,
+        expertsSelected: result.expertsRun || [],
+        mergedResponse: true,
+        memoryUpdated: true,
+        confidence: result.confidence,
+        ok: result.ok,
+        latencyMs: Date.now() - started,
+        businessId: req.businessId || null,
+      });
+      persistBrainExecution(execution).catch(() => {});
+      return {
+        ...result,
+        console: result.console
+          ? { ...result.console, latencyMs: result.console.latencyMs ?? Date.now() - started }
+          : {
+            intent: result.intent,
+            expertsSelected: result.expertsRun,
+            memoriesLoaded: ["business_memory", "business_dna", "workspace_memory", "conversation_memory"],
+            latencyMs: Date.now() - started,
+          },
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const execution = logBrainExecution({
+        kind: "think",
+        feature: "hubly-brain-think",
+        task: "reason",
+        expertsSelected: [],
+        mergedResponse: false,
+        memoryUpdated: false,
+        ok: false,
+        latencyMs: Date.now() - started,
+        error: msg,
+        businessId: req.businessId || null,
+      });
+      persistBrainExecution(execution).catch(() => {});
+      throw err;
+    }
+  },
+
+  /** Registered experts + AI Capability Registry (never customer-facing). */
+  experts() {
+    return thinkBrainStatus();
+  },
+
+  expertCapabilities() {
+    ensureExpertsRegistered();
+    return listExpertCapabilities();
+  },
+
+  /** Section 1 — recent Brain executions (in-memory ring; Brain Console / status). */
+  executions(limit = 50) {
+    return listBrainExecutions(limit);
+  },
+
+  /** Section 2 — Experience Director interception log. */
+  experienceInterceptions(limit = 40) {
+    return listExperienceInterceptions(limit);
+  },
+
+  /** Section 2 — review freeform customer-facing text through Experience Director. */
+  reviewForCustomer(text: string, opts?: { request?: string | null; confidence?: number | null }) {
+    return reviewCustomerFacingText(text, opts);
   },
 };
 

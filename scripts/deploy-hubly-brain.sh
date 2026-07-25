@@ -100,29 +100,40 @@ PY
 )"
 fi
 
-curl -sS -m 60 -X POST "https://${PROJECT_REF}.supabase.co/functions/v1/hubly-brain" \
+SMOKE_BODY='{
+  "action":"think",
+  "request":"I am an independent fitness trainer.",
+  "intent":"discovery",
+  "discovery":{
+    "seed":"I am an independent fitness trainer.",
+    "facts":{},
+    "history":[{"role":"owner","text":"I am an independent fitness trainer."}],
+    "turns":1
+  },
+  "debug":true
+}'
+HTTP_CODE="$(curl -sS -m 90 -o /tmp/hubly-brain-smoke.json -w '%{http_code}' -X POST \
+  "https://${PROJECT_REF}.supabase.co/functions/v1/hubly-brain" \
   -H "Content-Type: application/json" \
   -H "apikey: ${ANON}" \
   -H "Authorization: Bearer ${ANON}" \
-  -d '{
-    "action":"think",
-    "request":"I am an independent fitness trainer.",
-    "intent":"discovery",
-    "discovery":{
-      "seed":"I am an independent fitness trainer.",
-      "facts":{},
-      "history":[{"role":"owner","text":"I am an independent fitness trainer."}],
-      "turns":1
-    },
-    "debug":true
-  }' | python3 - <<'PY'
-import sys, json
-raw = sys.stdin.read()
+  -d "$SMOKE_BODY" || true)"
+python3 - <<PY
+import json
+raw = open("/tmp/hubly-brain-smoke.json").read()
+code = "$HTTP_CODE"
+print("http:", code)
+print("bytes:", len(raw))
 try:
-  d = json.loads(raw)
+  d = json.loads(raw) if raw.strip() else {}
 except Exception:
   print("RAW:", raw[:500])
   raise SystemExit(1)
+if not raw.strip():
+  print("FAIL: empty response from hubly-brain")
+  raise SystemExit(1)
+if d.get("error") and not d.get("ok"):
+  print("error:", d.get("error"))
 disc = d.get("discovery") or {}
 src = d.get("aiSource") or disc.get("source")
 print("ok:", d.get("ok"))
