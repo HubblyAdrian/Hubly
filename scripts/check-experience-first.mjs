@@ -35,7 +35,7 @@ check("Live studio markup", /data-experience-live-studio="1"/.test(hubly) && /id
 check("Live studio surfaces", /id="is-live-website"/.test(hubly) && /id="is-live-booking"/.test(hubly) && /id="is-live-packages"/.test(hubly));
 check("isRenderLiveBuild wired", /function isRenderLiveBuild\(/.test(hubly) && /isRenderLiveBuild\(\)/.test(hubly));
 check("Building while talking copy", /Hubly is building/.test(hubly));
-check("Reveal moment copy", /I built your business/.test(hubly));
+check("Reveal moment copy", /Your business is ready|I built your business/.test(hubly));
 check("Clickable reveal surfaces", /data-experience-reveal="1"/.test(hubly) && /function isRevealOpenSurface\(/.test(hubly));
 check("Discovery prompt: work first", /Work first/.test(disc) && /buildingActions/.test(disc));
 check("Discovery prompt: not a wizard", /NOT a questionnaire|wizard/i.test(disc));

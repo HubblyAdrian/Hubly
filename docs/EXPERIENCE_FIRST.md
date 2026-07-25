@@ -54,11 +54,13 @@ Homepage preview · Booking preview · Package cards · Brand colors · Logo dir
 
 ### Reveal = one moment
 
-🎉 **I built your business.**
+🎉 **Your business is ready.**
 
 Then show clickable: Website · Booking · CRM · Packages  
 
 No reports. No confidence scores. No timelines.
+
+See also: [`HOLY_SHIT_SPRINT.md`](./HOLY_SHIT_SPRINT.md) — moment choreography + alive Home.
 
 ---
 

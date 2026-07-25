@@ -10,13 +10,13 @@
 ```
 Landing (hubly.app /)
   ↓ CTA / “Tell Hubly about your business”
-Conversation (Create · Discovery) — ChatGPT feel + live studio
-  ↓ website / booking / packages appear while talking
-Reveal — “I built your business” + clickable surfaces
+Conversation (Create · Discovery) — Holy Shit moments 1–4
+  ↓ website rewrites live · booking · logo · packages appear
+Reveal — “Your business is ready” + clickable surfaces
   ↓ Continue
 Save (account if needed)
   ↓
-Hubly Home (Operate · OS Dashboard)
+Alive Hubly Home — greeting · while away · website · recommendation · AI activity
   ↓
 Website · CRM · Jobs · Revenue  (same OS, personalized content)
 ```
@@ -26,10 +26,10 @@ Website · CRM · Jobs · Revenue  (same OS, personalized content)
 ## How to walk it (founder)
 
 1. Incognito → **hubly.app** (classic landing)  
-2. Start a business (seed prompt) → **/signup** Create conversation  
-3. Watch the **Live studio** (right side): website, booking, packages update as you talk  
-4. Finish → Reveal: **I built your business**  
-5. Continue → Operate Home (Dashboard)  
+2. **/signup** → type: *I'm an independent fitness trainer.*  
+3. Watch Moments 1–4 in under ~10s of talk (website builds, rewrites, packages land)  
+4. Reveal: **Your business is ready** — click a surface  
+5. Alive Home: While you were away · AI Activity · recommendation  
 6. Open Website / Customers / Jobs — same OS nav  
 
 ---
