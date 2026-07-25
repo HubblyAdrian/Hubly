@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hubly · Holy Shit Sprint</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--brand:#D9632D;--navy:#141B2B;--ink:#141B2B;--ink-3:#64748b;--border:#e2e8f0;--surface:#fff}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Plus Jakarta Sans",system-ui,sans-serif}
+.scene{padding:28px 20px 48px;min-height:100vh}
+.scene.dark{
+  color:#fff;
+  background:radial-gradient(1200px 600px at 20% -10%,#2a3348 0%,#141B2B 45%,#0b1020 100%);
+}
+.scene.light{color:var(--ink);background:linear-gradient(180deg,#f8fafc,#fff 40%,#fff7ed)}
+.mark{height:28px;margin:0 0 18px}
+.kicker{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fdba74;margin:0 0 8px}
+.scene.light .kicker{color:var(--brand)}
+h1{margin:0 0 8px;font-size:clamp(22px,3vw,30px);font-weight:800}
+.sub{margin:0 0 18px;opacity:.75;font-size:14px;max-width:48ch;line-height:1.45}
+.layout{display:grid;gap:14px;max-width:980px}
+@media(min-width:820px){.layout{grid-template-columns:1.1fr .9fr}}
+.chat,.studio{
+  border-radius:18px;border:1px solid rgba(255,255,255,.14);
+  background:rgba(15,23,42,.42);padding:14px;
+}
+.bubble{border-radius:14px;padding:10px 12px;margin:0 0 8px;font-size:13px;line-height:1.4;max-width:94%;white-space:pre-wrap}
+.bubble.hubly{background:rgba(255,255,255,.08)}
+.bubble.owner{background:rgba(217,99,45,.22);margin-left:auto}
+.tag{display:inline-flex;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#141B2B;background:#fdba74;padding:3px 7px;border-radius:999px;margin:0 0 8px}
+.status{font-size:13px;font-weight:700;margin:0 0 10px}
+.status em{font-style:normal;color:#fdba74}
+.logo{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05)}
+.logo .m{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:12px;font-weight:800;background:linear-gradient(135deg,#141B2B,#D9632D)}
+.logo .nm{font-size:13px;font-weight:750}.logo .nm small{display:block;font-size:10px;opacity:.55;text-transform:uppercase}
+.card{border-radius:14px;border:1px solid rgba(217,99,45,.55);background:linear-gradient(145deg,#0b1020,#141b2b);margin:0 0 8px;box-shadow:0 0 0 1px rgba(217,99,45,.2)}
+.card .hero{padding:16px 14px}
+.card .sk{font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.5;font-weight:750;margin:0 0 6px}
+.card h3{margin:0 0 6px;font-size:17px;font-weight:800}
+.card p{margin:0 0 10px;font-size:12px;opacity:.72}
+.cta{display:inline-flex;padding:6px 11px;border-radius:999px;background:var(--brand);font-size:11px;font-weight:750}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mini{border-radius:12px;padding:10px;border:1px solid rgba(253,186,116,.4);background:rgba(255,255,255,.04)}
+.mini .sk{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:750;margin:0 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.chip{font-size:10px;font-weight:700;padding:3px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.16)}
+.home{max-width:720px;margin:0 auto}
+.away{margin:0 0 16px;padding:14px 16px;border-radius:16px;border:1px solid var(--border);background:linear-gradient(135deg,rgba(217,99,45,.07),#fff)}
+.away .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);font-weight:750;margin:0 0 8px}
+.away ul,.feed ul{margin:0;padding:0;list-style:none}
+.away li,.feed li{font-size:14px;font-weight:650;margin:0 0 6px;display:flex;gap:8px}
+.away li::before,.feed li::before{content:"✓";color:var(--brand);font-weight:800}
+.preview{border-radius:18px;min-height:260px;background:linear-gradient(160deg,#141B2B,#1c273d 60%,#243044);color:#fff;padding:22px 20px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;margin:0 0 16px}
+.preview .sk{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55;font-weight:700}
+.preview h2{margin:0;font-size:28px;font-weight:800}
+.preview p{margin:0;font-size:14px;opacity:.75;max-width:36ch}
+.rec{margin:0 0 16px;padding:14px 16px;border-radius:14px;border:1px solid rgba(217,99,45,.35);background:rgba(217,99,45,.08);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.rec .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);font-weight:750;margin:0 0 4px}
+.rec .t{font-size:15px;font-weight:750;margin:0}
+.btn{border:0;border-radius:10px;padding:9px 14px;font:inherit;font-weight:750;cursor:pointer}
+.btn.brand{background:var(--brand);color:#fff}
+.btn.ghost{background:transparent;border:1px solid var(--border)}
+.feed{margin:0 0 16px;padding:14px 16px;border-radius:16px;border:1px solid var(--border);background:#fff}
+.feed .sk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:750;margin:0 0 8px}
+.feed .day{font-size:12px;font-weight:800;margin:0 0 8px}
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mod{border:1px solid var(--border);border-radius:14px;padding:14px;background:#fff}
+.mod .t{font-size:14px;font-weight:750;margin:0 0 4px}
+.mod .s{font-size:12px;color:var(--ink-3);margin:0}
+</style>
+</head>
+<body>
+  <div class="scene dark" id="scene-moments" data-shot="moments">
+    <img class="mark" src="../../public/assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+    <p class="kicker">Holy Shit · Moments 1–4</p>
+    <h1>Watch the business materialize</h1>
+    <p class="sub">No audio needed — the screen proves there’s an AI working.</p>
+    <div class="layout">
+      <div class="chat">
+        <div class="bubble owner">I'm an independent fitness trainer.</div>
+        <div class="bubble hubly">Perfect.
+
+I'll build your business.
+
+While we're talking I'm creating your website, booking experience, CRM, pricing, and brand.
+
+I'll only interrupt if I genuinely need your opinion.</div>
+        <div class="bubble hubly">I found something.
+
+Most independent trainers lose clients because they talk about certifications instead of results.
+
+I'm rewriting your homepage around transformations instead.</div>
+        <div class="bubble hubly">I made one assumption.
+
+I started with one-on-one coaching because that's the most common business model.
+
+If you also do online coaching I'll build that too.</div>
+      </div>
+      <aside class="studio">
+        <p class="kicker">Live studio</p>
+        <div class="tag">Rewriting homepage</div>
+        <p class="status">Booking, logo, and packages just landed…</p>
+        <div class="logo"><div class="m">PT</div><div class="nm">Personal Training<small>Logo direction</small></div></div>
+        <div class="card"><div class="hero">
+          <p class="sk">Website</p>
+          <h3>Personal Training</h3>
+          <p>Transformations that stick — not another gym pitch.</p>
+          <span class="cta">Book now</span>
+        </div></div>
+        <div class="row">
+          <div class="mini"><p class="sk">Booking</p><div class="chips"><span class="chip">Consult</span><span class="chip">Book session</span></div></div>
+          <div class="mini"><p class="sk">Packages</p><div class="chips"><span class="chip">1:1 Coaching</span><span class="chip">Transformation Plan</span></div></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="scene light" id="scene-home" data-shot="home">
+    <div class="home">
+      <img class="mark" src="../../public/assets/hubly-wordmark.png" alt="hubly" width="120" height="28" onerror="this.src='../../public/assets/hubly-wordmark-on-dark.png'">
+      <p class="kicker">Alive Home</p>
+      <h1>Good afternoon Adrian.</h1>
+      <p class="sub">While you were away… I kept working.</p>
+      <div class="away">
+        <p class="sk">While you were away</p>
+        <ul>
+          <li>Improved your homepage.</li>
+          <li>Optimized your booking page.</li>
+          <li>Added FAQs customers usually ask.</li>
+          <li>Created a recurring package.</li>
+        </ul>
+      </div>
+      <div class="preview">
+        <div class="sk">Website preview</div>
+        <h2>Personal Training</h2>
+        <p>Transformations that stick — not another gym pitch.</p>
+        <span class="cta">Open Website</span>
+      </div>
+      <div class="rec">
+        <div><p class="sk">Today's Recommendation</p><p class="t">Raise your consultation price by $10.</p></div>
+        <div><button class="btn brand">Apply</button> <button class="btn ghost">Dismiss</button></div>
+      </div>
+      <div class="feed">
+        <p class="sk">AI Activity</p>
+        <p class="day">Today</p>
+        <ul>
+          <li>Improved homepage headline</li>
+          <li>Added FAQ section</li>
+          <li>Optimized booking page</li>
+          <li>Suggested recurring package</li>
+          <li>Updated service descriptions</li>
+        </ul>
+      </div>
+      <div class="mods">
+        <div class="mod"><p class="t">Revenue</p><p class="s">See what’s coming in.</p></div>
+        <div class="mod"><p class="t">Customers</p><p class="s">Your CRM, ready.</p></div>
+        <div class="mod"><p class="t">Jobs</p><p class="s">Calendar &amp; work.</p></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

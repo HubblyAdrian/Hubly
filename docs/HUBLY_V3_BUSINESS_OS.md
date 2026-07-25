@@ -23,6 +23,10 @@ Think:
 
 **AI should generate. Hubly should operate.**
 
+The OS chassis is **locked** — one navigation, one CRM, one module set for every industry.  
+AI personalizes the experience above it (website, booking, packages, recommendations, focus).  
+See [`HUBLY_OS.md`](./HUBLY_OS.md).
+
 ---
 
 ## Two modes only
