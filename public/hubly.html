@@ -1587,6 +1587,15 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 }
 .is-reveal-ready-card .viz.live-crm .crm-line{font-size:12px;font-weight:650;color:rgba(255,255,255,.85);margin:0}
 .is-reveal-ready-card .lbl{margin:0;font-size:15px;font-weight:750;color:#fff}
+.is-reveal-back-chat{
+  appearance:none;border:0;background:transparent;color:#fdba74;font:inherit;font-size:13px;font-weight:750;
+  padding:0;margin:0 0 10px;cursor:pointer;text-align:left
+}
+.is-reveal-back-chat:hover{color:#fff;text-decoration:underline}
+#is-step-reveal[data-v3-reveal="1"] .is-reveal-hero{font-size:clamp(22px,3.2vw,28px);margin:0 0 6px}
+#is-step-reveal[data-v3-reveal="1"] .is-reveal-welcome{font-size:14px;margin:0 0 10px}
+#is-step-reveal[data-v3-reveal="1"] .is-reveal-ready-card .viz{min-height:72px;padding:10px}
+#is-step-reveal[data-v3-reveal="1"] .is-reveal-ready-card .lbl{font-size:13px}
 .is-reveal-continue{
   margin-top:18px;display:flex;flex-direction:column;gap:8px;align-items:stretch
 }
@@ -1600,6 +1609,14 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   background:#f1f5f9!important;color:#0f172a!important;border-color:#f1f5f9!important
 }
 .is-reveal-continue .hint{font-size:12px;color:rgba(255,255,255,.65);text-align:center;margin:0}
+/* Create studio cards are openable — website / booking / packages are the product */
+#is-live-website,#is-live-booking,#is-live-packages{cursor:pointer}
+#is-live-website:focus-visible,#is-live-booking:focus-visible,#is-live-packages:focus-visible{
+  outline:2px solid #D9632D;outline-offset:2px
+}
+.is-live-mini .open-hint,.is-live-preview-card .open-hint{
+  display:block;margin-top:6px;font-size:11px;font-weight:700;color:#fdba74;letter-spacing:.02em
+}
 #is-step-reveal.is-unveil .is-reveal-hero{animation:isLivePop .55s ease both}
 #is-step-reveal.is-unveil .is-reveal-welcome{animation:isLivePop .55s ease both;animation-delay:.08s}
 #is-step-reveal.is-unveil .is-reveal-forward{animation:isLivePop .55s ease both;animation-delay:.14s}
@@ -9082,12 +9099,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <p class="is-sub" id="is-talk-hint">I’ll build your website while we talk.</p>
         <div class="is-discovery-layout is-discovery" data-delight-create="1">
           <aside class="is-live-studio" id="is-live-studio" aria-live="polite" data-experience-live-studio="1" data-holy-shit-studio="1" data-hubly-workspace="1" data-create-hero="website">
-            <div class="is-live-preview-card is-on" id="is-live-website" data-surface="website">
+            <div class="is-live-preview-card is-on" id="is-live-website" data-surface="website" role="button" tabindex="0" onclick="isCreateOpenSurface('website')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();isCreateOpenSurface('website')}">
               <div class="hero">
                 <p class="sk">Your website</p>
                 <h3 id="is-live-website-title">Your homepage</h3>
                 <p id="is-live-website-sub">Takes shape as we talk…</p>
                 <span class="cta" id="is-live-website-cta">Book now</span>
+                <span class="open-hint">Tap to open full site →</span>
               </div>
               <div class="is-live-sections" id="is-live-sections" hidden aria-label="Page sections">
                 <span data-sec="about">About</span>
@@ -9100,15 +9118,17 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="nm" id="is-live-logo-name">Your brand<small>Logo</small></div>
             </div>
             <div class="is-live-row">
-              <div class="is-live-mini" id="is-live-booking" data-surface="booking">
+              <div class="is-live-mini" id="is-live-booking" data-surface="booking" role="button" tabindex="0" onclick="isCreateOpenSurface('booking')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();isCreateOpenSurface('booking')}">
                 <p class="sk">Booking</p>
                 <div class="line"></div><div class="line s"></div>
                 <div class="chip-row" id="is-live-booking-chips"></div>
+                <span class="open-hint">Open booking page →</span>
               </div>
-              <div class="is-live-mini" id="is-live-packages" data-surface="packages">
+              <div class="is-live-mini" id="is-live-packages" data-surface="packages" role="button" tabindex="0" onclick="isCreateOpenSurface('packages')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();isCreateOpenSurface('packages')}">
                 <p class="sk">Packages</p>
                 <div class="line"></div><div class="line s"></div>
                 <div class="chip-row" id="is-live-pkg-chips"></div>
+                <span class="open-hint">See packages layout →</span>
               </div>
             </div>
             <div class="is-hubly-workspace" id="is-hubly-workspace" aria-label="Hubly is working">
@@ -9233,6 +9253,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <div class="is-step" data-is="reveal" id="is-step-reveal" data-business-reveal="1" data-reveal-shell="1" data-v3-reveal="1">
         <div class="is-reveal-canvas" id="is-reveal-canvas">
+          <button type="button" class="is-reveal-back-chat" id="is-reveal-back-chat" onclick="isReturnToCreateChat()">← Back to chat</button>
           <div class="is-reveal-brand">
             <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
           </div>
@@ -18210,35 +18231,143 @@ function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
   }
   if(disc?.liveStatus)session.liveStatus=String(disc.liveStatus).slice(0,120);
 }
+function isKeepTalkingCreate(){
+  // Stay in chat — focus the composer so they can steer website / booking / packages.
+  try{isShowStep('talk');}catch(e){}
+  const step=document.getElementById('is-step-talk');
+  step?.classList.add('is-discovery','is-on');
+  document.querySelectorAll('#is-shell .is-step').forEach(el=>{
+    if(el.id!=='is-step-talk')el.classList.remove('is-on');
+  });
+  const inp=document.getElementById('is-talk-input');
+  if(inp){
+    inp.placeholder='Change anything — website, booking, packages…';
+    try{inp.focus({preventScroll:false});}catch(e){inp.focus();}
+    try{inp.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
+  }
+  const chips=document.getElementById('is-talk-chips');
+  if(chips){
+    chips.innerHTML=`<button type="button" class="is-chip" onclick="isCreateOpenSurface('website')">Open website</button>
+      <button type="button" class="is-chip" onclick="isCreateOpenSurface('booking')">Open booking</button>
+      <button type="button" class="is-chip" onclick="isCreateOpenSurface('packages')">See packages</button>
+      <button type="button" class="is-chip is-chip-brand" onclick="isCreateShowReadySummary()">Show what you built →</button>`;
+  }
+  try{
+    if(!(S._is?.discovery?._keptTalkNudge)){
+      S._is.discovery._keptTalkNudge=true;
+      isTalkPush('hubly','I’m listening — tell me what to change on the website, booking, or packages. Or tap the cards on the left to open them.');
+    }
+  }catch(e){}
+}
+window.isKeepTalkingCreate=isKeepTalkingCreate;
+
+/** Open real Create surfaces — SaaS booking/packages are the product, not chips. */
+async function isCreateOpenSurface(surfaceId){
+  S._is=S._is||{};
+  isApplyCreateStudioToBusiness();
+  const id=surfaceId||'website';
+  S._is._previewFromReveal=true;
+  isEnsureRevealBackBar();
+  try{
+    if(id==='booking'){
+      previewBookingPage();
+      return;
+    }
+    if(id==='packages'){
+      // Full site scrolled to packages / services — real layout, not chips.
+      try{await isCreateDesignWithAi();}catch(e){}
+      previewProfile();
+      setTimeout(()=>{
+        try{
+          const el=document.getElementById('ws-sec-services')||document.querySelector('#p-storefront [data-sec="services"], #ws-sec-packages, .ws-sec-services');
+          if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+        }catch(e){}
+      },220);
+      return;
+    }
+    if(id==='crm'){
+      S._is.revealPreferredSurface='crm';
+      isRevealContinueToWorkspace();
+      return;
+    }
+    try{await isCreateDesignWithAi();}catch(e){}
+    previewProfile();
+  }catch(e){
+    console.warn('create open surface',e);
+  }
+}
+window.isCreateOpenSurface=isCreateOpenSurface;
+
+function isReturnToCreateChat(){
+  isHideRevealBackBar();
+  try{setOwnerPreview(false);}catch(e){}
+  try{document.body.style.overflow='';document.documentElement.style.overflow='';}catch(e){}
+  document.body.classList.remove('ws-booking-open');
+  document.getElementById('p-booking-landing')?.classList.remove('active');
+  document.getElementById('p-booking')?.classList.remove('active');
+  document.getElementById('p-storefront')?.classList.remove('active');
+  document.getElementById('p-app')?.classList.remove('active');
+  const onboard=document.getElementById('p-onboard');
+  const shell=document.getElementById('is-shell');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  onboard?.classList.add('active','is-active');
+  if(shell)shell.style.display='flex';
+  isShowStep('talk');
+  document.getElementById('is-step-talk')?.classList.add('is-discovery');
+  isKeepTalkingCreate();
+  try{history.replaceState({page:'p-onboard',ceoDemo:!!S._ceoDemo},'', (isCeoDemoPath()?hublyPath():'/demo')+'#talk');}catch(e){}
+}
+window.isReturnToCreateChat=isReturnToCreateChat;
+
 function isShowCreateRevealChip(){
   const chips=document.getElementById('is-talk-chips');
   if(!chips)return;
-  chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="document.getElementById('is-talk-input')?.focus()">Keep talking</button>
-    <button type="button" class="is-chip" onclick="isCreateContinueToReveal()">Show me what you built →</button>`;
-  setTimeout(()=>{
-    try{
-      const inp=document.getElementById('is-talk-input');
-      if(inp){inp.focus();inp.placeholder='Change anything — name, vibe, packages, booking…';}
-    }catch(e){}
-  },80);
+  chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="isKeepTalkingCreate()">Keep talking</button>
+    <button type="button" class="is-chip" onclick="isCreateOpenSurface('website')">Open website</button>
+    <button type="button" class="is-chip" onclick="isCreateOpenSurface('booking')">Open booking</button>
+    <button type="button" class="is-chip" onclick="isCreateOpenSurface('packages')">See packages</button>
+    <button type="button" class="is-chip" onclick="isCreateShowReadySummary()">Show what you built →</button>`;
+  setTimeout(()=>{try{isKeepTalkingCreate();}catch(e){}},40);
 }
 function isScheduleCreateRevealAuto(){
   const session=S._is?.discovery;
   if(!session)return;
   try{clearTimeout(session._revealAutoTimer);}catch(e){}
-  // Never auto-jump — owners need time to talk and steer. Reveal is opt-in only.
   session._revealAutoTimer=null;
 }
-async function isCreateContinueToReveal(){
+
+/** Compact ready summary — stays chat-first; optional smaller reveal. */
+async function isCreateShowReadySummary(){
   const session=S._is?.discovery;
   if(!session)return;
   try{clearTimeout(session._revealAutoTimer);}catch(e){}
-  if(session.readyForThinking&&S._is._enteringReveal)return;
-  S._is._enteringReveal=true;
-  session.readyForThinking=true;
-  session.complete=true;
+  isApplyCreateStudioToBusiness();
   isTalkClearChips();
   isHideCreateDecision();
+  // Prefer staying in chat with openable surfaces — not a dead-end takeover.
+  isTalkPush('hubly','Here’s what we built — open Website, Booking, or Packages on the left (or below). Keep talking anytime, or enter Hubly Home when you’re ready.');
+  const chips=document.getElementById('is-talk-chips');
+  if(chips){
+    chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="isCreateOpenSurface('website')">Open website</button>
+      <button type="button" class="is-chip is-chip-brand" onclick="isCreateOpenSurface('booking')">Open booking</button>
+      <button type="button" class="is-chip is-chip-brand" onclick="isCreateOpenSurface('packages')">See packages</button>
+      <button type="button" class="is-chip" onclick="isKeepTalkingCreate()">Keep talking</button>
+      <button type="button" class="is-chip" onclick="isRevealContinueToWorkspace()">Enter Hubly Home</button>
+      <button type="button" class="is-chip" onclick="isCreateContinueToReveal()">Full summary</button>`;
+  }
+  isRenderLiveBuild({pulse:'all'});
+  try{document.getElementById('is-live-studio')?.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+}
+window.isCreateShowReadySummary=isCreateShowReadySummary;
+
+async function isCreateContinueToReveal(){
+  // Legacy full reveal — always with Back to chat.
+  const session=S._is?.discovery;
+  if(!session)return;
+  try{clearTimeout(session._revealAutoTimer);}catch(e){}
+  if(S._is._enteringReveal)return;
+  S._is._enteringReveal=true;
+  session.readyForThinking=true;
   try{
     await isDiscoveryCompleteToThinking();
   }finally{
@@ -18621,12 +18750,12 @@ async function isDiscoveryCompleteToThinking(){
   const mobileTrades=['detailing','windows','pressure_washing','landscaping','cleaning','hvac'];
   isSetTravel(mobileTrades.includes(normalizeBlueprintId(S.businessType)));
 
-  // Output over process: if Create already built the business on screen, go to Reveal.
-  // Don't make the customer watch a second “creative build” theater.
+  // Output over process: Create already built on screen — stay in chat (Back always works).
+  // Full reveal summary is optional via “Full summary”.
   if(S._is?.discovery?.holyShitComplete){
     const pack=S._is.discovery.holyPack||{};
     const studio=S._is.discovery.studio||{};
-    const experience={
+    S._is.creativeExperience={
       industryKey:pack.industryId||S.businessType||'local',
       industryLabel:pack.industry||S.biz||'Your business',
       designConfidence:96,
@@ -18643,9 +18772,9 @@ async function isDiscoveryCompleteToThinking(){
         logoName:studio.logoName||S.biz,
       },
     };
-    S._is.creativeExperience=experience;
-    await isSleep(450);
-    await isRunBusinessRevealExperience(seed,experience);
+    isShowStep('talk');
+    document.getElementById('is-step-talk')?.classList.add('is-discovery');
+    await isCreateShowReadySummary();
     return;
   }
 
@@ -19493,8 +19622,10 @@ function isEnsureRevealBackBar(){
     document.body.appendChild(bar);
   }
   bar.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center">
-      <button type="button" class="btn btn-out btn-sm" onclick="isReturnToRevealFromPreview()">← Back</button>
-      <button type="button" class="btn btn-brand btn-sm" onclick="isCreateOpenWebsiteEditor()">Edit website</button>
+      <button type="button" class="btn btn-brand btn-sm" onclick="isReturnToCreateChat()">← Back to chat</button>
+      <button type="button" class="btn btn-out btn-sm" onclick="isCreateOpenSurface('booking')">Booking</button>
+      <button type="button" class="btn btn-out btn-sm" onclick="isCreateOpenSurface('packages')">Packages</button>
+      <button type="button" class="btn btn-out btn-sm" onclick="isCreateOpenWebsiteEditor()">Edit website</button>
       <button type="button" class="btn btn-out btn-sm" onclick="isRevealContinueToWorkspace()">Enter Hubly Home</button>
     </div>`;
   bar.classList.add('is-on');
@@ -19529,20 +19660,8 @@ function isHideRevealBackBar(){
   document.getElementById('is-reveal-back-bar')?.classList.remove('is-on');
 }
 function isReturnToRevealFromPreview(){
-  isHideRevealBackBar();
-  try{setOwnerPreview(false);}catch(e){}
-  try{document.body.style.overflow='';document.documentElement.style.overflow='';}catch(e){}
-  document.body.classList.remove('ws-booking-open');
-  document.getElementById('p-booking-landing')?.classList.remove('active');
-  document.getElementById('p-booking')?.classList.remove('active');
-  document.getElementById('p-storefront')?.classList.remove('active');
-  const onboard=document.getElementById('p-onboard');
-  const shell=document.getElementById('is-shell');
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  onboard?.classList.add('active','is-active');
-  if(shell)shell.style.display='flex';
-  isShowStep('reveal');
-  try{history.replaceState({page:'p-onboard',ceoDemo:!!S._ceoDemo},'', (isCeoDemoPath()?hublyPath():'/demo')+'#reveal');}catch(e){}
+  // Prefer chat — that's where Create lives. Reveal is optional summary.
+  isReturnToCreateChat();
 }
 window.isReturnToRevealFromPreview=isReturnToRevealFromPreview;
 
