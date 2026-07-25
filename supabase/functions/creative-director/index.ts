@@ -77,7 +77,7 @@ RULES
 2. Fill editor_* fields for anything they asked. Leave unused fields null.
 3. hero_media_placement: "left" | "right" | "full" — for requests like photo on the right, left, whole first screen, full-bleed, background.
 4. composition: "portfolio" | "services" | "classic" — portfolio-first / packages-first / balanced.
-5. layout_id: only if they want a clearly different skin/look AND you know a layout id from state or common Hubly layouts (premium-dark, editorial, clean-modern, neon-nights, clear-view, bold-impact, estate-green, garage-industrial, chrome-velocity, aurora-gradient). Prefer null and set cycle_layout=true to let the client rotate.
+5. layout_id: REQUIRED when beat goal is Create design / unique industry look. Choose from: premium-dark, editorial, clean-modern, neon-nights, clear-view, bold-impact, estate-green, garage-industrial, chrome-velocity, aurora-gradient. Match the TRADE (e.g. bold-impact/chrome-velocity for fitness or detailing; clean-modern for flight; warm clear-view for dog grooming). Never default every trade to aurora-gradient / Soft Aurora.
 6. cycle_hero_photo / open_photo_picker / regenerate_copy / start_fresh_site / cycle_layout: booleans.
 7. headline / hero_sub: write tight conversion copy for their trade when they ask to rewrite.
 8. accent_color: "#RRGGBB" when they want a different accent, or when an inspiration screenshot shows a clear CTA color.

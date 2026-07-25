@@ -81,6 +81,9 @@ fi
 echo "=== Deploy hubly-brain ==="
 npx --yes supabase functions deploy hubly-brain --project-ref "$PROJECT_REF"
 
+echo "=== Deploy creative-director (Create AI design) ==="
+npx --yes supabase functions deploy creative-director --project-ref "$PROJECT_REF" || true
+
 echo "=== Deploy hubly-ai-status (optional probe) ==="
 npx --yes supabase functions deploy hubly-ai-status --project-ref "$PROJECT_REF" || true
 

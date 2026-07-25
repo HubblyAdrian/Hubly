@@ -194,6 +194,9 @@ Cursor can check off AI Create only when:
 - Fitness / flight / dog groomer use **real trade media** (not spa stock)
 - Full-site preview scrollable; **Preview & edit** before Enter Hubly Home
 - Home no longer duplicates the website card when the link is already on top
+- **View website** opens the real scrollable site (not the left studio card)
+- **Enter Hubly Home** is high-contrast (white button)
+- OpenAI Creative Director designs layout/accent/copy on Create — not Soft Aurora by default
 
 ---
 

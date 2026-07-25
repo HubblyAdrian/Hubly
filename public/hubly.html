@@ -1591,6 +1591,14 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   margin-top:18px;display:flex;flex-direction:column;gap:8px;align-items:stretch
 }
 .is-reveal-continue .btn{width:100%;min-height:48px;font-size:16px;font-weight:750}
+.is-reveal-continue .btn-out,
+.is-reveal-continue button.btn-out{
+  background:#fff!important;color:#141B2B!important;border:2px solid #fff!important;
+  font-weight:800!important;letter-spacing:.01em
+}
+.is-reveal-continue .btn-out:hover{
+  background:#f1f5f9!important;color:#0f172a!important;border-color:#f1f5f9!important
+}
 .is-reveal-continue .hint{font-size:12px;color:rgba(255,255,255,.65);text-align:center;margin:0}
 #is-step-reveal.is-unveil .is-reveal-hero{animation:isLivePop .55s ease both}
 #is-step-reveal.is-unveil .is-reveal-welcome{animation:isLivePop .55s ease both;animation-delay:.08s}
@@ -17566,6 +17574,8 @@ const HUBLY_HOLY_SHIT = (function(){
     session.complete=false;
     session.readyForThinking=false;
     session.learningSummary={header:'Built',lines:(pack.work||[]).slice(0,3).map(w=>w.what)};
+    // Kick OpenAI design pass (layout/accent/copy) so View isn't stuck on Soft Aurora defaults.
+    try{if(typeof isCreateDesignWithAi==='function')isCreateDesignWithAi();}catch(e){}
     return{pack,token};
   }
   return{INSIGHTS,WORKSPACE_STEPS,inferPack,applyPackFacts,playOpeningSequence,seedActivity,setMomentTag,setWorkspaceStep,resetWorkspace,think,thinkOff,thoughtThenResult,flash,celebrate,fmtTime};
@@ -17647,7 +17657,7 @@ function isShowCreateDecision(opts){
   el.hidden=false;
   el.classList.add('is-on');
   el.innerHTML=`<p class="cd-label">I already moved your call to action.</p>
-    <button type="button" onclick="isCreateDecisionView()">View</button>
+    <button type="button" onclick="isCreateDecisionView()">View website</button>
     <button type="button" class="is-keep" onclick="isCreateDecisionKeep()">Keep</button>
     <button type="button" onclick="isCreateDecisionUndo()">Undo</button>`;
 }
@@ -17658,13 +17668,118 @@ function isHideCreateDecision(){
   el.hidden=true;
   el.innerHTML='';
 }
-function isCreateDecisionView(){
+/** OpenAI Creative Director designs look/layout for this conversation — not Soft Aurora picker. */
+async function isCreateDesignWithAi(){
+  S._is=S._is||{};
+  if(S._is._createAiDesigning)return S._is._createAiDesignPromise;
+  S._is._createAiDesigning=true;
+  S._is._createAiDesignPromise=(async()=>{
+    try{
+      isApplyCreateStudioToBusiness();
+      const session=S._is?.discovery;
+      const pack=session?.holyPack;
+      const ownerBits=(session?.messages||[])
+        .filter(m=>m&& (m.role==='owner'||m.role==='you'))
+        .map(m=>m.text).filter(Boolean).slice(-6).join(' ');
+      const industry=pack?.industry||S.industry||S.businessType||'local service';
+      const msg=[
+        ownerBits||`I run a ${industry} business.`,
+        `Design a distinctive one-page website for ${industry}.`,
+        'Pick layout_id, accent_color, composition, headline, and hero_sub that fit THIS trade.',
+        'Do NOT default to spa/wellness looks for trainers, flight instructors, or dog groomers.',
+        'Feel like a custom design for this owner — not a template picker (avoid Soft Aurora unless it truly fits).',
+        'Prefer layouts: bold-impact, clean-modern, chrome-velocity, garage-industrial, estate-green, premium-dark, clear-view, neon-nights.',
+      ].join('\n');
+      const dbClient=await waitForDb();
+      const blueprintIds=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.isReady())
+        ?HublyBlueprints.list().map(bp=>bp.id)
+        :['fitness','flight_instruction','dog_grooming','detailing','photography','hvac','spa','cleaning','pressure_washing','landscaping'];
+      const {data,error}=await dbClient.functions.invoke('creative-director',{body:{
+        beat_id:'editor',
+        beat_label:'Create design',
+        beat_goal:'Design a unique website look for this industry from the conversation — layout, accent, composition, and first-screen copy. Not a generic blueprint skin.',
+        messages:[{side:'owner',text:msg.slice(0,1200)}],
+        state:{
+          biz:S.biz||'',
+          businessType:S.businessType||null,
+          city:S.city||'',
+          industry,
+          layout:typeof getWebsiteLayoutId==='function'?getWebsiteLayoutId():null,
+          headline:S.website?.heroHeadline||'',
+          heroSub:S.website?.heroSub||'',
+          packages:(S.services||[]).map(s=>s.name).filter(Boolean).slice(0,4),
+        },
+        blueprint_ids:blueprintIds,
+        owner_message:msg.slice(0,1200),
+      }});
+      if(error||data?.error){
+        console.warn('Create AI design failed',error||data?.error);
+        return false;
+      }
+      const actions=typeof edAiActionsFromClaude==='function'?edAiActionsFromClaude(data):[];
+      // Always push AI headline/sub when provided even if pack already set copy.
+      if(typeof edAiApplyActions==='function'&&actions.length)edAiApplyActions(actions);
+      const apply=data?.apply||{};
+      if(apply.headline){
+        ensureWebsiteCopy();
+        S.website.heroHeadline=String(apply.headline);
+        S.website.customHeroHeadline=true;
+        if(session?.studio)session.studio.heroSub=String(apply.headline);
+      }
+      if(apply.hero_sub||apply.heroSub||apply.story){
+        const sub=String(apply.hero_sub||apply.heroSub||apply.story||'');
+        if(sub){
+          ensureWebsiteCopy();
+          S.website.heroSub=sub;
+          S.website.customHeroSub=true;
+          if(session?.studio)session.studio.heroSub=sub;
+        }
+      }
+      // Unsplash keyword hero when AI implies a mood and we still have stock/spa media.
+      try{
+        const mood=String(apply.mood||industry||'').toLowerCase();
+        const q=encodeURIComponent(
+          /train|fitness|coach/.test(mood)?'personal trainer gym fitness workout'
+          :/flight|pilot|aviation/.test(mood)?'airplane cockpit flight training aviation'
+          :/dog|groom|pet/.test(mood)?'dog grooming pet salon happy dog'
+          :/detail|car|auto/.test(mood)?'car detailing clean vehicle shine'
+          :/photo|wedding/.test(mood)?'photography portrait studio'
+          :/hvac|heat|cool/.test(mood)?'home hvac technician comfort'
+          :String(industry).slice(0,48)
+        );
+        if(q&&!S._ownerUploadedMedia){
+          // Deterministic Unsplash Source-style query via images.unsplash featured search redirect isn't available;
+          // use curated trade banners already set, but mark AI-designed.
+          S._is.createAiMood=mood||industry;
+        }
+      }catch(e){}
+      S._is.createAiDesigned=true;
+      isRenderLiveBuild({pulse:'website',rewrite:true});
+      return true;
+    }catch(e){
+      console.warn('isCreateDesignWithAi',e);
+      return false;
+    }finally{
+      S._is._createAiDesigning=false;
+    }
+  })();
+  return S._is._createAiDesignPromise;
+}
+window.isCreateDesignWithAi=isCreateDesignWithAi;
+async function isCreateDecisionView(){
   const session=S._is?.discovery;
-  if(!session?.studio)return;
-  session.studio.cta=S._is.createDecision?.nextCta||'Book now';
-  session.studio.ctaElevated=true;
-  isRenderLiveBuild({pulse:'website',rewrite:true});
-  try{HUBLY_HOLY_SHIT.celebrate('Book now is above the fold.');}catch(e){}
+  if(session?.studio){
+    session.studio.cta=S._is.createDecision?.nextCta||'Book now';
+    session.studio.ctaElevated=true;
+  }
+  isApplyCreateStudioToBusiness();
+  try{HUBLY_HOLY_SHIT.celebrate('Opening your full website…');}catch(e){}
+  // Design with OpenAI then open the real scrollable site — not the left studio card.
+  try{await isCreateDesignWithAi();}catch(e){}
+  S._is=S._is||{};
+  S._is._previewFromReveal=true;
+  isEnsureRevealBackBar();
+  previewProfile();
 }
 function isCreateDecisionKeep(){
   const session=S._is?.discovery;
@@ -19469,7 +19584,7 @@ function isRevealRenderReadyCards(creativeExperience){
 }
 
 /** Reveal cards open the real surface (show, don’t tell). */
-function isRevealOpenSurface(surfaceId){
+async function isRevealOpenSurface(surfaceId){
   S._is=S._is||{};
   isApplyCreateStudioToBusiness();
   const id=surfaceId||'website';
@@ -19485,7 +19600,10 @@ function isRevealOpenSurface(surfaceId){
       previewBookingPage();
       return;
     }
-    // website + packages → live storefront
+    // AI-designed look before opening the full site (not Soft Aurora default).
+    if(id==='website'||id==='packages'){
+      try{await isCreateDesignWithAi();}catch(e){}
+    }
     isEnsureRevealBackBar();
     previewProfile();
   }catch(e){
@@ -19494,6 +19612,7 @@ function isRevealOpenSurface(surfaceId){
     isRevealContinueToWorkspace();
   }
 }
+window.isRevealOpenSurface=isRevealOpenSurface;
 
 function isOpenPreferredOperateSurface(){
   const surface=S._is?.revealPreferredSurface;
