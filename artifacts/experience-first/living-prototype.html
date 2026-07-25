@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hubly · Experience-First Living Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--brand:#D9632D;--navy:#141B2B}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:"Plus Jakarta Sans",system-ui,sans-serif;color:#fff;
+  background:radial-gradient(1200px 600px at 20% -10%,#2a3348 0%,#141B2B 45%,#0b1020 100%);
+  min-height:100vh;padding:28px 20px 48px;
+}
+.mark{height:28px;margin:0 0 18px}
+.scene{max-width:980px;margin:0 auto 40px}
+.kicker{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fdba74;margin:0 0 8px}
+h1{margin:0 0 8px;font-size:clamp(22px,3vw,30px);font-weight:800}
+.sub{margin:0 0 18px;color:rgba(255,255,255,.72);font-size:14px;max-width:48ch;line-height:1.45}
+.layout{display:grid;gap:14px}
+@media(min-width:820px){.layout{grid-template-columns:1.1fr .9fr}}
+.chat,.studio{
+  border-radius:18px;border:1px solid rgba(255,255,255,.14);
+  background:rgba(15,23,42,.42);padding:14px;
+}
+.bubble{border-radius:14px;padding:10px 12px;margin:0 0 8px;font-size:13px;line-height:1.4;max-width:92%}
+.bubble.hubly{background:rgba(255,255,255,.08)}
+.bubble.owner{background:rgba(217,99,45,.22);margin-left:auto}
+.typing{font-size:12px;color:rgba(255,255,255,.65);margin-top:8px}
+.typing i{display:inline-block;width:5px;height:5px;border-radius:50%;background:#fdba74;margin-right:3px;opacity:.5}
+.status{font-size:13px;font-weight:700;margin:0 0 10px}
+.status em{font-style:normal;color:#fdba74}
+.card{
+  border-radius:14px;overflow:hidden;border:1px solid rgba(217,99,45,.55);
+  background:linear-gradient(145deg,#0b1020,#141b2b 55%,#1a1520);margin:0 0 8px;
+  box-shadow:0 0 0 1px rgba(217,99,45,.2)
+}
+.card .hero{padding:16px 14px}
+.card .sk{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);font-weight:750;margin:0 0 6px}
+.card h3{margin:0 0 6px;font-size:17px;font-weight:800}
+.card p{margin:0 0 10px;font-size:12px;color:rgba(255,255,255,.72)}
+.cta{display:inline-flex;padding:6px 11px;border-radius:999px;background:var(--brand);font-size:11px;font-weight:750}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mini{border-radius:12px;padding:10px;border:1px solid rgba(253,186,116,.4);background:rgba(255,255,255,.04)}
+.mini .sk{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:750;margin:0 0 6px}
+.line{height:6px;border-radius:99px;background:rgba(255,255,255,.14);margin:0 0 5px;width:80%}
+.line.s{width:55%}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.chip{font-size:10px;font-weight:700;padding:3px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.16)}
+.swatches{display:flex;gap:6px;margin-top:8px}
+.swatches i{width:18px;height:18px;border-radius:50%;display:block;border:1px solid rgba(255,255,255,.2)}
+.reveal-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:16px 0}
+@media(min-width:720px){.reveal-grid{grid-template-columns:repeat(4,1fr)}}
+.ready{
+  border-radius:16px;padding:14px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);min-height:120px;display:flex;flex-direction:column;gap:8px;cursor:pointer
+}
+.ready:hover{border-color:rgba(217,99,45,.55);transform:translateY(-2px)}
+.viz{flex:1;border-radius:12px;background:linear-gradient(145deg,#0b1020,#141b2b);border:1px solid rgba(255,255,255,.08);padding:12px;min-height:72px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
+.bar{height:8px;border-radius:99px;background:rgba(255,255,255,.14);width:72%}
+.bar.s{width:48%}
+.lbl{margin:0;font-size:15px;font-weight:750}
+.btn{
+  display:block;width:100%;margin-top:10px;border:0;border-radius:12px;padding:14px;
+  background:var(--brand);color:#fff;font:inherit;font-weight:750;font-size:16px;cursor:pointer
+}
+.hint{text-align:center;font-size:12px;color:rgba(255,255,255,.65);margin:8px 0 0}
+</style>
+</head>
+<body>
+  <div class="scene" id="scene-discovery" data-shot="discovery">
+    <img class="mark" src="../../public/assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+    <p class="kicker">Create · Discovery</p>
+    <h1>What are we building together?</h1>
+    <p class="sub">You just hired me. I’ll start building — and only ask when the answer changes what I make.</p>
+    <div class="layout">
+      <div class="chat">
+        <div class="bubble hubly">I’m already sketching a pressure washing homepage for Austin — tell me who you usually serve and I’ll keep building.</div>
+        <div class="bubble owner">Mostly homeowners, want recurring wash plans</div>
+        <div class="bubble hubly">Got it — lighting up booking and three package cards now. Anywhere else you drive for jobs?</div>
+        <div class="typing"><i></i><i></i><i></i> Hubly is building…</div>
+      </div>
+      <aside class="studio">
+        <p class="kicker">Live studio</p>
+        <p class="status">Putting packages together for <em>Austin SoftWash</em>…</p>
+        <div class="card">
+          <div class="hero">
+            <p class="sk">Website</p>
+            <h3>Austin SoftWash</h3>
+            <p>Pressure Washing · Austin</p>
+            <span class="cta">Book now</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="mini">
+            <p class="sk">Booking</p>
+            <div class="line"></div><div class="line s"></div>
+            <div class="chips"><span class="chip">Austin</span><span class="chip">residential</span></div>
+          </div>
+          <div class="mini">
+            <p class="sk">Packages</p>
+            <div class="line"></div><div class="line s"></div>
+            <div class="chips"><span class="chip">Starter</span><span class="chip">Popular</span><span class="chip">Pro</span></div>
+          </div>
+        </div>
+        <div class="swatches"><i style="background:#141B2B"></i><i style="background:#D9632D"></i><i style="background:#f8fafc"></i></div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="scene" id="scene-reveal" data-shot="reveal">
+    <img class="mark" src="../../public/assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
+    <p class="kicker">Reveal</p>
+    <h1>🎉 I built your business.</h1>
+    <p class="sub">Website, booking, CRM, and packages — tap any to open it.</p>
+    <div class="reveal-grid">
+      <div class="ready"><div class="viz"><div class="bar"></div><div class="bar s"></div><span class="cta">Book now</span></div><p class="lbl">Website</p></div>
+      <div class="ready"><div class="viz"><div class="bar"></div><div class="bar s"></div><span class="cta">Book</span></div><p class="lbl">Booking</p></div>
+      <div class="ready"><div class="viz"><div class="bar"></div><div class="bar s"></div><div class="bar" style="width:58%"></div></div><p class="lbl">CRM</p></div>
+      <div class="ready"><div class="viz"><div class="bar"></div><div class="bar s"></div><span class="cta">3 packages</span></div><p class="lbl">Packages</p></div>
+    </div>
+    <button type="button" class="btn">Enter Hubly Home</button>
+    <p class="hint">Same operating system — personalized for your business.</p>
+  </div>
+</body>
+</html>

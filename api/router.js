@@ -48,6 +48,7 @@ module.exports = async (req, res) => {
       urlPath.startsWith('/booking-frames/') ||
       urlPath.startsWith('/booking-wizard/') ||
       urlPath.startsWith('/smart-quote/') ||
+      urlPath.startsWith('/create-systems/') ||
       urlPath === '/website-ast.js'
     ) {
       const filePath = path.join(__dirname, '../public', urlPath);
@@ -160,6 +161,7 @@ module.exports = async (req, res) => {
 
     // Apex / www front door = classic platform marketing landing.
     // Create mode (Welcome conversation) starts at /signup, /welcome, etc.
+    // CEO Demo Mode (/demo, /experience) falls through to hubly.html — client boots Create.
     // Business subdomains ({slug}.myhubly.app) must get hubly.html so copied
     // booking links open the owner's site — not the Hubly landing page.
     if (!businessSite) {

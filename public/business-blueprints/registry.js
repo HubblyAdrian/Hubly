@@ -20,6 +20,9 @@
     'photography.json',
     'hvac.json',
     'spa.json',
+    'fitness.json',
+    'flight-instruction.json',
+    'dog-grooming.json',
   ];
 
   const byId = {};
@@ -104,6 +107,13 @@
       lawn_care: 'landscaping',
       'house-cleaning': 'cleaning',
       house_cleaning: 'cleaning',
+      // Create / holy-shit packs use industry labels that aren't blueprint files yet.
+      // Map to the nearest real blueprint so we never fall through to detailing.
+      fitness: 'spa',
+      personal_training: 'spa',
+      coaching: 'spa',
+      wellness: 'spa',
+      trainer: 'spa',
     };
     const mapped = aliases[id] || aliases[String(id).replace(/_/g, '-')];
     return mapped ? byId[mapped] || null : null;

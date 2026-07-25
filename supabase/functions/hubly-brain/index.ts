@@ -95,6 +95,20 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || "think");
 
+    if (action === "diagnose_openai" || action === "diagnoseOpenAI") {
+      if (typeof (Hubly as { diagnoseOpenAI?: () => Promise<unknown> }).diagnoseOpenAI !== "function") {
+        return jsonRes({ error: "diagnoseOpenAI unavailable" }, 501);
+      }
+      const diag = await (Hubly as { diagnoseOpenAI: (o?: Record<string, unknown>) => Promise<unknown> })
+        .diagnoseOpenAI({
+          jsonMode: body.jsonMode === true,
+          prompt: body.prompt || body.request || null,
+          transport: body.transport || null,
+          model: body.model || null,
+        });
+      return jsonRes({ ok: true, diagnose: diag });
+    }
+
     if (action === "status" || action === "experts" || action === "executions") {
       return jsonRes({
         ok: true,
@@ -134,6 +148,7 @@ Deno.serve(async (req) => {
       dna: body.dna || null,
       workspace: body.workspace || null,
       conversation: body.conversation || null,
+      discovery: body.discovery || null,
       blueprintKnowledge: body.blueprintKnowledge || body.blueprint || null,
       experts: body.experts || null,
       debug: body.debug === true || body.console === true,
@@ -160,6 +175,10 @@ Deno.serve(async (req) => {
       timeline: result.timeline,
       conversation: result.conversation,
       workspace: result.workspace,
+      discovery: result.discovery || null,
+      aiSource: result.discovery?.source || null,
+      aiProvider: result.discovery?.provider || null,
+      aiModel: result.discovery?.model || null,
       memoryKeys: Object.keys(result.memory || {}),
       memoryUpdated: true,
       experienceDirector: result.experienceDirector || null,
