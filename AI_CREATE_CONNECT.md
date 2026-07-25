@@ -202,6 +202,7 @@ Cursor can check off AI Create only when:
 - Left studio is a **smaller proof rail**; conversation is the main column
 - Left cards open **real Website / Booking / Packages** (customer layout + Edit packages)
 - From those surfaces, **← Back to chat** returns to Create (not a dead-end into Home/editor)
+- **Create AI Workspace** (mock target): left Build/Website/Booking/Packages/CRM/Dashboard · center live website canvas with surface tabs · right Hubly AI chat — booking & packages visible in-canvas, not only as chips
 
 ---
 
@@ -209,5 +210,5 @@ Cursor can check off AI Create only when:
 
 1. Stream discovery replies (ChatGPT feel)
 2. Drive live studio from `buildingActions` / fact deltas; retire scripted stages when `aiSource==="openai"`
-3. Deeper editor-first Create (closer to Website Editor mock) without rushing into Home
+3. ~~Deeper editor-first Create (Website Editor mock)~~ → **Create AI Workspace** shipped (left nav · center live canvas · right chat)
 4. CEO `/demo` pass + log sessions

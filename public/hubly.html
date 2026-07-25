@@ -1112,14 +1112,167 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-discovery-layout{
   display:grid;gap:14px;align-items:start;
 }
-/* Chat-first Create: conversation is the main column; studio is a compact proof rail */
+/* Legacy 2-col discovery (fallback when AI workspace off) */
 @media(min-width:900px){
-  .is-wrap.is-discovery-wide{max-width:min(1100px,96vw)}
-  #is-step-talk.is-discovery .is-discovery-layout{
+  .is-wrap.is-discovery-wide:not(.is-aw-wide){max-width:min(1100px,96vw)}
+  #is-step-talk.is-discovery:not(.is-ai-workspace) .is-discovery-layout{
     grid-template-columns:minmax(220px,.62fr) minmax(380px,1.38fr);
   }
-  #is-step-talk.is-discovery .is-live-studio{order:-1;position:sticky;top:12px}
+  #is-step-talk.is-discovery:not(.is-ai-workspace) .is-live-studio{order:-1;position:sticky;top:12px}
 }
+/* Create AI Workspace — left nav · center live canvas · right chat (mock target) */
+#is-shell.is-ai-workspace{
+  padding:0!important;justify-content:stretch;align-items:stretch;
+  background:#0b1020;
+}
+#is-shell.is-ai-workspace .is-home-exit{display:none}
+#is-shell.is-ai-workspace .is-wrap.is-aw-wide{
+  max-width:none;width:100%;height:100%;max-height:100dvh;margin:0;padding:0;
+  border-radius:0;border:0;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;
+  box-shadow:none;display:flex;flex-direction:column;min-height:0;
+}
+#is-step-talk.is-ai-workspace{
+  display:flex;flex-direction:column;flex:1;min-height:0;height:100%;
+  padding:0;margin:0;
+}
+#is-step-talk.is-ai-workspace > .is-talk-bar,
+#is-step-talk.is-ai-workspace > .is-kicker,
+#is-step-talk.is-ai-workspace > .is-title,
+#is-step-talk.is-ai-workspace > .is-sub,
+#is-step-talk.is-ai-workspace > .is-discovery-layout{display:none!important}
+#is-step-talk.is-ai-workspace .is-aw-shell{display:grid}
+.is-aw-shell{
+  display:none;flex:1;min-height:0;height:100%;
+  grid-template-columns:72px minmax(0,1fr) minmax(300px,360px);
+  background:#0b1020;color:#fff;
+}
+@media(min-width:1100px){
+  .is-aw-shell{grid-template-columns:200px minmax(0,1fr) minmax(320px,380px)}
+}
+@media(max-width:860px){
+  .is-aw-shell{grid-template-columns:1fr;grid-template-rows:auto minmax(40vh,1fr) minmax(38vh,1fr)}
+  .is-aw-nav{flex-direction:row;flex-wrap:wrap;gap:6px;padding:10px;border-right:0;border-bottom:1px solid rgba(255,255,255,.1)}
+  .is-aw-nav .is-aw-brand{width:100%}
+  .is-aw-nav .is-aw-check{display:none}
+  .is-aw-nav button span{display:inline}
+}
+.is-aw-nav{
+  display:flex;flex-direction:column;gap:6px;padding:14px 10px;
+  background:#141B2B;border-right:1px solid rgba(255,255,255,.1);min-height:0;
+}
+.is-aw-nav .is-aw-brand{padding:4px 6px 12px}
+.is-aw-nav .is-aw-brand .hubly-mark{height:24px;width:auto;display:block}
+.is-aw-nav button{
+  appearance:none;border:1px solid transparent;background:transparent;color:rgba(255,255,255,.72);
+  border-radius:10px;padding:10px 10px;font:inherit;font-size:12px;font-weight:700;
+  cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;
+}
+.is-aw-nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+.is-aw-nav button.on{background:rgba(217,99,45,.18);border-color:rgba(217,99,45,.45);color:#fff}
+.is-aw-nav button .ic{width:18px;text-align:center;opacity:.85;flex:0 0 auto}
+@media(max-width:1099px){
+  .is-aw-nav button span:not(.ic){display:none}
+  .is-aw-nav button{justify-content:center;padding:10px}
+}
+.is-aw-check{
+  margin-top:auto;padding:12px 8px 4px;border-top:1px solid rgba(255,255,255,.1);
+}
+.is-aw-check .sk{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;font-weight:800;margin:0 0 8px}
+.is-aw-check ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.is-aw-check li{font-size:11px;font-weight:650;color:rgba(255,255,255,.55);display:flex;gap:6px;align-items:center}
+.is-aw-check li.is-done{color:rgba(255,255,255,.9)}
+.is-aw-check li.is-done::before{content:"✓";color:#D9632D;font-weight:800}
+.is-aw-check li:not(.is-done)::before{content:"·";color:rgba(255,255,255,.35);font-weight:800}
+.is-aw-main{display:flex;flex-direction:column;min-width:0;min-height:0;background:#0f172a}
+.is-aw-top{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.1);
+  background:rgba(15,23,42,.92);
+}
+.is-aw-tabs{display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:0}
+.is-aw-tabs button{
+  appearance:none;border:0;background:transparent;color:rgba(255,255,255,.6);
+  font:inherit;font-size:12px;font-weight:750;padding:8px 10px;border-radius:8px;cursor:pointer
+}
+.is-aw-tabs button:hover{color:#fff;background:rgba(255,255,255,.06)}
+.is-aw-tabs button.on{color:#fff;background:rgba(217,99,45,.22)}
+.is-aw-devices{display:flex;gap:4px}
+.is-aw-devices button{
+  appearance:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);
+  color:rgba(255,255,255,.7);border-radius:8px;padding:6px 10px;font:inherit;font-size:11px;font-weight:700;cursor:pointer
+}
+.is-aw-devices button.on{border-color:#D9632D;color:#fff;background:rgba(217,99,45,.2)}
+.is-aw-publish{
+  appearance:none;border:0;background:#D9632D;color:#fff;border-radius:10px;
+  padding:8px 14px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap
+}
+.is-aw-publish:hover{filter:brightness(1.05)}
+.is-aw-canvas{flex:1;min-height:0;overflow:auto;padding:14px;background:linear-gradient(180deg,#0f172a,#111827)}
+.is-aw-canvas.is-phone .is-aw-preview{max-width:390px;margin:0 auto}
+.is-aw-preview{
+  background:#fff;border-radius:14px;overflow:hidden;min-height:280px;
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 40px rgba(0,0,0,.35);
+  color:#0f172a;
+}
+.is-aw-preview .ws-site{min-height:280px}
+.is-aw-empty{
+  display:none;min-height:280px;align-items:center;justify-content:center;text-align:center;
+  padding:40px 24px;color:rgba(255,255,255,.7);font-size:14px;line-height:1.45;
+  border:1px dashed rgba(255,255,255,.18);border-radius:14px;background:rgba(15,23,42,.35)
+}
+.is-aw-empty.is-on{display:flex}
+.is-aw-panel{display:none;min-height:0}
+.is-aw-panel.on{display:block;animation:isLivePop .35s ease both}
+.is-aw-surface-card{
+  background:#fff;color:#0f172a;border-radius:14px;padding:20px;border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 16px 40px rgba(0,0,0,.28)
+}
+.is-aw-surface-card h2{margin:0 0 6px;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.is-aw-surface-card .sub{margin:0 0 14px;font-size:13px;color:#64748b;line-height:1.4}
+.is-aw-surface-card .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.is-aw-surface-card .chip{
+  display:inline-flex;padding:8px 12px;border-radius:999px;border:1px solid #e2e8f0;
+  font-size:12px;font-weight:700;background:#f8fafc;color:#0f172a
+}
+.is-aw-surface-card .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.is-aw-surface-card .actions .btn{min-height:40px}
+.is-aw-pkg-grid{display:grid;gap:10px}
+@media(min-width:700px){.is-aw-pkg-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.is-aw-pkg{
+  border:1px solid #e2e8f0;border-radius:12px;padding:14px;background:#fff
+}
+.is-aw-pkg .nm{font-size:14px;font-weight:800;margin:0 0 4px}
+.is-aw-pkg .pr{font-size:13px;font-weight:750;color:#D9632D;margin:0 0 6px}
+.is-aw-pkg .ds{font-size:12px;color:#64748b;margin:0;line-height:1.35}
+.is-aw-pkg.is-pop{border-color:rgba(217,99,45,.45);box-shadow:0 0 0 1px rgba(217,99,45,.2)}
+.is-aw-chat{
+  display:flex;flex-direction:column;min-height:0;min-width:0;
+  background:#141B2B;border-left:1px solid rgba(255,255,255,.1);
+}
+.is-aw-chat-head{
+  display:flex;align-items:center;gap:10px;padding:12px 14px;
+  border-bottom:1px solid rgba(255,255,255,.1);flex:0 0 auto
+}
+.is-aw-chat-head .hubly-mark{height:22px;width:auto;display:block}
+.is-aw-chat-head .meta{display:flex;flex-direction:column;gap:1px;min-width:0}
+.is-aw-chat-head strong{font-size:13px;font-weight:800;color:#fff}
+.is-aw-chat-head span{font-size:11px;color:rgba(255,255,255,.55);font-weight:600}
+.is-aw-chat-ask{padding:12px 14px 0;flex:0 0 auto}
+.is-aw-chat-ask .is-title{font-size:clamp(18px,2vw,22px);margin:0 0 4px}
+.is-aw-chat-ask .is-sub{font-size:12px;margin:0 0 8px;max-width:36ch}
+#is-step-talk.is-ai-workspace.is-convo .is-aw-chat-ask{display:none}
+.is-aw-chat .is-discovery-main{
+  flex:1;min-height:0;overflow:auto;padding:10px 14px;display:flex;flex-direction:column
+}
+#is-step-talk.is-ai-workspace .is-talk-log{max-height:none;flex:1;min-height:120px}
+#is-step-talk.is-ai-workspace .is-talk-form{
+  margin:0;padding:10px 14px 14px;border-top:1px solid rgba(255,255,255,.1);
+  flex:0 0 auto;background:#141B2B
+}
+#is-step-talk.is-ai-workspace .is-talk-chips{margin:8px 0}
+#is-step-talk.is-ai-workspace #is-pkg-wrap,
+#is-step-talk.is-ai-workspace #is-addons-wrap,
+#is-step-talk.is-ai-workspace #is-area-panel{display:none!important}
 #is-step-talk.is-discovery .is-title{
   font-size:clamp(20px,2.4vw,26px);margin:0 0 4px
 }
@@ -9113,9 +9266,100 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-talk-progress" id="is-talk-progress" data-i18n-title="isTalkProgress" aria-label="Progress"></div>
         </div>
         <div class="is-kicker">Hubly</div>
-        <h1 class="is-title" id="is-talk-ask">What do you do?</h1>
-        <p class="is-sub" id="is-talk-hint">I’ll build your website while we talk.</p>
-        <div class="is-discovery-layout is-discovery" data-delight-create="1">
+        <h1 class="is-title" id="is-talk-ask-legacy">What do you do?</h1>
+        <p class="is-sub" id="is-talk-hint-legacy">I’ll build your website while we talk.</p>
+
+        <!-- Create AI Workspace: left nav · center canvas · right chat -->
+        <div class="is-aw-shell" id="is-aw-shell" data-create-ai-workspace="1">
+          <aside class="is-aw-nav" aria-label="Create workspace">
+            <div class="is-aw-brand">
+              <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="100" height="24">
+            </div>
+            <button type="button" class="on" data-aw-nav="build" onclick="isCreateAwSetSurface('website')"><span class="ic">✦</span><span>Build</span></button>
+            <button type="button" data-aw-nav="website" onclick="isCreateAwSetSurface('website')"><span class="ic">◎</span><span>Website</span></button>
+            <button type="button" data-aw-nav="booking" onclick="isCreateAwSetSurface('booking')"><span class="ic">▦</span><span>Booking</span></button>
+            <button type="button" data-aw-nav="packages" onclick="isCreateAwSetSurface('packages')"><span class="ic">▣</span><span>Packages</span></button>
+            <button type="button" data-aw-nav="crm" onclick="isCreateAwSetSurface('crm')"><span class="ic">☺</span><span>CRM</span></button>
+            <button type="button" data-aw-nav="dashboard" onclick="isCreateAwSetSurface('dashboard')"><span class="ic">▤</span><span>Dashboard</span></button>
+            <div class="is-aw-check">
+              <p class="sk">Coming to life</p>
+              <ul id="is-aw-checklist">
+                <li data-aw-check="website">Website</li>
+                <li data-aw-check="booking">Booking</li>
+                <li data-aw-check="packages">Packages</li>
+                <li data-aw-check="crm">CRM</li>
+              </ul>
+            </div>
+          </aside>
+          <section class="is-aw-main">
+            <div class="is-aw-top">
+              <div class="is-aw-tabs" role="tablist" aria-label="Workspace surfaces">
+                <button type="button" class="on" data-aw-tab="website" onclick="isCreateAwSetSurface('website')">Website</button>
+                <button type="button" data-aw-tab="booking" onclick="isCreateAwSetSurface('booking')">Booking</button>
+                <button type="button" data-aw-tab="packages" onclick="isCreateAwSetSurface('packages')">Packages</button>
+                <button type="button" data-aw-tab="brand" onclick="isCreateAwSetSurface('brand')">Brand</button>
+                <button type="button" data-aw-tab="crm" onclick="isCreateAwSetSurface('crm')">CRM</button>
+                <button type="button" data-aw-tab="dashboard" onclick="isCreateAwSetSurface('dashboard')">Dashboard</button>
+              </div>
+              <div class="is-aw-devices" aria-label="Preview device">
+                <button type="button" class="on" id="is-aw-device-desk" onclick="isCreateAwSetDevice('desktop')">Desktop</button>
+                <button type="button" id="is-aw-device-phone" onclick="isCreateAwSetDevice('phone')">Mobile</button>
+              </div>
+              <button type="button" class="is-aw-publish" id="is-aw-publish" onclick="isCreateAwPublish()">Enter Hubly Home</button>
+            </div>
+            <div class="is-aw-canvas" id="is-aw-canvas">
+              <div class="is-aw-panel on" data-aw-panel="website">
+                <div class="is-aw-empty is-on" id="is-aw-empty">Tell me what you do — your website builds here live.</div>
+                <div class="is-aw-preview ed-ws-preview" id="is-aw-preview" hidden></div>
+              </div>
+              <div class="is-aw-panel" data-aw-panel="booking" hidden>
+                <div class="is-aw-surface-card" id="is-aw-booking-card"></div>
+              </div>
+              <div class="is-aw-panel" data-aw-panel="packages" hidden>
+                <div class="is-aw-surface-card" id="is-aw-packages-card"></div>
+              </div>
+              <div class="is-aw-panel" data-aw-panel="brand" hidden>
+                <div class="is-aw-surface-card" id="is-aw-brand-card"></div>
+              </div>
+              <div class="is-aw-panel" data-aw-panel="crm" hidden>
+                <div class="is-aw-surface-card" id="is-aw-crm-card"></div>
+              </div>
+              <div class="is-aw-panel" data-aw-panel="dashboard" hidden>
+                <div class="is-aw-surface-card" id="is-aw-dash-card"></div>
+              </div>
+            </div>
+          </section>
+          <aside class="is-aw-chat" aria-label="Hubly AI chat">
+            <div class="is-aw-chat-head">
+              <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="90" height="22">
+              <div class="meta">
+                <strong>Hubly AI</strong>
+                <span>Your AI business partner</span>
+              </div>
+            </div>
+            <div class="is-aw-chat-ask" id="is-aw-chat-ask">
+              <h1 class="is-title" id="is-talk-ask">What do you do?</h1>
+              <p class="is-sub" id="is-talk-hint">Talk naturally — I’m building your business while we talk.</p>
+            </div>
+            <div class="is-discovery-main">
+              <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
+              <div class="is-hubly-thinking" id="is-hubly-thinking" data-hubly-thinking="1" aria-live="polite" aria-hidden="true">
+                <span class="th-k">Thinking</span>
+                <span class="th-line" id="is-hubly-thinking-line"></span>
+              </div>
+              <div class="is-create-decision" id="is-create-decision" data-create-decision="1" hidden aria-live="polite"></div>
+              <div class="is-discovery-typing" id="is-discovery-typing" hidden aria-hidden="true"></div>
+              <div class="is-talk-chips" id="is-talk-chips"></div>
+            </div>
+            <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
+              <input type="text" id="is-talk-input" autocomplete="off" placeholder="Ask Hubly anything about your business…" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
+              <button type="submit" class="btn btn-brand" id="is-talk-send" data-i18n="isContinue">Continue</button>
+            </form>
+          </aside>
+        </div>
+
+        <!-- Hidden studio mirrors (kept for live-build state sync) -->
+        <div class="is-discovery-layout is-discovery" data-delight-create="1" hidden aria-hidden="true">
           <aside class="is-live-studio" id="is-live-studio" aria-live="polite" data-experience-live-studio="1" data-holy-shit-studio="1" data-hubly-workspace="1" data-create-hero="website">
             <div class="is-create-ready-strip" id="is-create-ready-strip" hidden>
               <p class="rdy-h">Your business is ready</p>
@@ -9127,13 +9371,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" onclick="isCreateOpenSurface('packages-edit')">Edit packages</button>
               </div>
             </div>
-            <div class="is-live-preview-card is-on" id="is-live-website" data-surface="website" role="button" tabindex="0" onclick="isCreateOpenSurface('website')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();isCreateOpenSurface('website')}">
+            <div class="is-live-preview-card is-on" id="is-live-website" data-surface="website">
               <div class="hero">
                 <p class="sk">Your website</p>
                 <h3 id="is-live-website-title">Your homepage</h3>
                 <p id="is-live-website-sub">Takes shape as we talk…</p>
                 <span class="cta" id="is-live-website-cta">Book now</span>
-                <span class="open-hint">Tap to open full site →</span>
               </div>
               <div class="is-live-sections" id="is-live-sections" hidden aria-label="Page sections">
                 <span data-sec="about">About</span>
@@ -9146,17 +9389,15 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="nm" id="is-live-logo-name">Your brand<small>Logo</small></div>
             </div>
             <div class="is-live-row">
-              <div class="is-live-mini" id="is-live-booking" data-surface="booking" role="button" tabindex="0" onclick="isCreateOpenSurface('booking')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();isCreateOpenSurface('booking')}">
+              <div class="is-live-mini" id="is-live-booking" data-surface="booking">
                 <p class="sk">Booking</p>
                 <div class="line"></div><div class="line s"></div>
                 <div class="chip-row" id="is-live-booking-chips"></div>
-                <span class="open-hint">Open booking page →</span>
               </div>
-              <div class="is-live-mini" id="is-live-packages" data-surface="packages" role="button" tabindex="0" onclick="isCreateOpenSurface('packages')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();isCreateOpenSurface('packages')}">
+              <div class="is-live-mini" id="is-live-packages" data-surface="packages">
                 <p class="sk">Packages</p>
                 <div class="line"></div><div class="line s"></div>
                 <div class="chip-row" id="is-live-pkg-chips"></div>
-                <span class="open-hint">See packages layout →</span>
               </div>
             </div>
             <div class="is-hubly-workspace" id="is-hubly-workspace" aria-label="Hubly is working">
@@ -9177,16 +9418,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <p class="is-live-status" id="is-live-status" hidden>Got it.</p>
             <div class="is-live-moment-tag" id="is-live-moment-tag">Updated</div>
           </aside>
-          <div class="is-discovery-main">
-            <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
-            <div class="is-hubly-thinking" id="is-hubly-thinking" data-hubly-thinking="1" aria-live="polite" aria-hidden="true">
-              <span class="th-k">Thinking</span>
-              <span class="th-line" id="is-hubly-thinking-line"></span>
-            </div>
-            <div class="is-create-decision" id="is-create-decision" data-create-decision="1" hidden aria-live="polite"></div>
-            <div class="is-discovery-typing" id="is-discovery-typing" hidden aria-hidden="true"></div>
-            <div class="is-talk-chips" id="is-talk-chips"></div>
-          </div>
         </div>
         <div id="is-pkg-wrap" class="is-pkg-wrap" aria-live="polite">
           <div id="is-pkg-panel" class="is-pkg-panel"></div>
@@ -9213,10 +9444,6 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <p class="is-area-hint" data-i18n="isAreaRefine">You can refine this later in Website editor → Business &amp; hours.</p>
         </div>
-        <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
-          <input type="text" id="is-talk-input" autocomplete="off" placeholder="Tell me what you’re working on…" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
-          <button type="submit" class="btn btn-brand" id="is-talk-send" data-i18n="isContinue">Continue</button>
-        </form>
       </div>
 
       <div class="is-step" data-is="thinking" id="is-step-thinking" data-thinking-experience="1">
@@ -17670,6 +17897,7 @@ function isDiscoveryBoot(opts){
     isShowAreaPanel(false);
     isTalkClearChips();
     isShowStep('talk');
+    try{isEnterCreateAiWorkspace();}catch(e){}
     if(seed){
       setTimeout(()=>{ isDiscoverySend(seed).catch(e=>console.error('discovery boot AI',e)); }, 40);
     }else{
@@ -17678,6 +17906,7 @@ function isDiscoveryBoot(opts){
   }else{
     isShowStep('talk');
     isTalkRender();
+    try{isEnterCreateAiWorkspace();}catch(e){}
   }
   step?.classList.toggle('is-convo',!!(S._is.messages||[]).length);
   isTalkSetPrompt({
@@ -17845,9 +18074,13 @@ async function isCreateDecisionView(){
     session.studio.ctaElevated=true;
   }
   isApplyCreateStudioToBusiness();
-  try{HUBLY_HOLY_SHIT.celebrate('Opening your full website…');}catch(e){}
-  // Design with OpenAI then open the real scrollable site — not the left studio card.
+  try{HUBLY_HOLY_SHIT.celebrate('Updating your website…');}catch(e){}
   try{await isCreateDesignWithAi();}catch(e){}
+  // AI Workspace: show the live site in the center canvas (mock target).
+  if(isCreateAiWorkspaceOn()){
+    isCreateAwSetSurface('website');
+    return;
+  }
   S._is=S._is||{};
   S._is._previewFromReveal=true;
   isEnsureRevealBackBar();
@@ -17884,7 +18117,8 @@ function isRenderLiveBuild(opts){
   if(!studio)return;
   const session=S._is?.discovery;
   if(!session){studio.hidden=true;return;}
-  studio.hidden=false;
+  // Mirror stays hidden inside AI Workspace; canvas + checklist are the UI.
+  studio.hidden=isCreateAiWorkspaceOn();
   const live=isLiveBuildFromFacts(session);
   const statusEl=document.getElementById('is-live-status');
   if(statusEl)statusEl.innerHTML=live.status;
@@ -17949,6 +18183,17 @@ function isRenderLiveBuild(opts){
   if(opts.pulse==='packages'||opts.pulse==='all')HUBLY_HOLY_SHIT.flash(pkgs,'is-pulse');
   if(opts.pulse==='logo'||opts.pulse==='all')HUBLY_HOLY_SHIT.flash(logo,'is-pulse');
   if(opts.pulse==='brand'&&brand)HUBLY_HOLY_SHIT.flash(brand,'is-pulse');
+  // AI Workspace center canvas — refresh live website / active surface.
+  if(isCreateAiWorkspaceOn()){
+    try{
+      const surf=S._is?.createAwSurface||'website';
+      if(surf==='website')isRenderCreateWorkspacePreview();
+      else if(surf==='booking')isRenderCreateAwBooking();
+      else if(surf==='packages')isRenderCreateAwPackages();
+      else if(surf==='brand')isRenderCreateAwBrand();
+      else isSyncCreateAwChecklist();
+    }catch(e){}
+  }
 }
 /** @deprecated Experience-first uses live studio; kept as alias for any stray callers. */
 function isRenderUnderstandingPanel(){isRenderLiveBuild();}
@@ -18282,6 +18527,230 @@ function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
   }
   if(disc?.liveStatus)session.liveStatus=String(disc.liveStatus).slice(0,120);
 }
+function isCreateAiWorkspaceOn(){
+  return !!document.getElementById('is-step-talk')?.classList.contains('is-ai-workspace');
+}
+
+/** Enter Create AI Workspace (mock target: center canvas + right chat). */
+function isEnterCreateAiWorkspace(){
+  const shell=document.getElementById('is-shell');
+  const wrap=document.querySelector('#is-shell .is-wrap');
+  const step=document.getElementById('is-step-talk');
+  shell?.classList.add('is-ai-workspace');
+  wrap?.classList.add('is-aw-wide','is-discovery-wide');
+  wrap?.classList.remove('is-reveal-wide','is-creative-wide','is-thinking-wide');
+  step?.classList.add('is-ai-workspace','is-discovery');
+  S._is=S._is||{};
+  S._is.createAwSurface=S._is.createAwSurface||'website';
+  S._is.createAwDevice=S._is.createAwDevice||'desktop';
+  isCreateAwSetDevice(S._is.createAwDevice);
+  isCreateAwSetSurface(S._is.createAwSurface,{quiet:true});
+  isRenderCreateWorkspacePreview();
+}
+window.isEnterCreateAiWorkspace=isEnterCreateAiWorkspace;
+
+function isCreateAwSetDevice(device){
+  const d=device==='phone'?'phone':'desktop';
+  S._is=S._is||{};
+  S._is.createAwDevice=d;
+  S.edPreviewDevice=d;
+  const canvas=document.getElementById('is-aw-canvas');
+  canvas?.classList.toggle('is-phone',d==='phone');
+  document.getElementById('is-aw-device-desk')?.classList.toggle('on',d==='desktop');
+  document.getElementById('is-aw-device-phone')?.classList.toggle('on',d==='phone');
+}
+window.isCreateAwSetDevice=isCreateAwSetDevice;
+
+function isCreateAwSetSurface(surfaceId,opts){
+  opts=opts||{};
+  const id=surfaceId||'website';
+  S._is=S._is||{};
+  S._is.createAwSurface=id;
+  if(!isCreateAiWorkspaceOn())isEnterCreateAiWorkspace();
+  document.querySelectorAll('#is-aw-shell [data-aw-tab]').forEach(btn=>{
+    btn.classList.toggle('on',btn.getAttribute('data-aw-tab')===id);
+  });
+  document.querySelectorAll('#is-aw-shell [data-aw-nav]').forEach(btn=>{
+    const nav=btn.getAttribute('data-aw-nav');
+    let on=false;
+    if(nav==='build')on=(id==='website'||id==='brand');
+    else if(nav==='website')on=(id==='website'||id==='brand');
+    else on=(nav===id);
+    btn.classList.toggle('on',on);
+  });
+  document.querySelectorAll('#is-aw-canvas [data-aw-panel]').forEach(panel=>{
+    const match=panel.getAttribute('data-aw-panel')===id;
+    panel.classList.toggle('on',match);
+    panel.hidden=!match;
+  });
+  isApplyCreateStudioToBusiness();
+  if(id==='website')isRenderCreateWorkspacePreview();
+  else if(id==='booking')isRenderCreateAwBooking();
+  else if(id==='packages')isRenderCreateAwPackages();
+  else if(id==='brand')isRenderCreateAwBrand();
+  else if(id==='crm')isRenderCreateAwCrm();
+  else if(id==='dashboard')isRenderCreateAwDashboard();
+  if(!opts.quiet){
+    try{
+      const labels={website:'Website',booking:'Booking',packages:'Packages',brand:'Brand',crm:'CRM',dashboard:'Dashboard'};
+      const el=document.getElementById('is-live-status');
+      if(el)el.textContent='Showing '+(labels[id]||id);
+    }catch(e){}
+  }
+}
+window.isCreateAwSetSurface=isCreateAwSetSurface;
+
+function isCreateAwPublish(){
+  if(S._is?.discovery?.holyShitComplete){
+    isRevealContinueToWorkspace();
+    return;
+  }
+  isTalkPush('hubly','Almost — keep talking a bit more so I can finish website, booking, and packages. Then you can enter Hubly Home.');
+  try{document.getElementById('is-talk-input')?.focus();}catch(e){}
+}
+window.isCreateAwPublish=isCreateAwPublish;
+
+function isRenderCreateWorkspacePreview(){
+  const preview=document.getElementById('is-aw-preview');
+  const empty=document.getElementById('is-aw-empty');
+  if(!preview)return;
+  try{isApplyCreateStudioToBusiness();}catch(e){}
+  try{if(typeof renderWebsite==='function')renderWebsite();}catch(e){}
+  const src=document.getElementById('ws-page');
+  const html=(src&&src.innerHTML&&src.innerHTML.trim())?src.innerHTML:'';
+  const hasBiz=!!(S.biz&&S.biz!=='My Business')||!!S._is?.discovery?.studio?.heroTitle||!!S.website?.heroHeadline;
+  const ready=!!html&&(hasBiz||!!S._is?.discovery?.holyShitComplete||(S._is?.discovery?.turns||0)>=1);
+  if(!ready){
+    preview.hidden=true;
+    preview.innerHTML='';
+    empty?.classList.add('is-on');
+    if(empty)empty.hidden=false;
+    return;
+  }
+  empty?.classList.remove('is-on');
+  if(empty)empty.hidden=true;
+  preview.hidden=false;
+  const themeId=typeof getWebsiteThemeId==='function'?getWebsiteThemeId():'classic';
+  preview.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${html}</div></div>`;
+  try{if(typeof stripPreviewCloneIds==='function')stripPreviewCloneIds(preview);}catch(e){}
+  const site=preview.querySelector('.ws-site');
+  try{applyWebsiteLayout?.(site);}catch(e){}
+  try{applyCompositionClass?.(typeof getWebsiteComposition==='function'?getWebsiteComposition():'classic');}catch(e){}
+  try{applyHeroMediaPlacement?.();}catch(e){}
+  try{applyProfileCardThemeVars?.(site);}catch(e){}
+  try{applyHeroFocus?.(site);}catch(e){}
+  // Disable pe targets in Create canvas — chat drives edits.
+  preview.querySelectorAll('[data-pe],.ws-pe-target').forEach(el=>{
+    el.removeAttribute('data-pe');
+    el.classList.remove('ws-pe-target');
+  });
+  isSyncCreateAwChecklist();
+}
+window.isRenderCreateWorkspacePreview=isRenderCreateWorkspacePreview;
+
+function isSyncCreateAwChecklist(){
+  const session=S._is?.discovery;
+  const studio=session?.studio||{};
+  const done={
+    website:!!(studio.heroTitle||studio.phase==='website'||session?.holyShitComplete),
+    booking:!!(studio.bookingOn||session?.holyShitComplete),
+    packages:!!(studio.packagesOn||session?.holyShitComplete),
+    crm:!!(session?.holyShitComplete||(session?.buildingActions||[]).includes('crm')),
+  };
+  document.querySelectorAll('#is-aw-checklist [data-aw-check]').forEach(li=>{
+    const k=li.getAttribute('data-aw-check');
+    li.classList.toggle('is-done',!!done[k]);
+  });
+  const pub=document.getElementById('is-aw-publish');
+  if(pub)pub.textContent=session?.holyShitComplete?'Enter Hubly Home':'Keep building…';
+}
+
+function isRenderCreateAwBooking(){
+  const card=document.getElementById('is-aw-booking-card');
+  if(!card)return;
+  isApplyCreateStudioToBusiness();
+  const biz=S.biz||S._is?.discovery?.studio?.heroTitle||'Your business';
+  const chips=(S._is?.discovery?.studio?.bookingChips||['Consult','Book session']).slice(0,4);
+  const svcs=(typeof getBookingServices==='function'?getBookingServices():(S.services||[])).filter(s=>s&&s.name).slice(0,4);
+  card.innerHTML=`<p class="sk" style="margin:0 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#D9632D;font-weight:800">Customer booking</p>
+    <h2>${escPeHtml(biz)}</h2>
+    <p class="sub">This is the booking flow customers get — already wired in Hubly. Try it, or keep chatting to change it.</p>
+    <div class="chip-row">${chips.map(c=>`<span class="chip">${escPeHtml(c)}</span>`).join('')}</div>
+    ${svcs.length?`<div class="is-aw-pkg-grid" style="margin-bottom:12px">${svcs.map(s=>`<div class="is-aw-pkg"><p class="nm">${escPeHtml(s.name)}</p><p class="pr">${s.showPrice===false?'':('$'+(Number(s.price)||0))}</p><p class="ds">${escPeHtml(s.desc||s.dur||'Book this')}</p></div>`).join('')}</div>`:''}
+    <div class="actions">
+      <button type="button" class="btn btn-brand" onclick="isCreateOpenSurface('booking',{forceFull:true})">Open full booking page</button>
+      <button type="button" class="btn btn-out" onclick="isKeepTalkingCreate()">Change via chat</button>
+    </div>`;
+  isSyncCreateAwChecklist();
+}
+
+function isRenderCreateAwPackages(){
+  const card=document.getElementById('is-aw-packages-card');
+  if(!card)return;
+  isApplyCreateStudioToBusiness();
+  const svcs=(typeof getBookingServices==='function'?getBookingServices():(S.services||S.editorSvcs||[])).filter(s=>s&&s.name);
+  const chips=(S._is?.discovery?.studio?.pkgChips||[]).slice(0,6);
+  const list=svcs.length?svcs:chips.map((n,i)=>({name:n,price:'',desc:'',popular:i===1}));
+  card.innerHTML=`<p class="sk" style="margin:0 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#D9632D;font-weight:800">Your offers</p>
+    <h2>Packages</h2>
+    <p class="sub">How customers see your offers on the website. Edit anytime — Hubly already seeded these for your trade.</p>
+    <div class="is-aw-pkg-grid">${list.length?list.map((s,i)=>`<div class="is-aw-pkg${s.popular||i===1?' is-pop':''}"><p class="nm">${escPeHtml(s.name||s)}</p><p class="pr">${s.price===''||s.price==null?'':('$'+(Number(s.price)||0))}</p><p class="ds">${escPeHtml(s.desc||(s.popular||i===1?'Popular':'Package'))}</p></div>`).join(''):'<p class="sub">Packages appear as we talk…</p>'}</div>
+    <div class="actions">
+      <button type="button" class="btn btn-brand" onclick="isCreateOpenSurface('packages',{forceFull:true})">See on website</button>
+      <button type="button" class="btn btn-out" onclick="isCreateOpenSurface('packages-edit')">Edit packages</button>
+      <button type="button" class="btn btn-out" onclick="isKeepTalkingCreate()">Change via chat</button>
+    </div>`;
+  isSyncCreateAwChecklist();
+}
+
+function isRenderCreateAwBrand(){
+  const card=document.getElementById('is-aw-brand-card');
+  if(!card)return;
+  const studio=S._is?.discovery?.studio||{};
+  const biz=S.biz||studio.logoName||'Your brand';
+  const mark=studio.logoMark||(biz.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase())||'HB';
+  card.innerHTML=`<h2>Brand</h2>
+    <p class="sub">Logo direction and colors — refine by chatting (“make it more premium”).</p>
+    <div style="display:flex;align-items:center;gap:14px;margin:0 0 14px">
+      <div style="width:56px;height:56px;border-radius:50%;background:#141B2B;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px">${escPeHtml(mark)}</div>
+      <div><strong style="display:block;font-size:16px">${escPeHtml(biz)}</strong><span style="font-size:12px;color:#64748b">Logo direction</span></div>
+    </div>
+    <div class="chip-row">
+      <span class="chip" style="background:#141B2B;color:#fff;border-color:#141B2B">Navy</span>
+      <span class="chip" style="background:#D9632D;color:#fff;border-color:#D9632D">Orange</span>
+      <span class="chip">Light</span>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn btn-brand" onclick="isCreateAwSetSurface('website')">View on website</button>
+      <button type="button" class="btn btn-out" onclick="isKeepTalkingCreate()">Change via chat</button>
+    </div>`;
+}
+
+function isRenderCreateAwCrm(){
+  const card=document.getElementById('is-aw-crm-card');
+  if(!card)return;
+  card.innerHTML=`<h2>CRM</h2>
+    <p class="sub">Pipeline ready — waiting for your first customer. No fake contacts.</p>
+    <div class="is-aw-pkg" style="margin-bottom:12px"><p class="nm">Inbox</p><p class="ds">Leads and messages land here once someone books.</p></div>
+    <div class="actions">
+      <button type="button" class="btn btn-brand" onclick="isRevealContinueToWorkspace()">Open CRM in Hubly Home</button>
+      <button type="button" class="btn btn-out" onclick="isKeepTalkingCreate()">Keep talking</button>
+    </div>`;
+  isSyncCreateAwChecklist();
+}
+
+function isRenderCreateAwDashboard(){
+  const card=document.getElementById('is-aw-dash-card');
+  if(!card)return;
+  const biz=S.biz||'Your business';
+  card.innerHTML=`<h2>Dashboard</h2>
+    <p class="sub">${escPeHtml(biz)} — Home shows jobs, money, and today’s work after you enter Hubly.</p>
+    <div class="actions">
+      <button type="button" class="btn btn-brand" onclick="isRevealContinueToWorkspace()">Enter Hubly Home</button>
+      <button type="button" class="btn btn-out" onclick="isCreateAwSetSurface('website')">Back to website</button>
+    </div>`;
+}
+
 function isKeepTalkingCreate(){
   // Stay in chat — always a visible response (focus + message). Never a dead chip.
   try{isHideRevealBackBar();}catch(e){}
@@ -18299,9 +18768,10 @@ function isKeepTalkingCreate(){
     onboard.classList.add('active','is-active');
   }
   if(shell)shell.style.display='flex';
+  try{isEnterCreateAiWorkspace();}catch(e){}
   const inp=document.getElementById('is-talk-input');
   if(inp){
-    inp.placeholder='Change anything — website, booking, packages…';
+    inp.placeholder='Ask Hubly anything — website, booking, packages…';
     inp.classList.add('is-listening');
     setTimeout(()=>inp.classList.remove('is-listening'),1600);
     try{inp.focus({preventScroll:false});}catch(e){try{inp.focus();}catch(e2){}}
@@ -18310,24 +18780,34 @@ function isKeepTalkingCreate(){
   const chips=document.getElementById('is-talk-chips');
   if(chips){
     chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="document.getElementById('is-talk-input')?.focus()">Type below ↓</button>
-      <button type="button" class="is-chip" onclick="isCreateOpenSurface('website')">Open website</button>
-      <button type="button" class="is-chip" onclick="isCreateOpenSurface('booking')">Open booking</button>
-      <button type="button" class="is-chip" onclick="isCreateOpenSurface('packages')">See packages</button>
+      <button type="button" class="is-chip" onclick="isCreateAwSetSurface('website')">Website</button>
+      <button type="button" class="is-chip" onclick="isCreateAwSetSurface('booking')">Booking</button>
+      <button type="button" class="is-chip" onclick="isCreateAwSetSurface('packages')">Packages</button>
       <button type="button" class="is-chip" onclick="isCreateShowReadySummary()">Show what you built →</button>`;
   }
   try{
-    isTalkPush('hubly','I’m here — tell me what to change on the website, booking, or packages. Tap the cards on the left to open the real pages anytime.');
+    isTalkPush('hubly','I’m here — tell me what to change. Use the Website / Booking / Packages tabs to see the real surfaces while we talk.');
     const log=document.getElementById('is-talk-log');
     if(log)log.scrollTop=log.scrollHeight;
   }catch(e){}
 }
 window.isKeepTalkingCreate=isKeepTalkingCreate;
 
-/** Open real Create surfaces — SaaS booking/packages are the product, not chips. */
-async function isCreateOpenSurface(surfaceId){
+/** Open Create surfaces — in AI Workspace, switch center tabs; forceFull opens takeover. */
+async function isCreateOpenSurface(surfaceId,opts){
+  opts=opts||{};
   S._is=S._is||{};
   isApplyCreateStudioToBusiness();
   const id=surfaceId||'website';
+  // In Create AI Workspace: stay in the shell and switch the center canvas.
+  if(isCreateAiWorkspaceOn()&&!opts.forceFull&&['website','booking','packages','brand','crm','dashboard'].includes(id)){
+    isCreateAwSetSurface(id);
+    return;
+  }
+  if(id==='packages-edit'){
+    isCreateOpenPackagesEditor();
+    return;
+  }
   S._is._previewFromReveal=true;
   isEnsureRevealBackBar();
   try{
@@ -18335,12 +18815,7 @@ async function isCreateOpenSurface(surfaceId){
       previewBookingPage();
       return;
     }
-    if(id==='packages-edit'){
-      isCreateOpenPackagesEditor();
-      return;
-    }
     if(id==='packages'){
-      // Full site scrolled to packages / services — real customer layout.
       try{await isCreateDesignWithAi();}catch(e){}
       previewProfile();
       setTimeout(()=>{
@@ -18349,13 +18824,12 @@ async function isCreateOpenSurface(surfaceId){
             ||document.getElementById('ws-sec-packages')
             ||document.querySelector('#p-storefront [data-sec="services"], .ws-sec-services, .ws-services');
           if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
-          else toast('Packages are on your website — scroll to Services.');
         }catch(e){}
       },280);
       return;
     }
-    if(id==='crm'){
-      S._is.revealPreferredSurface='crm';
+    if(id==='crm'||id==='dashboard'){
+      S._is.revealPreferredSurface=id==='crm'?'crm':null;
       isRevealContinueToWorkspace();
       return;
     }
@@ -18426,10 +18900,11 @@ function isReturnToCreateChat(){
   if(shell)shell.style.display='flex';
   isShowStep('talk');
   document.getElementById('is-step-talk')?.classList.add('is-discovery','is-convo');
+  try{isEnterCreateAiWorkspace();}catch(e){}
   isShowCreateRevealChip();
   const inp=document.getElementById('is-talk-input');
   if(inp){
-    inp.placeholder='Change anything — website, booking, packages…';
+    inp.placeholder='Ask Hubly anything — website, booking, packages…';
     setTimeout(()=>{try{inp.focus();}catch(e){}},40);
   }
   try{history.replaceState({page:'p-onboard',ceoDemo:!!S._ceoDemo},'', (isCeoDemoPath()?hublyPath():'/demo')+'#talk');}catch(e){}
@@ -18439,16 +18914,17 @@ window.isReturnToCreateChat=isReturnToCreateChat;
 function isShowCreateRevealChip(){
   const chips=document.getElementById('is-talk-chips');
   if(!chips)return;
+  try{isEnterCreateAiWorkspace();}catch(e){}
   chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="isKeepTalkingCreate()">Keep talking</button>
-    <button type="button" class="is-chip" onclick="isCreateOpenSurface('website')">Open website</button>
-    <button type="button" class="is-chip" onclick="isCreateOpenSurface('booking')">Open booking</button>
-    <button type="button" class="is-chip" onclick="isCreateOpenSurface('packages')">See packages</button>
+    <button type="button" class="is-chip" onclick="isCreateAwSetSurface('website')">Website</button>
+    <button type="button" class="is-chip" onclick="isCreateAwSetSurface('booking')">Booking</button>
+    <button type="button" class="is-chip" onclick="isCreateAwSetSurface('packages')">Packages</button>
     <button type="button" class="is-chip" onclick="isCreateOpenSurface('packages-edit')">Edit packages</button>
     <button type="button" class="is-chip" onclick="isCreateShowReadySummary()">Show what you built →</button>`;
   setTimeout(()=>{
     try{
       const inp=document.getElementById('is-talk-input');
-      if(inp){inp.placeholder='Change anything — website, booking, packages…';inp.focus();}
+      if(inp){inp.placeholder='Ask Hubly anything — website, booking, packages…';inp.focus();}
     }catch(e){}
   },40);
 }
@@ -18485,18 +18961,20 @@ async function isCreateShowReadySummary(){
     if(el.id!=='is-step-talk')el.classList.remove('is-on');
   });
   isShowCreateReadyStrip(true);
+  try{isEnterCreateAiWorkspace();}catch(e){}
   // Prefer staying in chat with openable surfaces — not a dead-end takeover.
-  isTalkPush('hubly','Here’s what we built — open the real Website, Booking page, or Packages layout. Keep talking anytime, or enter Hubly Home when you’re ready.');
+  isTalkPush('hubly','Here’s what we built — use the Website / Booking / Packages tabs to see the real surfaces. Keep talking anytime, or enter Hubly Home when you’re ready.');
   const chips=document.getElementById('is-talk-chips');
   if(chips){
-    chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="isCreateOpenSurface('website')">Open website</button>
-      <button type="button" class="is-chip is-chip-brand" onclick="isCreateOpenSurface('booking')">Open booking</button>
-      <button type="button" class="is-chip is-chip-brand" onclick="isCreateOpenSurface('packages')">See packages</button>
+    chips.innerHTML=`<button type="button" class="is-chip is-chip-brand" onclick="isCreateAwSetSurface('website')">Website</button>
+      <button type="button" class="is-chip is-chip-brand" onclick="isCreateAwSetSurface('booking')">Booking</button>
+      <button type="button" class="is-chip is-chip-brand" onclick="isCreateAwSetSurface('packages')">Packages</button>
       <button type="button" class="is-chip" onclick="isCreateOpenSurface('packages-edit')">Edit packages</button>
       <button type="button" class="is-chip" onclick="isKeepTalkingCreate()">Keep talking</button>
       <button type="button" class="is-chip" onclick="isRevealContinueToWorkspace()">Enter Hubly Home</button>`;
   }
   isRenderLiveBuild({pulse:'all'});
+  try{isCreateAwSetSurface('website',{quiet:true});}catch(e){}
   try{document.getElementById('is-talk-log')?.scrollTo({top:99999,behavior:'smooth'});}catch(e){}
 }
 window.isCreateShowReadySummary=isCreateShowReadySummary;

@@ -75,6 +75,13 @@ check(
 );
 check("Create seeds trade add-ons", /getTradeDefaultAddons/.test(hubly) && /editorAddons/.test(hubly));
 check("Create seeds about copy", /ownerBio/.test(hubly) && /tradeChrome/.test(hubly));
+check(
+  "Create AI Workspace shell",
+  /is-aw-shell/.test(hubly) &&
+    /isEnterCreateAiWorkspace/.test(hubly) &&
+    /isCreateAwSetSurface/.test(hubly) &&
+    /is-aw-preview/.test(hubly),
+);
 
 const passed = failures.length === 0;
 fs.mkdirSync(path.join(root, "docs"), { recursive: true });
