@@ -30,12 +30,12 @@ Create is polished enough that we'd confidently show it to a paying customer.
 
 ## Latest Create polish (today)
 
-- CTA change is visible (consult → Book now) with real View / Keep / Undo
-- Booking chips + logo appear live, one beat at a time
-- After live build: real conversation beat + **Show me what you built** (not an instant cut to Reveal)
-- Follow-up turns can change the live website (tone / CTA)
-- Reveal shows the actual website / booking / packages that were built
-- Landing promise clarified: “Tell Hubly what you do. We’ll build your business.”
+- Conversation compressed — less script, more ChatGPT (build while talking)
+- Page sections appear live (About / Services / Reviews)
+- Follow-ups visibly change the website (tone, CTA, packages, brand)
+- Reveal cards are the finished business (screenshot-worthy target)
+- Home after Create: website live · booking ready · CRM configured (no empty modules)
+- Still Gate 1 — not done until a paying customer would trust the flow
 
 ## Roadmap (one experience at a time)
 

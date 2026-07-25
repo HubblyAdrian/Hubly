@@ -17839,15 +17839,17 @@ function isDiscoveryApplyConversationToStudio(session,ownerText,disc){
   const t=String(ownerText||'').toLowerCase();
   let pulsed=false;
   if(/premium|luxury|high.?end|upscale/.test(t)){
-    const base=(session.studio.heroSub||'').replace(/\s*—\s*quietly premium\.?/i,'').replace(/\s*Warm, local, easy to book\.?/i,'').trim();
+    let base=(session.studio.heroSub||'').replace(/\s*[—.]\s*quietly premium\.?/i,'').replace(/\s*Warm, local, easy to book\.?/i,'').trim();
+    base=base.replace(/\.\s*$/,'');
     session.studio.heroSub=(base||'Results that last')+' — quietly premium.';
     session.studio.ctaElevated=true;
     session.studio.brandOn=true;
     pulsed=true;
   }
   if(/friendlier|warmer|friendly|approachable|neighborhood|local/.test(t)){
-    const base=(session.studio.heroSub||'').replace(/\s*—\s*quietly premium\.?/i,'').replace(/\s*Warm, local, easy to book\.?/i,'').trim();
-    session.studio.heroSub=(base||'Trusted nearby')+' Warm, local, easy to book.';
+    let base=(session.studio.heroSub||'').replace(/\s*[—.]\s*quietly premium\.?/i,'').replace(/\s*Warm, local, easy to book\.?/i,'').trim();
+    base=base.replace(/\.\s*$/,'');
+    session.studio.heroSub=(base||'Trusted nearby')+' — warm, local, easy to book.';
     session.studio.brandOn=true;
     pulsed=true;
   }
