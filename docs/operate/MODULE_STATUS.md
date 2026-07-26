@@ -72,7 +72,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 3 | 📅 Jobs & Calendar | ✅ Locked | ⏸ | [#246](https://github.com/HubblyAdrian/Hubly/pull/246) | 🔒 OS · MAT ✅ · merged |
 | 4 | 🧲 Leads | ✅ Locked | ⏸ | [#247](https://github.com/HubblyAdrian/Hubly/pull/247) | 🔒 OS · MAT ✅ · merged |
 | 5 | ❤️ Customers | ✅ Locked | ⏸ | [#248](https://github.com/HubblyAdrian/Hubly/pull/248) | 🔒 OS · golden profile · MAT ✅ · CMV PASS |
-| 6 | 🧭 Pipeline | ✅ OS done · MAT ✅ | ⏸ | pending | HublyDS v1 ([Rule #14](./OPERATE_ENGINEERING_RULES.md)) · CMV PASS · awaiting merge → 🔒 OS |
+| 6 | 🧭 Pipeline | ✅ OS done · MAT ✅ | ⏸ | [#249](https://github.com/HubblyAdrian/Hubly/pull/249) | HublyDS v1 ([Rule #14](./OPERATE_ENGINEERING_RULES.md)) · CMV PASS · awaiting merge → 🔒 OS |
 | 7–14 | Remaining | ⏳ | ⏸ | — | |
 
 ## Workflow
