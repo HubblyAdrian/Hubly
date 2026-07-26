@@ -82,7 +82,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 8 | 📣 Marketing | ✅ Locked | ⏸ | [#251](https://github.com/HubblyAdrian/Hubly/pull/251) | 🔒 OS · MAT ✅ · Rules #14–16 · merged |
 | 9 | ⭐ Reviews | ✅ Locked | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | 🔒 OS · MAT ✅ · Rule #17 · merged |
 | 10 | 🔁 Memberships | ✅ Locked | ⏸ | [#253](https://github.com/HubblyAdrian/Hubly/pull/253) | 🔒 OS · MAT ✅ · Rules #18–19 · merged |
-| 11 | 💰 Revenue | ⏳ Architecture first | ⏸ | — | [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) required · Rule #20 · `cursor/operate-revenue-2662` |
+| 11 | 💰 Revenue | ✅ OS complete · MAT ✅ · CMV PASS | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) · Rule #20 · awaiting approval → then 🔒 OS |
 | 12–14 | Remaining | ⏳ | ⏸ | — | Reports · Ask Hubly · Settings |
 
 ### 🔁 Memberships lock
