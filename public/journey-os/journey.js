@@ -1908,7 +1908,9 @@
   }
   function memPushActivity(type, label, payload) {
     var m = ensureMembershipsOsState();
-    m.activity.push({ id: memId('mem_act'), type: type, label: label, at: new Date().toISOString(), payload: payload || {} });
+    var entry = { id: memId('mem_act'), type: type, label: label, at: new Date().toISOString(), payload: payload ? Object.assign({}, payload) : {} };
+    try { Object.freeze(entry.payload); Object.freeze(entry); } catch (_) {}
+    m.activity.push(entry); // Rule #18 — append-only; never rewrite prior activity
   }
   function membershipSeedPlans() {
     var st = S(), w = st.website || {}, out = [], seen = {};
@@ -2044,23 +2046,24 @@
       }
     });
     if (!m._seeded) {
-      m.activity.push({ id: memId('mem_act'), type: 'system', label: 'Memberships OS initialized from plans and recurring customers', at: new Date().toISOString(), payload: {} });
       m._seeded = true;
+      var seedAct = { id: memId('mem_act'), type: 'system', label: 'Memberships OS initialized from plans and recurring customers', at: new Date().toISOString(), payload: {} };
+      try { Object.freeze(seedAct.payload); Object.freeze(seedAct); } catch (_) {}
+      m.activity.push(seedAct);
     }
-    m.subscribers = m.subscribers.map(function (s, idx) {
-      return {
-        id: s.id || ('mem_sub_' + idx),
-        customerId: s.customerId,
-        planId: s.planId || (m.plans[0] && m.plans[0].id) || '',
-        status: s.status || 'active',
-        startedAt: s.startedAt || todayStr(),
-        nextRenewalAt: s.nextRenewalAt || memAddMonths(s.startedAt || todayStr(), 1),
-        pausedAt: s.pausedAt || null,
-        cancelledAt: s.cancelledAt || null,
-        visitsUsed: Number(s.visitsUsed) || 0,
-        visitResetAt: s.visitResetAt || s.startedAt || todayStr()
-      };
-    }).filter(function (s) { return !!s.customerId; });
+    // Normalize in place (Rule #18) — do not replace subscriber object identity
+    m.subscribers = m.subscribers.filter(function (s) { return s && s.customerId; }).map(function (s, idx) {
+      s.id = s.id || ('mem_sub_' + idx);
+      s.planId = s.planId || (m.plans[0] && m.plans[0].id) || '';
+      s.status = s.status || 'active';
+      s.startedAt = s.startedAt || todayStr();
+      s.nextRenewalAt = s.nextRenewalAt || memAddMonths(s.startedAt, 1);
+      if (s.pausedAt == null) s.pausedAt = null;
+      if (s.cancelledAt == null) s.cancelledAt = null;
+      s.visitsUsed = Number(s.visitsUsed) || 0;
+      s.visitResetAt = s.visitResetAt || s.startedAt || todayStr();
+      return s;
+    });
     m.plans.forEach(function (p) {
       if (!m.billingRules.some(function (r) { return String(r.planId) === String(p.id); })) {
         m.billingRules.push({ id: memId('mem_rule'), planId: p.id, cadence: p.cadence || '/mo', chargeTiming: 'advance', renewalAnchor: 'signup_day', graceDays: 3, processor: 'stripe_stage2' });

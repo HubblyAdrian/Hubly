@@ -325,6 +325,20 @@ try {
       has(px, "jos-rev-page")
   );
 
+  mark("check memberships");
+  ok(
+    "memberships",
+    has(jjs, "function renderMemberships") &&
+      has(jjs, "handleMembershipsAct") &&
+      has(jjs, "ensureMembershipsOsState") &&
+      has(jjs, "mem-sub-save") &&
+      has(jjs, "membershipsOs") &&
+      has(jjs, "jos-mem-page") &&
+      has(hubly, 'id="v-memberships"') &&
+      has(hubly, 'id="jos-memberships-root"') &&
+      has(px, "jos-mem-page")
+  );
+
   const hublyEventsJs = read("public/journey-os/hubly-events.js");
   mark("check hubly-events");
   ok(
@@ -333,7 +347,10 @@ try {
       has(hublyEventsJs, "publish") &&
       has(hublyEventsJs, "on") &&
       has(hublyEventsJs, "review.requested") &&
-      has(hublyEventsJs, "reputation.changed")
+      has(hublyEventsJs, "reputation.changed") &&
+      has(hublyEventsJs, "membership.started") &&
+      has(hublyEventsJs, "membership.visit_used") &&
+      has(hublyEventsJs, "clearHistoryForTests")
   );
 
   const ms = Date.now() - started;

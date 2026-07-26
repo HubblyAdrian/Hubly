@@ -162,6 +162,8 @@ const editor = mount("v-editor", app);
 mount("jos-storefront-root", editor);
 const marketing = mount("v-marketing", app);
 mount("jos-marketing-root", marketing);
+const reviews = mount("v-reviews", app);
+mount("jos-reviews-root", reviews);
 mount("bar-title", document.body);
 mount("bar-sub", document.body);
 mount("nav-leads-badge", document.body);
@@ -291,6 +293,14 @@ try {
   ok("📣 Marketing still works", /jos-mkt|Marketing|Campaign/i.test(mktHtml) && mktHtml.length > 200, "len=" + mktHtml.length);
 } catch (e) {
   ok("📣 Marketing still works", false, String(e.message || e));
+}
+
+try {
+  H.renderReviews();
+  const revHtml = document.getElementById("jos-reviews-root").innerHTML;
+  ok("⭐ Reviews still works", /jos-rev|Reviews|Reputation|Inbox/i.test(revHtml) && revHtml.length > 200, "len=" + revHtml.length);
+} catch (e) {
+  ok("⭐ Reviews still works", false, String(e.message || e));
 }
 
 console.warn = _warn;

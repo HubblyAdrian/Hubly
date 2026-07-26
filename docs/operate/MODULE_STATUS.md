@@ -38,10 +38,11 @@ Before approval of any new module PR, verify previously **locked** modules still
 - 🧭 Pipeline still works  
 - 🌐 Storefront still works  
 - 📣 Marketing still works  
+- ⭐ Reviews still works  
 - (+ each newly locked module)
 
 Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).  
-**Note:** CMV evaluates `design-system.js` before `journey.js` (same load order as `hubly.html`).
+**Note:** CMV evaluates `design-system.js` → `hubly-events.js` → `journey.js` (same load order as `hubly.html`).
 
 ---
 
@@ -57,8 +58,8 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 🧭 Pipeline | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🌐 Storefront | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📣 Marketing | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
-| 🔁 Memberships | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
+| ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
+| 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
 | 💰 Revenue | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 📊 Reports | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | ✨ Ask Hubly | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
@@ -78,10 +79,20 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 6 | 🧭 Pipeline | ✅ Locked | ⏸ | [#249](https://github.com/HubblyAdrian/Hubly/pull/249) | 🔒 OS · MAT ✅ · HublyDS v1 · merged |
 | 7 | 🌐 Storefront | ✅ Locked | ⏸ | [#250](https://github.com/HubblyAdrian/Hubly/pull/250) | 🔒 OS · MAT ✅ · Service Catalog owner · merged |
 | 8 | 📣 Marketing | ✅ Locked | ⏸ | [#251](https://github.com/HubblyAdrian/Hubly/pull/251) | 🔒 OS · MAT ✅ · Rules #14–16 · merged |
-| 9 | ⭐ Reviews | ✅ OS complete · MAT ✅ · CMV PASS | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | Owns `S.reviewsOs` · Rule #17 HublyEvents · awaiting approval → then 🔒 OS |
-| 10–14 | Remaining | ⏳ | ⏸ | — | |
+| 9 | ⭐ Reviews | ✅ Locked | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | 🔒 OS · MAT ✅ · Rule #17 · merged |
+| 10 | 🔁 Memberships | ⏳ OS implemented (Stage 1) | ⏸ | — | Owns `S.membershipsOs` · Rules #18–19 · `cursor/operate-memberships-2662` · MAT ⏳ |
+| 11–14 | Remaining | ⏳ | ⏸ | — | Revenue · Reports · Ask Hubly · Settings |
+
+### ⭐ Reviews lock
+
+**Stage 1 — Operating System:** ✅ COMPLETE  
+**Stage 2 — Integrations:** ⏸ Deferred  
+
+**Do not modify Reviews unless:** bug fix · Stage 2 integrations · explicit module reopen.
 
 ## Workflow
 
 Planning → Development (Stage 1 OS) → Self QA → **MAT** → **CMV** → PR → Approval → Merge → **Lock OS**  
 Later: Stage 2 Integrations → separate PR
+
+**Engineering rules:** #14–19 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md))
