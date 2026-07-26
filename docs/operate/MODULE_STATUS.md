@@ -1,30 +1,77 @@
-# Hubly Operate — Module Status
+# Hubly Operate — Module Maturity Board
 
-Status values: **Planning** · **In Progress** · **QA** · **Approved** · **Merged** · **Locked**
+## Status keys
 
-Once a module is **Locked**, do not change it unless:
+| Symbol | Meaning |
+|--------|---------|
+| ✅ | Complete |
+| ⏸ | Deferred / not started for this stage |
+| ⏳ | Pending |
+| 🔒 | Locked |
+| 🔓 | Open (Stage 1 OS locked; Stage 2 may continue) |
+| ❌ | Not started |
 
-- it is a bug fix,
-- the module is explicitly reopened, or
-- another module has a documented dependency that requires a change.
+## Stages (every module)
 
-| # | Module | Status | PR | Notes |
-|---|--------|--------|----|-------|
-| 1 | 🏠 Home | **Locked** | [#242](https://github.com/HubblyAdrian/Hubly/pull/242) | Merged `a7d0aff` · checklist 100% |
-| 2 | 📥 Inbox | QA | — | Branch `cursor/operate-inbox-2662` · `INBOX_CHECKLIST.md` |
-| 3 | 📅 Jobs & Calendar | — | — | Not started |
-| 4 | 🧲 Leads | — | — | Not started |
-| 5 | 👥 Customers | — | — | Not started |
-| 6 | 🧭 Pipeline | — | — | Not started |
-| 7 | 🌐 Storefront | — | — | Not started |
-| 8 | 📣 Marketing | — | — | Not started |
-| 9 | ⭐ Reviews | — | — | Not started |
-| 10 | 🔁 Memberships | — | — | Not started |
-| 11 | 💰 Revenue | — | — | Not started |
-| 12 | 📊 Reports | — | — | Not started |
-| 13 | ✨ Ask Hubly | — | — | Not started |
-| 14 | ⚙️ Settings | — | — | Not started |
+1. **Operating System (Stage 1)** — Everything inside Hubly works. No external APIs required.  
+2. **Live Integrations (Stage 2)** — Twilio, Meta, Resend, Realtime, OAuth, calendars, payments, etc.  
+3. **Lock** — After Stage 1 merge (OS locked). Stage 2 is a separate PR when opened. Full lock when both stages (and AI/QA) are done, or when OS is locked and Stage 2 remains deferred by choice.
 
-## Workflow (required)
+### Lock rules
 
-Planning → Development → Self QA → PR → Approval → Merge → **Lock module**
+Once **Stage 1 (Operating System)** is locked for a module, do not change that OS implementation unless:
+
+- fixing a bug,
+- implementing **Stage 2** integrations (additive),
+- or the module is explicitly reopened.
+
+Do not ship placeholder integrations that pretend to be live. Stage 2 items must be clearly tracked and CTAs must not claim “connected” unless they are.
+
+---
+
+## Maturity board
+
+| Module | OS | Integrations | AI | QA | Locked |
+|--------|----|--------------|----|----|--------|
+| 🏠 Home | ✅ | ✅ | ✅ | ✅ | 🔒 |
+| 📥 Inbox | ✅ | ⏸ | ✅ | ✅ | 🔓 |
+| 📅 Jobs & Calendar | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+| 🧲 Leads | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+| 👥 Customers | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+| 🧭 Pipeline | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+| 🌐 Storefront | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+| 📣 Marketing | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+| ⭐ Reviews | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+| 🔁 Memberships | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+| 💰 Revenue | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+| 📊 Reports | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+| ✨ Ask Hubly | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+| ⚙️ Settings | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+
+---
+
+## Module detail
+
+| # | Module | Stage 1 (OS) | Stage 2 (Integrations) | PR | Notes |
+|---|--------|--------------|------------------------|----|-------|
+| 1 | 🏠 Home | ✅ COMPLETE · Locked | ✅ N/A / complete for Home scope | [#242](https://github.com/HubblyAdrian/Hubly/pull/242) | Full lock |
+| 2 | 📥 Inbox | ✅ COMPLETE · Locked | ⏸ Deferred | [#244](https://github.com/HubblyAdrian/Hubly/pull/244) | OS locked; Stage 2 = Twilio / Meta / Resend / Realtime |
+| 3 | 📅 Jobs & Calendar | ⏳ Planning | ⏳ | — | Next |
+| 4 | 🧲 Leads | ⏳ | ⏳ | — | |
+| 5 | 👥 Customers | ⏳ | ⏳ | — | |
+| 6 | 🧭 Pipeline | ⏳ | ⏳ | — | |
+| 7 | 🌐 Storefront | ⏳ | ⏳ | — | |
+| 8 | 📣 Marketing | ⏳ | ⏳ | — | |
+| 9 | ⭐ Reviews | ⏳ | ⏳ | — | |
+| 10 | 🔁 Memberships | ⏳ | ⏳ | — | |
+| 11 | 💰 Revenue | ⏳ | ⏳ | — | |
+| 12 | 📊 Reports | ⏳ | ⏳ | — | |
+| 13 | ✨ Ask Hubly | ⏳ | ⏳ | — | |
+| 14 | ⚙️ Settings | ⏳ | ⏳ | — | |
+
+## Workflow
+
+Planning → Development (Stage 1 OS) → Self QA → PR → Approval → Merge → **Lock Stage 1 OS**  
+Later: Stage 2 Integrations → PR → Approval → Merge → update maturity board
+
+Checklists: see [README.md](./README.md)

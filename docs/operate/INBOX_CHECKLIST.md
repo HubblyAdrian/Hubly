@@ -1,15 +1,16 @@
 # Module 2 — 📥 Inbox
 
-**Status:** QA  
-**Branch:** `cursor/operate-inbox-2662`  
-**Source of truth:** This checklist
+**PR:** [#244](https://github.com/HubblyAdrian/Hubly/pull/244) · Merged `895f666`
 
-Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked · ☐ Pending
+Legend: ✅ Complete · ⏸ Deferred · 🔴 Blocked
 
 ---
 
-## Core Layout
+## Stage 1 — Operating System ✅ COMPLETE · LOCKED
 
+Everything inside Hubly works. No external APIs required.
+
+### Core Layout
 | Item | Status |
 |------|--------|
 | Inbox page | ✅ |
@@ -17,8 +18,7 @@ Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked · ☐ Pending
 | Conversation window | ✅ |
 | Customer sidebar | ✅ |
 
-## Tabs
-
+### Tabs
 | Item | Status |
 |------|--------|
 | All Conversations | ✅ |
@@ -31,8 +31,7 @@ Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked · ☐ Pending
 | Needs Attention | ✅ |
 | Archived | ✅ |
 
-## Conversation List
-
+### Conversation List
 | Item | Status |
 |------|--------|
 | Customer name | ✅ |
@@ -44,8 +43,7 @@ Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked · ☐ Pending
 | Search | ✅ |
 | Filters | ✅ |
 
-## Conversation Window
-
+### Conversation Window
 | Item | Status |
 |------|--------|
 | Timeline | ✅ |
@@ -56,8 +54,7 @@ Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked · ☐ Pending
 | Reply Box | ✅ |
 | Internal Notes | ✅ |
 
-## Customer Sidebar
-
+### Customer Sidebar
 | Item | Status |
 |------|--------|
 | Customer Info | ✅ |
@@ -68,8 +65,7 @@ Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked · ☐ Pending
 | AI Summary | ✅ |
 | Quick Actions | ✅ |
 
-## Website Chat
-
+### Website Chat (in-app)
 | Item | Status |
 |------|--------|
 | Live Chat | ✅ |
@@ -78,45 +74,33 @@ Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked · ☐ Pending
 | Booking Button | ✅ |
 | Quote Button | ✅ |
 
-## SMS
-
+### SMS (in-app OS)
 | Item | Status |
 |------|--------|
-| Twilio Integration | 🟡 Deferred — UI + `sms:` compose + Settings CTA; product Twilio send not live yet |
 | Templates | ✅ |
-| Schedule SMS | ✅ |
+| Schedule SMS (in-app) | ✅ |
 | AI Rewrite | ✅ |
+| Open native Messages (`sms:`) | ✅ |
 
-## Email
-
+### Email (in-app OS)
 | Item | Status |
 |------|--------|
 | Inbox | ✅ |
-| Reply | ✅ |
+| Reply (composer / mailto) | ✅ |
 | Attachments | ✅ |
 | AI Draft | ✅ |
-| Schedule Email | ✅ |
+| Schedule Email (in-app) | ✅ |
 
-## Facebook
-
+### Facebook / Instagram (in-app OS)
 | Item | Status |
 |------|--------|
-| Messenger | ✅ |
+| Messenger / DM inbox views | ✅ |
 | Reply | ✅ |
 | AI Reply | ✅ |
 | Customer Matching | ✅ |
+| Booking Shortcut (IG) | ✅ |
 
-## Instagram
-
-| Item | Status |
-|------|--------|
-| DM Inbox | ✅ |
-| Reply | ✅ |
-| Customer Matching | ✅ |
-| Booking Shortcut | ✅ |
-
-## AI Features
-
+### AI Features (in-app)
 | Item | Status |
 |------|--------|
 | AI Summary | ✅ |
@@ -126,8 +110,7 @@ Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked · ☐ Pending
 | Lead Detection | ✅ |
 | Suggested Actions | ✅ |
 
-## Needs Attention
-
+### Needs Attention
 | Item | Status |
 |------|--------|
 | High Priority Leads | ✅ |
@@ -135,8 +118,7 @@ Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked · ☐ Pending
 | AI Failed Conversations | ✅ |
 | VIP Customers | ✅ |
 
-## Search
-
+### Search
 | Item | Status |
 |------|--------|
 | Customer | ✅ |
@@ -145,25 +127,27 @@ Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked · ☐ Pending
 | Vehicle | ✅ |
 | Message Content | ✅ |
 
-## Definition of Done
-
+### Stage 1 Definition of Done
 | Item | Status |
 |------|--------|
-| Realtime messaging | 🟡 Deferred — optimistic send + refresh; full websocket/realtime sync next |
 | Unified conversation timeline | ✅ |
-| AI functioning | ✅ |
-| Meta integration connected | 🟡 Deferred — channel UI + Settings connect CTA; OAuth/live Meta sync next |
-| Twilio connected | 🟡 Deferred — channel UI + Settings CTA; live Twilio send next |
-| Resend connected | 🟡 Deferred — email reply via mailto + platform Resend exists; per-business inbox send next |
+| AI functioning (in-app) | ✅ |
+| Every control works or opens a real in-app action | ✅ |
+| No fake “connected” integration claims | ✅ |
+
+**Stage 1 OS is locked.** Do not modify Inbox OS unless bug fix, Stage 2 work, or explicit reopen.
 
 ---
 
-## Self QA
+## Stage 2 — Live Integrations ⏸ DEFERRED
 
-| Check | Result |
-|-------|--------|
-| Buttons / actions | 21+ Inbox acts exercised in smoke |
-| Tabs | All 9 tabs present |
-| Console errors | 0 |
-| Validator | PASS |
-| Home untouched | ✅ (Home locked; no Home renderer edits) |
+Separate PR when opened. Do not pretend these are live in Stage 1 UI.
+
+| Item | Status |
+|------|--------|
+| Twilio live send / sync | ⏸ |
+| Meta (Facebook / Instagram) OAuth + sync | ⏸ |
+| Resend per-business inbox send | ⏸ |
+| Realtime websocket / live sync | ⏸ |
+
+Connect CTAs may route to Settings; they must not show as connected until Stage 2 is done.

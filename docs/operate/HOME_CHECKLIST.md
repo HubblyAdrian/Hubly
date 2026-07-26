@@ -1,14 +1,23 @@
 # Module 1 — 🏠 Home
 
-**Status:** Locked (100% complete)  
+**Status:** 🔒 Fully locked  
 **PR:** [#242](https://github.com/HubblyAdrian/Hubly/pull/242)  
 **Merged:** 2026-07-26 (`a7d0aff`)
 
-Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked
+| Stage | Status |
+|-------|--------|
+| Stage 1 — Operating System | ✅ COMPLETE · Locked |
+| Stage 2 — Live Integrations | ✅ COMPLETE for Home scope (demo/API data paths in-app) |
+
+Legend: ✅ Complete · ⏸ Deferred · 🔴 Blocked
+
+Do not modify Home unless bug fix or explicit reopen.
 
 ---
 
-## Core Layout
+## Stage 1 — Operating System
+
+### Core Layout
 
 | Item | Status |
 |------|--------|
@@ -67,7 +76,11 @@ Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked
 | Temperature | ✅ |
 | Wind | ✅ |
 | AI weather suggestions | ✅ |
-| Live weather provider API | 🟡 Deferred |
+
+### Stage 2 note
+| Item | Status |
+|------|--------|
+| Live weather provider API | ⏸ Deferred (optional Stage 2) |
 
 ## Activity Feed
 
@@ -108,12 +121,16 @@ Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked
 | Empty states | ✅ |
 | Error states | ✅ |
 | Permissions (revenue hide for staff/viewer) | ✅ |
-| Full RBAC matrix | 🟡 Deferred |
 | Mobile | ✅ |
 | Tablet | ✅ |
 | Animations | ✅ |
-| Freeform drag-reorder widgets | 🟡 Deferred |
-| Post-deploy pixel QA | 🟡 Deferred |
+
+### Deferred / optional follow-ups
+| Item | Status |
+|------|--------|
+| Full RBAC matrix | ⏸ |
+| Freeform drag-reorder widgets | ⏸ |
+| Post-deploy pixel QA | ⏸ |
 
 ## Definition of Done
 
@@ -127,4 +144,4 @@ Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked
 
 ---
 
-**Module 1 (🏠 Home): COMPLETE · LOCKED**
+**Module 1 (🏠 Home): Stage 1 + scope complete · FULLY LOCKED**
