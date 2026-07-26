@@ -1,7 +1,8 @@
 # Module 5 — ❤️ Customers
 
-**Status:** OS Complete · MAT ✅ ACCEPTED  
+**Status:** 🔒 OS LOCKED (Stage 1) — merged #248  
 **Branch:** `cursor/operate-customers-2662`  
+**PR:** [#248](https://github.com/HubblyAdrian/Hubly/pull/248)  
 **Stage in scope:** Stage 1 — Operating System  
 **Golden profile:** Reuse `openCustomerProfile` / profile shell everywhere (Leads, Inbox, Jobs, Pipeline, Revenue, Reports, Ask Hubly)
 
@@ -89,7 +90,13 @@ The Customers module is the permanent record for every client. Stage 1 runs on H
 - [x] Golden profile reused (not a second profile UI) ✅
 - [x] MAT ✅ ACCEPTED ✅
 - [x] CMV ✅ PASS ✅ (locked modules)
-- [x] Ready for merge → lock 🔒 OS after approval ⏳
+- [x] Ready for merge → lock 🔒 OS after approval ✅
+
+---
+
+## Lock
+
+**Customers Operating System is locked (🔒 OS).** Do not modify Stage 1 OS unless bug fix, Stage 2 integrations, or explicit reopen.
 
 ---
 
