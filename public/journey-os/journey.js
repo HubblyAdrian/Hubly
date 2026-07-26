@@ -683,49 +683,700 @@
     bindRoot(root);
   }
 
+  var MKT_TABS = [
+    ['overview', 'Overview'],
+    ['campaigns', 'Campaigns'],
+    ['email', 'Email'],
+    ['sms', 'SMS'],
+    ['social', 'Social'],
+    ['ads', 'Ads'],
+    ['automations', 'Automations'],
+    ['coupons', 'Coupons'],
+    ['ai', 'AI Studio']
+  ];
+  var MKT_SEGMENTS = [
+    ['all_customers', 'All customers'],
+    ['vip', 'VIP / favorites'],
+    ['members', 'Members'],
+    ['win_back', 'Win-back'],
+    ['open_leads', 'Open leads'],
+    ['ai_qualified_leads', 'AI qualified leads']
+  ];
+  var MKT_CHANNEL_LABEL = { email: 'Email', sms: 'SMS', social: 'Social', meta: 'Meta Ads', multi: 'Multi-channel' };
+  var MKT_STATUS_TONE = { draft: 'quote', scheduled: 'info', active: 'ok', paused: 'warn', done: 'lost' };
+
+  function mktId(prefix) { return (prefix || 'mkt') + '_' + Math.random().toString(36).slice(2, 9); }
+
+  function ensureMarketingOsState() {
+    var st = S();
+    if (!st.marketingOs || typeof st.marketingOs !== 'object') st.marketingOs = {};
+    var m = st.marketingOs;
+    if (!Array.isArray(m.campaigns)) {
+      m.campaigns = [
+        { id: 'mkt_camp_1', name: 'Spring ceramic push', channel: 'email', status: 'active', audience: { type: 'segment', key: 'members' }, serviceId: 'sf_svc_3', subject: 'Member pricing on ceramic', body: 'Book ceramic coating this month with member pricing.', scheduledAt: todayStr(), stats: { sends: 42, opens: 18, clicks: 9, attributedRevenue: 0 } },
+        { id: 'mkt_camp_2', name: 'Win-back SMS', channel: 'sms', status: 'scheduled', audience: { type: 'segment', key: 'win_back' }, body: 'We miss you — 15% off your next detail. Book online anytime.', scheduledAt: todayStr(), stats: { sends: 0, clicks: 0 } },
+        { id: 'mkt_camp_3', name: 'Instagram before/after', channel: 'social', status: 'draft', audience: { type: 'segment', key: 'all_customers' }, body: 'Swipe for the glow-up — Book Now link in bio.', stats: {} }
+      ];
+    }
+    if (!Array.isArray(m.templates)) {
+      m.templates = [
+        { id: 'mkt_tpl_email_1', kind: 'email', name: 'Thank-you + rebook', subject: 'Thanks for trusting us', body: 'Hi {{name}}, thanks for your visit. Ready to rebook? Tap your personalized link.' },
+        { id: 'mkt_tpl_email_2', kind: 'email', name: 'Seasonal promo', subject: 'Limited-time detail offer', body: 'This week only — upgrade your package and save.' },
+        { id: 'mkt_tpl_sms_1', kind: 'sms', name: 'Win-back text', body: 'Hi {{name}}, it has been a while. Reply BOOK for 15% off your next visit.' },
+        { id: 'mkt_tpl_sms_2', kind: 'sms', name: 'Appointment reminder', body: 'Reminder: your {{service}} is tomorrow. Reply C to confirm.' },
+        { id: 'mkt_tpl_social_1', kind: 'social', name: 'Before / after post', body: 'Transformation Tuesday — Book your detail. Link in bio.' },
+        { id: 'mkt_tpl_social_2', kind: 'social', name: 'Review spotlight', body: '5-star love from a happy customer. See why locals book with us.' }
+      ];
+    }
+    if (!Array.isArray(m.automations)) {
+      m.automations = [
+        { id: 'review_requests', name: 'Review Requests', on: true, desc: 'Ask for a review after completed jobs.' },
+        { id: 'follow_up', name: 'Follow-up Emails', on: true, desc: 'Thank-you and rebook nudges after service.' },
+        { id: 'birthday', name: 'Birthday', on: true, desc: 'Birthday offer for customers with a date on file.' },
+        { id: 're_engage', name: 'Re-engage', on: false, desc: 'Win-back sequence for quiet customers.' },
+        { id: 'smart_promos', name: 'Smart Promotions', on: false, desc: 'AI-suggested promos based on open capacity.' }
+      ];
+    }
+    if (!Array.isArray(m.coupons)) {
+      m.coupons = [
+        { id: 'mkt_cpn_1', code: 'SPRING15', label: '15% spring detail', discount: 15, type: 'pct', active: true, uses: 12 },
+        { id: 'mkt_cpn_2', code: 'WELCOME25', label: '$25 off first booking', discount: 25, type: 'flat', active: true, uses: 4 }
+      ];
+    }
+    if (!Array.isArray(m.calendar)) {
+      m.calendar = [
+        { id: 'mkt_cal_1', title: 'Before/after carousel', channel: 'instagram', scheduledAt: todayStr(), status: 'scheduled', body: 'Showcase paint correction results with Book Now CTA.' },
+        { id: 'mkt_cal_2', title: 'Member spotlight', channel: 'facebook', scheduledAt: todayStr(), status: 'draft', body: 'Highlight Shine Club perks and priority booking.' }
+      ];
+    }
+    if (!Array.isArray(m.ads)) {
+      m.ads = [
+        { id: 'mkt_ad_1', name: 'Local detail — leads', platform: 'meta', status: 'active', spend: 420, leads: 28, cpl: 15, clicks: 312, impressions: 8400 },
+        { id: 'mkt_ad_2', name: 'Ceramic retargeting', platform: 'meta', status: 'paused', spend: 180, leads: 9, cpl: 20, clicks: 96, impressions: 2100 }
+      ];
+    }
+    if (m.score == null) m.score = marketingScore();
+    if (!m.toggles || typeof m.toggles !== 'object') m.toggles = {};
+    m.automations.forEach(function (a) {
+      if (m.toggles[a.id] == null) m.toggles[a.id] = !!a.on;
+      a.on = !!m.toggles[a.id];
+    });
+    m.campaigns.forEach(function (c) {
+      if (!c.stats) c.stats = {};
+      if (c.stats.attributedRevenue == null && c.status === 'active') c.stats.attributedRevenue = mktAttributedRevenueDemo();
+    });
+    return m;
+  }
+
   function marketingScore() {
+    var m = S().marketingOs;
+    if (m && m.score != null && m.score > 0) return Math.round(m.score);
     var revN = (S().website?.manualReviews || S().manualReviews || []).length;
     var done = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).length;
     var custN = customers().length;
     return Math.max(50, Math.min(90, 50 + Math.min(12, revN * 3) + Math.min(16, done * 2) + Math.min(12, custN)));
   }
+
   function sparkHtml(vals) {
     var max = Math.max.apply(null, vals.concat([1]));
     return '<div class="jos-spark">' + vals.map(function (v) { return '<i style="height:' + Math.max(12, Math.round((v / max) * 100)) + '%"></i>'; }).join('') + '</div>';
   }
-  function renderMarketing() {
-    var root = el('jos-marketing-root'); if (!root) return;
-    var score = marketingScore();
-    var done = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; });
-    var rev = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    var mktRev = Math.round(rev * 0.18);
-    var newCust = Math.min(customers().length, Math.max(2, Math.round(customers().length * 0.2)));
-    var clicks = 40 + customers().length * 8 + done.length * 5;
-    var actions = [
-      { t: 'Holiday / seasonal promo', s: 'Push a limited offer before the next busy weekend.', q: 'Draft a holiday promo for my detailing business' },
-      { t: 'Instagram caption kit', s: 'Before/after posts with a Book Now CTA.', q: 'Write 3 Instagram captions with booking CTAs' },
-      { t: 'Testimonial spotlight', s: 'Turn a 5-star review into a shareable post.', q: 'Turn my best review into a social testimonial post' },
-      { t: 'Win-back campaign', s: 'Re-engage customers quiet for 60+ days.', q: 'Draft a win-back text for quiet customers' },
-      { t: 'Email nurture', s: 'Short sequence: thank-you → tip → rebook.', q: 'Write a 3-email nurture sequence after a job' }
-    ];
-    var months = ['Aug — Back-to-school clean', 'Sep — Fall ceramic push', 'Oct — Pre-winter undercarriage', 'Nov — Holiday gift cards', 'Dec — Year-end membership'];
-    var toggles = ['Review Requests', 'Follow-up Emails', 'Birthday', 'Re-engage', 'Smart Promotions'];
-    root.innerHTML = page('Operate · Marketing', 'Marketing Center', 'Score, today’s actions, and light automation — Hubly brand, ready to generate.', btn('preview', 'Open website', 'jos-btn-brand jos-btn-sm'),
-      '<div class="jos-mkt-head"><div class="jos-score-ring" style="--jos-pct:' + score + '"><span>' + score + '</span><small>Marketing Score</small></div><div><h2 class="jos-mkt-title">Keep the booking link warm</h2><p class="jos-muted">Warm traffic + reviews + seasonal pushes. Generate with Ask Hubly.</p></div></div>' +
-      '<div class="jos-mkt-3col"><div class="jos-card"><div class="jos-kicker">Today’s Marketing</div><div class="jos-stack jos-mt">' + actions.map(function (a) {
-        return '<div class="jos-mkt-act"><div><strong>' + esc(a.t) + '</strong><div class="jos-muted">' + esc(a.s) + '</div></div><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-ask="' + esc(a.q) + '">Generate</button></div>';
-      }).join('') + '</div></div><div class="jos-card"><div class="jos-kicker">Performance</div><div class="jos-stack jos-mt">' +
-      [['Website clicks', clicks, [32, 48, 40, 55, 62, 58, 70]], ['New customers', newCust, [1, 2, 1, 3, 2, 4, newCust]], ['Revenue from marketing', money(mktRev) || '$0', [20, 35, 28, 42, 50, 45, 60]], ['Email open rate', '42%', [30, 38, 35, 44, 40, 48, 42]], ['Instagram engagement', '6.8%', [4, 5, 5.5, 6, 7, 6.2, 6.8]]].map(function (r) {
-        return '<div class="jos-mkt-metric"><div><div class="jos-kpi-lbl">' + esc(r[0]) + '</div><div class="jos-kpi-v" style="font-size:18px">' + esc(String(r[1])) + '</div></div>' + sparkHtml(r[2]) + '</div>';
-      }).join('') + '</div></div><div class="jos-card"><div class="jos-kicker">AI Calendar</div><div class="jos-stack jos-mt">' + months.map(function (m) {
-        return '<div class="jos-mkt-cal"><span class="jos-pill quote">Soon</span><span>' + esc(m) + '</span></div>';
-      }).join('') + '</div></div></div>' +
-      '<div class="jos-card jos-mt"><div class="jos-kicker">Marketing Automation</div><div class="jos-toggle-row jos-mt">' + toggles.map(function (t, i) {
-        return '<label class="jos-toggle"><input type="checkbox"' + (i < 3 ? ' checked' : '') + ' disabled><span></span>' + esc(t) + '</label>';
-      }).join('') + '</div></div>');
-    bindRoot(root);
+
+  function mktSegmentLabel(key) {
+    var row = MKT_SEGMENTS.find(function (s) { return s[0] === key; });
+    return row ? row[1] : key;
   }
 
+  function mktLastJobDate(c) {
+    var done = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock && j.customer === c.name; });
+    if (!done.length) return null;
+    done.sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
+    return done[0].date || null;
+  }
+
+  function mktSegmentCount(key) {
+    var custs = customers();
+    if (key === 'all_customers') return custs.length;
+    if (key === 'vip') return custs.filter(function (c) { return c.favorite || (c.tags || []).indexOf('vip') >= 0; }).length;
+    if (key === 'members') return custs.filter(function (c) { return c.customerType === 'recurring' || c.isReturning || c.membership; }).length;
+    if (key === 'win_back') {
+      var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60);
+      var cut = cutoff.toISOString().slice(0, 10);
+      return custs.filter(function (c) {
+        var last = mktLastJobDate(c);
+        return last && String(last).slice(0, 10) < cut;
+      }).length;
+    }
+    if (key === 'open_leads') return pipelineLeadSource().length;
+    if (key === 'ai_qualified_leads') return pipelineLeadSource().filter(function (l) { return l.aiQualified; }).length;
+    return 0;
+  }
+
+  function mktSampleCustomerId(key) {
+    var custs = customers();
+    if (!custs.length) return null;
+    if (key === 'members') {
+      var mem = custs.find(function (c) { return c.customerType === 'recurring'; });
+      return (mem || custs[0]).id;
+    }
+    if (key === 'vip') {
+      var vip = custs.find(function (c) { return c.favorite; });
+      return (vip || custs[0]).id;
+    }
+    return custs[0].id;
+  }
+
+  function mktServiceName(serviceId) {
+    if (!serviceId) return '';
+    ensureStorefrontOsState();
+    var svc = storefrontCatalog().find(function (s) { return String(s.id) === String(serviceId); });
+    return svc ? svc.name : '';
+  }
+
+  function mktAttributedRevenueDemo() {
+    var done = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; });
+    var rev = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    return Math.round(rev * 0.18) || 0;
+  }
+
+  function mktTemplates(kind) {
+    return ensureMarketingOsState().templates.filter(function (t) { return !kind || t.kind === kind; });
+  }
+
+  function mktCampStatusBadge(status) {
+    var d = DS();
+    var lbl = String(status || 'draft').replace(/_/g, ' ');
+    lbl = lbl.charAt(0).toUpperCase() + lbl.slice(1);
+    return d ? d.statusBadge(lbl, MKT_STATUS_TONE[status] || 'quote') : '<span class="jos-pill ' + esc(MKT_STATUS_TONE[status] || 'quote') + '">' + esc(lbl) + '</span>';
+  }
+
+  function mktTodayActions() {
+    return [
+      { t: 'Holiday / seasonal promo', s: 'Push a limited offer before the next busy weekend.', q: 'Draft a holiday promo for my detailing business', act: 'mkt-ai-campaign' },
+      { t: 'Instagram caption kit', s: 'Before/after posts with a Book Now CTA.', q: 'Write 3 Instagram captions with booking CTAs', act: 'mkt-ai-post' },
+      { t: 'Testimonial spotlight', s: 'Turn a 5-star review into a shareable post.', q: 'Turn my best review into a social testimonial post', act: 'mkt-ai-post' },
+      { t: 'Win-back campaign', s: 'Re-engage customers quiet for 60+ days.', q: 'Draft a win-back text for quiet customers', act: 'mkt-ai-sms' },
+      { t: 'Email nurture', s: 'Short sequence: thank-you, tip, rebook.', q: 'Write a 3-email nurture sequence after a job', act: 'mkt-ai-email' }
+    ];
+  }
+
+  function renderMktCampaignModal(root) {
+    if (!root._josMktCampModal) return '';
+    var d = root._josMktCampDraft || {};
+    var editing = !!d.id;
+    var segOpts = MKT_SEGMENTS.map(function (s) {
+      return '<option value="' + esc(s[0]) + '"' + ((d.audience && d.audience.key) === s[0] || (!d.audience && s[0] === 'all_customers') ? ' selected' : '') + '>' + esc(s[1]) + ' (' + mktSegmentCount(s[0]) + ')</option>';
+    }).join('');
+    ensureStorefrontOsState();
+    var svcOpts = '<option value="">— Optional service —</option>' + storefrontCatalog().filter(function (s) { return s.status !== 'archived'; }).map(function (s) {
+      return '<option value="' + esc(String(s.id)) + '"' + (String(d.serviceId) === String(s.id) ? ' selected' : '') + '>' + esc(s.name) + '</option>';
+    }).join('');
+    var chOpts = ['email', 'sms', 'social', 'meta', 'multi'].map(function (c) {
+      return '<option value="' + c + '"' + ((d.channel || 'email') === c ? ' selected' : '') + '>' + esc(MKT_CHANNEL_LABEL[c] || c) + '</option>';
+    }).join('');
+    return '<div class="jos-mkt-modal" data-jos-mkt-modal="1"><div class="jos-mkt-modal-panel">' +
+      '<h3>' + (editing ? 'Edit campaign' : 'Create campaign') + '</h3>' +
+      '<div class="jos-mkt-form">' +
+      '<label>Name<input id="jos-mkt-camp-name" type="text" value="' + esc(d.name || '') + '"></label>' +
+      '<label>Channel<select id="jos-mkt-camp-channel">' + chOpts + '</select></label>' +
+      '<label>Audience<select id="jos-mkt-camp-audience">' + segOpts + '</select></label>' +
+      '<label>Service (Storefront catalog)<select id="jos-mkt-camp-service">' + svcOpts + '</select></label>' +
+      '<label>Subject<input id="jos-mkt-camp-subject" type="text" value="' + esc(d.subject || '') + '"></label>' +
+      '<label class="jos-mkt-span2">Body<textarea id="jos-mkt-camp-body" class="jos-textarea">' + esc(d.body || '') + '</textarea></label>' +
+      '<label>Schedule<input id="jos-mkt-camp-schedule" type="date" value="' + esc(String(d.scheduledAt || todayStr()).slice(0, 10)) + '"></label>' +
+      '<label>Status<select id="jos-mkt-camp-status">' +
+        ['draft', 'scheduled', 'active', 'paused'].map(function (s) {
+          return '<option value="' + s + '"' + ((d.status || 'draft') === s ? ' selected' : '') + '>' + esc(s) + '</option>';
+        }).join('') +
+      '</select></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' +
+        dsBtn('mkt-camp-save', editing ? 'Save changes' : 'Create campaign', 'jos-btn-brand jos-btn-sm') +
+        dsBtn('mkt-camp-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
+      '</div></div></div>';
+  }
+
+  function renderMktTemplateModal(root, kind) {
+    if (!root._josMktTplModal || root._josMktTplKind !== kind) return '';
+    var d = root._josMktTplDraft || {};
+    var editing = !!d.id;
+    return '<div class="jos-mkt-modal" data-jos-mkt-modal="1"><div class="jos-mkt-modal-panel">' +
+      '<h3>' + (editing ? 'Edit' : 'New') + ' ' + esc(kind) + ' template</h3>' +
+      '<div class="jos-mkt-form">' +
+      '<label>Name<input id="jos-mkt-tpl-name" type="text" value="' + esc(d.name || '') + '"></label>' +
+      (kind === 'email' ? '<label>Subject<input id="jos-mkt-tpl-subject" type="text" value="' + esc(d.subject || '') + '"></label>' : '') +
+      '<label class="jos-mkt-span2">Body<textarea id="jos-mkt-tpl-body" class="jos-textarea">' + esc(d.body || '') + '</textarea></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' +
+        dsBtn('mkt-tpl-save', 'Save template', 'jos-btn-brand jos-btn-sm') +
+        dsBtn('mkt-tpl-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
+      '</div></div></div>';
+  }
+
+  function renderMktCouponModal(root) {
+    if (!root._josMktCpnModal) return '';
+    var d = root._josMktCpnDraft || {};
+    return '<div class="jos-mkt-modal" data-jos-mkt-modal="1"><div class="jos-mkt-modal-panel">' +
+      '<h3>Create coupon</h3>' +
+      '<div class="jos-mkt-form">' +
+      '<label>Code<input id="jos-mkt-cpn-code" type="text" value="' + esc(d.code || '') + '" placeholder="SPRING15"></label>' +
+      '<label>Label<input id="jos-mkt-cpn-label" type="text" value="' + esc(d.label || '') + '"></label>' +
+      '<label>Type<select id="jos-mkt-cpn-type"><option value="pct"' + ((d.type || 'pct') === 'pct' ? ' selected' : '') + '>Percent</option><option value="flat"' + (d.type === 'flat' ? ' selected' : '') + '>Flat $</option></select></label>' +
+      '<label>Discount<input id="jos-mkt-cpn-discount" type="number" min="0" value="' + esc(String(d.discount != null ? d.discount : 15)) + '"></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' +
+        dsBtn('mkt-coupon-save', 'Save coupon', 'jos-btn-brand jos-btn-sm') +
+        dsBtn('mkt-coupon-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
+      '</div></div></div>';
+  }
+
+  function renderMktOverviewTab(root) {
+    var m = ensureMarketingOsState();
+    var score = marketingScore();
+    var d = DS();
+    var done = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; });
+    var mktRev = mktAttributedRevenueDemo();
+    var newCust = Math.min(customers().length, Math.max(2, Math.round(customers().length * 0.2)));
+    var clicks = 40 + customers().length * 8 + done.length * 5;
+    var actions = mktTodayActions();
+    var ring = d ? d.scoreRing(score, 'Marketing Score') : '<div class="jos-score-ring" style="--jos-pct:' + score + '"><span>' + score + '</span><small>Marketing Score</small></div>';
+    var kpis = d
+      ? d.metricCard('Website clicks', String(clicks), 'OS demo') +
+        d.metricCard('New customers', String(newCust), 'From Customers module') +
+        d.metricCard('Attributed revenue', money(mktRev) || '$0', 'Read from completed jobs') +
+        d.metricCard('Active campaigns', String(m.campaigns.filter(function (c) { return c.status === 'active'; }).length), 'Owned by Marketing')
+      : '';
+    var perf = [['Website clicks', clicks, [32, 48, 40, 55, 62, 58, 70]], ['New customers', newCust, [1, 2, 1, 3, 2, 4, newCust]], ['Revenue from marketing', money(mktRev) || '$0', [20, 35, 28, 42, 50, 45, 60]], ['Email open rate', '42%', [30, 38, 35, 44, 40, 48, 42]], ['Instagram engagement', '6.8%', [4, 5, 5.5, 6, 7, 6.2, 6.8]]].map(function (r) {
+      return '<div class="jos-mkt-metric"><div><div class="jos-kpi-lbl">' + esc(r[0]) + '</div><div class="jos-kpi-v" style="font-size:18px">' + esc(String(r[1])) + '</div></div>' + sparkHtml(r[2]) + '</div>';
+    }).join('');
+    var cal = m.calendar.slice(0, 5).map(function (item) {
+      return '<div class="jos-mkt-cal"><span class="jos-pill ' + esc(item.status === 'scheduled' ? 'info' : 'quote') + '">' + esc(item.status || 'draft') + '</span><span>' + esc(item.title) + ' · ' + esc(String(item.scheduledAt || '').slice(0, 10)) + '</span></div>';
+    }).join('');
+    var ai = d ? d.aiInsightCard({
+      kicker: 'AI · Marketing',
+      body: root._josMktAiBody || ('Score ' + score + ' — focus on win-back and seasonal pushes. Audiences resolve from Customers and Leads (no duplicate CRM).'),
+      actionsHtml: dsBtn('mkt-ai-budget', 'Budget tip', 'jos-btn jos-btn-sm') + dsBtn('go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm')
+    }) : '';
+    return '<div class="jos-mkt-overview">' +
+      '<div class="jos-mkt-head">' + ring + '<div><h2 class="jos-mkt-title">Keep the booking link warm</h2><p class="jos-muted">Campaigns, templates, and automations — audiences read from Customers and Leads.</p>' +
+      (d ? d.actionToolbar(dsBtn('preview', 'Preview Storefront', 'jos-btn jos-btn-sm') + dsBtn('mkt-open-customer', 'Open sample customer', 'jos-btn jos-btn-sm') + dsBtn('mkt-go-leads', 'Open leads', 'jos-btn jos-btn-sm')) : '') +
+      '</div></div>' +
+      (kpis ? '<div class="jos-mkt-kpis jos-mt">' + kpis + '</div>' : '') +
+      '<div class="jos-mkt-3col jos-mt">' +
+        '<div class="jos-card"><div class="jos-kicker">Today actions</div><div class="jos-stack jos-mt">' + actions.map(function (a) {
+          return '<div class="jos-mkt-act"><div><strong>' + esc(a.t) + '</strong><div class="jos-muted">' + esc(a.s) + '</div></div>' +
+            '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="' + esc(a.act) + '" data-jos-mkt-ask="' + esc(a.q) + '">Generate</button></div>';
+        }).join('') + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Performance</div><div class="jos-stack jos-mt">' + perf + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Content calendar</div><div class="jos-stack jos-mt">' + (cal || '<div class="jos-muted">No calendar items yet.</div>') + '</div></div>' +
+      '</div>' +
+      (ai ? '<div class="jos-mt">' + ai + '</div>' : '') +
+      '</div>';
+  }
+
+  function renderMktCampaignsTab(root) {
+    var m = ensureMarketingOsState();
+    var q = String(root._josMktQ || '').toLowerCase();
+    var list = m.campaigns.filter(function (c) {
+      if (!q) return true;
+      var blob = [c.name, c.channel, c.body, mktServiceName(c.serviceId), mktSegmentLabel(c.audience && c.audience.key)].join(' ').toLowerCase();
+      return blob.indexOf(q) >= 0;
+    });
+    var cards = list.length ? list.map(function (c) {
+      var aud = c.audience && c.audience.key ? c.audience.key : 'all_customers';
+      var svc = mktServiceName(c.serviceId);
+      return '<div class="jos-mkt-card" data-jos-mkt-camp="' + esc(c.id) + '">' +
+        '<div class="jos-mkt-card-h"><div><strong>' + esc(c.name) + '</strong><div class="jos-muted">' + esc(MKT_CHANNEL_LABEL[c.channel] || c.channel) + ' · ' + esc(mktSegmentLabel(aud)) + ' (' + mktSegmentCount(aud) + ')' + (svc ? ' · ' + esc(svc) : '') + '</div></div>' + mktCampStatusBadge(c.status) + '</div>' +
+        '<p class="jos-mkt-card-body">' + esc(c.body || c.subject || '') + '</p>' +
+        '<div class="jos-mkt-card-meta">Scheduled ' + esc(String(c.scheduledAt || '—').slice(0, 10)) +
+        (c.stats && c.stats.attributedRevenue ? ' · Attributed ' + esc(money(c.stats.attributedRevenue) || '$0') : '') + '</div>' +
+        '<div class="jos-mkt-card-foot">' +
+          '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="mkt-camp-edit" data-jos-mkt-camp="' + esc(c.id) + '">Edit</button>' +
+          ['draft', 'scheduled', 'active', 'paused'].map(function (st) {
+            return '<button type="button" class="jos-btn jos-btn-sm' + (c.status === st ? ' jos-btn-brand' : '') + '" data-jos-act="mkt-camp-status" data-jos-mkt-status="' + st + '" data-jos-mkt-camp="' + esc(c.id) + '">' + esc(st) + '</button>';
+          }).join('') +
+        '</div></div>';
+    }).join('') : (DS() ? DS().emptyState('No campaigns', 'Create a campaign to reach your audiences.') : '<div class="jos-empty">No campaigns yet.</div>');
+    return (DS() ? DS().sectionHeader('Campaigns', 'Owned outreach — audiences are segment keys.', dsBtn('mkt-camp-create-open', '+ Create campaign', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-mkt-toolbar jos-mt">' + (DS() ? DS().searchBar('jos-mkt-search', 'Search campaigns…', root._josMktQ || '') : '') + '</div>' +
+      '<div class="jos-mkt-grid jos-mt">' + cards + '</div>' + renderMktCampaignModal(root);
+  }
+
+  function renderMktEmailTab(root) {
+    var tpls = mktTemplates('email');
+    var rows = tpls.map(function (t) {
+      return '<div class="jos-mkt-card"><div class="jos-mkt-card-h"><strong>' + esc(t.name) + '</strong>' + mktCampStatusBadge('draft') + '</div>' +
+        '<div class="jos-muted">' + esc(t.subject || '') + '</div>' +
+        '<p class="jos-mkt-card-body">' + esc(t.body || '') + '</p>' +
+        '<div class="jos-mkt-card-foot">' +
+          '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="mkt-tpl-edit" data-jos-mkt-tpl="' + esc(t.id) + '" data-jos-mkt-kind="email">Edit</button>' +
+          '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="mkt-email-send" data-jos-mkt-tpl="' + esc(t.id) + '">Queue send</button>' +
+        '</div></div>';
+    }).join('');
+    return DS().sectionHeader('Email templates', 'OS templates — live send is Stage 2 (Resend).',
+      '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="mkt-tpl-create" data-jos-mkt-kind="email">New template</button>') +
+      '<div class="jos-mkt-grid jos-mt">' + (rows || DS().emptyState('No email templates', 'Create a template to reuse in campaigns.')) + '</div>' +
+      renderMktTemplateModal(root, 'email');
+  }
+
+  function renderMktSmsTab(root) {
+    var tpls = mktTemplates('sms');
+    var rows = tpls.map(function (t) {
+      return '<div class="jos-mkt-card"><div class="jos-mkt-card-h"><strong>' + esc(t.name) + '</strong></div>' +
+        '<p class="jos-mkt-card-body">' + esc(t.body || '') + '</p>' +
+        '<div class="jos-mkt-card-foot">' +
+          '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="mkt-tpl-edit" data-jos-mkt-tpl="' + esc(t.id) + '" data-jos-mkt-kind="sms">Edit</button>' +
+          '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="mkt-sms-broadcast" data-jos-mkt-tpl="' + esc(t.id) + '">Draft broadcast</button>' +
+        '</div></div>';
+    }).join('');
+    var draft = '<div class="jos-card jos-mt"><div class="jos-kicker">Broadcast draft</div>' +
+      '<textarea id="jos-mkt-sms-broadcast" class="jos-textarea jos-mt" placeholder="SMS broadcast copy…">' + esc(root._josMktSmsDraft || '') + '</textarea>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('mkt-sms-queue', 'Queue broadcast (OS)', 'jos-btn-brand jos-btn-sm') + '</div>' +
+      '<p class="jos-muted jos-mt">Twilio send — Stage 2 · not connected</p></div>';
+    return DS().sectionHeader('SMS', 'Templates and broadcast drafts — Twilio is Stage 2.',
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="mkt-tpl-create" data-jos-mkt-kind="sms">New SMS template</button>') +
+      '<div class="jos-mkt-grid jos-mt">' + rows + '</div>' + draft + renderMktTemplateModal(root, 'sms');
+  }
+
+  function renderMktSocialTab(root) {
+    var m = ensureMarketingOsState();
+    var cal = m.calendar.map(function (item) {
+      return '<div class="jos-mkt-card"><div class="jos-mkt-card-h"><strong>' + esc(item.title) + '</strong>' + mktCampStatusBadge(item.status) + '</div>' +
+        '<div class="jos-muted">' + esc(item.channel || 'social') + ' · ' + esc(String(item.scheduledAt || '').slice(0, 10)) + '</div>' +
+        '<p class="jos-mkt-card-body">' + esc(item.body || '') + '</p>' +
+        '<div class="jos-mkt-card-foot">' +
+          '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="mkt-social-publish" data-jos-mkt-cal="' + esc(item.id) + '">Publish</button>' +
+        '</div></div>';
+    }).join('');
+    var posts = mktTemplates('social').map(function (t) {
+      return '<div class="jos-mkt-card"><div class="jos-mkt-card-h"><strong>' + esc(t.name) + '</strong></div><p class="jos-mkt-card-body">' + esc(t.body || '') + '</p>' +
+        '<div class="jos-mkt-card-foot"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="mkt-tpl-edit" data-jos-mkt-tpl="' + esc(t.id) + '" data-jos-mkt-kind="social">Edit</button></div></div>';
+    }).join('');
+    return DS().sectionHeader('Social and calendar', 'Draft posts — Meta publish is Stage 2.', dsBtn('mkt-cal-add', 'Add calendar item', 'jos-btn-brand jos-btn-sm')) +
+      '<div class="jos-mkt-2col jos-mt"><div><div class="jos-kicker">Calendar</div><div class="jos-mkt-grid">' + (cal || '<div class="jos-muted">No items scheduled.</div>') + '</div></div>' +
+      '<div><div class="jos-kicker">Post drafts</div><div class="jos-mkt-grid">' + posts + '</div></div></div>' +
+      renderMktTemplateModal(root, 'social');
+  }
+
+  function renderMktAdsTab(root) {
+    var m = ensureMarketingOsState();
+    var d = DS();
+    var cards = m.ads.map(function (ad) {
+      var cpl = ad.leads ? Math.round((ad.spend || 0) / Math.max(1, ad.leads)) : (ad.cpl || 0);
+      return '<div class="jos-mkt-card"><div class="jos-mkt-card-h"><strong>' + esc(ad.name) + '</strong>' + mktCampStatusBadge(ad.status) + '</div>' +
+        '<div class="jos-mkt-ad-kpis">' +
+          (d ? d.metricCard('Spend (demo)', money(ad.spend) || '$0', 'OS only') : '') +
+          (d ? d.metricCard('Leads', String(ad.leads || 0), 'OS demo') : '') +
+          (d ? d.metricCard('CPL', money(cpl) || '$0', 'Spend / leads') : '') +
+        '</div>' +
+        '<div class="jos-muted jos-mt">Clicks ' + esc(String(ad.clicks || 0)) + ' · Impressions ' + esc(String(ad.impressions || 0)) + '</div>' +
+        '<div class="jos-mkt-card-foot jos-mt">' +
+          dsBtn('mkt-ads-lead-form', 'Lead Forms', 'jos-btn jos-btn-sm') +
+          dsBtn('mkt-ads-meta', 'Connect Meta', 'jos-btn jos-btn-sm') +
+        '</div></div>';
+    }).join('');
+    var attr = d ? d.metricCard('Attributed revenue', money(mktAttributedRevenueDemo()) || '$0', 'Read from completed jobs — demo') : '';
+    return '<div class="jos-muted jos-mb">OS performance cards — Meta Ads API is Stage 2 · not connected.</div>' +
+      (attr ? '<div class="jos-mkt-kpis">' + attr + '</div>' : '') +
+      '<div class="jos-mkt-grid jos-mt">' + cards + '</div>';
+  }
+
+  function renderMktAutomationsTab(root) {
+    var m = ensureMarketingOsState();
+    var rows = m.automations.map(function (a) {
+      var on = !!m.toggles[a.id];
+      return '<div class="jos-mkt-auto"><div><strong>' + esc(a.name) + '</strong><div class="jos-muted">' + esc(a.desc || '') + '</div></div>' +
+        '<label class="jos-toggle"><input type="checkbox" data-jos-act="mkt-auto-toggle" data-jos-mkt-auto="' + esc(a.id) + '"' + (on ? ' checked' : '') + '><span></span></label></div>';
+    }).join('');
+    return DS().sectionHeader('Automations', 'OS rules only — live triggers are Stage 2.') +
+      '<div class="jos-card jos-mt"><div class="jos-toggle-row">' + rows + '</div></div>';
+  }
+
+  function renderMktCouponsTab(root) {
+    var m = ensureMarketingOsState();
+    var rows = m.coupons.map(function (c) {
+      var val = c.type === 'flat' ? money(c.discount) : (c.discount + '%');
+      return '<div class="jos-mkt-card"><div class="jos-mkt-card-h"><strong>' + esc(c.code) + '</strong>' + (DS() ? DS().statusBadge(c.active ? 'Active' : 'Inactive', c.active ? 'ok' : 'lost') : '') + '</div>' +
+        '<div class="jos-muted">' + esc(c.label || '') + ' · ' + esc(val || '') + '</div>' +
+        '<div class="jos-muted">Uses ' + esc(String(c.uses || 0)) + ' (OS)</div></div>';
+    }).join('');
+    return DS().sectionHeader('Coupons', 'Owned by Marketing — apply on Storefront checkout in Stage 2.', dsBtn('mkt-coupon-create', '+ Create coupon', 'jos-btn-brand jos-btn-sm')) +
+      '<div class="jos-mkt-grid jos-mt">' + (rows || DS().emptyState('No coupons', 'Create a promo code for campaigns.')) + '</div>' +
+      renderMktCouponModal(root);
+  }
+
+  function renderMktAiTab(root) {
+    var d = DS();
+    var tools = [
+      ['mkt-ai-campaign', 'Generate campaign', 'Draft a multi-channel campaign into owned records.'],
+      ['mkt-ai-post', 'Generate social post', 'Add a social template and calendar item.'],
+      ['mkt-ai-email', 'Write email', 'Create an email template body.'],
+      ['mkt-ai-sms', 'Write SMS', 'Create a short SMS template.'],
+      ['mkt-ai-budget', 'Budget suggestion', 'OS tip from score and CPL demo.']
+    ];
+    var tiles = tools.map(function (t) {
+      return '<div class="jos-mkt-ai-tile"><h3>' + esc(t[1]) + '</h3><p class="jos-muted">' + esc(t[2]) + '</p>' +
+        dsBtn(t[0], 'Generate', 'jos-btn-brand jos-btn-sm') + '</div>';
+    }).join('');
+    var tip = d ? d.aiInsightCard({ kicker: 'Latest AI output', body: root._josMktAiOut || 'Generate a campaign, post, or template — results save to Marketing OS records.' }) : '';
+    return DS().sectionHeader('AI Studio', 'In-app generators — no external ad AI required for Stage 1.') +
+      '<div class="jos-mkt-ai-grid jos-mt">' + tiles + '</div>' +
+      (tip ? '<div class="jos-mt">' + tip + '</div>' : '');
+  }
+
+  function renderMktTabBody(root, tab) {
+    if (tab === 'overview') return renderMktOverviewTab(root);
+    if (tab === 'campaigns') return renderMktCampaignsTab(root);
+    if (tab === 'email') return renderMktEmailTab(root);
+    if (tab === 'sms') return renderMktSmsTab(root);
+    if (tab === 'social') return renderMktSocialTab(root);
+    if (tab === 'ads') return renderMktAdsTab(root);
+    if (tab === 'automations') return renderMktAutomationsTab(root);
+    if (tab === 'coupons') return renderMktCouponsTab(root);
+    if (tab === 'ai') return renderMktAiTab(root);
+    return renderMktOverviewTab(root);
+  }
+
+  function renderMarketingPageInner(root) {
+    ensureMarketingOsState();
+    var tab = root._josMktTab || 'overview';
+    var d = DS();
+    var tabsHtml = '<div class="jos-tabs jos-mkt-tabs">' + MKT_TABS.map(function (t) {
+      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-mkt-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    }).join('') + '</div>';
+    var head = d ? d.pageHeader('Marketing', 'Campaigns that fill the calendar — audiences read from Customers and Leads.', dsBtn('preview', 'Preview Storefront', 'jos-btn jos-btn-sm') + dsBtn('mkt-go-pipeline', 'Pipeline', 'jos-btn jos-btn-sm') + dsBtn('go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm')) :
+      '<div class="jos-page-head"><div><h1>Marketing</h1><p>Campaigns that fill the calendar.</p></div></div>';
+    root.innerHTML =
+      '<div class="jos-page jos-mkt-page">' +
+      head + tabsHtml +
+      '<div class="jos-mkt-body">' + renderMktTabBody(root, tab) + '</div></div>';
+    bindRoot(root);
+    wireMarketingRoot(root);
+  }
+
+  function renderMarketing() {
+    var root = ownPixelView('v-marketing', 'jos-marketing-root');
+    if (!root) return;
+    updateChrome('marketing');
+    root.innerHTML = '<div class="jos-page jos-mkt-page"><div class="jos-home-loading">Loading Marketing…</div></div>';
+    try { renderMarketingPageInner(root); }
+    catch (err) {
+      console.warn('HublyJourneyOS Marketing', err);
+      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Marketing could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderMarketing()">Retry</button></div></div></div>';
+    }
+  }
+
+  function wireMarketingRoot(root) {
+    if (root._josMktBound) return;
+    root._josMktBound = true;
+    root.addEventListener('input', function (e) {
+      if (e.target && e.target.id === 'jos-mkt-search') {
+        root._josMktQ = e.target.value;
+        clearTimeout(root._josMktSearchT);
+        root._josMktSearchT = setTimeout(function () { renderMarketing(); }, 140);
+      }
+    });
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        if (root._josMktCampModal || root._josMktTplModal || root._josMktCpnModal) {
+          root._josMktCampModal = false;
+          root._josMktTplModal = false;
+          root._josMktCpnModal = false;
+          root._josMktCampDraft = null;
+          root._josMktTplDraft = null;
+          root._josMktCpnDraft = null;
+          return renderMarketing();
+        }
+      }
+    });
+  }
+
+  function readMktCampDraft() {
+    var base = (el('jos-marketing-root') && el('jos-marketing-root')._josMktCampDraft) || {};
+    return {
+      id: base.id || null,
+      name: (el('jos-mkt-camp-name') || {}).value || '',
+      channel: (el('jos-mkt-camp-channel') || {}).value || 'email',
+      audience: { type: 'segment', key: (el('jos-mkt-camp-audience') || {}).value || 'all_customers' },
+      serviceId: (el('jos-mkt-camp-service') || {}).value || '',
+      subject: (el('jos-mkt-camp-subject') || {}).value || '',
+      body: (el('jos-mkt-camp-body') || {}).value || '',
+      scheduledAt: (el('jos-mkt-camp-schedule') || {}).value || todayStr(),
+      status: (el('jos-mkt-camp-status') || {}).value || 'draft'
+    };
+  }
+
+  function handleMarketingAct(act, t) {
+    var root = el('jos-marketing-root');
+    if (!root) return;
+    ensureMarketingOsState();
+    var m = S().marketingOs;
+    var campId = t && (t.getAttribute('data-jos-mkt-camp') || (t.closest('[data-jos-mkt-camp]') && t.closest('[data-jos-mkt-camp]').getAttribute('data-jos-mkt-camp')));
+    var tplId = t && t.getAttribute('data-jos-mkt-tpl');
+    var kind = t && t.getAttribute('data-jos-mkt-kind');
+    var autoId = t && t.getAttribute('data-jos-mkt-auto');
+    try {
+      if (act === 'mkt-camp-create-open') {
+        root._josMktCampModal = true;
+        root._josMktCampDraft = { status: 'draft', channel: 'email', audience: { type: 'segment', key: 'all_customers' } };
+        return renderMarketing();
+      }
+      if (act === 'mkt-camp-edit' && campId) {
+        var camp = m.campaigns.find(function (c) { return String(c.id) === String(campId); });
+        if (!camp) return toast('Campaign not found');
+        root._josMktCampModal = true;
+        root._josMktCampDraft = Object.assign({}, camp, { audience: camp.audience || { type: 'segment', key: 'all_customers' } });
+        return renderMarketing();
+      }
+      if (act === 'mkt-camp-cancel') {
+        root._josMktCampModal = false;
+        root._josMktCampDraft = null;
+        return renderMarketing();
+      }
+      if (act === 'mkt-camp-save') {
+        var draft = readMktCampDraft();
+        if (!draft.name.trim()) { toast('Name is required'); return; }
+        if (draft.id) {
+          var idx = m.campaigns.findIndex(function (c) { return String(c.id) === String(draft.id); });
+          if (idx >= 0) m.campaigns[idx] = Object.assign({}, m.campaigns[idx], draft);
+        } else {
+          m.campaigns.unshift(Object.assign({}, draft, { id: mktId('mkt_camp'), stats: {} }));
+        }
+        root._josMktCampModal = false;
+        root._josMktCampDraft = null;
+        toast('Campaign saved (OS)');
+        return renderMarketing();
+      }
+      if (act === 'mkt-camp-status' && campId) {
+        var st = t.getAttribute('data-jos-mkt-status');
+        var c = m.campaigns.find(function (x) { return String(x.id) === String(campId); });
+        if (c && st) { c.status = st; toast('Campaign · ' + st); return renderMarketing(); }
+        return;
+      }
+      if (act === 'mkt-tpl-create') {
+        root._josMktTplModal = true;
+        root._josMktTplKind = kind || 'email';
+        root._josMktTplDraft = { kind: root._josMktTplKind };
+        return renderMarketing();
+      }
+      if (act === 'mkt-tpl-edit' && tplId) {
+        var tpl = m.templates.find(function (x) { return String(x.id) === String(tplId); });
+        if (!tpl) return;
+        root._josMktTplModal = true;
+        root._josMktTplKind = tpl.kind || kind || 'email';
+        root._josMktTplDraft = Object.assign({}, tpl);
+        return renderMarketing();
+      }
+      if (act === 'mkt-tpl-cancel') {
+        root._josMktTplModal = false;
+        root._josMktTplDraft = null;
+        return renderMarketing();
+      }
+      if (act === 'mkt-tpl-save') {
+        var td = {
+          id: root._josMktTplDraft && root._josMktTplDraft.id,
+          kind: root._josMktTplKind || 'email',
+          name: (el('jos-mkt-tpl-name') || {}).value || 'Template',
+          subject: (el('jos-mkt-tpl-subject') || {}).value || '',
+          body: (el('jos-mkt-tpl-body') || {}).value || ''
+        };
+        if (td.id) {
+          var ti = m.templates.findIndex(function (x) { return String(x.id) === String(td.id); });
+          if (ti >= 0) m.templates[ti] = Object.assign({}, m.templates[ti], td);
+        } else {
+          m.templates.unshift(Object.assign({}, td, { id: mktId('mkt_tpl_' + td.kind) }));
+        }
+        root._josMktTplModal = false;
+        root._josMktTplDraft = null;
+        toast('Template saved');
+        return renderMarketing();
+      }
+      if (act === 'mkt-email-send') return toast('Queued for send (OS) — Resend · Stage 2 · not connected');
+      if (act === 'mkt-sms-broadcast' || act === 'mkt-sms-queue') return toast('Broadcast queued (OS) — Twilio · Stage 2 · not connected');
+      if (act === 'mkt-social-publish') return toast('Meta publish — Stage 2 · not connected');
+      if (act === 'mkt-ads-lead-form' || act === 'mkt-ads-meta') return toast('Meta Lead Ads — Stage 2 · not connected');
+      if (act === 'mkt-auto-toggle' && autoId) {
+        m.toggles[autoId] = !!(t && t.checked);
+        var au = m.automations.find(function (a) { return a.id === autoId; });
+        if (au) au.on = m.toggles[autoId];
+        toast((au ? au.name : 'Automation') + (m.toggles[autoId] ? ' on' : ' off'));
+        return renderMarketing();
+      }
+      if (act === 'mkt-coupon-create') {
+        root._josMktCpnModal = true;
+        root._josMktCpnDraft = {};
+        return renderMarketing();
+      }
+      if (act === 'mkt-coupon-cancel') {
+        root._josMktCpnModal = false;
+        root._josMktCpnDraft = null;
+        return renderMarketing();
+      }
+      if (act === 'mkt-coupon-save') {
+        var cp = {
+          id: mktId('mkt_cpn'),
+          code: String((el('jos-mkt-cpn-code') || {}).value || '').trim().toUpperCase(),
+          label: (el('jos-mkt-cpn-label') || {}).value || '',
+          type: (el('jos-mkt-cpn-type') || {}).value || 'pct',
+          discount: Number((el('jos-mkt-cpn-discount') || {}).value) || 0,
+          active: true,
+          uses: 0
+        };
+        if (!cp.code) { toast('Coupon code required'); return; }
+        m.coupons.unshift(cp);
+        root._josMktCpnModal = false;
+        root._josMktCpnDraft = null;
+        toast('Coupon created');
+        return renderMarketing();
+      }
+      if (act === 'mkt-cal-add') {
+        m.calendar.unshift({ id: mktId('mkt_cal'), title: 'New post', channel: 'instagram', scheduledAt: todayStr(), status: 'draft', body: 'Draft caption with Book Now CTA.' });
+        toast('Calendar item added');
+        return renderMarketing();
+      }
+      if (act === 'mkt-go-leads') return switchNav('leads');
+      if (act === 'mkt-go-pipeline') return switchNav('pipeline');
+      if (act === 'mkt-open-customer') {
+        var cid = mktSampleCustomerId('all_customers');
+        if (cid) return openCustomerProfile(cid);
+        return toast('Add a customer first');
+      }
+      if (act === 'mkt-ai-campaign' || act === 'mkt-ai-post' || act === 'mkt-ai-email' || act === 'mkt-ai-sms') {
+        var askQ = t && t.getAttribute('data-jos-mkt-ask');
+        if (askQ) ask(askQ);
+        var biz = S().biz || 'your business';
+        if (act === 'mkt-ai-campaign') {
+          m.campaigns.unshift({ id: mktId('mkt_camp'), name: 'AI · Weekend promo', channel: 'multi', status: 'draft', audience: { type: 'segment', key: 'all_customers' }, body: 'Limited slots this weekend for ' + biz + ' — book online.', scheduledAt: todayStr(), stats: {} });
+          root._josMktAiOut = 'Campaign draft added to Campaigns tab.';
+        } else if (act === 'mkt-ai-post') {
+          m.templates.unshift({ id: mktId('mkt_tpl_social'), kind: 'social', name: 'AI · Social post', body: 'Fresh results from ' + biz + ' — tap Book Now.' });
+          m.calendar.unshift({ id: mktId('mkt_cal'), title: 'AI social post', channel: 'instagram', scheduledAt: todayStr(), status: 'draft', body: 'Generated post with booking CTA.' });
+          root._josMktAiOut = 'Social template and calendar item created.';
+        } else if (act === 'mkt-ai-email') {
+          m.templates.unshift({ id: mktId('mkt_tpl_email'), kind: 'email', name: 'AI · Nurture email', subject: 'Thanks from ' + biz, body: 'Hi {{name}}, thanks for choosing us. Ready to rebook?' });
+          root._josMktAiOut = 'Email template saved to Email tab.';
+        } else {
+          m.templates.unshift({ id: mktId('mkt_tpl_sms'), kind: 'sms', name: 'AI · SMS', body: 'Hi {{name}} — reply BOOK for your next visit with ' + biz + '.' });
+          root._josMktAiOut = 'SMS template saved.';
+        }
+        m.score = Math.min(96, marketingScore() + 2);
+        toast('Generated into Marketing OS');
+        root._josMktTab = act === 'mkt-ai-campaign' ? 'campaigns' : (act === 'mkt-ai-post' ? 'social' : (act === 'mkt-ai-email' ? 'email' : 'sms'));
+        return renderMarketing();
+      }
+      if (act === 'mkt-ai-budget') {
+        var ad = m.ads[0] || { spend: 0, leads: 1 };
+        var cpl = ad.leads ? Math.round((ad.spend || 0) / ad.leads) : 15;
+        root._josMktAiBody = 'Demo CPL ' + money(cpl) + ' — consider shifting 20% spend to retargeting completed-job audiences. Live Meta sync is Stage 2.';
+        root._josMktAiOut = root._josMktAiBody;
+        toast('Budget tip generated (OS)');
+        return renderMarketing();
+      }
+    } catch (err) {
+      console.warn('HublyJourneyOS mkt act', act, err);
+      toast('Failed — try again');
+    }
+  }
   function membershipPlans() {
     var st = S(), plans = st.memberships || st.website?.memberships || st.website?.membershipPlans || [];
     if (Array.isArray(plans) && plans.length) return plans;
@@ -5591,7 +6242,7 @@
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
       if (t.hasAttribute('data-jos-inbox-tab')) {
         var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
         return;
@@ -5638,6 +6289,10 @@
         var sfr = el('jos-storefront-root'); if (sfr) { sfr._josSfTab = t.getAttribute('data-jos-sf-tab'); renderStorefront(); }
         return;
       }
+      if (t.hasAttribute('data-jos-mkt-tab')) {
+        var mkr = el('jos-marketing-root'); if (mkr) { mkr._josMktTab = t.getAttribute('data-jos-mkt-tab'); renderMarketing(); }
+        return;
+      }
       if (t.hasAttribute('data-jos-cust-row')) {
         var crow = el('jos-customers-root');
         if (crow) {
@@ -5676,6 +6331,7 @@
       if (act && String(act).indexOf('pipe-') === 0) return handlePipelineAct(act, t);
       if (act && (String(act).indexOf('cust-') === 0 || String(act).indexOf('customers-') === 0)) return handleCustomersAct(act, t);
       if (act && String(act).indexOf('sf-') === 0) return handleStorefrontAct(act, t);
+      if (act && String(act).indexOf('mkt-') === 0) return handleMarketingAct(act, t);
       if (act === 'ask-submit' || act === 'ask-brief') {
         switchNav('ask');
         return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
@@ -5728,6 +6384,7 @@
     renderActivity: renderActivity,
     renderAskHubly: renderAskHubly,
     renderMarketing: renderMarketing,
+    handleMarketingAct: handleMarketingAct,
     renderMemberships: renderMemberships,
     renderReportsPage: renderReportsPage,
     renderGrowth: renderGrowth,

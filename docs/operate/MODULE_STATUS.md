@@ -55,7 +55,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | ❤️ Customers | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🧭 Pipeline | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🌐 Storefront | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 📣 Marketing | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
+| 📣 Marketing | ⏳ OS QA pending | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | ⭐ Reviews | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 🔁 Memberships | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 💰 Revenue | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
@@ -76,7 +76,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 5 | ❤️ Customers | ✅ Locked | ⏸ | [#248](https://github.com/HubblyAdrian/Hubly/pull/248) | 🔒 OS · golden profile · MAT ✅ · CMV PASS |
 | 6 | 🧭 Pipeline | ✅ Locked | ⏸ | [#249](https://github.com/HubblyAdrian/Hubly/pull/249) | 🔒 OS · MAT ✅ · HublyDS v1 · merged |
 | 7 | 🌐 Storefront | ✅ Locked | ⏸ | [#250](https://github.com/HubblyAdrian/Hubly/pull/250) | 🔒 OS · MAT ✅ · Service Catalog owner · merged |
-| 8 | 📣 Marketing | ⏳ Architecture → OS | ⏸ | — | [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md) · Rules #14–16 · `cursor/operate-marketing-2662` |
+| 8 | 📣 Marketing | ⏳ OS in progress / QA pending | ⏸ | — | [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md) · Rules #14–16 · `cursor/operate-marketing-2662` |
 | 9–14 | Remaining | ⏳ | ⏸ | — | |
 
 ## Workflow

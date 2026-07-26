@@ -1,6 +1,6 @@
 # Module 8 — 📣 Marketing
 
-**Status:** Architecture done · Stage 1 OS in progress  
+**Status:** Stage 1 OS complete · QA / MAT pending  
 **Branch:** `cursor/operate-marketing-2662`  
 **Architecture:** [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md) ✅  
 **Design System:** HublyDS (Rule #14)  
@@ -20,44 +20,44 @@ Marketing creates demand. Reads Customers, Leads, Services, Jobs, Reviews, Reven
 ## Stage 1 — Operating System
 
 ### Core
-- [ ] Architecture doc approved ✅ (shipped)  
-- [ ] `ownPixelView('v-marketing', 'jos-marketing-root')` ⏳  
-- [ ] HublyDS chrome ⏳  
-- [ ] Tabs ⏳  
-- [ ] Responsive ⏳  
+- [x] Architecture doc approved ✅ (shipped)  
+- [x] `ownPixelView('v-marketing', 'jos-marketing-root')` ✅  
+- [x] HublyDS chrome ✅  
+- [x] Tabs ✅  
+- [x] Responsive ✅  
 
 ### Tabs
-- [ ] Overview ⏳  
-- [ ] Campaigns ⏳  
-- [ ] Email ⏳  
-- [ ] SMS ⏳  
-- [ ] Social / Calendar ⏳  
-- [ ] Ads (OS + Stage 2 placeholders) ⏳  
-- [ ] Automations ⏳  
-- [ ] Coupons ⏳  
-- [ ] AI Studio ⏳  
+- [x] Overview ✅  
+- [x] Campaigns ✅  
+- [x] Email ✅  
+- [x] SMS ✅  
+- [x] Social / Calendar ✅  
+- [x] Ads (OS + Stage 2 placeholders) ✅  
+- [x] Automations ✅  
+- [x] Coupons ✅  
+- [x] AI Studio ✅  
 
 ### Ownership (Rule #15)
-- [ ] `S.marketingOs` owns campaigns/templates/automations/coupons/calendar/ads ⏳  
-- [ ] Audiences = segment keys over Customers/Leads (no copied CRM) ⏳  
-- [ ] Service CTAs reference Storefront catalog ⏳  
+- [x] `S.marketingOs` owns campaigns/templates/automations/coupons/calendar/ads ✅  
+- [x] Audiences = segment keys over Customers/Leads (no copied CRM) ✅  
+- [x] Service CTAs reference Storefront catalog ✅  
 
 ### Actions (`mkt-*`)
-- [ ] Create/edit campaign, schedule (OS), pause ⏳  
-- [ ] Template CRUD (email/SMS/social) ⏳  
-- [ ] Automation toggles ⏳  
-- [ ] Coupon create ⏳  
-- [ ] AI generate campaign/post/email/SMS ⏳  
-- [ ] Stage 2: Meta/Twilio/Resend toasts ⏳  
+- [x] Create/edit campaign, schedule (OS), pause ✅  
+- [x] Template CRUD (email/SMS/social) ✅  
+- [x] Automation toggles ✅  
+- [x] Coupon create ✅  
+- [x] AI generate campaign/post/email/SMS ✅  
+- [x] Stage 2: Meta/Twilio/Resend toasts ✅  
 
 ### Rule #16
-- [ ] Deep-link Storefront preview / customer profile where relevant ⏳  
-- [ ] CMV locked modules incl. Storefront ⏳  
+- [x] Deep-link Storefront preview / customer profile where relevant ✅  
+- [x] CMV locked modules incl. Storefront ✅  
 
 ### QA / MAT / CMV
-- [ ] Validator marketing gate ⏳  
+- [x] Validator marketing gate ✅  
 - [ ] MAT ⏳  
-- [ ] CMV PASS ⏳  
+- [x] CMV PASS ✅  
 
 ### Definition of Done
 - [ ] OS complete · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳  

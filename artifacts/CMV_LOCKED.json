@@ -30,6 +30,11 @@
       "name": "🧭 Pipeline still works",
       "pass": true,
       "detail": "len=8760"
+    },
+    {
+      "name": "🌐 Storefront still works",
+      "pass": true,
+      "detail": "len=3133"
     }
   ],
   "warns": []
