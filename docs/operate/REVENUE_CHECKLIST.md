@@ -1,6 +1,6 @@
 # Module 11 — 💰 Revenue
 
-**Status:** Architecture approved · Stage 1 OS pending  
+**Status:** Architecture approved · Stage 1 OS implemented · MAT pending
 **Branch:** `cursor/operate-revenue-2662`  
 **Architecture (required):** [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md)  
 **Events:** [EVENTS.md](./EVENTS.md) (Rules #17–18 · #20)  
@@ -30,35 +30,35 @@ Revenue is the financial system of record. Correctness over cosmetics.
 ## Stage 1 — Operating System
 
 ### Core
-- [ ] `ownPixelView('v-money', 'jos-revenue-root')` ⏳  
-- [ ] HublyDS chrome ⏳  
-- [ ] Tabs ⏳  
-- [ ] Responsive ⏳  
+- [x] `ownPixelView('v-money', 'jos-revenue-root')` ✅
+- [x] HublyDS chrome ✅
+- [x] Tabs ✅
+- [x] Responsive ✅
 
 ### Tabs
-- [ ] Overview ⏳  
-- [ ] Invoices ⏳  
-- [ ] Payments ⏳  
-- [ ] Deposits ⏳  
-- [ ] Refunds ⏳  
-- [ ] Taxes ⏳  
-- [ ] Payouts ⏳  
-- [ ] Activity (append-only) ⏳  
+- [x] Overview ✅
+- [x] Invoices ✅
+- [x] Payments ✅
+- [x] Deposits ✅
+- [x] Refunds ✅
+- [x] Taxes ✅
+- [x] Payouts ✅
+- [x] Activity (append-only) ✅
 
 ### Ownership & Integrity
-- [ ] `S.revenueOs` owns ledger ✅ planned  
-- [ ] Lifecycle Draft → Sent → Deposit Paid → Paid → Refunded ⏳  
-- [ ] No silent overwrite / delete (Rule #20) ⏳  
-- [ ] Publishes HublyEvents ⏳  
-- [ ] No customer/job clones (Rules #15 · #19) ⏳  
+- [x] `S.revenueOs` owns ledger ✅
+- [x] Lifecycle Draft → Sent → Deposit Paid → Paid → Refunded ✅
+- [x] No silent overwrite / delete (Rule #20) ✅
+- [x] Publishes HublyEvents ✅
+- [x] No customer/job clones (Rules #15 · #19) ✅
 
 ### Actions (`rve-*`)
-- [ ] Create / send / void invoice ⏳  
-- [ ] Record deposit / payment ⏳  
-- [ ] Issue refund ⏳  
-- [ ] Record payout (OS) ⏳  
-- [ ] Open customer profile ⏳  
-- [ ] Stage 2 Stripe toast ⏳  
+- [x] Create / send / void invoice ✅
+- [x] Record deposit / payment ✅
+- [x] Issue refund ✅
+- [x] Record payout (OS) ✅
+- [x] Open customer profile ✅
+- [x] Stage 2 Stripe toast ✅
 
 ### QA / MAT / CMV
 - [ ] Validator revenue gates ⏳  
