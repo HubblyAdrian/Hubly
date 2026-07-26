@@ -1,0 +1,19 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
+const f=[];
+const c=(n,ok)=>{if(!ok){console.error("FAIL "+n);f.push(n)}else console.log("OK "+n)};
+const hubly=fs.readFileSync(path.join(root,"public/hubly.html"),"utf8");
+const router=fs.readFileSync(path.join(root,"api/router.js"),"utf8");
+const home=fs.readFileSync(path.join(root,"public/platform-home.html"),"utf8");
+const jjs=fs.readFileSync(path.join(root,"public/journey-os/journey.js"),"utf8");
+c("files",fs.existsSync(path.join(root,"public/journey-os/journey.css")));
+c("router",/journey-os\//.test(router));
+c("nav",/Pipeline[\s\S]*Opportunities[\s\S]*Ask Hubly/.test(hubly));
+c("views",/id="v-pipeline"/.test(hubly)&&/id="v-ask"/.test(hubly)&&/id="v-growth"/.test(hubly));
+c("api",/renderPipeline/.test(jjs)&&/openCustomerProfile/.test(jjs));
+c("landing",/Build your business/.test(hubly)&&/Build your business/.test(home));
+c("script",/journey-os\/journey\.js/.test(hubly));
+if(f.length) process.exit(1); console.log("PASS");

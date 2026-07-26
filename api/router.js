@@ -48,6 +48,8 @@ module.exports = async (req, res) => {
       urlPath.startsWith('/booking-frames/') ||
       urlPath.startsWith('/booking-wizard/') ||
       urlPath.startsWith('/smart-quote/') ||
+      urlPath.startsWith('/journey-os/') ||
+      urlPath.startsWith('/create-systems/') ||
       urlPath === '/website-ast.js'
     ) {
       const filePath = path.join(__dirname, '../public', urlPath);

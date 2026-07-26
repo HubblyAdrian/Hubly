@@ -28,6 +28,7 @@
 <!-- Critical marketing fonts only — full layout font pack loads on demand via ensureGoogleFonts() -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
+<link rel="stylesheet" href="/journey-os/journey.css">
 <style>
 :root{
   --brand:#D9632D;--brand-dark:#B84E1F;--brand-light:#FDF0E8;
@@ -2879,9 +2880,11 @@ body.ed-sheet-open #ed-ai-fab{pointer-events:auto}
 .ni{display:flex;align-items:center;gap:9px;padding:8px 14px;font-size:13px;font-weight:500;color:rgba(255,255,255,.5);cursor:pointer;transition:all .12s;border-left:2px solid transparent}
 .nav-count-badge{margin-left:auto;background:var(--brand);color:#1a1a1a;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px;}
 .ni svg{width:15px;height:15px;flex-shrink:0;opacity:.65}
+.ni .ni-emoji{width:18px;flex-shrink:0;text-align:center;font-size:14px;line-height:1;opacity:.9}
 .ni:hover{color:rgba(255,255,255,.82);background:rgba(255,255,255,.05)}
 .ni.active{color:#fff;background:rgba(255,255,255,.08);border-left-color:var(--brand)}
 .ni.active svg{opacity:1}
+.jos-cust-hint{margin:12px 4px 0;font-size:12px;color:var(--ink-3);line-height:1.4}
 .nav-bot{margin-top:auto;border-top:1px solid rgba(255,255,255,.08);padding:6px 0}
 .app-main{margin-left:var(--nav);flex:1;min-height:100vh}
 .app-bar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:50;backdrop-filter:blur(10px)}
@@ -8698,9 +8701,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <button type="button" class="welcome-signin" onclick="showP('p-signin')">Sign in</button>
     </div>
     <main class="welcome-hero" id="welcome-hero">
-      <p class="welcome-kicker">Your business partner</p>
-      <h1 class="welcome-title">Let's build your business.</h1>
-      <p class="welcome-ask">What are we building today?</p>
+      <p class="welcome-kicker">Your AI business partner</p>
+      <h1 class="welcome-title">Build your business.</h1>
+      <p class="welcome-ask">Tell me about the business you want to build — I’ll research your market and create website, booking, packages, and CRM while we chat.</p>
       <div class="welcome-composer">
         <div class="welcome-input-wrap" id="welcome-input-wrap">
           <textarea id="welcome-input" rows="2" placeholder="Type anything..." aria-label="What are we building today?" autocomplete="off" data-lpignore="true" data-form-type="other"></textarea>
@@ -9596,34 +9599,65 @@ document.addEventListener('DOMContentLoaded', function() {
         <input class="file-input-native" type="file" id="sidebar-logo-file" accept="image/*" onchange="handleSidebarLogo(this)">
         <div><div class="nav-biz" id="nav-biz">Your Business</div><div class="nav-plan">Free plan</div></div>
       </div>
-      <div class="nav-sec">Main</div>
+      <div class="nav-sec">Business</div>
       <div class="ni active" data-v="dashboard" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard
+        <span class="ni-emoji" aria-hidden="true">🏠</span><span class="ni-lbl ni-lbl-full">Business</span><span class="ni-lbl ni-lbl-short">Home</span>
       </div>
       <div class="ni" data-v="leads" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="12" r="3"/><path d="M18 9v6M15 12h6"/></svg><span class="ni-lbl ni-lbl-full">Leads</span><span class="ni-lbl ni-lbl-short">Leads</span><span class="nav-count-badge hidden" id="nav-leads-badge">0</span>
-      </div>
-      <div class="ni" data-v="jobs" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl ni-lbl-full">Jobs &amp; Calendar</span><span class="ni-lbl ni-lbl-short">Jobs</span><span class="nav-count-badge hidden" id="nav-jobs-badge">0</span>
+        <span class="ni-emoji" aria-hidden="true">👋</span><span class="ni-lbl ni-lbl-full">Leads</span><span class="ni-lbl ni-lbl-short">Leads</span><span class="nav-count-badge hidden" id="nav-leads-badge">0</span>
       </div>
       <div class="ni" data-v="customers" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>Customers
+        <span class="ni-emoji" aria-hidden="true">❤️</span><span class="ni-lbl">Customers</span>
+      </div>
+      <div class="ni" data-v="pipeline" onclick="switchV(this)">
+        <span class="ni-emoji" aria-hidden="true">🔄</span><span class="ni-lbl">Pipeline</span>
+      </div>
+      <div class="ni" data-v="opportunities" onclick="switchV(this)">
+        <span class="ni-emoji" aria-hidden="true">✨</span><span class="ni-lbl ni-lbl-full">Opportunities</span><span class="ni-lbl ni-lbl-short">Opps</span><span class="nav-count-badge hidden" id="nav-opps-badge">0</span>
+      </div>
+      <div class="ni" data-v="activity" onclick="switchV(this)">
+        <span class="ni-emoji" aria-hidden="true">📝</span><span class="ni-lbl">Activity</span>
+      </div>
+      <div class="ni" data-v="ask" onclick="switchV(this)">
+        <span class="ni-emoji" aria-hidden="true">🤖</span><span class="ni-lbl">Ask Hubly</span>
+      </div>
+      <div class="nav-sec">Operate</div>
+      <div class="ni" data-v="jobs" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl ni-lbl-full">Jobs &amp; Calendar</span><span class="ni-lbl ni-lbl-short">Jobs</span><span class="nav-count-badge hidden" id="nav-jobs-badge">0</span>
       </div>
       <div class="ni" data-v="quotes" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>Quick Quote
       </div>
-      <div class="ni" data-v="money" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h2m4 0h2"/></svg>Revenue
+      <div class="ni" data-v="reviews" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.9 6.3L22 9.3l-5 4.8 1.2 7L12 17.8 5.8 21l1.2-7-5-4.8 7.1-1L12 2z"/></svg>Reviews
       </div>
-      <div class="ni" data-v="chats" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chats
+      <div class="ni" data-v="marketing" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11v2a2 2 0 0 0 2 2h1l6 4V5L6 9H5a2 2 0 0 0-2 2z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 7a7 7 0 0 1 0 10"/></svg>Marketing
+      </div>
+      <div class="ni" data-v="memberships" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>Memberships
+      </div>
+      <div class="ni" data-v="reports" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-3"/></svg>Reports
+      </div>
+      <div class="ni" data-v="growth" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h6v6"/></svg>Growth
+      </div>
+      <div class="nav-sec">Website</div>
+      <div class="ni" data-v="editor" onclick="try{S._edHubTab='site'}catch(e){};switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.7 3.6 5.7 3.6 9s-1.2 6.3-3.6 9c-2.4-2.7-3.6-5.7-3.6-9s1.2-6.3 3.6-9z"/></svg><span class="ni-lbl ni-lbl-full">Website</span><span class="ni-lbl ni-lbl-short">Site</span>
+      </div>
+      <div class="ni" data-v="settings" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings
       </div>
       <div class="ni" data-v="marketplace" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Marketplace
       </div>
-      <div class="nav-sec">Website</div>
-      <div class="ni" data-v="editor" onclick="try{S._edHubTab='site'}catch(e){};switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.7 3.6 5.7 3.6 9s-1.2 6.3-3.6 9c-2.4-2.7-3.6-5.7-3.6-9s1.2-6.3 3.6-9z"/></svg><span class="ni-lbl ni-lbl-full">Website editor</span><span class="ni-lbl ni-lbl-short">Website</span>
+      <div class="ni" data-v="money" onclick="switchV(this)" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Revenue
+      </div>
+      <div class="ni" data-v="chats" onclick="switchV(this)" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chats
       </div>
       <div class="nav-bot">
         <div class="ni" onclick="signOut()">
@@ -9654,6 +9688,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- DASHBOARD — Hubly v3 Operate Home -->
       <div id="v-dashboard" class="body" data-v3-operate-home="1">
+        <div id="jos-dash-root" class="jos-dash-mount"></div>
         <div class="dash-hero dash-ops-hero">
           <div class="dash-greeting">
             <h1 id="dash-greet-title"><span id="dash-greet-line1">Good morning</span><span id="dash-greet-line2">Your Business</span></h1>
@@ -10036,25 +10071,65 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <!-- LEADS PIPELINE -->
+      <!-- LEADS — directory + side detail (Pipeline is its own page) -->
       <div id="v-leads" class="body hidden">
-        <div class="leads-head">
-          <div>
-            <h1>Leads</h1>
-            <p>Quotes, chats, and requests — click a lead for details. Accept to put them on Jobs &amp; Calendar.</p>
-          </div>
-          <div class="flex ai-c" style="gap:8px;flex-wrap:wrap;">
-            <button type="button" class="btn btn-ink btn-sm" onclick="openM('m-new-lead')">+ New Lead</button>
-            <button type="button" class="btn btn-out btn-sm" onclick="openSmartQuote()">⚡ Quick Quote</button>
-          </div>
-        </div>
-        <div class="leads-kpis" id="leads-kpis"></div>
+        <div id="jos-leads-root"></div>
+        <div class="leads-kpis" id="leads-kpis" hidden></div>
         <div class="leads-kpi-focus hidden" id="leads-kpi-focus"></div>
-        <div class="leads-board" id="leads-board"></div>
+        <div class="leads-board" id="leads-board" hidden></div>
         <div class="lead-detail-drawer hidden" id="lead-detail-drawer">
           <div class="cust-detail" id="lead-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div>Select a lead</div></div></div>
         </div>
-        <div class="leads-tip"><span><strong>Pro tip:</strong> When you add a stage, pick where it goes — board, quote, <strong>Won → Jobs</strong>, or Lost. The system saves that destination so drops always route correctly. Edit any stage with ✎.</span></div>
+      </div>
+
+      <!-- PIPELINE -->
+      <div id="v-pipeline" class="body hidden">
+        <div id="jos-pipeline-root"></div>
+      </div>
+
+      <!-- OPPORTUNITIES (was Follow-ups) -->
+      <div id="v-opportunities" class="body hidden">
+        <div id="jos-opportunities-root"></div>
+      </div>
+
+      <!-- ACTIVITY -->
+      <div id="v-activity" class="body hidden">
+        <div id="jos-activity-root"></div>
+      </div>
+
+      <!-- ASK HUBLY -->
+      <div id="v-ask" class="body hidden">
+        <div id="jos-ask-root"></div>
+      </div>
+
+      <!-- REVIEWS (business) -->
+      <div id="v-reviews" class="body hidden">
+        <div id="jos-reviews-root"></div>
+      </div>
+
+      <!-- MARKETING -->
+      <div id="v-marketing" class="body hidden">
+        <div id="jos-marketing-root"></div>
+      </div>
+
+      <!-- MEMBERSHIPS -->
+      <div id="v-memberships" class="body hidden">
+        <div id="jos-memberships-root"></div>
+      </div>
+
+      <!-- REPORTS -->
+      <div id="v-reports" class="body hidden">
+        <div id="jos-reports-root"></div>
+      </div>
+
+      <!-- GROWTH -->
+      <div id="v-growth" class="body hidden">
+        <div id="jos-growth-root"></div>
+      </div>
+
+      <!-- SETTINGS hub -->
+      <div id="v-settings" class="body hidden">
+        <div id="jos-settings-root"></div>
       </div>
 
       <!-- CUSTOMERS -->
@@ -10112,6 +10187,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="cust-detail-drawer hidden" id="cust-detail-drawer">
           <div class="cust-detail" id="cust-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div data-i18n="selectCustomerLbl">Select a customer</div></div></div>
         </div>
+        <p class="jos-cust-hint">Tip: click a customer for the side view — then open <strong>Full profile</strong> for Overview, Jobs, Bookings, Reviews, Notes, History, Files, and Activity.</p>
       </div>
 
       <!-- BOOKING WIZARD retired — Book Now lives in Website editor hub -->
@@ -11838,6 +11914,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/smart-quote/engine.js"></script>
 <script defer src="/smart-quote/ui.js"></script>
 <script defer src="/smart-quote/booking.js"></script>
+<script defer src="/journey-os/journey.js"></script>
 <script defer src="/booking-wizard/ui.js"></script>
 <link rel="stylesheet" href="/booking-wizard/mock-skin.css">
 <script defer src="/themes/registry.js"></script>
@@ -34730,20 +34807,27 @@ function switchV(el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
-  const titles={dashboard:t('dashboard'),jobs:t('jobs'),leads:'Leads',customers:t('customers'),quotes:'Quick Quote',money:t('money'),chats:t('chats'),marketplace:'Marketplace',editor:t('myStorefront'),'booking-wizard':'Website · Book Now'};
+  const titles={
+    dashboard:'Business',jobs:t('jobs'),leads:'Leads',customers:t('customers'),
+    pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
+    quotes:'Quick Quote',money:t('money'),chats:t('chats'),marketplace:'Marketplace',
+    editor:'Website',settings:'Settings',reviews:'Reviews',marketing:'Marketing',
+    memberships:'Memberships',reports:'Reports',growth:'Growth','booking-wizard':'Website · Book Now'
+  };
   const tabLabel=titles[v]||v;
   document.getElementById('bar-title').textContent=tabLabel;
   setHublyDocTitle(tabLabel);
   // Already on Quick Quote — page has “New Quick Quote”; hide the duplicate app-bar shortcut.
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
-  if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();try{syncDashSiteLink();}catch(e){}}
+  if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();try{syncDashSiteLink();}catch(e){}try{HublyJourneyOS?.enhanceDashboard?.();}catch(e){}}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel();try{refreshGoogleCalendarStatus();}catch(e){}try{syncGoogleCalendar({quiet:true});}catch(e){}}
-  if(v==='leads'){renderLeadsBoard({refresh:true});}
+  if(v==='leads'){try{HublyJourneyOS?.renderLeadsList?.();}catch(e){}try{renderLeadsBoard({refresh:true});}catch(e){}}
   if(v==='customers')renderCustomersView();
   if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}
   if(v==='money'){renderReports();renderMoneyView();try{syncMoneyPayPrefs();}catch(e){}try{refreshStripeConnectStatus({quiet:true});}catch(e){}}
   if(v==='chats')renderChatsPanel();
   if(v==='marketplace'){try{loadMarketplaceSettings();loadMarketplaceBookings();}catch(e){console.warn(e);}}
+  try{HublyJourneyOS?.onSwitchView?.(v);}catch(e){}
   if(v==='editor'){
     hublyBootLog('switchV editor enter');
     try{initWsPeEditor();hublyBootLog('editor initWsPeEditor');}catch(e){hublyBootFail('editor initWsPeEditor',e);console.warn(e);}
@@ -38592,6 +38676,7 @@ function viewCustomer(id){
         <div class="field full"><label>Notes</label><textarea id="cd-notes" rows="3">${escapeHtml(c.notes||'')}</textarea></div>
       </div>
       <div class="crm-edit-actions">
+        <button type="button" class="btn btn-brand btn-sm" onclick="HublyJourneyOS&&HublyJourneyOS.openCustomerProfile('${c.id}')">Full profile</button>
         <button type="button" class="btn btn-ink btn-sm" onclick="saveCustomerDetail()">Save customer</button>
         <button type="button" class="btn btn-out btn-sm" onclick="openNewJobForCustomer('${c.id}')">${schedLbl}</button>
       </div>
@@ -45496,7 +45581,7 @@ function applyTranslations(){
   setTxt('.auth-hint', t('signInHint'), '#p-signin');
   setTxt('.auth-foot', null, '#p-signin', `${t('noAccount')} <a onclick="showP('p-signup')">${t('signUpFree')}</a>`);
   // Milestone 2 · Epic 1 — Welcome Experience (no classic signup form)
-  setTxt('.welcome-title', "Let's build your business.", '#p-signup');
+  setTxt('.welcome-title', "Build your business.", '#p-signup');
   setTxt('.welcome-ask', 'What are we building today?', '#p-signup');
   const siBtns = document.querySelectorAll('#p-signin .btn-ink');
   if(siBtns[0]) siBtns[0].textContent = t('signIn');

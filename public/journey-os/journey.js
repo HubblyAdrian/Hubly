@@ -337,10 +337,19 @@
 
   function renderSettingsHub() {
     var root = el('jos-settings-root'); if (!root) return;
-    var links = [{ t: 'Business profile', s: 'Name, phone, service area', act: 'go-editor' }, { t: 'Payments', s: 'Stripe Connect', act: 'stripe' }, { t: 'Calendar', s: 'Google Calendar sync', act: 'go-jobs' }, { t: 'Website & booking', s: 'Layouts, packages, hours', act: 'go-editor' }, { t: 'Quick Quote setup', s: 'Questions & packages', act: 'smart-quote' }, { t: 'Ask Hubly', s: 'Coach preferences', act: 'go-ask' }];
-    root.innerHTML = page('Operate · Settings', 'Business settings', 'Shortcuts into the chassis — Hubly orange, not purple.', '',
-      '<div class="jos-settings-nav">' + links.map(function (l) {
-        return '<button type="button" class="jos-settings-link" data-jos-act="' + esc(l.act) + '"><div><strong>' + esc(l.t) + '</strong><div class="jos-muted">' + esc(l.s) + '</div></div><span>Open →</span></button>';
+    var cards = [
+      { ico: '🏢', t: 'Business', s: 'Manage your business details and team.', links: 'Business Information · Brand · Team · Locations', act: 'go-editor' },
+      { ico: '🌐', t: 'Website', s: 'Manage your website, domain and SEO.', links: 'Domain · SEO · Homepage · Pages', act: 'go-editor' },
+      { ico: '📅', t: 'Booking', s: 'Configure booking experience and policies.', links: 'Availability · Questions · Policies · Calendar Sync', act: 'go-editor' },
+      { ico: '💳', t: 'Payments', s: 'Manage payments, taxes and invoices.', links: 'Stripe · Taxes · Invoices · Payment Methods', act: 'stripe' },
+      { ico: '🔌', t: 'Integrations', s: 'Connect Hubly with the tools you already use.', links: 'Google Calendar · Twilio · Google Business', act: 'go-jobs' },
+      { ico: '🔔', t: 'Notifications', s: 'Manage how you and your team get notified.', links: 'Email · SMS · Push · In-App', act: 'go-ask' },
+      { ico: '✨', t: 'AI', s: 'Configure AI tools and automation.', links: 'Business Coach · Automation · Knowledge Base', act: 'go-ask' },
+      { ico: '👤', t: 'Account', s: 'Manage your account and subscription.', links: 'Billing · Subscription · Security', act: 'go-settings' }
+    ];
+    root.innerHTML = page('Settings', 'Settings', 'Manage your business, preferences and integrations.', '',
+      '<div class="jos-grid jos-settings-grid">' + cards.map(function (c) {
+        return '<button type="button" class="jos-tile jos-settings-card" data-jos-act="' + esc(c.act) + '"><div class="jos-tile-ico">' + c.ico + '</div><h3>' + esc(c.t) + '</h3><p>' + esc(c.s) + '</p><div class="jos-muted jos-mt" style="font-size:12px">' + esc(c.links) + '</div></button>';
       }).join('') + '</div>');
     bindRoot(root);
   }
@@ -494,13 +503,14 @@
       if (act === 'ask-review') return ask('Who should I ask for a review?');
       if (act === 'ask-cust') return ask('Summarize next best action for ' + (el('jos-cp-name')?.textContent || 'this customer'));
       if (act === 'ask') return ask('Plan a simple marketing campaign for this week');
-      if (act === 'go-reviews') return onSwitchView('reviews');
-      if (act === 'go-mem') return onSwitchView('memberships');
-      if (act === 'go-money') return switchNav('money');
+      if (act === 'go-reviews') return switchNav('reviews');
+      if (act === 'go-mem') return switchNav('memberships');
+      if (act === 'go-money') return switchNav('reports');
       if (act === 'go-leads') return switchNav('leads');
       if (act === 'go-jobs') return switchNav('jobs');
       if (act === 'go-editor') return switchNav('editor');
-      if (act === 'go-ask') return onSwitchView('ask');
+      if (act === 'go-ask') return switchNav('ask');
+      if (act === 'go-settings') return switchNav('settings');
       if (act === 'close-profile') return closeCustomerProfile();
     });
   }

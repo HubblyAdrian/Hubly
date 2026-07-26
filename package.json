@@ -57,7 +57,8 @@
     "check:builder-epic10": "node scripts/check-builder-epic10.mjs",
     "check:builder-epic11": "node scripts/check-builder-epic11.mjs",
     "check:builder-epic12": "node scripts/check-builder-epic12.mjs",
-    "check:gcal-blocks-not-jobs": "node scripts/check-google-calendar-blocks-not-jobs.mjs"
+    "check:gcal-blocks-not-jobs": "node scripts/check-google-calendar-blocks-not-jobs.mjs",
+    "check:customer-journey-os": "node scripts/check-customer-journey-os.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
