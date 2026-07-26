@@ -11,17 +11,19 @@
 
 After Stage 1 merges → **lock the OS**. Stage 2 is additive and tracked separately.
 
+**Acceptance gate:** [Module Acceptance Test (MAT)](./MAT.md) — not informal smoke language.
+
 ## Maturity board
 
-See [MODULE_STATUS.md](./MODULE_STATUS.md).
+See [MODULE_STATUS.md](./MODULE_STATUS.md) (OS · Integrations · AI · QA · **MAT** · Lock).
 
 ## Checklists
 
-| Module | File | OS | Integrations | Locked |
-|--------|------|----|--------------|--------|
-| Home | [HOME_CHECKLIST.md](./HOME_CHECKLIST.md) | ✅ | ✅ | 🔒 |
-| Inbox | [INBOX_CHECKLIST.md](./INBOX_CHECKLIST.md) | ✅ | ⏸ | 🔓 (OS locked) |
-| Jobs & Calendar | [JOBS_CHECKLIST.md](./JOBS_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
+| Module | File | OS | Integrations | MAT | Locked |
+|--------|------|----|--------------|-----|--------|
+| Home | [HOME_CHECKLIST.md](./HOME_CHECKLIST.md) | ✅ | ✅ | ✅ | 🔒 Full |
+| Inbox | [INBOX_CHECKLIST.md](./INBOX_CHECKLIST.md) | ✅ | ⏸ | ✅ | 🔒 OS |
+| Jobs & Calendar | [JOBS_CHECKLIST.md](./JOBS_CHECKLIST.md) · [JOBS_MAT.md](./JOBS_MAT.md) | ✅ | ⏸ | ✅ | ❌ (🔒 OS after merge) |
 | Leads | [LEADS_CHECKLIST.md](./LEADS_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
 | Customers | [CUSTOMERS_CHECKLIST.md](./CUSTOMERS_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
 | Pipeline | [PIPELINE_CHECKLIST.md](./PIPELINE_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
