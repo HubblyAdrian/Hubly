@@ -25,13 +25,13 @@ See [MODULE_STATUS.md](./MODULE_STATUS.md) (OS · Integrations · AI · QA · **
 | Inbox | [INBOX_CHECKLIST.md](./INBOX_CHECKLIST.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Jobs & Calendar | [JOBS_CHECKLIST.md](./JOBS_CHECKLIST.md) · [JOBS_MAT.md](./JOBS_MAT.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Leads | [LEADS_CHECKLIST.md](./LEADS_CHECKLIST.md) · [LEADS_MAT.md](./LEADS_MAT.md) | ✅ | ⏸ | ✅ | ❌ (🔒 OS after merge) |
-| Customers | [CUSTOMERS_CHECKLIST.md](./CUSTOMERS_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
-| Pipeline | [PIPELINE_CHECKLIST.md](./PIPELINE_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
-| Storefront | [STOREFRONT_CHECKLIST.md](./STOREFRONT_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
-| Marketing | [MARKETING_CHECKLIST.md](./MARKETING_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
-| Reviews | [REVIEWS_CHECKLIST.md](./REVIEWS_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
-| Memberships | [MEMBERSHIPS_CHECKLIST.md](./MEMBERSHIPS_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
-| Revenue | [REVENUE_CHECKLIST.md](./REVENUE_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
-| Reports | [REPORTS_CHECKLIST.md](./REPORTS_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
-| Ask Hubly | [ASK_HUBLY_CHECKLIST.md](./ASK_HUBLY_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
-| Settings | [SETTINGS_CHECKLIST.md](./SETTINGS_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
+| Customers | [CUSTOMERS_CHECKLIST.md](./CUSTOMERS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Pipeline | [PIPELINE_CHECKLIST.md](./PIPELINE_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Storefront | [STOREFRONT_CHECKLIST.md](./STOREFRONT_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Marketing | [MARKETING_CHECKLIST.md](./MARKETING_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Reviews | [REVIEWS_CHECKLIST.md](./REVIEWS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Memberships | [MEMBERSHIPS_CHECKLIST.md](./MEMBERSHIPS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Revenue | [REVENUE_CHECKLIST.md](./REVENUE_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Reports | [REPORTS_CHECKLIST.md](./REPORTS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Ask Hubly | [ASK_HUBLY_CHECKLIST.md](./ASK_HUBLY_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Settings | [SETTINGS_CHECKLIST.md](./SETTINGS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
