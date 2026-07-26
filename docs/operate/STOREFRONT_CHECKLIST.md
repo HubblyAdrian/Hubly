@@ -21,48 +21,48 @@ Reviews on the site are **read-only** here (owner: ⭐ Reviews). Full review req
 ## Stage 1 — Operating System
 
 ### Core
-- [ ] `ownPixelView('v-editor', 'jos-storefront-root')` ⏳
-- [ ] Header (preview site, save, Ask Hubly) ⏳
-- [ ] Tabs ⏳
-- [ ] HublyDS page chrome ⏳
-- [ ] Responsive layout ⏳
+- [x] `ownPixelView('v-editor', 'jos-storefront-root')` ✅
+- [x] Header (preview site, save, Ask Hubly) ✅
+- [x] Tabs ✅
+- [x] HublyDS page chrome ✅
+- [x] Responsive layout ✅
 
 ### Tabs
-- [ ] Website ⏳
-- [ ] Booking ⏳
-- [ ] Services (catalog — source of truth) ⏳
-- [ ] Pricing ⏳
-- [ ] Gallery ⏳
-- [ ] Reviews (read) ⏳
-- [ ] SEO ⏳
-- [ ] Domain ⏳
-- [ ] Analytics (OS/demo) ⏳
+- [x] Website ✅
+- [x] Booking ✅
+- [x] Services (catalog — source of truth) ✅
+- [x] Pricing ✅
+- [x] Gallery ✅
+- [x] Reviews (read) ✅
+- [x] SEO ✅
+- [x] Domain ✅
+- [x] Analytics (OS/demo) ✅
 
 ### Service Catalog (Rule #15)
-- [ ] List / add / edit / archive services ⏳
-- [ ] Owns catalog data (`editorSvcs` / `services`) ⏳
-- [ ] Pricing fields (flat / duration / deposit OS) ⏳
+- [x] List / add / edit / archive services ✅
+- [x] Owns catalog data (`editorSvcs` / `services`) ✅
+- [x] Pricing fields (flat / duration / deposit OS) ✅
 
 ### Actions (`sf-*`)
-- [ ] Tab switch, save website copy, preview site/booking ⏳
-- [ ] Service CRUD ⏳
-- [ ] SEO / domain / slug edit ⏳
-- [ ] Stage 2 placeholders (live domain DNS, live analytics) ⏳
+- [x] Tab switch, save website copy, preview site/booking ✅
+- [x] Service CRUD ✅
+- [x] SEO / domain / slug edit ✅
+- [x] Stage 2 placeholders (live domain DNS, live analytics) ✅
 
 ### Empty / Error / Mobile
-- [ ] Empty catalog / gallery ⏳
-- [ ] Error + Retry ⏳
-- [ ] Responsive ⏳
+- [x] Empty catalog / gallery ✅
+- [x] Error + Retry ✅
+- [x] Responsive ✅
 
 ### QA / MAT / CMV
-- [ ] Validator storefront gate ⏳
-- [ ] CMV includes Pipeline ⏳
+- [x] Validator storefront gate ✅
+- [x] CMV includes Pipeline ✅
 - [ ] MAT ⏳
 
 ### Stage 1 Definition of Done
-- [ ] Storefront OS complete ⏳
-- [ ] HublyDS used ⏳
-- [ ] Service Catalog owned here ⏳
+- [x] Storefront OS complete ✅
+- [x] HublyDS used ✅
+- [x] Service Catalog owned here ✅
 - [ ] MAT ✅ ACCEPTED ⏳
 - [ ] CMV PASS ⏳
 - [ ] Merge → lock 🔒 OS ⏳

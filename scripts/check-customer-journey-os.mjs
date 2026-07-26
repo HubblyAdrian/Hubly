@@ -282,6 +282,20 @@ try {
       has(px, "jos-ds-drawer")
   );
 
+  mark("check storefront");
+  ok(
+    "storefront",
+    has(jjs, "function renderStorefront") &&
+      has(jjs, "handleStorefrontAct") &&
+      has(jjs, "ensureStorefrontOsState") &&
+      has(jjs, "syncStorefrontCatalogToServices") &&
+      has(jjs, "sf-preview") &&
+      has(hubly, 'id="v-editor"') &&
+      has(hubly, 'id="jos-storefront-root"') &&
+      has(hubly, "journey-os/design-system.js") &&
+      (has(px, "jos-sf-page") || has(px, "jos-storefront-root"))
+  );
+
   const ms = Date.now() - started;
   mark("done");
   clearTimeout(timer);

@@ -10037,6 +10037,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- EDITOR (Profile + Booking Page tabs) -->
       <div id="v-editor" class="hidden ed-canvas-on" style="height:calc(100vh - 54px);overflow:hidden;display:flex;flex-direction:column;min-height:0;">
+        <div id="jos-storefront-root"></div>
         <button type="button" class="ed-settings-rail-scrim" id="ed-settings-rail-scrim" onclick="closeEdSettingsRail()" aria-label="Close settings"></button>
         <div class="ed-shell ed-canvas-mode" id="ed-shell" style="flex:1;min-height:0;">
           <div class="ed-mobile-tabs">
@@ -34643,70 +34644,75 @@ function switchV(el){
   try{HublyJourneyOS?.onSwitchView?.(v);}catch(e){}
   if(v==='editor'){
     hublyBootLog('switchV editor enter');
-    try{initWsPeEditor();hublyBootLog('editor initWsPeEditor');}catch(e){hublyBootFail('editor initWsPeEditor',e);console.warn(e);}
-    try{mountEdChrome();hublyBootLog('editor mountEdChrome');}catch(e){hublyBootFail('editor mountEdChrome',e);}
-    try{closeEdSheet();hublyBootLog('editor closeEdSheet');}catch(e){hublyBootFail('editor closeEdSheet',e);}
-    try{
-      // Returning owners already have a layout — don't trap them in Styles tour.
-      const g=typeof ensureEditorGuide==='function'?ensureEditorGuide():null;
-      if(g&&(S.website?.layout||S.slug)&&!g.completed){
-        g.dismissed=true;g.active=false;
-      }
-    }catch(e){hublyBootFail('editor dismiss guide',e);}
-    try{
-      // Default to Site. openWebsiteEditorHub / Setup help set _edHubKeepTab
-      // so Packages / Book / Quote deep-links are not wiped back to Site.
-      if(!S._edHubKeepTab)S._edHubTab='site';
-      S._edHubKeepTab=false;
-      const hub=(S&&S._edHubTab)||'site';
-      document.body.classList.toggle('ed-hub-alt-open', hub==='book'||hub==='quote'||hub==='packages');
-      switchWebsiteHubTab(hub);
-      hublyBootLog('editor switchWebsiteHubTab', hub);
-    }catch(e){hublyBootFail('editor switchWebsiteHubTab',e);}
-    try{applyEdPreviewDeviceShowOnly();}catch(e){hublyBootFail('editor applyEdPreviewDeviceShowOnly',e);}
-    try{forceEdSiteCanvasVisible();}catch(e){hublyBootFail('editor forceEdSiteCanvasVisible',e);}
-    try{populateEditorFromState();hublyBootLog('editor populateEditorFromState');}catch(e){hublyBootFail('editor populateEditorFromState',e);console.warn('populateEditorFromState',e);}
-    try{switchEdTab('sf');}catch(e){hublyBootFail('editor switchEdTab',e);console.warn('switchEdTab',e);}
-    try{setEdMobileView('edit');}catch(e){hublyBootFail('editor setEdMobileView',e);}
-    try{renderHublyCoach();syncEdAiFab();}catch(e){hublyBootFail('editor coach/fab',e);}
-    setTimeout(()=>{
-      const pendingSheet=S&&S._edPendingSheet;
-      if(!pendingSheet){
-        try{closeEdSheet();}catch(e){}
-      }
-      try{switchWebsiteHubTab((S&&S._edHubTab)||'site');}catch(e){}
-      try{renderSectionsDragList();}catch(e){hublyBootFail('editor renderSectionsDragList',e);}
-      try{ensureGoogleFonts();}catch(e){}
-      try{renderLayoutSelector();}catch(e){hublyBootFail('editor renderLayoutSelector',e);}
-      try{renderGradientPicker('grad-picker-ed');}catch(e){hublyBootFail('editor renderGradientPicker',e);}
-      try{renderHoursGrid('hours-grid-ed');}catch(e){hublyBootFail('editor renderHoursGrid',e);}
-      try{syncBkBrandUI();}catch(e){}
-      try{applyEdPreviewDevice();}catch(e){hublyBootFail('editor applyEdPreviewDevice',e);console.warn(e);}
-      try{forceEdSiteCanvasVisible();}catch(e){}
-      try{updateEdPrev();hublyBootLog('editor updateEdPrev done');}catch(e){hublyBootFail('editor updateEdPrev',e);console.warn('editor updateEdPrev',e);}
-      try{updateEdPeHint();}catch(e){}
-      try{syncEdFullUrl();}catch(e){}
-      try{syncEdAiFab();}catch(e){}
-      if(isPlaceholderBizName(S.biz||document.getElementById('ed-name')?.value)&&!S._bizNamePrompted){
-        S._bizNamePrompted=true;
-        try{promptForBizName();}catch(e){}
-      }
+    const edView=document.getElementById('v-editor');
+    if(edView&&edView.classList.contains('jos-pixel-owned')){
+      hublyBootLog('switchV editor pixel-owned — skip legacy init');
+    }else{
+      try{initWsPeEditor();hublyBootLog('editor initWsPeEditor');}catch(e){hublyBootFail('editor initWsPeEditor',e);console.warn(e);}
+      try{mountEdChrome();hublyBootLog('editor mountEdChrome');}catch(e){hublyBootFail('editor mountEdChrome',e);}
+      try{closeEdSheet();hublyBootLog('editor closeEdSheet');}catch(e){hublyBootFail('editor closeEdSheet',e);}
       try{
-        // Don't auto-open Styles/tour — that overlay was trapping clicks.
-        renderEditorGuide();
-      }catch(e){hublyBootFail('editor renderEditorGuide',e);}
-      if(pendingSheet){
-        try{S._edPendingSheet='';}catch(e){}
+        // Returning owners already have a layout — don't trap them in Styles tour.
+        const g=typeof ensureEditorGuide==='function'?ensureEditorGuide():null;
+        if(g&&(S.website?.layout||S.slug)&&!g.completed){
+          g.dismissed=true;g.active=false;
+        }
+      }catch(e){hublyBootFail('editor dismiss guide',e);}
+      try{
+        // Default to Site. openWebsiteEditorHub / Setup help set _edHubKeepTab
+        // so Packages / Book / Quote deep-links are not wiped back to Site.
+        if(!S._edHubKeepTab)S._edHubTab='site';
+        S._edHubKeepTab=false;
+        const hub=(S&&S._edHubTab)||'site';
+        document.body.classList.toggle('ed-hub-alt-open', hub==='book'||hub==='quote'||hub==='packages');
+        switchWebsiteHubTab(hub);
+        hublyBootLog('editor switchWebsiteHubTab', hub);
+      }catch(e){hublyBootFail('editor switchWebsiteHubTab',e);}
+      try{applyEdPreviewDeviceShowOnly();}catch(e){hublyBootFail('editor applyEdPreviewDeviceShowOnly',e);}
+      try{forceEdSiteCanvasVisible();}catch(e){hublyBootFail('editor forceEdSiteCanvasVisible',e);}
+      try{populateEditorFromState();hublyBootLog('editor populateEditorFromState');}catch(e){hublyBootFail('editor populateEditorFromState',e);console.warn('populateEditorFromState',e);}
+      try{switchEdTab('sf');}catch(e){hublyBootFail('editor switchEdTab',e);console.warn('switchEdTab',e);}
+      try{setEdMobileView('edit');}catch(e){hublyBootFail('editor setEdMobileView',e);}
+      try{renderHublyCoach();syncEdAiFab();}catch(e){hublyBootFail('editor coach/fab',e);}
+      setTimeout(()=>{
+        const pendingSheet=S&&S._edPendingSheet;
+        if(!pendingSheet){
+          try{closeEdSheet();}catch(e){}
+        }
+        try{switchWebsiteHubTab((S&&S._edHubTab)||'site');}catch(e){}
+        try{renderSectionsDragList();}catch(e){hublyBootFail('editor renderSectionsDragList',e);}
+        try{ensureGoogleFonts();}catch(e){}
+        try{renderLayoutSelector();}catch(e){hublyBootFail('editor renderLayoutSelector',e);}
+        try{renderGradientPicker('grad-picker-ed');}catch(e){hublyBootFail('editor renderGradientPicker',e);}
+        try{renderHoursGrid('hours-grid-ed');}catch(e){hublyBootFail('editor renderHoursGrid',e);}
+        try{syncBkBrandUI();}catch(e){}
+        try{applyEdPreviewDevice();}catch(e){hublyBootFail('editor applyEdPreviewDevice',e);console.warn(e);}
+        try{forceEdSiteCanvasVisible();}catch(e){}
+        try{updateEdPrev();hublyBootLog('editor updateEdPrev done');}catch(e){hublyBootFail('editor updateEdPrev',e);console.warn('editor updateEdPrev',e);}
+        try{updateEdPeHint();}catch(e){}
+        try{syncEdFullUrl();}catch(e){}
+        try{syncEdAiFab();}catch(e){}
+        if(isPlaceholderBizName(S.biz||document.getElementById('ed-name')?.value)&&!S._bizNamePrompted){
+          S._bizNamePrompted=true;
+          try{promptForBizName();}catch(e){}
+        }
         try{
-          if(pendingSheet==='hours'){
-            openEdSheet('settings');
-            jumpToEdSection('hours');
-          }else if(pendingSheet==='settings'||pendingSheet==='layout'||pendingSheet==='account'||pendingSheet==='ai'){
-            openEdSheet(pendingSheet);
-          }
-        }catch(e){}
-      }
-    },80);
+          // Don't auto-open Styles/tour — that overlay was trapping clicks.
+          renderEditorGuide();
+        }catch(e){hublyBootFail('editor renderEditorGuide',e);}
+        if(pendingSheet){
+          try{S._edPendingSheet='';}catch(e){}
+          try{
+            if(pendingSheet==='hours'){
+              openEdSheet('settings');
+              jumpToEdSection('hours');
+            }else if(pendingSheet==='settings'||pendingSheet==='layout'||pendingSheet==='account'||pendingSheet==='ai'){
+              openEdSheet(pendingSheet);
+            }
+          }catch(e){}
+        }
+      },80);
+    }
   }else{
     unmountEdChrome();
   }
