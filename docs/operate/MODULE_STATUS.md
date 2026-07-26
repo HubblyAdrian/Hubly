@@ -53,7 +53,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 🧲 Leads | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ❤️ Customers | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🧭 Pipeline | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 🌐 Storefront | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
+| 🌐 Storefront | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
 | 📣 Marketing | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | ⭐ Reviews | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 🔁 Memberships | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
@@ -74,7 +74,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 4 | 🧲 Leads | ✅ Locked | ⏸ | [#247](https://github.com/HubblyAdrian/Hubly/pull/247) | 🔒 OS · MAT ✅ · merged |
 | 5 | ❤️ Customers | ✅ Locked | ⏸ | [#248](https://github.com/HubblyAdrian/Hubly/pull/248) | 🔒 OS · golden profile · MAT ✅ · CMV PASS |
 | 6 | 🧭 Pipeline | ✅ Locked | ⏸ | [#249](https://github.com/HubblyAdrian/Hubly/pull/249) | 🔒 OS · MAT ✅ · HublyDS v1 · merged |
-| 7 | 🌐 Storefront | ⏳ OS · QA pending | ⏸ | — | Service Catalog owner ([Rule #15](./DATA_OWNERSHIP.md)) · HublyDS · `cursor/operate-storefront-2662` |
+| 7 | 🌐 Storefront | ✅ OS done · MAT ✅ | ⏸ | [#250](https://github.com/HubblyAdrian/Hubly/pull/250) | Service Catalog owner ([Rule #15](./DATA_OWNERSHIP.md)) · HublyDS · CMV PASS · awaiting merge → 🔒 OS |
 | 8–14 | Remaining | ⏳ | ⏸ | — | |
 
 ## Workflow
