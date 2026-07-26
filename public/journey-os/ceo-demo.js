@@ -170,6 +170,9 @@
         phone: '(619) 555-0133',
         last_message: 'Can you fit ceramic coating in this week?',
         unread: 2,
+        priority: 'high',
+        isLead: true,
+        needsAttention: true,
         updated_at: todayOffset(0) + 'T09:15:00',
         messages: [
           { dir: 'in', text: 'Hi, saw your Google listing for ceramic coating.', at: '9:02 AM' },
@@ -184,6 +187,7 @@
         phone: '(619) 555-0198',
         last_message: 'Perfect, see you at 9am tomorrow.',
         unread: 0,
+        vip: true,
         updated_at: todayOffset(0) + 'T08:40:00',
         messages: [
           { dir: 'out', text: 'Reminder: Interior Detail tomorrow at 9:00 AM.', at: '8:30 AM' },
@@ -196,6 +200,8 @@
         channel: 'instagram',
         last_message: 'How much for a Model 3 interior detail?',
         unread: 1,
+        vehicle: 'Tesla Model 3',
+        needsAttention: true,
         updated_at: todayOffset(0) + 'T07:22:00',
         messages: [
           { dir: 'in', text: 'How much for a Model 3 interior detail?', at: '7:22 AM' }
@@ -207,10 +213,52 @@
         channel: 'chat',
         last_message: 'Left at vehicle size step',
         unread: 1,
+        aiMode: 'ai',
+        needsAttention: true,
         updated_at: todayOffset(0) + 'T06:50:00',
         messages: [
           { dir: 'in', text: 'Started booking Exterior Detail on website', at: '6:45 AM' },
           { dir: 'sys', text: 'Left at vehicle size step', at: '6:50 AM' }
+        ]
+      },
+      {
+        id: 'conv_emily',
+        customer_name: 'Emily Wilson',
+        channel: 'email',
+        email: 'emily@example.com',
+        last_message: 'Can you send the ceramic quote as a PDF?',
+        unread: 1,
+        needsAttention: true,
+        updated_at: todayOffset(0) + 'T10:05:00',
+        messages: [
+          { dir: 'in', text: 'Can you send the ceramic quote as a PDF?', at: '10:05 AM', attachment: 'request.pdf' }
+        ]
+      },
+      {
+        id: 'conv_chris',
+        customer_name: 'Chris Park',
+        channel: 'facebook',
+        last_message: 'Do you detail trucks at the office park?',
+        unread: 0,
+        updated_at: todayOffset(0) + 'T11:20:00',
+        messages: [
+          { dir: 'in', text: 'Do you detail trucks at the office park?', at: '11:18 AM' },
+          { dir: 'out', text: 'Yes — mobile service available in Mission Valley.', at: '11:20 AM' }
+        ]
+      },
+      {
+        id: 'conv_ai_fail',
+        customer_name: 'Website Visitor',
+        channel: 'ai',
+        last_message: 'AI could not confirm vehicle size',
+        unread: 1,
+        aiFailed: true,
+        needsAttention: true,
+        aiMode: 'ai',
+        updated_at: todayOffset(0) + 'T12:01:00',
+        messages: [
+          { dir: 'in', text: 'I want an exterior detail tomorrow', at: '11:58 AM' },
+          { dir: 'sys', text: 'AI could not confirm vehicle size', at: '12:01 PM' }
         ]
       },
       {
@@ -226,7 +274,7 @@
           { dir: 'out', text: 'Done — updated to 11:30 AM.', at: '4:12 PM' }
         ]
       }
-    ];
+    ];    ];
 
     try {
       var navBiz = document.getElementById('nav-biz');
