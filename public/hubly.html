@@ -12193,6 +12193,10 @@ function showP(id,opts){
 window.addEventListener('popstate',()=>{
   if(typeof getSlugFromHost==='function'&&getSlugFromHost())return;
   const dest=pageForHublyPath(hublyPath())||'p-landing';
+  if(dest==='p-ceo-demo'||isCeoDemoPath()||S._ceoDemo){
+    startCeoDemoMode();
+    return;
+  }
   if((dest==='p-app')&&!currentUser){
     // Instant Site draft / claimed owner — try silent resume before forcing login.
     if(readOwnerLogin()?.password||readDraftLogin()?.password){
