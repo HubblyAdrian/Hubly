@@ -593,10 +593,12 @@
 .jos-perk{margin-bottom:4px}
 
 /* ── Dashboard tight morning briefing ── */
-.jos-dash-tight ~ .dash-focus-row,
-.jos-dash-tight ~ .dash-one-rec,
 #v-dashboard.jos-dash-tight .dash-focus-row,
-#v-dashboard.jos-dash-tight .dash-one-rec{display:none}
+#v-dashboard.jos-dash-tight .dash-one-rec,
+#v-dashboard.jos-dash-tight .dash-ops-hero,
+#v-dashboard.jos-dash-tight .dash-hero,
+#v-dashboard.jos-dash-tight .dash-site-hero,
+#v-dashboard.jos-dash-tight .dash-ask-dock{display:none!important}
 .jos-dash-compact{margin-bottom:14px}
 .jos-dash-tight-brief{padding:16px 18px}
 .jos-dash-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;position:relative}
@@ -624,6 +626,10 @@
 }
 .jos-dash-sched-row strong{color:#fdba74;min-width:52px;font-size:12px}
 .jos-dash-sched-row:last-child{border-bottom:0}
+.jos-growth-brief{margin-bottom:14px}
+.jos-growth-row{gap:12px;padding:10px 0;border-bottom:1px solid var(--jos-border);align-items:flex-start}
+.jos-growth-row:last-child{border-bottom:0}
+.jos-growth-row .jos-muted{margin-top:4px}
 
 @media(max-width:960px){
   .jos-mkt-3col,.jos-ov-grid,.jos-mem-layout,.jos-job-split,.jos-book-split{grid-template-columns:1fr}
