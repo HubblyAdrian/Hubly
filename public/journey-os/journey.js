@@ -15,7 +15,7 @@
     { id: 'returning', label: 'Returning Customer', dot: 'returning' },
     { id: 'membership', label: 'Membership', dot: 'membership' }
   ];
-  var PROFILE_TABS = ['Overview', 'Jobs', 'Bookings', 'Reviews', 'Notes', 'History', 'Files', 'Activity'];
+  var PROFILE_TABS = ['Overview', 'Timeline', 'Jobs', 'Payments', 'Photos', 'Messages', 'Membership', 'Reviews', 'Documents', 'Notes'];
   var ASK_CHIPS = ['Who should I follow up with today?', 'Draft a win-back text', 'What membership should I offer?', 'Summarize this week’s revenue', 'Who needs a rebook nudge?'];
   var POPULAR_ASKS = [
     { t: 'Recover abandoned bookings', s: 'Draft follow-ups for unfinished starts.' },
@@ -1632,66 +1632,733 @@
     return renderLeads();
   }
 
-  function renderCustomersPage() {
-    var view = el('v-customers'); if (!view) return;
-    var root = el('jos-customers-root');
-    if (!root) {
-      root = document.createElement('div'); root.id = 'jos-customers-root';
-      view.insertBefore(root, view.firstChild);
-    }
-    view.classList.add('jos-pixel-owned');
-    var list = customers().slice();
-    if (!list.length) {
-      list = [
-        { id: 'demo_c1', name: 'Sarah Johnson', phone: '(512) 555-0198', email: 'sarah.johnson@gmail.com', vehicle: 'Tesla Model Y', customerType: 'recurring', statusOverride: 'vip', preferredService: 'Ceramic Coating' },
-        { id: 'demo_c2', name: 'Mike Brown', phone: '(512) 555-0142', email: 'mike.brown@email.com', vehicle: 'BMW X5', preferredService: 'Interior Detail' },
-        { id: 'demo_c3', name: 'Emily Smith', phone: '(512) 555-0177', email: 'emily.s@email.com', vehicle: 'Audi Q5', preferredService: 'Full Detail' }
+  var CUST_TABS = [
+    ['all', 'All Customers'],
+    ['memberships', 'Memberships'],
+    ['vehicles', 'Vehicles / Properties'],
+    ['segments', 'Segments'],
+    ['favorites', 'Favorites']
+  ];
+  var CUST_SEGMENTS = [
+    ['vip', 'VIP'],
+    ['high_ltv', 'High LTV'],
+    ['new', 'New'],
+    ['at_risk', 'At Risk'],
+    ['seasonal', 'Seasonal'],
+    ['repeat', 'Repeat']
+  ];
+  var CUST_PERM_ROLES = [
+    { role: 'Owner', view: '✅', edit: '✅', book: '✅', archive: '✅', assign: '✅' },
+    { role: 'Manager', view: '✅', edit: '✅', book: '✅', archive: '✅', assign: '✅' },
+    { role: 'Office', view: '✅', edit: '✅', book: '✅', archive: '—', assign: '✅' },
+    { role: 'Sales', view: '✅', edit: '✅', book: '✅', archive: '—', assign: '—' },
+    { role: 'Read Only', view: '✅', edit: '—', book: '—', archive: '—', assign: '—' }
+  ];
+
+  function ensureCustomersOsState() {
+    var st = S();
+    if (!Array.isArray(st.customers)) st.customers = [];
+    if (!Array.isArray(st.team) || !st.team.length) {
+      st.team = [
+        { id: 'tech_adrian', name: 'Adrian Lopez', role: 'Owner' },
+        { id: 'tech_maya', name: 'Maya Chen', role: 'Technician' },
+        { id: 'tech_luis', name: 'Luis Ortega', role: 'Technician' }
       ];
     }
-    var q = (root._josCustQ || '').toLowerCase();
-    var tab = root._josCustTab || 'all';
-    var rows = list.map(function (c) {
-      var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
-      var lifetime = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-      var last = lastJob(c);
-      var hs = healthScore(c);
-      var vip = c.statusOverride === 'vip' || c.isVip || /vip/i.test(String(c.tags || c.status || ''));
-      return { c: c, lifetime: lifetime, last: last, hs: hs, vip: vip, member: c.customerType === 'recurring', vehicles: c.vehicle || vehicleOf(last) || '—' };
-    }).filter(function (x) {
-      if (tab === 'vip' && !x.vip) return false;
-      if (tab === 'member' && !x.member) return false;
-      if (!q) return true;
-      return String(x.c.name || '').toLowerCase().indexOf(q) >= 0 || String(x.c.phone || '').indexOf(q) >= 0 || String(x.c.email || '').toLowerCase().indexOf(q) >= 0;
-    });
-    var selId = root._josCustId || null;
-    var selRow = rows.find(function (x) { return String(x.c.id) === String(selId); }) || null;
-    function sideHtml(row) {
-      if (!row) return '<div class="jos-px-side-empty">Select a customer — profile opens on the right.</div>';
-      var c = row.c;
-      return '<div class="jos-px-side-head"><div class="jos-px-person"><div class="jos-px-av">' + esc(initials(c.name)) + '</div><div><strong>' + esc(c.name || 'Customer') + (row.vip ? '<span class="jos-px-badge vip">VIP</span>' : (row.member ? '<span class="jos-px-badge member">Member</span>' : '')) + '</strong><div class="sub">' + esc([c.phone, c.email].filter(Boolean).join(' · ') || 'No contact') + '</div></div></div>' +
-        '<div class="jos-px-side-meta"><div><span>Vehicle</span> ' + esc(row.vehicles) + '</div><div><span>Preferred</span> ' + esc(c.preferredService || '—') + '</div></div></div>' +
-        '<div class="jos-px-side-body"><div class="jos-px-side-stats"><div class="jos-px-side-stat"><div class="l">Lifetime</div><div class="v">' + esc(money(row.lifetime) || '$0') + '</div></div><div class="jos-px-side-stat"><div class="l">Last visit</div><div class="v">' + esc(row.last?.date ? dateLong(row.last.date) : '—') + '</div></div><div class="jos-px-side-stat"><div class="l">Membership</div><div class="v">' + (row.member ? 'Active' : 'None') + '</div></div><div class="jos-px-side-stat"><div class="l">Health</div><div class="v">' + row.hs + '</div></div></div>' +
-        '<p style="font-size:13px;color:var(--jos-ink-2);line-height:1.45;margin:0 0 12px">' + esc(aiCustomerSummary(c, custJobsFor(c).filter(function (j) { return j.status === 'completed'; }), custJobsFor(c).filter(function (j) { return j.status !== 'completed' && j.status !== 'cancelled' && j.status !== 'pending'; }))) + '</p>' +
-        '<div class="jos-px-side-actions"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(c.id)) + '">View Full Profile</button>' + btn('new-job-cust', 'New Job', 'jos-btn jos-btn-sm') + '</div></div>';
+    if (!st.customersOs) st.customersOs = { savedFilters: [], role: 'Owner' };
+    if (!Array.isArray(st.customersOs.savedFilters)) st.customersOs.savedFilters = [];
+    if (!st.customers.length) {
+      st.customers = [
+        { id: 'demo_c1', name: 'Sarah Johnson', phone: '(512) 555-0198', email: 'sarah.johnson@gmail.com', vehicle: 'Tesla Model Y', customerType: 'recurring', statusOverride: 'vip', preferredService: 'Ceramic Coating', city: 'Austin', favorite: true, tags: ['VIP', 'Member'] },
+        { id: 'demo_c2', name: 'Mike Brown', phone: '(512) 555-0142', email: 'mike.brown@email.com', vehicle: 'BMW X5', preferredService: 'Interior Detail', city: 'Austin', tags: ['Interior'] },
+        { id: 'demo_c3', name: 'Emily Smith', phone: '(512) 555-0177', email: 'emily.s@email.com', vehicle: 'Audi Q5', preferredService: 'Full Detail', city: 'Austin', tags: ['Reviewer'], favorite: true }
+      ];
     }
-    root.innerHTML = '<div class="jos-px-page"><div class="jos-px-page-head"><div><h1>Customers</h1><p>Lifetime value, membership, vehicles, and health — click a row for the side panel.</p></div><div class="jos-head-actions">' + btn('add-cust', '+ Add customer', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
-      '<div class="jos-px-filters"><input type="search" id="jos-cust-q" placeholder="Search customers…" value="' + esc(root._josCustQ || '') + '">' +
-      [['all', 'All'], ['vip', 'VIP'], ['member', 'Members']].map(function (f) {
-        return '<button type="button" class="jos-px-chip' + (tab === f[0] ? ' on' : '') + '" data-jos-cust-tab="' + f[0] + '">' + f[1] + '</button>';
-      }).join('') + '</div>' +
-      '<div class="jos-px-layout"><div class="jos-px-table-wrap"><table class="jos-px-table"><thead><tr><th>Customer</th><th>Lifetime</th><th>Last visit</th><th>Membership</th><th>Vehicles</th><th>Health</th></tr></thead><tbody>' +
-      (rows.length ? rows.map(function (x) {
-        var on = selRow && String(selRow.c.id) === String(x.c.id);
-        var hClass = x.hs >= 85 ? '' : (x.hs >= 70 ? ' mid' : ' low');
-        return '<tr class="' + (on ? 'sel' : '') + '" data-jos-cust-row="' + esc(String(x.c.id)) + '"><td><div class="jos-px-person"><div class="jos-px-av">' + esc(initials(x.c.name)) + '</div><div><strong>' + esc(x.c.name) + (x.vip ? '<span class="jos-px-badge vip">VIP</span>' : '') + '</strong><div class="sub">' + esc(x.c.phone || x.c.email || '') + '</div></div></div></td><td style="font-weight:750;color:var(--jos-navy)">' + esc(money(x.lifetime) || '$0') + '</td><td>' + esc(x.last?.date ? dateLong(x.last.date) : '—') + '</td><td>' + (x.member ? '<span class="jos-px-badge member">Active</span>' : '—') + '</td><td>' + esc(x.vehicles) + '</td><td><span class="jos-px-health-dot' + hClass + '"><i></i>' + x.hs + '</span></td></tr>';
-      }).join('') : '<tr><td colspan="6"><div class="jos-empty">No customers yet.</div></td></tr>') +
-      '</tbody></table></div><aside class="jos-px-side" id="jos-cust-side">' + sideHtml(selRow) + '</aside></div></div>';
-    if (selRow) S().activeCustId = selRow.c.id;
+    var team = st.team;
+    st.customers.forEach(function (c, idx) {
+      if (!c.id) c.id = 'cust_auto_' + idx;
+      if (!c.status) c.status = c.archived ? 'inactive' : 'active';
+      if (c.favorite == null) c.favorite = !!(c.statusOverride === 'vip' || c.isVip);
+      if (!Array.isArray(c.tags)) c.tags = c.tags ? String(c.tags).split(/[,\s]+/).filter(Boolean) : [];
+      if (c.statusOverride === 'vip' && c.tags.indexOf('VIP') < 0) c.tags.push('VIP');
+      if (!c.membership) {
+        c.membership = c.customerType === 'recurring' ? (c.preferredService ? c.preferredService + ' Plan' : 'Monthly Plan') : '';
+      }
+      if (!Array.isArray(c.vehicles)) {
+        c.vehicles = c.vehicle ? [{ label: String(c.vehicle), type: '' }] : [];
+      }
+      if (!c.vehicle && c.vehicles[0]) c.vehicle = c.vehicles[0].label || c.vehicles[0].name || '';
+      if (!c.city) {
+        var addr = String(c.address || '');
+        var m = addr.match(/,\s*([^,]+),\s*[A-Z]{2}\b/) || addr.match(/,\s*([^,]+)$/);
+        c.city = m ? m[1].trim() : (st.city || '');
+      }
+      if (!c.assignedTo) c.assignedTo = (team[idx % team.length] || team[0]).name;
+      if (c.aiScore == null) {
+        var base = 50 + (c.customerType === 'recurring' ? 20 : 0) + (c.favorite ? 8 : 0);
+        c.aiScore = Math.max(5, Math.min(99, base + (idx % 19)));
+      }
+      if (c.unread == null) c.unread = 0;
+      if (!Array.isArray(c.notesList)) c.notesList = c.notes ? [String(c.notes)] : [];
+      if (!Array.isArray(c.documents)) c.documents = [];
+      if (!Array.isArray(c.photos)) c.photos = [];
+      if (!Array.isArray(c.payments)) c.payments = [];
+      if (!c.property) c.property = '';
+      if (!Array.isArray(c.activity) || !c.activity.length) {
+        c.activity = [{ type: 'created', label: 'Customer record created', at: String(c.createdAt || todayStr()).slice(0, 16).replace('T', ' ') }];
+      }
+      if (c.lifetimeValue == null) {
+        var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
+        c.lifetimeValue = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+        if (!c.lifetimeValue && c.payments && c.payments.length) {
+          c.lifetimeValue = c.payments.reduce(function (s, p) { return s + (parseFloat(p.amount) || 0); }, 0);
+        }
+      }
+    });
+    return st;
+  }
+
+  function customersOsList() {
+    ensureCustomersOsState();
+    return customers().filter(function (c) { return !c.deleted; });
+  }
+
+  function findCustomer(id) {
+    return customersOsList().find(function (c) { return String(c.id) === String(id); }) || null;
+  }
+
+  function custIsVip(c) {
+    return !!(c.statusOverride === 'vip' || c.isVip || (c.tags || []).some(function (t) { return /vip/i.test(String(t)); }));
+  }
+
+  function custIsMember(c) {
+    return c.customerType === 'recurring' || !!(c.membership && String(c.membership).trim());
+  }
+
+  function custSegmentOf(c) {
+    var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
+    var ltv = custLifetime(c);
+    var created = String(c.createdAt || '').slice(0, 10);
+    var daysNew = todayStr();
+    try {
+      var d = new Date(todayStr() + 'T12:00:00');
+      d.setDate(d.getDate() - 30);
+      daysNew = d.toISOString().slice(0, 10);
+    } catch (e) {}
+    if (custIsVip(c)) return 'vip';
+    if (ltv >= 500 || done.length >= 4) return 'high_ltv';
+    if (created && created >= daysNew) return 'new';
+    if ((c.aiScore != null && c.aiScore < 45) || /at.?risk|abandoned/i.test((c.tags || []).join(' '))) return 'at_risk';
+    if (/seasonal/i.test((c.tags || []).join(' ')) || c.seasonal) return 'seasonal';
+    if (done.length >= 2) return 'repeat';
+    return 'new';
+  }
+
+  function custLifetime(c) {
+    if (c && c.lifetimeValue != null && c.lifetimeValue > 0) return Number(c.lifetimeValue) || 0;
+    var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
+    var fromJobs = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    if (fromJobs) return fromJobs;
+    return (c.payments || []).reduce(function (s, p) { return s + (parseFloat(p.amount) || 0); }, 0);
+  }
+
+  function custMatchesTab(c, tab, segment) {
+    if (tab === 'memberships') return custIsMember(c);
+    if (tab === 'vehicles') return !!(c.vehicle || (c.vehicles && c.vehicles.length) || c.property);
+    if (tab === 'favorites') return !!c.favorite;
+    if (tab === 'segments') {
+      var seg = segment || 'vip';
+      return custSegmentOf(c) === seg || (seg === 'vip' && custIsVip(c));
+    }
+    return true;
+  }
+
+  function custMatchesFilters(c, root) {
+    var f = root._josCustFilters || {};
+    if (f.active === 'active' && c.status === 'inactive') return false;
+    if (f.active === 'inactive' && c.status !== 'inactive') return false;
+    if (f.membership === 'yes' && !custIsMember(c)) return false;
+    if (f.membership === 'no' && custIsMember(c)) return false;
+    if (f.ltv === 'high' && !(custLifetime(c) >= 500)) return false;
+    if (f.ltv === 'med' && !(custLifetime(c) >= 200 && custLifetime(c) < 500)) return false;
+    if (f.ltv === 'low' && !(custLifetime(c) < 200)) return false;
+    if (f.lastJob && f.lastJob !== 'all') {
+      var last = lastJob(c);
+      var ld = last && last.date ? String(last.date).slice(0, 10) : '';
+      if (f.lastJob === 'none' && ld) return false;
+      if (f.lastJob === '30') {
+        var cut30 = todayStr();
+        try {
+          var d30 = new Date(todayStr() + 'T12:00:00');
+          d30.setDate(d30.getDate() - 30);
+          cut30 = d30.toISOString().slice(0, 10);
+        } catch (e) {}
+        if (!ld || ld < cut30) return false;
+      }
+      if (f.lastJob === 'stale') {
+        var cut90 = todayStr();
+        try {
+          var d90 = new Date(todayStr() + 'T12:00:00');
+          d90.setDate(d90.getDate() - 90);
+          cut90 = d90.toISOString().slice(0, 10);
+        } catch (e2) {}
+        if (ld && ld >= cut90) return false;
+      }
+    }
+    if (f.city && f.city !== 'all' && String(c.city || '') !== f.city) return false;
+    if (f.assigned && f.assigned !== 'all' && c.assignedTo !== f.assigned) return false;
+    if (f.service && f.service !== 'all' && String(c.preferredService || '') !== f.service) return false;
+    if (f.vehicle && String(c.vehicle || vehicleOf(c) || '').toLowerCase().indexOf(String(f.vehicle).toLowerCase()) < 0) return false;
+    if (f.tags && String(f.tags).trim()) {
+      var want = String(f.tags).toLowerCase().split(/[,\s]+/).filter(Boolean);
+      var have = (c.tags || []).map(function (t) { return String(t).toLowerCase(); });
+      if (!want.every(function (w) { return have.some(function (h) { return h.indexOf(w) >= 0; }); })) return false;
+    }
+    return true;
+  }
+
+  function custSearchHay(c) {
+    var veh = (c.vehicles || []).map(function (v) { return v.label || v.name || v; }).join(' ');
+    return [
+      c.name, c.phone, c.email, c.address, c.city, c.vehicle, veh, c.property,
+      c.membership, (c.tags || []).join(' '), c.notes, (c.notesList || []).join(' '),
+      c.preferredService, c.assignedTo
+    ].join(' ').toLowerCase();
+  }
+
+  function filterCustomersList(root) {
+    var tab = root._josCustTab || 'all';
+    var seg = root._josCustSegment || 'vip';
+    var q = String(root._josCustQ || '').trim().toLowerCase();
+    var list = customersOsList().filter(function (c) { return custMatchesTab(c, tab, seg); });
+    list = list.filter(function (c) { return custMatchesFilters(c, root); });
+    if (q) list = list.filter(function (c) { return custSearchHay(c).indexOf(q) > -1; });
+    return list.slice().sort(function (a, b) {
+      return custLifetime(b) - custLifetime(a) || String(a.name || '').localeCompare(String(b.name || ''));
+    });
+  }
+
+  function uniqueCustValues(field) {
+    var set = {};
+    customersOsList().forEach(function (c) {
+      var v = field === 'service' ? c.preferredService : c[field];
+      if (v) set[String(v)] = true;
+    });
+    return Object.keys(set).sort();
+  }
+
+  function renderCustomersFilterDrawer(root) {
+    var f = root._josCustFilters || {};
+    if (!root._josCustFilterOpen) return '';
+    function opt(list, cur, allLabel) {
+      return '<option value="all"' + (!cur || cur === 'all' ? ' selected' : '') + '>' + (allLabel || 'All') + '</option>' +
+        list.map(function (v) {
+          return '<option value="' + esc(v) + '"' + (cur === v ? ' selected' : '') + '>' + esc(v) + '</option>';
+        }).join('');
+    }
+    return '<div class="jos-cust-drawer" id="jos-cust-drawer">' +
+      '<div class="jos-between"><div class="jos-kicker">Filters</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-filter-close">Close</button></div>' +
+      '<div class="jos-cust-filter-grid">' +
+      '<label>Status<select id="jos-cf-active">' + opt(['active', 'inactive'], f.active, 'Any') + '</select></label>' +
+      '<label>Membership<select id="jos-cf-membership">' + opt(['yes', 'no'], f.membership, 'Any') + '</select></label>' +
+      '<label>Lifetime Value<select id="jos-cf-ltv">' + opt(['high', 'med', 'low'], f.ltv, 'Any') + '</select></label>' +
+      '<label>Last Job<select id="jos-cf-lastjob">' + opt(['30', 'stale', 'none'], f.lastJob, 'Any') + '</select></label>' +
+      '<label>City<select id="jos-cf-city">' + opt(uniqueCustValues('city'), f.city) + '</select></label>' +
+      '<label>Assigned Employee<select id="jos-cf-assigned">' + opt(uniqueCustValues('assignedTo'), f.assigned, 'Anyone') + '</select></label>' +
+      '<label>Service<select id="jos-cf-service">' + opt(uniqueCustValues('service'), f.service) + '</select></label>' +
+      '<label>Vehicle<input id="jos-cf-vehicle" type="text" value="' + esc(f.vehicle || '') + '" placeholder="Vehicle…"></label>' +
+      '<label>Tags<input id="jos-cf-tags" type="text" value="' + esc(f.tags || '') + '" placeholder="VIP, Member"></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' +
+      btn('cust-filter-apply', 'Apply', 'jos-btn-brand jos-btn-sm') +
+      btn('cust-filter-reset', 'Reset', 'jos-btn jos-btn-sm') +
+      btn('cust-filter-save', 'Save Filter', 'jos-btn jos-btn-sm') +
+      '</div></div>';
+  }
+
+  function renderCustomersAddModal(root) {
+    if (!root._josCustAddOpen) return '';
+    var d = root._josCustDraft || {};
+    var team = S().team || [];
+    return '<div class="jos-cust-modal-backdrop" data-jos-act="cust-add-cancel">' +
+      '<div class="jos-cust-modal" onclick="event.stopPropagation()">' +
+      '<div class="jos-between"><h3 style="margin:0">Add Customer</h3><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-add-cancel">✕</button></div>' +
+      '<div class="jos-cust-form">' +
+      '<label>Name<input id="jos-ca-name" value="' + esc(d.name || '') + '" placeholder="Full name"></label>' +
+      '<label>Phone<input id="jos-ca-phone" value="' + esc(d.phone || '') + '" placeholder="(619) 555-0100"></label>' +
+      '<label>Email<input id="jos-ca-email" value="' + esc(d.email || '') + '" placeholder="name@email.com"></label>' +
+      '<label>Address<input id="jos-ca-address" value="' + esc(d.address || '') + '" placeholder="Service address"></label>' +
+      '<label>Vehicle / Property<input id="jos-ca-vehicle" value="' + esc(d.vehicle || '') + '" placeholder="Vehicle or property"></label>' +
+      '<label>Tags<input id="jos-ca-tags" value="' + esc(d.tags || '') + '" placeholder="VIP, Member"></label>' +
+      '<label>Membership<select id="jos-ca-membership">' +
+        [['', 'None'], ['Monthly Interior', 'Monthly Interior'], ['Monthly Exterior', 'Monthly Exterior'], ['Annual Ceramic', 'Annual Ceramic']].map(function (s) {
+          return '<option value="' + esc(s[0]) + '"' + ((d.membership || '') === s[0] ? ' selected' : '') + '>' + esc(s[1]) + '</option>';
+        }).join('') +
+      '</select></label>' +
+      '<label>Assigned<select id="jos-ca-assigned">' +
+        team.map(function (t) {
+          return '<option value="' + esc(t.name) + '"' + ((d.assignedTo || (team[0] && team[0].name)) === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+        }).join('') +
+      '</select></label>' +
+      '<label class="jos-cust-span2">Notes<textarea id="jos-ca-notes" class="jos-textarea" placeholder="Notes…">' + esc(d.notes || '') + '</textarea></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' +
+      btn('cust-add-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
+      btn('cust-add-save', 'Save', 'jos-btn-brand jos-btn-sm') +
+      '</div></div></div>';
+  }
+
+  function renderCustomerCard(c, selectedId) {
+    var on = selectedId && String(c.id) === String(selectedId);
+    var last = lastJob(c);
+    var ltv = custLifetime(c);
+    var member = custIsMember(c);
+    return '<button type="button" class="jos-list-card jos-cust-card' + (on ? ' on' : '') + '" data-jos-cust-row="' + esc(String(c.id)) + '">' +
+      '<div class="jos-between">' +
+        '<div class="jos-px-person"><div class="jos-px-av">' + esc(initials(c.name)) + '</div><div><strong class="t">' + esc(c.name || 'Customer') +
+        (c.favorite ? ' ★' : '') + '</strong>' +
+        '<div class="s">' + esc(c.phone || c.email || '—') + '</div></div></div>' +
+        '<div class="jos-cust-card-ltv">' + esc(money(ltv) || '$0') + '</div>' +
+      '</div>' +
+      '<div class="meta">' +
+        (member ? '<span class="jos-pill ok">' + esc(c.membership || 'Member') + '</span>' : '') +
+        (custIsVip(c) ? '<span class="jos-pill hot">VIP</span>' : '') +
+        '<span class="jos-pill info">AI ' + esc(String(c.aiScore || 0)) + '</span>' +
+        (c.unread ? '<span class="jos-pill hot">' + c.unread + ' new</span>' : '') +
+        ((c.tags || []).slice(0, 3).map(function (t) { return '<span class="jos-tag">' + esc(t) + '</span>'; }).join('')) +
+      '</div>' +
+      '<div class="s jos-cust-last">Last job · ' + esc(last && last.date ? dateLong(last.date) : 'None') +
+        (c.assignedTo ? ' · ' + esc(c.assignedTo) : '') + '</div></button>';
+  }
+
+  function custAiInsights(c) {
+    var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
+    var booked = custJobsFor(c).filter(function (j) { return j.status !== 'completed' && j.status !== 'cancelled'; });
+    var ltv = custLifetime(c);
+    var churn = Math.max(8, Math.min(92, 100 - (c.aiScore || 50) + (done.length ? 0 : 15)));
+    var upsell = c.customerType === 'recurring' ? 'Offer annual ceramic refresh add-on' : 'Offer membership after next completed visit';
+    var nba = booked.length ? 'Confirm upcoming visit 24h ahead' : (c.unread ? 'Reply to unread messages' : 'Send a rebook nudge');
+    var memSug = custIsMember(c) ? (c.membership || 'Keep current plan') : 'Monthly Interior · best fit from visit pattern';
+    var forecast = Math.round(ltv * 0.35 + (custIsMember(c) ? 400 : 120));
+    var reviewOdds = done.length >= 2 || /review/i.test((c.tags || []).join(' ')) ? 78 : (done.length ? 55 : 28);
+    return {
+      summary: aiCustomerSummary(c, done, booked),
+      churn: churn,
+      upsell: upsell,
+      nba: nba,
+      membership: memSug,
+      forecast: forecast,
+      reviewOdds: reviewOdds
+    };
+  }
+
+  function renderCustomerWorkspace(root, c) {
+    if (!c) return '<div class="jos-empty">Select a customer to open the workspace. Click a card to open the golden profile.</div>';
+    var last = lastJob(c);
+    var next = nextJob(c);
+    var ltv = custLifetime(c);
+    var hs = healthScore(c);
+    var ai = custAiInsights(c);
+    var tab = root._josCustProfileTab || 'Overview';
+    var tabs = '<div class="jos-btn-row jos-cust-ws-tabs">' + PROFILE_TABS.map(function (t) {
+      return '<button type="button" class="jos-btn jos-btn-sm' + (tab === t ? ' jos-btn-brand' : '') + '" data-jos-act="cust-ws-tab" data-jos-cust-ws-tab="' + esc(t) + '">' + esc(t) + '</button>';
+    }).join('') + '</div>';
+    return '<div class="jos-card jos-cust-workspace" data-jos-cust-id="' + esc(String(c.id)) + '">' +
+      '<div class="jos-between"><div class="jos-px-person"><div class="jos-px-av">' + esc(initials(c.name)) + '</div><div>' +
+      '<div class="jos-kicker">Customer Workspace</div><h3 style="margin:4px 0 0">' + esc(c.name || 'Customer') + (c.favorite ? ' ★' : '') + '</h3>' +
+      '<div class="jos-muted">' + esc([c.phone, c.email].filter(Boolean).join(' · ') || 'No contact') + '</div></div></div>' +
+      '<div class="jos-btn-row">' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(c.id)) + '">Open Full Profile</button>' +
+        btn('new-job-cust', 'Book Job', 'jos-btn jos-btn-sm') +
+      '</div></div>' +
+      '<div class="jos-cust-ws-stats jos-mt">' +
+        [['Lifetime', money(ltv) || '$0'], ['Health', String(hs)], ['Last job', last && last.date ? dateLong(last.date) : '—'], ['Next', next && next.date ? dateLong(next.date) : '—'], ['Membership', custIsMember(c) ? (c.membership || 'Active') : 'None']].map(function (x) {
+          return '<div class="jos-kpi"><div class="jos-kpi-lbl">' + esc(x[0]) + '</div><div class="jos-kpi-v" style="font-size:15px">' + esc(x[1]) + '</div></div>';
+        }).join('') +
+      '</div>' +
+      tabs +
+      '<div class="jos-cust-ws-body jos-mt" id="jos-cust-ws-body">' + profileTabHtml(c, tab) + '</div>' +
+      '<div class="jos-ai jos-mt"><div class="sk">AI · in-app</div><p style="font-size:13px;margin-top:6px">' + esc(ai.summary) + '</p>' +
+      '<div class="jos-muted jos-mt">Next best action: <strong>' + esc(ai.nba) + '</strong></div></div></div>';
+  }
+
+  function renderCustomerSidebar(c) {
+    if (!c) {
+      return '<div class="jos-stack jos-cust-side"><div class="jos-empty">AI summary, health, and activity appear when you select a customer.</div>' +
+        '<div class="jos-card"><div class="jos-kicker">Permissions (OS)</div><table class="jos-cust-perm"><thead><tr><th>Role</th><th>View</th><th>Edit</th><th>Book</th><th>Archive</th><th>Assign</th></tr></thead><tbody>' +
+        CUST_PERM_ROLES.map(function (r) {
+          return '<tr><td>' + esc(r.role) + '</td><td>' + r.view + '</td><td>' + r.edit + '</td><td>' + r.book + '</td><td>' + r.archive + '</td><td>' + r.assign + '</td></tr>';
+        }).join('') + '</tbody></table></div></div>';
+    }
+    var ai = custAiInsights(c);
+    var hs = healthScore(c);
+    return '<div class="jos-stack jos-cust-side">' +
+      '<div class="jos-ai"><div class="sk">AI Summary</div><p style="font-size:13px;margin-top:6px">' + esc(ai.summary) + '</p>' +
+      '<div class="jos-stack jos-mt" style="gap:6px">' +
+        '<div class="jos-between"><span style="font-size:12px">Churn risk</span><strong>' + ai.churn + '%</strong></div>' +
+        '<div class="jos-between"><span style="font-size:12px">Upsell</span><strong style="font-size:12px;text-align:right;max-width:60%">' + esc(ai.upsell) + '</strong></div>' +
+        '<div class="jos-between"><span style="font-size:12px">Membership</span><strong style="font-size:12px;text-align:right;max-width:60%">' + esc(ai.membership) + '</strong></div>' +
+        '<div class="jos-between"><span style="font-size:12px">Revenue forecast</span><strong>' + esc(money(ai.forecast)) + '</strong></div>' +
+        '<div class="jos-between"><span style="font-size:12px">Review prediction</span><strong>' + ai.reviewOdds + '%</strong></div>' +
+        '<div class="jos-between"><span style="font-size:12px">Next best action</span><strong style="font-size:12px;text-align:right;max-width:60%">' + esc(ai.nba) + '</strong></div>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' + btn('cust-ai-refresh', 'Refresh insights', 'jos-btn-brand jos-btn-sm') + btn('ask-cust', 'Ask Hubly', 'jos-btn jos-btn-sm') + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Quick Actions</div><div class="jos-btn-row jos-mt">' +
+        btn('cust-call', 'Call', 'jos-btn jos-btn-sm') +
+        btn('cust-sms', 'SMS', 'jos-btn jos-btn-sm') +
+        btn('cust-email', 'Email', 'jos-btn jos-btn-sm') +
+        btn('new-job-cust', 'Book Job', 'jos-btn-brand jos-btn-sm') +
+        btn('cust-quote', 'Quote', 'jos-btn jos-btn-sm') +
+        btn('cust-favorite', c.favorite ? 'Unfavorite' : 'Favorite', 'jos-btn jos-btn-sm') +
+        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(c.id)) + '">Full Profile</button>' +
+      '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Customer Health</div>' +
+      '<div class="jos-health jos-mt"><div class="jos-health-ring" style="--jos-pct:' + hs + '"><span>' + hs + '</span></div>' +
+      '<div><div class="jos-kpi-lbl">Score</div><div class="jos-muted">Jobs, membership & engagement</div></div></div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Recent Activity</div><div class="jos-stack jos-mt">' +
+      ((c.activity || []).slice(0, 6).map(function (a) {
+        return '<div class="jos-sched-row"><div class="time">' + esc(String(a.type || '').slice(0, 4)) + '</div><div><div class="who">' + esc(a.label) + '</div><div class="svc">' + esc(a.at || '') + '</div></div>';
+      }).join('') || '<div class="jos-muted">No activity</div>') +
+      '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Permissions (OS)</div><table class="jos-cust-perm"><thead><tr><th>Role</th><th>View</th><th>Edit</th><th>Book</th><th>Archive</th><th>Assign</th></tr></thead><tbody>' +
+      CUST_PERM_ROLES.map(function (r) {
+        return '<tr><td>' + esc(r.role) + '</td><td>' + r.view + '</td><td>' + r.edit + '</td><td>' + r.book + '</td><td>' + r.archive + '</td><td>' + r.assign + '</td></tr>';
+      }).join('') + '</tbody></table></div></div>';
+  }
+
+  function renderCustomersContextMenu(root) {
+    var menu = root._josCustCtx;
+    if (!menu || !menu.open) return '';
+    return '<div class="jos-cust-ctx" style="left:' + menu.x + 'px;top:' + menu.y + 'px" id="jos-cust-ctx">' +
+      '<button type="button" data-jos-act="cust-call">Call</button>' +
+      '<button type="button" data-jos-act="cust-sms">SMS</button>' +
+      '<button type="button" data-jos-act="cust-email">Email</button>' +
+      '<button type="button" data-jos-act="new-job-cust">Book Job</button>' +
+      '<button type="button" data-jos-act="cust-quote">Quote</button>' +
+      '<button type="button" data-jos-act="cust-favorite">Favorite</button>' +
+      '<button type="button" data-jos-act="cust-archive">Archive</button>' +
+      '<button type="button" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(menu.id || '')) + '">Open Profile</button>' +
+      '</div>';
+  }
+
+  function renderCustomers() {
+    var root = ownPixelView('v-customers', 'jos-customers-root');
+    if (!root) return;
+    updateChrome('customers');
+    root.innerHTML = '<div class="jos-page jos-cust-page"><div class="jos-home-loading">Loading Customers…</div></div>';
+    try { renderCustomersPageInner(root); }
+    catch (err) {
+      console.warn('HublyJourneyOS Customers', err);
+      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Customers could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderCustomers()">Retry</button></div></div></div>';
+    }
+  }
+
+  function renderCustomersPage() {
+    return renderCustomers();
+  }
+
+  function renderCustomersPageInner(root) {
+    ensureCustomersOsState();
+    var tab = root._josCustTab || 'all';
+    var seg = root._josCustSegment || 'vip';
+    var all = customersOsList();
+    var filtered = filterCustomersList(root);
+    var selectedId = root._josCustId || (filtered[0] && filtered[0].id) || null;
+    var sel = selectedId ? findCustomer(selectedId) : null;
+    if (selectedId && !sel) {
+      selectedId = filtered[0] ? filtered[0].id : null;
+      root._josCustId = selectedId;
+      sel = selectedId ? findCustomer(selectedId) : null;
+    }
+    if (sel) {
+      S().activeCustId = sel.id;
+      if (sel.unread) sel.unread = 0;
+    }
+
+    var tabsHtml = '<div class="jos-tabs jos-cust-tabs">' + CUST_TABS.map(function (t) {
+      var count = all.filter(function (c) { return custMatchesTab(c, t[0], seg); }).length;
+      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-cust-tab="' + t[0] + '">' + esc(t[1]) +
+        (count ? ' <span class="jos-tab-count">' + count + '</span>' : '') + '</button>';
+    }).join('') + '</div>';
+
+    var segHtml = tab === 'segments'
+      ? '<div class="jos-cust-segments">' + CUST_SEGMENTS.map(function (s) {
+          return '<button type="button" class="jos-px-chip' + (seg === s[0] ? ' on' : '') + '" data-jos-act="cust-segment" data-jos-cust-seg="' + s[0] + '">' + esc(s[1]) + '</button>';
+        }).join('') + '</div>'
+      : '';
+
+    var listHtml = filtered.length
+      ? filtered.map(function (c) { return renderCustomerCard(c, selectedId); }).join('')
+      : '<div class="jos-empty">No customers in this view.' + (root._josCustQ ? ' Clear search (Esc) to see more.' : '') + '</div>';
+
+    root.innerHTML =
+      '<div class="jos-page jos-cust-page">' +
+      '<div class="jos-page-head"><div><h1>Customers</h1><p>Lifetime value, memberships, vehicles, and the golden profile — one record per client.</p></div>' +
+      '<div class="jos-page-actions">' +
+        btn('cust-filter-open', 'Filters', 'jos-btn jos-btn-sm') +
+        btn('cust-add-open', 'Add Customer', 'jos-btn-brand jos-btn-sm') +
+        btn('go-ask', 'Ask Hubly', 'jos-btn jos-btn-sm') +
+      '</div></div>' +
+      tabsHtml +
+      segHtml +
+      '<div class="jos-cust-toolbar">' +
+        '<label class="jos-cust-search"><input id="jos-cust-search" type="search" placeholder="Search name, phone, email, address, vehicle, property, membership, tags, notes…" value="' + esc(root._josCustQ || '') + '"></label>' +
+      '</div>' +
+      renderCustomersFilterDrawer(root) +
+      '<div class="jos-split jos-cust-layout">' +
+        '<div class="jos-stack jos-cust-list">' + listHtml + '</div>' +
+        '<div class="jos-cust-main">' + renderCustomerWorkspace(root, sel) + '</div>' +
+        '<div class="jos-stack">' + renderCustomerSidebar(sel) + '</div>' +
+      '</div>' +
+      renderCustomersAddModal(root) +
+      renderCustomersContextMenu(root) +
+      '</div>';
+
     bindRoot(root);
-    var qInput = el('jos-cust-q');
-    if (qInput && !qInput._josBound) {
-      qInput._josBound = true;
-      qInput.addEventListener('input', function () { root._josCustQ = qInput.value || ''; renderCustomersPage(); });
+    wireCustomersRoot(root);
+  }
+
+  function readCustAddDraft() {
+    return {
+      name: (el('jos-ca-name') || {}).value || '',
+      phone: (el('jos-ca-phone') || {}).value || '',
+      email: (el('jos-ca-email') || {}).value || '',
+      address: (el('jos-ca-address') || {}).value || '',
+      vehicle: (el('jos-ca-vehicle') || {}).value || '',
+      tags: (el('jos-ca-tags') || {}).value || '',
+      membership: (el('jos-ca-membership') || {}).value || '',
+      assignedTo: (el('jos-ca-assigned') || {}).value || '',
+      notes: (el('jos-ca-notes') || {}).value || ''
+    };
+  }
+
+  function saveNewCustomer() {
+    var root = el('jos-customers-root');
+    var d = readCustAddDraft();
+    if (!String(d.name || '').trim()) { toast('Name is required'); return; }
+    ensureCustomersOsState();
+    var st = S();
+    var id = 'cust_' + Date.now();
+    var city = '';
+    var m = String(d.address || '').match(/,\s*([^,]+),\s*[A-Z]{2}\b/);
+    if (m) city = m[1].trim();
+    var cust = {
+      id: id, name: d.name.trim(), phone: d.phone, email: d.email, address: d.address, city: city,
+      vehicle: d.vehicle, vehicles: d.vehicle ? [{ label: d.vehicle, type: '' }] : [],
+      property: /property|office|home/i.test(d.vehicle) ? d.vehicle : '',
+      tags: String(d.tags || '').split(/[,\s]+/).filter(Boolean),
+      membership: d.membership, customerType: d.membership ? 'recurring' : 'one_off',
+      assignedTo: d.assignedTo, notes: d.notes, notesList: d.notes ? [d.notes] : [],
+      status: 'active', favorite: false, aiScore: 55, unread: 0,
+      documents: [], photos: [], payments: [],
+      createdAt: new Date().toISOString(),
+      activity: [{ type: 'created', label: 'Customer added', at: new Date().toLocaleString() }]
+    };
+    st.customers.unshift(cust);
+    root._josCustAddOpen = false;
+    root._josCustDraft = null;
+    root._josCustId = id;
+    root._josCustTab = 'all';
+    toast('Customer saved');
+    renderCustomers();
+  }
+
+  function wireCustomersRoot(root) {
+    if (root._josCustBound) return;
+    root._josCustBound = true;
+
+    root.addEventListener('click', function (e) {
+      var tabBtn = e.target.closest('[data-jos-cust-tab]');
+      if (tabBtn) {
+        root._josCustTab = tabBtn.getAttribute('data-jos-cust-tab');
+        root._josCustCtx = null;
+        renderCustomers();
+        e.stopPropagation();
+        return;
+      }
+      var card = e.target.closest('[data-jos-cust-row]');
+      if (card && !e.target.closest('[data-jos-act]')) {
+        var id = card.getAttribute('data-jos-cust-row');
+        root._josCustId = id;
+        root._josCustCtx = null;
+        S().activeCustId = id;
+        var found = findCustomer(id);
+        if (found) found.unread = 0;
+        renderCustomers();
+        openCustomerProfile(id);
+        e.stopPropagation();
+      }
+    });
+
+    root.addEventListener('contextmenu', function (e) {
+      var card = e.target.closest('.jos-cust-card[data-jos-cust-row]');
+      if (!card) return;
+      e.preventDefault();
+      root._josCustId = card.getAttribute('data-jos-cust-row');
+      var rect = root.getBoundingClientRect();
+      root._josCustCtx = { open: true, x: Math.max(8, e.clientX - rect.left), y: Math.max(8, e.clientY - rect.top), id: root._josCustId };
+      renderCustomers();
+    });
+
+    root.addEventListener('input', function (e) {
+      if (e.target && e.target.id === 'jos-cust-search') {
+        root._josCustQ = e.target.value;
+        clearTimeout(root._josCustSearchT);
+        root._josCustSearchT = setTimeout(function () { renderCustomers(); }, 140);
+      }
+    });
+
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        if (root._josCustAddOpen) { root._josCustAddOpen = false; renderCustomers(); return; }
+        if (root._josCustFilterOpen) { root._josCustFilterOpen = false; renderCustomers(); return; }
+        if (root._josCustCtx && root._josCustCtx.open) { root._josCustCtx = null; renderCustomers(); return; }
+        if (root._josCustQ) {
+          root._josCustQ = '';
+          var inp = el('jos-cust-search');
+          if (inp) inp.value = '';
+          renderCustomers();
+        }
+      }
+    });
+  }
+
+  function selectedCustomer() {
+    var root = el('jos-customers-root');
+    if (!root || !root._josCustId) return null;
+    return findCustomer(root._josCustId);
+  }
+
+  function pushCustActivity(c, type, label) {
+    c.activity = c.activity || [];
+    c.activity.unshift({ type: type, label: label, at: new Date().toLocaleString() });
+    c.activity = c.activity.slice(0, 40);
+  }
+
+  function handleCustomersAct(act, t) {
+    var root = el('jos-customers-root');
+    if (!root) return;
+    ensureCustomersOsState();
+    var c = selectedCustomer();
+    root._josCustCtx = null;
+
+    try {
+      if (act === 'cust-filter-open') { root._josCustFilterOpen = true; return renderCustomers(); }
+      if (act === 'cust-filter-close') { root._josCustFilterOpen = false; return renderCustomers(); }
+      if (act === 'cust-filter-apply') {
+        root._josCustFilters = {
+          active: (el('jos-cf-active') || {}).value || 'all',
+          membership: (el('jos-cf-membership') || {}).value || 'all',
+          ltv: (el('jos-cf-ltv') || {}).value || 'all',
+          lastJob: (el('jos-cf-lastjob') || {}).value || 'all',
+          city: (el('jos-cf-city') || {}).value || 'all',
+          assigned: (el('jos-cf-assigned') || {}).value || 'all',
+          service: (el('jos-cf-service') || {}).value || 'all',
+          vehicle: (el('jos-cf-vehicle') || {}).value || '',
+          tags: (el('jos-cf-tags') || {}).value || ''
+        };
+        root._josCustFilterOpen = false;
+        return renderCustomers();
+      }
+      if (act === 'cust-filter-reset') {
+        root._josCustFilters = {};
+        root._josCustFilterOpen = false;
+        toast('Filters reset');
+        return renderCustomers();
+      }
+      if (act === 'cust-filter-save') {
+        root._josCustFilters = {
+          active: (el('jos-cf-active') || {}).value || 'all',
+          membership: (el('jos-cf-membership') || {}).value || 'all',
+          ltv: (el('jos-cf-ltv') || {}).value || 'all',
+          lastJob: (el('jos-cf-lastjob') || {}).value || 'all',
+          city: (el('jos-cf-city') || {}).value || 'all',
+          assigned: (el('jos-cf-assigned') || {}).value || 'all',
+          service: (el('jos-cf-service') || {}).value || 'all',
+          vehicle: (el('jos-cf-vehicle') || {}).value || '',
+          tags: (el('jos-cf-tags') || {}).value || ''
+        };
+        var stSave = S();
+        stSave.customersOs.savedFilters = stSave.customersOs.savedFilters || [];
+        stSave.customersOs.savedFilters.unshift({ name: 'Saved ' + (stSave.customersOs.savedFilters.length + 1), filters: Object.assign({}, root._josCustFilters), at: todayStr() });
+        stSave.customersOs.savedFilters = stSave.customersOs.savedFilters.slice(0, 8);
+        toast('Filter saved');
+        return renderCustomers();
+      }
+      if (act === 'cust-add-open') { root._josCustAddOpen = true; root._josCustDraft = {}; return renderCustomers(); }
+      if (act === 'cust-add-cancel') { root._josCustAddOpen = false; root._josCustDraft = null; return renderCustomers(); }
+      if (act === 'cust-add-save') return saveNewCustomer();
+      if (act === 'cust-segment') {
+        root._josCustSegment = t.getAttribute('data-jos-cust-seg') || 'vip';
+        root._josCustTab = 'segments';
+        return renderCustomers();
+      }
+      if (act === 'cust-ws-tab') {
+        root._josCustProfileTab = t.getAttribute('data-jos-cust-ws-tab') || 'Overview';
+        return renderCustomers();
+      }
+      if (act === 'cust-full-profile') {
+        var cidFull = t.getAttribute('data-jos-cust') || root._josCustId || S().activeCustId;
+        if (cidFull) {
+          root._josCustId = cidFull;
+          S().activeCustId = cidFull;
+          return openCustomerProfile(cidFull);
+        }
+        return toast('Select a customer first');
+      }
+      if (act === 'cust-call') {
+        if (!c || !c.phone) return toast('No phone on file');
+        location.href = 'tel:' + String(c.phone).replace(/\D/g, '');
+        pushCustActivity(c, 'call', 'Called ' + c.name);
+        return;
+      }
+      if (act === 'cust-sms') {
+        if (!c || !c.phone) return toast('No phone on file');
+        location.href = 'sms:' + String(c.phone).replace(/\D/g, '');
+        pushCustActivity(c, 'sms', 'SMS to ' + c.name);
+        return;
+      }
+      if (act === 'cust-email') {
+        if (!c || !c.email) return toast('No email on file');
+        location.href = 'mailto:' + c.email;
+        pushCustActivity(c, 'email', 'Email to ' + c.name);
+        return;
+      }
+      if (act === 'cust-quote') {
+        if (typeof global.openSmartQuote === 'function') global.openSmartQuote();
+        else toast('Quote · ' + ((c && c.name) || 'Customer'));
+        if (c) pushCustActivity(c, 'quote', 'Opened quote');
+        return;
+      }
+      if (act === 'cust-favorite') {
+        if (!c) return toast('Select a customer');
+        c.favorite = !c.favorite;
+        pushCustActivity(c, 'fav', c.favorite ? 'Marked favorite' : 'Removed favorite');
+        toast(c.favorite ? 'Favorited' : 'Removed from favorites');
+        return renderCustomers();
+      }
+      if (act === 'cust-archive') {
+        if (!c) return toast('Select a customer');
+        c.status = 'inactive';
+        c.archived = true;
+        pushCustActivity(c, 'archive', 'Archived customer');
+        toast('Customer archived');
+        return renderCustomers();
+      }
+      if (act === 'cust-ai-refresh') {
+        if (!c) return toast('Select a customer');
+        c.aiScore = Math.max(5, Math.min(99, (c.aiScore || 50) + (Math.floor(Math.random() * 7) - 3)));
+        pushCustActivity(c, 'ai', 'AI insights refreshed');
+        toast('Insights refreshed');
+        return renderCustomers();
+      }
+      if (act === 'cust-pay-refund') return toast('Refund · Stage 2 placeholder (not connected)');
+      if (act === 'cust-review-sync') return toast('Review sync · Stage 2 placeholder (not connected)');
+      if (act === 'cust-doc-cloud') return toast('Cloud docs · Stage 2 placeholder (not connected)');
+      if (act === 'cust-mem-billing') return toast('Membership billing · Stage 2 placeholder (not connected)');
+    } catch (err) {
+      console.warn('Customers action failed', err);
+      toast('Failed to update — try again');
     }
   }
 
@@ -1719,11 +2386,10 @@
     return Math.max(60, Math.min(96, score));
   }
   function statusPill(c) {
-    if (c.customerType === 'recurring' || c.isVip || /vip/i.test(String(c.tags || c.status || ''))) {
-      var lbl = c.customerType === 'recurring' ? 'Member' : 'VIP';
-      return '<span class="jos-status-pill ' + (lbl === 'VIP' ? 'vip' : 'member') + '">' + lbl + '</span>';
-    }
+    if (custIsVip(c)) return '<span class="jos-status-pill vip">VIP</span>';
+    if (custIsMember(c) || c.customerType === 'recurring') return '<span class="jos-status-pill member">Member</span>';
     if (c.isReturning) return '<span class="jos-status-pill returning">Returning</span>';
+    if (c.favorite) return '<span class="jos-status-pill member">Favorite</span>';
     return '';
   }
   function ensureProfileShell() {
@@ -1785,25 +2451,32 @@
       return '<div class="jos-card jos-card-tight jos-card-hover' + (selectedId != null && String(selectedId) === String(id) ? ' on' : '') + '" data-jos-job="' + esc(String(id)) + '" role="button" tabindex="0"><div class="jos-between"><strong>' + esc(j.service || 'Booking') + '</strong><span class="jos-pill ' + pill + '">' + st + '</span></div><div class="jos-muted jos-mt">' + esc(j.date ? dateLong(j.date) : '—') + '</div></div>';
     }).join('') + '</div>';
   }
-  function renderProfileTab(c, tab) {
-    var body = el('jos-cp-body'), shell = el('jos-customer-profile'); if (!body || !c) return;
+  function profileTabHtml(c, tab, opts) {
+    opts = opts || {};
+    var shell = opts.shell || el('jos-customer-profile');
     var custJobs = custJobsFor(c);
     var completed = custJobs.filter(function (j) { return j.status === 'completed'; }).slice().sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
+    var cancelled = custJobs.filter(function (j) { return j.status === 'cancelled'; });
+    var recurring = custJobs.filter(function (j) { return j.recurring || /membership/i.test(String(j.service || '')); });
     var booked = custJobs.filter(function (j) { return j.status !== 'completed' && j.status !== 'cancelled' && j.status !== 'pending'; });
     var pending = custJobs.filter(function (j) { return j.status === 'pending'; });
-    var pastBook = custJobs.filter(function (j) { return j.status === 'completed' || j.status === 'cancelled'; });
     var upcoming = booked.concat(pending).slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); });
     var lifetime = completed.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    if (!lifetime) lifetime = custLifetime(c);
     var hs = healthScore(c), last = lastJob(c), next = nextJob(c);
-    var selId = shell?._josJobId;
+    var selId = shell && shell._josJobId;
+    var html = '';
+
     if (tab === 'Overview') {
       var tags = aiTags(c, completed, lifetime);
       var recent = completed.slice(0, 5);
       var custQuotes = quotes().filter(function (q) { return q.customerName === c.name || (c.phone && q.customerPhone === c.phone); }).filter(function (q) { return q.status !== 'booked' && q.status !== 'accepted'; }).slice(0, 3);
-      body.innerHTML = '<div class="jos-ov-kpi"><div class="jos-health"><div class="jos-health-ring" style="--jos-pct:' + hs + '"><span>' + hs + '</span></div><div><div class="jos-kpi-lbl">Customer Health</div><div class="jos-muted">From jobs & membership</div></div></div>' +
-        [['Lifetime Value', money(lifetime) || '$0'], ['Last Visit', last?.date ? dateLong(last.date) : '—'], ['Next Appointment', next?.date ? dateLong(next.date) : '—'], ['Membership', c.customerType === 'recurring' ? 'Active' : 'None']].map(function (x) {
+      var ai = custAiInsights(c);
+      html = '<div class="jos-ov-kpi"><div class="jos-health"><div class="jos-health-ring" style="--jos-pct:' + hs + '"><span>' + hs + '</span></div><div><div class="jos-kpi-lbl">Customer Health</div><div class="jos-muted">From jobs & membership</div></div></div>' +
+        [['Lifetime Value', money(lifetime) || '$0'], ['Last Visit', last && last.date ? dateLong(last.date) : '—'], ['Next Appointment', next && next.date ? dateLong(next.date) : '—'], ['Membership', custIsMember(c) ? (c.membership || 'Active') : 'None']].map(function (x) {
           return '<div class="jos-kpi"><div class="jos-kpi-lbl">' + esc(x[0]) + '</div><div class="jos-kpi-v" style="font-size:16px">' + esc(x[1]) + '</div></div>';
-        }).join('') + '</div><div class="jos-ov-grid"><div class="jos-stack"><div class="jos-profile-ai"><div class="sk">AI Summary</div><p>' + esc(aiCustomerSummary(c, completed, booked)) + '</p><div class="jos-tag-row">' + tags.map(function (t) { return '<span class="jos-tag">' + esc(t) + '</span>'; }).join('') + '</div></div>' +
+        }).join('') + '</div><div class="jos-ov-grid"><div class="jos-stack"><div class="jos-profile-ai"><div class="sk">AI Summary</div><p>' + esc(aiCustomerSummary(c, completed, booked)) + '</p><div class="jos-tag-row">' + tags.map(function (t) { return '<span class="jos-tag">' + esc(t) + '</span>'; }).join('') + '</div>' +
+        '<div class="jos-muted jos-mt" style="font-size:12px">Churn ' + ai.churn + '% · Upsell: ' + esc(ai.upsell) + ' · NBA: ' + esc(ai.nba) + '</div></div>' +
         '<div class="jos-card"><div class="jos-kicker">Recent Activity</div><div class="jos-stack jos-mt">' + (recent.length ? recent.map(function (j) {
           return '<div class="jos-between"><div><strong>' + esc(j.service || 'Job') + '</strong><div class="jos-muted">' + esc(j.date ? dateLong(j.date) : '') + '</div></div><span>' + esc(j.amount != null ? money(j.amount) : '') + '</span></div>';
         }).join('') : '<div class="jos-muted">No jobs yet.</div>') + '</div></div></div><div class="jos-stack"><div class="jos-card"><div class="jos-kicker">Favorite Vehicle</div><div class="jos-mt" style="font-size:15px;font-weight:750">' + esc(c.vehicle || vehicleOf(last) || '—') + '</div><div class="jos-muted jos-mt">Preferred: ' + esc(c.preferredService || '—') + '</div></div>' +
@@ -1811,33 +2484,7 @@
           return '<div class="jos-between"><div><strong>' + esc((q.packageNames && q.packageNames[0]) || 'Quote') + '</strong><div class="jos-muted">' + esc(q.status || 'open') + '</div></div><span class="jos-pipe-amt">' + esc(money(q.amount || 0)) + '</span></div>';
         }).join('') : '<div class="jos-muted">No open quotes.</div>') + '</div></div>' +
         '<div class="jos-card"><div class="jos-kicker">AI Recommendations</div><div class="jos-stack jos-mt"><div class="jos-between"><span style="font-size:13px">Create a follow-up while the visit is fresh.</span>' + btn('ask-cust', 'Create Follow-up', 'jos-btn-brand jos-btn-sm') + '</div><div class="jos-between"><span style="font-size:13px">See membership & rebook opportunities.</span>' + btn('go-opps', 'Create Follow-up', 'jos-btn-ink jos-btn-sm') + '</div></div></div></div></div>';
-    } else if (tab === 'Jobs') {
-      if (selId == null && completed[0]) selId = completed[0].id || completed[0].reqId;
-      var selJob = completed.find(function (j) { return String(j.id || j.reqId) === String(selId); }) || completed[0] || null;
-      if (shell) shell._josJobId = selJob ? (selJob.id || selJob.reqId) : null;
-      body.innerHTML = '<div class="jos-job-split"><div>' + listJobs(completed, 'No completed jobs yet.', shell?._josJobId) + '</div><div class="jos-side">' + jobDetailHtml(selJob) + '</div></div>';
-    } else if (tab === 'Bookings') {
-      var allB = upcoming.concat(pastBook);
-      if (selId == null && allB[0]) selId = allB[0].id || allB[0].reqId;
-      var selB = allB.find(function (j) { return String(j.id || j.reqId) === String(selId); }) || allB[0] || null;
-      if (shell) shell._josJobId = selB ? (selB.id || selB.reqId) : null;
-      body.innerHTML = '<div class="jos-book-split"><div class="jos-stack"><div class="jos-kicker">Upcoming</div>' + listBookings(upcoming, shell?._josJobId) + '<div class="jos-kicker jos-mt">Past</div>' + listBookings(pastBook, shell?._josJobId) + '</div><div class="jos-side">' + bookingDetailHtml(selB) + '</div></div>';
-    } else if (tab === 'Reviews') {
-      body.innerHTML = '<div class="jos-stack"><div class="jos-card"><div class="jos-between"><strong>Review status</strong><span class="jos-pill quote">Ready to ask</span></div><p class="jos-muted jos-mt">Ask while the job is fresh — Hubly can draft the message.</p><div class="jos-mt">' + btn('ask-review', 'Draft a review ask', 'jos-btn-brand jos-btn-sm') + '</div></div><div class="jos-card"><div class="jos-kicker">Recent asks</div><div class="jos-muted jos-mt">No review replies attached to this customer yet.</div></div></div>';
-    } else if (tab === 'Notes') {
-      var prefs = [];
-      if (c.preferredService) prefs.push(c.preferredService + ' preferred');
-      if (c.vehicle) prefs.push('Drives ' + c.vehicle);
-      if (c.notes && /text|sms|call|email/i.test(c.notes)) prefs.push('Noted communication preference');
-      if (c.customerType === 'recurring') prefs.push('Values recurring convenience');
-      if (!prefs.length) prefs = ['Prefers clear scheduling', 'Responds to short texts'];
-      var learned = [c.name + ' books ' + (c.preferredService || 'detailing') + ' services.', (c.vehicle ? 'Vehicle on file: ' + c.vehicle + '.' : 'Vehicle details still light.'), completed.length ? completed.length + ' completed visits on record.' : 'Still early in the relationship.'];
-      body.innerHTML = '<div class="jos-ai-notes"><h3>AI Notes</h3><div class="jos-card jos-mt"><div class="jos-kicker">Customer Summary</div><p style="font-size:13px;margin-top:8px">' + esc(aiCustomerSummary(c, completed, booked)) + '</p></div>' +
-        '<div class="jos-card"><div class="jos-kicker">Preferences</div><ul class="jos-check-list">' + prefs.map(function (p) { return '<li>✓ ' + esc(p) + '</li>'; }).join('') + '</ul></div>' +
-        '<div class="jos-card"><div class="jos-kicker">AI Recommendations</div><p style="font-size:13px;margin-top:8px">' + esc(c.customerType === 'recurring' ? 'Keep member slots priority and confirm 24h ahead.' : 'Offer a membership after the next completed visit.') + '</p><div class="jos-mt">' + btn('ask-cust', 'Ask Hubly', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
-        '<div class="jos-card"><div class="jos-kicker">Things Hubly Has Learned</div><ul class="jos-learn-list">' + learned.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' +
-        '<div class="jos-card"><div class="jos-kicker">Confidence</div><div class="jos-stack jos-mt">' + confBar('Service Preferences', Math.min(94, 55 + completed.length * 8)) + confBar('Communication', c.phone || c.email ? 78 : 52) + confBar('Vehicle', c.vehicle || vehicleOf(last) ? 86 : 48) + '</div></div></div>';
-    } else if (tab === 'History') {
+    } else if (tab === 'Timeline' || tab === 'History') {
       var nodes = [];
       quotes().filter(function (q) { return q.customerName === c.name; }).forEach(function (q) {
         nodes.push({ ico: 'Q', kind: 'quote', t: 'Quote', s: money(q.amount || 0) + ' · ' + (q.status || 'draft'), at: q.createdAt || q.updatedAt || '' });
@@ -1851,6 +2498,9 @@
         }
         if (j.isMembershipSignup || /membership/i.test(String(j.service || ''))) nodes.push({ ico: 'M', kind: 'mem', t: 'Membership', s: j.service || 'Plan started', at: j.date || j.createdAt || '' });
       });
+      (c.activity || []).forEach(function (a) {
+        nodes.push({ ico: '·', kind: 'book', t: a.label || a.type || 'Activity', s: '', at: a.at || '' });
+      });
       if (c.customerType === 'recurring') nodes.push({ ico: 'M', kind: 'mem', t: 'Membership', s: 'Active recurring plan', at: c.createdAt || '' });
       if (!nodes.length) {
         nodes = custJobs.slice().sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); }).map(function (j) {
@@ -1858,32 +2508,120 @@
         });
       }
       nodes.sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
-      body.innerHTML = '<div class="jos-card"><h3 style="font-size:15px;font-weight:800;margin-bottom:10px">Customer Timeline</h3>' + (nodes.length ? '<div class="jos-timeline">' + nodes.map(function (n) {
-        return '<div class="jos-tl-item"><div class="jos-tl-ico ' + esc(n.kind) + '">' + esc(n.ico) + '</div><div><div class="jos-tl-t">' + esc(n.t) + '</div><div class="jos-tl-s">' + esc(n.s) + (n.at ? ' · ' + esc(String(n.at).slice(0, 10)) : '') + '</div></div></div>';
-      }).join('') + '</div>' : '<div class="jos-empty">No history yet.</div>') + '</div>';
-    } else if (tab === 'Files') {
-      body.innerHTML = '<div class="jos-stack"><div class="jos-file-row"><strong>Quotes & receipts</strong><div class="jos-muted jos-mt">PDFs and photos attached to jobs appear here.</div></div><div class="jos-file-row"><strong>Quick Quote</strong><div class="jos-muted jos-mt">Create a new quote for this customer.</div><div class="jos-mt">' + btn('smart-quote', 'Create Quick Quote', 'jos-btn-brand jos-btn-sm') + '</div></div></div>';
+      html = '<div class="jos-card"><h3 style="font-size:15px;font-weight:800;margin-bottom:10px">Customer Timeline</h3>' + (nodes.length ? '<div class="jos-timeline">' + nodes.map(function (n) {
+        return '<div class="jos-tl-item"><div class="jos-tl-ico ' + esc(n.kind) + '">' + esc(n.ico) + '</div><div><div class="jos-tl-t">' + esc(n.t) + '</div><div class="jos-tl-s">' + esc(n.s) + (n.at ? ' · ' + esc(String(n.at).slice(0, 16)) : '') + '</div></div></div>';
+      }).join('') + '</div>' : '<div class="jos-empty">No timeline yet.</div>') + '</div>';
+    } else if (tab === 'Jobs' || tab === 'Bookings') {
+      if (selId == null && (upcoming[0] || completed[0])) selId = (upcoming[0] || completed[0]).id || (upcoming[0] || completed[0]).reqId;
+      var allJobs = upcoming.concat(completed).concat(cancelled);
+      var selJob = allJobs.find(function (j) { return String(j.id || j.reqId) === String(selId); }) || allJobs[0] || null;
+      if (shell) shell._josJobId = selJob ? (selJob.id || selJob.reqId) : null;
+      html = '<div class="jos-stack">' +
+        '<div class="jos-kicker">Upcoming</div>' + listBookings(upcoming, shell && shell._josJobId) +
+        '<div class="jos-kicker jos-mt">Completed</div>' + listJobs(completed, 'No completed jobs yet.', shell && shell._josJobId) +
+        '<div class="jos-kicker jos-mt">Cancelled</div>' + (cancelled.length ? listBookings(cancelled, shell && shell._josJobId) : '<div class="jos-empty">None</div>') +
+        '<div class="jos-kicker jos-mt">Recurring</div>' + (recurring.length ? listBookings(recurring, shell && shell._josJobId) : '<div class="jos-empty">No recurring jobs</div>') +
+        '<div class="jos-side jos-mt">' + (selJob ? (selJob.status === 'completed' ? jobDetailHtml(selJob) : bookingDetailHtml(selJob)) : '<div class="jos-side-empty">Select a job</div>') + '</div>' +
+        '<div class="jos-btn-row jos-mt">' + btn('new-job-cust', 'Book Job', 'jos-btn-brand jos-btn-sm') + btn('smart-quote', 'Quote', 'jos-btn jos-btn-sm') + '</div></div>';
+    } else if (tab === 'Payments') {
+      var pays = (c.payments && c.payments.length) ? c.payments.slice() : completed.map(function (j, i) {
+        return { id: 'jp_' + i, amount: j.amount, status: 'paid', at: j.date, method: 'Card', label: j.service };
+      });
+      html = '<div class="jos-stack"><div class="jos-between"><div class="jos-kicker">Payments</div>' + btn('cust-pay-refund', 'Refund (Stage 2)', 'jos-btn jos-btn-sm') + '</div>' +
+        (pays.length ? pays.map(function (p) {
+          return '<div class="jos-between jos-note"><div><strong>' + esc(money(p.amount) || '$0') + '</strong><div class="jos-muted">' + esc(p.label || p.method || 'Payment') + ' · ' + esc(String(p.at || '').slice(0, 10)) + '</div></div><span class="jos-pill ' + (p.status === 'paid' ? 'won' : 'quote') + '">' + esc(p.status || 'paid') + '</span></div>';
+        }).join('') : '<div class="jos-empty">No payments on file.</div>') +
+        '<p class="jos-muted" style="font-size:12px">Live processor refunds are Stage 2 — placeholder only, not connected.</p></div>';
+    } else if (tab === 'Photos') {
+      var photos = (c.photos && c.photos.length) ? c.photos : [];
+      html = '<div class="jos-stack"><div class="jos-kicker">Job Photos</div><div class="jos-photo-grid">' +
+        (photos.length ? photos.map(function (p) {
+          return '<div class="jos-photo"><strong>' + esc(p.label || p.name || 'Photo') + '</strong><span class="jos-muted">' + esc(String(p.at || '').slice(0, 10)) + '</span></div>';
+        }).join('') : '<div class="jos-empty" style="grid-column:1/-1">No photos yet. Attach from completed jobs.</div>') +
+        '</div><div class="jos-mt">' + btn('cust-doc-cloud', 'Cloud storage (Stage 2)', 'jos-btn jos-btn-sm') + '</div></div>';
+    } else if (tab === 'Messages') {
+      var convs = conversations().filter(function (cv) {
+        return (c.name && cv.customer_name === c.name) || (c.phone && cv.phone === c.phone);
+      });
+      var msgs = [];
+      convs.forEach(function (cv) { (cv.messages || []).forEach(function (m) { msgs.push(m); }); });
+      if (!msgs.length && c.notes) msgs = [{ dir: 'sys', text: 'CRM note: ' + String(c.notes).slice(0, 120), at: '' }];
+      html = '<div class="jos-stack"><div class="jos-chat-stream">' +
+        (msgs.length ? msgs.map(function (m) {
+          var dir = m.dir === 'out' ? 'out' : (m.dir === 'sys' ? 'sys' : 'in');
+          if (dir === 'sys') return '<div class="jos-chat-sys">' + esc(m.text || '') + '</div>';
+          return '<div class="jos-chat-bubble ' + dir + '">' + esc(m.text || '') + '<div class="jos-muted" style="font-size:10px;margin-top:4px">' + esc(m.at || '') + '</div></div>';
+        }).join('') : '<div class="jos-empty">No messages yet.</div>') +
+        '</div><div class="jos-btn-row jos-mt">' + btn('cust-sms', 'SMS', 'jos-btn-brand jos-btn-sm') + btn('cust-email', 'Email', 'jos-btn jos-btn-sm') + btn('cust-call', 'Call', 'jos-btn jos-btn-sm') + '</div></div>';
+    } else if (tab === 'Membership') {
+      html = '<div class="jos-stack"><div class="jos-card"><div class="jos-between"><strong>' + esc(c.membership || (c.customerType === 'recurring' ? 'Active plan' : 'No membership')) + '</strong>' +
+        '<span class="jos-pill ' + (custIsMember(c) ? 'won' : 'quote') + '">' + (custIsMember(c) ? 'Active' : 'None') + '</span></div>' +
+        '<p class="jos-muted jos-mt">' + (custIsMember(c) ? ('Recurring · ' + esc(money(c.recurringAmount || 120) || '$120') + '/visit plan') : 'Suggest a plan from visit history.') + '</p>' +
+        '<div class="jos-btn-row jos-mt">' + btn('go-mem', 'View plans', 'jos-btn-brand jos-btn-sm') + btn('cust-mem-billing', 'Billing (Stage 2)', 'jos-btn jos-btn-sm') + '</div></div>' +
+        '<div class="jos-ai"><div class="sk">Membership suggestion</div><p style="font-size:13px;margin-top:6px">' + esc(custAiInsights(c).membership) + '</p></div>' +
+        '<p class="jos-muted" style="font-size:12px">Live membership billing is Stage 2 — placeholder only, not connected.</p></div>';
+    } else if (tab === 'Reviews') {
+      html = '<div class="jos-stack"><div class="jos-card"><div class="jos-between"><strong>Review status</strong><span class="jos-pill quote">Ready to ask</span></div>' +
+        '<p class="jos-muted jos-mt">Ask while the job is fresh — Hubly can draft the message. Prediction: <strong>' + custAiInsights(c).reviewOdds + '%</strong> likely to leave a review.</p>' +
+        '<div class="jos-mt">' + btn('ask-review', 'Draft a review ask', 'jos-btn-brand jos-btn-sm') + btn('cust-review-sync', 'Sync Google (Stage 2)', 'jos-btn jos-btn-sm') + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Recent asks</div><div class="jos-muted jos-mt">No review replies attached to this customer yet.</div></div>' +
+        '<p class="jos-muted" style="font-size:12px">Live Google / Facebook review sync is Stage 2 — not connected.</p></div>';
+    } else if (tab === 'Documents' || tab === 'Files') {
+      var docs = (c.documents && c.documents.length) ? c.documents : [];
+      html = '<div class="jos-stack">' +
+        (docs.length ? docs.map(function (d) {
+          return '<div class="jos-file-row"><strong>' + esc(d.name || d) + '</strong><div class="jos-muted jos-mt">' + esc(d.kind || 'document') + '</div></div>';
+        }).join('') : '<div class="jos-file-row"><strong>Quotes & receipts</strong><div class="jos-muted jos-mt">PDFs and photos attached to jobs appear here.</div></div>') +
+        '<div class="jos-file-row"><strong>Quick Quote</strong><div class="jos-muted jos-mt">Create a new quote for this customer.</div><div class="jos-mt">' + btn('smart-quote', 'Create Quick Quote', 'jos-btn-brand jos-btn-sm') + btn('cust-doc-cloud', 'Cloud docs (Stage 2)', 'jos-btn jos-btn-sm') + '</div></div>' +
+        '<p class="jos-muted" style="font-size:12px">Cloud document storage is Stage 2 — placeholder only, not connected.</p></div>';
+    } else if (tab === 'Notes') {
+      var prefs = [];
+      if (c.preferredService) prefs.push(c.preferredService + ' preferred');
+      if (c.vehicle) prefs.push('Drives ' + c.vehicle);
+      if (c.notes && /text|sms|call|email/i.test(c.notes)) prefs.push('Noted communication preference');
+      if (c.customerType === 'recurring') prefs.push('Values recurring convenience');
+      if (!prefs.length) prefs = ['Prefers clear scheduling', 'Responds to short texts'];
+      var learned = [c.name + ' books ' + (c.preferredService || 'detailing') + ' services.', (c.vehicle ? 'Vehicle on file: ' + c.vehicle + '.' : 'Vehicle details still light.'), completed.length ? completed.length + ' completed visits on record.' : 'Still early in the relationship.'];
+      var noteRows = (c.notesList && c.notesList.length) ? c.notesList : (c.notes ? [c.notes] : []);
+      html = '<div class="jos-ai-notes"><h3>Notes</h3>' +
+        '<div class="jos-stack jos-mt">' + (noteRows.length ? noteRows.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') : '<div class="jos-muted">No notes yet.</div>') + '</div>' +
+        '<div class="jos-card jos-mt"><div class="jos-kicker">Customer Summary</div><p style="font-size:13px;margin-top:8px">' + esc(aiCustomerSummary(c, completed, booked)) + '</p></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Preferences</div><ul class="jos-check-list">' + prefs.map(function (p) { return '<li>✓ ' + esc(p) + '</li>'; }).join('') + '</ul></div>' +
+        '<div class="jos-card"><div class="jos-kicker">AI Recommendations</div><p style="font-size:13px;margin-top:8px">' + esc(c.customerType === 'recurring' ? 'Keep member slots priority and confirm 24h ahead.' : 'Offer a membership after the next completed visit.') + '</p><div class="jos-mt">' + btn('ask-cust', 'Ask Hubly', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Things Hubly Has Learned</div><ul class="jos-learn-list">' + learned.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Confidence</div><div class="jos-stack jos-mt">' + confBar('Service Preferences', Math.min(94, 55 + completed.length * 8)) + confBar('Communication', c.phone || c.email ? 78 : 52) + confBar('Vehicle', c.vehicle || vehicleOf(last) ? 86 : 48) + '</div></div></div>';
     } else if (tab === 'Activity') {
       var acts = custJobs.slice().sort(function (a, b) { return String(b.date || b.createdAt || '').localeCompare(String(a.date || a.createdAt || '')); }).slice(0, 12);
-      body.innerHTML = acts.length ? '<div class="jos-activity">' + acts.map(function (j) {
+      html = acts.length ? '<div class="jos-activity">' + acts.map(function (j) {
         return '<div class="jos-act"><div class="jos-act-ico ' + (j.status === 'completed' ? 'book' : 'quote') + '">' + (j.status === 'completed' ? '✓' : '·') + '</div><div><div class="jos-act-t">' + esc((j.status || 'job') + ' · ' + (j.service || 'Service')) + '</div><div class="jos-act-s">' + esc((j.date ? dateLong(j.date) : '') + (j.amount != null ? ' · ' + money(j.amount) : '')) + '</div></div></div>';
       }).join('') + '</div>' : '<div class="jos-empty">No activity yet.</div>';
-    } else body.innerHTML = '<div class="jos-empty">Nothing here yet.</div>';
+    } else {
+      html = '<div class="jos-empty">Nothing here yet.</div>';
+    }
+    return html;
+  }
+
+  function renderProfileTab(c, tab) {
+    var body = el('jos-cp-body'), shell = el('jos-customer-profile'); if (!body || !c) return;
+    body.innerHTML = profileTabHtml(c, tab, { shell: shell });
     bindRoot(body);
   }
+
   function openCustomerProfile(id, tab) {
-    var c = customers().find(function (x) { return String(x.id) === String(id); });
+    ensureCustomersOsState();
+    var c = findCustomer(id) || customers().find(function (x) { return String(x.id) === String(id); });
     if (!c) { toast('Customer not found'); return; }
     var shell = ensureProfileShell();
     S().activeCustId = c.id; S()._josProfileTab = tab || 'Overview'; shell._josCustId = c.id; shell._josJobId = null;
+    var custRoot = el('jos-customers-root'); if (custRoot) custRoot._josCustId = c.id;
     el('jos-cp-av').textContent = initials(c.name); el('jos-cp-name').textContent = c.name || 'Customer';
     el('jos-cp-pill').innerHTML = statusPill(c);
-    el('jos-cp-meta').textContent = [c.phone, c.email].filter(Boolean).join(' · ') || 'No contact info';
+    el('jos-cp-meta').textContent = [c.phone, c.email, c.city].filter(Boolean).join(' · ') || 'No contact info';
     var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
-    var spent = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    var spent = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) || custLifetime(c);
     var since = c.createdAt || c.customerSince || (done.length ? done.slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); })[0].date : null);
     var last = lastJob(c);
-    el('jos-cp-stats').innerHTML = [['Customer since', since ? dateLong(String(since).slice(0, 10)) : '—'], ['Total spent', money(spent) || '$0'], ['Jobs', String(done.length)], ['Last service', last?.date ? dateLong(last.date) : '—'], ['Membership', c.customerType === 'recurring' ? 'Active' : 'None']].map(function (x) {
+    el('jos-cp-stats').innerHTML = [['Customer since', since ? dateLong(String(since).slice(0, 10)) : '—'], ['Total spent', money(spent) || '$0'], ['Jobs', String(done.length)], ['Last service', last && last.date ? dateLong(last.date) : '—'], ['Membership', custIsMember(c) ? (c.membership || 'Active') : 'None']].map(function (x) {
       return '<div class="jos-cp-stat"><div class="l">' + esc(x[0]) + '</div><div class="v">' + esc(x[1]) + '</div></div>';
     }).join('');
     el('jos-cp-tabs').innerHTML = PROFILE_TABS.map(function (t) {
@@ -3941,7 +4679,7 @@
       reviews: renderBizReviews,
       settings: renderSettingsHub,
       leads: renderLeads,
-      customers: renderCustomersPage,
+      customers: renderCustomers,
       dashboard: enhanceDashboard,
       chats: renderInbox,
       jobs: renderJobs
@@ -3987,11 +4725,17 @@
       }
       if (t.hasAttribute('data-jos-lead')) { var key = t.getAttribute('data-jos-lead'); if (key && typeof global.viewLead === 'function') global.viewLead(key); return; }
       if (t.hasAttribute('data-jos-cust-tab')) {
-        var cr = el('jos-customers-root'); if (cr) { cr._josCustTab = t.getAttribute('data-jos-cust-tab'); renderCustomersPage(); }
+        var cr = el('jos-customers-root'); if (cr) { cr._josCustTab = t.getAttribute('data-jos-cust-tab'); renderCustomers(); }
         return;
       }
       if (t.hasAttribute('data-jos-cust-row')) {
-        var crow = el('jos-customers-root'); if (crow) { crow._josCustId = t.getAttribute('data-jos-cust-row'); S().activeCustId = crow._josCustId; renderCustomersPage(); }
+        var crow = el('jos-customers-root');
+        if (crow) {
+          crow._josCustId = t.getAttribute('data-jos-cust-row');
+          S().activeCustId = crow._josCustId;
+          renderCustomers();
+          openCustomerProfile(crow._josCustId);
+        }
         return;
       }
       if (t.hasAttribute('data-jos-job')) {
@@ -4019,18 +4763,18 @@
       if (act && String(act).indexOf('inbox-') === 0) return handleInboxAct(act, t);
       if (act && String(act).indexOf('jobs-') === 0) return handleJobsAct(act, t);
       if (act && String(act).indexOf('leads-') === 0) return handleLeadsAct(act, t);
+      if (act && (String(act).indexOf('cust-') === 0 || String(act).indexOf('customers-') === 0)) return handleCustomersAct(act, t);
       if (act === 'ask-submit' || act === 'ask-brief') {
         switchNav('ask');
         return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
       }
       if (act === 'manual-lead') return typeof global.openM === 'function' ? global.openM('m-new-lead') : toast('Add lead');
-      if (act === 'add-cust') return typeof global.openM === 'function' ? global.openM('m-new-cust') : toast('Add customer');
-      if (act === 'new-invoice') return typeof global.openM === 'function' ? global.openM('m-new-invoice') : toast('New invoice');
-      if (act === 'cust-full-profile') {
-        var cidFull = t.getAttribute('data-jos-cust') || S().activeCustId || el('jos-customers-root')?._josCustId;
-        if (cidFull) return openCustomerProfile(cidFull);
-        return;
+      if (act === 'add-cust') {
+        var custRootAdd = el('jos-customers-root');
+        if (custRootAdd) return handleCustomersAct('cust-add-open', t);
+        return typeof global.openM === 'function' ? global.openM('m-new-cust') : toast('Add customer');
       }
+      if (act === 'new-invoice') return typeof global.openM === 'function' ? global.openM('m-new-invoice') : toast('New invoice');
       if (act === 'smart-quote') return typeof global.openSmartQuote === 'function' ? global.openSmartQuote() : toast('Quick Quote');
       if (act === 'preview') return typeof global.previewProfile === 'function' ? global.previewProfile() : null;
       if (act === 'stripe') return typeof global.goStripeConnect === 'function' ? global.goStripeConnect() : ask('Connect Stripe');
@@ -4078,10 +4822,12 @@
     renderSettingsHub: renderSettingsHub,
     renderLeads: renderLeads,
     renderLeadsList: renderLeadsList,
-    renderCustomersPage: renderCustomersPage,
+    renderCustomers: renderCustomers,
+    renderCustomersPage: renderCustomers,
     renderInbox: renderInbox,
     renderJobs: renderJobs,
     openCustomerProfile: openCustomerProfile,
+    handleCustomersAct: handleCustomersAct,
     closeCustomerProfile: closeCustomerProfile,
     enhanceDashboard: enhanceDashboard,
     openQuickNew: openQuickNew,

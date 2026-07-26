@@ -26,6 +26,18 @@
 **Module Acceptance Test** — formal acceptance before merge. See [MAT.md](./MAT.md).  
 Do not use “functional smoke pass” as the merge gate.
 
+### Cross-Module Verification (CMV)
+
+Before approval of any new module PR, verify previously **locked** modules still function (no modifications — confirmation only):
+
+- 🏠 Home still works  
+- 📥 Inbox still works  
+- 📅 Jobs still works  
+- 🧲 Leads still works  
+- (+ each newly locked module)
+
+Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
+
 ---
 
 ## Maturity board
@@ -35,8 +47,8 @@ Do not use “functional smoke pass” as the merge gate.
 | 🏠 Home | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 Full |
 | 📥 Inbox | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📅 Jobs & Calendar | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 🧲 Leads | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
-| 👥 Customers | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
+| 🧲 Leads | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
+| ❤️ Customers | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
 | 🧭 Pipeline | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 🌐 Storefront | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 📣 Marketing | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
@@ -55,11 +67,12 @@ Do not use “functional smoke pass” as the merge gate.
 |---|--------|--------------|---------|----|-------|
 | 1 | 🏠 Home | ✅ Locked | ✅ | [#242](https://github.com/HubblyAdrian/Hubly/pull/242) | 🔒 Full · MAT ✅ |
 | 2 | 📥 Inbox | ✅ Locked | ⏸ | [#244](https://github.com/HubblyAdrian/Hubly/pull/244) | 🔒 OS · MAT ✅ |
-| 3 | 📅 Jobs & Calendar | ✅ Locked | ⏸ | [#246](https://github.com/HubblyAdrian/Hubly/pull/246) | 🔒 OS · [JOBS_MAT.md](./JOBS_MAT.md) · approved |
-| 4 | 🧲 Leads | ✅ MAT ACCEPTED | ⏸ | [#247](https://github.com/HubblyAdrian/Hubly/pull/247) | [LEADS_MAT.md](./LEADS_MAT.md) · lock 🔒 OS after merge |
-| 5–14 | Remaining | ⏳ | ⏸ | — | |
+| 3 | 📅 Jobs & Calendar | ✅ Locked | ⏸ | [#246](https://github.com/HubblyAdrian/Hubly/pull/246) | 🔒 OS · MAT ✅ · merged |
+| 4 | 🧲 Leads | ✅ Locked | ⏸ | [#247](https://github.com/HubblyAdrian/Hubly/pull/247) | 🔒 OS · MAT ✅ · merged |
+| 5 | ❤️ Customers | ✅ OS done · MAT ✅ | ⏸ | [#248](https://github.com/HubblyAdrian/Hubly/pull/248) | golden profile · CMV PASS · awaiting merge → 🔒 OS |
+| 6–14 | Remaining | ⏳ | ⏸ | — | |
 
 ## Workflow
 
-Planning → Development (Stage 1 OS) → Self QA → **MAT** → PR → Approval → Merge → **Lock OS**  
+Planning → Development (Stage 1 OS) → Self QA → **MAT** → **CMV** → PR → Approval → Merge → **Lock OS**  
 Later: Stage 2 Integrations → separate PR

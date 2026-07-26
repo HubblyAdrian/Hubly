@@ -629,3 +629,78 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   .jos-leads-filter-grid{grid-template-columns:1fr 1fr}
   .jos-leads-form{grid-template-columns:1fr}
 }
+
+/* Customers */
+.jos-cust-page{animation:josHomeIn .3s ease both;position:relative}
+.jos-cust-tabs{flex-wrap:wrap}
+.jos-cust-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px;align-items:center}
+.jos-cust-search{
+  flex:1;min-width:220px;display:flex;align-items:center;
+  background:#fff;border:1px solid var(--jos-border);border-radius:12px;padding:0 12px;height:40px;
+}
+.jos-cust-search input{border:0;outline:none;width:100%;font:inherit;font-size:13px;background:transparent;color:var(--jos-navy)}
+.jos-cust-segments{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.jos-cust-layout{
+  display:grid;grid-template-columns:minmax(240px,.9fr) minmax(0,1.4fr) minmax(220px,.75fr);
+  gap:14px;align-items:start;min-height:62vh;
+}
+.jos-cust-list{max-height:72vh;overflow:auto;padding-right:2px}
+.jos-cust-main,.jos-cust-side{min-width:0}
+.jos-cust-card{text-align:left;width:100%}
+.jos-cust-card-ltv{font-weight:800;color:var(--jos-navy);font-size:14px;white-space:nowrap}
+.jos-cust-last{
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:4px 0 0;color:var(--jos-ink-2);font-size:12px;
+}
+.jos-cust-workspace h3{font-family:'Plus Jakarta Sans','DM Sans',sans-serif;letter-spacing:-.02em}
+.jos-cust-ws-tabs{flex-wrap:wrap;margin-top:12px}
+.jos-cust-ws-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.jos-cust-ws-body{max-height:48vh;overflow:auto}
+.jos-cust-drawer{
+  margin:0 0 14px;padding:14px;border:1px solid var(--jos-border);border-radius:14px;background:#fff;
+  animation:josHomeIn .25s ease both;
+}
+.jos-cust-filter-grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px;
+}
+.jos-cust-filter-grid label,.jos-cust-form label{
+  display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--jos-ink-3);
+}
+.jos-cust-filter-grid select,.jos-cust-filter-grid input,
+.jos-cust-form select,.jos-cust-form input{
+  height:36px;border:1px solid var(--jos-border);border-radius:10px;padding:0 10px;
+  font:inherit;font-size:13px;font-weight:600;color:var(--jos-navy);background:#fff;
+}
+.jos-cust-modal-backdrop{
+  position:fixed;inset:0;background:rgba(20,27,43,.45);z-index:80;
+  display:flex;align-items:center;justify-content:center;padding:16px;
+}
+.jos-cust-modal{
+  width:min(560px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;
+  border:1px solid var(--jos-border);padding:18px;box-shadow:0 18px 50px rgba(20,27,43,.18);
+}
+.jos-cust-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.jos-cust-form .jos-cust-span2{grid-column:1/-1}
+.jos-cust-ctx{
+  position:absolute;z-index:70;min-width:180px;background:#fff;border:1px solid var(--jos-border);
+  border-radius:12px;padding:6px;box-shadow:0 12px 32px rgba(20,27,43,.16);display:flex;flex-direction:column;
+}
+.jos-cust-ctx button{
+  border:0;background:transparent;text-align:left;padding:8px 10px;border-radius:8px;
+  font:inherit;font-size:13px;font-weight:650;color:var(--jos-navy);cursor:pointer;
+}
+.jos-cust-ctx button:hover{background:var(--jos-brand-soft);color:var(--jos-brand-dark)}
+.jos-cust-perm{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+.jos-cust-perm th,.jos-cust-perm td{padding:6px 4px;border-bottom:1px solid var(--jos-border);text-align:center}
+.jos-cust-perm th:first-child,.jos-cust-perm td:first-child{text-align:left;font-weight:700}
+@media(max-width:1100px){
+  .jos-cust-layout{grid-template-columns:1fr}
+  .jos-cust-list{max-height:none}
+  .jos-cust-ws-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .jos-cust-filter-grid{grid-template-columns:1fr 1fr}
+  .jos-cust-form{grid-template-columns:1fr}
+  .jos-cust-ws-body{max-height:none}
+}
+@media(max-width:720px){
+  .jos-cust-page .jos-page-head{flex-direction:column;align-items:stretch}
+  .jos-cust-page .jos-page-actions{flex-wrap:wrap}
+}

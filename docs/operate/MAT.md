@@ -70,3 +70,4 @@ Result
 2. Deferred Stage 2 items are listed under **Deferred**, not counted as failures.
 3. MAT is recorded on the maturity board (`MAT` column) and linked from the module checklist.
 4. After merge + OS lock, do not regress MAT without a bug fix or Stage 2 PR.
+5. **Cross-Module Verification (CMV)** is required on every PR before approval: confirm previously locked modules still render (`node scripts/cmv-locked-modules.mjs`). Do not modify locked modules — verification only.
