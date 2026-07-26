@@ -29,7 +29,7 @@ See [MODULE_STATUS.md](./MODULE_STATUS.md) (OS · Integrations · AI · QA · **
 | Jobs & Calendar | [JOBS_CHECKLIST.md](./JOBS_CHECKLIST.md) · [JOBS_MAT.md](./JOBS_MAT.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Leads | [LEADS_CHECKLIST.md](./LEADS_CHECKLIST.md) · [LEADS_MAT.md](./LEADS_MAT.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Customers | [CUSTOMERS_CHECKLIST.md](./CUSTOMERS_CHECKLIST.md) | ✅ | ⏸ | ✅ | 🔒 OS |
-| Pipeline | [PIPELINE_CHECKLIST.md](./PIPELINE_CHECKLIST.md) · [PIPELINE_PLAN.md](./PIPELINE_PLAN.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Pipeline | [PIPELINE_CHECKLIST.md](./PIPELINE_CHECKLIST.md) · [PIPELINE_MAT.md](./PIPELINE_MAT.md) | ✅ | ⏸ | ✅ | ❌ (🔒 OS after merge) |
 | Storefront | [STOREFRONT_CHECKLIST.md](./STOREFRONT_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Marketing | [MARKETING_CHECKLIST.md](./MARKETING_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Reviews | [REVIEWS_CHECKLIST.md](./REVIEWS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
