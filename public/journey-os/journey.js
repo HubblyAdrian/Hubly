@@ -44,6 +44,9 @@
   }
   function toast(msg) { if (typeof global.toast === 'function') global.toast(msg); }
   function el(id) { return document.getElementById(id); }
+  function todayStr() {
+    return typeof global.dateStr === 'function' ? global.dateStr(new Date()) : new Date().toISOString().slice(0, 10);
+  }
   function hasTwilio() { var st = S(); return !!(st.twilio || st.twilioReady || st.smsReady || st.messaging?.twilio || st.integrations?.twilio); }
   function initials(name) {
     var p = String(name || '?').trim().split(/\s+/).filter(Boolean);
@@ -51,9 +54,15 @@
   }
   function ask(q) {
     var text = String(q || '').trim(); if (!text) return;
-    if (typeof global.askAI === 'function') return global.askAI(text);
-    var input = el('ai-question-input') || el('jos-ask-input'); if (input) input.value = text;
-    toast('Ask Hubly: ' + text);
+    try { switchNav('ask'); } catch (e) {}
+    var run = function () {
+      var input = el('jos-ask-input') || el('ai-question-input');
+      if (input) input.value = text;
+      if (typeof global.askAI === 'function') return global.askAI(text);
+      toast('Ask Hubly: ' + text);
+    };
+    if (typeof global.requestAnimationFrame === 'function') global.requestAnimationFrame(run);
+    else setTimeout(run, 0);
   }
   function copyText(t) {
     t = String(t || ''); if (!t) return;
@@ -757,50 +766,597 @@
     renderProfileTab(c, S()._josProfileTab || 'Overview'); shell.classList.add('open');
   }
 
+  function ownPixelView(viewId, rootId) {
+    var view = el(viewId), root = el(rootId);
+    if (!view) return root;
+    view.classList.add('jos-pixel-owned');
+    Array.prototype.slice.call(view.children).forEach(function (ch) { if (ch.id !== rootId) ch.remove(); });
+    if (!root) { root = document.createElement('div'); root.id = rootId; view.appendChild(root); }
+    return root;
+  }
+
+  function conversations() {
+    var st = S();
+    return Array.isArray(st.conversations) && st.conversations.length ? st.conversations : (Array.isArray(st.chatConversations) ? st.chatConversations : []);
+  }
+
+  function demoConversations() {
+    return [
+      { id: 'conv1', customer_name: 'Alex Rivera', channel: 'sms', last_message: 'Can you fit me in for ceramic coating this week?', unread: 2, updated_at: todayStr() + 'T09:15:00', phone: '(619) 555-0133', messages: [{ dir: 'in', text: 'Hi, saw your Google listing. Do you do ceramic coating?', at: '9:02 AM' }, { dir: 'out', text: 'Yes! I have Thursday or Saturday open. What vehicle?', at: '9:05 AM' }, { dir: 'in', text: 'Can you fit me in for ceramic coating this week?', at: '9:15 AM' }] },
+      { id: 'conv2', customer_name: 'Sarah Johnson', channel: 'sms', last_message: 'Perfect, see you at 9am tomorrow.', unread: 0, updated_at: todayStr() + 'T08:40:00', phone: '(619) 555-0198', messages: [{ dir: 'out', text: 'Reminder: Interior Detail tomorrow at 9:00 AM.', at: '8:30 AM' }, { dir: 'in', text: 'Perfect, see you at 9am tomorrow.', at: '8:40 AM' }] },
+      { id: 'conv3', customer_name: 'Taylor Kim', channel: 'instagram', last_message: 'How much for a Model 3 interior?', unread: 1, updated_at: todayStr() + 'T07:22:00', messages: [{ dir: 'in', text: 'How much for a Model 3 interior?', at: '7:22 AM' }] },
+      { id: 'conv4', customer_name: 'Jordan Lee', channel: 'chat', last_message: 'Left at vehicle size step', unread: 1, updated_at: todayStr() + 'T06:50:00', messages: [{ dir: 'in', text: 'Started booking Exterior Detail', at: '6:45 AM' }, { dir: 'sys', text: 'Left at vehicle size step', at: '6:50 AM' }] }
+    ];
+  }
+
+  function channelCounts(convs) {
+    var counts = { chat: 0, sms: 0, email: 0, facebook: 0, instagram: 0, needs: 0 };
+    (convs || []).forEach(function (c) {
+      var ch = String(c.channel || 'chat').toLowerCase();
+      if (ch === 'website' || ch === 'web') ch = 'chat';
+      if (counts[ch] == null) counts.chat += (c.unread || 0);
+      else counts[ch] += (c.unread || 0);
+      if ((c.unread || 0) > 0 || c.needsAttention) counts.needs++;
+    });
+    return counts;
+  }
+
+  function homeScores() {
+    var done = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).length;
+    var members = customers().filter(function (c) { return c.customerType === 'recurring'; }).length;
+    var pending = jobs().filter(function (j) { return j.status === 'pending'; }).length;
+    var leads = collectLeads().length;
+    var rating = Number(S().website?.reviewRating || 4.9);
+    var revenue = Math.max(55, Math.min(99, 70 + Math.min(25, done * 2)));
+    var reviews = Math.max(50, Math.min(99, Math.round(rating * 18)));
+    var marketing = Math.max(48, Math.min(96, 62 + Math.min(20, leads)));
+    var leadResp = Math.max(45, Math.min(98, 88 - Math.min(30, pending * 4)));
+    var membership = Math.max(40, Math.min(97, 50 + members * 8));
+    var overall = Math.round((revenue + reviews + marketing + leadResp + membership) / 5);
+    return { overall: overall, revenue: revenue, reviews: reviews, marketing: marketing, leadResp: leadResp, membership: membership };
+  }
+
+  function homeLayout() {
+    try { return JSON.parse(localStorage.getItem('hubly_home_layout_v1') || 'null'); } catch (e) { return null; }
+  }
+
+  function saveHomeLayout(layout) {
+    try { localStorage.setItem('hubly_home_layout_v1', JSON.stringify(layout || {})); } catch (e) {}
+  }
+
+  function sparkSvg(vals, color) {
+    vals = vals || [12, 18, 14, 22, 20, 28, 26];
+    var max = Math.max.apply(null, vals) || 1;
+    var w = 120, h = 28, step = w / Math.max(1, vals.length - 1);
+    var pts = vals.map(function (v, i) { return (i * step).toFixed(1) + ',' + (h - (v / max) * (h - 4) - 2).toFixed(1); }).join(' ');
+    return '<svg class="jos-spark" viewBox="0 0 ' + w + ' ' + h + '" width="120" height="28" aria-hidden="true"><polyline fill="none" stroke="' + (color || '#D9632D') + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="' + pts + '"/></svg>';
+  }
+
+  var CHROME = {
+    dashboard: { title: 'Home', sub: 'Good morning — let\u2019s grow your business today.' },
+    chats: { title: 'Inbox', sub: 'Every conversation in one place.' },
+    jobs: { title: 'Jobs & Calendar', sub: 'Schedule, routes, and today\u2019s work.' },
+    leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
+    customers: { title: 'Customers', sub: 'People, vehicles, and history.' },
+    pipeline: { title: 'Pipeline', sub: 'Move every job from inquiry to booked.' },
+    editor: { title: 'Storefront', sub: 'Your booking site and pages.' },
+    marketing: { title: 'Marketing', sub: 'Campaigns that fill the calendar.' },
+    reviews: { title: 'Reviews', sub: 'Reputation and request flows.' },
+    memberships: { title: 'Memberships', sub: 'Recurring revenue plans.' },
+    money: { title: 'Revenue', sub: 'Payments, invoices, and cash flow.' },
+    reports: { title: 'Reports', sub: 'Performance across the business.' },
+    ask: { title: 'Ask Hubly', sub: 'Your operating partner for follow-ups, pricing, and growth.' },
+    settings: { title: 'Settings', sub: 'Business, team, and integrations.' }
+  };
+  function updateChrome(v) {
+    var c = CHROME[v] || { title: v, sub: '' };
+    var titleEl = el('bar-title'), subEl = el('bar-sub');
+    if (titleEl) titleEl.textContent = c.title;
+    if (subEl) subEl.textContent = c.sub;
+    if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
+  }
+
   function enhanceDashboard() {
-    var root = el('jos-dash-root'), dash = el('v-dashboard'); if (!root && !dash) return;
-    if (dash) {
-      dash.classList.add('jos-dash-tight', 'jos-pixel-owned');
-      // Own the full view — clear legacy Operate Home children except jos-dash-root
-      Array.prototype.slice.call(dash.children).forEach(function (ch) {
-        if (ch.id !== 'jos-dash-root') ch.remove();
+    var root = ownPixelView('v-dashboard', 'jos-dash-root');
+    if (!root) return;
+    updateChrome('dashboard');
+    root.classList.add('jos-home-root');
+    try {
+      renderHomeDashboard(root);
+    } catch (err) {
+      console.warn('HublyJourneyOS Home', err);
+      root.innerHTML = '<div class="jos-page jos-home-page"><div class="jos-empty jos-error-state"><strong>Home could not load</strong><p class="jos-muted">Refresh or Ask Hubly for help.</p><div class="jos-mt">' +
+        btn('go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm') +
+        ' <button type="button" class="jos-btn jos-btn-sm" onclick="HublyJourneyOS.enhanceDashboard()">Retry</button></div></div></div>';
+      bindRoot(root);
+    }
+  }
+
+  function canViewRevenue() {
+    var st = S();
+    var role = String(st.role || st.userRole || st.ownerRole || 'owner').toLowerCase();
+    if (st.permissions && st.permissions.revenue === false) return false;
+    if (role === 'staff' || role === 'tech' || role === 'viewer') return false;
+    return true;
+  }
+
+  function renderHomeDashboard(root) {
+    root.innerHTML = '<div class="jos-page jos-home-page"><div class="jos-home-loading" aria-live="polite">Loading Home…</div></div>';
+    var today = todayStr();
+    var allJobs = jobs().filter(function (j) { return !j.isBlock && j.status !== 'cancelled'; });
+    var todayJobs = allJobs.filter(function (j) { return j.date === today; });
+    var demoSched = false;
+    var ceoDemo = !!S()._ceoDemo;
+    if (!todayJobs.length && ceoDemo) {
+      demoSched = true;
+      todayJobs = [
+        { id: 'demo_j1', customer: 'Sarah Johnson', service: 'Interior Detail', time: '9:00 AM', amount: 260, status: 'confirmed', address: 'La Jolla, CA', phone: '(619) 555-0198' },
+        { id: 'demo_j2', customer: 'Mike Brown', service: 'Exterior Detail', time: '1:00 PM', amount: 180, status: 'confirmed', address: 'Pacific Beach, CA', phone: '(619) 555-0142' },
+        { id: 'demo_j3', customer: 'Chris Park', service: 'Paint Correction', time: '4:00 PM', amount: 450, status: 'in_progress', address: 'Mission Valley, CA', phone: '(619) 555-0177' }
+      ];
+    }
+    var completedToday = todayJobs.filter(function (j) { return j.status === 'completed'; });
+    var running = todayJobs.filter(function (j) { return j.status === 'in_progress' || j.status === 'running'; });
+    var upcoming = todayJobs.filter(function (j) { return j.status !== 'completed' && j.status !== 'in_progress' && j.status !== 'running'; });
+    var late = todayJobs.filter(function (j) { return j.isLate || j.status === 'late'; }).length;
+    var pending = jobs().filter(function (j) { return j.status === 'pending'; }).length;
+    var todayRev = jobs().filter(function (j) { return j.status === 'completed' && j.date === today; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    if (!todayRev && ceoDemo) todayRev = todayJobs.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) * 0.35 || 845;
+    var yest = new Date(); yest.setDate(yest.getDate() - 1);
+    var yestStr = typeof global.dateStr === 'function' ? global.dateStr(yest) : yest.toISOString().slice(0, 10);
+    var yestRev = jobs().filter(function (j) { return j.status === 'completed' && j.date === yestStr; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    if (!yestRev && ceoDemo) yestRev = Math.round(todayRev * 0.88);
+    var weekRev = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).slice(0, 14).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    if (!weekRev && ceoDemo) weekRev = Math.round(todayRev * 5.2);
+    var month = today.slice(0, 7);
+    var monthRev = jobs().filter(function (j) { return j.status === 'completed' && String(j.date || '').slice(0, 7) === month; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    if (!monthRev && ceoDemo) monthRev = Math.round(todayRev * 18);
+    var outstanding = quotes().filter(function (q) { return q.status === 'sent' || q.status === 'draft'; }).reduce(function (s, q) { return s + (parseFloat(q.amount) || 0); }, 0);
+    if (!outstanding && ceoDemo) outstanding = 1240;
+    var deposits = Math.round(todayRev * 0.22) || (ceoDemo ? 180 : 0);
+    var revDelta = yestRev ? Math.round(((todayRev - yestRev) / yestRev) * 100) : (ceoDemo ? 12 : 0);
+    var convs = conversations().length ? conversations() : (ceoDemo ? demoConversations() : []);
+    var ch = channelCounts(convs);
+    var msgsWaiting = convs.reduce(function (s, c) { return s + (c.unread || 0); }, 0);
+    if (!msgsWaiting && ceoDemo) msgsWaiting = ch.needs || 5;
+    var scores = homeScores();
+    var hour = new Date().getHours(), greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
+    var owner = S().ownerName || 'Adrian';
+    if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
+    if (owner.indexOf(' ') > -1) owner = owner.split(' ')[0];
+    var layout = homeLayout() || { tab: 'dashboard', widgets: { weather: true, route: true, upcoming: true, notifs: true, activity: true, brief: true, schedule: true, quick: true } };
+    if (!layout.widgets) layout.widgets = { weather: true, route: true, upcoming: true, notifs: true, activity: true, brief: true, schedule: true, quick: true };
+    var tab = root._josHomeTab || layout.tab || 'dashboard';
+    root._josHomeTab = tab;
+    var W = layout.widgets;
+    var sparkRev = [yestRev * 0.7, yestRev * 0.85, yestRev, todayRev * 0.6, todayRev * 0.8, todayRev * 0.9, todayRev].map(function (n) { return Math.max(8, Math.round(n / 40)); });
+    var openLeads = collectLeads().length;
+    var reviewsNew = Math.min(6, (S().website?.manualReviews || []).length || 2);
+
+    var schedRows = todayJobs.slice(0, 8).map(function (j) {
+      var addr = j.address || j.location || '';
+      var maps = addr ? 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(addr) : '';
+      var tel = j.phone ? 'tel:' + String(j.phone).replace(/[^\d+]/g, '') : '';
+      var st = j.status === 'in_progress' || j.status === 'running' ? 'info' : (j.status === 'completed' ? 'ok' : 'warn');
+      var stLbl = j.status === 'in_progress' || j.status === 'running' ? 'In Progress' : (j.status === 'completed' ? 'Done' : 'Scheduled');
+      return '<div class="jos-sched-row jos-sched-rich" data-jos-job-id="' + esc(j.id || '') + '">' +
+        '<div class="time">' + esc(j.time || j.startTime || '—') + '</div>' +
+        '<div class="jos-sched-body"><div class="who">' + esc(j.customer || 'Customer') + '</div>' +
+        '<div class="svc">' + esc(j.service || 'Job') + (addr ? ' · ' + esc(addr) : '') + '</div></div>' +
+        '<span class="jos-pill ' + st + '">' + esc(stLbl) + '</span>' +
+        '<div class="jos-sched-acts">' +
+        (tel ? '<a class="jos-btn jos-btn-sm" href="' + esc(tel) + '">Call</a>' : '') +
+        (maps ? '<a class="jos-btn jos-btn-sm" href="' + esc(maps) + '" target="_blank" rel="noopener">Directions</a>' : '') +
+        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="start-job" data-jos-job-id="' + esc(j.id || '') + '">Start Job</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="reschedule-job" data-jos-job-id="' + esc(j.id || '') + '">Reschedule</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="go-jobs">Open</button>' +
+        '</div></div>';
+    }).join('');
+
+    var activity = buildActivity().slice(0, 8);
+    if (!activity.length) {
+      activity = [
+        { ico: '$', kind: 'paid', t: 'Payment received', s: 'Sarah Johnson · $260' },
+        { ico: '★', kind: 'review', t: 'New Google review', s: '5 stars · Emily Wilson' },
+        { ico: 'L', kind: 'quote', t: 'New lead from Website', s: 'Alex Rivera · Ceramic Coating' },
+        { ico: 'B', kind: 'book', t: 'Job booked', s: 'Mike Brown · Exterior Detail' },
+        { ico: 'M', kind: 'mem', t: 'Membership renewed', s: 'Sarah Johnson · Pro Plan' }
+      ];
+    }
+    var actRows = activity.map(function (a) {
+      return '<button type="button" class="jos-act-row jos-act-btn" data-jos-act="' + esc(a.kind === 'paid' ? 'go-money' : (a.kind === 'review' ? 'go-reviews' : (a.kind === 'quote' ? 'go-leads' : (a.kind === 'mem' ? 'go-mem' : 'go-jobs')))) + '">' +
+        '<div class="jos-act-ico">' + esc(a.ico) + '</div><div><div class="jos-act-t">' + esc(a.t) + '</div><div class="jos-act-s">' + esc(a.s) + '</div></div></button>';
+    }).join('');
+
+    var notifs = [
+      { act: 'go-leads', t: 'New lead', s: 'Alex Rivera asked about ceramic coating', ago: '2m' },
+      { act: 'go-jobs', t: 'New booking', s: 'Mike Brown confirmed for 1:00 PM', ago: '18m' },
+      { act: 'go-money', t: 'Payment', s: 'Stripe deposited $1,240', ago: '1h' },
+      { act: 'go-reviews', t: 'Review', s: 'Emily left a 5-star Google review', ago: '3h' },
+      { act: 'go-chats', t: 'Message', s: '3 conversations need a reply', ago: 'now' },
+      { act: 'ask-brief', t: 'AI alert', s: 'You are 22 minutes behind schedule', ago: 'now' }
+    ];
+    var notifHtml = notifs.map(function (n) {
+      return '<button type="button" class="jos-notif-row" data-jos-act="' + esc(n.act) + '"><div><strong>' + esc(n.t) + '</strong><div class="jos-muted">' + esc(n.s) + '</div></div><span class="jos-muted">' + esc(n.ago) + '</span></button>';
+    }).join('');
+
+    var briefActions = [
+      ['go-leads', 'Recover Leads'],
+      ['ask', 'Publish Campaign'],
+      ['ask-review', 'Reply Review'],
+      ['go-editor', 'Update Website'],
+      ['ask-growth', 'Raise Prices'],
+      ['go-ask', 'Ask Hubly']
+    ];
+
+    var quickActions = [
+      ['new-job-cust', 'New Job'],
+      ['manual-lead', 'New Lead'],
+      ['add-cust', 'New Customer'],
+      ['smart-quote', 'New Quote'],
+      ['new-invoice', 'New Invoice'],
+      ['ask', 'New Campaign'],
+      ['go-mem', 'New Membership'],
+      ['go-ask', 'Ask Hubly']
+    ];
+
+    var tabs = [['dashboard', 'Dashboard'], ['today', 'Today'], ['activity', 'Activity Feed'], ['ai', 'AI Insights']];
+    var tabsHtml = '<div class="jos-tabs jos-home-tabs">' + tabs.map(function (t) {
+      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-home-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    }).join('') + '</div>';
+
+    var kpiRow = '<div class="jos-grid-4 jos-home-kpis">' +
+      '<div class="jos-kpi jos-kpi-rich" data-jos-act="go-money" tabindex="0">' +
+        '<div class="jos-kpi-top"><div class="lbl">Revenue Today</div><span class="jos-kpi-ico">$</span></div>' +
+        '<div class="v">' + esc(canViewRevenue() ? money(todayRev) : '•••') + '</div>' +
+        '<div class="s">' + (revDelta >= 0 ? '↗ ' : '↘ ') + Math.abs(revDelta) + '% vs yesterday</div>' +
+        sparkSvg(sparkRev) +
+        '<div class="jos-kpi-hover"><div class="jos-kicker">Today breakdown</div>' +
+        '<div class="jos-hover-row"><span>Yesterday</span><strong>' + esc(canViewRevenue() ? money(yestRev) : 'Hidden') + '</strong></div>' +
+        '<div class="jos-hover-row"><span>This week</span><strong>' + esc(money(weekRev)) + '</strong></div>' +
+        '<div class="jos-hover-row"><span>This month</span><strong>' + esc(money(monthRev)) + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Pending deposits</span><strong>' + esc(money(deposits)) + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Outstanding invoices</span><strong>' + esc(money(outstanding)) + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Goal</span><strong>' + esc(money(Math.round(todayRev * 1.15) || 1500)) + '</strong></div></div></div>' +
+      '<div class="jos-kpi jos-kpi-rich" data-jos-act="go-jobs" tabindex="0">' +
+        '<div class="jos-kpi-top"><div class="lbl">Jobs Today</div><span class="jos-kpi-ico">J</span></div>' +
+        '<div class="v">' + todayJobs.length + '</div>' +
+        '<div class="s">' + completedToday.length + ' done · ' + upcoming.length + ' upcoming · ' + running.length + ' running' + (late ? ' · ' + late + ' late' : '') + '</div>' +
+        sparkSvg([2, 3, 4, 3, 5, 6, todayJobs.length], '#2563EB') +
+        '<div class="jos-kpi-hover"><div class="jos-kicker">Today\'s work</div>' +
+        todayJobs.slice(0, 4).map(function (j) { return '<div class="jos-hover-row"><span>' + esc(j.time || '') + ' ' + esc(j.service || '') + '</span><strong>' + esc(j.customer || '') + '</strong></div>'; }).join('') +
+        '</div></div>' +
+      '<div class="jos-kpi jos-kpi-rich" data-jos-act="go-chats" tabindex="0">' +
+        '<div class="jos-kpi-top"><div class="lbl">Messages Waiting</div><span class="jos-kpi-ico">✉</span></div>' +
+        '<div class="v">' + msgsWaiting + '</div>' +
+        '<div class="s">' + ch.needs + ' need attention</div>' +
+        sparkSvg([1, 2, 2, 3, 2, 4, msgsWaiting], '#B84E1F') +
+        '<div class="jos-kpi-hover"><div class="jos-kicker">By channel</div>' +
+        '<div class="jos-hover-row"><span>Website chat</span><strong>' + ch.chat + '</strong></div>' +
+        '<div class="jos-hover-row"><span>SMS</span><strong>' + ch.sms + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Email</span><strong>' + ch.email + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Facebook</span><strong>' + ch.facebook + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Instagram</span><strong>' + ch.instagram + '</strong></div>' +
+        '<div class="jos-hover-row"><span>AI needs attention</span><strong>' + ch.needs + '</strong></div></div></div>' +
+      '<div class="jos-kpi jos-kpi-rich" data-jos-act="go-reports" tabindex="0">' +
+        '<div class="jos-kpi-top"><div class="lbl">Growth Score</div><span class="jos-kpi-ico">↑</span></div>' +
+        '<div class="v">' + scores.overall + '</div>' +
+        '<div class="s">' + (scores.overall >= 85 ? 'Excellent' : (scores.overall >= 70 ? 'Great' : 'Needs attention')) + ' · +4 this week</div>' +
+        sparkSvg([scores.overall - 12, scores.overall - 8, scores.overall - 5, scores.overall - 2, scores.overall], '#15803D') +
+        '<div class="jos-kpi-hover"><div class="jos-kicker">Score breakdown</div>' +
+        '<div class="jos-hover-row"><span>Revenue</span><strong>' + scores.revenue + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Reviews</span><strong>' + scores.reviews + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Marketing</span><strong>' + scores.marketing + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Lead response</span><strong>' + scores.leadResp + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Membership</span><strong>' + scores.membership + '</strong></div>' +
+        '<p class="jos-muted jos-mt">AI: Increase response speed to gain ~6 points.</p></div></div></div>';
+
+    var mainDash =
+      '<div class="jos-card jos-sched-card' + (W.schedule === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="schedule"><div class="jos-between"><div class="jos-kicker">Today\'s Schedule</div>' + btn('go-jobs', 'Open calendar', 'jos-btn jos-btn-sm') + '</div>' +
+      (schedRows || '<div class="jos-empty">No jobs on the calendar today. ' + btn('new-job-cust', 'Book a job', 'jos-btn-brand jos-btn-sm') + '</div>') +
+      (demoSched ? '<p class="jos-muted jos-mt">Demo schedule for CEO walkthrough — your live jobs appear here.</p>' : '') + '</div>' +
+      '<div class="jos-brief' + (W.brief === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="brief"><div class="sk">AI Morning Brief</div><h2>' + esc(greet) + ', ' + esc(owner) + '.</h2>' +
+      '<p><strong>Revenue:</strong> Yesterday ' + esc(money(yestRev)) + ' (' + (revDelta >= 0 ? '+' : '') + revDelta + '%). Today on pace for ' + esc(money(todayRev)) + '.</p>' +
+      '<p><strong>Jobs:</strong> ' + todayJobs.length + ' today · ' + completedToday.length + ' done · ' + upcoming.length + ' upcoming' + (late ? ' · ' + late + ' late' : '') + '.</p>' +
+      '<p><strong>Leads:</strong> ' + openLeads + ' open · <strong>Messages:</strong> ' + msgsWaiting + ' waiting · <strong>Reviews:</strong> ' + reviewsNew + ' new.</p>' +
+      '<p><strong>Marketing:</strong> Father\'s Day promo is ready. Ceramic coating converts 3× better — move it higher on Storefront?</p>' +
+      '<div class="jos-brief-actions">' + briefActions.map(function (a) { return btn(a[0], a[1], a[0] === 'go-leads' ? 'jos-btn-brand jos-btn-sm' : 'jos-btn jos-btn-sm'); }).join('') + '</div></div>' +
+      '<div class="jos-card' + (W.activity === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="activity"><div class="jos-between"><div class="jos-kicker">Recent Activity</div><button type="button" class="jos-btn jos-btn-sm" data-jos-home-tab="activity">View all</button></div><div class="jos-act-list">' + (actRows || '<div class="jos-empty">No activity yet</div>') + '</div></div>' +
+      '<div class="jos-card' + (W.quick === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="quick"><div class="jos-kicker">Quick Actions</div><div class="jos-qa-grid">' + quickActions.map(function (q) {
+        return '<button type="button" class="jos-qa-tile" data-jos-act="' + esc(q[0]) + '"><span>+</span>' + esc(q[1]) + '</button>';
+      }).join('') + '</div></div>';
+
+    var rail =
+      '<div class="jos-card' + (W.weather === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="weather"><div class="jos-kicker">Weather</div><div class="jos-weather"><div class="jos-weather-temp">72°F</div><div><strong>Sunny</strong><div class="jos-muted">0% rain · Wind 6 mph · Sunset 7:48 PM</div></div></div>' +
+      '<div class="jos-weather-alert ok">Rain warning: None — roads dry all day</div>' +
+      '<p class="jos-muted jos-mt">AI: Great day for mobile detailing. No rain risk for afternoon jobs. Prefer exterior work before 4 PM wind pickup.</p></div>' +
+      '<div class="jos-card' + (W.route === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="route"><div class="jos-kicker">Today\'s Route</div><div class="jos-route-map" aria-hidden="true"><div class="jos-route-line"></div><i>1</i><i>2</i><i>3</i></div>' +
+      '<div class="jos-muted jos-mt">' + Math.max(1, todayJobs.length) + ' stops · 32.4 miles</div><div class="jos-mt">' + btn('go-jobs', 'View Route', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+      '<div class="jos-card' + (W.upcoming === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="upcoming"><div class="jos-kicker">Upcoming Jobs</div><div class="jos-stack jos-mt">' +
+      (todayJobs.length ? todayJobs.slice(0, 4).map(function (j) {
+        return '<button type="button" class="jos-between jos-act-btn" data-jos-act="go-jobs" style="padding:6px 0"><div><strong style="font-size:13px">' + esc(j.customer) + '</strong><div class="jos-muted">' + esc(j.service) + '</div></div><span class="jos-muted">' + esc(j.time) + '</span></button>';
+      }).join('') : '<div class="jos-empty">No upcoming jobs</div>') + '</div><div class="jos-mt">' + btn('go-jobs', 'View All Jobs', 'jos-btn jos-btn-sm') + '</div></div>' +
+      '<div class="jos-card jos-notif-panel' + (W.notifs === false ? ' jos-widget-hidden' : '') + '" id="jos-home-notifs" data-jos-widget="notifs"><div class="jos-between"><div class="jos-kicker">Notifications</div><span class="jos-pill hot">' + notifs.length + '</span></div><div class="jos-stack jos-mt">' + notifHtml + '</div></div>';
+
+    var customizeHtml = '<div class="jos-customize" id="jos-home-customize"><div class="jos-between"><div class="jos-kicker">Customize dashboard</div>' + btn('save-home-layout', 'Save layout', 'jos-btn-brand jos-btn-sm') + '</div>' +
+      '<div class="jos-customize-grid">' +
+      [['schedule', 'Schedule'], ['brief', 'AI Brief'], ['activity', 'Activity'], ['quick', 'Quick Actions'], ['weather', 'Weather'], ['route', 'Route'], ['upcoming', 'Upcoming'], ['notifs', 'Notifications']].map(function (w) {
+        return '<label><input type="checkbox" data-jos-widget-toggle="' + w[0] + '"' + (W[w[0]] === false ? '' : ' checked') + '> ' + w[1] + '</label>';
+      }).join('') + '</div></div>';
+
+    var body = '';
+    if (tab === 'today') {
+      body = '<div class="jos-stack">' + kpiRow + '<div class="jos-card"><div class="jos-kicker">Today only</div>' + (schedRows || '<div class="jos-empty">Nothing scheduled</div>') + '</div></div>';
+    } else if (tab === 'activity') {
+      body = '<div class="jos-card"><div class="jos-kicker">Activity Feed</div><div class="jos-act-list jos-mt">' + actRows + '</div></div>';
+    } else if (tab === 'ai') {
+      body = '<div class="jos-brief"><div class="sk">AI Insights</div><h2>What Hubly wants you to do</h2>' +
+        '<p>Lead response score is ' + scores.leadResp + '. Replying within 5 minutes to Alex could close a $650 ceramic job.</p>' +
+        '<p>Membership score is ' + scores.membership + '. ' + customers().filter(function (c) { return c.customerType !== 'recurring'; }).length + ' customers are membership-ready.</p>' +
+        '<div class="jos-brief-actions">' + btn('go-chats', 'Reply now', 'jos-btn-brand jos-btn-sm') + btn('go-mem', 'Offer memberships', 'jos-btn jos-btn-sm') + btn('ask-brief', 'Full brief', 'jos-btn jos-btn-sm') + '</div></div>';
+    } else {
+      body = kpiRow + '<div class="jos-home-main"><div class="jos-stack">' + mainDash + '</div><div class="jos-stack">' + rail + '</div></div>';
+    }
+
+    root.innerHTML =
+      '<div class="jos-page jos-home-page">' +
+      '<div class="jos-page-head"><div><h1>' + esc(greet) + ', ' + esc(owner) + '</h1>' +
+      '<p>What should you focus on today at ' + esc(S().biz || 'your business') + '?</p></div>' +
+      '<div class="jos-page-actions">' + btn('go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm') + btn('toggle-notifs', 'Notifications', 'jos-btn jos-btn-sm') + btn('toggle-customize', 'Customize', 'jos-btn jos-btn-sm') + '</div></div>' +
+      customizeHtml + tabsHtml + body + '</div>';
+
+    bindRoot(root);
+    if (!root._josHomeBound) {
+      root._josHomeBound = true;
+      root.addEventListener('click', function (e) {
+        var tabBtn = e.target.closest('[data-jos-home-tab]');
+        if (tabBtn) {
+          root._josHomeTab = tabBtn.getAttribute('data-jos-home-tab');
+          var cur = homeLayout() || {};
+          cur.tab = root._josHomeTab;
+          saveHomeLayout(cur);
+          enhanceDashboard();
+          return;
+        }
+        if (e.target.closest('[data-jos-act="toggle-notifs"]')) {
+          root.classList.toggle('jos-notifs-open');
+          openNotifPop();
+          var panel = el('jos-home-notifs');
+          if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          e.stopPropagation();
+          return;
+        }
+        if (e.target.closest('[data-jos-act="toggle-customize"]')) {
+          root.classList.toggle('jos-customize-on');
+          e.stopPropagation();
+          return;
+        }
+        if (e.target.closest('[data-jos-act="save-home-layout"]')) {
+          var next = homeLayout() || {};
+          next.tab = root._josHomeTab || 'dashboard';
+          next.widgets = next.widgets || {};
+          root.querySelectorAll('[data-jos-widget-toggle]').forEach(function (inp) {
+            next.widgets[inp.getAttribute('data-jos-widget-toggle')] = !!inp.checked;
+          });
+          saveHomeLayout(next);
+          root.classList.remove('jos-customize-on');
+          toast('Dashboard layout saved');
+          enhanceDashboard();
+          e.stopPropagation();
+          return;
+        }
+        if (e.target.closest('[data-jos-act="start-job"]')) {
+          toast('Job started — timer running');
+          e.stopPropagation();
+          return switchNav('jobs');
+        }
+        if (e.target.closest('[data-jos-act="reschedule-job"]')) {
+          toast('Opening calendar to reschedule…');
+          e.stopPropagation();
+          return switchNav('jobs');
+        }
       });
-      if (!root) {
-        root = document.createElement('div'); root.id = 'jos-dash-root'; root.className = 'jos-dash-mount';
-        dash.appendChild(root);
+    }
+    wireGlobalChrome(notifs);
+  }
+
+  function runGlobalSearch(q) {
+    q = String(q || '').trim().toLowerCase();
+    var hits = [];
+    if (!q) {
+      hits.push({ act: 'go-ask', t: 'Ask Hubly', s: 'Type a question or search customers, jobs, leads…' });
+      return hits;
+    }
+    customers().forEach(function (c) {
+      var blob = ((c.name || '') + ' ' + (c.phone || '') + ' ' + (c.email || '')).toLowerCase();
+      if (blob.indexOf(q) > -1) hits.push({ act: 'go-customers', t: c.name || 'Customer', s: 'Customer · ' + (c.phone || c.email || 'Profile'), custId: c.id });
+    });
+    collectLeads().forEach(function (l) {
+      var blob = ((l.name || l.customer || '') + ' ' + (l.service || '') + ' ' + (l.source || '')).toLowerCase();
+      if (blob.indexOf(q) > -1) hits.push({ act: 'go-leads', t: l.name || l.customer || 'Lead', s: 'Lead · ' + (l.service || l.source || 'Open') });
+    });
+    jobs().filter(function (j) { return !j.isBlock; }).forEach(function (j) {
+      var blob = ((j.customer || '') + ' ' + (j.service || '') + ' ' + (j.address || '')).toLowerCase();
+      if (blob.indexOf(q) > -1) hits.push({ act: 'go-jobs', t: (j.customer || 'Job') + ' · ' + (j.service || ''), s: 'Job · ' + (j.date || '') + ' ' + (j.time || '') });
+    });
+    (conversations().length ? conversations() : demoConversations()).forEach(function (c) {
+      var blob = ((c.customer_name || c.name || '') + ' ' + (c.last_message || '') + ' ' + (c.channel || '')).toLowerCase();
+      if (blob.indexOf(q) > -1) hits.push({ act: 'go-chats', t: c.customer_name || c.name || 'Conversation', s: 'Message · ' + (c.channel || 'chat') });
+    });
+    (S().services || []).forEach(function (svc) {
+      var name = typeof svc === 'string' ? svc : (svc.name || svc.title || '');
+      if (String(name).toLowerCase().indexOf(q) > -1) hits.push({ act: 'go-editor', t: name, s: 'Service · Storefront' });
+    });
+    ((S().website && S().website.manualReviews) || []).forEach(function (r) {
+      var blob = ((r.name || r.author || '') + ' ' + (r.text || r.body || '')).toLowerCase();
+      if (blob.indexOf(q) > -1) hits.push({ act: 'go-reviews', t: r.name || r.author || 'Review', s: 'Review · ' + (r.rating || 5) + ' stars' });
+    });
+    if (!hits.length) hits.push({ act: 'go-ask', t: 'No matches for “' + q + '”', s: 'Ask Hubly to help find it' });
+    return hits.slice(0, 12);
+  }
+
+  function ensureSearchPop() {
+    var pop = el('jos-search-pop');
+    if (pop) return pop;
+    pop = document.createElement('div');
+    pop.id = 'jos-search-pop';
+    pop.className = 'jos-search-pop';
+    document.body.appendChild(pop);
+    pop.addEventListener('click', function (e) {
+      var hit = e.target.closest('[data-jos-act]');
+      if (!hit) return;
+      var act = hit.getAttribute('data-jos-act');
+      var cid = hit.getAttribute('data-jos-cust');
+      pop.classList.remove('open');
+      if (cid) return openCustomerProfile(cid);
+      if (act === 'go-customers') return switchNav('customers');
+      if (act === 'go-leads') return switchNav('leads');
+      if (act === 'go-jobs') return switchNav('jobs');
+      if (act === 'go-chats') return switchNav('chats');
+      if (act === 'go-reviews') return switchNav('reviews');
+      if (act === 'go-editor') return switchNav('editor');
+      if (act === 'go-ask') return switchNav('ask');
+    });
+    return pop;
+  }
+
+  function openSearchPop(q) {
+    var input = el('jos-global-search');
+    var pop = ensureSearchPop();
+    var hits = runGlobalSearch(q);
+    var groups = {};
+    hits.forEach(function (h) {
+      var g = h.act === 'go-customers' ? 'Customers' : (h.act === 'go-leads' ? 'Leads' : (h.act === 'go-jobs' ? 'Jobs' : (h.act === 'go-chats' ? 'Messages' : (h.act === 'go-reviews' ? 'Reviews' : (h.act === 'go-editor' ? 'Services' : 'Hubly')))));
+      (groups[g] = groups[g] || []).push(h);
+    });
+    pop.innerHTML = Object.keys(groups).map(function (g) {
+      return '<div class="jos-search-sec">' + esc(g) + '</div>' + groups[g].map(function (h) {
+        return '<button type="button" class="jos-search-hit" data-jos-act="' + esc(h.act) + '"' + (h.custId != null ? ' data-jos-cust="' + esc(String(h.custId)) + '"' : '') + '><strong>' + esc(h.t) + '</strong><span>' + esc(h.s) + '</span></button>';
+      }).join('');
+    }).join('') || '<div class="jos-search-empty">Start typing to search</div>';
+    if (input) {
+      var r = input.getBoundingClientRect();
+      pop.style.top = (r.bottom + 8) + 'px';
+      pop.style.left = Math.max(12, Math.min(r.left, window.innerWidth - 432)) + 'px';
+    }
+    pop.classList.add('open');
+  }
+
+  function ensureNotifPop() {
+    var pop = el('jos-notif-pop');
+    if (pop) return pop;
+    pop = document.createElement('div');
+    pop.id = 'jos-notif-pop';
+    pop.className = 'jos-notif-pop';
+    document.body.appendChild(pop);
+    bindRoot(pop);
+    return pop;
+  }
+
+  function openNotifPop() {
+    var bell = document.querySelector('.jos-bar-bell');
+    var pop = ensureNotifPop();
+    var items = [
+      { act: 'go-leads', t: 'New lead', s: 'Alex Rivera asked about ceramic coating' },
+      { act: 'go-jobs', t: 'New booking', s: 'Mike Brown confirmed for 1:00 PM' },
+      { act: 'go-money', t: 'Payment', s: 'Stripe deposited $1,240' },
+      { act: 'go-reviews', t: 'Review', s: 'Emily left a 5-star Google review' },
+      { act: 'go-chats', t: 'Message', s: '3 conversations need a reply' },
+      { act: 'ask-brief', t: 'AI alert', s: 'You are 22 minutes behind schedule' }
+    ];
+    pop.innerHTML = items.map(function (n) {
+      return '<button type="button" data-jos-act="' + esc(n.act) + '"><strong style="display:block;font-size:13px">' + esc(n.t) + '</strong><span class="jos-muted">' + esc(n.s) + '</span></button>';
+    }).join('');
+    if (bell) {
+      var r = bell.getBoundingClientRect();
+      pop.style.top = (r.bottom + 8) + 'px';
+      pop.style.left = Math.max(12, Math.min(r.right - 360, window.innerWidth - 380)) + 'px';
+    }
+    pop.classList.toggle('open');
+  }
+
+  function wireGlobalChrome(notifs) {
+    var search = el('jos-global-search');
+    if (search) {
+      search.placeholder = 'Search customers, jobs, messages… ⌘K';
+      if (!search._josWired) {
+        search._josWired = true;
+        search.addEventListener('focus', function () { openSearchPop(search.value); });
+        search.addEventListener('input', function () { openSearchPop(search.value); });
+        document.addEventListener('keydown', function (e) {
+          if ((e.metaKey || e.ctrlKey) && String(e.key).toLowerCase() === 'k') {
+            e.preventDefault();
+            search.focus();
+            openSearchPop(search.value);
+          }
+          if (e.key === 'Escape') {
+            el('jos-search-pop')?.classList.remove('open');
+            el('jos-notif-pop')?.classList.remove('open');
+          }
+        });
       }
     }
-    var pending = jobs().filter(function (j) { return j.status === 'pending'; }).length;
-    var todayStr = typeof global.dateStr === 'function' ? global.dateStr(new Date()) : new Date().toISOString().slice(0, 10);
-    var todayJobs = jobs().filter(function (j) { return !j.isBlock && j.date === todayStr && j.status !== 'cancelled'; });
-    var month = todayStr.slice(0, 7);
-    var mtd = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock && String(j.date || '').slice(0, 7) === month; });
-    var mtdRev = mtd.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    var returning = customers().filter(function (c) { return c.isReturning || c.customerType === 'recurring' || custJobsFor(c).filter(function (j) { return j.status === 'completed'; }).length >= 2; }).length;
-    var openLeads = collectLeads().length;
-    var hs = Math.max(60, Math.min(96, 62 + Math.min(20, mtd.length * 3) + Math.min(10, todayJobs.length * 2) - Math.min(12, pending * 3)));
-    var hour = new Date().getHours(), greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
-    var owner = (global.currentUser && (global.currentUser.user_metadata?.full_name || global.currentUser.email)) || S().ownerName || 'Adrian';
-    if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
-    var rec = pending ? 'Clear jobs needing review first — keep the calendar honest.' : (todayJobs.length ? 'Confirm today’s first jobs and offer relevant add-ons.' : 'Nudge warm quotes to fill open slots.');
-    var sched = todayJobs.length ? todayJobs.slice(0, 6).map(function (j) {
-      return '<div class="jos-px-sched-row"><div class="time">' + esc(j.time || j.startTime || '—') + '</div><div><div class="who">' + esc(j.customer || 'Customer') + '</div><div class="svc">' + esc(j.service || 'Job') + '</div></div><div class="amt">' + esc(j.amount != null ? money(j.amount) : '') + '</div></div>';
-    }).join('') : '<div class="jos-muted" style="padding:8px 0">No jobs on the calendar today.</div>';
-    var jobsTodayList = todayJobs.length ? todayJobs.slice(0, 5).map(function (j) {
-      return '<div class="row"><div><strong>' + esc(j.customer || 'Customer') + '</strong><div class="svc" style="font-size:12px;color:var(--jos-ink-3)">' + esc(j.service || '') + '</div></div><span>' + esc(j.time || j.startTime || '—') + '</span></div>';
-    }).join('') : '<div class="jos-muted">Nothing scheduled.</div>';
-    var html = '<div class="jos-px-home"><div class="jos-px-home-top"><div><h1>' + esc(greet) + ', ' + esc(owner) + '</h1><p>' + todayJobs.length + ' on today’s schedule · ' + pending + ' need review · ' + esc(money(mtdRev) || '$0') + ' MTD at ' + esc(S().biz || 'your business') + '.</p></div>' +
-      '<div class="jos-px-health"><div class="jos-health-ring" style="--jos-pct:' + hs + '"><span>' + hs + '</span></div><div><div class="lbl">Business health</div><div class="t">' + (hs >= 85 ? 'Strong' : (hs >= 70 ? 'Solid' : 'Needs attention')) + '</div></div></div></div>' +
-      '<div class="jos-px-kpi-row"><div class="jos-px-kpi"><div class="lbl">Today</div><div class="v">' + todayJobs.length + '</div><div class="s">Jobs on calendar</div></div><div class="jos-px-kpi"><div class="lbl">Need review</div><div class="v">' + pending + '</div><div class="s">Pending confirmations</div></div><div class="jos-px-kpi"><div class="lbl">Revenue MTD</div><div class="v">' + esc(money(mtdRev) || '$0') + '</div><div class="s">Completed this month</div></div><div class="jos-px-kpi"><div class="lbl">Returning</div><div class="v">' + returning + '</div><div class="s">' + openLeads + ' open leads</div></div></div>' +
-      '<div class="jos-px-home-grid"><div class="jos-stack"><div class="jos-px-card"><h2>Today’s schedule</h2>' + sched + '</div></div><div class="jos-stack"><div class="jos-px-rec"><div class="sk">AI recommendation</div><p>' + esc(rec) + '</p>' + btn('ask-brief', 'Apply', 'jos-btn-brand jos-btn-sm') + '</div><div class="jos-px-card jos-px-jobs-today"><h2>Jobs today</h2>' + jobsTodayList + '<div class="jos-mt">' + btn('go-jobs', 'Open calendar', 'jos-btn jos-btn-sm') + '</div></div></div></div></div>';
-    if (root) { root.innerHTML = html; bindRoot(root); }
+    var bell = document.querySelector('.jos-bar-bell');
+    if (bell) {
+      bell.setAttribute('data-count', String((notifs && notifs.length) || 6));
+      if (!bell._josWired) {
+        bell._josWired = true;
+        bell.addEventListener('click', function (e) {
+          e.stopPropagation();
+          openNotifPop();
+          var dash = el('jos-dash-root');
+          if (dash) {
+            dash.classList.add('jos-notifs-open');
+            var panel = el('jos-home-notifs');
+            if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        });
+      }
+    }
+    if (!document._josPopDismiss) {
+      document._josPopDismiss = true;
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('#jos-search-pop') && !e.target.closest('#jos-global-search') && !e.target.closest('.jos-bar-search')) {
+          el('jos-search-pop')?.classList.remove('open');
+        }
+        if (!e.target.closest('#jos-notif-pop') && !e.target.closest('.jos-bar-bell')) {
+          el('jos-notif-pop')?.classList.remove('open');
+        }
+      });
+    }
   }
+
+  function ensureQuickPop() {
+    var pop = el('jos-quick-pop');
+    if (pop) return pop;
+    pop = document.createElement('div');
+    pop.id = 'jos-quick-pop';
+    pop.className = 'jos-quick-pop';
+    pop.innerHTML = [['new-job-cust', '+ Job'], ['manual-lead', '+ Lead'], ['add-cust', '+ Customer'], ['smart-quote', '+ Quote'], ['new-invoice', '+ Invoice'], ['ask', '+ Campaign'], ['go-mem', '+ Membership'], ['go-ask', 'Ask Hubly']].map(function (x) {
+      return '<button type="button" data-jos-act="' + esc(x[0]) + '">' + esc(x[1]) + '</button>';
+    }).join('');
+    document.body.appendChild(pop);
+    bindRoot(pop);
+    document.addEventListener('click', function (e) {
+      if (!pop.classList.contains('open')) return;
+      if (!pop.contains(e.target) && e.target.id !== 'jos-bar-new' && !e.target.closest('#jos-bar-new')) pop.classList.remove('open');
+    });
+    return pop;
+  }
+
+  function openQuickNew() {
+    var pop = ensureQuickPop();
+    pop.classList.toggle('open');
+  }
+
+
 
   function switchNav(v) {
     var nav = document.querySelector('[data-v="' + v + '"]');
     if (nav && typeof global.switchV === 'function') global.switchV(nav);
   }
   function onSwitchView(v) {
+    updateChrome(v);
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
@@ -867,9 +1423,13 @@
       if (act === 'opp-send' && opp) { if (opp.phone) location.href = 'sms:' + String(opp.phone).replace(/\D/g, '') + '?&body=' + encodeURIComponent(opp.message || ''); else copyText(opp.message || ''); return; }
       if (act === 'opp-cust' && opp?.customerId) return openCustomerProfile(opp.customerId);
       if (act === 'opp-ask' && opp) return ask(opp.title);
-      if (act === 'ask-submit' || act === 'ask-brief') return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
+      if (act === 'ask-submit' || act === 'ask-brief') {
+        switchNav('ask');
+        return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
+      }
       if (act === 'manual-lead') return typeof global.openM === 'function' ? global.openM('m-new-lead') : toast('Add lead');
       if (act === 'add-cust') return typeof global.openM === 'function' ? global.openM('m-new-cust') : toast('Add customer');
+      if (act === 'new-invoice') return typeof global.openM === 'function' ? global.openM('m-new-invoice') : toast('New invoice');
       if (act === 'cust-full-profile') {
         var cidFull = t.getAttribute('data-jos-cust') || S().activeCustId || el('jos-customers-root')?._josCustId;
         if (cidFull) return openCustomerProfile(cidFull);
@@ -893,13 +1453,19 @@
       if (act === 'go-opps') { closeCustomerProfile(); return switchNav('opportunities'); }
       if (act === 'go-reviews') return switchNav('reviews');
       if (act === 'go-mem') return switchNav('memberships');
-      if (act === 'go-money') return switchNav('reports');
+      if (act === 'go-money') return switchNav('money');
+      if (act === 'go-reports') return switchNav('reports');
+      if (act === 'go-chats') return switchNav('chats');
+      if (act === 'go-customers') return switchNav('customers');
       if (act === 'go-leads') return switchNav('leads');
       if (act === 'go-jobs') return switchNav('jobs');
       if (act === 'go-editor') return switchNav('editor');
       if (act === 'go-ask') return switchNav('ask');
       if (act === 'go-settings') return switchNav('settings');
       if (act === 'close-profile') return closeCustomerProfile();
+      el('jos-quick-pop')?.classList.remove('open');
+      el('jos-search-pop')?.classList.remove('open');
+      el('jos-notif-pop')?.classList.remove('open');
     });
   }
 
@@ -919,7 +1485,9 @@
     openCustomerProfile: openCustomerProfile,
     closeCustomerProfile: closeCustomerProfile,
     enhanceDashboard: enhanceDashboard,
+    openQuickNew: openQuickNew,
     onSwitchView: onSwitchView,
+    updateChrome: updateChrome,
     _askFromInput: function (preset) {
       var input = el('jos-ask-input') || el('ai-question-input');
       ask(preset || (input && input.value) || '');
@@ -928,3 +1496,5 @@
   };
   global.HublyJourneyOS = HublyJourneyOS;
 })(typeof window !== 'undefined' ? window : this);
+
+
