@@ -16,4 +16,5 @@ c("views",/id="v-pipeline"/.test(hubly)&&/id="v-ask"/.test(hubly)&&/id="v-growth
 c("api",/renderPipeline/.test(jjs)&&/openCustomerProfile/.test(jjs));
 c("landing",/Build your business/.test(hubly)&&/Build your business/.test(home));
 c("script",/journey-os\/journey\.js/.test(hubly));
+c("ceo demo route",/\/demo.:.p-ceo-demo/.test(hubly)&&/startCeoDemoMode/.test(hubly)&&fs.existsSync(path.join(root,"public/journey-os/ceo-demo.js")));
 if(f.length) process.exit(1); console.log("PASS");
