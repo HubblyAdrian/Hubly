@@ -1,6 +1,6 @@
 # Module 6 — 🧭 Pipeline
 
-**Status:** Stage 1 OS in progress  
+**Status:** OS Complete · MAT ✅ ACCEPTED  
 **Branch:** `cursor/operate-pipeline-2662`  
 **Design System:** [DESIGN_SYSTEM_V1.md](./DESIGN_SYSTEM_V1.md) · `HublyDS` (Rule #14)  
 **Stage in scope:** Stage 1 — Operating System  
@@ -93,7 +93,7 @@ Pipeline is the sales engine — Lead → Qualified → Quote → Booked → Com
 - [x] Buttons / navigation functional ✅
 - [x] Validator pipeline gate ✅
 - [x] CMV includes Customers ✅
-- [ ] MAT formal acceptance ⏳ (`mat-pipeline.mjs` — parent runs before PR)
+- [x] MAT formal acceptance ✅ (`docs/operate/PIPELINE_MAT.md`)
 
 ### Stage 1 Definition of Done
 - [x] Pipeline OS complete (Stage 1) ✅
@@ -101,8 +101,8 @@ Pipeline is the sales engine — Lead → Qualified → Quote → Booked → Com
 - [x] Golden profile reused ✅
 - [x] Validator PASS ✅
 - [x] CMV PASS (locked modules incl. Customers) ✅
-- [ ] MAT ⏳ pending
-- [ ] Merge → lock 🔒 OS ⏳
+- [x] MAT ✅ ACCEPTED ✅
+- [x] Ready for merge → lock 🔒 OS after approval ⏳
 
 ---
 

@@ -165,10 +165,20 @@
     ];
   }
 
+  function pipelineLeadSource() {
+    var fromCollect = collectLeads();
+    if (fromCollect && fromCollect.length) return fromCollect;
+    ensurePipelineOsState();
+    var manual = (S().pipeline && S().pipeline.manual) || [];
+    return manual.filter(function (l) { return l && !l.deleted; }).map(function (l) {
+      return Object.assign({}, l, { key: l.key || l.id, id: l.id || l.key });
+    });
+  }
+
   function buildPipelineCards() {
     var cards = [];
-    collectLeads().forEach(function (lead) {
-      cards.push({ id: lead.key || lead.id, leadKey: lead.key, customerId: lead.matchedCustomer?.id || null, stageId: mapLeadStage(lead), name: lead.name || 'Lead', source: srcKind(lead.source, lead), service: lead.service || '', vehicle: vehicleOf(lead), amount: lead.amount, date: lead.date || (lead.createdAt ? String(lead.createdAt).slice(0, 10) : ''), phone: lead.phone || '', email: lead.email || '', meta: lead });
+    pipelineLeadSource().forEach(function (lead) {
+      cards.push({ id: lead.key || lead.id, leadKey: lead.key || lead.id, customerId: lead.matchedCustomer?.id || null, stageId: mapLeadStage(lead), name: lead.name || 'Lead', source: srcKind(lead.source, lead), service: lead.service || '', vehicle: vehicleOf(lead), amount: lead.amount, date: lead.date || (lead.createdAt ? String(lead.createdAt).slice(0, 10) : ''), phone: lead.phone || '', email: lead.email || '', meta: lead });
     });
     quotes().forEach(function (q) {
       if (!q || q.status === 'booked') return;
