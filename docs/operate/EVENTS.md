@@ -37,7 +37,12 @@ Benefits: audit trail · reporting · AI context · debugging.
 | `job.started` | Jobs | — |
 | `job.completed` | Jobs | Reviews, Marketing, Revenue, Reports |
 | `payment.received` | Revenue | Reports, Customers |
+| `deposit.paid` | Revenue | Reports, Customers |
 | `invoice.sent` | Revenue | Customers, Reports |
+| `invoice.paid` | Revenue | Reports, Customers, Memberships |
+| `refund.issued` | Revenue | Reports, Customers |
+| `payout.completed` | Revenue | Reports |
+| `invoice.voided` | Revenue | Reports |
 | `membership.started` | Memberships | Customers, Pipeline, Revenue |
 | `membership.renewed` | Memberships | Revenue, Reports |
 | `membership.cancelled` | Memberships | Revenue, Reports |

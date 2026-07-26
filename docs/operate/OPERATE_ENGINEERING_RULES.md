@@ -89,6 +89,16 @@ Examples:
 
 Reinforces Rule #15. See [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md).
 
+## Rule #20 — Financial Integrity
+
+Financial records are **append-only**.
+
+Payments, invoices (after send), refunds, deposits, and payouts must never be silently overwritten or deleted. Corrections are new events — refunds, adjustments, voids, credits — preserving a complete audit trail.
+
+Aligns with Rules #18 and #19. Required for Revenue, reporting, AI analysis, and future accounting integrations.
+
+See [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md).
+
 ## Cross-Module Verification (CMV)
 
 Before approval of a new module PR, confirm previously **locked** modules still function (no modifications — confirmation only).
@@ -101,4 +111,7 @@ Load order for runners: `design-system.js` → `hubly-events.js` → `journey.js
 
 **MAT** (`docs/operate/MAT.md`) is the merge gate — not informal smoke language.
 
-Special modules (e.g. Marketing) require an architecture doc before Development — see [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md).
+Special modules require an architecture doc before Development:
+
+- Marketing → [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md)  
+- Revenue → [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) (correctness gate + Rule #20)
