@@ -57,7 +57,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 🧭 Pipeline | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🌐 Storefront | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📣 Marketing | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| ⭐ Reviews | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
+| ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
 | 🔁 Memberships | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 💰 Revenue | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 📊 Reports | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
@@ -78,7 +78,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 6 | 🧭 Pipeline | ✅ Locked | ⏸ | [#249](https://github.com/HubblyAdrian/Hubly/pull/249) | 🔒 OS · MAT ✅ · HublyDS v1 · merged |
 | 7 | 🌐 Storefront | ✅ Locked | ⏸ | [#250](https://github.com/HubblyAdrian/Hubly/pull/250) | 🔒 OS · MAT ✅ · Service Catalog owner · merged |
 | 8 | 📣 Marketing | ✅ Locked | ⏸ | [#251](https://github.com/HubblyAdrian/Hubly/pull/251) | 🔒 OS · MAT ✅ · Rules #14–16 · merged |
-| 9 | ⭐ Reviews | ⏳ OS implemented (Stage 1) | ⏸ | — | Owns `S.reviewsOs` · HublyEvents · `cursor/operate-reviews-2662` · MAT ⏳ |
+| 9 | ⭐ Reviews | ✅ OS complete · MAT ✅ · CMV PASS | ⏸ | pending | Owns `S.reviewsOs` · Rule #17 HublyEvents · `cursor/operate-reviews-2662` · awaiting approval |
 | 10–14 | Remaining | ⏳ | ⏸ | — | |
 
 ## Workflow

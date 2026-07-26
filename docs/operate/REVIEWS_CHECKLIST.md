@@ -1,10 +1,11 @@
 # Module 9 — ⭐ Reviews
 
-**Status:** Stage 1 OS in progress  
+**Status:** Stage 1 OS · MAT ✅ · CMV PASS · awaiting approval  
 **Branch:** `cursor/operate-reviews-2662`  
 **Events:** [EVENTS.md](./EVENTS.md) (Rule #17)  
 **Design System:** HublyDS (Rule #14)  
 **Ownership:** Review records / requests / replies / reputation (Rule #15)  
+**MAT:** [REVIEWS_MAT.md](./REVIEWS_MAT.md) · runner `node scripts/mat-reviews.mjs`  
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
 
@@ -49,11 +50,12 @@ Reviews owns reputation. Complements Marketing (demand + trust).
 
 ### QA / MAT / CMV
 - [x] Validator reviews + hubly-events gates ✅  
-- [ ] MAT ⏳  
+- [x] MAT ✅ ACCEPTED (`scripts/mat-reviews.mjs` · [REVIEWS_MAT.md](./REVIEWS_MAT.md))  
 - [x] CMV incl. Marketing ✅  
 
 ### Definition of Done
-- [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳  
+- [x] OS · MAT ✅ · CMV PASS  
+- [ ] Merge → 🔒 OS ⏳ (awaiting approval)  
 
 ---
 
