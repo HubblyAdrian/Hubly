@@ -48,7 +48,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 📥 Inbox | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📅 Jobs & Calendar | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🧲 Leads | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| ❤️ Customers | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
+| ❤️ Customers | ✅ | ⏸ | ✅ | ✅ | ⏳ | ❌ |
 | 🧭 Pipeline | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 🌐 Storefront | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 📣 Marketing | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
@@ -69,7 +69,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 2 | 📥 Inbox | ✅ Locked | ⏸ | [#244](https://github.com/HubblyAdrian/Hubly/pull/244) | 🔒 OS · MAT ✅ |
 | 3 | 📅 Jobs & Calendar | ✅ Locked | ⏸ | [#246](https://github.com/HubblyAdrian/Hubly/pull/246) | 🔒 OS · MAT ✅ · merged |
 | 4 | 🧲 Leads | ✅ Locked | ⏸ | [#247](https://github.com/HubblyAdrian/Hubly/pull/247) | 🔒 OS · MAT ✅ · merged |
-| 5 | ❤️ Customers | ⏳ In Progress | ⏸ | — | `cursor/operate-customers-2662` · golden profile |
+| 5 | ❤️ Customers | ✅ OS done · MAT ⏳ | ⏸ | — | `cursor/operate-customers-2662` · golden profile reused |
 | 6–14 | Remaining | ⏳ | ⏸ | — | |
 
 ## Workflow

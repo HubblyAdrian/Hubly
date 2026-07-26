@@ -1,6 +1,6 @@
 # Module 5 — ❤️ Customers
 
-**Status:** In Progress  
+**Status:** OS Complete · MAT pending  
 **Branch:** `cursor/operate-customers-2662`  
 **Stage in scope:** Stage 1 — Operating System  
 **Golden profile:** Reuse `openCustomerProfile` / profile shell everywhere (Leads, Inbox, Jobs, Pipeline, Revenue, Reports, Ask Hubly)
@@ -18,78 +18,78 @@ The Customers module is the permanent record for every client. Stage 1 runs on H
 ## Stage 1 — Operating System
 
 ### Core Layout
-- [ ] Header
-- [ ] Tabs
-- [ ] Customer List
-- [ ] Customer Profile (golden profile)
-- [ ] Right Sidebar
-- [ ] Responsive layout
+- [x] Header ✅
+- [x] Tabs ✅
+- [x] Customer List ✅
+- [x] Customer Profile (golden profile) ✅
+- [x] Right Sidebar ✅
+- [x] Responsive layout ✅
 
 ### Header
-- [ ] Search (name, phone, email, address, vehicle, property, membership, tags, notes)
-- [ ] Filters drawer (Active, Inactive, Membership, Lifetime Value, Last Job, City, Assigned Employee, Service, Vehicle, Tags · Apply / Reset / Save)
-- [ ] Add Customer modal (Cancel / Save)
+- [x] Search (name, phone, email, address, vehicle, property, membership, tags, notes) ✅
+- [x] Filters drawer (Active, Inactive, Membership, Lifetime Value, Last Job, City, Assigned Employee, Service, Vehicle, Tags · Apply / Reset / Save) ✅
+- [x] Add Customer modal (Cancel / Save) ✅
 
 ### Tabs
-- [ ] All Customers
-- [ ] Memberships
-- [ ] Vehicles / Properties
-- [ ] Segments (VIP, High LTV, New, At Risk, Seasonal, Repeat)
-- [ ] Favorites
+- [x] All Customers ✅
+- [x] Memberships ✅
+- [x] Vehicles / Properties ✅
+- [x] Segments (VIP, High LTV, New, At Risk, Seasonal, Repeat) ✅
+- [x] Favorites ✅
 
 ### Customer List
-- [ ] Cards: avatar, name, lifetime value, last job, membership badge, tags, AI score, unread, favorite
-- [ ] Click → profile
-- [ ] Context menu: Call, SMS, Email, Book Job, Quote, Favorite, Archive
+- [x] Cards: avatar, name, lifetime value, last job, membership badge, tags, AI score, unread, favorite ✅
+- [x] Click → profile ✅ (`openCustomerProfile`)
+- [x] Context menu: Call, SMS, Email, Book Job, Quote, Favorite, Archive ✅
 
 ### Profile (golden)
-- [ ] Overview
-- [ ] Timeline
-- [ ] Jobs (upcoming / completed / cancelled / recurring)
-- [ ] Payments
-- [ ] Photos
-- [ ] Messages
-- [ ] Membership
-- [ ] Reviews
-- [ ] Documents
-- [ ] Notes
+- [x] Overview ✅
+- [x] Timeline ✅
+- [x] Jobs (upcoming / completed / cancelled / recurring) ✅
+- [x] Payments ✅
+- [x] Photos ✅
+- [x] Messages ✅
+- [x] Membership ✅
+- [x] Reviews ✅
+- [x] Documents ✅
+- [x] Notes ✅
 
 ### Sidebar
-- [ ] AI Summary
-- [ ] Quick Actions
-- [ ] Customer Health
-- [ ] Recent Activity
+- [x] AI Summary ✅
+- [x] Quick Actions ✅
+- [x] Customer Health ✅
+- [x] Recent Activity ✅
 
 ### AI
-- [ ] Customer Summary
-- [ ] Churn Prediction
-- [ ] Upsell Recommendations
-- [ ] Membership Suggestions
-- [ ] Revenue Forecast
-- [ ] Next Best Action
-- [ ] Review Prediction
+- [x] Customer Summary ✅
+- [x] Churn Prediction ✅
+- [x] Upsell Recommendations ✅
+- [x] Membership Suggestions ✅
+- [x] Revenue Forecast ✅
+- [x] Next Best Action ✅
+- [x] Review Prediction ✅
 
 ### Permissions UI
-- [ ] Owner / Manager / Office / Sales / Read Only matrix
+- [x] Owner / Manager / Office / Sales / Read Only matrix ✅
 
 ### Empty / Error / Mobile
-- [ ] Empty states
-- [ ] Error states
-- [ ] Responsive Desktop / Tablet / Mobile
+- [x] Empty states ✅
+- [x] Error states ✅
+- [x] Responsive Desktop / Tablet / Mobile ✅
 
 ### QA / MAT / CMV
-- [ ] Buttons / navigation functional
-- [ ] Console errors = 0
-- [ ] Validator PASS
-- [ ] MAT formal acceptance
-- [ ] Cross-Module Verification (Home · Inbox · Jobs · Leads)
+- [x] Buttons / navigation functional ✅
+- [ ] Console errors = 0 ⏳
+- [x] Validator PASS ✅
+- [ ] MAT formal acceptance ⏳
+- [x] Cross-Module Verification (Home · Inbox · Jobs · Leads) ✅ (locked modules untouched)
 
 ### Stage 1 Definition of Done
-- [ ] Customers OS complete
-- [ ] Golden profile reused (not a second profile UI)
-- [ ] MAT ✅ ACCEPTED
-- [ ] CMV ✅ PASS
-- [ ] Ready for merge → lock 🔒 OS
+- [x] Customers OS complete ✅
+- [x] Golden profile reused (not a second profile UI) ✅
+- [ ] MAT ✅ ACCEPTED ⏳
+- [x] CMV ✅ PASS ✅ (locked modules)
+- [ ] Ready for merge → lock 🔒 OS ⏳ (awaiting MAT)
 
 ---
 

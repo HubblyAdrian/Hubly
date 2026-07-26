@@ -240,6 +240,29 @@ try {
       has(px, "jos-leads-drawer")
   );
 
+  mark("check customers");
+  ok(
+    "customers",
+    has(jjs, "function renderCustomers") &&
+      has(jjs, "handleCustomersAct") &&
+      has(jjs, "CUST_TABS") &&
+      has(jjs, "ensureCustomersOsState") &&
+      has(jjs, "openCustomerProfile") &&
+      has(jjs, "profileTabHtml") &&
+      has(jjs, "PROFILE_TABS") &&
+      has(jjs, "Timeline") &&
+      has(jjs, "Payments") &&
+      has(jjs, "Membership") &&
+      has(jjs, "cust-full-profile") &&
+      has(hubly, 'id="jos-customers-root"') &&
+      has(hubly, 'id="v-customers"') &&
+      has(px, "jos-cust-page") &&
+      has(px, "jos-cust-layout") &&
+      has(px, "jos-cust-drawer") &&
+      has(ceo, "favorite") &&
+      has(ceo, "vehicles")
+  );
+
   const ms = Date.now() - started;
   mark("done");
   clearTimeout(timer);
