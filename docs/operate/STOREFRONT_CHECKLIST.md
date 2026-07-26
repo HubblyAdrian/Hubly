@@ -1,9 +1,10 @@
 # Module 7 — 🌐 Storefront
 
-**Status:** Stage 1 OS in progress  
+**Status:** OS Complete · MAT ✅ ACCEPTED  
 **Branch:** `cursor/operate-storefront-2662`  
 **Design System:** [DESIGN_SYSTEM_V1.md](./DESIGN_SYSTEM_V1.md) · HublyDS (Rule #14)  
 **Data ownership:** [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · Service Catalog owner (Rule #15)  
+**MAT:** [STOREFRONT_MAT.md](./STOREFRONT_MAT.md)  
 **Stage in scope:** Stage 1 — Operating System  
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
@@ -26,6 +27,7 @@ Reviews on the site are **read-only** here (owner: ⭐ Reviews). Full review req
 - [x] Tabs ✅
 - [x] HublyDS page chrome ✅
 - [x] Responsive layout ✅
+- [x] Legacy editor gated when `jos-pixel-owned` ✅
 
 ### Tabs
 - [x] Website ✅
@@ -42,12 +44,13 @@ Reviews on the site are **read-only** here (owner: ⭐ Reviews). Full review req
 - [x] List / add / edit / archive services ✅
 - [x] Owns catalog data (`editorSvcs` / `services`) ✅
 - [x] Pricing fields (flat / duration / deposit OS) ✅
+- [x] `syncStorefrontCatalogToServices()` mirror for consumers ✅
 
 ### Actions (`sf-*`)
 - [x] Tab switch, save website copy, preview site/booking ✅
 - [x] Service CRUD ✅
 - [x] SEO / domain / slug edit ✅
-- [x] Stage 2 placeholders (live domain DNS, live analytics) ✅
+- [x] Stage 2 placeholders (live domain DNS, live analytics, gallery upload) ✅
 
 ### Empty / Error / Mobile
 - [x] Empty catalog / gallery ✅
@@ -57,15 +60,15 @@ Reviews on the site are **read-only** here (owner: ⭐ Reviews). Full review req
 ### QA / MAT / CMV
 - [x] Validator storefront gate ✅
 - [x] CMV includes Pipeline ✅
-- [ ] MAT ⏳
+- [x] MAT formal acceptance ✅
 
 ### Stage 1 Definition of Done
 - [x] Storefront OS complete ✅
 - [x] HublyDS used ✅
 - [x] Service Catalog owned here ✅
-- [ ] MAT ✅ ACCEPTED ⏳
-- [ ] CMV PASS ⏳
-- [ ] Merge → lock 🔒 OS ⏳
+- [x] MAT ✅ ACCEPTED ✅
+- [x] CMV PASS ✅
+- [x] Ready for merge → lock 🔒 OS after approval ⏳
 
 ---
 
@@ -77,3 +80,4 @@ Reviews on the site are **read-only** here (owner: ⭐ Reviews). Full review req
 | Live analytics provider | ⏸ |
 | Live review platform embed sync | ⏸ |
 | Live payment deposit processor | ⏸ |
+| Cloud gallery upload | ⏸ |
