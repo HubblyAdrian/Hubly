@@ -50,7 +50,7 @@
 |---|--------|--------------|---------|----|-------|
 | 1 | 🏠 Home | ✅ Locked | ✅ | [#242](https://github.com/HubblyAdrian/Hubly/pull/242) | 🔒 Full |
 | 2 | 📥 Inbox | ✅ Locked | ⏸ | [#244](https://github.com/HubblyAdrian/Hubly/pull/244) | 🔒 OS |
-| 3 | 📅 Jobs & Calendar | ✅ QA | ⏸ | — | `cursor/operate-jobs-calendar-2662` · lock 🔒 OS after merge |
+| 3 | 📅 Jobs & Calendar | ✅ QA | ⏸ | [#246](https://github.com/HubblyAdrian/Hubly/pull/246) | lock 🔒 OS after merge |
 | 4–14 | Remaining | ⏳ | ⏸ | — | |
 
 ## Workflow

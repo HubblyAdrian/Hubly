@@ -3,7 +3,8 @@
 **Date:** 2026-07-26  
 **Module:** 📅 Jobs & Calendar  
 **Stage:** 1 — Operating System  
-**Branch:** `cursor/operate-jobs-calendar-2662`
+**Branch:** `cursor/operate-jobs-calendar-2662`  
+**PR:** [#246](https://github.com/HubblyAdrian/Hubly/pull/246)
 
 ## Summary
 

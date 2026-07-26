@@ -2,6 +2,7 @@
 
 **Status:** QA (Stage 1 OS)  
 **Branch:** `cursor/operate-jobs-calendar-2662`  
+**PR:** [#246](https://github.com/HubblyAdrian/Hubly/pull/246)  
 **Stage in scope:** Stage 1 — Operating System
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
