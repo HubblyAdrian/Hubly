@@ -115,26 +115,25 @@ try {
   );
 
   const jjs = read("public/journey-os/journey.js");
-  mark("check pixel shell");
+  mark("check pixel shell (Home)");
   ok(
     "pixel shell",
     has(hubly, "jos-pixel") &&
       has(hubly, "operate-pixel.css") &&
       has(jjs, "enhanceDashboard") &&
-      has(jjs, "renderInbox") &&
-      has(jjs, "renderJobs") &&
-      has(jjs, "renderMoney")
+      has(jjs, "renderHomeDashboard") &&
+      has(jjs, "wireGlobalChrome") &&
+      has(jjs, "openQuickNew")
   );
 
-  mark("check views");
+  mark("check views (Home)");
   ok(
     "views",
-    has(hubly, 'id="v-pipeline"') &&
-      has(hubly, 'id="v-ask"') &&
+    has(hubly, 'id="v-dashboard"') &&
       has(hubly, 'id="jos-dash-root"') &&
-      has(hubly, 'id="jos-inbox-root"') &&
-      has(hubly, 'id="jos-jobs-root"') &&
-      has(hubly, 'id="jos-money-root"')
+      has(hubly, 'id="jos-global-search"') &&
+      has(hubly, "jos-bar-bell") &&
+      has(hubly, 'id="jos-bar-ask"')
   );
 
   mark("check api");
