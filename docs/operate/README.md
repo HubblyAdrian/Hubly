@@ -12,7 +12,7 @@
 After Stage 1 merges → **lock the OS**. Stage 2 is additive and tracked separately.
 
 **Design System:** [DESIGN_SYSTEM_V1.md](./DESIGN_SYSTEM_V1.md) · `public/journey-os/design-system.js` → `window.HublyDS`  
-**Engineering rules:** [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) (Rule #14 HublyDS · Rule #15 [Single Source of Truth](./DATA_OWNERSHIP.md))
+**Engineering rules:** [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) (Rule #14 HublyDS · Rule #15 [Single Source of Truth](./DATA_OWNERSHIP.md) · Rule #16 E2E journey)
 
 **Acceptance gate:** [Module Acceptance Test (MAT)](./MAT.md) — not informal smoke language.
 
@@ -30,8 +30,8 @@ See [MODULE_STATUS.md](./MODULE_STATUS.md) (OS · Integrations · AI · QA · **
 | Leads | [LEADS_CHECKLIST.md](./LEADS_CHECKLIST.md) · [LEADS_MAT.md](./LEADS_MAT.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Customers | [CUSTOMERS_CHECKLIST.md](./CUSTOMERS_CHECKLIST.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Pipeline | [PIPELINE_CHECKLIST.md](./PIPELINE_CHECKLIST.md) · [PIPELINE_MAT.md](./PIPELINE_MAT.md) | ✅ | ⏸ | ✅ | 🔒 OS |
-| Storefront | [STOREFRONT_CHECKLIST.md](./STOREFRONT_CHECKLIST.md) · [STOREFRONT_MAT.md](./STOREFRONT_MAT.md) | ✅ | ⏸ | ✅ | ❌ (🔒 OS after merge) |
-| Marketing | [MARKETING_CHECKLIST.md](./MARKETING_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Storefront | [STOREFRONT_CHECKLIST.md](./STOREFRONT_CHECKLIST.md) · [STOREFRONT_MAT.md](./STOREFRONT_MAT.md) | ✅ | ⏸ | ✅ | 🔒 OS |
+| Marketing | [MARKETING_CHECKLIST.md](./MARKETING_CHECKLIST.md) · [MARKETING_MAT.md](./MARKETING_MAT.md) · [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md) | ✅ | ⏸ | ✅ | ❌ (🔒 OS after merge) |
 | Reviews | [REVIEWS_CHECKLIST.md](./REVIEWS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Memberships | [MEMBERSHIPS_CHECKLIST.md](./MEMBERSHIPS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Revenue | [REVENUE_CHECKLIST.md](./REVENUE_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |

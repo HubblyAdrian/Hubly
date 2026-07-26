@@ -160,6 +160,8 @@ const pipe = mount("v-pipeline", app);
 mount("jos-pipeline-root", pipe);
 const editor = mount("v-editor", app);
 mount("jos-storefront-root", editor);
+const marketing = mount("v-marketing", app);
+mount("jos-marketing-root", marketing);
 mount("bar-title", document.body);
 mount("bar-sub", document.body);
 mount("nav-leads-badge", document.body);
@@ -272,6 +274,14 @@ try {
   ok("🧭 Pipeline still works", /jos-pipe|Pipeline|Lead|Qualified/i.test(pipeHtml) && pipeHtml.length > 200, "len=" + pipeHtml.length);
 } catch (e) {
   ok("🧭 Pipeline still works", false, String(e.message || e));
+}
+
+try {
+  H.renderStorefront();
+  const sfHtml = document.getElementById("jos-storefront-root").innerHTML;
+  ok("🌐 Storefront still works", /jos-sf|Storefront|Website|Preview/i.test(sfHtml) && sfHtml.length > 200, "len=" + sfHtml.length);
+} catch (e) {
+  ok("🌐 Storefront still works", false, String(e.message || e));
 }
 
 console.warn = _warn;

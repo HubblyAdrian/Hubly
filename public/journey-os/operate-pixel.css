@@ -35,7 +35,8 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 #p-app.jos-pixel #v-leads.jos-pixel-owned > :not(#jos-leads-root),
 #p-app.jos-pixel #v-customers.jos-pixel-owned > :not(#jos-customers-root),
 #p-app.jos-pixel #v-pipeline.jos-pixel-owned > :not(#jos-pipeline-root),
-#p-app.jos-pixel #v-editor.jos-pixel-owned > :not(#jos-storefront-root){
+#p-app.jos-pixel #v-editor.jos-pixel-owned > :not(#jos-storefront-root),
+#p-app.jos-pixel #v-marketing.jos-pixel-owned > :not(#jos-marketing-root){
   display:none!important;
 }
 
@@ -817,4 +818,73 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 @media(max-width:960px){
   .jos-sf-layout{grid-template-columns:1fr}
   .jos-sf-sidebar{position:relative;top:0}
+}
+
+/* Marketing OS */
+.jos-mkt-page{animation:josHomeIn .3s ease both;position:relative}
+.jos-mkt-tabs{margin-bottom:12px;flex-wrap:wrap}
+.jos-mkt-head{display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+.jos-mkt-title{font-size:18px;font-weight:800;margin:0 0 4px;color:var(--jos-navy)}
+.jos-mkt-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.jos-mkt-3col{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.jos-mkt-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.jos-mkt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.jos-mkt-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.jos-mkt-act{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+  padding:10px 0;border-bottom:1px solid var(--jos-border);
+}
+.jos-mkt-act:last-child{border-bottom:0;padding-bottom:0}
+.jos-mkt-act strong{font-size:13px;display:block;color:var(--jos-navy)}
+.jos-mkt-metric{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:8px 0;border-bottom:1px solid var(--jos-border);
+}
+.jos-mkt-metric:last-child{border-bottom:0}
+.jos-mkt-cal{
+  display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--jos-border);font-size:13px;
+}
+.jos-mkt-cal:last-child{border-bottom:0}
+.jos-mkt-card{
+  border:1px solid var(--jos-border);border-radius:12px;background:#fff;padding:14px;
+  display:flex;flex-direction:column;gap:8px;min-height:100px;
+}
+.jos-mkt-card-h{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.jos-mkt-card-h strong{font-size:14px;color:var(--jos-navy)}
+.jos-mkt-card-body{font-size:13px;margin:0;color:var(--jos-ink-2);line-height:1.45}
+.jos-mkt-card-meta{font-size:11px;color:var(--jos-ink-3)}
+.jos-mkt-card-foot{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+.jos-mkt-ad-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.jos-mkt-auto{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 0;border-bottom:1px solid var(--jos-border);
+}
+.jos-mkt-auto:last-child{border-bottom:0}
+.jos-mkt-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:640px}
+.jos-mkt-form label{display:grid;gap:4px;font-size:11px;font-weight:700;color:var(--jos-ink-2)}
+.jos-mkt-form input,.jos-mkt-form textarea,.jos-mkt-form select{
+  border:1px solid var(--jos-border);border-radius:10px;padding:9px 11px;font:inherit;font-size:13px;
+}
+.jos-mkt-span2{grid-column:1 / -1}
+.jos-mkt-modal{
+  position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px;
+  background:rgba(15,20,31,.45);
+}
+.jos-mkt-modal-panel{
+  width:min(560px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:14px;
+  padding:18px;border:1px solid var(--jos-border);box-shadow:0 20px 60px rgba(15,20,31,.2);
+}
+.jos-mkt-modal-panel h3{margin:0 0 12px;font-size:16px;font-weight:800;color:var(--jos-navy)}
+.jos-mkt-ai-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.jos-mkt-ai-tile{
+  border:1px solid var(--jos-border);border-radius:12px;background:#fff;padding:14px;
+}
+.jos-mkt-ai-tile h3{margin:0 0 6px;font-size:14px;font-weight:800;color:var(--jos-navy)}
+@media(max-width:1100px){
+  .jos-mkt-3col,.jos-mkt-2col{grid-template-columns:1fr}
+  .jos-mkt-ad-kpis{grid-template-columns:1fr 1fr}
+}
+@media(max-width:720px){
+  .jos-mkt-ad-kpis{grid-template-columns:1fr}
+  .jos-mkt-form{grid-template-columns:1fr}
 }

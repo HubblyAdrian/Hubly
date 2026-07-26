@@ -1,28 +1,43 @@
 # Rule #15 — Single Source of Truth
 
-Every type of data in Hubly has **exactly one owner**.
+**Every new feature must answer before it is built: Who owns this data?**
 
+Every type of data in Hubly has **exactly one owner**.  
 Other modules **read** that data — they do not own or duplicate it.
 
 | Data | Owner |
 |------|--------|
-| Customer | ❤️ Customers |
-| Lead | 🧲 Leads |
-| Job | 📅 Jobs & Calendar |
-| Service (catalog) | 🌐 Storefront → Service Catalog |
-| Membership | 🔁 Memberships |
-| Payment | 💰 Revenue |
-| Review | ⭐ Reviews |
-| Campaign | 📣 Marketing |
+| Services | 🌐 Storefront → Service Catalog |
+| Customers | ❤️ Customers |
+| Leads | 🧲 Leads |
+| Jobs | 📅 Jobs & Calendar |
+| Reviews | ⭐ Reviews |
+| Campaigns | 📣 Marketing |
+| Templates / Automations / Coupons | 📣 Marketing |
+| Membership Plans | 🔁 Memberships |
+| Payments | 💰 Revenue |
 
-## Implications
+## Enforcement (aggressive)
 
-- Jobs **reference** services from the Storefront Service Catalog — they do not define a parallel service list as source of truth.
-- Marketing **references** customer segments from Customers — no separate customer database.
-- Reports **aggregate** from owning modules — they do not store copies.
-- Pipeline **orchestrates** Lead / Quote / Job / Customer / Review / Membership stages — it does not own those entities.
-- Storefront **owns** `S.editorSvcs` / service catalog / website copy / gallery / SEO / domain presentation. Reviews shown on the site are **read** from Reviews (or demo `website.manualReviews` until Reviews locks).
+1. Before adding state, name the owner module in the PR / checklist.  
+2. **Forbidden:** `S.marketingCustomers`, parallel `S.services` owned by Jobs/Marketing, copied review tables in Marketing.  
+3. Cross-module UI may **filter/reference** by id or segment key only.  
+4. Reports **aggregate** — they do not store copies.  
+5. Pipeline **orchestrates** stages — it does not own Lead/Job/Customer entities.  
+6. Storefront **owns** the Service Catalog (`S.editorSvcs` + mirror `S.services` for booking consumers).  
+7. Marketing **owns** campaigns/templates/automations/coupons; audiences resolve from Customers/Leads at use time.
 
-## Stage 1 Storefront
+## Module implications
 
-Service Catalog OS lives under Storefront. Consumers (`getBookingServices`, booking preview, Jobs service pickers) should prefer catalog data owned here.
+| Module | May own | Must only read |
+|--------|---------|----------------|
+| Storefront | Services, website copy, gallery, SEO, domain | Reviews (display), Customers (none required) |
+| Marketing | Campaigns, templates, automations, coupons, calendar, ad OS records | Customers, Leads, Services, Jobs, Reviews, Revenue |
+| Reviews | Review records, request/reply flows | Customers, Jobs |
+| Jobs | Jobs / calendar blocks | Services (catalog), Customers |
+| Leads | Lead records | — |
+| Customers | Customer profiles | — |
+| Revenue | Payments / invoices OS | Customers, Jobs |
+| Memberships | Plans | Customers, Services |
+
+See also [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md) and [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) Rule #16.

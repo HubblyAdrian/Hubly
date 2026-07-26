@@ -296,6 +296,19 @@ try {
       (has(px, "jos-sf-page") || has(px, "jos-storefront-root"))
   );
 
+  mark("check marketing");
+  ok(
+    "marketing",
+    has(jjs, "function renderMarketing") &&
+      has(jjs, "handleMarketingAct") &&
+      has(jjs, "ensureMarketingOsState") &&
+      has(jjs, "mkt-camp-create-open") &&
+      has(jjs, "marketingOs") &&
+      has(hubly, 'id="v-marketing"') &&
+      has(hubly, 'id="jos-marketing-root"') &&
+      has(px, "jos-mkt-page")
+  );
+
   const ms = Date.now() - started;
   mark("done");
   clearTimeout(timer);

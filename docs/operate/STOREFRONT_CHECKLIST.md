@@ -1,7 +1,8 @@
 # Module 7 — 🌐 Storefront
 
-**Status:** OS Complete · MAT ✅ ACCEPTED  
+**Status:** 🔒 OS LOCKED (Stage 1) — merged #250  
 **Branch:** `cursor/operate-storefront-2662`  
+**PR:** [#250](https://github.com/HubblyAdrian/Hubly/pull/250)  
 **Design System:** [DESIGN_SYSTEM_V1.md](./DESIGN_SYSTEM_V1.md) · HublyDS (Rule #14)  
 **Data ownership:** [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · Service Catalog owner (Rule #15)  
 **MAT:** [STOREFRONT_MAT.md](./STOREFRONT_MAT.md)  
@@ -68,7 +69,11 @@ Reviews on the site are **read-only** here (owner: ⭐ Reviews). Full review req
 - [x] Service Catalog owned here ✅
 - [x] MAT ✅ ACCEPTED ✅
 - [x] CMV PASS ✅
-- [x] Ready for merge → lock 🔒 OS after approval ⏳
+- [x] Merged #250 → **🔒 OS LOCKED** ✅
+
+---
+
+**Storefront Operating System is locked (🔒 OS).** Do not modify Stage 1 OS unless bug fix, Stage 2 integrations, or explicit reopen.
 
 ---
 
