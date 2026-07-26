@@ -1,11 +1,12 @@
 # Module 8 — 📣 Marketing
 
-**Status:** Stage 1 OS complete · QA / MAT pending  
+**Status:** OS Complete · MAT ✅ ACCEPTED  
 **Branch:** `cursor/operate-marketing-2662`  
 **Architecture:** [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md) ✅  
+**MAT:** [MARKETING_MAT.md](./MARKETING_MAT.md)  
 **Design System:** HublyDS (Rule #14)  
 **Ownership:** Campaigns / Templates / Automations / Coupons (Rule #15)  
-**E2E:** Rule #16 journey must remain intact  
+**E2E:** Rule #16 journey intact  
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
 
@@ -20,7 +21,7 @@ Marketing creates demand. Reads Customers, Leads, Services, Jobs, Reviews, Reven
 ## Stage 1 — Operating System
 
 ### Core
-- [x] Architecture doc approved ✅ (shipped)  
+- [x] Architecture doc approved ✅  
 - [x] `ownPixelView('v-marketing', 'jos-marketing-root')` ✅  
 - [x] HublyDS chrome ✅  
 - [x] Tabs ✅  
@@ -51,16 +52,17 @@ Marketing creates demand. Reads Customers, Leads, Services, Jobs, Reviews, Reven
 - [x] Stage 2: Meta/Twilio/Resend toasts ✅  
 
 ### Rule #16
-- [x] Deep-link Storefront preview / customer profile where relevant ✅  
+- [x] Deep-link Storefront preview / customer profile / Leads / Pipeline ✅  
 - [x] CMV locked modules incl. Storefront ✅  
 
 ### QA / MAT / CMV
 - [x] Validator marketing gate ✅  
-- [ ] MAT ⏳  
+- [x] MAT formal acceptance ✅  
 - [x] CMV PASS ✅  
 
 ### Definition of Done
-- [ ] OS complete · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳  
+- [x] OS complete · MAT ✅ · CMV PASS ✅  
+- [x] Ready for merge → lock 🔒 OS after approval ⏳  
 
 ---
 

@@ -55,7 +55,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | ❤️ Customers | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🧭 Pipeline | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🌐 Storefront | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 📣 Marketing | ⏳ OS QA pending | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
+| 📣 Marketing | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
 | ⭐ Reviews | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 🔁 Memberships | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 💰 Revenue | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
