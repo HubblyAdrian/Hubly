@@ -472,38 +472,1162 @@
       '<div class="jos-px-side-body"><div class="jos-px-side-stats"><div class="jos-px-side-stat"><div class="l">Estimate</div><div class="v">' + esc(lead.amount != null ? money(lead.amount) : '—') + '</div></div><div class="jos-px-side-stat"><div class="l">Created</div><div class="v">' + esc(lead.createdAt ? String(lead.createdAt).slice(0, 10) : '—') + '</div></div></div>' +
       '<div class="jos-px-side-actions">' + btn('manual-lead', 'Edit lead', 'jos-btn jos-btn-sm') + (lead.key ? '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-lead="' + esc(lead.key) + '">Open full lead</button>' : '') + '</div></div>';
   }
-  function renderLeadsList() {
-    var root = el('jos-leads-root'); if (!root) return;
-    var leads = allLeads();
-    var selKey = root._josLeadKey || null;
-    var sel = leads.find(function (l) { return String(l.key) === String(selKey); }) || null;
-    var filter = root._josLeadFilter || 'all';
-    var q = (root._josLeadQ || '').toLowerCase();
-    var filtered = leads.filter(function (l) {
-      var kind = srcKind(l.source, l);
-      if (filter !== 'all' && kind !== filter) return false;
-      if (!q) return true;
-      return String(l.name || '').toLowerCase().indexOf(q) >= 0 || String(l.service || '').toLowerCase().indexOf(q) >= 0 || String(vehicleOf(l) || '').toLowerCase().indexOf(q) >= 0;
+  var LEADS_TABS = [
+    ['new', 'New Leads'],
+    ['quotes', 'Quotes'],
+    ['waiting', 'Waiting'],
+    ['lost', 'Lost'],
+    ['ai', 'AI Qualified']
+  ];
+  var LEADS_WS_TABS = [
+    ['overview', 'Overview'],
+    ['conversation', 'Conversation'],
+    ['quote', 'Quote'],
+    ['estimate', 'Estimate'],
+    ['tasks', 'Tasks'],
+    ['notes', 'Notes'],
+    ['files', 'Files']
+  ];
+  var LEADS_PERM_ROLES = [
+    { role: 'Owner', view: '✅', edit: '✅', convert: '✅', delete: '✅', assign: '✅' },
+    { role: 'Manager', view: '✅', edit: '✅', convert: '✅', delete: '✅', assign: '✅' },
+    { role: 'Office', view: '✅', edit: '✅', convert: '✅', delete: '—', assign: '✅' },
+    { role: 'Sales', view: '✅', edit: '✅', convert: '✅', delete: '—', assign: '—' },
+    { role: 'Read Only', view: '✅', edit: '—', convert: '—', delete: '—', assign: '—' }
+  ];
+  var LEADS_TEAM = [
+    { id: 'tech_adrian', name: 'Adrian Lopez', role: 'Owner' },
+    { id: 'tech_maya', name: 'Maya Chen', role: 'Sales' },
+    { id: 'tech_luis', name: 'Luis Ortega', role: 'Office' }
+  ];
+
+  function normalizeLeadStage(lead) {
+    var s = String(lead.stage || lead.status || 'new').toLowerCase();
+    if (lead.spam || s === 'spam') return 'spam';
+    if (lead.duplicateOf || s === 'duplicate') return 'duplicate';
+    if (s === 'archived' || lead.archived) return 'archived';
+    if (s === 'lost') return 'lost';
+    if (/waiting_payment|wait.*pay/.test(s) || lead.waitingReason === 'payment') return 'waiting_payment';
+    if (/waiting_photos|wait.*photo/.test(s) || lead.waitingReason === 'photos') return 'waiting_photos';
+    if (/waiting_approval|wait.*approv/.test(s) || lead.waitingReason === 'approval') return 'waiting_approval';
+    if (/waiting_customer|waiting|incomplete/.test(s) || lead.waitingReason === 'customer' || lead.isAbandoned) return 'waiting_customer';
+    if (/quote_expired|expired/.test(s) || lead.quoteStatus === 'expired') return 'quote_expired';
+    if (/quote_viewed|viewed/.test(s) || lead.quoteStatus === 'viewed') return 'quote_viewed';
+    if (/quote_sent|quoted|quote/.test(s) || lead.quoteStatus === 'sent') return 'quote_sent';
+    if (s === 'new' || s === 'new_inquiry' || !s) return 'new';
+    return s;
+  }
+
+  function leadStatusTone(stage) {
+    stage = String(stage || '').toLowerCase();
+    if (/lost|spam|archived|duplicate|expired/.test(stage)) return 'hot';
+    if (/waiting/.test(stage)) return 'warn';
+    if (/quote/.test(stage)) return 'info';
+    if (/ai|qualified|new/.test(stage)) return 'ok';
+    return 'info';
+  }
+
+  function leadStageDisplay(lead) {
+    var stage = lead.osStage || normalizeLeadStage(lead);
+    var map = {
+      new: 'New',
+      quote_sent: 'Quote Sent',
+      quote_viewed: 'Quote Viewed',
+      quote_expired: 'Quote Expired',
+      waiting_customer: 'Waiting · Customer',
+      waiting_payment: 'Waiting · Payment',
+      waiting_photos: 'Waiting · Photos',
+      waiting_approval: 'Waiting · Approval',
+      lost: 'Lost',
+      archived: 'Archived',
+      spam: 'Spam',
+      duplicate: 'Duplicate'
+    };
+    return map[stage] || leadStageLbl(lead);
+  }
+
+  function pushLeadActivity(lead, type, label) {
+    lead.activity = lead.activity || [];
+    lead.activity.unshift({ type: type, label: label, at: new Date().toLocaleString() });
+    lead.activity = lead.activity.slice(0, 40);
+  }
+
+  function ensureLeadsOsState() {
+    var st = S();
+    if (!st.pipeline || typeof st.pipeline !== 'object') st.pipeline = { manual: [], deleted: [], stages: {}, lostReasons: {}, edits: {} };
+    if (!Array.isArray(st.pipeline.manual)) st.pipeline.manual = [];
+    if (!Array.isArray(st.abandonedLeads)) st.abandonedLeads = [];
+    if (!Array.isArray(st.team) || !st.team.length) st.team = LEADS_TEAM.slice();
+    if (!st.leadsOs) st.leadsOs = { savedFilters: [], role: 'Owner' };
+    if (!Array.isArray(st.leadsOs.savedFilters)) st.leadsOs.savedFilters = [];
+
+    var leads = allLeadsRaw();
+    leads.forEach(function (lead, idx) {
+      if (!lead.id && !lead.key) lead.id = 'lead_auto_' + idx;
+      if (!lead.key) lead.key = lead.id || ('lead_' + idx);
+      lead.osStage = normalizeLeadStage(lead);
+      lead.stage = lead.osStage;
+      if (!lead.status) {
+        if (/waiting/.test(lead.osStage)) lead.status = 'waiting';
+        else if (/quote/.test(lead.osStage)) lead.status = 'quoted';
+        else if (/lost|archived|spam|duplicate/.test(lead.osStage)) lead.status = lead.osStage;
+        else lead.status = 'new';
+      }
+      if (/waiting_/.test(lead.osStage) && !lead.waitingReason) {
+        lead.waitingReason = lead.osStage.replace('waiting_', '');
+      }
+      if (!lead.quoteStatus) {
+        if (lead.osStage === 'quote_sent') lead.quoteStatus = 'sent';
+        else if (lead.osStage === 'quote_viewed') lead.quoteStatus = 'viewed';
+        else if (lead.osStage === 'quote_expired') lead.quoteStatus = 'expired';
+        else if (lead.quote && lead.quote.status) lead.quoteStatus = lead.quote.status;
+        else lead.quoteStatus = 'none';
+      }
+      if (!lead.assignedTo) {
+        var team = st.team || LEADS_TEAM;
+        lead.assignedTo = (team[idx % team.length] || team[0]).name;
+      }
+      if (!Array.isArray(lead.tags)) lead.tags = lead.tags ? [String(lead.tags)] : [];
+      if (lead.aiScore == null) {
+        var base = lead.aiQualified ? 75 : 45;
+        if (lead.amount || lead.estimatedValue) base += 10;
+        if (lead.unread) base += 5;
+        lead.aiScore = Math.max(5, Math.min(99, base + (idx % 17)));
+      }
+      if (lead.aiQualified == null) lead.aiQualified = lead.aiScore >= 70;
+      if (lead.unread == null) lead.unread = 0;
+      if (!lead.lastMessage) {
+        if (lead.messages && lead.messages.length) lead.lastMessage = lead.messages[lead.messages.length - 1].text || '';
+        else lead.lastMessage = lead.notes ? String(lead.notes).slice(0, 80) : 'No messages yet';
+      }
+      if (!Array.isArray(lead.messages)) lead.messages = [];
+      if (!Array.isArray(lead.notesList)) {
+        lead.notesList = lead.notes ? [String(lead.notes)] : [];
+      }
+      if (!Array.isArray(lead.tasks)) lead.tasks = [];
+      if (!Array.isArray(lead.files)) lead.files = [];
+      if (!Array.isArray(lead.activity) || !lead.activity.length) {
+        lead.activity = [{ type: 'created', label: 'Lead created', at: String(lead.createdAt || todayStr()).slice(0, 16).replace('T', ' ') }];
+      }
+      if (!lead.estimate) {
+        var tot = parseFloat(lead.estimatedValue != null ? lead.estimatedValue : lead.amount) || 0;
+        lead.estimate = tot ? { labor: Math.round(tot * 0.65), materials: Math.round(tot * 0.35), total: tot, notes: '' } : { labor: 0, materials: 0, total: 0, notes: '' };
+      }
+      if (!lead.quote && (lead.quoteStatus === 'sent' || lead.quoteStatus === 'viewed' || lead.quoteStatus === 'expired' || lead.amount)) {
+        lead.quote = {
+          id: 'q_' + (lead.id || idx),
+          amount: parseFloat(lead.amount || lead.estimatedValue) || 0,
+          status: lead.quoteStatus === 'none' ? 'draft' : lead.quoteStatus,
+          packageName: lead.service || 'Service',
+          sentAt: String(lead.createdAt || todayStr()).slice(0, 10)
+        };
+      }
+      if (lead.estimatedValue == null) lead.estimatedValue = parseFloat(lead.amount) || 0;
+      if (!lead.buyingIntent) {
+        lead.buyingIntent = lead.aiScore >= 80 ? 'high' : (lead.aiScore >= 55 ? 'med' : (lead.aiScore >= 20 ? 'low' : 'none'));
+      }
+      if (!lead.lastContacted) lead.lastContacted = lead.createdAt || todayStr();
+      if (!lead.property) lead.property = lead.address || '';
+      if (lead.followUpAt == null) lead.followUpAt = '';
+      if (lead.spam == null) lead.spam = lead.osStage === 'spam';
     });
-    root.innerHTML = '<div class="jos-px-page"><div class="jos-px-page-head"><div><h1>Leads</h1><p>Inbound interest from Google, Meta, Instagram, Hubly, and manual entry.</p></div><div class="jos-head-actions">' + btn('manual-lead', '+ Manual lead', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
-      '<div class="jos-px-filters"><input type="search" id="jos-leads-q" placeholder="Search leads…" value="' + esc(root._josLeadQ || '') + '">' +
-      [['all', 'All'], ['google', 'Google'], ['facebook', 'Facebook'], ['instagram', 'Instagram'], ['hubly', 'Hubly'], ['manual', 'Manual']].map(function (f) {
-        return '<button type="button" class="jos-px-chip' + (filter === f[0] ? ' on' : '') + '" data-jos-lead-filter="' + f[0] + '">' + f[1] + '</button>';
-      }).join('') + '</div>' +
-      '<div class="jos-px-layout' + (sel ? '' : ' solo') + '"><div class="jos-px-table-wrap"><table class="jos-px-table"><thead><tr><th>Name</th><th>Source</th><th>Status</th><th>Service</th><th>Vehicle</th><th>Date</th></tr></thead><tbody>' +
-      (filtered.length ? filtered.map(function (l) {
-        var kind = srcKind(l.source, l), when = l.createdAt ? (dateLong(String(l.createdAt).slice(0, 10)) || String(l.createdAt).slice(0, 10)) : '—';
-        var on = sel && String(sel.key) === String(l.key);
-        return '<tr class="' + (on ? 'sel' : '') + '" data-jos-lead-row="' + esc(l.key || '') + '"><td><div class="jos-px-person"><div class="jos-px-av">' + esc(initials(l.name)) + '</div><div><strong>' + esc(l.name || 'Lead') + '</strong></div></div></td><td><span class="jos-src">' + srcIco(kind) + ' ' + esc(srcLabel(kind)) + '</span></td><td><span class="jos-pill quote">' + esc(leadStageLbl(l)) + '</span></td><td>' + esc(l.service || '—') + '</td><td>' + esc(vehicleOf(l) || '—') + '</td><td>' + esc(when) + '</td></tr>';
-      }).join('') : '<tr><td colspan="6"><div class="jos-empty">No leads match this filter.</div></td></tr>') +
-      '</tbody></table></div><aside class="jos-px-side" id="jos-leads-side">' + leadSideHtml(sel) + '</aside></div></div>';
-    bindRoot(root);
-    var qInput = el('jos-leads-q');
-    if (qInput && !qInput._josBound) {
-      qInput._josBound = true;
-      qInput.addEventListener('input', function () { root._josLeadQ = qInput.value || ''; renderLeadsList(); });
+    return st;
+  }
+
+  function allLeadsRaw() {
+    var st = S();
+    if (!st.pipeline || typeof st.pipeline !== 'object') st.pipeline = { manual: [], deleted: [], stages: {}, lostReasons: {}, edits: {} };
+    if (!Array.isArray(st.pipeline.manual)) st.pipeline.manual = [];
+    var pipe = st.pipeline.manual;
+    // Prefer live pipeline.manual objects so OS mutations + ceo-demo enrichments persist.
+    if (pipe.length) {
+      pipe.forEach(function (l, i) {
+        if (!l.id) l.id = 'lead_auto_' + i;
+        if (!l.key) l.key = l.id;
+      });
+      return pipe;
     }
-    el('v-leads')?.classList.add('jos-enhanced');
+    // Seed from collectPipelineLeads / demo fallback once, then keep on pipeline.manual.
+    var collected = collectLeads();
+    if (!collected.length) collected = allLeads();
+    collected.forEach(function (l, i) {
+      var id = l.id || ('lead_seed_' + i);
+      pipe.push(Object.assign({}, l, { id: id, key: l.key || id }));
+    });
+    return pipe;
+  }
+
+  function leadsOsList() {
+    ensureLeadsOsState();
+    return allLeadsRaw().filter(function (l) { return !l.deleted; });
+  }
+
+  function findLead(id) {
+    return leadsOsList().find(function (l) { return String(l.id) === String(id) || String(l.key) === String(id); }) || null;
+  }
+
+  function leadMatchesTab(lead, tab) {
+    var stage = lead.osStage || normalizeLeadStage(lead);
+    if (tab === 'new') return stage === 'new';
+    if (tab === 'quotes') return /quote_sent|quote_viewed|quote_expired/.test(stage);
+    if (tab === 'waiting') return /^waiting_/.test(stage);
+    if (tab === 'lost') return /lost|archived|spam|duplicate/.test(stage);
+    if (tab === 'ai') return !!lead.aiQualified && !/lost|archived|spam|duplicate/.test(stage);
+    return true;
+  }
+
+  function leadMatchesFilters(lead, root) {
+    var f = root._josLeadFilters || {};
+    if (f.status && f.status !== 'all' && String(lead.status || '') !== f.status) return false;
+    if (f.source && f.source !== 'all' && srcKind(lead.source, lead) !== f.source) return false;
+    if (f.assigned && f.assigned !== 'all' && lead.assignedTo !== f.assigned) return false;
+    if (f.service && f.service !== 'all' && lead.service !== f.service) return false;
+    if (f.vehicle && String(vehicleOf(lead) || '').toLowerCase().indexOf(String(f.vehicle).toLowerCase()) < 0) return false;
+    if (f.property && String(lead.property || lead.address || '').toLowerCase().indexOf(String(f.property).toLowerCase()) < 0) return false;
+    if (f.aiScore === 'high' && !(lead.aiScore >= 80)) return false;
+    if (f.aiScore === 'med' && !(lead.aiScore >= 50 && lead.aiScore < 80)) return false;
+    if (f.aiScore === 'low' && !(lead.aiScore < 50)) return false;
+    if (f.tags && String(f.tags).trim()) {
+      var want = String(f.tags).toLowerCase().split(/[,\s]+/).filter(Boolean);
+      var have = (lead.tags || []).map(function (t) { return String(t).toLowerCase(); });
+      if (!want.every(function (w) { return have.some(function (h) { return h.indexOf(w) >= 0; }); })) return false;
+    }
+    if (f.pipeline && f.pipeline !== 'all' && (lead.osStage || normalizeLeadStage(lead)) !== f.pipeline) return false;
+    if (f.quoteStatus && f.quoteStatus !== 'all' && String(lead.quoteStatus || 'none') !== f.quoteStatus) return false;
+    if (f.valueMin && !(parseFloat(lead.estimatedValue || lead.amount || 0) >= parseFloat(f.valueMin))) return false;
+    if (f.valueMax && !(parseFloat(lead.estimatedValue || lead.amount || 0) <= parseFloat(f.valueMax))) return false;
+    if (f.created && f.created !== 'all') {
+      var created = String(lead.createdAt || '').slice(0, 10);
+      var today = todayStr();
+      if (f.created === 'today' && created !== today) return false;
+      if (f.created === 'week') {
+        var ws = today;
+        try {
+          var d = new Date(today + 'T12:00:00');
+          d.setDate(d.getDate() - 7);
+          ws = d.toISOString().slice(0, 10);
+        } catch (e) {}
+        if (created < ws) return false;
+      }
+      if (f.created === 'month') {
+        var ms = today.slice(0, 7);
+        if (created.slice(0, 7) !== ms) return false;
+      }
+    }
+    if (f.lastContacted && f.lastContacted !== 'all') {
+      var lc = String(lead.lastContacted || '').slice(0, 10);
+      if (f.lastContacted === 'today' && lc !== todayStr()) return false;
+      if (f.lastContacted === 'stale') {
+        var cut = todayStr();
+        try {
+          var dd = new Date(todayStr() + 'T12:00:00');
+          dd.setDate(dd.getDate() - 7);
+          cut = dd.toISOString().slice(0, 10);
+        } catch (e2) {}
+        if (lc >= cut) return false;
+      }
+    }
+    return true;
+  }
+
+  function leadSearchHay(lead) {
+    var msgBlob = (lead.messages || []).map(function (m) { return m.text || m.content || ''; }).join(' ');
+    return [
+      lead.name, lead.phone, lead.email, vehicleOf(lead), lead.property, lead.address,
+      lead.service, lead.source, lead.notes, (lead.notesList || []).join(' '),
+      lead.lastMessage, msgBlob, (lead.tags || []).join(' '), lead.assignedTo
+    ].join(' ').toLowerCase();
+  }
+
+  function filterLeadsList(root) {
+    var tab = root._josLeadsTab || 'new';
+    var q = String(root._josLeadsQ || '').trim().toLowerCase();
+    var list = leadsOsList().filter(function (l) { return leadMatchesTab(l, tab); });
+    list = list.filter(function (l) { return leadMatchesFilters(l, root); });
+    if (q) list = list.filter(function (l) { return leadSearchHay(l).indexOf(q) > -1; });
+    if (tab === 'ai') list = list.slice().sort(function (a, b) { return (b.aiScore || 0) - (a.aiScore || 0); });
+    else list = list.slice().sort(function (a, b) { return String(b.lastContacted || b.createdAt || '').localeCompare(String(a.lastContacted || a.createdAt || '')); });
+    return list;
+  }
+
+  function leadTimeLabel(lead) {
+    var raw = String(lead.lastContacted || lead.createdAt || '');
+    if (!raw) return '—';
+    if (raw.indexOf('T') > -1) {
+      try {
+        var d = new Date(raw);
+        if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      } catch (e) {}
+    }
+    return raw.slice(0, 10);
+  }
+
+  function uniqueLeadValues(field) {
+    var set = {};
+    leadsOsList().forEach(function (l) {
+      var v = field === 'source' ? srcKind(l.source, l) : (field === 'vehicle' ? vehicleOf(l) : l[field]);
+      if (v) set[String(v)] = true;
+    });
+    return Object.keys(set).sort();
+  }
+
+  function renderLeadsFilterDrawer(root) {
+    var f = root._josLeadFilters || {};
+    var open = !!root._josLeadFilterOpen;
+    if (!open) return '';
+    function opt(list, cur, allLabel) {
+      return '<option value="all"' + (!cur || cur === 'all' ? ' selected' : '') + '>' + (allLabel || 'All') + '</option>' +
+        list.map(function (v) {
+          return '<option value="' + esc(v) + '"' + (cur === v ? ' selected' : '') + '>' + esc(v) + '</option>';
+        }).join('');
+    }
+    return '<div class="jos-leads-drawer" id="jos-leads-drawer">' +
+      '<div class="jos-between"><div class="jos-kicker">Filters</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-filter-close">Close</button></div>' +
+      '<div class="jos-leads-filter-grid">' +
+      '<label>Status<select id="jos-lf-status">' + opt(['new', 'quoted', 'waiting', 'lost', 'archived', 'spam', 'duplicate'], f.status) + '</select></label>' +
+      '<label>Source<select id="jos-lf-source">' + opt(uniqueLeadValues('source'), f.source) + '</select></label>' +
+      '<label>Assigned<select id="jos-lf-assigned">' + opt(uniqueLeadValues('assignedTo'), f.assigned, 'Anyone') + '</select></label>' +
+      '<label>Service<select id="jos-lf-service">' + opt(uniqueLeadValues('service'), f.service) + '</select></label>' +
+      '<label>Vehicle<input id="jos-lf-vehicle" type="text" value="' + esc(f.vehicle || '') + '" placeholder="Vehicle…"></label>' +
+      '<label>Property<input id="jos-lf-property" type="text" value="' + esc(f.property || '') + '" placeholder="Property…"></label>' +
+      '<label>AI Score<select id="jos-lf-aiscore">' + opt(['high', 'med', 'low'], f.aiScore, 'Any') + '</select></label>' +
+      '<label>Tags<input id="jos-lf-tags" type="text" value="' + esc(f.tags || '') + '" placeholder="hot, ceramic"></label>' +
+      '<label>Date Created<select id="jos-lf-created">' + opt(['today', 'week', 'month'], f.created, 'Any time') + '</select></label>' +
+      '<label>Last Contacted<select id="jos-lf-contacted">' + opt(['today', 'stale'], f.lastContacted, 'Any') + '</select></label>' +
+      '<label>Pipeline Stage<select id="jos-lf-pipeline">' + opt(['new', 'quote_sent', 'quote_viewed', 'quote_expired', 'waiting_customer', 'waiting_payment', 'waiting_photos', 'waiting_approval', 'lost', 'archived', 'spam', 'duplicate'], f.pipeline) + '</select></label>' +
+      '<label>Quote Status<select id="jos-lf-quote">' + opt(['none', 'draft', 'sent', 'viewed', 'expired', 'accepted'], f.quoteStatus) + '</select></label>' +
+      '<label>Est. Value Min<input id="jos-lf-vmin" type="number" value="' + esc(f.valueMin || '') + '" placeholder="0"></label>' +
+      '<label>Est. Value Max<input id="jos-lf-vmax" type="number" value="' + esc(f.valueMax || '') + '" placeholder="9999"></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' +
+      btn('leads-filter-apply', 'Apply', 'jos-btn-brand jos-btn-sm') +
+      btn('leads-filter-reset', 'Reset', 'jos-btn jos-btn-sm') +
+      btn('leads-filter-save', 'Save Filter', 'jos-btn jos-btn-sm') +
+      '</div></div>';
+  }
+
+  function renderLeadsAddModal(root) {
+    if (!root._josLeadAddOpen) return '';
+    var d = root._josLeadDraft || {};
+    var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
+    return '<div class="jos-leads-modal-backdrop" data-jos-act="leads-add-cancel">' +
+      '<div class="jos-leads-modal" onclick="event.stopPropagation()">' +
+      '<div class="jos-between"><h3 style="margin:0">Add Lead</h3><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-add-cancel">✕</button></div>' +
+      '<div class="jos-leads-form">' +
+      '<label>Name<input id="jos-la-name" value="' + esc(d.name || '') + '" placeholder="Full name"></label>' +
+      '<label>Phone<input id="jos-la-phone" value="' + esc(d.phone || '') + '" placeholder="(619) 555-0100"></label>' +
+      '<label>Email<input id="jos-la-email" value="' + esc(d.email || '') + '" placeholder="name@email.com"></label>' +
+      '<label>Address<input id="jos-la-address" value="' + esc(d.address || '') + '" placeholder="Service address"></label>' +
+      '<label>Vehicle / Property<input id="jos-la-vehicle" value="' + esc(d.vehicle || '') + '" placeholder="Vehicle or property"></label>' +
+      '<label>Service<input id="jos-la-service" value="' + esc(d.service || '') + '" placeholder="Service interest"></label>' +
+      '<label>Source<select id="jos-la-source">' +
+        [['manual', 'Manual'], ['google', 'Google'], ['facebook', 'Facebook'], ['instagram', 'Instagram'], ['hubly', 'Hubly'], ['website', 'Website']].map(function (s) {
+          return '<option value="' + s[0] + '"' + ((d.source || 'manual') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
+        }).join('') +
+      '</select></label>' +
+      '<label>Assigned User<select id="jos-la-assigned">' +
+        team.map(function (t) {
+          return '<option value="' + esc(t.name) + '"' + ((d.assignedTo || team[0].name) === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+        }).join('') +
+      '</select></label>' +
+      '<label class="jos-leads-span2">Notes<textarea id="jos-la-notes" class="jos-textarea" placeholder="Notes…">' + esc(d.notes || '') + '</textarea></label>' +
+      '<label class="jos-leads-span2">Tags<input id="jos-la-tags" value="' + esc(d.tags || '') + '" placeholder="hot, ceramic"></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' +
+      btn('leads-add-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
+      btn('leads-add-save', 'Save Lead', 'jos-btn-brand jos-btn-sm') +
+      btn('leads-add-quote', 'Save & Quote', 'jos-btn jos-btn-sm') +
+      '</div></div></div>';
+  }
+
+  function renderLeadCard(lead, selectedId) {
+    var on = selectedId && (String(lead.id) === String(selectedId) || String(lead.key) === String(selectedId));
+    var kind = srcKind(lead.source, lead);
+    return '<button type="button" class="jos-list-card jos-leads-card' + (on ? ' on' : '') + '" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' +
+      '<div class="jos-between">' +
+        '<div class="jos-px-person"><div class="jos-px-av">' + esc(initials(lead.name)) + '</div><div><strong class="t">' + esc(lead.name || 'Lead') + '</strong>' +
+        '<div class="s">' + srcIco(kind) + ' ' + esc(srcLabel(kind)) + '</div></div></div>' +
+        '<span class="jos-muted">' + esc(leadTimeLabel(lead)) + '</span>' +
+      '</div>' +
+      '<div class="s jos-leads-last">' + esc(lead.lastMessage || 'No messages yet') + '</div>' +
+      '<div class="meta">' +
+        '<span class="jos-pill ' + leadStatusTone(lead.osStage) + '">' + esc(leadStageDisplay(lead)) + '</span>' +
+        '<span class="jos-pill info">AI ' + esc(String(lead.aiScore || 0)) + '</span>' +
+        (lead.unread ? '<span class="jos-pill hot">' + lead.unread + ' new</span>' : '') +
+        '<span class="jos-muted">' + esc(lead.assignedTo || 'Unassigned') + '</span>' +
+      '</div></button>';
+  }
+
+  function renderLeadWorkspace(root, lead, ws) {
+    if (!lead) return '<div class="jos-empty">Select a lead to open the workspace.</div>';
+    var tabBar = '<div class="jos-btn-row jos-leads-ws-tabs">' + LEADS_WS_TABS.map(function (t) {
+      return '<button type="button" class="jos-btn jos-btn-sm' + (ws === t[0] ? ' jos-btn-brand' : '') + '" data-jos-lead-ws="' + t[0] + '">' + t[1] + '</button>';
+    }).join('') + '</div>';
+
+    var actions = '<div class="jos-btn-row jos-mt jos-leads-actions">' +
+      btn('leads-convert-customer', 'Convert to Customer', 'jos-btn-brand jos-btn-sm') +
+      btn('leads-convert-job', 'Convert to Job', 'jos-btn jos-btn-sm') +
+      btn('leads-create-quote', 'Create Quote', 'jos-btn jos-btn-sm') +
+      btn('leads-followup', 'Schedule Follow-up', 'jos-btn jos-btn-sm') +
+      btn('leads-request-photos', 'Request Photos', 'jos-btn jos-btn-sm') +
+      btn('leads-payment-link', 'Send Payment Link', 'jos-btn jos-btn-sm') +
+      btn('leads-review-request', 'Send Review Request', 'jos-btn jos-btn-sm') +
+      btn('leads-archive', 'Archive', 'jos-btn jos-btn-sm') +
+      btn('leads-delete', 'Delete', 'jos-btn jos-btn-sm') +
+      btn('leads-duplicate', 'Duplicate', 'jos-btn jos-btn-sm') +
+      '</div>';
+
+    var body = '';
+    if (ws === 'overview') {
+      body = '<div class="jos-stack jos-mt">' +
+        '<div class="jos-between"><div><div class="jos-kicker">Contact</div><strong>' + esc(lead.name) + '</strong>' +
+        '<div class="jos-muted">' + esc(lead.phone || '—') + ' · ' + esc(lead.email || '—') + '</div></div>' +
+        '<span class="jos-pill ' + leadStatusTone(lead.osStage) + '">' + esc(leadStageDisplay(lead)) + '</span></div>' +
+        '<div><div class="jos-kicker">Service</div>' + esc(lead.service || '—') + '</div>' +
+        '<div><div class="jos-kicker">Vehicle / Property</div>' + esc(vehicleOf(lead) || lead.property || '—') + '</div>' +
+        '<div><div class="jos-kicker">Address</div>' + esc(lead.address || lead.property || '—') + '</div>' +
+        '<div><div class="jos-kicker">Source</div>' + srcIco(srcKind(lead.source, lead)) + ' ' + esc(srcLabel(srcKind(lead.source, lead))) + '</div>' +
+        '<div><div class="jos-kicker">Assigned</div>' + esc(lead.assignedTo || 'Unassigned') +
+        ' <button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-assign">Reassign</button></div>' +
+        '<div><div class="jos-kicker">Estimated Value</div>' + esc(money(lead.estimatedValue || lead.amount) || '$0') + '</div>' +
+        '<div><div class="jos-kicker">Tags</div>' + ((lead.tags || []).map(function (t) { return '<span class="jos-pill info">' + esc(t) + '</span>'; }).join(' ') || '<span class="jos-muted">None</span>') +
+        ' <button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-add-tag">Add tag</button></div>' +
+        '<div class="jos-ai"><div class="sk">AI</div><p style="font-size:13px;margin-top:6px"><strong>Score:</strong> ' + esc(String(lead.aiScore)) +
+        ' · <strong>Intent:</strong> ' + esc(lead.buyingIntent || '—') +
+        ' · <strong>Follow-up:</strong> ' + esc(lead.followUpAt || 'Suggest within 24h') + '</p>' +
+        '<div class="jos-btn-row jos-mt">' +
+        btn('leads-ai-summary', 'Auto Summary', 'jos-btn jos-btn-sm') +
+        btn('leads-ai-followup', 'Recommended Follow-up', 'jos-btn jos-btn-sm') +
+        btn('leads-ai-intent', 'Buying Intent', 'jos-btn jos-btn-sm') +
+        btn('leads-ai-dup', 'Duplicate Check', 'jos-btn jos-btn-sm') +
+        btn('leads-ai-spam', 'Spam Check', 'jos-btn jos-btn-sm') +
+        '</div></div></div>';
+    } else if (ws === 'conversation') {
+      var msgs = lead.messages && lead.messages.length ? lead.messages : [{ dir: 'sys', text: lead.lastMessage || 'No conversation yet', at: '' }];
+      body = '<div class="jos-mt"><div class="jos-chat-stream">' + msgs.map(function (m) {
+        var dir = m.dir === 'out' ? 'out' : (m.dir === 'sys' ? 'sys' : 'in');
+        if (dir === 'sys') return '<div class="jos-chat-sys">' + esc(m.text || '') + '</div>';
+        return '<div class="jos-chat-bubble ' + dir + '">' + esc(m.text || '') +
+          '<div class="jos-muted" style="font-size:10px;margin-top:4px">' + esc(m.at || '') + '</div></div>';
+      }).join('') + '</div>' +
+        '<div class="jos-chat-input jos-mt"><input id="jos-leads-reply" type="text" placeholder="Reply…" value="' + esc(root._josLeadDraftMsg || '') + '">' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="leads-send">Send</button></div>' +
+        '<div class="jos-btn-row jos-mt">' +
+        btn('leads-ai-conv-summary', 'Conversation Summary', 'jos-btn jos-btn-sm') +
+        btn('leads-call', 'Call', 'jos-btn jos-btn-sm') +
+        btn('leads-sms', 'SMS', 'jos-btn jos-btn-sm') +
+        btn('leads-email', 'Email', 'jos-btn jos-btn-sm') +
+        '</div></div>';
+    } else if (ws === 'quote') {
+      var q = lead.quote;
+      body = '<div class="jos-stack jos-mt">' +
+        (q ? '<div class="jos-note"><strong>Quote ' + esc(q.id) + '</strong><div class="jos-muted">' + esc(money(q.amount)) + ' · ' + esc(q.status) + ' · ' + esc(q.packageName || lead.service || '') + '</div></div>' : '<div class="jos-muted">No quote yet</div>') +
+        '<div class="jos-btn-row">' +
+        btn('leads-create-quote', 'Create / Update Quote', 'jos-btn-brand jos-btn-sm') +
+        btn('leads-quote-print', 'Print', 'jos-btn jos-btn-sm') +
+        btn('leads-quote-share', 'Share', 'jos-btn jos-btn-sm') +
+        btn('leads-quote-email', 'Email (placeholder)', 'jos-btn jos-btn-sm') +
+        btn('leads-ai-suggest-quote', 'Suggested Quote', 'jos-btn jos-btn-sm') +
+        '</div></div>';
+    } else if (ws === 'estimate') {
+      var est = lead.estimate || { labor: 0, materials: 0, total: 0, notes: '' };
+      body = '<div class="jos-stack jos-mt">' +
+        '<div class="jos-between"><div><div class="jos-kicker">Labor</div>' + esc(money(est.labor)) + '</div>' +
+        '<div><div class="jos-kicker">Materials</div>' + esc(money(est.materials)) + '</div>' +
+        '<div><div class="jos-kicker">Total</div><strong>' + esc(money(est.total)) + '</strong></div></div>' +
+        '<div><div class="jos-kicker">Notes</div><textarea id="jos-leads-est-notes" class="jos-textarea">' + esc(est.notes || '') + '</textarea></div>' +
+        '<div class="jos-btn-row">' + btn('leads-est-save', 'Save Estimate', 'jos-btn-brand jos-btn-sm') + btn('leads-est-print', 'Print', 'jos-btn jos-btn-sm') + '</div></div>';
+    } else if (ws === 'tasks') {
+      body = '<div class="jos-stack jos-mt">' +
+        ((lead.tasks || []).length ? lead.tasks.map(function (t, i) {
+          return '<label class="jos-check-row"><input type="checkbox" data-jos-act="leads-task-toggle" data-jos-task-i="' + i + '"' + (t.done ? ' checked' : '') + '> ' + esc(t.label) + '</label>';
+        }).join('') : '<div class="jos-empty">No tasks yet</div>') +
+        '<div class="jos-chat-input jos-mt"><input id="jos-leads-task-new" placeholder="New task…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-task-add">Add</button></div>' +
+        '<div class="jos-mt">' + btn('leads-ai-reminder', 'Follow-up Reminder', 'jos-btn jos-btn-sm') + '</div></div>';
+    } else if (ws === 'notes') {
+      body = '<div class="jos-stack jos-mt">' +
+        ((lead.notesList || []).length ? lead.notesList.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') : '<div class="jos-muted">No notes yet</div>') +
+        '<div class="jos-chat-input jos-mt"><input id="jos-leads-note-new" placeholder="Add note…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-note-add">Add</button></div></div>';
+    } else {
+      body = '<div class="jos-stack jos-mt">' +
+        ((lead.files || []).length ? lead.files.map(function (f, i) {
+          return '<div class="jos-between jos-note"><div>📎 ' + esc(f.name || f) + '</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-file-del" data-jos-file-i="' + i + '">Remove</button></div>';
+        }).join('') : '<div class="jos-empty">No files attached</div>') +
+        '<div class="jos-mt">' + btn('leads-file-add', 'Add File', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+    }
+
+    return '<div class="jos-card jos-leads-workspace" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' +
+      '<div class="jos-between"><div><div class="jos-kicker">Lead Workspace</div><h3 style="margin:4px 0 0">' + esc(lead.name || 'Lead') + '</h3></div>' +
+      '<span class="jos-pill info">AI ' + esc(String(lead.aiScore || 0)) + '</span></div>' +
+      tabBar + actions + body + '</div>';
+  }
+
+  function renderLeadSidebar(lead) {
+    if (!lead) return '<div class="jos-empty">Notes, activity, and score appear here.</div>';
+    return '<div class="jos-stack jos-leads-side">' +
+      '<div class="jos-card"><div class="jos-kicker">Notes</div>' +
+      ((lead.notesList || []).slice(0, 3).map(function (n) { return '<div class="jos-note jos-mt">' + esc(n) + '</div>'; }).join('') || '<p class="jos-muted jos-mt">No notes</p>') +
+      '<div class="jos-chat-input jos-mt"><input id="jos-leads-side-note" placeholder="Quick note…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-side-note">Add</button></div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Recent Activity</div><div class="jos-stack jos-mt">' +
+      ((lead.activity || []).slice(0, 6).map(function (a) {
+        return '<div class="jos-sched-row"><div class="time">' + esc(String(a.type || '').slice(0, 4)) + '</div><div><div class="who">' + esc(a.label) + '</div><div class="svc">' + esc(a.at || '') + '</div></div></div>';
+      }).join('') || '<div class="jos-muted">No activity</div>') +
+      '</div></div>' +
+      '<div class="jos-ai"><div class="sk">Lead Score</div><div class="jos-kpi-v brand jos-mt">' + esc(String(lead.aiScore || 0)) + '</div>' +
+      '<p style="font-size:13px;margin-top:6px">Intent: <strong>' + esc(lead.buyingIntent || '—') + '</strong>' +
+      (lead.spam ? ' · <strong>Spam risk</strong>' : '') +
+      (lead.duplicateOf ? ' · <strong>Possible duplicate</strong>' : '') + '</p>' +
+      '<div class="jos-btn-row jos-mt">' + btn('leads-recalc-score', 'Recalculate', 'jos-btn-brand jos-btn-sm') +
+      btn('leads-ai-membership', 'Suggested Membership', 'jos-btn jos-btn-sm') + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Attachments</div><div class="jos-stack jos-mt">' +
+      ((lead.files || []).length ? lead.files.map(function (f) { return '<div class="jos-note">📎 ' + esc(f.name || f) + '</div>'; }).join('') : '<div class="jos-muted">None</div>') +
+      '</div>' + btn('leads-file-add', 'Add attachment', 'jos-btn jos-btn-sm') + '</div>' +
+      '<div class="jos-card"><div class="jos-kicker">Permissions (OS)</div>' +
+      '<table class="jos-leads-perm"><thead><tr><th>Role</th><th>View</th><th>Edit</th><th>Convert</th><th>Delete</th><th>Assign</th></tr></thead><tbody>' +
+      LEADS_PERM_ROLES.map(function (r) {
+        return '<tr><td>' + esc(r.role) + '</td><td>' + r.view + '</td><td>' + r.edit + '</td><td>' + r.convert + '</td><td>' + r.delete + '</td><td>' + r.assign + '</td></tr>';
+      }).join('') +
+      '</tbody></table></div></div>';
+  }
+
+  function renderLeadsContextMenu(root) {
+    var menu = root._josLeadCtx;
+    if (!menu || !menu.open) return '';
+    return '<div class="jos-leads-ctx" style="left:' + menu.x + 'px;top:' + menu.y + 'px" id="jos-leads-ctx">' +
+      '<button type="button" data-jos-act="leads-call">Call</button>' +
+      '<button type="button" data-jos-act="leads-sms">SMS</button>' +
+      '<button type="button" data-jos-act="leads-email">Email</button>' +
+      '<button type="button" data-jos-act="leads-convert-customer">Convert to Customer</button>' +
+      '<button type="button" data-jos-act="leads-convert-job">Convert to Job</button>' +
+      '<button type="button" data-jos-act="leads-assign">Assign</button>' +
+      '<button type="button" data-jos-act="leads-copy">Copy Contact</button>' +
+      '<button type="button" data-jos-act="leads-archive">Archive</button>' +
+      '<button type="button" data-jos-act="leads-delete">Delete</button>' +
+      '</div>';
+  }
+
+  function renderLeads() {
+    var root = ownPixelView('v-leads', 'jos-leads-root');
+    if (!root) return;
+    updateChrome('leads');
+    root.innerHTML = '<div class="jos-page jos-leads-page"><div class="jos-home-loading">Loading Leads…</div></div>';
+    try { renderLeadsPage(root); }
+    catch (err) {
+      console.warn('HublyJourneyOS Leads', err);
+      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Leads could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderLeads()">Retry</button></div></div></div>';
+    }
+  }
+
+  function renderLeadsPage(root) {
+    ensureLeadsOsState();
+    var tab = root._josLeadsTab || 'new';
+    var ws = root._josLeadWorkspace || 'overview';
+    var all = leadsOsList();
+    var filtered = filterLeadsList(root);
+    var selectedId = root._josLeadId || (filtered[0] && (filtered[0].id || filtered[0].key)) || null;
+    if (selectedId && !filtered.some(function (l) { return String(l.id) === String(selectedId) || String(l.key) === String(selectedId); })) {
+      selectedId = filtered[0] ? (filtered[0].id || filtered[0].key) : null;
+      root._josLeadId = selectedId;
+    }
+    var sel = selectedId ? findLead(selectedId) : null;
+    if (sel) sel.unread = 0;
+
+    var tabsHtml = '<div class="jos-tabs jos-leads-tabs">' + LEADS_TABS.map(function (t) {
+      var count = all.filter(function (l) { return leadMatchesTab(l, t[0]); }).length;
+      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-leads-tab="' + t[0] + '">' + esc(t[1]) +
+        (count ? ' <span class="jos-tab-count">' + count + '</span>' : '') + '</button>';
+    }).join('') + '</div>';
+
+    var listHtml = filtered.length
+      ? filtered.map(function (l) { return renderLeadCard(l, selectedId); }).join('')
+      : '<div class="jos-empty">No leads in this view.' + (root._josLeadsQ ? ' Clear search (Esc) to see more.' : '') + '</div>';
+
+    var integCtas = '<div class="jos-leads-integ">' +
+      '<span class="jos-muted">Stage 2 integrations</span>' +
+      btn('leads-connect-meta', 'Connect Meta Lead Ads', 'jos-btn jos-btn-sm') +
+      btn('leads-connect-messenger', 'Connect Messenger / IG', 'jos-btn jos-btn-sm') +
+      btn('leads-connect-forms', 'Connect Google Forms', 'jos-btn jos-btn-sm') +
+      '</div>';
+
+    root.innerHTML =
+      '<div class="jos-page jos-leads-page">' +
+      '<div class="jos-page-head"><div><h1>Leads</h1><p>Capture, qualify, quote, and convert inbound interest.</p></div>' +
+      '<div class="jos-page-actions">' +
+        btn('leads-filter-open', 'Filters', 'jos-btn jos-btn-sm') +
+        btn('leads-add-open', 'Add Lead', 'jos-btn-brand jos-btn-sm') +
+        btn('go-ask', 'Ask Hubly', 'jos-btn jos-btn-sm') +
+      '</div></div>' +
+      tabsHtml +
+      '<div class="jos-leads-toolbar">' +
+        '<label class="jos-leads-search"><input id="jos-leads-search" type="search" placeholder="Search name, phone, email, vehicle, property, service, source, notes, conversation…" value="' + esc(root._josLeadsQ || '') + '"></label>' +
+      '</div>' +
+      renderLeadsFilterDrawer(root) +
+      integCtas +
+      '<div class="jos-split jos-leads-layout">' +
+        '<div class="jos-stack jos-leads-list">' + listHtml + '</div>' +
+        '<div class="jos-leads-main">' + renderLeadWorkspace(root, sel, ws) + '</div>' +
+        '<div class="jos-stack">' + renderLeadSidebar(sel) + '</div>' +
+      '</div>' +
+      renderLeadsAddModal(root) +
+      renderLeadsContextMenu(root) +
+      '</div>';
+
+    bindRoot(root);
+    wireLeadsRoot(root);
+    try {
+      var badge = el('nav-leads-badge');
+      if (badge) {
+        var n = all.filter(function (l) { return (l.unread > 0 || l.aiQualified) && !/lost|spam|archived|duplicate/.test(l.osStage || ''); }).length;
+        badge.textContent = String(n);
+        badge.classList.toggle('hidden', !n);
+      }
+    } catch (e) {}
+  }
+
+  function readLeadAddDraft() {
+    return {
+      name: (el('jos-la-name') || {}).value || '',
+      phone: (el('jos-la-phone') || {}).value || '',
+      email: (el('jos-la-email') || {}).value || '',
+      address: (el('jos-la-address') || {}).value || '',
+      vehicle: (el('jos-la-vehicle') || {}).value || '',
+      service: (el('jos-la-service') || {}).value || '',
+      source: (el('jos-la-source') || {}).value || 'manual',
+      assignedTo: (el('jos-la-assigned') || {}).value || '',
+      notes: (el('jos-la-notes') || {}).value || '',
+      tags: (el('jos-la-tags') || {}).value || ''
+    };
+  }
+
+  function saveNewLead(andQuote) {
+    var root = el('jos-leads-root');
+    var d = readLeadAddDraft();
+    if (!String(d.name || '').trim()) { toast('Name is required'); return; }
+    ensureLeadsOsState();
+    var st = S();
+    var id = 'lead_' + Date.now();
+    var lead = {
+      id: id, key: id, name: d.name.trim(), phone: d.phone, email: d.email, address: d.address,
+      vehicle: d.vehicle, property: d.address, service: d.service, source: d.source,
+      assignedTo: d.assignedTo, notes: d.notes, notesList: d.notes ? [d.notes] : [],
+      tags: String(d.tags || '').split(/[,\s]+/).filter(Boolean),
+      stage: 'new', osStage: 'new', status: 'new', createdAt: new Date().toISOString(),
+      lastContacted: new Date().toISOString(), lastMessage: d.notes || 'Manual lead created',
+      aiScore: 50, aiQualified: false, unread: 0, quoteStatus: 'none', estimatedValue: 0,
+      messages: [], tasks: [], files: [], activity: [{ type: 'created', label: 'Manual lead created', at: new Date().toLocaleString() }],
+      estimate: { labor: 0, materials: 0, total: 0, notes: '' }, buyingIntent: 'med'
+    };
+    st.pipeline.manual.unshift(lead);
+    root._josLeadAddOpen = false;
+    root._josLeadDraft = null;
+    root._josLeadId = id;
+    root._josLeadsTab = 'new';
+    if (andQuote) {
+      lead.quote = { id: 'q_' + id, amount: 0, status: 'draft', packageName: lead.service || 'Service', sentAt: todayStr() };
+      lead.quoteStatus = 'draft';
+      lead.stage = 'quote_sent';
+      lead.osStage = 'quote_sent';
+      lead.status = 'quoted';
+      pushLeadActivity(lead, 'quote', 'Draft quote created');
+      root._josLeadWorkspace = 'quote';
+      root._josLeadsTab = 'quotes';
+      toast('Lead saved · draft quote ready');
+    } else toast('Lead saved');
+    renderLeads();
+  }
+
+  function wireLeadsRoot(root) {
+    if (root._josLeadsBound) return;
+    root._josLeadsBound = true;
+
+    root.addEventListener('click', function (e) {
+      var tabBtn = e.target.closest('[data-jos-leads-tab]');
+      if (tabBtn) {
+        root._josLeadsTab = tabBtn.getAttribute('data-jos-leads-tab');
+        root._josLeadCtx = null;
+        renderLeads();
+        e.stopPropagation();
+        return;
+      }
+      var wsBtn = e.target.closest('[data-jos-lead-ws]');
+      if (wsBtn) {
+        root._josLeadWorkspace = wsBtn.getAttribute('data-jos-lead-ws');
+        renderLeads();
+        e.stopPropagation();
+        return;
+      }
+      var card = e.target.closest('[data-jos-lead-id]');
+      if (card && !e.target.closest('[data-jos-act]')) {
+        root._josLeadId = card.getAttribute('data-jos-lead-id');
+        root._josLeadWorkspace = 'overview';
+        root._josLeadCtx = null;
+        var lead = findLead(root._josLeadId);
+        if (lead) lead.unread = 0;
+        renderLeads();
+        e.stopPropagation();
+      }
+    });
+
+    root.addEventListener('dblclick', function (e) {
+      var card = e.target.closest('[data-jos-lead-id]');
+      if (!card) return;
+      var id = card.getAttribute('data-jos-lead-id');
+      root._josLeadId = id;
+      var lead = findLead(id);
+      if (lead && typeof global.viewLead === 'function') {
+        try { global.viewLead(lead.key || lead.id); }
+        catch (err) { toast('Open profile · ' + (lead.name || 'Lead')); }
+      } else toast('Lead profile · ' + ((lead && lead.name) || 'Lead'));
+      e.preventDefault();
+    });
+
+    root.addEventListener('contextmenu', function (e) {
+      var card = e.target.closest('.jos-leads-card[data-jos-lead-id]');
+      if (!card) return;
+      e.preventDefault();
+      root._josLeadId = card.getAttribute('data-jos-lead-id');
+      var rect = root.getBoundingClientRect();
+      root._josLeadCtx = { open: true, x: Math.max(8, e.clientX - rect.left), y: Math.max(8, e.clientY - rect.top) };
+      renderLeads();
+    });
+
+    root.addEventListener('input', function (e) {
+      if (e.target && e.target.id === 'jos-leads-search') {
+        root._josLeadsQ = e.target.value;
+        clearTimeout(root._josLeadsSearchT);
+        root._josLeadsSearchT = setTimeout(function () { renderLeads(); }, 140);
+      }
+      if (e.target && e.target.id === 'jos-leads-reply') root._josLeadDraftMsg = e.target.value;
+    });
+
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        if (root._josLeadAddOpen) { root._josLeadAddOpen = false; renderLeads(); return; }
+        if (root._josLeadFilterOpen) { root._josLeadFilterOpen = false; renderLeads(); return; }
+        if (root._josLeadCtx && root._josLeadCtx.open) { root._josLeadCtx = null; renderLeads(); return; }
+        if (root._josLeadsQ) {
+          root._josLeadsQ = '';
+          var inp = el('jos-leads-search');
+          if (inp) inp.value = '';
+          renderLeads();
+        }
+      }
+    });
+  }
+
+  function selectedLead() {
+    var root = el('jos-leads-root');
+    if (!root || !root._josLeadId) return null;
+    return findLead(root._josLeadId);
+  }
+
+  function mutateLead(mutator) {
+    var root = el('jos-leads-root');
+    var lead = selectedLead();
+    if (!lead) return null;
+    ensureLeadsOsState();
+    mutator(lead);
+    if (root) renderLeads();
+    return lead;
+  }
+
+  function handleLeadsAct(act, t) {
+    var root = el('jos-leads-root');
+    if (!root) return;
+    ensureLeadsOsState();
+    var lead = selectedLead();
+    root._josLeadCtx = null;
+
+    try {
+      if (act === 'leads-filter-open') { root._josLeadFilterOpen = true; return renderLeads(); }
+      if (act === 'leads-filter-close') { root._josLeadFilterOpen = false; return renderLeads(); }
+      if (act === 'leads-filter-apply') {
+        root._josLeadFilters = {
+          status: (el('jos-lf-status') || {}).value || 'all',
+          source: (el('jos-lf-source') || {}).value || 'all',
+          assigned: (el('jos-lf-assigned') || {}).value || 'all',
+          service: (el('jos-lf-service') || {}).value || 'all',
+          vehicle: (el('jos-lf-vehicle') || {}).value || '',
+          property: (el('jos-lf-property') || {}).value || '',
+          aiScore: (el('jos-lf-aiscore') || {}).value || 'all',
+          tags: (el('jos-lf-tags') || {}).value || '',
+          created: (el('jos-lf-created') || {}).value || 'all',
+          lastContacted: (el('jos-lf-contacted') || {}).value || 'all',
+          pipeline: (el('jos-lf-pipeline') || {}).value || 'all',
+          quoteStatus: (el('jos-lf-quote') || {}).value || 'all',
+          valueMin: (el('jos-lf-vmin') || {}).value || '',
+          valueMax: (el('jos-lf-vmax') || {}).value || ''
+        };
+        root._josLeadFilterOpen = false;
+        toast('Filters applied');
+        return renderLeads();
+      }
+      if (act === 'leads-filter-reset') {
+        root._josLeadFilters = {};
+        root._josLeadFilterOpen = false;
+        toast('Filters reset');
+        return renderLeads();
+      }
+      if (act === 'leads-filter-save') {
+        var st = S();
+        st.leadsOs = st.leadsOs || { savedFilters: [] };
+        var snap = root._josLeadFilters || {};
+        st.leadsOs.savedFilters.unshift({ name: 'Saved ' + (st.leadsOs.savedFilters.length + 1), filters: Object.assign({}, snap), at: new Date().toISOString() });
+        toast('Filter saved');
+        return;
+      }
+      if (act === 'leads-add-open') { root._josLeadAddOpen = true; root._josLeadDraft = {}; return renderLeads(); }
+      if (act === 'leads-add-cancel') { root._josLeadAddOpen = false; return renderLeads(); }
+      if (act === 'leads-add-save') return saveNewLead(false);
+      if (act === 'leads-add-quote') return saveNewLead(true);
+
+      if (act === 'leads-connect-meta' || act === 'leads-connect-messenger' || act === 'leads-connect-forms') {
+        toast('Live sync comes in Stage 2 — CTA only for now');
+        return;
+      }
+
+      if (!lead && !/^leads-add|^leads-filter|^leads-connect/.test(act)) {
+        if (act === 'leads-add-open') return;
+        return toast('Select a lead first');
+      }
+
+      if (act === 'leads-send') {
+        var reply = (el('jos-leads-reply') || {}).value || root._josLeadDraftMsg || '';
+        if (!String(reply).trim()) return toast('Type a reply first');
+        mutateLead(function (l) {
+          l.messages = l.messages || [];
+          l.messages.push({ dir: 'out', text: String(reply).trim(), at: 'Just now' });
+          l.lastMessage = String(reply).trim();
+          l.lastContacted = new Date().toISOString();
+          pushLeadActivity(l, 'message', 'Outbound message');
+        });
+        root._josLeadDraftMsg = '';
+        toast('Message sent');
+        return;
+      }
+      if (act === 'leads-call') {
+        if (lead && lead.phone) location.href = 'tel:' + String(lead.phone).replace(/\D/g, '');
+        else toast('No phone on this lead');
+        return;
+      }
+      if (act === 'leads-sms') {
+        if (lead && lead.phone) location.href = 'sms:' + String(lead.phone).replace(/\D/g, '');
+        else toast('No phone on this lead');
+        return;
+      }
+      if (act === 'leads-email') {
+        if (lead && lead.email) location.href = 'mailto:' + lead.email;
+        else toast('No email on this lead');
+        return;
+      }
+      if (act === 'leads-copy') {
+        if (!lead) return;
+        copyText([lead.name, lead.phone, lead.email].filter(Boolean).join(' · '));
+        return;
+      }
+      if (act === 'leads-assign') {
+        var team = S().team || LEADS_TEAM;
+        var names = team.map(function (x) { return x.name; });
+        var next = names[(names.indexOf(lead.assignedTo) + 1) % names.length] || names[0];
+        mutateLead(function (l) {
+          l.assignedTo = next;
+          pushLeadActivity(l, 'assign', 'Assigned to ' + next);
+        });
+        toast('Assigned to ' + next);
+        return;
+      }
+      if (act === 'leads-add-tag') {
+        var tag = window.prompt('Tag name', 'follow-up');
+        if (!tag) return;
+        mutateLead(function (l) {
+          l.tags = l.tags || [];
+          l.tags.push(String(tag).trim());
+          pushLeadActivity(l, 'tag', 'Tagged ' + tag);
+        });
+        return;
+      }
+      if (act === 'leads-convert-customer') {
+        mutateLead(function (l) {
+          var st = S();
+          st.customers = st.customers || [];
+          var exists = st.customers.find(function (c) { return c.phone === l.phone || c.name === l.name; });
+          if (!exists) {
+            st.customers.unshift({
+              id: 'cust_' + (l.id || Date.now()),
+              name: l.name, phone: l.phone, email: l.email,
+              vehicle: vehicleOf(l), preferredService: l.service, address: l.address
+            });
+          }
+          pushLeadActivity(l, 'convert', 'Converted to customer');
+        });
+        toast('Converted to customer');
+        return;
+      }
+      if (act === 'leads-convert-job') {
+        mutateLead(function (l) {
+          var st = S();
+          st.jobs = st.jobs || [];
+          st.jobs.unshift({
+            id: 'job_from_' + (l.id || Date.now()),
+            customer: l.name, phone: l.phone, service: l.service || 'Detail',
+            vehicle: vehicleOf(l), address: l.address || (S().city || 'San Diego, CA'),
+            date: todayStr(), time: '10:00 AM', status: 'scheduled',
+            amount: l.estimatedValue || l.amount || 0, assignedTo: l.assignedTo
+          });
+          l.stage = 'won';
+          l.osStage = 'archived';
+          l.status = 'archived';
+          pushLeadActivity(l, 'convert', 'Converted to job');
+        });
+        toast('Converted to job');
+        return;
+      }
+      if (act === 'leads-create-quote') {
+        mutateLead(function (l) {
+          var amt = parseFloat(l.estimatedValue || l.amount) || 250;
+          l.quote = { id: 'q_' + (l.id || Date.now()), amount: amt, status: 'sent', packageName: l.service || 'Service', sentAt: todayStr() };
+          l.quoteStatus = 'sent';
+          l.stage = 'quote_sent';
+          l.osStage = 'quote_sent';
+          l.status = 'quoted';
+          l.amount = amt;
+          pushLeadActivity(l, 'quote', 'Quote created · ' + money(amt));
+        });
+        root._josLeadWorkspace = 'quote';
+        toast('Quote created');
+        return renderLeads();
+      }
+      if (act === 'leads-followup') {
+        mutateLead(function (l) {
+          var when = new Date();
+          when.setDate(when.getDate() + 1);
+          l.followUpAt = when.toISOString().slice(0, 10) + ' 10:00';
+          l.tasks = l.tasks || [];
+          l.tasks.unshift({ id: 't_fu_' + Date.now(), label: 'Follow up ' + l.followUpAt, done: false });
+          pushLeadActivity(l, 'followup', 'Follow-up scheduled');
+        });
+        toast('Follow-up scheduled');
+        return;
+      }
+      if (act === 'leads-request-photos') {
+        mutateLead(function (l) {
+          l.stage = 'waiting_photos';
+          l.osStage = 'waiting_photos';
+          l.status = 'waiting';
+          l.waitingReason = 'photos';
+          l.messages = l.messages || [];
+          l.messages.push({ dir: 'out', text: 'Could you send a few photos of the vehicle?', at: 'Just now' });
+          l.lastMessage = 'Could you send a few photos of the vehicle?';
+          pushLeadActivity(l, 'photos', 'Requested photos');
+        });
+        toast('Photo request sent');
+        return;
+      }
+      if (act === 'leads-payment-link') {
+        mutateLead(function (l) {
+          l.stage = 'waiting_payment';
+          l.osStage = 'waiting_payment';
+          l.status = 'waiting';
+          l.waitingReason = 'payment';
+          l.files = l.files || [];
+          l.files.push({ name: 'payment-link.pdf', kind: 'pdf' });
+          pushLeadActivity(l, 'payment', 'Payment link sent');
+        });
+        toast('Payment link sent (OS)');
+        return;
+      }
+      if (act === 'leads-review-request') {
+        mutateLead(function (l) {
+          l.messages = l.messages || [];
+          l.messages.push({ dir: 'out', text: 'If you have a minute, a quick review would mean a lot!', at: 'Just now' });
+          l.lastMessage = 'Review request sent';
+          pushLeadActivity(l, 'review', 'Review request sent');
+        });
+        toast('Review request sent');
+        return;
+      }
+      if (act === 'leads-archive') {
+        mutateLead(function (l) {
+          l.stage = 'archived';
+          l.osStage = 'archived';
+          l.status = 'archived';
+          l.archived = true;
+          pushLeadActivity(l, 'archive', 'Archived');
+        });
+        toast('Lead archived');
+        return;
+      }
+      if (act === 'leads-delete') {
+        if (!window.confirm('Delete this lead?')) return;
+        mutateLead(function (l) {
+          l.deleted = true;
+          var st = S();
+          if (st.pipeline && Array.isArray(st.pipeline.manual)) {
+            st.pipeline.manual = st.pipeline.manual.filter(function (x) { return String(x.id) !== String(l.id); });
+            st.pipeline.deleted = st.pipeline.deleted || [];
+            st.pipeline.deleted.push(l.id || l.key);
+          }
+        });
+        root._josLeadId = null;
+        toast('Lead deleted');
+        return renderLeads();
+      }
+      if (act === 'leads-duplicate') {
+        ensureLeadsOsState();
+        var st2 = S();
+        var copy = Object.assign({}, lead, {
+          id: 'lead_copy_' + Date.now(),
+          key: null,
+          name: (lead.name || 'Lead') + ' (copy)',
+          stage: 'new',
+          osStage: 'new',
+          status: 'new',
+          createdAt: new Date().toISOString(),
+          activity: [{ type: 'created', label: 'Duplicated lead', at: new Date().toLocaleString() }]
+        });
+        copy.key = copy.id;
+        st2.pipeline.manual.unshift(copy);
+        root._josLeadId = copy.id;
+        toast('Lead duplicated');
+        return renderLeads();
+      }
+      if (act === 'leads-note-add' || act === 'leads-side-note') {
+        var noteEl = act === 'leads-side-note' ? el('jos-leads-side-note') : el('jos-leads-note-new');
+        var note = noteEl ? noteEl.value : '';
+        if (!String(note || '').trim()) return toast('Type a note');
+        mutateLead(function (l) {
+          l.notesList = l.notesList || [];
+          l.notesList.unshift(String(note).trim());
+          pushLeadActivity(l, 'note', 'Note added');
+        });
+        return;
+      }
+      if (act === 'leads-task-add') {
+        var taskEl = el('jos-leads-task-new');
+        var task = taskEl ? taskEl.value : '';
+        if (!String(task || '').trim()) return toast('Type a task');
+        mutateLead(function (l) {
+          l.tasks = l.tasks || [];
+          l.tasks.unshift({ id: 't_' + Date.now(), label: String(task).trim(), done: false });
+          pushLeadActivity(l, 'task', 'Task added');
+        });
+        return;
+      }
+      if (act === 'leads-task-toggle') {
+        var ti = parseInt(t && t.getAttribute('data-jos-task-i'), 10);
+        mutateLead(function (l) {
+          if (l.tasks && l.tasks[ti]) l.tasks[ti].done = !l.tasks[ti].done;
+        });
+        return;
+      }
+      if (act === 'leads-file-add') {
+        mutateLead(function (l) {
+          l.files = l.files || [];
+          l.files.push({ name: 'attachment-' + (l.files.length + 1) + '.jpg', kind: 'image' });
+          pushLeadActivity(l, 'file', 'File attached');
+        });
+        toast('File added (OS placeholder)');
+        return;
+      }
+      if (act === 'leads-file-del') {
+        var fi = parseInt(t && t.getAttribute('data-jos-file-i'), 10);
+        mutateLead(function (l) {
+          if (l.files) l.files.splice(fi, 1);
+        });
+        return;
+      }
+      if (act === 'leads-est-save') {
+        var notesEst = (el('jos-leads-est-notes') || {}).value || '';
+        mutateLead(function (l) {
+          l.estimate = l.estimate || { labor: 0, materials: 0, total: 0 };
+          l.estimate.notes = notesEst;
+          pushLeadActivity(l, 'estimate', 'Estimate saved');
+        });
+        toast('Estimate saved');
+        return;
+      }
+      if (act === 'leads-est-print' || act === 'leads-quote-print') {
+        toast('Print placeholder — ready for Stage 2');
+        return;
+      }
+      if (act === 'leads-quote-share') {
+        toast('Share placeholder — copy link in Stage 2');
+        return;
+      }
+      if (act === 'leads-quote-email') {
+        toast('Email send placeholder — not claiming connected');
+        return;
+      }
+      if (act === 'leads-recalc-score') {
+        mutateLead(function (l) {
+          var score = 40;
+          if (l.messages && l.messages.length) score += Math.min(20, l.messages.length * 4);
+          if (l.quoteStatus && l.quoteStatus !== 'none') score += 15;
+          if (l.estimatedValue >= 400) score += 15;
+          if (l.unread) score += 5;
+          if (l.spam) score = 5;
+          if (l.duplicateOf) score = Math.min(score, 50);
+          l.aiScore = Math.max(5, Math.min(99, score));
+          l.aiQualified = l.aiScore >= 70;
+          l.buyingIntent = l.aiScore >= 80 ? 'high' : (l.aiScore >= 55 ? 'med' : 'low');
+          pushLeadActivity(l, 'ai', 'Score recalculated · ' + l.aiScore);
+        });
+        toast('Lead score recalculated');
+        return;
+      }
+      if (act === 'leads-ai-summary') return ask('Summarize lead ' + (lead && lead.name) + ' and recommend next action');
+      if (act === 'leads-ai-followup') return ask('Recommend the best follow-up message for lead ' + (lead && lead.name));
+      if (act === 'leads-ai-intent') return ask('What is the buying intent for lead ' + (lead && lead.name) + '?');
+      if (act === 'leads-ai-conv-summary') return ask('Summarize the conversation with ' + (lead && lead.name));
+      if (act === 'leads-ai-suggest-quote') return ask('Suggest a quote package and price for ' + (lead && lead.name) + ' interested in ' + (lead && lead.service));
+      if (act === 'leads-ai-membership') return ask('Suggest a membership plan for lead ' + (lead && lead.name));
+      if (act === 'leads-ai-reminder') return ask('Create a follow-up reminder plan for ' + (lead && lead.name));
+      if (act === 'leads-ai-dup') {
+        mutateLead(function (l) {
+          var others = leadsOsList().filter(function (x) {
+            return String(x.id) !== String(l.id) && (
+              (l.phone && x.phone === l.phone) ||
+              (l.email && x.email === l.email) ||
+              (l.name && x.name && x.name.toLowerCase() === l.name.toLowerCase())
+            );
+          });
+          if (others.length) {
+            l.duplicateOf = others[0].id || others[0].key;
+            pushLeadActivity(l, 'duplicate', 'Possible duplicate of ' + (others[0].name || 'another lead'));
+            toast('Possible duplicate found');
+          } else {
+            pushLeadActivity(l, 'duplicate', 'No duplicates found');
+            toast('No duplicates found');
+          }
+        });
+        return;
+      }
+      if (act === 'leads-ai-spam') {
+        mutateLead(function (l) {
+          var blob = [l.name, l.email, l.lastMessage, l.notes].join(' ').toLowerCase();
+          var spammy = /seo|crypto|bot|buy cheap|viagra|casino/.test(blob) || (l.aiScore || 0) < 15;
+          l.spam = spammy;
+          if (spammy) {
+            l.stage = 'spam';
+            l.osStage = 'spam';
+            l.status = 'spam';
+            pushLeadActivity(l, 'spam', 'Flagged as spam');
+            toast('Flagged as spam');
+          } else {
+            pushLeadActivity(l, 'spam', 'Not spam');
+            toast('Looks legitimate');
+          }
+        });
+        return;
+      }
+    } catch (err) {
+      console.warn('Leads action failed', err);
+      toast('Failed to update — try again');
+    }
+  }
+
+  function renderLeadsList() {
+    return renderLeads();
   }
 
   function renderCustomersPage() {
@@ -2814,7 +3938,7 @@
       growth: renderGrowth,
       reviews: renderBizReviews,
       settings: renderSettingsHub,
-      leads: renderLeadsList,
+      leads: renderLeads,
       customers: renderCustomersPage,
       dashboard: enhanceDashboard,
       chats: renderInbox,
@@ -2826,7 +3950,7 @@
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-filter],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
       if (t.hasAttribute('data-jos-inbox-tab')) {
         var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
         return;
@@ -2835,16 +3959,28 @@
         var irId = el('jos-inbox-root'); if (irId) { irId._josInboxId = t.getAttribute('data-jos-inbox-id'); renderInbox(); }
         return;
       }
+      if (t.hasAttribute('data-jos-leads-tab')) {
+        var ltRoot = el('jos-leads-root'); if (ltRoot) { ltRoot._josLeadsTab = t.getAttribute('data-jos-leads-tab'); renderLeads(); }
+        return;
+      }
+      if (t.hasAttribute('data-jos-lead-ws')) {
+        var lwRoot = el('jos-leads-root'); if (lwRoot) { lwRoot._josLeadWorkspace = t.getAttribute('data-jos-lead-ws'); renderLeads(); }
+        return;
+      }
+      if (t.hasAttribute('data-jos-lead-id')) {
+        var liRoot = el('jos-leads-root'); if (liRoot) { liRoot._josLeadId = t.getAttribute('data-jos-lead-id'); liRoot._josLeadWorkspace = liRoot._josLeadWorkspace || 'overview'; renderLeads(); }
+        return;
+      }
       if (t.hasAttribute('data-jos-card')) {
         var cards = el('jos-pipeline-root')?._josCards || [];
         return openCard(cards.find(function (c) { return String(c.id) === String(t.getAttribute('data-jos-card')); }));
       }
       if (t.hasAttribute('data-jos-lead-filter')) {
-        var leadsRoot = el('jos-leads-root'); if (leadsRoot) { leadsRoot._josLeadFilter = t.getAttribute('data-jos-lead-filter'); renderLeadsList(); }
+        var leadsRoot = el('jos-leads-root'); if (leadsRoot) { leadsRoot._josLeadFilter = t.getAttribute('data-jos-lead-filter'); renderLeads(); }
         return;
       }
       if (t.hasAttribute('data-jos-lead-row')) {
-        var lr = el('jos-leads-root'); if (lr) { lr._josLeadKey = t.getAttribute('data-jos-lead-row'); renderLeadsList(); }
+        var lr = el('jos-leads-root'); if (lr) { lr._josLeadId = t.getAttribute('data-jos-lead-row') || t.getAttribute('data-jos-lead-id'); renderLeads(); }
         return;
       }
       if (t.hasAttribute('data-jos-lead')) { var key = t.getAttribute('data-jos-lead'); if (key && typeof global.viewLead === 'function') global.viewLead(key); return; }
@@ -2880,6 +4016,7 @@
       if (act === 'opp-ask' && opp) return ask(opp.title);
       if (act && String(act).indexOf('inbox-') === 0) return handleInboxAct(act, t);
       if (act && String(act).indexOf('jobs-') === 0) return handleJobsAct(act, t);
+      if (act && String(act).indexOf('leads-') === 0) return handleLeadsAct(act, t);
       if (act === 'ask-submit' || act === 'ask-brief') {
         switchNav('ask');
         return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
@@ -2937,6 +4074,7 @@
     renderGrowth: renderGrowth,
     renderBizReviews: renderBizReviews,
     renderSettingsHub: renderSettingsHub,
+    renderLeads: renderLeads,
     renderLeadsList: renderLeadsList,
     renderCustomersPage: renderCustomersPage,
     renderInbox: renderInbox,

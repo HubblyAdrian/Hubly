@@ -156,13 +156,150 @@
         { id: 'lost', label: 'Lost', tone: 'red', role: 'lost', isLost: true }
       ],
       manual: [
-        { id: 'lead_google', name: 'Alex Rivera', phone: '(619) 555-0133', email: 'alex.r@email.com', service: 'Ceramic Coating', vehicle: 'Porsche Macan', source: 'google', stage: 'new', createdAt: todayOffset(0) + 'T09:12:00', notes: 'Came from Google · /ceramic-coating', aiQualified: true, aiScore: 88 },
-        { id: 'lead_ig', name: 'Taylor Kim', phone: '(619) 555-0166', email: 'taylor.k@email.com', service: 'Interior Detail', vehicle: 'Model 3', source: 'instagram', stage: 'new', createdAt: todayOffset(-1) + 'T14:20:00', notes: 'Instagram DM' },
-        { id: 'lead_fb', name: 'Sam Ortiz', phone: '(619) 555-0121', email: 'sam.o@email.com', service: 'Exterior Detail', vehicle: 'Tahoe', source: 'facebook', stage: 'new', createdAt: todayOffset(-2) + 'T11:05:00', notes: 'Facebook lead form' },
-        { id: 'lead_hubly', name: 'Priya Shah', phone: '(619) 555-0190', email: 'priya.s@email.com', service: 'Paint Correction', vehicle: 'White Tesla', source: 'hubly', stage: 'quote_sent', createdAt: todayOffset(-3) + 'T16:40:00', amount: 450, notes: 'Hubly booking page quote' },
-        { id: 'lead_web', name: 'Chris Park', phone: '(619) 555-0188', email: 'chris.p@email.com', service: 'Paint Correction', vehicle: 'F-150', source: 'website', stage: 'quote_sent', createdAt: todayOffset(-1) + 'T10:00:00', amount: 450, notes: 'Website quote request' },
-        { id: 'lead_incomplete', name: 'Jordan Lee', phone: '(619) 555-0119', email: 'jordan.lee@email.com', service: 'Exterior Detail', vehicle: 'F-150 · White', source: 'booking', stage: 'quote_sent', createdAt: todayOffset(-2) + 'T18:22:00', amount: 180, notes: 'Incomplete quote from booking page', isAbandoned: true },
-        { id: 'lead_lost', name: 'Dana Wu', phone: '(619) 555-0155', email: 'dana.w@email.com', service: 'Interior Detail', vehicle: 'Civic', source: 'google', stage: 'lost', createdAt: todayOffset(-14) + 'T10:00:00', notes: 'Went with competitor' }
+        {
+          id: 'lead_google', name: 'Alex Rivera', phone: '(619) 555-0133', email: 'alex.r@email.com',
+          service: 'Ceramic Coating', vehicle: 'Porsche Macan', address: '2910 Mission Blvd, San Diego',
+          source: 'google', stage: 'new', status: 'new', createdAt: todayOffset(0) + 'T09:12:00',
+          lastContacted: todayOffset(0) + 'T09:15:00', notes: 'Came from Google · /ceramic-coating',
+          aiQualified: true, aiScore: 88, buyingIntent: 'high', unread: 2, assignedTo: 'Adrian Lopez',
+          tags: ['hot', 'ceramic'], lastMessage: 'Can you fit ceramic coating in this week?',
+          estimatedValue: 599, quoteStatus: 'none',
+          messages: [
+            { dir: 'in', text: 'Hi, saw your Google listing for ceramic coating.', at: '9:02 AM' },
+            { dir: 'out', text: 'Happy to help! Thursday or Saturday open.', at: '9:05 AM' },
+            { dir: 'in', text: 'Can you fit ceramic coating in this week?', at: '9:15 AM' }
+          ],
+          activity: [{ type: 'created', label: 'Lead created from Google', at: todayOffset(0) + ' 09:12' }, { type: 'message', label: 'Inbound SMS', at: todayOffset(0) + ' 09:15' }]
+        },
+        {
+          id: 'lead_ig', name: 'Taylor Kim', phone: '(619) 555-0166', email: 'taylor.k@email.com',
+          service: 'Interior Detail', vehicle: 'Model 3', source: 'instagram', stage: 'waiting_photos',
+          status: 'waiting', waitingReason: 'photos', createdAt: todayOffset(-1) + 'T14:20:00',
+          lastContacted: todayOffset(0) + 'T07:22:00', notes: 'Instagram DM', aiQualified: true, aiScore: 74,
+          buyingIntent: 'med', unread: 1, assignedTo: 'Maya Chen', tags: ['ig', 'ev'],
+          lastMessage: 'How much for a Model 3 interior detail?', estimatedValue: 220, quoteStatus: 'draft',
+          messages: [{ dir: 'in', text: 'How much for a Model 3 interior detail?', at: '7:22 AM' }],
+          tasks: [{ id: 't_ig1', label: 'Request cabin photos', done: false }],
+          activity: [{ type: 'created', label: 'Lead from Instagram', at: todayOffset(-1) + ' 14:20' }]
+        },
+        {
+          id: 'lead_fb', name: 'Sam Ortiz', phone: '(619) 555-0121', email: 'sam.o@email.com',
+          service: 'Exterior Detail', vehicle: 'Honda', property: 'Office park lot B',
+          source: 'facebook', stage: 'new', status: 'new', createdAt: todayOffset(-2) + 'T11:05:00',
+          lastContacted: todayOffset(-2) + 'T11:05:00', notes: 'Facebook lead form',
+          aiScore: 61, buyingIntent: 'med', unread: 0, assignedTo: 'Luis Ortega', tags: ['meta'],
+          lastMessage: 'Submitted Facebook lead form', estimatedValue: 150, quoteStatus: 'none',
+          messages: [{ dir: 'sys', text: 'Lead form submitted via Facebook', at: '11:05 AM' }],
+          activity: [{ type: 'created', label: 'Facebook Lead Ads form', at: todayOffset(-2) + ' 11:05' }]
+        },
+        {
+          id: 'lead_hubly', name: 'Priya Shah', phone: '(619) 555-0190', email: 'priya.s@email.com',
+          service: 'Paint Correction', vehicle: 'White Tesla', address: 'La Jolla',
+          source: 'hubly', stage: 'quote_viewed', status: 'quoted', createdAt: todayOffset(-3) + 'T16:40:00',
+          lastContacted: todayOffset(-1) + 'T12:00:00', amount: 450, estimatedValue: 450,
+          notes: 'Hubly booking page quote', aiQualified: true, aiScore: 82, buyingIntent: 'high',
+          unread: 0, assignedTo: 'Adrian Lopez', tags: ['hubly', 'paint'], quoteStatus: 'viewed',
+          lastMessage: 'Opened quote link',
+          quote: { id: 'q_priya', amount: 450, status: 'viewed', packageName: 'Paint Correction', sentAt: todayOffset(-3) },
+          estimate: { labor: 280, materials: 120, total: 450, notes: 'Two-stage correction' },
+          messages: [
+            { dir: 'out', text: 'Here is your paint correction quote — $450.', at: '4:42 PM' },
+            { dir: 'sys', text: 'Quote viewed', at: 'Yesterday' }
+          ],
+          activity: [{ type: 'quote', label: 'Quote sent', at: todayOffset(-3) + ' 16:42' }, { type: 'quote', label: 'Quote viewed', at: todayOffset(-1) + ' 12:00' }]
+        },
+        {
+          id: 'lead_web', name: 'Chris Park', phone: '(619) 555-0188', email: 'chris.p@email.com',
+          service: 'Paint Correction', vehicle: 'F-150', source: 'website', stage: 'quote_sent',
+          status: 'quoted', createdAt: todayOffset(-1) + 'T10:00:00', lastContacted: todayOffset(-1) + 'T10:05:00',
+          amount: 450, estimatedValue: 450, notes: 'Website quote request', aiScore: 70, buyingIntent: 'med',
+          unread: 0, assignedTo: 'Maya Chen', tags: ['website'], quoteStatus: 'sent',
+          lastMessage: 'Do you detail trucks at the office park?',
+          quote: { id: 'q_chris', amount: 450, status: 'sent', packageName: 'Paint Correction', sentAt: todayOffset(-1) },
+          messages: [
+            { dir: 'in', text: 'Do you detail trucks at the office park?', at: '11:18 AM' },
+            { dir: 'out', text: 'Yes — mobile service in Mission Valley. Quote attached.', at: '11:20 AM' }
+          ],
+          tasks: [{ id: 't_cp1', label: 'Follow up on quote', done: false }],
+          activity: [{ type: 'created', label: 'Website quote request', at: todayOffset(-1) + ' 10:00' }]
+        },
+        {
+          id: 'lead_incomplete', name: 'Jordan Lee', phone: '(619) 555-0119', email: 'jordan.lee@email.com',
+          service: 'Exterior Detail', vehicle: 'F-150 · White', source: 'booking', stage: 'waiting_customer',
+          status: 'waiting', waitingReason: 'customer', createdAt: todayOffset(-2) + 'T18:22:00',
+          lastContacted: todayOffset(0) + 'T06:50:00', amount: 180, estimatedValue: 180,
+          notes: 'Incomplete quote from booking page', isAbandoned: true, aiScore: 55, buyingIntent: 'low',
+          unread: 1, assignedTo: 'Luis Ortega', tags: ['abandoned'], quoteStatus: 'draft',
+          lastMessage: 'Left at vehicle size step',
+          messages: [
+            { dir: 'in', text: 'Started booking Exterior Detail on website', at: '6:45 AM' },
+            { dir: 'sys', text: 'Left at vehicle size step', at: '6:50 AM' }
+          ],
+          activity: [{ type: 'created', label: 'Abandoned booking', at: todayOffset(-2) + ' 18:22' }]
+        },
+        {
+          id: 'lead_wait_pay', name: 'Morgan Ellis', phone: '(619) 555-0144', email: 'morgan.e@email.com',
+          service: 'Ceramic Coating', vehicle: 'BMW X3', source: 'google', stage: 'waiting_payment',
+          status: 'waiting', waitingReason: 'payment', createdAt: todayOffset(-4) + 'T09:00:00',
+          lastContacted: todayOffset(-1) + 'T15:00:00', amount: 599, estimatedValue: 599,
+          notes: 'Deposit link sent', aiQualified: true, aiScore: 91, buyingIntent: 'high',
+          unread: 0, assignedTo: 'Adrian Lopez', tags: ['deposit'], quoteStatus: 'accepted',
+          lastMessage: 'Ready when the deposit clears',
+          quote: { id: 'q_morgan', amount: 599, status: 'accepted', packageName: 'Ceramic Coating', sentAt: todayOffset(-4) },
+          messages: [{ dir: 'out', text: 'Payment link sent for $150 deposit.', at: '3:00 PM' }],
+          files: [{ name: 'deposit-link.pdf', kind: 'pdf' }],
+          activity: [{ type: 'payment', label: 'Payment link sent', at: todayOffset(-1) + ' 15:00' }]
+        },
+        {
+          id: 'lead_wait_appr', name: 'Riley Chen', phone: '(619) 555-0177', email: 'riley.c@email.com',
+          service: 'Full Detail', vehicle: 'Audi Q5', property: 'Condo garage',
+          source: 'hubly', stage: 'waiting_approval', status: 'waiting', waitingReason: 'approval',
+          createdAt: todayOffset(-5) + 'T11:30:00', lastContacted: todayOffset(-2) + 'T09:00:00',
+          amount: 320, estimatedValue: 320, notes: 'Waiting on spouse approval',
+          aiScore: 68, buyingIntent: 'med', unread: 0, assignedTo: 'Maya Chen', tags: ['approval'],
+          quoteStatus: 'viewed', lastMessage: 'Need to check with my partner',
+          messages: [{ dir: 'in', text: 'Need to check with my partner before booking.', at: '9:00 AM' }],
+          activity: [{ type: 'waiting', label: 'Waiting on approval', at: todayOffset(-2) + ' 09:00' }]
+        },
+        {
+          id: 'lead_expired', name: 'Casey Brooks', phone: '(619) 555-0102', email: 'casey.b@email.com',
+          service: 'Interior Detail', vehicle: 'Rav4', source: 'website', stage: 'quote_expired',
+          status: 'quoted', createdAt: todayOffset(-21) + 'T08:00:00', lastContacted: todayOffset(-20) + 'T10:00:00',
+          amount: 200, estimatedValue: 200, notes: 'Quote expired — no response',
+          aiScore: 40, buyingIntent: 'low', unread: 0, assignedTo: 'Luis Ortega', tags: ['expired'],
+          quoteStatus: 'expired', lastMessage: 'Quote reminder sent',
+          quote: { id: 'q_casey', amount: 200, status: 'expired', packageName: 'Interior Detail', sentAt: todayOffset(-21) },
+          messages: [{ dir: 'out', text: 'Your quote expires tomorrow — reply to renew.', at: '10:00 AM' }],
+          activity: [{ type: 'quote', label: 'Quote expired', at: todayOffset(-14) + ' 08:00' }]
+        },
+        {
+          id: 'lead_lost', name: 'Dana Wu', phone: '(619) 555-0155', email: 'dana.w@email.com',
+          service: 'Interior Detail', vehicle: 'Civic', source: 'google', stage: 'lost', status: 'lost',
+          createdAt: todayOffset(-14) + 'T10:00:00', lastContacted: todayOffset(-10) + 'T12:00:00',
+          notes: 'Went with competitor', aiScore: 22, buyingIntent: 'low', unread: 0,
+          assignedTo: 'Adrian Lopez', tags: ['lost'], lastMessage: 'Went with another shop',
+          quoteStatus: 'none', estimatedValue: 180,
+          messages: [{ dir: 'in', text: 'Thanks but we went with another shop.', at: '12:00 PM' }],
+          activity: [{ type: 'lost', label: 'Marked lost — competitor', at: todayOffset(-10) + ' 12:00' }]
+        },
+        {
+          id: 'lead_spam', name: 'Promo Bot', phone: '(800) 555-0000', email: 'spam@example.com',
+          service: '—', source: 'website', stage: 'spam', status: 'spam',
+          createdAt: todayOffset(-1) + 'T03:00:00', notes: 'Spam detection',
+          aiScore: 5, buyingIntent: 'none', unread: 0, assignedTo: 'Adrian Lopez', tags: ['spam'],
+          lastMessage: 'Buy cheap SEO now!!!', spam: true, quoteStatus: 'none', estimatedValue: 0,
+          messages: [{ dir: 'in', text: 'Buy cheap SEO now!!!', at: '3:00 AM' }],
+          activity: [{ type: 'spam', label: 'Flagged as spam', at: todayOffset(-1) + ' 03:01' }]
+        },
+        {
+          id: 'lead_dup', name: 'Alex R.', phone: '(619) 555-0133', email: 'alex.rivera@email.com',
+          service: 'Ceramic Coating', vehicle: 'Porsche Macan', source: 'manual', stage: 'duplicate',
+          status: 'duplicate', createdAt: todayOffset(0) + 'T09:30:00', notes: 'Likely duplicate of Alex Rivera',
+          aiScore: 88, buyingIntent: 'high', unread: 0, assignedTo: 'Adrian Lopez', tags: ['duplicate'],
+          lastMessage: 'Possible duplicate lead', duplicateOf: 'lead_google', quoteStatus: 'none',
+          estimatedValue: 599,
+          activity: [{ type: 'duplicate', label: 'Duplicate of Alex Rivera', at: todayOffset(0) + ' 09:30' }]
+        }
       ]
     };
 
