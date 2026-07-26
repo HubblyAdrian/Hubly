@@ -309,6 +309,33 @@ try {
       has(px, "jos-mkt-page")
   );
 
+  mark("check reviews");
+  ok(
+    "reviews",
+    has(jjs, "function renderReviews") &&
+      has(jjs, "handleReviewsAct") &&
+      has(jjs, "ensureReviewsOsState") &&
+      has(jjs, "rev-request-open") &&
+      has(jjs, "reviewsOs") &&
+      has(jjs, "jos-rev-page") &&
+      has(hubly, 'id="v-reviews"') &&
+      has(hubly, 'id="jos-reviews-root"') &&
+      has(hubly, "journey-os/hubly-events.js") &&
+      inOrder(hubly, ["journey-os/design-system.js", "journey-os/hubly-events.js", "journey-os/journey.js"]) &&
+      has(px, "jos-rev-page")
+  );
+
+  const hublyEventsJs = read("public/journey-os/hubly-events.js");
+  mark("check hubly-events");
+  ok(
+    "hubly-events",
+    has(hublyEventsJs, "HublyEvents") &&
+      has(hublyEventsJs, "publish") &&
+      has(hublyEventsJs, "on") &&
+      has(hublyEventsJs, "review.requested") &&
+      has(hublyEventsJs, "reputation.changed")
+  );
+
   const ms = Date.now() - started;
   mark("done");
   clearTimeout(timer);

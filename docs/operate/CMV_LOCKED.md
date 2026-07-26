@@ -12,6 +12,7 @@
 | ❤️ Customers still works | ✅ · len=11030 |
 | 🧭 Pipeline still works | ✅ · len=8760 |
 | 🌐 Storefront still works | ✅ · len=3133 |
+| 📣 Marketing still works | ✅ · len=7426 |
 
 **Console warns during CMV:** 0
 

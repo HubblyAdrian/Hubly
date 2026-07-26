@@ -220,6 +220,7 @@ const _warn = console.warn;
 console.warn = (...a) => warns.push(a.map(String).join(" "));
 
 eval(fs.readFileSync(path.join(repoRoot, "public/journey-os/design-system.js"), "utf8"));
+eval(fs.readFileSync(path.join(repoRoot, "public/journey-os/hubly-events.js"), "utf8"));
 eval(fs.readFileSync(path.join(repoRoot, "public/journey-os/journey.js"), "utf8"));
 const H = window.HublyJourneyOS;
 
@@ -282,6 +283,14 @@ try {
   ok("🌐 Storefront still works", /jos-sf|Storefront|Website|Preview/i.test(sfHtml) && sfHtml.length > 200, "len=" + sfHtml.length);
 } catch (e) {
   ok("🌐 Storefront still works", false, String(e.message || e));
+}
+
+try {
+  H.renderMarketing();
+  const mktHtml = document.getElementById("jos-marketing-root").innerHTML;
+  ok("📣 Marketing still works", /jos-mkt|Marketing|Campaign/i.test(mktHtml) && mktHtml.length > 200, "len=" + mktHtml.length);
+} catch (e) {
+  ok("📣 Marketing still works", false, String(e.message || e));
 }
 
 console.warn = _warn;

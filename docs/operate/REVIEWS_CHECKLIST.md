@@ -23,34 +23,34 @@ Reviews owns reputation. Complements Marketing (demand + trust).
 ## Stage 1 — Operating System
 
 ### Core
-- [ ] `ownPixelView('v-reviews', 'jos-reviews-root')` ⏳  
-- [ ] HublyDS chrome ⏳  
-- [ ] Tabs ⏳  
-- [ ] Responsive ⏳  
+- [x] `ownPixelView('v-reviews', 'jos-reviews-root')` ✅  
+- [x] HublyDS chrome ✅  
+- [x] Tabs ✅  
+- [x] Responsive ✅  
 
 ### Tabs
-- [ ] Overview / Reputation ⏳  
-- [ ] All Reviews (Google / Facebook / Website) ⏳  
-- [ ] Requests ⏳  
-- [ ] AI Replies ⏳  
-- [ ] Analytics ⏳  
-- [ ] Event log (recent HublyEvents) ⏳  
+- [x] Overview / Reputation ✅  
+- [x] All Reviews (Google / Facebook / Website) ✅  
+- [x] Requests ✅  
+- [x] AI Replies ✅  
+- [x] Analytics ✅  
+- [x] Event log (recent HublyEvents) ✅  
 
 ### Ownership & Events
-- [ ] `S.reviewsOs` owns reviews/requests/replies ⏳  
-- [ ] Publishes HublyEvents on request/receive/respond/reputation ⏳  
-- [ ] Reads Customers + completed Jobs for request targets ⏳  
+- [x] `S.reviewsOs` owns reviews/requests/replies ✅  
+- [x] Publishes HublyEvents on request/receive/respond/reputation ✅  
+- [x] Reads Customers + completed Jobs for request targets ✅  
 
 ### Actions (`rev-*`)
-- [ ] Request review (customer/job picker) ⏳  
-- [ ] Record / ingest review (OS) ⏳  
-- [ ] AI reply draft + save response ⏳  
-- [ ] Stage 2: Google / Facebook sync toasts ⏳  
+- [x] Request review (customer/job picker) ✅  
+- [x] Record / ingest review (OS) ✅  
+- [x] AI reply draft + save response ✅  
+- [x] Stage 2: Google / Facebook sync toasts ✅  
 
 ### QA / MAT / CMV
-- [ ] Validator reviews + hubly-events gates ⏳  
+- [x] Validator reviews + hubly-events gates ✅  
 - [ ] MAT ⏳  
-- [ ] CMV incl. Marketing ⏳  
+- [x] CMV incl. Marketing ✅  
 
 ### Definition of Done
 - [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳  
