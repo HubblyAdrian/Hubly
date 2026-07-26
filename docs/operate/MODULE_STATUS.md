@@ -11,7 +11,7 @@ Once a module is **Locked**, do not change it unless:
 | # | Module | Status | PR | Notes |
 |---|--------|--------|----|-------|
 | 1 | 🏠 Home | **Locked** | [#242](https://github.com/HubblyAdrian/Hubly/pull/242) | Merged `a7d0aff` · checklist 100% |
-| 2 | 📥 Inbox | Planning | — | Branch `cursor/operate-inbox-2662` · see `docs/operate/INBOX_PLAN.md` |
+| 2 | 📥 Inbox | In Progress | — | Branch `cursor/operate-inbox-2662` · `INBOX_CHECKLIST.md` |
 | 3 | 📅 Jobs & Calendar | — | — | Not started |
 | 4 | 🧲 Leads | — | — | Not started |
 | 5 | 👥 Customers | — | — | Not started |
