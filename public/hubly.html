@@ -29,6 +29,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
+<link rel="stylesheet" href="/journey-os/operate-pixel.css">
 <style>
 :root{
   --brand:#D9632D;--brand-dark:#B84E1F;--brand-light:#FDF0E8;
@@ -9620,7 +9621,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <!-- APP -->
-<div id="p-app" class="page">
+<div id="p-app" class="page jos-pixel">
   <div class="app-shell">
     <button type="button" class="app-nav-backdrop" id="app-nav-backdrop" aria-label="Close menu" onclick="closeMobileNav()"></button>
     <nav class="app-nav" id="app-nav" aria-label="Main">
@@ -9628,73 +9629,77 @@ document.addEventListener('DOMContentLoaded', function() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
       <div class="nav-top">
-        <div class="nav-badge" id="nav-badge" title="Click to change your logo" onclick="sidebarLogoClick()">BR</div>
+        <div class="nav-badge" id="nav-badge" title="Click to change your logo" onclick="sidebarLogoClick()">AD</div>
         <input class="file-input-native" type="file" id="sidebar-logo-file" accept="image/*" onchange="handleSidebarLogo(this)">
-        <div><div class="nav-biz" id="nav-biz">Your Business</div><div class="nav-plan">Free plan</div></div>
+        <div class="nav-top-meta">
+          <img class="hubly-mark hubly-mark-sm nav-hubly-mark" src="assets/hubly-wordmark.png" alt="hubly" width="72" height="18">
+          <div class="nav-biz" id="nav-biz">Adrian's Detailing</div>
+          <div class="nav-plan">Free plan</div>
+        </div>
       </div>
-      <div class="nav-sec">Business</div>
+      <div class="nav-sec" data-nav-sec="Operations">Operations</div>
       <div class="ni active" data-v="dashboard" onclick="switchV(this)">
-        <span class="ni-emoji" aria-hidden="true">🏠</span><span class="ni-lbl ni-lbl-full">Business</span><span class="ni-lbl ni-lbl-short">Home</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span class="ni-lbl ni-lbl-full">Business</span><span class="ni-lbl ni-lbl-short">Home</span>
       </div>
       <div class="ni" data-v="leads" onclick="switchV(this)">
-        <span class="ni-emoji" aria-hidden="true">👋</span><span class="ni-lbl ni-lbl-full">Leads</span><span class="ni-lbl ni-lbl-short">Leads</span><span class="nav-count-badge hidden" id="nav-leads-badge">0</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="ni-lbl ni-lbl-full">Leads</span><span class="ni-lbl ni-lbl-short">Leads</span><span class="nav-count-badge hidden" id="nav-leads-badge">0</span>
       </div>
       <div class="ni" data-v="customers" onclick="switchV(this)">
-        <span class="ni-emoji" aria-hidden="true">❤️</span><span class="ni-lbl">Customers</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="ni-lbl">Customers</span>
       </div>
       <div class="ni" data-v="pipeline" onclick="switchV(this)">
-        <span class="ni-emoji" aria-hidden="true">🔄</span><span class="ni-lbl">Pipeline</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h14"/><circle cx="18" cy="12" r="2"/><circle cx="20" cy="18" r="2"/></svg><span class="ni-lbl">Pipeline</span>
       </div>
-      <div class="ni" data-v="opportunities" onclick="switchV(this)">
-        <span class="ni-emoji" aria-hidden="true">✨</span><span class="ni-lbl ni-lbl-full">Opportunities</span><span class="ni-lbl ni-lbl-short">Opps</span><span class="nav-count-badge hidden" id="nav-opps-badge">0</span>
-      </div>
-      <div class="ni" data-v="activity" onclick="switchV(this)">
-        <span class="ni-emoji" aria-hidden="true">📝</span><span class="ni-lbl">Activity</span>
-      </div>
-      <div class="ni" data-v="ask" onclick="switchV(this)">
-        <span class="ni-emoji" aria-hidden="true">🤖</span><span class="ni-lbl">Ask Hubly</span>
-      </div>
-      <div class="nav-sec">Operate</div>
       <div class="ni" data-v="jobs" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl ni-lbl-full">Jobs &amp; Calendar</span><span class="ni-lbl ni-lbl-short">Jobs</span><span class="nav-count-badge hidden" id="nav-jobs-badge">0</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl ni-lbl-full">Jobs &amp; Calendar</span><span class="ni-lbl ni-lbl-short">Jobs</span><span class="nav-count-badge hidden" id="nav-jobs-badge">0</span>
       </div>
       <div class="ni" data-v="quotes" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>Quick Quote
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg><span class="ni-lbl">Quick Quote</span>
       </div>
-      <div class="ni" data-v="reviews" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.9 6.3L22 9.3l-5 4.8 1.2 7L12 17.8 5.8 21l1.2-7-5-4.8 7.1-1L12 2z"/></svg>Reviews
+      <div class="nav-sec" data-nav-sec="Growth">Growth</div>
+      <div class="ni" data-v="opportunities" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.5H20l-4.5 3.3L17.2 18 12 14.7 6.8 18l1.7-6.2L4 8.5h6.2L12 3z"/></svg><span class="ni-lbl ni-lbl-full">Opportunities</span><span class="ni-lbl ni-lbl-short">Opps</span><span class="nav-count-badge hidden" id="nav-opps-badge">0</span>
+      </div>
+      <div class="ni" data-v="ask" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/></svg><span class="ni-lbl">Ask Hubly</span>
       </div>
       <div class="ni" data-v="marketing" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11v2a2 2 0 0 0 2 2h1l6 4V5L6 9H5a2 2 0 0 0-2 2z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 7a7 7 0 0 1 0 10"/></svg>Marketing
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a2 2 0 0 0 2 2h1l6 4V5L6 9H5a2 2 0 0 0-2 2z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 7a7 7 0 0 1 0 10"/></svg><span class="ni-lbl">Marketing</span>
       </div>
       <div class="ni" data-v="memberships" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>Memberships
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg><span class="ni-lbl">Memberships</span>
+      </div>
+      <div class="ni" data-v="reviews" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3L22 9.3l-5 4.8 1.2 7L12 17.8 5.8 21l1.2-7-5-4.8 7.1-1L12 2z"/></svg><span class="ni-lbl">Reviews</span>
       </div>
       <div class="ni" data-v="reports" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-3"/></svg>Reports
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-3"/></svg><span class="ni-lbl">Reports</span>
       </div>
       <div class="ni" data-v="growth" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h6v6"/></svg>Growth
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h6v6"/></svg><span class="ni-lbl">Growth</span>
       </div>
-      <div class="nav-sec">Website</div>
+      <div class="ni jos-nav-hidden" data-v="activity" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span class="ni-lbl">Activity</span>
+      </div>
+      <div class="nav-sec" data-nav-sec="Setup">Setup</div>
       <div class="ni" data-v="editor" onclick="try{S._edHubTab='site'}catch(e){};switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.7 3.6 5.7 3.6 9s-1.2 6.3-3.6 9c-2.4-2.7-3.6-5.7-3.6-9s1.2-6.3 3.6-9z"/></svg><span class="ni-lbl ni-lbl-full">Website</span><span class="ni-lbl ni-lbl-short">Site</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.7 3.6 5.7 3.6 9s-1.2 6.3-3.6 9c-2.4-2.7-3.6-5.7-3.6-9s1.2-6.3 3.6-9z"/></svg><span class="ni-lbl ni-lbl-full">Website</span><span class="ni-lbl ni-lbl-short">Site</span>
       </div>
       <div class="ni" data-v="settings" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span class="ni-lbl">Settings</span>
       </div>
-      <div class="ni" data-v="marketplace" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Marketplace
+      <div class="ni jos-nav-hidden" data-v="marketplace" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="ni-lbl">Marketplace</span>
       </div>
-      <div class="ni" data-v="money" onclick="switchV(this)" hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Revenue
+      <div class="ni jos-nav-hidden" data-v="money" onclick="switchV(this)" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span class="ni-lbl">Revenue</span>
       </div>
-      <div class="ni" data-v="chats" onclick="switchV(this)" hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chats
+      <div class="ni jos-nav-hidden" data-v="chats" onclick="switchV(this)" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span class="ni-lbl">Chats</span>
       </div>
       <div class="nav-bot">
         <div class="ni" onclick="signOut()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="ni-lbl">Sign out</span>
         </div>
       </div>
     </nav>
@@ -9704,18 +9709,31 @@ document.addEventListener('DOMContentLoaded', function() {
           <button type="button" class="nav-menu-btn" id="nav-menu-btn" onclick="toggleMobileNav()" aria-label="Open menu" title="Menu" aria-controls="app-nav" aria-expanded="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
           </button>
-          <div class="bar-title" id="bar-title">Dashboard</div>
+          <div class="bar-title" id="bar-title">Business</div>
+        </div>
+        <div class="app-bar-center jos-bar-search-wrap">
+          <label class="jos-bar-search" for="jos-global-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input id="jos-global-search" type="search" placeholder="Search… ⌘K" autocomplete="off">
+          </label>
         </div>
         <div class="bar-r">
-          <button class="btn btn-brand btn-sm btn-newjob" onclick="openM('m-new-job')">+ New Job</button>
-          <button type="button" class="btn btn-out btn-sm" id="bar-qq-btn" onclick="openSmartQuote()">Quick Quote</button>
-          <button type="button" class="btn btn-out btn-sm" onclick="openBlockTimeModal()">🚫 <span data-i18n="blockTimeBtn">Block time</span></button>
-          <button type="button" class="btn btn-out btn-sm theme-bar-btn" id="theme-btn-app" onclick="toggleHublyTheme()" title="Day / Night mode" aria-label="Toggle day and night mode">
+          <button type="button" class="btn btn-brand btn-sm jos-bar-new" id="jos-bar-new" onclick="openM('m-new-job')">+ New</button>
+          <button class="btn btn-brand btn-sm btn-newjob jos-legacy-bar" onclick="openM('m-new-job')">+ New Job</button>
+          <button type="button" class="btn btn-out btn-sm jos-legacy-bar" id="bar-qq-btn" onclick="openSmartQuote()">Quick Quote</button>
+          <button type="button" class="btn btn-out btn-sm jos-legacy-bar" onclick="openBlockTimeModal()">🚫 <span data-i18n="blockTimeBtn">Block time</span></button>
+          <button type="button" class="btn btn-out btn-sm theme-bar-btn jos-legacy-bar" id="theme-btn-app" onclick="toggleHublyTheme()" title="Day / Night mode" aria-label="Toggle day and night mode">
             <span class="theme-ico" id="theme-ico-app" aria-hidden="true">🌙</span>
             <span class="theme-lbl" id="theme-label-app">Night</span>
           </button>
-          <button type="button" class="btn btn-out btn-sm lang-bar-btn lang-has-tip" id="lang-btn-app" onclick="toggleLang()" title="Language / Idioma" aria-label="Language / Idioma" data-lang-tip="Language / Idioma — tap to switch">🌐 <span id="lang-label-app">ES</span></button>
-          <div class="ava" id="top-ava" title="Your business">HB</div>
+          <button type="button" class="btn btn-out btn-sm lang-bar-btn lang-has-tip jos-legacy-bar" id="lang-btn-app" onclick="toggleLang()" title="Language / Idioma" aria-label="Language / Idioma" data-lang-tip="Language / Idioma — tap to switch">🌐 <span id="lang-label-app">ES</span></button>
+          <button type="button" class="jos-bar-bell" aria-label="Notifications" title="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          </button>
+          <div class="jos-bar-biz" title="Adrian's Detailing">
+            <div class="ava" id="top-ava">AD</div>
+            <span class="jos-bar-biz-name" id="jos-bar-biz-name">Adrian's Detailing</span>
+          </div>
         </div>
       </div>
 
@@ -10167,7 +10185,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- CUSTOMERS -->
       <div id="v-customers" class="body hidden">
-        <div class="cust-page-head">
+        <div id="jos-customers-root"></div>
+        <div class="cust-page-head jos-legacy-cust">
           <div>
             <h1 data-i18n="customers">Customers</h1>
             <p>Your happy customers and their history.</p>
@@ -10177,15 +10196,15 @@ document.addEventListener('DOMContentLoaded', function() {
             <input type="search" id="cust-srch" placeholder="Search customers..." data-i18n-placeholder="searchCustomersPh" oninput="renderCustomersView()" style="min-width:180px;padding:8px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;">
           </div>
         </div>
-        <div class="cust-range-bar" id="cust-range-bar" role="tablist" aria-label="Customer time range">
+        <div class="cust-range-bar jos-legacy-cust" id="cust-range-bar" role="tablist" aria-label="Customer time range">
           <span class="cust-range-lbl">Show</span>
           <button type="button" class="cust-range-btn on" data-range="all" onclick="setCustRange('all')">All time</button>
           <button type="button" class="cust-range-btn" data-range="day" onclick="setCustRange('day')">Today</button>
           <button type="button" class="cust-range-btn" data-range="week" onclick="setCustRange('week')">This week</button>
           <button type="button" class="cust-range-btn" data-range="month" onclick="setCustRange('month')">This month</button>
         </div>
-        <div class="cust-kpis" id="cust-kpis"></div>
-        <div class="cust-layout">
+        <div class="cust-kpis jos-legacy-cust" id="cust-kpis"></div>
+        <div class="cust-layout jos-legacy-cust">
           <aside>
             <div class="cust-side-card">
               <h3>Top customers</h3>
@@ -10217,10 +10236,10 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </div>
         </div>
-        <div class="cust-detail-drawer hidden" id="cust-detail-drawer">
+        <div class="cust-detail-drawer hidden jos-legacy-cust" id="cust-detail-drawer">
           <div class="cust-detail" id="cust-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div data-i18n="selectCustomerLbl">Select a customer</div></div></div>
         </div>
-        <p class="jos-cust-hint">Tip: click a customer for the side view — then open <strong>Full profile</strong> for Overview, Jobs, Bookings, Reviews, Notes, History, Files, and Activity.</p>
+        <p class="jos-cust-hint jos-legacy-cust">Tip: click a customer for the side view — then open <strong>Full profile</strong> for Overview, Jobs, Bookings, Reviews, Notes, History, Files, and Activity.</p>
       </div>
 
       <!-- BOOKING WIZARD retired — Book Now lives in Website editor hub -->
@@ -12184,6 +12203,12 @@ function showP(id,opts){
     try{ensureGoogleFonts();}catch(e){}
   }
   if(id==='p-app'){
+    try{
+      document.body.classList.add('jos-pixel');
+      document.getElementById('p-app')?.classList.add('jos-pixel');
+      const biz=document.getElementById('jos-bar-biz-name');
+      if(biz&&S.biz)biz.textContent=S.biz;
+    }catch(e){}
     try{document.dispatchEvent(new CustomEvent('hubly:owner-chrome'));}catch(e){}
   }
   if(!opts.skipRoute)syncHublyRoute(id,{replace:!!opts.replaceRoute});
@@ -12247,6 +12272,10 @@ async function startCeoDemoMode(){
   S._ceoDemo=true;
   S._accountClaimed=true;
   S._deferredAccount=false;
+  try{
+    document.body.classList.add('jos-pixel');
+    document.getElementById('p-app')?.classList.add('jos-pixel');
+  }catch(e){}
   showCeoDemoChrome();
   // Wait briefly for deferred journey-os scripts.
   for(let i=0;i<40 && typeof HublyCeoDemo==='undefined';i++)await new Promise(r=>setTimeout(r,25));
@@ -12264,10 +12293,15 @@ async function startCeoDemoMode(){
   }catch(e){}
   openOperateHome({replaceRoute:true});
   setTimeout(()=>{
+    try{
+      const biz=document.getElementById('nav-biz');
+      if(biz&&S.biz)biz.textContent=S.biz;
+      const barBiz=document.getElementById('jos-bar-biz-name');
+      if(barBiz&&S.biz)barBiz.textContent=S.biz;
+    }catch(e){}
     try{HublyJourneyOS?.enhanceDashboard?.();}catch(e){}
     try{HublyJourneyOS?.onSwitchView?.('dashboard');}catch(e){}
-    try{renderCustomersView?.();}catch(e){}
-    try{renderLeadsBoard?.({refresh:true});}catch(e){}
+    try{HublyJourneyOS?.renderCustomersPage?.();}catch(e){try{renderCustomersView?.();}catch(e2){}}
     try{HublyJourneyOS?.renderLeadsList?.();}catch(e){}
   },120);
 }
@@ -12277,6 +12311,10 @@ window.startCeoDemoMode=startCeoDemoMode;
 function openOperateHome(opts){
   opts=opts||{};
   try{S._hublyMode='operate';}catch(e){}
+  try{
+    document.body.classList.add('jos-pixel');
+    document.getElementById('p-app')?.classList.add('jos-pixel');
+  }catch(e){}
   S._forceAdvancedStudio=false;
   S._advancedStudio=false;
   clearOnboardOverlays();
@@ -34938,10 +34976,10 @@ function switchV(el){
   setHublyDocTitle(tabLabel);
   // Already on Quick Quote — page has “New Quick Quote”; hide the duplicate app-bar shortcut.
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
-  if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();try{syncDashSiteLink();}catch(e){}try{HublyJourneyOS?.enhanceDashboard?.();}catch(e){}}
+  if(v==='dashboard'){try{HublyJourneyOS?.enhanceDashboard?.();}catch(e){try{renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();syncDashSiteLink();}catch(e2){}}}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel();try{refreshGoogleCalendarStatus();}catch(e){}try{syncGoogleCalendar({quiet:true});}catch(e){}}
-  if(v==='leads'){try{HublyJourneyOS?.renderLeadsList?.();}catch(e){}try{renderLeadsBoard({refresh:true});}catch(e){}}
-  if(v==='customers')renderCustomersView();
+  if(v==='leads'){try{HublyJourneyOS?.renderLeadsList?.();}catch(e){}}
+  if(v==='customers'){try{HublyJourneyOS.renderCustomersPage()}catch(e){renderCustomersView()}}
   if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}
   if(v==='money'){renderReports();renderMoneyView();try{syncMoneyPayPrefs();}catch(e){}try{refreshStripeConnectStatus({quiet:true});}catch(e){}}
   if(v==='chats')renderChatsPanel();
@@ -45750,8 +45788,9 @@ function applyTranslations(){
     const textNode=[...ni.childNodes].reverse().find(n=>n.nodeType===3&&n.textContent.trim());
     if(textNode)textNode.textContent=' '+navMap[v];
   });
-  document.querySelectorAll('.nav-sec').forEach((el,i)=>{
-    el.textContent=i===0?t('navMain'):t('navProfileSec');
+  document.querySelectorAll('.nav-sec').forEach((el)=>{
+    const key=el.getAttribute('data-nav-sec');
+    if(key)el.textContent=key;
   });
   const navPlan=document.querySelector('.nav-plan');
   if(navPlan)navPlan.textContent=S.tier==='pro'?t('proPlan'):t('freePlan');
