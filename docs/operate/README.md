@@ -32,7 +32,7 @@ See [MODULE_STATUS.md](./MODULE_STATUS.md) (OS · Integrations · AI · QA · **
 | Pipeline | [PIPELINE_CHECKLIST.md](./PIPELINE_CHECKLIST.md) · [PIPELINE_MAT.md](./PIPELINE_MAT.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Storefront | [STOREFRONT_CHECKLIST.md](./STOREFRONT_CHECKLIST.md) · [STOREFRONT_MAT.md](./STOREFRONT_MAT.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Marketing | [MARKETING_CHECKLIST.md](./MARKETING_CHECKLIST.md) · [MARKETING_MAT.md](./MARKETING_MAT.md) · [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md) | ✅ | ⏸ | ✅ | 🔒 OS |
-| Reviews | [REVIEWS_CHECKLIST.md](./REVIEWS_CHECKLIST.md) · [REVIEWS_PLAN.md](./REVIEWS_PLAN.md) · [EVENTS.md](./EVENTS.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Reviews | [REVIEWS_CHECKLIST.md](./REVIEWS_CHECKLIST.md) · [REVIEWS_MAT.md](./REVIEWS_MAT.md) · [REVIEWS_PLAN.md](./REVIEWS_PLAN.md) · [EVENTS.md](./EVENTS.md) | ✅ | ⏸ | ✅ | ❌ |
 | Memberships | [MEMBERSHIPS_CHECKLIST.md](./MEMBERSHIPS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Revenue | [REVENUE_CHECKLIST.md](./REVENUE_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Reports | [REPORTS_CHECKLIST.md](./REPORTS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
