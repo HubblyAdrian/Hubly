@@ -225,6 +225,21 @@ try {
       has(px, "jos-cal-month")
   );
 
+  mark("check leads");
+  ok(
+    "leads",
+    has(jjs, "function renderLeads") &&
+      has(jjs, "handleLeadsAct") &&
+      has(jjs, "LEADS_TABS") &&
+      has(jjs, "ensureLeadsOsState") &&
+      has(jjs, "renderLeadWorkspace") &&
+      has(jjs, "AI Qualified") &&
+      has(hubly, 'id="jos-leads-root"') &&
+      has(px, "jos-leads-page") &&
+      has(px, "jos-leads-layout") &&
+      has(px, "jos-leads-drawer")
+  );
+
   const ms = Date.now() - started;
   mark("done");
   clearTimeout(timer);
