@@ -21,7 +21,7 @@ See [MODULE_STATUS.md](./MODULE_STATUS.md).
 |--------|------|----|--------------|--------|
 | Home | [HOME_CHECKLIST.md](./HOME_CHECKLIST.md) | ✅ | ✅ | 🔒 |
 | Inbox | [INBOX_CHECKLIST.md](./INBOX_CHECKLIST.md) | ✅ | ⏸ | 🔓 (OS locked) |
-| Jobs & Calendar | [JOBS_CHECKLIST.md](./JOBS_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
+| Jobs & Calendar | [JOBS_CHECKLIST.md](./JOBS_CHECKLIST.md) | ✅ | ⏸ | ❌ (🔒 OS after merge) |
 | Leads | [LEADS_CHECKLIST.md](./LEADS_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
 | Customers | [CUSTOMERS_CHECKLIST.md](./CUSTOMERS_CHECKLIST.md) | ⏳ | ⏳ | ❌ |
 | Pipeline | [PIPELINE_CHECKLIST.md](./PIPELINE_CHECKLIST.md) | ⏳ | ⏳ | ❌ |

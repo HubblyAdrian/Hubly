@@ -492,3 +492,70 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   .jos-inbox-split{grid-template-columns:1fr}
   .jos-inbox-list{max-height:none}
 }
+
+/* Jobs & Calendar */
+.jos-jobs-page{animation:josHomeIn .3s ease both}
+.jos-jobs-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px;align-items:center}
+.jos-jobs-actions{flex-wrap:wrap}
+.jos-jobs-metrics{margin-top:12px}
+.jos-jobs-bulk{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.jos-jobs-layout{
+  display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.9fr);gap:14px;align-items:start;
+}
+.jos-jobs-main,.jos-jobs-side{min-width:0}
+.jos-jobs-details h3{font-family:'Plus Jakarta Sans','DM Sans',sans-serif;letter-spacing:-.02em}
+.jos-job-card{cursor:pointer;position:relative;transition:border-color .15s ease, transform .15s ease}
+.jos-job-card:hover{border-color:rgba(217,99,45,.45);transform:translateY(-1px)}
+.jos-job-card.on{border-color:var(--jos-brand);box-shadow:0 0 0 2px rgba(217,99,45,.12)}
+.jos-bulk-check{position:absolute;top:10px;right:10px}
+.jos-cal-month{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.jos-cal-day{
+  min-height:88px;border:1px solid var(--jos-border);border-radius:12px;background:#fff;
+  padding:8px;text-align:left;cursor:pointer;font:inherit;color:inherit;
+}
+.jos-cal-day.today{border-color:var(--jos-brand);background:var(--jos-brand-soft)}
+.jos-cal-day .d{font-size:12px;font-weight:800;color:var(--jos-navy);margin-bottom:4px}
+.jos-cal-pill{
+  display:block;width:100%;margin-top:3px;padding:3px 5px;border-radius:6px;font-size:10px;font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:grab;
+}
+.jos-cal-pill.ok,.jos-cal-event.ok{background:rgba(34,160,107,.12);color:#0F6B45}
+.jos-cal-pill.info,.jos-cal-event.info{background:rgba(37,99,235,.12);color:#1D4ED8}
+.jos-cal-pill.hot,.jos-cal-event.hot{background:rgba(220,38,38,.12);color:#B91C1C}
+.jos-cal-pill.warn,.jos-cal-event.warn{background:rgba(217,99,45,.14);color:var(--jos-brand-dark)}
+.jos-cal-dayview{display:grid;gap:8px}
+.jos-cal-slot{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;align-items:stretch}
+.jos-cal-slot .t{font-size:11px;font-weight:700;color:var(--jos-ink-3);padding-top:8px}
+.jos-cal-slot .slot{
+  min-height:56px;border:1px dashed var(--jos-border-2);border-radius:12px;padding:8px;background:var(--jos-surface-2);
+}
+.jos-cal-event{
+  background:#fff;border:1px solid var(--jos-border);border-radius:10px;padding:8px 10px;margin-bottom:6px;
+}
+.jos-cal-week{display:grid;gap:4px}
+.jos-cal-week-head,.jos-cal-week-row{display:grid;grid-template-columns:56px repeat(7,minmax(0,1fr));gap:4px}
+.jos-cal-week-h{
+  border:0;background:var(--jos-surface-3);border-radius:8px;padding:8px 4px;font:inherit;font-size:11px;font-weight:800;cursor:pointer;
+}
+.jos-cal-week-h.today{background:var(--jos-brand-soft);color:var(--jos-brand-dark)}
+.jos-cal-week-row .t{font-size:11px;font-weight:700;color:var(--jos-ink-3);padding-top:8px}
+.jos-cal-week-cell{
+  min-height:54px;border:1px solid var(--jos-border);border-radius:10px;padding:4px;background:#fff;
+}
+.jos-progress{height:8px;border-radius:999px;background:var(--jos-surface-3);overflow:hidden;margin-top:8px}
+.jos-progress i{display:block;height:100%;background:linear-gradient(90deg,var(--jos-brand),#F0A070);border-radius:999px}
+.jos-check-row{display:flex;gap:8px;align-items:center;font-size:13px;padding:6px 0;border-bottom:1px solid var(--jos-border)}
+.jos-photo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+.jos-photo{
+  background:var(--jos-surface-2);border:1px solid var(--jos-border);border-radius:10px;padding:12px;font-size:12px;font-weight:700;
+  display:flex;flex-direction:column;gap:8px;min-height:72px;
+}
+.jos-textarea{
+  width:100%;min-height:72px;border:1px solid var(--jos-border);border-radius:12px;padding:10px 12px;
+  font:inherit;font-size:13px;resize:vertical;background:#fff;color:var(--jos-navy);
+}
+@media(max-width:1100px){
+  .jos-jobs-layout{grid-template-columns:1fr}
+  .jos-cal-month{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .jos-cal-week-head,.jos-cal-week-row{grid-template-columns:40px repeat(7,minmax(44px,1fr));overflow:auto}
+}

@@ -210,6 +210,21 @@ try {
       has(px, "jos-inbox-split")
   );
 
+  mark("check jobs");
+  ok(
+    "jobs",
+    has(jjs, "function renderJobs") &&
+      has(jjs, "handleJobsAct") &&
+      has(jjs, "JOBS_TABS") &&
+      has(jjs, "JOBS_CAL_VIEWS") &&
+      has(jjs, "renderJobsCalendar") &&
+      has(jjs, "renderJobWorkspace") &&
+      has(hubly, 'id="jos-jobs-root"') &&
+      has(px, "jos-jobs-page") &&
+      has(px, "jos-jobs-layout") &&
+      has(px, "jos-cal-month")
+  );
+
   const ms = Date.now() - started;
   mark("done");
   clearTimeout(timer);

@@ -1,41 +1,33 @@
-# Module 3 — 📅 Jobs & Calendar · Planning
+# Module 3 — 📅 Jobs & Calendar · Stage 1 OS
 
 **Branch:** `cursor/operate-jobs-calendar-2662`  
 **Stage in scope:** Stage 1 — Operating System only  
-**Locked modules (do not modify):** 🏠 Home · 📥 Inbox OS
+**Locked modules (do not modify):** 🏠 Home · 📥 Inbox OS  
+**Checklist:** `docs/operate/JOBS_CHECKLIST.md` (Stage 1 complete · Stage 2 deferred)
 
 ---
 
-## Blocker before Development
+## Implementation
 
-`docs/operate/JOBS_CHECKLIST.md` Stage 1 items are not filled yet.
+1. `renderJobs` / `handleJobsAct` in Journey OS — calendar, jobs list, route, availability, team, workspace.
+2. `#v-jobs` / `#jos-jobs-root` + `switchV('jobs')` — Home/Inbox untouched.
+3. Hubly-data calendar (day/week/month/agenda), drag reschedule, resize duration, status colors.
+4. Job workspace: overview, checklist, photos, notes, products, invoice, timeline + job actions.
+5. Search, filters, bulk actions, metrics, AI prompts, notifications, loading/empty/error, responsive CSS.
+6. Validator Jobs gate + self QA smoke.
 
-**Please paste the official Jobs & Calendar Stage 1 (Operating System) checklist** into that file (or into chat once — it will be written to the repo).
-
-Stage 2 (Google Calendar, live maps, Twilio reminders, etc.) stays deferred until after Stage 1 merge.
-
----
-
-## Proposed plan (after checklist arrives)
-
-1. Implement `renderJobs` in Journey OS for Jobs & Calendar **OS only**.
-2. Wire `#v-jobs` / `#jos-jobs-root` + `switchV('jobs')` without touching Home/Inbox.
-3. In-app calendar, job list, route preview, availability, team views as specified.
-4. Self QA every button/tab/modal/route; console clean; validator Inbox/Home unchanged except Jobs gate.
-5. One PR → wait for approval → merge → lock Jobs Stage 1 OS.
-
-## Expected files (pending checklist)
+## Files
 
 | File | Change |
 |------|--------|
-| `docs/operate/JOBS_CHECKLIST.md` | Official Stage 1 items |
-| `public/journey-os/journey.js` | `renderJobs` only |
-| `public/journey-os/operate-pixel.css` | Jobs styles only |
-| `public/hubly.html` | Jobs mount / switchV only |
-| `public/journey-os/ceo-demo.js` | Jobs seed if needed |
+| `docs/operate/JOBS_CHECKLIST.md` | Stage 1 ✅ · Stage 2 ⏸ |
+| `public/journey-os/journey.js` | `renderJobs` + `handleJobsAct` |
+| `public/journey-os/operate-pixel.css` | Jobs styles |
+| `public/hubly.html` | Jobs mount / switchV |
+| `public/journey-os/ceo-demo.js` | Jobs/team seed |
 | `scripts/check-customer-journey-os.mjs` | Jobs gate |
-| `docs/operate/MODULE_STATUS.md` | Maturity updates |
+| `docs/operate/MODULE_STATUS.md` | Maturity board |
 
 ## Next step
 
-Provide the **Jobs & Calendar Stage 1 checklist** → status moves to In Progress.
+PR → approval → merge → lock Jobs as **🔒 OS** (Stage 2 integrations remain deferred).

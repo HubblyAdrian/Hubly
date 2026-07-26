@@ -115,18 +115,26 @@
       }
     ];
 
+    S.team = [
+      { id: 'tech_adrian', name: 'Adrian Lopez', role: 'Owner' },
+      { id: 'tech_maya', name: 'Maya Chen', role: 'Technician' },
+      { id: 'tech_luis', name: 'Luis Ortega', role: 'Technician' }
+    ];
+
     S.jobs = [
-      { id: 'job_t1', customer: 'Sarah Johnson', phone: '(619) 555-0198', service: 'Interior Detail', amount: 260, date: todayOffset(0), time: '9:00 AM', status: 'scheduled', vehicle: 'Tesla Model Y · Pearl White', fromBooking: true },
-      { id: 'job_t2', customer: 'Mike Brown', phone: '(619) 555-0142', service: 'Exterior Detail', amount: 180, date: todayOffset(0), time: '11:30 AM', status: 'scheduled', vehicle: 'BMW X5 · Black', fromBooking: true },
-      { id: 'job_t3', customer: 'Chris Park', phone: '(619) 555-0188', service: 'Paint Correction', amount: 450, date: todayOffset(0), time: '2:00 PM', status: 'scheduled', vehicle: 'F-150 · Blue', fromBooking: false },
-      { id: 'job_t4', customer: 'Emily Smith', phone: '(619) 555-0177', service: 'Full Detail', amount: 320, date: todayOffset(0), time: '4:30 PM', status: 'scheduled', vehicle: 'Audi Q5', fromBooking: true },
-      { id: 'job_pending', customer: 'Jordan Lee', phone: '(619) 555-0119', service: 'Exterior Detail', amount: 180, date: todayOffset(1), time: '10:00 AM', status: 'pending', vehicle: 'F-150 · White', fromBooking: true },
-      { id: 'job_sj1', customer: 'Sarah Johnson', service: 'Exterior Detail + Ceramic Coating', amount: 720, date: todayOffset(-36), time: '9:00 AM', status: 'completed', vehicle: 'Tesla Model Y · Pearl White', fromBooking: true },
-      { id: 'job_sj2', customer: 'Sarah Johnson', service: 'Interior Detail', amount: 220, date: todayOffset(-72), time: '9:00 AM', status: 'completed', vehicle: 'Tesla Model Y · Pearl White', fromBooking: true },
-      { id: 'job_sj3', customer: 'Sarah Johnson', service: 'Ceramic Coating', amount: 599, date: '2024-05-04', time: '9:00 AM', status: 'completed', vehicle: 'Tesla Model Y · Pearl White', fromBooking: true },
-      { id: 'job_sj4', customer: 'Sarah Johnson', service: 'Interior Detail', amount: 220, date: todayOffset(30), time: '9:00 AM', status: 'scheduled', vehicle: 'Tesla Model Y · Pearl White', fromBooking: true },
-      { id: 'job_mb1', customer: 'Mike Brown', service: 'Interior Detail', amount: 220, date: todayOffset(-20), time: '11:00 AM', status: 'completed', vehicle: 'BMW X5 · Black', fromBooking: true },
-      { id: 'job_es1', customer: 'Emily Smith', service: 'Full Detail', amount: 320, date: todayOffset(-10), time: '2:00 PM', status: 'completed', vehicle: 'Audi Q5', fromBooking: false, reviewRequested: true }
+      { id: 'job_t1', customer: 'Sarah Johnson', phone: '(619) 555-0198', service: 'Interior Detail', amount: 260, date: todayOffset(0), time: '9:00 AM', status: 'in_progress', address: '4821 Mission Blvd, San Diego, CA', assignedTo: 'Maya Chen', depositStatus: 'paid', deposit: 65, vehicle: 'Tesla Model Y · Pearl White', fromBooking: true, routeOrder: 1 },
+      { id: 'job_t2', customer: 'Mike Brown', phone: '(619) 555-0142', service: 'Exterior Detail', amount: 180, date: todayOffset(0), time: '11:30 AM', status: 'scheduled', address: '901 Harbor Island Dr, San Diego, CA', assignedTo: 'Luis Ortega', depositStatus: 'due', deposit: 45, vehicle: 'BMW X5 · Black', fromBooking: true, routeOrder: 2 },
+      { id: 'job_t3', customer: 'Chris Park', phone: '(619) 555-0188', service: 'Paint Correction', amount: 450, date: todayOffset(0), time: '2:00 PM', status: 'scheduled', address: '2200 Pacific Hwy, San Diego, CA', assignedTo: 'Adrian Lopez', depositStatus: 'due', deposit: 112, vehicle: 'F-150 · Blue', fromBooking: false, routeOrder: 3 },
+      { id: 'job_t4', customer: 'Emily Smith', phone: '(619) 555-0177', service: 'Full Detail', amount: 320, date: todayOffset(0), time: '4:30 PM', status: 'scheduled', address: '1150 W Washington St, San Diego, CA', assignedTo: 'Maya Chen', depositStatus: 'none', deposit: 0, vehicle: 'Audi Q5', fromBooking: true, routeOrder: 4 },
+      { id: 'job_pending', customer: 'Jordan Lee', phone: '(619) 555-0119', service: 'Exterior Detail', amount: 180, date: todayOffset(1), time: '10:00 AM', status: 'pending', address: '5500 Grossmont Center Dr, La Mesa, CA', assignedTo: 'Luis Ortega', depositStatus: 'due', deposit: 45, vehicle: 'F-150 · White', fromBooking: true, routeOrder: 5 },
+      { id: 'job_cancel', customer: 'Alex Rivera', phone: '(619) 555-0133', service: 'Ceramic Coating', amount: 599, date: todayOffset(-2), time: '1:00 PM', status: 'cancelled', address: '3750 Road Runner Row, San Diego, CA', assignedTo: 'Adrian Lopez', depositStatus: 'none', deposit: 0, vehicle: 'Porsche Macan', fromBooking: true },
+      { id: 'job_recur', customer: 'Sarah Johnson', phone: '(619) 555-0198', service: 'Membership Interior Detail', amount: 180, date: todayOffset(7), time: '9:00 AM', status: 'scheduled', address: '4821 Mission Blvd, San Diego, CA', assignedTo: 'Maya Chen', depositStatus: 'paid', deposit: 0, recurring: true, vehicle: 'Tesla Model Y · Pearl White', fromBooking: true },
+      { id: 'job_sj1', customer: 'Sarah Johnson', service: 'Exterior Detail + Ceramic Coating', amount: 720, date: todayOffset(-36), time: '9:00 AM', status: 'completed', address: '4821 Mission Blvd, San Diego, CA', assignedTo: 'Adrian Lopez', depositStatus: 'paid', deposit: 180, vehicle: 'Tesla Model Y · Pearl White', fromBooking: true },
+      { id: 'job_sj2', customer: 'Sarah Johnson', service: 'Interior Detail', amount: 220, date: todayOffset(-72), time: '9:00 AM', status: 'completed', address: '4821 Mission Blvd, San Diego, CA', assignedTo: 'Maya Chen', depositStatus: 'paid', deposit: 55, vehicle: 'Tesla Model Y · Pearl White', fromBooking: true },
+      { id: 'job_sj3', customer: 'Sarah Johnson', service: 'Ceramic Coating', amount: 599, date: '2024-05-04', time: '9:00 AM', status: 'completed', address: '4821 Mission Blvd, San Diego, CA', assignedTo: 'Adrian Lopez', depositStatus: 'paid', deposit: 150, vehicle: 'Tesla Model Y · Pearl White', fromBooking: true },
+      { id: 'job_sj4', customer: 'Sarah Johnson', service: 'Interior Detail', amount: 220, date: todayOffset(30), time: '9:00 AM', status: 'scheduled', address: '4821 Mission Blvd, San Diego, CA', assignedTo: 'Maya Chen', depositStatus: 'none', deposit: 0, vehicle: 'Tesla Model Y · Pearl White', fromBooking: true },
+      { id: 'job_mb1', customer: 'Mike Brown', service: 'Interior Detail', amount: 220, date: todayOffset(-20), time: '11:00 AM', status: 'completed', address: '901 Harbor Island Dr, San Diego, CA', assignedTo: 'Luis Ortega', depositStatus: 'paid', deposit: 55, vehicle: 'BMW X5 · Black', fromBooking: true },
+      { id: 'job_es1', customer: 'Emily Smith', service: 'Full Detail', amount: 320, date: todayOffset(-10), time: '2:00 PM', status: 'completed', address: '1150 W Washington St, San Diego, CA', assignedTo: 'Maya Chen', depositStatus: 'paid', deposit: 80, vehicle: 'Audi Q5', fromBooking: false, reviewRequested: true }
     ];
 
     S.quotes = [
@@ -274,7 +282,7 @@
           { dir: 'out', text: 'Done — updated to 11:30 AM.', at: '4:12 PM' }
         ]
       }
-    ];    ];
+    ];
 
     try {
       var navBiz = document.getElementById('nav-biz');
