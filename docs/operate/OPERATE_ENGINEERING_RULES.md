@@ -62,9 +62,32 @@ Modules publish and subscribe to business events. They do not call each other’
 
 See [EVENTS.md](./EVENTS.md). Runtime: `window.HublyEvents` (`public/journey-os/hubly-events.js`).
 
-Core events include: `lead.created`, `lead.qualified`, `quote.sent`, `quote.accepted`, `job.booked`, `job.started`, `job.completed`, `payment.received`, `membership.started`, `membership.renewed`, `review.requested`, `review.received`, `review.responded`, `reputation.changed`, `campaign.sent`, `customer.created`.
+Core events include: `lead.created`, `lead.qualified`, `quote.sent`, `quote.accepted`, `job.booked`, `job.started`, `job.completed`, `payment.received`, `invoice.sent`, `membership.started`, `membership.renewed`, `membership.cancelled`, `membership.paused`, `membership.visit_used`, `review.requested`, `review.received`, `review.responded`, `reputation.changed`, `campaign.sent`, `customer.created`.
 
 New modules must publish events when mutating owned data. Locked modules are not mass-refactored unless reopened.
+
+## Rule #18 — Business Events Are Immutable
+
+Once a business event occurs, it is recorded as history and never rewritten.
+
+- Append to HublyEvents history and module activity logs.  
+- Correct mistakes with a **new** compensating event (e.g. cancel after start) — do not edit the original.  
+- Visits, renewals, payments, and invoices are append-only ledgers.  
+- See [EVENTS.md](./EVENTS.md) (Immutability section).
+
+## Rule #19 — Modules Cannot Bypass Their Owners
+
+If a module needs information, it must request it from the owning module or shared services — it must **not** store its own copy.
+
+Examples:
+
+- Marketing must not keep its own customer records.  
+- Reports must not store payment totals.  
+- Jobs must not redefine services (Storefront owns the catalog).  
+- Ask Hubly must not maintain a separate customer database.  
+- Memberships store `customerId` / `planId` / service refs only — never cloned Customers or Revenue rows.
+
+Reinforces Rule #15. See [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md).
 
 ## Cross-Module Verification (CMV)
 

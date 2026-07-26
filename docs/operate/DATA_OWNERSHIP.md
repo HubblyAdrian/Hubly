@@ -14,18 +14,22 @@ Other modules **read** that data — they do not own or duplicate it.
 | Reviews | ⭐ Reviews |
 | Campaigns | 📣 Marketing |
 | Templates / Automations / Coupons | 📣 Marketing |
-| Membership Plans | 🔁 Memberships |
-| Payments | 💰 Revenue |
+| Membership Plans / Subscribers / Visits | 🔁 Memberships |
+| Payments / Invoices / Deposits / Taxes / Stripe / Payouts | 💰 Revenue |
+| Dashboards / Analytics / Forecasts | 📊 Reports (aggregates only) |
+| AI conversations / memory / actions / context | ✨ Ask Hubly |
+| Business config / Integrations / Permissions / Branding / AI prefs | ⚙️ Settings |
 
 ## Enforcement (aggressive)
 
 1. Before adding state, name the owner module in the PR / checklist.  
-2. **Forbidden:** `S.marketingCustomers`, parallel `S.services` owned by Jobs/Marketing, copied review tables in Marketing.  
+2. **Forbidden:** `S.marketingCustomers`, parallel `S.services` owned by Jobs/Marketing, copied review tables in Marketing, `membershipCustomers`, Reports payment ledgers, Ask Hubly customer DBs.  
 3. Cross-module UI may **filter/reference** by id or segment key only.  
 4. Reports **aggregate** — they do not store copies.  
 5. Pipeline **orchestrates** stages — it does not own Lead/Job/Customer entities.  
 6. Storefront **owns** the Service Catalog (`S.editorSvcs` + mirror `S.services` for booking consumers).  
-7. Marketing **owns** campaigns/templates/automations/coupons; audiences resolve from Customers/Leads at use time.
+7. Marketing **owns** campaigns/templates/automations/coupons; audiences resolve from Customers/Leads at use time.  
+8. **Rule #19:** Modules cannot bypass their owners — no silent second copies.
 
 ## Module implications
 
@@ -37,7 +41,10 @@ Other modules **read** that data — they do not own or duplicate it.
 | Jobs | Jobs / calendar blocks | Services (catalog), Customers |
 | Leads | Lead records | — |
 | Customers | Customer profiles | — |
-| Revenue | Payments / invoices OS | Customers, Jobs |
-| Memberships | Plans | Customers, Services |
+| Memberships | Plans, subscribers, billing rules, visit/renewal ledgers (`S.membershipsOs`) | Customers, Jobs, Revenue, Services (catalog refs) |
+| Revenue | Payments / invoices / deposits / taxes / Stripe / payouts | Customers, Jobs, Memberships |
+| Reports | Dashboard layouts / saved views | Everything (aggregate only — no business entities) |
+| Ask Hubly | Conversations, memory, actions, context | Everything (never source of truth for entities) |
+| Settings | Business config, integrations, permissions, branding, AI prefs | — |
 
-See also [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md), [EVENTS.md](./EVENTS.md) (Rule #17), and [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md).
+See also [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md), [EVENTS.md](./EVENTS.md) (Rules #17–18), [MEMBERSHIPS_PLAN.md](./MEMBERSHIPS_PLAN.md), and [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md).

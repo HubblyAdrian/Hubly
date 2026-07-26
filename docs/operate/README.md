@@ -12,7 +12,7 @@
 After Stage 1 merges → **lock the OS**. Stage 2 is additive and tracked separately.
 
 **Design System:** [DESIGN_SYSTEM_V1.md](./DESIGN_SYSTEM_V1.md) · `public/journey-os/design-system.js` → `window.HublyDS`  
-**Engineering rules:** [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) (Rules #14–17 · [EVENTS.md](./EVENTS.md))
+**Engineering rules:** [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) (Rules #14–19 · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md))
 
 **Acceptance gate:** [Module Acceptance Test (MAT)](./MAT.md) — not informal smoke language.
 
@@ -32,8 +32,8 @@ See [MODULE_STATUS.md](./MODULE_STATUS.md) (OS · Integrations · AI · QA · **
 | Pipeline | [PIPELINE_CHECKLIST.md](./PIPELINE_CHECKLIST.md) · [PIPELINE_MAT.md](./PIPELINE_MAT.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Storefront | [STOREFRONT_CHECKLIST.md](./STOREFRONT_CHECKLIST.md) · [STOREFRONT_MAT.md](./STOREFRONT_MAT.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Marketing | [MARKETING_CHECKLIST.md](./MARKETING_CHECKLIST.md) · [MARKETING_MAT.md](./MARKETING_MAT.md) · [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md) | ✅ | ⏸ | ✅ | 🔒 OS |
-| Reviews | [REVIEWS_CHECKLIST.md](./REVIEWS_CHECKLIST.md) · [REVIEWS_MAT.md](./REVIEWS_MAT.md) · [REVIEWS_PLAN.md](./REVIEWS_PLAN.md) · [EVENTS.md](./EVENTS.md) | ✅ | ⏸ | ✅ | ❌ |
-| Memberships | [MEMBERSHIPS_CHECKLIST.md](./MEMBERSHIPS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Reviews | [REVIEWS_CHECKLIST.md](./REVIEWS_CHECKLIST.md) · [REVIEWS_MAT.md](./REVIEWS_MAT.md) · [REVIEWS_PLAN.md](./REVIEWS_PLAN.md) · [EVENTS.md](./EVENTS.md) | ✅ | ⏸ | ✅ | 🔒 OS |
+| Memberships | [MEMBERSHIPS_CHECKLIST.md](./MEMBERSHIPS_CHECKLIST.md) · [MEMBERSHIPS_MAT.md](./MEMBERSHIPS_MAT.md) · [MEMBERSHIPS_PLAN.md](./MEMBERSHIPS_PLAN.md) · [EVENTS.md](./EVENTS.md) | ✅ | ⏸ | ✅ | ❌ |
 | Revenue | [REVENUE_CHECKLIST.md](./REVENUE_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Reports | [REPORTS_CHECKLIST.md](./REPORTS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Ask Hubly | [ASK_HUBLY_CHECKLIST.md](./ASK_HUBLY_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |

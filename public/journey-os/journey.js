@@ -1892,33 +1892,549 @@
     if (recurring.length) return [{ name: 'Recurring plan', price: recurring[0].recurringAmount || 99, cadence: '/mo', includes: ['Priority scheduling', 'Member pricing'] }];
     return [{ name: 'Essentials', price: 79, cadence: '/mo', includes: ['1 visit / month', 'Member-only slots'] }, { name: 'Shine Club', price: 129, cadence: '/mo', includes: ['2 visits / month', 'Interior refresh', 'Priority booking'] }];
   }
-  function renderMemberships() {
-    var root = el('jos-memberships-root'); if (!root) return;
-    var plans = membershipPlans();
-    var members = customers().filter(function (c) { return c.customerType === 'recurring'; });
-    var active = members.length;
-    var cancelled = Math.max(0, Math.round(active * 0.08));
-    var mrr = members.reduce(function (s, c) { return s + (parseFloat(c.recurringAmount) || 0); }, 0);
-    if (!mrr && plans[0]) mrr = (parseFloat(plans[0].price || plans[0].amount) || 99) * Math.max(active, 1);
-    var candidates = customers().filter(function (c) { return c.customerType !== 'recurring'; }).map(function (c) {
-      var done = jobs().filter(function (j) { return j.customer === c.name && j.status === 'completed'; }).length;
-      return { c: c, done: done, match: Math.min(98, 55 + done * 12) };
+  var MEM_TABS = [
+    ['overview', 'Overview'],
+    ['plans', 'Plans'],
+    ['subscribers', 'Subscribers'],
+    ['visits', 'Visits'],
+    ['billing', 'Billing'],
+    ['activity', 'Activity']
+  ];
+  function memId(prefix) { return (prefix || 'mem') + '_' + Math.random().toString(36).slice(2, 9); }
+  function memSlug(v) { return String(v || 'membership').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'membership'; }
+  function publishMembershipEvent(type, payload) {
+    var ev = hublyEvents();
+    if (ev && typeof ev.publish === 'function') ev.publish(type, payload);
+  }
+  function memPushActivity(type, label, payload) {
+    var m = ensureMembershipsOsState();
+    var entry = { id: memId('mem_act'), type: type, label: label, at: new Date().toISOString(), payload: payload ? Object.assign({}, payload) : {} };
+    try { Object.freeze(entry.payload); Object.freeze(entry); } catch (_) {}
+    m.activity.push(entry); // Rule #18 — append-only; never rewrite prior activity
+  }
+  function membershipSeedPlans() {
+    var st = S(), w = st.website || {}, out = [], seen = {};
+    function add(p) {
+      if (!p || typeof p !== 'object') return;
+      var name = p.name || p.title || p.label || p.planName;
+      if (!name) return;
+      var key = memSlug(name);
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push(p);
+    }
+    (membershipPlans() || []).forEach(add);
+    [w.offers, w.offerings, w.membershipOffers, w.plans].forEach(function (arr) {
+      if (!Array.isArray(arr)) return;
+      arr.forEach(function (offer) {
+        var blob = [offer.type, offer.kind, offer.category, offer.name, offer.title].join(' ').toLowerCase();
+        if (/member|recurring|subscription|plan/.test(blob)) add(offer);
+      });
+    });
+    return out;
+  }
+  function memCatalogServices() {
+    try { return storefrontCatalog().filter(function (s) { return s.status !== 'archived'; }); }
+    catch (e) { return []; }
+  }
+  function memFindCatalogService(v, catalog) {
+    var raw = String(v || '').trim().toLowerCase();
+    if (!raw) return null;
+    return (catalog || memCatalogServices()).find(function (s) {
+      return String(s.id).toLowerCase() === raw || String(s.name || '').toLowerCase() === raw;
+    }) || null;
+  }
+  function memServiceRefs(raw, catalog) {
+    catalog = catalog || memCatalogServices();
+    var list = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+    var refs = [];
+    list.forEach(function (item) {
+      var svc = null, name = '', serviceId = '';
+      if (item && typeof item === 'object') {
+        serviceId = item.serviceId || item.catalogId || item.id || '';
+        name = item.serviceName || item.name || item.label || '';
+        svc = memFindCatalogService(serviceId || name, catalog);
+      } else {
+        name = String(item || '');
+        svc = memFindCatalogService(name, catalog);
+      }
+      if (!svc && !serviceId && !name) return;
+      var ref = {
+        id: 'mem_inc_' + memSlug((svc && svc.id) || serviceId || name),
+        serviceId: (svc && svc.id) || serviceId || null,
+        serviceName: (svc && svc.name) || name || 'Catalog service'
+      };
+      if (!refs.some(function (r) { return String(r.serviceId || r.serviceName) === String(ref.serviceId || ref.serviceName); })) refs.push(ref);
+    });
+    return refs;
+  }
+  function memPlanBenefits(p, catalog) {
+    var raw = [];
+    ['includes', 'perks', 'benefits'].forEach(function (k) {
+      var v = p && p[k];
+      if (Array.isArray(v)) raw = raw.concat(v);
+      else if (v) raw.push(v);
+    });
+    return raw.map(function (x) { return typeof x === 'object' ? (x.name || x.label || '') : String(x || ''); })
+      .filter(function (x) { return x && !memFindCatalogService(x, catalog); });
+  }
+  function memVisitAllowance(p) {
+    var direct = Number(p.visitAllowance != null ? p.visitAllowance : (p.includedVisits != null ? p.includedVisits : (p.visitsPerPeriod != null ? p.visitsPerPeriod : p.visits)));
+    if (Number.isFinite(direct) && direct > 0) return Math.round(direct);
+    var txt = [].concat(p.includes || [], p.perks || [], p.benefits || []).join(' ');
+    var m = txt.match(/(\d+)\s*(visit|booking|service)/i);
+    return m ? Math.max(1, Number(m[1]) || 1) : 1;
+  }
+  function normalizeMembershipPlan(p, idx) {
+    p = p || {};
+    var catalog = memCatalogServices();
+    var id = p.id || p.planId || ('mem_plan_seed_' + idx + '_' + memSlug(p.name || p.title || 'plan'));
+    var rawRefs = [].concat(p.includedServices || [], p.services || [], p.serviceRefs || [], p.serviceIds || []);
+    var fromBenefits = [].concat(p.includes || [], p.perks || [], p.benefits || []).filter(function (x) { return memFindCatalogService(typeof x === 'object' ? (x.name || x.id) : x, catalog); });
+    var refs = memServiceRefs(rawRefs.concat(fromBenefits), catalog);
+    return {
+      id: id,
+      name: p.name || p.title || p.label || 'Membership',
+      price: Number(p.price != null ? p.price : (p.amount != null ? p.amount : 0)) || 0,
+      cadence: p.cadence || p.interval || p.period || '/mo',
+      visitAllowance: memVisitAllowance(p),
+      status: p.status || 'active',
+      includedServices: refs,
+      benefits: memPlanBenefits(p, catalog),
+      source: p.source || (String(id).indexOf('seed') >= 0 ? 'seed' : 'owned')
+    };
+  }
+  function memAddMonths(ds, months) {
+    var d = ds ? new Date(String(ds).slice(0, 10) + 'T00:00:00') : new Date();
+    if (isNaN(d.getTime())) d = new Date();
+    d.setMonth(d.getMonth() + (months == null ? 1 : months));
+    return d.toISOString().slice(0, 10);
+  }
+  function ensureMembershipsOsState() {
+    var st = S();
+    if (!st.membershipsOs || typeof st.membershipsOs !== 'object') st.membershipsOs = {};
+    var m = st.membershipsOs;
+    if (!Array.isArray(m.plans)) m.plans = [];
+    if (!Array.isArray(m.subscribers)) m.subscribers = [];
+    if (!Array.isArray(m.billingRules)) m.billingRules = [];
+    if (!Array.isArray(m.includedServices)) m.includedServices = [];
+    if (!Array.isArray(m.visits)) m.visits = [];
+    if (!Array.isArray(m.renewals)) m.renewals = [];
+    if (!Array.isArray(m.activity)) m.activity = [];
+    membershipSeedPlans().forEach(function (plan, idx) {
+      var np = normalizeMembershipPlan(plan, idx);
+      var dup = m.plans.find(function (p) { return String(p.id) === String(np.id) || memSlug(p.name) === memSlug(np.name); });
+      if (!dup) m.plans.push(np);
+    });
+    m.plans = m.plans.map(function (p, idx) { return normalizeMembershipPlan(p, idx); });
+    customers().filter(function (c) { return c.customerType === 'recurring'; }).forEach(function (c, idx) {
+      if (!c.id) return;
+      var namedPlan = c.membership && m.plans.find(function (p) { return memSlug(p.name) === memSlug(c.membership); });
+      var plan = namedPlan || m.plans[0] || normalizeMembershipPlan({ name: 'Recurring plan', price: c.recurringAmount || 99, cadence: '/mo' }, 0);
+      if (!m.plans.length) m.plans.push(plan);
+      if (!m.subscribers.some(function (s) { return String(s.customerId) === String(c.id) && s.status !== 'cancelled'; })) {
+        m.subscribers.push({
+          id: 'mem_sub_seed_' + idx + '_' + memSlug(c.id),
+          customerId: c.id,
+          planId: plan.id,
+          status: 'active',
+          startedAt: c.createdAt || c.customerSince || todayStr(),
+          nextRenewalAt: memAddMonths(todayStr(), 1),
+          visitsUsed: 0,
+          visitResetAt: todayStr()
+        });
+      }
+    });
+    if (!m._seeded) {
+      m._seeded = true;
+      var seedAct = { id: memId('mem_act'), type: 'system', label: 'Memberships OS initialized from plans and recurring customers', at: new Date().toISOString(), payload: {} };
+      try { Object.freeze(seedAct.payload); Object.freeze(seedAct); } catch (_) {}
+      m.activity.push(seedAct);
+    }
+    // Normalize in place (Rule #18) — do not replace subscriber object identity
+    m.subscribers = m.subscribers.filter(function (s) { return s && s.customerId; }).map(function (s, idx) {
+      s.id = s.id || ('mem_sub_' + idx);
+      s.planId = s.planId || (m.plans[0] && m.plans[0].id) || '';
+      s.status = s.status || 'active';
+      s.startedAt = s.startedAt || todayStr();
+      s.nextRenewalAt = s.nextRenewalAt || memAddMonths(s.startedAt, 1);
+      if (s.pausedAt == null) s.pausedAt = null;
+      if (s.cancelledAt == null) s.cancelledAt = null;
+      s.visitsUsed = Number(s.visitsUsed) || 0;
+      s.visitResetAt = s.visitResetAt || s.startedAt || todayStr();
+      return s;
+    });
+    m.plans.forEach(function (p) {
+      if (!m.billingRules.some(function (r) { return String(r.planId) === String(p.id); })) {
+        m.billingRules.push({ id: memId('mem_rule'), planId: p.id, cadence: p.cadence || '/mo', chargeTiming: 'advance', renewalAnchor: 'signup_day', graceDays: 3, processor: 'stripe_stage2' });
+      }
+    });
+    var refs = [];
+    m.plans.forEach(function (p) {
+      (p.includedServices || []).forEach(function (r) {
+        refs.push({ id: r.id || memId('mem_inc'), planId: p.id, serviceId: r.serviceId || null, serviceName: r.serviceName || r.name || '' });
+      });
+    });
+    m.includedServices = refs;
+    return m;
+  }
+  function memPlanById(id) {
+    var m = ensureMembershipsOsState();
+    return m.plans.find(function (p) { return String(p.id) === String(id); }) || m.plans[0] || null;
+  }
+  function memCustomerById(id) {
+    return customers().find(function (c) { return String(c.id) === String(id); }) || null;
+  }
+  function memCustomerName(id) {
+    var c = memCustomerById(id);
+    return c ? c.name : 'Customer';
+  }
+  function memJobsForCustomer(customerId) {
+    var c = memCustomerById(customerId);
+    return jobs().filter(function (j) {
+      return j && !j.isBlock && ((j.customerId && String(j.customerId) === String(customerId)) || (c && j.customer === c.name) || (c && c.phone && j.phone === c.phone));
+    });
+  }
+  function memStatusBadge(status) {
+    var d = DS(), s = String(status || 'active');
+    var lbl = s.charAt(0).toUpperCase() + s.slice(1);
+    var tone = s === 'active' ? 'ok' : (s === 'paused' ? 'warn' : 'hot');
+    return d ? d.statusBadge(lbl, tone) : '<span class="jos-pill ' + tone + '">' + esc(lbl) + '</span>';
+  }
+  function memPlanOptions(selectedId) {
+    var m = ensureMembershipsOsState();
+    return m.plans.filter(function (p) { return p.status !== 'archived'; }).map(function (p) {
+      return '<option value="' + esc(p.id) + '"' + (String(selectedId) === String(p.id) ? ' selected' : '') + '>' + esc(p.name) + ' · ' + esc(money(p.price) || '$0') + esc(p.cadence || '/mo') + '</option>';
+    }).join('');
+  }
+  function memCustomerOptions(selectedId) {
+    var active = ensureMembershipsOsState().subscribers.filter(function (s) { return s.status !== 'cancelled'; }).map(function (s) { return String(s.customerId); });
+    return customers().map(function (c) {
+      var busy = active.indexOf(String(c.id)) >= 0 && String(selectedId) !== String(c.id);
+      return '<option value="' + esc(c.id || '') + '"' + (String(selectedId) === String(c.id) ? ' selected' : '') + (busy ? ' disabled' : '') + '>' + esc(c.name || 'Customer') + (busy ? ' (member)' : '') + '</option>';
+    }).join('');
+  }
+  function renderMemPlanModal(root) {
+    if (!root._josMemPlanModal) return '';
+    var m = ensureMembershipsOsState();
+    var edit = m.plans.find(function (p) { return String(p.id) === String(root._josMemPlanEditId); }) || {};
+    var services = memCatalogServices();
+    var selected = (edit.includedServices || []).map(function (r) { return String(r.serviceId || r.serviceName); });
+    var svcOpts = services.map(function (s) {
+      var on = selected.indexOf(String(s.id)) >= 0 || selected.indexOf(String(s.name)) >= 0;
+      return '<option value="' + esc(s.id) + '"' + (on ? ' selected' : '') + '>' + esc(s.name) + '</option>';
+    }).join('');
+    return '<div class="jos-mem-modal"><div class="jos-mem-modal-panel">' +
+      '<h3>' + esc(edit.id ? 'Edit membership plan' : 'Create membership plan') + '</h3>' +
+      '<div class="jos-mem-form">' +
+        '<label>Name<input id="jos-mem-plan-name" type="text" value="' + esc(edit.name || '') + '" placeholder="Shine Club"></label>' +
+        '<label>Price<input id="jos-mem-plan-price" type="number" min="0" step="1" value="' + esc(edit.price || '') + '"></label>' +
+        '<label>Cadence<select id="jos-mem-plan-cadence"><option value="/mo"' + ((edit.cadence || '/mo') === '/mo' ? ' selected' : '') + '>/mo</option><option value="/wk"' + (edit.cadence === '/wk' ? ' selected' : '') + '>/wk</option><option value="/yr"' + (edit.cadence === '/yr' ? ' selected' : '') + '>/yr</option></select></label>' +
+        '<label>Visits per period<input id="jos-mem-plan-visits" type="number" min="1" step="1" value="' + esc(edit.visitAllowance || 1) + '"></label>' +
+        '<label class="jos-mem-span2">Included catalog services<select id="jos-mem-plan-services" multiple>' + svcOpts + '</select><span class="jos-muted">References Storefront services by id/name.</span></label>' +
+        '<label class="jos-mem-span2">Perks<textarea id="jos-mem-plan-benefits" class="jos-textarea" placeholder="Priority scheduling&#10;Member pricing">' + esc((edit.benefits || []).join('\n')) + '</textarea></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('mem-plan-save', 'Save plan', 'jos-btn-brand jos-btn-sm') + dsBtn('mem-plan-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
+  }
+  function renderMemSubscriberModal(root) {
+    if (!root._josMemSubModal) return '';
+    return '<div class="jos-mem-modal"><div class="jos-mem-modal-panel">' +
+      '<h3>Start membership</h3><p class="jos-muted">Creates a subscriber record with customerId + planId only.</p>' +
+      '<div class="jos-mem-form">' +
+        '<label>Customer<select id="jos-mem-sub-customer">' + memCustomerOptions('') + '</select></label>' +
+        '<label>Plan<select id="jos-mem-sub-plan">' + memPlanOptions('') + '</select></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('mem-sub-save', 'Start subscription', 'jos-btn-brand jos-btn-sm') + dsBtn('mem-sub-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
+  }
+  function memKpis() {
+    var m = ensureMembershipsOsState(), d = DS();
+    var active = m.subscribers.filter(function (s) { return s.status === 'active'; });
+    var paused = m.subscribers.filter(function (s) { return s.status === 'paused'; }).length;
+    var mrr = active.reduce(function (sum, s) { var p = memPlanById(s.planId); return sum + (p ? Number(p.price) || 0 : 0); }, 0);
+    var monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+    var visits = m.visits.filter(function (v) { return String(v.usedAt || '').slice(0, 10) >= monthStart; }).length;
+    var due = active.filter(function (s) { return String(s.nextRenewalAt || '') <= memAddMonths(todayStr(), 0); }).length;
+    if (d) {
+      return '<div class="jos-mem-kpis">' +
+        d.metricCard('Projected MRR', money(mrr) || '$0', 'Plans x active subscribers') +
+        d.metricCard('Active members', String(active.length), paused + ' paused') +
+        d.metricCard('Visits used', String(visits), 'Tracked by Memberships OS') +
+        d.metricCard('Renewals due', String(due), 'Next billing cycle') +
+        '</div>';
+    }
+    return '<div class="jos-kpi-row"><div class="jos-kpi"><div class="jos-kpi-lbl">Projected MRR</div><div class="jos-kpi-v brand">' + esc(money(mrr) || '$0') + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Active members</div><div class="jos-kpi-v">' + active.length + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Visits used</div><div class="jos-kpi-v">' + visits + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Renewals due</div><div class="jos-kpi-v">' + due + '</div></div></div>';
+  }
+  function renderMemOverviewTab(root) {
+    var m = ensureMembershipsOsState(), d = DS();
+    var activeIds = m.subscribers.filter(function (s) { return s.status !== 'cancelled'; }).map(function (s) { return String(s.customerId); });
+    var candidates = customers().filter(function (c) { return activeIds.indexOf(String(c.id)) < 0; }).map(function (c) {
+      var done = memJobsForCustomer(c.id).filter(function (j) { return j.status === 'completed'; }).length;
+      return { c: c, done: done, match: Math.min(98, 52 + done * 12 + (c.favorite ? 8 : 0)) };
     }).filter(function (x) { return x.done >= 1; }).sort(function (a, b) { return b.done - a.done || b.match - a.match; }).slice(0, 5);
-    var perks = [['Priority booking', 92], ['Member pricing', 88], ['Interior refresh', 74], ['Free add-on', 61]];
-    var retain = [72, 78, 81, 84, 86, 88];
-    var mrrTrend = [0.6, 0.7, 0.75, 0.82, 0.9, 1].map(function (x) { return Math.round(mrr * x) || (40 + Math.round(x * 60)); });
-    root.innerHTML = page('Operate · Memberships', 'Memberships Overview', active + ' active · MRR ' + esc(money(mrr) || '$0'), btn('ask-mem', 'Improve plans', 'jos-btn-brand jos-btn-sm'),
-      '<div class="jos-kpi-row"><div class="jos-kpi"><div class="jos-kpi-lbl">MRR</div><div class="jos-kpi-v brand">' + esc(money(mrr) || '$0') + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Total Members</div><div class="jos-kpi-v">' + (active + cancelled) + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Active</div><div class="jos-kpi-v">' + active + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Cancelled</div><div class="jos-kpi-v">' + cancelled + '</div></div></div>' +
-      '<div class="jos-mem-layout"><div class="jos-stack"><div class="jos-kicker">Your Membership Programs</div>' + plans.map(function (p) {
-        var inc = (p.includes || p.perks || []).slice(0, 4).map(function (x) { return '<li>✓ ' + esc(x) + '</li>'; }).join('');
-        return '<div class="jos-mem-card"><div class="jos-between"><h3>' + esc(p.name || 'Membership') + '</h3><div class="jos-mem-price">' + esc(money(p.price || p.amount || 0)) + '<small>' + esc(p.cadence || '/mo') + '</small></div></div><ul class="jos-mem-list">' + (inc || '<li class="jos-muted">Customize in Website editor</li>') + '</ul>' + btn('ask-mem', 'Edit with Hubly', 'jos-btn-ink jos-btn-sm') + '</div>';
-      }).join('') + '<div class="jos-card"><div class="jos-kicker">Retention (months)</div><div class="jos-bars jos-mt">' + retain.map(function (v, i) { return '<div class="jos-bar"><i style="height:' + v + '%"></i><span>M' + (i + 1) + '</span></div>'; }).join('') + '</div></div><div class="jos-card"><div class="jos-kicker">MRR trend</div><div class="jos-bars jos-bars-line jos-mt">' + mrrTrend.map(function (v) { var max = Math.max.apply(null, mrrTrend); return '<div class="jos-bar"><i style="height:' + Math.max(10, Math.round((v / max) * 100)) + '%"></i></div>'; }).join('') + '</div></div></div>' +
-      '<div class="jos-stack"><div class="jos-card"><div class="jos-kicker">AI Suggestions</div><p class="jos-mt" style="font-size:13px"><strong>' + candidates.length + '</strong> customers qualify for a plan.</p><div class="jos-stack jos-mt">' + (candidates.length ? candidates.map(function (x) {
-        return '<div class="jos-between jos-sug"><div><strong>' + esc(x.c.name) + '</strong><div class="jos-muted">' + x.done + ' completed jobs</div></div><span class="jos-pill won">' + x.match + '% match</span></div>';
-      }).join('') : '<div class="jos-muted">Add more completed jobs to surface matches.</div>') + '</div></div><div class="jos-card"><div class="jos-kicker">Top Perks</div><div class="jos-stack jos-mt">' + perks.map(function (p) {
-        return '<div class="jos-perk"><div class="jos-between"><span>' + esc(p[0]) + '</span><strong>' + p[1] + '%</strong></div><div class="jos-conf-bar"><i style="width:' + p[1] + '%"></i></div></div>';
-      }).join('') + '</div></div></div></div>');
+    var planRows = m.plans.slice(0, 3).map(function (p) {
+      return '<div class="jos-mem-act"><div><strong>' + esc(p.name) + '</strong><div class="jos-muted">' + esc(money(p.price) || '$0') + esc(p.cadence || '/mo') + ' · ' + esc(String(p.visitAllowance || 1)) + ' visit allowance</div></div>' + memStatusBadge(p.status) + '</div>';
+    }).join('');
+    var candRows = candidates.length ? candidates.map(function (x) {
+      return '<div class="jos-mem-act"><div><strong>' + esc(x.c.name) + '</strong><div class="jos-muted">' + x.done + ' completed jobs · reads Customers/Jobs</div></div><span class="jos-pill booked">' + x.match + '% fit</span></div>';
+    }).join('') : (d ? d.emptyState('No candidates yet', 'Complete jobs to surface membership-ready customers.') : '<div class="jos-empty">No candidates yet.</div>');
+    var ai = d ? d.aiInsightCard({ kicker: 'AI · Memberships', body: 'Stage 1 OS is ready: plans, subscribers, renewals, visits, and append-only activity are owned here. Customers, jobs, storefront services, and payments stay with their modules.', actionsHtml: dsBtn('mem-sub-open', 'Start membership', 'jos-btn-brand jos-btn-sm') + dsBtn('mem-stripe', 'Stripe Stage 2', 'jos-btn jos-btn-sm') }) : '';
+    return memKpis() + (ai ? '<div class="jos-mt">' + ai + '</div>' : '') +
+      '<div class="jos-mem-2col jos-mt"><div class="jos-card"><div class="jos-kicker">Plans snapshot</div><div class="jos-stack jos-mt">' + (planRows || (d ? d.emptyState('No plans', 'Create a membership plan to get started.') : '')) + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Ready to invite</div><div class="jos-stack jos-mt">' + candRows + '</div></div></div>';
+  }
+  function renderMemPlanCard(p) {
+    var services = (p.includedServices || []).map(function (r) { return '<li>' + esc(r.serviceName || r.name || 'Catalog service') + '</li>'; }).join('');
+    var perks = (p.benefits || []).map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('');
+    return '<div class="jos-mem-card"><div class="jos-mem-card-h"><div><strong>' + esc(p.name) + '</strong><div class="jos-muted">' + esc(money(p.price) || '$0') + esc(p.cadence || '/mo') + ' · ' + esc(String(p.visitAllowance || 1)) + ' visits</div></div>' + memStatusBadge(p.status) + '</div>' +
+      '<div class="jos-mem-plan-lists"><div><div class="jos-kicker">Included services</div><ul>' + (services || '<li class="jos-muted">Reference Storefront services here.</li>') + '</ul></div><div><div class="jos-kicker">Perks</div><ul>' + (perks || '<li class="jos-muted">No perks yet.</li>') + '</ul></div></div>' +
+      '<div class="jos-mem-card-foot"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="mem-plan-edit" data-jos-mem-plan="' + esc(p.id) + '">Edit</button><button type="button" class="jos-btn jos-btn-sm" data-jos-act="mem-stripe">Stripe Stage 2</button></div></div>';
+  }
+  function renderMemPlansTab(root) {
+    var m = ensureMembershipsOsState(), d = DS();
+    var cards = m.plans.length ? m.plans.map(renderMemPlanCard).join('') : (d ? d.emptyState('No plans yet', 'Create your first recurring membership offer.') : '');
+    return (d ? d.sectionHeader('Membership plans', 'Plans owned by Memberships OS. Included services reference Storefront catalog records.', dsBtn('mem-plan-open', '+ Create plan', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-mem-grid jos-mt">' + cards + '</div>' + renderMemPlanModal(root);
+  }
+  function renderMemSubscriberRow(s) {
+    var c = memCustomerById(s.customerId), p = memPlanById(s.planId);
+    var jobsDone = memJobsForCustomer(s.customerId).filter(function (j) { return j.status === 'completed'; }).length;
+    var allowance = p ? p.visitAllowance || 1 : 1;
+    return '<div class="jos-mem-card" data-jos-mem-sub="' + esc(s.id) + '"><div class="jos-mem-card-h"><div><strong>' + esc(c ? c.name : 'Customer') + '</strong><div class="jos-muted">' + esc(p ? p.name : 'Plan') + ' · ' + esc(money(p ? p.price : 0) || '$0') + esc(p ? p.cadence : '/mo') + '</div></div>' + memStatusBadge(s.status) + '</div>' +
+      '<div class="jos-mem-sub-meta"><div><span>Started</span><strong>' + esc(String(s.startedAt || '').slice(0, 10)) + '</strong></div><div><span>Next renewal</span><strong>' + esc(String(s.nextRenewalAt || '').slice(0, 10)) + '</strong></div><div><span>Visits</span><strong>' + esc(String(s.visitsUsed || 0)) + '/' + esc(String(allowance)) + '</strong></div><div><span>Completed jobs</span><strong>' + jobsDone + '</strong></div></div>' +
+      '<div class="jos-mem-card-foot">' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="mem-use-visit" data-jos-mem-sub="' + esc(s.id) + '">Use visit</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="mem-renew" data-jos-mem-sub="' + esc(s.id) + '">Renew</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="mem-pause" data-jos-mem-sub="' + esc(s.id) + '">Pause</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="mem-cancel" data-jos-mem-sub="' + esc(s.id) + '">Cancel</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="mem-open-customer" data-jos-mem-cust="' + esc(s.customerId) + '">Customer</button>' +
+      '</div></div>';
+  }
+  function renderMemSubscribersTab(root) {
+    var m = ensureMembershipsOsState(), d = DS();
+    var rows = m.subscribers.length ? m.subscribers.map(renderMemSubscriberRow).join('') : (d ? d.emptyState('No subscribers yet', 'Start a membership from an existing customer record.') : '');
+    return (d ? d.sectionHeader('Subscribers', 'References Customers by customerId and plans by planId — no customer clones.', dsBtn('mem-sub-open', '+ Start subscription', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-mem-grid jos-mt">' + rows + '</div>' + renderMemSubscriberModal(root);
+  }
+  function renderMemVisitsTab() {
+    var m = ensureMembershipsOsState(), d = DS();
+    var eligible = m.subscribers.filter(function (s) {
+      var p = memPlanById(s.planId);
+      return s.status === 'active' && (Number(s.visitsUsed) || 0) < ((p && p.visitAllowance) || 1);
+    });
+    var quick = eligible.slice(0, 6).map(function (s) {
+      var p = memPlanById(s.planId);
+      return '<div class="jos-mem-act"><div><strong>' + esc(memCustomerName(s.customerId)) + '</strong><div class="jos-muted">' + esc(p ? p.name : 'Plan') + ' · ' + esc(String(s.visitsUsed || 0)) + '/' + esc(String((p && p.visitAllowance) || 1)) + ' used</div></div><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="mem-use-visit" data-jos-mem-sub="' + esc(s.id) + '">Use visit</button></div>';
+    }).join('');
+    var log = m.visits.slice().reverse().map(function (v) {
+      return '<div class="jos-mem-event"><div class="jos-mem-event-type">' + esc(memCustomerName(v.customerId)) + ' · visit used</div><div class="jos-muted">' + esc(String(v.usedAt || '').replace('T', ' ').slice(0, 19)) + ' · ' + esc((memPlanById(v.planId) || {}).name || 'Plan') + '</div></div>';
+    }).join('');
+    return '<div class="jos-mem-2col"><div class="jos-card"><div class="jos-kicker">Eligible today</div><div class="jos-stack jos-mt">' + (quick || (d ? d.emptyState('No eligible visits', 'Renew or start a membership to add visits.') : '')) + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Visit usage log</div><div class="jos-mem-events jos-mt">' + (log || (d ? d.emptyState('No visits used', 'Use a visit to create the first tracking entry.') : '')) + '</div></div></div>';
+  }
+  function renderMemBillingTab() {
+    var m = ensureMembershipsOsState(), d = DS();
+    var actual = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).reduce(function (sum, j) { return sum + (Number(j.amount) || 0); }, 0);
+    var rules = m.billingRules.map(function (r) {
+      var p = memPlanById(r.planId);
+      return '<div class="jos-mem-card"><div class="jos-mem-card-h"><div><strong>' + esc(p ? p.name : 'Plan') + '</strong><div class="jos-muted">' + esc(r.cadence || '/mo') + ' · charge ' + esc(r.chargeTiming || 'advance') + ' · ' + esc(String(r.graceDays || 0)) + ' grace days</div></div><span class="jos-pill info">OS rule</span></div><p class="jos-muted">Stripe billing and card-on-file collection are Stage 2.</p></div>';
+    }).join('');
+    var renewals = m.renewals.slice().reverse().slice(0, 10).map(function (r) {
+      return '<div class="jos-mem-event"><div class="jos-mem-event-type">' + esc(memCustomerName(r.customerId)) + ' renewed</div><div class="jos-muted">' + esc(String(r.renewedAt || '').slice(0, 10)) + ' · next ' + esc(String(r.nextRenewalAt || '').slice(0, 10)) + '</div></div>';
+    }).join('');
+    var kpi = d ? '<div class="jos-mem-kpis">' + d.metricCard('Completed job revenue', money(actual) || '$0', 'Read from Jobs/Revenue owners') + d.metricCard('Renewal records', String(m.renewals.length), 'Owned renewal refs') + '</div>' : '';
+    return kpi + '<div class="jos-mem-2col jos-mt"><div class="jos-card"><div class="jos-kicker">Billing rules</div><div class="jos-mem-grid jos-mt">' + rules + '</div><div class="jos-mt">' + dsBtn('mem-stripe', 'Connect Stripe (Stage 2)', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Renewals</div><div class="jos-mem-events jos-mt">' + (renewals || (d ? d.emptyState('No renewals yet', 'Renew a subscriber to populate this log.') : '')) + '</div></div></div>';
+  }
+  function renderMemActivityTab() {
+    var m = ensureMembershipsOsState(), d = DS();
+    var list = m.activity.slice().reverse().map(function (a) {
+      return '<div class="jos-mem-event"><div class="jos-mem-event-type">' + esc(a.type || 'activity') + '</div><div class="jos-muted">' + esc(String(a.at || '').replace('T', ' ').slice(0, 19)) + '</div><p>' + esc(a.label || '') + '</p></div>';
+    }).join('');
+    var ev = hublyEvents();
+    var events = ev && typeof ev.recent === 'function' ? ev.recent(30).filter(function (row) { return /^membership\./.test(row.type); }) : [];
+    var eventHtml = events.map(function (row) {
+      return '<div class="jos-mem-event"><div class="jos-mem-event-type">' + esc(row.type) + '</div><div class="jos-muted">' + esc(String(row.at || '').replace('T', ' ').slice(0, 19)) + '</div><pre class="jos-mem-event-payload">' + esc(JSON.stringify(row.payload || {}, null, 0)) + '</pre></div>';
+    }).join('');
+    return '<div class="jos-mem-2col"><div class="jos-card"><div class="jos-kicker">Append-only activity</div><div class="jos-mem-events jos-mt">' + (list || (d ? d.emptyState('No activity yet', 'Membership actions append entries here.') : '')) + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Membership events</div><div class="jos-mem-events jos-mt">' + (eventHtml || (d ? d.emptyState('No events yet', 'Start, renew, cancel, pause, or use a visit to publish events.') : '')) + '</div></div></div>';
+  }
+  function renderMemTabBody(root, tab) {
+    if (tab === 'overview') return renderMemOverviewTab(root);
+    if (tab === 'plans') return renderMemPlansTab(root);
+    if (tab === 'subscribers') return renderMemSubscribersTab(root);
+    if (tab === 'visits') return renderMemVisitsTab();
+    if (tab === 'billing') return renderMemBillingTab();
+    if (tab === 'activity') return renderMemActivityTab();
+    return renderMemOverviewTab(root);
+  }
+  function renderMembershipsPageInner(root) {
+    ensureMembershipsOsState();
+    var tab = root._josMemTab || 'overview';
+    var d = DS();
+    var tabsHtml = '<div class="jos-tabs jos-mem-tabs">' + MEM_TABS.map(function (t) {
+      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-mem-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    }).join('') + '</div>';
+    var head = d ? d.pageHeader('Memberships', 'Recurring plans, subscribers, renewals, and visit usage — reads Customers, Jobs, Revenue, and Storefront.', dsBtn('mem-plan-open', 'Create plan', 'jos-btn jos-btn-sm') + dsBtn('mem-sub-open', 'Start membership', 'jos-btn-brand jos-btn-sm') + dsBtn('go-ask', 'Ask Hubly', 'jos-btn jos-btn-sm')) :
+      '<div class="jos-page-head"><div><h1>Memberships</h1><p>Recurring plans and visit tracking.</p></div></div>';
+    root.innerHTML = '<div class="jos-page jos-mem-page">' + head + tabsHtml +
+      '<div class="jos-mem-body">' + renderMemTabBody(root, tab) + '</div></div>';
     bindRoot(root);
+    wireMembershipsRoot(root);
+  }
+  function renderMemberships() {
+    var root = ownPixelView('v-memberships', 'jos-memberships-root');
+    if (!root) return;
+    updateChrome('memberships');
+    root.innerHTML = '<div class="jos-page jos-mem-page"><div class="jos-home-loading">Loading Memberships…</div></div>';
+    try { renderMembershipsPageInner(root); }
+    catch (err) {
+      console.warn('HublyJourneyOS Memberships', err);
+      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Memberships could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderMemberships()">Retry</button></div></div></div>';
+    }
+  }
+  function wireMembershipsRoot(root) {
+    if (root._josMemBound) return;
+    root._josMemBound = true;
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && (root._josMemPlanModal || root._josMemSubModal)) {
+        root._josMemPlanModal = false;
+        root._josMemSubModal = false;
+        root._josMemPlanEditId = null;
+        renderMemberships();
+      }
+    });
+  }
+  function readMemPlanDraft(root) {
+    var svc = el('jos-mem-plan-services');
+    var selected = svc ? Array.prototype.slice.call(svc.selectedOptions || []).map(function (o) { return o.value; }) : [];
+    return {
+      id: root._josMemPlanEditId || memId('mem_plan'),
+      name: (el('jos-mem-plan-name') || {}).value || '',
+      price: Number((el('jos-mem-plan-price') || {}).value) || 0,
+      cadence: (el('jos-mem-plan-cadence') || {}).value || '/mo',
+      visitAllowance: Math.max(1, Number((el('jos-mem-plan-visits') || {}).value) || 1),
+      includedServices: memServiceRefs(selected),
+      benefits: String((el('jos-mem-plan-benefits') || {}).value || '').split(/\n|,/).map(function (x) { return x.trim(); }).filter(Boolean),
+      status: 'active',
+      source: 'owned'
+    };
+  }
+  function handleMembershipsAct(act, t) {
+    var root = el('jos-memberships-root');
+    if (!root) return;
+    var m = ensureMembershipsOsState();
+    var subId = t && (t.getAttribute('data-jos-mem-sub') || (t.closest('[data-jos-mem-sub]') && t.closest('[data-jos-mem-sub]').getAttribute('data-jos-mem-sub')));
+    var planId = t && (t.getAttribute('data-jos-mem-plan') || (t.closest('[data-jos-mem-plan]') && t.closest('[data-jos-mem-plan]').getAttribute('data-jos-mem-plan')));
+    try {
+      if (act === 'mem-plan-open') {
+        root._josMemPlanModal = true;
+        root._josMemPlanEditId = null;
+        root._josMemTab = 'plans';
+        return renderMemberships();
+      }
+      if (act === 'mem-plan-edit' && planId) {
+        root._josMemPlanModal = true;
+        root._josMemPlanEditId = planId;
+        root._josMemTab = 'plans';
+        return renderMemberships();
+      }
+      if (act === 'mem-plan-cancel') {
+        root._josMemPlanModal = false;
+        root._josMemPlanEditId = null;
+        return renderMemberships();
+      }
+      if (act === 'mem-plan-save') {
+        var draft = readMemPlanDraft(root);
+        if (!draft.name.trim()) { toast('Plan name required'); return; }
+        var idx = m.plans.findIndex(function (p) { return String(p.id) === String(draft.id); });
+        if (idx >= 0) m.plans[idx] = normalizeMembershipPlan(draft, idx);
+        else m.plans.push(normalizeMembershipPlan(draft, m.plans.length));
+        if (!m.billingRules.some(function (r) { return String(r.planId) === String(draft.id); })) {
+          m.billingRules.push({ id: memId('mem_rule'), planId: draft.id, cadence: draft.cadence, chargeTiming: 'advance', renewalAnchor: 'signup_day', graceDays: 3, processor: 'stripe_stage2' });
+        }
+        memPushActivity('plan.saved', 'Saved plan ' + draft.name, { planId: draft.id });
+        root._josMemPlanModal = false;
+        root._josMemPlanEditId = null;
+        toast('Membership plan saved');
+        return renderMemberships();
+      }
+      if (act === 'mem-sub-open') {
+        root._josMemSubModal = true;
+        root._josMemTab = 'subscribers';
+        return renderMemberships();
+      }
+      if (act === 'mem-sub-cancel') {
+        root._josMemSubModal = false;
+        return renderMemberships();
+      }
+      if (act === 'mem-sub-save') {
+        var customerId = (el('jos-mem-sub-customer') || {}).value || '';
+        var startPlanId = (el('jos-mem-sub-plan') || {}).value || '';
+        if (!customerId || !startPlanId) { toast('Pick a customer and plan'); return; }
+        var existing = m.subscribers.find(function (s) { return String(s.customerId) === String(customerId) && s.status !== 'cancelled'; });
+        if (existing) { toast('Customer already has an active membership'); return; }
+        var sub = { id: memId('mem_sub'), customerId: customerId, planId: startPlanId, status: 'active', startedAt: todayStr(), nextRenewalAt: memAddMonths(todayStr(), 1), visitsUsed: 0, visitResetAt: todayStr() };
+        m.subscribers.push(sub);
+        memPushActivity('membership.started', 'Started membership for ' + memCustomerName(customerId), { subscriberId: sub.id, customerId: customerId, planId: startPlanId });
+        publishMembershipEvent('membership.started', { subscriberId: sub.id, customerId: customerId, planId: startPlanId });
+        root._josMemSubModal = false;
+        toast('Membership started');
+        return renderMemberships();
+      }
+      var sub = subId && m.subscribers.find(function (s) { return String(s.id) === String(subId); });
+      if ((act === 'mem-renew' || act === 'mem-pause' || act === 'mem-cancel' || act === 'mem-use-visit') && !sub) { toast('Subscriber not found'); return; }
+      if (act === 'mem-renew') {
+        sub.status = 'active';
+        sub.pausedAt = null;
+        sub.visitsUsed = 0;
+        sub.visitResetAt = todayStr();
+        sub.nextRenewalAt = memAddMonths(sub.nextRenewalAt || todayStr(), 1);
+        var renewal = { id: memId('mem_ren'), subscriberId: sub.id, customerId: sub.customerId, planId: sub.planId, renewedAt: todayStr(), nextRenewalAt: sub.nextRenewalAt };
+        m.renewals.push(renewal);
+        memPushActivity('membership.renewed', 'Renewed membership for ' + memCustomerName(sub.customerId), renewal);
+        publishMembershipEvent('membership.renewed', renewal);
+        toast('Membership renewed');
+        return renderMemberships();
+      }
+      if (act === 'mem-pause') {
+        sub.status = 'paused';
+        sub.pausedAt = todayStr();
+        memPushActivity('membership.paused', 'Paused membership for ' + memCustomerName(sub.customerId), { subscriberId: sub.id, customerId: sub.customerId, planId: sub.planId });
+        publishMembershipEvent('membership.paused', { subscriberId: sub.id, customerId: sub.customerId, planId: sub.planId });
+        toast('Membership paused');
+        return renderMemberships();
+      }
+      if (act === 'mem-cancel') {
+        sub.status = 'cancelled';
+        sub.cancelledAt = todayStr();
+        memPushActivity('membership.cancelled', 'Cancelled membership for ' + memCustomerName(sub.customerId), { subscriberId: sub.id, customerId: sub.customerId, planId: sub.planId });
+        publishMembershipEvent('membership.cancelled', { subscriberId: sub.id, customerId: sub.customerId, planId: sub.planId });
+        toast('Membership cancelled');
+        return renderMemberships();
+      }
+      if (act === 'mem-use-visit') {
+        if (sub.status !== 'active') { toast('Membership must be active'); return; }
+        var p = memPlanById(sub.planId);
+        var allowance = (p && p.visitAllowance) || 1;
+        if ((Number(sub.visitsUsed) || 0) >= allowance) { toast('Visit allowance used for this period'); return; }
+        sub.visitsUsed = (Number(sub.visitsUsed) || 0) + 1;
+        var visit = { id: memId('mem_visit'), subscriberId: sub.id, customerId: sub.customerId, planId: sub.planId, usedAt: new Date().toISOString(), serviceId: ((p && p.includedServices && p.includedServices[0]) || {}).serviceId || null };
+        m.visits.push(visit);
+        memPushActivity('membership.visit_used', 'Used visit for ' + memCustomerName(sub.customerId), visit);
+        publishMembershipEvent('membership.visit_used', visit);
+        toast('Visit used');
+        return renderMemberships();
+      }
+      if (act === 'mem-open-customer') {
+        var cid = t && t.getAttribute('data-jos-mem-cust');
+        if (cid) return openCustomerProfile(cid, 'Membership');
+        return toast('No customer linked');
+      }
+      if (act === 'mem-stripe') return toast('Stripe billing is Stage 2 · not connected');
+    } catch (err) {
+      console.warn('HublyJourneyOS mem act', act, err);
+      toast('Failed — try again');
+    }
   }
 
   function renderReportsPage() {
@@ -6727,7 +7243,7 @@
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
       if (t.hasAttribute('data-jos-inbox-tab')) {
         var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
         return;
@@ -6786,6 +7302,10 @@
         var revs = el('jos-reviews-root'); if (revs) { revs._josRevSource = t.getAttribute('data-jos-rev-source'); renderReviews(); }
         return;
       }
+      if (t.hasAttribute('data-jos-mem-tab')) {
+        var memr = el('jos-memberships-root'); if (memr) { memr._josMemTab = t.getAttribute('data-jos-mem-tab'); renderMemberships(); }
+        return;
+      }
       if (t.hasAttribute('data-jos-cust-row')) {
         var crow = el('jos-customers-root');
         if (crow) {
@@ -6826,6 +7346,7 @@
       if (act && String(act).indexOf('sf-') === 0) return handleStorefrontAct(act, t);
       if (act && String(act).indexOf('mkt-') === 0) return handleMarketingAct(act, t);
       if (act && String(act).indexOf('rev-') === 0) return handleReviewsAct(act, t);
+      if (act && String(act).indexOf('mem-') === 0) return handleMembershipsAct(act, t);
       if (act === 'ask-submit' || act === 'ask-brief') {
         switchNav('ask');
         return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
@@ -6880,6 +7401,7 @@
     renderMarketing: renderMarketing,
     handleMarketingAct: handleMarketingAct,
     renderMemberships: renderMemberships,
+    handleMembershipsAct: handleMembershipsAct,
     renderReportsPage: renderReportsPage,
     renderGrowth: renderGrowth,
     renderReviews: renderReviews,
