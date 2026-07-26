@@ -1,6 +1,6 @@
 # Module 5 — ❤️ Customers
 
-**Status:** OS Complete · MAT pending  
+**Status:** OS Complete · MAT ✅ ACCEPTED  
 **Branch:** `cursor/operate-customers-2662`  
 **Stage in scope:** Stage 1 — Operating System  
 **Golden profile:** Reuse `openCustomerProfile` / profile shell everywhere (Leads, Inbox, Jobs, Pipeline, Revenue, Reports, Ask Hubly)
@@ -79,17 +79,17 @@ The Customers module is the permanent record for every client. Stage 1 runs on H
 
 ### QA / MAT / CMV
 - [x] Buttons / navigation functional ✅
-- [ ] Console errors = 0 ⏳
+- [x] Console errors = 0 ✅
 - [x] Validator PASS ✅
-- [ ] MAT formal acceptance ⏳
+- [x] MAT formal acceptance ✅ (`docs/operate/CUSTOMERS_MAT.md`)
 - [x] Cross-Module Verification (Home · Inbox · Jobs · Leads) ✅ (locked modules untouched)
 
 ### Stage 1 Definition of Done
 - [x] Customers OS complete ✅
 - [x] Golden profile reused (not a second profile UI) ✅
-- [ ] MAT ✅ ACCEPTED ⏳
+- [x] MAT ✅ ACCEPTED ✅
 - [x] CMV ✅ PASS ✅ (locked modules)
-- [ ] Ready for merge → lock 🔒 OS ⏳ (awaiting MAT)
+- [x] Ready for merge → lock 🔒 OS after approval ⏳
 
 ---
 
