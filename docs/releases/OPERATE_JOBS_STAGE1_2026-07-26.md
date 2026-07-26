@@ -28,6 +28,11 @@ Jobs & Calendar Stage 1 ships Hubly’s scheduling and job operations OS: calend
 - SMS arrival notifications
 - Customer live tracking
 
+## Module Acceptance Test (MAT)
+
+See [JOBS_MAT.md](../operate/JOBS_MAT.md). Runner: `node scripts/mat-jobs.mjs`.  
+Result: **✅ ACCEPTED** (final QA pass before merge).
+
 ## Lock (after merge)
 
 **Jobs Operating System → 🔒 OS**  

@@ -1925,9 +1925,9 @@
           return { id: 'cl_' + j.id + '_' + i, label: label, done: j.status === 'completed' };
         });
       }
-      if (!Array.isArray(j.photos)) j.photos = { before: [], after: [] };
-      if (!j.photos.before) j.photos.before = [];
-      if (!j.photos.after) j.photos.after = [];
+      if (!j.photos || typeof j.photos !== 'object' || Array.isArray(j.photos)) j.photos = { before: [], after: [] };
+      if (!Array.isArray(j.photos.before)) j.photos.before = [];
+      if (!Array.isArray(j.photos.after)) j.photos.after = [];
       if (!Array.isArray(j.internalNotes)) j.internalNotes = j.notes ? [String(j.notes)] : [];
       if (!Array.isArray(j.customerNotes)) j.customerNotes = [];
       if (!Array.isArray(j.voiceNotes)) j.voiceNotes = [];

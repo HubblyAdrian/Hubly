@@ -1,8 +1,9 @@
 # Module 3 — 📅 Jobs & Calendar
 
-**Status:** QA (Stage 1 OS)  
+**Status:** MAT ACCEPTED (Stage 1 OS) — awaiting merge  
 **Branch:** `cursor/operate-jobs-calendar-2662`  
 **PR:** [#246](https://github.com/HubblyAdrian/Hubly/pull/246)  
+**MAT:** [JOBS_MAT.md](./JOBS_MAT.md) · `node scripts/mat-jobs.mjs`  
 **Stage in scope:** Stage 1 — Operating System
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
