@@ -105,3 +105,21 @@ Reviews **owns:** `S.reviewsOs`.
 
 Memberships **reads:** Customers, Jobs, Revenue (refs only).  
 Memberships **owns:** `S.membershipsOs` (plans, subscribers, billing rules, included-service refs, visits, renewals, activity).
+
+---
+
+## Revenue (Module 11) publishes
+
+| Event | When |
+|-------|------|
+| `invoice.sent` | Invoice Draft → Sent |
+| `deposit.paid` | Deposit recorded |
+| `payment.received` | Payment recorded |
+| `invoice.paid` | Invoice reaches Paid |
+| `refund.issued` | Refund / credit appended |
+| `payout.completed` | Payout marked completed (OS) |
+| `invoice.voided` | Invoice voided (compensating) |
+
+Revenue **reads:** Customers, Jobs, Memberships, Services.  
+Revenue **owns:** `S.revenueOs` (Rule #20 — financial integrity / append-only).  
+See [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md).

@@ -56,12 +56,12 @@ First of the connected business systems: Memberships → Revenue → Reports →
 - [x] Stage 2 Stripe toast ✅  
 
 ### QA / MAT / CMV
-- [ ] Validator memberships + events gates ⏳  
-- [ ] MAT ⏳  
-- [ ] CMV incl. Reviews ✅  
+- [x] Validator memberships + events gates ✅  
+- [x] MAT ✅ ACCEPTED (`scripts/mat-memberships.mjs` · [MEMBERSHIPS_MAT.md](./MEMBERSHIPS_MAT.md))  
+- [x] CMV incl. Reviews ✅  
 
 ### Definition of Done
-- [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳  
+- [x] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ✅ 
 
 ---
 

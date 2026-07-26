@@ -61,7 +61,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 📣 Marketing | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 💰 Revenue | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
+| 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
 | 📊 Reports | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | ✨ Ask Hubly | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | ⚙️ Settings | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |

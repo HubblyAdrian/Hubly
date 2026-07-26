@@ -1,11 +1,12 @@
 # Module 11 — 💰 Revenue
 
-**Status:** Architecture approved · Stage 1 OS implemented · MAT pending
+**Status:** Stage 1 OS · MAT ✅ · CMV PASS · awaiting approval  
 **Branch:** `cursor/operate-revenue-2662`  
 **Architecture (required):** [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md)  
 **Events:** [EVENTS.md](./EVENTS.md) (Rules #17–18 · #20)  
 **Ownership:** [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) (Rules #15 · #19)  
 **Design System:** HublyDS (Rule #14)  
+**MAT:** [REVENUE_MAT.md](./REVENUE_MAT.md) · runner `node scripts/mat-revenue.mjs` 
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
 

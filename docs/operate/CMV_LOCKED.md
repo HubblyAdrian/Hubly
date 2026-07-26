@@ -14,6 +14,7 @@
 | 🌐 Storefront still works | ✅ · len=3133 |
 | 📣 Marketing still works | ✅ · len=7426 |
 | ⭐ Reviews still works | ✅ · len=4361 |
+| 🔁 Memberships still works | ✅ · len=3127 |
 
 **Console warns during CMV:** 0
 

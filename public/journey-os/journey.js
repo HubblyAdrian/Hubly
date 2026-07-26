@@ -2666,11 +2666,27 @@
     r.stripe.status = r.stripe.status === 'live' ? 'placeholder' : (r.stripe.status || 'not_connected');
     if (r.stripe.lastSyncAt == null) r.stripe.lastSyncAt = null;
     if (r.stripe.accountLabel == null) r.stripe.accountLabel = null;
-    r.invoices = r.invoices.map(normalizeRevenueInvoice);
-    r.payments = r.payments.map(function (p) { return normalizeRevenueLedgerRow(p, 'rve_pay'); }).filter(function (p) { return p.invoiceId && p.amount; });
-    r.deposits = r.deposits.map(function (p) { return normalizeRevenueLedgerRow(p, 'rve_dep'); }).filter(function (p) { return p.invoiceId && p.amount; });
-    r.refunds = r.refunds.map(function (p) { return normalizeRevenueLedgerRow(p, 'rve_ref'); }).filter(function (p) { return p.invoiceId && p.amount; });
-    r.payouts = r.payouts.map(normalizeRevenuePayout).filter(function (p) { return p.amount; });
+    // Normalize in place (Rule #20) — preserve object identity for ledger rows
+    function applyInv(inv, idx) {
+      var n = normalizeRevenueInvoice(inv, idx);
+      Object.keys(n).forEach(function (k) { inv[k] = n[k]; });
+      return inv;
+    }
+    function applyLedger(row, prefix) {
+      var n = normalizeRevenueLedgerRow(row, prefix);
+      Object.keys(n).forEach(function (k) { row[k] = n[k]; });
+      return row;
+    }
+    function applyPayout(row) {
+      var n = normalizeRevenuePayout(row);
+      Object.keys(n).forEach(function (k) { row[k] = n[k]; });
+      return row;
+    }
+    r.invoices.forEach(applyInv);
+    r.payments = r.payments.map(function (p) { return applyLedger(p, 'rve_pay'); }).filter(function (p) { return p.invoiceId && p.amount; });
+    r.deposits = r.deposits.map(function (p) { return applyLedger(p, 'rve_dep'); }).filter(function (p) { return p.invoiceId && p.amount; });
+    r.refunds = r.refunds.map(function (p) { return applyLedger(p, 'rve_ref'); }).filter(function (p) { return p.invoiceId && p.amount; });
+    r.payouts = r.payouts.map(applyPayout).filter(function (p) { return p.amount; });
     jobs().forEach(function (j, idx) {
       var seed = rveSeedInvoiceFromJob(j, idx);
       if (!seed) return;
@@ -2691,7 +2707,7 @@
         r.payments.push(seed.payment);
       }
     });
-    r.invoices = r.invoices.map(normalizeRevenueInvoice);
+    r.invoices.forEach(applyInv);
     r.taxes = rveRecalcTaxes(r);
     if (!r._seeded) {
       r._seeded = true;

@@ -339,6 +339,21 @@ try {
       has(px, "jos-mem-page")
   );
 
+  mark("check revenue");
+  ok(
+    "revenue",
+    has(jjs, "function renderRevenue") &&
+      has(jjs, "handleRevenueAct") &&
+      has(jjs, "ensureRevenueOsState") &&
+      has(jjs, "rve-inv-send") &&
+      has(jjs, "revenueOs") &&
+      has(jjs, "jos-rve-page") &&
+      has(hubly, 'id="v-money"') &&
+      has(hubly, 'id="jos-revenue-root"') &&
+      has(px, "jos-rve-page") &&
+      fs.existsSync(path.join(root, "docs/operate/REVENUE_ARCHITECTURE.md"))
+  );
+
   const hublyEventsJs = read("public/journey-os/hubly-events.js");
   mark("check hubly-events");
   ok(
@@ -350,6 +365,8 @@ try {
       has(hublyEventsJs, "reputation.changed") &&
       has(hublyEventsJs, "membership.started") &&
       has(hublyEventsJs, "membership.visit_used") &&
+      has(hublyEventsJs, "invoice.paid") &&
+      has(hublyEventsJs, "refund.issued") &&
       has(hublyEventsJs, "clearHistoryForTests")
   );
 
