@@ -44,6 +44,9 @@
   }
   function toast(msg) { if (typeof global.toast === 'function') global.toast(msg); }
   function el(id) { return document.getElementById(id); }
+  function todayStr() {
+    return typeof global.dateStr === 'function' ? global.dateStr(new Date()) : new Date().toISOString().slice(0, 10);
+  }
   function hasTwilio() { var st = S(); return !!(st.twilio || st.twilioReady || st.smsReady || st.messaging?.twilio || st.integrations?.twilio); }
   function initials(name) {
     var p = String(name || '?').trim().split(/\s+/).filter(Boolean);
@@ -51,9 +54,15 @@
   }
   function ask(q) {
     var text = String(q || '').trim(); if (!text) return;
-    if (typeof global.askAI === 'function') return global.askAI(text);
-    var input = el('ai-question-input') || el('jos-ask-input'); if (input) input.value = text;
-    toast('Ask Hubly: ' + text);
+    try { switchNav('ask'); } catch (e) {}
+    var run = function () {
+      var input = el('jos-ask-input') || el('ai-question-input');
+      if (input) input.value = text;
+      if (typeof global.askAI === 'function') return global.askAI(text);
+      toast('Ask Hubly: ' + text);
+    };
+    if (typeof global.requestAnimationFrame === 'function') global.requestAnimationFrame(run);
+    else setTimeout(run, 0);
   }
   function copyText(t) {
     t = String(t || ''); if (!t) return;
@@ -823,6 +832,30 @@
     return '<svg class="jos-spark" viewBox="0 0 ' + w + ' ' + h + '" width="120" height="28" aria-hidden="true"><polyline fill="none" stroke="' + (color || '#D9632D') + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="' + pts + '"/></svg>';
   }
 
+  var CHROME = {
+    dashboard: { title: 'Home', sub: 'Good morning — let\u2019s grow your business today.' },
+    chats: { title: 'Inbox', sub: 'Every conversation in one place.' },
+    jobs: { title: 'Jobs & Calendar', sub: 'Schedule, routes, and today\u2019s work.' },
+    leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
+    customers: { title: 'Customers', sub: 'People, vehicles, and history.' },
+    pipeline: { title: 'Pipeline', sub: 'Move every job from inquiry to booked.' },
+    editor: { title: 'Storefront', sub: 'Your booking site and pages.' },
+    marketing: { title: 'Marketing', sub: 'Campaigns that fill the calendar.' },
+    reviews: { title: 'Reviews', sub: 'Reputation and request flows.' },
+    memberships: { title: 'Memberships', sub: 'Recurring revenue plans.' },
+    money: { title: 'Revenue', sub: 'Payments, invoices, and cash flow.' },
+    reports: { title: 'Reports', sub: 'Performance across the business.' },
+    ask: { title: 'Ask Hubly', sub: 'Your operating partner for follow-ups, pricing, and growth.' },
+    settings: { title: 'Settings', sub: 'Business, team, and integrations.' }
+  };
+  function updateChrome(v) {
+    var c = CHROME[v] || { title: v, sub: '' };
+    var titleEl = el('bar-title'), subEl = el('bar-sub');
+    if (titleEl) titleEl.textContent = c.title;
+    if (subEl) subEl.textContent = c.sub;
+    if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
+  }
+
   function enhanceDashboard() {
     var root = ownPixelView('v-dashboard', 'jos-dash-root');
     if (!root) return;
@@ -853,7 +886,8 @@
     var allJobs = jobs().filter(function (j) { return !j.isBlock && j.status !== 'cancelled'; });
     var todayJobs = allJobs.filter(function (j) { return j.date === today; });
     var demoSched = false;
-    if (!todayJobs.length) {
+    var ceoDemo = !!S()._ceoDemo;
+    if (!todayJobs.length && ceoDemo) {
       demoSched = true;
       todayJobs = [
         { id: 'demo_j1', customer: 'Sarah Johnson', service: 'Interior Detail', time: '9:00 AM', amount: 260, status: 'confirmed', address: 'La Jolla, CA', phone: '(619) 555-0198' },
@@ -867,19 +901,24 @@
     var late = todayJobs.filter(function (j) { return j.isLate || j.status === 'late'; }).length;
     var pending = jobs().filter(function (j) { return j.status === 'pending'; }).length;
     var todayRev = jobs().filter(function (j) { return j.status === 'completed' && j.date === today; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    if (!todayRev) todayRev = todayJobs.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) * 0.35 || 845;
+    if (!todayRev && ceoDemo) todayRev = todayJobs.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) * 0.35 || 845;
     var yest = new Date(); yest.setDate(yest.getDate() - 1);
     var yestStr = typeof global.dateStr === 'function' ? global.dateStr(yest) : yest.toISOString().slice(0, 10);
-    var yestRev = jobs().filter(function (j) { return j.status === 'completed' && j.date === yestStr; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) || Math.round(todayRev * 0.88);
-    var weekRev = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).slice(0, 14).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) || Math.round(todayRev * 5.2);
+    var yestRev = jobs().filter(function (j) { return j.status === 'completed' && j.date === yestStr; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    if (!yestRev && ceoDemo) yestRev = Math.round(todayRev * 0.88);
+    var weekRev = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).slice(0, 14).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    if (!weekRev && ceoDemo) weekRev = Math.round(todayRev * 5.2);
     var month = today.slice(0, 7);
-    var monthRev = jobs().filter(function (j) { return j.status === 'completed' && String(j.date || '').slice(0, 7) === month; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) || Math.round(todayRev * 18);
-    var outstanding = quotes().filter(function (q) { return q.status === 'sent' || q.status === 'draft'; }).reduce(function (s, q) { return s + (parseFloat(q.amount) || 0); }, 0) || 1240;
-    var deposits = Math.round(todayRev * 0.22) || 180;
-    var revDelta = yestRev ? Math.round(((todayRev - yestRev) / yestRev) * 100) : 12;
-    var convs = conversations().length ? conversations() : demoConversations();
+    var monthRev = jobs().filter(function (j) { return j.status === 'completed' && String(j.date || '').slice(0, 7) === month; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    if (!monthRev && ceoDemo) monthRev = Math.round(todayRev * 18);
+    var outstanding = quotes().filter(function (q) { return q.status === 'sent' || q.status === 'draft'; }).reduce(function (s, q) { return s + (parseFloat(q.amount) || 0); }, 0);
+    if (!outstanding && ceoDemo) outstanding = 1240;
+    var deposits = Math.round(todayRev * 0.22) || (ceoDemo ? 180 : 0);
+    var revDelta = yestRev ? Math.round(((todayRev - yestRev) / yestRev) * 100) : (ceoDemo ? 12 : 0);
+    var convs = conversations().length ? conversations() : (ceoDemo ? demoConversations() : []);
     var ch = channelCounts(convs);
-    var msgsWaiting = convs.reduce(function (s, c) { return s + (c.unread || 0); }, 0) || (ch.needs || 5);
+    var msgsWaiting = convs.reduce(function (s, c) { return s + (c.unread || 0); }, 0);
+    if (!msgsWaiting && ceoDemo) msgsWaiting = ch.needs || 5;
     var scores = homeScores();
     var hour = new Date().getHours(), greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
     var owner = S().ownerName || 'Adrian';
@@ -1317,6 +1356,7 @@
     if (nav && typeof global.switchV === 'function') global.switchV(nav);
   }
   function onSwitchView(v) {
+    updateChrome(v);
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
@@ -1383,9 +1423,13 @@
       if (act === 'opp-send' && opp) { if (opp.phone) location.href = 'sms:' + String(opp.phone).replace(/\D/g, '') + '?&body=' + encodeURIComponent(opp.message || ''); else copyText(opp.message || ''); return; }
       if (act === 'opp-cust' && opp?.customerId) return openCustomerProfile(opp.customerId);
       if (act === 'opp-ask' && opp) return ask(opp.title);
-      if (act === 'ask-submit' || act === 'ask-brief') return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
+      if (act === 'ask-submit' || act === 'ask-brief') {
+        switchNav('ask');
+        return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
+      }
       if (act === 'manual-lead') return typeof global.openM === 'function' ? global.openM('m-new-lead') : toast('Add lead');
       if (act === 'add-cust') return typeof global.openM === 'function' ? global.openM('m-new-cust') : toast('Add customer');
+      if (act === 'new-invoice') return typeof global.openM === 'function' ? global.openM('m-new-invoice') : toast('New invoice');
       if (act === 'cust-full-profile') {
         var cidFull = t.getAttribute('data-jos-cust') || S().activeCustId || el('jos-customers-root')?._josCustId;
         if (cidFull) return openCustomerProfile(cidFull);
@@ -1409,13 +1453,19 @@
       if (act === 'go-opps') { closeCustomerProfile(); return switchNav('opportunities'); }
       if (act === 'go-reviews') return switchNav('reviews');
       if (act === 'go-mem') return switchNav('memberships');
-      if (act === 'go-money') return switchNav('reports');
+      if (act === 'go-money') return switchNav('money');
+      if (act === 'go-reports') return switchNav('reports');
+      if (act === 'go-chats') return switchNav('chats');
+      if (act === 'go-customers') return switchNav('customers');
       if (act === 'go-leads') return switchNav('leads');
       if (act === 'go-jobs') return switchNav('jobs');
       if (act === 'go-editor') return switchNav('editor');
       if (act === 'go-ask') return switchNav('ask');
       if (act === 'go-settings') return switchNav('settings');
       if (act === 'close-profile') return closeCustomerProfile();
+      el('jos-quick-pop')?.classList.remove('open');
+      el('jos-search-pop')?.classList.remove('open');
+      el('jos-notif-pop')?.classList.remove('open');
     });
   }
 
@@ -1437,6 +1487,7 @@
     enhanceDashboard: enhanceDashboard,
     openQuickNew: openQuickNew,
     onSwitchView: onSwitchView,
+    updateChrome: updateChrome,
     _askFromInput: function (preset) {
       var input = el('jos-ask-input') || el('ai-question-input');
       ask(preset || (input && input.value) || '');
