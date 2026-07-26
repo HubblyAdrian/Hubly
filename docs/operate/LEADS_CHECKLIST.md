@@ -1,6 +1,6 @@
 # Module 4 — 🧲 Leads
 
-**Status:** MAT ACCEPTED (Stage 1 OS) — awaiting merge  
+**Status:** 🔒 OS LOCKED (Stage 1) — merged #247  
 **Branch:** `cursor/operate-leads-2662`  
 **PR:** [#247](https://github.com/HubblyAdrian/Hubly/pull/247)  
 **MAT:** [LEADS_MAT.md](./LEADS_MAT.md) · `node scripts/mat-leads.mjs`  
@@ -139,3 +139,8 @@ Separate PR when opened. Do not pretend these are live in Stage 1 UI.
 | Google Forms live sync | ⏸ |
 | Twilio lead SMS automation | ⏸ |
 |
+
+
+## Lock
+
+**Leads Operating System is locked (🔒 OS).** Do not modify Stage 1 OS unless bug fix, Stage 2 integrations, or explicit reopen.
