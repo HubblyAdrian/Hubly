@@ -1,0 +1,31 @@
+{
+  "pass": true,
+  "checks": [
+    {
+      "name": "🏠 Home still works",
+      "pass": true,
+      "detail": "len=14631"
+    },
+    {
+      "name": "📥 Inbox still works",
+      "pass": true,
+      "detail": "len=7232"
+    },
+    {
+      "name": "📅 Jobs still works",
+      "pass": true,
+      "detail": "len=10982"
+    },
+    {
+      "name": "🧲 Leads still works",
+      "pass": true,
+      "detail": "len=8161"
+    },
+    {
+      "name": "❤️ Customers still works",
+      "pass": true,
+      "detail": "len=11030"
+    }
+  ],
+  "warns": []
+}

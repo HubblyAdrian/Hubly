@@ -263,6 +263,25 @@ try {
       has(ceo, "vehicles")
   );
 
+  mark("check pipeline");
+  ok(
+    "pipeline",
+    has(jjs, "function renderPipeline") &&
+      has(jjs, "handlePipelineAct") &&
+      has(jjs, "wirePipelineRoot") &&
+      has(jjs, "pipe-filter-open") &&
+      has(jjs, "HublyDS") &&
+      fs.existsSync(path.join(root, "public/journey-os/design-system.js")) &&
+      has(hubly, "journey-os/design-system.js") &&
+      inOrder(hubly, ["journey-os/design-system.js", "journey-os/journey.js"]) &&
+      has(hubly, 'id="v-pipeline"') &&
+      has(hubly, 'id="jos-pipeline-root"') &&
+      has(px, "jos-pipe-page") &&
+      has(px, "jos-pipe-layout") &&
+      has(px, "jos-ds-search") &&
+      has(px, "jos-ds-drawer")
+  );
+
   const ms = Date.now() - started;
   mark("done");
   clearTimeout(timer);

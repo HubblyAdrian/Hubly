@@ -34,9 +34,11 @@ Before approval of any new module PR, verify previously **locked** modules still
 - 📥 Inbox still works  
 - 📅 Jobs still works  
 - 🧲 Leads still works  
+- ❤️ Customers still works  
 - (+ each newly locked module)
 
-Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
+Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).  
+**Note:** CMV evaluates `design-system.js` before `journey.js` (same load order as `hubly.html`).
 
 ---
 
@@ -48,7 +50,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 📥 Inbox | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📅 Jobs & Calendar | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🧲 Leads | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| ❤️ Customers | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
+| ❤️ Customers | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🧭 Pipeline | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 🌐 Storefront | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 📣 Marketing | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
@@ -69,8 +71,9 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 2 | 📥 Inbox | ✅ Locked | ⏸ | [#244](https://github.com/HubblyAdrian/Hubly/pull/244) | 🔒 OS · MAT ✅ |
 | 3 | 📅 Jobs & Calendar | ✅ Locked | ⏸ | [#246](https://github.com/HubblyAdrian/Hubly/pull/246) | 🔒 OS · MAT ✅ · merged |
 | 4 | 🧲 Leads | ✅ Locked | ⏸ | [#247](https://github.com/HubblyAdrian/Hubly/pull/247) | 🔒 OS · MAT ✅ · merged |
-| 5 | ❤️ Customers | ✅ OS done · MAT ✅ | ⏸ | [#248](https://github.com/HubblyAdrian/Hubly/pull/248) | golden profile · CMV PASS · awaiting merge → 🔒 OS |
-| 6–14 | Remaining | ⏳ | ⏸ | — | |
+| 5 | ❤️ Customers | ✅ Locked | ⏸ | [#248](https://github.com/HubblyAdrian/Hubly/pull/248) | 🔒 OS · golden profile · MAT ✅ · CMV PASS |
+| 6 | 🧭 Pipeline | ⏳ In progress | ⏸ | — | Stage 1 OS · HublyDS v1 ([Rule #14](./OPERATE_ENGINEERING_RULES.md)) · branch `cursor/operate-pipeline-2662` |
+| 7–14 | Remaining | ⏳ | ⏸ | — | |
 
 ## Workflow
 

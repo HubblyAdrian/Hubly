@@ -156,6 +156,8 @@ const leads = mount("v-leads", app);
 mount("jos-leads-root", leads);
 const cust = mount("v-customers", app);
 mount("jos-customers-root", cust);
+const pipe = mount("v-pipeline", app);
+mount("jos-pipeline-root", pipe);
 mount("bar-title", document.body);
 mount("bar-sub", document.body);
 mount("nav-leads-badge", document.body);
@@ -213,6 +215,7 @@ const warns = [];
 const _warn = console.warn;
 console.warn = (...a) => warns.push(a.map(String).join(" "));
 
+eval(fs.readFileSync(path.join(repoRoot, "public/journey-os/design-system.js"), "utf8"));
 eval(fs.readFileSync(path.join(repoRoot, "public/journey-os/journey.js"), "utf8"));
 const H = window.HublyJourneyOS;
 
@@ -251,6 +254,14 @@ try {
   ok("🧲 Leads still works", /jos-leads|Leads|New Leads|AI Qualified/i.test(leadsHtml) && leadsHtml.length > 200, "len=" + leadsHtml.length);
 } catch (e) {
   ok("🧲 Leads still works", false, String(e.message || e));
+}
+
+try {
+  H.renderCustomers();
+  const custHtml = document.getElementById("jos-customers-root").innerHTML;
+  ok("❤️ Customers still works", /jos-cust|Customers|golden|profile/i.test(custHtml) && custHtml.length > 200, "len=" + custHtml.length);
+} catch (e) {
+  ok("❤️ Customers still works", false, String(e.message || e));
 }
 
 console.warn = _warn;

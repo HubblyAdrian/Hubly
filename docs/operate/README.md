@@ -11,6 +11,9 @@
 
 After Stage 1 merges → **lock the OS**. Stage 2 is additive and tracked separately.
 
+**Design System:** [DESIGN_SYSTEM_V1.md](./DESIGN_SYSTEM_V1.md) · `public/journey-os/design-system.js` → `window.HublyDS`  
+**Engineering rules:** [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) (Rule #14 — new modules must use HublyDS)
+
 **Acceptance gate:** [Module Acceptance Test (MAT)](./MAT.md) — not informal smoke language.
 
 ## Maturity board
@@ -24,9 +27,9 @@ See [MODULE_STATUS.md](./MODULE_STATUS.md) (OS · Integrations · AI · QA · **
 | Home | [HOME_CHECKLIST.md](./HOME_CHECKLIST.md) | ✅ | ✅ | ✅ | 🔒 Full |
 | Inbox | [INBOX_CHECKLIST.md](./INBOX_CHECKLIST.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Jobs & Calendar | [JOBS_CHECKLIST.md](./JOBS_CHECKLIST.md) · [JOBS_MAT.md](./JOBS_MAT.md) | ✅ | ⏸ | ✅ | 🔒 OS |
-| Leads | [LEADS_CHECKLIST.md](./LEADS_CHECKLIST.md) · [LEADS_MAT.md](./LEADS_MAT.md) | ✅ | ⏸ | ✅ | ❌ (🔒 OS after merge) |
-| Customers | [CUSTOMERS_CHECKLIST.md](./CUSTOMERS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
-| Pipeline | [PIPELINE_CHECKLIST.md](./PIPELINE_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Leads | [LEADS_CHECKLIST.md](./LEADS_CHECKLIST.md) · [LEADS_MAT.md](./LEADS_MAT.md) | ✅ | ⏸ | ✅ | 🔒 OS |
+| Customers | [CUSTOMERS_CHECKLIST.md](./CUSTOMERS_CHECKLIST.md) | ✅ | ⏸ | ✅ | 🔒 OS |
+| Pipeline | [PIPELINE_CHECKLIST.md](./PIPELINE_CHECKLIST.md) · [PIPELINE_PLAN.md](./PIPELINE_PLAN.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Storefront | [STOREFRONT_CHECKLIST.md](./STOREFRONT_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Marketing | [MARKETING_CHECKLIST.md](./MARKETING_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Reviews | [REVIEWS_CHECKLIST.md](./REVIEWS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
