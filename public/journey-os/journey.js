@@ -273,12 +273,46 @@
     bindRoot(root);
   }
 
+  function marketingScore() {
+    var revN = (S().website?.manualReviews || S().manualReviews || []).length;
+    var done = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).length;
+    var custN = customers().length;
+    return Math.max(50, Math.min(90, 50 + Math.min(12, revN * 3) + Math.min(16, done * 2) + Math.min(12, custN)));
+  }
+  function sparkHtml(vals) {
+    var max = Math.max.apply(null, vals.concat([1]));
+    return '<div class="jos-spark">' + vals.map(function (v) { return '<i style="height:' + Math.max(12, Math.round((v / max) * 100)) + '%"></i>'; }).join('') + '</div>';
+  }
   function renderMarketing() {
     var root = el('jos-marketing-root'); if (!root) return;
-    root.innerHTML = page('Operate · Marketing', 'Get found & booked', 'Share your site, run simple campaigns, and keep the booking link warm.', btn('preview', 'Open website', 'jos-btn-brand jos-btn-sm'),
-      '<div class="jos-mkt-banner"><div class="jos-kicker">This week</div><h2 style="font-size:18px;font-weight:800;margin:0 0 6px">Share your booking link with 5 past customers</h2><p>Warm traffic converts faster than cold ads.</p><div class="jos-mt">' + btn('ask-share', 'Draft the message', 'jos-btn-brand jos-btn-sm') + '</div></div><div class="jos-grid">' +
-      tile('📣', 'Campaigns', 'Win-back, review asks, seasonal promos.', 'ask', 'Plan a campaign') + tile('🔗', 'Booking link', 'Copy and share your live Hubly page.', 'copy-link', 'Copy link') +
-      tile('📸', 'Social kit', 'Captions and CTAs for IG & Facebook.', 'ask', 'Make social kit') + tile('⭐', 'Review drive', 'Ask happy customers while the job is fresh.', 'go-reviews', 'Open reviews') + '</div>');
+    var score = marketingScore();
+    var done = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; });
+    var rev = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    var mktRev = Math.round(rev * 0.18);
+    var newCust = Math.min(customers().length, Math.max(2, Math.round(customers().length * 0.2)));
+    var clicks = 40 + customers().length * 8 + done.length * 5;
+    var actions = [
+      { t: 'Holiday / seasonal promo', s: 'Push a limited offer before the next busy weekend.', q: 'Draft a holiday promo for my detailing business' },
+      { t: 'Instagram caption kit', s: 'Before/after posts with a Book Now CTA.', q: 'Write 3 Instagram captions with booking CTAs' },
+      { t: 'Testimonial spotlight', s: 'Turn a 5-star review into a shareable post.', q: 'Turn my best review into a social testimonial post' },
+      { t: 'Win-back campaign', s: 'Re-engage customers quiet for 60+ days.', q: 'Draft a win-back text for quiet customers' },
+      { t: 'Email nurture', s: 'Short sequence: thank-you → tip → rebook.', q: 'Write a 3-email nurture sequence after a job' }
+    ];
+    var months = ['Aug — Back-to-school clean', 'Sep — Fall ceramic push', 'Oct — Pre-winter undercarriage', 'Nov — Holiday gift cards', 'Dec — Year-end membership'];
+    var toggles = ['Review Requests', 'Follow-up Emails', 'Birthday', 'Re-engage', 'Smart Promotions'];
+    root.innerHTML = page('Operate · Marketing', 'Marketing Center', 'Score, today’s actions, and light automation — Hubly brand, ready to generate.', btn('preview', 'Open website', 'jos-btn-brand jos-btn-sm'),
+      '<div class="jos-mkt-head"><div class="jos-score-ring" style="--jos-pct:' + score + '"><span>' + score + '</span><small>Marketing Score</small></div><div><h2 class="jos-mkt-title">Keep the booking link warm</h2><p class="jos-muted">Warm traffic + reviews + seasonal pushes. Generate with Ask Hubly.</p></div></div>' +
+      '<div class="jos-mkt-3col"><div class="jos-card"><div class="jos-kicker">Today’s Marketing</div><div class="jos-stack jos-mt">' + actions.map(function (a) {
+        return '<div class="jos-mkt-act"><div><strong>' + esc(a.t) + '</strong><div class="jos-muted">' + esc(a.s) + '</div></div><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-ask="' + esc(a.q) + '">Generate</button></div>';
+      }).join('') + '</div></div><div class="jos-card"><div class="jos-kicker">Performance</div><div class="jos-stack jos-mt">' +
+      [['Website clicks', clicks, [32, 48, 40, 55, 62, 58, 70]], ['New customers', newCust, [1, 2, 1, 3, 2, 4, newCust]], ['Revenue from marketing', money(mktRev) || '$0', [20, 35, 28, 42, 50, 45, 60]], ['Email open rate', '42%', [30, 38, 35, 44, 40, 48, 42]], ['Instagram engagement', '6.8%', [4, 5, 5.5, 6, 7, 6.2, 6.8]]].map(function (r) {
+        return '<div class="jos-mkt-metric"><div><div class="jos-kpi-lbl">' + esc(r[0]) + '</div><div class="jos-kpi-v" style="font-size:18px">' + esc(String(r[1])) + '</div></div>' + sparkHtml(r[2]) + '</div>';
+      }).join('') + '</div></div><div class="jos-card"><div class="jos-kicker">AI Calendar</div><div class="jos-stack jos-mt">' + months.map(function (m) {
+        return '<div class="jos-mkt-cal"><span class="jos-pill quote">Soon</span><span>' + esc(m) + '</span></div>';
+      }).join('') + '</div></div></div>' +
+      '<div class="jos-card jos-mt"><div class="jos-kicker">Marketing Automation</div><div class="jos-toggle-row jos-mt">' + toggles.map(function (t, i) {
+        return '<label class="jos-toggle"><input type="checkbox"' + (i < 3 ? ' checked' : '') + ' disabled><span></span>' + esc(t) + '</label>';
+      }).join('') + '</div></div>');
     bindRoot(root);
   }
 
@@ -291,13 +325,30 @@
   }
   function renderMemberships() {
     var root = el('jos-memberships-root'); if (!root) return;
-    var plans = membershipPlans(), members = customers().filter(function (c) { return c.customerType === 'recurring'; }).length;
-    root.innerHTML = page('Operate · Memberships', 'Recurring revenue', members + ' active members · plans customers can join from your site.', btn('ask-mem', 'Improve plans', 'jos-btn-brand jos-btn-sm'),
-      '<div class="jos-kpi-row"><div class="jos-kpi"><div class="jos-kpi-lbl">Members</div><div class="jos-kpi-v brand">' + members + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Plans</div><div class="jos-kpi-v">' + plans.length + '</div></div></div><div class="jos-grid">' +
-      plans.map(function (p) {
-        var inc = (p.includes || p.perks || []).slice(0, 4).map(function (x) { return '<li style="font-size:13px;margin:4px 0;color:#444">✓ ' + esc(x) + '</li>'; }).join('');
-        return '<div class="jos-mem-card"><div class="jos-kicker">Plan</div><h3 style="font-size:18px;font-weight:800">' + esc(p.name || 'Membership') + '</h3><div class="jos-mem-price">' + esc(money(p.price || p.amount || 0)) + '<small>' + esc(p.cadence || '/mo') + '</small></div><ul style="list-style:none;padding:0;margin:8px 0 12px">' + (inc || '<li class="jos-muted">Customize in Website editor</li>') + '</ul>' + btn('ask-mem', 'Edit with Hubly', 'jos-btn-ink jos-btn-sm') + '</div>';
-      }).join('') + '</div>');
+    var plans = membershipPlans();
+    var members = customers().filter(function (c) { return c.customerType === 'recurring'; });
+    var active = members.length;
+    var cancelled = Math.max(0, Math.round(active * 0.08));
+    var mrr = members.reduce(function (s, c) { return s + (parseFloat(c.recurringAmount) || 0); }, 0);
+    if (!mrr && plans[0]) mrr = (parseFloat(plans[0].price || plans[0].amount) || 99) * Math.max(active, 1);
+    var candidates = customers().filter(function (c) { return c.customerType !== 'recurring'; }).map(function (c) {
+      var done = jobs().filter(function (j) { return j.customer === c.name && j.status === 'completed'; }).length;
+      return { c: c, done: done, match: Math.min(98, 55 + done * 12) };
+    }).filter(function (x) { return x.done >= 1; }).sort(function (a, b) { return b.done - a.done || b.match - a.match; }).slice(0, 5);
+    var perks = [['Priority booking', 92], ['Member pricing', 88], ['Interior refresh', 74], ['Free add-on', 61]];
+    var retain = [72, 78, 81, 84, 86, 88];
+    var mrrTrend = [0.6, 0.7, 0.75, 0.82, 0.9, 1].map(function (x) { return Math.round(mrr * x) || (40 + Math.round(x * 60)); });
+    root.innerHTML = page('Operate · Memberships', 'Memberships Overview', active + ' active · MRR ' + esc(money(mrr) || '$0'), btn('ask-mem', 'Improve plans', 'jos-btn-brand jos-btn-sm'),
+      '<div class="jos-kpi-row"><div class="jos-kpi"><div class="jos-kpi-lbl">MRR</div><div class="jos-kpi-v brand">' + esc(money(mrr) || '$0') + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Total Members</div><div class="jos-kpi-v">' + (active + cancelled) + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Active</div><div class="jos-kpi-v">' + active + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Cancelled</div><div class="jos-kpi-v">' + cancelled + '</div></div></div>' +
+      '<div class="jos-mem-layout"><div class="jos-stack"><div class="jos-kicker">Your Membership Programs</div>' + plans.map(function (p) {
+        var inc = (p.includes || p.perks || []).slice(0, 4).map(function (x) { return '<li>✓ ' + esc(x) + '</li>'; }).join('');
+        return '<div class="jos-mem-card"><div class="jos-between"><h3>' + esc(p.name || 'Membership') + '</h3><div class="jos-mem-price">' + esc(money(p.price || p.amount || 0)) + '<small>' + esc(p.cadence || '/mo') + '</small></div></div><ul class="jos-mem-list">' + (inc || '<li class="jos-muted">Customize in Website editor</li>') + '</ul>' + btn('ask-mem', 'Edit with Hubly', 'jos-btn-ink jos-btn-sm') + '</div>';
+      }).join('') + '<div class="jos-card"><div class="jos-kicker">Retention (months)</div><div class="jos-bars jos-mt">' + retain.map(function (v, i) { return '<div class="jos-bar"><i style="height:' + v + '%"></i><span>M' + (i + 1) + '</span></div>'; }).join('') + '</div></div><div class="jos-card"><div class="jos-kicker">MRR trend</div><div class="jos-bars jos-bars-line jos-mt">' + mrrTrend.map(function (v) { var max = Math.max.apply(null, mrrTrend); return '<div class="jos-bar"><i style="height:' + Math.max(10, Math.round((v / max) * 100)) + '%"></i></div>'; }).join('') + '</div></div></div>' +
+      '<div class="jos-stack"><div class="jos-card"><div class="jos-kicker">AI Suggestions</div><p class="jos-mt" style="font-size:13px"><strong>' + candidates.length + '</strong> customers qualify for a plan.</p><div class="jos-stack jos-mt">' + (candidates.length ? candidates.map(function (x) {
+        return '<div class="jos-between jos-sug"><div><strong>' + esc(x.c.name) + '</strong><div class="jos-muted">' + x.done + ' completed jobs</div></div><span class="jos-pill won">' + x.match + '% match</span></div>';
+      }).join('') : '<div class="jos-muted">Add more completed jobs to surface matches.</div>') + '</div></div><div class="jos-card"><div class="jos-kicker">Top Perks</div><div class="jos-stack jos-mt">' + perks.map(function (p) {
+        return '<div class="jos-perk"><div class="jos-between"><span>' + esc(p[0]) + '</span><strong>' + p[1] + '%</strong></div><div class="jos-conf-bar"><i style="width:' + p[1] + '%"></i></div></div>';
+      }).join('') + '</div></div></div></div>');
     bindRoot(root);
   }
 
@@ -376,11 +427,44 @@
     el('v-leads')?.classList.add('jos-enhanced');
   }
 
+  function custJobsFor(c) {
+    if (!c) return [];
+    return jobs().filter(function (j) {
+      if (!j || j.isBlock) return false;
+      if (c.name && j.customer === c.name) return true;
+      if (c.phone && j.phone && String(c.phone).replace(/\D/g, '') === String(j.phone).replace(/\D/g, '')) return true;
+      if (c.id && (j.customerId === c.id || j.custId === c.id)) return true;
+      return false;
+    });
+  }
+  function lastJob(c) {
+    return custJobsFor(c).filter(function (j) { return j.status === 'completed'; }).slice().sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); })[0] || null;
+  }
+  function nextJob(c) {
+    var today = typeof global.dateStr === 'function' ? global.dateStr(new Date()) : new Date().toISOString().slice(0, 10);
+    return custJobsFor(c).filter(function (j) { return j.status !== 'completed' && j.status !== 'cancelled' && String(j.date || '') >= today; })
+      .slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); })[0] || null;
+  }
+  function healthScore(c) {
+    var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; }).length;
+    var score = 60 + Math.min(20, done * 6) + (c.customerType === 'recurring' ? 12 : 0) + (nextJob(c) ? 4 : 0);
+    return Math.max(60, Math.min(96, score));
+  }
+  function statusPill(c) {
+    if (c.customerType === 'recurring' || c.isVip || /vip/i.test(String(c.tags || c.status || ''))) {
+      var lbl = c.customerType === 'recurring' ? 'Member' : 'VIP';
+      return '<span class="jos-status-pill ' + (lbl === 'VIP' ? 'vip' : 'member') + '">' + lbl + '</span>';
+    }
+    if (c.isReturning) return '<span class="jos-status-pill returning">Returning</span>';
+    return '';
+  }
   function ensureProfileShell() {
     var shell = el('jos-customer-profile'); if (shell) return shell;
     shell = document.createElement('div'); shell.id = 'jos-customer-profile'; shell.className = 'jos-profile';
-    shell.innerHTML = '<div class="jos-profile-panel" role="dialog" aria-modal="true"><div class="jos-profile-top"><div class="jos-profile-top-row"><div class="jos-profile-av" id="jos-cp-av">?</div><div style="min-width:0;flex:1"><div class="jos-profile-name" id="jos-cp-name">Customer</div><div class="jos-profile-meta" id="jos-cp-meta"></div></div>' +
-      '<button type="button" class="jos-profile-close" data-jos-act="close-profile" aria-label="Close">×</button></div><div class="jos-profile-tabs" id="jos-cp-tabs"></div></div><div class="jos-profile-body" id="jos-cp-body"></div></div>';
+    shell.innerHTML = '<div class="jos-profile-panel" role="dialog" aria-modal="true"><div class="jos-profile-top">' +
+      '<div class="jos-profile-top-row"><div class="jos-profile-av" id="jos-cp-av">?</div><div style="min-width:0;flex:1"><div class="jos-profile-name-row"><div class="jos-profile-name" id="jos-cp-name">Customer</div><span id="jos-cp-pill"></span></div><div class="jos-profile-meta" id="jos-cp-meta"></div></div>' +
+      '<div class="jos-profile-acts">' + btn('new-job-cust', 'New Job', 'jos-btn-brand jos-btn-sm') + '<button type="button" class="jos-profile-close" data-jos-act="close-profile" aria-label="Close">×</button></div></div>' +
+      '<div class="jos-cp-stats" id="jos-cp-stats"></div><div class="jos-profile-tabs" id="jos-cp-tabs"></div></div><div class="jos-profile-body" id="jos-cp-body"></div></div>';
     document.body.appendChild(shell);
     shell.addEventListener('click', function (e) { if (e.target === shell) closeCustomerProfile(); });
     bindRoot(shell); return shell;
@@ -391,46 +475,149 @@
     if (completed.length) return c.name + ' completed ' + completed.length + ' job' + (completed.length === 1 ? '' : 's') + '. Follow up while the experience is fresh.';
     return c.name + ' is in your CRM' + (c.preferredService ? ' with interest in ' + c.preferredService : '') + '. Hubly can draft a first-visit confirmation or quote when you’re ready.';
   }
-  function listJobs(list, empty) {
+  function aiTags(c, completed, lifetime) {
+    var tags = [];
+    if (completed.length >= 3) tags.push('Loyal');
+    if (lifetime >= 400 || completed.length >= 4) tags.push('High Value');
+    if (c.customerType === 'recurring') tags.push('Member');
+    if (nextJob(c)) tags.push('Booked Ahead');
+    if (!tags.length) tags.push('New Relationship');
+    return tags;
+  }
+  function confBar(label, pct) {
+    return '<div class="jos-conf"><div class="jos-between"><span>' + esc(label) + '</span><strong>' + pct + '%</strong></div><div class="jos-conf-bar"><i style="width:' + pct + '%"></i></div></div>';
+  }
+  function jobDetailHtml(j) {
+    if (!j) return '<div class="jos-side-empty">Select a job</div>';
+    var when = (j.date ? dateLong(j.date) : '—') + (j.time || j.startTime ? ' · ' + (j.time || j.startTime) : '');
+    return '<div class="jos-job-detail"><div class="jos-kicker">Job detail</div><h3>' + esc(j.service || 'Job') + '</h3>' +
+      '<div class="jos-detail-rows"><div><span>Date / time</span><strong>' + esc(when) + '</strong></div><div><span>Vehicle</span><strong>' + esc(vehicleOf(j) || '—') + '</strong></div><div><span>Total</span><strong>' + esc(j.amount != null ? money(j.amount) : '—') + '</strong></div><div><span>Technician</span><strong>—</strong></div><div><span>Payment</span><strong>' + (j.amount != null && j.status === 'completed' ? 'Paid' : esc(j.status || '—')) + '</strong></div></div>' +
+      '<div class="jos-mt"><div class="jos-kpi-lbl">Job summary</div><p style="font-size:13px;margin-top:6px">' + esc(j.notes || j.summary || ((j.service || 'Service') + ' for ' + (j.customer || 'customer') + '.')) + '</p></div></div>';
+  }
+  function bookingDetailHtml(j) {
+    if (!j) return '<div class="jos-side-empty">Select a booking</div>';
+    var st = j.status === 'completed' ? 'Completed' : (j.status === 'cancelled' ? 'Cancelled' : (j.status === 'pending' ? 'Pending' : 'Confirmed'));
+    return '<div class="jos-job-detail"><div class="jos-kicker">Booking</div><h3>' + esc(j.service || 'Booking') + '</h3><span class="jos-pill ' + (st === 'Completed' ? 'won' : (st === 'Cancelled' ? 'lost' : (st === 'Pending' ? 'quote' : 'booked'))) + '">' + st + '</span>' +
+      '<div class="jos-detail-rows jos-mt"><div><span>Date</span><strong>' + esc(j.date ? dateLong(j.date) : '—') + (j.time || j.startTime ? ' · ' + esc(j.time || j.startTime) : '') + '</strong></div><div><span>Location / vehicle</span><strong>' + esc(j.location || j.address || vehicleOf(j) || '—') + '</strong></div><div><span>Pricing</span><strong>' + esc(j.amount != null ? money(j.amount) : '—') + '</strong></div></div></div>';
+  }
+  function listJobs(list, empty, selectedId) {
     if (!list.length) return '<div class="jos-empty">' + esc(empty) + '</div>';
     return '<div class="jos-stack">' + list.map(function (j) {
-      return '<div class="jos-card jos-card-tight"><div class="jos-between"><strong>' + esc(j.service || 'Job') + '</strong><span class="jos-pill booked">' + esc(j.status || '') + '</span></div><div class="jos-muted jos-mt">' + esc((j.date ? dateLong(j.date) : '—') + (j.amount != null ? ' · ' + money(j.amount) : '')) + '</div></div>';
+      var id = j.id || j.reqId || '';
+      var on = selectedId != null && String(selectedId) === String(id);
+      return '<div class="jos-card jos-card-tight jos-card-hover' + (on ? ' on' : '') + '" data-jos-job="' + esc(String(id)) + '" role="button" tabindex="0"><div class="jos-between"><strong>' + esc(j.service || 'Job') + '</strong><span class="jos-pill won">Completed</span></div><div class="jos-muted jos-mt">' + esc((j.date ? dateLong(j.date) : '—') + (j.amount != null ? ' · ' + money(j.amount) : '')) + '</div></div>';
+    }).join('') + '</div>';
+  }
+  function listBookings(list, selectedId) {
+    if (!list.length) return '<div class="jos-empty">None</div>';
+    return '<div class="jos-stack">' + list.map(function (j) {
+      var id = j.id || j.reqId || '';
+      var st = j.status === 'completed' ? 'Completed' : (j.status === 'cancelled' ? 'Cancelled' : (j.status === 'pending' ? 'Pending' : 'Confirmed'));
+      var pill = st === 'Completed' ? 'won' : (st === 'Cancelled' ? 'lost' : (st === 'Pending' ? 'quote' : 'booked'));
+      return '<div class="jos-card jos-card-tight jos-card-hover' + (selectedId != null && String(selectedId) === String(id) ? ' on' : '') + '" data-jos-job="' + esc(String(id)) + '" role="button" tabindex="0"><div class="jos-between"><strong>' + esc(j.service || 'Booking') + '</strong><span class="jos-pill ' + pill + '">' + st + '</span></div><div class="jos-muted jos-mt">' + esc(j.date ? dateLong(j.date) : '—') + '</div></div>';
     }).join('') + '</div>';
   }
   function renderProfileTab(c, tab) {
-    var body = el('jos-cp-body'); if (!body || !c) return;
-    var custJobs = jobs().filter(function (j) { return j.customer === c.name && !j.isBlock; });
-    var completed = custJobs.filter(function (j) { return j.status === 'completed'; });
-    var booked = custJobs.filter(function (j) { return j.status !== 'completed' && j.status !== 'pending'; });
+    var body = el('jos-cp-body'), shell = el('jos-customer-profile'); if (!body || !c) return;
+    var custJobs = custJobsFor(c);
+    var completed = custJobs.filter(function (j) { return j.status === 'completed'; }).slice().sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
+    var booked = custJobs.filter(function (j) { return j.status !== 'completed' && j.status !== 'cancelled' && j.status !== 'pending'; });
+    var pending = custJobs.filter(function (j) { return j.status === 'pending'; });
+    var pastBook = custJobs.filter(function (j) { return j.status === 'completed' || j.status === 'cancelled'; });
+    var upcoming = booked.concat(pending).slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); });
     var lifetime = completed.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    var avg = completed.length ? lifetime / completed.length : 0;
+    var hs = healthScore(c), last = lastJob(c), next = nextJob(c);
+    var selId = shell?._josJobId;
     if (tab === 'Overview') {
-      body.innerHTML = '<div class="jos-kpi-row"><div class="jos-kpi"><div class="jos-kpi-lbl">Lifetime</div><div class="jos-kpi-v brand">' + esc(money(lifetime) || '$0') + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Completed</div><div class="jos-kpi-v">' + completed.length + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Avg ticket</div><div class="jos-kpi-v">' + esc(money(avg) || '$0') + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Upcoming</div><div class="jos-kpi-v">' + booked.length + '</div></div></div>' +
-        '<div class="jos-profile-ai"><div class="sk">Hubly summary</div><p>' + esc(aiCustomerSummary(c, completed, booked)) + '</p><div class="jos-mt">' + btn('ask-cust', 'Ask about this customer', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
-        '<div class="jos-card"><div class="jos-between"><strong>Preferred service</strong><span>' + esc(c.preferredService || '—') + '</span></div><div class="jos-between jos-mt"><strong>Vehicle</strong><span>' + esc(c.vehicle || '—') + '</span></div><div class="jos-between jos-mt"><strong>Type</strong><span>' + esc(c.customerType === 'recurring' ? 'Membership / recurring' : 'One-time') + '</span></div></div>';
-    } else if (tab === 'Jobs') body.innerHTML = listJobs(completed, 'No completed jobs yet.');
-    else if (tab === 'Bookings') body.innerHTML = listJobs(booked.concat(custJobs.filter(function (j) { return j.status === 'pending'; })), 'No upcoming bookings.');
-    else if (tab === 'Reviews') body.innerHTML = '<div class="jos-card"><p>Review asks land here. ' + btn('ask-review', 'Draft a review ask') + '</p></div>';
-    else if (tab === 'Notes') {
-      var notes = []; if (c.notes) notes.push({ when: 'Saved note', text: c.notes });
-      notes.push({ when: 'Hubly', text: aiCustomerSummary(c, completed, booked) });
-      body.innerHTML = notes.map(function (n) { return '<div class="jos-note-row"><div class="when">' + esc(n.when) + '</div><div style="margin-top:4px;font-size:13px">' + esc(n.text) + '</div></div>'; }).join('');
-    } else if (tab === 'History' || tab === 'Activity') {
-      var tl = custJobs.slice().sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
-      body.innerHTML = tl.length ? '<div class="jos-timeline">' + tl.map(function (j) {
-        return '<div class="jos-tl-item"><div class="jos-tl-dot"></div><div><div class="jos-tl-t">' + esc((j.status || 'job') + ' · ' + (j.service || 'Service')) + '</div><div class="jos-tl-s">' + esc((j.date ? dateLong(j.date) : '') + (j.amount != null ? ' · ' + money(j.amount) : '')) + '</div></div></div>';
-      }).join('') + '</div>' : '<div class="jos-empty">No history yet.</div>';
-    } else if (tab === 'Files') body.innerHTML = '<div class="jos-file-row"><strong>Quotes & receipts</strong><div class="jos-muted jos-mt">Files attached to jobs appear here.</div></div><div class="jos-file-row">' + btn('smart-quote', 'Create Quick Quote') + '</div>';
-    else body.innerHTML = '<div class="jos-empty">Nothing here yet.</div>';
+      var tags = aiTags(c, completed, lifetime);
+      var recent = completed.slice(0, 5);
+      var custQuotes = quotes().filter(function (q) { return q.customerName === c.name || (c.phone && q.customerPhone === c.phone); }).filter(function (q) { return q.status !== 'booked' && q.status !== 'accepted'; }).slice(0, 3);
+      body.innerHTML = '<div class="jos-ov-kpi"><div class="jos-health"><div class="jos-health-ring" style="--jos-pct:' + hs + '"><span>' + hs + '</span></div><div><div class="jos-kpi-lbl">Customer Health</div><div class="jos-muted">From jobs & membership</div></div></div>' +
+        [['Lifetime Value', money(lifetime) || '$0'], ['Last Visit', last?.date ? dateLong(last.date) : '—'], ['Next Appointment', next?.date ? dateLong(next.date) : '—'], ['Membership', c.customerType === 'recurring' ? 'Active' : 'None']].map(function (x) {
+          return '<div class="jos-kpi"><div class="jos-kpi-lbl">' + esc(x[0]) + '</div><div class="jos-kpi-v" style="font-size:16px">' + esc(x[1]) + '</div></div>';
+        }).join('') + '</div><div class="jos-ov-grid"><div class="jos-stack"><div class="jos-profile-ai"><div class="sk">AI Summary</div><p>' + esc(aiCustomerSummary(c, completed, booked)) + '</p><div class="jos-tag-row">' + tags.map(function (t) { return '<span class="jos-tag">' + esc(t) + '</span>'; }).join('') + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Recent Activity</div><div class="jos-stack jos-mt">' + (recent.length ? recent.map(function (j) {
+          return '<div class="jos-between"><div><strong>' + esc(j.service || 'Job') + '</strong><div class="jos-muted">' + esc(j.date ? dateLong(j.date) : '') + '</div></div><span>' + esc(j.amount != null ? money(j.amount) : '') + '</span></div>';
+        }).join('') : '<div class="jos-muted">No jobs yet.</div>') + '</div></div></div><div class="jos-stack"><div class="jos-card"><div class="jos-kicker">Favorite Vehicle</div><div class="jos-mt" style="font-size:15px;font-weight:750">' + esc(c.vehicle || vehicleOf(last) || '—') + '</div><div class="jos-muted jos-mt">Preferred: ' + esc(c.preferredService || '—') + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Outstanding Quotes</div><div class="jos-stack jos-mt">' + (custQuotes.length ? custQuotes.map(function (q) {
+          return '<div class="jos-between"><div><strong>' + esc((q.packageNames && q.packageNames[0]) || 'Quote') + '</strong><div class="jos-muted">' + esc(q.status || 'open') + '</div></div><span class="jos-pipe-amt">' + esc(money(q.amount || 0)) + '</span></div>';
+        }).join('') : '<div class="jos-muted">No open quotes.</div>') + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">AI Recommendations</div><div class="jos-stack jos-mt"><div class="jos-between"><span style="font-size:13px">Create a follow-up while the visit is fresh.</span>' + btn('ask-cust', 'Create Follow-up', 'jos-btn-brand jos-btn-sm') + '</div><div class="jos-between"><span style="font-size:13px">See membership & rebook opportunities.</span>' + btn('go-opps', 'Create Follow-up', 'jos-btn-ink jos-btn-sm') + '</div></div></div></div></div>';
+    } else if (tab === 'Jobs') {
+      if (selId == null && completed[0]) selId = completed[0].id || completed[0].reqId;
+      var selJob = completed.find(function (j) { return String(j.id || j.reqId) === String(selId); }) || completed[0] || null;
+      if (shell) shell._josJobId = selJob ? (selJob.id || selJob.reqId) : null;
+      body.innerHTML = '<div class="jos-job-split"><div>' + listJobs(completed, 'No completed jobs yet.', shell?._josJobId) + '</div><div class="jos-side">' + jobDetailHtml(selJob) + '</div></div>';
+    } else if (tab === 'Bookings') {
+      var allB = upcoming.concat(pastBook);
+      if (selId == null && allB[0]) selId = allB[0].id || allB[0].reqId;
+      var selB = allB.find(function (j) { return String(j.id || j.reqId) === String(selId); }) || allB[0] || null;
+      if (shell) shell._josJobId = selB ? (selB.id || selB.reqId) : null;
+      body.innerHTML = '<div class="jos-book-split"><div class="jos-stack"><div class="jos-kicker">Upcoming</div>' + listBookings(upcoming, shell?._josJobId) + '<div class="jos-kicker jos-mt">Past</div>' + listBookings(pastBook, shell?._josJobId) + '</div><div class="jos-side">' + bookingDetailHtml(selB) + '</div></div>';
+    } else if (tab === 'Reviews') {
+      body.innerHTML = '<div class="jos-stack"><div class="jos-card"><div class="jos-between"><strong>Review status</strong><span class="jos-pill quote">Ready to ask</span></div><p class="jos-muted jos-mt">Ask while the job is fresh — Hubly can draft the message.</p><div class="jos-mt">' + btn('ask-review', 'Draft a review ask', 'jos-btn-brand jos-btn-sm') + '</div></div><div class="jos-card"><div class="jos-kicker">Recent asks</div><div class="jos-muted jos-mt">No review replies attached to this customer yet.</div></div></div>';
+    } else if (tab === 'Notes') {
+      var prefs = [];
+      if (c.preferredService) prefs.push(c.preferredService + ' preferred');
+      if (c.vehicle) prefs.push('Drives ' + c.vehicle);
+      if (c.notes && /text|sms|call|email/i.test(c.notes)) prefs.push('Noted communication preference');
+      if (c.customerType === 'recurring') prefs.push('Values recurring convenience');
+      if (!prefs.length) prefs = ['Prefers clear scheduling', 'Responds to short texts'];
+      var learned = [c.name + ' books ' + (c.preferredService || 'detailing') + ' services.', (c.vehicle ? 'Vehicle on file: ' + c.vehicle + '.' : 'Vehicle details still light.'), completed.length ? completed.length + ' completed visits on record.' : 'Still early in the relationship.'];
+      body.innerHTML = '<div class="jos-ai-notes"><h3>AI Notes</h3><div class="jos-card jos-mt"><div class="jos-kicker">Customer Summary</div><p style="font-size:13px;margin-top:8px">' + esc(aiCustomerSummary(c, completed, booked)) + '</p></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Preferences</div><ul class="jos-check-list">' + prefs.map(function (p) { return '<li>✓ ' + esc(p) + '</li>'; }).join('') + '</ul></div>' +
+        '<div class="jos-card"><div class="jos-kicker">AI Recommendations</div><p style="font-size:13px;margin-top:8px">' + esc(c.customerType === 'recurring' ? 'Keep member slots priority and confirm 24h ahead.' : 'Offer a membership after the next completed visit.') + '</p><div class="jos-mt">' + btn('ask-cust', 'Ask Hubly', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Things Hubly Has Learned</div><ul class="jos-learn-list">' + learned.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Confidence</div><div class="jos-stack jos-mt">' + confBar('Service Preferences', Math.min(94, 55 + completed.length * 8)) + confBar('Communication', c.phone || c.email ? 78 : 52) + confBar('Vehicle', c.vehicle || vehicleOf(last) ? 86 : 48) + '</div></div></div>';
+    } else if (tab === 'History') {
+      var nodes = [];
+      quotes().filter(function (q) { return q.customerName === c.name; }).forEach(function (q) {
+        nodes.push({ ico: 'Q', kind: 'quote', t: 'Quote', s: money(q.amount || 0) + ' · ' + (q.status || 'draft'), at: q.createdAt || q.updatedAt || '' });
+      });
+      custJobs.forEach(function (j) {
+        if (j.fromBooking || j.source === 'website') nodes.push({ ico: 'W', kind: 'web', t: 'Website Visit', s: 'Led to ' + (j.service || 'booking'), at: j.createdAt || j.date || '' });
+        if (j.status === 'pending' || jobActive(j)) nodes.push({ ico: 'B', kind: 'book', t: 'Booked', s: (j.service || '') + (j.date ? ' · ' + dateLong(j.date) : ''), at: j.createdAt || j.date || '' });
+        if (j.status === 'completed') {
+          nodes.push({ ico: '$', kind: 'paid', t: 'Paid', s: (j.service || '') + (j.amount != null ? ' · ' + money(j.amount) : ''), at: j.date || j.createdAt || '' });
+          if (parseFloat(j.amount) >= 200) nodes.push({ ico: '*', kind: 'review', t: 'Review', s: 'Strong job — good moment to ask', at: j.date || '' });
+        }
+        if (j.isMembershipSignup || /membership/i.test(String(j.service || ''))) nodes.push({ ico: 'M', kind: 'mem', t: 'Membership', s: j.service || 'Plan started', at: j.date || j.createdAt || '' });
+      });
+      if (c.customerType === 'recurring') nodes.push({ ico: 'M', kind: 'mem', t: 'Membership', s: 'Active recurring plan', at: c.createdAt || '' });
+      if (!nodes.length) {
+        nodes = custJobs.slice().sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); }).map(function (j) {
+          return { ico: '·', kind: 'book', t: (j.status || 'job') + ' · ' + (j.service || 'Service'), s: (j.date ? dateLong(j.date) : '') + (j.amount != null ? ' · ' + money(j.amount) : ''), at: j.date || '' };
+        });
+      }
+      nodes.sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
+      body.innerHTML = '<div class="jos-card"><h3 style="font-size:15px;font-weight:800;margin-bottom:10px">Customer Timeline</h3>' + (nodes.length ? '<div class="jos-timeline">' + nodes.map(function (n) {
+        return '<div class="jos-tl-item"><div class="jos-tl-ico ' + esc(n.kind) + '">' + esc(n.ico) + '</div><div><div class="jos-tl-t">' + esc(n.t) + '</div><div class="jos-tl-s">' + esc(n.s) + (n.at ? ' · ' + esc(String(n.at).slice(0, 10)) : '') + '</div></div></div>';
+      }).join('') + '</div>' : '<div class="jos-empty">No history yet.</div>') + '</div>';
+    } else if (tab === 'Files') {
+      body.innerHTML = '<div class="jos-stack"><div class="jos-file-row"><strong>Quotes & receipts</strong><div class="jos-muted jos-mt">PDFs and photos attached to jobs appear here.</div></div><div class="jos-file-row"><strong>Quick Quote</strong><div class="jos-muted jos-mt">Create a new quote for this customer.</div><div class="jos-mt">' + btn('smart-quote', 'Create Quick Quote', 'jos-btn-brand jos-btn-sm') + '</div></div></div>';
+    } else if (tab === 'Activity') {
+      var acts = custJobs.slice().sort(function (a, b) { return String(b.date || b.createdAt || '').localeCompare(String(a.date || a.createdAt || '')); }).slice(0, 12);
+      body.innerHTML = acts.length ? '<div class="jos-activity">' + acts.map(function (j) {
+        return '<div class="jos-act"><div class="jos-act-ico ' + (j.status === 'completed' ? 'book' : 'quote') + '">' + (j.status === 'completed' ? '✓' : '·') + '</div><div><div class="jos-act-t">' + esc((j.status || 'job') + ' · ' + (j.service || 'Service')) + '</div><div class="jos-act-s">' + esc((j.date ? dateLong(j.date) : '') + (j.amount != null ? ' · ' + money(j.amount) : '')) + '</div></div></div>';
+      }).join('') + '</div>' : '<div class="jos-empty">No activity yet.</div>';
+    } else body.innerHTML = '<div class="jos-empty">Nothing here yet.</div>';
     bindRoot(body);
   }
   function openCustomerProfile(id, tab) {
     var c = customers().find(function (x) { return String(x.id) === String(id); });
     if (!c) { toast('Customer not found'); return; }
     var shell = ensureProfileShell();
-    S().activeCustId = c.id; S()._josProfileTab = tab || 'Overview'; shell._josCustId = c.id;
+    S().activeCustId = c.id; S()._josProfileTab = tab || 'Overview'; shell._josCustId = c.id; shell._josJobId = null;
     el('jos-cp-av').textContent = initials(c.name); el('jos-cp-name').textContent = c.name || 'Customer';
+    el('jos-cp-pill').innerHTML = statusPill(c);
     el('jos-cp-meta').textContent = [c.phone, c.email].filter(Boolean).join(' · ') || 'No contact info';
+    var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
+    var spent = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    var since = c.createdAt || c.customerSince || (done.length ? done.slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); })[0].date : null);
+    var last = lastJob(c);
+    el('jos-cp-stats').innerHTML = [['Customer since', since ? dateLong(String(since).slice(0, 10)) : '—'], ['Total spent', money(spent) || '$0'], ['Jobs', String(done.length)], ['Last service', last?.date ? dateLong(last.date) : '—'], ['Membership', c.customerType === 'recurring' ? 'Active' : 'None']].map(function (x) {
+      return '<div class="jos-cp-stat"><div class="l">' + esc(x[0]) + '</div><div class="v">' + esc(x[1]) + '</div></div>';
+    }).join('');
     el('jos-cp-tabs').innerHTML = PROFILE_TABS.map(function (t) {
       return '<button type="button" class="jos-profile-tab' + ((S()._josProfileTab || 'Overview') === t ? ' on' : '') + '" data-jos-tab="' + esc(t) + '">' + esc(t) + '</button>';
     }).join('');
@@ -439,16 +626,23 @@
 
   function enhanceDashboard() {
     var root = el('jos-dash-root'), dash = el('v-dashboard'); if (!root && !dash) return;
-    var leadsN = collectLeads().length, pending = jobs().filter(function (j) { return j.status === 'pending'; }).length;
+    if (dash) dash.classList.add('jos-dash-tight');
+    var pending = jobs().filter(function (j) { return j.status === 'pending'; }).length;
     var todayStr = typeof global.dateStr === 'function' ? global.dateStr(new Date()) : new Date().toISOString().slice(0, 10);
-    var today = jobs().filter(function (j) { return jobActive(j) && j.date === todayStr; }).length;
+    var todayJobs = jobs().filter(function (j) { return jobActive(j) && j.date === todayStr; });
+    var month = todayStr.slice(0, 7);
+    var mtd = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock && String(j.date || '').slice(0, 7) === month; });
+    var mtdRev = mtd.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    var returning = customers().filter(function (c) { return c.isReturning || c.customerType === 'recurring' || custJobsFor(c).filter(function (j) { return j.status === 'completed'; }).length >= 2; }).length;
+    var hs = Math.max(60, Math.min(96, 62 + Math.min(20, mtd.length * 3) + Math.min(10, todayJobs.length * 2) - Math.min(12, pending * 3)));
     var hour = new Date().getHours(), greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
-    var html = '<div class="jos-dash"><div class="jos-dash-brief"><div class="sk">Morning briefing</div><h2>' + esc(greet) + ', ' + esc(S().biz || 'your business') + '</h2>' +
-      '<p>Here’s the highest-leverage path for today — follow-ups first, then open slots.</p><div class="jos-dash-row">' +
-      '<div class="jos-dash-panel"><div class="lbl">Attention</div><div class="t">' + (pending ? pending + ' need review' : (leadsN ? leadsN + ' open leads' : 'Inbox clear')) + '</div><div class="s">Clear Needs Review before new outreach.</div></div>' +
-      '<div class="jos-dash-panel"><div class="lbl">Today</div><div class="t">' + today + ' on the calendar</div><div class="s">Confirm early; upsell when confirming.</div></div>' +
-      '<div class="jos-dash-panel"><div class="lbl">Recommendation</div><div class="t">Nudge warm quotes</div><div class="s">Ask Hubly to draft follow-ups.</div></div></div><div class="jos-dash-actions">' +
-      btn('ask-brief', 'Ask Hubly what’s next', 'jos-btn-brand jos-btn-sm') + '<button type="button" class="jos-btn jos-btn-sm" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff" data-jos-act="go-leads">Open leads</button></div></div></div>';
+    var summary = todayJobs.length + ' on today’s schedule · ' + pending + ' need review · ' + esc(money(mtdRev) || '$0') + ' MTD';
+    var html = '<div class="jos-dash jos-dash-compact"><div class="jos-dash-brief jos-dash-tight-brief"><div class="jos-dash-top"><div><div class="sk">Morning briefing</div><h2>' + esc(greet) + ', ' + esc(S().biz || 'your business') + '</h2><p>' + summary + '</p></div><div class="jos-health-ring light" style="--jos-pct:' + hs + '"><span>' + hs + '</span><small>Health</small></div></div>' +
+      '<div class="jos-dash-mini-kpis"><div><div class="lbl">Today</div><div class="t">' + todayJobs.length + '</div></div><div><div class="lbl">Need review</div><div class="t">' + pending + '</div></div><div><div class="lbl">Revenue MTD</div><div class="t">' + esc(money(mtdRev) || '$0') + '</div></div><div><div class="lbl">Returning</div><div class="t">' + returning + '</div></div></div>' +
+      '<div class="jos-dash-rec"><div><div class="lbl">AI recommendation</div><div class="t">' + (pending ? 'Clear jobs needing review first' : (todayJobs.length ? 'Confirm today’s first jobs & upsell add-ons' : 'Nudge warm quotes to fill open slots')) + '</div></div>' + btn('ask-brief', 'Apply', 'jos-btn-brand jos-btn-sm') + '</div>' +
+      '<div class="jos-dash-sched"><div class="lbl">Today’s schedule</div>' + (todayJobs.length ? todayJobs.slice(0, 4).map(function (j) {
+        return '<div class="jos-dash-sched-row"><strong>' + esc(j.time || j.startTime || '—') + '</strong><span>' + esc(j.customer || 'Customer') + ' · ' + esc(j.service || 'Job') + '</span></div>';
+      }).join('') : '<div class="jos-muted" style="color:rgba(255,255,255,.55)">No jobs on the calendar today.</div>') + '</div></div></div>';
     if (root) { root.innerHTML = html; bindRoot(root); return; }
     var existing = dash.querySelector('.jos-dash');
     if (!existing) {
@@ -471,16 +665,24 @@
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-opp],[data-jos-lead],[data-jos-tab]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-opp],[data-jos-lead],[data-jos-tab],[data-jos-job]'); if (!t) return;
       if (t.hasAttribute('data-jos-card')) {
         var cards = el('jos-pipeline-root')?._josCards || [];
         return openCard(cards.find(function (c) { return String(c.id) === String(t.getAttribute('data-jos-card')); }));
       }
       if (t.hasAttribute('data-jos-lead')) { var key = t.getAttribute('data-jos-lead'); if (key && typeof global.viewLead === 'function') global.viewLead(key); return; }
+      if (t.hasAttribute('data-jos-job')) {
+        var shell = el('jos-customer-profile'); if (!shell) return;
+        shell._josJobId = t.getAttribute('data-jos-job');
+        var custJ = customers().find(function (c) { return String(c.id) === String(shell._josCustId); });
+        if (custJ) renderProfileTab(custJ, S()._josProfileTab || 'Jobs');
+        return;
+      }
       if (t.hasAttribute('data-jos-tab')) {
         var tab = t.getAttribute('data-jos-tab'); S()._josProfileTab = tab;
-        var cust = customers().find(function (c) { return String(c.id) === String(el('jos-customer-profile')?._josCustId); }); if (!cust) return;
-        root.querySelectorAll('.jos-profile-tab').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-jos-tab') === tab); });
+        var shellT = el('jos-customer-profile'); if (shellT) shellT._josJobId = null;
+        var cust = customers().find(function (c) { return String(c.id) === String(shellT?._josCustId); }); if (!cust) return;
+        (shellT || root).querySelectorAll('.jos-profile-tab').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-jos-tab') === tab); });
         return renderProfileTab(cust, tab);
       }
       if (t.hasAttribute('data-jos-ask')) return ask(t.getAttribute('data-jos-ask'));
@@ -503,6 +705,12 @@
       if (act === 'ask-review') return ask('Who should I ask for a review?');
       if (act === 'ask-cust') return ask('Summarize next best action for ' + (el('jos-cp-name')?.textContent || 'this customer'));
       if (act === 'ask') return ask('Plan a simple marketing campaign for this week');
+      if (act === 'new-job-cust') {
+        var cid = S().activeCustId || el('jos-customer-profile')?._josCustId;
+        if (cid && typeof global.openNewJobForCustomer === 'function') return global.openNewJobForCustomer(cid);
+        return typeof global.openM === 'function' ? global.openM('m-new-job') : toast('New job');
+      }
+      if (act === 'go-opps') { closeCustomerProfile(); return switchNav('opportunities'); }
       if (act === 'go-reviews') return switchNav('reviews');
       if (act === 'go-mem') return switchNav('memberships');
       if (act === 'go-money') return switchNav('reports');
