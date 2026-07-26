@@ -1304,22 +1304,27 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-creative-confidence .row{display:flex;justify-content:space-between;font-size:12px;margin:0 0 6px;color:rgba(255,255,255,.85)}
 .is-creative-confidence .row strong{color:#fdba74}
 .is-creative-choice{
-  margin:10px 0;padding:12px;border-radius:14px;background:rgba(217,99,45,.14);border:1px solid rgba(217,99,45,.3);
+  margin:12px 0 0;padding:14px;border-radius:16px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.16);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
 }
-.is-creative-choice .cq{font-size:13px;font-weight:700;margin:0 0 10px}
-.is-creative-choice .opts{display:flex;flex-wrap:wrap;gap:8px}
+.is-creative-choice .cq{font-size:14px;font-weight:750;margin:0 0 12px;color:#fff}
+.is-creative-choice .opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(max-width:640px){.is-creative-choice .opts{grid-template-columns:1fr}}
 .is-creative-choice button{
-  appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(15,23,42,.45);color:#fff;
-  font:inherit;font-size:12px;font-weight:700;padding:8px 12px;border-radius:10px;cursor:pointer;
+  appearance:none;border:1px solid rgba(255,255,255,.2);background:rgba(15,23,42,.55);color:#fff;text-align:left;
+  font:inherit;font-size:13px;font-weight:700;padding:14px 16px;border-radius:14px;cursor:pointer;
+  transition:border-color .15s,background .15s,transform .15s;
 }
-.is-creative-choice button:hover{border-color:#fdba74;color:#fdba74}
-.is-creative-interrupt{display:flex;gap:8px;margin-top:10px}
+.is-creative-choice button strong{display:block;font-size:15px;font-weight:800;margin:0 0 4px}
+.is-creative-choice button span{display:block;font-weight:550;font-size:12px;line-height:1.35;color:rgba(255,255,255,.72)}
+.is-creative-choice button:hover{border-color:#d9632d;background:rgba(217,99,45,.18);transform:translateY(-1px)}
+.is-creative-interrupt{display:flex;gap:8px;margin-top:12px}
 .is-creative-interrupt input{
-  flex:1;min-width:0;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(15,23,42,.5);
-  color:#fff;font:inherit;font-size:13px;padding:10px 12px;
+  flex:1;min-width:0;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(15,23,42,.55);
+  color:#fff;font:inherit;font-size:13px;padding:12px 14px;
 }
 .is-creative-interrupt button{
-  appearance:none;border:none;border-radius:12px;background:#d9632d;color:#fff;font:inherit;font-weight:800;font-size:12px;padding:10px 14px;cursor:pointer;
+  appearance:none;border:none;border-radius:12px;background:#d9632d;color:#fff;font:inherit;font-weight:800;font-size:13px;padding:12px 18px;cursor:pointer;
 }
 .is-creative-transition{
   margin-top:12px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(253,186,116,.35);
@@ -8572,7 +8577,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var land=document.getElementById('p-landing');
     var boot=document.getElementById('p-boot');
     // Owner routes: never flash the Hubly marketing page while auth restores.
-    var ownerPaths={'/':1,'/app':1,'/dashboard':1,'/login':1,'/onboarding':1,'/signup':1,'/welcome':1,'/demo':1,'/experience':1};
+    var ownerPaths={'/':1,'/app':1,'/dashboard':1,'/login':1,'/onboarding':1,'/signup':1,'/welcome':1,'/demo':1,'/experience':1,'/create-demo':1};
     if(ownerPaths[path]){
       if(land)land.classList.remove('active');
       if(boot)boot.classList.add('active');
@@ -9656,6 +9661,13 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="quotes" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg><span class="ni-lbl">Quick Quote</span>
       </div>
+      <div class="nav-sec" data-nav-sec="Customer Intelligence">Customer Intelligence</div>
+      <div class="ni" data-v="activity" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span class="ni-lbl">Activity</span>
+      </div>
+      <div class="ni" data-v="reviews" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3L22 9.3l-5 4.8 1.2 7L12 17.8 5.8 21l1.2-7-5-4.8 7.1-1L12 2z"/></svg><span class="ni-lbl">Reviews</span>
+      </div>
       <div class="nav-sec" data-nav-sec="Growth">Growth</div>
       <div class="ni" data-v="opportunities" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.5H20l-4.5 3.3L17.2 18 12 14.7 6.8 18l1.7-6.2L4 8.5h6.2L12 3z"/></svg><span class="ni-lbl ni-lbl-full">Opportunities</span><span class="ni-lbl ni-lbl-short">Opps</span><span class="nav-count-badge hidden" id="nav-opps-badge">0</span>
@@ -9669,17 +9681,11 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="memberships" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg><span class="ni-lbl">Memberships</span>
       </div>
-      <div class="ni" data-v="reviews" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3L22 9.3l-5 4.8 1.2 7L12 17.8 5.8 21l1.2-7-5-4.8 7.1-1L12 2z"/></svg><span class="ni-lbl">Reviews</span>
-      </div>
       <div class="ni" data-v="reports" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-3"/></svg><span class="ni-lbl">Reports</span>
       </div>
       <div class="ni" data-v="growth" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h6v6"/></svg><span class="ni-lbl">Growth</span>
-      </div>
-      <div class="ni jos-nav-hidden" data-v="activity" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span class="ni-lbl">Activity</span>
       </div>
       <div class="nav-sec" data-nav-sec="Setup">Setup</div>
       <div class="ni" data-v="editor" onclick="try{S._edHubTab='site'}catch(e){};switchV(this)">
@@ -9688,13 +9694,13 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="settings" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span class="ni-lbl">Settings</span>
       </div>
-      <div class="ni jos-nav-hidden" data-v="marketplace" onclick="switchV(this)">
+      <div class="ni jos-nav-hidden" data-v="marketplace" onclick="switchV(this)" hidden aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="ni-lbl">Marketplace</span>
       </div>
-      <div class="ni jos-nav-hidden" data-v="money" onclick="switchV(this)" hidden>
+      <div class="ni jos-nav-hidden" data-v="money" onclick="switchV(this)" hidden aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span class="ni-lbl">Revenue</span>
       </div>
-      <div class="ni jos-nav-hidden" data-v="chats" onclick="switchV(this)" hidden>
+      <div class="ni jos-nav-hidden" data-v="chats" onclick="switchV(this)" hidden aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span class="ni-lbl">Chats</span>
       </div>
       <div class="nav-bot">
@@ -9740,222 +9746,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- DASHBOARD — Hubly v3 Operate Home -->
       <div id="v-dashboard" class="body" data-v3-operate-home="1">
         <div id="jos-dash-root" class="jos-dash-mount"></div>
-        <div class="dash-hero dash-ops-hero">
-          <div class="dash-greeting">
-            <h1 id="dash-greet-title"><span id="dash-greet-line1">Good morning</span><span id="dash-greet-line2">Your Business</span></h1>
-            <p class="dash-ready" id="dash-ready-line">Your business is ready.</p>
-            <div class="dash-greet-time" id="dash-greet-time"></div>
-            <button type="button" class="dash-site-link" id="dash-site-link" onclick="copyDashSiteLink()" title="Copy your Hubly website link" hidden>
-              <span class="dash-site-link-lbl">Website</span>
-              <span class="dash-site-link-url" id="dash-site-url">yourname.myhubly.app</span>
-              <span class="dash-site-link-copy" id="dash-site-copy">Copy</span>
-            </button>
-          </div>
-          <div class="dash-date-pill">
-            <span class="dash-date-txt" id="today-lbl"></span>
-            <button type="button" class="btn btn-out btn-sm" onclick="goDashToday()" data-i18n="todayBtn">Today</button>
-          </div>
-        </div>
-
-        <div class="dash-site-hero" id="dash-site-hero">
-          <div class="dash-website-preview" id="dash-website-preview" aria-label="Website preview">
-            <div class="site-frame">
-              <div class="site-kicker">Your website</div>
-              <h2 class="site-title" id="dash-site-preview-title">Your Business</h2>
-              <p class="site-sub" id="dash-site-preview-sub">Live preview of what customers see first.</p>
-              <button type="button" class="site-cta" onclick="previewProfile()">Open Website</button>
-            </div>
-          </div>
-          <div class="dash-site-actions">
-            <button type="button" class="btn btn-brand btn-sm" onclick="previewProfile()">Open Website</button>
-            <button type="button" class="btn btn-out btn-sm" onclick="copyDashSiteLink()">Share Website</button>
-          </div>
-        </div>
-
-        <div class="dash-focus-row" id="dash-focus-row">
-          <div class="dash-focus-card" onclick="typeof goStripeConnect==='function'?goStripeConnect():askAI('Connect Stripe')">
-            <p class="t">Connect Stripe</p>
-            <p class="s">Get paid when jobs book.</p>
-          </div>
-          <div class="dash-focus-card" onclick="typeof goCustomers==='function'?document.querySelector('[data-v=customers]')?.click():askAI('Import customers')">
-            <p class="t">Import Customers</p>
-            <p class="s">Bring your list into CRM.</p>
-          </div>
-          <div class="dash-focus-card" onclick="copyDashSiteLink()">
-            <p class="t">Share Booking Link</p>
-            <p class="s">Start getting customers today.</p>
-          </div>
-        </div>
-
-        <div class="dash-one-rec" id="dash-one-rec" aria-live="polite">
-          <div>
-            <p class="sk">Today's Recommendation</p>
-            <p class="t" id="dash-one-rec-t">Share your booking link with three past customers.</p>
-          </div>
-          <div class="actions">
-            <button type="button" class="btn btn-brand btn-sm" id="dash-one-rec-apply" onclick="applyDashOneRec()">Apply</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="dash-one-rec-dismiss" onclick="dismissDashOneRec()">Dismiss</button>
-          </div>
-        </div>
-
-        <div class="dash-ask-dock">
-          <div class="sk">Ask Hubly</div>
-          <div class="ai-chip-row" id="ai-suggestions">
-            <button type="button" class="ai-chip" onclick="askAI(this.textContent)">Make my website feel more premium</button>
-            <button type="button" class="ai-chip" onclick="askAI(this.textContent)">Who should I follow up with?</button>
-            <button type="button" class="ai-chip" onclick="askAI(this.textContent)">Optimize tomorrow</button>
-          </div>
-          <div class="ai-input-row">
-            <input type="text" id="ai-question-input" data-i18n-placeholder="aiQuestionPh" placeholder="How would you like to improve your business…" onkeydown="if(event.key==='Enter')askAI()">
-            <button type="button" class="btn btn-ink" id="ai-ask-btn" data-i18n="aiAskBtn" onclick="askAI()">Ask</button>
-          </div>
-          <div id="ai-answer-area"></div>
-        </div>
-
-        <!-- Legacy Daily hooks kept for script compatibility (hidden) -->
-        <div class="hubly-daily" id="hubly-daily" aria-hidden="true" hidden>
-          <div class="hubly-daily-top">
-            <div>
-              <div class="hubly-daily-kicker">Hubly Daily</div>
-              <div class="hubly-daily-greet" id="hubly-daily-greet">Good morning.</div>
-            </div>
-            <div class="hubly-daily-health" id="hubly-daily-health"></div>
-          </div>
-          <ul class="hubly-daily-list" id="hubly-daily-list"></ul>
-          <div class="hubly-daily-actions">
-            <div class="hubly-daily-rec">
-              <div class="hubly-daily-rec-lbl">My recommendation</div>
-              <div class="hubly-daily-rec-t" id="hubly-daily-rec-t">Loading…</div>
-              <p class="hubly-daily-rec-d" id="hubly-daily-rec-d"></p>
-            </div>
-            <div class="hubly-daily-handle">
-              <div class="hubly-daily-handle-lbl">I'll handle today</div>
-              <div class="hubly-daily-handle-t" id="hubly-daily-handle-t"></div>
-              <p class="hubly-daily-handle-d" id="hubly-daily-handle-d"></p>
-            </div>
-          </div>
-        </div>
-        <div class="dash-kpi-grid">
-          <div class="dash-kpi" onclick="openKpiDrill('revenue')">
-            <div class="dash-kpi-icon dash-kpi-icon-green">$</div>
-            <div class="dash-kpi-body">
-              <div class="dash-kpi-lbl" id="kpi-rev-lbl" data-i18n="revenueYtd">Revenue (YTD)</div>
-              <div class="dash-kpi-val amber" id="kpi-rev">$0.00</div>
-              <div class="dash-kpi-sub" id="kpi-rev-sub" data-i18n="gettingStarted">Getting started</div>
-            </div>
-          </div>
-          <div class="dash-kpi" onclick="openKpiDrill('jobs')">
-            <div class="dash-kpi-icon dash-kpi-icon-blue">💼</div>
-            <div class="dash-kpi-body">
-              <div class="dash-kpi-lbl" data-i18n="jobsMonth">Jobs this month</div>
-              <div class="dash-kpi-val" id="kpi-jcount">0</div>
-              <div class="dash-kpi-sub" data-i18n="thisMonth">This month</div>
-            </div>
-          </div>
-          <div class="dash-kpi" onclick="openKpiDrill('customers')">
-            <div class="dash-kpi-icon dash-kpi-icon-tan">👥</div>
-            <div class="dash-kpi-body">
-              <div class="dash-kpi-lbl" data-i18n="customers">Customers</div>
-              <div class="dash-kpi-val" id="kpi-custs">0</div>
-              <div class="dash-kpi-sub" data-i18n="customersTotal">Total</div>
-            </div>
-          </div>
-          <div class="dash-kpi" onclick="openKpiDrill('bookings')">
-            <div class="dash-kpi-icon dash-kpi-icon-purple">📅</div>
-            <div class="dash-kpi-body">
-              <div class="dash-kpi-lbl" data-i18n="onlineBookingsLbl">Hubly bookings</div>
-              <div class="dash-kpi-val" id="kpi-bookings">0</div>
-              <div class="dash-kpi-sub" data-i18n="thisMonth">This month</div>
-            </div>
-          </div>
-        </div>
-        <div id="dash-weather-alert" class="dash-weather-alert hidden" onclick="goWeatherRiskJobs()"></div>
-        <div id="weather-risk-banner" class="weather-banner hidden"></div>
-        <div class="ob-addons-nudge hidden" id="dash-addons-nudge">
-          <div style="font-size:18px;line-height:1;">✨</div>
-          <div class="f1">
-            <div class="nudge-t">Add booking add-ons</div>
-            <div class="nudge-s">Pet hair, clay bar, engine bay. extras customers can tap during booking. Takes about a minute.</div>
-          </div>
-          <button type="button" class="btn btn-ink btn-sm" onclick="goAddonsFromNudge()">Add add-ons</button>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="dismissAddonsNudge()">Not now</button>
-        </div>
-        <div class="sc hidden" id="winback-card">
-          <div class="sc-h"><div class="sc-t" data-i18n="winBackTitle">Win back lapsed customers</div></div>
-          <div class="sc-b" id="winback-list" style="display:flex;flex-direction:column;gap:8px;padding:14px 16px;"></div>
-        </div>
-        <div class="sc hidden" id="pending-reviews-card">
-          <div class="sc-h"><div class="sc-t" data-i18n="pendingReviewsTitle">Reviews awaiting approval</div></div>
-          <div class="sc-b" id="pending-reviews-list" style="display:flex;flex-direction:column;gap:12px;padding:14px 16px;"></div>
-        </div>
-        <div class="sc" id="dash-followups-card">
-          <div class="sc-h">
-            <div class="sc-t">Follow-ups due</div>
-            <div class="dash-card-actions">
-              <button type="button" class="dash-card-link" onclick="goLeadsFromDash()">Open Leads →</button>
-            </div>
-          </div>
-          <div class="sc-b" id="dash-followups-list"></div>
-        </div>
-        <div class="dash-mid-grid">
-          <div class="sc">
-            <div class="sc-h">
-              <div class="sc-t" data-i18n="todaySchedule">Today's schedule</div>
-              <div class="dash-card-actions">
-                <button type="button" class="btn btn-out btn-sm" onclick="openDashBlockTime()" title="Block / emergency time">+ Block</button>
-                <button type="button" class="btn btn-ink btn-sm" onclick="openDashNewJob()">+ Job</button>
-                <button type="button" class="dash-card-link" onclick="goDashCalendar()" data-i18n="viewCalendar">View calendar →</button>
-              </div>
-            </div>
-            <div class="dash-schedule-scroll" id="today-jobs-wrap"><div id="today-jobs"></div></div>
-          </div>
-          <div class="sc">
-            <div class="sc-h">
-              <div class="sc-t" data-i18n="newBookingsTitle">New bookings</div>
-              <div class="dash-card-actions">
-                <span class="badge b-amber" id="new-bk-badge">0 new</span>
-                <button type="button" class="btn btn-ink btn-sm" onclick="openDashNewJob()">+ Add</button>
-              </div>
-            </div>
-            <div class="dash-bookings-scroll" id="new-bookings"></div>
-          </div>
-        </div>
-        <div class="dash-bottom-grid">
-          <div class="sc">
-            <div class="sc-h"><div class="sc-t" data-i18n="quickActions">Quick actions</div></div>
-            <div class="sc-b" style="padding:14px;">
-              <button type="button" class="dash-link-btn" onclick="copyLink()">
-                <span>🔗</span>
-                <span data-i18n="copyMyLink">Copy my link</span>
-                <span class="dash-link-url" id="dash-profile-url">yourname.hubly.app</span>
-              </button>
-              <div class="qa-grid">
-                <div class="qa" onclick="openTodaysSpecial()"><div class="qa-ico" style="background:#fff7ed;color:#c2410c;">%</div><div class="qa-l">Today’s special</div><div class="qa-s">Fill a slow day with a quick discount</div></div>
-                <div class="qa" onclick="openSmartQuote()"><div class="qa-ico" style="background:#ede9fe;color:#6d28d9;">QQ</div><div class="qa-l">Quick Quote</div><div class="qa-s">Build a price for someone you just met</div></div>
-                <div class="qa" onclick="previewProfile()"><div class="qa-ico qa-ico-blue">🔗</div><div class="qa-l" data-i18n="viewProfile">View profile</div><div class="qa-s" data-i18n="clientView">Client view</div></div>
-              </div>
-            </div>
-          </div>
-          <div class="sc">
-            <div class="sc-h"><div class="sc-t" data-i18n="hublyScoreTitle">Hubly Score</div><span class="badge b-amber" id="setup-check-badge">0 of 10</span></div>
-            <div class="sc-b" style="display:flex;gap:20px;align-items:center;padding:14px 16px;">
-              <div style="position:relative;width:88px;height:88px;flex-shrink:0;">
-                <svg width="88" height="88" viewBox="0 0 88 88" style="transform:rotate(-90deg);">
-                  <circle cx="44" cy="44" r="36" fill="none" stroke="var(--border)" stroke-width="8"/>
-                  <circle id="hs-ring-fill" cx="44" cy="44" r="36" fill="none" stroke="#f59e0b" stroke-width="8" stroke-linecap="round" style="transition:stroke-dashoffset .6s ease, stroke .3s ease;"/>
-                </svg>
-                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;">
-                  <span id="hs-score-num" style="font-size:24px;font-weight:800;line-height:1;">0</span>
-                  <span style="font-size:9px;color:var(--ink-3);font-weight:600;">/ 100</span>
-                </div>
-              </div>
-              <div id="hs-action-list" style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;"></div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- JOBS -->
       <div id="v-jobs" class="body hidden">
         <div class="jobs-page-head">
           <div>
@@ -10125,13 +9917,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- LEADS — directory + side detail (Pipeline is its own page) -->
       <div id="v-leads" class="body hidden">
         <div id="jos-leads-root"></div>
-        <div class="leads-kpis" id="leads-kpis" hidden></div>
-        <div class="leads-kpi-focus hidden" id="leads-kpi-focus"></div>
-        <div class="leads-board" id="leads-board" hidden></div>
-        <div class="lead-detail-drawer hidden" id="lead-detail-drawer">
-          <div class="cust-detail" id="lead-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div>Select a lead</div></div></div>
-        </div>
       </div>
+
 
       <!-- PIPELINE -->
       <div id="v-pipeline" class="body hidden">
@@ -10186,61 +9973,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- CUSTOMERS -->
       <div id="v-customers" class="body hidden">
         <div id="jos-customers-root"></div>
-        <div class="cust-page-head jos-legacy-cust">
-          <div>
-            <h1 data-i18n="customers">Customers</h1>
-            <p>Your happy customers and their history.</p>
-          </div>
-          <div class="flex ai-c" style="gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-ink btn-sm" onclick="openM('m-new-cust')" data-i18n="addCustomerBtn">+ Add customer</button>
-            <input type="search" id="cust-srch" placeholder="Search customers..." data-i18n-placeholder="searchCustomersPh" oninput="renderCustomersView()" style="min-width:180px;padding:8px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;">
-          </div>
-        </div>
-        <div class="cust-range-bar jos-legacy-cust" id="cust-range-bar" role="tablist" aria-label="Customer time range">
-          <span class="cust-range-lbl">Show</span>
-          <button type="button" class="cust-range-btn on" data-range="all" onclick="setCustRange('all')">All time</button>
-          <button type="button" class="cust-range-btn" data-range="day" onclick="setCustRange('day')">Today</button>
-          <button type="button" class="cust-range-btn" data-range="week" onclick="setCustRange('week')">This week</button>
-          <button type="button" class="cust-range-btn" data-range="month" onclick="setCustRange('month')">This month</button>
-        </div>
-        <div class="cust-kpis jos-legacy-cust" id="cust-kpis"></div>
-        <div class="cust-layout jos-legacy-cust">
-          <aside>
-            <div class="cust-side-card">
-              <h3>Top customers</h3>
-              <div id="cust-top-list"></div>
-            </div>
-            <div class="cust-side-card">
-              <h3>Customer overview</h3>
-              <div class="cust-donut-wrap" id="cust-overview"></div>
-            </div>
-          </aside>
-          <div class="cust-main-card">
-            <div class="cust-toolbar">
-              <div class="cust-tabs" id="cust-tabs"></div>
-            </div>
-            <div class="cust-table-wrap">
-              <table class="cust-table">
-                <thead>
-                  <tr>
-                    <th>Customer</th>
-                    <th>Last job</th>
-                    <th>Total spent</th>
-                    <th>Jobs</th>
-                    <th>Next / plan</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody id="cust-table-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <div class="cust-detail-drawer hidden jos-legacy-cust" id="cust-detail-drawer">
-          <div class="cust-detail" id="cust-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div data-i18n="selectCustomerLbl">Select a customer</div></div></div>
-        </div>
-        <p class="jos-cust-hint jos-legacy-cust">Tip: click a customer for the side view — then open <strong>Full profile</strong> for Overview, Jobs, Bookings, Reviews, Notes, History, Files, and Activity.</p>
       </div>
+
 
       <!-- BOOKING WIZARD retired — Book Now lives in Website editor hub -->
 
@@ -12101,6 +11835,7 @@ const HUBLY_PAGE_ROUTES={
   'p-onboard':{path:'/onboarding',title:'Hubly · Setup'},
   'p-app':{path:'/app',title:'Hubly · Home'},
   'p-ceo-demo':{path:'/demo',title:'Hubly · CEO Demo'},
+  'p-create-demo':{path:'/create-demo',title:'Hubly · Create Demo'},
 };
 const HUBLY_PATH_TO_PAGE={
   '/':'p-signup',
@@ -12117,6 +11852,7 @@ const HUBLY_PATH_TO_PAGE={
   '/dashboard':'p-app',
   '/demo':'p-ceo-demo',
   '/experience':'p-ceo-demo',
+  '/create-demo':'p-create-demo',
 };
 function hublyPath(){
   const p=(location.pathname||'/').replace(/\/+$/,'');
@@ -12125,6 +11861,10 @@ function hublyPath(){
 function isCeoDemoPath(path){
   const p=path||hublyPath();
   return p==='/demo'||p==='/experience';
+}
+function isCreateDemoPath(path){
+  const p=path||hublyPath();
+  return p==='/create-demo';
 }
 function pageForHublyPath(path){
   return HUBLY_PATH_TO_PAGE[path||hublyPath()]||null;
@@ -12143,6 +11883,18 @@ function syncHublyRoute(id,{replace}={}){
         else history.pushState({page:id,ceoDemo:true},'',next);
       }
       document.title='Hubly · CEO Demo';
+    }catch(e){}
+    return;
+  }
+  if(typeof S!=='undefined'&&S._createDemo){
+    try{
+      const next='/create-demo';
+      const cur=(location.pathname||'')+(location.hash||'');
+      if(cur!==next){
+        if(replace)history.replaceState({page:'p-create-demo',createDemo:true},'',next);
+        else history.pushState({page:'p-create-demo',createDemo:true},'',next);
+      }
+      document.title='Hubly · Create Demo';
     }catch(e){}
     return;
   }
@@ -12220,6 +11972,10 @@ window.addEventListener('popstate',()=>{
   const dest=pageForHublyPath(hublyPath())||'p-landing';
   if(dest==='p-ceo-demo'||isCeoDemoPath()||S._ceoDemo){
     startCeoDemoMode();
+    return;
+  }
+  if(dest==='p-create-demo'||isCreateDemoPath()||S._createDemo){
+    startCreateDemoMode();
     return;
   }
   if((dest==='p-app')&&!currentUser){
@@ -12307,6 +12063,57 @@ async function startCeoDemoMode(){
 }
 window.restartCeoDemo=restartCeoDemo;
 window.startCeoDemoMode=startCeoDemoMode;
+
+/** Create Demo — /create-demo — glass “building live” progressive build (no login). */
+async function startCreateDemoMode(){
+  if(S._createDemoBusy)return;
+  S._createDemoBusy=true;
+  S._createDemo=true;
+  S._ceoDemo=false;
+  S._instantSite=true;
+  S._creativeDirector=true;
+  S._deferredAccount=true;
+  S._accountClaimed=false;
+  hideCeoDemoChrome();
+  try{
+    document.body.classList.remove('jos-pixel','ceo-demo-on');
+    document.getElementById('p-app')?.classList.remove('active','jos-pixel');
+  }catch(e){}
+  const seed='My Pressure Washing — residential driveway and house washes in Austin';
+  S.biz='My Pressure Washing';
+  S.city='Austin';
+  S.businessType='pressure-washing';
+  S._blueprintConfirmed=true;
+  try{clearInstantSiteDraft?.();}catch(e){}
+  const onboard=document.getElementById('p-onboard');
+  onboard?.classList.add('is-active');
+  onboard?.classList.remove('cd-active','cd-building');
+  const cd=document.getElementById('cd-shell');
+  if(cd)cd.style.display='none';
+  const shell=document.getElementById('is-shell');
+  if(shell)shell.style.display='flex';
+  S._is={
+    prompt:seed,seed,step:'creative-build',talkBeat:'owner',messages:[],
+    ownerName:'Adrian',ownerFirst:'Adrian',ownerLast:'',phone:'',city:'Austin',
+    bizNamedByOwner:true,locked:{biz:'My Pressure Washing'},
+    discovery:{facts:{industryId:{value:'pressure_washing'},industry:{value:'Pressure Washing'},area:{value:'Austin'}}},
+  };
+  showP('p-onboard',{replaceRoute:true,skipRoute:true});
+  try{
+    history.replaceState({page:'p-create-demo',createDemo:true},'','/create-demo');
+    document.title='Hubly · Create Demo';
+  }catch(e){}
+  try{isUpdateAtmosphere?.();}catch(e){}
+  try{
+    await isRunCreativeBuildExperience(seed);
+  }catch(e){
+    console.warn('Create demo creative build failed',e);
+    try{isShowStep('creative-build');}catch(e2){}
+  }finally{
+    S._createDemoBusy=false;
+  }
+}
+window.startCreateDemoMode=startCreateDemoMode;
 
 function openOperateHome(opts){
   opts=opts||{};
@@ -15201,6 +15008,11 @@ async function checkSession(){
     await startCeoDemoMode();
     return;
   }
+  // Create Demo — glass progressive build; no login.
+  if(isCreateDemoPath()){
+    await startCreateDemoMode();
+    return;
+  }
   const dest=pageForHublyPath(hublyPath());
   const marketing=!dest||dest==='p-landing';
   const welcomeDoor=dest==='p-signup'; // `/`, `/signup`, `/welcome`
@@ -17549,9 +17361,13 @@ function isCreativeRenderDecisions(experience){
 function isCreativeRenderConfidence(experience){
   const el=document.getElementById('is-creative-confidence');
   if(!el||!experience)return;
-  const rows=Object.entries(experience.surfaceConfidence||{}).map(([k,v])=>{
-    const label=k.charAt(0).toUpperCase()+k.slice(1);
-    return `<div class="row"><span>${escPeHtml(label)}</span><strong>${v}%</strong></div>`;
+  const labels={website:'Website',brand:'Brand',packages:'Packages',booking:'Booking',portfolio:'Portfolio',workspace:'Workspace'};
+  const order=['website','brand','packages','booking','portfolio','workspace'];
+  const sc=experience.surfaceConfidence||{};
+  const keys=order.filter(k=>sc[k]!=null).concat(Object.keys(sc).filter(k=>!order.includes(k)));
+  const rows=keys.map(k=>{
+    const label=labels[k]||(k.charAt(0).toUpperCase()+k.slice(1));
+    return `<div class="row"><span>${escPeHtml(label)}</span><strong>${sc[k]}%</strong></div>`;
   });
   rows.unshift(`<div class="row"><span>Overall</span><strong>${experience.designConfidence}%</strong></div>`);
   el.innerHTML=rows.join('');
@@ -17621,7 +17437,7 @@ async function isCreativeShowChoice(experience){
       resolve(id);
     };
     box.hidden=false;
-    const opts=(experience.directions||[]).map(d=>`<button type="button" data-dir="${escPeHtml(d.id)}"><strong>${escPeHtml(d.label)}</strong><br><span style="font-weight:500;opacity:.8">${escPeHtml(d.hint||'')}</span></button>`).join('');
+    const opts=(experience.directions||[]).map(d=>`<button type="button" data-dir="${escPeHtml(d.id)}"><strong>${escPeHtml(d.label)}</strong><span>${escPeHtml(d.hint||'')}</span></button>`).join('');
     box.innerHTML=`<div class="cq">${escPeHtml(experience.choicePrompt||HUBLY_CREATIVE_BUILD.CREATIVE_BUILD_CHOICE_PROMPT)}</div><div class="opts">${opts}</div>`;
     isCreativePush('hubly',experience.choicePrompt||"I have two directions. Can I show you both?");
     box.querySelectorAll('button[data-dir]').forEach(btn=>{
@@ -17631,7 +17447,7 @@ async function isCreativeShowChoice(experience){
     setTimeout(()=>{
       const rec=(experience.directions&&experience.directions[0]&&experience.directions[0].id)||'luxury';
       finish(rec,experience.directions?.[0]?.label||'Luxury');
-    },7000);
+    },12000);
   });
 }
 async function isCreativeBuildInterruptSend(){
