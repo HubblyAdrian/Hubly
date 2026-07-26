@@ -1,7 +1,8 @@
 # Module 4 — 🧲 Leads
 
-**Status:** Stage 1 OS complete · MAT pending  
+**Status:** MAT ACCEPTED (Stage 1 OS) — awaiting merge  
 **Branch:** `cursor/operate-leads-2662`  
+**MAT:** [LEADS_MAT.md](./LEADS_MAT.md) · `node scripts/mat-leads.mjs`  
 **Stage in scope:** Stage 1 — Operating System
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
@@ -122,7 +123,7 @@ Leads is the inbound interest OS — capture, qualify, quote, and convert. Stage
 - [x] `renderLeads` + `handleLeadsAct` + `renderLeadsList` alias ✅
 - [x] Validator leads gate passes ✅
 - [x] No fake “connected” integration claims ✅
-- [ ] MAT formal acceptance ⏳
+- [x] MAT formal acceptance ✅ · [LEADS_MAT.md](./LEADS_MAT.md)
 
 ---
 

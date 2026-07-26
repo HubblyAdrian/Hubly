@@ -1025,11 +1025,13 @@
     var all = leadsOsList();
     var filtered = filterLeadsList(root);
     var selectedId = root._josLeadId || (filtered[0] && (filtered[0].id || filtered[0].key)) || null;
-    if (selectedId && !filtered.some(function (l) { return String(l.id) === String(selectedId) || String(l.key) === String(selectedId); })) {
+    var sel = selectedId ? findLead(selectedId) : null;
+    // Keep workspace selection even when the lead is outside the active tab/filter.
+    if (selectedId && !sel) {
       selectedId = filtered[0] ? (filtered[0].id || filtered[0].key) : null;
       root._josLeadId = selectedId;
+      sel = selectedId ? findLead(selectedId) : null;
     }
-    var sel = selectedId ? findLead(selectedId) : null;
     if (sel) sel.unread = 0;
 
     var tabsHtml = '<div class="jos-tabs jos-leads-tabs">' + LEADS_TABS.map(function (t) {
