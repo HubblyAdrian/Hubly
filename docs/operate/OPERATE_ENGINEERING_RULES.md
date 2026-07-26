@@ -56,11 +56,23 @@ If a module breaks that flow, it is not ready.
 
 Marketing MAT / CMV must confirm locked modules still function. New modules deep-link to existing owners (golden customer profile, Storefront catalog, etc.) instead of inventing parallel surfaces.
 
+## Rule #17 — Event-Driven Architecture
+
+Modules publish and subscribe to business events. They do not call each other’s internals.
+
+See [EVENTS.md](./EVENTS.md). Runtime: `window.HublyEvents` (`public/journey-os/hubly-events.js`).
+
+Core events include: `lead.created`, `lead.qualified`, `quote.sent`, `quote.accepted`, `job.booked`, `job.started`, `job.completed`, `payment.received`, `membership.started`, `membership.renewed`, `review.requested`, `review.received`, `review.responded`, `reputation.changed`, `campaign.sent`, `customer.created`.
+
+New modules must publish events when mutating owned data. Locked modules are not mass-refactored unless reopened.
+
 ## Cross-Module Verification (CMV)
 
 Before approval of a new module PR, confirm previously **locked** modules still function (no modifications — confirmation only).
 
 Runner: `node scripts/cmv-locked-modules.mjs`
+
+Load order for runners: `design-system.js` → `hubly-events.js` → `journey.js`.
 
 ## Acceptance
 

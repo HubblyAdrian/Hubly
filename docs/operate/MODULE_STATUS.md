@@ -37,6 +37,7 @@ Before approval of any new module PR, verify previously **locked** modules still
 - ❤️ Customers still works  
 - 🧭 Pipeline still works  
 - 🌐 Storefront still works  
+- 📣 Marketing still works  
 - (+ each newly locked module)
 
 Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).  
@@ -55,7 +56,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | ❤️ Customers | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🧭 Pipeline | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🌐 Storefront | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 📣 Marketing | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
+| 📣 Marketing | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ⭐ Reviews | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 🔁 Memberships | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | 💰 Revenue | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
@@ -76,8 +77,9 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 5 | ❤️ Customers | ✅ Locked | ⏸ | [#248](https://github.com/HubblyAdrian/Hubly/pull/248) | 🔒 OS · golden profile · MAT ✅ · CMV PASS |
 | 6 | 🧭 Pipeline | ✅ Locked | ⏸ | [#249](https://github.com/HubblyAdrian/Hubly/pull/249) | 🔒 OS · MAT ✅ · HublyDS v1 · merged |
 | 7 | 🌐 Storefront | ✅ Locked | ⏸ | [#250](https://github.com/HubblyAdrian/Hubly/pull/250) | 🔒 OS · MAT ✅ · Service Catalog owner · merged |
-| 8 | 📣 Marketing | ✅ OS done · MAT ✅ | ⏸ | [#251](https://github.com/HubblyAdrian/Hubly/pull/251) | [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md) · Rules #14–16 · CMV PASS · awaiting merge → 🔒 OS |
-| 9–14 | Remaining | ⏳ | ⏸ | — | |
+| 8 | 📣 Marketing | ✅ Locked | ⏸ | [#251](https://github.com/HubblyAdrian/Hubly/pull/251) | 🔒 OS · MAT ✅ · Rules #14–16 · merged |
+| 9 | ⭐ Reviews | ⏳ In progress | ⏸ | — | Owns reviews · publishes events ([EVENTS.md](./EVENTS.md) Rule #17) · `cursor/operate-reviews-2662` |
+| 10–14 | Remaining | ⏳ | ⏸ | — | |
 
 ## Workflow
 

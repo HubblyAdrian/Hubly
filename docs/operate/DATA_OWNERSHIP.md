@@ -33,11 +33,11 @@ Other modules **read** that data — they do not own or duplicate it.
 |--------|---------|----------------|
 | Storefront | Services, website copy, gallery, SEO, domain | Reviews (display), Customers (none required) |
 | Marketing | Campaigns, templates, automations, coupons, calendar, ad OS records | Customers, Leads, Services, Jobs, Reviews, Revenue |
-| Reviews | Review records, request/reply flows | Customers, Jobs |
+| Reviews | Review records, requests, replies, reputation analytics (`S.reviewsOs`) | Customers, Jobs, Marketing (read flags) |
 | Jobs | Jobs / calendar blocks | Services (catalog), Customers |
 | Leads | Lead records | — |
 | Customers | Customer profiles | — |
 | Revenue | Payments / invoices OS | Customers, Jobs |
 | Memberships | Plans | Customers, Services |
 
-See also [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md) and [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) Rule #16.
+See also [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md), [EVENTS.md](./EVENTS.md) (Rule #17), and [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md).
