@@ -2,6 +2,7 @@
 
 **Status:** MAT ACCEPTED (Stage 1 OS) — awaiting merge  
 **Branch:** `cursor/operate-leads-2662`  
+**PR:** [#247](https://github.com/HubblyAdrian/Hubly/pull/247)  
 **MAT:** [LEADS_MAT.md](./LEADS_MAT.md) · `node scripts/mat-leads.mjs`  
 **Stage in scope:** Stage 1 — Operating System
 
