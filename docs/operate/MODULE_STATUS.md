@@ -35,7 +35,7 @@ Do not ship placeholder integrations that pretend to be live. Stage 2 items must
 |--------|----|--------------|----|----|--------|
 | 🏠 Home | ✅ | ✅ | ✅ | ✅ | 🔒 |
 | 📥 Inbox | ✅ | ⏸ | ✅ | ✅ | 🔓 |
-| 📅 Jobs & Calendar | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
+| 📅 Jobs & Calendar | ⏳ Planning | ⏸ | ⏳ | ⏳ | ❌ |
 | 🧲 Leads | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
 | 👥 Customers | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
 | 🧭 Pipeline | ⏳ | ⏳ | ⏳ | ⏳ | ❌ |
@@ -56,7 +56,7 @@ Do not ship placeholder integrations that pretend to be live. Stage 2 items must
 |---|--------|--------------|------------------------|----|-------|
 | 1 | 🏠 Home | ✅ COMPLETE · Locked | ✅ N/A / complete for Home scope | [#242](https://github.com/HubblyAdrian/Hubly/pull/242) | Full lock |
 | 2 | 📥 Inbox | ✅ COMPLETE · Locked | ⏸ Deferred | [#244](https://github.com/HubblyAdrian/Hubly/pull/244) | OS locked; Stage 2 = Twilio / Meta / Resend / Realtime |
-| 3 | 📅 Jobs & Calendar | ⏳ Planning | ⏳ | — | Next |
+| 3 | 📅 Jobs & Calendar | ⏳ Planning | ⏸ | — | Branch `cursor/operate-jobs-calendar-2662` · await Stage 1 checklist |
 | 4 | 🧲 Leads | ⏳ | ⏳ | — | |
 | 5 | 👥 Customers | ⏳ | ⏳ | — | |
 | 6 | 🧭 Pipeline | ⏳ | ⏳ | — | |
