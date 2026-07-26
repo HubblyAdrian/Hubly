@@ -442,26 +442,122 @@
     bindRoot(root);
   }
 
-  function renderLeadsList() {
-    var root = el('jos-leads-root'); if (!root) return;
+  function leadStageLbl(lead) {
+    try { var st = typeof global.leadStageById === 'function' && global.leadStageById(lead.stage); if (st?.label) return st.label; } catch (e) {}
+    var mid = mapLeadStage(lead), pipe = PIPE_STAGES.find(function (s) { return s.id === mid || s.id === lead.stage; });
+    return (pipe && pipe.label) || lead.stage || 'New';
+  }
+  function allLeads() {
     var leads = collectLeads();
     if (!leads.length) {
       leads = demoPipelineCards().filter(function (c) { return /new_inquiry|quoted|incomplete/.test(c.stageId); })
-        .map(function (c, i) { return { key: 'demo:' + i, name: c.name, source: c.source, stage: c.stageId, service: c.service, vehicle: c.vehicle, createdAt: c.date, amount: c.amount }; });
+        .map(function (c, i) { return { key: 'demo:' + i, name: c.name, source: c.source, stage: c.stageId, service: c.service, vehicle: c.vehicle, createdAt: c.date, amount: c.amount, phone: c.phone || '', email: c.email || '' }; });
     }
-    function stageLbl(lead) {
-      try { var st = typeof global.leadStageById === 'function' && global.leadStageById(lead.stage); if (st?.label) return st.label; } catch (e) {}
-      var mid = mapLeadStage(lead), pipe = PIPE_STAGES.find(function (s) { return s.id === mid || s.id === lead.stage; });
-      return (pipe && pipe.label) || lead.stage || 'New';
-    }
-    root.innerHTML = '<div class="jos-head"><div><div class="jos-kicker">CRM · Leads</div><h1>Leads</h1><p>Name, source, status, service, vehicle, date.</p></div><div class="jos-head-actions">' + btn('manual-lead', '+ Manual lead', 'jos-btn-ink jos-btn-sm') + '</div></div>' +
-      '<div class="jos-crm-layout"><div class="jos-table-wrap"><table class="jos-table"><thead><tr><th>Name</th><th>Source</th><th>Status</th><th>Service</th><th>Vehicle</th><th>Date</th></tr></thead><tbody>' +
-      leads.map(function (l) {
-        var kind = srcKind(l.source, l), when = l.createdAt ? (dateLong(String(l.createdAt).slice(0, 10)) || (typeof global.leadRelativeTime === 'function' ? global.leadRelativeTime(l.createdAt) : String(l.createdAt).slice(0, 10))) : '—';
-        return '<tr data-jos-lead="' + esc(l.key || '') + '"><td><strong>' + esc(l.name || 'Lead') + '</strong></td><td><span class="jos-src">' + srcIco(kind) + ' ' + esc(srcLabel(kind)) + '</span></td><td><span class="jos-pill quote">' + esc(stageLbl(l)) + '</span></td><td>' + esc(l.service || '—') + '</td><td>' + esc(vehicleOf(l) || '—') + '</td><td>' + esc(when) + '</td></tr>';
-      }).join('') + '</tbody></table></div><div class="jos-side"><div class="jos-side-empty">Select a lead — details open in the panel below.</div></div></div>';
+    return leads;
+  }
+  function leadSideHtml(lead) {
+    if (!lead) return '<div class="jos-px-side-empty">Select a lead to preview details.</div>';
+    var kind = srcKind(lead.source, lead);
+    return '<div class="jos-px-side-head"><div class="jos-px-person"><div class="jos-px-av">' + esc(initials(lead.name)) + '</div><div><strong>' + esc(lead.name || 'Lead') + '</strong><div class="sub">' + esc(leadStageLbl(lead)) + '</div></div></div>' +
+      '<div class="jos-px-side-meta"><div><span>Source</span> ' + srcIco(kind) + ' ' + esc(srcLabel(kind)) + '</div><div><span>Service</span> ' + esc(lead.service || '—') + '</div><div><span>Vehicle</span> ' + esc(vehicleOf(lead) || '—') + '</div><div><span>Phone</span> ' + esc(lead.phone || '—') + '</div></div></div>' +
+      '<div class="jos-px-side-body"><div class="jos-px-side-stats"><div class="jos-px-side-stat"><div class="l">Estimate</div><div class="v">' + esc(lead.amount != null ? money(lead.amount) : '—') + '</div></div><div class="jos-px-side-stat"><div class="l">Created</div><div class="v">' + esc(lead.createdAt ? String(lead.createdAt).slice(0, 10) : '—') + '</div></div></div>' +
+      '<div class="jos-px-side-actions">' + btn('manual-lead', 'Edit lead', 'jos-btn jos-btn-sm') + (lead.key ? '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-lead="' + esc(lead.key) + '">Open full lead</button>' : '') + '</div></div>';
+  }
+  function renderLeadsList() {
+    var root = el('jos-leads-root'); if (!root) return;
+    var leads = allLeads();
+    var selKey = root._josLeadKey || null;
+    var sel = leads.find(function (l) { return String(l.key) === String(selKey); }) || null;
+    var filter = root._josLeadFilter || 'all';
+    var q = (root._josLeadQ || '').toLowerCase();
+    var filtered = leads.filter(function (l) {
+      var kind = srcKind(l.source, l);
+      if (filter !== 'all' && kind !== filter) return false;
+      if (!q) return true;
+      return String(l.name || '').toLowerCase().indexOf(q) >= 0 || String(l.service || '').toLowerCase().indexOf(q) >= 0 || String(vehicleOf(l) || '').toLowerCase().indexOf(q) >= 0;
+    });
+    root.innerHTML = '<div class="jos-px-page"><div class="jos-px-page-head"><div><h1>Leads</h1><p>Inbound interest from Google, Meta, Instagram, Hubly, and manual entry.</p></div><div class="jos-head-actions">' + btn('manual-lead', '+ Manual lead', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+      '<div class="jos-px-filters"><input type="search" id="jos-leads-q" placeholder="Search leads…" value="' + esc(root._josLeadQ || '') + '">' +
+      [['all', 'All'], ['google', 'Google'], ['facebook', 'Facebook'], ['instagram', 'Instagram'], ['hubly', 'Hubly'], ['manual', 'Manual']].map(function (f) {
+        return '<button type="button" class="jos-px-chip' + (filter === f[0] ? ' on' : '') + '" data-jos-lead-filter="' + f[0] + '">' + f[1] + '</button>';
+      }).join('') + '</div>' +
+      '<div class="jos-px-layout' + (sel ? '' : ' solo') + '"><div class="jos-px-table-wrap"><table class="jos-px-table"><thead><tr><th>Name</th><th>Source</th><th>Status</th><th>Service</th><th>Vehicle</th><th>Date</th></tr></thead><tbody>' +
+      (filtered.length ? filtered.map(function (l) {
+        var kind = srcKind(l.source, l), when = l.createdAt ? (dateLong(String(l.createdAt).slice(0, 10)) || String(l.createdAt).slice(0, 10)) : '—';
+        var on = sel && String(sel.key) === String(l.key);
+        return '<tr class="' + (on ? 'sel' : '') + '" data-jos-lead-row="' + esc(l.key || '') + '"><td><div class="jos-px-person"><div class="jos-px-av">' + esc(initials(l.name)) + '</div><div><strong>' + esc(l.name || 'Lead') + '</strong></div></div></td><td><span class="jos-src">' + srcIco(kind) + ' ' + esc(srcLabel(kind)) + '</span></td><td><span class="jos-pill quote">' + esc(leadStageLbl(l)) + '</span></td><td>' + esc(l.service || '—') + '</td><td>' + esc(vehicleOf(l) || '—') + '</td><td>' + esc(when) + '</td></tr>';
+      }).join('') : '<tr><td colspan="6"><div class="jos-empty">No leads match this filter.</div></td></tr>') +
+      '</tbody></table></div><aside class="jos-px-side" id="jos-leads-side">' + leadSideHtml(sel) + '</aside></div></div>';
     bindRoot(root);
+    var qInput = el('jos-leads-q');
+    if (qInput && !qInput._josBound) {
+      qInput._josBound = true;
+      qInput.addEventListener('input', function () { root._josLeadQ = qInput.value || ''; renderLeadsList(); });
+    }
     el('v-leads')?.classList.add('jos-enhanced');
+  }
+
+  function renderCustomersPage() {
+    var view = el('v-customers'); if (!view) return;
+    var root = el('jos-customers-root');
+    if (!root) {
+      root = document.createElement('div'); root.id = 'jos-customers-root';
+      view.insertBefore(root, view.firstChild);
+    }
+    view.classList.add('jos-pixel-owned');
+    var list = customers().slice();
+    if (!list.length) {
+      list = [
+        { id: 'demo_c1', name: 'Sarah Johnson', phone: '(512) 555-0198', email: 'sarah.johnson@gmail.com', vehicle: 'Tesla Model Y', customerType: 'recurring', statusOverride: 'vip', preferredService: 'Ceramic Coating' },
+        { id: 'demo_c2', name: 'Mike Brown', phone: '(512) 555-0142', email: 'mike.brown@email.com', vehicle: 'BMW X5', preferredService: 'Interior Detail' },
+        { id: 'demo_c3', name: 'Emily Smith', phone: '(512) 555-0177', email: 'emily.s@email.com', vehicle: 'Audi Q5', preferredService: 'Full Detail' }
+      ];
+    }
+    var q = (root._josCustQ || '').toLowerCase();
+    var tab = root._josCustTab || 'all';
+    var rows = list.map(function (c) {
+      var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
+      var lifetime = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+      var last = lastJob(c);
+      var hs = healthScore(c);
+      var vip = c.statusOverride === 'vip' || c.isVip || /vip/i.test(String(c.tags || c.status || ''));
+      return { c: c, lifetime: lifetime, last: last, hs: hs, vip: vip, member: c.customerType === 'recurring', vehicles: c.vehicle || vehicleOf(last) || '—' };
+    }).filter(function (x) {
+      if (tab === 'vip' && !x.vip) return false;
+      if (tab === 'member' && !x.member) return false;
+      if (!q) return true;
+      return String(x.c.name || '').toLowerCase().indexOf(q) >= 0 || String(x.c.phone || '').indexOf(q) >= 0 || String(x.c.email || '').toLowerCase().indexOf(q) >= 0;
+    });
+    var selId = root._josCustId || null;
+    var selRow = rows.find(function (x) { return String(x.c.id) === String(selId); }) || null;
+    function sideHtml(row) {
+      if (!row) return '<div class="jos-px-side-empty">Select a customer — profile opens on the right.</div>';
+      var c = row.c;
+      return '<div class="jos-px-side-head"><div class="jos-px-person"><div class="jos-px-av">' + esc(initials(c.name)) + '</div><div><strong>' + esc(c.name || 'Customer') + (row.vip ? '<span class="jos-px-badge vip">VIP</span>' : (row.member ? '<span class="jos-px-badge member">Member</span>' : '')) + '</strong><div class="sub">' + esc([c.phone, c.email].filter(Boolean).join(' · ') || 'No contact') + '</div></div></div>' +
+        '<div class="jos-px-side-meta"><div><span>Vehicle</span> ' + esc(row.vehicles) + '</div><div><span>Preferred</span> ' + esc(c.preferredService || '—') + '</div></div></div>' +
+        '<div class="jos-px-side-body"><div class="jos-px-side-stats"><div class="jos-px-side-stat"><div class="l">Lifetime</div><div class="v">' + esc(money(row.lifetime) || '$0') + '</div></div><div class="jos-px-side-stat"><div class="l">Last visit</div><div class="v">' + esc(row.last?.date ? dateLong(row.last.date) : '—') + '</div></div><div class="jos-px-side-stat"><div class="l">Membership</div><div class="v">' + (row.member ? 'Active' : 'None') + '</div></div><div class="jos-px-side-stat"><div class="l">Health</div><div class="v">' + row.hs + '</div></div></div>' +
+        '<p style="font-size:13px;color:var(--jos-ink-2);line-height:1.45;margin:0 0 12px">' + esc(aiCustomerSummary(c, custJobsFor(c).filter(function (j) { return j.status === 'completed'; }), custJobsFor(c).filter(function (j) { return j.status !== 'completed' && j.status !== 'cancelled' && j.status !== 'pending'; }))) + '</p>' +
+        '<div class="jos-px-side-actions"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(c.id)) + '">View Full Profile</button>' + btn('new-job-cust', 'New Job', 'jos-btn jos-btn-sm') + '</div></div>';
+    }
+    root.innerHTML = '<div class="jos-px-page"><div class="jos-px-page-head"><div><h1>Customers</h1><p>Lifetime value, membership, vehicles, and health — click a row for the side panel.</p></div><div class="jos-head-actions">' + btn('add-cust', '+ Add customer', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+      '<div class="jos-px-filters"><input type="search" id="jos-cust-q" placeholder="Search customers…" value="' + esc(root._josCustQ || '') + '">' +
+      [['all', 'All'], ['vip', 'VIP'], ['member', 'Members']].map(function (f) {
+        return '<button type="button" class="jos-px-chip' + (tab === f[0] ? ' on' : '') + '" data-jos-cust-tab="' + f[0] + '">' + f[1] + '</button>';
+      }).join('') + '</div>' +
+      '<div class="jos-px-layout"><div class="jos-px-table-wrap"><table class="jos-px-table"><thead><tr><th>Customer</th><th>Lifetime</th><th>Last visit</th><th>Membership</th><th>Vehicles</th><th>Health</th></tr></thead><tbody>' +
+      (rows.length ? rows.map(function (x) {
+        var on = selRow && String(selRow.c.id) === String(x.c.id);
+        var hClass = x.hs >= 85 ? '' : (x.hs >= 70 ? ' mid' : ' low');
+        return '<tr class="' + (on ? 'sel' : '') + '" data-jos-cust-row="' + esc(String(x.c.id)) + '"><td><div class="jos-px-person"><div class="jos-px-av">' + esc(initials(x.c.name)) + '</div><div><strong>' + esc(x.c.name) + (x.vip ? '<span class="jos-px-badge vip">VIP</span>' : '') + '</strong><div class="sub">' + esc(x.c.phone || x.c.email || '') + '</div></div></div></td><td style="font-weight:750;color:var(--jos-navy)">' + esc(money(x.lifetime) || '$0') + '</td><td>' + esc(x.last?.date ? dateLong(x.last.date) : '—') + '</td><td>' + (x.member ? '<span class="jos-px-badge member">Active</span>' : '—') + '</td><td>' + esc(x.vehicles) + '</td><td><span class="jos-px-health-dot' + hClass + '"><i></i>' + x.hs + '</span></td></tr>';
+      }).join('') : '<tr><td colspan="6"><div class="jos-empty">No customers yet.</div></td></tr>') +
+      '</tbody></table></div><aside class="jos-px-side" id="jos-cust-side">' + sideHtml(selRow) + '</aside></div></div>';
+    if (selRow) S().activeCustId = selRow.c.id;
+    bindRoot(root);
+    var qInput = el('jos-cust-q');
+    if (qInput && !qInput._josBound) {
+      qInput._josBound = true;
+      qInput.addEventListener('input', function () { root._josCustQ = qInput.value || ''; renderCustomersPage(); });
+    }
   }
 
   function custJobsFor(c) {
@@ -663,31 +759,41 @@
 
   function enhanceDashboard() {
     var root = el('jos-dash-root'), dash = el('v-dashboard'); if (!root && !dash) return;
-    if (dash) dash.classList.add('jos-dash-tight');
+    if (dash) {
+      dash.classList.add('jos-dash-tight', 'jos-pixel-owned');
+      // Own the full view — clear legacy Operate Home children except jos-dash-root
+      Array.prototype.slice.call(dash.children).forEach(function (ch) {
+        if (ch.id !== 'jos-dash-root') ch.remove();
+      });
+      if (!root) {
+        root = document.createElement('div'); root.id = 'jos-dash-root'; root.className = 'jos-dash-mount';
+        dash.appendChild(root);
+      }
+    }
     var pending = jobs().filter(function (j) { return j.status === 'pending'; }).length;
     var todayStr = typeof global.dateStr === 'function' ? global.dateStr(new Date()) : new Date().toISOString().slice(0, 10);
-    var todayJobs = jobs().filter(function (j) { return jobActive(j) && j.date === todayStr; });
+    var todayJobs = jobs().filter(function (j) { return !j.isBlock && j.date === todayStr && j.status !== 'cancelled'; });
     var month = todayStr.slice(0, 7);
     var mtd = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock && String(j.date || '').slice(0, 7) === month; });
     var mtdRev = mtd.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
     var returning = customers().filter(function (c) { return c.isReturning || c.customerType === 'recurring' || custJobsFor(c).filter(function (j) { return j.status === 'completed'; }).length >= 2; }).length;
+    var openLeads = collectLeads().length;
     var hs = Math.max(60, Math.min(96, 62 + Math.min(20, mtd.length * 3) + Math.min(10, todayJobs.length * 2) - Math.min(12, pending * 3)));
     var hour = new Date().getHours(), greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
-    var summary = todayJobs.length + ' on today’s schedule · ' + pending + ' need review · ' + esc(money(mtdRev) || '$0') + ' MTD';
-    var html = '<div class="jos-dash jos-dash-compact"><div class="jos-dash-brief jos-dash-tight-brief"><div class="jos-dash-top"><div><div class="sk">Morning briefing</div><h2>' + esc(greet) + ', ' + esc(S().biz || 'your business') + '</h2><p>' + summary + '</p></div><div class="jos-health-ring light" style="--jos-pct:' + hs + '"><span>' + hs + '</span><small>Health</small></div></div>' +
-      '<div class="jos-dash-mini-kpis"><div><div class="lbl">Today</div><div class="t">' + todayJobs.length + '</div></div><div><div class="lbl">Need review</div><div class="t">' + pending + '</div></div><div><div class="lbl">Revenue MTD</div><div class="t">' + esc(money(mtdRev) || '$0') + '</div></div><div><div class="lbl">Returning</div><div class="t">' + returning + '</div></div></div>' +
-      '<div class="jos-dash-rec"><div><div class="lbl">AI recommendation</div><div class="t">' + (pending ? 'Clear jobs needing review first' : (todayJobs.length ? 'Confirm today’s first jobs & upsell add-ons' : 'Nudge warm quotes to fill open slots')) + '</div></div>' + btn('ask-brief', 'Apply', 'jos-btn-brand jos-btn-sm') + '</div>' +
-      '<div class="jos-dash-sched"><div class="lbl">Today’s schedule</div>' + (todayJobs.length ? todayJobs.slice(0, 4).map(function (j) {
-        return '<div class="jos-dash-sched-row"><strong>' + esc(j.time || j.startTime || '—') + '</strong><span>' + esc(j.customer || 'Customer') + ' · ' + esc(j.service || 'Job') + '</span></div>';
-      }).join('') : '<div class="jos-muted" style="color:rgba(255,255,255,.55)">No jobs on the calendar today.</div>') + '</div></div></div>';
-    if (root) { root.innerHTML = html; bindRoot(root); return; }
-    var existing = dash.querySelector('.jos-dash');
-    if (!existing) {
-      var wrap = document.createElement('div'); wrap.innerHTML = html; var node = wrap.firstChild;
-      var hero = dash.querySelector('.dash-hero, .dash-ops-hero');
-      if (hero?.parentNode) hero.parentNode.insertBefore(node, hero.nextSibling); else dash.insertBefore(node, dash.firstChild);
-      bindRoot(node);
-    } else { existing.outerHTML = html; bindRoot(dash.querySelector('.jos-dash')); }
+    var owner = (global.currentUser && (global.currentUser.user_metadata?.full_name || global.currentUser.email)) || S().ownerName || 'Adrian';
+    if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
+    var rec = pending ? 'Clear jobs needing review first — keep the calendar honest.' : (todayJobs.length ? 'Confirm today’s first jobs and offer relevant add-ons.' : 'Nudge warm quotes to fill open slots.');
+    var sched = todayJobs.length ? todayJobs.slice(0, 6).map(function (j) {
+      return '<div class="jos-px-sched-row"><div class="time">' + esc(j.time || j.startTime || '—') + '</div><div><div class="who">' + esc(j.customer || 'Customer') + '</div><div class="svc">' + esc(j.service || 'Job') + '</div></div><div class="amt">' + esc(j.amount != null ? money(j.amount) : '') + '</div></div>';
+    }).join('') : '<div class="jos-muted" style="padding:8px 0">No jobs on the calendar today.</div>';
+    var jobsTodayList = todayJobs.length ? todayJobs.slice(0, 5).map(function (j) {
+      return '<div class="row"><div><strong>' + esc(j.customer || 'Customer') + '</strong><div class="svc" style="font-size:12px;color:var(--jos-ink-3)">' + esc(j.service || '') + '</div></div><span>' + esc(j.time || j.startTime || '—') + '</span></div>';
+    }).join('') : '<div class="jos-muted">Nothing scheduled.</div>';
+    var html = '<div class="jos-px-home"><div class="jos-px-home-top"><div><h1>' + esc(greet) + ', ' + esc(owner) + '</h1><p>' + todayJobs.length + ' on today’s schedule · ' + pending + ' need review · ' + esc(money(mtdRev) || '$0') + ' MTD at ' + esc(S().biz || 'your business') + '.</p></div>' +
+      '<div class="jos-px-health"><div class="jos-health-ring" style="--jos-pct:' + hs + '"><span>' + hs + '</span></div><div><div class="lbl">Business health</div><div class="t">' + (hs >= 85 ? 'Strong' : (hs >= 70 ? 'Solid' : 'Needs attention')) + '</div></div></div></div>' +
+      '<div class="jos-px-kpi-row"><div class="jos-px-kpi"><div class="lbl">Today</div><div class="v">' + todayJobs.length + '</div><div class="s">Jobs on calendar</div></div><div class="jos-px-kpi"><div class="lbl">Need review</div><div class="v">' + pending + '</div><div class="s">Pending confirmations</div></div><div class="jos-px-kpi"><div class="lbl">Revenue MTD</div><div class="v">' + esc(money(mtdRev) || '$0') + '</div><div class="s">Completed this month</div></div><div class="jos-px-kpi"><div class="lbl">Returning</div><div class="v">' + returning + '</div><div class="s">' + openLeads + ' open leads</div></div></div>' +
+      '<div class="jos-px-home-grid"><div class="jos-stack"><div class="jos-px-card"><h2>Today’s schedule</h2>' + sched + '</div></div><div class="jos-stack"><div class="jos-px-rec"><div class="sk">AI recommendation</div><p>' + esc(rec) + '</p>' + btn('ask-brief', 'Apply', 'jos-btn-brand jos-btn-sm') + '</div><div class="jos-px-card jos-px-jobs-today"><h2>Jobs today</h2>' + jobsTodayList + '<div class="jos-mt">' + btn('go-jobs', 'Open calendar', 'jos-btn jos-btn-sm') + '</div></div></div></div></div>';
+    if (root) { root.innerHTML = html; bindRoot(root); }
   }
 
   function switchNav(v) {
@@ -695,19 +801,50 @@
     if (nav && typeof global.switchV === 'function') global.switchV(nav);
   }
   function onSwitchView(v) {
-    var map = { pipeline: renderPipeline, opportunities: renderOpportunities, activity: renderActivity, ask: renderAskHubly, 'ask-hubly': renderAskHubly, marketing: renderMarketing, memberships: renderMemberships, reports: renderReportsPage, growth: renderGrowth, reviews: renderBizReviews, settings: renderSettingsHub, leads: renderLeadsList, dashboard: enhanceDashboard };
+    var map = {
+      pipeline: renderPipeline,
+      opportunities: renderOpportunities,
+      activity: renderActivity,
+      ask: renderAskHubly,
+      'ask-hubly': renderAskHubly,
+      marketing: renderMarketing,
+      memberships: renderMemberships,
+      reports: renderReportsPage,
+      growth: renderGrowth,
+      reviews: renderBizReviews,
+      settings: renderSettingsHub,
+      leads: renderLeadsList,
+      customers: renderCustomersPage,
+      dashboard: enhanceDashboard
+    };
     if (map[v]) try { map[v](); } catch (e) { console.warn('HublyJourneyOS', v, e); }
   }
 
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-opp],[data-jos-lead],[data-jos-tab],[data-jos-job]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-filter],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-tab],[data-jos-job]'); if (!t) return;
       if (t.hasAttribute('data-jos-card')) {
         var cards = el('jos-pipeline-root')?._josCards || [];
         return openCard(cards.find(function (c) { return String(c.id) === String(t.getAttribute('data-jos-card')); }));
       }
+      if (t.hasAttribute('data-jos-lead-filter')) {
+        var leadsRoot = el('jos-leads-root'); if (leadsRoot) { leadsRoot._josLeadFilter = t.getAttribute('data-jos-lead-filter'); renderLeadsList(); }
+        return;
+      }
+      if (t.hasAttribute('data-jos-lead-row')) {
+        var lr = el('jos-leads-root'); if (lr) { lr._josLeadKey = t.getAttribute('data-jos-lead-row'); renderLeadsList(); }
+        return;
+      }
       if (t.hasAttribute('data-jos-lead')) { var key = t.getAttribute('data-jos-lead'); if (key && typeof global.viewLead === 'function') global.viewLead(key); return; }
+      if (t.hasAttribute('data-jos-cust-tab')) {
+        var cr = el('jos-customers-root'); if (cr) { cr._josCustTab = t.getAttribute('data-jos-cust-tab'); renderCustomersPage(); }
+        return;
+      }
+      if (t.hasAttribute('data-jos-cust-row')) {
+        var crow = el('jos-customers-root'); if (crow) { crow._josCustId = t.getAttribute('data-jos-cust-row'); S().activeCustId = crow._josCustId; renderCustomersPage(); }
+        return;
+      }
       if (t.hasAttribute('data-jos-job')) {
         var shell = el('jos-customer-profile'); if (!shell) return;
         shell._josJobId = t.getAttribute('data-jos-job');
@@ -732,6 +869,12 @@
       if (act === 'opp-ask' && opp) return ask(opp.title);
       if (act === 'ask-submit' || act === 'ask-brief') return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
       if (act === 'manual-lead') return typeof global.openM === 'function' ? global.openM('m-new-lead') : toast('Add lead');
+      if (act === 'add-cust') return typeof global.openM === 'function' ? global.openM('m-new-cust') : toast('Add customer');
+      if (act === 'cust-full-profile') {
+        var cidFull = t.getAttribute('data-jos-cust') || S().activeCustId || el('jos-customers-root')?._josCustId;
+        if (cidFull) return openCustomerProfile(cidFull);
+        return;
+      }
       if (act === 'smart-quote') return typeof global.openSmartQuote === 'function' ? global.openSmartQuote() : toast('Quick Quote');
       if (act === 'preview') return typeof global.previewProfile === 'function' ? global.previewProfile() : null;
       if (act === 'stripe') return typeof global.goStripeConnect === 'function' ? global.goStripeConnect() : ask('Connect Stripe');
@@ -743,7 +886,7 @@
       if (act === 'ask-cust') return ask('Summarize next best action for ' + (el('jos-cp-name')?.textContent || 'this customer'));
       if (act === 'ask') return ask('Plan a simple marketing campaign for this week');
       if (act === 'new-job-cust') {
-        var cid = S().activeCustId || el('jos-customer-profile')?._josCustId;
+        var cid = S().activeCustId || el('jos-customer-profile')?._josCustId || el('jos-customers-root')?._josCustId;
         if (cid && typeof global.openNewJobForCustomer === 'function') return global.openNewJobForCustomer(cid);
         return typeof global.openM === 'function' ? global.openM('m-new-job') : toast('New job');
       }
@@ -772,6 +915,7 @@
     renderBizReviews: renderBizReviews,
     renderSettingsHub: renderSettingsHub,
     renderLeadsList: renderLeadsList,
+    renderCustomersPage: renderCustomersPage,
     openCustomerProfile: openCustomerProfile,
     closeCustomerProfile: closeCustomerProfile,
     enhanceDashboard: enhanceDashboard,
