@@ -14234,9 +14234,7 @@ async function refreshOpenAppViews(){
   await loadJobs();
   try{await refreshLeadsSources();}catch(e){}
   try{await loadCustomers();}catch(e){}
-  renderDashToday();
-  renderDashNewBookings();
-  updateKPIs();
+  try{HublyJourneyOS?.enhanceDashboard?.();}catch(e){renderDashToday();renderDashNewBookings();updateKPIs();}
   try{
     if(viewIsOpen('v-jobs')){
       if(typeof renderCal==='function')renderCal();
@@ -14244,11 +14242,15 @@ async function refreshOpenAppViews(){
     }
   }catch(e){}
   try{
-    if(viewIsOpen('v-leads')&&typeof renderLeadsBoard==='function')renderLeadsBoard({refresh:true});
-    else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
+    if(viewIsOpen('v-leads')){
+      try{HublyJourneyOS?.renderLeadsList?.();}catch(e2){}
+      if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
+    } else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
   }catch(e){}
   try{
-    if(viewIsOpen('v-customers')&&typeof renderCustomersView==='function')renderCustomersView();
+    if(viewIsOpen('v-customers')){
+      try{HublyJourneyOS.renderCustomersPage()}catch(e2){if(typeof renderCustomersView==='function')renderCustomersView();}
+    }
   }catch(e){}
   try{
     if(viewIsOpen('v-money')){
@@ -14263,8 +14265,10 @@ async function refreshOpenAppViews(){
   }catch(e){}
   try{
     if(viewIsOpen('v-dashboard')){
-      if(typeof renderDashToday==='function')renderDashToday();
-      if(typeof renderDashNewBookings==='function')renderDashNewBookings();
+      try{HublyJourneyOS?.enhanceDashboard?.();}catch(e2){
+        if(typeof renderDashToday==='function')renderDashToday();
+        if(typeof renderDashNewBookings==='function')renderDashNewBookings();
+      }
     }
   }catch(e){}
 }
