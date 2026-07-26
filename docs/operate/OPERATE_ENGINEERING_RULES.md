@@ -25,6 +25,23 @@ If a UI pattern already exists in Hubly:
 3. Only create a new component if the existing one cannot satisfy the use case.  
 4. New modules consume Design System v1 from day one. Locked modules are not mass-refactored unless reopened.
 
+## Rule #15 — Single Source of Truth
+
+Every type of data has **exactly one owner**. Other modules read it — they do not own or duplicate it.
+
+See [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md).
+
+| Data | Owner |
+|------|--------|
+| Customer | ❤️ Customers |
+| Lead | 🧲 Leads |
+| Job | 📅 Jobs |
+| Service | 🌐 Storefront → Service Catalog |
+| Membership | 🔁 Memberships |
+| Payment | 💰 Revenue |
+| Review | ⭐ Reviews |
+| Campaign | 📣 Marketing |
+
 ## Cross-Module Verification (CMV)
 
 Before approval of a new module PR, confirm locked modules still function (no modifications — confirmation only).

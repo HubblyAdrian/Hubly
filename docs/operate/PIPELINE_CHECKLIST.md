@@ -1,7 +1,9 @@
 # Module 6 — 🧭 Pipeline
 
-**Status:** OS Complete · MAT ✅ ACCEPTED  
+**Status:** 🔒 OS LOCKED (Stage 1) — merged #249  
 **Branch:** `cursor/operate-pipeline-2662`  
+**PR:** [#249](https://github.com/HubblyAdrian/Hubly/pull/249)  
+**MAT:** [PIPELINE_MAT.md](./PIPELINE_MAT.md)  
 **Design System:** [DESIGN_SYSTEM_V1.md](./DESIGN_SYSTEM_V1.md) · `HublyDS` (Rule #14)  
 **Stage in scope:** Stage 1 — Operating System  
 **Golden profile:** Reuse `openCustomerProfile` — never a second CRM profile
@@ -102,7 +104,11 @@ Pipeline is the sales engine — Lead → Qualified → Quote → Booked → Com
 - [x] Validator PASS ✅
 - [x] CMV PASS (locked modules incl. Customers) ✅
 - [x] MAT ✅ ACCEPTED ✅
-- [x] Ready for merge → lock 🔒 OS after approval ⏳
+- [x] Merged #249 → **🔒 OS LOCKED** ✅
+
+---
+
+**Pipeline Operating System is locked (🔒 OS).** Do not modify Stage 1 OS unless bug fix, Stage 2 integrations, or explicit reopen.
 
 ---
 
