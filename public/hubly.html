@@ -10105,12 +10105,13 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <!-- CHATS -->
+      <!-- CHATS / INBOX -->
       <div id="v-chats" class="body hidden">
-        <div class="flex ai-c jc-b" style="margin-bottom:20px;">
+        <div id="jos-inbox-root"></div>
+        <div class="flex ai-c jc-b jos-legacy-inbox" style="margin-bottom:20px;">
           <div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="chats">Chats</div>
         </div>
-        <div id="chats-panel-body"></div>
+        <div id="chats-panel-body" class="jos-legacy-inbox"></div>
       </div>
 
       <!-- MARKETPLACE (owner settings — AI-first booking engine; consumer entry at /get-done) -->
@@ -34798,7 +34799,7 @@ function switchV(el){
   if(v==='customers'){try{HublyJourneyOS.renderCustomersPage()}catch(e){renderCustomersView()}}
   if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}
   if(v==='money'){renderReports();renderMoneyView();try{syncMoneyPayPrefs();}catch(e){}try{refreshStripeConnectStatus({quiet:true});}catch(e){}}
-  if(v==='chats')renderChatsPanel();
+  if(v==='chats'){try{HublyJourneyOS?.onSwitchView?.('chats');}catch(e){renderChatsPanel();}}
   if(v==='marketplace'){try{loadMarketplaceSettings();loadMarketplaceBookings();}catch(e){console.warn(e);}}
   try{HublyJourneyOS?.onSwitchView?.(v);}catch(e){}
   if(v==='editor'){

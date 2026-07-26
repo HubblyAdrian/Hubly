@@ -782,10 +782,13 @@
 
   function demoConversations() {
     return [
-      { id: 'conv1', customer_name: 'Alex Rivera', channel: 'sms', last_message: 'Can you fit me in for ceramic coating this week?', unread: 2, updated_at: todayStr() + 'T09:15:00', phone: '(619) 555-0133', messages: [{ dir: 'in', text: 'Hi, saw your Google listing. Do you do ceramic coating?', at: '9:02 AM' }, { dir: 'out', text: 'Yes! I have Thursday or Saturday open. What vehicle?', at: '9:05 AM' }, { dir: 'in', text: 'Can you fit me in for ceramic coating this week?', at: '9:15 AM' }] },
-      { id: 'conv2', customer_name: 'Sarah Johnson', channel: 'sms', last_message: 'Perfect, see you at 9am tomorrow.', unread: 0, updated_at: todayStr() + 'T08:40:00', phone: '(619) 555-0198', messages: [{ dir: 'out', text: 'Reminder: Interior Detail tomorrow at 9:00 AM.', at: '8:30 AM' }, { dir: 'in', text: 'Perfect, see you at 9am tomorrow.', at: '8:40 AM' }] },
-      { id: 'conv3', customer_name: 'Taylor Kim', channel: 'instagram', last_message: 'How much for a Model 3 interior?', unread: 1, updated_at: todayStr() + 'T07:22:00', messages: [{ dir: 'in', text: 'How much for a Model 3 interior?', at: '7:22 AM' }] },
-      { id: 'conv4', customer_name: 'Jordan Lee', channel: 'chat', last_message: 'Left at vehicle size step', unread: 1, updated_at: todayStr() + 'T06:50:00', messages: [{ dir: 'in', text: 'Started booking Exterior Detail', at: '6:45 AM' }, { dir: 'sys', text: 'Left at vehicle size step', at: '6:50 AM' }] }
+      { id: 'conv1', customer_name: 'Alex Rivera', channel: 'sms', last_message: 'Can you fit me in for ceramic coating this week?', unread: 2, updated_at: todayStr() + 'T09:15:00', phone: '(619) 555-0133', priority: 'high', isLead: true, needsAttention: true, messages: [{ dir: 'in', text: 'Hi, saw your Google listing. Do you do ceramic coating?', at: '9:02 AM' }, { dir: 'out', text: 'Yes! I have Thursday or Saturday open. What vehicle?', at: '9:05 AM' }, { dir: 'in', text: 'Can you fit me in for ceramic coating this week?', at: '9:15 AM' }] },
+      { id: 'conv2', customer_name: 'Sarah Johnson', channel: 'sms', last_message: 'Perfect, see you at 9am tomorrow.', unread: 0, updated_at: todayStr() + 'T08:40:00', phone: '(619) 555-0198', vip: true, messages: [{ dir: 'out', text: 'Reminder: Interior Detail tomorrow at 9:00 AM.', at: '8:30 AM' }, { dir: 'in', text: 'Perfect, see you at 9am tomorrow.', at: '8:40 AM' }] },
+      { id: 'conv3', customer_name: 'Taylor Kim', channel: 'instagram', last_message: 'How much for a Model 3 interior?', unread: 1, updated_at: todayStr() + 'T07:22:00', vehicle: 'Tesla Model 3', needsAttention: true, messages: [{ dir: 'in', text: 'How much for a Model 3 interior?', at: '7:22 AM' }] },
+      { id: 'conv4', customer_name: 'Jordan Lee', channel: 'chat', last_message: 'Left at vehicle size step', unread: 1, updated_at: todayStr() + 'T06:50:00', aiMode: 'ai', needsAttention: true, messages: [{ dir: 'in', text: 'Started booking Exterior Detail', at: '6:45 AM' }, { dir: 'sys', text: 'Left at vehicle size step', at: '6:50 AM' }] },
+      { id: 'conv5', customer_name: 'Emily Wilson', channel: 'email', email: 'emily@example.com', last_message: 'Can you send the ceramic quote as a PDF?', unread: 1, updated_at: todayStr() + 'T10:05:00', needsAttention: true, messages: [{ dir: 'in', text: 'Can you send the ceramic quote as a PDF?', at: '10:05 AM', attachment: 'request.pdf' }] },
+      { id: 'conv6', customer_name: 'Chris Park', channel: 'facebook', last_message: 'Do you detail trucks at the office park?', unread: 0, updated_at: todayStr() + 'T11:20:00', messages: [{ dir: 'in', text: 'Do you detail trucks at the office park?', at: '11:18 AM' }, { dir: 'out', text: 'Yes — mobile service available in Mission Valley.', at: '11:20 AM' }] },
+      { id: 'conv7', customer_name: 'Website Visitor', channel: 'ai', last_message: 'AI could not confirm vehicle size', unread: 1, updated_at: todayStr() + 'T12:01:00', aiFailed: true, needsAttention: true, aiMode: 'ai', messages: [{ dir: 'in', text: 'I want an exterior detail tomorrow', at: '11:58 AM' }, { dir: 'sys', text: 'AI could not confirm vehicle size', at: '12:01 PM' }] }
     ];
   }
 
@@ -1351,6 +1354,541 @@
 
 
 
+  var INBOX_TABS = [
+    ['all', 'All Conversations'],
+    ['chat', 'Website Chat'],
+    ['sms', 'SMS'],
+    ['email', 'Email'],
+    ['facebook', 'Facebook'],
+    ['instagram', 'Instagram'],
+    ['ai', 'AI Conversations'],
+    ['needs', 'Needs Attention'],
+    ['archived', 'Archived']
+  ];
+  var INBOX_TEMPLATES = [
+    { id: 'greet', label: 'Greeting', body: 'Hi {{name}} — thanks for reaching out to {{biz}}. How can I help today?' },
+    { id: 'quote', label: 'Quote follow-up', body: 'Hi {{name}}, just checking if you had a chance to review the quote. Happy to answer any questions.' },
+    { id: 'book', label: 'Book slot', body: 'Hi {{name}}, I have openings this week. Want me to hold a time for your {{service}}?' },
+    { id: 'thanks', label: 'Thanks', body: 'Appreciate you, {{name}}! Reply anytime if you need anything else.' }
+  ];
+
+  function normalizeChannel(ch) {
+    ch = String(ch || 'chat').toLowerCase();
+    if (ch === 'website' || ch === 'web' || ch === 'live') return 'chat';
+    if (ch === 'fb' || ch === 'messenger') return 'facebook';
+    if (ch === 'ig' || ch === 'dm') return 'instagram';
+    return ch;
+  }
+  function channelLabel(ch) {
+    return ({ chat: 'Website Chat', sms: 'SMS', email: 'Email', facebook: 'Facebook', instagram: 'Instagram', ai: 'AI' })[normalizeChannel(ch)] || 'Chat';
+  }
+  function channelIco(ch) {
+    return ({ chat: 'W', sms: 'S', email: '@', facebook: 'f', instagram: 'Ig', ai: 'AI' })[normalizeChannel(ch)] || '•';
+  }
+  function inboxTime(raw) {
+    if (!raw) return '';
+    try {
+      var d = new Date(raw);
+      if (!isNaN(d.getTime())) {
+        var now = new Date();
+        if (d.toDateString() === now.toDateString()) {
+          return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        }
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+    } catch (e) {}
+    return String(raw).slice(11, 16) || String(raw);
+  }
+  function enrichConversation(c) {
+    c = Object.assign({}, c || {});
+    c.channel = normalizeChannel(c.channel);
+    c.customer_name = c.customer_name || c.name || 'Visitor';
+    c.last_message = c.last_message || c.lastMessage || '';
+    c.unread = Number(c.unread || 0);
+    c.messages = Array.isArray(c.messages) ? c.messages.slice() : [];
+    c.notes = Array.isArray(c.notes) ? c.notes.slice() : (c.notes ? [c.notes] : []);
+    c.attachments = Array.isArray(c.attachments) ? c.attachments : [];
+    var blob = (c.last_message + ' ' + c.messages.map(function (m) { return m.text || m.content || ''; }).join(' ')).toLowerCase();
+    if (c.priority == null) {
+      if (c.vip || /vip/.test(blob)) c.priority = 'high';
+      else if (c.unread > 0 || /price|quote|book|coating|urgent|asap/.test(blob)) c.priority = 'med';
+      else c.priority = 'low';
+    }
+    if (c.intent == null) {
+      if (/book|schedule|appointment|thursday|saturday/.test(blob)) c.intent = 'Ready to book';
+      else if (/price|how much|quote|cost/.test(blob)) c.intent = 'Pricing';
+      else if (/cancel|refund|complaint/.test(blob)) c.intent = 'At risk';
+      else c.intent = 'Browsing';
+    }
+    if (c.sentiment == null) {
+      if (/perfect|thanks|great|love/.test(blob)) c.sentiment = 'Positive';
+      else if (/cancel|angry|upset|refund/.test(blob)) c.sentiment = 'Negative';
+      else c.sentiment = 'Neutral';
+    }
+    if (c.isLead == null) c.isLead = /price|quote|book|coating|detail/.test(blob) || c.unread > 0;
+    if (c.needsAttention == null) c.needsAttention = c.unread > 0 || c.priority === 'high' || c.aiFailed || c.channel === 'ai';
+    if (c.aiMode == null) c.aiMode = c.channel === 'chat' || c.channel === 'ai' ? 'ai' : 'human';
+    if (c.archived == null) c.archived = !!c.archived;
+    return c;
+  }
+  function inboxConversations() {
+    var list = conversations();
+    if (!list.length) list = demoConversations();
+    return list.map(enrichConversation);
+  }
+  function matchCustomer(conv) {
+    var name = String(conv.customer_name || '').toLowerCase();
+    var phone = String(conv.phone || conv.customer_phone || '').replace(/\D/g, '');
+    var email = String(conv.email || conv.customer_email || '').toLowerCase();
+    return customers().find(function (c) {
+      if (name && String(c.name || '').toLowerCase() === name) return true;
+      if (phone && String(c.phone || '').replace(/\D/g, '') === phone) return true;
+      if (email && String(c.email || '').toLowerCase() === email) return true;
+      return false;
+    }) || null;
+  }
+  function integrationStatus() {
+    var st = S();
+    return {
+      twilio: !!(st.twilioConnected || st.smsProvider === 'twilio' || st.integrations?.twilio),
+      resend: !!(st.resendConnected || st.emailProvider === 'resend' || st.integrations?.resend),
+      meta: !!(st.metaConnected || st.facebookConnected || st.instagramConnected || st.integrations?.meta)
+    };
+  }
+
+  function renderInbox() {
+    var root = ownPixelView('v-chats', 'jos-inbox-root');
+    if (!root) return;
+    updateChrome('chats');
+    try {
+      renderInboxPage(root);
+    } catch (err) {
+      console.warn('HublyJourneyOS Inbox', err);
+      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Inbox could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderInbox()">Retry</button></div></div></div>';
+    }
+  }
+
+  function renderInboxPage(root) {
+    var tab = root._josInboxTab || 'all';
+    var q = String(root._josInboxQ || '').trim().toLowerCase();
+    var filter = root._josInboxFilter || 'all';
+    var all = inboxConversations();
+    var selectedId = root._josInboxId || (all[0] && all[0].id) || null;
+    var integ = integrationStatus();
+
+    var filtered = all.filter(function (c) {
+      if (tab === 'archived') return !!c.archived;
+      if (c.archived && tab !== 'archived') return false;
+      if (tab === 'needs') return !!c.needsAttention;
+      if (tab === 'ai') return c.channel === 'ai' || c.aiMode === 'ai';
+      if (tab !== 'all' && normalizeChannel(c.channel) !== tab) return false;
+      if (filter === 'unread' && !(c.unread > 0)) return false;
+      if (filter === 'priority' && c.priority === 'low') return false;
+      if (filter === 'leads' && !c.isLead) return false;
+      if (!q) return true;
+      var cust = matchCustomer(c);
+      var vehicle = cust ? String(cust.vehicle || cust.vehicles || '') : String(c.vehicle || '');
+      var msgBlob = c.messages.map(function (m) { return m.text || m.content || ''; }).join(' ');
+      var hay = [c.customer_name, c.phone, c.customer_phone, c.email, c.customer_email, c.last_message, vehicle, msgBlob].join(' ').toLowerCase();
+      return hay.indexOf(q) > -1;
+    });
+
+    if (selectedId && !filtered.some(function (c) { return String(c.id) === String(selectedId); })) {
+      selectedId = filtered[0] ? filtered[0].id : null;
+      root._josInboxId = selectedId;
+    }
+    var sel = filtered.find(function (c) { return String(c.id) === String(selectedId); }) || null;
+    var cust = sel ? matchCustomer(sel) : null;
+
+    var tabsHtml = '<div class="jos-tabs jos-inbox-tabs">' + INBOX_TABS.map(function (t) {
+      var count = all.filter(function (c) {
+        if (t[0] === 'all') return !c.archived;
+        if (t[0] === 'archived') return !!c.archived;
+        if (t[0] === 'needs') return !c.archived && c.needsAttention;
+        if (t[0] === 'ai') return !c.archived && (c.channel === 'ai' || c.aiMode === 'ai');
+        return !c.archived && normalizeChannel(c.channel) === t[0];
+      }).length;
+      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-inbox-tab="' + t[0] + '">' + esc(t[1]) + (count ? ' <span class="jos-tab-count">' + count + '</span>' : '') + '</button>';
+    }).join('') + '</div>';
+
+    var listHtml = filtered.length ? filtered.map(function (c) {
+      var on = sel && String(sel.id) === String(c.id);
+      return '<button type="button" class="jos-list-card' + (on ? ' on' : '') + '" data-jos-inbox-id="' + esc(String(c.id)) + '">' +
+        '<div class="jos-between"><div class="t">' + esc(c.customer_name) + '</div><span class="jos-muted">' + esc(inboxTime(c.updated_at)) + '</span></div>' +
+        '<div class="s">' + esc(c.last_message || 'No messages yet') + '</div>' +
+        '<div class="meta"><span class="jos-ch-ico" title="' + esc(channelLabel(c.channel)) + '">' + esc(channelIco(c.channel)) + '</span>' +
+        '<span class="jos-pill ' + (c.priority === 'high' ? 'hot' : (c.priority === 'med' ? 'warn' : 'info')) + '">AI ' + esc(c.priority) + '</span>' +
+        (c.unread ? '<span class="jos-pill hot">' + c.unread + ' new</span>' : '') +
+        '</div></button>';
+    }).join('') : '<div class="jos-empty">No conversations in this view.' + (q ? ' Clear search to see more.' : '') + '</div>';
+
+    var timeline = '';
+    if (sel) {
+      var msgs = sel.messages.length ? sel.messages : [{ dir: 'in', text: sel.last_message || '…', at: inboxTime(sel.updated_at) }];
+      timeline = msgs.map(function (m) {
+        var dir = m.dir === 'out' || m.role === 'assistant' || m.role === 'business' ? 'out' : (m.dir === 'sys' || m.role === 'system' ? 'sys' : 'in');
+        var text = m.text || m.content || '';
+        if (dir === 'sys') return '<div class="jos-chat-sys">' + esc(text) + '</div>';
+        return '<div class="jos-chat-bubble ' + dir + '">' + esc(text) +
+          (m.image ? '<div class="jos-chat-attach">🖼 Image attached</div>' : '') +
+          (m.voice ? '<div class="jos-chat-attach">🎤 Voice note' + (m.voiceDuration ? ' · ' + esc(m.voiceDuration) : '') + '</div>' : '') +
+          (m.attachment ? '<div class="jos-chat-attach">📎 ' + esc(m.attachment) + '</div>' : '') +
+          '<div class="jos-muted" style="font-size:10px;margin-top:4px">' + esc(m.at || '') + '</div></div>';
+      }).join('');
+      (sel.attachments || []).forEach(function (a) {
+        timeline += '<div class="jos-chat-sys">Attachment: ' + esc(a.name || a) + '</div>';
+      });
+    }
+
+    var templatesHtml = INBOX_TEMPLATES.map(function (t) {
+      return '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-template" data-jos-template="' + esc(t.id) + '">' + esc(t.label) + '</button>';
+    }).join('');
+
+    var channelTools = '';
+    if (sel) {
+      var ch = normalizeChannel(sel.channel);
+      if (ch === 'chat') {
+        channelTools = '<div class="jos-inbox-tools"><div class="jos-kicker">Website Chat</div><div class="jos-btn-row">' +
+          btn('inbox-ai-takeover', 'AI Takeover', sel.aiMode === 'ai' ? 'jos-btn-brand jos-btn-sm' : 'jos-btn jos-btn-sm') +
+          btn('inbox-human-takeover', 'Human Takeover', sel.aiMode === 'human' ? 'jos-btn-brand jos-btn-sm' : 'jos-btn jos-btn-sm') +
+          btn('inbox-booking', 'Booking', 'jos-btn jos-btn-sm') +
+          btn('smart-quote', 'Quote', 'jos-btn jos-btn-sm') +
+          '</div></div>';
+      } else if (ch === 'sms') {
+        channelTools = '<div class="jos-inbox-tools"><div class="jos-kicker">SMS · Twilio ' + (integ.twilio ? 'connected' : 'not connected') + '</div><div class="jos-btn-row">' +
+          btn('inbox-sms-open', 'Open Messages', 'jos-btn-brand jos-btn-sm') +
+          btn('inbox-schedule-sms', 'Schedule SMS', 'jos-btn jos-btn-sm') +
+          btn('inbox-ai-rewrite', 'AI Rewrite', 'jos-btn jos-btn-sm') +
+          (integ.twilio ? '' : btn('inbox-connect-twilio', 'Connect Twilio', 'jos-btn jos-btn-sm')) +
+          '</div></div>';
+      } else if (ch === 'email') {
+        channelTools = '<div class="jos-inbox-tools"><div class="jos-kicker">Email · Resend ' + (integ.resend ? 'connected' : 'ready via platform') + '</div><div class="jos-btn-row">' +
+          btn('inbox-email-reply', 'Reply', 'jos-btn-brand jos-btn-sm') +
+          btn('inbox-ai-draft', 'AI Draft', 'jos-btn jos-btn-sm') +
+          btn('inbox-schedule-email', 'Schedule Email', 'jos-btn jos-btn-sm') +
+          btn('inbox-attach', 'Attachments', 'jos-btn jos-btn-sm') +
+          '</div></div>';
+      } else if (ch === 'facebook') {
+        channelTools = '<div class="jos-inbox-tools"><div class="jos-kicker">Facebook Messenger · Meta ' + (integ.meta ? 'connected' : 'not connected') + '</div><div class="jos-btn-row">' +
+          btn('inbox-send', 'Reply', 'jos-btn-brand jos-btn-sm') +
+          btn('inbox-ai-reply', 'AI Reply', 'jos-btn jos-btn-sm') +
+          btn('inbox-match-customer', 'Match Customer', 'jos-btn jos-btn-sm') +
+          (integ.meta ? '' : btn('inbox-connect-meta', 'Connect Meta', 'jos-btn jos-btn-sm')) +
+          '</div></div>';
+      } else if (ch === 'instagram') {
+        channelTools = '<div class="jos-inbox-tools"><div class="jos-kicker">Instagram DM · Meta ' + (integ.meta ? 'connected' : 'not connected') + '</div><div class="jos-btn-row">' +
+          btn('inbox-send', 'Reply', 'jos-btn-brand jos-btn-sm') +
+          btn('inbox-match-customer', 'Match Customer', 'jos-btn jos-btn-sm') +
+          btn('inbox-booking', 'Booking Shortcut', 'jos-btn jos-btn-sm') +
+          (integ.meta ? '' : btn('inbox-connect-meta', 'Connect Meta', 'jos-btn jos-btn-sm')) +
+          '</div></div>';
+      }
+    }
+
+    var chatHtml = sel ? (
+      '<div class="jos-card jos-inbox-thread">' +
+        '<div class="jos-between"><div><div class="jos-kicker">' + esc(channelLabel(sel.channel)) + '</div><h3 style="margin:4px 0 0">' + esc(sel.customer_name) + '</h3></div>' +
+        '<div class="jos-btn-row">' + btn('inbox-archive', sel.archived ? 'Unarchive' : 'Archive', 'jos-btn jos-btn-sm') + btn('inbox-ai-reply', 'AI Reply', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+        '<div class="jos-ai jos-mt"><div class="sk">AI</div><p style="font-size:13px;margin-top:6px"><strong>Intent:</strong> ' + esc(sel.intent) + ' · <strong>Sentiment:</strong> ' + esc(sel.sentiment) + (sel.isLead ? ' · Lead detected' : '') + '</p>' +
+        '<div class="jos-btn-row jos-mt">' + btn('inbox-ai-summary', 'AI Summary', 'jos-btn jos-btn-sm') + btn('inbox-suggested', 'Suggested Actions', 'jos-btn jos-btn-sm') + '</div></div>' +
+        channelTools +
+        '<div class="jos-chat-stream jos-mt">' + timeline + '</div>' +
+        '<div class="jos-inbox-templates jos-mt"><div class="jos-kicker">Templates</div><div class="jos-btn-row jos-mt">' + templatesHtml + '</div></div>' +
+        '<div class="jos-chat-input jos-mt"><input id="jos-inbox-reply" type="text" placeholder="Reply…" value="' + esc(root._josInboxDraft || '') + '">' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-attach" title="Attachments">📎</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-image" title="Images">🖼</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-voice" title="Voice note">🎤</button>' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="inbox-send">Send</button></div>' +
+        '<div class="jos-mt"><div class="jos-kicker">Internal Notes</div>' +
+        '<div class="jos-notes">' + (sel.notes.length ? sel.notes.map(function (n) { return '<div class="jos-note">' + esc(typeof n === 'string' ? n : (n.text || '')) + '</div>'; }).join('') : '<div class="jos-muted">No internal notes yet</div>') + '</div>' +
+        '<div class="jos-chat-input jos-mt"><input id="jos-inbox-note" type="text" placeholder="Add internal note…">' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-note">Add note</button></div></div>' +
+      '</div>'
+    ) : '<div class="jos-empty">Select a conversation</div>';
+
+    var spent = 0, jobCount = 0, vehicles = '', membership = 'None';
+    if (cust) {
+      spent = jobs().filter(function (j) { return j.customer === cust.name && j.status === 'completed'; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+      jobCount = jobs().filter(function (j) { return j.customer === cust.name && !j.isBlock; }).length;
+      vehicles = cust.vehicle || cust.vehicles || cust.property || '—';
+      membership = cust.customerType === 'recurring' ? ('Active' + (cust.membershipPlan ? ' · ' + cust.membershipPlan : '')) : 'None';
+    }
+
+    var sideHtml = sel ? (
+      '<div class="jos-stack">' +
+        '<div class="jos-card"><div class="jos-kicker">Customer Info</div><h3 style="margin:8px 0 4px">' + esc(sel.customer_name) + '</h3>' +
+        '<div class="jos-muted">' + esc(sel.phone || sel.customer_phone || 'No phone') + '</div>' +
+        '<div class="jos-muted">' + esc(sel.email || sel.customer_email || 'No email') + '</div>' +
+        '<div class="jos-mt">' + (cust ? '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(cust.id)) + '">View profile</button>' : btn('inbox-match-customer', 'Match / Add customer', 'jos-btn-brand jos-btn-sm')) + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Lifetime Revenue</div><div class="jos-kpi-v brand jos-mt">' + esc(money(spent) || '$0') + '</div><div class="jos-muted">' + jobCount + ' jobs</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Membership</div><p class="jos-mt">' + esc(membership) + '</p></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Vehicles / Properties</div><p class="jos-mt">' + esc(vehicles || '—') + '</p></div>' +
+        '<div class="jos-ai"><div class="sk">AI Summary</div><p style="font-size:13px;margin-top:6px">' + esc(sel.customer_name) + ' is showing <strong>' + esc(sel.intent) + '</strong> intent with <strong>' + esc(sel.sentiment).toLowerCase() + '</strong> sentiment. Priority: ' + esc(sel.priority) + '.</p>' +
+        '<div class="jos-btn-row jos-mt">' + btn('inbox-ai-summary', 'Refresh summary', 'jos-btn jos-btn-sm') + btn('inbox-ai-reply', 'Draft reply', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Quick Actions</div><div class="jos-stack jos-mt">' +
+        btn('new-job-cust', 'New Job', 'jos-btn jos-btn-sm') +
+        btn('smart-quote', 'New Quote', 'jos-btn jos-btn-sm') +
+        btn('inbox-booking', 'Send booking link', 'jos-btn jos-btn-sm') +
+        btn('go-leads', 'Open Leads', 'jos-btn jos-btn-sm') +
+        '</div></div>' +
+        (tab === 'needs' || sel.needsAttention ? '<div class="jos-card"><div class="jos-kicker">Needs Attention</div><ul class="jos-inbox-ul"><li>High priority: ' + (sel.priority === 'high' ? 'Yes' : 'No') + '</li><li>Waiting: ' + (sel.unread ? 'Yes (' + sel.unread + ')' : 'No') + '</li><li>AI failed: ' + (sel.aiFailed ? 'Yes' : 'No') + '</li><li>VIP: ' + (sel.vip ? 'Yes' : 'No') + '</li></ul></div>' : '') +
+      '</div>'
+    ) : '<div class="jos-empty">Customer details appear here</div>';
+
+    var needsPanel = '';
+    if (tab === 'needs') {
+      var high = all.filter(function (c) { return !c.archived && c.priority === 'high'; }).length;
+      var waiting = all.filter(function (c) { return !c.archived && c.unread > 0; }).length;
+      var failed = all.filter(function (c) { return !c.archived && c.aiFailed; }).length;
+      var vip = all.filter(function (c) { return !c.archived && c.vip; }).length;
+      needsPanel = '<div class="jos-grid-4 jos-mt" style="margin-bottom:12px">' +
+        [['High Priority Leads', high], ['Waiting Customers', waiting], ['AI Failed', failed], ['VIP Customers', vip]].map(function (x) {
+          return '<div class="jos-kpi"><div class="lbl">' + esc(x[0]) + '</div><div class="v">' + x[1] + '</div></div>';
+        }).join('') + '</div>';
+    }
+
+    root.innerHTML =
+      '<div class="jos-page jos-inbox-page">' +
+      '<div class="jos-page-head"><div><h1>Inbox</h1><p>Unified conversations across chat, SMS, email, and social.</p></div>' +
+      '<div class="jos-page-actions">' + btn('go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm') + btn('inbox-refresh', 'Refresh', 'jos-btn jos-btn-sm') + '</div></div>' +
+      tabsHtml + needsPanel +
+      '<div class="jos-inbox-toolbar">' +
+        '<label class="jos-inbox-search"><input id="jos-inbox-search" type="search" placeholder="Search customer, phone, email, vehicle, message…" value="' + esc(root._josInboxQ || '') + '"></label>' +
+        '<select id="jos-inbox-filter" class="jos-inbox-filter">' +
+          [['all', 'All'], ['unread', 'Unread'], ['priority', 'Priority'], ['leads', 'Leads']].map(function (f) {
+            return '<option value="' + f[0] + '"' + (filter === f[0] ? ' selected' : '') + '>' + f[1] + '</option>';
+          }).join('') +
+        '</select>' +
+      '</div>' +
+      '<div class="jos-split jos-inbox-split"><div class="jos-stack jos-inbox-list">' + listHtml + '</div><div>' + chatHtml + '</div><div class="jos-stack">' + sideHtml + '</div></div>' +
+      '</div>';
+
+    bindRoot(root);
+    if (!root._josInboxBound) {
+      root._josInboxBound = true;
+      root.addEventListener('click', function (e) {
+        var tabBtn = e.target.closest('[data-jos-inbox-tab]');
+        if (tabBtn) {
+          root._josInboxTab = tabBtn.getAttribute('data-jos-inbox-tab');
+          renderInbox();
+          e.stopPropagation();
+          return;
+        }
+        var idBtn = e.target.closest('[data-jos-inbox-id]');
+        if (idBtn) {
+          root._josInboxId = idBtn.getAttribute('data-jos-inbox-id');
+          var st = S();
+          var convs = Array.isArray(st.conversations) ? st.conversations : [];
+          convs.forEach(function (c) {
+            if (String(c.id) === String(root._josInboxId)) c.unread = 0;
+          });
+          renderInbox();
+          e.stopPropagation();
+        }
+      });
+      root.addEventListener('input', function (e) {
+        if (e.target && e.target.id === 'jos-inbox-search') {
+          root._josInboxQ = e.target.value;
+          clearTimeout(root._josInboxSearchT);
+          root._josInboxSearchT = setTimeout(function () { renderInbox(); }, 160);
+        }
+        if (e.target && e.target.id === 'jos-inbox-reply') root._josInboxDraft = e.target.value;
+      });
+      root.addEventListener('change', function (e) {
+        if (e.target && e.target.id === 'jos-inbox-filter') {
+          root._josInboxFilter = e.target.value;
+          renderInbox();
+        }
+      });
+    }
+    updateInboxBadge();
+  }
+
+  function updateInboxBadge() {
+    var badge = el('nav-inbox-badge');
+    if (!badge) return;
+    var n = inboxConversations().filter(function (c) { return !c.archived && (c.unread > 0 || c.needsAttention); }).length;
+    badge.textContent = String(n);
+    badge.classList.toggle('hidden', !n);
+  }
+
+  function selectedInboxConv() {
+    var root = el('jos-inbox-root');
+    if (!root) return null;
+    var id = root._josInboxId;
+    return inboxConversations().find(function (c) { return String(c.id) === String(id); }) || null;
+  }
+
+  function mutateInboxConv(mutator) {
+    var root = el('jos-inbox-root');
+    var sel = selectedInboxConv();
+    if (!sel) return null;
+    var st = S();
+    if (!Array.isArray(st.conversations) || !st.conversations.length) st.conversations = inboxConversations();
+    var live = st.conversations.find(function (c) { return String(c.id) === String(sel.id); });
+    if (!live) {
+      live = Object.assign({}, sel);
+      st.conversations.unshift(live);
+    }
+    mutator(live);
+    if (root) renderInbox();
+    return live;
+  }
+
+  function handleInboxAct(act, t) {
+    var root = el('jos-inbox-root');
+    var sel = selectedInboxConv();
+    var draftEl = el('jos-inbox-reply');
+    var draft = draftEl ? draftEl.value : (root && root._josInboxDraft) || '';
+
+    if (act === 'inbox-refresh') { toast('Inbox refreshed'); return renderInbox(); }
+    if (act === 'inbox-send') {
+      if (!sel) return toast('Select a conversation');
+      if (!String(draft || '').trim()) return toast('Type a reply first');
+      mutateInboxConv(function (c) {
+        c.messages = c.messages || [];
+        c.messages.push({ dir: 'out', text: String(draft).trim(), at: 'Just now' });
+        c.last_message = String(draft).trim();
+        c.unread = 0;
+        c.aiMode = 'human';
+        c.updated_at = new Date().toISOString();
+      });
+      if (root) root._josInboxDraft = '';
+      toast('Message sent');
+      return;
+    }
+    if (act === 'inbox-note') {
+      var noteEl = el('jos-inbox-note');
+      var note = noteEl ? noteEl.value : '';
+      if (!String(note || '').trim()) return toast('Add a note first');
+      mutateInboxConv(function (c) {
+        c.notes = c.notes || [];
+        c.notes.push(String(note).trim());
+      });
+      toast('Note saved');
+      return;
+    }
+    if (act === 'inbox-template') {
+      var tid = t.getAttribute('data-jos-template');
+      var tpl = INBOX_TEMPLATES.find(function (x) { return x.id === tid; });
+      if (!tpl) return;
+      var body = tpl.body
+        .replace(/\{\{name\}\}/g, (sel && sel.customer_name) || 'there')
+        .replace(/\{\{biz\}\}/g, S().biz || 'Hubly')
+        .replace(/\{\{service\}\}/g, 'detail');
+      if (draftEl) draftEl.value = body;
+      if (root) root._josInboxDraft = body;
+      toast('Template inserted');
+      return;
+    }
+    if (act === 'inbox-attach') {
+      mutateInboxConv(function (c) {
+        c.messages = c.messages || [];
+        c.messages.push({ dir: 'out', text: 'Shared an attachment', attachment: 'estimate.pdf', at: 'Just now' });
+        c.last_message = 'Shared an attachment';
+      });
+      toast('Attachment added to timeline');
+      return;
+    }
+    if (act === 'inbox-image') {
+      mutateInboxConv(function (c) {
+        c.messages = c.messages || [];
+        c.messages.push({ dir: 'out', text: 'Shared a photo', image: true, at: 'Just now' });
+        c.last_message = 'Shared a photo';
+      });
+      toast('Image added to timeline');
+      return;
+    }
+    if (act === 'inbox-voice') {
+      mutateInboxConv(function (c) {
+        c.messages = c.messages || [];
+        c.messages.push({ dir: 'out', text: 'Voice note', voice: true, voiceDuration: '0:12', at: 'Just now' });
+        c.last_message = 'Voice note';
+      });
+      toast('Voice note added to timeline');
+      return;
+    }
+    if (act === 'inbox-archive') {
+      mutateInboxConv(function (c) { c.archived = !c.archived; });
+      toast(sel && sel.archived ? 'Conversation restored' : 'Conversation archived');
+      return;
+    }
+    if (act === 'inbox-ai-takeover') {
+      mutateInboxConv(function (c) { c.aiMode = 'ai'; c.channel = c.channel || 'chat'; });
+      toast('AI is handling this chat');
+      return;
+    }
+    if (act === 'inbox-human-takeover') {
+      mutateInboxConv(function (c) { c.aiMode = 'human'; });
+      toast('You took over this chat');
+      return;
+    }
+    if (act === 'inbox-booking') {
+      var link = location.origin + '/' + (S().slug || 'book');
+      copyText('Book online: ' + link);
+      if (draftEl) draftEl.value = 'You can book here anytime: ' + link;
+      if (root) root._josInboxDraft = draftEl ? draftEl.value : '';
+      toast('Booking link ready');
+      return;
+    }
+    if (act === 'inbox-sms-open') {
+      if (!sel) return;
+      var phone = String(sel.phone || sel.customer_phone || '').replace(/\D/g, '');
+      if (phone) location.href = 'sms:' + phone + (draft ? '?&body=' + encodeURIComponent(draft) : '');
+      else toast('No phone on this conversation');
+      return;
+    }
+    if (act === 'inbox-schedule-sms') {
+      toast('SMS scheduled for later today');
+      mutateInboxConv(function (c) {
+        c.notes = c.notes || [];
+        c.notes.push('Scheduled SMS: ' + (draft || '(template pending)'));
+      });
+      return;
+    }
+    if (act === 'inbox-schedule-email') {
+      toast('Email scheduled for later today');
+      mutateInboxConv(function (c) {
+        c.notes = c.notes || [];
+        c.notes.push('Scheduled email: ' + (draft || '(draft pending)'));
+      });
+      return;
+    }
+    if (act === 'inbox-email-reply') {
+      if (!sel) return;
+      var em = sel.email || sel.customer_email;
+      if (em) location.href = 'mailto:' + encodeURIComponent(em) + (draft ? '?body=' + encodeURIComponent(draft) : '');
+      else toast('No email on this conversation');
+      return;
+    }
+    if (act === 'inbox-ai-rewrite' || act === 'inbox-ai-draft' || act === 'inbox-ai-reply') {
+      var prompt = 'Draft a concise, friendly reply to ' + ((sel && sel.customer_name) || 'this customer') +
+        ' about: ' + ((sel && sel.last_message) || 'their message');
+      ask(prompt);
+      return;
+    }
+    if (act === 'inbox-ai-summary') {
+      ask('Summarize this conversation with ' + ((sel && sel.customer_name) || 'the customer') +
+        ' and recommend the next best action. Last message: ' + ((sel && sel.last_message) || ''));
+      return;
+    }
+    if (act === 'inbox-suggested') {
+      ask('Suggest 3 next actions for this Inbox conversation with ' + ((sel && sel.customer_name) || 'the customer'));
+      return;
+    }
+    if (act === 'inbox-match-customer') {
+      if (sel && matchCustomer(sel)) {
+        var matched = matchCustomer(sel);
+        return openCustomerProfile(matched.id);
+      }
+      return typeof global.openM === 'function' ? global.openM('m-new-cust') : toast('Add customer');
+    }
+    if (act === 'inbox-connect-twilio' || act === 'inbox-connect-meta') {
+      toast(act === 'inbox-connect-twilio' ? 'Open Settings to connect Twilio' : 'Open Settings to connect Meta');
+      return switchNav('settings');
+    }
+  }
+
   function switchNav(v) {
     var nav = document.querySelector('[data-v="' + v + '"]');
     if (nav && typeof global.switchV === 'function') global.switchV(nav);
@@ -1371,7 +1909,8 @@
       settings: renderSettingsHub,
       leads: renderLeadsList,
       customers: renderCustomersPage,
-      dashboard: enhanceDashboard
+      dashboard: enhanceDashboard,
+      chats: renderInbox
     };
     if (map[v]) try { map[v](); } catch (e) { console.warn('HublyJourneyOS', v, e); }
   }
@@ -1379,7 +1918,15 @@
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-filter],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-tab],[data-jos-job]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-filter],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
+      if (t.hasAttribute('data-jos-inbox-tab')) {
+        var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
+        return;
+      }
+      if (t.hasAttribute('data-jos-inbox-id')) {
+        var irId = el('jos-inbox-root'); if (irId) { irId._josInboxId = t.getAttribute('data-jos-inbox-id'); renderInbox(); }
+        return;
+      }
       if (t.hasAttribute('data-jos-card')) {
         var cards = el('jos-pipeline-root')?._josCards || [];
         return openCard(cards.find(function (c) { return String(c.id) === String(t.getAttribute('data-jos-card')); }));
@@ -1423,6 +1970,7 @@
       if (act === 'opp-send' && opp) { if (opp.phone) location.href = 'sms:' + String(opp.phone).replace(/\D/g, '') + '?&body=' + encodeURIComponent(opp.message || ''); else copyText(opp.message || ''); return; }
       if (act === 'opp-cust' && opp?.customerId) return openCustomerProfile(opp.customerId);
       if (act === 'opp-ask' && opp) return ask(opp.title);
+      if (act && String(act).indexOf('inbox-') === 0) return handleInboxAct(act, t);
       if (act === 'ask-submit' || act === 'ask-brief') {
         switchNav('ask');
         return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
@@ -1482,6 +2030,7 @@
     renderSettingsHub: renderSettingsHub,
     renderLeadsList: renderLeadsList,
     renderCustomersPage: renderCustomersPage,
+    renderInbox: renderInbox,
     openCustomerProfile: openCustomerProfile,
     closeCustomerProfile: closeCustomerProfile,
     enhanceDashboard: enhanceDashboard,

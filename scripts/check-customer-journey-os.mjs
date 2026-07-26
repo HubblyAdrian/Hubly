@@ -198,6 +198,18 @@ try {
       has(px, "jos-search-pop")
   );
 
+  mark("check inbox");
+  ok(
+    "inbox",
+    has(jjs, "function renderInbox") &&
+      has(jjs, "handleInboxAct") &&
+      has(jjs, "INBOX_TABS") &&
+      has(jjs, "Needs Attention") &&
+      has(hubly, 'id="jos-inbox-root"') &&
+      has(px, "jos-inbox-page") &&
+      has(px, "jos-inbox-split")
+  );
+
   const ms = Date.now() - started;
   mark("done");
   clearTimeout(timer);
