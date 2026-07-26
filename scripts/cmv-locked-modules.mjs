@@ -158,6 +158,8 @@ const cust = mount("v-customers", app);
 mount("jos-customers-root", cust);
 const pipe = mount("v-pipeline", app);
 mount("jos-pipeline-root", pipe);
+const editor = mount("v-editor", app);
+mount("jos-storefront-root", editor);
 mount("bar-title", document.body);
 mount("bar-sub", document.body);
 mount("nav-leads-badge", document.body);
@@ -262,6 +264,14 @@ try {
   ok("❤️ Customers still works", /jos-cust|Customers|golden|profile/i.test(custHtml) && custHtml.length > 200, "len=" + custHtml.length);
 } catch (e) {
   ok("❤️ Customers still works", false, String(e.message || e));
+}
+
+try {
+  H.renderPipeline();
+  const pipeHtml = document.getElementById("jos-pipeline-root").innerHTML;
+  ok("🧭 Pipeline still works", /jos-pipe|Pipeline|Lead|Qualified/i.test(pipeHtml) && pipeHtml.length > 200, "len=" + pipeHtml.length);
+} catch (e) {
+  ok("🧭 Pipeline still works", false, String(e.message || e));
 }
 
 console.warn = _warn;

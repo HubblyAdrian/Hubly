@@ -5,11 +5,12 @@
 
 | Module | Result |
 |--------|--------|
-| 🏠 Home still works | ✅ · len=14631 |
+| 🏠 Home still works | ✅ · len=14627 |
 | 📥 Inbox still works | ✅ · len=7232 |
 | 📅 Jobs still works | ✅ · len=10982 |
 | 🧲 Leads still works | ✅ · len=8161 |
 | ❤️ Customers still works | ✅ · len=11030 |
+| 🧭 Pipeline still works | ✅ · len=8760 |
 
 **Console warns during CMV:** 0
 

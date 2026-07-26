@@ -3031,6 +3031,505 @@
     renderProfileTab(c, S()._josProfileTab || 'Overview'); shell.classList.add('open');
   }
 
+  var STOREFRONT_TABS = [
+    ['website', 'Website'],
+    ['booking', 'Booking'],
+    ['services', 'Services'],
+    ['pricing', 'Pricing'],
+    ['gallery', 'Gallery'],
+    ['reviews', 'Reviews'],
+    ['seo', 'SEO'],
+    ['domain', 'Domain'],
+    ['analytics', 'Analytics']
+  ];
+
+  function demoStorefrontCatalog() {
+    return [
+      { id: 'sf_svc_1', name: 'Interior Detail', price: 189, dur: '2.5 hrs', desc: 'Deep clean, vacuum, and interior protection.', status: 'active', website: true, depositType: 'pct', depositVal: 25 },
+      { id: 'sf_svc_2', name: 'Exterior Detail', price: 149, dur: '2 hrs', desc: 'Hand wash, clay bar, and paint-safe finish.', status: 'active', website: true, depositType: 'pct', depositVal: 25 },
+      { id: 'sf_svc_3', name: 'Ceramic Coating', price: 899, dur: '1 day', desc: 'Long-lasting gloss and hydrophobic protection.', status: 'active', website: true, depositType: 'flat', depositVal: 200 }
+    ];
+  }
+
+  function normalizeStorefrontSvc(s, i) {
+    if (!s || typeof s !== 'object') return null;
+    var id = s.id || ('sf_svc_' + (i + 1));
+    return {
+      id: id,
+      name: s.name || ('Service ' + (i + 1)),
+      price: Number(s.price) || 0,
+      dur: s.dur || s.duration || s.duration_hours || '',
+      desc: s.desc || s.description || '',
+      status: s.status || (s.archived ? 'archived' : 'active'),
+      website: s.website !== false,
+      depositType: s.depositType || 'pct',
+      depositVal: s.depositVal != null ? s.depositVal : 25,
+      popular: !!s.popular,
+      showPrice: s.showPrice !== false
+    };
+  }
+
+  function ensureStorefrontOsState() {
+    var st = S();
+    if (!st.website || typeof st.website !== 'object') st.website = {};
+    var w = st.website;
+    if (!w.heroHeadline) w.heroHeadline = st.biz || 'Your local pros — book online in minutes.';
+    if (!w.heroSub) w.heroSub = 'Premium service with clear pricing and easy scheduling.';
+    if (!w.seoTitle) w.seoTitle = (st.biz || 'Local business') + ' — Book online';
+    if (!w.seoDescription) w.seoDescription = 'Book ' + (st.biz || 'our services') + ' online. See packages, gallery, and reviews.';
+    if (w.reviewRating == null) w.reviewRating = 4.9;
+    if (!Array.isArray(w.manualReviews)) {
+      w.manualReviews = [
+        { name: 'Sarah J.', rating: 5, text: 'Incredible attention to detail — car looks brand new.', at: '2 weeks ago' },
+        { name: 'Mike B.', rating: 5, text: 'Easy booking and great communication.', at: '1 month ago' }
+      ];
+    }
+    if (!st.slug) st.slug = 'your-business';
+    if (!Array.isArray(st.galleryPairs) || !st.galleryPairs.length) {
+      st.galleryPairs = [
+        { title: 'Before & After', caption: 'Paint correction showcase' },
+        { title: 'Interior refresh', caption: 'Deep clean package' },
+        { title: 'Ceramic finish', caption: 'Hydrophobic gloss' }
+      ];
+    }
+    if (!Array.isArray(st.portfolioUrls)) st.portfolioUrls = [];
+    if (!st.storefrontOs || typeof st.storefrontOs !== 'object') {
+      st.storefrontOs = { visits: 428, bookingStarts: 96, conversion: 22.4, aiTip: '', aiSeo: '' };
+    }
+    var cat = Array.isArray(st.editorSvcs) && st.editorSvcs.length ? st.editorSvcs :
+      (Array.isArray(st.services) && st.services.length ? st.services : null);
+    if (!cat || !cat.length) cat = demoStorefrontCatalog();
+    st.editorSvcs = cat.map(normalizeStorefrontSvc).filter(Boolean);
+    syncStorefrontCatalogToServices();
+  }
+
+  function storefrontCatalog() {
+    ensureStorefrontOsState();
+    return (S().editorSvcs || []).filter(function (s) { return s && s.name; });
+  }
+
+  function syncStorefrontCatalogToServices() {
+    var st = S();
+    var cat = Array.isArray(st.editorSvcs) ? st.editorSvcs : [];
+    st.services = cat.map(function (s) {
+      return {
+        id: s.id,
+        name: s.name,
+        price: s.price,
+        dur: s.dur || '',
+        duration: s.dur || '',
+        desc: s.desc || '',
+        status: s.status || 'active',
+        website: s.website !== false,
+        depositType: s.depositType || 'pct',
+        depositVal: s.depositVal != null ? s.depositVal : 25,
+        popular: !!s.popular,
+        showPrice: s.showPrice !== false
+      };
+    });
+  }
+
+  function storefrontSlug() {
+    return String(S().slug || 'your-business').trim() || 'your-business';
+  }
+
+  function storefrontUrl() {
+    return storefrontSlug() + '.myhubly.app';
+  }
+
+  function sfStatusBadge(svc) {
+    var d = DS();
+    var st = svc.status === 'archived' ? ['Archived', 'lost'] : (svc.website === false ? ['Hidden', 'quote'] : ['Live', 'ok']);
+    return d ? d.statusBadge(st[0], st[1]) : '<span class="jos-pill ' + st[1] + '">' + esc(st[0]) + '</span>';
+  }
+
+  function sfAiBody() {
+    var st = S();
+    var w = st.website || {};
+    var cat = storefrontCatalog().filter(function (s) { return s.status !== 'archived' && s.website !== false; });
+    var tip = st.storefrontOs && st.storefrontOs.aiTip;
+    if (tip) return tip;
+    if (!w.seoDescription || String(w.seoDescription).length < 60) {
+      return 'Add a longer SEO description (120+ characters) with your city and top service — it helps Google and booking conversion.';
+    }
+    if (!cat.length) return 'Add at least one live service to your catalog so visitors can book from your site.';
+    if (!w.heroSub || String(w.heroSub).length < 40) return 'Expand your hero subheadline with trust cues — years in business, guarantee, or same-week availability.';
+    return 'Your storefront looks solid. Refresh for a new SEO headline idea or ask Hubly to rewrite your hero copy.';
+  }
+
+  function sfAiSeoBody() {
+    var st = S();
+    if (st.storefrontOs && st.storefrontOs.aiSeo) return st.storefrontOs.aiSeo;
+    var biz = st.biz || 'Local business';
+    var city = st.city ? (' in ' + String(st.city).split(',')[0]) : '';
+    return 'Try: "' + biz + city + ' — Book detailing & packages online" with a description mentioning your top 2 services and service area.';
+  }
+
+  function renderStorefrontPreviewStrip() {
+    return '<div class="jos-sf-preview">' +
+      '<div><div class="jos-kicker">Live preview</div><div class="jos-sf-preview-url">' + esc(storefrontUrl()) + '</div></div>' +
+      '<div class="jos-sf-preview-actions">' +
+        dsBtn('sf-preview', 'Preview site', 'jos-btn jos-btn-sm') +
+        dsBtn('sf-preview-booking', 'Preview booking', 'jos-btn jos-btn-sm') +
+        dsBtn('sf-copy-url', 'Copy URL', 'jos-btn-brand jos-btn-sm') +
+      '</div></div>';
+  }
+
+  function renderStorefrontSidebar(root) {
+    var d = DS();
+    var ai = d ? d.aiInsightCard({
+      kicker: 'AI · Storefront',
+      body: root._josSfAiBody || sfAiBody(),
+      actionsHtml: dsBtn('sf-ai-refresh', 'Refresh tip', 'jos-btn jos-btn-sm') + dsBtn('go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm')
+    }) : '<div class="jos-ai"><div class="sk">AI · Storefront</div><p style="font-size:13px;margin-top:6px">' + esc(root._josSfAiBody || sfAiBody()) + '</p><div class="jos-btn-row jos-mt">' + dsBtn('sf-ai-refresh', 'Refresh tip', 'jos-btn jos-btn-sm') + '</div></div>';
+    var seo = d ? d.aiInsightCard({ kicker: 'SEO suggestion', body: sfAiSeoBody() }) :
+      '<div class="jos-card jos-mt"><div class="jos-kicker">SEO suggestion</div><p class="jos-muted" style="font-size:13px;margin-top:6px">' + esc(sfAiSeoBody()) + '</p></div>';
+    return '<div class="jos-sf-sidebar">' + ai + '<div class="jos-mt">' + seo + '</div></div>';
+  }
+
+  function renderStorefrontWebsiteTab() {
+    var w = S().website || {};
+    return '<div class="jos-sf-form">' +
+      '<label>Hero headline<input id="jos-sf-hero-head" type="text" value="' + esc(w.heroHeadline || '') + '"></label>' +
+      '<label>Hero subheadline<textarea id="jos-sf-hero-sub">' + esc(w.heroSub || '') + '</textarea></label>' +
+      '<div class="jos-btn-row">' + dsBtn('sf-site-save', 'Save website copy', 'jos-btn-brand jos-btn-sm') + dsBtn('sf-preview', 'Preview site', 'jos-btn jos-btn-sm') + '</div>' +
+      '</div>';
+  }
+
+  function renderStorefrontBookingTab() {
+    var st = S();
+    var style = st.bookingWizard && st.bookingWizard.style ? st.bookingWizard.style : (st.website && st.website.bookingStyle) || 'Guided steps · vehicle → service → time';
+    return '<div class="jos-card"><div class="jos-kicker">Booking experience</div>' +
+      '<p style="font-size:13px;margin-top:8px">' + esc(style) + '</p>' +
+      '<p class="jos-muted" style="font-size:12px;margin-top:8px">Visitors book from your catalog services marked Live on the website.</p>' +
+      '<div class="jos-btn-row jos-mt">' +
+        dsBtn('sf-preview-booking', 'Preview booking', 'jos-btn-brand jos-btn-sm') +
+        dsBtn('sf-preview', 'Preview site', 'jos-btn jos-btn-sm') +
+      '</div></div>';
+  }
+
+  function renderStorefrontServiceCard(svc, mode) {
+    var acts = mode === 'pricing'
+      ? '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-pricing-edit" data-jos-sf-svc="' + esc(String(svc.id)) + '">Edit pricing</button>'
+      : '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-svc-edit" data-jos-sf-svc="' + esc(String(svc.id)) + '">Edit</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-svc-archive" data-jos-sf-svc="' + esc(String(svc.id)) + '">' + (svc.status === 'archived' ? 'Restore' : 'Archive') + '</button>';
+    return '<div class="jos-sf-card" data-jos-sf-svc-id="' + esc(String(svc.id)) + '">' +
+      '<div class="jos-sf-card-h"><strong>' + esc(svc.name) + '</strong>' + sfStatusBadge(svc) + '</div>' +
+      '<div class="jos-sf-card-meta">' + esc(money(svc.price) || '$0') + ' · ' + esc(svc.dur || '—') + '</div>' +
+      '<div class="jos-sf-card-meta">' + esc(svc.desc || '') + '</div>' +
+      '<div class="jos-sf-card-foot">' + acts + '</div></div>';
+  }
+
+  function renderStorefrontServicesTab(root) {
+    var cat = storefrontCatalog();
+    var active = cat.filter(function (s) { return s.status !== 'archived'; });
+    var list = active.length
+      ? '<div class="jos-sf-grid">' + active.map(function (s) { return renderStorefrontServiceCard(s, 'services'); }).join('') + '</div>'
+      : (DS() ? DS().emptyState('No services yet', 'Add your first package to power booking and pricing.') : '<div class="jos-empty"><strong>No services yet</strong><p class="jos-muted">Add your first package.</p></div>');
+    return '<div class="jos-between jos-mb"><div class="jos-muted">' + active.length + ' service' + (active.length === 1 ? '' : 's') + ' in catalog</div>' +
+      dsBtn('sf-svc-add-open', 'Add Service', 'jos-btn-brand jos-btn-sm') + '</div>' + list + renderStorefrontServiceModal(root);
+  }
+
+  function renderStorefrontPricingTab(root) {
+    var cat = storefrontCatalog().filter(function (s) { return s.status !== 'archived'; });
+    if (!cat.length) return DS() ? DS().emptyState('No pricing yet', 'Add services first, then set price, duration, and deposit.') : '<div class="jos-empty">No services to price.</div>';
+    var rows = cat.map(function (s) {
+      return '<div class="jos-sf-card"><div class="jos-sf-card-h"><strong>' + esc(s.name) + '</strong>' + sfStatusBadge(s) + '</div>' +
+        '<div class="jos-sf-form" style="margin-top:8px">' +
+        '<label>Price ($)<input type="number" min="0" step="1" data-jos-sf-price="' + esc(String(s.id)) + '" value="' + esc(String(s.price || 0)) + '"></label>' +
+        '<label>Duration<input type="text" data-jos-sf-dur="' + esc(String(s.id)) + '" value="' + esc(s.dur || '') + '"></label>' +
+        '<label>Deposit type<select data-jos-sf-dep-type="' + esc(String(s.id)) + '"><option value="pct"' + (s.depositType === 'pct' ? ' selected' : '') + '>Percent</option><option value="flat"' + (s.depositType === 'flat' ? ' selected' : '') + '>Flat</option></select></label>' +
+        '<label>Deposit value<input type="number" min="0" data-jos-sf-dep-val="' + esc(String(s.id)) + '" value="' + esc(String(s.depositVal != null ? s.depositVal : 25)) + '"></label>' +
+        '</div></div>';
+    }).join('');
+    return '<div class="jos-sf-grid">' + rows + '</div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('sf-pricing-save', 'Save pricing', 'jos-btn-brand jos-btn-sm') + '</div>';
+  }
+
+  function renderStorefrontGalleryTab() {
+    var pairs = S().galleryPairs || [];
+    var urls = S().portfolioUrls || [];
+    var items = pairs.length
+      ? pairs.map(function (p, i) {
+          var img = urls[i] || '';
+          return '<div class="jos-sf-gallery-item">' + (img ? '<span>Photo</span>' : esc(p.title || ('Album ' + (i + 1)))) + '<div class="jos-muted" style="font-size:11px;margin-top:4px">' + esc(p.caption || '') + '</div></div>';
+        }).join('')
+      : '';
+    var empty = !items ? (DS() ? DS().emptyState('No gallery yet', 'Upload photos in Stage 2 — demo albums shown when seeded.') : '<div class="jos-empty">No gallery items.</div>') : '';
+    return '<div class="jos-between jos-mb"><div><div class="jos-kicker">Portfolio</div><p class="jos-muted" style="font-size:12px;margin-top:4px">Shown on your public site.</p></div>' +
+      dsBtn('sf-gallery-upload', 'Upload photos', 'jos-btn jos-btn-sm') + '</div>' +
+      (items ? '<div class="jos-sf-gallery">' + items + '</div>' : empty);
+  }
+
+  function renderStorefrontReviewsTab() {
+    var w = S().website || {};
+    var reviews = Array.isArray(w.manualReviews) ? w.manualReviews : [];
+    var rating = Number(w.reviewRating || 0).toFixed(1);
+    var list = reviews.length
+      ? reviews.map(function (r) {
+          var stars = '★'.repeat(Math.min(5, Math.max(0, Number(r.rating) || 5)));
+          return '<div class="jos-sf-review"><strong>' + esc(r.name || 'Customer') + '</strong><div class="stars">' + stars + '</div><p style="font-size:13px;margin:0">' + esc(r.text || '') + '</p>' +
+            (r.at ? '<div class="jos-muted" style="font-size:11px;margin-top:6px">' + esc(r.at) + '</div>' : '') + '</div>';
+        }).join('')
+      : (DS() ? DS().emptyState('No reviews on site', 'Reviews module will own request/reply flows.') : '<div class="jos-empty">No reviews.</div>');
+    return '<div class="jos-card jos-mb"><div class="jos-kicker">Site rating</div><div style="font-size:22px;font-weight:800;margin-top:6px">' + esc(rating) + ' ★</div>' +
+      '<p class="jos-muted" style="font-size:12px;margin-top:6px">Read-only here — request and reply live in ⭐ Reviews.</p></div>' +
+      '<div class="jos-stack">' + list + '</div>';
+  }
+
+  function renderStorefrontSeoTab() {
+    var w = S().website || {};
+    return '<div class="jos-sf-form">' +
+      '<label>SEO title<input id="jos-sf-seo-title" type="text" value="' + esc(w.seoTitle || '') + '"></label>' +
+      '<label>SEO description<textarea id="jos-sf-seo-desc">' + esc(w.seoDescription || '') + '</textarea></label>' +
+      '<div class="jos-btn-row">' + dsBtn('sf-seo-save', 'Save SEO', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+  }
+
+  function renderStorefrontDomainTab() {
+    return '<div class="jos-sf-form">' +
+      '<label>Slug (subdomain)<input id="jos-sf-slug" type="text" value="' + esc(storefrontSlug()) + '"></label>' +
+      '<div class="jos-card"><div class="jos-kicker">Your URL</div><div class="jos-sf-preview-url" style="margin-top:6px">' + esc(storefrontUrl()) + '</div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('sf-copy-url', 'Copy URL', 'jos-btn-brand jos-btn-sm') + dsBtn('sf-domain-save', 'Save slug', 'jos-btn jos-btn-sm') + '</div></div>' +
+      '<div class="jos-muted" style="font-size:12px">Custom domain DNS &amp; SSL — Stage 2 integration.</div>' +
+      '<div class="jos-btn-row">' + dsBtn('sf-dns-stage2', 'Connect custom domain', 'jos-btn jos-btn-sm') + '</div></div>';
+  }
+
+  function renderStorefrontAnalyticsTab() {
+    var os = S().storefrontOs || {};
+    var d = DS();
+    var kpis = d
+      ? d.metricCard('Visits (demo)', String(os.visits || 0), 'Stage 2 · live analytics') +
+        d.metricCard('Booking starts', String(os.bookingStarts || 0), 'OS counters') +
+        d.metricCard('Conversion', (os.conversion || 0) + '%', 'Starts ÷ visits')
+      : '<div class="jos-kpi"><div class="jos-kpi-lbl">Visits</div><div class="jos-kpi-v">' + esc(String(os.visits || 0)) + '</div></div>';
+    return '<div class="jos-muted jos-mb" style="font-size:12px">Demo KPIs for Stage 1 — not connected to a live analytics provider.</div>' +
+      '<div class="jos-sf-kpis">' + kpis + '</div>' +
+      dsBtn('sf-analytics-stage2', 'Connect live analytics', 'jos-btn jos-btn-sm');
+  }
+
+  function renderStorefrontServiceModal(root) {
+    if (!root._josSfSvcModal) return '';
+    var draft = root._josSfDraft || {};
+    var editing = !!draft.id;
+    return '<div class="jos-sf-modal" data-jos-sf-modal="1"><div class="jos-sf-modal-panel">' +
+      '<h3>' + (editing ? 'Edit service' : 'Add service') + '</h3>' +
+      '<div class="jos-sf-form">' +
+      '<label>Name<input id="jos-sf-svc-name" type="text" value="' + esc(draft.name || '') + '"></label>' +
+      '<label>Price ($)<input id="jos-sf-svc-price" type="number" min="0" value="' + esc(String(draft.price != null ? draft.price : '')) + '"></label>' +
+      '<label>Duration<input id="jos-sf-svc-dur" type="text" value="' + esc(draft.dur || '') + '" placeholder="e.g. 2 hrs"></label>' +
+      '<label>Description<textarea id="jos-sf-svc-desc">' + esc(draft.desc || '') + '</textarea></label>' +
+      '<label><input id="jos-sf-svc-website" type="checkbox"' + (draft.website !== false ? ' checked' : '') + '> Show on website</label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' +
+        dsBtn('sf-svc-save', editing ? 'Save changes' : 'Add service', 'jos-btn-brand jos-btn-sm') +
+        dsBtn('sf-svc-add-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
+      '</div></div></div>';
+  }
+
+  function renderStorefrontTabBody(root, tab) {
+    if (tab === 'website') return renderStorefrontWebsiteTab();
+    if (tab === 'booking') return renderStorefrontBookingTab();
+    if (tab === 'services') return renderStorefrontServicesTab(root);
+    if (tab === 'pricing') return renderStorefrontPricingTab(root);
+    if (tab === 'gallery') return renderStorefrontGalleryTab();
+    if (tab === 'reviews') return renderStorefrontReviewsTab();
+    if (tab === 'seo') return renderStorefrontSeoTab();
+    if (tab === 'domain') return renderStorefrontDomainTab();
+    if (tab === 'analytics') return renderStorefrontAnalyticsTab();
+    return renderStorefrontWebsiteTab();
+  }
+
+  function renderStorefrontPageInner(root) {
+    ensureStorefrontOsState();
+    var tab = root._josSfTab || 'website';
+    var d = DS();
+    var tabsHtml = '<div class="jos-tabs jos-sf-tabs">' + STOREFRONT_TABS.map(function (t) {
+      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-sf-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    }).join('') + '</div>';
+    var head = d ? d.pageHeader('Storefront', 'Website, booking, catalog, and acquisition.', dsBtn('sf-preview', 'Preview site', 'jos-btn jos-btn-sm') + dsBtn('sf-site-save', 'Save', 'jos-btn-brand jos-btn-sm') + dsBtn('go-ask', 'Ask Hubly', 'jos-btn jos-btn-sm')) :
+      '<div class="jos-page-head"><div><h1>Storefront</h1><p>Website, booking, catalog, and acquisition.</p></div><div class="jos-page-actions">' + dsBtn('sf-preview', 'Preview site', 'jos-btn jos-btn-sm') + dsBtn('go-ask', 'Ask Hubly', 'jos-btn jos-btn-sm') + '</div></div>';
+    root.innerHTML =
+      '<div class="jos-page jos-sf-page">' +
+      head +
+      renderStorefrontPreviewStrip() +
+      tabsHtml +
+      '<div class="jos-sf-layout">' +
+        '<div class="jos-sf-main">' + renderStorefrontTabBody(root, tab) + '</div>' +
+        renderStorefrontSidebar(root) +
+      '</div></div>';
+    bindRoot(root);
+    wireStorefrontRoot(root);
+  }
+
+  function renderStorefront() {
+    var root = ownPixelView('v-editor', 'jos-storefront-root');
+    if (!root) return;
+    updateChrome('editor');
+    root.innerHTML = '<div class="jos-page jos-sf-page"><div class="jos-home-loading">Loading Storefront…</div></div>';
+    try { renderStorefrontPageInner(root); }
+    catch (err) {
+      console.warn('HublyJourneyOS Storefront', err);
+      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Storefront could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderStorefront()">Retry</button></div></div></div>';
+    }
+  }
+
+  function readStorefrontSvcDraft() {
+    var root = el('jos-storefront-root');
+    var base = (root && root._josSfDraft) || {};
+    return {
+      id: base.id,
+      name: (el('jos-sf-svc-name') || {}).value || '',
+      price: Number((el('jos-sf-svc-price') || {}).value) || 0,
+      dur: (el('jos-sf-svc-dur') || {}).value || '',
+      desc: (el('jos-sf-svc-desc') || {}).value || '',
+      website: !!(el('jos-sf-svc-website') && el('jos-sf-svc-website').checked)
+    };
+  }
+
+  function wireStorefrontRoot(root) {
+    if (root._josSfBound) return;
+    root._josSfBound = true;
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && root._josSfSvcModal) {
+        root._josSfSvcModal = false;
+        root._josSfDraft = null;
+        renderStorefront();
+      }
+    });
+  }
+
+  function findStorefrontSvc(id) {
+    return storefrontCatalog().find(function (s) { return String(s.id) === String(id); });
+  }
+
+  function handleStorefrontAct(act, t) {
+    var root = el('jos-storefront-root');
+    if (!root) return;
+    ensureStorefrontOsState();
+    var svcId = t && (t.getAttribute('data-jos-sf-svc') || t.getAttribute('data-jos-sf-svc-id') || (t.closest('[data-jos-sf-svc-id]') && t.closest('[data-jos-sf-svc-id]').getAttribute('data-jos-sf-svc-id')));
+    try {
+      if (act === 'sf-preview') {
+        if (typeof global.previewProfile === 'function') return global.previewProfile();
+        return toast('Preview not available in this session');
+      }
+      if (act === 'sf-preview-booking') {
+        if (typeof global.previewBookingOverlay === 'function') return global.previewBookingOverlay();
+        if (typeof global.previewBookingPage === 'function') return global.previewBookingPage();
+        return toast('Booking preview not available');
+      }
+      if (act === 'sf-copy-url') return copyText('https://' + storefrontUrl());
+      if (act === 'sf-site-save') {
+        var w = S().website;
+        var head = el('jos-sf-hero-head');
+        var sub = el('jos-sf-hero-sub');
+        if (head) { w.heroHeadline = head.value || w.heroHeadline; w.customHeroHeadline = true; }
+        if (sub) { w.heroSub = sub.value || w.heroSub; w.customHeroSub = true; }
+        var seoT = el('jos-sf-seo-title');
+        var seoD = el('jos-sf-seo-desc');
+        if (seoT) w.seoTitle = seoT.value || w.seoTitle;
+        if (seoD) w.seoDescription = seoD.value || w.seoDescription;
+        toast('Saved');
+        return renderStorefront();
+      }
+      if (act === 'sf-seo-save') {
+        var ws = S().website;
+        ws.seoTitle = (el('jos-sf-seo-title') || {}).value || ws.seoTitle;
+        ws.seoDescription = (el('jos-sf-seo-desc') || {}).value || ws.seoDescription;
+        toast('SEO saved');
+        return renderStorefront();
+      }
+      if (act === 'sf-domain-save') {
+        var slug = String((el('jos-sf-slug') || {}).value || '').trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+        if (!slug) { toast('Slug is required'); return; }
+        S().slug = slug;
+        toast('Slug saved · ' + storefrontUrl());
+        return renderStorefront();
+      }
+      if (act === 'sf-dns-stage2') return toast('Stage 2 — custom domain DNS not connected yet');
+      if (act === 'sf-analytics-stage2') return toast('Stage 2 — live analytics provider not connected yet');
+      if (act === 'sf-gallery-upload') return toast('Stage 2 — gallery upload coming soon');
+      if (act === 'sf-ai-refresh') {
+        root._josSfAiBody = sfAiBody() + ' · Tip refreshed ' + new Date().toLocaleTimeString();
+        S().storefrontOs.aiTip = root._josSfAiBody;
+        S().storefrontOs.aiSeo = sfAiSeoBody();
+        return renderStorefront();
+      }
+      if (act === 'sf-svc-add-open') {
+        root._josSfSvcModal = true;
+        root._josSfDraft = { website: true, status: 'active' };
+        return renderStorefront();
+      }
+      if (act === 'sf-svc-add-cancel') {
+        root._josSfSvcModal = false;
+        root._josSfDraft = null;
+        return renderStorefront();
+      }
+      if (act === 'sf-svc-edit' && svcId) {
+        var editSvc = findStorefrontSvc(svcId);
+        if (!editSvc) return toast('Service not found');
+        root._josSfSvcModal = true;
+        root._josSfDraft = Object.assign({}, editSvc);
+        return renderStorefront();
+      }
+      if (act === 'sf-svc-archive' && svcId) {
+        var arch = findStorefrontSvc(svcId);
+        if (!arch) return toast('Service not found');
+        arch.status = arch.status === 'archived' ? 'active' : 'archived';
+        syncStorefrontCatalogToServices();
+        toast(arch.status === 'archived' ? 'Service archived' : 'Service restored');
+        return renderStorefront();
+      }
+      if (act === 'sf-svc-save') {
+        var d = readStorefrontSvcDraft();
+        if (!String(d.name || '').trim()) { toast('Service name is required'); return; }
+        var cat = storefrontCatalog();
+        if (d.id) {
+          var existing = findStorefrontSvc(d.id);
+          if (existing) Object.assign(existing, d, { status: existing.status || 'active' });
+        } else {
+          cat.push(normalizeStorefrontSvc({
+            id: 'sf_svc_' + Date.now(),
+            name: d.name,
+            price: d.price,
+            dur: d.dur,
+            desc: d.desc,
+            website: d.website,
+            status: 'active'
+          }, cat.length));
+        }
+        S().editorSvcs = cat;
+        syncStorefrontCatalogToServices();
+        root._josSfSvcModal = false;
+        root._josSfDraft = null;
+        toast('Service saved');
+        return renderStorefront();
+      }
+      if (act === 'sf-pricing-save') {
+        var priced = storefrontCatalog();
+        priced.forEach(function (s) {
+          var p = root.querySelector('[data-jos-sf-price="' + s.id + '"]');
+          var du = root.querySelector('[data-jos-sf-dur="' + s.id + '"]');
+          var dt = root.querySelector('[data-jos-sf-dep-type="' + s.id + '"]');
+          var dv = root.querySelector('[data-jos-sf-dep-val="' + s.id + '"]');
+          if (p) s.price = Number(p.value) || 0;
+          if (du) s.dur = du.value || s.dur;
+          if (dt) s.depositType = dt.value || s.depositType;
+          if (dv) s.depositVal = Number(dv.value) || 0;
+        });
+        syncStorefrontCatalogToServices();
+        toast('Pricing saved');
+        return renderStorefront();
+      }
+      if (act === 'sf-pricing-edit' && svcId) {
+        root._josSfTab = 'pricing';
+        return renderStorefront();
+      }
+    } catch (err) {
+      console.warn('HublyJourneyOS sf act', act, err);
+      toast('Failed — try again');
+    }
+  }
+
   function ownPixelView(viewId, rootId) {
     var view = el(viewId), root = el(rootId);
     if (!view) return root;
@@ -5083,7 +5582,8 @@
       customers: renderCustomers,
       dashboard: enhanceDashboard,
       chats: renderInbox,
-      jobs: renderJobs
+      jobs: renderJobs,
+      editor: renderStorefront
     };
     if (map[v]) try { map[v](); } catch (e) { console.warn('HublyJourneyOS', v, e); }
   }
@@ -5091,7 +5591,7 @@
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
       if (t.hasAttribute('data-jos-inbox-tab')) {
         var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
         return;
@@ -5134,6 +5634,10 @@
         var cr = el('jos-customers-root'); if (cr) { cr._josCustTab = t.getAttribute('data-jos-cust-tab'); renderCustomers(); }
         return;
       }
+      if (t.hasAttribute('data-jos-sf-tab')) {
+        var sfr = el('jos-storefront-root'); if (sfr) { sfr._josSfTab = t.getAttribute('data-jos-sf-tab'); renderStorefront(); }
+        return;
+      }
       if (t.hasAttribute('data-jos-cust-row')) {
         var crow = el('jos-customers-root');
         if (crow) {
@@ -5171,6 +5675,7 @@
       if (act && String(act).indexOf('leads-') === 0) return handleLeadsAct(act, t);
       if (act && String(act).indexOf('pipe-') === 0) return handlePipelineAct(act, t);
       if (act && (String(act).indexOf('cust-') === 0 || String(act).indexOf('customers-') === 0)) return handleCustomersAct(act, t);
+      if (act && String(act).indexOf('sf-') === 0) return handleStorefrontAct(act, t);
       if (act === 'ask-submit' || act === 'ask-brief') {
         switchNav('ask');
         return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
@@ -5234,6 +5739,8 @@
     renderCustomersPage: renderCustomers,
     renderInbox: renderInbox,
     renderJobs: renderJobs,
+    renderStorefront: renderStorefront,
+    handleStorefrontAct: handleStorefrontAct,
     openCustomerProfile: openCustomerProfile,
     handleCustomersAct: handleCustomersAct,
     closeCustomerProfile: closeCustomerProfile,

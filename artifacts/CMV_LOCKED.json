@@ -4,7 +4,7 @@
     {
       "name": "🏠 Home still works",
       "pass": true,
-      "detail": "len=14631"
+      "detail": "len=14627"
     },
     {
       "name": "📥 Inbox still works",
@@ -25,6 +25,11 @@
       "name": "❤️ Customers still works",
       "pass": true,
       "detail": "len=11030"
+    },
+    {
+      "name": "🧭 Pipeline still works",
+      "pass": true,
+      "detail": "len=8760"
     }
   ],
   "warns": []
