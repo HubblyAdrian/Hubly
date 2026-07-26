@@ -35,6 +35,11 @@
       "name": "🌐 Storefront still works",
       "pass": true,
       "detail": "len=3133"
+    },
+    {
+      "name": "📣 Marketing still works",
+      "pass": true,
+      "detail": "len=7426"
     }
   ],
   "warns": []

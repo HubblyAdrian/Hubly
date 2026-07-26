@@ -1,7 +1,8 @@
 # Module 8 — 📣 Marketing
 
-**Status:** OS Complete · MAT ✅ ACCEPTED  
+**Status:** 🔒 OS LOCKED (Stage 1) — merged #251  
 **Branch:** `cursor/operate-marketing-2662`  
+**PR:** [#251](https://github.com/HubblyAdrian/Hubly/pull/251)  
 **Architecture:** [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md) ✅  
 **MAT:** [MARKETING_MAT.md](./MARKETING_MAT.md)  
 **Design System:** HublyDS (Rule #14)  
@@ -62,7 +63,11 @@ Marketing creates demand. Reads Customers, Leads, Services, Jobs, Reviews, Reven
 
 ### Definition of Done
 - [x] OS complete · MAT ✅ · CMV PASS ✅  
-- [x] Ready for merge → lock 🔒 OS after approval ⏳  
+- [x] Merged #251 → **🔒 OS LOCKED** ✅  
+
+---
+
+**Marketing Operating System is locked (🔒 OS).** Do not modify Stage 1 OS unless bug fix, Stage 2 integrations, or explicit reopen.
 
 ---
 

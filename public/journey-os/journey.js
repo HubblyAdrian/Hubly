@@ -1377,6 +1377,514 @@
       toast('Failed — try again');
     }
   }
+
+  var REV_TABS = [
+    ['overview', 'Overview'],
+    ['inbox', 'Inbox'],
+    ['requests', 'Requests'],
+    ['ai', 'AI Replies'],
+    ['analytics', 'Analytics'],
+    ['events', 'Events']
+  ];
+  var REV_SOURCE_LABEL = { google: 'Google', facebook: 'Facebook', website: 'Website', manual: 'Manual' };
+  var REV_SOURCE_TONE = { google: 'info', facebook: 'booked', website: 'quote', manual: 'open' };
+  var _revJobSubscribed = false;
+
+  function revId(prefix) { return (prefix || 'rev') + '_' + Math.random().toString(36).slice(2, 9); }
+  function hublyEvents() { return global.HublyEvents || null; }
+  function publishRevEvent(type, payload) {
+    var ev = hublyEvents();
+    if (ev && typeof ev.publish === 'function') ev.publish(type, payload);
+  }
+  function normalizeReviewSource(src) {
+    var s = String(src || 'manual').toLowerCase();
+    if (/google|gmb/.test(s)) return 'google';
+    if (/facebook|fb|meta/.test(s)) return 'facebook';
+    if (/website|web|hubly/.test(s)) return 'website';
+    return 'manual';
+  }
+  function normalizeReview(r) {
+    if (!r || typeof r !== 'object') return null;
+    var src = normalizeReviewSource(r.source || r.src);
+    var hasReply = !!(r.reply || r.respondedAt);
+    return {
+      id: r.id || revId('rev'),
+      name: r.name || r.author || 'Customer',
+      text: r.text || r.body || '',
+      rating: Math.min(5, Math.max(1, Number(r.rating) || 5)),
+      source: src,
+      customerId: r.customerId || null,
+      jobId: r.jobId || null,
+      status: r.status || (hasReply ? 'replied' : 'new'),
+      reply: r.reply || null,
+      at: r.at || r.date || todayStr(),
+      respondedAt: r.respondedAt || (r.reply ? todayStr() : null)
+    };
+  }
+  function seedReviewsFromLegacy() {
+    var manual = S().website?.manualReviews || S().manualReviews || [];
+    var demo = [
+      { name: 'Alex P.', text: 'Showed up on time and the finish looked brand new.', rating: 5, source: 'google' },
+      { name: 'Sam R.', text: 'Easy booking and clear communication.', rating: 5, source: 'facebook' },
+      { name: 'Jordan M.', text: 'Will book again — already told two neighbors.', rating: 5, source: 'website' }
+    ];
+    return (manual.length ? manual : demo).map(function (r, i) {
+      return normalizeReview(Object.assign({}, r, { id: revId('rev_seed_' + i) }));
+    }).filter(Boolean);
+  }
+  function recalcReviewsAnalytics(reviews) {
+    var list = reviews || [];
+    var count = list.length;
+    if (!count) return { rating: 0, count: 0, responseRate: 0, fiveStarPct: 0, newThisMonth: 0 };
+    var sum = list.reduce(function (s, rv) { return s + (Number(rv.rating) || 0); }, 0);
+    var replied = list.filter(function (rv) { return rv.status === 'replied' || rv.reply; }).length;
+    var five = list.filter(function (rv) { return Number(rv.rating) >= 5; }).length;
+    var monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+    var newMo = list.filter(function (rv) { return String(rv.at || '').slice(0, 10) >= monthStart; }).length;
+    return {
+      rating: Math.round((sum / count) * 10) / 10,
+      count: count,
+      responseRate: Math.round((replied / count) * 100),
+      fiveStarPct: Math.round((five / count) * 100),
+      newThisMonth: newMo
+    };
+  }
+  function buildReviewsAiSummary(reviews) {
+    var list = reviews || [];
+    if (!list.length) return 'No reviews yet — request feedback after completed jobs.';
+    var a = recalcReviewsAnalytics(list);
+    return 'Customers rate you ' + a.rating.toFixed(1) + ' overall (' + a.count + ' reviews). They consistently mention attention to detail, communication, and convenience. Keep asking after completed jobs.';
+  }
+  function ensureReviewsOsState() {
+    var st = S();
+    if (!st.reviewsOs || typeof st.reviewsOs !== 'object') st.reviewsOs = {};
+    var r = st.reviewsOs;
+    if (!r._seeded) {
+      r.reviews = seedReviewsFromLegacy();
+      r._seeded = true;
+    }
+    if (!Array.isArray(r.reviews)) r.reviews = [];
+    if (!Array.isArray(r.requests)) r.requests = [];
+    if (!Array.isArray(r.replies)) r.replies = [];
+    r.reviews = r.reviews.map(function (x) { return normalizeReview(x); }).filter(Boolean);
+    r.analytics = recalcReviewsAnalytics(r.reviews);
+    if (!r.aiSummary) r.aiSummary = buildReviewsAiSummary(r.reviews);
+    if (!_revJobSubscribed && hublyEvents()) {
+      _revJobSubscribed = true;
+      hublyEvents().on('job.completed', function (payload) {
+        var ro = ensureReviewsOsState();
+        var jobId = payload && payload.jobId;
+        var customerId = payload && payload.customerId;
+        if (!jobId && !customerId) return;
+        var m = st.marketingOs;
+        if (m && m.toggles && m.toggles.review_requests === false) return;
+        var dup = ro.requests.some(function (req) {
+          return (jobId && String(req.jobId) === String(jobId)) || (customerId && String(req.customerId) === String(customerId) && req.status === 'pending');
+        });
+        if (dup) return;
+        ro.requests.unshift({
+          id: revId('rev_req'),
+          customerId: customerId || null,
+          jobId: jobId || null,
+          status: 'pending',
+          channel: 'sms',
+          createdAt: todayStr(),
+          suggested: true
+        });
+        toast('Job completed — review request queued');
+      });
+    }
+    return r;
+  }
+  function publishReputationChanged() {
+    var r = ensureReviewsOsState();
+    r.analytics = recalcReviewsAnalytics(r.reviews);
+    publishRevEvent('reputation.changed', {
+      rating: r.analytics.rating,
+      count: r.analytics.count,
+      responseRate: r.analytics.responseRate
+    });
+  }
+  function revCustomerName(customerId) {
+    if (!customerId) return 'Customer';
+    var c = customers().find(function (x) { return String(x.id) === String(customerId); });
+    return c ? c.name : 'Customer';
+  }
+  function revCompletedJobTargets() {
+    return jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).map(function (j) {
+      var c = customers().find(function (x) { return x.name === j.customer || String(x.id) === String(j.customerId); });
+      var ro = ensureReviewsOsState();
+      var already = ro.requests.some(function (req) {
+        return String(req.jobId) === String(j.id) && req.status !== 'cancelled';
+      });
+      return {
+        jobId: j.id,
+        customerId: c ? c.id : (j.customerId || null),
+        customerName: j.customer || (c ? c.name : 'Customer'),
+        service: j.service,
+        date: j.date,
+        alreadyRequested: already
+      };
+    });
+  }
+  function revSourceBadge(source) {
+    var d = DS();
+    var lbl = REV_SOURCE_LABEL[source] || source;
+    return d ? d.statusBadge(lbl, REV_SOURCE_TONE[source] || 'quote') : '<span class="jos-pill">' + esc(lbl) + '</span>';
+  }
+  function revStars(n) {
+    n = Math.round(Number(n) || 0);
+    return '<span class="jos-rev-stars" aria-label="' + n + ' stars">' + '★'.repeat(Math.min(5, Math.max(0, n))) + '</span>';
+  }
+  function revReviewCard(rev, opts) {
+    opts = opts || {};
+    var sel = opts.selected ? ' jos-rev-card-on' : '';
+    var acts = opts.showActions !== false
+      ? '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-select" data-jos-rev-id="' + esc(rev.id) + '">Reply</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-open-customer" data-jos-rev-cust="' + esc(rev.customerId || '') + '">Customer</button>'
+      : '';
+    return '<div class="jos-rev-card' + sel + '" data-jos-rev-id="' + esc(rev.id) + '">' +
+      '<div class="jos-rev-card-h"><div><strong>' + esc(rev.name) + '</strong><div class="jos-muted" style="font-size:11px">' + esc(String(rev.at || '').slice(0, 10)) + '</div></div>' + revSourceBadge(rev.source) + '</div>' +
+      revStars(rev.rating) +
+      '<p class="jos-rev-card-body">"' + esc(rev.text) + '"</p>' +
+      (rev.reply ? '<div class="jos-rev-reply"><div class="jos-kicker">Your reply</div><p>' + esc(rev.reply) + '</p></div>' : '') +
+      '<div class="jos-rev-card-foot">' + (DS() ? DS().statusBadge(rev.status === 'replied' ? 'Replied' : 'New', rev.status === 'replied' ? 'ok' : 'warn') : '') + acts + '</div></div>';
+  }
+  function renderRevRequestModal(root) {
+    if (!root._josRevReqModal) return '';
+    var d = root._josRevReqDraft || {};
+    var targets = revCompletedJobTargets();
+    var opts = '<option value="">— Pick completed job —</option>' + targets.map(function (t) {
+      var val = String(t.jobId) + ':' + String(t.customerId || '');
+      var lbl = t.customerName + ' · ' + (t.service || 'Job') + ' · ' + String(t.date || '').slice(0, 10) + (t.alreadyRequested ? ' (requested)' : '');
+      return '<option value="' + esc(val) + '"' + (d.targetKey === val ? ' selected' : '') + '>' + esc(lbl) + '</option>';
+    }).join('');
+    return '<div class="jos-rev-modal" data-jos-rev-modal="1"><div class="jos-rev-modal-panel">' +
+      '<h3>Request a review</h3>' +
+      '<p class="jos-muted">Targets read from completed jobs × customers. SMS/email delivery is Stage 2.</p>' +
+      '<div class="jos-rev-form">' +
+      '<label>Completed job<select id="jos-rev-req-target">' + opts + '</select></label>' +
+      '<label>Channel<select id="jos-rev-req-channel"><option value="sms"' + ((d.channel || 'sms') === 'sms' ? ' selected' : '') + '>SMS</option><option value="email"' + (d.channel === 'email' ? ' selected' : '') + '>Email</option></select></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('rev-request-save', 'Send request (OS)', 'jos-btn-brand jos-btn-sm') + dsBtn('rev-request-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
+  }
+  function renderRevRecordModal(root) {
+    if (!root._josRevRecModal) return '';
+    var d = root._josRevRecDraft || {};
+    var srcOpts = ['google', 'facebook', 'website', 'manual'].map(function (s) {
+      return '<option value="' + s + '"' + ((d.source || 'manual') === s ? ' selected' : '') + '>' + esc(REV_SOURCE_LABEL[s]) + '</option>';
+    }).join('');
+    return '<div class="jos-rev-modal" data-jos-rev-modal="1"><div class="jos-rev-modal-panel">' +
+      '<h3>Record review</h3>' +
+      '<div class="jos-rev-form">' +
+      '<label>Name<input id="jos-rev-rec-name" type="text" value="' + esc(d.name || '') + '"></label>' +
+      '<label>Rating<input id="jos-rev-rec-rating" type="number" min="1" max="5" value="' + esc(String(d.rating != null ? d.rating : 5)) + '"></label>' +
+      '<label>Source<select id="jos-rev-rec-source">' + srcOpts + '</select></label>' +
+      '<label class="jos-rev-span2">Review text<textarea id="jos-rev-rec-text" class="jos-textarea">' + esc(d.text || '') + '</textarea></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('rev-record-save', 'Save review', 'jos-btn-brand jos-btn-sm') + dsBtn('rev-record-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
+  }
+  function renderRevOverviewTab(root) {
+    var r = ensureReviewsOsState();
+    var d = DS();
+    var a = r.analytics;
+    var kpis = d
+      ? d.metricCard('Overall rating', a.rating ? a.rating.toFixed(1) + ' ★' : '—', a.count + ' reviews') +
+        d.metricCard('5-star reviews', String(Math.round(a.count * a.fiveStarPct / 100) || 0), a.fiveStarPct + '% of all') +
+        d.metricCard('New this month', String(a.newThisMonth), 'Keep asking after jobs') +
+        d.metricCard('Response rate', a.responseRate + '%', 'Owner + AI replies')
+      : '';
+    var latest = r.reviews.slice(0, 4).map(function (rv) { return revReviewCard(rv, { showActions: false }); }).join('');
+    var ai = d ? d.aiInsightCard({
+      kicker: 'AI · Reputation summary',
+      body: r.aiSummary,
+      actionsHtml: dsBtn('rev-ai-refresh', 'Refresh summary', 'jos-btn jos-btn-sm') + dsBtn('rev-request-open', 'Request review', 'jos-btn-brand jos-btn-sm')
+    }) : '';
+    var pending = r.requests.filter(function (req) { return req.status === 'pending'; }).length;
+    return '<div class="jos-rev-overview">' +
+      (kpis ? '<div class="jos-rev-kpis">' + kpis + '</div>' : '') +
+      (ai ? '<div class="jos-mt">' + ai + '</div>' : '') +
+      '<div class="jos-rev-2col jos-mt">' +
+        '<div class="jos-card"><div class="jos-kicker">Latest reviews</div><div class="jos-rev-stack jos-mt">' + (latest || (d ? d.emptyState('No reviews', 'Record or sync reviews to get started.') : '')) + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Quick actions</div><div class="jos-stack jos-mt">' +
+          '<div class="jos-rev-act"><div><strong>Pending requests</strong><div class="jos-muted">' + pending + ' waiting to send</div></div>' + dsBtn('rev-go-requests', 'View', 'jos-btn jos-btn-sm') + '</div>' +
+          '<div class="jos-rev-act"><div><strong>Sync Google</strong><div class="jos-muted">Stage 2 · not connected</div></div>' + dsBtn('rev-sync-google', 'Connect', 'jos-btn jos-btn-sm') + '</div>' +
+          '<div class="jos-rev-act"><div><strong>Sync Facebook</strong><div class="jos-muted">Stage 2 · not connected</div></div>' + dsBtn('rev-sync-facebook', 'Connect', 'jos-btn jos-btn-sm') + '</div>' +
+        '</div></div></div></div>';
+  }
+  function renderRevInboxTab(root) {
+    var r = ensureReviewsOsState();
+    var d = DS();
+    var filt = root._josRevSource || 'all';
+    var list = r.reviews.filter(function (rv) { return filt === 'all' || rv.source === filt; });
+    var chips = ['all', 'google', 'facebook', 'website', 'manual'].map(function (s) {
+      var lbl = s === 'all' ? 'All' : (REV_SOURCE_LABEL[s] || s);
+      return '<button type="button" class="jos-tab' + (filt === s ? ' on' : '') + '" data-jos-rev-source="' + s + '">' + esc(lbl) + '</button>';
+    }).join('');
+    var cards = list.length ? list.map(function (rv) { return revReviewCard(rv); }).join('')
+      : (d ? d.emptyState('No reviews', 'Try another source filter or record a review.') : '');
+    return (d ? d.sectionHeader('All reviews', 'Filter by source — live sync is Stage 2.', dsBtn('rev-record-open', '+ Record review', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-rev-filters jos-mt">' + chips + '</div>' +
+      '<div class="jos-rev-grid jos-mt">' + cards + '</div>' + renderRevRecordModal(root);
+  }
+  function renderRevRequestsTab(root) {
+    var r = ensureReviewsOsState();
+    var d = DS();
+    var rows = r.requests.length ? r.requests.map(function (req) {
+      var nm = revCustomerName(req.customerId);
+      var st = req.status || 'pending';
+      return '<div class="jos-rev-card"><div class="jos-rev-card-h"><div><strong>' + esc(nm) + '</strong><div class="jos-muted" style="font-size:11px">' + esc(String(req.createdAt || '').slice(0, 10)) + ' · ' + esc(req.channel || 'sms') + (req.suggested ? ' · suggested' : '') + '</div></div>' +
+        (d ? d.statusBadge(st, st === 'sent' ? 'ok' : (st === 'pending' ? 'warn' : 'quote')) : '') + '</div>' +
+        '<div class="jos-muted">Job ' + esc(String(req.jobId || '—')) + '</div>' +
+        '<div class="jos-rev-card-foot">' +
+          (st === 'pending' ? '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="rev-request-send" data-jos-rev-req="' + esc(req.id) + '">Mark sent (OS)</button>' : '') +
+        '</div></div>';
+    }).join('') : (d ? d.emptyState('No requests', 'Create a request after a completed job.') : '');
+    var targets = revCompletedJobTargets().filter(function (t) { return !t.alreadyRequested; }).slice(0, 5);
+    var suggest = targets.length ? '<div class="jos-card jos-mt"><div class="jos-kicker">Ready to ask</div><div class="jos-stack jos-mt">' + targets.map(function (t) {
+      return '<div class="jos-rev-act"><div><strong>' + esc(t.customerName) + '</strong><div class="jos-muted">' + esc(t.service || 'Job') + ' · ' + esc(String(t.date || '').slice(0, 10)) + '</div></div>' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="rev-request-quick" data-jos-rev-job="' + esc(String(t.jobId)) + '" data-jos-rev-cust="' + esc(String(t.customerId || '')) + '">Request</button></div>';
+    }).join('') + '</div></div>' : '';
+    return (d ? d.sectionHeader('Review requests', 'OS records requests — live SMS/email is Stage 2.', dsBtn('rev-request-open', '+ New request', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-rev-grid jos-mt">' + rows + '</div>' + suggest + renderRevRequestModal(root);
+  }
+  function renderRevAiTab(root) {
+    var r = ensureReviewsOsState();
+    var d = DS();
+    var selId = root._josRevSelId || (r.reviews[0] && r.reviews[0].id);
+    var sel = r.reviews.find(function (rv) { return String(rv.id) === String(selId); });
+    var pick = r.reviews.length ? '<div class="jos-rev-pick jos-mb">' + r.reviews.slice(0, 8).map(function (rv) {
+      return '<button type="button" class="jos-btn jos-btn-sm' + (String(rv.id) === String(selId) ? ' jos-btn-brand' : '') + '" data-jos-act="rev-select" data-jos-rev-id="' + esc(rv.id) + '">' + esc(rv.name) + '</button>';
+    }).join('') + '</div>' : '';
+    var draft = root._josRevAiDraft || (sel && sel.reply) || '';
+    var body = sel
+      ? '<div class="jos-card">' + revReviewCard(sel, { showActions: false }) + '</div>' +
+        '<div class="jos-card jos-mt"><div class="jos-kicker">Draft reply</div>' +
+        '<textarea id="jos-rev-ai-draft" class="jos-textarea jos-mt" placeholder="AI draft reply…">' + esc(draft) + '</textarea>' +
+        '<div class="jos-btn-row jos-mt">' + dsBtn('rev-ai-draft', 'Generate draft', 'jos-btn jos-btn-sm') + dsBtn('rev-ai-save', 'Save response', 'jos-btn-brand jos-btn-sm') + '</div></div>'
+      : (d ? d.emptyState('Select a review', 'Pick a review from Inbox to draft a reply.') : '');
+    return (d ? d.sectionHeader('AI replies', 'Draft owner responses — saved to Reviews OS.') : '') + pick + body;
+  }
+  function renderRevAnalyticsTab(root) {
+    var r = ensureReviewsOsState();
+    var d = DS();
+    var a = r.analytics;
+    var bySrc = { google: 0, facebook: 0, website: 0, manual: 0 };
+    r.reviews.forEach(function (rv) { if (bySrc[rv.source] != null) bySrc[rv.source]++; });
+    var bars = Object.keys(bySrc).map(function (k) {
+      var pct = a.count ? Math.round((bySrc[k] / a.count) * 100) : 0;
+      return '<div class="jos-rev-bar-row"><span>' + esc(REV_SOURCE_LABEL[k]) + '</span><div class="jos-rev-bar"><i style="width:' + pct + '%"></i></div><span>' + bySrc[k] + '</span></div>';
+    }).join('');
+    var kpis = d
+      ? d.metricCard('Avg rating', a.rating ? a.rating.toFixed(1) : '—', 'All sources') +
+        d.metricCard('Total reviews', String(a.count), 'Owned records') +
+        d.metricCard('5-star %', a.fiveStarPct + '%', 'Reputation quality') +
+        d.metricCard('Response rate', a.responseRate + '%', 'Replied / total')
+      : '';
+    var trend = [a.rating || 4.5, 4.6, 4.7, 4.8, a.rating || 4.9, 4.9, a.rating || 5].map(function (v, i) {
+      return '<div class="jos-rev-trend-col"><i style="height:' + Math.round((v / 5) * 100) + '%"></i><span>' + ['M', 'T', 'W', 'T', 'F', 'S', 'S'][i] + '</span></div>';
+    }).join('');
+    return (kpis ? '<div class="jos-rev-kpis">' + kpis + '</div>' : '') +
+      '<div class="jos-rev-2col jos-mt">' +
+        '<div class="jos-card"><div class="jos-kicker">By source</div><div class="jos-rev-bars jos-mt">' + bars + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Rating trend (demo)</div><div class="jos-rev-trend jos-mt">' + trend + '</div></div></div>';
+  }
+  function renderRevEventsTab() {
+    var d = DS();
+    var ev = hublyEvents();
+    var rows = ev && typeof ev.recent === 'function' ? ev.recent(25) : [];
+    var list = rows.length ? rows.map(function (row) {
+      return '<div class="jos-rev-event"><div class="jos-rev-event-type">' + esc(row.type) + '</div>' +
+        '<div class="jos-muted" style="font-size:11px">' + esc(String(row.at || '').replace('T', ' ').slice(0, 19)) + '</div>' +
+        '<pre class="jos-rev-event-payload">' + esc(JSON.stringify(row.payload || {}, null, 0)) + '</pre></div>';
+    }).join('') : (d ? d.emptyState('No events yet', 'Request, receive, or respond to reviews to populate the feed.') : '');
+    return (d ? d.sectionHeader('Event log', 'Recent HublyEvents (Rule #17).') : '') +
+      '<div class="jos-rev-events jos-mt">' + list + '</div>';
+  }
+  function renderRevTabBody(root, tab) {
+    if (tab === 'overview') return renderRevOverviewTab(root);
+    if (tab === 'inbox') return renderRevInboxTab(root);
+    if (tab === 'requests') return renderRevRequestsTab(root);
+    if (tab === 'ai') return renderRevAiTab(root);
+    if (tab === 'analytics') return renderRevAnalyticsTab(root);
+    if (tab === 'events') return renderRevEventsTab();
+    return renderRevOverviewTab(root);
+  }
+  function renderReviewsPageInner(root) {
+    ensureReviewsOsState();
+    var tab = root._josRevTab || 'overview';
+    var d = DS();
+    var tabsHtml = '<div class="jos-tabs jos-rev-tabs">' + REV_TABS.map(function (t) {
+      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-rev-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    }).join('') + '</div>';
+    var head = d ? d.pageHeader('Reviews', 'Reputation, requests, and AI replies — reads Customers and completed Jobs.', dsBtn('rev-request-open', 'Request review', 'jos-btn-brand jos-btn-sm') + dsBtn('rev-record-open', 'Record review', 'jos-btn jos-btn-sm') + dsBtn('go-ask', 'Ask Hubly', 'jos-btn jos-btn-sm')) :
+      '<div class="jos-page-head"><div><h1>Reviews</h1><p>Reputation and request flows.</p></div></div>';
+    root.innerHTML = '<div class="jos-page jos-rev-page">' + head + tabsHtml +
+      '<div class="jos-rev-body">' + renderRevTabBody(root, tab) + '</div></div>';
+    bindRoot(root);
+    wireReviewsRoot(root);
+  }
+  function renderReviews() {
+    var root = ownPixelView('v-reviews', 'jos-reviews-root');
+    if (!root) return;
+    updateChrome('reviews');
+    root.innerHTML = '<div class="jos-page jos-rev-page"><div class="jos-home-loading">Loading Reviews…</div></div>';
+    try { renderReviewsPageInner(root); }
+    catch (err) {
+      console.warn('HublyJourneyOS Reviews', err);
+      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Reviews could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderReviews()">Retry</button></div></div></div>';
+    }
+  }
+  function renderBizReviews() { return renderReviews(); }
+  function wireReviewsRoot(root) {
+    if (root._josRevBound) return;
+    root._josRevBound = true;
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && (root._josRevReqModal || root._josRevRecModal)) {
+        root._josRevReqModal = false;
+        root._josRevRecModal = false;
+        root._josRevReqDraft = null;
+        root._josRevRecDraft = null;
+        renderReviews();
+      }
+    });
+  }
+  function readRevRequestDraft() {
+    var raw = (el('jos-rev-req-target') || {}).value || '';
+    var parts = raw.split(':');
+    return {
+      jobId: parts[0] || '',
+      customerId: parts[1] || '',
+      channel: (el('jos-rev-req-channel') || {}).value || 'sms',
+      targetKey: raw
+    };
+  }
+  function handleReviewsAct(act, t) {
+    var root = el('jos-reviews-root');
+    if (!root) return;
+    ensureReviewsOsState();
+    var r = S().reviewsOs;
+    var revIdAttr = t && (t.getAttribute('data-jos-rev-id') || (t.closest('[data-jos-rev-id]') && t.closest('[data-jos-rev-id]').getAttribute('data-jos-rev-id')));
+    var reqId = t && t.getAttribute('data-jos-rev-req');
+    try {
+      if (act === 'rev-request-open') {
+        root._josRevReqModal = true;
+        root._josRevReqDraft = { channel: 'sms' };
+        root._josRevTab = 'requests';
+        return renderReviews();
+      }
+      if (act === 'rev-request-cancel' || act === 'rev-record-cancel') {
+        root._josRevReqModal = false;
+        root._josRevRecModal = false;
+        root._josRevReqDraft = null;
+        root._josRevRecDraft = null;
+        return renderReviews();
+      }
+      if (act === 'rev-request-save') {
+        var rd = readRevRequestDraft();
+        if (!rd.jobId) { toast('Pick a completed job'); return; }
+        var req = { id: revId('rev_req'), customerId: rd.customerId || null, jobId: rd.jobId, status: 'sent', channel: rd.channel, createdAt: todayStr() };
+        r.requests.unshift(req);
+        publishRevEvent('review.requested', { requestId: req.id, customerId: req.customerId, jobId: req.jobId });
+        root._josRevReqModal = false;
+        root._josRevReqDraft = null;
+        toast('Review request recorded (OS) — delivery Stage 2 · not connected');
+        return renderReviews();
+      }
+      if (act === 'rev-request-quick') {
+        var qJob = t.getAttribute('data-jos-rev-job');
+        var qCust = t.getAttribute('data-jos-rev-cust');
+        var qReq = { id: revId('rev_req'), customerId: qCust || null, jobId: qJob, status: 'sent', channel: 'sms', createdAt: todayStr() };
+        r.requests.unshift(qReq);
+        publishRevEvent('review.requested', { requestId: qReq.id, customerId: qReq.customerId, jobId: qReq.jobId });
+        toast('Review request recorded (OS) — delivery Stage 2 · not connected');
+        return renderReviews();
+      }
+      if (act === 'rev-request-send' && reqId) {
+        var rq = r.requests.find(function (x) { return String(x.id) === String(reqId); });
+        if (rq) {
+          rq.status = 'sent';
+          publishRevEvent('review.requested', { requestId: rq.id, customerId: rq.customerId, jobId: rq.jobId });
+          toast('Marked sent (OS) — delivery Stage 2 · not connected');
+        }
+        return renderReviews();
+      }
+      if (act === 'rev-record-open') {
+        root._josRevRecModal = true;
+        root._josRevRecDraft = {};
+        root._josRevTab = 'inbox';
+        return renderReviews();
+      }
+      if (act === 'rev-record-save') {
+        var rec = normalizeReview({
+          id: revId('rev'),
+          name: (el('jos-rev-rec-name') || {}).value || 'Customer',
+          rating: Number((el('jos-rev-rec-rating') || {}).value) || 5,
+          source: (el('jos-rev-rec-source') || {}).value || 'manual',
+          text: (el('jos-rev-rec-text') || {}).value || '',
+          status: 'new',
+          at: todayStr()
+        });
+        if (!rec.text.trim()) { toast('Review text required'); return; }
+        r.reviews.unshift(rec);
+        r.aiSummary = buildReviewsAiSummary(r.reviews);
+        publishRevEvent('review.received', { reviewId: rec.id, source: rec.source, rating: rec.rating });
+        publishReputationChanged();
+        root._josRevRecModal = false;
+        root._josRevRecDraft = null;
+        toast('Review recorded');
+        return renderReviews();
+      }
+      if (act === 'rev-select' && revIdAttr) {
+        root._josRevSelId = revIdAttr;
+        root._josRevTab = 'ai';
+        root._josRevAiDraft = '';
+        return renderReviews();
+      }
+      if (act === 'rev-ai-draft') {
+        var rv = r.reviews.find(function (x) { return String(x.id) === String(root._josRevSelId); });
+        if (!rv) { toast('Select a review first'); return; }
+        var biz = S().biz || 'our team';
+        root._josRevAiDraft = 'Thank you, ' + (rv.name || 'there') + '! We appreciate you trusting ' + biz + '. Glad the ' + (rv.text.toLowerCase().indexOf('book') >= 0 ? 'booking experience' : 'service') + ' met your expectations — hope to see you again soon.';
+        return renderReviews();
+      }
+      if (act === 'rev-ai-save') {
+        var rv2 = r.reviews.find(function (x) { return String(x.id) === String(root._josRevSelId); });
+        if (!rv2) { toast('Select a review first'); return; }
+        var reply = (el('jos-rev-ai-draft') || {}).value || root._josRevAiDraft || '';
+        if (!reply.trim()) { toast('Write a reply first'); return; }
+        rv2.reply = reply.trim();
+        rv2.status = 'replied';
+        rv2.respondedAt = todayStr();
+        r.replies.push({ id: revId('rev_reply'), reviewId: rv2.id, text: rv2.reply, at: rv2.respondedAt });
+        publishRevEvent('review.responded', { reviewId: rv2.id });
+        publishReputationChanged();
+        toast('Reply saved');
+        return renderReviews();
+      }
+      if (act === 'rev-ai-refresh') {
+        r.aiSummary = buildReviewsAiSummary(r.reviews);
+        toast('Summary refreshed');
+        return renderReviews();
+      }
+      if (act === 'rev-sync-google' || act === 'rev-sync-facebook') {
+        return toast('Stage 2 · not connected');
+      }
+      if (act === 'rev-go-requests') {
+        root._josRevTab = 'requests';
+        return renderReviews();
+      }
+      if (act === 'rev-open-customer') {
+        var cid = t && t.getAttribute('data-jos-rev-cust');
+        if (cid) return openCustomerProfile(cid);
+        return toast('No customer linked');
+      }
+    } catch (err) {
+      console.warn('HublyJourneyOS rev act', act, err);
+      toast('Failed — try again');
+    }
+  }
+
   function membershipPlans() {
     var st = S(), plans = st.memberships || st.website?.memberships || st.website?.membershipPlans || [];
     if (Array.isArray(plans) && plans.length) return plans;
@@ -1458,29 +1966,6 @@
       }).join('') + '</div></div>' +
       '<div class="jos-grid jos-mt">' + tile('📈', 'Capacity', 'Fill open slots this week.', 'ask-growth', 'Fill open slots') + tile('💎', 'Ticket size', 'Add-ons and mid-tier packaging.', 'ask-growth', 'Raise ticket size') +
       tile('🔁', 'Retention', 'Rebooks and memberships.', 'go-mem', 'View memberships') + tile('🌐', 'Presence', 'Website + booking polish.', 'preview', 'Open website') + '</div></div>';
-    bindRoot(root);
-  }
-
-  function renderBizReviews() {
-    var root = el('jos-reviews-root'); if (!root) return;
-    var manual = S().website?.manualReviews || S().manualReviews || [];
-    var rating = Number(S().website?.reviewRating || S().reviewRating || 4.9);
-    var cards = (manual.length ? manual : [{ name: 'Alex P.', text: 'Showed up on time and the finish looked brand new.', rating: 5, src: 'Google' }, { name: 'Sam R.', text: 'Easy booking and clear communication.', rating: 5, src: 'Facebook' }, { name: 'Jordan M.', text: 'Will book again — already told two neighbors.', rating: 5, src: 'Manual' }]).slice(0, 8);
-    var count = Number(S().website?.reviewCount || cards.length) || cards.length;
-    var fiveStar = Math.round(count * 0.9);
-    root.innerHTML = page('Operate · Reviews', 'Reviews', 'Manage reputation and turn feedback into growth.', btn('ask-review', 'Request a Review', 'jos-btn-brand jos-btn-sm'),
-      '<div class="jos-kpi-row"><div class="jos-kpi"><div class="jos-kpi-lbl">Overall Rating</div><div class="jos-kpi-v brand">' + rating.toFixed(1) + '</div><div class="jos-kpi-sub"><span class="jos-review-stars">' + '★'.repeat(Math.round(rating)) + '</span> · ' + count + ' reviews</div></div>' +
-      '<div class="jos-kpi"><div class="jos-kpi-lbl">5-Star Reviews</div><div class="jos-kpi-v">' + fiveStar + '</div><div class="jos-kpi-sub">' + Math.round((fiveStar / Math.max(1, count)) * 100) + '% of all</div></div>' +
-      '<div class="jos-kpi"><div class="jos-kpi-lbl">New this month</div><div class="jos-kpi-v">' + Math.min(count, Math.max(2, Math.round(count * 0.12))) + '</div><div class="jos-kpi-sub">Keep asking after jobs</div></div>' +
-      '<div class="jos-kpi"><div class="jos-kpi-lbl">Response rate</div><div class="jos-kpi-v">100%</div><div class="jos-kpi-sub">You reply to every review</div></div></div>' +
-      '<div class="jos-ov-grid"><div class="jos-card"><div class="jos-kicker">AI Summary</div><p style="font-size:13px;margin-top:8px">Customers love attention to detail, communication, and convenience. Watch scheduling availability during busy weeks.</p><div class="jos-mt"><div class="jos-kpi-lbl">Consistently mention</div><ul class="jos-check-list"><li>✓ Attention to detail</li><li>✓ Communication</li><li>✓ Convenience</li><li>✓ Easy to book</li></ul></div></div>' +
-      '<div class="jos-card"><div class="jos-kicker">Latest Reviews</div><div class="jos-stack jos-mt">' + cards.slice(0, 4).map(function (r) {
-        return '<div class="jos-file-row" style="margin:0"><div class="jos-between"><strong>' + esc(r.name || r.author || 'Customer') + '</strong><span class="jos-pill quote">' + esc(r.src || 'Review') + '</span></div><div class="jos-review-stars">' + '★'.repeat(Number(r.rating) || 5) + '</div><p style="font-size:13px;margin-top:6px">“' + esc(r.text || r.body || '') + '”</p></div>';
-      }).join('') + '</div></div></div>' +
-      '<div class="jos-card jos-mt"><div class="jos-kicker">AI Opportunities</div><div class="jos-stack jos-mt">' +
-      [['Ask for a review', 'Recent completed jobs are warm.', 'ask-review', 'Send Request'], ['Use a review on homepage', 'Best 5-star quotes make great testimonials.', 'ask', 'Add to Homepage'], ['Generate Instagram testimonial', 'Turn praise into a short post.', 'ask', 'Generate Post'], ['Create testimonial section', 'Showcase social proof on your site.', 'go-editor', 'Create Section']].map(function (x) {
-        return '<div class="jos-between"><div><strong>' + esc(x[0]) + '</strong><div class="jos-muted">' + esc(x[1]) + '</div></div>' + btn(x[2], x[3], 'jos-btn-brand jos-btn-sm') + '</div>';
-      }).join('') + '</div></div>');
     bindRoot(root);
   }
 
@@ -6227,7 +6712,7 @@
       memberships: renderMemberships,
       reports: renderReportsPage,
       growth: renderGrowth,
-      reviews: renderBizReviews,
+      reviews: renderReviews,
       settings: renderSettingsHub,
       leads: renderLeads,
       customers: renderCustomers,
@@ -6242,7 +6727,7 @@
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
       if (t.hasAttribute('data-jos-inbox-tab')) {
         var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
         return;
@@ -6293,6 +6778,14 @@
         var mkr = el('jos-marketing-root'); if (mkr) { mkr._josMktTab = t.getAttribute('data-jos-mkt-tab'); renderMarketing(); }
         return;
       }
+      if (t.hasAttribute('data-jos-rev-tab')) {
+        var revr = el('jos-reviews-root'); if (revr) { revr._josRevTab = t.getAttribute('data-jos-rev-tab'); renderReviews(); }
+        return;
+      }
+      if (t.hasAttribute('data-jos-rev-source')) {
+        var revs = el('jos-reviews-root'); if (revs) { revs._josRevSource = t.getAttribute('data-jos-rev-source'); renderReviews(); }
+        return;
+      }
       if (t.hasAttribute('data-jos-cust-row')) {
         var crow = el('jos-customers-root');
         if (crow) {
@@ -6332,6 +6825,7 @@
       if (act && (String(act).indexOf('cust-') === 0 || String(act).indexOf('customers-') === 0)) return handleCustomersAct(act, t);
       if (act && String(act).indexOf('sf-') === 0) return handleStorefrontAct(act, t);
       if (act && String(act).indexOf('mkt-') === 0) return handleMarketingAct(act, t);
+      if (act && String(act).indexOf('rev-') === 0) return handleReviewsAct(act, t);
       if (act === 'ask-submit' || act === 'ask-brief') {
         switchNav('ask');
         return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
@@ -6388,6 +6882,8 @@
     renderMemberships: renderMemberships,
     renderReportsPage: renderReportsPage,
     renderGrowth: renderGrowth,
+    renderReviews: renderReviews,
+    handleReviewsAct: handleReviewsAct,
     renderBizReviews: renderBizReviews,
     renderSettingsHub: renderSettingsHub,
     renderLeads: renderLeads,
