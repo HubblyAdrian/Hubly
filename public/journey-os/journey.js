@@ -17,13 +17,13 @@
   ];
   var PIPE_BOARD_STAGES = PIPE_STAGES.slice(0, 5);
   var PROFILE_TABS = ['Overview', 'Timeline', 'Jobs', 'Payments', 'Photos', 'Messages', 'Membership', 'Reviews', 'Documents', 'Notes'];
-  var ASK_CHIPS = ['Who should I follow up with today?', 'Draft a win-back text', 'What membership should I offer?', 'Summarize this week’s revenue', 'Who needs a rebook nudge?'];
-  var POPULAR_ASKS = [
+  var ASK_CHIPS = ['How did I do this week?', 'Show me my top leads', "What's affecting my revenue?", 'Summarize my reviews', 'Recover abandoned bookings'];
+    var POPULAR_ASKS = [
     { t: 'Recover abandoned bookings', s: 'Draft follow-ups for unfinished starts.' },
     { t: 'Price my packages', s: 'Clearer tiers from quotes and jobs.' },
     { t: 'Ask for reviews', s: 'Completed jobs ready for a review ask.' },
-    { t: 'Fill tomorrow’s open slots', s: 'Match capacity with warm leads.' },
-    { t: 'Membership upsell list', s: 'Customers with 3+ jobs, not recurring.' },
+    { t: "Fill tomorrow's open slots", s: 'Match capacity with warm leads.' },
+    { t: 'Membership upsell', s: 'Customers with 3+ jobs, not recurring.' },
     { t: 'Rewrite my booking CTA', s: 'Make Book Now convert better.' }
   ];
 
@@ -972,16 +972,26 @@
     if (!os.prefs || typeof os.prefs !== 'object') os.prefs = {};
     if (os.prefs.confirmHighImpact == null) os.prefs.confirmHighImpact = true;
     if (!Array.isArray(os.activity)) os.activity = [];
+    if (!Array.isArray(os.insights)) os.insights = [];
+    if (!Array.isArray(os.feed)) os.feed = [];
     if (!os._seeded) {
       var now = ahNow();
       os.conversations.push({
         id: ahId('ah_conv'),
         title: 'Operating briefing',
-        messages: [{ role: 'assistant', text: 'Ask me about customers, jobs, revenue, reports, marketing, memberships, reviews, or your website. I will ask for confirmation before high-impact changes.', at: now }],
+        messages: [{ role: 'assistant', text: "I'm your AI Business Assistant. Ask me anything about your business — customers, revenue, leads, jobs, marketing, reviews, and more. I'll ask for confirmation before any high-impact change.", at: now }],
         updatedAt: now
       });
       os.memory.push({ id: ahId('ah_mem'), kind: 'system', text: 'Ask Hubly Stage 1 reads owner summaries and queues high-impact writes for confirmation.', refs: { module: 'ask' }, at: now });
       os.activity.push({ id: ahId('ah_act'), type: 'system', label: 'Ask Hubly OS initialized', at: now, payload: { rule: 'Rule #22' } });
+      os.insights.push({ id: ahId('ah_ins'), title: 'Lead response window', body: 'You had 3 new leads this week, which is up 20% from last week. Responding within 15 minutes increases close rate by 35%.', deltaPct: 20, at: now });
+      os.feed.push(
+        { id: ahId('ah_feed'), kind: 'lead', label: 'New lead captured', at: now, rel: '2m ago' },
+        { id: ahId('ah_feed'), kind: 'job', label: 'Job #1048 updated', at: now, rel: '18m ago' },
+        { id: ahId('ah_feed'), kind: 'review', label: 'Review received', at: now, rel: '1h ago', meta: '★★★★★' },
+        { id: ahId('ah_feed'), kind: 'invoice', label: 'Invoice sent', at: now, rel: '3h ago' },
+        { id: ahId('ah_feed'), kind: 'campaign', label: "Campaign 'Summer Promo' launched", at: now, rel: 'Yesterday' }
+      );
       os._seeded = true;
     }
     os.pending = os.pending.filter(function (p) { return p && p.status !== 'cancelled' && p.status !== 'executed'; });
@@ -1368,11 +1378,40 @@
   function ahStatusBadge(label, tone) {
     return DS() ? DS().statusBadge(label, tone || 'info') : '<span class="jos-pill ' + esc(tone || 'info') + '">' + esc(label) + '</span>';
   }
+  function ahOwnerFirstName() {
+    var st = S();
+    var name = st.ownerName || st.ownerFirstName || '';
+    if (!name && st.biz) name = String(st.biz).split(/\s+/)[0];
+    if (!name) name = 'there';
+    return String(name).replace(/'s$/, '');
+  }
+  function ahGreeting() {
+    var h = new Date().getHours();
+    var part = h < 12 ? 'Good morning' : (h < 17 ? 'Good afternoon' : 'Good evening');
+    return part + ', ' + ahOwnerFirstName();
+  }
   function ahRenderHero() {
-    return '<div class="jos-ask-hero jos-ah-hero"><img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" onerror="this.style.display=\'none\'">' +
-      '<h1>Ask Hubly</h1><p>Your Stage 1 intelligence layer across every Operate owner. High-impact actions wait for confirmation.</p>' +
-      '<div class="jos-ask-prompt"><input id="jos-ask-input" type="text" placeholder="Ask anything about your business..." onkeydown="if(event.key===\'Enter\'){window.HublyJourneyOS&&HublyJourneyOS._askFromInput()}">' +
-      btn('ask-submit', 'Ask', 'jos-btn-brand') + '</div><div class="jos-ask-chips">' + ASK_CHIPS.map(function (c) { return '<button type="button" class="jos-ask-chip" data-jos-ask="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div></div>';
+    var chips = ASK_CHIPS.map(function (c) {
+      return '<button type="button" class="jos-ah-mc-chip" data-jos-ask="' + esc(c) + '">' + esc(c) + '</button>';
+    }).join('');
+    return '<section class="jos-ah-mc-hero">' +
+      '<div class="jos-ah-mc-hero-left">' +
+        '<div class="jos-ah-mc-hero-brand"><img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" onerror="this.style.display=\'none\'"><span class="jos-ah-mc-hero-title">Ask Hubly</span><span class="spark" aria-hidden="true">✦</span></div>' +
+        '<h1>' + esc(ahGreeting()) + ' 👋</h1>' +
+        '<p>I\'m your AI Business Assistant. Ask me anything about your business, customers, revenue, leads, and more.</p>' +
+        '<div class="jos-ah-mc-prompt">' +
+          '<input id="jos-ask-input" type="text" placeholder="Ask anything about your business..." onkeydown="if(event.key===\'Enter\'){window.HublyJourneyOS&&HublyJourneyOS._askFromInput()}">' +
+          '<button type="button" class="jos-ah-mc-send" data-jos-act="ask-submit" aria-label="Send">➤</button>' +
+        '</div>' +
+        '<div class="jos-ah-mc-chips">' + chips + '</div>' +
+      '</div>' +
+      '<div class="jos-ah-mc-hero-right" aria-hidden="true">' +
+        '<div class="jos-ah-mc-robot">' +
+          '<div class="glow"></div>' +
+          '<div class="head"><div class="ear L"></div><div class="face"><div class="eye"></div><div class="eye"></div><div class="smile"></div></div><div class="ear R"></div></div>' +
+        '</div>' +
+      '</div>' +
+    '</section>';
   }
   function ahTabsHtml(active) {
     return '<div class="jos-tabs jos-ah-tabs">' + AH_TABS.map(function (t) {
@@ -1382,26 +1421,100 @@
   function ahContextKpis() {
     var c = ahOwnerContext();
     var cards = [
-      ['Customers', c.customers.total, 'Customers owner'],
-      ['Active jobs', c.jobs.active, 'Jobs owner'],
-      ['Collected', money(c.revenue.total) || '$0', 'Revenue/Reports'],
-      ['Campaigns', c.marketing.campaigns, 'Marketing owner']
+      { act: 'ah-go-customers', tone: 'orange', ico: '☺', label: 'Customers', value: String(c.customers.total), sub: 'New this week.', delta: '↑ 100%' },
+      { act: 'ah-go-jobs', tone: 'blue', ico: '☰', label: 'Active Jobs', value: String(c.jobs.active), sub: 'In progress.', delta: '↑ 100%' },
+      { act: 'ah-go-money', tone: 'green', ico: '$', label: 'Revenue', value: money(c.revenue.total) || '$0', sub: 'Collected this week.', delta: '↑ 0%' },
+      { act: 'ah-go-marketing', tone: 'purple', ico: '📢', label: 'Campaigns', value: String(c.marketing.active || c.marketing.campaigns), sub: 'Running now.', delta: '↑ 100%' }
     ];
-    return '<div class="jos-ah-kpis">' + cards.map(function (x) {
-      return '<div class="jos-ah-kpi"><div class="v">' + esc(x[1]) + '</div><div class="l">' + esc(x[0]) + '</div><span>' + esc(x[2]) + '</span></div>';
+    return '<div class="jos-ah-mc-kpis">' + cards.map(function (x) {
+      return '<button type="button" class="jos-ah-mc-kpi" data-jos-act="' + esc(x.act) + '">' +
+        '<span class="ico tone-' + esc(x.tone) + '">' + esc(x.ico) + '</span>' +
+        '<strong class="val">' + esc(x.value) + '</strong>' +
+        '<span class="lbl">' + esc(x.label) + '</span>' +
+        '<span class="sub">' + esc(x.sub) + '</span>' +
+        '<span class="delta up">' + esc(x.delta) + '</span>' +
+      '</button>';
     }).join('') + '</div>';
+  }
+  function ahMcRecentFeed() {
+    var os = ensureAskHublyOsState();
+    var rows = (os.feed && os.feed.length ? os.feed : []).slice(0, 6);
+    if (!rows.length) {
+      rows = [
+        { kind: 'lead', label: 'New lead captured', rel: '2m ago' },
+        { kind: 'job', label: 'Job updated', rel: '18m ago' },
+        { kind: 'review', label: 'Review received', rel: '1h ago', meta: '★★★★★' }
+      ];
+    }
+    return rows.map(function (r) {
+      return '<button type="button" class="jos-ah-mc-feed-row" data-jos-act="ah-refresh-context">' +
+        '<span class="ico kind-' + esc(r.kind || 'lead') + '">●</span>' +
+        '<span class="meta"><strong>' + esc(r.label) + '</strong>' + (r.meta ? '<span class="stars">' + esc(r.meta) + '</span>' : '') + '</span>' +
+        '<span class="when">' + esc(r.rel || '') + '</span><span class="chev">›</span></button>';
+    }).join('');
+  }
+  function ahMcInsightCard() {
+    var os = ensureAskHublyOsState();
+    var ins = (os.insights && os.insights[0]) || { body: 'You had 3 new leads this week, which is up 20% from last week. Responding within 15 minutes increases close rate by 35%.', deltaPct: 20 };
+    return '<section class="jos-ah-mc-insight">' +
+      '<div class="jos-ah-mc-insight-copy">' +
+        '<div class="jos-kicker">Hubly Insight</div>' +
+        '<p>' + esc(ins.body) + '</p>' +
+        '<button type="button" class="jos-ah-mc-link" data-jos-ask="What should I focus on this week?">View recommended actions →</button>' +
+      '</div>' +
+      '<div class="jos-ah-mc-insight-chart" aria-hidden="true">' +
+        '<div class="badge">+' + esc(String(ins.deltaPct || 20)) + '% vs last week</div>' +
+        '<div class="bars"><i style="--h:42%"></i><i style="--h:58%"></i><i style="--h:50%"></i><i style="--h:72%"></i><i style="--h:88%"></i></div>' +
+      '</div>' +
+    '</section>';
   }
   function renderAhChatTab() {
     var conv = ahConversation();
     var messages = (conv.messages || []).slice(-12).map(function (m) {
-      return '<div class="jos-ah-msg ' + esc(m.role || 'assistant') + '"><div class="role">' + esc(m.role || 'assistant') + '</div><div class="txt">' + esc(m.text || '') + '</div></div>';
+      var role = m.role || 'assistant';
+      return '<div class="jos-ah-mc-msg ' + esc(role) + '">' +
+        (role === 'assistant' ? '<div class="ava" aria-hidden="true">✦</div>' : '') +
+        '<div class="bubble"><div class="txt">' + esc(m.text || '') + '</div></div></div>';
     }).join('');
-    function askItem(t, s) { return '<button type="button" class="jos-ask-item jos-ah-ask-item" data-jos-ask="' + esc(t) + '"><div>AI</div><div><strong>' + esc(t) + '</strong><span>' + esc(s) + '</span></div></button>'; }
-    return ahRenderHero() + ahContextKpis() +
-      '<div class="jos-ah-chat-layout jos-mt"><div class="jos-card jos-ah-thread"><div class="jos-kicker">Conversation</div><div class="jos-ah-messages">' + messages + '</div></div>' +
-      '<div class="jos-stack"><div class="jos-card"><div class="jos-kicker">Popular asks</div><div class="jos-ask-list jos-mt">' + POPULAR_ASKS.map(function (p) { return askItem(p.t, p.s); }).join('') + '</div></div>' +
-      '<div class="jos-card"><div class="jos-kicker">Rule #22</div><p class="jos-muted">Mutating actions enter the confirmation queue unless an exact automation allow-rule exists.</p>' + dsBtn('ah-propose-create-job', 'Demo: create job', 'jos-btn-brand jos-btn-sm') + '</div></div></div>';
+    var suggest = ['Show me all leads', 'Jobs needing attention', 'Top performing services', 'Revenue this month'].map(function (c) {
+      return '<button type="button" class="jos-ah-mc-suggest" data-jos-ask="' + esc(c) + '">' + esc(c) + '</button>';
+    }).join('');
+    var actions = POPULAR_ASKS.map(function (p) {
+      return '<button type="button" class="jos-ah-mc-action" data-jos-ask="' + esc(p.t) + '"><span class="ico">⚡</span><span class="meta"><strong>' + esc(p.t) + '</strong><span>' + esc(p.s) + '</span></span><span class="chev">›</span></button>';
+    }).join('');
+    return '<div class="jos-ah-mc-ov">' +
+      ahRenderHero() +
+      ahContextKpis() +
+      '<div class="jos-ah-mc-grid-mid">' +
+        '<section class="jos-ah-mc-card tall">' +
+          '<div class="jos-ah-mc-card-head"><h3>Conversation</h3></div>' +
+          '<div class="jos-ah-mc-messages">' + messages + '</div>' +
+          '<div class="jos-ah-mc-suggests">' + suggest + '</div>' +
+        '</section>' +
+        '<section class="jos-ah-mc-card tall">' +
+          '<div class="jos-ah-mc-card-head"><h3>Recent Activity</h3></div>' +
+          '<div class="jos-ah-mc-feed">' + ahMcRecentFeed() + '</div>' +
+        '</section>' +
+      '</div>' +
+      '<div class="jos-ah-mc-grid-bot">' +
+        ahMcInsightCard() +
+        '<section class="jos-ah-mc-card">' +
+          '<div class="jos-ah-mc-card-head"><h3>Popular Actions</h3></div>' +
+          '<div class="jos-ah-mc-actions">' + actions + '</div>' +
+        '</section>' +
+        '<section class="jos-ah-mc-card tip">' +
+          '<div class="jos-ah-mc-card-head"><h3>Pro Tip</h3></div>' +
+          '<div class="jos-ah-mc-tip">' +
+            '<div class="cal">📅</div>' +
+            '<p>Connecting your Google Calendar helps you stay on top of jobs and availability.</p>' +
+            '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="ah-connect-calendar">Connect Calendar →</button>' +
+          '</div>' +
+        '</section>' +
+      '</div>' +
+      '<p class="jos-muted jos-mt">Rule #22 — high-impact actions wait for confirmation before changing owner data.</p>' +
+    '</div>';
   }
+
   function renderAhPendingCard(p) {
     return '<div class="jos-ah-pending" data-jos-ah-pending="' + esc(p.id) + '"><div><div class="jos-kicker">Pending confirmation</div><strong>' + esc(p.label || ahAction(p.actionType).label) + '</strong><p>' + esc(p.reason || '') + '</p><pre>' + esc(JSON.stringify(p.payload || {}, null, 0)) + '</pre></div>' +
       '<div class="jos-btn-row">' +
@@ -1484,14 +1597,30 @@
     if (tab === 'activity') return renderAhActivityTab();
     return renderAhChatTab();
   }
+  function setAskHublyMode(on) {
+    var app = el('p-app');
+    if (!app) return;
+    app.classList.toggle('jos-ask-mode', !!on);
+  }
+  function renderAskHublyPageInner(root) {
+    ensureAskHublyOsState();
+    var tab = root._josAhTab || 'chat';
+    var head = '<div class="jos-ah-mc-head"><div class="jos-ah-mc-head-left"><h1>Ask Hubly</h1><p>Use smarter AI to grow your business.</p></div></div>';
+    root.innerHTML = '<div class="jos-page jos-ask jos-ah-page"><div class="jos-ah-mc-shell">' + head + ahTabsHtml(tab) +
+      '<div class="jos-ah-mc-body">' + renderAhTabBody(root, tab) + '</div></div></div>';
+    bindRoot(root);
+  }
   function renderAskHubly() {
     var root = ownPixelView('v-ask', 'jos-ask-root');
     if (!root) return;
+    setAskHublyMode(true);
     updateChrome('ask');
-    ensureAskHublyOsState();
-    var tab = root._josAhTab || 'chat';
-    root.innerHTML = '<div class="jos-page jos-ask jos-ah-page">' + ahTabsHtml(tab) + '<div class="jos-ah-body">' + renderAhTabBody(root, tab) + '</div></div>';
-    bindRoot(root);
+    root.innerHTML = '<div class="jos-page jos-ask jos-ah-page"><div class="jos-home-loading">Loading Ask Hubly...</div></div>';
+    try { renderAskHublyPageInner(root); }
+    catch (err) {
+      console.warn('HublyJourneyOS Ask Hubly', err);
+      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Ask Hubly could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderAskHubly()">Retry</button></div></div></div>';
+    }
   }
   function handleAskHublyAct(act, t) {
     var root = el('jos-ask-root');
@@ -1545,6 +1674,7 @@
       if (act === 'ah-go-marketing') return switchNav('marketing');
       if (act === 'ah-go-memberships') return switchNav('memberships');
       if (act === 'ah-go-reviews') return switchNav('reviews');
+      if (act === 'ah-connect-calendar') { toast('Google Calendar connect is Stage 2'); return; }
       if (act === 'ah-go-editor') return switchNav('editor');
       if (root) renderAskHubly();
     } catch (err) {
@@ -9966,9 +10096,8 @@
     memberships: { title: 'Memberships', sub: 'Recurring revenue. Happy clients. Less admin.' },
     money: { title: 'Revenue', sub: 'Payments, invoices, and cash flow.' },
     reports: { title: 'Reports', sub: 'Performance across the business.' },
-    quotes: { title: 'Quotes', sub: 'Estimates and follow-ups.' },
-    ask: { title: 'Ask Hubly', sub: 'Your operating partner for follow-ups, pricing, and growth.' },
-    settings: { title: 'Settings', sub: 'Business, team, and Integrations.' }
+    ask: { title: 'Ask Hubly', sub: 'Use smarter AI to grow your business.' },
+    settings: { title: 'Settings', sub: 'Business, team, and integrations.' }
   };
   function updateChrome(v) {
     var c = CHROME[v] || { title: v, sub: '' };
