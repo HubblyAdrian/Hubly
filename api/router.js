@@ -30,7 +30,23 @@ function isBusinessSubdomain(req) {
 }
 
 function serveHublyHtml(res) {
-  const content = fs.readFileSync(path.join(__dirname, '../public/hubly.html'), 'utf8');
+  let content = fs.readFileSync(path.join(__dirname, '../public/hubly.html'), 'utf8');
+  // Owner-only CEO walkthrough — never ship an open /demo to customers.
+  // Set HUBLY_CEO_DEMO_KEY in the server env, then open /hubly-ceo?k=<key>
+  const ceoKey = String(process.env.HUBLY_CEO_DEMO_KEY || '').trim();
+  const inject =
+    '<script>window.__HUBLY_CEO_DEMO__=' +
+    JSON.stringify({
+      enabled: !!ceoKey,
+      key: ceoKey || null,
+      path: '/hubly-ceo',
+    }) +
+    ';</script>';
+  if (content.includes('</head>')) {
+    content = content.replace('</head>', inject + '\n</head>');
+  } else {
+    content = inject + content;
+  }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
   return res.status(200).send(content);

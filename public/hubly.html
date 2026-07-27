@@ -8577,7 +8577,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var land=document.getElementById('p-landing');
     var boot=document.getElementById('p-boot');
     // Owner routes: never flash the Hubly marketing page while auth restores.
-    var ownerPaths={'/':1,'/app':1,'/dashboard':1,'/login':1,'/onboarding':1,'/signup':1,'/welcome':1,'/demo':1,'/experience':1,'/create-demo':1};
+    var ownerPaths={'/':1,'/app':1,'/dashboard':1,'/login':1,'/onboarding':1,'/signup':1,'/welcome':1,'/hubly-ceo':1,'/create-demo':1};
     if(ownerPaths[path]){
       if(land)land.classList.remove('active');
       if(boot)boot.classList.add('active');
@@ -11541,7 +11541,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
 <script defer src="/journey-os/journey.js"></script>
-<script defer src="/journey-os/ceo-demo.js"></script>
+<!-- ceo-demo.js loads on-demand only for owner-authorized /hubly-ceo -->
 <script defer src="/booking-wizard/ui.js"></script>
 <link rel="stylesheet" href="/booking-wizard/mock-skin.css">
 <script defer src="/themes/registry.js"></script>
@@ -11674,7 +11674,7 @@ const HUBLY_PAGE_ROUTES={
   'p-reset-password':{path:'/reset-password',title:'Hubly · Reset password'},
   'p-onboard':{path:'/onboarding',title:'Hubly · Setup'},
   'p-app':{path:'/app',title:'Hubly · Home'},
-  'p-ceo-demo':{path:'/demo',title:'Hubly · CEO Demo'},
+  'p-ceo-demo':{path:'/hubly-ceo',title:'Hubly · CEO Demo'},
   'p-create-demo':{path:'/create-demo',title:'Hubly · Create Demo'},
 };
 const HUBLY_PATH_TO_PAGE={
@@ -11690,17 +11690,42 @@ const HUBLY_PATH_TO_PAGE={
   '/onboarding':'p-onboard',
   '/app':'p-app',
   '/dashboard':'p-app',
-  '/demo':'p-ceo-demo',
-  '/experience':'p-ceo-demo',
+  // Public /demo and /experience are retired — customers must never land in CEO demo.
+  '/hubly-ceo':'p-ceo-demo',
   '/create-demo':'p-create-demo',
 };
 function hublyPath(){
   const p=(location.pathname||'/').replace(/\/+$/,'');
   return p||'/';
 }
+function ceoDemoConfig(){
+  return (typeof window!=='undefined'&&window.__HUBLY_CEO_DEMO__)||{};
+}
+function ceoDemoSecretOk(){
+  const cfg=ceoDemoConfig();
+  let provided='';
+  try{provided=String(new URLSearchParams(location.search||'').get('k')||'').trim();}catch(e){}
+  // Sticky unlock for this tab after a valid key (so #home navigation keeps working).
+  try{
+    if(!provided&&sessionStorage.getItem('hubly_ceo_demo_ok')==='1')return true;
+  }catch(e){}
+  const expected=String(cfg.key||'').trim();
+  // Localhost convenience when env key is not injected yet.
+  const host=(location.hostname||'').toLowerCase();
+  const localDev=host==='localhost'||host==='127.0.0.1';
+  const localKey=provided==='hubly-local-ceo';
+  const ok=!!((cfg.enabled&&expected&&provided&&provided===expected)||(localDev&&localKey));
+  if(ok){
+    try{sessionStorage.setItem('hubly_ceo_demo_ok','1');}catch(e){}
+  }
+  return ok;
+}
 function isCeoDemoPath(path){
   const p=path||hublyPath();
-  return p==='/demo'||p==='/experience';
+  return p==='/hubly-ceo';
+}
+function isCeoDemoAuthorized(path){
+  return isCeoDemoPath(path)&&ceoDemoSecretOk();
 }
 function isCreateDemoPath(path){
   const p=path||hublyPath();
@@ -11714,7 +11739,7 @@ function syncHublyRoute(id,{replace}={}){
   // CEO Demo Mode keeps a single review URL for the Operate walkthrough.
   if(typeof S!=='undefined'&&S._ceoDemo){
     try{
-      const base=isCeoDemoPath()?hublyPath():'/demo';
+      const base=isCeoDemoPath()?hublyPath():'/hubly-ceo';
       const hash=id==='p-app'?'#home':'';
       const next=base+hash;
       const cur=(location.pathname||'')+(location.hash||'');
@@ -11810,8 +11835,13 @@ function showP(id,opts){
 window.addEventListener('popstate',()=>{
   if(typeof getSlugFromHost==='function'&&getSlugFromHost())return;
   const dest=pageForHublyPath(hublyPath())||'p-landing';
-  if(dest==='p-ceo-demo'||isCeoDemoPath()||S._ceoDemo){
+  if(S._ceoDemo||isCeoDemoAuthorized()){
     startCeoDemoMode();
+    return;
+  }
+  // Retired public demo URLs — send customers to Welcome, never seed CRM.
+  if(hublyPath()==='/demo'||hublyPath()==='/experience'||dest==='p-ceo-demo'){
+    showP('p-signup',{replaceRoute:true});
     return;
   }
   if(dest==='p-create-demo'||isCreateDemoPath()||S._createDemo){
@@ -11860,11 +11890,35 @@ function hideCeoDemoChrome(){
   }catch(e){}
 }
 function restartCeoDemo(){
-  const base=isCeoDemoPath()?hublyPath():'/demo';
+  if(!ceoDemoSecretOk()&&!S._ceoDemo)return;
+  const base=isCeoDemoPath()?hublyPath():'/hubly-ceo';
   location.href=base+'#home';
 }
-/** CEO Demo — /demo · /experience — Journey OS Operate with seeded CRM (no login). */
+function loadCeoDemoSeedScript(){
+  return new Promise((resolve)=>{
+    if(typeof HublyCeoDemo!=='undefined'){resolve(true);return;}
+    const existing=document.querySelector('script[data-hubly-ceo-demo-seed]');
+    if(existing){
+      existing.addEventListener('load',()=>resolve(typeof HublyCeoDemo!=='undefined'));
+      existing.addEventListener('error',()=>resolve(false));
+      return;
+    }
+    const s=document.createElement('script');
+    s.src='/journey-os/ceo-demo.js';
+    s.async=true;
+    s.dataset.hublyCeoDemoSeed='1';
+    s.onload=()=>resolve(typeof HublyCeoDemo!=='undefined');
+    s.onerror=()=>resolve(false);
+    document.head.appendChild(s);
+  });
+}
+/** CEO Demo — owner-only /hubly-ceo?k=… — Journey OS Operate with seeded CRM (no login). */
 async function startCeoDemoMode(){
+  if(!S._ceoDemo&&!isCeoDemoAuthorized()){
+    console.warn('[Hubly] CEO demo is owner-only and locked');
+    try{showP('p-signup',{replaceRoute:true});}catch(e){}
+    return;
+  }
   S._ceoDemo=true;
   S._accountClaimed=true;
   S._deferredAccount=false;
@@ -11873,7 +11927,7 @@ async function startCeoDemoMode(){
     document.getElementById('p-app')?.classList.add('jos-pixel');
   }catch(e){}
   showCeoDemoChrome();
-  // Wait briefly for deferred journey-os scripts.
+  await loadCeoDemoSeedScript();
   for(let i=0;i<40 && typeof HublyCeoDemo==='undefined';i++)await new Promise(r=>setTimeout(r,25));
   try{
     if(typeof HublyCeoDemo!=='undefined'&&HublyCeoDemo.seed)HublyCeoDemo.seed(S);
@@ -11883,7 +11937,7 @@ async function startCeoDemoMode(){
   currentUser=currentUser||{id:'ceo-demo-user',email:'ceo-demo@hubly.app',user_metadata:{full_name:'Adrian'}};
   currentBusiness=currentBusiness||{id:'ceo-demo-biz',name:S.biz,slug:S.slug,meta:{ceoDemo:true}};
   try{
-    const base=isCeoDemoPath()?hublyPath():'/demo';
+    const base=isCeoDemoPath()?hublyPath():'/hubly-ceo';
     history.replaceState({page:'p-ceo-demo',ceoDemo:true},'',base+'#home');
     document.title='Hubly · CEO Demo';
   }catch(e){}
@@ -11976,7 +12030,7 @@ function openOperateHome(opts){
   showP('p-app',{replaceRoute:opts.replaceRoute!==false});
   try{
     if(S._ceoDemo){
-      const base=isCeoDemoPath()?hublyPath():'/demo';
+      const base=isCeoDemoPath()?hublyPath():'/hubly-ceo';
       history.replaceState({page:'p-app',ceoDemo:true},'', base+'#home');
       document.title='Hubly · CEO Demo · Home';
     }else{
@@ -14843,9 +14897,14 @@ async function submitNewPassword(btn){
   }
 }
 async function checkSession(){
-  // CEO Demo Mode — seeded Operate walkthrough; no login.
-  if(isCeoDemoPath()){
+  // CEO Demo Mode — owner-only secret path + key; never open for customers.
+  if(isCeoDemoAuthorized()){
     await startCeoDemoMode();
+    return;
+  }
+  if(hublyPath()==='/demo'||hublyPath()==='/experience'||hublyPath()==='/hubly-ceo'){
+    // Locked or retired public URLs → Welcome (not a seeded Operate shell).
+    showP('p-signup',{replaceRoute:true});
     return;
   }
   // Create Demo — glass progressive build; no login.

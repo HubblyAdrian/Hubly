@@ -155,13 +155,21 @@ try {
   ok("script", has(hubly, "journey-os/journey.js"));
 
   const ceo = read("public/journey-os/ceo-demo.js");
+  const routerJs = read("api/router.js");
   mark("check ceo demo");
   ok(
     "ceo demo",
-    has(hubly, "/demo") &&
+    has(hubly, "/hubly-ceo") &&
       has(hubly, "p-ceo-demo") &&
       has(hubly, "startCeoDemoMode") &&
-      has(ceo, "Pro Shine Detailing")
+      has(hubly, "isCeoDemoAuthorized") &&
+      has(hubly, "ceoDemoSecretOk") &&
+      !has(hubly, "'/demo':'p-ceo-demo'") &&
+      !has(hubly, '"/demo":"p-ceo-demo"') &&
+      !has(hubly, "/experience':'p-ceo-demo") &&
+      !has(hubly, '<script defer src="/journey-os/ceo-demo.js">') &&
+      has(ceo, "Pro Shine Detailing") &&
+      has(routerJs, "HUBLY_CEO_DEMO_KEY")
   );
 
   mark("check create live build");
