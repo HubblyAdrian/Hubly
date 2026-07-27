@@ -155,6 +155,22 @@ The public landing page is an **intelligent router** (same chat, different desti
 
 See [AI_LANDING_ARCHITECTURE.md](../AI_LANDING_ARCHITECTURE.md).
 
+**🔒 Locked:** AI Landing Experience Stage 1 is frozen after #259. Do not redesign unless bug fix, Stage 2 additive work, or explicit reopen.
+
+## Rule #25 — Hubly Memory
+
+Hubly has **three memory kinds** — do not collapse them into “AI memory”:
+
+| Kind | Object | Expires |
+|------|--------|---------|
+| Temporary | Hubly Session (conversation, imports, intent, builder progress) | 30 days |
+| Permanent | Business (customers, services, website, pricing, revenue, …) | Never |
+| Conversation | Ask Hubly (threads, coaching, recommendations) | Soft retention |
+
+AI Discovery (Business Builder Module 2) fills **Business DNA** inside Temporary Memory and must **never re-ask** facts Temporary Memory already holds.
+
+See [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) · [builder/DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md).
+
 ## Cross-Module Verification (CMV)
 
 Before approval of a new module PR, confirm previously **locked** modules still function (no modifications — confirmation only).
@@ -173,4 +189,6 @@ Special modules require an architecture doc before Development:
 - Revenue → [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) (correctness gate + Rule #20)  
 - Ask Hubly → [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md) (intelligence layer + Rule #22)  
 - Settings → [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md) (control center + Rule #23)  
-- AI Landing → [AI_LANDING_ARCHITECTURE.md](../AI_LANDING_ARCHITECTURE.md) (dual product router + Rule #24)
+- AI Landing → [AI_LANDING_ARCHITECTURE.md](../AI_LANDING_ARCHITECTURE.md) (dual product router + Rule #24) · **🔒 Locked**  
+- AI Discovery → [DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md) (Business DNA + Rule #25) · required before Module 2 Development  
+- Hubly Memory → [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) (Temporary · Permanent · Conversation)

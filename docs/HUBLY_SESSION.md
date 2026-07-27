@@ -1,6 +1,7 @@
 # Hubly Session — Lifecycle & Handoff
 
 **Rule #24** · Canonical module: `public/hubly-session.js`  
+**Memory kind:** Temporary Memory — see [HUBLY_MEMORY.md](./HUBLY_MEMORY.md)  
 **Storage key:** `localStorage.hubly_session_v1`  
 **Legacy key (migrated once):** `hubly_builder_session_v1`
 

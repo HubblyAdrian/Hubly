@@ -14,7 +14,9 @@ Track platform-level readiness **alongside** module completion ([MODULE_STATUS.m
 | Financial Integrity | ✅ | Rule #20 · Revenue ledger |
 | AI Confirmation Policy | ✅ | Rule #22 · Ask Hubly architecture |
 | Settings ownership | ✅ | Rule #23 · Settings architecture |
-| Dual Product Architecture | ✅ | Rule #24 · AI Landing router |
+| Dual Product Architecture | ✅ 🔒 | Rule #24 · AI Landing locked (#259) |
+| Hubly Memory | ✅ | Rule #25 · Temporary / Permanent / Conversation |
+| AI Business Builder | ⏳ | Module 2 Discovery architecture |
 | Integrations | ⏸ | Stage 2 — deferred per module |
 | Performance | ⏳ | Not yet a formal gate |
 | Accessibility | ⏳ | Not yet a formal gate |

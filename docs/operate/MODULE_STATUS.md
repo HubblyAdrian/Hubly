@@ -67,7 +67,9 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | Financial Integrity | ✅ |
 | AI Confirmation Policy | ✅ Rule #22 |
 | Settings ownership | ✅ Rule #23 |
-| Dual Product Architecture | ✅ Rule #24 |
+| Dual Product Architecture | ✅ Rule #24 · 🔒 Landing locked |
+| Hubly Memory | ✅ Rule #25 |
+| AI Business Builder | ⏳ Module 2 Architecture |
 | Integrations | ⏸ Stage 2 |
 | Performance | ⏳ |
 | Accessibility | ⏳ |
@@ -163,10 +165,23 @@ All **14** Operate modules have Stage 1 OS complete and locked:
 
 **Do not modify Reviews unless:** bug fix · Stage 2 integrations · explicit module reopen.
 
+---
+
+## Hubly AI Business Builder (separate milestone)
+
+Operate Stage 1 is complete. The next product milestone is **Hubly AI Business Builder** — see [builder/README.md](../builder/README.md).
+
+| # | Module | Status |
+|---|--------|--------|
+| 1 | 🌎 AI Landing Experience | 🔒 Locked (#259) |
+| 2 | 🤖 AI Discovery | ⏳ Architecture ([DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md)) |
+
+**Hubly Memory** (Rule #25): [HUBLY_MEMORY.md](../HUBLY_MEMORY.md)
+
 ## Workflow
 
 Planning → Development (Stage 1 OS) → Self QA → **MAT** → **CMV** → PR → Approval → Merge → **Lock OS**  
 Later: Stage 2 Integrations → separate PR
 
-**Special gates:** Marketing / Revenue / Ask Hubly / **Settings** architecture docs before Development.  
-**Engineering rules:** #14–23 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md))
+**Special gates:** Marketing / Revenue / Ask Hubly / Settings / **AI Landing** / **AI Discovery** architecture docs before Development.  
+**Engineering rules:** #14–25 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md))
