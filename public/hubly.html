@@ -5834,7 +5834,13 @@ html{scroll-behavior:smooth}
 .ws-site[data-ws-tone="dark"] .ws-gal-album-h a{
   color:rgba(248,250,252,.88)!important;
 }
-.ws-gal-album-actions{display:flex;gap:6px;flex-wrap:wrap}
+.ws-gal-album-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ws-gal-rename-btn,
+#ed-ws-preview .ws-gal-album-actions .ws-gal-rename-btn,
+#edph-screen .ws-gal-album-actions .ws-gal-rename-btn{
+  color:#141B2B!important;border-color:#CBD5E1!important;background:#fff!important;font-weight:700!important;
+}
+.ws-gal-rename-btn:hover{border-color:#D9632D!important;color:#D9632D!important}
 /* Booking already has in-sidebar “Chat with us” — hide the floating bubble there */
 body:has(#p-booking.active) #ws-chat-bubble,
 body:has(#p-booking.active) #ws-chat-teaser,
@@ -9825,6 +9831,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="pipeline" onclick="switchV(this)" title="Pipeline">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h14"/><circle cx="18" cy="12" r="2"/><circle cx="20" cy="18" r="2"/></svg><span class="ni-lbl">Pipeline</span>
       </div>
+      <div class="ni" data-v="quotes" onclick="switchV(this)" title="Quick Quote">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg><span class="ni-lbl">Quick Quote</span>
+      </div>
       <div class="ni" data-v="editor" onclick="try{S._edHubTab='site'}catch(e){};switchV(this)" title="Website editor">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.7 3.6 5.7 3.6 9s-1.2 6.3-3.6 9c-2.4-2.7-3.6-5.7-3.6-9s1.2-6.3 3.6-9z"/></svg><span class="ni-lbl">Website editor</span>
       </div>
@@ -9850,7 +9859,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0-4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span class="ni-lbl">Settings</span>
       </div>
       <!-- kept for deep-links -->
-      <div class="ni jos-nav-hidden" data-v="quotes" onclick="switchV(this)" hidden aria-hidden="true"><span class="ni-lbl">Quotes</span></div>
       <div class="ni jos-nav-hidden" data-v="opportunities" onclick="switchV(this)" hidden aria-hidden="true"><span class="ni-lbl">Opportunities</span></div>
       <div class="ni jos-nav-hidden" data-v="activity" onclick="switchV(this)" hidden aria-hidden="true"><span class="ni-lbl">Activity</span></div>
       <div class="ni jos-nav-hidden" data-v="growth" onclick="switchV(this)" hidden aria-hidden="true"><span class="ni-lbl">Growth</span></div>
@@ -10239,8 +10247,6 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
-              <button type="button" class="btn btn-out btn-sm ed-settings-rail-toggle" id="ed-settings-rail-toggle" onclick="toggleEdSettingsRail()" aria-controls="ed-settings-rail" aria-expanded="true" title="Show or hide website menu">☰ Menu</button>
-              <button type="button" class="btn btn-out btn-sm" onclick="previewProfile()" data-i18n="viewProfile">Preview</button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
           </div>
@@ -11371,7 +11377,9 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="field"><label>Customer name</label><input type="text" id="nj-cust" placeholder="Maria Gonzalez" list="cust-dl" oninput="onNjCustomerInput()" onchange="onNjCustomerInput()" onblur="onNjCustomerInput()"><datalist id="cust-dl"></datalist></div>
       <div class="field-row"><div class="field"><label>Phone</label><input type="tel" id="nj-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div><div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="nj-email" placeholder="maria@email.com"></div></div>
-      <div class="field"><label id="nj-svc-lbl">Service</label><select id="nj-svc" onchange="onNjSvcChange()"><option value="">Select service...</option></select></div>
+      <div class="field"><label id="nj-svc-lbl">Service</label><select id="nj-svc" onchange="onNjSvcChange()"><option value="">Select service...</option></select>
+        <input type="text" id="nj-svc-custom" class="hidden" style="margin-top:8px;" placeholder="Describe the one-off job…" autocomplete="off">
+      </div>
       <div class="field-row"><div class="field"><label>Date</label><input type="date" id="nj-date"></div><div class="field"><label>Time</label><input type="time" id="nj-time" value="09:00"></div></div>
       <div class="field"><label id="nj-addr-lbl">Address</label><input type="text" id="nj-addr" placeholder="Where is the vehicle?"></div>
       <div id="nj-vehicle-fields">
@@ -26355,20 +26363,10 @@ function isEdSettingsRailMobile(){
 function syncEdSettingsToggleUi(){
   const shell=document.getElementById('ed-shell');
   const rail=document.getElementById('ed-settings-rail');
-  const toggle=document.getElementById('ed-settings-rail-toggle')||document.querySelector('.ed-settings-rail-toggle');
   const stub=document.getElementById('ed-settings-rail-stub');
   const mobile=isEdSettingsRailMobile();
   const expanded=mobile?!!rail?.classList.contains('is-open'):!shell?.classList.contains('ed-settings-collapsed');
-  if(toggle){
-    toggle.setAttribute('aria-expanded',expanded?'true':'false');
-    if(mobile){
-      toggle.textContent='☰ Menu';
-      toggle.title='Open website menu';
-    }else{
-      toggle.textContent=expanded?'Hide menu':'☰ Menu';
-      toggle.title=expanded?'Hide website menu':'Show website menu';
-    }
-  }
+  /* Hide menu / View profile removed — reopen collapsed desktop rail via › stub only. */
   if(stub){
     if(mobile){
       stub.hidden=true;
@@ -26644,8 +26642,15 @@ function guideWebsiteInlineEdit(kind){
     wsScrollToSection('ws-footer-hours-col');
     const el=root&&(root.querySelector('[data-pe="hours"]')||root.querySelector('[data-ws-clone-id="ws-footer-hours-col"]'));
     pulseWsPeTargets(el?[el]:[]);
-    setEdPeGuideHint('Hours live in your <strong>footer</strong> — edit them right here.');
-    setTimeout(()=>{if(el)openHoursPeEditor(el);},420);
+    setEdPeGuideHint('Hours live in your <strong>footer</strong> — tap them on the website to edit. No floating panel.');
+    try{toast('Scroll to Hours on your website');}catch(e){}
+    try{
+      if(typeof HublyJourneyOS?.updateChrome==='function')HublyJourneyOS.updateChrome('editor');
+      else{
+        const bar=document.getElementById('bar-title');
+        if(bar)bar.textContent='Website editor';
+      }
+    }catch(e){}
     return;
   }
   if(k==='business'||k==='area'){
@@ -26729,12 +26734,15 @@ function switchWebsiteHubTab(tab){
     document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
     document.querySelector('[data-v="editor"]')?.classList.add('active');
     const bar=document.getElementById('bar-title');
+    const sub=document.getElementById('bar-sub');
     if(bar){
-      if(t==='book')bar.textContent='Website · Book Now';
-      else if(t==='quote')bar.textContent='Website · Customize questions';
-      else if(t==='packages')bar.textContent='Website · Packages';
-      else bar.textContent=(typeof window.t==='function'?window.t('myStorefront'):'Website');
+      if(t==='book')bar.textContent='Website editor · Book Now';
+      else if(t==='quote')bar.textContent='Website editor · Questions';
+      else if(t==='packages')bar.textContent='Website editor · Packages';
+      else bar.textContent=(typeof window.t==='function'?window.t('myStorefront'):'Website editor');
     }
+    if(sub)sub.textContent='Edit your site, packages, and Book Now.';
+    try{if(typeof setHublyDocTitle==='function')setHublyDocTitle(bar?.textContent||'Website editor');}catch(e2){}
   }catch(e){}
   const shell=document.getElementById('ed-shell');
   const packages=document.getElementById('ed-hub-packages');
@@ -26826,19 +26834,24 @@ function jumpToEdSection(section){
     }catch(e){}
     return;
   }
+  // Hours: edit on the live site footer — never open the floating hours sheet.
+  if(section==='hours'){
+    try{goEdSettingsNav('hours');}catch(e){try{guideWebsiteInlineEdit('hours');}catch(e2){}}
+    return;
+  }
   // Prefer stable focused panels (same path as the left Settings rail).
-  const focusMap={design:'styles',brand:'brand',hours:'hours',business:'business',area:'business',membership:'membership',gallery:'gallery',payment:'payment',stripe:'stripe'};
+  const focusMap={design:'styles',brand:'brand',business:'business',area:'business',membership:'membership',gallery:'gallery',payment:'payment',stripe:'stripe'};
   if(focusMap[section]){
     try{S._edSettingsNav=focusMap[section];}catch(e){}
+    // Business info also edits on-canvas when possible
+    if(section==='business'||section==='area'||section==='membership'){
+      try{goEdSettingsNav(focusMap[section]);}catch(e){}
+      return;
+    }
     const mode=(section==='design'||section==='brand')?'layout'
       :(section==='payment'||section==='stripe'||section==='account'||section==='dirty')?'account'
       :'settings';
     try{openEdSheet(mode,{focus:focusMap[section]});}catch(e){}
-    if(section==='area'||section==='business'||section==='hours'){
-      setTimeout(()=>{
-        try{edRenderAreaRefine();window._edAreaMap?.invalidateSize?.();}catch(e){}
-      },80);
-    }
     return;
   }
   const run=()=>{
@@ -29700,6 +29713,8 @@ function moveEditorService(idx,dir){
   try{if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});}catch(e){}
 }
 function movePortfolioItem(idx,dir,albumId){
+  /* Owner reordered photos — never re-spread stock albums (that rewrote bucket names/photos). */
+  try{S._galleryOwnerOrdered=true;}catch(e){}
   ensureGalleryAlbums();
   if(albumId){
     const alb=S.website.galleryAlbums.find(a=>a.id===albumId);
@@ -29787,8 +29802,8 @@ function ensureGalleryAlbums(){
   }
   // Stock Instant Site only: if some named buckets stayed empty while we have
   // photos, re-spread so the public Before & After rails aren't blank headers.
-  // Skip buckets the owner cleared on purpose (e.g. they don't offer Family).
-  if(!S._ownerUploadedMedia){
+  // Skip after the owner reordered photos or cleared a bucket on purpose.
+  if(!S._ownerUploadedMedia&&!S._galleryOwnerOrdered){
     const pool=(S.portfolioUrls||[]).filter(Boolean);
     const fillable=S.website.galleryAlbums.filter(a=>!a.userCleared);
     const empties=fillable.filter(a=>(a.urls||[]).length===0);
@@ -33744,7 +33759,7 @@ function renderWebsiteGallery(targetId){
       const urls=alb.urls||[];
       const actions=editing?`<div class="ws-gal-album-actions">
         <button type="button" class="btn btn-out btn-sm" onclick="event.stopPropagation();pickGalleryPhotosForAlbum('${escPeHtml(alb.id)}')">Add photos</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openRenameGalleryAlbum('${escPeHtml(alb.id)}',this)">Rename</button>
+        <button type="button" class="btn btn-out btn-sm ws-gal-rename-btn" onclick="event.stopPropagation();openRenameGalleryAlbum('${escPeHtml(alb.id)}',this)">Rename</button>
       </div>`:'';
       return `<div class="ws-gal-album" data-album-id="${escPeHtml(alb.id)}">
         <div class="ws-gal-album-h"><h3>${escPeHtml(alb.name)}</h3>${actions}</div>
@@ -35373,8 +35388,7 @@ function switchV(el){
           try{S._edPendingSheet='';}catch(e){}
           try{
             if(pendingSheet==='hours'){
-              openEdSheet('settings');
-              jumpToEdSection('hours');
+              goEdSettingsNav('hours');
             }else if(pendingSheet==='settings'||pendingSheet==='layout'||pendingSheet==='account'||pendingSheet==='ai'){
               openEdSheet(pendingSheet);
             }
@@ -38411,7 +38425,10 @@ async function submitBlockTime(){
 }
 async function addJob(opts={}){
   const customer=opts.customer||document.getElementById('nj-cust').value.trim();
-  const service=opts.service||document.getElementById('nj-svc').value;
+  let service=opts.service||document.getElementById('nj-svc').value;
+  if(service==='__custom__'){
+    service=(document.getElementById('nj-svc-custom')?.value||'').trim();
+  }
   const date=opts.date||document.getElementById('nj-date').value;
   const time=opts.time||document.getElementById('nj-time').value;
   const addr=opts.address||document.getElementById('nj-addr').value;
@@ -38427,7 +38444,7 @@ async function addJob(opts={}){
   const ymm=[vYear,vMake,vModel].filter(Boolean).join(' ');
   const vehicle=opts.vehicle||(ymm?(vType?`${ymm} (${vType})`:ymm):vType);
   if(!customer){toast('Enter a customer name');return null}
-  if(!service){toast('Select a service');return null}
+  if(!service){toast('Select a package or enter a custom job');return null}
 
   const promoSel=document.getElementById('nj-promo');
   const promoId=opts.promoId||promoSel?.value||'';
@@ -43636,11 +43653,25 @@ function populateNjSvc(){
   if(!sel)return;
   const current=sel.value;
   const svcs=getBookingServices();
+  const customInp=document.getElementById('nj-svc-custom');
   sel.innerHTML='<option value="">Select service...</option>'+svcs.map(s=>{
     const priceLabel=s.pricingType==='variable'?svcDisplayPrice(s):(s.price?'$'+s.price:'');
     return `<option value="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}${priceLabel?'. '+priceLabel:''}</option>`;
-  }).join('');
-  if(svcs.some(s=>s.name===current))sel.value=current;
+  }).join('')+'<option value="__custom__">Custom / one-off…</option>';
+  if(current==='__custom__'||(current&&!svcs.some(s=>s.name===current)&&current!=='')){
+    if(current&&current!=='__custom__'){
+      if(customInp){customInp.value=current;customInp.classList.remove('hidden');}
+      sel.value='__custom__';
+    }else{
+      sel.value='__custom__';
+      customInp?.classList.remove('hidden');
+    }
+  }else if(svcs.some(s=>s.name===current)){
+    sel.value=current;
+    customInp?.classList.add('hidden');
+  }else{
+    customInp?.classList.add('hidden');
+  }
 }
 function leadPackageOptionsHtml(selected){
   const svcs=getBookingServices();
@@ -43727,7 +43758,14 @@ function onNjPromoChange(){
 function onNjSvcChange(){
   const sel=document.getElementById('nj-svc');
   const amt=document.getElementById('nj-amt');
+  const customInp=document.getElementById('nj-svc-custom');
   if(!sel||!amt)return;
+  if(sel.value==='__custom__'){
+    customInp?.classList.remove('hidden');
+    setTimeout(()=>customInp?.focus(),30);
+    return;
+  }
+  customInp?.classList.add('hidden');
   // One-shot: only honored on the call immediately following
   // openNewJobForCustomer()'s membership resolution -- cleared here so any
   // later, genuine dropdown change (the user picking a different real
