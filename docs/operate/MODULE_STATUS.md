@@ -42,6 +42,7 @@ Before approval of any new module PR, verify previously **locked** modules still
 - 🔁 Memberships still works  
 - 💰 Revenue still works  
 - 📊 Reports still works  
+- ✨ Ask Hubly still works  
 - (+ each newly locked module)
 
 Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).  
@@ -64,6 +65,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | CMV | ✅ |
 | Financial Integrity | ✅ |
 | AI Confirmation Policy | ✅ Rule #22 |
+| Settings ownership | ✅ Rule #23 |
 | Integrations | ⏸ Stage 2 |
 | Performance | ⏳ |
 | Accessibility | ⏳ |
@@ -87,8 +89,8 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| ✨ Ask Hubly | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
-| ⚙️ Settings | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
+| ✨ Ask Hubly | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
+| ⚙️ Settings | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
 
 ---
 
@@ -108,8 +110,15 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 10 | 🔁 Memberships | ✅ Locked | ⏸ | [#253](https://github.com/HubblyAdrian/Hubly/pull/253) | 🔒 OS · MAT ✅ · Rules #18–19 · merged |
 | 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔒 OS · MAT ✅ · Rule #20 · merged |
 | 12 | 📊 Reports | ✅ Locked | ⏸ | [#255](https://github.com/HubblyAdrian/Hubly/pull/255) | 🔒 OS · MAT ✅ · Rule #21 · merged |
-| 13 | ✨ Ask Hubly | ✅ MAT complete | ⏸ | [#256](https://github.com/HubblyAdrian/Hubly/pull/256) | [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md) · Rule #22 · MAT ✅ · CMV PASS · awaiting approval |
-| 14 | ⚙️ Settings | ⏳ | ⏸ | — | |
+| 13 | ✨ Ask Hubly | ✅ Locked | ⏸ | [#256](https://github.com/HubblyAdrian/Hubly/pull/256) | 🔒 OS · MAT ✅ · Rule #22 · merged |
+| 14 | ⚙️ Settings | ✅ MAT complete | ⏸ | [#257](https://github.com/HubblyAdrian/Hubly/pull/257) | [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md) · Rule #23 · MAT ✅ · CMV PASS · awaiting approval |
+
+### 🤖 Ask Hubly lock
+
+**Stage 1 — Operating System:** ✅ COMPLETE  
+**Stage 2 — Advanced AI / Integrations:** ⏸ Deferred  
+
+**Do not modify Ask Hubly unless:** bug fix · Stage 2 AI capabilities · explicit module reopen.
 
 ### 📊 Reports lock
 
@@ -144,5 +153,5 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 Planning → Development (Stage 1 OS) → Self QA → **MAT** → **CMV** → PR → Approval → Merge → **Lock OS**  
 Later: Stage 2 Integrations → separate PR
 
-**Special gates:** Marketing / Revenue / **Ask Hubly** architecture docs before Development.  
-**Engineering rules:** #14–22 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md))
+**Special gates:** Marketing / Revenue / Ask Hubly / **Settings** architecture docs before Development.  
+**Engineering rules:** #14–23 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md))

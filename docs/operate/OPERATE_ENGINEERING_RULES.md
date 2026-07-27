@@ -125,6 +125,19 @@ Before any AI action that **changes business data**, Ask Hubly must either:
 
 Keeps Ask Hubly powerful but predictable. See [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md).
 
+## Rule #23 — Settings Never Own Business Data
+
+Settings configure the platform.
+
+They **never** become the owner of Customers, Jobs, Revenue, Services, Reviews, or Marketing campaigns.
+
+- Own: business profile, team/roles, platform billing stubs, integration OS status, notifications, branding tokens, AI defaults, security, permissions (`S.settingsOs`).  
+- Do not own / store: customers, jobs, payment ledgers, service catalogs, reviews, campaigns.  
+- Other modules **read** Settings configuration; Settings does not replace their sources of truth.  
+- Reinforces Rules #15 and #19.
+
+See [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md).
+
 ## Cross-Module Verification (CMV)
 
 Before approval of a new module PR, confirm previously **locked** modules still function (no modifications — confirmation only).
@@ -141,4 +154,5 @@ Special modules require an architecture doc before Development:
 
 - Marketing → [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md)  
 - Revenue → [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) (correctness gate + Rule #20)  
-- Ask Hubly → [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md) (intelligence layer + Rule #22)
+- Ask Hubly → [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md) (intelligence layer + Rule #22)  
+- Settings → [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md) (control center + Rule #23)

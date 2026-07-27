@@ -1,7 +1,7 @@
 # Module 13 — ✨ Ask Hubly
 
-**Status:** Stage 1 OS complete · MAT ✅ ACCEPTED · CMV PASS · awaiting PR approval
-**Branch:** `cursor/operate-ask-hubly-2662`  
+**Status:** Stage 1 OS ✅ COMPLETE · 🔒 OS locked  
+**Branch:** merged via [#256](https://github.com/HubblyAdrian/Hubly/pull/256)  
 **Architecture (required):** [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md)  
 **Plan:** [ASK_HUBLY_PLAN.md](./ASK_HUBLY_PLAN.md)  
 **Rules:** #14–22 (especially **#22**)  
@@ -62,7 +62,9 @@ Ask Hubly is the intelligence layer on top of Operate — not just another page.
 - [x] CMV incl. Reports ✅  
 
 ### Definition of Done
-- [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳ (awaiting approval)  
+- [x] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ✅  
+
+**Do not modify Ask Hubly unless:** bug fix · Stage 2 AI capabilities · explicit module reopen.
 
 ---
 

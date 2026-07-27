@@ -385,6 +385,22 @@ try {
       fs.existsSync(path.join(root, "docs/operate/ASK_HUBLY_ARCHITECTURE.md"))
   );
 
+  mark("check settings");
+  ok(
+    "settings",
+    has(jjs, "function renderSettings") &&
+      has(jjs, "handleSettingsAct") &&
+      has(jjs, "ensureSettingsOsState") &&
+      has(jjs, "set-business-save") &&
+      has(jjs, "settingsOs") &&
+      has(jjs, "jos-set-page") &&
+      has(jjs, "Rule #23") &&
+      has(hubly, 'id="v-settings"') &&
+      has(hubly, 'id="jos-settings-root"') &&
+      has(px, "jos-set-page") &&
+      fs.existsSync(path.join(root, "docs/operate/SETTINGS_ARCHITECTURE.md"))
+  );
+
   const hublyEventsJs = read("public/journey-os/hubly-events.js");
   mark("check hubly-events");
   ok(

@@ -17,6 +17,7 @@
 | 🔁 Memberships still works | ✅ · len=3127 |
 | 💰 Revenue still works | ✅ · len=3315 |
 | 📊 Reports still works | ✅ · len=4509 |
+| ✨ Ask Hubly still works | ✅ · len=4465 |
 
 **Console warns during CMV:** 0
 

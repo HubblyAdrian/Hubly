@@ -139,3 +139,18 @@ See [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md).
 Ask Hubly **reads:** all owners (summaries + ids).  
 Ask Hubly **owns:** `S.askHublyOs` — never operational entities.  
 See [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md) · Rule #22.
+
+---
+
+## Settings (Module 14) publishes
+
+| Event | When |
+|-------|------|
+| `settings.updated` | Any settings area saved |
+| `settings.team.invited` | Team invitation created |
+| `settings.integration.toggled` | Integration OS status changed |
+| `settings.security.audited` | Security-sensitive change logged |
+
+Settings **owns:** `S.settingsOs` — configuration only (Rule #23).  
+Settings **must not own:** Customers · Jobs · Revenue · Services · Reviews · Campaigns.  
+See [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md).

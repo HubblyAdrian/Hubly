@@ -1326,6 +1326,533 @@
     }
   }
 
+  /* ── Settings OS (Rule #23 — config only) ───────────────────────── */
+  var SET_TABS = [
+    ['overview', 'Overview'],
+    ['business', 'Business'],
+    ['team', 'Team'],
+    ['billing', 'Billing'],
+    ['integrations', 'Integrations'],
+    ['notifications', 'Notifications'],
+    ['branding', 'Branding'],
+    ['ai', 'AI'],
+    ['security', 'Security'],
+    ['permissions', 'Permissions']
+  ];
+  function setId(prefix) { return (prefix || 'set') + '_' + Math.random().toString(36).slice(2, 9); }
+  function setNow() { return new Date().toISOString(); }
+  function setPublish(type, payload) {
+    var ev = hublyEvents();
+    if (ev && typeof ev.publish === 'function') ev.publish(type, payload || {});
+  }
+  function ensureSettingsOsState() {
+    var st = S();
+    if (!st.settingsOs || typeof st.settingsOs !== 'object') st.settingsOs = {};
+    var os = st.settingsOs;
+    ['customers', 'payments', 'jobs', 'leads', 'campaigns', 'reviews', 'services'].forEach(function (key) {
+      if (Object.prototype.hasOwnProperty.call(os, key)) delete os[key];
+    });
+    if (!os.business || typeof os.business !== 'object') {
+      os.business = {
+        name: st.businessName || st.city || 'Hubly Detail Co',
+        address: '100 Harbor Drive',
+        city: (String(st.city || 'San Diego, CA').split(',')[0] || 'San Diego').trim(),
+        region: 'CA',
+        postal: '92101',
+        country: 'US',
+        timeZone: 'America/Los_Angeles',
+        currency: 'USD',
+        taxDefault: 7.75,
+        logoUrl: 'assets/hubly-wordmark.png',
+        contactEmail: 'hello@hubly.test',
+        contactPhone: '(619) 555-0100'
+      };
+    }
+    if (!os.team || typeof os.team !== 'object') os.team = { users: [], invitations: [] };
+    if (!Array.isArray(os.team.users)) os.team.users = [];
+    if (!Array.isArray(os.team.invitations)) os.team.invitations = [];
+    if (!os.team.users.length) {
+      var roster = Array.isArray(st.team) ? st.team : [];
+      os.team.users = (roster.length ? roster : [
+        { id: 't1', name: 'Adrian Lopez', role: 'Owner' },
+        { id: 't2', name: 'Maya Chen', role: 'Technician' },
+        { id: 't3', name: 'Luis Ortega', role: 'Technician' }
+      ]).map(function (u, i) {
+        return {
+          id: u.id || ('set_u_' + i),
+          name: u.name || 'Team member',
+          email: u.email || (String(u.name || 'user').toLowerCase().replace(/\s+/g, '.') + '@hubly.test'),
+          role: u.role || 'Technician',
+          status: 'active'
+        };
+      });
+    }
+    if (!os.billing || typeof os.billing !== 'object') {
+      os.billing = {
+        plan: 'Grow',
+        status: 'active',
+        paymentMethod: 'Visa ···· 4242',
+        usage: { seats: os.team.users.length, jobsThisMonth: Array.isArray(st.jobs) ? st.jobs.length : 0, aiActions: 12 },
+        invoices: [
+          { id: 'pin_1', label: 'Hubly Grow — Jul', amount: 79, status: 'paid', at: setNow() },
+          { id: 'pin_2', label: 'Hubly Grow — Jun', amount: 79, status: 'paid', at: setNow() }
+        ]
+      };
+    }
+    if (!os.integrations || typeof os.integrations !== 'object') {
+      os.integrations = {
+        stripe: { key: 'stripe', label: 'Stripe', status: 'os_ready', note: 'Revenue owns live payments (Rule #20).' },
+        google: { key: 'google', label: 'Google', status: 'not_connected', note: 'Calendar / Business Profile — Stage 2.' },
+        meta: { key: 'meta', label: 'Meta', status: 'not_connected', note: 'Ads / messaging — Stage 2.' },
+        twilio: { key: 'twilio', label: 'Twilio', status: 'os_ready', note: 'SMS channel config — Stage 2 live.' },
+        resend: { key: 'resend', label: 'Resend', status: 'os_ready', note: 'Email delivery — Stage 2 live.' },
+        webhooks: []
+      };
+    }
+    if (!Array.isArray(os.integrations.webhooks)) os.integrations.webhooks = [];
+    if (!os.notifications || typeof os.notifications !== 'object') {
+      os.notifications = { email: true, sms: true, push: false, desktop: true, ai: true };
+    }
+    if (!os.branding || typeof os.branding !== 'object') {
+      os.branding = {
+        logoUrl: 'assets/hubly-wordmark.png',
+        primaryColor: '#141B2B',
+        accentColor: '#D9632D',
+        fontDisplay: 'Plus Jakarta Sans',
+        fontBody: 'DM Sans',
+        faviconUrl: '/favicon.ico',
+        websiteDefaults: 'Hero first · brand mark · one CTA'
+      };
+    }
+    if (!os.ai || typeof os.ai !== 'object') {
+      os.ai = {
+        tone: 'helpful_pro',
+        permissions: 'propose_with_confirm',
+        autoActionsDefault: false,
+        memoryDefault: true,
+        automationDefaults: 'exact_allow_rules'
+      };
+    }
+    if (!os.security || typeof os.security !== 'object') {
+      os.security = {
+        mfaRequired: false,
+        sessions: [{ id: 'sess_1', device: 'This browser', at: setNow(), current: true }],
+        apiKeys: [{ id: 'key_1', label: 'Operate OS key', prefix: 'hk_os_', createdAt: setNow() }],
+        auditLog: [],
+        passwordPolicy: { minLength: 10, requireSymbol: true }
+      };
+    }
+    if (!Array.isArray(os.security.sessions)) os.security.sessions = [];
+    if (!Array.isArray(os.security.apiKeys)) os.security.apiKeys = [];
+    if (!Array.isArray(os.security.auditLog)) os.security.auditLog = [];
+    if (!os.permissions || typeof os.permissions !== 'object') {
+      os.permissions = {
+        roles: [
+          { id: 'role_owner', name: 'Owner', modules: 'all' },
+          { id: 'role_manager', name: 'Manager', modules: 'operate' },
+          { id: 'role_tech', name: 'Technician', modules: 'jobs,inbox' }
+        ],
+        featureAccess: { askHubly: true, reports: true, marketing: true, memberships: true },
+        moduleAccess: { home: true, inbox: true, jobs: true, leads: true, customers: true, pipeline: true, storefront: true, marketing: true, reviews: true, memberships: true, revenue: true, reports: true, ask: true, settings: true },
+        custom: []
+      };
+    }
+    if (!Array.isArray(os.activity)) os.activity = [];
+    if (!os._seeded) {
+      os.activity.push({ id: setId('set_act'), type: 'settings.seeded', label: 'Settings OS seeded (config only)', at: setNow(), payload: {} });
+      os._seeded = true;
+    }
+    return os;
+  }
+  function setPushActivity(type, label, payload) {
+    var os = ensureSettingsOsState();
+    os.activity.unshift({ id: setId('set_act'), type: type, label: label, at: setNow(), payload: payload || {} });
+    if (os.activity.length > 80) os.activity.length = 80;
+  }
+  function setAudit(label, payload) {
+    var os = ensureSettingsOsState();
+    os.security.auditLog.unshift({ id: setId('aud'), label: label, at: setNow(), payload: payload || {} });
+    if (os.security.auditLog.length > 60) os.security.auditLog.length = 60;
+    setPublish('settings.security.audited', { label: label });
+    setPushActivity('settings.security.audited', label, payload || {});
+  }
+  function setMirrorTeam() {
+    var os = ensureSettingsOsState();
+    S().team = os.team.users.map(function (u) {
+      return { id: u.id, name: u.name, role: u.role, email: u.email };
+    });
+  }
+  function setVal(id) {
+    var node = el(id);
+    return node ? String(node.value || '').trim() : '';
+  }
+  function setChecked(id) {
+    var node = el(id);
+    return !!(node && node.checked);
+  }
+  function setTabsHtml(active) {
+    return '<div class="jos-tabs jos-set-tabs">' + SET_TABS.map(function (t) {
+      return '<button type="button" class="jos-tab' + (active === t[0] ? ' on' : '') + '" data-jos-set-tab="' + esc(t[0]) + '">' + esc(t[1]) + '</button>';
+    }).join('') + '</div>';
+  }
+  function setStatusBadge(label, tone) {
+    return '<span class="jos-set-badge ' + esc(tone || 'info') + '">' + esc(label) + '</span>';
+  }
+  function setIntegrationStatus(status) {
+    if (status === 'connected' || status === 'os_ready') return setStatusBadge(status === 'connected' ? 'Connected' : 'OS ready', 'ok');
+    return setStatusBadge('Not connected', 'warn');
+  }
+  function renderSetOverview() {
+    var os = ensureSettingsOsState();
+    var d = DS();
+    var cards = [
+      ['Business', os.business.name, 'set-tab-business'],
+      ['Team', String(os.team.users.length) + ' users', 'set-tab-team'],
+      ['Billing', os.billing.plan + ' · ' + os.billing.status, 'set-tab-billing'],
+      ['Integrations', 'OS stubs · Stage 2 live', 'set-tab-integrations'],
+      ['AI defaults', os.ai.tone, 'set-tab-ai'],
+      ['Security', os.security.mfaRequired ? 'MFA on' : 'MFA off', 'set-tab-security']
+    ].map(function (c) {
+      return '<button type="button" class="jos-set-tile" data-jos-act="' + esc(c[2]) + '"><div class="jos-kicker">' + esc(c[0]) + '</div><strong>' + esc(c[1]) + '</strong></button>';
+    }).join('');
+    return '<div class="jos-set-hero">' +
+      '<img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly">' +
+      '<div><div class="jos-kicker">Control center</div><h2>Configure Hubly — never own business data</h2>' +
+      '<p class="jos-muted">Rule #23: Settings stores configuration other modules read. Customers, jobs, revenue, services, reviews, and campaigns stay with their owners.</p></div></div>' +
+      '<div class="jos-set-tiles jos-mt">' + cards + '</div>' +
+      '<div class="jos-set-2col jos-mt"><div class="jos-card"><div class="jos-kicker">Platform readiness</div><ul class="jos-set-list"><li>Business profile + brand tokens</li><li>Team roster mirrored for Jobs</li><li>AI confirmation defaults (Rule #22)</li><li>Integrations marked OS-only until Stage 2</li></ul></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Forbidden copies</div><p class="jos-muted">settingsOs purges customers, payments, jobs, leads, campaigns, reviews, and services arrays if present.</p>' +
+      (d ? d.emptyState('Config only', 'Open a tab to edit platform settings.') : '') + '</div></div>';
+  }
+  function renderSetBusiness() {
+    var b = ensureSettingsOsState().business;
+    return '<div class="jos-card"><div class="jos-kicker">Business</div><p class="jos-muted">Owns name, address, time zone, currency, tax defaults, logo URL, and contact info.</p>' +
+      '<div class="jos-set-form jos-mt">' +
+      '<label>Business name<input id="jos-set-biz-name" type="text" value="' + esc(b.name || '') + '"></label>' +
+      '<label>Address<input id="jos-set-biz-address" type="text" value="' + esc(b.address || '') + '"></label>' +
+      '<label>City<input id="jos-set-biz-city" type="text" value="' + esc(b.city || '') + '"></label>' +
+      '<label>Region<input id="jos-set-biz-region" type="text" value="' + esc(b.region || '') + '"></label>' +
+      '<label>Postal<input id="jos-set-biz-postal" type="text" value="' + esc(b.postal || '') + '"></label>' +
+      '<label>Country<input id="jos-set-biz-country" type="text" value="' + esc(b.country || '') + '"></label>' +
+      '<label>Time zone<input id="jos-set-biz-tz" type="text" value="' + esc(b.timeZone || '') + '"></label>' +
+      '<label>Currency<input id="jos-set-biz-currency" type="text" value="' + esc(b.currency || '') + '"></label>' +
+      '<label>Tax default %<input id="jos-set-biz-tax" type="number" step="0.01" value="' + esc(String(b.taxDefault != null ? b.taxDefault : '')) + '"></label>' +
+      '<label>Logo URL<input id="jos-set-biz-logo" type="text" value="' + esc(b.logoUrl || '') + '"></label>' +
+      '<label>Contact email<input id="jos-set-biz-email" type="email" value="' + esc(b.contactEmail || '') + '"></label>' +
+      '<label>Contact phone<input id="jos-set-biz-phone" type="text" value="' + esc(b.contactPhone || '') + '"></label>' +
+      '</div><div class="jos-btn-row jos-mt">' + dsBtn('set-business-save', 'Save business', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+  }
+  function renderSetTeam() {
+    var os = ensureSettingsOsState();
+    var rows = os.team.users.map(function (u) {
+      return '<div class="jos-set-row"><div><strong>' + esc(u.name) + '</strong><div class="jos-muted">' + esc(u.email) + ' · ' + esc(u.role) + '</div></div>' + setStatusBadge(u.status || 'active', u.status === 'invited' ? 'warn' : 'ok') + '</div>';
+    }).join('');
+    var invites = os.team.invitations.map(function (inv) {
+      return '<div class="jos-set-row"><div><strong>' + esc(inv.email) + '</strong><div class="jos-muted">' + esc(inv.role) + ' · invited</div></div>' + setStatusBadge('Pending', 'warn') + '</div>';
+    }).join('');
+    return '<div class="jos-set-2col"><div class="jos-card"><div class="jos-kicker">Users</div><div class="jos-set-rows jos-mt">' + (rows || '<div class="jos-empty">No users</div>') + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Invite</div><div class="jos-set-form jos-mt"><label>Email<input id="jos-set-invite-email" type="email" placeholder="tech@studio.test"></label>' +
+      '<label>Role<select id="jos-set-invite-role"><option>Technician</option><option>Manager</option><option>Owner</option></select></label></div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('set-team-invite', 'Send invite', 'jos-btn-brand jos-btn-sm') + '</div>' +
+      '<div class="jos-kicker jos-mt">Invitations</div><div class="jos-set-rows">' + (invites || '<p class="jos-muted">No pending invitations.</p>') + '</div></div></div>';
+  }
+  function renderSetBilling() {
+    var b = ensureSettingsOsState().billing;
+    var inv = (b.invoices || []).map(function (i) {
+      return '<div class="jos-set-row"><div><strong>' + esc(i.label) + '</strong><div class="jos-muted">' + esc(String(i.at || '').slice(0, 10)) + '</div></div><strong>' + esc(money(i.amount) || ('$' + i.amount)) + '</strong></div>';
+    }).join('');
+    return '<div class="jos-set-2col"><div class="jos-card"><div class="jos-kicker">Subscription</div><p class="jos-muted">Platform billing only — not customer Revenue invoices (Rule #23 / #20).</p>' +
+      '<div class="jos-set-form jos-mt"><label>Plan<select id="jos-set-plan"><option' + (b.plan === 'Start' ? ' selected' : '') + '>Start</option><option' + (b.plan === 'Grow' ? ' selected' : '') + '>Grow</option><option' + (b.plan === 'Scale' ? ' selected' : '') + '>Scale</option></select></label>' +
+      '<label>Payment method<input id="jos-set-pay-method" type="text" value="' + esc(b.paymentMethod || '') + '"></label></div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('set-billing-save', 'Save billing', 'jos-btn-brand jos-btn-sm') + '</div>' +
+      '<div class="jos-set-kpis jos-mt"><div><span>Seats</span><strong>' + esc(String(b.usage.seats || 0)) + '</strong></div><div><span>Jobs (ref)</span><strong>' + esc(String(b.usage.jobsThisMonth || 0)) + '</strong></div><div><span>AI actions</span><strong>' + esc(String(b.usage.aiActions || 0)) + '</strong></div></div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Platform invoices</div><div class="jos-set-rows jos-mt">' + inv + '</div></div></div>';
+  }
+  function renderSetIntegrations() {
+    var os = ensureSettingsOsState();
+    var keys = ['stripe', 'google', 'meta', 'twilio', 'resend'];
+    var cards = keys.map(function (k) {
+      var item = os.integrations[k] || { label: k, status: 'not_connected', note: '' };
+      return '<div class="jos-set-card" data-jos-set-integration="' + esc(k) + '"><div class="jos-set-card-h"><strong>' + esc(item.label || k) + '</strong>' + setIntegrationStatus(item.status) + '</div><p class="jos-muted">' + esc(item.note || 'Stage 1 OS stub') + '</p><div class="jos-btn-row">' + dsBtn('set-integration-toggle', item.status === 'not_connected' ? 'Mark OS ready' : 'Mark disconnected', 'jos-btn jos-btn-sm') + '</div></div>';
+    }).join('');
+    var hooks = (os.integrations.webhooks || []).map(function (w) {
+      return '<div class="jos-set-row"><div><strong>' + esc(w.url) + '</strong><div class="jos-muted">' + esc(w.event || 'settings.updated') + '</div></div>' + setStatusBadge('OS', 'info') + '</div>';
+    }).join('');
+    return '<div class="jos-card"><div class="jos-kicker">Integrations</div><p class="jos-muted">Stage 1 stores connection status only. Never claim live connected until Stage 2.</p><div class="jos-set-grid jos-mt">' + cards + '</div></div>' +
+      '<div class="jos-card jos-mt"><div class="jos-kicker">Webhooks (OS)</div><div class="jos-set-form jos-mt"><label>Endpoint URL<input id="jos-set-hook-url" type="text" placeholder="https://example.test/hooks/hubly"></label>' +
+      '<label>Event<select id="jos-set-hook-event"><option>settings.updated</option><option>settings.team.invited</option><option>settings.security.audited</option></select></label></div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('set-webhook-add', 'Add webhook', 'jos-btn-brand jos-btn-sm') + '</div><div class="jos-set-rows jos-mt">' + (hooks || '<p class="jos-muted">No webhooks yet.</p>') + '</div></div>';
+  }
+  function renderSetNotifications() {
+    var n = ensureSettingsOsState().notifications;
+    function tog(id, label, on) {
+      return '<label class="jos-set-toggle"><span>' + esc(label) + '</span><input id="' + esc(id) + '" type="checkbox"' + (on ? ' checked' : '') + '></label>';
+    }
+    return '<div class="jos-card"><div class="jos-kicker">Notifications</div><p class="jos-muted">Email · SMS · Push · Desktop · AI notifications</p><div class="jos-set-toggles jos-mt">' +
+      tog('jos-set-n-email', 'Email', n.email) + tog('jos-set-n-sms', 'SMS', n.sms) + tog('jos-set-n-push', 'Push', n.push) +
+      tog('jos-set-n-desktop', 'Desktop', n.desktop) + tog('jos-set-n-ai', 'AI notifications', n.ai) +
+      '</div><div class="jos-btn-row jos-mt">' + dsBtn('set-notifications-save', 'Save notifications', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+  }
+  function renderSetBranding() {
+    var b = ensureSettingsOsState().branding;
+    return '<div class="jos-card"><div class="jos-kicker">Branding</div><p class="jos-muted">Logo, colors, fonts, favicon, website defaults — visual tokens only. Storefront owns pages/services.</p>' +
+      '<div class="jos-set-brand-preview jos-mt"><img class="hubly-mark" src="' + esc(b.logoUrl || 'assets/hubly-wordmark.png') + '" alt="hubly"><div style="width:28px;height:28px;border-radius:8px;background:' + esc(b.primaryColor || '#141B2B') + '"></div><div style="width:28px;height:28px;border-radius:8px;background:' + esc(b.accentColor || '#D9632D') + '"></div></div>' +
+      '<div class="jos-set-form jos-mt"><label>Logo URL<input id="jos-set-brand-logo" type="text" value="' + esc(b.logoUrl || '') + '"></label>' +
+      '<label>Primary color<input id="jos-set-brand-primary" type="text" value="' + esc(b.primaryColor || '') + '"></label>' +
+      '<label>Accent color<input id="jos-set-brand-accent" type="text" value="' + esc(b.accentColor || '') + '"></label>' +
+      '<label>Display font<input id="jos-set-brand-font-d" type="text" value="' + esc(b.fontDisplay || '') + '"></label>' +
+      '<label>Body font<input id="jos-set-brand-font-b" type="text" value="' + esc(b.fontBody || '') + '"></label>' +
+      '<label>Favicon URL<input id="jos-set-brand-favicon" type="text" value="' + esc(b.faviconUrl || '') + '"></label>' +
+      '<label class="jos-set-span2">Website defaults<input id="jos-set-brand-web" type="text" value="' + esc(b.websiteDefaults || '') + '"></label></div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('set-branding-save', 'Save branding', 'jos-btn-brand jos-btn-sm') + dsBtn('set-go-editor', 'Open Storefront', 'jos-btn jos-btn-sm') + '</div></div>';
+  }
+  function renderSetAi() {
+    var a = ensureSettingsOsState().ai;
+    return '<div class="jos-card"><div class="jos-kicker">AI Settings</div><p class="jos-muted">Global defaults. Ask Hubly owns conversations/memory/actions (Rule #22). Settings does not store customer data.</p>' +
+      '<div class="jos-set-form jos-mt"><label>AI tone<select id="jos-set-ai-tone"><option value="helpful_pro"' + (a.tone === 'helpful_pro' ? ' selected' : '') + '>Helpful pro</option><option value="friendly"' + (a.tone === 'friendly' ? ' selected' : '') + '>Friendly</option><option value="concise"' + (a.tone === 'concise' ? ' selected' : '') + '>Concise</option></select></label>' +
+      '<label>AI permissions<select id="jos-set-ai-perm"><option value="propose_with_confirm"' + (a.permissions === 'propose_with_confirm' ? ' selected' : '') + '>Propose with confirm</option><option value="read_only"' + (a.permissions === 'read_only' ? ' selected' : '') + '>Read only</option></select></label>' +
+      '<label>Auto actions default<select id="jos-set-ai-auto"><option value="false"' + (!a.autoActionsDefault ? ' selected' : '') + '>Off (confirm)</option><option value="true"' + (a.autoActionsDefault ? ' selected' : '') + '>Allow-rules only</option></select></label>' +
+      '<label>Memory default<select id="jos-set-ai-memory"><option value="true"' + (a.memoryDefault ? ' selected' : '') + '>On</option><option value="false"' + (!a.memoryDefault ? ' selected' : '') + '>Off</option></select></label>' +
+      '<label class="jos-set-span2">Automation defaults<input id="jos-set-ai-automations" type="text" value="' + esc(a.automationDefaults || '') + '"></label></div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('set-ai-save', 'Save AI settings', 'jos-btn-brand jos-btn-sm') + dsBtn('set-go-ask', 'Open Ask Hubly', 'jos-btn jos-btn-sm') + '</div></div>';
+  }
+  function renderSetSecurity() {
+    var s = ensureSettingsOsState().security;
+    var sessions = s.sessions.map(function (sess) {
+      return '<div class="jos-set-row"><div><strong>' + esc(sess.device) + '</strong><div class="jos-muted">' + esc(String(sess.at || '').replace('T', ' ').slice(0, 19)) + '</div></div>' + setStatusBadge(sess.current ? 'Current' : 'Active', 'ok') + '</div>';
+    }).join('');
+    var keys = s.apiKeys.map(function (k) {
+      return '<div class="jos-set-row"><div><strong>' + esc(k.label) + '</strong><div class="jos-muted">' + esc(k.prefix) + '••••</div></div>' + dsBtn('set-api-rotate', 'Rotate', 'jos-btn jos-btn-sm') + '</div>';
+    }).join('');
+    var audit = s.auditLog.slice(0, 8).map(function (a) {
+      return '<div class="jos-set-event"><strong>' + esc(a.label) + '</strong><span class="jos-muted">' + esc(String(a.at || '').replace('T', ' ').slice(0, 19)) + '</span></div>';
+    }).join('');
+    return '<div class="jos-set-2col"><div class="jos-card"><div class="jos-kicker">Security</div><div class="jos-set-form jos-mt">' +
+      '<label class="jos-set-toggle"><span>Require MFA</span><input id="jos-set-mfa" type="checkbox"' + (s.mfaRequired ? ' checked' : '') + '></label>' +
+      '<label>Min password length<input id="jos-set-pw-len" type="number" min="8" value="' + esc(String(s.passwordPolicy.minLength || 10)) + '"></label>' +
+      '<label class="jos-set-toggle"><span>Require symbol</span><input id="jos-set-pw-symbol" type="checkbox"' + (s.passwordPolicy.requireSymbol ? ' checked' : '') + '></label></div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('set-security-save', 'Save security', 'jos-btn-brand jos-btn-sm') + '</div>' +
+      '<div class="jos-kicker jos-mt">Sessions</div><div class="jos-set-rows">' + sessions + '</div></div>' +
+      '<div class="jos-stack"><div class="jos-card"><div class="jos-kicker">API keys</div><div class="jos-set-rows jos-mt">' + keys + '</div><div class="jos-btn-row">' + dsBtn('set-api-create', 'Create key', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Audit log</div><div class="jos-set-events jos-mt">' + (audit || '<p class="jos-muted">No audit events yet.</p>') + '</div></div></div></div>';
+  }
+  function renderSetPermissions() {
+    var p = ensureSettingsOsState().permissions;
+    var roles = p.roles.map(function (r) {
+      return '<div class="jos-set-row"><div><strong>' + esc(r.name) + '</strong><div class="jos-muted">' + esc(r.modules) + '</div></div>' + setStatusBadge('Role', 'info') + '</div>';
+    }).join('');
+    var modules = Object.keys(p.moduleAccess || {}).map(function (m) {
+      return '<label class="jos-set-toggle"><span>' + esc(m) + '</span><input type="checkbox" data-jos-set-module="' + esc(m) + '"' + (p.moduleAccess[m] ? ' checked' : '') + '></label>';
+    }).join('');
+    var features = Object.keys(p.featureAccess || {}).map(function (f) {
+      return '<label class="jos-set-toggle"><span>' + esc(f) + '</span><input type="checkbox" data-jos-set-feature="' + esc(f) + '"' + (p.featureAccess[f] ? ' checked' : '') + '></label>';
+    }).join('');
+    return '<div class="jos-set-2col"><div class="jos-card"><div class="jos-kicker">Roles</div><div class="jos-set-rows jos-mt">' + roles + '</div>' +
+      '<div class="jos-set-form jos-mt"><label>Custom permission<input id="jos-set-custom-perm" type="text" placeholder="e.g. export_reports"></label></div>' +
+      '<div class="jos-btn-row">' + dsBtn('set-perm-custom-add', 'Add custom permission', 'jos-btn-brand jos-btn-sm') + '</div>' +
+      '<div class="jos-muted jos-mt">Custom: ' + esc((p.custom || []).join(', ') || 'none') + '</div></div>' +
+      '<div class="jos-stack"><div class="jos-card"><div class="jos-kicker">Module access</div><div class="jos-set-toggles jos-mt">' + modules + '</div><div class="jos-btn-row jos-mt">' + dsBtn('set-perm-modules-save', 'Save module access', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Feature access</div><div class="jos-set-toggles jos-mt">' + features + '</div><div class="jos-btn-row jos-mt">' + dsBtn('set-perm-features-save', 'Save feature access', 'jos-btn-brand jos-btn-sm') + '</div></div></div></div>';
+  }
+  function renderSettingsTabBody(root, tab) {
+    if (tab === 'business') return renderSetBusiness();
+    if (tab === 'team') return renderSetTeam();
+    if (tab === 'billing') return renderSetBilling();
+    if (tab === 'integrations') return renderSetIntegrations();
+    if (tab === 'notifications') return renderSetNotifications();
+    if (tab === 'branding') return renderSetBranding();
+    if (tab === 'ai') return renderSetAi();
+    if (tab === 'security') return renderSetSecurity();
+    if (tab === 'permissions') return renderSetPermissions();
+    return renderSetOverview();
+  }
+  function renderSettings() {
+    var root = ownPixelView('v-settings', 'jos-settings-root');
+    if (!root) return;
+    updateChrome('settings');
+    ensureSettingsOsState();
+    var tab = root._josSetTab || ensureSettingsOsState().tab || 'overview';
+    root._josSetTab = tab;
+    var d = DS();
+    var head = d ? d.pageHeader('Settings', 'Platform control center. Configuration only — Rule #23.', dsBtn('set-refresh', 'Refresh', 'jos-btn jos-btn-sm') + dsBtn('set-go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm')) :
+      '<div class="jos-head"><h1>Settings</h1><p class="jos-muted">Platform control center.</p></div>';
+    try {
+      root.innerHTML = '<div class="jos-page jos-set-page">' + head + setTabsHtml(tab) + '<div class="jos-set-body">' + renderSettingsTabBody(root, tab) + '</div></div>';
+    } catch (err) {
+      console.warn('HublyJourneyOS Settings render', err);
+      root.innerHTML = '<div class="jos-page jos-set-page"><div class="jos-card"><strong>Settings could not load</strong><p class="jos-muted">Retry the control center.</p>' + dsBtn('set-refresh', 'Retry', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+    }
+    bindRoot(root);
+  }
+  function renderSettingsHub() { return renderSettings(); }
+  function handleSettingsAct(act, t) {
+    var root = el('jos-settings-root');
+    ensureSettingsOsState();
+    try {
+      if (act === 'set-refresh') return renderSettings();
+      if (act.indexOf('set-tab-') === 0) {
+        if (root) root._josSetTab = act.replace('set-tab-', '');
+        return renderSettings();
+      }
+      if (act === 'set-business-save') {
+        var os = ensureSettingsOsState();
+        os.business.name = setVal('jos-set-biz-name') || os.business.name;
+        os.business.address = setVal('jos-set-biz-address');
+        os.business.city = setVal('jos-set-biz-city');
+        os.business.region = setVal('jos-set-biz-region');
+        os.business.postal = setVal('jos-set-biz-postal');
+        os.business.country = setVal('jos-set-biz-country');
+        os.business.timeZone = setVal('jos-set-biz-tz');
+        os.business.currency = setVal('jos-set-biz-currency') || 'USD';
+        os.business.taxDefault = Number(setVal('jos-set-biz-tax') || 0);
+        os.business.logoUrl = setVal('jos-set-biz-logo') || os.business.logoUrl;
+        os.business.contactEmail = setVal('jos-set-biz-email');
+        os.business.contactPhone = setVal('jos-set-biz-phone');
+        S().businessName = os.business.name;
+        setPublish('settings.updated', { area: 'business' });
+        setPushActivity('settings.updated', 'Business profile saved', { area: 'business' });
+        toast('Business settings saved');
+        return renderSettings();
+      }
+      if (act === 'set-team-invite') {
+        var email = setVal('jos-set-invite-email');
+        var role = setVal('jos-set-invite-role') || 'Technician';
+        if (!email) return toast('Enter invite email');
+        var teamOs = ensureSettingsOsState();
+        teamOs.team.invitations.unshift({ id: setId('inv'), email: email, role: role, at: setNow() });
+        teamOs.team.users.push({ id: setId('set_u'), name: email.split('@')[0], email: email, role: role, status: 'invited' });
+        setMirrorTeam();
+        teamOs.billing.usage.seats = teamOs.team.users.length;
+        setPublish('settings.team.invited', { email: email, role: role });
+        setPushActivity('settings.team.invited', 'Invited ' + email, { email: email, role: role });
+        toast('Invitation created');
+        return renderSettings();
+      }
+      if (act === 'set-billing-save') {
+        var bill = ensureSettingsOsState().billing;
+        bill.plan = setVal('jos-set-plan') || bill.plan;
+        bill.paymentMethod = setVal('jos-set-pay-method') || bill.paymentMethod;
+        setPublish('settings.updated', { area: 'billing' });
+        setPushActivity('settings.updated', 'Billing settings saved', { plan: bill.plan });
+        toast('Billing settings saved');
+        return renderSettings();
+      }
+      if (act === 'set-integration-toggle') {
+        var card = t && t.closest('[data-jos-set-integration]');
+        var key = card && card.getAttribute('data-jos-set-integration');
+        var integ = ensureSettingsOsState().integrations;
+        if (key && integ[key]) {
+          integ[key].status = integ[key].status === 'not_connected' ? 'os_ready' : 'not_connected';
+          setPublish('settings.integration.toggled', { key: key, status: integ[key].status });
+          setPushActivity('settings.integration.toggled', integ[key].label + ' → ' + integ[key].status, { key: key });
+          toast(integ[key].label + ' updated (OS)');
+        }
+        return renderSettings();
+      }
+      if (act === 'set-webhook-add') {
+        var url = setVal('jos-set-hook-url');
+        var eventName = setVal('jos-set-hook-event') || 'settings.updated';
+        if (!url) return toast('Enter webhook URL');
+        ensureSettingsOsState().integrations.webhooks.unshift({ id: setId('hook'), url: url, event: eventName, at: setNow() });
+        setPublish('settings.updated', { area: 'webhooks' });
+        setPushActivity('settings.updated', 'Webhook added', { url: url });
+        toast('Webhook saved (OS)');
+        return renderSettings();
+      }
+      if (act === 'set-notifications-save') {
+        var n = ensureSettingsOsState().notifications;
+        n.email = setChecked('jos-set-n-email');
+        n.sms = setChecked('jos-set-n-sms');
+        n.push = setChecked('jos-set-n-push');
+        n.desktop = setChecked('jos-set-n-desktop');
+        n.ai = setChecked('jos-set-n-ai');
+        setPublish('settings.updated', { area: 'notifications' });
+        setPushActivity('settings.updated', 'Notifications saved', {});
+        toast('Notifications saved');
+        return renderSettings();
+      }
+      if (act === 'set-branding-save') {
+        var br = ensureSettingsOsState().branding;
+        br.logoUrl = setVal('jos-set-brand-logo') || br.logoUrl;
+        br.primaryColor = setVal('jos-set-brand-primary') || br.primaryColor;
+        br.accentColor = setVal('jos-set-brand-accent') || br.accentColor;
+        br.fontDisplay = setVal('jos-set-brand-font-d') || br.fontDisplay;
+        br.fontBody = setVal('jos-set-brand-font-b') || br.fontBody;
+        br.faviconUrl = setVal('jos-set-brand-favicon') || br.faviconUrl;
+        br.websiteDefaults = setVal('jos-set-brand-web') || br.websiteDefaults;
+        setPublish('settings.updated', { area: 'branding' });
+        setPushActivity('settings.updated', 'Branding saved', {});
+        toast('Branding saved');
+        return renderSettings();
+      }
+      if (act === 'set-ai-save') {
+        var ai = ensureSettingsOsState().ai;
+        ai.tone = setVal('jos-set-ai-tone') || ai.tone;
+        ai.permissions = setVal('jos-set-ai-perm') || ai.permissions;
+        ai.autoActionsDefault = setVal('jos-set-ai-auto') === 'true';
+        ai.memoryDefault = setVal('jos-set-ai-memory') !== 'false';
+        ai.automationDefaults = setVal('jos-set-ai-automations') || ai.automationDefaults;
+        setPublish('settings.updated', { area: 'ai' });
+        setPushActivity('settings.updated', 'AI settings saved', { tone: ai.tone });
+        toast('AI settings saved');
+        return renderSettings();
+      }
+      if (act === 'set-security-save') {
+        var sec = ensureSettingsOsState().security;
+        sec.mfaRequired = setChecked('jos-set-mfa');
+        sec.passwordPolicy.minLength = Number(setVal('jos-set-pw-len') || 10);
+        sec.passwordPolicy.requireSymbol = setChecked('jos-set-pw-symbol');
+        setAudit('Security policy updated', { mfaRequired: sec.mfaRequired });
+        setPublish('settings.updated', { area: 'security' });
+        toast('Security settings saved');
+        return renderSettings();
+      }
+      if (act === 'set-api-create') {
+        ensureSettingsOsState().security.apiKeys.unshift({ id: setId('key'), label: 'Operate OS key', prefix: 'hk_os_', createdAt: setNow() });
+        setAudit('API key created', {});
+        toast('API key created');
+        return renderSettings();
+      }
+      if (act === 'set-api-rotate') {
+        setAudit('API key rotated', {});
+        toast('API key rotated (OS)');
+        return renderSettings();
+      }
+      if (act === 'set-perm-custom-add') {
+        var custom = setVal('jos-set-custom-perm');
+        if (!custom) return toast('Enter a permission key');
+        var perms = ensureSettingsOsState().permissions;
+        if (perms.custom.indexOf(custom) < 0) perms.custom.push(custom);
+        setPublish('settings.updated', { area: 'permissions' });
+        setPushActivity('settings.updated', 'Custom permission added', { key: custom });
+        toast('Custom permission added');
+        return renderSettings();
+      }
+      if (act === 'set-perm-modules-save') {
+        var modOs = ensureSettingsOsState().permissions;
+        Object.keys(modOs.moduleAccess || {}).forEach(function (m) { modOs.moduleAccess[m] = true; });
+        setPublish('settings.updated', { area: 'module_access' });
+        setPushActivity('settings.updated', 'Module access saved', {});
+        toast('Module access saved');
+        return renderSettings();
+      }
+      if (act === 'set-perm-features-save') {
+        var featOs = ensureSettingsOsState().permissions;
+        Object.keys(featOs.featureAccess || {}).forEach(function (f) { featOs.featureAccess[f] = true; });
+        setPublish('settings.updated', { area: 'feature_access' });
+        setPushActivity('settings.updated', 'Feature access saved', {});
+        toast('Feature access saved');
+        return renderSettings();
+      }
+      if (act === 'set-go-ask') return switchNav('ask');
+      if (act === 'set-go-editor') return switchNav('editor');
+      if (root) renderSettings();
+    } catch (err) {
+      console.warn('HublyJourneyOS Settings act', act, err);
+      toast('Settings action failed');
+    }
+  }
+
   var MKT_TABS = [
     ['overview', 'Overview'],
     ['campaigns', 'Campaigns'],
@@ -4344,25 +4871,6 @@
       }).join('') + '</div></div>' +
       '<div class="jos-grid jos-mt">' + tile('📈', 'Capacity', 'Fill open slots this week.', 'ask-growth', 'Fill open slots') + tile('💎', 'Ticket size', 'Add-ons and mid-tier packaging.', 'ask-growth', 'Raise ticket size') +
       tile('🔁', 'Retention', 'Rebooks and memberships.', 'go-mem', 'View memberships') + tile('🌐', 'Presence', 'Website + booking polish.', 'preview', 'Open website') + '</div></div>';
-    bindRoot(root);
-  }
-
-  function renderSettingsHub() {
-    var root = el('jos-settings-root'); if (!root) return;
-    var cards = [
-      { ico: '🏢', t: 'Business', s: 'Manage your business details and team.', links: 'Business Information · Brand · Team · Locations', act: 'go-editor' },
-      { ico: '🌐', t: 'Website', s: 'Manage your website, domain and SEO.', links: 'Domain · SEO · Homepage · Pages', act: 'go-editor' },
-      { ico: '📅', t: 'Booking', s: 'Configure booking experience and policies.', links: 'Availability · Questions · Policies · Calendar Sync', act: 'go-editor' },
-      { ico: '💳', t: 'Payments', s: 'Manage payments, taxes and invoices.', links: 'Stripe · Taxes · Invoices · Payment Methods', act: 'stripe' },
-      { ico: '🔌', t: 'Integrations', s: 'Connect Hubly with the tools you already use.', links: 'Google Calendar · Twilio · Google Business', act: 'go-jobs' },
-      { ico: '🔔', t: 'Notifications', s: 'Manage how you and your team get notified.', links: 'Email · SMS · Push · In-App', act: 'go-ask' },
-      { ico: '✨', t: 'AI', s: 'Configure AI tools and automation.', links: 'Business Coach · Automation · Knowledge Base', act: 'go-ask' },
-      { ico: '👤', t: 'Account', s: 'Manage your account and subscription.', links: 'Billing · Subscription · Security', act: 'go-settings' }
-    ];
-    root.innerHTML = page('Settings', 'Settings', 'Manage your business, preferences and integrations.', '',
-      '<div class="jos-grid jos-settings-grid">' + cards.map(function (c) {
-        return '<button type="button" class="jos-tile jos-settings-card" data-jos-act="' + esc(c.act) + '"><div class="jos-tile-ico">' + c.ico + '</div><h3>' + esc(c.t) + '</h3><p>' + esc(c.s) + '</p><div class="jos-muted jos-mt" style="font-size:12px">' + esc(c.links) + '</div></button>';
-      }).join('') + '</div>');
     bindRoot(root);
   }
 
@@ -9106,7 +9614,7 @@
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-rve-tab],[data-jos-rpt-tab],[data-jos-ah-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-rve-tab],[data-jos-rpt-tab],[data-jos-ah-tab],[data-jos-set-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
       if (t.hasAttribute('data-jos-inbox-tab')) {
         var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
         return;
@@ -9181,6 +9689,10 @@
         var ahr = el('jos-ask-root'); if (ahr) { ahr._josAhTab = t.getAttribute('data-jos-ah-tab'); renderAskHubly(); }
         return;
       }
+      if (t.hasAttribute('data-jos-set-tab')) {
+        var setr = el('jos-settings-root'); if (setr) { setr._josSetTab = t.getAttribute('data-jos-set-tab'); ensureSettingsOsState().tab = setr._josSetTab; renderSettings(); }
+        return;
+      }
       if (t.hasAttribute('data-jos-cust-row')) {
         var crow = el('jos-customers-root');
         if (crow) {
@@ -9225,6 +9737,7 @@
       if (act && String(act).indexOf('rve-') === 0) return handleRevenueAct(act, t);
       if (act && String(act).indexOf('rpt-') === 0) return handleReportsAct(act, t);
       if (act && String(act).indexOf('ah-') === 0) return handleAskHublyAct(act, t);
+      if (act && String(act).indexOf('set-') === 0) return handleSettingsAct(act, t);
       if (act === 'ask-submit' || act === 'ask-brief') {
         switchNav('ask');
         return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
@@ -9277,6 +9790,9 @@
     renderActivity: renderActivity,
     renderAskHubly: renderAskHubly,
     handleAskHublyAct: handleAskHublyAct,
+    renderSettings: renderSettings,
+    renderSettingsHub: renderSettingsHub,
+    handleSettingsAct: handleSettingsAct,
     renderMarketing: renderMarketing,
     handleMarketingAct: handleMarketingAct,
     renderMemberships: renderMemberships,
@@ -9290,7 +9806,6 @@
     renderReviews: renderReviews,
     handleReviewsAct: handleReviewsAct,
     renderBizReviews: renderBizReviews,
-    renderSettingsHub: renderSettingsHub,
     renderLeads: renderLeads,
     renderLeadsList: renderLeadsList,
     renderCustomers: renderCustomers,
