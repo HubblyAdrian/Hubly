@@ -91,9 +91,9 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 🧲 Leads | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ❤️ Customers | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🧭 Pipeline | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 🌐 Storefront | ✅ | ⏸ | ✅ | ⏳ | ⏳ | 🔓 Reopen |
-| 📣 Marketing | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
+| 🌐 Storefront | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
+| 📣 Marketing | ✅ | ⏸ | ✅ | ⏳ | ⏳ | 🔓 Reopen |
+| ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
 | 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
@@ -113,8 +113,8 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 5 | ❤️ Customers | ✅ Locked | ⏸ | [#248](https://github.com/HubblyAdrian/Hubly/pull/248) | 🔒 OS · golden profile · MAT ✅ · CMV PASS |
 | 6 | 🧭 Pipeline | ✅ Locked | ⏸ | [#249](https://github.com/HubblyAdrian/Hubly/pull/249) | 🔒 OS · MAT ✅ · HublyDS v1 · merged |
 | 7 | 🌐 Storefront | ✅ Locked | ⏸ | [#250](https://github.com/HubblyAdrian/Hubly/pull/250) | 🔒 OS · MAT ✅ · Service Catalog owner · merged |
-| 8 | 📣 Marketing | ✅ Locked | ⏸ | [#251](https://github.com/HubblyAdrian/Hubly/pull/251) | 🔒 OS · MAT ✅ · Rules #14–16 · merged |
-| 9 | ⭐ Reviews | 🔓 Reopen | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | Mission Control · [REVIEWS_MISSION_CONTROL.md](./REVIEWS_MISSION_CONTROL.md) |
+| 8 | 📣 Marketing | 🔓 Reopen | ⏸ | Mission Control redesign | Explicit reopen · [MARKETING_MISSION_CONTROL.md](./MARKETING_MISSION_CONTROL.md) · prior lock [#251](https://github.com/HubblyAdrian/Hubly/pull/251) |
+| 9 | ⭐ Reviews | ✅ Locked | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | 🔒 OS · MAT ✅ · Rule #17 · merged |
 | 10 | 🔁 Memberships | ✅ Locked | ⏸ | [#253](https://github.com/HubblyAdrian/Hubly/pull/253) | 🔒 OS · MAT ✅ · Rules #18–19 · merged |
 | 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔓 Reopen · MAT ✅ · Rule #20 · merged |
 | 12 | 📊 Reports | ✅ Locked | ⏸ | [#255](https://github.com/HubblyAdrian/Hubly/pull/255) | 🔒 OS · MAT ✅ · Rule #21 · merged |

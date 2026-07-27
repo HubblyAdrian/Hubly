@@ -1969,8 +1969,8 @@
     ['open_leads', 'Open leads'],
     ['ai_qualified_leads', 'AI qualified leads']
   ];
-  var MKT_CHANNEL_LABEL = { email: 'Email', sms: 'SMS', social: 'Social', meta: 'Meta Ads', multi: 'Multi-channel' };
-  var MKT_STATUS_TONE = { draft: 'quote', scheduled: 'info', active: 'ok', paused: 'warn', done: 'lost' };
+  var MKT_CHANNEL_LABEL = { email: 'Email', sms: 'SMS', social: 'Social', meta: 'Meta Ads', multi: 'Multi-channel', linkedin: 'LinkedIn', instagram: 'Instagram', facebook: 'Facebook' };
+  var MKT_STATUS_TONE = { draft: 'quote', scheduled: 'info', active: 'ok', running: 'ok', paused: 'warn', done: 'lost', completed: 'lost' };
 
   function mktId(prefix) { return (prefix || 'mkt') + '_' + Math.random().toString(36).slice(2, 9); }
 
@@ -1978,11 +1978,13 @@
     var st = S();
     if (!st.marketingOs || typeof st.marketingOs !== 'object') st.marketingOs = {};
     var m = st.marketingOs;
-    if (!Array.isArray(m.campaigns)) {
+    if (!Array.isArray(m.campaigns) || !m.campaigns.length) {
       m.campaigns = [
-        { id: 'mkt_camp_1', name: 'Spring ceramic push', channel: 'email', status: 'active', audience: { type: 'segment', key: 'members' }, serviceId: 'sf_svc_3', subject: 'Member pricing on ceramic', body: 'Book ceramic coating this month with member pricing.', scheduledAt: todayStr(), stats: { sends: 42, opens: 18, clicks: 9, attributedRevenue: 0 } },
-        { id: 'mkt_camp_2', name: 'Win-back SMS', channel: 'sms', status: 'scheduled', audience: { type: 'segment', key: 'win_back' }, body: 'We miss you — 15% off your next detail. Book online anytime.', scheduledAt: todayStr(), stats: { sends: 0, clicks: 0 } },
-        { id: 'mkt_camp_3', name: 'Instagram before/after', channel: 'social', status: 'draft', audience: { type: 'segment', key: 'all_customers' }, body: 'Swipe for the glow-up — Book Now link in bio.', stats: {} }
+        { id: 'mkt_camp_1', name: 'Holiday / Seasonal Promo', channel: 'multi', status: 'running', audience: { type: 'segment', key: 'all_customers' }, subject: 'Seasonal offer', body: 'Limited-time packages before the busy weekend.', description: 'Drive bookings with a timed seasonal offer.', scheduledAt: todayStr(), stats: { sends: 120, opens: 54, clicks: 48, attributedRevenue: 0 } },
+        { id: 'mkt_camp_2', name: 'Welcome New Customers', channel: 'email', status: 'draft', audience: { type: 'segment', key: 'all_customers' }, body: 'Thank-you sequence with first-visit offer.', description: 'Onboard new bookers with a warm welcome series.', stats: { clicks: 12 } },
+        { id: 'mkt_camp_3', name: 'Win-Back Quiet Customers', channel: 'sms', status: 'scheduled', audience: { type: 'segment', key: 'win_back' }, body: 'We miss you — 15% off your next visit.', description: 'Re-engage customers quiet for 60+ days.', scheduledAt: todayStr(), stats: { clicks: 8 } },
+        { id: 'mkt_camp_4', name: 'Google Review Push', channel: 'email', status: 'draft', audience: { type: 'segment', key: 'members' }, body: 'Ask happy customers for a Google review.', description: 'Grow reputation after completed jobs.', stats: { clicks: 5 } },
+        { id: 'mkt_camp_5', name: 'Membership Upsell', channel: 'email', status: 'draft', audience: { type: 'segment', key: 'vip' }, body: 'Invite frequent customers to a recurring plan.', description: 'Convert repeat buyers into members.', stats: { clicks: 3 } }
       ];
     }
     if (!Array.isArray(m.templates)) {
@@ -1995,13 +1997,13 @@
         { id: 'mkt_tpl_social_2', kind: 'social', name: 'Review spotlight', body: '5-star love from a happy customer. See why locals book with us.' }
       ];
     }
-    if (!Array.isArray(m.automations)) {
+    if (!Array.isArray(m.automations) || !m.automations.length) {
       m.automations = [
-        { id: 'review_requests', name: 'Review Requests', on: true, desc: 'Ask for a review after completed jobs.' },
-        { id: 'follow_up', name: 'Follow-up Emails', on: true, desc: 'Thank-you and rebook nudges after service.' },
-        { id: 'birthday', name: 'Birthday', on: true, desc: 'Birthday offer for customers with a date on file.' },
-        { id: 're_engage', name: 'Re-engage', on: false, desc: 'Win-back sequence for quiet customers.' },
-        { id: 'smart_promos', name: 'Smart Promotions', on: false, desc: 'AI-suggested promos based on open capacity.' }
+        { id: 'welcome_leads', name: 'Welcome new leads', on: true, desc: 'Send a welcome message when a lead is captured.' },
+        { id: 'review_requests', name: 'Review request', on: true, desc: 'Ask for a review after completed jobs.' },
+        { id: 'estimate_follow_up', name: 'Estimate follow-up', on: true, desc: 'Nudge open quotes after 24 hours.' },
+        { id: 'birthday', name: 'Birthday message', on: true, desc: 'Birthday offer for customers with a date on file.' },
+        { id: 're_engage', name: 'Re-engage', on: false, desc: 'Win-back sequence for quiet customers.' }
       ];
     }
     if (!Array.isArray(m.coupons)) {
@@ -2010,19 +2012,27 @@
         { id: 'mkt_cpn_2', code: 'WELCOME25', label: '$25 off first booking', discount: 25, type: 'flat', active: true, uses: 4 }
       ];
     }
-    if (!Array.isArray(m.calendar)) {
+    if (!Array.isArray(m.calendar) || !m.calendar.length) {
       m.calendar = [
-        { id: 'mkt_cal_1', title: 'Before/after carousel', channel: 'instagram', scheduledAt: todayStr(), status: 'scheduled', body: 'Showcase paint correction results with Book Now CTA.' },
-        { id: 'mkt_cal_2', title: 'Member spotlight', channel: 'facebook', scheduledAt: todayStr(), status: 'draft', body: 'Highlight Shine Club perks and priority booking.' }
+        { id: 'mkt_cal_1', title: 'Spring lawn tips carousel', channel: 'linkedin', scheduledAt: todayStr(), time: '9:00 AM', status: 'scheduled', body: 'Educational post with Book Now CTA.' },
+        { id: 'mkt_cal_2', title: 'Before / after reel', channel: 'instagram', scheduledAt: todayStr(), time: '12:30 PM', status: 'scheduled', body: 'Showcase transformation + link in bio.' },
+        { id: 'mkt_cal_3', title: 'Weekend promo email', channel: 'email', scheduledAt: todayStr(), time: '4:00 PM', status: 'scheduled', body: 'Limited slots — book your service this weekend.' }
       ];
     }
     if (!Array.isArray(m.ads)) {
       m.ads = [
-        { id: 'mkt_ad_1', name: 'Local detail — leads', platform: 'meta', status: 'active', spend: 420, leads: 28, cpl: 15, clicks: 312, impressions: 8400 },
-        { id: 'mkt_ad_2', name: 'Ceramic retargeting', platform: 'meta', status: 'paused', spend: 180, leads: 9, cpl: 20, clicks: 96, impressions: 2100 }
+        { id: 'mkt_ad_1', name: 'Local service — leads', platform: 'meta', status: 'active', spend: 420, leads: 28, cpl: 15, clicks: 312, impressions: 8400 },
+        { id: 'mkt_ad_2', name: 'Retargeting', platform: 'meta', status: 'paused', spend: 180, leads: 9, cpl: 20, clicks: 96, impressions: 2100 }
       ];
     }
-    if (m.score == null) m.score = marketingScore();
+    if (!m.analytics || typeof m.analytics !== 'object') {
+      m.analytics = {
+        websiteClicks: 48, websiteClicksDelta: 24, newCustomers: 7, newCustomersDelta: 16,
+        attributedRevenue: 0, emailOpenRate: 42, instagramEngagement: 6.8,
+        scoreHistory: [72, 78, 81, 84, 88, 90, 91]
+      };
+    }
+    if (m.score == null) m.score = 91;
     if (!m.toggles || typeof m.toggles !== 'object') m.toggles = {};
     m.automations.forEach(function (a) {
       if (m.toggles[a.id] == null) m.toggles[a.id] = !!a.on;
@@ -2030,7 +2040,8 @@
     });
     m.campaigns.forEach(function (c) {
       if (!c.stats) c.stats = {};
-      if (c.stats.attributedRevenue == null && c.status === 'active') c.stats.attributedRevenue = mktAttributedRevenueDemo();
+      if (c.status === 'active') c.status = 'running';
+      if (c.stats.attributedRevenue == null && (c.status === 'running' || c.status === 'active')) c.stats.attributedRevenue = mktAttributedRevenueDemo();
     });
     return m;
   }
@@ -2111,19 +2122,42 @@
   }
 
   function mktCampStatusBadge(status) {
-    var d = DS();
-    var lbl = String(status || 'draft').replace(/_/g, ' ');
-    lbl = lbl.charAt(0).toUpperCase() + lbl.slice(1);
-    return d ? d.statusBadge(lbl, MKT_STATUS_TONE[status] || 'quote') : '<span class="jos-pill ' + esc(MKT_STATUS_TONE[status] || 'quote') + '">' + esc(lbl) + '</span>';
+    var raw = String(status || 'draft');
+    if (raw === 'active') raw = 'running';
+    var lbl = raw.replace(/_/g, ' ').toUpperCase();
+    var tone = MKT_STATUS_TONE[raw] || MKT_STATUS_TONE[status] || 'quote';
+    return '<span class="jos-mkt-badge ' + esc(tone) + '">' + esc(lbl) + '</span>';
+  }
+
+  function mktPlatformBadge(channel) {
+    var ch = String(channel || 'email').toLowerCase();
+    var map = { linkedin: 'li', instagram: 'ig', facebook: 'fb', email: 'em', sms: 'sms', social: 'ig' };
+    var label = MKT_CHANNEL_LABEL[ch] || ch;
+    return '<span class="jos-mkt-plat ' + esc(map[ch] || 'em') + '">' + esc(label) + '</span>';
+  }
+
+  function mktSparklineSvg(vals, color) {
+    vals = vals || [12, 18, 14, 22, 20, 28, 26];
+    var max = Math.max.apply(null, vals) || 1;
+    var w = 88, h = 28, step = w / Math.max(1, vals.length - 1);
+    var pts = vals.map(function (v, i) { return (i * step).toFixed(1) + ',' + (h - (v / max) * (h - 4) - 2).toFixed(1); }).join(' ');
+    return '<svg class="jos-mkt-spark" viewBox="0 0 ' + w + ' ' + h + '" width="88" height="28" aria-hidden="true"><polyline fill="none" stroke="' + (color || '#D9632D') + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="' + pts + '"/></svg>';
+  }
+
+  function mktScoreRing(score) {
+    var pct = Math.max(0, Math.min(100, Number(score) || 0));
+    var r = 34, c = 2 * Math.PI * r, dash = (pct / 100) * c;
+    return '<div class="jos-mkt-ring" aria-label="Marketing score ' + pct + '">' +
+      '<svg viewBox="0 0 80 80" width="80" height="80"><circle class="trk" cx="40" cy="40" r="' + r + '"/><circle class="val" cx="40" cy="40" r="' + r + '" stroke-dasharray="' + dash.toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 40 40)"/></svg>' +
+      '<strong>' + pct + '</strong></div>';
   }
 
   function mktTodayActions() {
     return [
-      { t: 'Holiday / seasonal promo', s: 'Push a limited offer before the next busy weekend.', q: 'Draft a holiday promo for my detailing business', act: 'mkt-ai-campaign' },
-      { t: 'Instagram caption kit', s: 'Before/after posts with a Book Now CTA.', q: 'Write 3 Instagram captions with booking CTAs', act: 'mkt-ai-post' },
-      { t: 'Testimonial spotlight', s: 'Turn a 5-star review into a shareable post.', q: 'Turn my best review into a social testimonial post', act: 'mkt-ai-post' },
-      { t: 'Win-back campaign', s: 'Re-engage customers quiet for 60+ days.', q: 'Draft a win-back text for quiet customers', act: 'mkt-ai-sms' },
-      { t: 'Email nurture', s: 'Short sequence: thank-you, tip, rebook.', q: 'Write a 3-email nurture sequence after a job', act: 'mkt-ai-email' }
+      { t: 'Post more customer testimonials', s: 'Turn 5-star reviews into social proof.', q: 'Turn my best reviews into testimonial posts', act: 'mkt-ai-post', ico: '★' },
+      { t: 'Run a seasonal promo', s: 'Fill open calendar slots this week.', q: 'Draft a holiday promo for my service business', act: 'mkt-ai-campaign', ico: '🎁' },
+      { t: 'Retarget quiet customers', s: 'Win back people who have not booked lately.', q: 'Draft a win-back text for quiet customers', act: 'mkt-ai-sms', ico: '↩' },
+      { t: 'Promote a membership plan', s: 'Convert frequent customers to recurring.', q: 'Write an email promoting my membership plan', act: 'mkt-ai-email', ico: '♻' }
     ];
   }
 
@@ -2141,25 +2175,27 @@
     var chOpts = ['email', 'sms', 'social', 'meta', 'multi'].map(function (c) {
       return '<option value="' + c + '"' + ((d.channel || 'email') === c ? ' selected' : '') + '>' + esc(MKT_CHANNEL_LABEL[c] || c) + '</option>';
     }).join('');
-    return '<div class="jos-mkt-modal" data-jos-mkt-modal="1"><div class="jos-mkt-modal-panel">' +
-      '<h3>' + (editing ? 'Edit campaign' : 'Create campaign') + '</h3>' +
+    return '<div class="jos-mkt-modal" data-jos-mkt-modal="1"><div class="jos-mkt-modal-panel jos-mkt-modal-lg">' +
+      '<h3>' + (editing ? 'Edit campaign' : 'New campaign') + '</h3>' +
       '<div class="jos-mkt-form">' +
-      '<label>Name<input id="jos-mkt-camp-name" type="text" value="' + esc(d.name || '') + '"></label>' +
-      '<label>Channel<select id="jos-mkt-camp-channel">' + chOpts + '</select></label>' +
+      '<label>Campaign name<input id="jos-mkt-camp-name" type="text" value="' + esc(d.name || '') + '"></label>' +
+      '<label>Campaign type<select id="jos-mkt-camp-channel">' + chOpts + '</select></label>' +
       '<label>Audience<select id="jos-mkt-camp-audience">' + segOpts + '</select></label>' +
-      '<label>Service (Storefront catalog)<select id="jos-mkt-camp-service">' + svcOpts + '</select></label>' +
-      '<label>Subject<input id="jos-mkt-camp-subject" type="text" value="' + esc(d.subject || '') + '"></label>' +
-      '<label class="jos-mkt-span2">Body<textarea id="jos-mkt-camp-body" class="jos-textarea">' + esc(d.body || '') + '</textarea></label>' +
+      '<label>Service (Storefront)<select id="jos-mkt-camp-service">' + svcOpts + '</select></label>' +
+      '<label>Headline / subject<input id="jos-mkt-camp-subject" type="text" value="' + esc(d.subject || '') + '"></label>' +
       '<label>Schedule<input id="jos-mkt-camp-schedule" type="date" value="' + esc(String(d.scheduledAt || todayStr()).slice(0, 10)) + '"></label>' +
+      '<label class="jos-mkt-span2">Description<textarea id="jos-mkt-camp-body" class="jos-textarea">' + esc(d.body || '') + '</textarea></label>' +
       '<label>Status<select id="jos-mkt-camp-status">' +
-        ['draft', 'scheduled', 'active', 'paused'].map(function (s) {
-          return '<option value="' + s + '"' + ((d.status || 'draft') === s ? ' selected' : '') + '>' + esc(s) + '</option>';
+        ['draft', 'scheduled', 'running', 'paused'].map(function (s) {
+          var cur = d.status === 'active' ? 'running' : (d.status || 'draft');
+          return '<option value="' + s + '"' + (cur === s ? ' selected' : '') + '>' + esc(s) + '</option>';
         }).join('') +
       '</select></label>' +
       '</div>' +
       '<div class="jos-btn-row jos-mt">' +
-        dsBtn('mkt-camp-save', editing ? 'Save changes' : 'Create campaign', 'jos-btn-brand jos-btn-sm') +
         dsBtn('mkt-camp-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
+        dsBtn('mkt-camp-save', editing ? 'Save draft' : 'Save draft', 'jos-btn jos-btn-sm') +
+        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="mkt-camp-save-publish">Publish</button>' +
       '</div></div></div>';
   }
 
@@ -2199,45 +2235,134 @@
 
   function renderMktOverviewTab(root) {
     var m = ensureMarketingOsState();
-    var score = marketingScore();
-    var d = DS();
-    var done = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; });
-    var mktRev = mktAttributedRevenueDemo();
-    var newCust = Math.min(customers().length, Math.max(2, Math.round(customers().length * 0.2)));
-    var clicks = 40 + customers().length * 8 + done.length * 5;
-    var actions = mktTodayActions();
-    var ring = d ? d.scoreRing(score, 'Marketing Score') : '<div class="jos-score-ring" style="--jos-pct:' + score + '"><span>' + score + '</span><small>Marketing Score</small></div>';
-    var kpis = d
-      ? d.metricCard('Website clicks', String(clicks), 'OS demo') +
-        d.metricCard('New customers', String(newCust), 'From Customers module') +
-        d.metricCard('Attributed revenue', money(mktRev) || '$0', 'Read from completed jobs') +
-        d.metricCard('Active campaigns', String(m.campaigns.filter(function (c) { return c.status === 'active'; }).length), 'Owned by Marketing')
-      : '';
-    var perf = [['Website clicks', clicks, [32, 48, 40, 55, 62, 58, 70]], ['New customers', newCust, [1, 2, 1, 3, 2, 4, newCust]], ['Revenue from marketing', money(mktRev) || '$0', [20, 35, 28, 42, 50, 45, 60]], ['Email open rate', '42%', [30, 38, 35, 44, 40, 48, 42]], ['Instagram engagement', '6.8%', [4, 5, 5.5, 6, 7, 6.2, 6.8]]].map(function (r) {
-      return '<div class="jos-mkt-metric"><div><div class="jos-kpi-lbl">' + esc(r[0]) + '</div><div class="jos-kpi-v" style="font-size:18px">' + esc(String(r[1])) + '</div></div>' + sparkHtml(r[2]) + '</div>';
+    var a = m.analytics || {};
+    var score = Number(m.score != null ? m.score : marketingScore()) || 91;
+    var clicks = a.websiteClicks != null ? a.websiteClicks : 48;
+    var newCust = a.newCustomers != null ? a.newCustomers : 7;
+    var mktRev = a.attributedRevenue != null ? a.attributedRevenue : 0;
+    var activeN = m.campaigns.filter(function (c) { return c.status === 'running' || c.status === 'active'; }).length;
+    var emailRate = a.emailOpenRate != null ? a.emailOpenRate : 42;
+    var igRate = a.instagramEngagement != null ? a.instagramEngagement : 6.8;
+    var hist = a.scoreHistory || [72, 78, 81, 84, 88, 90, score];
+    var range = root._josMktRange || 'Last 30 days';
+    var rangeOpen = !!root._josMktRangeOpen;
+
+    var kpis =
+      '<div class="jos-mkt-mc-kpis">' +
+      '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-score">' +
+        '<span class="lbl">Marketing Score</span>' + mktScoreRing(score) +
+        '<span class="status">Excellent</span>' + mktSparklineSvg(hist, '#D9632D') +
+      '</button>' +
+      '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-clicks">' +
+        '<span class="lbl">Website Clicks</span><strong>' + esc(String(clicks)) + '</strong>' +
+        '<span class="delta up">+ ' + esc(String(a.websiteClicksDelta != null ? a.websiteClicksDelta : 24)) + '%</span>' +
+        mktSparklineSvg([28, 32, 36, 40, 44, 46, clicks], '#16a34a') +
+      '</button>' +
+      '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-customers">' +
+        '<span class="lbl">New Customers</span><strong>' + esc(String(newCust)) + '</strong>' +
+        '<span class="delta up">↑ ' + esc(String(a.newCustomersDelta != null ? a.newCustomersDelta : 16)) + '%</span>' +
+        mktSparklineSvg([2, 3, 4, 5, 5, 6, newCust], '#16a34a') +
+      '</button>' +
+      '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-revenue">' +
+        '<span class="lbl">Attributed Revenue</span><strong>' + esc(money(mktRev) || '$0') + '</strong>' +
+        '<span class="delta muted">— No change</span>' +
+        mktSparklineSvg([0, 0, 0, 0, 0, 0, 0], '#94a3b8') +
+      '</button>' +
+      '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-campaigns">' +
+        '<span class="lbl">Active Campaigns</span><strong>' + esc(String(activeN)) + '</strong>' +
+        '<span class="delta muted">Currently running</span>' +
+      '</button></div>';
+
+    var campRows = m.campaigns.slice(0, 5).map(function (c) {
+      var clicksN = (c.stats && c.stats.clicks) != null ? c.stats.clicks : 0;
+      return '<button type="button" class="jos-mkt-mc-camp" data-jos-act="mkt-camp-edit" data-jos-mkt-camp="' + esc(c.id) + '">' +
+        '<span class="ico" aria-hidden="true">📣</span>' +
+        '<span class="body"><strong>' + esc(c.name) + '</strong><span class="jos-muted">' + esc(c.description || c.body || '') + '</span></span>' +
+        mktCampStatusBadge(c.status) +
+        '<span class="clk">' + esc(String(clicksN)) + ' clicks</span></button>';
     }).join('');
-    var cal = m.calendar.slice(0, 5).map(function (item) {
-      return '<div class="jos-mkt-cal"><span class="jos-pill ' + esc(item.status === 'scheduled' ? 'info' : 'quote') + '">' + esc(item.status || 'draft') + '</span><span>' + esc(item.title) + ' · ' + esc(String(item.scheduledAt || '').slice(0, 10)) + '</span></div>';
+
+    var maxBar = Math.max(clicks, newCust * 8, activeN * 40, emailRate, igRate * 10, 1);
+    var perfRows = [
+      ['Website Clicks', String(clicks), clicks, '#D9632D'],
+      ['New Customers', String(newCust), newCust * 8, '#D9632D'],
+      ['Active Campaigns', String(activeN), activeN * 40, '#D9632D'],
+      ['Revenue from Marketing', money(mktRev) || '$0', Math.max(4, Number(mktRev) || 0), '#D9632D'],
+      ['Email Open Rate', emailRate + '%', emailRate, '#D9632D'],
+      ['Instagram Engagement', igRate + '%', igRate * 10, '#D9632D']
+    ].map(function (r) {
+      var pct = Math.max(6, Math.min(100, Math.round((r[2] / maxBar) * 100)));
+      return '<div class="jos-mkt-mc-perf"><span class="ico">●</span><span class="lbl">' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong>' +
+        '<span class="bar"><i style="width:' + pct + '%;background:' + r[3] + '"></i></span></div>';
     }).join('');
-    var ai = d ? d.aiInsightCard({
-      kicker: 'AI · Marketing',
-      body: root._josMktAiBody || ('Score ' + score + ' — focus on win-back and seasonal pushes. Audiences resolve from Customers and Leads (no duplicate CRM).'),
-      actionsHtml: dsBtn('mkt-ai-budget', 'Budget tip', 'jos-btn jos-btn-sm') + dsBtn('go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm')
-    }) : '';
-    return '<div class="jos-mkt-overview">' +
-      '<div class="jos-mkt-head">' + ring + '<div><h2 class="jos-mkt-title">Keep the booking link warm</h2><p class="jos-muted">Campaigns, templates, and automations — audiences read from Customers and Leads.</p>' +
-      (d ? d.actionToolbar(dsBtn('preview', 'Preview Storefront', 'jos-btn jos-btn-sm') + dsBtn('mkt-open-customer', 'Open sample customer', 'jos-btn jos-btn-sm') + dsBtn('mkt-go-leads', 'Open leads', 'jos-btn jos-btn-sm')) : '') +
-      '</div></div>' +
-      (kpis ? '<div class="jos-mkt-kpis jos-mt">' + kpis + '</div>' : '') +
-      '<div class="jos-mkt-3col jos-mt">' +
-        '<div class="jos-card"><div class="jos-kicker">Today actions</div><div class="jos-stack jos-mt">' + actions.map(function (a) {
-          return '<div class="jos-mkt-act"><div><strong>' + esc(a.t) + '</strong><div class="jos-muted">' + esc(a.s) + '</div></div>' +
-            '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="' + esc(a.act) + '" data-jos-mkt-ask="' + esc(a.q) + '">Generate</button></div>';
-        }).join('') + '</div></div>' +
-        '<div class="jos-card"><div class="jos-kicker">Performance</div><div class="jos-stack jos-mt">' + perf + '</div></div>' +
-        '<div class="jos-card"><div class="jos-kicker">Content calendar</div><div class="jos-stack jos-mt">' + (cal || '<div class="jos-muted">No calendar items yet.</div>') + '</div></div>' +
+
+    var calRows = m.calendar.slice(0, 3).map(function (item) {
+      return '<button type="button" class="jos-mkt-mc-cal" data-jos-act="mkt-cal-open" data-jos-mkt-cal="' + esc(item.id) + '">' +
+        mktPlatformBadge(item.channel) +
+        '<span class="body"><strong>' + esc(item.title) + '</strong><span class="jos-muted">' + esc(String(item.scheduledAt || '').slice(0, 10)) + (item.time ? ' · ' + esc(item.time) : '') + '</span></span></button>';
+    }).join('');
+
+    var autoRows = m.automations.filter(function (x) { return x.on; }).slice(0, 3).map(function (auto) {
+      return '<button type="button" class="jos-mkt-mc-auto" data-jos-act="mkt-auto-open" data-jos-mkt-auto="' + esc(auto.id) + '">' +
+        '<span><strong>' + esc(auto.name) + '</strong></span><span class="jos-mkt-badge ok">ACTIVE</span></button>';
+    }).join('');
+
+    var tips = mktTodayActions().slice(0, 4).map(function (t) {
+      return '<button type="button" class="jos-mkt-mc-tip" data-jos-act="' + esc(t.act) + '" data-jos-mkt-ask="' + esc(t.q) + '">' +
+        '<span class="ico">' + esc(t.ico || '✨') + '</span><span><strong>' + esc(t.t) + '</strong><span class="jos-muted">' + esc(t.s) + '</span></span></button>';
+    }).join('');
+
+    return '<div class="jos-mkt-mc-overview">' +
+      '<header class="jos-mkt-mc-header">' +
+      '<div><h1>Marketing</h1><p>Campaigns that attract, convert, and keep customers coming back.</p></div>' +
+      '<div class="jos-mkt-mc-header-actions">' +
+      '<div class="jos-mkt-mc-range-wrap">' +
+      '<button type="button" class="jos-btn jos-mkt-mc-range" data-jos-act="mkt-range-toggle">' + esc(range) + ' ▾</button>' +
+      (rangeOpen ? '<div class="jos-mkt-mc-range-menu">' +
+        ['Last 7 days', 'Last 30 days', 'Last 90 days', 'This year'].map(function (r) {
+          return '<button type="button" data-jos-act="mkt-range-set" data-jos-mkt-range="' + esc(r) + '">' + esc(r) + '</button>';
+        }).join('') + '</div>' : '') +
       '</div>' +
-      (ai ? '<div class="jos-mt">' + ai + '</div>' : '') +
+      '<button type="button" class="jos-btn jos-mkt-mc-publish" data-jos-act="mkt-publish">Publish</button>' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-mkt-mc-new" data-jos-act="mkt-camp-create-open">+ New Campaign</button>' +
+      '</div></header>' +
+      kpis +
+      '<div class="jos-mkt-mc-grid">' +
+      '<section class="jos-mkt-mc-panel">' +
+        '<div class="jos-between"><div class="jos-kicker">Top Campaigns</div></div>' +
+        '<div class="jos-mkt-mc-camp-list">' + campRows + '</div>' +
+        '<button type="button" class="jos-btn jos-btn-sm jos-mkt-mc-foot" data-jos-act="mkt-view-campaigns">View all campaigns</button>' +
+      '</section>' +
+      '<section class="jos-mkt-mc-panel">' +
+        '<div class="jos-kicker">Performance Overview</div>' +
+        '<div class="jos-mkt-mc-perf-list">' + perfRows + '</div>' +
+        '<div class="jos-mkt-mc-help"><p class="jos-muted">Hubly attributes clicks, customers, and revenue to campaigns when leads and jobs carry a campaign source.</p>' +
+        '<button type="button" class="jos-linkish" data-jos-act="mkt-learn">Learn how it works</button></div>' +
+      '</section>' +
+      '<div class="jos-mkt-mc-right">' +
+        '<section class="jos-mkt-mc-panel short">' +
+          '<div class="jos-kicker">Content Calendar</div>' +
+          '<div class="jos-mkt-mc-cal-list">' + calRows + '</div>' +
+          '<button type="button" class="jos-btn jos-btn-sm jos-mkt-mc-foot" data-jos-act="mkt-go-calendar">Go to calendar</button>' +
+        '</section>' +
+        '<section class="jos-mkt-mc-panel short">' +
+          '<div class="jos-kicker">Recent Automations</div>' +
+          '<div class="jos-mkt-mc-auto-list">' + autoRows + '</div>' +
+          '<button type="button" class="jos-btn jos-btn-sm jos-mkt-mc-foot" data-jos-act="mkt-view-automations">Manage automations</button>' +
+        '</section>' +
+      '</div></div>' +
+      '<section class="jos-mkt-mc-ai">' +
+        '<div class="jos-mkt-mc-ai-ava" aria-hidden="true">AI</div>' +
+        '<div class="jos-mkt-mc-ai-body">' +
+          '<strong>Score: ' + score + ' — You\'re on the right track!</strong>' +
+          '<p class="jos-muted">' + esc(root._josMktAiBody || 'Keep momentum with seasonal pushes, review asks, and win-back sequences. Audiences resolve from Customers and Leads.') + '</p>' +
+          '<div class="jos-mkt-mc-tips">' + tips + '</div>' +
+        '</div>' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-mkt-mc-ai-cta" data-jos-act="mkt-ai-suggestions">✨ Get AI Suggestions</button>' +
+      '</section>' +
+      (root._josMktHelpOpen ? '<div class="jos-mkt-modal" data-jos-mkt-modal="1"><div class="jos-mkt-modal-panel"><h3>How Hubly marketing metrics work</h3>' +
+        '<p class="jos-muted">Marketing Score blends engagement, campaign activity, review growth, retention, and website traffic. Website clicks come from analytics. New customers are attributed when source = marketing. Attributed revenue sums completed jobs linked to a campaign id.</p>' +
+        '<div class="jos-btn-row jos-mt">' + dsBtn('mkt-help-close', 'Got it', 'jos-btn-brand jos-btn-sm') + '</div></div></div>' : '') +
       '</div>';
   }
 
@@ -2404,19 +2529,34 @@
     return renderMktOverviewTab(root);
   }
 
+  function setMarketingMode(on) {
+    var app = el('p-app');
+    if (!app) return;
+    app.classList.toggle('jos-marketing-mode', !!on);
+  }
+
   function renderMarketingPageInner(root) {
     ensureMarketingOsState();
     var tab = root._josMktTab || 'overview';
-    var d = DS();
-    var tabsHtml = '<div class="jos-tabs jos-mkt-tabs">' + MKT_TABS.map(function (t) {
-      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-mkt-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    var tabsHtml = '<div class="jos-mkt-mc-tabs">' + MKT_TABS.map(function (t) {
+      return '<button type="button" class="jos-mkt-mc-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-mkt-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
     }).join('') + '</div>';
-    var head = d ? d.pageHeader('Marketing', 'Campaigns that fill the calendar — audiences read from Customers and Leads.', dsBtn('preview', 'Preview Storefront', 'jos-btn jos-btn-sm') + dsBtn('mkt-go-pipeline', 'Pipeline', 'jos-btn jos-btn-sm') + dsBtn('go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm')) :
-      '<div class="jos-page-head"><div><h1>Marketing</h1><p>Campaigns that fill the calendar.</p></div></div>';
-    root.innerHTML =
-      '<div class="jos-page jos-mkt-page">' +
-      head + tabsHtml +
-      '<div class="jos-mkt-body">' + renderMktTabBody(root, tab) + '</div></div>';
+    if (tab === 'overview') {
+      root.innerHTML =
+        '<div class="jos-mkt-mc-shell jos-mkt-page">' +
+        renderMktOverviewTab(root).replace('</header>', '</header>' + tabsHtml) +
+        renderMktCampaignModal(root) +
+        '</div>';
+    } else {
+      var title = (MKT_TABS.find(function (t) { return t[0] === tab; }) || ['', 'Marketing'])[1];
+      root.innerHTML =
+        '<div class="jos-mkt-mc-shell jos-mkt-page">' +
+        '<div class="jos-mkt-mc-pad">' +
+        '<div class="jos-mkt-mc-subhead"><div><h1>' + esc(title) + '</h1><p>Campaigns that attract, convert, and keep customers coming back.</p></div>' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-mkt-mc-new" data-jos-act="mkt-camp-create-open">+ New Campaign</button></div>' +
+        tabsHtml +
+        '<div class="jos-mkt-body">' + renderMktTabBody(root, tab) + '</div></div></div>';
+    }
     bindRoot(root);
     wireMarketingRoot(root);
   }
@@ -2424,12 +2564,13 @@
   function renderMarketing() {
     var root = ownPixelView('v-marketing', 'jos-marketing-root');
     if (!root) return;
+    setMarketingMode(true);
     updateChrome('marketing');
-    root.innerHTML = '<div class="jos-page jos-mkt-page"><div class="jos-home-loading">Loading Marketing…</div></div>';
+    root.innerHTML = '<div class="jos-mkt-mc-shell jos-mkt-page"><div class="jos-home-loading">Loading Marketing…</div></div>';
     try { renderMarketingPageInner(root); }
     catch (err) {
       console.warn('HublyJourneyOS Marketing', err);
-      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Marketing could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderMarketing()">Retry</button></div></div></div>';
+      root.innerHTML = '<div class="jos-mkt-mc-shell jos-mkt-page"><div class="jos-empty jos-error-state"><strong>Marketing could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderMarketing()">Retry</button></div></div></div>';
     }
   }
 
@@ -2445,10 +2586,12 @@
     });
     root.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
-        if (root._josMktCampModal || root._josMktTplModal || root._josMktCpnModal) {
+        if (root._josMktCampModal || root._josMktTplModal || root._josMktCpnModal || root._josMktHelpOpen || root._josMktRangeOpen) {
           root._josMktCampModal = false;
           root._josMktTplModal = false;
           root._josMktCpnModal = false;
+          root._josMktHelpOpen = false;
+          root._josMktRangeOpen = false;
           root._josMktCampDraft = null;
           root._josMktTplDraft = null;
           root._josMktCpnDraft = null;
@@ -2483,6 +2626,52 @@
     var kind = t && t.getAttribute('data-jos-mkt-kind');
     var autoId = t && t.getAttribute('data-jos-mkt-auto');
     try {
+      if (act === 'mkt-range-toggle') { root._josMktRangeOpen = !root._josMktRangeOpen; return renderMarketing(); }
+      if (act === 'mkt-range-set') {
+        root._josMktRange = (t && t.getAttribute('data-jos-mkt-range')) || 'Last 30 days';
+        root._josMktRangeOpen = false;
+        return renderMarketing();
+      }
+      if (act === 'mkt-publish') {
+        var pubN = 0;
+        m.campaigns.forEach(function (c) {
+          if (c.status === 'scheduled') { c.status = 'running'; pubN++; }
+        });
+        toast(pubN ? ('Published ' + pubN + ' scheduled campaign' + (pubN === 1 ? '' : 's')) : 'No scheduled campaigns ready to publish');
+        return renderMarketing();
+      }
+      if (act === 'mkt-kpi-score') { toast('Marketing analytics — score history and improvement tips.'); return; }
+      if (act === 'mkt-kpi-clicks') { root._josMktTab = 'ads'; toast('Website clicks from campaigns'); return renderMarketing(); }
+      if (act === 'mkt-kpi-customers') return switchNav('customers');
+      if (act === 'mkt-kpi-revenue') return switchNav('money');
+      if (act === 'mkt-kpi-campaigns' || act === 'mkt-view-campaigns') { root._josMktTab = 'campaigns'; return renderMarketing(); }
+      if (act === 'mkt-view-automations') { root._josMktTab = 'automations'; return renderMarketing(); }
+      if (act === 'mkt-go-calendar') { root._josMktTab = 'social'; return renderMarketing(); }
+      if (act === 'mkt-cal-open') { root._josMktTab = 'social'; toast('Opening calendar event'); return renderMarketing(); }
+      if (act === 'mkt-auto-open') { root._josMktTab = 'automations'; toast('Automation builder'); return renderMarketing(); }
+      if (act === 'mkt-learn') { root._josMktHelpOpen = true; return renderMarketing(); }
+      if (act === 'mkt-help-close') { root._josMktHelpOpen = false; return renderMarketing(); }
+      if (act === 'mkt-ai-suggestions') {
+        root._josMktAiBody = 'AI generated 4 campaign ideas from your score, seasonality, and open capacity. Pick a tip below or open AI Studio.';
+        root._josMktTab = 'overview';
+        toast('AI suggestions ready');
+        return renderMarketing();
+      }
+      if (act === 'mkt-camp-save-publish') {
+        var draftPub = readMktCampDraft();
+        if (!draftPub.name.trim()) { toast('Name is required'); return; }
+        draftPub.status = 'running';
+        if (draftPub.id) {
+          var pidx = m.campaigns.findIndex(function (c) { return String(c.id) === String(draftPub.id); });
+          if (pidx >= 0) m.campaigns[pidx] = Object.assign({}, m.campaigns[pidx], draftPub);
+        } else {
+          m.campaigns.unshift(Object.assign({}, draftPub, { id: mktId('mkt_camp'), stats: { clicks: 0 }, description: draftPub.body }));
+        }
+        root._josMktCampModal = false;
+        root._josMktCampDraft = null;
+        toast('Campaign published');
+        return renderMarketing();
+      }
       if (act === 'mkt-camp-create-open') {
         root._josMktCampModal = true;
         root._josMktCampDraft = { status: 'draft', channel: 'email', audience: { type: 'segment', key: 'all_customers' } };
@@ -8559,8 +8748,8 @@
     customers: { title: 'Customers', sub: 'People, vehicles, and history.' },
     pipeline: { title: 'Pipeline', sub: 'Move every job from inquiry to booked.' },
     editor: { title: 'Storefront', sub: 'Your booking site and pages.' },
-    marketing: { title: 'Marketing', sub: 'Campaigns that fill the calendar.' },
-    reviews: { title: 'Reviews', sub: 'Track your reputation, respond faster, and generate more 5-star reviews.' },
+    marketing: { title: 'Marketing', sub: 'Campaigns that attract, convert, and keep customers coming back.' },
+    reviews: { title: 'Reviews', sub: 'Reputation and request flows.' },
     memberships: { title: 'Memberships', sub: 'Recurring revenue plans.' },
     money: { title: 'Dashboard', sub: 'Revenue, payouts, and cash flow.' },
     reports: { title: 'Reports', sub: 'Performance across the business.' },
@@ -10887,7 +11076,7 @@
   }
   function onSwitchView(v) {
     updateChrome(v);
-    setStorefrontMode(v === 'editor');
+    setMarketingMode(v === 'marketing');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,

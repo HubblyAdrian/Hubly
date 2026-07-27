@@ -1019,8 +1019,151 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   .jos-sf-mc-url{display:none}
 }
 
-/* Marketing OS */
+/* Marketing — Mission Control dashboard */
 .jos-mkt-page{animation:josHomeIn .3s ease both;position:relative}
+#p-app.jos-pixel.jos-marketing-mode{
+  --nav:260px;
+  --jos-mkt-bg:#FAFAFC;
+}
+#p-app.jos-pixel.jos-marketing-mode .app-main{margin-left:var(--nav);background:var(--jos-mkt-bg)}
+#p-app.jos-pixel.jos-marketing-mode .app-bar{display:none!important}
+#p-app.jos-pixel.jos-marketing-mode #v-marketing.body,
+#p-app.jos-pixel.jos-marketing-mode #jos-marketing-root{
+  min-height:100vh;height:100vh;padding:0!important;overflow:auto;background:var(--jos-mkt-bg);
+}
+#p-app.jos-pixel.jos-marketing-mode .app-nav{width:var(--nav);background:#1A1C2E}
+#p-app.jos-pixel.jos-marketing-mode .ni.active{background:var(--jos-brand);box-shadow:none}
+
+.jos-mkt-mc-shell{
+  max-width:1600px;margin:0 auto;padding:32px 40px 40px;min-height:100%;
+  background:var(--jos-mkt-bg,#FAFAFC);animation:josHomeIn .35s ease both;box-sizing:border-box;
+}
+.jos-mkt-mc-pad{padding:0}
+.jos-mkt-mc-header{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:8px;flex-wrap:wrap;
+}
+.jos-mkt-mc-header h1,.jos-mkt-mc-subhead h1{
+  margin:0;font-size:36px;font-weight:700;color:#202020;letter-spacing:-.03em;
+  font-family:'Plus Jakarta Sans','DM Sans',sans-serif;line-height:1.1;
+}
+.jos-mkt-mc-header p,.jos-mkt-mc-subhead p{margin:8px 0 0;font-size:15px;color:#777;line-height:1.4}
+.jos-mkt-mc-header-actions,.jos-mkt-mc-subhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.jos-mkt-mc-subhead{justify-content:space-between;margin-bottom:8px}
+.jos-mkt-mc-range,.jos-mkt-mc-publish{
+  height:52px;min-width:150px;padding:0 18px;border-radius:14px;background:#fff;border:1px solid #ECECEC;
+  font-weight:650;color:#202020;
+}
+.jos-mkt-mc-range{width:220px;justify-content:space-between}
+.jos-mkt-mc-new{height:52px;min-width:190px;border-radius:14px;padding:0 20px;font-weight:750}
+.jos-mkt-mc-range-wrap{position:relative}
+.jos-mkt-mc-range-menu{
+  position:absolute;top:56px;left:0;z-index:30;min-width:220px;background:#fff;border:1px solid #ECECEC;
+  border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.1);padding:6px;
+}
+.jos-mkt-mc-range-menu button{
+  width:100%;appearance:none;border:0;background:transparent;text-align:left;padding:10px 12px;border-radius:8px;
+  font:inherit;font-size:13px;font-weight:650;cursor:pointer;
+}
+.jos-mkt-mc-range-menu button:hover{background:var(--jos-brand-soft)}
+
+.jos-mkt-mc-tabs{
+  display:flex;gap:4px;height:52px;align-items:stretch;border-bottom:1px solid #ECECEC;margin:12px 0 24px;overflow:auto;
+}
+.jos-mkt-mc-tab{
+  appearance:none;border:0;background:transparent;padding:0 24px;font:inherit;font-size:15px;font-weight:650;
+  color:#888;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;
+}
+.jos-mkt-mc-tab.on{color:var(--jos-brand);border-bottom-color:var(--jos-brand)}
+
+.jos-mkt-mc-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:20px;margin-bottom:24px}
+.jos-mkt-mc-kpi{
+  appearance:none;border:1px solid #ECECEC;background:#fff;border-radius:18px;min-height:140px;padding:18px 20px;
+  text-align:left;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.04);
+  display:flex;flex-direction:column;gap:6px;transition:transform .18s ease,box-shadow .18s ease;
+}
+.jos-mkt-mc-kpi:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.08)}
+.jos-mkt-mc-kpi .lbl{font-size:13px;font-weight:650;color:#777}
+.jos-mkt-mc-kpi strong{font-size:28px;font-weight:800;color:#202020;letter-spacing:-.03em}
+.jos-mkt-mc-kpi .delta{font-size:12px;font-weight:700}
+.jos-mkt-mc-kpi .delta.up{color:#16a34a}
+.jos-mkt-mc-kpi .delta.muted{color:#94a3b8}
+.jos-mkt-mc-kpi .status{font-size:12px;font-weight:700;color:var(--jos-brand)}
+.jos-mkt-ring{position:relative;width:80px;height:80px;margin:4px 0}
+.jos-mkt-ring svg{display:block}
+.jos-mkt-ring .trk{fill:none;stroke:#F3E8E0;stroke-width:7}
+.jos-mkt-ring .val{fill:none;stroke:var(--jos-brand);stroke-width:7;stroke-linecap:round}
+.jos-mkt-ring strong{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#202020}
+.jos-mkt-spark{margin-top:auto}
+
+.jos-mkt-mc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-bottom:24px}
+.jos-mkt-mc-panel{
+  background:#fff;border:1px solid #ECECEC;border-radius:18px;padding:20px;box-shadow:0 4px 14px rgba(0,0,0,.04);
+  min-height:240px;display:flex;flex-direction:column;transition:transform .18s,box-shadow .18s;
+}
+.jos-mkt-mc-panel:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.07)}
+.jos-mkt-mc-right{display:flex;flex-direction:column;gap:24px;min-width:0}
+.jos-mkt-mc-panel.short{min-height:0;flex:1}
+
+.jos-mkt-mc-camp-list,.jos-mkt-mc-perf-list,.jos-mkt-mc-cal-list,.jos-mkt-mc-auto-list{display:grid;gap:8px;margin-top:12px;flex:1}
+.jos-mkt-mc-camp,.jos-mkt-mc-cal,.jos-mkt-mc-auto{
+  appearance:none;border:0;background:transparent;width:100%;display:flex;align-items:center;gap:12px;
+  padding:10px 8px;border-radius:12px;cursor:pointer;text-align:left;font:inherit;min-height:64px;
+}
+.jos-mkt-mc-camp:hover,.jos-mkt-mc-cal:hover,.jos-mkt-mc-auto:hover{background:#F8F9FB}
+.jos-mkt-mc-camp .ico{width:36px;height:36px;border-radius:50%;background:#FDF0E8;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.jos-mkt-mc-camp .body,.jos-mkt-mc-cal .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.jos-mkt-mc-camp strong,.jos-mkt-mc-cal strong,.jos-mkt-mc-auto strong{font-size:13px;font-weight:750;color:#202020}
+.jos-mkt-mc-camp .jos-muted,.jos-mkt-mc-cal .jos-muted{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jos-mkt-mc-camp .clk{font-size:12px;font-weight:700;color:#777;white-space:nowrap}
+.jos-mkt-badge{
+  font-size:10px;font-weight:800;letter-spacing:.04em;padding:4px 8px;border-radius:999px;white-space:nowrap;
+}
+.jos-mkt-badge.ok{background:#DCFCE7;color:#15803D}
+.jos-mkt-badge.quote{background:#FFEDD5;color:#C2410C}
+.jos-mkt-badge.info{background:#DBEAFE;color:#1D4ED8}
+.jos-mkt-badge.lost,.jos-mkt-badge.warn{background:#F1F5F9;color:#64748B}
+
+.jos-mkt-mc-perf{display:grid;grid-template-columns:16px 1fr auto;gap:8px 10px;align-items:center;min-height:56px;padding:4px 0}
+.jos-mkt-mc-perf .ico{color:var(--jos-brand);font-size:10px}
+.jos-mkt-mc-perf .lbl{font-size:13px;font-weight:650;color:#444;grid-column:2}
+.jos-mkt-mc-perf strong{font-size:13px;font-weight:800;color:#202020}
+.jos-mkt-mc-perf .bar{grid-column:2 / -1;height:8px;background:#F3F4F6;border-radius:999px;overflow:hidden}
+.jos-mkt-mc-perf .bar i{display:block;height:100%;border-radius:999px;animation:josMktBar .6s ease both}
+@keyframes josMktBar{from{width:0!important}}
+
+.jos-mkt-plat{font-size:10px;font-weight:800;padding:4px 8px;border-radius:999px;color:#fff;flex-shrink:0}
+.jos-mkt-plat.li{background:#0A66C2}
+.jos-mkt-plat.ig{background:#E1306C}
+.jos-mkt-plat.em{background:var(--jos-brand)}
+.jos-mkt-plat.fb{background:#1877F2}
+.jos-mkt-plat.sms{background:#0F766E}
+
+.jos-mkt-mc-foot{margin-top:12px;align-self:flex-start}
+.jos-mkt-mc-help{margin-top:16px;padding-top:14px;border-top:1px solid #ECECEC}
+
+.jos-mkt-mc-ai{
+  display:flex;align-items:center;gap:20px;padding:24px 28px;border-radius:24px;min-height:180px;
+  background:linear-gradient(135deg,#FFF7F2 0%,#FFE8D9 55%,#FFF9F5 100%);
+  border:1px solid rgba(217,99,45,.25);box-shadow:0 8px 30px rgba(217,99,45,.1);flex-wrap:wrap;
+}
+.jos-mkt-mc-ai-ava{
+  width:56px;height:56px;border-radius:50%;background:var(--jos-brand);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;
+}
+.jos-mkt-mc-ai-body{flex:1;min-width:220px}
+.jos-mkt-mc-ai-body strong{font-size:16px;color:#202020}
+.jos-mkt-mc-tips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.jos-mkt-mc-tip{
+  appearance:none;border:1px solid #ECECEC;background:#fff;border-radius:14px;padding:12px;display:flex;gap:10px;
+  text-align:left;cursor:pointer;font:inherit;transition:transform .15s;
+}
+.jos-mkt-mc-tip:hover{transform:translateY(-1px);border-color:var(--jos-brand)}
+.jos-mkt-mc-tip .ico{width:28px;height:28px;border-radius:50%;background:#FDF0E8;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.jos-mkt-mc-tip strong{display:block;font-size:12px;font-weight:750;color:#202020}
+.jos-mkt-mc-tip .jos-muted{font-size:11px}
+.jos-mkt-mc-ai-cta{height:52px;padding:0 22px;border-radius:14px;font-weight:750;flex-shrink:0}
+.jos-mkt-modal-lg{max-width:1000px;width:min(1000px,96vw);max-height:760px}
+
 .jos-mkt-tabs{margin-bottom:12px;flex-wrap:wrap}
 .jos-mkt-head{display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap}
 .jos-mkt-title{font-size:18px;font-weight:800;margin:0 0 4px;color:var(--jos-navy)}
@@ -1079,13 +1222,29 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   border:1px solid var(--jos-border);border-radius:12px;background:#fff;padding:14px;
 }
 .jos-mkt-ai-tile h3{margin:0 0 6px;font-size:14px;font-weight:800;color:var(--jos-navy)}
+@media(max-width:1200px){
+  .jos-mkt-mc-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .jos-mkt-mc-grid{grid-template-columns:1fr 1fr}
+  .jos-mkt-mc-right{grid-column:1 / -1;flex-direction:row}
+  .jos-mkt-mc-tips{grid-template-columns:1fr}
+}
 @media(max-width:1100px){
   .jos-mkt-3col,.jos-mkt-2col{grid-template-columns:1fr}
   .jos-mkt-ad-kpis{grid-template-columns:1fr 1fr}
 }
+@media(max-width:900px){
+  .jos-mkt-mc-shell{padding:24px 20px 32px}
+  .jos-mkt-mc-header h1,.jos-mkt-mc-subhead h1{font-size:28px}
+  .jos-mkt-mc-kpis,.jos-mkt-mc-grid{grid-template-columns:1fr}
+  .jos-mkt-mc-right{flex-direction:column}
+  .jos-mkt-mc-ai{flex-direction:column;align-items:stretch}
+}
 @media(max-width:720px){
   .jos-mkt-ad-kpis{grid-template-columns:1fr}
   .jos-mkt-form{grid-template-columns:1fr}
+  #p-app.jos-pixel.jos-marketing-mode{--nav:0px}
+  #p-app.jos-pixel.jos-marketing-mode .app-nav{transform:translateX(-100%)}
+  #p-app.jos-pixel.jos-marketing-mode .app-main{margin-left:0}
 }
 
 /* Reviews — Mission Control */
