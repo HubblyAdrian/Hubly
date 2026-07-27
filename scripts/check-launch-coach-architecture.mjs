@@ -40,11 +40,12 @@ ok(/Business Health/i.test(coach), "Business Health score");
 ok(/90 Days|Next 90/i.test(coach), "forecast window");
 
 const milestone = read("docs/builder/README.md");
-ok(/Rule #29 🔒|Rule #29/.test(milestone) && /Locked/i.test(milestone), "Rule #29 locked on milestone");
+ok(/Rule #29/i.test(milestone) && /frozen|Locked|Architecture complete/i.test(milestone), "Rule #29 locked/frozen on milestone");
 ok(/AI Launch Coach/i.test(milestone), "Module 7 on milestone");
-ok(/officially ends|Builder officially ends|ends when the business launches/i.test(milestone), "Builder ends at OS");
-ok(/No Builder \/ Agency module may bypass|No Builder module may bypass|no module may bypass/i.test(milestone), "no pipeline bypass");
-ok(/Dev may begin/i.test(milestone), "Module 4 Dev may begin");
+ok(/Launch → Hubly Operating System|ends at Launch|Operate OS/i.test(milestone), "Builder ends at OS");
+ok(/bypass|No Builder module may be reordered/i.test(milestone), "no pipeline bypass / reorder");
+ok(/Module 2/i.test(milestone) && /Next|Discovery/i.test(milestone), "Module 2 next Development");
+ok(/BUILDER_MASTER_WORKFLOW/i.test(milestone), "master workflow on milestone");
 
 const act = read("docs/builder/ACTIVATION_ARCHITECTURE.md");
 ok(/Architecture locked|🔒/.test(act), "Activation architecture locked");

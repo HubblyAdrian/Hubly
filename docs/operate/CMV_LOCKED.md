@@ -25,3 +25,7 @@
 ### Result
 
 ✅ CMV PASS
+
+### Context
+
+Agency architecture freeze + BUILDER_MASTER_WORKFLOW.md. No UI. Module 2 next.
