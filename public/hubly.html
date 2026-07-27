@@ -45713,8 +45713,17 @@ function applyTranslations(){
       setHublyDocTitle(titles[activeNav.dataset.v]);
     }
   }
-  const soBtn = document.querySelector('.ni[onclick="signOut()"]');
-  if(soBtn) soBtn.childNodes[soBtn.childNodes.length-1].textContent = t('signOut');
+  const soLbl = document.querySelector('.nav-signout .ni-lbl') || document.querySelector('.ni.nav-signout .ni-lbl');
+  if(soLbl) soLbl.textContent = t('signOut');
+  else {
+    const soBtn = document.querySelector('.ni.nav-signout, .ni[onclick="signOut()"]');
+    if(soBtn){
+      // Remove any stray text nodes left by older i18n that wrote onto childNodes[-1]
+      [...soBtn.childNodes].forEach(n=>{ if(n.nodeType===3 && String(n.textContent||'').trim()) n.remove(); });
+      const lbl = soBtn.querySelector('.ni-lbl');
+      if(lbl) lbl.textContent = t('signOut');
+    }
+  }
   document.querySelectorAll('.btn-newjob').forEach(b=>{ b.textContent=t('newJob'); });
 
   // ── DASHBOARD BODY ──
