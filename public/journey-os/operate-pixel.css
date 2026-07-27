@@ -264,8 +264,11 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 #p-app.jos-pixel.jos-ask-mode #jos-ask-fab,
 body.ed-editor-open #jos-ask-fab,
 #p-app.jos-pixel.jos-storefront-mode #jos-ask-fab{display:none!important}
+/* Sit above setup-help coach when that bubble is visible */
+body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
 @media(max-width:800px){
   #jos-ask-fab{right:14px;bottom:calc(18px + env(safe-area-inset-bottom));padding:7px 12px 7px 7px;font-size:12px}
+  body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:calc(86px + env(safe-area-inset-bottom))}
   #jos-ask-fab .jos-ask-fab-ico{width:32px;height:32px;font-size:10px}
   #jos-ask-fab .jos-ask-fab-lbl{display:none}
 }
