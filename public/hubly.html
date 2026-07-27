@@ -3354,10 +3354,13 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
   #v-editor.ed-canvas-on .ed-shell.ed-hub-alt.ed-sheet-open .ed-ctrl{
     display:none!important;
   }
-  .ed-top-bar{flex-wrap:wrap;padding:10px 12px;gap:8px;position:relative;z-index:5000;background:var(--surface,#fff)}
+  .ed-top-bar{flex-wrap:wrap;padding:10px 12px;gap:8px;position:relative;z-index:5000;background:#fff!important;color:#141B2B!important}
   .ed-top-bar .ed-tab-switch{min-width:0;max-width:none;flex:1}
   .ed-top-actions{width:100%;justify-content:stretch}
-  .ed-top-actions .btn{flex:1}
+  .ed-top-actions .btn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ed-site-url-wrap{max-width:100%;flex:1 1 100%;order:-1}
+  .ed-device-bar{order:0;flex:1 1 auto;justify-content:stretch}
+  .ed-device-btn{flex:1;text-align:center}
   #v-editor{height:auto!important;overflow:visible!important}
   .ed-ctrl{padding:0}
   .ed-tab-scroll{padding:0;gap:0}
