@@ -1903,7 +1903,7 @@ img{max-width:100%;display:block}
   </form>
 </div>
 
-<script src="/landing-intent.js"></script>
+<script src="/hubly-session.js"></script>
 <script>
 (function(){
   document.getElementById('y').textContent = new Date().getFullYear();
@@ -1919,7 +1919,8 @@ img{max-width:100%;display:block}
   window.addEventListener('scroll', syncNav, { passive: true });
 
   /* Rule #24 — Dual Product Architecture: grow business | hire someone */
-  var Intent = window.HublyLandingIntent;
+  var Intent = window.HublySession || window.HublyLandingIntent;
+  var importKick = null;
   var path = 'business';
   var userTouched = false;
   var lastUnderstanding = null;
@@ -1976,23 +1977,31 @@ img{max-width:100%;display:block}
   if(pathHelp) pathHelp.addEventListener('click', function(){ setPath('help'); });
   if(pathBiz) pathBiz.addEventListener('click', function(){ setPath('business'); });
 
+  function paintStatus(u, session){
+    if(!heroStatus || !heroStatusText) return;
+    var line = (Intent && Intent.statusLine) ? Intent.statusLine(u || {}) : (u && u.statusLine) || '';
+    if(!line && session && session.importProgress && session.importProgress.length){
+      line = 'Hubly ' + session.importProgress[session.importProgress.length - 1];
+    }
+    if(line){
+      heroStatusText.textContent = line;
+      heroStatus.classList.add('is-on');
+      var learning = !(u && u.ready) || (session && session.status === 'importing');
+      heroStatus.classList.toggle('is-learning', !!learning);
+    } else {
+      heroStatusText.textContent = '';
+      heroStatus.classList.remove('is-on', 'is-learning');
+    }
+  }
+
   function refreshUnderstanding(){
     if(!Intent || !input) return;
     var u = Intent.understand(input.value, path);
     lastUnderstanding = u;
-    Intent.upsertSession(u);
-    if(heroStatus && heroStatusText){
-      if(u.statusLine){
-        heroStatusText.textContent = u.statusLine;
-        heroStatus.classList.add('is-on');
-        heroStatus.classList.toggle('is-learning', !u.ready);
-      } else {
-        heroStatusText.textContent = '';
-        heroStatus.classList.remove('is-on', 'is-learning');
-      }
-    }
+    var session = Intent.upsertSession(u);
+    u.statusLine = Intent.statusLine(u);
+    paintStatus(u, session);
     if(heroCta){
-      var c = copy[path];
       var autoPath = u.intent === 'hire_pro' ? 'help' : (u.intent === 'build_business' ? 'business' : path);
       var label = autoPath === 'help'
         ? (u.ready ? copy.help.ctaReady : copy.help.cta)
@@ -2004,6 +2013,15 @@ img{max-width:100%;display:block}
       heroCta.classList.toggle('is-disabled', !u.ready);
       heroCta.classList.toggle('is-ready', !!u.ready);
       if(u.ready) heroCta.setAttribute('aria-label', u.destination === 'marketplace_concierge' ? 'Continue to AI Concierge' : 'Continue Building your business');
+    }
+    /* Real import pipeline — begin the moment URLs are detected */
+    if(u.imports && u.imports.length && Intent.startImportPipeline){
+      clearTimeout(importKick);
+      importKick = setTimeout(function(){
+        Intent.startImportPipeline(function(){
+          paintStatus(lastUnderstanding, Intent.loadSession());
+        });
+      }, 220);
     }
     return u;
   }
@@ -2092,21 +2110,25 @@ img{max-width:100%;display:block}
     refreshUnderstanding();
   });
 
-  function goBuild(){
-    var v = input.value.trim();
-    Intent && Intent.track('continue_build', { q: v });
-    window.location.href = v
-      ? '/signup?q=' + encodeURIComponent(v)
-      : '/signup';
+  function goWithSession(kind){
+    var u = refreshUnderstanding() || lastUnderstanding || Intent.understand(input.value, path);
+    var session = Intent.upsertSession(u);
+    if(Intent.markHandedOff) Intent.markHandedOff();
+    Intent.track(kind === 'hire' ? 'continue_hire' : 'continue_build', { hs: session && session.id, intent: u.intent });
+    var url = Intent.routeUrl(u, session);
+    /* Ensure hire/build exit matches kind when caller is explicit */
+    if(kind === 'hire' && url.indexOf('/get-done') !== 0){
+      var q = encodeURIComponent((u.text || '').trim());
+      url = q ? '/get-done?q=' + q + '&hs=' + encodeURIComponent(session.id) : '/get-done';
+    }
+    if(kind === 'build' && url.indexOf('/signup') !== 0){
+      var qb = encodeURIComponent((u.text || '').trim());
+      url = qb ? '/signup?q=' + qb + '&hs=' + encodeURIComponent(session.id) : '/signup?hs=' + encodeURIComponent(session.id);
+    }
+    window.location.href = url;
   }
-  function goHelp(){
-    var v = input.value.trim();
-    Intent && Intent.track('continue_hire', { q: v });
-    /* Never invent a fake prompt — empty opens clean Get Done */
-    window.location.href = v
-      ? '/get-done?q=' + encodeURIComponent(v)
-      : '/get-done';
-  }
+  function goBuild(){ goWithSession('build'); }
+  function goHelp(){ goWithSession('hire'); }
   function goPrimary(){
     var u = refreshUnderstanding() || lastUnderstanding;
     if(!u || !u.ready){
@@ -2118,7 +2140,6 @@ img{max-width:100%;display:block}
       }
       return;
     }
-    /* Intent wins over the tab when confident */
     if(u.intent === 'hire_pro' || u.destination === 'marketplace_concierge') return goHelp();
     if(u.intent === 'build_business' || u.destination === 'business_builder') return goBuild();
     if(path === 'business') goBuild();
@@ -2129,7 +2150,7 @@ img{max-width:100%;display:block}
     if(e.key === 'Enter') goPrimary();
   });
 
-  /* Restore anonymous Builder Session after refresh */
+  /* Restore anonymous Hubly Session after refresh */
   try {
     var existing = Intent && Intent.loadSession();
     if(existing && existing.lastText && input && !input.value){

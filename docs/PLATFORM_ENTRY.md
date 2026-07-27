@@ -32,7 +32,9 @@ One shared AI chat detects intent and routes into the correct product — withou
 
 Primary hero tabs use **user jobs**, not product jargon.
 
-See [AI_LANDING_ARCHITECTURE.md](./AI_LANDING_ARCHITECTURE.md).
+See [AI_LANDING_ARCHITECTURE.md](./AI_LANDING_ARCHITECTURE.md) and [HUBLY_SESSION.md](./HUBLY_SESSION.md).
+
+Landing creates a structured **Hubly Session** (not a Builder-only session). Continue Building hands off via `?hs=` so Business Builder consumes conversation, industry, location, imports, and memory — without re-inferring. Website/social paste starts `/api/import-analyze` immediately.
 
 Post-booking consumer home is **My Hub** (design only) — `docs/MY_HUB.md`.
 

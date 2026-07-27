@@ -149,6 +149,8 @@ Hubly serves two different users. Neither flow should interfere with the other.
 
 The public landing page is an **intelligent router** (same chat, different destination).
 
+**Hubly Session** (`public/hubly-session.js`) is the continuous anonymous memory across Landing → Business Builder → Marketplace → Ask Hubly. Builder consumes the structured session (`?hs=` + `toBuilderPayload()`), not raw `?q=` re-inference. Import URLs start real analysis via `/api/import-analyze`. Lifecycle: create → import → handoff → upgrade to account → TTL expire (30 days). See [HUBLY_SESSION.md](../HUBLY_SESSION.md).
+
 **IMPORTANT:** Do not remove or replace the Marketplace. `/marketplace`, `/get-done`, and the provider app stay intact. The landing AI detects intent and routes — it does not collapse Hubly into one product.
 
 See [AI_LANDING_ARCHITECTURE.md](../AI_LANDING_ARCHITECTURE.md).

@@ -50,7 +50,8 @@ module.exports = async (req, res) => {
       urlPath.startsWith('/smart-quote/') ||
       urlPath.startsWith('/journey-os/') ||
       urlPath === '/website-ast.js' ||
-      urlPath === '/landing-intent.js'
+      urlPath === '/landing-intent.js' ||
+      urlPath === '/hubly-session.js'
     ) {
       const filePath = path.join(__dirname, '../public', urlPath);
       if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {

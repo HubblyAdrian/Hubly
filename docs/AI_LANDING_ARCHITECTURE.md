@@ -2,8 +2,9 @@
 
 **Module:** AI Landing Experience (public front door)  
 **Rules:** **#24 — Dual Product Architecture**  
-**Surface:** `public/platform-home.html` + `public/landing-intent.js`  
-**Status:** Stage 1 — local intent understanding (no new Brain layers)
+**Surface:** `public/platform-home.html` + `public/hubly-session.js`  
+**Session:** [HUBLY_SESSION.md](./HUBLY_SESSION.md)  
+**Status:** Stage 1 — continuous Hubly Session + import pipeline start
 
 ---
 
@@ -17,6 +18,22 @@ The landing page serves **two independent products**:
 2. **I need to hire someone** → AI Marketplace Concierge → Customer Booking (`/get-done`)  
 
 Provider Marketplace (`/marketplace`) remains a core long-term path (footer / dedicated landing). It must stay intact.
+
+---
+
+## Continuous AI experience
+
+```
+Landing
+  ↓
+Hubly Session  (structured memory)
+  ↓
+Business Builder  (consumes session — does not re-infer)
+```
+
+Same session can later continue into Marketplace, Public Ask Hubly, and future products.
+
+One session. One memory.
 
 ---
 
@@ -48,23 +65,6 @@ Do not lead with “Marketplace” or “Operating System” as the primary choi
 
 ---
 
-## Intent examples
-
-### Business → Builder
-
-- I need a website.  
-- Help me price my services.  
-- I own a cleaning company.  
-- I'm starting a mobile detailing company.  
-
-### Consumer → Marketplace
-
-- I need my house cleaned tomorrow.  
-- Find a photographer.  
-- I need my windows washed.  
-
----
-
 ## What the landing AI does (Stage 1)
 
 Local understanding on every keystroke (no API required):
@@ -77,19 +77,52 @@ Local understanding on every keystroke (no API required):
 - Confidence  
 - Import URLs (website, Instagram, Google, Facebook)
 
-Creates an **anonymous Builder Session** in `localStorage` before account creation.
+Creates an **anonymous Hubly Session** in `localStorage` (`hubly_session_v1`) before account creation.
 
 **No account is created on this screen.**
 
+### Structured handoff (required)
+
+Landing writes the Hubly Session, then navigates with `?hs=<sessionId>` (and `?q=` for display continuity).
+
+Builder / Welcome loads `HublySession.toBuilderPayload()` and applies:
+
+conversation · industry · business name · location · stage · intent · confidence · detected imports · website / Instagram / Google Business / Facebook analysis · future AI memory
+
+**Do not re-infer facts the session already learned.**
+
+### Import pipeline (required)
+
+Paste a website → analysis begins immediately via `/api/import-analyze`:
+
+Reading services… → branding… → reviews… → photos…
+
+Builder opens already knowing what was extracted. Social sources get structured partial analysis and continue enrichment in Builder.
+
 ---
 
-## Routing exits (unchanged destinations)
+## Routing exits
 
 | Intent | Exit |
 |--------|------|
-| Business / grow | `/signup?q=` → Welcome → Instant Site |
-| Hire / get done | `/get-done?q=` → Marketplace Concierge |
+| Business / grow | `/signup?q=&hs=` → Welcome → Instant Site (session consume) |
+| Hire / get done | `/get-done?q=&hs=` → Marketplace Concierge |
 | Provider get booked | `/marketplace` (footer / dedicated — not removed) |
+
+---
+
+## Session lifecycle
+
+| Event | When |
+|-------|------|
+| Created | First meaningful Landing `understand` / `upsertSession` |
+| Importing | URL detected → `startImportPipeline` |
+| Handed off | Continue Building / Find someone |
+| Upgraded | Save My Business / Create Account → `upgradeToAccount` |
+| Expires | 30 days after last update (`expiresAt`) |
+| Deleted | TTL, corrupt JSON, or `clearSession()` |
+
+Full detail: [HUBLY_SESSION.md](./HUBLY_SESSION.md).
 
 ---
 
@@ -99,9 +132,9 @@ Subtle status line under the input:
 
 `Hubly understands: Mobile Detailing · Dallas, TX · Startup`
 
-Or after a paste:
+Or while importing:
 
-`Hubly detected: Website · ready to import during setup`
+`Hubly Reading services…`
 
 Continue button stays disabled until enough context, then animates to ready.
 
@@ -111,5 +144,7 @@ Continue button stays disabled until enough context, then animates to ready.
 
 - Break or remove `/marketplace`, `/get-done`, Marketplace Lite provider app  
 - Invent a new Brain layer (product-direction freeze)  
-- Require login before Builder Session starts  
+- Require login before Hubly Session starts  
+- Hand off only raw `?q=` and re-infer in Builder  
+- Treat website/social as detect-only with no analysis job  
 - Put Marketplace in primary nav customer copy (footer / dedicated entry OK)

@@ -139,8 +139,14 @@ ok(/Continue Building/.test(heroBlock), 'Continue Building CTA in hero');
 ok(/hero-status|heroStatus/.test(heroBlock), 'live AI status line in hero');
 ok(/Most software makes you learn how it works/.test(heroBlock), 'brand why in hero');
 ok(!/Get Matched/.test(heroBlock), 'old Get Matched label removed from hero');
-ok(/landing-intent\.js/.test(html), 'shared landing intent router loaded');
-ok(/HublyLandingIntent|Rule #24/.test(html), 'Rule #24 dual-product router wired');
+ok(/hubly-session\.js/.test(html), 'Hubly Session module loaded');
+ok(/HublySession|HublyLandingIntent|Rule #24/.test(html), 'Rule #24 dual-product router wired');
+ok(/hs=/.test(html), 'structured Hubly Session handoff param');
+ok(/startImportPipeline/.test(html), 'real import pipeline kickoff');
+const hublySessionJs = fs.readFileSync('public/hubly-session.js', 'utf8');
+ok(/Reading services/.test(hublySessionJs), 'import progress status copy in Hubly Session');
+ok(/startImportPipeline/.test(hublySessionJs), 'import pipeline API in Hubly Session');
+ok(/toBuilderPayload/.test(hublySessionJs), 'structured builder handoff payload');
 
 const primaryNav = html.match(/<nav class="nav-links"[^>]*>[\s\S]*?<\/nav>/i)?.[0] || '';
 ok(!/Marketplace/i.test(primaryNav), 'Marketplace not in primary nav');
