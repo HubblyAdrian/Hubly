@@ -4020,7 +4020,6 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   #p-app.jos-pixel.jos-jobs-mode:not(.jos-nav-expanded){--nav:80px}
   #p-app.jos-pixel.jos-jobs-mode:not(.jos-nav-expanded) .ni .ni-lbl,
   #p-app.jos-pixel.jos-jobs-mode:not(.jos-nav-expanded) .nav-profile-meta{display:none!important}
-  #p-app.jos-pixel.jos-jobs-mode:not(.jos-nav-expanded) .nav-jobs-new{width:56px;margin:0 auto 8px;font-size:18px;padding:0}
   .jos-jobs-main{padding:20px 16px 32px}
   .jos-jobs-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .jos-jobs-search{min-width:100%}
