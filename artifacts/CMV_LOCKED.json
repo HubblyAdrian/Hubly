@@ -4,52 +4,52 @@
     {
       "name": "🏠 Home still works",
       "pass": true,
-      "detail": "len=14627"
+      "detail": "len=24811"
     },
     {
       "name": "📥 Inbox still works",
       "pass": true,
-      "detail": "len=7232"
+      "detail": "len=19656"
     },
     {
       "name": "📅 Jobs still works",
       "pass": true,
-      "detail": "len=10982"
+      "detail": "len=19165"
     },
     {
       "name": "🧲 Leads still works",
       "pass": true,
-      "detail": "len=8161"
+      "detail": "len=12259"
     },
     {
       "name": "❤️ Customers still works",
       "pass": true,
-      "detail": "len=11030"
+      "detail": "len=10367"
     },
     {
       "name": "🧭 Pipeline still works",
       "pass": true,
-      "detail": "len=8760"
+      "detail": "len=8928"
     },
     {
       "name": "🌐 Storefront still works",
       "pass": true,
-      "detail": "len=3133"
+      "detail": "len=7173"
     },
     {
       "name": "📣 Marketing still works",
       "pass": true,
-      "detail": "len=7426"
+      "detail": "len=8526"
     },
     {
       "name": "⭐ Reviews still works",
       "pass": true,
-      "detail": "len=4361"
+      "detail": "len=6464"
     },
     {
       "name": "🔁 Memberships still works",
       "pass": true,
-      "detail": "len=3127"
+      "detail": "len=5465"
     },
     {
       "name": "💰 Revenue still works",
@@ -59,17 +59,17 @@
     {
       "name": "📊 Reports still works",
       "pass": true,
-      "detail": "len=9564"
+      "detail": "len=9562"
     },
     {
       "name": "✨ Ask Hubly still works",
       "pass": true,
-      "detail": "len=8851"
+      "detail": "len=8853"
     },
     {
       "name": "⚙️ Settings still works",
       "pass": true,
-      "detail": "len=9961"
+      "detail": "len=10325"
     }
   ],
   "warns": []

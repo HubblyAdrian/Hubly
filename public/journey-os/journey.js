@@ -3244,10 +3244,71 @@
     if (!list.length) return 'No reviews yet — request feedback after completed jobs to build your reputation.';
     return 'Customers rave about your quality of work (95%), punctuality (92%), and communication (90%). Strengths: professional service, attention to detail, easy booking. Opportunity: respond faster to 4-star reviews and ask for reviews after every completed job.';
   }
+  function demoReviewsSeed() {
+    return {
+      reviews: [
+        { id: 'rev_demo_a', name: 'Alex Rivera', text: 'Absolutely fantastic lawn service. The yard looks pristine and the team showed up right on time.', rating: 5, source: 'google', at: '2026-05-18', status: 'replied', reply: 'Thank you Alex!', tags: ['quality', 'punctual'] },
+        { id: 'rev_demo_s', name: 'Sam R.', text: 'Professional from start to finish. Clear communication and beautiful results.', rating: 5, source: 'facebook', at: '2026-05-14', status: 'new', tags: ['communication'] },
+        { id: 'rev_demo_j', name: 'Jordan Lee', text: 'Best lawn care we have used in Salt Lake. Booking was easy and the cut was perfect.', rating: 5, source: 'website', at: '2026-05-10', status: 'replied', reply: 'Appreciate you Jordan!', tags: ['booking'] },
+        { id: 'rev_demo_4', name: 'Morgan Chen', text: 'Reliable weekly mowing. Edges are always sharp.', rating: 5, source: 'google', at: '2026-05-02', status: 'replied', reply: 'Thanks Morgan!' },
+        { id: 'rev_demo_5', name: 'Taylor Brooks', text: 'Great spring clean up. Would recommend.', rating: 5, source: 'google', at: '2026-04-28', status: 'replied', reply: 'Glad we could help!' }
+      ],
+      analytics: {
+        rating: 5.0,
+        count: 56,
+        fiveStarCount: 45,
+        fiveStarPct: 80,
+        newThisMonth: 8,
+        responseRate: 100,
+        ratingDelta: 0.3,
+        fiveStarDelta: 12,
+        newDelta: 4,
+        avgResponseHours: 1.2
+      },
+      requests: [
+        { id: 'rev_req_1', customerId: null, jobId: null, status: 'pending', channel: 'sms', createdAt: todayStr(), method: 'sms', sent: false, opened: false, clicked: false, completed: false, reminders: 0 },
+        { id: 'rev_req_2', customerId: null, jobId: null, status: 'pending', channel: 'sms', createdAt: todayStr(), method: 'sms', sent: false, opened: false, clicked: false, completed: false, reminders: 0 },
+        { id: 'rev_req_3', customerId: null, jobId: null, status: 'pending', channel: 'email', createdAt: todayStr(), method: 'email', sent: false, opened: false, clicked: false, completed: false, reminders: 0 },
+        { id: 'rev_req_4', customerId: null, jobId: null, status: 'pending', channel: 'sms', createdAt: todayStr(), method: 'sms', sent: false, opened: false, clicked: false, completed: false, reminders: 0 },
+        { id: 'rev_req_5', customerId: null, jobId: null, status: 'pending', channel: 'sms', createdAt: todayStr(), method: 'sms', sent: false, opened: false, clicked: false, completed: false, reminders: 0 },
+        { id: 'rev_req_6', customerId: null, jobId: null, status: 'pending', channel: 'sms', createdAt: todayStr(), method: 'sms', sent: false, opened: false, clicked: false, completed: false, reminders: 0 },
+        { id: 'rev_req_7', customerId: null, jobId: null, status: 'pending', channel: 'email', createdAt: todayStr(), method: 'email', sent: false, opened: false, clicked: false, completed: false, reminders: 0 },
+        { id: 'rev_req_8', customerId: null, jobId: null, status: 'pending', channel: 'sms', createdAt: todayStr(), method: 'sms', sent: false, opened: false, clicked: false, completed: false, reminders: 0 },
+        { id: 'rev_req_9', customerId: null, jobId: null, status: 'pending', channel: 'sms', createdAt: todayStr(), method: 'sms', sent: false, opened: false, clicked: false, completed: false, reminders: 0 },
+        { id: 'rev_req_10', customerId: null, jobId: null, status: 'pending', channel: 'sms', createdAt: todayStr(), method: 'sms', sent: false, opened: false, clicked: false, completed: false, reminders: 0 }
+      ],
+      platforms: {
+        google: { connected: true, reviews: 32, rating: 4.9, lastSync: '2h ago' },
+        facebook: { connected: true, reviews: 14, rating: 5.0, lastSync: '2h ago' },
+        yelp: { connected: false, reviews: 0, rating: 0, lastSync: '—' },
+        website: { connected: true, reviews: 6, rating: 4.8, lastSync: '1d ago' },
+        hubly: { connected: true, reviews: 4, rating: 5.0, lastSync: 'Live' }
+      },
+      growthHistory: [24, 30, 38, 48, 56],
+      growthLabels: ['Apr 22', 'Apr 29', 'May 6', 'May 13', 'May 20'],
+      aiSummary: 'Customers rave about your quality of work (95%), punctuality (92%), and communication (90%). Keep asking after every completed job to stay at 5.0.',
+      pendingRequests: 10
+    };
+  }
+
   function ensureReviewsOsState() {
     var st = S();
     if (!st.reviewsOs || typeof st.reviewsOs !== 'object') st.reviewsOs = {};
     var r = st.reviewsOs;
+    if (allowDemoSeed()) {
+      var demo = demoReviewsSeed();
+      r.reviews = demo.reviews.map(function (x) { return normalizeReview(x); }).filter(Boolean);
+      r.requests = demo.requests.map(function (x) { return Object.assign({}, x); });
+      r.platforms = JSON.parse(JSON.stringify(demo.platforms));
+      r.growthHistory = demo.growthHistory.slice();
+      r.growthLabels = demo.growthLabels.slice();
+      r.aiSummary = demo.aiSummary;
+      r.analytics = Object.assign({}, demo.analytics);
+      r.requestStats = { sent: 122, completed: 87, conversionPct: 71, deltaPct: 18 };
+      r._seeded = true;
+      r._demoShot = true;
+      return r;
+    }
     if (!r._seeded) {
       r.reviews = seedReviewsFromLegacy();
       r.requests = [
@@ -3342,8 +3403,9 @@
     var parts = String(name || 'C').trim().split(/\s+/);
     return (parts[0] ? parts[0][0] : 'C') + (parts[1] ? parts[1][0] : '');
   }
-  function revAvatar(name, cls) {
-    return '<span class="jos-rev-mc-ava' + (cls ? ' ' + cls : '') + '" aria-hidden="true">' + esc(revInitials(name).toUpperCase()) + '</span>';
+  function revAvatar(name, tone) {
+    var cls = tone ? (' tone-' + tone) : '';
+    return '<span class="jos-rev-mc-ava' + cls + '" aria-hidden="true">' + esc(revInitials(name).toUpperCase()) + '</span>';
   }
   function revSourceBadge(source) {
     var lbl = REV_SOURCE_LABEL[source] || source;
@@ -3363,20 +3425,90 @@
     }).join(' ');
     return '<svg class="jos-rev-mc-spark" viewBox="0 0 100 32" preserveAspectRatio="none"><polyline fill="none" stroke="' + (up ? '#22C55E' : '#F97316') + '" stroke-width="2" points="' + pts + '"/></svg>';
   }
-  function revMcGrowthChart(vals) {
+  function revMcGrowthChart(vals, labels) {
     var data = vals || [12, 18, 22, 28, 35, 42, 48, 52, 56];
+    var labs = labels || [];
     var max = Math.max.apply(null, data.concat([1]));
-    var w = 100, h = 60;
+    var w = 320, h = 140, pad = 8;
     var pts = data.map(function (v, i) {
-      var x = (i / Math.max(1, data.length - 1)) * w;
-      var y = h - (v / max) * (h - 8) - 4;
+      var x = pad + (i / Math.max(1, data.length - 1)) * (w - pad * 2);
+      var y = h - pad - (v / max) * (h - pad * 2 - 18);
       return x.toFixed(1) + ',' + y.toFixed(1);
     });
     var line = pts.join(' ');
-    var area = '0,' + h + ' ' + line + ' ' + w + ',' + h;
-    return '<svg class="jos-rev-mc-chart" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+    var area = pad + ',' + (h - 18) + ' ' + line + ' ' + (w - pad) + ',' + (h - 18);
+    var labelHtml = labs.length ? ('<div class="jos-rev-mc-chart-labels">' + labs.map(function (l) {
+      return '<span>' + esc(l) + '</span>';
+    }).join('') + '</div>') : '';
+    return '<div class="jos-rev-mc-chart-wrap"><svg class="jos-rev-mc-chart" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
       '<defs><linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7C3AED" stop-opacity=".35"/><stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/></linearGradient></defs>' +
-      '<polygon fill="url(#revGrad)" points="' + area + '"/><polyline fill="none" stroke="#7C3AED" stroke-width="2" points="' + line + '"/></svg>';
+      '<polygon fill="url(#revGrad)" points="' + area + '"/><polyline fill="none" stroke="#7C3AED" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="' + line + '"/></svg>' +
+      labelHtml + '</div>';
+  }
+
+  function renderRevTopChrome(root) {
+    var bizName = allowDemoSeed() ? "Adrian's Lawn Service" : (S().businessName || S().biz || "Adrian's Lawn Service");
+    var notifN = allowDemoSeed() ? 3 : 0;
+    return '<header class="jos-rev-top">' +
+      '<label class="jos-rev-global-search"><span class="jos-rev-search-ico" aria-hidden="true"></span>' +
+      '<input id="jos-rev-global-search" type="search" placeholder="Search customers, jobs, messages..." value="' + esc(root._josRevGlobalQ || '') + '">' +
+      '<kbd>⌘K</kbd></label>' +
+      '<div class="jos-rev-top-actions">' +
+      '<button type="button" class="jos-btn jos-rev-top-new" data-jos-act="rev-request-open">+ New</button>' +
+      '<button type="button" class="jos-btn jos-rev-ask-btn" data-jos-act="go-ask"><span aria-hidden="true">✦</span> Ask Hubly</button>' +
+      '<button type="button" class="jos-icon-btn jos-rev-bell" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>' +
+      (notifN ? '<i class="badge">' + notifN + '</i>' : '') + '</button>' +
+      '<button type="button" class="jos-rev-profile" data-jos-act="go-settings" title="Profile">' +
+      '<span class="ava">' + esc(initials(bizName)) + '</span><span class="meta"><strong>' + esc(bizName) + '</strong></span></button>' +
+      '</div></header>';
+  }
+
+  function renderRevLatestCard(rev, tone) {
+    var dateLbl = '';
+    try {
+      dateLbl = new Date(String(rev.at || '').slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (e) { dateLbl = String(rev.at || '').slice(0, 10); }
+    return '<article class="jos-rev-shot-item">' +
+      revAvatar(rev.name, tone) +
+      '<div class="copy">' +
+        '<div class="top"><strong>' + esc(rev.name) + '</strong><span class="when">' + esc(dateLbl) + '</span></div>' +
+        revStars(rev.rating) +
+        '<p>' + esc(rev.text) + '</p>' +
+        revSourceBadge(rev.source) +
+      '</div>' +
+      '<button type="button" class="jos-rev-shot-more" data-jos-act="rev-more" data-jos-rev-id="' + esc(rev.id) + '" aria-label="More">⋯</button>' +
+    '</article>';
+  }
+
+  function revShotAnalytics(r) {
+    var a = r.analytics || {};
+    if (allowDemoSeed() && r._demoShot) {
+      return {
+        rating: a.rating != null ? a.rating : 5.0,
+        count: a.count != null ? a.count : 56,
+        fiveStarCount: a.fiveStarCount != null ? a.fiveStarCount : 45,
+        fiveStarPct: a.fiveStarPct != null ? a.fiveStarPct : 80,
+        newThisMonth: a.newThisMonth != null ? a.newThisMonth : 8,
+        responseRate: a.responseRate != null ? a.responseRate : 100,
+        ratingDelta: a.ratingDelta != null ? a.ratingDelta : 0.3,
+        fiveStarDelta: a.fiveStarDelta != null ? a.fiveStarDelta : 12,
+        newDelta: a.newDelta != null ? a.newDelta : 4
+      };
+    }
+    var list = r.reviews || [];
+    var five = list.filter(function (rv) { return Number(rv.rating) >= 5; }).length;
+    return {
+      rating: a.rating || 0,
+      count: a.count || 0,
+      fiveStarCount: a.fiveStarCount != null ? a.fiveStarCount : five,
+      fiveStarPct: a.fiveStarPct != null ? a.fiveStarPct : (a.count ? Math.round((five / a.count) * 100) : 0),
+      newThisMonth: a.newThisMonth || 0,
+      responseRate: a.responseRate || 0,
+      ratingDelta: a.ratingDelta || 0,
+      fiveStarDelta: a.fiveStarDelta != null ? a.fiveStarDelta : 0,
+      newDelta: a.newDelta != null ? a.newDelta : (a.newDeltaPct || 0)
+    };
   }
   function revFilterReviews(list, root) {
     var q = String(root._josRevQ || '').trim().toLowerCase();
@@ -3566,95 +3698,139 @@
         '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="' + (p.connected ? 'rev-sync-' + key : 'rev-connect-' + key) + '">' + (p.connected ? 'Sync' : 'Connect') + '</button></div>';
     }).join('');
   }
-  function renderRevSidebar(root) {
-    var r = ensureReviewsOsState();
-    var range = root._josRevGrowthRange || 'Month';
-    var growthFilters = ['Week', 'Month', 'Quarter', 'Year'].map(function (f) {
-      return '<button type="button" class="jos-rev-mc-gf' + (range === f ? ' on' : '') + '" data-jos-act="rev-growth-range" data-jos-rev-range="' + f + '">' + f + '</button>';
-    }).join('');
-    var platRows = Object.keys(REV_PLATFORM_META).slice(0, 5).map(function (key) {
-      var p = r.platforms[key] || {};
-      return '<button type="button" class="jos-rev-mc-plat-mini" data-jos-act="rev-plat-open" data-jos-rev-platform="' + key + '">' +
-        '<span class="logo ' + REV_PLATFORM_META[key].cls + '">' + REV_PLATFORM_META[key].label[0] + '</span>' +
-        '<span class="name">' + esc(REV_PLATFORM_META[key].label) + '</span>' +
-        '<span class="meta">' + (p.reviews || 0) + ' · ' + (p.rating ? p.rating.toFixed(1) : '—') + '</span>' +
-        '<span class="sync">' + esc(p.lastSync || '—') + '</span></button>';
-    }).join('');
-    var goals = (r.goals || []).map(function (g) {
-      var pct = g.target ? Math.round((g.current / g.target) * 100) : 0;
-      return '<div class="jos-rev-mc-goal"><div class="jos-rev-mc-goal-top"><span>' + esc(g.label) + '</span><strong>' + pct + '%</strong></div><div class="jos-rev-mc-goal-bar"><i style="width:' + pct + '%"></i></div></div>';
-    }).join('');
-    var biz = String(S().biz || 'business').replace(/\s+/g, '');
-    var link = 'hubly.app/review/' + biz;
-    var pending = r.requests.filter(function (req) { return req.status === 'pending'; }).length;
-    return '<aside class="jos-rev-mc-side">' +
-      '<section class="jos-rev-mc-side-card"><h3>Take action</h3>' +
-        '<div class="jos-rev-mc-side-act"><div><strong>Pending requests</strong><span class="jos-muted">' + pending + ' waiting to send</span></div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-go-requests">View</button></div>' +
-        '<div class="jos-rev-mc-side-act"><div><strong>Sync Google</strong><span class="jos-muted">Last synced 2h ago</span></div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-sync-google">Sync</button></div>' +
-        '<div class="jos-rev-mc-side-act"><div><strong>Sync Facebook</strong><span class="jos-muted">Last synced 2h ago</span></div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-sync-facebook">Sync</button></div>' +
-      '</section>' +
-      '<section class="jos-rev-mc-side-card tall"><div class="jos-rev-mc-side-head"><h3>Review growth</h3><div class="jos-rev-mc-growth-f">' + growthFilters + '</div></div>' + revMcGrowthChart(r.growthHistory) + '</section>' +
-      '<section class="jos-rev-mc-side-card"><h3>Platforms</h3><div class="jos-rev-mc-plat-list">' + platRows + '</div></section>' +
-      '<section class="jos-rev-mc-side-card"><h3>Goals</h3>' + goals + '<div class="jos-rev-mc-side-btns">' + dsBtn('rev-goal-edit', 'Edit Goal', 'jos-btn jos-btn-sm') + dsBtn('rev-goal-ai', 'AI Suggest', 'jos-btn jos-btn-sm') + '</div></section>' +
-      '<section class="jos-rev-mc-side-card"><h3>Quick actions</h3>' +
-        '<button type="button" class="jos-rev-mc-qa" data-jos-act="rev-qr">Generate QR Code</button>' +
-        '<button type="button" class="jos-rev-mc-qa" data-jos-act="rev-email-campaign">Email Campaign</button>' +
-        '<button type="button" class="jos-rev-mc-qa" data-jos-act="rev-sms-campaign">Text Campaign</button>' +
-        '<button type="button" class="jos-rev-mc-qa" data-jos-act="rev-copy-link">Copy Review Link</button>' +
-        '<button type="button" class="jos-rev-mc-qa" data-jos-act="rev-nfc">Generate NFC Card</button>' +
-        '<button type="button" class="jos-rev-mc-qa" data-jos-act="rev-poster">Print Poster</button>' +
-      '</section>' +
-      '<section class="jos-rev-mc-side-card"><h3>Get more reviews</h3><div class="jos-rev-mc-link-row"><input readonly value="' + esc(link) + '" id="jos-rev-link"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="rev-copy-link">Copy link</button></div></section>' +
-    '</aside>';
-  }
   function renderRevMissionControl(root) {
     var r = ensureReviewsOsState();
-    var tab = root._josRevTab || 'overview';
-    if (tab === 'ai') tab = 'overview';
-    if (tab === 'events') tab = 'connections';
-    var a = r.analytics;
-    var rs = r.requestStats;
-    var range = root._josRevRange || 'Last 30 Days';
+    var a = revShotAnalytics(r);
+    var range = root._josRevRange || 'This month';
     var rangeOpen = !!root._josRevRangeOpen;
-    var rangeMenu = rangeOpen ? '<div class="jos-rev-mc-range-menu">' + REV_DATE_RANGES.map(function (lbl) {
-      return '<button type="button" data-jos-act="rev-range-set" data-jos-rev-range="' + esc(lbl) + '">' + esc(lbl) + '</button>';
-    }).join('') + '</div>' : '';
-    var tabsHtml = '<div class="jos-rev-mc-tabs">' + REV_TABS.map(function (t) {
-      return '<button type="button" class="jos-rev-mc-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-rev-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
-    }).join('') + '</div>';
-    var mainBody = tab === 'requests' ? renderRevRequestsPanel(root)
-      : tab === 'analytics' ? renderRevAnalyticsPanel(root)
-        : tab === 'connections' ? renderRevConnectionsPanel(root)
-          : renderRevFeedPanel(root, tab);
-    var showSide = tab !== 'analytics' && tab !== 'connections';
-    return '<div class="jos-rev-mc-shell jos-rev-page">' +
+    var rangeMenu = rangeOpen ? '<div class="jos-rev-mc-range-menu">' +
+      ['This month', 'Last 30 Days', 'Last 7 Days', 'This Year'].map(function (lbl) {
+        return '<button type="button" data-jos-act="rev-range-set" data-jos-rev-range="' + esc(lbl) + '">' + esc(lbl) + '</button>';
+      }).join('') + '</div>' : '';
+    var pending = allowDemoSeed() && r.pendingRequests != null
+      ? r.pendingRequests
+      : r.requests.filter(function (req) { return req.status === 'pending'; }).length;
+    var googleSync = (r.platforms && r.platforms.google && r.platforms.google.lastSync) || '2h ago';
+    var fbSync = (r.platforms && r.platforms.facebook && r.platforms.facebook.lastSync) || '2h ago';
+    var latest = r.reviews.slice().sort(function (x, y) {
+      return String(y.at || '').localeCompare(String(x.at || ''));
+    }).slice(0, 3);
+    var tones = ['purple', 'orange', 'green'];
+    var latestHtml = latest.length
+      ? latest.map(function (rv, i) { return renderRevLatestCard(rv, tones[i] || 'purple'); }).join('')
+      : '<div class="jos-rev-shot-empty">No reviews yet. Request feedback after completed jobs.</div>';
+    var bizSlug = allowDemoSeed()
+      ? 'AdriansLawnService'
+      : String(S().businessName || S().biz || 'business').replace(/[^a-zA-Z0-9]+/g, '');
+    var link = 'hubly.app/review/' + bizSlug;
+    var growthVals = r.growthHistory || [24, 30, 38, 48, 56];
+    var growthLabs = r.growthLabels || ['Apr 22', 'Apr 29', 'May 6', 'May 13', 'May 20'];
+    if (growthVals.length > growthLabs.length) growthVals = growthVals.slice(growthVals.length - growthLabs.length);
+
+    return '<div class="jos-rev-mc-shell jos-rev-page jos-rev-shot">' +
+      renderRevTopChrome(root) +
       '<header class="jos-rev-mc-header">' +
-        '<div class="jos-rev-mc-title"><span class="jos-rev-mc-star" aria-hidden="true">⭐</span><div><h1>Reviews</h1><p>Track your reputation, respond faster, and generate more 5-star reviews.</p></div></div>' +
+        '<div class="jos-rev-mc-title">' +
+          '<span class="jos-rev-mc-star" aria-hidden="true"></span>' +
+          '<div><h1>Reviews</h1><p>Build trust, grow your reputation, and win more jobs.</p></div>' +
+        '</div>' +
         '<div class="jos-rev-mc-header-actions">' +
-          '<div class="jos-rev-mc-search-wrap"><input id="jos-rev-search" class="jos-rev-mc-search" placeholder="Search reviews…" value="' + esc(root._josRevQ || '') + '"></div>' +
-          '<div class="jos-rev-mc-range-wrap"><button type="button" class="jos-btn jos-rev-mc-range" data-jos-act="rev-range-toggle">' + esc(range) + ' ▾</button>' + rangeMenu + '</div>' +
-          '<button type="button" class="jos-btn jos-btn-brand jos-rev-mc-req-btn" data-jos-act="rev-request-open">Request Review</button>' +
+          '<button type="button" class="jos-btn jos-rev-export" data-jos-act="rev-export-csv">' +
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/></svg> Export reviews</button>' +
+          '<div class="jos-rev-mc-range-wrap">' +
+            '<button type="button" class="jos-btn jos-rev-mc-range" data-jos-act="rev-range-toggle">' +
+              '<span class="cal-ico" aria-hidden="true"></span><span>' + esc(range) + '</span>' +
+              '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>' +
+            rangeMenu +
+          '</div>' +
         '</div>' +
       '</header>' +
-      '<div class="jos-rev-mc-kpis">' +
-        '<button type="button" class="jos-rev-mc-kpi tone-lav" data-jos-act="rev-kpi-rating"><span class="ico">★</span><span class="lbl">Overall Rating</span><strong>' + (a.rating ? a.rating.toFixed(1) : '—') + '</strong>' + revStars(Math.round(a.rating)) + '<span class="sub">' + a.count + ' Reviews</span><span class="delta up">+' + a.ratingDelta + ' This Month</span></button>' +
-        '<button type="button" class="jos-rev-mc-kpi tone-blue" data-jos-act="rev-kpi-new"><span class="lbl">New Reviews</span><strong>' + a.newThisMonth + '</strong><span class="sub">This Month</span><span class="delta up">+' + a.newDeltaPct + '%</span>' + revMcSparkline([2, 4, 3, 6, 5, 8, a.newThisMonth], true) + '</button>' +
-        '<button type="button" class="jos-rev-mc-kpi tone-green" data-jos-act="rev-kpi-response"><span class="lbl">Response Rate</span><strong>' + a.responseRate + '%</strong><span class="sub">Average ' + a.avgResponseHours + ' Hours</span></button>' +
-        '<button type="button" class="jos-rev-mc-kpi tone-orange" data-jos-act="rev-kpi-requests"><span class="lbl">Review Requests</span><strong>' + rs.sent + ' Sent</strong><span class="sub">' + rs.completed + ' Completed · ' + rs.conversionPct + '%</span><span class="delta up">+' + rs.deltaPct + '%</span></button>' +
+
+      '<div class="jos-rev-shot-kpis">' +
+        '<button type="button" class="jos-rev-shot-kpi tone-purple" data-jos-act="rev-kpi-rating">' +
+          '<span class="lbl">Overall Rating</span>' +
+          '<div class="val-row"><strong>' + (a.rating ? Number(a.rating).toFixed(1) : '—') + '</strong><span class="star-ico" aria-hidden="true"></span></div>' +
+          '<span class="sub">From ' + a.count + ' reviews</span>' +
+          '<span class="delta up">↑ ' + a.ratingDelta + ' from last month</span>' +
+        '</button>' +
+        '<button type="button" class="jos-rev-shot-kpi tone-blue" data-jos-act="rev-kpi-fivestar">' +
+          '<span class="lbl">5-Star Reviews</span>' +
+          '<strong>' + a.fiveStarCount + '</strong>' +
+          '<span class="sub">' + a.fiveStarPct + '% of all reviews</span>' +
+          '<span class="delta up">↑ ' + a.fiveStarDelta + ' from last month</span>' +
+        '</button>' +
+        '<button type="button" class="jos-rev-shot-kpi tone-green" data-jos-act="rev-kpi-new">' +
+          '<span class="lbl">New This Month</span>' +
+          '<strong>' + a.newThisMonth + '</strong>' +
+          '<span class="sub">Reviews in the last 30 days</span>' +
+          '<span class="delta up">↑ ' + a.newDelta + ' from last month</span>' +
+        '</button>' +
+        '<button type="button" class="jos-rev-shot-kpi tone-orange" data-jos-act="rev-kpi-response">' +
+          '<span class="lbl">Response Rate</span>' +
+          '<strong>' + a.responseRate + '%</strong>' +
+          '<span class="sub">You\'re doing great!</span>' +
+          '<span class="pill-ok">Excellent</span>' +
+        '</button>' +
       '</div>' +
-      '<section class="jos-rev-mc-ai">' +
-        '<div class="jos-rev-mc-ai-badge" aria-hidden="true">AI</div>' +
-        '<div class="jos-rev-mc-ai-copy"><strong>AI Reputation Summary</strong><p>' + esc(r.aiSummary) + '</p></div>' +
-        '<div class="jos-rev-mc-ai-btns">' +
-          '<button type="button" class="jos-btn jos-rev-mc-ai-outline" data-jos-act="rev-ai-report">View Report</button>' +
-          '<button type="button" class="jos-btn jos-rev-mc-ai-purple" data-jos-act="rev-ai-actions">AI Actions</button>' +
-          '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-ai-refresh">Refresh</button>' +
+
+      '<div class="jos-rev-shot-mid">' +
+        '<section class="jos-rev-shot-ai">' +
+          '<div class="jos-rev-shot-ai-badge" aria-hidden="true">AI</div>' +
+          '<div class="copy">' +
+            '<strong>AI Reputation Summary</strong>' +
+            '<p>' + esc(r.aiSummary || buildReviewsAiSummary(r.reviews)) + '</p>' +
+            '<div class="btns">' +
+              '<button type="button" class="jos-btn jos-rev-shot-outline" data-jos-act="rev-ai-report">View full summary</button>' +
+              '<button type="button" class="jos-btn jos-rev-shot-purple" data-jos-act="rev-ai-actions">See recommendations</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="jos-rev-shot-ai-art" aria-hidden="true"></div>' +
+        '</section>' +
+        '<aside class="jos-rev-shot-action">' +
+          '<div class="head"><span class="rocket" aria-hidden="true">🚀</span><h3>Take Action</h3></div>' +
+          '<div class="row">' +
+            '<span class="ico person" aria-hidden="true"></span>' +
+            '<div class="copy"><strong>Pending requests</strong><span>' + pending + ' waiting to send</span></div>' +
+            '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-go-requests">View</button>' +
+          '</div>' +
+          '<div class="row">' +
+            '<span class="ico g" aria-hidden="true">G</span>' +
+            '<div class="copy"><strong>Sync Google</strong><span>Last synced ' + esc(googleSync) + '</span></div>' +
+            '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-sync-google">Sync</button>' +
+          '</div>' +
+          '<div class="row">' +
+            '<span class="ico fb" aria-hidden="true">f</span>' +
+            '<div class="copy"><strong>Sync Facebook</strong><span>Last synced ' + esc(fbSync) + '</span></div>' +
+            '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-sync-facebook">Sync</button>' +
+          '</div>' +
+        '</aside>' +
+      '</div>' +
+
+      '<div class="jos-rev-shot-bottom">' +
+        '<section class="jos-rev-shot-latest">' +
+          '<div class="head"><h3>Latest Reviews</h3>' +
+            '<button type="button" class="jos-linkish" data-jos-act="rev-view-all">View all reviews</button></div>' +
+          '<div class="list">' + latestHtml + '</div>' +
+          '<button type="button" class="jos-btn jos-rev-shot-viewall" data-jos-act="rev-view-all">View all reviews ›</button>' +
+        '</section>' +
+        '<div class="jos-rev-shot-right">' +
+          '<section class="jos-rev-shot-growth">' +
+            '<div class="head">' +
+              '<h3><span class="chart-ico" aria-hidden="true"></span> Review Growth</h3>' +
+              '<button type="button" class="jos-btn jos-btn-sm jos-rev-growth-dd" data-jos-act="rev-growth-range" data-jos-rev-range="This month">This month ▾</button>' +
+            '</div>' +
+            revMcGrowthChart(growthVals, growthLabs) +
+          '</section>' +
+          '<section class="jos-rev-shot-getmore">' +
+            '<div class="head"><h3><span class="plane-ico" aria-hidden="true"></span> Get More Reviews</h3></div>' +
+            '<div class="link-row">' +
+              '<input readonly value="' + esc(link) + '" id="jos-rev-link">' +
+              '<button type="button" class="jos-btn jos-rev-shot-outline" data-jos-act="rev-copy-link">Copy link</button>' +
+            '</div>' +
+          '</section>' +
         '</div>' +
-      '</section>' +
-      '<div class="jos-rev-mc-main' + (showSide ? '' : ' full') + '">' +
-        '<div class="jos-rev-mc-feed-col">' + tabsHtml + mainBody + '</div>' +
-        (showSide ? renderRevSidebar(root) : '') +
       '</div>' +
+
       renderRevRequestModal(root) + renderRevRecordModal(root) + renderRevKpiDrawer(root) + renderRevDetailDrawer(root) +
     '</div>';
   }
@@ -3699,8 +3875,9 @@
     if (root._josRevBound) return;
     root._josRevBound = true;
     root.addEventListener('input', function (e) {
-      if (e.target && e.target.id === 'jos-rev-search') {
+      if (e.target && (e.target.id === 'jos-rev-search' || e.target.id === 'jos-rev-global-search')) {
         root._josRevQ = e.target.value;
+        if (e.target.id === 'jos-rev-global-search') root._josRevGlobalQ = e.target.value;
         clearTimeout(root._josRevSearchT);
         root._josRevSearchT = setTimeout(function () { renderReviews(); }, 300);
       }
@@ -3717,11 +3894,11 @@
           root._josRevRangeOpen = false;
           return renderReviews();
         }
-        if (root._josRevQ) { root._josRevQ = ''; return renderReviews(); }
+        if (root._josRevQ || root._josRevGlobalQ) { root._josRevQ = ''; root._josRevGlobalQ = ''; return renderReviews(); }
       }
       if (e.key === '/' && !/input|textarea|select/i.test((e.target || {}).tagName || '')) {
         e.preventDefault();
-        var s = el('jos-rev-search'); if (s) s.focus();
+        var s = el('jos-rev-global-search') || el('jos-rev-search'); if (s) s.focus();
       }
       if (e.key === 'r' || e.key === 'R') {
         if (/input|textarea|select/i.test((e.target || {}).tagName || '')) return;
@@ -3752,9 +3929,12 @@
       if (act === 'rev-range-toggle') { root._josRevRangeOpen = !root._josRevRangeOpen; return renderReviews(); }
       if (act === 'rev-range-set') { root._josRevRange = t.getAttribute('data-jos-rev-range'); root._josRevRangeOpen = false; return renderReviews(); }
       if (act === 'rev-kpi-rating') { root._josRevKpiDrawer = 'rating'; return renderReviews(); }
-      if (act === 'rev-kpi-new') { root._josRevKpiDrawer = 'new'; root._josRevTab = 'inbox'; return renderReviews(); }
+      if (act === 'rev-kpi-fivestar' || act === 'rev-kpi-new') { root._josRevKpiDrawer = 'new'; return renderReviews(); }
       if (act === 'rev-kpi-response') { root._josRevKpiDrawer = 'response'; return renderReviews(); }
-      if (act === 'rev-kpi-requests') { root._josRevKpiDrawer = 'requests'; root._josRevTab = 'requests'; return renderReviews(); }
+      if (act === 'rev-kpi-requests') { root._josRevKpiDrawer = 'requests'; return renderReviews(); }
+      if (act === 'rev-view-all') { root._josRevKpiDrawer = 'new'; return renderReviews(); }
+      if (act === 'rev-go-requests') { root._josRevReqModal = true; root._josRevReqDraft = { step: 1, channel: 'sms' }; return renderReviews(); }
+      if (act === 'rev-more' && revIdAttr) { root._josRevSelId = revIdAttr; return renderReviews(); }
       if (act === 'rev-drawer-close') { root._josRevKpiDrawer = null; root._josRevSelId = null; return renderReviews(); }
       if (act === 'rev-expand' && revIdAttr) { root._josRevExpanded = root._josRevExpanded === revIdAttr ? null : revIdAttr; return renderReviews(); }
       if (act === 'rev-open' && revIdAttr) { root._josRevSelId = revIdAttr; return renderReviews(); }
@@ -3771,9 +3951,15 @@
       if (act === 'rev-page-first') { root._josRevPage = 1; return renderReviews(); }
       if (act === 'rev-page-last') { root._josRevPage = 99; return renderReviews(); }
       if (act === 'rev-copy-link') {
-        var link = (el('jos-rev-link') || {}).value || 'hubly.app/review/' + String(S().biz || 'business').replace(/\s+/g, '');
+        var link = (el('jos-rev-link') || {}).value || ('hubly.app/review/' + (allowDemoSeed() ? 'AdriansLawnService' : String(S().biz || 'business').replace(/[^a-zA-Z0-9]+/g, '')));
         if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link);
         return toast('Copied');
+      }
+      if (act === 'rev-sync-google' || act === 'rev-sync-facebook') {
+        var plat = act === 'rev-sync-google' ? 'google' : 'facebook';
+        if (r.platforms && r.platforms[plat]) r.platforms[plat].lastSync = 'just now';
+        toast((plat === 'google' ? 'Google' : 'Facebook') + ' synced');
+        return renderReviews();
       }
       if (act === 'rev-qr') return toast('QR code generated');
       if (act === 'rev-nfc') return toast('NFC card preview ready');
@@ -10060,6 +10246,8 @@
     setInboxMode(false);
     setLeadsMode(false);
     setPipelineMode(false);
+    setMarketingMode(false);
+    setReviewsMode(false);
     updateChrome('dashboard');
     root.classList.add('jos-home-root');
     try {
@@ -13310,6 +13498,8 @@
     setJobsMode(v === 'jobs');
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');
+    setMarketingMode(v === 'marketing');
+    setReviewsMode(v === 'reviews');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,

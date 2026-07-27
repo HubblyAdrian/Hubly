@@ -1,36 +1,23 @@
 # Operate Reviews — Reputation Mission Control
 
-**Status:** 🔓 Explicit reopen (product redesign)  
-**Branch:** `cursor/operate-reviews-mission-control-2662`  
-**Viewport:** max 1600px · `#F7F8FC` · padding 32/32/40
+**Status:** screenshot-exact rebuild  
+**Branch:** `cursor/reviews-screenshot-exact-2662`  
+**Viewport:** max 1600px · `#F5F6FA` · padding 20/40/40  
+**See also:** [REVIEWS_SCREENSHOT_EXACT.md](./REVIEWS_SCREENSHOT_EXACT.md)
 
 ## Layout
 
 ```
-[ Sidebar 260px | Header · Search · Date · Request Review ]
-[                | KPI row (4) ]
-[                | AI Reputation Summary ]
-[                | Feed (9) | Sidebar (3): Growth · Platforms · Goals · Quick Actions ]
-[                | Pagination ]
+[ Sidebar 260px | Top chrome: Search · + New · Ask Hubly · Bell · Profile ]
+[                | Header · Export · This month ]
+[                | KPI row (4): Rating · 5-Star · New · Response ]
+[                | AI Reputation Summary | Take Action ]
+[                | Latest Reviews | Review Growth · Get More Reviews ]
 ```
 
 - App bar hidden while Reviews is active (`jos-reviews-mode`)
-- Header: ⭐ Reviews title, live search, date range, Request Review CTA
-- KPIs: Overall Rating · New Reviews · Response Rate · Review Requests (click → drawer)
-- AI summary strip with View Report · AI Actions · Refresh
-- Feed tabs: Overview · Inbox · Needs Reply · Requests · Analytics · Connections
-- Review cards: avatar · stars · platform · text · tags · Reply / AI Reply / Customer / More
-- Sidebar: Take action · Review growth chart · Platforms · Goals · Quick actions · Copy link
-
-## Behavior
-
-- KPI cards open 560px right drawer (ESC / outside click closes)
-- Search debounced 300ms across name, text, platform, tags
-- Date range updates metrics and feed (demo)
-- Request Review opens 720px 4-step modal
-- Feed filters: rating, platform, tag chips with clear
-- Pagination: 25/50/100 rows
-- Keyboard: `/` search · `R` request · `ESC` close
+- Demo KPIs / latest reviews when `allowDemoSeed()`
+- Tabs, Request Review CTA, Platforms, Goals, Quick actions removed from default view
 
 ## Ownership
 
