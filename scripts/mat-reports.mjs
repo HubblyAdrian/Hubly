@@ -291,7 +291,7 @@ function setMulti(id, values) {
 }
 
 H.renderReportsPage();
-check("Header", "Page renders", /jos-rpt-page|Reports/.test(rptRoot.innerHTML));
+check("Header", "Page renders", /jos-rpt-page|jos-rpt-mc-shell|Reports/.test(rptRoot.innerHTML));
 check("Ownership", "reportsOs created", !!(state.reportsOs && Array.isArray(state.reportsOs.dashboards)));
 check("Ownership", "Seeded dashboards", state.reportsOs.dashboards.length >= 1);
 check("Rule 21", "No payments array", !Object.prototype.hasOwnProperty.call(state.reportsOs, "payments") || !Array.isArray(state.reportsOs.payments));
@@ -407,7 +407,7 @@ check("Design System", "Uses HublyDS", /DS\(\)|pageHeader|HublyDS/.test(jsrc));
 check("Empty States", "Empty helpers", /No dashboard|empty|No forecast|No schedule/i.test(jsrc));
 check("Error States", "Retry markup", /Reports could not load|Retry/.test(jsrc));
 const css = fs.readFileSync(path.join(repoRoot, "public/journey-os/operate-pixel.css"), "utf8");
-check("Responsive CSS", "Reports layout", /jos-rpt-page|jos-rpt-/.test(css));
+check("Responsive CSS", "Reports layout", /jos-rpt-page|jos-rpt-mc-shell|jos-rpt-/.test(css));
 check("Mount", "jos-reports-root in hubly.html", /jos-reports-root/.test(fs.readFileSync(path.join(repoRoot, "public/hubly.html"), "utf8")));
 
 let validatorPass = false;
@@ -470,7 +470,7 @@ window.localStorage={getItem:function(){return null;},setItem:function(){}};
 <script src="/journey-os/design-system.js"></script>
 <script src="/journey-os/hubly-events.js"></script>
 <script src="/journey-os/journey.js"></script>
-<script>HublyJourneyOS.renderReportsPage();document.title=document.getElementById("jos-reports-root").innerHTML.includes("jos-rpt-page")?"MAT_OK":"MAT_FAIL";</script>
+<script>HublyJourneyOS.renderReportsPage();document.title=(/jos-rpt-page|jos-rpt-mc-shell/.test(document.getElementById("jos-reports-root").innerHTML))?"MAT_OK":"MAT_FAIL";</script>
 </body></html>`;
   fs.writeFileSync(path.join(pub, "mat-reports.html"), matHtml);
   const browser = await chromium.launch({

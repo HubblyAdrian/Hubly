@@ -15,8 +15,8 @@
 | 📣 Marketing still works | ✅ · len=7426 |
 | ⭐ Reviews still works | ✅ · len=4361 |
 | 🔁 Memberships still works | ✅ · len=3127 |
-| 💰 Revenue still works | ✅ · len=6225 |
-| 📊 Reports still works | ✅ · len=4509 |
+| 💰 Revenue still works | ✅ · len=3315 |
+| 📊 Reports still works | ✅ · len=9564 |
 | ✨ Ask Hubly still works | ✅ · len=4465 |
 | ⚙️ Settings still works | ✅ · len=9961 |
 

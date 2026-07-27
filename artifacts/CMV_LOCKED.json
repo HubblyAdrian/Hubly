@@ -59,7 +59,7 @@
     {
       "name": "📊 Reports still works",
       "pass": true,
-      "detail": "len=4509"
+      "detail": "len=9564"
     },
     {
       "name": "✨ Ask Hubly still works",
