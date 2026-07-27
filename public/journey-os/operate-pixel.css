@@ -62,14 +62,16 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   min-height:calc(100vh - 64px);
 }
 
-/* Dark sidebar */
+/* Dark sidebar — same collapsed/expanded chrome on every Operate tab */
 #p-app.jos-pixel .app-nav{
-  width:var(--nav);
+  width:var(--nav)!important;
   background:linear-gradient(180deg,var(--jos-sidebar) 0%,#0C111A 100%);
   border-right:1px solid rgba(255,255,255,.06);
   color:rgba(255,255,255,.78);
   box-shadow:none;
   display:flex;flex-direction:column;
+  align-items:stretch;
+  overflow:hidden;
 }
 #p-app.jos-pixel .nav-brand-row{
   padding:18px 18px 10px;display:flex;align-items:center;gap:10px;
@@ -82,19 +84,33 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 }
 #p-app.jos-pixel .nav-sec{display:none}
 #p-app.jos-pixel .ni{
-  margin:2px 12px;padding:0 16px;height:48px;border-radius:12px;border-left:0;
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  justify-content:flex-start;
+  margin:2px 12px;padding:0 16px;height:44px;border-radius:12px;
+  border:0!important;border-left:0!important;outline:none;
   color:rgba(255,255,255,.72);font-size:13px;font-weight:600;gap:12px;
-  width:calc(100% - 24px);box-sizing:border-box;
+  width:calc(100% - 24px);max-width:none;box-sizing:border-box;
+  white-space:nowrap;overflow:hidden;text-align:left;
 }
 #p-app.jos-pixel .ni svg{width:20px;height:20px;opacity:.8;stroke:currentColor;flex-shrink:0}
 #p-app.jos-pixel .ni .ni-emoji{display:none}
-#p-app.jos-pixel .ni:hover{color:#fff;background:rgba(217,99,45,.22)}
-#p-app.jos-pixel .ni.active{
-  color:#fff;background:var(--jos-brand);
-  box-shadow:0 6px 18px rgba(217,99,45,.35);
+#p-app.jos-pixel .ni .ni-lbl{
+  display:inline-block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
+#p-app.jos-pixel .ni:hover{color:#fff;background:rgba(217,99,45,.22)}
+#p-app.jos-pixel .ni.active,
+#p-app.jos-pixel .ni.active:hover{
+  color:#fff!important;
+  background:var(--jos-brand)!important;
+  box-shadow:0 6px 18px rgba(217,99,45,.35)!important;
+  border:0!important;outline:none!important;
+}
+#p-app.jos-pixel .ni.active svg{opacity:1;color:#fff}
 /* Need a hand removed — Ask Hubly / chat bubble is support */
-#p-app.jos-pixel.jos-nav-expanded{--nav:260px}
+#p-app.jos-pixel.jos-nav-expanded{--nav:260px!important}
 #p-app.jos-pixel .nav-rail-toggle{
   width:100%;appearance:none;border:1px solid rgba(255,255,255,.12);
   background:rgba(255,255,255,.06);color:rgba(255,255,255,.85);
@@ -109,6 +125,7 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 #p-app.jos-pixel.jos-nav-expanded .nav-rail-toggle::after{
   content:"Collapse menu";font-size:12px;font-weight:700;letter-spacing:.02em;
 }
+#p-app.jos-pixel:not(.jos-nav-expanded) .app-nav{align-items:center}
 #p-app.jos-pixel:not(.jos-nav-expanded) .nav-scroll{
   width:100%;padding:12px 0 8px;display:flex;flex-direction:column;align-items:center;gap:4px;
 }
@@ -117,8 +134,8 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 }
 #p-app.jos-pixel:not(.jos-nav-expanded) .nav-hubly-mark{height:18px;width:auto}
 #p-app.jos-pixel:not(.jos-nav-expanded) .ni{
-  width:56px;height:48px;margin:0;padding:0;border-radius:12px;
-  justify-content:center;position:relative;gap:0;
+  width:56px!important;height:48px;margin:0;padding:0;border-radius:12px;
+  justify-content:center!important;position:relative;gap:0;
 }
 #p-app.jos-pixel:not(.jos-nav-expanded) .ni .ni-lbl,
 #p-app.jos-pixel:not(.jos-nav-expanded) .nav-profile-meta,
@@ -131,7 +148,7 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 #p-app.jos-pixel:not(.jos-nav-expanded) .nav-bot{width:80px;padding:8px;box-sizing:border-box}
 #p-app.jos-pixel:not(.jos-nav-expanded) .nav-profile{justify-content:center;padding:8px}
 #p-app.jos-pixel:not(.jos-nav-expanded) .nav-signout{
-  width:56px;height:40px;margin:4px auto 0;justify-content:center;padding:0;
+  width:56px;height:40px;margin:4px auto 0;justify-content:center!important;padding:0;
 }
 #p-app.jos-pixel:not(.jos-nav-expanded) .nav-jobs-new{display:none!important}
 #p-app.jos-pixel .nav-view-site{
@@ -142,27 +159,27 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   width:64px;margin:0 auto 8px;text-align:center;font-size:9px;padding:6px 4px;line-height:1.25;
 }
 #p-app.jos-pixel.jos-nav-expanded .nav-view-site{
-  margin:6px 14px 8px;padding:8px 12px;font-size:12px;border-radius:10px;
+  margin:6px 14px 8px;padding:8px 12px;font-size:12px;border-radius:10px;text-align:left;
 }
 #p-app.jos-pixel .nav-view-site:hover{color:#FDBA74;background:rgba(255,255,255,.06)}
-#p-app.jos-pixel .app-nav{width:var(--nav);align-items:stretch;overflow:hidden}
-#p-app.jos-pixel:not(.jos-nav-expanded) .app-nav{align-items:center}
-#p-app.jos-pixel .app-main{overflow-x:hidden;min-width:0}
+#p-app.jos-pixel .app-main{overflow-x:hidden;min-width:0;margin-left:var(--nav)}
 
-/* Expanded nav restores labels even in inbox/jobs modes */
+/* Expanded: icon LEFT of label — never stacked — same on Home/Inbox/every tab */
 #p-app.jos-pixel.jos-nav-expanded .ni .ni-lbl,
 #p-app.jos-pixel.jos-nav-expanded .nav-profile-meta,
 #p-app.jos-pixel.jos-nav-expanded .nav-profile-chev,
-#p-app.jos-pixel.jos-nav-expanded .nav-signout .ni-lbl{display:inline}
-#p-app.jos-pixel.jos-nav-expanded .nav-profile-meta{display:block}
+#p-app.jos-pixel.jos-nav-expanded .nav-signout .ni-lbl{display:inline-block!important}
+#p-app.jos-pixel.jos-nav-expanded .nav-profile-meta{display:block!important}
 #p-app.jos-pixel.jos-nav-expanded .ni{
-  width:calc(100% - 24px);height:48px;margin:2px 12px;padding:0 16px;justify-content:flex-start;gap:12px;
+  width:calc(100% - 24px)!important;height:44px;margin:2px 12px;padding:0 14px;
+  justify-content:flex-start!important;gap:12px;
+  flex-direction:row!important;flex-wrap:nowrap!important;
 }
 #p-app.jos-pixel.jos-nav-expanded .nav-bot{width:auto;padding:10px 10px 12px}
 #p-app.jos-pixel.jos-nav-expanded .nav-brand-row{width:auto;height:auto;min-height:0;padding:18px 18px 10px;justify-content:flex-start}
 #p-app.jos-pixel.jos-nav-expanded .nav-scroll{align-items:stretch;padding:10px 0 8px;display:block}
 #p-app.jos-pixel.jos-nav-expanded .nav-profile{justify-content:flex-start;padding:8px 10px}
-#p-app.jos-pixel.jos-nav-expanded .nav-signout{width:auto;height:auto;margin:0;padding:0 16px;justify-content:flex-start;gap:12px}
+#p-app.jos-pixel.jos-nav-expanded .nav-signout{width:auto;height:auto;margin:0;padding:0 16px;justify-content:flex-start!important;gap:12px}
 #p-app.jos-pixel.jos-nav-expanded .nav-count-badge{position:static;margin-left:auto}
 #p-app.jos-pixel.jos-inbox-mode #jos-inbox-root,
 #p-app.jos-pixel.jos-leads-mode #jos-leads-root{overflow-x:hidden!important}
@@ -170,7 +187,6 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 #p-app.jos-pixel.jos-leads-mode .jos-ld-header h1{font-size:20px}
 #p-app.jos-pixel.jos-leads-mode .jos-ld-ws-name strong{font-size:18px}
 #p-app.jos-pixel.jos-inbox-mode .jos-ibx-title h1{font-size:20px}
-#p-app.jos-pixel .ni.active svg{opacity:1;color:#fff}
 #p-app.jos-pixel .nav-count-badge{
   margin-left:auto;min-width:20px;height:20px;padding:0 6px;
   border-radius:999px;background:var(--jos-brand);color:#fff;
@@ -4003,10 +4019,10 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   .jos-jobs-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(max-width:1023px){
-  #p-app.jos-pixel.jos-jobs-mode{--nav:80px}
-  #p-app.jos-pixel.jos-jobs-mode .ni .ni-lbl,
-  #p-app.jos-pixel.jos-jobs-mode .nav-profile-meta{display:none}
-  #p-app.jos-pixel.jos-jobs-mode .nav-jobs-new{width:56px;margin:0 auto 8px;font-size:18px;padding:0}
+  #p-app.jos-pixel.jos-jobs-mode:not(.jos-nav-expanded){--nav:80px}
+  #p-app.jos-pixel.jos-jobs-mode:not(.jos-nav-expanded) .ni .ni-lbl,
+  #p-app.jos-pixel.jos-jobs-mode:not(.jos-nav-expanded) .nav-profile-meta{display:none!important}
+  #p-app.jos-pixel.jos-jobs-mode:not(.jos-nav-expanded) .nav-jobs-new{width:56px;margin:0 auto 8px;font-size:18px;padding:0}
   .jos-jobs-main{padding:20px 16px 32px}
   .jos-jobs-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .jos-jobs-search{min-width:100%}
@@ -4346,9 +4362,9 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   .jos-ld-global-search{width:min(360px,30vw);flex-basis:min(360px,30vw)}
 }
 @media(max-width:1023px){
-  #p-app.jos-pixel.jos-leads-mode{--nav:80px}
-  #p-app.jos-pixel.jos-leads-mode .ni .ni-lbl,
-  #p-app.jos-pixel.jos-leads-mode .nav-profile-meta{display:none}
+  #p-app.jos-pixel.jos-leads-mode:not(.jos-nav-expanded){--nav:80px}
+  #p-app.jos-pixel.jos-leads-mode:not(.jos-nav-expanded) .ni .ni-lbl,
+  #p-app.jos-pixel.jos-leads-mode:not(.jos-nav-expanded) .nav-profile-meta{display:none!important}
   .jos-ld-layout{grid-template-columns:1fr}
   .jos-ld-inbox{max-height:42vh}
   .jos-ld-header{flex-wrap:wrap;height:auto;padding:12px 16px;gap:12px}
@@ -4632,9 +4648,9 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   .jos-cm-global-search{width:min(320px,28vw);flex-basis:min(320px,28vw)}
 }
 @media(max-width:1023px){
-  #p-app.jos-pixel.jos-customers-mode{--nav:80px}
-  #p-app.jos-pixel.jos-customers-mode .ni .ni-lbl,
-  #p-app.jos-pixel.jos-customers-mode .nav-profile-meta{display:none}
+  #p-app.jos-pixel.jos-customers-mode:not(.jos-nav-expanded){--nav:80px}
+  #p-app.jos-pixel.jos-customers-mode:not(.jos-nav-expanded) .ni .ni-lbl,
+  #p-app.jos-pixel.jos-customers-mode:not(.jos-nav-expanded) .nav-profile-meta{display:none!important}
   .jos-cm-header{flex-wrap:wrap;min-height:0}
   .jos-cm-global-search{order:3;width:100%;flex:1 1 100%}
   .jos-cm-fab{display:flex;align-items:center;justify-content:center}
@@ -4671,8 +4687,46 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 }
 
 
-/* operate-nav-unify: one sidebar chrome everywhere */
+/* operate-nav-unify: one sidebar chrome everywhere — last-wins lock */
 #p-app.jos-pixel .app-nav .ni[title]{/* titles kept for collapsed a11y */}
 #p-app.jos-pixel.jos-nav-expanded .ni{position:relative}
 #p-app.jos-pixel .nav-jobs-new{display:none}
 #p-app.jos-pixel.jos-nav-expanded.jos-jobs-mode .nav-jobs-new{display:flex}
+#p-app.jos-pixel.jos-nav-expanded{
+  --nav:260px!important;
+}
+#p-app.jos-pixel .app-nav{
+  width:var(--nav)!important;
+}
+#p-app.jos-pixel .ni,
+#p-app.jos-pixel.jos-inbox-mode .ni,
+#p-app.jos-pixel.jos-jobs-mode .ni,
+#p-app.jos-pixel.jos-leads-mode .ni,
+#p-app.jos-pixel.jos-customers-mode .ni,
+#p-app.jos-pixel.jos-pipeline-mode .ni,
+#p-app.jos-pixel.jos-marketing-mode .ni,
+#p-app.jos-pixel.jos-reviews-mode .ni,
+#p-app.jos-pixel.jos-memberships-mode .ni,
+#p-app.jos-pixel.jos-settings-mode .ni,
+#p-app.jos-pixel.jos-storefront-mode .ni{
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+}
+#p-app.jos-pixel .ni.active,
+#p-app.jos-pixel.jos-inbox-mode .ni.active,
+#p-app.jos-pixel.jos-jobs-mode .ni.active,
+#p-app.jos-pixel.jos-leads-mode .ni.active,
+#p-app.jos-pixel.jos-customers-mode .ni.active,
+#p-app.jos-pixel.jos-pipeline-mode .ni.active,
+#p-app.jos-pixel.jos-marketing-mode .ni.active,
+#p-app.jos-pixel.jos-reviews-mode .ni.active,
+#p-app.jos-pixel.jos-memberships-mode .ni.active,
+#p-app.jos-pixel.jos-settings-mode .ni.active,
+#p-app.jos-pixel.jos-storefront-mode .ni.active{
+  color:#fff!important;
+  background:var(--jos-brand)!important;
+  box-shadow:0 6px 18px rgba(217,99,45,.35)!important;
+  border:0!important;
+}
