@@ -15,7 +15,7 @@
 | 📣 Marketing still works | ✅ · len=7426 |
 | ⭐ Reviews still works | ✅ · len=4361 |
 | 🔁 Memberships still works | ✅ · len=3127 |
-| 💰 Revenue still works | ✅ · len=3315 |
+| 💰 Revenue still works | ✅ · len=6225 |
 | 📊 Reports still works | ✅ · len=4509 |
 | ✨ Ask Hubly still works | ✅ · len=4465 |
 | ⚙️ Settings still works | ✅ · len=3268 |
@@ -25,7 +25,3 @@
 ### Result
 
 ✅ CMV PASS
-
-### Context
-
-Rule #29 Agency lock · Module 7 AI Launch Coach architecture. No UI.

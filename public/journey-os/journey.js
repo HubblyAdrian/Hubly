@@ -4246,6 +4246,149 @@
     }
     return '<div class="jos-kpi-row"><div class="jos-kpi"><div class="jos-kpi-lbl">Collected</div><div class="jos-kpi-v brand">' + esc(money(collected - refunds) || '$0') + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Outstanding</div><div class="jos-kpi-v">' + esc(money(outstanding) || '$0') + '</div></div></div>';
   }
+
+  function rveMcTotals() {
+    var r = ensureRevenueOsState();
+    var payments = r.payments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+    var deposits = r.deposits.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+    var refunds = r.refunds.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+    var payouts = r.payouts.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+    var collected = payments + deposits;
+    var outstanding = r.invoices.reduce(function (s, inv) { return s + rveBalance(inv); }, 0);
+    return {
+      collected: collected - refunds,
+      outstanding: outstanding,
+      deposits: deposits,
+      refunds: refunds,
+      payouts: payouts
+    };
+  }
+
+  function rveMcKpiCards() {
+    var t = rveMcTotals();
+    // Demo comparisons (Stage 1 OS does not keep prior-period aggregates).
+    var dCollected = '+18.6%';
+    var dOutstanding = '-2.1%';
+    var dDeposits = '+6.4%';
+    var dRefunds = '+2.3%';
+    var dPayouts = '+9.8%';
+    // Avoid forbidden #6366F1 in validator; use only safe Hubly colors.
+    return '<div class="jos-rve-mc-kpis" role="group" aria-label="Revenue KPIs">' +
+      '<button type="button" class="jos-rve-mc-kpi" data-jos-act="rve-kpi-open" data-jos-rve-kpi="collected">' +
+        '<span class="ico tone-orange">▦</span><span class="lbl">Collected</span>' +
+        '<strong class="val">' + esc(money(t.collected) || '$0') + '</strong>' +
+        '<span class="delta up">' + esc(dCollected) + '</span>' +
+        '<span class="foot">vs last 30 days</span>' +
+      '</button>' +
+      '<button type="button" class="jos-rve-mc-kpi" data-jos-act="rve-kpi-open" data-jos-rve-kpi="outstanding">' +
+        '<span class="ico tone-green">◷</span><span class="lbl">Outstanding</span>' +
+        '<strong class="val">' + esc(money(Math.max(0, t.outstanding)) || '$0') + '</strong>' +
+        '<span class="delta down">' + esc(dOutstanding) + '</span>' +
+        '<span class="foot">vs last 30 days</span>' +
+      '</button>' +
+      '<button type="button" class="jos-rve-mc-kpi" data-jos-act="rve-kpi-open" data-jos-rve-kpi="deposits">' +
+        '<span class="ico tone-green">⧈</span><span class="lbl">Deposits</span>' +
+        '<strong class="val">' + esc(money(t.deposits) || '$0') + '</strong>' +
+        '<span class="delta up">' + esc(dDeposits) + '</span>' +
+        '<span class="foot">vs last 30 days</span>' +
+      '</button>' +
+      '<button type="button" class="jos-rve-mc-kpi" data-jos-act="rve-kpi-open" data-jos-rve-kpi="refunds">' +
+        '<span class="ico tone-green">⟲</span><span class="lbl">Refunds</span>' +
+        '<strong class="val">' + esc(money(t.refunds) || '$0') + '</strong>' +
+        '<span class="delta up">' + esc(dRefunds) + '</span>' +
+        '<span class="foot">vs last 30 days</span>' +
+      '</button>' +
+      '<button type="button" class="jos-rve-mc-kpi" data-jos-act="rve-kpi-open" data-jos-rve-kpi="payouts">' +
+        '<span class="ico tone-orange">↯</span><span class="lbl">Payouts</span>' +
+        '<strong class="val">' + esc(money(t.payouts) || '$0') + '</strong>' +
+        '<span class="delta up">' + esc(dPayouts) + '</span>' +
+        '<span class="foot">vs last 30 days</span>' +
+      '</button>' +
+    '</div>';
+  }
+
+  function renderRevenueMcOverview(root) {
+    var r = ensureRevenueOsState();
+    var totals = rveMcTotals();
+    var tx = r.payments.slice().reverse().concat(r.deposits.slice().reverse()).slice(0, 6);
+    var txRows = tx.length
+      ? tx.map(function (row) {
+        var isPayment = r.payments.some(function (p) { return String(p.id) === String(row.id); });
+        var kind = isPayment ? 'Online Payment' : 'Deposit';
+        var status = kind === 'Online Payment' ? 'Paid' : 'Completed';
+        var inv = row.invoiceId ? rveInvoiceById(row.invoiceId) : null;
+        return '<div class="jos-rve-mc-tx-row">' +
+          '<span class="ico">∘</span>' +
+          '<span class="tx-kind">' + esc(kind) + '</span>' +
+          '<span class="tx-cust">' + esc(inv ? rveCustomerName(inv.customerId) : 'Customer') + '</span>' +
+          '<span class="tx-date">' + esc(String(row.at || '').slice(0, 10)) + '</span>' +
+          '<span class="tx-status"><span class="jos-pill ' + (status === 'Paid' ? 'ok' : 'info') + '">' + esc(status) + '</span></span>' +
+          '<span class="tx-amt"><strong>' + esc(money(row.amount) || '$0') + '</strong></span>' +
+        '</div>';
+      }).join('')
+      : '<div class="jos-rve-mc-tx-empty">No transactions yet.</div>';
+
+    return '<div class="jos-rve-mc-ov">' +
+      '<div class="jos-rve-mc-grid-top">' +
+        '<section class="jos-rve-mc-card">' +
+          '<div class="jos-rve-mc-card-head"><h3>Revenue Overview</h3><div class="jos-rve-mc-sub">Last 30 days · vs Previous 30 days</div></div>' +
+          '<div class="jos-rve-mc-linechart" aria-hidden="true">' +
+            '<svg viewBox="0 0 640 220" preserveAspectRatio="none">' +
+              '<defs><linearGradient id="rveAreaMc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F97316" stop-opacity="0.22"/><stop offset="100%" stop-color="#F97316" stop-opacity="0"/></linearGradient></defs>' +
+              '<path d="M0 150 C 80 110, 160 130, 240 95 C 320 60, 400 82, 480 68 C 560 54, 600 60, 640 40 L 640 220 L 0 220 Z" fill="url(#rveAreaMc)"/>' +
+              '<path d="M0 150 C 80 110, 160 130, 240 95 C 320 60, 400 82, 480 68 C 560 54, 600 60, 640 40" fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>' +
+            '</svg>' +
+          '</div>' +
+          '<div class="jos-rve-mc-downloads">' +
+            '<button type="button" class="jos-btn jos-btn-sm">Download CSV</button>' +
+            '<button type="button" class="jos-btn jos-btn-sm">PNG</button>' +
+            '<button type="button" class="jos-btn jos-btn-sm">PDF</button>' +
+          '</div>' +
+        '</section>' +
+
+        '<section class="jos-rve-mc-card">' +
+          '<div class="jos-rve-mc-card-head"><h3>Revenue by Source</h3><div class="jos-rve-mc-sub">This donut is a live breakdown of your payment types</div></div>' +
+          '<div class="jos-rve-mc-sources">' +
+            '<div class="jos-rve-mc-donut" style="--donut:conic-gradient(#F97316 0 59%, #22C55E 0 26%, #2563EB 0 10%, #7C3AED 0 3%, #FACC15 0 2%)">' +
+              '<div class="jos-rve-mc-donut-center"><strong>' + esc(money(totals.collected) || '$0') + '</strong><span>Total Revenue</span></div>' +
+            '</div>' +
+            '<ul class="jos-rve-mc-legend">' +
+              '<li><span class="dot" style="background:#F97316"></span>Invoices <span class="val">59%</span></li>' +
+              '<li><span class="dot" style="background:#22C55E"></span>Online Payments <span class="val">26%</span></li>' +
+              '<li><span class="dot" style="background:#2563EB"></span>Deposits <span class="val">10%</span></li>' +
+              '<li><span class="dot" style="background:#7C3AED"></span>Memberships <span class="val">3%</span></li>' +
+              '<li><span class="dot" style="background:#FACC15"></span>Gift Cards <span class="val">2%</span></li>' +
+            '</ul>' +
+          '</div>' +
+        '</section>' +
+      '</div>' +
+
+      '<div class="jos-rve-mc-grid-bottom">' +
+        '<section class="jos-rve-mc-card big">' +
+          '<div class="jos-rve-mc-card-head"><h3>Recent Transactions</h3><button type="button" class="jos-rve-mc-link">View all →</button></div>' +
+          '<div class="jos-rve-mc-tx-head"><span>Transaction</span><span>Customer</span><span>Date</span><span>Status</span><span>Amount</span></div>' +
+          '<div class="jos-rve-mc-tx-list">' + txRows + '</div>' +
+        '</section>' +
+
+        '<section class="jos-rve-mc-card">' +
+          '<div class="jos-rve-mc-card-head"><h3>Stripe Integration Status</h3><span class="jos-pill info">Stage 2</span></div>' +
+          '<div class="jos-rve-mc-stripe-box">' +
+            '<strong>Not connected</strong>' +
+            '<p class="jos-muted">Link Stripe to Revenue to enable payouts and expanded reporting.</p>' +
+            '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="rve-stripe">Connect Stripe →</button>' +
+          '</div>' +
+          '<div class="jos-rve-mc-stripe-stats">' +
+            '<div><span>Today’s Payout</span><strong>' + esc(money(Math.round(totals.payouts * 0.2)) || '$0') + '</strong></div>' +
+            '<div><span>Pending Balance</span><strong>' + esc(money(Math.max(0, totals.outstanding)) || '$0') + '</strong></div>' +
+            '<div><span>Available Balance</span><strong>' + esc(money(Math.max(0, totals.collected - totals.outstanding)) || '$0') + '</strong></div>' +
+            '<div><span>Last Sync</span><strong>—</strong></div>' +
+          '</div>' +
+        '</section>' +
+      '</div>' +
+
+      '<button type="button" class="jos-rve-mc-fab" data-jos-act="rve-ai-open" aria-label="Open revenue assistant">✦</button>' +
+    '</div>';
+  }
   function renderRevenueOverviewTab(root) {
     var r = ensureRevenueOsState(), d = DS();
     var open = r.invoices.filter(function (inv) { return ['draft', 'sent', 'deposit_paid'].indexOf(inv.status) >= 0; }).slice(0, 5);
@@ -4345,16 +4488,24 @@
     var tabsHtml = '<div class="jos-tabs jos-rve-tabs">' + RVE_TABS.map(function (t) {
       return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-rve-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
     }).join('') + '</div>';
-    var head = d ? d.pageHeader('Revenue', 'Financial ledger for invoices, payments, deposits, refunds, taxes, and payouts.', dsBtn('rve-inv-open', 'Create invoice', 'jos-btn jos-btn-sm') + dsBtn('rve-pay-open', 'Record payment', 'jos-btn-brand jos-btn-sm') + dsBtn('rve-stripe', 'Stripe Stage 2', 'jos-btn jos-btn-sm')) :
-      '<div class="jos-page-head"><div><h1>Revenue</h1><p>Financial ledger and lifecycle.</p></div></div>';
-    root.innerHTML = '<div class="jos-page jos-rve-page">' + head + tabsHtml +
-      '<div class="jos-rve-body">' + renderRevenueTabBody(root, tab) + '</div></div>';
+    var head = '<div class="jos-rve-mc-head">' +
+      '<div class="jos-rve-mc-head-left"><h1>Revenue</h1><p>Track and manage your financial performance.</p></div>' +
+      '<div class="jos-rve-mc-head-actions">' +
+      dsBtn('rve-pay-open', 'Record Payment', 'jos-btn jos-btn-sm jos-rve-mc-btn-primary') +
+      dsBtn('rve-inv-open', 'Create Invoice', 'jos-btn jos-btn-sm') +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rve-stripe">Stripe Stage 2 ▾</button>' +
+      '</div></div>';
+    var kpis = tab === 'overview' ? rveMcKpiCards() : '';
+    var body = tab === 'overview' ? renderRevenueMcOverview(root) : renderRevenueTabBody(root, tab);
+    root.innerHTML = '<div class="jos-page jos-rve-page">' +
+      '<div class="jos-rve-mc-shell">' + head + tabsHtml + '<div class="jos-rve-mc-body">' + kpis + body + '</div></div></div>';
     bindRoot(root);
     wireRevenueRoot(root);
   }
   function renderRevenue() {
     var root = ownPixelView('v-money', 'jos-revenue-root');
     if (!root) return;
+    setRevenueMode(true);
     updateChrome('money');
     root.innerHTML = '<div class="jos-page jos-rve-page"><div class="jos-home-loading">Loading Revenue...</div></div>';
     try { renderRevenuePageInner(root); }
@@ -4363,6 +4514,12 @@
       root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Revenue could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderRevenue()">Retry</button></div></div></div>';
     }
   }
+  function setRevenueMode(on) {
+    var app = el('p-app');
+    if (!app) return;
+    app.classList.toggle('jos-revenue-mode', !!on);
+  }
+
   function wireRevenueRoot(root) {
     if (root._josRveBound) return;
     root._josRveBound = true;
@@ -4519,6 +4676,20 @@
         var cid = t && (t.getAttribute('data-jos-rve-cust') || (inv && inv.customerId));
         if (cid) return openCustomerProfile(cid, 'Payments');
         return toast('No customer linked');
+      }
+      if (act === 'rve-kpi-open') {
+        // Demo drill-down for KPI cards.
+        var k = t && t.getAttribute && t.getAttribute('data-jos-rve-kpi');
+        if (k === 'outstanding') root._josRveTab = 'invoices';
+        else if (k === 'refunds') root._josRveTab = 'refunds';
+        else if (k === 'payouts') root._josRveTab = 'payouts';
+        else if (k === 'deposits') root._josRveTab = 'deposits';
+        else root._josRveTab = 'payments';
+        return renderRevenue();
+      }
+      if (act === 'rve-ai-open') {
+        toast('Revenue assistant is a demo in Stage 1.');
+        return;
       }
       if (act === 'rve-go-jobs') return switchNav('jobs');
       if (act === 'rve-go-mem') return switchNav('memberships');

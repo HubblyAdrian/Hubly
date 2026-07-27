@@ -1,6 +1,6 @@
 # Module 11 — 💰 Revenue
 
-**Status:** 🔒 OS locked · Stage 1 COMPLETE · Stage 2 ⏸ Deferred  
+**Status:** 🔓 Explicit reopen (Mission Control dashboard) · Stage 1 COMPLETE · Stage 2 ⏸ Deferred  
 **PR:** [#254](https://github.com/HubblyAdrian/Hubly/pull/254) (merged)  
 **Architecture (required):** [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md)  
 **Events:** [EVENTS.md](./EVENTS.md) (Rules #17–18 · #20)  

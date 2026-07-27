@@ -1,0 +1,380 @@
+{
+  "accepted": true,
+  "consoleErrors": 0,
+  "validatorPass": true,
+  "cmvPass": true,
+  "desktopOk": true,
+  "tabletOk": true,
+  "mobileOk": true,
+  "eventLog": [
+    "invoice.sent",
+    "deposit.paid",
+    "payment.received",
+    "invoice.paid",
+    "refund.issued",
+    "payout.completed",
+    "invoice.voided"
+  ],
+  "results": [
+    {
+      "section": "Events",
+      "name": "HublyEvents loaded",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 20",
+      "name": "Financial event constants",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Header",
+      "name": "Page renders",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Ownership",
+      "name": "revenueOs created",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Ownership",
+      "name": "Seeded invoices from jobs",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Architecture",
+      "name": "REVENUE_ARCHITECTURE present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Architecture",
+      "name": "Rule #20 in engineering rules",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "overview",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "invoices",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "payments",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "deposits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "refunds",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "taxes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "payouts",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "activity",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Invoices",
+      "name": "Draft created",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Invoices",
+      "name": "Sent",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "invoice.sent published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Deposits",
+      "name": "Deposit recorded",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "deposit.paid published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Payments",
+      "name": "Payment recorded",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Invoices",
+      "name": "Paid in full",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "payment.received published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "invoice.paid published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Refunds",
+      "name": "Refund issued",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "refund.issued published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 20",
+      "name": "Payments not deleted on refund",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Payouts",
+      "name": "Payout completed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "payout.completed published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Invoices",
+      "name": "Voided",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "invoice.voided published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 18",
+      "name": "HublyEvents history frozen",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 20",
+      "name": "Activity frozen append-only",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Stage 2",
+      "name": "Stripe placeholder",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "E2E Journey",
+      "name": "Open customer profile",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 15",
+      "name": "Owns revenueOs",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 19",
+      "name": "No paymentCustomers clone",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 17",
+      "name": "Publishes HublyEvents",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Design System",
+      "name": "Uses HublyDS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rve-inv-open",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rve-inv-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rve-inv-send",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rve-inv-void",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rve-pay-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rve-dep-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rve-ref-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rve-payout-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rve-stripe",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rve-open-customer",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Empty States",
+      "name": "Empty helpers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Error States",
+      "name": "Retry markup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive CSS",
+      "name": "Revenue layout",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Load order",
+      "name": "hubly.html loads hubly-events",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Mount",
+      "name": "jos-revenue-root in hubly.html",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Validator",
+      "name": "check-customer-journey-os",
+      "ok": true,
+      "detail": "PASS in 32ms"
+    },
+    {
+      "section": "CMV",
+      "name": "Locked modules incl. Memberships",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Console",
+      "name": "Console errors = 0",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "section": "Responsive",
+      "name": "Desktop",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive",
+      "name": "Tablet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive",
+      "name": "Mobile",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 **Module:** 💰 Revenue  
 **Stage:** 1 — Operating System  
 **Branch:** `cursor/operate-revenue-2662`  
-**Date:** 2026-07-26  
+**Date:** 2026-07-27  
 **Runner:** `node scripts/mat-revenue.mjs`  
 **Architecture:** [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md)  
 **Rules:** #14–20
@@ -210,7 +210,7 @@
 - ✅ jos-revenue-root in hubly.html
 
 ### Validator (1/1)
-- ✅ check-customer-journey-os — PASS in 25ms
+- ✅ check-customer-journey-os — PASS in 32ms
 
 ### CMV (1/1)
 - ✅ Locked modules incl. Memberships

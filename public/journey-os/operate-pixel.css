@@ -1494,6 +1494,121 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   .jos-rve-form,.jos-rve-money-row{grid-template-columns:1fr}
 }
 
+/* Revenue — Mission Control overlay */
+#p-app.jos-pixel.jos-revenue-mode .app-bar{display:none!important}
+#p-app.jos-pixel.jos-revenue-mode .app-main{margin-left:var(--nav);background:#F8F9FB}
+#p-app.jos-pixel.jos-revenue-mode #jos-revenue-root{min-height:calc(100vh - 64px);overflow-y:auto}
+#p-app.jos-pixel.jos-revenue-mode .jos-page{
+  padding:32px!important;
+  max-width:1440px!important;
+  background:transparent!important;
+}
+
+.jos-rve-mc-shell{display:flex;flex-direction:column;gap:18px}
+.jos-rve-mc-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+  margin-bottom:12px;flex-wrap:wrap;
+}
+.jos-rve-mc-head-left h1{margin:0;font-size:36px;font-weight:850;letter-spacing:-.03em;color:var(--jos-navy)}
+.jos-rve-mc-head-left p{margin:4px 0 0;font-size:14px;color:var(--jos-ink-2);max-width:52ch}
+.jos-rve-mc-head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.jos-rve-mc-btn-primary{background:var(--jos-brand)!important;border-color:var(--jos-brand)!important;color:#fff!important}
+
+.jos-rve-mc-body{display:flex;flex-direction:column;gap:18px}
+
+.jos-rve-mc-kpis{
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;
+  height:112px;align-items:stretch;
+}
+.jos-rve-mc-kpi{
+  appearance:none;border:1px solid var(--jos-border);border-radius:16px;
+  background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.04);
+  padding:18px 18px;cursor:pointer;text-align:left;
+  display:flex;flex-direction:column;gap:6px;
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.jos-rve-mc-kpi:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.06)}
+.jos-rve-mc-kpi .ico{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:12px;background:var(--jos-surface-2);color:var(--jos-brand);font-weight:900}
+.jos-rve-mc-kpi .lbl{font-size:12px;font-weight:850;color:var(--jos-ink-3);text-transform:uppercase;letter-spacing:.06em}
+.jos-rve-mc-kpi .val{font-size:22px;font-weight:900;color:var(--jos-navy);display:block;line-height:1.05;margin-top:2px}
+.jos-rve-mc-kpi .delta{font-size:12px;font-weight:900}
+.jos-rve-mc-kpi .delta.up{color:#16a34a}
+.jos-rve-mc-kpi .delta.down{color:#dc2626}
+.jos-rve-mc-kpi .foot{font-size:12px;color:var(--jos-ink-3)}
+
+.jos-rve-mc-grid-top{display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:start}
+.jos-rve-mc-grid-bottom{display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:start}
+
+.jos-rve-mc-card{
+  border:1px solid var(--jos-border);
+  border-radius:16px;background:#fff;
+  box-shadow:0 6px 18px rgba(0,0,0,.04);
+  padding:18px;
+}
+.jos-rve-mc-card.big{padding:18px}
+.jos-rve-mc-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.jos-rve-mc-card-head h3{margin:0;font-size:16px;font-weight:900;color:var(--jos-navy)}
+.jos-rve-mc-sub{font-size:12px;color:var(--jos-ink-2);margin-top:6px}
+.jos-rve-mc-link{
+  appearance:none;border:0;background:transparent;color:var(--jos-brand);cursor:pointer;font:inherit;font-size:12px;font-weight:900
+}
+
+.jos-rve-mc-linechart{height:220px;border-radius:12px;background:linear-gradient(180deg,rgba(249,115,22,.06),rgba(249,115,22,0))}
+.jos-rve-mc-downloads{display:flex;gap:10px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+
+.jos-rve-mc-sources{display:grid;grid-template-columns:1fr;gap:10px}
+.jos-rve-mc-donut{
+  --donut:conic-gradient(#F97316 0 100%);
+  width:190px;height:190px;margin:0 auto;border-radius:50%;
+  background:var(--donut);
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.jos-rve-mc-donut::after{
+  content:'';position:absolute;inset:22px;border-radius:50%;background:#fff;border:1px solid var(--jos-border);
+}
+.jos-rve-mc-donut-center{
+  position:relative;z-index:1;text-align:center;
+  display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;
+}
+.jos-rve-mc-donut-center strong{font-size:18px;font-weight:950;color:var(--jos-navy)}
+.jos-rve-mc-donut-center span{font-size:12px;color:var(--jos-ink-3);font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.jos-rve-mc-legend{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.jos-rve-mc-legend li{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--jos-ink-2)}
+.jos-rve-mc-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:8px}
+.jos-rve-mc-legend .val{font-weight:900;color:var(--jos-navy)}
+
+.jos-rve-mc-tx-head{display:grid;grid-template-columns:1.2fr 1fr .6fr .8fr .9fr;gap:10px;font-size:12px;color:var(--jos-ink-3);font-weight:900;margin-bottom:10px}
+.jos-rve-mc-tx-list{display:flex;flex-direction:column;gap:8px}
+.jos-rve-mc-tx-row{
+  display:grid;grid-template-columns:1.2fr 1fr .6fr .8fr .9fr;gap:10px;align-items:center;
+  padding:10px 12px;border:1px solid var(--jos-border);border-radius:12px;background:#fff;
+}
+.jos-rve-mc-tx-row:hover{background:#FAFAFA}
+.jos-rve-mc-tx-row .ico{color:var(--jos-brand);font-weight:900}
+.jos-rve-mc-tx-empty{color:var(--jos-ink-3);font-size:13px;padding:12px 0}
+
+.jos-rve-mc-stripe-box{padding:14px;border-radius:12px;border:1px dashed rgba(217,99,45,.35);background:var(--jos-brand-soft);color:var(--jos-brand-dark);display:grid;gap:8px}
+.jos-rve-mc-stripe-stats{margin-top:12px;display:grid;gap:8px}
+.jos-rve-mc-stripe-stats strong{color:var(--jos-navy)}
+
+.jos-rve-mc-fab{
+  position:fixed;right:28px;bottom:28px;width:56px;height:56px;border-radius:18px;
+  border:1px solid var(--jos-brand);background:var(--jos-brand);color:#fff;
+  box-shadow:0 10px 26px rgba(217,99,45,.28);
+  cursor:pointer;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;
+}
+
+@media(max-width:980px){
+  .jos-rve-mc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .jos-rve-mc-grid-top,.jos-rve-mc-grid-bottom{grid-template-columns:1fr}
+}
+
+@media(max-width:720px){
+  .jos-rve-mc-tx-head,.jos-rve-mc-tx-row{grid-template-columns:1.3fr .9fr .7fr .8fr}
+  .jos-rve-mc-tx-row .tx-amt{grid-column:1 / -1}
+  .jos-rve-mc-fab{right:16px;bottom:16px}
+}
+
 /* Reports OS */
 .jos-rpt-page{animation:josHomeIn .3s ease both;position:relative}
 .jos-rpt-tabs{margin-bottom:12px;flex-wrap:wrap}

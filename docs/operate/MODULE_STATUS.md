@@ -95,7 +95,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 📣 Marketing | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
 | 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
+| 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
 | 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ✨ Ask Hubly | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ⚙️ Settings | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
@@ -116,7 +116,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 8 | 📣 Marketing | ✅ Locked | ⏸ | [#251](https://github.com/HubblyAdrian/Hubly/pull/251) | 🔒 OS · MAT ✅ · Rules #14–16 · merged |
 | 9 | ⭐ Reviews | 🔓 Reopen | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | Mission Control · [REVIEWS_MISSION_CONTROL.md](./REVIEWS_MISSION_CONTROL.md) |
 | 10 | 🔁 Memberships | ✅ Locked | ⏸ | [#253](https://github.com/HubblyAdrian/Hubly/pull/253) | 🔒 OS · MAT ✅ · Rules #18–19 · merged |
-| 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔒 OS · MAT ✅ · Rule #20 · merged |
+| 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔓 Reopen · MAT ✅ · Rule #20 · merged |
 | 12 | 📊 Reports | ✅ Locked | ⏸ | [#255](https://github.com/HubblyAdrian/Hubly/pull/255) | 🔒 OS · MAT ✅ · Rule #21 · merged |
 | 13 | ✨ Ask Hubly | ✅ Locked | ⏸ | [#256](https://github.com/HubblyAdrian/Hubly/pull/256) | 🔒 OS · MAT ✅ · Rule #22 · merged |
 | 14 | ⚙️ Settings | ✅ Locked | ⏸ | [#257](https://github.com/HubblyAdrian/Hubly/pull/257) | 🔒 OS · MAT ✅ · Rule #23 · merged |
