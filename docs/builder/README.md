@@ -7,45 +7,48 @@
 
 ---
 
-## Canonical objects (🔒 Rule #26 + #27)
+## Canonical objects (🔒 Rules #26–#28)
 
-No Builder module may bypass or duplicate these models. UI may not modify them without reopening architecture.
+No Builder module may bypass or duplicate these models.  
+**No UI implementation may change these architecture documents without reopening the module.**
 
-| Object | Doc | Role |
-|--------|-----|------|
-| **Business Profile** | Rule #26 | What the business is |
-| **Owner Profile** | Rule #26 | How the founder operates |
-| **Business DNA** | Rule #26 | Combination of both — **canonical for all future Builder modules** |
-| **Research Profile** | Module 3 | Market / competitor / brand / pricing intelligence |
-| **Business Vision** | [BUSINESS_VISION.md](./BUSINESS_VISION.md) · Rule #27 | Destination — what the owner wants to become |
-| Creative Blueprint | Module 4 output | Agency blueprint for build modules |
+| Object | Rule / Doc | Role |
+|--------|------------|------|
+| **Business Profile** | #26 | What the business is |
+| **Owner Profile** | #26 | How the founder operates |
+| **Business DNA** | #26 | Combination — canonical for all Builder modules |
+| **Research Profile** | Module 3 | Market intelligence |
+| **Business Vision** | #27 🔒 · [BUSINESS_VISION.md](./BUSINESS_VISION.md) | Destination — build toward this |
+| **Creative Blueprint** | Module 4 **canonical output** | Agency blueprint |
+| **Creative Review** | #28 · [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md) | Self-critique before acceptance / Reveal |
 
 ```
 Hubly Session
   → Business Profile + Owner Profile → Business DNA
   → Research Profile
-  → Business Vision
+  → Business Vision 🔒
   → Creative Blueprint (Module 4)
+  → Creative Review (Rule #28)
+  → Business Reveal (Module 5)
+  → Save My Business (mid-reveal on first edit)
 ```
 
 ---
 
-## Vision
-
-The Builder starts the moment the user types on the landing page.
+## Pipeline
 
 ```
 Landing (Module 1) 🔒
   ↓
 AI Discovery (Module 2) 🔒 Architecture · Dev may begin
-  ↓  DNA ≥ 90%
-AI Research Engine (Module 3) ⏳ Architecture
-  ↓  Research Profile
-Business Vision (Rule #27) ⏳ Canonical
   ↓
-AI Creative Director (Module 4) ⏳ Architecture
-  ↓  Creative Blueprint
-Module 5+ (implement blueprints)
+AI Research Engine (Module 3) ⏳ Architecture
+  ↓
+Business Vision 🔒
+  ↓
+AI Creative Director (Module 4) 🔒 Architecture · Dev may begin
+  ↓ Creative Blueprint + Creative Review
+Business Reveal (Module 5) ⏳ Architecture
   ↓
 Save My Business → Permanent Memory → Operate OS
 ```
@@ -56,37 +59,26 @@ Save My Business → Permanent Memory → Operate OS
 
 | # | Module | Purpose | Status |
 |---|--------|---------|--------|
-| 1 | 🌎 AI Landing Experience | Intent router · Hubly Session | 🔒 Locked |
+| 1 | 🌎 AI Landing | Intent router · Hubly Session | 🔒 Locked |
 | 2 | 🤖 AI Discovery | Business + Owner → DNA | 🔒 Architecture · Dev may begin |
-| 3 | 🔍 AI Research Engine | Research before build | ⏳ Architecture |
-| 4 | 🎨 AI Creative Director | Creative Blueprint + agency reveal | ⏳ Architecture |
-| 5+ | Implement / publish | Website runtime, etc. | ❌ Not started |
+| 3 | 🔍 AI Research Engine | Research Profile | ⏳ Architecture |
+| 4 | 🎨 AI Creative Director | Creative Blueprint + Review | 🔒 Architecture · Dev may begin |
+| 5 | ✨ Business Reveal | Staged ceremony · mid-reveal save | ⏳ Architecture |
 
 ---
 
 ## Locked
 
-### Module 1 — Landing
-Do not redesign unless explicitly reopened. [AI_LANDING_ARCHITECTURE.md](../AI_LANDING_ARCHITECTURE.md)
+- Module 1 Landing · Module 2 Discovery architecture · Rule #26 DNA  
+- **Rule #27 Business Vision** — Creative Director builds toward Vision  
+- **Module 4 architecture** — Creative Blueprint is the canonical output; Creative Review required  
+- Architecture docs are frozen for UI — reopen to change  
 
-### Module 2 — Discovery Architecture
-Frozen. Dev uses `DISCOVERY_*`. Do not alter architecture without reopen.
+## Module 5 — Business Reveal
 
-### Rule #26 — Business DNA model
-**Canonical for all future Builder modules.** Business Profile · Owner Profile · Business DNA may not be bypassed or duplicated.
+[REVEAL_ARCHITECTURE.md](./REVEAL_ARCHITECTURE.md) · [REVEAL_CHECKLIST.md](./REVEAL_CHECKLIST.md) · [REVEAL_MAT.md](./REVEAL_MAT.md)
 
----
-
-## Module 3 — Research
-[RESEARCH_ARCHITECTURE.md](./RESEARCH_ARCHITECTURE.md) · checklist · MAT
-
-## Module 4 — Creative Director
-[CREATIVE_DIRECTOR_ARCHITECTURE.md](./CREATIVE_DIRECTOR_ARCHITECTURE.md) · [CREATIVE_DIRECTOR_CHECKLIST.md](./CREATIVE_DIRECTOR_CHECKLIST.md) · [CREATIVE_DIRECTOR_MAT.md](./CREATIVE_DIRECTOR_MAT.md)
-
-**Signature:** Present the business together — brand → positioning → services → booking → growth. Not “website generated.”
-
-## Business Vision
-[BUSINESS_VISION.md](./BUSINESS_VISION.md) — destination before Creative Director builds.
+Signature: present the business together. **Save My Business** on first edit (lightweight OAuth/email) and at Stage 9 — not “Create Account.”
 
 ---
 
@@ -94,7 +86,7 @@ Frozen. Dev uses `DISCOVERY_*`. Do not alter architecture without reopen.
 
 | Kind | Scope | Expires |
 |------|-------|---------|
-| Temporary | Hubly Session (+ DNA / research / vision / blueprint) | 30 days |
+| Temporary | Session + DNA + research + vision + blueprint + review | 30 days |
 | Permanent | Business | Never |
 | Conversation | Ask Hubly | Soft retention |
 

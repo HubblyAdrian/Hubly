@@ -17,8 +17,10 @@ Track platform-level readiness **alongside** module completion ([MODULE_STATUS.m
 | Dual Product Architecture | ✅ 🔒 | Rule #24 · AI Landing locked (#259) |
 | Hubly Memory | ✅ | Rule #25 · Temporary / Permanent / Conversation |
 | Business DNA model | ✅ 🔒 | Rule #26 · canonical for all Builder modules |
-| Business Vision | ✅ | Rule #27 · destination before Creative Director |
-| AI Business Builder | ⏳ | M2 Dev · M3 Research arch · M4 Creative Director arch |
+| Business Vision | ✅ 🔒 | Rule #27 · Creative Director builds toward Vision |
+| Creative Blueprint | ✅ 🔒 | Canonical Module 4 output |
+| Creative Review | ✅ | Rule #28 · before Reveal |
+| AI Business Builder | ⏳ | M2/M4 Dev · M3/M5 Architecture |
 | Integrations | ⏸ | Stage 2 — deferred per module |
 | Performance | ⏳ | Not yet a formal gate |
 | Accessibility | ⏳ | Not yet a formal gate |

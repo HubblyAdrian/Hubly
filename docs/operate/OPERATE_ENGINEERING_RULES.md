@@ -183,23 +183,35 @@ Business DNA is the **canonical model for all future Builder modules** — the c
 
 **Canonical Builder objects (do not bypass or duplicate):**
 
-Business Profile · Owner Profile · Business DNA · Research Profile · Business Vision
+Business Profile · Owner Profile · Business DNA · Research Profile · Business Vision · Creative Blueprint · Creative Review
 
-No Builder module may invent parallel copies. **No UI may modify these models without reopening architecture.**
+No Builder module may invent parallel copies. **No UI implementation may change these architecture documents without reopening the module.**
 
 Downstream coaching (Ask Hubly) and Creative Director (Module 4) must use **Owner Profile** and **Business Vision** when advising/building, not Business Profile alone.
 
-See [DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md) · [BUSINESS_VISION.md](../builder/BUSINESS_VISION.md) · [CREATIVE_DIRECTOR_ARCHITECTURE.md](../builder/CREATIVE_DIRECTOR_ARCHITECTURE.md).
+See [DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md) · [BUSINESS_VISION.md](../builder/BUSINESS_VISION.md) · [CREATIVE_DIRECTOR_ARCHITECTURE.md](../builder/CREATIVE_DIRECTOR_ARCHITECTURE.md) · [CREATIVE_REVIEW.md](../builder/CREATIVE_REVIEW.md).
 
-## Rule #27 — Business Vision
+## Rule #27 — Business Vision (🔒 Locked)
 
 Business Vision is the **destination** — complementary to DNA and Research, not a replacement.
 
 Long-term goals · ideal customers · desired positioning · growth timeline · success metrics · expansion plans.
 
-Creative Director builds **toward Vision**. If Vision says premium luxury, do not emit budget branding.
+**Creative Director must build toward the Business Vision**, not simply reflect the current business. If Vision says premium luxury, do not emit budget branding.
+
+**Creative Blueprint** is the **canonical output of Module 4**.
 
 See [BUSINESS_VISION.md](../builder/BUSINESS_VISION.md).
+
+## Rule #28 — Creative Review Engine
+
+Every Creative Blueprint is scored before acceptance:
+
+Brand Consistency · Customer Trust · Conversion · SEO Readiness · Revenue Potential
+
+Director summary required (not “Done”). Pipeline: Creative Blueprint → Creative Review → Business Reveal.
+
+See [CREATIVE_REVIEW.md](../builder/CREATIVE_REVIEW.md) · [REVEAL_ARCHITECTURE.md](../builder/REVEAL_ARCHITECTURE.md).
 
 ## Cross-Module Verification (CMV)
 
@@ -222,6 +234,8 @@ Special modules require an architecture doc before Development:
 - AI Landing → [AI_LANDING_ARCHITECTURE.md](../AI_LANDING_ARCHITECTURE.md) (dual product router + Rule #24) · **🔒 Locked**  
 - AI Discovery → [DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md) (Business + Owner Profile · Rule #26) · **🔒 Architecture locked** · Dev may begin  
 - AI Research Engine → [RESEARCH_ARCHITECTURE.md](../builder/RESEARCH_ARCHITECTURE.md) (research before build) · required before Module 3 Development  
-- Business Vision → [BUSINESS_VISION.md](../builder/BUSINESS_VISION.md) (Rule #27 · destination) · canonical before Module 4  
-- AI Creative Director → [CREATIVE_DIRECTOR_ARCHITECTURE.md](../builder/CREATIVE_DIRECTOR_ARCHITECTURE.md) · required before Module 4 Development  
+- Business Vision → [BUSINESS_VISION.md](../builder/BUSINESS_VISION.md) (Rule #27) · **🔒 Locked** · Creative Director builds toward Vision  
+- AI Creative Director → [CREATIVE_DIRECTOR_ARCHITECTURE.md](../builder/CREATIVE_DIRECTOR_ARCHITECTURE.md) · **🔒 Architecture locked** · Creative Blueprint canonical output · Dev may begin  
+- Creative Review → [CREATIVE_REVIEW.md](../builder/CREATIVE_REVIEW.md) (Rule #28) · required before Blueprint acceptance  
+- Business Reveal → [REVEAL_ARCHITECTURE.md](../builder/REVEAL_ARCHITECTURE.md) · required before Module 5 Development  
 - Hubly Memory → [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) (Temporary · Permanent · Conversation)

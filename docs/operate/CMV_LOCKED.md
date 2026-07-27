@@ -28,4 +28,4 @@
 
 ### Context
 
-Rule #26 product-wide lock · Business Vision (Rule #27) · Module 4 Creative Director architecture. No Builder UI code.
+Rule #27 Vision lock · Creative Review (Rule #28) · Module 5 Reveal architecture. No Builder UI code.

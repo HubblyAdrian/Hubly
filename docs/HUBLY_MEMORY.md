@@ -35,8 +35,9 @@ Conversation Memory  →  Ask Hubly / coaching history
 | Owner Profile | Experience, goals, communication style, growth priorities, stage, risk, preferred customers |
 | Business DNA | Combination of Business Profile + Owner Profile (**canonical** — Rule #26) |
 | Research Profile | Module 3 market / competitor / brand / pricing insights (cached) |
-| Business Vision | Destination — long-term goals, ideal customers, positioning, timeline (Rule #27) |
-| Creative Blueprint | Module 4 agency output (brand / site / booking / growth blueprints) |
+| Business Vision | Destination — long-term goals, ideal customers, positioning, timeline (**Rule #27 🔒**) |
+| Creative Blueprint | **Canonical Module 4 output** — agency blueprint |
+| Creative Review | Rule #28 scores + director summary before acceptance / Reveal |
 
 **Lifecycle**
 
@@ -150,14 +151,19 @@ Hubly does not only learn “the business.” It learns the **owner** — and wh
 | **Owner Profile** | Experience, goals, communication style, growth priorities, business stage, risk tolerance, preferred customers |
 | **Business DNA** | The combination of both — **canonical for all future Builder modules** |
 | **Research Profile** | What the market says |
-| **Business Vision** | What the owner wants to become (destination) |
+| **Business Vision** | What the owner wants to become (destination) — **Rule #27 🔒** |
+| **Creative Blueprint** | Canonical Module 4 output |
+| **Creative Review** | Self-critique scores before Reveal — **Rule #28** |
 
 Ask Hubly coaches using DNA **and** Vision, e.g. memberships before ceramic expansion for a founder who wants steady recurring revenue **and** aims to be the premium detailer in Dallas.
 
 **🔒 Rule #26 locked.** No Builder module may bypass or duplicate Business Profile · Owner Profile · Business DNA.  
-UI may not modify these models (or Research Profile / Business Vision) without reopening architecture.
+**🔒 Rule #27 locked.** Creative Director must build toward Business Vision.  
+**Rule #28.** Creative Review required before Blueprint acceptance.
 
-See [builder/DISCOVERY_ARCHITECTURE.md](./builder/DISCOVERY_ARCHITECTURE.md) · [builder/BUSINESS_VISION.md](./builder/BUSINESS_VISION.md).
+UI may not change these architecture documents without reopening the module.
+
+See [builder/DISCOVERY_ARCHITECTURE.md](./builder/DISCOVERY_ARCHITECTURE.md) · [builder/BUSINESS_VISION.md](./builder/BUSINESS_VISION.md) · [builder/CREATIVE_REVIEW.md](./builder/CREATIVE_REVIEW.md).
 
 ---
 
@@ -179,7 +185,8 @@ See [builder/DISCOVERY_ARCHITECTURE.md](./builder/DISCOVERY_ARCHITECTURE.md) · 
 | AI Discovery (🔒 Architecture) | Fills Business Profile + Owner Profile → Business DNA |
 | AI Research Engine (Module 3) | Builds Research Profile into Temporary Memory |
 | Business Vision (Rule #27) | Destination object before Creative Director |
-| AI Creative Director (Module 4) | Consumes all canonical objects → Creative Blueprint |
+| AI Creative Director (Module 4) | Consumes canonical objects → **Creative Blueprint** → **Creative Review** |
+| Business Reveal (Module 5) | Staged ceremony · mid-reveal Save My Business |
 | Website / Services / Brand modules | Implement Creative Blueprint into Permanent Memory after upgrade |
 | Ask Hubly (Operate 🔒) | Owns Conversation Memory; reads Permanent Memory, Owner Profile, and Vision for tailored coaching |
 | Marketplace Concierge | May read Temporary Memory for hire intent; separate consumer journey |

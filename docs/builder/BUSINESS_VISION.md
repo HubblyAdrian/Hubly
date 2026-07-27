@@ -1,6 +1,6 @@
 # Business Vision
 
-**Status:** Canonical Builder object (Rule #27)  
+**Status:** 🔒 **Canonical Builder object (Rule #27) — Locked**  
 **Complements:** Business Profile · Owner Profile · Business DNA · Research Profile  
 **Does not replace:** facts (profiles) or market findings (research)  
 **Related:** [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) · [builder/README.md](./README.md) · [CREATIVE_DIRECTOR_ARCHITECTURE.md](./CREATIVE_DIRECTOR_ARCHITECTURE.md)
@@ -127,7 +127,9 @@ See [HUBLY_MEMORY.md](../HUBLY_MEMORY.md).
 
 ## Lock
 
-**Rule #27 — Business Vision** is canonical for Builder Module 4+.
+**Rule #27 — Business Vision** is **🔒 locked** and canonical for Builder Module 4+.
+
+Creative Director **must build toward Business Vision**, not simply reflect the current business.
 
 UI / Development may implement capture and editing.  
-**No UI may alter this object model without reopening architecture.**
+**No UI implementation may change this architecture document without reopening the module.**

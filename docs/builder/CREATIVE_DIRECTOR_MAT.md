@@ -1,9 +1,10 @@
 # 🎨 AI Creative Director — Module Acceptance Test (MAT)
 
 **Module:** 4 — AI Creative Director  
-**Architecture:** [CREATIVE_DIRECTOR_ARCHITECTURE.md](./CREATIVE_DIRECTOR_ARCHITECTURE.md)  
+**Architecture:** 🔒 Locked — [CREATIVE_DIRECTOR_ARCHITECTURE.md](./CREATIVE_DIRECTOR_ARCHITECTURE.md)  
 **Checklist:** [CREATIVE_DIRECTOR_CHECKLIST.md](./CREATIVE_DIRECTOR_CHECKLIST.md)  
-**Vision:** [BUSINESS_VISION.md](./BUSINESS_VISION.md)  
+**Vision:** [BUSINESS_VISION.md](./BUSINESS_VISION.md) · Rule #27 🔒  
+**Review:** [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md) · Rule #28  
 **Gate:** MAT must pass before merge of Stage 1 Creative Director Development
 
 ---
@@ -20,6 +21,8 @@
 | A6 | Marketing blueprint generated | ⏳ |
 | A7 | Growth blueprint cites Business Vision when present | ⏳ |
 | A8 | Confidence attached to recommendations | ⏳ |
+| A9 | Creative Review scores generated before acceptance | ⏳ |
+| A10 | Director review summary present (not “Done”) | ⏳ |
 
 ---
 
@@ -75,7 +78,7 @@
 
 | Role | Status |
 |------|--------|
-| Architecture approval | ⏳ |
+| Architecture lock | ✅ |
 | Self QA | ⏳ |
 | MAT | ⏳ |
 | CMV | ⏳ |

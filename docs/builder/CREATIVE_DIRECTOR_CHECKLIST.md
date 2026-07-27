@@ -1,9 +1,11 @@
 # 🎨 AI Creative Director — Checklist
 
-**Status:** ⏳ Architecture · Development not started  
+**Status:** 🔒 Architecture locked · Development may begin (Creative Review required)  
 **Architecture:** [CREATIVE_DIRECTOR_ARCHITECTURE.md](./CREATIVE_DIRECTOR_ARCHITECTURE.md)  
 **MAT:** [CREATIVE_DIRECTOR_MAT.md](./CREATIVE_DIRECTOR_MAT.md)  
-**Vision:** [BUSINESS_VISION.md](./BUSINESS_VISION.md)  
+**Vision:** [BUSINESS_VISION.md](./BUSINESS_VISION.md) · **🔒 Rule #27**  
+**Review:** [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md) · Rule #28  
+**Canonical output:** Creative Blueprint  
 **Canonical inputs:** Business Profile · Owner Profile · Business DNA · Research Profile · Business Vision  
 **Milestone:** [Hubly AI Business Builder](./README.md)
 
@@ -17,7 +19,11 @@ Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔒 Locked
 - [x] Canonical inputs include Vision (Rule #27) ✅  
 - [x] Rule #26 DNA model not bypassed ✅  
 - [x] Agency reveal principle (not “website generated”) ✅  
-- [ ] Founder approval of architecture → Development  
+- [x] Creative Blueprint = canonical Module 4 output ✅  
+- [x] Creative Review (Rule #28) required before acceptance ✅  
+- [x] Architecture approved + **🔒 Locked** ✅  
+- [ ] Development (Stage 1)  
+- [ ] QA → MAT → CMV → Approval → Merge → Lock Stage 1 OS  
 
 ---
 
@@ -86,7 +92,8 @@ Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔒 Locked
 - [ ] Explain / Ask Why  
 - [ ] Editable suggestions  
 - [ ] Confidence on recommendations  
-- [ ] Signature reveal ceremony  
+- [ ] Signature reveal ceremony handoff to Module 5  
+- [ ] Creative Review scores + director summary before Blueprint accept  
 
 ---
 

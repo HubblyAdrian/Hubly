@@ -1,10 +1,11 @@
-# 🎨 AI Creative Director — Architecture (required before Development)
+# 🎨 AI Creative Director — Architecture (🔒 Architecture · Dev may begin)
 
 **Milestone:** Hubly AI Business Builder  
 **Module:** 4 — AI Creative Director  
-**Rules:** #24 · #25 · #26 (canonical DNA) · #27 (Business Vision) · explain every recommendation  
-**Status:** Architecture gate — do not start Development without founder approval  
-**Related:** [BUSINESS_VISION.md](./BUSINESS_VISION.md) · [RESEARCH_ARCHITECTURE.md](./RESEARCH_ARCHITECTURE.md) · [DISCOVERY_ARCHITECTURE.md](./DISCOVERY_ARCHITECTURE.md) · [README.md](./README.md)
+**Rules:** #24 · #25 · #26 · #27 🔒 (Business Vision) · #28 (Creative Review) · explain every recommendation  
+**Status:** 🔒 **Architecture locked** — Development may begin; UI must not alter these docs without reopening  
+**Canonical output:** **Creative Blueprint** (then Creative Review before acceptance)  
+**Related:** [BUSINESS_VISION.md](./BUSINESS_VISION.md) · [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md) · [REVEAL_ARCHITECTURE.md](./REVEAL_ARCHITECTURE.md) · [README.md](./README.md)
 
 ---
 
@@ -16,7 +17,9 @@ This is an **AI Creative Director** that designs the entire business.
 
 > If the world's best creative agency spent a week building this business, what would they create?
 
-The AI uses everything learned so far to produce a cohesive **Creative Blueprint** — the source of truth for later build modules.
+The AI uses everything learned so far to produce a cohesive **Creative Blueprint** — the **canonical output of Module 4** and source of truth for Reveal / later build modules.
+
+Creative Director must build **toward the Business Vision** (Rule #27), not simply reflect the current business.
 
 ---
 
@@ -146,9 +149,11 @@ Every recommendation shows confidence (Brand Voice 97% · Pricing 81% · Hero 94
 
 ---
 
-## Outputs — Creative Blueprint
+## Outputs — Creative Blueprint (canonical Module 4 output)
 
-Source of truth for Module 5+:
+**🔒 Locked as the Module 4 deliverable.** No parallel “website JSON” may replace it.
+
+Source of truth for Module 5 Reveal +:
 
 | Blueprint block | Contents |
 |-----------------|----------|
@@ -168,14 +173,42 @@ Stored in Hubly Session (Temporary) until account upgrade → Permanent Memory.
 
 ---
 
+## Creative Review (Rule #28) — required before acceptance
+
+Before the Creative Blueprint is accepted, run the **Creative Review Engine**:
+
+Brand Consistency · Customer Trust · Conversion · SEO Readiness · Revenue Potential
+
+Director summary (not “Done”):
+
+> I've reviewed the business I created. Here's what I'm most confident about, and here's where I'd continue improving it over time.
+
+See [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md). Pipeline:
+
+```
+Creative Blueprint → Creative Review → Business Reveal (Module 5)
+```
+
+---
+
+## Signature reveal handoff
+
+Module 4 prepares the Creative Blueprint + Creative Review.  
+Module 5 owns the full staged Business Reveal ceremony (“present the business we've created together”).
+
+Module 4 may show a short director preview; it must not claim the website is “generated and done.”
+
+---
+
 ## Must not
 
 - Output “a finished website” as the only artifact  
+- Skip Creative Review before Blueprint acceptance  
 - Ignore Business Vision when present  
-- Bypass canonical profiles / DNA / Research  
+- Bypass canonical profiles / DNA / Research / Vision  
 - Hide rationale (“trust the AI”)  
 - Feel like a spinner  
-- Modify canonical object models in UI without reopening architecture  
+- Modify canonical object models or these architecture docs in UI without reopening the module  
 - Redesign locked Landing / Discovery architecture  
 
 ---
