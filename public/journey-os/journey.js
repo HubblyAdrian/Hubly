@@ -6453,6 +6453,24 @@
   function seedDemoLeadsIfEmpty() {
     ensureLeadsOsState();
     var pipe = S().pipeline.manual;
+    var demoIds = {
+      lead_jordan: 1, lead_sarah: 1, lead_mike: 1, lead_alex: 1, lead_emily: 1, lead_pat: 1
+    };
+    var demoNames = {
+      'jordan lee': 1, 'sarah chen': 1, 'mike torres': 1, 'alex rivera': 1, 'emily wilson': 1, 'pat nguyen': 1
+    };
+    if (!allowDemoSeed()) {
+      // Never invent fake people for real accounts; strip leftover demo rows.
+      if (Array.isArray(pipe) && pipe.length) {
+        S().pipeline.manual = pipe.filter(function (l) {
+          if (!l) return false;
+          if (demoIds[String(l.id || '')] || demoIds[String(l.key || '')]) return false;
+          if (demoNames[String(l.name || '').trim().toLowerCase()]) return false;
+          return true;
+        });
+      }
+      return;
+    }
     if (pipe.length) return;
     var now = Date.now();
     var demo = [
@@ -10051,6 +10069,7 @@
     if (titleEl) titleEl.textContent = c.title;
     if (subEl) subEl.textContent = c.sub;
     if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
+    try { updateInboxBadge(); } catch (e) {}
   }
 
   function enhanceDashboard() {
@@ -13547,6 +13566,10 @@
     openQuickNew: openQuickNew,
     onSwitchView: onSwitchView,
     updateChrome: updateChrome,
+    updateInboxBadge: updateInboxBadge,
+    toggleOperateNavRail: function () {
+      if (typeof global.toggleOperateNavRail === 'function') return global.toggleOperateNavRail();
+    },
     _askFromInput: function (preset) {
       var input = el('jos-ask-input') || el('ai-question-input');
       ahAsk(preset || (input && input.value) || '');
