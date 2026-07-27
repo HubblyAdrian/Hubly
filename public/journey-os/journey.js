@@ -58,6 +58,7 @@
     var run = function () {
       var input = el('jos-ask-input') || el('ai-question-input');
       if (input) input.value = text;
+      if (global.HublyJourneyOS && typeof global.HublyJourneyOS._askFromInput === 'function') return global.HublyJourneyOS._askFromInput(text);
       if (typeof global.askAI === 'function') return global.askAI(text);
       toast('Ask Hubly: ' + text);
     };
@@ -665,22 +666,664 @@
     bindRoot(root);
   }
 
+  var AH_TABS = [
+    ['chat', 'Chat'],
+    ['actions', 'Actions'],
+    ['memory', 'Memory'],
+    ['automations', 'Automations'],
+    ['context', 'Context'],
+    ['activity', 'Activity']
+  ];
+  var AH_ACTION_CATALOG = {
+    create_job: { label: 'Create job', requiresConfirm: true, desc: 'Adds a minimal Jobs-owned job stub.' },
+    create_quote: { label: 'Create quote', requiresConfirm: true, desc: 'Creates a draft quote when a quote owner array exists.' },
+    draft_campaign: { label: 'Draft campaign', requiresConfirm: false, desc: 'Adds a Marketing-owned draft campaign.' },
+    send_campaign: { label: 'Send campaign', requiresConfirm: true, desc: 'Marks a Marketing OS campaign sent in Stage 1.' },
+    update_website: { label: 'Update website', requiresConfirm: true, desc: 'Saves a Storefront-owned AI copy suggestion.' },
+    publish_website: { label: 'Publish website', requiresConfirm: true, desc: 'Records a Stage 1 publish signal.' },
+    schedule_followup: { label: 'Schedule follow-up', requiresConfirm: true, desc: 'Creates a confirmed follow-up note/task signal.' },
+    cancel_membership: { label: 'Cancel membership', requiresConfirm: true, desc: 'Cancels a Memberships-owned subscriber when available.' },
+    refund_payment: { label: 'Refund payment', requiresConfirm: true, desc: 'Guarded: never runs silently.' },
+    delete_customer: { label: 'Delete customer', requiresConfirm: true, desc: 'Guarded: never runs silently.' },
+    change_pricing: { label: 'Change pricing', requiresConfirm: true, desc: 'Guarded: never runs silently.' },
+    generate_draft: { label: 'Generate draft', requiresConfirm: false, desc: 'Creates draft text in the conversation.' },
+    explain_report: { label: 'Explain report', requiresConfirm: false, desc: 'Explains live owner aggregates.' },
+    summarize_customer: { label: 'Summarize customer', requiresConfirm: false, desc: 'Summarizes one customer from owner refs.' },
+    suggest_followups: { label: 'Suggest follow-ups', requiresConfirm: false, desc: 'Suggests follow-ups without mutating owners.' },
+    generate_report: { label: 'Generate report', requiresConfirm: false, desc: 'Refreshes analytics/report aggregate signals.' }
+  };
+  var AH_HARD_GUARDS = {
+    refund_payment: true,
+    delete_customer: true,
+    change_pricing: true,
+    publish_website: true
+  };
+
+  function ahId(prefix) { return (prefix || 'ah') + '_' + Math.random().toString(36).slice(2, 9); }
+  function ahNow() { return new Date().toISOString(); }
+  function ahAction(type) {
+    return AH_ACTION_CATALOG[type] || { label: type || 'Action', requiresConfirm: true, desc: 'Unknown mutating action.' };
+  }
+  /** Explicit propose act strings so routes remain greppable for MAT. */
+  function ahProposeAct(type) {
+    var map = {
+      create_job: 'ah-propose-create-job',
+      create_quote: 'ah-propose-create-quote',
+      draft_campaign: 'ah-propose-draft-campaign',
+      send_campaign: 'ah-propose-send-campaign',
+      update_website: 'ah-propose-update-website',
+      publish_website: 'ah-propose-publish-website',
+      schedule_followup: 'ah-propose-schedule-followup',
+      cancel_membership: 'ah-propose-cancel-membership',
+      refund_payment: 'ah-propose-refund-payment',
+      delete_customer: 'ah-propose-delete-customer',
+      change_pricing: 'ah-propose-change-pricing',
+      generate_draft: 'ah-propose-generate-draft',
+      explain_report: 'ah-propose-explain-report',
+      summarize_customer: 'ah-propose-summarize-customer',
+      suggest_followups: 'ah-propose-suggest-followups',
+      generate_report: 'ah-propose-generate-report'
+    };
+    return map[type] || ('ah-propose-' + String(type || '').replace(/_/g, '-'));
+  }
+  function ahPublish(type, payload) {
+    var ev = hublyEvents();
+    if (ev && typeof ev.publish === 'function') ev.publish(type, payload || {});
+  }
+  function ensureAskHublyOsState() {
+    var st = S();
+    if (!st.askHublyOs || typeof st.askHublyOs !== 'object') st.askHublyOs = {};
+    var os = st.askHublyOs;
+    ['customers', 'payments', 'jobs', 'leads', 'campaigns'].forEach(function (key) {
+      if (Object.prototype.hasOwnProperty.call(os, key)) delete os[key];
+    });
+    if (!Array.isArray(os.conversations)) os.conversations = [];
+    if (!Array.isArray(os.memory)) os.memory = [];
+    if (!Array.isArray(os.actions)) os.actions = [];
+    if (!Array.isArray(os.pending)) os.pending = [];
+    if (!Array.isArray(os.automations)) os.automations = [];
+    if (!os.prefs || typeof os.prefs !== 'object') os.prefs = {};
+    if (os.prefs.confirmHighImpact == null) os.prefs.confirmHighImpact = true;
+    if (!Array.isArray(os.activity)) os.activity = [];
+    if (!os._seeded) {
+      var now = ahNow();
+      os.conversations.push({
+        id: ahId('ah_conv'),
+        title: 'Operating briefing',
+        messages: [{ role: 'assistant', text: 'Ask me about customers, jobs, revenue, reports, marketing, memberships, reviews, or your website. I will ask for confirmation before high-impact changes.', at: now }],
+        updatedAt: now
+      });
+      os.memory.push({ id: ahId('ah_mem'), kind: 'system', text: 'Ask Hubly Stage 1 reads owner summaries and queues high-impact writes for confirmation.', refs: { module: 'ask' }, at: now });
+      os.activity.push({ id: ahId('ah_act'), type: 'system', label: 'Ask Hubly OS initialized', at: now, payload: { rule: 'Rule #22' } });
+      os._seeded = true;
+    }
+    os.pending = os.pending.filter(function (p) { return p && p.status !== 'cancelled' && p.status !== 'executed'; });
+    return os;
+  }
+  function ahPushActivity(type, label, payload) {
+    var os = ensureAskHublyOsState();
+    os.activity.push({ id: ahId('ah_act'), type: type, label: label, at: ahNow(), payload: payload ? Object.assign({}, payload) : {} });
+  }
+  function ahLogAction(status, type, payload, note, pendingId) {
+    var cat = ahAction(type), os = ensureAskHublyOsState();
+    var entry = {
+      id: ahId('ah_log'),
+      actionType: type,
+      label: cat.label,
+      status: status,
+      requiresConfirm: !!cat.requiresConfirm,
+      pendingId: pendingId || null,
+      payload: payload ? Object.assign({}, payload) : {},
+      note: note || '',
+      at: ahNow()
+    };
+    os.actions.push(entry);
+    return entry;
+  }
+  function ahConversation() {
+    var os = ensureAskHublyOsState();
+    var root = el('jos-ask-root');
+    var id = root && root._josAhConvId;
+    var conv = id && os.conversations.find(function (c) { return String(c.id) === String(id); });
+    if (!conv) conv = os.conversations[os.conversations.length - 1];
+    if (!conv) {
+      conv = { id: ahId('ah_conv'), title: 'Ask Hubly', messages: [], updatedAt: ahNow() };
+      os.conversations.push(conv);
+    }
+    if (root) root._josAhConvId = conv.id;
+    return conv;
+  }
+  function ahAddMessage(role, text) {
+    var conv = ahConversation();
+    conv.messages.push({ role: role, text: String(text || ''), at: ahNow() });
+    conv.updatedAt = ahNow();
+    if (role === 'user' && (!conv.title || conv.title === 'Ask Hubly' || conv.title === 'Operating briefing')) conv.title = String(text || 'Ask Hubly').slice(0, 54);
+    return conv;
+  }
+  function ahMemoryNote(kind, text, refs) {
+    var os = ensureAskHublyOsState();
+    os.memory.push({ id: ahId('ah_mem'), kind: kind || 'note', text: String(text || ''), refs: refs || { module: 'ask' }, at: ahNow() });
+  }
+  function ahAutomationAllowed(type) {
+    return ensureAskHublyOsState().automations.some(function (a) {
+      return a && a.allowed === true && String(a.actionType) === String(type);
+    });
+  }
+  function ahEventPayload(type, payload, actionId) {
+    payload = payload || {};
+    return {
+      actionType: type,
+      actionId: actionId || null,
+      customerId: payload.customerId || null,
+      jobId: payload.jobId || null,
+      campaignId: payload.campaignId || null,
+      reportId: payload.reportId || null,
+      label: payload.label || ahAction(type).label
+    };
+  }
+  function ahDefaultCustomer() {
+    var st = S(), active = st.activeCustId;
+    return (active && customers().find(function (c) { return String(c.id) === String(active); })) || customers()[0] || null;
+  }
+  function ahCustomerName(id) {
+    var c = customers().find(function (x) { return String(x.id) === String(id); });
+    return c ? c.name : 'Customer';
+  }
+  function ahOwnerContext() {
+    var ag = null;
+    try { if (typeof rptAggregates === 'function') ag = rptAggregates(); } catch (e) {}
+    var st = S(), m = st.marketingOs && typeof st.marketingOs === 'object' ? st.marketingOs : {};
+    var mem = st.membershipsOs && typeof st.membershipsOs === 'object' ? st.membershipsOs : {};
+    var rev = st.reviewsOs && typeof st.reviewsOs === 'object' ? st.reviewsOs : {};
+    var website = st.website && typeof st.website === 'object' ? st.website : {};
+    return {
+      customers: { total: customers().length },
+      leads: { total: collectLeads().length },
+      jobs: { total: jobs().filter(function (j) { return j && !j.isBlock; }).length, active: jobs().filter(jobActive).length },
+      quotes: { total: quotes().length },
+      revenue: { total: ag ? ag.revenue.total : jobs().filter(function (j) { return j.status === 'completed'; }).reduce(function (sum, j) { return sum + (Number(j.amount) || 0); }, 0), outstanding: ag ? ag.revenue.outstanding : 0 },
+      reports: { dashboards: st.reportsOs && Array.isArray(st.reportsOs.dashboards) ? st.reportsOs.dashboards.length : 0 },
+      marketing: { campaigns: Array.isArray(m.campaigns) ? m.campaigns.length : 0, active: Array.isArray(m.campaigns) ? m.campaigns.filter(function (c) { return c.status === 'active' || c.status === 'scheduled'; }).length : 0 },
+      reviews: { count: Array.isArray(rev.reviews) ? rev.reviews.length : (Array.isArray(website.manualReviews) ? website.manualReviews.length : 0), rating: rev.analytics && rev.analytics.rating ? rev.analytics.rating : (website.reviewRating || 0) },
+      memberships: { plans: Array.isArray(mem.plans) ? mem.plans.length : 0, active: Array.isArray(mem.subscribers) ? mem.subscribers.filter(function (s) { return s.status !== 'cancelled' && s.status !== 'paused'; }).length : 0 },
+      services: { total: Array.isArray(st.editorSvcs) ? st.editorSvcs.filter(function (s) { return s && s.status !== 'archived'; }).length : 0 }
+    };
+  }
+  function ahContextLine() {
+    var c = ahOwnerContext();
+    return c.customers.total + ' customers, ' + c.leads.total + ' leads, ' + c.jobs.active + ' active jobs, ' + (money(c.revenue.total) || '$0') + ' collected, ' + c.marketing.active + ' active campaigns, ' + c.memberships.active + ' active memberships.';
+  }
+  function ahFollowupText() {
+    var rows = [];
+    collectLeads().slice(0, 2).forEach(function (l) { rows.push((l.name || 'Lead') + ' - open lead for ' + (l.service || 'service')); });
+    customers().slice(0, 2).forEach(function (c) { rows.push((c.name || 'Customer') + ' - rebook or review nudge'); });
+    jobs().filter(function (j) { return j.status === 'completed' && !j.reviewRequested; }).slice(0, 1).forEach(function (j) { rows.push((j.customer || 'Customer') + ' - ask for a review after ' + (j.service || 'job')); });
+    if (!rows.length) rows.push('No urgent owner records found. Start with a friendly rebook message to recent customers.');
+    return 'Suggested follow-ups: ' + rows.join('; ') + '.';
+  }
+  function ahPayloadFor(type) {
+    var cust = ahDefaultCustomer();
+    var st = S(), label = ahAction(type).label;
+    var payload = { label: label };
+    if (cust) { payload.customerId = cust.id; payload.customerLabel = cust.name; }
+    if (type === 'create_job') return Object.assign(payload, { service: 'AI scheduled service', date: todayStr(), note: 'Created from Ask Hubly proposal' });
+    if (type === 'create_quote') return Object.assign(payload, { service: 'AI draft quote', amount: 0 });
+    if (type === 'draft_campaign') return Object.assign(payload, { name: 'Ask Hubly win-back draft', channel: 'email', body: 'We miss you - book this week for a fresh detail.' });
+    if (type === 'send_campaign') {
+      var camp = st.marketingOs && Array.isArray(st.marketingOs.campaigns) && st.marketingOs.campaigns.find(function (c) { return c.status === 'draft' || c.status === 'scheduled' || c.status === 'active'; });
+      if (camp) payload.campaignId = camp.id;
+      payload.label = camp ? ('Send campaign ' + (camp.name || camp.id)) : 'Send campaign';
+      return payload;
+    }
+    if (type === 'update_website') return Object.assign(payload, { field: 'heroHeadline', value: 'Book a detail that feels effortless' });
+    if (type === 'publish_website') return Object.assign(payload, { websiteId: st.slug || 'site', label: 'Publish website' });
+    if (type === 'schedule_followup') return Object.assign(payload, { followupText: 'Check in and offer a rebook window', dueAt: todayStr() });
+    if (type === 'cancel_membership') {
+      var sub = st.membershipsOs && Array.isArray(st.membershipsOs.subscribers) && st.membershipsOs.subscribers.find(function (s) { return s.status !== 'cancelled'; });
+      if (sub) payload.subscriberId = sub.id;
+      return payload;
+    }
+    if (type === 'refund_payment') return Object.assign(payload, { amount: 0, label: 'Prepare refund request' });
+    if (type === 'delete_customer') return Object.assign(payload, { label: 'Delete customer request' });
+    if (type === 'change_pricing') return Object.assign(payload, { serviceId: null, label: 'Change pricing request' });
+    if (type === 'generate_report') return Object.assign(payload, { metricKeys: ['revenue_collected', 'jobs_completed', 'active_members', 'review_rating'] });
+    return payload;
+  }
+  function ahDraftText(payload) {
+    payload = payload || {};
+    return payload.text || 'Draft: Hi ' + (payload.customerLabel || 'there') + ', we have a few openings this week if you want to refresh your vehicle. Reply with a day that works and we will hold a spot.';
+  }
+  function ahApplyAction(type, payload, source) {
+    payload = payload || {};
+    var st = S(), result = { label: ahAction(type).label, draft: false };
+    if (type === 'create_job') {
+      if (Array.isArray(st.jobs)) {
+        var cust = payload.customerId && customers().find(function (c) { return String(c.id) === String(payload.customerId); });
+        var job = {
+          id: ahId('job_ai'),
+          customerId: payload.customerId || null,
+          customer: cust ? cust.name : (payload.customerLabel || 'Customer'),
+          service: payload.service || 'AI scheduled service',
+          date: payload.date || todayStr(),
+          time: payload.time || '9:00 AM',
+          status: 'scheduled',
+          amount: Number(payload.amount) || 0,
+          createdAt: ahNow(),
+          internalNotes: ['Created by Ask Hubly after confirmation'],
+          timeline: [{ type: 'created', label: 'Created by Ask Hubly', at: new Date().toLocaleString() }]
+        };
+        st.jobs.push(job);
+        result.jobId = job.id;
+        result.label = 'Job created in Jobs OS';
+        ahPublish('job.booked', { jobId: job.id, customerId: job.customerId, source: 'ask_hubly' });
+      } else result.label = 'Job creation queued for Jobs OS';
+      toast(result.label);
+      return result;
+    }
+    if (type === 'create_quote') {
+      var quote = { id: ahId('quote_ai'), customerId: payload.customerId || null, status: 'draft', service: payload.service || 'AI draft quote', amount: Number(payload.amount) || 0, createdAt: ahNow(), source: 'ask_hubly' };
+      if (Array.isArray(st.smartQuotes)) { st.smartQuotes.push(quote); result.quoteId = quote.id; result.label = 'Draft quote created'; }
+      else if (Array.isArray(st.quotes)) { st.quotes.push(quote); result.quoteId = quote.id; result.label = 'Draft quote created'; }
+      else result.label = 'Draft quote prepared for Quotes OS';
+      toast(result.label);
+      return result;
+    }
+    if (type === 'draft_campaign') {
+      if (st.marketingOs && typeof st.marketingOs === 'object') {
+        if (!Array.isArray(st.marketingOs.campaigns)) st.marketingOs.campaigns = [];
+        var camp = { id: ahId('mkt_camp_ai'), name: payload.name || 'Ask Hubly campaign draft', channel: payload.channel || 'email', status: 'draft', audience: { type: 'segment', key: 'win_back' }, body: payload.body || ahDraftText(payload), stats: {}, createdAt: ahNow(), source: 'ask_hubly' };
+        st.marketingOs.campaigns.push(camp);
+        result.campaignId = camp.id;
+        result.label = 'Campaign draft created in Marketing';
+      } else result.label = 'Campaign draft generated';
+      result.draft = true;
+      ahAddMessage('assistant', result.label + ': ' + (payload.body || ahDraftText(payload)));
+      ahMemoryNote('draft', result.label, { module: 'marketing', id: result.campaignId || null });
+      toast(result.label);
+      return result;
+    }
+    if (type === 'send_campaign') {
+      var campaign = st.marketingOs && Array.isArray(st.marketingOs.campaigns) && (st.marketingOs.campaigns.find(function (c) { return String(c.id) === String(payload.campaignId); }) || st.marketingOs.campaigns.find(function (c) { return c.status === 'draft' || c.status === 'scheduled' || c.status === 'active'; }));
+      if (campaign) {
+        campaign.status = 'done';
+        campaign.sentAt = ahNow();
+        result.campaignId = campaign.id;
+        result.label = 'Campaign marked sent in Marketing OS';
+        ahPublish('campaign.sent', { campaignId: campaign.id, label: campaign.name || campaign.id });
+      } else result.label = 'Stage 1 campaign send recorded';
+      toast(result.label);
+      return result;
+    }
+    if (type === 'update_website') {
+      if (!st.website || typeof st.website !== 'object') st.website = {};
+      st.website.aiDraft = { field: payload.field || 'heroHeadline', value: payload.value || 'Book a detail that feels effortless', at: ahNow(), source: 'ask_hubly' };
+      result.label = 'Website copy suggestion saved in Storefront';
+      toast(result.label);
+      return result;
+    }
+    if (type === 'publish_website') {
+      if (!st.website || typeof st.website !== 'object') st.website = {};
+      st.website.lastAiPublishAt = ahNow();
+      result.label = 'Website publish signal recorded (Stage 1)';
+      toast(result.label);
+      return result;
+    }
+    if (type === 'schedule_followup') {
+      ahMemoryNote('followup', payload.followupText || 'Follow-up scheduled by Ask Hubly', { module: payload.customerId ? 'customers' : 'ask', id: payload.customerId || null });
+      result.label = 'Follow-up note scheduled in Ask memory';
+      toast(result.label);
+      return result;
+    }
+    if (type === 'cancel_membership') {
+      var mem = st.membershipsOs && typeof st.membershipsOs === 'object' ? st.membershipsOs : null;
+      var sub = mem && Array.isArray(mem.subscribers) && mem.subscribers.find(function (s) { return String(s.id) === String(payload.subscriberId); });
+      if (sub) {
+        sub.status = 'cancelled';
+        sub.cancelledAt = todayStr();
+        result.subscriberId = sub.id;
+        result.label = 'Membership cancelled in Memberships OS';
+        ahPublish('membership.cancelled', { subscriberId: sub.id, customerId: sub.customerId, planId: sub.planId });
+      } else result.label = 'Membership cancellation recorded for owner review';
+      toast(result.label);
+      return result;
+    }
+    if (type === 'refund_payment') {
+      result.label = 'Refund request prepared for Revenue; no live refund issued in Stage 1';
+      toast(result.label);
+      return result;
+    }
+    if (type === 'delete_customer') {
+      result.label = 'Customer deletion request recorded; no customer deleted by Ask Hubly Stage 1';
+      toast(result.label);
+      return result;
+    }
+    if (type === 'change_pricing') {
+      result.label = 'Pricing change request recorded; Storefront pricing was not changed silently';
+      toast(result.label);
+      return result;
+    }
+    if (type === 'generate_report') {
+      if (typeof publishReportGenerated === 'function') publishReportGenerated(payload.metricKeys || ['revenue_collected']);
+      result.label = 'Report aggregates refreshed from owner modules';
+      toast(result.label);
+      return result;
+    }
+    if (type === 'summarize_customer') {
+      var name = payload.customerId ? ahCustomerName(payload.customerId) : (ahDefaultCustomer() ? ahDefaultCustomer().name : 'Customer');
+      var msg = name + ': ' + ahContextLine() + ' Next best action: send a timely rebook or review ask.';
+      ahAddMessage('assistant', msg);
+      ahMemoryNote('summary', msg, { module: 'customers', id: payload.customerId || null });
+      result.label = 'Customer summary generated';
+      result.draft = true;
+      toast(result.label);
+      return result;
+    }
+    if (type === 'explain_report') {
+      var report = 'Report readout: ' + ahContextLine() + ' Reports is reading aggregates at render time and does not own operational rows.';
+      ahAddMessage('assistant', report);
+      ahMemoryNote('report', report, { module: 'reports' });
+      result.label = 'Report explained';
+      result.draft = true;
+      toast(result.label);
+      return result;
+    }
+    if (type === 'suggest_followups') {
+      var follow = ahFollowupText();
+      ahAddMessage('assistant', follow);
+      ahMemoryNote('suggestion', follow, { module: 'customers' });
+      result.label = 'Follow-up suggestions generated';
+      result.draft = true;
+      toast(result.label);
+      return result;
+    }
+    if (type === 'generate_draft') {
+      var draft = ahDraftText(payload);
+      ahAddMessage('assistant', draft);
+      ahMemoryNote('draft', draft, { module: 'ask' });
+      result.label = 'Draft generated';
+      result.draft = true;
+      toast(result.label);
+      return result;
+    }
+    return result;
+  }
+  function ahExecuteAction(type, payload, source, pendingId) {
+    source = source || 'direct';
+    if (AH_HARD_GUARDS[type] && source !== 'confirmed' && source !== 'automation') {
+      ahPushActivity('guard.rejected', 'Rejected silent ' + ahAction(type).label, { actionType: type });
+      toast('Confirmation required for ' + ahAction(type).label);
+      return null;
+    }
+    var result = ahApplyAction(type, payload || {}, source) || {};
+    var entry = ahLogAction('executed', type, Object.assign({}, payload || {}, result), result.label, pendingId);
+    ahPushActivity('ai.action.executed', result.label || ('Executed ' + ahAction(type).label), ahEventPayload(type, Object.assign({}, payload || {}, result), entry.id));
+    if (result.draft) ahPublish('ai.draft.generated', ahEventPayload(type, Object.assign({}, payload || {}, result), entry.id));
+    else ahPublish('ai.action.executed', ahEventPayload(type, Object.assign({}, payload || {}, result), entry.id));
+    return result;
+  }
+  function ahProposeAction(type, payload) {
+    var cat = ahAction(type), os = ensureAskHublyOsState();
+    payload = payload || ahPayloadFor(type);
+    if (cat.requiresConfirm && !ahAutomationAllowed(type)) {
+      var pending = { id: ahId('ah_pending'), actionType: type, label: cat.label, payload: Object.assign({}, payload), reason: cat.desc, status: 'pending', createdAt: ahNow() };
+      os.pending.push(pending);
+      ahLogAction('proposed', type, payload, cat.desc, pending.id);
+      ahPushActivity('ai.action.proposed', 'Proposed ' + cat.label, ahEventPayload(type, payload, pending.id));
+      ahPublish('ai.action.proposed', ahEventPayload(type, payload, pending.id));
+      ahAddMessage('assistant', 'I proposed "' + cat.label + '" and moved it to Actions for confirmation.');
+      var root = el('jos-ask-root');
+      if (root) root._josAhTab = 'actions';
+      toast('Action needs confirmation');
+      renderAskHubly();
+      return pending;
+    }
+    var source = cat.requiresConfirm ? 'automation' : 'safe';
+    var res = ahExecuteAction(type, payload, source, null);
+    renderAskHubly();
+    return res;
+  }
+  function ahConfirmPending(id) {
+    var os = ensureAskHublyOsState();
+    var p = os.pending.find(function (x) { return String(x.id) === String(id); });
+    if (!p) { toast('Pending action not found'); return; }
+    p.status = 'executed';
+    ahLogAction('confirmed', p.actionType, p.payload, 'User confirmed', p.id);
+    ahPushActivity('ai.action.confirmed', 'Confirmed ' + p.label, ahEventPayload(p.actionType, p.payload, p.id));
+    ahPublish('ai.action.confirmed', ahEventPayload(p.actionType, p.payload, p.id));
+    ahExecuteAction(p.actionType, p.payload, 'confirmed', p.id);
+    os.pending = os.pending.filter(function (x) { return String(x.id) !== String(id); });
+    renderAskHubly();
+  }
+  function ahCancelPending(id) {
+    var os = ensureAskHublyOsState();
+    var p = os.pending.find(function (x) { return String(x.id) === String(id); });
+    if (!p) { toast('Pending action not found'); return; }
+    p.status = 'cancelled';
+    ahLogAction('cancelled', p.actionType, p.payload, 'User cancelled', p.id);
+    ahPushActivity('ai.action.cancelled', 'Cancelled ' + p.label, ahEventPayload(p.actionType, p.payload, p.id));
+    ahPublish('ai.action.cancelled', ahEventPayload(p.actionType, p.payload, p.id));
+    os.pending = os.pending.filter(function (x) { return String(x.id) !== String(id); });
+    toast('Action cancelled');
+    renderAskHubly();
+  }
+  function ahParseAsk(text) {
+    var q = String(text || '').toLowerCase();
+    if (/refund/.test(q)) return { type: 'refund_payment', payload: ahPayloadFor('refund_payment') };
+    if (/delete|remove/.test(q) && /customer|client/.test(q)) return { type: 'delete_customer', payload: ahPayloadFor('delete_customer') };
+    if (/change|raise|lower|update/.test(q) && /pricing|price|rate/.test(q)) return { type: 'change_pricing', payload: ahPayloadFor('change_pricing') };
+    if (/publish|go live/.test(q) && /website|site|page|homepage/.test(q)) return { type: 'publish_website', payload: ahPayloadFor('publish_website') };
+    if (/cancel/.test(q) && /membership|member/.test(q)) return { type: 'cancel_membership', payload: ahPayloadFor('cancel_membership') };
+    if (/send|launch|blast/.test(q) && /campaign|email|sms/.test(q)) return { type: 'send_campaign', payload: ahPayloadFor('send_campaign') };
+    if (/create|book|schedule|add/.test(q) && /job|appointment|booking/.test(q)) return { type: 'create_job', payload: ahPayloadFor('create_job') };
+    if (/quote|estimate/.test(q) && /create|draft|send|make|new/.test(q)) return { type: 'create_quote', payload: ahPayloadFor('create_quote') };
+    if (/campaign|win.?back|marketing/.test(q) && /draft|write|generate|create/.test(q)) return { type: 'draft_campaign', payload: ahPayloadFor('draft_campaign') };
+    if (/website|homepage|headline|booking cta|site copy/.test(q)) return { type: 'update_website', payload: ahPayloadFor('update_website') };
+    if (/follow.?up|follow up|reminder/.test(q) && /schedule|task|create/.test(q)) return { type: 'schedule_followup', payload: ahPayloadFor('schedule_followup') };
+    if (/report|revenue|forecast|kpi|analytics/.test(q) && /refresh|generate|run/.test(q)) return { type: 'generate_report', payload: ahPayloadFor('generate_report') };
+    if (/report|revenue|forecast|kpi|analytics/.test(q)) return { type: 'explain_report', payload: ahPayloadFor('explain_report') };
+    if (/summarize|summary/.test(q) && /customer|client/.test(q)) return { type: 'summarize_customer', payload: ahPayloadFor('summarize_customer') };
+    if (/follow.?up|follow up|rebook|nudge|who should/.test(q)) return { type: 'suggest_followups', payload: ahPayloadFor('suggest_followups') };
+    if (/draft|write|text|email|message|membership/.test(q)) return { type: 'generate_draft', payload: ahPayloadFor('generate_draft') };
+    return null;
+  }
+  function ahAsk(text) {
+    text = String(text || '').trim();
+    if (!text) return;
+    ensureAskHublyOsState();
+    ahAddMessage('user', text);
+    var parsed = ahParseAsk(text);
+    if (parsed) return ahProposeAction(parsed.type, parsed.payload);
+    var answer = 'Here is the current operating context: ' + ahContextLine() + ' I can answer safely, generate drafts, or propose confirmed actions into the owning modules.';
+    ahAddMessage('assistant', answer);
+    ahMemoryNote('context', 'Answered owner-context question: ' + text.slice(0, 80), { module: 'ask' });
+    renderAskHubly();
+  }
+  function ahStatusBadge(label, tone) {
+    return DS() ? DS().statusBadge(label, tone || 'info') : '<span class="jos-pill ' + esc(tone || 'info') + '">' + esc(label) + '</span>';
+  }
+  function ahRenderHero() {
+    return '<div class="jos-ask-hero jos-ah-hero"><img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" onerror="this.style.display=\'none\'">' +
+      '<h1>Ask Hubly</h1><p>Your Stage 1 intelligence layer across every Operate owner. High-impact actions wait for confirmation.</p>' +
+      '<div class="jos-ask-prompt"><input id="jos-ask-input" type="text" placeholder="Ask anything about your business..." onkeydown="if(event.key===\'Enter\'){window.HublyJourneyOS&&HublyJourneyOS._askFromInput()}">' +
+      btn('ask-submit', 'Ask', 'jos-btn-brand') + '</div><div class="jos-ask-chips">' + ASK_CHIPS.map(function (c) { return '<button type="button" class="jos-ask-chip" data-jos-ask="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div></div>';
+  }
+  function ahTabsHtml(active) {
+    return '<div class="jos-tabs jos-ah-tabs">' + AH_TABS.map(function (t) {
+      return '<button type="button" class="jos-tab' + (active === t[0] ? ' on' : '') + '" data-jos-ah-tab="' + esc(t[0]) + '">' + esc(t[1]) + '</button>';
+    }).join('') + '</div>';
+  }
+  function ahContextKpis() {
+    var c = ahOwnerContext();
+    var cards = [
+      ['Customers', c.customers.total, 'Customers owner'],
+      ['Active jobs', c.jobs.active, 'Jobs owner'],
+      ['Collected', money(c.revenue.total) || '$0', 'Revenue/Reports'],
+      ['Campaigns', c.marketing.campaigns, 'Marketing owner']
+    ];
+    return '<div class="jos-ah-kpis">' + cards.map(function (x) {
+      return '<div class="jos-ah-kpi"><div class="v">' + esc(x[1]) + '</div><div class="l">' + esc(x[0]) + '</div><span>' + esc(x[2]) + '</span></div>';
+    }).join('') + '</div>';
+  }
+  function renderAhChatTab() {
+    var conv = ahConversation();
+    var messages = (conv.messages || []).slice(-12).map(function (m) {
+      return '<div class="jos-ah-msg ' + esc(m.role || 'assistant') + '"><div class="role">' + esc(m.role || 'assistant') + '</div><div class="txt">' + esc(m.text || '') + '</div></div>';
+    }).join('');
+    function askItem(t, s) { return '<button type="button" class="jos-ask-item jos-ah-ask-item" data-jos-ask="' + esc(t) + '"><div>AI</div><div><strong>' + esc(t) + '</strong><span>' + esc(s) + '</span></div></button>'; }
+    return ahRenderHero() + ahContextKpis() +
+      '<div class="jos-ah-chat-layout jos-mt"><div class="jos-card jos-ah-thread"><div class="jos-kicker">Conversation</div><div class="jos-ah-messages">' + messages + '</div></div>' +
+      '<div class="jos-stack"><div class="jos-card"><div class="jos-kicker">Popular asks</div><div class="jos-ask-list jos-mt">' + POPULAR_ASKS.map(function (p) { return askItem(p.t, p.s); }).join('') + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Rule #22</div><p class="jos-muted">Mutating actions enter the confirmation queue unless an exact automation allow-rule exists.</p>' + dsBtn('ah-propose-create-job', 'Demo: create job', 'jos-btn-brand jos-btn-sm') + '</div></div></div>';
+  }
+  function renderAhPendingCard(p) {
+    return '<div class="jos-ah-pending" data-jos-ah-pending="' + esc(p.id) + '"><div><div class="jos-kicker">Pending confirmation</div><strong>' + esc(p.label || ahAction(p.actionType).label) + '</strong><p>' + esc(p.reason || '') + '</p><pre>' + esc(JSON.stringify(p.payload || {}, null, 0)) + '</pre></div>' +
+      '<div class="jos-btn-row">' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="ah-confirm" data-jos-ah-pending="' + esc(p.id) + '">Confirm</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="ah-cancel" data-jos-ah-pending="' + esc(p.id) + '">Cancel</button></div></div>';
+  }
+  function renderAhActionsTab() {
+    var os = ensureAskHublyOsState();
+    var logs = os.actions.slice().reverse().slice(0, 18).map(function (a) {
+      var tone = a.status === 'executed' ? 'ok' : (a.status === 'cancelled' ? 'warn' : 'info');
+      return '<div class="jos-ah-log"><div><strong>' + esc(a.label || a.actionType) + '</strong><span>' + esc(String(a.at || '').replace('T', ' ').slice(0, 19)) + '</span></div>' + ahStatusBadge(a.status, tone) + '</div>';
+    }).join('');
+    var demos = ['create_job', 'create_quote', 'draft_campaign', 'send_campaign', 'update_website', 'publish_website', 'schedule_followup', 'generate_report', 'summarize_customer', 'suggest_followups', 'generate_draft'].map(function (type) {
+      return dsBtn(ahProposeAct(type), ahAction(type).label, ahAction(type).requiresConfirm ? 'jos-btn jos-btn-sm' : 'jos-btn-brand jos-btn-sm');
+    }).join('');
+    var guarded = ['refund_payment', 'delete_customer', 'change_pricing'].map(function (type) {
+      return dsBtn(ahProposeAct(type), ahAction(type).label, 'jos-btn jos-btn-sm');
+    }).join('');
+    return '<div class="jos-ah-2col"><div class="jos-card"><div class="jos-kicker">Confirmation queue</div><div class="jos-ah-pending-list jos-mt">' + (os.pending.length ? os.pending.map(renderAhPendingCard).join('') : (DS() ? DS().emptyState('No pending actions', 'High-impact proposals will appear here.') : '<div class="jos-empty">No pending actions.</div>')) + '</div></div>' +
+      '<div class="jos-stack"><div class="jos-card"><div class="jos-kicker">Action catalog demos</div><div class="jos-btn-row jos-mt">' + demos + '</div></div><div class="jos-card"><div class="jos-kicker">Hard guards</div><p class="jos-muted">These cannot execute silently; they must enter pending or match an exact automation allow-rule.</p><div class="jos-btn-row">' + guarded + '</div></div></div></div>' +
+      '<div class="jos-card jos-mt"><div class="jos-kicker">Append-only action log</div><div class="jos-ah-log-list jos-mt">' + (logs || (DS() ? DS().emptyState('No action log yet', 'Ask Hubly proposals and executions append here.') : '')) + '</div></div>';
+  }
+  function renderAhMemoryTab() {
+    var os = ensureAskHublyOsState();
+    var rows = os.memory.slice().reverse().map(function (m) {
+      return '<div class="jos-ah-memory"><div class="jos-between"><strong>' + esc(m.kind || 'note') + '</strong><span class="jos-muted">' + esc(String(m.at || '').replace('T', ' ').slice(0, 19)) + '</span></div><p>' + esc(m.text || '') + '</p><div class="jos-muted">' + esc(m.refs ? JSON.stringify(m.refs) : '') + '</div></div>';
+    }).join('');
+    return '<div class="jos-card"><div class="jos-kicker">Memory notes</div><p class="jos-muted">Notes only: no duplicated customers, jobs, payments, leads, or campaigns.</p><div class="jos-ah-memory-add jos-mt"><input id="jos-ah-memory-input" type="text" placeholder="Add a business memory note...">' + dsBtn('ah-memory-add', 'Add memory', 'jos-btn-brand jos-btn-sm') + '</div><div class="jos-ah-memory-list jos-mt">' + rows + '</div></div>';
+  }
+  function renderAhAutomationsTab() {
+    var os = ensureAskHublyOsState();
+    var opts = Object.keys(AH_ACTION_CATALOG).map(function (type) {
+      return '<option value="' + esc(type) + '">' + esc(ahAction(type).label + (ahAction(type).requiresConfirm ? ' - confirmable' : ' - safe')) + '</option>';
+    }).join('');
+    var rows = os.automations.map(function (a) {
+      return '<div class="jos-ah-auto"><div><strong>' + esc(ahAction(a.actionType).label) + '</strong><div class="jos-muted">' + esc(a.note || 'Exact actionType allow-rule') + '</div></div>' +
+        '<button type="button" class="jos-btn jos-btn-sm' + (a.allowed ? ' jos-btn-brand' : '') + '" data-jos-act="ah-auto-toggle" data-jos-ah-auto="' + esc(a.id) + '">' + (a.allowed ? 'Allowed' : 'Paused') + '</button></div>';
+    }).join('');
+    return '<div class="jos-ah-2col"><div class="jos-card"><div class="jos-kicker">Add allow-rule</div><p class="jos-muted">Allow-rules auto-confirm only the exact listed action type.</p><div class="jos-ah-auto-form jos-mt"><label>Action<select id="jos-ah-auto-action">' + opts + '</select></label><label>Note<input id="jos-ah-auto-note" type="text" placeholder="e.g. owner-approved daily report"></label>' + dsBtn('ah-auto-add', 'Add rule', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Automation allow-rules</div><div class="jos-ah-auto-list jos-mt">' + (rows || (DS() ? DS().emptyState('No allow-rules', 'Confirmed actions will queue until a rule is added.') : '')) + '</div></div></div>';
+  }
+  function renderAhContextTab() {
+    var c = ahOwnerContext();
+    var rows = [
+      ['Customers', 'S.customers', c.customers.total + ' customers', 'ah-go-customers'],
+      ['Leads', 'collectLeads()', c.leads.total + ' leads', 'ah-go-leads'],
+      ['Jobs', 'S.jobs', c.jobs.active + ' active / ' + c.jobs.total + ' total', 'ah-go-jobs'],
+      ['Revenue', 'S.revenueOs', money(c.revenue.total) || '$0', 'ah-go-money'],
+      ['Reports', 'S.reportsOs', c.reports.dashboards + ' dashboards', 'ah-go-reports'],
+      ['Marketing', 'S.marketingOs', c.marketing.campaigns + ' campaigns', 'ah-go-marketing'],
+      ['Memberships', 'S.membershipsOs', c.memberships.active + ' active', 'ah-go-memberships'],
+      ['Reviews', 'S.reviewsOs', c.reviews.count + ' reviews', 'ah-go-reviews'],
+      ['Storefront', 'S.website / S.editorSvcs', c.services.total + ' services', 'ah-go-editor']
+    ].map(function (r) {
+      return '<tr><td><strong>' + esc(r[0]) + '</strong></td><td>' + esc(r[1]) + '</td><td>' + esc(r[2]) + '</td><td>' + dsBtn(r[3], 'Open', 'jos-btn jos-btn-sm') + '</td></tr>';
+    }).join('');
+    var proposals = ['create_job', 'draft_campaign', 'send_campaign', 'update_website', 'publish_website', 'generate_report'].map(function (type) {
+      return dsBtn(ahProposeAct(type), ahAction(type).label, 'jos-btn jos-btn-sm');
+    }).join('');
+    return '<div class="jos-card"><div class="jos-kicker">Owner context map</div><p class="jos-muted">Ask Hubly reads summaries and ids from owners; it never stores operational row arrays inside S.askHublyOs.</p><div class="jos-rpt-table-wrap jos-mt"><table class="jos-rpt-table"><thead><tr><th>Module</th><th>Owner</th><th>Now</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('ah-refresh-context', 'Refresh context', 'jos-btn-brand jos-btn-sm') + proposals + '</div></div>';
+  }
+  function renderAhActivityTab() {
+    var os = ensureAskHublyOsState();
+    var rows = os.activity.slice().reverse().map(function (a) {
+      return '<div class="jos-ah-event"><div class="jos-ah-event-type">' + esc(a.type || 'activity') + '</div><div class="jos-muted">' + esc(String(a.at || '').replace('T', ' ').slice(0, 19)) + '</div><p>' + esc(a.label || '') + '</p>' + (a.payload ? '<pre>' + esc(JSON.stringify(a.payload || {}, null, 0)) + '</pre>' : '') + '</div>';
+    }).join('');
+    var ev = hublyEvents();
+    var aiEvents = ev && typeof ev.recent === 'function' ? ev.recent(30).filter(function (row) { return /^ai\./.test(row.type); }) : [];
+    var eventRows = aiEvents.map(function (row) {
+      return '<div class="jos-ah-event"><div class="jos-ah-event-type">' + esc(row.type) + '</div><div class="jos-muted">' + esc(String(row.at || '').replace('T', ' ').slice(0, 19)) + '</div><pre>' + esc(JSON.stringify(row.payload || {}, null, 0)) + '</pre></div>';
+    }).join('');
+    return '<div class="jos-ah-2col"><div class="jos-card"><div class="jos-kicker">Ask Hubly activity</div><div class="jos-ah-events jos-mt">' + (rows || '') + '</div></div><div class="jos-card"><div class="jos-kicker">AI events</div><div class="jos-ah-events jos-mt">' + (eventRows || (DS() ? DS().emptyState('No AI events yet', 'Propose or execute an action to publish events.') : '')) + '</div></div></div>';
+  }
+  function renderAhTabBody(root, tab) {
+    if (tab === 'actions') return renderAhActionsTab();
+    if (tab === 'memory') return renderAhMemoryTab();
+    if (tab === 'automations') return renderAhAutomationsTab();
+    if (tab === 'context') return renderAhContextTab();
+    if (tab === 'activity') return renderAhActivityTab();
+    return renderAhChatTab();
+  }
   function renderAskHubly() {
-    var root = el('jos-ask-root'); if (!root) return;
-    var recent = (S().askHistory || S().aiHistory || []).slice(0, 5);
-    if (!recent.length) recent = [{ t: 'Who should I follow up with?', s: 'Yesterday' }, { t: 'Rewrite my homepage headline', s: '2 days ago' }, { t: 'Suggest a membership price', s: 'This week' }];
-    function askItem(t, s, ico) { return '<div class="jos-ask-item" data-jos-ask="' + esc(t) + '"><div>' + ico + '</div><div><strong>' + esc(t) + '</strong><span>' + esc(s) + '</span></div></div>'; }
-    root.innerHTML = '<div class="jos-page jos-ask"><div class="jos-ask-hero"><img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" onerror="this.style.display=\'none\'">' +
-      '<h1>Ask Hubly</h1><p>Your operating partner for follow-ups, pricing, and growth — one thread above every feature.</p>' +
-      '<div class="jos-ask-prompt"><input id="jos-ask-input" type="text" placeholder="Ask anything about your business…" onkeydown="if(event.key===\'Enter\'){window.HublyJourneyOS&&HublyJourneyOS._askFromInput()}">' +
-      btn('ask-submit', 'Ask', 'jos-btn-brand') + '</div><div class="jos-ask-chips">' + ASK_CHIPS.map(function (c) { return '<button type="button" class="jos-ask-chip" data-jos-ask="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div></div>' +
-      '<div class="jos-ask-grid"><div class="jos-ask-section"><h2>Popular asks</h2><div class="jos-ask-list">' + POPULAR_ASKS.map(function (p) { return askItem(p.t, p.s, '⚡'); }).join('') + '</div></div>' +
-      '<div class="jos-stack"><div class="jos-ask-section"><h2>Recent conversations</h2><div class="jos-ask-list">' + recent.map(function (r) { return askItem(r.t || r.q || r.question || 'Conversation', r.s || r.when || 'Recent', '💬'); }).join('') + '</div></div>' +
-      '<div class="jos-ask-section"><h2>Impact</h2><div class="jos-ask-stats">' +
-      [['Open leads', collectLeads().length], ['Active jobs', jobs().filter(jobActive).length], ['Customers', customers().length], ['Quotes', quotes().length]].map(function (x) {
-        return '<div class="jos-ask-stat"><div class="v">' + x[1] + '</div><div class="l">' + x[0] + '</div></div>';
-      }).join('') + '</div></div></div></div></div>';
+    var root = ownPixelView('v-ask', 'jos-ask-root');
+    if (!root) return;
+    updateChrome('ask');
+    ensureAskHublyOsState();
+    var tab = root._josAhTab || 'chat';
+    root.innerHTML = '<div class="jos-page jos-ask jos-ah-page">' + ahTabsHtml(tab) + '<div class="jos-ah-body">' + renderAhTabBody(root, tab) + '</div></div>';
     bindRoot(root);
+  }
+  function handleAskHublyAct(act, t) {
+    var root = el('jos-ask-root');
+    ensureAskHublyOsState();
+    try {
+      if (act === 'ah-confirm') {
+        var pid = t && (t.getAttribute('data-jos-ah-pending') || (t.closest('[data-jos-ah-pending]') && t.closest('[data-jos-ah-pending]').getAttribute('data-jos-ah-pending')));
+        return ahConfirmPending(pid);
+      }
+      if (act === 'ah-cancel') {
+        var cid = t && (t.getAttribute('data-jos-ah-pending') || (t.closest('[data-jos-ah-pending]') && t.closest('[data-jos-ah-pending]').getAttribute('data-jos-ah-pending')));
+        return ahCancelPending(cid);
+      }
+      if (act === 'ah-memory-add') {
+        var mem = el('jos-ah-memory-input');
+        if (!mem || !String(mem.value || '').trim()) return toast('Enter a memory note');
+        ahMemoryNote('note', mem.value.trim(), { module: 'ask' });
+        ahPushActivity('memory.added', 'Memory note added', {});
+        return renderAskHubly();
+      }
+      if (act === 'ah-auto-add') {
+        var actionType = (el('jos-ah-auto-action') || {}).value || 'generate_report';
+        var note = (el('jos-ah-auto-note') || {}).value || '';
+        var os = ensureAskHublyOsState();
+        var existing = os.automations.find(function (a) { return String(a.actionType) === String(actionType); });
+        if (existing) { existing.allowed = true; existing.note = note || existing.note; toast('Allow-rule updated'); }
+        else os.automations.push({ id: ahId('ah_auto'), actionType: actionType, allowed: true, note: note || 'Exact Ask Hubly allow-rule' });
+        ahPushActivity('automation.allowed', 'Automation allowed for ' + ahAction(actionType).label, { actionType: actionType });
+        return renderAskHubly();
+      }
+      if (act === 'ah-auto-toggle') {
+        var aid = t && t.getAttribute('data-jos-ah-auto');
+        var auto = ensureAskHublyOsState().automations.find(function (a) { return String(a.id) === String(aid); });
+        if (auto) { auto.allowed = !auto.allowed; ahPushActivity('automation.toggled', (auto.allowed ? 'Allowed ' : 'Paused ') + ahAction(auto.actionType).label, { actionType: auto.actionType }); }
+        return renderAskHubly();
+      }
+      if (act === 'ah-refresh-context') {
+        ahPushActivity('context.refreshed', 'Refreshed owner context', { summary: ahContextLine() });
+        toast('Context refreshed');
+        return renderAskHubly();
+      }
+      if (act.indexOf('ah-propose-') === 0) {
+        var type = act.replace('ah-propose-', '').replace(/-/g, '_');
+        return ahProposeAction(type, ahPayloadFor(type));
+      }
+      if (act === 'ah-go-money') return switchNav('money');
+      if (act === 'ah-go-reports') return switchNav('reports');
+      if (act === 'ah-go-customers') return switchNav('customers');
+      if (act === 'ah-go-leads') return switchNav('leads');
+      if (act === 'ah-go-jobs') return switchNav('jobs');
+      if (act === 'ah-go-marketing') return switchNav('marketing');
+      if (act === 'ah-go-memberships') return switchNav('memberships');
+      if (act === 'ah-go-reviews') return switchNav('reviews');
+      if (act === 'ah-go-editor') return switchNav('editor');
+      if (root) renderAskHubly();
+    } catch (err) {
+      console.warn('HublyJourneyOS Ask Hubly act', act, err);
+      toast('Ask Hubly action failed');
+    }
   }
 
   var MKT_TABS = [
@@ -8463,7 +9106,7 @@
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-rve-tab],[data-jos-rpt-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-rve-tab],[data-jos-rpt-tab],[data-jos-ah-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
       if (t.hasAttribute('data-jos-inbox-tab')) {
         var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
         return;
@@ -8534,6 +9177,10 @@
         var rptr = el('jos-reports-root'); if (rptr) { rptr._josRptTab = t.getAttribute('data-jos-rpt-tab'); renderReportsPage(); }
         return;
       }
+      if (t.hasAttribute('data-jos-ah-tab')) {
+        var ahr = el('jos-ask-root'); if (ahr) { ahr._josAhTab = t.getAttribute('data-jos-ah-tab'); renderAskHubly(); }
+        return;
+      }
       if (t.hasAttribute('data-jos-cust-row')) {
         var crow = el('jos-customers-root');
         if (crow) {
@@ -8577,6 +9224,7 @@
       if (act && String(act).indexOf('mem-') === 0) return handleMembershipsAct(act, t);
       if (act && String(act).indexOf('rve-') === 0) return handleRevenueAct(act, t);
       if (act && String(act).indexOf('rpt-') === 0) return handleReportsAct(act, t);
+      if (act && String(act).indexOf('ah-') === 0) return handleAskHublyAct(act, t);
       if (act === 'ask-submit' || act === 'ask-brief') {
         switchNav('ask');
         return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
@@ -8628,6 +9276,7 @@
     renderOpportunities: renderOpportunities,
     renderActivity: renderActivity,
     renderAskHubly: renderAskHubly,
+    handleAskHublyAct: handleAskHublyAct,
     renderMarketing: renderMarketing,
     handleMarketingAct: handleMarketingAct,
     renderMemberships: renderMemberships,
@@ -8659,7 +9308,7 @@
     updateChrome: updateChrome,
     _askFromInput: function (preset) {
       var input = el('jos-ask-input') || el('ai-question-input');
-      ask(preset || (input && input.value) || '');
+      ahAsk(preset || (input && input.value) || '');
       if (input && !preset) input.value = '';
     }
   };

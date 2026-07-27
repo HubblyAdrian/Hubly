@@ -41,6 +41,7 @@ Before approval of any new module PR, verify previously **locked** modules still
 - ⭐ Reviews still works  
 - 🔁 Memberships still works  
 - 💰 Revenue still works  
+- 📊 Reports still works  
 - (+ each newly locked module)
 
 Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).  
@@ -50,7 +51,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 
 ## Platform readiness
 
-See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform health (Design System, Event Bus, MAT/CMV, Financial Integrity, Integrations, Performance, Accessibility, Security).
+See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform health.
 
 | Area | Status |
 |------|--------|
@@ -62,6 +63,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | MAT | ✅ |
 | CMV | ✅ |
 | Financial Integrity | ✅ |
+| AI Confirmation Policy | ✅ Rule #22 |
 | Integrations | ⏸ Stage 2 |
 | Performance | ⏳ |
 | Accessibility | ⏳ |
@@ -84,8 +86,8 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
-| ✨ Ask Hubly | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
+| 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
+| ✨ Ask Hubly | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
 | ⚙️ Settings | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 
 ---
@@ -105,8 +107,16 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 9 | ⭐ Reviews | ✅ Locked | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | 🔒 OS · MAT ✅ · Rule #17 · merged |
 | 10 | 🔁 Memberships | ✅ Locked | ⏸ | [#253](https://github.com/HubblyAdrian/Hubly/pull/253) | 🔒 OS · MAT ✅ · Rules #18–19 · merged |
 | 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔒 OS · MAT ✅ · Rule #20 · merged |
-| 12 | 📊 Reports | ✅ OS complete · MAT ✅ · CMV PASS | ⏸ | [#255](https://github.com/HubblyAdrian/Hubly/pull/255) | Rule #21 · aggregates only · awaiting approval → then 🔒 OS |
-| 13–14 | Remaining | ⏳ | ⏸ | — | Ask Hubly · Settings |
+| 12 | 📊 Reports | ✅ Locked | ⏸ | [#255](https://github.com/HubblyAdrian/Hubly/pull/255) | 🔒 OS · MAT ✅ · Rule #21 · merged |
+| 13 | ✨ Ask Hubly | ✅ MAT complete | ⏸ | [#256](https://github.com/HubblyAdrian/Hubly/pull/256) | [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md) · Rule #22 · MAT ✅ · CMV PASS · awaiting approval |
+| 14 | ⚙️ Settings | ⏳ | ⏸ | — | |
+
+### 📊 Reports lock
+
+**Stage 1 — Operating System:** ✅ COMPLETE  
+**Stage 2 — Integrations:** ⏸ Deferred  
+
+**Do not modify Reports unless:** bug fix · Stage 2 integrations · explicit module reopen.
 
 ### 💰 Revenue lock
 
@@ -134,5 +144,5 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 Planning → Development (Stage 1 OS) → Self QA → **MAT** → **CMV** → PR → Approval → Merge → **Lock OS**  
 Later: Stage 2 Integrations → separate PR
 
-**Special gates:** Marketing / Revenue architecture docs before Development.  
-**Engineering rules:** #14–21 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md))
+**Special gates:** Marketing / Revenue / **Ask Hubly** architecture docs before Development.  
+**Engineering rules:** #14–22 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md))

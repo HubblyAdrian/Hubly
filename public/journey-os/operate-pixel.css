@@ -37,7 +37,8 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 #p-app.jos-pixel #v-pipeline.jos-pixel-owned > :not(#jos-pipeline-root),
 #p-app.jos-pixel #v-editor.jos-pixel-owned > :not(#jos-storefront-root),
 #p-app.jos-pixel #v-marketing.jos-pixel-owned > :not(#jos-marketing-root),
-#p-app.jos-pixel #v-reports.jos-pixel-owned > :not(#jos-reports-root){
+#p-app.jos-pixel #v-reports.jos-pixel-owned > :not(#jos-reports-root),
+#p-app.jos-pixel #v-ask.jos-pixel-owned > :not(#jos-ask-root){
   display:none!important;
 }
 #p-app.jos-pixel #v-reviews.jos-pixel-owned > :not(#jos-reviews-root){
@@ -1194,4 +1195,67 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 @media(max-width:720px){
   .jos-rpt-form{grid-template-columns:1fr}
   .jos-rpt-grid{grid-template-columns:1fr}
+}
+
+/* Ask Hubly OS */
+.jos-ah-page{animation:josHomeIn .3s ease both;position:relative;max-width:1160px}
+.jos-ah-tabs{margin-bottom:12px;flex-wrap:wrap}
+.jos-ah-body{display:grid;gap:14px}
+.jos-ah-hero{max-width:none;margin-bottom:14px}
+.jos-ah-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.jos-ah-kpi{
+  background:#fff;border:1px solid var(--jos-border);border-radius:12px;padding:12px;min-width:0;
+}
+.jos-ah-kpi .v{font-size:20px;font-weight:850;color:var(--jos-brand);letter-spacing:-.03em}
+.jos-ah-kpi .l{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--jos-ink-3);margin-top:2px}
+.jos-ah-kpi span{display:block;font-size:12px;color:var(--jos-ink-2);margin-top:4px}
+.jos-ah-chat-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.8fr);gap:14px;align-items:start}
+.jos-ah-thread{min-height:360px}
+.jos-ah-messages{display:grid;gap:10px;margin-top:12px;max-height:520px;overflow:auto;padding-right:4px}
+.jos-ah-msg{
+  border:1px solid var(--jos-border);border-radius:12px;padding:10px 12px;background:var(--jos-surface-2);
+  max-width:86%;
+}
+.jos-ah-msg.user{margin-left:auto;background:var(--jos-brand-soft);border-color:rgba(217,99,45,.25)}
+.jos-ah-msg .role{
+  font-size:10px;font-weight:850;letter-spacing:.07em;text-transform:uppercase;color:var(--jos-ink-3);margin-bottom:4px;
+}
+.jos-ah-msg .txt{font-size:13px;line-height:1.45;color:var(--jos-navy);white-space:pre-wrap}
+.jos-ah-ask-item{width:100%;text-align:left}
+.jos-ah-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.jos-ah-pending-list,.jos-ah-log-list,.jos-ah-memory-list,.jos-ah-auto-list,.jos-ah-events{display:grid;gap:10px}
+.jos-ah-pending{
+  border:1px solid rgba(217,99,45,.28);background:var(--jos-brand-soft);border-radius:12px;padding:12px;
+  display:grid;gap:10px;color:var(--jos-brand-dark);
+}
+.jos-ah-pending strong{color:var(--jos-brand-dark);font-size:14px}
+.jos-ah-pending p{margin:4px 0 0;font-size:12px;line-height:1.45}
+.jos-ah-pending pre,.jos-ah-event pre{
+  margin:8px 0 0;white-space:pre-wrap;word-break:break-word;font-size:11px;
+  background:rgba(255,255,255,.65);border:1px solid rgba(217,99,45,.18);border-radius:8px;padding:8px;color:var(--jos-navy);
+}
+.jos-ah-log,.jos-ah-auto{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border:1px solid var(--jos-border);border-radius:10px;padding:10px;background:#fff;
+}
+.jos-ah-log strong,.jos-ah-auto strong{font-size:13px;color:var(--jos-navy)}
+.jos-ah-log span{display:block;font-size:11px;color:var(--jos-ink-3);margin-top:2px}
+.jos-ah-memory,.jos-ah-event{
+  border:1px solid var(--jos-border);border-radius:10px;padding:10px;background:#fff;
+}
+.jos-ah-memory p,.jos-ah-event p{margin:7px 0 0;font-size:12px;line-height:1.45;color:var(--jos-ink-2)}
+.jos-ah-memory-add{display:flex;gap:8px;flex-wrap:wrap}
+.jos-ah-memory-add input{flex:1;min-width:220px}
+.jos-ah-memory-add input,.jos-ah-auto-form input,.jos-ah-auto-form select{
+  font:inherit;padding:9px 11px;border:1px solid var(--jos-border);border-radius:8px;background:#fff;color:var(--jos-navy);
+}
+.jos-ah-auto-form{display:grid;gap:10px}
+.jos-ah-auto-form label{display:grid;gap:4px;font-size:11px;font-weight:800;color:var(--jos-ink-2)}
+.jos-ah-event-type{font-weight:850;font-size:12px;color:var(--jos-navy)}
+@media(max-width:1100px){
+  .jos-ah-chat-layout,.jos-ah-2col{grid-template-columns:1fr}
+}
+@media(max-width:720px){
+  .jos-ah-msg{max-width:100%}
+  .jos-ah-memory-add{display:grid}
 }

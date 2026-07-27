@@ -1,12 +1,14 @@
 # Module 12 — 📊 Reports
 
-**Status:** Stage 1 OS · MAT ✅ · CMV PASS · awaiting approval  
-**Branch:** `cursor/operate-reports-2662`  
+**Status:** 🔒 OS locked · Stage 1 COMPLETE · Stage 2 ⏸ Deferred  
+**PR:** [#255](https://github.com/HubblyAdrian/Hubly/pull/255) (merged)  
 **Plan:** [REPORTS_PLAN.md](./REPORTS_PLAN.md)  
 **Platform:** [PLATFORM_READINESS.md](./PLATFORM_READINESS.md)  
 **Rules:** #14–21 (especially **#21**)  
 **Design System:** HublyDS (Rule #14)  
-**MAT:** [REPORTS_MAT.md](./REPORTS_MAT.md) · runner `node scripts/mat-reports.mjs` 
+**MAT:** [REPORTS_MAT.md](./REPORTS_MAT.md) · runner `node scripts/mat-reports.mjs`  
+
+**Do not modify Reports unless:** bug fix · Stage 2 integrations · explicit module reopen. 
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
 
@@ -58,8 +60,7 @@ Reports is a **presentation and analytics layer**. It owns almost no business da
 - [x] CMV incl. Revenue ✅  
 
 ### Definition of Done
-- [x] OS · MAT ✅ · CMV PASS  
-- [ ] Merge → 🔒 OS ⏳ (awaiting approval)  
+- [x] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ✅ 
 
 ---
 

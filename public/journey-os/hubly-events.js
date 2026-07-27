@@ -101,7 +101,13 @@
       REVIEW_RESPONDED: 'review.responded',
       REPUTATION_CHANGED: 'reputation.changed',
       CAMPAIGN_SENT: 'campaign.sent',
-      CUSTOMER_CREATED: 'customer.created'
+      CUSTOMER_CREATED: 'customer.created',
+      AI_ACTION_PROPOSED: 'ai.action.proposed',
+      AI_ACTION_CONFIRMED: 'ai.action.confirmed',
+      AI_ACTION_CANCELLED: 'ai.action.cancelled',
+      AI_ACTION_EXECUTED: 'ai.action.executed',
+      AI_DRAFT_GENERATED: 'ai.draft.generated',
+      REPORT_GENERATED: 'report.generated'
     })
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -17,7 +17,7 @@ Other modules **read** that data — they do not own or duplicate it.
 | Membership Plans / Subscribers / Visits | 🔁 Memberships |
 | Payments / Invoices / Deposits / Taxes / Stripe / Payouts | 💰 Revenue |
 | Dashboards / Saved definitions / Layouts / Schedules / Forecast models | 📊 Reports (Rule #21 — aggregates only; never operational copies) |
-| AI conversations / memory / actions / context | ✨ Ask Hubly |
+| AI conversations / memory / actions / pending confirmations / automation allow-rules | ✨ Ask Hubly (Rule #22 — never owns operational entities) |
 | Business config / Integrations / Permissions / Branding / AI prefs | ⚙️ Settings |
 
 ## Enforcement (aggressive)
@@ -45,7 +45,7 @@ Other modules **read** that data — they do not own or duplicate it.
 | Memberships | Plans, subscribers, billing rules, visit/renewal ledgers (`S.membershipsOs`) | Customers, Jobs, Revenue, Services (catalog refs) |
 | Revenue | Payments / invoices / deposits / refunds / taxes / Stripe sync status / payouts (`S.revenueOs`) — Rule #20 | Customers, Jobs, Memberships, Services |
 | Reports | Dashboards, definitions, layouts, schedules, forecast models (`S.reportsOs`) | Revenue, Memberships, Pipeline, Customers, Leads, Jobs, Marketing, Reviews (aggregate only) |
-| Ask Hubly | Conversations, memory, actions, context | Everything (never source of truth for entities) |
+| Ask Hubly | Conversations, memory, action log, pending confirmations, automation allow-rules (`S.askHublyOs`) | Everything via owners (never source of truth for entities) |
 | Settings | Business config, integrations, permissions, branding, AI prefs | — |
 
 See also [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md), [EVENTS.md](./EVENTS.md) (Rules #17–18), [MEMBERSHIPS_PLAN.md](./MEMBERSHIPS_PLAN.md), and [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md).
