@@ -252,7 +252,11 @@ try {
 try {
   H.renderInbox();
   const inboxHtml = document.getElementById("jos-inbox-root").innerHTML;
-  ok("📥 Inbox still works", /jos-inbox|Inbox|conversation|SMS|Needs/i.test(inboxHtml) && inboxHtml.length > 200, "len=" + inboxHtml.length);
+  ok(
+    "📥 Inbox still works",
+    /jos-inbox-shot|Inbox|Alex Rivera|Book Job|Contact Details/i.test(inboxHtml) && inboxHtml.length > 200,
+    "len=" + inboxHtml.length
+  );
 } catch (e) {
   ok("📥 Inbox still works", false, String(e.message || e));
 }
