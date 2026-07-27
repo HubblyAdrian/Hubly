@@ -42,6 +42,7 @@ ok(/Business Profile/i.test(arch), "Business Profile in Discovery architecture")
 ok(/Owner Profile/i.test(arch), "Owner Profile in Discovery architecture");
 ok(/Business DNA/i.test(arch), "Business DNA as combination");
 ok(/Rule #26/.test(arch), "Rule #26 referenced");
+ok(/canonical for all future Builder|No Builder module may bypass/i.test(read("docs/builder/README.md") + read("docs/operate/OPERATE_ENGINEERING_RULES.md")), "Rule #26 product-wide canonical lock");
 ok(/never re-ask|Nothing already known|Never ask something already known/i.test(arch), "never re-ask known facts");
 ok(/90%/.test(arch), "completion threshold ≥ 90%");
 ok(/Max \*\*2\*\* questions|Max 2 questions/i.test(arch), "max 2 questions");
@@ -65,8 +66,11 @@ ok(/Owner Profile/i.test(mat), "MAT covers Owner Profile");
 ok(/Business DNA reaches|DNA ≥ 90%|≥ 90%/i.test(mat), "MAT covers DNA completion");
 
 const milestone = read("docs/builder/README.md");
-ok(/Architecture locked/i.test(milestone), "milestone shows Discovery architecture locked");
+ok(/Architecture locked|🔒 Architecture/i.test(milestone), "milestone shows Discovery architecture locked");
 ok(/AI Research Engine/i.test(milestone), "milestone lists AI Research Engine");
+ok(/Creative Director/i.test(milestone), "milestone lists Creative Director");
+ok(/Business Vision/i.test(milestone), "milestone lists Business Vision");
+ok(/No Builder module may bypass/i.test(milestone), "milestone bans bypassing canonical objects");
 
 if (failed) process.exit(1);
 console.log("OK discovery architecture lock / Rule #26 checks passed");

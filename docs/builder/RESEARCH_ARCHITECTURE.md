@@ -164,7 +164,7 @@ Pause · Retry · Skip unavailable sources · Continue when complete
 
 ## Outputs — Research Profile
 
-Feeds Module 4 Creative Director:
+**Canonical object.** Feeds Module 4 Creative Director (with Business Vision):
 
 | Block | Contents |
 |-------|----------|

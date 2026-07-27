@@ -33,8 +33,10 @@ Conversation Memory  →  Ask Hubly / coaching history
 | Builder progress | Discovery % · research cache |
 | Business Profile | Industry, services, location, pricing, brand, website |
 | Owner Profile | Experience, goals, communication style, growth priorities, stage, risk, preferred customers |
-| Business DNA | Combination of Business Profile + Owner Profile |
+| Business DNA | Combination of Business Profile + Owner Profile (**canonical** — Rule #26) |
 | Research Profile | Module 3 market / competitor / brand / pricing insights (cached) |
+| Business Vision | Destination — long-term goals, ideal customers, positioning, timeline (Rule #27) |
+| Creative Blueprint | Module 4 agency output (brand / site / booking / growth blueprints) |
 
 **Lifecycle**
 
@@ -138,19 +140,24 @@ Ask Hubly runs on Permanent Memory
 
 ---
 
-## Profiles inside Temporary → Permanent Memory (Rule #26)
+## Profiles inside Temporary → Permanent Memory (Rule #26 · #27)
 
-Hubly does not only learn “the business.” It learns the **owner**.
+Hubly does not only learn “the business.” It learns the **owner** — and where they want to go.
 
 | Layer | What it is |
 |-------|------------|
 | **Business Profile** | Industry, services, location, pricing, brand, website |
 | **Owner Profile** | Experience, goals, communication style, growth priorities, business stage, risk tolerance, preferred customers |
-| **Business DNA** | The combination of both — what Discovery completes and Research / Ask Hubly consume |
+| **Business DNA** | The combination of both — **canonical for all future Builder modules** |
+| **Research Profile** | What the market says |
+| **Business Vision** | What the owner wants to become (destination) |
 
-Ask Hubly coaches using **both** profiles, e.g. memberships before ceramic expansion for a founder who wants steady recurring revenue while just starting out.
+Ask Hubly coaches using DNA **and** Vision, e.g. memberships before ceramic expansion for a founder who wants steady recurring revenue **and** aims to be the premium detailer in Dallas.
 
-See [builder/DISCOVERY_ARCHITECTURE.md](./builder/DISCOVERY_ARCHITECTURE.md).
+**🔒 Rule #26 locked.** No Builder module may bypass or duplicate Business Profile · Owner Profile · Business DNA.  
+UI may not modify these models (or Research Profile / Business Vision) without reopening architecture.
+
+See [builder/DISCOVERY_ARCHITECTURE.md](./builder/DISCOVERY_ARCHITECTURE.md) · [builder/BUSINESS_VISION.md](./builder/BUSINESS_VISION.md).
 
 ---
 
@@ -171,6 +178,8 @@ See [builder/DISCOVERY_ARCHITECTURE.md](./builder/DISCOVERY_ARCHITECTURE.md).
 | AI Landing (🔒) | Creates Temporary Memory |
 | AI Discovery (🔒 Architecture) | Fills Business Profile + Owner Profile → Business DNA |
 | AI Research Engine (Module 3) | Builds Research Profile into Temporary Memory |
-| Website / Services / Brand modules | Write into Permanent Memory after upgrade |
-| Ask Hubly (Operate 🔒) | Owns Conversation Memory; reads Permanent Memory **and** Owner Profile for tailored coaching |
+| Business Vision (Rule #27) | Destination object before Creative Director |
+| AI Creative Director (Module 4) | Consumes all canonical objects → Creative Blueprint |
+| Website / Services / Brand modules | Implement Creative Blueprint into Permanent Memory after upgrade |
+| Ask Hubly (Operate 🔒) | Owns Conversation Memory; reads Permanent Memory, Owner Profile, and Vision for tailored coaching |
 | Marketplace Concierge | May read Temporary Memory for hire intent; separate consumer journey |
