@@ -1391,6 +1391,10 @@
   }
   function ahGreeting() {
     var h = new Date().getHours();
+    try {
+      if (typeof global.businessHourNow === 'function') h = Number(global.businessHourNow()) || h;
+    } catch (e) {}
+    h = Math.max(0, Math.min(23, h | 0));
     var part = h < 12 ? 'Good morning' : (h < 17 ? 'Good afternoon' : 'Good evening');
     return part + ', ' + ahOwnerFirstName();
   }
