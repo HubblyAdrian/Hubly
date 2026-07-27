@@ -2328,6 +2328,40 @@
 
   function mktId(prefix) { return (prefix || 'mkt') + '_' + Math.random().toString(36).slice(2, 9); }
 
+  function demoMarketingSeed() {
+    return {
+      score: 91,
+      analytics: {
+        websiteClicks: 48,
+        websiteClicksDelta: 24,
+        newCustomers: 7,
+        newCustomersDelta: 16,
+        attributedRevenue: 0,
+        activeCampaigns: 1,
+        emailOpenRate: 42,
+        instagramEngagement: 6.8,
+        scoreHistory: [72, 78, 81, 84, 88, 90, 91]
+      },
+      campaigns: [
+        { id: 'mkt_camp_holiday', name: 'Holiday / Seasonal Promo', description: 'Seasonal offer for local homeowners', status: 'running', channel: 'multi', tone: 'blue', stats: { clicks: 48 } },
+        { id: 'mkt_camp_ig', name: 'Instagram caption test', description: 'A/B captions for Reels & feed', status: 'draft', channel: 'instagram', tone: 'pink', stats: { clicks: 32 } },
+        { id: 'mkt_camp_testimonial', name: 'Testimonial spotlight', description: 'Feature 5-star customer stories', status: 'scheduled', channel: 'social', tone: 'purple', stats: { clicks: 27 } },
+        { id: 'mkt_camp_winback', name: 'Win-back campaign', description: 'Re-engage quiet customers', status: 'running', channel: 'sms', tone: 'teal', stats: { clicks: 18 } },
+        { id: 'mkt_camp_nurture', name: 'Email nurture', description: 'Warm leads over 3 touches', status: 'running', channel: 'email', tone: 'orange', stats: { clicks: 14 } }
+      ],
+      calendar: [
+        { id: 'mkt_cal_1', channel: 'linkedin', title: 'Share spring lawn tips', scheduledAt: '2026-07-28', time: '9:00 AM' },
+        { id: 'mkt_cal_2', channel: 'instagram', title: 'Before / after Reel', scheduledAt: '2026-07-29', time: '12:00 PM' },
+        { id: 'mkt_cal_3', channel: 'email', title: 'Weekend booking reminder', scheduledAt: '2026-07-30', time: '8:00 AM' }
+      ],
+      automations: [
+        { id: 'welcome_leads', name: 'Welcome new leads', on: true, desc: 'Send a welcome message when a lead is captured.' },
+        { id: 'estimate_follow_up', name: 'Follow up after estimate', on: true, desc: 'Nudge open quotes after 24 hours.' },
+        { id: 'review_requests', name: 'Review request', on: true, desc: 'Ask for a review after completed jobs.' }
+      ]
+    };
+  }
+
   function ensureMarketingOsState() {
     var st = S();
     if (!st.marketingOs || typeof st.marketingOs !== 'object') st.marketingOs = {};
@@ -2346,8 +2380,8 @@
     if (!Array.isArray(m.automations) || !m.automations.length) {
       m.automations = [
         { id: 'welcome_leads', name: 'Welcome new leads', on: true, desc: 'Send a welcome message when a lead is captured.' },
+        { id: 'estimate_follow_up', name: 'Follow up after estimate', on: true, desc: 'Nudge open quotes after 24 hours.' },
         { id: 'review_requests', name: 'Review request', on: true, desc: 'Ask for a review after completed jobs.' },
-        { id: 'estimate_follow_up', name: 'Estimate follow-up', on: true, desc: 'Nudge open quotes after 24 hours.' },
         { id: 'birthday', name: 'Birthday message', on: true, desc: 'Birthday offer for customers with a date on file.' },
         { id: 're_engage', name: 'Re-engage', on: false, desc: 'Win-back sequence for quiet customers.' }
       ];
@@ -2355,6 +2389,17 @@
     if (!Array.isArray(m.coupons)) m.coupons = [];
     if (!Array.isArray(m.calendar)) m.calendar = [];
     if (!Array.isArray(m.ads)) m.ads = [];
+    if (!m.analytics || typeof m.analytics !== 'object') m.analytics = {};
+    if (allowDemoSeed()) {
+      var demo = demoMarketingSeed();
+      m.score = demo.score;
+      m.analytics = Object.assign({}, demo.analytics);
+      m.campaigns = demo.campaigns.map(function (c) { return Object.assign({}, c, { stats: Object.assign({}, c.stats) }); });
+      m.calendar = demo.calendar.map(function (c) { return Object.assign({}, c); });
+      m.automations = demo.automations.map(function (a) { return Object.assign({}, a); });
+      if (!m.toggles || typeof m.toggles !== 'object') m.toggles = {};
+      demo.automations.forEach(function (a) { m.toggles[a.id] = true; });
+    }
     if (m.score == null) m.score = marketingScore();
     if (!m.toggles || typeof m.toggles !== 'object') m.toggles = {};
     m.automations.forEach(function (a) {
@@ -2476,11 +2521,39 @@
 
   function mktTodayActions() {
     return [
-      { t: 'Post more customer testimonials', s: 'Turn 5-star reviews into social proof.', q: 'Turn my best reviews into testimonial posts', act: 'mkt-ai-post', ico: '★' },
-      { t: 'Run a seasonal promo', s: 'Fill open calendar slots this week.', q: 'Draft a holiday promo for my service business', act: 'mkt-ai-campaign', ico: '🎁' },
-      { t: 'Retarget quiet customers', s: 'Win back people who have not booked lately.', q: 'Draft a win-back text for quiet customers', act: 'mkt-ai-sms', ico: '↩' },
-      { t: 'Promote a membership plan', s: 'Convert frequent customers to recurring.', q: 'Write an email promoting my membership plan', act: 'mkt-ai-email', ico: '♻' }
+      { t: 'Post more customer testimonials', s: 'Build trust and social proof.', q: 'Turn my best reviews into testimonial posts', act: 'mkt-ai-post', ico: '★' },
+      { t: 'Run a seasonal promo', s: 'Boost engagement and sales.', q: 'Draft a holiday promo for my service business', act: 'mkt-ai-campaign', ico: '🎁' },
+      { t: 'Try a retargeting ad', s: 'Bring back interested leads.', q: 'Suggest a retargeting ad for warm website visitors', act: 'mkt-ai-campaign', ico: '🎯' },
+      { t: 'Automate review requests', s: 'Get more 5-star reviews.', q: 'Set up automated review requests after jobs', act: 'mkt-ai-email', ico: '✦' }
     ];
+  }
+
+  function renderMktTopChrome(root) {
+    var owner = S().ownerName || S().ownerFirst || 'Adrian';
+    if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
+    if (owner && owner.indexOf(' ') > -1) owner = owner.split(/\s+/)[0];
+    if (!owner) owner = 'Adrian';
+    var bizName = S().businessName || S().biz || "Adrian's Lawn Service";
+    if (allowDemoSeed()) bizName = "Adrian's Lawn Service";
+    var hour = new Date().getHours();
+    var greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
+    var notifN = allowDemoSeed() ? 3 : 0;
+    return '<header class="jos-mkt-top">' +
+      '<div class="jos-mkt-greet"><h2>' + esc(greet) + ', ' + esc(owner) + ' <span aria-hidden="true">👋</span></h2>' +
+      '<p>Let\'s grow your business today.</p></div>' +
+      '<label class="jos-mkt-global-search"><span class="jos-mkt-search-ico" aria-hidden="true"></span>' +
+      '<input id="jos-mkt-global-search" type="search" placeholder="Search customers, jobs, messages, etc." value="' + esc(root._josMktGlobalQ || '') + '">' +
+      '<kbd>⌘K</kbd></label>' +
+      '<div class="jos-mkt-top-actions">' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-mkt-top-new" data-jos-act="mkt-camp-create-open">+ New</button>' +
+      '<button type="button" class="jos-btn jos-mkt-ask-btn" data-jos-act="go-ask"><span aria-hidden="true">✦</span> Ask Hubly</button>' +
+      '<button type="button" class="jos-icon-btn jos-mkt-bell" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>' +
+      (notifN ? '<i class="badge">' + notifN + '</i>' : '') + '</button>' +
+      '<button type="button" class="jos-mkt-profile" data-jos-act="go-settings" title="Profile">' +
+      '<span class="ava">' + esc(initials(bizName)) + '</span><span class="meta"><strong>' + esc(bizName) + '</strong></span>' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>' +
+      '</div></header>';
   }
 
   function renderMktCampaignModal(root) {
@@ -2558,70 +2631,79 @@
   function renderMktOverviewTab(root) {
     var m = ensureMarketingOsState();
     var a = m.analytics || {};
-    var score = Number(m.score != null ? m.score : marketingScore()) || 91;
-    var clicks = a.websiteClicks != null ? a.websiteClicks : 48;
-    var newCust = a.newCustomers != null ? a.newCustomers : 7;
-    var mktRev = a.attributedRevenue != null ? a.attributedRevenue : 0;
-    var activeN = m.campaigns.filter(function (c) { return c.status === 'running' || c.status === 'active'; }).length;
-    var emailRate = a.emailOpenRate != null ? a.emailOpenRate : 42;
-    var igRate = a.instagramEngagement != null ? a.instagramEngagement : 6.8;
+    var demo = allowDemoSeed();
+    var score = demo ? 91 : (Number(m.score != null ? m.score : marketingScore()) || 0);
+    var clicks = demo ? 48 : (a.websiteClicks != null ? a.websiteClicks : 0);
+    var newCust = demo ? 7 : (a.newCustomers != null ? a.newCustomers : 0);
+    var mktRev = demo ? 0 : (a.attributedRevenue != null ? a.attributedRevenue : 0);
+    var activeN = demo ? 1 : m.campaigns.filter(function (c) { return c.status === 'running' || c.status === 'active'; }).length;
+    var clicksDelta = demo ? 24 : (a.websiteClicksDelta != null ? a.websiteClicksDelta : 0);
+    var custDelta = demo ? 16 : (a.newCustomersDelta != null ? a.newCustomersDelta : 0);
+    var emailRate = a.emailOpenRate != null ? a.emailOpenRate : (demo ? 42 : 0);
+    var igRate = a.instagramEngagement != null ? a.instagramEngagement : (demo ? 6.8 : 0);
     var hist = a.scoreHistory || [72, 78, 81, 84, 88, 90, score];
     var range = root._josMktRange || 'Last 30 days';
     var rangeOpen = !!root._josMktRangeOpen;
 
     var kpis =
       '<div class="jos-mkt-mc-kpis">' +
-      '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-score">' +
+      '<button type="button" class="jos-mkt-mc-kpi tone-score" data-jos-act="mkt-kpi-score">' +
         '<span class="lbl">Marketing Score</span>' + mktScoreRing(score) +
-        '<span class="status">Excellent</span>' + mktSparklineSvg(hist, '#D9632D') +
+        '<span class="status">Excellent. You\'re doing great!</span>' + mktSparklineSvg(hist, '#D9632D') +
       '</button>' +
       '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-clicks">' +
+        '<span class="kpi-ico tone-purple" aria-hidden="true"></span>' +
         '<span class="lbl">Website Clicks</span><strong>' + esc(String(clicks)) + '</strong>' +
-        '<span class="delta up">+ ' + esc(String(a.websiteClicksDelta != null ? a.websiteClicksDelta : 24)) + '%</span>' +
-        mktSparklineSvg([28, 32, 36, 40, 44, 46, clicks], '#16a34a') +
+        '<span class="delta up">↑ ' + esc(String(clicksDelta)) + '% vs last 30 days</span>' +
+        mktSparklineSvg([28, 32, 36, 40, 44, 46, Math.max(clicks, 1)], '#7C3AED') +
       '</button>' +
       '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-customers">' +
+        '<span class="kpi-ico tone-green" aria-hidden="true"></span>' +
         '<span class="lbl">New Customers</span><strong>' + esc(String(newCust)) + '</strong>' +
-        '<span class="delta up">↑ ' + esc(String(a.newCustomersDelta != null ? a.newCustomersDelta : 16)) + '%</span>' +
-        mktSparklineSvg([2, 3, 4, 5, 5, 6, newCust], '#16a34a') +
+        '<span class="delta up">↑ ' + esc(String(custDelta)) + '% vs last 30 days</span>' +
+        mktSparklineSvg([2, 3, 4, 5, 5, 6, Math.max(newCust, 1)], '#16a34a') +
       '</button>' +
       '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-revenue">' +
+        '<span class="kpi-ico tone-blue" aria-hidden="true"></span>' +
         '<span class="lbl">Attributed Revenue</span><strong>' + esc(money(mktRev) || '$0') + '</strong>' +
         '<span class="delta muted">— No change</span>' +
-        mktSparklineSvg([0, 0, 0, 0, 0, 0, 0], '#94a3b8') +
+        mktSparklineSvg([0, 0, 0, 0, 0, 0, 0], '#3B82F6') +
       '</button>' +
       '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-campaigns">' +
+        '<span class="kpi-ico tone-orange" aria-hidden="true"></span>' +
         '<span class="lbl">Active Campaigns</span><strong>' + esc(String(activeN)) + '</strong>' +
         '<span class="delta muted">Currently running</span>' +
+        mktSparklineSvg([1, 1, 1, 1, 1, 1, Math.max(activeN, 1)], '#D9632D') +
       '</button></div>';
 
     var campRows = m.campaigns.slice(0, 5).map(function (c) {
       var clicksN = (c.stats && c.stats.clicks) != null ? c.stats.clicks : 0;
+      var tone = c.tone || 'orange';
       return '<button type="button" class="jos-mkt-mc-camp" data-jos-act="mkt-camp-edit" data-jos-mkt-camp="' + esc(c.id) + '">' +
-        '<span class="ico" aria-hidden="true">📣</span>' +
-        '<span class="body"><strong>' + esc(c.name) + '</strong><span class="jos-muted">' + esc(c.description || c.body || '') + '</span></span>' +
+        '<span class="ico tone-' + esc(tone) + '" aria-hidden="true"></span>' +
+        '<span class="copy"><strong>' + esc(c.name) + '</strong><span class="jos-muted">' + esc(c.description || c.body || '') + '</span></span>' +
         mktCampStatusBadge(c.status) +
-        '<span class="clk">' + esc(String(clicksN)) + ' clicks</span></button>';
+        '<span class="clk">' + esc(String(clicksN)) + ' Clicks</span></button>';
     }).join('');
 
     var maxBar = Math.max(clicks, newCust * 8, activeN * 40, emailRate, igRate * 10, 1);
     var perfRows = [
-      ['Website Clicks', String(clicks), clicks, '#D9632D'],
-      ['New Customers', String(newCust), newCust * 8, '#D9632D'],
-      ['Active Campaigns', String(activeN), activeN * 40, '#D9632D'],
-      ['Revenue from Marketing', money(mktRev) || '$0', Math.max(4, Number(mktRev) || 0), '#D9632D'],
-      ['Email Open Rate', emailRate + '%', emailRate, '#D9632D'],
-      ['Instagram Engagement', igRate + '%', igRate * 10, '#D9632D']
+      ['Website Clicks', String(clicks), clicks],
+      ['New Customers', String(newCust), newCust * 8],
+      ['Active Campaigns', String(activeN), activeN * 40],
+      ['Revenue from Marketing', money(mktRev) || '$0', Math.max(0, Number(mktRev) || 0)],
+      ['Email Open Rate', emailRate + '%', emailRate],
+      ['Instagram Engagement', igRate + '%', igRate * 10]
     ].map(function (r) {
-      var pct = Math.max(6, Math.min(100, Math.round((r[2] / maxBar) * 100)));
-      return '<div class="jos-mkt-mc-perf"><span class="ico">●</span><span class="lbl">' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong>' +
-        '<span class="bar"><i style="width:' + pct + '%;background:' + r[3] + '"></i></span></div>';
+      var pct = r[2] <= 0 ? 0 : Math.max(6, Math.min(100, Math.round((r[2] / maxBar) * 100)));
+      return '<div class="jos-mkt-mc-perf"><span class="ico" aria-hidden="true"></span><span class="lbl">' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong>' +
+        '<span class="bar"><i style="width:' + pct + '%"></i></span></div>';
     }).join('');
 
-    var calRows = m.calendar.slice(0, 3).map(function (item) {
+    var calRows = (m.calendar || []).slice(0, 3).map(function (item) {
       return '<button type="button" class="jos-mkt-mc-cal" data-jos-act="mkt-cal-open" data-jos-mkt-cal="' + esc(item.id) + '">' +
         mktPlatformBadge(item.channel) +
-        '<span class="body"><strong>' + esc(item.title) + '</strong><span class="jos-muted">' + esc(String(item.scheduledAt || '').slice(0, 10)) + (item.time ? ' · ' + esc(item.time) : '') + '</span></span></button>';
+        '<span class="copy"><strong>' + esc(item.title) + '</strong><span class="jos-muted">' + esc(String(item.scheduledAt || '').slice(0, 10)) + (item.time ? ' · ' + esc(item.time) : '') + '</span></span></button>';
     }).join('');
 
     var autoRows = m.automations.filter(function (x) { return x.on; }).slice(0, 3).map(function (auto) {
@@ -2631,15 +2713,17 @@
 
     var tips = mktTodayActions().slice(0, 4).map(function (t) {
       return '<button type="button" class="jos-mkt-mc-tip" data-jos-act="' + esc(t.act) + '" data-jos-mkt-ask="' + esc(t.q) + '">' +
-        '<span class="ico">' + esc(t.ico || '✨') + '</span><span><strong>' + esc(t.t) + '</strong><span class="jos-muted">' + esc(t.s) + '</span></span></button>';
+        '<span class="ico" aria-hidden="true">' + esc(t.ico || '✦') + '</span><span><strong>' + esc(t.t) + '</strong><span class="jos-muted">' + esc(t.s) + '</span></span></button>';
     }).join('');
 
     return '<div class="jos-mkt-mc-overview">' +
       '<header class="jos-mkt-mc-header">' +
-      '<div><h1>Marketing</h1><p>Campaigns that attract, convert, and keep customers coming back.</p></div>' +
+      '<div class="jos-mkt-mc-title"><span class="jos-mkt-mc-mega" aria-hidden="true"></span><div>' +
+      '<h1>Marketing</h1><p>Campaigns that attract, convert, and keep customers coming back.</p></div></div>' +
       '<div class="jos-mkt-mc-header-actions">' +
       '<div class="jos-mkt-mc-range-wrap">' +
-      '<button type="button" class="jos-btn jos-mkt-mc-range" data-jos-act="mkt-range-toggle">' + esc(range) + ' ▾</button>' +
+      '<button type="button" class="jos-btn jos-mkt-mc-range" data-jos-act="mkt-range-toggle">' +
+      '<span class="cal-ico" aria-hidden="true"></span><span class="range-meta"><span class="range-lbl">Date range</span><strong>' + esc(range) + '</strong></span><span class="chev" aria-hidden="true">▾</span></button>' +
       (rangeOpen ? '<div class="jos-mkt-mc-range-menu">' +
         ['Last 7 days', 'Last 30 days', 'Last 90 days', 'This year'].map(function (r) {
           return '<button type="button" data-jos-act="mkt-range-set" data-jos-mkt-range="' + esc(r) + '">' + esc(r) + '</button>';
@@ -2651,24 +2735,27 @@
       kpis +
       '<div class="jos-mkt-mc-grid">' +
       '<section class="jos-mkt-mc-panel">' +
-        '<div class="jos-between"><div class="jos-kicker">Top Campaigns</div></div>' +
+        '<div class="jos-mkt-mc-panel-h"><div class="jos-kicker">Top Campaigns</div>' +
+        '<button type="button" class="jos-linkish" data-jos-act="mkt-view-campaigns">View all campaigns</button></div>' +
         '<div class="jos-mkt-mc-camp-list">' + campRows + '</div>' +
-        '<button type="button" class="jos-btn jos-btn-sm jos-mkt-mc-foot" data-jos-act="mkt-view-campaigns">View all campaigns</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm jos-mkt-mc-foot" data-jos-act="mkt-view-campaigns">View all campaigns →</button>' +
       '</section>' +
       '<section class="jos-mkt-mc-panel">' +
-        '<div class="jos-kicker">Performance Overview</div>' +
+        '<div class="jos-mkt-mc-panel-h"><div class="jos-kicker">Performance Overview</div>' +
+        '<button type="button" class="jos-linkish" data-jos-act="mkt-learn">View full report</button></div>' +
         '<div class="jos-mkt-mc-perf-list">' + perfRows + '</div>' +
-        '<div class="jos-mkt-mc-help"><p class="jos-muted">Hubly attributes clicks, customers, and revenue to campaigns when leads and jobs carry a campaign source.</p>' +
-        '<button type="button" class="jos-linkish" data-jos-act="mkt-learn">Learn how it works</button></div>' +
+        '<div class="jos-mkt-mc-help"><p class="jos-muted">Marketing performance is measured by your campaigns and how they convert. <button type="button" class="jos-linkish" data-jos-act="mkt-learn">Learn how it works</button></p></div>' +
       '</section>' +
       '<div class="jos-mkt-mc-right">' +
         '<section class="jos-mkt-mc-panel short">' +
-          '<div class="jos-kicker">Content Calendar</div>' +
+          '<div class="jos-mkt-mc-panel-h"><div class="jos-kicker">Content Calendar</div>' +
+          '<button type="button" class="jos-linkish" data-jos-act="mkt-go-calendar">View calendar</button></div>' +
           '<div class="jos-mkt-mc-cal-list">' + calRows + '</div>' +
           '<button type="button" class="jos-btn jos-btn-sm jos-mkt-mc-foot" data-jos-act="mkt-go-calendar">Go to calendar</button>' +
         '</section>' +
         '<section class="jos-mkt-mc-panel short">' +
-          '<div class="jos-kicker">Recent Automations</div>' +
+          '<div class="jos-mkt-mc-panel-h"><div class="jos-kicker">Recent Automations</div>' +
+          '<button type="button" class="jos-linkish" data-jos-act="mkt-view-automations">View all</button></div>' +
           '<div class="jos-mkt-mc-auto-list">' + autoRows + '</div>' +
           '<button type="button" class="jos-btn jos-btn-sm jos-mkt-mc-foot" data-jos-act="mkt-view-automations">Manage automations</button>' +
         '</section>' +
@@ -2676,11 +2763,11 @@
       '<section class="jos-mkt-mc-ai">' +
         '<div class="jos-mkt-mc-ai-ava" aria-hidden="true">AI</div>' +
         '<div class="jos-mkt-mc-ai-body">' +
-          '<strong>Score: ' + score + ' — You\'re on the right track!</strong>' +
-          '<p class="jos-muted">' + esc(root._josMktAiBody || 'Keep momentum with seasonal pushes, review asks, and win-back sequences. Audiences resolve from Customers and Leads.') + '</p>' +
+          '<div class="jos-mkt-mc-ai-title"><strong>AI Marketing Assistant</strong><span class="jos-mkt-beta">BETA</span></div>' +
+          '<p>Score: ' + score + ' You\'re on the right track! Here are a few ways to increase your reach and conversions.</p>' +
           '<div class="jos-mkt-mc-tips">' + tips + '</div>' +
         '</div>' +
-        '<button type="button" class="jos-btn jos-btn-brand jos-mkt-mc-ai-cta" data-jos-act="mkt-ai-suggestions">✨ Get AI Suggestions</button>' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-mkt-mc-ai-cta" data-jos-act="mkt-ai-suggestions">Get AI Suggestions ✨</button>' +
       '</section>' +
       (root._josMktHelpOpen ? '<div class="jos-mkt-modal" data-jos-mkt-modal="1"><div class="jos-mkt-modal-panel"><h3>How Hubly marketing metrics work</h3>' +
         '<p class="jos-muted">Marketing Score blends engagement, campaign activity, review growth, retention, and website traffic. Website clicks come from analytics. New customers are attributed when source = marketing. Attributed revenue sums completed jobs linked to a campaign id.</p>' +
@@ -2865,16 +2952,18 @@
     }).join('') + '</div>';
     if (tab === 'overview') {
       root.innerHTML =
-        '<div class="jos-mkt-mc-shell jos-mkt-page">' +
+        '<div class="jos-mkt-mc-shell jos-mkt-page jos-mkt-shot">' +
+        renderMktTopChrome(root) +
         renderMktOverviewTab(root).replace('</header>', '</header>' + tabsHtml) +
         renderMktCampaignModal(root) +
         '</div>';
     } else {
       var title = (MKT_TABS.find(function (t) { return t[0] === tab; }) || ['', 'Marketing'])[1];
       root.innerHTML =
-        '<div class="jos-mkt-mc-shell jos-mkt-page">' +
+        '<div class="jos-mkt-mc-shell jos-mkt-page jos-mkt-shot">' +
+        renderMktTopChrome(root) +
         '<div class="jos-mkt-mc-pad">' +
-        '<div class="jos-mkt-mc-subhead"><div><h1>' + esc(title) + '</h1><p>Campaigns that attract, convert, and keep customers coming back.</p></div>' +
+        '<div class="jos-mkt-mc-subhead"><div class="jos-mkt-mc-title"><span class="jos-mkt-mc-mega" aria-hidden="true"></span><div><h1>' + esc(title) + '</h1><p>Campaigns that attract, convert, and keep customers coming back.</p></div></div>' +
         '<button type="button" class="jos-btn jos-btn-brand jos-mkt-mc-new" data-jos-act="mkt-camp-create-open">+ New Campaign</button></div>' +
         tabsHtml +
         '<div class="jos-mkt-body">' + renderMktTabBody(root, tab) + '</div></div></div>';
@@ -10051,6 +10140,11 @@
     if (titleEl) titleEl.textContent = c.title;
     if (subEl) subEl.textContent = c.sub;
     if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
+    try {
+      document.querySelectorAll('.app-nav .ni[data-v]').forEach(function (n) {
+        n.classList.toggle('active', n.getAttribute('data-v') === v);
+      });
+    } catch (eChrome) {}
   }
 
   function enhanceDashboard() {
@@ -10060,6 +10154,7 @@
     setInboxMode(false);
     setLeadsMode(false);
     setPipelineMode(false);
+    setMarketingMode(false);
     updateChrome('dashboard');
     root.classList.add('jos-home-root');
     try {
@@ -13310,6 +13405,7 @@
     setJobsMode(v === 'jobs');
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');
+    setMarketingMode(v === 'marketing');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
