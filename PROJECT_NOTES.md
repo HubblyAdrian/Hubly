@@ -45,7 +45,11 @@ Brand why (signature):
 Also: **One AI. Two experiences.** Ask Hubly / Build My Business.
 Interface language is **Ask Hubly** (not Get Help / Find Help / Marketplace).
 
-**Do not keep redesigning the homepage.** Next priority is the first five
+**Rule #24 — Dual Product Architecture (active):** Landing is an intent router —
+“I want to grow my business” → Builder · “I need to hire someone” → Concierge.
+Marketplace remains intact (`/marketplace`, `/get-done`). See `docs/AI_LANDING_ARCHITECTURE.md`.
+
+**Homepage craft still gated** (`scripts/check-homepage-craft.mjs`). Next priority is the first five
 minutes after **Build My Business** — someone types what they do and
 watches Hubly build a live website, booking, services, CRM, payments,
 and dashboard. That product moment beats another headline tweak.

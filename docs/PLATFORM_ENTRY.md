@@ -18,21 +18,21 @@ Do **not** brand the business platform as “Hubly Pro” in public UI. That rea
 Never say “Marketplace Lite” in UI or marketing. That name is internal packaging/engineering only.
 ---
 
-## Job of the homepage
+## Job of the homepage (Rule #24)
 
-Not to explain every feature.
+Not a brochure. An **intelligent router**.
 
-To help every visitor identify the correct path within seconds:
+One shared AI chat detects intent and routes into the correct product — without removing Marketplace.
 
-| Path | Destination |
+| User phrasing | Destination |
 |---|---|
-| Get Done | AI Concierge → `/get-done` |
-| Marketplace | `/marketplace` → `/marketplace/join` or `/marketplace/login` |
-| Hubly (run your business) | Instant Site setup → `/signup` (existing Business Experience onboarding) |
+| I want to grow my business | AI Business Builder → `/signup` → Operating System |
+| I need to hire someone | AI Concierge → `/get-done` → Booking |
+| Get found by customers (providers) | `/marketplace` → join / login (footer + dedicated landing — **preserved**) |
 
-Public nav pattern: **Get Done · Marketplace · Hubly** (+ Sign in / Get started).
+Primary hero tabs use **user jobs**, not product jargon.
 
-Marketplace path label may later experiment with copy (*Get Booked*, *Receive Bookings*, *Join the Marketplace*, *Start Getting Customers*). Do not change homepage messaging in follow-on work without an explicit copy pass.
+See [AI_LANDING_ARCHITECTURE.md](./AI_LANDING_ARCHITECTURE.md).
 
 Post-booking consumer home is **My Hub** (design only) — `docs/MY_HUB.md`.
 

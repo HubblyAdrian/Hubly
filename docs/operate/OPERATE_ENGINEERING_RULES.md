@@ -138,6 +138,21 @@ They **never** become the owner of Customers, Jobs, Revenue, Services, Reviews, 
 
 See [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md).
 
+## Rule #24 — Dual Product Architecture
+
+Hubly serves two different users. Neither flow should interfere with the other.
+
+| Persona | User phrasing | Destination |
+|---------|---------------|-------------|
+| Business Owner | I want to grow my business | AI Business Builder → Operating System |
+| Consumer | I need to hire someone | AI Marketplace Concierge → Booking |
+
+The public landing page is an **intelligent router** (same chat, different destination).
+
+**IMPORTANT:** Do not remove or replace the Marketplace. `/marketplace`, `/get-done`, and the provider app stay intact. The landing AI detects intent and routes — it does not collapse Hubly into one product.
+
+See [AI_LANDING_ARCHITECTURE.md](../AI_LANDING_ARCHITECTURE.md).
+
 ## Cross-Module Verification (CMV)
 
 Before approval of a new module PR, confirm previously **locked** modules still function (no modifications — confirmation only).
@@ -155,4 +170,5 @@ Special modules require an architecture doc before Development:
 - Marketing → [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md)  
 - Revenue → [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) (correctness gate + Rule #20)  
 - Ask Hubly → [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md) (intelligence layer + Rule #22)  
-- Settings → [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md) (control center + Rule #23)
+- Settings → [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md) (control center + Rule #23)  
+- AI Landing → [AI_LANDING_ARCHITECTURE.md](../AI_LANDING_ARCHITECTURE.md) (dual product router + Rule #24)

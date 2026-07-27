@@ -171,6 +171,28 @@ img{max-width:100%;display:block}
   background:#f1f5f9;color:var(--ink);border-color:#e2e8f0;
 }
 .ask-pill .btn-ghost:hover{background:#e2e8f0}
+.ask-pill .btn[disabled],.ask-pill .btn.is-disabled{
+  opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;
+}
+.ask-pill .btn.is-ready{
+  box-shadow:0 12px 28px rgba(217,99,45,.42);
+  animation:ctaReady .55s ease both;
+}
+@keyframes ctaReady{
+  from{transform:translateY(4px);filter:saturate(.8)}
+  to{transform:none;filter:none}
+}
+.hero-status{
+  min-height:22px;margin:10px 2px 0;font-size:13px;font-weight:650;
+  color:rgba(255,255,255,.82);letter-spacing:-.01em;
+  opacity:0;transition:opacity .25s ease;
+}
+.hero-status.is-on{opacity:1}
+.hero-status .dot{
+  display:inline-block;width:8px;height:8px;border-radius:999px;
+  background:#22c55e;margin-right:8px;box-shadow:0 0 0 4px rgba(34,197,94,.18);
+}
+.hero-status.is-learning .dot{background:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,.18)}
 @media(min-width:640px){
   .ask-pill{
     flex-direction:row;align-items:center;gap:0;
@@ -705,11 +727,11 @@ img{max-width:100%;display:block}
   width:100%;font-size:12px;font-weight:700;letter-spacing:.04em;
   text-transform:uppercase;color:rgba(255,255,255,.55);margin:4px 0 2px;
 }
-.chips-more{
+.browse-more{
   display:inline-flex;align-items:center;font-size:13px;font-weight:750;
   color:#fff;text-decoration:underline;text-underline-offset:3px;margin-left:4px;
 }
-.chips-more:hover{color:var(--brand)}
+.browse-more:hover{color:var(--brand)}
 
 /* —— Journey destinations (not feature columns) —— */
 .trust-strip-lead,
@@ -1392,25 +1414,26 @@ img{max-width:100%;display:block}
   <div class="hero-media" aria-hidden="true"></div>
   <div class="hero-inner">
     <div class="hero-copy">
-      <div class="path-tabs" role="tablist" aria-label="How are you using Hubly?">
-        <button type="button" class="path-tab" role="tab" aria-selected="false" data-path="help" id="pathHelp">Ask Hubly</button>
-        <button type="button" class="path-tab is-on" role="tab" aria-selected="true" data-path="business" id="pathBiz">Build My Business</button>
+      <div class="path-tabs" role="tablist" aria-label="What are you trying to do?">
+        <button type="button" class="path-tab" role="tab" aria-selected="false" data-path="help" id="pathHelp">I need to hire someone</button>
+        <button type="button" class="path-tab is-on" role="tab" aria-selected="true" data-path="business" id="pathBiz">I want to grow my business</button>
       </div>
       <h1 id="heroTitle">Build your business.<br><em>Watch it come to life.</em></h1>
-      <p class="hero-lead" id="heroLead">Talk naturally. Hubly researches your market and builds your website, booking, packages, and CRM while you chat.</p>
+      <p class="hero-lead" id="heroLead">Talk naturally. Hubly researches your market and builds your website, booking, pricing, services, and operating system while you chat.</p>
 
       <div class="ask-pill" id="ask">
         <input id="heroInput" type="text" autocomplete="off"
-          placeholder="I own a pressure washing company…"
+          placeholder="Tell me about your business..."
           aria-label="Tell Hubly about your business">
         <div class="ask-pill-acts">
-          <button class="btn btn-brand" type="button" id="heroCta">Build My Business</button>
+          <button class="btn btn-brand is-disabled" type="button" id="heroCta" disabled>Continue Building</button>
         </div>
       </div>
+      <p class="hero-status" id="heroStatus" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="heroStatusText"></span></p>
       <p class="hero-brand-line">Most software makes you learn how it works.<br><em>Hubly learns how you work.</em></p>
 
-      <div class="chips" id="chips" aria-label="Popular services">
-        <span class="chips-label" id="chipsLabel">Popular trades</span>
+      <div class="chips" id="chips" aria-label="Popular trades">
+        <span class="chips-label" id="chipsLabel">Popular Trades</span>
       </div>
     </div>
 
@@ -1469,7 +1492,7 @@ img{max-width:100%;display:block}
           </span>
           <span class="journey-role-label">For business owners</span>
         </div>
-        <h3>Build My <em>Business</em></h3>
+        <h3>I want to grow my <em>business</em></h3>
         <p class="journey-desc">Tell Hubly about your business. We’ll build everything else.</p>
         <ol class="journey-steps how-lane" data-step>
           <li><strong>Describe</strong></li>
@@ -1478,9 +1501,9 @@ img{max-width:100%;display:block}
           <li><strong>Start growing</strong></li>
         </ol>
         <div class="journey-cta-wrap">
-          <span class="btn-journey">Build My Business →</span>
+          <span class="btn-journey">Continue Building →</span>
         </div>
-        <p class="journey-foot">Setup in minutes. Growth for years.</p>
+        <p class="journey-foot">AI Business Builder · Operating System</p>
       </a>
 
       <a class="journey-dest journey-dest-help" href="/get-done" data-journey="help" id="journeyHelp">
@@ -1488,10 +1511,10 @@ img{max-width:100%;display:block}
           <span class="journey-role-ico" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"/></svg>
           </span>
-          <span class="journey-role-label">For homeowners</span>
+          <span class="journey-role-label">For customers</span>
         </div>
-        <h3>Get My Project <em>Done</em></h3>
-        <p class="journey-desc">Describe your project. Hubly connects you with the right local professional.</p>
+        <h3>I need to hire <em>someone</em></h3>
+        <p class="journey-desc">Describe what you need. Hubly’s AI Concierge finds the right local pro.</p>
         <ol class="journey-steps how-lane" data-step>
           <li><strong>Describe</strong></li>
           <li><strong>Hubly understands</strong></li>
@@ -1499,9 +1522,9 @@ img{max-width:100%;display:block}
           <li><strong>Book</strong></li>
         </ol>
         <div class="journey-cta-wrap">
-          <span class="btn-journey">Ask Hubly →</span>
+          <span class="btn-journey">Get Something Done →</span>
         </div>
-        <p class="journey-foot">Trusted pros. Fair pricing. Peace of mind.</p>
+        <p class="journey-foot">AI Concierge · Customer Booking</p>
       </a>
     </div>
 
@@ -1880,6 +1903,7 @@ img{max-width:100%;display:block}
   </form>
 </div>
 
+<script src="/landing-intent.js"></script>
 <script>
 (function(){
   document.getElementById('y').textContent = new Date().getFullYear();
@@ -1894,9 +1918,11 @@ img{max-width:100%;display:block}
   syncNav();
   window.addEventListener('scroll', syncNav, { passive: true });
 
-  /* Two paths: Build My Business (primary) | Ask Hubly */
+  /* Rule #24 — Dual Product Architecture: grow business | hire someone */
+  var Intent = window.HublyLandingIntent;
   var path = 'business';
   var userTouched = false;
+  var lastUnderstanding = null;
   var input = document.getElementById('heroInput');
   var heroCta = document.getElementById('heroCta');
   var heroTitle = document.getElementById('heroTitle');
@@ -1904,21 +1930,25 @@ img{max-width:100%;display:block}
   var chipsLabel = document.getElementById('chipsLabel');
   var pathHelp = document.getElementById('pathHelp');
   var pathBiz = document.getElementById('pathBiz');
+  var heroStatus = document.getElementById('heroStatus');
+  var heroStatusText = document.getElementById('heroStatusText');
 
   var copy = {
     help: {
       title: 'What do you need done <em>today?</em>',
-      lead: 'Ask Hubly. We’ll connect you with the right local pro.',
+      lead: 'Talk naturally. Hubly’s AI Concierge finds the right local pro and helps you book.',
       placeholder: 'I need my windows cleaned this Friday…',
-      cta: 'Ask Hubly',
+      cta: 'Find someone',
+      ctaReady: '✨ Find someone',
       chipsLabel: 'Need inspiration?'
     },
     business: {
       title: 'Build your business.<br><em>Watch it come to life.</em>',
-      lead: 'Talk naturally. Hubly researches your market and builds your website, booking, packages, and CRM while you chat.',
-      placeholder: 'I own a mobile detailing business…',
-      cta: 'Build My Business',
-      chipsLabel: 'Popular trades'
+      lead: 'Talk naturally. Hubly researches your market and builds your website, booking, pricing, services, and operating system while you chat.',
+      placeholder: 'Tell me about your business...',
+      cta: 'Continue Building',
+      ctaReady: '✨ Continue Building',
+      chipsLabel: 'Popular Trades'
     }
   };
 
@@ -1929,7 +1959,6 @@ img{max-width:100%;display:block}
     var c = copy[path];
     if(heroTitle) heroTitle.innerHTML = c.title;
     if(heroLead) heroLead.textContent = c.lead;
-    if(heroCta) heroCta.textContent = c.cta;
     if(chipsLabel) chipsLabel.textContent = c.chipsLabel;
     if(input && !userTouched) input.setAttribute('placeholder', c.placeholder);
     if(input) input.setAttribute('aria-label', path === 'help' ? 'Describe what you need' : 'Tell Hubly about your business');
@@ -1941,45 +1970,90 @@ img{max-width:100%;display:block}
       pathBiz.classList.toggle('is-on', path === 'business');
       pathBiz.setAttribute('aria-selected', path === 'business' ? 'true' : 'false');
     }
+    refreshUnderstanding();
     if(changed && typeof restartDemo === 'function') restartDemo();
   }
   if(pathHelp) pathHelp.addEventListener('click', function(){ setPath('help'); });
   if(pathBiz) pathBiz.addEventListener('click', function(){ setPath('business'); });
 
-  /* Popular service chips — optional browse under the AI */
-  var chips = [
-    { label: 'Window Cleaning', href: '/get-done?cat=windows', seed: 'I need my windows cleaned…' },
-    { label: 'Pressure Washing', href: '/get-done?cat=pressure', seed: 'I need pressure washing…' },
-    { label: 'Cleaning', href: '/get-done?cat=cleaning', seed: 'I need house cleaning…' },
-    { label: 'Lawn Care', href: '/get-done?cat=lawn', seed: 'I need lawn care…' },
-    { label: 'HVAC', href: '/get-done?cat=hvac', seed: 'I need HVAC help…' },
-    { label: 'Photography', href: '/get-done?cat=photography', seed: 'I need a photographer…' }
-  ];
+  function refreshUnderstanding(){
+    if(!Intent || !input) return;
+    var u = Intent.understand(input.value, path);
+    lastUnderstanding = u;
+    Intent.upsertSession(u);
+    if(heroStatus && heroStatusText){
+      if(u.statusLine){
+        heroStatusText.textContent = u.statusLine;
+        heroStatus.classList.add('is-on');
+        heroStatus.classList.toggle('is-learning', !u.ready);
+      } else {
+        heroStatusText.textContent = '';
+        heroStatus.classList.remove('is-on', 'is-learning');
+      }
+    }
+    if(heroCta){
+      var c = copy[path];
+      var autoPath = u.intent === 'hire_pro' ? 'help' : (u.intent === 'build_business' ? 'business' : path);
+      var label = autoPath === 'help'
+        ? (u.ready ? copy.help.ctaReady : copy.help.cta)
+        : (u.ready ? copy.business.ctaReady : copy.business.cta);
+      if(u.ready && u.intent === 'hire_pro' && path === 'business') label = copy.help.ctaReady;
+      if(u.ready && u.intent === 'build_business' && path === 'help') label = copy.business.ctaReady;
+      heroCta.textContent = label;
+      heroCta.disabled = !u.ready;
+      heroCta.classList.toggle('is-disabled', !u.ready);
+      heroCta.classList.toggle('is-ready', !!u.ready);
+      if(u.ready) heroCta.setAttribute('aria-label', u.destination === 'marketplace_concierge' ? 'Continue to AI Concierge' : 'Continue Building your business');
+    }
+    return u;
+  }
+
+  /* Popular trades — seed the AI box; do not start onboarding */
   var chipEl = document.getElementById('chips');
-  chips.forEach(function(c, i){
+  var tradeChips = Intent ? Intent.tradeCatalog() : [
+    { label: 'Detailing', phrase: "I'm starting a mobile detailing company" },
+    { label: 'Cleaning', phrase: "I'm starting a cleaning company" },
+    { label: 'Pressure Washing', phrase: "I'm starting a pressure washing business" },
+    { label: 'Window Cleaning', phrase: "I'm starting a window cleaning business" },
+    { label: 'Photography', phrase: "I'm starting a photography business" },
+    { label: 'HVAC', phrase: "I'm starting an HVAC business" },
+    { label: 'Lawn Care', phrase: "I'm starting a lawn care business" }
+  ];
+  var hireSeeds = {
+    Detailing: 'I need ceramic coating for my Tesla…',
+    Cleaning: 'I need my house cleaned tomorrow…',
+    'Pressure Washing': 'I need my driveway pressure washed…',
+    'Window Cleaning': 'I need my windows cleaned…',
+    Photography: 'Find a photographer…',
+    HVAC: 'I need HVAC repair…',
+    'Lawn Care': 'I need lawn care this weekend…'
+  };
+  tradeChips.forEach(function(c, i){
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'chip'; b.textContent = c.label;
     b.addEventListener('click', function(){
-      if(path === 'business'){
-        input.value = 'I run a ' + c.label.toLowerCase() + ' business…';
-        userTouched = true;
-        return;
-      }
-      input.value = c.seed;
       userTouched = true;
-      goHelp();
+      if(path === 'help'){
+        input.value = hireSeeds[c.label] || ('I need ' + c.label.toLowerCase() + '…');
+      } else {
+        input.value = c.phrase || ("I'm starting a " + c.label.toLowerCase() + ' business');
+      }
+      Intent && Intent.track('trade_selected', { trade: c.label, path: path });
+      refreshUnderstanding();
+      input.focus();
     });
     chipEl.appendChild(b);
     if(reduce) b.classList.add('in');
     else setTimeout(function(){ b.classList.add('in'); }, 520 + i * 90);
   });
   var viewAll = document.createElement('a');
-  viewAll.href = '/get-done';
-  viewAll.className = 'chips-more';
+  viewAll.href = path === 'help' ? '/get-done' : '#industries';
+  viewAll.className = 'browse-more';
+  viewAll.id = 'chipsMore';
   viewAll.textContent = 'View All →';
   chipEl.appendChild(viewAll);
 
-  /* Rotating placeholders — consumer needs by default */
+  /* Rotating example prompts */
   var prompts = [
     'I need my windows cleaned…',
     'I need pressure washing this week…',
@@ -1989,10 +2063,11 @@ img{max-width:100%;display:block}
     'Book HVAC repair…'
   ];
   var bizPrompts = [
-    'I pressure wash homes in Dallas…',
+    "I'm starting a mobile detailing company",
+    'I own a pressure washing business in Dallas…',
     'I clean houses in Austin…',
-    'I detail cars and boats…',
-    'I install Christmas lights…'
+    'I already have a website — I want more customers…',
+    "Here's my Instagram…"
   ];
   var pi = 0, char = 0, deleting = false, pause = 0;
   function rotatePlaceholder(){
@@ -2012,22 +2087,40 @@ img{max-width:100%;display:block}
   }
   if(!reduce) setInterval(rotatePlaceholder, 42);
   input.addEventListener('focus', function(){ userTouched = true; });
-  input.addEventListener('input', function(){ userTouched = true; });
+  input.addEventListener('input', function(){
+    userTouched = true;
+    refreshUnderstanding();
+  });
 
   function goBuild(){
     var v = input.value.trim();
+    Intent && Intent.track('continue_build', { q: v });
     window.location.href = v
       ? '/signup?q=' + encodeURIComponent(v)
       : '/signup';
   }
   function goHelp(){
     var v = input.value.trim();
+    Intent && Intent.track('continue_hire', { q: v });
     /* Never invent a fake prompt — empty opens clean Get Done */
     window.location.href = v
       ? '/get-done?q=' + encodeURIComponent(v)
       : '/get-done';
   }
   function goPrimary(){
+    var u = refreshUnderstanding() || lastUnderstanding;
+    if(!u || !u.ready){
+      if(heroStatus && heroStatusText){
+        heroStatusText.textContent = path === 'help'
+          ? 'Hubly is learning about your project…'
+          : 'Hubly is learning about your business…';
+        heroStatus.classList.add('is-on', 'is-learning');
+      }
+      return;
+    }
+    /* Intent wins over the tab when confident */
+    if(u.intent === 'hire_pro' || u.destination === 'marketplace_concierge') return goHelp();
+    if(u.intent === 'build_business' || u.destination === 'business_builder') return goBuild();
     if(path === 'business') goBuild();
     else goHelp();
   }
@@ -2035,6 +2128,18 @@ img{max-width:100%;display:block}
   input.addEventListener('keydown', function(e){
     if(e.key === 'Enter') goPrimary();
   });
+
+  /* Restore anonymous Builder Session after refresh */
+  try {
+    var existing = Intent && Intent.loadSession();
+    if(existing && existing.lastText && input && !input.value){
+      input.value = existing.lastText;
+      userTouched = true;
+      if(existing.detected && existing.detected.intent === 'hire_pro') setPath('help');
+    }
+  } catch (_) {}
+  refreshUnderstanding();
+  Intent && Intent.track('landing_view', { path: path });
 
   /* Live AI demo — business builds OR Ask Hubly matches, synced to path tabs */
   var restartDemo = null;
@@ -2418,14 +2523,20 @@ img{max-width:100%;display:block}
     u.className = 'msg msg-user'; u.textContent = v;
     msgs.appendChild(u);
     document.getElementById('askInput').value = '';
+    var understood = Intent ? Intent.understand(v, 'help') : null;
+    if(Intent && understood) Intent.upsertSession(understood);
+    var dest = understood && Intent ? Intent.routeUrl(understood) : ('/get-done?q=' + encodeURIComponent(v));
+    var goingBuilder = dest.indexOf('/signup') === 0;
     setTimeout(function(){
       var b = document.createElement('div');
       b.className = 'msg msg-bot';
-      b.textContent = 'Got it—opening Get Done with your request…';
+      b.textContent = goingBuilder
+        ? 'Got it—you sound like a business owner. Opening the Business Builder…'
+        : 'Got it—opening Get Done with your request…';
       msgs.appendChild(b);
       msgs.scrollTop = msgs.scrollHeight;
       setTimeout(function(){
-        window.location.href = '/get-done?q=' + encodeURIComponent(v);
+        window.location.href = dest;
       }, 650);
     }, 350);
     msgs.scrollTop = msgs.scrollHeight;
