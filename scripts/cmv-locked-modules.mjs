@@ -172,6 +172,8 @@ const reports = mount("v-reports", app);
 mount("jos-reports-root", reports);
 const ask = mount("v-ask", app);
 mount("jos-ask-root", ask);
+const settings = mount("v-settings", app);
+mount("jos-settings-root", settings);
 mount("bar-title", document.body);
 mount("bar-sub", document.body);
 mount("nav-leads-badge", document.body);
@@ -341,6 +343,14 @@ try {
   ok("✨ Ask Hubly still works", /jos-ah|Ask Hubly|Rule #22|Conversation/i.test(ahHtml) && ahHtml.length > 200, "len=" + ahHtml.length);
 } catch (e) {
   ok("✨ Ask Hubly still works", false, String(e.message || e));
+}
+
+try {
+  H.renderSettings();
+  const setHtml = document.getElementById("jos-settings-root").innerHTML;
+  ok("⚙️ Settings still works", /jos-set|Settings|Rule #23|Control center/i.test(setHtml) && setHtml.length > 200, "len=" + setHtml.length);
+} catch (e) {
+  ok("⚙️ Settings still works", false, String(e.message || e));
 }
 
 console.warn = _warn;

@@ -43,6 +43,7 @@ Before approval of any new module PR, verify previously **locked** modules still
 - 💰 Revenue still works  
 - 📊 Reports still works  
 - ✨ Ask Hubly still works  
+- ⚙️ Settings still works  
 - (+ each newly locked module)
 
 Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).  
@@ -90,7 +91,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ✨ Ask Hubly | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| ⚙️ Settings | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
+| ⚙️ Settings | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 
 ---
 
@@ -111,7 +112,20 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔒 OS · MAT ✅ · Rule #20 · merged |
 | 12 | 📊 Reports | ✅ Locked | ⏸ | [#255](https://github.com/HubblyAdrian/Hubly/pull/255) | 🔒 OS · MAT ✅ · Rule #21 · merged |
 | 13 | ✨ Ask Hubly | ✅ Locked | ⏸ | [#256](https://github.com/HubblyAdrian/Hubly/pull/256) | 🔒 OS · MAT ✅ · Rule #22 · merged |
-| 14 | ⚙️ Settings | ✅ MAT complete | ⏸ | [#257](https://github.com/HubblyAdrian/Hubly/pull/257) | [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md) · Rule #23 · MAT ✅ · CMV PASS · awaiting approval |
+| 14 | ⚙️ Settings | ✅ Locked | ⏸ | [#257](https://github.com/HubblyAdrian/Hubly/pull/257) | 🔒 OS · MAT ✅ · Rule #23 · merged |
+
+### Finish line
+
+All **14** Operate modules have Stage 1 OS complete and locked:
+
+🏠 Home · 📥 Inbox · 📅 Jobs · 🧲 Leads · ❤️ Customers · 🧭 Pipeline · 🌐 Storefront · 📣 Marketing · ⭐ Reviews · 🔁 Memberships · 💰 Revenue · 📊 Reports · ✨ Ask Hubly · ⚙️ Settings
+
+### ⚙️ Settings lock
+
+**Stage 1 — Operating System:** ✅ COMPLETE  
+**Stage 2 — External Integrations & Advanced Configuration:** ⏸ Deferred  
+
+**Do not modify Settings unless:** bug fix · Stage 2 integrations · explicit module reopen.
 
 ### 🤖 Ask Hubly lock
 

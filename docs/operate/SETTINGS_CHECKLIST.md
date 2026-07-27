@@ -1,7 +1,7 @@
 # Module 14 — ⚙️ Settings
 
-**Status:** Stage 1 OS complete · MAT ✅ ACCEPTED · CMV PASS · awaiting PR approval  
-**Branch:** `cursor/operate-settings-2662`  
+**Status:** Stage 1 OS ✅ COMPLETE · 🔒 OS locked  
+**Branch:** merged via [#257](https://github.com/HubblyAdrian/Hubly/pull/257)  
 **Architecture (required):** [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md)  
 **Plan:** [SETTINGS_PLAN.md](./SETTINGS_PLAN.md)  
 **MAT:** [SETTINGS_MAT.md](./SETTINGS_MAT.md)  
@@ -54,11 +54,13 @@ Settings is the control center for Operate — configuration only (Rule #23).
 - [x] CMV incl. Ask Hubly ✅  
 
 ### Definition of Done
-- [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳ (awaiting approval)  
+- [x] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ✅  
+
+**Do not modify Settings unless:** bug fix · Stage 2 integrations · explicit module reopen.
 
 ---
 
-## Stage 2 — Advanced AI / Integrations ⏸ DEFERRED
+## Stage 2 — External Integrations & Advanced Configuration ⏸ DEFERRED
 
 | Item | Status |
 |------|--------|
