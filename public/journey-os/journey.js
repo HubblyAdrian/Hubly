@@ -86,6 +86,7 @@
     if (/google|gmb|maps/.test(blob)) return 'google';
     if (/facebook|fb|meta/.test(blob)) return 'facebook';
     if (/instagram|ig\b/.test(blob)) return 'instagram';
+    if (/referral|referred|word.?of.?mouth/.test(blob)) return 'referral';
     if (s === 'booking' || s === 'hubly' || /hubly/.test(notes)) return 'hubly';
     if (s === 'website' || /website|landing/.test(notes)) return 'website';
     if (s === 'chat') return 'chat';
@@ -94,8 +95,8 @@
     if (s === 'membership') return 'membership';
     return 'manual';
   }
-  var SRC_LABEL = { google: 'Google', facebook: 'Facebook', instagram: 'Instagram', hubly: 'Hubly', website: 'Website', chat: 'Chat', quote: 'Quote', abandoned: 'Abandoned', membership: 'Membership', manual: 'Manual' };
-  var SRC_LETTER = { google: 'G', facebook: 'f', instagram: 'Ig', hubly: 'h', website: 'W', chat: '💬', quote: 'Q', abandoned: '…', membership: 'M', manual: '+' };
+  var SRC_LABEL = { google: 'Google', facebook: 'Facebook', instagram: 'Instagram', hubly: 'Hubly', website: 'Website', chat: 'Chat', quote: 'Quote', abandoned: 'Abandoned', membership: 'Membership', manual: 'Manual', referral: 'Referral' };
+  var SRC_LETTER = { google: 'G', facebook: 'f', instagram: 'Ig', hubly: 'h', website: 'W', chat: 'C', quote: 'Q', abandoned: '…', membership: 'M', manual: '+', referral: 'R' };
   function srcLabel(k) { return SRC_LABEL[k] || 'Manual'; }
   function srcIco(k) { return '<span class="jos-src-ico ' + esc(k) + '" title="' + esc(srcLabel(k)) + '">' + (SRC_LETTER[k] || '+') + '</span>'; }
   function vehicleOf(o) { return o?.vehicle || o?.vehicleLabel || o?.car || (o?.answers && (o.answers.vehicle || o.answers.vehicle_type)) || ''; }
@@ -5622,21 +5623,27 @@
       '<div class="jos-px-side-actions">' + btn('manual-lead', 'Edit lead', 'jos-btn jos-btn-sm') + (lead.key ? '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-lead="' + esc(lead.key) + '">Open full lead</button>' : '') + '</div></div>';
   }
   var LEADS_TABS = [
-    ['new', 'New Leads'],
-    ['quotes', 'Quotes'],
-    ['waiting', 'Waiting'],
+    ['all', 'All Leads'],
+    ['new', 'New'],
+    ['contacted', 'Contacted'],
+    ['qualified', 'Qualified'],
+    ['won', 'Won'],
     ['lost', 'Lost'],
-    ['ai', 'AI Qualified']
+    ['unqualified', 'Unqualified']
   ];
   var LEADS_WS_TABS = [
     ['overview', 'Overview'],
-    ['conversation', 'Conversation'],
-    ['quote', 'Quote'],
-    ['estimate', 'Estimate'],
-    ['tasks', 'Tasks'],
+    ['activity', 'Activity'],
     ['notes', 'Notes'],
+    ['appointments', 'Appointments'],
+    ['tasks', 'Tasks'],
     ['files', 'Files']
   ];
+  var LEADS_CRM_STATUSES = ['new', 'contacted', 'qualified', 'won', 'lost', 'unqualified'];
+  var LEADS_STATUS_LABEL = {
+    new: 'New', contacted: 'Contacted', qualified: 'Qualified',
+    won: 'Won', lost: 'Lost', unqualified: 'Unqualified'
+  };
   var LEADS_PERM_ROLES = [
     { role: 'Owner', view: '✅', edit: '✅', convert: '✅', delete: '✅', assign: '✅' },
     { role: 'Manager', view: '✅', edit: '✅', convert: '✅', delete: '✅', assign: '✅' },
@@ -5669,11 +5676,110 @@
 
   function leadStatusTone(stage) {
     stage = String(stage || '').toLowerCase();
-    if (/lost|spam|archived|duplicate|expired/.test(stage)) return 'hot';
+    if (stage === 'won' || stage === 'qualified') return 'ok';
+    if (stage === 'new') return 'brand';
+    if (stage === 'contacted') return 'info';
+    if (stage === 'lost' || stage === 'unqualified' || /spam|archived|duplicate|expired/.test(stage)) return 'mute';
     if (/waiting/.test(stage)) return 'warn';
     if (/quote/.test(stage)) return 'info';
-    if (/ai|qualified|new/.test(stage)) return 'ok';
     return 'info';
+  }
+
+  function normalizeCrmStatus(lead) {
+    var explicit = String(lead.crmStatus || '').toLowerCase();
+    if (LEADS_CRM_STATUSES.indexOf(explicit) > -1) return explicit;
+    var s = String(lead.osStage || lead.stage || lead.status || 'new').toLowerCase();
+    if (s === 'won' || lead.won) return 'won';
+    if (s === 'lost') return 'lost';
+    if (s === 'unqualified' || s === 'spam') return 'unqualified';
+    if (s === 'archived' && (lead.converted || lead.won)) return 'won';
+    if (/quote_viewed|qualified/.test(s) || (lead.aiQualified && lead.aiScore >= 70)) return 'qualified';
+    if (/quote_sent|quote_expired|waiting|contacted/.test(s) || (lead.messages && lead.messages.some(function (m) { return m.dir === 'out'; }))) return 'contacted';
+    return 'new';
+  }
+
+  function leadCrmLabel(lead) {
+    return LEADS_STATUS_LABEL[normalizeCrmStatus(lead)] || 'New';
+  }
+
+  function leadRelativeTime(lead) {
+    var raw = String(lead.lastContacted || lead.createdAt || '');
+    if (!raw) return '—';
+    try {
+      var d = new Date(raw);
+      if (isNaN(d.getTime())) return raw.slice(0, 10);
+      var mins = Math.round((Date.now() - d.getTime()) / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return mins + 'm ago';
+      var hrs = Math.round(mins / 60);
+      if (hrs < 24) return hrs + 'h ago';
+      var days = Math.round(hrs / 24);
+      if (days < 7) return days + 'd ago';
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch (e) {
+      return raw.slice(0, 10);
+    }
+  }
+
+  function leadScoreBand(score) {
+    score = Number(score) || 0;
+    if (score >= 80) return { tone: 'ok', label: 'High' };
+    if (score >= 60) return { tone: 'warn', label: 'Med' };
+    return { tone: 'hot', label: 'Low' };
+  }
+
+  function leadChecklist(lead) {
+    return [
+      { id: 'responded', label: 'Responded to outreach', done: !!(lead.messages && lead.messages.some(function (m) { return m.dir === 'out'; })) || normalizeCrmStatus(lead) !== 'new' },
+      { id: 'budget', label: 'Provided budget', done: !!(lead.budget || lead.estimatedValue || lead.amount) },
+      { id: 'service', label: 'Requested specific service', done: !!lead.service },
+      { id: 'ready', label: 'Ready to book', done: normalizeCrmStatus(lead) === 'qualified' || normalizeCrmStatus(lead) === 'won' || !!lead.appointmentAt }
+    ];
+  }
+
+  function leadAiRecommendation(lead) {
+    var score = Number(lead.aiScore) || 0;
+    var status = normalizeCrmStatus(lead);
+    if (status === 'won') return { title: 'Lead converted', body: 'This lead is won. Keep the relationship warm with a review request or membership offer.', primary: 'Request Review' };
+    if (score >= 80) return { title: 'Likely to convert', body: 'They provided a budget, requested a specific service, and want quick turnaround. Contact now while intent is high.', primary: 'Contact Now' };
+    if (score >= 60) return { title: 'Nurture this lead', body: 'Good fit so far. Send an estimate and confirm preferred contact time to move them to Qualified.', primary: 'Send Estimate' };
+    return { title: 'Qualify before pitching', body: 'Ask about budget and service scope. AI will refresh the score as details come in.', primary: 'Send Follow-up' };
+  }
+
+  function seedDemoLeadsIfEmpty() {
+    ensureLeadsOsState();
+    var pipe = S().pipeline.manual;
+    if (pipe.length) return;
+    var now = Date.now();
+    var demo = [
+      { id: 'lead_jordan', name: 'Jordan Lee', phone: '(619) 555-0198', email: 'jordan@email.com', address: 'La Jolla, CA', service: 'Lawn Mowing', industry: 'Residential', source: 'website', crmStatus: 'new', aiScore: 86, budget: '$150-$200', bestTime: 'Evenings', unread: 1, lastMessage: 'Looking for weekly lawn care starting this month.', tags: ['Lawn Mowing', 'Residential'], minutesAgo: 2 },
+      { id: 'lead_sarah', name: 'Sarah Chen', phone: '(619) 555-0142', email: 'sarah@email.com', address: 'Pacific Beach, CA', service: 'Full Detail', industry: 'Residential', source: 'google', crmStatus: 'contacted', aiScore: 72, budget: '$250-$350', bestTime: 'Mornings', unread: 0, lastMessage: 'Thanks — can you send a quote for Saturday?', tags: ['Detail'], minutesAgo: 45 },
+      { id: 'lead_mike', name: 'Mike Torres', phone: '(619) 555-0177', email: 'mike@email.com', address: 'Mission Valley, CA', service: 'Ceramic Coating', industry: 'Residential', source: 'facebook', crmStatus: 'qualified', aiScore: 91, budget: '$600+', bestTime: 'Weekends', unread: 0, lastMessage: 'Ready to book if you have a slot next week.', tags: ['Ceramic', 'Hot'], minutesAgo: 120 },
+      { id: 'lead_alex', name: 'Alex Rivera', phone: '(619) 555-0133', email: 'alex@email.com', address: 'UTC, CA', service: 'Interior Detail', industry: 'Residential', source: 'referral', crmStatus: 'won', aiScore: 95, budget: '$200', bestTime: 'Afternoons', unread: 0, lastMessage: 'Booked — see you Thursday.', tags: ['Won'], minutesAgo: 400 },
+      { id: 'lead_emily', name: 'Emily Wilson', phone: '(619) 555-0111', email: 'emily@email.com', address: 'Downtown SD', service: 'Exterior Wash', industry: 'Commercial', source: 'instagram', crmStatus: 'lost', aiScore: 28, budget: 'Under $100', bestTime: 'Anytime', unread: 0, lastMessage: 'Went with another provider.', tags: ['Lost'], minutesAgo: 1440 },
+      { id: 'lead_pat', name: 'Pat Nguyen', phone: '(619) 555-0166', email: 'pat@email.com', address: 'Clairemont, CA', service: 'Pressure Washing', industry: 'Residential', source: 'website', crmStatus: 'unqualified', aiScore: 18, budget: '', bestTime: '', unread: 0, lastMessage: 'Just browsing prices.', tags: ['Cold'], minutesAgo: 2880 }
+    ];
+    demo.forEach(function (d, i) {
+      var created = new Date(now - d.minutesAgo * 60000).toISOString();
+      pipe.push({
+        id: d.id, key: d.id, name: d.name, phone: d.phone, email: d.email, address: d.address,
+        service: d.service, industry: d.industry, source: d.source, crmStatus: d.crmStatus,
+        stage: d.crmStatus === 'won' ? 'archived' : (d.crmStatus === 'lost' ? 'lost' : 'new'),
+        osStage: d.crmStatus === 'won' ? 'archived' : (d.crmStatus === 'lost' ? 'lost' : 'new'),
+        status: d.crmStatus, aiScore: d.aiScore, aiQualified: d.aiScore >= 70,
+        budget: d.budget, bestTime: d.bestTime, unread: d.unread, lastMessage: d.lastMessage,
+        tags: d.tags, assignedTo: LEADS_TEAM[i % LEADS_TEAM.length].name,
+        createdAt: created, lastContacted: created, estimatedValue: d.aiScore * 4,
+        notes: d.lastMessage, notesList: [d.lastMessage],
+        messages: d.crmStatus === 'new' ? [{ dir: 'in', text: d.lastMessage, at: 'Just now' }] :
+          [{ dir: 'in', text: d.lastMessage, at: 'Earlier' }, { dir: 'out', text: 'Thanks for reaching out — happy to help!', at: 'Earlier' }],
+        tasks: [], files: [], appointments: d.crmStatus === 'won' ? [{ when: 'Thu 10:00 AM', label: 'Service visit' }] : [],
+        activity: [{ type: 'created', label: 'Lead created', at: created.slice(0, 16).replace('T', ' ') }],
+        estimate: { labor: 0, materials: 0, total: d.aiScore * 4, notes: '' },
+        buyingIntent: d.aiScore >= 80 ? 'high' : (d.aiScore >= 55 ? 'med' : 'low'),
+        won: d.crmStatus === 'won'
+      });
+    });
   }
 
   function leadStageDisplay(lead) {
@@ -5716,6 +5822,7 @@
       if (!lead.key) lead.key = lead.id || ('lead_' + idx);
       lead.osStage = normalizeLeadStage(lead);
       lead.stage = lead.osStage;
+      lead.crmStatus = normalizeCrmStatus(lead);
       if (!lead.status) {
         if (/waiting/.test(lead.osStage)) lead.status = 'waiting';
         else if (/quote/.test(lead.osStage)) lead.status = 'quoted';
@@ -5816,13 +5923,8 @@
   }
 
   function leadMatchesTab(lead, tab) {
-    var stage = lead.osStage || normalizeLeadStage(lead);
-    if (tab === 'new') return stage === 'new';
-    if (tab === 'quotes') return /quote_sent|quote_viewed|quote_expired/.test(stage);
-    if (tab === 'waiting') return /^waiting_/.test(stage);
-    if (tab === 'lost') return /lost|archived|spam|duplicate/.test(stage);
-    if (tab === 'ai') return !!lead.aiQualified && !/lost|archived|spam|duplicate/.test(stage);
-    return true;
+    if (!tab || tab === 'all') return true;
+    return normalizeCrmStatus(lead) === tab;
   }
 
   function leadMatchesFilters(lead, root) {
@@ -5889,13 +5991,17 @@
   }
 
   function filterLeadsList(root) {
-    var tab = root._josLeadsTab || 'new';
+    var tab = root._josLeadsTab || 'all';
     var q = String(root._josLeadsQ || '').trim().toLowerCase();
+    var sort = root._josLeadsSort || 'newest';
     var list = leadsOsList().filter(function (l) { return leadMatchesTab(l, tab); });
     list = list.filter(function (l) { return leadMatchesFilters(l, root); });
     if (q) list = list.filter(function (l) { return leadSearchHay(l).indexOf(q) > -1; });
-    if (tab === 'ai') list = list.slice().sort(function (a, b) { return (b.aiScore || 0) - (a.aiScore || 0); });
-    else list = list.slice().sort(function (a, b) { return String(b.lastContacted || b.createdAt || '').localeCompare(String(a.lastContacted || a.createdAt || '')); });
+    list = list.slice().sort(function (a, b) {
+      if (sort === 'score') return (b.aiScore || 0) - (a.aiScore || 0);
+      if (sort === 'oldest') return String(a.lastContacted || a.createdAt || '').localeCompare(String(b.lastContacted || b.createdAt || ''));
+      return String(b.lastContacted || b.createdAt || '').localeCompare(String(a.lastContacted || a.createdAt || ''));
+    });
     return list;
   }
 
@@ -5991,236 +6097,320 @@
 
   function renderLeadCard(lead, selectedId) {
     var on = selectedId && (String(lead.id) === String(selectedId) || String(lead.key) === String(selectedId));
-    var kind = srcKind(lead.source, lead);
-    return '<button type="button" class="jos-list-card jos-leads-card' + (on ? ' on' : '') + '" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' +
-      '<div class="jos-between">' +
-        '<div class="jos-px-person"><div class="jos-px-av">' + esc(initials(lead.name)) + '</div><div><strong class="t">' + esc(lead.name || 'Lead') + '</strong>' +
-        '<div class="s">' + srcIco(kind) + ' ' + esc(srcLabel(kind)) + '</div></div></div>' +
-        '<span class="jos-muted">' + esc(leadTimeLabel(lead)) + '</span>' +
-      '</div>' +
-      '<div class="s jos-leads-last">' + esc(lead.lastMessage || 'No messages yet') + '</div>' +
-      '<div class="meta">' +
-        '<span class="jos-pill ' + leadStatusTone(lead.osStage) + '">' + esc(leadStageDisplay(lead)) + '</span>' +
-        '<span class="jos-pill info">AI ' + esc(String(lead.aiScore || 0)) + '</span>' +
-        (lead.unread ? '<span class="jos-pill hot">' + lead.unread + ' new</span>' : '') +
-        '<span class="jos-muted">' + esc(lead.assignedTo || 'Unassigned') + '</span>' +
-      '</div></button>';
+    var crm = normalizeCrmStatus(lead);
+    var unread = Number(lead.unread) > 0;
+    return '<button type="button" class="jos-ld-card' + (on ? ' on' : '') + (unread ? ' unread' : '') + '" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' +
+      (unread ? '<i class="jos-ld-unread" aria-hidden="true"></i>' : '') +
+      '<span class="jos-ld-ava">' + esc(initials(lead.name)) + '</span>' +
+      '<span class="jos-ld-card-body">' +
+      '<span class="jos-ld-card-top"><strong>' + esc(lead.name || 'Lead') + '</strong><span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span></span>' +
+      '<span class="jos-muted">' + esc(lead.industry || 'Residential') + ' · ' + esc(lead.service || 'Service') + '</span>' +
+      '<span class="jos-ld-preview">' + esc((lead.lastMessage || 'No messages yet').slice(0, 72)) + '</span>' +
+      '<span class="jos-ld-card-meta"><span>' + esc(lead.phone || '—') + '</span><span>' + esc(leadRelativeTime(lead)) + '</span></span>' +
+      '</span></button>';
   }
 
   function renderLeadWorkspace(root, lead, ws) {
-    if (!lead) return '<div class="jos-empty">Select a lead to open the workspace.</div>';
-    var tabBar = '<div class="jos-btn-row jos-leads-ws-tabs">' + LEADS_WS_TABS.map(function (t) {
-      return '<button type="button" class="jos-btn jos-btn-sm' + (ws === t[0] ? ' jos-btn-brand' : '') + '" data-jos-lead-ws="' + t[0] + '">' + t[1] + '</button>';
+    if (!lead) {
+      return '<div class="jos-ld-empty-ws"><div class="jos-ld-empty-art" aria-hidden="true"></div><h3>Select a lead</h3><p>Pick a lead from the inbox to qualify, score, and convert.</p></div>';
+    }
+    var crm = normalizeCrmStatus(lead);
+    var band = leadScoreBand(lead.aiScore);
+    var checklist = leadChecklist(lead);
+    var rec = leadAiRecommendation(lead);
+    var score = Number(lead.aiScore) || 0;
+    var circ = Math.round((score / 100) * 100);
+
+    var tabBar = '<div class="jos-ld-ws-tabs">' + LEADS_WS_TABS.map(function (t) {
+      return '<button type="button" class="jos-ld-ws-tab' + (ws === t[0] ? ' on' : '') + '" data-jos-lead-ws="' + t[0] + '">' + t[1] + '</button>';
     }).join('') + '</div>';
 
-    var actions = '<div class="jos-btn-row jos-mt jos-leads-actions">' +
-      btn('leads-convert-customer', 'Convert to Customer', 'jos-btn-brand jos-btn-sm') +
-      btn('leads-convert-job', 'Convert to Job', 'jos-btn jos-btn-sm') +
-      btn('leads-create-quote', 'Create Quote', 'jos-btn jos-btn-sm') +
-      btn('leads-followup', 'Schedule Follow-up', 'jos-btn jos-btn-sm') +
-      btn('leads-request-photos', 'Request Photos', 'jos-btn jos-btn-sm') +
-      btn('leads-payment-link', 'Send Payment Link', 'jos-btn jos-btn-sm') +
-      btn('leads-review-request', 'Send Review Request', 'jos-btn jos-btn-sm') +
-      btn('leads-archive', 'Archive', 'jos-btn jos-btn-sm') +
-      btn('leads-delete', 'Delete', 'jos-btn jos-btn-sm') +
-      btn('leads-duplicate', 'Duplicate', 'jos-btn jos-btn-sm') +
-      '</div>';
+    var head = '<div class="jos-ld-ws-head">' +
+      '<div class="jos-ld-ws-identity">' +
+      '<span class="jos-ld-ava lg">' + esc(initials(lead.name)) + '</span>' +
+      '<div><div class="jos-ld-ws-name"><strong>' + esc(lead.name || 'Lead') + '</strong><span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span></div>' +
+      '<div class="jos-muted">' + esc(lead.industry || 'Residential') + ' · ' + esc(lead.service || 'Service') + '</div></div></div>' +
+      '<div class="jos-ld-qa">' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-call" title="Call" aria-label="Call">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.4 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.6A2 2 0 0 1 22 16.9z"/></svg></button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-sms" title="SMS" aria-label="SMS">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-email" title="Email" aria-label="Email">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-more-menu" title="More" aria-label="More">⋯</button>' +
+      '</div></div>';
 
     var body = '';
     if (ws === 'overview') {
-      body = '<div class="jos-stack jos-mt">' +
-        '<div class="jos-between"><div><div class="jos-kicker">Contact</div><strong>' + esc(lead.name) + '</strong>' +
-        '<div class="jos-muted">' + esc(lead.phone || '—') + ' · ' + esc(lead.email || '—') + '</div></div>' +
-        '<span class="jos-pill ' + leadStatusTone(lead.osStage) + '">' + esc(leadStageDisplay(lead)) + '</span></div>' +
-        '<div><div class="jos-kicker">Service</div>' + esc(lead.service || '—') + '</div>' +
-        '<div><div class="jos-kicker">Vehicle / Property</div>' + esc(vehicleOf(lead) || lead.property || '—') + '</div>' +
-        '<div><div class="jos-kicker">Address</div>' + esc(lead.address || lead.property || '—') + '</div>' +
-        '<div><div class="jos-kicker">Source</div>' + srcIco(srcKind(lead.source, lead)) + ' ' + esc(srcLabel(srcKind(lead.source, lead))) + '</div>' +
-        '<div><div class="jos-kicker">Assigned</div>' + esc(lead.assignedTo || 'Unassigned') +
-        ' <button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-assign">Reassign</button></div>' +
-        '<div><div class="jos-kicker">Estimated Value</div>' + esc(money(lead.estimatedValue || lead.amount) || '$0') + '</div>' +
-        '<div><div class="jos-kicker">Tags</div>' + ((lead.tags || []).map(function (t) { return '<span class="jos-pill info">' + esc(t) + '</span>'; }).join(' ') || '<span class="jos-muted">None</span>') +
-        ' <button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-add-tag">Add tag</button></div>' +
-        '<div class="jos-ai"><div class="sk">AI</div><p style="font-size:13px;margin-top:6px"><strong>Score:</strong> ' + esc(String(lead.aiScore)) +
-        ' · <strong>Intent:</strong> ' + esc(lead.buyingIntent || '—') +
-        ' · <strong>Follow-up:</strong> ' + esc(lead.followUpAt || 'Suggest within 24h') + '</p>' +
-        '<div class="jos-btn-row jos-mt">' +
-        btn('leads-ai-summary', 'Auto Summary', 'jos-btn jos-btn-sm') +
-        btn('leads-ai-followup', 'Recommended Follow-up', 'jos-btn jos-btn-sm') +
-        btn('leads-ai-intent', 'Buying Intent', 'jos-btn jos-btn-sm') +
-        btn('leads-ai-dup', 'Duplicate Check', 'jos-btn jos-btn-sm') +
-        btn('leads-ai-spam', 'Spam Check', 'jos-btn jos-btn-sm') +
-        '</div></div></div>';
-    } else if (ws === 'conversation') {
-      var msgs = lead.messages && lead.messages.length ? lead.messages : [{ dir: 'sys', text: lead.lastMessage || 'No conversation yet', at: '' }];
-      body = '<div class="jos-mt"><div class="jos-chat-stream">' + msgs.map(function (m) {
-        var dir = m.dir === 'out' ? 'out' : (m.dir === 'sys' ? 'sys' : 'in');
-        if (dir === 'sys') return '<div class="jos-chat-sys">' + esc(m.text || '') + '</div>';
-        return '<div class="jos-chat-bubble ' + dir + '">' + esc(m.text || '') +
-          '<div class="jos-muted" style="font-size:10px;margin-top:4px">' + esc(m.at || '') + '</div></div>';
-      }).join('') + '</div>' +
-        '<div class="jos-chat-input jos-mt"><input id="jos-leads-reply" type="text" placeholder="Reply…" value="' + esc(root._josLeadDraftMsg || '') + '">' +
-        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="leads-send">Send</button></div>' +
-        '<div class="jos-btn-row jos-mt">' +
-        btn('leads-ai-conv-summary', 'Conversation Summary', 'jos-btn jos-btn-sm') +
-        btn('leads-call', 'Call', 'jos-btn jos-btn-sm') +
-        btn('leads-sms', 'SMS', 'jos-btn jos-btn-sm') +
-        btn('leads-email', 'Email', 'jos-btn jos-btn-sm') +
-        '</div></div>';
-    } else if (ws === 'quote') {
-      var q = lead.quote;
-      body = '<div class="jos-stack jos-mt">' +
-        (q ? '<div class="jos-note"><strong>Quote ' + esc(q.id) + '</strong><div class="jos-muted">' + esc(money(q.amount)) + ' · ' + esc(q.status) + ' · ' + esc(q.packageName || lead.service || '') + '</div></div>' : '<div class="jos-muted">No quote yet</div>') +
+      var fields = [
+        ['Phone', lead.phone || '—', 'leads-call'],
+        ['Email', lead.email || '—', 'leads-email'],
+        ['Address', lead.address || lead.property || '—', ''],
+        ['Source', srcLabel(srcKind(lead.source, lead)), ''],
+        ['Service Interested', lead.service || '—', ''],
+        ['Budget', lead.budget || money(lead.estimatedValue || lead.amount) || '—', ''],
+        ['Best Time to Contact', lead.bestTime || '—', ''],
+        ['Notes', (lead.notesList && lead.notesList[0]) || lead.notes || '—', '']
+      ];
+      body = '<div class="jos-ld-overview">' +
+        '<section class="jos-ld-info">' +
+        '<div class="jos-kicker">Lead Information</div>' +
+        fields.map(function (f) {
+          return '<div class="jos-ld-field' + (f[2] ? ' clickable' : '') + '"' + (f[2] ? ' data-jos-act="' + f[2] + '"' : '') + '>' +
+            '<span>' + esc(f[0]) + '</span><strong>' + esc(f[1]) + '</strong><i class="jos-ld-edit" aria-hidden="true"></i></div>';
+        }).join('') +
+        '</section>' +
+        '<section class="jos-ld-score-card">' +
+        '<div class="jos-kicker">Lead Score</div>' +
+        '<div class="jos-ld-ring tone-' + band.tone + '" style="--p:' + circ + '"><div class="jos-ld-ring-inner"><strong>' + esc(String(score)) + '</strong><span>' + esc(band.label) + '</span></div></div>' +
+        '<ul class="jos-ld-check">' + checklist.map(function (c) {
+          return '<li class="' + (c.done ? 'done' : '') + '">' + (c.done ? '✓' : '○') + ' ' + esc(c.label) + '</li>';
+        }).join('') + '</ul></section></div>' +
+        '<section class="jos-ld-msg-card">' +
+        '<div class="jos-kicker">Latest Message</div>' +
+        '<p>' + esc(lead.lastMessage || 'No messages yet') + '</p>' +
+        '<button type="button" class="jos-linkish" data-jos-act="go-chats">View Conversation</button></section>' +
+        '<section class="jos-ld-ai-card">' +
+        '<div class="jos-ld-ai-badge">AI</div>' +
+        '<strong>' + esc(rec.title) + '</strong>' +
+        '<p>' + esc(rec.body) + '</p>' +
         '<div class="jos-btn-row">' +
-        btn('leads-create-quote', 'Create / Update Quote', 'jos-btn-brand jos-btn-sm') +
-        btn('leads-quote-print', 'Print', 'jos-btn jos-btn-sm') +
-        btn('leads-quote-share', 'Share', 'jos-btn jos-btn-sm') +
-        btn('leads-quote-email', 'Email (placeholder)', 'jos-btn jos-btn-sm') +
-        btn('leads-ai-suggest-quote', 'Suggested Quote', 'jos-btn jos-btn-sm') +
-        '</div></div>';
-    } else if (ws === 'estimate') {
-      var est = lead.estimate || { labor: 0, materials: 0, total: 0, notes: '' };
-      body = '<div class="jos-stack jos-mt">' +
-        '<div class="jos-between"><div><div class="jos-kicker">Labor</div>' + esc(money(est.labor)) + '</div>' +
-        '<div><div class="jos-kicker">Materials</div>' + esc(money(est.materials)) + '</div>' +
-        '<div><div class="jos-kicker">Total</div><strong>' + esc(money(est.total)) + '</strong></div></div>' +
-        '<div><div class="jos-kicker">Notes</div><textarea id="jos-leads-est-notes" class="jos-textarea">' + esc(est.notes || '') + '</textarea></div>' +
-        '<div class="jos-btn-row">' + btn('leads-est-save', 'Save Estimate', 'jos-btn-brand jos-btn-sm') + btn('leads-est-print', 'Print', 'jos-btn jos-btn-sm') + '</div></div>';
+        btn('leads-call', 'Contact Now', 'jos-btn-brand jos-btn-sm') +
+        btn('leads-create-quote', 'Send Estimate', 'jos-btn jos-btn-sm') +
+        btn('leads-followup', 'Schedule Appointment', 'jos-btn jos-btn-sm') +
+        btn('leads-ai-dismiss', 'Dismiss', 'jos-btn jos-btn-sm') +
+        '</div></section>';
+    } else if (ws === 'activity') {
+      body = '<div class="jos-ld-timeline">' + ((lead.activity || []).map(function (a) {
+        return '<button type="button" class="jos-ld-tl" data-jos-act="leads-ai-summary"><i></i><span><strong>' + esc(a.label) + '</strong><span class="jos-muted">' + esc(a.at || '') + '</span></span></button>';
+      }).join('') || '<div class="jos-muted">No activity yet</div>') + '</div>';
+    } else if (ws === 'notes') {
+      body = '<div class="jos-stack">' +
+        ((lead.notesList || []).length ? lead.notesList.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') : '<div class="jos-muted">No notes yet</div>') +
+        '<div class="jos-chat-input jos-mt"><input id="jos-leads-note-new" placeholder="Add note…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-note-add">Add</button></div></div>';
+    } else if (ws === 'appointments') {
+      body = '<div class="jos-stack">' +
+        ((lead.appointments || []).length ? lead.appointments.map(function (a) {
+          return '<div class="jos-note"><strong>' + esc(a.label || 'Appointment') + '</strong><div class="jos-muted">' + esc(a.when || '') + '</div></div>';
+        }).join('') : '<div class="jos-muted">No appointments yet</div>') +
+        '<div class="jos-btn-row">' + btn('leads-followup', 'Schedule Appointment', 'jos-btn-brand jos-btn-sm') + btn('leads-convert-job', 'Convert to Job', 'jos-btn jos-btn-sm') + '</div></div>';
     } else if (ws === 'tasks') {
-      body = '<div class="jos-stack jos-mt">' +
+      body = '<div class="jos-stack">' +
         ((lead.tasks || []).length ? lead.tasks.map(function (t, i) {
           return '<label class="jos-check-row"><input type="checkbox" data-jos-act="leads-task-toggle" data-jos-task-i="' + i + '"' + (t.done ? ' checked' : '') + '> ' + esc(t.label) + '</label>';
         }).join('') : '<div class="jos-empty">No tasks yet</div>') +
-        '<div class="jos-chat-input jos-mt"><input id="jos-leads-task-new" placeholder="New task…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-task-add">Add</button></div>' +
-        '<div class="jos-mt">' + btn('leads-ai-reminder', 'Follow-up Reminder', 'jos-btn jos-btn-sm') + '</div></div>';
-    } else if (ws === 'notes') {
-      body = '<div class="jos-stack jos-mt">' +
-        ((lead.notesList || []).length ? lead.notesList.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') : '<div class="jos-muted">No notes yet</div>') +
-        '<div class="jos-chat-input jos-mt"><input id="jos-leads-note-new" placeholder="Add note…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-note-add">Add</button></div></div>';
+        '<div class="jos-chat-input jos-mt"><input id="jos-leads-task-new" placeholder="New task…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-task-add">Add</button></div></div>';
     } else {
-      body = '<div class="jos-stack jos-mt">' +
+      body = '<div class="jos-stack">' +
         ((lead.files || []).length ? lead.files.map(function (f, i) {
-          return '<div class="jos-between jos-note"><div>📎 ' + esc(f.name || f) + '</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-file-del" data-jos-file-i="' + i + '">Remove</button></div>';
+          return '<div class="jos-between jos-note"><div>' + esc(f.name || f) + '</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-file-del" data-jos-file-i="' + i + '">Remove</button></div>';
         }).join('') : '<div class="jos-empty">No files attached</div>') +
         '<div class="jos-mt">' + btn('leads-file-add', 'Add File', 'jos-btn-brand jos-btn-sm') + '</div></div>';
     }
 
-    return '<div class="jos-card jos-leads-workspace" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' +
-      '<div class="jos-between"><div><div class="jos-kicker">Lead Workspace</div><h3 style="margin:4px 0 0">' + esc(lead.name || 'Lead') + '</h3></div>' +
-      '<span class="jos-pill info">AI ' + esc(String(lead.aiScore || 0)) + '</span></div>' +
-      tabBar + actions + body + '</div>';
+    return '<div class="jos-ld-workspace" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' + head + tabBar + '<div class="jos-ld-ws-body">' + body + '</div></div>';
   }
 
-  function renderLeadSidebar(lead) {
-    if (!lead) return '<div class="jos-empty">Notes, activity, and score appear here.</div>';
-    return '<div class="jos-stack jos-leads-side">' +
-      '<div class="jos-card"><div class="jos-kicker">Notes</div>' +
-      ((lead.notesList || []).slice(0, 3).map(function (n) { return '<div class="jos-note jos-mt">' + esc(n) + '</div>'; }).join('') || '<p class="jos-muted jos-mt">No notes</p>') +
-      '<div class="jos-chat-input jos-mt"><input id="jos-leads-side-note" placeholder="Quick note…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-side-note">Add</button></div></div>' +
-      '<div class="jos-card"><div class="jos-kicker">Recent Activity</div><div class="jos-stack jos-mt">' +
-      ((lead.activity || []).slice(0, 6).map(function (a) {
-        return '<div class="jos-sched-row"><div class="time">' + esc(String(a.type || '').slice(0, 4)) + '</div><div><div class="who">' + esc(a.label) + '</div><div class="svc">' + esc(a.at || '') + '</div></div></div>';
-      }).join('') || '<div class="jos-muted">No activity</div>') +
-      '</div></div>' +
-      '<div class="jos-ai"><div class="sk">Lead Score</div><div class="jos-kpi-v brand jos-mt">' + esc(String(lead.aiScore || 0)) + '</div>' +
-      '<p style="font-size:13px;margin-top:6px">Intent: <strong>' + esc(lead.buyingIntent || '—') + '</strong>' +
-      (lead.spam ? ' · <strong>Spam risk</strong>' : '') +
-      (lead.duplicateOf ? ' · <strong>Possible duplicate</strong>' : '') + '</p>' +
-      '<div class="jos-btn-row jos-mt">' + btn('leads-recalc-score', 'Recalculate', 'jos-btn-brand jos-btn-sm') +
-      btn('leads-ai-membership', 'Suggested Membership', 'jos-btn jos-btn-sm') + '</div></div>' +
-      '<div class="jos-card"><div class="jos-kicker">Attachments</div><div class="jos-stack jos-mt">' +
-      ((lead.files || []).length ? lead.files.map(function (f) { return '<div class="jos-note">📎 ' + esc(f.name || f) + '</div>'; }).join('') : '<div class="jos-muted">None</div>') +
-      '</div>' + btn('leads-file-add', 'Add attachment', 'jos-btn jos-btn-sm') + '</div>' +
-      '<div class="jos-card"><div class="jos-kicker">Permissions (OS)</div>' +
-      '<table class="jos-leads-perm"><thead><tr><th>Role</th><th>View</th><th>Edit</th><th>Convert</th><th>Delete</th><th>Assign</th></tr></thead><tbody>' +
-      LEADS_PERM_ROLES.map(function (r) {
-        return '<tr><td>' + esc(r.role) + '</td><td>' + r.view + '</td><td>' + r.edit + '</td><td>' + r.convert + '</td><td>' + r.delete + '</td><td>' + r.assign + '</td></tr>';
+  function renderLeadRightPanel(root, lead, all, filtered) {
+    var total = all.length;
+    var counts = {};
+    LEADS_CRM_STATUSES.forEach(function (s) { counts[s] = 0; });
+    all.forEach(function (l) { counts[normalizeCrmStatus(l)] = (counts[normalizeCrmStatus(l)] || 0) + 1; });
+    var sources = { website: 0, google: 0, facebook: 0, referral: 0, instagram: 0, other: 0 };
+    all.forEach(function (l) {
+      var k = srcKind(l.source, l);
+      if (sources[k] == null) sources.other += 1;
+      else sources[k] += 1;
+    });
+    var srcTotal = Math.max(1, total);
+    var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
+    var crm = lead ? normalizeCrmStatus(lead) : 'new';
+    var maxPipe = Math.max(1, Math.max.apply(null, LEADS_CRM_STATUSES.map(function (s) { return counts[s] || 0; })));
+
+    return '<aside class="jos-ld-rail">' +
+      '<section class="jos-ld-widget">' +
+      '<div class="jos-kicker">Lead Status</div>' +
+      '<select id="jos-ld-status" class="jos-ld-select"' + (lead ? '' : ' disabled') + '>' +
+      LEADS_CRM_STATUSES.map(function (s) {
+        return '<option value="' + s + '"' + (crm === s ? ' selected' : '') + '>' + esc(LEADS_STATUS_LABEL[s]) + '</option>';
+      }).join('') + '</select></section>' +
+
+      '<section class="jos-ld-widget">' +
+      '<div class="jos-kicker">Assigned To</div>' +
+      '<select id="jos-ld-assigned" class="jos-ld-select"' + (lead ? '' : ' disabled') + '>' +
+      team.map(function (t) {
+        return '<option value="' + esc(t.name) + '"' + ((lead && lead.assignedTo) === t.name ? ' selected' : '') + '>' + esc(t.name) + (t.role ? ' · ' + esc(t.role) : '') + '</option>';
+      }).join('') + '</select></section>' +
+
+      '<section class="jos-ld-widget">' +
+      '<div class="jos-kicker">Tags</div>' +
+      '<div class="jos-ld-tags">' +
+      ((lead && lead.tags && lead.tags.length) ? lead.tags.map(function (tg, i) {
+        return '<button type="button" class="jos-ld-tag" data-jos-act="leads-tag-remove" data-jos-tag-i="' + i + '">' + esc(tg) + ' ×</button>';
+      }).join('') : '<span class="jos-muted">No tags</span>') +
+      '<button type="button" class="jos-ld-tag add" data-jos-act="leads-add-tag">+ Add Tag</button>' +
+      '</div></section>' +
+
+      '<button type="button" class="jos-ld-widget jos-ld-summary" data-jos-act="go-reports">' +
+      '<div class="jos-kicker">Lead Summary</div>' +
+      '<div class="jos-ld-sum-num">' + total + '</div>' +
+      '<div class="jos-ld-sum-trend"><span class="up">+12% this week</span></div>' +
+      '<div class="jos-ld-spark" aria-hidden="true"><i style="height:35%"></i><i style="height:48%"></i><i style="height:42%"></i><i style="height:60%"></i><i style="height:55%"></i><i style="height:72%"></i><i style="height:68%"></i></div>' +
+      '</button>' +
+
+      '<section class="jos-ld-widget">' +
+      '<div class="jos-kicker">Conversion Pipeline</div>' +
+      '<div class="jos-ld-pipe">' + LEADS_CRM_STATUSES.filter(function (s) { return s !== 'unqualified'; }).map(function (s) {
+        var n = counts[s] || 0;
+        var pct = Math.round((n / maxPipe) * 100);
+        return '<button type="button" class="jos-ld-pipe-row" data-jos-leads-tab="' + s + '">' +
+          '<span>' + esc(LEADS_STATUS_LABEL[s]) + '</span><span class="n">' + n + '</span>' +
+          '<span class="bar"><i class="tone-' + leadStatusTone(s) + '" style="width:' + pct + '%"></i></span></button>';
+      }).join('') + '</div></section>' +
+
+      '<section class="jos-ld-widget">' +
+      '<div class="jos-kicker">Lead Sources</div>' +
+      '<div class="jos-ld-donut" style="--w:' + Math.round(sources.website / srcTotal * 100) + ';--g:' + Math.round(sources.google / srcTotal * 100) + ';--f:' + Math.round(sources.facebook / srcTotal * 100) + ';--r:' + Math.round(sources.referral / srcTotal * 100) + ';--i:' + Math.round(sources.instagram / srcTotal * 100) + '">' +
+      '<div class="jos-ld-donut-hole"><strong>' + total + '</strong><span>leads</span></div></div>' +
+      '<div class="jos-ld-src-legend">' +
+      [['website', 'Website'], ['google', 'Google'], ['facebook', 'Facebook'], ['referral', 'Referral'], ['instagram', 'Instagram']].map(function (s) {
+        var pct = Math.round((sources[s[0]] || 0) / srcTotal * 100);
+        return '<button type="button" class="jos-ld-src-row" data-jos-act="leads-filter-source" data-jos-source="' + s[0] + '"><i class="src-' + s[0] + '"></i><span>' + s[1] + '</span><strong>' + pct + '%</strong></button>';
       }).join('') +
-      '</tbody></table></div></div>';
+      '</div></section></aside>';
   }
 
   function renderLeadsContextMenu(root) {
     var menu = root._josLeadCtx;
     if (!menu || !menu.open) return '';
+    var items = [
+      ['leads-call', 'Call'], ['leads-sms', 'Text'], ['leads-email', 'Email'],
+      ['leads-create-quote', 'Create Estimate'], ['leads-payment-link', 'Create Invoice'],
+      ['leads-followup', 'Schedule Appointment'], ['leads-convert-customer', 'Convert to Customer'],
+      ['leads-archive', 'Archive'], ['leads-delete', 'Delete'], ['leads-assign', 'Assign'],
+      ['leads-duplicate', 'Merge Duplicate'], ['leads-review-request', 'Request Review'],
+      ['leads-ai-followup', 'Generate AI Follow-Up']
+    ];
     return '<div class="jos-leads-ctx" style="left:' + menu.x + 'px;top:' + menu.y + 'px" id="jos-leads-ctx">' +
-      '<button type="button" data-jos-act="leads-call">Call</button>' +
-      '<button type="button" data-jos-act="leads-sms">SMS</button>' +
-      '<button type="button" data-jos-act="leads-email">Email</button>' +
-      '<button type="button" data-jos-act="leads-convert-customer">Convert to Customer</button>' +
-      '<button type="button" data-jos-act="leads-convert-job">Convert to Job</button>' +
-      '<button type="button" data-jos-act="leads-assign">Assign</button>' +
-      '<button type="button" data-jos-act="leads-copy">Copy Contact</button>' +
-      '<button type="button" data-jos-act="leads-archive">Archive</button>' +
-      '<button type="button" data-jos-act="leads-delete">Delete</button>' +
-      '</div>';
+      items.map(function (x) {
+        return '<button type="button" data-jos-act="' + x[0] + '">' + x[1] + '</button>';
+      }).join('') + '</div>';
+  }
+
+  function setLeadsMode(on) {
+    var app = el('p-app');
+    if (!app) return;
+    app.classList.toggle('jos-leads-mode', !!on);
   }
 
   function renderLeads() {
     var root = ownPixelView('v-leads', 'jos-leads-root');
     if (!root) return;
+    setLeadsMode(true);
     updateChrome('leads');
-    root.innerHTML = '<div class="jos-page jos-leads-page"><div class="jos-home-loading">Loading Leads…</div></div>';
+    root.innerHTML = '<div class="jos-ld-shell"><div class="jos-home-loading">Loading Leads…</div></div>';
     try { renderLeadsPage(root); }
     catch (err) {
       console.warn('HublyJourneyOS Leads', err);
-      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Leads could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderLeads()">Retry</button></div></div></div>';
+      root.innerHTML = '<div class="jos-ld-shell"><div class="jos-empty jos-error-state"><strong>Leads could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderLeads()">Retry</button></div></div></div>';
     }
   }
 
   function renderLeadsPage(root) {
+    seedDemoLeadsIfEmpty();
     ensureLeadsOsState();
-    var tab = root._josLeadsTab || 'new';
+    if (!root._josLeadsTab) root._josLeadsTab = 'all';
+    var tab = root._josLeadsTab || 'all';
     var ws = root._josLeadWorkspace || 'overview';
     var all = leadsOsList();
     var filtered = filterLeadsList(root);
-    var selectedId = root._josLeadId || (filtered[0] && (filtered[0].id || filtered[0].key)) || null;
+    var visible = filtered.slice(0, root._josLeadsLimit || 25);
+    var selectedId = root._josLeadId || (visible[0] && (visible[0].id || visible[0].key)) || null;
     var sel = selectedId ? findLead(selectedId) : null;
-    // Keep workspace selection even when the lead is outside the active tab/filter.
     if (selectedId && !sel) {
-      selectedId = filtered[0] ? (filtered[0].id || filtered[0].key) : null;
+      selectedId = visible[0] ? (visible[0].id || visible[0].key) : null;
       root._josLeadId = selectedId;
       sel = selectedId ? findLead(selectedId) : null;
     }
     if (sel) sel.unread = 0;
+    var f = root._josLeadFilters || {};
+    var bulkOpen = !!root._josLeadBulkOpen;
+    var owner = S().ownerName || 'Adrian';
+    var wsOpen = !!sel && !!root._josLeadId;
 
-    var tabsHtml = '<div class="jos-tabs jos-leads-tabs">' + LEADS_TABS.map(function (t) {
+    var statusTabs = '<div class="jos-ld-status-tabs">' + LEADS_TABS.map(function (t) {
       var count = all.filter(function (l) { return leadMatchesTab(l, t[0]); }).length;
-      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-leads-tab="' + t[0] + '">' + esc(t[1]) +
-        (count ? ' <span class="jos-tab-count">' + count + '</span>' : '') + '</button>';
+      return '<button type="button" class="jos-ld-stab' + (tab === t[0] ? ' on' : '') + '" data-jos-leads-tab="' + t[0] + '">' +
+        esc(t[1]) + (t[0] !== 'all' ? ' <em>(' + count + ')</em>' : '') + '</button>';
     }).join('') + '</div>';
 
-    var listHtml = filtered.length
-      ? filtered.map(function (l) { return renderLeadCard(l, selectedId); }).join('')
-      : '<div class="jos-empty">No leads in this view.' + (root._josLeadsQ ? ' Clear search (Esc) to see more.' : '') + '</div>';
-
-    var integCtas = '<div class="jos-leads-integ">' +
-      '<span class="jos-muted">Stage 2 integrations</span>' +
-      btn('leads-connect-meta', 'Connect Meta Lead Ads', 'jos-btn jos-btn-sm') +
-      btn('leads-connect-messenger', 'Connect Messenger / IG', 'jos-btn jos-btn-sm') +
-      btn('leads-connect-forms', 'Connect Google Forms', 'jos-btn jos-btn-sm') +
-      '</div>';
+    var listHtml = visible.length
+      ? visible.map(function (l) { return renderLeadCard(l, selectedId); }).join('')
+      : '<div class="jos-ld-empty-list"><strong>No leads yet</strong><p>Create your first lead or connect a form.</p>' + btn('leads-add-open', 'New Lead', 'jos-btn-brand jos-btn-sm') + '</div>';
 
     root.innerHTML =
-      '<div class="jos-page jos-leads-page">' +
-      '<div class="jos-page-head"><div><h1>Leads</h1><p>Capture, qualify, quote, and convert inbound interest.</p></div>' +
-      '<div class="jos-page-actions">' +
-        btn('leads-filter-open', 'Filters', 'jos-btn jos-btn-sm') +
-        btn('leads-add-open', 'Add Lead', 'jos-btn-brand jos-btn-sm') +
-        btn('go-ask', 'Ask Hubly', 'jos-btn jos-btn-sm') +
-      '</div></div>' +
-      tabsHtml +
-      '<div class="jos-leads-toolbar">' +
-        '<label class="jos-leads-search"><input id="jos-leads-search" type="search" placeholder="Search name, phone, email, vehicle, property, service, source, notes, conversation…" value="' + esc(root._josLeadsQ || '') + '"></label>' +
+      '<div class="jos-ld-shell' + (wsOpen ? ' ws-open' : '') + '">' +
+      '<header class="jos-ld-header">' +
+      '<div class="jos-ld-header-left"><h1>Leads</h1><p>Capture, qualify, and convert more demand.</p></div>' +
+      '<label class="jos-ld-global-search"><span class="jos-ld-search-ico" aria-hidden="true"></span>' +
+      '<input id="jos-leads-global-search" type="search" placeholder="Search leads, customers, phone, email..." value="' + esc(root._josLeadsGlobalQ || '') + '">' +
+      '<kbd>⌘K</kbd></label>' +
+      '<div class="jos-ld-header-actions">' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-ld-new" data-jos-act="leads-add-open">+ New Lead</button>' +
+      '<div class="jos-ld-bulk-wrap">' +
+      '<button type="button" class="jos-btn jos-ld-bulk" data-jos-act="leads-bulk-toggle">Bulk Actions</button>' +
+      (bulkOpen ? '<div class="jos-ld-bulk-menu">' +
+        [['leads-bulk-assign', 'Assign'], ['leads-bulk-archive', 'Archive'], ['leads-bulk-export', 'Export selected'], ['leads-bulk-tag', 'Add tag']].map(function (x) {
+          return '<button type="button" data-jos-act="' + x[0] + '">' + x[1] + '</button>';
+        }).join('') + '</div>' : '') +
       '</div>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></button>' +
+      '<button type="button" class="jos-ld-biz" data-jos-act="go-settings" title="Business">' + esc((S().businessName || "Adrian's Lawn Care").slice(0, 18)) + '</button>' +
+      '<button type="button" class="jos-ld-ava-btn" data-jos-act="go-settings" title="Profile">' + esc(initials(owner)) + '</button>' +
+      '</div></header>' +
+
+      statusTabs +
+
+      '<div class="jos-ld-filters">' +
+      '<label class="jos-ld-filter-search"><input id="jos-leads-search" type="search" placeholder="Search by name..." value="' + esc(root._josLeadsQ || '') + '"></label>' +
+      '<select id="jos-ld-filter-source" class="jos-ld-dd"><option value="all">All Sources</option>' +
+      uniqueLeadValues('source').map(function (s) {
+        return '<option value="' + esc(s) + '"' + ((f.source || 'all') === s ? ' selected' : '') + '>' + esc(srcLabel(s)) + '</option>';
+      }).join('') + '</select>' +
+      '<select id="jos-ld-filter-service" class="jos-ld-dd"><option value="all">All Services</option>' +
+      uniqueLeadValues('service').map(function (s) {
+        return '<option value="' + esc(s) + '"' + ((f.service || 'all') === s ? ' selected' : '') + '>' + esc(s) + '</option>';
+      }).join('') + '</select>' +
+      '<select id="jos-ld-filter-assigned" class="jos-ld-dd"><option value="all">All Assignments</option>' +
+      uniqueLeadValues('assignedTo').map(function (s) {
+        return '<option value="' + esc(s) + '"' + ((f.assigned || 'all') === s ? ' selected' : '') + '>' + esc(s) + '</option>';
+      }).join('') + '</select>' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-filter-open">More Filters</button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-export" title="Export" aria-label="Export">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg></button>' +
+      '</div>' +
+
+      '<div class="jos-ld-layout">' +
+      '<section class="jos-ld-inbox">' +
+      '<div class="jos-ld-inbox-head"><strong>' + filtered.length + ' Leads</strong>' +
+      '<select id="jos-ld-sort" class="jos-ld-sort">' +
+      [['newest', 'Newest'], ['oldest', 'Oldest'], ['score', 'Highest score']].map(function (s) {
+        return '<option value="' + s[0] + '"' + ((root._josLeadsSort || 'newest') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
+      }).join('') + '</select></div>' +
+      '<div class="jos-ld-list">' + listHtml + '</div>' +
+      (filtered.length > visible.length
+        ? '<button type="button" class="jos-btn jos-ld-loadmore" data-jos-act="leads-load-more">Load More Leads</button>'
+        : (filtered.length ? '<div class="jos-muted jos-ld-end">End of list</div>' : '')) +
+      '</section>' +
+      '<section class="jos-ld-main">' + renderLeadWorkspace(root, sel, ws) + '</section>' +
+      renderLeadRightPanel(root, sel, all, filtered) +
+      '</div>' +
+
       renderLeadsFilterDrawer(root) +
-      integCtas +
-      '<div class="jos-split jos-leads-layout">' +
-        '<div class="jos-stack jos-leads-list">' + listHtml + '</div>' +
-        '<div class="jos-leads-main">' + renderLeadWorkspace(root, sel, ws) + '</div>' +
-        '<div class="jos-stack">' + renderLeadSidebar(sel) + '</div>' +
-      '</div>' +
       renderLeadsAddModal(root) +
       renderLeadsContextMenu(root) +
+      '<button type="button" class="jos-ld-fab" data-jos-act="leads-add-open" aria-label="New Lead">+</button>' +
       '</div>';
 
     bindRoot(root);
@@ -6228,7 +6418,7 @@
     try {
       var badge = el('nav-leads-badge');
       if (badge) {
-        var n = all.filter(function (l) { return (l.unread > 0 || l.aiQualified) && !/lost|spam|archived|duplicate/.test(l.osStage || ''); }).length;
+        var n = all.filter(function (l) { return (l.unread > 0 || normalizeCrmStatus(l) === 'new') && normalizeCrmStatus(l) !== 'lost'; }).length;
         badge.textContent = String(n);
         badge.classList.toggle('hidden', !n);
       }
@@ -6262,17 +6452,18 @@
       vehicle: d.vehicle, property: d.address, service: d.service, source: d.source,
       assignedTo: d.assignedTo, notes: d.notes, notesList: d.notes ? [d.notes] : [],
       tags: String(d.tags || '').split(/[,\s]+/).filter(Boolean),
-      stage: 'new', osStage: 'new', status: 'new', createdAt: new Date().toISOString(),
+      stage: 'new', osStage: 'new', status: 'new', crmStatus: 'new', createdAt: new Date().toISOString(),
       lastContacted: new Date().toISOString(), lastMessage: d.notes || 'Manual lead created',
-      aiScore: 50, aiQualified: false, unread: 0, quoteStatus: 'none', estimatedValue: 0,
-      messages: [], tasks: [], files: [], activity: [{ type: 'created', label: 'Manual lead created', at: new Date().toLocaleString() }],
+      aiScore: 50, aiQualified: false, unread: 1, quoteStatus: 'none', estimatedValue: 0,
+      industry: 'Residential', budget: '', bestTime: '',
+      messages: [], tasks: [], files: [], appointments: [], activity: [{ type: 'created', label: 'Manual lead created', at: new Date().toLocaleString() }],
       estimate: { labor: 0, materials: 0, total: 0, notes: '' }, buyingIntent: 'med'
     };
     st.pipeline.manual.unshift(lead);
     root._josLeadAddOpen = false;
     root._josLeadDraft = null;
     root._josLeadId = id;
-    root._josLeadsTab = 'new';
+    root._josLeadsTab = 'all';
     if (andQuote) {
       lead.quote = { id: 'q_' + id, amount: 0, status: 'draft', packageName: lead.service || 'Service', sentAt: todayStr() };
       lead.quoteStatus = 'draft';
@@ -6288,14 +6479,20 @@
   }
 
   function wireLeadsRoot(root) {
-    if (root._josLeadsBound) return;
-    root._josLeadsBound = true;
+    if (root._josLeadsBoundV2) return;
+    root._josLeadsBoundV2 = true;
 
     root.addEventListener('click', function (e) {
+      if (!e.target.closest('.jos-ld-bulk-wrap') && root._josLeadBulkOpen) {
+        root._josLeadBulkOpen = false;
+        renderLeads();
+        return;
+      }
       var tabBtn = e.target.closest('[data-jos-leads-tab]');
       if (tabBtn) {
         root._josLeadsTab = tabBtn.getAttribute('data-jos-leads-tab');
         root._josLeadCtx = null;
+        root._josLeadsLimit = 25;
         renderLeads();
         e.stopPropagation();
         return;
@@ -6314,6 +6511,7 @@
         root._josLeadCtx = null;
         var lead = findLead(root._josLeadId);
         if (lead) lead.unread = 0;
+        root.querySelector('.jos-ld-shell') && root.querySelector('.jos-ld-shell').classList.add('ws-open');
         renderLeads();
         e.stopPropagation();
       }
@@ -6333,7 +6531,7 @@
     });
 
     root.addEventListener('contextmenu', function (e) {
-      var card = e.target.closest('.jos-leads-card[data-jos-lead-id]');
+      var card = e.target.closest('.jos-ld-card[data-jos-lead-id]');
       if (!card) return;
       e.preventDefault();
       root._josLeadId = card.getAttribute('data-jos-lead-id');
@@ -6343,25 +6541,78 @@
     });
 
     root.addEventListener('input', function (e) {
-      if (e.target && e.target.id === 'jos-leads-search') {
+      if (e.target && (e.target.id === 'jos-leads-search' || e.target.id === 'jos-leads-global-search')) {
         root._josLeadsQ = e.target.value;
+        if (e.target.id === 'jos-leads-global-search') root._josLeadsGlobalQ = e.target.value;
+        root._josLeadsLimit = 25;
         clearTimeout(root._josLeadsSearchT);
         root._josLeadsSearchT = setTimeout(function () { renderLeads(); }, 140);
       }
       if (e.target && e.target.id === 'jos-leads-reply') root._josLeadDraftMsg = e.target.value;
     });
 
+    root.addEventListener('change', function (e) {
+      var id = e.target && e.target.id;
+      if (id === 'jos-ld-filter-source' || id === 'jos-ld-filter-service' || id === 'jos-ld-filter-assigned') {
+        root._josLeadFilters = root._josLeadFilters || {};
+        if (id === 'jos-ld-filter-source') root._josLeadFilters.source = e.target.value;
+        if (id === 'jos-ld-filter-service') root._josLeadFilters.service = e.target.value;
+        if (id === 'jos-ld-filter-assigned') root._josLeadFilters.assigned = e.target.value;
+        root._josLeadsLimit = 25;
+        return renderLeads();
+      }
+      if (id === 'jos-ld-sort') {
+        root._josLeadsSort = e.target.value;
+        return renderLeads();
+      }
+      if (id === 'jos-ld-status') {
+        var leadSt = selectedLead();
+        if (!leadSt) return;
+        var next = e.target.value;
+        mutateLead(function (l) {
+          l.crmStatus = next;
+          l.status = next;
+          if (next === 'won') { l.won = true; l.osStage = 'archived'; l.stage = 'archived'; }
+          else if (next === 'lost') { l.osStage = 'lost'; l.stage = 'lost'; }
+          else if (next === 'unqualified') { l.osStage = 'spam'; l.stage = 'unqualified'; }
+          else { l.osStage = 'new'; l.stage = next; }
+          pushLeadActivity(l, 'status', 'Status → ' + (LEADS_STATUS_LABEL[next] || next));
+        });
+        toast('Status updated');
+        return;
+      }
+      if (id === 'jos-ld-assigned') {
+        var name = e.target.value;
+        mutateLead(function (l) {
+          l.assignedTo = name;
+          pushLeadActivity(l, 'assign', 'Assigned to ' + name);
+        });
+        toast('Assigned to ' + name);
+      }
+    });
+
     root.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
         if (root._josLeadAddOpen) { root._josLeadAddOpen = false; renderLeads(); return; }
         if (root._josLeadFilterOpen) { root._josLeadFilterOpen = false; renderLeads(); return; }
+        if (root._josLeadBulkOpen) { root._josLeadBulkOpen = false; renderLeads(); return; }
         if (root._josLeadCtx && root._josLeadCtx.open) { root._josLeadCtx = null; renderLeads(); return; }
         if (root._josLeadsQ) {
           root._josLeadsQ = '';
-          var inp = el('jos-leads-search');
-          if (inp) inp.value = '';
+          root._josLeadsGlobalQ = '';
           renderLeads();
         }
+      }
+      if ((e.key === 'n' || e.key === 'N') && !e.metaKey && !e.ctrlKey && !/input|textarea|select/i.test((e.target || {}).tagName || '')) {
+        e.preventDefault();
+        root._josLeadAddOpen = true;
+        root._josLeadDraft = {};
+        renderLeads();
+      }
+      if (e.key === '/' && !/input|textarea|select/i.test((e.target || {}).tagName || '')) {
+        e.preventDefault();
+        var inp = el('jos-leads-search') || el('jos-leads-global-search');
+        if (inp) inp.focus();
       }
     });
   }
@@ -6431,6 +6682,45 @@
       if (act === 'leads-add-cancel') { root._josLeadAddOpen = false; return renderLeads(); }
       if (act === 'leads-add-save') return saveNewLead(false);
       if (act === 'leads-add-quote') return saveNewLead(true);
+      if (act === 'leads-bulk-toggle') { root._josLeadBulkOpen = !root._josLeadBulkOpen; return renderLeads(); }
+      if (act === 'leads-load-more') {
+        root._josLeadsLimit = (root._josLeadsLimit || 25) + 25;
+        return renderLeads();
+      }
+      if (act === 'leads-export') {
+        var rows = filterLeadsList(root).map(function (l) {
+          return [l.name, l.phone, l.email, normalizeCrmStatus(l), l.service, l.source, l.assignedTo, l.aiScore].join(',');
+        });
+        var csv = 'name,phone,email,status,service,source,assigned,score\n' + rows.join('\n');
+        try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(csv); } catch (eExp) {}
+        toast('Exported ' + rows.length + ' leads');
+        return;
+      }
+      if (act === 'leads-filter-source') {
+        root._josLeadFilters = root._josLeadFilters || {};
+        root._josLeadFilters.source = t.getAttribute('data-jos-source') || 'all';
+        return renderLeads();
+      }
+      if (act === 'leads-tag-remove') {
+        var tiRm = parseInt(t && t.getAttribute('data-jos-tag-i'), 10);
+        mutateLead(function (l) {
+          if (l.tags) l.tags.splice(tiRm, 1);
+        });
+        return;
+      }
+      if (act === 'leads-more-menu') {
+        if (!lead) return toast('Select a lead first');
+        var rect = t.getBoundingClientRect();
+        var rrect = root.getBoundingClientRect();
+        root._josLeadCtx = { open: true, x: Math.max(8, rect.left - rrect.left - 40), y: Math.max(8, rect.bottom - rrect.top + 4) };
+        return renderLeads();
+      }
+      if (act === 'leads-ai-dismiss') { toast('Recommendation dismissed'); return; }
+      if (act === 'leads-bulk-assign' || act === 'leads-bulk-archive' || act === 'leads-bulk-export' || act === 'leads-bulk-tag') {
+        root._josLeadBulkOpen = false;
+        toast('Bulk action ready — select leads in Stage 2');
+        return renderLeads();
+      }
 
       if (act === 'leads-connect-meta' || act === 'leads-connect-messenger' || act === 'leads-connect-forms') {
         toast('Live sync comes in Stage 2 — CTA only for now');
@@ -6506,9 +6796,16 @@
             st.customers.unshift({
               id: 'cust_' + (l.id || Date.now()),
               name: l.name, phone: l.phone, email: l.email,
-              vehicle: vehicleOf(l), preferredService: l.service, address: l.address
+              vehicle: vehicleOf(l), preferredService: l.service, address: l.address,
+              notes: (l.notesList || []).join('\n'), tags: (l.tags || []).slice()
             });
           }
+          l.crmStatus = 'won';
+          l.won = true;
+          l.converted = true;
+          l.stage = 'archived';
+          l.osStage = 'archived';
+          l.status = 'won';
           pushLeadActivity(l, 'convert', 'Converted to customer');
         });
         toast('Converted to customer');
@@ -11995,7 +12292,7 @@
   }
   function onSwitchView(v) {
     updateChrome(v);
-    setJobsMode(v === 'jobs');
+    setLeadsMode(v === 'leads');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
@@ -12186,6 +12483,10 @@
       if (act === 'go-quotes') return switchNav('quotes');
       if (act === 'go-ask') return switchNav('ask');
       if (act === 'go-settings') return switchNav('settings');
+      if (act === 'toggle-notifs') {
+        toast('Notifications');
+        return;
+      }
       if (act === 'close-profile') return closeCustomerProfile();
       el('jos-quick-pop')?.classList.remove('open');
       el('jos-search-pop')?.classList.remove('open');
