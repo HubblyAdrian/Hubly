@@ -1,18 +1,21 @@
 # Module 4 — 🧲 Leads
 
-**Status:** 🔒 OS LOCKED (Stage 1) — merged #247  
-**Branch:** `cursor/operate-leads-2662`  
-**PR:** [#247](https://github.com/HubblyAdrian/Hubly/pull/247)  
-**MAT:** [LEADS_MAT.md](./LEADS_MAT.md) · `node scripts/mat-leads.mjs`  
-**Stage in scope:** Stage 1 — Operating System
+**Status:** 🔓 Explicit reopen — Dashboard v2 redesign  
+**Prior lock:** [#247](https://github.com/HubblyAdrian/Hubly/pull/247) · Stage 1 OS approved  
+**Redesign:** [`LEADS_MISSION_CONTROL.md`](./LEADS_MISSION_CONTROL.md) · branch `cursor/operate-leads-mission-control-2662`  
+**MAT:** [LEADS_MAT.md](./LEADS_MAT.md) · `node scripts/mat-leads.mjs`
 
-Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
+Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked · 🔄 In review
+
+## Stage 3 — Leads Dashboard v2 🔄 In review
+
+Three-column HubSpot/Linear-style Leads workspace per product pixel spec + mockup.
 
 ---
 
 ## Purpose
 
-Leads is the inbound interest OS — capture, qualify, quote, and convert. Stage 1 runs entirely on Hubly data (pipeline.manual + abandoned). No live Meta / Twilio / Google Forms sync.
+The Leads module is the inbound interest OS — capture, qualify, and convert. Stage 1 runs on Hubly data; Dashboard v2 redesigns the chrome while preserving OS actions.
 
 ---
 
