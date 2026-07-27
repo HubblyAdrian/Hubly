@@ -1,7 +1,7 @@
 # Operate Leads — Dashboard v2
 
-**Status:** 🔓 Explicit reopen (product redesign)  
-**Branch:** `cursor/operate-leads-mission-control-2662`  
+**Status:** 🔓 Screenshot-exact rebuild  
+**Branch:** `cursor/leads-screenshot-exact-2662`  
 **Viewport:** ≤1800px · `#F8F9FC`
 
 ## Layout
