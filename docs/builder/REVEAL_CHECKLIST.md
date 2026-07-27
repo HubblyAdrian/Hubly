@@ -1,10 +1,11 @@
 # ✨ Business Reveal — Checklist
 
-**Status:** ⏳ Architecture · Development not started  
+**Status:** 🔒 Architecture locked · Development not started (design-phase completion)  
 **Architecture:** [REVEAL_ARCHITECTURE.md](./REVEAL_ARCHITECTURE.md)  
 **MAT:** [REVEAL_MAT.md](./REVEAL_MAT.md)  
-**Creative Review:** [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md) · Rule #28  
-**Milestone:** [Hubly AI Business Builder](./README.md)
+**Creative Review:** [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md) · Rule #28 🔒  
+**Next:** [ACTIVATION_ARCHITECTURE.md](./ACTIVATION_ARCHITECTURE.md)  
+**Milestone:** [Hubly AI Business Agency](./README.md)
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔒 Locked
 
@@ -16,7 +17,9 @@ Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔒 Locked
 - [x] Creative Review included in pipeline ✅  
 - [x] Save My Business on first edit (not only end) ✅  
 - [x] CTA language “Save My Business” (not Create Account) ✅  
-- [ ] Founder approval → Development  
+- [x] Architecture approved + **🔒 Locked** (canonical design completion) ✅  
+- [ ] Development (Stage 1) after Module 4 path as needed  
+- [ ] QA → MAT → CMV → Approval → Merge → Lock Stage 1 OS  
 
 ---
 

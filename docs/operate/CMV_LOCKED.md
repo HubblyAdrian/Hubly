@@ -25,7 +25,3 @@
 ### Result
 
 ✅ CMV PASS
-
-### Context
-
-Rule #27 Vision lock · Creative Review (Rule #28) · Module 5 Reveal architecture. No Builder UI code.
