@@ -28,4 +28,4 @@
 
 ### Context
 
-Rule #29 Agency lock · Module 7 AI Launch Coach architecture. No UI.
+Agency architecture freeze + BUILDER_MASTER_WORKFLOW.md. No UI. Module 2 next.

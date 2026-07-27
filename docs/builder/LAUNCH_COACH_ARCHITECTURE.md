@@ -4,7 +4,7 @@
 **Module:** 7 — AI Launch Coach  
 **Agency role:** Final coach / “CEO of the agency” before go-live  
 **Rules:** #24–#29 · never block launch · coach, don’t configure · Creative Review ≠ Launch Coach  
-**Status:** Architecture gate — do not start Development without founder approval  
+**Status:** Architecture gate — **🔒 Architecture locked** (Agency frozen); Development after Module 6 Stage 1  
 **Related:** [ACTIVATION_ARCHITECTURE.md](./ACTIVATION_ARCHITECTURE.md) · [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md) · [README.md](./README.md)
 
 ---

@@ -1,6 +1,6 @@
 # 🎓 AI Launch Coach — Checklist
 
-**Status:** ⏳ Architecture · Development not started  
+**Status:** 🔒 Architecture locked · Development after Module 6  
 **Architecture:** [LAUNCH_COACH_ARCHITECTURE.md](./LAUNCH_COACH_ARCHITECTURE.md)  
 **MAT:** [LAUNCH_COACH_MAT.md](./LAUNCH_COACH_MAT.md)  
 **Milestone:** [Hubly AI Business Agency](./README.md)  

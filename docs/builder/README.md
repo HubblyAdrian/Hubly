@@ -1,119 +1,108 @@
 # Hubly AI Business Agency — Milestone
 
 **Product name (canonical):** Hubly AI Business Agency  
-**Legacy label:** “Business Builder” (casual speech OK; architecture uses Agency)  
-**Status:** Active · **Rule #29 🔒 Locked**  
-**Entry:** AI Landing Experience (🔒 locked — Module 1)  
-**Session:** Hubly Session · [HUBLY_MEMORY.md](../HUBLY_MEMORY.md)  
-**Exit:** Launch → Hubly Operating System (Home Dashboard)  
-**Parallel product:** Marketplace remains intact (`/marketplace`, `/get-done`)
+**Legacy label:** “Business Builder”  
+**Status:** 🔒 **Architecture complete & frozen (Rule #29)**  
+**Master workflow:** [BUILDER_MASTER_WORKFLOW.md](./BUILDER_MASTER_WORKFLOW.md) ← start here  
+**Entry:** AI Landing Experience (🔒 Stage 1 done)  
+**Exit:** Launch → Hubly Operating System  
+**Parallel:** Marketplace intact (`/marketplace`, `/get-done`)
 
 ---
 
-## What we built
+## Architecture freeze
 
-Not a website wizard. An **AI Business Agency**:
+The Agency is **complete at the architecture level**.
 
-| Module | Agency role |
-|--------|-------------|
-| 1 · Landing | AI Consultant |
-| 2 · Discovery | Business Strategist |
-| 3 · Research | Market Research Team |
-| 4 · Creative Director | Creative Director |
-| 5 · Business Reveal | Creative Presentation |
-| 6 · Business Activation | AI Project Manager |
-| 7 · AI Launch Coach | CEO / final coach before go-live |
-| — · Launch | Hand keys to Operate OS |
+Modules:
 
-Narrative:
+1. AI Landing Experience  
+2. AI Discovery  
+3. AI Research  
+4. AI Creative Director  
+5. Business Reveal  
+6. Business Activation  
+7. AI Launch Coach  
 
-> Understood you → Researched market → Designed brand → Built website → Configured ops → Reviewed work → **Coached before launch** → Handed keys to a live business.
+Launch → Hubly Operating System.
 
-By Home, the user does **not** feel like they finished onboarding. They feel they worked with an agency.
+**No Builder module may be reordered, bypassed, or redesigned without explicitly reopening Builder Architecture.**
+
+**Stop creating new architecture documents.** Build next.
 
 ---
 
-## Canonical pipeline (🔒 — no module may bypass without reopen)
+## Development order (mandatory)
 
 ```
-Creative Blueprint
-  ↓
-Creative Review              (Rule #28 🔒)
-  ↓
-Business Reveal              (canonical design completion)
-  ↓
-Save My Business             (first account — first edit or final CTA)
-  ↓
-Business Activation          (Module 6 🔒 canonical activation)
-  ↓
-AI Launch Coach              (Module 7 — final recommendations)
-  ↓
-🚀 Launch My Business
-  ↓
-Home Dashboard (Operate OS)  ← Builder officially ends here
+1 Landing ✅ → 2 Discovery → 3 Research → 4 Creative Director
+  → 5 Reveal → 6 Activation → 7 Launch Coach → Launch → Home
 ```
 
-**No Builder / Agency module may bypass this pipeline without reopening architecture.**
+Do **not** build modules out of order.
 
-Also locked: Creative Blueprint → Creative Review → Business Reveal (no UI bypass).
+Every module:
 
----
+Architecture → Development → QA → MAT → CMV → Approval → Merge → Lock  
 
-## Canonical objects
+**No shortcuts.**
 
-| Object | Rule | Role |
-|--------|------|------|
-| Business Profile / Owner Profile / DNA | #26 🔒 | Current truth |
-| Research Profile | M3 | Market |
-| Business Vision | #27 🔒 | Destination |
-| Creative Blueprint | M4 | Design output |
-| Creative Review | #28 🔒 | Self-critique before presentation |
-| Activated Business | M6 🔒 | Connected / ready to operate |
-| Launch Plan | M7 | Coach recommendations + forecast + timeline |
-| Permanent Business | Upgrade | Operate OS |
-
----
-
-## Modules
-
-| # | Module | Purpose | Status |
-|---|--------|---------|--------|
-| 1 | 🌎 AI Landing | Consultant | 🔒 Locked |
-| 2 | 🤖 AI Discovery | Strategist · DNA | 🔒 Architecture · Dev may begin |
-| 3 | 🔍 AI Research | Research team | ⏳ Architecture |
-| 4 | 🎨 AI Creative Director | Blueprint + Review | 🔒 Architecture · **Dev may begin** |
-| 5 | ✨ Business Reveal | Presentation | 🔒 Architecture |
-| 6 | 🚀 Business Activation | Project Manager · connect | 🔒 Architecture (canonical activation) |
-| 7 | 🎓 AI Launch Coach | Final coach · forecast · Launch | ⏳ Architecture |
+| # | Module | Arch | Dev |
+|---|--------|------|-----|
+| 1 | AI Landing | 🔒 | 🔒 Done (#259) |
+| 2 | AI Discovery | 🔒 | ⏳ **Next** |
+| 3 | AI Research | 🔒 | ⏳ |
+| 4 | AI Creative Director | 🔒 | ⏳ |
+| 5 | Business Reveal | 🔒 | ⏳ |
+| 6 | Business Activation | 🔒 | ⏳ |
+| 7 | AI Launch Coach | 🔒 | ⏳ |
 
 ---
 
-## Locked (Rule #29)
+## Agency roles
 
-- **Hubly AI Business Agency** = canonical Builder experience  
-- **Business Activation** = canonical activation stage  
-- Builder **ends** when the business launches into the Hubly Operating System  
-- Module 4 Development may begin against locked architecture  
-- **Do not modify Agency architecture without reopening the module**
-
----
-
-## Module 7 — AI Launch Coach
-
-[LAUNCH_COACH_ARCHITECTURE.md](./LAUNCH_COACH_ARCHITECTURE.md) · [LAUNCH_COACH_CHECKLIST.md](./LAUNCH_COACH_CHECKLIST.md) · [LAUNCH_COACH_MAT.md](./LAUNCH_COACH_MAT.md)
-
-Between Activation and Launch: prioritized recommendations, readiness / health / forecast, Ask Coach, then Launch → first Home greeting + personalized Morning Brief.
+| Module | Role |
+|--------|------|
+| Landing | AI Consultant |
+| Discovery | Business Strategist |
+| Research | Market Research Team |
+| Creative Director | Creative Director |
+| Reveal | Creative Presentation |
+| Activation | AI Project Manager |
+| Launch Coach | Final coach before go-live |
 
 ---
 
-## First Home handoff
+## Canonical pipeline (no bypass)
 
-On first enter of Home after Launch:
+```
+Hubly Session → Profiles → DNA → Research → Vision
+  → Creative Blueprint → Creative Review → Reveal
+  → Save My Business → Activation → Launch Coach
+  → Launch → Operate Home → First Morning Brief
+```
 
-> Welcome to Hubly, {Name}. We built the foundation together. Now let's grow your business.
-
-Morning Brief opens already personalized from Agency memory. Seamless Builder → Operator — never feels like switching products.
+See [BUILDER_MASTER_WORKFLOW.md](./BUILDER_MASTER_WORKFLOW.md) for inputs/outputs/APIs/events per step.
 
 ---
 
-Workflow: Architecture → Development → QA → MAT → CMV → Approval → Merge → Lock. **Do not skip stages.**
+## Canonical objects (Rules #26–#29)
+
+Business Profile · Owner Profile · Business DNA · Research Profile · Business Vision · Creative Blueprint · Creative Review · Activated Business · Launch Plan
+
+---
+
+## Doc index (do not expand with new modules)
+
+| Doc | Role |
+|-----|------|
+| [BUILDER_MASTER_WORKFLOW.md](./BUILDER_MASTER_WORKFLOW.md) | **Master story** |
+| [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) | Memory kinds |
+| [HUBLY_SESSION.md](../HUBLY_SESSION.md) | Temporary session |
+| [DISCOVERY_*](./DISCOVERY_ARCHITECTURE.md) | Module 2 |
+| [RESEARCH_*](./RESEARCH_ARCHITECTURE.md) | Module 3 |
+| [CREATIVE_DIRECTOR_*](./CREATIVE_DIRECTOR_ARCHITECTURE.md) · [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md) | Module 4 |
+| [BUSINESS_VISION.md](./BUSINESS_VISION.md) | Rule #27 |
+| [REVEAL_*](./REVEAL_ARCHITECTURE.md) | Module 5 |
+| [ACTIVATION_*](./ACTIVATION_ARCHITECTURE.md) | Module 6 |
+| [LAUNCH_COACH_*](./LAUNCH_COACH_ARCHITECTURE.md) | Module 7 |

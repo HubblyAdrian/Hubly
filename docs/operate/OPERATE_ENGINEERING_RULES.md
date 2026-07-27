@@ -222,26 +222,22 @@ First account creation point: **Save My Business** (first edit or final Reveal C
 
 See [CREATIVE_REVIEW.md](../builder/CREATIVE_REVIEW.md) · [REVEAL_ARCHITECTURE.md](../builder/REVEAL_ARCHITECTURE.md) · [ACTIVATION_ARCHITECTURE.md](../builder/ACTIVATION_ARCHITECTURE.md).
 
-## Rule #29 — AI Business Agency + Business Activation (🔒 Locked)
+## Rule #29 — AI Business Agency (🔒 Locked · Architecture complete)
 
-The **Hubly AI Business Agency** is the **canonical Builder experience** (not merely a “Business Builder” wizard).
+The **Hubly AI Business Agency** is the **canonical Builder experience**. Architecture is **frozen**.
 
-- **Business Activation** is the **canonical activation stage**  
-- The Builder **officially ends** when the business launches into the **Hubly Operating System**  
-- **No Builder module may bypass the Agency pipeline** without reopening architecture  
+Complete modules: Landing · Discovery · Research · Creative Director · Reveal · Activation · Launch Coach → Launch → Operate OS.
 
-```
-… → Reveal → Save My Business → Activation → Launch Coach → Launch → Home (Operate OS)
-```
+**No Builder module may be reordered, bypassed, or redesigned without explicitly reopening Builder Architecture.**
 
-Module 6 is **Business Activation** (AI Project Manager) — not “Business Setup.”  
-Mission-control language; never block launch on optional integrations.
+**Development order is sequential only.** Do not build out of order.  
+**Stop creating new architecture modules.** Master story: [BUILDER_MASTER_WORKFLOW.md](../builder/BUILDER_MASTER_WORKFLOW.md).
 
-Module 7 **AI Launch Coach** is the final agency employee before Launch.
+Process every module: Architecture → Development → QA → MAT → CMV → Approval → Merge → Lock. **No shortcuts.**
 
-Module 4 Development may begin against locked Creative Director architecture.
+Module 1 Landing Stage 1 is done. **Next Development: Module 2 AI Discovery.**
 
-See [builder/README.md](../builder/README.md) · [ACTIVATION_ARCHITECTURE.md](../builder/ACTIVATION_ARCHITECTURE.md) · [LAUNCH_COACH_ARCHITECTURE.md](../builder/LAUNCH_COACH_ARCHITECTURE.md).
+See [builder/README.md](../builder/README.md) · [BUILDER_MASTER_WORKFLOW.md](../builder/BUILDER_MASTER_WORKFLOW.md).
 
 ## Cross-Module Verification (CMV)
 
@@ -268,6 +264,7 @@ Special modules require an architecture doc before Development:
 - AI Creative Director → [CREATIVE_DIRECTOR_ARCHITECTURE.md](../builder/CREATIVE_DIRECTOR_ARCHITECTURE.md) · **🔒 Architecture locked** · Creative Blueprint canonical output · **Dev may begin**  
 - Creative Review → [CREATIVE_REVIEW.md](../builder/CREATIVE_REVIEW.md) (Rule #28) · **🔒 Locked** · required before presentation  
 - Business Reveal → [REVEAL_ARCHITECTURE.md](../builder/REVEAL_ARCHITECTURE.md) · **🔒 Architecture locked** · canonical design-phase completion  
-- Business Activation → [ACTIVATION_ARCHITECTURE.md](../builder/ACTIVATION_ARCHITECTURE.md) (Rule #29) · **🔒 Architecture locked** · canonical activation  
-- AI Launch Coach → [LAUNCH_COACH_ARCHITECTURE.md](../builder/LAUNCH_COACH_ARCHITECTURE.md) · required before Module 7 Development · sits before Launch  
+- Business Activation → [ACTIVATION_ARCHITECTURE.md](../builder/ACTIVATION_ARCHITECTURE.md) (Rule #29) · **🔒 Architecture locked**  
+- AI Launch Coach → [LAUNCH_COACH_ARCHITECTURE.md](../builder/LAUNCH_COACH_ARCHITECTURE.md) · **🔒 Architecture locked**  
+- **Builder Master Workflow** → [BUILDER_MASTER_WORKFLOW.md](../builder/BUILDER_MASTER_WORKFLOW.md) · **canonical end-to-end story** · no new arch modules  
 - Hubly Memory → [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) (Temporary · Permanent · Conversation)
