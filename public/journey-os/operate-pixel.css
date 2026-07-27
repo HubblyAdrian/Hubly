@@ -1449,24 +1449,24 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 .jos-mkt-ring strong{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#141B2B}
 .jos-mkt-spark{margin-top:auto}
 
-.jos-mkt-mc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-bottom:24px}
+.jos-mkt-mc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-bottom:24px;align-items:start}
 .jos-mkt-mc-panel{
   background:#fff;border:1px solid #ECECEC;border-radius:18px;padding:20px;box-shadow:0 4px 14px rgba(0,0,0,.04);
-  min-height:240px;display:flex;flex-direction:column;transition:transform .18s,box-shadow .18s;
+  min-height:0;display:flex;flex-direction:column;transition:transform .18s,box-shadow .18s;
 }
 .jos-mkt-mc-panel:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.07)}
 .jos-mkt-mc-panel-h{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .jos-mkt-mc-panel-h .jos-kicker{margin:0}
 .jos-mkt-mc-panel-h .jos-linkish{font-size:12px;font-weight:700;color:#2563EB;white-space:nowrap}
 .jos-mkt-mc-right{display:flex;flex-direction:column;gap:20px;min-width:0}
-.jos-mkt-mc-panel.short{min-height:0;flex:1}
+.jos-mkt-mc-panel.short{min-height:0;flex:0 0 auto}
 
 .jos-mkt-mc-camp-list,.jos-mkt-mc-perf-list,.jos-mkt-mc-cal-list,.jos-mkt-mc-auto-list{
-  display:grid;gap:6px;margin-top:12px;flex:1;align-content:start;align-items:start;
+  display:flex;flex-direction:column;gap:4px;margin:12px 0 0;flex:0 0 auto;
 }
 .jos-mkt-mc-camp,.jos-mkt-mc-cal,.jos-mkt-mc-auto{
   appearance:none;border:0;background:transparent;width:100%;display:flex;align-items:center;gap:12px;
-  padding:10px 8px;border-radius:12px;cursor:pointer;text-align:left;font:inherit;min-height:52px;height:auto;align-self:start;
+  padding:10px 8px;border-radius:12px;cursor:pointer;text-align:left;font:inherit;flex:0 0 auto;
 }
 .jos-mkt-mc-camp:hover,.jos-mkt-mc-cal:hover,.jos-mkt-mc-auto:hover{background:#F8F9FB}
 .jos-mkt-mc-camp .ico{
