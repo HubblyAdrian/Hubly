@@ -2846,6 +2846,7 @@
     var rangeOpen = !!root._josMktRangeOpen;
 
     var kpis =
+      (!demo && !m.analytics ? '<div class="jos-mkt-mc-banner"><span class="ico">i</span><p>Marketing campaigns live here in Operate. Website/email/SMS delivery analytics connect in Stage 2 — zeros mean nothing is synced yet.</p></div>' : '') +
       '<div class="jos-mkt-mc-kpis">' +
       '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-score">' +
         '<span class="lbl">Marketing Score</span>' + mktScoreRing(score) +
@@ -4563,7 +4564,8 @@
       return '<option value="' + esc(s.id) + '"' + (on ? ' selected' : '') + '>' + esc(s.name) + '</option>';
     }).join('');
     return '<div class="jos-mem-mc-overlay" data-jos-mem-modal="1"><div class="jos-mem-mc-modal">' +
-      '<h3>' + esc(edit.id ? 'Edit plan' : 'Create plan') + '</h3>' +
+      '<h3>' + esc(edit.id ? 'Edit membership' : 'Create membership') + '</h3>' +
+      '<p class="jos-muted">This offer also appears on your website so customers can join online.</p>' +
       '<div class="jos-mem-form">' +
         '<label>Name<input id="jos-mem-plan-name" type="text" value="' + esc(edit.name || '') + '" placeholder="Lawn Care"></label>' +
         '<label>Price<input id="jos-mem-plan-price" type="number" min="0" step="1" value="' + esc(edit.price || '') + '"></label>' +
@@ -4572,7 +4574,7 @@
         '<label class="jos-mem-span2">Included catalog services<select id="jos-mem-plan-services" multiple>' + svcOpts + '</select></label>' +
         '<label class="jos-mem-span2">Perks<textarea id="jos-mem-plan-benefits" class="jos-textarea">' + esc((edit.benefits || []).join('\n')) + '</textarea></label>' +
       '</div>' +
-      '<div class="jos-mem-mc-modal-foot">' + dsBtn('mem-plan-save', 'Save plan', 'jos-btn-brand') + dsBtn('mem-plan-cancel', 'Cancel', 'jos-btn') + '</div></div></div>';
+      '<div class="jos-mem-mc-modal-foot">' + dsBtn('mem-plan-save', 'Save membership', 'jos-btn-brand') + dsBtn('mem-plan-cancel', 'Cancel', 'jos-btn') + '</div></div></div>';
   }
   function renderMemSubscriberModal(root) {
     if (!root._josMemSubModal) return '';
@@ -4803,8 +4805,8 @@
       '<header class="jos-mem-mc-header">' +
         '<div><h1>Memberships</h1><p>Recurring revenue. Happy clients. Less admin.</p></div>' +
         '<div class="jos-mem-mc-header-actions">' +
-          '<button type="button" class="jos-btn jos-mem-mc-secondary" data-jos-act="mem-plan-open">Create plan</button>' +
-          '<button type="button" class="jos-btn jos-btn-brand jos-mem-mc-primary" data-jos-act="mem-sub-open">Create membership</button>' +
+          '<button type="button" class="jos-btn jos-btn-brand jos-mem-mc-primary" data-jos-act="mem-plan-open">Create membership</button>' +
+          '<button type="button" class="jos-btn jos-mem-mc-secondary" data-jos-act="mem-sub-open">Start subscription</button>' +
           '<button type="button" class="jos-btn jos-mem-mc-ghost" data-jos-act="go-ask">Ask Hubly</button>' +
         '</div>' +
       '</header>' +
@@ -4893,6 +4895,44 @@
       source: 'owned'
     };
   }
+  function memCadenceToWebsite(cadence) {
+    var c = String(cadence || '/mo').toLowerCase();
+    if (c === '/wk' || c.indexOf('week') >= 0) return 'weekly';
+    if (c === '/yr' || c.indexOf('year') >= 0) return 'yearly';
+    if (c.indexOf('bi') >= 0) return 'biweekly';
+    return 'monthly';
+  }
+  function syncMembershipPlanToWebsite(plan) {
+    if (!plan || !plan.name) return;
+    var st = S();
+    if (!st.website || typeof st.website !== 'object') st.website = {};
+    var offers = Array.isArray(st.website.membershipOffers) ? st.website.membershipOffers : [];
+    var offer = {
+      id: plan.id,
+      enabled: plan.status !== 'archived' && plan.status !== 'inactive',
+      name: plan.name,
+      price: Number(plan.price) || 0,
+      cadence: memCadenceToWebsite(plan.cadence),
+      description: (plan.benefits && plan.benefits[0]) || (plan.name + ' membership'),
+      includes: [].concat(plan.benefits || [], (plan.includedServices || []).map(function (r) { return r.serviceName || r.name; })).filter(Boolean)
+    };
+    var i = offers.findIndex(function (o) { return String(o.id) === String(plan.id) || memSlug(o.name) === memSlug(plan.name); });
+    if (i >= 0) offers[i] = Object.assign({}, offers[i], offer);
+    else offers.push(offer);
+    st.website.membershipOffers = offers;
+    try {
+      if (typeof global.syncLegacyMembershipOffer === 'function') global.syncLegacyMembershipOffer();
+      else if (typeof window.syncLegacyMembershipOffer === 'function') window.syncLegacyMembershipOffer();
+    } catch (e) {}
+    try {
+      if (typeof global.renderWebsitePreview === 'function') global.renderWebsitePreview();
+      else if (typeof window.renderWebsitePreview === 'function') window.renderWebsitePreview();
+    } catch (e2) {}
+    try {
+      if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon();
+      else if (typeof global.saveBiz === 'function') global.saveBiz();
+    } catch (e3) {}
+  }
   function handleMembershipsAct(act, t) {
     var root = el('jos-memberships-root');
     if (!root) return;
@@ -4948,17 +4988,19 @@
       }
       if (act === 'mem-plan-save') {
         var draft = readMemPlanDraft(root);
-        if (!draft.name.trim()) { toast('Plan name required'); return; }
+        if (!draft.name.trim()) { toast('Membership name required'); return; }
         var idx = m.plans.findIndex(function (p) { return String(p.id) === String(draft.id); });
-        if (idx >= 0) m.plans[idx] = normalizeMembershipPlan(draft, idx);
-        else m.plans.push(normalizeMembershipPlan(draft, m.plans.length));
+        var saved = normalizeMembershipPlan(draft, idx >= 0 ? idx : m.plans.length);
+        if (idx >= 0) m.plans[idx] = saved;
+        else m.plans.push(saved);
         if (!m.billingRules.some(function (r) { return String(r.planId) === String(draft.id); })) {
           m.billingRules.push({ id: memId('mem_rule'), planId: draft.id, cadence: draft.cadence, chargeTiming: 'advance', renewalAnchor: 'signup_day', graceDays: 3, processor: 'stripe_stage2' });
         }
-        memPushActivity('plan.saved', 'Saved plan ' + draft.name, { planId: draft.id });
+        try { syncMembershipPlanToWebsite(saved); } catch (eSync) {}
+        memPushActivity('plan.saved', 'Saved membership ' + draft.name, { planId: draft.id });
         root._josMemPlanModal = false;
         root._josMemPlanEditId = null;
-        toast('Membership plan saved');
+        toast('Membership saved · added to website');
         return renderMemberships();
       }
       if (act === 'mem-sub-open') {
@@ -5348,29 +5390,49 @@
   }
   function rveJobOptions(selectedId) {
     var opts = '<option value="">No linked job</option>';
-    return opts + jobs().filter(function (j) { return !j.isBlock && rveAmount(j.amount); }).map(function (j) {
+    return opts + jobs().filter(function (j) { return !j.isBlock; }).map(function (j) {
       var id = j.id || j.reqId || '';
-      return '<option value="' + esc(id) + '"' + (String(id) === String(selectedId) ? ' selected' : '') + '>' + esc((j.customer || 'Customer') + ' · ' + rveJobLabel(j)) + '</option>';
+      var amt = rveAmount(j.amount);
+      return '<option value="' + esc(id) + '"' + (String(id) === String(selectedId) ? ' selected' : '') + '>' + esc((j.customer || 'Customer') + ' · ' + rveJobLabel(j) + (amt ? ' · ' + (money(amt) || '') : '')) + '</option>';
     }).join('');
+  }
+  function rveCatalogOptions(selectedKey) {
+    var opts = '<option value="custom:">Custom price</option>';
+    try {
+      storefrontCatalog().filter(function (s) { return s && s.name && s.status !== 'archived'; }).forEach(function (s) {
+        var key = 'svc:' + s.id;
+        opts += '<option value="' + esc(key) + '"' + (String(selectedKey) === key ? ' selected' : '') + ' data-price="' + esc(String(s.price != null ? s.price : '')) + '">' + esc((s.name || 'Service') + (s.price != null ? ' · ' + (money(s.price) || '') : '')) + '</option>';
+      });
+    } catch (e) {}
+    try {
+      ensureMembershipsOsState().plans.forEach(function (p) {
+        var key = 'mem:' + p.id;
+        opts += '<option value="' + esc(key) + '"' + (String(selectedKey) === key ? ' selected' : '') + ' data-price="' + esc(String(p.price != null ? p.price : '')) + '">' + esc((p.name || 'Membership') + ' (membership)' + (p.price != null ? ' · ' + (money(p.price) || '') : '')) + '</option>';
+      });
+    } catch (e2) {}
+    return opts;
   }
   function rveInvoiceOptions(selectedId) {
     var r = ensureRevenueOsState();
-    return r.invoices.filter(function (inv) { return inv.status !== 'void' && inv.status !== 'refunded'; }).map(function (inv) {
+    var list = r.invoices.filter(function (inv) { return inv.status !== 'void' && inv.status !== 'refunded'; });
+    if (!list.length) return '<option value="">No invoices yet — create one first</option>';
+    return list.map(function (inv) {
       return '<option value="' + esc(inv.id) + '"' + (String(inv.id) === String(selectedId) ? ' selected' : '') + '>' + esc(inv.number + ' · ' + rveCustomerName(inv.customerId) + ' · ' + (money(inv.total) || '$0')) + '</option>';
     }).join('');
   }
   function renderRevenueInvoiceModal(root) {
     if (root._josRveModal !== 'invoice') return '';
     return '<div class="jos-rve-modal"><div class="jos-rve-modal-panel">' +
-      '<h3>Create invoice</h3><p class="jos-muted">Creates a draft invoice owned by Revenue. Customers and Jobs are referenced by id.</p>' +
+      '<h3>Create invoice</h3><p class="jos-muted">Pick a customer and what they\'re paying for — a package, membership, or custom amount.</p>' +
       '<div class="jos-rve-form">' +
         '<label>Customer<select id="jos-rve-inv-customer">' + rveCustomerOptions('') + '</select></label>' +
-        '<label>Linked job<select id="jos-rve-inv-job">' + rveJobOptions('') + '</select></label>' +
-        '<label>Service label<input id="jos-rve-inv-service" type="text" placeholder="Interior detail"></label>' +
+        '<label>Item / package<select id="jos-rve-inv-item" onchange="HublyJourneyOS.rveFillInvoiceFromItem(this)">' + rveCatalogOptions('custom:') + '</select></label>' +
+        '<label>Service label<input id="jos-rve-inv-service" type="text" placeholder="Exterior window cleaning"></label>' +
         '<label>Subtotal<input id="jos-rve-inv-subtotal" type="number" min="0" step="0.01" value="0"></label>' +
         '<label>Tax<input id="jos-rve-inv-tax" type="number" min="0" step="0.01" value="0"></label>' +
         '<label>Deposit required<input id="jos-rve-inv-deposit" type="number" min="0" step="0.01" value="0"></label>' +
-        '<label class="jos-rve-span2">Line description<textarea id="jos-rve-inv-desc" class="jos-textarea" placeholder="Service description"></textarea></label>' +
+        '<label class="jos-rve-span2">Line description<textarea id="jos-rve-inv-desc" class="jos-textarea" placeholder="What this invoice covers"></textarea></label>' +
+        '<label class="jos-rve-span2">Optional linked job<select id="jos-rve-inv-job">' + rveJobOptions('') + '</select></label>' +
       '</div>' +
       '<div class="jos-btn-row jos-mt">' + dsBtn('rve-inv-save', 'Save draft', 'jos-btn-brand jos-btn-sm') + dsBtn('rve-inv-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
   }
@@ -5573,7 +5635,17 @@
     var paid = rvePaidAmount(inv.id), dep = rveDepositAmount(inv.id), ref = rveRefundAmount(inv.id);
     var canSend = inv.status === 'draft';
     var canVoid = inv.status === 'draft' || inv.status === 'sent';
-    return '<div class="jos-rve-card" data-jos-rve-inv="' + esc(inv.id) + '"><div class="jos-rve-card-h"><div><strong>' + esc(inv.number) + '</strong><div class="jos-muted">' + esc(rveCustomerName(inv.customerId)) + ' · ' + esc(inv.serviceName || 'Service') + '</div></div>' + rveStatusBadge(inv.status) + '</div>' +
+    var cust = rveCustomerName(inv.customerId);
+    var phone = '';
+    try {
+      var c = customers().find(function (x) { return String(x.id) === String(inv.customerId); });
+      if (c && c.phone) phone = displayPhone(c.phone);
+    } catch (e) {}
+    return '<div class="jos-rve-card" data-jos-rve-inv="' + esc(inv.id) + '">' +
+      '<div class="jos-rve-card-h"><div><strong>' + esc(inv.number) + '</strong>' +
+      '<div class="jos-rve-card-who"><strong class="jos-rve-cust">' + esc(cust) + '</strong>' +
+      (phone ? '<span class="jos-muted">' + esc(phone) + '</span>' : '') +
+      '<span class="jos-muted">' + esc(inv.serviceName || 'Service') + '</span></div></div>' + rveStatusBadge(inv.status) + '</div>' +
       '<div class="jos-rve-money-row"><div><span>Total</span><strong>' + esc(money(inv.total) || '$0') + '</strong></div><div><span>Collected</span><strong>' + esc(money(paid + dep) || '$0') + '</strong></div><div><span>Balance</span><strong>' + esc(money(bal) || '$0') + '</strong></div><div><span>Refunded</span><strong>' + esc(money(ref) || '$0') + '</strong></div></div>' +
       '<div class="jos-rve-card-foot">' +
         (canSend ? '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="rve-inv-send" data-jos-rve-inv="' + esc(inv.id) + '">Send</button>' : '') +
@@ -5701,6 +5773,11 @@
     var customerId = (el('jos-rve-inv-customer') || {}).value || '';
     var jobCust = job ? rveCustomerForJob(job) : null;
     if (!customerId && jobCust) customerId = jobCust.id;
+    var itemKey = (el('jos-rve-inv-item') || {}).value || 'custom:';
+    var serviceId = null;
+    var membershipId = null;
+    if (itemKey.indexOf('svc:') === 0) serviceId = itemKey.slice(4);
+    if (itemKey.indexOf('mem:') === 0) membershipId = itemKey.slice(4);
     var subtotal = rveAmount((el('jos-rve-inv-subtotal') || {}).value || (job && job.amount));
     var taxAmount = rveAmount((el('jos-rve-inv-tax') || {}).value);
     var serviceName = (el('jos-rve-inv-service') || {}).value || (job && job.service) || 'Service';
@@ -5709,7 +5786,8 @@
       id: rveId('rve_inv'),
       customerId: customerId || null,
       jobId: jobId || null,
-      serviceId: job && job.serviceId || null,
+      serviceId: serviceId || (job && job.serviceId) || null,
+      membershipId: membershipId || null,
       serviceName: serviceName,
       subtotal: subtotal,
       taxAmount: taxAmount,
@@ -5717,8 +5795,27 @@
       depositRequired: rveAmount((el('jos-rve-inv-deposit') || {}).value),
       status: 'draft',
       issuedAt: rveTodayIso(),
-      lines: [{ id: rveId('rve_line'), serviceId: job && job.serviceId || null, description: desc, qty: 1, unitPrice: subtotal, taxRate: subtotal ? Math.round((taxAmount / subtotal) * 10000) / 100 : 0 }]
+      lines: [{ id: rveId('rve_line'), serviceId: serviceId || (job && job.serviceId) || null, description: desc, qty: 1, unitPrice: subtotal, taxRate: subtotal ? Math.round((taxAmount / subtotal) * 10000) / 100 : 0 }]
     }, ensureRevenueOsState().invoices.length);
+  }
+  function rveFillInvoiceFromItem(sel) {
+    try {
+      if (!sel) return;
+      var key = String(sel.value || '');
+      var opt = sel.options[sel.selectedIndex];
+      var label = opt ? String(opt.textContent || '').replace(/\s·\s.*$/, '').replace(/\s\(membership\)$/, '').trim() : '';
+      var price = opt ? opt.getAttribute('data-price') : '';
+      var svc = el('jos-rve-inv-service');
+      var sub = el('jos-rve-inv-subtotal');
+      var desc = el('jos-rve-inv-desc');
+      if (key.indexOf('custom:') === 0) {
+        if (svc && !svc.value) svc.value = '';
+        return;
+      }
+      if (svc) svc.value = label;
+      if (sub && price !== '' && price != null) sub.value = String(price);
+      if (desc && (!desc.value || desc.value === 'Service description')) desc.value = label;
+    } catch (e) {}
   }
   function readRevenueLedgerDraft() {
     var invoiceId = (el('jos-rve-ledger-invoice') || {}).value || '';
@@ -5771,7 +5868,14 @@
         return renderRevenue();
       }
       if (act === 'rve-pay-open' || act === 'rve-dep-open' || act === 'rve-ref-open') {
-        root._josRveInvoiceId = invId || null;
+        var openInvoices = r.invoices.filter(function (x) { return x.status !== 'void' && x.status !== 'refunded'; });
+        if (!invId && !openInvoices.length) {
+          toast('Create an invoice first, then record a ' + (act === 'rve-dep-open' ? 'deposit' : (act === 'rve-pay-open' ? 'payment' : 'refund')));
+          root._josRveModal = 'invoice';
+          root._josRveTab = 'invoices';
+          return renderRevenue();
+        }
+        root._josRveInvoiceId = invId || (openInvoices[0] && openInvoices[0].id) || null;
         root._josRveModal = act === 'rve-pay-open' ? 'payment' : (act === 'rve-dep-open' ? 'deposit' : 'refund');
         root._josRveTab = act === 'rve-pay-open' ? 'payments' : (act === 'rve-dep-open' ? 'deposits' : 'refunds');
         return renderRevenue();
@@ -7121,6 +7225,11 @@
     return '<div class="jos-leads-modal-backdrop" data-jos-lead-backdrop="1" role="presentation">' +
       '<div class="jos-leads-modal" role="dialog" aria-modal="true" aria-labelledby="jos-la-title">' +
       '<div class="jos-between jos-leads-modal-head"><h3 id="jos-la-title">Add Lead</h3><button type="button" class="jos-leads-modal-x" data-jos-act="leads-add-cancel" aria-label="Close">×</button></div>' +
+      '<div class="jos-leads-paste">' +
+      '<label class="jos-leads-span2">Paste text / screenshot notes<textarea id="jos-la-paste" class="jos-textarea" rows="3" placeholder="Paste a text thread or type what you see in a screenshot — we\'ll fill the fields below.">' + esc(d.paste || '') + '</textarea></label>' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-btn-brand" data-jos-act="leads-paste-parse">Fill from paste</button>' +
+      '<p class="jos-muted jos-leads-paste-hint">Tip: copy a text message, or describe a screenshot (name, phone, what they want).</p>' +
+      '</div>' +
       '<div class="jos-leads-form">' +
       '<label>Name<input id="jos-la-name" value="' + esc(d.name || '') + '" placeholder="Full name" autocomplete="name"></label>' +
       '<label>Phone<span class="jos-phone-dial">' + esc(dial) + '</span><input id="jos-la-phone" type="tel" inputmode="tel" value="' + esc(formatPhoneValue(d.phone || '')) + '" placeholder="888-888-8888" autocomplete="tel"></label>' +
@@ -7129,7 +7238,7 @@
       '<label>Vehicle / Property<input id="jos-la-vehicle" value="' + esc(d.vehicle || '') + '" placeholder="Vehicle or property"></label>' +
       '<label>Service<input id="jos-la-service" value="' + esc(d.service || '') + '" placeholder="Service interest"></label>' +
       '<label>Source<select id="jos-la-source">' +
-        [['manual', 'Manual'], ['google', 'Google'], ['facebook', 'Facebook'], ['instagram', 'Instagram'], ['hubly', 'Hubly'], ['website', 'Website']].map(function (s) {
+        [['manual', 'Manual'], ['text', 'Text / screenshot'], ['google', 'Google'], ['facebook', 'Facebook'], ['instagram', 'Instagram'], ['hubly', 'Hubly'], ['website', 'Website']].map(function (s) {
           return '<option value="' + s[0] + '"' + ((d.source || 'manual') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
         }).join('') +
       '</select></label>' +
@@ -7149,6 +7258,29 @@
       '</div></div></div>';
   }
 
+  function parseLeadPasteText(raw) {
+    var text = String(raw || '').trim();
+    var out = { name: '', phone: '', email: '', address: '', service: '', notes: text, source: 'text' };
+    if (!text) return out;
+    var emailM = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    if (emailM) out.email = emailM[0];
+    var phoneM = text.match(/(?:\+?1[\s\-.]?)?(?:\(?\d{3}\)?[\s\-.]?)\d{3}[\s\-.]?\d{4}/);
+    if (phoneM) out.phone = formatPhoneValue(phoneM[0]);
+    var lines = text.split(/\n+/).map(function (l) { return l.replace(/^[\-\*\u2022]\s*/, '').trim(); }).filter(Boolean);
+    var nameLine = lines.find(function (l) {
+      if (/@/.test(l) || /\d{3}/.test(l)) return false;
+      var words = l.split(/\s+/);
+      return words.length >= 2 && words.length <= 4 && words.every(function (w) { return /^[A-Za-z.'-]+$/.test(w); });
+    });
+    if (nameLine) out.name = nameLine.replace(/^(hi|hey|hello)\s+/i, '').trim();
+    var svcHints = /(lawn|mow|clean|detail|window|pressure|wash|plumb|hvac|roof|paint|gutters?|membership|quote|estimate)/i;
+    var svcLine = lines.find(function (l) { return svcHints.test(l); });
+    if (svcLine) out.service = svcLine.slice(0, 80);
+    var addrLine = lines.find(function (l) { return /\d{2,5}\s+\w+/.test(l) && /(st|street|ave|road|rd|dr|ln|way|blvd|ct)\b/i.test(l); });
+    if (addrLine) out.address = addrLine;
+    return out;
+  }
+
   function renderLeadCard(lead, selectedId) {
     var on = selectedId && (String(lead.id) === String(selectedId) || String(lead.key) === String(selectedId));
     var crm = normalizeCrmStatus(lead);
@@ -7158,9 +7290,8 @@
       '<span class="jos-ld-ava">' + esc(initials(lead.name)) + '</span>' +
       '<span class="jos-ld-card-body">' +
       '<span class="jos-ld-card-top"><strong>' + esc(lead.name || 'Lead') + '</strong><span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span></span>' +
-      '<span class="jos-muted">' + esc(lead.industry || 'Residential') + ' · ' + esc(lead.service || 'Service') + '</span>' +
-      '<span class="jos-ld-preview">' + esc((lead.lastMessage || 'No messages yet').slice(0, 72)) + '</span>' +
-      '<span class="jos-ld-card-meta"><span>' + esc(displayPhone(lead.phone)) + '</span><span>' + esc(leadRelativeTime(lead)) + '</span></span>' +
+      '<span class="jos-ld-card-sub">' + esc(lead.service || lead.industry || 'New lead') + '</span>' +
+      '<span class="jos-ld-card-meta"><span>' + esc(lead.phone ? displayPhone(lead.phone) : 'No phone') + '</span><span>' + esc(leadRelativeTime(lead)) + '</span></span>' +
       '</span></button>';
   }
 
@@ -7210,8 +7341,10 @@
         '<section class="jos-ld-info">' +
         '<div class="jos-kicker">Lead Information</div>' +
         fields.map(function (f) {
-          return '<div class="jos-ld-field' + (f[2] ? ' clickable' : '') + '"' + (f[2] ? ' data-jos-act="' + f[2] + '"' : '') + '>' +
-            '<span>' + esc(f[0]) + '</span><strong>' + esc(f[1]) + '</strong><i class="jos-ld-edit" aria-hidden="true"></i></div>';
+          var val = f[1];
+          var isEmpty = !val || val === '—';
+          return '<div class="jos-ld-field' + (f[2] ? ' clickable' : '') + (isEmpty ? ' is-empty' : '') + '"' + (f[2] ? ' data-jos-act="' + f[2] + '"' : '') + '>' +
+            '<span>' + esc(f[0]) + '</span><strong>' + esc(val) + '</strong></div>';
         }).join('') +
         '</section>' +
         '<section class="jos-ld-score-card">' +
@@ -7751,6 +7884,13 @@
       }
       if (act === 'leads-add-open') { root._josLeadAddOpen = true; root._josLeadDraft = {}; return renderLeads(); }
       if (act === 'leads-add-cancel') { root._josLeadAddOpen = false; return renderLeads(); }
+      if (act === 'leads-paste-parse') {
+        var parsed = parseLeadPasteText((el('jos-la-paste') || {}).value || '');
+        root._josLeadDraft = Object.assign({}, root._josLeadDraft || {}, parsed, { paste: (el('jos-la-paste') || {}).value || '' });
+        if (parsed.name || parsed.phone || parsed.email) toast('Filled what we could find — check the fields');
+        else toast('Couldn’t find name/phone yet — edit fields manually');
+        return renderLeads();
+      }
       if (act === 'leads-add-save') return saveNewLead(false);
       if (act === 'leads-add-quote') return saveNewLead(true);
       if (act === 'leads-bulk-toggle') { root._josLeadBulkOpen = !root._josLeadBulkOpen; return renderLeads(); }
@@ -14156,6 +14296,7 @@
     handleMembershipsAct: handleMembershipsAct,
     renderRevenue: renderRevenue,
     handleRevenueAct: handleRevenueAct,
+    rveFillInvoiceFromItem: rveFillInvoiceFromItem,
     renderReportsPage: renderReportsPage,
     renderReports: renderReports,
     handleReportsAct: handleReportsAct,
