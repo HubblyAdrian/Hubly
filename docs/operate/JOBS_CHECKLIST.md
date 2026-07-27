@@ -1,12 +1,15 @@
 # Module 3 — 📅 Jobs & Calendar
 
-**Status:** 🔒 OS LOCKED (Stage 1) — approved  
-**Branch:** `cursor/operate-jobs-calendar-2662`  
-**PR:** [#246](https://github.com/HubblyAdrian/Hubly/pull/246)  
-**MAT:** [JOBS_MAT.md](./JOBS_MAT.md) · `node scripts/mat-jobs.mjs`  
-**Stage in scope:** Stage 1 — Operating System
+**Status:** 🔓 Explicit reopen — Mission Control redesign  
+**Prior lock:** [#246](https://github.com/HubblyAdrian/Hubly/pull/246) · Stage 1 OS approved  
+**Redesign:** [`JOBS_MISSION_CONTROL.md`](./JOBS_MISSION_CONTROL.md) · branch `cursor/operate-jobs-mission-control-2662`  
+**MAT:** [JOBS_MAT.md](./JOBS_MAT.md) · `node scripts/mat-jobs.mjs`
 
-Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
+Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked · 🔄 In review
+
+## Stage 3 — Mission Control Jobs 🔄 In review
+
+Three-column Jobs workspace + drawer per product pixel spec.
 
 ---
 
