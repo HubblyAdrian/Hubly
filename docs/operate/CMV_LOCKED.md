@@ -9,7 +9,7 @@
 | 📥 Inbox still works | ✅ · len=19656 |
 | 📅 Jobs still works | ✅ · len=19165 |
 | 🧲 Leads still works | ✅ · len=12259 |
-| ❤️ Customers still works | ✅ · len=9759 |
+| ❤️ Customers still works | ✅ · len=9708 |
 | 🧭 Pipeline still works | ✅ · len=8928 |
 | 🌐 Storefront still works | ✅ · len=7173 |
 | 📣 Marketing still works | ✅ · len=8526 |

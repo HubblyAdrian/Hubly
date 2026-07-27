@@ -8236,7 +8236,20 @@
     var done = jobsAll.filter(function (j) { return j.status === 'completed'; });
     var ai = custAiInsights(c);
     var tab = root._josCustProfileTab || 'Overview';
-    var since = c.createdAt ? dateLong(String(c.createdAt).slice(0, 10)) : '—';
+    var since = '—';
+    if (c.createdAt) {
+      try {
+        since = new Date(String(c.createdAt).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch (eSince) { since = dateLong(String(c.createdAt).slice(0, 10)); }
+    }
+    var lastJobLbl = '—';
+    if (last && last.date) {
+      try {
+        lastJobLbl = new Date(String(last.date).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch (eLast) { lastJobLbl = dateLong(last.date); }
+    } else if (allowDemoSeed()) {
+      lastJobLbl = 'May 18, 2024';
+    }
     var statusStat = c.status === 'lost' ? 'Lost' : (c.status === 'inactive' || c.archived ? 'Inactive' : 'Active');
     var jobsCount = jobsAll.length || done.length || (allowDemoSeed() && String(c.id) === 'demo_james' ? 2 : 0);
     var notesCount = (c.notesList || []).length;
@@ -8260,7 +8273,7 @@
     var stats = '<div class="jos-cm-stats">' +
       [['Total Spent', money(ltv) || '$0', allowDemoSeed() || ltv ? '+12%' : '', 'go-reports'],
         ['Total Jobs', String(jobsCount), '', 'go-jobs'],
-        ['Last Job', last && last.date ? dateLong(last.date) : (allowDemoSeed() ? 'May 18, 2024' : '—'), '', 'go-jobs'],
+        ['Last Job', lastJobLbl, '', 'go-jobs'],
         ['Customer Since', since !== '—' ? since : (allowDemoSeed() ? 'Jan 15, 2024' : '—'), '', 'cust-ws-tab'],
         ['Status', statusStat, '', 'cust-status-menu']].map(function (x) {
         return '<button type="button" class="jos-cm-stat" data-jos-act="' + x[3] + '"' + (x[3] === 'cust-ws-tab' ? ' data-jos-cust-ws-tab="Overview"' : '') + '>' +
@@ -8295,14 +8308,14 @@
           return '<div class="jos-cm-pref"><span>' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong></div>';
         }).join('') + '</section>' +
         '<section class="jos-cm-card-block span2">' +
+        '<div class="jos-between"><div class="jos-kicker">Notes</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-add-note">+ Add Note</button></div>' +
+        ((c.notesList || []).length ? '<div class="jos-cm-notes">' + c.notesList.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') + '</div>' : '<p class="jos-muted">No notes yet</p>') +
+        '</section>' +
+        '<section class="jos-cm-card-block span2">' +
         '<div class="jos-between"><div class="jos-kicker">Recent Activity</div><button type="button" class="jos-linkish" data-jos-act="cust-ws-tab" data-jos-cust-ws-tab="Overview">View All Activity →</button></div>' +
         '<div class="jos-cm-timeline">' + ((c.activity || []).slice(0, 5).map(function (a) {
           return '<div class="jos-cm-tl"><i class="t-' + esc(String(a.type || 'act')) + '"></i><span><strong>' + esc(a.label) + '</strong><span class="jos-muted">' + esc(a.at || '') + '</span></span></div>';
-        }).join('') || '<div class="jos-muted">No activity yet</div>') + '</div></section>' +
-        '<section class="jos-cm-card-block span2">' +
-        '<div class="jos-between"><div class="jos-kicker">Notes</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-add-note">+ Add Note</button></div>' +
-        ((c.notesList || []).length ? '<div class="jos-cm-notes">' + c.notesList.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') + '</div>' : '<p class="jos-muted">No notes yet</p>') +
-        '</section></div>';
+        }).join('') || '<div class="jos-muted">No activity yet</div>') + '</div></section></div>';
     } else if (tab === 'Jobs') {
       body = '<div class="jos-cm-table-wrap"><table class="jos-cm-table"><thead><tr><th>Job</th><th>Vehicle</th><th>Service</th><th>Status</th><th>Technician</th><th>Revenue</th><th>Date</th></tr></thead><tbody>' +
         (jobsAll.length ? jobsAll.map(function (j) {
