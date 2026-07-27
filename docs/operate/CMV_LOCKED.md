@@ -25,7 +25,3 @@
 ### Result
 
 ✅ CMV PASS
-
-### Context
-
-Rule #29 Agency lock · Module 7 AI Launch Coach architecture. No UI.

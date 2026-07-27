@@ -50,11 +50,10 @@ Interface language is **Ask Hubly** (not Get Help / Find Help / Marketplace).
 Marketplace remains intact (`/marketplace`, `/get-done`). Merged #259.
 See `docs/AI_LANDING_ARCHITECTURE.md` · `docs/HUBLY_MEMORY.md`.
 
-**Next milestone — Hubly AI Business Agency (Rule #29 🔒):** Canonical Builder experience.
-Business Activation locked. Pipeline: … → Activation → **AI Launch Coach** → Launch → Operate Home.
-Builder ends at OS handoff. Module 4 Dev may begin. Module 7 architecture:
-`docs/builder/LAUNCH_COACH_ARCHITECTURE.md`. First Home greeting + Morning Brief seed.
-Do not bypass Agency pipeline without reopening architecture.
+**Hubly AI Business Agency (Rule #29 🔒) — architecture frozen.** Seven modules + Launch → Operate OS.
+Master story: `docs/builder/BUILDER_MASTER_WORKFLOW.md`. No reorder/bypass/redesign without reopen.
+**Stop new architecture docs. Develop in order:** Module 1 ✅ → **Module 2 Discovery next** → … → Module 7.
+Each module: Arch → Dev → QA → MAT → CMV → Approval → Merge → Lock. No shortcuts.
 
 **Homepage craft still gated** (`scripts/check-homepage-craft.mjs`). The first five
 minutes after **Continue Building** are Module 2 — someone already typed on Landing

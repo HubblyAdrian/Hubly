@@ -72,8 +72,8 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | Business + Owner Profile / DNA | ✅ 🔒 Rule #26 |
 | Business Vision | ✅ 🔒 Rule #27 |
 | Creative Review | ✅ 🔒 Rule #28 |
-| AI Business Agency | ✅ 🔒 Rule #29 · Activation locked · Launch Coach arch |
-| AI Business Agency modules | ⏳ M2/M4 Dev · M3/M7 Architecture |
+| AI Business Agency | ✅ 🔒 Rule #29 · **architecture frozen** · master workflow |
+| Agency Development | ⏳ Sequential · Module 2 next |
 | Integrations | ⏸ Stage 2 |
 | Performance | ⏳ |
 | Accessibility | ⏳ |
@@ -171,23 +171,23 @@ All **14** Operate modules have Stage 1 OS complete and locked:
 
 ---
 
-## Hubly AI Business Agency (separate milestone) · Rule #29 🔒
+## Hubly AI Business Agency · Rule #29 🔒 Architecture frozen
 
-Operate Stage 1 is complete. Canonical Builder experience: **Hubly AI Business Agency** — see [builder/README.md](../builder/README.md).
+Canonical Builder experience. **Architecture complete.** Master story: [BUILDER_MASTER_WORKFLOW.md](../builder/BUILDER_MASTER_WORKFLOW.md).
 
-| # | Module | Status |
-|---|--------|--------|
-| 1 | 🌎 AI Landing Experience | 🔒 Locked (#259) |
-| 2 | 🤖 AI Discovery | 🔒 Architecture · Dev may begin |
-| 3 | 🔍 AI Research Engine | ⏳ Architecture |
-| 4 | 🎨 AI Creative Director | 🔒 Architecture · **Dev may begin** |
-| 5 | ✨ Business Reveal | 🔒 Architecture · design completion |
-| 6 | 🚀 Business Activation | 🔒 Architecture · canonical activation |
-| 7 | 🎓 AI Launch Coach | ⏳ Architecture ([LAUNCH_COACH_ARCHITECTURE.md](../builder/LAUNCH_COACH_ARCHITECTURE.md)) |
+| # | Module | Arch | Dev |
+|---|--------|------|-----|
+| 1 | 🌎 AI Landing | 🔒 | 🔒 Done (#259) |
+| 2 | 🤖 AI Discovery | 🔒 | ⏳ **Next Development** |
+| 3 | 🔍 AI Research | 🔒 | ⏳ |
+| 4 | 🎨 AI Creative Director | 🔒 | ⏳ |
+| 5 | ✨ Business Reveal | 🔒 | ⏳ |
+| 6 | 🚀 Business Activation | 🔒 | ⏳ |
+| 7 | 🎓 AI Launch Coach | 🔒 | ⏳ |
 
-Builder **ends** at Launch → Operate Home.  
-**No module may bypass** Agency pipeline without reopen.  
-**Rules #26–#29 🔒** · Save My Business = first account point.
+**No reorder / bypass / redesign without reopening Builder Architecture.**  
+**Do not build out of order.** Process: Arch → Dev → QA → MAT → CMV → Approval → Merge → Lock.  
+**Stop new architecture modules.** Build Module 2 next.
 
 ## Workflow
 

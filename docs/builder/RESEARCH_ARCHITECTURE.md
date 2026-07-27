@@ -4,7 +4,7 @@
 **Module:** 3 — AI Research Engine  
 **Rules:** #24 · #25 · #26 · research before build · never block the Builder  
 **Inputs:** Module 2 outputs (Hubly Session · Business Profile · Owner Profile · Business DNA · imports · conversation)  
-**Status:** Architecture gate — do not start Development without founder approval  
+**Status:** 🔒 Architecture locked (Agency frozen) · Development after Module 2  
 **Related:** [DISCOVERY_ARCHITECTURE.md](./DISCOVERY_ARCHITECTURE.md) · [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) · [README.md](./README.md)
 
 ---
