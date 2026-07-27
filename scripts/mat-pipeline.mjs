@@ -435,7 +435,7 @@ window.localStorage={getItem:function(){return null;},setItem:function(){}};
 </script>
 <script src="/journey-os/design-system.js"></script>
 <script src="/journey-os/journey.js"></script>
-<script>HublyJourneyOS.renderPipeline();document.title=document.getElementById("jos-pipeline-root").innerHTML.includes("jos-pipe-page")?"MAT_OK":"MAT_FAIL";</script>
+<script>HublyJourneyOS.renderPipeline();document.title=document.getElementById("jos-pipeline-root").innerHTML.includes("jos-pipe-page")||document.getElementById("jos-pipeline-root").innerHTML.includes("jos-pk-shell")?"MAT_OK":"MAT_FAIL";</script>
 </body></html>`;
   fs.writeFileSync(path.join(pub, "mat-pipeline.html"), matHtml);
   const browser = await chromium.launch({
@@ -454,7 +454,7 @@ window.localStorage={getItem:function(){return null;},setItem:function(){}};
     await page.waitForTimeout(350);
     return page.evaluate(() => {
       const root = document.getElementById("jos-pipeline-root");
-      const pageEl = root && root.querySelector(".jos-pipe-page");
+      const pageEl = root && (root.querySelector(".jos-pipe-page") || root.querySelector(".jos-pk-shell"));
       if (!pageEl) return false;
       const r = pageEl.getBoundingClientRect();
       return r.width > 200 && r.height > 200 && document.title.includes("MAT_OK");

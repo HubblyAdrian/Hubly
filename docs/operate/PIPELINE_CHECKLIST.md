@@ -1,11 +1,11 @@
 # Module 6 — 🧭 Pipeline
 
-**Status:** 🔒 OS LOCKED (Stage 1) — merged #249  
-**Branch:** `cursor/operate-pipeline-2662`  
-**PR:** [#249](https://github.com/HubblyAdrian/Hubly/pull/249)  
+**Status:** 🔓 Explicit reopen (product redesign — Mission Control)  
+**Branch:** `cursor/operate-pipeline-mission-control-2662`  
+**Prior lock:** Stage 1 OS locked via [#249](https://github.com/HubblyAdrian/Hubly/pull/249)  
+**Spec:** [PIPELINE_MISSION_CONTROL.md](./PIPELINE_MISSION_CONTROL.md)  
 **MAT:** [PIPELINE_MAT.md](./PIPELINE_MAT.md)  
 **Design System:** [DESIGN_SYSTEM_V1.md](./DESIGN_SYSTEM_V1.md) · `HublyDS` (Rule #14)  
-**Stage in scope:** Stage 1 — Operating System  
 **Golden profile:** Reuse `openCustomerProfile` — never a second CRM profile
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
@@ -14,101 +14,62 @@ Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
 
 ## Purpose
 
-Pipeline is the sales engine — Lead → Qualified → Quote → Booked → Completed → Review → Membership. Stage 1 runs on Hubly data (leads, quotes, jobs, customers). Cards open existing surfaces (Leads, golden Customer profile, Jobs, Smart Quote).
+Pipeline is the visual sales engine — Lead → Qualified → Quote → Booked → Completed. The operator should manage the deal on this page (contact, AI, tags, convert to job) without leaving Pipeline.
 
 ---
 
-## Stage 1 — Operating System
+## Mission Control reopen
 
 ### Core Layout
 - [x] `ownPixelView('v-pipeline', 'jos-pipeline-root')` ✅
-- [x] Page header (search, filters, Add Lead / Quick Quote) ✅
-- [x] KPI strip (deals by stage / value) ✅
-- [x] Board columns (7 sales stages) ✅
-- [x] Right detail sidebar on card select ✅
-- [x] Board view (default) ✅
-- [x] Responsive layout ✅
+- [x] `jos-pipeline-mode` full-height shell · hide app bar ✅
+- [x] Header 80px — title 36px, subtitle, Add Lead + Bulk Deals ✅
+- [x] Search 52px + Filters + Sort ✅
+- [x] KPI row (4 cards · 112px) ✅
+- [x] Kanban 5 columns + sticky 360px workspace ✅
+- [x] Pro tip footer ✅
 
-### Board stages
-- [x] Lead ✅
-- [x] Qualified ✅
-- [x] Quote ✅
-- [x] Booked ✅
-- [x] Completed ✅
-- [x] Review ✅
-- [x] Membership ✅
+### Board stages (visible)
+- [x] Lead (blue) ✅
+- [x] Qualified (purple) ✅
+- [x] Quote (orange) ✅
+- [x] Booked (green) ✅
+- [x] Completed (gray) ✅
+- [x] Review / Membership map into Completed on board ✅
 
-### Search
-- [x] Real-time filter: name, phone, service, vehicle, source, stage ✅
-- [x] ESC clears search ✅
+### Deal cards
+- [x] Avatar · name · service · status tag · amount ✅
+- [x] Hover scale · grab cursor · drag rotate ✅
+- [x] Click selects workspace ✅
+- [x] Drop highlight (target + green ok) ✅
 
-### Filters (drawer · HublyDS `filterDrawer`)
-- [x] Stage ✅
-- [x] Source ✅
-- [x] Service ✅
-- [x] Value range ✅
-- [x] Apply / Reset / Save Filter ✅
-
-### Detail sidebar (HublyDS)
-- [x] Contact + stage badge ✅
-- [x] Amount / service meta ✅
-- [x] AI next action (`aiInsightCard`) ✅
-- [x] Timeline / activity (`activityFeed`) ✅
-- [x] Stage prev / next + stage picker ✅
-- [x] Action toolbar ✅
-
-### Card interactions
-- [x] Click selects + shows detail ✅
-- [x] Drag-drop between columns → persist stage override ✅
-- [x] `HublyDS.pipelineCard` when available (fallback OK) ✅
+### Workspace
+- [x] Customer header + stage badge + value ✅
+- [x] Quick actions: Call · Email · Message · Maps ✅
+- [x] AI Hubly Insights + View Insights ✅
+- [x] Activity + See All ✅
+- [x] Details (source, owner, dates, service, vehicle) ✅
+- [x] Tags + Add Tag + filter-by-tag ✅
+- [x] Convert to Job CTA ✅
 
 ### Actions (`pipe-*`)
-- [x] Filter open / apply / reset / save ✅
-- [x] Search ✅
-- [x] Select card ✅
-- [x] Move stage (prev / next / picker) ✅
-- [x] Open lead ✅
-- [x] Open customer golden profile (`openCustomerProfile`) ✅
-- [x] Create quote ✅
-- [x] Book job ✅
-- [x] Request review ✅
-- [x] Offer membership ✅
-- [x] Archive ✅
-- [x] AI refresh ✅
+- [x] Filters / sort / KPI filters ✅
+- [x] Bulk Deals (toast placeholder) ✅
+- [x] Add lead / add-in-stage ✅
+- [x] Call / email / maps / AI drawer ✅
+- [x] Convert to job / book job ✅
+- [x] Archive / stage move / DnD ✅
+- [x] Open lead / golden customer profile ✅
 
-### Design System usage (Rule #14)
-- [x] `pageHeader`, `searchBar`, `filterDrawer` ✅
-- [x] `metricCard`, `aiInsightCard`, `activityFeed` ✅
-- [x] `actionToolbar`, `actionButton`, `statusBadge` ✅
-- [x] `emptyState`, `sectionHeader`, `pipelineCard` ✅
+### Responsive
+- [x] Desktop 1600 / laptop 1440 ✅
+- [x] Tablet horizontal board scroll ✅
+- [x] Mobile stacked stages ✅
 
-### Empty / Error / Mobile
-- [x] Empty column state ✅
-- [x] Empty board (no cards) ✅
-- [x] Error + Retry ✅
-- [x] Responsive Desktop / Tablet / Mobile ✅
-
-### Integrations (Stage 2 placeholders only)
-- [x] Live CRM sync → toast “Stage 2 · not connected” ✅
-
-### QA / MAT / CMV
-- [x] Buttons / navigation functional ✅
-- [x] Validator pipeline gate ✅
-- [x] CMV includes Customers ✅
-- [x] MAT formal acceptance ✅ (`docs/operate/PIPELINE_MAT.md`)
-
-### Stage 1 Definition of Done
-- [x] Pipeline OS complete (Stage 1) ✅
-- [x] HublyDS v1 for new UI ✅
-- [x] Golden profile reused ✅
-- [x] Validator PASS ✅
-- [x] CMV PASS (locked modules incl. Customers) ✅
-- [x] MAT ✅ ACCEPTED ✅
-- [x] Merged #249 → **🔒 OS LOCKED** ✅
-
----
-
-**Pipeline Operating System is locked (🔒 OS).** Do not modify Stage 1 OS unless bug fix, Stage 2 integrations, or explicit reopen.
+### QA
+- [x] `node --check` journey.js ✅
+- [ ] Visual QA 1440 / 1600 ⏳
+- [ ] MAT re-run after merge candidate ⏳
 
 ---
 
@@ -118,6 +79,7 @@ Pipeline is the sales engine — Lead → Qualified → Quote → Booked → Com
 |------|--------|
 | Live CRM / external pipeline sync | ⏸ |
 | Live quote / booking provider webhooks | ⏸ |
-| Live review platform sync | ⏸ |
+| Bulk CSV import | ⏸ |
+| Supabase Realtime multi-user sync | ⏸ |
 
 Do not claim “connected” in Stage 1 UI.
