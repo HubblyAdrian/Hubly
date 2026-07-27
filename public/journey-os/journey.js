@@ -6825,8 +6825,8 @@
   function allLeads() {
     var leads = collectLeads();
     if (!leads.length && allowDemoSeed()) {
-      leads = demoPipelineCards().filter(function (c) { return /lead|quote|qualified/.test(c.stageId); })
-        .map(function (c, i) { return { key: 'demo:' + i, name: c.name, source: c.source, stage: c.stageId, service: c.service, vehicle: c.vehicle, createdAt: c.date, amount: c.amount, phone: c.phone || '', email: c.email || '' }; });
+      leads = demoPipelineCards().filter(function (c) { return /quote|incomplete/.test(c.stageId); })
+        .map(function (c, i) { return { key: 'demo:' + i, name: c.name, source: c.source, stage: 'new', service: c.service, vehicle: c.vehicle, createdAt: c.date, amount: c.amount, phone: c.phone || '', email: c.email || '' }; });
     }
     return leads;
   }
