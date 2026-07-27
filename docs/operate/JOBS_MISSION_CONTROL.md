@@ -2,28 +2,44 @@
 
 **Status:** 🔓 Explicit reopen (product redesign)  
 **Branch:** `cursor/operate-jobs-mission-control-2662`  
-**Viewport:** 1440–1728px · 100vh
+**Viewport:** 1440–1728px · 100vh · `#F7F8FA`
 
 ## Layout
 
 ```
-[ Sidebar 240px | Main (scroll) | Right rail 320px sticky ]
+[ Sidebar 240px #111827 | Main (scroll) | Right rail 320px sticky ]
 Job Details drawer 520px (slides from right)
 ```
 
 - Global app bar hidden while Jobs is active
-- Sidebar: logo, + New Job, navigation, business profile
-- Main: header, filter card, 5 KPIs, job table + tabs + pagination
-- Rail: month calendar, upcoming jobs, business summary
+- Sidebar: logo, + New Job, navigation, business profile (never scrolls)
+- Main width ≈ `calc(100% - 560px)` · padding 32 / 32 / 40
+- Rail: Calendar (340px) · Upcoming (280px) · Business Summary (230px)
+
+## Main content
+
+1. **Header (80px)** — Jobs + subtitle · Export (CSV/Excel/PDF/Custom) · New Job · Notifications · Profile  
+2. **Filter card (92px)** — Date / Status / Services / Team / Locations / Search · Source / Tags / Clear / Advanced  
+3. **KPI row (5 × 110px)** — Total · Completed · In Progress · Scheduled · Revenue  
+4. **Table card** — tabs (All / Scheduled / In Progress / Completed / Cancelled) · sticky header · 92px rows · pagination 25/50/100  
 
 ## Interactions
 
-- KPI cards filter the table (or open Revenue)
-- Row / customer / status / amount / calendar day all clickable
-- Status & ⋯ menus for workflow actions
+- KPI cards filter the table (Revenue → Money)
+- Row / customer / service / date / status / amount / ⋯ all clickable
+- Status menu: In Progress / Complete / Reschedule / Assign / Cancel / Duplicate
 - Drawer tabs: Overview · Customer · Services · Photos · Checklist · Messages · Invoice · Timeline · Activity
-- Export CSV/Excel/PDF/Custom · Advanced filters drawer
-- Empty state with New Job / Import Jobs
+- Empty state: New Job + Import Jobs · demo jobs seeded when empty
+- Live search · stacked filters · calendar day sync · hover 150ms · card lift 4px · button scale 1.02
+
+## Responsive
+
+| Breakpoint | Behavior |
+|---|---|
+| ≥1440 | Sidebar + Main + Rail |
+| 1024–1439 | Rail collapses to Calendar / Upcoming / Summary tabs |
+| 768–1023 | Icon sidebar · filter chips · stacked job cards · FAB |
+| <768 | Single column · KPI carousel · rail below list · FAB |
 
 ## Ownership
 

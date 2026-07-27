@@ -10686,12 +10686,38 @@
   function jobsTeam() { ensureJobsOsState(); return S().team || DEFAULT_TEAM; }
   function findJob(id) { return jobsAll().find(function (j) { return String(j.id) === String(id); }) || null; }
   function jobStatusTone(st) {
+    /* Pill colors: Completed green · Scheduled blue · In Progress orange · Cancelled gray */
     st = String(st || '').toLowerCase();
     if (st === 'completed' || st === 'paid') return 'ok';
-    if (st === 'in_progress' || st === 'running') return 'info';
+    if (st === 'in_progress' || st === 'running' || st === 'paused') return 'warn';
+    if (st === 'cancelled') return 'mute';
+    if (st === 'scheduled' || st === 'pending' || st === 'confirmed') return 'info';
+    return 'info';
+  }
+  function jobRowTone(st) {
+    /* Row left border: Completed green · Scheduled blue · In Progress orange · Cancelled red */
+    st = String(st || '').toLowerCase();
+    if (st === 'completed' || st === 'paid') return 'ok';
     if (st === 'cancelled') return 'hot';
-    if (st === 'paused' || st === 'pending') return 'warn';
-    return 'warn';
+    if (st === 'in_progress' || st === 'running' || st === 'paused') return 'warn';
+    return 'info';
+  }
+  function jobKpiIcon(kind) {
+    var paths = {
+      briefcase: '<path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 12h18"/>',
+      check: '<path d="M20 6 9 17l-5-5"/>',
+      clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+      cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>',
+      dollar: '<path d="M12 2v20M17 7c0-2-2-3-5-3s-5 1-5 3 2 3 5 3 5 1 5 3-2 3-5 3-5-1-5-3"/>'
+    };
+    return '<svg class="jos-jobs-kpi-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (paths[kind] || paths.briefcase) + '</svg>';
+  }
+  function jobUiIcon(kind) {
+    if (kind === 'download') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>';
+    if (kind === 'bell') return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>';
+    if (kind === 'cal') return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>';
+    if (kind === 'clock') return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    return '';
   }
   function parseJobMinutes(time) {
     var m = String(time || '9:00 AM').match(/(\d+):(\d+)\s*(AM|PM)?/i);
@@ -10988,14 +11014,14 @@
     }).join('') + '</div>';
 
     var rowsHtml = pageRows.length ? pageRows.map(function (j) {
-      var tone = j.status === 'completed' ? 'ok' : (j.status === 'cancelled' ? 'hot' : (j.status === 'in_progress' || j.status === 'running' ? 'warn' : 'info'));
+      var tone = jobRowTone(j.status);
       var created = (j.timeline && j.timeline[0] && j.timeline[0].at) || j.date || '';
       return '<tr class="jos-jobs-row tone-' + tone + '" data-jos-job-id="' + esc(j.id) + '">' +
         '<td class="col-job"><button type="button" class="jos-linkish" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><strong>' + esc(jobNumber(j)) + '</strong><span class="jos-muted">' + esc(String(created).slice(0, 16)) + '</span></button></td>' +
         '<td class="col-cust"><button type="button" class="jos-jobs-cust" data-jos-act="jobs-open-customer" data-jos-job-id="' + esc(j.id) + '">' +
-        '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span><span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(j.email || j.phone || '') + '</span></span></button></td>' +
+        '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span><span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(j.email || '—') + '</span><span class="jos-muted">' + esc(j.phone || '—') + '</span></span></button></td>' +
         '<td class="col-svc"><button type="button" class="jos-linkish" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><strong>' + esc(j.service || 'Service') + '</strong><span class="jos-muted">' + esc(j.vehicle || 'Vehicle') + ' · ' + esc(String(j.durationMin || 120)) + 'm</span></button></td>' +
-        '<td class="col-date"><button type="button" class="jos-linkish" data-jos-act="jobs-cal-day" data-jos-day="' + esc(j.date || '') + '"><span>📅 ' + esc(j.date || '—') + '</span><span class="jos-muted">🕐 ' + esc(j.time || '—') + '</span></button></td>' +
+        '<td class="col-date"><button type="button" class="jos-linkish jos-jobs-dt" data-jos-act="jobs-cal-day" data-jos-day="' + esc(j.date || '') + '"><span>' + jobUiIcon('cal') + ' ' + esc(j.date || '—') + '</span><span class="jos-muted">' + jobUiIcon('clock') + ' ' + esc(j.time || '—') + '</span></button></td>' +
         '<td class="col-status"><button type="button" class="jos-pill ' + jobStatusTone(j.status) + '" data-jos-act="jobs-status-menu" data-jos-job-id="' + esc(j.id) + '">' + esc(j.status) + '</button></td>' +
         '<td class="col-amt"><button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '">' + esc(money(j.amount) || '$0') + '</button></td>' +
         '<td class="col-act"><div class="jos-jobs-more-wrap">' +
@@ -11003,8 +11029,22 @@
         '</div></td></tr>';
     }).join('') : '';
 
+    var mobileCards = pageRows.length ? '<div class="jos-jobs-cards">' + pageRows.map(function (j) {
+      var tone = jobRowTone(j.status);
+      return '<article class="jos-jobs-card tone-' + tone + '" data-jos-job-id="' + esc(j.id) + '">' +
+        '<button type="button" class="jos-jobs-card-main" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
+        '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span>' +
+        '<span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(jobNumber(j)) + ' · ' + esc(j.service || '') + '</span>' +
+        '<span class="jos-muted">' + esc(j.date || '') + ' · ' + esc(j.time || '') + '</span></span>' +
+        '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></button>' +
+        '<div class="jos-jobs-card-foot">' +
+        '<button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '">' + esc(money(j.amount) || '$0') + '</button>' +
+        '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋯</button>' +
+        '</div></article>';
+    }).join('') + '</div>' : '';
+
     var emptyTable = '<div class="jos-jobs-empty">' +
-      '<div class="jos-jobs-empty-art" aria-hidden="true">📋</div>' +
+      '<div class="jos-jobs-empty-art" aria-hidden="true"></div>' +
       '<h3>No jobs yet.</h3>' +
       '<p>Create your first job or import bookings to get started.</p>' +
       '<div class="jos-btn-row">' + btn('jobs-create', 'New Job', 'jos-btn-brand') + btn('jobs-import', 'Import Jobs', 'jos-btn jos-btn-out') + '</div></div>';
@@ -11043,14 +11083,14 @@
       '<div><h1>Jobs</h1><p>Manage and track every job in one place.</p></div>' +
       '<div class="jos-jobs-header-actions">' +
       '<div class="jos-jobs-export-wrap">' +
-      '<button type="button" class="jos-btn jos-jobs-export" data-jos-act="jobs-export-toggle">↓ Export</button>' +
+      '<button type="button" class="jos-btn jos-jobs-export" data-jos-act="jobs-export-toggle">' + jobUiIcon('download') + ' Export</button>' +
       (exportOpen ? '<div class="jos-jobs-export-menu">' +
         [['csv', 'CSV'], ['excel', 'Excel'], ['pdf', 'PDF'], ['custom', 'Custom Report']].map(function (x) {
           return '<button type="button" data-jos-act="jobs-export-fmt" data-jos-fmt="' + x[0] + '">' + x[1] + '</button>';
         }).join('') + '</div>' : '') +
       '</div>' +
       '<button type="button" class="jos-btn jos-btn-brand jos-jobs-new" data-jos-act="jobs-create">+ New Job</button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications">🔔</button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' + jobUiIcon('bell') + '</button>' +
       '<button type="button" class="jos-jobs-ava-btn" data-jos-act="go-settings" title="Profile">' + esc(jobInitials(S().ownerName || 'Adrian')) + '</button>' +
       '</div></header>' +
 
@@ -11093,14 +11133,14 @@
         '</aside>' : '') +
 
       '<section class="jos-jobs-kpis">' +
-      [['jobs-kpi-all', 'Total Jobs', total || 24, 'briefcase', 'brand'],
-        ['jobs-kpi-completed', 'Completed', completed || 16, 'check', 'ok'],
-        ['jobs-kpi-progress', 'In Progress', inProgress || 4, 'clock', 'warn'],
-        ['jobs-kpi-scheduled', 'Scheduled', scheduled || 10, 'cal', 'info'],
-        ['jobs-kpi-revenue', 'Revenue', money(revenue) || '$6,840', 'dollar', 'blue']].map(function (k) {
+      [['jobs-kpi-all', 'Total Jobs', total || 24, 'briefcase', 'brand', '+12%'],
+        ['jobs-kpi-completed', 'Completed', completed || 16, 'check', 'ok', '+8%'],
+        ['jobs-kpi-progress', 'In Progress', inProgress || 4, 'clock', 'warn', 'Active'],
+        ['jobs-kpi-scheduled', 'Scheduled', scheduled || 10, 'cal', 'info', 'Next 7d'],
+        ['jobs-kpi-revenue', 'Revenue', money(revenue) || '$6,840', 'dollar', 'blue', '+18%']].map(function (k) {
         return '<button type="button" class="jos-jobs-kpi tone-' + k[4] + '" data-jos-act="' + k[0] + '">' +
-          '<span class="jos-jobs-kpi-ico" aria-hidden="true"></span>' +
-          '<span><span class="lbl">' + esc(k[1]) + '</span><strong>' + esc(String(k[2])) + '</strong><span class="trend">↗ live</span></span></button>';
+          '<span class="jos-jobs-kpi-ico" aria-hidden="true">' + jobKpiIcon(k[3]) + '</span>' +
+          '<span><span class="lbl">' + esc(k[1]) + '</span><strong>' + esc(String(k[2])) + '</strong><span class="trend">' + esc(k[5]) + '</span></span></button>';
       }).join('') +
       '</section>' +
 
@@ -11109,28 +11149,36 @@
       (pageRows.length
         ? '<div class="jos-jobs-table-wrap"><table class="jos-jobs-table"><thead><tr>' +
           '<th style="width:120px">Job #</th><th style="width:280px">Customer</th><th style="width:200px">Service</th><th style="width:220px">Date &amp; Time</th><th style="width:150px">Status</th><th style="width:120px">Amount</th><th style="width:80px">Actions</th>' +
-          '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' + pager
+          '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' + mobileCards + pager
         : emptyTable) +
       '</section>' +
       '</main>' +
 
       '<aside class="jos-jobs-rail">' +
-      '<section class="jos-jobs-rail-card"><div class="jos-kicker">Calendar</div>' + renderJobsMiniCal(root, calAnchor, all) + '</section>' +
-      '<section class="jos-jobs-rail-card grow"><div class="jos-kicker">Upcoming Jobs</div><div class="jos-jobs-upcoming">' +
-      (upcoming.length ? upcoming.map(function (j) {
-        return '<button type="button" class="jos-jobs-up-card" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
-          '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span>' +
-          '<span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(j.time) + ' · ' + esc(j.service) + '</span><span class="jos-muted">' + esc(j.vehicle || '') + '</span></span>' +
-          '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></button>';
-      }).join('') : '<div class="jos-muted">No upcoming jobs</div>') +
-      '</div></section>' +
-      '<section class="jos-jobs-rail-card"><div class="jos-kicker">Business Summary</div>' +
-      '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-reports"><span>Completion Rate</span><strong>' + completionRate + '%</strong></button>' +
-      '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-money"><span>Average Ticket</span><strong>' + esc(money(avgTicket)) + '</strong></button>' +
-      '<div class="jos-jobs-spark" aria-hidden="true"><i style="height:40%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:70%"></i><i style="height:62%"></i><i style="height:80%"></i><i style="height:75%"></i></div>' +
-      '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-reports"><span>Reschedule %</span><strong>6%</strong></button>' +
-      '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-reports"><span>No Show %</span><strong>2%</strong></button>' +
-      '</section></aside>' +
+      (function () {
+        var railTab = root._josJobsRailTab || 'calendar';
+        return '<div class="jos-jobs-rail-tabs">' +
+          [['calendar', 'Calendar'], ['upcoming', 'Upcoming'], ['summary', 'Summary']].map(function (t) {
+            return '<button type="button" class="jos-jobs-rail-tab' + (railTab === t[0] ? ' on' : '') + '" data-jos-rail-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+          }).join('') + '</div>' +
+          '<section class="jos-jobs-rail-card jos-rail-panel' + (railTab === 'calendar' ? ' on' : '') + '" data-jos-rail-panel="calendar"><div class="jos-kicker">Calendar</div>' + renderJobsMiniCal(root, calAnchor, all) + '</section>' +
+          '<section class="jos-jobs-rail-card grow jos-rail-panel' + (railTab === 'upcoming' ? ' on' : '') + '" data-jos-rail-panel="upcoming"><div class="jos-kicker">Upcoming Jobs</div><div class="jos-jobs-upcoming">' +
+          (upcoming.length ? upcoming.map(function (j) {
+            return '<button type="button" class="jos-jobs-up-card" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
+              '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span>' +
+              '<span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(j.time) + ' · ' + esc(j.service) + '</span><span class="jos-muted">' + esc(j.vehicle || '') + '</span></span>' +
+              '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></button>';
+          }).join('') : '<div class="jos-muted">No upcoming jobs</div>') +
+          '</div></section>' +
+          '<section class="jos-jobs-rail-card jos-rail-panel' + (railTab === 'summary' ? ' on' : '') + '" data-jos-rail-panel="summary"><div class="jos-kicker">Business Summary</div>' +
+          '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-reports"><span>Completion Rate</span><strong>' + completionRate + '%</strong></button>' +
+          '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-money"><span>Average Ticket</span><strong>' + esc(money(avgTicket)) + '</strong></button>' +
+          '<div class="jos-jobs-spark" aria-hidden="true"><i style="height:40%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:70%"></i><i style="height:62%"></i><i style="height:80%"></i><i style="height:75%"></i></div>' +
+          '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-reports"><span>Reschedule %</span><strong>6%</strong></button>' +
+          '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-reports"><span>No Show %</span><strong>2%</strong></button>' +
+          '</section>';
+      })() +
+      '</aside>' +
       '</div>' +
       '<div class="jos-jobs-drawer-backdrop' + (drawerOpen ? ' open' : '') + '" data-jos-act="jobs-drawer-close"></div>' +
       drawer + statusMenu + rowMenu +
@@ -11159,6 +11207,13 @@
       if (listTab) {
         root._josJobsListView = listTab.getAttribute('data-jos-jobs-list');
         root._josJobsPage = 1;
+        renderJobs();
+        e.stopPropagation();
+        return;
+      }
+      var railTab = e.target.closest('[data-jos-rail-tab]');
+      if (railTab) {
+        root._josJobsRailTab = railTab.getAttribute('data-jos-rail-tab') || 'calendar';
         renderJobs();
         e.stopPropagation();
         return;
