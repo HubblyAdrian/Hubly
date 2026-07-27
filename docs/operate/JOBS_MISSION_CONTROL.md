@@ -21,7 +21,7 @@ Job Details drawer 520px (slides from right)
 1. **Header (80px)** — Jobs + subtitle · Export (CSV/Excel/PDF/Custom) · New Job · Notifications · Profile  
 2. **Filter card (92px)** — Date / Status / Services / Team / Locations / Search · Source / Tags / Clear / Advanced  
 3. **KPI row (5 × 110px)** — Total · Completed · In Progress · Scheduled · Revenue  
-4. **Table card** — tabs (All / Scheduled / In Progress / Completed / Cancelled) · sticky header · 92px rows · pagination 25/50/100  
+4. **Table card** — tabs (All / Scheduled / In Progress / Completed / Canceled) · sticky header · 92px rows · pagination **5 per page** (screenshot)  
 
 ## Interactions
 
