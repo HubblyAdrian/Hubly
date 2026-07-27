@@ -171,6 +171,22 @@ AI Discovery (Business Builder Module 2) fills **Business DNA** inside Temporary
 
 See [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) · [builder/DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md).
 
+## Rule #26 — Business Profile + Owner Profile
+
+Business DNA is the **combination** of two profiles — not a single flat bag of facts:
+
+| Profile | Holds |
+|---------|-------|
+| Business Profile | Industry · services · location · pricing · brand · website |
+| Owner Profile | Experience · goals · communication style · growth priorities · stage · risk · preferred customers |
+| Business DNA | Both together — completion ≥ 90% ends Discovery |
+
+Downstream coaching (Ask Hubly) and Research (Module 3) must use **Owner Profile** when advising, not Business Profile alone.
+
+**🔒 Module 2 Architecture locked.** Development may implement Discovery; UI must not change this model without reopening.
+
+See [DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md) · [RESEARCH_ARCHITECTURE.md](../builder/RESEARCH_ARCHITECTURE.md).
+
 ## Cross-Module Verification (CMV)
 
 Before approval of a new module PR, confirm previously **locked** modules still function (no modifications — confirmation only).
@@ -190,5 +206,6 @@ Special modules require an architecture doc before Development:
 - Ask Hubly → [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md) (intelligence layer + Rule #22)  
 - Settings → [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md) (control center + Rule #23)  
 - AI Landing → [AI_LANDING_ARCHITECTURE.md](../AI_LANDING_ARCHITECTURE.md) (dual product router + Rule #24) · **🔒 Locked**  
-- AI Discovery → [DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md) (Business DNA + Rule #25) · required before Module 2 Development  
+- AI Discovery → [DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md) (Business + Owner Profile · Rule #26) · **🔒 Architecture locked** · Dev may begin  
+- AI Research Engine → [RESEARCH_ARCHITECTURE.md](../builder/RESEARCH_ARCHITECTURE.md) (research before build) · required before Module 3 Development  
 - Hubly Memory → [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) (Temporary · Permanent · Conversation)

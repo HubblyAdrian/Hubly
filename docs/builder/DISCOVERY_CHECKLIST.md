@@ -1,11 +1,10 @@
 # 🤖 AI Discovery — Checklist
 
-**Status:** ⏳ Architecture · Development not started  
+**Status:** 🔒 Architecture locked · Development may begin (no Stage 1 UI in this lock PR)  
 **Architecture:** [DISCOVERY_ARCHITECTURE.md](./DISCOVERY_ARCHITECTURE.md)  
 **MAT:** [DISCOVERY_MAT.md](./DISCOVERY_MAT.md)  
 **Memory:** [HUBLY_MEMORY.md](../HUBLY_MEMORY.md)  
-**Milestone:** [Hubly AI Business Builder](./README.md)  
-**Branch (target):** `cursor/hubly-ai-builder-m2-discovery-2662`
+**Milestone:** [Hubly AI Business Builder](./README.md)
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔒 Locked
 
@@ -15,9 +14,12 @@ Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔒 Locked
 
 - [x] Architecture doc before Development ✅  
 - [x] Hubly Memory defined ✅  
-- [x] Module 1 Landing locked (no redesign) ✅  
+- [x] Business Profile + Owner Profile + Business DNA (Rule #26) ✅  
+- [x] Module 1 Landing locked ✅  
 - [x] Marketplace remains parallel product ✅  
-- [ ] Founder approval of architecture → Development  
+- [x] Architecture approved + **🔒 Locked** ✅  
+- [ ] Development (Stage 1)  
+- [ ] QA → MAT → CMV → Approval → Merge → Lock Stage 1 OS  
 
 ---
 
@@ -32,21 +34,38 @@ Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔒 Locked
 
 ---
 
-## Business DNA
+## Business Profile
 
 - [ ] Industry  
 - [ ] Business Name  
 - [ ] Location  
-- [ ] Stage  
 - [ ] Services  
 - [ ] Pricing  
 - [ ] Brand  
-- [ ] Goals  
-- [ ] Target Customer  
+- [ ] Website / socials  
 - [ ] Booking Preferences  
-- [ ] Live panel updates every answer  
+
+---
+
+## Owner Profile
+
+- [ ] Experience  
+- [ ] Goals  
+- [ ] Communication Style  
+- [ ] Growth Priorities  
+- [ ] Business Stage  
+- [ ] Risk Tolerance  
+- [ ] Preferred Customers  
+
+---
+
+## Business DNA (combined)
+
+- [ ] Live panel shows Business + Owner sections  
 - [ ] Cards editable on click  
+- [ ] Progress = weighted DNA %  
 - [ ] Completion at ≥ 90%  
+- [ ] Downstream modules receive both profiles  
 
 ---
 
@@ -63,7 +82,7 @@ Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔒 Locked
 ## AI
 
 - [ ] Dynamic industry questions  
-- [ ] Suggestions appear as DNA grows  
+- [ ] Owner-aware suggestions  
 - [ ] Progress updates (Business DNA %)  
 - [ ] Suggested reply chips  
 
@@ -72,7 +91,7 @@ Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔒 Locked
 ## Layout
 
 - [ ] Left: Conversation with Hubly  
-- [ ] Right: Live Business DNA panel  
+- [ ] Right: Live Business DNA (Business + Owner)  
 - [ ] Hubly wordmark + `Building {name}…`  
 - [ ] Responsive: desktop · tablet · mobile  
 
@@ -80,18 +99,14 @@ Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔒 Locked
 
 ## Navigation
 
-- [ ] Continue  
-- [ ] Back  
-- [ ] Skip  
-- [ ] Save & Exit  
-- [ ] Edit previous answer  
+- [ ] Continue · Back · Skip · Save & Exit · Edit previous  
 
 ---
 
 ## QA
 
 - [ ] Zero console errors  
-- [ ] Business DNA persists  
+- [ ] Profiles + DNA persist  
 - [ ] Session survives refresh  
 - [ ] Accessibility pass  
 
@@ -99,6 +114,10 @@ Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔒 Locked
 
 ## Deferred
 
-- [ ] Deeper vendor Instagram / Google crawl (beyond Module 1 partial)  
+- [ ] Deeper vendor Instagram / Google crawl  
 - [ ] Server-persisted Hubly Session  
 - [ ] Full revenue estimation engine for suggestions  
+
+---
+
+**Architecture is locked (🔒).** Do not change the approved model (Business Profile · Owner Profile · Business DNA) without reopening Module 2.
