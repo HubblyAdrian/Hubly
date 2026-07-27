@@ -90,7 +90,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ✨ Ask Hubly | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| ⚙️ Settings | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
+| ⚙️ Settings | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
 
 ---
 

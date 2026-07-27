@@ -1,9 +1,10 @@
 # Module 14 — ⚙️ Settings
 
-**Status:** Architecture approved · Stage 1 OS in progress  
+**Status:** Stage 1 OS complete · MAT ✅ ACCEPTED · CMV PASS · awaiting PR approval  
 **Branch:** `cursor/operate-settings-2662`  
 **Architecture (required):** [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md)  
 **Plan:** [SETTINGS_PLAN.md](./SETTINGS_PLAN.md)  
+**MAT:** [SETTINGS_MAT.md](./SETTINGS_MAT.md)  
 **Rules:** #14–23 (especially **#23**)  
 **Design System:** HublyDS (Rule #14) · Hubly wordmark  
 
@@ -29,31 +30,31 @@ Settings is the control center for Operate — configuration only (Rule #23).
 ## Stage 1 — Operating System
 
 ### Core
-- [ ] `ownPixelView('v-settings', 'jos-settings-root')` ⏳
-- [ ] HublyDS + wordmark chrome ⏳
-- [ ] Tabs ⏳
-- [ ] Responsive ⏳
-- [ ] Rule #23 purge of forbidden entity copies ⏳
+- [x] `ownPixelView('v-settings', 'jos-settings-root')` ✅
+- [x] HublyDS + wordmark chrome ✅
+- [x] Tabs ✅
+- [x] Responsive ✅
+- [x] Rule #23 purge of forbidden entity copies ✅
 
 ### Tabs
-- [ ] Overview ⏳
-- [ ] Business ⏳
-- [ ] Team ⏳
-- [ ] Billing ⏳
-- [ ] Integrations ⏳
-- [ ] Notifications ⏳
-- [ ] Branding ⏳
-- [ ] AI ⏳
-- [ ] Security ⏳
-- [ ] Permissions ⏳
+- [x] Overview ✅
+- [x] Business ✅
+- [x] Team ✅
+- [x] Billing ✅
+- [x] Integrations ✅
+- [x] Notifications ✅
+- [x] Branding ✅
+- [x] AI ✅
+- [x] Security ✅
+- [x] Permissions ✅
 
 ### QA / MAT / CMV
-- [ ] Validator settings gates ⏳  
-- [ ] MAT ⏳  
-- [ ] CMV incl. Ask Hubly ⏳  
+- [x] Validator settings gates ✅  
+- [x] MAT ✅ ACCEPTED — [SETTINGS_MAT.md](./SETTINGS_MAT.md)  
+- [x] CMV incl. Ask Hubly ✅  
 
 ### Definition of Done
-- [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳  
+- [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳ (awaiting approval)  
 
 ---
 

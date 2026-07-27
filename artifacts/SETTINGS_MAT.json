@@ -1,0 +1,417 @@
+{
+  "accepted": true,
+  "consoleErrors": 0,
+  "validatorPass": true,
+  "cmvPass": true,
+  "desktopOk": true,
+  "tabletOk": true,
+  "mobileOk": true,
+  "eventLog": [
+    "settings.updated",
+    "settings.team.invited",
+    "settings.updated",
+    "settings.integration.toggled",
+    "settings.updated",
+    "settings.updated",
+    "settings.updated",
+    "settings.updated",
+    "settings.security.audited",
+    "settings.updated",
+    "settings.security.audited",
+    "settings.updated",
+    "settings.updated",
+    "settings.updated"
+  ],
+  "results": [
+    {
+      "section": "Events",
+      "name": "HublyEvents loaded",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 23",
+      "name": "Settings event constants",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Header",
+      "name": "Page renders",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Ownership",
+      "name": "settingsOs created",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Ownership",
+      "name": "Seeded team users",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Architecture",
+      "name": "SETTINGS_ARCHITECTURE present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Architecture",
+      "name": "Rule #23 in engineering rules",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "overview",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "business",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "team",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "billing",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "integrations",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "notifications",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "branding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "ai",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "security",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "permissions",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Business",
+      "name": "Name saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "settings.updated published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Team",
+      "name": "Invitation created",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Team",
+      "name": "User added",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Team",
+      "name": "Mirrors S.team",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "settings.team.invited published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Billing",
+      "name": "Plan saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Integrations",
+      "name": "Toggle OS status",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "settings.integration.toggled published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Integrations",
+      "name": "Webhook added",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Notifications",
+      "name": "SMS off saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Branding",
+      "name": "Accent saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "AI",
+      "name": "Tone saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Security",
+      "name": "MFA enabled",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "settings.security.audited published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Security",
+      "name": "API key created",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Permissions",
+      "name": "Custom permission added",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Permissions",
+      "name": "Module access saveable",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 23",
+      "name": "Purges customers copy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 23",
+      "name": "Purges payments copy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 23",
+      "name": "Purges jobs copy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 23",
+      "name": "Purges campaigns copy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 15",
+      "name": "Owns settingsOs",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 23",
+      "name": "Config-only guard",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Brand",
+      "name": "Hubly wordmark",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Design System",
+      "name": "Uses HublyDS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-business-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-team-invite",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-billing-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-integration-toggle",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-webhook-add",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-notifications-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-branding-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-ai-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-security-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-api-create",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-perm-custom-add",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-go-ask",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Empty States",
+      "name": "Empty helpers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Error States",
+      "name": "Retry markup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive CSS",
+      "name": "Settings layout",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Mount",
+      "name": "jos-settings-root in hubly.html",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Validator",
+      "name": "check-customer-journey-os",
+      "ok": true,
+      "detail": "PASS in 40ms"
+    },
+    {
+      "section": "CMV",
+      "name": "Locked modules incl. Ask Hubly",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Console",
+      "name": "Console errors = 0",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "section": "Responsive",
+      "name": "Desktop",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive",
+      "name": "Tablet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive",
+      "name": "Mobile",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

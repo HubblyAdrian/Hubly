@@ -62,7 +62,9 @@ Ask Hubly is the intelligence layer on top of Operate — not just another page.
 - [x] CMV incl. Reports ✅  
 
 ### Definition of Done
-- [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳ (awaiting approval)  
+- [x] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ✅  
+
+**Do not modify Ask Hubly unless:** bug fix · Stage 2 AI capabilities · explicit module reopen.
 
 ---
 

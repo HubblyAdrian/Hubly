@@ -170,6 +170,8 @@ const money = mount("v-money", app);
 mount("jos-revenue-root", money);
 const reports = mount("v-reports", app);
 mount("jos-reports-root", reports);
+const ask = mount("v-ask", app);
+mount("jos-ask-root", ask);
 mount("bar-title", document.body);
 mount("bar-sub", document.body);
 mount("nav-leads-badge", document.body);
@@ -331,6 +333,14 @@ try {
   ok("📊 Reports still works", /jos-rpt|Reports|Dashboard|Rule #21/i.test(rptHtml) && rptHtml.length > 200, "len=" + rptHtml.length);
 } catch (e) {
   ok("📊 Reports still works", false, String(e.message || e));
+}
+
+try {
+  H.renderAskHubly();
+  const ahHtml = document.getElementById("jos-ask-root").innerHTML;
+  ok("✨ Ask Hubly still works", /jos-ah|Ask Hubly|Rule #22|Conversation/i.test(ahHtml) && ahHtml.length > 200, "len=" + ahHtml.length);
+} catch (e) {
+  ok("✨ Ask Hubly still works", false, String(e.message || e));
 }
 
 console.warn = _warn;
