@@ -1,0 +1,321 @@
+{
+  "accepted": true,
+  "consoleErrors": 0,
+  "validatorPass": true,
+  "cmvPass": true,
+  "desktopOk": true,
+  "tabletOk": true,
+  "mobileOk": true,
+  "eventLog": [
+    "report.generated",
+    "report.generated"
+  ],
+  "results": [
+    {
+      "section": "Events",
+      "name": "HublyEvents loaded",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Header",
+      "name": "Page renders",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Ownership",
+      "name": "reportsOs created",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Ownership",
+      "name": "Seeded dashboards",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 21",
+      "name": "No payments array",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 21",
+      "name": "No customers array",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 21",
+      "name": "No jobs array",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Architecture",
+      "name": "PLATFORM_READINESS present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Architecture",
+      "name": "Rule #21 in engineering rules",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "overview",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "dashboards",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "definitions",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "layouts",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "scheduled",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "forecasts",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "sources",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Aggregates",
+      "name": "Reads Revenue owner",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Dashboards",
+      "name": "Dashboard saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Definitions",
+      "name": "Definition saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Layouts",
+      "name": "Layout saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Scheduled",
+      "name": "Schedule saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Forecasts",
+      "name": "Forecast saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Forecasts",
+      "name": "Forecast run",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "report.generated published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Overview",
+      "name": "Refresh aggregates",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "E2E Journey",
+      "name": "Deep-link Revenue",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 21",
+      "name": "Purges payments copy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 21",
+      "name": "Purges customers copy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 15",
+      "name": "Owns reportsOs",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 21",
+      "name": "Deletes forbidden keys",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Design System",
+      "name": "Uses HublyDS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rpt-dash-open",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rpt-dash-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rpt-def-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rpt-layout-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rpt-sched-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rpt-forecast-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rpt-forecast-run",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rpt-refresh",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rpt-go-money",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "rpt-go-mem",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Empty States",
+      "name": "Empty helpers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Error States",
+      "name": "Retry markup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive CSS",
+      "name": "Reports layout",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Mount",
+      "name": "jos-reports-root in hubly.html",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Validator",
+      "name": "check-customer-journey-os",
+      "ok": true,
+      "detail": "PASS in 36ms"
+    },
+    {
+      "section": "CMV",
+      "name": "Locked modules incl. Revenue",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Console",
+      "name": "Console errors = 0",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "section": "Responsive",
+      "name": "Desktop",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive",
+      "name": "Tablet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive",
+      "name": "Mobile",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

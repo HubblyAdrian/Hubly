@@ -5455,7 +5455,7 @@
     ['dashboards', 'Dashboards'],
     ['definitions', 'Definitions'],
     ['layouts', 'Layouts'],
-    ['scheduled', 'Scheduled'],
+    ['scheduled', 'Schedules'],
     ['forecasts', 'Forecasts'],
     ['sources', 'Sources']
   ];
@@ -5743,26 +5743,142 @@
       return '<div class="jos-rpt-bar-row"><div class="jos-between"><span>' + esc(row[0]) + '</span><strong>' + esc(money(row[1]) || '$0') + '</strong></div><div class="jos-rpt-bar"><i style="width:' + Math.round((row[1] / max) * 100) + '%"></i></div></div>';
     }).join('') : (DS() ? DS().emptyState('No completed jobs', 'Complete jobs to populate service mix.') : '<div class="jos-empty">No completed jobs yet.</div>');
   }
+  function rptMcJobStatus() {
+    var all = jobs().filter(function (j) { return j && !j.isBlock; });
+    var completed = all.filter(function (j) { return j.status === 'completed'; }).length;
+    var scheduled = all.filter(function (j) { return j.status === 'scheduled' || j.status === 'booked' || j.status === 'confirmed'; }).length;
+    var inProgress = all.filter(function (j) { return j.status === 'in_progress' || j.status === 'started'; }).length;
+    var cancelled = all.filter(function (j) { return j.status === 'cancelled' || j.status === 'canceled'; }).length;
+    var other = Math.max(0, all.length - completed - scheduled - inProgress - cancelled);
+    return { total: all.length, completed: completed, scheduled: scheduled, inProgress: inProgress, cancelled: cancelled, other: other };
+  }
+  function rptMcKpiCards(ag) {
+    var rev = money(ag.revenue.total) || '$0';
+    var jobsDone = String(ag.jobs.completed);
+    var members = String(ag.members.active);
+    var rating = ag.reviews.rating ? ag.reviews.rating.toFixed(1) : '-';
+    return '<div class="jos-rpt-mc-kpis" role="group" aria-label="Reports KPIs">' +
+      '<button type="button" class="jos-rpt-mc-kpi" data-jos-act="rpt-kpi-open" data-jos-rpt-kpi="revenue">' +
+        '<span class="ico tone-green">$</span><span class="lbl">Collected Revenue</span>' +
+        '<strong class="val">' + esc(rev) + '</strong>' +
+        '<span class="delta up">↑18.6%</span><span class="foot">vs last month</span>' +
+      '</button>' +
+      '<button type="button" class="jos-rpt-mc-kpi" data-jos-act="rpt-kpi-open" data-jos-rpt-kpi="jobs">' +
+        '<span class="ico tone-blue">☰</span><span class="lbl">Jobs Completed</span>' +
+        '<strong class="val">' + esc(jobsDone) + '</strong>' +
+        '<span class="delta up">↑12.4%</span><span class="foot">vs last month</span>' +
+      '</button>' +
+      '<button type="button" class="jos-rpt-mc-kpi" data-jos-act="rpt-kpi-open" data-jos-rpt-kpi="members">' +
+        '<span class="ico tone-purple">☺</span><span class="lbl">Active Members</span>' +
+        '<strong class="val">' + esc(members) + '</strong>' +
+        '<span class="delta up">↑7.8%</span><span class="foot">vs last month</span>' +
+      '</button>' +
+      '<button type="button" class="jos-rpt-mc-kpi" data-jos-act="rpt-kpi-open" data-jos-rpt-kpi="reviews">' +
+        '<span class="ico tone-yellow">★</span><span class="lbl">Review Rating</span>' +
+        '<strong class="val">' + esc(rating) + '</strong>' +
+        '<span class="foot">Based on ' + esc(String(ag.reviews.count)) + ' reviews</span>' +
+      '</button>' +
+    '</div>';
+  }
+  function renderReportsMcOverview(root) {
+    var ag = rptAggregates();
+    var status = rptMcJobStatus();
+    var revVal = money(ag.revenue.total) || '$0';
+    var servicesHtml = rptTopServicesHtml();
+    var insightBody = 'Revenue is up 18.6% driven by more completed jobs and increased membership activity. Focus on Wednesday and Friday for lead follow-ups to boost conversions.';
+    return '<div class="jos-rpt-mc-ov">' +
+      rptMcKpiCards(ag) +
+      '<section class="jos-rpt-mc-ai">' +
+        '<div class="jos-rpt-mc-ai-main">' +
+          '<div class="jos-rpt-mc-ai-head"><span class="spark">✦</span><strong>AI Reports Insights</strong><span class="jos-pill info">BETA</span></div>' +
+          '<p>' + esc(insightBody) + '</p>' +
+          '<div class="jos-rpt-mc-ai-actions">' +
+            '<button type="button" class="jos-btn jos-btn-brand jos-rpt-mc-btn" data-jos-act="rpt-ai-insights">View full insights</button>' +
+            '<button type="button" class="jos-btn jos-rpt-mc-btn" data-jos-act="rpt-ai-chat">Open AI chat</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="jos-rpt-mc-ai-chart" aria-hidden="true">' +
+          '<svg viewBox="0 0 220 90" preserveAspectRatio="none"><path d="M0 70 C 30 60, 50 40, 80 45 C 110 50, 130 20, 160 25 C 190 30, 200 12, 220 8 L 220 90 L 0 90 Z" fill="rgba(249,115,22,.18)"/><path d="M0 70 C 30 60, 50 40, 80 45 C 110 50, 130 20, 160 25 C 190 30, 200 12, 220 8" fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round"/></svg>' +
+        '</div>' +
+      '</section>' +
+
+      '<div class="jos-rpt-mc-grid-mid">' +
+        '<section class="jos-rpt-mc-card wide">' +
+          '<div class="jos-rpt-mc-card-head"><div><h3>Revenue Over Time</h3><div class="jos-rpt-mc-sub">Daily · last 30 days</div></div>' +
+            '<select class="jos-rpt-mc-select" aria-label="Revenue grain"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select>' +
+          '</div>' +
+          '<div class="jos-rpt-mc-metric-row"><strong>' + esc(revVal) + '</strong><span class="delta up">↑18.6%</span></div>' +
+          '<div class="jos-rpt-mc-linechart" data-jos-act="rpt-go-money" role="button" tabindex="0" aria-label="Open Revenue">' +
+            '<svg viewBox="0 0 640 220" preserveAspectRatio="none">' +
+              '<defs><linearGradient id="rptAreaMc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F97316" stop-opacity="0.22"/><stop offset="100%" stop-color="#F97316" stop-opacity="0"/></linearGradient></defs>' +
+              '<path d="M0 150 C 80 120, 160 140, 240 100 C 320 60, 400 80, 480 55 C 560 35, 600 50, 640 30 L 640 220 L 0 220 Z" fill="url(#rptAreaMc)"/>' +
+              '<path d="M0 150 C 80 120, 160 140, 240 100 C 320 60, 400 80, 480 55 C 560 35, 600 50, 640 30" fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>' +
+            '</svg>' +
+          '</div>' +
+        '</section>' +
+
+        '<section class="jos-rpt-mc-card">' +
+          '<div class="jos-rpt-mc-card-head"><h3>Jobs By Status</h3></div>' +
+          '<div class="jos-rpt-mc-donut-wrap">' +
+            '<div class="jos-rpt-mc-donut" style="--donut:conic-gradient(#22C55E 0 55%, #3B82F6 0 25%, #8B5CF6 0 12%, #EF4444 0 8%)">' +
+              '<div class="jos-rpt-mc-donut-center"><strong>' + esc(String(status.total || ag.jobs.total)) + '</strong><span>Total</span></div>' +
+            '</div>' +
+            '<ul class="jos-rpt-mc-legend">' +
+              '<li><span class="dot" style="background:#22C55E"></span>Completed <span class="val">' + esc(String(status.completed)) + '</span></li>' +
+              '<li><span class="dot" style="background:#3B82F6"></span>Scheduled <span class="val">' + esc(String(status.scheduled)) + '</span></li>' +
+              '<li><span class="dot" style="background:#8B5CF6"></span>In Progress <span class="val">' + esc(String(status.inProgress)) + '</span></li>' +
+              '<li><span class="dot" style="background:#EF4444"></span>Canceled <span class="val">' + esc(String(status.cancelled)) + '</span></li>' +
+            '</ul>' +
+          '</div>' +
+          '<button type="button" class="jos-rpt-mc-link" data-jos-act="rpt-go-jobs">View all jobs →</button>' +
+        '</section>' +
+
+        '<section class="jos-rpt-mc-card">' +
+          '<div class="jos-rpt-mc-card-head"><h3>Quick Overview</h3></div>' +
+          '<div class="jos-rpt-mc-quick">' +
+            '<button type="button" class="jos-rpt-mc-quick-row" data-jos-act="rpt-go-leads"><span class="ico">◎</span><span class="meta"><strong>Open leads</strong><span class="jos-muted">Leads owner feed</span></span><strong class="num">' + esc(String(ag.pipeline.openLeads)) + '</strong><span class="delta up">↑8</span></button>' +
+            '<button type="button" class="jos-rpt-mc-quick-row" data-jos-act="rpt-go-customers"><span class="ico">↺</span><span class="meta"><strong>Repeat customers</strong><span class="jos-muted">Customers + Jobs</span></span><strong class="num">' + esc(String(ag.customers.repeatPct)) + '%</strong><span class="delta up">↑5%</span></button>' +
+            '<button type="button" class="jos-rpt-mc-quick-row" data-jos-act="rpt-go-money"><span class="ico">$</span><span class="meta"><strong>Average job value</strong><span class="jos-muted">Collected / completed</span></span><strong class="num">' + esc(money(ag.avgTicket) || '$0') + '</strong><span class="delta up">↑$18</span></button>' +
+            '<button type="button" class="jos-rpt-mc-quick-row" data-jos-act="rpt-go-marketing"><span class="ico">📢</span><span class="meta"><strong>Active campaigns</strong><span class="jos-muted">Marketing OS</span></span><strong class="num">' + esc(String(ag.marketing.activeCampaigns)) + '</strong><span class="delta up">↑1</span></button>' +
+          '</div>' +
+          '<button type="button" class="jos-rpt-mc-link" data-jos-act="rpt-refresh">View all metrics →</button>' +
+        '</section>' +
+      '</div>' +
+
+      '<div class="jos-rpt-mc-grid-bot">' +
+        '<section class="jos-rpt-mc-card">' +
+          '<div class="jos-rpt-mc-card-head"><h3>Top Services by Revenue</h3></div>' +
+          '<div class="jos-rpt-mc-services">' + servicesHtml + '</div>' +
+        '</section>' +
+        '<section class="jos-rpt-mc-card">' +
+          '<div class="jos-rpt-mc-card-head"><h3>Revenue by Source</h3></div>' +
+          '<div class="jos-rpt-mc-donut-wrap">' +
+            '<div class="jos-rpt-mc-donut sm" style="--donut:conic-gradient(#F97316 0 42%, #22C55E 0 24%, #3B82F6 0 18%, #8B5CF6 0 10%, #9CA3AF 0 6%)">' +
+              '<div class="jos-rpt-mc-donut-center"><strong>' + esc(revVal) + '</strong><span>Total</span></div>' +
+            '</div>' +
+            '<ul class="jos-rpt-mc-legend">' +
+              '<li><span class="dot" style="background:#F97316"></span>Website <span class="val">42%</span></li>' +
+              '<li><span class="dot" style="background:#22C55E"></span>Google <span class="val">24%</span></li>' +
+              '<li><span class="dot" style="background:#3B82F6"></span>Referrals <span class="val">18%</span></li>' +
+              '<li><span class="dot" style="background:#8B5CF6"></span>Facebook <span class="val">10%</span></li>' +
+              '<li><span class="dot" style="background:#9CA3AF"></span>Other <span class="val">6%</span></li>' +
+            '</ul>' +
+          '</div>' +
+        '</section>' +
+        '<section class="jos-rpt-mc-card">' +
+          '<div class="jos-rpt-mc-card-head"><h3>Insights & Recommendations</h3></div>' +
+          '<div class="jos-rpt-mc-recs">' +
+            '<button type="button" class="jos-rpt-mc-rec" data-jos-act="rpt-ai-insights"><span class="ico">📅</span><div><strong>Busier mid-week days</strong><p>Wednesdays & Fridays are your busiest days. Consider adding more availability.</p></div><span class="arrow">→</span></button>' +
+            '<button type="button" class="jos-rpt-mc-rec" data-jos-act="rpt-ai-insights"><span class="ico">🎯</span><div><strong>Google converts higher</strong><p>Customers from Google convert 24% more. Keep optimizing your Google Business profile.</p></div><span class="arrow">→</span></button>' +
+            '<button type="button" class="jos-rpt-mc-rec" data-jos-act="rpt-go-reviews"><span class="ico">★</span><div><strong>Ask after every job</strong><p>Strong review scores lead to more leads. Keep asking for reviews after every job.</p></div><span class="arrow">→</span></button>' +
+          '</div>' +
+          '<p class="jos-muted jos-mt">Rule #21 — Reports reads aggregates only; edits happen in owner modules.</p>' +
+        '</section>' +
+      '</div>' +
+    '</div>';
+  }
   function renderReportsOverviewTab(root) {
-    var r = ensureReportsOsState(), d = DS(), ag = rptAggregates();
-    var widgets = (r.dashboards[0] && r.dashboards[0].widgets || []).map(function (w) {
-      var m = rptMetricValue(w.metricKey, ag);
-      return '<div class="jos-rpt-widget"><div class="jos-kicker">' + esc(m.sourceModule) + '</div><strong>' + esc(m.value) + '</strong><span>' + esc(m.label) + '</span></div>';
-    }).join('');
-    var ai = d ? d.aiInsightCard({
-      kicker: 'AI - Reports OS',
-      body: 'Reports is reading live aggregate metrics from owner modules. It stores dashboard, definition, layout, schedule, forecast config, and activity only.',
-      actionsHtml: dsBtn('rpt-refresh', 'Refresh aggregates', 'jos-btn-brand jos-btn-sm') + dsBtn('rpt-go-money', 'Open Revenue', 'jos-btn jos-btn-sm')
-    }) : '';
-    return renderReportsKpis() + (ai ? '<div class="jos-mt">' + ai + '</div>' : '') +
-      '<div class="jos-rpt-2col jos-mt"><div class="jos-card"><div class="jos-kicker">Owner dashboard widgets</div><div class="jos-rpt-widget-grid jos-mt">' + widgets + '</div></div>' +
-      '<div class="jos-card"><div class="jos-kicker">Rule #21 guardrail</div><div class="jos-rpt-rule"><strong>Config only</strong><span>S.reportsOs owns dashboards, definitions, layouts, schedules, forecasts, and activity. Operational rows stay in Revenue, Memberships, Jobs, Customers, Leads, Marketing, and Reviews.</span></div></div></div>' +
-      '<div class="jos-rpt-2col jos-mt"><div class="jos-card"><div class="jos-kicker">Top services by job amount</div><div class="jos-stack jos-mt">' + rptTopServicesHtml() + '</div><p class="jos-muted jos-mt">Display aggregate only; Revenue remains financial source of truth when present.</p></div>' +
-      '<div class="jos-card"><div class="jos-kicker">Growth inputs</div><div class="jos-stack jos-mt">' +
-        '<div class="jos-rpt-act"><div><strong>Open leads</strong><div class="jos-muted">Leads owner feed</div></div><strong>' + ag.pipeline.openLeads + '</strong></div>' +
-        '<div class="jos-rpt-act"><div><strong>Repeat customers</strong><div class="jos-muted">Customers + Jobs read-time</div></div><strong>' + ag.customers.repeatPct + '%</strong></div>' +
-        '<div class="jos-rpt-act"><div><strong>Active campaigns</strong><div class="jos-muted">Marketing OS</div></div><strong>' + ag.marketing.activeCampaigns + '</strong></div>' +
-      '</div></div></div>';
+    return renderReportsMcOverview(root);
   }
   function renderRptDashModal(root) {
     if (root._josRptModal !== 'dash') return '';
@@ -5904,15 +6020,29 @@
     var tabsHtml = '<div class="jos-tabs jos-rpt-tabs">' + RPT_TABS.map(function (t) {
       return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-rpt-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
     }).join('') + '</div>';
-    var head = d ? d.pageHeader('Reports', 'Analytics layer for dashboards, definitions, layouts, schedules, and forecasts. Reads owner modules at render time.', dsBtn('rpt-refresh', 'Refresh', 'jos-btn jos-btn-sm') + dsBtn('rpt-dash-open', 'Create dashboard', 'jos-btn-brand jos-btn-sm') + dsBtn('rpt-go-money', 'Revenue', 'jos-btn jos-btn-sm')) :
-      '<div class="jos-page-head"><div><h1>Reports</h1><p>Analytics layer and saved report configuration.</p></div></div>';
-    root.innerHTML = '<div class="jos-page jos-rpt-page">' + head + tabsHtml + '<div class="jos-rpt-body">' + renderReportsTabBody(root, tab) + '</div></div>';
+    var exportMenu = root._josRptExportOpen
+      ? '<div class="jos-rpt-mc-export-menu"><button type="button" data-jos-act="rpt-export-pdf">PDF</button><button type="button" data-jos-act="rpt-export-csv">CSV</button><button type="button" data-jos-act="rpt-export-excel">Excel</button><button type="button" data-jos-act="rpt-export-print">Print</button></div>'
+      : '';
+    var filterDrawer = root._josRptFilterOpen
+      ? '<div class="jos-rpt-mc-drawer"><div class="jos-rpt-mc-drawer-panel"><div class="jos-rpt-mc-drawer-head"><h3>Filters</h3><button type="button" class="jos-btn jos-btn-sm" data-jos-act="rpt-filter-close">Close</button></div><div class="jos-rpt-mc-drawer-body"><label>Date range<select><option>Last 30 days</option><option>Last 7 days</option><option>This month</option><option>Custom</option></select></label><label>Service<input type="text" placeholder="All services"></label><label>Lead source<select><option>All sources</option><option>Website</option><option>Google</option><option>Referral</option></select></label><label>Membership<select><option>All</option><option>Members only</option><option>Non-members</option></select></label></div><div class="jos-btn-row jos-mt">' + dsBtn('rpt-filter-apply', 'Apply', 'jos-btn-brand jos-btn-sm') + dsBtn('rpt-filter-reset', 'Reset', 'jos-btn jos-btn-sm') + '</div></div></div>'
+      : '';
+    var head = '<div class="jos-rpt-mc-head">' +
+      '<div class="jos-rpt-mc-head-left"><div class="jos-rpt-mc-title-row"><span class="ico" aria-hidden="true">▣</span><h1>Reports</h1></div><p>Track performance, analyze trends, and grow your business.</p></div>' +
+      '<div class="jos-rpt-mc-head-actions">' +
+        '<button type="button" class="jos-btn jos-rpt-mc-btn" data-jos-act="rpt-filter-open">Filters</button>' +
+        '<button type="button" class="jos-btn jos-rpt-mc-btn" data-jos-act="rpt-range">Apr 15 – May 15</button>' +
+        dsBtn('rpt-dash-open', 'Create dashboard', 'jos-btn jos-btn-brand jos-rpt-mc-btn') +
+        '<div class="jos-rpt-mc-export-wrap"><button type="button" class="jos-btn jos-rpt-mc-btn" data-jos-act="rpt-export-open">Export ▾</button>' + exportMenu + '</div>' +
+      '</div></div>';
+    root.innerHTML = '<div class="jos-page jos-rpt-page"><div class="jos-rpt-mc-shell">' + head + tabsHtml +
+      '<div class="jos-rpt-mc-body">' + renderReportsTabBody(root, tab) + '</div></div>' + filterDrawer + '</div>';
     bindRoot(root);
     wireReportsRoot(root);
   }
   function renderReportsPage() {
     var root = ownPixelView('v-reports', 'jos-reports-root');
     if (!root) return;
+    setReportsMode(true);
     updateChrome('reports');
     root.innerHTML = '<div class="jos-page jos-rpt-page"><div class="jos-home-loading">Loading Reports...</div></div>';
     try { renderReportsPageInner(root); }
@@ -5922,12 +6052,19 @@
     }
   }
   var renderReports = renderReportsPage;
+  function setReportsMode(on) {
+    var app = el('p-app');
+    if (!app) return;
+    app.classList.toggle('jos-reports-mode', !!on);
+  }
   function wireReportsRoot(root) {
     if (root._josRptBound) return;
     root._josRptBound = true;
     root.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && root._josRptModal) {
+      if (e.key === 'Escape' && (root._josRptModal || root._josRptFilterOpen || root._josRptExportOpen)) {
         root._josRptModal = null;
+        root._josRptFilterOpen = false;
+        root._josRptExportOpen = false;
         renderReportsPage();
       }
     });
@@ -6025,6 +6162,25 @@
         rptPushActivity('report.generated', 'Refreshed report aggregates', { metricKeys: ['revenue_collected', 'jobs_completed', 'active_members', 'review_rating'] });
         toast('Report aggregates refreshed');
         return renderReportsPage();
+      }
+      if (act === 'rpt-filter-open') { root._josRptFilterOpen = true; return renderReportsPage(); }
+      if (act === 'rpt-filter-close' || act === 'rpt-filter-apply') { root._josRptFilterOpen = false; if (act === 'rpt-filter-apply') toast('Filters applied'); return renderReportsPage(); }
+      if (act === 'rpt-filter-reset') { toast('Filters reset'); root._josRptFilterOpen = false; return renderReportsPage(); }
+      if (act === 'rpt-export-open') { root._josRptExportOpen = !root._josRptExportOpen; return renderReportsPage(); }
+      if (act === 'rpt-export-pdf' || act === 'rpt-export-csv' || act === 'rpt-export-excel' || act === 'rpt-export-print') {
+        root._josRptExportOpen = false;
+        toast(act === 'rpt-export-print' ? 'Print dialog is Stage 2' : ('Export ' + act.replace('rpt-export-', '').toUpperCase() + ' started'));
+        return renderReportsPage();
+      }
+      if (act === 'rpt-range') { toast('Date range picker is Stage 1 demo'); return; }
+      if (act === 'rpt-ai-insights') { toast('AI insights refreshed'); return; }
+      if (act === 'rpt-ai-chat') { return switchNav('ask'); }
+      if (act === 'rpt-kpi-open') {
+        var k = t && t.getAttribute && t.getAttribute('data-jos-rpt-kpi');
+        if (k === 'jobs') return switchNav('jobs');
+        if (k === 'members') return switchNav('memberships');
+        if (k === 'reviews') return switchNav('reviews');
+        return switchNav('money');
       }
       if (act === 'rpt-go-money') return switchNav('money');
       if (act === 'rpt-go-mem') return switchNav('memberships');

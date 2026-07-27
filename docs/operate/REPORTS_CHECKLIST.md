@@ -1,6 +1,6 @@
 # Module 12 — 📊 Reports
 
-**Status:** 🔒 OS locked · Stage 1 COMPLETE · Stage 2 ⏸ Deferred  
+**Status:** 🔓 Explicit reopen (Mission Control dashboard) · Stage 1 COMPLETE · Stage 2 ⏸ Deferred  
 **PR:** [#255](https://github.com/HubblyAdrian/Hubly/pull/255) (merged)  
 **Plan:** [REPORTS_PLAN.md](./REPORTS_PLAN.md)  
 **Platform:** [PLATFORM_READINESS.md](./PLATFORM_READINESS.md)  
