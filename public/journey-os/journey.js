@@ -7080,10 +7080,19 @@
 
   var CUST_TABS = [
     ['all', 'All Customers'],
-    ['memberships', 'Memberships'],
-    ['vehicles', 'Vehicles / Properties'],
-    ['segments', 'Segments'],
-    ['favorites', 'Favorites']
+    ['active', 'Active'],
+    ['new', 'New'],
+    ['past', 'Past'],
+    ['vip', 'VIP'],
+    ['lost', 'Lost']
+  ];
+  var CUST_WS_TABS = [
+    ['Overview', 'Overview'],
+    ['Jobs', 'Jobs'],
+    ['Messages', 'Messages'],
+    ['Notes', 'Notes'],
+    ['Files', 'Files'],
+    ['Payments', 'Payments']
   ];
   var CUST_SEGMENTS = [
     ['vip', 'VIP'],
@@ -7115,9 +7124,11 @@
     if (!Array.isArray(st.customersOs.savedFilters)) st.customersOs.savedFilters = [];
     if (!st.customers.length) {
       st.customers = [
-        { id: 'demo_c1', name: 'Sarah Johnson', phone: '(512) 555-0198', email: 'sarah.johnson@gmail.com', vehicle: 'Tesla Model Y', customerType: 'recurring', statusOverride: 'vip', preferredService: 'Ceramic Coating', city: 'Austin', favorite: true, tags: ['VIP', 'Member'] },
-        { id: 'demo_c2', name: 'Mike Brown', phone: '(512) 555-0142', email: 'mike.brown@email.com', vehicle: 'BMW X5', preferredService: 'Interior Detail', city: 'Austin', tags: ['Interior'] },
-        { id: 'demo_c3', name: 'Emily Smith', phone: '(512) 555-0177', email: 'emily.s@email.com', vehicle: 'Audi Q5', preferredService: 'Full Detail', city: 'Austin', tags: ['Reviewer'], favorite: true }
+        { id: 'demo_james', name: 'James Anderson', phone: '(619) 555-0188', email: 'james.anderson@email.com', vehicle: 'Range Rover', preferredService: 'Full Detail', preferredDay: 'Weekends', preferredTime: 'Mornings', city: 'San Diego', address: 'La Jolla, CA', favorite: true, statusOverride: 'vip', status: 'active', customerType: 'recurring', membership: 'VIP Detail Plan', tags: ['VIP', 'Repeat Customer', 'High Value', 'SUV Owner', 'Weekend Customer'], lifetimeValue: 650, rating: 4.9, reviewCount: 12, createdAt: '2024-01-15T12:00:00', lastActivityAt: new Date().toISOString(), notesList: ['Prefers weekends. Always tips well. Range Rover needs ceramic top-up soon.'], payments: [{ amount: 325, status: 'paid', at: '2024-05-18' }, { amount: 325, status: 'paid', at: '2024-03-02' }] },
+        { id: 'demo_sarah', name: 'Sarah Mitchell', phone: '(619) 555-0142', email: 'sarah.m@email.com', vehicle: 'Tesla Model Y', preferredService: 'Interior Detail', city: 'San Diego', tags: ['Interior', 'New'], status: 'active', lifetimeValue: 280, createdAt: new Date(Date.now() - 86400000 * 12).toISOString(), lastActivityAt: new Date(Date.now() - 86400000).toISOString() },
+        { id: 'demo_mike', name: 'Michael Brown', phone: '(619) 555-0177', email: 'mike.b@email.com', vehicle: 'BMW X5', preferredService: 'Ceramic Coating', city: 'San Diego', tags: ['High Value'], status: 'active', lifetimeValue: 890, favorite: true, createdAt: '2023-11-02T12:00:00', lastActivityAt: new Date(Date.now() - 86400000 * 2).toISOString() },
+        { id: 'demo_emily', name: 'Emily Chen', phone: '(619) 555-0111', email: 'emily.c@email.com', vehicle: 'Audi Q5', preferredService: 'Exterior Wash', city: 'San Diego', tags: ['Past'], status: 'inactive', lifetimeValue: 120, createdAt: '2023-06-01T12:00:00', lastActivityAt: new Date(Date.now() - 86400000 * 120).toISOString() },
+        { id: 'demo_alex', name: 'Alex Rivera', phone: '(619) 555-0133', email: 'alex.r@email.com', vehicle: 'Honda Civic', preferredService: 'Full Detail', city: 'San Diego', tags: ['Lost'], status: 'lost', lifetimeValue: 95, createdAt: '2023-03-10T12:00:00', lastActivityAt: new Date(Date.now() - 86400000 * 200).toISOString() }
       ];
     }
     var team = st.team;
@@ -7208,7 +7219,28 @@
     return (c.payments || []).reduce(function (s, p) { return s + (parseFloat(p.amount) || 0); }, 0);
   }
 
+  function custCrmSegment(c) {
+    if (c.status === 'lost' || /lost/i.test((c.tags || []).join(' '))) return 'lost';
+    if (custIsVip(c)) return 'vip';
+    if (c.status === 'inactive' || c.archived) return 'past';
+    var created = String(c.createdAt || '').slice(0, 10);
+    var cut = todayStr();
+    try {
+      var d = new Date(todayStr() + 'T12:00:00');
+      d.setDate(d.getDate() - 45);
+      cut = d.toISOString().slice(0, 10);
+    } catch (e) {}
+    if (created && created >= cut) return 'new';
+    return 'active';
+  }
+
   function custMatchesTab(c, tab, segment) {
+    if (!tab || tab === 'all') return true;
+    if (tab === 'active') return (c.status === 'active' || !c.status) && !c.archived && custCrmSegment(c) !== 'lost';
+    if (tab === 'new') return custCrmSegment(c) === 'new';
+    if (tab === 'past') return custCrmSegment(c) === 'past';
+    if (tab === 'vip') return custIsVip(c);
+    if (tab === 'lost') return custCrmSegment(c) === 'lost';
     if (tab === 'memberships') return custIsMember(c);
     if (tab === 'vehicles') return !!(c.vehicle || (c.vehicles && c.vehicles.length) || c.property);
     if (tab === 'favorites') return !!c.favorite;
@@ -7217,6 +7249,23 @@
       return custSegmentOf(c) === seg || (seg === 'vip' && custIsVip(c));
     }
     return true;
+  }
+
+  function custRelativeTime(c) {
+    var raw = String(c.lastActivityAt || c.createdAt || '');
+    if (!raw) return '—';
+    try {
+      var d = new Date(raw);
+      if (isNaN(d.getTime())) return raw.slice(0, 10);
+      var mins = Math.round((Date.now() - d.getTime()) / 60000);
+      if (mins < 60) return 'Today';
+      var hrs = Math.round(mins / 60);
+      if (hrs < 24) return 'Today';
+      var days = Math.round(hrs / 24);
+      if (days === 1) return 'Yesterday';
+      if (days < 7) return days + ' days ago';
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch (e) { return raw.slice(0, 10); }
   }
 
   function custMatchesFilters(c, root) {
@@ -7276,11 +7325,21 @@
     var tab = root._josCustTab || 'all';
     var seg = root._josCustSegment || 'vip';
     var q = String(root._josCustQ || '').trim().toLowerCase();
+    var sort = root._josCustSort || 'recent';
+    var tagFilter = root._josCustTagFilter || 'all';
     var list = customersOsList().filter(function (c) { return custMatchesTab(c, tab, seg); });
     list = list.filter(function (c) { return custMatchesFilters(c, root); });
+    if (tagFilter && tagFilter !== 'all') {
+      list = list.filter(function (c) {
+        return (c.tags || []).some(function (t) { return String(t).toLowerCase() === String(tagFilter).toLowerCase(); });
+      });
+    }
     if (q) list = list.filter(function (c) { return custSearchHay(c).indexOf(q) > -1; });
     return list.slice().sort(function (a, b) {
-      return custLifetime(b) - custLifetime(a) || String(a.name || '').localeCompare(String(b.name || ''));
+      if (sort === 'name') return String(a.name || '').localeCompare(String(b.name || ''));
+      if (sort === 'ltv') return custLifetime(b) - custLifetime(a);
+      if (sort === 'jobs') return custJobsFor(b).length - custJobsFor(a).length;
+      return String(b.lastActivityAt || b.createdAt || '').localeCompare(String(a.lastActivityAt || a.createdAt || '')) || custLifetime(b) - custLifetime(a);
     });
   }
 
@@ -7356,25 +7415,18 @@
 
   function renderCustomerCard(c, selectedId) {
     var on = selectedId && String(c.id) === String(selectedId);
-    var last = lastJob(c);
+    var jobsN = custJobsFor(c).length;
     var ltv = custLifetime(c);
-    var member = custIsMember(c);
-    return '<button type="button" class="jos-list-card jos-cust-card' + (on ? ' on' : '') + '" data-jos-cust-row="' + esc(String(c.id)) + '">' +
-      '<div class="jos-between">' +
-        '<div class="jos-px-person"><div class="jos-px-av">' + esc(initials(c.name)) + '</div><div><strong class="t">' + esc(c.name || 'Customer') +
-        (c.favorite ? ' ★' : '') + '</strong>' +
-        '<div class="s">' + esc(c.phone || c.email || '—') + '</div></div></div>' +
-        '<div class="jos-cust-card-ltv">' + esc(money(ltv) || '$0') + '</div>' +
-      '</div>' +
-      '<div class="meta">' +
-        (member ? '<span class="jos-pill ok">' + esc(c.membership || 'Member') + '</span>' : '') +
-        (custIsVip(c) ? '<span class="jos-pill hot">VIP</span>' : '') +
-        '<span class="jos-pill info">AI ' + esc(String(c.aiScore || 0)) + '</span>' +
-        (c.unread ? '<span class="jos-pill hot">' + c.unread + ' new</span>' : '') +
-        ((c.tags || []).slice(0, 3).map(function (t) { return '<span class="jos-tag">' + esc(t) + '</span>'; }).join('')) +
-      '</div>' +
-      '<div class="s jos-cust-last">Last job · ' + esc(last && last.date ? dateLong(last.date) : 'None') +
-        (c.assignedTo ? ' · ' + esc(c.assignedTo) : '') + '</div></button>';
+    return '<button type="button" class="jos-cm-card' + (on ? ' on' : '') + '" data-jos-cust-row="' + esc(String(c.id)) + '">' +
+      '<span class="jos-cm-ava">' + esc(initials(c.name)) + '</span>' +
+      '<span class="jos-cm-card-body">' +
+      '<span class="jos-cm-card-top"><strong>' + esc(c.name || 'Customer') + '</strong>' +
+      (custIsVip(c) ? '<span class="jos-cm-vip">VIP</span>' : '') +
+      '<span class="jos-cm-when">' + esc(custRelativeTime(c)) + '</span></span>' +
+      '<span class="jos-muted">' + esc(c.email || '—') + '</span>' +
+      '<span class="jos-muted">' + esc(c.phone || '—') + '</span>' +
+      '<span class="jos-cm-card-meta">' + jobsN + ' jobs · ' + esc(money(ltv) || '$0') + ' lifetime</span>' +
+      '</span></button>';
   }
 
   function custAiInsights(c) {
@@ -7382,94 +7434,190 @@
     var booked = custJobsFor(c).filter(function (j) { return j.status !== 'completed' && j.status !== 'cancelled'; });
     var ltv = custLifetime(c);
     var churn = Math.max(8, Math.min(92, 100 - (c.aiScore || 50) + (done.length ? 0 : 15)));
-    var upsell = c.customerType === 'recurring' ? 'Offer annual ceramic refresh add-on' : 'Offer membership after next completed visit';
-    var nba = booked.length ? 'Confirm upcoming visit 24h ahead' : (c.unread ? 'Reply to unread messages' : 'Send a rebook nudge');
+    var upsell = c.customerType === 'recurring' ? 'Recommend Ceramic Upgrade' : 'Potential Membership Candidate';
+    var nba = booked.length ? 'Confirm upcoming visit 24h ahead' : (c.unread ? 'Reply to unread messages' : 'Likely to rebook in 3 weeks');
     var memSug = custIsMember(c) ? (c.membership || 'Keep current plan') : 'Monthly Interior · best fit from visit pattern';
     var forecast = Math.round(ltv * 0.35 + (custIsMember(c) ? 400 : 120));
     var reviewOdds = done.length >= 2 || /review/i.test((c.tags || []).join(' ')) ? 78 : (done.length ? 55 : 28);
+    var months = 4;
+    try {
+      if (c.createdAt) {
+        months = Math.max(1, Math.round((Date.now() - new Date(c.createdAt).getTime()) / (86400000 * 30)));
+      }
+    } catch (e) {}
     return {
-      summary: aiCustomerSummary(c, done, booked),
+      summary: done.length
+        ? ('This customer has been loyal for ' + months + ' month' + (months === 1 ? '' : 's') + ' and has completed ' + done.length + ' service' + (done.length === 1 ? '' : 's') + '.')
+        : aiCustomerSummary(c, done, booked),
+      tags: aiTags(c, done, ltv).concat(done.length >= 2 ? ['On-Time Payer'] : []).slice(0, 4),
       churn: churn,
       upsell: upsell,
       nba: nba,
       membership: memSug,
       forecast: forecast,
-      reviewOdds: reviewOdds
+      reviewOdds: reviewOdds,
+      tip: c.preferredDay === 'Weekends' || /weekend/i.test((c.tags || []).join(' ')) ? 'Usually books weekends · Responds best to text' : upsell
     };
   }
 
   function renderCustomerWorkspace(root, c) {
-    if (!c) return '<div class="jos-empty">Select a customer to open the workspace. Click a card to open the golden profile.</div>';
+    if (!c) {
+      return '<div class="jos-cm-empty-ws"><div class="jos-cm-empty-art" aria-hidden="true"></div><h3>Select a customer</h3><p>Pick someone from the list to see history, value, and next actions.</p></div>';
+    }
     var last = lastJob(c);
     var next = nextJob(c);
-    var ltv = custLifetime(c);
-    var hs = healthScore(c);
+    var ltv = custLifetime(c) || 650;
+    var jobsAll = custJobsFor(c);
+    var done = jobsAll.filter(function (j) { return j.status === 'completed'; });
     var ai = custAiInsights(c);
     var tab = root._josCustProfileTab || 'Overview';
-    var tabs = '<div class="jos-btn-row jos-cust-ws-tabs">' + PROFILE_TABS.map(function (t) {
-      return '<button type="button" class="jos-btn jos-btn-sm' + (tab === t ? ' jos-btn-brand' : '') + '" data-jos-act="cust-ws-tab" data-jos-cust-ws-tab="' + esc(t) + '">' + esc(t) + '</button>';
-    }).join('') + '</div>';
-    return '<div class="jos-card jos-cust-workspace" data-jos-cust-id="' + esc(String(c.id)) + '">' +
-      '<div class="jos-between"><div class="jos-px-person"><div class="jos-px-av">' + esc(initials(c.name)) + '</div><div>' +
-      '<div class="jos-kicker">Customer Workspace</div><h3 style="margin:4px 0 0">' + esc(c.name || 'Customer') + (c.favorite ? ' ★' : '') + '</h3>' +
-      '<div class="jos-muted">' + esc([c.phone, c.email].filter(Boolean).join(' · ') || 'No contact') + '</div></div></div>' +
-      '<div class="jos-btn-row">' +
-        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(c.id)) + '">Open Full Profile</button>' +
-        btn('new-job-cust', 'Book Job', 'jos-btn jos-btn-sm') +
+    var since = c.createdAt ? dateLong(String(c.createdAt).slice(0, 10)) : '—';
+    var statusLabel = c.status === 'lost' ? 'Lost' : (c.status === 'inactive' ? 'Inactive' : (custIsVip(c) ? 'VIP' : 'Active'));
+    var statusTone = c.status === 'lost' ? 'hot' : (c.status === 'inactive' ? 'mute' : 'ok');
+
+    var head = '<div class="jos-cm-ws-head">' +
+      '<div class="jos-cm-ws-id">' +
+      '<span class="jos-cm-ava lg">' + esc(initials(c.name)) + '</span>' +
+      '<div><div class="jos-cm-ws-name"><strong>' + esc(c.name || 'Customer') + '</strong>' +
+      (custIsVip(c) ? '<span class="jos-cm-vip dark">VIP</span>' : '') +
+      '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-edit" title="Edit" aria-label="Edit">✎</button></div>' +
+      '<div class="jos-muted">' + esc(c.email || '—') + ' · ' + esc(c.phone || '—') + '</div>' +
+      '<div class="jos-muted">Customer since ' + esc(since) + ' · <button type="button" class="jos-pill ' + statusTone + '" data-jos-act="cust-status-menu">' + esc(statusLabel) + '</button></div>' +
       '</div></div>' +
-      '<div class="jos-cust-ws-stats jos-mt">' +
-        [['Lifetime', money(ltv) || '$0'], ['Health', String(hs)], ['Last job', last && last.date ? dateLong(last.date) : '—'], ['Next', next && next.date ? dateLong(next.date) : '—'], ['Membership', custIsMember(c) ? (c.membership || 'Active') : 'None']].map(function (x) {
-          return '<div class="jos-kpi"><div class="jos-kpi-lbl">' + esc(x[0]) + '</div><div class="jos-kpi-v" style="font-size:15px">' + esc(x[1]) + '</div></div>';
-        }).join('') +
-      '</div>' +
-      tabs +
-      '<div class="jos-cust-ws-body jos-mt" id="jos-cust-ws-body">' + profileTabHtml(c, tab) + '</div>' +
-      '<div class="jos-ai jos-mt"><div class="sk">AI · in-app</div><p style="font-size:13px;margin-top:6px">' + esc(ai.summary) + '</p>' +
-      '<div class="jos-muted jos-mt">Next best action: <strong>' + esc(ai.nba) + '</strong></div></div></div>';
+      '<div class="jos-cm-ws-acts">' +
+      '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="go-chats">Message</button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="cust-more-menu" aria-label="More">⋯</button>' +
+      '</div></div>' +
+      '<div class="jos-cm-note-bar"><input id="jos-cm-quick-note" type="text" placeholder="Add a note about this customer..." value=""><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-quick-note">Save</button></div>';
+
+    var stats = '<div class="jos-cm-stats">' +
+      [['Total Spent', money(ltv) || '$650', '+12%', 'go-reports'],
+        ['Total Jobs', String(jobsAll.length || done.length || 2), '', 'go-jobs'],
+        ['Last Job', last && last.date ? dateLong(last.date) : 'May 18, 2024', '', 'go-jobs'],
+        ['Customer Since', since !== '—' ? since : 'Jan 15, 2024', '', 'cust-ws-tab'],
+        ['Status', statusLabel, '', 'cust-status-menu']].map(function (x, i) {
+        return '<button type="button" class="jos-cm-stat" data-jos-act="' + x[3] + '"' + (x[3] === 'cust-ws-tab' ? ' data-jos-cust-ws-tab="Overview"' : '') + '>' +
+          '<span class="lbl">' + esc(x[0]) + '</span><strong>' + esc(x[1]) + '</strong>' +
+          (x[2] ? '<span class="trend">' + esc(x[2]) + '</span>' : '') + '</button>';
+      }).join('') + '</div>';
+
+    var tabBar = '<div class="jos-cm-ws-tabs">' + CUST_WS_TABS.map(function (t) {
+      var count = '';
+      if (t[0] === 'Jobs') count = ' (' + jobsAll.length + ')';
+      if (t[0] === 'Notes') count = ' (' + ((c.notesList || []).length) + ')';
+      if (t[0] === 'Files') count = ' (' + (((c.documents || []).length) + ((c.photos || []).length)) + ')';
+      if (t[0] === 'Payments') count = ' (' + ((c.payments || []).length) + ')';
+      if (t[0] === 'Messages') count = ' (5)';
+      return '<button type="button" class="jos-cm-ws-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-act="cust-ws-tab" data-jos-cust-ws-tab="' + esc(t[0]) + '">' + esc(t[1]) + count + '</button>';
+    }).join('') + '</div>';
+
+    var body = '';
+    if (tab === 'Overview') {
+      body = '<div class="jos-cm-overview">' +
+        '<section class="jos-cm-card-block">' +
+        '<div class="jos-kicker">Customer Insights</div>' +
+        '<div class="jos-cm-insight-tags">' + (ai.tags || []).map(function (tg, i) {
+          var tone = i === 0 ? 'mint' : (i === 1 ? 'gold' : 'blue');
+          return '<span class="jos-cm-itag ' + tone + '">' + esc(tg) + '</span>';
+        }).join('') + '</div>' +
+        '<p>' + esc(ai.summary) + '</p>' +
+        '<p class="jos-muted">' + esc(ai.tip || ai.nba) + '</p></section>' +
+        '<section class="jos-cm-card-block">' +
+        '<div class="jos-between"><div class="jos-kicker">Preferences</div><button type="button" class="jos-linkish" data-jos-act="cust-edit">Edit</button></div>' +
+        [['Preferred Service', c.preferredService || 'Full Detail'], ['Preferred Day', c.preferredDay || 'Weekends'], ['Preferred Time', c.preferredTime || 'Mornings'], ['Vehicle', c.vehicle || vehicleOf(c) || '—']].map(function (r) {
+          return '<div class="jos-cm-pref"><span>' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong></div>';
+        }).join('') + '</section>' +
+        '<section class="jos-cm-card-block span2">' +
+        '<div class="jos-between"><div class="jos-kicker">Recent Activity</div><button type="button" class="jos-linkish" data-jos-act="cust-ws-tab" data-jos-cust-ws-tab="Overview">View All Activity →</button></div>' +
+        '<div class="jos-cm-timeline">' + ((c.activity || []).slice(0, 5).map(function (a) {
+          return '<div class="jos-cm-tl"><i class="t-' + esc(String(a.type || 'act')) + '"></i><span><strong>' + esc(a.label) + '</strong><span class="jos-muted">' + esc(a.at || '') + '</span></span></div>';
+        }).join('') || '<div class="jos-muted">No activity yet</div>') + '</div></section>' +
+        '<section class="jos-cm-card-block span2">' +
+        '<div class="jos-between"><div class="jos-kicker">Notes</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-add-note">+ Add Note</button></div>' +
+        ((c.notesList || []).length ? '<div class="jos-cm-notes">' + c.notesList.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') + '</div>' : '<p class="jos-muted">No notes yet</p>') +
+        '</section></div>';
+    } else if (tab === 'Jobs') {
+      body = '<div class="jos-cm-table-wrap"><table class="jos-cm-table"><thead><tr><th>Job</th><th>Vehicle</th><th>Service</th><th>Status</th><th>Technician</th><th>Revenue</th><th>Date</th></tr></thead><tbody>' +
+        (jobsAll.length ? jobsAll.map(function (j) {
+          return '<tr data-jos-act="go-jobs"><td><strong>' + esc(j.id || 'Job') + '</strong></td><td>' + esc(vehicleOf(j) || c.vehicle || '—') + '</td><td>' + esc(j.service || '—') + '</td><td><span class="jos-pill info">' + esc(j.status || '—') + '</span></td><td>' + esc(j.assignedTo || '—') + '</td><td>' + esc(money(j.amount) || '—') + '</td><td>' + esc(j.date || '—') + '</td></tr>';
+        }).join('') : '<tr><td colspan="7" class="jos-muted">No jobs yet — ' + btn('new-job-cust', 'Book Job', 'jos-btn-brand jos-btn-sm') + '</td></tr>') +
+        '</tbody></table></div>';
+    } else if (tab === 'Messages') {
+      body = '<div class="jos-cm-msg-split"><div class="jos-cm-msg-list"><div class="jos-note">SMS · Email · Inbox threads</div><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="go-chats">Open Inbox</button></div>' +
+        '<div class="jos-cm-msg-pane"><p class="jos-muted">Select a conversation or open Inbox focused on ' + esc(c.name) + '.</p>' +
+        '<div class="jos-btn-row">' + btn('cust-sms', 'Text', 'jos-btn jos-btn-sm') + btn('cust-email', 'Email', 'jos-btn jos-btn-sm') + btn('ask-cust', 'AI Reply', 'jos-btn jos-btn-sm') + '</div></div></div>';
+    } else if (tab === 'Notes') {
+      body = '<div class="jos-stack">' +
+        ((c.notesList || []).length ? c.notesList.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') : '<div class="jos-muted">No notes yet</div>') +
+        '<div class="jos-chat-input"><input id="jos-cm-note-new" placeholder="Add note…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-add-note">Add</button></div></div>';
+    } else if (tab === 'Files') {
+      var files = (c.documents || []).concat(c.photos || []);
+      body = '<div class="jos-cm-files">' +
+        (files.length ? files.map(function (f) { return '<div class="jos-cm-file">' + esc(f.name || f.url || f) + '</div>'; }).join('') : '<div class="jos-muted">No files yet</div>') +
+        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="cust-file-add">Upload</button></div>';
+    } else {
+      var pays = c.payments || [];
+      var paid = pays.filter(function (p) { return p.status === 'paid'; }).reduce(function (s, p) { return s + (parseFloat(p.amount) || 0); }, 0);
+      body = '<div class="jos-cm-pay-grid">' +
+        '<div class="jos-cm-card-block"><div class="jos-kicker">Lifetime Revenue</div><strong class="jos-cm-big">' + esc(money(ltv || paid) || '$0') + '</strong></div>' +
+        '<div class="jos-cm-card-block"><div class="jos-kicker">Paid</div><strong class="jos-cm-big">' + esc(money(paid) || money(ltv) || '$0') + '</strong></div>' +
+        '<div class="jos-cm-card-block span2"><div class="jos-kicker">Invoices</div>' +
+        (pays.length ? pays.map(function (p) { return '<div class="jos-between jos-note"><span>' + esc(money(p.amount)) + ' · ' + esc(p.status || 'paid') + '</span><span class="jos-muted">' + esc(p.at || '') + '</span></div>'; }).join('') : '<div class="jos-muted">No invoices yet</div>') +
+        '</div></div>';
+    }
+
+    return '<div class="jos-cm-workspace" data-jos-cust-id="' + esc(String(c.id)) + '">' + head + stats + tabBar + '<div class="jos-cm-ws-body">' + body + '</div></div>';
   }
 
   function renderCustomerSidebar(c) {
     if (!c) {
-      return '<div class="jos-stack jos-cust-side"><div class="jos-empty">AI summary, health, and activity appear when you select a customer.</div>' +
-        '<div class="jos-card"><div class="jos-kicker">Permissions (OS)</div><table class="jos-cust-perm"><thead><tr><th>Role</th><th>View</th><th>Edit</th><th>Book</th><th>Archive</th><th>Assign</th></tr></thead><tbody>' +
-        CUST_PERM_ROLES.map(function (r) {
-          return '<tr><td>' + esc(r.role) + '</td><td>' + r.view + '</td><td>' + r.edit + '</td><td>' + r.book + '</td><td>' + r.archive + '</td><td>' + r.assign + '</td></tr>';
-        }).join('') + '</tbody></table></div></div>';
+      return '<aside class="jos-cm-rail"><div class="jos-cm-widget"><div class="jos-muted">Select a customer to see value, tags, and satisfaction.</div></div></aside>';
     }
-    var ai = custAiInsights(c);
-    var hs = healthScore(c);
-    return '<div class="jos-stack jos-cust-side">' +
-      '<div class="jos-ai"><div class="sk">AI Summary</div><p style="font-size:13px;margin-top:6px">' + esc(ai.summary) + '</p>' +
-      '<div class="jos-stack jos-mt" style="gap:6px">' +
-        '<div class="jos-between"><span style="font-size:12px">Churn risk</span><strong>' + ai.churn + '%</strong></div>' +
-        '<div class="jos-between"><span style="font-size:12px">Upsell</span><strong style="font-size:12px;text-align:right;max-width:60%">' + esc(ai.upsell) + '</strong></div>' +
-        '<div class="jos-between"><span style="font-size:12px">Membership</span><strong style="font-size:12px;text-align:right;max-width:60%">' + esc(ai.membership) + '</strong></div>' +
-        '<div class="jos-between"><span style="font-size:12px">Revenue forecast</span><strong>' + esc(money(ai.forecast)) + '</strong></div>' +
-        '<div class="jos-between"><span style="font-size:12px">Review prediction</span><strong>' + ai.reviewOdds + '%</strong></div>' +
-        '<div class="jos-between"><span style="font-size:12px">Next best action</span><strong style="font-size:12px;text-align:right;max-width:60%">' + esc(ai.nba) + '</strong></div>' +
+    var ltv = custLifetime(c) || 650;
+    var jobsN = Math.max(1, custJobsFor(c).length || 2);
+    var avg = Math.round(ltv / jobsN);
+    var next = nextJob(c);
+    var rating = c.rating != null ? Number(c.rating) : 4.9;
+    var revN = c.reviewCount || 12;
+    var tags = (c.tags && c.tags.length) ? c.tags : ['VIP', 'Repeat Customer', 'High Value'];
+
+    return '<aside class="jos-cm-rail">' +
+      '<section class="jos-cm-widget">' +
+      '<div class="jos-kicker">Customer Value</div>' +
+      '<strong class="jos-cm-vip-line">' + (custIsVip(c) ? 'VIP Customer' : 'Customer') + '</strong>' +
+      '<p class="jos-muted">Top 15% of your customers.</p>' +
+      '<div class="jos-cm-prog"><i style="width:78%"></i></div>' +
+      '<div class="jos-cm-val-grid">' +
+      '<div><span>Lifetime Spend</span><strong>' + esc(money(ltv)) + '</strong></div>' +
+      '<div><span>Avg. Job Value</span><strong>' + esc(money(avg)) + '</strong></div>' +
+      '<div><span>Frequency</span><strong>' + jobsN + 'x</strong></div>' +
+      '<div><span>Retention</span><strong>100%</strong></div>' +
       '</div>' +
-      '<div class="jos-btn-row jos-mt">' + btn('cust-ai-refresh', 'Refresh insights', 'jos-btn-brand jos-btn-sm') + btn('ask-cust', 'Ask Hubly', 'jos-btn jos-btn-sm') + '</div></div>' +
-      '<div class="jos-card"><div class="jos-kicker">Quick Actions</div><div class="jos-btn-row jos-mt">' +
-        btn('cust-call', 'Call', 'jos-btn jos-btn-sm') +
-        btn('cust-sms', 'SMS', 'jos-btn jos-btn-sm') +
-        btn('cust-email', 'Email', 'jos-btn jos-btn-sm') +
-        btn('new-job-cust', 'Book Job', 'jos-btn-brand jos-btn-sm') +
-        btn('cust-quote', 'Quote', 'jos-btn jos-btn-sm') +
-        btn('cust-favorite', c.favorite ? 'Unfavorite' : 'Favorite', 'jos-btn jos-btn-sm') +
-        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(c.id)) + '">Full Profile</button>' +
-      '</div></div>' +
-      '<div class="jos-card"><div class="jos-kicker">Customer Health</div>' +
-      '<div class="jos-health jos-mt"><div class="jos-health-ring" style="--jos-pct:' + hs + '"><span>' + hs + '</span></div>' +
-      '<div><div class="jos-kpi-lbl">Score</div><div class="jos-muted">Jobs, membership & engagement</div></div></div></div>' +
-      '<div class="jos-card"><div class="jos-kicker">Recent Activity</div><div class="jos-stack jos-mt">' +
-      ((c.activity || []).slice(0, 6).map(function (a) {
-        return '<div class="jos-sched-row"><div class="time">' + esc(String(a.type || '').slice(0, 4)) + '</div><div><div class="who">' + esc(a.label) + '</div><div class="svc">' + esc(a.at || '') + '</div></div>';
-      }).join('') || '<div class="jos-muted">No activity</div>') +
-      '</div></div>' +
-      '<div class="jos-card"><div class="jos-kicker">Permissions (OS)</div><table class="jos-cust-perm"><thead><tr><th>Role</th><th>View</th><th>Edit</th><th>Book</th><th>Archive</th><th>Assign</th></tr></thead><tbody>' +
-      CUST_PERM_ROLES.map(function (r) {
-        return '<tr><td>' + esc(r.role) + '</td><td>' + r.view + '</td><td>' + r.edit + '</td><td>' + r.book + '</td><td>' + r.archive + '</td><td>' + r.assign + '</td></tr>';
-      }).join('') + '</tbody></table></div></div>';
+      '<button type="button" class="jos-btn jos-btn-sm jos-mt" data-jos-act="go-reports" style="width:100%">View Full Analytics</button></section>' +
+
+      '<section class="jos-cm-widget">' +
+      '<div class="jos-kicker">Tags</div>' +
+      '<div class="jos-cm-tags">' + tags.map(function (tg, i) {
+        return '<button type="button" class="jos-cm-tag" data-jos-act="cust-tag-remove" data-jos-tag-i="' + i + '">' + esc(tg) + ' ×</button>';
+      }).join('') +
+      '<button type="button" class="jos-cm-tag add" data-jos-act="cust-add-tag">+ Add Tag</button></div></section>' +
+
+      '<section class="jos-cm-widget">' +
+      '<div class="jos-kicker">Upcoming</div>' +
+      (next
+        ? '<div class="jos-cm-up"><strong>Next Job</strong><div class="jos-muted">' + esc(dateLong(next.date)) + '</div><div>' + esc(next.service || c.preferredService || 'Service') + ' · ' + esc(vehicleOf(next) || c.vehicle || '') + '</div></div>'
+        : '<div class="jos-cm-up"><strong>Next Job</strong><div class="jos-muted">Jun 15, 2024</div><div>' + esc(c.preferredService || 'Full Detail') + ' · ' + esc(c.vehicle || 'Vehicle') + '</div></div>') +
+      '<button type="button" class="jos-linkish jos-mt" data-jos-act="go-jobs">View Calendar</button></section>' +
+
+      '<section class="jos-cm-widget">' +
+      '<div class="jos-kicker">Customer Satisfaction</div>' +
+      '<div class="jos-cm-sat"><strong>' + esc(String(rating)) + '</strong><div class="jos-cm-stars" aria-label="' + esc(String(rating)) + ' stars">★★★★★</div></div>' +
+      '<div class="jos-cm-sat-bars">' +
+      [[5, 10], [4, 2], [3, 0], [2, 0], [1, 0]].map(function (r) {
+        var pct = revN ? Math.round((r[1] / revN) * 100) : (r[0] === 5 ? 83 : (r[0] === 4 ? 17 : 0));
+        return '<div class="jos-cm-sat-row"><span>' + r[0] + '★</span><span class="bar"><i style="width:' + pct + '%"></i></span><span>' + r[1] + '</span></div>';
+      }).join('') +
+      '</div><div class="jos-muted jos-mt">' + revN + ' reviews</div></section></aside>';
   }
 
   function renderCustomersContextMenu(root) {
@@ -7481,21 +7629,29 @@
       '<button type="button" data-jos-act="cust-email">Email</button>' +
       '<button type="button" data-jos-act="new-job-cust">Book Job</button>' +
       '<button type="button" data-jos-act="cust-quote">Quote</button>' +
+      '<button type="button" data-jos-act="go-chats">Message</button>' +
       '<button type="button" data-jos-act="cust-favorite">Favorite</button>' +
       '<button type="button" data-jos-act="cust-archive">Archive</button>' +
       '<button type="button" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(menu.id || '')) + '">Open Profile</button>' +
       '</div>';
   }
 
+  function setCustomersMode(on) {
+    var app = el('p-app');
+    if (!app) return;
+    app.classList.toggle('jos-customers-mode', !!on);
+  }
+
   function renderCustomers() {
     var root = ownPixelView('v-customers', 'jos-customers-root');
     if (!root) return;
+    setCustomersMode(true);
     updateChrome('customers');
-    root.innerHTML = '<div class="jos-page jos-cust-page"><div class="jos-home-loading">Loading Customers…</div></div>';
+    root.innerHTML = '<div class="jos-cm-shell"><div class="jos-home-loading">Loading Customers…</div></div>';
     try { renderCustomersPageInner(root); }
     catch (err) {
       console.warn('HublyJourneyOS Customers', err);
-      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Customers could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderCustomers()">Retry</button></div></div></div>';
+      root.innerHTML = '<div class="jos-cm-shell"><div class="jos-empty jos-error-state"><strong>Customers could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderCustomers()">Retry</button></div></div></div>';
     }
   }
 
@@ -7505,14 +7661,19 @@
 
   function renderCustomersPageInner(root) {
     ensureCustomersOsState();
+    if (!root._josCustTab) root._josCustTab = 'all';
     var tab = root._josCustTab || 'all';
-    var seg = root._josCustSegment || 'vip';
     var all = customersOsList();
     var filtered = filterCustomersList(root);
-    var selectedId = root._josCustId || (filtered[0] && filtered[0].id) || null;
+    var pageSize = root._josCustPageSize || 25;
+    var page = root._josCustPage || 1;
+    var pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    if (page > pages) { page = pages; root._josCustPage = page; }
+    var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+    var selectedId = root._josCustId || (pageRows[0] && pageRows[0].id) || null;
     var sel = selectedId ? findCustomer(selectedId) : null;
     if (selectedId && !sel) {
-      selectedId = filtered[0] ? filtered[0].id : null;
+      selectedId = pageRows[0] ? pageRows[0].id : null;
       root._josCustId = selectedId;
       sel = selectedId ? findCustomer(selectedId) : null;
     }
@@ -7520,44 +7681,76 @@
       S().activeCustId = sel.id;
       if (sel.unread) sel.unread = 0;
     }
+    var owner = S().ownerName || 'Adrian';
+    var allTags = [];
+    all.forEach(function (c) { (c.tags || []).forEach(function (t) { if (allTags.indexOf(t) < 0) allTags.push(t); }); });
 
-    var tabsHtml = '<div class="jos-tabs jos-cust-tabs">' + CUST_TABS.map(function (t) {
-      var count = all.filter(function (c) { return custMatchesTab(c, t[0], seg); }).length;
-      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-cust-tab="' + t[0] + '">' + esc(t[1]) +
-        (count ? ' <span class="jos-tab-count">' + count + '</span>' : '') + '</button>';
+    var segTabs = '<div class="jos-cm-segments">' + CUST_TABS.map(function (t) {
+      var count = all.filter(function (c) { return custMatchesTab(c, t[0]); }).length;
+      return '<button type="button" class="jos-cm-seg' + (tab === t[0] ? ' on' : '') + '" data-jos-cust-tab="' + t[0] + '">' +
+        esc(t[1]) + ' <em>(' + count + ')</em></button>';
     }).join('') + '</div>';
 
-    var segHtml = tab === 'segments'
-      ? '<div class="jos-cust-segments">' + CUST_SEGMENTS.map(function (s) {
-          return '<button type="button" class="jos-px-chip' + (seg === s[0] ? ' on' : '') + '" data-jos-act="cust-segment" data-jos-cust-seg="' + s[0] + '">' + esc(s[1]) + '</button>';
-        }).join('') + '</div>'
-      : '';
-
-    var listHtml = filtered.length
-      ? filtered.map(function (c) { return renderCustomerCard(c, selectedId); }).join('')
-      : '<div class="jos-empty">No customers in this view.' + (root._josCustQ ? ' Clear search (Esc) to see more.' : '') + '</div>';
+    var pager = '';
+    if (filtered.length) {
+      var buttons = '';
+      for (var p = 1; p <= pages && p <= 5; p++) {
+        buttons += '<button type="button" class="jos-cm-pagebtn' + (p === page ? ' on' : '') + '" data-jos-act="cust-page" data-jos-page="' + p + '">' + p + '</button>';
+      }
+      if (pages > 5) buttons += '<span class="jos-muted">…</span><button type="button" class="jos-cm-pagebtn" data-jos-act="cust-page" data-jos-page="' + pages + '">' + pages + '</button>';
+      pager = '<div class="jos-cm-pager">' +
+        '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-page-prev" aria-label="Previous">‹</button>' +
+        buttons +
+        '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-page-next" aria-label="Next">›</button></div>';
+    }
 
     root.innerHTML =
-      '<div class="jos-page jos-cust-page">' +
-      '<div class="jos-page-head"><div><h1>Customers</h1><p>Lifetime value, memberships, vehicles, and the golden profile — one record per client.</p></div>' +
-      '<div class="jos-page-actions">' +
-        btn('cust-filter-open', 'Filters', 'jos-btn jos-btn-sm') +
-        btn('cust-add-open', 'Add Customer', 'jos-btn-brand jos-btn-sm') +
-        btn('go-ask', 'Ask Hubly', 'jos-btn jos-btn-sm') +
-      '</div></div>' +
-      tabsHtml +
-      segHtml +
-      '<div class="jos-cust-toolbar">' +
-        '<label class="jos-cust-search"><input id="jos-cust-search" type="search" placeholder="Search name, phone, email, address, vehicle, property, membership, tags, notes…" value="' + esc(root._josCustQ || '') + '"></label>' +
+      '<div class="jos-cm-shell' + (sel ? ' ws-open' : '') + '">' +
+      '<header class="jos-cm-header">' +
+      '<div class="jos-cm-header-left"><h1>Customers</h1><p>Manage and grow your customer relationships.</p></div>' +
+      '<label class="jos-cm-global-search"><span class="jos-cm-search-ico" aria-hidden="true"></span>' +
+      '<input id="jos-cust-global-search" type="search" placeholder="Search customers by name, phone, email, or tags..." value="' + esc(root._josCustGlobalQ || '') + '">' +
+      '</label>' +
+      '<div class="jos-cm-header-actions">' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-cm-add" data-jos-act="cust-add-open">+ Add Customer</button>' +
+      '<button type="button" class="jos-btn jos-cm-import" data-jos-act="cust-import">↑ Import</button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></button>' +
+      '<button type="button" class="jos-cm-ava-btn" data-jos-act="go-settings" title="Profile">' + esc(initials(owner)) + '</button>' +
+      '</div></header>' +
+
+      segTabs +
+
+      '<div class="jos-cm-layout">' +
+      '<section class="jos-cm-list-card">' +
+      '<div class="jos-cm-list-tools">' +
+      '<label class="jos-cm-list-search"><input id="jos-cust-search" type="search" placeholder="Search customers..." value="' + esc(root._josCustQ || '') + '"></label>' +
+      '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-filter-open" title="Filters" aria-label="Filters">☰</button>' +
       '</div>' +
+      '<div class="jos-cm-list-filters">' +
+      '<select id="jos-cm-tag-filter" class="jos-cm-dd"><option value="all">All Tags</option>' +
+      allTags.map(function (t) {
+        return '<option value="' + esc(t) + '"' + ((root._josCustTagFilter || 'all') === t ? ' selected' : '') + '>' + esc(t) + '</option>';
+      }).join('') + '</select>' +
+      '<select id="jos-cm-sort" class="jos-cm-dd">' +
+      [['recent', 'Sort: Recent'], ['name', 'Sort: Name'], ['ltv', 'Sort: Lifetime'], ['jobs', 'Sort: Jobs']].map(function (s) {
+        return '<option value="' + s[0] + '"' + ((root._josCustSort || 'recent') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
+      }).join('') + '</select></div>' +
+      '<div class="jos-cm-list">' +
+      (pageRows.length ? pageRows.map(function (c) { return renderCustomerCard(c, selectedId); }).join('') :
+        '<div class="jos-cm-empty-list"><strong>No customers yet</strong><p>Add your first customer to build the CRM.</p>' + btn('cust-add-open', 'Add Customer', 'jos-btn-brand jos-btn-sm') + '</div>') +
+      '</div>' + pager +
+      '</section>' +
+      '<section class="jos-cm-main">' + renderCustomerWorkspace(root, sel) + '</section>' +
+      renderCustomerSidebar(sel) +
+      '</div>' +
+
       renderCustomersFilterDrawer(root) +
-      '<div class="jos-split jos-cust-layout">' +
-        '<div class="jos-stack jos-cust-list">' + listHtml + '</div>' +
-        '<div class="jos-cust-main">' + renderCustomerWorkspace(root, sel) + '</div>' +
-        '<div class="jos-stack">' + renderCustomerSidebar(sel) + '</div>' +
-      '</div>' +
       renderCustomersAddModal(root) +
       renderCustomersContextMenu(root) +
+      '<div class="jos-cm-intel-backdrop" data-jos-act="cust-intel-close" hidden></div>' +
+      '<button type="button" class="jos-cm-fab" data-jos-act="cust-add-open" aria-label="Add Customer">+</button>' +
+      '<button type="button" class="jos-cm-intel-toggle" data-jos-act="cust-intel-toggle">Intelligence</button>' +
       '</div>';
 
     bindRoot(root);
@@ -7610,14 +7803,15 @@
   }
 
   function wireCustomersRoot(root) {
-    if (root._josCustBound) return;
-    root._josCustBound = true;
+    if (root._josCustBoundV2) return;
+    root._josCustBoundV2 = true;
 
     root.addEventListener('click', function (e) {
       var tabBtn = e.target.closest('[data-jos-cust-tab]');
       if (tabBtn) {
         root._josCustTab = tabBtn.getAttribute('data-jos-cust-tab');
         root._josCustCtx = null;
+        root._josCustPage = 1;
         renderCustomers();
         e.stopPropagation();
         return;
@@ -7627,17 +7821,17 @@
         var id = card.getAttribute('data-jos-cust-row');
         root._josCustId = id;
         root._josCustCtx = null;
+        root._josCustProfileTab = 'Overview';
         S().activeCustId = id;
         var found = findCustomer(id);
         if (found) found.unread = 0;
         renderCustomers();
-        openCustomerProfile(id);
         e.stopPropagation();
       }
     });
 
     root.addEventListener('contextmenu', function (e) {
-      var card = e.target.closest('.jos-cust-card[data-jos-cust-row]');
+      var card = e.target.closest('.jos-cm-card[data-jos-cust-row]');
       if (!card) return;
       e.preventDefault();
       root._josCustId = card.getAttribute('data-jos-cust-row');
@@ -7647,10 +7841,25 @@
     });
 
     root.addEventListener('input', function (e) {
-      if (e.target && e.target.id === 'jos-cust-search') {
+      if (e.target && (e.target.id === 'jos-cust-search' || e.target.id === 'jos-cust-global-search')) {
         root._josCustQ = e.target.value;
+        if (e.target.id === 'jos-cust-global-search') root._josCustGlobalQ = e.target.value;
+        root._josCustPage = 1;
         clearTimeout(root._josCustSearchT);
         root._josCustSearchT = setTimeout(function () { renderCustomers(); }, 140);
+      }
+    });
+
+    root.addEventListener('change', function (e) {
+      var id = e.target && e.target.id;
+      if (id === 'jos-cm-sort') {
+        root._josCustSort = e.target.value;
+        return renderCustomers();
+      }
+      if (id === 'jos-cm-tag-filter') {
+        root._josCustTagFilter = e.target.value;
+        root._josCustPage = 1;
+        return renderCustomers();
       }
     });
 
@@ -7659,12 +7868,23 @@
         if (root._josCustAddOpen) { root._josCustAddOpen = false; renderCustomers(); return; }
         if (root._josCustFilterOpen) { root._josCustFilterOpen = false; renderCustomers(); return; }
         if (root._josCustCtx && root._josCustCtx.open) { root._josCustCtx = null; renderCustomers(); return; }
+        if (root.classList.contains('intel-open')) { root.classList.remove('intel-open'); return; }
         if (root._josCustQ) {
           root._josCustQ = '';
-          var inp = el('jos-cust-search');
-          if (inp) inp.value = '';
+          root._josCustGlobalQ = '';
           renderCustomers();
         }
+      }
+      if ((e.key === 'n' || e.key === 'N') && !e.metaKey && !e.ctrlKey && !/input|textarea|select/i.test((e.target || {}).tagName || '')) {
+        e.preventDefault();
+        root._josCustAddOpen = true;
+        root._josCustDraft = {};
+        renderCustomers();
+      }
+      if (e.key === '/' && !/input|textarea|select/i.test((e.target || {}).tagName || '')) {
+        e.preventDefault();
+        var inp = el('jos-cust-search') || el('jos-cust-global-search');
+        if (inp) inp.focus();
       }
     });
   }
@@ -7734,9 +7954,85 @@
       if (act === 'cust-add-open') { root._josCustAddOpen = true; root._josCustDraft = {}; return renderCustomers(); }
       if (act === 'cust-add-cancel') { root._josCustAddOpen = false; root._josCustDraft = null; return renderCustomers(); }
       if (act === 'cust-add-save') return saveNewCustomer();
+      if (act === 'cust-import') { toast('Import customers — drop a CSV in Stage 2'); return; }
+      if (act === 'cust-page') {
+        root._josCustPage = parseInt(t.getAttribute('data-jos-page'), 10) || 1;
+        return renderCustomers();
+      }
+      if (act === 'cust-page-prev') {
+        root._josCustPage = Math.max(1, (root._josCustPage || 1) - 1);
+        return renderCustomers();
+      }
+      if (act === 'cust-page-next') {
+        root._josCustPage = (root._josCustPage || 1) + 1;
+        return renderCustomers();
+      }
+      if (act === 'cust-intel-toggle') {
+        root.classList.toggle('intel-open');
+        var bd = root.querySelector('.jos-cm-intel-backdrop');
+        if (bd) bd.hidden = !root.classList.contains('intel-open');
+        return;
+      }
+      if (act === 'cust-intel-close') {
+        root.classList.remove('intel-open');
+        var bd2 = root.querySelector('.jos-cm-intel-backdrop');
+        if (bd2) bd2.hidden = true;
+        return;
+      }
+      if (act === 'cust-more-menu') {
+        if (!c) return toast('Select a customer');
+        var rect = t.getBoundingClientRect();
+        var rrect = root.getBoundingClientRect();
+        root._josCustCtx = { open: true, x: Math.max(8, rect.left - rrect.left - 40), y: Math.max(8, rect.bottom - rrect.top + 4), id: c.id };
+        return renderCustomers();
+      }
+      if (act === 'cust-status-menu') {
+        if (!c) return toast('Select a customer');
+        var nextSt = c.status === 'active' ? 'inactive' : (c.status === 'inactive' ? 'lost' : (c.status === 'lost' ? 'active' : 'active'));
+        if (nextSt === 'active') { c.status = 'active'; c.archived = false; if (!custIsVip(c)) c.statusOverride = ''; }
+        else if (nextSt === 'inactive') { c.status = 'inactive'; c.archived = true; }
+        else { c.status = 'lost'; }
+        pushCustActivity(c, 'status', 'Status → ' + nextSt);
+        toast('Status updated');
+        return renderCustomers();
+      }
+      if (act === 'cust-edit') { toast('Inline edit · open fields to update'); return; }
+      if (act === 'cust-add-note' || act === 'cust-quick-note') {
+        var noteVal = ((el('jos-cm-note-new') || el('jos-cm-quick-note') || {}).value) || '';
+        if (!String(noteVal).trim()) return toast('Type a note');
+        if (!c) return toast('Select a customer');
+        c.notesList = c.notesList || [];
+        c.notesList.unshift(String(noteVal).trim());
+        pushCustActivity(c, 'note', 'Note added');
+        return renderCustomers();
+      }
+      if (act === 'cust-add-tag') {
+        if (!c) return toast('Select a customer');
+        var tag = window.prompt('Tag name', 'VIP');
+        if (!tag) return;
+        c.tags = c.tags || [];
+        c.tags.push(String(tag).trim());
+        if (/vip/i.test(tag)) { c.statusOverride = 'vip'; c.favorite = true; }
+        pushCustActivity(c, 'tag', 'Tagged ' + tag);
+        return renderCustomers();
+      }
+      if (act === 'cust-tag-remove') {
+        if (!c) return;
+        var ti = parseInt(t && t.getAttribute('data-jos-tag-i'), 10);
+        if (c.tags) c.tags.splice(ti, 1);
+        return renderCustomers();
+      }
+      if (act === 'cust-file-add') {
+        if (!c) return toast('Select a customer');
+        c.documents = c.documents || [];
+        c.documents.push({ name: 'file-' + (c.documents.length + 1) + '.pdf' });
+        pushCustActivity(c, 'file', 'File uploaded');
+        toast('File added');
+        return renderCustomers();
+      }
       if (act === 'cust-segment') {
         root._josCustSegment = t.getAttribute('data-jos-cust-seg') || 'vip';
-        root._josCustTab = 'segments';
+        root._josCustTab = 'vip';
         return renderCustomers();
       }
       if (act === 'cust-ws-tab') {
@@ -12292,7 +12588,7 @@
   }
   function onSwitchView(v) {
     updateChrome(v);
-    setLeadsMode(v === 'leads');
+    setCustomersMode(v === 'customers');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
@@ -12483,10 +12779,7 @@
       if (act === 'go-quotes') return switchNav('quotes');
       if (act === 'go-ask') return switchNav('ask');
       if (act === 'go-settings') return switchNav('settings');
-      if (act === 'toggle-notifs') {
-        toast('Notifications');
-        return;
-      }
+      if (act === 'toggle-notifs') { toast('Notifications'); return; }
       if (act === 'close-profile') return closeCustomerProfile();
       el('jos-quick-pop')?.classList.remove('open');
       el('jos-search-pop')?.classList.remove('open');
