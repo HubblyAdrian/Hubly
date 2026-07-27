@@ -1,0 +1,108 @@
+# Creative Review Engine
+
+**Status:** Canonical Builder capability (Rule #28) — required before Creative Blueprint acceptance  
+**Module:** Spans end of Module 4 → Stage 8 of Module 5 (Business Reveal)  
+**Inputs:** Creative Blueprint · Business DNA · Research Profile · Business Vision  
+**Related:** [CREATIVE_DIRECTOR_ARCHITECTURE.md](./CREATIVE_DIRECTOR_ARCHITECTURE.md) · [REVEAL_ARCHITECTURE.md](./REVEAL_ARCHITECTURE.md) · [README.md](./README.md)
+
+---
+
+## Why this exists
+
+Inputs (Profile · DNA · Research · Vision) produce a **Creative Blueprint**.
+
+Before the blueprint is accepted — and before the emotional Business Reveal — Hubly must **review its own work**.
+
+That is what elevates Hubly beyond website builders: a creative director who critiques and refines before presenting.
+
+```
+Creative Director
+  ↓  Creative Blueprint (canonical Module 4 output)
+Creative Review Engine
+  ↓  scored + suggestions + AI summary
+Business Reveal (Module 5)
+```
+
+---
+
+## Rule #28 — Creative Review
+
+Every generated Creative Blueprint is scored before acceptance.
+
+No “Done.” No silent ship.
+
+Hubly speaks like a director reviewing the work:
+
+> I've reviewed the business I created. Here's what I'm most confident about, and here's where I'd continue improving it over time.
+
+---
+
+## Score dimensions
+
+| Dimension | Example score | Example rationale / suggestions |
+|-----------|---------------|----------------------------------|
+| **Brand Consistency** | 96 | Colors match premium positioning; typography supports luxury; photography style consistent |
+| **Customer Trust** | 89 | Add more before-and-after photos; highlight insurance; surface Google rating earlier |
+| **Conversion** | 92 | Strong headline; booking CTA above the fold; consider financing if applicable |
+| **SEO Readiness** | 81 | Expand service-area content; add location pages later; more long-tail service copy |
+| **Revenue Potential** | 94 | Promote ceramic coatings; add maintenance memberships; bundle interior + exterior |
+
+Each score is expandable: **Why** · **Suggestions** · **Future improvements**.
+
+Low scores do not block Reveal — they surface honest critique and optional refine loops (Regenerate section / Apply suggestion).
+
+---
+
+## Review object (canonical)
+
+```
+CreativeReview = {
+  blueprintId,
+  scores: { brandConsistency, customerTrust, conversion, seoReadiness, revenuePotential },
+  reasons: { ... },
+  suggestions: [ { dimension, text, impact, confidence } ],
+  summary: "I've reviewed the business I created…",
+  visionAlignment: { score, notes },   // Rule #27 — builds toward Vision
+  reviewedAt,
+  status: "draft" | "presented" | "accepted"
+}
+```
+
+Stored in Hubly Session (Temporary Memory) with the Creative Blueprint. Survives refresh.
+
+---
+
+## AI summary (required)
+
+Replace terminal states like “Done” / “Generated” with a director summary that:
+
+1. Names top confidence areas  
+2. Names honest improvement areas  
+3. Ties at least one note to **Business Vision** when present  
+4. Invites continue improving over time (not a one-shot magic trick)
+
+---
+
+## Relationship to modules
+
+| Module | Role |
+|--------|------|
+| 4 · Creative Director | Produces Creative Blueprint → runs Creative Review before handoff |
+| 5 · Business Reveal | Stage 8 presents Creative Review scores as part of the ceremony |
+| Later Operate / Ask Hubly | May re-run lightweight reviews as the business evolves |
+
+---
+
+## Must not
+
+- Skip Creative Review before accepting the Creative Blueprint  
+- Show scores without Why / Suggestions  
+- Claim perfect 100s as theater  
+- Ignore Business Vision when scoring brand / revenue alignment  
+- Modify this model in UI without reopening architecture  
+
+---
+
+## Lock
+
+**Rule #28** is canonical. Module 4 Development must include Creative Review before Blueprint acceptance. Module 5 must present the review in the Reveal.

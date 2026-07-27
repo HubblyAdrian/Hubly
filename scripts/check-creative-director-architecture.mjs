@@ -52,6 +52,8 @@ ok(/Page Blueprint/i.test(cd), "page blueprint not HTML-only");
 const rules = read("docs/operate/OPERATE_ENGINEERING_RULES.md");
 ok(/Rule #26/.test(rules) && /Locked|canonical/i.test(rules), "Rule #26 locked/canonical in engineering rules");
 ok(/Rule #27/.test(rules), "Rule #27 in engineering rules");
+ok(/Locked/i.test(read("docs/builder/BUSINESS_VISION.md")), "Business Vision doc locked");
+ok(/canonical output|Creative Blueprint/i.test(read("docs/builder/CREATIVE_DIRECTOR_ARCHITECTURE.md")), "Creative Blueprint canonical on M4");
 ok(/CREATIVE_DIRECTOR_ARCHITECTURE/.test(rules), "Creative Director registered");
 ok(/BUSINESS_VISION/.test(rules), "Business Vision registered");
 ok(/No Builder module may|do not bypass or duplicate/i.test(rules), "no bypass/duplicate rule");

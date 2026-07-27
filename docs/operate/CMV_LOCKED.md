@@ -25,7 +25,3 @@
 ### Result
 
 ✅ CMV PASS
-
-### Context
-
-Rule #26 product-wide lock · Business Vision (Rule #27) · Module 4 Creative Director architecture. No Builder UI code.
