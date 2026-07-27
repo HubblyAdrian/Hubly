@@ -2741,59 +2741,54 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ah-mc-head-left p{margin:6px 0 0;font-size:14px;color:var(--jos-ink-2)}
 .jos-ah-mc-body,.jos-ah-mc-ov{display:flex;flex-direction:column;gap:20px}
 
-.jos-ah-mc-hero{
-  position:relative;overflow:hidden;min-height:300px;border-radius:24px;padding:40px;
-  display:flex;justify-content:space-between;gap:24px;align-items:center;
-  background:
-    radial-gradient(circle at 82% 42%, rgba(249,115,22,.28), transparent 28%),
-    radial-gradient(circle at 70% 70%, rgba(249,115,22,.12), transparent 34%),
-    linear-gradient(135deg,#0F172A 0%,#111827 48%,#1E293B 100%);
-  color:#fff;box-shadow:0 10px 30px rgba(15,23,42,.22);
+/* One Ask Hubly chat: brand head + thread + composer (no separate Conversation card) */
+.jos-ah-mc-chat{
+  min-width:0;min-height:520px;border-radius:22px;overflow:hidden;
+  display:flex;flex-direction:column;
+  border:1px solid #E5E7EB;background:#fff;
+  box-shadow:0 10px 30px rgba(15,23,42,.08);
 }
-.jos-ah-mc-hero-left{max-width:720px;min-width:0;flex:1}
+.jos-ah-mc-chat-head{
+  padding:22px 24px 18px;
+  background:
+    radial-gradient(circle at 88% 20%, rgba(249,115,22,.32), transparent 34%),
+    linear-gradient(135deg,#0F172A 0%,#111827 52%,#1E293B 100%);
+  color:#fff;
+}
 .jos-ah-mc-hero-brand{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .jos-ah-mc-hero-brand .hubly-mark{height:22px;width:auto}
-.jos-ah-mc-hero-title{font-size:14px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.78)}
+.jos-ah-mc-hero-title{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.78)}
 .jos-ah-mc-hero-brand .spark{color:#F97316}
-.jos-ah-mc-hero h1{margin:0;font-size:clamp(32px,4vw,48px);font-weight:800;letter-spacing:-.04em;line-height:1.05}
-.jos-ah-mc-hero p{margin:14px 0 0;font-size:15px;line-height:1.55;color:rgba(255,255,255,.72);max-width:52ch}
-.jos-ah-mc-prompt{
-  margin-top:22px;display:flex;align-items:center;gap:10px;
-  width:min(680px,100%);height:64px;border-radius:18px;background:#fff;padding:8px 8px 8px 18px;
+.jos-ah-mc-chat-head h2{margin:0;font-size:clamp(22px,2.6vw,30px);font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.jos-ah-mc-chat-head p{margin:8px 0 0;font-size:13px;line-height:1.45;color:rgba(255,255,255,.68);max-width:48ch}
+.jos-ah-mc-chat .jos-ah-mc-messages{
+  flex:1;min-height:220px;max-height:none;overflow:auto;
+  padding:18px 20px;gap:14px;background:linear-gradient(180deg,#FBFBFD 0%,#fff 40%);
 }
+.jos-ah-mc-chat-foot{
+  padding:14px 18px 18px;border-top:1px solid #EEF0F4;
+  background:#fff;display:flex;flex-direction:column;gap:12px;
+}
+.jos-ah-mc-prompt{
+  display:flex;align-items:center;gap:10px;width:100%;
+  height:56px;border-radius:16px;background:#F7F8FB;border:1px solid #E5E7EB;
+  padding:6px 6px 6px 16px;
+}
+.jos-ah-mc-prompt:focus-within{border-color:rgba(217,99,45,.45);box-shadow:0 0 0 3px rgba(217,99,45,.12);background:#fff}
 .jos-ah-mc-prompt input{
-  flex:1;border:0;outline:none;background:transparent;font:inherit;font-size:15px;color:var(--jos-navy);
+  flex:1;border:0;outline:none;background:transparent;font:inherit;font-size:14px;color:var(--jos-navy);
 }
 .jos-ah-mc-send{
-  appearance:none;border:0;width:48px;height:48px;border-radius:14px;background:#F97316;color:#fff;
-  font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 8px 18px rgba(249,115,22,.35);
+  appearance:none;border:0;width:44px;height:44px;border-radius:12px;background:#D9632D;color:#fff;
+  font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 8px 18px rgba(217,99,45,.28);
 }
-.jos-ah-mc-chips{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+.jos-ah-mc-chips{display:flex;flex-wrap:wrap;gap:8px}
 .jos-ah-mc-chip{
-  appearance:none;border:0;height:40px;padding:0 18px;border-radius:999px;background:#1F2937;color:#fff;
-  font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s ease;
+  appearance:none;border:1px solid #E5E7EB;height:34px;padding:0 12px;border-radius:999px;
+  background:#F7F8FB;color:var(--jos-navy);
+  font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s ease,border-color .15s ease;
 }
-.jos-ah-mc-chip:hover{background:#374151}
-
-.jos-ah-mc-hero-right{width:280px;height:260px;position:relative;flex-shrink:0}
-.jos-ah-mc-robot{position:absolute;inset:20px 10px;display:flex;align-items:center;justify-content:center;animation:josAhFloat 3.6s ease-in-out infinite}
-.jos-ah-mc-robot .glow{
-  position:absolute;width:180px;height:180px;border-radius:50%;
-  background:radial-gradient(circle,rgba(249,115,22,.35),transparent 70%);filter:blur(4px);
-}
-.jos-ah-mc-robot .head{position:relative;z-index:1;display:flex;align-items:center;gap:8px}
-.jos-ah-mc-robot .face{
-  width:120px;height:120px;border-radius:28px;background:#fff;border:1px solid rgba(255,255,255,.4);
-  box-shadow:0 18px 40px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;gap:14px;position:relative;
-}
-.jos-ah-mc-robot .eye{width:14px;height:14px;border-radius:50%;background:#F97316;box-shadow:0 0 12px rgba(249,115,22,.8)}
-.jos-ah-mc-robot .smile{
-  position:absolute;bottom:34px;width:34px;height:16px;border:3px solid #F97316;border-top:0;border-radius:0 0 20px 20px;
-}
-.jos-ah-mc-robot .ear{
-  width:28px;height:28px;border-radius:50%;background:#F97316;box-shadow:0 0 18px rgba(249,115,22,.7);
-}
-@keyframes josAhFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.jos-ah-mc-chip:hover{background:#FFF7ED;border-color:rgba(217,99,45,.35);color:#9A3412}
 
 .jos-ah-mc-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
 .jos-ah-mc-kpi{
@@ -2815,7 +2810,7 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ah-mc-kpi .sub{font-size:12px;color:var(--jos-ink-2)}
 .jos-ah-mc-kpi .delta{font-size:12px;font-weight:850;color:#16A34A}
 
-.jos-ah-mc-grid-mid{display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:stretch}
+.jos-ah-mc-grid-mid{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:20px;align-items:stretch}
 .jos-ah-mc-grid-bot{display:grid;grid-template-columns:1.5fr 1.1fr .8fr;gap:20px;align-items:stretch}
 .jos-ah-mc-card{
   border:1px solid #ECECEC;border-radius:20px;background:#fff;padding:18px 20px;
@@ -2823,27 +2818,22 @@ html[data-theme="night"] .jos-mem-form select{
   transition:transform .2s ease, box-shadow .2s ease;
 }
 .jos-ah-mc-card:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(0,0,0,.07)}
-.jos-ah-mc-card.tall{min-height:420px}
+.jos-ah-mc-card.tall{min-height:520px}
+.jos-ah-mc-side{height:100%}
 .jos-ah-mc-card-head h3{margin:0;font-size:13px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;color:var(--jos-ink-3)}
 
-.jos-ah-mc-messages{display:grid;gap:12px;flex:1;overflow:auto;max-height:300px;padding-right:4px}
+.jos-ah-mc-messages{display:grid;gap:12px;flex:1;overflow:auto;padding-right:4px}
 .jos-ah-mc-msg{display:flex;gap:10px;align-items:flex-start}
 .jos-ah-mc-msg.user{justify-content:flex-end}
 .jos-ah-mc-msg .ava{
-  width:32px;height:32px;border-radius:50%;background:linear-gradient(145deg,#111827,#F97316);color:#fff;
+  width:32px;height:32px;border-radius:50%;background:linear-gradient(145deg,#111827,#D9632D);color:#fff;
   display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;
 }
 .jos-ah-mc-msg .bubble{
   max-width:86%;border:1px solid #ECECEC;border-radius:16px;padding:12px 14px;background:#F8FAFC;color:var(--jos-navy);
 }
-.jos-ah-mc-msg.user .bubble{background:#FFF7ED;border-color:rgba(249,115,22,.25)}
+.jos-ah-mc-msg.user .bubble{background:#FFF7ED;border-color:rgba(217,99,45,.25)}
 .jos-ah-mc-msg .txt{font-size:14px;line-height:1.5;white-space:pre-wrap}
-.jos-ah-mc-suggests{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
-.jos-ah-mc-suggest{
-  appearance:none;border:1px solid #ECECEC;background:#F7F8FB;border-radius:999px;padding:8px 12px;
-  font:inherit;font-size:12px;font-weight:700;color:var(--jos-navy);cursor:pointer;
-}
-.jos-ah-mc-suggest:hover{background:#EEF2F7}
 
 .jos-ah-mc-feed{display:grid;gap:8px}
 .jos-ah-mc-feed-row{
@@ -2897,13 +2887,15 @@ html[data-theme="night"] .jos-mem-form select{
 
 @media(max-width:1100px){
   .jos-ah-mc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .jos-ah-mc-grid-mid,.jos-ah-mc-grid-bot,.jos-ah-mc-insight,.jos-ah-mc-hero{grid-template-columns:1fr;display:grid}
-  .jos-ah-mc-hero-right{width:100%;height:180px}
+  .jos-ah-mc-grid-mid,.jos-ah-mc-grid-bot,.jos-ah-mc-insight{grid-template-columns:1fr;display:grid}
+  .jos-ah-mc-chat,.jos-ah-mc-card.tall{min-height:0}
+  .jos-ah-mc-chat .jos-ah-mc-messages{min-height:200px;max-height:360px}
 }
 @media(max-width:720px){
   .jos-ah-mc-kpis{grid-template-columns:1fr}
-  .jos-ah-mc-hero{padding:24px}
-  .jos-ah-mc-prompt{height:56px}
+  .jos-ah-mc-chat-head{padding:18px}
+  .jos-ah-mc-prompt{height:52px}
+  .jos-ah-mc-send{width:40px;height:40px;border-radius:11px}
 }
 
 /* Settings — screenshot-exact Mission Control */

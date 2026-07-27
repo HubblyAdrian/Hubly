@@ -1515,27 +1515,35 @@
     var part = h < 12 ? 'Good morning' : (h < 17 ? 'Good afternoon' : 'Good evening');
     return part + ', ' + ahOwnerFirstName();
   }
-  function ahRenderHero() {
+  function ahRenderUnifiedChat() {
+    var conv = ahConversation();
+    var msgs = (conv.messages || []).slice();
+    if (!msgs.length) {
+      msgs = [{ role: 'assistant', text: "I'm your AI Business Assistant. Ask me anything about your business — customers, revenue, leads, jobs, marketing, reviews, and more. I'll ask for confirmation before any high-impact change." }];
+    }
+    var messages = msgs.slice(-20).map(function (m) {
+      var role = m.role || 'assistant';
+      return '<div class="jos-ah-mc-msg ' + esc(role) + '">' +
+        (role === 'assistant' ? '<div class="ava" aria-hidden="true">✦</div>' : '') +
+        '<div class="bubble"><div class="txt">' + esc(m.text || '') + '</div></div></div>';
+    }).join('');
     var chips = ASK_CHIPS.map(function (c) {
       return '<button type="button" class="jos-ah-mc-chip" data-jos-ask="' + esc(c) + '">' + esc(c) + '</button>';
     }).join('');
-    return '<section class="jos-ah-mc-hero">' +
-      '<div class="jos-ah-mc-hero-left">' +
+    return '<section class="jos-ah-mc-chat" aria-label="Ask Hubly conversation">' +
+      '<header class="jos-ah-mc-chat-head">' +
         '<div class="jos-ah-mc-hero-brand"><img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" onerror="this.style.display=\'none\'"><span class="jos-ah-mc-hero-title">Ask Hubly</span><span class="spark" aria-hidden="true">✦</span></div>' +
-        '<h1>' + esc(ahGreeting()) + ' 👋</h1>' +
-        '<p>I\'m your AI Business Assistant. Ask me anything about your business, customers, revenue, leads, and more.</p>' +
+        '<h2>' + esc(ahGreeting()) + '</h2>' +
+        '<p>One place to ask about customers, jobs, revenue, leads, and more.</p>' +
+      '</header>' +
+      '<div class="jos-ah-mc-messages" id="jos-ah-messages">' + messages + '</div>' +
+      '<footer class="jos-ah-mc-chat-foot">' +
+        '<div class="jos-ah-mc-chips">' + chips + '</div>' +
         '<div class="jos-ah-mc-prompt">' +
-          '<input id="jos-ask-input" type="text" placeholder="Ask anything about your business..." onkeydown="if(event.key===\'Enter\'){window.HublyJourneyOS&&HublyJourneyOS._askFromInput()}">' +
+          '<input id="jos-ask-input" type="text" placeholder="Ask anything about your business..." autocomplete="off" onkeydown="if(event.key===\'Enter\'){window.HublyJourneyOS&&HublyJourneyOS._askFromInput()}">' +
           '<button type="button" class="jos-ah-mc-send" data-jos-act="ask-submit" aria-label="Send">➤</button>' +
         '</div>' +
-        '<div class="jos-ah-mc-chips">' + chips + '</div>' +
-      '</div>' +
-      '<div class="jos-ah-mc-hero-right" aria-hidden="true">' +
-        '<div class="jos-ah-mc-robot">' +
-          '<div class="glow"></div>' +
-          '<div class="head"><div class="ear L"></div><div class="face"><div class="eye"></div><div class="eye"></div><div class="smile"></div></div><div class="ear R"></div></div>' +
-        '</div>' +
-      '</div>' +
+      '</footer>' +
     '</section>';
   }
   function ahTabsHtml(active) {
@@ -1594,33 +1602,18 @@
     '</section>';
   }
   function renderAhChatTab() {
-    var conv = ahConversation();
-    var messages = (conv.messages || []).slice(-12).map(function (m) {
-      var role = m.role || 'assistant';
-      return '<div class="jos-ah-mc-msg ' + esc(role) + '">' +
-        (role === 'assistant' ? '<div class="ava" aria-hidden="true">✦</div>' : '') +
-        '<div class="bubble"><div class="txt">' + esc(m.text || '') + '</div></div></div>';
-    }).join('');
-    var suggest = ['Show me all leads', 'Jobs needing attention', 'Top performing services', 'Revenue this month'].map(function (c) {
-      return '<button type="button" class="jos-ah-mc-suggest" data-jos-ask="' + esc(c) + '">' + esc(c) + '</button>';
-    }).join('');
     var actions = POPULAR_ASKS.map(function (p) {
       return '<button type="button" class="jos-ah-mc-action" data-jos-ask="' + esc(p.t) + '"><span class="ico">⚡</span><span class="meta"><strong>' + esc(p.t) + '</strong><span>' + esc(p.s) + '</span></span><span class="chev">›</span></button>';
     }).join('');
     return '<div class="jos-ah-mc-ov">' +
-      ahRenderHero() +
-      ahContextKpis() +
       '<div class="jos-ah-mc-grid-mid">' +
-        '<section class="jos-ah-mc-card tall">' +
-          '<div class="jos-ah-mc-card-head"><h3>Conversation</h3></div>' +
-          '<div class="jos-ah-mc-messages">' + messages + '</div>' +
-          '<div class="jos-ah-mc-suggests">' + suggest + '</div>' +
-        '</section>' +
-        '<section class="jos-ah-mc-card tall">' +
+        ahRenderUnifiedChat() +
+        '<aside class="jos-ah-mc-card tall jos-ah-mc-side">' +
           '<div class="jos-ah-mc-card-head"><h3>Recent Activity</h3></div>' +
           '<div class="jos-ah-mc-feed">' + ahMcRecentFeed() + '</div>' +
-        '</section>' +
+        '</aside>' +
       '</div>' +
+      ahContextKpis() +
       '<div class="jos-ah-mc-grid-bot">' +
         ahMcInsightCard() +
         '<section class="jos-ah-mc-card">' +
