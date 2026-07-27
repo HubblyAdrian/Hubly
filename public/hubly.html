@@ -9909,7 +9909,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <span class="theme-lbl" id="theme-label-app">Night</span>
           </button>
           <button type="button" class="btn btn-out btn-sm lang-bar-btn lang-has-tip jos-legacy-bar" id="lang-btn-app" onclick="toggleLang()" title="Language / Idioma" aria-label="Language / Idioma" data-lang-tip="Language / Idioma — tap to switch">🌐 <span id="lang-label-app">ES</span></button>
-          <button type="button" class="jos-bar-ask" id="jos-bar-ask" aria-label="Ask Hubly" title="Ask Hubly" onclick="document.querySelector('.ni[data-v=\'ask\']')?.click()">Ask Hubly</button>
           <button type="button" class="jos-bar-bell" aria-label="Notifications" title="Notifications">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
           </button>
@@ -10873,6 +10872,11 @@ document.addEventListener('DOMContentLoaded', function() {
   <button type="button" id="ed-ai-fab" class="ed-ai-fab hidden" onclick="openEdSheet('ai')" title="Ask AI to change your site" aria-label="Ask AI">
     <span class="ed-ai-fab-ico" aria-hidden="true">AI</span>
     <span>Ask AI</span>
+  </button>
+  <!-- Global Ask Hubly bubble (left nav tab stays; top-bar Ask Hubly removed) -->
+  <button type="button" id="jos-ask-fab" class="jos-ask-fab" onclick="document.querySelector('.ni[data-v=\'ask\']')?.click()" title="Ask Hubly" aria-label="Ask Hubly">
+    <span class="jos-ask-fab-ico" aria-hidden="true">AI</span>
+    <span class="jos-ask-fab-lbl">Ask Hubly</span>
   </button>
 </div>
 
