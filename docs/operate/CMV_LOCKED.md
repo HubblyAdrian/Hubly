@@ -1,8 +1,7 @@
 # Cross-Module Verification (CMV)
 
 **Date:** 2026-07-27  
-**Runner:** `node scripts/cmv-locked-modules.mjs`  
-**Context:** AI Landing lock + Hubly AI Business Builder Module 2 architecture
+**Runner:** `node scripts/cmv-locked-modules.mjs`
 
 | Module | Result |
 |--------|--------|
@@ -27,8 +26,6 @@
 
 ✅ CMV PASS
 
-### Related locks
+### Context
 
-- 🌎 AI Landing Experience → 🔒 (#259)
-- Hubly Memory → Rule #25 documented
-- 🤖 AI Discovery → architecture only (no Stage 1 code in this CMV)
+AI Discovery architecture lock (Rule #26 Business + Owner Profile) + Module 3 Research architecture docs. No Builder UI code in this change.

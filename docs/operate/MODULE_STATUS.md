@@ -69,7 +69,8 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | Settings ownership | ✅ Rule #23 |
 | Dual Product Architecture | ✅ Rule #24 · 🔒 Landing locked |
 | Hubly Memory | ✅ Rule #25 |
-| AI Business Builder | ⏳ Module 2 Architecture |
+| Business + Owner Profile | ✅ Rule #26 · 🔒 Discovery architecture |
+| AI Business Builder | ⏳ M2 Dev may begin · M3 Architecture |
 | Integrations | ⏸ Stage 2 |
 | Performance | ⏳ |
 | Accessibility | ⏳ |
@@ -174,14 +175,16 @@ Operate Stage 1 is complete. The next product milestone is **Hubly AI Business B
 | # | Module | Status |
 |---|--------|--------|
 | 1 | 🌎 AI Landing Experience | 🔒 Locked (#259) |
-| 2 | 🤖 AI Discovery | ⏳ Architecture ([DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md)) |
+| 2 | 🤖 AI Discovery | 🔒 Architecture locked · Rule #26 profiles · Dev may begin |
+| 3 | 🔍 AI Research Engine | ⏳ Architecture ([RESEARCH_ARCHITECTURE.md](../builder/RESEARCH_ARCHITECTURE.md)) |
 
-**Hubly Memory** (Rule #25): [HUBLY_MEMORY.md](../HUBLY_MEMORY.md)
+**Hubly Memory** (Rule #25): [HUBLY_MEMORY.md](../HUBLY_MEMORY.md)  
+**Business + Owner Profile** (Rule #26): DNA = Business Profile + Owner Profile
 
 ## Workflow
 
 Planning → Development (Stage 1 OS) → Self QA → **MAT** → **CMV** → PR → Approval → Merge → **Lock OS**  
 Later: Stage 2 Integrations → separate PR
 
-**Special gates:** Marketing / Revenue / Ask Hubly / Settings / **AI Landing** / **AI Discovery** architecture docs before Development.  
-**Engineering rules:** #14–25 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md))
+**Special gates:** Marketing / Revenue / Ask Hubly / Settings / **AI Landing** / **AI Discovery** / **AI Research** architecture docs before Development.  
+**Engineering rules:** #14–26 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md))

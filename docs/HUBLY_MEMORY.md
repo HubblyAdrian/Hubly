@@ -30,8 +30,11 @@ Conversation Memory  →  Ask Hubly / coaching history
 | Conversation | Landing + Discovery turns |
 | Imports | Website, Instagram, Google Business, Facebook analysis |
 | Intent | `build_business` / `hire_pro` + confidence |
-| Builder progress | Discovery % · DNA checklist state |
-| Detected facts | Industry, name, location, stage |
+| Builder progress | Discovery % · research cache |
+| Business Profile | Industry, services, location, pricing, brand, website |
+| Owner Profile | Experience, goals, communication style, growth priorities, stage, risk, preferred customers |
+| Business DNA | Combination of Business Profile + Owner Profile |
+| Research Profile | Module 3 market / competitor / brand / pricing insights (cached) |
 
 **Lifecycle**
 
@@ -135,6 +138,22 @@ Ask Hubly runs on Permanent Memory
 
 ---
 
+## Profiles inside Temporary → Permanent Memory (Rule #26)
+
+Hubly does not only learn “the business.” It learns the **owner**.
+
+| Layer | What it is |
+|-------|------------|
+| **Business Profile** | Industry, services, location, pricing, brand, website |
+| **Owner Profile** | Experience, goals, communication style, growth priorities, business stage, risk tolerance, preferred customers |
+| **Business DNA** | The combination of both — what Discovery completes and Research / Ask Hubly consume |
+
+Ask Hubly coaches using **both** profiles, e.g. memberships before ceramic expansion for a founder who wants steady recurring revenue while just starting out.
+
+See [builder/DISCOVERY_ARCHITECTURE.md](./builder/DISCOVERY_ARCHITECTURE.md).
+
+---
+
 ## Naming — do not confuse
 
 | Say | Do not say |
@@ -150,7 +169,8 @@ Ask Hubly runs on Permanent Memory
 | Module | Memory role |
 |--------|-------------|
 | AI Landing (🔒) | Creates Temporary Memory |
-| AI Discovery (Module 2) | Fills Business DNA inside Temporary Memory |
+| AI Discovery (🔒 Architecture) | Fills Business Profile + Owner Profile → Business DNA |
+| AI Research Engine (Module 3) | Builds Research Profile into Temporary Memory |
 | Website / Services / Brand modules | Write into Permanent Memory after upgrade |
-| Ask Hubly (Operate 🔒) | Owns Conversation Memory; reads Permanent Memory |
+| Ask Hubly (Operate 🔒) | Owns Conversation Memory; reads Permanent Memory **and** Owner Profile for tailored coaching |
 | Marketplace Concierge | May read Temporary Memory for hire intent; separate consumer journey |
