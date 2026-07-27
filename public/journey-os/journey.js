@@ -8462,7 +8462,7 @@
       '<div class="jos-between jos-cust-modal-head"><h3 id="jos-ca-title">Add Customer</h3><button type="button" class="jos-cust-modal-x" data-jos-act="cust-add-cancel" aria-label="Close">×</button></div>' +
       '<div class="jos-cust-form">' +
       '<label>Name<input id="jos-ca-name" value="' + esc(d.name || '') + '" placeholder="Full name"></label>' +
-      '<label>Phone<input id="jos-ca-phone" type="tel" inputmode="tel" value="' + esc(formatPhoneValue(d.phone || '')) + '" placeholder="888-888-8888" autocomplete="tel"></label>' +
+      '<label>Phone<span class="jos-phone-dial">' + esc(phoneCountryDial()) + '</span><input id="jos-ca-phone" type="tel" inputmode="tel" value="' + esc(formatPhoneValue(d.phone || '')) + '" placeholder="888-888-8888" autocomplete="tel"></label>' +
       '<label>Email<input id="jos-ca-email" value="' + esc(d.email || '') + '" placeholder="name@email.com"></label>' +
       '<label>Address<input id="jos-ca-address" value="' + esc(d.address || '') + '" placeholder="Service address"></label>' +
       '<label>Vehicle / Property<input id="jos-ca-vehicle" value="' + esc(d.vehicle || '') + '" placeholder="Vehicle or property"></label>' +
