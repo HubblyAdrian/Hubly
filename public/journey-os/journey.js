@@ -10375,7 +10375,7 @@
   }
 
   var CHROME = {
-    dashboard: { title: 'Home', sub: 'Good morning — let\u2019s grow your business today.' },
+    dashboard: { title: 'Home', sub: '' },
     chats: { title: 'Inbox', sub: 'Every conversation in one place.' },
     jobs: { title: 'Jobs', sub: 'Manage and track every job in one place.' },
     leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
@@ -10390,11 +10390,27 @@
     ask: { title: 'Ask Hubly', sub: 'Use smarter AI to grow your business.' },
     settings: { title: 'Settings', sub: 'Business, team, and integrations.' }
   };
+
+  function timeOfDayGreeting() {
+    var h = new Date().getHours();
+    try {
+      if (typeof global.businessHourNow === 'function') h = Number(global.businessHourNow()) || h;
+    } catch (e) {}
+    h = Math.max(0, Math.min(23, h | 0));
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  function homeChromeSub() {
+    return timeOfDayGreeting() + ' \u2014 let\u2019s grow your business today.';
+  }
+
   function updateChrome(v) {
     var c = CHROME[v] || { title: v, sub: '' };
     var titleEl = el('bar-title'), subEl = el('bar-sub');
     if (titleEl) titleEl.textContent = c.title;
-    if (subEl) subEl.textContent = c.sub;
+    if (subEl) subEl.textContent = (v === 'dashboard') ? homeChromeSub() : c.sub;
     if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
     try { updateInboxBadge(); } catch (e) {}
   }
@@ -10645,8 +10661,7 @@
     if (!msgsWaiting && ceoDemo) msgsWaiting = ch.needs || 5;
 
     var scores = homeScores();
-    var hour = new Date().getHours();
-    var greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
+    var greet = timeOfDayGreeting();
     var owner = S().ownerName || S().ownerFirst || (S().biz ? String(S().biz).split(/[\s'-]/)[0] : '') || 'there';
     if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
     if (owner.indexOf(' ') > -1) owner = owner.split(' ')[0];
