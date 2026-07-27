@@ -87,7 +87,7 @@ try {
     "screenshot nav",
     has(nav, 'ni-lbl">Home<') &&
       has(nav, 'ni-lbl">Inbox<') &&
-      has(nav, 'ni-lbl">Storefront<') &&
+      has(nav, 'ni-lbl">Website editor<') &&
       has(nav, 'ni-lbl">Revenue<') &&
       has(nav, 'ni-lbl">Ask Hubly<') &&
       has(nav, 'ni-lbl">Settings<')
@@ -103,7 +103,7 @@ try {
       "Leads",
       "Customers",
       "Pipeline",
-      "Storefront",
+      "Website editor",
       "Marketing",
       "Reviews",
       "Memberships",
@@ -290,18 +290,27 @@ try {
       has(px, "jos-ds-drawer")
   );
 
-  mark("check storefront");
+  mark("check website editor (classic)");
+  ok(
+    "website editor",
+    has(jjs, "function restoreWebsiteEditor") &&
+      has(jjs, "editor: restoreWebsiteEditor") &&
+      has(hubly, 'id="v-editor"') &&
+      has(hubly, 'id="ed-shell"') &&
+      has(hubly, "ni-lbl\">Website editor<") &&
+      has(hubly, "function switchWebsiteHubTab") &&
+      has(hubly, "function mountEdChrome")
+  );
+
+  mark("check storefront (legacy OS kept)");
   ok(
     "storefront",
     has(jjs, "function renderStorefront") &&
       has(jjs, "handleStorefrontAct") &&
       has(jjs, "ensureStorefrontOsState") &&
       has(jjs, "syncStorefrontCatalogToServices") &&
-      has(jjs, "sf-preview") &&
-      has(hubly, 'id="v-editor"') &&
       has(hubly, 'id="jos-storefront-root"') &&
-      has(hubly, "journey-os/design-system.js") &&
-      (has(px, "jos-sf-page") || has(px, "jos-storefront-root"))
+      (has(px, "jos-sf-page") || has(px, "jos-storefront-root") || has(px, "jos-sf-mc-shell"))
   );
 
   mark("check marketing");

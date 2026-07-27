@@ -159,6 +159,7 @@ mount("jos-customers-root", cust);
 const pipe = mount("v-pipeline", app);
 mount("jos-pipeline-root", pipe);
 const editor = mount("v-editor", app);
+mount("ed-shell", editor);
 mount("jos-storefront-root", editor);
 const marketing = mount("v-marketing", app);
 mount("jos-marketing-root", marketing);
@@ -290,11 +291,17 @@ try {
 }
 
 try {
-  H.renderStorefront();
-  const sfHtml = document.getElementById("jos-storefront-root").innerHTML;
-  ok("🌐 Storefront still works", /jos-sf|Storefront|Website|Preview/i.test(sfHtml) && sfHtml.length > 200, "len=" + sfHtml.length);
+  H.restoreWebsiteEditor();
+  const edView = document.getElementById("v-editor");
+  const edShell = document.getElementById("ed-shell");
+  const restored =
+    edShell &&
+    edView &&
+    !edView.classList.contains("jos-pixel-owned") &&
+    !document.getElementById("p-app")?.classList.contains("jos-storefront-mode");
+  ok("🌐 Website editor still works", restored, restored ? "classic #ed-shell" : "missing classic shell");
 } catch (e) {
-  ok("🌐 Storefront still works", false, String(e.message || e));
+  ok("🌐 Website editor still works", false, String(e.message || e));
 }
 
 try {
