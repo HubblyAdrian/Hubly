@@ -3339,6 +3339,23 @@
       }
       r._seeded = true;
     }
+    if (!allowDemoSeed() && r.requestStats && Number(r.requestStats.sent) === 122) {
+      // Strip leftover CEO-demo review stats from real accounts.
+      r.requestStats = { sent: 0, completed: 0, conversionPct: 0, deltaPct: 0 };
+      if (Array.isArray(r.goals)) {
+        r.goals = r.goals.map(function (g) { return Object.assign({}, g, { current: 0 }); });
+      }
+      r.growthHistory = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+      if (r.platforms) {
+        Object.keys(r.platforms).forEach(function (k) {
+          if (k === 'website' || k === 'hubly') {
+            r.platforms[k] = Object.assign({}, r.platforms[k], { reviews: 0, rating: 0 });
+          } else {
+            r.platforms[k] = Object.assign({}, r.platforms[k], { connected: false, reviews: 0, rating: 0, lastSync: '—' });
+          }
+        });
+      }
+    }
     if (!Array.isArray(r.reviews)) r.reviews = [];
     if (!Array.isArray(r.requests)) r.requests = [];
     if (!Array.isArray(r.replies)) r.replies = [];
