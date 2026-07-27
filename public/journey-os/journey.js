@@ -76,6 +76,44 @@
     function fb() { try { var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); ok(); } catch (e) { toast(t); } }
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(t).then(ok).catch(fb); else fb();
   }
+  /** Business dial code — matches market country when known, else +1. */
+  function phoneCountryDial() {
+    try {
+      if (typeof global.phoneCountryDial === 'function') return global.phoneCountryDial();
+    } catch (e) {}
+    var st = S() || {};
+    var c = String(st.country || st.bizCountry || st.countryCode || '').trim().toUpperCase();
+    if (!c && st.city) {
+      var blob = String(st.city) + ' ' + String(st.address || '');
+      if (/,\s*(ON|BC|AB|QC|MB|SK|NS|NB|NL|PE|YT|NT|NU)\b/i.test(blob)) c = 'CA';
+    }
+    if (c === 'GB' || c === 'UK') return '+44';
+    if (c === 'AU') return '+61';
+    if (c === 'MX') return '+52';
+    if (c === 'NZ') return '+64';
+    return '+1';
+  }
+  /** National digits only (10 for NANP). Strips leading country 1. */
+  function phoneDigits(raw) {
+    var d = String(raw || '').replace(/\D/g, '');
+    if (d.length === 11 && d.charAt(0) === '1') d = d.slice(1);
+    if (d.length > 10) d = d.slice(-10);
+    return d.slice(0, 10);
+  }
+  /** Format as 888-888-8888 */
+  function formatPhoneValue(raw) {
+    var d = phoneDigits(raw);
+    if (d.length >= 7) return d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6);
+    if (d.length >= 4) return d.slice(0, 3) + '-' + d.slice(3);
+    return d;
+  }
+  /** Display with matching country code: +1 888-888-8888 */
+  function displayPhone(raw) {
+    var fmt = formatPhoneValue(raw);
+    if (!fmt) return '—';
+    if (phoneDigits(raw).length === 10) return phoneCountryDial() + ' ' + fmt;
+    return fmt;
+  }
   function page(kicker, title, sub, actions, body) {
     return '<div class="jos-page"><div class="jos-head"><div><div class="jos-kicker">' + esc(kicker) + '</div><h1>' + esc(title) + '</h1><p>' + sub + '</p></div>' +
       (actions ? '<div class="jos-head-actions">' + actions + '</div>' : '') + '</div>' + body + '</div>';
@@ -6613,7 +6651,7 @@
     if (!lead) return '<div class="jos-px-side-empty">Select a lead to preview details.</div>';
     var kind = srcKind(lead.source, lead);
     return '<div class="jos-px-side-head"><div class="jos-px-person"><div class="jos-px-av">' + esc(initials(lead.name)) + '</div><div><strong>' + esc(lead.name || 'Lead') + '</strong><div class="sub">' + esc(leadStageLbl(lead)) + '</div></div></div>' +
-      '<div class="jos-px-side-meta"><div><span>Source</span> ' + srcIco(kind) + ' ' + esc(srcLabel(kind)) + '</div><div><span>Service</span> ' + esc(lead.service || '—') + '</div><div><span>Vehicle</span> ' + esc(vehicleOf(lead) || '—') + '</div><div><span>Phone</span> ' + esc(lead.phone || '—') + '</div></div></div>' +
+      '<div class="jos-px-side-meta"><div><span>Source</span> ' + srcIco(kind) + ' ' + esc(srcLabel(kind)) + '</div><div><span>Service</span> ' + esc(lead.service || '—') + '</div><div><span>Vehicle</span> ' + esc(vehicleOf(lead) || '—') + '</div><div><span>Phone</span> ' + esc(displayPhone(lead.phone)) + '</div></div></div>' +
       '<div class="jos-px-side-body"><div class="jos-px-side-stats"><div class="jos-px-side-stat"><div class="l">Estimate</div><div class="v">' + esc(lead.amount != null ? money(lead.amount) : '—') + '</div></div><div class="jos-px-side-stat"><div class="l">Created</div><div class="v">' + esc(lead.createdAt ? String(lead.createdAt).slice(0, 10) : '—') + '</div></div></div>' +
       '<div class="jos-px-side-actions">' + btn('manual-lead', 'Edit lead', 'jos-btn jos-btn-sm') + (lead.key ? '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-lead="' + esc(lead.key) + '">Open full lead</button>' : '') + '</div></div>';
   }
@@ -7079,13 +7117,14 @@
     if (!root._josLeadAddOpen) return '';
     var d = root._josLeadDraft || {};
     var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
-    return '<div class="jos-leads-modal-backdrop" data-jos-act="leads-add-cancel">' +
-      '<div class="jos-leads-modal" onclick="event.stopPropagation()">' +
-      '<div class="jos-between"><h3 style="margin:0">Add Lead</h3><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-add-cancel">✕</button></div>' +
+    var dial = phoneCountryDial();
+    return '<div class="jos-leads-modal-backdrop" data-jos-lead-backdrop="1" role="presentation">' +
+      '<div class="jos-leads-modal" role="dialog" aria-modal="true" aria-labelledby="jos-la-title">' +
+      '<div class="jos-between jos-leads-modal-head"><h3 id="jos-la-title">Add Lead</h3><button type="button" class="jos-leads-modal-x" data-jos-act="leads-add-cancel" aria-label="Close">×</button></div>' +
       '<div class="jos-leads-form">' +
-      '<label>Name<input id="jos-la-name" value="' + esc(d.name || '') + '" placeholder="Full name"></label>' +
-      '<label>Phone<input id="jos-la-phone" value="' + esc(d.phone || '') + '" placeholder="(619) 555-0100"></label>' +
-      '<label>Email<input id="jos-la-email" value="' + esc(d.email || '') + '" placeholder="name@email.com"></label>' +
+      '<label>Name<input id="jos-la-name" value="' + esc(d.name || '') + '" placeholder="Full name" autocomplete="name"></label>' +
+      '<label>Phone<span class="jos-phone-dial">' + esc(dial) + '</span><input id="jos-la-phone" type="tel" inputmode="tel" value="' + esc(formatPhoneValue(d.phone || '')) + '" placeholder="888-888-8888" autocomplete="tel"></label>' +
+      '<label>Email<input id="jos-la-email" value="' + esc(d.email || '') + '" placeholder="name@email.com" autocomplete="email"></label>' +
       '<label>Address<input id="jos-la-address" value="' + esc(d.address || '') + '" placeholder="Service address"></label>' +
       '<label>Vehicle / Property<input id="jos-la-vehicle" value="' + esc(d.vehicle || '') + '" placeholder="Vehicle or property"></label>' +
       '<label>Service<input id="jos-la-service" value="' + esc(d.service || '') + '" placeholder="Service interest"></label>' +
@@ -7095,14 +7134,15 @@
         }).join('') +
       '</select></label>' +
       '<label>Assigned User<select id="jos-la-assigned">' +
+        '<option value="">—</option>' +
         team.map(function (t) {
-          return '<option value="' + esc(t.name) + '"' + ((d.assignedTo || team[0].name) === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+          return '<option value="' + esc(t.name) + '"' + ((d.assignedTo || '') === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
         }).join('') +
       '</select></label>' +
       '<label class="jos-leads-span2">Notes<textarea id="jos-la-notes" class="jos-textarea" placeholder="Notes…">' + esc(d.notes || '') + '</textarea></label>' +
       '<label class="jos-leads-span2">Tags<input id="jos-la-tags" value="' + esc(d.tags || '') + '" placeholder="hot, ceramic"></label>' +
       '</div>' +
-      '<div class="jos-btn-row jos-mt">' +
+      '<div class="jos-btn-row jos-mt jos-leads-modal-actions">' +
       btn('leads-add-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
       btn('leads-add-save', 'Save Lead', 'jos-btn-brand jos-btn-sm') +
       btn('leads-add-quote', 'Save & Quote', 'jos-btn jos-btn-sm') +
@@ -7120,7 +7160,7 @@
       '<span class="jos-ld-card-top"><strong>' + esc(lead.name || 'Lead') + '</strong><span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span></span>' +
       '<span class="jos-muted">' + esc(lead.industry || 'Residential') + ' · ' + esc(lead.service || 'Service') + '</span>' +
       '<span class="jos-ld-preview">' + esc((lead.lastMessage || 'No messages yet').slice(0, 72)) + '</span>' +
-      '<span class="jos-ld-card-meta"><span>' + esc(lead.phone || '—') + '</span><span>' + esc(leadRelativeTime(lead)) + '</span></span>' +
+      '<span class="jos-ld-card-meta"><span>' + esc(displayPhone(lead.phone)) + '</span><span>' + esc(leadRelativeTime(lead)) + '</span></span>' +
       '</span></button>';
   }
 
@@ -7157,7 +7197,7 @@
     var body = '';
     if (ws === 'overview') {
       var fields = [
-        ['Phone', lead.phone || '—', 'leads-call'],
+        ['Phone', displayPhone(lead.phone), 'leads-call'],
         ['Email', lead.email || '—', 'leads-email'],
         ['Address', lead.address || lead.property || '—', ''],
         ['Source', srcLabel(srcKind(lead.source, lead)), ''],
@@ -7456,14 +7496,18 @@
 
   function saveNewLead(andQuote) {
     var root = el('jos-leads-root');
+    if (!root) return;
     var d = readLeadAddDraft();
     if (!String(d.name || '').trim()) { toast('Name is required'); return; }
     ensureLeadsOsState();
     var st = S();
+    if (!st.pipeline || typeof st.pipeline !== 'object') st.pipeline = { manual: [], deleted: [], stages: {}, lostReasons: {}, edits: {} };
+    if (!Array.isArray(st.pipeline.manual)) st.pipeline.manual = [];
     var id = 'lead_' + Date.now();
+    var phone = formatPhoneValue(d.phone || '');
     var lead = {
-      id: id, key: id, name: d.name.trim(), phone: d.phone, email: d.email, address: d.address,
-      vehicle: d.vehicle, property: d.address, service: d.service, source: d.source,
+      id: id, key: id, name: d.name.trim(), phone: phone, email: d.email, address: d.address,
+      vehicle: d.vehicle, property: d.address, service: d.service, source: d.source || 'manual',
       assignedTo: d.assignedTo, notes: d.notes, notesList: d.notes ? [d.notes] : [],
       tags: String(d.tags || '').split(/[,\s]+/).filter(Boolean),
       stage: 'new', osStage: 'new', status: 'new', crmStatus: 'new', createdAt: new Date().toISOString(),
@@ -7474,6 +7518,9 @@
       estimate: { labor: 0, materials: 0, total: 0, notes: '' }, buyingIntent: 'med'
     };
     st.pipeline.manual.unshift(lead);
+    try {
+      if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon();
+    } catch (ePersist) {}
     root._josLeadAddOpen = false;
     root._josLeadDraft = null;
     root._josLeadId = id;
@@ -7493,10 +7540,17 @@
   }
 
   function wireLeadsRoot(root) {
-    if (root._josLeadsBoundV2) return;
-    root._josLeadsBoundV2 = true;
+    if (root._josLeadsBoundV3) return;
+    root._josLeadsBoundV3 = true;
 
     root.addEventListener('click', function (e) {
+      if (e.target && e.target.getAttribute && e.target.getAttribute('data-jos-lead-backdrop') === '1') {
+        root._josLeadAddOpen = false;
+        root._josLeadDraft = null;
+        renderLeads();
+        e.stopPropagation();
+        return;
+      }
       if (!e.target.closest('.jos-ld-bulk-wrap') && root._josLeadBulkOpen) {
         root._josLeadBulkOpen = false;
         renderLeads();
@@ -7563,6 +7617,9 @@
         root._josLeadsSearchT = setTimeout(function () { renderLeads(); }, 140);
       }
       if (e.target && e.target.id === 'jos-leads-reply') root._josLeadDraftMsg = e.target.value;
+      if (e.target && (e.target.id === 'jos-la-phone' || e.target.id === 'jos-ca-phone')) {
+        e.target.value = formatPhoneValue(e.target.value);
+      }
     });
 
     root.addEventListener('change', function (e) {
@@ -8405,7 +8462,7 @@
       '<div class="jos-between jos-cust-modal-head"><h3 id="jos-ca-title">Add Customer</h3><button type="button" class="jos-cust-modal-x" data-jos-act="cust-add-cancel" aria-label="Close">×</button></div>' +
       '<div class="jos-cust-form">' +
       '<label>Name<input id="jos-ca-name" value="' + esc(d.name || '') + '" placeholder="Full name"></label>' +
-      '<label>Phone<input id="jos-ca-phone" value="' + esc(d.phone || '') + '" placeholder="(619) 555-0100"></label>' +
+      '<label>Phone<span class="jos-phone-dial">' + esc(phoneCountryDial()) + '</span><input id="jos-ca-phone" type="tel" inputmode="tel" value="' + esc(formatPhoneValue(d.phone || '')) + '" placeholder="888-888-8888" autocomplete="tel"></label>' +
       '<label>Email<input id="jos-ca-email" value="' + esc(d.email || '') + '" placeholder="name@email.com"></label>' +
       '<label>Address<input id="jos-ca-address" value="' + esc(d.address || '') + '" placeholder="Service address"></label>' +
       '<label>Vehicle / Property<input id="jos-ca-vehicle" value="' + esc(d.vehicle || '') + '" placeholder="Vehicle or property"></label>' +
@@ -8433,7 +8490,7 @@
     var on = selectedId && String(c.id) === String(selectedId);
     var jobsN = custJobsFor(c).length;
     var ltv = custLifetime(c);
-    var contact = c.phone || c.email || 'No contact';
+    var contact = c.phone ? displayPhone(c.phone) : (c.email || 'No contact');
     return '<button type="button" class="jos-cm-card' + (on ? ' on' : '') + '" data-jos-cust-row="' + esc(String(c.id)) + '">' +
       '<span class="jos-cm-ava">' + esc(initials(c.name)) + '</span>' +
       '<span class="jos-cm-card-body">' +
@@ -8497,7 +8554,7 @@
       '<div><div class="jos-cm-ws-name"><strong>' + esc(c.name || 'Customer') + '</strong>' +
       (custIsVip(c) ? '<span class="jos-cm-vip dark">VIP</span>' : '') +
       '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-edit" title="Edit" aria-label="Edit">✎</button></div>' +
-      '<div class="jos-muted">' + esc(c.email || '—') + ' · ' + esc(c.phone || '—') + '</div>' +
+      '<div class="jos-muted">' + esc(c.email || '—') + ' · ' + esc(c.phone ? displayPhone(c.phone) : '—') + '</div>' +
       '<div class="jos-muted">Customer since ' + esc(since) + ' · <button type="button" class="jos-pill ' + statusTone + '" data-jos-act="cust-status-menu">' + esc(statusLabel) + '</button></div>' +
       '</div></div>' +
       '<div class="jos-cm-ws-acts">' +
@@ -8800,7 +8857,7 @@
     var m = String(d.address || '').match(/,\s*([^,]+),\s*[A-Z]{2}\b/);
     if (m) city = m[1].trim();
     var cust = {
-      id: id, name: d.name.trim(), phone: d.phone, email: d.email, address: d.address, city: city,
+      id: id, name: d.name.trim(), phone: formatPhoneValue(d.phone || ''), email: d.email, address: d.address, city: city,
       vehicle: d.vehicle, vehicles: d.vehicle ? [{ label: d.vehicle, type: '' }] : [],
       property: /property|office|home/i.test(d.vehicle) ? d.vehicle : '',
       tags: String(d.tags || '').split(/[,\s]+/).filter(Boolean),
@@ -8821,8 +8878,8 @@
   }
 
   function wireCustomersRoot(root) {
-    if (root._josCustBoundV2) return;
-    root._josCustBoundV2 = true;
+    if (root._josCustBoundV3) return;
+    root._josCustBoundV3 = true;
 
     root.addEventListener('click', function (e) {
       if (e.target && e.target.getAttribute && e.target.getAttribute('data-jos-cust-backdrop') === '1') {
@@ -8872,6 +8929,9 @@
         root._josCustPage = 1;
         clearTimeout(root._josCustSearchT);
         root._josCustSearchT = setTimeout(function () { renderCustomers(); }, 140);
+      }
+      if (e.target && e.target.id === 'jos-ca-phone') {
+        e.target.value = formatPhoneValue(e.target.value);
       }
     });
 
