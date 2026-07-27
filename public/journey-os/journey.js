@@ -4013,7 +4013,10 @@
     if (Array.isArray(plans) && plans.length) return plans;
     var recurring = customers().filter(function (c) { return c.customerType === 'recurring'; });
     if (recurring.length) return [{ name: 'Recurring plan', price: recurring[0].recurringAmount || 99, cadence: '/mo', includes: ['Priority scheduling', 'Member pricing'] }];
-    return [{ name: 'Essentials', price: 79, cadence: '/mo', includes: ['1 visit / month', 'Member-only slots'] }, { name: 'Shine Club', price: 129, cadence: '/mo', includes: ['2 visits / month', 'Interior refresh', 'Priority booking'] }];
+    if (allowDemoSeed()) {
+      return [{ name: 'Essentials', price: 79, cadence: '/mo', includes: ['1 visit / month', 'Member-only slots'] }, { name: 'Shine Club', price: 129, cadence: '/mo', includes: ['2 visits / month', 'Interior refresh', 'Priority booking'] }];
+    }
+    return [];
   }
   var MEM_TABS = [
     ['overview', 'Overview'],
@@ -4173,9 +4176,18 @@
       var seedAct = { id: memId('mem_act'), type: 'system', label: 'Memberships OS initialized from plans and recurring customers', at: new Date().toISOString(), payload: {} };
       try { Object.freeze(seedAct.payload); Object.freeze(seedAct); } catch (_) {}
       m.activity.push(seedAct);
-      m.analytics = { activeDemo: 128, mrrDemo: 8450, churnDemo: 2.4, renewalsDemo: 23 };
+      m.analytics = allowDemoSeed()
+        ? { activeDemo: 128, mrrDemo: 8450, churnDemo: 2.4, renewalsDemo: 23 }
+        : { activeDemo: 0, mrrDemo: 0, churnDemo: 0, renewalsDemo: 0 };
     }
-    if (!m.analytics) m.analytics = { activeDemo: 128, mrrDemo: 8450, churnDemo: 2.4, renewalsDemo: 23 };
+    if (!m.analytics) {
+      m.analytics = allowDemoSeed()
+        ? { activeDemo: 128, mrrDemo: 8450, churnDemo: 2.4, renewalsDemo: 23 }
+        : { activeDemo: 0, mrrDemo: 0, churnDemo: 0, renewalsDemo: 0 };
+    }
+    if (!allowDemoSeed() && m.analytics && Number(m.analytics.activeDemo) === 128) {
+      m.analytics = { activeDemo: 0, mrrDemo: 0, churnDemo: 0, renewalsDemo: 0 };
+    }
     // Normalize in place (Rule #18) — do not replace subscriber object identity
     m.subscribers = m.subscribers.filter(function (s) { return s && s.customerId; }).map(function (s, idx) {
       s.id = s.id || ('mem_sub_' + idx);
@@ -4188,8 +4200,13 @@
       s.visitsUsed = Number(s.visitsUsed) || 0;
       s.visitResetAt = s.visitResetAt || s.startedAt || todayStr();
       if (s.autoRenew == null) s.autoRenew = true;
-      if (!s.cardBrand) s.cardBrand = idx % 2 === 0 ? 'Visa' : 'Card';
-      if (!s.cardLast4) s.cardLast4 = idx % 3 === 0 ? '4242' : (idx % 3 === 1 ? '1881' : '5555');
+      if (allowDemoSeed()) {
+        if (!s.cardBrand) s.cardBrand = idx % 2 === 0 ? 'Visa' : 'Card';
+        if (!s.cardLast4) s.cardLast4 = idx % 3 === 0 ? '4242' : (idx % 3 === 1 ? '1881' : '5555');
+      } else {
+        if (!s.cardBrand) s.cardBrand = '';
+        if (!s.cardLast4) s.cardLast4 = '';
+      }
       if (!s.billingStatus) s.billingStatus = s.status === 'past_due' ? 'failed' : 'auto';
       return s;
     });
@@ -4299,14 +4316,15 @@
       var n = String(s.nextRenewalAt || '');
       return s.status === 'active' && n >= todayStr() && n <= weekEnd;
     }).length;
+    var demo = allowDemoSeed();
     return {
-      active: (active.length >= 5 ? active.length : ((m.analytics && m.analytics.activeDemo) || active.length)),
-      mrr: (mrr >= 500 ? mrr : ((m.analytics && m.analytics.mrrDemo) || mrr)),
-      churn: (m.analytics && m.analytics.churnDemo != null) ? m.analytics.churnDemo : churn,
-      renewals: (renewals >= 3 ? renewals : ((m.analytics && m.analytics.renewalsDemo) || renewals)),
-      activeDelta: 12,
-      mrrDelta: 18,
-      churnDelta: -4
+      active: demo && active.length < 5 ? ((m.analytics && m.analytics.activeDemo) || active.length) : active.length,
+      mrr: demo && mrr < 500 ? ((m.analytics && m.analytics.mrrDemo) || mrr) : mrr,
+      churn: demo && m.analytics && m.analytics.churnDemo != null ? m.analytics.churnDemo : (m.subscribers.length ? churn : 0),
+      renewals: demo && renewals < 3 ? ((m.analytics && m.analytics.renewalsDemo) || renewals) : renewals,
+      activeDelta: demo ? 12 : 0,
+      mrrDelta: demo ? 18 : 0,
+      churnDelta: demo ? -4 : 0
     };
   }
   function renderMemPlanModal(root) {
@@ -5932,12 +5950,12 @@
       '<button type="button" class="jos-rpt-mc-kpi" data-jos-act="rpt-kpi-open" data-jos-rpt-kpi="revenue">' +
         '<span class="ico tone-green">$</span><span class="lbl">Collected Revenue</span>' +
         '<strong class="val">' + esc(rev) + '</strong>' +
-        '<span class="delta up">↑18.6%</span><span class="foot">vs last month</span>' +
+        '<span class="delta up">—</span><span class="foot">vs last month</span>' +
       '</button>' +
       '<button type="button" class="jos-rpt-mc-kpi" data-jos-act="rpt-kpi-open" data-jos-rpt-kpi="jobs">' +
         '<span class="ico tone-blue">☰</span><span class="lbl">Jobs Completed</span>' +
         '<strong class="val">' + esc(jobsDone) + '</strong>' +
-        '<span class="delta up">↑12.4%</span><span class="foot">vs last month</span>' +
+        '<span class="delta up">—</span><span class="foot">vs last month</span>' +
       '</button>' +
       '<button type="button" class="jos-rpt-mc-kpi" data-jos-act="rpt-kpi-open" data-jos-rpt-kpi="members">' +
         '<span class="ico tone-purple">☺</span><span class="lbl">Active Members</span>' +
@@ -5978,7 +5996,7 @@
           '<div class="jos-rpt-mc-card-head"><div><h3>Revenue Over Time</h3><div class="jos-rpt-mc-sub">Daily · last 30 days</div></div>' +
             '<select class="jos-rpt-mc-select" aria-label="Revenue grain"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select>' +
           '</div>' +
-          '<div class="jos-rpt-mc-metric-row"><strong>' + esc(revVal) + '</strong><span class="delta up">↑18.6%</span></div>' +
+          '<div class="jos-rpt-mc-metric-row"><strong>' + esc(revVal) + '</strong><span class="delta up">—</span></div>' +
           '<div class="jos-rpt-mc-linechart" data-jos-act="rpt-go-money" role="button" tabindex="0" aria-label="Open Revenue">' +
             '<svg viewBox="0 0 640 220" preserveAspectRatio="none">' +
               '<defs><linearGradient id="rptAreaMc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F97316" stop-opacity="0.22"/><stop offset="100%" stop-color="#F97316" stop-opacity="0"/></linearGradient></defs>' +
@@ -10230,52 +10248,101 @@
       '</div></div>';
   }
 
+  function businessServiceNames() {
+    var st = S();
+    var names = [];
+    function pushName(n) {
+      n = String(n || '').trim();
+      if (!n) return;
+      if (names.some(function (x) { return x.toLowerCase() === n.toLowerCase(); })) return;
+      names.push(n);
+    }
+    (st.editorSvcs || st.services || []).forEach(function (s) { pushName(s && (s.name || s.title)); });
+    ((st.website && st.website.packages) || []).forEach(function (p) { pushName(p && (p.name || p.title)); });
+    jobs().forEach(function (j) { if (!j.isBlock) pushName(j.service); });
+    return names;
+  }
   function commandCenterActions(ctx) {
     var actions = [];
+    var demo = !!ctx.ceoDemo || allowDemoSeed();
     var quoteVal = ctx.outstanding || 0;
-    if (quoteVal > 0 || ctx.ceoDemo) {
-      actions.push({
-        title: 'You have ' + money(quoteVal || 2180) + ' in quotes that haven\'t been followed up.',
-        meta: 'Estimated recover · ' + money(Math.round((quoteVal || 2180) * 0.42)),
-        cta: 'Follow Up',
-        act: 'go-quotes',
-        tone: 'hot'
-      });
+    if (quoteVal > 0 || demo) {
+      var qShow = quoteVal > 0 ? quoteVal : (demo ? 2180 : 0);
+      if (qShow > 0) {
+        actions.push({
+          title: 'You have ' + money(qShow) + ' in quotes that haven\'t been followed up.',
+          meta: 'Estimated recover · ' + money(Math.round(qShow * 0.42)),
+          cta: 'Follow Up',
+          act: 'go-quotes',
+          tone: 'hot'
+        });
+      }
     }
-    if (ctx.openLeads > 0 || ctx.ceoDemo) {
-      var leadN = ctx.openLeads || 5;
-      actions.push({
-        title: 'Respond to ' + leadN + ' new lead' + (leadN === 1 ? '' : 's'),
-        meta: 'Estimated value · ' + money(ctx.leadValue || 920),
-        cta: 'Respond',
-        act: 'go-leads',
-        tone: 'brand'
-      });
+    if (ctx.openLeads > 0 || demo) {
+      var leadN = ctx.openLeads || (demo ? 5 : 0);
+      if (leadN > 0) {
+        actions.push({
+          title: 'Respond to ' + leadN + ' new lead' + (leadN === 1 ? '' : 's'),
+          meta: 'Estimated value · ' + money(ctx.leadValue || (demo ? 920 : 0)),
+          cta: 'Respond',
+          act: 'go-leads',
+          tone: 'brand'
+        });
+      }
     }
-    if (ctx.gapHours >= 2 || ctx.ceoDemo) {
-      actions.push({
-        title: 'Tomorrow\'s schedule has a ' + (ctx.gapHours || 3) + '-hour gap.',
-        meta: 'Fill with detail packages near your route',
-        cta: 'Fill Schedule',
-        act: 'go-jobs',
-        tone: 'warn'
-      });
+    if (ctx.gapHours >= 2 || demo) {
+      var gap = ctx.gapHours || (demo ? 3 : 0);
+      if (gap >= 2) {
+        var svcHint = (businessServiceNames()[0] || 'open packages');
+        actions.push({
+          title: 'Tomorrow\'s schedule has a ' + gap + '-hour gap.',
+          meta: 'Fill with ' + svcHint + ' near your route',
+          cta: 'Fill Schedule',
+          act: 'go-jobs',
+          tone: 'warn'
+        });
+      }
     }
-    actions.push({
-      title: 'Ceramic Coating is converting 41% better than Interior Details.',
-      meta: 'Potential monthly gain · +$480',
-      cta: 'Promote Service',
-      act: 'go-marketing',
-      tone: 'ok'
-    });
-    if (ctx.staleCustomers > 0 || ctx.ceoDemo) {
-      actions.push({
-        title: (ctx.staleCustomers || 3) + ' repeat customers haven\'t booked in over 90 days.',
-        meta: 'Win-back reminder ready',
-        cta: 'Send Reminder',
-        act: 'ask-share',
-        tone: 'info'
-      });
+    // Industry-aware service tip — never invent Ceramic Coating for lawn companies
+    (function () {
+      var names = businessServiceNames();
+      if (names.length >= 2) {
+        actions.push({
+          title: names[0] + ' is your most booked service vs ' + names[1] + '.',
+          meta: 'Promote it this week to fill open slots',
+          cta: 'Promote Service',
+          act: 'go-marketing',
+          tone: 'ok'
+        });
+      } else if (names.length === 1) {
+        actions.push({
+          title: 'Promote ' + names[0] + ' to warm leads this week.',
+          meta: 'Turn website interest into booked jobs',
+          cta: 'Promote Service',
+          act: 'go-marketing',
+          tone: 'ok'
+        });
+      } else if (demo) {
+        actions.push({
+          title: 'Add your top service so Hubly can recommend what to promote.',
+          meta: 'Open Website editor → Packages',
+          cta: 'Add Service',
+          act: 'go-editor',
+          tone: 'ok'
+        });
+      }
+    })();
+    if (ctx.staleCustomers > 0 || demo) {
+      var staleN = ctx.staleCustomers || (demo ? 3 : 0);
+      if (staleN > 0) {
+        actions.push({
+          title: staleN + ' repeat customers haven\'t booked in over 90 days.',
+          meta: 'Win-back reminder ready',
+          cta: 'Send Reminder',
+          act: 'ask-share',
+          tone: 'info'
+        });
+      }
     }
     if (ctx.msgsWaiting > 0) {
       actions.push({
@@ -10480,7 +10547,7 @@
         '<button type="button" class="jos-kpi-hit" data-jos-act="go-leads">' +
         '<div class="jos-kpi-top"><span class="jos-kpi-ico" aria-hidden="true">◎</span><span class="lbl">New Leads</span></div>' +
         '<div class="v">' + openLeads + '</div>' +
-        '<div class="jos-kpi-lines"><span>Response · ~6 min</span><span>Conversion · 28%</span></div>' +
+        '<div class="jos-kpi-lines"><span>Response · —</span><span>Conversion · —</span></div>' +
         '<div class="s">Newest first ready</div>' +
         sparkSvg([1, 2, 2, 4, 3, 5, openLeads || 3], '#B84E1F') +
         '<span class="jos-kpi-cta">Open Leads →</span></button>') +
@@ -11191,12 +11258,14 @@
     }
     if (c.favorite == null) c.favorite = !!c.favorite;
     if (c.service == null) {
-      if (/ceramic|coating/.test(blob)) c.service = 'Ceramic Coating';
-      else if (/interior/.test(blob)) c.service = 'Interior Detail';
-      else if (/exterior/.test(blob)) c.service = 'Exterior Detail';
-      else c.service = 'Full Detail';
+      var svcNames = businessServiceNames();
+      if (/mow|lawn|yard|landscape/.test(blob)) c.service = svcNames[0] || 'Lawn Care';
+      else if (svcNames.length) c.service = svcNames[0];
+      else if (allowDemoSeed() && /ceramic|coating/.test(blob)) c.service = 'Ceramic Coating';
+      else if (allowDemoSeed() && /interior/.test(blob)) c.service = 'Interior Detail';
+      else c.service = svcNames[0] || '';
     }
-    if (c.estValue == null) c.estValue = /ceramic/.test(blob) ? 650 : (/interior/.test(blob) ? 220 : 280);
+    if (c.estValue == null) c.estValue = Number(c.amount) || 0;
     return c;
   }
   function inboxConversations() {
