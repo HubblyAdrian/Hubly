@@ -3723,12 +3723,10 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 }
 #p-app.jos-pixel.jos-jobs-mode .ni.active{background:var(--jos-brand);box-shadow:none}
 #p-app.jos-pixel.jos-nav-expanded.jos-jobs-mode .nav-jobs-new{
-  display:flex;margin:0 12px 10px;height:40px;align-items:center;justify-content:center;gap:8px;
-  background:var(--jos-brand);color:#fff;border:0;border-radius:12px;font:inherit;font-size:13px;font-weight:750;cursor:pointer;
-  width:calc(100% - 24px);
+  display:none!important;
 }
 #p-app.jos-pixel:not(.jos-nav-expanded).jos-jobs-mode .nav-jobs-new{display:none!important}
-#p-app.jos-pixel.jos-jobs-mode .nav-jobs-new:hover{background:var(--jos-brand-dark)}
+#p-app.jos-pixel.jos-jobs-mode .nav-jobs-new{display:none!important}
 #p-app.jos-pixel:not(.jos-jobs-mode) .nav-jobs-new{display:none}
 
 .jos-jobs-shell{
@@ -4690,8 +4688,8 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 /* operate-nav-unify: one sidebar chrome everywhere — last-wins lock */
 #p-app.jos-pixel .app-nav .ni[title]{/* titles kept for collapsed a11y */}
 #p-app.jos-pixel.jos-nav-expanded .ni{position:relative}
-#p-app.jos-pixel .nav-jobs-new{display:none}
-#p-app.jos-pixel.jos-nav-expanded.jos-jobs-mode .nav-jobs-new{display:flex}
+#p-app.jos-pixel .nav-jobs-new{display:none!important}
+#p-app.jos-pixel.jos-nav-expanded.jos-jobs-mode .nav-jobs-new{display:none!important}
 #p-app.jos-pixel.jos-nav-expanded{
   --nav:260px!important;
 }
