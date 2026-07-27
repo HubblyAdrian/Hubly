@@ -65,6 +65,11 @@
       "name": "✨ Ask Hubly still works",
       "pass": true,
       "detail": "len=4465"
+    },
+    {
+      "name": "⚙️ Settings still works",
+      "pass": true,
+      "detail": "len=3268"
     }
   ],
   "warns": []
