@@ -1461,10 +1461,12 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 .jos-mkt-mc-right{display:flex;flex-direction:column;gap:20px;min-width:0}
 .jos-mkt-mc-panel.short{min-height:0;flex:1}
 
-.jos-mkt-mc-camp-list,.jos-mkt-mc-perf-list,.jos-mkt-mc-cal-list,.jos-mkt-mc-auto-list{display:grid;gap:6px;margin-top:12px;flex:1}
+.jos-mkt-mc-camp-list,.jos-mkt-mc-perf-list,.jos-mkt-mc-cal-list,.jos-mkt-mc-auto-list{
+  display:grid;gap:6px;margin-top:12px;flex:1;align-content:start;align-items:start;
+}
 .jos-mkt-mc-camp,.jos-mkt-mc-cal,.jos-mkt-mc-auto{
   appearance:none;border:0;background:transparent;width:100%;display:flex;align-items:center;gap:12px;
-  padding:10px 8px;border-radius:12px;cursor:pointer;text-align:left;font:inherit;min-height:58px;
+  padding:10px 8px;border-radius:12px;cursor:pointer;text-align:left;font:inherit;min-height:52px;height:auto;align-self:start;
 }
 .jos-mkt-mc-camp:hover,.jos-mkt-mc-cal:hover,.jos-mkt-mc-auto:hover{background:#F8F9FB}
 .jos-mkt-mc-camp .ico{
@@ -1488,7 +1490,7 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 .jos-mkt-badge.info{background:#DBEAFE;color:#1D4ED8}
 .jos-mkt-badge.lost,.jos-mkt-badge.warn{background:#F1F5F9;color:#64748B}
 
-.jos-mkt-mc-perf{display:grid;grid-template-columns:16px 1fr auto;gap:8px 10px;align-items:center;min-height:52px;padding:4px 0}
+.jos-mkt-mc-perf{display:grid;grid-template-columns:16px 1fr auto;gap:6px 10px;align-items:center;min-height:0;padding:6px 0;align-content:center}
 .jos-mkt-mc-perf .ico{
   width:8px;height:8px;border-radius:50%;background:var(--jos-brand);
 }
