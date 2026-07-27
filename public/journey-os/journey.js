@@ -1908,8 +1908,41 @@
     if (status === 'connected' || status === 'os_ready') return setStatusBadge(status === 'connected' ? 'Connected' : 'OS ready', 'ok');
     return setStatusBadge('Not connected', 'warn');
   }
+  function renderSetAskDock(root) {
+    var open = !!(root && root._josSetAskOpen);
+    var msgs = (root && Array.isArray(root._josSetAskMsgs) && root._josSetAskMsgs.length)
+      ? root._josSetAskMsgs
+      : [{ role: 'assistant', text: "I can help configure business profile, team, billing, integrations, branding, AI defaults, and security — without owning customer or job data." }];
+    var thread = msgs.map(function (m) {
+      return '<div class="jos-set-ask-msg ' + esc(m.role || 'assistant') + '">' +
+        (m.role === 'assistant' ? '<span class="role">Ask Hubly</span>' : '') +
+        '<div class="txt">' + esc(m.text || '') + '</div></div>';
+    }).join('');
+    var chips = ['Finish my business profile', 'Invite my team', 'Connect Google Calendar', 'Turn on MFA'].map(function (q) {
+      return '<button type="button" class="jos-set-ask-chip" data-jos-act="set-ask-chip" data-jos-set-ask="' + esc(q) + '">' + esc(q) + '</button>';
+    }).join('');
+    return '<div class="jos-set-ask-dock' + (open ? ' open' : '') + '" id="jos-set-ask-dock">' +
+      '<button type="button" class="jos-set-ask-fab" data-jos-act="set-ask-toggle" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="jos-set-ask-panel">' +
+        '<span class="spark" aria-hidden="true">✦</span><span>Ask Hubly</span>' +
+      '</button>' +
+      '<aside class="jos-set-ask-panel" id="jos-set-ask-panel" aria-label="Ask Hubly settings coach"' + (open ? '' : ' hidden') + '>' +
+        '<div class="jos-set-ask-head">' +
+          '<div class="jos-set-ask-brand"><img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly" onerror="this.src=\'/assets/hubly-wordmark.png\'"><strong>Settings coach</strong></div>' +
+          '<button type="button" class="jos-set-ask-x" data-jos-act="set-ask-toggle" aria-label="Close">×</button>' +
+        '</div>' +
+        '<div class="jos-set-ask-thread">' + thread + '</div>' +
+        '<div class="jos-set-ask-chips">' + chips + '</div>' +
+        '<div class="jos-set-ask-compose">' +
+          '<input id="jos-set-ask-input" type="text" placeholder="Ask about settings…" onkeydown="if(event.key===\'Enter\'){var b=document.querySelector(\'[data-jos-act=set-ask-send]\');if(b)b.click();}">' +
+          '<button type="button" class="jos-btn jos-btn-brand jos-set-ask-send" data-jos-act="set-ask-send" aria-label="Send">↗</button>' +
+        '</div>' +
+        '<button type="button" class="jos-set-ask-full" data-jos-act="set-go-ask">Open full Ask Hubly →</button>' +
+      '</aside>' +
+    '</div>';
+  }
   function renderSetOverview() {
     var os = ensureSettingsOsState();
+    var root = el('jos-settings-root');
     var city = (allowDemoSeed() && os._demoShot) ? 'Salt Lake City' : (os.business.city || os.business.name || '—');
     var teamN = (allowDemoSeed() && os._demoShot) ? 3 : (os.team.users || []).length;
     var plan = (os.billing.plan || 'Grow') + ' · ' + ((os.billing.status || 'active').replace(/^./, function (c) { return c.toUpperCase(); }));
@@ -1929,12 +1962,19 @@
         '</span></button>';
     }).join('');
     var features = [
-      'Business profile tied to owned booking',
-      'Auto-assign reminder for jobs',
-      'AI coach (Ask Hubly OS) in Stage 2',
-      'Integrations marked OS-only until Stage 2'
+      'Business profile drives booking and invoices',
+      'Team roles for managers and technicians',
+      'Ask Hubly guides setup without owning ops data',
+      'Integrations stay OS-ready until Stage 2 connect'
     ].map(function (t) {
       return '<div class="jos-set-mc-feature"><span class="mark" aria-hidden="true">✓</span><span>' + esc(t) + '</span></div>';
+    }).join('');
+    var askPreview = [
+      { q: 'What should I finish first?', a: 'Start with Business profile, then invite your team so jobs can be assigned.' },
+      { q: 'Is MFA required?', a: mfaOff ? 'MFA is currently off. Turn it on under Security for stronger account protection.' : 'MFA is on. Sessions and API keys are managed under Security.' }
+    ].map(function (row) {
+      return '<button type="button" class="jos-set-ask-preview" data-jos-act="set-ask-chip" data-jos-set-ask="' + esc(row.q) + '">' +
+        '<strong>' + esc(row.q) + '</strong><span>' + esc(row.a) + '</span></button>';
     }).join('');
     return '<div class="jos-set-mc-ov">' +
       '<div class="jos-set-mc-panel">' +
@@ -1953,16 +1993,18 @@
           '<section class="jos-set-mc-card jos-set-mc-features">' +
             '<div class="jos-set-mc-card-head"><h3><span class="jos-set-mc-hico rocket" aria-hidden="true"></span> Platform Features</h3></div>' +
             '<div class="jos-set-mc-feature-list">' + features + '</div>' +
+            '<div class="jos-set-mc-config-only">Config only — open the tabs above to edit platform settings.</div>' +
           '</section>' +
-          '<section class="jos-set-mc-card jos-set-mc-forbidden-card">' +
-            '<div class="jos-set-mc-card-head"><h3><span class="jos-set-mc-hico lock" aria-hidden="true"></span> Forbidden Copies</h3></div>' +
-            '<p class="jos-set-mc-forbidden-copy">customers, payments, jobs, leads, campaigns, reviews, and services arrays.</p>' +
-            '<div class="jos-set-mc-config-only">Config only — open OS tabs to edit platform settings.</div>' +
+          '<section class="jos-set-mc-card jos-set-mc-askcard" aria-label="Ask Hubly">' +
+            '<div class="jos-set-mc-card-head"><h3><span class="jos-set-mc-hico ask" aria-hidden="true"></span> Ask Hubly</h3>' +
+            '<button type="button" class="jos-set-mc-ask-open" data-jos-act="set-ask-toggle">Open chat</button></div>' +
+            '<p class="jos-set-mc-ask-lead">Your AI settings coach. Ask anything about setup — I\'ll point you to the right tab.</p>' +
+            '<div class="jos-set-ask-preview-list">' + askPreview + '</div>' +
           '</section>' +
         '</div>' +
         '<section class="jos-set-mc-banner">' +
           '<div class="jos-set-mc-banner-copy"><span class="spark" aria-hidden="true">✦</span><div><strong>Need help customizing your settings?</strong><p>Ask Hubly can guide you through best practices and recommended setups.</p></div></div>' +
-          '<button type="button" class="jos-btn jos-btn-brand jos-set-mc-banner-btn" data-jos-act="set-go-ask"><span aria-hidden="true">✦</span> Ask Hubly</button>' +
+          '<button type="button" class="jos-btn jos-btn-brand jos-set-mc-banner-btn" data-jos-act="set-ask-toggle"><span aria-hidden="true">✦</span> Ask Hubly</button>' +
         '</section>' +
       '</div>' +
     '</div>';
@@ -2151,6 +2193,7 @@
       '</div>' +
       setTabsHtml(tab) +
       '<div class="jos-set-mc-body">' + renderSettingsTabBody(root, tab) + '</div>' +
+      renderSetAskDock(root) +
     '</div>';
     bindRoot(root);
   }
@@ -2178,6 +2221,39 @@
     try {
       if (act === 'set-refresh') return renderSettings();
       if (act === 'set-new') { openQuickNew(); return; }
+      if (act === 'set-ask-toggle') {
+        if (root) root._josSetAskOpen = !root._josSetAskOpen;
+        return renderSettings();
+      }
+      if (act === 'set-ask-chip' || act === 'set-ask-send') {
+        if (!root) return;
+        var q = '';
+        if (act === 'set-ask-chip') q = (t && t.getAttribute('data-jos-set-ask')) || '';
+        else {
+          var inp = el('jos-set-ask-input');
+          q = inp ? String(inp.value || '').trim() : '';
+        }
+        if (!q) return toast('Ask a settings question');
+        if (!Array.isArray(root._josSetAskMsgs)) {
+          root._josSetAskMsgs = [{ role: 'assistant', text: "I can help configure business profile, team, billing, integrations, branding, AI defaults, and security — without owning customer or job data." }];
+        }
+        root._josSetAskMsgs.push({ role: 'user', text: q });
+        var lower = q.toLowerCase();
+        var reply = 'I can open the right Settings tab for that. Try Business, Team, Integrations, Branding, AI, or Security.';
+        var jump = '';
+        if (/business|profile|address|city/.test(lower)) { reply = 'Business profile owns name, address, timezone, and contact info. Opening Business…'; jump = 'business'; }
+        else if (/team|invite|user|role/.test(lower)) { reply = 'Invite teammates and set roles under Team. Opening Team…'; jump = 'team'; }
+        else if (/calendar|google|integrat|stripe|twilio/.test(lower)) { reply = 'Integrations are OS-ready until Stage 2 live connect. Opening Integrations…'; jump = 'integrations'; }
+        else if (/mfa|security|password|api/.test(lower)) { reply = 'Security covers MFA, sessions, and API keys. Opening Security…'; jump = 'security'; }
+        else if (/brand|logo|color|font/.test(lower)) { reply = 'Branding stores visual tokens only — your Website editor owns pages. Opening Branding…'; jump = 'branding'; }
+        else if (/ai|ask hubly|tone/.test(lower)) { reply = 'AI defaults control tone and confirmation behavior for Ask Hubly. Opening AI…'; jump = 'ai'; }
+        else if (/bill|plan|grow|subscription/.test(lower)) { reply = 'Platform billing (not customer invoices) lives under Billing. Opening Billing…'; jump = 'billing'; }
+        else if (/first|finish|start|setup/.test(lower)) { reply = 'Finish Business profile first, then invite your team, then connect calendar when Stage 2 is ready.'; jump = 'business'; }
+        root._josSetAskMsgs.push({ role: 'assistant', text: reply });
+        root._josSetAskOpen = true;
+        if (jump) root._josSetTab = jump;
+        return renderSettings();
+      }
       if (act.indexOf('set-tab-') === 0) {
         if (root) root._josSetTab = act.replace('set-tab-', '');
         return renderSettings();

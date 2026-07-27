@@ -10,13 +10,15 @@ Settings Overview matches the Mission Control screenshot 1:1. Extra Overview chr
 4. **Overview panel**
    - Hero — hubly wordmark · CONTROL CENTER · “Configure Hubly — never own business data” · shield/lock art
    - **6 status cards** — Business · Team · Status · Information (+ Live) · AI Defaults · Security (MFA: off)
-   - **Platform Features** (4 green checks) · **Forbidden Copies** (+ dashed config note)
-   - Ask Hubly help banner — “Need help customizing your settings?”
+   - **Platform Features** (4 green checks) · **Ask Hubly** coach card (quick prompts)
+   - Ask Hubly help banner
+5. **Floating Ask Hubly chat** — FAB + expandable settings coach panel on every Settings tab
 
 ## Deleted from Overview
 
 - Platform Checklist + progress bar
 - Recommended Next Steps priority list
+- Forbidden Copies engineering dump
 - Visible Rule #23 footnote wording in the hero
 - Missing Mission Control CSS (restored)
 
