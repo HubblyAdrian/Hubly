@@ -3090,28 +3090,594 @@
     }
   }
 
-  function renderReportsPage() {
-    var root = el('jos-reports-root'); if (!root) return;
+  var RPT_TABS = [
+    ['overview', 'Overview'],
+    ['dashboards', 'Dashboards'],
+    ['definitions', 'Definitions'],
+    ['layouts', 'Layouts'],
+    ['scheduled', 'Scheduled'],
+    ['forecasts', 'Forecasts'],
+    ['sources', 'Sources']
+  ];
+  var RPT_SOURCES = [
+    { key: 'revenue', name: 'Revenue', owner: 'S.revenueOs', reads: 'Collected, outstanding, invoice/payment totals', act: 'rpt-go-money' },
+    { key: 'memberships', name: 'Memberships', owner: 'S.membershipsOs', reads: 'Plans, active subscribers, projected MRR', act: 'rpt-go-mem' },
+    { key: 'pipeline', name: 'Pipeline', owner: 'Pipeline OS', reads: 'Stage counts and open opportunities', act: 'rpt-go-pipeline' },
+    { key: 'customers', name: 'Customers', owner: 'S.customers', reads: 'Customer counts and repeat rate', act: 'rpt-go-customers' },
+    { key: 'leads', name: 'Leads', owner: 'collectLeads()', reads: 'Lead volume and source mix', act: 'rpt-go-leads' },
+    { key: 'jobs', name: 'Jobs', owner: 'S.jobs', reads: 'Completed/scheduled job aggregates', act: 'rpt-go-jobs' },
+    { key: 'marketing', name: 'Marketing', owner: 'S.marketingOs', reads: 'Campaign, template, automation counts', act: 'rpt-go-marketing' },
+    { key: 'reviews', name: 'Reviews', owner: 'S.reviewsOs', reads: 'Rating, review counts, requests', act: 'rpt-go-reviews' }
+  ];
+  function rptId(prefix) { return (prefix || 'rpt') + '_' + Math.random().toString(36).slice(2, 9); }
+  function rptTodayIso() { return new Date().toISOString(); }
+  function rptRound(n) { n = Number(n) || 0; return Math.round(n * 100) / 100; }
+  function rptNum(v) { var n = Number(v); return Number.isFinite(n) ? n : 0; }
+  function rptSourceLabel(key) {
+    var src = RPT_SOURCES.find(function (s) { return s.key === key || s.name.toLowerCase() === String(key || '').toLowerCase(); });
+    return src ? src.name : (key || 'Source');
+  }
+  function ensureReportsOsState() {
+    var st = S();
+    if (!st.reportsOs || typeof st.reportsOs !== 'object') st.reportsOs = {};
+    var r = st.reportsOs;
+    ['payments', 'invoices', 'customers', 'jobs', 'leads', 'campaigns', 'reviews', 'memberships', 'subscribers'].forEach(function (key) {
+      if (Object.prototype.hasOwnProperty.call(r, key)) delete r[key];
+    });
+    if (!Array.isArray(r.dashboards)) r.dashboards = [];
+    if (!Array.isArray(r.definitions)) r.definitions = [];
+    if (!Array.isArray(r.layouts)) r.layouts = [];
+    if (!Array.isArray(r.schedules)) r.schedules = [];
+    if (!Array.isArray(r.forecasts)) r.forecasts = [];
+    if (!Array.isArray(r.activity)) r.activity = [];
+    if (!r._seeded) {
+      var now = rptTodayIso();
+      r.layouts.push({ id: 'rpt_layout_exec', name: 'Executive overview', columns: 4, theme: 'light' });
+      r.layouts.push({ id: 'rpt_layout_ops', name: 'Operations board', columns: 3, theme: 'light' });
+      r.definitions.push({
+        id: 'rpt_def_operating_snapshot',
+        name: 'Operating snapshot',
+        sourceModules: ['Revenue', 'Jobs', 'Customers', 'Leads', 'Reviews'],
+        metrics: ['revenue_collected', 'jobs_completed', 'average_ticket', 'customers_total', 'review_rating'],
+        filters: { period: 'current_month' }
+      });
+      r.definitions.push({
+        id: 'rpt_def_retention_growth',
+        name: 'Retention and growth',
+        sourceModules: ['Memberships', 'Pipeline', 'Marketing', 'Reviews'],
+        metrics: ['active_members', 'projected_mrr', 'open_leads', 'active_campaigns', 'review_count'],
+        filters: { period: 'rolling_30' }
+      });
+      r.dashboards.push({
+        id: 'rpt_dash_owner',
+        name: 'Owner dashboard',
+        layoutId: 'rpt_layout_exec',
+        widgets: [
+          { metricKey: 'revenue_collected', sourceModule: 'Revenue' },
+          { metricKey: 'jobs_completed', sourceModule: 'Jobs' },
+          { metricKey: 'active_members', sourceModule: 'Memberships' },
+          { metricKey: 'review_rating', sourceModule: 'Reviews' }
+        ],
+        createdAt: now
+      });
+      r.dashboards.push({
+        id: 'rpt_dash_growth',
+        name: 'Growth watch',
+        layoutId: 'rpt_layout_ops',
+        widgets: [
+          { metricKey: 'open_leads', sourceModule: 'Leads' },
+          { metricKey: 'pipeline_open', sourceModule: 'Pipeline' },
+          { metricKey: 'active_campaigns', sourceModule: 'Marketing' },
+          { metricKey: 'customers_total', sourceModule: 'Customers' }
+        ],
+        createdAt: now
+      });
+      r.schedules.push({ id: 'rpt_sched_weekly_owner', definitionId: 'rpt_def_operating_snapshot', cadence: 'weekly', channel: 'os', nextRunAt: todayStr(), status: 'active' });
+      r.forecasts.push({ id: 'rpt_fcst_revenue_30', name: '30-day collected revenue', model: 'linear_os', sourceMetric: 'revenue_collected', horizonDays: 30, lastRunAt: null, projection: null });
+      r.activity.push({ id: rptId('rpt_act'), type: 'system', label: 'Reports OS initialized with dashboard/report configuration only', at: now, payload: { metricKeys: ['revenue_collected', 'jobs_completed', 'active_members', 'review_rating'] } });
+      r._seeded = true;
+    }
+    r.dashboards = r.dashboards.map(function (d, idx) {
+      d.id = d.id || rptId('rpt_dash');
+      d.name = d.name || ('Dashboard ' + (idx + 1));
+      d.layoutId = d.layoutId || (r.layouts[0] && r.layouts[0].id) || '';
+      if (!Array.isArray(d.widgets)) d.widgets = [];
+      d.widgets = d.widgets.map(function (w) { return { metricKey: w.metricKey || 'revenue_collected', sourceModule: w.sourceModule || 'Revenue' }; });
+      d.createdAt = d.createdAt || rptTodayIso();
+      return d;
+    });
+    r.definitions = r.definitions.map(function (d, idx) {
+      d.id = d.id || rptId('rpt_def');
+      d.name = d.name || ('Report definition ' + (idx + 1));
+      if (!Array.isArray(d.sourceModules)) d.sourceModules = [];
+      if (!Array.isArray(d.metrics)) d.metrics = [];
+      if (!d.filters || typeof d.filters !== 'object') d.filters = {};
+      return d;
+    });
+    r.layouts = r.layouts.map(function (l, idx) {
+      l.id = l.id || rptId('rpt_layout');
+      l.name = l.name || ('Layout ' + (idx + 1));
+      l.columns = Math.max(1, Math.min(6, Number(l.columns) || 3));
+      l.theme = l.theme || 'light';
+      return l;
+    });
+    r.schedules = r.schedules.map(function (s) {
+      s.id = s.id || rptId('rpt_sched');
+      s.definitionId = s.definitionId || (r.definitions[0] && r.definitions[0].id) || '';
+      s.cadence = s.cadence || 'weekly';
+      s.channel = 'os';
+      s.nextRunAt = s.nextRunAt || todayStr();
+      s.status = s.status || 'active';
+      return s;
+    });
+    r.forecasts = r.forecasts.map(function (f, idx) {
+      f.id = f.id || rptId('rpt_fcst');
+      f.name = f.name || ('Forecast ' + (idx + 1));
+      f.model = 'linear_os';
+      f.sourceMetric = f.sourceMetric || 'revenue_collected';
+      f.horizonDays = Math.max(1, Number(f.horizonDays) || 30);
+      if (f.lastRunAt == null) f.lastRunAt = null;
+      if (f.projection == null) f.projection = null;
+      else f.projection = rptRound(f.projection);
+      return f;
+    });
+    return r;
+  }
+  function rptPushActivity(type, label, payload) {
+    var r = ensureReportsOsState();
+    r.activity.push({ id: rptId('rpt_act'), type: type, label: label, at: rptTodayIso(), payload: payload ? Object.assign({}, payload) : {} });
+  }
+  function publishReportGenerated(metricKeys) {
+    var ev = hublyEvents();
+    if (ev && typeof ev.publish === 'function') ev.publish('report.generated', { metricKeys: metricKeys || [], at: rptTodayIso() });
+  }
+  function rptRevenueSummary() {
+    var st = S();
+    var r = st.revenueOs && typeof st.revenueOs === 'object' ? st.revenueOs : null;
+    if (r) {
+      var pays = Array.isArray(r.payments) ? r.payments : [];
+      var deps = Array.isArray(r.deposits) ? r.deposits : [];
+      var refs = Array.isArray(r.refunds) ? r.refunds : [];
+      var invs = Array.isArray(r.invoices) ? r.invoices : [];
+      var collected = pays.reduce(function (s, p) { return s + rptNum(p.amount); }, 0) + deps.reduce(function (s, p) { return s + rptNum(p.amount); }, 0) - refs.reduce(function (s, p) { return s + rptNum(p.amount); }, 0);
+      if (!collected && invs.length) {
+        collected = invs.filter(function (inv) { return ['paid', 'partially_refunded', 'refunded'].indexOf(inv.status) >= 0; }).reduce(function (s, inv) { return s + rptNum(inv.total); }, 0) - refs.reduce(function (s, p) { return s + rptNum(p.amount); }, 0);
+      }
+      var byInvoice = {};
+      pays.concat(deps).forEach(function (row) { if (row.invoiceId) byInvoice[row.invoiceId] = (byInvoice[row.invoiceId] || 0) + rptNum(row.amount); });
+      var outstanding = invs.filter(function (inv) { return ['draft', 'sent', 'deposit_paid'].indexOf(inv.status) >= 0; }).reduce(function (s, inv) {
+        return s + Math.max(0, rptNum(inv.total) - (byInvoice[inv.id] || 0));
+      }, 0);
+      return { total: rptRound(collected), outstanding: rptRound(outstanding), source: 'Revenue OS', usedRevenueOs: true };
+    }
     var completed = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; });
-    var rev = completed.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    var avg = completed.length ? rev / completed.length : 0;
-    var booked = jobs().filter(function (j) { return jobActive(j) && j.status !== 'completed'; }).length;
-    var repeat = customers().filter(function (c) { return custJobsFor(c).filter(function (j) { return j.status === 'completed'; }).length >= 2; }).length;
-    var repeatPct = customers().length ? Math.round((repeat / customers().length) * 100) : 0;
-    var svcMap = {};
-    completed.forEach(function (j) { var k = j.service || 'Other'; svcMap[k] = (svcMap[k] || 0) + (parseFloat(j.amount) || 0); });
-    var topSvc = Object.keys(svcMap).map(function (k) { return [k, svcMap[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 5);
-    if (!topSvc.length) topSvc = [['Full Detail', rev * 0.35 || 120], ['Interior', rev * 0.25 || 90], ['Ceramic', rev * 0.2 || 80], ['Other', rev * 0.2 || 60]];
-    var maxSvc = Math.max.apply(null, topSvc.map(function (x) { return x[1]; })) || 1;
-    var trend = [0.55, 0.62, 0.6, 0.72, 0.78, 0.85, 0.9, 0.88, 0.95, 1].map(function (x) { return Math.round((rev || 1000) * x); });
-    root.innerHTML = page('Operate · Reports', 'Reports', 'Understand how your business performed — facts only.', btn('go-money', 'Export / money view', 'jos-btn-ink jos-btn-sm'),
-      '<div class="jos-kpi-row"><div class="jos-kpi"><div class="jos-kpi-lbl">Revenue</div><div class="jos-kpi-v brand">' + esc(money(rev) || '$0') + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Jobs Completed</div><div class="jos-kpi-v">' + completed.length + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Average Ticket</div><div class="jos-kpi-v">' + esc(money(avg) || '$0') + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Repeat Customers</div><div class="jos-kpi-v">' + repeatPct + '%</div><div class="jos-kpi-sub">' + repeat + ' returning · ' + booked + ' booked ahead</div></div></div>' +
-      '<div class="jos-ov-grid"><div class="jos-card"><div class="jos-kicker">Revenue Trend</div><div class="jos-bars jos-bars-line jos-mt" style="height:140px">' + trend.map(function (v) { var max = Math.max.apply(null, trend); return '<div class="jos-bar"><i style="height:' + Math.max(8, Math.round((v / max) * 100)) + '%"></i></div>'; }).join('') + '</div></div>' +
-      '<div class="jos-card"><div class="jos-kicker">Top Services (by revenue)</div><div class="jos-stack jos-mt">' + topSvc.map(function (s) {
-        return '<div class="jos-perk"><div class="jos-between"><span>' + esc(s[0]) + '</span><strong>' + esc(money(s[1])) + '</strong></div><div class="jos-conf-bar"><i style="width:' + Math.round((s[1] / maxSvc) * 100) + '%"></i></div></div>';
-      }).join('') + '</div></div></div>' +
-      '<div class="jos-grid-2 jos-mt"><div class="jos-tile"><h3>Customer sources</h3><p>Website, booking, and manual leads feeding jobs.</p><div class="jos-report-bar"><i style="width:' + Math.min(100, 25 + collectLeads().length * 6) + '%"></i></div><div class="jos-muted jos-mt">' + collectLeads().length + ' open leads · ' + quotes().length + ' quotes</div></div><div class="jos-tile"><h3>Monthly growth</h3><p>Completed jobs vs prior pace.</p><div class="jos-report-bar"><i style="width:' + Math.min(100, 30 + completed.length * 4) + '%"></i></div><div class="jos-muted jos-mt">Based on completed jobs and payments.</div></div></div>');
+    return { total: rptRound(completed.reduce(function (s, j) { return s + rptNum(j.amount); }, 0)), outstanding: 0, source: 'Jobs display fallback', usedRevenueOs: false };
+  }
+  function rptMembershipSummary() {
+    var m = S().membershipsOs && typeof S().membershipsOs === 'object' ? S().membershipsOs : null;
+    if (m) {
+      var plans = Array.isArray(m.plans) ? m.plans : [];
+      var subs = Array.isArray(m.subscribers) ? m.subscribers : [];
+      var active = subs.filter(function (s) { return s.status !== 'cancelled' && s.status !== 'paused'; });
+      var mrr = active.reduce(function (sum, s) {
+        var plan = plans.find(function (p) { return String(p.id) === String(s.planId); });
+        return sum + (plan ? rptNum(plan.price) : 0);
+      }, 0);
+      return { active: active.length, paused: subs.filter(function (s) { return s.status === 'paused'; }).length, mrr: rptRound(mrr), source: 'Memberships OS' };
+    }
+    var recurring = customers().filter(function (c) { return c.customerType === 'recurring' || c.membership; }).length;
+    return { active: recurring, paused: 0, mrr: 0, source: 'Customers display fallback' };
+  }
+  function rptMarketingSummary() {
+    var m = S().marketingOs && typeof S().marketingOs === 'object' ? S().marketingOs : {};
+    var campaigns = Array.isArray(m.campaigns) ? m.campaigns : [];
+    var templates = Array.isArray(m.templates) ? m.templates : [];
+    var autos = Array.isArray(m.automations) ? m.automations : [];
+    return {
+      activeCampaigns: campaigns.filter(function (c) { return c.status === 'active' || c.status === 'scheduled'; }).length,
+      campaigns: campaigns.length,
+      templates: templates.length,
+      automations: autos.filter(function (a) { return a.on || (m.toggles && m.toggles[a.id]); }).length,
+      source: 'Marketing OS'
+    };
+  }
+  function rptReviewsSummary() {
+    var r = S().reviewsOs && typeof S().reviewsOs === 'object' ? S().reviewsOs : null;
+    var list = r && Array.isArray(r.reviews) ? r.reviews : ((S().website && Array.isArray(S().website.manualReviews)) ? S().website.manualReviews : (Array.isArray(S().manualReviews) ? S().manualReviews : []));
+    var count = list.length;
+    var rating = count ? rptRound(list.reduce(function (s, rv) { return s + rptNum(rv.rating || 5); }, 0) / count) : 0;
+    var requests = r && Array.isArray(r.requests) ? r.requests : [];
+    return { rating: rating, count: count, pendingRequests: requests.filter(function (req) { return req.status === 'pending'; }).length, source: r ? 'Reviews OS' : 'Manual reviews display fallback' };
+  }
+  function rptPipelineSummary() {
+    var st = S();
+    var collected = collectLeads();
+    var manual = st.pipeline && Array.isArray(st.pipeline.manual) ? st.pipeline.manual.filter(function (l) { return l && !l.deleted; }) : [];
+    var seen = {};
+    var open = collected.concat(manual).filter(function (l) {
+      var id = String(l.key || l.id || l.name || Math.random());
+      if (seen[id]) return false;
+      seen[id] = true;
+      return true;
+    });
+    var cardsByStage = {};
+    if (st.pipeline && st.pipeline.stages) Object.keys(st.pipeline.stages).forEach(function (key) { var stage = st.pipeline.stages[key]; cardsByStage[stage] = (cardsByStage[stage] || 0) + 1; });
+    return { openLeads: open.length, stageCounts: cardsByStage, source: 'Leads/Pipeline owners' };
+  }
+  function rptJobSummary() {
+    var all = jobs().filter(function (j) { return j && !j.isBlock; });
+    var completed = all.filter(function (j) { return j.status === 'completed'; });
+    var booked = all.filter(function (j) { return jobActive(j) && j.status !== 'completed' && j.status !== 'cancelled'; });
+    return { total: all.length, completed: completed.length, booked: booked.length, source: 'Jobs' };
+  }
+  function rptCustomerSummary() {
+    var custs = customers();
+    var repeat = custs.filter(function (c) { return custJobsFor(c).filter(function (j) { return j.status === 'completed'; }).length >= 2; }).length;
+    return { total: custs.length, repeat: repeat, repeatPct: custs.length ? Math.round((repeat / custs.length) * 100) : 0, source: 'Customers/Jobs' };
+  }
+  function rptAggregates() {
+    var revenue = rptRevenueSummary();
+    var jobsAgg = rptJobSummary();
+    var members = rptMembershipSummary();
+    var pipe = rptPipelineSummary();
+    var custs = rptCustomerSummary();
+    var mkt = rptMarketingSummary();
+    var revs = rptReviewsSummary();
+    var avg = jobsAgg.completed ? revenue.total / jobsAgg.completed : 0;
+    return { revenue: revenue, jobs: jobsAgg, members: members, pipeline: pipe, customers: custs, marketing: mkt, reviews: revs, avgTicket: rptRound(avg) };
+  }
+  function rptMetricValue(metricKey, ag) {
+    ag = ag || rptAggregates();
+    var map = {
+      revenue_collected: { label: 'Collected revenue', value: money(ag.revenue.total) || '$0', raw: ag.revenue.total, sourceModule: 'Revenue', sub: ag.revenue.source },
+      revenue_outstanding: { label: 'Outstanding', value: money(ag.revenue.outstanding) || '$0', raw: ag.revenue.outstanding, sourceModule: 'Revenue', sub: 'Open invoice balance' },
+      jobs_completed: { label: 'Jobs completed', value: String(ag.jobs.completed), raw: ag.jobs.completed, sourceModule: 'Jobs', sub: ag.jobs.booked + ' booked ahead' },
+      average_ticket: { label: 'Average ticket', value: money(ag.avgTicket) || '$0', raw: ag.avgTicket, sourceModule: 'Revenue', sub: 'Collected / completed jobs' },
+      active_members: { label: 'Active members', value: String(ag.members.active), raw: ag.members.active, sourceModule: 'Memberships', sub: ag.members.source },
+      projected_mrr: { label: 'Projected MRR', value: money(ag.members.mrr) || '$0', raw: ag.members.mrr, sourceModule: 'Memberships', sub: 'Plans x active subscribers' },
+      open_leads: { label: 'Open leads', value: String(ag.pipeline.openLeads), raw: ag.pipeline.openLeads, sourceModule: 'Leads', sub: 'Lead owner feed' },
+      pipeline_open: { label: 'Pipeline cards', value: String(Object.keys(ag.pipeline.stageCounts).reduce(function (s, k) { return s + ag.pipeline.stageCounts[k]; }, 0)), raw: Object.keys(ag.pipeline.stageCounts).reduce(function (s, k) { return s + ag.pipeline.stageCounts[k]; }, 0), sourceModule: 'Pipeline', sub: 'Stage assignments only' },
+      customers_total: { label: 'Customers', value: String(ag.customers.total), raw: ag.customers.total, sourceModule: 'Customers', sub: ag.customers.repeatPct + '% repeat' },
+      review_rating: { label: 'Review rating', value: ag.reviews.rating ? ag.reviews.rating.toFixed(1) : '-', raw: ag.reviews.rating, sourceModule: 'Reviews', sub: ag.reviews.count + ' reviews' },
+      review_count: { label: 'Reviews', value: String(ag.reviews.count), raw: ag.reviews.count, sourceModule: 'Reviews', sub: ag.reviews.pendingRequests + ' pending requests' },
+      active_campaigns: { label: 'Active campaigns', value: String(ag.marketing.activeCampaigns), raw: ag.marketing.activeCampaigns, sourceModule: 'Marketing', sub: ag.marketing.campaigns + ' total campaigns' }
+    };
+    return map[metricKey] || { label: metricKey, value: '-', raw: 0, sourceModule: 'Reports', sub: 'Unknown metric key' };
+  }
+  function rptMetricOptions(selected) {
+    var keys = ['revenue_collected', 'revenue_outstanding', 'jobs_completed', 'average_ticket', 'active_members', 'projected_mrr', 'open_leads', 'pipeline_open', 'customers_total', 'review_rating', 'review_count', 'active_campaigns'];
+    return keys.map(function (key) { var m = rptMetricValue(key); return '<option value="' + esc(key) + '"' + (String(selected) === key ? ' selected' : '') + '>' + esc(m.label + ' - ' + m.sourceModule) + '</option>'; }).join('');
+  }
+  function rptLayoutOptions(selectedId) {
+    return ensureReportsOsState().layouts.map(function (l) {
+      return '<option value="' + esc(l.id) + '"' + (String(selectedId) === String(l.id) ? ' selected' : '') + '>' + esc(l.name + ' (' + l.columns + ' cols)') + '</option>';
+    }).join('');
+  }
+  function rptDefinitionOptions(selectedId) {
+    return ensureReportsOsState().definitions.map(function (d) {
+      return '<option value="' + esc(d.id) + '"' + (String(selectedId) === String(d.id) ? ' selected' : '') + '>' + esc(d.name) + '</option>';
+    }).join('');
+  }
+  function rptStatusBadge(label, tone) {
+    return DS() ? DS().statusBadge(label, tone || 'info') : '<span class="jos-pill ' + esc(tone || 'info') + '">' + esc(label) + '</span>';
+  }
+  function renderReportsKpis() {
+    var d = DS(), ag = rptAggregates();
+    if (d) {
+      return '<div class="jos-rpt-kpis">' +
+        d.metricCard('Collected revenue', money(ag.revenue.total) || '$0', ag.revenue.source) +
+        d.metricCard('Jobs completed', String(ag.jobs.completed), ag.jobs.booked + ' booked ahead') +
+        d.metricCard('Active members', String(ag.members.active), ag.members.source) +
+        d.metricCard('Review rating', ag.reviews.rating ? ag.reviews.rating.toFixed(1) : '-', ag.reviews.count + ' reviews') +
+        '</div>';
+    }
+    return '<div class="jos-kpi-row"><div class="jos-kpi"><div class="jos-kpi-lbl">Collected revenue</div><div class="jos-kpi-v brand">' + esc(money(ag.revenue.total) || '$0') + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Jobs completed</div><div class="jos-kpi-v">' + ag.jobs.completed + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Active members</div><div class="jos-kpi-v">' + ag.members.active + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Review rating</div><div class="jos-kpi-v">' + (ag.reviews.rating || '-') + '</div></div></div>';
+  }
+  function rptTopServicesHtml() {
+    var completed = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; });
+    var map = {};
+    completed.forEach(function (j) { var k = j.service || 'Other'; map[k] = (map[k] || 0) + rptNum(j.amount); });
+    var rows = Object.keys(map).map(function (k) { return [k, map[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 5);
+    var max = Math.max.apply(null, rows.map(function (x) { return x[1]; }).concat([1]));
+    return rows.length ? rows.map(function (row) {
+      return '<div class="jos-rpt-bar-row"><div class="jos-between"><span>' + esc(row[0]) + '</span><strong>' + esc(money(row[1]) || '$0') + '</strong></div><div class="jos-rpt-bar"><i style="width:' + Math.round((row[1] / max) * 100) + '%"></i></div></div>';
+    }).join('') : (DS() ? DS().emptyState('No completed jobs', 'Complete jobs to populate service mix.') : '<div class="jos-empty">No completed jobs yet.</div>');
+  }
+  function renderReportsOverviewTab(root) {
+    var r = ensureReportsOsState(), d = DS(), ag = rptAggregates();
+    var widgets = (r.dashboards[0] && r.dashboards[0].widgets || []).map(function (w) {
+      var m = rptMetricValue(w.metricKey, ag);
+      return '<div class="jos-rpt-widget"><div class="jos-kicker">' + esc(m.sourceModule) + '</div><strong>' + esc(m.value) + '</strong><span>' + esc(m.label) + '</span></div>';
+    }).join('');
+    var ai = d ? d.aiInsightCard({
+      kicker: 'AI - Reports OS',
+      body: 'Reports is reading live aggregate metrics from owner modules. It stores dashboard, definition, layout, schedule, forecast config, and activity only.',
+      actionsHtml: dsBtn('rpt-refresh', 'Refresh aggregates', 'jos-btn-brand jos-btn-sm') + dsBtn('rpt-go-money', 'Open Revenue', 'jos-btn jos-btn-sm')
+    }) : '';
+    return renderReportsKpis() + (ai ? '<div class="jos-mt">' + ai + '</div>' : '') +
+      '<div class="jos-rpt-2col jos-mt"><div class="jos-card"><div class="jos-kicker">Owner dashboard widgets</div><div class="jos-rpt-widget-grid jos-mt">' + widgets + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Rule #21 guardrail</div><div class="jos-rpt-rule"><strong>Config only</strong><span>S.reportsOs owns dashboards, definitions, layouts, schedules, forecasts, and activity. Operational rows stay in Revenue, Memberships, Jobs, Customers, Leads, Marketing, and Reviews.</span></div></div></div>' +
+      '<div class="jos-rpt-2col jos-mt"><div class="jos-card"><div class="jos-kicker">Top services by job amount</div><div class="jos-stack jos-mt">' + rptTopServicesHtml() + '</div><p class="jos-muted jos-mt">Display aggregate only; Revenue remains financial source of truth when present.</p></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Growth inputs</div><div class="jos-stack jos-mt">' +
+        '<div class="jos-rpt-act"><div><strong>Open leads</strong><div class="jos-muted">Leads owner feed</div></div><strong>' + ag.pipeline.openLeads + '</strong></div>' +
+        '<div class="jos-rpt-act"><div><strong>Repeat customers</strong><div class="jos-muted">Customers + Jobs read-time</div></div><strong>' + ag.customers.repeatPct + '%</strong></div>' +
+        '<div class="jos-rpt-act"><div><strong>Active campaigns</strong><div class="jos-muted">Marketing OS</div></div><strong>' + ag.marketing.activeCampaigns + '</strong></div>' +
+      '</div></div></div>';
+  }
+  function renderRptDashModal(root) {
+    if (root._josRptModal !== 'dash') return '';
+    return '<div class="jos-rpt-modal"><div class="jos-rpt-modal-panel"><h3>Create dashboard</h3><p class="jos-muted">Stores widget metric keys and source module labels only.</p>' +
+      '<div class="jos-rpt-form"><label>Name<input id="jos-rpt-dash-name" type="text" placeholder="Weekly owner dashboard"></label>' +
+      '<label>Layout<select id="jos-rpt-dash-layout">' + rptLayoutOptions('') + '</select></label>' +
+      '<label class="jos-rpt-span2">Widgets<select id="jos-rpt-dash-widgets" multiple>' + rptMetricOptions('') + '</select><span class="jos-muted">Pick metrics. No operational rows are copied.</span></label></div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('rpt-dash-save', 'Save dashboard', 'jos-btn-brand jos-btn-sm') + dsBtn('rpt-dash-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
+  }
+  function renderReportsDashboardsTab(root) {
+    var r = ensureReportsOsState(), d = DS(), ag = rptAggregates();
+    var cards = r.dashboards.map(function (dash) {
+      var layout = r.layouts.find(function (l) { return String(l.id) === String(dash.layoutId); });
+      var widgets = (dash.widgets || []).map(function (w) {
+        var m = rptMetricValue(w.metricKey, ag);
+        return '<div class="jos-rpt-chip"><strong>' + esc(m.value) + '</strong><span>' + esc(m.label) + ' - ' + esc(rptSourceLabel(w.sourceModule)) + '</span></div>';
+      }).join('');
+      return '<div class="jos-rpt-card"><div class="jos-rpt-card-h"><div><strong>' + esc(dash.name) + '</strong><div class="jos-muted">' + esc((layout && layout.name) || 'Layout') + ' - ' + esc(String((dash.widgets || []).length)) + ' widgets</div></div>' + rptStatusBadge('OS config', 'info') + '</div><div class="jos-rpt-chip-grid">' + widgets + '</div><div class="jos-rpt-card-foot">' + dsBtn('rpt-dash-open', 'New dashboard', 'jos-btn jos-btn-sm') + '</div></div>';
+    }).join('');
+    return (d ? d.sectionHeader('Dashboards', 'Saved widget layouts with metric keys only.', dsBtn('rpt-dash-open', '+ Dashboard', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-rpt-grid jos-mt">' + (cards || (d ? d.emptyState('No dashboards', 'Create a dashboard to group metric widgets.') : '')) + '</div>' + renderRptDashModal(root);
+  }
+  function renderRptDefModal(root) {
+    if (root._josRptModal !== 'def') return '';
+    return '<div class="jos-rpt-modal"><div class="jos-rpt-modal-panel"><h3>Create report definition</h3><p class="jos-muted">Definitions save metric keys, source module labels, and filters only.</p>' +
+      '<div class="jos-rpt-form"><label>Name<input id="jos-rpt-def-name" type="text" placeholder="Monthly performance"></label>' +
+      '<label>Period filter<select id="jos-rpt-def-period"><option value="current_month">Current month</option><option value="rolling_30">Rolling 30 days</option><option value="all_time">All time</option></select></label>' +
+      '<label class="jos-rpt-span2">Metrics<select id="jos-rpt-def-metrics" multiple>' + rptMetricOptions('') + '</select></label>' +
+      '<label class="jos-rpt-span2">Source modules<input id="jos-rpt-def-sources" type="text" placeholder="Revenue, Jobs, Customers"></label></div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('rpt-def-save', 'Save definition', 'jos-btn-brand jos-btn-sm') + dsBtn('rpt-def-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
+  }
+  function renderReportsDefinitionsTab(root) {
+    var r = ensureReportsOsState(), d = DS();
+    var rows = r.definitions.map(function (def) {
+      return '<div class="jos-rpt-card"><div class="jos-rpt-card-h"><div><strong>' + esc(def.name) + '</strong><div class="jos-muted">' + esc((def.sourceModules || []).join(', ') || 'No sources') + '</div></div>' + rptStatusBadge(String((def.metrics || []).length) + ' metrics', 'info') + '</div>' +
+        '<div class="jos-rpt-code">' + esc((def.metrics || []).join(', ') || 'No metrics') + '</div><div class="jos-muted">Filters: ' + esc(JSON.stringify(def.filters || {})) + '</div></div>';
+    }).join('');
+    return (d ? d.sectionHeader('Definitions', 'Reusable saved report definitions. Sources are references by module name only.', dsBtn('rpt-def-open', '+ Definition', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-rpt-grid jos-mt">' + (rows || (d ? d.emptyState('No definitions', 'Create a report definition.') : '')) + '</div>' + renderRptDefModal(root);
+  }
+  function renderRptLayoutModal(root) {
+    if (root._josRptModal !== 'layout') return '';
+    return '<div class="jos-rpt-modal"><div class="jos-rpt-modal-panel"><h3>Create layout</h3><div class="jos-rpt-form">' +
+      '<label>Name<input id="jos-rpt-layout-name" type="text" placeholder="KPI grid"></label>' +
+      '<label>Columns<input id="jos-rpt-layout-cols" type="number" min="1" max="6" value="3"></label>' +
+      '<label class="jos-rpt-span2">Theme<select id="jos-rpt-layout-theme"><option value="light">Light</option><option value="compact">Compact</option><option value="board">Board</option></select></label></div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('rpt-layout-save', 'Save layout', 'jos-btn-brand jos-btn-sm') + dsBtn('rpt-layout-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
+  }
+  function renderReportsLayoutsTab(root) {
+    var r = ensureReportsOsState(), d = DS();
+    var rows = r.layouts.map(function (layout) {
+      var used = r.dashboards.filter(function (dash) { return String(dash.layoutId) === String(layout.id); }).length;
+      return '<div class="jos-rpt-card"><div class="jos-rpt-card-h"><div><strong>' + esc(layout.name) + '</strong><div class="jos-muted">' + esc(String(layout.columns)) + ' columns - ' + esc(layout.theme || 'light') + '</div></div>' + rptStatusBadge(used + ' dashboards', 'quote') + '</div><div class="jos-rpt-layout-preview" style="grid-template-columns:repeat(' + esc(String(layout.columns)) + ',1fr)">' + Array.from({ length: Math.min(6, Number(layout.columns) || 3) }).map(function (_, i) { return '<i>' + (i + 1) + '</i>'; }).join('') + '</div></div>';
+    }).join('');
+    return (d ? d.sectionHeader('Layouts', 'Presentation layouts used by dashboards.', dsBtn('rpt-layout-open', '+ Layout', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-rpt-grid jos-mt">' + rows + '</div>' + renderRptLayoutModal(root);
+  }
+  function renderRptScheduleModal(root) {
+    if (root._josRptModal !== 'sched') return '';
+    return '<div class="jos-rpt-modal"><div class="jos-rpt-modal-panel"><h3>Schedule report</h3><p class="jos-muted">Stage 1 schedules stay inside Hubly OS.</p>' +
+      '<div class="jos-rpt-form"><label>Definition<select id="jos-rpt-sched-def">' + rptDefinitionOptions('') + '</select></label>' +
+      '<label>Cadence<select id="jos-rpt-sched-cadence"><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option></select></label>' +
+      '<label>Next run<input id="jos-rpt-sched-next" type="date" value="' + esc(todayStr()) + '"></label><label>Status<select id="jos-rpt-sched-status"><option value="active">Active</option><option value="paused">Paused</option></select></label></div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('rpt-sched-save', 'Save schedule', 'jos-btn-brand jos-btn-sm') + dsBtn('rpt-sched-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
+  }
+  function renderReportsScheduledTab(root) {
+    var r = ensureReportsOsState(), d = DS();
+    var rows = r.schedules.map(function (s) {
+      var def = r.definitions.find(function (x) { return String(x.id) === String(s.definitionId); });
+      return '<div class="jos-rpt-card"><div class="jos-rpt-card-h"><div><strong>' + esc(def ? def.name : 'Definition') + '</strong><div class="jos-muted">' + esc(s.cadence) + ' - next ' + esc(String(s.nextRunAt || '').slice(0, 10)) + ' - channel ' + esc(s.channel) + '</div></div>' + rptStatusBadge(s.status || 'active', s.status === 'paused' ? 'warn' : 'ok') + '</div></div>';
+    }).join('');
+    return (d ? d.sectionHeader('Scheduled reports', 'OS-only schedules. Email/Slack delivery is Stage 2.', dsBtn('rpt-sched-open', '+ Schedule', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-rpt-grid jos-mt">' + (rows || (d ? d.emptyState('No schedules', 'Schedule a saved definition.') : '')) + '</div>' + renderRptScheduleModal(root);
+  }
+  function renderRptForecastModal(root) {
+    if (root._josRptModal !== 'forecast') return '';
+    return '<div class="jos-rpt-modal"><div class="jos-rpt-modal-panel"><h3>Create forecast</h3><p class="jos-muted">Stores model config and latest projection only.</p>' +
+      '<div class="jos-rpt-form"><label>Name<input id="jos-rpt-fcst-name" type="text" placeholder="60-day revenue projection"></label>' +
+      '<label>Source metric<select id="jos-rpt-fcst-metric">' + rptMetricOptions('revenue_collected') + '</select></label>' +
+      '<label>Horizon days<input id="jos-rpt-fcst-days" type="number" min="1" max="365" value="30"></label><label>Model<select id="jos-rpt-fcst-model"><option value="linear_os">linear_os</option></select></label></div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('rpt-forecast-save', 'Save forecast', 'jos-btn-brand jos-btn-sm') + dsBtn('rpt-forecast-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
+  }
+  function rptForecastProjection(forecast) {
+    var metric = rptMetricValue(forecast.sourceMetric);
+    var raw = rptNum(metric.raw);
+    var multiplier = Math.max(1, Number(forecast.horizonDays) || 30) / 30;
+    return rptRound(raw * multiplier);
+  }
+  function renderReportsForecastsTab(root) {
+    var r = ensureReportsOsState(), d = DS();
+    var rows = r.forecasts.map(function (f) {
+      var metric = rptMetricValue(f.sourceMetric);
+      var display = /revenue|mrr|ticket|outstanding/.test(f.sourceMetric) ? (money(f.projection || 0) || '$0') : String(f.projection == null ? '-' : f.projection);
+      return '<div class="jos-rpt-card" data-jos-rpt-forecast="' + esc(f.id) + '"><div class="jos-rpt-card-h"><div><strong>' + esc(f.name) + '</strong><div class="jos-muted">' + esc(f.model) + ' - ' + esc(metric.label) + ' - ' + esc(String(f.horizonDays)) + ' days</div></div>' + rptStatusBadge(f.lastRunAt ? 'Run' : 'Not run', f.lastRunAt ? 'ok' : 'warn') + '</div><div class="jos-rpt-forecast-value">' + esc(display) + '</div><div class="jos-muted">Last run: ' + esc(f.lastRunAt ? String(f.lastRunAt).replace('T', ' ').slice(0, 19) : 'Never') + '</div><div class="jos-rpt-card-foot">' + dsBtn('rpt-forecast-run', 'Run forecast', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+    }).join('');
+    return (d ? d.sectionHeader('Forecasts', 'Linear OS forecasts read a metric key and store model output only.', dsBtn('rpt-forecast-open', '+ Forecast', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-rpt-grid jos-mt">' + rows + '</div>' + renderRptForecastModal(root);
+  }
+  function renderReportsSourcesTab() {
+    var ag = rptAggregates(), d = DS();
+    var counts = {
+      revenue: ag.revenue.usedRevenueOs ? (money(ag.revenue.total) || '$0') : 'fallback ' + (money(ag.revenue.total) || '$0'),
+      memberships: ag.members.active + ' active',
+      pipeline: Object.keys(ag.pipeline.stageCounts).length + ' stages',
+      customers: ag.customers.total + ' customers',
+      leads: ag.pipeline.openLeads + ' leads',
+      jobs: ag.jobs.completed + ' completed',
+      marketing: ag.marketing.activeCampaigns + ' active',
+      reviews: ag.reviews.count + ' reviews'
+    };
+    var rows = RPT_SOURCES.map(function (src) {
+      return '<tr><td><strong>' + esc(src.name) + '</strong></td><td>' + esc(src.owner) + '</td><td>' + esc(src.reads) + '</td><td>' + esc(counts[src.key] || '-') + '</td><td>' + dsBtn(src.act, 'Open', 'jos-btn jos-btn-sm') + '</td></tr>';
+    }).join('');
+    return (d ? d.sectionHeader('Owner sources', 'Reports reads aggregates from owners and deep-links back to the source of truth.', dsBtn('rpt-refresh', 'Refresh aggregates', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-rpt-table-wrap jos-mt"><table class="jos-rpt-table"><thead><tr><th>Module</th><th>Owner</th><th>Reports reads</th><th>Now</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<div class="jos-rpt-rule jos-mt"><strong>No duplication</strong><span>S.reportsOs never stores customers, payments, jobs, leads, campaigns, reviews, memberships, or subscribers. It stores report configuration and forecast model output only.</span></div>';
+  }
+  function renderReportsActivityTab() {
+    var r = ensureReportsOsState(), d = DS();
+    var list = r.activity.slice().reverse().map(function (a) {
+      return '<div class="jos-rpt-event"><div class="jos-rpt-event-type">' + esc(a.type || 'activity') + '</div><div class="jos-muted">' + esc(String(a.at || '').replace('T', ' ').slice(0, 19)) + '</div><p>' + esc(a.label || '') + '</p>' + (a.payload ? '<pre class="jos-rpt-event-payload">' + esc(JSON.stringify(a.payload || {}, null, 0)) + '</pre>' : '') + '</div>';
+    }).join('');
+    return '<div class="jos-card"><div class="jos-kicker">Reports activity</div><div class="jos-rpt-events jos-mt">' + (list || (d ? d.emptyState('No activity yet', 'Report config actions append here.') : '')) + '</div></div>';
+  }
+  function renderReportsTabBody(root, tab) {
+    if (tab === 'overview') return renderReportsOverviewTab(root);
+    if (tab === 'dashboards') return renderReportsDashboardsTab(root);
+    if (tab === 'definitions') return renderReportsDefinitionsTab(root);
+    if (tab === 'layouts') return renderReportsLayoutsTab(root);
+    if (tab === 'scheduled') return renderReportsScheduledTab(root);
+    if (tab === 'forecasts') return renderReportsForecastsTab(root);
+    if (tab === 'sources') return renderReportsSourcesTab() + '<div class="jos-mt">' + renderReportsActivityTab() + '</div>';
+    return renderReportsOverviewTab(root);
+  }
+  function renderReportsPageInner(root) {
+    ensureReportsOsState();
+    var tab = root._josRptTab || 'overview';
+    var d = DS();
+    var tabsHtml = '<div class="jos-tabs jos-rpt-tabs">' + RPT_TABS.map(function (t) {
+      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-rpt-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    }).join('') + '</div>';
+    var head = d ? d.pageHeader('Reports', 'Analytics layer for dashboards, definitions, layouts, schedules, and forecasts. Reads owner modules at render time.', dsBtn('rpt-refresh', 'Refresh', 'jos-btn jos-btn-sm') + dsBtn('rpt-dash-open', 'Create dashboard', 'jos-btn-brand jos-btn-sm') + dsBtn('rpt-go-money', 'Revenue', 'jos-btn jos-btn-sm')) :
+      '<div class="jos-page-head"><div><h1>Reports</h1><p>Analytics layer and saved report configuration.</p></div></div>';
+    root.innerHTML = '<div class="jos-page jos-rpt-page">' + head + tabsHtml + '<div class="jos-rpt-body">' + renderReportsTabBody(root, tab) + '</div></div>';
     bindRoot(root);
+    wireReportsRoot(root);
+  }
+  function renderReportsPage() {
+    var root = ownPixelView('v-reports', 'jos-reports-root');
+    if (!root) return;
+    updateChrome('reports');
+    root.innerHTML = '<div class="jos-page jos-rpt-page"><div class="jos-home-loading">Loading Reports...</div></div>';
+    try { renderReportsPageInner(root); }
+    catch (err) {
+      console.warn('HublyJourneyOS Reports', err);
+      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Reports could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderReportsPage()">Retry</button></div></div></div>';
+    }
+  }
+  var renderReports = renderReportsPage;
+  function wireReportsRoot(root) {
+    if (root._josRptBound) return;
+    root._josRptBound = true;
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && root._josRptModal) {
+        root._josRptModal = null;
+        renderReportsPage();
+      }
+    });
+  }
+  function rptSelectedOptions(id) {
+    var node = el(id);
+    return node ? Array.prototype.slice.call(node.selectedOptions || []).map(function (o) { return o.value; }) : [];
+  }
+  function rptModulesForMetrics(metrics) {
+    var seen = {};
+    metrics.forEach(function (key) { var m = rptMetricValue(key); seen[m.sourceModule] = true; });
+    return Object.keys(seen);
+  }
+  function handleReportsAct(act, t) {
+    var root = el('jos-reports-root');
+    if (!root) return;
+    var r = ensureReportsOsState();
+    try {
+      if (act === 'rpt-dash-open') { root._josRptModal = 'dash'; root._josRptTab = 'dashboards'; return renderReportsPage(); }
+      if (act === 'rpt-def-open') { root._josRptModal = 'def'; root._josRptTab = 'definitions'; return renderReportsPage(); }
+      if (act === 'rpt-layout-open') { root._josRptModal = 'layout'; root._josRptTab = 'layouts'; return renderReportsPage(); }
+      if (act === 'rpt-sched-open') { root._josRptModal = 'sched'; root._josRptTab = 'scheduled'; return renderReportsPage(); }
+      if (act === 'rpt-forecast-open') { root._josRptModal = 'forecast'; root._josRptTab = 'forecasts'; return renderReportsPage(); }
+      if (/^rpt-(dash|def|layout|sched|forecast)-cancel$/.test(act)) { root._josRptModal = null; return renderReportsPage(); }
+      if (act === 'rpt-dash-save') {
+        var dashMetrics = rptSelectedOptions('jos-rpt-dash-widgets');
+        if (!dashMetrics.length) dashMetrics = ['revenue_collected', 'jobs_completed', 'active_members', 'review_rating'];
+        var dash = {
+          id: rptId('rpt_dash'),
+          name: (el('jos-rpt-dash-name') || {}).value || 'New dashboard',
+          layoutId: (el('jos-rpt-dash-layout') || {}).value || (r.layouts[0] && r.layouts[0].id) || '',
+          widgets: dashMetrics.map(function (key) { var metric = rptMetricValue(key); return { metricKey: key, sourceModule: metric.sourceModule }; }),
+          createdAt: rptTodayIso()
+        };
+        r.dashboards.push(dash);
+        rptPushActivity('dashboard.saved', 'Saved dashboard ' + dash.name, { dashboardId: dash.id, metricKeys: dashMetrics });
+        root._josRptModal = null;
+        toast('Dashboard saved');
+        return renderReportsPage();
+      }
+      if (act === 'rpt-def-save') {
+        var defMetrics = rptSelectedOptions('jos-rpt-def-metrics');
+        if (!defMetrics.length) defMetrics = ['revenue_collected', 'jobs_completed'];
+        var typedSources = String((el('jos-rpt-def-sources') || {}).value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+        var def = {
+          id: rptId('rpt_def'),
+          name: (el('jos-rpt-def-name') || {}).value || 'New report definition',
+          sourceModules: typedSources.length ? typedSources : rptModulesForMetrics(defMetrics),
+          metrics: defMetrics,
+          filters: { period: (el('jos-rpt-def-period') || {}).value || 'current_month' }
+        };
+        r.definitions.push(def);
+        rptPushActivity('definition.saved', 'Saved definition ' + def.name, { definitionId: def.id, metricKeys: def.metrics, sourceModules: def.sourceModules });
+        root._josRptModal = null;
+        toast('Definition saved');
+        return renderReportsPage();
+      }
+      if (act === 'rpt-layout-save') {
+        var layout = { id: rptId('rpt_layout'), name: (el('jos-rpt-layout-name') || {}).value || 'New layout', columns: Math.max(1, Math.min(6, Number((el('jos-rpt-layout-cols') || {}).value) || 3)), theme: (el('jos-rpt-layout-theme') || {}).value || 'light' };
+        r.layouts.push(layout);
+        rptPushActivity('layout.saved', 'Saved layout ' + layout.name, { layoutId: layout.id, columns: layout.columns, theme: layout.theme });
+        root._josRptModal = null;
+        toast('Layout saved');
+        return renderReportsPage();
+      }
+      if (act === 'rpt-sched-save') {
+        var sched = { id: rptId('rpt_sched'), definitionId: (el('jos-rpt-sched-def') || {}).value || (r.definitions[0] && r.definitions[0].id) || '', cadence: (el('jos-rpt-sched-cadence') || {}).value || 'weekly', channel: 'os', nextRunAt: (el('jos-rpt-sched-next') || {}).value || todayStr(), status: (el('jos-rpt-sched-status') || {}).value || 'active' };
+        r.schedules.push(sched);
+        rptPushActivity('schedule.saved', 'Saved OS schedule', { scheduleId: sched.id, definitionId: sched.definitionId, cadence: sched.cadence, channel: sched.channel });
+        root._josRptModal = null;
+        toast('Schedule saved');
+        return renderReportsPage();
+      }
+      if (act === 'rpt-forecast-save') {
+        var fc = { id: rptId('rpt_fcst'), name: (el('jos-rpt-fcst-name') || {}).value || 'New forecast', model: 'linear_os', sourceMetric: (el('jos-rpt-fcst-metric') || {}).value || 'revenue_collected', horizonDays: Math.max(1, Number((el('jos-rpt-fcst-days') || {}).value) || 30), lastRunAt: null, projection: null };
+        r.forecasts.push(fc);
+        rptPushActivity('forecast.saved', 'Saved forecast model ' + fc.name, { forecastId: fc.id, metricKeys: [fc.sourceMetric], model: fc.model, horizonDays: fc.horizonDays });
+        root._josRptModal = null;
+        toast('Forecast saved');
+        return renderReportsPage();
+      }
+      if (act === 'rpt-forecast-run') {
+        var fcstId = t && (t.getAttribute('data-jos-rpt-forecast') || (t.closest('[data-jos-rpt-forecast]') && t.closest('[data-jos-rpt-forecast]').getAttribute('data-jos-rpt-forecast')));
+        var forecast = r.forecasts.find(function (f) { return String(f.id) === String(fcstId); }) || r.forecasts[0];
+        if (!forecast) { toast('Create a forecast first'); return; }
+        forecast.projection = rptForecastProjection(forecast);
+        forecast.lastRunAt = rptTodayIso();
+        rptPushActivity('forecast.run', 'Ran forecast ' + forecast.name, { forecastId: forecast.id, metricKeys: [forecast.sourceMetric], projection: forecast.projection });
+        publishReportGenerated([forecast.sourceMetric]);
+        toast('Forecast run complete');
+        return renderReportsPage();
+      }
+      if (act === 'rpt-refresh') {
+        publishReportGenerated(['revenue_collected', 'jobs_completed', 'active_members', 'review_rating']);
+        rptPushActivity('report.generated', 'Refreshed report aggregates', { metricKeys: ['revenue_collected', 'jobs_completed', 'active_members', 'review_rating'] });
+        toast('Report aggregates refreshed');
+        return renderReportsPage();
+      }
+      if (act === 'rpt-go-money') return switchNav('money');
+      if (act === 'rpt-go-mem') return switchNav('memberships');
+      if (act === 'rpt-go-jobs') return switchNav('jobs');
+      if (act === 'rpt-go-leads') return switchNav('leads');
+      if (act === 'rpt-go-customers') return switchNav('customers');
+      if (act === 'rpt-go-pipeline') return switchNav('pipeline');
+      if (act === 'rpt-go-marketing') return switchNav('marketing');
+      if (act === 'rpt-go-reviews') return switchNav('reviews');
+    } catch (err) {
+      console.warn('HublyJourneyOS rpt act', act, err);
+      toast('Failed - try again');
+    }
   }
 
   function renderGrowth() {
@@ -7897,7 +8463,7 @@
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-rve-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-rve-tab],[data-jos-rpt-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
       if (t.hasAttribute('data-jos-inbox-tab')) {
         var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
         return;
@@ -7964,6 +8530,10 @@
         var rver = el('jos-revenue-root'); if (rver) { rver._josRveTab = t.getAttribute('data-jos-rve-tab'); renderRevenue(); }
         return;
       }
+      if (t.hasAttribute('data-jos-rpt-tab')) {
+        var rptr = el('jos-reports-root'); if (rptr) { rptr._josRptTab = t.getAttribute('data-jos-rpt-tab'); renderReportsPage(); }
+        return;
+      }
       if (t.hasAttribute('data-jos-cust-row')) {
         var crow = el('jos-customers-root');
         if (crow) {
@@ -8006,6 +8576,7 @@
       if (act && String(act).indexOf('rev-') === 0) return handleReviewsAct(act, t);
       if (act && String(act).indexOf('mem-') === 0) return handleMembershipsAct(act, t);
       if (act && String(act).indexOf('rve-') === 0) return handleRevenueAct(act, t);
+      if (act && String(act).indexOf('rpt-') === 0) return handleReportsAct(act, t);
       if (act === 'ask-submit' || act === 'ask-brief') {
         switchNav('ask');
         return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
@@ -8064,6 +8635,8 @@
     renderRevenue: renderRevenue,
     handleRevenueAct: handleRevenueAct,
     renderReportsPage: renderReportsPage,
+    renderReports: renderReports,
+    handleReportsAct: handleReportsAct,
     renderGrowth: renderGrowth,
     renderReviews: renderReviews,
     handleReviewsAct: handleReviewsAct,

@@ -99,6 +99,19 @@ Aligns with Rules #18 and #19. Required for Revenue, reporting, AI analysis, and
 
 See [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md).
 
+## Rule #21 — Reports Never Duplicate Data
+
+Reports are a **presentation and analytics layer**.
+
+They aggregate, summarize, forecast, and visualize data from owner modules. They **never** become a second source of truth for operational data.
+
+- Own: dashboards, saved report definitions, layouts, scheduled reports, forecast **models** (config).  
+- Do not own / store: customers, payments, jobs, leads, campaigns, reviews, memberships.  
+- KPIs are computed at read-time from owning modules (`revenueOs`, `membershipsOs`, Jobs, etc.).  
+- Reinforces Rules #15 and #19.
+
+See [REPORTS_PLAN.md](./REPORTS_PLAN.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md).
+
 ## Cross-Module Verification (CMV)
 
 Before approval of a new module PR, confirm previously **locked** modules still function (no modifications — confirmation only).

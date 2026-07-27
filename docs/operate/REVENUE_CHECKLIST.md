@@ -1,12 +1,14 @@
 # Module 11 — 💰 Revenue
 
-**Status:** Stage 1 OS · MAT ✅ · CMV PASS · awaiting approval  
-**Branch:** `cursor/operate-revenue-2662`  
+**Status:** 🔒 OS locked · Stage 1 COMPLETE · Stage 2 ⏸ Deferred  
+**PR:** [#254](https://github.com/HubblyAdrian/Hubly/pull/254) (merged)  
 **Architecture (required):** [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md)  
 **Events:** [EVENTS.md](./EVENTS.md) (Rules #17–18 · #20)  
 **Ownership:** [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) (Rules #15 · #19)  
 **Design System:** HublyDS (Rule #14)  
-**MAT:** [REVENUE_MAT.md](./REVENUE_MAT.md) · runner `node scripts/mat-revenue.mjs` 
+**MAT:** [REVENUE_MAT.md](./REVENUE_MAT.md) · runner `node scripts/mat-revenue.mjs`  
+
+**Do not modify Revenue unless:** bug fix · Stage 2 integrations · explicit module reopen. 
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
 
@@ -62,12 +64,12 @@ Revenue is the financial system of record. Correctness over cosmetics.
 - [x] Stage 2 Stripe toast ✅
 
 ### QA / MAT / CMV
-- [ ] Validator revenue gates ⏳  
-- [ ] MAT ⏳  
-- [ ] CMV incl. Memberships ⏳  
+- [x] Validator revenue gates ✅  
+- [x] MAT ✅ ACCEPTED (`scripts/mat-revenue.mjs` · [REVENUE_MAT.md](./REVENUE_MAT.md))  
+- [x] CMV incl. Memberships ✅  
 
 ### Definition of Done
-- [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳  
+- [x] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ✅ 
 
 ---
 

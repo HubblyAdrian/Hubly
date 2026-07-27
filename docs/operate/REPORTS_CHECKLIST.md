@@ -1,18 +1,72 @@
 # Module 12 — 📊 Reports
 
-**Status:** Not started  
-**Source of truth:** This checklist (fill before Development)
+**Status:** Stage 1 OS · MAT ✅ · CMV PASS · awaiting approval  
+**Branch:** `cursor/operate-reports-2662`  
+**Plan:** [REPORTS_PLAN.md](./REPORTS_PLAN.md)  
+**Platform:** [PLATFORM_READINESS.md](./PLATFORM_READINESS.md)  
+**Rules:** #14–21 (especially **#21**)  
+**Design System:** HublyDS (Rule #14)  
+**MAT:** [REPORTS_MAT.md](./REPORTS_MAT.md) · runner `node scripts/mat-reports.mjs` 
 
-Legend: ✅ Complete · 🟡 Deferred · 🔴 Blocked · ☐ Pending
-
-Paste / maintain the official build checklist here. Cursor reads this file instead of chat history.
+Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
 
 ---
 
-## Checklist
+## Purpose
 
-☐ _(awaiting checklist items)_
+Reports is a **presentation and analytics layer**. It owns almost no business data.
 
-## Definition of Done
+**Reads (aggregate):** Revenue · Memberships · Pipeline · Customers · Leads · Jobs · Marketing · Reviews  
+**Owns:** `S.reportsOs` — dashboards, definitions, layouts, schedules, forecast models  
+**Never owns:** customers, payments, jobs, leads, campaigns, reviews, memberships
 
-☐ _(awaiting)_
+---
+
+## Stage 1 — Operating System
+
+### Core
+- [x] `ownPixelView('v-reports', 'jos-reports-root')` ✅
+- [x] HublyDS chrome ✅
+- [x] Tabs ✅
+- [x] Responsive ✅
+
+### Tabs
+- [x] Overview (live aggregates) ✅
+- [x] Dashboards ✅
+- [x] Definitions ✅
+- [x] Layouts ✅
+- [x] Scheduled ✅
+- [x] Forecasts ✅
+- [x] Sources (owner map · Rule #21) ✅
+
+### Ownership (Rule #21)
+- [x] `S.reportsOs` owns presentation config only ✅
+- [x] KPIs computed at read-time from owners — no payment/customer copies ✅
+- [x] Deep-links to Revenue / Memberships / Jobs / etc. ✅
+
+### Actions (`rpt-*`)
+- [x] Create / save dashboard ✅
+- [x] Create / save report definition ✅
+- [x] Save layout ✅
+- [x] Schedule report (OS) ✅
+- [x] Run / refresh forecast (OS) ✅
+- [x] Navigate to owner modules ✅
+
+### QA / MAT / CMV
+- [x] Validator reports gates ✅  
+- [x] MAT ✅ ACCEPTED (`scripts/mat-reports.mjs` · [REPORTS_MAT.md](./REPORTS_MAT.md))  
+- [x] CMV incl. Revenue ✅  
+
+### Definition of Done
+- [x] OS · MAT ✅ · CMV PASS  
+- [ ] Merge → 🔒 OS ⏳ (awaiting approval)  
+
+---
+
+## Stage 2 — Live Integrations ⏸ DEFERRED
+
+| Item | Status |
+|------|--------|
+| Email / Slack scheduled delivery | ⏸ |
+| Export CSV / PDF live pipelines | ⏸ |
+| External BI connectors | ⏸ |

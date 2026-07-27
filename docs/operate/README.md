@@ -12,7 +12,8 @@
 After Stage 1 merges → **lock the OS**. Stage 2 is additive and tracked separately.
 
 **Design System:** [DESIGN_SYSTEM_V1.md](./DESIGN_SYSTEM_V1.md) · `public/journey-os/design-system.js` → `window.HublyDS`  
-**Engineering rules:** [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) (Rules #14–20 · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md))
+**Engineering rules:** [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) (Rules #14–21 · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md))  
+**Platform readiness:** [PLATFORM_READINESS.md](./PLATFORM_READINESS.md)
 
 **Acceptance gate:** [Module Acceptance Test (MAT)](./MAT.md) — not informal smoke language.
 
@@ -34,7 +35,7 @@ See [MODULE_STATUS.md](./MODULE_STATUS.md) (OS · Integrations · AI · QA · **
 | Marketing | [MARKETING_CHECKLIST.md](./MARKETING_CHECKLIST.md) · [MARKETING_MAT.md](./MARKETING_MAT.md) · [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Reviews | [REVIEWS_CHECKLIST.md](./REVIEWS_CHECKLIST.md) · [REVIEWS_MAT.md](./REVIEWS_MAT.md) · [REVIEWS_PLAN.md](./REVIEWS_PLAN.md) · [EVENTS.md](./EVENTS.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Memberships | [MEMBERSHIPS_CHECKLIST.md](./MEMBERSHIPS_CHECKLIST.md) · [MEMBERSHIPS_MAT.md](./MEMBERSHIPS_MAT.md) · [MEMBERSHIPS_PLAN.md](./MEMBERSHIPS_PLAN.md) · [EVENTS.md](./EVENTS.md) | ✅ | ⏸ | ✅ | 🔒 OS |
-| Revenue | [REVENUE_CHECKLIST.md](./REVENUE_CHECKLIST.md) · [REVENUE_MAT.md](./REVENUE_MAT.md) · [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) · [REVENUE_PLAN.md](./REVENUE_PLAN.md) | ✅ | ⏸ | ✅ | ❌ |
-| Reports | [REPORTS_CHECKLIST.md](./REPORTS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Revenue | [REVENUE_CHECKLIST.md](./REVENUE_CHECKLIST.md) · [REVENUE_MAT.md](./REVENUE_MAT.md) · [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) · [REVENUE_PLAN.md](./REVENUE_PLAN.md) | ✅ | ⏸ | ✅ | 🔒 OS |
+| Reports | [REPORTS_CHECKLIST.md](./REPORTS_CHECKLIST.md) · [REPORTS_MAT.md](./REPORTS_MAT.md) · [REPORTS_PLAN.md](./REPORTS_PLAN.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) | ✅ | ⏸ | ✅ | ❌ |
 | Ask Hubly | [ASK_HUBLY_CHECKLIST.md](./ASK_HUBLY_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Settings | [SETTINGS_CHECKLIST.md](./SETTINGS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
