@@ -29,7 +29,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
-<link rel="stylesheet" href="/journey-os/operate-pixel.css?v=live-cust-edit-1">
+<link rel="stylesheet" href="/journey-os/operate-pixel.css?v=live-op-polish-1">
 <style>
 :root{
   --brand:#D9632D;--brand-dark:#B84E1F;--brand-light:#FDF0E8;
@@ -4382,14 +4382,29 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .ed-settings-rail-scrim{
   display:none;position:fixed;inset:0;background:rgba(15,23,42,.28);z-index:2390;border:0;padding:0;cursor:pointer;
 }
-/* Collapsed settings rail (desktop) */
+/* Collapsed settings rail (desktop) — keep a stub so Menu is always reopenable */
 #v-editor.ed-canvas-on .ed-shell.ed-settings-collapsed,
 .ed-shell.ed-canvas-mode.ed-settings-collapsed{
-  grid-template-columns:0 minmax(0,1fr)!important;
+  grid-template-columns:44px minmax(0,1fr)!important;
 }
 #v-editor.ed-canvas-on .ed-shell.ed-settings-collapsed .ed-settings-rail,
 .ed-shell.ed-canvas-mode.ed-settings-collapsed .ed-settings-rail{
   display:none!important;
+}
+#v-editor.ed-canvas-on .ed-settings-rail-stub,
+.ed-shell.ed-canvas-mode .ed-settings-rail-stub{
+  display:none;appearance:none;border:0;border-right:1px solid #E5E7EB;background:#F7F8FA;
+  grid-column:1;grid-row:2;width:44px;min-height:0;cursor:pointer;color:#141B2B;
+  font-size:22px;font-weight:700;line-height:1;padding:0;align-items:flex-start;justify-content:center;
+  padding-top:14px;z-index:9;
+}
+#v-editor.ed-canvas-on .ed-shell.ed-settings-collapsed .ed-settings-rail-stub,
+.ed-shell.ed-canvas-mode.ed-settings-collapsed .ed-settings-rail-stub{
+  display:flex!important;
+}
+#v-editor.ed-canvas-on .ed-settings-rail-stub:hover,
+.ed-shell.ed-canvas-mode .ed-settings-rail-stub:hover{
+  background:#FFF1E8;color:#D9632D;
 }
 .ed-ctrl-status{padding:10px 14px 12px;border-top:1px solid var(--border);background:#fff;flex-shrink:0;font-size:11px;color:var(--ink-3);line-height:1.45}
 .ed-ctrl{background:#fff;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;padding:0;order:2;box-shadow:-8px 0 24px rgba(15,23,42,.04)}
@@ -4719,9 +4734,28 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .ed-prev .phone-device{box-shadow:0 28px 56px rgba(15,23,42,.2),0 0 0 1px rgba(15,23,42,.08)}
 .ed-prev .ph-url{margin-top:10px;font-size:11px;color:var(--ink-3);background:#fff;border:1px solid var(--border);padding:6px 12px;border-radius:999px}
 .ed-prev-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:12px;display:flex;align-items:center;gap:7px}
-.ed-device-bar{display:flex;gap:6px;justify-content:center;padding:4px;background:#f1f3f6;border-radius:12px;border:1px solid var(--border);width:auto;flex-shrink:0}
-.ed-device-btn{font-size:11px;font-weight:600;padding:6px 14px;border-radius:8px;border:none;background:transparent;color:var(--ink-2);cursor:pointer;font-family:inherit}
-.ed-device-btn.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.ed-device-bar{display:flex;gap:4px;justify-content:center;padding:4px;background:#EEF0F3;border-radius:12px;border:1px solid #E5E7EB;width:auto;flex-shrink:0}
+.ed-device-btn{font-size:12px;font-weight:700;padding:7px 14px;border-radius:8px;border:none;background:transparent;color:#374151;cursor:pointer;font-family:inherit}
+.ed-device-btn.on{background:#fff;color:#141B2B;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+/* Force readable editor chrome even in night theme */
+#v-editor.ed-canvas-on .ed-top-bar,
+.ed-shell.ed-canvas-mode .ed-top-bar{
+  background:#fff!important;color:#141B2B!important;
+}
+#v-editor .ed-site-url-label{color:#6B7280!important}
+#v-editor .ed-site-url-text{color:#141B2B!important}
+#v-editor .ed-site-url-copy{
+  font-size:11px;font-weight:800;color:#141B2B!important;background:#EEF0F3!important;
+  border:1px solid #D1D5DB!important;border-radius:8px;padding:5px 10px;flex-shrink:0;
+}
+#v-editor .ed-site-url:hover .ed-site-url-copy{background:#E5E7EB!important}
+#v-editor .ed-site-url.copied .ed-site-url-copy{background:#166534!important;border-color:#166534!important;color:#fff!important}
+#v-editor .ed-device-bar{background:#EEF0F3!important;border-color:#E5E7EB!important}
+#v-editor .ed-device-btn{color:#374151!important}
+#v-editor .ed-device-btn.on{background:#fff!important;color:#141B2B!important}
+#v-editor .ed-top-actions .btn-out{color:#141B2B!important;border-color:#D1D5DB!important;background:#fff!important}
+#v-editor .ed-top-actions .btn-ink{background:#141B2B!important;color:#fff!important;border-color:#141B2B!important}
+#v-editor .ed-settings-rail-toggle{font-weight:750}
 .ed-sf-desktop{width:100%;max-width:none;margin:0;padding:0;display:none}
 .ed-sf-desktop-frame{background:var(--surface);border-radius:12px;overflow:hidden;border:1px solid var(--border);box-shadow:0 10px 26px rgba(20,20,20,.12);transform:scale(1);transform-origin:top center}
 .ed-bk-phone-wrap{display:none;padding:0;width:100%;justify-content:center}
@@ -5906,10 +5940,10 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
   padding:0;margin:0;border:none!important;background:transparent!important;cursor:pointer;text-align:left;font:inherit;box-shadow:none!important;border-radius:0!important;
 }
 .ed-site-url:hover .ed-site-url-text{color:#4f46e5;}
-.ed-site-url-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);flex-shrink:0;}
-.ed-site-url-text{flex:0 1 auto;min-width:0;font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ed-site-url-copy{font-size:11px;font-weight:700;color:var(--ink);background:#f1f5f9;border:1px solid var(--border);border-radius:8px;padding:5px 10px;flex-shrink:0;}
-.ed-site-url:hover .ed-site-url-copy{background:#e2e8f0;}
+.ed-site-url-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7280;flex-shrink:0;}
+.ed-site-url-text{flex:0 1 auto;min-width:0;font-size:13px;font-weight:600;color:#141B2B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ed-site-url-copy{font-size:11px;font-weight:800;color:#141B2B;background:#EEF0F3;border:1px solid #D1D5DB;border-radius:8px;padding:5px 10px;flex-shrink:0;}
+.ed-site-url:hover .ed-site-url-copy{background:#E5E7EB;}
 .ed-site-url.copied .ed-site-url-copy{background:#166534;border-color:#166534;color:#fff;}
 .ws-ticker-off{display:none!important;}
 .ws-footer-bottom{margin-top:32px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);text-align:center;font-size:12px;color:rgba(255,255,255,.38)}
@@ -7717,11 +7751,18 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 .ed-prev.ed-preview-phone .ed-ws-preview{
   border-radius:28px!important;
   box-shadow:0 20px 50px rgba(15,23,42,.18),0 0 0 1px rgba(15,23,42,.08)!important;
+  overflow-x:hidden!important;
 }
 .ed-prev.ed-preview-phone .ed-ws-preview .ws-hero{min-height:0}
 .ed-prev.ed-preview-phone .ed-ws-preview .ws-hero-inner{padding:28px 18px 24px}
 .ed-prev.ed-preview-phone .ed-ws-preview .ws-section{padding:36px 16px}
-.ed-prev.ed-preview-phone .ed-ws-preview .ws-site-header-inner{padding:10px 14px}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-site-header-inner{padding:10px 14px;gap:8px}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-header-nav{display:none!important}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-header-name{max-width:132px;font-size:11px}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-header-cta{padding:9px 14px;font-size:11px;white-space:nowrap}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-header-lang{display:none!important}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-hero-actions{flex-wrap:wrap}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-trust{grid-template-columns:1fr}
 .ed-prev.ed-preview-phone .ed-pe-hint{font-size:11px;padding:8px 14px}
 .ed-shell.ed-canvas-mode .ed-prev.ed-preview-phone .ed-sf-desktop,
 .ed-shell.ed-canvas-mode .ed-prev.ed-preview-phone .ed-ws-preview{max-width:390px!important}
@@ -10195,17 +10236,20 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
-              <button type="button" class="btn btn-out btn-sm ed-settings-rail-toggle" id="ed-settings-rail-toggle" onclick="toggleEdSettingsRail()" aria-controls="ed-settings-rail" aria-expanded="true" title="Show or hide settings menu">Settings</button>
+              <button type="button" class="btn btn-out btn-sm ed-settings-rail-toggle" id="ed-settings-rail-toggle" onclick="toggleEdSettingsRail()" aria-controls="ed-settings-rail" aria-expanded="true" title="Show or hide website menu">☰ Menu</button>
               <button type="button" class="btn btn-out btn-sm" onclick="previewProfile()" data-i18n="viewProfile">Preview</button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
           </div>
 
+          <!-- Collapsed rail stub — always-visible reopen when menu is hidden -->
+          <button type="button" class="ed-settings-rail-stub" id="ed-settings-rail-stub" onclick="openEdSettingsRail()" aria-label="Open website menu" title="Open website menu" hidden>›</button>
+
           <!-- Left Settings: Business · Website · Booking · Integrations -->
-          <aside class="ed-settings-rail" id="ed-settings-rail" aria-label="Editor settings">
+          <aside class="ed-settings-rail" id="ed-settings-rail" aria-label="Website editor menu">
             <div class="ed-settings-rail-head">
-              <strong>Settings</strong>
-              <button type="button" class="ed-settings-rail-close" onclick="closeEdSettingsRail()" aria-label="Collapse settings menu" title="Collapse menu">‹</button>
+              <strong>Website</strong>
+              <button type="button" class="ed-settings-rail-close" onclick="closeEdSettingsRail()" aria-label="Collapse website menu" title="Collapse menu">‹</button>
             </div>
             <nav class="ed-settings-rail-nav" id="ed-settings-rail-nav">
               <div class="ed-settings-group">
@@ -11668,7 +11712,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/hubly-session.js"></script>
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
-<script defer src="/journey-os/journey.js?v=live-cust-edit-1"></script>
+<script defer src="/journey-os/journey.js?v=live-op-polish-1"></script>
 <!-- ceo-demo.js loads on-demand only for owner-authorized /hubly-ceo -->
 <script defer src="/booking-wizard/ui.js"></script>
 <link rel="stylesheet" href="/booking-wizard/mock-skin.css">
@@ -26309,16 +26353,26 @@ function syncEdSettingsToggleUi(){
   const shell=document.getElementById('ed-shell');
   const rail=document.getElementById('ed-settings-rail');
   const toggle=document.getElementById('ed-settings-rail-toggle')||document.querySelector('.ed-settings-rail-toggle');
+  const stub=document.getElementById('ed-settings-rail-stub');
   const mobile=isEdSettingsRailMobile();
   const expanded=mobile?!!rail?.classList.contains('is-open'):!shell?.classList.contains('ed-settings-collapsed');
   if(toggle){
     toggle.setAttribute('aria-expanded',expanded?'true':'false');
     if(mobile){
-      toggle.textContent='Settings';
-      toggle.title='Open settings menu';
+      toggle.textContent='☰ Menu';
+      toggle.title='Open website menu';
     }else{
-      toggle.textContent=expanded?'Hide menu':'Settings';
-      toggle.title=expanded?'Hide settings menu':'Show settings menu';
+      toggle.textContent=expanded?'Hide menu':'☰ Menu';
+      toggle.title=expanded?'Hide website menu':'Show website menu';
+    }
+  }
+  if(stub){
+    if(mobile){
+      stub.hidden=true;
+      stub.setAttribute('aria-hidden','true');
+    }else{
+      stub.hidden=!!expanded;
+      stub.setAttribute('aria-hidden',expanded?'true':'false');
     }
   }
 }
@@ -35340,7 +35394,10 @@ function mountEdChrome(){
   try{closeEdSheet();}catch(e){}
   try{
     if(isEdSettingsRailMobile())closeEdSettingsRail();
-    else restoreEdSettingsRailPref();
+    else {
+      // Entering Website editor: open the Website submenu by default
+      openEdSettingsRail();
+    }
     syncEdSettingsRail((S&&(S._edSettingsNav||S._edHubTab))||'');
     syncEdCtrlTop();
   }catch(e){}
