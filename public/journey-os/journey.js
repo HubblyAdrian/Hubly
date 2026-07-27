@@ -3959,43 +3959,46 @@
   }
   function renderRevSidebar(root) {
     var r = ensureReviewsOsState();
-    var range = root._josRevGrowthRange || 'Month';
-    var growthFilters = ['Week', 'Month', 'Quarter', 'Year'].map(function (f) {
-      return '<button type="button" class="jos-rev-mc-gf' + (range === f ? ' on' : '') + '" data-jos-act="rev-growth-range" data-jos-rev-range="' + f + '">' + f + '</button>';
-    }).join('');
-    var platRows = Object.keys(REV_PLATFORM_META).slice(0, 5).map(function (key) {
-      var p = r.platforms[key] || {};
-      return '<button type="button" class="jos-rev-mc-plat-mini" data-jos-act="rev-plat-open" data-jos-rev-platform="' + key + '">' +
-        '<span class="logo ' + REV_PLATFORM_META[key].cls + '">' + REV_PLATFORM_META[key].label[0] + '</span>' +
-        '<span class="name">' + esc(REV_PLATFORM_META[key].label) + '</span>' +
-        '<span class="meta">' + (p.reviews || 0) + ' · ' + (p.rating ? p.rating.toFixed(1) : '—') + '</span>' +
-        '<span class="sync">' + esc(p.lastSync || '—') + '</span></button>';
-    }).join('');
-    var goals = (r.goals || []).map(function (g) {
-      var pct = g.target ? Math.round((g.current / g.target) * 100) : 0;
-      return '<div class="jos-rev-mc-goal"><div class="jos-rev-mc-goal-top"><span>' + esc(g.label) + '</span><strong>' + pct + '%</strong></div><div class="jos-rev-mc-goal-bar"><i style="width:' + pct + '%"></i></div></div>';
-    }).join('');
     var biz = String(S().biz || 'business').replace(/\s+/g, '');
     var link = 'hubly.app/review/' + biz;
     var pending = r.requests.filter(function (req) { return req.status === 'pending'; }).length;
+    var needsReply = r.reviews.filter(function (rv) { return rv.status !== 'replied' && !rv.reply; }).length;
+    var connected = Object.keys(REV_PLATFORM_META).filter(function (key) {
+      return r.platforms[key] && r.platforms[key].connected;
+    }).length;
+    /* One compact rail — growth/platforms/goals live on Analytics & Connections tabs. */
     return '<aside class="jos-rev-mc-side">' +
-      '<section class="jos-rev-mc-side-card"><h3>Take action</h3>' +
-        '<div class="jos-rev-mc-side-act"><div><strong>Pending requests</strong><span class="jos-muted">' + pending + ' waiting to send</span></div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-go-requests">View</button></div>' +
-        '<div class="jos-rev-mc-side-act"><div><strong>Sync Google</strong><span class="jos-muted">Last synced 2h ago</span></div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-sync-google">Sync</button></div>' +
-        '<div class="jos-rev-mc-side-act"><div><strong>Sync Facebook</strong><span class="jos-muted">Last synced 2h ago</span></div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-sync-facebook">Sync</button></div>' +
+      '<section class="jos-rev-mc-side-card jos-rev-mc-side-compact">' +
+        '<h3>Get reviews</h3>' +
+        '<p class="jos-rev-mc-side-lead">Share your link after a job. Keep it short.</p>' +
+        '<div class="jos-rev-mc-link-row">' +
+          '<input readonly value="' + esc(link) + '" id="jos-rev-link" aria-label="Review link">' +
+          '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="rev-copy-link">Copy</button>' +
+        '</div>' +
+        '<div class="jos-rev-mc-side-chips">' +
+          '<button type="button" class="jos-rev-mc-chip" data-jos-act="rev-request-open">Request</button>' +
+          '<button type="button" class="jos-rev-mc-chip" data-jos-act="rev-qr">QR code</button>' +
+          '<button type="button" class="jos-rev-mc-chip" data-jos-act="rev-sms-campaign">Text</button>' +
+          '<button type="button" class="jos-rev-mc-chip" data-jos-act="rev-email-campaign">Email</button>' +
+        '</div>' +
+        '<div class="jos-rev-mc-side-stats">' +
+          '<button type="button" class="jos-rev-mc-stat" data-jos-act="rev-go-requests">' +
+            '<strong>' + pending + '</strong><span>Pending</span></button>' +
+          '<button type="button" class="jos-rev-mc-stat" data-jos-act="rev-go-needs">' +
+            '<strong>' + needsReply + '</strong><span>Need reply</span></button>' +
+          '<button type="button" class="jos-rev-mc-stat" data-jos-act="rev-go-connections">' +
+            '<strong>' + connected + '</strong><span>Connected</span></button>' +
+        '</div>' +
+        '<details class="jos-rev-mc-more-tools">' +
+          '<summary>More tools</summary>' +
+          '<div class="jos-rev-mc-more-list">' +
+            '<button type="button" data-jos-act="rev-poster">Print poster</button>' +
+            '<button type="button" data-jos-act="rev-nfc">NFC card</button>' +
+            '<button type="button" data-jos-act="rev-sync-google">Sync Google</button>' +
+            '<button type="button" data-jos-act="rev-sync-facebook">Sync Facebook</button>' +
+          '</div>' +
+        '</details>' +
       '</section>' +
-      '<section class="jos-rev-mc-side-card tall"><div class="jos-rev-mc-side-head"><h3>Review growth</h3><div class="jos-rev-mc-growth-f">' + growthFilters + '</div></div>' + revMcGrowthChart(r.growthHistory) + '</section>' +
-      '<section class="jos-rev-mc-side-card"><h3>Platforms</h3><div class="jos-rev-mc-plat-list">' + platRows + '</div></section>' +
-      '<section class="jos-rev-mc-side-card"><h3>Goals</h3>' + goals + '<div class="jos-rev-mc-side-btns">' + dsBtn('rev-goal-edit', 'Edit Goal', 'jos-btn jos-btn-sm') + dsBtn('rev-goal-ai', 'AI Suggest', 'jos-btn jos-btn-sm') + '</div></section>' +
-      '<section class="jos-rev-mc-side-card"><h3>Quick actions</h3>' +
-        '<button type="button" class="jos-rev-mc-qa" data-jos-act="rev-qr">Generate QR Code</button>' +
-        '<button type="button" class="jos-rev-mc-qa" data-jos-act="rev-email-campaign">Email Campaign</button>' +
-        '<button type="button" class="jos-rev-mc-qa" data-jos-act="rev-sms-campaign">Text Campaign</button>' +
-        '<button type="button" class="jos-rev-mc-qa" data-jos-act="rev-copy-link">Copy Review Link</button>' +
-        '<button type="button" class="jos-rev-mc-qa" data-jos-act="rev-nfc">Generate NFC Card</button>' +
-        '<button type="button" class="jos-rev-mc-qa" data-jos-act="rev-poster">Print Poster</button>' +
-      '</section>' +
-      '<section class="jos-rev-mc-side-card"><h3>Get more reviews</h3><div class="jos-rev-mc-link-row"><input readonly value="' + esc(link) + '" id="jos-rev-link"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="rev-copy-link">Copy link</button></div></section>' +
     '</aside>';
   }
   function renderRevMissionControl(root) {
@@ -4297,6 +4300,14 @@
       }
       if (act === 'rev-go-requests') {
         root._josRevTab = 'requests';
+        return renderReviews();
+      }
+      if (act === 'rev-go-needs') {
+        root._josRevTab = 'needs_reply';
+        return renderReviews();
+      }
+      if (act === 'rev-go-connections') {
+        root._josRevTab = 'connections';
         return renderReviews();
       }
       if (act === 'rev-open-customer') {
