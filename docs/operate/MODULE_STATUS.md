@@ -98,7 +98,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ✨ Ask Hubly | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| ⚙️ Settings | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
+| ⚙️ Settings | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
 
 ---
 
@@ -119,7 +119,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔒 OS · MAT ✅ · Rule #20 · merged |
 | 12 | 📊 Reports | ✅ Locked | ⏸ | [#255](https://github.com/HubblyAdrian/Hubly/pull/255) | 🔒 OS · MAT ✅ · Rule #21 · merged |
 | 13 | ✨ Ask Hubly | ✅ Locked | ⏸ | [#256](https://github.com/HubblyAdrian/Hubly/pull/256) | 🔒 OS · MAT ✅ · Rule #22 · merged |
-| 14 | ⚙️ Settings | ✅ Locked | ⏸ | [#257](https://github.com/HubblyAdrian/Hubly/pull/257) | 🔒 OS · MAT ✅ · Rule #23 · merged |
+| 14 | ⚙️ Settings | ✅ Locked | ⏸ | [#257](https://github.com/HubblyAdrian/Hubly/pull/257) | 🔓 Reopen · MAT ✅ · Rule #23 · merged |
 
 ### Finish line
 
@@ -131,6 +131,7 @@ All **14** Operate modules have Stage 1 OS complete and locked:
 
 **Stage 1 — Operating System:** ✅ COMPLETE  
 **Stage 2 — External Integrations & Advanced Configuration:** ⏸ Deferred  
+**Reopen:** Mission Control dashboard (`cursor/operate-settings-mission-control-2662`) — hero, status KPIs, platform checklist, next steps, Ask Hubly banner. Design: [SETTINGS_MISSION_CONTROL.md](./SETTINGS_MISSION_CONTROL.md).
 
 **Do not modify Settings unless:** bug fix · Stage 2 integrations · explicit module reopen.
 

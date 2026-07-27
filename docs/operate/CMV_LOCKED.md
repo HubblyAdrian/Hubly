@@ -18,14 +18,10 @@
 | 💰 Revenue still works | ✅ · len=3315 |
 | 📊 Reports still works | ✅ · len=4509 |
 | ✨ Ask Hubly still works | ✅ · len=4465 |
-| ⚙️ Settings still works | ✅ · len=3268 |
+| ⚙️ Settings still works | ✅ · len=9961 |
 
 **Console warns during CMV:** 0
 
 ### Result
 
 ✅ CMV PASS
-
-### Context
-
-Rule #29 Agency lock · Module 7 AI Launch Coach architecture. No UI.

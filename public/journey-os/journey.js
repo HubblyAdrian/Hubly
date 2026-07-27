@@ -1464,6 +1464,38 @@
     }
     return os;
   }
+  function setChecklistItems() {
+    var os = ensureSettingsOsState();
+    var b = os.business || {};
+    var br = os.branding || {};
+    var integ = os.integrations || {};
+    var n = os.notifications || {};
+    return [
+      { id: 'profile', title: 'Business Profile', desc: 'Name, address, and contact details', done: !!(b.name && b.address && b.city), tab: 'business', eta: '2 min' },
+      { id: 'logo', title: 'Logo Uploaded', desc: 'Brand mark for invoices and storefront', done: !!(b.logoUrl || br.logoUrl), tab: 'branding', eta: '1 min' },
+      { id: 'colors', title: 'Brand Colors', desc: 'Primary and accent tokens', done: !!(br.primaryColor && br.accentColor), tab: 'branding', eta: '2 min' },
+      { id: 'team', title: 'Team Invited', desc: 'At least one teammate beyond owner', done: (os.team.users || []).length > 1 || (os.team.invitations || []).length > 0, tab: 'team', eta: '3 min' },
+      { id: 'calendar', title: 'Calendar Connected', desc: 'Google Calendar — Stage 2 live', done: integ.google && integ.google.status !== 'not_connected', tab: 'integrations', eta: '2 min', stage2: true },
+      { id: 'payments', title: 'Payments Connected', desc: 'Stripe OS ready for Revenue', done: integ.stripe && integ.stripe.status !== 'not_connected', tab: 'integrations', eta: '2 min' },
+      { id: 'reviews', title: 'Review Platform Connected', desc: 'Google / Meta review channel', done: integ.meta && integ.meta.status !== 'not_connected', tab: 'integrations', eta: '3 min', stage2: true },
+      { id: 'domain', title: 'Domain Connected', desc: 'Custom domain — Stage 2', done: !!(br.websiteDefaults && /domain/i.test(br.websiteDefaults)), tab: 'branding', eta: '5 min', stage2: true },
+      { id: 'ai', title: 'AI Enabled', desc: 'Tone and confirmation defaults', done: !!(os.ai && os.ai.tone), tab: 'ai', eta: '1 min' },
+      { id: 'notifs', title: 'Notifications Configured', desc: 'Email, SMS, or desktop alerts', done: !!(n.email || n.sms || n.desktop), tab: 'notifications', eta: '1 min' }
+    ];
+  }
+  function setNextSteps() {
+    return setChecklistItems().filter(function (x) { return !x.done; }).slice(0, 6).map(function (x, i) {
+      return {
+        id: x.id,
+        title: x.title,
+        priority: i === 0 ? 'High' : (i < 3 ? 'Med' : 'Low'),
+        eta: x.eta,
+        tab: x.tab,
+        cta: x.stage2 ? 'Connect' : 'Open',
+        stage2: !!x.stage2
+      };
+    });
+  }
   function setPushActivity(type, label, payload) {
     var os = ensureSettingsOsState();
     os.activity.unshift({ id: setId('set_act'), type: type, label: label, at: setNow(), payload: payload || {} });
@@ -1504,25 +1536,64 @@
   }
   function renderSetOverview() {
     var os = ensureSettingsOsState();
-    var d = DS();
-    var cards = [
-      ['Business', os.business.name, 'set-tab-business'],
-      ['Team', String(os.team.users.length) + ' users', 'set-tab-team'],
-      ['Billing', os.billing.plan + ' · ' + os.billing.status, 'set-tab-billing'],
-      ['Integrations', 'OS stubs · Stage 2 live', 'set-tab-integrations'],
-      ['AI defaults', os.ai.tone, 'set-tab-ai'],
-      ['Security', os.security.mfaRequired ? 'MFA on' : 'MFA off', 'set-tab-security']
+    var checklist = setChecklistItems();
+    var doneCount = checklist.filter(function (x) { return x.done; }).length;
+    var pct = Math.round((doneCount / checklist.length) * 100);
+    var statusCards = [
+      { label: 'Business', value: os.business.city || os.business.name, sub: os.business.name, act: 'set-tab-business', icon: 'biz', tone: 'purple' },
+      { label: 'Team', value: String(os.team.users.length) + ' users', sub: 'Active members', act: 'set-tab-team', icon: 'team', tone: 'green' },
+      { label: 'Plan', value: os.billing.plan + ' · ' + (os.billing.status || 'Active'), sub: 'Platform billing', act: 'set-tab-billing', icon: 'plan', tone: 'blue' },
+      { label: 'Integrations', value: 'OS status · Stage 2', sub: 'Live', act: 'set-tab-integrations', icon: 'plug', tone: 'purple', badge: 'Live' },
+      { label: 'AI Defaults', value: String(os.ai.tone || 'helpful_pro'), sub: 'Ask Hubly defaults', act: 'set-tab-ai', icon: 'ai', tone: 'amber' },
+      { label: 'Security', value: os.security.mfaRequired ? 'MFA: on' : 'MFA: off', sub: 'Access & sessions', act: 'set-tab-security', icon: 'shield', tone: 'red' }
     ].map(function (c) {
-      return '<button type="button" class="jos-set-tile" data-jos-act="' + esc(c[2]) + '"><div class="jos-kicker">' + esc(c[0]) + '</div><strong>' + esc(c[1]) + '</strong></button>';
+      return '<button type="button" class="jos-set-mc-kpi tone-' + esc(c.tone) + '" data-jos-act="' + esc(c.act) + '" aria-label="' + esc(c.label) + '">' +
+        '<span class="jos-set-mc-kpi-ico" aria-hidden="true" data-ico="' + esc(c.icon) + '"></span>' +
+        '<span class="jos-set-mc-kpi-body"><span class="lbl">' + esc(c.label) + '</span><strong>' + esc(c.value) + '</strong><span class="sub">' + esc(c.sub) + '</span></span>' +
+        (c.badge ? '<span class="jos-set-mc-live">' + esc(c.badge) + '</span>' : '') +
+        '</button>';
     }).join('');
-    return '<div class="jos-set-hero">' +
-      '<img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly">' +
-      '<div><div class="jos-kicker">Control center</div><h2>Configure Hubly — never own business data</h2>' +
-      '<p class="jos-muted">Rule #23: Settings stores configuration other modules read. Customers, jobs, revenue, services, reviews, and campaigns stay with their owners.</p></div></div>' +
-      '<div class="jos-set-tiles jos-mt">' + cards + '</div>' +
-      '<div class="jos-set-2col jos-mt"><div class="jos-card"><div class="jos-kicker">Platform readiness</div><ul class="jos-set-list"><li>Business profile + brand tokens</li><li>Team roster mirrored for Jobs</li><li>AI confirmation defaults (Rule #22)</li><li>Integrations marked OS-only until Stage 2</li></ul></div>' +
-      '<div class="jos-card"><div class="jos-kicker">Forbidden copies</div><p class="jos-muted">settingsOs purges customers, payments, jobs, leads, campaigns, reviews, and services arrays if present.</p>' +
-      (d ? d.emptyState('Config only', 'Open a tab to edit platform settings.') : '') + '</div></div>';
+    var checkRows = checklist.map(function (item) {
+      return '<button type="button" class="jos-set-mc-check' + (item.done ? ' done' : '') + '" data-jos-act="set-checklist-open" data-jos-set-tab-target="' + esc(item.tab) + '">' +
+        '<span class="mark" aria-hidden="true">' + (item.done ? '✓' : '') + '</span>' +
+        '<span class="txt"><strong>' + esc(item.title) + '</strong><span>' + esc(item.desc) + '</span></span>' +
+        '<span class="chev" aria-hidden="true">›</span></button>';
+    }).join('');
+    var steps = setNextSteps();
+    var stepRows = (steps.length ? steps : [{ title: 'All set', priority: 'Low', eta: '—', tab: 'overview', cta: 'Overview', id: 'all' }]).map(function (s) {
+      return '<div class="jos-set-mc-step" data-jos-set-step="' + esc(s.id) + '">' +
+        '<div class="jos-set-mc-step-main"><span class="prio p-' + esc(String(s.priority || 'Low').toLowerCase()) + '">' + esc(s.priority || 'Low') + '</span>' +
+        '<div><strong>' + esc(s.title) + '</strong><span>' + esc(s.eta) + '</span></div></div>' +
+        '<button type="button" class="jos-btn jos-btn-sm jos-set-mc-step-cta" data-jos-act="set-next-step" data-jos-set-tab-target="' + esc(s.tab || 'overview') + '" data-jos-set-stage2="' + (s.stage2 ? '1' : '0') + '">' + esc(s.cta || 'Open') + '</button></div>';
+    }).join('');
+    return '<div class="jos-set-mc-ov">' +
+      '<section class="jos-set-mc-hero">' +
+        '<div class="jos-set-mc-hero-left">' +
+          '<div class="jos-set-mc-hero-brand"><img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly" onerror="this.src=\'/assets/hubly-wordmark.png\'"><span class="jos-kicker">Control center</span></div>' +
+          '<h2>Configure Hubly — never own business data</h2>' +
+          '<p>Rule #23: Settings stores configuration other modules read. Customers, jobs, revenue, services, reviews, and campaigns stay with their owners. Everything about your business can be configured here.</p>' +
+        '</div>' +
+        '<div class="jos-set-mc-hero-art" aria-hidden="true">' +
+          '<div class="platform"><span class="shield"></span><span class="lock"></span><span class="gear g1"></span><span class="gear g2"></span></div>' +
+        '</div>' +
+      '</section>' +
+      '<div class="jos-set-mc-kpis" role="group" aria-label="Settings status">' + statusCards + '</div>' +
+      '<div class="jos-set-mc-mid">' +
+        '<section class="jos-set-mc-card jos-set-mc-checklist">' +
+          '<div class="jos-set-mc-card-head"><div><h3>Platform Checklist</h3><p class="jos-muted">Finish setup so every Operate module reads clean config.</p></div>' +
+          '<div class="jos-set-mc-progress"><strong>' + doneCount + ' / ' + checklist.length + ' Complete</strong><div class="bar"><i style="width:' + pct + '%"></i></div></div></div>' +
+          '<div class="jos-set-mc-check-list">' + checkRows + '</div></section>' +
+        '<section class="jos-set-mc-card jos-set-mc-next">' +
+          '<div class="jos-set-mc-card-head"><div><h3>Recommended Next Steps</h3><p class="jos-muted">AI prioritizes missing settings.</p></div></div>' +
+          '<div class="jos-set-mc-steps">' + stepRows + '</div>' +
+          '<div class="jos-set-mc-forbidden"><div class="jos-kicker">Forbidden copies</div><p class="jos-muted">settingsOs purges customers, payments, jobs, leads, campaigns, reviews, and services arrays if present.</p><div class="jos-set-mc-config-only">Config only — open OS tabs to edit platform settings.</div></div>' +
+        '</section>' +
+      '</div>' +
+      '<section class="jos-set-mc-banner">' +
+        '<div class="jos-set-mc-banner-copy"><span class="spark" aria-hidden="true">✦</span><div><strong>Need help configuring Hubly?</strong><p>Ask Hubly can guide you through best practices and recommended setups.</p></div></div>' +
+        '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="set-go-ask">✦ Ask Hubly</button>' +
+      '</section>' +
+    '</div>';
   }
   function renderSetBusiness() {
     var b = ensureSettingsOsState().business;
@@ -1666,23 +1737,38 @@
     if (tab === 'permissions') return renderSetPermissions();
     return renderSetOverview();
   }
+  function setSettingsMode(on) {
+    var app = el('p-app');
+    if (!app) return;
+    app.classList.toggle('jos-settings-mode', !!on);
+  }
+  function renderSettingsPageInner(root) {
+    ensureSettingsOsState();
+    var tab = root._josSetTab || ensureSettingsOsState().tab || 'overview';
+    root._josSetTab = tab;
+    ensureSettingsOsState().tab = tab;
+    var head = '<div class="jos-set-mc-head"><div class="jos-set-mc-head-left"><h1>Settings</h1><p>Return to control center. Configure your Hubly.</p></div>' +
+      '<div class="jos-set-mc-head-actions">' + dsBtn('set-refresh', 'Refresh', 'jos-btn jos-btn-sm') + dsBtn('set-go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+    root.innerHTML = '<div class="jos-page jos-set-page"><div class="jos-set-mc-shell">' + head + setTabsHtml(tab) +
+      '<div class="jos-set-mc-body">' + renderSettingsTabBody(root, tab) + '</div></div></div>';
+    bindRoot(root);
+  }
   function renderSettings() {
     var root = ownPixelView('v-settings', 'jos-settings-root');
     if (!root) return;
+    setSettingsMode(true);
     updateChrome('settings');
     ensureSettingsOsState();
     var tab = root._josSetTab || ensureSettingsOsState().tab || 'overview';
     root._josSetTab = tab;
-    var d = DS();
-    var head = d ? d.pageHeader('Settings', 'Platform control center. Configuration only — Rule #23.', dsBtn('set-refresh', 'Refresh', 'jos-btn jos-btn-sm') + dsBtn('set-go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm')) :
-      '<div class="jos-head"><h1>Settings</h1><p class="jos-muted">Platform control center.</p></div>';
+    root.innerHTML = '<div class="jos-page jos-set-page"><div class="jos-home-loading">Loading Settings...</div></div>';
     try {
-      root.innerHTML = '<div class="jos-page jos-set-page">' + head + setTabsHtml(tab) + '<div class="jos-set-body">' + renderSettingsTabBody(root, tab) + '</div></div>';
+      renderSettingsPageInner(root);
     } catch (err) {
       console.warn('HublyJourneyOS Settings render', err);
       root.innerHTML = '<div class="jos-page jos-set-page"><div class="jos-card"><strong>Settings could not load</strong><p class="jos-muted">Retry the control center.</p>' + dsBtn('set-refresh', 'Retry', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+      bindRoot(root);
     }
-    bindRoot(root);
   }
   function renderSettingsHub() { return renderSettings(); }
   function handleSettingsAct(act, t) {
@@ -1692,6 +1778,17 @@
       if (act === 'set-refresh') return renderSettings();
       if (act.indexOf('set-tab-') === 0) {
         if (root) root._josSetTab = act.replace('set-tab-', '');
+        return renderSettings();
+      }
+      if (act === 'set-checklist-open' || act === 'set-next-step') {
+        var target = t && t.getAttribute('data-jos-set-tab-target');
+        var stage2 = t && t.getAttribute('data-jos-set-stage2') === '1';
+        if (stage2) {
+          toast('Live connect is Stage 2 — opening Integrations OS');
+          if (root) root._josSetTab = 'integrations';
+          return renderSettings();
+        }
+        if (target && root) root._josSetTab = target;
         return renderSettings();
       }
       if (act === 'set-business-save') {
@@ -7635,7 +7732,7 @@
     money: { title: 'Revenue', sub: 'Payments, invoices, and cash flow.' },
     reports: { title: 'Reports', sub: 'Performance across the business.' },
     ask: { title: 'Ask Hubly', sub: 'Your operating partner for follow-ups, pricing, and growth.' },
-    settings: { title: 'Settings', sub: 'Business, team, and integrations.' }
+    settings: { title: 'Settings', sub: 'Business, team, and Integrations.' }
   };
   function updateChrome(v) {
     var c = CHROME[v] || { title: v, sub: '' };

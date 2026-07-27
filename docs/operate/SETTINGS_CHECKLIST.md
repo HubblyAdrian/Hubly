@@ -1,10 +1,11 @@
 # Module 14 — ⚙️ Settings
 
-**Status:** Stage 1 OS ✅ COMPLETE · 🔒 OS locked  
+**Status:** 🔓 Explicit reopen (Mission Control dashboard) · Stage 1 OS ✅ COMPLETE  
 **Branch:** merged via [#257](https://github.com/HubblyAdrian/Hubly/pull/257)  
 **Architecture (required):** [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md)  
 **Plan:** [SETTINGS_PLAN.md](./SETTINGS_PLAN.md)  
-**MAT:** [SETTINGS_MAT.md](./SETTINGS_MAT.md)  
+**MAT:** [SETTINGS_MAT.md](./SETTINGS_MAT.md) · runner `node scripts/mat-settings.mjs`  
+**Design:** [SETTINGS_MISSION_CONTROL.md](./SETTINGS_MISSION_CONTROL.md)  
 **Rules:** #14–23 (especially **#23**)  
 **Design System:** HublyDS (Rule #14) · Hubly wordmark  
 
@@ -55,6 +56,21 @@ Settings is the control center for Operate — configuration only (Rule #23).
 
 ### Definition of Done
 - [x] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ✅  
+
+---
+
+## Mission Control reopen (`cursor/operate-settings-mission-control-2662`)
+
+Design: [SETTINGS_MISSION_CONTROL.md](./SETTINGS_MISSION_CONTROL.md)
+
+- [x] Control-center hero + floating art ✅
+- [x] Status KPI strip (6 cards → tabs) ✅
+- [x] Platform Checklist + Recommended Next Steps ✅
+- [x] Ask Hubly help banner ✅
+- [x] Rule #23 ownership + purge preserved ✅
+- [x] Stage 2 `settings_*` schema migration ✅
+- [x] MAT ✅ ACCEPTED · CMV PASS ✅
+- [ ] Visual QA vs mockup (desktop / laptop / tablet / mobile)
 
 **Do not modify Settings unless:** bug fix · Stage 2 integrations · explicit module reopen.
 
