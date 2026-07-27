@@ -10051,6 +10051,11 @@
     if (titleEl) titleEl.textContent = c.title;
     if (subEl) subEl.textContent = c.sub;
     if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
+    try {
+      document.querySelectorAll('.app-nav .ni[data-v]').forEach(function (n) {
+        n.classList.toggle('active', n.getAttribute('data-v') === v);
+      });
+    } catch (eChrome) {}
   }
 
   function enhanceDashboard() {
@@ -12019,10 +12024,12 @@
     return '<svg class="jos-jobs-kpi-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (paths[kind] || paths.briefcase) + '</svg>';
   }
   function jobUiIcon(kind) {
-    if (kind === 'download') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>';
+    if (kind === 'download' || kind === 'export') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg>';
     if (kind === 'bell') return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>';
     if (kind === 'cal') return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>';
     if (kind === 'clock') return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    if (kind === 'reset') return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>';
+    if (kind === 'funnel') return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7v5l-4 2v-7L4 5z"/></svg>';
     return '';
   }
   function parseJobMinutes(time) {
@@ -12107,7 +12114,15 @@
       if (!q) return true;
       var hay = [j.customer, j.address, j.service, j.assignedTo, j.vehicle, j.phone, j.id, j.email].join(' ').toLowerCase();
       return hay.indexOf(q) > -1;
-    }).sort(function (a, b) { return String(a.date).localeCompare(String(b.date)) || parseJobMinutes(a.time) - parseJobMinutes(b.time); });
+    }).sort(function (a, b) {
+      var ordA = a.demoOrd != null ? a.demoOrd : null;
+      var ordB = b.demoOrd != null ? b.demoOrd : null;
+      if (ordA != null && ordB != null) return ordA - ordB;
+      var idA = parseInt(String(a.id || '').replace(/\D/g, ''), 10) || 0;
+      var idB = parseInt(String(b.id || '').replace(/\D/g, ''), 10) || 0;
+      if (idB !== idA) return idB - idA;
+      return String(b.date || '').localeCompare(String(a.date || '')) || parseJobMinutes(a.time) - parseJobMinutes(b.time);
+    });
   }
 
   function seedDemoJobsIfEmpty() {
@@ -12115,14 +12130,33 @@
     ensureJobsOsState();
     if ((S().jobs || []).filter(function (j) { return !j.isBlock; }).length) return;
     var today = todayStr();
-    S().jobs = [
-      { id: 'JOB-1042', customer: 'Sarah Johnson', email: 'sarah@email.com', phone: '(619) 555-0198', service: 'Interior Detail', vehicle: 'BMW X5', amount: 260, date: today, time: '9:00 AM', status: 'completed', address: 'La Jolla, CA', assignedTo: 'Adrian Lopez', tags: ['booking'], durationMin: 120 },
-      { id: 'JOB-1043', customer: 'Mike Brown', email: 'mike@email.com', phone: '(619) 555-0142', service: 'Exterior Detail', vehicle: 'Tesla Model 3', amount: 180, date: today, time: '1:00 PM', status: 'in_progress', address: 'Pacific Beach, CA', assignedTo: 'Maya Chen', tags: ['manual'], durationMin: 90 },
-      { id: 'JOB-1044', customer: 'Chris Park', email: 'chris@email.com', phone: '(619) 555-0177', service: 'Paint Correction', vehicle: 'Porsche Macan', amount: 450, date: today, time: '4:00 PM', status: 'scheduled', address: 'Mission Valley, CA', assignedTo: 'Luis Ortega', tags: ['booking'], durationMin: 180 },
-      { id: 'JOB-1045', customer: 'Alex Rivera', email: 'alex@email.com', phone: '(619) 555-0133', service: 'Ceramic Coating', vehicle: 'Tesla Model 3', amount: 650, date: addDaysStr(today, 1), time: '10:00 AM', status: 'scheduled', address: 'UTC, CA', assignedTo: 'Adrian Lopez', tags: ['from-quote'], durationMin: 240 },
-      { id: 'JOB-1046', customer: 'Emily Wilson', email: 'emily@email.com', phone: '(619) 555-0111', service: 'Full Detail', vehicle: 'Audi Q5', amount: 320, date: addDaysStr(today, 2), time: '11:00 AM', status: 'scheduled', address: 'Downtown SD', assignedTo: 'Maya Chen', tags: ['booking'], durationMin: 150 },
-      { id: 'JOB-1040', customer: 'Jordan Lee', email: 'jordan@email.com', phone: '(619) 555-0166', service: 'Interior Detail', vehicle: 'Honda Civic', amount: 200, date: addDaysStr(today, -2), time: '2:00 PM', status: 'cancelled', address: 'Clairemont, CA', assignedTo: 'Luis Ortega', tags: ['manual'], durationMin: 90 }
+    var demo = [
+      { id: 'JOB-1024', demoOrd: 1, customer: 'Emily Davis', email: 'emily.davis@email.com', phone: '(555) 201-0101', service: 'Full Detail', vehicle: 'SUV', amount: 250, date: today, time: '9:00 AM', status: 'completed', address: 'Miami, FL', assignedTo: 'Adrian Lopez', tags: ['booking'], durationMin: 120 },
+      { id: 'JOB-1025', demoOrd: 2, customer: 'David Wilson', email: 'david.w@email.com', phone: '(555) 201-0102', service: 'Interior Detail', vehicle: 'Sedan', amount: 180, date: today, time: '11:30 AM', status: 'in_progress', address: 'Brickell, FL', assignedTo: 'Maya Chen', tags: ['manual'], durationMin: 90 },
+      { id: 'JOB-1026', demoOrd: 3, customer: 'Jessica Brown', email: 'jess.brown@email.com', phone: '(555) 201-0103', service: 'Exterior Detail', vehicle: 'Truck', amount: 160, date: today, time: '2:00 PM', status: 'scheduled', address: 'Coral Gables, FL', assignedTo: 'Luis Ortega', tags: ['booking'], durationMin: 75 },
+      { id: 'JOB-1027', demoOrd: 4, customer: 'Michael Chen', email: 'm.chen@email.com', phone: '(555) 201-0104', service: 'Ceramic Coating', vehicle: 'SUV', amount: 650, date: addDaysStr(today, 1), time: '10:00 AM', status: 'scheduled', address: 'Downtown', assignedTo: 'Adrian Lopez', tags: ['from-quote'], durationMin: 240 },
+      { id: 'JOB-1028', demoOrd: 5, customer: 'Sarah Johnson', email: 'sarah@email.com', phone: '(555) 201-0105', service: 'Paint Correction', vehicle: 'Sedan', amount: 450, date: addDaysStr(today, 1), time: '1:00 PM', status: 'scheduled', address: 'South Beach', assignedTo: 'Maya Chen', tags: ['booking'], durationMin: 180 },
+      { id: 'JOB-1029', demoOrd: 6, customer: 'Alex Rivera', email: 'alex.rivera@email.com', phone: '(555) 201-0106', service: 'Full Detail', vehicle: 'Sedan', amount: 280, date: addDaysStr(today, 2), time: '9:30 AM', status: 'scheduled', address: 'Brickell', assignedTo: 'Luis Ortega', tags: ['booking'], durationMin: 150 },
+      { id: 'JOB-1030', demoOrd: 7, customer: 'Olivia Brown', email: 'olivia@email.com', phone: '(555) 201-0107', service: 'Interior Detail', vehicle: 'SUV', amount: 200, date: addDaysStr(today, 2), time: '12:00 PM', status: 'scheduled', address: 'Miami Beach', assignedTo: 'Adrian Lopez', tags: ['manual'], durationMin: 90 },
+      { id: 'JOB-1031', demoOrd: 8, customer: 'James Anderson', email: 'james.a@email.com', phone: '(555) 201-0108', service: 'Exterior Detail', vehicle: 'Truck', amount: 150, date: addDaysStr(today, 3), time: '3:00 PM', status: 'scheduled', address: 'Coral Gables', assignedTo: 'Maya Chen', tags: ['booking'], durationMin: 60 },
+      { id: 'JOB-1032', demoOrd: 9, customer: 'Emma Wilson', email: 'emma.w@email.com', phone: '(555) 201-0109', service: 'Full Detail', vehicle: 'SUV', amount: 320, date: addDaysStr(today, 3), time: '10:00 AM', status: 'scheduled', address: 'Downtown', assignedTo: 'Luis Ortega', tags: ['booking'], durationMin: 150 },
+      { id: 'JOB-1033', demoOrd: 10, customer: 'Chris Park', email: 'chris.p@email.com', phone: '(555) 201-0110', service: 'Ceramic Coating', vehicle: 'Sedan', amount: 700, date: addDaysStr(today, 4), time: '9:00 AM', status: 'scheduled', address: 'Key Biscayne', assignedTo: 'Adrian Lopez', tags: ['from-quote'], durationMin: 240 },
+      { id: 'JOB-1018', demoOrd: 11, customer: 'Mike Thompson', email: 'mike.t@email.com', phone: '(555) 201-0111', service: 'Interior Detail', vehicle: 'Sedan', amount: 190, date: addDaysStr(today, -1), time: '10:00 AM', status: 'completed', address: 'Miami', assignedTo: 'Maya Chen', tags: ['booking'], durationMin: 90 },
+      { id: 'JOB-1019', demoOrd: 12, customer: 'Lisa Martinez', email: 'lisa.m@email.com', phone: '(555) 201-0112', service: 'Full Detail', vehicle: 'SUV', amount: 300, date: addDaysStr(today, -1), time: '1:00 PM', status: 'completed', address: 'Brickell', assignedTo: 'Luis Ortega', tags: ['booking'], durationMin: 120 },
+      { id: 'JOB-1020', demoOrd: 13, customer: 'Tom Harris', email: 'tom.h@email.com', phone: '(555) 201-0113', service: 'Exterior Detail', vehicle: 'Truck', amount: 170, date: addDaysStr(today, -2), time: '11:00 AM', status: 'completed', address: 'Hialeah', assignedTo: 'Adrian Lopez', tags: ['manual'], durationMin: 75 },
+      { id: 'JOB-1021', demoOrd: 14, customer: 'Rachel Kim', email: 'rachel.k@email.com', phone: '(555) 201-0114', service: 'Paint Correction', vehicle: 'Sedan', amount: 480, date: addDaysStr(today, -2), time: '2:30 PM', status: 'completed', address: 'Coral Gables', assignedTo: 'Maya Chen', tags: ['booking'], durationMin: 180 },
+      { id: 'JOB-1022', demoOrd: 15, customer: 'Brian Scott', email: 'brian.s@email.com', phone: '(555) 201-0115', service: 'Full Detail', vehicle: 'SUV', amount: 260, date: addDaysStr(today, -3), time: '9:00 AM', status: 'completed', address: 'South Beach', assignedTo: 'Luis Ortega', tags: ['booking'], durationMin: 120 },
+      { id: 'JOB-1023', demoOrd: 16, customer: 'Nina Patel', email: 'nina.p@email.com', phone: '(555) 201-0116', service: 'Interior Detail', vehicle: 'Sedan', amount: 175, date: addDaysStr(today, -3), time: '1:00 PM', status: 'completed', address: 'Downtown', assignedTo: 'Adrian Lopez', tags: ['manual'], durationMin: 90 },
+      { id: 'JOB-1015', demoOrd: 17, customer: 'Kevin Lopez', email: 'kevin.l@email.com', phone: '(555) 201-0117', service: 'Exterior Detail', vehicle: 'SUV', amount: 155, date: addDaysStr(today, -4), time: '10:30 AM', status: 'completed', address: 'Miami', assignedTo: 'Maya Chen', tags: ['booking'], durationMin: 60 },
+      { id: 'JOB-1016', demoOrd: 18, customer: 'Amy Foster', email: 'amy.f@email.com', phone: '(555) 201-0118', service: 'Full Detail', vehicle: 'Sedan', amount: 240, date: addDaysStr(today, -5), time: '12:00 PM', status: 'completed', address: 'Brickell', assignedTo: 'Luis Ortega', tags: ['booking'], durationMin: 120 },
+      { id: 'JOB-1017', demoOrd: 19, customer: 'Ryan Cooper', email: 'ryan.c@email.com', phone: '(555) 201-0119', service: 'Ceramic Coating', vehicle: 'Truck', amount: 800, date: addDaysStr(today, -6), time: '9:00 AM', status: 'completed', address: 'Homestead', assignedTo: 'Adrian Lopez', tags: ['from-quote'], durationMin: 300 },
+      { id: 'JOB-1010', demoOrd: 20, customer: 'Grace Lee', email: 'grace.l@email.com', phone: '(555) 201-0120', service: 'Interior Detail', vehicle: 'SUV', amount: 210, date: addDaysStr(today, -7), time: '3:00 PM', status: 'completed', address: 'Miami Beach', assignedTo: 'Maya Chen', tags: ['booking'], durationMin: 90 },
+      { id: 'JOB-1011', demoOrd: 21, customer: 'Daniel Ruiz', email: 'dan.r@email.com', phone: '(555) 201-0121', service: 'Full Detail', vehicle: 'Sedan', amount: 290, date: addDaysStr(today, -8), time: '11:00 AM', status: 'completed', address: 'Coral Gables', assignedTo: 'Luis Ortega', tags: ['booking'], durationMin: 150 },
+      { id: 'JOB-1012', demoOrd: 22, customer: 'Hannah Brooks', email: 'hannah.b@email.com', phone: '(555) 201-0122', service: 'Exterior Detail', vehicle: 'Sedan', amount: 140, date: today, time: '4:30 PM', status: 'in_progress', address: 'Downtown', assignedTo: 'Adrian Lopez', tags: ['manual'], durationMin: 60 },
+      { id: 'JOB-1013', demoOrd: 23, customer: 'Peter Nguyen', email: 'peter.n@email.com', phone: '(555) 201-0123', service: 'Full Detail', vehicle: 'SUV', amount: 310, date: today, time: '5:00 PM', status: 'in_progress', address: 'Brickell', assignedTo: 'Maya Chen', tags: ['booking'], durationMin: 120 },
+      { id: 'JOB-1008', demoOrd: 24, customer: 'Jordan Lee', email: 'jordan@email.com', phone: '(555) 201-0124', service: 'Interior Detail', vehicle: 'Sedan', amount: 200, date: addDaysStr(today, -2), time: '2:00 PM', status: 'cancelled', address: 'Clairemont', assignedTo: 'Luis Ortega', tags: ['manual'], durationMin: 90 }
     ];
+    S().jobs = demo;
     ensureJobsOsState();
   }
 
@@ -12165,11 +12199,56 @@
     }
   }
 
+  function jobStatusLabel(st) {
+    st = String(st || '').toLowerCase();
+    if (st === 'in_progress' || st === 'running' || st === 'paused') return 'In Progress';
+    if (st === 'completed' || st === 'paid') return 'Completed';
+    if (st === 'cancelled') return 'Canceled';
+    if (st === 'scheduled' || st === 'pending' || st === 'confirmed') return 'Scheduled';
+    return st ? (st.charAt(0).toUpperCase() + st.slice(1)) : 'Scheduled';
+  }
+
+  function jobMoney(n) {
+    var x = Number(n);
+    if (!Number.isFinite(x)) return '$0.00';
+    return '$' + x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function jobMoneyWhole(n) {
+    var x = Number(n);
+    if (!Number.isFinite(x)) return '$0';
+    return '$' + Math.round(x).toLocaleString('en-US');
+  }
+
+  function jobCreatedLabel(j) {
+    var raw = (j.timeline && j.timeline[0] && j.timeline[0].at) || j.createdAt || j.date || '';
+    try {
+      var d = new Date(String(raw).slice(0, 10) + 'T12:00:00');
+      if (!isNaN(d.getTime())) return 'Created ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (e) {}
+    return raw ? ('Created ' + String(raw).slice(0, 10)) : 'Created recently';
+  }
+
+  function jobDatePretty(ds) {
+    try {
+      var d = new Date(String(ds).slice(0, 10) + 'T12:00:00');
+      if (!isNaN(d.getTime())) return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (e) {}
+    return ds || '—';
+  }
+
+  function jobUpcomingBadge(ds) {
+    var today = todayStr();
+    if (ds === today) return 'Today';
+    if (ds === addDaysStr(today, 1)) return 'Tomorrow';
+    return jobDatePretty(ds);
+  }
+
   function renderJobsMiniCal(root, anchor, all) {
     var d = new Date(String(anchor || todayStr()).slice(0, 10) + 'T12:00:00');
     var y = d.getFullYear(), m = d.getMonth();
     var first = new Date(y, m, 1);
-    var startPad = (first.getDay() + 6) % 7; // Mon-start
+    var startPad = (first.getDay() + 6) % 7;
     var daysInMonth = new Date(y, m + 1, 0).getDate();
     var label = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
     var cells = [];
@@ -12178,10 +12257,11 @@
     for (i = 1; i <= daysInMonth; i++) {
       var ds = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(i).padStart(2, '0');
       var count = all.filter(function (j) { return j.date === ds && j.status !== 'cancelled'; }).length;
-      var on = (root._josJobsDateFilter === ds) || (ds === todayStr() && root._josJobsDateFilter === 'today');
       var isToday = ds === todayStr();
+      var filt = root._josJobsDateFilter;
+      var on = (filt === ds) || (isToday && (!filt || filt === 'all' || filt === 'today'));
       cells.push('<button type="button" class="jos-jcal-cell' + (on ? ' on' : '') + (isToday ? ' today' : '') + (count ? ' has' : '') + '" data-jos-act="jobs-cal-day" data-jos-day="' + ds + '">' +
-        '<span>' + i + '</span>' + (count ? '<i>' + count + '</i>' : '') + '</button>');
+        '<span>' + i + '</span>' + (count ? '<i></i>' : '') + '</button>');
     }
     return '<div class="jos-jcal">' +
       '<div class="jos-jcal-head">' +
@@ -12190,11 +12270,7 @@
       '<button type="button" data-jos-act="jobs-cal-next" aria-label="Next month">›</button>' +
       '</div>' +
       '<div class="jos-jcal-dow">' + ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div>' +
-      '<div class="jos-jcal-grid">' + cells.join('') + '</div>' +
-      '<div class="jos-btn-row jos-mt">' +
-      btn('jobs-cal-today', 'Today', 'jos-btn jos-btn-sm') +
-      btn('jobs-full-calendar', 'View Full Calendar', 'jos-btn-brand jos-btn-sm') +
-      '</div></div>';
+      '<div class="jos-jcal-grid">' + cells.join('') + '</div></div>';
   }
 
   function renderJobDrawer(root, j, workspaceTab) {
@@ -12297,47 +12373,60 @@
     var advOpen = !!root._josJobsAdvOpen;
     var exportOpen = !!root._josExportOpen;
     var calAnchor = root._josCalAnchor || today;
-
-    // Default list view for new UI
     if (!root._josJobsListView) root._josJobsListView = 'all';
+    if (!root._josJobsPageSize) root._josJobsPageSize = 5;
 
     var filtered = filterJobsList(root);
     var pageSize = jobsPageSize(root);
     var page = jobsPage(root);
-    var pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    var pages = Math.max(1, Math.ceil(filtered.length / pageSize) || 1);
     if (page > pages) { page = pages; root._josJobsPage = page; }
     var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+    var fromN = filtered.length ? ((page - 1) * pageSize + 1) : 0;
+    var toN = Math.min(filtered.length, page * pageSize);
 
-    var total = all.filter(function (j) { return j.status !== 'cancelled'; }).length;
+    var total = all.length;
     var completed = all.filter(function (j) { return j.status === 'completed'; }).length;
     var inProgress = all.filter(function (j) { return j.status === 'in_progress' || j.status === 'paused' || j.status === 'running'; }).length;
     var scheduled = all.filter(function (j) { return ['scheduled', 'pending', 'confirmed'].indexOf(j.status) > -1; }).length;
     var revenue = all.filter(function (j) { return j.status === 'completed'; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    if (!revenue) revenue = all.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) * 0.55 || 6840;
+    if (allowDemoSeed()) {
+      if (total < 24) total = 24;
+      if (completed < 16) completed = 16;
+      if (inProgress < 4) inProgress = 4;
+      if (scheduled < 10) scheduled = 10;
+      if (revenue < 6840) revenue = 6840;
+    }
 
     var services = Array.from(new Set(all.map(function (j) { return j.service; }).filter(Boolean)));
     var locations = Array.from(new Set(all.map(function (j) { return (j.address || '').split(',')[0]; }).filter(Boolean)));
     var listView = root._josJobsListView || 'all';
+    var owner = S().ownerName || S().ownerFirst || 'John';
+    if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
+    if (owner && owner.indexOf(' ') > -1) owner = owner.split(' ')[0];
+    var bizName = S().biz || "John's Detailing";
+    var notifN = (S().jobNotifications && S().jobNotifications.length) || (allowDemoSeed() ? 6 : 0);
 
-    var tableTabs = [['all', 'All Jobs'], ['scheduled', 'Scheduled'], ['in_progress', 'In Progress'], ['completed', 'Completed'], ['cancelled', 'Cancelled']];
+    var rangeStart = addDaysStr(today, -15);
+    var rangeEnd = addDaysStr(today, 15);
+    var dateRangeLabel = jobDatePretty(rangeStart) + ' - ' + jobDatePretty(rangeEnd);
+
+    var tableTabs = [['all', 'All Jobs'], ['scheduled', 'Scheduled'], ['in_progress', 'In Progress'], ['completed', 'Completed'], ['cancelled', 'Canceled']];
     var tabsHtml = '<div class="jos-jobs-table-tabs">' + tableTabs.map(function (t) {
       return '<button type="button" class="jos-jobs-ttab' + (listView === t[0] ? ' on' : '') + '" data-jos-jobs-list="' + t[0] + '">' + esc(t[1]) + '</button>';
     }).join('') + '</div>';
 
     var rowsHtml = pageRows.length ? pageRows.map(function (j) {
       var tone = jobRowTone(j.status);
-      var created = (j.timeline && j.timeline[0] && j.timeline[0].at) || j.date || '';
       return '<tr class="jos-jobs-row tone-' + tone + '" data-jos-job-id="' + esc(j.id) + '">' +
-        '<td class="col-job"><button type="button" class="jos-linkish" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><strong>' + esc(jobNumber(j)) + '</strong><span class="jos-muted">' + esc(String(created).slice(0, 16)) + '</span></button></td>' +
+        '<td class="col-job"><button type="button" class="jos-linkish" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><strong>' + esc(jobNumber(j).replace(/^JOB-/, '#')) + '</strong><span class="jos-muted">' + esc(jobCreatedLabel(j)) + '</span></button></td>' +
         '<td class="col-cust"><button type="button" class="jos-jobs-cust" data-jos-act="jobs-open-customer" data-jos-job-id="' + esc(j.id) + '">' +
-        '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span><span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(j.email || '—') + '</span><span class="jos-muted">' + esc(j.phone || '—') + '</span></span></button></td>' +
-        '<td class="col-svc"><button type="button" class="jos-linkish" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><strong>' + esc(j.service || 'Service') + '</strong><span class="jos-muted">' + esc(j.vehicle || 'Vehicle') + ' · ' + esc(String(j.durationMin || 120)) + 'm</span></button></td>' +
-        '<td class="col-date"><button type="button" class="jos-linkish jos-jobs-dt" data-jos-act="jobs-cal-day" data-jos-day="' + esc(j.date || '') + '"><span>' + jobUiIcon('cal') + ' ' + esc(j.date || '—') + '</span><span class="jos-muted">' + jobUiIcon('clock') + ' ' + esc(j.time || '—') + '</span></button></td>' +
-        '<td class="col-status"><button type="button" class="jos-pill ' + jobStatusTone(j.status) + '" data-jos-act="jobs-status-menu" data-jos-job-id="' + esc(j.id) + '">' + esc(j.status) + '</button></td>' +
-        '<td class="col-amt"><button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '">' + esc(money(j.amount) || '$0') + '</button></td>' +
-        '<td class="col-act"><div class="jos-jobs-more-wrap">' +
-        '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋯</button>' +
-        '</div></td></tr>';
+        '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span><span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(j.email || '—') + '</span></span></button></td>' +
+        '<td class="col-svc"><button type="button" class="jos-linkish" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><strong>' + esc(j.service || 'Service') + '</strong><span class="jos-muted">' + esc(j.vehicle || 'Vehicle') + '</span></button></td>' +
+        '<td class="col-date"><button type="button" class="jos-linkish jos-jobs-dt" data-jos-act="jobs-cal-day" data-jos-day="' + esc(j.date || '') + '"><span>' + jobUiIcon('cal') + ' ' + esc(jobDatePretty(j.date)) + '</span><span class="jos-muted">' + jobUiIcon('clock') + ' ' + esc(j.time || '—') + '</span></button></td>' +
+        '<td class="col-status"><button type="button" class="jos-pill ' + jobStatusTone(j.status) + '" data-jos-act="jobs-status-menu" data-jos-job-id="' + esc(j.id) + '">' + esc(jobStatusLabel(j.status)) + '</button></td>' +
+        '<td class="col-amt"><button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '">' + esc(jobMoney(j.amount)) + '</button></td>' +
+        '<td class="col-act"><button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋮</button></td></tr>';
     }).join('') : '';
 
     var mobileCards = pageRows.length ? '<div class="jos-jobs-cards">' + pageRows.map(function (j) {
@@ -12346,11 +12435,11 @@
         '<button type="button" class="jos-jobs-card-main" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
         '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span>' +
         '<span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(jobNumber(j)) + ' · ' + esc(j.service || '') + '</span>' +
-        '<span class="jos-muted">' + esc(j.date || '') + ' · ' + esc(j.time || '') + '</span></span>' +
-        '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></button>' +
+        '<span class="jos-muted">' + esc(jobDatePretty(j.date)) + ' · ' + esc(j.time || '') + '</span></span>' +
+        '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(jobStatusLabel(j.status)) + '</span></button>' +
         '<div class="jos-jobs-card-foot">' +
-        '<button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '">' + esc(money(j.amount) || '$0') + '</button>' +
-        '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋯</button>' +
+        '<button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '">' + esc(jobMoney(j.amount)) + '</button>' +
+        '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋮</button>' +
         '</div></article>';
     }).join('') + '</div>' : '';
 
@@ -12361,94 +12450,92 @@
       '<div class="jos-btn-row">' + btn('jobs-create', 'New Job', 'jos-btn-brand') + btn('jobs-import', 'Import Jobs', 'jos-btn jos-btn-out') + '</div></div>';
 
     var upcoming = all.filter(function (j) {
-      return j.status !== 'cancelled' && j.status !== 'completed' && String(j.date || '') >= today;
-    }).sort(function (a, b) { return String(a.date).localeCompare(String(b.date)) || parseJobMinutes(a.time) - parseJobMinutes(b.time); }).slice(0, 6);
+      return ['scheduled', 'pending', 'confirmed'].indexOf(j.status) > -1 && String(j.date || '') >= today;
+    }).sort(function (a, b) { return String(a.date).localeCompare(String(b.date)) || parseJobMinutes(a.time) - parseJobMinutes(b.time); }).slice(0, 3);
 
-    var completionRate = total ? Math.round((completed / Math.max(1, total)) * 100) : 0;
-    var avgTicket = completed ? Math.round(revenue / Math.max(1, completed)) : Math.round(revenue / Math.max(1, all.length || 1));
+    var completionRate = allowDemoSeed() ? 92 : (total ? Math.round((completed / Math.max(1, total)) * 100) : 0);
+    var avgTicket = allowDemoSeed() ? 220 : (completed ? Math.round(revenue / Math.max(1, completed)) : 0);
+    var rescheduleRate = allowDemoSeed() ? 8 : 6;
+    var noShowRate = allowDemoSeed() ? 2 : 2;
 
-    var pager = '';
-    if (filtered.length) {
-      var buttons = '';
-      for (var p = 1; p <= pages && p <= 5; p++) {
-        buttons += '<button type="button" class="jos-jobs-pagebtn' + (p === page ? ' on' : '') + '" data-jos-act="jobs-page" data-jos-page="' + p + '">' + p + '</button>';
-      }
-      pager = '<div class="jos-jobs-pager">' +
-        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-page-prev"' + (page <= 1 ? ' disabled' : '') + '>Previous</button>' +
-        buttons +
-        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-page-next"' + (page >= pages ? ' disabled' : '') + '>Next</button>' +
-        '<select id="jos-jobs-page-size" class="jos-jobs-pagesize">' +
-        [25, 50, 100].map(function (n) { return '<option value="' + n + '"' + (pageSize === n ? ' selected' : '') + '>' + n + ' / page</option>'; }).join('') +
-        '</select></div>';
+    var pagerButtons = '';
+    var maxShow = Math.min(pages, 5);
+    for (var p = 1; p <= maxShow; p++) {
+      pagerButtons += '<button type="button" class="jos-jobs-pagebtn' + (p === page ? ' on' : '') + '" data-jos-act="jobs-page" data-jos-page="' + p + '">' + p + '</button>';
     }
+    if (pages > 5) pagerButtons += '<span class="jos-jobs-ellipsis">…</span><button type="button" class="jos-jobs-pagebtn" data-jos-act="jobs-page" data-jos-page="' + pages + '">' + pages + '</button>';
+    var pager = filtered.length
+      ? '<div class="jos-jobs-pager">' +
+        '<div class="jos-jobs-showing">Showing ' + fromN + ' to ' + toN + ' of ' + filtered.length + ' jobs</div>' +
+        '<div class="jos-jobs-pager-btns">' +
+        '<button type="button" class="jos-jobs-pagebtn" data-jos-act="jobs-page-prev" aria-label="Previous"' + (page <= 1 ? ' disabled' : '') + '>‹</button>' +
+        pagerButtons +
+        '<button type="button" class="jos-jobs-pagebtn" data-jos-act="jobs-page-next" aria-label="Next"' + (page >= pages ? ' disabled' : '') + '>›</button>' +
+        '</div></div>'
+      : '';
 
     var drawer = drawerOpen && selected ? renderJobDrawer(root, selected, workspaceTab) : '';
     var statusMenu = '<div class="jos-jobs-pop" id="jos-jobs-status-pop" hidden></div>';
     var rowMenu = '<div class="jos-jobs-pop" id="jos-jobs-row-pop" hidden></div>';
 
     root.innerHTML =
-      '<div class="jos-jobs-shell">' +
+      '<div class="jos-jobs-shell jos-jobs-shot">' +
       '<div class="jos-jobs-layout">' +
       '<main class="jos-jobs-main">' +
       '<header class="jos-jobs-header">' +
-      '<div><h1>Jobs</h1><p>Manage and track every job in one place.</p></div>' +
+      '<div><h1>Jobs</h1><p>Manage and track all your jobs in one place.</p></div>' +
       '<div class="jos-jobs-header-actions">' +
       '<div class="jos-jobs-export-wrap">' +
-      '<button type="button" class="jos-btn jos-jobs-export" data-jos-act="jobs-export-toggle">' + jobUiIcon('download') + ' Export</button>' +
+      '<button type="button" class="jos-btn jos-jobs-export" data-jos-act="jobs-export-toggle">' + jobUiIcon('export') + ' Export</button>' +
       (exportOpen ? '<div class="jos-jobs-export-menu">' +
         [['csv', 'CSV'], ['excel', 'Excel'], ['pdf', 'PDF'], ['custom', 'Custom Report']].map(function (x) {
           return '<button type="button" data-jos-act="jobs-export-fmt" data-jos-fmt="' + x[0] + '">' + x[1] + '</button>';
         }).join('') + '</div>' : '') +
       '</div>' +
       '<button type="button" class="jos-btn jos-btn-brand jos-jobs-new" data-jos-act="jobs-create">+ New Job</button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' + jobUiIcon('bell') + '</button>' +
-      '<button type="button" class="jos-jobs-ava-btn" data-jos-act="go-settings" title="Profile">' + esc(jobInitials(S().ownerName || 'Adrian')) + '</button>' +
+      '<button type="button" class="jos-icon-btn jos-jobs-bell" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' + jobUiIcon('bell') + (notifN ? '<i class="badge">' + notifN + '</i>' : '') + '</button>' +
+      '<button type="button" class="jos-jobs-profile" data-jos-act="go-settings" title="Profile"><span class="ava">' + esc(jobInitials(owner)) + '</span><span class="meta"><strong>' + esc(bizName) + '</strong></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>' +
       '</div></header>' +
 
       '<section class="jos-jobs-filters">' +
       '<div class="jos-jobs-filter-row">' +
-      '<select id="jos-jobs-filter-date" class="jos-jobs-dd"><option value="all">Date</option><option value="today"' + ((root._josJobsDateFilter || '') === 'today' ? ' selected' : '') + '>Today</option><option value="week"' + ((root._josJobsDateFilter || '') === 'week' ? ' selected' : '') + '>This week</option></select>' +
-      '<select id="jos-jobs-filter-status" class="jos-jobs-dd"><option value="all">Status</option>' + ['scheduled', 'in_progress', 'completed', 'cancelled', 'pending'].map(function (s) {
-        return '<option value="' + s + '"' + ((root._josJobsStatus || 'all') === s ? ' selected' : '') + '>' + s + '</option>';
+      '<select id="jos-jobs-filter-date" class="jos-jobs-dd wide"><option value="all">' + esc(dateRangeLabel) + '</option><option value="today"' + ((root._josJobsDateFilter || '') === 'today' ? ' selected' : '') + '>Today</option><option value="week"' + ((root._josJobsDateFilter || '') === 'week' ? ' selected' : '') + '>This week</option><option value="all">All dates</option></select>' +
+      '<select id="jos-jobs-filter-status" class="jos-jobs-dd"><option value="all">All Status</option>' + ['scheduled', 'in_progress', 'completed', 'cancelled', 'pending'].map(function (s) {
+        return '<option value="' + s + '"' + ((root._josJobsStatus || 'all') === s ? ' selected' : '') + '>' + esc(jobStatusLabel(s)) + '</option>';
       }).join('') + '</select>' +
-      '<select id="jos-jobs-filter-service" class="jos-jobs-dd"><option value="all">Services</option>' + services.map(function (s) {
+      '<select id="jos-jobs-filter-service" class="jos-jobs-dd"><option value="all">All Services</option>' + services.map(function (s) {
         return '<option value="' + esc(s) + '"' + ((root._josJobsService || 'all') === s ? ' selected' : '') + '>' + esc(s) + '</option>';
       }).join('') + '</select>' +
-      '<select id="jos-jobs-filter-employee" class="jos-jobs-dd"><option value="all">Team</option>' + jobsTeam().map(function (t) {
+      '<select id="jos-jobs-filter-employee" class="jos-jobs-dd"><option value="all">All Team Members</option>' + jobsTeam().map(function (t) {
         return '<option value="' + esc(t.name) + '"' + ((root._josJobsEmployee || 'all') === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
       }).join('') + '</select>' +
-      '<select id="jos-jobs-filter-location" class="jos-jobs-dd"><option value="all">Locations</option>' + locations.map(function (l) {
+      '<select id="jos-jobs-filter-location" class="jos-jobs-dd"><option value="all">All Locations</option>' + locations.map(function (l) {
         return '<option value="' + esc(l) + '"' + ((root._josJobsLocation || 'all') === l ? ' selected' : '') + '>' + esc(l) + '</option>';
       }).join('') + '</select>' +
-      '<label class="jos-jobs-search"><input id="jos-jobs-search" type="search" placeholder="Search customer, address, phone..." value="' + esc(root._josJobsQ || '') + '"></label>' +
+      '<label class="jos-jobs-search"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg><input id="jos-jobs-search" type="search" placeholder="Search jobs, customer, or address..." value="' + esc(root._josJobsQ || '') + '"></label>' +
       '</div>' +
       '<div class="jos-jobs-filter-row two">' +
-      '<select id="jos-jobs-filter-source" class="jos-jobs-dd"><option value="all">Source</option><option value="booking">Booking</option><option value="manual">Manual</option><option value="from-quote">Quote</option></select>' +
-      '<select id="jos-jobs-filter-tag" class="jos-jobs-dd"><option value="all">Tags</option><option value="booking">booking</option><option value="manual">manual</option><option value="from-quote">from-quote</option><option value="priority">priority</option></select>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-clear-filters">Clear Filters</button>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-adv-toggle">Advanced Filters</button>' +
-      '</div></section>' +
+      '<select id="jos-jobs-filter-source" class="jos-jobs-dd"><option value="all">Source</option><option value="booking"' + ((root._josJobsSource || 'all') === 'booking' ? ' selected' : '') + '>Booking</option><option value="manual"' + ((root._josJobsSource || 'all') === 'manual' ? ' selected' : '') + '>Manual</option><option value="from-quote"' + ((root._josJobsSource || 'all') === 'from-quote' ? ' selected' : '') + '>Quote</option></select>' +
+      '<select id="jos-jobs-filter-tag" class="jos-jobs-dd"><option value="all">Tags</option><option value="booking"' + ((root._josJobsTag || 'all') === 'booking' ? ' selected' : '') + '>booking</option><option value="manual"' + ((root._josJobsTag || 'all') === 'manual' ? ' selected' : '') + '>manual</option><option value="from-quote"' + ((root._josJobsTag || 'all') === 'from-quote' ? ' selected' : '') + '>from-quote</option><option value="priority"' + ((root._josJobsTag || 'all') === 'priority' ? ' selected' : '') + '>priority</option></select>' +
+      '<div class="jos-jobs-filter-actions">' +
+      '<button type="button" class="jos-jobs-clear" data-jos-act="jobs-clear-filters">' + jobUiIcon('reset') + ' Clear Filters</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-jobs-filters-btn" data-jos-act="jobs-adv-toggle">' + jobUiIcon('funnel') + ' Filters</button>' +
+      '</div></div></section>' +
 
       (advOpen ? '<aside class="jos-jobs-adv">' +
         '<div class="jos-between"><div class="jos-kicker">Advanced Filters</div><button type="button" class="jos-icon-btn" data-jos-act="jobs-adv-toggle">✕</button></div>' +
         '<label>Revenue Range<input type="text" placeholder="$0 – $1000" id="jos-jobs-adv-rev"></label>' +
         '<label>Travel Radius<input type="text" placeholder="25 miles" id="jos-jobs-adv-radius"></label>' +
         '<label>Customer Type<select id="jos-jobs-adv-ctype"><option>Any</option><option>New</option><option>Returning</option><option>Member</option></select></label>' +
-        '<label>Vehicle Type<select><option>Any</option><option>Sedan</option><option>SUV</option><option>Truck</option></select></label>' +
-        '<label class="jos-check-row"><input type="checkbox" id="jos-jobs-adv-recurring"> Recurring Only</label>' +
-        '<label>Job Value<select><option>Any</option><option>Under $200</option><option>$200–$500</option><option>$500+</option></select></label>' +
-        '<label>Employee<select id="jos-jobs-adv-emp"><option value="all">Any</option>' + jobsTeam().map(function (t) { return '<option value="' + esc(t.name) + '">' + esc(t.name) + '</option>'; }).join('') + '</select></label>' +
-        '<label>Weather<select><option>Any</option><option>Clear</option><option>Rain risk</option></select></label>' +
-        '<label>Lead Source<select><option>Any</option><option>Website</option><option>Instagram</option><option>Google</option></select></label>' +
         '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="jobs-adv-apply">Apply</button>' +
         '</aside>' : '') +
 
       '<section class="jos-jobs-kpis">' +
-      [['jobs-kpi-all', 'Total Jobs', total || 24, 'briefcase', 'brand', '+12%'],
-        ['jobs-kpi-completed', 'Completed', completed || 16, 'check', 'ok', '+8%'],
-        ['jobs-kpi-progress', 'In Progress', inProgress || 4, 'clock', 'warn', 'Active'],
-        ['jobs-kpi-scheduled', 'Scheduled', scheduled || 10, 'cal', 'info', 'Next 7d'],
-        ['jobs-kpi-revenue', 'Revenue', money(revenue) || '$6,840', 'dollar', 'blue', '+18%']].map(function (k) {
+      [['jobs-kpi-all', 'Total Jobs', total, 'briefcase', 'brand', '+12% vs last 30 days'],
+        ['jobs-kpi-completed', 'Completed', completed, 'check', 'ok', '+8% vs last 30 days'],
+        ['jobs-kpi-progress', 'In Progress', inProgress, 'clock', 'warn', '+4% vs last 30 days'],
+        ['jobs-kpi-scheduled', 'Scheduled', scheduled, 'cal', 'info', '+20% vs last 30 days'],
+        ['jobs-kpi-revenue', 'Revenue', jobMoneyWhole(revenue), 'dollar', 'blue', '+18% vs last 30 days']].map(function (k) {
         return '<button type="button" class="jos-jobs-kpi tone-' + k[4] + '" data-jos-act="' + k[0] + '">' +
           '<span class="jos-jobs-kpi-ico" aria-hidden="true">' + jobKpiIcon(k[3]) + '</span>' +
           '<span><span class="lbl">' + esc(k[1]) + '</span><strong>' + esc(String(k[2])) + '</strong><span class="trend">' + esc(k[5]) + '</span></span></button>';
@@ -12459,7 +12546,7 @@
       tabsHtml +
       (pageRows.length
         ? '<div class="jos-jobs-table-wrap"><table class="jos-jobs-table"><thead><tr>' +
-          '<th style="width:120px">Job #</th><th style="width:280px">Customer</th><th style="width:200px">Service</th><th style="width:220px">Date &amp; Time</th><th style="width:150px">Status</th><th style="width:120px">Amount</th><th style="width:80px">Actions</th>' +
+          '<th class="col-job">Job</th><th class="col-cust">Customer</th><th class="col-svc">Service</th><th class="col-date">Date &amp; Time</th><th class="col-status">Status</th><th class="col-amt">Amount</th><th class="col-act"></th>' +
           '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' + mobileCards + pager
         : emptyTable) +
       '</section>' +
@@ -12472,21 +12559,27 @@
           [['calendar', 'Calendar'], ['upcoming', 'Upcoming'], ['summary', 'Summary']].map(function (t) {
             return '<button type="button" class="jos-jobs-rail-tab' + (railTab === t[0] ? ' on' : '') + '" data-jos-rail-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
           }).join('') + '</div>' +
-          '<section class="jos-jobs-rail-card jos-rail-panel' + (railTab === 'calendar' ? ' on' : '') + '" data-jos-rail-panel="calendar"><div class="jos-kicker">Calendar</div>' + renderJobsMiniCal(root, calAnchor, all) + '</section>' +
-          '<section class="jos-jobs-rail-card grow jos-rail-panel' + (railTab === 'upcoming' ? ' on' : '') + '" data-jos-rail-panel="upcoming"><div class="jos-kicker">Upcoming Jobs</div><div class="jos-jobs-upcoming">' +
+          '<section class="jos-jobs-rail-card jos-rail-panel' + (railTab === 'calendar' ? ' on' : '') + '" data-jos-rail-panel="calendar">' +
+          '<div class="jos-jobs-rail-h"><span>Calendar</span><button type="button" class="jos-jobs-rail-link" data-jos-act="jobs-full-calendar">View Full Calendar</button></div>' +
+          renderJobsMiniCal(root, calAnchor, all) + '</section>' +
+          '<section class="jos-jobs-rail-card grow jos-rail-panel' + (railTab === 'upcoming' ? ' on' : '') + '" data-jos-rail-panel="upcoming">' +
+          '<div class="jos-jobs-rail-h"><span>Upcoming Jobs</span><button type="button" class="jos-jobs-rail-link" data-jos-act="jobs-kpi-scheduled">View All</button></div>' +
+          '<div class="jos-jobs-upcoming">' +
           (upcoming.length ? upcoming.map(function (j) {
             return '<button type="button" class="jos-jobs-up-card" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
               '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span>' +
-              '<span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(j.time) + ' · ' + esc(j.service) + '</span><span class="jos-muted">' + esc(j.vehicle || '') + '</span></span>' +
-              '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></button>';
+              '<span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(jobDatePretty(j.date)) + ' · ' + esc(j.time) + '</span><span class="jos-muted">' + esc(j.service) + '</span></span>' +
+              '<span class="jos-jobs-up-badge">' + esc(jobUpcomingBadge(j.date)) + '</span></button>';
           }).join('') : '<div class="jos-muted">No upcoming jobs</div>') +
           '</div></section>' +
-          '<section class="jos-jobs-rail-card jos-rail-panel' + (railTab === 'summary' ? ' on' : '') + '" data-jos-rail-panel="summary"><div class="jos-kicker">Business Summary</div>' +
-          '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-reports"><span>Completion Rate</span><strong>' + completionRate + '%</strong></button>' +
-          '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-money"><span>Average Ticket</span><strong>' + esc(money(avgTicket)) + '</strong></button>' +
-          '<div class="jos-jobs-spark" aria-hidden="true"><i style="height:40%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:70%"></i><i style="height:62%"></i><i style="height:80%"></i><i style="height:75%"></i></div>' +
-          '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-reports"><span>Reschedule %</span><strong>6%</strong></button>' +
-          '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-reports"><span>No Show %</span><strong>2%</strong></button>' +
+          '<section class="jos-jobs-rail-card jos-rail-panel' + (railTab === 'summary' ? ' on' : '') + '" data-jos-rail-panel="summary">' +
+          '<div class="jos-jobs-rail-h"><span>Jobs Summary</span><button type="button" class="jos-jobs-rail-select" data-jos-act="go-reports">This Month ▾</button></div>' +
+          '<div class="jos-jobs-sum-metric"><div class="jos-between"><span>Completion Rate</span><strong>' + completionRate + '%</strong></div>' +
+          '<div class="jos-jobs-bar"><i style="width:' + completionRate + '%"></i></div></div>' +
+          '<div class="jos-jobs-sum-metric"><div class="jos-between"><span>Average Job Value</span><strong>' + esc(jobMoneyWhole(avgTicket)) + '</strong></div>' +
+          '<div class="jos-jobs-spark" aria-hidden="true"><i style="height:40%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:70%"></i><i style="height:62%"></i><i style="height:80%"></i><i style="height:75%"></i></div></div>' +
+          '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-reports"><span>Reschedule Rate</span><strong>' + rescheduleRate + '%</strong></button>' +
+          '<button type="button" class="jos-jobs-sum-row" data-jos-act="go-reports"><span>No Show Rate</span><strong>' + noShowRate + '%</strong></button>' +
           '</section>';
       })() +
       '</aside>' +
