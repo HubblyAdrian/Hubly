@@ -181,7 +181,9 @@ const state = {
   city: "Austin, TX",
   slug: "shine-auto",
   services: [],
-  editorSvcs: [],
+  editorSvcs: [
+    { id: "sf_svc_1", name: "Interior Detail", price: 189, dur: "2.5 hrs", desc: "Deep clean", status: "active", website: true, depositType: "pct", depositVal: 25 },
+  ],
   website: null,
   galleryPairs: [],
   jobs: [],

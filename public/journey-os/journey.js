@@ -28,6 +28,10 @@
   ];
 
   function S() { return global.S || {}; }
+  function allowDemoSeed() {
+    var st = S();
+    return !!(st && st._ceoDemo) || !!(global.__HUBLY_MAT__ || global.__HUBLY_ALLOW_DEMO_SEED__);
+  }
   function esc(v) {
     if (typeof global.escapeHtml === 'function') return global.escapeHtml(v);
     return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -233,7 +237,7 @@
       cards.push({ id: 'job:' + (j.id || j.reqId), jobId: j.id, customerId: (customers().find(function (c) { return c.name === j.customer; }) || {}).id || null, customerName: j.customer, stageId: stageId, name: j.customer || 'Customer', source: j.fromBooking ? 'hubly' : srcKind(j.source, j), service: j.service || '', vehicle: vehicleOf(j), amount: j.amount, date: j.date || '', meta: j });
     });
     cards.forEach(function (c) { c.stageId = getCardStageId(c); });
-    return cards.length ? cards : demoPipelineCards();
+    return cards.length ? cards : (allowDemoSeed() ? demoPipelineCards() : []);
   }
 
   function pipeCardMetaBits(card) {
@@ -852,7 +856,7 @@
       out.push({ tag: 'Pricing', title: 'Tighten quote follow-ups', body: 'Open quotes waiting — nudge with a clearer package.', impact: 'Lift quote close rate', message: 'Quick check-in on your quote — want me to hold the mid-tier this week?', phone: '' });
     }
     out.push({ tag: 'Upsell', title: 'Offer add-ons on next booked job', body: 'Suggest interior protection when confirming.', impact: '+ average ticket', message: 'Before we start — want to add interior protection?', phone: '' });
-    if (out.length < 4) out = out.concat(demoOpportunities());
+    if (out.length < 4 && allowDemoSeed()) out = out.concat(demoOpportunities());
     return out.slice(0, 9);
   }
   function renderOpportunities() {
@@ -879,8 +883,8 @@
     (S().chatConversations || []).slice(0, 4).forEach(function (c) {
       items.push({ kind: 'ai', ico: 'AI', t: 'Chat lead · ' + (c.customer_name || c.customer_phone || 'Visitor'), s: 'Website chatbot', at: c.started_at || c.created_at || '' });
     });
-    items.push({ kind: 'email', ico: '@', t: 'Ask Hubly stood by for follow-ups', s: 'AI action · morning briefing ready', at: new Date().toISOString() });
-    if (items.length < 5) items = items.concat([{ kind: 'ai', ico: 'AI', t: 'Hubly drafted 3 follow-up texts', s: 'AI action', at: '' }, { kind: 'email', ico: '@', t: 'Quote email opened', s: 'Jordan Lee · Full detail', at: '' }, { kind: 'book', ico: '📅', t: 'New booking confirmed', s: 'Demo customer · Tomorrow 10:00', at: '' }]);
+    if (items.length) items.push({ kind: 'email', ico: '@', t: 'Ask Hubly stood by for follow-ups', s: 'AI action · morning briefing ready', at: new Date().toISOString() });
+    if (items.length < 5 && allowDemoSeed()) items = items.concat([{ kind: 'ai', ico: 'AI', t: 'Hubly drafted 3 follow-up texts', s: 'AI action', at: '' }, { kind: 'email', ico: '@', t: 'Quote email opened', s: 'Jordan Lee · Full detail', at: '' }, { kind: 'book', ico: '📅', t: 'New booking confirmed', s: 'Demo customer · Tomorrow 10:00', at: '' }]);
     items.sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
     return items.slice(0, 24);
   }
@@ -1711,18 +1715,18 @@
     });
     if (!os.business || typeof os.business !== 'object') {
       os.business = {
-        name: st.businessName || st.city || 'Hubly Detail Co',
-        address: '100 Harbor Drive',
-        city: (String(st.city || 'San Diego, CA').split(',')[0] || 'San Diego').trim(),
-        region: 'CA',
-        postal: '92101',
+        name: st.businessName || st.biz || 'Your business',
+        address: '',
+        city: (String(st.city || '').split(',')[0] || '').trim(),
+        region: '',
+        postal: '',
         country: 'US',
-        timeZone: 'America/Los_Angeles',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles',
         currency: 'USD',
-        taxDefault: 7.75,
+        taxDefault: 0,
         logoUrl: 'assets/hubly-wordmark.png',
-        contactEmail: 'hello@hubly.test',
-        contactPhone: '(619) 555-0100'
+        contactEmail: st.ownerEmail || '',
+        contactPhone: st.phone || ''
       };
     }
     if (!os.team || typeof os.team !== 'object') os.team = { users: [], invitations: [] };
@@ -1730,15 +1734,11 @@
     if (!Array.isArray(os.team.invitations)) os.team.invitations = [];
     if (!os.team.users.length) {
       var roster = Array.isArray(st.team) ? st.team : [];
-      os.team.users = (roster.length ? roster : [
-        { id: 't1', name: 'Adrian Lopez', role: 'Owner' },
-        { id: 't2', name: 'Maya Chen', role: 'Technician' },
-        { id: 't3', name: 'Luis Ortega', role: 'Technician' }
-      ]).map(function (u, i) {
+      os.team.users = roster.map(function (u, i) {
         return {
           id: u.id || ('set_u_' + i),
           name: u.name || 'Team member',
-          email: u.email || (String(u.name || 'user').toLowerCase().replace(/\s+/g, '.') + '@hubly.test'),
+          email: u.email || '',
           role: u.role || 'Technician',
           status: 'active'
         };
@@ -1748,12 +1748,9 @@
       os.billing = {
         plan: 'Grow',
         status: 'active',
-        paymentMethod: 'Visa ···· 4242',
-        usage: { seats: os.team.users.length, jobsThisMonth: Array.isArray(st.jobs) ? st.jobs.length : 0, aiActions: 12 },
-        invoices: [
-          { id: 'pin_1', label: 'Hubly Grow — Jul', amount: 79, status: 'paid', at: setNow() },
-          { id: 'pin_2', label: 'Hubly Grow — Jun', amount: 79, status: 'paid', at: setNow() }
-        ]
+        paymentMethod: '',
+        usage: { seats: os.team.users.length, jobsThisMonth: Array.isArray(st.jobs) ? st.jobs.length : 0, aiActions: 0 },
+        invoices: []
       };
     }
     if (!os.integrations || typeof os.integrations !== 'object') {
@@ -2335,15 +2332,7 @@
     var st = S();
     if (!st.marketingOs || typeof st.marketingOs !== 'object') st.marketingOs = {};
     var m = st.marketingOs;
-    if (!Array.isArray(m.campaigns) || !m.campaigns.length) {
-      m.campaigns = [
-        { id: 'mkt_camp_1', name: 'Holiday / Seasonal Promo', channel: 'multi', status: 'running', audience: { type: 'segment', key: 'all_customers' }, subject: 'Seasonal offer', body: 'Limited-time packages before the busy weekend.', description: 'Drive bookings with a timed seasonal offer.', scheduledAt: todayStr(), stats: { sends: 120, opens: 54, clicks: 48, attributedRevenue: 0 } },
-        { id: 'mkt_camp_2', name: 'Welcome New Customers', channel: 'email', status: 'draft', audience: { type: 'segment', key: 'all_customers' }, body: 'Thank-you sequence with first-visit offer.', description: 'Onboard new bookers with a warm welcome series.', stats: { clicks: 12 } },
-        { id: 'mkt_camp_3', name: 'Win-Back Quiet Customers', channel: 'sms', status: 'scheduled', audience: { type: 'segment', key: 'win_back' }, body: 'We miss you — 15% off your next visit.', description: 'Re-engage customers quiet for 60+ days.', scheduledAt: todayStr(), stats: { clicks: 8 } },
-        { id: 'mkt_camp_4', name: 'Google Review Push', channel: 'email', status: 'draft', audience: { type: 'segment', key: 'members' }, body: 'Ask happy customers for a Google review.', description: 'Grow reputation after completed jobs.', stats: { clicks: 5 } },
-        { id: 'mkt_camp_5', name: 'Membership Upsell', channel: 'email', status: 'draft', audience: { type: 'segment', key: 'vip' }, body: 'Invite frequent customers to a recurring plan.', description: 'Convert repeat buyers into members.', stats: { clicks: 3 } }
-      ];
-    }
+    if (!Array.isArray(m.campaigns)) m.campaigns = [];
     if (!Array.isArray(m.templates)) {
       m.templates = [
         { id: 'mkt_tpl_email_1', kind: 'email', name: 'Thank-you + rebook', subject: 'Thanks for trusting us', body: 'Hi {{name}}, thanks for your visit. Ready to rebook? Tap your personalized link.' },
@@ -2363,33 +2352,10 @@
         { id: 're_engage', name: 'Re-engage', on: false, desc: 'Win-back sequence for quiet customers.' }
       ];
     }
-    if (!Array.isArray(m.coupons)) {
-      m.coupons = [
-        { id: 'mkt_cpn_1', code: 'SPRING15', label: '15% spring detail', discount: 15, type: 'pct', active: true, uses: 12 },
-        { id: 'mkt_cpn_2', code: 'WELCOME25', label: '$25 off first booking', discount: 25, type: 'flat', active: true, uses: 4 }
-      ];
-    }
-    if (!Array.isArray(m.calendar) || !m.calendar.length) {
-      m.calendar = [
-        { id: 'mkt_cal_1', title: 'Spring lawn tips carousel', channel: 'linkedin', scheduledAt: todayStr(), time: '9:00 AM', status: 'scheduled', body: 'Educational post with Book Now CTA.' },
-        { id: 'mkt_cal_2', title: 'Before / after reel', channel: 'instagram', scheduledAt: todayStr(), time: '12:30 PM', status: 'scheduled', body: 'Showcase transformation + link in bio.' },
-        { id: 'mkt_cal_3', title: 'Weekend promo email', channel: 'email', scheduledAt: todayStr(), time: '4:00 PM', status: 'scheduled', body: 'Limited slots — book your service this weekend.' }
-      ];
-    }
-    if (!Array.isArray(m.ads)) {
-      m.ads = [
-        { id: 'mkt_ad_1', name: 'Local service — leads', platform: 'meta', status: 'active', spend: 420, leads: 28, cpl: 15, clicks: 312, impressions: 8400 },
-        { id: 'mkt_ad_2', name: 'Retargeting', platform: 'meta', status: 'paused', spend: 180, leads: 9, cpl: 20, clicks: 96, impressions: 2100 }
-      ];
-    }
-    if (!m.analytics || typeof m.analytics !== 'object') {
-      m.analytics = {
-        websiteClicks: 48, websiteClicksDelta: 24, newCustomers: 7, newCustomersDelta: 16,
-        attributedRevenue: 0, emailOpenRate: 42, instagramEngagement: 6.8,
-        scoreHistory: [72, 78, 81, 84, 88, 90, 91]
-      };
-    }
-    if (m.score == null) m.score = 91;
+    if (!Array.isArray(m.coupons)) m.coupons = [];
+    if (!Array.isArray(m.calendar)) m.calendar = [];
+    if (!Array.isArray(m.ads)) m.ads = [];
+    if (m.score == null) m.score = marketingScore();
     if (!m.toggles || typeof m.toggles !== 'object') m.toggles = {};
     m.automations.forEach(function (a) {
       if (m.toggles[a.id] == null) m.toggles[a.id] = !!a.on;
@@ -2397,8 +2363,7 @@
     });
     m.campaigns.forEach(function (c) {
       if (!c.stats) c.stats = {};
-      if (c.status === 'active') c.status = 'running';
-      if (c.stats.attributedRevenue == null && (c.status === 'running' || c.status === 'active')) c.stats.attributedRevenue = mktAttributedRevenueDemo();
+      if (c.stats.attributedRevenue == null && c.status === 'active' && allowDemoSeed()) c.stats.attributedRevenue = mktAttributedRevenueDemo();
     });
     return m;
   }
@@ -3250,18 +3215,8 @@
   }
   function seedReviewsFromLegacy() {
     var manual = S().website?.manualReviews || S().manualReviews || [];
-    var demo = [
-      { name: 'Alex P.', text: 'Showed up on time and the finish looked brand new. Professional crew and spotless cleanup.', rating: 5, source: 'google', tags: ['Professional', 'Fast', 'Clean'], service: 'Full detail', employee: 'Marcus' },
-      { name: 'Sam R.', text: 'Easy booking and clear communication from start to finish. Will definitely book again.', rating: 5, source: 'facebook', tags: ['Friendly', 'Communication'], service: 'Interior wash' },
-      { name: 'Jordan M.', text: 'Will book again — already told two neighbors. Quality exceeded expectations.', rating: 5, source: 'website', tags: ['Quality', 'Friendly'], service: 'Ceramic coating' },
-      { name: 'Riley K.', text: 'Great attention to detail on my truck. Punctual and respectful of my property.', rating: 5, source: 'google', tags: ['Professional', 'Punctual'], service: 'Truck detail' },
-      { name: 'Casey L.', text: 'Solid work overall. A bit of a wait on scheduling but worth it.', rating: 4, source: 'yelp', tags: ['Quality'], service: 'Monthly wash' },
-      { name: 'Morgan T.', text: 'Luxury-level finish on my SUV. The team was courteous and efficient.', rating: 5, source: 'google', tags: ['Luxury', 'Professional'], service: 'Premium detail', employee: 'Dana' },
-      { name: 'Taylor W.', text: 'Quick turnaround and friendly service. Highly recommend for busy families.', rating: 5, source: 'hubly', tags: ['Fast', 'Friendly'], service: 'Express wash' },
-      { name: 'Jamie H.', text: 'Good value and consistent results every visit.', rating: 4, source: 'facebook', tags: ['Friendly'], service: 'Membership wash', status: 'new' }
-    ];
-    return (manual.length ? manual : demo).map(function (r, i) {
-      return normalizeReview(Object.assign({}, r, { id: revId('rev_seed_' + i) }));
+    return (Array.isArray(manual) ? manual : []).map(function (r, i) {
+      return normalizeReview(Object.assign({}, r, { id: r.id || revId('rev_seed_' + i) }));
     }).filter(Boolean);
   }
   function recalcReviewsAnalytics(reviews) {
@@ -6357,7 +6312,7 @@
   }
   function allLeads() {
     var leads = collectLeads();
-    if (!leads.length) {
+    if (!leads.length && allowDemoSeed()) {
       leads = demoPipelineCards().filter(function (c) { return /lead|quote|qualified/.test(c.stageId); })
         .map(function (c, i) { return { key: 'demo:' + i, name: c.name, source: c.source, stage: c.stageId, service: c.service, vehicle: c.vehicle, createdAt: c.date, amount: c.amount, phone: c.phone || '', email: c.email || '' }; });
     }
@@ -6561,7 +6516,8 @@
     if (!st.pipeline || typeof st.pipeline !== 'object') st.pipeline = { manual: [], deleted: [], stages: {}, lostReasons: {}, edits: {} };
     if (!Array.isArray(st.pipeline.manual)) st.pipeline.manual = [];
     if (!Array.isArray(st.abandonedLeads)) st.abandonedLeads = [];
-    if (!Array.isArray(st.team) || !st.team.length) st.team = LEADS_TEAM.slice();
+    if (!Array.isArray(st.team)) st.team = [];
+    if (!st.team.length && allowDemoSeed()) st.team = LEADS_TEAM.slice();
     if (!st.leadsOs) st.leadsOs = { savedFilters: [], role: 'Owner' };
     if (!Array.isArray(st.leadsOs.savedFilters)) st.leadsOs.savedFilters = [];
 
@@ -6589,8 +6545,8 @@
         else lead.quoteStatus = 'none';
       }
       if (!lead.assignedTo) {
-        var team = st.team || LEADS_TEAM;
-        lead.assignedTo = (team[idx % team.length] || team[0]).name;
+        var team = (st.team && st.team.length) ? st.team : (allowDemoSeed() ? LEADS_TEAM : []);
+        lead.assignedTo = team.length ? (team[idx % team.length] || team[0]).name : '';
       }
       if (!Array.isArray(lead.tags)) lead.tags = lead.tags ? [String(lead.tags)] : [];
       if (lead.aiScore == null) {
@@ -7862,7 +7818,8 @@
   function ensureCustomersOsState() {
     var st = S();
     if (!Array.isArray(st.customers)) st.customers = [];
-    if (!Array.isArray(st.team) || !st.team.length) {
+    if (!Array.isArray(st.team)) st.team = [];
+    if (!st.team.length && allowDemoSeed()) {
       st.team = [
         { id: 'tech_adrian', name: 'Adrian Lopez', role: 'Owner' },
         { id: 'tech_maya', name: 'Maya Chen', role: 'Technician' },
@@ -7871,7 +7828,7 @@
     }
     if (!st.customersOs) st.customersOs = { savedFilters: [], role: 'Owner' };
     if (!Array.isArray(st.customersOs.savedFilters)) st.customersOs.savedFilters = [];
-    if (!st.customers.length) {
+    if (!st.customers.length && allowDemoSeed()) {
       st.customers = [
         { id: 'demo_james', name: 'James Anderson', phone: '(619) 555-0188', email: 'james.anderson@email.com', vehicle: 'Range Rover', preferredService: 'Full Detail', preferredDay: 'Weekends', preferredTime: 'Mornings', city: 'San Diego', address: 'La Jolla, CA', favorite: true, statusOverride: 'vip', status: 'active', customerType: 'recurring', membership: 'VIP Detail Plan', tags: ['VIP', 'Repeat Customer', 'High Value', 'SUV Owner', 'Weekend Customer'], lifetimeValue: 650, rating: 4.9, reviewCount: 12, createdAt: '2024-01-15T12:00:00', lastActivityAt: new Date().toISOString(), notesList: ['Prefers weekends. Always tips well. Range Rover needs ceramic top-up soon.'], payments: [{ amount: 325, status: 'paid', at: '2024-05-18' }, { amount: 325, status: 'paid', at: '2024-03-02' }] },
         { id: 'demo_sarah', name: 'Sarah Mitchell', phone: '(619) 555-0142', email: 'sarah.m@email.com', vehicle: 'Tesla Model Y', preferredService: 'Interior Detail', city: 'San Diego', tags: ['Interior', 'New'], status: 'active', lifetimeValue: 280, createdAt: new Date(Date.now() - 86400000 * 12).toISOString(), lastActivityAt: new Date(Date.now() - 86400000).toISOString() },
@@ -7899,7 +7856,7 @@
         var m = addr.match(/,\s*([^,]+),\s*[A-Z]{2}\b/) || addr.match(/,\s*([^,]+)$/);
         c.city = m ? m[1].trim() : (st.city || '');
       }
-      if (!c.assignedTo) c.assignedTo = (team[idx % team.length] || team[0]).name;
+      if (!c.assignedTo) c.assignedTo = team.length ? (team[idx % team.length] || team[0]).name : '';
       if (c.aiScore == null) {
         var base = 50 + (c.customerType === 'recurring' ? 20 : 0) + (c.favorite ? 8 : 0);
         c.aiScore = Math.max(5, Math.min(99, base + (idx % 19)));
@@ -9204,29 +9161,18 @@
     }
     if (!w.seoTitle) w.seoTitle = (st.biz || 'Local business') + ' — Book online';
     if (!w.seoDescription) w.seoDescription = 'Book ' + (st.biz || 'our services') + ' online. See packages, gallery, and reviews.';
-    if (w.reviewRating == null) w.reviewRating = 4.9;
-    if (!Array.isArray(w.manualReviews)) {
-      w.manualReviews = [
-        { name: 'Sarah J.', rating: 5, text: 'Incredible attention to detail — car looks brand new.', at: '2 weeks ago' },
-        { name: 'Mike B.', rating: 5, text: 'Easy booking and great communication.', at: '1 month ago' }
-      ];
-    }
-    if (!st.slug || st.slug === 'your-business') st.slug = String(biz).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'adrians-lawn-service';
-    if (!st.biz) st.biz = biz;
-    if (!Array.isArray(st.galleryPairs) || !st.galleryPairs.length) {
-      st.galleryPairs = [
-        { title: 'Before & After', caption: 'Paint correction showcase' },
-        { title: 'Interior refresh', caption: 'Deep clean package' },
-        { title: 'Ceramic finish', caption: 'Hydrophobic gloss' }
-      ];
-    }
+    if (w.reviewRating == null) w.reviewRating = 0;
+    if (!Array.isArray(w.manualReviews)) w.manualReviews = [];
+    if (!st.slug) st.slug = 'your-business';
+    if (!Array.isArray(st.galleryPairs)) st.galleryPairs = [];
     if (!Array.isArray(st.portfolioUrls)) st.portfolioUrls = [];
     if (!st.storefrontOs || typeof st.storefrontOs !== 'object') {
-      st.storefrontOs = { visits: 428, bookingStarts: 96, conversion: 22.4, aiTip: '', aiSeo: '' };
+      st.storefrontOs = { visits: 0, bookingStarts: 0, conversion: 0, aiTip: '', aiSeo: '' };
     }
     var cat = Array.isArray(st.editorSvcs) && st.editorSvcs.length ? st.editorSvcs :
       (Array.isArray(st.services) && st.services.length ? st.services : null);
-    if (!cat || !cat.length) cat = demoStorefrontCatalog();
+    if ((!cat || !cat.length) && allowDemoSeed()) cat = demoStorefrontCatalog();
+    if (!cat) cat = [];
     st.editorSvcs = cat.map(normalizeStorefrontSvc).filter(Boolean);
     syncStorefrontCatalogToServices();
   }
@@ -10300,9 +10246,8 @@
     if (!msgsWaiting && ceoDemo) msgsWaiting = ch.needs || 5;
 
     var scores = homeScores();
-    var hour = new Date().getHours();
-    var greet = hour < 12 ? 'Good Morning' : (hour < 18 ? 'Good Afternoon' : 'Good Evening');
-    var owner = S().ownerName || 'Adrian';
+    var hour = new Date().getHours(), greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
+    var owner = S().ownerName || S().ownerFirst || (S().biz ? String(S().biz).split(' ')[0] : '') || 'there';
     if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
     if (owner.indexOf(' ') > -1) owner = owner.split(' ')[0];
     var bizName = S().biz || 'Pro Shine Detailing';
@@ -10312,22 +10257,8 @@
     var revRange = root._josRevRange || layout.revRange || 'month';
     root._josRevRange = revRange;
     var sparkRev = [yestRev * 0.7, yestRev * 0.85, yestRev, todayRev * 0.6, todayRev * 0.8, todayRev * 0.9, todayRev].map(function (n) { return Math.max(8, Math.round(n / 40)); });
-    var leadList = collectLeads();
-    var openLeads = leadList.length || (ceoDemo ? 5 : 0);
-    var leadValue = leadList.reduce(function (s, l) { return s + (parseFloat(l.value || l.amount || l.estimate) || 0); }, 0) || (ceoDemo ? 920 : 0);
-    var reviews = (S().website && S().website.manualReviews) || [];
-    var rating = Number(S().website && S().website.reviewRating) || (reviews[0] && reviews[0].rating) || 4.9;
-    var reviewCount = Number(S().website && S().website.reviewCount) || reviews.length || (ceoDemo ? 128 : 0);
-    var recentReview = reviews[0] || { name: 'Emily Wilson', text: 'Incredible ceramic coating — car looks brand new.', rating: 5 };
-    var dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-    var weatherTemp = 72;
-    var weatherLbl = 'Sunny · 0% rain';
-    var staleCustomers = customers().filter(function (c) {
-      var last = c.lastJobDate || c.lastVisit || c.updatedAt;
-      if (!last) return true;
-      var d = new Date(last);
-      return !isNaN(d.getTime()) && ((Date.now() - d.getTime()) / 86400000) > 90;
-    }).length;
+    var openLeads = collectLeads().length;
+    var reviewsNew = Math.min(6, (S().website?.manualReviews || []).length || 0);
 
     var ccActions = commandCenterActions({
       outstanding: outstanding,
@@ -10466,91 +10397,158 @@
         '</tr>';
     }).join('');
 
-    var recentLeads = cardShell('recent-leads', 'jos-leads-card',
-      '<div class="jos-between"><div><div class="jos-kicker">Recent Leads</div><h3 class="jos-card-title">Newest conversations</h3></div>' +
-      btn('go-leads', 'View All Leads', 'jos-btn jos-btn-sm') + '</div>' +
-      (leadRows
-        ? '<div class="jos-table-wrap"><table class="jos-home-table"><thead><tr><th>Customer</th><th>Service</th><th>Location</th><th>Time</th><th>Status</th><th>Value</th></tr></thead><tbody>' + leadRows + '</tbody></table></div>'
-        : '<div class="jos-empty-action"><strong>No leads yet</strong><p>Let\'s get your first customer.</p><div class="jos-btn-row">' + btn('go-editor', 'Generate Website', 'jos-btn-brand jos-btn-sm') + btn('go-marketing', 'Run Marketing Campaign', 'jos-btn jos-btn-sm') + btn('copy-link', 'Share Booking Link', 'jos-btn jos-btn-sm') + '</div></div>'));
-
-    var revFilters = ['week', 'month', 'quarter', 'year'].map(function (r) {
-      return '<button type="button" class="jos-chip' + (revRange === r ? ' on' : '') + '" data-jos-act="rev-range" data-jos-range="' + r + '">' + (r.charAt(0).toUpperCase() + r.slice(1)) + '</button>';
+    var activity = buildActivity().slice(0, 8);
+    if (!activity.length && allowDemoSeed()) {
+      activity = [
+        { ico: '$', kind: 'paid', t: 'Payment received', s: 'Sarah Johnson · $260' },
+        { ico: '★', kind: 'review', t: 'New Google review', s: '5 stars · Emily Wilson' },
+        { ico: 'L', kind: 'quote', t: 'New lead from Website', s: 'Alex Rivera · Ceramic Coating' },
+        { ico: 'B', kind: 'book', t: 'Job booked', s: 'Mike Brown · Exterior Detail' },
+        { ico: 'M', kind: 'mem', t: 'Membership renewed', s: 'Sarah Johnson · Pro Plan' }
+      ];
+    }
+    var actRows = activity.map(function (a) {
+      return '<button type="button" class="jos-act-row jos-act-btn" data-jos-act="' + esc(a.kind === 'paid' ? 'go-money' : (a.kind === 'review' ? 'go-reviews' : (a.kind === 'quote' ? 'go-leads' : (a.kind === 'mem' ? 'go-mem' : 'go-jobs')))) + '">' +
+        '<div class="jos-act-ico">' + esc(a.ico) + '</div><div><div class="jos-act-t">' + esc(a.t) + '</div><div class="jos-act-s">' + esc(a.s) + '</div></div></button>';
     }).join('');
 
-    var revenueSummary = cardShell('revenue-chart', 'jos-revsum-card',
-      '<div class="jos-between"><div><div class="jos-kicker">Revenue Summary</div><h3 class="jos-card-title">Interactive graph</h3></div>' +
-      '<div class="jos-chip-row">' + revFilters + '</div></div>' +
-      '<button type="button" class="jos-rev-chart-btn" data-jos-act="go-money" title="Open Revenue Analytics">' +
-      revenueChartSvg(revRange, chartSeries[revRange] || chartSeries.month) +
-      '<div class="jos-rev-tip jos-muted">Hover points · Revenue · Jobs · Average ticket</div></button>' +
-      '<div class="jos-rev-stats">' +
-      '<div><span class="jos-muted">Revenue</span><strong>' + esc(canViewRevenue() ? money(revRange === 'week' ? weekRev : monthRev) : '•••') + '</strong></div>' +
-      '<div><span class="jos-muted">Jobs</span><strong>' + (revRange === 'week' ? weekJobsDone : monthJobsDone) + '</strong></div>' +
-      '<div><span class="jos-muted">Avg ticket</span><strong>' + esc(canViewRevenue() ? money(Math.round((monthRev || todayRev || 1) / Math.max(1, monthJobsDone || 1))) : '•••') + '</strong></div>' +
-      '</div>');
-
-    var scoreExpanded = root._josScoreExpand || null;
-    var scoreRows = scoreMetrics.map(function (m) {
-      var open = scoreExpanded === m.id;
-      return '<div class="jos-score-metric' + (open ? ' open' : '') + '">' +
-        '<button type="button" class="jos-score-metric-btn" data-jos-act="score-expand" data-jos-score="' + esc(m.id) + '">' +
-        '<span>' + esc(m.label) + '</span><strong>' + m.value + '</strong></button>' +
-        (open ? '<div class="jos-score-tip"><p>' + esc(m.tip) + '</p><div class="jos-btn-row">' + btn('go-ask', 'AI tips', 'jos-btn-brand jos-btn-sm') + btn('ask', 'Automations', 'jos-btn jos-btn-sm') + '</div></div>' : '') +
-        '</div>';
+    var notifs = [];
+    if (allowDemoSeed()) {
+      notifs = [
+        { act: 'go-leads', t: 'New lead', s: 'Alex Rivera asked about ceramic coating', ago: '2m' },
+        { act: 'go-jobs', t: 'New booking', s: 'Mike Brown confirmed for 1:00 PM', ago: '18m' },
+        { act: 'go-money', t: 'Payment', s: 'Stripe deposited $1,240', ago: '1h' },
+        { act: 'go-reviews', t: 'Review', s: 'Emily left a 5-star Google review', ago: '3h' },
+        { act: 'go-chats', t: 'Message', s: '3 conversations need a reply', ago: 'now' },
+        { act: 'ask-brief', t: 'AI alert', s: 'You are 22 minutes behind schedule', ago: 'now' }
+      ];
+    } else {
+      if (openLeads) notifs.push({ act: 'go-leads', t: 'Open leads', s: openLeads + ' lead' + (openLeads === 1 ? '' : 's') + ' need attention', ago: 'now' });
+      if (msgsWaiting) notifs.push({ act: 'go-chats', t: 'Messages waiting', s: msgsWaiting + ' unread conversation' + (msgsWaiting === 1 ? '' : 's'), ago: 'now' });
+      if (reviewsNew) notifs.push({ act: 'go-reviews', t: 'New reviews', s: reviewsNew + ' review' + (reviewsNew === 1 ? '' : 's') + ' to check', ago: 'now' });
+      if (todayJobs.length) notifs.push({ act: 'go-jobs', t: 'Jobs today', s: todayJobs.length + ' job' + (todayJobs.length === 1 ? '' : 's') + ' on the calendar', ago: 'now' });
+    }
+    var notifHtml = notifs.map(function (n) {
+      return '<button type="button" class="jos-notif-row" data-jos-act="' + esc(n.act) + '"><div><strong>' + esc(n.t) + '</strong><div class="jos-muted">' + esc(n.s) + '</div></div><span class="jos-muted">' + esc(n.ago) + '</span></button>';
     }).join('');
 
-    var businessScore = cardShell('biz-score', 'jos-score-card',
-      '<div class="jos-between"><div><div class="jos-kicker">Business Score</div><h3 class="jos-card-title">Health at a glance</h3></div></div>' +
-      '<div class="jos-score-ring-wrap">' +
-      '<div class="jos-score-ring" style="--jos-pct:' + scores.overall + '"><span>' + scores.overall + '</span></div>' +
-      '<div><strong>' + (scores.overall >= 85 ? 'Excellent' : (scores.overall >= 70 ? 'Strong' : 'Needs focus')) + '</strong>' +
-      '<p class="jos-muted">0–100 from response, reviews, website, bookings, retention, growth, and missed opportunities.</p></div></div>' +
-      '<div class="jos-score-metrics">' + scoreRows + '</div>');
+    var briefActions = [
+      ['go-leads', 'Recover Leads'],
+      ['ask', 'Publish Campaign'],
+      ['ask-review', 'Reply Review'],
+      ['go-editor', 'Update Website'],
+      ['ask-growth', 'Raise Prices'],
+      ['go-ask', 'Ask Hubly']
+    ];
 
-    var quickActs = [
-      ['manual-lead', 'New Lead'],
-      ['smart-quote', 'New Quote'],
+    var quickActions = [
       ['new-job-cust', 'New Job'],
-      ['go-chats', 'Send Message'],
-      ['ask-review', 'Request Review'],
-      ['new-invoice', 'Create Invoice'],
-      ['go-jobs', 'Update Availability'],
-      ['go-editor', 'Edit Storefront'],
-      ['ask', 'Generate Social Post'],
-      ['go-ask', 'Open AI Coach']
+      ['manual-lead', 'New Lead'],
+      ['add-cust', 'New Customer'],
+      ['smart-quote', 'New Quote'],
+      ['new-invoice', 'New Invoice'],
+      ['ask', 'New Campaign'],
+      ['go-mem', 'New Membership'],
+      ['go-ask', 'Ask Hubly']
     ];
-    var quickRow = cardShell('quick', 'jos-quick-card',
-      '<div class="jos-kicker">Quick Actions</div>' +
-      '<div class="jos-quick-row">' + quickActs.map(function (q) {
-        return '<button type="button" class="jos-quick-btn" data-jos-act="' + esc(q[0]) + '">' + esc(q[1]) + '</button>';
-      }).join('') + '</div>');
 
-    var customizeHtml = '<div class="jos-customize" id="jos-home-customize">' +
-      '<div class="jos-between"><div class="jos-kicker">Dashboard customization</div>' + btn('save-home-layout', 'Save layout', 'jos-btn-brand jos-btn-sm') + '</div>' +
-      '<p class="jos-muted">Hide widgets, pick a role layout, and save your operating view.</p>' +
-      '<div class="jos-layout-presets">' +
-      [['owner', 'Owner'], ['office', 'Office Manager'], ['employee', 'Employee'], ['sales', 'Sales'], ['franchise', 'Franchise']].map(function (p) {
-        return '<button type="button" class="jos-chip' + ((layout.layoutPreset || 'owner') === p[0] ? ' on' : '') + '" data-jos-act="layout-preset" data-jos-preset="' + p[0] + '">' + p[1] + '</button>';
-      }).join('') + '</div>' +
+    var tabs = [['dashboard', 'Dashboard'], ['today', 'Today'], ['activity', 'Activity Feed'], ['ai', 'AI Insights']];
+    var tabsHtml = '<div class="jos-tabs jos-home-tabs">' + tabs.map(function (t) {
+      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-home-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    }).join('') + '</div>';
+
+    var kpiRow = '<div class="jos-grid-4 jos-home-kpis">' +
+      '<div class="jos-kpi jos-kpi-rich" data-jos-act="go-money" tabindex="0">' +
+        '<div class="jos-kpi-top"><div class="lbl">Revenue Today</div><span class="jos-kpi-ico">$</span></div>' +
+        '<div class="v">' + esc(canViewRevenue() ? money(todayRev) : '•••') + '</div>' +
+        '<div class="s">' + (revDelta >= 0 ? '↗ ' : '↘ ') + Math.abs(revDelta) + '% vs yesterday</div>' +
+        sparkSvg(sparkRev) +
+        '<div class="jos-kpi-hover"><div class="jos-kicker">Today breakdown</div>' +
+        '<div class="jos-hover-row"><span>Yesterday</span><strong>' + esc(canViewRevenue() ? money(yestRev) : 'Hidden') + '</strong></div>' +
+        '<div class="jos-hover-row"><span>This week</span><strong>' + esc(money(weekRev)) + '</strong></div>' +
+        '<div class="jos-hover-row"><span>This month</span><strong>' + esc(money(monthRev)) + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Pending deposits</span><strong>' + esc(money(deposits)) + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Outstanding invoices</span><strong>' + esc(money(outstanding)) + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Goal</span><strong>' + esc(money(Math.round(todayRev * 1.15) || 1500)) + '</strong></div></div></div>' +
+      '<div class="jos-kpi jos-kpi-rich" data-jos-act="go-jobs" tabindex="0">' +
+        '<div class="jos-kpi-top"><div class="lbl">Jobs Today</div><span class="jos-kpi-ico">J</span></div>' +
+        '<div class="v">' + todayJobs.length + '</div>' +
+        '<div class="s">' + completedToday.length + ' done · ' + upcoming.length + ' upcoming · ' + running.length + ' running' + (late ? ' · ' + late + ' late' : '') + '</div>' +
+        sparkSvg([2, 3, 4, 3, 5, 6, todayJobs.length], '#2563EB') +
+        '<div class="jos-kpi-hover"><div class="jos-kicker">Today\'s work</div>' +
+        todayJobs.slice(0, 4).map(function (j) { return '<div class="jos-hover-row"><span>' + esc(j.time || '') + ' ' + esc(j.service || '') + '</span><strong>' + esc(j.customer || '') + '</strong></div>'; }).join('') +
+        '</div></div>' +
+      '<div class="jos-kpi jos-kpi-rich" data-jos-act="go-chats" tabindex="0">' +
+        '<div class="jos-kpi-top"><div class="lbl">Messages Waiting</div><span class="jos-kpi-ico">✉</span></div>' +
+        '<div class="v">' + msgsWaiting + '</div>' +
+        '<div class="s">' + ch.needs + ' need attention</div>' +
+        sparkSvg([1, 2, 2, 3, 2, 4, msgsWaiting], '#B84E1F') +
+        '<div class="jos-kpi-hover"><div class="jos-kicker">By channel</div>' +
+        '<div class="jos-hover-row"><span>Website chat</span><strong>' + ch.chat + '</strong></div>' +
+        '<div class="jos-hover-row"><span>SMS</span><strong>' + ch.sms + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Email</span><strong>' + ch.email + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Facebook</span><strong>' + ch.facebook + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Instagram</span><strong>' + ch.instagram + '</strong></div>' +
+        '<div class="jos-hover-row"><span>AI needs attention</span><strong>' + ch.needs + '</strong></div></div></div>' +
+      '<div class="jos-kpi jos-kpi-rich" data-jos-act="go-reports" tabindex="0">' +
+        '<div class="jos-kpi-top"><div class="lbl">Growth Score</div><span class="jos-kpi-ico">↑</span></div>' +
+        '<div class="v">' + scores.overall + '</div>' +
+        '<div class="s">' + (scores.overall >= 85 ? 'Excellent' : (scores.overall >= 70 ? 'Great' : 'Needs attention')) + ' · +4 this week</div>' +
+        sparkSvg([scores.overall - 12, scores.overall - 8, scores.overall - 5, scores.overall - 2, scores.overall], '#15803D') +
+        '<div class="jos-kpi-hover"><div class="jos-kicker">Score breakdown</div>' +
+        '<div class="jos-hover-row"><span>Revenue</span><strong>' + scores.revenue + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Reviews</span><strong>' + scores.reviews + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Marketing</span><strong>' + scores.marketing + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Lead response</span><strong>' + scores.leadResp + '</strong></div>' +
+        '<div class="jos-hover-row"><span>Membership</span><strong>' + scores.membership + '</strong></div>' +
+        '<p class="jos-muted jos-mt">AI: Increase response speed to gain ~6 points.</p></div></div></div>';
+
+    var mainDash =
+      '<div class="jos-card jos-sched-card' + (W.schedule === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="schedule"><div class="jos-between"><div class="jos-kicker">Today\'s Schedule</div>' + btn('go-jobs', 'Open calendar', 'jos-btn jos-btn-sm') + '</div>' +
+      (schedRows || '<div class="jos-empty">No jobs on the calendar today. ' + btn('new-job-cust', 'Book a job', 'jos-btn-brand jos-btn-sm') + '</div>') +
+      (demoSched ? '<p class="jos-muted jos-mt">Demo schedule for CEO walkthrough — your live jobs appear here.</p>' : '') + '</div>' +
+      '<div class="jos-brief' + (W.brief === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="brief"><div class="sk">AI Morning Brief</div><h2>' + esc(greet) + ', ' + esc(owner) + '.</h2>' +
+      '<p><strong>Revenue:</strong> Yesterday ' + esc(money(yestRev)) + ' (' + (revDelta >= 0 ? '+' : '') + revDelta + '%). Today on pace for ' + esc(money(todayRev)) + '.</p>' +
+      '<p><strong>Jobs:</strong> ' + todayJobs.length + ' today · ' + completedToday.length + ' done · ' + upcoming.length + ' upcoming' + (late ? ' · ' + late + ' late' : '') + '.</p>' +
+      '<p><strong>Leads:</strong> ' + openLeads + ' open · <strong>Messages:</strong> ' + msgsWaiting + ' waiting · <strong>Reviews:</strong> ' + reviewsNew + ' new.</p>' +
+      '<p><strong>Marketing:</strong> ' + (((S().marketingOs && S().marketingOs.campaigns) || []).filter(function (c) { return c.status === 'active'; }).length ? (((S().marketingOs.campaigns || []).filter(function (c) { return c.status === 'active'; }).length) + ' active campaign(s). Keep promoting your top services.') : 'No campaigns running yet — open Marketing when you are ready.') + '</p>' +
+      '<div class="jos-brief-actions">' + briefActions.map(function (a) { return btn(a[0], a[1], a[0] === 'go-leads' ? 'jos-btn-brand jos-btn-sm' : 'jos-btn jos-btn-sm'); }).join('') + '</div></div>' +
+      '<div class="jos-card' + (W.activity === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="activity"><div class="jos-between"><div class="jos-kicker">Recent Activity</div><button type="button" class="jos-btn jos-btn-sm" data-jos-home-tab="activity">View all</button></div><div class="jos-act-list">' + (actRows || '<div class="jos-empty">No activity yet</div>') + '</div></div>' +
+      '<div class="jos-card' + (W.quick === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="quick"><div class="jos-kicker">Quick Actions</div><div class="jos-qa-grid">' + quickActions.map(function (q) {
+        return '<button type="button" class="jos-qa-tile" data-jos-act="' + esc(q[0]) + '"><span>+</span>' + esc(q[1]) + '</button>';
+      }).join('') + '</div></div>';
+
+    var rail =
+      '<div class="jos-card' + (W.weather === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="weather"><div class="jos-kicker">Weather</div><div class="jos-weather"><div class="jos-weather-temp">72°F</div><div><strong>Sunny</strong><div class="jos-muted">0% rain · Wind 6 mph · Sunset 7:48 PM</div></div></div>' +
+      '<div class="jos-weather-alert ok">Rain warning: None — roads dry all day</div>' +
+      '<p class="jos-muted jos-mt">AI: Great day for mobile detailing. No rain risk for afternoon jobs. Prefer exterior work before 4 PM wind pickup.</p></div>' +
+      '<div class="jos-card' + (W.route === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="route"><div class="jos-kicker">Today\'s Route</div><div class="jos-route-map" aria-hidden="true"><div class="jos-route-line"></div><i>1</i><i>2</i><i>3</i></div>' +
+      '<div class="jos-muted jos-mt">' + Math.max(1, todayJobs.length) + ' stops · 32.4 miles</div><div class="jos-mt">' + btn('go-jobs', 'View Route', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+      '<div class="jos-card' + (W.upcoming === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="upcoming"><div class="jos-kicker">Upcoming Jobs</div><div class="jos-stack jos-mt">' +
+      (todayJobs.length ? todayJobs.slice(0, 4).map(function (j) {
+        return '<button type="button" class="jos-between jos-act-btn" data-jos-act="go-jobs" style="padding:6px 0"><div><strong style="font-size:13px">' + esc(j.customer) + '</strong><div class="jos-muted">' + esc(j.service) + '</div></div><span class="jos-muted">' + esc(j.time) + '</span></button>';
+      }).join('') : '<div class="jos-empty">No upcoming jobs</div>') + '</div><div class="jos-mt">' + btn('go-jobs', 'View All Jobs', 'jos-btn jos-btn-sm') + '</div></div>' +
+      '<div class="jos-card jos-notif-panel' + (W.notifs === false ? ' jos-widget-hidden' : '') + '" id="jos-home-notifs" data-jos-widget="notifs"><div class="jos-between"><div class="jos-kicker">Notifications</div><span class="jos-pill hot">' + notifs.length + '</span></div><div class="jos-stack jos-mt">' + notifHtml + '</div></div>';
+
+    var customizeHtml = '<div class="jos-customize" id="jos-home-customize"><div class="jos-between"><div class="jos-kicker">Customize dashboard</div>' + btn('save-home-layout', 'Save layout', 'jos-btn-brand jos-btn-sm') + '</div>' +
       '<div class="jos-customize-grid">' +
-      [['kpi-revenue', 'Revenue'], ['kpi-jobs', 'Jobs'], ['kpi-leads', 'Leads'], ['kpi-rating', 'Rating'], ['command', 'Command Center'], ['today', 'Today'], ['recent-leads', 'Recent Leads'], ['revenue-chart', 'Revenue Chart'], ['biz-score', 'Business Score'], ['quick', 'Quick Actions']].map(function (w) {
+      [['schedule', 'Schedule'], ['brief', 'AI Brief'], ['activity', 'Activity'], ['quick', 'Quick Actions'], ['weather', 'Weather'], ['route', 'Route'], ['upcoming', 'Upcoming'], ['notifs', 'Notifications']].map(function (w) {
         return '<label><input type="checkbox" data-jos-widget-toggle="' + w[0] + '"' + (W[w[0]] === false ? '' : ' checked') + '> ' + w[1] + '</label>';
-      }).join('') +
-      '</div></div>';
+      }).join('') + '</div></div>';
 
-    var fab = '<button type="button" class="jos-home-fab" data-jos-act="home-fab" aria-label="Quick actions">+</button>' +
-      '<div class="jos-home-fab-sheet" id="jos-home-fab-sheet" hidden>' +
-      quickActs.map(function (q) {
-        return '<button type="button" data-jos-act="' + esc(q[0]) + '">' + esc(q[1]) + '</button>';
-      }).join('') + '</div>';
-
-    var notifs = [
-      { act: 'go-jobs', t: 'Recent booking', s: 'Mike Brown confirmed for 1:00 PM', ago: '18m' },
-      { act: 'go-chats', t: 'Missed chat', s: '3 conversations need a reply', ago: 'now' },
-      { act: 'go-leads', t: 'New lead', s: 'Alex Rivera asked about ceramic coating', ago: '2m' },
-      { act: 'go-reviews', t: 'Review received', s: 'Emily left a 5-star Google review', ago: '3h' },
-      { act: 'go-money', t: 'Payment completed', s: 'Stripe deposited $1,240', ago: '1h' }
-    ];
+    var body = '';
+    if (tab === 'today') {
+      body = '<div class="jos-stack">' + kpiRow + '<div class="jos-card"><div class="jos-kicker">Today only</div>' + (schedRows || '<div class="jos-empty">Nothing scheduled</div>') + '</div></div>';
+    } else if (tab === 'activity') {
+      body = '<div class="jos-card"><div class="jos-kicker">Activity Feed</div><div class="jos-act-list jos-mt">' + actRows + '</div></div>';
+    } else if (tab === 'ai') {
+      body = '<div class="jos-brief"><div class="sk">AI Insights</div><h2>What Hubly wants you to do</h2>' +
+        '<p>Lead response score is ' + scores.leadResp + '. Reply to new leads within 5 minutes to improve close rate.</p>' +
+        '<p>Membership score is ' + scores.membership + '. ' + customers().filter(function (c) { return c.customerType !== 'recurring'; }).length + ' customers are membership-ready.</p>' +
+        '<div class="jos-brief-actions">' + btn('go-chats', 'Reply now', 'jos-btn-brand jos-btn-sm') + btn('go-mem', 'Offer memberships', 'jos-btn jos-btn-sm') + btn('ask-brief', 'Full brief', 'jos-btn jos-btn-sm') + '</div></div>';
+    } else {
+      body = kpiRow + '<div class="jos-home-main"><div class="jos-stack">' + mainDash + '</div><div class="jos-stack">' + rail + '</div></div>';
+    }
 
     root.innerHTML =
       '<div class="jos-page jos-home-page jos-home-v2">' +
@@ -10784,18 +10782,7 @@
       var blob = ((j.customer || '') + ' ' + (j.service || '') + ' ' + (j.address || '')).toLowerCase();
       if (blob.indexOf(q) > -1) hits.push({ act: 'go-jobs', t: (j.customer || 'Job') + ' · ' + (j.service || ''), s: 'Job · ' + (j.date || '') + ' ' + (j.time || '') });
     });
-    quotes().forEach(function (qt) {
-      var blob = ((qt.customer || qt.name || '') + ' ' + (qt.service || '') + ' ' + (qt.status || '') + ' ' + String(qt.amount || '')).toLowerCase();
-      if (blob.indexOf(q) > -1) hits.push({ act: 'go-quotes', t: qt.customer || qt.name || 'Quote', s: 'Quote · ' + money(parseFloat(qt.amount) || 0) });
-    });
-    try {
-      var invs = (S().invoices || S().revenueOs && S().revenueOs.invoices) || [];
-      (invs || []).forEach(function (inv) {
-        var blob = ((inv.customer || inv.name || '') + ' ' + (inv.number || inv.id || '') + ' ' + String(inv.amount || '')).toLowerCase();
-        if (blob.indexOf(q) > -1) hits.push({ act: 'go-money', t: inv.customer || inv.number || 'Invoice', s: 'Invoice · ' + money(parseFloat(inv.amount) || 0) });
-      });
-    } catch (eInv) {}
-    (conversations().length ? conversations() : demoConversations()).forEach(function (c) {
+    (conversations().length ? conversations() : (allowDemoSeed() ? demoConversations() : [])).forEach(function (c) {
       var blob = ((c.customer_name || c.name || '') + ' ' + (c.last_message || '') + ' ' + (c.channel || '')).toLowerCase();
       if (blob.indexOf(q) > -1) hits.push({ act: 'go-chats', t: c.customer_name || c.name || 'Conversation', s: 'Message · ' + (c.channel || 'chat') });
     });
@@ -10875,14 +10862,25 @@
   function openNotifPop() {
     var bell = document.querySelector('.jos-bar-bell');
     var pop = ensureNotifPop();
-    var items = [
-      { act: 'go-leads', t: 'New lead', s: 'Alex Rivera asked about ceramic coating' },
-      { act: 'go-jobs', t: 'New booking', s: 'Mike Brown confirmed for 1:00 PM' },
-      { act: 'go-money', t: 'Payment', s: 'Stripe deposited $1,240' },
-      { act: 'go-reviews', t: 'Review', s: 'Emily left a 5-star Google review' },
-      { act: 'go-chats', t: 'Message', s: '3 conversations need a reply' },
-      { act: 'ask-brief', t: 'AI alert', s: 'You are 22 minutes behind schedule' }
-    ];
+    var items = [];
+    if (allowDemoSeed()) {
+      items = [
+        { act: 'go-leads', t: 'New lead', s: 'Alex Rivera asked about ceramic coating' },
+        { act: 'go-jobs', t: 'New booking', s: 'Mike Brown confirmed for 1:00 PM' },
+        { act: 'go-money', t: 'Payment', s: 'Stripe deposited $1,240' },
+        { act: 'go-reviews', t: 'Review', s: 'Emily left a 5-star Google review' },
+        { act: 'go-chats', t: 'Message', s: '3 conversations need a reply' },
+        { act: 'ask-brief', t: 'AI alert', s: 'You are 22 minutes behind schedule' }
+      ];
+    } else {
+      var leadN = collectLeads().length;
+      var unread = conversations().reduce(function (n, c) { return n + (c.unread || 0); }, 0);
+      var todayN = jobs().filter(function (j) { return !j.isBlock && j.date === todayStr(); }).length;
+      if (leadN) items.push({ act: 'go-leads', t: 'Open leads', s: leadN + ' lead' + (leadN === 1 ? '' : 's') + ' in your pipeline' });
+      if (unread) items.push({ act: 'go-chats', t: 'Messages waiting', s: unread + ' unread message' + (unread === 1 ? '' : 's') });
+      if (todayN) items.push({ act: 'go-jobs', t: 'Jobs today', s: todayN + ' job' + (todayN === 1 ? '' : 's') + ' scheduled' });
+      if (!items.length) items.push({ act: 'go-ask', t: 'You\'re all caught up', s: 'Ask Hubly what to focus on next' });
+    }
     pop.innerHTML = items.map(function (n) {
       return '<button type="button" data-jos-act="' + esc(n.act) + '"><strong style="display:block;font-size:13px">' + esc(n.t) + '</strong><span class="jos-muted">' + esc(n.s) + '</span></button>';
     }).join('');
@@ -11106,7 +11104,7 @@
   }
   function inboxConversations() {
     var list = conversations();
-    if (!list.length) list = demoConversations();
+    if (!list.length && allowDemoSeed()) list = demoConversations();
     return list.map(enrichConversation);
   }
   function matchCustomer(conv) {
@@ -11649,7 +11647,7 @@
     var sel = selectedInboxConv();
     if (!sel) return null;
     var st = S();
-    if (!Array.isArray(st.conversations) || !st.conversations.length) st.conversations = inboxConversations();
+    if (!Array.isArray(st.conversations)) st.conversations = [];
     var live = st.conversations.find(function (c) { return String(c.id) === String(sel.id); });
     if (!live) {
       live = Object.assign({}, sel);
@@ -11972,7 +11970,8 @@
   function ensureJobsOsState() {
     var st = S();
     if (!Array.isArray(st.jobs)) st.jobs = [];
-    if (!Array.isArray(st.team) || !st.team.length) st.team = DEFAULT_TEAM.slice();
+    if (!Array.isArray(st.team)) st.team = [];
+    if (!st.team.length && allowDemoSeed()) st.team = DEFAULT_TEAM.slice();
     if (!st.availability) {
       st.availability = {
         hours: { mon: '8:00 AM – 6:00 PM', tue: '8:00 AM – 6:00 PM', wed: '8:00 AM – 6:00 PM', thu: '8:00 AM – 6:00 PM', fri: '8:00 AM – 6:00 PM', sat: '9:00 AM – 4:00 PM', sun: 'Closed' },
@@ -11987,7 +11986,7 @@
       if (!j.id) j.id = 'job_auto_' + idx;
       if (!j.status) j.status = 'scheduled';
       if (!j.address) j.address = (j.location || (S().city ? S().city : 'San Diego, CA'));
-      if (!j.assignedTo) j.assignedTo = (st.team[idx % st.team.length] || st.team[0]).name;
+      if (!j.assignedTo) j.assignedTo = st.team.length ? (st.team[idx % st.team.length] || st.team[0]).name : '';
       if (j.depositStatus == null) j.depositStatus = j.status === 'completed' ? 'paid' : (parseFloat(j.amount) >= 300 ? 'due' : 'none');
       if (j.deposit == null) j.deposit = j.depositStatus === 'none' ? 0 : Math.round((parseFloat(j.amount) || 0) * 0.25);
       if (!Array.isArray(j.checklist) || !j.checklist.length) {
@@ -12024,7 +12023,7 @@
     ensureJobsOsState();
     return (S().jobs || []).filter(function (j) { return !j.isBlock; });
   }
-  function jobsTeam() { ensureJobsOsState(); return S().team || DEFAULT_TEAM; }
+  function jobsTeam() { ensureJobsOsState(); return (S().team && S().team.length) ? S().team : (allowDemoSeed() ? DEFAULT_TEAM : []); }
   function findJob(id) { return jobsAll().find(function (j) { return String(j.id) === String(id); }) || null; }
   function jobStatusTone(st) {
     /* Pill colors: Completed green · Scheduled blue · In Progress orange · Cancelled gray */
