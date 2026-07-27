@@ -21,10 +21,10 @@
 ### Tabs
 ✅ overview
 ✅ inbox
+✅ needs_reply
 ✅ requests
-✅ ai
 ✅ analytics
-✅ events
+✅ connections
 
 ### Requests / Inbox / AI
 ✅ Quick request recorded
@@ -40,7 +40,7 @@
 ✅ Publishes HublyEvents
 
 ### Stage 2 / E2E
-✅ Google sync placeholder
+✅ Yelp connect placeholder
 ✅ Open customer profile
 
 ### Cross-Module Verification
@@ -111,10 +111,10 @@
 ### Tabs (6/6)
 - ✅ overview
 - ✅ inbox
+- ✅ needs_reply
 - ✅ requests
-- ✅ ai
 - ✅ analytics
-- ✅ events
+- ✅ connections
 
 ### Requests (1/1)
 - ✅ Quick request recorded
@@ -126,7 +126,7 @@
 - ✅ Reply saved
 
 ### Stage 2 (1/1)
-- ✅ Google sync placeholder
+- ✅ Yelp connect placeholder
 
 ### E2E Journey (1/1)
 - ✅ Open customer profile
@@ -167,7 +167,7 @@
 - ✅ hubly.html loads hubly-events
 
 ### Validator (1/1)
-- ✅ check-customer-journey-os — PASS in 26ms
+- ✅ check-customer-journey-os — PASS in 33ms
 
 ### CMV (1/1)
 - ✅ Locked modules incl. Marketing

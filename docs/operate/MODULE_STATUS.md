@@ -93,7 +93,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 🧭 Pipeline | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🌐 Storefront | ✅ | ⏸ | ✅ | ⏳ | ⏳ | 🔓 Reopen |
 | 📣 Marketing | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
+| ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
 | 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
@@ -114,7 +114,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 6 | 🧭 Pipeline | ✅ Locked | ⏸ | [#249](https://github.com/HubblyAdrian/Hubly/pull/249) | 🔒 OS · MAT ✅ · HublyDS v1 · merged |
 | 7 | 🌐 Storefront | ✅ Locked | ⏸ | [#250](https://github.com/HubblyAdrian/Hubly/pull/250) | 🔒 OS · MAT ✅ · Service Catalog owner · merged |
 | 8 | 📣 Marketing | ✅ Locked | ⏸ | [#251](https://github.com/HubblyAdrian/Hubly/pull/251) | 🔒 OS · MAT ✅ · Rules #14–16 · merged |
-| 9 | ⭐ Reviews | ✅ Locked | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | 🔒 OS · MAT ✅ · Rule #17 · merged |
+| 9 | ⭐ Reviews | 🔓 Reopen | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | Mission Control · [REVIEWS_MISSION_CONTROL.md](./REVIEWS_MISSION_CONTROL.md) |
 | 10 | 🔁 Memberships | ✅ Locked | ⏸ | [#253](https://github.com/HubblyAdrian/Hubly/pull/253) | 🔒 OS · MAT ✅ · Rules #18–19 · merged |
 | 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔒 OS · MAT ✅ · Rule #20 · merged |
 | 12 | 📊 Reports | ✅ Locked | ⏸ | [#255](https://github.com/HubblyAdrian/Hubly/pull/255) | 🔒 OS · MAT ✅ · Rule #21 · merged |
@@ -162,12 +162,13 @@ All **14** Operate modules have Stage 1 OS complete and locked:
 
 **Do not modify Memberships unless:** bug fix · Stage 2 integrations · explicit module reopen.
 
-### ⭐ Reviews lock
+### ⭐ Reviews reopen
 
 **Stage 1 — Operating System:** ✅ COMPLETE  
+**Mission Control redesign:** 🔓 In progress — [REVIEWS_MISSION_CONTROL.md](./REVIEWS_MISSION_CONTROL.md)  
 **Stage 2 — Integrations:** ⏸ Deferred  
 
-**Do not modify Reviews unless:** bug fix · Stage 2 integrations · explicit module reopen.
+**Do not modify Reviews unless:** bug fix · Mission Control redesign · Stage 2 integrations · explicit module reopen.
 
 ---
 

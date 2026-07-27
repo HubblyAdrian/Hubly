@@ -255,28 +255,28 @@ function setTextarea(id, value) {
 }
 
 H.renderReviews();
-check("Header", "Page renders", /jos-rev-page|Reviews/.test(revRoot.innerHTML));
+check("Header", "Page renders", /jos-rev-mc-shell|jos-rev-page|Reviews/.test(revRoot.innerHTML));
 check("Ownership", "reviewsOs created", !!(state.reviewsOs && Array.isArray(state.reviewsOs.reviews)));
 check("Ownership", "Seeded reviews", state.reviewsOs.reviews.length >= 1);
 check("Architecture", "EVENTS.md present", fs.existsSync(path.join(repoRoot, "docs/operate/EVENTS.md")));
 
-const tabs = ["overview", "inbox", "requests", "ai", "analytics", "events"];
+const tabs = ["overview", "inbox", "needs_reply", "requests", "analytics", "connections"];
 tabs.forEach((tab) => {
   revRoot._josRevTab = tab;
   H.renderReviews();
   const ok =
     revRoot.innerHTML.includes(`data-jos-rev-tab="${tab}"`) &&
     (tab === "overview"
-      ? /Rating|Reputation|AI|★/i.test(revRoot.innerHTML)
+      ? /Rating|Reputation|AI|★|Reviews/i.test(revRoot.innerHTML)
       : tab === "inbox"
         ? /Google|Facebook|Website|Review/i.test(revRoot.innerHTML)
-        : tab === "requests"
-          ? /Request|completed|job/i.test(revRoot.innerHTML)
-          : tab === "ai"
-            ? /AI|Reply|Draft|Select/i.test(revRoot.innerHTML)
+        : tab === "needs_reply"
+          ? /Needs Reply|Reply|review/i.test(revRoot.innerHTML)
+          : tab === "requests"
+            ? /Request|completed|job|Sent/i.test(revRoot.innerHTML)
             : tab === "analytics"
-              ? /Analytics|Response|5-Star|rating/i.test(revRoot.innerHTML)
-              : /Event|review\.|HublyEvents|recent/i.test(revRoot.innerHTML + JSON.stringify(window.HublyEvents.recent(5))));
+              ? /Analytics|platform|growth/i.test(revRoot.innerHTML)
+              : /Connect|Google|Platform|Sync/i.test(revRoot.innerHTML));
   check("Tabs", tab, ok);
 });
 
@@ -302,20 +302,20 @@ check("Inbox", "Record review", state.reviewsOs.reviews.length === revN + 1 || s
 check("Events", "review.received published", eventLog.includes("review.received") || window.HublyEvents.recent(30).some((e) => e.type === "review.received"));
 check("Events", "reputation.changed published", eventLog.includes("reputation.changed") || window.HublyEvents.recent(30).some((e) => e.type === "reputation.changed"));
 
-// AI reply
+// AI reply via drawer
 const target = state.reviewsOs.reviews.find((r) => r.name === "MAT Reviewer") || state.reviewsOs.reviews[0];
 revRoot._josRevSelId = target.id;
-revRoot._josRevTab = "ai";
+revRoot._josRevTab = "overview";
 H.renderReviews();
-clickAct("rev-ai-draft");
+clickAct("rev-ai-draft", { "data-jos-rev-id": target.id });
 setTextarea("jos-rev-ai-draft", revRoot._josRevAiDraft || "Thank you for the kind words!");
 clickAct("rev-ai-save");
-check("AI", "Reply saved", !!(target.reply || target.status === "replied") || /Reply saved/.test(toasts.join(" ")));
+check("AI", "Reply saved", !!(target.reply || target.status === "replied") || /Reply sent|Reply saved/.test(toasts.join(" ")));
 check("Events", "review.responded published", eventLog.includes("review.responded") || window.HublyEvents.recent(40).some((e) => e.type === "review.responded"));
 
-// Stage 2
-clickAct("rev-sync-google");
-check("Stage 2", "Google sync placeholder", /Stage 2/.test(toasts.join(" ")));
+// Stage 2 connect placeholder
+clickAct("rev-connect-yelp");
+check("Stage 2", "Yelp connect placeholder", /Stage 2/.test(toasts.join(" ")));
 
 // Rule #16
 clickAct("rev-open-customer", { "data-jos-rev-cust": "c1" });
@@ -342,7 +342,7 @@ check("Alias", "renderBizReviews alias", typeof H.renderBizReviews === "function
 check("Empty States", "Empty helpers", /No review|empty|Select/i.test(jsrc));
 check("Error States", "Retry markup", /Reviews could not load|Retry/.test(jsrc));
 const css = fs.readFileSync(path.join(repoRoot, "public/journey-os/operate-pixel.css"), "utf8");
-check("Responsive CSS", "Reviews layout", /jos-rev-page|jos-rev-layout|jos-rev-/.test(css));
+check("Responsive CSS", "Reviews layout", /jos-rev-mc-shell|jos-rev-mc-main|jos-rev-mc-/.test(css));
 check("Load order", "hubly.html loads hubly-events", /hubly-events\.js/.test(fs.readFileSync(path.join(repoRoot, "public/hubly.html"), "utf8")));
 
 let validatorPass = false;
@@ -405,7 +405,7 @@ window.localStorage={getItem:function(){return null;},setItem:function(){}};
 <script src="/journey-os/design-system.js"></script>
 <script src="/journey-os/hubly-events.js"></script>
 <script src="/journey-os/journey.js"></script>
-<script>HublyJourneyOS.renderReviews();document.title=document.getElementById("jos-reviews-root").innerHTML.includes("jos-rev-page")?"MAT_OK":"MAT_FAIL";</script>
+<script>HublyJourneyOS.renderReviews();document.title=document.getElementById("jos-reviews-root").innerHTML.includes("jos-rev-mc-shell")?"MAT_OK":"MAT_FAIL";</script>
 </body></html>`;
   fs.writeFileSync(path.join(pub, "mat-reviews.html"), matHtml);
   const browser = await chromium.launch({
@@ -424,7 +424,7 @@ window.localStorage={getItem:function(){return null;},setItem:function(){}};
     await page.waitForTimeout(350);
     return page.evaluate(() => {
       const root = document.getElementById("jos-reviews-root");
-      const pageEl = root && root.querySelector(".jos-rev-page");
+      const pageEl = root && (root.querySelector(".jos-rev-mc-shell") || root.querySelector(".jos-rev-page"));
       if (!pageEl) return false;
       const r = pageEl.getBoundingClientRect();
       return r.width > 200 && r.height > 200 && document.title.includes("MAT_OK");
