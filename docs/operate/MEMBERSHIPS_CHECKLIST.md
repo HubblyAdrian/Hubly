@@ -1,74 +1,46 @@
 # Module 10 — 🔁 Memberships
 
-**Status:** 🔒 OS locked · Stage 1 COMPLETE · Stage 2 ⏸ Deferred  
-**PR:** [#253](https://github.com/HubblyAdrian/Hubly/pull/253) (merged)  
+**Status:** 🔓 Explicit reopen (Mission Control dashboard)  
 **Events:** [EVENTS.md](./EVENTS.md) (Rules #17–18)  
 **Ownership:** [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) (Rules #15 · #19)  
 **Design System:** HublyDS (Rule #14)  
 **Plan:** [MEMBERSHIPS_PLAN.md](./MEMBERSHIPS_PLAN.md)  
 **MAT:** [MEMBERSHIPS_MAT.md](./MEMBERSHIPS_MAT.md) · runner `node scripts/mat-memberships.mjs`  
-
-**Do not modify Memberships unless:** bug fix · Stage 2 integrations · explicit module reopen.
+**Mission Control:** [MEMBERSHIPS_MISSION_CONTROL.md](./MEMBERSHIPS_MISSION_CONTROL.md)
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
 
 ---
 
-## Purpose
+## Mission Control shell
 
-Memberships owns recurring plans, subscribers, visits, and renewals.  
-First of the connected business systems: Memberships → Revenue → Reports → Ask Hubly.
+- [x] `jos-memberships-mode` full-height shell, app bar hidden
+- [x] Header with Create plan / Create membership / Ask Hubly
+- [x] KPI strip (Active, MRR, Churn, Renewals)
+- [x] Tabs with orange underline (Subscriptions default)
+- [x] Info banner + toolbar filters/search
+- [x] Memberships table (72px rows, status pills, visit bars, actions menu)
+- [x] Membership drawer (520px) with usage ring, billing, timeline
+- [x] Pagination (10/25/50)
+- [x] Responsive tablet/mobile
 
-**Reads:** Customers · Jobs · Revenue  
-**Owns:** `S.membershipsOs`  
-**Publishes:** `membership.started` · `membership.renewed` · `membership.cancelled` · `membership.paused` · `membership.visit_used`
+## Core OS (retained)
 
----
+- [x] `S.membershipsOs` ownership
+- [x] HublyEvents: started · renewed · cancelled · paused · visit_used
+- [x] Plans / subscribers / visits / renewals / append-only activity
+- [x] Rule #18 append-only activity · Rule #19 no customer clones
 
-## Stage 1 — Operating System
+## QA / MAT
 
-### Core
-- [x] `ownPixelView('v-memberships', 'jos-memberships-root')` ✅  
-- [x] HublyDS chrome ✅  
-- [x] Tabs ✅  
-- [x] Responsive ✅  
+- [x] Validator + CMV gates
+- [ ] Visual QA in browser
+- [ ] MAT re-run after merge
 
-### Tabs
-- [x] Overview ✅  
-- [x] Plans ✅  
-- [x] Subscribers ✅  
-- [x] Visits ✅  
-- [x] Billing (rules OS · Stripe Stage 2 toast) ✅  
-- [x] Activity (append-only · Rule #18) ✅  
-
-### Ownership & Events
-- [x] `S.membershipsOs` owns plans/subscribers/visits/renewals/activity ✅  
-- [x] No customer/payment clones (Rules #15 · #19) ✅  
-- [x] Publishes HublyEvents on start/renew/pause/cancel/visit ✅  
-- [x] Activity + visits + renewals append-only (Rule #18) ✅  
-
-### Actions (`mem-*`)
-- [x] Create / edit plan ✅  
-- [x] Start membership ✅  
-- [x] Renew / pause / cancel ✅  
-- [x] Use visit ✅  
-- [x] Open customer profile ✅  
-- [x] Stage 2 Stripe toast ✅  
-
-### QA / MAT / CMV
-- [x] Validator memberships + events gates ✅  
-- [x] MAT ✅ ACCEPTED (`scripts/mat-memberships.mjs` · [MEMBERSHIPS_MAT.md](./MEMBERSHIPS_MAT.md))  
-- [x] CMV incl. Reviews ✅  
-
-### Definition of Done
-- [x] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ✅ 
-
----
-
-## Stage 2 — Live Integrations ⏸ DEFERRED
+## Stage 2 ⏸ DEFERRED
 
 | Item | Status |
 |------|--------|
-| Live Stripe subscription billing | ⏸ |
-| Live renewals / dunning | ⏸ |
-| Live payout sync | ⏸ |
+| Live Stripe subscriptions | ⏸ |
+| Card-on-file / retry payment | ⏸ |
+| Automated renewals | ⏸ |

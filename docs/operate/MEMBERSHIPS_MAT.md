@@ -3,7 +3,7 @@
 **Module:** 🔁 Memberships  
 **Stage:** 1 — Operating System  
 **Branch:** `cursor/operate-memberships-2662`  
-**Date:** 2026-07-26  
+**Date:** 2026-07-27  
 **Runner:** `node scripts/mat-memberships.mjs`  
 **Events:** [EVENTS.md](./EVENTS.md) (Rules #17–18)  
 **Rules:** #14–19
@@ -191,7 +191,7 @@
 - ✅ hubly.html loads hubly-events
 
 ### Validator (1/1)
-- ✅ check-customer-journey-os — PASS in 28ms
+- ✅ check-customer-journey-os — PASS in 36ms
 
 ### CMV (1/1)
 - ✅ Locked modules incl. Reviews
