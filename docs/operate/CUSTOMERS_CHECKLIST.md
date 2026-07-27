@@ -1,18 +1,21 @@
 # Module 5 — ❤️ Customers
 
-**Status:** 🔒 OS LOCKED (Stage 1) — merged #248  
-**Branch:** `cursor/operate-customers-2662`  
-**PR:** [#248](https://github.com/HubblyAdrian/Hubly/pull/248)  
-**Stage in scope:** Stage 1 — Operating System  
-**Golden profile:** Reuse `openCustomerProfile` / profile shell everywhere (Leads, Inbox, Jobs, Pipeline, Revenue, Reports, Ask Hubly)
+**Status:** 🔓 Explicit reopen — CRM Command Center redesign  
+**Prior lock:** [#248](https://github.com/HubblyAdrian/Hubly/pull/248) · Stage 1 OS approved  
+**Redesign:** [`CUSTOMERS_MISSION_CONTROL.md`](./CUSTOMERS_MISSION_CONTROL.md) · branch `cursor/operate-customers-mission-control-2662`  
+**Golden profile:** Still available via ⋯ → Open Profile (`openCustomerProfile`)
 
-Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
+Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked · 🔄 In review
+
+## Stage 3 — Customers CRM Command Center 🔄 In review
+
+Three-column Linear/Stripe-style Customers workspace per product pixel spec + mockup.
 
 ---
 
 ## Purpose
 
-The Customers module is the permanent record for every client. Stage 1 runs on Hubly data only — one unified profile for communication, jobs, payments, memberships, photos, documents, reviews, and AI insights.
+The Customers module is the permanent record for every client. Dashboard v2 redesigns the chrome into a living customer command center while preserving Stage 1 OS data and actions.
 
 ---
 
