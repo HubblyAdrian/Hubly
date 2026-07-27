@@ -28,4 +28,4 @@
 
 ### Context
 
-Rule #28 Creative Review lock · AI Business Agency · Module 6 Business Activation architecture. No UI.
+Rule #29 Agency lock · Module 7 AI Launch Coach architecture. No UI.

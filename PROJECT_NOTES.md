@@ -50,11 +50,11 @@ Interface language is **Ask Hubly** (not Get Help / Find Help / Marketplace).
 Marketplace remains intact (`/marketplace`, `/get-done`). Merged #259.
 See `docs/AI_LANDING_ARCHITECTURE.md` · `docs/HUBLY_MEMORY.md`.
 
-**Next milestone — Hubly AI Business Agency:** Rules **#26–#28 🔒**. No UI may bypass
-Creative Blueprint → Creative Review → Business Reveal. **Save My Business** is the first
-account point. Module 4 Dev may begin. Module 6 is **Business Activation** (mission control),
-not Setup — `docs/builder/ACTIVATION_ARCHITECTURE.md`. Do not modify Agency architecture
-without reopening the module.
+**Next milestone — Hubly AI Business Agency (Rule #29 🔒):** Canonical Builder experience.
+Business Activation locked. Pipeline: … → Activation → **AI Launch Coach** → Launch → Operate Home.
+Builder ends at OS handoff. Module 4 Dev may begin. Module 7 architecture:
+`docs/builder/LAUNCH_COACH_ARCHITECTURE.md`. First Home greeting + Morning Brief seed.
+Do not bypass Agency pipeline without reopening architecture.
 
 **Homepage craft still gated** (`scripts/check-homepage-craft.mjs`). The first five
 minutes after **Continue Building** are Module 2 — someone already typed on Landing

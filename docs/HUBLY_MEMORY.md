@@ -154,18 +154,18 @@ Hubly does not only learn “the business.” It learns the **owner** — and wh
 | **Business Vision** | What the owner wants to become (destination) — **Rule #27 🔒** |
 | **Creative Blueprint** | Canonical Module 4 output |
 | **Creative Review** | Self-critique scores before Reveal — **Rule #28 🔒** |
-| Activated Business | Module 6 launch / connection state |
+| Activated Business | Module 6 launch / connection state — **canonical activation (Rule #29 🔒)** |
+| Launch Plan | Module 7 coach recommendations · forecast · timeline |
 
 Ask Hubly coaches using DNA **and** Vision, e.g. memberships before ceramic expansion for a founder who wants steady recurring revenue **and** aims to be the premium detailer in Dallas.
 
-**🔒 Rule #26 locked.** No Agency module may bypass or duplicate Business Profile · Owner Profile · Business DNA.  
-**🔒 Rule #27 locked.** Creative Director must build toward Business Vision.  
-**🔒 Rule #28 locked.** Every generated business must be reviewed before presentation.  
-**No UI may bypass** Creative Blueprint → Creative Review → Business Reveal.
+**🔒 Rules #26–#29.** Agency is canonical. No module may bypass Blueprint → Review → Reveal → Activation → Launch Coach → Launch → Home without reopening.
+
+First Home after Launch: personalized greeting + Morning Brief from Agency memory — Builder → Operator handoff.
 
 UI may not change these architecture documents without reopening the module.
 
-See [builder/DISCOVERY_ARCHITECTURE.md](./builder/DISCOVERY_ARCHITECTURE.md) · [builder/BUSINESS_VISION.md](./builder/BUSINESS_VISION.md) · [builder/CREATIVE_REVIEW.md](./builder/CREATIVE_REVIEW.md) · [builder/ACTIVATION_ARCHITECTURE.md](./builder/ACTIVATION_ARCHITECTURE.md).
+See [builder/README.md](./builder/README.md) · [builder/LAUNCH_COACH_ARCHITECTURE.md](./builder/LAUNCH_COACH_ARCHITECTURE.md) · [builder/CREATIVE_REVIEW.md](./builder/CREATIVE_REVIEW.md).
 
 ---
 
@@ -189,7 +189,8 @@ See [builder/DISCOVERY_ARCHITECTURE.md](./builder/DISCOVERY_ARCHITECTURE.md) · 
 | Business Vision (Rule #27) | Destination object before Creative Director |
 | AI Creative Director (Module 4) | Consumes canonical objects → **Creative Blueprint** → **Creative Review** |
 | Business Reveal (Module 5) | Staged ceremony · **canonical design completion** · mid-reveal Save My Business |
-| Business Activation (Module 6) | Connect · readiness · Launch → Operate Home |
+| Business Activation (Module 6) | Connect · readiness · handoff to Launch Coach |
+| AI Launch Coach (Module 7) | Final recommendations · Launch ceremony · first Home seed |
 | Website / Services / Brand modules | Implement Creative Blueprint into Permanent Memory after upgrade |
 | Ask Hubly (Operate 🔒) | Owns Conversation Memory; reads Permanent Memory, Owner Profile, and Vision for tailored coaching |
 | Marketplace Concierge | May read Temporary Memory for hire intent; separate consumer journey |

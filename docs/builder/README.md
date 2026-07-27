@@ -1,17 +1,18 @@
 # Hubly AI Business Agency — Milestone
 
 **Product name (canonical):** Hubly AI Business Agency  
-**Legacy label:** “Business Builder” (still fine in casual speech; architecture uses Agency)  
-**Status:** Active  
+**Legacy label:** “Business Builder” (casual speech OK; architecture uses Agency)  
+**Status:** Active · **Rule #29 🔒 Locked**  
 **Entry:** AI Landing Experience (🔒 locked — Module 1)  
 **Session:** Hubly Session · [HUBLY_MEMORY.md](../HUBLY_MEMORY.md)  
+**Exit:** Launch → Hubly Operating System (Home Dashboard)  
 **Parallel product:** Marketplace remains intact (`/marketplace`, `/get-done`)
 
 ---
 
 ## What we built
 
-This is not a website wizard. It is an **AI Business Agency**:
+Not a website wizard. An **AI Business Agency**:
 
 | Module | Agency role |
 |--------|-------------|
@@ -20,50 +21,56 @@ This is not a website wizard. It is an **AI Business Agency**:
 | 3 · Research | Market Research Team |
 | 4 · Creative Director | Creative Director |
 | 5 · Business Reveal | Creative Presentation |
-| 6 · Business Activation | AI Project Manager → Launch |
+| 6 · Business Activation | AI Project Manager |
+| 7 · AI Launch Coach | CEO / final coach before go-live |
+| — · Launch | Hand keys to Operate OS |
 
-Narrative users remember:
+Narrative:
 
-> Learn about you → Research → Design → Review → Present → **Activate** → Launch → Run (Operate OS)
+> Understood you → Researched market → Designed brand → Built website → Configured ops → Reviewed work → **Coached before launch** → Handed keys to a live business.
+
+By Home, the user does **not** feel like they finished onboarding. They feel they worked with an agency.
 
 ---
 
-## Canonical pipeline (🔒 — no UI may bypass)
+## Canonical pipeline (🔒 — no module may bypass without reopen)
 
 ```
 Creative Blueprint
   ↓
-Creative Review          (Rule #28 🔒)
+Creative Review              (Rule #28 🔒)
   ↓
-Business Reveal          (canonical completion of design phase)
+Business Reveal              (canonical design completion)
   ↓
-Save My Business         (first account point — first edit or final CTA)
+Save My Business             (first account — first edit or final CTA)
   ↓
-Business Activation      (Module 6 — connect & launch)
+Business Activation          (Module 6 🔒 canonical activation)
   ↓
-Launch My Business
+AI Launch Coach              (Module 7 — final recommendations)
   ↓
-Home Dashboard (Operate OS)
+🚀 Launch My Business
+  ↓
+Home Dashboard (Operate OS)  ← Builder officially ends here
 ```
 
-**No UI implementation may bypass** Creative Blueprint → Creative Review → Business Reveal.
+**No Builder / Agency module may bypass this pipeline without reopening architecture.**
+
+Also locked: Creative Blueprint → Creative Review → Business Reveal (no UI bypass).
 
 ---
 
-## Canonical objects (🔒 Rules #26–#28)
+## Canonical objects
 
 | Object | Rule | Role |
 |--------|------|------|
-| Business Profile | #26 | What the business is |
-| Owner Profile | #26 | How the founder operates |
-| Business DNA | #26 | Combination — all Agency modules |
-| Research Profile | M3 | Market intelligence |
+| Business Profile / Owner Profile / DNA | #26 🔒 | Current truth |
+| Research Profile | M3 | Market |
 | Business Vision | #27 🔒 | Destination |
-| Creative Blueprint | M4 output | Agency blueprint |
+| Creative Blueprint | M4 | Design output |
 | Creative Review | #28 🔒 | Self-critique before presentation |
-| Activated Business | M6 output | Live / connected / launched |
-
-**No UI may change these architecture documents without reopening the module.**
+| Activated Business | M6 🔒 | Connected / ready to operate |
+| Launch Plan | M7 | Coach recommendations + forecast + timeline |
+| Permanent Business | Upgrade | Operate OS |
 
 ---
 
@@ -71,43 +78,42 @@ Home Dashboard (Operate OS)
 
 | # | Module | Purpose | Status |
 |---|--------|---------|--------|
-| 1 | 🌎 AI Landing | Consultant · Hubly Session | 🔒 Locked |
+| 1 | 🌎 AI Landing | Consultant | 🔒 Locked |
 | 2 | 🤖 AI Discovery | Strategist · DNA | 🔒 Architecture · Dev may begin |
-| 3 | 🔍 AI Research | Market Research Team | ⏳ Architecture |
-| 4 | 🎨 AI Creative Director | Creative Blueprint + Review | 🔒 Architecture · **Dev may begin** |
-| 5 | ✨ Business Reveal | Creative Presentation | 🔒 Architecture (completion of design) |
-| 6 | 🚀 Business Activation | Project Manager · connect · launch | ⏳ Architecture |
+| 3 | 🔍 AI Research | Research team | ⏳ Architecture |
+| 4 | 🎨 AI Creative Director | Blueprint + Review | 🔒 Architecture · **Dev may begin** |
+| 5 | ✨ Business Reveal | Presentation | 🔒 Architecture |
+| 6 | 🚀 Business Activation | Project Manager · connect | 🔒 Architecture (canonical activation) |
+| 7 | 🎓 AI Launch Coach | Final coach · forecast · Launch | ⏳ Architecture |
 
 ---
 
-## Locked
+## Locked (Rule #29)
 
-- Landing · Discovery architecture · Rules #26–#27  
-- **Rule #28 Creative Review** — every generated business reviewed before presentation  
-- **Business Reveal** — canonical completion of the design/agency phase  
-- **Save My Business** — first account creation point (first edit or Stage 9 CTA)  
-- Module 4 architecture — Development may begin  
-
-Do **not** modify Builder / Agency architecture without reopening the module.
+- **Hubly AI Business Agency** = canonical Builder experience  
+- **Business Activation** = canonical activation stage  
+- Builder **ends** when the business launches into the Hubly Operating System  
+- Module 4 Development may begin against locked architecture  
+- **Do not modify Agency architecture without reopening the module**
 
 ---
 
-## Module 6 — Business Activation
+## Module 7 — AI Launch Coach
 
-[ACTIVATION_ARCHITECTURE.md](./ACTIVATION_ARCHITECTURE.md) · [ACTIVATION_CHECKLIST.md](./ACTIVATION_CHECKLIST.md) · [ACTIVATION_MAT.md](./ACTIVATION_MAT.md)
+[LAUNCH_COACH_ARCHITECTURE.md](./LAUNCH_COACH_ARCHITECTURE.md) · [LAUNCH_COACH_CHECKLIST.md](./LAUNCH_COACH_CHECKLIST.md) · [LAUNCH_COACH_MAT.md](./LAUNCH_COACH_MAT.md)
 
-Not “Business Setup.” Not a config form. **Mission control preparing for launch.**
-
-Design the business ≠ Activate the business.
+Between Activation and Launch: prioritized recommendations, readiness / health / forecast, Ask Coach, then Launch → first Home greeting + personalized Morning Brief.
 
 ---
 
-## Memory
+## First Home handoff
 
-| Kind | Scope | Expires |
-|------|-------|---------|
-| Temporary | Session through Activation | 30 days / until upgrade |
-| Permanent | Business after Save My Business | Never |
-| Conversation | Ask Hubly | Soft retention |
+On first enter of Home after Launch:
+
+> Welcome to Hubly, {Name}. We built the foundation together. Now let's grow your business.
+
+Morning Brief opens already personalized from Agency memory. Seamless Builder → Operator — never feels like switching products.
+
+---
 
 Workflow: Architecture → Development → QA → MAT → CMV → Approval → Merge → Lock. **Do not skip stages.**

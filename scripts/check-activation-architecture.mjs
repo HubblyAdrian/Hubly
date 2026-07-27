@@ -39,6 +39,8 @@ ok(/Save My Business/i.test(reveal), "Save My Business account point");
 const act = read("docs/builder/ACTIVATION_ARCHITECTURE.md");
 ok(/Business Activation/i.test(act), "named Business Activation");
 ok(/not.*Business Setup|not “Business Setup”|not \"Business Setup\"/i.test(act), "not Business Setup");
+ok(/Architecture locked|🔒/.test(act) || /canonical activation/i.test(act), "Activation architecture locked or canonical");
+ok(/Launch Coach/i.test(act) || /LAUNCH_COACH/i.test(read("docs/builder/README.md")), "Launch Coach in Agency path");
 ok(/mission control/i.test(act), "mission control principle");
 ok(/Fuel your business with online payments/i.test(act), "Stripe why-language");
 ok(/Protect your schedule from double bookings/i.test(act), "Calendar why-language");
@@ -51,7 +53,7 @@ ok(/AI Project Manager/i.test(act), "Project Manager role");
 const milestone = read("docs/builder/README.md");
 ok(/AI Business Agency/i.test(milestone), "Agency product name");
 ok(/Business Activation/i.test(milestone), "Module 6 on milestone");
-ok(/No UI implementation may bypass/i.test(milestone), "pipeline bypass ban");
+ok(/No UI implementation may bypass|No Builder .* may bypass|no module may bypass/i.test(milestone), "pipeline bypass ban");
 ok(/Save My Business/i.test(milestone), "Save My Business on milestone");
 
 const rules = read("docs/operate/OPERATE_ENGINEERING_RULES.md");
