@@ -39,7 +39,10 @@
   function money(n) {
     if (typeof global.fmtMoney === 'function') return global.fmtMoney(n);
     if (global.HublySmartQuote && HublySmartQuote.formatMoney) return HublySmartQuote.formatMoney(n);
-    var x = Number(n); return Number.isFinite(x) ? ('$' + x.toFixed(x % 1 ? 2 : 0)) : '';
+    var x = Number(n);
+    if (!Number.isFinite(x)) return '';
+    var frac = x % 1 ? 2 : 0;
+    return '$' + x.toLocaleString('en-US', { minimumFractionDigits: frac, maximumFractionDigits: frac });
   }
   function dateLong(ds) {
     if (!ds) return '';
