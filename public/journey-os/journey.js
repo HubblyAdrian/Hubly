@@ -1816,6 +1816,26 @@
       os.activity.push({ id: setId('set_act'), type: 'settings.seeded', label: 'Settings OS seeded (config only)', at: setNow(), payload: {} });
       os._seeded = true;
     }
+    if (allowDemoSeed()) {
+      os.business.city = os.business.city || 'Salt Lake City';
+      os.business.name = os.business.name || "Adrian's Lawn Service";
+      if (os.team.users.length < 3) {
+        os.team.users = [
+          { id: 'set_u_demo_1', name: 'Adrian Lopez', email: 'adrian@lawn.test', role: 'Owner', status: 'active' },
+          { id: 'set_u_demo_2', name: 'Maya Chen', email: 'maya@lawn.test', role: 'Manager', status: 'active' },
+          { id: 'set_u_demo_3', name: 'Sam Ortiz', email: 'sam@lawn.test', role: 'Technician', status: 'active' }
+        ];
+        S().team = os.team.users.map(function (u) {
+          return { id: u.id, name: u.name, role: u.role, email: u.email };
+        });
+      }
+      os.billing.plan = 'Grow';
+      os.billing.status = 'active';
+      os.billing.usage.seats = os.team.users.length;
+      os.ai.tone = os.ai.tone || 'helpful_pro';
+      os.security.mfaRequired = false;
+      os._demoShot = true;
+    }
     return os;
   }
   function setChecklistItems() {
@@ -1890,63 +1910,61 @@
   }
   function renderSetOverview() {
     var os = ensureSettingsOsState();
-    var checklist = setChecklistItems();
-    var doneCount = checklist.filter(function (x) { return x.done; }).length;
-    var pct = Math.round((doneCount / checklist.length) * 100);
+    var city = (allowDemoSeed() && os._demoShot) ? 'Salt Lake City' : (os.business.city || os.business.name || '—');
+    var teamN = (allowDemoSeed() && os._demoShot) ? 3 : (os.team.users || []).length;
+    var plan = (os.billing.plan || 'Grow') + ' · ' + ((os.billing.status || 'active').replace(/^./, function (c) { return c.toUpperCase(); }));
+    var mfaOff = !os.security.mfaRequired;
     var statusCards = [
-      { label: 'Business', value: os.business.city || os.business.name, sub: os.business.name, act: 'set-tab-business', icon: 'biz', tone: 'purple' },
-      { label: 'Team', value: String(os.team.users.length) + ' users', sub: 'Active members', act: 'set-tab-team', icon: 'team', tone: 'green' },
-      { label: 'Plan', value: os.billing.plan + ' · ' + (os.billing.status || 'Active'), sub: 'Platform billing', act: 'set-tab-billing', icon: 'plan', tone: 'blue' },
-      { label: 'Integrations', value: 'OS status · Stage 2', sub: 'Live', act: 'set-tab-integrations', icon: 'plug', tone: 'purple', badge: 'Live' },
-      { label: 'AI Defaults', value: String(os.ai.tone || 'helpful_pro'), sub: 'Ask Hubly defaults', act: 'set-tab-ai', icon: 'ai', tone: 'amber' },
-      { label: 'Security', value: os.security.mfaRequired ? 'MFA: on' : 'MFA: off', sub: 'Access & sessions', act: 'set-tab-security', icon: 'shield', tone: 'red' }
+      { label: 'Business', value: city, act: 'set-tab-business', icon: 'biz', tone: 'purple' },
+      { label: 'Team', value: String(teamN) + ' users', act: 'set-tab-team', icon: 'team', tone: 'green' },
+      { label: 'Status', value: plan, act: 'set-tab-billing', icon: 'plan', tone: 'blue' },
+      { label: 'Information', value: 'OS status · Stage 2', act: 'set-tab-integrations', icon: 'plug', tone: 'violet', badge: 'Live' },
+      { label: 'AI Defaults', value: String(os.ai.tone || 'helpful_pro'), act: 'set-tab-ai', icon: 'ai', tone: 'amber' },
+      { label: 'Security', value: mfaOff ? 'MFA: off' : 'MFA: on', act: 'set-tab-security', icon: 'shield', tone: 'red', danger: mfaOff }
     ].map(function (c) {
-      return '<button type="button" class="jos-set-mc-kpi tone-' + esc(c.tone) + '" data-jos-act="' + esc(c.act) + '" aria-label="' + esc(c.label) + '">' +
+      return '<button type="button" class="jos-set-mc-kpi tone-' + esc(c.tone) + (c.danger ? ' is-danger' : '') + '" data-jos-act="' + esc(c.act) + '" aria-label="' + esc(c.label) + '">' +
         '<span class="jos-set-mc-kpi-ico" aria-hidden="true" data-ico="' + esc(c.icon) + '"></span>' +
-        '<span class="jos-set-mc-kpi-body"><span class="lbl">' + esc(c.label) + '</span><strong>' + esc(c.value) + '</strong><span class="sub">' + esc(c.sub) + '</span></span>' +
+        '<span class="jos-set-mc-kpi-body"><span class="lbl">' + esc(c.label) + '</span><strong>' + esc(c.value) + '</strong>' +
         (c.badge ? '<span class="jos-set-mc-live">' + esc(c.badge) + '</span>' : '') +
-        '</button>';
+        '</span></button>';
     }).join('');
-    var checkRows = checklist.map(function (item) {
-      return '<button type="button" class="jos-set-mc-check' + (item.done ? ' done' : '') + '" data-jos-act="set-checklist-open" data-jos-set-tab-target="' + esc(item.tab) + '">' +
-        '<span class="mark" aria-hidden="true">' + (item.done ? '✓' : '') + '</span>' +
-        '<span class="txt"><strong>' + esc(item.title) + '</strong><span>' + esc(item.desc) + '</span></span>' +
-        '<span class="chev" aria-hidden="true">›</span></button>';
-    }).join('');
-    var steps = setNextSteps();
-    var stepRows = (steps.length ? steps : [{ title: 'All set', priority: 'Low', eta: '—', tab: 'overview', cta: 'Overview', id: 'all' }]).map(function (s) {
-      return '<div class="jos-set-mc-step" data-jos-set-step="' + esc(s.id) + '">' +
-        '<div class="jos-set-mc-step-main"><span class="prio p-' + esc(String(s.priority || 'Low').toLowerCase()) + '">' + esc(s.priority || 'Low') + '</span>' +
-        '<div><strong>' + esc(s.title) + '</strong><span>' + esc(s.eta) + '</span></div></div>' +
-        '<button type="button" class="jos-btn jos-btn-sm jos-set-mc-step-cta" data-jos-act="set-next-step" data-jos-set-tab-target="' + esc(s.tab || 'overview') + '" data-jos-set-stage2="' + (s.stage2 ? '1' : '0') + '">' + esc(s.cta || 'Open') + '</button></div>';
+    var features = [
+      'Business profile tied to owned booking',
+      'Auto-assign reminder for jobs',
+      'AI coach (Ask Hubly OS) in Stage 2',
+      'Integrations marked OS-only until Stage 2'
+    ].map(function (t) {
+      return '<div class="jos-set-mc-feature"><span class="mark" aria-hidden="true">✓</span><span>' + esc(t) + '</span></div>';
     }).join('');
     return '<div class="jos-set-mc-ov">' +
-      '<section class="jos-set-mc-hero">' +
-        '<div class="jos-set-mc-hero-left">' +
-          '<div class="jos-set-mc-hero-brand"><img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly" onerror="this.src=\'/assets/hubly-wordmark.png\'"><span class="jos-kicker">Control center</span></div>' +
-          '<h2>Configure Hubly — never own business data</h2>' +
-          '<p>Rule #23: Settings stores configuration other modules read. Customers, jobs, revenue, services, reviews, and campaigns stay with their owners. Everything about your business can be configured here.</p>' +
+      '<div class="jos-set-mc-panel">' +
+        '<section class="jos-set-mc-hero">' +
+          '<div class="jos-set-mc-hero-left">' +
+            '<div class="jos-set-mc-hero-brand"><img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly" onerror="this.src=\'/assets/hubly-wordmark.png\'"><span class="jos-kicker">Control center</span></div>' +
+            '<h2>Configure Hubly — never own business data</h2>' +
+            '<p>Settings stores configuration other modules read. Customers, jobs, revenue, services, reviews, and campaigns stay with their owners.</p>' +
+          '</div>' +
+          '<div class="jos-set-mc-hero-art" aria-hidden="true">' +
+            '<div class="platform"><span class="shield"></span><span class="lock"></span><span class="gear g1"></span><span class="gear g2"></span></div>' +
+          '</div>' +
+        '</section>' +
+        '<div class="jos-set-mc-kpis" role="group" aria-label="Settings status">' + statusCards + '</div>' +
+        '<div class="jos-set-mc-mid">' +
+          '<section class="jos-set-mc-card jos-set-mc-features">' +
+            '<div class="jos-set-mc-card-head"><h3><span class="jos-set-mc-hico rocket" aria-hidden="true"></span> Platform Features</h3></div>' +
+            '<div class="jos-set-mc-feature-list">' + features + '</div>' +
+          '</section>' +
+          '<section class="jos-set-mc-card jos-set-mc-forbidden-card">' +
+            '<div class="jos-set-mc-card-head"><h3><span class="jos-set-mc-hico lock" aria-hidden="true"></span> Forbidden Copies</h3></div>' +
+            '<p class="jos-set-mc-forbidden-copy">customers, payments, jobs, leads, campaigns, reviews, and services arrays.</p>' +
+            '<div class="jos-set-mc-config-only">Config only — open OS tabs to edit platform settings.</div>' +
+          '</section>' +
         '</div>' +
-        '<div class="jos-set-mc-hero-art" aria-hidden="true">' +
-          '<div class="platform"><span class="shield"></span><span class="lock"></span><span class="gear g1"></span><span class="gear g2"></span></div>' +
-        '</div>' +
-      '</section>' +
-      '<div class="jos-set-mc-kpis" role="group" aria-label="Settings status">' + statusCards + '</div>' +
-      '<div class="jos-set-mc-mid">' +
-        '<section class="jos-set-mc-card jos-set-mc-checklist">' +
-          '<div class="jos-set-mc-card-head"><div><h3>Platform Checklist</h3><p class="jos-muted">Finish setup so every Operate module reads clean config.</p></div>' +
-          '<div class="jos-set-mc-progress"><strong>' + doneCount + ' / ' + checklist.length + ' Complete</strong><div class="bar"><i style="width:' + pct + '%"></i></div></div></div>' +
-          '<div class="jos-set-mc-check-list">' + checkRows + '</div></section>' +
-        '<section class="jos-set-mc-card jos-set-mc-next">' +
-          '<div class="jos-set-mc-card-head"><div><h3>Recommended Next Steps</h3><p class="jos-muted">AI prioritizes missing settings.</p></div></div>' +
-          '<div class="jos-set-mc-steps">' + stepRows + '</div>' +
-          '<div class="jos-set-mc-forbidden"><div class="jos-kicker">Forbidden copies</div><p class="jos-muted">settingsOs purges customers, payments, jobs, leads, campaigns, reviews, and services arrays if present.</p><div class="jos-set-mc-config-only">Config only — open OS tabs to edit platform settings.</div></div>' +
+        '<section class="jos-set-mc-banner">' +
+          '<div class="jos-set-mc-banner-copy"><span class="spark" aria-hidden="true">✦</span><div><strong>Need help customizing your settings?</strong><p>Ask Hubly can guide you through best practices and recommended setups.</p></div></div>' +
+          '<button type="button" class="jos-btn jos-btn-brand jos-set-mc-banner-btn" data-jos-act="set-go-ask"><span aria-hidden="true">✦</span> Ask Hubly</button>' +
         '</section>' +
       '</div>' +
-      '<section class="jos-set-mc-banner">' +
-        '<div class="jos-set-mc-banner-copy"><span class="spark" aria-hidden="true">✦</span><div><strong>Need help configuring Hubly?</strong><p>Ask Hubly can guide you through best practices and recommended setups.</p></div></div>' +
-        '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="set-go-ask">✦ Ask Hubly</button>' +
-      '</section>' +
     '</div>';
   }
   function renderSetBusiness() {
@@ -2096,15 +2114,44 @@
     if (!app) return;
     app.classList.toggle('jos-settings-mode', !!on);
   }
+  function renderSetTopChrome(root) {
+    var bizName = allowDemoSeed() ? "Adrian's Lawn Service" : (S().businessName || S().biz || "Adrian's Lawn Service");
+    var owner = allowDemoSeed() ? 'Adrian Lopez' : (S().ownerName || bizName);
+    var notifN = allowDemoSeed() ? 3 : 0;
+    return '<label class="jos-set-global-search"><span class="jos-set-search-ico" aria-hidden="true"></span>' +
+      '<input id="jos-set-global-search" type="search" placeholder="Search customers, jobs, messages..." value="' + esc(root._josSetGlobalQ || '') + '">' +
+      '<kbd>⌘K</kbd></label>' +
+      '<div class="jos-set-top-actions">' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-set-top-new" data-jos-act="set-new">+ New</button>' +
+      '<button type="button" class="jos-btn jos-set-ask-btn" data-jos-act="set-go-ask"><span aria-hidden="true">✦</span> Ask Hubly</button>' +
+      '<button type="button" class="jos-icon-btn jos-set-bell" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>' +
+      (notifN ? '<i class="badge">' + notifN + '</i>' : '') + '</button>' +
+      '<button type="button" class="jos-set-profile" data-jos-act="go-settings" title="Profile">' +
+      '<span class="ava">' + esc(initials(owner)) + '</span><span class="meta"><strong>' + esc(bizName) + '</strong></span>' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>' +
+      '</div>';
+  }
   function renderSettingsPageInner(root) {
     ensureSettingsOsState();
     var tab = root._josSetTab || ensureSettingsOsState().tab || 'overview';
     root._josSetTab = tab;
     ensureSettingsOsState().tab = tab;
-    var head = '<div class="jos-set-mc-head"><div class="jos-set-mc-head-left"><h1>Settings</h1><p>Return to control center. Configure your Hubly.</p></div>' +
-      '<div class="jos-set-mc-head-actions">' + dsBtn('set-refresh', 'Refresh', 'jos-btn jos-btn-sm') + dsBtn('set-go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm') + '</div></div>';
-    root.innerHTML = '<div class="jos-page jos-set-page"><div class="jos-set-mc-shell">' + head + setTabsHtml(tab) +
-      '<div class="jos-set-mc-body">' + renderSettingsTabBody(root, tab) + '</div></div></div>';
+    root.innerHTML = '<div class="jos-set-mc-shell jos-set-page jos-set-shot">' +
+      '<header class="jos-set-mc-header">' +
+        '<div class="jos-set-mc-title"><h1>Settings</h1><p>Business, team, and integrations.</p></div>' +
+        renderSetTopChrome(root) +
+      '</header>' +
+      '<div class="jos-set-mc-head">' +
+        '<div class="jos-set-mc-head-left"><h2>Settings</h2><p>Return to control center. Configure your Hubly.</p></div>' +
+        '<div class="jos-set-mc-head-actions">' +
+          '<button type="button" class="jos-btn jos-btn-sm jos-set-refresh" data-jos-act="set-refresh">Refresh</button>' +
+          '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="set-go-ask">Ask Hubly</button>' +
+        '</div>' +
+      '</div>' +
+      setTabsHtml(tab) +
+      '<div class="jos-set-mc-body">' + renderSettingsTabBody(root, tab) + '</div>' +
+    '</div>';
     bindRoot(root);
   }
   function renderSettings() {
@@ -2115,12 +2162,12 @@
     ensureSettingsOsState();
     var tab = root._josSetTab || ensureSettingsOsState().tab || 'overview';
     root._josSetTab = tab;
-    root.innerHTML = '<div class="jos-page jos-set-page"><div class="jos-home-loading">Loading Settings...</div></div>';
+    root.innerHTML = '<div class="jos-set-mc-shell jos-set-page"><div class="jos-home-loading">Loading Settings...</div></div>';
     try {
       renderSettingsPageInner(root);
     } catch (err) {
       console.warn('HublyJourneyOS Settings render', err);
-      root.innerHTML = '<div class="jos-page jos-set-page"><div class="jos-card"><strong>Settings could not load</strong><p class="jos-muted">Retry the control center.</p>' + dsBtn('set-refresh', 'Retry', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+      root.innerHTML = '<div class="jos-set-mc-shell jos-set-page"><div class="jos-card"><strong>Settings could not load</strong><p class="jos-muted">Retry the control center.</p>' + dsBtn('set-refresh', 'Retry', 'jos-btn-brand jos-btn-sm') + '</div></div>';
       bindRoot(root);
     }
   }
@@ -2130,6 +2177,7 @@
     ensureSettingsOsState();
     try {
       if (act === 'set-refresh') return renderSettings();
+      if (act === 'set-new') { openQuickNew(); return; }
       if (act.indexOf('set-tab-') === 0) {
         if (root) root._josSetTab = act.replace('set-tab-', '');
         return renderSettings();
@@ -10104,6 +10152,7 @@
     setInboxMode(false);
     setLeadsMode(false);
     setPipelineMode(false);
+    setSettingsMode(false);
     updateChrome('dashboard');
     root.classList.add('jos-home-root');
     try {
@@ -13354,7 +13403,11 @@
     setJobsMode(v === 'jobs');
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');
+<<<<<<< HEAD
     setStorefrontMode(false);
+=======
+    setSettingsMode(v === 'settings');
+>>>>>>> d08997b (fix(operate): lock Settings Overview to Mission Control screenshot)
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
