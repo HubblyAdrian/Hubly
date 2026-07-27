@@ -11347,7 +11347,7 @@
     var sort = root._josInboxSort || 'newest';
     var all = inboxConversations();
     var selectedId = root._josInboxId || (all[0] && all[0].id) || null;
-    var dockCollapsed = !!root._josDockCollapsed;
+    var dockCollapsed = root._josDockCollapsed !== false; /* default collapsed so columns aren't crushed */
     var hubOpen = root._josHubOpen !== false;
     var noteMode = !!root._josNoteMode;
     var scrollKeep = root._josChatScroll || 0;
@@ -11422,10 +11422,9 @@
       '<section class="jos-ibx-listcol">' +
       '<div class="jos-ibx-list-tools">' +
       '<label class="jos-ibx-search"><input id="jos-inbox-search" type="search" placeholder="Search conversations..." value="' + esc(root._josInboxQ || '') + '"></label>' +
-      '<div class="jos-ibx-sort-row"><label>Sort</label><select id="jos-inbox-sort">' +
+      '<div class="jos-ibx-sort-row"><label for="jos-inbox-sort">Sort</label><select id="jos-inbox-sort">' +
       INBOX_SORTS.map(function (s) { return '<option value="' + s[0] + '"' + (sort === s[0] ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') +
-      '</select>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-mark-all">Mark all read</button></div></div>' +
+      '</select></div></div>' +
       '<div class="jos-ibx-list">' + listCards + '</div></section>';
 
     var chatCol = '';
