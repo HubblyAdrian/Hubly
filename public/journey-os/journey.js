@@ -1641,7 +1641,7 @@
       '<kbd>⌘K</kbd></label>' +
       '<div class="jos-ah-top-actions">' +
       '<button type="button" class="jos-btn jos-btn-brand jos-ah-top-new" data-jos-act="ah-new">+ New</button>' +
-      '<button type="button" class="jos-btn jos-ah-ask-btn" data-jos-act="ask-focus">✦ Ask Hubly</button>' +
+      '<button type="button" class="jos-btn jos-ah-ask-btn" data-jos-act="ask-focus"><span aria-hidden="true">✦</span> Ask Hubly</button>' +
       '<button type="button" class="jos-icon-btn jos-ah-bell" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
       '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>' +
       (notifN ? '<i class="badge">' + notifN + '</i>' : '') + '</button>' +

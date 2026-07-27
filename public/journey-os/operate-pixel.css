@@ -2628,34 +2628,34 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 }
 .jos-ah-mc-chip:hover{background:#374151}
 
-.jos-ah-mc-hero-right{width:260px;height:240px;position:relative;flex-shrink:0}
+.jos-ah-mc-hero-right{width:280px;height:250px;position:relative;flex-shrink:0}
 .jos-ah-mc-orb{position:absolute;border-radius:50%;background:var(--jos-ah-brand);opacity:.55;animation:josAhFloat 3.6s ease-in-out infinite}
-.jos-ah-mc-orb.o1{width:18px;height:18px;top:18px;right:36px}
-.jos-ah-mc-orb.o2{width:12px;height:12px;top:70px;right:10px;animation-delay:.4s;opacity:.35}
-.jos-ah-mc-orb.o3{width:22px;height:22px;bottom:28px;left:8px;animation-delay:.8s;opacity:.45}
-.jos-ah-mc-robot{position:absolute;inset:24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:josAhFloat 3.6s ease-in-out infinite}
+.jos-ah-mc-orb.o1{width:20px;height:20px;top:14px;right:42px}
+.jos-ah-mc-orb.o2{width:12px;height:12px;top:64px;right:8px;animation-delay:.4s;opacity:.35}
+.jos-ah-mc-orb.o3{width:24px;height:24px;bottom:36px;left:4px;animation-delay:.8s;opacity:.45}
+.jos-ah-mc-robot{position:absolute;inset:10px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:josAhFloat 3.6s ease-in-out infinite}
 .jos-ah-mc-robot .glow{
-  position:absolute;width:170px;height:170px;border-radius:50%;
-  background:radial-gradient(circle,rgba(217,99,45,.32),transparent 70%);filter:blur(4px);
+  position:absolute;width:190px;height:190px;border-radius:50%;
+  background:radial-gradient(circle,rgba(217,99,45,.34),transparent 70%);filter:blur(6px);
 }
 .jos-ah-mc-robot .body{
-  position:relative;z-index:1;width:70px;height:54px;margin-top:70px;border-radius:18px;background:#fff;
-  box-shadow:0 14px 28px rgba(0,0,0,.2);
+  position:relative;z-index:1;width:78px;height:60px;margin-top:86px;border-radius:22px;background:#fff;
+  box-shadow:0 16px 32px rgba(0,0,0,.22);
 }
 .jos-ah-mc-robot .chest-spark{
-  position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;
+  position:absolute;left:50%;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;
   background:var(--jos-ah-brand);clip-path:polygon(50% 0,61% 35%,100% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,0 35%,39% 35%);
 }
-.jos-ah-mc-robot .head{position:absolute;top:10px;z-index:2;display:flex;align-items:center;gap:6px}
+.jos-ah-mc-robot .head{position:absolute;top:6px;z-index:2;display:flex;align-items:center;gap:8px}
 .jos-ah-mc-robot .face{
-  width:100px;height:100px;border-radius:24px;background:#fff;
-  box-shadow:0 18px 40px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;gap:14px;position:relative;
+  width:112px;height:112px;border-radius:28px;background:#fff;
+  box-shadow:0 20px 44px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;gap:16px;position:relative;
 }
-.jos-ah-mc-robot .eye{width:12px;height:12px;border-radius:50%;background:var(--jos-ah-brand)}
+.jos-ah-mc-robot .eye{width:14px;height:14px;border-radius:50%;background:var(--jos-ah-brand)}
 .jos-ah-mc-robot .smile{
-  position:absolute;bottom:28px;width:30px;height:14px;border:3px solid var(--jos-ah-brand);border-top:0;border-radius:0 0 20px 20px;
+  position:absolute;bottom:30px;width:34px;height:16px;border:3.5px solid var(--jos-ah-brand);border-top:0;border-radius:0 0 22px 22px;
 }
-.jos-ah-mc-robot .ear{width:22px;height:22px;border-radius:50%;background:var(--jos-ah-brand)}
+.jos-ah-mc-robot .ear{width:24px;height:24px;border-radius:50%;background:var(--jos-ah-brand);box-shadow:0 6px 12px rgba(217,99,45,.35)}
 @keyframes josAhFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 
 .jos-ah-mc-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
