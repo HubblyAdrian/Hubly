@@ -1908,41 +1908,8 @@
     if (status === 'connected' || status === 'os_ready') return setStatusBadge(status === 'connected' ? 'Connected' : 'OS ready', 'ok');
     return setStatusBadge('Not connected', 'warn');
   }
-  function renderSetAskDock(root) {
-    var open = !!(root && root._josSetAskOpen);
-    var msgs = (root && Array.isArray(root._josSetAskMsgs) && root._josSetAskMsgs.length)
-      ? root._josSetAskMsgs
-      : [{ role: 'assistant', text: "I can help configure business profile, team, billing, integrations, branding, AI defaults, and security — without owning customer or job data." }];
-    var thread = msgs.map(function (m) {
-      return '<div class="jos-set-ask-msg ' + esc(m.role || 'assistant') + '">' +
-        (m.role === 'assistant' ? '<span class="role">Ask Hubly</span>' : '') +
-        '<div class="txt">' + esc(m.text || '') + '</div></div>';
-    }).join('');
-    var chips = ['Finish my business profile', 'Invite my team', 'Connect Google Calendar', 'Turn on MFA'].map(function (q) {
-      return '<button type="button" class="jos-set-ask-chip" data-jos-act="set-ask-chip" data-jos-set-ask="' + esc(q) + '">' + esc(q) + '</button>';
-    }).join('');
-    return '<div class="jos-set-ask-dock' + (open ? ' open' : '') + '" id="jos-set-ask-dock">' +
-      '<button type="button" class="jos-set-ask-fab" data-jos-act="set-ask-toggle" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="jos-set-ask-panel">' +
-        '<span class="spark" aria-hidden="true">✦</span><span>Ask Hubly</span>' +
-      '</button>' +
-      '<aside class="jos-set-ask-panel" id="jos-set-ask-panel" aria-label="Ask Hubly settings coach"' + (open ? '' : ' hidden') + '>' +
-        '<div class="jos-set-ask-head">' +
-          '<div class="jos-set-ask-brand"><img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly" onerror="this.src=\'/assets/hubly-wordmark.png\'"><strong>Settings coach</strong></div>' +
-          '<button type="button" class="jos-set-ask-x" data-jos-act="set-ask-toggle" aria-label="Close">×</button>' +
-        '</div>' +
-        '<div class="jos-set-ask-thread">' + thread + '</div>' +
-        '<div class="jos-set-ask-chips">' + chips + '</div>' +
-        '<div class="jos-set-ask-compose">' +
-          '<input id="jos-set-ask-input" type="text" placeholder="Ask about settings…" onkeydown="if(event.key===\'Enter\'){var b=document.querySelector(\'[data-jos-act=set-ask-send]\');if(b)b.click();}">' +
-          '<button type="button" class="jos-btn jos-btn-brand jos-set-ask-send" data-jos-act="set-ask-send" aria-label="Send">↗</button>' +
-        '</div>' +
-        '<button type="button" class="jos-set-ask-full" data-jos-act="set-go-ask">Open full Ask Hubly →</button>' +
-      '</aside>' +
-    '</div>';
-  }
   function renderSetOverview() {
     var os = ensureSettingsOsState();
-    var root = el('jos-settings-root');
     var city = (allowDemoSeed() && os._demoShot) ? 'Salt Lake City' : (os.business.city || os.business.name || '—');
     var teamN = (allowDemoSeed() && os._demoShot) ? 3 : (os.team.users || []).length;
     var plan = (os.billing.plan || 'Grow') + ' · ' + ((os.billing.status || 'active').replace(/^./, function (c) { return c.toUpperCase(); }));
@@ -1962,19 +1929,12 @@
         '</span></button>';
     }).join('');
     var features = [
-      'Business profile drives booking and invoices',
-      'Team roles for managers and technicians',
-      'Ask Hubly guides setup without owning ops data',
-      'Integrations stay OS-ready until Stage 2 connect'
+      'Business profile tied to owned booking',
+      'Auto-assign reminder for jobs',
+      'AI coach (Ask Hubly OS) in Stage 2',
+      'Integrations marked OS-only until Stage 2'
     ].map(function (t) {
       return '<div class="jos-set-mc-feature"><span class="mark" aria-hidden="true">✓</span><span>' + esc(t) + '</span></div>';
-    }).join('');
-    var askPreview = [
-      { q: 'What should I finish first?', a: 'Start with Business profile, then invite your team so jobs can be assigned.' },
-      { q: 'Is MFA required?', a: mfaOff ? 'MFA is currently off. Turn it on under Security for stronger account protection.' : 'MFA is on. Sessions and API keys are managed under Security.' }
-    ].map(function (row) {
-      return '<button type="button" class="jos-set-ask-preview" data-jos-act="set-ask-chip" data-jos-set-ask="' + esc(row.q) + '">' +
-        '<strong>' + esc(row.q) + '</strong><span>' + esc(row.a) + '</span></button>';
     }).join('');
     return '<div class="jos-set-mc-ov">' +
       '<div class="jos-set-mc-panel">' +
@@ -1993,18 +1953,16 @@
           '<section class="jos-set-mc-card jos-set-mc-features">' +
             '<div class="jos-set-mc-card-head"><h3><span class="jos-set-mc-hico rocket" aria-hidden="true"></span> Platform Features</h3></div>' +
             '<div class="jos-set-mc-feature-list">' + features + '</div>' +
-            '<div class="jos-set-mc-config-only">Config only — open the tabs above to edit platform settings.</div>' +
           '</section>' +
-          '<section class="jos-set-mc-card jos-set-mc-askcard" aria-label="Ask Hubly">' +
-            '<div class="jos-set-mc-card-head"><h3><span class="jos-set-mc-hico ask" aria-hidden="true"></span> Ask Hubly</h3>' +
-            '<button type="button" class="jos-set-mc-ask-open" data-jos-act="set-ask-toggle">Open chat</button></div>' +
-            '<p class="jos-set-mc-ask-lead">Your AI settings coach. Ask anything about setup — I\'ll point you to the right tab.</p>' +
-            '<div class="jos-set-ask-preview-list">' + askPreview + '</div>' +
+          '<section class="jos-set-mc-card jos-set-mc-forbidden-card">' +
+            '<div class="jos-set-mc-card-head"><h3><span class="jos-set-mc-hico lock" aria-hidden="true"></span> Forbidden Copies</h3></div>' +
+            '<p class="jos-set-mc-forbidden-copy">customers, payments, jobs, leads, campaigns, reviews, and services arrays.</p>' +
+            '<div class="jos-set-mc-config-only">Config only — open OS tabs to edit platform settings.</div>' +
           '</section>' +
         '</div>' +
         '<section class="jos-set-mc-banner">' +
           '<div class="jos-set-mc-banner-copy"><span class="spark" aria-hidden="true">✦</span><div><strong>Need help customizing your settings?</strong><p>Ask Hubly can guide you through best practices and recommended setups.</p></div></div>' +
-          '<button type="button" class="jos-btn jos-btn-brand jos-set-mc-banner-btn" data-jos-act="set-ask-toggle"><span aria-hidden="true">✦</span> Ask Hubly</button>' +
+          '<button type="button" class="jos-btn jos-btn-brand jos-set-mc-banner-btn" data-jos-act="set-go-ask"><span aria-hidden="true">✦</span> Ask Hubly</button>' +
         '</section>' +
       '</div>' +
     '</div>';
@@ -2193,7 +2151,6 @@
       '</div>' +
       setTabsHtml(tab) +
       '<div class="jos-set-mc-body">' + renderSettingsTabBody(root, tab) + '</div>' +
-      renderSetAskDock(root) +
     '</div>';
     bindRoot(root);
   }
@@ -2221,39 +2178,6 @@
     try {
       if (act === 'set-refresh') return renderSettings();
       if (act === 'set-new') { openQuickNew(); return; }
-      if (act === 'set-ask-toggle') {
-        if (root) root._josSetAskOpen = !root._josSetAskOpen;
-        return renderSettings();
-      }
-      if (act === 'set-ask-chip' || act === 'set-ask-send') {
-        if (!root) return;
-        var q = '';
-        if (act === 'set-ask-chip') q = (t && t.getAttribute('data-jos-set-ask')) || '';
-        else {
-          var inp = el('jos-set-ask-input');
-          q = inp ? String(inp.value || '').trim() : '';
-        }
-        if (!q) return toast('Ask a settings question');
-        if (!Array.isArray(root._josSetAskMsgs)) {
-          root._josSetAskMsgs = [{ role: 'assistant', text: "I can help configure business profile, team, billing, integrations, branding, AI defaults, and security — without owning customer or job data." }];
-        }
-        root._josSetAskMsgs.push({ role: 'user', text: q });
-        var lower = q.toLowerCase();
-        var reply = 'I can open the right Settings tab for that. Try Business, Team, Integrations, Branding, AI, or Security.';
-        var jump = '';
-        if (/business|profile|address|city/.test(lower)) { reply = 'Business profile owns name, address, timezone, and contact info. Opening Business…'; jump = 'business'; }
-        else if (/team|invite|user|role/.test(lower)) { reply = 'Invite teammates and set roles under Team. Opening Team…'; jump = 'team'; }
-        else if (/calendar|google|integrat|stripe|twilio/.test(lower)) { reply = 'Integrations are OS-ready until Stage 2 live connect. Opening Integrations…'; jump = 'integrations'; }
-        else if (/mfa|security|password|api/.test(lower)) { reply = 'Security covers MFA, sessions, and API keys. Opening Security…'; jump = 'security'; }
-        else if (/brand|logo|color|font/.test(lower)) { reply = 'Branding stores visual tokens only — your Website editor owns pages. Opening Branding…'; jump = 'branding'; }
-        else if (/ai|ask hubly|tone/.test(lower)) { reply = 'AI defaults control tone and confirmation behavior for Ask Hubly. Opening AI…'; jump = 'ai'; }
-        else if (/bill|plan|grow|subscription/.test(lower)) { reply = 'Platform billing (not customer invoices) lives under Billing. Opening Billing…'; jump = 'billing'; }
-        else if (/first|finish|start|setup/.test(lower)) { reply = 'Finish Business profile first, then invite your team, then connect calendar when Stage 2 is ready.'; jump = 'business'; }
-        root._josSetAskMsgs.push({ role: 'assistant', text: reply });
-        root._josSetAskOpen = true;
-        if (jump) root._josSetTab = jump;
-        return renderSettings();
-      }
       if (act.indexOf('set-tab-') === 0) {
         if (root) root._josSetTab = act.replace('set-tab-', '');
         return renderSettings();
@@ -2498,7 +2422,9 @@
     var revN = (S().website?.manualReviews || S().manualReviews || []).length;
     var done = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).length;
     var custN = customers().length;
-    return Math.max(50, Math.min(90, 50 + Math.min(12, revN * 3) + Math.min(16, done * 2) + Math.min(12, custN)));
+    if (!allowDemoSeed() && !revN && !done && !custN) return 0;
+    var base = allowDemoSeed() ? 50 : 0;
+    return Math.max(base, Math.min(90, base + Math.min(12, revN * 3) + Math.min(16, done * 2) + Math.min(12, custN)));
   }
 
   function sparkHtml(vals) {
@@ -2682,14 +2608,15 @@
   function renderMktOverviewTab(root) {
     var m = ensureMarketingOsState();
     var a = m.analytics || {};
-    var score = Number(m.score != null ? m.score : marketingScore()) || 91;
-    var clicks = a.websiteClicks != null ? a.websiteClicks : 48;
-    var newCust = a.newCustomers != null ? a.newCustomers : 7;
+    var demo = allowDemoSeed();
+    var score = Number(m.score != null ? m.score : marketingScore()) || (demo ? 91 : 0);
+    var clicks = a.websiteClicks != null ? a.websiteClicks : (demo ? 48 : 0);
+    var newCust = a.newCustomers != null ? a.newCustomers : (demo ? 7 : 0);
     var mktRev = a.attributedRevenue != null ? a.attributedRevenue : 0;
     var activeN = m.campaigns.filter(function (c) { return c.status === 'running' || c.status === 'active'; }).length;
-    var emailRate = a.emailOpenRate != null ? a.emailOpenRate : 42;
-    var igRate = a.instagramEngagement != null ? a.instagramEngagement : 6.8;
-    var hist = a.scoreHistory || [72, 78, 81, 84, 88, 90, score];
+    var emailRate = a.emailOpenRate != null ? a.emailOpenRate : (demo ? 42 : 0);
+    var igRate = a.instagramEngagement != null ? a.instagramEngagement : (demo ? 6.8 : 0);
+    var hist = a.scoreHistory || (demo ? [72, 78, 81, 84, 88, 90, score] : [0, 0, 0, 0, 0, 0, score]);
     var range = root._josMktRange || 'Last 30 days';
     var rangeOpen = !!root._josMktRangeOpen;
 
@@ -2697,16 +2624,16 @@
       '<div class="jos-mkt-mc-kpis">' +
       '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-score">' +
         '<span class="lbl">Marketing Score</span>' + mktScoreRing(score) +
-        '<span class="status">Excellent</span>' + mktSparklineSvg(hist, '#D9632D') +
+        '<span class="status">' + (score >= 80 ? 'Excellent' : (score >= 50 ? 'Building' : 'Getting started')) + '</span>' + mktSparklineSvg(hist, '#D9632D') +
       '</button>' +
       '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-clicks">' +
         '<span class="lbl">Website Clicks</span><strong>' + esc(String(clicks)) + '</strong>' +
-        '<span class="delta up">+ ' + esc(String(a.websiteClicksDelta != null ? a.websiteClicksDelta : 24)) + '%</span>' +
+        '<span class="delta' + (clicks ? ' up' : ' muted') + '">' + (clicks ? ('+ ' + esc(String(a.websiteClicksDelta != null ? a.websiteClicksDelta : (demo ? 24 : 0))) + '%') : '—') + '</span>' +
         mktSparklineSvg([28, 32, 36, 40, 44, 46, clicks], '#16a34a') +
       '</button>' +
       '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-customers">' +
         '<span class="lbl">New Customers</span><strong>' + esc(String(newCust)) + '</strong>' +
-        '<span class="delta up">↑ ' + esc(String(a.newCustomersDelta != null ? a.newCustomersDelta : 16)) + '%</span>' +
+        '<span class="delta' + (newCust ? ' up' : ' muted') + '">' + (newCust ? ('↑ ' + esc(String(a.newCustomersDelta != null ? a.newCustomersDelta : (demo ? 16 : 0))) + '%') : '—') + '</span>' +
         mktSparklineSvg([2, 3, 4, 5, 5, 6, newCust], '#16a34a') +
       '</button>' +
       '<button type="button" class="jos-mkt-mc-kpi" data-jos-act="mkt-kpi-revenue">' +
@@ -3374,24 +3301,42 @@
     var r = st.reviewsOs;
     if (!r._seeded) {
       r.reviews = seedReviewsFromLegacy();
-      r.requests = [
-        { id: revId('rev_req'), customerId: null, jobId: null, status: 'pending', channel: 'sms', createdAt: todayStr(), method: 'sms', sent: false, opened: false, clicked: false, completed: false, reminders: 0 },
-        { id: revId('rev_req'), customerId: null, jobId: null, status: 'sent', channel: 'email', createdAt: todayStr(), method: 'email', sent: true, opened: true, clicked: true, completed: true, reminders: 1 }
-      ];
-      r.platforms = {
-        google: { connected: true, reviews: 32, rating: 4.9, lastSync: '2h ago' },
-        facebook: { connected: true, reviews: 14, rating: 5.0, lastSync: '2h ago' },
-        yelp: { connected: false, reviews: 0, rating: 0, lastSync: '—' },
-        website: { connected: true, reviews: 6, rating: 4.8, lastSync: '1d ago' },
-        hubly: { connected: true, reviews: 4, rating: 5.0, lastSync: 'Live' }
-      };
-      r.goals = [
-        { id: 'g1', label: '100 Reviews', current: 75, target: 100 },
-        { id: 'g2', label: '5.0 Rating', current: 98, target: 100 },
-        { id: 'g3', label: '100% Response Rate', current: 98, target: 100 }
-      ];
-      r.growthHistory = [12, 18, 22, 28, 35, 42, 48, 52, 56];
-      r.requestStats = { sent: 122, completed: 87, conversionPct: 71, deltaPct: 18 };
+      if (allowDemoSeed()) {
+        r.requests = [
+          { id: revId('rev_req'), customerId: null, jobId: null, status: 'pending', channel: 'sms', createdAt: todayStr(), method: 'sms', sent: false, opened: false, clicked: false, completed: false, reminders: 0 },
+          { id: revId('rev_req'), customerId: null, jobId: null, status: 'sent', channel: 'email', createdAt: todayStr(), method: 'email', sent: true, opened: true, clicked: true, completed: true, reminders: 1 }
+        ];
+        r.platforms = {
+          google: { connected: true, reviews: 32, rating: 4.9, lastSync: '2h ago' },
+          facebook: { connected: true, reviews: 14, rating: 5.0, lastSync: '2h ago' },
+          yelp: { connected: false, reviews: 0, rating: 0, lastSync: '—' },
+          website: { connected: true, reviews: 6, rating: 4.8, lastSync: '1d ago' },
+          hubly: { connected: true, reviews: 4, rating: 5.0, lastSync: 'Live' }
+        };
+        r.goals = [
+          { id: 'g1', label: '100 Reviews', current: 75, target: 100 },
+          { id: 'g2', label: '5.0 Rating', current: 98, target: 100 },
+          { id: 'g3', label: '100% Response Rate', current: 98, target: 100 }
+        ];
+        r.growthHistory = [12, 18, 22, 28, 35, 42, 48, 52, 56];
+        r.requestStats = { sent: 122, completed: 87, conversionPct: 71, deltaPct: 18 };
+      } else {
+        r.requests = Array.isArray(r.requests) ? r.requests : [];
+        r.platforms = {
+          google: { connected: false, reviews: 0, rating: 0, lastSync: '—' },
+          facebook: { connected: false, reviews: 0, rating: 0, lastSync: '—' },
+          yelp: { connected: false, reviews: 0, rating: 0, lastSync: '—' },
+          website: { connected: true, reviews: 0, rating: 0, lastSync: '—' },
+          hubly: { connected: true, reviews: 0, rating: 0, lastSync: 'Live' }
+        };
+        r.goals = [
+          { id: 'g1', label: '100 Reviews', current: 0, target: 100 },
+          { id: 'g2', label: '5.0 Rating', current: 0, target: 100 },
+          { id: 'g3', label: '100% Response Rate', current: 0, target: 100 }
+        ];
+        r.growthHistory = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        r.requestStats = { sent: 0, completed: 0, conversionPct: 0, deltaPct: 0 };
+      }
       r._seeded = true;
     }
     if (!Array.isArray(r.reviews)) r.reviews = [];
@@ -3399,8 +3344,8 @@
     if (!Array.isArray(r.replies)) r.replies = [];
     if (!r.platforms) r.platforms = REV_PLATFORM_META;
     if (!r.goals) r.goals = [];
-    if (!r.growthHistory) r.growthHistory = [12, 18, 22, 28, 35, 42, 48, 52, 56];
-    if (!r.requestStats) r.requestStats = { sent: 122, completed: 87, conversionPct: 71, deltaPct: 18 };
+    if (!r.growthHistory) r.growthHistory = allowDemoSeed() ? [12, 18, 22, 28, 35, 42, 48, 52, 56] : [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    if (!r.requestStats) r.requestStats = { sent: 0, completed: 0, conversionPct: 0, deltaPct: 0 };
     r.reviews = r.reviews.map(function (x) { return normalizeReview(x); }).filter(Boolean);
     r.analytics = recalcReviewsAnalytics(r.reviews);
     if (!r.aiSummary) r.aiSummary = buildReviewsAiSummary(r.reviews);
@@ -8314,7 +8259,7 @@
     }
     var last = lastJob(c);
     var next = nextJob(c);
-    var ltv = custLifetime(c) || 650;
+    var ltv = custLifetime(c) || (allowDemoSeed() ? 650 : 0);
     var jobsAll = custJobsFor(c);
     var done = jobsAll.filter(function (j) { return j.status === 'completed'; });
     var ai = custAiInsights(c);
@@ -8421,7 +8366,7 @@
     if (!c) {
       return '<aside class="jos-cm-rail"><div class="jos-cm-widget"><div class="jos-muted">Select a customer to see value, tags, and satisfaction.</div></div></aside>';
     }
-    var ltv = custLifetime(c) || 650;
+    var ltv = custLifetime(c) || (allowDemoSeed() ? 650 : 0);
     var jobsN = Math.max(1, custJobsFor(c).length || 2);
     var avg = Math.round(ltv / jobsN);
     var next = nextJob(c);
@@ -11050,7 +10995,7 @@
     }
     var bell = document.querySelector('.jos-bar-bell');
     if (bell) {
-      bell.setAttribute('data-count', String((notifs && notifs.length) || 6));
+      bell.setAttribute('data-count', String((notifs && notifs.length) || 0));
       if (!bell._josWired) {
         bell._josWired = true;
         bell.addEventListener('click', function (e) {
@@ -11352,9 +11297,9 @@
     var leadCount = all.filter(function (c) { return !c.archived && c.isLead; }).length;
     var today = todayStr();
     var jobsToday = jobs().filter(function (j) { return !j.isBlock && j.date === today && j.status !== 'cancelled'; }).length;
-    var revToday = jobs().filter(function (j) { return j.status === 'completed' && j.date === today; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) || 2480;
-    var pendingQuotes = quotes().filter(function (q) { return q.status === 'sent' || q.status === 'draft'; }).length || 4;
-    var rating = Number(S().website && S().website.reviewRating) || 4.9;
+    var revToday = jobs().filter(function (j) { return j.status === 'completed' && j.date === today; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    var pendingQuotes = quotes().filter(function (q) { return q.status === 'sent' || q.status === 'draft'; }).length;
+    var rating = Number(S().website && S().website.reviewRating) || 0;
 
     var tabsHtml = '<div class="jos-ibx-filters" role="tablist">' + INBOX_TABS.map(function (t) {
       var count = inboxTabCount(all, t[0]);
@@ -11624,13 +11569,13 @@
       ['inbox-kpi-open', openCount, 'Open Conversations', '◎'],
       ['inbox-kpi-unread', unreadCount, 'Unread', '✉'],
       ['inbox-kpi-leads', leadCount, 'New Leads', '◎'],
-      ['inbox-kpi-jobs', jobsToday || 6, 'Jobs Today', '✓'],
-      ['inbox-kpi-revenue', money(revToday), 'Revenue Today', '$'],
+      ['inbox-kpi-jobs', jobsToday, 'Jobs Today', '✓'],
+      ['inbox-kpi-revenue', money(revToday || 0), 'Revenue Today', '$'],
       ['inbox-kpi-quotes', pendingQuotes, 'Pending Quotes', '☰'],
-      ['inbox-kpi-conversion', '38%', 'Conversion Rate', '%'],
-      ['inbox-kpi-response', '2m 31s', 'Response Time', '⏱'],
-      ['inbox-kpi-missed', 1, 'Missed Calls', '☎'],
-      ['inbox-kpi-reviews', rating.toFixed(1) + '★', 'Review Score', '★']
+      ['inbox-kpi-conversion', allowDemoSeed() ? '38%' : '—', 'Conversion Rate', '%'],
+      ['inbox-kpi-response', allowDemoSeed() ? '2m 31s' : '—', 'Response Time', '⏱'],
+      ['inbox-kpi-missed', allowDemoSeed() ? 1 : 0, 'Missed Calls', '☎'],
+      ['inbox-kpi-reviews', (rating ? rating.toFixed(1) + '★' : '—'), 'Review Score', '★']
     ];
     var dock =
       '<footer class="jos-ibx-dock' + (dockCollapsed ? ' collapsed' : '') + '">' +
@@ -12482,7 +12427,7 @@
     var inProgress = all.filter(function (j) { return j.status === 'in_progress' || j.status === 'paused' || j.status === 'running'; }).length;
     var scheduled = all.filter(function (j) { return ['scheduled', 'pending', 'confirmed'].indexOf(j.status) > -1; }).length;
     var revenue = all.filter(function (j) { return j.status === 'completed'; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    if (!revenue) revenue = all.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) * 0.55 || 6840;
+    if (!revenue) revenue = all.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
 
     var services = Array.from(new Set(all.map(function (j) { return j.service; }).filter(Boolean)));
     var locations = Array.from(new Set(all.map(function (j) { return (j.address || '').split(',')[0]; }).filter(Boolean)));
@@ -12613,11 +12558,11 @@
         '</aside>' : '') +
 
       '<section class="jos-jobs-kpis">' +
-      [['jobs-kpi-all', 'Total Jobs', total || 24, 'briefcase', 'brand', '+12%'],
-        ['jobs-kpi-completed', 'Completed', completed || 16, 'check', 'ok', '+8%'],
-        ['jobs-kpi-progress', 'In Progress', inProgress || 4, 'clock', 'warn', 'Active'],
-        ['jobs-kpi-scheduled', 'Scheduled', scheduled || 10, 'cal', 'info', 'Next 7d'],
-        ['jobs-kpi-revenue', 'Revenue', money(revenue) || '$6,840', 'dollar', 'blue', '+18%']].map(function (k) {
+      [['jobs-kpi-all', 'Total Jobs', total, 'briefcase', 'brand', total ? '' : '—'],
+        ['jobs-kpi-completed', 'Completed', completed, 'check', 'ok', completed ? '' : '—'],
+        ['jobs-kpi-progress', 'In Progress', inProgress, 'clock', 'warn', inProgress ? 'Active' : '—'],
+        ['jobs-kpi-scheduled', 'Scheduled', scheduled, 'cal', 'info', scheduled ? 'Next 7d' : '—'],
+        ['jobs-kpi-revenue', 'Revenue', money(revenue || 0), 'dollar', 'blue', revenue ? '' : '—']].map(function (k) {
         return '<button type="button" class="jos-jobs-kpi tone-' + k[4] + '" data-jos-act="' + k[0] + '">' +
           '<span class="jos-jobs-kpi-ico" aria-hidden="true">' + jobKpiIcon(k[3]) + '</span>' +
           '<span><span class="lbl">' + esc(k[1]) + '</span><strong>' + esc(String(k[2])) + '</strong><span class="trend">' + esc(k[5]) + '</span></span></button>';
@@ -13475,15 +13420,21 @@
   }
   function onSwitchView(v) {
     updateChrome(v);
+    // Always reset Operate chrome modes so leftover classes cannot leave a huge left gap
+    // or force a different sidebar width when switching pages.
     setPipelineMode(v === 'pipeline');
     setJobsMode(v === 'jobs');
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');
-<<<<<<< HEAD
-    setStorefrontMode(false);
-=======
+    setCustomersMode(v === 'customers');
+    setMarketingMode(v === 'marketing');
+    setReviewsMode(v === 'reviews');
+    setMembershipsMode(v === 'memberships');
+    setRevenueMode(v === 'money');
+    setReportsMode(v === 'reports');
+    setAskHublyMode(v === 'ask' || v === 'ask-hubly');
     setSettingsMode(v === 'settings');
->>>>>>> d08997b (fix(operate): lock Settings Overview to Mission Control screenshot)
+    setStorefrontMode(false);
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
