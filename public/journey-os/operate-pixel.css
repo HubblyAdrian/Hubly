@@ -871,13 +871,29 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 .jos-pipe-col-body{padding:8px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1}
 .jos-pipe-col.drop-target{outline:2px dashed rgba(217,99,45,.45);background:rgba(217,99,45,.06)}
 .jos-pipe-card.on{border-color:var(--jos-brand);box-shadow:0 0 0 2px rgba(217,99,45,.2)}
-.jos-pipe-dot.lead{background:#f59e0b}
-.jos-pipe-dot.qualified{background:#8b5cf6}
 .jos-pipe-dot.quote{background:var(--jos-brand)}
+.jos-pipe-dot.incomplete,.jos-pipe-dot.qualified{background:#8b5cf6}
 .jos-pipe-dot.booked{background:#2563eb}
 .jos-pipe-dot.completed{background:#16a34a}
+.jos-pipe-dot.lead{background:#f59e0b}
 .jos-pipe-dot.review{background:#0d9488}
 .jos-pipe-dot.membership{background:#0f766e}
+.jos-pk-stage-tabs{
+  display:none;gap:6px;margin:0 0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  padding-bottom:2px;flex-shrink:0;
+}
+.jos-pk-stage-tab{
+  appearance:none;border:1px solid var(--jos-border);background:#fff;border-radius:999px;
+  padding:8px 12px;font:inherit;font-size:12px;font-weight:750;color:var(--jos-ink-2);
+  white-space:nowrap;cursor:pointer;flex:0 0 auto;
+}
+.jos-pk-stage-tab em{font-style:normal;opacity:.7;margin-left:4px}
+.jos-pk-stage-tab.on{border-color:rgba(217,99,45,.5);background:var(--jos-brand-soft);color:var(--jos-brand)}
+.jos-pk-field{display:grid;gap:4px;font-size:11px;font-weight:700;color:var(--jos-ink-2);margin-bottom:10px}
+.jos-pk-field input,.jos-pk-field textarea{
+  border:1px solid var(--jos-border);border-radius:10px;padding:9px 11px;font:inherit;font-size:13px;font-weight:550;color:var(--jos-navy);
+}
+.jos-pk-field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .jos-pipe-detail{
   background:#fff;border:1px solid var(--jos-border);border-radius:14px;
   padding:14px 16px;position:sticky;top:12px;max-height:72vh;overflow:auto;
@@ -994,9 +1010,10 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 }
 .jos-pk-main{flex:1 1 75%;min-width:0;display:flex;flex-direction:column;gap:12px}
 .jos-pk-board{
-  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;
   overflow-x:hidden;padding-bottom:4px;align-items:stretch;width:100%;max-width:100%;
 }
+.jos-pk-board-4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .jos-pk-col{
   background:#F5F7FA;border-radius:20px;display:flex;flex-direction:column;
   min-height:520px;max-height:680px;border:1px solid rgba(230,232,236,.7);
@@ -1151,19 +1168,27 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 @media(max-width:1200px){
   .jos-pk-layout{flex-direction:column}
   .jos-pk-ws{flex:none;width:100%;position:relative;top:0;max-height:none}
-  .jos-pk-board{grid-template-columns:repeat(5,minmax(220px,280px))}
+  .jos-pk-board,.jos-pk-board-4{grid-template-columns:repeat(4,minmax(200px,1fr));overflow-x:auto}
   .jos-pk-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:768px){
   #p-app.jos-pixel.jos-pipeline-mode{--nav:0px}
   #p-app.jos-pixel.jos-pipeline-mode .app-nav{transform:translateX(-100%)}
   #p-app.jos-pixel.jos-pipeline-mode .app-main{margin-left:0}
-  .jos-pk-shell{padding:16px}
-  .jos-pk-header{flex-direction:column;min-height:0}
-  .jos-pk-header h1{font-size:26px}
-  .jos-pk-kpis{grid-template-columns:1fr}
-  .jos-pk-board{grid-template-columns:1fr;overflow:visible}
+  .jos-pk-shell{padding:12px;height:auto;min-height:100vh;max-height:none;overflow:auto}
+  .jos-pk-header{flex-direction:column;min-height:0;gap:12px;margin-bottom:10px}
+  .jos-pk-header h1{font-size:24px}
+  .jos-pk-header p{font-size:13px}
+  .jos-pk-header-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .jos-pk-add,.jos-pk-bulk{width:100%;height:44px}
+  .jos-pk-stage-tabs{display:flex}
+  .jos-pk-kpis{display:none}
+  .jos-pk-board,.jos-pk-board-4{grid-template-columns:1fr;overflow:visible}
   .jos-pk-col{max-height:none;min-height:0}
+  .jos-pk-card{max-width:none}
+  .jos-pk-tip{display:none}
+  .jos-pk-ws{border-radius:16px;padding:16px;position:relative;top:0;max-height:none}
+  .jos-pk-ws-name{font-size:22px}
 }
 
 /* Storefront OS */

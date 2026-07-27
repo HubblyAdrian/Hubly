@@ -6,16 +6,14 @@
 (function (global) {
   'use strict';
 
+  /* Pipeline = quotes → jobs only (Leads stay on Leads). */
   var PIPE_STAGES = [
-    { id: 'lead', label: 'Lead', dot: 'lead', tone: 'blue' },
-    { id: 'qualified', label: 'Qualified', dot: 'qualified', tone: 'purple' },
-    { id: 'quote', label: 'Quote', dot: 'quote', tone: 'orange' },
+    { id: 'quote', label: 'Quotes', dot: 'quote', tone: 'orange' },
+    { id: 'incomplete', label: 'Incomplete', dot: 'qualified', tone: 'purple' },
     { id: 'booked', label: 'Booked', dot: 'booked', tone: 'green' },
-    { id: 'completed', label: 'Completed', dot: 'completed', tone: 'gray' },
-    { id: 'review', label: 'Review', dot: 'review', tone: 'gray' },
-    { id: 'membership', label: 'Membership', dot: 'membership', tone: 'green' }
+    { id: 'completed', label: 'Complete', dot: 'completed', tone: 'gray' }
   ];
-  var PIPE_BOARD_STAGES = PIPE_STAGES.slice(0, 5);
+  var PIPE_BOARD_STAGES = PIPE_STAGES.slice();
   var PROFILE_TABS = ['Overview', 'Timeline', 'Jobs', 'Payments', 'Photos', 'Messages', 'Membership', 'Reviews', 'Documents', 'Notes'];
   var ASK_CHIPS = ['How did I do this week?', 'Show me my top leads', "What's affecting my revenue?", 'Summarize my reviews', 'Recover abandoned bookings'];
     var POPULAR_ASKS = [
@@ -154,14 +152,15 @@
 
   function ensurePipelineOsState() {
     var st = S();
-    if (!st.pipeline) st.pipeline = { manual: [], stages: {} };
+    if (!st.pipeline) st.pipeline = { manual: [], stages: {}, edits: {} };
     if (!st.pipeline.stages) st.pipeline.stages = {};
+    if (!st.pipeline.edits) st.pipeline.edits = {};
     if (!Array.isArray(st.pipeline.manual)) st.pipeline.manual = [];
   }
 
   function pipeStageLabel(id) {
     var st = PIPE_STAGES.find(function (s) { return s.id === id; });
-    return st ? st.label : (id || 'Lead');
+    return st ? st.label : (id || 'Quotes');
   }
 
   function pipeStageIndex(id) {
@@ -169,10 +168,10 @@
   }
 
   function getCardStageId(card) {
-    if (!card) return 'lead';
+    if (!card) return 'quote';
     var st = S();
     if (st.pipeline && st.pipeline.stages && st.pipeline.stages[card.id]) return st.pipeline.stages[card.id];
-    return card.stageId || 'lead';
+    return card.stageId || 'quote';
   }
 
   function setCardStageId(cardId, stageId) {
@@ -194,53 +193,54 @@
     return out;
   }
 
+  function mapQuoteStage(q) {
+    var st = String((q && (q.status || q.quoteStatus)) || 'draft').toLowerCase();
+    if (/incomplete|abandon|expir|declin|stale|lost|cancel/.test(st)) return 'incomplete';
+    if (/book|won|accept|schedul/.test(st)) return 'booked';
+    if (/complete|done|paid|closed/.test(st)) return 'completed';
+    if (/draft|sent|open|pending|new|quote/.test(st) || !st) return 'quote';
+    return 'incomplete';
+  }
+
   function mapLeadStage(lead) {
+    /* Leads are not pipeline cards; keep helper for any legacy callers. */
     var stage = String(lead.stage || '').toLowerCase(), role = '';
     try { if (typeof global.leadStageById === 'function') role = global.leadStageById(lead.stage)?.role || ''; } catch (e) {}
-    if (lead.source === 'membership' || lead.isMembershipSignup || stage === 'membership') return 'membership';
-    if (stage === 'review' || lead.reviewRequested || lead.needsReview) return 'review';
-    if (role === 'won' || stage === 'won' || stage === 'booked') {
-      var match = jobs().find(function (j) { return j.customer === lead.name || (lead.phone && j.phone === lead.phone); });
-      if (match && match.status === 'completed') return match.reviewRequested ? 'review' : 'completed';
-      return 'booked';
-    }
-    if (stage === 'completed') return lead.reviewRequested ? 'review' : 'completed';
-    if (lead.aiQualified || stage === 'qualified') return 'qualified';
+    if (role === 'won' || stage === 'won' || stage === 'booked') return 'booked';
+    if (stage === 'completed') return 'completed';
+    if (stage === 'incomplete' || lead.source === 'abandoned') return 'incomplete';
     if (role === 'quote' || stage === 'quote_sent' || /quote/.test(stage) || lead.quoteStatus) return 'quote';
-    if (lead.isReturning || lead.isRecurring) return 'qualified';
-    if (stage === 'incomplete' || lead.source === 'abandoned') return 'lead';
-    return 'lead';
+    return 'quote';
   }
 
   function boardStageId(card) {
     var sid = getCardStageId(card);
-    if (sid === 'review' || sid === 'membership') return 'completed';
+    if (sid === 'lead' || sid === 'qualified' || sid === 'review' || sid === 'membership') {
+      if (sid === 'review' || sid === 'membership') return 'completed';
+      return 'quote';
+    }
+    if (sid === 'incomplete_quote') return 'incomplete';
     return sid;
   }
 
   function pipeStatusTag(card) {
-    var sid = getCardStageId(card);
+    var sid = boardStageId(card);
     var tags = pipeCardTags(card);
     if (tags.length) return String(tags[0]);
-    if (sid === 'lead') return 'New';
-    if (sid === 'qualified') return 'Follow up';
-    if (sid === 'quote') return 'Quoted';
+    if (sid === 'quote') return 'Quote';
+    if (sid === 'incomplete') return 'Incomplete';
     if (sid === 'booked') return 'Booked';
-    if (sid === 'completed') return 'Done';
+    if (sid === 'completed') return 'Complete';
     return pipeStageLabel(sid);
   }
 
   function demoPipelineCards() {
     return [
-      { id: 'd1', stageId: 'lead', name: 'Alex Rivera', source: 'website', service: 'Interior Detail', amount: 250, phone: '(619) 555-0101', email: 'alex@email.com', tags: ['New Lead', 'Exterior', 'Weekend', 'High Intent'], owner: 'Adrian', createdAt: '2025-05-18' },
-      { id: 'd2', stageId: 'lead', name: 'Sam Chen', source: 'google', service: 'Exterior Wash', vehicle: 'SUV', amount: 89, phone: '(619) 555-0102', tags: ['New'], owner: 'Adrian' },
-      { id: 'd3', stageId: 'lead', name: 'Jordan Lee', source: 'instagram', service: 'Full Detail + Wax', vehicle: 'Sedan', amount: 349, tags: ['Weekend'], owner: 'Adrian' },
-      { id: 'd8', stageId: 'lead', name: 'Taylor Smith', source: 'facebook', service: 'Mobile Detail', amount: 339, tags: ['New Lead'], owner: 'Adrian' },
-      { id: 'd9', stageId: 'qualified', name: 'Chris Martin', source: 'website', service: 'Ceramic Coating', amount: 899, tags: ['High Intent'], owner: 'Adrian' },
-      { id: 'd10', stageId: 'qualified', name: 'Jamie Wilson', source: 'referral', service: 'Paint Correction', amount: 599, tags: ['Follow up'], owner: 'Adrian' },
-      { id: 'd11', stageId: 'quote', name: 'Casey Brown', source: 'hubly', service: 'Interior + Ceramic', amount: 1250, tags: ['Quoted'], owner: 'Adrian' },
+      { id: 'd11', stageId: 'quote', name: 'Casey Brown', source: 'hubly', service: 'Interior + Ceramic', amount: 1250, phone: '(619) 555-0111', tags: ['Quoted'], owner: 'Adrian', date: todayStr() },
       { id: 'd12', stageId: 'quote', name: 'Morgan Davis', source: 'google', service: 'Full Detail', amount: 1000, tags: ['Quoted'], owner: 'Adrian' },
-      { id: 'd4', stageId: 'booked', name: 'Test', source: 'hubly', service: 'Mobile detail', date: todayStr(), amount: 179, tags: ['Booked'], owner: 'Adrian' }
+      { id: 'd13', stageId: 'incomplete', name: 'Riley Park', source: 'website', service: 'Exterior Wash', amount: 120, tags: ['Incomplete'], owner: 'Adrian' },
+      { id: 'd4', stageId: 'booked', name: 'Test', source: 'hubly', service: 'Exterior Window Cleaning', date: todayStr(), time: '09:00', amount: 179, tags: ['Booked'], owner: 'Adrian' },
+      { id: 'd14', stageId: 'completed', name: 'Alex Rivera', source: 'hubly', service: 'Interior Detail', amount: 250, date: todayStr(), tags: ['Complete'], owner: 'Adrian' }
     ];
   }
 
@@ -254,25 +254,45 @@
     });
   }
 
+  function applyPipelineEdits(card) {
+    ensurePipelineOsState();
+    var edits = (S().pipeline.edits && S().pipeline.edits[card.id]) || null;
+    if (!edits) return card;
+    ['service', 'amount', 'date', 'time', 'notes', 'phone', 'email', 'address', 'name'].forEach(function (k) {
+      if (edits[k] != null && edits[k] !== '') card[k] = edits[k];
+    });
+    return card;
+  }
+
   function buildPipelineCards() {
     var cards = [];
-    pipelineLeadSource().forEach(function (lead) {
-      cards.push({ id: lead.key || lead.id, leadKey: lead.key || lead.id, customerId: lead.matchedCustomer?.id || null, stageId: mapLeadStage(lead), name: lead.name || 'Lead', source: srcKind(lead.source, lead), service: lead.service || '', vehicle: vehicleOf(lead), amount: lead.amount, date: lead.date || (lead.createdAt ? String(lead.createdAt).slice(0, 10) : ''), phone: lead.phone || '', email: lead.email || '', meta: lead });
-    });
+    /* Quotes + jobs only — raw leads live on the Leads page. */
     quotes().forEach(function (q) {
-      if (!q || q.status === 'booked') return;
+      if (!q) return;
+      var qSt = String(q.status || '').toLowerCase();
+      if (qSt === 'booked' || qSt === 'accepted') return;
       var id = 'sq:' + (q.id || Math.random().toString(36).slice(2, 7));
       if (cards.some(function (c) { return c.id === id; })) return;
-      cards.push({ id: id, quoteId: q.id, stageId: 'quote', name: q.customerName || 'Quote', source: 'quote', service: (q.packageNames && q.packageNames[0]) || 'Smart Quote', vehicle: vehicleOf(q), amount: q.amount, date: (q.updatedAt || q.createdAt || '').slice(0, 10), meta: q });
+      cards.push(applyPipelineEdits({
+        id: id, quoteId: q.id, stageId: mapQuoteStage(q),
+        name: q.customerName || q.name || 'Quote', source: 'quote',
+        service: (q.packageNames && q.packageNames[0]) || q.service || 'Quick Quote',
+        vehicle: vehicleOf(q), amount: q.amount, date: (q.date || q.updatedAt || q.createdAt || '').toString().slice(0, 10),
+        time: q.time || '', phone: q.phone || q.customerPhone || '', email: q.email || q.customerEmail || '',
+        notes: q.notes || '', address: q.address || '', meta: q
+      }));
     });
     jobs().filter(jobActive).forEach(function (j) {
-      var stageId = j.status === 'completed' ? (j.reviewRequested ? 'review' : 'completed') : 'booked';
-      if (j.isMembershipSignup || /membership/i.test(String(j.service || ''))) stageId = 'membership';
-      else {
-        var cust = customers().find(function (c) { return c.name === j.customer || (j.phone && c.phone === j.phone); });
-        if (cust && (cust.customerType === 'recurring' || cust.isReturning) && j.status !== 'completed') stageId = 'membership';
-      }
-      cards.push({ id: 'job:' + (j.id || j.reqId), jobId: j.id, customerId: (customers().find(function (c) { return c.name === j.customer; }) || {}).id || null, customerName: j.customer, stageId: stageId, name: j.customer || 'Customer', source: j.fromBooking ? 'hubly' : srcKind(j.source, j), service: j.service || '', vehicle: vehicleOf(j), amount: j.amount, date: j.date || '', meta: j });
+      var stageId = (j.status === 'completed' || j.status === 'done') ? 'completed' : 'booked';
+      cards.push(applyPipelineEdits({
+        id: 'job:' + (j.id || j.reqId), jobId: j.id,
+        customerId: (customers().find(function (c) { return c.name === j.customer; }) || {}).id || null,
+        customerName: j.customer, stageId: stageId, name: j.customer || 'Customer',
+        source: j.fromBooking ? 'hubly' : srcKind(j.source, j),
+        service: j.service || '', vehicle: vehicleOf(j), amount: j.amount,
+        date: j.date || '', time: j.time || '', phone: j.phone || '', email: j.email || '',
+        notes: j.notes || '', address: j.address || '', meta: j
+      }));
     });
     cards.forEach(function (c) { c.stageId = getCardStageId(c); });
     return cards.length ? cards : (allowDemoSeed() ? demoPipelineCards() : []);
@@ -280,12 +300,13 @@
 
   function pipeCardMetaBits(card) {
     var bits = [];
-    var sid = getCardStageId(card);
-    if (sid === 'quote' || sid === 'lead' || sid === 'qualified') {
+    var sid = boardStageId(card);
+    if (sid === 'quote' || sid === 'incomplete') {
       if (card.service) bits.push(card.service);
       if (card.vehicle) bits.push(card.vehicle);
-    } else if (sid === 'booked' || sid === 'completed' || sid === 'review') {
+    } else if (sid === 'booked' || sid === 'completed') {
       if (card.date) bits.push(String(card.date).length === 10 ? dateLong(card.date) : card.date);
+      if (card.time) bits.push(String(card.time).slice(0, 5));
       if (card.service) bits.push(card.service);
     } else {
       if (card.service) bits.push(card.service);
@@ -322,8 +343,9 @@
       if (f.valueMax && amt > Number(f.valueMax)) return false;
       if (root._josPipeOpenOnly) {
         var i = pipeStageIndex(boardStageId(c));
-        if (!(i >= 0 && i < 4)) return false;
+        if (!(i >= 0 && i < 3)) return false;
       }
+      if (root._josPipeMobileStage && boardStageId(c) !== root._josPipeMobileStage) return false;
       if (tag) {
         var tags = pipeCardTags(c).map(function (x) { return String(x).toLowerCase(); });
         if (tags.indexOf(String(tag).toLowerCase()) < 0 && String(pipeStatusTag(c)).toLowerCase() !== String(tag).toLowerCase()) return false;
@@ -357,15 +379,12 @@
 
   function pipeAiBody(card) {
     if (!card) return 'Select a deal to see AI next steps.';
-    var sid = getCardStageId(card);
+    var sid = boardStageId(card);
     var map = {
-      lead: 'Quality lead with consistent service interest. Likely interested in premium protection add-ons. Recommend a same-week slot.',
-      qualified: 'High intent. Send a clear package quote with good / better / best options. Likely to close within 48 hours.',
-      quote: 'Quote outstanding. Follow up within 24h and hold the mid-tier package.',
+      quote: 'Quote outstanding. Follow up within 24h — confirm job type, price, and a same-week slot.',
+      incomplete: 'Incomplete quote. Finish the package, price, and time so they can book.',
       booked: 'Confirm details and suggest one add-on before the job.',
-      completed: 'Ask for a review while the experience is fresh. Suggest membership.',
-      review: 'Send a short review link and thank-you note.',
-      membership: 'Pitch recurring value — priority scheduling and member pricing.'
+      completed: 'Ask for a review while the experience is fresh. Suggest membership.'
     };
     return map[sid] || 'Move this deal forward with a personal follow-up.';
   }
@@ -394,27 +413,40 @@
 
   function renderPipelineKpis(cards) {
     var totalVal = cards.reduce(function (s, c) { return s + (Number(c.amount) || 0); }, 0);
-    var open = cards.filter(function (c) { var i = pipeStageIndex(boardStageId(c)); return i >= 0 && i < 4; }).length;
+    var open = cards.filter(function (c) { var i = pipeStageIndex(boardStageId(c)); return i >= 0 && i < 3; }).length;
     var won = cards.filter(function (c) { return boardStageId(c) === 'completed'; }).length;
-    var stages = PIPE_BOARD_STAGES.length;
+    var quotesN = cards.filter(function (c) { return boardStageId(c) === 'quote' || boardStageId(c) === 'incomplete'; }).length;
     return '<div class="jos-pk-kpis">' +
-      [['pipe-kpi-open', 'Open Deals', String(open), '+27%', 'Filters board to open deals'],
-        ['pipe-kpi-value', 'Pipeline Value', money(totalVal) || '$8,197', '+32%', 'Total estimated revenue'],
-        ['pipe-kpi-won', 'Won / Recurring', String(won), won ? 'Last 30 days' : 'No changes from last 30 days', 'Recurring & completed'],
-        ['pipe-kpi-stages', 'Stages', String(stages), 'Total in your pipeline', 'Pipeline settings']].map(function (k) {
+      [['pipe-kpi-open', 'Open deals', String(open), 'Quotes + booked', 'Filters board to open deals'],
+        ['pipe-kpi-value', 'Pipeline value', money(totalVal) || '$0', quotesN + ' quotes', 'Total estimated revenue'],
+        ['pipe-kpi-won', 'Complete', String(won), won ? 'Finished jobs' : 'None yet', 'Completed jobs'],
+        ['pipe-kpi-stages', 'Stages', String(PIPE_BOARD_STAGES.length), 'Quotes → Complete', 'Pipeline stages']].map(function (k) {
         return '<button type="button" class="jos-pk-kpi" data-jos-act="' + k[0] + '" title="' + esc(k[4]) + '">' +
           '<span class="lbl">' + esc(k[1]) + '</span><strong>' + esc(k[2]) + '</strong>' +
           '<span class="trend">' + esc(k[3]) + '</span></button>';
       }).join('') + '</div>';
   }
 
+  function renderPipelineMobileTabs(root, cards) {
+    var cur = root._josPipeMobileStage || '';
+    return '<div class="jos-pk-stage-tabs" role="tablist" aria-label="Pipeline stages">' +
+      '<button type="button" class="jos-pk-stage-tab' + (!cur ? ' on' : '') + '" data-jos-act="pipe-mobile-stage" data-pipe-stage="">All</button>' +
+      PIPE_BOARD_STAGES.map(function (st) {
+        var n = cards.filter(function (c) { return boardStageId(c) === st.id; }).length;
+        return '<button type="button" class="jos-pk-stage-tab' + (cur === st.id ? ' on' : '') + '" data-jos-act="pipe-mobile-stage" data-pipe-stage="' + esc(st.id) + '">' +
+          esc(st.label) + ' <em>' + n + '</em></button>';
+      }).join('') + '</div>';
+  }
+
   function renderPipelineBoard(cards, selectedId) {
-    return '<div class="jos-pk-board">' + PIPE_BOARD_STAGES.map(function (st) {
+    return '<div class="jos-pk-board jos-pk-board-4">' + PIPE_BOARD_STAGES.map(function (st) {
       var rows = cards.filter(function (c) { return boardStageId(c) === st.id; });
       var sum = rows.reduce(function (s, c) { return s + (Number(c.amount) || 0); }, 0);
       var empty = st.id === 'completed' && !rows.length
         ? '<div class="jos-pk-empty"><div class="jos-pk-empty-art" aria-hidden="true"></div><p>No completed jobs yet. Move deals here once the service is complete.</p></div>'
         : (rows.length ? '' : '<div class="jos-pk-empty muted">No deals</div>');
+      var addLabel = (st.id === 'quote' || st.id === 'incomplete') ? '+ Quick Quote' : '+ Add job';
+      var addAct = (st.id === 'quote' || st.id === 'incomplete') ? 'pipe-create-quote' : 'pipe-convert-job';
       return '<div class="jos-pk-col tone-' + esc(st.tone) + '" data-pipe-stage="' + esc(st.id) + '">' +
         '<div class="jos-pk-col-h"><div class="jos-pk-col-title">' + esc(st.label) +
         '<span class="jos-pk-count">' + rows.length + '</span></div>' +
@@ -422,25 +454,27 @@
         '<div class="jos-pk-col-body">' +
         (rows.length ? rows.map(function (c) { return pipeCardHtml(c, selectedId); }).join('') : empty) +
         '</div>' +
-        '<button type="button" class="jos-pk-col-add" data-jos-act="pipe-add-in-stage" data-pipe-stage="' + esc(st.id) + '">+ Add Lead</button></div>';
+        '<button type="button" class="jos-pk-col-add" data-jos-act="' + addAct + '" data-pipe-stage="' + esc(st.id) + '">' + addLabel + '</button></div>';
     }).join('') + '</div>';
   }
 
   function renderPipelineDetail(root, card) {
     if (!card) {
-      return '<aside class="jos-pk-ws"><div class="jos-pk-ws-empty"><strong>Select a deal</strong><p>Click a card to manage contact, AI insights, and convert to a job.</p></div></aside>';
+      return '<aside class="jos-pk-ws"><div class="jos-pk-ws-empty"><strong>Select a deal</strong><p>Edit job type, price, and time — or start a Quick Quote.</p></div></aside>';
     }
     var sid = boardStageId(card);
     var tags = pipeCardTags(card);
     if (!tags.length) tags = [pipeStatusTag(card)];
     tags = tags.slice(0, 8);
-    var amt = card.amount != null && Number.isFinite(Number(card.amount)) ? money(card.amount) : '$0';
-    var next = pipeActivityItems(card).find(function (a) { return a.type === 'next'; }) || pipeActivityItems(card)[0];
+    var amtVal = card.amount != null && Number.isFinite(Number(card.amount)) ? String(card.amount) : '';
+    var stagePick = '<div class="jos-pipe-stage-pick">' + PIPE_BOARD_STAGES.map(function (st) {
+      return '<button type="button" class="jos-btn jos-btn-sm' + (sid === st.id ? ' jos-btn-brand' : '') + '" data-jos-act="pipe-stage-set" data-pipe-stage="' + esc(st.id) + '">' + esc(st.label) + '</button>';
+    }).join('') + '</div>';
     return '<aside class="jos-pk-ws">' +
       '<div class="jos-pk-ws-head">' +
       '<div><div class="jos-pk-ws-name">' + esc(card.name || 'Deal') + '</div>' +
       '<div class="jos-pk-ws-meta"><span class="jos-pill info">' + esc(pipeStageLabel(sid)) + '</span>' +
-      '<strong class="jos-pk-amt">' + esc(amt) + '</strong></div></div></div>' +
+      '<strong class="jos-pk-amt">' + esc(amtVal ? money(amtVal) : '$0') + '</strong></div></div></div>' +
 
       '<div class="jos-pk-qa">' +
       '<button type="button" class="jos-pk-qa-btn" data-jos-act="pipe-call" title="Call" aria-label="Call">' +
@@ -449,33 +483,31 @@
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></button>' +
       '<button type="button" class="jos-pk-qa-btn" data-jos-act="go-chats" title="Message" aria-label="Message">' +
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>' +
-      '<button type="button" class="jos-pk-qa-btn" data-jos-act="pipe-maps" title="Location" aria-label="Location">' +
-      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button>' +
+      '<button type="button" class="jos-pk-qa-btn" data-jos-act="pipe-create-quote" title="Quick Quote" aria-label="Quick Quote">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></button>' +
       '</div>' +
+
+      '<section class="jos-pk-sec">' +
+      '<div class="jos-kicker">Stage</div>' + stagePick + '</section>' +
+
+      '<section class="jos-pk-sec jos-pk-edit">' +
+      '<div class="jos-kicker">Edit deal</div>' +
+      '<label class="jos-pk-field">Job / service<input id="jos-pipe-svc" type="text" value="' + esc(card.service || '') + '" placeholder="e.g. Full detail, lawn cut"></label>' +
+      '<label class="jos-pk-field">Amount ($)<input id="jos-pipe-amt" type="number" min="0" step="1" value="' + esc(amtVal) + '" placeholder="0"></label>' +
+      '<div class="jos-pk-field-row">' +
+      '<label class="jos-pk-field">Date<input id="jos-pipe-date" type="date" value="' + esc((card.date || '').toString().slice(0, 10)) + '"></label>' +
+      '<label class="jos-pk-field">Time<input id="jos-pipe-time" type="time" value="' + esc((card.time || '').toString().slice(0, 5)) + '"></label>' +
+      '</div>' +
+      '<label class="jos-pk-field">Notes<textarea id="jos-pipe-notes" rows="2" placeholder="One-off details, access notes…">' + esc(card.notes || '') + '</textarea></label>' +
+      '<div class="jos-btn-row jos-mt">' +
+      btn('pipe-deal-save', 'Save changes', 'jos-btn-brand jos-btn-sm') +
+      btn('pipe-create-quote', 'Quick Quote', 'jos-btn jos-btn-sm') +
+      '</div></section>' +
 
       '<section class="jos-pk-ai">' +
       '<div class="jos-between"><div class="jos-kicker">AI Hubly Insights</div><span class="jos-pk-new">NEW</span></div>' +
       '<p>' + esc(root._josPipeAiBody || pipeAiBody(card)) + '</p>' +
       '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="pipe-ai-drawer">View Insights</button></section>' +
-
-      '<section class="jos-pk-sec">' +
-      '<div class="jos-kicker">Activity</div>' +
-      (next ? '<div class="jos-pk-next"><strong>' + esc(next.label) + '</strong><span class="jos-muted">' + esc(next.at || '') + '</span></div>' : '') +
-      '<div class="jos-pk-feed">' + pipeActivityItems(card).map(function (a) {
-        return '<div class="jos-pk-feed-row"><i></i><span><strong>' + esc(a.label) + '</strong><span class="jos-muted">' + esc(a.at || '') + '</span></span></div>';
-      }).join('') + '</div>' +
-      '<button type="button" class="jos-linkish" data-jos-act="pipe-activity-all">See All</button></section>' +
-
-      '<section class="jos-pk-sec">' +
-      '<div class="jos-kicker">Details</div>' +
-      [['Source', srcLabel(card.source || 'website')],
-        ['Lead Owner', card.owner || S().ownerName || 'Adrian'],
-        ['Created', card.createdAt ? dateLong(card.createdAt) : (card.date ? dateLong(card.date) : 'May 18, 2025')],
-        ['Last Activity', '2 hours ago'],
-        ['Service', card.service || '—'],
-        ['Vehicle', card.vehicle || '—']].map(function (r) {
-        return '<div class="jos-pk-kv"><span>' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong></div>';
-      }).join('') + '</section>' +
 
       '<section class="jos-pk-sec">' +
       '<div class="jos-kicker">Tags</div>' +
@@ -485,7 +517,8 @@
       '<button type="button" class="jos-pk-tag-pill add" data-jos-act="pipe-add-tag">+ Add Tag</button></div></section>' +
 
       '<button type="button" class="jos-btn jos-btn-brand jos-pk-cta" data-jos-act="pipe-convert-job">' +
-      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg> Convert to Job</button></aside>';
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg> ' +
+      (card.jobId ? 'Open job' : 'Convert to job') + '</button></aside>';
   }
 
   function setPipelineMode(on) {
@@ -511,10 +544,10 @@
     root.innerHTML =
       '<div class="jos-pk-shell jos-pipe-page">' +
       '<header class="jos-pk-header">' +
-      '<div><h1>Pipeline</h1><p>Track, manage and convert leads into loyal customers.</p></div>' +
+      '<div><h1>Pipeline</h1><p>Quotes, bookings, and completed jobs — edit job type, price, and time on each deal.</p></div>' +
       '<div class="jos-pk-header-actions">' +
-      '<button type="button" class="jos-btn jos-pk-add" data-jos-act="manual-lead">+ Add Lead</button>' +
-      '<button type="button" class="jos-btn jos-btn-brand jos-pk-bulk" data-jos-act="pipe-bulk">+ Bulk Deals</button>' +
+      '<button type="button" class="jos-btn jos-pk-add" data-jos-act="pipe-create-quote">+ Quick Quote</button>' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-pk-bulk" data-jos-act="pipe-convert-job">+ Schedule job</button>' +
       '</div></header>' +
 
       '<div class="jos-pk-search-row">' +
@@ -530,12 +563,13 @@
         }).join('') + '</div>' : '') +
       '</div></div>' +
 
+      renderPipelineMobileTabs(root, all) +
       renderPipelineFilterDrawer(root) +
       renderPipelineKpis(cards) +
 
       '<div class="jos-pk-layout jos-pipe-layout">' +
       '<div class="jos-pk-main">' + renderPipelineBoard(cards, selectedId) +
-      '<div class="jos-pk-tip"><span aria-hidden="true">✨</span> Pro Tip: Drag and drop deals between stages to keep your pipeline up to date.</div></div>' +
+      '<div class="jos-pk-tip">Drag deals between Quotes → Incomplete → Booked → Complete. Tap a card to edit job, money, and time.</div></div>' +
       renderPipelineDetail(root, sel) +
       '</div></div>';
 
@@ -610,7 +644,8 @@
       }
       if ((e.key === 'n' || e.key === 'N') && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement) && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
-        return typeof global.openM === 'function' ? global.openM('m-new-lead') : toast('Add lead');
+        if (typeof global.openSmartQuote === 'function') return global.openSmartQuote();
+        return toast('Quick Quote');
       }
       if ((e.key === 'Delete' || e.key === 'Backspace') && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
         var sel = selectedPipeCard();
@@ -719,16 +754,59 @@
         return renderPipeline();
       }
       if (act === 'pipe-kpi-stages') {
-        toast('Pipeline stages: Lead → Qualified → Quote → Booked → Completed. Drag cards to edit flow.');
+        toast('Pipeline stages: Quotes → Incomplete → Booked → Complete. Drag cards to update.');
         return;
       }
+      if (act === 'pipe-mobile-stage') {
+        root._josPipeMobileStage = stageId || '';
+        return renderPipeline();
+      }
+      if (act === 'pipe-deal-save' && card) {
+        ensurePipelineOsState();
+        if (!S().pipeline.edits) S().pipeline.edits = {};
+        var svc = ((el('jos-pipe-svc') || {}).value || '').trim();
+        var amtRaw = (el('jos-pipe-amt') || {}).value;
+        var dateV = (el('jos-pipe-date') || {}).value || '';
+        var timeV = (el('jos-pipe-time') || {}).value || '';
+        var notesV = ((el('jos-pipe-notes') || {}).value || '').trim();
+        var amtN = amtRaw === '' ? null : Number(amtRaw);
+        var patch = { service: svc, amount: Number.isFinite(amtN) ? amtN : card.amount, date: dateV, time: timeV, notes: notesV };
+        S().pipeline.edits[card.id] = Object.assign({}, S().pipeline.edits[card.id] || {}, patch);
+        if (card.quoteId) {
+          var q = quotes().find(function (x) { return String(x.id) === String(card.quoteId); });
+          if (q) {
+            if (svc) { q.service = svc; q.packageNames = [svc]; }
+            if (Number.isFinite(amtN)) q.amount = amtN;
+            if (dateV) q.date = dateV;
+            if (timeV) q.time = timeV;
+            if (notesV) q.notes = notesV;
+            q.updatedAt = new Date().toISOString();
+          }
+        }
+        if (card.jobId) {
+          var j = jobs().find(function (x) { return String(x.id) === String(card.jobId); });
+          if (j) {
+            if (svc) j.service = svc;
+            if (Number.isFinite(amtN)) j.amount = amtN;
+            if (dateV) j.date = dateV;
+            if (timeV) j.time = timeV;
+            if (notesV) j.notes = notesV;
+          }
+        }
+        try { if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon(); } catch (ePersist) {}
+        toast('Deal updated');
+        return renderPipeline();
+      }
       if (act === 'pipe-bulk') {
-        toast('Bulk Deals — CSV import and mass stage actions coming next. Use + Add Lead for now.');
-        return;
+        return typeof global.openM === 'function' ? global.openM('m-new-job') : toast('Schedule a job');
       }
       if (act === 'pipe-add-in-stage') {
         if (stageId) root._josPipePreferredStage = stageId;
-        return typeof global.openM === 'function' ? global.openM('m-new-lead') : toast('Add lead to ' + pipeStageLabel(stageId || 'lead'));
+        if (stageId === 'booked' || stageId === 'completed') {
+          return typeof global.openM === 'function' ? global.openM('m-new-job') : toast('Schedule job');
+        }
+        if (typeof global.openSmartQuote === 'function') return global.openSmartQuote();
+        return toast('Quick Quote');
       }
       if (act === 'pipe-filter-tag') {
         var tag = (t && t.getAttribute('data-jos-tag')) || '';
@@ -825,8 +903,9 @@
         return toast('Link a customer record first');
       }
       if (act === 'pipe-create-quote') {
+        if (stageId) root._josPipePreferredStage = stageId;
         if (typeof global.openSmartQuote === 'function') return global.openSmartQuote();
-        return toast('Quick Quote');
+        return switchNav('quotes');
       }
       if (act === 'pipe-request-review') {
         if (card) movePipeCard(card.id, 'completed', 'Moved to Completed — review workflow suggested.');
@@ -7519,7 +7598,12 @@
       root._josLeadId = selectedId;
       sel = selectedId ? findLead(selectedId) : null;
     }
-    if (sel) sel.unread = 0;
+    if (sel) {
+      sel.unread = 0;
+      try {
+        if (typeof global.markLeadSeen === 'function') global.markLeadSeen(sel.key || sel.id);
+      } catch (eSeen0) {}
+    }
     var f = root._josLeadFilters || {};
     var bulkOpen = !!root._josLeadBulkOpen;
     var owner = S().ownerName || 'Adrian';
@@ -7605,9 +7689,11 @@
     try {
       var badge = el('nav-leads-badge');
       if (badge) {
-        var n = all.filter(function (l) { return (l.unread > 0 || normalizeCrmStatus(l) === 'new') && normalizeCrmStatus(l) !== 'lost'; }).length;
+        /* Badge = unread only. Opening a lead clears unread so the orange count drops. */
+        var n = all.filter(function (l) { return Number(l.unread) > 0 && normalizeCrmStatus(l) !== 'lost'; }).length;
         badge.textContent = String(n);
         badge.classList.toggle('hidden', !n);
+        badge.classList.toggle('pulse', n > 0);
       }
     } catch (e) {}
   }
@@ -7711,7 +7797,12 @@
         root._josLeadWorkspace = 'overview';
         root._josLeadCtx = null;
         var lead = findLead(root._josLeadId);
-        if (lead) lead.unread = 0;
+        if (lead) {
+          lead.unread = 0;
+          try {
+            if (typeof global.markLeadSeen === 'function') global.markLeadSeen(lead.key || lead.id);
+          } catch (eSeen) {}
+        }
         root.querySelector('.jos-ld-shell') && root.querySelector('.jos-ld-shell').classList.add('ws-open');
         renderLeads();
         e.stopPropagation();
@@ -10643,8 +10734,9 @@
     jobs: { title: 'Jobs', sub: 'Manage and track every job in one place.' },
     leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
     customers: { title: 'Customers', sub: 'People, vehicles, and history.' },
-    pipeline: { title: 'Pipeline', sub: 'Track, manage and convert leads into loyal customers.' },
+    pipeline: { title: 'Pipeline', sub: 'Quotes, bookings, and completed jobs.' },
     editor: { title: 'Website editor', sub: 'Edit your site, packages, and Book Now.' },
+    quotes: { title: 'Quick Quote', sub: 'Draft and send quotes from the field.' },
     marketing: { title: 'Marketing', sub: 'Campaigns that attract, convert, and keep customers coming back.' },
     reviews: { title: 'Reviews', sub: 'Reputation and request flows.' },
     memberships: { title: 'Memberships', sub: 'Recurring revenue. Happy clients. Less admin.' },
