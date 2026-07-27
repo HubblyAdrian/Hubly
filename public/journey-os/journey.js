@@ -8396,9 +8396,9 @@
     if (!root._josCustAddOpen) return '';
     var d = root._josCustDraft || {};
     var team = S().team || [];
-    return '<div class="jos-cust-modal-backdrop" data-jos-act="cust-add-cancel">' +
-      '<div class="jos-cust-modal" onclick="event.stopPropagation()">' +
-      '<div class="jos-between"><h3 style="margin:0">Add Customer</h3><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-add-cancel">✕</button></div>' +
+    return '<div class="jos-cust-modal-backdrop" data-jos-cust-backdrop="1" role="presentation">' +
+      '<div class="jos-cust-modal" role="dialog" aria-modal="true" aria-labelledby="jos-ca-title">' +
+      '<div class="jos-between jos-cust-modal-head"><h3 id="jos-ca-title">Add Customer</h3><button type="button" class="jos-cust-modal-x" data-jos-act="cust-add-cancel" aria-label="Close">×</button></div>' +
       '<div class="jos-cust-form">' +
       '<label>Name<input id="jos-ca-name" value="' + esc(d.name || '') + '" placeholder="Full name"></label>' +
       '<label>Phone<input id="jos-ca-phone" value="' + esc(d.phone || '') + '" placeholder="(619) 555-0100"></label>' +
@@ -8412,13 +8412,14 @@
         }).join('') +
       '</select></label>' +
       '<label>Assigned<select id="jos-ca-assigned">' +
+        '<option value="">—</option>' +
         team.map(function (t) {
-          return '<option value="' + esc(t.name) + '"' + ((d.assignedTo || (team[0] && team[0].name)) === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+          return '<option value="' + esc(t.name) + '"' + ((d.assignedTo || '') === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
         }).join('') +
       '</select></label>' +
       '<label class="jos-cust-span2">Notes<textarea id="jos-ca-notes" class="jos-textarea" placeholder="Notes…">' + esc(d.notes || '') + '</textarea></label>' +
       '</div>' +
-      '<div class="jos-btn-row jos-mt">' +
+      '<div class="jos-btn-row jos-mt jos-cust-modal-actions">' +
       btn('cust-add-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
       btn('cust-add-save', 'Save', 'jos-btn-brand jos-btn-sm') +
       '</div></div></div>';
@@ -8428,15 +8429,15 @@
     var on = selectedId && String(c.id) === String(selectedId);
     var jobsN = custJobsFor(c).length;
     var ltv = custLifetime(c);
+    var contact = c.phone || c.email || 'No contact';
     return '<button type="button" class="jos-cm-card' + (on ? ' on' : '') + '" data-jos-cust-row="' + esc(String(c.id)) + '">' +
       '<span class="jos-cm-ava">' + esc(initials(c.name)) + '</span>' +
       '<span class="jos-cm-card-body">' +
       '<span class="jos-cm-card-top"><strong>' + esc(c.name || 'Customer') + '</strong>' +
       (custIsVip(c) ? '<span class="jos-cm-vip">VIP</span>' : '') +
       '<span class="jos-cm-when">' + esc(custRelativeTime(c)) + '</span></span>' +
-      '<span class="jos-muted">' + esc(c.email || '—') + '</span>' +
-      '<span class="jos-muted">' + esc(c.phone || '—') + '</span>' +
-      '<span class="jos-cm-card-meta">' + jobsN + ' jobs · ' + esc(money(ltv) || '$0') + ' lifetime</span>' +
+      '<span class="jos-cm-card-contact">' + esc(contact) + '</span>' +
+      '<span class="jos-cm-card-meta">' + jobsN + ' job' + (jobsN === 1 ? '' : 's') + ' · ' + esc(money(ltv) || '$0') + ' lifetime</span>' +
       '</span></button>';
   }
 
@@ -8531,8 +8532,8 @@
           var tone = i === 0 ? 'mint' : (i === 1 ? 'gold' : 'blue');
           return '<span class="jos-cm-itag ' + tone + '">' + esc(tg) + '</span>';
         }).join('') + '</div>' +
-        '<p>' + esc(ai.summary) + '</p>' +
-        '<p class="jos-muted">' + esc(ai.tip || ai.nba) + '</p></section>' +
+        '<p class="jos-cm-insight-copy">' + esc(ai.summary) + '</p>' +
+        '<p class="jos-cm-insight-tip">' + esc(ai.tip || ai.nba) + '</p></section>' +
         '<section class="jos-cm-card-block">' +
         '<div class="jos-between"><div class="jos-kicker">Preferences</div><button type="button" class="jos-linkish" data-jos-act="cust-edit">Edit</button></div>' +
         [['Preferred Service', c.preferredService || 'Full Detail'], ['Preferred Day', c.preferredDay || 'Weekends'], ['Preferred Time', c.preferredTime || 'Mornings'], ['Vehicle', c.vehicle || vehicleOf(c) || '—']].map(function (r) {
@@ -8590,7 +8591,7 @@
     var next = nextJob(c);
     var rating = c.rating != null ? Number(c.rating) : 4.9;
     var revN = c.reviewCount || 12;
-    var tags = (c.tags && c.tags.length) ? c.tags : ['VIP', 'Repeat Customer', 'High Value'];
+    var tags = Array.isArray(c.tags) ? c.tags.filter(Boolean) : [];
 
     return '<aside class="jos-cm-rail">' +
       '<section class="jos-cm-widget">' +
@@ -8608,9 +8609,11 @@
 
       '<section class="jos-cm-widget">' +
       '<div class="jos-kicker">Tags</div>' +
-      '<div class="jos-cm-tags">' + tags.map(function (tg, i) {
-        return '<button type="button" class="jos-cm-tag" data-jos-act="cust-tag-remove" data-jos-tag-i="' + i + '">' + esc(tg) + ' ×</button>';
-      }).join('') +
+      '<div class="jos-cm-tags">' + (tags.length
+        ? tags.map(function (tg, i) {
+          return '<button type="button" class="jos-cm-tag" data-jos-act="cust-tag-remove" data-jos-tag-i="' + i + '" title="Remove tag">' + esc(tg) + '<span class="jos-cm-tag-x" aria-hidden="true">×</span></button>';
+        }).join('')
+        : '<span class="jos-muted">No tags yet</span>') +
       '<button type="button" class="jos-cm-tag add" data-jos-act="cust-add-tag">+ Add Tag</button></div></section>' +
 
       '<section class="jos-cm-widget">' +
@@ -8818,6 +8821,13 @@
     root._josCustBoundV2 = true;
 
     root.addEventListener('click', function (e) {
+      if (e.target && e.target.getAttribute && e.target.getAttribute('data-jos-cust-backdrop') === '1') {
+        root._josCustAddOpen = false;
+        root._josCustDraft = null;
+        renderCustomers();
+        e.stopPropagation();
+        return;
+      }
       var tabBtn = e.target.closest('[data-jos-cust-tab]');
       if (tabBtn) {
         root._josCustTab = tabBtn.getAttribute('data-jos-cust-tab');
@@ -9030,7 +9040,12 @@
       if (act === 'cust-tag-remove') {
         if (!c) return;
         var ti = parseInt(t && t.getAttribute('data-jos-tag-i'), 10);
-        if (c.tags) c.tags.splice(ti, 1);
+        if (!Array.isArray(c.tags)) c.tags = [];
+        if (!isNaN(ti) && ti >= 0 && ti < c.tags.length) {
+          var removed = c.tags.splice(ti, 1)[0];
+          pushCustActivity(c, 'tag', 'Removed tag ' + (removed || ''));
+          try { if (typeof global.saveBiz === 'function') global.saveBiz(); } catch (eSave) {}
+        }
         return renderCustomers();
       }
       if (act === 'cust-file-add') {
