@@ -4047,6 +4047,40 @@
     d.setMonth(d.getMonth() + (months == null ? 1 : months));
     return d.toISOString().slice(0, 10);
   }
+  function demoMembershipsSeed() {
+    var d3 = memAddMonths(todayStr(), 0);
+    try {
+      var t = new Date(); t.setDate(t.getDate() + 3); d3 = t.toISOString().slice(0, 10);
+    } catch (_) {}
+    var overdue5 = todayStr();
+    try {
+      var o = new Date(); o.setDate(o.getDate() - 5); overdue5 = o.toISOString().slice(0, 10);
+    } catch (_) {}
+    var d12 = todayStr();
+    try {
+      var f = new Date(); f.setDate(f.getDate() + 12); d12 = f.toISOString().slice(0, 10);
+    } catch (_) {}
+    var d20 = todayStr();
+    try {
+      var g = new Date(); g.setDate(g.getDate() + 20); d20 = g.toISOString().slice(0, 10);
+    } catch (_) {}
+    return {
+      plans: [
+        { id: 'mem_plan_lawn', name: 'Lawn Care', price: 120, cadence: '/mo', visitAllowance: 4, status: 'active', benefits: ['Weekly mow', 'Edging'], includedServices: [] },
+        { id: 'mem_plan_premium', name: 'Premium Yard', price: 189, cadence: '/mo', visitAllowance: 4, status: 'active', benefits: ['Mow', 'Fertilize'], includedServices: [] },
+        { id: 'mem_plan_basic', name: 'Basic Cut', price: 79, cadence: '/mo', visitAllowance: 2, status: 'active', benefits: ['Biweekly mow'], includedServices: [] }
+      ],
+      subscribers: [
+        { id: 'mem_sub_demo_1', customerId: 'demo_james', planId: 'mem_plan_lawn', status: 'active', startedAt: '2026-01-15', nextRenewalAt: d3, visitsUsed: 2, visitResetAt: todayStr(), cardBrand: 'Card', cardLast4: '4242', billingStatus: 'auto', autoRenew: true },
+        { id: 'mem_sub_demo_2', customerId: 'demo_sarah', planId: 'mem_plan_lawn', status: 'past_due', startedAt: '2025-11-02', nextRenewalAt: overdue5, visitsUsed: 1, visitResetAt: todayStr(), cardBrand: 'Card', cardLast4: '1881', billingStatus: 'failed', autoRenew: true },
+        { id: 'mem_sub_demo_3', customerId: 'demo_mike', planId: 'mem_plan_premium', status: 'active', startedAt: '2025-08-10', nextRenewalAt: d12, visitsUsed: 3, visitResetAt: todayStr(), cardBrand: 'Visa', cardLast4: '4242', billingStatus: 'auto', autoRenew: true },
+        { id: 'mem_sub_demo_4', customerId: 'demo_emily', planId: 'mem_plan_basic', status: 'cancelled', startedAt: '2025-03-01', nextRenewalAt: d20, visitsUsed: 0, visitResetAt: todayStr(), cardBrand: 'Card', cardLast4: '5555', billingStatus: 'auto', autoRenew: false, cancelledAt: todayStr() },
+        { id: 'mem_sub_demo_5', customerId: 'demo_alex', planId: 'mem_plan_lawn', status: 'active', startedAt: '2026-02-01', nextRenewalAt: d20, visitsUsed: 2, visitResetAt: todayStr(), cardBrand: 'Card', cardLast4: '4242', billingStatus: 'auto', autoRenew: true }
+      ],
+      analytics: { activeDemo: 128, mrrDemo: 8450, churnDemo: 2.4, renewalsDemo: 23, totalDemo: 128, pagesDemo: 26 }
+    };
+  }
+
   function ensureMembershipsOsState() {
     var st = S();
     if (!st.membershipsOs || typeof st.membershipsOs !== 'object') st.membershipsOs = {};
@@ -4058,6 +4092,31 @@
     if (!Array.isArray(m.visits)) m.visits = [];
     if (!Array.isArray(m.renewals)) m.renewals = [];
     if (!Array.isArray(m.activity)) m.activity = [];
+
+    if (allowDemoSeed()) {
+      var demo = demoMembershipsSeed();
+      if (!Array.isArray(st.customers) || !st.customers.length) {
+        st.customers = [
+          { id: 'demo_james', name: 'James Anderson', email: 'james.anderson@email.com', phone: '(619) 555-0188', status: 'active', customerType: 'recurring' },
+          { id: 'demo_sarah', name: 'Sarah Mitchell', email: 'sarah.m@email.com', phone: '(619) 555-0142', status: 'active' },
+          { id: 'demo_mike', name: 'Michael Brown', email: 'mike.b@email.com', phone: '(619) 555-0177', status: 'active' },
+          { id: 'demo_emily', name: 'Emily Chen', email: 'emily.c@email.com', phone: '(619) 555-0111', status: 'inactive' },
+          { id: 'demo_alex', name: 'Alex Rivera', email: 'alex.r@email.com', phone: '(619) 555-0133', status: 'active' }
+        ];
+      }
+      m.plans = demo.plans.map(function (p, idx) { return normalizeMembershipPlan(p, idx); });
+      m.subscribers = demo.subscribers.map(function (s) { return Object.assign({}, s); });
+      m.analytics = Object.assign({}, demo.analytics);
+      m._seeded = true;
+      m._demoShot = true;
+      m.plans.forEach(function (p) {
+        if (!m.billingRules.some(function (r) { return String(r.planId) === String(p.id); })) {
+          m.billingRules.push({ id: memId('mem_rule'), planId: p.id, cadence: p.cadence || '/mo', chargeTiming: 'advance', renewalAnchor: 'signup_day', graceDays: 3, processor: 'stripe_stage2' });
+        }
+      });
+      return m;
+    }
+
     membershipSeedPlans().forEach(function (plan, idx) {
       var np = normalizeMembershipPlan(plan, idx);
       var dup = m.plans.find(function (p) { return String(p.id) === String(np.id) || memSlug(p.name) === memSlug(np.name); });
@@ -4170,6 +4229,20 @@
     if (c === '/yr' || /year/i.test(c)) return 'Yearly';
     return 'Monthly';
   }
+  function memCadenceShort(cadence) {
+    var c = String(cadence || '/mo');
+    if (c === '/wk' || /week/i.test(c)) return 'week';
+    if (c === '/yr' || /year/i.test(c)) return 'year';
+    return 'month';
+  }
+  function memAmountLabel(price) {
+    var n = Number(price) || 0;
+    return '$' + n.toFixed(2);
+  }
+  function memMrrLabel(n) {
+    var x = Number(n) || 0;
+    return '$' + x.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
   function memStatusPill(status) {
     var s = String(status || 'active').toLowerCase();
     if (s === 'past_due' || s === 'pastdue') s = 'past_due';
@@ -4200,12 +4273,24 @@
   }
   function memKpiStats() {
     var m = ensureMembershipsOsState();
+    if (allowDemoSeed() && m._demoShot && m.analytics) {
+      return {
+        active: m.analytics.activeDemo != null ? m.analytics.activeDemo : 128,
+        mrr: m.analytics.mrrDemo != null ? m.analytics.mrrDemo : 8450,
+        churn: m.analytics.churnDemo != null ? m.analytics.churnDemo : 2.4,
+        renewals: m.analytics.renewalsDemo != null ? m.analytics.renewalsDemo : 23,
+        activeDelta: 12,
+        mrrDelta: 18,
+        churnDelta: -4,
+        total: m.analytics.totalDemo != null ? m.analytics.totalDemo : 128,
+        pages: m.analytics.pagesDemo != null ? m.analytics.pagesDemo : 26
+      };
+    }
     var active = m.subscribers.filter(function (s) { return s.status === 'active'; });
     var mrr = active.reduce(function (sum, s) { var p = memPlanById(s.planId); return sum + (p ? Number(p.price) || 0 : 0); }, 0);
     var cancelled = m.subscribers.filter(function (s) { return s.status === 'cancelled'; }).length;
     var total = Math.max(1, m.subscribers.length);
     var churn = Math.round((cancelled / total) * 1000) / 10;
-    var in7 = memAddMonths(todayStr(), 0);
     var weekEnd = (function () {
       var d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().slice(0, 10);
     })();
@@ -4214,13 +4299,15 @@
       return s.status === 'active' && n >= todayStr() && n <= weekEnd;
     }).length;
     return {
-      active: (active.length >= 5 ? active.length : ((m.analytics && m.analytics.activeDemo) || active.length)),
-      mrr: (mrr >= 500 ? mrr : ((m.analytics && m.analytics.mrrDemo) || mrr)),
-      churn: (m.analytics && m.analytics.churnDemo != null) ? m.analytics.churnDemo : churn,
-      renewals: (renewals >= 3 ? renewals : ((m.analytics && m.analytics.renewalsDemo) || renewals)),
+      active: active.length,
+      mrr: mrr,
+      churn: churn,
+      renewals: renewals,
       activeDelta: 12,
       mrrDelta: 18,
-      churnDelta: -4
+      churnDelta: -4,
+      total: m.subscribers.length,
+      pages: Math.max(1, Math.ceil(m.subscribers.length / 10))
     };
   }
   function renderMemPlanModal(root) {
@@ -4332,7 +4419,7 @@
       '<td><strong>' + esc(p.name || 'Plan') + '</strong><div class="jos-muted">' + esc(memCadenceLabel(p.cadence)) + '</div></td>' +
       '<td>' + memStatusPill(s.status) + '</td>' +
       '<td><strong class="' + (overdue ? 'danger' : '') + '">' + esc(memFmtDate(s.nextRenewalAt)) + '</strong><div class="jos-muted ' + (overdue ? 'danger' : '') + '">' + esc(memRelDate(s.nextRenewalAt)) + '</div></td>' +
-      '<td><strong>' + esc(money(p.price) || '$0') + '</strong><div class="jos-muted">/ ' + esc(memCadenceLabel(p.cadence).toLowerCase().replace('ly', '').replace('month', 'month')) + '</div></td>' +
+      '<td><strong>' + esc(memAmountLabel(p.price)) + '</strong><div class="jos-muted">/ ' + esc(memCadenceShort(p.cadence)) + '</div></td>' +
       '<td><div class="jos-mem-mc-visits"><span>' + used + ' of ' + allowance + '</span><div class="jos-mem-mc-vbar" title="' + used + ' completed · ' + Math.max(0, allowance - used) + ' remaining"><i style="width:' + pct + '%"></i></div></div></td>' +
       '<td><strong>' + esc(s.cardBrand || 'Card') + ' •••• ' + esc(s.cardLast4 || '4242') + '</strong><div class="' + (s.billingStatus === 'failed' ? 'danger' : 'jos-muted') + '">' + (s.billingStatus === 'failed' ? 'Failed' : 'Auto') + '</div></td>' +
       '<td class="jos-mem-mc-actions"><div class="jos-mem-mc-act-wrap">' +
@@ -4352,12 +4439,16 @@
   function renderMemSubscriptionsPanel(root) {
     var m = ensureMembershipsOsState(), d = DS();
     var list = memFilterSubscribers(m.subscribers, root);
+    var stats = memKpiStats();
     var per = Number(root._josMemPerPage) || 10;
     var page = Number(root._josMemPage) || 1;
-    var total = list.length;
+    var realTotal = list.length;
+    var total = (allowDemoSeed() && m._demoShot && !root._josMemQ && (root._josMemStatus || 'all') === 'all' && (root._josMemPlanFilter || 'all') === 'all')
+      ? (stats.total || 128)
+      : realTotal;
     var start = (page - 1) * per;
-    var slice = list.slice(start, start + per);
-    var pages = Math.max(1, Math.ceil(total / per));
+    var slice = list.slice(0, Math.min(list.length, per));
+    var pages = (allowDemoSeed() && m._demoShot && total > realTotal) ? (stats.pages || 26) : Math.max(1, Math.ceil(total / per));
     var statusOpts = [['all', 'All Status'], ['active', 'Active'], ['paused', 'Paused'], ['past_due', 'Past Due'], ['cancelled', 'Cancelled']].map(function (o) {
       return '<option value="' + o[0] + '"' + ((root._josMemStatus || 'all') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
     }).join('');
@@ -4366,28 +4457,28 @@
     }).join('');
     var rows = slice.length ? slice.map(function (s) { return renderMemTableRow(s, root); }).join('')
       : '<tr><td colspan="8">' + (d ? d.emptyState('No subscriptions', 'Start a membership from an existing customer.') : 'No subscriptions') + '</td></tr>';
-    var pageBtns = '';
-    for (var i = 1; i <= Math.min(pages, 5); i++) {
-      pageBtns += '<button type="button" class="jos-mem-mc-page' + (page === i ? ' on' : '') + '" data-jos-act="mem-page" data-jos-mem-page="' + i + '">' + i + '</button>';
-    }
+    var pageNums = [1];
+    if (pages >= 2) pageNums.push(2);
+    if (pages >= 3) pageNums.push(3);
+    if (pages > 3) pageNums.push(pages);
+    var pageBtns = pageNums.map(function (i) {
+      return '<button type="button" class="jos-mem-mc-page' + (page === i ? ' on' : '') + '" data-jos-act="mem-page" data-jos-mem-page="' + i + '">' + i + '</button>';
+    }).join('');
     return '<div class="jos-mem-mc-toolbar">' +
       '<div class="jos-mem-mc-filters">' +
         '<select id="jos-mem-status-filter" data-jos-act="mem-filter-status">' + statusOpts + '</select>' +
         '<select id="jos-mem-plan-filter" data-jos-act="mem-filter-plan">' + planOpts + '</select>' +
       '</div>' +
       '<div class="jos-mem-mc-toolbar-right">' +
-        '<input id="jos-mem-search" class="jos-mem-mc-search" placeholder="Search memberships..." value="' + esc(root._josMemQ || '') + '">' +
+        '<label class="jos-mem-mc-search-wrap"><span class="jos-mem-search-ico" aria-hidden="true"></span>' +
+        '<input id="jos-mem-search" class="jos-mem-mc-search" placeholder="Search memberships..." value="' + esc(root._josMemQ || '') + '"></label>' +
       '</div></div>' +
       '<div class="jos-mem-mc-table-card"><table class="jos-mem-mc-table"><thead><tr>' +
         '<th>Customer</th><th>Plan</th><th>Status</th><th>Next Payment</th><th>Amount</th><th>Visits / Period</th><th>Billing</th><th>Actions</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table>' +
       '<footer class="jos-mem-mc-pag">' +
-        '<span>Showing ' + (total ? start + 1 : 0) + ' to ' + Math.min(start + per, total) + ' of ' + total + ' results</span>' +
-        '<div class="jos-mem-mc-pag-center">' +
-          '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="mem-page-prev"' + (page <= 1 ? ' disabled' : '') + '>Previous</button>' +
-          pageBtns +
-          '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="mem-page-next"' + (page >= pages ? ' disabled' : '') + '>Next</button>' +
-        '</div>' +
+        '<span>Showing ' + (realTotal ? 1 : 0) + ' to ' + Math.min(per, realTotal) + ' of ' + total + ' results</span>' +
+        '<div class="jos-mem-mc-pag-center">' + pageBtns + '</div>' +
         '<label>Rows per page <select id="jos-mem-per-page" data-jos-act="mem-per-page"><option' + (per === 10 ? ' selected' : '') + '>10</option><option' + (per === 25 ? ' selected' : '') + '>25</option><option' + (per === 50 ? ' selected' : '') + '>50</option></select></label>' +
       '</footer></div>';
   }
@@ -4454,6 +4545,24 @@
     }).join('');
     return '<section class="jos-mem-mc-panel"><h3>Append-only activity</h3>' + (list || (d ? d.emptyState('No activity yet', 'Membership actions append entries here.') : '')) + '</section>';
   }
+  function renderMemTopChrome(root) {
+    var bizName = allowDemoSeed() ? "Adrian's Lawn Service" : (S().businessName || S().biz || "Adrian's Lawn Service");
+    var notifN = allowDemoSeed() ? 2 : 0;
+    return '<div class="jos-mem-top-actions">' +
+      '<label class="jos-mem-global-search"><span class="jos-mem-search-ico" aria-hidden="true"></span>' +
+      '<input id="jos-mem-global-search" type="search" placeholder="Search customers, jobs, messages..." value="' + esc(root._josMemGlobalQ || '') + '">' +
+      '<kbd>⌘K</kbd></label>' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-mem-top-new" data-jos-act="mem-sub-open">+ New</button>' +
+      '<button type="button" class="jos-btn jos-mem-ask-btn" data-jos-act="go-ask">Ask Hubly</button>' +
+      '<button type="button" class="jos-icon-btn jos-mem-bell" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>' +
+      (notifN ? '<i class="badge">' + notifN + '</i>' : '') + '</button>' +
+      '<button type="button" class="jos-mem-profile" data-jos-act="go-settings" title="Profile">' +
+      '<span class="ava">' + esc(initials(bizName)) + '</span><span class="meta"><strong>' + esc(bizName) + '</strong></span>' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>' +
+    '</div>';
+  }
+
   function renderMemMissionControl(root) {
     var tab = root._josMemTab || 'subscribers';
     var stats = memKpiStats();
@@ -4461,8 +4570,8 @@
       return '<button type="button" class="jos-mem-mc-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-mem-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
     }).join('') +
       '<div class="jos-mem-mc-tab-actions">' +
-        '<button type="button" class="jos-btn jos-mem-mc-filter" data-jos-act="mem-filter-open">Filter</button>' +
-        '<button type="button" class="jos-btn jos-btn-brand jos-mem-mc-start" data-jos-act="mem-sub-open">Start subscription</button>' +
+        '<button type="button" class="jos-btn jos-mem-mc-filter" data-jos-act="mem-filter-open"><span class="filter-ico" aria-hidden="true"></span> Filter</button>' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-mem-mc-start" data-jos-act="mem-sub-open"><span class="play-ico" aria-hidden="true">▶</span> Start subscription</button>' +
       '</div></div>';
     var body = tab === 'overview' ? renderMemOverviewTab(root)
       : tab === 'plans' ? renderMemPlansTab(root)
@@ -4470,23 +4579,34 @@
           : tab === 'visits' ? renderMemVisitsTab()
             : tab === 'billing' ? renderMemBillingTab()
               : renderMemActivityTab();
-    return '<div class="jos-mem-mc-shell jos-mem-page">' +
+    return '<div class="jos-mem-mc-shell jos-mem-page jos-mem-shot">' +
       '<header class="jos-mem-mc-header">' +
-        '<div><h1>Memberships</h1><p>Recurring revenue. Happy clients. Less admin.</p></div>' +
-        '<div class="jos-mem-mc-header-actions">' +
-          '<button type="button" class="jos-btn jos-mem-mc-secondary" data-jos-act="mem-plan-open">Create plan</button>' +
-          '<button type="button" class="jos-btn jos-btn-brand jos-mem-mc-primary" data-jos-act="mem-sub-open">Create membership</button>' +
-          '<button type="button" class="jos-btn jos-mem-mc-ghost" data-jos-act="go-ask">Ask Hubly</button>' +
-        '</div>' +
+        '<div class="jos-mem-mc-title"><h1>Memberships</h1><p>Recurring revenue. Happy clients. Less admin.</p></div>' +
+        renderMemTopChrome(root) +
       '</header>' +
+      '<div class="jos-mem-mc-header-actions">' +
+        '<button type="button" class="jos-btn jos-mem-mc-secondary" data-jos-act="mem-plan-open">Create plan</button>' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-mem-mc-primary" data-jos-act="mem-sub-open">Create membership</button>' +
+        '<button type="button" class="jos-btn jos-mem-mc-ghost" data-jos-act="go-ask">Ask Hubly</button>' +
+      '</div>' +
       '<div class="jos-mem-mc-kpis">' +
-        '<button type="button" class="jos-mem-mc-kpi" data-jos-act="mem-kpi-active"><span class="ico tone-orange">◎</span><span class="lbl">Active Memberships</span><strong>' + stats.active + '</strong><span class="delta up">↑ ' + stats.activeDelta + '%</span><span class="foot">vs last 30 days</span></button>' +
-        '<button type="button" class="jos-mem-mc-kpi" data-jos-act="mem-kpi-mrr"><span class="ico tone-green">$</span><span class="lbl">MRR</span><strong>' + esc(money(stats.mrr) || '$0') + '</strong><span class="delta up">↑ ' + stats.mrrDelta + '%</span><span class="foot">vs last 30 days</span></button>' +
-        '<button type="button" class="jos-mem-mc-kpi" data-jos-act="mem-kpi-churn"><span class="ico tone-purple">↻</span><span class="lbl">Churn Rate</span><strong>' + stats.churn + '%</strong><span class="delta up">↓ ' + Math.abs(stats.churnDelta) + '%</span><span class="foot">vs last 30 days</span></button>' +
-        '<button type="button" class="jos-mem-mc-kpi" data-jos-act="mem-kpi-renewals"><span class="ico tone-blue">▦</span><span class="lbl">Renewals</span><strong>' + stats.renewals + '</strong><span class="foot">Next 7 days</span></button>' +
+        '<button type="button" class="jos-mem-mc-kpi" data-jos-act="mem-kpi-active">' +
+          '<span class="ico tone-orange" aria-hidden="true"></span><span class="lbl">Total Active Memberships</span>' +
+          '<strong>' + stats.active + '</strong><span class="delta up">↑ ' + stats.activeDelta + '% vs last 30 days</span></button>' +
+        '<button type="button" class="jos-mem-mc-kpi" data-jos-act="mem-kpi-mrr">' +
+          '<span class="ico tone-green" aria-hidden="true">$</span><span class="lbl">Monthly Recurring Revenue</span>' +
+          '<strong>' + esc(memMrrLabel(stats.mrr)) + '</strong><span class="delta up">↑ ' + stats.mrrDelta + '% vs last 30 days</span></button>' +
+        '<button type="button" class="jos-mem-mc-kpi" data-jos-act="mem-kpi-churn">' +
+          '<span class="ico tone-purple" aria-hidden="true"></span><span class="lbl">Churn Rate</span>' +
+          '<strong>' + stats.churn + '%</strong><span class="delta up">↓ ' + Math.abs(stats.churnDelta) + '% vs last 30 days</span></button>' +
+        '<button type="button" class="jos-mem-mc-kpi" data-jos-act="mem-kpi-renewals">' +
+          '<span class="ico tone-blue" aria-hidden="true"></span><span class="lbl">Upcoming Renewals</span>' +
+          '<strong>' + stats.renewals + '</strong><span class="foot">Next 7 days</span></button>' +
       '</div>' +
       tabsHtml +
-      '<div class="jos-mem-mc-banner"><span class="ico">i</span><p>Reference: Customers buy memberships and plans by planId — no customer clones.</p><button type="button" class="jos-mem-mc-learn" data-jos-act="mem-learn">Learn more</button></div>' +
+      '<div class="jos-mem-mc-banner"><span class="ico">i</span>' +
+        '<p>Reference: Customers buy memberships and plans by planId — no customer clones.</p>' +
+        '<button type="button" class="jos-mem-mc-learn" data-jos-act="mem-learn">Learn more <span aria-hidden="true">↗</span></button></div>' +
       '<div class="jos-mem-mc-body">' + body + '</div>' +
       renderMemPlanModal(root) + renderMemSubscriberModal(root) + renderMemDrawer(root) +
     '</div>';
@@ -4523,8 +4643,9 @@
     if (root._josMemBound) return;
     root._josMemBound = true;
     root.addEventListener('input', function (e) {
-      if (e.target && e.target.id === 'jos-mem-search') {
+      if (e.target && (e.target.id === 'jos-mem-search' || e.target.id === 'jos-mem-global-search')) {
         root._josMemQ = e.target.value;
+        if (e.target.id === 'jos-mem-global-search') root._josMemGlobalQ = e.target.value;
         clearTimeout(root._josMemSearchT);
         root._josMemSearchT = setTimeout(function () { renderMemberships(); }, 180);
       }
@@ -10060,6 +10181,7 @@
     setInboxMode(false);
     setLeadsMode(false);
     setPipelineMode(false);
+    setMembershipsMode(false);
     updateChrome('dashboard');
     root.classList.add('jos-home-root');
     try {
@@ -13310,6 +13432,7 @@
     setJobsMode(v === 'jobs');
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');
+    setMembershipsMode(v === 'memberships');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,

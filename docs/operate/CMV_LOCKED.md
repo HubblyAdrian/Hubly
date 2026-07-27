@@ -5,20 +5,20 @@
 
 | Module | Result |
 |--------|--------|
-| 🏠 Home still works | ✅ · len=14627 |
-| 📥 Inbox still works | ✅ · len=7232 |
-| 📅 Jobs still works | ✅ · len=10982 |
-| 🧲 Leads still works | ✅ · len=8161 |
-| ❤️ Customers still works | ✅ · len=11030 |
-| 🧭 Pipeline still works | ✅ · len=8760 |
-| 🌐 Storefront still works | ✅ · len=3133 |
-| 📣 Marketing still works | ✅ · len=7426 |
-| ⭐ Reviews still works | ✅ · len=4361 |
-| 🔁 Memberships still works | ✅ · len=3127 |
-| 💰 Revenue still works | ✅ · len=3315 |
-| 📊 Reports still works | ✅ · len=4509 |
-| ✨ Ask Hubly still works | ✅ · len=8851 |
-| ⚙️ Settings still works | ✅ · len=3268 |
+| 🏠 Home still works | ✅ · len=24811 |
+| 📥 Inbox still works | ✅ · len=19656 |
+| 📅 Jobs still works | ✅ · len=19165 |
+| 🧲 Leads still works | ✅ · len=12259 |
+| ❤️ Customers still works | ✅ · len=10367 |
+| 🧭 Pipeline still works | ✅ · len=8928 |
+| 🌐 Storefront still works | ✅ · len=7173 |
+| 📣 Marketing still works | ✅ · len=8526 |
+| ⭐ Reviews still works | ✅ · len=9225 |
+| 🔁 Memberships still works | ✅ · len=6696 |
+| 💰 Revenue still works | ✅ · len=6225 |
+| 📊 Reports still works | ✅ · len=9562 |
+| ✨ Ask Hubly still works | ✅ · len=8853 |
+| ⚙️ Settings still works | ✅ · len=10325 |
 
 **Console warns during CMV:** 0
 
