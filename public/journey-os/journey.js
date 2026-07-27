@@ -10697,10 +10697,19 @@
         widgetMenuHtml(widgetId) + inner + '</section>';
     }
 
+    var siteUrl = storefrontPublicUrl();
     var hero = '<header class="jos-home-hero" data-jos-widget="hero">' +
       '<div class="jos-home-hero-main">' +
       '<h1>' + esc(greet) + ' ' + esc(owner) + ' <span aria-hidden="true">👋</span></h1>' +
       '<p class="jos-home-hero-biz">' + esc(bizName) + '</p>' +
+      '<div class="jos-home-site" title="Your website">' +
+      '<button type="button" class="jos-home-site-link" data-jos-act="preview" aria-label="View website">' +
+      '<span class="jos-home-site-live">Live</span>' +
+      '<span class="jos-home-site-url">' + esc(siteUrl) + '</span>' +
+      '</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="home-copy-site" title="Copy website link">Copy</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-btn-brand" data-jos-act="preview">View site</button>' +
+      '</div>' +
       '<p class="jos-home-hero-motivation">Here\'s what deserves your attention next — Hubly is watching the business with you.</p>' +
       '</div>' +
       '<div class="jos-home-hero-meta">' +
@@ -13942,8 +13951,9 @@
       if (act === 'new-invoice') return typeof global.openM === 'function' ? global.openM('m-new-invoice') : toast('New invoice');
       if (act === 'smart-quote') return typeof global.openSmartQuote === 'function' ? global.openSmartQuote() : toast('Quick Quote');
       if (act === 'preview') return typeof global.previewProfile === 'function' ? global.previewProfile() : null;
+      if (act === 'home-copy-site') return copyText('https://' + storefrontPublicUrl());
       if (act === 'stripe') return typeof global.goStripeConnect === 'function' ? global.goStripeConnect() : ask('Connect Stripe');
-      if (act === 'copy-link') return copyText(location.origin + '/' + (S().slug || ''));
+      if (act === 'copy-link') return copyText('https://' + storefrontPublicUrl());
       if (act === 'ask-share') return ask('Draft a message to share my booking link with past customers');
       if (act === 'ask-mem') return ask('Improve my membership plans');
       if (act === 'ask-growth') return ask('What should I do next to grow?');

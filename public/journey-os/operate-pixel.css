@@ -151,17 +151,7 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   width:56px;height:40px;margin:4px auto 0;justify-content:center!important;padding:0;
 }
 #p-app.jos-pixel:not(.jos-nav-expanded) .nav-jobs-new{display:none!important}
-#p-app.jos-pixel .nav-view-site{
-  display:block;text-decoration:none;color:rgba(255,255,255,.55);font-weight:750;
-  letter-spacing:.02em;
-}
-#p-app.jos-pixel:not(.jos-nav-expanded) .nav-view-site{
-  width:64px;margin:0 auto 8px;text-align:center;font-size:9px;padding:6px 4px;line-height:1.25;
-}
-#p-app.jos-pixel.jos-nav-expanded .nav-view-site{
-  margin:6px 14px 8px;padding:8px 12px;font-size:12px;border-radius:10px;text-align:left;
-}
-#p-app.jos-pixel .nav-view-site:hover{color:#FDBA74;background:rgba(255,255,255,.06)}
+#p-app.jos-pixel .nav-view-site{display:none!important}
 #p-app.jos-pixel .app-main{overflow-x:hidden;min-width:0;margin-left:var(--nav)}
 
 /* Expanded: icon LEFT of label — never stacked — same on Home/Inbox/every tab */
@@ -3194,6 +3184,22 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   margin:0;font-size:clamp(26px,3vw,34px);font-weight:800;letter-spacing:-.035em;color:#141B2B;
 }
 .jos-home-hero-biz{margin:6px 0 0;font-size:15px;font-weight:750;color:var(--jos-brand)}
+.jos-home-site{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;max-width:100%;
+}
+.jos-home-site-link{
+  appearance:none;border:1px solid var(--jos-card-border);background:#fff;border-radius:10px;
+  padding:7px 10px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;font:inherit;
+  max-width:min(420px,100%);min-width:0;box-shadow:var(--jos-card-shadow);
+}
+.jos-home-site-link:hover{border-color:rgba(217,99,45,.45)}
+.jos-home-site-live{
+  flex-shrink:0;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:#15803D;background:rgba(21,128,61,.1);padding:3px 6px;border-radius:6px;
+}
+.jos-home-site-url{
+  font-size:13px;font-weight:700;color:var(--jos-navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 .jos-home-hero-motivation{margin:6px 0 0;font-size:13px;color:var(--jos-ink-2);max-width:52ch}
 .jos-home-hero-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .jos-home-weather{
