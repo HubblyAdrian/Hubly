@@ -1,0 +1,342 @@
+{
+  "accepted": true,
+  "consoleErrors": 0,
+  "validatorPass": true,
+  "cmvPass": true,
+  "desktopOk": true,
+  "tabletOk": true,
+  "mobileOk": true,
+  "eventLog": [
+    "membership.started",
+    "membership.visit_used",
+    "membership.renewed",
+    "membership.paused",
+    "membership.cancelled"
+  ],
+  "results": [
+    {
+      "section": "Events",
+      "name": "HublyEvents loaded",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 18",
+      "name": "Immutable history API",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Header",
+      "name": "Page renders",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Ownership",
+      "name": "membershipsOs created",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Ownership",
+      "name": "Seeded plans",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Ownership",
+      "name": "Seeded subscriber from recurring customer",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Architecture",
+      "name": "EVENTS.md present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Architecture",
+      "name": "MEMBERSHIPS_PLAN present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "overview",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "plans",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "subscribers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "visits",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "billing",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "activity",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Plans",
+      "name": "Plan saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 18",
+      "name": "Activity append-only before mutate",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Subscribers",
+      "name": "Membership started",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "membership.started published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Visits",
+      "name": "Visit used",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "membership.visit_used published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Subscribers",
+      "name": "Renewed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "membership.renewed published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Subscribers",
+      "name": "Paused",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "membership.paused published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Subscribers",
+      "name": "Cancelled",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "membership.cancelled published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 18",
+      "name": "HublyEvents history frozen",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 18",
+      "name": "Activity not rewritten in place",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Stage 2",
+      "name": "Stripe placeholder",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "E2E Journey",
+      "name": "Open customer profile",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 15",
+      "name": "Owns membershipsOs",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 19",
+      "name": "No membershipCustomers clone",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 17",
+      "name": "Publishes HublyEvents",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Design System",
+      "name": "Uses HublyDS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "mem-plan-open",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "mem-plan-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "mem-sub-open",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "mem-sub-save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "mem-renew",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "mem-pause",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "mem-cancel",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "mem-use-visit",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "mem-stripe",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "mem-open-customer",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Empty States",
+      "name": "Empty helpers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Error States",
+      "name": "Retry markup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive CSS",
+      "name": "Memberships layout",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Load order",
+      "name": "hubly.html loads hubly-events",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Validator",
+      "name": "check-customer-journey-os",
+      "ok": true,
+      "detail": "PASS in 36ms"
+    },
+    {
+      "section": "CMV",
+      "name": "Locked modules incl. Reviews",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Console",
+      "name": "Console errors = 0",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "section": "Responsive",
+      "name": "Desktop",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive",
+      "name": "Tablet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive",
+      "name": "Mobile",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

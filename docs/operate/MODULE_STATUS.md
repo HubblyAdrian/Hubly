@@ -94,8 +94,8 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 🌐 Storefront | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📣 Marketing | ✅ | ⏸ | ✅ | ⏳ | ⏳ | 🔓 Reopen |
 | ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
+| 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
+| 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ✨ Ask Hubly | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ⚙️ Settings | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
@@ -115,8 +115,8 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 7 | 🌐 Storefront | ✅ Locked | ⏸ | [#250](https://github.com/HubblyAdrian/Hubly/pull/250) | 🔒 OS · MAT ✅ · Service Catalog owner · merged |
 | 8 | 📣 Marketing | 🔓 Reopen | ⏸ | Mission Control redesign | Explicit reopen · [MARKETING_MISSION_CONTROL.md](./MARKETING_MISSION_CONTROL.md) · prior lock [#251](https://github.com/HubblyAdrian/Hubly/pull/251) |
 | 9 | ⭐ Reviews | ✅ Locked | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | 🔒 OS · MAT ✅ · Rule #17 · merged |
-| 10 | 🔁 Memberships | ✅ Locked | ⏸ | [#253](https://github.com/HubblyAdrian/Hubly/pull/253) | 🔒 OS · MAT ✅ · Rules #18–19 · merged |
-| 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔓 Reopen · MAT ✅ · Rule #20 · merged |
+| 10 | 🔁 Memberships | 🔓 Reopen | ⏸ | [#253](https://github.com/HubblyAdrian/Hubly/pull/253) | Mission Control · [MEMBERSHIPS_MISSION_CONTROL.md](./MEMBERSHIPS_MISSION_CONTROL.md) |
+| 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔒 OS · MAT ✅ · Rule #20 · merged |
 | 12 | 📊 Reports | ✅ Locked | ⏸ | [#255](https://github.com/HubblyAdrian/Hubly/pull/255) | 🔒 OS · MAT ✅ · Rule #21 · merged |
 | 13 | ✨ Ask Hubly | ✅ Locked | ⏸ | [#256](https://github.com/HubblyAdrian/Hubly/pull/256) | 🔒 OS · MAT ✅ · Rule #22 · merged |
 | 14 | ⚙️ Settings | ✅ Locked | ⏸ | [#257](https://github.com/HubblyAdrian/Hubly/pull/257) | 🔓 Reopen · MAT ✅ · Rule #23 · merged |
@@ -156,12 +156,13 @@ All **14** Operate modules have Stage 1 OS complete and locked:
 
 **Do not modify Revenue unless:** bug fix · Stage 2 integrations · explicit module reopen.
 
-### 🔁 Memberships lock
+### 🔁 Memberships reopen
 
 **Stage 1 — Operating System:** ✅ COMPLETE  
+**Mission Control redesign:** 🔓 In progress — [MEMBERSHIPS_MISSION_CONTROL.md](./MEMBERSHIPS_MISSION_CONTROL.md)  
 **Stage 2 — Integrations:** ⏸ Deferred  
 
-**Do not modify Memberships unless:** bug fix · Stage 2 integrations · explicit module reopen.
+**Do not modify Memberships unless:** bug fix · Mission Control redesign · Stage 2 integrations · explicit module reopen.
 
 ### ⭐ Reviews reopen
 

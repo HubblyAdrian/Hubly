@@ -252,7 +252,7 @@ function setSelect(id, value) {
 }
 
 H.renderMemberships();
-check("Header", "Page renders", /jos-mem-page|Memberships/.test(memRoot.innerHTML));
+check("Header", "Page renders", /jos-mem-mc-shell|jos-mem-page|Memberships/.test(memRoot.innerHTML));
 check("Ownership", "membershipsOs created", !!(state.membershipsOs && Array.isArray(state.membershipsOs.plans)));
 check("Ownership", "Seeded plans", state.membershipsOs.plans.length >= 1);
 check("Ownership", "Seeded subscriber from recurring customer", state.membershipsOs.subscribers.some((s) => s.customerId === "c1"));
@@ -270,7 +270,7 @@ tabs.forEach((tab) => {
       : tab === "plans"
         ? /Plan|Visit|price|Create/i.test(memRoot.innerHTML)
         : tab === "subscribers"
-          ? /Subscriber|Customer|Start|Active|Paused/i.test(memRoot.innerHTML)
+          ? /Subscription|Customer|Start|Active|Paused|Next Payment/i.test(memRoot.innerHTML)
           : tab === "visits"
             ? /Visit|allowance|Use/i.test(memRoot.innerHTML)
             : tab === "billing"
@@ -381,7 +381,7 @@ check("Design System", "Uses HublyDS", /DS\(\)|pageHeader|HublyDS/.test(jsrc));
 check("Empty States", "Empty helpers", /No plan|No subscriber|empty|Activity/i.test(jsrc));
 check("Error States", "Retry markup", /Memberships could not load|Retry/.test(jsrc));
 const css = fs.readFileSync(path.join(repoRoot, "public/journey-os/operate-pixel.css"), "utf8");
-check("Responsive CSS", "Memberships layout", /jos-mem-page|jos-mem-/.test(css));
+check("Responsive CSS", "Memberships layout", /jos-mem-mc-shell|jos-mem-mc-table|jos-mem-mc-/.test(css));
 check("Load order", "hubly.html loads hubly-events", /hubly-events\.js/.test(fs.readFileSync(path.join(repoRoot, "public/hubly.html"), "utf8")));
 
 let validatorPass = false;
@@ -444,7 +444,7 @@ window.localStorage={getItem:function(){return null;},setItem:function(){}};
 <script src="/journey-os/design-system.js"></script>
 <script src="/journey-os/hubly-events.js"></script>
 <script src="/journey-os/journey.js"></script>
-<script>HublyJourneyOS.renderMemberships();document.title=document.getElementById("jos-memberships-root").innerHTML.includes("jos-mem-page")?"MAT_OK":"MAT_FAIL";</script>
+<script>HublyJourneyOS.renderMemberships();document.title=document.getElementById("jos-memberships-root").innerHTML.includes("jos-mem-mc-shell")?"MAT_OK":"MAT_FAIL";</script>
 </body></html>`;
   fs.writeFileSync(path.join(pub, "mat-memberships.html"), matHtml);
   const browser = await chromium.launch({
@@ -463,7 +463,7 @@ window.localStorage={getItem:function(){return null;},setItem:function(){}};
     await page.waitForTimeout(350);
     return page.evaluate(() => {
       const root = document.getElementById("jos-memberships-root");
-      const pageEl = root && root.querySelector(".jos-mem-page");
+      const pageEl = root && (root.querySelector(".jos-mem-mc-shell") || root.querySelector(".jos-mem-page"));
       if (!pageEl) return false;
       const r = pageEl.getBoundingClientRect();
       return r.width > 200 && r.height > 200 && document.title.includes("MAT_OK");
