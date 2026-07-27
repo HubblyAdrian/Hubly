@@ -1,11 +1,12 @@
 # Module 12 — 📊 Reports
 
-**Status:** Stage 1 OS complete
+**Status:** Stage 1 OS · MAT ✅ · CMV PASS · awaiting approval  
 **Branch:** `cursor/operate-reports-2662`  
 **Plan:** [REPORTS_PLAN.md](./REPORTS_PLAN.md)  
 **Platform:** [PLATFORM_READINESS.md](./PLATFORM_READINESS.md)  
 **Rules:** #14–21 (especially **#21**)  
 **Design System:** HublyDS (Rule #14)  
+**MAT:** [REPORTS_MAT.md](./REPORTS_MAT.md) · runner `node scripts/mat-reports.mjs` 
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
 

@@ -1,6 +1,6 @@
 # Cross-Module Verification (CMV)
 
-**Date:** 2026-07-26  
+**Date:** 2026-07-27  
 **Runner:** `node scripts/cmv-locked-modules.mjs`
 
 | Module | Result |
@@ -15,6 +15,7 @@
 | 📣 Marketing still works | ✅ · len=7426 |
 | ⭐ Reviews still works | ✅ · len=4361 |
 | 🔁 Memberships still works | ✅ · len=3127 |
+| 💰 Revenue still works | ✅ · len=3315 |
 
 **Console warns during CMV:** 0
 

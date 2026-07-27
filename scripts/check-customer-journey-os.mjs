@@ -354,6 +354,21 @@ try {
       fs.existsSync(path.join(root, "docs/operate/REVENUE_ARCHITECTURE.md"))
   );
 
+  mark("check reports");
+  ok(
+    "reports",
+    has(jjs, "function renderReportsPage") &&
+      has(jjs, "handleReportsAct") &&
+      has(jjs, "ensureReportsOsState") &&
+      has(jjs, "rpt-dash-save") &&
+      has(jjs, "reportsOs") &&
+      has(jjs, "jos-rpt-page") &&
+      has(hubly, 'id="v-reports"') &&
+      has(hubly, 'id="jos-reports-root"') &&
+      has(px, "jos-rpt-page") &&
+      fs.existsSync(path.join(root, "docs/operate/PLATFORM_READINESS.md"))
+  );
+
   const hublyEventsJs = read("public/journey-os/hubly-events.js");
   mark("check hubly-events");
   ok(

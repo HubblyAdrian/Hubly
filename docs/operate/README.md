@@ -36,6 +36,6 @@ See [MODULE_STATUS.md](./MODULE_STATUS.md) (OS · Integrations · AI · QA · **
 | Reviews | [REVIEWS_CHECKLIST.md](./REVIEWS_CHECKLIST.md) · [REVIEWS_MAT.md](./REVIEWS_MAT.md) · [REVIEWS_PLAN.md](./REVIEWS_PLAN.md) · [EVENTS.md](./EVENTS.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Memberships | [MEMBERSHIPS_CHECKLIST.md](./MEMBERSHIPS_CHECKLIST.md) · [MEMBERSHIPS_MAT.md](./MEMBERSHIPS_MAT.md) · [MEMBERSHIPS_PLAN.md](./MEMBERSHIPS_PLAN.md) · [EVENTS.md](./EVENTS.md) | ✅ | ⏸ | ✅ | 🔒 OS |
 | Revenue | [REVENUE_CHECKLIST.md](./REVENUE_CHECKLIST.md) · [REVENUE_MAT.md](./REVENUE_MAT.md) · [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) · [REVENUE_PLAN.md](./REVENUE_PLAN.md) | ✅ | ⏸ | ✅ | 🔒 OS |
-| Reports | [REPORTS_CHECKLIST.md](./REPORTS_CHECKLIST.md) · [REPORTS_PLAN.md](./REPORTS_PLAN.md) | ⏳ | ⏸ | ⏳ | ❌ |
+| Reports | [REPORTS_CHECKLIST.md](./REPORTS_CHECKLIST.md) · [REPORTS_MAT.md](./REPORTS_MAT.md) · [REPORTS_PLAN.md](./REPORTS_PLAN.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) | ✅ | ⏸ | ✅ | ❌ |
 | Ask Hubly | [ASK_HUBLY_CHECKLIST.md](./ASK_HUBLY_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |
 | Settings | [SETTINGS_CHECKLIST.md](./SETTINGS_CHECKLIST.md) | ⏳ | ⏸ | ⏳ | ❌ |

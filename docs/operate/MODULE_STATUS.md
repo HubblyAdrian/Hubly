@@ -84,7 +84,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 📊 Reports | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
+| 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
 | ✨ Ask Hubly | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | ⚙️ Settings | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 
@@ -105,7 +105,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 9 | ⭐ Reviews | ✅ Locked | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | 🔒 OS · MAT ✅ · Rule #17 · merged |
 | 10 | 🔁 Memberships | ✅ Locked | ⏸ | [#253](https://github.com/HubblyAdrian/Hubly/pull/253) | 🔒 OS · MAT ✅ · Rules #18–19 · merged |
 | 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔒 OS · MAT ✅ · Rule #20 · merged |
-| 12 | 📊 Reports | ⏳ | ⏸ | — | Rule #21 · aggregates only · `cursor/operate-reports-2662` |
+| 12 | 📊 Reports | ✅ OS complete · MAT ✅ · CMV PASS | ⏸ | pending | Rule #21 · aggregates only · awaiting approval → then 🔒 OS |
 | 13–14 | Remaining | ⏳ | ⏸ | — | Ask Hubly · Settings |
 
 ### 💰 Revenue lock
