@@ -1966,7 +1966,7 @@
       { label: 'Business', value: city, act: 'set-tab-business', icon: 'biz', tone: 'purple' },
       { label: 'Team', value: String(teamN) + ' users', act: 'set-tab-team', icon: 'team', tone: 'green' },
       { label: 'Status', value: plan, act: 'set-tab-billing', icon: 'plan', tone: 'blue' },
-      { label: 'Information', value: 'OS status · Stage 2', act: 'set-tab-integrations', icon: 'plug', tone: 'violet', badge: 'Live' },
+      { label: 'Integrations', value: 'Stripe · Google · SMS', act: 'set-tab-integrations', icon: 'plug', tone: 'violet', badge: 'Setup' },
       { label: 'AI Defaults', value: String(os.ai.tone || 'helpful_pro'), act: 'set-tab-ai', icon: 'ai', tone: 'amber' },
       { label: 'Security', value: mfaOff ? 'MFA: off' : 'MFA: on', act: 'set-tab-security', icon: 'shield', tone: 'red', danger: mfaOff }
     ].map(function (c) {
@@ -2221,40 +2221,25 @@
     app.classList.toggle('jos-settings-mode', !!on);
   }
   function renderSetTopChrome(root) {
-    var bizName = allowDemoSeed() ? "Adrian's Lawn Service" : (S().businessName || S().biz || "Adrian's Lawn Service");
-    var owner = allowDemoSeed() ? 'Adrian Lopez' : (S().ownerName || bizName);
-    var notifN = allowDemoSeed() ? 3 : 0;
-    return '<label class="jos-set-global-search"><span class="jos-set-search-ico" aria-hidden="true"></span>' +
-      '<input id="jos-set-global-search" type="search" placeholder="Search customers, jobs, messages..." value="' + esc(root._josSetGlobalQ || '') + '">' +
-      '<kbd>⌘K</kbd></label>' +
-      '<div class="jos-set-top-actions">' +
-      '<button type="button" class="jos-btn jos-btn-brand jos-set-top-new" data-jos-act="set-new">+ New</button>' +
-      '<button type="button" class="jos-btn jos-set-ask-btn" data-jos-act="set-go-ask"><span aria-hidden="true">✦</span> Ask Hubly</button>' +
-      '<button type="button" class="jos-icon-btn jos-set-bell" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
-      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>' +
-      (notifN ? '<i class="badge">' + notifN + '</i>' : '') + '</button>' +
-      '<button type="button" class="jos-set-profile" data-jos-act="go-settings" title="Profile">' +
-      '<span class="ava">' + esc(initials(owner)) + '</span><span class="meta"><strong>' + esc(bizName) + '</strong></span>' +
-      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>' +
-      '</div>';
+    /* Kept for compatibility — Settings page no longer duplicates global chrome. */
+    return '';
   }
   function renderSettingsPageInner(root) {
     ensureSettingsOsState();
     var tab = root._josSetTab || ensureSettingsOsState().tab || 'overview';
     root._josSetTab = tab;
     ensureSettingsOsState().tab = tab;
-    root.innerHTML = '<div class="jos-set-mc-shell jos-set-page jos-set-shot">' +
+    root.innerHTML = '<div class="jos-set-mc-shell jos-set-page">' +
       '<header class="jos-set-mc-header">' +
-        '<div class="jos-set-mc-title"><h1>Settings</h1><p>Business, team, and integrations.</p></div>' +
-        renderSetTopChrome(root) +
-      '</header>' +
-      '<div class="jos-set-mc-head">' +
-        '<div class="jos-set-mc-head-left"><h2>Settings</h2><p>Return to control center. Configure your Hubly.</p></div>' +
+        '<div class="jos-set-mc-title">' +
+          '<h1>Settings</h1>' +
+          '<p>Business, team, billing, and integrations — one place to configure Hubly.</p>' +
+        '</div>' +
         '<div class="jos-set-mc-head-actions">' +
           '<button type="button" class="jos-btn jos-btn-sm jos-set-refresh" data-jos-act="set-refresh">Refresh</button>' +
           '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="set-go-ask">Ask Hubly</button>' +
         '</div>' +
-      '</div>' +
+      '</header>' +
       setTabsHtml(tab) +
       '<div class="jos-set-mc-body">' + renderSettingsTabBody(root, tab) + '</div>' +
     '</div>';
