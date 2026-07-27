@@ -9999,6 +9999,9 @@
   }
 
   function homeScores() {
+    if (allowDemoSeed()) {
+      return { overall: 92, revenue: 94, reviews: 96, marketing: 88, leadResp: 95, membership: 86 };
+    }
     var done = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).length;
     var members = customers().filter(function (c) { return c.customerType === 'recurring'; }).length;
     var pending = jobs().filter(function (j) { return j.status === 'pending'; }).length;
@@ -10059,7 +10062,15 @@
     setJobsMode(false);
     setInboxMode(false);
     setLeadsMode(false);
+    setCustomersMode(false);
     setPipelineMode(false);
+    setStorefrontMode(false);
+    setMarketingMode(false);
+    setReviewsMode(false);
+    setMembershipsMode(false);
+    setRevenueMode(false);
+    setReportsMode(false);
+    setHomeMode(true);
     updateChrome('dashboard');
     root.classList.add('jos-home-root');
     try {
@@ -10196,447 +10207,288 @@
       '<defs><linearGradient id="josRevFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(217,99,45,.35)"/><stop offset="100%" stop-color="rgba(217,99,45,0)"/></linearGradient></defs>' +
       '<polygon fill="url(#josRevFill)" points="' + area + '"/>' +
       '<polyline fill="none" stroke="#D9632D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="' + pts + '"/>' +
-      bars +
-      '</svg>';
+      bars + '</svg>';
+  }
+
+  function setHomeMode(on) {
+    var app = el('p-app');
+    if (!app) return;
+    if (on) {
+      app.classList.add('jos-pixel');
+      try { document.body.classList.add('jos-pixel'); } catch (e) {}
+    }
+    app.classList.toggle('jos-home-mode', !!on);
+  }
+
+  function homeSpark(vals, color) {
+    vals = vals || [12, 18, 14, 22, 20, 28, 26];
+    var max = Math.max.apply(null, vals.concat([1]));
+    var w = 88, h = 28, step = w / Math.max(1, vals.length - 1);
+    var pts = vals.map(function (v, i) {
+      return (i * step).toFixed(1) + ',' + (h - (v / max) * (h - 4) - 2).toFixed(1);
+    }).join(' ');
+    return '<svg class="jos-hs-spark" viewBox="0 0 ' + w + ' ' + h + '" width="88" height="28" aria-hidden="true"><polyline fill="none" stroke="' + (color || '#D9632D') + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="' + pts + '"/></svg>';
+  }
+
+  function homeBookingsBars(allJobs, ceoDemo) {
+    var days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    var today = new Date();
+    var monday = new Date(today); monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    var series = days.map(function (label, i) {
+      var d = new Date(monday); d.setDate(monday.getDate() + i);
+      var ds = typeof global.dateStr === 'function' ? global.dateStr(d) : d.toISOString().slice(0, 10);
+      var dayJobs = allJobs.filter(function (j) { return j.date === ds; });
+      var confirmed = dayJobs.filter(function (j) { return j.status === 'completed' || j.status === 'confirmed' || j.status === 'scheduled'; }).length;
+      var pending = dayJobs.filter(function (j) { return j.status === 'pending' || j.status === 'in_progress'; }).length;
+      var cancelled = dayJobs.filter(function (j) { return j.status === 'cancelled'; }).length;
+      if (ceoDemo && !dayJobs.length) {
+        confirmed = [4, 6, 5, 7, 8, 3, 2][i];
+        pending = [1, 2, 1, 2, 1, 1, 0][i];
+        cancelled = [0, 1, 0, 0, 1, 0, 0][i];
+      }
+      var total = Math.max(1, confirmed + pending + cancelled);
+      return { label: label, confirmed: confirmed, pending: pending, cancelled: cancelled, total: total };
+    });
+    var max = Math.max.apply(null, series.map(function (s) { return s.confirmed + s.pending + s.cancelled; }).concat([1]));
+    return '<div class="jos-hs-bars">' + series.map(function (s) {
+      var h = Math.max(8, Math.round(((s.confirmed + s.pending + s.cancelled) / max) * 110));
+      var cH = Math.round((s.confirmed / Math.max(1, s.confirmed + s.pending + s.cancelled)) * h);
+      var pH = Math.round((s.pending / Math.max(1, s.confirmed + s.pending + s.cancelled)) * h);
+      var xH = Math.max(0, h - cH - pH);
+      return '<div class="jos-hs-bar-col" title="' + esc(s.label) + '">' +
+        '<div class="jos-hs-bar" style="height:' + h + 'px">' +
+        '<i class="c" style="height:' + cH + 'px"></i>' +
+        '<i class="p" style="height:' + pH + 'px"></i>' +
+        '<i class="x" style="height:' + xH + 'px"></i>' +
+        '</div><span>' + esc(s.label) + '</span></div>';
+    }).join('') + '</div>';
+  }
+
+  function homeRevArea(vals) {
+    vals = vals || [42, 55, 48, 62, 70, 66, 78, 74, 82, 88];
+    var max = Math.max.apply(null, vals.concat([1]));
+    var w = 320, h = 120, pad = 8;
+    var step = (w - pad * 2) / Math.max(1, vals.length - 1);
+    var pts = vals.map(function (v, i) {
+      var x = pad + i * step;
+      var y = h - pad - ((v / max) * (h - pad * 2));
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    var area = pad + ',' + (h - pad) + ' ' + pts + ' ' + (pad + (vals.length - 1) * step).toFixed(1) + ',' + (h - pad);
+    return '<svg class="jos-hs-rev-svg" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">' +
+      '<defs><linearGradient id="josHsRev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(217,99,45,.35)"/><stop offset="100%" stop-color="rgba(217,99,45,0)"/></linearGradient></defs>' +
+      '<polygon fill="url(#josHsRev)" points="' + area + '"/><polyline fill="none" stroke="#D9632D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="' + pts + '"/></svg>';
   }
 
   function renderHomeDashboard(root) {
-    root.innerHTML = '<div class="jos-page jos-home-page jos-home-v2"><div class="jos-home-loading" aria-live="polite">Loading Home…</div></div>';
+    setHomeMode(true);
+    root.innerHTML = '<div class="jos-page jos-home-shot"><div class="jos-home-loading" aria-live="polite">Loading Home…</div></div>';
     var today = todayStr();
-    var allJobs = jobs().filter(function (j) { return !j.isBlock && j.status !== 'cancelled'; });
-    var todayJobs = allJobs.filter(function (j) { return j.date === today; });
-    var demoSched = false;
+    var allJobs = jobs().filter(function (j) { return !j.isBlock; });
+    var liveJobs = allJobs.filter(function (j) { return j.status !== 'cancelled'; });
+    var todayJobs = liveJobs.filter(function (j) { return j.date === today; });
     var ceoDemo = allowDemoSeed();
     if (!todayJobs.length && ceoDemo) {
-      demoSched = true;
       todayJobs = [
-        { id: 'demo_j1', customer: 'Sarah Johnson', service: 'Interior Detail', time: '9:00 AM', amount: 260, status: 'confirmed', address: 'La Jolla, CA', phone: '(619) 555-0198' },
-        { id: 'demo_j2', customer: 'Mike Brown', service: 'Exterior Detail', time: '1:00 PM', amount: 180, status: 'confirmed', address: 'Pacific Beach, CA', phone: '(619) 555-0142' },
-        { id: 'demo_j3', customer: 'Chris Park', service: 'Paint Correction', time: '4:00 PM', amount: 450, status: 'in_progress', address: 'Mission Valley, CA', phone: '(619) 555-0177' }
+        { id: 'demo_j1', customer: 'Sarah Johnson', service: 'Exterior Detail', time: '10:00 AM', amount: 180, status: 'confirmed', address: 'Miami, FL' },
+        { id: 'demo_j2', customer: 'Mike Brown', service: 'Interior Detail', time: '12:30 PM', amount: 220, status: 'confirmed', address: 'Brickell' },
+        { id: 'demo_j3', customer: 'Chris Park', service: 'Paint Correction', time: '3:00 PM', amount: 450, status: 'scheduled', address: 'Coral Gables' },
+        { id: 'demo_j4', customer: 'Alex Rivera', service: 'Pickup Order', time: '5:00 PM', amount: 40, status: 'pending', address: 'Shop' }
       ];
     }
-    var completedToday = todayJobs.filter(function (j) { return j.status === 'completed'; });
-    var weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    var weekJobsDone = allJobs.filter(function (j) {
-      if (j.status !== 'completed') return false;
-      var d = new Date(String(j.date || '') + 'T12:00:00');
-      return !isNaN(d.getTime()) && d >= weekStart;
-    }).length;
+
     var month = today.slice(0, 7);
-    var monthJobsDone = allJobs.filter(function (j) { return j.status === 'completed' && String(j.date || '').slice(0, 7) === month; }).length;
-    if (!monthJobsDone && ceoDemo) monthJobsDone = 28;
-    if (!weekJobsDone && ceoDemo) weekJobsDone = 9;
-    var completionPct = todayJobs.length ? Math.round((completedToday.length / todayJobs.length) * 100) : (ceoDemo ? 67 : 0);
+    var completedJobs = allJobs.filter(function (j) { return j.status === 'completed'; });
+    var monthJobsDone = completedJobs.filter(function (j) { return String(j.date || '').slice(0, 7) === month; }).length;
+    var monthRev = completedJobs.filter(function (j) { return String(j.date || '').slice(0, 7) === month; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    if (ceoDemo) {
+      if (monthJobsDone < 36) monthJobsDone = 36;
+      if (monthRev < 12420) monthRev = 12420;
+    }
 
-    var todayRev = jobs().filter(function (j) { return j.status === 'completed' && j.date === today; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    if (!todayRev && ceoDemo) todayRev = todayJobs.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) * 0.35 || 845;
-    var yest = new Date(); yest.setDate(yest.getDate() - 1);
-    var yestStr = typeof global.dateStr === 'function' ? global.dateStr(yest) : yest.toISOString().slice(0, 10);
-    var yestRev = jobs().filter(function (j) { return j.status === 'completed' && j.date === yestStr; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    if (!yestRev && ceoDemo) yestRev = Math.round(todayRev * 0.88);
-    var weekRev = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).slice(0, 14).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    if (!weekRev && ceoDemo) weekRev = Math.round(todayRev * 5.2);
-    var monthRev = jobs().filter(function (j) { return j.status === 'completed' && String(j.date || '').slice(0, 7) === month; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    if (!monthRev && ceoDemo) monthRev = Math.round(todayRev * 18);
-    var outstanding = quotes().filter(function (q) { return q.status === 'sent' || q.status === 'draft'; }).reduce(function (s, q) { return s + (parseFloat(q.amount) || 0); }, 0);
-    if (!outstanding && ceoDemo) outstanding = 2180;
-    var revDelta = yestRev ? Math.round(((todayRev - yestRev) / yestRev) * 100) : (ceoDemo ? 12 : 0);
-    var revBeat = Math.max(0, Math.round(monthRev * 0.12) || (ceoDemo ? 1420 : 0));
+    var prevMonth = new Date(); prevMonth.setMonth(prevMonth.getMonth() - 1);
+    var prevKey = prevMonth.toISOString().slice(0, 7);
+    var prevRev = completedJobs.filter(function (j) { return String(j.date || '').slice(0, 7) === prevKey; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    var revDelta = prevRev ? (((monthRev - prevRev) / prevRev) * 100) : (ceoDemo ? 18.6 : 0);
+    var jobsDelta = ceoDemo ? 12.4 : (monthJobsDone ? 8 : 0);
 
-    var convs = conversations().length ? conversations() : (ceoDemo ? demoConversations() : []);
-    var ch = channelCounts(convs);
-    var msgsWaiting = convs.reduce(function (s, c) { return s + (c.unread || 0); }, 0);
-    if (!msgsWaiting && ceoDemo) msgsWaiting = ch.needs || 5;
-
-    var scores = homeScores();
-    var hour = new Date().getHours();
-    var greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
-    var owner = S().ownerName || S().ownerFirst || (S().biz ? String(S().biz).split(/[\s'-]/)[0] : '') || 'there';
-    if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
-    if (owner.indexOf(' ') > -1) owner = owner.split(' ')[0];
-    if (/^adrian'?s$/i.test(owner) && S().ownerName) owner = String(S().ownerName).split(/\s+/)[0];
-    var bizName = S().biz || 'Your business';
-    var layout = homeLayout() || { widgets: {}, revRange: 'month', layoutPreset: 'owner' };
-    if (!layout.widgets) layout.widgets = {};
-    var W = layout.widgets;
-    var revRange = root._josRevRange || layout.revRange || 'month';
-    root._josRevRange = revRange;
-    var sparkRev = [yestRev * 0.7, yestRev * 0.85, yestRev, todayRev * 0.6, todayRev * 0.8, todayRev * 0.9, todayRev].map(function (n) { return Math.max(8, Math.round(n / 40)); });
     var leadList = collectLeads();
-    var openLeads = leadList.length || (ceoDemo ? 5 : 0);
-    var leadValue = leadList.reduce(function (s, l) { return s + (parseFloat(l.value || l.amount || l.estimate) || 0); }, 0) || (ceoDemo ? 920 : 0);
+    var openLeads = leadList.length || (ceoDemo ? 72 : 0);
+    var leadsDelta = ceoDemo ? 8.7 : (openLeads ? 5 : 0);
+    var outstandingQuotes = quotes().filter(function (q) { return q.status === 'sent' || q.status === 'draft'; }).length;
+    if (!outstandingQuotes && ceoDemo) outstandingQuotes = 2;
+
     var reviews = (S().website && S().website.manualReviews) || [];
     var rating = Number(S().website && S().website.reviewRating) || (reviews[0] && reviews[0].rating) || (ceoDemo ? 4.9 : 0);
     var reviewCount = Number(S().website && S().website.reviewCount) || reviews.length || (ceoDemo ? 128 : 0);
-    var recentReview = reviews[0] || (ceoDemo
-      ? { name: 'Emily Wilson', text: 'Incredible ceramic coating — car looks brand new.', rating: 5 }
-      : { name: '', text: 'No reviews yet', rating: 0 });
-    var reviewsNew = Math.min(6, reviews.length || 0);
-    var dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-    var weatherTemp = 72;
-    var weatherLbl = 'Sunny · 0% rain';
-    var staleCustomers = customers().filter(function (c) {
-      var last = c.lastJobDate || c.lastVisit || c.updatedAt;
-      if (!last) return true;
-      var d = new Date(last);
-      return !isNaN(d.getTime()) && ((Date.now() - d.getTime()) / 86400000) > 90;
-    }).length;
 
-    var ccActions = commandCenterActions({
-      outstanding: outstanding,
-      openLeads: openLeads,
-      leadValue: leadValue,
-      gapHours: todayJobs.length < 3 ? 3 : 0,
-      staleCustomers: staleCustomers,
-      msgsWaiting: msgsWaiting,
-      revBeat: revBeat,
-      ceoDemo: ceoDemo
+    var scores = homeScores();
+    var owner = S().ownerName || S().ownerFirst || '';
+    if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
+    if (owner && owner.indexOf(' ') > -1) owner = owner.split(' ')[0];
+    if (!owner && S().biz) owner = String(S().biz).split(/[\s'-]+/)[0];
+    if (!owner) owner = 'there';
+
+    var coachTasks = [];
+    if (openLeads > 0 || ceoDemo) {
+      coachTasks.push({ ico: 'lead', title: 'Respond to ' + (openLeads || 5) + ' new lead' + ((openLeads || 5) === 1 ? '' : 's'), act: 'go-leads', cta: 'View', tone: 'ok' });
+    }
+    if (outstandingQuotes > 0 || ceoDemo) {
+      coachTasks.push({ ico: 'quote', title: 'Finish ' + (outstandingQuotes || 2) + ' quote' + ((outstandingQuotes || 2) === 1 ? '' : 's'), act: 'go-quotes', cta: 'View', tone: 'info' });
+    }
+    coachTasks.push({ ico: 'review', title: 'Grow your reviews', act: 'go-reviews', cta: 'Send', tone: 'brand' });
+    if (!coachTasks.length) {
+      coachTasks.push({ ico: 'lead', title: 'Get your first lead', act: 'go-editor', cta: 'View', tone: 'ok' });
+    }
+
+    var agenda = (todayJobs.length ? todayJobs : []).slice(0, 6).map(function (j, i) {
+      var tones = ['warn', 'brand', 'info', 'ok'];
+      return { time: j.time || j.startTime || '—', service: j.service || 'Job', where: j.address || j.location || j.customer || '', tone: tones[i % tones.length], id: j.id };
     });
 
-    var chartSeries = {
-      week: [todayRev * 0.6, todayRev * 0.8, yestRev, todayRev * 0.9, todayRev, weekRev / 5, weekRev / 4].map(function (n) { return Math.max(10, Math.round(n || 40)); }),
-      month: [monthRev * 0.18, monthRev * 0.22, monthRev * 0.2, monthRev * 0.28, monthRev * 0.25, monthRev * 0.3, monthRev * 0.32].map(function (n) { return Math.max(20, Math.round((n || 80) / 10)); }),
-      quarter: [62, 70, 68, 74, 80, 78, 88],
-      year: [48, 52, 55, 60, 66, 72, 80]
+    var leadRows = (leadList.length ? leadList : (ceoDemo ? [
+      { name: 'John Smith', service: 'Exterior Detail', location: 'Miami, FL', time: '2m ago', status: 'New' },
+      { name: 'Maria Garcia', service: 'Interior Detail', location: 'Brickell', time: '18m ago', status: 'Contacted' },
+      { name: 'James Lee', service: 'Ceramic Coating', location: 'Coral Gables', time: '1h ago', status: 'New' },
+      { name: 'Ava Patel', service: 'Full Detail', location: 'South Beach', time: '3h ago', status: 'Contacted' }
+    ] : [])).slice(0, 6);
+
+    var revSeries = ceoDemo || monthRev
+      ? [42, 48, 55, 52, 61, 70, 66, 74, 80, 78, 86, 92]
+      : [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8];
+
+    var kpi = function (tone, label, value, trend, sub, sparkColor, sparkVals, act) {
+      return '<button type="button" class="jos-hs-kpi tone-' + tone + '" data-jos-act="' + act + '">' +
+        '<div class="jos-hs-kpi-top"><span class="jos-hs-kpi-ico" aria-hidden="true"></span><span class="jos-hs-kpi-label">' + esc(label) + '</span></div>' +
+        '<div class="jos-hs-kpi-val">' + esc(String(value)) + '</div>' +
+        '<div class="jos-hs-kpi-foot"><span class="up">' + esc(trend) + '</span>' + (sub ? '<span class="sub">' + esc(sub) + '</span>' : '') + homeSpark(sparkVals, sparkColor) + '</div>' +
+        '</button>';
     };
 
-    var scoreMetrics = [
-      { id: 'response', label: 'Response time', value: scores.leadResp, tip: 'Average reply is under 8 minutes. Industry average is 42 minutes. Turn on auto-SMS for after-hours leads.' },
-      { id: 'reviews', label: 'Review score', value: scores.reviews, tip: 'Ask every completed job for a Google review within 2 hours.' },
-      { id: 'website', label: 'Website completion', value: scores.marketing, tip: 'Add before/after photos and a clear ceramic CTA on Storefront.' },
-      { id: 'bookings', label: 'Bookings', value: Math.min(99, 60 + todayJobs.length * 6), tip: 'Fill tomorrow\'s gap with a short exterior package promo.' },
-      { id: 'retention', label: 'Customer retention', value: scores.membership, tip: 'Send a 90-day win-back to inactive repeat customers.' },
-      { id: 'growth', label: 'Revenue growth', value: scores.revenue, tip: 'You are pacing ahead of last month — protect high-ticket slots.' },
-      { id: 'missed', label: 'Missed opportunities', value: Math.max(40, 100 - (msgsWaiting * 4 + openLeads * 3)), tip: 'Clear inbox and quote follow-ups first for the biggest lift.' }
-    ];
-
-    function cardShell(widgetId, extraClass, inner) {
-      var hidden = W[widgetId] === false ? ' jos-widget-hidden' : '';
-      return '<section class="jos-hcard' + (extraClass ? ' ' + extraClass : '') + hidden + '" data-jos-widget="' + esc(widgetId) + '" draggable="true">' +
-        widgetMenuHtml(widgetId) + inner + '</section>';
-    }
-
-    var hero = '<header class="jos-home-hero" data-jos-widget="hero">' +
-      '<div class="jos-home-hero-main">' +
-      '<h1>' + esc(greet) + ' ' + esc(owner) + ' <span aria-hidden="true">👋</span></h1>' +
-      '<p class="jos-home-hero-biz">' + esc(bizName) + '</p>' +
-      '<p class="jos-home-hero-motivation">Here\'s what deserves your attention next — Hubly is watching the business with you.</p>' +
-      '</div>' +
-      '<div class="jos-home-hero-meta">' +
-      '<div class="jos-home-weather"><span class="jos-home-weather-temp">' + weatherTemp + '°F</span><span>' + esc(weatherLbl) + '</span></div>' +
-      '<div class="jos-home-date">' + esc(dateLabel) + '</div>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="toggle-customize">Customize</button>' +
-      '</div></header>';
-
-    var kpiRow = '<div class="jos-home-kpis jos-home-kpi-row">' +
-      cardShell('kpi-revenue', 'jos-kpi-card', 
-        '<button type="button" class="jos-kpi-hit" data-jos-act="go-money">' +
-        '<div class="jos-kpi-top"><span class="jos-kpi-ico" aria-hidden="true">$</span><span class="lbl">Revenue</span></div>' +
-        '<div class="v">' + esc(canViewRevenue() ? money(todayRev) : '•••') + '</div>' +
-        '<div class="jos-kpi-lines"><span>Today · ' + esc(canViewRevenue() ? money(todayRev) : 'Hidden') + '</span><span>Month · ' + esc(canViewRevenue() ? money(monthRev) : 'Hidden') + '</span></div>' +
-        '<div class="s">' + (revDelta >= 0 ? '+' : '') + revDelta + '% growth</div>' +
-        sparkSvg(sparkRev) +
-        '<span class="jos-kpi-cta">View Revenue →</span></button>') +
-      cardShell('kpi-jobs', 'jos-kpi-card',
-        '<button type="button" class="jos-kpi-hit" data-jos-act="go-jobs">' +
-        '<div class="jos-kpi-top"><span class="jos-kpi-ico" aria-hidden="true">✓</span><span class="lbl">Jobs Completed</span></div>' +
-        '<div class="v">' + (completedToday.length || (ceoDemo ? 2 : 0)) + '</div>' +
-        '<div class="jos-kpi-lines"><span>Today · ' + completedToday.length + '</span><span>Week · ' + weekJobsDone + '</span><span>Month · ' + monthJobsDone + '</span></div>' +
-        '<div class="s">' + completionPct + '% completion</div>' +
-        sparkSvg([2, 3, 4, 3, 5, 6, Math.max(1, completedToday.length || 2)], '#2563EB') +
-        '<span class="jos-kpi-cta">Jobs Analytics →</span></button>') +
-      cardShell('kpi-leads', 'jos-kpi-card',
-        '<button type="button" class="jos-kpi-hit" data-jos-act="go-leads">' +
-        '<div class="jos-kpi-top"><span class="jos-kpi-ico" aria-hidden="true">◎</span><span class="lbl">New Leads</span></div>' +
-        '<div class="v">' + openLeads + '</div>' +
-        '<div class="jos-kpi-lines"><span>Response · ~6 min</span><span>Conversion · 28%</span></div>' +
-        '<div class="s">Newest first ready</div>' +
-        sparkSvg([1, 2, 2, 4, 3, 5, openLeads || 3], '#B84E1F') +
-        '<span class="jos-kpi-cta">Open Leads →</span></button>') +
-      cardShell('kpi-rating', 'jos-kpi-card',
-        '<button type="button" class="jos-kpi-hit" data-jos-act="go-reviews">' +
-        '<div class="jos-kpi-top"><span class="jos-kpi-ico" aria-hidden="true">★</span><span class="lbl">Rating</span></div>' +
-        '<div class="v">' + Number(rating).toFixed(1) + '</div>' +
-        '<div class="jos-kpi-lines"><span>Google · ' + Number(rating).toFixed(1) + '</span><span>' + reviewCount + ' reviews</span></div>' +
-        '<div class="s jos-kpi-quote">“' + esc(String(recentReview.text || recentReview.body || 'Great work').slice(0, 48)) + (String(recentReview.text || '').length > 48 ? '…' : '') + '”</div>' +
-        sparkSvg([scores.reviews - 8, scores.reviews - 5, scores.reviews - 2, scores.reviews], '#15803D') +
-        '<span class="jos-kpi-cta">Review Center →</span></button>') +
-      '</div>';
-
-    var ccRows = ccActions.map(function (a, i) {
-      return '<div class="jos-cc-row tone-' + esc(a.tone || 'brand') + '">' +
-        '<div class="jos-cc-idx">' + (i + 1) + '</div>' +
-        '<div class="jos-cc-body"><div class="jos-cc-title">' + esc(a.title) + '</div><div class="jos-cc-meta">' + esc(a.meta) + '</div></div>' +
-        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="' + esc(a.act) + '">' + esc(a.cta) + '</button>' +
-        '</div>';
-    }).join('');
-
-    var commandCenter = cardShell('command', 'jos-command-card',
-      '<div class="jos-cc-head">' +
-      '<div><div class="jos-kicker">Business Command Center</div>' +
-      '<h2>Here\'s what I\'d focus on today.</h2>' +
-      '<p class="jos-muted">Live from bookings, revenue, missed leads, calendar, weather, reviews, website, and marketing.</p></div>' +
-      btn('go-ask', 'Full AI Workspace', 'jos-btn jos-btn-sm') +
-      '</div>' +
-      '<div class="jos-cc-list">' + (ccRows || '<div class="jos-empty-action"><strong>You\'re clear for now</strong><p>Ask Hubly what to improve next, or fill the calendar.</p><div class="jos-btn-row">' + btn('go-jobs', 'Fill Schedule', 'jos-btn-brand jos-btn-sm') + btn('go-ask', 'Ask Hubly', 'jos-btn jos-btn-sm') + '</div></div>') + '</div>' +
-      '<form class="jos-cc-chat" data-jos-act="cc-ask-form" onsubmit="return false;">' +
-      '<input id="jos-home-cc-input" type="text" placeholder="Ask Hubly AI…" autocomplete="off" aria-label="Ask Hubly AI">' +
-      '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="cc-ask">Ask</button>' +
-      '</form>');
-
-    var timeline = todayJobs.length ? todayJobs.slice(0, 8).map(function (j) {
-      var st = j.status === 'in_progress' || j.status === 'running' ? 'info' : (j.status === 'completed' ? 'ok' : 'warn');
-      var stLbl = j.status === 'in_progress' || j.status === 'running' ? 'In Progress' : (j.status === 'completed' ? 'Done' : 'Scheduled');
-      return '<button type="button" class="jos-today-item" data-jos-act="go-jobs" data-jos-job-id="' + esc(j.id || '') + '">' +
-        '<div class="jos-today-time">' + esc(j.time || j.startTime || '—') + '</div>' +
-        '<div class="jos-today-dot" aria-hidden="true"></div>' +
-        '<div class="jos-today-body">' +
-        '<div class="who">' + esc(j.customer || 'Customer') + '</div>' +
-        '<div class="svc">' + esc(j.service || 'Job') + '</div>' +
-        '<div class="jos-muted">' + esc(j.address || j.location || 'Address on file') + '</div>' +
-        '</div><span class="jos-pill ' + st + '">' + esc(stLbl) + '</span></button>';
-    }).join('') : '<div class="jos-empty-action"><strong>No appointments today</strong><p>Let\'s get your first job on the board.</p><div class="jos-btn-row">' + btn('new-job-cust', 'New Job', 'jos-btn-brand jos-btn-sm') + btn('go-marketing', 'Run Campaign', 'jos-btn jos-btn-sm') + '</div></div>';
-
-    var todayPanel = cardShell('today', 'jos-today-card',
-      '<div class="jos-between"><div><div class="jos-kicker">Today</div><h3 class="jos-card-title">Today\'s Timeline</h3></div>' +
-      btn('go-jobs', 'View Calendar', 'jos-btn jos-btn-sm') + '</div>' +
-      '<div class="jos-today-timeline">' + timeline + '</div>' +
-      (demoSched ? '<p class="jos-muted jos-mt">Sample day for walkthrough — live jobs replace this automatically.</p>' : ''));
-
-    var leadRows = (leadList.length ? leadList : (ceoDemo ? [
-      { name: 'Alex Rivera', service: 'Ceramic Coating', location: 'La Jolla', time: '2m ago', status: 'New', value: 650 },
-      { name: 'Jordan Lee', service: 'Interior Detail', location: 'PB', time: '18m ago', status: 'Contacted', value: 220 },
-      { name: 'Sam Ortiz', service: 'Full Detail', location: 'Mission Valley', time: '1h ago', status: 'Quoted', value: 380 },
-      { name: 'Riley Chen', service: 'Paint Correction', location: 'UTC', time: '3h ago', status: 'New', value: 520 }
-    ] : [])).slice(0, 6).map(function (l) {
-      return '<tr class="jos-leads-row">' +
-        '<td><button type="button" class="jos-linkish" data-jos-act="go-customers">' + esc(l.name || l.customer || 'Lead') + '</button></td>' +
-        '<td>' + esc(l.service || 'Service') + '</td>' +
-        '<td>' + esc(l.location || l.city || l.address || '—') + '</td>' +
-        '<td>' + esc(l.time || l.createdAt || l.date || '—') + '</td>' +
-        '<td><button type="button" class="jos-pill warn" data-jos-act="go-leads">' + esc(l.status || 'New') + '</button></td>' +
-        '<td><button type="button" class="jos-linkish" data-jos-act="go-quotes">' + esc(money(parseFloat(l.value || l.amount) || 0)) + '</button></td>' +
-        '</tr>';
-    }).join('');
-
-    var recentLeads = cardShell('recent-leads', 'jos-leads-card',
-      '<div class="jos-between"><div><div class="jos-kicker">Recent Leads</div><h3 class="jos-card-title">Newest conversations</h3></div>' +
-      btn('go-leads', 'View All Leads', 'jos-btn jos-btn-sm') + '</div>' +
-      (leadRows
-        ? '<div class="jos-table-wrap"><table class="jos-home-table"><thead><tr><th>Customer</th><th>Service</th><th>Location</th><th>Time</th><th>Status</th><th>Value</th></tr></thead><tbody>' + leadRows + '</tbody></table></div>'
-        : '<div class="jos-empty-action"><strong>No leads yet</strong><p>Let\'s get your first customer.</p><div class="jos-btn-row">' + btn('go-editor', 'Generate Website', 'jos-btn-brand jos-btn-sm') + btn('go-marketing', 'Run Marketing Campaign', 'jos-btn jos-btn-sm') + btn('copy-link', 'Share Booking Link', 'jos-btn jos-btn-sm') + '</div></div>'));
-
-    var revFilters = ['week', 'month', 'quarter', 'year'].map(function (r) {
-      return '<button type="button" class="jos-chip' + (revRange === r ? ' on' : '') + '" data-jos-act="rev-range" data-jos-range="' + r + '">' + (r.charAt(0).toUpperCase() + r.slice(1)) + '</button>';
-    }).join('');
-
-    var revenueSummary = cardShell('revenue-chart', 'jos-revsum-card',
-      '<div class="jos-between"><div><div class="jos-kicker">Revenue Summary</div><h3 class="jos-card-title">Interactive graph</h3></div>' +
-      '<div class="jos-chip-row">' + revFilters + '</div></div>' +
-      '<button type="button" class="jos-rev-chart-btn" data-jos-act="go-money" title="Open Revenue Analytics">' +
-      revenueChartSvg(revRange, chartSeries[revRange] || chartSeries.month) +
-      '<div class="jos-rev-tip jos-muted">Hover points · Revenue · Jobs · Average ticket</div></button>' +
-      '<div class="jos-rev-stats">' +
-      '<div><span class="jos-muted">Revenue</span><strong>' + esc(canViewRevenue() ? money(revRange === 'week' ? weekRev : monthRev) : '•••') + '</strong></div>' +
-      '<div><span class="jos-muted">Jobs</span><strong>' + (revRange === 'week' ? weekJobsDone : monthJobsDone) + '</strong></div>' +
-      '<div><span class="jos-muted">Avg ticket</span><strong>' + esc(canViewRevenue() ? money(Math.round((monthRev || todayRev || 1) / Math.max(1, monthJobsDone || 1))) : '•••') + '</strong></div>' +
-      '</div>');
-
-    var scoreExpanded = root._josScoreExpand || null;
-    var scoreRows = scoreMetrics.map(function (m) {
-      var open = scoreExpanded === m.id;
-      return '<div class="jos-score-metric' + (open ? ' open' : '') + '">' +
-        '<button type="button" class="jos-score-metric-btn" data-jos-act="score-expand" data-jos-score="' + esc(m.id) + '">' +
-        '<span>' + esc(m.label) + '</span><strong>' + m.value + '</strong></button>' +
-        (open ? '<div class="jos-score-tip"><p>' + esc(m.tip) + '</p><div class="jos-btn-row">' + btn('go-ask', 'AI tips', 'jos-btn-brand jos-btn-sm') + btn('ask', 'Automations', 'jos-btn jos-btn-sm') + '</div></div>' : '') +
-        '</div>';
-    }).join('');
-
-    var businessScore = cardShell('biz-score', 'jos-score-card',
-      '<div class="jos-between"><div><div class="jos-kicker">Business Score</div><h3 class="jos-card-title">Health at a glance</h3></div></div>' +
-      '<div class="jos-score-ring-wrap">' +
-      '<div class="jos-score-ring" style="--jos-pct:' + scores.overall + '"><span>' + scores.overall + '</span></div>' +
-      '<div><strong>' + (scores.overall >= 85 ? 'Excellent' : (scores.overall >= 70 ? 'Strong' : 'Needs focus')) + '</strong>' +
-      '<p class="jos-muted">0–100 from response, reviews, website, bookings, retention, growth, and missed opportunities.</p></div></div>' +
-      '<div class="jos-score-metrics">' + scoreRows + '</div>');
-
-    var quickActs = [
-      ['manual-lead', 'New Lead'],
-      ['smart-quote', 'New Quote'],
-      ['new-job-cust', 'New Job'],
-      ['go-chats', 'Send Message'],
-      ['ask-review', 'Request Review'],
-      ['new-invoice', 'Create Invoice'],
-      ['go-jobs', 'Update Availability'],
-      ['go-editor', 'Edit Storefront'],
-      ['ask', 'Generate Social Post'],
-      ['go-ask', 'Open AI Coach']
-    ];
-    var quickRow = cardShell('quick', 'jos-quick-card',
-      '<div class="jos-kicker">Quick Actions</div>' +
-      '<div class="jos-quick-row">' + quickActs.map(function (q) {
-        return '<button type="button" class="jos-quick-btn" data-jos-act="' + esc(q[0]) + '">' + esc(q[1]) + '</button>';
-      }).join('') + '</div>');
-
-    var customizeHtml = '<div class="jos-customize" id="jos-home-customize">' +
-      '<div class="jos-between"><div class="jos-kicker">Dashboard customization</div>' + btn('save-home-layout', 'Save layout', 'jos-btn-brand jos-btn-sm') + '</div>' +
-      '<p class="jos-muted">Hide widgets, pick a role layout, and save your operating view.</p>' +
-      '<div class="jos-layout-presets">' +
-      [['owner', 'Owner'], ['office', 'Office Manager'], ['employee', 'Employee'], ['sales', 'Sales'], ['franchise', 'Franchise']].map(function (p) {
-        return '<button type="button" class="jos-chip' + ((layout.layoutPreset || 'owner') === p[0] ? ' on' : '') + '" data-jos-act="layout-preset" data-jos-preset="' + p[0] + '">' + p[1] + '</button>';
-      }).join('') + '</div>' +
-      '<div class="jos-customize-grid">' +
-      [['kpi-revenue', 'Revenue'], ['kpi-jobs', 'Jobs'], ['kpi-leads', 'Leads'], ['kpi-rating', 'Rating'], ['command', 'Command Center'], ['today', 'Today'], ['recent-leads', 'Recent Leads'], ['revenue-chart', 'Revenue Chart'], ['biz-score', 'Business Score'], ['quick', 'Quick Actions']].map(function (w) {
-        return '<label><input type="checkbox" data-jos-widget-toggle="' + w[0] + '"' + (W[w[0]] === false ? '' : ' checked') + '> ' + w[1] + '</label>';
-      }).join('') +
-      '</div></div>';
-
-    var fab = '<button type="button" class="jos-home-fab" data-jos-act="home-fab" aria-label="Quick actions">+</button>' +
-      '<div class="jos-home-fab-sheet" id="jos-home-fab-sheet" hidden>' +
-      quickActs.map(function (q) {
-        return '<button type="button" data-jos-act="' + esc(q[0]) + '">' + esc(q[1]) + '</button>';
-      }).join('') + '</div>';
-
-    var notifs = [];
-    if (ceoDemo) {
-      notifs = [
-        { act: 'go-leads', t: 'New lead', s: 'Alex Rivera asked about ceramic coating', ago: '2m' },
-        { act: 'go-jobs', t: 'New booking', s: 'Mike Brown confirmed for 1:00 PM', ago: '18m' },
-        { act: 'go-money', t: 'Payment', s: 'Stripe deposited $1,240', ago: '1h' },
-        { act: 'go-reviews', t: 'Review', s: 'Emily left a 5-star Google review', ago: '3h' },
-        { act: 'go-chats', t: 'Message', s: '3 conversations need a reply', ago: 'now' },
-        { act: 'ask-brief', t: 'AI alert', s: 'You are 22 minutes behind schedule', ago: 'now' }
-      ];
-    } else {
-      if (openLeads) notifs.push({ act: 'go-leads', t: 'Open leads', s: openLeads + ' lead' + (openLeads === 1 ? '' : 's') + ' need attention', ago: 'now' });
-      if (msgsWaiting) notifs.push({ act: 'go-chats', t: 'Messages waiting', s: msgsWaiting + ' unread conversation' + (msgsWaiting === 1 ? '' : 's'), ago: 'now' });
-      if (reviewsNew) notifs.push({ act: 'go-reviews', t: 'New reviews', s: reviewsNew + ' review' + (reviewsNew === 1 ? '' : 's') + ' to check', ago: 'now' });
-      if (todayJobs.length) notifs.push({ act: 'go-jobs', t: 'Jobs today', s: todayJobs.length + ' job' + (todayJobs.length === 1 ? '' : 's') + ' on the calendar', ago: 'now' });
-    }
+    var fmtDelta = function (n, suffix) {
+      var v = Number(n) || 0;
+      var sign = v >= 0 ? '+ ' : '− ';
+      return sign + Math.abs(v).toFixed(v % 1 ? 1 : 0) + (suffix || '%');
+    };
 
     root.innerHTML =
-      '<div class="jos-page jos-home-page jos-home-v2">' +
-      customizeHtml +
-      hero +
-      kpiRow +
-      '<div class="jos-home-row-cc">' + commandCenter + todayPanel + '</div>' +
-      '<div class="jos-home-row-3">' + recentLeads + revenueSummary + businessScore + '</div>' +
-      quickRow +
-      fab +
+      '<div class="jos-page jos-home-shot">' +
+      '<header class="jos-hs-top">' +
+      '<div><h1>Welcome back, ' + esc(owner) + ' <span aria-hidden="true">👋</span></h1>' +
+      '<p>Here\'s what\'s happening with your business today</p></div>' +
+      '<div class="jos-hs-actions">' +
+      '<button type="button" class="jos-hs-new" data-jos-act="new-job-cust">+ New</button>' +
+      '<button type="button" class="jos-hs-icon-btn" data-jos-act="toggle-notifs" aria-label="Notifications"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><i class="dot"></i></button>' +
+      '<button type="button" class="jos-hs-profile" data-jos-act="go-settings"><span class="ava">' + esc(initials(owner)) + '</span><span>' + esc(owner) + '</span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>' +
+      '</div></header>' +
+
+      '<div class="jos-hs-kpis">' +
+      kpi('brand', 'Total Revenue', canViewRevenue() ? money(monthRev) : '•••', fmtDelta(revDelta), '', '#D9632D', [12, 16, 14, 20, 18, 24, 28], 'go-money') +
+      kpi('ok', 'Jobs Completed', monthJobsDone, fmtDelta(jobsDelta), '', '#16A34A', [8, 10, 9, 12, 11, 14, 16], 'go-jobs') +
+      kpi('purple', 'New Leads', openLeads, fmtDelta(leadsDelta), '', '#7C3AED', [6, 8, 7, 10, 9, 12, 14], 'go-leads') +
+      kpi('blue', 'Avg. Rating', rating ? Number(rating).toFixed(1) : '0.0', (ceoDemo || rating ? '+ 0.2' : '+ 0'), (reviewCount ? ('from ' + reviewCount + ' reviews') : 'No reviews yet'), '#2563EB', [10, 11, 12, 12, 13, 14, 14], 'go-reviews') +
+      '</div>' +
+
+      '<div class="jos-hs-mid">' +
+      '<section class="jos-hs-card jos-hs-coach">' +
+      '<div class="jos-hs-coach-star" aria-hidden="true">✦</div>' +
+      '<div class="jos-hs-coach-head"><div class="jos-hs-kicker">AI Business Coach</div><h2>You\'re on track! <span aria-hidden="true">🚀</span></h2></div>' +
+      '<div class="jos-hs-coach-list">' + coachTasks.map(function (t) {
+        return '<div class="jos-hs-coach-row tone-' + t.tone + '">' +
+          '<span class="ico" aria-hidden="true"></span>' +
+          '<span class="txt">' + esc(t.title) + '</span>' +
+          '<button type="button" data-jos-act="' + t.act + '">' + esc(t.cta) + '</button></div>';
+      }).join('') + '</div>' +
+      '<form class="jos-hs-coach-ask" data-jos-act="cc-ask-form" onsubmit="return false;">' +
+      '<input id="jos-home-cc-input" type="text" placeholder="Ask anything about your business..." autocomplete="off" aria-label="Ask Hubly">' +
+      '<button type="button" class="jos-hs-send" data-jos-act="cc-ask" aria-label="Send"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>' +
+      '</form></section>' +
+
+      '<section class="jos-hs-card jos-hs-bookings">' +
+      '<div class="jos-hs-card-h"><h3>Bookings Overview</h3>' +
+      '<button type="button" class="jos-hs-select" data-jos-act="go-jobs">Last 7 days ▾</button></div>' +
+      homeBookingsBars(allJobs, ceoDemo) +
+      '<div class="jos-hs-legend"><span class="c">Confirmed</span><span class="p">Pending</span><span class="x">Cancelled</span></div>' +
+      '</section>' +
+
+      '<section class="jos-hs-card jos-hs-agenda">' +
+      '<div class="jos-hs-card-h"><h3>Today\'s Agenda</h3>' +
+      '<button type="button" class="jos-hs-link" data-jos-act="go-jobs">View Calendar</button></div>' +
+      '<div class="jos-hs-agenda-list">' +
+      (agenda.length ? agenda.map(function (a) {
+        return '<button type="button" class="jos-hs-agenda-item tone-' + a.tone + '" data-jos-act="go-jobs" data-jos-job-id="' + esc(a.id || '') + '">' +
+          '<span class="t">' + esc(a.time) + '</span><i></i>' +
+          '<span class="b"><strong>' + esc(a.service) + '</strong><em>' + esc(a.where) + '</em></span></button>';
+      }).join('') : '<div class="jos-hs-empty">No appointments today<div class="jos-hs-empty-actions"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="new-job-cust">New Job</button></div></div>') +
+      '</div></section>' +
+      '</div>' +
+
+      '<div class="jos-hs-bot">' +
+      '<section class="jos-hs-card jos-hs-leads">' +
+      '<div class="jos-hs-card-h"><h3>Recent Leads</h3>' +
+      '<button type="button" class="jos-hs-link" data-jos-act="go-leads">View all</button></div>' +
+      (leadRows.length
+        ? '<div class="jos-hs-leads-table"><table><thead><tr><th>Customer</th><th>Service</th><th>Location</th><th>Time</th><th>Status</th></tr></thead><tbody>' +
+          leadRows.map(function (l) {
+            var st = String(l.status || 'New');
+            var pill = /contact/i.test(st) ? 'ok' : 'brand';
+            return '<tr><td><button type="button" class="jos-hs-cust" data-jos-act="go-customers"><span class="ava">' + esc(initials(l.name || l.customer)) + '</span>' + esc(l.name || l.customer || 'Lead') + '</button></td>' +
+              '<td>' + esc(l.service || 'Service') + '</td><td>' + esc(l.location || l.city || l.address || '—') + '</td>' +
+              '<td>' + esc(l.time || l.createdAt || '—') + '</td>' +
+              '<td><button type="button" class="jos-hs-pill ' + pill + '" data-jos-act="go-leads">' + esc(st) + '</button></td></tr>';
+          }).join('') + '</tbody></table></div>'
+        : '<div class="jos-hs-empty">No leads yet<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="go-editor" style="margin-top:12px">Share booking link</button></div>') +
+      '</section>' +
+
+      '<section class="jos-hs-card jos-hs-rev">' +
+      '<div class="jos-hs-card-h"><h3>Revenue Summary</h3>' +
+      '<button type="button" class="jos-hs-select" data-jos-act="go-money">This Month ▾</button></div>' +
+      '<div class="jos-hs-rev-metric"><strong>' + esc(canViewRevenue() ? money(monthRev) : '•••') + '</strong>' +
+      '<span class="up">' + esc(fmtDelta(revDelta)) + '</span></div>' +
+      homeRevArea(revSeries) +
+      '</section>' +
+
+      '<section class="jos-hs-card jos-hs-score">' +
+      '<div class="jos-hs-card-h"><h3>Performance Score</h3></div>' +
+      '<div class="jos-hs-gauge" style="--pct:' + scores.overall + '"><span>' + scores.overall + '</span></div>' +
+      '<div class="jos-hs-score-lbl">' + (scores.overall >= 85 ? 'Excellent!' : (scores.overall >= 70 ? 'Strong' : 'Needs focus')) + '</div>' +
+      '<p class="jos-hs-score-copy">You\'re performing better than ' + scores.overall + '% of other businesses on Hubly.</p>' +
+      '<ul class="jos-hs-score-list">' +
+      [['Response Time', scores.leadResp >= 80 ? 'Excellent' : 'Good'],
+        ['Completion Rate', scores.revenue >= 75 ? 'Excellent' : 'Good'],
+        ['Customer Rating', scores.reviews >= 80 ? 'Excellent' : 'Good'],
+        ['Repeat Customers', scores.membership >= 70 ? 'Good' : 'Growing']].map(function (row) {
+        return '<li><span class="check" aria-hidden="true">✓</span><span>' + row[0] + '</span><strong>' + row[1] + '</strong></li>';
+      }).join('') +
+      '</ul></section>' +
+      '</div>' +
+
+      '<section class="jos-hs-card jos-hs-qa">' +
+      '<div class="jos-hs-kicker">Quick Actions</div>' +
+      '<div class="jos-hs-qa-row">' +
+      [['manual-lead', 'New Lead', 'ok'],
+        ['smart-quote', 'New Quote', 'ok'],
+        ['new-job-cust', 'Add Job', 'info'],
+        ['go-chats', 'Send Message', 'brand'],
+        ['ask-review', 'Request Review', 'warn'],
+        ['new-invoice', 'Create Invoice', 'teal'],
+        ['go-jobs', 'Update Availability', 'indigo'],
+        ['go-editor', 'Edit Website', 'purple']].map(function (q) {
+        return '<button type="button" class="jos-hs-qa-btn tone-' + q[2] + '" data-jos-act="' + q[0] + '"><i></i>' + esc(q[1]) + '</button>';
+      }).join('') +
+      '</div></section>' +
       '</div>';
 
     bindRoot(root);
     if (!root._josHomeBound) {
       root._josHomeBound = true;
       root.addEventListener('click', function (e) {
-        var menuBtn = e.target.closest('[data-jos-act="wmenu-toggle"]');
-        if (menuBtn) {
-          var wrap = menuBtn.closest('.jos-wmenu');
-          var pop = wrap && wrap.querySelector('.jos-wmenu-pop');
-          root.querySelectorAll('.jos-wmenu-pop').forEach(function (p) { if (p !== pop) p.hidden = true; });
-          if (pop) pop.hidden = !pop.hidden;
-          e.stopPropagation();
-          return;
-        }
-        if (e.target.closest('[data-jos-act="wmenu-hide"]')) {
-          var wid = e.target.closest('[data-jos-act="wmenu-hide"]').getAttribute('data-jos-widget-id');
-          var nextHide = homeLayout() || {};
-          nextHide.widgets = nextHide.widgets || {};
-          nextHide.widgets[wid] = false;
-          saveHomeLayout(nextHide);
-          toast('Widget hidden — Customize to restore');
-          enhanceDashboard();
-          e.stopPropagation();
-          return;
-        }
-        if (e.target.closest('[data-jos-act="wmenu-refresh"]')) {
-          toast('Widget refreshed');
-          enhanceDashboard();
-          e.stopPropagation();
-          return;
-        }
-        if (e.target.closest('[data-jos-act="wmenu-pin"]')) {
-          toast('Widget pinned to top of layout');
-          e.stopPropagation();
-          return;
-        }
-        if (e.target.closest('[data-jos-act="wmenu-duplicate"]') || e.target.closest('[data-jos-act="wmenu-move"]') || e.target.closest('[data-jos-act="wmenu-export"]')) {
-          toast('Layout editor saved for this session');
-          e.stopPropagation();
-          return;
-        }
-        if (e.target.closest('[data-jos-act="toggle-customize"]')) {
-          root.classList.toggle('jos-customize-on');
-          e.stopPropagation();
-          return;
-        }
-        if (e.target.closest('[data-jos-act="save-home-layout"]')) {
-          var next = homeLayout() || {};
-          next.widgets = next.widgets || {};
-          next.revRange = root._josRevRange || 'month';
-          root.querySelectorAll('[data-jos-widget-toggle]').forEach(function (inp) {
-            next.widgets[inp.getAttribute('data-jos-widget-toggle')] = !!inp.checked;
-          });
-          saveHomeLayout(next);
-          root.classList.remove('jos-customize-on');
-          toast('Dashboard layout saved');
-          enhanceDashboard();
-          e.stopPropagation();
-          return;
-        }
-        var presetBtn = e.target.closest('[data-jos-act="layout-preset"]');
-        if (presetBtn) {
-          var preset = presetBtn.getAttribute('data-jos-preset');
-          var lp = homeLayout() || { widgets: {} };
-          lp.layoutPreset = preset;
-          lp.widgets = lp.widgets || {};
-          if (preset === 'employee') {
-            lp.widgets['kpi-revenue'] = false;
-            lp.widgets['revenue-chart'] = false;
-            lp.widgets['biz-score'] = false;
-          } else if (preset === 'sales') {
-            lp.widgets['kpi-jobs'] = false;
-            lp.widgets.today = false;
-          } else {
-            Object.keys(lp.widgets).forEach(function (k) { lp.widgets[k] = true; });
-          }
-          saveHomeLayout(lp);
-          toast((presetBtn.textContent || 'Layout') + ' layout applied');
-          enhanceDashboard();
-          e.stopPropagation();
-          return;
-        }
-        var rangeBtn = e.target.closest('[data-jos-act="rev-range"]');
-        if (rangeBtn) {
-          root._josRevRange = rangeBtn.getAttribute('data-jos-range') || 'month';
-          var lr = homeLayout() || {};
-          lr.revRange = root._josRevRange;
-          saveHomeLayout(lr);
-          enhanceDashboard();
-          e.stopPropagation();
-          return;
-        }
-        var scoreBtn = e.target.closest('[data-jos-act="score-expand"]');
-        if (scoreBtn) {
-          var sid = scoreBtn.getAttribute('data-jos-score');
-          root._josScoreExpand = root._josScoreExpand === sid ? null : sid;
-          enhanceDashboard();
-          e.stopPropagation();
-          return;
-        }
         if (e.target.closest('[data-jos-act="cc-ask"]') || e.target.closest('[data-jos-act="cc-ask-form"]')) {
           var input = el('jos-home-cc-input');
           var q = (input && input.value) || 'What should I focus on right now?';
           switchNav('ask');
           setTimeout(function () { HublyJourneyOS._askFromInput(q); }, 40);
           e.stopPropagation();
-          return;
-        }
-        if (e.target.closest('[data-jos-act="home-fab"]')) {
-          var sheet = el('jos-home-fab-sheet');
-          if (sheet) sheet.hidden = !sheet.hidden;
-          e.stopPropagation();
-          return;
         }
       });
       root.addEventListener('keydown', function (e) {
@@ -10646,43 +10498,32 @@
           if (askBtn) askBtn.click();
         }
       });
-      root.addEventListener('dragstart', function (e) {
-        var card = e.target.closest('[data-jos-widget].jos-hcard');
-        if (!card) return;
-        root._josDragWidget = card.getAttribute('data-jos-widget');
-        card.classList.add('jos-dragging');
-      });
-      root.addEventListener('dragend', function (e) {
-        var card = e.target.closest('.jos-hcard');
-        if (card) card.classList.remove('jos-dragging');
-        root._josDragWidget = null;
-      });
     }
 
-    // Soft realtime refresh markers
     if (!root._josLiveTimer) {
       root._josLiveTimer = setInterval(function () {
-        if (!document.body.contains(root)) {
+        try {
+          if (!root.isConnected && !(document.body && typeof document.body.contains === 'function' && document.body.contains(root))) {
+            clearInterval(root._josLiveTimer);
+            root._josLiveTimer = null;
+            return;
+          }
+        } catch (e) {
           clearInterval(root._josLiveTimer);
           root._josLiveTimer = null;
           return;
         }
         if (document.hidden) return;
-        if (root.classList.contains('jos-customize-on')) return;
-        if (root.querySelector('.jos-wmenu-pop:not([hidden])')) return;
         if (el('jos-home-cc-input') && document.activeElement === el('jos-home-cc-input')) return;
-        // Lightweight pulse: re-render on a gentle cadence for live feel
         if (!root._josLiveTick) root._josLiveTick = 0;
         root._josLiveTick += 1;
         if (root._josLiveTick % 2 === 0) enhanceDashboard();
       }, 30000);
     }
 
-    wireGlobalChrome(notifs);
+    wireGlobalChrome([]);
     wireHomeProfileMenu();
   }
-
-  
 
   function wireHomeProfileMenu() {
     var biz = document.querySelector('#p-app.jos-pixel .jos-bar-biz');
@@ -13307,6 +13148,7 @@
   function onSwitchView(v) {
     updateChrome(v);
     setPipelineMode(v === 'pipeline');
+    setHomeMode(v === 'dashboard');
     setJobsMode(v === 'jobs');
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');

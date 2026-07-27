@@ -244,7 +244,11 @@ function ok(name, pass, detail = "") {
 try {
   H.enhanceDashboard();
   const homeHtml = document.getElementById("jos-dash-root").innerHTML;
-  ok("🏠 Home still works", /jos-|Home|KPI|dashboard|Today/i.test(homeHtml) && homeHtml.length > 200, "len=" + homeHtml.length);
+  ok(
+    "🏠 Home still works",
+    /jos-home-shot|Welcome back|AI Business Coach|Quick Actions/i.test(homeHtml) && homeHtml.length > 200,
+    "len=" + homeHtml.length
+  );
 } catch (e) {
   ok("🏠 Home still works", false, String(e.message || e));
 }
