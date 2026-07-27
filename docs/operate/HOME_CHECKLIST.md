@@ -1,17 +1,18 @@
 # Module 1 — 🏠 Home
 
-**Status:** 🔒 Fully locked  
-**PR:** [#242](https://github.com/HubblyAdrian/Hubly/pull/242)  
-**Merged:** 2026-07-26 (`a7d0aff`)
+**Status:** 🔓 Explicit reopen — Business Command Center redesign  
+**Prior lock PR:** [#242](https://github.com/HubblyAdrian/Hubly/pull/242) · Merged 2026-07-26 (`a7d0aff`)  
+**Redesign:** see [`HOME_COMMAND_CENTER.md`](./HOME_COMMAND_CENTER.md) · branch `cursor/operate-home-command-center-2662`
 
 | Stage | Status |
 |-------|--------|
-| Stage 1 — Operating System | ✅ COMPLETE · Locked |
+| Stage 1 — Operating System | ✅ COMPLETE · UI reopened for Command Center |
 | Stage 2 — Live Integrations | ✅ COMPLETE for Home scope (demo/API data paths in-app) |
+| Stage 3 — Command Center Home | 🔄 In review |
 
-Legend: ✅ Complete · ⏸ Deferred · 🔴 Blocked
+Legend: ✅ Complete · ⏸ Deferred · 🔴 Blocked · 🔄 In review
 
-Do not modify Home unless bug fix or explicit reopen.
+Home was reopened by product request to rebuild post-login Home as a Business Command Center.
 
 ---
 
