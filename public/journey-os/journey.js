@@ -10202,10 +10202,9 @@
     var allJobs = jobs().filter(function (j) { return !j.isBlock && j.status !== 'cancelled'; });
     var todayJobs = allJobs.filter(function (j) { return j.date === today; });
     var demoSched = false;
-    var ceoDemo = !!S()._ceoDemo;
-    if (!todayJobs.length) {
+    var ceoDemo = allowDemoSeed();
+    if (!todayJobs.length && ceoDemo) {
       demoSched = true;
-      ceoDemo = true;
       todayJobs = [
         { id: 'demo_j1', customer: 'Sarah Johnson', service: 'Interior Detail', time: '9:00 AM', amount: 260, status: 'confirmed', address: 'La Jolla, CA', phone: '(619) 555-0198' },
         { id: 'demo_j2', customer: 'Mike Brown', service: 'Exterior Detail', time: '1:00 PM', amount: 180, status: 'confirmed', address: 'Pacific Beach, CA', phone: '(619) 555-0142' },
@@ -10246,19 +10245,37 @@
     if (!msgsWaiting && ceoDemo) msgsWaiting = ch.needs || 5;
 
     var scores = homeScores();
-    var hour = new Date().getHours(), greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
+    var hour = new Date().getHours();
+    var greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
     var owner = S().ownerName || S().ownerFirst || (S().biz ? String(S().biz).split(' ')[0] : '') || 'there';
     if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
     if (owner.indexOf(' ') > -1) owner = owner.split(' ')[0];
-    var bizName = S().biz || 'Pro Shine Detailing';
+    var bizName = S().biz || 'Your business';
     var layout = homeLayout() || { widgets: {}, revRange: 'month', layoutPreset: 'owner' };
     if (!layout.widgets) layout.widgets = {};
     var W = layout.widgets;
     var revRange = root._josRevRange || layout.revRange || 'month';
     root._josRevRange = revRange;
     var sparkRev = [yestRev * 0.7, yestRev * 0.85, yestRev, todayRev * 0.6, todayRev * 0.8, todayRev * 0.9, todayRev].map(function (n) { return Math.max(8, Math.round(n / 40)); });
-    var openLeads = collectLeads().length;
-    var reviewsNew = Math.min(6, (S().website?.manualReviews || []).length || 0);
+    var leadList = collectLeads();
+    var openLeads = leadList.length || (ceoDemo ? 5 : 0);
+    var leadValue = leadList.reduce(function (s, l) { return s + (parseFloat(l.value || l.amount || l.estimate) || 0); }, 0) || (ceoDemo ? 920 : 0);
+    var reviews = (S().website && S().website.manualReviews) || [];
+    var rating = Number(S().website && S().website.reviewRating) || (reviews[0] && reviews[0].rating) || (ceoDemo ? 4.9 : 0);
+    var reviewCount = Number(S().website && S().website.reviewCount) || reviews.length || (ceoDemo ? 128 : 0);
+    var recentReview = reviews[0] || (ceoDemo
+      ? { name: 'Emily Wilson', text: 'Incredible ceramic coating — car looks brand new.', rating: 5 }
+      : { name: '', text: 'No reviews yet', rating: 0 });
+    var reviewsNew = Math.min(6, reviews.length || 0);
+    var dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    var weatherTemp = 72;
+    var weatherLbl = 'Sunny · 0% rain';
+    var staleCustomers = customers().filter(function (c) {
+      var last = c.lastJobDate || c.lastVisit || c.updatedAt;
+      if (!last) return true;
+      var d = new Date(last);
+      return !isNaN(d.getTime()) && ((Date.now() - d.getTime()) / 86400000) > 90;
+    }).length;
 
     var ccActions = commandCenterActions({
       outstanding: outstanding,
@@ -10397,23 +10414,86 @@
         '</tr>';
     }).join('');
 
-    var activity = buildActivity().slice(0, 8);
-    if (!activity.length && allowDemoSeed()) {
-      activity = [
-        { ico: '$', kind: 'paid', t: 'Payment received', s: 'Sarah Johnson · $260' },
-        { ico: '★', kind: 'review', t: 'New Google review', s: '5 stars · Emily Wilson' },
-        { ico: 'L', kind: 'quote', t: 'New lead from Website', s: 'Alex Rivera · Ceramic Coating' },
-        { ico: 'B', kind: 'book', t: 'Job booked', s: 'Mike Brown · Exterior Detail' },
-        { ico: 'M', kind: 'mem', t: 'Membership renewed', s: 'Sarah Johnson · Pro Plan' }
-      ];
-    }
-    var actRows = activity.map(function (a) {
-      return '<button type="button" class="jos-act-row jos-act-btn" data-jos-act="' + esc(a.kind === 'paid' ? 'go-money' : (a.kind === 'review' ? 'go-reviews' : (a.kind === 'quote' ? 'go-leads' : (a.kind === 'mem' ? 'go-mem' : 'go-jobs')))) + '">' +
-        '<div class="jos-act-ico">' + esc(a.ico) + '</div><div><div class="jos-act-t">' + esc(a.t) + '</div><div class="jos-act-s">' + esc(a.s) + '</div></div></button>';
+    var recentLeads = cardShell('recent-leads', 'jos-leads-card',
+      '<div class="jos-between"><div><div class="jos-kicker">Recent Leads</div><h3 class="jos-card-title">Newest conversations</h3></div>' +
+      btn('go-leads', 'View All Leads', 'jos-btn jos-btn-sm') + '</div>' +
+      (leadRows
+        ? '<div class="jos-table-wrap"><table class="jos-home-table"><thead><tr><th>Customer</th><th>Service</th><th>Location</th><th>Time</th><th>Status</th><th>Value</th></tr></thead><tbody>' + leadRows + '</tbody></table></div>'
+        : '<div class="jos-empty-action"><strong>No leads yet</strong><p>Let\'s get your first customer.</p><div class="jos-btn-row">' + btn('go-editor', 'Generate Website', 'jos-btn-brand jos-btn-sm') + btn('go-marketing', 'Run Marketing Campaign', 'jos-btn jos-btn-sm') + btn('copy-link', 'Share Booking Link', 'jos-btn jos-btn-sm') + '</div></div>'));
+
+    var revFilters = ['week', 'month', 'quarter', 'year'].map(function (r) {
+      return '<button type="button" class="jos-chip' + (revRange === r ? ' on' : '') + '" data-jos-act="rev-range" data-jos-range="' + r + '">' + (r.charAt(0).toUpperCase() + r.slice(1)) + '</button>';
     }).join('');
 
+    var revenueSummary = cardShell('revenue-chart', 'jos-revsum-card',
+      '<div class="jos-between"><div><div class="jos-kicker">Revenue Summary</div><h3 class="jos-card-title">Interactive graph</h3></div>' +
+      '<div class="jos-chip-row">' + revFilters + '</div></div>' +
+      '<button type="button" class="jos-rev-chart-btn" data-jos-act="go-money" title="Open Revenue Analytics">' +
+      revenueChartSvg(revRange, chartSeries[revRange] || chartSeries.month) +
+      '<div class="jos-rev-tip jos-muted">Hover points · Revenue · Jobs · Average ticket</div></button>' +
+      '<div class="jos-rev-stats">' +
+      '<div><span class="jos-muted">Revenue</span><strong>' + esc(canViewRevenue() ? money(revRange === 'week' ? weekRev : monthRev) : '•••') + '</strong></div>' +
+      '<div><span class="jos-muted">Jobs</span><strong>' + (revRange === 'week' ? weekJobsDone : monthJobsDone) + '</strong></div>' +
+      '<div><span class="jos-muted">Avg ticket</span><strong>' + esc(canViewRevenue() ? money(Math.round((monthRev || todayRev || 1) / Math.max(1, monthJobsDone || 1))) : '•••') + '</strong></div>' +
+      '</div>');
+
+    var scoreExpanded = root._josScoreExpand || null;
+    var scoreRows = scoreMetrics.map(function (m) {
+      var open = scoreExpanded === m.id;
+      return '<div class="jos-score-metric' + (open ? ' open' : '') + '">' +
+        '<button type="button" class="jos-score-metric-btn" data-jos-act="score-expand" data-jos-score="' + esc(m.id) + '">' +
+        '<span>' + esc(m.label) + '</span><strong>' + m.value + '</strong></button>' +
+        (open ? '<div class="jos-score-tip"><p>' + esc(m.tip) + '</p><div class="jos-btn-row">' + btn('go-ask', 'AI tips', 'jos-btn-brand jos-btn-sm') + btn('ask', 'Automations', 'jos-btn jos-btn-sm') + '</div></div>' : '') +
+        '</div>';
+    }).join('');
+
+    var businessScore = cardShell('biz-score', 'jos-score-card',
+      '<div class="jos-between"><div><div class="jos-kicker">Business Score</div><h3 class="jos-card-title">Health at a glance</h3></div></div>' +
+      '<div class="jos-score-ring-wrap">' +
+      '<div class="jos-score-ring" style="--jos-pct:' + scores.overall + '"><span>' + scores.overall + '</span></div>' +
+      '<div><strong>' + (scores.overall >= 85 ? 'Excellent' : (scores.overall >= 70 ? 'Strong' : 'Needs focus')) + '</strong>' +
+      '<p class="jos-muted">0–100 from response, reviews, website, bookings, retention, growth, and missed opportunities.</p></div></div>' +
+      '<div class="jos-score-metrics">' + scoreRows + '</div>');
+
+    var quickActs = [
+      ['manual-lead', 'New Lead'],
+      ['smart-quote', 'New Quote'],
+      ['new-job-cust', 'New Job'],
+      ['go-chats', 'Send Message'],
+      ['ask-review', 'Request Review'],
+      ['new-invoice', 'Create Invoice'],
+      ['go-jobs', 'Update Availability'],
+      ['go-editor', 'Edit Storefront'],
+      ['ask', 'Generate Social Post'],
+      ['go-ask', 'Open AI Coach']
+    ];
+    var quickRow = cardShell('quick', 'jos-quick-card',
+      '<div class="jos-kicker">Quick Actions</div>' +
+      '<div class="jos-quick-row">' + quickActs.map(function (q) {
+        return '<button type="button" class="jos-quick-btn" data-jos-act="' + esc(q[0]) + '">' + esc(q[1]) + '</button>';
+      }).join('') + '</div>');
+
+    var customizeHtml = '<div class="jos-customize" id="jos-home-customize">' +
+      '<div class="jos-between"><div class="jos-kicker">Dashboard customization</div>' + btn('save-home-layout', 'Save layout', 'jos-btn-brand jos-btn-sm') + '</div>' +
+      '<p class="jos-muted">Hide widgets, pick a role layout, and save your operating view.</p>' +
+      '<div class="jos-layout-presets">' +
+      [['owner', 'Owner'], ['office', 'Office Manager'], ['employee', 'Employee'], ['sales', 'Sales'], ['franchise', 'Franchise']].map(function (p) {
+        return '<button type="button" class="jos-chip' + ((layout.layoutPreset || 'owner') === p[0] ? ' on' : '') + '" data-jos-act="layout-preset" data-jos-preset="' + p[0] + '">' + p[1] + '</button>';
+      }).join('') + '</div>' +
+      '<div class="jos-customize-grid">' +
+      [['kpi-revenue', 'Revenue'], ['kpi-jobs', 'Jobs'], ['kpi-leads', 'Leads'], ['kpi-rating', 'Rating'], ['command', 'Command Center'], ['today', 'Today'], ['recent-leads', 'Recent Leads'], ['revenue-chart', 'Revenue Chart'], ['biz-score', 'Business Score'], ['quick', 'Quick Actions']].map(function (w) {
+        return '<label><input type="checkbox" data-jos-widget-toggle="' + w[0] + '"' + (W[w[0]] === false ? '' : ' checked') + '> ' + w[1] + '</label>';
+      }).join('') +
+      '</div></div>';
+
+    var fab = '<button type="button" class="jos-home-fab" data-jos-act="home-fab" aria-label="Quick actions">+</button>' +
+      '<div class="jos-home-fab-sheet" id="jos-home-fab-sheet" hidden>' +
+      quickActs.map(function (q) {
+        return '<button type="button" data-jos-act="' + esc(q[0]) + '">' + esc(q[1]) + '</button>';
+      }).join('') + '</div>';
+
     var notifs = [];
-    if (allowDemoSeed()) {
+    if (ceoDemo) {
       notifs = [
         { act: 'go-leads', t: 'New lead', s: 'Alex Rivera asked about ceramic coating', ago: '2m' },
         { act: 'go-jobs', t: 'New booking', s: 'Mike Brown confirmed for 1:00 PM', ago: '18m' },
@@ -10427,127 +10507,6 @@
       if (msgsWaiting) notifs.push({ act: 'go-chats', t: 'Messages waiting', s: msgsWaiting + ' unread conversation' + (msgsWaiting === 1 ? '' : 's'), ago: 'now' });
       if (reviewsNew) notifs.push({ act: 'go-reviews', t: 'New reviews', s: reviewsNew + ' review' + (reviewsNew === 1 ? '' : 's') + ' to check', ago: 'now' });
       if (todayJobs.length) notifs.push({ act: 'go-jobs', t: 'Jobs today', s: todayJobs.length + ' job' + (todayJobs.length === 1 ? '' : 's') + ' on the calendar', ago: 'now' });
-    }
-    var notifHtml = notifs.map(function (n) {
-      return '<button type="button" class="jos-notif-row" data-jos-act="' + esc(n.act) + '"><div><strong>' + esc(n.t) + '</strong><div class="jos-muted">' + esc(n.s) + '</div></div><span class="jos-muted">' + esc(n.ago) + '</span></button>';
-    }).join('');
-
-    var briefActions = [
-      ['go-leads', 'Recover Leads'],
-      ['ask', 'Publish Campaign'],
-      ['ask-review', 'Reply Review'],
-      ['go-editor', 'Update Website'],
-      ['ask-growth', 'Raise Prices'],
-      ['go-ask', 'Ask Hubly']
-    ];
-
-    var quickActions = [
-      ['new-job-cust', 'New Job'],
-      ['manual-lead', 'New Lead'],
-      ['add-cust', 'New Customer'],
-      ['smart-quote', 'New Quote'],
-      ['new-invoice', 'New Invoice'],
-      ['ask', 'New Campaign'],
-      ['go-mem', 'New Membership'],
-      ['go-ask', 'Ask Hubly']
-    ];
-
-    var tabs = [['dashboard', 'Dashboard'], ['today', 'Today'], ['activity', 'Activity Feed'], ['ai', 'AI Insights']];
-    var tabsHtml = '<div class="jos-tabs jos-home-tabs">' + tabs.map(function (t) {
-      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-home-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
-    }).join('') + '</div>';
-
-    var kpiRow = '<div class="jos-grid-4 jos-home-kpis">' +
-      '<div class="jos-kpi jos-kpi-rich" data-jos-act="go-money" tabindex="0">' +
-        '<div class="jos-kpi-top"><div class="lbl">Revenue Today</div><span class="jos-kpi-ico">$</span></div>' +
-        '<div class="v">' + esc(canViewRevenue() ? money(todayRev) : '•••') + '</div>' +
-        '<div class="s">' + (revDelta >= 0 ? '↗ ' : '↘ ') + Math.abs(revDelta) + '% vs yesterday</div>' +
-        sparkSvg(sparkRev) +
-        '<div class="jos-kpi-hover"><div class="jos-kicker">Today breakdown</div>' +
-        '<div class="jos-hover-row"><span>Yesterday</span><strong>' + esc(canViewRevenue() ? money(yestRev) : 'Hidden') + '</strong></div>' +
-        '<div class="jos-hover-row"><span>This week</span><strong>' + esc(money(weekRev)) + '</strong></div>' +
-        '<div class="jos-hover-row"><span>This month</span><strong>' + esc(money(monthRev)) + '</strong></div>' +
-        '<div class="jos-hover-row"><span>Pending deposits</span><strong>' + esc(money(deposits)) + '</strong></div>' +
-        '<div class="jos-hover-row"><span>Outstanding invoices</span><strong>' + esc(money(outstanding)) + '</strong></div>' +
-        '<div class="jos-hover-row"><span>Goal</span><strong>' + esc(money(Math.round(todayRev * 1.15) || 1500)) + '</strong></div></div></div>' +
-      '<div class="jos-kpi jos-kpi-rich" data-jos-act="go-jobs" tabindex="0">' +
-        '<div class="jos-kpi-top"><div class="lbl">Jobs Today</div><span class="jos-kpi-ico">J</span></div>' +
-        '<div class="v">' + todayJobs.length + '</div>' +
-        '<div class="s">' + completedToday.length + ' done · ' + upcoming.length + ' upcoming · ' + running.length + ' running' + (late ? ' · ' + late + ' late' : '') + '</div>' +
-        sparkSvg([2, 3, 4, 3, 5, 6, todayJobs.length], '#2563EB') +
-        '<div class="jos-kpi-hover"><div class="jos-kicker">Today\'s work</div>' +
-        todayJobs.slice(0, 4).map(function (j) { return '<div class="jos-hover-row"><span>' + esc(j.time || '') + ' ' + esc(j.service || '') + '</span><strong>' + esc(j.customer || '') + '</strong></div>'; }).join('') +
-        '</div></div>' +
-      '<div class="jos-kpi jos-kpi-rich" data-jos-act="go-chats" tabindex="0">' +
-        '<div class="jos-kpi-top"><div class="lbl">Messages Waiting</div><span class="jos-kpi-ico">✉</span></div>' +
-        '<div class="v">' + msgsWaiting + '</div>' +
-        '<div class="s">' + ch.needs + ' need attention</div>' +
-        sparkSvg([1, 2, 2, 3, 2, 4, msgsWaiting], '#B84E1F') +
-        '<div class="jos-kpi-hover"><div class="jos-kicker">By channel</div>' +
-        '<div class="jos-hover-row"><span>Website chat</span><strong>' + ch.chat + '</strong></div>' +
-        '<div class="jos-hover-row"><span>SMS</span><strong>' + ch.sms + '</strong></div>' +
-        '<div class="jos-hover-row"><span>Email</span><strong>' + ch.email + '</strong></div>' +
-        '<div class="jos-hover-row"><span>Facebook</span><strong>' + ch.facebook + '</strong></div>' +
-        '<div class="jos-hover-row"><span>Instagram</span><strong>' + ch.instagram + '</strong></div>' +
-        '<div class="jos-hover-row"><span>AI needs attention</span><strong>' + ch.needs + '</strong></div></div></div>' +
-      '<div class="jos-kpi jos-kpi-rich" data-jos-act="go-reports" tabindex="0">' +
-        '<div class="jos-kpi-top"><div class="lbl">Growth Score</div><span class="jos-kpi-ico">↑</span></div>' +
-        '<div class="v">' + scores.overall + '</div>' +
-        '<div class="s">' + (scores.overall >= 85 ? 'Excellent' : (scores.overall >= 70 ? 'Great' : 'Needs attention')) + ' · +4 this week</div>' +
-        sparkSvg([scores.overall - 12, scores.overall - 8, scores.overall - 5, scores.overall - 2, scores.overall], '#15803D') +
-        '<div class="jos-kpi-hover"><div class="jos-kicker">Score breakdown</div>' +
-        '<div class="jos-hover-row"><span>Revenue</span><strong>' + scores.revenue + '</strong></div>' +
-        '<div class="jos-hover-row"><span>Reviews</span><strong>' + scores.reviews + '</strong></div>' +
-        '<div class="jos-hover-row"><span>Marketing</span><strong>' + scores.marketing + '</strong></div>' +
-        '<div class="jos-hover-row"><span>Lead response</span><strong>' + scores.leadResp + '</strong></div>' +
-        '<div class="jos-hover-row"><span>Membership</span><strong>' + scores.membership + '</strong></div>' +
-        '<p class="jos-muted jos-mt">AI: Increase response speed to gain ~6 points.</p></div></div></div>';
-
-    var mainDash =
-      '<div class="jos-card jos-sched-card' + (W.schedule === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="schedule"><div class="jos-between"><div class="jos-kicker">Today\'s Schedule</div>' + btn('go-jobs', 'Open calendar', 'jos-btn jos-btn-sm') + '</div>' +
-      (schedRows || '<div class="jos-empty">No jobs on the calendar today. ' + btn('new-job-cust', 'Book a job', 'jos-btn-brand jos-btn-sm') + '</div>') +
-      (demoSched ? '<p class="jos-muted jos-mt">Demo schedule for CEO walkthrough — your live jobs appear here.</p>' : '') + '</div>' +
-      '<div class="jos-brief' + (W.brief === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="brief"><div class="sk">AI Morning Brief</div><h2>' + esc(greet) + ', ' + esc(owner) + '.</h2>' +
-      '<p><strong>Revenue:</strong> Yesterday ' + esc(money(yestRev)) + ' (' + (revDelta >= 0 ? '+' : '') + revDelta + '%). Today on pace for ' + esc(money(todayRev)) + '.</p>' +
-      '<p><strong>Jobs:</strong> ' + todayJobs.length + ' today · ' + completedToday.length + ' done · ' + upcoming.length + ' upcoming' + (late ? ' · ' + late + ' late' : '') + '.</p>' +
-      '<p><strong>Leads:</strong> ' + openLeads + ' open · <strong>Messages:</strong> ' + msgsWaiting + ' waiting · <strong>Reviews:</strong> ' + reviewsNew + ' new.</p>' +
-      '<p><strong>Marketing:</strong> ' + (((S().marketingOs && S().marketingOs.campaigns) || []).filter(function (c) { return c.status === 'active'; }).length ? (((S().marketingOs.campaigns || []).filter(function (c) { return c.status === 'active'; }).length) + ' active campaign(s). Keep promoting your top services.') : 'No campaigns running yet — open Marketing when you are ready.') + '</p>' +
-      '<div class="jos-brief-actions">' + briefActions.map(function (a) { return btn(a[0], a[1], a[0] === 'go-leads' ? 'jos-btn-brand jos-btn-sm' : 'jos-btn jos-btn-sm'); }).join('') + '</div></div>' +
-      '<div class="jos-card' + (W.activity === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="activity"><div class="jos-between"><div class="jos-kicker">Recent Activity</div><button type="button" class="jos-btn jos-btn-sm" data-jos-home-tab="activity">View all</button></div><div class="jos-act-list">' + (actRows || '<div class="jos-empty">No activity yet</div>') + '</div></div>' +
-      '<div class="jos-card' + (W.quick === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="quick"><div class="jos-kicker">Quick Actions</div><div class="jos-qa-grid">' + quickActions.map(function (q) {
-        return '<button type="button" class="jos-qa-tile" data-jos-act="' + esc(q[0]) + '"><span>+</span>' + esc(q[1]) + '</button>';
-      }).join('') + '</div></div>';
-
-    var rail =
-      '<div class="jos-card' + (W.weather === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="weather"><div class="jos-kicker">Weather</div><div class="jos-weather"><div class="jos-weather-temp">72°F</div><div><strong>Sunny</strong><div class="jos-muted">0% rain · Wind 6 mph · Sunset 7:48 PM</div></div></div>' +
-      '<div class="jos-weather-alert ok">Rain warning: None — roads dry all day</div>' +
-      '<p class="jos-muted jos-mt">AI: Great day for mobile detailing. No rain risk for afternoon jobs. Prefer exterior work before 4 PM wind pickup.</p></div>' +
-      '<div class="jos-card' + (W.route === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="route"><div class="jos-kicker">Today\'s Route</div><div class="jos-route-map" aria-hidden="true"><div class="jos-route-line"></div><i>1</i><i>2</i><i>3</i></div>' +
-      '<div class="jos-muted jos-mt">' + Math.max(1, todayJobs.length) + ' stops · 32.4 miles</div><div class="jos-mt">' + btn('go-jobs', 'View Route', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
-      '<div class="jos-card' + (W.upcoming === false ? ' jos-widget-hidden' : '') + '" data-jos-widget="upcoming"><div class="jos-kicker">Upcoming Jobs</div><div class="jos-stack jos-mt">' +
-      (todayJobs.length ? todayJobs.slice(0, 4).map(function (j) {
-        return '<button type="button" class="jos-between jos-act-btn" data-jos-act="go-jobs" style="padding:6px 0"><div><strong style="font-size:13px">' + esc(j.customer) + '</strong><div class="jos-muted">' + esc(j.service) + '</div></div><span class="jos-muted">' + esc(j.time) + '</span></button>';
-      }).join('') : '<div class="jos-empty">No upcoming jobs</div>') + '</div><div class="jos-mt">' + btn('go-jobs', 'View All Jobs', 'jos-btn jos-btn-sm') + '</div></div>' +
-      '<div class="jos-card jos-notif-panel' + (W.notifs === false ? ' jos-widget-hidden' : '') + '" id="jos-home-notifs" data-jos-widget="notifs"><div class="jos-between"><div class="jos-kicker">Notifications</div><span class="jos-pill hot">' + notifs.length + '</span></div><div class="jos-stack jos-mt">' + notifHtml + '</div></div>';
-
-    var customizeHtml = '<div class="jos-customize" id="jos-home-customize"><div class="jos-between"><div class="jos-kicker">Customize dashboard</div>' + btn('save-home-layout', 'Save layout', 'jos-btn-brand jos-btn-sm') + '</div>' +
-      '<div class="jos-customize-grid">' +
-      [['schedule', 'Schedule'], ['brief', 'AI Brief'], ['activity', 'Activity'], ['quick', 'Quick Actions'], ['weather', 'Weather'], ['route', 'Route'], ['upcoming', 'Upcoming'], ['notifs', 'Notifications']].map(function (w) {
-        return '<label><input type="checkbox" data-jos-widget-toggle="' + w[0] + '"' + (W[w[0]] === false ? '' : ' checked') + '> ' + w[1] + '</label>';
-      }).join('') + '</div></div>';
-
-    var body = '';
-    if (tab === 'today') {
-      body = '<div class="jos-stack">' + kpiRow + '<div class="jos-card"><div class="jos-kicker">Today only</div>' + (schedRows || '<div class="jos-empty">Nothing scheduled</div>') + '</div></div>';
-    } else if (tab === 'activity') {
-      body = '<div class="jos-card"><div class="jos-kicker">Activity Feed</div><div class="jos-act-list jos-mt">' + actRows + '</div></div>';
-    } else if (tab === 'ai') {
-      body = '<div class="jos-brief"><div class="sk">AI Insights</div><h2>What Hubly wants you to do</h2>' +
-        '<p>Lead response score is ' + scores.leadResp + '. Reply to new leads within 5 minutes to improve close rate.</p>' +
-        '<p>Membership score is ' + scores.membership + '. ' + customers().filter(function (c) { return c.customerType !== 'recurring'; }).length + ' customers are membership-ready.</p>' +
-        '<div class="jos-brief-actions">' + btn('go-chats', 'Reply now', 'jos-btn-brand jos-btn-sm') + btn('go-mem', 'Offer memberships', 'jos-btn jos-btn-sm') + btn('ask-brief', 'Full brief', 'jos-btn jos-btn-sm') + '</div></div>';
-    } else {
-      body = kpiRow + '<div class="jos-home-main"><div class="jos-stack">' + mainDash + '</div><div class="jos-stack">' + rail + '</div></div>';
     }
 
     root.innerHTML =
@@ -10717,6 +10676,8 @@
     wireGlobalChrome(notifs);
     wireHomeProfileMenu();
   }
+
+  
 
   function wireHomeProfileMenu() {
     var biz = document.querySelector('#p-app.jos-pixel .jos-bar-biz');
@@ -12145,6 +12106,7 @@
   }
 
   function seedDemoJobsIfEmpty() {
+    if (!allowDemoSeed()) return;
     ensureJobsOsState();
     if ((S().jobs || []).filter(function (j) { return !j.isBlock; }).length) return;
     var today = todayStr();
@@ -12162,6 +12124,10 @@
   function setJobsMode(on) {
     var app = el('p-app');
     if (!app) return;
+    if (on) {
+      app.classList.add('jos-pixel');
+      try { document.body.classList.add('jos-pixel'); } catch (e) {}
+    }
     app.classList.toggle('jos-jobs-mode', !!on);
   }
 
@@ -13336,6 +13302,9 @@
   function onSwitchView(v) {
     updateChrome(v);
     setPipelineMode(v === 'pipeline');
+    setJobsMode(v === 'jobs');
+    setInboxMode(v === 'chats');
+    setLeadsMode(v === 'leads');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
