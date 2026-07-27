@@ -18,7 +18,7 @@ Other modules **read** that data — they do not own or duplicate it.
 | Payments / Invoices / Deposits / Taxes / Stripe / Payouts | 💰 Revenue |
 | Dashboards / Saved definitions / Layouts / Schedules / Forecast models | 📊 Reports (Rule #21 — aggregates only; never operational copies) |
 | AI conversations / memory / actions / pending confirmations / automation allow-rules | ✨ Ask Hubly (Rule #22 — never owns operational entities) |
-| Business config / Integrations / Permissions / Branding / AI prefs | ⚙️ Settings |
+| Business config / Team / Platform billing / Integrations OS / Notifications / Branding / AI prefs / Security / Permissions | ⚙️ Settings (Rule #23 — config only; never Customers/Jobs/Revenue/Services/Reviews/Campaigns) |
 
 ## Enforcement (aggressive)
 
@@ -30,7 +30,8 @@ Other modules **read** that data — they do not own or duplicate it.
 6. Storefront **owns** the Service Catalog (`S.editorSvcs` + mirror `S.services` for booking consumers).  
 7. Marketing **owns** campaigns/templates/automations/coupons; audiences resolve from Customers/Leads at use time.  
 8. **Rule #19:** Modules cannot bypass their owners — no silent second copies.  
-9. **Rule #21:** Reports never duplicate operational data — presentation/analytics only.
+9. **Rule #21:** Reports never duplicate operational data — presentation/analytics only.  
+10. **Rule #23:** Settings never own business data — configuration only.
 
 ## Module implications
 
@@ -46,6 +47,6 @@ Other modules **read** that data — they do not own or duplicate it.
 | Revenue | Payments / invoices / deposits / refunds / taxes / Stripe sync status / payouts (`S.revenueOs`) — Rule #20 | Customers, Jobs, Memberships, Services |
 | Reports | Dashboards, definitions, layouts, schedules, forecast models (`S.reportsOs`) | Revenue, Memberships, Pipeline, Customers, Leads, Jobs, Marketing, Reviews (aggregate only) |
 | Ask Hubly | Conversations, memory, action log, pending confirmations, automation allow-rules (`S.askHublyOs`) | Everything via owners (never source of truth for entities) |
-| Settings | Business config, integrations, permissions, branding, AI prefs | — |
+| Settings | Business profile, team/roles, platform billing stubs, integrations OS, notifications, branding, AI defaults, security, permissions (`S.settingsOs`) | Must not store Customers, Jobs, Revenue ledger, Services, Reviews, Campaigns (Rule #23) |
 
 See also [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md), [EVENTS.md](./EVENTS.md) (Rules #17–18), [MEMBERSHIPS_PLAN.md](./MEMBERSHIPS_PLAN.md), and [OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md).

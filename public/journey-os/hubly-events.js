@@ -107,7 +107,11 @@
       AI_ACTION_CANCELLED: 'ai.action.cancelled',
       AI_ACTION_EXECUTED: 'ai.action.executed',
       AI_DRAFT_GENERATED: 'ai.draft.generated',
-      REPORT_GENERATED: 'report.generated'
+      REPORT_GENERATED: 'report.generated',
+      SETTINGS_UPDATED: 'settings.updated',
+      SETTINGS_TEAM_INVITED: 'settings.team.invited',
+      SETTINGS_INTEGRATION_TOGGLED: 'settings.integration.toggled',
+      SETTINGS_SECURITY_AUDITED: 'settings.security.audited'
     })
   };
 })(typeof window !== 'undefined' ? window : globalThis);
