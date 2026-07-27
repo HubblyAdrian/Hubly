@@ -1,10 +1,10 @@
-# ✨ Business Reveal — Architecture (required before Development)
+# ✨ Business Reveal — Architecture (🔒 Architecture)
 
-**Milestone:** Hubly AI Business Builder  
+**Milestone:** Hubly AI Business Agency  
 **Module:** 5 — Business Reveal  
-**Rules:** #24–#28 · narrate, don’t dump · Save My Business on first meaningful edit  
-**Status:** Architecture gate — do not start Development without founder approval  
-**Related:** [CREATIVE_DIRECTOR_ARCHITECTURE.md](./CREATIVE_DIRECTOR_ARCHITECTURE.md) · [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md) · [BUSINESS_VISION.md](./BUSINESS_VISION.md) · [README.md](./README.md)
+**Status:** 🔒 **Architecture locked** — canonical **completion of the AI Agency design phase**  
+**Rules:** #24–#28 🔒 · narrate, don’t dump · Save My Business on first meaningful edit  
+**Related:** [CREATIVE_DIRECTOR_ARCHITECTURE.md](./CREATIVE_DIRECTOR_ARCHITECTURE.md) · [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md) · [ACTIVATION_ARCHITECTURE.md](./ACTIVATION_ARCHITECTURE.md) · [README.md](./README.md)
 
 ---
 
@@ -27,19 +27,23 @@ Business Profile · Owner Profile · Business DNA · Research Profile · Busines
 
 ---
 
-## Pipeline (locked)
+## Pipeline (🔒 — no UI may bypass)
 
 ```
 Creative Director (Module 4)
   ↓  Creative Blueprint (canonical)
-Creative Review (Rule #28)
+Creative Review (Rule #28 🔒)
   ↓  scores + summary
-Business Reveal (Module 5)
+Business Reveal (Module 5) — canonical completion of design
   ↓  staged ceremony
-Save My Business (mid-reveal on first edit · final CTA)
+Save My Business (first account point — first edit or final CTA)
   ↓
-Account → Permanent Memory → Operate OS
+Business Activation (Module 6) — connect & launch
+  ↓
+Launch My Business → Home Dashboard (Operate OS)
 ```
+
+**No UI implementation may bypass** Creative Blueprint → Creative Review → Business Reveal.
 
 ---
 

@@ -1,5 +1,7 @@
-# Hubly AI Business Builder — Milestone
+# Hubly AI Business Agency — Milestone
 
+**Product name (canonical):** Hubly AI Business Agency  
+**Legacy label:** “Business Builder” (still fine in casual speech; architecture uses Agency)  
 **Status:** Active  
 **Entry:** AI Landing Experience (🔒 locked — Module 1)  
 **Session:** Hubly Session · [HUBLY_MEMORY.md](../HUBLY_MEMORY.md)  
@@ -7,51 +9,61 @@
 
 ---
 
-## Canonical objects (🔒 Rules #26–#28)
+## What we built
 
-No Builder module may bypass or duplicate these models.  
-**No UI implementation may change these architecture documents without reopening the module.**
+This is not a website wizard. It is an **AI Business Agency**:
 
-| Object | Rule / Doc | Role |
-|--------|------------|------|
-| **Business Profile** | #26 | What the business is |
-| **Owner Profile** | #26 | How the founder operates |
-| **Business DNA** | #26 | Combination — canonical for all Builder modules |
-| **Research Profile** | Module 3 | Market intelligence |
-| **Business Vision** | #27 🔒 · [BUSINESS_VISION.md](./BUSINESS_VISION.md) | Destination — build toward this |
-| **Creative Blueprint** | Module 4 **canonical output** | Agency blueprint |
-| **Creative Review** | #28 · [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md) | Self-critique before acceptance / Reveal |
+| Module | Agency role |
+|--------|-------------|
+| 1 · Landing | AI Consultant |
+| 2 · Discovery | Business Strategist |
+| 3 · Research | Market Research Team |
+| 4 · Creative Director | Creative Director |
+| 5 · Business Reveal | Creative Presentation |
+| 6 · Business Activation | AI Project Manager → Launch |
 
-```
-Hubly Session
-  → Business Profile + Owner Profile → Business DNA
-  → Research Profile
-  → Business Vision 🔒
-  → Creative Blueprint (Module 4)
-  → Creative Review (Rule #28)
-  → Business Reveal (Module 5)
-  → Save My Business (mid-reveal on first edit)
-```
+Narrative users remember:
+
+> Learn about you → Research → Design → Review → Present → **Activate** → Launch → Run (Operate OS)
 
 ---
 
-## Pipeline
+## Canonical pipeline (🔒 — no UI may bypass)
 
 ```
-Landing (Module 1) 🔒
+Creative Blueprint
   ↓
-AI Discovery (Module 2) 🔒 Architecture · Dev may begin
+Creative Review          (Rule #28 🔒)
   ↓
-AI Research Engine (Module 3) ⏳ Architecture
+Business Reveal          (canonical completion of design phase)
   ↓
-Business Vision 🔒
+Save My Business         (first account point — first edit or final CTA)
   ↓
-AI Creative Director (Module 4) 🔒 Architecture · Dev may begin
-  ↓ Creative Blueprint + Creative Review
-Business Reveal (Module 5) ⏳ Architecture
+Business Activation      (Module 6 — connect & launch)
   ↓
-Save My Business → Permanent Memory → Operate OS
+Launch My Business
+  ↓
+Home Dashboard (Operate OS)
 ```
+
+**No UI implementation may bypass** Creative Blueprint → Creative Review → Business Reveal.
+
+---
+
+## Canonical objects (🔒 Rules #26–#28)
+
+| Object | Rule | Role |
+|--------|------|------|
+| Business Profile | #26 | What the business is |
+| Owner Profile | #26 | How the founder operates |
+| Business DNA | #26 | Combination — all Agency modules |
+| Research Profile | M3 | Market intelligence |
+| Business Vision | #27 🔒 | Destination |
+| Creative Blueprint | M4 output | Agency blueprint |
+| Creative Review | #28 🔒 | Self-critique before presentation |
+| Activated Business | M6 output | Live / connected / launched |
+
+**No UI may change these architecture documents without reopening the module.**
 
 ---
 
@@ -59,26 +71,34 @@ Save My Business → Permanent Memory → Operate OS
 
 | # | Module | Purpose | Status |
 |---|--------|---------|--------|
-| 1 | 🌎 AI Landing | Intent router · Hubly Session | 🔒 Locked |
-| 2 | 🤖 AI Discovery | Business + Owner → DNA | 🔒 Architecture · Dev may begin |
-| 3 | 🔍 AI Research Engine | Research Profile | ⏳ Architecture |
-| 4 | 🎨 AI Creative Director | Creative Blueprint + Review | 🔒 Architecture · Dev may begin |
-| 5 | ✨ Business Reveal | Staged ceremony · mid-reveal save | ⏳ Architecture |
+| 1 | 🌎 AI Landing | Consultant · Hubly Session | 🔒 Locked |
+| 2 | 🤖 AI Discovery | Strategist · DNA | 🔒 Architecture · Dev may begin |
+| 3 | 🔍 AI Research | Market Research Team | ⏳ Architecture |
+| 4 | 🎨 AI Creative Director | Creative Blueprint + Review | 🔒 Architecture · **Dev may begin** |
+| 5 | ✨ Business Reveal | Creative Presentation | 🔒 Architecture (completion of design) |
+| 6 | 🚀 Business Activation | Project Manager · connect · launch | ⏳ Architecture |
 
 ---
 
 ## Locked
 
-- Module 1 Landing · Module 2 Discovery architecture · Rule #26 DNA  
-- **Rule #27 Business Vision** — Creative Director builds toward Vision  
-- **Module 4 architecture** — Creative Blueprint is the canonical output; Creative Review required  
-- Architecture docs are frozen for UI — reopen to change  
+- Landing · Discovery architecture · Rules #26–#27  
+- **Rule #28 Creative Review** — every generated business reviewed before presentation  
+- **Business Reveal** — canonical completion of the design/agency phase  
+- **Save My Business** — first account creation point (first edit or Stage 9 CTA)  
+- Module 4 architecture — Development may begin  
 
-## Module 5 — Business Reveal
+Do **not** modify Builder / Agency architecture without reopening the module.
 
-[REVEAL_ARCHITECTURE.md](./REVEAL_ARCHITECTURE.md) · [REVEAL_CHECKLIST.md](./REVEAL_CHECKLIST.md) · [REVEAL_MAT.md](./REVEAL_MAT.md)
+---
 
-Signature: present the business together. **Save My Business** on first edit (lightweight OAuth/email) and at Stage 9 — not “Create Account.”
+## Module 6 — Business Activation
+
+[ACTIVATION_ARCHITECTURE.md](./ACTIVATION_ARCHITECTURE.md) · [ACTIVATION_CHECKLIST.md](./ACTIVATION_CHECKLIST.md) · [ACTIVATION_MAT.md](./ACTIVATION_MAT.md)
+
+Not “Business Setup.” Not a config form. **Mission control preparing for launch.**
+
+Design the business ≠ Activate the business.
 
 ---
 
@@ -86,8 +106,8 @@ Signature: present the business together. **Save My Business** on first edit (li
 
 | Kind | Scope | Expires |
 |------|-------|---------|
-| Temporary | Session + DNA + research + vision + blueprint + review | 30 days |
-| Permanent | Business | Never |
+| Temporary | Session through Activation | 30 days / until upgrade |
+| Permanent | Business after Save My Business | Never |
 | Conversation | Ask Hubly | Soft retention |
 
 Workflow: Architecture → Development → QA → MAT → CMV → Approval → Merge → Lock. **Do not skip stages.**

@@ -28,4 +28,4 @@
 
 ### Context
 
-Rule #27 Vision lock · Creative Review (Rule #28) · Module 5 Reveal architecture. No Builder UI code.
+Rule #28 Creative Review lock · AI Business Agency · Module 6 Business Activation architecture. No UI.

@@ -69,10 +69,11 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | Settings ownership | ✅ Rule #23 |
 | Dual Product Architecture | ✅ Rule #24 · 🔒 Landing locked |
 | Hubly Memory | ✅ Rule #25 |
-| Business + Owner Profile / DNA | ✅ 🔒 Rule #26 · canonical for all Builder modules |
+| Business + Owner Profile / DNA | ✅ 🔒 Rule #26 |
 | Business Vision | ✅ 🔒 Rule #27 |
-| Creative Review | ✅ Rule #28 |
-| AI Business Builder | ⏳ M2/M4 Dev may begin · M3/M5 Architecture |
+| Creative Review | ✅ 🔒 Rule #28 |
+| AI Business Agency | ✅ Rule #29 · Activation architecture |
+| AI Business Agency modules | ⏳ M2/M4 Dev · M3/M5–M6 Architecture |
 | Integrations | ⏸ Stage 2 |
 | Performance | ⏳ |
 | Accessibility | ⏳ |
@@ -170,28 +171,28 @@ All **14** Operate modules have Stage 1 OS complete and locked:
 
 ---
 
-## Hubly AI Business Builder (separate milestone)
+## Hubly AI Business Agency (separate milestone)
 
-Operate Stage 1 is complete. The next product milestone is **Hubly AI Business Builder** — see [builder/README.md](../builder/README.md).
+Operate Stage 1 is complete. The next product milestone is **Hubly AI Business Agency** (formerly “Business Builder”) — see [builder/README.md](../builder/README.md).
 
 | # | Module | Status |
 |---|--------|--------|
 | 1 | 🌎 AI Landing Experience | 🔒 Locked (#259) |
 | 2 | 🤖 AI Discovery | 🔒 Architecture locked · Dev may begin |
 | 3 | 🔍 AI Research Engine | ⏳ Architecture · Research Profile canonical |
-| 4 | 🎨 AI Creative Director | 🔒 Architecture locked · Creative Blueprint + Review · Dev may begin |
-| 5 | ✨ Business Reveal | ⏳ Architecture ([REVEAL_ARCHITECTURE.md](../builder/REVEAL_ARCHITECTURE.md)) |
+| 4 | 🎨 AI Creative Director | 🔒 Architecture · Blueprint + Review · **Dev may begin** |
+| 5 | ✨ Business Reveal | 🔒 Architecture · canonical design completion |
+| 6 | 🚀 Business Activation | ⏳ Architecture ([ACTIVATION_ARCHITECTURE.md](../builder/ACTIVATION_ARCHITECTURE.md)) |
 
 **Hubly Memory** (Rule #25): [HUBLY_MEMORY.md](../HUBLY_MEMORY.md)  
-**Rule #26 🔒:** Business Profile · Owner Profile · Business DNA  
-**Rule #27 🔒:** Business Vision — build toward destination  
-**Rule #28:** Creative Review Engine — [CREATIVE_REVIEW.md](../builder/CREATIVE_REVIEW.md)  
-**Canonical outputs:** Creative Blueprint (M4) · Creative Review · Reveal approval
+**Rules #26–#28 🔒:** DNA · Vision · Creative Review (no bypass Blueprint → Review → Reveal)  
+**Rule #29:** AI Business Agency · Business Activation (not Setup)  
+**Account:** Save My Business (first edit or Reveal CTA)
 
 ## Workflow
 
 Planning → Development (Stage 1 OS) → Self QA → **MAT** → **CMV** → PR → Approval → Merge → **Lock OS**  
 Later: Stage 2 Integrations → separate PR
 
-**Special gates:** Marketing / Revenue / Ask Hubly / Settings / **AI Landing** / **AI Discovery** / **AI Research** / **Creative Director** / **Creative Review** / **Business Reveal** / **Business Vision** architecture docs before Development.  
-**Engineering rules:** #14–28 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md))
+**Special gates:** Marketing / Revenue / Ask Hubly / Settings / **AI Landing** / **AI Discovery** / **AI Research** / **Creative Director** / **Creative Review** / **Business Reveal** / **Business Activation** / **Business Vision** architecture docs before Development.  
+**Engineering rules:** #14–29 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md))

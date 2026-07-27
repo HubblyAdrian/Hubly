@@ -32,6 +32,7 @@ ok(/must build toward/i.test(vision), "build toward Vision stated");
 
 const review = read("docs/builder/CREATIVE_REVIEW.md");
 ok(/Rule #28/.test(review), "Rule #28 on Creative Review");
+ok(/🔒|Locked/i.test(review), "Rule #28 Creative Review locked");
 ok(/Brand Consistency/i.test(review), "Brand Consistency score");
 ok(/Customer Trust/i.test(review), "Customer Trust score");
 ok(/Conversion/i.test(review), "Conversion score");
@@ -65,7 +66,9 @@ ok(/No UI implementation may change these architecture documents/i.test(rules), 
 const milestone = read("docs/builder/README.md");
 ok(/Business Reveal/i.test(milestone), "Module 5 on milestone");
 ok(/Creative Review/i.test(milestone), "Creative Review on milestone");
-ok(/Rule #27/.test(milestone), "Rule #27 on milestone");
+ok(/Rule #27|#27 🔒/i.test(milestone), "Rule #27 on milestone");
+ok(/Rule #28|#28 🔒/i.test(milestone), "Rule #28 on milestone");
+ok(/Business Activation/i.test(milestone), "Module 6 on milestone");
 
 const mat = read("docs/builder/REVEAL_MAT.md");
 ok(/First edit triggers lightweight save/i.test(mat), "MAT first-edit save");
