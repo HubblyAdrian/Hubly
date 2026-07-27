@@ -8544,24 +8544,44 @@
     var done = jobsAll.filter(function (j) { return j.status === 'completed'; });
     var ai = custAiInsights(c);
     var tab = root._josCustProfileTab || 'Overview';
+    var editing = !!root._josCustEditOpen && String(root._josCustId) === String(c.id);
     var since = c.createdAt ? dateLong(String(c.createdAt).slice(0, 10)) : '—';
     var statusLabel = c.status === 'lost' ? 'Lost' : (c.status === 'inactive' ? 'Inactive' : (custIsVip(c) ? 'VIP' : 'Active'));
     var statusTone = c.status === 'lost' ? 'hot' : (c.status === 'inactive' ? 'mute' : 'ok');
 
-    var head = '<div class="jos-cm-ws-head">' +
-      '<div class="jos-cm-ws-id">' +
-      '<span class="jos-cm-ava lg">' + esc(initials(c.name)) + '</span>' +
-      '<div><div class="jos-cm-ws-name"><strong>' + esc(c.name || 'Customer') + '</strong>' +
-      (custIsVip(c) ? '<span class="jos-cm-vip dark">VIP</span>' : '') +
-      '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-edit" title="Edit" aria-label="Edit">✎</button></div>' +
-      '<div class="jos-muted">' + esc(c.email || '—') + ' · ' + esc(c.phone ? displayPhone(c.phone) : '—') + '</div>' +
-      '<div class="jos-muted">Customer since ' + esc(since) + ' · <button type="button" class="jos-pill ' + statusTone + '" data-jos-act="cust-status-menu">' + esc(statusLabel) + '</button></div>' +
-      '</div></div>' +
-      '<div class="jos-cm-ws-acts">' +
-      '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="go-chats">Message</button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="cust-more-menu" aria-label="More">⋯</button>' +
-      '</div></div>' +
-      '<div class="jos-cm-note-bar"><input id="jos-cm-quick-note" type="text" placeholder="Add a note about this customer..." value=""><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-quick-note">Save</button></div>';
+    var head = '';
+    if (editing) {
+      head = '<div class="jos-cm-ws-head jos-cm-edit-head">' +
+        '<div class="jos-cm-edit-grid">' +
+        '<label>Name<input id="jos-ce-name" type="text" value="' + esc(c.name || '') + '" autocomplete="name"></label>' +
+        '<label>Phone<span class="jos-phone-dial">' + esc(phoneCountryDial()) + '</span><input id="jos-ce-phone" type="tel" inputmode="tel" value="' + esc(formatPhoneValue(c.phone || '')) + '" placeholder="888-888-8888" autocomplete="tel"></label>' +
+        '<label>Email<input id="jos-ce-email" type="email" value="' + esc(c.email || '') + '" placeholder="name@email.com" autocomplete="email"></label>' +
+        '<label>Address<input id="jos-ce-address" type="text" value="' + esc(c.address || '') + '" placeholder="Service address"></label>' +
+        '<label>Preferred service<input id="jos-ce-service" type="text" value="' + esc(c.preferredService || '') + '" placeholder="Full Detail"></label>' +
+        '<label>Preferred day<input id="jos-ce-day" type="text" value="' + esc(c.preferredDay || '') + '" placeholder="Weekends"></label>' +
+        '<label>Preferred time<input id="jos-ce-time" type="text" value="' + esc(c.preferredTime || '') + '" placeholder="Mornings"></label>' +
+        '<label>Vehicle<input id="jos-ce-vehicle" type="text" value="' + esc(c.vehicle || vehicleOf(c) || '') + '" placeholder="Vehicle"></label>' +
+        '</div>' +
+        '<div class="jos-btn-row jos-cm-edit-actions">' +
+        btn('cust-edit-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
+        btn('cust-edit-save', 'Save changes', 'jos-btn-brand jos-btn-sm') +
+        '</div></div>';
+    } else {
+      head = '<div class="jos-cm-ws-head">' +
+        '<div class="jos-cm-ws-id">' +
+        '<span class="jos-cm-ava lg">' + esc(initials(c.name)) + '</span>' +
+        '<div><div class="jos-cm-ws-name"><strong>' + esc(c.name || 'Customer') + '</strong>' +
+        (custIsVip(c) ? '<span class="jos-cm-vip dark">VIP</span>' : '') +
+        '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-edit" title="Edit" aria-label="Edit">✎</button></div>' +
+        '<div class="jos-muted">' + esc(c.email || '—') + ' · ' + esc(c.phone ? displayPhone(c.phone) : '—') + '</div>' +
+        '<div class="jos-muted">Customer since ' + esc(since) + ' · <button type="button" class="jos-pill ' + statusTone + '" data-jos-act="cust-status-menu">' + esc(statusLabel) + '</button></div>' +
+        '</div></div>' +
+        '<div class="jos-cm-ws-acts">' +
+        '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="go-chats">Message</button>' +
+        '<button type="button" class="jos-icon-btn" data-jos-act="cust-more-menu" aria-label="More">⋯</button>' +
+        '</div></div>' +
+        '<div class="jos-cm-note-bar"><input id="jos-cm-quick-note" type="text" placeholder="Add a note about this customer..." value=""><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-quick-note">Save</button></div>';
+    }
 
     var stats = '<div class="jos-cm-stats">' +
       [['Total Spent', money(ltv) || '$650', '+12%', 'go-reports'],
@@ -8596,7 +8616,7 @@
         '<p class="jos-cm-insight-copy">' + esc(ai.summary) + '</p>' +
         '<p class="jos-cm-insight-tip">' + esc(ai.tip || ai.nba) + '</p></section>' +
         '<section class="jos-cm-card-block">' +
-        '<div class="jos-between"><div class="jos-kicker">Preferences</div><button type="button" class="jos-linkish" data-jos-act="cust-edit">Edit</button></div>' +
+        '<div class="jos-between"><div class="jos-kicker">Preferences</div><button type="button" class="jos-linkish" data-jos-act="cust-edit">' + (editing ? 'Editing…' : 'Edit') + '</button></div>' +
         [['Preferred Service', c.preferredService || 'Full Detail'], ['Preferred Day', c.preferredDay || 'Weekends'], ['Preferred Time', c.preferredTime || 'Mornings'], ['Vehicle', c.vehicle || vehicleOf(c) || '—']].map(function (r) {
           return '<div class="jos-cm-pref"><span>' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong></div>';
         }).join('') + '</section>' +
@@ -8639,7 +8659,7 @@
         '</div></div>';
     }
 
-    return '<div class="jos-cm-workspace" data-jos-cust-id="' + esc(String(c.id)) + '">' + head + stats + tabBar + '<div class="jos-cm-ws-body">' + body + '</div></div>';
+    return '<div class="jos-cm-workspace' + (editing ? ' is-editing' : '') + '" data-jos-cust-id="' + esc(String(c.id)) + '">' + head + (editing ? '' : stats) + tabBar + '<div class="jos-cm-ws-body">' + body + '</div></div>';
   }
 
   function renderCustomerSidebar(c) {
@@ -8901,6 +8921,7 @@
       var card = e.target.closest('[data-jos-cust-row]');
       if (card && !e.target.closest('[data-jos-act]')) {
         var id = card.getAttribute('data-jos-cust-row');
+        if (String(id) !== String(root._josCustId || '')) root._josCustEditOpen = false;
         root._josCustId = id;
         root._josCustCtx = null;
         root._josCustProfileTab = 'Overview';
@@ -8930,7 +8951,7 @@
         clearTimeout(root._josCustSearchT);
         root._josCustSearchT = setTimeout(function () { renderCustomers(); }, 140);
       }
-      if (e.target && e.target.id === 'jos-ca-phone') {
+      if (e.target && (e.target.id === 'jos-ca-phone' || e.target.id === 'jos-ce-phone')) {
         e.target.value = formatPhoneValue(e.target.value);
       }
     });
@@ -8950,6 +8971,7 @@
 
     root.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
+        if (root._josCustEditOpen) { root._josCustEditOpen = false; renderCustomers(); return; }
         if (root._josCustAddOpen) { root._josCustAddOpen = false; renderCustomers(); return; }
         if (root._josCustFilterOpen) { root._josCustFilterOpen = false; renderCustomers(); return; }
         if (root._josCustCtx && root._josCustCtx.open) { root._josCustCtx = null; renderCustomers(); return; }
@@ -9081,7 +9103,41 @@
         toast('Status updated');
         return renderCustomers();
       }
-      if (act === 'cust-edit') { toast('Inline edit · open fields to update'); return; }
+      if (act === 'cust-edit') {
+        if (!c) return toast('Select a customer');
+        root._josCustEditOpen = true;
+        root._josCustProfileTab = 'Overview';
+        return renderCustomers();
+      }
+      if (act === 'cust-edit-cancel') {
+        root._josCustEditOpen = false;
+        return renderCustomers();
+      }
+      if (act === 'cust-edit-save') {
+        if (!c) return toast('Select a customer');
+        var nameVal = String((el('jos-ce-name') || {}).value || '').trim();
+        if (!nameVal) return toast('Name is required');
+        c.name = nameVal;
+        c.phone = formatPhoneValue((el('jos-ce-phone') || {}).value || '');
+        c.email = String((el('jos-ce-email') || {}).value || '').trim();
+        c.address = String((el('jos-ce-address') || {}).value || '').trim();
+        c.preferredService = String((el('jos-ce-service') || {}).value || '').trim();
+        c.preferredDay = String((el('jos-ce-day') || {}).value || '').trim();
+        c.preferredTime = String((el('jos-ce-time') || {}).value || '').trim();
+        c.vehicle = String((el('jos-ce-vehicle') || {}).value || '').trim();
+        if (c.address) {
+          var cityMatch = c.address.match(/,\s*([^,]+),\s*[A-Z]{2}\b/);
+          if (cityMatch) c.city = cityMatch[1].trim();
+        }
+        pushCustActivity(c, 'edit', 'Profile updated');
+        root._josCustEditOpen = false;
+        toast('Customer updated');
+        try {
+          if (typeof global.saveCustomerDetail === 'function') global.saveCustomerDetail(c);
+          else if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon();
+        } catch (eSave) {}
+        return renderCustomers();
+      }
       if (act === 'cust-add-note' || act === 'cust-quick-note') {
         var noteVal = ((el('jos-cm-note-new') || el('jos-cm-quick-note') || {}).value) || '';
         if (!String(noteVal).trim()) return toast('Type a note');
@@ -9108,7 +9164,10 @@
         if (!isNaN(ti) && ti >= 0 && ti < c.tags.length) {
           var removed = c.tags.splice(ti, 1)[0];
           pushCustActivity(c, 'tag', 'Removed tag ' + (removed || ''));
-          try { if (typeof global.saveBiz === 'function') global.saveBiz(); } catch (eSave) {}
+          try {
+            if (typeof global.saveCustomerDetail === 'function') global.saveCustomerDetail(c);
+            else if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon();
+          } catch (eSave) {}
         }
         return renderCustomers();
       }
