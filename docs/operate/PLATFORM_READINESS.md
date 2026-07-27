@@ -12,6 +12,7 @@ Track platform-level readiness **alongside** module completion ([MODULE_STATUS.m
 | MAT | ✅ | Per-module acceptance runners |
 | CMV | ✅ | Locked-module confirmation |
 | Financial Integrity | ✅ | Rule #20 · Revenue ledger |
+| AI Confirmation Policy | ✅ | Rule #22 · Ask Hubly architecture |
 | Integrations | ⏸ | Stage 2 — deferred per module |
 | Performance | ⏳ | Not yet a formal gate |
 | Accessibility | ⏳ | Not yet a formal gate |

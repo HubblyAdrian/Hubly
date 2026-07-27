@@ -112,6 +112,19 @@ They aggregate, summarize, forecast, and visualize data from owner modules. They
 
 See [REPORTS_PLAN.md](./REPORTS_PLAN.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md).
 
+## Rule #22 — AI Confirmation Policy
+
+Before any AI action that **changes business data**, Ask Hubly must either:
+
+1. **Ask for confirmation**, or  
+2. Follow a **user-configured automation rule** that explicitly allows that action type.
+
+**Requires confirmation (defaults):** delete customer · refund payment · change pricing · publish website · send marketing campaign · cancel membership · other mutating writes.
+
+**Does not require confirmation:** generate a draft · explain a report · summarize a customer · suggest follow-ups · read-only Q&A.
+
+Keeps Ask Hubly powerful but predictable. See [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md).
+
 ## Cross-Module Verification (CMV)
 
 Before approval of a new module PR, confirm previously **locked** modules still function (no modifications — confirmation only).
@@ -127,4 +140,5 @@ Load order for runners: `design-system.js` → `hubly-events.js` → `journey.js
 Special modules require an architecture doc before Development:
 
 - Marketing → [MARKETING_ARCHITECTURE.md](./MARKETING_ARCHITECTURE.md)  
-- Revenue → [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) (correctness gate + Rule #20)
+- Revenue → [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) (correctness gate + Rule #20)  
+- Ask Hubly → [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md) (intelligence layer + Rule #22)
