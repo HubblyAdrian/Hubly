@@ -111,7 +111,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔒 OS · MAT ✅ · Rule #20 · merged |
 | 12 | 📊 Reports | ✅ Locked | ⏸ | [#255](https://github.com/HubblyAdrian/Hubly/pull/255) | 🔒 OS · MAT ✅ · Rule #21 · merged |
 | 13 | ✨ Ask Hubly | ✅ Locked | ⏸ | [#256](https://github.com/HubblyAdrian/Hubly/pull/256) | 🔒 OS · MAT ✅ · Rule #22 · merged |
-| 14 | ⚙️ Settings | ⏳ Architecture first | ⏸ | — | [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md) · Rule #23 · `cursor/operate-settings-2662` |
+| 14 | ⚙️ Settings | ✅ MAT complete | ⏸ | [#257](https://github.com/HubblyAdrian/Hubly/pull/257) | [SETTINGS_ARCHITECTURE.md](./SETTINGS_ARCHITECTURE.md) · Rule #23 · MAT ✅ · CMV PASS · awaiting approval |
 
 ### 🤖 Ask Hubly lock
 
