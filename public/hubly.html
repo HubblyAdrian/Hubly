@@ -34831,6 +34831,19 @@ window.addEventListener('resize',()=>{
     if(nav)nav.setAttribute('aria-hidden','true');
   }
 });
+function openJobsNew(){
+  try{
+    const n=document.querySelector('.ni[data-v="jobs"]');
+    if(n&&!n.classList.contains('active')) switchV(n);
+    setTimeout(function(){
+      if(window.HublyJourneyOS&&typeof HublyJourneyOS.handleJobsAct==='function'){
+        HublyJourneyOS.handleJobsAct('jobs-create');
+      }else if(typeof openM==='function'){
+        openM('m-new-job');
+      }
+    },80);
+  }catch(e){try{openM('m-new-job');}catch(e2){}}
+}
 function switchV(el){
   hublyBootLog('switchV',el?.dataset?.v||'?');
   try{closeMobileNav();}catch(e){}
@@ -34844,7 +34857,7 @@ function switchV(el){
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
   const titles={
-    dashboard:'Home',jobs:'Jobs & Calendar',leads:'Leads',customers:t('customers'),
+    dashboard:'Home',jobs:'Jobs',leads:'Leads',customers:t('customers'),
     pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
     quotes:'Quick Quote',money:'Revenue',chats:'Inbox',marketplace:'Marketplace',
     editor:'Storefront',settings:'Settings',reviews:'Reviews',marketing:'Marketing',
