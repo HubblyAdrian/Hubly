@@ -39,7 +39,18 @@
   function money(n) {
     if (typeof global.fmtMoney === 'function') return global.fmtMoney(n);
     if (global.HublySmartQuote && HublySmartQuote.formatMoney) return HublySmartQuote.formatMoney(n);
-    var x = Number(n); return Number.isFinite(x) ? ('$' + x.toFixed(x % 1 ? 2 : 0)) : '';
+    var x = Number(n);
+    if (!Number.isFinite(x)) return '';
+    try {
+      return (x % 1 ? x : Math.round(x)).toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: x % 1 ? 2 : 0,
+        maximumFractionDigits: x % 1 ? 2 : 0
+      });
+    } catch (e) {
+      return '$' + x.toFixed(x % 1 ? 2 : 0);
+    }
   }
   function dateLong(ds) {
     if (!ds) return '';
