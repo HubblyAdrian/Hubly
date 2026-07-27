@@ -11353,7 +11353,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="field"><label>Name *</label><input type="text" id="nl-name" placeholder="Sarah Johnson"></div>
       <div class="field-row">
-        <div class="field"><label>Phone</label><input type="tel" id="nl-phone" placeholder="000-000-0000" oninput="formatPhone(this)"></div>
+        <div class="field"><label>Phone</label><input type="tel" id="nl-phone" placeholder="888-888-8888" oninput="formatPhone(this)"></div>
         <div class="field"><label>Email</label><input type="email" id="nl-email" placeholder="sarah@email.com"></div>
       </div>
       <div class="field"><label id="nl-svc-lbl">Package</label><select id="nl-service" onchange="onNlSvcChange()"><option value="">Select a package…</option></select>
@@ -11412,7 +11412,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="contact-import-hint" data-i18n="pasteContactHint">Booked over text? Copy the contact or message, paste here, and we’ll fill the fields.</div>
       </div>
       <div class="field-row"><div class="field"><label>First name</label><input type="text" id="nc-first" placeholder="Maria"></div><div class="field"><label>Last name</label><input type="text" id="nc-last" placeholder="Gonzalez"></div></div>
-      <div class="field"><label>Phone</label><input type="tel" id="nc-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div>
+      <div class="field"><label>Phone</label><input type="tel" id="nc-phone" placeholder="888-888-8888" oninput="formatPhone(this)"></div>
       <div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="nc-email" placeholder="maria@email.com"></div>
       <div id="nc-vehicle-fields">
         <div class="field"><label>Vehicle type <span class="opt">(optional)</span></label><select id="nc-vtype"><option value="">Select type...</option><option value="Sedan">Sedan</option><option value="Coupe">Coupe</option><option value="Crossover">Crossover</option><option value="SUV">SUV</option><option value="Truck">Truck</option><option value="Van">Van</option></select></div>
@@ -24984,7 +24984,40 @@ function obStartFromWelcome(){
   document.getElementById('ob1')?.classList.add('active');
   renderBizTypeGrid();
 }
-function formatPhone(el){var v=el.value.replace(/[^0-9]/g,"").slice(0,10);if(v.length>=7)el.value=v.slice(0,3)+"-"+v.slice(3,6)+"-"+v.slice(6);else if(v.length>=4)el.value=v.slice(0,3)+"-"+v.slice(3);else el.value=v;}
+function phoneCountryDial(){
+  try{
+    const c=String((typeof S!=='undefined'&&S&&(S.country||S.bizCountry||S.countryCode))||'').trim().toUpperCase();
+    if(c==='GB'||c==='UK')return '+44';
+    if(c==='AU')return '+61';
+    if(c==='MX')return '+52';
+    if(c==='NZ')return '+64';
+  }catch(e){}
+  return '+1';
+}
+function phoneDigits(raw){
+  let d=String(raw||'').replace(/\D/g,'');
+  if(d.length===11&&d.charAt(0)==='1')d=d.slice(1);
+  if(d.length>10)d=d.slice(-10);
+  return d.slice(0,10);
+}
+/** National format: 888-888-8888 */
+function formatPhoneValue(raw){
+  const d=phoneDigits(raw);
+  if(d.length>=7)return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
+  if(d.length>=4)return d.slice(0,3)+'-'+d.slice(3);
+  return d;
+}
+/** Display with matching country code: +1 888-888-8888 */
+function displayPhone(raw){
+  const fmt=formatPhoneValue(raw);
+  if(!fmt)return '';
+  if(phoneDigits(raw).length===10)return phoneCountryDial()+' '+fmt;
+  return fmt;
+}
+function formatPhone(el){
+  if(!el)return;
+  el.value=formatPhoneValue(el.value);
+}
 function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈'}
 
 // ONBOARDING
@@ -40681,7 +40714,7 @@ async function deleteLead(key){
 }
 function submitNewLead(){
   const name=document.getElementById('nl-name')?.value?.trim()||'';
-  const phone=document.getElementById('nl-phone')?.value?.trim()||'';
+  const phone=formatPhoneValue(document.getElementById('nl-phone')?.value||'');
   const email=document.getElementById('nl-email')?.value?.trim()||'';
   if(!name){toast('Add a name');return;}
   if(!phone&&!email){toast('Add a phone or email');return;}
@@ -40705,6 +40738,7 @@ function submitNewLead(){
   closeM('m-new-lead');
   ['nl-name','nl-phone','nl-email','nl-service','nl-address','nl-amount','nl-notes','nl-paste'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   try{updateLeadsNavBadge(collectPipelineLeads());}catch(e){}
+  try{if(window.HublyJourneyOS&&typeof HublyJourneyOS.renderLeads==='function')HublyJourneyOS.renderLeads();}catch(e){}
   renderLeadsBoard();
   toast(`${name} added to Leads`);
 }
