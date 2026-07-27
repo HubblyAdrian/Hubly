@@ -50,10 +50,11 @@ Interface language is **Ask Hubly** (not Get Help / Find Help / Marketplace).
 Marketplace remains intact (`/marketplace`, `/get-done`). Merged #259.
 See `docs/AI_LANDING_ARCHITECTURE.md` · `docs/HUBLY_MEMORY.md`.
 
-**Next milestone — Hubly AI Business Builder:** Module 2 AI Discovery architecture is
-**🔒 locked** (Business Profile + Owner Profile → Business DNA). Development may begin
-against `docs/builder/DISCOVERY_*`. Module 3 AI Research Engine architecture:
-`docs/builder/RESEARCH_ARCHITECTURE.md`. Do not redesign locked Landing or Discovery architecture.
+**Next milestone — Hubly AI Business Builder:** Rule #26 **🔒 locked** — Business DNA
+(Business Profile + Owner Profile) is canonical for all Builder modules. Research Profile
+is a canonical input. **Business Vision** (Rule #27) is the destination before Module 4.
+Creative Director architecture: `docs/builder/CREATIVE_DIRECTOR_ARCHITECTURE.md`.
+Do not bypass/duplicate canonical objects; no UI may alter models without reopening architecture.
 
 **Homepage craft still gated** (`scripts/check-homepage-craft.mjs`). The first five
 minutes after **Continue Building** are Module 2 — someone already typed on Landing

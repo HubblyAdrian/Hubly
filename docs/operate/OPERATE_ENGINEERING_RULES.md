@@ -171,9 +171,9 @@ AI Discovery (Business Builder Module 2) fills **Business DNA** inside Temporary
 
 See [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) · [builder/DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md).
 
-## Rule #26 — Business Profile + Owner Profile
+## Rule #26 — Business Profile + Owner Profile (🔒 Locked)
 
-Business DNA is the **combination** of two profiles — not a single flat bag of facts:
+Business DNA is the **canonical model for all future Builder modules** — the combination of two profiles:
 
 | Profile | Holds |
 |---------|-------|
@@ -181,11 +181,25 @@ Business DNA is the **combination** of two profiles — not a single flat bag of
 | Owner Profile | Experience · goals · communication style · growth priorities · stage · risk · preferred customers |
 | Business DNA | Both together — completion ≥ 90% ends Discovery |
 
-Downstream coaching (Ask Hubly) and Research (Module 3) must use **Owner Profile** when advising, not Business Profile alone.
+**Canonical Builder objects (do not bypass or duplicate):**
 
-**🔒 Module 2 Architecture locked.** Development may implement Discovery; UI must not change this model without reopening.
+Business Profile · Owner Profile · Business DNA · Research Profile · Business Vision
 
-See [DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md) · [RESEARCH_ARCHITECTURE.md](../builder/RESEARCH_ARCHITECTURE.md).
+No Builder module may invent parallel copies. **No UI may modify these models without reopening architecture.**
+
+Downstream coaching (Ask Hubly) and Creative Director (Module 4) must use **Owner Profile** and **Business Vision** when advising/building, not Business Profile alone.
+
+See [DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md) · [BUSINESS_VISION.md](../builder/BUSINESS_VISION.md) · [CREATIVE_DIRECTOR_ARCHITECTURE.md](../builder/CREATIVE_DIRECTOR_ARCHITECTURE.md).
+
+## Rule #27 — Business Vision
+
+Business Vision is the **destination** — complementary to DNA and Research, not a replacement.
+
+Long-term goals · ideal customers · desired positioning · growth timeline · success metrics · expansion plans.
+
+Creative Director builds **toward Vision**. If Vision says premium luxury, do not emit budget branding.
+
+See [BUSINESS_VISION.md](../builder/BUSINESS_VISION.md).
 
 ## Cross-Module Verification (CMV)
 
@@ -208,4 +222,6 @@ Special modules require an architecture doc before Development:
 - AI Landing → [AI_LANDING_ARCHITECTURE.md](../AI_LANDING_ARCHITECTURE.md) (dual product router + Rule #24) · **🔒 Locked**  
 - AI Discovery → [DISCOVERY_ARCHITECTURE.md](../builder/DISCOVERY_ARCHITECTURE.md) (Business + Owner Profile · Rule #26) · **🔒 Architecture locked** · Dev may begin  
 - AI Research Engine → [RESEARCH_ARCHITECTURE.md](../builder/RESEARCH_ARCHITECTURE.md) (research before build) · required before Module 3 Development  
+- Business Vision → [BUSINESS_VISION.md](../builder/BUSINESS_VISION.md) (Rule #27 · destination) · canonical before Module 4  
+- AI Creative Director → [CREATIVE_DIRECTOR_ARCHITECTURE.md](../builder/CREATIVE_DIRECTOR_ARCHITECTURE.md) · required before Module 4 Development  
 - Hubly Memory → [HUBLY_MEMORY.md](../HUBLY_MEMORY.md) (Temporary · Permanent · Conversation)

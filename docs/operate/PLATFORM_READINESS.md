@@ -16,8 +16,9 @@ Track platform-level readiness **alongside** module completion ([MODULE_STATUS.m
 | Settings ownership | ✅ | Rule #23 · Settings architecture |
 | Dual Product Architecture | ✅ 🔒 | Rule #24 · AI Landing locked (#259) |
 | Hubly Memory | ✅ | Rule #25 · Temporary / Permanent / Conversation |
-| Business + Owner Profile | ✅ 🔒 | Rule #26 · Discovery architecture locked |
-| AI Business Builder | ⏳ | M2 Dev may begin · M3 Research architecture |
+| Business DNA model | ✅ 🔒 | Rule #26 · canonical for all Builder modules |
+| Business Vision | ✅ | Rule #27 · destination before Creative Director |
+| AI Business Builder | ⏳ | M2 Dev · M3 Research arch · M4 Creative Director arch |
 | Integrations | ⏸ | Stage 2 — deferred per module |
 | Performance | ⏳ | Not yet a formal gate |
 | Accessibility | ⏳ | Not yet a formal gate |

@@ -28,4 +28,4 @@
 
 ### Context
 
-AI Discovery architecture lock (Rule #26 Business + Owner Profile) + Module 3 Research architecture docs. No Builder UI code in this change.
+Rule #26 product-wide lock · Business Vision (Rule #27) · Module 4 Creative Director architecture. No Builder UI code.

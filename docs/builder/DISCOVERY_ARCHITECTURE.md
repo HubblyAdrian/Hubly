@@ -220,17 +220,19 @@ Autosave after every response. Pause / refresh resumes the same conversation.
 
 ---
 
-## Outputs → Module 3 (AI Research Engine)
+## Outputs → Module 3 (AI Research Engine) → Module 4
 
 | Output | Notes |
 |--------|-------|
-| Business Profile | Structured business facts |
-| Owner Profile | Founder operating style |
-| Business DNA | Combined ≥ 90% |
+| Business Profile | Structured business facts — **canonical** |
+| Owner Profile | Founder operating style — **canonical** |
+| Business DNA | Combined ≥ 90% — **canonical for all Builder modules** |
 | Hubly Session | Intact Temporary Memory |
 | Conversation | Full thread |
 | Imports | Website / social analysis |
 | Recommendations | Suggestions surfaced in Discovery |
+
+Module 4 also requires **Research Profile** + **Business Vision** (Rule #27).
 
 ---
 
