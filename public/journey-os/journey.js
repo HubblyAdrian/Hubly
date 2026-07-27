@@ -1489,6 +1489,16 @@
     if (!text) return;
     ensureAskHublyOsState();
     ahAddMessage('user', text);
+    if (/recover abandoned|abandoned booking|lead recovery|unfinished start/i.test(text)) {
+      var nRec = leadsOsList().filter(isRecoveryLead).length;
+      ahAddMessage('assistant', nRec
+        ? ('Opening Lead Recovery — ' + nRec + ' unfinished booking' + (nRec === 1 ? '' : 's') + ' ready for follow-up.')
+        : 'Opening Lead Recovery. When someone starts booking and leaves, they land in this queue.');
+      ahMemoryNote('nav', 'Opened Lead Recovery from Ask Hubly', { module: 'leads' });
+      renderAskHubly();
+      openLeadsRecovery();
+      return;
+    }
     var parsed = ahParseAsk(text);
     if (parsed) return ahProposeAction(parsed.type, parsed.payload);
     var answer = 'Here is the current operating context: ' + ahContextLine() + ' I can answer safely, generate drafts, or propose confirmed actions into the owning modules.';
@@ -6802,7 +6812,7 @@
     var members = customers().filter(function (c) { return c.customerType === 'recurring'; }).length;
     var score = Math.max(55, Math.min(96, 58 + Math.min(20, done.length) + Math.min(12, members * 4) - Math.min(10, pending * 2)));
     var opps = [
-      { impact: 'High', t: 'Recover abandoned bookings', s: pending ? pending + ' need review right now.' : 'Catch unfinished booking starts.', act: 'go-leads', cta: 'Do it →', est: '+$850' },
+      { impact: 'High', t: 'Recover abandoned bookings', s: pending ? pending + ' need review right now.' : 'Catch unfinished booking starts.', act: 'go-leads-recovery', cta: 'Do it →', est: '+$850' },
       { impact: 'High', t: 'Raise mid-tier package clarity', s: 'Quotes stall when options feel similar.', act: 'ask-growth', cta: 'Update pricing →', est: '+$1,200/mo' },
       { impact: 'High', t: 'Launch a membership', s: members ? members + ' members already — grow the plan.' : 'Turn repeat customers into MRR.', act: 'go-mem', cta: 'Create →', est: '+$2,400/mo' },
       { impact: 'Medium', t: 'Generate a seasonal campaign', s: 'Holiday / weekend promo for warm lists.', act: 'ask', cta: 'Generate →', est: 'Reach list' },
@@ -6841,6 +6851,7 @@
   }
   var LEADS_TABS = [
     ['all', 'All Leads'],
+    ['recovery', 'Lead Recovery'],
     ['new', 'New'],
     ['contacted', 'Contacted'],
     ['qualified', 'Qualified'],
@@ -6919,6 +6930,195 @@
     return LEADS_STATUS_LABEL[normalizeCrmStatus(lead)] || 'New';
   }
 
+  function leadDropStep(lead) {
+    if (!lead) return '';
+    if (lead.dropStep) return String(lead.dropStep);
+    var blob = [lead.lastMessage, lead.notes, (lead.messages || []).map(function (m) { return m.text || ''; }).join(' ')].join(' ');
+    var m = blob.match(/left at\s+([^.\n]+)/i);
+    if (m) return m[1].replace(/\s+step$/i, '').trim();
+    if (/vehicle/i.test(blob)) return 'Vehicle size';
+    if (/time|slot|schedule/i.test(blob)) return 'Choose time';
+    if (/payment|deposit|checkout/i.test(blob)) return 'Payment';
+    if (/service|package/i.test(blob)) return 'Choose service';
+    if (lead.service) return 'Finish booking · ' + lead.service;
+    return 'Unfinished booking';
+  }
+
+  function isRecoveryLead(lead) {
+    if (!lead || lead.deleted || lead.archived || lead.recovered) return false;
+    if (normalizeCrmStatus(lead) === 'won' || lead.won) return false;
+    if (lead.isAbandoned || lead.jobStatus === 'abandoned') return true;
+    if (srcKind(lead.source, lead) === 'abandoned') return true;
+    if ((lead.tags || []).some(function (t) { return /abandon|incomplete|recover/i.test(String(t)); })) return true;
+    var blob = [lead.lastMessage, lead.notes, lead.osStage, lead.waitingReason].join(' ').toLowerCase();
+    if (/left at|abandon|incomplete booking|started booking/.test(blob)) return true;
+    if (lead.osStage === 'waiting_customer' && /waiting|customer/.test(String(lead.waitingReason || 'customer'))) {
+      if (/quote_expired|lost|spam/.test(String(lead.osStage))) return false;
+      if (lead.quoteStatus === 'draft' || !lead.quoteStatus || lead.quoteStatus === 'none') return true;
+    }
+    return false;
+  }
+
+  function leadRecoverySms(lead) {
+    var svc = lead.service || 'your booking';
+    var step = leadDropStep(lead);
+    return 'Hey' + (lead.name ? ' ' + String(lead.name).split(/\s+/)[0] : '') +
+      ' — still want help finishing ' + svc + '?' +
+      (step ? ' You left off at ' + step + '.' : '') +
+      ' I can save your spot — reply YES and I’ll finish it for you.';
+  }
+
+  function openLeadsRecovery() {
+    switchNav('leads');
+    var apply = function () {
+      var root = el('jos-leads-root');
+      if (!root) return;
+      root._josLeadsTab = 'recovery';
+      root._josLeadId = null;
+      try { renderLeads(); } catch (e) {}
+    };
+    if (typeof global.requestAnimationFrame === 'function') global.requestAnimationFrame(apply);
+    else setTimeout(apply, 0);
+  }
+
+  function syncAbandonedLeadsIntoPipeline() {
+    var st = S();
+    if (!st.pipeline || typeof st.pipeline !== 'object') st.pipeline = { manual: [], deleted: [], stages: {}, lostReasons: {}, edits: {} };
+    if (!Array.isArray(st.pipeline.manual)) st.pipeline.manual = [];
+    if (!Array.isArray(st.abandonedLeads)) st.abandonedLeads = [];
+    var pipe = st.pipeline.manual;
+    var deleted = {};
+    (st.pipeline.deleted || []).forEach(function (k) { deleted[String(k)] = true; });
+    st.abandonedLeads.forEach(function (r, i) {
+      if (!r) return;
+      var id = String(r.id || ('abandon_' + i));
+      var key = 'br:' + id;
+      if (deleted[key] || deleted[id]) return;
+      var existing = pipe.find(function (l) {
+        return String(l.reqId || '') === id || String(l.id || '') === id || String(l.key || '') === key;
+      });
+      if (existing) {
+        existing.isAbandoned = true;
+        existing.jobStatus = existing.jobStatus || 'abandoned';
+        if (!existing.source || existing.source === 'booking') existing.source = 'abandoned';
+        if (!existing.dropStep) existing.dropStep = leadDropStep(existing);
+        if (!(existing.tags || []).some(function (t) { return /abandon/i.test(String(t)); })) {
+          existing.tags = (existing.tags || []).concat(['abandoned']);
+        }
+        return;
+      }
+      var created = r.created_at || r.createdAt || new Date().toISOString();
+      var name = r.customer_name || r.customer_phone || r.name || 'Website visitor';
+      var service = r.service_name || r.service || 'Service';
+      var notes = r.notes || 'Started booking and left before finishing.';
+      pipe.unshift({
+        id: id,
+        key: key,
+        reqId: id,
+        name: name,
+        phone: r.customer_phone || r.phone || '',
+        email: r.customer_email || r.email || '',
+        address: r.address || '',
+        service: service,
+        source: 'abandoned',
+        jobStatus: 'abandoned',
+        isAbandoned: true,
+        dropStep: leadDropStep({ lastMessage: notes, notes: notes, service: service }) || 'Unfinished booking',
+        stage: 'waiting_customer',
+        osStage: 'waiting_customer',
+        status: 'waiting',
+        waitingReason: 'customer',
+        crmStatus: 'new',
+        createdAt: created,
+        lastContacted: created,
+        lastMessage: /left at/i.test(notes) ? notes : ('Left at ' + (leadDropStep({ notes: notes, service: service }) || 'checkout')),
+        notes: notes,
+        notesList: [notes],
+        tags: ['abandoned', 'recovery'],
+        unread: 1,
+        aiScore: 58,
+        aiQualified: false,
+        quoteStatus: 'draft',
+        estimatedValue: 0,
+        buyingIntent: 'med',
+        assignedTo: (st.team && st.team[0] && st.team[0].name) || '',
+        messages: [
+          { dir: 'in', text: 'Started booking ' + service + ' on website', at: 'Earlier' },
+          { dir: 'sys', text: notes, at: 'Earlier' }
+        ],
+        tasks: [{ id: 't_rec_' + id, label: 'Send recovery follow-up', done: false }],
+        files: [],
+        appointments: [],
+        activity: [{ type: 'created', label: 'Abandoned booking captured', at: String(created).slice(0, 16).replace('T', ' ') }],
+        estimate: { labor: 0, materials: 0, total: 0, notes: '' }
+      });
+    });
+  }
+
+  function seedRecoveryDemoLeadsIfNeeded() {
+    if (!allowDemoSeed()) return;
+    var st = S();
+    if (!st.pipeline || !Array.isArray(st.pipeline.manual)) return;
+    var pipe = st.pipeline.manual;
+    if (pipe.some(isRecoveryLead)) return;
+    var now = Date.now();
+    var demos = [
+      {
+        id: 'lead_recover_jordan', name: 'Jordan Lee', phone: '(619) 555-0119', email: 'jordan.lee@email.com',
+        service: 'Exterior Detail', vehicle: 'F-150 · White', dropStep: 'Vehicle size',
+        lastMessage: 'Left at vehicle size step', minutesAgo: 35, aiScore: 62
+      },
+      {
+        id: 'lead_recover_sam', name: 'Sam Ortiz', phone: '(619) 555-0188', email: 'sam.o@email.com',
+        service: 'Full Detail', vehicle: 'Tesla Model 3', dropStep: 'Choose time',
+        lastMessage: 'Left at choose time step', minutesAgo: 180, aiScore: 71
+      },
+      {
+        id: 'lead_recover_priya', name: 'Priya Shah', phone: '(619) 555-0120', email: 'priya.s@email.com',
+        service: 'Ceramic Coating', vehicle: 'BMW X5', dropStep: 'Payment',
+        lastMessage: 'Left at payment step', minutesAgo: 1440, aiScore: 84
+      }
+    ];
+    demos.forEach(function (d, i) {
+      if (pipe.some(function (l) { return String(l.id) === d.id; })) return;
+      var created = new Date(now - d.minutesAgo * 60000).toISOString();
+      pipe.unshift({
+        id: d.id, key: d.id, name: d.name, phone: d.phone, email: d.email,
+        service: d.service, vehicle: d.vehicle, source: 'abandoned',
+        jobStatus: 'abandoned', isAbandoned: true, dropStep: d.dropStep,
+        stage: 'waiting_customer', osStage: 'waiting_customer', status: 'waiting',
+        waitingReason: 'customer', crmStatus: 'new',
+        createdAt: created, lastContacted: created, lastMessage: d.lastMessage,
+        notes: 'Incomplete booking from website', notesList: ['Incomplete booking from website'],
+        tags: ['abandoned', 'recovery'], unread: i === 0 ? 1 : 0,
+        aiScore: d.aiScore, aiQualified: d.aiScore >= 70, quoteStatus: 'draft',
+        estimatedValue: d.aiScore * 3, buyingIntent: d.aiScore >= 70 ? 'high' : 'med',
+        assignedTo: LEADS_TEAM[i % LEADS_TEAM.length].name,
+        messages: [
+          { dir: 'in', text: 'Started booking ' + d.service + ' on website', at: 'Earlier' },
+          { dir: 'sys', text: d.lastMessage, at: 'Earlier' }
+        ],
+        tasks: [{ id: 't_' + d.id, label: 'Send recovery follow-up', done: false }],
+        files: [], appointments: [],
+        activity: [{ type: 'created', label: 'Abandoned booking captured', at: created.slice(0, 16).replace('T', ' ') }],
+        estimate: { labor: 0, materials: 0, total: d.aiScore * 3, notes: '' }
+      });
+    });
+    if (!Array.isArray(st.abandonedLeads) || !st.abandonedLeads.length) {
+      st.abandonedLeads = demos.map(function (d) {
+        return {
+          id: d.id,
+          customer_name: d.name,
+          customer_phone: d.phone,
+          customer_email: d.email,
+          service_name: d.service,
+          notes: d.lastMessage,
+          created_at: new Date(now - d.minutesAgo * 60000).toISOString()
+        };
+      });
+    }
+  }
+
   function leadRelativeTime(lead) {
     var raw = String(lead.lastContacted || lead.createdAt || '');
     if (!raw) return '—';
@@ -6957,6 +7157,14 @@
   function leadAiRecommendation(lead) {
     var score = Number(lead.aiScore) || 0;
     var status = normalizeCrmStatus(lead);
+    if (isRecoveryLead(lead)) {
+      var step = leadDropStep(lead);
+      return {
+        title: 'Recover this booking',
+        body: 'They started ' + (lead.service || 'a booking') + ' and left' + (step ? ' at ' + step : '') + '. A short text in the next hour recovers the most unfinished starts.',
+        primary: 'Send Recovery Text'
+      };
+    }
     if (status === 'won') return { title: 'Lead converted', body: 'This lead is won. Keep the relationship warm with a review request or membership offer.', primary: 'Request Review' };
     if (score >= 80) return { title: 'Likely to convert', body: 'They provided a budget, requested a specific service, and want quick turnaround. Contact now while intent is high.', primary: 'Contact Now' };
     if (score >= 60) return { title: 'Nurture this lead', body: 'Good fit so far. Send an estimate and confirm preferred contact time to move them to Qualified.', primary: 'Send Estimate' };
@@ -7160,6 +7368,7 @@
 
   function leadMatchesTab(lead, tab) {
     if (!tab || tab === 'all') return true;
+    if (tab === 'recovery') return isRecoveryLead(lead);
     return normalizeCrmStatus(lead) === tab;
   }
 
@@ -7365,12 +7574,19 @@
     var on = selectedId && (String(lead.id) === String(selectedId) || String(lead.key) === String(selectedId));
     var crm = normalizeCrmStatus(lead);
     var unread = Number(lead.unread) > 0;
-    return '<button type="button" class="jos-ld-card' + (on ? ' on' : '') + (unread ? ' unread' : '') + '" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' +
+    var recover = isRecoveryLead(lead);
+    var pill = recover
+      ? '<span class="jos-pill warn">Recover</span>'
+      : '<span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span>';
+    var sub = recover
+      ? ('Left at ' + leadDropStep(lead) + (lead.service ? ' · ' + lead.service : ''))
+      : (lead.service || lead.industry || 'New lead');
+    return '<button type="button" class="jos-ld-card' + (on ? ' on' : '') + (unread ? ' unread' : '') + (recover ? ' recover' : '') + '" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' +
       (unread ? '<i class="jos-ld-unread" aria-hidden="true"></i>' : '') +
-      '<span class="jos-ld-ava">' + esc(initials(lead.name)) + '</span>' +
+      '<span class="jos-ld-ava' + (recover ? ' recover' : '') + '">' + esc(initials(lead.name)) + '</span>' +
       '<span class="jos-ld-card-body">' +
-      '<span class="jos-ld-card-top"><strong>' + esc(lead.name || 'Lead') + '</strong><span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span></span>' +
-      '<span class="jos-ld-card-sub">' + esc(lead.service || lead.industry || 'New lead') + '</span>' +
+      '<span class="jos-ld-card-top"><strong>' + esc(lead.name || 'Lead') + '</strong>' + pill + '</span>' +
+      '<span class="jos-ld-card-sub">' + esc(sub) + '</span>' +
       '<span class="jos-ld-card-meta"><span>' + esc(lead.phone ? displayPhone(lead.phone) : 'No phone') + '</span><span>' + esc(leadRelativeTime(lead)) + '</span></span>' +
       '</span></button>';
   }
@@ -7390,15 +7606,18 @@
       return '<button type="button" class="jos-ld-ws-tab' + (ws === t[0] ? ' on' : '') + '" data-jos-lead-ws="' + t[0] + '">' + t[1] + '</button>';
     }).join('') + '</div>';
 
+    var recover = isRecoveryLead(lead);
     var head = '<div class="jos-ld-ws-head">' +
       '<div class="jos-ld-ws-identity">' +
-      '<span class="jos-ld-ava lg">' + esc(initials(lead.name)) + '</span>' +
-      '<div><div class="jos-ld-ws-name"><strong>' + esc(lead.name || 'Lead') + '</strong><span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span></div>' +
-      '<div class="jos-muted">' + esc(lead.industry || 'Residential') + ' · ' + esc(lead.service || 'Service') + '</div></div></div>' +
+      '<span class="jos-ld-ava lg' + (recover ? ' recover' : '') + '">' + esc(initials(lead.name)) + '</span>' +
+      '<div><div class="jos-ld-ws-name"><strong>' + esc(lead.name || 'Lead') + '</strong>' +
+      (recover ? '<span class="jos-pill warn">Recover</span>' : '<span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span>') +
+      '</div>' +
+      '<div class="jos-muted">' + esc(recover ? ('Incomplete booking · Left at ' + leadDropStep(lead)) : ((lead.industry || 'Residential') + ' · ' + (lead.service || 'Service'))) + '</div></div></div>' +
       '<div class="jos-ld-qa">' +
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-call" title="Call" aria-label="Call">' +
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.4 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.6A2 2 0 0 1 22 16.9z"/></svg></button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="leads-sms" title="SMS" aria-label="SMS">' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="' + (recover ? 'leads-recover-sms' : 'leads-sms') + '" title="SMS" aria-label="SMS">' +
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>' +
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-email" title="Email" aria-label="Email">' +
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></button>' +
@@ -7413,11 +7632,26 @@
         ['Address', lead.address || lead.property || '—', ''],
         ['Source', srcLabel(srcKind(lead.source, lead)), ''],
         ['Service Interested', lead.service || '—', ''],
+        ['Dropped at', recover ? leadDropStep(lead) : '—', ''],
         ['Budget', lead.budget || money(lead.estimatedValue || lead.amount) || '—', ''],
         ['Best Time to Contact', lead.bestTime || '—', ''],
         ['Notes', (lead.notesList && lead.notesList[0]) || lead.notes || '—', '']
       ];
-      body = '<div class="jos-ld-overview">' +
+      if (!recover) fields = fields.filter(function (f) { return f[0] !== 'Dropped at'; });
+      var recoverBanner = recover
+        ? '<section class="jos-ld-recover-banner">' +
+          '<div class="jos-ld-recover-copy"><span class="jos-kicker">Lead Recovery</span>' +
+          '<strong>They started booking and didn’t finish</strong>' +
+          '<p>Left at <b>' + esc(leadDropStep(lead)) + '</b>' + (lead.service ? ' · ' + esc(lead.service) : '') +
+          ' · ' + esc(leadRelativeTime(lead)) + '. Send a short follow-up while intent is still warm.</p></div>' +
+          '<div class="jos-btn-row">' +
+          btn('leads-recover-sms', 'Send Recovery Text', 'jos-btn-brand jos-btn-sm') +
+          btn('leads-recover-resume', 'Finish booking', 'jos-btn jos-btn-sm') +
+          btn('leads-recover-done', 'Mark recovered', 'jos-btn jos-btn-sm') +
+          btn('leads-recover-lost', 'Mark lost', 'jos-btn jos-btn-sm') +
+          '</div></section>'
+        : '';
+      body = recoverBanner + '<div class="jos-ld-overview">' +
         '<section class="jos-ld-info">' +
         '<div class="jos-kicker">Lead Information</div>' +
         fields.map(function (f) {
@@ -7434,18 +7668,25 @@
           return '<li class="' + (c.done ? 'done' : '') + '">' + (c.done ? '✓' : '○') + ' ' + esc(c.label) + '</li>';
         }).join('') + '</ul></section></div>' +
         '<section class="jos-ld-msg-card">' +
-        '<div class="jos-kicker">Latest Message</div>' +
-        '<p>' + esc(lead.lastMessage || 'No messages yet') + '</p>' +
-        '<button type="button" class="jos-linkish" data-jos-act="go-chats">View Conversation</button></section>' +
+        '<div class="jos-kicker">' + (recover ? 'Recovery message draft' : 'Latest Message') + '</div>' +
+        '<p>' + esc(recover ? leadRecoverySms(lead) : (lead.lastMessage || 'No messages yet')) + '</p>' +
+        (recover
+          ? '<div class="jos-btn-row">' + btn('leads-recover-sms', 'Send this text', 'jos-btn-brand jos-btn-sm') + btn('go-chats', 'Open Inbox', 'jos-btn jos-btn-sm') + '</div>'
+          : '<button type="button" class="jos-linkish" data-jos-act="go-chats">View Conversation</button>') +
+        '</section>' +
         '<section class="jos-ld-ai-card">' +
         '<div class="jos-ld-ai-badge">AI</div>' +
         '<strong>' + esc(rec.title) + '</strong>' +
         '<p>' + esc(rec.body) + '</p>' +
         '<div class="jos-btn-row">' +
-        btn('leads-call', 'Contact Now', 'jos-btn-brand jos-btn-sm') +
-        btn('leads-create-quote', 'Send Estimate', 'jos-btn jos-btn-sm') +
-        btn('leads-followup', 'Schedule Appointment', 'jos-btn jos-btn-sm') +
-        btn('leads-ai-dismiss', 'Dismiss', 'jos-btn jos-btn-sm') +
+        (recover
+          ? btn('leads-recover-sms', 'Send Recovery Text', 'jos-btn-brand jos-btn-sm') +
+            btn('leads-recover-resume', 'Finish booking', 'jos-btn jos-btn-sm') +
+            btn('leads-call', 'Call Now', 'jos-btn jos-btn-sm')
+          : btn('leads-call', 'Contact Now', 'jos-btn-brand jos-btn-sm') +
+            btn('leads-create-quote', 'Send Estimate', 'jos-btn jos-btn-sm') +
+            btn('leads-followup', 'Schedule Appointment', 'jos-btn jos-btn-sm') +
+            btn('leads-ai-dismiss', 'Dismiss', 'jos-btn jos-btn-sm')) +
         '</div></section>';
     } else if (ws === 'activity') {
       body = '<div class="jos-ld-timeline">' + ((lead.activity || []).map(function (a) {
@@ -7585,11 +7826,14 @@
 
   function renderLeadsPage(root) {
     seedDemoLeadsIfEmpty();
+    syncAbandonedLeadsIntoPipeline();
+    seedRecoveryDemoLeadsIfNeeded();
     ensureLeadsOsState();
     if (!root._josLeadsTab) root._josLeadsTab = 'all';
     var tab = root._josLeadsTab || 'all';
     var ws = root._josLeadWorkspace || 'overview';
     var all = leadsOsList();
+    var recoveryCount = all.filter(isRecoveryLead).length;
     var filtered = filterLeadsList(root);
     var visible = filtered.slice(0, root._josLeadsLimit || 25);
     var selectedId = root._josLeadId || (visible[0] && (visible[0].id || visible[0].key)) || null;
@@ -7612,13 +7856,15 @@
 
     var statusTabs = '<div class="jos-ld-status-tabs">' + LEADS_TABS.map(function (t) {
       var count = all.filter(function (l) { return leadMatchesTab(l, t[0]); }).length;
-      return '<button type="button" class="jos-ld-stab' + (tab === t[0] ? ' on' : '') + '" data-jos-leads-tab="' + t[0] + '">' +
+      return '<button type="button" class="jos-ld-stab' + (tab === t[0] ? ' on' : '') + (t[0] === 'recovery' ? ' recover' : '') + '" data-jos-leads-tab="' + t[0] + '">' +
         esc(t[1]) + (t[0] !== 'all' ? ' <em>(' + count + ')</em>' : '') + '</button>';
     }).join('') + '</div>';
 
     var listHtml = visible.length
       ? visible.map(function (l) { return renderLeadCard(l, selectedId); }).join('')
-      : '<div class="jos-ld-empty-list"><strong>No leads yet</strong><p>Create your first lead or connect a form.</p>' + btn('leads-add-open', 'New Lead', 'jos-btn-brand jos-btn-sm') + '</div>';
+      : (tab === 'recovery'
+        ? '<div class="jos-ld-empty-list"><strong>No unfinished bookings</strong><p>When someone starts booking and leaves, they show up here for follow-up.</p></div>'
+        : '<div class="jos-ld-empty-list"><strong>No leads yet</strong><p>Create your first lead or connect a form.</p>' + btn('leads-add-open', 'New Lead', 'jos-btn-brand jos-btn-sm') + '</div>');
 
     root.innerHTML =
       '<div class="jos-ld-shell' + (wsOpen ? ' ws-open' : '') + '">' +
@@ -7663,9 +7909,14 @@
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg></button>' +
       '</div>' +
 
+      (tab === 'recovery'
+        ? '<div class="jos-ld-recover-strip"><strong>Lead Recovery</strong><span>People who started booking and didn’t finish — text them while intent is warm.' +
+          (recoveryCount ? ' <em>' + recoveryCount + ' waiting</em>' : '') + '</span></div>'
+        : '') +
+
       '<div class="jos-ld-layout">' +
       '<section class="jos-ld-inbox">' +
-      '<div class="jos-ld-inbox-head"><strong>' + filtered.length + ' Leads</strong>' +
+      '<div class="jos-ld-inbox-head"><strong>' + filtered.length + (tab === 'recovery' ? ' to recover' : ' Leads') + '</strong>' +
       '<select id="jos-ld-sort" class="jos-ld-sort">' +
       [['newest', 'Newest'], ['oldest', 'Oldest'], ['score', 'Highest score']].map(function (s) {
         return '<option value="' + s[0] + '"' + ((root._josLeadsSort || 'newest') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
@@ -7937,6 +8188,82 @@
     root._josLeadCtx = null;
 
     try {
+      if (act === 'leads-recover-sms') {
+        if (!lead) return toast('Select a lead first');
+        var sms = leadRecoverySms(lead);
+        mutateLead(function (l) {
+          l.messages = l.messages || [];
+          l.messages.push({ dir: 'out', text: sms, at: 'Just now' });
+          l.lastMessage = sms;
+          l.crmStatus = l.crmStatus === 'new' ? 'contacted' : l.crmStatus;
+          l.lastContacted = new Date().toISOString();
+          l.unread = 0;
+          pushLeadActivity(l, 'sms', 'Recovery text sent');
+        });
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(sms);
+        } catch (eSms) {}
+        if (lead.phone && typeof global.openSmsCompose === 'function') {
+          try { global.openSmsCompose(lead.phone, sms); } catch (eOpen) {}
+        }
+        toast('Recovery text ready' + (lead.phone ? ' · ' + displayPhone(lead.phone) : ''));
+        return;
+      }
+      if (act === 'leads-recover-resume') {
+        if (!lead) return toast('Select a lead first');
+        if (lead.reqId && typeof global.acceptAbandonedLead === 'function') {
+          try {
+            Promise.resolve(global.acceptAbandonedLead(lead)).catch(function () {});
+            toast('Finishing booking…');
+            return;
+          } catch (eAcc) {}
+        }
+        mutateLead(function (l) {
+          l.quote = l.quote || { id: 'q_' + (l.id || Date.now()), amount: parseFloat(l.estimatedValue || l.amount) || 0, status: 'draft', packageName: l.service || 'Service', sentAt: todayStr() };
+          l.quoteStatus = 'draft';
+          l.crmStatus = 'contacted';
+          l.lastContacted = new Date().toISOString();
+          pushLeadActivity(l, 'recover', 'Opened finish-booking path');
+        });
+        root._josLeadWorkspace = 'overview';
+        try {
+          if (typeof global.openSmartQuote === 'function') global.openSmartQuote();
+          else if (typeof global.switchV === 'function') switchNav('quotes');
+        } catch (eResume) {}
+        toast('Finish their booking — quote/draft ready');
+        return;
+      }
+      if (act === 'leads-recover-done') {
+        if (!lead) return toast('Select a lead first');
+        mutateLead(function (l) {
+          l.recovered = true;
+          l.isAbandoned = false;
+          l.unread = 0;
+          l.crmStatus = 'contacted';
+          l.osStage = 'quote_sent';
+          l.stage = 'quote_sent';
+          l.status = 'quoted';
+          l.tags = (l.tags || []).filter(function (t) { return !/abandon|recovery/i.test(String(t)); }).concat(['recovered']);
+          pushLeadActivity(l, 'recover', 'Marked recovered');
+        });
+        toast('Marked recovered');
+        return;
+      }
+      if (act === 'leads-recover-lost') {
+        if (!lead) return toast('Select a lead first');
+        mutateLead(function (l) {
+          l.recovered = false;
+          l.crmStatus = 'lost';
+          l.osStage = 'lost';
+          l.stage = 'lost';
+          l.status = 'lost';
+          l.isAbandoned = false;
+          l.unread = 0;
+          pushLeadActivity(l, 'lost', 'Recovery marked lost');
+        });
+        toast('Marked lost');
+        return;
+      }
       if (act === 'leads-filter-open') { root._josLeadFilterOpen = true; return renderLeads(); }
       if (act === 'leads-filter-close') { root._josLeadFilterOpen = false; return renderLeads(); }
       if (act === 'leads-filter-apply') {
@@ -11567,6 +11894,7 @@
       if (cid) return openCustomerProfile(cid);
       if (act === 'go-customers') return switchNav('customers');
       if (act === 'go-leads') return switchNav('leads');
+      if (act === 'go-leads-recovery') return openLeadsRecovery();
       if (act === 'go-jobs') return switchNav('jobs');
       if (act === 'go-chats') return switchNav('chats');
       if (act === 'go-reviews') return switchNav('reviews');
@@ -14367,6 +14695,7 @@
       if (act === 'go-chats') return switchNav('chats');
       if (act === 'go-customers') return switchNav('customers');
       if (act === 'go-leads') return switchNav('leads');
+      if (act === 'go-leads-recovery') return openLeadsRecovery();
       if (act === 'go-jobs') return switchNav('jobs');
       if (act === 'go-editor') return switchNav('editor');
       if (act === 'go-marketing') return switchNav('marketing');
@@ -14407,6 +14736,7 @@
     renderBizReviews: renderBizReviews,
     renderLeads: renderLeads,
     renderLeadsList: renderLeadsList,
+    openLeadsRecovery: openLeadsRecovery,
     renderCustomers: renderCustomers,
     renderCustomersPage: renderCustomers,
     renderInbox: renderInbox,
