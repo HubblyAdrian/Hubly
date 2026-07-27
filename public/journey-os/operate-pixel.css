@@ -2790,6 +2790,16 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
   animation:josHomeIn .4s ease both;
 }
+.jos-home-v2 .jos-hcard.jos-command-card{
+  background:linear-gradient(160deg,#161C2C 0%,#1A2233 48%,#241820 100%)!important;
+  color:#fff;
+  border:0;
+  box-shadow:0 16px 40px rgba(15,23,42,.28);
+}
+.jos-home-v2 .jos-hcard.jos-command-card:hover{
+  border-color:transparent;
+  box-shadow:0 18px 48px rgba(15,23,42,.34);
+}
 .jos-home-v2 .jos-hcard:hover{
   transform:translateY(-3px);
   box-shadow:0 14px 40px rgba(0,0,0,.08);
@@ -2822,7 +2832,7 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 }
 @keyframes josHeroIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .jos-home-hero h1{
-  margin:0;font-size:clamp(26px,3vw,34px);font-weight:800;letter-spacing:-.035em;color:var(--jos-navy);
+  margin:0;font-size:clamp(26px,3vw,34px);font-weight:800;letter-spacing:-.035em;color:#141B2B;
 }
 .jos-home-hero-biz{margin:6px 0 0;font-size:15px;font-weight:750;color:var(--jos-brand)}
 .jos-home-hero-motivation{margin:6px 0 0;font-size:13px;color:var(--jos-ink-2);max-width:52ch}
@@ -2836,7 +2846,7 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 .jos-home-date{font-size:13px;font-weight:700;color:var(--jos-ink-2)}
 
 .jos-home-kpi-row{
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--jos-gap);margin-bottom:var(--jos-gap);
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--jos-gap);margin-bottom:var(--jos-gap);
 }
 .jos-home-v2 .jos-kpi-card{min-height:150px;padding:0;overflow:hidden}
 .jos-home-v2 .jos-kpi-hit{
@@ -2857,9 +2867,13 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   linear-gradient(160deg,#161C2C 0%,#1A2233 48%,#241820 100%);color:#fff;border:0}
 .jos-command-card .jos-kicker{color:#FDBA74}
 .jos-command-card h2{margin:6px 0 6px;font-size:22px;font-weight:800;letter-spacing:-.03em;color:#fff}
-.jos-command-card .jos-muted{color:rgba(255,255,255,.68)}
-.jos-command-card .jos-btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#fff}
+.jos-command-card .jos-muted{color:rgba(255,255,255,.78)}
+.jos-command-card .jos-empty-action strong{color:#fff}
+.jos-command-card .jos-empty-action p{color:rgba(255,255,255,.75)}
+.jos-command-card .jos-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff}
 .jos-command-card .jos-btn-brand{background:var(--jos-brand);border-color:var(--jos-brand);color:#fff}
+.jos-command-card .jos-wmenu-btn{color:rgba(255,255,255,.7)}
+.jos-command-card .jos-wmenu-btn:hover{background:rgba(255,255,255,.12);color:#fff}
 .jos-cc-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px;padding-right:28px}
 .jos-cc-list{display:grid;gap:8px;flex:1;overflow:auto;max-height:210px;padding-right:2px}
 .jos-cc-row{
@@ -2979,12 +2993,12 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 
 .jos-home-fab,.jos-home-fab-sheet{display:none}
 @media(max-width:1100px){
-  .jos-home-kpi-row{grid-template-columns:1fr 1fr}
+  .jos-home-kpi-row{grid-template-columns:1fr 1fr!important}
   .jos-home-row-cc,.jos-home-row-3{grid-template-columns:1fr}
 }
 @media(max-width:720px){
   .jos-home-v2.jos-page{padding:16px 14px 110px}
-  .jos-home-kpi-row{grid-template-columns:1fr}
+  .jos-home-kpi-row{grid-template-columns:1fr!important}
   .jos-home-hero{min-height:auto}
   .jos-command-card{min-height:auto}
   .jos-cc-list{max-height:none}

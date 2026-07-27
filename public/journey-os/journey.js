@@ -10056,6 +10056,10 @@
   function enhanceDashboard() {
     var root = ownPixelView('v-dashboard', 'jos-dash-root');
     if (!root) return;
+    setJobsMode(false);
+    setInboxMode(false);
+    setLeadsMode(false);
+    setPipelineMode(false);
     updateChrome('dashboard');
     root.classList.add('jos-home-root');
     try {
@@ -10247,9 +10251,10 @@
     var scores = homeScores();
     var hour = new Date().getHours();
     var greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
-    var owner = S().ownerName || S().ownerFirst || (S().biz ? String(S().biz).split(' ')[0] : '') || 'there';
+    var owner = S().ownerName || S().ownerFirst || (S().biz ? String(S().biz).split(/[\s'-]/)[0] : '') || 'there';
     if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
     if (owner.indexOf(' ') > -1) owner = owner.split(' ')[0];
+    if (/^adrian'?s$/i.test(owner) && S().ownerName) owner = String(S().ownerName).split(/\s+/)[0];
     var bizName = S().biz || 'Your business';
     var layout = homeLayout() || { widgets: {}, revRange: 'month', layoutPreset: 'owner' };
     if (!layout.widgets) layout.widgets = {};
