@@ -8687,13 +8687,14 @@
 
   function demoConversations() {
     return [
-      { id: 'conv1', customer_name: 'Alex Rivera', channel: 'sms', last_message: 'Can you fit me in for ceramic coating this week?', unread: 2, updated_at: todayStr() + 'T09:15:00', phone: '(619) 555-0133', priority: 'high', isLead: true, needsAttention: true, messages: [{ dir: 'in', text: 'Hi, saw your Google listing. Do you do ceramic coating?', at: '9:02 AM' }, { dir: 'out', text: 'Yes! I have Thursday or Saturday open. What vehicle?', at: '9:05 AM' }, { dir: 'in', text: 'Can you fit me in for ceramic coating this week?', at: '9:15 AM' }] },
-      { id: 'conv2', customer_name: 'Sarah Johnson', channel: 'sms', last_message: 'Perfect, see you at 9am tomorrow.', unread: 0, updated_at: todayStr() + 'T08:40:00', phone: '(619) 555-0198', vip: true, messages: [{ dir: 'out', text: 'Reminder: Interior Detail tomorrow at 9:00 AM.', at: '8:30 AM' }, { dir: 'in', text: 'Perfect, see you at 9am tomorrow.', at: '8:40 AM' }] },
-      { id: 'conv3', customer_name: 'Taylor Kim', channel: 'instagram', last_message: 'How much for a Model 3 interior?', unread: 1, updated_at: todayStr() + 'T07:22:00', vehicle: 'Tesla Model 3', needsAttention: true, messages: [{ dir: 'in', text: 'How much for a Model 3 interior?', at: '7:22 AM' }] },
-      { id: 'conv4', customer_name: 'Jordan Lee', channel: 'chat', last_message: 'Left at vehicle size step', unread: 1, updated_at: todayStr() + 'T06:50:00', aiMode: 'ai', needsAttention: true, messages: [{ dir: 'in', text: 'Started booking Exterior Detail', at: '6:45 AM' }, { dir: 'sys', text: 'Left at vehicle size step', at: '6:50 AM' }] },
-      { id: 'conv5', customer_name: 'Emily Wilson', channel: 'email', email: 'emily@example.com', last_message: 'Can you send the ceramic quote as a PDF?', unread: 1, updated_at: todayStr() + 'T10:05:00', needsAttention: true, messages: [{ dir: 'in', text: 'Can you send the ceramic quote as a PDF?', at: '10:05 AM', attachment: 'request.pdf' }] },
-      { id: 'conv6', customer_name: 'Chris Park', channel: 'facebook', last_message: 'Do you detail trucks at the office park?', unread: 0, updated_at: todayStr() + 'T11:20:00', messages: [{ dir: 'in', text: 'Do you detail trucks at the office park?', at: '11:18 AM' }, { dir: 'out', text: 'Yes — mobile service available in Mission Valley.', at: '11:20 AM' }] },
-      { id: 'conv7', customer_name: 'Website Visitor', channel: 'ai', last_message: 'AI could not confirm vehicle size', unread: 1, updated_at: todayStr() + 'T12:01:00', aiFailed: true, needsAttention: true, aiMode: 'ai', messages: [{ dir: 'in', text: 'I want an exterior detail tomorrow', at: '11:58 AM' }, { dir: 'sys', text: 'AI could not confirm vehicle size', at: '12:01 PM' }] }
+      { id: 'conv1', customer_name: 'Alex Rivera', channel: 'instagram', source: 'Instagram', last_message: 'Hi! I\'m interested in a full detail for my Tesla this Saturday.', unread: 2, updated_at: todayStr() + 'T10:30:00', phone: '(619) 555-0133', email: 'alex@email.com', vehicle: 'Tesla Model 3', priority: 'high', isLead: true, needsAttention: true, service: 'Full Detail', estValue: 300, messages: [{ dir: 'in', text: 'Hi! I\'m interested in a full detail for my Tesla.', at: '10:12 AM' }, { dir: 'out', text: 'Awesome — we can do Saturday morning. Interior + exterior?', at: '10:18 AM' }, { dir: 'in', text: 'Hi! I\'m interested in a full detail for my Tesla this Saturday.', at: '10:30 AM' }] },
+      { id: 'conv2', customer_name: 'Sarah Johnson', channel: 'sms', last_message: 'Perfect, see you at 9am tomorrow.', unread: 0, updated_at: todayStr() + 'T08:40:00', phone: '(619) 555-0198', vip: true, booked: true, waitingOn: 'booked', vehicle: 'BMW X5', messages: [{ dir: 'out', text: 'Reminder: Interior Detail tomorrow at 9:00 AM.', at: '8:30 AM' }, { dir: 'in', text: 'Perfect, see you at 9am tomorrow.', at: '8:40 AM' }] },
+      { id: 'conv3', customer_name: 'Mike Thompson', channel: 'sms', last_message: 'How much for a Model 3 interior?', unread: 1, updated_at: todayStr() + 'T09:05:00', vehicle: 'Tesla Model 3', phone: '(619) 555-0142', needsAttention: true, isLead: true, messages: [{ dir: 'in', text: 'How much for a Model 3 interior?', at: '9:05 AM' }] },
+      { id: 'conv4', customer_name: 'Jordan Lee', channel: 'chat', last_message: 'Left at vehicle size step', unread: 1, updated_at: todayStr() + 'T06:50:00', aiMode: 'ai', needsAttention: true, vehicle: 'Honda Civic', messages: [{ dir: 'in', text: 'Started booking Exterior Detail', at: '6:45 AM' }, { dir: 'sys', text: 'Left at vehicle size step', at: '6:50 AM' }] },
+      { id: 'conv5', customer_name: 'Emily Wilson', channel: 'email', email: 'emily@example.com', last_message: 'Can you send the ceramic quote as a PDF?', unread: 1, updated_at: todayStr() + 'T10:05:00', needsAttention: true, vehicle: 'Porsche Macan', service: 'Ceramic Coating', estValue: 650, messages: [{ dir: 'in', text: 'Can you send the ceramic quote as a PDF?', at: '10:05 AM', attachment: 'request.pdf' }] },
+      { id: 'conv6', customer_name: 'Chris Park', channel: 'facebook', last_message: 'Do you detail trucks at the office park?', unread: 0, updated_at: todayStr() + 'T11:20:00', vehicle: 'Ford F-150', waitingOn: 'customer', messages: [{ dir: 'in', text: 'Do you detail trucks at the office park?', at: '11:18 AM' }, { dir: 'out', text: 'Yes — mobile service available in Mission Valley.', at: '11:20 AM' }] },
+      { id: 'conv7', customer_name: 'Website Visitor', channel: 'ai', last_message: 'AI could not confirm vehicle size', unread: 1, updated_at: todayStr() + 'T12:01:00', aiFailed: true, needsAttention: true, aiMode: 'ai', messages: [{ dir: 'in', text: 'I want an exterior detail tomorrow', at: '11:58 AM' }, { dir: 'sys', text: 'AI could not confirm vehicle size', at: '12:01 PM' }] },
+      { id: 'conv8', customer_name: 'Taylor Kim', channel: 'phone', last_message: 'Missed call · left voicemail about ceramic', unread: 1, updated_at: todayStr() + 'T07:22:00', phone: '(619) 555-0177', needsAttention: true, isLead: true, vehicle: 'Audi Q5', messages: [{ dir: 'sys', text: 'Missed call · 0:42 voicemail', at: '7:20 AM' }, { dir: 'in', text: 'Hey — curious about ceramic pricing for an Audi Q5.', at: '7:22 AM' }] }
     ];
   }
 
@@ -8741,9 +8742,9 @@
   }
 
   var CHROME = {
-    dashboard: { title: 'Home', sub: 'Your Business Command Center — focus on what matters next.' },
-    chats: { title: 'Messages', sub: 'Every conversation in one place.' },
-    jobs: { title: 'Jobs', sub: 'Schedule, routes, and today\u2019s work.' },
+    dashboard: { title: 'Home', sub: 'Good morning — let\u2019s grow your business today.' },
+    chats: { title: 'Inbox', sub: 'Manage every customer conversation.' },
+    jobs: { title: 'Jobs & Calendar', sub: 'Schedule, routes, and today\u2019s work.' },
     leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
     customers: { title: 'Customers', sub: 'People, vehicles, and history.' },
     pipeline: { title: 'Pipeline', sub: 'Move every job from inquiry to booked.' },
@@ -9629,35 +9630,60 @@
 
 
   var INBOX_TABS = [
-    ['all', 'All Conversations'],
-    ['chat', 'Website Chat'],
-    ['sms', 'SMS'],
-    ['email', 'Email'],
-    ['facebook', 'Facebook'],
+    ['all', 'All'],
+    ['unread', 'Unread'],
+    ['leads', 'Leads'],
+    ['customers', 'Customers'],
+    ['booked', 'Booked'],
+    ['archived', 'Archived'],
     ['instagram', 'Instagram'],
-    ['ai', 'AI Conversations'],
-    ['needs', 'Needs Attention'],
-    ['archived', 'Archived']
+    ['facebook', 'Facebook'],
+    ['email', 'Email'],
+    ['sms', 'SMS'],
+    ['phone', 'Calls'],
+    ['ai', 'AI']
   ];
   var INBOX_TEMPLATES = [
-    { id: 'greet', label: 'Greeting', body: 'Hi {{name}} — thanks for reaching out to {{biz}}. How can I help today?' },
-    { id: 'quote', label: 'Quote follow-up', body: 'Hi {{name}}, just checking if you had a chance to review the quote. Happy to answer any questions.' },
-    { id: 'book', label: 'Book slot', body: 'Hi {{name}}, I have openings this week. Want me to hold a time for your {{service}}?' },
-    { id: 'thanks', label: 'Thanks', body: 'Appreciate you, {{name}}! Reply anytime if you need anything else.' }
+    { id: 'ceramic', label: 'Ceramic Quote', body: 'Hi {{name}} — here is our ceramic coating package for your vehicle. I can send a formal quote or book a Saturday slot. Which works better?' },
+    { id: 'interior', label: 'Interior Detail', body: 'Hi {{name}}, our Interior Detail runs about 2 hours and includes deep clean + protectant. Want me to hold a time this week?' },
+    { id: 'follow', label: 'Follow Up', body: 'Hi {{name}} — just checking in on your {{service}} interest. Happy to answer any questions or lock a time.' },
+    { id: 'appt', label: 'Appointment Reminder', body: 'Hi {{name}}, reminder that you are booked with {{biz}}. Reply YES to confirm or text if you need to reschedule.' },
+    { id: 'thanks', label: 'Thank You', body: 'Appreciate you, {{name}}! Reply anytime if you need anything else from {{biz}}.' },
+    { id: 'review', label: 'Review Request', body: 'Hi {{name}}, thanks for trusting {{biz}}! If we earned it, a quick Google review helps a lot: {{link}}' },
+    { id: 'reschedule', label: 'Reschedule', body: 'Hi {{name}}, no problem — I can move your appointment. What days work best for you?' },
+    { id: 'payment', label: 'Payment Reminder', body: 'Hi {{name}}, friendly reminder that your invoice is ready. I can text a pay link whenever you are ready.' }
   ];
+  var INBOX_SORTS = [
+    ['newest', 'Newest'],
+    ['oldest', 'Oldest'],
+    ['unread', 'Unread'],
+    ['waiting_me', 'Waiting on Me'],
+    ['waiting_cust', 'Waiting on Customer'],
+    ['booked', 'Booked'],
+    ['quote', 'Quote Sent'],
+    ['score', 'Lead Score']
+  ];
+  var INBOX_SUGGESTED_REPLIES = ['Sounds good!', 'Thank you!', "What's included?", "Can't wait!"];
+
+  function setInboxMode(on) {
+    var app = el('p-app');
+    if (!app) return;
+    app.classList.toggle('jos-inbox-mode', !!on);
+  }
 
   function normalizeChannel(ch) {
     ch = String(ch || 'chat').toLowerCase();
     if (ch === 'website' || ch === 'web' || ch === 'live') return 'chat';
     if (ch === 'fb' || ch === 'messenger') return 'facebook';
     if (ch === 'ig' || ch === 'dm') return 'instagram';
+    if (ch === 'call' || ch === 'calls' || ch === 'phone') return 'phone';
     return ch;
   }
   function channelLabel(ch) {
-    return ({ chat: 'Website Chat', sms: 'SMS', email: 'Email', facebook: 'Facebook', instagram: 'Instagram', ai: 'AI' })[normalizeChannel(ch)] || 'Chat';
+    return ({ chat: 'Website Chat', sms: 'SMS', email: 'Email', facebook: 'Facebook', instagram: 'Instagram', ai: 'AI', phone: 'Phone' })[normalizeChannel(ch)] || 'Chat';
   }
   function channelIco(ch) {
-    return ({ chat: 'W', sms: 'S', email: '@', facebook: 'f', instagram: 'Ig', ai: 'AI' })[normalizeChannel(ch)] || '•';
+    return ({ chat: 'W', sms: 'S', email: '@', facebook: 'f', instagram: 'Ig', ai: 'AI', phone: '☎' })[normalizeChannel(ch)] || '•';
   }
   function inboxTime(raw) {
     if (!raw) return '';
@@ -9672,6 +9698,18 @@
       }
     } catch (e) {}
     return String(raw).slice(11, 16) || String(raw);
+  }
+  function inboxInitials(name) {
+    name = String(name || 'C').trim();
+    var parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  }
+  function leadTemp(score) {
+    score = Number(score) || 0;
+    if (score >= 80) return 'Hot';
+    if (score >= 55) return 'Warm';
+    return 'Cold';
   }
   function enrichConversation(c) {
     c = Object.assign({}, c || {});
@@ -9703,6 +9741,26 @@
     if (c.needsAttention == null) c.needsAttention = c.unread > 0 || c.priority === 'high' || c.aiFailed || c.channel === 'ai';
     if (c.aiMode == null) c.aiMode = c.channel === 'chat' || c.channel === 'ai' ? 'ai' : 'human';
     if (c.archived == null) c.archived = !!c.archived;
+    if (c.vehicle == null) c.vehicle = c.car || '';
+    if (c.source == null) c.source = channelLabel(c.channel);
+    if (c.leadScore == null) {
+      c.leadScore = Math.min(99, 40 + (c.unread ? 15 : 0) + (c.priority === 'high' ? 25 : 10) + (c.isLead ? 12 : 0) + (/ceramic|coating|saturday/.test(blob) ? 10 : 0));
+    }
+    if (c.waitingOn == null) {
+      if (c.booked) c.waitingOn = 'booked';
+      else if (c.archived) c.waitingOn = 'closed';
+      else if (c.needsAttention || c.unread > 0) c.waitingOn = 'business';
+      else if (c.messages.length && (c.messages[c.messages.length - 1].dir === 'out')) c.waitingOn = 'customer';
+      else c.waitingOn = 'business';
+    }
+    if (c.favorite == null) c.favorite = !!c.favorite;
+    if (c.service == null) {
+      if (/ceramic|coating/.test(blob)) c.service = 'Ceramic Coating';
+      else if (/interior/.test(blob)) c.service = 'Interior Detail';
+      else if (/exterior/.test(blob)) c.service = 'Exterior Detail';
+      else c.service = 'Full Detail';
+    }
+    if (c.estValue == null) c.estValue = /ceramic/.test(blob) ? 650 : (/interior/.test(blob) ? 220 : 280);
     return c;
   }
   function inboxConversations() {
@@ -9730,42 +9788,83 @@
     };
   }
 
+  function inboxTabCount(all, key) {
+    return all.filter(function (c) {
+      if (key === 'all') return !c.archived;
+      if (key === 'archived') return !!c.archived;
+      if (key === 'unread') return !c.archived && c.unread > 0;
+      if (key === 'leads') return !c.archived && c.isLead;
+      if (key === 'customers') return !c.archived && !!matchCustomer(c) && !c.isLead;
+      if (key === 'booked') return !c.archived && (c.booked || c.waitingOn === 'booked');
+      if (key === 'ai') return !c.archived && (c.channel === 'ai' || c.aiMode === 'ai');
+      if (key === 'phone') return !c.archived && normalizeChannel(c.channel) === 'phone';
+      return !c.archived && normalizeChannel(c.channel) === key;
+    }).length;
+  }
+
+  function sortInboxList(list, sort) {
+    var arr = list.slice();
+    if (sort === 'oldest') arr.sort(function (a, b) { return String(a.updated_at || '').localeCompare(String(b.updated_at || '')); });
+    else if (sort === 'unread') arr.sort(function (a, b) { return (b.unread || 0) - (a.unread || 0); });
+    else if (sort === 'waiting_me') arr.sort(function (a, b) { return (a.waitingOn === 'business' ? 0 : 1) - (b.waitingOn === 'business' ? 0 : 1); });
+    else if (sort === 'waiting_cust') arr.sort(function (a, b) { return (a.waitingOn === 'customer' ? 0 : 1) - (b.waitingOn === 'customer' ? 0 : 1); });
+    else if (sort === 'booked') arr.sort(function (a, b) { return (b.booked ? 1 : 0) - (a.booked ? 1 : 0); });
+    else if (sort === 'quote') arr.sort(function (a, b) { return (/quote/i.test(b.last_message) ? 1 : 0) - (/quote/i.test(a.last_message) ? 1 : 0); });
+    else if (sort === 'score') arr.sort(function (a, b) { return (b.leadScore || 0) - (a.leadScore || 0); });
+    else arr.sort(function (a, b) { return String(b.updated_at || '').localeCompare(String(a.updated_at || '')); });
+    return arr;
+  }
+
+  function cardBorderClass(c) {
+    if (c.needsAttention && c.unread > 1) return 'tone-hot';
+    if (c.booked || c.waitingOn === 'booked') return 'tone-ok';
+    if (c.archived || c.waitingOn === 'closed') return 'tone-muted';
+    if (c.waitingOn === 'customer') return 'tone-info';
+    return 'tone-brand';
+  }
+
   function renderInbox() {
     var root = ownPixelView('v-chats', 'jos-inbox-root');
     if (!root) return;
+    setInboxMode(true);
     updateChrome('chats');
     try {
       renderInboxPage(root);
     } catch (err) {
       console.warn('HublyJourneyOS Inbox', err);
-      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Inbox could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderInbox()">Retry</button></div></div></div>';
+      root.innerHTML = '<div class="jos-inbox-shell"><div class="jos-empty jos-error-state"><strong>Inbox could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderInbox()">Retry</button></div></div></div>';
     }
   }
 
   function renderInboxPage(root) {
     var tab = root._josInboxTab || 'all';
     var q = String(root._josInboxQ || '').trim().toLowerCase();
-    var filter = root._josInboxFilter || 'all';
+    var sort = root._josInboxSort || 'newest';
     var all = inboxConversations();
     var selectedId = root._josInboxId || (all[0] && all[0].id) || null;
-    var integ = integrationStatus();
+    var dockCollapsed = !!root._josDockCollapsed;
+    var hubOpen = root._josHubOpen !== false;
+    var noteMode = !!root._josNoteMode;
+    var scrollKeep = root._josChatScroll || 0;
 
     var filtered = all.filter(function (c) {
       if (tab === 'archived') return !!c.archived;
       if (c.archived && tab !== 'archived') return false;
-      if (tab === 'needs') return !!c.needsAttention;
+      if (tab === 'unread') return c.unread > 0;
+      if (tab === 'leads') return !!c.isLead;
+      if (tab === 'customers') return !!matchCustomer(c) && !c.isLead;
+      if (tab === 'booked') return !!(c.booked || c.waitingOn === 'booked');
       if (tab === 'ai') return c.channel === 'ai' || c.aiMode === 'ai';
+      if (tab === 'phone') return normalizeChannel(c.channel) === 'phone';
       if (tab !== 'all' && normalizeChannel(c.channel) !== tab) return false;
-      if (filter === 'unread' && !(c.unread > 0)) return false;
-      if (filter === 'priority' && c.priority === 'low') return false;
-      if (filter === 'leads' && !c.isLead) return false;
       if (!q) return true;
       var cust = matchCustomer(c);
       var vehicle = cust ? String(cust.vehicle || cust.vehicles || '') : String(c.vehicle || '');
       var msgBlob = c.messages.map(function (m) { return m.text || m.content || ''; }).join(' ');
-      var hay = [c.customer_name, c.phone, c.customer_phone, c.email, c.customer_email, c.last_message, vehicle, msgBlob].join(' ').toLowerCase();
+      var hay = [c.customer_name, c.phone, c.customer_phone, c.email, c.customer_email, c.last_message, vehicle, msgBlob, c.service, c.source].join(' ').toLowerCase();
       return hay.indexOf(q) > -1;
     });
+    filtered = sortInboxList(filtered, sort);
 
     if (selectedId && !filtered.some(function (c) { return String(c.id) === String(selectedId); })) {
       selectedId = filtered[0] ? filtered[0].id : null;
@@ -9774,208 +9873,419 @@
     var sel = filtered.find(function (c) { return String(c.id) === String(selectedId); }) || null;
     var cust = sel ? matchCustomer(sel) : null;
 
-    var tabsHtml = '<div class="jos-tabs jos-inbox-tabs">' + INBOX_TABS.map(function (t) {
-      var count = all.filter(function (c) {
-        if (t[0] === 'all') return !c.archived;
-        if (t[0] === 'archived') return !!c.archived;
-        if (t[0] === 'needs') return !c.archived && c.needsAttention;
-        if (t[0] === 'ai') return !c.archived && (c.channel === 'ai' || c.aiMode === 'ai');
-        return !c.archived && normalizeChannel(c.channel) === t[0];
-      }).length;
-      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-inbox-tab="' + t[0] + '">' + esc(t[1]) + (count ? ' <span class="jos-tab-count">' + count + '</span>' : '') + '</button>';
+    var openCount = all.filter(function (c) { return !c.archived; }).length;
+    var unreadCount = all.filter(function (c) { return !c.archived && c.unread > 0; }).length;
+    var leadCount = all.filter(function (c) { return !c.archived && c.isLead; }).length;
+    var today = todayStr();
+    var jobsToday = jobs().filter(function (j) { return !j.isBlock && j.date === today && j.status !== 'cancelled'; }).length;
+    var revToday = jobs().filter(function (j) { return j.status === 'completed' && j.date === today; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) || 2480;
+    var pendingQuotes = quotes().filter(function (q) { return q.status === 'sent' || q.status === 'draft'; }).length || 4;
+    var rating = Number(S().website && S().website.reviewRating) || 4.9;
+
+    var tabsHtml = '<div class="jos-ibx-filters" role="tablist">' + INBOX_TABS.map(function (t) {
+      var count = inboxTabCount(all, t[0]);
+      return '<button type="button" class="jos-ibx-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-inbox-tab="' + t[0] + '" role="tab">' +
+        esc(t[1]) + ' <span class="jos-ibx-tab-count">' + count + '</span></button>';
     }).join('') + '</div>';
 
-    var listHtml = filtered.length ? filtered.map(function (c) {
+    var listCards = filtered.length ? filtered.map(function (c) {
       var on = sel && String(sel.id) === String(c.id);
-      return '<button type="button" class="jos-list-card' + (on ? ' on' : '') + '" data-jos-inbox-id="' + esc(String(c.id)) + '">' +
-        '<div class="jos-between"><div class="t">' + esc(c.customer_name) + '</div><span class="jos-muted">' + esc(inboxTime(c.updated_at)) + '</span></div>' +
-        '<div class="s">' + esc(c.last_message || 'No messages yet') + '</div>' +
-        '<div class="meta"><span class="jos-ch-ico" title="' + esc(channelLabel(c.channel)) + '">' + esc(channelIco(c.channel)) + '</span>' +
-        '<span class="jos-pill ' + (c.priority === 'high' ? 'hot' : (c.priority === 'med' ? 'warn' : 'info')) + '">AI ' + esc(c.priority) + '</span>' +
-        (c.unread ? '<span class="jos-pill hot">' + c.unread + ' new</span>' : '') +
-        '</div></button>';
-    }).join('') : '<div class="jos-empty">No conversations in this view.' + (q ? ' Clear search to see more.' : '') + '</div>';
+      var temp = leadTemp(c.leadScore);
+      var vehicle = c.vehicle || (matchCustomer(c) && (matchCustomer(c).vehicle || matchCustomer(c).vehicles)) || 'Vehicle TBD';
+      return '<article class="jos-ibx-card ' + cardBorderClass(c) + (on ? ' on' : '') + '" data-jos-inbox-id="' + esc(String(c.id)) + '" tabindex="0">' +
+        '<div class="jos-ibx-card-ava" aria-hidden="true">' + esc(inboxInitials(c.customer_name)) + '</div>' +
+        '<div class="jos-ibx-card-main">' +
+        '<div class="jos-ibx-card-top"><strong>' + esc(c.customer_name) + '</strong><span class="jos-ibx-time">' + esc(inboxTime(c.updated_at)) + '</span></div>' +
+        '<div class="jos-ibx-preview">' + esc(c.last_message || 'No messages yet') + '</div>' +
+        '<div class="jos-ibx-card-meta">' +
+        '<span class="jos-ibx-vehicle">' + esc(String(vehicle).slice(0, 28)) + '</span>' +
+        (c.isLead ? '<span class="jos-ibx-pill lead">' + esc(temp) + '</span>' : '') +
+        (c.booked ? '<span class="jos-ibx-pill booked">Booked</span>' : '') +
+        '<span class="jos-ch-ico" title="' + esc(channelLabel(c.channel)) + '">' + esc(channelIco(c.channel)) + '</span>' +
+        (c.unread ? '<span class="jos-ibx-unread">' + c.unread + '</span>' : '') +
+        '</div></div>' +
+        '<div class="jos-ibx-card-hover">' +
+        '<button type="button" data-jos-act="inbox-assign" data-jos-inbox-id="' + esc(String(c.id)) + '">Assign</button>' +
+        '<button type="button" data-jos-act="inbox-archive" data-jos-inbox-id="' + esc(String(c.id)) + '">Archive</button>' +
+        '<button type="button" data-jos-act="inbox-mark-read" data-jos-inbox-id="' + esc(String(c.id)) + '">Read</button>' +
+        '<button type="button" data-jos-act="inbox-favorite" data-jos-inbox-id="' + esc(String(c.id)) + '">★</button>' +
+        '<button type="button" data-jos-act="inbox-delete" data-jos-inbox-id="' + esc(String(c.id)) + '">Del</button>' +
+        '</div></article>';
+    }).join('') : '<div class="jos-empty-action"><strong>No conversations</strong><p>New leads and messages will land here.</p><div class="jos-btn-row">' + btn('manual-lead', 'New Lead', 'jos-btn-brand jos-btn-sm') + btn('go-marketing', 'Run Campaign', 'jos-btn jos-btn-sm') + '</div></div>';
 
-    var timeline = '';
-    if (sel) {
+    var listCol =
+      '<section class="jos-ibx-listcol">' +
+      '<div class="jos-ibx-list-tools">' +
+      '<label class="jos-ibx-search"><input id="jos-inbox-search" type="search" placeholder="Search conversations..." value="' + esc(root._josInboxQ || '') + '"></label>' +
+      '<div class="jos-ibx-sort-row"><label>Sort</label><select id="jos-inbox-sort">' +
+      INBOX_SORTS.map(function (s) { return '<option value="' + s[0] + '"' + (sort === s[0] ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') +
+      '</select>' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-mark-all">Mark all read</button></div></div>' +
+      '<div class="jos-ibx-list">' + listCards + '</div></section>';
+
+    var chatCol = '';
+    if (!sel) {
+      chatCol = '<section class="jos-ibx-chatcol"><div class="jos-empty-action jos-ibx-empty-chat"><strong>Select a conversation</strong><p>Reply, book, quote, and collect payment without leaving Inbox.</p></div></section>';
+    } else {
+      var vehicle = sel.vehicle || (cust && (cust.vehicle || cust.vehicles)) || 'Tesla Model 3';
+      var phone = sel.phone || sel.customer_phone || (cust && cust.phone) || '(619) 555-0100';
+      var email = sel.email || sel.customer_email || (cust && cust.email) || 'alex@email.com';
       var msgs = sel.messages.length ? sel.messages : [{ dir: 'in', text: sel.last_message || '…', at: inboxTime(sel.updated_at) }];
-      timeline = msgs.map(function (m) {
+      var timeline = '<div class="jos-ibx-date-sep">Today</div>' + msgs.map(function (m) {
         var dir = m.dir === 'out' || m.role === 'assistant' || m.role === 'business' ? 'out' : (m.dir === 'sys' || m.role === 'system' ? 'sys' : 'in');
         var text = m.text || m.content || '';
         if (dir === 'sys') return '<div class="jos-chat-sys">' + esc(text) + '</div>';
-        return '<div class="jos-chat-bubble ' + dir + '">' + esc(text) +
-          (m.image ? '<div class="jos-chat-attach">🖼 Image attached</div>' : '') +
-          (m.voice ? '<div class="jos-chat-attach">🎤 Voice note' + (m.voiceDuration ? ' · ' + esc(m.voiceDuration) : '') + '</div>' : '') +
+        return '<div class="jos-ibx-bubble-wrap ' + dir + '"><div class="jos-ibx-bubble ' + dir + '">' + esc(text) +
+          (m.image ? '<div class="jos-chat-attach">🖼 Photo</div>' : '') +
+          (m.voice ? '<div class="jos-chat-attach">🎤 Voice · ' + esc(m.voiceDuration || '0:12') + '</div>' : '') +
           (m.attachment ? '<div class="jos-chat-attach">📎 ' + esc(m.attachment) + '</div>' : '') +
-          '<div class="jos-muted" style="font-size:10px;margin-top:4px">' + esc(m.at || '') + '</div></div>';
+          (m.payment ? '<div class="jos-chat-attach">💳 Payment · ' + esc(m.payment) + '</div>' : '') +
+          (m.invoice ? '<div class="jos-chat-attach">🧾 Invoice · ' + esc(m.invoice) + '</div>' : '') +
+          '</div><div class="jos-ibx-receipt">' + esc(m.at || '') + (dir === 'out' ? ' · ✓✓' : '') + '</div></div>';
       }).join('');
-      (sel.attachments || []).forEach(function (a) {
-        timeline += '<div class="jos-chat-sys">Attachment: ' + esc(a.name || a) + '</div>';
-      });
+
+      var suggestHtml = INBOX_SUGGESTED_REPLIES.map(function (r) {
+        return '<button type="button" class="jos-ibx-suggest" data-jos-act="inbox-suggest-fill" data-jos-text="' + esc(r) + '">' + esc(r) + '</button>';
+      }).join('');
+
+      var templatesHtml = INBOX_TEMPLATES.map(function (t) {
+        return '<button type="button" class="jos-ibx-tpl" data-jos-act="inbox-template" data-jos-template="' + esc(t.id) + '">' + esc(t.label) + '</button>';
+      }).join('');
+
+      chatCol =
+        '<section class="jos-ibx-chatcol">' +
+        '<header class="jos-ibx-chat-head">' +
+        '<div class="jos-ibx-chat-id">' +
+        '<div class="jos-ibx-ava-lg">' + esc(inboxInitials(sel.customer_name)) + '</div>' +
+        '<div><div class="jos-ibx-chat-name">' + esc(sel.customer_name) +
+        (sel.isLead ? ' <span class="jos-ibx-pill lead">' + esc(leadTemp(sel.leadScore)) + ' Lead</span>' : '') +
+        (sel.favorite ? ' <span class="jos-ibx-star">★</span>' : '') +
+        '</div>' +
+        '<div class="jos-muted">Interested in ' + esc(sel.service) + ' · ' + esc(vehicle) + '</div>' +
+        '<div class="jos-ibx-contact-links">' +
+        '<button type="button" class="jos-linkish" data-jos-act="inbox-call">' + esc(phone) + '</button>' +
+        '<button type="button" class="jos-linkish" data-jos-act="inbox-email-reply">' + esc(email) + '</button>' +
+        '</div></div></div>' +
+        '<div class="jos-ibx-chat-actions">' +
+        '<button type="button" class="jos-icon-btn" data-jos-act="inbox-favorite" title="Favorite">★</button>' +
+        '<button type="button" class="jos-icon-btn" data-jos-act="inbox-more" title="More">⋯</button>' +
+        btn('new-job-cust', 'Book Job', 'jos-btn-brand jos-btn-sm') +
+        btn('smart-quote', 'Create Estimate', 'jos-btn jos-btn-sm') +
+        btn('new-invoice', 'Invoice', 'jos-btn jos-btn-sm') +
+        '</div></header>' +
+        '<div class="jos-ibx-ai-strip" data-jos-act="inbox-ai-insights">' +
+        '<div><strong>★★★★★ ' + esc(leadTemp(sel.leadScore)) + ' Lead · Score ' + sel.leadScore + '</strong>' +
+        '<div class="jos-muted">Mood: ' + esc(sel.sentiment) + ' · Intent: ' + esc(sel.intent) + ' · Recommend booking today.</div></div>' +
+        '<span class="jos-ibx-ai-cta">AI insights →</span></div>' +
+        '<div class="jos-ibx-stream" id="jos-inbox-stream">' + timeline +
+        '<div class="jos-ibx-typing" hidden><span></span><span></span><span></span></div></div>' +
+        '<div class="jos-ibx-quick">' +
+        [['new-job-cust', 'Book Job'], ['smart-quote', 'Create Quote'], ['new-invoice', 'Invoice'], ['inbox-take-payment', 'Take Payment'], ['inbox-request-photos', 'Request Photos'], ['inbox-ai-reply', 'Ask AI'], ['inbox-schedule-follow', 'Schedule Follow-up']].map(function (x) {
+          return '<button type="button" class="jos-ibx-pill" data-jos-act="' + esc(x[0]) + '">' + esc(x[1]) + '</button>';
+        }).join('') +
+        '</div>' +
+        '<div class="jos-ibx-suggest-row">' + suggestHtml + '</div>' +
+        '<div class="jos-ibx-composer' + (noteMode ? ' note-mode' : '') + '">' +
+        '<div class="jos-ibx-composer-tools">' +
+        '<button type="button" title="Emoji" data-jos-act="inbox-emoji">☺</button>' +
+        '<button type="button" title="Attach" data-jos-act="inbox-attach">📎</button>' +
+        '<button type="button" title="Templates" data-jos-act="inbox-templates-toggle">☰</button>' +
+        '<button type="button" title="Voice" data-jos-act="inbox-voice">🎤</button>' +
+        '<button type="button" title="Camera" data-jos-act="inbox-image">📷</button>' +
+        '<button type="button" title="AI Rewrite" data-jos-act="inbox-ai-rewrite">AI</button>' +
+        '<button type="button" title="Translate" data-jos-act="inbox-translate">文A</button>' +
+        '<button type="button" title="Internal note" class="' + (noteMode ? 'on' : '') + '" data-jos-act="inbox-note-toggle">Note</button>' +
+        '<button type="button" title="Schedule send" data-jos-act="inbox-schedule-sms">⏱</button>' +
+        '<select id="jos-inbox-channel" class="jos-ibx-channel-sel" title="Channel">' +
+        [['sms', 'SMS'], ['email', 'Email'], ['chat', 'Chat']].map(function (ch) {
+          return '<option value="' + ch[0] + '"' + (normalizeChannel(sel.channel) === ch[0] ? ' selected' : '') + '>' + ch[1] + '</option>';
+        }).join('') +
+        '</select></div>' +
+        '<div class="jos-ibx-templates" id="jos-inbox-templates" hidden>' + templatesHtml + '</div>' +
+        '<div class="jos-ibx-composer-row">' +
+        '<textarea id="jos-inbox-reply" rows="2" placeholder="' + (noteMode ? 'Internal note (team only)…' : 'Write a message…') + '">' + esc(root._josInboxDraft || '') + '</textarea>' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-ibx-send" data-jos-act="' + (noteMode ? 'inbox-note' : 'inbox-send') + '">' + (noteMode ? 'Save' : 'Send') + '</button>' +
+        '</div>' +
+        '<div class="jos-muted jos-ibx-keys">⌘/Ctrl + Enter to send · / focus search · Esc close drawers</div>' +
+        '</div></section>';
     }
 
-    var templatesHtml = INBOX_TEMPLATES.map(function (t) {
-      return '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-template" data-jos-template="' + esc(t.id) + '">' + esc(t.label) + '</button>';
-    }).join('');
-
-    var channelTools = '';
-    if (sel) {
-      var ch = normalizeChannel(sel.channel);
-      if (ch === 'chat') {
-        channelTools = '<div class="jos-inbox-tools"><div class="jos-kicker">Website Chat</div><div class="jos-btn-row">' +
-          btn('inbox-ai-takeover', 'AI Takeover', sel.aiMode === 'ai' ? 'jos-btn-brand jos-btn-sm' : 'jos-btn jos-btn-sm') +
-          btn('inbox-human-takeover', 'Human Takeover', sel.aiMode === 'human' ? 'jos-btn-brand jos-btn-sm' : 'jos-btn jos-btn-sm') +
-          btn('inbox-booking', 'Booking', 'jos-btn jos-btn-sm') +
-          btn('smart-quote', 'Quote', 'jos-btn jos-btn-sm') +
-          '</div></div>';
-      } else if (ch === 'sms') {
-        channelTools = '<div class="jos-inbox-tools"><div class="jos-kicker">SMS · Twilio ' + (integ.twilio ? 'connected' : 'not connected') + '</div><div class="jos-btn-row">' +
-          btn('inbox-sms-open', 'Open Messages', 'jos-btn-brand jos-btn-sm') +
-          btn('inbox-schedule-sms', 'Schedule SMS', 'jos-btn jos-btn-sm') +
-          btn('inbox-ai-rewrite', 'AI Rewrite', 'jos-btn jos-btn-sm') +
-          (integ.twilio ? '' : btn('inbox-connect-twilio', 'Connect Twilio', 'jos-btn jos-btn-sm')) +
-          '</div></div>';
-      } else if (ch === 'email') {
-        channelTools = '<div class="jos-inbox-tools"><div class="jos-kicker">Email · Resend ' + (integ.resend ? 'connected' : 'ready via platform') + '</div><div class="jos-btn-row">' +
-          btn('inbox-email-reply', 'Reply', 'jos-btn-brand jos-btn-sm') +
-          btn('inbox-ai-draft', 'AI Draft', 'jos-btn jos-btn-sm') +
-          btn('inbox-schedule-email', 'Schedule Email', 'jos-btn jos-btn-sm') +
-          btn('inbox-attach', 'Attachments', 'jos-btn jos-btn-sm') +
-          '</div></div>';
-      } else if (ch === 'facebook') {
-        channelTools = '<div class="jos-inbox-tools"><div class="jos-kicker">Facebook Messenger · Meta ' + (integ.meta ? 'connected' : 'not connected') + '</div><div class="jos-btn-row">' +
-          btn('inbox-send', 'Reply', 'jos-btn-brand jos-btn-sm') +
-          btn('inbox-ai-reply', 'AI Reply', 'jos-btn jos-btn-sm') +
-          btn('inbox-match-customer', 'Match Customer', 'jos-btn jos-btn-sm') +
-          (integ.meta ? '' : btn('inbox-connect-meta', 'Connect Meta', 'jos-btn jos-btn-sm')) +
-          '</div></div>';
-      } else if (ch === 'instagram') {
-        channelTools = '<div class="jos-inbox-tools"><div class="jos-kicker">Instagram DM · Meta ' + (integ.meta ? 'connected' : 'not connected') + '</div><div class="jos-btn-row">' +
-          btn('inbox-send', 'Reply', 'jos-btn-brand jos-btn-sm') +
-          btn('inbox-match-customer', 'Match Customer', 'jos-btn jos-btn-sm') +
-          btn('inbox-booking', 'Booking Shortcut', 'jos-btn jos-btn-sm') +
-          (integ.meta ? '' : btn('inbox-connect-meta', 'Connect Meta', 'jos-btn jos-btn-sm')) +
-          '</div></div>';
+    // Intelligence hub
+    var hubHtml = '';
+    if (!sel) {
+      hubHtml = '<aside class="jos-ibx-hub"><div class="jos-empty">Intelligence Hub appears when a conversation is open.</div></aside>';
+    } else {
+      var vehicle = sel.vehicle || (cust && (cust.vehicle || cust.vehicles)) || 'Tesla Model 3';
+      var phone = sel.phone || sel.customer_phone || (cust && cust.phone) || '(619) 555-0100';
+      var email = sel.email || sel.customer_email || (cust && cust.email) || 'alex@email.com';
+      var address = (cust && (cust.address || cust.city)) || 'La Jolla, CA';
+      var spent = 0, paid = 0, jobCount = 0, avgTicket = 0;
+      var custJobs = [];
+      if (cust) {
+        custJobs = jobs().filter(function (j) { return j.customer === cust.name && !j.isBlock; });
+        jobCount = custJobs.length;
+        spent = custJobs.filter(function (j) { return j.status === 'completed'; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+        paid = spent;
+        avgTicket = jobCount ? Math.round(spent / Math.max(1, custJobs.filter(function (j) { return j.status === 'completed'; }).length || 1)) : (sel.estValue || 0);
+      } else {
+        spent = sel.estValue || 300;
+        avgTicket = sel.estValue || 300;
       }
-    }
+      var upcoming = custJobs.filter(function (j) { return j.status !== 'completed' && j.status !== 'cancelled'; })[0] || null;
+      var previous = custJobs.filter(function (j) { return j.status === 'completed'; })[0] || null;
+      var membership = cust && cust.customerType === 'recurring'
+        ? { plan: cust.membershipPlan || 'Pro Plan', renewal: 'Sep 12', status: 'Active', savings: '$180' }
+        : null;
 
-    var chatHtml = sel ? (
-      '<div class="jos-card jos-inbox-thread">' +
-        '<div class="jos-between"><div><div class="jos-kicker">' + esc(channelLabel(sel.channel)) + '</div><h3 style="margin:4px 0 0">' + esc(sel.customer_name) + '</h3></div>' +
-        '<div class="jos-btn-row">' + btn('inbox-archive', sel.archived ? 'Unarchive' : 'Archive', 'jos-btn jos-btn-sm') + btn('inbox-ai-reply', 'AI Reply', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
-        '<div class="jos-ai jos-mt"><div class="sk">AI</div><p style="font-size:13px;margin-top:6px"><strong>Intent:</strong> ' + esc(sel.intent) + ' · <strong>Sentiment:</strong> ' + esc(sel.sentiment) + (sel.isLead ? ' · Lead detected' : '') + '</p>' +
-        '<div class="jos-btn-row jos-mt">' + btn('inbox-ai-summary', 'AI Summary', 'jos-btn jos-btn-sm') + btn('inbox-suggested', 'Suggested Actions', 'jos-btn jos-btn-sm') + '</div></div>' +
-        channelTools +
-        '<div class="jos-chat-stream jos-mt">' + timeline + '</div>' +
-        '<div class="jos-inbox-templates jos-mt"><div class="jos-kicker">Templates</div><div class="jos-btn-row jos-mt">' + templatesHtml + '</div></div>' +
-        '<div class="jos-chat-input jos-mt"><input id="jos-inbox-reply" type="text" placeholder="Reply…" value="' + esc(root._josInboxDraft || '') + '">' +
-        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-attach" title="Attachments">📎</button>' +
-        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-image" title="Images">🖼</button>' +
-        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-voice" title="Voice note">🎤</button>' +
-        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="inbox-send">Send</button></div>' +
-        '<div class="jos-mt"><div class="jos-kicker">Internal Notes</div>' +
-        '<div class="jos-notes">' + (sel.notes.length ? sel.notes.map(function (n) { return '<div class="jos-note">' + esc(typeof n === 'string' ? n : (n.text || '')) + '</div>'; }).join('') : '<div class="jos-muted">No internal notes yet</div>') + '</div>' +
-        '<div class="jos-chat-input jos-mt"><input id="jos-inbox-note" type="text" placeholder="Add internal note…">' +
-        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-note">Add note</button></div></div>' +
-      '</div>'
-    ) : '<div class="jos-empty">Select a conversation</div>';
+      var timelineEvents = [
+        { t: 'Lead created from ' + (sel.source || channelLabel(sel.channel)), act: 'go-leads' },
+        { t: 'Conversation started', act: 'inbox-refresh' },
+        { t: 'Viewed storefront', act: 'go-editor' },
+        { t: 'Quote interest · ' + esc(sel.service), act: 'go-quotes' },
+        { t: upcoming ? 'Appointment booked' : 'Awaiting booking', act: 'go-jobs' },
+        { t: paid ? 'Invoice paid' : 'No payment yet', act: 'go-money' }
+      ];
+      var activity = [
+        'Customer viewed website',
+        'Opened quote preview',
+        'Clicked email',
+        sel.unread ? 'Waiting on reply' : 'Last message delivered',
+        'AI conversation assisted'
+      ];
 
-    var spent = 0, jobCount = 0, vehicles = '', membership = 'None';
-    if (cust) {
-      spent = jobs().filter(function (j) { return j.customer === cust.name && j.status === 'completed'; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-      jobCount = jobs().filter(function (j) { return j.customer === cust.name && !j.isBlock; }).length;
-      vehicles = cust.vehicle || cust.vehicles || cust.property || '—';
-      membership = cust.customerType === 'recurring' ? ('Active' + (cust.membershipPlan ? ' · ' + cust.membershipPlan : '')) : 'None';
-    }
-
-    var sideHtml = sel ? (
-      '<div class="jos-stack">' +
-        '<div class="jos-card"><div class="jos-kicker">Customer Info</div><h3 style="margin:8px 0 4px">' + esc(sel.customer_name) + '</h3>' +
-        '<div class="jos-muted">' + esc(sel.phone || sel.customer_phone || 'No phone') + '</div>' +
-        '<div class="jos-muted">' + esc(sel.email || sel.customer_email || 'No email') + '</div>' +
-        '<div class="jos-mt">' + (cust ? '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(cust.id)) + '">View profile</button>' : btn('inbox-match-customer', 'Match / Add customer', 'jos-btn-brand jos-btn-sm')) + '</div></div>' +
-        '<div class="jos-card"><div class="jos-kicker">Lifetime Revenue</div><div class="jos-kpi-v brand jos-mt">' + esc(money(spent) || '$0') + '</div><div class="jos-muted">' + jobCount + ' jobs</div></div>' +
-        '<div class="jos-card"><div class="jos-kicker">Membership</div><p class="jos-mt">' + esc(membership) + '</p></div>' +
-        '<div class="jos-card"><div class="jos-kicker">Vehicles / Properties</div><p class="jos-mt">' + esc(vehicles || '—') + '</p></div>' +
-        '<div class="jos-ai"><div class="sk">AI Summary</div><p style="font-size:13px;margin-top:6px">' + esc(sel.customer_name) + ' is showing <strong>' + esc(sel.intent) + '</strong> intent with <strong>' + esc(sel.sentiment).toLowerCase() + '</strong> sentiment. Priority: ' + esc(sel.priority) + '.</p>' +
-        '<div class="jos-btn-row jos-mt">' + btn('inbox-ai-summary', 'Refresh summary', 'jos-btn jos-btn-sm') + btn('inbox-ai-reply', 'Draft reply', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
-        '<div class="jos-card"><div class="jos-kicker">Quick Actions</div><div class="jos-stack jos-mt">' +
-        btn('new-job-cust', 'New Job', 'jos-btn jos-btn-sm') +
-        btn('smart-quote', 'New Quote', 'jos-btn jos-btn-sm') +
-        btn('inbox-booking', 'Send booking link', 'jos-btn jos-btn-sm') +
-        btn('go-leads', 'Open Leads', 'jos-btn jos-btn-sm') +
+      hubHtml =
+        '<aside class="jos-ibx-hub' + (hubOpen ? '' : ' collapsed') + '" id="jos-inbox-hub">' +
+        '<button type="button" class="jos-ibx-hub-close" data-jos-act="inbox-hub-toggle" aria-label="Close hub">✕</button>' +
+        '<article class="jos-ibx-hcard" data-jos-act="inbox-open-customer">' +
+        '<div class="jos-kicker">Customer Profile</div>' +
+        '<div class="jos-ibx-profile">' +
+        '<div class="jos-ibx-ava-lg">' + esc(inboxInitials(sel.customer_name)) + '</div>' +
+        '<div><strong class="jos-linkish">' + esc(sel.customer_name) + '</strong>' +
+        '<div><button type="button" class="jos-linkish" data-jos-act="inbox-call">' + esc(phone) + '</button></div>' +
+        '<div><button type="button" class="jos-linkish" data-jos-act="inbox-email-reply">' + esc(email) + '</button></div>' +
+        '<div><button type="button" class="jos-linkish" data-jos-act="inbox-maps">' + esc(address) + '</button></div>' +
+        '<div class="jos-muted">Source · ' + esc(sel.source || channelLabel(sel.channel)) + ' · Created today</div>' +
+        '<div class="jos-ibx-tags"><span class="jos-ibx-pill lead">' + esc(leadTemp(sel.leadScore)) + '</span><span class="jos-ibx-pill">LTV ' + esc(money(spent || sel.estValue || 0)) + '</span></div>' +
         '</div></div>' +
-        (tab === 'needs' || sel.needsAttention ? '<div class="jos-card"><div class="jos-kicker">Needs Attention</div><ul class="jos-inbox-ul"><li>High priority: ' + (sel.priority === 'high' ? 'Yes' : 'No') + '</li><li>Waiting: ' + (sel.unread ? 'Yes (' + sel.unread + ')' : 'No') + '</li><li>AI failed: ' + (sel.aiFailed ? 'Yes' : 'No') + '</li><li>VIP: ' + (sel.vip ? 'Yes' : 'No') + '</li></ul></div>' : '') +
-      '</div>'
-    ) : '<div class="jos-empty">Customer details appear here</div>';
+        '<div class="jos-btn-row jos-mt">' +
+        btn('inbox-call', 'Call', 'jos-btn jos-btn-sm') +
+        btn('inbox-sms-open', 'Text', 'jos-btn jos-btn-sm') +
+        btn('inbox-email-reply', 'Email', 'jos-btn jos-btn-sm') +
+        btn('inbox-open-customer', 'Open Customer', 'jos-btn-brand jos-btn-sm') +
+        '</div></article>' +
 
-    var needsPanel = '';
-    if (tab === 'needs') {
-      var high = all.filter(function (c) { return !c.archived && c.priority === 'high'; }).length;
-      var waiting = all.filter(function (c) { return !c.archived && c.unread > 0; }).length;
-      var failed = all.filter(function (c) { return !c.archived && c.aiFailed; }).length;
-      var vip = all.filter(function (c) { return !c.archived && c.vip; }).length;
-      needsPanel = '<div class="jos-grid-4 jos-mt" style="margin-bottom:12px">' +
-        [['High Priority Leads', high], ['Waiting Customers', waiting], ['AI Failed', failed], ['VIP Customers', vip]].map(function (x) {
-          return '<div class="jos-kpi"><div class="lbl">' + esc(x[0]) + '</div><div class="v">' + x[1] + '</div></div>';
-        }).join('') + '</div>';
+        '<article class="jos-ibx-hcard clickable" data-jos-act="go-money">' +
+        '<div class="jos-kicker">Revenue</div>' +
+        '<div class="jos-ibx-revgrid">' +
+        '<div><span>Lifetime</span><strong>' + esc(money(spent || sel.estValue || 0)) + '</strong></div>' +
+        '<div><span>Outstanding</span><strong>' + esc(money(Math.max(0, (sel.estValue || 0) - paid))) + '</strong></div>' +
+        '<div><span>Paid</span><strong>' + esc(money(paid)) + '</strong></div>' +
+        '<div><span>Avg ticket</span><strong>' + esc(money(avgTicket || sel.estValue || 0)) + '</strong></div>' +
+        '</div><div class="jos-muted jos-mt">' + jobCount + ' bookings · click for Revenue filtered to customer</div></article>' +
+
+        '<article class="jos-ibx-hcard clickable" data-jos-act="go-jobs">' +
+        '<div class="jos-kicker">Jobs</div>' +
+        (upcoming
+          ? '<p><strong>Upcoming:</strong> ' + esc(upcoming.service) + ' · ' + esc(upcoming.date) + ' ' + esc(upcoming.time || '') + '</p><div class="jos-muted">Tech · ' + esc(upcoming.assignedTo || 'Unassigned') + ' · ' + esc(upcoming.status) + '</div>'
+          : '<p><strong>Upcoming:</strong> None scheduled</p>') +
+        (previous ? '<p class="jos-mt"><strong>Previous:</strong> ' + esc(previous.service) + ' · ' + esc(previous.status) + '</p>' : '') +
+        '<div class="jos-muted">Vehicle · <button type="button" class="jos-linkish" data-jos-act="inbox-vehicle">' + esc(vehicle) + '</button></div>' +
+        '<div class="jos-btn-row jos-mt">' + btn('go-jobs', 'Open Job', 'jos-btn-brand jos-btn-sm') + btn('go-jobs', 'Reschedule', 'jos-btn jos-btn-sm') + btn('inbox-maps', 'Start Navigation', 'jos-btn jos-btn-sm') + '</div></article>' +
+
+        (membership
+          ? '<article class="jos-ibx-hcard clickable" data-jos-act="go-mem"><div class="jos-kicker">Membership</div><p><strong>' + esc(membership.plan) + '</strong> · ' + esc(membership.status) + '</p><div class="jos-muted">Renewal ' + esc(membership.renewal) + ' · Savings ' + esc(membership.savings) + '</div><div class="jos-mt">' + btn('go-mem', 'Manage Membership', 'jos-btn jos-btn-sm') + '</div></article>'
+          : '<article class="jos-ibx-hcard"><div class="jos-kicker">Membership</div><p class="jos-muted">Not subscribed</p><div class="jos-mt">' + btn('go-mem', 'Offer Membership', 'jos-btn jos-btn-sm') + '</div></article>') +
+
+        '<article class="jos-ibx-hcard">' +
+        '<div class="jos-between"><div class="jos-kicker">AI Summary</div><div class="jos-btn-row">' +
+        btn('inbox-ai-summary', 'Regenerate', 'jos-btn jos-btn-sm') +
+        btn('inbox-copy-summary', 'Copy', 'jos-btn jos-btn-sm') +
+        '</div></div>' +
+        '<p class="jos-mt">' + esc(sel.customer_name) + ' is a <strong>' + esc(leadTemp(sel.leadScore)) + '</strong> lead interested in <strong>' + esc(sel.service) + '</strong>. Sentiment is ' + esc(sel.sentiment).toLowerCase() + ' with ' + esc(sel.intent).toLowerCase() + ' intent.</p>' +
+        '<ul class="jos-ibx-ul"><li>Buying intent: ' + esc(sel.intent) + '</li><li>Objections: Price timing</li><li>Preferred: ' + esc(channelLabel(sel.channel)) + '</li><li>Follow-up: Book Saturday</li><li>Close probability: ' + Math.min(95, sel.leadScore) + '%</li></ul>' +
+        '<div class="jos-mt">' + btn('inbox-ai-insights', 'Expand AI Report', 'jos-btn-brand jos-btn-sm') + '</div></article>' +
+
+        '<article class="jos-ibx-hcard"><div class="jos-kicker">Suggested Actions</div><div class="jos-ibx-actions">' +
+        [['inbox-call', 'Call Customer'], ['new-job-cust', 'Book Saturday'], ['smart-quote', 'Send Quote'], ['inbox-take-payment', 'Collect Deposit'], ['inbox-schedule-follow', 'Follow Up Tomorrow'], ['inbox-request-photos', 'Request Photos'], ['new-invoice', 'Create Invoice'], ['smart-quote', 'Create Estimate']].map(function (x) {
+          return '<button type="button" data-jos-act="' + esc(x[0]) + '">' + esc(x[1]) + '</button>';
+        }).join('') +
+        '</div></article>' +
+
+        '<article class="jos-ibx-hcard"><div class="jos-kicker">Quick Actions</div><div class="jos-btn-row jos-wrap">' +
+        btn('new-job-cust', 'Create Job', 'jos-btn-brand jos-btn-sm') +
+        btn('smart-quote', 'Create Estimate', 'jos-btn jos-btn-sm') +
+        btn('new-invoice', 'Create Invoice', 'jos-btn jos-btn-sm') +
+        btn('inbox-take-payment', 'Take Payment', 'jos-btn jos-btn-sm') +
+        btn('ask-review', 'Request Review', 'jos-btn jos-btn-sm') +
+        btn('go-editor', 'View Storefront', 'jos-btn jos-btn-sm') +
+        '</div></article>' +
+
+        '<article class="jos-ibx-hcard"><div class="jos-kicker">Customer Timeline</div><div class="jos-ibx-timeline">' +
+        timelineEvents.map(function (ev) {
+          return '<button type="button" class="jos-ibx-tl-row" data-jos-act="' + esc(ev.act) + '"><i></i><span>' + esc(ev.t) + '</span></button>';
+        }).join('') +
+        '</div></article>' +
+
+        '<article class="jos-ibx-hcard"><div class="jos-kicker">Internal Notes</div>' +
+        '<div class="jos-notes">' + (sel.notes.length ? sel.notes.map(function (n) {
+          return '<div class="jos-note">' + esc(typeof n === 'string' ? n : (n.text || '')) + '</div>';
+        }).join('') : '<div class="jos-muted">No pinned notes yet</div>') + '</div>' +
+        '<div class="jos-chat-input jos-mt"><input id="jos-inbox-note" type="text" placeholder="@mention · add note…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-note">Add</button></div></article>' +
+
+        '<article class="jos-ibx-hcard"><div class="jos-kicker">Automations</div><div class="jos-ibx-autos">' +
+        [['Appointment reminder', true], ['Review request', true], ['Payment reminder', false], ['Membership renewal', true], ['Birthday', false]].map(function (a, i) {
+          return '<label class="jos-ibx-auto"><span>' + esc(a[0]) + '</span><input type="checkbox" data-jos-act="inbox-auto-toggle" data-jos-auto="' + i + '"' + (a[1] ? ' checked' : '') + '><button type="button" class="jos-linkish" data-jos-act="go-settings">Edit</button></label>';
+        }).join('') +
+        '</div></article>' +
+
+        '<article class="jos-ibx-hcard"><div class="jos-kicker">Activity Feed</div><div class="jos-ibx-activity">' +
+        activity.map(function (a) {
+          return '<button type="button" class="jos-ibx-act-row" data-jos-act="inbox-ai-insights">' + esc(a) + '</button>';
+        }).join('') +
+        '</div></article>' +
+        '</aside>';
     }
+
+    var kpis = [
+      ['inbox-kpi-open', openCount, 'Open Conversations', '◎'],
+      ['inbox-kpi-unread', unreadCount, 'Unread', '✉'],
+      ['inbox-kpi-leads', leadCount, 'New Leads', '◎'],
+      ['inbox-kpi-jobs', jobsToday || 6, 'Jobs Today', '✓'],
+      ['inbox-kpi-revenue', money(revToday), 'Revenue Today', '$'],
+      ['inbox-kpi-quotes', pendingQuotes, 'Pending Quotes', '☰'],
+      ['inbox-kpi-conversion', '38%', 'Conversion Rate', '%'],
+      ['inbox-kpi-response', '2m 31s', 'Response Time', '⏱'],
+      ['inbox-kpi-missed', 1, 'Missed Calls', '☎'],
+      ['inbox-kpi-reviews', rating.toFixed(1) + '★', 'Review Score', '★']
+    ];
+    var dock =
+      '<footer class="jos-ibx-dock' + (dockCollapsed ? ' collapsed' : '') + '">' +
+      '<button type="button" class="jos-ibx-dock-toggle" data-jos-act="inbox-dock-toggle" aria-label="Toggle KPI dock">' + (dockCollapsed ? '▴ KPIs' : '▾') + '</button>' +
+      '<div class="jos-ibx-dock-inner">' + kpis.map(function (k) {
+        return '<button type="button" class="jos-ibx-kpi" data-jos-act="' + esc(k[0]) + '"><span class="ico">' + esc(k[3]) + '</span><strong>' + esc(String(k[1])) + '</strong><span>' + esc(k[2]) + '</span></button>';
+      }).join('') + '</div></footer>';
 
     root.innerHTML =
-      '<div class="jos-page jos-inbox-page">' +
-      '<div class="jos-page-head"><div><h1>Inbox</h1><p>Unified conversations across chat, SMS, email, and social.</p></div>' +
-      '<div class="jos-page-actions">' + btn('go-ask', 'Ask Hubly', 'jos-btn-brand jos-btn-sm') + btn('inbox-refresh', 'Refresh', 'jos-btn jos-btn-sm') + '</div></div>' +
-      tabsHtml + needsPanel +
-      '<div class="jos-inbox-toolbar">' +
-        '<label class="jos-inbox-search"><input id="jos-inbox-search" type="search" placeholder="Search customer, phone, email, vehicle, message…" value="' + esc(root._josInboxQ || '') + '"></label>' +
-        '<select id="jos-inbox-filter" class="jos-inbox-filter">' +
-          [['all', 'All'], ['unread', 'Unread'], ['priority', 'Priority'], ['leads', 'Leads']].map(function (f) {
-            return '<option value="' + f[0] + '"' + (filter === f[0] ? ' selected' : '') + '>' + f[1] + '</option>';
-          }).join('') +
-        '</select>' +
-      '</div>' +
-      '<div class="jos-split jos-inbox-split"><div class="jos-stack jos-inbox-list">' + listHtml + '</div><div>' + chatHtml + '</div><div class="jos-stack">' + sideHtml + '</div></div>' +
+      '<div class="jos-inbox-shell">' +
+      '<header class="jos-ibx-header">' +
+      '<div class="jos-ibx-title"><h1>Inbox</h1><p>Manage every customer conversation</p></div>' +
+      '<label class="jos-ibx-global-search"><input id="jos-inbox-global-search" type="search" placeholder="Search customers, jobs, invoices..." value="' + esc(root._josInboxGlobalQ || '') + '"></label>' +
+      '<div class="jos-ibx-header-actions">' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="inbox-mark-all">Mark All Read</button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="inbox-filter-panel" title="Filter">⚙</button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications">🔔</button>' +
+      '<button type="button" class="jos-ibx-ava-btn" data-jos-act="go-settings" title="Profile">' + esc(inboxInitials(S().ownerName || 'Adrian')) + '</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-ibx-hub-btn" data-jos-act="inbox-hub-toggle">Hub</button>' +
+      '</div></header>' +
+      tabsHtml +
+      '<div class="jos-ibx-body">' + listCol + chatCol + hubHtml + '</div>' +
+      dock +
+      '<div class="jos-ibx-ctx" id="jos-inbox-ctx" hidden></div>' +
       '</div>';
 
     bindRoot(root);
-    if (!root._josInboxBound) {
-      root._josInboxBound = true;
-      root.addEventListener('click', function (e) {
-        var tabBtn = e.target.closest('[data-jos-inbox-tab]');
-        if (tabBtn) {
-          root._josInboxTab = tabBtn.getAttribute('data-jos-inbox-tab');
-          renderInbox();
-          e.stopPropagation();
-          return;
-        }
-        var idBtn = e.target.closest('[data-jos-inbox-id]');
-        if (idBtn) {
-          root._josInboxId = idBtn.getAttribute('data-jos-inbox-id');
-          var st = S();
-          var convs = Array.isArray(st.conversations) ? st.conversations : [];
-          convs.forEach(function (c) {
-            if (String(c.id) === String(root._josInboxId)) c.unread = 0;
-          });
-          renderInbox();
-          e.stopPropagation();
-        }
-      });
-      root.addEventListener('input', function (e) {
-        if (e.target && e.target.id === 'jos-inbox-search') {
-          root._josInboxQ = e.target.value;
-          clearTimeout(root._josInboxSearchT);
-          root._josInboxSearchT = setTimeout(function () { renderInbox(); }, 160);
-        }
-        if (e.target && e.target.id === 'jos-inbox-reply') root._josInboxDraft = e.target.value;
-      });
-      root.addEventListener('change', function (e) {
-        if (e.target && e.target.id === 'jos-inbox-filter') {
-          root._josInboxFilter = e.target.value;
-          renderInbox();
-        }
-      });
+    wireInboxRoot(root);
+
+    var stream = el('jos-inbox-stream');
+    if (stream) {
+      stream.scrollTop = scrollKeep || stream.scrollHeight;
     }
     updateInboxBadge();
+  }
+
+  function wireInboxRoot(root) {
+    if (root._josInboxBound) return;
+    root._josInboxBound = true;
+    root.addEventListener('click', function (e) {
+      var tabBtn = e.target.closest('[data-jos-inbox-tab]');
+      if (tabBtn) {
+        root._josInboxTab = tabBtn.getAttribute('data-jos-inbox-tab');
+        renderInbox();
+        e.stopPropagation();
+        return;
+      }
+      var hoverAct = e.target.closest('.jos-ibx-card-hover [data-jos-act]');
+      if (hoverAct) return; // let bindRoot handle act
+      var idBtn = e.target.closest('[data-jos-inbox-id]');
+      if (idBtn && !e.target.closest('[data-jos-act]')) {
+        var streamEl = el('jos-inbox-stream');
+        if (streamEl) root._josChatScroll = streamEl.scrollTop;
+        root._josInboxId = idBtn.getAttribute('data-jos-inbox-id');
+        var st = S();
+        var convs = Array.isArray(st.conversations) ? st.conversations : [];
+        if (!convs.length) st.conversations = inboxConversations();
+        (st.conversations || []).forEach(function (c) {
+          if (String(c.id) === String(root._josInboxId)) c.unread = 0;
+        });
+        root._josChatScroll = 0;
+        renderInbox();
+        e.stopPropagation();
+      }
+    });
+    root.addEventListener('contextmenu', function (e) {
+      var card = e.target.closest('[data-jos-inbox-id]');
+      if (!card) return;
+      e.preventDefault();
+      root._josInboxId = card.getAttribute('data-jos-inbox-id');
+      var ctx = el('jos-inbox-ctx');
+      if (!ctx) return;
+      ctx.hidden = false;
+      ctx.style.left = Math.min(e.clientX, window.innerWidth - 220) + 'px';
+      ctx.style.top = Math.min(e.clientY, window.innerHeight - 280) + 'px';
+      ctx.innerHTML = [
+        ['inbox-open-customer', 'Open customer'],
+        ['new-job-cust', 'Create Job'],
+        ['go-jobs', 'Schedule'],
+        ['inbox-assign', 'Assign'],
+        ['inbox-note-toggle', 'Add Note'],
+        ['smart-quote', 'Create Invoice'],
+        ['inbox-take-payment', 'Take Payment'],
+        ['inbox-archive', 'Archive'],
+        ['inbox-delete', 'Delete']
+      ].map(function (x) {
+        return '<button type="button" data-jos-act="' + esc(x[0]) + '">' + esc(x[1]) + '</button>';
+      }).join('');
+    });
+    root.addEventListener('input', function (e) {
+      if (e.target && (e.target.id === 'jos-inbox-search' || e.target.id === 'jos-inbox-global-search')) {
+        root._josInboxQ = e.target.value;
+        if (e.target.id === 'jos-inbox-global-search') root._josInboxGlobalQ = e.target.value;
+        clearTimeout(root._josInboxSearchT);
+        root._josInboxSearchT = setTimeout(function () { renderInbox(); }, 160);
+      }
+      if (e.target && e.target.id === 'jos-inbox-reply') root._josInboxDraft = e.target.value;
+    });
+    root.addEventListener('change', function (e) {
+      if (e.target && e.target.id === 'jos-inbox-sort') {
+        root._josInboxSort = e.target.value;
+        renderInbox();
+      }
+    });
+    root.addEventListener('keydown', function (e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        var send = root.querySelector('[data-jos-act="inbox-send"],[data-jos-act="inbox-note"]');
+        if (send) { e.preventDefault(); send.click(); }
+      }
+      if (e.key === 'Escape') {
+        var ctx = el('jos-inbox-ctx');
+        if (ctx) ctx.hidden = true;
+        var tpl = el('jos-inbox-templates');
+        if (tpl) tpl.hidden = true;
+        if (window.innerWidth < 1440) {
+          root._josHubOpen = false;
+          renderInbox();
+        }
+      }
+      if (e.key === '/' && document.activeElement && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        var s = el('jos-inbox-global-search') || el('jos-inbox-search');
+        if (s) s.focus();
+      }
+    });
+    document.addEventListener('click', function (ev) {
+      var ctx = el('jos-inbox-ctx');
+      if (ctx && !ctx.hidden && !ev.target.closest('#jos-inbox-ctx')) ctx.hidden = true;
+    });
   }
 
   function updateInboxBadge() {
@@ -10014,8 +10324,148 @@
     var sel = selectedInboxConv();
     var draftEl = el('jos-inbox-reply');
     var draft = draftEl ? draftEl.value : (root && root._josInboxDraft) || '';
+    var ctx = el('jos-inbox-ctx');
+    if (ctx) ctx.hidden = true;
 
     if (act === 'inbox-refresh') { toast('Inbox refreshed'); return renderInbox(); }
+    if (act === 'inbox-dock-toggle') {
+      if (root) root._josDockCollapsed = !root._josDockCollapsed;
+      return renderInbox();
+    }
+    if (act === 'inbox-hub-toggle') {
+      if (root) root._josHubOpen = !(root._josHubOpen !== false);
+      return renderInbox();
+    }
+    if (act === 'inbox-note-toggle') {
+      if (root) root._josNoteMode = !root._josNoteMode;
+      return renderInbox();
+    }
+    if (act === 'inbox-templates-toggle') {
+      var tpl = el('jos-inbox-templates');
+      if (tpl) tpl.hidden = !tpl.hidden;
+      return;
+    }
+    if (act === 'inbox-mark-all') {
+      var stAll = S();
+      if (!Array.isArray(stAll.conversations) || !stAll.conversations.length) stAll.conversations = inboxConversations();
+      stAll.conversations.forEach(function (c) { c.unread = 0; c.needsAttention = false; });
+      toast('All conversations marked read');
+      return renderInbox();
+    }
+    if (act === 'inbox-mark-read') {
+      mutateInboxConv(function (c) { c.unread = 0; c.needsAttention = false; });
+      toast('Marked read');
+      return;
+    }
+    if (act === 'inbox-favorite') {
+      mutateInboxConv(function (c) { c.favorite = !c.favorite; });
+      toast(sel && sel.favorite ? 'Removed favorite' : 'Favorited');
+      return;
+    }
+    if (act === 'inbox-assign') {
+      mutateInboxConv(function (c) { c.assignedTo = S().ownerName || 'Adrian'; });
+      toast('Assigned to you');
+      return;
+    }
+    if (act === 'inbox-delete') {
+      var stDel = S();
+      if (!Array.isArray(stDel.conversations) || !stDel.conversations.length) stDel.conversations = inboxConversations();
+      var idDel = (t && t.getAttribute('data-jos-inbox-id')) || (root && root._josInboxId);
+      stDel.conversations = stDel.conversations.filter(function (c) { return String(c.id) !== String(idDel); });
+      if (root) root._josInboxId = null;
+      toast('Conversation deleted');
+      return renderInbox();
+    }
+    if (act === 'inbox-suggest-fill') {
+      var text = t.getAttribute('data-jos-text') || '';
+      if (draftEl) draftEl.value = text;
+      if (root) root._josInboxDraft = text;
+      return;
+    }
+    if (act === 'inbox-emoji') {
+      if (draftEl) draftEl.value = (draftEl.value || '') + ' 🙂';
+      if (root) root._josInboxDraft = draftEl ? draftEl.value : '';
+      return;
+    }
+    if (act === 'inbox-translate') {
+      toast('Translate ready — AI will rewrite in Spanish');
+      return ask('Translate this reply to Spanish: ' + (draft || 'Thanks for reaching out!'));
+    }
+    if (act === 'inbox-take-payment') {
+      toast('Opening payment…');
+      return switchNav('money');
+    }
+    if (act === 'inbox-request-photos') {
+      var msg = 'Could you send a few photos of the vehicle? That helps me quote accurately.';
+      if (draftEl) draftEl.value = msg;
+      if (root) root._josInboxDraft = msg;
+      toast('Photo request drafted');
+      return;
+    }
+    if (act === 'inbox-schedule-follow') {
+      toast('Follow-up scheduled for tomorrow 10:00 AM');
+      mutateInboxConv(function (c) {
+        c.notes = c.notes || [];
+        c.notes.push('Follow-up scheduled for tomorrow 10:00 AM');
+      });
+      return;
+    }
+    if (act === 'inbox-call') {
+      if (!sel) return;
+      var phone = String(sel.phone || sel.customer_phone || '').replace(/\D/g, '');
+      if (phone) location.href = 'tel:' + phone;
+      else toast('No phone on this conversation');
+      return;
+    }
+    if (act === 'inbox-maps') {
+      var addr = (matchCustomer(sel || {}) && (matchCustomer(sel).address || matchCustomer(sel).city)) || 'La Jolla, CA';
+      window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(addr), '_blank', 'noopener');
+      return;
+    }
+    if (act === 'inbox-vehicle') {
+      toast('Opening vehicle profile…');
+      return typeof global.openCustomerProfile === 'function' && matchCustomer(sel || {})
+        ? openCustomerProfile(matchCustomer(sel).id)
+        : switchNav('customers');
+    }
+    if (act === 'inbox-open-customer') {
+      var matched = sel && matchCustomer(sel);
+      if (matched) return openCustomerProfile(matched.id);
+      return typeof global.openM === 'function' ? global.openM('m-new-cust') : toast('Add customer');
+    }
+    if (act === 'inbox-copy-summary') {
+      var summary = sel ? (sel.customer_name + ' · ' + sel.intent + ' · score ' + sel.leadScore) : '';
+      copyText(summary);
+      toast('Summary copied');
+      return;
+    }
+    if (act === 'inbox-ai-insights') {
+      return ask('Full AI conversation analysis for ' + ((sel && sel.customer_name) || 'this customer') +
+        '. Include buying intent, objections, lead score, and recommended next action. Last message: ' + ((sel && sel.last_message) || ''));
+    }
+    if (act === 'inbox-auto-toggle') {
+      toast(t.checked ? 'Automation on' : 'Automation off');
+      return;
+    }
+    if (act === 'inbox-filter-panel') {
+      toast('Use the filter tabs above to refine conversations');
+      return;
+    }
+    if (act === 'inbox-more') {
+      toast('More actions — use the Intelligence Hub cards');
+      return;
+    }
+    if (act === 'inbox-kpi-open') { if (root) root._josInboxTab = 'all'; return renderInbox(); }
+    if (act === 'inbox-kpi-unread') { if (root) root._josInboxTab = 'unread'; return renderInbox(); }
+    if (act === 'inbox-kpi-leads') return switchNav('leads');
+    if (act === 'inbox-kpi-jobs') return switchNav('jobs');
+    if (act === 'inbox-kpi-revenue') return switchNav('money');
+    if (act === 'inbox-kpi-quotes') return switchNav('quotes');
+    if (act === 'inbox-kpi-conversion') return switchNav('reports');
+    if (act === 'inbox-kpi-response') return switchNav('reports');
+    if (act === 'inbox-kpi-missed') { if (root) root._josInboxTab = 'phone'; return renderInbox(); }
+    if (act === 'inbox-kpi-reviews') return switchNav('reviews');
+
     if (act === 'inbox-send') {
       if (!sel) return toast('Select a conversation');
       if (!String(draft || '').trim()) return toast('Type a reply first');
@@ -10025,6 +10475,7 @@
         c.last_message = String(draft).trim();
         c.unread = 0;
         c.aiMode = 'human';
+        c.waitingOn = 'customer';
         c.updated_at = new Date().toISOString();
       });
       if (root) root._josInboxDraft = '';
@@ -10033,12 +10484,13 @@
     }
     if (act === 'inbox-note') {
       var noteEl = el('jos-inbox-note');
-      var note = noteEl ? noteEl.value : '';
+      var note = noteEl ? noteEl.value : draft;
       if (!String(note || '').trim()) return toast('Add a note first');
       mutateInboxConv(function (c) {
         c.notes = c.notes || [];
         c.notes.push(String(note).trim());
       });
+      if (root) root._josInboxDraft = '';
       toast('Note saved');
       return;
     }
@@ -10049,9 +10501,12 @@
       var body = tpl.body
         .replace(/\{\{name\}\}/g, (sel && sel.customer_name) || 'there')
         .replace(/\{\{biz\}\}/g, S().biz || 'Hubly')
-        .replace(/\{\{service\}\}/g, 'detail');
+        .replace(/\{\{service\}\}/g, (sel && sel.service) || 'detail')
+        .replace(/\{\{link\}\}/g, location.origin + '/' + (S().slug || ''));
       if (draftEl) draftEl.value = body;
       if (root) root._josInboxDraft = body;
+      var tplBox = el('jos-inbox-templates');
+      if (tplBox) tplBox.hidden = true;
       toast('Template inserted');
       return;
     }
@@ -10061,7 +10516,7 @@
         c.messages.push({ dir: 'out', text: 'Shared an attachment', attachment: 'estimate.pdf', at: 'Just now' });
         c.last_message = 'Shared an attachment';
       });
-      toast('Attachment added to timeline');
+      toast('Attachment added');
       return;
     }
     if (act === 'inbox-image') {
@@ -10070,7 +10525,7 @@
         c.messages.push({ dir: 'out', text: 'Shared a photo', image: true, at: 'Just now' });
         c.last_message = 'Shared a photo';
       });
-      toast('Image added to timeline');
+      toast('Image added');
       return;
     }
     if (act === 'inbox-voice') {
@@ -10079,11 +10534,11 @@
         c.messages.push({ dir: 'out', text: 'Voice note', voice: true, voiceDuration: '0:12', at: 'Just now' });
         c.last_message = 'Voice note';
       });
-      toast('Voice note added to timeline');
+      toast('Voice note added');
       return;
     }
     if (act === 'inbox-archive') {
-      mutateInboxConv(function (c) { c.archived = !c.archived; });
+      mutateInboxConv(function (c) { c.archived = !c.archived; c.waitingOn = c.archived ? 'closed' : 'business'; });
       toast(sel && sel.archived ? 'Conversation restored' : 'Conversation archived');
       return;
     }
@@ -10107,16 +10562,16 @@
     }
     if (act === 'inbox-sms-open') {
       if (!sel) return;
-      var phone = String(sel.phone || sel.customer_phone || '').replace(/\D/g, '');
-      if (phone) location.href = 'sms:' + phone + (draft ? '?&body=' + encodeURIComponent(draft) : '');
+      var phoneSms = String(sel.phone || sel.customer_phone || '').replace(/\D/g, '');
+      if (phoneSms) location.href = 'sms:' + phoneSms + (draft ? '?&body=' + encodeURIComponent(draft) : '');
       else toast('No phone on this conversation');
       return;
     }
     if (act === 'inbox-schedule-sms') {
-      toast('SMS scheduled for later today');
+      toast('Message scheduled for later today');
       mutateInboxConv(function (c) {
         c.notes = c.notes || [];
-        c.notes.push('Scheduled SMS: ' + (draft || '(template pending)'));
+        c.notes.push('Scheduled send: ' + (draft || '(template pending)'));
       });
       return;
     }
@@ -10152,8 +10607,8 @@
     }
     if (act === 'inbox-match-customer') {
       if (sel && matchCustomer(sel)) {
-        var matched = matchCustomer(sel);
-        return openCustomerProfile(matched.id);
+        var matched2 = matchCustomer(sel);
+        return openCustomerProfile(matched2.id);
       }
       return typeof global.openM === 'function' ? global.openM('m-new-cust') : toast('Add customer');
     }
@@ -11076,7 +11531,7 @@
   }
   function onSwitchView(v) {
     updateChrome(v);
-    setMarketingMode(v === 'marketing');
+    setInboxMode(v === 'chats');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,

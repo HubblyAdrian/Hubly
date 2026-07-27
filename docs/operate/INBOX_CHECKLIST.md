@@ -1,14 +1,20 @@
 # Module 2 — 📥 Inbox
 
-**PR:** [#244](https://github.com/HubblyAdrian/Hubly/pull/244) · Merged `895f666`
+**PR:** [#244](https://github.com/HubblyAdrian/Hubly/pull/244) · Merged `895f666`  
+**Status:** 🔓 Explicit reopen — Mission Control redesign  
+**Redesign:** [`INBOX_MISSION_CONTROL.md`](./INBOX_MISSION_CONTROL.md) · branch `cursor/operate-inbox-mission-control-2662`
 
-Legend: ✅ Complete · ⏸ Deferred · 🔴 Blocked
+Legend: ✅ Complete · ⏸ Deferred · 🔴 Blocked · 🔄 In review
 
 ---
 
-## Stage 1 — Operating System ✅ COMPLETE · LOCKED
+## Stage 1 — Operating System ✅ COMPLETE · UI reopened
 
 Everything inside Hubly works. No external APIs required.
+
+## Stage 3 — Mission Control Inbox 🔄 In review
+
+Four-column mission control + KPI dock per product pixel spec.
 
 ### Core Layout
 | Item | Status |
