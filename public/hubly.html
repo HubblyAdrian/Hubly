@@ -9642,7 +9642,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span class="ni-lbl">Home</span>
       </div>
       <div class="ni" data-v="chats" onclick="switchV(this)" title="Inbox">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span class="ni-lbl">Inbox</span><span class="nav-count-badge" id="nav-inbox-badge">8</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span class="ni-lbl">Inbox</span><span class="nav-count-badge hidden" id="nav-inbox-badge">0</span>
       </div>
       <div class="ni" data-v="jobs" onclick="switchV(this)" title="Jobs &amp; Calendar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl">Jobs &amp; Calendar</span>
@@ -34848,6 +34848,21 @@ function toggleOperateNavRail(){
 }
 document.addEventListener('DOMContentLoaded',initOperateNavRail);
 try{initOperateNavRail();}catch(e){}
+document.addEventListener('DOMContentLoaded',function(){
+  try{
+    const badge=document.getElementById('nav-inbox-badge');
+    if(badge && (!window.HublyJourneyOS || typeof HublyJourneyOS.updateInboxBadge!=='function')){
+      // Hide placeholder until Journey OS can compute a real count.
+      if(badge.textContent==='8' || badge.textContent==='0'){
+        badge.textContent='0';
+        badge.classList.add('hidden');
+      }
+    }
+    if(window.HublyJourneyOS && typeof HublyJourneyOS.updateInboxBadge==='function'){
+      HublyJourneyOS.updateInboxBadge();
+    }
+  }catch(e){}
+});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&document.body.classList.contains('nav-drawer-open'))closeMobileNav();
 });

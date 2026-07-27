@@ -10069,6 +10069,7 @@
     if (titleEl) titleEl.textContent = c.title;
     if (subEl) subEl.textContent = c.sub;
     if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
+    try { updateInboxBadge(); } catch (e) {}
   }
 
   function enhanceDashboard() {
@@ -13565,6 +13566,7 @@
     openQuickNew: openQuickNew,
     onSwitchView: onSwitchView,
     updateChrome: updateChrome,
+    updateInboxBadge: updateInboxBadge,
     toggleOperateNavRail: function () {
       if (typeof global.toggleOperateNavRail === 'function') return global.toggleOperateNavRail();
     },
