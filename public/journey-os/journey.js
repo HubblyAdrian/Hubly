@@ -1571,7 +1571,7 @@
       ['Marketing', 'S.marketingOs', c.marketing.campaigns + ' campaigns', 'ah-go-marketing'],
       ['Memberships', 'S.membershipsOs', c.memberships.active + ' active', 'ah-go-memberships'],
       ['Reviews', 'S.reviewsOs', c.reviews.count + ' reviews', 'ah-go-reviews'],
-      ['Storefront', 'S.website / S.editorSvcs', c.services.total + ' services', 'ah-go-editor']
+      ['Website editor', 'S.website / S.editorSvcs', c.services.total + ' services', 'ah-go-editor']
     ].map(function (r) {
       return '<tr><td><strong>' + esc(r[0]) + '</strong></td><td>' + esc(r[1]) + '</td><td>' + esc(r[2]) + '</td><td>' + dsBtn(r[3], 'Open', 'jos-btn jos-btn-sm') + '</td></tr>';
     }).join('');
@@ -2029,7 +2029,7 @@
       '<label>Body font<input id="jos-set-brand-font-b" type="text" value="' + esc(b.fontBody || '') + '"></label>' +
       '<label>Favicon URL<input id="jos-set-brand-favicon" type="text" value="' + esc(b.faviconUrl || '') + '"></label>' +
       '<label class="jos-set-span2">Website defaults<input id="jos-set-brand-web" type="text" value="' + esc(b.websiteDefaults || '') + '"></label></div>' +
-      '<div class="jos-btn-row jos-mt">' + dsBtn('set-branding-save', 'Save branding', 'jos-btn-brand jos-btn-sm') + dsBtn('set-go-editor', 'Open Storefront', 'jos-btn jos-btn-sm') + '</div></div>';
+      '<div class="jos-btn-row jos-mt">' + dsBtn('set-branding-save', 'Save branding', 'jos-btn-brand jos-btn-sm') + dsBtn('set-go-editor', 'Open Website editor', 'jos-btn jos-btn-sm') + '</div></div>';
   }
   function renderSetAi() {
     var a = ensureSettingsOsState().ai;
@@ -9449,6 +9449,31 @@
     app.classList.toggle('jos-storefront-mode', !!on);
   }
 
+  /** Restore classic Website editor (#ed-shell) instead of Storefront Mission Control. */
+  function restoreWebsiteEditor() {
+    setStorefrontMode(false);
+    updateChrome('editor');
+    var view = el('v-editor');
+    if (!view) return;
+    view.classList.remove('jos-pixel-owned');
+    var sfRoot = el('jos-storefront-root');
+    if (sfRoot) sfRoot.remove();
+    // If Storefront MC already destroyed the classic shell, reload once to recover markup.
+    if (!el('ed-shell')) {
+      try {
+        if (!sessionStorage.getItem('hubly_restore_editor_reload')) {
+          sessionStorage.setItem('hubly_restore_editor_reload', '1');
+          location.reload();
+          return;
+        }
+        sessionStorage.removeItem('hubly_restore_editor_reload');
+      } catch (e) {}
+      toast('Website editor could not restore — refresh the page');
+      return;
+    }
+    try { sessionStorage.removeItem('hubly_restore_editor_reload'); } catch (e) {}
+  }
+
   function renderStorefrontPreviewStrip() {
     return '<div class="jos-sf-preview">' +
       '<div><div class="jos-kicker">Live preview</div><div class="jos-sf-preview-url">' + esc(storefrontUrl()) + '</div></div>' +
@@ -10036,7 +10061,7 @@
     leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
     customers: { title: 'Customers', sub: 'People, vehicles, and history.' },
     pipeline: { title: 'Pipeline', sub: 'Track, manage and convert leads into loyal customers.' },
-    editor: { title: 'Storefront', sub: 'Your booking site and pages.' },
+    editor: { title: 'Website editor', sub: 'Edit your site, packages, and Book Now.' },
     marketing: { title: 'Marketing', sub: 'Campaigns that attract, convert, and keep customers coming back.' },
     reviews: { title: 'Reviews', sub: 'Reputation and request flows.' },
     memberships: { title: 'Memberships', sub: 'Recurring revenue. Happy clients. Less admin.' },
@@ -13310,6 +13335,7 @@
     setJobsMode(v === 'jobs');
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');
+    setStorefrontMode(false);
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
@@ -13328,7 +13354,7 @@
       dashboard: enhanceDashboard,
       chats: renderInbox,
       jobs: renderJobs,
-      editor: renderStorefront
+      editor: restoreWebsiteEditor
     };
     if (map[v]) try { map[v](); } catch (e) { console.warn('HublyJourneyOS', v, e); }
   }
@@ -13539,6 +13565,7 @@
     renderJobs: renderJobs,
     handleJobsAct: handleJobsAct,
     renderStorefront: renderStorefront,
+    restoreWebsiteEditor: restoreWebsiteEditor,
     handleStorefrontAct: handleStorefrontAct,
     openCustomerProfile: openCustomerProfile,
     handleCustomersAct: handleCustomersAct,
