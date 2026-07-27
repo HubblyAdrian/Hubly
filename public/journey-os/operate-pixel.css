@@ -243,12 +243,35 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   border-radius:10px;padding:9px 14px;font-weight:750;
   box-shadow:0 2px 8px rgba(217,99,45,.25);
 }
-#p-app.jos-pixel .jos-bar-ask{
-  appearance:none;border:1px solid rgba(217,99,45,.35);background:var(--jos-brand-soft);
-  color:var(--jos-brand-dark);border-radius:10px;padding:8px 12px;font:inherit;
-  font-size:12px;font-weight:750;cursor:pointer;white-space:nowrap;
+/* Ask Hubly lives in left nav + bottom-right bubble — not the top bar */
+#p-app.jos-pixel .jos-bar-ask{display:none!important}
+#jos-ask-fab{
+  position:fixed;right:20px;bottom:20px;z-index:12500;
+  min-height:52px;padding:8px 16px 8px 8px;border-radius:999px;border:none;cursor:pointer;
+  background:#141B2B;color:#fff;font:inherit;font-size:13px;font-weight:750;
+  box-shadow:0 14px 32px rgba(15,23,42,.35);
+  display:inline-flex;align-items:center;gap:10px;
+  transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease;
 }
-#p-app.jos-pixel .jos-bar-ask:hover{background:rgba(217,99,45,.18)}
+#jos-ask-fab .jos-ask-fab-ico{
+  flex-shrink:0;width:36px;height:36px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--jos-brand,#D9632D);color:#fff;
+  font-size:11px;font-weight:800;letter-spacing:.04em;
+}
+#jos-ask-fab:hover{transform:translateY(-2px);box-shadow:0 18px 36px rgba(15,23,42,.42)}
+#jos-ask-fab.hidden,
+#p-app.jos-pixel.jos-ask-mode #jos-ask-fab,
+body.ed-editor-open #jos-ask-fab,
+#p-app.jos-pixel.jos-storefront-mode #jos-ask-fab{display:none!important}
+/* Sit above setup-help coach when that bubble is visible */
+body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
+@media(max-width:800px){
+  #jos-ask-fab{right:14px;bottom:calc(18px + env(safe-area-inset-bottom));padding:7px 12px 7px 7px;font-size:12px}
+  body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:calc(86px + env(safe-area-inset-bottom))}
+  #jos-ask-fab .jos-ask-fab-ico{width:32px;height:32px;font-size:10px}
+  #jos-ask-fab .jos-ask-fab-lbl{display:none}
+}
 #p-app.jos-pixel .jos-bar-bell{
   appearance:none;border:1px solid var(--jos-border);background:#fff;
   width:38px;height:38px;border-radius:10px;display:inline-flex;
@@ -2085,10 +2108,25 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 .jos-mem-mc-drawer-foot{display:flex;gap:8px;flex-wrap:wrap;padding:16px 24px;border-top:1px solid #E5E7EB}
 .jos-mem-mc-close{appearance:none;border:0;background:#F3F4F6;width:36px;height:36px;border-radius:10px;font-size:22px;cursor:pointer}
 .jos-mem-mc-modal{
-  width:min(640px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;padding:24px;
-  box-shadow:0 24px 60px rgba(0,0,0,.18);
+  width:min(640px,96vw);max-height:90vh;overflow:auto;background:#fff!important;border-radius:18px;padding:24px;
+  box-shadow:0 24px 60px rgba(0,0,0,.18);color:#141B2B!important;
+}
+.jos-mem-mc-modal h3{
+  margin:0 0 8px;font-size:20px;font-weight:800;letter-spacing:-.02em;color:#141B2B!important;
+}
+.jos-mem-mc-modal > p,
+.jos-mem-mc-modal > .jos-muted,
+.jos-mem-mc-modal p.jos-muted{
+  margin:0 0 16px;font-size:13px;line-height:1.45;color:#4A5160!important;
 }
 .jos-mem-mc-modal-foot{display:flex;gap:10px;margin-top:20px}
+html[data-theme="night"] .jos-mem-mc-modal{
+  background:#fff!important;color:#141B2B!important;
+}
+html[data-theme="night"] .jos-mem-mc-modal h3{color:#141B2B!important}
+html[data-theme="night"] .jos-mem-mc-modal > p,
+html[data-theme="night"] .jos-mem-mc-modal > .jos-muted,
+html[data-theme="night"] .jos-mem-mc-modal p.jos-muted{color:#4A5160!important}
 .jos-mem-mc-dsec{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #F3F4F6}
 .jos-mem-mc-dsec h4{margin:0 0 12px;font-size:14px;font-weight:700;color:#111827}
 .jos-mem-mc-drow{display:flex;gap:12px;align-items:center}
@@ -2137,12 +2175,19 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 .jos-mem-mc-bill-card p{margin:4px 0 0}
 
 .jos-mem-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:680px}
-.jos-mem-form label{display:grid;gap:4px;font-size:11px;font-weight:700;color:var(--jos-ink-2)}
+.jos-mem-form label{display:grid;gap:4px;font-size:11px;font-weight:700;color:#4A5160!important}
 .jos-mem-form input,.jos-mem-form textarea,.jos-mem-form select{
-  font:inherit;padding:8px 10px;border:1px solid var(--jos-border);border-radius:8px;background:#fff;
+  font:inherit;padding:8px 10px;border:1px solid #E5E7EB;border-radius:8px;
+  background:#fff!important;color:#141B2B!important;
 }
 .jos-mem-form select[multiple]{min-height:96px}
 .jos-mem-span2{grid-column:1 / -1}
+html[data-theme="night"] .jos-mem-form label{color:#4A5160!important}
+html[data-theme="night"] .jos-mem-form input,
+html[data-theme="night"] .jos-mem-form textarea,
+html[data-theme="night"] .jos-mem-form select{
+  background:#fff!important;color:#141B2B!important;border-color:#E5E7EB;
+}
 
 @media(max-width:1100px){
   .jos-mem-mc-kpis{grid-template-columns:1fr 1fr}

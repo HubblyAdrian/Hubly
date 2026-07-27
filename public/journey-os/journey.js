@@ -2130,8 +2130,7 @@
           '</section>' +
         '</div>' +
         '<section class="jos-set-mc-banner">' +
-          '<div class="jos-set-mc-banner-copy"><span class="spark" aria-hidden="true">✦</span><div><strong>Need help customizing your settings?</strong><p>Ask Hubly can guide you through best practices and recommended setups.</p></div></div>' +
-          '<button type="button" class="jos-btn jos-btn-brand jos-set-mc-banner-btn" data-jos-act="set-go-ask"><span aria-hidden="true">✦</span> Ask Hubly</button>' +
+          '<div class="jos-set-mc-banner-copy"><span class="spark" aria-hidden="true">✦</span><div><strong>Need help customizing your settings?</strong><p>Use the Ask Hubly bubble (bottom right) or the Ask Hubly tab for best-practice guidance.</p></div></div>' +
         '</section>' +
       '</div>' +
     '</div>';
@@ -2284,7 +2283,7 @@
       '<label>Auto actions default<select id="jos-set-ai-auto"><option value="false"' + (!a.autoActionsDefault ? ' selected' : '') + '>Off (confirm)</option><option value="true"' + (a.autoActionsDefault ? ' selected' : '') + '>Allow-rules only</option></select></label>' +
       '<label>Memory default<select id="jos-set-ai-memory"><option value="true"' + (a.memoryDefault ? ' selected' : '') + '>On</option><option value="false"' + (!a.memoryDefault ? ' selected' : '') + '>Off</option></select></label>' +
       '<label class="jos-set-span2">Automation defaults<input id="jos-set-ai-automations" type="text" value="' + esc(a.automationDefaults || '') + '"></label></div>' +
-      '<div class="jos-btn-row jos-mt">' + dsBtn('set-ai-save', 'Save AI settings', 'jos-btn-brand jos-btn-sm') + dsBtn('set-go-ask', 'Open Ask Hubly', 'jos-btn jos-btn-sm') + '</div></div>';
+      '<div class="jos-btn-row jos-mt">' + dsBtn('set-ai-save', 'Save AI settings', 'jos-btn-brand jos-btn-sm') + '</div></div>';
   }
   function renderSetSecurity() {
     var s = ensureSettingsOsState().security;
@@ -2358,7 +2357,6 @@
         '</div>' +
         '<div class="jos-set-mc-head-actions">' +
           '<button type="button" class="jos-btn jos-btn-sm jos-set-refresh" data-jos-act="set-refresh">Refresh</button>' +
-          '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="set-go-ask">Ask Hubly</button>' +
         '</div>' +
       '</header>' +
       setTabsHtml(tab) +
@@ -4897,7 +4895,6 @@
         '<div class="jos-mem-mc-header-actions">' +
           '<button type="button" class="jos-btn jos-btn-brand jos-mem-mc-primary" data-jos-act="mem-plan-open">Create membership</button>' +
           '<button type="button" class="jos-btn jos-mem-mc-secondary" data-jos-act="mem-sub-open">Start subscription</button>' +
-          '<button type="button" class="jos-btn jos-mem-mc-ghost" data-jos-act="go-ask">Ask Hubly</button>' +
         '</div>' +
       '</header>' +
       '<div class="jos-mem-mc-kpis">' +
@@ -10772,6 +10769,13 @@
     return timeOfDayGreeting() + ' \u2014 let\u2019s grow your business today.';
   }
 
+  function syncAskFab(v) {
+    var fab = el('jos-ask-fab');
+    if (!fab) return;
+    var hide = v === 'ask' || v === 'ask-hubly' || v === 'editor' ||
+      !!(document.body && document.body.classList.contains('ed-editor-open'));
+    fab.classList.toggle('hidden', !!hide);
+  }
   function updateChrome(v) {
     var c = CHROME[v] || { title: v, sub: '' };
     var titleEl = el('bar-title'), subEl = el('bar-sub');
@@ -10779,6 +10783,7 @@
     if (subEl) subEl.textContent = (v === 'dashboard') ? homeChromeSub() : c.sub;
     if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
     try { updateInboxBadge(); } catch (e) {}
+    try { syncAskFab(v); } catch (eFab) {}
   }
 
   function enhanceDashboard() {
