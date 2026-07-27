@@ -53,12 +53,13 @@ Reports is a **presentation and analytics layer**. It owns almost no business da
 - [x] Navigate to owner modules ✅
 
 ### QA / MAT / CMV
-- [ ] Validator reports gates ⏳  
-- [ ] MAT ⏳  
-- [ ] CMV incl. Revenue ⏳  
+- [x] Validator reports gates ✅  
+- [x] MAT ✅ ACCEPTED (`scripts/mat-reports.mjs` · [REPORTS_MAT.md](./REPORTS_MAT.md))  
+- [x] CMV incl. Revenue ✅  
 
 ### Definition of Done
-- [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳  
+- [x] OS · MAT ✅ · CMV PASS  
+- [ ] Merge → 🔒 OS ⏳ (awaiting approval)  
 
 ---
 
