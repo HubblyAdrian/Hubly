@@ -45,14 +45,18 @@ Brand why (signature):
 Also: **One AI. Two experiences.** Ask Hubly / Build My Business.
 Interface language is **Ask Hubly** (not Get Help / Find Help / Marketplace).
 
-**Rule #24 — Dual Product Architecture (active):** Landing is an intent router —
+**Rule #24 — Dual Product Architecture (🔒 locked):** Landing is an intent router —
 “I want to grow my business” → Builder · “I need to hire someone” → Concierge.
-Marketplace remains intact (`/marketplace`, `/get-done`). See `docs/AI_LANDING_ARCHITECTURE.md`.
+Marketplace remains intact (`/marketplace`, `/get-done`). Merged #259.
+See `docs/AI_LANDING_ARCHITECTURE.md` · `docs/HUBLY_MEMORY.md`.
 
-**Homepage craft still gated** (`scripts/check-homepage-craft.mjs`). Next priority is the first five
-minutes after **Build My Business** — someone types what they do and
-watches Hubly build a live website, booking, services, CRM, payments,
-and dashboard. That product moment beats another headline tweak.
+**Next milestone — Hubly AI Business Builder:** Module 2 AI Discovery
+(fill Business DNA; never re-ask known facts). Architecture:
+`docs/builder/DISCOVERY_ARCHITECTURE.md`. Do not redesign locked Landing.
+
+**Homepage craft still gated** (`scripts/check-homepage-craft.mjs`). The first five
+minutes after **Continue Building** are Module 2 — someone already typed on Landing
+and watches Hubly assemble Business DNA, then website, booking, services, CRM.
 
 **Homepage signature experience (hard freeze):** Hero demo must show
 Understanding → Business Memory facts → Website → Booking → CRM →

@@ -36,6 +36,8 @@ See [AI_LANDING_ARCHITECTURE.md](./AI_LANDING_ARCHITECTURE.md) and [HUBLY_SESSIO
 
 Landing creates a structured **Hubly Session** (not a Builder-only session). Continue Building hands off via `?hs=` so Business Builder consumes conversation, industry, location, imports, and memory — without re-inferring. Website/social paste starts `/api/import-analyze` immediately.
 
+**🔒 AI Landing Experience is locked.** Do not redesign unless explicitly reopened. Next: [AI Discovery](./builder/DISCOVERY_ARCHITECTURE.md) · [Hubly Memory](./HUBLY_MEMORY.md).
+
 Post-booking consumer home is **My Hub** (design only) — `docs/MY_HUB.md`.
 
 ---

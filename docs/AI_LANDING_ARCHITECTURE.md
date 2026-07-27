@@ -3,8 +3,11 @@
 **Module:** AI Landing Experience (public front door)  
 **Rules:** **#24 — Dual Product Architecture**  
 **Surface:** `public/platform-home.html` + `public/hubly-session.js`  
-**Session:** [HUBLY_SESSION.md](./HUBLY_SESSION.md)  
-**Status:** Stage 1 — continuous Hubly Session + import pipeline start
+**Session:** [HUBLY_SESSION.md](./HUBLY_SESSION.md) · [HUBLY_MEMORY.md](./HUBLY_MEMORY.md)  
+**Status:** 🔒 **Locked** — Stage 1 complete (merged #259)  
+**Milestone:** [Hubly AI Business Builder](./builder/README.md)
+
+Do **not** redesign this module unless explicitly reopened (bug fix / Stage 2 additive work only).
 
 ---
 
