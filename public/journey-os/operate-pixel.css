@@ -1478,7 +1478,7 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 .jos-mkt-mc-camp .ico.tone-purple{background:#F3E8FF;color:#7C3AED}
 .jos-mkt-mc-camp .ico.tone-teal{background:#CCFBF1;color:#0F766E}
 .jos-mkt-mc-camp .ico.tone-orange{background:#FDF0E8;color:var(--jos-brand)}
-.jos-mkt-mc-camp .body,.jos-mkt-mc-cal .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.jos-mkt-mc-camp .copy,.jos-mkt-mc-cal .copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .jos-mkt-mc-camp strong,.jos-mkt-mc-cal strong,.jos-mkt-mc-auto strong{font-size:13px;font-weight:750;color:#141B2B}
 .jos-mkt-mc-camp .jos-muted,.jos-mkt-mc-cal .jos-muted{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .jos-mkt-mc-camp .clk{font-size:12px;font-weight:700;color:#777;white-space:nowrap}

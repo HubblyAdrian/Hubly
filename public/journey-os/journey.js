@@ -2681,7 +2681,7 @@
       var tone = c.tone || 'orange';
       return '<button type="button" class="jos-mkt-mc-camp" data-jos-act="mkt-camp-edit" data-jos-mkt-camp="' + esc(c.id) + '">' +
         '<span class="ico tone-' + esc(tone) + '" aria-hidden="true"></span>' +
-        '<span class="body"><strong>' + esc(c.name) + '</strong><span class="jos-muted">' + esc(c.description || c.body || '') + '</span></span>' +
+        '<span class="copy"><strong>' + esc(c.name) + '</strong><span class="jos-muted">' + esc(c.description || c.body || '') + '</span></span>' +
         mktCampStatusBadge(c.status) +
         '<span class="clk">' + esc(String(clicksN)) + ' Clicks</span></button>';
     }).join('');
@@ -2703,7 +2703,7 @@
     var calRows = (m.calendar || []).slice(0, 3).map(function (item) {
       return '<button type="button" class="jos-mkt-mc-cal" data-jos-act="mkt-cal-open" data-jos-mkt-cal="' + esc(item.id) + '">' +
         mktPlatformBadge(item.channel) +
-        '<span class="body"><strong>' + esc(item.title) + '</strong><span class="jos-muted">' + esc(String(item.scheduledAt || '').slice(0, 10)) + (item.time ? ' · ' + esc(item.time) : '') + '</span></span></button>';
+        '<span class="copy"><strong>' + esc(item.title) + '</strong><span class="jos-muted">' + esc(String(item.scheduledAt || '').slice(0, 10)) + (item.time ? ' · ' + esc(item.time) : '') + '</span></span></button>';
     }).join('');
 
     var autoRows = m.automations.filter(function (x) { return x.on; }).slice(0, 3).map(function (auto) {
