@@ -92,7 +92,7 @@
 | Checklist | 45 / 45 |
 | Buttons | 15 / 15 |
 | Tabs | 10 / 10 |
-| Routes | 12 / 12 |
+| Routes | 14 / 14 |
 | Console Errors | 0 |
 | Validator | PASS |
 | CMV | PASS |
@@ -187,7 +187,7 @@
 ### Design System (1/1)
 - ✅ Uses HublyDS
 
-### Routes (12/12)
+### Routes (14/14)
 - ✅ set-business-save
 - ✅ set-team-invite
 - ✅ set-billing-save
@@ -200,6 +200,8 @@
 - ✅ set-api-create
 - ✅ set-perm-custom-add
 - ✅ set-go-ask
+- ✅ set-checklist-open
+- ✅ set-next-step
 
 ### Empty States (1/1)
 - ✅ Empty helpers
@@ -214,7 +216,7 @@
 - ✅ jos-settings-root in hubly.html
 
 ### Validator (1/1)
-- ✅ check-customer-journey-os — PASS in 40ms
+- ✅ check-customer-journey-os — PASS in 35ms
 
 ### CMV (1/1)
 - ✅ Locked modules incl. Ask Hubly

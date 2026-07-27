@@ -354,6 +354,18 @@
       "detail": ""
     },
     {
+      "section": "Routes",
+      "name": "set-checklist-open",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "set-next-step",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "section": "Empty States",
       "name": "Empty helpers",
       "ok": true,
@@ -381,7 +393,7 @@
       "section": "Validator",
       "name": "check-customer-journey-os",
       "ok": true,
-      "detail": "PASS in 40ms"
+      "detail": "PASS in 35ms"
     },
     {
       "section": "CMV",

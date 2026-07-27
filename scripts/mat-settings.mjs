@@ -262,7 +262,7 @@ function setCheck(id, on) {
 }
 
 H.renderSettings();
-check("Header", "Page renders", /jos-set-page|Settings|hubly-mark|Rule #23/.test(setRoot.innerHTML));
+check("Header", "Page renders", /jos-set-page|jos-set-mc-shell|Settings|hubly-mark|Rule #23/.test(setRoot.innerHTML));
 check("Ownership", "settingsOs created", !!(state.settingsOs && state.settingsOs.business));
 check("Ownership", "Seeded team users", state.settingsOs.team.users.length >= 1);
 check("Architecture", "SETTINGS_ARCHITECTURE present", fs.existsSync(path.join(repoRoot, "docs/operate/SETTINGS_ARCHITECTURE.md")));
@@ -436,10 +436,12 @@ check("Design System", "Uses HublyDS", /DS\(\)|pageHeader|HublyDS/.test(jsrc));
   "set-go-ask",
 ].forEach((act) => check("Routes", act, jsrc.includes("'" + act + "'") || jsrc.includes('"' + act + '"')));
 
+check("Routes", "set-checklist-open", jsrc.includes("'set-checklist-open'") || jsrc.includes('"set-checklist-open"'));
+check("Routes", "set-next-step", jsrc.includes("'set-next-step'") || jsrc.includes('"set-next-step"'));
 check("Empty States", "Empty helpers", /No users|No pending|No webhooks|No audit|Config only/i.test(jsrc));
 check("Error States", "Retry markup", /Settings could not load|Retry/.test(jsrc));
 const css = fs.readFileSync(path.join(repoRoot, "public/journey-os/operate-pixel.css"), "utf8");
-check("Responsive CSS", "Settings layout", /jos-set-page|jos-set-/.test(css));
+check("Responsive CSS", "Settings layout", /jos-set-page|jos-set-mc-|jos-settings-mode/.test(css));
 check("Mount", "jos-settings-root in hubly.html", /jos-settings-root/.test(fs.readFileSync(path.join(repoRoot, "public/hubly.html"), "utf8")));
 
 let validatorPass = false;

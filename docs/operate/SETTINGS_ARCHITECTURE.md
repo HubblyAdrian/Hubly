@@ -18,6 +18,8 @@ It configures how the business, team, billing, integrations, notifications, bran
 
 It must stay a **configuration owner** — never a second CRM, ledger, catalog, or campaign store (**Rule #23**).
 
+**Mission Control surface:** Operate Settings ships as a premium control center (`jos-settings-mode`) — hero, status KPIs, platform checklist, recommended next steps, and Ask Hubly banner. Design: [SETTINGS_MISSION_CONTROL.md](./SETTINGS_MISSION_CONTROL.md). Ownership and Rule #23 are unchanged.
+
 ---
 
 ## Rule #23 — Settings Never Own Business Data
