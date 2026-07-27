@@ -7,39 +7,33 @@ It sits on top of the existing Revenue ledger ownership:
 - **Core actions:** `rve-*` lifecycle (invoice draft → send → deposit/payment → paid → refunds → payout)
 - **Stripe integration:** Stage 2 is still deferred; UI shows “Stripe Stage 2” entry points.
 
+See also: [REVENUE_SCREENSHOT_EXACT.md](./REVENUE_SCREENSHOT_EXACT.md) for the locked visual layout.
+
 ## Layout (desktop-first)
 
 - Canvas wrapper: `#p-app` enters Revenue mode via `jos-revenue-mode`
-- Content container: max-width **1440px**, centered, **32px** internal padding
-- Background: **#F8F9FB**
-- Cards: rounded corners (**16px**), `1px solid #ECECEC`, subtle shadow
+- Content container: max-width **1600px**, centered, **40px** horizontal padding
+- Background: **#F5F6FA**
+- Cards: rounded corners (**16px**), `1px solid #E8EAF0`, subtle shadow
 
 ## Screen sections
 
-### Header (110px)
+### Header chrome
 
-- Left:
-  - Title: **Revenue**
-  - Subtitle: **Track and manage your financial performance.**
-- Right:
-  - **Record Payment** (opens the OS payment modal: `rve-pay-open`)
-  - **Create Invoice** (opens the invoice modal: `rve-inv-open`)
-  - **Stripe Stage 2** dropdown/entry (action: `rve-stripe`)
+- Left: **Revenue** + **Track and manage your financial performance.**
+- Right: search · **+ New** · **Ask Hubly** · notifications (badge 3 in demo) · business profile
 
-### Navigation tabs (44px)
+### Navigation tabs
 
 - **Overview / Invoices / Payments / Deposits / Refunds / Taxes / Payouts / Activity**
-- Tabs update through **React-less state** in `journey.js` (single `data-jos-rve-tab` value)
-- Filters/state are persisted on the root element dataset (Revenue mode local state)
+- Right actions on the tab row: **Create Invoice** · **Record Payment** · **Stripe Stage 2 ▾**
 
 ### Overview grid
 
-- KPI strip (Collected / Outstanding / Deposits / Refunds / Payouts)
-- Revenue Overview chart card (interactive placeholder)
-- Revenue by Source donut card (legend + percentage breakdown)
-- Recent Transactions card (latest ledger items)
-- Stripe Integration Status card (shows Stage 2 “Not connected” placeholder)
-- Floating Revenue Assistant FAB (Stage 1 demo entry)
+- KPI strip (Collected / Outstanding / Deposits / Refunds / Payouts) with vs-last-30-days deltas
+- Left: Revenue Overview dual-line chart · Recent Transactions
+- Right: Revenue by Source donut · Stripe Integration Status (Not connected)
+- No CSV/PNG/PDF downloads, no floating FAB, no Stripe balance stats on Overview
 
 ## Interaction model
 
@@ -55,4 +49,4 @@ Revenue ledger is append-only for ledger events and preserves HublyEvents histor
 - Payments are not deleted on refund
 - Activity log is frozen append-only
 - Lifecycle updates are performed on `S.revenueOs` objects and publish the correct HublyEvents
-
+- Demo KPI/transaction filler applies only when `allowDemoSeed()` / `_ceoDemo`
