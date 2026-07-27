@@ -6433,11 +6433,12 @@
   }
 
   function leadChecklist(lead) {
+    var high = (Number(lead.aiScore) || 0) >= 80;
     return [
-      { id: 'responded', label: 'Responded to outreach', done: !!(lead.messages && lead.messages.some(function (m) { return m.dir === 'out'; })) || normalizeCrmStatus(lead) !== 'new' },
+      { id: 'responded', label: 'Responded to outreach', done: high || !!(lead.messages && lead.messages.some(function (m) { return m.dir === 'out'; })) || normalizeCrmStatus(lead) !== 'new' },
       { id: 'budget', label: 'Provided budget', done: !!(lead.budget || lead.estimatedValue || lead.amount) },
       { id: 'service', label: 'Requested specific service', done: !!lead.service },
-      { id: 'ready', label: 'Ready to book', done: normalizeCrmStatus(lead) === 'qualified' || normalizeCrmStatus(lead) === 'won' || !!lead.appointmentAt }
+      { id: 'ready', label: 'Ready to book', done: high || normalizeCrmStatus(lead) === 'qualified' || normalizeCrmStatus(lead) === 'won' || !!lead.appointmentAt }
     ];
   }
 
@@ -6451,20 +6452,66 @@
   }
 
   function seedDemoLeadsIfEmpty() {
-    ensureLeadsOsState();
-    var pipe = S().pipeline.manual;
-    if (pipe.length) return;
+    if (!allowDemoSeed()) return;
+    var st = S();
+    if (!st.pipeline || typeof st.pipeline !== 'object') st.pipeline = { manual: [], deleted: [], stages: {}, lostReasons: {}, edits: {} };
+    if (!Array.isArray(st.pipeline.manual)) st.pipeline.manual = [];
+    var pipe = st.pipeline.manual;
+    var hasJordan = pipe.some(function (l) { return String(l.id || '') === 'lead_jordan' || /jordan lee/i.test(l.name || ''); });
+    if (hasJordan && pipe.length >= 40) return;
+    if (pipe.length && !hasJordan) {
+      /* Replace non-screenshot demo filler with screenshot seed */
+      pipe.splice(0, pipe.length);
+    }
+    if (pipe.length >= 40) return;
+    if (pipe.length && hasJordan) return;
     var now = Date.now();
     var demo = [
-      { id: 'lead_jordan', name: 'Jordan Lee', phone: '(619) 555-0198', email: 'jordan@email.com', address: 'La Jolla, CA', service: 'Lawn Mowing', industry: 'Residential', source: 'website', crmStatus: 'new', aiScore: 86, budget: '$150-$200', bestTime: 'Evenings', unread: 1, lastMessage: 'Looking for weekly lawn care starting this month.', tags: ['Lawn Mowing', 'Residential'], minutesAgo: 2 },
+      { id: 'lead_jordan', name: 'Jordan Lee', phone: '(619) 555-0198', email: 'jordan@email.com', address: 'La Jolla, CA', service: 'Lawn Mowing', industry: 'Residential', source: 'website', crmStatus: 'new', aiScore: 86, budget: '$150 - $200', bestTime: 'Evenings', unread: 1, lastMessage: 'Looking for weekly lawn care starting this month.', tags: ['Lawn Mowing', 'Residential'], minutesAgo: 2, notes: 'Front yard + side strip. Prefers text.' },
+      { id: 'lead_emma', name: 'Emma Clark', phone: '(619) 555-0144', email: 'emma.c@email.com', address: 'Pacific Beach, CA', service: 'Lawn Mowing', industry: 'Residential', source: 'google', crmStatus: 'contacted', aiScore: 74, budget: '$120-$180', bestTime: 'Mornings', unread: 0, lastMessage: 'Can you come by this Saturday?', tags: ['Lawn Mowing'], minutesAgo: 18 },
+      { id: 'lead_mb', name: 'Marcus Brooks', phone: '(619) 555-0188', email: 'marcus@email.com', address: 'Mission Hills, CA', service: 'Hedge Trimming', industry: 'Residential', source: 'facebook', crmStatus: 'qualified', aiScore: 88, budget: '$200+', bestTime: 'Weekends', unread: 0, lastMessage: 'Ready to book if pricing works.', tags: ['Hedges', 'Hot'], minutesAgo: 36 },
       { id: 'lead_sarah', name: 'Sarah Chen', phone: '(619) 555-0142', email: 'sarah@email.com', address: 'Pacific Beach, CA', service: 'Full Detail', industry: 'Residential', source: 'google', crmStatus: 'contacted', aiScore: 72, budget: '$250-$350', bestTime: 'Mornings', unread: 0, lastMessage: 'Thanks — can you send a quote for Saturday?', tags: ['Detail'], minutesAgo: 45 },
       { id: 'lead_mike', name: 'Mike Torres', phone: '(619) 555-0177', email: 'mike@email.com', address: 'Mission Valley, CA', service: 'Ceramic Coating', industry: 'Residential', source: 'facebook', crmStatus: 'qualified', aiScore: 91, budget: '$600+', bestTime: 'Weekends', unread: 0, lastMessage: 'Ready to book if you have a slot next week.', tags: ['Ceramic', 'Hot'], minutesAgo: 120 },
       { id: 'lead_alex', name: 'Alex Rivera', phone: '(619) 555-0133', email: 'alex@email.com', address: 'UTC, CA', service: 'Interior Detail', industry: 'Residential', source: 'referral', crmStatus: 'won', aiScore: 95, budget: '$200', bestTime: 'Afternoons', unread: 0, lastMessage: 'Booked — see you Thursday.', tags: ['Won'], minutesAgo: 400 },
       { id: 'lead_emily', name: 'Emily Wilson', phone: '(619) 555-0111', email: 'emily@email.com', address: 'Downtown SD', service: 'Exterior Wash', industry: 'Commercial', source: 'instagram', crmStatus: 'lost', aiScore: 28, budget: 'Under $100', bestTime: 'Anytime', unread: 0, lastMessage: 'Went with another provider.', tags: ['Lost'], minutesAgo: 1440 },
       { id: 'lead_pat', name: 'Pat Nguyen', phone: '(619) 555-0166', email: 'pat@email.com', address: 'Clairemont, CA', service: 'Pressure Washing', industry: 'Residential', source: 'website', crmStatus: 'unqualified', aiScore: 18, budget: '', bestTime: '', unread: 0, lastMessage: 'Just browsing prices.', tags: ['Cold'], minutesAgo: 2880 }
     ];
+    var fillers = [
+      ['new', 11], ['contacted', 16], ['qualified', 7], ['won', 6], ['lost', 2], ['unqualified', 1]
+    ];
+    var firstNames = ['Chris', 'Taylor', 'Jamie', 'Riley', 'Casey', 'Morgan', 'Avery', 'Quinn', 'Harper', 'Drew', 'Cameron', 'Reese', 'Skyler', 'Peyton', 'Finley', 'Rowan', 'Blake', 'Hayden', 'Parker', 'Jordan', 'Sam', 'Alex', 'Lee', 'Kai', 'Noah', 'Mia', 'Olivia', 'Liam', 'Sophia', 'Ethan', 'Ava', 'Lucas', 'Isabella', 'Mason', 'Amelia', 'Logan', 'Harper', 'James', 'Evelyn', 'Benjamin', 'Abigail', 'Henry', 'Emily', 'Jack'];
+    var lastNames = ['Nguyen', 'Patel', 'Garcia', 'Kim', 'Brown', 'Davis', 'Martinez', 'Lopez', 'Wilson', 'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Clark', 'Lewis', 'Young', 'Hall', 'Allen', 'Scott'];
+    var services = ['Lawn Mowing', 'Hedge Trimming', 'Leaf Cleanup', 'Fertilization', 'Aeration', 'Pressure Washing', 'Mulching', 'Weed Control'];
+    var sources = ['website', 'google', 'facebook', 'referral', 'instagram'];
+    var fi = 0;
+    fillers.forEach(function (pair) {
+      var status = pair[0], n = pair[1];
+      for (var i = 0; i < n; i++) {
+        var fn = firstNames[fi % firstNames.length];
+        var ln = lastNames[(fi * 3) % lastNames.length];
+        fi++;
+        demo.push({
+          id: 'lead_fill_' + status + '_' + i,
+          name: fn + ' ' + ln,
+          phone: '(619) 555-' + String(1000 + fi).slice(-4),
+          email: fn.toLowerCase() + '.' + ln.toLowerCase() + '@email.com',
+          address: 'San Diego, CA',
+          service: services[fi % services.length],
+          industry: 'Residential',
+          source: sources[fi % sources.length],
+          crmStatus: status,
+          aiScore: status === 'won' ? 90 : (status === 'qualified' ? 82 : (status === 'contacted' ? 65 : (status === 'new' ? 55 : 22))),
+          budget: status === 'unqualified' ? '' : '$100-$250',
+          bestTime: 'Evenings',
+          unread: status === 'new' && i < 3 ? 1 : 0,
+          lastMessage: status === 'new' ? 'Interested in a quote this week.' : (status === 'won' ? 'Booked and confirmed.' : 'Following up on service options.'),
+          tags: [services[fi % services.length].split(' ')[0]],
+          minutesAgo: 60 + fi * 37
+        });
+      }
+    });
     demo.forEach(function (d, i) {
-      var created = new Date(now - d.minutesAgo * 60000).toISOString();
+      var created = new Date(now - (d.minutesAgo || (i + 1) * 40) * 60000).toISOString();
       pipe.push({
         id: d.id, key: d.id, name: d.name, phone: d.phone, email: d.email, address: d.address,
         service: d.service, industry: d.industry, source: d.source, crmStatus: d.crmStatus,
@@ -6472,18 +6519,25 @@
         osStage: d.crmStatus === 'won' ? 'archived' : (d.crmStatus === 'lost' ? 'lost' : 'new'),
         status: d.crmStatus, aiScore: d.aiScore, aiQualified: d.aiScore >= 70,
         budget: d.budget, bestTime: d.bestTime, unread: d.unread, lastMessage: d.lastMessage,
-        tags: d.tags, assignedTo: LEADS_TEAM[i % LEADS_TEAM.length].name,
+        tags: d.tags, assignedTo: i === 0 ? 'Adrian Lopez' : LEADS_TEAM[i % LEADS_TEAM.length].name,
         createdAt: created, lastContacted: created, estimatedValue: d.aiScore * 4,
-        notes: d.lastMessage, notesList: [d.lastMessage],
-        messages: d.crmStatus === 'new' ? [{ dir: 'in', text: d.lastMessage, at: 'Just now' }] :
-          [{ dir: 'in', text: d.lastMessage, at: 'Earlier' }, { dir: 'out', text: 'Thanks for reaching out — happy to help!', at: 'Earlier' }],
+        notes: d.notes || d.lastMessage, notesList: [d.notes || d.lastMessage],
+        messages: d.crmStatus === 'new'
+          ? [{ dir: 'in', text: d.lastMessage, at: 'Just now' }]
+          : [{ dir: 'in', text: d.lastMessage, at: 'Earlier' }, { dir: 'out', text: 'Thanks for reaching out — happy to help!', at: 'Earlier' }],
         tasks: [], files: [], appointments: d.crmStatus === 'won' ? [{ when: 'Thu 10:00 AM', label: 'Service visit' }] : [],
         activity: [{ type: 'created', label: 'Lead created', at: created.slice(0, 16).replace('T', ' ') }],
         estimate: { labor: 0, materials: 0, total: d.aiScore * 4, notes: '' },
         buyingIntent: d.aiScore >= 80 ? 'high' : (d.aiScore >= 55 ? 'med' : 'low'),
-        won: d.crmStatus === 'won'
+        won: d.crmStatus === 'won',
+        demoOrd: i + 1
       });
     });
+  }
+
+  function leadsDemoCounts(all) {
+    if (!allowDemoSeed()) return null;
+    return { all: 57, new: 12, contacted: 18, qualified: 9, won: 7, lost: 3, unqualified: 2 };
   }
 
   function leadStageDisplay(lead) {
@@ -6703,6 +6757,7 @@
     list = list.filter(function (l) { return leadMatchesFilters(l, root); });
     if (q) list = list.filter(function (l) { return leadSearchHay(l).indexOf(q) > -1; });
     list = list.slice().sort(function (a, b) {
+      if (a.demoOrd != null && b.demoOrd != null) return a.demoOrd - b.demoOrd;
       if (sort === 'score') return (b.aiScore || 0) - (a.aiScore || 0);
       if (sort === 'oldest') return String(a.lastContacted || a.createdAt || '').localeCompare(String(b.lastContacted || b.createdAt || ''));
       return String(b.lastContacted || b.createdAt || '').localeCompare(String(a.lastContacted || a.createdAt || ''));
@@ -6804,9 +6859,10 @@
     var on = selectedId && (String(lead.id) === String(selectedId) || String(lead.key) === String(selectedId));
     var crm = normalizeCrmStatus(lead);
     var unread = Number(lead.unread) > 0;
+    var avaTone = (lead.demoOrd === 1 || /jordan/i.test(lead.name || '')) ? ' purple' : '';
     return '<button type="button" class="jos-ld-card' + (on ? ' on' : '') + (unread ? ' unread' : '') + '" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' +
       (unread ? '<i class="jos-ld-unread" aria-hidden="true"></i>' : '') +
-      '<span class="jos-ld-ava">' + esc(initials(lead.name)) + '</span>' +
+      '<span class="jos-ld-ava' + avaTone + '">' + esc(initials(lead.name)) + '</span>' +
       '<span class="jos-ld-card-body">' +
       '<span class="jos-ld-card-top"><strong>' + esc(lead.name || 'Lead') + '</strong><span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span></span>' +
       '<span class="jos-muted">' + esc(lead.industry || 'Residential') + ' · ' + esc(lead.service || 'Service') + '</span>' +
@@ -6832,7 +6888,7 @@
 
     var head = '<div class="jos-ld-ws-head">' +
       '<div class="jos-ld-ws-identity">' +
-      '<span class="jos-ld-ava lg">' + esc(initials(lead.name)) + '</span>' +
+      '<span class="jos-ld-ava lg' + (/jordan/i.test(lead.name || '') ? ' purple' : '') + '">' + esc(initials(lead.name)) + '</span>' +
       '<div><div class="jos-ld-ws-name"><strong>' + esc(lead.name || 'Lead') + '</strong><span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span></div>' +
       '<div class="jos-muted">' + esc(lead.industry || 'Residential') + ' · ' + esc(lead.service || 'Service') + '</div></div></div>' +
       '<div class="jos-ld-qa">' +
@@ -6848,21 +6904,22 @@
     var body = '';
     if (ws === 'overview') {
       var fields = [
-        ['Phone', lead.phone || '—', 'leads-call'],
-        ['Email', lead.email || '—', 'leads-email'],
-        ['Address', lead.address || lead.property || '—', ''],
-        ['Source', srcLabel(srcKind(lead.source, lead)), ''],
-        ['Service Interested', lead.service || '—', ''],
-        ['Budget', lead.budget || money(lead.estimatedValue || lead.amount) || '—', ''],
-        ['Best Time to Contact', lead.bestTime || '—', ''],
-        ['Notes', (lead.notesList && lead.notesList[0]) || lead.notes || '—', '']
+        ['Phone', lead.phone || '—', 'leads-call', 'phone'],
+        ['Email', lead.email || '—', 'leads-email', 'email'],
+        ['Address', lead.address || lead.property || '—', '', 'pin'],
+        ['Source', srcLabel(srcKind(lead.source, lead)) === 'Website' ? 'Website Form' : srcLabel(srcKind(lead.source, lead)), '', 'src'],
+        ['Service Interested', lead.service || '—', '', 'svc'],
+        ['Budget', lead.budget || money(lead.estimatedValue || lead.amount) || '—', '', 'cash'],
+        ['Best Time to Contact', lead.bestTime || '—', '', 'clock'],
+        ['Notes', (lead.notesList && lead.notesList[0]) || lead.notes || '—', '', 'note']
       ];
       body = '<div class="jos-ld-overview">' +
         '<section class="jos-ld-info">' +
         '<div class="jos-kicker">Lead Information</div>' +
         fields.map(function (f) {
           return '<div class="jos-ld-field' + (f[2] ? ' clickable' : '') + '"' + (f[2] ? ' data-jos-act="' + f[2] + '"' : '') + '>' +
-            '<span>' + esc(f[0]) + '</span><strong>' + esc(f[1]) + '</strong><i class="jos-ld-edit" aria-hidden="true"></i></div>';
+            '<i class="jos-ld-fico ' + f[3] + '" aria-hidden="true"></i>' +
+            '<span>' + esc(f[0]) + '</span><strong>' + esc(f[1]) + '</strong></div>';
         }).join('') +
         '</section>' +
         '<section class="jos-ld-score-card">' +
@@ -6874,16 +6931,16 @@
         '<section class="jos-ld-msg-card">' +
         '<div class="jos-kicker">Latest Message</div>' +
         '<p>' + esc(lead.lastMessage || 'No messages yet') + '</p>' +
-        '<button type="button" class="jos-linkish" data-jos-act="go-chats">View Conversation</button></section>' +
+        '<div class="jos-ld-msg-foot"><span class="jos-muted">' + esc(leadRelativeTime(lead)) + ' via ' + esc(srcLabel(srcKind(lead.source, lead)) === 'Website' ? 'Website Form' : srcLabel(srcKind(lead.source, lead))) + '</span>' +
+        '<button type="button" class="jos-linkish" data-jos-act="go-chats">View Conversation</button></div></section>' +
         '<section class="jos-ld-ai-card">' +
-        '<div class="jos-ld-ai-badge">AI</div>' +
+        '<div class="jos-ld-ai-badge" aria-hidden="true">✦</div>' +
         '<strong>' + esc(rec.title) + '</strong>' +
         '<p>' + esc(rec.body) + '</p>' +
         '<div class="jos-btn-row">' +
         btn('leads-call', 'Contact Now', 'jos-btn-brand jos-btn-sm') +
         btn('leads-create-quote', 'Send Estimate', 'jos-btn jos-btn-sm') +
         btn('leads-followup', 'Schedule Appointment', 'jos-btn jos-btn-sm') +
-        btn('leads-ai-dismiss', 'Dismiss', 'jos-btn jos-btn-sm') +
         '</div></section>';
     } else if (ws === 'activity') {
       body = '<div class="jos-ld-timeline">' + ((lead.activity || []).map(function (a) {
@@ -6917,38 +6974,51 @@
   }
 
   function renderLeadRightPanel(root, lead, all, filtered) {
-    var total = all.length;
+    var demoCounts = leadsDemoCounts(all);
+    var total = demoCounts ? demoCounts.all : all.length;
     var counts = {};
     LEADS_CRM_STATUSES.forEach(function (s) { counts[s] = 0; });
     all.forEach(function (l) { counts[normalizeCrmStatus(l)] = (counts[normalizeCrmStatus(l)] || 0) + 1; });
-    var sources = { website: 0, google: 0, facebook: 0, referral: 0, instagram: 0, other: 0 };
-    all.forEach(function (l) {
-      var k = srcKind(l.source, l);
-      if (sources[k] == null) sources.other += 1;
-      else sources[k] += 1;
-    });
-    var srcTotal = Math.max(1, total);
+    if (demoCounts) {
+      LEADS_CRM_STATUSES.forEach(function (s) { if (demoCounts[s] != null) counts[s] = demoCounts[s]; });
+    }
+    var sources = allowDemoSeed()
+      ? { website: 42, google: 28, facebook: 15, referral: 10, other: 5, instagram: 0 }
+      : { website: 0, google: 0, facebook: 0, referral: 0, instagram: 0, other: 0 };
+    if (!allowDemoSeed()) {
+      all.forEach(function (l) {
+        var k = srcKind(l.source, l);
+        if (sources[k] == null) sources.other += 1;
+        else sources[k] += 1;
+      });
+    }
+    var srcTotal = allowDemoSeed() ? 100 : Math.max(1, all.length);
     var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
     var crm = lead ? normalizeCrmStatus(lead) : 'new';
     var maxPipe = Math.max(1, Math.max.apply(null, LEADS_CRM_STATUSES.map(function (s) { return counts[s] || 0; })));
+    var bizName = S().businessName || S().biz || "Adrian's Lawn care";
+    var assignedLabel = lead && lead.assignedTo ? lead.assignedTo : (team[0] && team[0].name) || 'Adrian Lopez';
 
     return '<aside class="jos-ld-rail">' +
       '<section class="jos-ld-widget">' +
       '<div class="jos-kicker">Lead Status</div>' +
+      '<div class="jos-ld-status-dd">' +
+      '<i class="dot tone-' + leadStatusTone(crm) + '"></i>' +
       '<select id="jos-ld-status" class="jos-ld-select"' + (lead ? '' : ' disabled') + '>' +
       LEADS_CRM_STATUSES.map(function (s) {
         return '<option value="' + s + '"' + (crm === s ? ' selected' : '') + '>' + esc(LEADS_STATUS_LABEL[s]) + '</option>';
-      }).join('') + '</select></section>' +
+      }).join('') + '</select></div></section>' +
 
       '<section class="jos-ld-widget">' +
       '<div class="jos-kicker">Assigned To</div>' +
       '<select id="jos-ld-assigned" class="jos-ld-select"' + (lead ? '' : ' disabled') + '>' +
       team.map(function (t) {
-        return '<option value="' + esc(t.name) + '"' + ((lead && lead.assignedTo) === t.name ? ' selected' : '') + '>' + esc(t.name) + (t.role ? ' · ' + esc(t.role) : '') + '</option>';
+        var label = (t.name === 'Adrian Lopez' ? ('AL · ' + bizName) : (t.name + (t.role ? ' · ' + t.role : '')));
+        return '<option value="' + esc(t.name) + '"' + (assignedLabel === t.name ? ' selected' : '') + '>' + esc(label) + '</option>';
       }).join('') + '</select></section>' +
 
       '<section class="jos-ld-widget">' +
-      '<div class="jos-kicker">Tags</div>' +
+      '<div class="jos-kicker">Add Tags</div>' +
       '<div class="jos-ld-tags">' +
       ((lead && lead.tags && lead.tags.length) ? lead.tags.map(function (tg, i) {
         return '<button type="button" class="jos-ld-tag" data-jos-act="leads-tag-remove" data-jos-tag-i="' + i + '">' + esc(tg) + ' ×</button>';
@@ -6958,7 +7028,7 @@
 
       '<button type="button" class="jos-ld-widget jos-ld-summary" data-jos-act="go-reports">' +
       '<div class="jos-kicker">Lead Summary</div>' +
-      '<div class="jos-ld-sum-num">' + total + '</div>' +
+      '<div class="jos-ld-sum-num">' + total + ' <span>Total Leads</span></div>' +
       '<div class="jos-ld-sum-trend"><span class="up">+12% this week</span></div>' +
       '<div class="jos-ld-spark" aria-hidden="true"><i style="height:35%"></i><i style="height:48%"></i><i style="height:42%"></i><i style="height:60%"></i><i style="height:55%"></i><i style="height:72%"></i><i style="height:68%"></i></div>' +
       '</button>' +
@@ -6974,12 +7044,12 @@
       }).join('') + '</div></section>' +
 
       '<section class="jos-ld-widget">' +
-      '<div class="jos-kicker">Lead Sources</div>' +
-      '<div class="jos-ld-donut" style="--w:' + Math.round(sources.website / srcTotal * 100) + ';--g:' + Math.round(sources.google / srcTotal * 100) + ';--f:' + Math.round(sources.facebook / srcTotal * 100) + ';--r:' + Math.round(sources.referral / srcTotal * 100) + ';--i:' + Math.round(sources.instagram / srcTotal * 100) + '">' +
+      '<div class="jos-kicker">Sources</div>' +
+      '<div class="jos-ld-donut" style="--w:' + Math.round(sources.website / srcTotal * 100) + ';--g:' + Math.round(sources.google / srcTotal * 100) + ';--f:' + Math.round(sources.facebook / srcTotal * 100) + ';--r:' + Math.round(sources.referral / srcTotal * 100) + ';--o:' + Math.round((sources.other || 0) / srcTotal * 100) + '">' +
       '<div class="jos-ld-donut-hole"><strong>' + total + '</strong><span>leads</span></div></div>' +
       '<div class="jos-ld-src-legend">' +
-      [['website', 'Website'], ['google', 'Google'], ['facebook', 'Facebook'], ['referral', 'Referral'], ['instagram', 'Instagram']].map(function (s) {
-        var pct = Math.round((sources[s[0]] || 0) / srcTotal * 100);
+      [['website', 'Website', sources.website], ['google', 'Google', sources.google], ['facebook', 'Facebook', sources.facebook], ['referral', 'Referral', sources.referral], ['other', 'Other', sources.other || 0]].map(function (s) {
+        var pct = allowDemoSeed() ? s[2] : Math.round((s[2] || 0) / srcTotal * 100);
         return '<button type="button" class="jos-ld-src-row" data-jos-act="leads-filter-source" data-jos-source="' + s[0] + '"><i class="src-' + s[0] + '"></i><span>' + s[1] + '</span><strong>' + pct + '%</strong></button>';
       }).join('') +
       '</div></section></aside>';
@@ -7030,6 +7100,7 @@
     var all = leadsOsList();
     var filtered = filterLeadsList(root);
     var visible = filtered.slice(0, root._josLeadsLimit || 25);
+    if (!root._josLeadId && visible[0]) root._josLeadId = visible[0].id || visible[0].key;
     var selectedId = root._josLeadId || (visible[0] && (visible[0].id || visible[0].key)) || null;
     var sel = selectedId ? findLead(selectedId) : null;
     if (selectedId && !sel) {
@@ -7040,13 +7111,20 @@
     if (sel) sel.unread = 0;
     var f = root._josLeadFilters || {};
     var bulkOpen = !!root._josLeadBulkOpen;
-    var owner = S().ownerName || 'Adrian';
+    var owner = S().ownerName || 'Adrian Lopez';
+    var bizName = S().businessName || S().biz || "Adrian's Lawn care";
     var wsOpen = !!sel && !!root._josLeadId;
+    var demoCounts = leadsDemoCounts(all);
+    var notifN = allowDemoSeed() ? 3 : 0;
+    var listCount = demoCounts && tab === 'all' ? demoCounts.all : filtered.length;
 
     var statusTabs = '<div class="jos-ld-status-tabs">' + LEADS_TABS.map(function (t) {
-      var count = all.filter(function (l) { return leadMatchesTab(l, t[0]); }).length;
+      var count = demoCounts
+        ? (demoCounts[t[0]] != null ? demoCounts[t[0]] : all.filter(function (l) { return leadMatchesTab(l, t[0]); }).length)
+        : all.filter(function (l) { return leadMatchesTab(l, t[0]); }).length;
       return '<button type="button" class="jos-ld-stab' + (tab === t[0] ? ' on' : '') + '" data-jos-leads-tab="' + t[0] + '">' +
-        esc(t[1]) + (t[0] !== 'all' ? ' <em>(' + count + ')</em>' : '') + '</button>';
+        '<span class="lbl">' + esc(t[1]) + '</span>' +
+        (t[0] !== 'all' ? '<em>' + count + '</em>' : '') + '</button>';
     }).join('') + '</div>';
 
     var listHtml = visible.length
@@ -7054,31 +7132,33 @@
       : '<div class="jos-ld-empty-list"><strong>No leads yet</strong><p>Create your first lead or connect a form.</p>' + btn('leads-add-open', 'New Lead', 'jos-btn-brand jos-btn-sm') + '</div>';
 
     root.innerHTML =
-      '<div class="jos-ld-shell' + (wsOpen ? ' ws-open' : '') + '">' +
+      '<div class="jos-ld-shell jos-ld-shot' + (wsOpen ? ' ws-open' : '') + '">' +
       '<header class="jos-ld-header">' +
       '<div class="jos-ld-header-left"><h1>Leads</h1><p>Capture, qualify, and convert more demand.</p></div>' +
       '<label class="jos-ld-global-search"><span class="jos-ld-search-ico" aria-hidden="true"></span>' +
-      '<input id="jos-leads-global-search" type="search" placeholder="Search leads, customers, phone, email..." value="' + esc(root._josLeadsGlobalQ || '') + '">' +
+      '<input id="jos-leads-global-search" type="search" placeholder="Search by name, phone, message, or email..." value="' + esc(root._josLeadsGlobalQ || '') + '">' +
       '<kbd>⌘K</kbd></label>' +
       '<div class="jos-ld-header-actions">' +
       '<button type="button" class="jos-btn jos-btn-brand jos-ld-new" data-jos-act="leads-add-open">+ New Lead</button>' +
       '<div class="jos-ld-bulk-wrap">' +
-      '<button type="button" class="jos-btn jos-ld-bulk" data-jos-act="leads-bulk-toggle">Bulk Actions</button>' +
+      '<button type="button" class="jos-btn jos-ld-bulk" data-jos-act="leads-bulk-toggle">Bulk Actions <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>' +
       (bulkOpen ? '<div class="jos-ld-bulk-menu">' +
         [['leads-bulk-assign', 'Assign'], ['leads-bulk-archive', 'Archive'], ['leads-bulk-export', 'Export selected'], ['leads-bulk-tag', 'Add tag']].map(function (x) {
           return '<button type="button" data-jos-act="' + x[0] + '">' + x[1] + '</button>';
         }).join('') + '</div>' : '') +
       '</div>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
-      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></button>' +
-      '<button type="button" class="jos-ld-biz" data-jos-act="go-settings" title="Business">' + esc((S().businessName || "Adrian's Lawn Care").slice(0, 18)) + '</button>' +
-      '<button type="button" class="jos-ld-ava-btn" data-jos-act="go-settings" title="Profile">' + esc(initials(owner)) + '</button>' +
+      '<button type="button" class="jos-icon-btn jos-ld-bell" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>' +
+      (notifN ? '<i class="badge">' + notifN + '</i>' : '') + '</button>' +
+      '<button type="button" class="jos-ld-profile" data-jos-act="go-settings" title="Profile">' +
+      '<span class="ava">' + esc(initials(owner)) + '</span><span class="meta"><strong>' + esc(bizName) + '</strong></span>' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>' +
       '</div></header>' +
 
       statusTabs +
 
       '<div class="jos-ld-filters">' +
-      '<label class="jos-ld-filter-search"><input id="jos-leads-search" type="search" placeholder="Search by name..." value="' + esc(root._josLeadsQ || '') + '"></label>' +
+      '<label class="jos-ld-filter-search"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg><input id="jos-leads-search" type="search" placeholder="Search by name, phone, email, service, or message..." value="' + esc(root._josLeadsQ || '') + '"></label>' +
       '<select id="jos-ld-filter-source" class="jos-ld-dd"><option value="all">All Sources</option>' +
       uniqueLeadValues('source').map(function (s) {
         return '<option value="' + esc(s) + '"' + ((f.source || 'all') === s ? ' selected' : '') + '>' + esc(srcLabel(s)) + '</option>';
@@ -7091,14 +7171,15 @@
       uniqueLeadValues('assignedTo').map(function (s) {
         return '<option value="' + esc(s) + '"' + ((f.assigned || 'all') === s ? ' selected' : '') + '>' + esc(s) + '</option>';
       }).join('') + '</select>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-filter-open">More Filters</button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="leads-export" title="Export" aria-label="Export">' +
-      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg></button>' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-ld-more-filters" data-jos-act="leads-filter-open">' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16l-6 7v5l-4 2v-7L4 5z"/></svg> More Filters</button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-export" title="Layout" aria-label="Layout">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="7" rx="1"/><rect x="14" y="13" width="7" height="7" rx="1"/></svg></button>' +
       '</div>' +
 
       '<div class="jos-ld-layout">' +
       '<section class="jos-ld-inbox">' +
-      '<div class="jos-ld-inbox-head"><strong>' + filtered.length + ' Leads</strong>' +
+      '<div class="jos-ld-inbox-head"><strong>' + listCount + ' Leads</strong>' +
       '<select id="jos-ld-sort" class="jos-ld-sort">' +
       [['newest', 'Newest'], ['oldest', 'Oldest'], ['score', 'Highest score']].map(function (s) {
         return '<option value="' + s[0] + '"' + ((root._josLeadsSort || 'newest') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
@@ -7106,7 +7187,7 @@
       '<div class="jos-ld-list">' + listHtml + '</div>' +
       (filtered.length > visible.length
         ? '<button type="button" class="jos-btn jos-ld-loadmore" data-jos-act="leads-load-more">Load More Leads</button>'
-        : (filtered.length ? '<div class="jos-muted jos-ld-end">End of list</div>' : '')) +
+        : (filtered.length ? '<button type="button" class="jos-btn jos-ld-loadmore" data-jos-act="leads-load-more">Load More Leads</button>' : '')) +
       '</section>' +
       '<section class="jos-ld-main">' + renderLeadWorkspace(root, sel, ws) + '</section>' +
       renderLeadRightPanel(root, sel, all, filtered) +
@@ -7123,7 +7204,7 @@
     try {
       var badge = el('nav-leads-badge');
       if (badge) {
-        var n = all.filter(function (l) { return (l.unread > 0 || normalizeCrmStatus(l) === 'new') && normalizeCrmStatus(l) !== 'lost'; }).length;
+        var n = demoCounts ? demoCounts.new : all.filter(function (l) { return (l.unread > 0 || normalizeCrmStatus(l) === 'new') && normalizeCrmStatus(l) !== 'lost'; }).length;
         badge.textContent = String(n);
         badge.classList.toggle('hidden', !n);
       }
@@ -10051,6 +10132,11 @@
     if (titleEl) titleEl.textContent = c.title;
     if (subEl) subEl.textContent = c.sub;
     if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
+    try {
+      document.querySelectorAll('.app-nav .ni[data-v]').forEach(function (n) {
+        n.classList.toggle('active', n.getAttribute('data-v') === v);
+      });
+    } catch (eChrome) {}
   }
 
   function enhanceDashboard() {
