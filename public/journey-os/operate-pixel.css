@@ -2826,8 +2826,9 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 .jos-set-tabs{margin:0;flex-wrap:wrap;gap:0;border-bottom:1px solid #E8EAF0;padding-bottom:0}
 .jos-set-tabs .jos-tab{
   height:44px;padding:0 14px;border-radius:0;background:transparent;border:0;
-  border-bottom:2px solid transparent;color:#6B7280;font-weight:650;font-size:13px;
+  border-bottom:2px solid transparent;color:#4A5160;font-weight:650;font-size:13px;
 }
+.jos-set-tabs .jos-tab:hover{color:#141B2B}
 .jos-set-tabs .jos-tab.on{color:var(--jos-set-brand);border-bottom-color:var(--jos-set-brand);background:transparent;font-weight:750}
 
 .jos-set-mc-body{display:flex;flex-direction:column;gap:18px}
