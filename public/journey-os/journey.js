@@ -1905,8 +1905,56 @@
     return '<span class="jos-set-badge ' + esc(tone || 'info') + '">' + esc(label) + '</span>';
   }
   function setIntegrationStatus(status) {
-    if (status === 'connected' || status === 'os_ready') return setStatusBadge(status === 'connected' ? 'Connected' : 'OS ready', 'ok');
+    if (status === 'connected') return setStatusBadge('Connected', 'ok');
+    if (status === 'os_ready') return setStatusBadge('Ready', 'ok');
+    if (status === 'pending') return setStatusBadge('Finish setup', 'warn');
     return setStatusBadge('Not connected', 'warn');
+  }
+  function integrationLogo(key) {
+    var logos = {
+      stripe: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>',
+      google: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>',
+      meta: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="#0866FF" d="M12 2C6.5 2 2 6.2 2 11.5c0 2.9 1.4 5.5 3.6 7.2V22l3.4-1.9c.9.2 1.9.4 2.9.4 5.5 0 10-4.2 10-9.5S17.5 2 12 2zm1.1 12.7h-2.1l-.2-1.1h-.1c-.4.7-1.2 1.3-2.2 1.3-1.4 0-2.3-1.1-2.3-2.7 0-1.8 1.1-3 2.8-3 1 0 1.6.4 2 1.1h.1V7.9h2.1v6.8zm-2.9-1.6c.8 0 1.3-.6 1.3-1.5s-.5-1.5-1.3-1.5-1.3.6-1.3 1.5.5 1.5 1.3 1.5zm6.5 1.8c-1.5 0-2.5-1.1-2.5-2.8 0-1.8 1.1-2.9 2.6-2.9.7 0 1.3.2 1.7.6l-.7 1c-.3-.3-.7-.4-1.1-.4-.7 0-1.2.5-1.2 1.4h3.4c0 .2 0 .4-.1.7-.3 1.4-1.2 2.4-2.1 2.4zm1.2-3.4h-2.3c0-.8.5-1.4 1.2-1.4s1.1.5 1.1 1.4z"/></svg>',
+      twilio: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#F22F46"/><circle cx="8.5" cy="9.5" r="1.6" fill="#fff"/><circle cx="15.5" cy="9.5" r="1.6" fill="#fff"/><circle cx="8.5" cy="14.5" r="1.6" fill="#fff"/><circle cx="15.5" cy="14.5" r="1.6" fill="#fff"/></svg>',
+      resend: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#000"/><path fill="#fff" d="M6.5 7.5h5.2c2.6 0 4.3 1.5 4.3 3.8 0 2.4-1.7 3.9-4.4 3.9H9.2V16.5H6.5V7.5zm2.7 2.1v3h2.3c1.2 0 1.9-.6 1.9-1.5s-.7-1.5-1.9-1.5H9.2z"/></svg>'
+    };
+    return '<span class="jos-set-integ-logo" data-brand="' + esc(key) + '">' + (logos[key] || '') + '</span>';
+  }
+  function syncLiveIntegrations() {
+    var st = S();
+    var os = ensureSettingsOsState();
+    var integ = os.integrations;
+    var stripeOn = !!(st._stripeConnected || st.stripeConnectAccountId || st.stripeConnected);
+    var googleOn = !!(st._googleCalendarConnected || st.googleCalendarConnected);
+    var metaOn = !!(st.metaConnected || st.facebookConnected || st.instagramConnected || (st.integrations && st.integrations.meta));
+    var twilioOn = !!(st.twilioConnected || st.smsProvider === 'twilio' || (st.integrations && st.integrations.twilio));
+    var resendOn = !!(st.resendConnected || st.emailProvider === 'resend' || (st.integrations && st.integrations.resend));
+    integ.stripe = Object.assign({}, integ.stripe, {
+      label: 'Stripe',
+      status: stripeOn ? 'connected' : 'not_connected',
+      note: stripeOn ? 'Card checkout for bookings and invoices.' : 'Connect so customers can pay by card when they book.'
+    });
+    integ.google = Object.assign({}, integ.google, {
+      label: 'Google Calendar',
+      status: googleOn ? 'connected' : 'not_connected',
+      note: googleOn ? 'Jobs stay in sync with Google Calendar.' : 'Sync jobs and blocks to Google Calendar.'
+    });
+    integ.meta = Object.assign({}, integ.meta, {
+      label: 'Meta',
+      status: metaOn ? 'connected' : 'not_connected',
+      note: metaOn ? 'Facebook / Instagram messaging linked.' : 'Connect Facebook & Instagram for inbox and ads.'
+    });
+    integ.twilio = Object.assign({}, integ.twilio, {
+      label: 'Twilio',
+      status: twilioOn ? 'connected' : 'not_connected',
+      note: twilioOn ? 'SMS sending is configured.' : 'Add Twilio so Hubly can text customers.'
+    });
+    integ.resend = Object.assign({}, integ.resend, {
+      label: 'Resend',
+      status: resendOn ? 'connected' : 'not_connected',
+      note: resendOn ? 'Transactional email is configured.' : 'Add Resend to send booking and invoice emails.'
+    });
+    return integ;
   }
   function renderSetOverview() {
     var os = ensureSettingsOsState();
@@ -2012,17 +2060,75 @@
       '<div class="jos-card"><div class="jos-kicker">Platform invoices</div><div class="jos-set-rows jos-mt">' + inv + '</div></div></div>';
   }
   function renderSetIntegrations() {
-    var os = ensureSettingsOsState();
-    var keys = ['stripe', 'google', 'meta', 'twilio', 'resend'];
-    var cards = keys.map(function (k) {
-      var item = os.integrations[k] || { label: k, status: 'not_connected', note: '' };
-      return '<div class="jos-set-card" data-jos-set-integration="' + esc(k) + '"><div class="jos-set-card-h"><strong>' + esc(item.label || k) + '</strong>' + setIntegrationStatus(item.status) + '</div><p class="jos-muted">' + esc(item.note || 'Stage 1 OS stub') + '</p><div class="jos-btn-row">' + dsBtn('set-integration-toggle', item.status === 'not_connected' ? 'Mark OS ready' : 'Mark disconnected', 'jos-btn jos-btn-sm') + '</div></div>';
+    var root = el('jos-settings-root');
+    var setupKey = root && root._josIntegSetup;
+    var integ = syncLiveIntegrations();
+    var catalog = [
+      { key: 'stripe', blurb: 'Payments · deposits · invoices' },
+      { key: 'google', blurb: 'Calendar sync · availability' },
+      { key: 'meta', blurb: 'Facebook · Instagram inbox' },
+      { key: 'twilio', blurb: 'SMS reminders · replies' },
+      { key: 'resend', blurb: 'Email receipts · confirmations' }
+    ];
+    var cards = catalog.map(function (c) {
+      var item = integ[c.key] || { label: c.key, status: 'not_connected', note: '' };
+      var connected = item.status === 'connected' || item.status === 'os_ready';
+      var actions = '';
+      if (c.key === 'stripe') {
+        actions = connected
+          ? dsBtn('set-integ-stripe-dash', 'Dashboard', 'jos-btn jos-btn-sm') + dsBtn('set-integ-stripe-disconnect', 'Disconnect', 'jos-btn jos-btn-sm')
+          : dsBtn('set-integ-stripe-connect', 'Connect Stripe', 'jos-btn-brand jos-btn-sm');
+      } else if (c.key === 'google') {
+        actions = connected
+          ? dsBtn('set-integ-google-disconnect', 'Disconnect', 'jos-btn jos-btn-sm')
+          : dsBtn('set-integ-google-connect', 'Connect Google', 'jos-btn-brand jos-btn-sm');
+      } else if (c.key === 'meta') {
+        actions = connected
+          ? dsBtn('set-integ-meta-disconnect', 'Disconnect', 'jos-btn jos-btn-sm')
+          : dsBtn('set-integ-setup', 'Set up Meta', 'jos-btn-brand jos-btn-sm');
+      } else if (c.key === 'twilio') {
+        actions = connected
+          ? dsBtn('set-integ-twilio-disconnect', 'Disconnect', 'jos-btn jos-btn-sm') + dsBtn('set-integ-setup', 'Edit', 'jos-btn jos-btn-sm')
+          : dsBtn('set-integ-setup', 'Set up Twilio', 'jos-btn-brand jos-btn-sm');
+      } else if (c.key === 'resend') {
+        actions = connected
+          ? dsBtn('set-integ-resend-disconnect', 'Disconnect', 'jos-btn jos-btn-sm') + dsBtn('set-integ-setup', 'Edit', 'jos-btn jos-btn-sm')
+          : dsBtn('set-integ-setup', 'Set up Resend', 'jos-btn-brand jos-btn-sm');
+      }
+      var setupPanel = '';
+      if (setupKey === c.key) {
+        if (c.key === 'meta') {
+          setupPanel = '<div class="jos-set-integ-setup"><label>Facebook Page ID<input id="jos-set-meta-page" type="text" placeholder="Page ID" value="' + esc((S().metaPageId || '')) + '"></label>' +
+            '<label>Instagram account<input id="jos-set-meta-ig" type="text" placeholder="@yourbusiness" value="' + esc((S().instagramHandle || '')) + '"></label>' +
+            '<div class="jos-btn-row">' + dsBtn('set-integ-meta-save', 'Save & connect', 'jos-btn-brand jos-btn-sm') + dsBtn('set-integ-setup-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div>';
+        } else if (c.key === 'twilio') {
+          setupPanel = '<div class="jos-set-integ-setup"><label>Account SID<input id="jos-set-twilio-sid" type="text" placeholder="ACxxxxxxxx" value="' + esc((S().twilioAccountSid || '')) + '"></label>' +
+            '<label>Auth token<input id="jos-set-twilio-token" type="password" placeholder="Auth token" value="' + esc((S().twilioAuthToken || '')) + '"></label>' +
+            '<label>From number<input id="jos-set-twilio-from" type="text" placeholder="+1…" value="' + esc((S().twilioFromNumber || '')) + '"></label>' +
+            '<div class="jos-btn-row">' + dsBtn('set-integ-twilio-save', 'Save & connect', 'jos-btn-brand jos-btn-sm') + dsBtn('set-integ-setup-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div>';
+        } else if (c.key === 'resend') {
+          setupPanel = '<div class="jos-set-integ-setup"><label>API key<input id="jos-set-resend-key" type="password" placeholder="re_…" value="' + esc((S().resendApiKey || '')) + '"></label>' +
+            '<label>From email<input id="jos-set-resend-from" type="email" placeholder="bookings@yourdomain.com" value="' + esc((S().resendFromEmail || '')) + '"></label>' +
+            '<div class="jos-btn-row">' + dsBtn('set-integ-resend-save', 'Save & connect', 'jos-btn-brand jos-btn-sm') + dsBtn('set-integ-setup-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div>';
+        }
+      }
+      return '<article class="jos-set-integ-card" data-jos-set-integration="' + esc(c.key) + '">' +
+        '<div class="jos-set-integ-top">' + integrationLogo(c.key) +
+        '<div class="jos-set-integ-copy"><strong>' + esc(item.label || c.key) + '</strong><span>' + esc(c.blurb) + '</span></div>' +
+        setIntegrationStatus(item.status) +
+        '</div>' +
+        '<p class="jos-set-integ-note">' + esc(item.note || '') + '</p>' +
+        '<div class="jos-btn-row">' + actions + '</div>' +
+        setupPanel +
+        '</article>';
     }).join('');
-    var hooks = (os.integrations.webhooks || []).map(function (w) {
-      return '<div class="jos-set-row"><div><strong>' + esc(w.url) + '</strong><div class="jos-muted">' + esc(w.event || 'settings.updated') + '</div></div>' + setStatusBadge('OS', 'info') + '</div>';
+    var hooks = (integ.webhooks || []).map(function (w) {
+      return '<div class="jos-set-row"><div><strong>' + esc(w.url) + '</strong><div class="jos-muted">' + esc(w.event || 'settings.updated') + '</div></div>' + setStatusBadge('Active', 'ok') + '</div>';
     }).join('');
-    return '<div class="jos-card"><div class="jos-kicker">Integrations</div><p class="jos-muted">Stage 1 stores connection status only. Never claim live connected until Stage 2.</p><div class="jos-set-grid jos-mt">' + cards + '</div></div>' +
-      '<div class="jos-card jos-mt"><div class="jos-kicker">Webhooks (OS)</div><div class="jos-set-form jos-mt"><label>Endpoint URL<input id="jos-set-hook-url" type="text" placeholder="https://example.test/hooks/hubly"></label>' +
+    return '<div class="jos-card jos-set-integ-wrap"><div class="jos-kicker">Integrations</div>' +
+      '<p class="jos-set-integ-lead">Connect the tools you already use. Stripe and Google open their real setup flow; SMS and email save your keys here.</p>' +
+      '<div class="jos-set-integ-grid jos-mt">' + cards + '</div></div>' +
+      '<div class="jos-card jos-mt"><div class="jos-kicker">Webhooks</div><div class="jos-set-form jos-mt"><label>Endpoint URL<input id="jos-set-hook-url" type="text" placeholder="https://your-site.com/hooks/hubly"></label>' +
       '<label>Event<select id="jos-set-hook-event"><option>settings.updated</option><option>settings.team.invited</option><option>settings.security.audited</option></select></label></div>' +
       '<div class="jos-btn-row jos-mt">' + dsBtn('set-webhook-add', 'Add webhook', 'jos-btn-brand jos-btn-sm') + '</div><div class="jos-set-rows jos-mt">' + (hooks || '<p class="jos-muted">No webhooks yet.</p>') + '</div></div>';
   }
@@ -2236,16 +2342,108 @@
         toast('Billing settings saved');
         return renderSettings();
       }
+      if (act === 'set-integ-stripe-connect') {
+        if (typeof window.connectStripe === 'function') return window.connectStripe();
+        toast('Sign in to connect Stripe');
+        return;
+      }
+      if (act === 'set-integ-stripe-dash') {
+        if (typeof window.openStripeDashboard === 'function') return window.openStripeDashboard();
+        toast('Open Stripe from Revenue when connected');
+        return;
+      }
+      if (act === 'set-integ-stripe-disconnect') {
+        if (typeof window.disconnectStripe === 'function') return window.disconnectStripe().then(function () { renderSettings(); });
+        return;
+      }
+      if (act === 'set-integ-google-connect') {
+        if (typeof window.connectGoogleCalendar === 'function') return window.connectGoogleCalendar();
+        toast('Sign in to connect Google Calendar');
+        return;
+      }
+      if (act === 'set-integ-google-disconnect') {
+        if (typeof window.disconnectGoogleCalendar === 'function') return window.disconnectGoogleCalendar().then(function () { renderSettings(); });
+        return;
+      }
+      if (act === 'set-integ-setup') {
+        var setupCard = t && t.closest('[data-jos-set-integration]');
+        var setupFor = setupCard && setupCard.getAttribute('data-jos-set-integration');
+        if (root) root._josIntegSetup = setupFor || null;
+        return renderSettings();
+      }
+      if (act === 'set-integ-setup-cancel') {
+        if (root) root._josIntegSetup = null;
+        return renderSettings();
+      }
+      if (act === 'set-integ-meta-save') {
+        var pageId = setVal('jos-set-meta-page');
+        var ig = setVal('jos-set-meta-ig');
+        if (!pageId && !ig) return toast('Add a Facebook Page ID or Instagram handle');
+        var stM = S();
+        stM.metaPageId = pageId;
+        stM.instagramHandle = ig;
+        stM.metaConnected = true;
+        stM.facebookConnected = !!pageId;
+        stM.instagramConnected = !!ig;
+        if (root) root._josIntegSetup = null;
+        setPublish('settings.updated', { area: 'integrations', key: 'meta' });
+        toast('Meta connected');
+        return renderSettings();
+      }
+      if (act === 'set-integ-meta-disconnect') {
+        var stMd = S();
+        stMd.metaConnected = false;
+        stMd.facebookConnected = false;
+        stMd.instagramConnected = false;
+        toast('Meta disconnected');
+        return renderSettings();
+      }
+      if (act === 'set-integ-twilio-save') {
+        var sid = setVal('jos-set-twilio-sid');
+        var tok = setVal('jos-set-twilio-token');
+        var fromN = setVal('jos-set-twilio-from');
+        if (!sid || !tok) return toast('Enter Twilio Account SID and auth token');
+        var stT = S();
+        stT.twilioAccountSid = sid;
+        stT.twilioAuthToken = tok;
+        stT.twilioFromNumber = fromN;
+        stT.twilioConnected = true;
+        stT.smsProvider = 'twilio';
+        if (root) root._josIntegSetup = null;
+        setPublish('settings.updated', { area: 'integrations', key: 'twilio' });
+        toast('Twilio connected');
+        return renderSettings();
+      }
+      if (act === 'set-integ-twilio-disconnect') {
+        var stTd = S();
+        stTd.twilioConnected = false;
+        stTd.smsProvider = '';
+        toast('Twilio disconnected');
+        return renderSettings();
+      }
+      if (act === 'set-integ-resend-save') {
+        var rkey = setVal('jos-set-resend-key');
+        var rfrom = setVal('jos-set-resend-from');
+        if (!rkey) return toast('Enter your Resend API key');
+        var stR = S();
+        stR.resendApiKey = rkey;
+        stR.resendFromEmail = rfrom;
+        stR.resendConnected = true;
+        stR.emailProvider = 'resend';
+        if (root) root._josIntegSetup = null;
+        setPublish('settings.updated', { area: 'integrations', key: 'resend' });
+        toast('Resend connected');
+        return renderSettings();
+      }
+      if (act === 'set-integ-resend-disconnect') {
+        var stRd = S();
+        stRd.resendConnected = false;
+        stRd.emailProvider = '';
+        toast('Resend disconnected');
+        return renderSettings();
+      }
       if (act === 'set-integration-toggle') {
-        var card = t && t.closest('[data-jos-set-integration]');
-        var key = card && card.getAttribute('data-jos-set-integration');
-        var integ = ensureSettingsOsState().integrations;
-        if (key && integ[key]) {
-          integ[key].status = integ[key].status === 'not_connected' ? 'os_ready' : 'not_connected';
-          setPublish('settings.integration.toggled', { key: key, status: integ[key].status });
-          setPushActivity('settings.integration.toggled', integ[key].label + ' → ' + integ[key].status, { key: key });
-          toast(integ[key].label + ' updated (OS)');
-        }
+        // Legacy no-op — real Connect / Set up actions above
         return renderSettings();
       }
       if (act === 'set-webhook-add') {
@@ -12585,26 +12783,21 @@
     var drawer = drawerOpen && selected ? renderJobDrawer(root, selected, workspaceTab) : '';
     var statusMenu = '<div class="jos-jobs-pop" id="jos-jobs-status-pop" hidden></div>';
     var rowMenu = '<div class="jos-jobs-pop" id="jos-jobs-row-pop" hidden></div>';
+    var mainView = root._josJobsMainView === 'calendar' ? 'calendar' : 'list';
+    var calView = root._josCalView || 'week';
 
-    root.innerHTML =
-      '<div class="jos-jobs-shell">' +
-      '<div class="jos-jobs-layout">' +
-      '<main class="jos-jobs-main">' +
-      '<header class="jos-jobs-header">' +
-      '<div><h1>Jobs</h1><p>Manage and track every job in one place.</p></div>' +
-      '<div class="jos-jobs-header-actions">' +
-      '<div class="jos-jobs-export-wrap">' +
-      '<button type="button" class="jos-btn jos-jobs-export" data-jos-act="jobs-export-toggle">' + jobUiIcon('download') + ' Export</button>' +
-      (exportOpen ? '<div class="jos-jobs-export-menu">' +
-        [['csv', 'CSV'], ['excel', 'Excel'], ['pdf', 'PDF'], ['custom', 'Custom Report']].map(function (x) {
-          return '<button type="button" data-jos-act="jobs-export-fmt" data-jos-fmt="' + x[0] + '">' + x[1] + '</button>';
-        }).join('') + '</div>' : '') +
-      '</div>' +
-      '<button type="button" class="jos-btn jos-btn-brand jos-jobs-new" data-jos-act="jobs-create">+ New Job</button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' + jobUiIcon('bell') + '</button>' +
-      '<button type="button" class="jos-jobs-ava-btn" data-jos-act="go-settings" title="Profile">' + esc(jobInitials(S().ownerName || 'Adrian')) + '</button>' +
-      '</div></header>' +
-
+    var mainBody = '';
+    if (mainView === 'calendar') {
+      mainBody =
+        '<section class="jos-jobs-cal-full">' +
+        '<div class="jos-between jos-jobs-cal-toolbar">' +
+        '<div><h2 class="jos-jobs-cal-title">Calendar</h2><p class="jos-muted">Day · week · month · agenda — click a job to open it.</p></div>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-list-view">← Back to list</button>' +
+        '</div>' +
+        renderJobsCalendar(root, calView, calAnchor, selectedId) +
+        '</section>';
+    } else {
+      mainBody =
       '<section class="jos-jobs-filters">' +
       '<div class="jos-jobs-filter-row">' +
       '<select id="jos-jobs-filter-date" class="jos-jobs-dd"><option value="all">Date</option><option value="today"' + ((root._josJobsDateFilter || '') === 'today' ? ' selected' : '') + '>Today</option><option value="week"' + ((root._josJobsDateFilter || '') === 'week' ? ' selected' : '') + '>This week</option></select>' +
@@ -12627,6 +12820,7 @@
       '<select id="jos-jobs-filter-tag" class="jos-jobs-dd"><option value="all">Tags</option><option value="booking">booking</option><option value="manual">manual</option><option value="from-quote">from-quote</option><option value="priority">priority</option></select>' +
       '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-clear-filters">Clear Filters</button>' +
       '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-adv-toggle">Advanced Filters</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-btn-brand" data-jos-act="jobs-full-calendar">View Full Calendar</button>' +
       '</div></section>' +
 
       (advOpen ? '<aside class="jos-jobs-adv">' +
@@ -12662,7 +12856,31 @@
           '<th style="width:120px">Job #</th><th style="width:280px">Customer</th><th style="width:200px">Service</th><th style="width:220px">Date &amp; Time</th><th style="width:150px">Status</th><th style="width:120px">Amount</th><th style="width:80px">Actions</th>' +
           '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' + mobileCards + pager
         : emptyTable) +
-      '</section>' +
+      '</section>';
+    }
+
+    root.innerHTML =
+      '<div class="jos-jobs-shell">' +
+      '<div class="jos-jobs-layout">' +
+      '<main class="jos-jobs-main">' +
+      '<header class="jos-jobs-header">' +
+      '<div><h1>Jobs</h1><p>Manage and track every job in one place.</p></div>' +
+      '<div class="jos-jobs-header-actions">' +
+      '<div class="jos-jobs-export-wrap">' +
+      '<button type="button" class="jos-btn jos-jobs-export" data-jos-act="jobs-export-toggle">' + jobUiIcon('download') + ' Export</button>' +
+      (exportOpen ? '<div class="jos-jobs-export-menu">' +
+        [['csv', 'CSV'], ['excel', 'Excel'], ['pdf', 'PDF'], ['custom', 'Custom Report']].map(function (x) {
+          return '<button type="button" data-jos-act="jobs-export-fmt" data-jos-fmt="' + x[0] + '">' + x[1] + '</button>';
+        }).join('') + '</div>' : '') +
+      '</div>' +
+      (mainView === 'calendar'
+        ? '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-list-view">List view</button>'
+        : '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-full-calendar">Calendar</button>') +
+      '<button type="button" class="jos-btn jos-btn-brand jos-jobs-new" data-jos-act="jobs-create">+ New Job</button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' + jobUiIcon('bell') + '</button>' +
+      '<button type="button" class="jos-jobs-ava-btn" data-jos-act="go-settings" title="Profile">' + esc(jobInitials(S().ownerName || 'Adrian')) + '</button>' +
+      '</div></header>' +
+      mainBody +
       '</main>' +
 
       '<aside class="jos-jobs-rail">' +
@@ -12717,7 +12935,40 @@
       var listTab = e.target.closest('[data-jos-jobs-list]');
       if (listTab) {
         root._josJobsListView = listTab.getAttribute('data-jos-jobs-list');
+        root._josJobsMainView = 'list';
         root._josJobsPage = 1;
+        renderJobs();
+        e.stopPropagation();
+        return;
+      }
+      var calViewBtn = e.target.closest('[data-jos-cal-view]');
+      if (calViewBtn) {
+        root._josCalView = calViewBtn.getAttribute('data-jos-cal-view') || 'week';
+        root._josJobsMainView = 'calendar';
+        renderJobs();
+        e.stopPropagation();
+        return;
+      }
+      var calDayBtn = e.target.closest('[data-jos-cal-day]');
+      if (calDayBtn) {
+        var cds = calDayBtn.getAttribute('data-jos-cal-day') || '';
+        if (cds) {
+          root._josCalAnchor = cds;
+          if (root._josJobsMainView === 'calendar') root._josCalView = 'day';
+          else {
+            root._josJobsDateFilter = cds;
+            root._josJobsPage = 1;
+          }
+          renderJobs();
+        }
+        e.stopPropagation();
+        return;
+      }
+      var calPill = e.target.closest('.jos-cal-pill[data-jos-job-id], .jos-cal-event[data-jos-job-id]');
+      if (calPill) {
+        root._josJobId = calPill.getAttribute('data-jos-job-id');
+        root._josDrawerOpen = true;
+        root._josJobWorkspace = 'overview';
         renderJobs();
         e.stopPropagation();
         return;
@@ -13021,35 +13272,57 @@
     try {
       if (act === 'jobs-cal-prev') {
         var dPrev = new Date(String(root._josCalAnchor || todayStr()).slice(0, 10) + 'T12:00:00');
-        dPrev.setMonth(dPrev.getMonth() - 1);
+        if (root._josJobsMainView === 'calendar') {
+          var cvPrev = root._josCalView || 'week';
+          if (cvPrev === 'day') dPrev.setDate(dPrev.getDate() - 1);
+          else if (cvPrev === 'week') dPrev.setDate(dPrev.getDate() - 7);
+          else dPrev.setMonth(dPrev.getMonth() - 1);
+        } else {
+          dPrev.setMonth(dPrev.getMonth() - 1);
+        }
         root._josCalAnchor = dPrev.toISOString().slice(0, 10);
         return renderJobs();
       }
       if (act === 'jobs-cal-next') {
         var dNext = new Date(String(root._josCalAnchor || todayStr()).slice(0, 10) + 'T12:00:00');
-        dNext.setMonth(dNext.getMonth() + 1);
+        if (root._josJobsMainView === 'calendar') {
+          var cvNext = root._josCalView || 'week';
+          if (cvNext === 'day') dNext.setDate(dNext.getDate() + 1);
+          else if (cvNext === 'week') dNext.setDate(dNext.getDate() + 7);
+          else dNext.setMonth(dNext.getMonth() + 1);
+        } else {
+          dNext.setMonth(dNext.getMonth() + 1);
+        }
         root._josCalAnchor = dNext.toISOString().slice(0, 10);
         return renderJobs();
       }
       if (act === 'jobs-cal-today') {
         root._josCalAnchor = todayStr();
-        root._josJobsDateFilter = 'today';
+        if (root._josJobsMainView !== 'calendar') root._josJobsDateFilter = 'today';
         root._josJobsPage = 1;
         return renderJobs();
       }
       if (act === 'jobs-cal-day') {
         var day = t.getAttribute('data-jos-day') || '';
-        root._josJobsDateFilter = day || 'all';
         root._josCalAnchor = day || root._josCalAnchor || todayStr();
-        root._josJobsPage = 1;
-        toast(day ? ('Showing jobs on ' + day) : 'Calendar day');
+        if (root._josJobsMainView === 'calendar') {
+          root._josCalView = 'day';
+        } else {
+          root._josJobsDateFilter = day || 'all';
+          root._josJobsPage = 1;
+          toast(day ? ('Showing jobs on ' + day) : 'Calendar day');
+        }
         return renderJobs();
       }
       if (act === 'jobs-full-calendar') {
-        root._josJobsTab = 'calendar';
-        toast('Opening full calendar view…');
-        // Stay on Jobs mission control; filter to week for calendar feel
-        root._josJobsDateFilter = 'week';
+        root._josJobsMainView = 'calendar';
+        root._josCalView = root._josCalView || 'week';
+        root._josCalAnchor = root._josCalAnchor || todayStr();
+        toast('Full calendar');
+        return renderJobs();
+      }
+      if (act === 'jobs-list-view') {
+        root._josJobsMainView = 'list';
         return renderJobs();
       }
       if (act === 'jobs-drawer-close') {
