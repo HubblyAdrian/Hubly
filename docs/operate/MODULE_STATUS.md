@@ -96,9 +96,9 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
 | 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
-| ✨ Ask Hubly | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| ⚙️ Settings | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
+| 📊 Reports | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
+| ✨ Ask Hubly | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔓 Reopen |
+| ⚙️ Settings | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 
 ---
 
@@ -117,9 +117,9 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 9 | ⭐ Reviews | ✅ Locked | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | 🔒 OS · MAT ✅ · Rule #17 · merged |
 | 10 | 🔁 Memberships | 🔓 Reopen | ⏸ | [#253](https://github.com/HubblyAdrian/Hubly/pull/253) | Mission Control · [MEMBERSHIPS_MISSION_CONTROL.md](./MEMBERSHIPS_MISSION_CONTROL.md) |
 | 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔒 OS · MAT ✅ · Rule #20 · merged |
-| 12 | 📊 Reports | ✅ Locked | ⏸ | [#255](https://github.com/HubblyAdrian/Hubly/pull/255) | 🔓 Reopen · MAT ✅ · Rule #21 · merged |
-| 13 | ✨ Ask Hubly | ✅ Locked | ⏸ | [#256](https://github.com/HubblyAdrian/Hubly/pull/256) | 🔒 OS · MAT ✅ · Rule #22 · merged |
-| 14 | ⚙️ Settings | ✅ Locked | ⏸ | [#257](https://github.com/HubblyAdrian/Hubly/pull/257) | 🔓 Reopen · MAT ✅ · Rule #23 · merged |
+| 12 | 📊 Reports | ✅ Locked | ⏸ | [#255](https://github.com/HubblyAdrian/Hubly/pull/255) | 🔒 OS · MAT ✅ · Rule #21 · merged |
+| 13 | ✨ Ask Hubly | ✅ Locked | ⏸ | [#256](https://github.com/HubblyAdrian/Hubly/pull/256) | 🔓 Reopen · MAT ✅ · Rule #22 · merged |
+| 14 | ⚙️ Settings | ✅ Locked | ⏸ | [#257](https://github.com/HubblyAdrian/Hubly/pull/257) | 🔒 OS · MAT ✅ · Rule #23 · merged |
 
 ### Finish line
 
@@ -139,6 +139,7 @@ All **14** Operate modules have Stage 1 OS complete and locked:
 
 **Stage 1 — Operating System:** ✅ COMPLETE  
 **Stage 2 — Advanced AI / Integrations:** ⏸ Deferred  
+**Reopen:** Mission Control dashboard (`cursor/operate-ask-hubly-mission-control-2662`) — hero, KPIs, conversation + activity, insight, popular actions, calendar tip. Design: [ASK_HUBLY_MISSION_CONTROL.md](./ASK_HUBLY_MISSION_CONTROL.md).
 
 **Do not modify Ask Hubly unless:** bug fix · Stage 2 AI capabilities · explicit module reopen.
 

@@ -1,6 +1,6 @@
 # Module 13 — ✨ Ask Hubly
 
-**Status:** Stage 1 OS ✅ COMPLETE · 🔒 OS locked  
+**Status:** 🔓 Explicit reopen (Mission Control dashboard) · Stage 1 OS ✅ COMPLETE  
 **Branch:** merged via [#256](https://github.com/HubblyAdrian/Hubly/pull/256)  
 **Architecture (required):** [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md)  
 **Plan:** [ASK_HUBLY_PLAN.md](./ASK_HUBLY_PLAN.md)  
@@ -63,6 +63,21 @@ Ask Hubly is the intelligence layer on top of Operate — not just another page.
 
 ### Definition of Done
 - [x] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ✅  
+
+---
+
+## Mission Control reopen (`cursor/operate-ask-hubly-mission-control-2662`)
+
+Design: [ASK_HUBLY_MISSION_CONTROL.md](./ASK_HUBLY_MISSION_CONTROL.md)
+
+- [x] Dark navy AI hero (greeting, prompt, chips, robot) ✅
+- [x] KPI strip (Customers · Jobs · Revenue · Campaigns) ✅
+- [x] Conversation + Recent Activity mid-grid ✅
+- [x] Hubly Insight + Popular Actions + Calendar Pro Tip ✅
+- [x] Rule #22 confirmation + `S.askHublyOs` ownership preserved ✅
+- [x] Stage 2 schema migration (`ask_hubly_*` tables) ✅
+- [x] MAT ✅ ACCEPTED · CMV PASS ✅
+- [ ] Visual QA vs mockup (desktop / laptop / tablet / mobile)
 
 **Do not modify Ask Hubly unless:** bug fix · Stage 2 AI capabilities · explicit module reopen.
 

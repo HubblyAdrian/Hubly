@@ -304,7 +304,7 @@
       "section": "Validator",
       "name": "check-customer-journey-os",
       "ok": true,
-      "detail": "PASS in 34ms"
+      "detail": "PASS in 32ms"
     },
     {
       "section": "CMV",

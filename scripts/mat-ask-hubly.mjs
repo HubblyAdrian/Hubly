@@ -253,7 +253,7 @@ function setSelect(id, value) {
 }
 
 H.renderAskHubly();
-check("Header", "Page renders", /jos-ah-page|Ask Hubly|hubly-mark/.test(askRoot.innerHTML));
+check("Header", "Page renders", /jos-ah-page|jos-ah-mc-shell|Ask Hubly|hubly-mark/.test(askRoot.innerHTML));
 check("Ownership", "askHublyOs created", !!(state.askHublyOs && Array.isArray(state.askHublyOs.conversations)));
 check("Ownership", "Seeded conversation", state.askHublyOs.conversations.length >= 1);
 check("Architecture", "ASK_HUBLY_ARCHITECTURE present", fs.existsSync(path.join(repoRoot, "docs/operate/ASK_HUBLY_ARCHITECTURE.md")));
@@ -356,7 +356,7 @@ check("Design System", "Uses HublyDS", /DS\(\)|pageHeader|HublyDS/.test(jsrc));
 check("Empty States", "Empty helpers", /No pending|empty|No memory|No automation/i.test(jsrc));
 check("Error States", "Retry markup", /Ask Hubly could not load|Retry/.test(jsrc));
 const css = fs.readFileSync(path.join(repoRoot, "public/journey-os/operate-pixel.css"), "utf8");
-check("Responsive CSS", "Ask Hubly layout", /jos-ah-page|jos-ah-/.test(css));
+check("Responsive CSS", "Ask Hubly layout", /jos-ah-page|jos-ah-mc-shell|jos-ah-/.test(css));
 check("Mount", "jos-ask-root in hubly.html", /jos-ask-root/.test(fs.readFileSync(path.join(repoRoot, "public/hubly.html"), "utf8")));
 
 let validatorPass = false;
@@ -419,7 +419,7 @@ window.localStorage={getItem:function(){return null;},setItem:function(){}};
 <script src="/journey-os/design-system.js"></script>
 <script src="/journey-os/hubly-events.js"></script>
 <script src="/journey-os/journey.js"></script>
-<script>HublyJourneyOS.renderAskHubly();document.title=document.getElementById("jos-ask-root").innerHTML.includes("jos-ah-page")?"MAT_OK":"MAT_FAIL";</script>
+<script>HublyJourneyOS.renderAskHubly();document.title=(/jos-ah-page|jos-ah-mc-shell/.test(document.getElementById("jos-ask-root").innerHTML))?"MAT_OK":"MAT_FAIL";</script>
 </body></html>`;
   fs.writeFileSync(path.join(pub, "mat-ask-hubly.html"), matHtml);
   const browser = await chromium.launch({

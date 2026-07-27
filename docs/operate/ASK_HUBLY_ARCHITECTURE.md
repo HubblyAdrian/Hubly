@@ -22,6 +22,8 @@ It may:
 
 It must stay **powerful but predictable** — high-impact writes require confirmation (Rule #22).
 
+**Mission Control surface:** Operate Chat ships as a premium dashboard (`jos-ask-mode`) — dark navy AI hero, KPI strip, conversation + activity, Hubly Insight, popular actions, calendar pro tip. Design: [ASK_HUBLY_MISSION_CONTROL.md](./ASK_HUBLY_MISSION_CONTROL.md). Ownership and Rule #22 confirmation are unchanged.
+
 ---
 
 ## What Ask Hubly owns (Rules #15 · #19)
