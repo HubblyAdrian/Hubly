@@ -7091,12 +7091,49 @@
     };
   }
 
+  var SF_DEFAULT_SECTIONS = [
+    { id: 'hero', label: 'Hero', type: 'hero', visible: true },
+    { id: 'services', label: 'Services', type: 'services', visible: true },
+    { id: 'why', label: 'Why Choose Us', type: 'why', visible: true },
+    { id: 'before_after', label: 'Before & After', type: 'gallery', visible: true },
+    { id: 'gallery', label: 'Gallery', type: 'gallery', visible: true },
+    { id: 'reviews', label: 'Reviews', type: 'reviews', visible: true },
+    { id: 'faq', label: 'FAQ', type: 'faq', visible: false },
+    { id: 'cta', label: 'CTA', type: 'cta', visible: true },
+    { id: 'footer', label: 'Footer', type: 'footer', visible: true }
+  ];
+
   function ensureStorefrontOsState() {
     var st = S();
     if (!st.website || typeof st.website !== 'object') st.website = {};
     var w = st.website;
-    if (!w.heroHeadline) w.heroHeadline = st.biz || 'Your local pros — book online in minutes.';
-    if (!w.heroSub) w.heroSub = 'Premium service with clear pricing and easy scheduling.';
+    var biz = st.biz || "Adrian's Lawn Services";
+    if (!w.heroHeadline) w.heroHeadline = 'Your Lawn. Our Passion.';
+    if (!w.heroSub) w.heroSub = 'Professional lawn care and landscaping with reliable scheduling, clear pricing, and results you can see.';
+    if (!w.heroPrimaryBtn) w.heroPrimaryBtn = 'Book Your Service';
+    if (!w.heroSecondaryBtn) w.heroSecondaryBtn = 'View Services';
+    if (!w.heroPrimaryLink) w.heroPrimaryLink = '#book';
+    if (!w.heroSecondaryLink) w.heroSecondaryLink = '#services';
+    if (w.heroOverlay == null) w.heroOverlay = 45;
+    if (!w.heroAlign) w.heroAlign = 'left';
+    if (!w.heroHeight) w.heroHeight = 'tall';
+    if (!Array.isArray(w.heroBadges) || !w.heroBadges.length) {
+      w.heroBadges = [
+        { icon: '✓', text: 'Satisfaction Guaranteed' },
+        { icon: '★', text: '5-Star Rated' },
+        { icon: '⚡', text: 'Same-Week Service' }
+      ];
+    }
+    if (!Array.isArray(w.sections) || !w.sections.length) w.sections = SF_DEFAULT_SECTIONS.map(function (s) { return Object.assign({}, s); });
+    if (!w.theme || typeof w.theme !== 'object') {
+      w.theme = { primary: '#16a34a', accent: '#D9632D', radius: 12, font: 'DM Sans' };
+    }
+    if (!st.bookingOs || typeof st.bookingOs !== 'object') {
+      st.bookingOs = {
+        enabled: true, instant: true, quotes: true, deposit: false, card: false, photos: false,
+        address: true, name: true, phone: true, email: true, vehicle: false, propertySize: false
+      };
+    }
     if (!w.seoTitle) w.seoTitle = (st.biz || 'Local business') + ' — Book online';
     if (!w.seoDescription) w.seoDescription = 'Book ' + (st.biz || 'our services') + ' online. See packages, gallery, and reviews.';
     if (w.reviewRating == null) w.reviewRating = 4.9;
@@ -7106,7 +7143,8 @@
         { name: 'Mike B.', rating: 5, text: 'Easy booking and great communication.', at: '1 month ago' }
       ];
     }
-    if (!st.slug) st.slug = 'your-business';
+    if (!st.slug || st.slug === 'your-business') st.slug = String(biz).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'adrians-lawn-service';
+    if (!st.biz) st.biz = biz;
     if (!Array.isArray(st.galleryPairs) || !st.galleryPairs.length) {
       st.galleryPairs = [
         { title: 'Before & After', caption: 'Paint correction showcase' },
@@ -7185,6 +7223,216 @@
     var biz = st.biz || 'Local business';
     var city = st.city ? (' in ' + String(st.city).split(',')[0]) : '';
     return 'Try: "' + biz + city + ' — Book detailing & packages online" with a description mentioning your top 2 services and service area.';
+  }
+
+  function storefrontPublicUrl() {
+    return storefrontSlug() + '.hubly.site';
+  }
+
+  function sfSnapshotState() {
+    var st = S();
+    return JSON.stringify({
+      website: st.website,
+      slug: st.slug,
+      editorSvcs: st.editorSvcs,
+      bookingOs: st.bookingOs
+    });
+  }
+
+  function sfPushUndo(root) {
+    if (!root) return;
+    if (!root._josSfUndo) root._josSfUndo = [];
+    if (!root._josSfRedo) root._josSfRedo = [];
+    root._josSfUndo.push(sfSnapshotState());
+    if (root._josSfUndo.length > 40) root._josSfUndo.shift();
+    root._josSfRedo = [];
+  }
+
+  function sfRestoreSnapshot(root, snap) {
+    if (!snap) return;
+    try {
+      var data = JSON.parse(snap);
+      var st = S();
+      if (data.website) st.website = data.website;
+      if (data.slug) st.slug = data.slug;
+      if (data.editorSvcs) st.editorSvcs = data.editorSvcs;
+      if (data.bookingOs) st.bookingOs = data.bookingOs;
+      syncStorefrontCatalogToServices();
+      renderStorefront();
+    } catch (e) {}
+  }
+
+  function sfField(label, id, val, type) {
+    type = type || 'text';
+    if (type === 'textarea') {
+      return '<label class="jos-sf-mc-field"><span>' + esc(label) + '</span><textarea id="' + esc(id) + '" data-jos-sf-live="1">' + esc(val || '') + '</textarea></label>';
+    }
+    if (type === 'checkbox') {
+      return '<label class="jos-sf-mc-check"><input id="' + esc(id) + '" type="checkbox"' + (val ? ' checked' : '') + ' data-jos-sf-live="1"><span>' + esc(label) + '</span></label>';
+    }
+    if (type === 'range') {
+      return '<label class="jos-sf-mc-field"><span>' + esc(label) + '</span><input id="' + esc(id) + '" type="range" min="0" max="80" value="' + esc(String(val != null ? val : 45)) + '" data-jos-sf-live="1"></label>';
+    }
+    return '<label class="jos-sf-mc-field"><span>' + esc(label) + '</span><input id="' + esc(id) + '" type="' + esc(type) + '" value="' + esc(val != null ? String(val) : '') + '" data-jos-sf-live="1"></label>';
+  }
+
+  function renderStorefrontLiveSite(root) {
+    ensureStorefrontOsState();
+    var st = S();
+    var w = st.website || {};
+    var sel = root._josSfSelect || 'hero';
+    var device = root._josSfDevice || 'desktop';
+    var biz = st.biz || "Adrian's Lawn Services";
+    var services = storefrontCatalog().filter(function (s) { return s.status !== 'archived' && s.website !== false; }).slice(0, 4);
+    if (!services.length) services = demoStorefrontCatalog().slice(0, 4);
+    var primary = (w.theme && w.theme.primary) || '#16a34a';
+    var on = function (id) { return sel === id ? ' is-selected' : ''; };
+    var heroBadges = (w.heroBadges || []).map(function (b, i) {
+      return '<span class="sf-live-badge' + on('badge:' + i) + '" data-jos-sf-pick="badge:' + i + '">' + esc(b.icon || '✓') + ' ' + esc(b.text || 'Trusted') + '</span>';
+    }).join('');
+    var svcCards = services.map(function (s, i) {
+      return '<article class="sf-live-svc' + on('service:' + i) + '" data-jos-sf-pick="service:' + i + '">' +
+        '<div class="sf-live-svc-ico" aria-hidden="true">🌿</div>' +
+        '<h4>' + esc(s.name) + '</h4>' +
+        '<p>' + esc(s.desc || 'Professional service with clear pricing.') + '</p>' +
+        '<span class="sf-live-link">Learn more →</span></article>';
+    }).join('');
+    var reviews = (w.manualReviews || []).slice(0, 2).map(function (r, i) {
+      return '<div class="sf-live-review' + on('review:' + i) + '" data-jos-sf-pick="review:' + i + '"><strong>' + esc(r.name || 'Customer') + '</strong><div class="stars">★★★★★</div><p>' + esc(r.text || '') + '</p></div>';
+    }).join('');
+    return '<div class="jos-sf-live-site device-' + esc(device) + '" style="--sf-primary:' + esc(primary) + '">' +
+      '<header class="sf-live-nav' + on('nav') + '" data-jos-sf-pick="nav">' +
+      '<div class="sf-live-logo' + on('logo') + '" data-jos-sf-pick="logo">' + esc(biz.split(' ')[0] || 'Hubly') + '<em>' + esc(biz.split(' ').slice(1).join(' ') || '') + '</em></div>' +
+      '<nav><span>Home</span><span>Services</span><span>About</span><span>Gallery</span><span>Contact</span></nav>' +
+      '<button type="button" class="sf-live-nav-cta' + on('nav-cta') + '" data-jos-sf-pick="nav-cta">Book Now</button></header>' +
+      '<section class="sf-live-hero align-' + esc(w.heroAlign || 'left') + ' height-' + esc(w.heroHeight || 'tall') + on('hero') + '" data-jos-sf-pick="hero" style="--sf-overlay:' + (Number(w.heroOverlay) || 45) + '%">' +
+      '<div class="sf-live-hero-bg' + on('hero-bg') + '" data-jos-sf-pick="hero-bg"></div>' +
+      '<div class="sf-live-hero-inner">' +
+      '<h1 class="sf-live-h1' + on('hero-headline') + '" data-jos-sf-pick="hero-headline">' + esc(w.heroHeadline || '') + '</h1>' +
+      '<p class="sf-live-sub' + on('hero-sub') + '" data-jos-sf-pick="hero-sub">' + esc(w.heroSub || '') + '</p>' +
+      '<div class="sf-live-hero-btns">' +
+      '<button type="button" class="sf-live-btn primary' + on('hero-primary') + '" data-jos-sf-pick="hero-primary">' + esc(w.heroPrimaryBtn || 'Book') + '</button>' +
+      '<button type="button" class="sf-live-btn secondary' + on('hero-secondary') + '" data-jos-sf-pick="hero-secondary">' + esc(w.heroSecondaryBtn || 'View Services') + '</button>' +
+      '</div>' +
+      '<div class="sf-live-badges">' + heroBadges + '</div></div></section>' +
+      '<section class="sf-live-section' + on('section:services') + '" data-jos-sf-pick="section:services">' +
+      '<h2>Complete Lawn Care Solutions</h2>' +
+      '<div class="sf-live-svc-grid">' + svcCards + '</div></section>' +
+      '<section class="sf-live-section muted' + on('section:reviews') + '" data-jos-sf-pick="section:reviews">' +
+      '<h2>What Customers Say</h2><div class="sf-live-reviews">' + reviews + '</div></section>' +
+      '<footer class="sf-live-footer' + on('footer') + '" data-jos-sf-pick="footer">© ' + esc(biz) + ' · Powered by <img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly" height="14"></footer>' +
+      '<button type="button" class="sf-live-chat" aria-label="Chat">💬</button></div>';
+  }
+
+  function renderStorefrontContextPanel(root) {
+    var tab = root._josSfTab || 'website';
+    var sel = root._josSfSelect || 'hero';
+    var ctx = root._josSfCtxTab || 'content';
+    var w = S().website || {};
+    var bo = S().bookingOs || {};
+    var head = '<div class="jos-sf-mc-ctx-head"><strong>' + esc(tab === 'website' ? ('Editing: ' + (sel.indexOf('hero') === 0 ? 'Hero Section' : sel.replace('section:', '').replace(/-/g, ' '))) : (STOREFRONT_TABS.find(function (t) { return t[0] === tab; }) || ['', 'Storefront'])[1]) + '</strong></div>';
+    var ctxTabs = tab === 'website' ? '<div class="jos-sf-mc-ctx-tabs">' +
+      ['content', 'design', 'advanced'].map(function (t) {
+        return '<button type="button" class="jos-sf-mc-ctx-tab' + (ctx === t ? ' on' : '') + '" data-jos-act="sf-ctx-tab" data-jos-sf-ctx="' + t + '">' + esc(t.charAt(0).toUpperCase() + t.slice(1)) + '</button>';
+      }).join('') + '</div>' : '';
+
+    var body = '';
+    if (tab === 'website' && (sel === 'hero' || sel.indexOf('hero') === 0 || sel.indexOf('badge') === 0)) {
+      body = '<div class="jos-sf-mc-ctx-body">' +
+        sfField('Heading', 'jos-sf-hero-head', w.heroHeadline) +
+        sfField('Subheading', 'jos-sf-hero-sub', w.heroSub, 'textarea') +
+        '<div class="jos-sf-mc-img"><span>Background image</span><div class="jos-sf-mc-img-thumb"></div><div class="jos-btn-row"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-hero-img">Change image</button><button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-hero-img-remove">Remove</button></div></div>' +
+        sfField('Overlay darkness', 'jos-sf-hero-overlay', w.heroOverlay, 'range') +
+        sfField('Primary button', 'jos-sf-hero-primary', w.heroPrimaryBtn) +
+        sfField('Primary link', 'jos-sf-hero-primary-link', w.heroPrimaryLink) +
+        sfField('Secondary button', 'jos-sf-hero-secondary', w.heroSecondaryBtn) +
+        sfField('Secondary link', 'jos-sf-hero-secondary-link', w.heroSecondaryLink) +
+        '<div class="jos-kicker">Trust badges</div>' +
+        (w.heroBadges || []).map(function (b, i) {
+          return '<div class="jos-sf-mc-badge-row"><span>☰</span>' + sfField('Badge ' + (i + 1), 'jos-sf-badge-' + i, b.text) + '</div>';
+        }).join('') +
+        '<button type="button" class="jos-linkish" data-jos-act="sf-badge-add">+ Add badge</button></div>';
+    } else if (tab === 'website') {
+      var sections = (w.sections || SF_DEFAULT_SECTIONS);
+      body = '<div class="jos-sf-mc-ctx-body"><div class="jos-kicker">Sections</div><div class="jos-sf-mc-sections">' +
+        sections.map(function (s) {
+          return '<button type="button" class="jos-sf-mc-sec' + (sel === 'section:' + s.id ? ' on' : '') + (s.visible === false ? ' hidden-sec' : '') + '" data-jos-act="sf-pick" data-jos-sf-pick="section:' + esc(s.id) + '"><span class="drag">☰</span> ' + esc(s.label) + '</button>';
+        }).join('') +
+        '</div><div class="jos-btn-row jos-mt">' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-section-add">Add Section</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-section-hide">Hide</button></div>' +
+        '<div class="jos-kicker jos-mt">Theme</div>' +
+        '<div class="jos-btn-row">' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-theme-colors">Colors</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-theme-fonts">Fonts</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-theme-reset">Reset Theme</button></div></div>';
+    } else if (tab === 'booking') {
+      body = '<div class="jos-sf-mc-ctx-body">' +
+        sfField('Booking enabled', 'jos-sf-bk-enabled', bo.enabled, 'checkbox') +
+        sfField('Instant booking', 'jos-sf-bk-instant', bo.instant, 'checkbox') +
+        sfField('Quote requests', 'jos-sf-bk-quotes', bo.quotes, 'checkbox') +
+        sfField('Require deposit', 'jos-sf-bk-deposit', bo.deposit, 'checkbox') +
+        sfField('Collect card', 'jos-sf-bk-card', bo.card, 'checkbox') +
+        sfField('Collect photos', 'jos-sf-bk-photos', bo.photos, 'checkbox') +
+        sfField('Require address', 'jos-sf-bk-address', bo.address, 'checkbox') +
+        '<div class="jos-kicker jos-mt">Customer information</div>' +
+        sfField('Name', 'jos-sf-bk-name', bo.name, 'checkbox') +
+        sfField('Phone', 'jos-sf-bk-phone', bo.phone, 'checkbox') +
+        sfField('Email', 'jos-sf-bk-email', bo.email, 'checkbox') +
+        sfField('Vehicle', 'jos-sf-bk-vehicle', bo.vehicle, 'checkbox') +
+        sfField('Property size', 'jos-sf-bk-property', bo.propertySize, 'checkbox') +
+        '<div class="jos-btn-row jos-mt">' + dsBtn('sf-preview-booking', 'Preview booking', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+    } else if (tab === 'services') {
+      body = '<div class="jos-sf-mc-ctx-body">' + renderStorefrontServicesTab(root) + '</div>';
+    } else if (tab === 'pricing') {
+      body = '<div class="jos-sf-mc-ctx-body">' + renderStorefrontPricingTab(root) + '</div>';
+    } else if (tab === 'gallery') {
+      body = '<div class="jos-sf-mc-ctx-body">' + renderStorefrontGalleryTab() + '</div>';
+    } else if (tab === 'reviews') {
+      body = '<div class="jos-sf-mc-ctx-body">' + renderStorefrontReviewsTab() + '</div>';
+    } else if (tab === 'seo') {
+      body = '<div class="jos-sf-mc-ctx-body">' + renderStorefrontSeoTab() +
+        '<div class="jos-btn-row jos-mt"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-seo-ai">Generate SEO</button><button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-seo-improve">Improve SEO</button></div></div>';
+    } else if (tab === 'domain') {
+      body = '<div class="jos-sf-mc-ctx-body">' + renderStorefrontDomainTab() + '</div>';
+    } else if (tab === 'analytics') {
+      body = '<div class="jos-sf-mc-ctx-body">' + renderStorefrontAnalyticsTab() + '</div>';
+  } else {
+      body = '<div class="jos-sf-mc-ctx-body"><p class="jos-muted">Click anything on the live preview to edit it instantly.</p></div>';
+    }
+    return '<aside class="jos-sf-mc-panel">' + head + ctxTabs + body + '</aside>';
+  }
+
+  function renderStorefrontToolbar(root) {
+    var device = root._josSfDevice || 'desktop';
+    var pubOpen = !!root._josSfPublishOpen;
+    return '<header class="jos-sf-mc-toolbar">' +
+      '<button type="button" class="jos-sf-mc-back" data-jos-act="sf-back">← Back to dashboard</button>' +
+      '<div class="jos-sf-mc-devices">' +
+      [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['mobile', 'Mobile']].map(function (d) {
+        return '<button type="button" class="jos-sf-mc-device' + (device === d[0] ? ' on' : '') + '" data-jos-act="sf-device" data-jos-sf-device="' + d[0] + '" title="' + d[1] + '"></button>';
+      }).join('') +
+      '</div>' +
+      '<div class="jos-sf-mc-url"><span class="jos-sf-mc-live">Published</span><span class="jos-sf-mc-url-text">' + esc(storefrontPublicUrl()) + '</span>' +
+      '<button type="button" class="jos-sf-mc-ext" data-jos-act="sf-preview" title="Open site">↗</button></div>' +
+      '<div class="jos-sf-mc-history">' +
+      '<button type="button" class="jos-sf-mc-icon" data-jos-act="sf-undo" title="Undo">↶</button>' +
+      '<button type="button" class="jos-sf-mc-icon" data-jos-act="sf-redo" title="Redo">↷</button></div>' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-preview">Preview</button>' +
+      '<div class="jos-sf-mc-publish-wrap">' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-sf-mc-publish" data-jos-act="sf-publish-toggle">Publish changes ▾</button>' +
+      (pubOpen ? '<div class="jos-sf-mc-publish-menu">' +
+        '<button type="button" data-jos-act="sf-publish">Publish</button>' +
+        '<button type="button" data-jos-act="sf-schedule">Schedule Publish</button>' +
+        '<button type="button" data-jos-act="sf-draft">Save Draft</button>' +
+        '<button type="button" data-jos-act="sf-history">View History</button></div>' : '') +
+      '</div></header>';
+  }
+
+  function setStorefrontMode(on) {
+    var app = el('p-app');
+    if (!app) return;
+    app.classList.toggle('jos-storefront-mode', !!on);
   }
 
   function renderStorefrontPreviewStrip() {
@@ -7364,21 +7612,21 @@
   function renderStorefrontPageInner(root) {
     ensureStorefrontOsState();
     var tab = root._josSfTab || 'website';
-    var d = DS();
-    var tabsHtml = '<div class="jos-tabs jos-sf-tabs">' + STOREFRONT_TABS.map(function (t) {
-      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-sf-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    if (!root._josSfSelect) root._josSfSelect = 'hero';
+    if (!root._josSfDevice) root._josSfDevice = 'desktop';
+    var tabsHtml = '<div class="jos-sf-mc-tabs">' + STOREFRONT_TABS.map(function (t) {
+      return '<button type="button" class="jos-sf-mc-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-sf-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
     }).join('') + '</div>';
-    var head = d ? d.pageHeader('Storefront', 'Website, booking, catalog, and acquisition.', dsBtn('sf-preview', 'Preview site', 'jos-btn jos-btn-sm') + dsBtn('sf-site-save', 'Save', 'jos-btn-brand jos-btn-sm') + dsBtn('go-ask', 'Ask Hubly', 'jos-btn jos-btn-sm')) :
-      '<div class="jos-page-head"><div><h1>Storefront</h1><p>Website, booking, catalog, and acquisition.</p></div><div class="jos-page-actions">' + dsBtn('sf-preview', 'Preview site', 'jos-btn jos-btn-sm') + dsBtn('go-ask', 'Ask Hubly', 'jos-btn jos-btn-sm') + '</div></div>';
     root.innerHTML =
-      '<div class="jos-page jos-sf-page">' +
-      head +
-      renderStorefrontPreviewStrip() +
+      '<div class="jos-sf-mc-shell jos-sf-page">' +
+      renderStorefrontToolbar(root) +
       tabsHtml +
-      '<div class="jos-sf-layout">' +
-        '<div class="jos-sf-main">' + renderStorefrontTabBody(root, tab) + '</div>' +
-        renderStorefrontSidebar(root) +
-      '</div></div>';
+      '<div class="jos-sf-mc-workspace">' +
+      '<div class="jos-sf-mc-preview-wrap">' + renderStorefrontLiveSite(root) + '</div>' +
+      renderStorefrontContextPanel(root) +
+      '</div>' +
+      renderStorefrontServiceModal(root) +
+      '</div>';
     bindRoot(root);
     wireStorefrontRoot(root);
   }
@@ -7386,12 +7634,13 @@
   function renderStorefront() {
     var root = ownPixelView('v-editor', 'jos-storefront-root');
     if (!root) return;
+    setStorefrontMode(true);
     updateChrome('editor');
-    root.innerHTML = '<div class="jos-page jos-sf-page"><div class="jos-home-loading">Loading Storefront…</div></div>';
+    root.innerHTML = '<div class="jos-sf-mc-shell"><div class="jos-home-loading">Loading Storefront…</div></div>';
     try { renderStorefrontPageInner(root); }
     catch (err) {
       console.warn('HublyJourneyOS Storefront', err);
-      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Storefront could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderStorefront()">Retry</button></div></div></div>';
+      root.innerHTML = '<div class="jos-sf-mc-shell"><div class="jos-empty jos-error-state"><strong>Storefront could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderStorefront()">Retry</button></div></div></div>';
     }
   }
 
@@ -7408,14 +7657,86 @@
     };
   }
 
+  function sfApplyLiveFields(root) {
+    var w = S().website;
+    var bo = S().bookingOs || {};
+    var head = el('jos-sf-hero-head');
+    var sub = el('jos-sf-hero-sub');
+    var ov = el('jos-sf-hero-overlay');
+    var pBtn = el('jos-sf-hero-primary');
+    var sBtn = el('jos-sf-hero-secondary');
+    var pLink = el('jos-sf-hero-primary-link');
+    var sLink = el('jos-sf-hero-secondary-link');
+    if (head) { w.heroHeadline = head.value; w.customHeroHeadline = true; }
+    if (sub) { w.heroSub = sub.value; w.customHeroSub = true; }
+    if (ov) w.heroOverlay = Number(ov.value) || 45;
+    if (pBtn) w.heroPrimaryBtn = pBtn.value || w.heroPrimaryBtn;
+    if (sBtn) w.heroSecondaryBtn = sBtn.value || w.heroSecondaryBtn;
+    if (pLink) w.heroPrimaryLink = pLink.value || w.heroPrimaryLink;
+    if (sLink) w.heroSecondaryLink = sLink.value || w.heroSecondaryLink;
+    (w.heroBadges || []).forEach(function (b, i) {
+      var inp = el('jos-sf-badge-' + i);
+      if (inp) b.text = inp.value || b.text;
+    });
+    [['jos-sf-bk-enabled', 'enabled'], ['jos-sf-bk-instant', 'instant'], ['jos-sf-bk-quotes', 'quotes'], ['jos-sf-bk-deposit', 'deposit'], ['jos-sf-bk-card', 'card'], ['jos-sf-bk-photos', 'photos'], ['jos-sf-bk-address', 'address'], ['jos-sf-bk-name', 'name'], ['jos-sf-bk-phone', 'phone'], ['jos-sf-bk-email', 'email'], ['jos-sf-bk-vehicle', 'vehicle'], ['jos-sf-bk-property', 'propertySize']].forEach(function (pair) {
+      var node = el(pair[0]);
+      if (node) bo[pair[1]] = !!node.checked;
+    });
+    S().bookingOs = bo;
+  }
+
   function wireStorefrontRoot(root) {
     if (root._josSfBound) return;
     root._josSfBound = true;
-    root.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && root._josSfSvcModal) {
-        root._josSfSvcModal = false;
-        root._josSfDraft = null;
+    root.addEventListener('click', function (e) {
+      var pick = e.target.closest('[data-jos-sf-pick]');
+      if (pick) {
+        root._josSfSelect = pick.getAttribute('data-jos-sf-pick');
+        root._josSfTab = 'website';
         renderStorefront();
+        e.stopPropagation();
+        return;
+      }
+    });
+    root.addEventListener('input', function (e) {
+      var t = e.target;
+      if (!(t instanceof Element)) return;
+      if (t.getAttribute('data-jos-sf-live') != null || t.id && String(t.id).indexOf('jos-sf-') === 0) {
+        sfApplyLiveFields(root);
+        clearTimeout(root._josSfLiveT);
+        root._josSfLiveT = setTimeout(function () { renderStorefront(); }, 120);
+      }
+    });
+    root.addEventListener('change', function (e) {
+      var t = e.target;
+      if (!(t instanceof Element)) return;
+      if (t.getAttribute('data-jos-sf-live') != null || (t.id && String(t.id).indexOf('jos-sf-bk-') === 0)) {
+        sfApplyLiveFields(root);
+        renderStorefront();
+      }
+    });
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        if (root._josSfSvcModal) { root._josSfSvcModal = false; root._josSfDraft = null; return renderStorefront(); }
+        if (root._josSfPublishOpen) { root._josSfPublishOpen = false; return renderStorefront(); }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (root._josSfUndo && root._josSfUndo.length) {
+          var cur = sfSnapshotState();
+          root._josSfRedo = root._josSfRedo || [];
+          root._josSfRedo.push(cur);
+          sfRestoreSnapshot(root, root._josSfUndo.pop());
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        if (root._josSfRedo && root._josSfRedo.length) {
+          var cur2 = sfSnapshotState();
+          root._josSfUndo = root._josSfUndo || [];
+          root._josSfUndo.push(cur2);
+          sfRestoreSnapshot(root, root._josSfRedo.pop());
+        }
       }
     });
   }
@@ -7430,6 +7751,81 @@
     ensureStorefrontOsState();
     var svcId = t && (t.getAttribute('data-jos-sf-svc') || t.getAttribute('data-jos-sf-svc-id') || (t.closest('[data-jos-sf-svc-id]') && t.closest('[data-jos-sf-svc-id]').getAttribute('data-jos-sf-svc-id')));
     try {
+      if (act === 'sf-back') return switchNav('dashboard');
+      if (act === 'sf-device') {
+        root._josSfDevice = (t && t.getAttribute('data-jos-sf-device')) || 'desktop';
+        return renderStorefront();
+      }
+      if (act === 'sf-pick') {
+        root._josSfSelect = (t && t.getAttribute('data-jos-sf-pick')) || 'hero';
+        root._josSfTab = 'website';
+        return renderStorefront();
+      }
+      if (act === 'sf-ctx-tab') {
+        root._josSfCtxTab = (t && t.getAttribute('data-jos-sf-ctx')) || 'content';
+        return renderStorefront();
+      }
+      if (act === 'sf-publish-toggle') {
+        root._josSfPublishOpen = !root._josSfPublishOpen;
+        return renderStorefront();
+      }
+      if (act === 'sf-publish') {
+        sfPushUndo(root);
+        sfApplyLiveFields(root);
+        root._josSfPublishOpen = false;
+        toast('Published — your site is live.');
+        return renderStorefront();
+      }
+      if (act === 'sf-schedule') { root._josSfPublishOpen = false; return toast('Schedule publish — coming soon.'); }
+      if (act === 'sf-draft') { sfApplyLiveFields(root); root._josSfPublishOpen = false; toast('Draft saved.'); return renderStorefront(); }
+      if (act === 'sf-history') { root._josSfPublishOpen = false; return toast('Publish history — coming soon.'); }
+      if (act === 'sf-undo') {
+        if (root._josSfUndo && root._josSfUndo.length) {
+          root._josSfRedo = root._josSfRedo || [];
+          root._josSfRedo.push(sfSnapshotState());
+          sfRestoreSnapshot(root, root._josSfUndo.pop());
+          toast('Undone');
+        }
+        return;
+      }
+      if (act === 'sf-redo') {
+        if (root._josSfRedo && root._josSfRedo.length) {
+          root._josSfUndo = root._josSfUndo || [];
+          root._josSfUndo.push(sfSnapshotState());
+          sfRestoreSnapshot(root, root._josSfRedo.pop());
+          toast('Redone');
+        }
+        return;
+      }
+      if (act === 'sf-hero-img') return toast('Image picker — upload or stock photos coming next.');
+      if (act === 'sf-hero-img-remove') { S().website.heroImage = ''; toast('Background image removed'); return renderStorefront(); }
+      if (act === 'sf-badge-add') {
+        S().website.heroBadges = (S().website.heroBadges || []).concat([{ icon: '✓', text: 'New badge' }]);
+        return renderStorefront();
+      }
+      if (act === 'sf-section-add') return toast('Section library — add Hero, FAQ, CTA, and more.');
+      if (act === 'sf-section-hide') {
+        var sid = String(root._josSfSelect || '').replace('section:', '');
+        if (sid) {
+          (S().website.sections || []).forEach(function (s) { if (s.id === sid) s.visible = false; });
+          toast('Section hidden on site');
+          return renderStorefront();
+        }
+        return toast('Select a section first');
+      }
+      if (act === 'sf-theme-colors' || act === 'sf-theme-fonts' || act === 'sf-theme-reset') {
+        if (act === 'sf-theme-reset') S().website.theme = { primary: '#16a34a', accent: '#D9632D', radius: 12, font: 'DM Sans' };
+        else toast('Theme editor — ' + (act === 'sf-theme-colors' ? 'colors' : 'fonts') + ' panel coming next.');
+        return renderStorefront();
+      }
+      if (act === 'sf-seo-ai' || act === 'sf-seo-improve') {
+        var biz = S().biz || 'Local business';
+        S().website.seoTitle = biz + ' — Book lawn care online';
+        S().website.seoDescription = 'Professional lawn care and landscaping. Book online, see pricing, and schedule service in minutes.';
+        toast('SEO copy generated — review in SEO tab.');
+        root._josSfTab = 'seo';
+        return renderStorefront();
+      }
       if (act === 'sf-preview') {
         if (typeof global.previewProfile === 'function') return global.previewProfile();
         return toast('Preview not available in this session');
@@ -7441,11 +7837,8 @@
       }
       if (act === 'sf-copy-url') return copyText('https://' + storefrontUrl());
       if (act === 'sf-site-save') {
-        var w = S().website;
-        var head = el('jos-sf-hero-head');
-        var sub = el('jos-sf-hero-sub');
-        if (head) { w.heroHeadline = head.value || w.heroHeadline; w.customHeroHeadline = true; }
-        if (sub) { w.heroSub = sub.value || w.heroSub; w.customHeroSub = true; }
+        sfPushUndo(root);
+        sfApplyLiveFields(root);
         var seoT = el('jos-sf-seo-title');
         var seoD = el('jos-sf-seo-desc');
         if (seoT) w.seoTitle = seoT.value || w.seoTitle;
@@ -9588,6 +9981,7 @@
   }
   function onSwitchView(v) {
     updateChrome(v);
+    setStorefrontMode(v === 'editor');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,

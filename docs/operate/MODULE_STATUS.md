@@ -91,7 +91,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 🧲 Leads | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ❤️ Customers | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🧭 Pipeline | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 🌐 Storefront | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
+| 🌐 Storefront | ✅ | ⏸ | ✅ | ⏳ | ⏳ | 🔓 Reopen |
 | 📣 Marketing | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
