@@ -36802,9 +36802,16 @@ function closeConfirm(){
 
 // CALENDAR
 function renderCal(){
+  if(document.getElementById('jos-jobs-root')?.closest('.jos-pixel-owned')){
+    try{window.HublyJourneyOS?.renderJobs?.();}catch(e){}
+    return;
+  }
+  const mon=document.getElementById('cal-mon-lbl');
+  const daysEl=document.getElementById('cal-days');
+  if(!mon||!daysEl)return;
   const {calYear:y,calMonth:m}=S;
   const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  document.getElementById('cal-mon-lbl').textContent=`${MONTHS[m]} ${y}`;
+  mon.textContent=`${MONTHS[m]} ${y}`;
   const first=new Date(y,m,1).getDay();
   const days=new Date(y,m+1,0).getDate();
   const prevDays=new Date(y,m,0).getDate();
@@ -36814,7 +36821,7 @@ function renderCal(){
   for(let d=1;d<=days;d++){const ds=dateStr(new Date(y,m,d));const isT=ds===todayS;const isS=ds===S.selectedDay;const hj=S.jobs.some(j=>j.date===ds);html+=`<div class="cal-d${isT?' today':''}${isS?' sel':''}${hj?' has-job':''}" onclick="selDay('${ds}')">${d}</div>`}
   const total=first+days;const rem=total%7===0?0:7-(total%7);
   for(let d=1;d<=rem;d++){const ds=dateStr(new Date(y,m+1,d));html+=`<div class="cal-d other-m" onclick="selDay('${ds}')">${d}</div>`}
-  document.getElementById('cal-days').innerHTML=html;
+  daysEl.innerHTML=html;
 }
 function calPrev(){S.calMonth--;if(S.calMonth<0){S.calMonth=11;S.calYear--}renderCal()}
 function calNext(){S.calMonth++;if(S.calMonth>11){S.calMonth=0;S.calYear++}renderCal()}
@@ -37211,6 +37218,10 @@ function renderJobsDayRail(jobs,dayStr){
     <button type="button" class="btn btn-out jdr-schedule" onclick="openJobsNewJobAt('${ds}',9)">+ Schedule new job</button>`;
 }
 function renderJobsPanel(){
+  if(document.getElementById('jos-jobs-root')?.closest('.jos-pixel-owned')){
+    try{window.HublyJourneyOS?.renderJobs?.();}catch(e){}
+    return;
+  }
   updateJobsReviewUI();
   syncJobsViewToggles();
   const main=document.getElementById('jobs-main-view')||document.getElementById('day-jobs');

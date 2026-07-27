@@ -36,8 +36,8 @@ Job Details drawer 520px (slides from right)
 
 | Breakpoint | Behavior |
 |---|---|
-| ≥1440 | Sidebar + Main + Rail |
-| 1024–1439 | Rail collapses to Calendar / Upcoming / Summary tabs |
+| ≥1200 | Sidebar + Main + Rail (screenshot truth) |
+| 1024–1199 | Rail collapses to Calendar / Upcoming / Summary tabs under main (sticky table headers disabled so they cannot overlay the calendar) |
 | 768–1023 | Icon sidebar · filter chips · stacked job cards · FAB |
 | <768 | Single column · KPI carousel · rail below list · FAB |
 

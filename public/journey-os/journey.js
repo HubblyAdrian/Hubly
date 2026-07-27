@@ -12106,6 +12106,7 @@
   }
 
   function seedDemoJobsIfEmpty() {
+    if (!allowDemoSeed()) return;
     ensureJobsOsState();
     if ((S().jobs || []).filter(function (j) { return !j.isBlock; }).length) return;
     var today = todayStr();
@@ -12123,6 +12124,10 @@
   function setJobsMode(on) {
     var app = el('p-app');
     if (!app) return;
+    if (on) {
+      app.classList.add('jos-pixel');
+      try { document.body.classList.add('jos-pixel'); } catch (e) {}
+    }
     app.classList.toggle('jos-jobs-mode', !!on);
   }
 
@@ -13297,6 +13302,9 @@
   function onSwitchView(v) {
     updateChrome(v);
     setPipelineMode(v === 'pipeline');
+    setJobsMode(v === 'jobs');
+    setInboxMode(v === 'chats');
+    setLeadsMode(v === 'leads');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
