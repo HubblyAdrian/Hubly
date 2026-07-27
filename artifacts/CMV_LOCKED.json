@@ -29,7 +29,7 @@
     {
       "name": "🧭 Pipeline still works",
       "pass": true,
-      "detail": "len=11294"
+      "detail": "len=11372"
     },
     {
       "name": "🌐 Storefront still works",
@@ -49,7 +49,7 @@
     {
       "name": "🔁 Memberships still works",
       "pass": true,
-      "detail": "len=5465"
+      "detail": "len=5466"
     },
     {
       "name": "💰 Revenue still works",

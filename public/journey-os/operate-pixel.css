@@ -863,7 +863,9 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   font-family:'Plus Jakarta Sans','DM Sans',sans-serif;line-height:1.1;
 }
 .jos-pk-header p{margin:6px 0 0;font-size:14px;color:var(--jos-ink-2);line-height:1.4}
-.jos-pk-header-actions{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.jos-pk-header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+.jos-pk-header-actions{display:flex;align-items:center;gap:12px}
+.jos-pk-header-tools{display:flex;align-items:center;gap:8px}
 .jos-pk-add{
   height:44px;padding:0 18px;border-radius:12px;background:#fff;border:1.5px solid var(--jos-brand);
   color:var(--jos-brand);font-weight:750;transition:transform .15s,box-shadow .2s;
@@ -893,10 +895,11 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 .jos-pk-search input{
   border:0;outline:0;flex:1;background:transparent;font:inherit;font-size:14px;color:var(--jos-navy);
 }
-.jos-pk-search-row > .jos-btn,.jos-pk-filter-btn,.jos-pk-sort-btn{
-  height:44px;border-radius:12px;background:#fff;border:1px solid var(--jos-border);
-  display:inline-flex;align-items:center;gap:6px;font-weight:700;
+.jos-pk-filter-btn,.jos-pk-sort-btn{
+  height:36px;border-radius:10px;background:#fff;border:1px solid var(--jos-border);
+  display:inline-flex;align-items:center;gap:6px;font-weight:700;padding:0 12px;
 }
+.jos-pk-search-row > .jos-btn{height:44px;border-radius:12px;background:#fff;border:1px solid var(--jos-border)}
 .jos-pk-sort-wrap{position:relative}
 .jos-pk-sort-menu{
   position:absolute;top:48px;right:0;z-index:30;min-width:160px;background:#fff;

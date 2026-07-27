@@ -10,11 +10,11 @@
 | 📅 Jobs still works | ✅ · len=19165 |
 | 🧲 Leads still works | ✅ · len=12259 |
 | ❤️ Customers still works | ✅ · len=10367 |
-| 🧭 Pipeline still works | ✅ · len=11294 |
+| 🧭 Pipeline still works | ✅ · len=11372 |
 | 🌐 Storefront still works | ✅ · len=7173 |
 | 📣 Marketing still works | ✅ · len=8526 |
 | ⭐ Reviews still works | ✅ · len=9225 |
-| 🔁 Memberships still works | ✅ · len=5465 |
+| 🔁 Memberships still works | ✅ · len=5466 |
 | 💰 Revenue still works | ✅ · len=6225 |
 | 📊 Reports still works | ✅ · len=9562 |
 | ✨ Ask Hubly still works | ✅ · len=8853 |

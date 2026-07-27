@@ -195,6 +195,13 @@
     return pipeStageLabel(sid);
   }
 
+  function pipeMoney(n) {
+    var x = Number(n);
+    if (!Number.isFinite(x)) return '$0';
+    var frac = Math.abs(x % 1) > 0.001 ? 2 : 0;
+    return '$' + x.toLocaleString('en-US', { minimumFractionDigits: frac, maximumFractionDigits: frac });
+  }
+
   function pipeDemoKpis(cards) {
     if (!allowDemoSeed()) return null;
     return { open: 14, value: 8197, won: 0, stages: 7 };
@@ -269,7 +276,7 @@
     var sid = boardStageId(card);
     var tag = pipeStatusTag(card);
     var tagTone = sid === 'lead' ? 'info' : (sid === 'qualified' ? 'follow' : (sid === 'quote' ? 'quote' : (sid === 'booked' ? 'ok' : 'mute')));
-    var amt = card.amount != null && Number.isFinite(Number(card.amount)) ? money(card.amount) : '$0';
+    var amt = card.amount != null && Number.isFinite(Number(card.amount)) ? pipeMoney(card.amount) : '$0';
     var sub = esc(card.service || 'Service');
     var extra = '';
     if (sid === 'booked' || sid === 'completed') {
@@ -389,7 +396,7 @@
     var stages = demo ? demo.stages : PIPE_BOARD_STAGES.length;
     var items = [
       ['pipe-kpi-open', 'Open Deals', String(open), '↑ 27% vs last 30 days', 'up', 'person', 'Filters board to open deals'],
-      ['pipe-kpi-value', 'Pipeline Value', money(totalVal) || '$0', '↑ 32% vs last 30 days', 'up', 'doc', 'Total estimated revenue'],
+      ['pipe-kpi-value', 'Pipeline Value', pipeMoney(totalVal), '↑ 32% vs last 30 days', 'up', 'doc', 'Total estimated revenue'],
       ['pipe-kpi-won', 'Won / Recurring', String(won), won ? '↑ last 30 days' : 'No changes from last 30 days', won ? 'up' : 'flat', 'spark', 'Recurring & completed'],
       ['pipe-kpi-stages', 'Stages', String(stages), 'Total in your pipeline', 'flat', 'gauge', 'Pipeline settings']
     ];
@@ -411,7 +418,7 @@
       return '<div class="jos-pk-col tone-' + esc(st.tone) + '" data-pipe-stage="' + esc(st.id) + '">' +
         '<div class="jos-pk-col-h"><div class="jos-pk-col-title">' + esc(st.label) +
         '<span class="jos-pk-count">' + rows.length + '</span></div>' +
-        '<div class="jos-pk-col-val">' + esc(money(sum) || '$0') + '</div></div>' +
+        '<div class="jos-pk-col-val">' + esc(pipeMoney(sum)) + '</div></div>' +
         '<div class="jos-pk-col-body">' +
         (rows.length ? rows.map(function (c) { return pipeCardHtml(c, selectedId); }).join('') : empty) +
         '</div>' +
@@ -427,7 +434,7 @@
     var tags = pipeCardTags(card);
     if (!tags.length) tags = [pipeStatusTag(card)];
     tags = tags.slice(0, 8);
-    var amt = card.amount != null && Number.isFinite(Number(card.amount)) ? money(card.amount) : '$0';
+    var amt = card.amount != null && Number.isFinite(Number(card.amount)) ? pipeMoney(card.amount) : '$0';
     var acts = pipeActivityItems(card);
     var next = acts.find(function (a) { return a.type === 'next'; }) || acts[0];
     var collapsed = !!root._josPipeWsCollapsed;
@@ -557,15 +564,12 @@
 
       '<header class="jos-pk-header">' +
       '<div><h1>Pipeline</h1><p>Track, manage and convert leads into loyal customers.</p></div>' +
+      '<div class="jos-pk-header-right">' +
       '<div class="jos-pk-header-actions">' +
       '<button type="button" class="jos-btn jos-pk-add" data-jos-act="manual-lead">+ Add Lead</button>' +
       '<button type="button" class="jos-btn jos-btn-brand jos-pk-bulk" data-jos-act="pipe-bulk">+ Bulk Deals</button>' +
-      '</div></header>' +
-
-      '<div class="jos-pk-search-row">' +
-      '<label class="jos-pk-search"><span class="jos-pk-search-ico" aria-hidden="true"></span>' +
-      '<input id="jos-pipe-search" type="search" placeholder="Search name, phone, service, vehicle, source, tags..." value="' + esc(root._josPipeQ || '') + '">' +
-      '</label>' +
+      '</div>' +
+      '<div class="jos-pk-header-tools">' +
       '<button type="button" class="jos-btn jos-btn-sm jos-pk-filter-btn" data-jos-act="pipe-filter-open">' +
       '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 7v5l-4 2v-7L4 5z"/></svg> Filters</button>' +
       '<div class="jos-pk-sort-wrap">' +
@@ -575,7 +579,12 @@
         [['recent', 'Recent'], ['value', 'Highest value'], ['name', 'Name A–Z']].map(function (s) {
           return '<button type="button" data-jos-act="pipe-sort-set" data-jos-sort="' + s[0] + '">' + s[1] + '</button>';
         }).join('') + '</div>' : '') +
-      '</div></div>' +
+      '</div></div></div></header>' +
+
+      '<div class="jos-pk-search-row">' +
+      '<label class="jos-pk-search"><span class="jos-pk-search-ico" aria-hidden="true"></span>' +
+      '<input id="jos-pipe-search" type="search" placeholder="Search name, phone, service, vehicle, source, tags..." value="' + esc(root._josPipeQ || '') + '">' +
+      '</label></div>' +
 
       renderPipelineFilterDrawer(root) +
       renderPipelineKpis(cards) +
