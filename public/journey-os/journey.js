@@ -9092,9 +9092,10 @@
 
   function demoStorefrontCatalog() {
     return [
-      { id: 'sf_svc_1', name: 'Interior Detail', price: 189, dur: '2.5 hrs', desc: 'Deep clean, vacuum, and interior protection.', status: 'active', website: true, depositType: 'pct', depositVal: 25 },
-      { id: 'sf_svc_2', name: 'Exterior Detail', price: 149, dur: '2 hrs', desc: 'Hand wash, clay bar, and paint-safe finish.', status: 'active', website: true, depositType: 'pct', depositVal: 25 },
-      { id: 'sf_svc_3', name: 'Ceramic Coating', price: 899, dur: '1 day', desc: 'Long-lasting gloss and hydrophobic protection.', status: 'active', website: true, depositType: 'flat', depositVal: 200 }
+      { id: 'sf_svc_1', name: 'Lawn Mowing', price: 49, dur: '1 hr', desc: 'Precision cuts and clean edges for a healthy, manicured lawn every week.', status: 'active', website: true, depositType: 'pct', depositVal: 0, icon: 'mow' },
+      { id: 'sf_svc_2', name: 'Landscaping', price: 299, dur: 'Half day', desc: 'Custom beds, mulch, and plantings that elevate your curb appeal.', status: 'active', website: true, depositType: 'pct', depositVal: 25, icon: 'plant' },
+      { id: 'sf_svc_3', name: 'Hedge Trimming', price: 89, dur: '1.5 hrs', desc: 'Clean shapes and tidy hedges that keep your property looking sharp.', status: 'active', website: true, depositType: 'pct', depositVal: 0, icon: 'shear' },
+      { id: 'sf_svc_4', name: 'Spring Clean Up', price: 179, dur: '3 hrs', desc: 'Leaf removal, bed refresh, and seasonal reset so your yard is ready.', status: 'active', website: true, depositType: 'pct', depositVal: 0, icon: 'leaf' }
     ];
   }
 
@@ -9132,25 +9133,32 @@
     var st = S();
     if (!st.website || typeof st.website !== 'object') st.website = {};
     var w = st.website;
-    var biz = st.biz || "Adrian's Lawn Services";
-    if (!w.heroHeadline) w.heroHeadline = 'Your Lawn. Our Passion.';
-    if (!w.heroSub) w.heroSub = 'Professional lawn care and landscaping with reliable scheduling, clear pricing, and results you can see.';
-    if (!w.heroPrimaryBtn) w.heroPrimaryBtn = 'Book Your Service';
-    if (!w.heroSecondaryBtn) w.heroSecondaryBtn = 'View Services';
-    if (!w.heroPrimaryLink) w.heroPrimaryLink = '#book';
-    if (!w.heroSecondaryLink) w.heroSecondaryLink = '#services';
+    if (allowDemoSeed()) {
+      st.biz = "Adrian's Lawn Service";
+      st.slug = 'adrians-lawn-service';
+      st.city = 'Salt Lake City, UT';
+    }
+    var biz = st.biz || "Adrian's Lawn Service";
+    if (allowDemoSeed() || !w.heroHeadline) w.heroHeadline = 'Your Lawn. Our Passion.';
+    if (allowDemoSeed() || !w.heroSub) w.heroSub = 'Professional lawn care and landscaping in Salt Lake City and surrounding areas.';
+    if (allowDemoSeed() || !w.heroPrimaryBtn) w.heroPrimaryBtn = 'Book Your Service';
+    if (allowDemoSeed() || !w.heroSecondaryBtn) w.heroSecondaryBtn = 'View Services';
+    if (allowDemoSeed() || !w.heroPrimaryLink) w.heroPrimaryLink = '/book';
+    if (allowDemoSeed() || !w.heroSecondaryLink) w.heroSecondaryLink = '/services';
+    if (w.showPrimaryBtn == null || allowDemoSeed()) w.showPrimaryBtn = true;
+    if (w.showSecondaryBtn == null || allowDemoSeed()) w.showSecondaryBtn = true;
     if (w.heroOverlay == null) w.heroOverlay = 45;
     if (!w.heroAlign) w.heroAlign = 'left';
     if (!w.heroHeight) w.heroHeight = 'tall';
-    if (!Array.isArray(w.heroBadges) || !w.heroBadges.length) {
+    if (allowDemoSeed() || !Array.isArray(w.heroBadges) || !w.heroBadges.length) {
       w.heroBadges = [
-        { icon: '✓', text: 'Satisfaction Guaranteed' },
-        { icon: '★', text: '5-Star Rated' },
-        { icon: '⚡', text: 'Same-Week Service' }
+        { icon: 'home', text: 'Locally Owned & Operated' },
+        { icon: 'clock', text: 'Reliable & On-Time' },
+        { icon: 'shield', text: 'Satisfaction Guaranteed' }
       ];
     }
     if (!Array.isArray(w.sections) || !w.sections.length) w.sections = SF_DEFAULT_SECTIONS.map(function (s) { return Object.assign({}, s); });
-    if (!w.theme || typeof w.theme !== 'object') {
+    if (!w.theme || typeof w.theme !== 'object' || allowDemoSeed()) {
       w.theme = { primary: '#16a34a', accent: '#D9632D', radius: 12, font: 'DM Sans' };
     }
     if (!st.bookingOs || typeof st.bookingOs !== 'object') {
@@ -9159,20 +9167,20 @@
         address: true, name: true, phone: true, email: true, vehicle: false, propertySize: false
       };
     }
-    if (!w.seoTitle) w.seoTitle = (st.biz || 'Local business') + ' — Book online';
-    if (!w.seoDescription) w.seoDescription = 'Book ' + (st.biz || 'our services') + ' online. See packages, gallery, and reviews.';
+    if (!w.seoTitle) w.seoTitle = biz + ' — Book online';
+    if (!w.seoDescription) w.seoDescription = 'Book ' + biz + ' online. See packages, gallery, and reviews.';
     if (w.reviewRating == null) w.reviewRating = 0;
     if (!Array.isArray(w.manualReviews)) w.manualReviews = [];
-    if (!st.slug) st.slug = 'your-business';
+    if (!st.slug) st.slug = allowDemoSeed() ? 'adrians-lawn-service' : 'your-business';
     if (!Array.isArray(st.galleryPairs)) st.galleryPairs = [];
     if (!Array.isArray(st.portfolioUrls)) st.portfolioUrls = [];
     if (!st.storefrontOs || typeof st.storefrontOs !== 'object') {
       st.storefrontOs = { visits: 0, bookingStarts: 0, conversion: 0, aiTip: '', aiSeo: '' };
     }
-    var cat = Array.isArray(st.editorSvcs) && st.editorSvcs.length ? st.editorSvcs :
-      (Array.isArray(st.services) && st.services.length ? st.services : null);
-    if ((!cat || !cat.length) && allowDemoSeed()) cat = demoStorefrontCatalog();
-    if (!cat) cat = [];
+    var cat = allowDemoSeed()
+      ? demoStorefrontCatalog()
+      : (Array.isArray(st.editorSvcs) && st.editorSvcs.length ? st.editorSvcs :
+        (Array.isArray(st.services) && st.services.length ? st.services : []));
     st.editorSvcs = cat.map(normalizeStorefrontSvc).filter(Boolean);
     syncStorefrontCatalogToServices();
   }
@@ -9296,46 +9304,47 @@
     var w = st.website || {};
     var sel = root._josSfSelect || 'hero';
     var device = root._josSfDevice || 'desktop';
-    var biz = st.biz || "Adrian's Lawn Services";
+    var biz = st.biz || "Adrian's Lawn Service";
     var services = storefrontCatalog().filter(function (s) { return s.status !== 'archived' && s.website !== false; }).slice(0, 4);
-    if (!services.length) services = demoStorefrontCatalog().slice(0, 4);
+    if (!services.length && allowDemoSeed()) services = demoStorefrontCatalog().slice(0, 4);
     var primary = (w.theme && w.theme.primary) || '#16a34a';
-    var on = function (id) { return sel === id ? ' is-selected' : ''; };
+    var mark = function (id) { return sel === id ? ' is-selected' : ''; };
     var heroBadges = (w.heroBadges || []).map(function (b, i) {
-      return '<span class="sf-live-badge' + on('badge:' + i) + '" data-jos-sf-pick="badge:' + i + '">' + esc(b.icon || '✓') + ' ' + esc(b.text || 'Trusted') + '</span>';
+      return '<span class="sf-live-badge' + mark('badge:' + i) + '" data-jos-sf-pick="badge:' + i + '"><i class="sf-live-badge-ico" aria-hidden="true"></i> ' + esc(b.text || 'Trusted') + '</span>';
     }).join('');
+    var svcIcons = { mow: 'mow', plant: 'plant', shear: 'shear', leaf: 'leaf' };
     var svcCards = services.map(function (s, i) {
-      return '<article class="sf-live-svc' + on('service:' + i) + '" data-jos-sf-pick="service:' + i + '">' +
-        '<div class="sf-live-svc-ico" aria-hidden="true">🌿</div>' +
+      var ico = svcIcons[s.icon] || ['mow', 'plant', 'shear', 'leaf'][i % 4];
+      return '<article class="sf-live-svc' + mark('service:' + i) + '" data-jos-sf-pick="service:' + i + '">' +
+        '<div class="sf-live-svc-ico tone-' + ico + '" aria-hidden="true"></div>' +
         '<h4>' + esc(s.name) + '</h4>' +
         '<p>' + esc(s.desc || 'Professional service with clear pricing.') + '</p>' +
         '<span class="sf-live-link">Learn more →</span></article>';
     }).join('');
-    var reviews = (w.manualReviews || []).slice(0, 2).map(function (r, i) {
-      return '<div class="sf-live-review' + on('review:' + i) + '" data-jos-sf-pick="review:' + i + '"><strong>' + esc(r.name || 'Customer') + '</strong><div class="stars">★★★★★</div><p>' + esc(r.text || '') + '</p></div>';
-    }).join('');
-    return '<div class="jos-sf-live-site device-' + esc(device) + '" style="--sf-primary:' + esc(primary) + '">' +
-      '<header class="sf-live-nav' + on('nav') + '" data-jos-sf-pick="nav">' +
-      '<div class="sf-live-logo' + on('logo') + '" data-jos-sf-pick="logo">' + esc(biz.split(' ')[0] || 'Hubly') + '<em>' + esc(biz.split(' ').slice(1).join(' ') || '') + '</em></div>' +
-      '<nav><span>Home</span><span>Services</span><span>About</span><span>Gallery</span><span>Contact</span></nav>' +
-      '<button type="button" class="sf-live-nav-cta' + on('nav-cta') + '" data-jos-sf-pick="nav-cta">Book Now</button></header>' +
-      '<section class="sf-live-hero align-' + esc(w.heroAlign || 'left') + ' height-' + esc(w.heroHeight || 'tall') + on('hero') + '" data-jos-sf-pick="hero" style="--sf-overlay:' + (Number(w.heroOverlay) || 45) + '%">' +
-      '<div class="sf-live-hero-bg' + on('hero-bg') + '" data-jos-sf-pick="hero-bg"></div>' +
+    return '<div class="jos-sf-live-site device-' + esc(device) + ' jos-sf-shot" style="--sf-primary:' + esc(primary) + '">' +
+      '<div class="sf-live-hero-stack">' +
+      '<header class="sf-live-nav overlay' + mark('nav') + '" data-jos-sf-pick="nav">' +
+      '<div class="sf-live-logo' + mark('logo') + '" data-jos-sf-pick="logo">' +
+      '<span class="sf-live-mark" aria-hidden="true"></span>' +
+      '<span class="sf-live-biz">' + esc(String(biz).toUpperCase()) + '</span></div>' +
+      '<nav><span>Home</span><span class="has-dd">Services</span><span>About</span><span>Reviews</span><span>Gallery</span><span>Contact</span></nav>' +
+      '<button type="button" class="sf-live-nav-cta' + mark('nav-cta') + '" data-jos-sf-pick="nav-cta">Book Now</button></header>' +
+      '<section class="sf-live-hero align-' + esc(w.heroAlign || 'left') + ' height-' + esc(w.heroHeight || 'tall') + '" data-jos-sf-pick="hero" style="--sf-overlay:' + (Number(w.heroOverlay) || 45) + '">' +
+      '<div class="sf-live-hero-bg' + mark('hero-bg') + '" data-jos-sf-pick="hero-bg"></div>' +
       '<div class="sf-live-hero-inner">' +
-      '<h1 class="sf-live-h1' + on('hero-headline') + '" data-jos-sf-pick="hero-headline">' + esc(w.heroHeadline || '') + '</h1>' +
-      '<p class="sf-live-sub' + on('hero-sub') + '" data-jos-sf-pick="hero-sub">' + esc(w.heroSub || '') + '</p>' +
+      '<h1 class="sf-live-h1' + mark('hero-headline') + '" data-jos-sf-pick="hero-headline">' + esc(w.heroHeadline || '') + '</h1>' +
+      '<p class="sf-live-sub' + mark('hero-sub') + '" data-jos-sf-pick="hero-sub">' + esc(w.heroSub || '') + '</p>' +
       '<div class="sf-live-hero-btns">' +
-      '<button type="button" class="sf-live-btn primary' + on('hero-primary') + '" data-jos-sf-pick="hero-primary">' + esc(w.heroPrimaryBtn || 'Book') + '</button>' +
-      '<button type="button" class="sf-live-btn secondary' + on('hero-secondary') + '" data-jos-sf-pick="hero-secondary">' + esc(w.heroSecondaryBtn || 'View Services') + '</button>' +
+      (w.showPrimaryBtn === false ? '' : '<button type="button" class="sf-live-btn primary' + mark('hero-primary') + '" data-jos-sf-pick="hero-primary"><i class="sf-ico-cal" aria-hidden="true"></i> ' + esc(w.heroPrimaryBtn || 'Book') + '</button>') +
+      (w.showSecondaryBtn === false ? '' : '<button type="button" class="sf-live-btn secondary' + mark('hero-secondary') + '" data-jos-sf-pick="hero-secondary"><i class="sf-ico-leaf" aria-hidden="true"></i> ' + esc(w.heroSecondaryBtn || 'View Services') + '</button>') +
       '</div>' +
-      '<div class="sf-live-badges">' + heroBadges + '</div></div></section>' +
-      '<section class="sf-live-section' + on('section:services') + '" data-jos-sf-pick="section:services">' +
+      '<div class="sf-live-badges">' + heroBadges + '</div></div></section></div>' +
+      '<section class="sf-live-section' + mark('section:services') + '" data-jos-sf-pick="section:services">' +
+      '<div class="sf-live-kicker">Our Services</div>' +
       '<h2>Complete Lawn Care Solutions</h2>' +
+      '<p class="sf-live-lead">From weekly mowing to full landscaping, we keep your outdoor space healthy, sharp, and ready to enjoy.</p>' +
       '<div class="sf-live-svc-grid">' + svcCards + '</div></section>' +
-      '<section class="sf-live-section muted' + on('section:reviews') + '" data-jos-sf-pick="section:reviews">' +
-      '<h2>What Customers Say</h2><div class="sf-live-reviews">' + reviews + '</div></section>' +
-      '<footer class="sf-live-footer' + on('footer') + '" data-jos-sf-pick="footer">© ' + esc(biz) + ' · Powered by <img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly" height="14"></footer>' +
-      '<button type="button" class="sf-live-chat" aria-label="Chat">💬</button></div>';
+      '<button type="button" class="sf-live-chat" aria-label="Chat"></button></div>';
   }
 
   function renderStorefrontContextPanel(root) {
@@ -9344,26 +9353,45 @@
     var ctx = root._josSfCtxTab || 'content';
     var w = S().website || {};
     var bo = S().bookingOs || {};
-    var head = '<div class="jos-sf-mc-ctx-head"><strong>' + esc(tab === 'website' ? ('Editing: ' + (sel.indexOf('hero') === 0 ? 'Hero Section' : sel.replace('section:', '').replace(/-/g, ' '))) : (STOREFRONT_TABS.find(function (t) { return t[0] === tab; }) || ['', 'Storefront'])[1]) + '</strong></div>';
+    var head = '<div class="jos-sf-mc-ctx-head"><strong>' + esc(tab === 'website' ? ('Editing: ' + (sel.indexOf('hero') === 0 || sel.indexOf('badge') === 0 || sel === 'hero' ? 'Hero Section' : sel.replace('section:', '').replace(/-/g, ' '))) : (STOREFRONT_TABS.find(function (t) { return t[0] === tab; }) || ['', 'Storefront'])[1]) + '</strong></div>';
     var ctxTabs = tab === 'website' ? '<div class="jos-sf-mc-ctx-tabs">' +
       ['content', 'design', 'advanced'].map(function (t) {
         return '<button type="button" class="jos-sf-mc-ctx-tab' + (ctx === t ? ' on' : '') + '" data-jos-act="sf-ctx-tab" data-jos-sf-ctx="' + t + '">' + esc(t.charAt(0).toUpperCase() + t.slice(1)) + '</button>';
       }).join('') + '</div>' : '';
 
     var body = '';
-    if (tab === 'website' && (sel === 'hero' || sel.indexOf('hero') === 0 || sel.indexOf('badge') === 0)) {
+    if (tab === 'website' && ctx === 'design') {
       body = '<div class="jos-sf-mc-ctx-body">' +
-        sfField('Heading', 'jos-sf-hero-head', w.heroHeadline) +
+        sfField('Overlay darkness', 'jos-sf-hero-overlay', w.heroOverlay, 'range') +
+        '<div class="jos-kicker">Theme</div>' +
+        '<div class="jos-btn-row">' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-theme-colors">Colors</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-theme-fonts">Fonts</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-theme-reset">Reset Theme</button></div></div>';
+    } else if (tab === 'website' && ctx === 'advanced') {
+      body = '<div class="jos-sf-mc-ctx-body"><p class="jos-muted">Advanced section settings, custom CSS, and SEO hooks live here.</p></div>';
+    } else if (tab === 'website' && (sel === 'hero' || sel.indexOf('hero') === 0 || sel.indexOf('badge') === 0 || !sel || sel === 'nav' || sel === 'logo' || sel === 'nav-cta')) {
+      body = '<div class="jos-sf-mc-ctx-body">' +
+        sfField('Heading', 'jos-sf-hero-head', w.heroHeadline, 'textarea') +
         sfField('Subheading', 'jos-sf-hero-sub', w.heroSub, 'textarea') +
         '<div class="jos-sf-mc-img"><span>Background image</span><div class="jos-sf-mc-img-thumb"></div><div class="jos-btn-row"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-hero-img">Change image</button><button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-hero-img-remove">Remove</button></div></div>' +
-        sfField('Overlay darkness', 'jos-sf-hero-overlay', w.heroOverlay, 'range') +
-        sfField('Primary button', 'jos-sf-hero-primary', w.heroPrimaryBtn) +
-        sfField('Primary link', 'jos-sf-hero-primary-link', w.heroPrimaryLink) +
-        sfField('Secondary button', 'jos-sf-hero-secondary', w.heroSecondaryBtn) +
-        sfField('Secondary link', 'jos-sf-hero-secondary-link', w.heroSecondaryLink) +
-        '<div class="jos-kicker">Trust badges</div>' +
+        '<div class="jos-sf-mc-btn-block">' +
+        '<div class="jos-kicker">Primary button</div>' +
+        sfField('Text', 'jos-sf-hero-primary', w.heroPrimaryBtn) +
+        '<label class="jos-sf-mc-field"><span>Link</span><div class="jos-sf-mc-link"><input id="jos-sf-hero-primary-link" type="text" value="' + esc(w.heroPrimaryLink || '/book') + '" data-jos-sf-live="1"><button type="button" class="jos-sf-mc-ext" data-jos-act="sf-preview" title="Open">↗</button></div></label>' +
+        '<label class="jos-sf-mc-toggle"><span>Show button</span><input id="jos-sf-hero-primary-show" type="checkbox"' + (w.showPrimaryBtn !== false ? ' checked' : '') + ' data-jos-sf-live="1"></label>' +
+        '</div>' +
+        '<div class="jos-sf-mc-btn-block">' +
+        '<div class="jos-kicker">Secondary button</div>' +
+        sfField('Text', 'jos-sf-hero-secondary', w.heroSecondaryBtn) +
+        '<label class="jos-sf-mc-field"><span>Link</span><div class="jos-sf-mc-link"><input id="jos-sf-hero-secondary-link" type="text" value="' + esc(w.heroSecondaryLink || '/services') + '" data-jos-sf-live="1"><button type="button" class="jos-sf-mc-ext" data-jos-act="sf-preview" title="Open">↗</button></div></label>' +
+        '<label class="jos-sf-mc-toggle"><span>Show button</span><input id="jos-sf-hero-secondary-show" type="checkbox"' + (w.showSecondaryBtn !== false ? ' checked' : '') + ' data-jos-sf-live="1"></label>' +
+        '</div>' +
+        '<div class="jos-kicker">Feature badges</div>' +
         (w.heroBadges || []).map(function (b, i) {
-          return '<div class="jos-sf-mc-badge-row"><span>☰</span>' + sfField('Badge ' + (i + 1), 'jos-sf-badge-' + i, b.text) + '</div>';
+          return '<div class="jos-sf-mc-badge-row"><span class="drag" aria-hidden="true">⠿</span><span class="jos-sf-mc-badge-ico" aria-hidden="true"></span>' +
+            '<input id="jos-sf-badge-' + i + '" type="text" value="' + esc(b.text || '') + '" data-jos-sf-live="1">' +
+            '<button type="button" class="jos-sf-mc-trash" data-jos-act="sf-badge-remove" data-jos-sf-badge="' + i + '" aria-label="Remove">🗑</button></div>';
         }).join('') +
         '<button type="button" class="jos-linkish" data-jos-act="sf-badge-add">+ Add badge</button></div>';
     } else if (tab === 'website') {
@@ -9424,15 +9452,16 @@
       '<button type="button" class="jos-sf-mc-back" data-jos-act="sf-back">← Back to dashboard</button>' +
       '<div class="jos-sf-mc-devices">' +
       [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['mobile', 'Mobile']].map(function (d) {
-        return '<button type="button" class="jos-sf-mc-device' + (device === d[0] ? ' on' : '') + '" data-jos-act="sf-device" data-jos-sf-device="' + d[0] + '" title="' + d[1] + '"></button>';
+        return '<button type="button" class="jos-sf-mc-device' + (device === d[0] ? ' on' : '') + '" data-jos-act="sf-device" data-jos-sf-device="' + d[0] + '" title="' + d[1] + '" aria-label="' + d[1] + '"></button>';
       }).join('') +
       '</div>' +
-      '<div class="jos-sf-mc-url"><span class="jos-sf-mc-live">Published</span><span class="jos-sf-mc-url-text">' + esc(storefrontPublicUrl()) + '</span>' +
+      '<div class="jos-sf-mc-url"><span class="jos-sf-mc-url-text">' + esc(storefrontPublicUrl()) + '</span>' +
+      '<span class="jos-sf-mc-live">Published</span>' +
       '<button type="button" class="jos-sf-mc-ext" data-jos-act="sf-preview" title="Open site">↗</button></div>' +
       '<div class="jos-sf-mc-history">' +
-      '<button type="button" class="jos-sf-mc-icon" data-jos-act="sf-undo" title="Undo">↶</button>' +
-      '<button type="button" class="jos-sf-mc-icon" data-jos-act="sf-redo" title="Redo">↷</button></div>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="sf-preview">Preview</button>' +
+      '<button type="button" class="jos-sf-mc-icon" data-jos-act="sf-undo" title="Undo" aria-label="Undo">↶</button>' +
+      '<button type="button" class="jos-sf-mc-icon" data-jos-act="sf-redo" title="Redo" aria-label="Redo">↷</button></div>' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-sf-mc-preview-btn" data-jos-act="sf-preview">Preview</button>' +
       '<div class="jos-sf-mc-publish-wrap">' +
       '<button type="button" class="jos-btn jos-btn-brand jos-sf-mc-publish" data-jos-act="sf-publish-toggle">Publish changes ▾</button>' +
       (pubOpen ? '<div class="jos-sf-mc-publish-menu">' +
@@ -9688,6 +9717,10 @@
     if (sBtn) w.heroSecondaryBtn = sBtn.value || w.heroSecondaryBtn;
     if (pLink) w.heroPrimaryLink = pLink.value || w.heroPrimaryLink;
     if (sLink) w.heroSecondaryLink = sLink.value || w.heroSecondaryLink;
+    var pShow = el('jos-sf-hero-primary-show');
+    var sShow = el('jos-sf-hero-secondary-show');
+    if (pShow) w.showPrimaryBtn = !!pShow.checked;
+    if (sShow) w.showSecondaryBtn = !!sShow.checked;
     (w.heroBadges || []).forEach(function (b, i) {
       var inp = el('jos-sf-badge-' + i);
       if (inp) b.text = inp.value || b.text;
@@ -9816,6 +9849,14 @@
       if (act === 'sf-badge-add') {
         S().website.heroBadges = (S().website.heroBadges || []).concat([{ icon: '✓', text: 'New badge' }]);
         return renderStorefront();
+      }
+      if (act === 'sf-badge-remove') {
+        var bi = Number(t && t.getAttribute('data-jos-sf-badge'));
+        if (!isNaN(bi)) {
+          S().website.heroBadges = (S().website.heroBadges || []).filter(function (_, i) { return i !== bi; });
+          return renderStorefront();
+        }
+        return;
       }
       if (act === 'sf-section-add') return toast('Section library — add Hero, FAQ, CTA, and more.');
       if (act === 'sf-section-hide') {
@@ -10051,6 +10092,11 @@
     if (titleEl) titleEl.textContent = c.title;
     if (subEl) subEl.textContent = c.sub;
     if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
+    try {
+      document.querySelectorAll('.app-nav .ni[data-v]').forEach(function (n) {
+        n.classList.toggle('active', n.getAttribute('data-v') === v);
+      });
+    } catch (eChrome) {}
   }
 
   function enhanceDashboard() {
@@ -10060,6 +10106,7 @@
     setInboxMode(false);
     setLeadsMode(false);
     setPipelineMode(false);
+    setStorefrontMode(false);
     updateChrome('dashboard');
     root.classList.add('jos-home-root');
     try {
@@ -13310,6 +13357,7 @@
     setJobsMode(v === 'jobs');
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');
+    setStorefrontMode(v === 'editor');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
