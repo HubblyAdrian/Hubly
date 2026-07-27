@@ -1184,9 +1184,11 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 }
 .sf-live-hero.height-tall{min-height:480px}
 .sf-live-hero-bg{
-  position:absolute;inset:0;background:
-    linear-gradient(105deg,rgba(0,0,0,calc(var(--sf-overlay,.45) / 100 + .35)) 0%,rgba(0,0,0,.22) 55%,rgba(0,0,0,.12) 100%),
-    url('https://images.unsplash.com/photo-1592419044706-39796d40f98c?auto=format&fit=crop&w=1600&q=80') center/cover;
+  position:absolute;inset:0;z-index:0;background-color:#1a2e1a;
+  background-image:
+    linear-gradient(105deg,rgba(0,0,0,calc(var(--sf-overlay,45) / 100 + .28)) 0%,rgba(0,0,0,.2) 55%,rgba(0,0,0,.1) 100%),
+    url('/assets/storefront-hero-lawn.jpg');
+  background-position:center;background-size:cover;
 }
 .sf-live-hero-inner{position:relative;z-index:1;max-width:560px}
 .sf-live-h1{margin:0;font-size:clamp(32px,4.2vw,48px);font-weight:800;line-height:1.08;letter-spacing:-.03em}
@@ -1241,24 +1243,24 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   flex:0 0 var(--jos-sf-panel,380px);width:var(--jos-sf-panel,380px);background:#fff;border-left:1px solid #E5E7EB;
   overflow:auto;padding:0;display:flex;flex-direction:column;
 }
-.jos-sf-mc-ctx-head{padding:18px 20px 8px}
+.jos-sf-mc-ctx-head{padding:14px 18px 6px}
 .jos-sf-mc-ctx-head strong{font-size:15px;font-weight:800;color:#141B2B}
-.jos-sf-mc-ctx-tabs{display:flex;gap:2px;padding:0 16px;border-bottom:1px solid #E5E7EB}
+.jos-sf-mc-ctx-tabs{display:flex;gap:2px;padding:0 14px;border-bottom:1px solid #E5E7EB}
 .jos-sf-mc-ctx-tab{
-  appearance:none;border:0;background:transparent;padding:12px 14px;font:inherit;font-size:13px;font-weight:750;
+  appearance:none;border:0;background:transparent;padding:10px 12px;font:inherit;font-size:13px;font-weight:750;
   color:#6B7280;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;
 }
 .jos-sf-mc-ctx-tab.on{color:var(--jos-brand);border-bottom-color:var(--jos-brand);background:transparent}
-.jos-sf-mc-ctx-body{padding:16px 20px 28px;overflow:auto;flex:1}
-.jos-sf-mc-field{display:grid;gap:6px;margin-bottom:12px}
+.jos-sf-mc-ctx-body{padding:12px 18px 20px;overflow:auto;flex:1}
+.jos-sf-mc-field{display:grid;gap:4px;margin-bottom:10px}
 .jos-sf-mc-field span{font-size:11px;font-weight:700;color:#6B7280}
 .jos-sf-mc-field input,.jos-sf-mc-field textarea{
-  font:inherit;padding:10px 12px;border:1px solid #E5E7EB;border-radius:10px;background:#fff;color:#111827;
+  font:inherit;padding:8px 10px;border:1px solid #E5E7EB;border-radius:10px;background:#fff;color:#111827;
 }
-.jos-sf-mc-field textarea{min-height:72px;resize:vertical}
+.jos-sf-mc-field textarea{min-height:56px;resize:vertical}
 .jos-sf-mc-link{display:flex;align-items:center;gap:6px}
-.jos-sf-mc-link input{flex:1;font:inherit;padding:10px 12px;border:1px solid #E5E7EB;border-radius:10px}
-.jos-sf-mc-btn-block{border:1px solid #E5E7EB;border-radius:14px;padding:14px;margin-bottom:14px;background:#FAFAFA}
+.jos-sf-mc-link input{flex:1;font:inherit;padding:8px 10px;border:1px solid #E5E7EB;border-radius:10px}
+.jos-sf-mc-btn-block{border:1px solid #E5E7EB;border-radius:12px;padding:12px;margin-bottom:10px;background:#FAFAFA}
 .jos-sf-mc-toggle{
   display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;font-weight:700;color:#111827;margin-top:4px;
 }
@@ -1271,22 +1273,23 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 .jos-sf-mc-toggle input:checked{background:#16a34a}
 .jos-sf-mc-toggle input:checked::after{transform:translateX(18px)}
 .jos-sf-mc-check{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px;font-weight:600;color:#111827}
-.jos-sf-mc-img{margin:12px 0 16px}
+.jos-sf-mc-img{margin:8px 0 12px}
 .jos-sf-mc-img > span{font-size:11px;font-weight:700;color:#6B7280}
 .jos-sf-mc-img-thumb{
-  height:110px;border-radius:12px;margin:8px 0;
-  background:
+  height:88px;border-radius:10px;margin:6px 0;background-color:#1a2e1a;
+  background-image:
     linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.25)),
-    url('https://images.unsplash.com/photo-1592419044706-39796d40f98c?auto=format&fit=crop&w=600&q=70') center/cover;
+    url('/assets/storefront-hero-lawn.jpg');
+  background-position:center;background-size:cover;
 }
-.jos-sf-mc-badge-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.jos-sf-mc-badge-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .jos-sf-mc-badge-row .drag{opacity:.45;cursor:grab;font-size:14px;color:#9CA3AF}
 .jos-sf-mc-badge-ico{
-  width:28px;height:28px;border-radius:8px;background:#DCFCE7;flex-shrink:0;position:relative;
+  width:26px;height:26px;border-radius:8px;background:#DCFCE7;flex-shrink:0;position:relative;
 }
-.jos-sf-mc-badge-ico::after{content:"";position:absolute;inset:8px;border:2px solid #16a34a;border-radius:50%}
+.jos-sf-mc-badge-ico::after{content:"";position:absolute;inset:7px;border:2px solid #16a34a;border-radius:50%}
 .jos-sf-mc-badge-row input{
-  flex:1;font:inherit;padding:10px 12px;border:1px solid #E5E7EB;border-radius:10px;background:#fff;
+  flex:1;font:inherit;padding:8px 10px;border:1px solid #E5E7EB;border-radius:10px;background:#fff;
 }
 .jos-sf-mc-trash{appearance:none;border:0;background:transparent;cursor:pointer;opacity:.55;font-size:14px}
 .jos-sf-mc-sections{display:grid;gap:6px;margin-bottom:8px}

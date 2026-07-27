@@ -37,7 +37,7 @@ async function serve() {
 await mkdir(OUT, { recursive: true });
 const { server, base } = await serve();
 const browser = await chromium.launch({ headless: true });
-const page = await browser.newPage({ viewport: { width: 1600, height: 1100 } });
+const page = await browser.newPage({ viewport: { width: 1600, height: 1200 } });
 await page.goto(`${base}/hubly.html`, { waitUntil: 'domcontentloaded', timeout: 60000 });
 await page.waitForFunction(() => typeof HublyJourneyOS !== 'undefined', null, { timeout: 30000 });
 await sleep(500);

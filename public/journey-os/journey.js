@@ -9329,7 +9329,7 @@
       '<span class="sf-live-biz">' + esc(String(biz).toUpperCase()) + '</span></div>' +
       '<nav><span>Home</span><span class="has-dd">Services</span><span>About</span><span>Reviews</span><span>Gallery</span><span>Contact</span></nav>' +
       '<button type="button" class="sf-live-nav-cta' + mark('nav-cta') + '" data-jos-sf-pick="nav-cta">Book Now</button></header>' +
-      '<section class="sf-live-hero align-' + esc(w.heroAlign || 'left') + ' height-' + esc(w.heroHeight || 'tall') + '" data-jos-sf-pick="hero" style="--sf-overlay:' + (Number(w.heroOverlay) || 45) + '%">' +
+      '<section class="sf-live-hero align-' + esc(w.heroAlign || 'left') + ' height-' + esc(w.heroHeight || 'tall') + '" data-jos-sf-pick="hero" style="--sf-overlay:' + (Number(w.heroOverlay) || 45) + '">' +
       '<div class="sf-live-hero-bg' + mark('hero-bg') + '" data-jos-sf-pick="hero-bg"></div>' +
       '<div class="sf-live-hero-inner">' +
       '<h1 class="sf-live-h1' + mark('hero-headline') + '" data-jos-sf-pick="hero-headline">' + esc(w.heroHeadline || '') + '</h1>' +
