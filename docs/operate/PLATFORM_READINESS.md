@@ -21,8 +21,9 @@ Track platform-level readiness **alongside** module completion ([MODULE_STATUS.m
 | Creative Blueprint | ✅ 🔒 | Canonical Module 4 output |
 | Creative Review | ✅ 🔒 | Rule #28 · before presentation |
 | Business Reveal | ✅ 🔒 | Canonical design-phase completion |
-| Business Activation | ⏳ | Rule #29 · Module 6 architecture |
-| AI Business Agency | ⏳ | M2/M4 Dev · M3/M5–M6 path |
+| Business Activation | ✅ 🔒 | Rule #29 · canonical activation |
+| AI Launch Coach | ⏳ | Module 7 architecture · before Launch |
+| AI Business Agency | ✅ 🔒 | Rule #29 · ends at Launch → Operate Home |
 | Integrations | ⏸ | Stage 2 — deferred per module |
 | Performance | ⏳ | Not yet a formal gate |
 | Accessibility | ⏳ | Not yet a formal gate |

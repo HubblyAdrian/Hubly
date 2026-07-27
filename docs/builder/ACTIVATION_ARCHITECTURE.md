@@ -1,10 +1,11 @@
-# 🚀 Business Activation — Architecture (required before Development)
+# 🚀 Business Activation — Architecture (🔒 Architecture)
 
 **Milestone:** Hubly AI Business Agency  
-**Module:** 6 — Business Activation (**not** “Business Setup”)  
+**Module:** 6 — Business Activation (**not** “Business Setup”) · **canonical activation stage (Rule #29 🔒)**  
 **Agency role:** AI Project Manager  
-**Rules:** #24–#28 · never block launch · mission-control language · why over what  
-**Status:** Architecture gate — do not start Development without founder approval  
+**Rules:** #24–#29 🔒 · never block launch · mission-control language · why over what  
+**Status:** 🔒 **Architecture locked** — Development may proceed after approval path; UI must not alter docs without reopen  
+**Next:** [LAUNCH_COACH_ARCHITECTURE.md](./LAUNCH_COACH_ARCHITECTURE.md) (Module 7) before Launch  
 **Related:** [REVEAL_ARCHITECTURE.md](./REVEAL_ARCHITECTURE.md) · [CREATIVE_REVIEW.md](./CREATIVE_REVIEW.md) · [README.md](./README.md)
 
 ---
@@ -105,12 +106,15 @@ Solo → skip. Else invite Manager · Technician · Office · Admin.
 ### 8. AI Automations
 Would you like Hubly to automatically: review requests · abandoned booking recovery · lead follow-up · reminders · membership upsells. Enable All · Choose · Skip.
 
-### 9. Final Activation Review + Launch
-Readiness score (e.g. Business Ready 97%). Missing items optional with AI recommendations (e.g. domain → +11% conversion estimate).
+### 9. Final Activation Review → Launch Coach
 
-**🚀 Launch My Business** — large, centered.
+Readiness toward connect completeness. Then hand off to **Module 7 AI Launch Coach** for final recommendations — do **not** jump straight to Dashboard.
 
-On launch: celebration → “Your business is officially live. Now let's take you to your command center.” → camera-zoom transition into **Home Dashboard** (Operate OS). Builder becomes the Operating System.
+```
+Activation complete → AI Launch Coach → 🚀 Launch My Business → Enter Hubly → Home
+```
+
+Large Launch control lives on Launch Coach (after final coaching), not as a silent skip of Module 7.
 
 ---
 
@@ -153,10 +157,9 @@ Label Stage 2 clearly — do not claim “Stripe live” until connected.
 | Output | Notes |
 |--------|-------|
 | Activated Business | Checklist state + connections |
-| Live Website | Published / public |
-| Live Booking | Accepting requests |
-| Connected Services | Stripe / calendar / domain as available |
-| Hubly Operating System | Home Dashboard entry |
+| Ready for Launch Coach | Handoff to Module 7 |
+| (After Coach + Launch) Live Website / Booking | Published / accepting |
+| Hubly Operating System | Home Dashboard entry via Launch Coach ceremony |
 
 ---
 
@@ -165,8 +168,8 @@ Label Stage 2 clearly — do not claim “Stripe live” until connected.
 - Rename back to “Business Setup” / feel like settings forms  
 - Block launch on optional integrations  
 - Bypass Creative Blueprint → Creative Review → Business Reveal  
+- Skip Launch Coach and dump Activation → Dashboard  
 - Use dry “Connect X” copy without why  
-- Dump user into Dashboard without Launch ceremony  
 - Modify architecture docs in UI without reopening  
 
 ---
