@@ -171,11 +171,53 @@ body:has(#p-storefront.active) > .theme-toggle{display:none!important}
 /* HOURS GRID */
 .hours-grid{display:flex;flex-direction:column;gap:6px}
 .hours-row{display:grid;grid-template-columns:48px 1fr;gap:8px;align-items:center}
-.hours-day{font-size:12px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.hours-day{font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap}
 .hours-inputs{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:0}
-.hours-inputs input[type=time]{flex:1;min-width:118px;max-width:148px;padding:7px 8px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;outline:none;font-variant-numeric:tabular-nums}
-.hours-inputs input:focus{border-color:var(--ink)}
-.hours-closed{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3);white-space:nowrap;flex-shrink:0}
+.hours-inputs input[type=time]{
+  flex:1;min-width:118px;max-width:148px;padding:7px 8px;border:1px solid var(--border);border-radius:var(--r-sm);
+  font-size:12px;outline:none;font-variant-numeric:tabular-nums;background:var(--surface);color:var(--ink);color-scheme:light;
+}
+.hours-inputs input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(217,99,45,.14)}
+.hours-closed{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:650;color:var(--ink-2);white-space:nowrap;flex-shrink:0}
+/* Website editor panels: keep readable day contrast even in night theme */
+#v-editor .ed-settings-rail,
+#v-editor .ed-ctrl,
+#v-editor .ed-pkg-edit-col,
+#v-editor #mem-editor-list,
+#v-editor .svc-ed-card{
+  color:#141B2B;
+}
+#v-editor .ed-settings-rail,
+#v-editor .ed-ctrl,
+#v-editor .svc-ed-card{
+  background:#fff;
+}
+#v-editor .ed-settings-item,
+#v-editor .ed-settings-group-label,
+#v-editor .ed-ctrl .field label,
+#v-editor .hours-day,
+#v-editor .hours-closed{
+  color:#141B2B;
+}
+#v-editor .ed-settings-group-label{color:#4A5160}
+#v-editor .ed-ctrl .field input,
+#v-editor .ed-ctrl .field textarea,
+#v-editor .ed-ctrl .field select,
+#v-editor .hours-inputs input[type=time],
+#v-editor #mem-editor-list input,
+#v-editor #mem-editor-list textarea,
+#v-editor #mem-editor-list select{
+  background:#fff;color:#141B2B;border-color:#E6E8EC;color-scheme:light;
+}
+#v-editor .svc-ed-card{
+  border:1px solid #E6E8EC;border-radius:14px;box-shadow:0 4px 16px rgba(15,23,42,.04);
+}
+#v-editor .svc-ed-card-h{
+  display:flex!important;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;cursor:pointer;background:#F8F9FB;border-bottom:1px solid #EEF0F3;
+}
+#v-editor .svc-ed-card-title{font-size:13px;font-weight:750;color:#141B2B}
+#v-editor .svc-ed-body{padding:14px}
 
 body{font-family:var(--font);background:var(--surface-2);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
 /* Marketing paints instantly; public slugs paint a blank surface — never a Hubly logo splash. */
@@ -34834,6 +34876,19 @@ function initOperateNavRail(){
     btn.setAttribute('aria-expanded',expanded?'true':'false');
     btn.title=expanded?'Collapse menu':'Expand menu';
   }
+  syncOperateNavTitles(expanded);
+}
+function syncOperateNavTitles(expanded){
+  document.querySelectorAll('#app-nav .ni[data-v]').forEach(function(ni){
+    const label=(ni.querySelector('.ni-lbl')&&ni.querySelector('.ni-lbl').textContent)||'';
+    if(!ni.dataset.railTitle)ni.dataset.railTitle=ni.getAttribute('title')||label;
+    if(expanded){
+      // Expanded labels are visible — hide native tooltips that look like stuck black chips.
+      ni.removeAttribute('title');
+    }else{
+      ni.setAttribute('title',ni.dataset.railTitle||label);
+    }
+  });
 }
 function toggleOperateNavRail(){
   const app=document.getElementById('p-app');
@@ -34846,6 +34901,7 @@ function toggleOperateNavRail(){
     btn.title=expanded?'Collapse menu':'Expand menu';
     btn.setAttribute('aria-label',expanded?'Collapse menu':'Expand menu');
   }
+  syncOperateNavTitles(expanded);
 }
 document.addEventListener('DOMContentLoaded',initOperateNavRail);
 try{initOperateNavRail();}catch(e){}
