@@ -1,6 +1,6 @@
 # Module 12 — 📊 Reports
 
-**Status:** Stage 1 OS in progress  
+**Status:** Stage 1 OS complete
 **Branch:** `cursor/operate-reports-2662`  
 **Plan:** [REPORTS_PLAN.md](./REPORTS_PLAN.md)  
 **Platform:** [PLATFORM_READINESS.md](./PLATFORM_READINESS.md)  
@@ -24,32 +24,32 @@ Reports is a **presentation and analytics layer**. It owns almost no business da
 ## Stage 1 — Operating System
 
 ### Core
-- [ ] `ownPixelView('v-reports', 'jos-reports-root')` ⏳  
-- [ ] HublyDS chrome ⏳  
-- [ ] Tabs ⏳  
-- [ ] Responsive ⏳  
+- [x] `ownPixelView('v-reports', 'jos-reports-root')` ✅
+- [x] HublyDS chrome ✅
+- [x] Tabs ✅
+- [x] Responsive ✅
 
 ### Tabs
-- [ ] Overview (live aggregates) ⏳  
-- [ ] Dashboards ⏳  
-- [ ] Definitions ⏳  
-- [ ] Layouts ⏳  
-- [ ] Scheduled ⏳  
-- [ ] Forecasts ⏳  
-- [ ] Sources (owner map · Rule #21) ⏳  
+- [x] Overview (live aggregates) ✅
+- [x] Dashboards ✅
+- [x] Definitions ✅
+- [x] Layouts ✅
+- [x] Scheduled ✅
+- [x] Forecasts ✅
+- [x] Sources (owner map · Rule #21) ✅
 
 ### Ownership (Rule #21)
-- [ ] `S.reportsOs` owns presentation config only ⏳  
-- [ ] KPIs computed at read-time from owners — no payment/customer copies ⏳  
-- [ ] Deep-links to Revenue / Memberships / Jobs / etc. ⏳  
+- [x] `S.reportsOs` owns presentation config only ✅
+- [x] KPIs computed at read-time from owners — no payment/customer copies ✅
+- [x] Deep-links to Revenue / Memberships / Jobs / etc. ✅
 
 ### Actions (`rpt-*`)
-- [ ] Create / save dashboard ⏳  
-- [ ] Create / save report definition ⏳  
-- [ ] Save layout ⏳  
-- [ ] Schedule report (OS) ⏳  
-- [ ] Run / refresh forecast (OS) ⏳  
-- [ ] Navigate to owner modules ⏳  
+- [x] Create / save dashboard ✅
+- [x] Create / save report definition ✅
+- [x] Save layout ✅
+- [x] Schedule report (OS) ✅
+- [x] Run / refresh forecast (OS) ✅
+- [x] Navigate to owner modules ✅
 
 ### QA / MAT / CMV
 - [ ] Validator reports gates ⏳  
