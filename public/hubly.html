@@ -9656,8 +9656,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="pipeline" onclick="switchV(this)" title="Pipeline">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h14"/><circle cx="18" cy="12" r="2"/><circle cx="20" cy="18" r="2"/></svg><span class="ni-lbl">Pipeline</span>
       </div>
-      <div class="ni" data-v="editor" onclick="try{S._edHubTab='site'}catch(e){};switchV(this)" title="Storefront">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.7 3.6 5.7 3.6 9s-1.2 6.3-3.6 9c-2.4-2.7-3.6-5.7-3.6-9s1.2-6.3 3.6-9z"/></svg><span class="ni-lbl">Storefront</span>
+      <div class="ni" data-v="editor" onclick="try{S._edHubTab='site'}catch(e){};switchV(this)" title="Website editor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.7 3.6 5.7 3.6 9s-1.2 6.3-3.6 9c-2.4-2.7-3.6-5.7-3.6-9s1.2-6.3 3.6-9z"/></svg><span class="ni-lbl">Website editor</span>
       </div>
       <div class="ni" data-v="marketing" onclick="switchV(this)" title="Marketing">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a2 2 0 0 0 2 2h1l6 4V5L6 9H5a2 2 0 0 0-2 2z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 7a7 7 0 0 1 0 10"/></svg><span class="ni-lbl">Marketing</span>
@@ -9687,7 +9687,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni jos-nav-hidden" data-v="growth" onclick="switchV(this)" hidden aria-hidden="true"><span class="ni-lbl">Growth</span></div>
       <div class="ni jos-nav-hidden" data-v="marketplace" onclick="switchV(this)" hidden aria-hidden="true"><span class="ni-lbl">Marketplace</span></div>
       </div>
-      <a class="nav-view-site" href="#" onclick="event.preventDefault();try{S._edHubTab='site'}catch(e){};document.querySelector('.ni[data-v=editor]')?.click()" title="View Storefront">View Site</a>
+      <a class="nav-view-site" href="#" onclick="event.preventDefault();try{S._edHubTab='site'}catch(e){};document.querySelector('.ni[data-v=editor]')?.click()" title="View website">View Site</a>
       <div class="nav-bot nav-profile-bot">
         <button type="button" class="nav-cta-support" onclick="document.querySelector('.ni[data-v=\'ask\']')?.click()">
           <strong>Need a hand?</strong>
@@ -34862,7 +34862,7 @@ function switchV(el){
     dashboard:'Home',jobs:'Jobs & Calendar',leads:'Leads',customers:t('customers'),
     pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
     quotes:'Quick Quote',money:'Revenue',chats:'Inbox',marketplace:'Marketplace',
-    editor:'Storefront',settings:'Settings',reviews:'Reviews',marketing:'Marketing',
+    editor:'Website editor',settings:'Settings',reviews:'Reviews',marketing:'Marketing',
     memberships:'Memberships',reports:'Reports',growth:'Growth','booking-wizard':'Website · Book Now'
   };
   const tabLabel=titles[v]||v;
