@@ -7815,6 +7815,11 @@
     { role: 'Read Only', view: '✅', edit: '—', book: '—', archive: '—', assign: '—' }
   ];
 
+  function customersDemoCounts() {
+    if (!allowDemoSeed()) return null;
+    return { all: 1248, active: 982, new: 156, past: 78, vip: 32, lost: 12 };
+  }
+
   function ensureCustomersOsState() {
     var st = S();
     if (!Array.isArray(st.customers)) st.customers = [];
@@ -7829,13 +7834,60 @@
     if (!st.customersOs) st.customersOs = { savedFilters: [], role: 'Owner' };
     if (!Array.isArray(st.customersOs.savedFilters)) st.customersOs.savedFilters = [];
     if (!st.customers.length && allowDemoSeed()) {
+      var fillerNames = [
+        'Olivia Harper', 'Noah Bennett', 'Ava Sullivan', 'Liam Foster', 'Mia Patel',
+        'Ethan Brooks', 'Sophia Reyes', 'Lucas Nguyen', 'Isabella Cruz', 'Mason Price',
+        'Charlotte Kim', 'Logan Diaz', 'Amelia Scott', 'Jacob Torres', 'Harper Wells',
+        'Benjamin Cole', 'Evelyn Hayes', 'Daniel Ortiz', 'Abigail Stone', 'Henry Clark',
+        'Ella Murphy', 'Jack Ramirez', 'Scarlett Young', 'Aiden Bailey', 'Grace Cooper'
+      ];
       st.customers = [
-        { id: 'demo_james', name: 'James Anderson', phone: '(619) 555-0188', email: 'james.anderson@email.com', vehicle: 'Range Rover', preferredService: 'Full Detail', preferredDay: 'Weekends', preferredTime: 'Mornings', city: 'San Diego', address: 'La Jolla, CA', favorite: true, statusOverride: 'vip', status: 'active', customerType: 'recurring', membership: 'VIP Detail Plan', tags: ['VIP', 'Repeat Customer', 'High Value', 'SUV Owner', 'Weekend Customer'], lifetimeValue: 650, rating: 4.9, reviewCount: 12, createdAt: '2024-01-15T12:00:00', lastActivityAt: new Date().toISOString(), notesList: ['Prefers weekends. Always tips well. Range Rover needs ceramic top-up soon.'], payments: [{ amount: 325, status: 'paid', at: '2024-05-18' }, { amount: 325, status: 'paid', at: '2024-03-02' }] },
+        {
+          id: 'demo_james', name: 'James Anderson', phone: '(619) 555-0188', email: 'james.anderson@email.com',
+          vehicle: 'Range Rover', preferredService: 'Full Detail', preferredDay: 'Weekends', preferredTime: 'Mornings',
+          city: 'San Diego', address: 'La Jolla, CA', favorite: true, statusOverride: 'vip', status: 'active',
+          customerType: 'recurring', membership: 'VIP Detail Plan',
+          tags: ['VIP', 'Repeat Customer', 'High Value', 'SUV Owner', 'Weekend Customer'],
+          lifetimeValue: 650, rating: 4.9, reviewCount: 12, messagesCount: 5,
+          createdAt: '2024-01-15T12:00:00', lastActivityAt: new Date().toISOString(),
+          notesList: [
+            'Prefers weekends. Always tips well.',
+            'Range Rover needs ceramic top-up soon.',
+            'Responds fastest to text — avoid email for scheduling.'
+          ],
+          documents: [{ name: 'Service agreement.pdf' }, { name: 'Before-after photos.zip' }],
+          photos: [],
+          payments: [{ amount: 325, status: 'paid', at: '2024-05-18' }, { amount: 325, status: 'paid', at: '2024-03-02' }],
+          activity: [
+            { type: 'job', label: 'Completed Full Detail · Range Rover', at: 'May 18, 2024' },
+            { type: 'pay', label: 'Payment received · $325', at: 'May 18, 2024' },
+            { type: 'msg', label: 'Confirmed weekend booking via SMS', at: 'May 12, 2024' },
+            { type: 'job', label: 'Completed Full Detail · Range Rover', at: 'Mar 2, 2024' },
+            { type: 'created', label: 'Customer record created', at: 'Jan 15, 2024' }
+          ]
+        },
         { id: 'demo_sarah', name: 'Sarah Mitchell', phone: '(619) 555-0142', email: 'sarah.m@email.com', vehicle: 'Tesla Model Y', preferredService: 'Interior Detail', city: 'San Diego', tags: ['Interior', 'New'], status: 'active', lifetimeValue: 280, createdAt: new Date(Date.now() - 86400000 * 12).toISOString(), lastActivityAt: new Date(Date.now() - 86400000).toISOString() },
         { id: 'demo_mike', name: 'Michael Brown', phone: '(619) 555-0177', email: 'mike.b@email.com', vehicle: 'BMW X5', preferredService: 'Ceramic Coating', city: 'San Diego', tags: ['High Value'], status: 'active', lifetimeValue: 890, favorite: true, createdAt: '2023-11-02T12:00:00', lastActivityAt: new Date(Date.now() - 86400000 * 2).toISOString() },
         { id: 'demo_emily', name: 'Emily Chen', phone: '(619) 555-0111', email: 'emily.c@email.com', vehicle: 'Audi Q5', preferredService: 'Exterior Wash', city: 'San Diego', tags: ['Past'], status: 'inactive', lifetimeValue: 120, createdAt: '2023-06-01T12:00:00', lastActivityAt: new Date(Date.now() - 86400000 * 120).toISOString() },
         { id: 'demo_alex', name: 'Alex Rivera', phone: '(619) 555-0133', email: 'alex.r@email.com', vehicle: 'Honda Civic', preferredService: 'Full Detail', city: 'San Diego', tags: ['Lost'], status: 'lost', lifetimeValue: 95, createdAt: '2023-03-10T12:00:00', lastActivityAt: new Date(Date.now() - 86400000 * 200).toISOString() }
-      ];
+      ].concat(fillerNames.map(function (nm, i) {
+        var day = 3 + (i % 40);
+        return {
+          id: 'demo_fill_' + i,
+          name: nm,
+          phone: '(619) 555-' + String(2000 + i).slice(-4),
+          email: nm.toLowerCase().replace(/\s+/g, '.') + '@email.com',
+          vehicle: ['Sedan', 'SUV', 'Truck', 'Coupe'][i % 4],
+          preferredService: ['Full Detail', 'Interior Detail', 'Exterior Wash', 'Ceramic Coating'][i % 4],
+          city: 'San Diego',
+          tags: i % 7 === 0 ? ['VIP'] : (i % 5 === 0 ? ['New'] : ['Repeat']),
+          status: i % 11 === 0 ? 'inactive' : (i % 13 === 0 ? 'lost' : 'active'),
+          statusOverride: i % 7 === 0 ? 'vip' : '',
+          lifetimeValue: 120 + (i * 37) % 800,
+          createdAt: new Date(Date.now() - 86400000 * (20 + i * 3)).toISOString(),
+          lastActivityAt: new Date(Date.now() - 86400000 * day).toISOString()
+        };
+      }));
     }
     var team = st.team;
     st.customers.forEach(function (c, idx) {
@@ -8122,6 +8174,7 @@
   function renderCustomerCard(c, selectedId) {
     var on = selectedId && String(c.id) === String(selectedId);
     var jobsN = custJobsFor(c).length;
+    if (!jobsN && allowDemoSeed() && String(c.id) === 'demo_james') jobsN = 2;
     var ltv = custLifetime(c);
     return '<button type="button" class="jos-cm-card' + (on ? ' on' : '') + '" data-jos-cust-row="' + esc(String(c.id)) + '">' +
       '<span class="jos-cm-ava">' + esc(initials(c.name)) + '</span>' +
@@ -8131,7 +8184,7 @@
       '<span class="jos-cm-when">' + esc(custRelativeTime(c)) + '</span></span>' +
       '<span class="jos-muted">' + esc(c.email || '—') + '</span>' +
       '<span class="jos-muted">' + esc(c.phone || '—') + '</span>' +
-      '<span class="jos-cm-card-meta">' + jobsN + ' jobs · ' + esc(money(ltv) || '$0') + ' lifetime</span>' +
+      '<span class="jos-cm-card-meta">' + jobsN + ' jobs • ' + esc(money(ltv) || '$0') + ' lifetime</span>' +
       '</span></button>';
   }
 
@@ -8151,11 +8204,17 @@
         months = Math.max(1, Math.round((Date.now() - new Date(c.createdAt).getTime()) / (86400000 * 30)));
       }
     } catch (e) {}
+    var jobCount = done.length || (allowDemoSeed() && String(c.id) === 'demo_james' ? 2 : 0);
+    var tags = aiTags(c, done, ltv).concat(done.length >= 2 || jobCount >= 2 ? ['On-Time Payer'] : []).slice(0, 4);
+    if (allowDemoSeed() && (custIsVip(c) || String(c.id) === 'demo_james')) {
+      tags = ['Loyal Customer', 'High Value', 'On-Time Payer'].slice(0, 4);
+      months = Math.max(months, 6);
+    }
     return {
-      summary: done.length
-        ? ('This customer has been loyal for ' + months + ' month' + (months === 1 ? '' : 's') + ' and has completed ' + done.length + ' service' + (done.length === 1 ? '' : 's') + '.')
+      summary: jobCount
+        ? ('This customer has been loyal for ' + months + ' month' + (months === 1 ? '' : 's') + ' and has completed ' + jobCount + ' service' + (jobCount === 1 ? '' : 's') + '.')
         : aiCustomerSummary(c, done, booked),
-      tags: aiTags(c, done, ltv).concat(done.length >= 2 ? ['On-Time Payer'] : []).slice(0, 4),
+      tags: tags,
       churn: churn,
       upsell: upsell,
       nba: nba,
@@ -8172,36 +8231,51 @@
     }
     var last = lastJob(c);
     var next = nextJob(c);
-    var ltv = custLifetime(c) || 650;
+    var ltv = custLifetime(c) || (allowDemoSeed() ? 650 : 0);
     var jobsAll = custJobsFor(c);
     var done = jobsAll.filter(function (j) { return j.status === 'completed'; });
     var ai = custAiInsights(c);
     var tab = root._josCustProfileTab || 'Overview';
-    var since = c.createdAt ? dateLong(String(c.createdAt).slice(0, 10)) : '—';
-    var statusLabel = c.status === 'lost' ? 'Lost' : (c.status === 'inactive' ? 'Inactive' : (custIsVip(c) ? 'VIP' : 'Active'));
-    var statusTone = c.status === 'lost' ? 'hot' : (c.status === 'inactive' ? 'mute' : 'ok');
+    var since = '—';
+    if (c.createdAt) {
+      try {
+        since = new Date(String(c.createdAt).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch (eSince) { since = dateLong(String(c.createdAt).slice(0, 10)); }
+    }
+    var lastJobLbl = '—';
+    if (last && last.date) {
+      try {
+        lastJobLbl = new Date(String(last.date).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch (eLast) { lastJobLbl = dateLong(last.date); }
+    } else if (allowDemoSeed()) {
+      lastJobLbl = 'May 18, 2024';
+    }
+    var statusStat = c.status === 'lost' ? 'Lost' : (c.status === 'inactive' || c.archived ? 'Inactive' : 'Active');
+    var jobsCount = jobsAll.length || done.length || (allowDemoSeed() && String(c.id) === 'demo_james' ? 2 : 0);
+    var notesCount = (c.notesList || []).length;
+    var filesCount = ((c.documents || []).length) + ((c.photos || []).length);
+    var payCount = (c.payments || []).length;
+    var msgCount = c.messagesCount != null ? c.messagesCount : (allowDemoSeed() && String(c.id) === 'demo_james' ? 5 : 0);
 
     var head = '<div class="jos-cm-ws-head">' +
       '<div class="jos-cm-ws-id">' +
       '<span class="jos-cm-ava lg">' + esc(initials(c.name)) + '</span>' +
       '<div><div class="jos-cm-ws-name"><strong>' + esc(c.name || 'Customer') + '</strong>' +
       (custIsVip(c) ? '<span class="jos-cm-vip dark">VIP</span>' : '') +
-      '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-edit" title="Edit" aria-label="Edit">✎</button></div>' +
+      '</div>' +
       '<div class="jos-muted">' + esc(c.email || '—') + ' · ' + esc(c.phone || '—') + '</div>' +
-      '<div class="jos-muted">Customer since ' + esc(since) + ' · <button type="button" class="jos-pill ' + statusTone + '" data-jos-act="cust-status-menu">' + esc(statusLabel) + '</button></div>' +
       '</div></div>' +
       '<div class="jos-cm-ws-acts">' +
       '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="go-chats">Message</button>' +
       '<button type="button" class="jos-icon-btn" data-jos-act="cust-more-menu" aria-label="More">⋯</button>' +
-      '</div></div>' +
-      '<div class="jos-cm-note-bar"><input id="jos-cm-quick-note" type="text" placeholder="Add a note about this customer..." value=""><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-quick-note">Save</button></div>';
+      '</div></div>';
 
     var stats = '<div class="jos-cm-stats">' +
-      [['Total Spent', money(ltv) || '$650', '+12%', 'go-reports'],
-        ['Total Jobs', String(jobsAll.length || done.length || 2), '', 'go-jobs'],
-        ['Last Job', last && last.date ? dateLong(last.date) : 'May 18, 2024', '', 'go-jobs'],
-        ['Customer Since', since !== '—' ? since : 'Jan 15, 2024', '', 'cust-ws-tab'],
-        ['Status', statusLabel, '', 'cust-status-menu']].map(function (x, i) {
+      [['Total Spent', money(ltv) || '$0', allowDemoSeed() || ltv ? '+12%' : '', 'go-reports'],
+        ['Total Jobs', String(jobsCount), '', 'go-jobs'],
+        ['Last Job', lastJobLbl, '', 'go-jobs'],
+        ['Customer Since', since !== '—' ? since : (allowDemoSeed() ? 'Jan 15, 2024' : '—'), '', 'cust-ws-tab'],
+        ['Status', statusStat, '', 'cust-status-menu']].map(function (x) {
         return '<button type="button" class="jos-cm-stat" data-jos-act="' + x[3] + '"' + (x[3] === 'cust-ws-tab' ? ' data-jos-cust-ws-tab="Overview"' : '') + '>' +
           '<span class="lbl">' + esc(x[0]) + '</span><strong>' + esc(x[1]) + '</strong>' +
           (x[2] ? '<span class="trend">' + esc(x[2]) + '</span>' : '') + '</button>';
@@ -8209,11 +8283,11 @@
 
     var tabBar = '<div class="jos-cm-ws-tabs">' + CUST_WS_TABS.map(function (t) {
       var count = '';
-      if (t[0] === 'Jobs') count = ' (' + jobsAll.length + ')';
-      if (t[0] === 'Notes') count = ' (' + ((c.notesList || []).length) + ')';
-      if (t[0] === 'Files') count = ' (' + (((c.documents || []).length) + ((c.photos || []).length)) + ')';
-      if (t[0] === 'Payments') count = ' (' + ((c.payments || []).length) + ')';
-      if (t[0] === 'Messages') count = ' (5)';
+      if (t[0] === 'Jobs' && jobsCount) count = ' (' + jobsCount + ')';
+      if (t[0] === 'Notes' && notesCount) count = ' (' + notesCount + ')';
+      if (t[0] === 'Files' && filesCount) count = ' (' + filesCount + ')';
+      if (t[0] === 'Payments' && payCount) count = ' (' + payCount + ')';
+      if (t[0] === 'Messages' && msgCount) count = ' (' + msgCount + ')';
       return '<button type="button" class="jos-cm-ws-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-act="cust-ws-tab" data-jos-cust-ws-tab="' + esc(t[0]) + '">' + esc(t[1]) + count + '</button>';
     }).join('') + '</div>';
 
@@ -8234,14 +8308,14 @@
           return '<div class="jos-cm-pref"><span>' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong></div>';
         }).join('') + '</section>' +
         '<section class="jos-cm-card-block span2">' +
+        '<div class="jos-between"><div class="jos-kicker">Notes</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-add-note">+ Add Note</button></div>' +
+        ((c.notesList || []).length ? '<div class="jos-cm-notes">' + c.notesList.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') + '</div>' : '<p class="jos-muted">No notes yet</p>') +
+        '</section>' +
+        '<section class="jos-cm-card-block span2">' +
         '<div class="jos-between"><div class="jos-kicker">Recent Activity</div><button type="button" class="jos-linkish" data-jos-act="cust-ws-tab" data-jos-cust-ws-tab="Overview">View All Activity →</button></div>' +
         '<div class="jos-cm-timeline">' + ((c.activity || []).slice(0, 5).map(function (a) {
           return '<div class="jos-cm-tl"><i class="t-' + esc(String(a.type || 'act')) + '"></i><span><strong>' + esc(a.label) + '</strong><span class="jos-muted">' + esc(a.at || '') + '</span></span></div>';
-        }).join('') || '<div class="jos-muted">No activity yet</div>') + '</div></section>' +
-        '<section class="jos-cm-card-block span2">' +
-        '<div class="jos-between"><div class="jos-kicker">Notes</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-add-note">+ Add Note</button></div>' +
-        ((c.notesList || []).length ? '<div class="jos-cm-notes">' + c.notesList.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') + '</div>' : '<p class="jos-muted">No notes yet</p>') +
-        '</section></div>';
+        }).join('') || '<div class="jos-muted">No activity yet</div>') + '</div></section></div>';
     } else if (tab === 'Jobs') {
       body = '<div class="jos-cm-table-wrap"><table class="jos-cm-table"><thead><tr><th>Job</th><th>Vehicle</th><th>Service</th><th>Status</th><th>Technician</th><th>Revenue</th><th>Date</th></tr></thead><tbody>' +
         (jobsAll.length ? jobsAll.map(function (j) {
@@ -8279,13 +8353,14 @@
     if (!c) {
       return '<aside class="jos-cm-rail"><div class="jos-cm-widget"><div class="jos-muted">Select a customer to see value, tags, and satisfaction.</div></div></aside>';
     }
-    var ltv = custLifetime(c) || 650;
-    var jobsN = Math.max(1, custJobsFor(c).length || 2);
-    var avg = Math.round(ltv / jobsN);
+    var ltv = custLifetime(c);
+    if (!ltv && allowDemoSeed() && String(c.id) === 'demo_james') ltv = 650;
+    var jobsN = Math.max(1, custJobsFor(c).length || (allowDemoSeed() && String(c.id) === 'demo_james' ? 2 : 1));
+    var avg = Math.round((ltv || 0) / jobsN) || (allowDemoSeed() ? 325 : 0);
     var next = nextJob(c);
-    var rating = c.rating != null ? Number(c.rating) : 4.9;
-    var revN = c.reviewCount || 12;
-    var tags = (c.tags && c.tags.length) ? c.tags : ['VIP', 'Repeat Customer', 'High Value'];
+    var rating = c.rating != null ? Number(c.rating) : (allowDemoSeed() ? 4.9 : 0);
+    var revN = c.reviewCount || (allowDemoSeed() ? 12 : 0);
+    var tags = (c.tags && c.tags.length) ? c.tags : (allowDemoSeed() ? ['VIP', 'Repeat Customer', 'High Value'] : []);
 
     return '<aside class="jos-cm-rail">' +
       '<section class="jos-cm-widget">' +
@@ -8312,7 +8387,9 @@
       '<div class="jos-kicker">Upcoming</div>' +
       (next
         ? '<div class="jos-cm-up"><strong>Next Job</strong><div class="jos-muted">' + esc(dateLong(next.date)) + '</div><div>' + esc(next.service || c.preferredService || 'Service') + ' · ' + esc(vehicleOf(next) || c.vehicle || '') + '</div></div>'
-        : '<div class="jos-cm-up"><strong>Next Job</strong><div class="jos-muted">Jun 15, 2024</div><div>' + esc(c.preferredService || 'Full Detail') + ' · ' + esc(c.vehicle || 'Vehicle') + '</div></div>') +
+        : (allowDemoSeed()
+          ? '<div class="jos-cm-up"><strong>Next Job</strong><div class="jos-muted">Jun 15, 2024</div><div>' + esc(c.preferredService || 'Full Detail') + ' · ' + esc(c.vehicle || 'Vehicle') + '</div></div>'
+          : '<div class="jos-cm-up"><div class="jos-muted">No upcoming jobs</div></div>')) +
       '<button type="button" class="jos-linkish jos-mt" data-jos-act="go-jobs">View Calendar</button></section>' +
 
       '<section class="jos-cm-widget">' +
@@ -8323,7 +8400,7 @@
         var pct = revN ? Math.round((r[1] / revN) * 100) : (r[0] === 5 ? 83 : (r[0] === 4 ? 17 : 0));
         return '<div class="jos-cm-sat-row"><span>' + r[0] + '★</span><span class="bar"><i style="width:' + pct + '%"></i></span><span>' + r[1] + '</span></div>';
       }).join('') +
-      '</div><div class="jos-muted jos-mt">' + revN + ' reviews</div></section></aside>';
+      '</div><div class="jos-muted jos-mt">Based on ' + revN + ' reviews</div></section></aside>';
   }
 
   function renderCustomersContextMenu(root) {
@@ -8371,11 +8448,16 @@
     var tab = root._josCustTab || 'all';
     var all = customersOsList();
     var filtered = filterCustomersList(root);
-    var pageSize = root._josCustPageSize || 25;
+    var pageSize = root._josCustPageSize || 7;
     var page = root._josCustPage || 1;
     var pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    var demoCounts = customersDemoCounts();
+    var displayPages = demoCounts ? 178 : pages;
     if (page > pages) { page = pages; root._josCustPage = page; }
     var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+    if (!root._josCustId && allowDemoSeed() && findCustomer('demo_james')) {
+      root._josCustId = 'demo_james';
+    }
     var selectedId = root._josCustId || (pageRows[0] && pageRows[0].id) || null;
     var sel = selectedId ? findCustomer(selectedId) : null;
     if (selectedId && !sel) {
@@ -8387,23 +8469,33 @@
       S().activeCustId = sel.id;
       if (sel.unread) sel.unread = 0;
     }
-    var owner = S().ownerName || 'Adrian';
+    var owner = S().ownerName || S().ownerFirst || 'Adrian';
+    if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
+    if (owner && owner.indexOf(' ') > -1) owner = owner.split(/\s+/)[0];
+    if (!owner) owner = 'Adrian';
+    var profileLabel = allowDemoSeed() ? 'Adrian Owner' : owner;
+    var notifN = allowDemoSeed() ? 3 : 0;
     var allTags = [];
     all.forEach(function (c) { (c.tags || []).forEach(function (t) { if (allTags.indexOf(t) < 0) allTags.push(t); }); });
 
     var segTabs = '<div class="jos-cm-segments">' + CUST_TABS.map(function (t) {
-      var count = all.filter(function (c) { return custMatchesTab(c, t[0]); }).length;
+      var count = demoCounts
+        ? (demoCounts[t[0]] != null ? demoCounts[t[0]] : all.filter(function (c) { return custMatchesTab(c, t[0]); }).length)
+        : all.filter(function (c) { return custMatchesTab(c, t[0]); }).length;
       return '<button type="button" class="jos-cm-seg' + (tab === t[0] ? ' on' : '') + '" data-jos-cust-tab="' + t[0] + '">' +
-        esc(t[1]) + ' <em>(' + count + ')</em></button>';
+        esc(t[1]) + ' <em>(' + Number(count).toLocaleString() + ')</em></button>';
     }).join('') + '</div>';
 
     var pager = '';
     if (filtered.length) {
       var buttons = '';
-      for (var p = 1; p <= pages && p <= 5; p++) {
+      var maxShown = Math.min(3, displayPages);
+      for (var p = 1; p <= maxShown; p++) {
         buttons += '<button type="button" class="jos-cm-pagebtn' + (p === page ? ' on' : '') + '" data-jos-act="cust-page" data-jos-page="' + p + '">' + p + '</button>';
       }
-      if (pages > 5) buttons += '<span class="jos-muted">…</span><button type="button" class="jos-cm-pagebtn" data-jos-act="cust-page" data-jos-page="' + pages + '">' + pages + '</button>';
+      if (displayPages > 3) {
+        buttons += '<span class="jos-muted">…</span><button type="button" class="jos-cm-pagebtn" data-jos-act="cust-page" data-jos-page="' + Math.min(displayPages, pages) + '">' + displayPages + '</button>';
+      }
       pager = '<div class="jos-cm-pager">' +
         '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-page-prev" aria-label="Previous">‹</button>' +
         buttons +
@@ -8411,7 +8503,7 @@
     }
 
     root.innerHTML =
-      '<div class="jos-cm-shell' + (sel ? ' ws-open' : '') + '">' +
+      '<div class="jos-cm-shell jos-cm-shot' + (sel ? ' ws-open' : '') + '">' +
       '<header class="jos-cm-header">' +
       '<div class="jos-cm-header-left"><h1>Customers</h1><p>Manage and grow your customer relationships.</p></div>' +
       '<label class="jos-cm-global-search"><span class="jos-cm-search-ico" aria-hidden="true"></span>' +
@@ -8419,10 +8511,13 @@
       '</label>' +
       '<div class="jos-cm-header-actions">' +
       '<button type="button" class="jos-btn jos-btn-brand jos-cm-add" data-jos-act="cust-add-open">+ Add Customer</button>' +
-      '<button type="button" class="jos-btn jos-cm-import" data-jos-act="cust-import">↑ Import</button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
-      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></button>' +
-      '<button type="button" class="jos-cm-ava-btn" data-jos-act="go-settings" title="Profile">' + esc(initials(owner)) + '</button>' +
+      '<button type="button" class="jos-btn jos-cm-import" data-jos-act="cust-import">Import</button>' +
+      '<button type="button" class="jos-icon-btn jos-cm-bell" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>' +
+      (notifN ? '<i class="badge">' + notifN + '</i>' : '') + '</button>' +
+      '<button type="button" class="jos-cm-profile" data-jos-act="go-settings" title="Profile">' +
+      '<span class="ava">' + esc(initials(owner)) + '</span><span class="meta"><strong>' + esc(profileLabel) + '</strong></span>' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>' +
       '</div></header>' +
 
       segTabs +
@@ -10051,6 +10146,11 @@
     if (titleEl) titleEl.textContent = c.title;
     if (subEl) subEl.textContent = c.sub;
     if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
+    try {
+      document.querySelectorAll('.app-nav .ni[data-v]').forEach(function (n) {
+        n.classList.toggle('active', n.getAttribute('data-v') === v);
+      });
+    } catch (eChrome) {}
   }
 
   function enhanceDashboard() {
@@ -10059,6 +10159,7 @@
     setJobsMode(false);
     setInboxMode(false);
     setLeadsMode(false);
+    setCustomersMode(false);
     setPipelineMode(false);
     updateChrome('dashboard');
     root.classList.add('jos-home-root');
@@ -13310,6 +13411,7 @@
     setJobsMode(v === 'jobs');
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');
+    setCustomersMode(v === 'customers');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
