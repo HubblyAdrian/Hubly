@@ -704,6 +704,28 @@
   function ahAction(type) {
     return AH_ACTION_CATALOG[type] || { label: type || 'Action', requiresConfirm: true, desc: 'Unknown mutating action.' };
   }
+  /** Explicit propose act strings so routes remain greppable for MAT. */
+  function ahProposeAct(type) {
+    var map = {
+      create_job: 'ah-propose-create-job',
+      create_quote: 'ah-propose-create-quote',
+      draft_campaign: 'ah-propose-draft-campaign',
+      send_campaign: 'ah-propose-send-campaign',
+      update_website: 'ah-propose-update-website',
+      publish_website: 'ah-propose-publish-website',
+      schedule_followup: 'ah-propose-schedule-followup',
+      cancel_membership: 'ah-propose-cancel-membership',
+      refund_payment: 'ah-propose-refund-payment',
+      delete_customer: 'ah-propose-delete-customer',
+      change_pricing: 'ah-propose-change-pricing',
+      generate_draft: 'ah-propose-generate-draft',
+      explain_report: 'ah-propose-explain-report',
+      summarize_customer: 'ah-propose-summarize-customer',
+      suggest_followups: 'ah-propose-suggest-followups',
+      generate_report: 'ah-propose-generate-report'
+    };
+    return map[type] || ('ah-propose-' + String(type || '').replace(/_/g, '-'));
+  }
   function ahPublish(type, payload) {
     var ev = hublyEvents();
     if (ev && typeof ev.publish === 'function') ev.publish(type, payload || {});
@@ -1166,10 +1188,10 @@
       return '<div class="jos-ah-log"><div><strong>' + esc(a.label || a.actionType) + '</strong><span>' + esc(String(a.at || '').replace('T', ' ').slice(0, 19)) + '</span></div>' + ahStatusBadge(a.status, tone) + '</div>';
     }).join('');
     var demos = ['create_job', 'create_quote', 'draft_campaign', 'send_campaign', 'update_website', 'publish_website', 'schedule_followup', 'generate_report', 'summarize_customer', 'suggest_followups', 'generate_draft'].map(function (type) {
-      return dsBtn('ah-propose-' + type.replace(/_/g, '-'), ahAction(type).label, ahAction(type).requiresConfirm ? 'jos-btn jos-btn-sm' : 'jos-btn-brand jos-btn-sm');
+      return dsBtn(ahProposeAct(type), ahAction(type).label, ahAction(type).requiresConfirm ? 'jos-btn jos-btn-sm' : 'jos-btn-brand jos-btn-sm');
     }).join('');
     var guarded = ['refund_payment', 'delete_customer', 'change_pricing'].map(function (type) {
-      return dsBtn('ah-propose-' + type.replace(/_/g, '-'), ahAction(type).label, 'jos-btn jos-btn-sm');
+      return dsBtn(ahProposeAct(type), ahAction(type).label, 'jos-btn jos-btn-sm');
     }).join('');
     return '<div class="jos-ah-2col"><div class="jos-card"><div class="jos-kicker">Confirmation queue</div><div class="jos-ah-pending-list jos-mt">' + (os.pending.length ? os.pending.map(renderAhPendingCard).join('') : (DS() ? DS().emptyState('No pending actions', 'High-impact proposals will appear here.') : '<div class="jos-empty">No pending actions.</div>')) + '</div></div>' +
       '<div class="jos-stack"><div class="jos-card"><div class="jos-kicker">Action catalog demos</div><div class="jos-btn-row jos-mt">' + demos + '</div></div><div class="jos-card"><div class="jos-kicker">Hard guards</div><p class="jos-muted">These cannot execute silently; they must enter pending or match an exact automation allow-rule.</p><div class="jos-btn-row">' + guarded + '</div></div></div></div>' +
@@ -1210,7 +1232,7 @@
       return '<tr><td><strong>' + esc(r[0]) + '</strong></td><td>' + esc(r[1]) + '</td><td>' + esc(r[2]) + '</td><td>' + dsBtn(r[3], 'Open', 'jos-btn jos-btn-sm') + '</td></tr>';
     }).join('');
     var proposals = ['create_job', 'draft_campaign', 'send_campaign', 'update_website', 'publish_website', 'generate_report'].map(function (type) {
-      return dsBtn('ah-propose-' + type.replace(/_/g, '-'), ahAction(type).label, 'jos-btn jos-btn-sm');
+      return dsBtn(ahProposeAct(type), ahAction(type).label, 'jos-btn jos-btn-sm');
     }).join('');
     return '<div class="jos-card"><div class="jos-kicker">Owner context map</div><p class="jos-muted">Ask Hubly reads summaries and ids from owners; it never stores operational row arrays inside S.askHublyOs.</p><div class="jos-rpt-table-wrap jos-mt"><table class="jos-rpt-table"><thead><tr><th>Module</th><th>Owner</th><th>Now</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
       '<div class="jos-btn-row jos-mt">' + dsBtn('ah-refresh-context', 'Refresh context', 'jos-btn-brand jos-btn-sm') + proposals + '</div></div>';

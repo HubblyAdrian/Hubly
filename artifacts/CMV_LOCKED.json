@@ -40,6 +40,26 @@
       "name": "📣 Marketing still works",
       "pass": true,
       "detail": "len=7426"
+    },
+    {
+      "name": "⭐ Reviews still works",
+      "pass": true,
+      "detail": "len=4361"
+    },
+    {
+      "name": "🔁 Memberships still works",
+      "pass": true,
+      "detail": "len=3127"
+    },
+    {
+      "name": "💰 Revenue still works",
+      "pass": true,
+      "detail": "len=3315"
+    },
+    {
+      "name": "📊 Reports still works",
+      "pass": true,
+      "detail": "len=4509"
     }
   ],
   "warns": []

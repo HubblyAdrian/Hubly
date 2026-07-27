@@ -369,6 +369,22 @@ try {
       fs.existsSync(path.join(root, "docs/operate/PLATFORM_READINESS.md"))
   );
 
+  mark("check ask-hubly");
+  ok(
+    "ask-hubly",
+    has(jjs, "function renderAskHubly") &&
+      has(jjs, "handleAskHublyAct") &&
+      has(jjs, "ensureAskHublyOsState") &&
+      has(jjs, "ahProposeAction") &&
+      has(jjs, "ah-confirm") &&
+      has(jjs, "askHublyOs") &&
+      has(jjs, "jos-ah-page") &&
+      has(hubly, 'id="v-ask"') &&
+      has(hubly, 'id="jos-ask-root"') &&
+      has(px, "jos-ah-page") &&
+      fs.existsSync(path.join(root, "docs/operate/ASK_HUBLY_ARCHITECTURE.md"))
+  );
+
   const hublyEventsJs = read("public/journey-os/hubly-events.js");
   mark("check hubly-events");
   ok(

@@ -1,0 +1,340 @@
+{
+  "accepted": true,
+  "consoleErrors": 0,
+  "validatorPass": true,
+  "cmvPass": true,
+  "desktopOk": true,
+  "tabletOk": true,
+  "mobileOk": true,
+  "eventLog": [
+    "ai.draft.generated",
+    "ai.action.proposed",
+    "ai.action.confirmed",
+    "job.booked",
+    "ai.action.executed",
+    "ai.action.proposed",
+    "ai.action.cancelled",
+    "ai.action.executed",
+    "ai.action.proposed"
+  ],
+  "results": [
+    {
+      "section": "Events",
+      "name": "HublyEvents loaded",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 22",
+      "name": "AI event constants",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Header",
+      "name": "Page renders",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Ownership",
+      "name": "askHublyOs created",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Ownership",
+      "name": "Seeded conversation",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Architecture",
+      "name": "ASK_HUBLY_ARCHITECTURE present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Architecture",
+      "name": "Rule #22 in engineering rules",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "chat",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "actions",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "memory",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "automations",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "context",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Tabs",
+      "name": "activity",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Safe",
+      "name": "Draft executes without pending",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "ai.draft.generated or executed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 22",
+      "name": "Create job queued for confirm",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "ai.action.proposed published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Jobs",
+      "name": "Job not created before confirm",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 22",
+      "name": "Confirmed creates job",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "ai.action.confirmed published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "ai.action.executed published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 22",
+      "name": "Publish website pending",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 22",
+      "name": "Cancel removes pending",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Events",
+      "name": "ai.action.cancelled published",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Automations",
+      "name": "Allow-rule saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 22",
+      "name": "Automation skips pending",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Quotes",
+      "name": "Quote created via automation",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Memory",
+      "name": "Memory note added",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 19",
+      "name": "Purges customers copy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 19",
+      "name": "Purges payments copy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Hard guards",
+      "name": "Refund requires confirm",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 15",
+      "name": "Owns askHublyOs",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Rule 22",
+      "name": "Confirmation engine",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Brand",
+      "name": "Hubly wordmark",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Design System",
+      "name": "Uses HublyDS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "ah-confirm",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "ah-cancel",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "ah-propose-create-job",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "ah-propose-generate-draft",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "ah-memory-add",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "ah-auto-add",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "ah-go-money",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Routes",
+      "name": "ah-go-reports",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Empty States",
+      "name": "Empty helpers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Error States",
+      "name": "Retry markup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive CSS",
+      "name": "Ask Hubly layout",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Mount",
+      "name": "jos-ask-root in hubly.html",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Validator",
+      "name": "check-customer-journey-os",
+      "ok": true,
+      "detail": "PASS in 34ms"
+    },
+    {
+      "section": "CMV",
+      "name": "Locked modules incl. Reports",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Console",
+      "name": "Console errors = 0",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "section": "Responsive",
+      "name": "Desktop",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive",
+      "name": "Tablet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "Responsive",
+      "name": "Mobile",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

@@ -168,6 +168,8 @@ const memberships = mount("v-memberships", app);
 mount("jos-memberships-root", memberships);
 const money = mount("v-money", app);
 mount("jos-revenue-root", money);
+const reports = mount("v-reports", app);
+mount("jos-reports-root", reports);
 mount("bar-title", document.body);
 mount("bar-sub", document.body);
 mount("nav-leads-badge", document.body);
@@ -321,6 +323,14 @@ try {
   ok("💰 Revenue still works", /jos-rve|Revenue|Invoice|Payment/i.test(rveHtml) && rveHtml.length > 200, "len=" + rveHtml.length);
 } catch (e) {
   ok("💰 Revenue still works", false, String(e.message || e));
+}
+
+try {
+  H.renderReportsPage();
+  const rptHtml = document.getElementById("jos-reports-root").innerHTML;
+  ok("📊 Reports still works", /jos-rpt|Reports|Dashboard|Rule #21/i.test(rptHtml) && rptHtml.length > 200, "len=" + rptHtml.length);
+} catch (e) {
+  ok("📊 Reports still works", false, String(e.message || e));
 }
 
 console.warn = _warn;

@@ -123,3 +123,19 @@ Memberships **owns:** `S.membershipsOs` (plans, subscribers, billing rules, incl
 Revenue **reads:** Customers, Jobs, Memberships, Services.  
 Revenue **owns:** `S.revenueOs` (Rule #20 — financial integrity / append-only).  
 See [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md).
+
+---
+
+## Ask Hubly (Module 13) publishes
+
+| Event | When |
+|-------|------|
+| `ai.action.proposed` | Mutating / high-impact action queued for confirm |
+| `ai.action.confirmed` | User confirmed |
+| `ai.action.cancelled` | User cancelled |
+| `ai.action.executed` | Action applied via owning module |
+| `ai.draft.generated` | Safe draft created (no confirm) |
+
+Ask Hubly **reads:** all owners (summaries + ids).  
+Ask Hubly **owns:** `S.askHublyOs` — never operational entities.  
+See [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md) · Rule #22.

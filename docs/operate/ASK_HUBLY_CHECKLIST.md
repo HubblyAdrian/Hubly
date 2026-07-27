@@ -1,6 +1,6 @@
 # Module 13 — ✨ Ask Hubly
 
-**Status:** Architecture approved · Stage 1 OS implemented · MAT pending
+**Status:** Stage 1 OS complete · MAT ✅ ACCEPTED · CMV PASS · awaiting PR approval
 **Branch:** `cursor/operate-ask-hubly-2662`  
 **Architecture (required):** [ASK_HUBLY_ARCHITECTURE.md](./ASK_HUBLY_ARCHITECTURE.md)  
 **Plan:** [ASK_HUBLY_PLAN.md](./ASK_HUBLY_PLAN.md)  
@@ -57,12 +57,12 @@ Ask Hubly is the intelligence layer on top of Operate — not just another page.
 - [x] Generate report / summarize / suggest (safe) ✅
 
 ### QA / MAT / CMV
-- [ ] Validator ask-hubly gates ⏳  
-- [ ] MAT ⏳  
-- [ ] CMV incl. Reports ⏳  
+- [x] Validator ask-hubly gates ✅  
+- [x] MAT ✅ ACCEPTED — [ASK_HUBLY_MAT.md](./ASK_HUBLY_MAT.md)  
+- [x] CMV incl. Reports ✅  
 
 ### Definition of Done
-- [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳  
+- [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳ (awaiting approval)  
 
 ---
 
