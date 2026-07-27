@@ -7,8 +7,8 @@
   'use strict';
 
   var PIPE_STAGES = [
-    { id: 'lead', label: 'Lead', dot: 'lead', tone: 'blue' },
-    { id: 'qualified', label: 'Qualified', dot: 'qualified', tone: 'purple' },
+    { id: 'lead', label: 'Lead', dot: 'lead', tone: 'navy' },
+    { id: 'qualified', label: 'Qualified', dot: 'qualified', tone: 'blue' },
     { id: 'quote', label: 'Quote', dot: 'quote', tone: 'orange' },
     { id: 'booked', label: 'Booked', dot: 'booked', tone: 'green' },
     { id: 'completed', label: 'Completed', dot: 'completed', tone: 'gray' },
@@ -182,19 +182,24 @@
 
   function pipeStatusTag(card) {
     var sid = getCardStageId(card);
-    var tags = pipeCardTags(card);
-    if (tags.length) return String(tags[0]);
     if (sid === 'lead') return 'New';
     if (sid === 'qualified') return 'Follow up';
     if (sid === 'quote') return 'Quoted';
     if (sid === 'booked') return 'Booked';
     if (sid === 'completed') return 'Done';
+    var tags = pipeCardTags(card);
+    if (tags.length) return String(tags[0]);
     return pipeStageLabel(sid);
+  }
+
+  function pipeDemoKpis(cards) {
+    if (!allowDemoSeed()) return null;
+    return { open: 14, value: 8197, won: 0, stages: 7 };
   }
 
   function demoPipelineCards() {
     return [
-      { id: 'd1', stageId: 'lead', name: 'Alex Rivera', source: 'website', service: 'Interior Detail', amount: 250, phone: '(619) 555-0101', email: 'alex@email.com', tags: ['New Lead', 'Exterior', 'Weekend', 'High Intent'], owner: 'Adrian', createdAt: '2025-05-18' },
+      { id: 'd1', stageId: 'lead', name: 'Alex Rivera', source: 'website', service: 'Full Detail', amount: 250, phone: '(619) 555-0101', email: 'alex@email.com', tags: ['New Lead', 'Exterior', 'Weekend', 'High Intent'], owner: 'Adrian', createdAt: '2025-05-18', address: 'San Diego, CA' },
       { id: 'd2', stageId: 'lead', name: 'Sam Chen', source: 'google', service: 'Exterior Wash', vehicle: 'SUV', amount: 89, phone: '(619) 555-0102', tags: ['New'], owner: 'Adrian' },
       { id: 'd3', stageId: 'lead', name: 'Jordan Lee', source: 'instagram', service: 'Full Detail + Wax', vehicle: 'Sedan', amount: 349, tags: ['Weekend'], owner: 'Adrian' },
       { id: 'd8', stageId: 'lead', name: 'Taylor Smith', source: 'facebook', service: 'Mobile Detail', amount: 339, tags: ['New Lead'], owner: 'Adrian' },
@@ -202,7 +207,7 @@
       { id: 'd10', stageId: 'qualified', name: 'Jamie Wilson', source: 'referral', service: 'Paint Correction', amount: 599, tags: ['Follow up'], owner: 'Adrian' },
       { id: 'd11', stageId: 'quote', name: 'Casey Brown', source: 'hubly', service: 'Interior + Ceramic', amount: 1250, tags: ['Quoted'], owner: 'Adrian' },
       { id: 'd12', stageId: 'quote', name: 'Morgan Davis', source: 'google', service: 'Full Detail', amount: 1000, tags: ['Quoted'], owner: 'Adrian' },
-      { id: 'd4', stageId: 'booked', name: 'Test', source: 'hubly', service: 'Mobile detail', date: todayStr(), amount: 179, tags: ['Booked'], owner: 'Adrian' }
+      { id: 'd4', stageId: 'booked', name: 'Test', source: 'hubly', service: 'Exterior Wash', vehicle: 'Camry · White', date: '2025-05-17', amount: 179, tags: ['Booked'], owner: 'Adrian' }
     ];
   }
 
@@ -258,15 +263,24 @@
 
   function pipeCardHtml(card, selectedId) {
     var on = String(selectedId) === String(card.id);
+    var sid = boardStageId(card);
     var tag = pipeStatusTag(card);
+    var tagTone = sid === 'lead' ? 'info' : (sid === 'qualified' ? 'follow' : (sid === 'quote' ? 'quote' : (sid === 'booked' ? 'ok' : 'mute')));
     var amt = card.amount != null && Number.isFinite(Number(card.amount)) ? money(card.amount) : '$0';
+    var sub = esc(card.service || 'Service');
+    var extra = '';
+    if (sid === 'booked' || sid === 'completed') {
+      var when = card.date ? (String(card.date).length === 10 ? dateLong(card.date) : card.date) : '';
+      if (when || card.service) sub = esc([when, card.service].filter(Boolean).join(' · '));
+      if (card.vehicle) extra = '<span class="jos-muted jos-pk-extra">' + esc(card.vehicle) + '</span>';
+    }
     return '<div class="jos-pk-card' + (on ? ' on' : '') + '" data-jos-pipe-card="' + esc(card.id) + '" role="button" tabindex="0" draggable="true">' +
-      '<span class="jos-pk-ava">' + esc(initials(card.name)) + '</span>' +
       '<span class="jos-pk-card-body">' +
       '<strong>' + esc(card.name || 'Deal') + '</strong>' +
-      '<span class="jos-muted">' + esc(card.service || 'Service') + '</span>' +
-      '<span class="jos-pk-card-foot"><span class="jos-pk-tag">' + esc(tag) + '</span><span class="jos-pk-amt">' + esc(amt) + '</span></span>' +
-      '</span></div>';
+      '<span class="jos-muted">' + sub + '</span>' + extra +
+      '<span class="jos-pk-card-foot"><span class="jos-pk-tag tone-' + tagTone + '">' + esc(tag) + '</span><span class="jos-pk-amt">' + esc(amt) + '</span></span>' +
+      '</span>' +
+      '<span class="jos-pk-ava">' + esc(initials(card.name)) + '</span></div>';
   }
 
   function filterPipelineCards(root, cards) {
@@ -302,6 +316,13 @@
   function pipeActivityItems(card) {
     var items = [];
     if (!card) return items;
+    if (allowDemoSeed() && String(card.id) === 'd1') {
+      return [
+        { type: 'next', label: 'Next: Follow up in 2 days', at: 'May 20, 2025 at 10:00 AM' },
+        { type: 'created', label: 'Lead created from Website', at: 'May 18, 2025' },
+        { type: 'msg', label: 'AI scored high intent', at: '2 hours ago' }
+      ];
+    }
     if (card.meta && card.meta.activity && card.meta.activity.length) {
       card.meta.activity.slice(0, 6).forEach(function (a) {
         items.push({ type: a.type || 'act', label: a.label || a.type || 'Activity', at: a.at || '' });
@@ -319,6 +340,9 @@
 
   function pipeAiBody(card) {
     if (!card) return 'Select a deal to see AI next steps.';
+    if (allowDemoSeed() && String(card.id) === 'd1') {
+      return 'Quality lead with consistent service interest. Likely interested in premium protection add-ons. Recommend a same-week Full Detail slot.';
+    }
     var sid = getCardStageId(card);
     var map = {
       lead: 'Quality lead with consistent service interest. Likely interested in premium protection add-ons. Recommend a same-week slot.',
@@ -355,19 +379,23 @@
   }
 
   function renderPipelineKpis(cards) {
-    var totalVal = cards.reduce(function (s, c) { return s + (Number(c.amount) || 0); }, 0);
-    var open = cards.filter(function (c) { var i = pipeStageIndex(boardStageId(c)); return i >= 0 && i < 4; }).length;
-    var won = cards.filter(function (c) { return boardStageId(c) === 'completed'; }).length;
-    var stages = PIPE_BOARD_STAGES.length;
-    return '<div class="jos-pk-kpis">' +
-      [['pipe-kpi-open', 'Open Deals', String(open), '+27%', 'Filters board to open deals'],
-        ['pipe-kpi-value', 'Pipeline Value', money(totalVal) || '$8,197', '+32%', 'Total estimated revenue'],
-        ['pipe-kpi-won', 'Won / Recurring', String(won), won ? 'Last 30 days' : 'No changes from last 30 days', 'Recurring & completed'],
-        ['pipe-kpi-stages', 'Stages', String(stages), 'Total in your pipeline', 'Pipeline settings']].map(function (k) {
-        return '<button type="button" class="jos-pk-kpi" data-jos-act="' + k[0] + '" title="' + esc(k[4]) + '">' +
-          '<span class="lbl">' + esc(k[1]) + '</span><strong>' + esc(k[2]) + '</strong>' +
-          '<span class="trend">' + esc(k[3]) + '</span></button>';
-      }).join('') + '</div>';
+    var demo = pipeDemoKpis(cards);
+    var totalVal = demo ? demo.value : cards.reduce(function (s, c) { return s + (Number(c.amount) || 0); }, 0);
+    var open = demo ? demo.open : cards.filter(function (c) { var i = pipeStageIndex(boardStageId(c)); return i >= 0 && i < 4; }).length;
+    var won = demo ? demo.won : cards.filter(function (c) { return boardStageId(c) === 'completed'; }).length;
+    var stages = demo ? demo.stages : PIPE_BOARD_STAGES.length;
+    var items = [
+      ['pipe-kpi-open', 'Open Deals', String(open), '↑ 27% vs last 30 days', 'up', 'person', 'Filters board to open deals'],
+      ['pipe-kpi-value', 'Pipeline Value', money(totalVal) || '$0', '↑ 32% vs last 30 days', 'up', 'doc', 'Total estimated revenue'],
+      ['pipe-kpi-won', 'Won / Recurring', String(won), won ? '↑ last 30 days' : 'No changes from last 30 days', won ? 'up' : 'flat', 'spark', 'Recurring & completed'],
+      ['pipe-kpi-stages', 'Stages', String(stages), 'Total in your pipeline', 'flat', 'gauge', 'Pipeline settings']
+    ];
+    return '<div class="jos-pk-kpis">' + items.map(function (k) {
+      return '<button type="button" class="jos-pk-kpi" data-jos-act="' + k[0] + '" title="' + esc(k[6]) + '">' +
+        '<span class="jos-pk-kpi-top"><span class="jos-pk-kpi-ico tone-' + k[5] + '" aria-hidden="true"></span><span class="lbl">' + esc(k[1]) + '</span></span>' +
+        '<strong>' + esc(k[2]) + '</strong>' +
+        '<span class="trend ' + k[4] + '">' + esc(k[3]) + '</span></button>';
+    }).join('') + '</div>';
   }
 
   function renderPipelineBoard(cards, selectedId) {
@@ -390,19 +418,47 @@
 
   function renderPipelineDetail(root, card) {
     if (!card) {
-      return '<aside class="jos-pk-ws"><div class="jos-pk-ws-empty"><strong>Select a deal</strong><p>Click a card to manage contact, AI insights, and convert to a job.</p></div></aside>';
+      return '<aside class="jos-pk-ws"><div class="jos-pk-ws-bar"><strong>Deal Workspace</strong></div><div class="jos-pk-ws-empty"><strong>Select a deal</strong><p>Click a card to manage contact, AI insights, and convert to a job.</p></div></aside>';
     }
     var sid = boardStageId(card);
     var tags = pipeCardTags(card);
     if (!tags.length) tags = [pipeStatusTag(card)];
     tags = tags.slice(0, 8);
     var amt = card.amount != null && Number.isFinite(Number(card.amount)) ? money(card.amount) : '$0';
-    var next = pipeActivityItems(card).find(function (a) { return a.type === 'next'; }) || pipeActivityItems(card)[0];
-    return '<aside class="jos-pk-ws">' +
-      '<div class="jos-pk-ws-head">' +
-      '<div><div class="jos-pk-ws-name">' + esc(card.name || 'Deal') + '</div>' +
-      '<div class="jos-pk-ws-meta"><span class="jos-pill info">' + esc(pipeStageLabel(sid)) + '</span>' +
-      '<strong class="jos-pk-amt">' + esc(amt) + '</strong></div></div></div>' +
+    var acts = pipeActivityItems(card);
+    var next = acts.find(function (a) { return a.type === 'next'; }) || acts[0];
+    var collapsed = !!root._josPipeWsCollapsed;
+    var tagTone = function (tg, i) {
+      var s = String(tg || '').toLowerCase();
+      if (/new|lead/.test(s)) return 'blue';
+      if (/high|intent|vip|hot/.test(s)) return 'orange';
+      if (/weekend|exterior|interior|follow/.test(s)) return 'gray';
+      return i === 0 ? 'blue' : 'gray';
+    };
+    var createdLbl = 'May 18, 2025';
+    if (card.createdAt) {
+      try {
+        createdLbl = new Date(String(card.createdAt).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch (eC) { createdLbl = dateLong(card.createdAt); }
+    } else if (card.date) {
+      createdLbl = dateLong(card.date);
+    }
+
+    return '<aside class="jos-pk-ws' + (collapsed ? ' collapsed' : '') + '">' +
+      '<div class="jos-pk-ws-bar">' +
+      '<strong>Deal Workspace</strong>' +
+      '<div class="jos-pk-ws-bar-acts">' +
+      '<button type="button" class="jos-icon-btn sm" data-jos-act="pipe-more-menu" aria-label="More">⋯</button>' +
+      '<button type="button" class="jos-icon-btn sm" data-jos-act="pipe-ws-toggle" aria-label="Collapse" title="Collapse">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>' +
+      '</div></div>' +
+
+      '<div class="jos-pk-ws-stage"><span class="jos-pill info">' + esc(pipeStageLabel(sid)) + '</span>' +
+      '<strong class="jos-pk-amt">' + esc(amt) + '</strong></div>' +
+
+      '<div class="jos-pk-ws-id">' +
+      '<div class="jos-pk-ws-name">' + esc(card.name || 'Deal') + '</div>' +
+      '<div class="jos-muted">' + esc(card.service || 'Service') + '</div></div>' +
 
       '<div class="jos-pk-qa">' +
       '<button type="button" class="jos-pk-qa-btn" data-jos-act="pipe-call" title="Call" aria-label="Call">' +
@@ -416,38 +472,33 @@
       '</div>' +
 
       '<section class="jos-pk-ai">' +
-      '<div class="jos-between"><div class="jos-kicker">AI Hubly Insights</div><span class="jos-pk-new">NEW</span></div>' +
+      '<div class="jos-between"><div class="jos-pk-ai-title"><span class="jos-pk-ai-spark" aria-hidden="true">✦</span> AI Hubly Insights</div><span class="jos-pk-new">NEW</span></div>' +
       '<p>' + esc(root._josPipeAiBody || pipeAiBody(card)) + '</p>' +
       '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="pipe-ai-drawer">View Insights</button></section>' +
 
       '<section class="jos-pk-sec">' +
-      '<div class="jos-kicker">Activity</div>' +
+      '<div class="jos-between"><div class="jos-kicker">Activity</div><button type="button" class="jos-linkish" data-jos-act="pipe-activity-all">See all</button></div>' +
       (next ? '<div class="jos-pk-next"><strong>' + esc(next.label) + '</strong><span class="jos-muted">' + esc(next.at || '') + '</span></div>' : '') +
-      '<div class="jos-pk-feed">' + pipeActivityItems(card).map(function (a) {
-        return '<div class="jos-pk-feed-row"><i></i><span><strong>' + esc(a.label) + '</strong><span class="jos-muted">' + esc(a.at || '') + '</span></span></div>';
-      }).join('') + '</div>' +
-      '<button type="button" class="jos-linkish" data-jos-act="pipe-activity-all">See All</button></section>' +
+      '</section>' +
 
       '<section class="jos-pk-sec">' +
       '<div class="jos-kicker">Details</div>' +
       [['Source', srcLabel(card.source || 'website')],
         ['Lead Owner', card.owner || S().ownerName || 'Adrian'],
-        ['Created', card.createdAt ? dateLong(card.createdAt) : (card.date ? dateLong(card.date) : 'May 18, 2025')],
-        ['Last Activity', '2 hours ago'],
-        ['Service', card.service || '—'],
-        ['Vehicle', card.vehicle || '—']].map(function (r) {
+        ['Created', createdLbl],
+        ['Last Activity', allowDemoSeed() ? '2 hours ago' : (card.date ? dateLong(card.date) : '—')]].map(function (r) {
         return '<div class="jos-pk-kv"><span>' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong></div>';
       }).join('') + '</section>' +
 
       '<section class="jos-pk-sec">' +
       '<div class="jos-kicker">Tags</div>' +
-      '<div class="jos-pk-tags">' + tags.map(function (tg) {
-        return '<button type="button" class="jos-pk-tag-pill" data-jos-act="pipe-filter-tag" data-jos-tag="' + esc(tg) + '">' + esc(tg) + '</button>';
+      '<div class="jos-pk-tags">' + tags.map(function (tg, i) {
+        return '<button type="button" class="jos-pk-tag-pill tone-' + tagTone(tg, i) + '" data-jos-act="pipe-filter-tag" data-jos-tag="' + esc(tg) + '">' + esc(tg) + '</button>';
       }).join('') +
       '<button type="button" class="jos-pk-tag-pill add" data-jos-act="pipe-add-tag">+ Add Tag</button></div></section>' +
 
       '<button type="button" class="jos-btn jos-btn-brand jos-pk-cta" data-jos-act="pipe-convert-job">' +
-      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg> Convert to Job</button></aside>';
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/><path d="m9 16 2 2 4-4"/></svg> Convert to Job</button></aside>';
   }
 
   function setPipelineMode(on) {
@@ -462,16 +513,45 @@
     var cards = filterPipelineCards(root, all);
     root._josCards = all;
     var selectedId = root._josPipeId;
-    if (selectedId && !cards.some(function (c) { return String(c.id) === String(selectedId); })) {
+    if (!selectedId && allowDemoSeed() && all.some(function (c) { return String(c.id) === 'd1'; })) {
+      selectedId = 'd1';
+      root._josPipeId = selectedId;
+    }
+    if (selectedId && !cards.some(function (c) { return String(c.id) === String(selectedId); }) && !all.some(function (c) { return String(c.id) === String(selectedId); })) {
       selectedId = cards[0] ? cards[0].id : null;
       root._josPipeId = selectedId;
     }
     if (!selectedId && cards[0]) { selectedId = cards[0].id; root._josPipeId = selectedId; }
     var sel = selectedId ? all.find(function (c) { return String(c.id) === String(selectedId); }) : null;
     var sortOpen = !!root._josPipeSortOpen;
+    var owner = S().ownerName || S().ownerFirst || 'Adrian';
+    if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
+    if (owner && owner.indexOf(' ') > -1) owner = owner.split(/\s+/)[0];
+    if (!owner) owner = 'Adrian';
+    var bizName = S().businessName || S().biz || "Adrian's Lawn Services";
+    var hour = new Date().getHours();
+    var greet = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
+    var notifN = allowDemoSeed() ? 3 : 0;
 
     root.innerHTML =
-      '<div class="jos-pk-shell jos-pipe-page">' +
+      '<div class="jos-pk-shell jos-pipe-page jos-pk-shot">' +
+      '<header class="jos-pk-top">' +
+      '<div class="jos-pk-greet"><h2>' + esc(greet) + ', ' + esc(owner) + ' <span aria-hidden="true">👋</span></h2>' +
+      '<p>Let\'s grow your business today.</p></div>' +
+      '<label class="jos-pk-global-search"><span class="jos-pk-search-ico" aria-hidden="true"></span>' +
+      '<input id="jos-pipe-global-search" type="search" placeholder="Search customers, jobs, messages..." value="' + esc(root._josPipeGlobalQ || '') + '">' +
+      '<kbd>⌘K</kbd></label>' +
+      '<div class="jos-pk-top-actions">' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-pk-new" data-jos-act="manual-lead">+ New</button>' +
+      '<button type="button" class="jos-btn jos-pk-ai-btn" data-jos-act="go-ask"><span aria-hidden="true">✦</span> AI Assistant</button>' +
+      '<button type="button" class="jos-icon-btn jos-pk-bell" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>' +
+      (notifN ? '<i class="badge">' + notifN + '</i>' : '') + '</button>' +
+      '<button type="button" class="jos-pk-profile" data-jos-act="go-settings" title="Profile">' +
+      '<span class="ava">' + esc(initials(bizName)) + '</span><span class="meta"><strong>' + esc(bizName) + '</strong></span>' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>' +
+      '</div></header>' +
+
       '<header class="jos-pk-header">' +
       '<div><h1>Pipeline</h1><p>Track, manage and convert leads into loyal customers.</p></div>' +
       '<div class="jos-pk-header-actions">' +
@@ -481,11 +561,13 @@
 
       '<div class="jos-pk-search-row">' +
       '<label class="jos-pk-search"><span class="jos-pk-search-ico" aria-hidden="true"></span>' +
-      '<input id="jos-pipe-search" type="search" placeholder="Search customer, phone, service, vehicle, tags..." value="' + esc(root._josPipeQ || '') + '">' +
+      '<input id="jos-pipe-search" type="search" placeholder="Search name, phone, service, vehicle, source, tags..." value="' + esc(root._josPipeQ || '') + '">' +
       '</label>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="pipe-filter-open">Filters</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-pk-filter-btn" data-jos-act="pipe-filter-open">' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 7v5l-4 2v-7L4 5z"/></svg> Filters</button>' +
       '<div class="jos-pk-sort-wrap">' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="pipe-sort-toggle">Sort</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-pk-sort-btn" data-jos-act="pipe-sort-toggle">' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6v12M5 9l3-3 3 3M16 18V6M13 15l3 3 3-3"/></svg> Sort</button>' +
       (sortOpen ? '<div class="jos-pk-sort-menu">' +
         [['recent', 'Recent'], ['value', 'Highest value'], ['name', 'Name A–Z']].map(function (s) {
           return '<button type="button" data-jos-act="pipe-sort-set" data-jos-sort="' + s[0] + '">' + s[1] + '</button>';
@@ -547,8 +629,9 @@
       }
     });
     root.addEventListener('input', function (e) {
-      if (e.target && e.target.id === 'jos-pipe-search') {
+      if (e.target && (e.target.id === 'jos-pipe-search' || e.target.id === 'jos-pipe-global-search')) {
         root._josPipeQ = e.target.value;
+        if (e.target.id === 'jos-pipe-global-search') root._josPipeGlobalQ = e.target.value;
         clearTimeout(root._josPipeSearchT);
         root._josPipeSearchT = setTimeout(function () { renderPipeline(); }, 140);
       }
@@ -658,6 +741,14 @@
       if (act === 'pipe-sort-toggle') {
         root._josPipeSortOpen = !root._josPipeSortOpen;
         return renderPipeline();
+      }
+      if (act === 'pipe-ws-toggle') {
+        root._josPipeWsCollapsed = !root._josPipeWsCollapsed;
+        return renderPipeline();
+      }
+      if (act === 'pipe-more-menu') {
+        toast('Deal actions — convert, archive, or assign from here.');
+        return;
       }
       if (act === 'pipe-sort-set') {
         root._josPipeSort = (t && t.getAttribute('data-jos-sort')) || 'recent';
@@ -10051,6 +10142,11 @@
     if (titleEl) titleEl.textContent = c.title;
     if (subEl) subEl.textContent = c.sub;
     if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
+    try {
+      document.querySelectorAll('.app-nav .ni[data-v]').forEach(function (n) {
+        n.classList.toggle('active', n.getAttribute('data-v') === v);
+      });
+    } catch (eChrome) {}
   }
 
   function enhanceDashboard() {
