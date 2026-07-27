@@ -42,7 +42,7 @@ Other modules **read** that data — they do not own or duplicate it.
 | Leads | Lead records | — |
 | Customers | Customer profiles | — |
 | Memberships | Plans, subscribers, billing rules, visit/renewal ledgers (`S.membershipsOs`) | Customers, Jobs, Revenue, Services (catalog refs) |
-| Revenue | Payments / invoices / deposits / taxes / Stripe / payouts | Customers, Jobs, Memberships |
+| Revenue | Payments / invoices / deposits / refunds / taxes / Stripe sync status / payouts (`S.revenueOs`) — Rule #20 | Customers, Jobs, Memberships, Services |
 | Reports | Dashboard layouts / saved views | Everything (aggregate only — no business entities) |
 | Ask Hubly | Conversations, memory, actions, context | Everything (never source of truth for entities) |
 | Settings | Business config, integrations, permissions, branding, AI prefs | — |

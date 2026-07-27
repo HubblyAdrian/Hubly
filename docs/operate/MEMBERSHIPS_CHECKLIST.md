@@ -1,12 +1,14 @@
 # Module 10 — 🔁 Memberships
 
-**Status:** Stage 1 OS · MAT ✅ · CMV PASS · awaiting approval  
-**Branch:** `cursor/operate-memberships-2662`  
+**Status:** 🔒 OS locked · Stage 1 COMPLETE · Stage 2 ⏸ Deferred  
+**PR:** [#253](https://github.com/HubblyAdrian/Hubly/pull/253) (merged)  
 **Events:** [EVENTS.md](./EVENTS.md) (Rules #17–18)  
 **Ownership:** [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) (Rules #15 · #19)  
 **Design System:** HublyDS (Rule #14)  
 **Plan:** [MEMBERSHIPS_PLAN.md](./MEMBERSHIPS_PLAN.md)  
-**MAT:** [MEMBERSHIPS_MAT.md](./MEMBERSHIPS_MAT.md) · runner `node scripts/mat-memberships.mjs`
+**MAT:** [MEMBERSHIPS_MAT.md](./MEMBERSHIPS_MAT.md) · runner `node scripts/mat-memberships.mjs`  
+
+**Do not modify Memberships unless:** bug fix · Stage 2 integrations · explicit module reopen.
 
 Legend: ✅ Complete · ⏸ Deferred · ⏳ Pending · 🔴 Blocked
 
@@ -54,12 +56,12 @@ First of the connected business systems: Memberships → Revenue → Reports →
 - [x] Stage 2 Stripe toast ✅  
 
 ### QA / MAT / CMV
-- [ ] Validator memberships + events gates ⏳  
-- [ ] MAT ⏳  
-- [ ] CMV incl. Reviews ✅  
+- [x] Validator memberships + events gates ✅  
+- [x] MAT ✅ ACCEPTED (`scripts/mat-memberships.mjs` · [MEMBERSHIPS_MAT.md](./MEMBERSHIPS_MAT.md))  
+- [x] CMV incl. Reviews ✅  
 
 ### Definition of Done
-- [ ] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ⏳  
+- [x] OS · MAT ✅ · CMV PASS · merge → 🔒 OS ✅ 
 
 ---
 

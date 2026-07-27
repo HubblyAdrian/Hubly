@@ -164,6 +164,8 @@ const marketing = mount("v-marketing", app);
 mount("jos-marketing-root", marketing);
 const reviews = mount("v-reviews", app);
 mount("jos-reviews-root", reviews);
+const memberships = mount("v-memberships", app);
+mount("jos-memberships-root", memberships);
 mount("bar-title", document.body);
 mount("bar-sub", document.body);
 mount("nav-leads-badge", document.body);
@@ -301,6 +303,14 @@ try {
   ok("⭐ Reviews still works", /jos-rev|Reviews|Reputation|Inbox/i.test(revHtml) && revHtml.length > 200, "len=" + revHtml.length);
 } catch (e) {
   ok("⭐ Reviews still works", false, String(e.message || e));
+}
+
+try {
+  H.renderMemberships();
+  const memHtml = document.getElementById("jos-memberships-root").innerHTML;
+  ok("🔁 Memberships still works", /jos-mem|Membership|Plan|Subscriber/i.test(memHtml) && memHtml.length > 200, "len=" + memHtml.length);
+} catch (e) {
+  ok("🔁 Memberships still works", false, String(e.message || e));
 }
 
 console.warn = _warn;

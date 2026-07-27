@@ -37,7 +37,12 @@ Benefits: audit trail · reporting · AI context · debugging.
 | `job.started` | Jobs | — |
 | `job.completed` | Jobs | Reviews, Marketing, Revenue, Reports |
 | `payment.received` | Revenue | Reports, Customers |
+| `deposit.paid` | Revenue | Reports, Customers |
 | `invoice.sent` | Revenue | Customers, Reports |
+| `invoice.paid` | Revenue | Reports, Customers, Memberships |
+| `refund.issued` | Revenue | Reports, Customers |
+| `payout.completed` | Revenue | Reports |
+| `invoice.voided` | Revenue | Reports |
 | `membership.started` | Memberships | Customers, Pipeline, Revenue |
 | `membership.renewed` | Memberships | Revenue, Reports |
 | `membership.cancelled` | Memberships | Revenue, Reports |
@@ -100,3 +105,21 @@ Reviews **owns:** `S.reviewsOs`.
 
 Memberships **reads:** Customers, Jobs, Revenue (refs only).  
 Memberships **owns:** `S.membershipsOs` (plans, subscribers, billing rules, included-service refs, visits, renewals, activity).
+
+---
+
+## Revenue (Module 11) publishes
+
+| Event | When |
+|-------|------|
+| `invoice.sent` | Invoice Draft → Sent |
+| `deposit.paid` | Deposit recorded |
+| `payment.received` | Payment recorded |
+| `invoice.paid` | Invoice reaches Paid |
+| `refund.issued` | Refund / credit appended |
+| `payout.completed` | Payout marked completed (OS) |
+| `invoice.voided` | Invoice voided (compensating) |
+
+Revenue **reads:** Customers, Jobs, Memberships, Services.  
+Revenue **owns:** `S.revenueOs` (Rule #20 — financial integrity / append-only).  
+See [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md).

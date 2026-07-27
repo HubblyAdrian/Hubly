@@ -2437,6 +2437,659 @@
     }
   }
 
+  var RVE_TABS = [
+    ['overview', 'Overview'],
+    ['invoices', 'Invoices'],
+    ['payments', 'Payments'],
+    ['deposits', 'Deposits'],
+    ['refunds', 'Refunds'],
+    ['taxes', 'Taxes'],
+    ['payouts', 'Payouts'],
+    ['activity', 'Activity']
+  ];
+  var RVE_STATUS_LABEL = {
+    draft: 'Draft',
+    sent: 'Sent',
+    deposit_paid: 'Deposit paid',
+    paid: 'Paid',
+    partially_refunded: 'Partially refunded',
+    refunded: 'Refunded',
+    void: 'Void'
+  };
+  function rveId(prefix) { return (prefix || 'rve') + '_' + Math.random().toString(36).slice(2, 9); }
+  function rveSlug(v) { return String(v || 'revenue').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'revenue'; }
+  function rveAmount(v) { var n = Number(v); return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0; }
+  function rveDateTime(raw) {
+    if (raw) {
+      var d = new Date(raw);
+      if (!isNaN(d.getTime())) return d.toISOString();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(String(raw))) return String(raw) + 'T12:00:00.000Z';
+    }
+    return new Date().toISOString();
+  }
+  function rveTodayIso() { return new Date().toISOString(); }
+  function publishRevenueEvent(type, payload) {
+    var ev = hublyEvents();
+    if (ev && typeof ev.publish === 'function') ev.publish(type, payload || {});
+  }
+  function rvePushActivity(type, label, payload) {
+    var r = ensureRevenueOsState();
+    var entry = { id: rveId('rve_act'), type: type, label: label, at: rveTodayIso(), payload: payload ? Object.assign({}, payload) : {} };
+    try { Object.freeze(entry.payload); Object.freeze(entry); } catch (_) {}
+    r.activity.push(entry); // Rule #20 — append-only financial activity.
+    return entry;
+  }
+  function rveCustomerById(id) {
+    return customers().find(function (c) { return String(c.id) === String(id); }) || null;
+  }
+  function rveCustomerName(id) {
+    var c = rveCustomerById(id);
+    return c ? c.name : 'Customer';
+  }
+  function rveCustomerForJob(j) {
+    if (!j) return null;
+    if (j.customerId) {
+      var direct = rveCustomerById(j.customerId);
+      if (direct) return direct;
+    }
+    return customers().find(function (c) {
+      return (j.customer && c.name === j.customer) ||
+        (j.phone && c.phone && String(c.phone).replace(/\D/g, '') === String(j.phone).replace(/\D/g, '')) ||
+        (j.email && c.email && String(c.email).toLowerCase() === String(j.email).toLowerCase());
+    }) || null;
+  }
+  function rveJobById(id) {
+    return jobs().find(function (j) { return String(j.id || j.reqId || '') === String(id); }) || null;
+  }
+  function rveJobLabel(j) {
+    if (!j) return 'No job';
+    return (j.service || 'Job') + (j.date ? ' · ' + String(j.date).slice(0, 10) : '') + (j.amount ? ' · ' + (money(j.amount) || '$0') : '');
+  }
+  function rveNormalizeStatus(status) {
+    var s = String(status || 'draft').toLowerCase();
+    if (s === 'open' || s === 'unpaid') return 'sent';
+    if (s === 'deposit' || s === 'deposit_paid') return 'deposit_paid';
+    if (s === 'partial_refund') return 'partially_refunded';
+    if (s === 'cancelled' || s === 'canceled' || s === 'voided') return 'void';
+    return RVE_STATUS_LABEL[s] ? s : 'draft';
+  }
+  function rveInvoiceNumber(idx) {
+    return 'RVE-' + String(new Date().getFullYear()).slice(2) + '-' + String(idx + 1).padStart(4, '0');
+  }
+  function normalizeRevenueInvoice(inv, idx) {
+    inv = inv || {};
+    var subtotal = rveAmount(inv.subtotal != null ? inv.subtotal : inv.amount);
+    var taxAmount = rveAmount(inv.taxAmount);
+    var total = rveAmount(inv.total != null ? inv.total : (subtotal + taxAmount));
+    var lines = Array.isArray(inv.lines) ? inv.lines : [];
+    if (!lines.length && (subtotal || inv.serviceName)) {
+      lines = [{
+        id: rveId('rve_line'),
+        serviceId: inv.serviceId || null,
+        description: inv.serviceName || 'Service',
+        qty: 1,
+        unitPrice: subtotal,
+        taxRate: taxAmount && subtotal ? Math.round((taxAmount / subtotal) * 10000) / 100 : 0
+      }];
+    }
+    return {
+      id: inv.id || rveId('rve_inv'),
+      number: inv.number || rveInvoiceNumber(idx || 0),
+      customerId: inv.customerId || null,
+      jobId: inv.jobId || null,
+      membershipId: inv.membershipId || null,
+      serviceId: inv.serviceId || null,
+      serviceName: inv.serviceName || (lines[0] && lines[0].description) || 'Service',
+      subtotal: subtotal,
+      taxAmount: taxAmount,
+      total: total,
+      depositRequired: rveAmount(inv.depositRequired),
+      status: rveNormalizeStatus(inv.status),
+      issuedAt: inv.issuedAt || rveDateTime(inv.createdAt || inv.date),
+      sentAt: inv.sentAt || null,
+      paidAt: inv.paidAt || null,
+      voidedAt: inv.voidedAt || null,
+      lines: lines.map(function (line, i) {
+        line = line || {};
+        return {
+          id: line.id || rveId('rve_line'),
+          serviceId: line.serviceId || null,
+          description: line.description || line.serviceName || line.name || 'Service',
+          qty: Number(line.qty || 1) || 1,
+          unitPrice: rveAmount(line.unitPrice != null ? line.unitPrice : line.amount),
+          taxRate: Number(line.taxRate || 0) || 0
+        };
+      })
+    };
+  }
+  function normalizeRevenueLedgerRow(row, prefix) {
+    row = row || {};
+    return {
+      id: row.id || rveId(prefix),
+      invoiceId: row.invoiceId || null,
+      customerId: row.customerId || null,
+      amount: rveAmount(row.amount),
+      method: row.method || 'other',
+      at: row.at || rveDateTime(row.createdAt || row.date),
+      note: row.note || ''
+    };
+  }
+  function normalizeRevenuePayout(row) {
+    row = row || {};
+    var st = String(row.status || 'completed').toLowerCase();
+    if (['pending', 'completed', 'failed'].indexOf(st) < 0) st = 'completed';
+    return {
+      id: row.id || rveId('rve_payout'),
+      amount: rveAmount(row.amount),
+      status: st,
+      at: row.at || rveDateTime(row.createdAt || row.date),
+      destinationLabel: row.destinationLabel || 'Manual payout record'
+    };
+  }
+  function rveSeedInvoiceFromJob(j, idx) {
+    var amount = rveAmount(j && j.amount);
+    if (!j || !amount) return null;
+    var c = rveCustomerForJob(j);
+    var paid = !!(j.paid || j.payStatus === 'paid' || j.status === 'paid');
+    var completed = j.status === 'completed' || paid;
+    if (!completed) return null;
+    var jid = j.id || j.reqId || ('job_' + idx);
+    var at = rveDateTime(j.paid_at || j.paidAt || j.date || j.createdAt);
+    return {
+      invoice: normalizeRevenueInvoice({
+        id: 'rve_inv_job_' + rveSlug(jid),
+        number: 'RVE-JOB-' + String(idx + 1).padStart(4, '0'),
+        customerId: c ? c.id : (j.customerId || null),
+        jobId: jid,
+        serviceId: j.serviceId || null,
+        serviceName: j.service || 'Completed job',
+        subtotal: amount,
+        total: amount,
+        status: paid ? 'paid' : 'sent',
+        issuedAt: rveDateTime(j.date || j.createdAt),
+        sentAt: paid || completed ? rveDateTime(j.date || j.createdAt) : null,
+        paidAt: paid ? at : null
+      }, idx),
+      payment: paid ? normalizeRevenueLedgerRow({
+        id: 'rve_pay_job_' + rveSlug(jid),
+        invoiceId: 'rve_inv_job_' + rveSlug(jid),
+        customerId: c ? c.id : (j.customerId || null),
+        amount: amount,
+        method: j.pay_method || j.payMethod || 'other',
+        at: at,
+        note: 'Seeded from paid job'
+      }, 'rve_pay') : null
+    };
+  }
+  function rveRecalcTaxes(r) {
+    var map = {};
+    (r.invoices || []).forEach(function (inv) {
+      if (inv.status === 'void') return;
+      (inv.lines || []).forEach(function (line) {
+        var rate = Number(line.taxRate || 0) || 0;
+        var taxable = (Number(line.qty || 1) || 1) * (Number(line.unitPrice) || 0);
+        var tax = taxable * rate / 100;
+        if (!rate && !tax) return;
+        var key = String(rate);
+        if (!map[key]) map[key] = { id: 'rve_tax_' + rveSlug(key), rate: rate, taxable: 0, taxAmount: 0, invoiceCount: 0 };
+        map[key].taxable += taxable;
+        map[key].taxAmount += tax;
+        map[key].invoiceCount += 1;
+      });
+      if (inv.taxAmount && !(inv.lines || []).some(function (line) { return Number(line.taxRate || 0) > 0; })) {
+        var fallback = 'recorded';
+        if (!map[fallback]) map[fallback] = { id: 'rve_tax_recorded', rate: null, taxable: 0, taxAmount: 0, invoiceCount: 0 };
+        map[fallback].taxable += Number(inv.subtotal) || 0;
+        map[fallback].taxAmount += Number(inv.taxAmount) || 0;
+        map[fallback].invoiceCount += 1;
+      }
+    });
+    return Object.keys(map).map(function (k) {
+      var x = map[k];
+      x.taxable = Math.round(x.taxable * 100) / 100;
+      x.taxAmount = Math.round(x.taxAmount * 100) / 100;
+      return x;
+    });
+  }
+  function ensureRevenueOsState() {
+    var st = S();
+    if (!st.revenueOs || typeof st.revenueOs !== 'object') st.revenueOs = {};
+    var r = st.revenueOs;
+    if (!Array.isArray(r.invoices)) r.invoices = [];
+    if (!Array.isArray(r.payments)) r.payments = [];
+    if (!Array.isArray(r.deposits)) r.deposits = [];
+    if (!Array.isArray(r.refunds)) r.refunds = [];
+    if (!Array.isArray(r.taxes)) r.taxes = [];
+    if (!Array.isArray(r.payouts)) r.payouts = [];
+    if (!Array.isArray(r.activity)) r.activity = [];
+    if (!r.stripe || typeof r.stripe !== 'object') r.stripe = {};
+    r.stripe.status = r.stripe.status === 'live' ? 'placeholder' : (r.stripe.status || 'not_connected');
+    if (r.stripe.lastSyncAt == null) r.stripe.lastSyncAt = null;
+    if (r.stripe.accountLabel == null) r.stripe.accountLabel = null;
+    // Normalize in place (Rule #20) — preserve object identity for ledger rows
+    function applyInv(inv, idx) {
+      var n = normalizeRevenueInvoice(inv, idx);
+      Object.keys(n).forEach(function (k) { inv[k] = n[k]; });
+      return inv;
+    }
+    function applyLedger(row, prefix) {
+      var n = normalizeRevenueLedgerRow(row, prefix);
+      Object.keys(n).forEach(function (k) { row[k] = n[k]; });
+      return row;
+    }
+    function applyPayout(row) {
+      var n = normalizeRevenuePayout(row);
+      Object.keys(n).forEach(function (k) { row[k] = n[k]; });
+      return row;
+    }
+    r.invoices.forEach(applyInv);
+    r.payments = r.payments.map(function (p) { return applyLedger(p, 'rve_pay'); }).filter(function (p) { return p.invoiceId && p.amount; });
+    r.deposits = r.deposits.map(function (p) { return applyLedger(p, 'rve_dep'); }).filter(function (p) { return p.invoiceId && p.amount; });
+    r.refunds = r.refunds.map(function (p) { return applyLedger(p, 'rve_ref'); }).filter(function (p) { return p.invoiceId && p.amount; });
+    r.payouts = r.payouts.map(applyPayout).filter(function (p) { return p.amount; });
+    jobs().forEach(function (j, idx) {
+      var seed = rveSeedInvoiceFromJob(j, idx);
+      if (!seed) return;
+      var existing = r.invoices.find(function (inv) { return String(inv.jobId || '') === String(seed.invoice.jobId || '') || String(inv.id) === String(seed.invoice.id); });
+      if (!existing) {
+        r.invoices.push(seed.invoice);
+      } else if (seed.payment && existing.status !== 'paid' && existing.status !== 'refunded' && existing.status !== 'partially_refunded') {
+        existing.status = 'paid';
+        existing.sentAt = existing.sentAt || seed.invoice.sentAt;
+        existing.paidAt = existing.paidAt || seed.invoice.paidAt;
+        if (!r.activity.some(function (a) { return a.type === 'system.seed_paid_job' && a.payload && String(a.payload.jobId) === String(seed.invoice.jobId); })) {
+          var paidSeedAct = { id: rveId('rve_act'), type: 'system.seed_paid_job', label: 'Seeded paid job into Revenue invoice ' + existing.number, at: rveTodayIso(), payload: { invoiceId: existing.id, jobId: seed.invoice.jobId, customerId: existing.customerId, amount: existing.total } };
+          try { Object.freeze(paidSeedAct.payload); Object.freeze(paidSeedAct); } catch (_) {}
+          r.activity.push(paidSeedAct);
+        }
+      }
+      if (seed.payment && !r.payments.some(function (p) { return String(p.id) === String(seed.payment.id) || (String(p.invoiceId) === String(seed.payment.invoiceId) && p.note === seed.payment.note); })) {
+        r.payments.push(seed.payment);
+      }
+    });
+    r.invoices.forEach(applyInv);
+    r.taxes = rveRecalcTaxes(r);
+    if (!r._seeded) {
+      r._seeded = true;
+      var entry = { id: rveId('rve_act'), type: 'system', label: 'Revenue OS initialized from completed and paid jobs by reference', at: rveTodayIso(), payload: {} };
+      try { Object.freeze(entry.payload); Object.freeze(entry); } catch (_) {}
+      r.activity.push(entry);
+    }
+    return r;
+  }
+  function rveInvoiceById(id) {
+    var r = ensureRevenueOsState();
+    return r.invoices.find(function (inv) { return String(inv.id) === String(id); }) || null;
+  }
+  function rveLedgerSum(rows, invoiceId) {
+    return (rows || []).filter(function (row) { return String(row.invoiceId) === String(invoiceId); })
+      .reduce(function (sum, row) { return sum + (Number(row.amount) || 0); }, 0);
+  }
+  function rvePaidAmount(invoiceId) { var r = ensureRevenueOsState(); return rveLedgerSum(r.payments, invoiceId); }
+  function rveDepositAmount(invoiceId) { var r = ensureRevenueOsState(); return rveLedgerSum(r.deposits, invoiceId); }
+  function rveRefundAmount(invoiceId) { var r = ensureRevenueOsState(); return rveLedgerSum(r.refunds, invoiceId); }
+  function rveCollectedAmount(invoiceId) { return rvePaidAmount(invoiceId) + rveDepositAmount(invoiceId); }
+  function rveBalance(inv) {
+    if (!inv || inv.status === 'void') return 0;
+    return Math.max(0, Math.round(((Number(inv.total) || 0) - rveCollectedAmount(inv.id)) * 100) / 100);
+  }
+  function rveStatusBadge(status) {
+    var d = DS(), s = rveNormalizeStatus(status);
+    var tone = s === 'paid' ? 'ok' : (s === 'sent' || s === 'deposit_paid' ? 'warn' : (s === 'refunded' || s === 'void' ? 'hot' : 'info'));
+    return d ? d.statusBadge(RVE_STATUS_LABEL[s] || s, tone) : '<span class="jos-pill ' + tone + '">' + esc(RVE_STATUS_LABEL[s] || s) + '</span>';
+  }
+  function rveCustomerOptions(selectedId) {
+    return customers().map(function (c) {
+      return '<option value="' + esc(c.id || '') + '"' + (String(c.id) === String(selectedId) ? ' selected' : '') + '>' + esc(c.name || 'Customer') + '</option>';
+    }).join('');
+  }
+  function rveJobOptions(selectedId) {
+    var opts = '<option value="">No linked job</option>';
+    return opts + jobs().filter(function (j) { return !j.isBlock && rveAmount(j.amount); }).map(function (j) {
+      var id = j.id || j.reqId || '';
+      return '<option value="' + esc(id) + '"' + (String(id) === String(selectedId) ? ' selected' : '') + '>' + esc((j.customer || 'Customer') + ' · ' + rveJobLabel(j)) + '</option>';
+    }).join('');
+  }
+  function rveInvoiceOptions(selectedId) {
+    var r = ensureRevenueOsState();
+    return r.invoices.filter(function (inv) { return inv.status !== 'void' && inv.status !== 'refunded'; }).map(function (inv) {
+      return '<option value="' + esc(inv.id) + '"' + (String(inv.id) === String(selectedId) ? ' selected' : '') + '>' + esc(inv.number + ' · ' + rveCustomerName(inv.customerId) + ' · ' + (money(inv.total) || '$0')) + '</option>';
+    }).join('');
+  }
+  function renderRevenueInvoiceModal(root) {
+    if (root._josRveModal !== 'invoice') return '';
+    return '<div class="jos-rve-modal"><div class="jos-rve-modal-panel">' +
+      '<h3>Create invoice</h3><p class="jos-muted">Creates a draft invoice owned by Revenue. Customers and Jobs are referenced by id.</p>' +
+      '<div class="jos-rve-form">' +
+        '<label>Customer<select id="jos-rve-inv-customer">' + rveCustomerOptions('') + '</select></label>' +
+        '<label>Linked job<select id="jos-rve-inv-job">' + rveJobOptions('') + '</select></label>' +
+        '<label>Service label<input id="jos-rve-inv-service" type="text" placeholder="Interior detail"></label>' +
+        '<label>Subtotal<input id="jos-rve-inv-subtotal" type="number" min="0" step="0.01" value="0"></label>' +
+        '<label>Tax<input id="jos-rve-inv-tax" type="number" min="0" step="0.01" value="0"></label>' +
+        '<label>Deposit required<input id="jos-rve-inv-deposit" type="number" min="0" step="0.01" value="0"></label>' +
+        '<label class="jos-rve-span2">Line description<textarea id="jos-rve-inv-desc" class="jos-textarea" placeholder="Service description"></textarea></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('rve-inv-save', 'Save draft', 'jos-btn-brand jos-btn-sm') + dsBtn('rve-inv-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
+  }
+  function renderRevenueLedgerModal(root) {
+    var modal = root._josRveModal;
+    if (['payment', 'deposit', 'refund', 'payout'].indexOf(modal) < 0) return '';
+    if (modal === 'payout') {
+      return '<div class="jos-rve-modal"><div class="jos-rve-modal-panel"><h3>Record payout</h3><p class="jos-muted">OS record only. Live Stripe Connect payouts are Stage 2.</p>' +
+        '<div class="jos-rve-form"><label>Amount<input id="jos-rve-payout-amount" type="number" min="0" step="0.01"></label>' +
+        '<label>Destination label<input id="jos-rve-payout-dest" type="text" placeholder="Operating account"></label></div>' +
+        '<div class="jos-btn-row jos-mt">' + dsBtn('rve-payout-save', 'Record payout', 'jos-btn-brand jos-btn-sm') + dsBtn('rve-pay-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
+    }
+    var label = modal === 'payment' ? 'Record payment' : (modal === 'deposit' ? 'Record deposit' : 'Issue refund');
+    var act = modal === 'payment' ? 'rve-pay-save' : (modal === 'deposit' ? 'rve-dep-save' : 'rve-ref-save');
+    var selected = root._josRveInvoiceId || '';
+    return '<div class="jos-rve-modal"><div class="jos-rve-modal-panel"><h3>' + esc(label) + '</h3>' +
+      '<div class="jos-rve-form">' +
+        '<label>Invoice<select id="jos-rve-ledger-invoice">' + rveInvoiceOptions(selected) + '</select></label>' +
+        '<label>Amount<input id="jos-rve-ledger-amount" type="number" min="0" step="0.01"></label>' +
+        '<label>Method<select id="jos-rve-ledger-method"><option value="card">Card</option><option value="cash">Cash</option><option value="check">Check</option><option value="stripe">Stripe</option><option value="other">Other</option></select></label>' +
+        '<label class="jos-rve-span2">Note<textarea id="jos-rve-ledger-note" class="jos-textarea"></textarea></label>' +
+      '</div><div class="jos-btn-row jos-mt">' + dsBtn(act, label, 'jos-btn-brand jos-btn-sm') + dsBtn('rve-pay-cancel', 'Cancel', 'jos-btn jos-btn-sm') + '</div></div></div>';
+  }
+  function rveKpis() {
+    var r = ensureRevenueOsState(), d = DS();
+    var collected = r.payments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0) + r.deposits.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+    var refunds = r.refunds.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+    var deposits = r.deposits.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+    var outstanding = r.invoices.reduce(function (s, inv) { return s + rveBalance(inv); }, 0);
+    if (d) {
+      return '<div class="jos-rve-kpis">' +
+        d.metricCard('Collected', money(collected - refunds) || '$0', 'Payments + deposits - refunds') +
+        d.metricCard('Outstanding', money(outstanding) || '$0', 'Open invoice balance') +
+        d.metricCard('Deposits', money(deposits) || '$0', r.deposits.length + ' recorded') +
+        d.metricCard('Refunds', money(refunds) || '$0', r.refunds.length + ' issued') +
+        '</div>';
+    }
+    return '<div class="jos-kpi-row"><div class="jos-kpi"><div class="jos-kpi-lbl">Collected</div><div class="jos-kpi-v brand">' + esc(money(collected - refunds) || '$0') + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Outstanding</div><div class="jos-kpi-v">' + esc(money(outstanding) || '$0') + '</div></div></div>';
+  }
+  function renderRevenueOverviewTab(root) {
+    var r = ensureRevenueOsState(), d = DS();
+    var open = r.invoices.filter(function (inv) { return ['draft', 'sent', 'deposit_paid'].indexOf(inv.status) >= 0; }).slice(0, 5);
+    var rows = open.map(function (inv) {
+      return '<div class="jos-rve-act"><div><strong>' + esc(inv.number) + ' · ' + esc(rveCustomerName(inv.customerId)) + '</strong><div class="jos-muted">' + esc(inv.serviceName || 'Service') + ' · balance ' + esc(money(rveBalance(inv)) || '$0') + '</div></div>' + rveStatusBadge(inv.status) + '</div>';
+    }).join('');
+    var ai = d ? d.aiInsightCard({
+      kicker: 'AI · Revenue integrity',
+      body: 'Revenue Stage 1 OS now owns invoices, payments, deposits, refunds, taxes, payouts, and Stripe sync status. Jobs and Customers are referenced, not cloned.',
+      actionsHtml: dsBtn('rve-inv-open', 'Create invoice', 'jos-btn-brand jos-btn-sm') + dsBtn('rve-stripe', 'Stripe Stage 2', 'jos-btn jos-btn-sm')
+    }) : '';
+    return rveKpis() + (ai ? '<div class="jos-mt">' + ai + '</div>' : '') +
+      '<div class="jos-rve-2col jos-mt"><div class="jos-card"><div class="jos-kicker">Open invoices</div><div class="jos-stack jos-mt">' + (rows || (d ? d.emptyState('No open invoices', 'Create or send an invoice to start tracking receivables.') : '')) + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Stripe sync status</div><div class="jos-rve-stripe"><strong>Not connected</strong><span>Live Stripe is deferred to Stage 2. OS records remain manual and append-only.</span></div><div class="jos-mt">' + dsBtn('rve-stripe', 'Stripe Stage 2', 'jos-btn jos-btn-sm') + '</div></div></div>';
+  }
+  function renderRevenueInvoiceCard(inv) {
+    var bal = rveBalance(inv);
+    var paid = rvePaidAmount(inv.id), dep = rveDepositAmount(inv.id), ref = rveRefundAmount(inv.id);
+    var canSend = inv.status === 'draft';
+    var canVoid = inv.status === 'draft' || inv.status === 'sent';
+    return '<div class="jos-rve-card" data-jos-rve-inv="' + esc(inv.id) + '"><div class="jos-rve-card-h"><div><strong>' + esc(inv.number) + '</strong><div class="jos-muted">' + esc(rveCustomerName(inv.customerId)) + ' · ' + esc(inv.serviceName || 'Service') + '</div></div>' + rveStatusBadge(inv.status) + '</div>' +
+      '<div class="jos-rve-money-row"><div><span>Total</span><strong>' + esc(money(inv.total) || '$0') + '</strong></div><div><span>Collected</span><strong>' + esc(money(paid + dep) || '$0') + '</strong></div><div><span>Balance</span><strong>' + esc(money(bal) || '$0') + '</strong></div><div><span>Refunded</span><strong>' + esc(money(ref) || '$0') + '</strong></div></div>' +
+      '<div class="jos-rve-card-foot">' +
+        (canSend ? '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="rve-inv-send" data-jos-rve-inv="' + esc(inv.id) + '">Send</button>' : '') +
+        (canVoid ? '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rve-inv-void" data-jos-rve-inv="' + esc(inv.id) + '">Void</button>' : '') +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rve-pay-open" data-jos-rve-inv="' + esc(inv.id) + '">Payment</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rve-dep-open" data-jos-rve-inv="' + esc(inv.id) + '">Deposit</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rve-ref-open" data-jos-rve-inv="' + esc(inv.id) + '">Refund</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rve-open-customer" data-jos-rve-cust="' + esc(inv.customerId || '') + '">Customer</button>' +
+      '</div></div>';
+  }
+  function renderRevenueInvoicesTab(root) {
+    var r = ensureRevenueOsState(), d = DS();
+    var rows = r.invoices.length ? r.invoices.slice().reverse().map(renderRevenueInvoiceCard).join('') : (d ? d.emptyState('No invoices yet', 'Create a draft invoice to start the Revenue ledger.') : '');
+    return (d ? d.sectionHeader('Invoices', 'Lifecycle: draft -> sent -> deposit paid -> paid -> refunded/void.', dsBtn('rve-inv-open', '+ Create invoice', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-rve-grid jos-mt">' + rows + '</div>' + renderRevenueInvoiceModal(root);
+  }
+  function renderRevenueLedgerTab(root, kind) {
+    var r = ensureRevenueOsState(), d = DS();
+    var rows = kind === 'payments' ? r.payments : (kind === 'deposits' ? r.deposits : r.refunds);
+    var act = kind === 'payments' ? 'rve-pay-open' : (kind === 'deposits' ? 'rve-dep-open' : 'rve-ref-open');
+    var title = kind.charAt(0).toUpperCase() + kind.slice(1);
+    var empty = d ? d.emptyState('No ' + kind + ' yet', 'Record a ' + kind.replace(/s$/, '') + ' to append to the ledger.') : '';
+    var list = rows.slice().reverse().map(function (row) {
+      var inv = rveInvoiceById(row.invoiceId);
+      return '<div class="jos-rve-event"><div class="jos-rve-event-type">' + esc(money(row.amount) || '$0') + ' · ' + esc(row.method || 'other') + '</div><div class="jos-muted">' + esc((inv && inv.number) || row.invoiceId || 'Invoice') + ' · ' + esc(rveCustomerName(row.customerId)) + ' · ' + esc(String(row.at || '').replace('T', ' ').slice(0, 19)) + '</div>' + (row.note ? '<p>' + esc(row.note) + '</p>' : '') + '</div>';
+    }).join('');
+    return (d ? d.sectionHeader(title, 'Append-only ' + kind + ' ledger owned by Revenue.', dsBtn(act, '+ Record', 'jos-btn-brand jos-btn-sm')) : '') +
+      '<div class="jos-rve-events jos-mt">' + (list || empty) + '</div>' + renderRevenueLedgerModal(root);
+  }
+  function renderRevenueTaxesTab() {
+    var r = ensureRevenueOsState(), d = DS();
+    var rows = r.taxes.map(function (tax) {
+      return '<div class="jos-rve-card"><div class="jos-rve-card-h"><div><strong>' + esc(tax.rate == null ? 'Recorded tax' : (tax.rate + '% tax')) + '</strong><div class="jos-muted">' + esc(String(tax.invoiceCount || 0)) + ' invoice lines</div></div><span class="jos-pill info">OS summary</span></div>' +
+        '<div class="jos-rve-money-row"><div><span>Taxable</span><strong>' + esc(money(tax.taxable) || '$0') + '</strong></div><div><span>Tax</span><strong>' + esc(money(tax.taxAmount) || '$0') + '</strong></div></div></div>';
+    }).join('');
+    return (d ? d.sectionHeader('Taxes', 'Stage 1 summary from invoice lines and recorded tax amounts.') : '') +
+      '<div class="jos-rve-grid jos-mt">' + (rows || (d ? d.emptyState('No tax recorded', 'Add tax to invoice lines to populate this summary.') : '')) + '</div>';
+  }
+  function renderRevenuePayoutsTab(root) {
+    var r = ensureRevenueOsState(), d = DS();
+    var rows = r.payouts.slice().reverse().map(function (p) {
+      return '<div class="jos-rve-event"><div class="jos-rve-event-type">' + esc(money(p.amount) || '$0') + ' payout</div><div class="jos-muted">' + esc(String(p.at || '').replace('T', ' ').slice(0, 19)) + ' · ' + esc(p.destinationLabel || 'Destination') + '</div>' + rveStatusBadge(p.status === 'completed' ? 'paid' : 'sent') + '</div>';
+    }).join('');
+    return (d ? d.sectionHeader('Payouts', 'Manual OS payout records. Live Connect payouts are Stage 2.', dsBtn('rve-payout-open', '+ Record payout', 'jos-btn-brand jos-btn-sm') + dsBtn('rve-stripe', 'Stripe Stage 2', 'jos-btn jos-btn-sm')) : '') +
+      '<div class="jos-rve-events jos-mt">' + (rows || (d ? d.emptyState('No payouts yet', 'Record a completed payout to append it to the ledger.') : '')) + '</div>' + renderRevenueLedgerModal(root);
+  }
+  function renderRevenueActivityTab() {
+    var r = ensureRevenueOsState(), d = DS();
+    var list = r.activity.slice().reverse().map(function (a) {
+      return '<div class="jos-rve-event"><div class="jos-rve-event-type">' + esc(a.type || 'activity') + '</div><div class="jos-muted">' + esc(String(a.at || '').replace('T', ' ').slice(0, 19)) + '</div><p>' + esc(a.label || '') + '</p></div>';
+    }).join('');
+    var ev = hublyEvents();
+    var eventTypes = /^(invoice\.sent|invoice\.paid|invoice\.voided|deposit\.paid|payment\.received|refund\.issued|payout\.completed)$/;
+    var events = ev && typeof ev.recent === 'function' ? ev.recent(40).filter(function (row) { return eventTypes.test(row.type); }) : [];
+    var eventHtml = events.map(function (row) {
+      return '<div class="jos-rve-event"><div class="jos-rve-event-type">' + esc(row.type) + '</div><div class="jos-muted">' + esc(String(row.at || '').replace('T', ' ').slice(0, 19)) + '</div><pre class="jos-rve-event-payload">' + esc(JSON.stringify(row.payload || {}, null, 0)) + '</pre></div>';
+    }).join('');
+    return '<div class="jos-rve-2col"><div class="jos-card"><div class="jos-kicker">Append-only activity</div><div class="jos-rve-events jos-mt">' + (list || (d ? d.emptyState('No activity yet', 'Revenue actions append entries here.') : '')) + '</div></div>' +
+      '<div class="jos-card"><div class="jos-kicker">Revenue events</div><div class="jos-rve-events jos-mt">' + (eventHtml || (d ? d.emptyState('No events yet', 'Send, pay, refund, or payout to publish events.') : '')) + '</div></div></div>';
+  }
+  function renderRevenueTabBody(root, tab) {
+    if (tab === 'overview') return renderRevenueOverviewTab(root);
+    if (tab === 'invoices') return renderRevenueInvoicesTab(root);
+    if (tab === 'payments') return renderRevenueLedgerTab(root, 'payments');
+    if (tab === 'deposits') return renderRevenueLedgerTab(root, 'deposits');
+    if (tab === 'refunds') return renderRevenueLedgerTab(root, 'refunds');
+    if (tab === 'taxes') return renderRevenueTaxesTab();
+    if (tab === 'payouts') return renderRevenuePayoutsTab(root);
+    if (tab === 'activity') return renderRevenueActivityTab();
+    return renderRevenueOverviewTab(root);
+  }
+  function renderRevenuePageInner(root) {
+    ensureRevenueOsState();
+    var tab = root._josRveTab || 'overview';
+    var d = DS();
+    var tabsHtml = '<div class="jos-tabs jos-rve-tabs">' + RVE_TABS.map(function (t) {
+      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-rve-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    }).join('') + '</div>';
+    var head = d ? d.pageHeader('Revenue', 'Financial ledger for invoices, payments, deposits, refunds, taxes, and payouts.', dsBtn('rve-inv-open', 'Create invoice', 'jos-btn jos-btn-sm') + dsBtn('rve-pay-open', 'Record payment', 'jos-btn-brand jos-btn-sm') + dsBtn('rve-stripe', 'Stripe Stage 2', 'jos-btn jos-btn-sm')) :
+      '<div class="jos-page-head"><div><h1>Revenue</h1><p>Financial ledger and lifecycle.</p></div></div>';
+    root.innerHTML = '<div class="jos-page jos-rve-page">' + head + tabsHtml +
+      '<div class="jos-rve-body">' + renderRevenueTabBody(root, tab) + '</div></div>';
+    bindRoot(root);
+    wireRevenueRoot(root);
+  }
+  function renderRevenue() {
+    var root = ownPixelView('v-money', 'jos-revenue-root');
+    if (!root) return;
+    updateChrome('money');
+    root.innerHTML = '<div class="jos-page jos-rve-page"><div class="jos-home-loading">Loading Revenue...</div></div>';
+    try { renderRevenuePageInner(root); }
+    catch (err) {
+      console.warn('HublyJourneyOS Revenue', err);
+      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Revenue could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderRevenue()">Retry</button></div></div></div>';
+    }
+  }
+  function wireRevenueRoot(root) {
+    if (root._josRveBound) return;
+    root._josRveBound = true;
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && root._josRveModal) {
+        root._josRveModal = null;
+        root._josRveInvoiceId = null;
+        renderRevenue();
+      }
+    });
+  }
+  function readRevenueInvoiceDraft(root) {
+    var jobId = (el('jos-rve-inv-job') || {}).value || '';
+    var job = jobId ? rveJobById(jobId) : null;
+    var customerId = (el('jos-rve-inv-customer') || {}).value || '';
+    var jobCust = job ? rveCustomerForJob(job) : null;
+    if (!customerId && jobCust) customerId = jobCust.id;
+    var subtotal = rveAmount((el('jos-rve-inv-subtotal') || {}).value || (job && job.amount));
+    var taxAmount = rveAmount((el('jos-rve-inv-tax') || {}).value);
+    var serviceName = (el('jos-rve-inv-service') || {}).value || (job && job.service) || 'Service';
+    var desc = (el('jos-rve-inv-desc') || {}).value || serviceName;
+    return normalizeRevenueInvoice({
+      id: rveId('rve_inv'),
+      customerId: customerId || null,
+      jobId: jobId || null,
+      serviceId: job && job.serviceId || null,
+      serviceName: serviceName,
+      subtotal: subtotal,
+      taxAmount: taxAmount,
+      total: subtotal + taxAmount,
+      depositRequired: rveAmount((el('jos-rve-inv-deposit') || {}).value),
+      status: 'draft',
+      issuedAt: rveTodayIso(),
+      lines: [{ id: rveId('rve_line'), serviceId: job && job.serviceId || null, description: desc, qty: 1, unitPrice: subtotal, taxRate: subtotal ? Math.round((taxAmount / subtotal) * 10000) / 100 : 0 }]
+    }, ensureRevenueOsState().invoices.length);
+  }
+  function readRevenueLedgerDraft() {
+    var invoiceId = (el('jos-rve-ledger-invoice') || {}).value || '';
+    var inv = rveInvoiceById(invoiceId);
+    return normalizeRevenueLedgerRow({
+      invoiceId: invoiceId,
+      customerId: inv ? inv.customerId : null,
+      amount: rveAmount((el('jos-rve-ledger-amount') || {}).value),
+      method: (el('jos-rve-ledger-method') || {}).value || 'other',
+      at: rveTodayIso(),
+      note: (el('jos-rve-ledger-note') || {}).value || ''
+    }, 'rve_row');
+  }
+  function handleRevenueAct(act, t) {
+    var root = el('jos-revenue-root');
+    if (!root) return;
+    var r = ensureRevenueOsState();
+    var invId = t && (t.getAttribute('data-jos-rve-inv') || (t.closest('[data-jos-rve-inv]') && t.closest('[data-jos-rve-inv]').getAttribute('data-jos-rve-inv')));
+    try {
+      if (act === 'rve-inv-open') { root._josRveModal = 'invoice'; root._josRveTab = 'invoices'; return renderRevenue(); }
+      if (act === 'rve-inv-cancel' || act === 'rve-pay-cancel') { root._josRveModal = null; root._josRveInvoiceId = null; return renderRevenue(); }
+      if (act === 'rve-inv-save') {
+        var draft = readRevenueInvoiceDraft(root);
+        if (!draft.customerId) { toast('Pick a customer'); return; }
+        if (!draft.total) { toast('Enter an invoice amount'); return; }
+        r.invoices.push(draft);
+        rvePushActivity('invoice.created', 'Created draft invoice ' + draft.number, { invoiceId: draft.id, customerId: draft.customerId, amount: draft.total });
+        root._josRveModal = null;
+        toast('Invoice draft created');
+        return renderRevenue();
+      }
+      var inv = invId && r.invoices.find(function (x) { return String(x.id) === String(invId); });
+      if ((act === 'rve-inv-send' || act === 'rve-inv-void') && !inv) { toast('Invoice not found'); return; }
+      if (act === 'rve-inv-send') {
+        if (inv.status !== 'draft') { toast('Only draft invoices can be sent'); return; }
+        inv.status = 'sent';
+        inv.sentAt = rveTodayIso();
+        rvePushActivity('invoice.sent', 'Sent invoice ' + inv.number, { invoiceId: inv.id, customerId: inv.customerId, amount: inv.total, at: inv.sentAt });
+        publishRevenueEvent('invoice.sent', { invoiceId: inv.id, customerId: inv.customerId, amount: inv.total, at: inv.sentAt });
+        toast('Invoice sent');
+        return renderRevenue();
+      }
+      if (act === 'rve-inv-void') {
+        if (inv.status !== 'draft' && inv.status !== 'sent') { toast('Only draft or sent invoices can be voided'); return; }
+        inv.status = 'void';
+        inv.voidedAt = rveTodayIso();
+        rvePushActivity('invoice.voided', 'Voided invoice ' + inv.number, { invoiceId: inv.id, customerId: inv.customerId, amount: inv.total, at: inv.voidedAt });
+        publishRevenueEvent('invoice.voided', { invoiceId: inv.id, customerId: inv.customerId, amount: inv.total, at: inv.voidedAt });
+        toast('Invoice voided');
+        return renderRevenue();
+      }
+      if (act === 'rve-pay-open' || act === 'rve-dep-open' || act === 'rve-ref-open') {
+        root._josRveInvoiceId = invId || null;
+        root._josRveModal = act === 'rve-pay-open' ? 'payment' : (act === 'rve-dep-open' ? 'deposit' : 'refund');
+        root._josRveTab = act === 'rve-pay-open' ? 'payments' : (act === 'rve-dep-open' ? 'deposits' : 'refunds');
+        return renderRevenue();
+      }
+      if (act === 'rve-pay-save') {
+        var pay = readRevenueLedgerDraft();
+        var payInv = rveInvoiceById(pay.invoiceId);
+        if (!payInv || !pay.amount) { toast('Pick an invoice and amount'); return; }
+        pay.id = rveId('rve_pay');
+        r.payments.push(pay);
+        var paidAt = pay.at;
+        rvePushActivity('payment.received', 'Recorded payment for ' + payInv.number, { paymentId: pay.id, invoiceId: pay.invoiceId, customerId: pay.customerId, amount: pay.amount, at: paidAt });
+        publishRevenueEvent('payment.received', { paymentId: pay.id, invoiceId: pay.invoiceId, customerId: pay.customerId, amount: pay.amount, at: paidAt });
+        if (rveCollectedAmount(payInv.id) >= (Number(payInv.total) || 0) && payInv.status !== 'paid') {
+          payInv.status = 'paid';
+          payInv.paidAt = paidAt;
+          rvePushActivity('invoice.paid', 'Invoice ' + payInv.number + ' paid in full', { invoiceId: payInv.id, customerId: payInv.customerId, amount: payInv.total, at: paidAt });
+          publishRevenueEvent('invoice.paid', { invoiceId: payInv.id, customerId: payInv.customerId, amount: payInv.total, at: paidAt });
+        }
+        root._josRveModal = null;
+        toast('Payment recorded');
+        return renderRevenue();
+      }
+      if (act === 'rve-dep-save') {
+        var dep = readRevenueLedgerDraft();
+        var depInv = rveInvoiceById(dep.invoiceId);
+        if (!depInv || !dep.amount) { toast('Pick an invoice and amount'); return; }
+        dep.id = rveId('rve_dep');
+        r.deposits.push(dep);
+        if (depInv.status !== 'paid' && depInv.status !== 'refunded' && depInv.status !== 'void') depInv.status = 'deposit_paid';
+        rvePushActivity('deposit.paid', 'Recorded deposit for ' + depInv.number, { depositId: dep.id, invoiceId: dep.invoiceId, customerId: dep.customerId, amount: dep.amount, at: dep.at });
+        publishRevenueEvent('deposit.paid', { depositId: dep.id, invoiceId: dep.invoiceId, customerId: dep.customerId, amount: dep.amount, at: dep.at });
+        root._josRveModal = null;
+        toast('Deposit recorded');
+        return renderRevenue();
+      }
+      if (act === 'rve-ref-save') {
+        var ref = readRevenueLedgerDraft();
+        var refInv = rveInvoiceById(ref.invoiceId);
+        if (!refInv || !ref.amount) { toast('Pick an invoice and amount'); return; }
+        var refundable = Math.max(0, rveCollectedAmount(refInv.id) - rveRefundAmount(refInv.id));
+        if (ref.amount > refundable) { toast('Refund exceeds collected balance'); return; }
+        ref.id = rveId('rve_ref');
+        r.refunds.push(ref);
+        var totalRefunded = rveRefundAmount(refInv.id);
+        var totalCollected = rveCollectedAmount(refInv.id);
+        refInv.status = totalRefunded >= Math.min(totalCollected, Number(refInv.total) || totalCollected) ? 'refunded' : 'partially_refunded';
+        rvePushActivity('refund.issued', 'Issued refund for ' + refInv.number, { refundId: ref.id, invoiceId: ref.invoiceId, customerId: ref.customerId, amount: ref.amount, at: ref.at });
+        publishRevenueEvent('refund.issued', { refundId: ref.id, invoiceId: ref.invoiceId, customerId: ref.customerId, amount: ref.amount, at: ref.at });
+        root._josRveModal = null;
+        toast('Refund issued');
+        return renderRevenue();
+      }
+      if (act === 'rve-payout-open') { root._josRveModal = 'payout'; root._josRveTab = 'payouts'; return renderRevenue(); }
+      if (act === 'rve-payout-save') {
+        var payout = normalizeRevenuePayout({ amount: (el('jos-rve-payout-amount') || {}).value, destinationLabel: (el('jos-rve-payout-dest') || {}).value || 'Operating account', status: 'completed', at: rveTodayIso() });
+        if (!payout.amount) { toast('Enter payout amount'); return; }
+        r.payouts.push(payout);
+        rvePushActivity('payout.completed', 'Recorded completed payout', { payoutId: payout.id, amount: payout.amount, at: payout.at });
+        publishRevenueEvent('payout.completed', { payoutId: payout.id, amount: payout.amount, at: payout.at });
+        root._josRveModal = null;
+        toast('Payout recorded');
+        return renderRevenue();
+      }
+      if (act === 'rve-open-customer') {
+        var cid = t && (t.getAttribute('data-jos-rve-cust') || (inv && inv.customerId));
+        if (cid) return openCustomerProfile(cid, 'Payments');
+        return toast('No customer linked');
+      }
+      if (act === 'rve-go-jobs') return switchNav('jobs');
+      if (act === 'rve-go-mem') return switchNav('memberships');
+      if (act === 'rve-stripe') return toast('Stripe is Stage 2 · not connected');
+    } catch (err) {
+      console.warn('HublyJourneyOS rve act', act, err);
+      toast('Failed — try again');
+    }
+  }
+
   function renderReportsPage() {
     var root = el('jos-reports-root'); if (!root) return;
     var completed = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; });
@@ -7226,6 +7879,7 @@
       'ask-hubly': renderAskHubly,
       marketing: renderMarketing,
       memberships: renderMemberships,
+      money: renderRevenue,
       reports: renderReportsPage,
       growth: renderGrowth,
       reviews: renderReviews,
@@ -7243,7 +7897,7 @@
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-rve-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
       if (t.hasAttribute('data-jos-inbox-tab')) {
         var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
         return;
@@ -7306,6 +7960,10 @@
         var memr = el('jos-memberships-root'); if (memr) { memr._josMemTab = t.getAttribute('data-jos-mem-tab'); renderMemberships(); }
         return;
       }
+      if (t.hasAttribute('data-jos-rve-tab')) {
+        var rver = el('jos-revenue-root'); if (rver) { rver._josRveTab = t.getAttribute('data-jos-rve-tab'); renderRevenue(); }
+        return;
+      }
       if (t.hasAttribute('data-jos-cust-row')) {
         var crow = el('jos-customers-root');
         if (crow) {
@@ -7347,6 +8005,7 @@
       if (act && String(act).indexOf('mkt-') === 0) return handleMarketingAct(act, t);
       if (act && String(act).indexOf('rev-') === 0) return handleReviewsAct(act, t);
       if (act && String(act).indexOf('mem-') === 0) return handleMembershipsAct(act, t);
+      if (act && String(act).indexOf('rve-') === 0) return handleRevenueAct(act, t);
       if (act === 'ask-submit' || act === 'ask-brief') {
         switchNav('ask');
         return HublyJourneyOS._askFromInput(act === 'ask-brief' ? 'What should I focus on this morning?' : null);
@@ -7402,6 +8061,8 @@
     handleMarketingAct: handleMarketingAct,
     renderMemberships: renderMemberships,
     handleMembershipsAct: handleMembershipsAct,
+    renderRevenue: renderRevenue,
+    handleRevenueAct: handleRevenueAct,
     renderReportsPage: renderReportsPage,
     renderGrowth: renderGrowth,
     renderReviews: renderReviews,
