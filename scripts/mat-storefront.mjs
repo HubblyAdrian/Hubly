@@ -269,7 +269,7 @@ function setTextarea(id, value) {
 // Core render
 H.renderStorefront();
 check("Header", "Page renders", /jos-sf-page|Storefront/.test(sfRoot.innerHTML));
-check("Header", "Preview strip", /jos-sf-preview|myhubly\.app|Preview site/.test(sfRoot.innerHTML));
+check("Header", "Preview strip", /jos-sf-preview|jos-sf-mc-toolbar|jos-sf-live-site|hubly\.site|myhubly\.app|Preview/.test(sfRoot.innerHTML));
 check("Ownership", "Service catalog seeded", Array.isArray(state.editorSvcs) && state.editorSvcs.length >= 1);
 check("Ownership", "Catalog mirrored to S.services", Array.isArray(state.services) && state.services.length >= 1);
 
@@ -390,7 +390,7 @@ routes.forEach((act) => check("Routes", act, jsrc.includes("'" + act + "'") || j
 check("Empty States", "Empty helpers", /No services|empty|Upload/i.test(jsrc));
 check("Error States", "Retry markup", /Storefront could not load|Retry/.test(jsrc));
 const css = fs.readFileSync(path.join(repoRoot, "public/journey-os/operate-pixel.css"), "utf8");
-check("Responsive CSS", "Storefront layout", /jos-sf-page|jos-sf-layout/.test(css));
+check("Responsive CSS", "Storefront layout", /jos-sf-page|jos-sf-layout|jos-sf-mc-shell|jos-sf-mc-workspace/.test(css));
 check("Gate", "Legacy editor skip when pixel-owned", /jos-pixel-owned/.test(fs.readFileSync(path.join(repoRoot, "public/hubly.html"), "utf8")));
 
 let validatorPass = false;
@@ -453,7 +453,7 @@ window.previewProfile=function(){};
 </script>
 <script src="/journey-os/design-system.js"></script>
 <script src="/journey-os/journey.js"></script>
-<script>HublyJourneyOS.renderStorefront();document.title=document.getElementById("jos-storefront-root").innerHTML.includes("jos-sf-page")?"MAT_OK":"MAT_FAIL";</script>
+<script>HublyJourneyOS.renderStorefront();document.title=document.getElementById("jos-storefront-root").innerHTML.includes("jos-sf-page")||document.getElementById("jos-storefront-root").innerHTML.includes("jos-sf-mc-shell")?"MAT_OK":"MAT_FAIL";</script>
 </body></html>`;
   fs.writeFileSync(path.join(pub, "mat-storefront.html"), matHtml);
   const browser = await chromium.launch({
@@ -472,7 +472,7 @@ window.previewProfile=function(){};
     await page.waitForTimeout(350);
     return page.evaluate(() => {
       const root = document.getElementById("jos-storefront-root");
-      const pageEl = root && root.querySelector(".jos-sf-page");
+      const pageEl = root && (root.querySelector(".jos-sf-page") || root.querySelector(".jos-sf-mc-shell"));
       if (!pageEl) return false;
       const r = pageEl.getBoundingClientRect();
       return r.width > 200 && r.height > 200 && document.title.includes("MAT_OK");
