@@ -16,7 +16,7 @@ Other modules **read** that data — they do not own or duplicate it.
 | Templates / Automations / Coupons | 📣 Marketing |
 | Membership Plans / Subscribers / Visits | 🔁 Memberships |
 | Payments / Invoices / Deposits / Taxes / Stripe / Payouts | 💰 Revenue |
-| Dashboards / Analytics / Forecasts | 📊 Reports (aggregates only) |
+| Dashboards / Saved definitions / Layouts / Schedules / Forecast models | 📊 Reports (Rule #21 — aggregates only; never operational copies) |
 | AI conversations / memory / actions / context | ✨ Ask Hubly |
 | Business config / Integrations / Permissions / Branding / AI prefs | ⚙️ Settings |
 
@@ -29,7 +29,8 @@ Other modules **read** that data — they do not own or duplicate it.
 5. Pipeline **orchestrates** stages — it does not own Lead/Job/Customer entities.  
 6. Storefront **owns** the Service Catalog (`S.editorSvcs` + mirror `S.services` for booking consumers).  
 7. Marketing **owns** campaigns/templates/automations/coupons; audiences resolve from Customers/Leads at use time.  
-8. **Rule #19:** Modules cannot bypass their owners — no silent second copies.
+8. **Rule #19:** Modules cannot bypass their owners — no silent second copies.  
+9. **Rule #21:** Reports never duplicate operational data — presentation/analytics only.
 
 ## Module implications
 
@@ -43,7 +44,7 @@ Other modules **read** that data — they do not own or duplicate it.
 | Customers | Customer profiles | — |
 | Memberships | Plans, subscribers, billing rules, visit/renewal ledgers (`S.membershipsOs`) | Customers, Jobs, Revenue, Services (catalog refs) |
 | Revenue | Payments / invoices / deposits / refunds / taxes / Stripe sync status / payouts (`S.revenueOs`) — Rule #20 | Customers, Jobs, Memberships, Services |
-| Reports | Dashboard layouts / saved views | Everything (aggregate only — no business entities) |
+| Reports | Dashboards, definitions, layouts, schedules, forecast models (`S.reportsOs`) | Revenue, Memberships, Pipeline, Customers, Leads, Jobs, Marketing, Reviews (aggregate only) |
 | Ask Hubly | Conversations, memory, actions, context | Everything (never source of truth for entities) |
 | Settings | Business config, integrations, permissions, branding, AI prefs | — |
 

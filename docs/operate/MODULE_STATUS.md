@@ -40,10 +40,32 @@ Before approval of any new module PR, verify previously **locked** modules still
 - 📣 Marketing still works  
 - ⭐ Reviews still works  
 - 🔁 Memberships still works  
+- 💰 Revenue still works  
 - (+ each newly locked module)
 
 Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).  
 **Note:** CMV evaluates `design-system.js` → `hubly-events.js` → `journey.js` (same load order as `hubly.html`).
+
+---
+
+## Platform readiness
+
+See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform health (Design System, Event Bus, MAT/CMV, Financial Integrity, Integrations, Performance, Accessibility, Security).
+
+| Area | Status |
+|------|--------|
+| Navigation | ✅ |
+| Design System | ✅ |
+| Event Bus | ✅ |
+| Data Ownership | ✅ |
+| QA Process | ✅ |
+| MAT | ✅ |
+| CMV | ✅ |
+| Financial Integrity | ✅ |
+| Integrations | ⏸ Stage 2 |
+| Performance | ⏳ |
+| Accessibility | ⏳ |
+| Security Review | ⏳ |
 
 ---
 
@@ -61,7 +83,7 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 📣 Marketing | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🔁 Memberships | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | ❌ |
+| 💰 Revenue | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📊 Reports | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | ✨ Ask Hubly | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
 | ⚙️ Settings | ⏳ | ⏸ | ⏳ | ⏳ | ⏳ | ❌ |
@@ -82,8 +104,16 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 | 8 | 📣 Marketing | ✅ Locked | ⏸ | [#251](https://github.com/HubblyAdrian/Hubly/pull/251) | 🔒 OS · MAT ✅ · Rules #14–16 · merged |
 | 9 | ⭐ Reviews | ✅ Locked | ⏸ | [#252](https://github.com/HubblyAdrian/Hubly/pull/252) | 🔒 OS · MAT ✅ · Rule #17 · merged |
 | 10 | 🔁 Memberships | ✅ Locked | ⏸ | [#253](https://github.com/HubblyAdrian/Hubly/pull/253) | 🔒 OS · MAT ✅ · Rules #18–19 · merged |
-| 11 | 💰 Revenue | ✅ OS complete · MAT ✅ · CMV PASS | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) · Rule #20 · awaiting approval → then 🔒 OS |
-| 12–14 | Remaining | ⏳ | ⏸ | — | Reports · Ask Hubly · Settings |
+| 11 | 💰 Revenue | ✅ Locked | ⏸ | [#254](https://github.com/HubblyAdrian/Hubly/pull/254) | 🔒 OS · MAT ✅ · Rule #20 · merged |
+| 12 | 📊 Reports | ⏳ | ⏸ | — | Rule #21 · aggregates only · `cursor/operate-reports-2662` |
+| 13–14 | Remaining | ⏳ | ⏸ | — | Ask Hubly · Settings |
+
+### 💰 Revenue lock
+
+**Stage 1 — Operating System:** ✅ COMPLETE  
+**Stage 2 — Integrations:** ⏸ Deferred  
+
+**Do not modify Revenue unless:** bug fix · Stage 2 integrations · explicit module reopen.
 
 ### 🔁 Memberships lock
 
@@ -104,6 +134,5 @@ Runner: `node scripts/cmv-locked-modules.mjs` (extend as modules lock).
 Planning → Development (Stage 1 OS) → Self QA → **MAT** → **CMV** → PR → Approval → Merge → **Lock OS**  
 Later: Stage 2 Integrations → separate PR
 
-**Special gate:** Revenue requires [REVENUE_ARCHITECTURE.md](./REVENUE_ARCHITECTURE.md) before Development (same pattern as Marketing).
-
-**Engineering rules:** #14–20 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md))
+**Special gates:** Marketing / Revenue architecture docs before Development.  
+**Engineering rules:** #14–21 ([OPERATE_ENGINEERING_RULES.md](./OPERATE_ENGINEERING_RULES.md) · [EVENTS.md](./EVENTS.md) · [DATA_OWNERSHIP.md](./DATA_OWNERSHIP.md) · [PLATFORM_READINESS.md](./PLATFORM_READINESS.md))
