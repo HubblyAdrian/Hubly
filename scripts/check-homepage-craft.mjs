@@ -133,14 +133,26 @@ ok(!/Talk to Hubly/.test(html), 'no competing Talk to Hubly CTA');
 
 const heroBlock = html.match(/<section class="hero"[\s\S]*?<\/section>/)?.[0] || '';
 ok(/Tell Hubly about your business/.test(heroBlock), 'business-primary hero headline');
-ok(/Ask Hubly/.test(heroBlock), 'Ask Hubly available in hero');
-ok(/Build My Business/.test(heroBlock), 'Build My Business path in hero');
+ok(/I want to grow my business/.test(heroBlock), 'user-phrased business path in hero');
+ok(/I need to hire someone/.test(heroBlock), 'user-phrased hire path in hero');
+ok(/Continue Building/.test(heroBlock), 'Continue Building CTA in hero');
+ok(/hero-status|heroStatus/.test(heroBlock), 'live AI status line in hero');
 ok(/Most software makes you learn how it works/.test(heroBlock), 'brand why in hero');
 ok(!/Get Matched/.test(heroBlock), 'old Get Matched label removed from hero');
+ok(/hubly-session\.js/.test(html), 'Hubly Session module loaded');
+ok(/HublySession|HublyLandingIntent|Rule #24/.test(html), 'Rule #24 dual-product router wired');
+ok(/hs=/.test(html), 'structured Hubly Session handoff param');
+ok(/startImportPipeline/.test(html), 'real import pipeline kickoff');
+const hublySessionJs = fs.readFileSync('public/hubly-session.js', 'utf8');
+ok(/Reading services/.test(hublySessionJs), 'import progress status copy in Hubly Session');
+ok(/startImportPipeline/.test(hublySessionJs), 'import pipeline API in Hubly Session');
+ok(/toBuilderPayload/.test(hublySessionJs), 'structured builder handoff payload');
 
 const primaryNav = html.match(/<nav class="nav-links"[^>]*>[\s\S]*?<\/nav>/i)?.[0] || '';
 ok(!/Marketplace/i.test(primaryNav), 'Marketplace not in primary nav');
 ok(/Ask Hubly/.test(primaryNav), 'Ask Hubly in primary nav');
+ok(html.includes('href="/marketplace"'), 'Marketplace entry preserved');
+ok(!/\bJoin Marketplace\b/i.test(html), 'no Join Marketplace customer language');
 
 if (failed) process.exit(1);
 console.log('OK homepage craftsmanship checks passed');

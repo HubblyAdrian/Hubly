@@ -14,6 +14,7 @@ Track platform-level readiness **alongside** module completion ([MODULE_STATUS.m
 | Financial Integrity | ✅ | Rule #20 · Revenue ledger |
 | AI Confirmation Policy | ✅ | Rule #22 · Ask Hubly architecture |
 | Settings ownership | ✅ | Rule #23 · Settings architecture |
+| Dual Product Architecture | ✅ | Rule #24 · AI Landing router |
 | Integrations | ⏸ | Stage 2 — deferred per module |
 | Performance | ⏳ | Not yet a formal gate |
 | Accessibility | ⏳ | Not yet a formal gate |

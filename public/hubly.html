@@ -11537,6 +11537,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/smart-quote/engine.js"></script>
 <script defer src="/smart-quote/ui.js"></script>
 <script defer src="/smart-quote/booking.js"></script>
+<script defer src="/hubly-session.js"></script>
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
 <script defer src="/journey-os/journey.js"></script>
@@ -16185,13 +16186,69 @@ async function startCreativeDirector(seedText){
   return startInstantSite(seedText);
 }
 
+function consumeHublySessionForBuilder(opts){
+  opts=opts||{};
+  const HS=window.HublySession||window.HublyLandingIntent;
+  if(!HS||typeof HS.loadSession!=='function')return null;
+  let session=null;
+  try{session=HS.loadSession();}catch(e){session=null;}
+  if(!session&&opts.hsId){
+    try{session=HS.loadSession();}catch(e){}
+  }
+  if(!session)return null;
+  const payload=typeof HS.toBuilderPayload==='function'?HS.toBuilderPayload(session):null;
+  if(!payload)return null;
+  S._hublySession=payload;
+  S._hublySessionRaw=session;
+  // Apply structured facts — do not wait for re-inference from seed text.
+  if(payload.businessName){
+    const okName=typeof isAcceptableBizName==='function'?isAcceptableBizName(payload.businessName):true;
+    if(okName)S.biz=payload.businessName;
+  }
+  if(payload.location){S.city=payload.location;S._is=S._is||{};S._is.city=payload.location;}
+  if(payload.industry){
+    S._is=S._is||{};
+    S._is.workLove=payload.industry;
+    try{
+      const match=typeof inferBlueprintMatch==='function'?inferBlueprintMatch(payload.industry+' '+(payload.lastText||'')):null;
+      if(match?.id){S.businessType=match.id;S._blueprintConfirmed=true;}
+    }catch(e){}
+  }
+  if(payload.imports){
+    S._hublyImports=payload.imports;
+    const web=payload.imports.website;
+    if(web&&web.analysis){
+      if(web.analysis.businessName&&!S.biz)S.biz=web.analysis.businessName;
+      if(web.analysis.phone&&!S.phone)S.phone=web.analysis.phone;
+      if(Array.isArray(web.analysis.services)&&web.analysis.services.length){
+        S._importedServiceHints=web.analysis.services.slice();
+      }
+      if(web.analysis.heroImage&&!S.bannerUrl)S.bannerUrl=web.analysis.heroImage;
+      if(Array.isArray(web.analysis.brandColors))S._importedBrandColors=web.analysis.brandColors.slice();
+    }
+    const ig=payload.imports.instagram;
+    if(ig&&(ig.url||ig.analysis?.profileUrl)){
+      S.ig=ig.analysis?.handle?('https://instagram.com/'+ig.analysis.handle):(ig.url||'');
+    }
+    const fb=payload.imports.facebook;
+    if(fb&&fb.url)S.fb=fb.url;
+    const gb=payload.imports.google_business;
+    if(gb&&gb.url)S.gb=gb.url;
+  }
+  try{if(typeof HS.markHandedOff==='function')HS.markHandedOff();}catch(e){}
+  return payload;
+}
+
 async function startInstantSite(seedText,opts){
   opts=opts||{};
-  const seed=String(seedText!=null?seedText:(S._mktSeedPrompt||'')).trim();
+  // Prefer structured Hubly Session over raw seed re-inference.
+  let hublyPayload=opts.hublyPayload||null;
+  if(!hublyPayload)hublyPayload=consumeHublySessionForBuilder(opts);
+  const seed=String(seedText!=null?seedText:(hublyPayload?.lastText||S._mktSeedPrompt||'')).trim();
   S._mktSeedPrompt=null;
-  // Fresh marketing seed starts clean; otherwise offer resume of in-browser progress.
-  if(seed||opts.forceFresh)clearInstantSiteDraft();
-  const pendingDraft=(!seed&&!opts.forceFresh)?readInstantSiteDraft():null;
+  // Fresh marketing seed starts clean; Hubly Session handoff continues the same conversation.
+  if((seed||opts.forceFresh)&&!hublyPayload)clearInstantSiteDraft();
+  const pendingDraft=(!seed&&!opts.forceFresh&&!hublyPayload)?readInstantSiteDraft():null;
   const offerResume=!!(pendingDraft&&instantSiteDraftIsResumable(pendingDraft));
   S._instantSite=true;
   S._creativeDirector=true;
@@ -16209,20 +16266,42 @@ async function startInstantSite(seedText,opts){
     if(typeof HublyBlueprints!=='undefined'){
       await HublyBlueprints.loadAll().catch(()=>{});
     }
+    const preservedBiz=S.biz;
+    const preservedCity=S.city;
+    const preservedPhone=S.phone;
+    const preservedIg=S.ig;
+    const preservedFb=S.fb;
+    const preservedGb=S.gb;
+    const preservedBanner=S.bannerUrl;
+    const preservedType=S.businessType;
+    const preservedImports=S._hublyImports;
+    const preservedHints=S._importedServiceHints;
+    const preservedColors=S._importedBrandColors;
+    const preservedSession=S._hublySession;
     resetOnboardState();
-    S.businessType=null;
-    S._blueprintConfirmed=false;
+    S.businessType=preservedType||null;
+    S._blueprintConfirmed=!!preservedType;
     S._blueprintSource=null;
     S._ownerUploadedMedia=false;
     S._seededGalleryFromBp=false;
     S._seededBannerFromBp=false;
-    S.bannerUrl=null;
+    S.bannerUrl=preservedBanner||null;
     S.portfolioUrls=[];
     S.services=[];
+    if(preservedBiz)S.biz=preservedBiz;
+    if(preservedCity)S.city=preservedCity;
+    if(preservedPhone)S.phone=preservedPhone;
+    if(preservedIg)S.ig=preservedIg;
+    if(preservedFb)S.fb=preservedFb;
+    if(preservedGb)S.gb=preservedGb;
+    if(preservedImports)S._hublyImports=preservedImports;
+    if(preservedHints)S._importedServiceHints=preservedHints;
+    if(preservedColors)S._importedBrandColors=preservedColors;
+    if(preservedSession)S._hublySession=preservedSession;
     S._instantSite=true;
     S._creativeDirector=true;
     S._deferredAccount=!currentUser;
-    S._cd={step:0,messages:[],mood:'dusk',whoText:seed||'',skipped:{},inferredType:null,typeFromName:false};
+    S._cd={step:0,messages:[],mood:'dusk',whoText:seed||'',skipped:{},inferredType:preservedType||null,typeFromName:!!preservedBiz};
     S._is={
       prompt:seed,
       seed,
@@ -16232,10 +16311,12 @@ async function startInstantSite(seedText,opts){
       ownerName:'',
       ownerFirst:'',
       ownerLast:'',
-      phone:'',
-      city:'',
-      bizNamedByOwner:false,
+      phone:preservedPhone||'',
+      city:preservedCity||'',
+      bizNamedByOwner:!!preservedBiz,
       locked:null,
+      fromHublySession:!!hublyPayload,
+      hublySessionId:hublyPayload?.sessionId||null,
     };
     onboard?.classList.add('is-active');
     onboard?.classList.remove('cd-active','cd-building');
@@ -16245,8 +16326,9 @@ async function startInstantSite(seedText,opts){
     if(shell)shell.style.display='flex';
     isUpdateAtmosphere();
     showP('p-onboard',{replaceRoute:true});
-    // Prefill anything we can from a marketing prompt — still talk through gaps.
-    if(seed)isTalkPrefillFromSeed(seed);
+    // Structured session wins: only prefill gaps from seed when Hubly Session lacked them.
+    if(seed&&!hublyPayload)isTalkPrefillFromSeed(seed);
+    else if(seed&&hublyPayload&&!S.businessType)isTalkPrefillFromSeed(seed);
     // Keep soft email / draft identity across Instant Site restarts in this browser.
     const soft=readSoftEmail();
     if(soft){S.email=soft;S._is.softEmail=soft;}
@@ -16555,9 +16637,21 @@ const HUBLY_DISCOVERY = (function(){
     replies.forEach(r=>{if(r.text)session.messages.push({role:'hubly',text:r.text,kind:r.kind});});
     return{ok:true,session,replies,confidence:conf,panel:panelFacts(session),complete:session.complete,clarificationCount:session.clarificationCount,emotion:emotion.state};
   }
+  function applyKnownFacts(session,facts){
+    if(!session||!facts)return session;
+    if(facts.industry)setFact(session,'industry',facts.industry,94,false);
+    if(facts.industryId)setFact(session,'industryId',facts.industryId,94,false);
+    if(facts.area)setFact(session,'area',facts.area,94,false);
+    if(facts.stage){
+      const st=facts.stage==='startup'||facts.stage==='early'?'early':(facts.stage==='established'?'established':facts.stage);
+      if(st==='early'||st==='established')setFact(session,'stage',st,92,false);
+    }
+    if(facts.goal)setFact(session,'goal',facts.goal,88,false);
+    return session;
+  }
   return{
     MAX_CLARIFICATION_QUESTIONS,ASK_CONFIDENCE,READY_CONFIDENCE,COMPLETION,LEARNING_HEADER,
-    createDiscoverySession,discoveryOpener,ingestDiscoveryTurn,detectEmotion,panelFacts,buildLearning,
+    createDiscoverySession,discoveryOpener,ingestDiscoveryTurn,detectEmotion,panelFacts,buildLearning,applyKnownFacts,setFact,
   };
 })();
 
@@ -16572,17 +16666,70 @@ function isDiscoveryBoot(opts){
   S._is=S._is||{};
   S._is.talkBeat='discovery';
   const seed=S._is.seed||S._is.prompt||'';
+  const hs=S._hublySession;
   const fresh=!S._is.discovery||!!opts.restart;
   if(fresh){
     S._is.discovery=HUBLY_DISCOVERY.createDiscoverySession(seed);
+    // Apply Hubly Session facts with high confidence — do not re-ask what Landing already learned.
+    if(hs&&typeof HUBLY_DISCOVERY.applyKnownFacts==='function'){
+      let industryId=null;
+      try{
+        const match=typeof inferBlueprintMatch==='function'?inferBlueprintMatch(hs.industry||''):null;
+        industryId=match?.id||null;
+      }catch(e){}
+      HUBLY_DISCOVERY.applyKnownFacts(S._is.discovery,{
+        industry:hs.industry||'',
+        industryId:industryId,
+        area:hs.location||'',
+        stage:hs.stage||'',
+        goal:hs.intent==='build_business'?'build_brand':null,
+      });
+    }
     S._is.messages=[];
     S._is._askedBeat='discovery';
+    // Continue the same conversation from Landing.
+    if(hs&&Array.isArray(hs.conversation)){
+      hs.conversation.slice(-6).forEach(turn=>{
+        if(!turn||!turn.text)return;
+        S._is.messages.push({side:turn.role==='user'?'owner':'hubly',text:String(turn.text)});
+      });
+    }
     isTalkRender();
     isShowAreaPanel(false);
     isTalkClearChips();
     isShowStep('talk');
-    const opener=HUBLY_DISCOVERY.discoveryOpener(S._is.discovery);
+    let opener=HUBLY_DISCOVERY.discoveryOpener(S._is.discovery);
+    if(hs){
+      const bits=[];
+      if(hs.businessName)bits.push(hs.businessName);
+      else if(hs.industry)bits.push(hs.industry);
+      if(hs.location)bits.push(hs.location);
+      const importBits=[];
+      const im=hs.imports||{};
+      if(im.website&&(im.website.status==='ready'||im.website.status==='partial')){
+        const a=im.website.analysis||{};
+        importBits.push('your website'+(a.serviceCount?` (${a.serviceCount} services)`:''));
+      }
+      if(im.instagram&&im.instagram.url)importBits.push('Instagram');
+      if(im.google_business&&im.google_business.url)importBits.push('Google Business');
+      if(im.facebook&&im.facebook.url)importBits.push('Facebook');
+      if(bits.length||importBits.length){
+        opener="I've been listening"+(bits.length?' — '+bits.join(' · '):'')+'.';
+        if(importBits.length)opener+=' I already started reading '+importBits.join(' · ')+'.';
+        opener+=" Let's keep going from here — I won't make you start over.";
+      }
+    }
     isTalkPush('hubly',opener);
+    if(hs&&hs.imports&&hs.imports.website&&hs.imports.website.analysis){
+      const a=hs.imports.website.analysis;
+      const lines=[];
+      if(a.serviceCount)lines.push(a.serviceCount+' services spotted');
+      if(a.imageCount)lines.push(a.imageCount+' photos found');
+      if(a.reviewSignals)lines.push('review signals found');
+      if(lines.length){
+        isTalkPush('hubly',"From your site I'm already seeing: "+lines.join(' · ')+'.');
+      }
+    }
   }else{
     isShowStep('talk');
     isTalkRender();
@@ -22736,6 +22883,16 @@ async function createInstantSiteAccount(email,password){
   saveOwnerLogin({email,password,biz:S.biz||''});
   clearDraftLogin();
   try{await ensureDraftBusiness();}catch(e){console.warn('ensureDraftBusiness after soft login',e);}
+  // Hubly Session lifecycle: anonymous → permanent (nothing recreated).
+  try{
+    const HS=window.HublySession||window.HublyLandingIntent;
+    if(HS&&typeof HS.upgradeToAccount==='function'){
+      HS.upgradeToAccount({
+        accountId:currentUser?.id||null,
+        businessId:(typeof currentBusiness!=='undefined'&&currentBusiness&&currentBusiness.id)||null,
+      });
+    }
+  }catch(e){}
   return {ok:true,via:createdVia};
 }
 async function isConfirmSoftEmail(){
@@ -45785,21 +45942,40 @@ function welcomeExperienceMount(){
       if(line)line.innerHTML="Voice is ready in the architecture — <strong>type for now</strong>, same conversation.";
     });
   }
-  // Milestone 2.5 — consume ?q= from platform-home / marketing CTAs.
+  // Rule #24 — consume Hubly Session (+ optional ?q=) from Landing.
   let seededFromQuery='';
-  try{seededFromQuery=(new URLSearchParams(location.search).get('q')||'').trim();}catch(e){}
-  if(seededFromQuery){
-    input.value=seededFromQuery;
+  let hsId='';
+  try{
+    const params=new URLSearchParams(location.search);
+    seededFromQuery=(params.get('q')||'').trim();
+    hsId=(params.get('hs')||'').trim();
+  }catch(e){}
+  const HS=window.HublySession||window.HublyLandingIntent;
+  let sessionText='';
+  try{
+    const sess=HS&&HS.loadSession?HS.loadSession():null;
+    if(sess&&(!hsId||sess.id===hsId))sessionText=String(sess.lastText||'').trim();
+  }catch(e){}
+  const seedText=seededFromQuery||sessionText;
+  if(seedText){
+    input.value=seedText;
     try{welcomeOnInput();}catch(e){}
     send.disabled=false;
+    if(HS&&typeof HS.toBuilderPayload==='function'){
+      const soft=document.getElementById('welcome-hubly-line');
+      const payload=HS.toBuilderPayload();
+      if(soft&&payload&&(payload.industry||payload.businessName||payload.imports)){
+        soft.innerHTML="I already know where we left off — <strong>continuing your Hubly Session</strong>.";
+      }
+    }
     setTimeout(()=>{try{welcomeSubmit();}catch(e){}},280);
   }else{
     input.value='';
     send.disabled=true;
     input.focus({preventScroll:true});
+    const soft=document.getElementById('welcome-hubly-line');
+    if(soft)soft.innerHTML=WELCOME_SOFT_LINES[0];
   }
-  const soft=document.getElementById('welcome-hubly-line');
-  if(soft)soft.innerHTML=WELCOME_SOFT_LINES[0];
 }
 
 function welcomeRenderInspiration(){
@@ -45865,11 +46041,19 @@ function welcomeSubmit(){
   const typing=document.getElementById('welcome-typing');
   if(typing)typing.classList.add('is-on');
   const soft=document.getElementById('welcome-hubly-line');
-  if(soft)soft.innerHTML="<strong>I'm with you</strong> — let's build this.";
+  if(soft)soft.innerHTML="<strong>I'm with you</strong> — continuing from your Hubly Session.";
   S._mktSeedPrompt=text;
-  // Conversation won — hand off to Instant Site / build flow with the seed.
+  // Keep Hubly Session in sync if visitor edited the Welcome line.
+  try{
+    const HS=window.HublySession||window.HublyLandingIntent;
+    if(HS&&typeof HS.understand==='function'){
+      const u=HS.understand(text,'business');
+      HS.upsertSession(u);
+    }
+  }catch(e){}
+  // Structured Hubly Session handoff into Instant Site / Builder.
   setTimeout(()=>{
-    try{startInstantSite(text,{forceFresh:true});}catch(e){
+    try{startInstantSite(text,{forceFresh:true,fromHublySession:true});}catch(e){
       console.warn(e);
       startCreativeDirector(text);
     }

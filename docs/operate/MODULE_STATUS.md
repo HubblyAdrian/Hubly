@@ -67,6 +67,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | Financial Integrity | ✅ |
 | AI Confirmation Policy | ✅ Rule #22 |
 | Settings ownership | ✅ Rule #23 |
+| Dual Product Architecture | ✅ Rule #24 |
 | Integrations | ⏸ Stage 2 |
 | Performance | ⏳ |
 | Accessibility | ⏳ |
