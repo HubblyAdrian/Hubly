@@ -11347,7 +11347,8 @@
     var sort = root._josInboxSort || 'newest';
     var all = inboxConversations();
     var selectedId = root._josInboxId || (all[0] && all[0].id) || null;
-    var dockCollapsed = root._josDockCollapsed !== false; /* default collapsed so columns aren't crushed */
+    if (root._josDockCollapsed == null) root._josDockCollapsed = true;
+    var dockCollapsed = !!root._josDockCollapsed;
     var hubOpen = root._josHubOpen !== false;
     var noteMode = !!root._josNoteMode;
     var scrollKeep = root._josChatScroll || 0;
