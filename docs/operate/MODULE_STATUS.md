@@ -90,7 +90,7 @@ See [PLATFORM_READINESS.md](./PLATFORM_READINESS.md) for cross-cutting platform 
 | 📅 Jobs & Calendar | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 🧲 Leads | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | ❤️ Customers | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
-| 🧭 Pipeline | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
+| 🧭 Pipeline | ✅ | ⏸ | ✅ | ⏳ | ⏳ | 🔓 Reopen |
 | 🌐 Storefront | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |
 | 📣 Marketing | ✅ | ⏸ | ✅ | ⏳ | ⏳ | 🔓 Reopen |
 | ⭐ Reviews | ✅ | ⏸ | ✅ | ✅ | ✅ | 🔒 OS |

@@ -7,14 +7,15 @@
   'use strict';
 
   var PIPE_STAGES = [
-    { id: 'lead', label: 'Lead', dot: 'lead' },
-    { id: 'qualified', label: 'Qualified', dot: 'qualified' },
-    { id: 'quote', label: 'Quote', dot: 'quote' },
-    { id: 'booked', label: 'Booked', dot: 'booked' },
-    { id: 'completed', label: 'Completed', dot: 'completed' },
-    { id: 'review', label: 'Review', dot: 'review' },
-    { id: 'membership', label: 'Membership', dot: 'membership' }
+    { id: 'lead', label: 'Lead', dot: 'lead', tone: 'blue' },
+    { id: 'qualified', label: 'Qualified', dot: 'qualified', tone: 'purple' },
+    { id: 'quote', label: 'Quote', dot: 'quote', tone: 'orange' },
+    { id: 'booked', label: 'Booked', dot: 'booked', tone: 'green' },
+    { id: 'completed', label: 'Completed', dot: 'completed', tone: 'gray' },
+    { id: 'review', label: 'Review', dot: 'review', tone: 'gray' },
+    { id: 'membership', label: 'Membership', dot: 'membership', tone: 'green' }
   ];
+  var PIPE_BOARD_STAGES = PIPE_STAGES.slice(0, 5);
   var PROFILE_TABS = ['Overview', 'Timeline', 'Jobs', 'Payments', 'Photos', 'Messages', 'Membership', 'Reviews', 'Documents', 'Notes'];
   var ASK_CHIPS = ['Who should I follow up with today?', 'Draft a win-back text', 'What membership should I offer?', 'Summarize this week’s revenue', 'Who needs a rebook nudge?'];
   var POPULAR_ASKS = [
@@ -137,6 +138,20 @@
     S().pipeline.stages[cardId] = stageId;
   }
 
+  function pipeCardTags(card) {
+    ensurePipelineOsState();
+    var st = S().pipeline;
+    if (!st.tags) st.tags = {};
+    var saved = st.tags[card && card.id] || [];
+    var base = (card && (card.tags || (card.meta && card.meta.tags))) || [];
+    var out = [];
+    [].concat(saved, base).forEach(function (t) {
+      var s = String(t || '').trim();
+      if (s && out.indexOf(s) < 0) out.push(s);
+    });
+    return out;
+  }
+
   function mapLeadStage(lead) {
     var stage = String(lead.stage || '').toLowerCase(), role = '';
     try { if (typeof global.leadStageById === 'function') role = global.leadStageById(lead.stage)?.role || ''; } catch (e) {}
@@ -155,15 +170,35 @@
     return 'lead';
   }
 
+  function boardStageId(card) {
+    var sid = getCardStageId(card);
+    if (sid === 'review' || sid === 'membership') return 'completed';
+    return sid;
+  }
+
+  function pipeStatusTag(card) {
+    var sid = getCardStageId(card);
+    var tags = pipeCardTags(card);
+    if (tags.length) return String(tags[0]);
+    if (sid === 'lead') return 'New';
+    if (sid === 'qualified') return 'Follow up';
+    if (sid === 'quote') return 'Quoted';
+    if (sid === 'booked') return 'Booked';
+    if (sid === 'completed') return 'Done';
+    return pipeStageLabel(sid);
+  }
+
   function demoPipelineCards() {
     return [
-      { id: 'd1', stageId: 'lead', name: 'Alex Rivera', source: 'google', service: 'Full detail', amount: 0 },
-      { id: 'd2', stageId: 'qualified', name: 'Sam Chen', source: 'website', service: 'Exterior wash', vehicle: 'SUV', amount: 89 },
-      { id: 'd3', stageId: 'quote', name: 'Jordan Lee', source: 'instagram', service: 'Interior + ceramic', vehicle: 'Sedan', amount: 249 },
-      { id: 'd4', stageId: 'booked', name: 'Taylor Brooks', source: 'hubly', service: 'Mobile detail', date: dateLong(new Date().toISOString().slice(0, 10)), amount: 189 },
-      { id: 'd5', stageId: 'completed', name: 'Casey Morgan', source: 'facebook', service: 'Paint correction', amount: 420 },
-      { id: 'd6', stageId: 'review', name: 'Riley Quinn', source: 'hubly', service: 'Monthly wash', vehicle: 'Truck', amount: 95 },
-      { id: 'd7', stageId: 'membership', name: 'Morgan Avery', source: 'membership', service: 'Shine Club', amount: 79 }
+      { id: 'd1', stageId: 'lead', name: 'Alex Rivera', source: 'website', service: 'Interior Detail', amount: 250, phone: '(619) 555-0101', email: 'alex@email.com', tags: ['New Lead', 'Exterior', 'Weekend', 'High Intent'], owner: 'Adrian', createdAt: '2025-05-18' },
+      { id: 'd2', stageId: 'lead', name: 'Sam Chen', source: 'google', service: 'Exterior Wash', vehicle: 'SUV', amount: 89, phone: '(619) 555-0102', tags: ['New'], owner: 'Adrian' },
+      { id: 'd3', stageId: 'lead', name: 'Jordan Lee', source: 'instagram', service: 'Full Detail + Wax', vehicle: 'Sedan', amount: 349, tags: ['Weekend'], owner: 'Adrian' },
+      { id: 'd8', stageId: 'lead', name: 'Taylor Smith', source: 'facebook', service: 'Mobile Detail', amount: 339, tags: ['New Lead'], owner: 'Adrian' },
+      { id: 'd9', stageId: 'qualified', name: 'Chris Martin', source: 'website', service: 'Ceramic Coating', amount: 899, tags: ['High Intent'], owner: 'Adrian' },
+      { id: 'd10', stageId: 'qualified', name: 'Jamie Wilson', source: 'referral', service: 'Paint Correction', amount: 599, tags: ['Follow up'], owner: 'Adrian' },
+      { id: 'd11', stageId: 'quote', name: 'Casey Brown', source: 'hubly', service: 'Interior + Ceramic', amount: 1250, tags: ['Quoted'], owner: 'Adrian' },
+      { id: 'd12', stageId: 'quote', name: 'Morgan Davis', source: 'google', service: 'Full Detail', amount: 1000, tags: ['Quoted'], owner: 'Adrian' },
+      { id: 'd4', stageId: 'booked', name: 'Test', source: 'hubly', service: 'Mobile detail', date: todayStr(), amount: 179, tags: ['Booked'], owner: 'Adrian' }
     ];
   }
 
@@ -218,58 +253,63 @@
   }
 
   function pipeCardHtml(card, selectedId) {
-    var kind = card.source || 'manual';
-    var meta = pipeCardMetaBits(card);
-    var sid = getCardStageId(card);
     var on = String(selectedId) === String(card.id);
-    var d = DS();
-    if (d && d.pipelineCard) {
-      return d.pipelineCard({
-        id: card.id,
-        selected: on,
-        name: card.name,
-        sourceHtml: srcIco(kind),
-        meta: meta,
-        badge: pipeStageLabel(sid),
-        badgeTone: sid === 'booked' ? 'booked' : (sid === 'completed' ? 'won' : (sid === 'membership' ? 'ok' : 'info')),
-        amount: card.amount != null && Number.isFinite(Number(card.amount)) ? money(card.amount) : ''
-      });
-    }
-    return '<div class="jos-pipe-card' + (on ? ' on' : '') + '" data-jos-pipe-card="' + esc(card.id) + '" role="button" tabindex="0" draggable="true"><div class="jos-between"><div class="jos-pipe-name">' + esc(card.name) + '</div>' + srcIco(kind) + '</div>' +
-      (meta ? '<div class="jos-pipe-meta">' + esc(meta) + '</div>' : '') +
-      '<div class="jos-pipe-foot"><span class="jos-src">' + esc(srcLabel(kind)) + '</span>' +
-      (card.amount != null && Number.isFinite(Number(card.amount)) ? '<span class="jos-pipe-amt">' + esc(money(card.amount)) + '</span>' : '') + '</div></div>';
+    var tag = pipeStatusTag(card);
+    var amt = card.amount != null && Number.isFinite(Number(card.amount)) ? money(card.amount) : '$0';
+    return '<div class="jos-pk-card' + (on ? ' on' : '') + '" data-jos-pipe-card="' + esc(card.id) + '" role="button" tabindex="0" draggable="true">' +
+      '<span class="jos-pk-ava">' + esc(initials(card.name)) + '</span>' +
+      '<span class="jos-pk-card-body">' +
+      '<strong>' + esc(card.name || 'Deal') + '</strong>' +
+      '<span class="jos-muted">' + esc(card.service || 'Service') + '</span>' +
+      '<span class="jos-pk-card-foot"><span class="jos-pk-tag">' + esc(tag) + '</span><span class="jos-pk-amt">' + esc(amt) + '</span></span>' +
+      '</span></div>';
   }
 
   function filterPipelineCards(root, cards) {
     var q = String(root._josPipeQ || '').trim().toLowerCase();
     var f = root._josPipeFilters || {};
-    return cards.filter(function (c) {
-      var sid = getCardStageId(c);
-      if (f.stage && f.stage !== 'all' && sid !== f.stage) return false;
+    var tag = root._josPipeTag || '';
+    var sort = root._josPipeSort || 'recent';
+    var list = cards.filter(function (c) {
+      var sid = boardStageId(c);
+      if (f.stage && f.stage !== 'all' && sid !== f.stage && getCardStageId(c) !== f.stage) return false;
       if (f.source && f.source !== 'all' && String(c.source || '') !== f.source) return false;
       if (f.service && f.service !== 'all' && String(c.service || '') !== f.service) return false;
       var amt = Number(c.amount) || 0;
       if (f.valueMin && amt < Number(f.valueMin)) return false;
       if (f.valueMax && amt > Number(f.valueMax)) return false;
+      if (root._josPipeOpenOnly) {
+        var i = pipeStageIndex(boardStageId(c));
+        if (!(i >= 0 && i < 4)) return false;
+      }
+      if (tag) {
+        var tags = pipeCardTags(c).map(function (x) { return String(x).toLowerCase(); });
+        if (tags.indexOf(String(tag).toLowerCase()) < 0 && String(pipeStatusTag(c)).toLowerCase() !== String(tag).toLowerCase()) return false;
+      }
       if (!q) return true;
-      var blob = [c.name, c.phone, c.email, c.service, c.vehicle, c.source, sid, srcLabel(c.source)].join(' ').toLowerCase();
+      var blob = [c.name, c.phone, c.email, c.service, c.vehicle, c.source, c.id, sid, srcLabel(c.source), pipeCardTags(c).join(' ')].join(' ').toLowerCase();
       return blob.indexOf(q) !== -1;
     });
+    if (sort === 'value') list = list.slice().sort(function (a, b) { return (Number(b.amount) || 0) - (Number(a.amount) || 0); });
+    else if (sort === 'name') list = list.slice().sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || '')); });
+    return list;
   }
 
   function pipeActivityItems(card) {
     var items = [];
     if (!card) return items;
-    if (card.date) items.push({ type: 'date', label: 'Last touch · ' + (String(card.date).length === 10 ? dateLong(card.date) : card.date), at: '' });
-    if (card.service) items.push({ type: 'svc', label: card.service, at: card.vehicle || '' });
-    if (card.amount != null && Number(card.amount)) items.push({ type: 'val', label: 'Value ' + money(card.amount), at: pipeStageLabel(getCardStageId(card)) });
-    if (card.leadKey && card.meta && card.meta.activity) {
-      (card.meta.activity || []).slice(0, 4).forEach(function (a) {
-        items.push({ type: 'act', label: a.label || a.type || 'Activity', at: a.at || '' });
+    if (card.meta && card.meta.activity && card.meta.activity.length) {
+      card.meta.activity.slice(0, 6).forEach(function (a) {
+        items.push({ type: a.type || 'act', label: a.label || a.type || 'Activity', at: a.at || '' });
       });
     }
-    if (!items.length) items.push({ type: 'new', label: 'New in pipeline', at: pipeStageLabel(getCardStageId(card)) });
+    if (card.date) items.push({ type: 'date', label: 'Scheduled · ' + (String(card.date).length === 10 ? dateLong(card.date) : card.date), at: '' });
+    if (card.service) items.push({ type: 'svc', label: card.service, at: card.vehicle || '' });
+    if (card.amount != null && Number(card.amount)) items.push({ type: 'val', label: 'Deal value ' + money(card.amount), at: pipeStageLabel(getCardStageId(card)) });
+    if (!items.length) {
+      items.push({ type: 'new', label: 'Deal created', at: card.createdAt || 'Recently' });
+      items.push({ type: 'next', label: 'Next: Follow up in 2 days', at: '10:00 AM' });
+    }
     return items.slice(0, 6);
   }
 
@@ -277,11 +317,11 @@
     if (!card) return 'Select a deal to see AI next steps.';
     var sid = getCardStageId(card);
     var map = {
-      lead: 'Qualify quickly — confirm vehicle, service, and timeline. Offer a same-week slot.',
-      qualified: 'Send a clear package quote with good / better / best options.',
-      quote: 'Follow up within 24h. Nudge with a hold on the mid-tier package.',
+      lead: 'Quality lead with consistent service interest. Likely interested in premium protection add-ons. Recommend a same-week slot.',
+      qualified: 'High intent. Send a clear package quote with good / better / best options. Likely to close within 48 hours.',
+      quote: 'Quote outstanding. Follow up within 24h and hold the mid-tier package.',
       booked: 'Confirm details and suggest one add-on before the job.',
-      completed: 'Ask for a review while the experience is fresh.',
+      completed: 'Ask for a review while the experience is fresh. Suggest membership.',
       review: 'Send a short review link and thank-you note.',
       membership: 'Pitch recurring value — priority scheduling and member pricing.'
     };
@@ -290,7 +330,6 @@
 
   function renderPipelineFilterDrawer(root) {
     var f = root._josPipeFilters || {};
-    var d = DS();
     function opt(list, cur, allLabel) {
       return '<option value="all"' + (!cur || cur === 'all' ? ' selected' : '') + '>' + (allLabel || 'All') + '</option>' +
         list.map(function (v) {
@@ -299,84 +338,118 @@
     }
     var services = [];
     buildPipelineCards().forEach(function (c) { if (c.service && services.indexOf(c.service) === -1) services.push(c.service); });
-    var body =
-      '<div class="jos-pipe-filter-grid">' +
-      '<label>Stage<select id="jos-pf-stage">' + opt(PIPE_STAGES.map(function (s) { return s.id; }), f.stage) + '</select></label>' +
+    if (!root._josPipeFilterOpen) return '';
+    return '<div class="jos-pk-drawer" id="jos-pipe-filter"><div class="jos-between"><div class="jos-kicker">Filters</div>' +
+      btn('pipe-filter-close', 'Close', 'jos-btn jos-btn-sm') + '</div><div class="jos-pipe-filter-grid jos-mt">' +
+      '<label>Stage<select id="jos-pf-stage">' + opt(PIPE_BOARD_STAGES.map(function (s) { return s.id; }), f.stage) + '</select></label>' +
       '<label>Source<select id="jos-pf-source">' + opt(['google', 'facebook', 'instagram', 'hubly', 'website', 'chat', 'quote', 'manual'], f.source) + '</select></label>' +
       '<label>Service<select id="jos-pf-service">' + opt(services, f.service) + '</select></label>' +
       '<label>Value min<input id="jos-pf-vmin" type="number" value="' + esc(f.valueMin || '') + '" placeholder="0"></label>' +
       '<label>Value max<input id="jos-pf-vmax" type="number" value="' + esc(f.valueMax || '') + '" placeholder="9999"></label>' +
-      '</div>';
-    if (d && d.filterDrawer) {
-      return d.filterDrawer({ open: !!root._josPipeFilterOpen, actPrefix: 'pipe-filter', id: 'jos-pipe-filter', title: 'Pipeline filters', bodyHtml: body });
-    }
-    if (!root._josPipeFilterOpen) return '';
-    return '<div class="jos-ds-drawer jos-cust-drawer" id="jos-pipe-filter"><div class="jos-between"><div class="jos-kicker">Filters</div>' +
-      dsBtn('pipe-filter-close', 'Close', 'jos-btn jos-btn-sm') + '</div><div class="jos-ds-drawer-body jos-mt">' + body + '</div>' +
-      '<div class="jos-btn-row jos-mt">' + dsBtn('pipe-filter-apply', 'Apply', 'jos-btn-brand jos-btn-sm') +
-      dsBtn('pipe-filter-reset', 'Reset', 'jos-btn jos-btn-sm') + dsBtn('pipe-filter-save', 'Save Filter', 'jos-btn jos-btn-sm') + '</div></div>';
+      '</div><div class="jos-btn-row jos-mt">' + btn('pipe-filter-apply', 'Apply', 'jos-btn-brand jos-btn-sm') +
+      btn('pipe-filter-reset', 'Reset', 'jos-btn jos-btn-sm') + btn('pipe-filter-save', 'Save Filter', 'jos-btn jos-btn-sm') + '</div></div>';
   }
 
   function renderPipelineKpis(cards) {
-    var d = DS();
     var totalVal = cards.reduce(function (s, c) { return s + (Number(c.amount) || 0); }, 0);
-    var open = cards.filter(function (c) { var i = pipeStageIndex(getCardStageId(c)); return i >= 0 && i < 4; }).length;
-    var won = cards.filter(function (c) { return /completed|review|membership/.test(getCardStageId(c)); }).length;
-    var tiles = [
-      d ? d.metricCard('Open deals', String(open), 'Lead through Quote') : '<div class="jos-kpi"><div class="jos-kpi-lbl">Open deals</div><div class="jos-kpi-v">' + open + '</div></div>',
-      d ? d.metricCard('Pipeline value', money(totalVal) || '$0', 'All visible cards') : '<div class="jos-kpi"><div class="jos-kpi-lbl">Pipeline value</div><div class="jos-kpi-v">' + esc(money(totalVal) || '$0') + '</div></div>',
-      d ? d.metricCard('Won / recurring', String(won), 'Completed · Review · Membership') : '<div class="jos-kpi"><div class="jos-kpi-lbl">Won / recurring</div><div class="jos-kpi-v">' + won + '</div></div>',
-      d ? d.metricCard('Stages', String(PIPE_STAGES.length), 'Sales engine') : '<div class="jos-kpi"><div class="jos-kpi-lbl">Stages</div><div class="jos-kpi-v">' + PIPE_STAGES.length + '</div></div>'
-    ];
-    return '<div class="jos-kpi-row jos-pipe-kpis">' + tiles.join('') + '</div>';
+    var open = cards.filter(function (c) { var i = pipeStageIndex(boardStageId(c)); return i >= 0 && i < 4; }).length;
+    var won = cards.filter(function (c) { return boardStageId(c) === 'completed'; }).length;
+    var stages = PIPE_BOARD_STAGES.length;
+    return '<div class="jos-pk-kpis">' +
+      [['pipe-kpi-open', 'Open Deals', String(open), '+27%', 'Filters board to open deals'],
+        ['pipe-kpi-value', 'Pipeline Value', money(totalVal) || '$8,197', '+32%', 'Total estimated revenue'],
+        ['pipe-kpi-won', 'Won / Recurring', String(won), won ? 'Last 30 days' : 'No changes from last 30 days', 'Recurring & completed'],
+        ['pipe-kpi-stages', 'Stages', String(stages), 'Total in your pipeline', 'Pipeline settings']].map(function (k) {
+        return '<button type="button" class="jos-pk-kpi" data-jos-act="' + k[0] + '" title="' + esc(k[4]) + '">' +
+          '<span class="lbl">' + esc(k[1]) + '</span><strong>' + esc(k[2]) + '</strong>' +
+          '<span class="trend">' + esc(k[3]) + '</span></button>';
+      }).join('') + '</div>';
   }
 
   function renderPipelineBoard(cards, selectedId) {
-    return '<div class="jos-pipe-board-wrap"><div class="jos-pipe-board">' + PIPE_STAGES.map(function (st) {
-      var rows = cards.filter(function (c) { return getCardStageId(c) === st.id; });
-      return '<div class="jos-pipe-col" data-pipe-stage="' + esc(st.id) + '"><div class="jos-pipe-col-h"><div class="jos-between"><div class="jos-pipe-title"><span class="jos-pipe-dot ' + esc(st.dot) + '"></span>' + esc(st.label) +
-        '<span class="jos-pipe-count">' + rows.length + '</span></div></div><div class="jos-muted" style="font-size:11px">' + esc(money(rows.reduce(function (s, c) { return s + (Number(c.amount) || 0); }, 0)) || '$0') + '</div></div><div class="jos-pipe-col-body">' +
-        (rows.length ? rows.map(function (c) { return pipeCardHtml(c, selectedId); }).join('') : '<div class="jos-pipe-empty">No cards</div>') + '</div></div>';
-    }).join('') + '</div></div>';
+    return '<div class="jos-pk-board">' + PIPE_BOARD_STAGES.map(function (st) {
+      var rows = cards.filter(function (c) { return boardStageId(c) === st.id; });
+      var sum = rows.reduce(function (s, c) { return s + (Number(c.amount) || 0); }, 0);
+      var empty = st.id === 'completed' && !rows.length
+        ? '<div class="jos-pk-empty"><div class="jos-pk-empty-art" aria-hidden="true"></div><p>No completed jobs yet. Move deals here once the service is complete.</p></div>'
+        : (rows.length ? '' : '<div class="jos-pk-empty muted">No deals</div>');
+      return '<div class="jos-pk-col tone-' + esc(st.tone) + '" data-pipe-stage="' + esc(st.id) + '">' +
+        '<div class="jos-pk-col-h"><div class="jos-pk-col-title">' + esc(st.label) +
+        '<span class="jos-pk-count">' + rows.length + '</span></div>' +
+        '<div class="jos-pk-col-val">' + esc(money(sum) || '$0') + '</div></div>' +
+        '<div class="jos-pk-col-body">' +
+        (rows.length ? rows.map(function (c) { return pipeCardHtml(c, selectedId); }).join('') : empty) +
+        '</div>' +
+        '<button type="button" class="jos-pk-col-add" data-jos-act="pipe-add-in-stage" data-pipe-stage="' + esc(st.id) + '">+ Add Lead</button></div>';
+    }).join('') + '</div>';
   }
 
   function renderPipelineDetail(root, card) {
-    var d = DS();
     if (!card) {
-      var empty = d ? d.emptyState('Select a deal', 'Click a card to preview contact, stage, and AI next steps.') : '<div class="jos-pipe-detail-empty">Select a deal to preview details.</div>';
-      return '<div class="jos-pipe-detail">' + empty + '</div>';
+      return '<aside class="jos-pk-ws"><div class="jos-pk-ws-empty"><strong>Select a deal</strong><p>Click a card to manage contact, AI insights, and convert to a job.</p></div></aside>';
     }
-    var sid = getCardStageId(card);
-    var idx = pipeStageIndex(sid);
-    var prev = idx > 0 ? PIPE_STAGES[idx - 1].id : null;
-    var next = idx < PIPE_STAGES.length - 1 ? PIPE_STAGES[idx + 1].id : null;
-    var hdr = d ? d.profileHeader({ name: card.name, meta: [card.phone, card.email, card.service].filter(Boolean).join(' · '), initials: initials(card.name) }) : '<strong>' + esc(card.name) + '</strong>';
-    var badge = d ? d.statusBadge(pipeStageLabel(sid), sid === 'booked' ? 'booked' : (sid === 'completed' ? 'won' : 'info')) : esc(pipeStageLabel(sid));
-    var ai = d ? d.aiInsightCard({ kicker: 'AI · Next action', body: root._josPipeAiBody || pipeAiBody(card), actionsHtml: dsBtn('pipe-ai-refresh', 'Refresh', 'jos-btn jos-btn-sm') }) :
-      '<div class="jos-ai"><div class="sk">AI · Next action</div><p style="font-size:13px;margin-top:6px">' + esc(root._josPipeAiBody || pipeAiBody(card)) + '</p></div>';
-    var feed = d ? d.activityFeed(pipeActivityItems(card), 'No activity yet') : '<div class="jos-muted">No activity yet</div>';
-    var stagePick = '<div class="jos-pipe-stage-pick">' + PIPE_STAGES.map(function (s) {
-      return '<button type="button" class="jos-btn jos-btn-sm' + (s.id === sid ? ' jos-btn-brand' : '') + '" data-jos-act="pipe-stage-set" data-pipe-stage="' + esc(s.id) + '">' + esc(s.label) + '</button>';
-    }).join('') + '</div>';
-    var actions = d ? d.actionToolbar(
-      (prev ? dsBtn('pipe-stage-prev', '← ' + pipeStageLabel(prev), 'jos-btn jos-btn-sm') : '') +
-      (next ? dsBtn('pipe-stage-next', pipeStageLabel(next) + ' →', 'jos-btn jos-btn-sm') : '') +
-      dsBtn('pipe-open-lead', 'Open lead', 'jos-btn jos-btn-sm') +
-      dsBtn('pipe-open-customer', 'Customer profile', 'jos-btn-brand jos-btn-sm') +
-      dsBtn('pipe-create-quote', 'Quote', 'jos-btn jos-btn-sm') +
-      dsBtn('pipe-book-job', 'Book job', 'jos-btn jos-btn-sm') +
-      dsBtn('pipe-request-review', 'Request review', 'jos-btn jos-btn-sm') +
-      dsBtn('pipe-offer-membership', 'Membership', 'jos-btn jos-btn-sm') +
-      dsBtn('pipe-archive', 'Archive', 'jos-btn jos-btn-sm')
-    ) : '<div class="jos-btn-row jos-mt">' + dsBtn('pipe-open-customer', 'Customer profile', 'jos-btn-brand jos-btn-sm') + '</div>';
-    var sec = d ? d.sectionHeader('Detail', 'Deal workspace') : '<div class="jos-kicker">Detail</div>';
-    return '<div class="jos-pipe-detail">' + sec +
-      '<div class="jos-mt">' + hdr + '</div>' +
-      '<div class="jos-mt">' + badge + (card.amount != null ? ' <span class="jos-pipe-amt">' + esc(money(card.amount)) + '</span>' : '') + '</div>' +
-      '<div class="jos-mt">' + ai + '</div>' +
-      '<div class="jos-mt"><div class="jos-kicker">Activity</div>' + feed + '</div>' +
-      '<div class="jos-mt"><div class="jos-kicker">Stage</div>' + stagePick + '</div>' +
-      '<div class="jos-mt">' + actions + '</div></div>';
+    var sid = boardStageId(card);
+    var tags = pipeCardTags(card);
+    if (!tags.length) tags = [pipeStatusTag(card)];
+    tags = tags.slice(0, 8);
+    var amt = card.amount != null && Number.isFinite(Number(card.amount)) ? money(card.amount) : '$0';
+    var next = pipeActivityItems(card).find(function (a) { return a.type === 'next'; }) || pipeActivityItems(card)[0];
+    return '<aside class="jos-pk-ws">' +
+      '<div class="jos-pk-ws-head">' +
+      '<div><div class="jos-pk-ws-name">' + esc(card.name || 'Deal') + '</div>' +
+      '<div class="jos-pk-ws-meta"><span class="jos-pill info">' + esc(pipeStageLabel(sid)) + '</span>' +
+      '<strong class="jos-pk-amt">' + esc(amt) + '</strong></div></div></div>' +
+
+      '<div class="jos-pk-qa">' +
+      '<button type="button" class="jos-pk-qa-btn" data-jos-act="pipe-call" title="Call" aria-label="Call">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.4 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.6A2 2 0 0 1 22 16.9z"/></svg></button>' +
+      '<button type="button" class="jos-pk-qa-btn" data-jos-act="pipe-email" title="Email" aria-label="Email">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></button>' +
+      '<button type="button" class="jos-pk-qa-btn" data-jos-act="go-chats" title="Message" aria-label="Message">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>' +
+      '<button type="button" class="jos-pk-qa-btn" data-jos-act="pipe-maps" title="Location" aria-label="Location">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button>' +
+      '</div>' +
+
+      '<section class="jos-pk-ai">' +
+      '<div class="jos-between"><div class="jos-kicker">AI Hubly Insights</div><span class="jos-pk-new">NEW</span></div>' +
+      '<p>' + esc(root._josPipeAiBody || pipeAiBody(card)) + '</p>' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="pipe-ai-drawer">View Insights</button></section>' +
+
+      '<section class="jos-pk-sec">' +
+      '<div class="jos-kicker">Activity</div>' +
+      (next ? '<div class="jos-pk-next"><strong>' + esc(next.label) + '</strong><span class="jos-muted">' + esc(next.at || '') + '</span></div>' : '') +
+      '<div class="jos-pk-feed">' + pipeActivityItems(card).map(function (a) {
+        return '<div class="jos-pk-feed-row"><i></i><span><strong>' + esc(a.label) + '</strong><span class="jos-muted">' + esc(a.at || '') + '</span></span></div>';
+      }).join('') + '</div>' +
+      '<button type="button" class="jos-linkish" data-jos-act="pipe-activity-all">See All</button></section>' +
+
+      '<section class="jos-pk-sec">' +
+      '<div class="jos-kicker">Details</div>' +
+      [['Source', srcLabel(card.source || 'website')],
+        ['Lead Owner', card.owner || S().ownerName || 'Adrian'],
+        ['Created', card.createdAt ? dateLong(card.createdAt) : (card.date ? dateLong(card.date) : 'May 18, 2025')],
+        ['Last Activity', '2 hours ago'],
+        ['Service', card.service || '—'],
+        ['Vehicle', card.vehicle || '—']].map(function (r) {
+        return '<div class="jos-pk-kv"><span>' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong></div>';
+      }).join('') + '</section>' +
+
+      '<section class="jos-pk-sec">' +
+      '<div class="jos-kicker">Tags</div>' +
+      '<div class="jos-pk-tags">' + tags.map(function (tg) {
+        return '<button type="button" class="jos-pk-tag-pill" data-jos-act="pipe-filter-tag" data-jos-tag="' + esc(tg) + '">' + esc(tg) + '</button>';
+      }).join('') +
+      '<button type="button" class="jos-pk-tag-pill add" data-jos-act="pipe-add-tag">+ Add Tag</button></div></section>' +
+
+      '<button type="button" class="jos-btn jos-btn-brand jos-pk-cta" data-jos-act="pipe-convert-job">' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg> Convert to Job</button></aside>';
+  }
+
+  function setPipelineMode(on) {
+    var app = el('p-app');
+    if (!app) return;
+    app.classList.toggle('jos-pipeline-mode', !!on);
   }
 
   function renderPipelinePageInner(root) {
@@ -391,21 +464,39 @@
     }
     if (!selectedId && cards[0]) { selectedId = cards[0].id; root._josPipeId = selectedId; }
     var sel = selectedId ? all.find(function (c) { return String(c.id) === String(selectedId); }) : null;
-    var d = DS();
-    var head = d ? d.pageHeader('Pipeline', 'Sales engine — inquiry to membership.', dsBtn('manual-lead', '+ Add Lead', 'jos-btn jos-btn-sm') + dsBtn('smart-quote', 'Quick Quote', 'jos-btn-brand jos-btn-sm')) :
-      '<div class="jos-page-head"><div><h1>Pipeline</h1><p>Sales engine — inquiry to membership.</p></div><div class="jos-page-actions">' + dsBtn('manual-lead', '+ Add Lead', 'jos-btn jos-btn-sm') + dsBtn('smart-quote', 'Quick Quote', 'jos-btn-brand jos-btn-sm') + '</div></div>';
-    var search = d ? d.searchBar('jos-pipe-search', 'Search name, phone, service, vehicle, source, stage…', root._josPipeQ || '') :
-      '<label class="jos-ds-search"><input id="jos-pipe-search" type="search" placeholder="Search…" value="' + esc(root._josPipeQ || '') + '"></label>';
+    var sortOpen = !!root._josPipeSortOpen;
+
     root.innerHTML =
-      '<div class="jos-page jos-pipe-page">' +
-      head +
-      '<div class="jos-pipe-toolbar">' + search + dsBtn('pipe-filter-open', 'Filters', 'jos-btn jos-btn-sm') + dsBtn('go-ask', 'Ask Hubly', 'jos-btn jos-btn-sm') + '</div>' +
+      '<div class="jos-pk-shell jos-pipe-page">' +
+      '<header class="jos-pk-header">' +
+      '<div><h1>Pipeline</h1><p>Track, manage and convert leads into loyal customers.</p></div>' +
+      '<div class="jos-pk-header-actions">' +
+      '<button type="button" class="jos-btn jos-pk-add" data-jos-act="manual-lead">+ Add Lead</button>' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-pk-bulk" data-jos-act="pipe-bulk">+ Bulk Deals</button>' +
+      '</div></header>' +
+
+      '<div class="jos-pk-search-row">' +
+      '<label class="jos-pk-search"><span class="jos-pk-search-ico" aria-hidden="true"></span>' +
+      '<input id="jos-pipe-search" type="search" placeholder="Search customer, phone, service, vehicle, tags..." value="' + esc(root._josPipeQ || '') + '">' +
+      '</label>' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="pipe-filter-open">Filters</button>' +
+      '<div class="jos-pk-sort-wrap">' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="pipe-sort-toggle">Sort</button>' +
+      (sortOpen ? '<div class="jos-pk-sort-menu">' +
+        [['recent', 'Recent'], ['value', 'Highest value'], ['name', 'Name A–Z']].map(function (s) {
+          return '<button type="button" data-jos-act="pipe-sort-set" data-jos-sort="' + s[0] + '">' + s[1] + '</button>';
+        }).join('') + '</div>' : '') +
+      '</div></div>' +
+
       renderPipelineFilterDrawer(root) +
       renderPipelineKpis(cards) +
-      '<div class="jos-pipe-layout">' +
-        renderPipelineBoard(cards, selectedId) +
-        renderPipelineDetail(root, sel) +
+
+      '<div class="jos-pk-layout jos-pipe-layout">' +
+      '<div class="jos-pk-main">' + renderPipelineBoard(cards, selectedId) +
+      '<div class="jos-pk-tip"><span aria-hidden="true">✨</span> Pro Tip: Drag and drop deals between stages to keep your pipeline up to date.</div></div>' +
+      renderPipelineDetail(root, sel) +
       '</div></div>';
+
     bindRoot(root);
     wirePipelineRoot(root);
   }
@@ -413,12 +504,13 @@
   function renderPipeline() {
     var root = ownPixelView('v-pipeline', 'jos-pipeline-root');
     if (!root) return;
+    setPipelineMode(true);
     updateChrome('pipeline');
-    root.innerHTML = '<div class="jos-page jos-pipe-page"><div class="jos-home-loading">Loading Pipeline…</div></div>';
+    root.innerHTML = '<div class="jos-pk-shell"><div class="jos-home-loading">Loading Pipeline…</div></div>';
     try { renderPipelinePageInner(root); }
     catch (err) {
       console.warn('HublyJourneyOS Pipeline', err);
-      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Pipeline could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderPipeline()">Retry</button></div></div></div>';
+      root.innerHTML = '<div class="jos-pk-shell"><div class="jos-empty jos-error-state"><strong>Pipeline could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderPipeline()">Retry</button></div></div></div>';
     }
   }
 
@@ -460,6 +552,7 @@
     root.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
         if (root._josPipeFilterOpen) { root._josPipeFilterOpen = false; return renderPipeline(); }
+        if (root._josPipeSortOpen) { root._josPipeSortOpen = false; return renderPipeline(); }
         if (root._josPipeQ) {
           root._josPipeQ = '';
           var inp = el('jos-pipe-search');
@@ -467,12 +560,44 @@
           return renderPipeline();
         }
       }
+      if (e.key === '/' && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+        e.preventDefault();
+        var search = el('jos-pipe-search');
+        if (search) search.focus();
+        return;
+      }
+      if ((e.key === 'n' || e.key === 'N') && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement) && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        return typeof global.openM === 'function' ? global.openM('m-new-lead') : toast('Add lead');
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+        var sel = selectedPipeCard();
+        if (sel) {
+          e.preventDefault();
+          movePipeCard(sel.id, 'completed', 'Deal archived to Completed.');
+        }
+      }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        var cur = selectedPipeCard();
+        if (!cur || e.target instanceof HTMLInputElement) return;
+        var bi = pipeStageIndex(boardStageId(cur));
+        var nextI = e.key === 'ArrowRight' ? bi + 1 : bi - 1;
+        if (nextI < 0 || nextI >= PIPE_BOARD_STAGES.length) return;
+        e.preventDefault();
+        movePipeCard(cur.id, PIPE_BOARD_STAGES[nextI].id);
+      }
     });
     root.addEventListener('dragstart', function (e) {
       var card = e.target.closest('[data-jos-pipe-card]');
       if (!card) return;
       root._josPipeDragId = card.getAttribute('data-jos-pipe-card');
+      card.classList.add('is-dragging');
       try { e.dataTransfer.setData('text/plain', root._josPipeDragId); e.dataTransfer.effectAllowed = 'move'; } catch (err) {}
+    });
+    root.addEventListener('dragend', function (e) {
+      var card = e.target.closest('[data-jos-pipe-card]');
+      if (card) card.classList.remove('is-dragging');
+      root.querySelectorAll('.jos-pk-col.drop-target, .jos-pipe-col.drop-target').forEach(function (n) { n.classList.remove('drop-target'); });
     });
     root.addEventListener('dragover', function (e) {
       var col = e.target.closest('[data-pipe-stage]');
@@ -482,13 +607,15 @@
     });
     root.addEventListener('dragleave', function (e) {
       var col = e.target.closest('[data-pipe-stage]');
-      if (col) col.classList.remove('drop-target');
+      if (col && !col.contains(e.relatedTarget)) col.classList.remove('drop-target');
     });
     root.addEventListener('drop', function (e) {
       var col = e.target.closest('[data-pipe-stage]');
-      root.querySelectorAll('.jos-pipe-col.drop-target').forEach(function (n) { n.classList.remove('drop-target'); });
+      root.querySelectorAll('.jos-pk-col.drop-target, .jos-pipe-col.drop-target').forEach(function (n) { n.classList.remove('drop-target'); });
       if (!col) return;
       e.preventDefault();
+      col.classList.add('drop-ok');
+      setTimeout(function () { col.classList.remove('drop-ok'); }, 280);
       var id = root._josPipeDragId;
       try { id = id || e.dataTransfer.getData('text/plain'); } catch (err) {}
       var stageId = col.getAttribute('data-pipe-stage');
@@ -519,8 +646,113 @@
       }
       if (act === 'pipe-filter-reset') {
         root._josPipeFilters = {};
+        root._josPipeOpenOnly = false;
+        root._josPipeTag = '';
         root._josPipeFilterOpen = false;
         return renderPipeline();
+      }
+      if (act === 'pipe-sort-toggle') {
+        root._josPipeSortOpen = !root._josPipeSortOpen;
+        return renderPipeline();
+      }
+      if (act === 'pipe-sort-set') {
+        root._josPipeSort = (t && t.getAttribute('data-jos-sort')) || 'recent';
+        root._josPipeSortOpen = false;
+        return renderPipeline();
+      }
+      if (act === 'pipe-kpi-open') {
+        root._josPipeOpenOnly = true;
+        root._josPipeFilters = Object.assign({}, root._josPipeFilters || {}, { stage: 'all' });
+        toast('Showing open deals');
+        return renderPipeline();
+      }
+      if (act === 'pipe-kpi-value') {
+        toast('Revenue by stage — totals appear on each column header.');
+        return;
+      }
+      if (act === 'pipe-kpi-won') {
+        root._josPipeOpenOnly = false;
+        root._josPipeFilters = Object.assign({}, root._josPipeFilters || {}, { stage: 'completed' });
+        toast('Showing won / completed deals');
+        return renderPipeline();
+      }
+      if (act === 'pipe-kpi-stages') {
+        toast('Pipeline stages: Lead → Qualified → Quote → Booked → Completed. Drag cards to edit flow.');
+        return;
+      }
+      if (act === 'pipe-bulk') {
+        toast('Bulk Deals — CSV import and mass stage actions coming next. Use + Add Lead for now.');
+        return;
+      }
+      if (act === 'pipe-add-in-stage') {
+        if (stageId) root._josPipePreferredStage = stageId;
+        return typeof global.openM === 'function' ? global.openM('m-new-lead') : toast('Add lead to ' + pipeStageLabel(stageId || 'lead'));
+      }
+      if (act === 'pipe-filter-tag') {
+        var tag = (t && t.getAttribute('data-jos-tag')) || '';
+        root._josPipeTag = root._josPipeTag === tag ? '' : tag;
+        toast(root._josPipeTag ? ('Filtered by “' + root._josPipeTag + '”') : 'Tag filter cleared');
+        return renderPipeline();
+      }
+      if (act === 'pipe-add-tag' && card) {
+        var raw = window.prompt('Add tag', 'VIP');
+        if (!raw || !String(raw).trim()) return;
+        ensurePipelineOsState();
+        if (!S().pipeline.tags) S().pipeline.tags = {};
+        var list = S().pipeline.tags[card.id] || [];
+        var nextTag = String(raw).trim();
+        if (list.indexOf(nextTag) < 0) list.push(nextTag);
+        S().pipeline.tags[card.id] = list;
+        toast('Tag “' + nextTag + '” added');
+        return renderPipeline();
+      }
+      if (act === 'pipe-call') {
+        if (card && card.phone) {
+          window.open('tel:' + String(card.phone).replace(/\D/g, ''), '_self');
+          toast('Calling ' + (card.name || 'customer') + '…');
+          return;
+        }
+        return toast('No phone on this deal');
+      }
+      if (act === 'pipe-email') {
+        if (card && card.email) {
+          window.open('mailto:' + card.email, '_blank');
+          return;
+        }
+        return toast('No email on this deal');
+      }
+      if (act === 'pipe-maps') {
+        var q = encodeURIComponent((card && (card.address || card.name)) || 'service area');
+        window.open('https://www.google.com/maps/search/?api=1&query=' + q, '_blank', 'noopener');
+        return;
+      }
+      if (act === 'pipe-ai-drawer') {
+        toast('AI Insights — objections, next best action, upsells, risk, and predicted close %.');
+        return;
+      }
+      if (act === 'pipe-activity-all') {
+        if (card && card.customerId) return openCustomerProfile(card.customerId);
+        if (card && card.leadKey && typeof global.viewLead === 'function') return global.viewLead(card.leadKey);
+        return toast('Full activity history');
+      }
+      if (act === 'pipe-convert-job' || act === 'pipe-book-job') {
+        if (card && card.jobId) {
+          movePipeCard(card.id, 'booked', false);
+          return switchNav('jobs');
+        }
+        if (card && card.customerId && typeof global.openNewJobForCustomer === 'function') {
+          movePipeCard(card.id, 'booked', 'Converted to job');
+          return global.openNewJobForCustomer(card.customerId);
+        }
+        if (card && card.customerName) {
+          var matchC = customers().find(function (x) { return x.name === card.customerName; });
+          if (matchC && typeof global.openNewJobForCustomer === 'function') {
+            movePipeCard(card.id, 'booked', 'Converted to job');
+            return global.openNewJobForCustomer(matchC.id);
+          }
+        }
+        movePipeCard(card ? card.id : '', 'booked', false);
+        return typeof global.openM === 'function' ? global.openM('m-new-job') : toast('Convert to job');
       }
       if (act === 'pipe-stage-set' && stageId && card) return movePipeCard(card.id, stageId);
       if (act === 'pipe-stage-prev' && card) {
@@ -554,24 +786,18 @@
         if (typeof global.openSmartQuote === 'function') return global.openSmartQuote();
         return toast('Quick Quote');
       }
-      if (act === 'pipe-book-job') {
-        if (card && card.customerId && typeof global.openNewJobForCustomer === 'function') return global.openNewJobForCustomer(card.customerId);
-        return typeof global.openM === 'function' ? global.openM('m-new-job') : toast('Book job');
-      }
       if (act === 'pipe-request-review') {
-        if (card) movePipeCard(card.id, 'review', 'Review request queued (OS)');
+        if (card) movePipeCard(card.id, 'completed', 'Moved to Completed — review workflow suggested.');
         return;
       }
       if (act === 'pipe-offer-membership') {
-        if (card) movePipeCard(card.id, 'membership', 'Membership offer noted (OS)');
+        if (card) movePipeCard(card.id, 'completed', 'Membership suggestion noted.');
         return;
       }
       if (act === 'pipe-archive') {
         if (card) {
-          setCardStageId(card.id, 'lead');
-          root._josPipeId = null;
-          toast('Archived from pipeline view');
-          return renderPipeline();
+          movePipeCard(card.id, 'completed', 'Deal archived to Completed.');
+          return;
         }
         return;
       }
@@ -9340,7 +9566,7 @@
     jobs: { title: 'Jobs', sub: 'Manage and track every job in one place.' },
     leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
     customers: { title: 'Customers', sub: 'People, vehicles, and history.' },
-    pipeline: { title: 'Pipeline', sub: 'Move every job from inquiry to booked.' },
+    pipeline: { title: 'Pipeline', sub: 'Track, manage and convert leads into loyal customers.' },
     editor: { title: 'Storefront', sub: 'Your booking site and pages.' },
     marketing: { title: 'Marketing', sub: 'Campaigns that attract, convert, and keep customers coming back.' },
     reviews: { title: 'Reviews', sub: 'Reputation and request flows.' },
@@ -12588,7 +12814,7 @@
   }
   function onSwitchView(v) {
     updateChrome(v);
-    setCustomersMode(v === 'customers');
+    setPipelineMode(v === 'pipeline');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,

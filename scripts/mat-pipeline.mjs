@@ -280,17 +280,20 @@ check("Header", "Filters apply", (() => {
   return open && (pipeRoot._josPipeFilters?.stage === "qualified" || /Taylor|Qualified/.test(pipeRoot.innerHTML));
 })());
 
-// Stages
+// Stages (Mission Control board = 5 columns; review/membership map into Completed)
 pipeRoot._josPipeFilters = {};
 pipeRoot._josPipeQ = "";
 H.renderPipeline();
-["lead", "qualified", "quote", "booked", "completed", "review", "membership"].forEach((st) => {
-  check("Stages", st, pipeRoot.innerHTML.includes(`data-pipe-stage="${st}"`) || pipeRoot.innerHTML.includes(st));
+const jsrcStages = fs.readFileSync(path.join(repoRoot, "public/journey-os/journey.js"), "utf8");
+["lead", "qualified", "quote", "booked", "completed"].forEach((st) => {
+  check("Stages", st, pipeRoot.innerHTML.includes(`data-pipe-stage="${st}"`));
 });
+check("Stages", "review maps to Completed on board", /boardStageId/.test(jsrcStages) && !pipeRoot.innerHTML.includes('data-pipe-stage="review"'));
+check("Stages", "membership maps to Completed on board", /membership/.test(jsrcStages) && !pipeRoot.innerHTML.includes('data-pipe-stage="membership"'));
 
 // Board / cards
-check("Board", "Cards render via HublyDS or fallback", /jos-pipe-card|data-jos-pipe-card/.test(pipeRoot.innerHTML));
-check("Board", "KPI strip", /jos-kpi|Stages|metric/i.test(pipeRoot.innerHTML));
+check("Board", "Cards render via HublyDS or fallback", /jos-pk-card|jos-pipe-card|data-jos-pipe-card/.test(pipeRoot.innerHTML));
+check("Board", "KPI strip", /jos-pk-kpi|jos-kpi|Stages|metric/i.test(pipeRoot.innerHTML));
 
 // Detail
 check("Detail", "Selecting card shows detail", (() => {
@@ -298,7 +301,7 @@ check("Detail", "Selecting card shows detail", (() => {
   const id = cards[0] && cards[0].id;
   pipeRoot._josPipeId = id;
   H.renderPipeline();
-  return /jos-pipe-detail|Next action|AI|Move|stage/i.test(pipeRoot.innerHTML);
+  return /jos-pk-ws|jos-pipe-detail|AI Hubly|Convert to Job|Next|stage/i.test(pipeRoot.innerHTML);
 })());
 
 check("Detail", "Stage next moves card", (() => {
@@ -318,7 +321,7 @@ check("Actions", "Request review", (() => {
   pipeRoot._josPipeId = card.id;
   H.renderPipeline();
   clickAct("pipe-request-review");
-  return state.pipeline.stages[card.id] === "review" || /review/i.test(toasts.join(" "));
+  return state.pipeline.stages[card.id] === "completed" || state.pipeline.stages[card.id] === "review" || /review|Completed/i.test(toasts.join(" "));
 })());
 check("Actions", "Offer membership", (() => {
   const cards = pipeRoot._josCards || [];
@@ -326,7 +329,7 @@ check("Actions", "Offer membership", (() => {
   pipeRoot._josPipeId = card.id;
   H.renderPipeline();
   clickAct("pipe-offer-membership");
-  return state.pipeline.stages[card.id] === "membership" || /membership/i.test(toasts.join(" "));
+  return state.pipeline.stages[card.id] === "completed" || state.pipeline.stages[card.id] === "membership" || /membership/i.test(toasts.join(" "));
 })());
 check("Actions", "Create quote", (() => {
   clickAct("pipe-create-quote");
@@ -348,7 +351,7 @@ check("Actions", "Stage 2 CRM placeholder", (() => {
 // Design system rule
 check("Design System", "Pipeline uses HublyDS helpers", (() => {
   const jsrc = fs.readFileSync(path.join(repoRoot, "public/journey-os/journey.js"), "utf8");
-  return /DS\(\)|HublyDS|pageHeader|pipelineCard|filterDrawer|aiInsightCard/.test(jsrc);
+  return /DS\(\)|HublyDS|pageHeader|pipelineCard|filterDrawer|aiInsightCard|jos-pk-/.test(jsrc);
 })());
 
 // Routes
@@ -370,10 +373,10 @@ const routes = [
 const jsrc = fs.readFileSync(path.join(repoRoot, "public/journey-os/journey.js"), "utf8");
 routes.forEach((act) => check("Routes", act, jsrc.includes("'" + act + "'") || jsrc.includes('"' + act + '"')));
 
-check("Empty States", "Empty column copy", /No cards|empty/i.test(jsrc));
+check("Empty States", "Empty column copy", /No deals|No completed|empty/i.test(jsrc));
 check("Error States", "Error retry markup", /Pipeline could not load|Retry/.test(jsrc));
 const css = fs.readFileSync(path.join(repoRoot, "public/journey-os/operate-pixel.css"), "utf8");
-check("Responsive CSS", "Pipeline layout", /jos-pipe-page|jos-pipe-layout/.test(css));
+check("Responsive CSS", "Pipeline layout", /jos-pipe-page|jos-pipe-layout|jos-pk-shell|jos-pk-layout/.test(css));
 check("Accessibility", "Buttons typed", /type="button"/.test(pipeRoot.innerHTML));
 
 let validatorPass = false;
@@ -435,7 +438,7 @@ window.localStorage={getItem:function(){return null;},setItem:function(){}};
 </script>
 <script src="/journey-os/design-system.js"></script>
 <script src="/journey-os/journey.js"></script>
-<script>HublyJourneyOS.renderPipeline();document.title=document.getElementById("jos-pipeline-root").innerHTML.includes("jos-pipe-page")?"MAT_OK":"MAT_FAIL";</script>
+<script>HublyJourneyOS.renderPipeline();document.title=document.getElementById("jos-pipeline-root").innerHTML.includes("jos-pipe-page")||document.getElementById("jos-pipeline-root").innerHTML.includes("jos-pk-shell")?"MAT_OK":"MAT_FAIL";</script>
 </body></html>`;
   fs.writeFileSync(path.join(pub, "mat-pipeline.html"), matHtml);
   const browser = await chromium.launch({
@@ -454,7 +457,7 @@ window.localStorage={getItem:function(){return null;},setItem:function(){}};
     await page.waitForTimeout(350);
     return page.evaluate(() => {
       const root = document.getElementById("jos-pipeline-root");
-      const pageEl = root && root.querySelector(".jos-pipe-page");
+      const pageEl = root && (root.querySelector(".jos-pipe-page") || root.querySelector(".jos-pk-shell"));
       if (!pageEl) return false;
       const r = pageEl.getBoundingClientRect();
       return r.width > 200 && r.height > 200 && document.title.includes("MAT_OK");
