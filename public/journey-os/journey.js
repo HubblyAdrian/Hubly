@@ -7735,7 +7735,14 @@
     var crm = lead ? normalizeCrmStatus(lead) : 'new';
     var maxPipe = Math.max(1, Math.max.apply(null, LEADS_CRM_STATUSES.map(function (s) { return counts[s] || 0; })));
 
+    var recoverN = all.filter(isRecoveryLead).length;
     return '<aside class="jos-ld-rail">' +
+      '<button type="button" class="jos-ld-widget jos-ld-recover-rail" data-jos-leads-tab="recovery">' +
+      '<div class="jos-kicker">Lead Recovery</div>' +
+      '<div class="jos-ld-sum-num">' + recoverN + '</div>' +
+      '<div class="jos-muted">Unfinished bookings to follow up</div>' +
+      '<span class="jos-ld-recover-rail-cta">Open queue →</span></button>' +
+
       '<section class="jos-ld-widget">' +
       '<div class="jos-kicker">Lead Status</div>' +
       '<select id="jos-ld-status" class="jos-ld-select"' + (lead ? '' : ' disabled') + '>' +

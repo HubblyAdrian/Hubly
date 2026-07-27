@@ -4278,6 +4278,13 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-card.recover{border-color:#FDBA74;background:#FFFBF5}
 .jos-ld-card.recover.on{border-color:var(--jos-brand);background:var(--jos-brand-soft)}
 .jos-ld-ava.recover{background:linear-gradient(145deg,#F97316,#D9632D)}
+.jos-ld-recover-rail{
+  text-align:left;cursor:pointer;border-color:rgba(217,99,45,.28)!important;
+  background:linear-gradient(160deg,#FFF7ED,#fff)!important;
+}
+.jos-ld-recover-rail .jos-kicker{color:#C2410C}
+.jos-ld-recover-rail-cta{display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:var(--jos-brand)}
+.jos-ld-recover-rail:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(217,99,45,.12)}
 
 .jos-ld-filters{
   display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 24px 16px;flex-shrink:0;
