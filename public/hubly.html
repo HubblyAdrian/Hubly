@@ -9636,6 +9636,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="nav-brand-row">
         <img class="hubly-mark hubly-mark-sm nav-hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="88" height="22">
       </div>
+      <button type="button" class="nav-jobs-new" onclick="openJobsNew()" title="New Job">+ New Job</button>
       <div class="nav-scroll">
       <div class="ni active" data-v="dashboard" onclick="switchV(this)" title="Home">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span class="ni-lbl">Home</span>
@@ -9643,7 +9644,10 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="chats" onclick="switchV(this)" title="Inbox">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span class="ni-lbl">Inbox</span><span class="nav-count-badge" id="nav-inbox-badge">8</span>
       </div>
-      <div class="ni" data-v="leads" onclick="switchV(this)" title="Leads">
+      <div class="ni" data-v="jobs" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl">Jobs</span>
+      </div>
+      <div class="ni" data-v="leads" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="ni-lbl">Leads</span><span class="nav-count-badge hidden" id="nav-leads-badge">0</span>
       </div>
       <div class="ni" data-v="jobs" onclick="switchV(this)" title="Jobs">
@@ -34827,6 +34831,19 @@ window.addEventListener('resize',()=>{
     if(nav)nav.setAttribute('aria-hidden','true');
   }
 });
+function openJobsNew(){
+  try{
+    const n=document.querySelector('.ni[data-v="jobs"]');
+    if(n&&!n.classList.contains('active')) switchV(n);
+    setTimeout(function(){
+      if(window.HublyJourneyOS&&typeof HublyJourneyOS.handleJobsAct==='function'){
+        HublyJourneyOS.handleJobsAct('jobs-create');
+      }else if(typeof openM==='function'){
+        openM('m-new-job');
+      }
+    },80);
+  }catch(e){try{openM('m-new-job');}catch(e2){}}
+}
 function switchV(el){
   hublyBootLog('switchV',el?.dataset?.v||'?');
   try{closeMobileNav();}catch(e){}
@@ -34840,7 +34857,7 @@ function switchV(el){
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
   const titles={
-    dashboard:'Home',jobs:'Jobs & Calendar',leads:'Leads',customers:t('customers'),
+    dashboard:'Home',jobs:'Jobs',leads:'Leads',customers:t('customers'),
     pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
     quotes:'Quick Quote',money:'Revenue',chats:'Inbox',marketplace:'Marketplace',
     editor:'Storefront',settings:'Settings',reviews:'Reviews',marketing:'Marketing',
