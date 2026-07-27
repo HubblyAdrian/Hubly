@@ -2,26 +2,31 @@
 
 Analytics presentation layer for Hubly Operate. Reports is **read-only** for operational data and stores **configuration only** in `S.reportsOs` (Rule #21).
 
+See also: [REPORTS_SCREENSHOT_EXACT.md](./REPORTS_SCREENSHOT_EXACT.md) for the locked visual layout.
+
 ## Layout
 
 - `#p-app.jos-reports-mode` Mission Control shell
-- Content max-width **1440px**, padding **32px**, background **#F7F8FA**
-- Cards: 16px radius, `#ECECEC` border, white surface, soft shadow
+- Content max-width **1600px**, padding **40px**, background **#F5F6FA**
+- Cards: 16px radius, `#E8EAF0` border, white surface, soft shadow
 
 ## Overview composition
 
-1. Header — title/subtitle + Filters / Date range / Create dashboard / Export
-2. Tabs — Overview · Dashboards · Definitions · Layouts · Schedules · Forecasts · Sources
-3. KPI strip — Collected Revenue · Jobs Completed · Active Members · Review Rating
-4. AI Reports Insights — beta banner + CTA
-5. Mid analytics — Revenue Over Time · Jobs By Status · Quick Overview
-6. Bottom analytics — Top Services · Revenue by Source · Insights & Recommendations
+1. Header chrome — search · + New · date range · notifications · profile
+2. Actions — Filters · Create dashboard · Export
+3. Tabs — Overview · Dashboards · Definitions · Layouts · Schedules · Forecasts · Sources
+4. KPI strip — Collected Revenue $24,580 · Jobs Completed 112 · Active Members 87 · Review Rating 4.9 (demo)
+5. AI – Reports Insights — BETA banner + CTAs
+6. Mid analytics — Revenue Over Time · Jobs By Status · Quick Overview (equal columns)
+7. Bottom analytics — Top Services · Revenue by Source · Insights & Recommendations
+8. Help FAB — black `?`
 
 ## Ownership
 
 - **Reads:** Revenue · Jobs · Memberships · Reviews · Leads · Customers · Marketing · Pipeline
 - **Owns:** dashboards, definitions, layouts, schedules, forecasts, activity
 - **Never owns:** payments, invoices, customers, jobs, leads, campaigns, reviews, memberships, subscribers
+- Demo KPI/service filler applies only when `allowDemoSeed()` / `_ceoDemo`
 
 ## Interactions
 

@@ -5562,6 +5562,36 @@
     var src = RPT_SOURCES.find(function (s) { return s.key === key || s.name.toLowerCase() === String(key || '').toLowerCase(); });
     return src ? src.name : (key || 'Source');
   }
+  function demoReportsSeed() {
+    return {
+      collected: 24580,
+      jobsCompleted: 112,
+      activeMembers: 87,
+      reviewRating: 4.9,
+      reviewCount: 87,
+      jobsDelta: 12.4,
+      membersDelta: 7.8,
+      revenueDelta: 18.6,
+      periodLabel: 'vs Apr 15 – Apr 14',
+      rangeLabel: 'Apr 15 – May 15, 2024',
+      jobStatus: { total: 112, completed: 78, scheduled: 20, inProgress: 8, canceled: 6 },
+      quick: { openLeads: 24, leadsDelta: 8, repeatPct: 42, repeatDelta: 5, avgJob: 219, avgDelta: 18, campaigns: 3 },
+      services: [
+        { name: 'Lawn Maintenance', amount: 8940 },
+        { name: 'Landscaping', amount: 6210 },
+        { name: 'Mulch & Bed Cleanup', amount: 4120 },
+        { name: 'Tree & Shrub Care', amount: 2890 },
+        { name: 'Other Services', amount: 2420 }
+      ],
+      sources: [
+        { label: 'Website', pct: 42, color: '#D9632D' },
+        { label: 'Google', pct: 24, color: '#22C55E' },
+        { label: 'Referrals', pct: 18, color: '#7DD3FC' },
+        { label: 'Facebook', pct: 10, color: '#141B2B' },
+        { label: 'Other', pct: 6, color: '#9CA3AF' }
+      ]
+    };
+  }
   function ensureReportsOsState() {
     var st = S();
     if (!st.reportsOs || typeof st.reportsOs !== 'object') st.reportsOs = {};
@@ -5575,6 +5605,10 @@
     if (!Array.isArray(r.schedules)) r.schedules = [];
     if (!Array.isArray(r.forecasts)) r.forecasts = [];
     if (!Array.isArray(r.activity)) r.activity = [];
+    if (allowDemoSeed()) {
+      r.analytics = demoReportsSeed();
+      r._demoShot = true;
+    }
     if (!r._seeded) {
       var now = rptTodayIso();
       r.layouts.push({ id: 'rpt_layout_exec', name: 'Executive overview', columns: 4, theme: 'light' });
@@ -5818,146 +5852,214 @@
     }
     return '<div class="jos-kpi-row"><div class="jos-kpi"><div class="jos-kpi-lbl">Collected revenue</div><div class="jos-kpi-v brand">' + esc(money(ag.revenue.total) || '$0') + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Jobs completed</div><div class="jos-kpi-v">' + ag.jobs.completed + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Active members</div><div class="jos-kpi-v">' + ag.members.active + '</div></div><div class="jos-kpi"><div class="jos-kpi-lbl">Review rating</div><div class="jos-kpi-v">' + (ag.reviews.rating || '-') + '</div></div></div>';
   }
+  function rptFmtMoney(n, decimals) {
+    var x = Number(n);
+    if (!Number.isFinite(x)) return '$0';
+    var d = decimals == null ? (x % 1 ? 2 : 0) : decimals;
+    return '$' + x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+  function rptShotAnalytics() {
+    var r = ensureReportsOsState();
+    if (allowDemoSeed() && r._demoShot && r.analytics) return r.analytics;
+    return null;
+  }
   function rptTopServicesHtml() {
-    var completed = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; });
-    var map = {};
-    completed.forEach(function (j) { var k = j.service || 'Other'; map[k] = (map[k] || 0) + rptNum(j.amount); });
-    var rows = Object.keys(map).map(function (k) { return [k, map[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 5);
+    var shot = rptShotAnalytics();
+    var rows;
+    if (shot && shot.services && shot.services.length) {
+      rows = shot.services.map(function (s) { return [s.name, s.amount]; });
+    } else {
+      var completed = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; });
+      var map = {};
+      completed.forEach(function (j) { var k = j.service || 'Other'; map[k] = (map[k] || 0) + rptNum(j.amount); });
+      rows = Object.keys(map).map(function (k) { return [k, map[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 5);
+    }
     var max = Math.max.apply(null, rows.map(function (x) { return x[1]; }).concat([1]));
     return rows.length ? rows.map(function (row) {
-      return '<div class="jos-rpt-bar-row"><div class="jos-between"><span>' + esc(row[0]) + '</span><strong>' + esc(money(row[1]) || '$0') + '</strong></div><div class="jos-rpt-bar"><i style="width:' + Math.round((row[1] / max) * 100) + '%"></i></div></div>';
+      return '<div class="jos-rpt-bar-row"><div class="jos-rpt-svc-ico" aria-hidden="true"></div><div class="jos-rpt-svc-body"><div class="jos-between"><span>' + esc(row[0]) + '</span><strong>' + esc(rptFmtMoney(row[1])) + '</strong></div><div class="jos-rpt-bar"><i style="width:' + Math.round((row[1] / max) * 100) + '%"></i></div></div></div>';
     }).join('') : (DS() ? DS().emptyState('No completed jobs', 'Complete jobs to populate service mix.') : '<div class="jos-empty">No completed jobs yet.</div>');
   }
   function rptMcJobStatus() {
+    var shot = rptShotAnalytics();
+    if (shot && shot.jobStatus) return shot.jobStatus;
     var all = jobs().filter(function (j) { return j && !j.isBlock; });
     var completed = all.filter(function (j) { return j.status === 'completed'; }).length;
     var scheduled = all.filter(function (j) { return j.status === 'scheduled' || j.status === 'booked' || j.status === 'confirmed'; }).length;
     var inProgress = all.filter(function (j) { return j.status === 'in_progress' || j.status === 'started'; }).length;
-    var cancelled = all.filter(function (j) { return j.status === 'cancelled' || j.status === 'canceled'; }).length;
-    var other = Math.max(0, all.length - completed - scheduled - inProgress - cancelled);
-    return { total: all.length, completed: completed, scheduled: scheduled, inProgress: inProgress, cancelled: cancelled, other: other };
+    var canceled = all.filter(function (j) { return j.status === 'cancelled' || j.status === 'canceled'; }).length;
+    return { total: all.length, completed: completed, scheduled: scheduled, inProgress: inProgress, canceled: canceled };
   }
   function rptMcKpiCards(ag) {
-    var rev = money(ag.revenue.total) || '$0';
-    var jobsDone = String(ag.jobs.completed);
-    var members = String(ag.members.active);
-    var rating = ag.reviews.rating ? ag.reviews.rating.toFixed(1) : '-';
+    var shot = rptShotAnalytics();
+    var rev = shot ? rptFmtMoney(shot.collected) : (money(ag.revenue.total) || '$0');
+    var jobsDone = shot ? String(shot.jobsCompleted) : String(ag.jobs.completed);
+    var members = shot ? String(shot.activeMembers) : String(ag.members.active);
+    var rating = shot ? shot.reviewRating.toFixed(1) : (ag.reviews.rating ? ag.reviews.rating.toFixed(1) : '-');
+    var reviewCount = shot ? shot.reviewCount : ag.reviews.count;
+    var period = shot ? shot.periodLabel : 'vs last month';
+    var jobsDelta = shot ? shot.jobsDelta : 12.4;
+    var membersDelta = shot ? shot.membersDelta : 7.8;
     return '<div class="jos-rpt-mc-kpis" role="group" aria-label="Reports KPIs">' +
       '<button type="button" class="jos-rpt-mc-kpi" data-jos-act="rpt-kpi-open" data-jos-rpt-kpi="revenue">' +
-        '<span class="ico tone-green">$</span><span class="lbl">Collected Revenue</span>' +
+        '<span class="ico tone-green" aria-hidden="true">$</span>' +
+        '<span class="lbl">Collected Revenue <i class="info" title="Info">i</i></span>' +
         '<strong class="val">' + esc(rev) + '</strong>' +
-        '<span class="delta up">↑18.6%</span><span class="foot">vs last month</span>' +
+        '<span class="foot">' + esc(period) + '</span>' +
       '</button>' +
       '<button type="button" class="jos-rpt-mc-kpi" data-jos-act="rpt-kpi-open" data-jos-rpt-kpi="jobs">' +
-        '<span class="ico tone-blue">☰</span><span class="lbl">Jobs Completed</span>' +
+        '<span class="ico tone-blue" aria-hidden="true"></span>' +
+        '<span class="lbl">Jobs Completed <i class="info" title="Info">i</i></span>' +
         '<strong class="val">' + esc(jobsDone) + '</strong>' +
-        '<span class="delta up">↑12.4%</span><span class="foot">vs last month</span>' +
+        '<span class="delta up">↑ ' + esc(String(jobsDelta)) + '%</span>' +
+        '<span class="foot">' + esc(period) + '</span>' +
       '</button>' +
       '<button type="button" class="jos-rpt-mc-kpi" data-jos-act="rpt-kpi-open" data-jos-rpt-kpi="members">' +
-        '<span class="ico tone-purple">☺</span><span class="lbl">Active Members</span>' +
+        '<span class="ico tone-purple" aria-hidden="true"></span>' +
+        '<span class="lbl">Active Members <i class="info" title="Info">i</i></span>' +
         '<strong class="val">' + esc(members) + '</strong>' +
-        '<span class="delta up">↑7.8%</span><span class="foot">vs last month</span>' +
+        '<span class="delta up">↑ ' + esc(String(membersDelta)) + '%</span>' +
+        '<span class="foot">' + esc(period) + '</span>' +
       '</button>' +
       '<button type="button" class="jos-rpt-mc-kpi" data-jos-act="rpt-kpi-open" data-jos-rpt-kpi="reviews">' +
-        '<span class="ico tone-yellow">★</span><span class="lbl">Review Rating</span>' +
+        '<span class="ico tone-yellow" aria-hidden="true">★</span>' +
+        '<span class="lbl">Review Rating <i class="info" title="Info">i</i></span>' +
         '<strong class="val">' + esc(rating) + '</strong>' +
-        '<span class="foot">Based on ' + esc(String(ag.reviews.count)) + ' reviews</span>' +
+        '<span class="foot">Based on ' + esc(String(reviewCount)) + ' reviews</span>' +
       '</button>' +
     '</div>';
   }
+  function rptRevenueOverTimeSvg() {
+    return '<div class="jos-rpt-mc-linechart" data-jos-act="rpt-go-money" role="button" tabindex="0" aria-label="Open Revenue">' +
+      '<svg viewBox="0 0 640 240" preserveAspectRatio="xMidYMid meet">' +
+        '<defs><linearGradient id="rptAreaMc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D9632D" stop-opacity="0.2"/><stop offset="100%" stop-color="#D9632D" stop-opacity="0"/></linearGradient></defs>' +
+        '<g stroke="#EEF0F4" stroke-width="1">' +
+          '<line x1="48" y1="20" x2="620" y2="20"/><line x1="48" y1="56" x2="620" y2="56"/>' +
+          '<line x1="48" y1="92" x2="620" y2="92"/><line x1="48" y1="128" x2="620" y2="128"/>' +
+          '<line x1="48" y1="164" x2="620" y2="164"/><line x1="48" y1="200" x2="620" y2="200"/>' +
+        '</g>' +
+        '<g fill="#9CA3AF" font-size="11" font-family="Plus Jakarta Sans, DM Sans, sans-serif">' +
+          '<text x="4" y="24">$25K</text><text x="4" y="60">$20K</text><text x="4" y="96">$15K</text>' +
+          '<text x="4" y="132">$10K</text><text x="10" y="168">$5K</text><text x="16" y="204">$0</text>' +
+          '<text x="48" y="226">Apr 15</text><text x="170" y="226">Apr 22</text><text x="290" y="226">Apr 29</text>' +
+          '<text x="420" y="226">May 6</text><text x="540" y="226">May 13</text>' +
+        '</g>' +
+        '<path d="M48 170 C 120 150, 180 155, 240 130 C 310 100, 370 110, 430 80 C 490 55, 550 70, 620 40 L 620 200 L 48 200 Z" fill="url(#rptAreaMc)"/>' +
+        '<path d="M48 170 C 120 150, 180 155, 240 130 C 310 100, 370 110, 430 80 C 490 55, 550 70, 620 40" fill="none" stroke="#D9632D" stroke-width="3" stroke-linecap="round"/>' +
+        '<g fill="#D9632D"><circle cx="48" cy="170" r="4"/><circle cx="240" cy="130" r="4"/><circle cx="430" cy="80" r="4"/><circle cx="620" cy="40" r="4"/></g>' +
+      '</svg></div>';
+  }
   function renderReportsMcOverview(root) {
     var ag = rptAggregates();
+    var shot = rptShotAnalytics();
     var status = rptMcJobStatus();
-    var revVal = money(ag.revenue.total) || '$0';
+    var revVal = shot ? rptFmtMoney(shot.collected) : (money(ag.revenue.total) || '$0');
+    var revDelta = shot ? shot.revenueDelta : 18.6;
+    var totalJobs = status.total || (shot && shot.jobsCompleted) || ag.jobs.total || 0;
+    function pct(n) { return totalJobs ? ((n / totalJobs) * 100).toFixed(1) : '0.0'; }
+    var completedPct = pct(status.completed);
+    var scheduledPct = pct(status.scheduled);
+    var progressPct = pct(status.inProgress);
+    var canceledPct = pct(status.canceled != null ? status.canceled : status.cancelled);
+    var canceledN = status.canceled != null ? status.canceled : (status.cancelled || 0);
+    var c1 = Number(completedPct), c2 = c1 + Number(scheduledPct), c3 = c2 + Number(progressPct), c4 = 100;
     var servicesHtml = rptTopServicesHtml();
+    var q = shot && shot.quick ? shot.quick : {
+      openLeads: ag.pipeline.openLeads, leadsDelta: 8, repeatPct: ag.customers.repeatPct, repeatDelta: 5,
+      avgJob: ag.avgTicket, avgDelta: 18, campaigns: ag.marketing.activeCampaigns
+    };
+    var sources = (shot && shot.sources) ? shot.sources : [
+      { label: 'Website', pct: 42, color: '#D9632D' },
+      { label: 'Google', pct: 24, color: '#22C55E' },
+      { label: 'Referrals', pct: 18, color: '#7DD3FC' },
+      { label: 'Facebook', pct: 10, color: '#141B2B' },
+      { label: 'Other', pct: 6, color: '#9CA3AF' }
+    ];
+    var srcAcc = 0;
+    var donutStops = sources.map(function (s) {
+      srcAcc += Number(s.pct) || 0;
+      return s.color + ' 0 ' + srcAcc + '%';
+    }).join(', ');
+    var sourceLegend = sources.map(function (s) {
+      return '<li><span class="lbl"><span class="dot" style="background:' + esc(s.color) + '"></span>' + esc(s.label) + '</span><span class="val">' + esc(String(s.pct)) + '%</span></li>';
+    }).join('');
     var insightBody = 'Revenue is up 18.6% driven by more completed jobs and increased membership activity. Focus on Wednesday and Friday for lead follow-ups to boost conversions.';
     return '<div class="jos-rpt-mc-ov">' +
       rptMcKpiCards(ag) +
       '<section class="jos-rpt-mc-ai">' +
         '<div class="jos-rpt-mc-ai-main">' +
-          '<div class="jos-rpt-mc-ai-head"><span class="spark">✦</span><strong>AI Reports Insights</strong><span class="jos-pill info">BETA</span></div>' +
+          '<div class="jos-rpt-mc-ai-head"><span class="spark" aria-hidden="true">✦</span><strong>AI – Reports Insights</strong><span class="jos-rpt-mc-beta">BETA</span></div>' +
           '<p>' + esc(insightBody) + '</p>' +
           '<div class="jos-rpt-mc-ai-actions">' +
-            '<button type="button" class="jos-btn jos-btn-brand jos-rpt-mc-btn" data-jos-act="rpt-ai-insights">View full insights</button>' +
-            '<button type="button" class="jos-btn jos-rpt-mc-btn" data-jos-act="rpt-ai-chat">Open AI chat</button>' +
+            '<button type="button" class="jos-btn jos-btn-brand jos-rpt-mc-btn-sm" data-jos-act="rpt-ai-insights">View full insights</button>' +
+            '<button type="button" class="jos-btn jos-rpt-mc-btn-outline" data-jos-act="rpt-ai-chat">Open AI chat</button>' +
           '</div>' +
         '</div>' +
         '<div class="jos-rpt-mc-ai-chart" aria-hidden="true">' +
-          '<svg viewBox="0 0 220 90" preserveAspectRatio="none"><path d="M0 70 C 30 60, 50 40, 80 45 C 110 50, 130 20, 160 25 C 190 30, 200 12, 220 8 L 220 90 L 0 90 Z" fill="rgba(249,115,22,.18)"/><path d="M0 70 C 30 60, 50 40, 80 45 C 110 50, 130 20, 160 25 C 190 30, 200 12, 220 8" fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round"/></svg>' +
+          '<svg viewBox="0 0 220 90" preserveAspectRatio="none"><path d="M0 70 C 30 60, 50 40, 80 45 C 110 50, 130 20, 160 25 C 190 30, 200 12, 220 8 L 220 90 L 0 90 Z" fill="rgba(217,99,45,.18)"/><path d="M0 70 C 30 60, 50 40, 80 45 C 110 50, 130 20, 160 25 C 190 30, 200 12, 220 8" fill="none" stroke="#D9632D" stroke-width="3" stroke-linecap="round"/><circle cx="80" cy="45" r="3.5" fill="#D9632D"/><circle cx="160" cy="25" r="3.5" fill="#D9632D"/><path d="M205 14 l10 -8 l0 6 z" fill="#D9632D"/></svg>' +
         '</div>' +
       '</section>' +
 
       '<div class="jos-rpt-mc-grid-mid">' +
-        '<section class="jos-rpt-mc-card wide">' +
-          '<div class="jos-rpt-mc-card-head"><div><h3>Revenue Over Time</h3><div class="jos-rpt-mc-sub">Daily · last 30 days</div></div>' +
-            '<select class="jos-rpt-mc-select" aria-label="Revenue grain"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select>' +
+        '<section class="jos-rpt-mc-card">' +
+          '<div class="jos-rpt-mc-card-head"><div><h3>Revenue Over Time <i class="info">i</i></h3></div>' +
+            '<button type="button" class="jos-rpt-mc-select" data-jos-act="rpt-grain">Daily ▾</button>' +
           '</div>' +
-          '<div class="jos-rpt-mc-metric-row"><strong>' + esc(revVal) + '</strong><span class="delta up">↑18.6%</span></div>' +
-          '<div class="jos-rpt-mc-linechart" data-jos-act="rpt-go-money" role="button" tabindex="0" aria-label="Open Revenue">' +
-            '<svg viewBox="0 0 640 220" preserveAspectRatio="none">' +
-              '<defs><linearGradient id="rptAreaMc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F97316" stop-opacity="0.22"/><stop offset="100%" stop-color="#F97316" stop-opacity="0"/></linearGradient></defs>' +
-              '<path d="M0 150 C 80 120, 160 140, 240 100 C 320 60, 400 80, 480 55 C 560 35, 600 50, 640 30 L 640 220 L 0 220 Z" fill="url(#rptAreaMc)"/>' +
-              '<path d="M0 150 C 80 120, 160 140, 240 100 C 320 60, 400 80, 480 55 C 560 35, 600 50, 640 30" fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>' +
-            '</svg>' +
-          '</div>' +
+          '<div class="jos-rpt-mc-metric-row"><strong>' + esc(revVal) + '</strong><span class="delta up">↑ ' + esc(String(revDelta)) + '%</span></div>' +
+          rptRevenueOverTimeSvg() +
         '</section>' +
 
         '<section class="jos-rpt-mc-card">' +
-          '<div class="jos-rpt-mc-card-head"><h3>Jobs By Status</h3></div>' +
+          '<div class="jos-rpt-mc-card-head"><h3>Jobs By Status <i class="info">i</i></h3></div>' +
           '<div class="jos-rpt-mc-donut-wrap">' +
-            '<div class="jos-rpt-mc-donut" style="--donut:conic-gradient(#22C55E 0 55%, #3B82F6 0 25%, #8B5CF6 0 12%, #EF4444 0 8%)">' +
-              '<div class="jos-rpt-mc-donut-center"><strong>' + esc(String(status.total || ag.jobs.total)) + '</strong><span>Total</span></div>' +
+            '<div class="jos-rpt-mc-donut" style="--donut:conic-gradient(#22C55E 0 ' + c1 + '%, #3B82F6 0 ' + c2 + '%, #8B5CF6 0 ' + c3 + '%, #EF4444 0 ' + c4 + '%)">' +
+              '<div class="jos-rpt-mc-donut-center"><strong>' + esc(String(totalJobs)) + '</strong><span>Total</span></div>' +
             '</div>' +
             '<ul class="jos-rpt-mc-legend">' +
-              '<li><span class="dot" style="background:#22C55E"></span>Completed <span class="val">' + esc(String(status.completed)) + '</span></li>' +
-              '<li><span class="dot" style="background:#3B82F6"></span>Scheduled <span class="val">' + esc(String(status.scheduled)) + '</span></li>' +
-              '<li><span class="dot" style="background:#8B5CF6"></span>In Progress <span class="val">' + esc(String(status.inProgress)) + '</span></li>' +
-              '<li><span class="dot" style="background:#EF4444"></span>Canceled <span class="val">' + esc(String(status.cancelled)) + '</span></li>' +
+              '<li><span class="lbl"><span class="dot" style="background:#22C55E"></span>Completed</span><span class="val">' + esc(String(status.completed)) + ' (' + esc(completedPct) + '%)</span></li>' +
+              '<li><span class="lbl"><span class="dot" style="background:#3B82F6"></span>Scheduled</span><span class="val">' + esc(String(status.scheduled)) + ' (' + esc(scheduledPct) + '%)</span></li>' +
+              '<li><span class="lbl"><span class="dot" style="background:#8B5CF6"></span>In Progress</span><span class="val">' + esc(String(status.inProgress)) + ' (' + esc(progressPct) + '%)</span></li>' +
+              '<li><span class="lbl"><span class="dot" style="background:#EF4444"></span>Canceled</span><span class="val">' + esc(String(canceledN)) + ' (' + esc(canceledPct) + '%)</span></li>' +
             '</ul>' +
           '</div>' +
-          '<button type="button" class="jos-rpt-mc-link" data-jos-act="rpt-go-jobs">View all jobs →</button>' +
+          '<button type="button" class="jos-rpt-mc-foot-btn" data-jos-act="rpt-go-jobs">View all jobs</button>' +
         '</section>' +
 
         '<section class="jos-rpt-mc-card">' +
-          '<div class="jos-rpt-mc-card-head"><h3>Quick Overview</h3></div>' +
+          '<div class="jos-rpt-mc-card-head"><h3>Quick Overview <i class="info">i</i></h3></div>' +
           '<div class="jos-rpt-mc-quick">' +
-            '<button type="button" class="jos-rpt-mc-quick-row" data-jos-act="rpt-go-leads"><span class="ico">◎</span><span class="meta"><strong>Open leads</strong><span class="jos-muted">Leads owner feed</span></span><strong class="num">' + esc(String(ag.pipeline.openLeads)) + '</strong><span class="delta up">↑8</span></button>' +
-            '<button type="button" class="jos-rpt-mc-quick-row" data-jos-act="rpt-go-customers"><span class="ico">↺</span><span class="meta"><strong>Repeat customers</strong><span class="jos-muted">Customers + Jobs</span></span><strong class="num">' + esc(String(ag.customers.repeatPct)) + '%</strong><span class="delta up">↑5%</span></button>' +
-            '<button type="button" class="jos-rpt-mc-quick-row" data-jos-act="rpt-go-money"><span class="ico">$</span><span class="meta"><strong>Average job value</strong><span class="jos-muted">Collected / completed</span></span><strong class="num">' + esc(money(ag.avgTicket) || '$0') + '</strong><span class="delta up">↑$18</span></button>' +
-            '<button type="button" class="jos-rpt-mc-quick-row" data-jos-act="rpt-go-marketing"><span class="ico">📢</span><span class="meta"><strong>Active campaigns</strong><span class="jos-muted">Marketing OS</span></span><strong class="num">' + esc(String(ag.marketing.activeCampaigns)) + '</strong><span class="delta up">↑1</span></button>' +
+            '<button type="button" class="jos-rpt-mc-quick-row" data-jos-act="rpt-go-leads"><span class="ico tone-box" aria-hidden="true"></span><span class="meta"><strong>Open leads</strong></span><strong class="num">' + esc(String(q.openLeads)) + '</strong><span class="delta up">↑ ' + esc(String(q.leadsDelta)) + '</span></button>' +
+            '<button type="button" class="jos-rpt-mc-quick-row" data-jos-act="rpt-go-customers"><span class="ico tone-person" aria-hidden="true"></span><span class="meta"><strong>Repeat customers</strong></span><strong class="num">' + esc(String(q.repeatPct)) + '%</strong><span class="delta up">↑ ' + esc(String(q.repeatDelta)) + '%</span></button>' +
+            '<button type="button" class="jos-rpt-mc-quick-row" data-jos-act="rpt-go-money"><span class="ico tone-gauge" aria-hidden="true"></span><span class="meta"><strong>Average job value</strong></span><strong class="num">' + esc(rptFmtMoney(q.avgJob)) + '</strong><span class="delta up">↑ $' + esc(String(q.avgDelta)) + '</span></button>' +
+            '<button type="button" class="jos-rpt-mc-quick-row" data-jos-act="rpt-go-marketing"><span class="ico tone-plane" aria-hidden="true"></span><span class="meta"><strong>Active campaigns</strong></span><strong class="num">' + esc(String(q.campaigns)) + '</strong><span class="delta muted"></span></button>' +
           '</div>' +
-          '<button type="button" class="jos-rpt-mc-link" data-jos-act="rpt-refresh">View all metrics →</button>' +
+          '<button type="button" class="jos-rpt-mc-foot-btn" data-jos-act="rpt-refresh">View all metrics</button>' +
         '</section>' +
       '</div>' +
 
       '<div class="jos-rpt-mc-grid-bot">' +
         '<section class="jos-rpt-mc-card">' +
-          '<div class="jos-rpt-mc-card-head"><h3>Top Services by Revenue</h3></div>' +
+          '<div class="jos-rpt-mc-card-head"><h3>Top Services by Revenue <i class="info">i</i></h3></div>' +
           '<div class="jos-rpt-mc-services">' + servicesHtml + '</div>' +
+          '<button type="button" class="jos-rpt-mc-foot-btn" data-jos-act="rpt-go-editor">View all services</button>' +
         '</section>' +
         '<section class="jos-rpt-mc-card">' +
-          '<div class="jos-rpt-mc-card-head"><h3>Revenue by Source</h3></div>' +
-          '<div class="jos-rpt-mc-donut-wrap">' +
-            '<div class="jos-rpt-mc-donut sm" style="--donut:conic-gradient(#F97316 0 42%, #22C55E 0 24%, #3B82F6 0 18%, #8B5CF6 0 10%, #9CA3AF 0 6%)">' +
+          '<div class="jos-rpt-mc-card-head"><h3>Revenue by Source <i class="info">i</i></h3></div>' +
+          '<div class="jos-rpt-mc-donut-wrap row">' +
+            '<div class="jos-rpt-mc-donut sm" style="--donut:conic-gradient(' + donutStops + ')">' +
               '<div class="jos-rpt-mc-donut-center"><strong>' + esc(revVal) + '</strong><span>Total</span></div>' +
             '</div>' +
-            '<ul class="jos-rpt-mc-legend">' +
-              '<li><span class="dot" style="background:#F97316"></span>Website <span class="val">42%</span></li>' +
-              '<li><span class="dot" style="background:#22C55E"></span>Google <span class="val">24%</span></li>' +
-              '<li><span class="dot" style="background:#3B82F6"></span>Referrals <span class="val">18%</span></li>' +
-              '<li><span class="dot" style="background:#8B5CF6"></span>Facebook <span class="val">10%</span></li>' +
-              '<li><span class="dot" style="background:#9CA3AF"></span>Other <span class="val">6%</span></li>' +
-            '</ul>' +
+            '<ul class="jos-rpt-mc-legend">' + sourceLegend + '</ul>' +
           '</div>' +
+          '<button type="button" class="jos-rpt-mc-foot-btn" data-jos-act="rpt-go-leads">View all sources</button>' +
         '</section>' +
         '<section class="jos-rpt-mc-card">' +
-          '<div class="jos-rpt-mc-card-head"><h3>Insights & Recommendations</h3></div>' +
+          '<div class="jos-rpt-mc-card-head"><h3>Insights & Recommendations <i class="info">i</i></h3></div>' +
           '<div class="jos-rpt-mc-recs">' +
-            '<button type="button" class="jos-rpt-mc-rec" data-jos-act="rpt-ai-insights"><span class="ico">📅</span><div><strong>Busier mid-week days</strong><p>Wednesdays & Fridays are your busiest days. Consider adding more availability.</p></div><span class="arrow">→</span></button>' +
-            '<button type="button" class="jos-rpt-mc-rec" data-jos-act="rpt-ai-insights"><span class="ico">🎯</span><div><strong>Google converts higher</strong><p>Customers from Google convert 24% more. Keep optimizing your Google Business profile.</p></div><span class="arrow">→</span></button>' +
-            '<button type="button" class="jos-rpt-mc-rec" data-jos-act="rpt-go-reviews"><span class="ico">★</span><div><strong>Ask after every job</strong><p>Strong review scores lead to more leads. Keep asking for reviews after every job.</p></div><span class="arrow">→</span></button>' +
+            '<button type="button" class="jos-rpt-mc-rec" data-jos-act="rpt-ai-insights"><span class="ico tone-cal" aria-hidden="true"></span><div><p>Wednesdays & Fridays are your busiest days. Consider adding more availability.</p></div><span class="arrow">›</span></button>' +
+            '<button type="button" class="jos-rpt-mc-rec" data-jos-act="rpt-ai-insights"><span class="ico tone-group" aria-hidden="true"></span><div><p>Customers from Google convert 24% more. Keep optimizing your Google Business profile.</p></div><span class="arrow">›</span></button>' +
+            '<button type="button" class="jos-rpt-mc-rec" data-jos-act="rpt-go-reviews"><span class="ico tone-star" aria-hidden="true"></span><div><p>Strong review scores lead to more leads. Keep asking for reviews after every job.</p></div><span class="arrow">›</span></button>' +
           '</div>' +
-          '<p class="jos-muted jos-mt">Rule #21 — Reports reads aggregates only; edits happen in owner modules.</p>' +
+          '<button type="button" class="jos-rpt-mc-foot-btn" data-jos-act="rpt-ai-insights">View all recommendations</button>' +
         '</section>' +
       '</div>' +
     '</div>';
@@ -6098,12 +6200,30 @@
     if (tab === 'sources') return renderReportsSourcesTab() + '<div class="jos-mt">' + renderReportsActivityTab() + '</div>';
     return renderReportsOverviewTab(root);
   }
+  function renderRptTopChrome(root) {
+    var shot = rptShotAnalytics();
+    var bizName = allowDemoSeed() ? "Adrian's Lawn Service" : (S().businessName || S().biz || "Adrian's Lawn Service");
+    var notifN = allowDemoSeed() ? 3 : 0;
+    var range = (shot && shot.rangeLabel) || 'Apr 15 – May 15, 2024';
+    return '<div class="jos-rpt-top-actions">' +
+      '<label class="jos-rpt-global-search"><span class="jos-rpt-search-ico" aria-hidden="true"></span>' +
+      '<input id="jos-rpt-global-search" type="search" placeholder="Search customers, jobs, invoices..." value="' + esc(root._josRptGlobalQ || '') + '">' +
+      '<kbd>⌘K</kbd></label>' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-rpt-top-new" data-jos-act="rpt-new">+ New</button>' +
+      '<button type="button" class="jos-btn jos-rpt-range-btn" data-jos-act="rpt-range"><span class="cal-ico" aria-hidden="true"></span>' + esc(range) + '</button>' +
+      '<button type="button" class="jos-icon-btn jos-rpt-bell" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>' +
+      (notifN ? '<i class="badge">' + notifN + '</i>' : '') + '</button>' +
+      '<button type="button" class="jos-rpt-profile" data-jos-act="go-settings" title="Profile">' +
+      '<span class="ava">' + esc(initials(bizName)) + '</span><span class="meta"><strong>' + esc(bizName) + '</strong></span>' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>' +
+    '</div>';
+  }
   function renderReportsPageInner(root) {
     ensureReportsOsState();
     var tab = root._josRptTab || 'overview';
-    var d = DS();
-    var tabsHtml = '<div class="jos-tabs jos-rpt-tabs">' + RPT_TABS.map(function (t) {
-      return '<button type="button" class="jos-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-rpt-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    var tabsHtml = '<div class="jos-rpt-mc-tabs">' + RPT_TABS.map(function (t) {
+      return '<button type="button" class="jos-rpt-mc-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-rpt-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
     }).join('') + '</div>';
     var exportMenu = root._josRptExportOpen
       ? '<div class="jos-rpt-mc-export-menu"><button type="button" data-jos-act="rpt-export-pdf">PDF</button><button type="button" data-jos-act="rpt-export-csv">CSV</button><button type="button" data-jos-act="rpt-export-excel">Excel</button><button type="button" data-jos-act="rpt-export-print">Print</button></div>'
@@ -6111,16 +6231,22 @@
     var filterDrawer = root._josRptFilterOpen
       ? '<div class="jos-rpt-mc-drawer"><div class="jos-rpt-mc-drawer-panel"><div class="jos-rpt-mc-drawer-head"><h3>Filters</h3><button type="button" class="jos-btn jos-btn-sm" data-jos-act="rpt-filter-close">Close</button></div><div class="jos-rpt-mc-drawer-body"><label>Date range<select><option>Last 30 days</option><option>Last 7 days</option><option>This month</option><option>Custom</option></select></label><label>Service<input type="text" placeholder="All services"></label><label>Lead source<select><option>All sources</option><option>Website</option><option>Google</option><option>Referral</option></select></label><label>Membership<select><option>All</option><option>Members only</option><option>Non-members</option></select></label></div><div class="jos-btn-row jos-mt">' + dsBtn('rpt-filter-apply', 'Apply', 'jos-btn-brand jos-btn-sm') + dsBtn('rpt-filter-reset', 'Reset', 'jos-btn jos-btn-sm') + '</div></div></div>'
       : '';
-    var head = '<div class="jos-rpt-mc-head">' +
-      '<div class="jos-rpt-mc-head-left"><div class="jos-rpt-mc-title-row"><span class="ico" aria-hidden="true">▣</span><h1>Reports</h1></div><p>Track performance, analyze trends, and grow your business.</p></div>' +
-      '<div class="jos-rpt-mc-head-actions">' +
-        '<button type="button" class="jos-btn jos-rpt-mc-btn" data-jos-act="rpt-filter-open">Filters</button>' +
-        '<button type="button" class="jos-btn jos-rpt-mc-btn" data-jos-act="rpt-range">Apr 15 – May 15</button>' +
-        dsBtn('rpt-dash-open', 'Create dashboard', 'jos-btn jos-btn-brand jos-rpt-mc-btn') +
-        '<div class="jos-rpt-mc-export-wrap"><button type="button" class="jos-btn jos-rpt-mc-btn" data-jos-act="rpt-export-open">Export ▾</button>' + exportMenu + '</div>' +
-      '</div></div>';
-    root.innerHTML = '<div class="jos-page jos-rpt-page"><div class="jos-rpt-mc-shell">' + head + tabsHtml +
-      '<div class="jos-rpt-mc-body">' + renderReportsTabBody(root, tab) + '</div></div>' + filterDrawer + '</div>';
+    root.innerHTML = '<div class="jos-rpt-mc-shell jos-rpt-page jos-rpt-shot">' +
+      '<header class="jos-rpt-mc-header">' +
+        '<div class="jos-rpt-mc-title"><div class="jos-rpt-mc-title-row"><span class="ico" aria-hidden="true"></span><h1>Reports</h1></div>' +
+          '<p>Track performance, analyze trends, and grow your business.</p></div>' +
+        renderRptTopChrome(root) +
+      '</header>' +
+      '<div class="jos-rpt-mc-header-actions">' +
+        '<button type="button" class="jos-btn jos-rpt-mc-secondary" data-jos-act="rpt-filter-open"><span class="filter-ico" aria-hidden="true"></span> Filters</button>' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-rpt-mc-primary" data-jos-act="rpt-dash-open">Create dashboard</button>' +
+        '<div class="jos-rpt-mc-export-wrap"><button type="button" class="jos-btn jos-rpt-mc-secondary" data-jos-act="rpt-export-open"><span class="export-ico" aria-hidden="true"></span> Export</button>' + exportMenu + '</div>' +
+      '</div>' +
+      tabsHtml +
+      '<div class="jos-rpt-mc-body">' + renderReportsTabBody(root, tab) + '</div>' +
+      '<button type="button" class="jos-rpt-mc-help" data-jos-act="rpt-help" aria-label="Help">?</button>' +
+      filterDrawer +
+    '</div>';
     bindRoot(root);
     wireReportsRoot(root);
   }
@@ -6129,11 +6255,11 @@
     if (!root) return;
     setReportsMode(true);
     updateChrome('reports');
-    root.innerHTML = '<div class="jos-page jos-rpt-page"><div class="jos-home-loading">Loading Reports...</div></div>';
+    root.innerHTML = '<div class="jos-rpt-mc-shell jos-rpt-page"><div class="jos-home-loading">Loading Reports...</div></div>';
     try { renderReportsPageInner(root); }
     catch (err) {
       console.warn('HublyJourneyOS Reports', err);
-      root.innerHTML = '<div class="jos-page"><div class="jos-empty jos-error-state"><strong>Reports could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderReportsPage()">Retry</button></div></div></div>';
+      root.innerHTML = '<div class="jos-rpt-mc-shell"><div class="jos-empty jos-error-state"><strong>Reports could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderReportsPage()">Retry</button></div></div></div>';
     }
   }
   var renderReports = renderReportsPage;
@@ -6275,6 +6401,10 @@
       if (act === 'rpt-go-pipeline') return switchNav('pipeline');
       if (act === 'rpt-go-marketing') return switchNav('marketing');
       if (act === 'rpt-go-reviews') return switchNav('reviews');
+      if (act === 'rpt-go-editor') return switchNav('editor');
+      if (act === 'rpt-new') { openQuickNew(); return; }
+      if (act === 'rpt-help') { toast('Need a hand? Ask Hubly from the sidebar.'); return; }
+      if (act === 'rpt-grain') { toast('Grain locked to Daily (demo)'); return; }
     } catch (err) {
       console.warn('HublyJourneyOS rpt act', act, err);
       toast('Failed - try again');
@@ -10060,6 +10190,7 @@
     setInboxMode(false);
     setLeadsMode(false);
     setPipelineMode(false);
+    setReportsMode(false);
     updateChrome('dashboard');
     root.classList.add('jos-home-root');
     try {
@@ -13310,6 +13441,7 @@
     setJobsMode(v === 'jobs');
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');
+    setReportsMode(v === 'reports');
     var map = {
       pipeline: renderPipeline,
       opportunities: renderOpportunities,
