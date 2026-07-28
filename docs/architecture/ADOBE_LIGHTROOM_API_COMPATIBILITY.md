@@ -128,9 +128,22 @@ Hubly (Edge + UI)
 
 ## Projects UI surface
 
-Inside a Project → **Lightroom** tab (photo-led businesses):
+Inside a Project → **Lightroom** tab (photo-led businesses) — premium command center, not a settings/API console:
 
-Overview · Albums · Photos · Photo Details · Exports · Sync · Connection
+**Command** · Albums · Photos · Sync · Export · Account
+
+Hero always answers: connected? synced? photo/edit counts? last sync? next action?
+
+| Surface | Hubly Actions discoverable |
+|---|---|
+| Hero / Command | Sync Now, Publish Project, Open Lightroom Project, Browse Photos, Create Album, Browse Albums, Export Final Photos, Check Workspace Health, Refresh Workspace, Upload to Lightroom |
+| Albums | Create / Browse / Open / Rename / Sync / Link / Unlink |
+| Photos | Browse, filters, multi-select bulk, Photo Details drawer, Export / Download / Canva |
+| Sync Center | Sync Now, Browse Photos, health + workspace refresh |
+| Export | Destination exports (Instagram → RAW), Publish Gallery / Project, Upload |
+| Account | Connect / Reconnect / Refresh Connection / Disconnect / health / workspace |
+
+**Adobe review rule:** every shipped Adobe capability in this matrix must have a discoverable user-facing workflow — never API-only.
 
 ### Bulk photo actions
 

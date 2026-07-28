@@ -159,6 +159,32 @@ describe('Hubly Projects module', () => {
     assert.match(css, /pp-bulk-bar/);
   });
 
+  it('ships premium Lightroom command-center workspace', () => {
+    const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
+    const css = readFileSync(join(root, 'public/journey-os/photography-projects.css'), 'utf8');
+    assert.match(js, /function renderLrHero/);
+    assert.match(js, /Sync Now/);
+    assert.match(js, /Manage Connection/);
+    assert.match(js, /Next Actions/);
+    assert.match(js, /Recent Activity/);
+    assert.match(js, /Sync Center/);
+    assert.match(js, /Export Final Photos/);
+    assert.match(js, /Connected Adobe Account/);
+    assert.match(js, /Connect Adobe Lightroom/);
+    assert.match(js, /pp-lr-album-card|pp-lr-album-grid/);
+    assert.match(js, /pp-lr-photo-grid/);
+    assert.match(js, /Photo Details/);
+    assert.match(js, /Check Workspace Health/);
+    assert.match(js, /Refresh Workspace/);
+    assert.doesNotMatch(js, /Download Rendition/);
+    assert.doesNotMatch(js, /\bOAuth\b/);
+    assert.doesNotMatch(js, /\bEndpoint\b/);
+    assert.match(css, /pp-lr-hero/);
+    assert.match(css, /pp-lr-stats/);
+    assert.match(css, /pp-lr-sync-compare/);
+    assert.match(css, /pp-lr-drawer/);
+  });
+
   it('ships dashboard metrics, Media upload, Creative tab, and Quick Project', () => {
     const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
     const journey = readFileSync(join(root, 'public/journey-os/journey.js'), 'utf8');
