@@ -130,7 +130,7 @@
           '<div class="am-grid">' +
             (installed.length
               ? installed.map(function (a) { return renderAppCard(a, true); }).join('')
-              : '<p class="am-muted">No apps installed yet. Connect Google, Stripe, Canva, or Adobe below.</p>') +
+              : '<p class="am-muted">No apps installed yet. Open Available below and connect the tools you already use.</p>') +
           '</div>' +
         '</section>' +
         '<section class="am-panel">' +

@@ -122,4 +122,7 @@
   };
 
   global.CanvaConnectedApp = CanvaConnectedApp;
+  if (global.HublyConnectedApps && typeof global.HublyConnectedApps.registerFacade === 'function') {
+    global.HublyConnectedApps.registerFacade(PROVIDER, CanvaConnectedApp);
+  }
 })(typeof window !== 'undefined' ? window : globalThis);

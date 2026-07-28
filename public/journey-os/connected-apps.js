@@ -152,6 +152,7 @@
   ];
 
   var DEFAULT_INSTALLED = ['google', 'stripe', 'canva', 'adobe_lightroom'];
+  var _facades = Object.create(null);
 
   function list() { return CATALOG.slice(); }
 
@@ -163,6 +164,16 @@
 
   function get(id) {
     return CATALOG.find(function (a) { return a.id === id; }) || null;
+  }
+
+  /** Client provider facades register here — createMarketingAsset never switches on vendor names. */
+  function registerFacade(id, facade) {
+    if (!id || !facade) return;
+    _facades[id] = facade;
+  }
+
+  function getFacade(id) {
+    return id ? (_facades[id] || null) : null;
   }
 
   function creativeApps() {
@@ -238,45 +249,26 @@
   }
 
   /**
-   * Plan a marketing asset by capability (creative), not by hardcoding Canva.
-   * Prefer Action Engine when present.
+   * Plan a marketing asset by capability (creative), not by hardcoding a vendor.
+   * Resolver picks an app; facade registry executes createDesign.
    */
   async function createMarketingAsset(opts) {
     opts = opts || {};
     var kind = opts.kind || 'instagram_carousel';
     var capability = opts.capability || 'creative';
+    var resolved = null;
 
     if (global.HublyActionEngine && typeof global.HublyActionEngine.resolveForCapability === 'function') {
-      var resolved = global.HublyActionEngine.resolveForCapability(capability, {
+      resolved = global.HublyActionEngine.resolveForCapability(capability, {
         businessId: opts.businessId,
         preferredProviderId: opts.providerId
       });
-      if (resolved && resolved.appId === 'canva' && global.CanvaConnectedApp) {
-        var canvaRes = await global.CanvaConnectedApp.createDesign({
-          businessId: opts.businessId,
-          projectId: opts.projectId,
-          title: opts.title || kind,
-          brand: opts.brand,
-          assetUrls: opts.photoUrls,
-          copy: opts.copy
-        });
-        return canvaRes;
-      }
-      if (resolved && resolved.status === 'not_configured') {
-        return {
-          ok: false,
-          status: 'not_configured',
-          provider: resolved.appId || null,
-          message: 'Need: Marketing Graphics. Connect a creative app — Hubly saved the request on the project.',
-          data: { kind: kind, status: 'planned', capability: capability }
-        };
-      }
     }
 
-    // Fallback: first creative catalog app (still capability-driven, not “Canva” in the message).
-    var creative = byCapability(capability)[0];
-    if (creative && creative.id === 'canva' && global.CanvaConnectedApp && typeof global.CanvaConnectedApp.createDesign === 'function') {
-      return global.CanvaConnectedApp.createDesign({
+    var appId = (resolved && resolved.appId) || opts.providerId || null;
+    var facade = getFacade(appId);
+    if (facade && typeof facade.createDesign === 'function') {
+      return facade.createDesign({
         businessId: opts.businessId,
         projectId: opts.projectId,
         title: opts.title || kind,
@@ -286,10 +278,20 @@
       });
     }
 
+    if (resolved && resolved.status === 'not_configured') {
+      return {
+        ok: false,
+        status: 'not_configured',
+        provider: resolved.appId || null,
+        message: 'Need: Marketing Graphics. Connect a creative app — Hubly saved the request on the project.',
+        data: { kind: kind, status: 'planned', capability: capability }
+      };
+    }
+
     return {
       ok: false,
       status: 'not_configured',
-      provider: null,
+      provider: appId,
       message: 'Need: Marketing Graphics. Install a creative Connected App from the Apps Marketplace.',
       data: { kind: kind, status: 'planned', capability: capability }
     };
@@ -309,6 +311,12 @@
     install: install,
     uninstall: uninstall,
     readInstalled: readInstalled,
+    registerFacade: registerFacade,
+    getFacade: getFacade,
     DEFAULT_INSTALLED: DEFAULT_INSTALLED
   };
+
+  // Facades may load before or after this file — bind whatever is already present.
+  if (global.CanvaConnectedApp) registerFacade('canva', global.CanvaConnectedApp);
+  if (global.AdobeLightroomService) registerFacade('adobe_lightroom', global.AdobeLightroomService);
 })(typeof window !== 'undefined' ? window : globalThis);

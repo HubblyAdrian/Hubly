@@ -16,6 +16,7 @@ import {
   type ConnectedAppCapability,
   type ConnectedAppProvider,
 } from "./hubly_connected_apps.ts";
+import { ensureHublyConnectedAppsRegistered } from "./hubly_connected_apps_bootstrap.ts";
 import { providerOk, type HublyProviderResult } from "./hubly_providers.ts";
 
 export type ActionIntent =
@@ -98,6 +99,7 @@ function pickProvider(
   capability: ConnectedAppCapability,
   preferConfigured = true,
 ): ConnectedAppProvider | null {
+  ensureHublyConnectedAppsRegistered();
   const apps = listConnectedAppsByCapability(capability);
   if (!apps.length) return null;
   if (preferConfigured) {
@@ -115,6 +117,7 @@ export function resolveProviderForCapability(
   capability: ConnectedAppCapability,
   opts?: { preferredProviderId?: string },
 ): ConnectedAppProvider | null {
+  ensureHublyConnectedAppsRegistered();
   if (opts?.preferredProviderId) {
     const preferred = getConnectedApp(opts.preferredProviderId);
     if (preferred && preferred.capabilities().includes(capability)) {

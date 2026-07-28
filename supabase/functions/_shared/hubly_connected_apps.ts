@@ -35,18 +35,26 @@ export type ConnectedAppCapability =
   | "templates"
   | "scheduling";
 
-export type ConnectedAppId =
-  | "adobe_lightroom"
-  | "capture_one"
-  | "dropbox"
-  | "google_drive"
-  | "canva"
-  | "frame_io"
-  | "meta"
-  | "google_business"
-  | "stripe"
-  | "twilio"
-  | "other";
+/**
+ * Provider id — open string so new plugins need not edit this union.
+ * Known ids are listed in CONNECTED_APP_CATALOG.
+ */
+export type ConnectedAppId = string;
+
+/** Documented known ids (not exhaustive — plugins may add more). */
+export const KNOWN_CONNECTED_APP_IDS = [
+  "adobe_lightroom",
+  "capture_one",
+  "dropbox",
+  "google_drive",
+  "canva",
+  "frame_io",
+  "meta",
+  "google_business",
+  "stripe",
+  "twilio",
+  "other",
+] as const;
 
 export type ConnectedAppHealth =
   | "healthy"
@@ -125,6 +133,26 @@ export interface ConnectedAppProvider {
 
   /** Optional product actions derived from capabilities. */
   actions?(): ConnectedAppAction[];
+
+  /**
+   * Creative-capable apps: create a design from brand + assets.
+   * Creative Engine calls this via capability resolve — never hardcode vendor.
+   */
+  createDesign?(opts: {
+    businessId: string;
+    projectId?: string;
+    title: string;
+    templateId?: string;
+    brand?: Record<string, unknown>;
+    assetUrls?: string[];
+    copy?: string;
+  }): Promise<HublyProviderResult<{
+    id: string;
+    title?: string;
+    editUrl?: string;
+    exportUrl?: string;
+    thumbnailUrl?: string;
+  }>>;
 }
 
 const _registry = new Map<string, ConnectedAppProvider>();
@@ -145,6 +173,16 @@ export function listConnectedAppsByCapability(
   capability: ConnectedAppCapability,
 ): ConnectedAppProvider[] {
   return listConnectedApps().filter((p) => p.capabilities().includes(capability));
+}
+
+/** Unregister — tests / freeze plugin verification only. */
+export function unregisterConnectedApp(id: string): void {
+  _registry.delete(id);
+}
+
+/** Test-only — clear registry. */
+export function clearConnectedAppRegistryForTests(): void {
+  _registry.clear();
 }
 
 /** Catalog metadata for product UI (Connected Apps / Apps Marketplace). */

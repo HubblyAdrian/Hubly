@@ -1033,7 +1033,7 @@
           '<div class="pp-mkt-top"><strong>' + esc(prov.label) + '</strong><span class="pp-pill">' + esc(prov.role) + '</span></div>' +
           '<p class="pp-muted">' + esc(mark) + '</p>' +
           (act
-            ? '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="' + act + '">' + (connected ? 'Manage' : 'Connect') + '</button>'
+            ? '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="' + act + '" data-pp-provider="' + esc(prov.id) + '">' + (connected ? 'Manage' : 'Connect') + '</button>'
             : '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" disabled>Soon</button>') +
           '</div>';
       }).join('') +
@@ -1063,8 +1063,13 @@
   }
 
   function connectActionForProvider(providerId) {
-    if (providerId === 'canva') return 'canva-connect';
-    if (providerId === 'adobe_lightroom') return 'adobe-connect';
+    // Prefer facade registry — plugins register facades instead of editing this switch forever.
+    var facade = global.HublyConnectedApps && global.HublyConnectedApps.getFacade
+      ? global.HublyConnectedApps.getFacade(providerId)
+      : null;
+    if (providerId === 'canva' || (facade && providerId === 'canva')) return 'canva-connect';
+    if (providerId === 'adobe_lightroom' || (facade && providerId === 'adobe_lightroom')) return 'adobe-connect';
+    if (facade && typeof facade.connect === 'function') return 'connect-app';
     return '';
   }
 
@@ -1501,21 +1506,33 @@
     if (act === 'adobe-connect') {
       var svcC = global.AdobeLightroomService;
       if (svcC) await svcC.connect({ businessId: businessId() || '' });
-      else toast('Adobe Lightroom isn’t connected yet. Projects still work in Hubly.');
+      else toast('Editing app isn’t connected yet. Projects still work in Hubly.');
       return;
     }
-    if (act === 'canva-connect') {
-      var canva = global.CanvaConnectedApp;
-      if (canva && canva.connect) await canva.connect({ businessId: businessId() || '', projectId: (p && p.id) || st.projectId });
-      else toast('Canva isn’t connected yet. Creative plans still save on the project.');
+    if (act === 'canva-connect' || act === 'connect-app') {
+      var connectId = act === 'canva-connect'
+        ? 'canva'
+        : (t.getAttribute('data-pp-provider') || 'canva');
+      var facadeC = (global.HublyConnectedApps && global.HublyConnectedApps.getFacade)
+        ? global.HublyConnectedApps.getFacade(connectId)
+        : null;
+      var canva = facadeC || (connectId === 'canva' ? global.CanvaConnectedApp : null);
+      if (canva && canva.connect) {
+        await canva.connect({ businessId: businessId() || '', projectId: (p && p.id) || st.projectId });
+      } else {
+        toast('Need: connect this app from the Apps Marketplace. Creative plans still save on the project.');
+      }
       if (p) {
+        var metaC = (global.HublyConnectedApps && global.HublyConnectedApps.get)
+          ? global.HublyConnectedApps.get(connectId)
+          : null;
         upsertWorkspaceLocal(p, {
-          provider: 'canva',
-          display_name: 'Canva',
+          provider: connectId,
+          display_name: (metaC && metaC.name) || connectId,
           sync_state: 'pending',
-          metadata: { role: 'creative' }
+          metadata: { role: (metaC && metaC.role) || 'connected' }
         });
-        addActivity(p, 'Canva connect requested', 'Creative Connected App');
+        addActivity(p, 'App connect requested', (metaC && metaC.name) || connectId);
         return saveAndRefresh(p, st);
       }
       return;

@@ -23,7 +23,7 @@ import {
   type ConnectedAppProvider,
 } from "./hubly_connected_apps.ts";
 import { resolveProviderForCapability } from "./hubly_action_engine.ts";
-import { ensureCanvaConnectedApp } from "./hubly_provider_canva.ts";
+import { ensureHublyConnectedAppsRegistered } from "./hubly_connected_apps_bootstrap.ts";
 import {
   providerError,
   providerOk,
@@ -43,7 +43,7 @@ export type CreativeAssetKind =
 export type CreateMarketingAssetInput = {
   businessId: string;
   projectId?: string;
-  /** Preferred provider; defaults to first creative Connected App (usually Canva). */
+  /** Preferred provider; defaults to first creative Connected App via Resolver. */
   providerId?: string;
   kind: CreativeAssetKind;
   title?: string;
@@ -77,7 +77,7 @@ export type CreativeEngineCatalogItem = {
 };
 
 function ensureCreativeProvidersRegistered(): void {
-  ensureCanvaConnectedApp();
+  ensureHublyConnectedAppsRegistered();
 }
 
 export function listCreativeProviders(): ConnectedAppProvider[] {
@@ -141,16 +141,9 @@ export async function createMarketingAsset(
     );
   }
 
-  // Vendor-specific create lives on the provider (CanvaProvider.createDesign, …)
-  const creative = provider as ConnectedAppProvider & {
-    createDesign?: (opts: Record<string, unknown>) => Promise<HublyProviderResult<{
-      id: string;
-      editUrl?: string;
-      exportUrl?: string;
-    }>>;
-  };
-  if (typeof creative.createDesign === "function") {
-    const created = await creative.createDesign({
+  // Vendor create lives on ConnectedAppProvider.createDesign (capability-bound).
+  if (typeof provider.createDesign === "function") {
+    const created = await provider.createDesign({
       businessId: input.businessId,
       projectId: input.projectId,
       title: input.title || input.kind,
@@ -179,7 +172,7 @@ export async function createMarketingAsset(
   return providerError(
     "creative_engine",
     "CREATE_NOT_SUPPORTED",
-    "Need: Marketing Graphics. Connected creative app does not implement design creation yet.",
+    "Need: Marketing Graphics. Connected creative app does not implement createDesign yet.",
     { retryable: false },
   );
 }

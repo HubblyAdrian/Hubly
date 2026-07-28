@@ -171,4 +171,7 @@
   };
 
   global.AdobeLightroomService = AdobeLightroomService;
+  if (global.HublyConnectedApps && typeof global.HublyConnectedApps.registerFacade === 'function') {
+    global.HublyConnectedApps.registerFacade(PROVIDER, AdobeLightroomService);
+  }
 })(typeof window !== 'undefined' ? window : globalThis);
