@@ -62,6 +62,12 @@ export type LightroomAsset = {
   flag?: string;
   url?: string;
   captureDate?: string;
+  keywords?: string[];
+  camera?: string;
+  lens?: string;
+  width?: number;
+  height?: number;
+  gps?: { latitude?: number; longitude?: number; altitude?: number };
 };
 
 export type LightroomSyncResult = {
@@ -135,6 +141,12 @@ function toAsset(a: LrAsset): LightroomAsset {
     rating: a.rating,
     flag: a.flag,
     captureDate: a.captureDate,
+    keywords: a.keywords || [],
+    camera: a.camera,
+    lens: a.lens,
+    width: a.width,
+    height: a.height,
+    gps: a.gps,
   };
 }
 
@@ -615,6 +627,9 @@ export class AdobeLightroomService
     albumId: string;
     catalogId?: string;
     admin: AdminLike;
+    /** Optional Adobe flag filter (pick / rejected / etc.). */
+    flag?: string;
+    limit?: number;
   }): Promise<HublyProviderResult<LightroomAsset[]>> {
     const session = await this.session(opts.admin, opts.businessId);
     if (!session.ok) return session.result as HublyProviderResult<LightroomAsset[]>;
@@ -627,7 +642,10 @@ export class AdobeLightroomService
     );
     if (!cat.ok) return cat.result as HublyProviderResult<LightroomAsset[]>;
 
-    const res = await session.client.listAlbumAssets(cat.catalogId, opts.albumId);
+    const res = await session.client.listAlbumAssets(cat.catalogId, opts.albumId, {
+      flag: opts.flag,
+      limit: opts.limit,
+    });
     if (!res.ok || !res.data) {
       return providerError(this.id, "ADOBE_LIST_ASSETS_FAILED", res.error || "listAssets failed", {
         retryable: true,
@@ -639,6 +657,37 @@ export class AdobeLightroomService
       `${res.data.length} asset(s) in album`,
       { catalogId: cat.catalogId, albumId: opts.albumId },
     );
+  }
+
+  /** Hubly Action: readCatalog — GET /v2/catalog */
+  async getCatalog(opts: {
+    businessId: string;
+    admin: AdminLike;
+  }): Promise<HublyProviderResult<{ id: string; name?: string; created?: string; updated?: string }>> {
+    const session = await this.session(opts.admin, opts.businessId);
+    if (!session.ok) {
+      return session.result as HublyProviderResult<{ id: string; name?: string; created?: string; updated?: string }>;
+    }
+    const res = await session.client.getCatalog();
+    if (!res.ok || !res.data) {
+      return providerError(this.id, "ADOBE_CATALOG_FAILED", res.error || "Could not read catalog", {
+        retryable: true,
+      });
+    }
+    // Cache catalog id via resolve path used elsewhere.
+    await this.resolveCatalogId(
+      opts.admin,
+      opts.businessId,
+      session.client,
+      session.ctx,
+      res.data.id,
+    );
+    return providerOk(this.id, {
+      id: res.data.id,
+      name: res.data.name,
+      created: res.data.created,
+      updated: res.data.updated,
+    }, "Catalog loaded");
   }
 
   async getAsset(opts: {
@@ -815,6 +864,12 @@ export class AdobeLightroomService
           flag: a.flag || null,
           rating: a.rating ?? null,
           captureDate: a.captureDate || null,
+          keywords: a.keywords || [],
+          camera: a.camera || null,
+          lens: a.lens || null,
+          width: a.width ?? null,
+          height: a.height ?? null,
+          gps: a.gps || null,
         })),
         synced_at: lastSyncAt,
       },

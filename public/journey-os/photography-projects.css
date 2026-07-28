@@ -1292,6 +1292,66 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   margin: 4px 0 0;
 }
 
+.pp-lr-workspace .pp-kicker {
+  margin: 0 0 4px;
+}
+.pp-lr-panels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--pp-border);
+}
+.pp-lr-panel-btn {
+  appearance: none;
+  border: 1px solid var(--pp-border);
+  background: var(--pp-surface-2);
+  color: var(--pp-ink-2);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.pp-lr-panel-btn.on {
+  background: var(--pp-navy);
+  border-color: var(--pp-navy);
+  color: #fff;
+}
+.pp-lr-status-card {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--pp-border);
+  background: var(--pp-surface-2);
+}
+.pp-lr-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}
+.pp-lr-status-grid .pp-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pp-ink-3);
+  margin-bottom: 4px;
+}
+.pp-lr-status-grid strong {
+  display: block;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+.pp-lr-status-grid small {
+  display: block;
+  margin-top: 2px;
+  color: var(--pp-ink-3);
+  font-size: 12px;
+}
+
 /* Ask Hubly + coach must not cover Projects CTAs */
 #p-app.jos-photo-projects-mode #jos-ask-fab,
 #p-app.jos-photo-projects-mode .hubly-coach {

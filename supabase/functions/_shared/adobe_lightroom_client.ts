@@ -42,6 +42,12 @@ export type LrAsset = {
   flag?: string;
   captureDate?: string;
   updated?: string;
+  keywords?: string[];
+  camera?: string;
+  lens?: string;
+  width?: number;
+  height?: number;
+  gps?: { latitude?: number; longitude?: number; altitude?: number };
   raw?: unknown;
 };
 
@@ -102,6 +108,73 @@ function isEdited(payload: Record<string, unknown>, row: Record<string, unknown>
   return false;
 }
 
+function asStringArray(val: unknown): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) {
+    return val.map((v) => {
+      if (typeof v === "string") return v;
+      if (v && typeof v === "object" && "value" in (v as object)) {
+        return String((v as { value: unknown }).value);
+      }
+      return String(v);
+    }).filter(Boolean);
+  }
+  if (typeof val === "string") {
+    return val.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function pickKeywords(xmp: Record<string, unknown>, payload: Record<string, unknown>): string[] {
+  const candidates = [
+    xmp.subject,
+    xmp.keywords,
+    xmp.Keyword,
+    xmp["dc:subject"],
+    (xmp.dc && typeof xmp.dc === "object" ? (xmp.dc as Record<string, unknown>).subject : null),
+    payload.keywords,
+    payload.subject,
+  ];
+  const out: string[] = [];
+  const seen: Record<string, boolean> = {};
+  for (const c of candidates) {
+    for (const k of asStringArray(c)) {
+      const key = k.toLowerCase();
+      if (!seen[key]) {
+        seen[key] = true;
+        out.push(k);
+      }
+    }
+  }
+  return out;
+}
+
+function pickCameraLens(xmp: Record<string, unknown>, payload: Record<string, unknown>) {
+  const exif = (xmp.exif || xmp.EXIF || payload.exif || {}) as Record<string, unknown>;
+  const tiff = (xmp.tiff || xmp.TIFF || {}) as Record<string, unknown>;
+  const camera = String(
+    exif.Model || exif.model || tiff.Model || xmp.Model || payload.camera || "",
+  ) || undefined;
+  const lens = String(
+    exif.LensModel || exif.Lens || exif.lensModel || xmp.LensModel || payload.lens || "",
+  ) || undefined;
+  return { camera, lens };
+}
+
+function pickDimensions(xmp: Record<string, unknown>, payload: Record<string, unknown>, importSource: Record<string, unknown>) {
+  const exif = (xmp.exif || xmp.EXIF || {}) as Record<string, unknown>;
+  const w = Number(
+    importSource.width || payload.width || exif.PixelXDimension || xmp.PixelXDimension || 0,
+  );
+  const h = Number(
+    importSource.height || payload.height || exif.PixelYDimension || xmp.PixelYDimension || 0,
+  );
+  return {
+    width: Number.isFinite(w) && w > 0 ? w : undefined,
+    height: Number.isFinite(h) && h > 0 ? h : undefined,
+  };
+}
+
 function mapAsset(row: unknown): LrAsset | null {
   if (!row || typeof row !== "object") return null;
   const r = row as Record<string, unknown>;
@@ -111,6 +184,14 @@ function mapAsset(row: unknown): LrAsset | null {
   const id = String(nested.id || r.id || "");
   if (!id) return null;
   const importSource = (payload.importSource || {}) as Record<string, unknown>;
+  const xmp = (payload.xmp && typeof payload.xmp === "object")
+    ? payload.xmp as Record<string, unknown>
+    : {};
+  const location = (payload.location && typeof payload.location === "object")
+    ? payload.location as Record<string, unknown>
+    : null;
+  const cam = pickCameraLens(xmp, payload);
+  const dims = pickDimensions(xmp, payload, importSource);
   return {
     id,
     name: importSource.fileName
@@ -123,6 +204,18 @@ function mapAsset(row: unknown): LrAsset | null {
     flag: payload.flag ? String(payload.flag) : undefined,
     captureDate: payload.captureDate ? String(payload.captureDate) : undefined,
     updated: nested.updated ? String(nested.updated) : undefined,
+    keywords: pickKeywords(xmp, payload),
+    camera: cam.camera,
+    lens: cam.lens,
+    width: dims.width,
+    height: dims.height,
+    gps: location
+      ? {
+        latitude: typeof location.latitude === "number" ? location.latitude : undefined,
+        longitude: typeof location.longitude === "number" ? location.longitude : undefined,
+        altitude: typeof location.altitude === "number" ? location.altitude : undefined,
+      }
+      : undefined,
     raw: row,
   };
 }

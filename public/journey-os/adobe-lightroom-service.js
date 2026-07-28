@@ -353,36 +353,44 @@
     listAssets: async function (opts) {
       opts = opts || {};
       var res = await invokeEdge('adobe-lightroom', {
-        action: 'listAssets',
+        action: 'browsePhotos',
         business_id: currentBusinessId(opts),
         album_id: opts.albumId || opts.album_id,
         catalog_id: opts.catalogId || opts.catalog_id,
+        project_id: opts.projectId || opts.project_id,
+        flag: opts.flag,
+        favorites_only: opts.favoritesOnly || opts.favorites_only,
+        edited_only: opts.editedOnly || opts.edited_only,
+        min_rating: opts.minRating != null ? opts.minRating : opts.min_rating,
+        keyword: opts.keyword,
+        q: opts.q || opts.query,
+        limit: opts.limit,
       });
       if (res.data && res.data.ok) return res.data;
-      return result({ ok: false, status: 'error', message: 'Could not list assets', data: [] });
+      return result({ ok: false, status: 'error', message: 'Could not browse photos', data: [] });
     },
 
     getAsset: async function (opts) {
       opts = opts || {};
       var res = await invokeEdge('adobe-lightroom', {
-        action: 'getAsset',
+        action: 'viewPhoto',
         business_id: currentBusinessId(opts),
         asset_id: opts.assetId || opts.asset_id,
         catalog_id: opts.catalogId || opts.catalog_id,
       });
-      return res.data || result({ ok: false, status: 'error', message: 'Could not load asset' });
+      return res.data || result({ ok: false, status: 'error', message: 'Could not load photo' });
     },
 
     downloadEditedAsset: async function (opts) {
       opts = opts || {};
       var res = await invokeEdge('adobe-lightroom', {
-        action: 'downloadEditedAsset',
+        action: 'exportFinalPhotos',
         business_id: currentBusinessId(opts),
         asset_id: opts.assetId || opts.asset_id,
         catalog_id: opts.catalogId || opts.catalog_id,
-        rendition_type: opts.renditionType || opts.rendition_type,
+        rendition_type: opts.renditionType || opts.rendition_type || '2048',
       });
-      return res.data || result({ ok: false, status: 'error', message: 'Could not download rendition' });
+      return res.data || result({ ok: false, status: 'error', message: 'Could not export photo' });
     },
 
     downloadEditedPhotos: async function (opts) {
@@ -390,16 +398,68 @@
     },
 
     getFavorites: async function (opts) {
-      var listed = await AdobeLightroomService.listAssets(opts);
-      if (!listed || !listed.ok) return listed || notConfigured({ data: [] });
-      var assets = (listed.data || []).filter(function (a) { return a && a.favorite; });
-      return result({
-        ok: true,
-        status: 'ready',
-        message: assets.length + ' favorite(s)',
-        data: assets,
-      });
+      return AdobeLightroomService.listAssets(Object.assign({}, opts || {}, { favoritesOnly: true }));
     },
+
+    readCatalog: async function (opts) {
+      opts = opts || {};
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'readCatalog',
+        business_id: currentBusinessId(opts),
+      });
+      return res.data || result({ ok: false, status: 'error', message: 'Could not read catalog' });
+    },
+
+    syncCatalogMetadata: async function (opts) {
+      opts = opts || {};
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'syncCatalogMetadata',
+        business_id: currentBusinessId(opts),
+      });
+      return res.data || result({ ok: false, status: 'error', message: 'Could not sync catalog' });
+    },
+
+    linkAlbum: async function (opts) {
+      opts = opts || {};
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'linkAlbum',
+        business_id: currentBusinessId(opts),
+        project_id: opts.projectId || opts.project_id,
+        album_id: opts.albumId || opts.album_id,
+        name: opts.name,
+        catalog_id: opts.catalogId || opts.catalog_id,
+      });
+      var edge = res.data;
+      if (edge && edge.ok) toast(edge.message || 'Album linked');
+      return edge || result({ ok: false, status: 'error', message: 'Could not link album' });
+    },
+
+    unlinkAlbum: async function (opts) {
+      opts = opts || {};
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'unlinkAlbum',
+        business_id: currentBusinessId(opts),
+        project_id: opts.projectId || opts.project_id,
+      });
+      var edge = res.data;
+      if (edge && edge.ok) toast(edge.message || 'Album unlinked');
+      return edge || result({ ok: false, status: 'error', message: 'Could not unlink album' });
+    },
+
+    /* ─── Hubly Actions (product vocabulary — UI must call these) ─── */
+    connectAccount: function (opts) { return AdobeLightroomService.connectAndRedirect(opts); },
+    disconnectAccount: function (opts) { return AdobeLightroomService.disconnect(opts); },
+    reconnectAccount: function (opts) { return AdobeLightroomService.connectAndRedirect(opts); },
+    refreshAuthentication: function (opts) { return AdobeLightroomService.refreshToken(opts); },
+    viewConnectionStatus: function (opts) { return AdobeLightroomService.status(opts); },
+    verifyCatalogHealth: function (opts) { return AdobeLightroomService.health(opts); },
+    createLightroomProject: function (opts) { return AdobeLightroomService.createAlbum(opts); },
+    openLightroomProject: function (opts) { return AdobeLightroomService.openAlbum(opts); },
+    browsePhotos: function (opts) { return AdobeLightroomService.listAssets(opts); },
+    viewPhoto: function (opts) { return AdobeLightroomService.getAsset(opts); },
+    exportFinalPhotos: function (opts) { return AdobeLightroomService.downloadEditedAsset(opts); },
+    syncAlbum: function (opts) { return AdobeLightroomService.syncProject(opts); },
+    uploadToLightroom: function (opts) { return AdobeLightroomService.uploadPhotos(opts); },
 
     openAlbum: async function (opts) {
       opts = opts || {};

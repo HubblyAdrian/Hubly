@@ -108,6 +108,7 @@ describe('Hubly Projects module', () => {
     assert.match(js, /\['media', 'Media'\]/);
     assert.match(js, /\['client', 'Client'\]/);
     assert.match(js, /\['creative', 'Creative'\]/);
+    assert.match(js, /\['lightroom', 'Lightroom'\]/);
     assert.match(js, /\['deliverables', 'Deliverables'\]/);
     assert.match(js, /\['timeline', 'Timeline'\]/);
     assert.match(js, /\['activity', 'Activity'\]/);
@@ -115,9 +116,28 @@ describe('Hubly Projects module', () => {
     assert.doesNotMatch(js, /\['apps', 'Connected Apps'\]/);
     assert.doesNotMatch(js, /\['files', 'Files'\]/);
     assert.match(js, /renderMediaTab/);
+    assert.match(js, /renderLightroomTab/);
     assert.match(js, /renderAiAssistantTab/);
     assert.match(js, /st\.tab = 'media'/);
     assert.match(js, /Math\.min\(3,/);
+  });
+
+  it('exposes Hubly Lightroom Actions in Projects (not Adobe jargon)', () => {
+    const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
+    const svc = readFileSync(join(root, 'public/journey-os/adobe-lightroom-service.js'), 'utf8');
+    const edge = readFileSync(join(root, 'supabase/functions/adobe-lightroom/index.ts'), 'utf8');
+    assert.match(js, /Export Final Photos|lr-export/);
+    assert.match(js, /Browse Photos|lr-browse-photos/);
+    assert.match(js, /Open Lightroom Project/);
+    assert.match(js, /Connect Adobe Account/);
+    assert.match(svc, /connectAccount/);
+    assert.match(svc, /browsePhotos/);
+    assert.match(svc, /exportFinalPhotos/);
+    assert.match(svc, /openLightroomProject/);
+    assert.match(edge, /browsePhotos/);
+    assert.match(edge, /exportFinalPhotos/);
+    assert.match(edge, /unlinkAlbum/);
+    assert.match(edge, /linkAlbum/);
   });
 
   it('ships dashboard metrics, Media upload, Creative tab, and Quick Project', () => {

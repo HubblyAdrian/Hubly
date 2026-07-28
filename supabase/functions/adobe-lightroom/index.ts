@@ -234,18 +234,53 @@ Deno.serve(async (req: Request) => {
       return jsonRes(res, res.ok ? 200 : 400);
     }
 
-    if (action === "listAssets") {
-      if (!albumId) return jsonRes({ error: "album_id required" }, 400);
+    if (action === "listAssets" || action === "browsePhotos") {
+      if (!albumId && projectId) {
+        const ws = await loadWorkspace(admin, projectId);
+        // Resolve linked album from workspace when browsing from a Hubly project.
+        const linked = String(ws?.external_id ||
+          (ws?.metadata as Record<string, unknown> | null)?.album_id || "");
+        if (linked) (body as Record<string, unknown>).album_id = linked;
+      }
+      const browseAlbumId = albumId ||
+        String((body as Record<string, unknown>).album_id || "");
+      if (!browseAlbumId) return jsonRes({ error: "album_id or linked project required" }, 400);
       const res = await lr.listAssets({
         businessId,
-        albumId,
+        albumId: browseAlbumId,
         catalogId: catalogId || undefined,
         admin,
+        flag: body?.flag ? String(body.flag) : undefined,
+        limit: body?.limit != null ? Number(body.limit) : undefined,
       });
-      return jsonRes(res, res.ok ? 200 : 400);
+      if (!res.ok || !res.data) return jsonRes(res, 400);
+      let assets = res.data;
+      // Client-side Hubly filters (Adobe album list has limited query params).
+      if (body?.favorites_only) assets = assets.filter((a) => !!a.favorite);
+      if (body?.edited_only) assets = assets.filter((a) => !!a.edited);
+      if (body?.min_rating != null) {
+        const min = Number(body.min_rating);
+        assets = assets.filter((a) => (a.rating ?? 0) >= min);
+      }
+      if (body?.keyword) {
+        const kw = String(body.keyword).toLowerCase();
+        assets = assets.filter((a) =>
+          (a.keywords || []).some((k) => String(k).toLowerCase().includes(kw)) ||
+          String(a.name || "").toLowerCase().includes(kw)
+        );
+      }
+      if (body?.q) {
+        const q = String(body.q).toLowerCase();
+        assets = assets.filter((a) =>
+          String(a.name || "").toLowerCase().includes(q) ||
+          (a.keywords || []).some((k) => String(k).toLowerCase().includes(q)) ||
+          String(a.camera || "").toLowerCase().includes(q)
+        );
+      }
+      return jsonRes({ ...res, data: assets, message: `${assets.length} photo(s)` });
     }
 
-    if (action === "getAsset") {
+    if (action === "getAsset" || action === "viewPhoto") {
       if (!assetId) return jsonRes({ error: "asset_id required" }, 400);
       const res = await lr.getAsset({
         businessId,
@@ -256,7 +291,71 @@ Deno.serve(async (req: Request) => {
       return jsonRes(res, res.ok ? 200 : 400);
     }
 
-    if (action === "downloadEditedAsset") {
+    if (action === "getCatalog" || action === "readCatalog" || action === "syncCatalogMetadata") {
+      const res = await lr.getCatalog({ businessId, admin });
+      return jsonRes(res, res.ok ? 200 : 400);
+    }
+
+    if (action === "linkAlbum") {
+      if (!projectId || !albumId) return jsonRes({ error: "project_id and album_id required" }, 400);
+      const albumName = name || "Lightroom Album";
+      await upsertWorkspace(admin, {
+        projectId,
+        businessId,
+        albumId,
+        albumName,
+        catalogId: catalogId || undefined,
+        syncState: "linked",
+        metadata: { linked_via: "adobe-lightroom:linkAlbum" },
+      });
+      await admin.from("photography_projects").update({
+        lightroom_status: "album_ready",
+        updated_at: new Date().toISOString(),
+      }).eq("id", projectId).eq("business_id", businessId);
+      return jsonRes({
+        ok: true,
+        status: "ready",
+        provider: ADOBE_PROVIDER_ID,
+        message: `Linked ${albumName} to Hubly project`,
+        data: { albumId, albumName, projectId },
+      });
+    }
+
+    if (action === "unlinkAlbum") {
+      if (!projectId) return jsonRes({ error: "project_id required" }, 400);
+      const ws = await loadWorkspace(admin, projectId);
+      if (!ws) {
+        return jsonRes({
+          ok: true,
+          status: "ready",
+          message: "No Lightroom album linked",
+          data: { unlinked: true },
+        });
+      }
+      await admin.from("photography_project_workspaces").update({
+        sync_state: "unlinked",
+        external_id: null,
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...((ws.metadata && typeof ws.metadata === "object") ? ws.metadata as Record<string, unknown> : {}),
+          unlinked_at: new Date().toISOString(),
+          previous_album_id: ws.external_id,
+        },
+      }).eq("id", ws.id);
+      await admin.from("photography_projects").update({
+        lightroom_status: "not_connected",
+        updated_at: new Date().toISOString(),
+      }).eq("id", projectId).eq("business_id", businessId);
+      return jsonRes({
+        ok: true,
+        status: "ready",
+        provider: ADOBE_PROVIDER_ID,
+        message: "Album unlinked from Hubly project (Adobe album unchanged)",
+        data: { unlinked: true, previousAlbumId: ws.external_id },
+      });
+    }
+
+    if (action === "downloadEditedAsset" || action === "exportFinalPhotos") {
       if (!assetId) return jsonRes({ error: "asset_id required" }, 400);
       const res = await lr.downloadEditedAsset({
         businessId,
@@ -276,6 +375,7 @@ Deno.serve(async (req: Request) => {
           assetId: res.data.assetId,
           contentType: res.data.contentType,
           base64: bytesToBase64(res.data.bytes),
+          renditionType: body?.rendition_type || "2048",
         },
       });
     }
@@ -367,12 +467,19 @@ Deno.serve(async (req: Request) => {
       supported: [
         "health",
         "status",
+        "getCatalog",
+        "readCatalog",
+        "syncCatalogMetadata",
         "listAlbums",
         "createAlbum",
         "renameAlbum",
+        "linkAlbum",
+        "unlinkAlbum",
         "listAssets",
+        "browsePhotos",
         "getAsset",
         "downloadEditedAsset",
+        "exportFinalPhotos",
         "openAlbum",
         "syncProject",
         "uploadPhotos",
