@@ -62,24 +62,50 @@
   }
 
   function renderPromoteDemo(bizId) {
-    var AE = global.HublyActionEngine;
-    if (!AE) return '';
-    var plan = AE.plan('promote_project', { businessId: bizId });
-    var ai = AE.forAi(plan);
+    var IE = global.HublyIntentEngine;
+    var pipeline = IE && typeof IE.run === 'function'
+      ? IE.run('promote_project', { businessId: bizId, emit: false })
+      : null;
+    if (!pipeline || !pipeline.ai) {
+      var AE = global.HublyActionEngine;
+      if (!AE) return '';
+      var plan = AE.plan('promote_project', { businessId: bizId });
+      var ai = AE.forAi(plan);
+      pipeline = {
+        ai: {
+          intent: 'Promote Project',
+          capabilities: ai.need,
+          required: ai.need,
+          optional: [],
+          prompt: ai.prompt
+        }
+      };
+    }
+    var ai = pipeline.ai;
     return '<section class="am-panel am-ai">' +
-      '<p class="am-eyebrow">AI Action Engine</p>' +
-      '<h2>Promote this project</h2>' +
-      '<p class="am-lead">AI asks for <strong>capabilities</strong> — never “Use Canva.”</p>' +
+      '<p class="am-eyebrow">Intent Engine</p>' +
+      '<h2>Ask Hubly → Intent → Capabilities → Execute</h2>' +
+      '<p class="am-lead">AI never names apps. It only declares intent and needed capabilities — Connected Apps resolve the rest.</p>' +
+      '<ol class="am-pipeline">' +
+        '<li><strong>Intent</strong> ' + esc(ai.intent) + '</li>' +
+        '<li><strong>Capabilities</strong> ' + esc((ai.capabilities || []).join(' · ')) + '</li>' +
+        '<li><strong>Execute</strong> Event Bus → Connected Apps</li>' +
+      '</ol>' +
       '<div class="am-need-box">' +
-        '<p class="am-need-k">Need</p>' +
+        '<p class="am-need-k">Intent</p>' +
+        '<p class="am-intent-name">' + esc(ai.intent) + '</p>' +
+        '<p class="am-need-k am-mt">Capabilities needed</p>' +
         '<ul class="am-need-list">' +
-          ai.need.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') +
+          (ai.capabilities || []).map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') +
         '</ul>' +
-        (ai.missing.length
-          ? '<p class="am-missing">Missing: ' + esc(ai.missing.join(', ')) + '</p>'
-          : '<p class="am-ok">All required capabilities are available from Connected Apps.</p>') +
+        ((ai.optional && ai.optional.length)
+          ? '<p class="am-muted am-mt">Optional: ' + esc(ai.optional.join(', ')) + '</p>'
+          : '') +
+        ((pipeline.execution && !pipeline.execution.ready) || (ai.prompt && /Missing:/.test(ai.prompt))
+          ? '<p class="am-missing">Connect apps that provide missing capabilities, then Execute.</p>'
+          : '<p class="am-ok">Ready to Execute via Connected Apps.</p>') +
       '</div>' +
-      '<p class="am-prompt">' + esc(ai.prompt) + '</p>' +
+      '<pre class="am-prompt">' + esc(ai.prompt) + '</pre>' +
       '</section>';
   }
 
@@ -169,17 +195,24 @@
     function onCapabilityEvent(payload, meta) {
       try {
         var type = meta && meta.type;
-        var AE = global.HublyActionEngine;
-        if (!AE) return;
         if (type === 'project.delivered' || type === 'gallery.delivered') {
-          var plan = AE.plan('promote_project', {
-            businessId: (payload && payload.businessId) || businessId(),
-            preferredProviderId: null
-          });
-          AE.publishProposed(plan, {
-            sourceEvent: type,
-            projectId: payload && (payload.projectId || payload.id)
-          });
+          var IE = global.HublyIntentEngine;
+          var AE = global.HublyActionEngine;
+          if (IE && typeof IE.run === 'function') {
+            IE.run('promote_project', {
+              businessId: (payload && payload.businessId) || businessId(),
+              projectId: payload && (payload.projectId || payload.id),
+              emit: true
+            });
+          } else if (AE && typeof AE.plan === 'function') {
+            var plan = AE.plan('promote_project', {
+              businessId: (payload && payload.businessId) || businessId()
+            });
+            AE.publishProposed(plan, {
+              sourceEvent: type,
+              projectId: payload && (payload.projectId || payload.id)
+            });
+          }
         }
       } catch (err) {
         console.warn('Apps event subscriber', err);

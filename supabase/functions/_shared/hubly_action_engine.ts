@@ -1,16 +1,13 @@
 /**
- * Hubly Core — AI Action Engine
+ * Hubly Core — Action Engine (Planner + Resolver)
  *
- * Capability-first planning. AI / Ask Hubly / Automation never hardcode
- * provider names. They declare needed capabilities:
+ * Sits under the Intent Engine:
  *
- *   Need: Marketing Graphic → Connected Apps resolve a creative provider
+ *   Ask Hubly → Intent → Planner → Resolver → Connected Apps → Event Bus → Execution
  *
- * The Action Engine:
- * 1. Maps user intent → required capabilities
- * 2. Discovers Connected Apps that declare those capabilities
- * 3. Builds a workflow plan (steps refer to capabilities, not vendors)
- * 4. Optionally binds a concrete provider at execution time
+ * This module owns Planner (intent → required capabilities) and Resolver
+ * (capability → Connected App). AI-facing copy stays in Intent Engine —
+ * never hardcode vendor names in prompts.
  */
 
 import {

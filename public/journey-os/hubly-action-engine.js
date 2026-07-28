@@ -1,8 +1,9 @@
 /**
- * Hubly Core — AI Action Engine (client)
+ * Hubly Core — Action Engine client (Planner + Resolver)
  *
- * AI says: Need: Marketing Graphic
- * Engine resolves Connected Apps by capability — never hardcodes “Use Canva”.
+ * Prefer HublyIntentEngine for Ask Hubly.
+ * This module maps Intent → Capabilities and resolves Connected Apps.
+ * AI copy must use Intent Engine (Intent → Capabilities → Execute).
  */
 (function (global) {
   'use strict';

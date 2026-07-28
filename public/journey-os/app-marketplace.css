@@ -174,11 +174,32 @@
 }
 .am-missing { margin: 8px 0 0; color: #a14a1e; font-size: 13px; }
 .am-ok { margin: 8px 0 0; color: #2f6b45; font-size: 13px; }
+.am-pipeline {
+  margin: 12px 0 14px;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--am-ink);
+}
+.am-pipeline li { margin: 0 0 4px; }
+.am-intent-name {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.am-mt { margin-top: 10px !important; }
 .am-prompt {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--am-muted);
   line-height: 1.45;
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: rgba(255,255,255,0.65);
+  border: 1px solid var(--am-line);
+  border-radius: 10px;
+  padding: 10px 12px;
 }
 @media (max-width: 640px) {
   .am-shell { padding: 18px 14px 48px; }

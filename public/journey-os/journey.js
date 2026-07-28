@@ -1499,6 +1499,28 @@
       openLeadsRecovery();
       return;
     }
+    // Intent Engine first — Ask Hubly speaks Intent → Capabilities → Execute (never vendors).
+    try {
+      var IE = global.HublyIntentEngine;
+      if (IE && typeof IE.handleAsk === 'function') {
+        var intentHandled = IE.handleAsk(text, {});
+        if (intentHandled && intentHandled.reply) {
+          ahAddMessage('assistant', intentHandled.reply);
+          ahMemoryNote('intent', 'Intent: ' + (intentHandled.intentLabel || intentHandled.intentId), {
+            module: 'ask',
+            intent: intentHandled.intentId
+          });
+          ahPushActivity('ai.action.proposed', 'Intent: ' + (intentHandled.intentLabel || 'Hubly'), {
+            intent: intentHandled.intentId,
+            capabilities: (intentHandled.pipeline && intentHandled.pipeline.ai && intentHandled.pipeline.ai.capabilities) || []
+          });
+          renderAskHubly();
+          return;
+        }
+      }
+    } catch (intentErr) {
+      console.warn('Intent Engine', intentErr);
+    }
     var parsed = ahParseAsk(text);
     if (parsed) return ahProposeAction(parsed.type, parsed.payload);
     var answer = 'Here is the current operating context: ' + ahContextLine() + ' I can answer safely, generate drafts, or propose confirmed actions into the owning modules.';

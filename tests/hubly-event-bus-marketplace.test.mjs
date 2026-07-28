@@ -27,13 +27,33 @@ describe('Hubly Event Bus + Apps Marketplace', () => {
     assert.match(eng, /planAction/);
     assert.match(eng, /describePlanForAi/);
     assert.match(eng, /Marketing Graphics/);
-    assert.match(eng, /Capability-first/);
+    assert.match(eng, /Planner \+ Resolver/);
     assert.doesNotMatch(eng, /Use Canva/);
-    // Runtime messages must speak capabilities (INTENT_NEEDS labels), not vendor CTAs
     assert.match(eng, /Need: \$\{needs/);
     const creative = readFileSync(join(root, 'supabase/functions/_shared/hubly_creative_engine.ts'), 'utf8');
     assert.match(creative, /resolveProviderForCapability/);
     assert.match(creative, /Need: Marketing Graphics/);
+  });
+
+  it('ships Intent Engine above Planner / Resolver / Event Bus', () => {
+    const intent = readFileSync(join(root, 'supabase/functions/_shared/hubly_intent_engine.ts'), 'utf8');
+    const client = readFileSync(join(root, 'public/journey-os/hubly-intent-engine.js'), 'utf8');
+    const html = readFileSync(join(root, 'public/hubly.html'), 'utf8');
+    const journey = readFileSync(join(root, 'public/journey-os/journey.js'), 'utf8');
+    const apps = readFileSync(join(root, 'public/journey-os/app-marketplace.js'), 'utf8');
+    assert.match(intent, /HublyIntentEngine/);
+    assert.match(intent, /recognizeIntent/);
+    assert.match(intent, /runIntentPipeline/);
+    assert.match(intent, /Intent: \$\{label\}/);
+    assert.match(intent, /Promote Project/);
+    assert.doesNotMatch(intent, /Use Canva/);
+    assert.match(client, /HublyIntentEngine/);
+    assert.match(client, /handleAsk/);
+    assert.match(client, /Intent: /);
+    assert.match(html, /hubly-intent-engine\.js/);
+    assert.match(journey, /HublyIntentEngine/);
+    assert.match(apps, /Intent Engine/);
+    assert.match(apps, /Ask Hubly → Intent → Capabilities → Execute/);
   });
 
   it('catalog declares productCapabilities for Marketplace + AI', () => {
