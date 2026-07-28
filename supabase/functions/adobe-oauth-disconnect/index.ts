@@ -93,9 +93,13 @@ Deno.serve(async (req: Request) => {
         connected: !!conn,
         health: conn ? "healthy" : "disconnected",
         account_label: conn?.adobe_email || conn?.adobe_display_name || null,
+        adobe_account: conn?.adobe_email || conn?.adobe_display_name || null,
         adobe_user_id: conn?.adobe_user_id || null,
         connected_at: conn?.connected_at || null,
         last_sync_at: conn?.last_sync_at || null,
+        token_expires_at: conn?.access_token_expires_at || null,
+        last_refresh_at: conn?.last_token_refresh_at || conn?.updated_at || null,
+        catalog_id: conn?.catalog_id || null,
         last_error: conn?.last_error || null,
         // Never return tokens
       });
@@ -123,6 +127,7 @@ Deno.serve(async (req: Request) => {
         access_token: refreshed.data.access_token,
         refresh_token: refreshed.data.refresh_token || conn.refresh_token,
         access_token_expires_at: expiresAt,
+        last_token_refresh_at: new Date().toISOString(),
         last_error: null,
         updated_at: new Date().toISOString(),
       }).eq("business_id", businessId);

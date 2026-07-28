@@ -193,4 +193,178 @@ export async function revokeAdobeToken(token: string): Promise<void> {
   }
 }
 
+/** Row shape for adobe_lightroom_connections (tokens never leave the server). */
+export type AdobeConnectionRow = {
+  id?: string;
+  business_id: string;
+  owner_id: string;
+  adobe_user_id: string;
+  adobe_email: string | null;
+  adobe_display_name: string | null;
+  refresh_token: string | null;
+  access_token: string | null;
+  access_token_expires_at: string | null;
+  last_token_refresh_at?: string | null;
+  catalog_id?: string | null;
+  scopes?: string[] | null;
+  connected_at: string | null;
+  last_sync_at: string | null;
+  last_error: string | null;
+  updated_at?: string | null;
+};
+
+export type AdobeAccessContext = {
+  accessToken: string;
+  expiresAt: string | null;
+  lastRefreshAt: string | null;
+  accountEmail: string | null;
+  accountDisplayName: string | null;
+  adobeUserId: string;
+  catalogId: string | null;
+  connectedAt: string | null;
+  connection: AdobeConnectionRow;
+};
+
+type AdminClient = {
+  from: (table: string) => {
+    select: (cols: string) => {
+      eq: (col: string, val: string) => {
+        maybeSingle: () => Promise<{ data: AdobeConnectionRow | null; error: unknown }>;
+      };
+    };
+    update: (payload: Record<string, unknown>) => {
+      eq: (col: string, val: string) => Promise<{ error: unknown }>;
+    };
+  };
+};
+
+/**
+ * AdobeOAuthService — IMS token vault + refresh.
+ * Shared by Lightroom (and later Express / Photoshop / Frame.io).
+ */
+export class AdobeOAuthService {
+  isConfigured(): boolean {
+    return adobeConfigured();
+  }
+
+  missingEnv(): string[] {
+    const missing: string[] = [];
+    if (!adobeClientId()) missing.push("ADOBE_CLIENT_ID");
+    if (!adobeClientSecret()) missing.push("ADOBE_CLIENT_SECRET");
+    return missing;
+  }
+
+  async getConnection(
+    admin: AdminClient,
+    businessId: string,
+  ): Promise<AdobeConnectionRow | null> {
+    const { data, error } = await admin
+      .from("adobe_lightroom_connections")
+      .select(
+        "id,business_id,owner_id,adobe_user_id,adobe_email,adobe_display_name,refresh_token,access_token,access_token_expires_at,last_token_refresh_at,catalog_id,scopes,connected_at,last_sync_at,last_error,updated_at",
+      )
+      .eq("business_id", businessId)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
+  /**
+   * Returns a usable access token, refreshing when within 60s of expiry.
+   * Never returns tokens to the browser — Edge / provider only.
+   */
+  async getValidAccessToken(
+    admin: AdminClient,
+    businessId: string,
+  ): Promise<AdobeAccessContext> {
+    if (!this.isConfigured()) {
+      throw new Error("Provider not configured. Add ADOBE_CLIENT_ID and ADOBE_CLIENT_SECRET.");
+    }
+    const conn = await this.getConnection(admin, businessId);
+    if (!conn?.access_token && !conn?.refresh_token) {
+      throw new Error("Adobe Lightroom is not connected. Connect Adobe first.");
+    }
+
+    const expiresMs = conn.access_token_expires_at
+      ? new Date(conn.access_token_expires_at).getTime()
+      : 0;
+    const needsRefresh = !conn.access_token || !expiresMs || expiresMs < Date.now() + 60_000;
+
+    if (needsRefresh) {
+      if (!conn.refresh_token) {
+        throw new Error("Adobe access expired — reconnect Adobe Lightroom.");
+      }
+      const refreshed = await refreshAdobeAccessToken({ refreshToken: conn.refresh_token });
+      if (!refreshed.ok) {
+        await admin.from("adobe_lightroom_connections").update({
+          last_error: refreshed.error,
+          updated_at: new Date().toISOString(),
+        }).eq("business_id", businessId);
+        throw new Error(refreshed.error);
+      }
+      const expiresAt = new Date(
+        Date.now() + (refreshed.data.expires_in || 3600) * 1000,
+      ).toISOString();
+      const now = new Date().toISOString();
+      await admin.from("adobe_lightroom_connections").update({
+        access_token: refreshed.data.access_token,
+        refresh_token: refreshed.data.refresh_token || conn.refresh_token,
+        access_token_expires_at: expiresAt,
+        last_token_refresh_at: now,
+        last_error: null,
+        updated_at: now,
+      }).eq("business_id", businessId);
+
+      conn.access_token = refreshed.data.access_token;
+      conn.refresh_token = refreshed.data.refresh_token || conn.refresh_token;
+      conn.access_token_expires_at = expiresAt;
+      conn.last_token_refresh_at = now;
+      conn.last_error = null;
+    }
+
+    return {
+      accessToken: String(conn.access_token),
+      expiresAt: conn.access_token_expires_at,
+      lastRefreshAt: conn.last_token_refresh_at || conn.updated_at || null,
+      accountEmail: conn.adobe_email,
+      accountDisplayName: conn.adobe_display_name,
+      adobeUserId: conn.adobe_user_id,
+      catalogId: conn.catalog_id || null,
+      connectedAt: conn.connected_at,
+      connection: conn,
+    };
+  }
+
+  async saveCatalogId(
+    admin: AdminClient,
+    businessId: string,
+    catalogId: string,
+  ): Promise<void> {
+    if (!catalogId) return;
+    await admin.from("adobe_lightroom_connections").update({
+      catalog_id: catalogId,
+      updated_at: new Date().toISOString(),
+    }).eq("business_id", businessId);
+  }
+
+  async touchSync(
+    admin: AdminClient,
+    businessId: string,
+    lastError: string | null = null,
+  ): Promise<void> {
+    await admin.from("adobe_lightroom_connections").update({
+      last_sync_at: new Date().toISOString(),
+      last_error: lastError,
+      updated_at: new Date().toISOString(),
+    }).eq("business_id", businessId);
+  }
+}
+
+let _oauthSingleton: AdobeOAuthService | null = null;
+
+export function getAdobeOAuthService(): AdobeOAuthService {
+  if (!_oauthSingleton) _oauthSingleton = new AdobeOAuthService();
+  return _oauthSingleton;
+}
+
 export { randomSecret, sanitizeReturnTo, appBaseUrl };

@@ -100,6 +100,7 @@ Deno.serve(async (req: Request) => {
       access_token: refreshed.data.access_token,
       refresh_token: refreshed.data.refresh_token || conn.refresh_token,
       access_token_expires_at: expiresAt,
+      last_token_refresh_at: new Date().toISOString(),
       last_error: null,
       updated_at: new Date().toISOString(),
     }).eq("business_id", businessId);

@@ -39,11 +39,19 @@ export interface ConnectedAppProvider {
 providers/
   google/
   meta/
-  adobe/
+  adobe/          ← OAuthService → HttpClient → LightroomClient → Provider (in _shared today)
   canva/
   quickbooks/
   dropbox/
 ```
+
+**Adobe (live):** see `docs/architecture/ADOBE_LIGHTROOM_API_COMPATIBILITY.md`
+
+```
+AdobeOAuthService → AdobeHttpClient → AdobeLightroomClient → AdobeLightroomProvider → Hubly
+```
+
+Edge entry: `adobe-lightroom` (actions) + `adobe-oauth-*` (IMS).
 
 Eventually:
 

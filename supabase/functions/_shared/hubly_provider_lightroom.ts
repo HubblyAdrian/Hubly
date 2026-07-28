@@ -1,13 +1,15 @@
 /**
- * AdobeLightroomService — Connected App (editing) for Hubly Core.
+ * AdobeLightroomProvider — Connected App (editing) for Hubly Core.
  *
- * Product: Connected Apps. Internal project link may use workspace rows.
- * Lightroom is one provider among many (Canva, Dropbox, Drive, Frame.io, …).
+ * Layers:
+ *   AdobeOAuthService → AdobeHttpClient → AdobeLightroomClient → this Provider → Hubly
  *
  * Production-First:
- * - Honest "Provider not configured" until Adobe credentials exist
- * - NEVER simulate successful Adobe API calls
- * - Projects work fully without Adobe
+ * - Real Adobe Lightroom Services API only (see ADOBE_LIGHTROOM_API_COMPATIBILITY.md)
+ * - Missing credentials → PROVIDER_NOT_CONFIGURED
+ * - Unsupported Adobe ops → UNSUPPORTED_OPERATION
+ * - Deferred Hubly ops → NOT_IMPLEMENTED (never fake success)
+ * - Hubly remains system of record for Photography Projects
  */
 
 import {
@@ -30,11 +32,25 @@ import type {
   ExternalWorkspaceProvider,
   ProjectWorkspace,
 } from "./hubly_project_workspace.ts";
+import {
+  getAdobeOAuthService,
+  type AdobeAccessContext,
+  type AdobeOAuthService,
+} from "./adobe_oauth.ts";
+import {
+  AdobeLightroomClient,
+  createLightroomClient,
+  type LrAlbum,
+  type LrAsset,
+} from "./adobe_lightroom_client.ts";
+import { adobePublicHealth } from "./adobe_http_client.ts";
 
 export type LightroomAlbum = {
   id: string;
   name: string;
   photoCount?: number;
+  subtype?: string;
+  catalogId?: string;
 };
 
 export type LightroomAsset = {
@@ -42,16 +58,38 @@ export type LightroomAsset = {
   name?: string;
   favorite?: boolean;
   edited?: boolean;
+  rating?: number;
+  flag?: string;
   url?: string;
+  captureDate?: string;
 };
 
 export type LightroomSyncResult = {
   projectId: string;
   albumId?: string;
+  catalogId?: string;
   imported: number;
   exported: number;
   favorites: number;
+  edited: number;
+  photoCount: number;
   lastSyncAt: string;
+  /** Workspace metadata patch only — never Hubly project fields. */
+  workspaceMetadata: Record<string, unknown>;
+};
+
+export type LightroomConnectionStatus = {
+  connected: boolean;
+  health: ConnectedAppHealth;
+  adobeAccount: string | null;
+  adobeUserId: string | null;
+  tokenExpiresAt: string | null;
+  lastRefreshAt: string | null;
+  catalogId: string | null;
+  connectedAt: string | null;
+  lastSyncAt: string | null;
+  lastError: string | null;
+  message: string;
 };
 
 export type LightroomConnection = {
@@ -60,10 +98,45 @@ export type LightroomConnection = {
   adobeUserId?: string;
 };
 
-const MISSING_ADOBE = [
-  "ADOBE_CLIENT_ID",
-  "ADOBE_CLIENT_SECRET",
-] as const;
+const MISSING_ADOBE = ["ADOBE_CLIENT_ID", "ADOBE_CLIENT_SECRET"] as const;
+
+type AdminLike = Parameters<AdobeOAuthService["getValidAccessToken"]>[0];
+
+function unsupported(detail: string, meta?: Record<string, unknown>) {
+  return providerError("adobe_lightroom", "UNSUPPORTED_OPERATION", detail, {
+    retryable: false,
+    meta,
+  });
+}
+
+function notImpl(detail: string, meta?: Record<string, unknown>) {
+  return providerError("adobe_lightroom", "NOT_IMPLEMENTED", detail, {
+    retryable: false,
+    meta,
+  });
+}
+
+function toAlbum(a: LrAlbum, catalogId?: string): LightroomAlbum {
+  return {
+    id: a.id,
+    name: a.name,
+    photoCount: a.photoCount,
+    subtype: a.subtype,
+    catalogId,
+  };
+}
+
+function toAsset(a: LrAsset): LightroomAsset {
+  return {
+    id: a.id,
+    name: a.name,
+    favorite: a.favorite,
+    edited: a.edited,
+    rating: a.rating,
+    flag: a.flag,
+    captureDate: a.captureDate,
+  };
+}
 
 /**
  * Capability-facing interface. Runtime / Edge Functions depend on this,
@@ -84,16 +157,45 @@ export interface LightroomProvider {
     businessId: string;
     projectId: string;
     name: string;
+    admin: AdminLike;
   }): Promise<HublyProviderResult<LightroomAlbum>>;
   renameAlbum(opts: {
     businessId: string;
     albumId: string;
     name: string;
+    catalogId?: string;
+    admin: AdminLike;
   }): Promise<HublyProviderResult<LightroomAlbum>>;
-  listAlbums(opts: { businessId: string }): Promise<HublyProviderResult<LightroomAlbum[]>>;
+  listAlbums(opts: {
+    businessId: string;
+    admin: AdminLike;
+    subtype?: string;
+  }): Promise<HublyProviderResult<LightroomAlbum[]>>;
+  listAssets(opts: {
+    businessId: string;
+    albumId: string;
+    catalogId?: string;
+    admin: AdminLike;
+  }): Promise<HublyProviderResult<LightroomAsset[]>>;
+  getAsset(opts: {
+    businessId: string;
+    assetId: string;
+    catalogId?: string;
+    admin: AdminLike;
+  }): Promise<HublyProviderResult<LightroomAsset>>;
+  downloadEditedAsset(opts: {
+    businessId: string;
+    assetId: string;
+    catalogId?: string;
+    renditionType?: string;
+    admin: AdminLike;
+  }): Promise<HublyProviderResult<{ assetId: string; contentType: string | null; bytes: ArrayBuffer }>>;
   syncProject(opts: {
     businessId: string;
     projectId: string;
+    albumId?: string;
+    catalogId?: string;
+    admin: AdminLike;
   }): Promise<HublyProviderResult<LightroomSyncResult>>;
   uploadPhotos(opts: {
     businessId: string;
@@ -101,19 +203,11 @@ export interface LightroomProvider {
     albumId?: string;
     fileRefs: string[];
   }): Promise<HublyProviderResult<{ queued: number }>>;
-  downloadEditedPhotos(opts: {
-    businessId: string;
-    projectId: string;
-    albumId?: string;
-  }): Promise<HublyProviderResult<{ assets: LightroomAsset[] }>>;
-  listAssets(opts: {
+  openAlbum(opts: {
     businessId: string;
     albumId: string;
-  }): Promise<HublyProviderResult<LightroomAsset[]>>;
-  getFavorites(opts: {
-    businessId: string;
-    albumId: string;
-  }): Promise<HublyProviderResult<LightroomAsset[]>>;
+    catalogId?: string;
+  }): Promise<HublyProviderResult<{ albumId: string; hint: string }>>;
   publishGallery(opts: {
     businessId: string;
     projectId: string;
@@ -125,16 +219,16 @@ export interface LightroomProvider {
   }): Promise<HublyProviderResult<{ archived: true }>>;
 }
 
-/**
- * Adobe Lightroom vendor implementation.
- * Methods return PROVIDER_NOT_CONFIGURED until Adobe OAuth secrets exist.
- * When credentials are present, real Adobe API wiring lands here — not in the UI.
- */
 export class AdobeLightroomService
   implements LightroomProvider, ExternalWorkspaceProvider, ConnectedAppProvider
 {
   readonly id = "adobe_lightroom" as const;
   readonly name = "Adobe Lightroom";
+  private oauth: AdobeOAuthService;
+
+  constructor(oauth?: AdobeOAuthService) {
+    this.oauth = oauth || getAdobeOAuthService();
+  }
 
   missingEnv(): string[] {
     const missing: string[] = [];
@@ -152,11 +246,54 @@ export class AdobeLightroomService
     return providerNotConfigured(this.id, this.missingEnv()) as HublyProviderResult<T>;
   }
 
-  /**
-   * OAuth start is Edge-owned (CSRF state + token vault).
-   * Clients: POST adobe-oauth-start → navigate to returned `url`.
-   * Callback: /functions/v1/adobe-oauth-callback (verify_jwt = false).
-   */
+  private async session(
+    admin: AdminLike,
+    businessId: string,
+  ): Promise<
+    | { ok: true; ctx: AdobeAccessContext; client: AdobeLightroomClient }
+    | { ok: false; result: HublyProviderResult<never> }
+  > {
+    if (!this.isConfigured()) return { ok: false, result: this.notReady() };
+    try {
+      const ctx = await this.oauth.getValidAccessToken(admin, businessId);
+      return { ok: true, ctx, client: createLightroomClient(ctx.accessToken) };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/not configured/i.test(msg)) return { ok: false, result: this.notReady() };
+      return {
+        ok: false,
+        result: providerError(this.id, "ADOBE_AUTH_FAILED", msg, { retryable: true }),
+      };
+    }
+  }
+
+  private async resolveCatalogId(
+    admin: AdminLike,
+    businessId: string,
+    client: AdobeLightroomClient,
+    ctx: AdobeAccessContext,
+    override?: string,
+  ): Promise<{ ok: true; catalogId: string } | { ok: false; result: HublyProviderResult<never> }> {
+    if (override) return { ok: true, catalogId: override };
+    if (ctx.catalogId) return { ok: true, catalogId: ctx.catalogId };
+    const cat = await client.getCatalog();
+    if (!cat.ok || !cat.data?.id) {
+      return {
+        ok: false,
+        result: providerError(
+          this.id,
+          "ADOBE_CATALOG_FAILED",
+          cat.error || "Could not load Lightroom catalog",
+          { retryable: true },
+        ),
+      };
+    }
+    await this.oauth.saveCatalogId(admin, businessId, cat.data.id);
+    return { ok: true, catalogId: cat.data.id };
+  }
+
+  /* ─── OAuth surface (Edge owns CSRF; provider documents entry) ─── */
+
   async connect(opts: {
     businessId: string;
     returnTo?: string;
@@ -170,11 +307,9 @@ export class AdobeLightroomService
     return providerOk(
       this.id,
       { authorizeUrl: "" },
-      "Adobe OAuth is live — invoke Edge Function adobe-oauth-start with business_id (and optional return_to / project_id) to receive the IMS authorize URL.",
+      "Adobe OAuth is live — invoke Edge Function adobe-oauth-start with business_id.",
       {
-        adobeRequired: true,
         edgeFunction: "adobe-oauth-start",
-        callbackFunction: "adobe-oauth-callback",
         businessId: opts.businessId,
         returnTo: opts.returnTo || null,
       },
@@ -185,86 +320,402 @@ export class AdobeLightroomService
     businessId: string;
   }): Promise<HublyProviderResult<{ disconnected: true }>> {
     if (!this.isConfigured()) return this.notReady();
-    if (!opts.businessId) {
-      return providerError(this.id, "BUSINESS_REQUIRED", "businessId is required", {
-        retryable: false,
-      });
-    }
     return providerOk(
       this.id,
       { disconnected: true as const },
-      "Invoke Edge Function adobe-oauth-disconnect with action=disconnect to revoke tokens and clear the connection.",
+      "Invoke Edge Function adobe-oauth-disconnect with action=disconnect.",
       { edgeFunction: "adobe-oauth-disconnect", businessId: opts.businessId },
     );
   }
 
   async refreshToken(opts: {
     businessId: string;
+    admin?: AdminLike;
   }): Promise<HublyProviderResult<{ expiresAt?: string }>> {
     if (!this.isConfigured()) return this.notReady();
-    if (!opts.businessId) {
-      return providerError(this.id, "BUSINESS_REQUIRED", "businessId is required", {
-        retryable: false,
+    if (!opts.admin) {
+      return providerOk(
+        this.id,
+        { expiresAt: undefined },
+        "Invoke Edge Function adobe-oauth-refresh to rotate the access token.",
+        { edgeFunction: "adobe-oauth-refresh", businessId: opts.businessId },
+      );
+    }
+    try {
+      const ctx = await this.oauth.getValidAccessToken(opts.admin, opts.businessId);
+      return providerOk(this.id, { expiresAt: ctx.expiresAt || undefined }, "Adobe token valid");
+    } catch (e) {
+      return providerError(
+        this.id,
+        "ADOBE_REFRESH_FAILED",
+        e instanceof Error ? e.message : String(e),
+        { retryable: true },
+      );
+    }
+  }
+
+  /* ─── Step 1: Health / Status ─── */
+
+  async health(opts?: {
+    businessId?: string;
+    admin?: AdminLike;
+  }): Promise<HublyProviderResult<ConnectedAppHealth>> {
+    // Always probe public Lightroom health (no secrets).
+    const probe = await adobePublicHealth();
+    if (!probe.ok) {
+      return providerOk(
+        this.id,
+        "error" as const,
+        `Lightroom API health check failed (${probe.status})`,
+        { adobeHealth: probe.data },
+      );
+    }
+    if (!this.isConfigured()) {
+      return providerOk(this.id, "not_configured" as const, "Lightroom API reachable — Hubly credentials missing");
+    }
+    if (opts?.businessId && opts?.admin) {
+      const session = await this.session(opts.admin, opts.businessId);
+      if (!session.ok) {
+        return providerOk(this.id, "disconnected" as const, session.result.message);
+      }
+      const cat = await session.client.getCatalog();
+      if (!cat.ok) {
+        return providerOk(this.id, "error" as const, cat.error || "Token rejected by Lightroom");
+      }
+      return providerOk(this.id, "healthy" as const, "Adobe Lightroom connected and catalog reachable");
+    }
+    return providerOk(this.id, "healthy" as const, "Lightroom API healthy — credentials configured");
+  }
+
+  async status(opts: {
+    businessId: string;
+    projectId?: string;
+    admin?: AdminLike;
+  }): Promise<HublyProviderResult<ConnectedAppStatus & LightroomConnectionStatus>> {
+    if (!this.isConfigured()) {
+      const payload: ConnectedAppStatus & LightroomConnectionStatus = {
+        connected: false,
+        health: "not_configured",
+        adobeAccount: null,
+        adobeUserId: null,
+        tokenExpiresAt: null,
+        lastRefreshAt: null,
+        catalogId: null,
+        connectedAt: null,
+        lastSyncAt: null,
+        lastError: null,
+        message: "Add ADOBE_CLIENT_ID and ADOBE_CLIENT_SECRET to connect Lightroom.",
+      };
+      return providerOk(this.id, payload, "Lightroom not configured");
+    }
+
+    if (!opts.admin) {
+      const payload: ConnectedAppStatus & LightroomConnectionStatus = {
+        connected: false,
+        health: "disconnected",
+        adobeAccount: null,
+        adobeUserId: null,
+        tokenExpiresAt: null,
+        lastRefreshAt: null,
+        catalogId: null,
+        connectedAt: null,
+        lastSyncAt: null,
+        lastError: null,
+        message: "Pass service-role admin to status() or call adobe-lightroom action=status.",
+      };
+      return providerOk(this.id, payload, "Status requires server context");
+    }
+
+    const conn = await this.oauth.getConnection(opts.admin, opts.businessId);
+    if (!conn) {
+      const payload: ConnectedAppStatus & LightroomConnectionStatus = {
+        connected: false,
+        health: "disconnected",
+        adobeAccount: null,
+        adobeUserId: null,
+        tokenExpiresAt: null,
+        lastRefreshAt: null,
+        catalogId: null,
+        connectedAt: null,
+        lastSyncAt: null,
+        lastError: null,
+        message: "Adobe Lightroom is not connected.",
+      };
+      return providerOk(this.id, payload, "Lightroom disconnected");
+    }
+
+    // Verify token against live catalog.
+    let health: ConnectedAppHealth = "healthy";
+    let verifyError: string | null = null;
+    let catalogId = conn.catalog_id || null;
+    try {
+      const ctx = await this.oauth.getValidAccessToken(opts.admin, opts.businessId);
+      const client = createLightroomClient(ctx.accessToken);
+      const cat = await client.getCatalog();
+      if (!cat.ok || !cat.data?.id) {
+        health = "error";
+        verifyError = cat.error || "Catalog verify failed";
+      } else {
+        catalogId = cat.data.id;
+        if (catalogId !== conn.catalog_id) {
+          await this.oauth.saveCatalogId(opts.admin, opts.businessId, catalogId);
+        }
+      }
+    } catch (e) {
+      health = "error";
+      verifyError = e instanceof Error ? e.message : String(e);
+    }
+
+    const adobeAccount = conn.adobe_email || conn.adobe_display_name || null;
+    const payload: ConnectedAppStatus & LightroomConnectionStatus = {
+      connected: true,
+      health,
+      adobeAccount,
+      adobeUserId: conn.adobe_user_id,
+      tokenExpiresAt: conn.access_token_expires_at,
+      lastRefreshAt: conn.last_token_refresh_at || conn.updated_at || null,
+      catalogId,
+      connectedAt: conn.connected_at,
+      lastSyncAt: conn.last_sync_at,
+      lastError: verifyError || conn.last_error,
+      message: health === "healthy"
+        ? `Connected as ${adobeAccount || conn.adobe_user_id}`
+        : (verifyError || "Adobe connection needs attention"),
+      accountLabel: adobeAccount || undefined,
+    };
+    return providerOk(this.id, payload, payload.message);
+  }
+
+  /* ─── Step 2: Albums ─── */
+
+  async listAlbums(opts: {
+    businessId: string;
+    admin: AdminLike;
+    subtype?: string;
+  }): Promise<HublyProviderResult<LightroomAlbum[]>> {
+    const session = await this.session(opts.admin, opts.businessId);
+    if (!session.ok) return session.result as HublyProviderResult<LightroomAlbum[]>;
+    const cat = await this.resolveCatalogId(
+      opts.admin,
+      opts.businessId,
+      session.client,
+      session.ctx,
+    );
+    if (!cat.ok) return cat.result as HublyProviderResult<LightroomAlbum[]>;
+
+    const res = await session.client.listAlbums(cat.catalogId, {
+      subtype: opts.subtype || "project",
+    });
+    if (!res.ok || !res.data) {
+      return providerError(this.id, "ADOBE_LIST_ALBUMS_FAILED", res.error || "listAlbums failed", {
+        retryable: true,
       });
     }
     return providerOk(
       this.id,
-      { expiresAt: undefined },
-      "Invoke Edge Function adobe-oauth-refresh (or adobe-oauth-disconnect action=refresh) to rotate the access token. Tokens never leave the server.",
-      { edgeFunction: "adobe-oauth-refresh", businessId: opts.businessId },
+      res.data.map((a) => toAlbum(a, cat.catalogId)),
+      `Found ${res.data.length} Lightroom album(s)`,
+      { catalogId: cat.catalogId },
     );
   }
 
-  async createAlbum(_opts: {
+  async createAlbum(opts: {
     businessId: string;
     projectId: string;
     name: string;
+    admin: AdminLike;
+    /** Existing workspace external_id — reuse instead of creating duplicates. */
+    existingAlbumId?: string | null;
+    existingCatalogId?: string | null;
   }): Promise<HublyProviderResult<LightroomAlbum>> {
-    if (!this.isConfigured()) return this.notReady();
-    return providerError(
+    const session = await this.session(opts.admin, opts.businessId);
+    if (!session.ok) return session.result as HublyProviderResult<LightroomAlbum>;
+    const cat = await this.resolveCatalogId(
+      opts.admin,
+      opts.businessId,
+      session.client,
+      session.ctx,
+      opts.existingCatalogId || undefined,
+    );
+    if (!cat.ok) return cat.result as HublyProviderResult<LightroomAlbum>;
+
+    // Reuse linked workspace album — do not create duplicates.
+    if (opts.existingAlbumId) {
+      const existing = await session.client.getAlbum(cat.catalogId, opts.existingAlbumId);
+      if (existing.ok && existing.data) {
+        return providerOk(
+          this.id,
+          toAlbum(existing.data, cat.catalogId),
+          "Reused existing Lightroom album for this project",
+          { reused: true, catalogId: cat.catalogId },
+        );
+      }
+    }
+
+    const created = await session.client.createProjectAlbum({
+      catalogId: cat.catalogId,
+      name: opts.name,
+      remoteId: opts.projectId,
+    });
+    if (!created.ok || !created.data) {
+      return providerError(
+        this.id,
+        "ADOBE_CREATE_ALBUM_FAILED",
+        created.error || "createAlbum failed",
+        { retryable: true },
+      );
+    }
+    return providerOk(
       this.id,
-      "ADOBE_API_NOT_IMPLEMENTED",
-      "Create Lightroom album is not wired yet.",
-      { retryable: false },
+      toAlbum(created.data, cat.catalogId),
+      `Created Lightroom album “${created.data.name}”`,
+      { reused: false, catalogId: cat.catalogId },
     );
   }
 
-  async renameAlbum(_opts: {
+  async renameAlbum(opts: {
     businessId: string;
     albumId: string;
     name: string;
+    catalogId?: string;
+    admin: AdminLike;
   }): Promise<HublyProviderResult<LightroomAlbum>> {
-    if (!this.isConfigured()) return this.notReady();
-    return providerError(
+    const session = await this.session(opts.admin, opts.businessId);
+    if (!session.ok) return session.result as HublyProviderResult<LightroomAlbum>;
+    const cat = await this.resolveCatalogId(
+      opts.admin,
+      opts.businessId,
+      session.client,
+      session.ctx,
+      opts.catalogId,
+    );
+    if (!cat.ok) return cat.result as HublyProviderResult<LightroomAlbum>;
+
+    const res = await session.client.renameAlbum({
+      catalogId: cat.catalogId,
+      albumId: opts.albumId,
+      name: opts.name,
+    });
+    if (!res.ok || !res.data) {
+      return providerError(
+        this.id,
+        "ADOBE_RENAME_ALBUM_FAILED",
+        res.error ||
+          "renameAlbum failed — Adobe only allows updates for project albums created by this app",
+        { retryable: true },
+      );
+    }
+    return providerOk(this.id, toAlbum(res.data, cat.catalogId), `Renamed album to “${opts.name}”`);
+  }
+
+  /* ─── Step 3: Assets ─── */
+
+  async listAssets(opts: {
+    businessId: string;
+    albumId: string;
+    catalogId?: string;
+    admin: AdminLike;
+  }): Promise<HublyProviderResult<LightroomAsset[]>> {
+    const session = await this.session(opts.admin, opts.businessId);
+    if (!session.ok) return session.result as HublyProviderResult<LightroomAsset[]>;
+    const cat = await this.resolveCatalogId(
+      opts.admin,
+      opts.businessId,
+      session.client,
+      session.ctx,
+      opts.catalogId,
+    );
+    if (!cat.ok) return cat.result as HublyProviderResult<LightroomAsset[]>;
+
+    const res = await session.client.listAlbumAssets(cat.catalogId, opts.albumId);
+    if (!res.ok || !res.data) {
+      return providerError(this.id, "ADOBE_LIST_ASSETS_FAILED", res.error || "listAssets failed", {
+        retryable: true,
+      });
+    }
+    return providerOk(
       this.id,
-      "ADOBE_API_NOT_IMPLEMENTED",
-      "Rename Lightroom album is not wired yet.",
-      { retryable: false },
+      res.data.map(toAsset),
+      `${res.data.length} asset(s) in album`,
+      { catalogId: cat.catalogId, albumId: opts.albumId },
     );
   }
 
-  async listAlbums(_opts: {
+  async getAsset(opts: {
     businessId: string;
-  }): Promise<HublyProviderResult<LightroomAlbum[]>> {
-    if (!this.isConfigured()) return this.notReady();
-    return providerError(
-      this.id,
-      "ADOBE_API_NOT_IMPLEMENTED",
-      "List Lightroom albums is not wired yet.",
-      { retryable: false },
+    assetId: string;
+    catalogId?: string;
+    admin: AdminLike;
+  }): Promise<HublyProviderResult<LightroomAsset>> {
+    const session = await this.session(opts.admin, opts.businessId);
+    if (!session.ok) return session.result as HublyProviderResult<LightroomAsset>;
+    const cat = await this.resolveCatalogId(
+      opts.admin,
+      opts.businessId,
+      session.client,
+      session.ctx,
+      opts.catalogId,
     );
+    if (!cat.ok) return cat.result as HublyProviderResult<LightroomAsset>;
+
+    const res = await session.client.getAsset(cat.catalogId, opts.assetId);
+    if (!res.ok || !res.data) {
+      return providerError(this.id, "ADOBE_GET_ASSET_FAILED", res.error || "getAsset failed", {
+        retryable: true,
+      });
+    }
+    return providerOk(this.id, toAsset(res.data), "Asset loaded");
   }
 
-  async syncProject(_opts: {
+  async downloadEditedAsset(opts: {
     businessId: string;
-    projectId: string;
-  }): Promise<HublyProviderResult<LightroomSyncResult>> {
-    if (!this.isConfigured()) return this.notReady();
-    return providerError(
+    assetId: string;
+    catalogId?: string;
+    renditionType?: string;
+    admin: AdminLike;
+  }): Promise<HublyProviderResult<{ assetId: string; contentType: string | null; bytes: ArrayBuffer }>> {
+    const session = await this.session(opts.admin, opts.businessId);
+    if (!session.ok) {
+      return session.result as HublyProviderResult<
+        { assetId: string; contentType: string | null; bytes: ArrayBuffer }
+      >;
+    }
+    const cat = await this.resolveCatalogId(
+      opts.admin,
+      opts.businessId,
+      session.client,
+      session.ctx,
+      opts.catalogId,
+    );
+    if (!cat.ok) {
+      return cat.result as HublyProviderResult<
+        { assetId: string; contentType: string | null; bytes: ArrayBuffer }
+      >;
+    }
+
+    const res = await session.client.getRendition({
+      catalogId: cat.catalogId,
+      assetId: opts.assetId,
+      renditionType: opts.renditionType || "2048",
+    });
+    if (!res.ok || !res.data) {
+      return providerError(
+        this.id,
+        "ADOBE_RENDITION_FAILED",
+        res.error ||
+          "Rendition not available — Adobe may need the master uploaded and renditions generated first",
+        { retryable: true },
+      );
+    }
+    return providerOk(
       this.id,
-      "ADOBE_API_NOT_IMPLEMENTED",
-      "Sync project with Lightroom is not wired yet.",
-      { retryable: false },
+      {
+        assetId: res.data.assetId,
+        contentType: res.data.contentType,
+        bytes: res.data.bytes,
+      },
+      "Rendition downloaded",
+      { renditionType: res.data.renditionType },
     );
   }
 
@@ -274,52 +725,121 @@ export class AdobeLightroomService
     albumId?: string;
     fileRefs: string[];
   }): Promise<HublyProviderResult<{ queued: number }>> {
-    if (!this.isConfigured()) return this.notReady();
-    return providerError(
-      this.id,
-      "ADOBE_API_NOT_IMPLEMENTED",
-      "Upload to Lightroom is not wired yet.",
-      { retryable: false },
+    // Adobe documents Create Asset + Create Master, but Hubly upload pipeline is deferred.
+    return notImpl(
+      "Photo upload to Lightroom is deferred. Adobe supports PUT /assets/{id} + /master — Hubly will wire this in a later step. Upload in Hubly or Lightroom for now.",
+      {
+        adobeEndpoints: [
+          "PUT /v2/catalogs/{catalog_id}/assets/{asset_id}",
+          "PUT /v2/catalogs/{catalog_id}/assets/{asset_id}/master",
+        ],
+      },
     );
   }
 
-  async downloadEditedPhotos(_opts: {
+  async openAlbum(opts: {
+    businessId: string;
+    albumId: string;
+    catalogId?: string;
+  }): Promise<HublyProviderResult<{ albumId: string; hint: string }>> {
+    // No documented Lightroom deep-link URI for partner project albums.
+    return unsupported(
+      "Adobe does not document a deep-link URI to open a specific album. Open Adobe Lightroom → Connections to find this Hubly project album.",
+      {
+        albumId: opts.albumId,
+        catalogId: opts.catalogId || null,
+        hint: "Open Adobe Lightroom desktop or lightroom.adobe.com → Connections",
+      },
+    );
+  }
+
+  /* ─── Step 5: Sync (Hubly = system of record) ─── */
+
+  async syncProject(opts: {
     businessId: string;
     projectId: string;
     albumId?: string;
-  }): Promise<HublyProviderResult<{ assets: LightroomAsset[] }>> {
-    if (!this.isConfigured()) return this.notReady();
-    return providerError(
-      this.id,
-      "ADOBE_API_NOT_IMPLEMENTED",
-      "Download edited photos is not wired yet.",
-      { retryable: false },
+    catalogId?: string;
+    admin: AdminLike;
+  }): Promise<HublyProviderResult<LightroomSyncResult>> {
+    const session = await this.session(opts.admin, opts.businessId);
+    if (!session.ok) return session.result as HublyProviderResult<LightroomSyncResult>;
+    const cat = await this.resolveCatalogId(
+      opts.admin,
+      opts.businessId,
+      session.client,
+      session.ctx,
+      opts.catalogId,
     );
-  }
+    if (!cat.ok) return cat.result as HublyProviderResult<LightroomSyncResult>;
 
-  async listAssets(_opts: {
-    businessId: string;
-    albumId: string;
-  }): Promise<HublyProviderResult<LightroomAsset[]>> {
-    if (!this.isConfigured()) return this.notReady();
-    return providerError(
-      this.id,
-      "ADOBE_API_NOT_IMPLEMENTED",
-      "List Lightroom assets is not wired yet.",
-      { retryable: false },
-    );
-  }
+    const albumId = opts.albumId;
+    if (!albumId) {
+      return providerError(
+        this.id,
+        "ALBUM_REQUIRED",
+        "Create or link a Lightroom album before syncing.",
+        { retryable: false },
+      );
+    }
 
-  async getFavorites(_opts: {
-    businessId: string;
-    albumId: string;
-  }): Promise<HublyProviderResult<LightroomAsset[]>> {
-    if (!this.isConfigured()) return this.notReady();
-    return providerError(
+    const assetsRes = await session.client.listAlbumAssets(cat.catalogId, albumId);
+    if (!assetsRes.ok || !assetsRes.data) {
+      await this.oauth.touchSync(opts.admin, opts.businessId, assetsRes.error || "sync failed");
+      return providerError(
+        this.id,
+        "ADOBE_SYNC_FAILED",
+        assetsRes.error || "Could not list album assets",
+        { retryable: true },
+      );
+    }
+
+    const assets = assetsRes.data;
+    const favorites = assets.filter((a) => a.favorite).length;
+    const edited = assets.filter((a) => a.edited).length;
+    const lastSyncAt = new Date().toISOString();
+
+    // Metadata only — never overwrite Hubly project name/status/gallery/invoices.
+    const workspaceMetadata: Record<string, unknown> = {
+      lightroom_sync: {
+        catalog_id: cat.catalogId,
+        album_id: albumId,
+        photo_count: assets.length,
+        favorites,
+        edited,
+        assets: assets.map((a) => ({
+          id: a.id,
+          name: a.name || null,
+          favorite: a.favorite,
+          edited: a.edited,
+          flag: a.flag || null,
+          rating: a.rating ?? null,
+          captureDate: a.captureDate || null,
+        })),
+        synced_at: lastSyncAt,
+      },
+    };
+
+    await this.oauth.touchSync(opts.admin, opts.businessId, null);
+
+    const data: LightroomSyncResult = {
+      projectId: opts.projectId,
+      albumId,
+      catalogId: cat.catalogId,
+      imported: assets.length,
+      exported: 0,
+      favorites,
+      edited,
+      photoCount: assets.length,
+      lastSyncAt,
+      workspaceMetadata,
+    };
+
+    return providerOk(
       this.id,
-      "ADOBE_API_NOT_IMPLEMENTED",
-      "Get Lightroom favorites is not wired yet.",
-      { retryable: false },
+      data,
+      `Synced ${assets.length} photo(s) · ${favorites} favorite(s) · ${edited} edited — Hubly project fields unchanged`,
+      { hublySystemOfRecord: true },
     );
   }
 
@@ -328,12 +848,10 @@ export class AdobeLightroomService
     projectId: string;
     galleryId: string;
   }): Promise<HublyProviderResult<{ shareUrl?: string }>> {
-    // Gallery publish is a Hubly capability — Adobe may enhance later.
-    // Without Adobe, Hubly still publishes its own client gallery.
     return providerOk(
       this.id,
       { shareUrl: undefined },
-      "Gallery publish uses Hubly delivery. Adobe export is optional and not wired yet.",
+      "Gallery publish uses Hubly delivery. Adobe export is optional.",
       { adobeRequired: false },
     );
   }
@@ -342,16 +860,16 @@ export class AdobeLightroomService
     businessId: string;
     projectId: string;
   }): Promise<HublyProviderResult<{ archived: true }>> {
-    // Archiving in Hubly never requires Adobe. Optional Adobe archive lands later.
     return providerOk(
       this.id,
       { archived: true as const },
-      "Project archived in Hubly. Adobe archive sync is optional and not wired yet.",
+      "Project archived in Hubly. Adobe archive sync is optional and not wired.",
       { adobeRequired: false },
     );
   }
 
-  /** ExternalWorkspaceProvider — attach Adobe as one of many project workspaces. */
+  /* ─── ExternalWorkspaceProvider ─── */
+
   async connectWorkspace(opts: {
     businessId: string;
     projectId: string;
@@ -377,8 +895,7 @@ export class AdobeLightroomService
           metadata: { via: "AdobeLightroomService.connectWorkspace" },
         },
       },
-      "Adobe Lightroom Connected App connection started",
-      { adobeRequired: true },
+      "Adobe Lightroom connection started",
     );
   }
 
@@ -394,14 +911,26 @@ export class AdobeLightroomService
     businessId: string;
     projectId: string;
     workspaceId?: string;
+    albumId?: string;
+    catalogId?: string;
+    admin?: AdminLike;
   }): Promise<HublyProviderResult<ProjectWorkspace>> {
+    if (!opts.admin) {
+      return providerError(
+        this.id,
+        "ADMIN_REQUIRED",
+        "syncWorkspace requires service-role admin context",
+        { retryable: false },
+      );
+    }
     const synced = await this.syncProject({
       businessId: opts.businessId,
       projectId: opts.projectId,
+      albumId: opts.albumId,
+      catalogId: opts.catalogId,
+      admin: opts.admin,
     });
-    if (!synced.ok) {
-      return synced as HublyProviderResult<ProjectWorkspace>;
-    }
+    if (!synced.ok) return synced as HublyProviderResult<ProjectWorkspace>;
     return providerOk(
       this.id,
       {
@@ -412,19 +941,19 @@ export class AdobeLightroomService
         externalId: synced.data?.albumId || null,
         syncState: "synced",
         lastSyncAt: synced.data?.lastSyncAt || new Date().toISOString(),
-        metadata: { sync: synced.data },
+        metadata: synced.data?.workspaceMetadata || {},
       },
       "Lightroom Connected App synced",
     );
   }
 
-  /* ─── ConnectedAppProvider ─────────────────────────────────────────── */
+  /* ─── ConnectedAppProvider ─── */
 
   permissions(): ConnectedAppPermission[] {
     return [
       { id: "catalog:read", label: "Read catalogs", required: true },
       { id: "assets:read", label: "Read photos", required: true },
-      { id: "assets:write", label: "Upload / sync photos", required: true },
+      { id: "assets:write", label: "Upload / sync photos", required: false },
     ];
   }
 
@@ -443,50 +972,33 @@ export class AdobeLightroomService
   async sync(opts: {
     businessId: string;
     projectId?: string;
+    albumId?: string;
+    catalogId?: string;
+    admin?: AdminLike;
   }): Promise<HublyProviderResult<{ lastSyncAt: string }>> {
     if (!opts.projectId) {
       return providerError(this.id, "PROJECT_REQUIRED", "projectId required to sync Lightroom", {
         retryable: false,
       });
     }
+    if (!opts.admin) {
+      return providerError(this.id, "ADMIN_REQUIRED", "sync requires service-role admin", {
+        retryable: false,
+      });
+    }
     const res = await this.syncProject({
       businessId: opts.businessId,
       projectId: opts.projectId,
+      albumId: opts.albumId,
+      catalogId: opts.catalogId,
+      admin: opts.admin,
     });
     if (!res.ok) return res as HublyProviderResult<{ lastSyncAt: string }>;
     return providerOk(
       this.id,
       { lastSyncAt: res.data?.lastSyncAt || new Date().toISOString() },
-      "Lightroom sync requested",
+      "Lightroom sync complete",
     );
-  }
-
-  async status(opts: {
-    businessId: string;
-    projectId?: string;
-  }): Promise<HublyProviderResult<ConnectedAppStatus>> {
-    if (!this.isConfigured()) {
-      return providerOk(this.id, {
-        connected: false,
-        health: "not_configured",
-        message: "Add ADOBE_CLIENT_ID and ADOBE_CLIENT_SECRET to connect Lightroom.",
-      }, "Lightroom not configured");
-    }
-    // Live connected/account state is service-role only — use adobe-oauth-disconnect action=status.
-    return providerOk(this.id, {
-      connected: false,
-      health: "disconnected",
-      message: opts.businessId
-        ? "Credentials present. Call adobe-oauth-disconnect action=status for live connection state (tokens stay server-side)."
-        : "Credentials present. Connect via adobe-oauth-start.",
-    }, "Lightroom OAuth ready");
-  }
-
-  async health(): Promise<HublyProviderResult<ConnectedAppHealth>> {
-    if (!this.isConfigured()) {
-      return providerOk(this.id, "not_configured" as const, "Lightroom not configured");
-    }
-    return providerOk(this.id, "healthy" as const, "Adobe credentials configured — OAuth via Edge Functions");
   }
 }
 
@@ -508,29 +1020,61 @@ export const AdobeLightroom = {
     getAdobeLightroomService().disconnect(opts),
   refreshToken: (opts: { businessId: string }) =>
     getAdobeLightroomService().refreshToken(opts),
-  createAlbum: (opts: { businessId: string; projectId: string; name: string }) =>
-    getAdobeLightroomService().createAlbum(opts),
-  renameAlbum: (opts: { businessId: string; albumId: string; name: string }) =>
-    getAdobeLightroomService().renameAlbum(opts),
-  listAlbums: (opts: { businessId: string }) =>
+  health: (opts?: { businessId?: string; admin?: AdminLike }) =>
+    getAdobeLightroomService().health(opts),
+  status: (opts: { businessId: string; admin?: AdminLike }) =>
+    getAdobeLightroomService().status(opts),
+  createAlbum: (opts: {
+    businessId: string;
+    projectId: string;
+    name: string;
+    admin: AdminLike;
+    existingAlbumId?: string | null;
+    existingCatalogId?: string | null;
+  }) => getAdobeLightroomService().createAlbum(opts),
+  renameAlbum: (opts: {
+    businessId: string;
+    albumId: string;
+    name: string;
+    admin: AdminLike;
+    catalogId?: string;
+  }) => getAdobeLightroomService().renameAlbum(opts),
+  listAlbums: (opts: { businessId: string; admin: AdminLike; subtype?: string }) =>
     getAdobeLightroomService().listAlbums(opts),
-  syncProject: (opts: { businessId: string; projectId: string }) =>
-    getAdobeLightroomService().syncProject(opts),
+  listAssets: (opts: {
+    businessId: string;
+    albumId: string;
+    admin: AdminLike;
+    catalogId?: string;
+  }) => getAdobeLightroomService().listAssets(opts),
+  getAsset: (opts: {
+    businessId: string;
+    assetId: string;
+    admin: AdminLike;
+    catalogId?: string;
+  }) => getAdobeLightroomService().getAsset(opts),
+  downloadEditedAsset: (opts: {
+    businessId: string;
+    assetId: string;
+    admin: AdminLike;
+    catalogId?: string;
+    renditionType?: string;
+  }) => getAdobeLightroomService().downloadEditedAsset(opts),
+  syncProject: (opts: {
+    businessId: string;
+    projectId: string;
+    admin: AdminLike;
+    albumId?: string;
+    catalogId?: string;
+  }) => getAdobeLightroomService().syncProject(opts),
   uploadPhotos: (opts: {
     businessId: string;
     projectId: string;
     albumId?: string;
     fileRefs: string[];
   }) => getAdobeLightroomService().uploadPhotos(opts),
-  downloadEditedPhotos: (opts: {
-    businessId: string;
-    projectId: string;
-    albumId?: string;
-  }) => getAdobeLightroomService().downloadEditedPhotos(opts),
-  listAssets: (opts: { businessId: string; albumId: string }) =>
-    getAdobeLightroomService().listAssets(opts),
-  getFavorites: (opts: { businessId: string; albumId: string }) =>
-    getAdobeLightroomService().getFavorites(opts),
+  openAlbum: (opts: { businessId: string; albumId: string; catalogId?: string }) =>
+    getAdobeLightroomService().openAlbum(opts),
   publishGallery: (opts: {
     businessId: string;
     projectId: string;

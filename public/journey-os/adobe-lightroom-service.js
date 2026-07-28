@@ -107,18 +107,27 @@
       if (!businessId) {
         return notConfigured({ message: 'Save your business first to connect Adobe Lightroom.' });
       }
-      var res = await invokeEdge('adobe-oauth-disconnect', {
+      // Prefer provider Edge (verifies catalog + returns token expiry / last refresh).
+      var res = await invokeEdge('adobe-lightroom', {
         action: 'status',
         business_id: businessId,
       });
       var edge = res.data;
+      if (!edge || edge.error) {
+        res = await invokeEdge('adobe-oauth-disconnect', {
+          action: 'status',
+          business_id: businessId,
+        });
+        edge = res.data;
+      }
       if (!edge) {
         return notConfigured({
           message: (res.error && res.error.message) ||
             'Could not check Adobe status. Projects still work in Hubly.',
         });
       }
-      if (edge.configured === false || edge.health === 'not_configured') {
+      if (edge.configured === false || edge.health === 'not_configured' ||
+          (edge.data && edge.data.health === 'not_configured')) {
         _configuredCache = false;
         _connectedCache = false;
         return notConfigured({
@@ -126,23 +135,29 @@
             'Adobe Lightroom isn’t configured yet. Projects still work without Lightroom.',
         });
       }
+      var data = edge.data || edge;
+      var connected = !!(data.connected || edge.connected);
       _configuredCache = true;
-      _connectedCache = !!edge.connected;
+      _connectedCache = connected;
       return result({
         ok: true,
-        status: edge.connected ? 'connected' : 'ready',
-        message: edge.connected
-          ? ('Connected as ' + (edge.account_label || 'Adobe'))
-          : 'Adobe is ready — connect Lightroom when you want album sync.',
+        status: connected ? 'connected' : 'ready',
+        message: data.message || edge.message ||
+          (connected
+            ? ('Connected as ' + (data.adobeAccount || data.adobe_account || edge.account_label || 'Adobe'))
+            : 'Adobe is ready — connect Lightroom when you want album sync.'),
         data: {
           configured: true,
-          connected: !!edge.connected,
-          health: edge.health || (edge.connected ? 'healthy' : 'disconnected'),
-          accountLabel: edge.account_label || null,
-          adobeUserId: edge.adobe_user_id || null,
-          connectedAt: edge.connected_at || null,
-          lastSyncAt: edge.last_sync_at || null,
-          lastError: edge.last_error || null,
+          connected: connected,
+          health: data.health || edge.health || (connected ? 'healthy' : 'disconnected'),
+          accountLabel: data.adobeAccount || data.adobe_account || edge.account_label || null,
+          adobeUserId: data.adobeUserId || edge.adobe_user_id || null,
+          tokenExpiresAt: data.tokenExpiresAt || data.token_expires_at || edge.token_expires_at || null,
+          lastRefreshAt: data.lastRefreshAt || data.last_refresh_at || edge.last_refresh_at || null,
+          catalogId: data.catalogId || data.catalog_id || edge.catalog_id || null,
+          connectedAt: data.connectedAt || edge.connected_at || null,
+          lastSyncAt: data.lastSyncAt || edge.last_sync_at || null,
+          lastError: data.lastError || edge.last_error || null,
         },
       });
     },
@@ -263,57 +278,180 @@
       });
     },
 
-    createAlbum: async function (opts) {
-      var edge = await invokeEdge('adobe-lightroom', Object.assign({ action: 'createAlbum' }, opts || {}));
-      if (edge.data && edge.data.ok) return edge.data;
-      var r = notConfigured({
-        message: 'Lightroom album creation needs Adobe. Your Hubly project folder still works.',
+    health: async function (opts) {
+      var businessId = currentBusinessId(opts);
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'health',
+        business_id: businessId || undefined,
       });
-      toast(r.message);
-      return r;
+      if (res.data && (res.data.ok || res.data.data)) return res.data;
+      return result({
+        ok: false,
+        status: 'error',
+        message: (res.data && res.data.message) ||
+          (res.error && res.error.message) ||
+          'Could not check Lightroom health',
+      });
+    },
+
+    createAlbum: async function (opts) {
+      opts = opts || {};
+      var businessId = currentBusinessId(opts);
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'createAlbum',
+        business_id: businessId,
+        project_id: opts.projectId || opts.project_id,
+        name: opts.name,
+      });
+      var edge = res.data;
+      if (edge && edge.ok && edge.data) {
+        toast(edge.message || 'Lightroom album ready');
+        return edge;
+      }
+      var msg = (edge && (edge.message || (edge.error && edge.error.detail) || edge.error)) ||
+        (res.error && res.error.message) ||
+        'Could not create Lightroom album. Connect Adobe first.';
+      toast(typeof msg === 'string' ? msg : 'Could not create Lightroom album');
+      return edge || result({ ok: false, status: 'error', message: String(msg) });
     },
 
     renameAlbum: async function (opts) {
-      await invokeEdge('adobe-lightroom', Object.assign({ action: 'renameAlbum' }, opts || {}));
-      return notConfigured();
+      opts = opts || {};
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'renameAlbum',
+        business_id: currentBusinessId(opts),
+        album_id: opts.albumId || opts.album_id,
+        name: opts.name,
+        catalog_id: opts.catalogId || opts.catalog_id,
+        project_id: opts.projectId || opts.project_id,
+      });
+      return res.data || result({ ok: false, status: 'error', message: 'Rename failed' });
     },
 
     listAlbums: async function (opts) {
-      var edge = await invokeEdge('adobe-lightroom', Object.assign({ action: 'listAlbums' }, opts || {}));
-      if (edge.data && edge.data.ok) return edge.data;
-      return notConfigured({ data: [] });
-    },
-
-    syncProject: async function (opts) {
-      var edge = await invokeEdge('adobe-lightroom', Object.assign({ action: 'syncProject' }, opts || {}));
-      if (edge.data && edge.data.ok) return edge.data;
-      var r = notConfigured({
-        message: 'Sync Lightroom when Adobe is connected. Upload and deliver from Hubly anytime.',
+      opts = opts || {};
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'listAlbums',
+        business_id: currentBusinessId(opts),
+        subtype: opts.subtype || 'project',
       });
-      toast(r.message);
-      return r;
-    },
-
-    uploadPhotos: async function (opts) {
-      await invokeEdge('adobe-lightroom', Object.assign({ action: 'uploadPhotos' }, opts || {}));
-      return notConfigured({
-        message: 'Upload photos in Hubly now. Lightroom sync will enhance this later.',
-      });
-    },
-
-    downloadEditedPhotos: async function (opts) {
-      await invokeEdge('adobe-lightroom', Object.assign({ action: 'downloadEditedPhotos' }, opts || {}));
-      return notConfigured();
+      if (res.data && res.data.ok) return res.data;
+      return result({ ok: false, status: 'error', message: 'Could not list albums', data: [] });
     },
 
     listAssets: async function (opts) {
-      await invokeEdge('adobe-lightroom', Object.assign({ action: 'listAssets' }, opts || {}));
-      return notConfigured({ data: [] });
+      opts = opts || {};
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'listAssets',
+        business_id: currentBusinessId(opts),
+        album_id: opts.albumId || opts.album_id,
+        catalog_id: opts.catalogId || opts.catalog_id,
+      });
+      if (res.data && res.data.ok) return res.data;
+      return result({ ok: false, status: 'error', message: 'Could not list assets', data: [] });
+    },
+
+    getAsset: async function (opts) {
+      opts = opts || {};
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'getAsset',
+        business_id: currentBusinessId(opts),
+        asset_id: opts.assetId || opts.asset_id,
+        catalog_id: opts.catalogId || opts.catalog_id,
+      });
+      return res.data || result({ ok: false, status: 'error', message: 'Could not load asset' });
+    },
+
+    downloadEditedAsset: async function (opts) {
+      opts = opts || {};
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'downloadEditedAsset',
+        business_id: currentBusinessId(opts),
+        asset_id: opts.assetId || opts.asset_id,
+        catalog_id: opts.catalogId || opts.catalog_id,
+        rendition_type: opts.renditionType || opts.rendition_type,
+      });
+      return res.data || result({ ok: false, status: 'error', message: 'Could not download rendition' });
+    },
+
+    downloadEditedPhotos: async function (opts) {
+      return AdobeLightroomService.downloadEditedAsset(opts);
     },
 
     getFavorites: async function (opts) {
-      await invokeEdge('adobe-lightroom', Object.assign({ action: 'getFavorites' }, opts || {}));
-      return notConfigured({ data: [] });
+      var listed = await AdobeLightroomService.listAssets(opts);
+      if (!listed || !listed.ok) return listed || notConfigured({ data: [] });
+      var assets = (listed.data || []).filter(function (a) { return a && a.favorite; });
+      return result({
+        ok: true,
+        status: 'ready',
+        message: assets.length + ' favorite(s)',
+        data: assets,
+      });
+    },
+
+    openAlbum: async function (opts) {
+      opts = opts || {};
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'openAlbum',
+        business_id: currentBusinessId(opts),
+        project_id: opts.projectId || opts.project_id,
+        album_id: opts.albumId || opts.album_id,
+        catalog_id: opts.catalogId || opts.catalog_id,
+      });
+      var edge = res.data;
+      var hint = (edge && edge.data && edge.data.hint) ||
+        'Open Adobe Lightroom → Connections to find this Hubly project album.';
+      toast(hint);
+      return edge || result({
+        ok: false,
+        status: 'error',
+        message: hint,
+        error: { code: 'UNSUPPORTED_OPERATION', detail: hint, retryable: false },
+        data: { hint: hint },
+      });
+    },
+
+    syncProject: async function (opts) {
+      opts = opts || {};
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'syncProject',
+        business_id: currentBusinessId(opts),
+        project_id: opts.projectId || opts.project_id,
+        album_id: opts.albumId || opts.album_id,
+        catalog_id: opts.catalogId || opts.catalog_id,
+      });
+      var edge = res.data;
+      if (edge && edge.ok) {
+        toast(edge.message || 'Lightroom sync complete');
+        return edge;
+      }
+      var msg = (edge && (edge.message || (edge.error && edge.error.detail))) ||
+        (res.error && res.error.message) ||
+        'Sync Lightroom when Adobe is connected. Upload and deliver from Hubly anytime.';
+      toast(String(msg));
+      return edge || result({ ok: false, status: 'error', message: String(msg) });
+    },
+
+    uploadPhotos: async function (opts) {
+      opts = opts || {};
+      var res = await invokeEdge('adobe-lightroom', {
+        action: 'uploadPhotos',
+        business_id: currentBusinessId(opts),
+        project_id: opts.projectId || opts.project_id,
+        album_id: opts.albumId || opts.album_id,
+        file_refs: opts.fileRefs || opts.file_refs || [],
+      });
+      var edge = res.data;
+      var msg = (edge && edge.message) ||
+        'Upload photos in Hubly or Lightroom for now. Hubly→Lightroom upload is deferred.';
+      toast(msg);
+      return edge || result({
+        ok: false,
+        status: 'error',
+        message: msg,
+        error: { code: 'NOT_IMPLEMENTED', detail: msg, retryable: false },
+      });
     },
 
     syncWorkspace: async function (opts) {

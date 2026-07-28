@@ -1042,11 +1042,19 @@
     var lrDetail = adobeConnected
       ? '<section class="pp-panel pp-panel-wide"><h3>Adobe Lightroom</h3><dl class="pp-dl">' +
         '<div><dt>Status</dt><dd>' + esc(lrLabel(p.lightroom_status)) + '</dd></div>' +
-        '<div><dt>Album</dt><dd>' + esc(lr.album_name || '\u2014') + '</dd></div>' +
+        '<div><dt>Album</dt><dd>' + esc(lr.album_name || (lrWs && lrWs.display_name) || '\u2014') + '</dd></div>' +
+        '<div><dt>Photos</dt><dd>' + esc(String(((lrWs && lrWs.metadata && lrWs.metadata.lightroom_sync) || {}).photo_count != null
+          ? lrWs.metadata.lightroom_sync.photo_count
+          : '\u2014')) + '</dd></div>' +
+        '<div><dt>Favorites</dt><dd>' + esc(String(((lrWs && lrWs.metadata && lrWs.metadata.lightroom_sync) || {}).favorites != null
+          ? lrWs.metadata.lightroom_sync.favorites
+          : '\u2014')) + '</dd></div>' +
         '<div><dt>Last Sync</dt><dd>' + esc(formatRelative((lrWs && lrWs.last_sync_at) || p.last_sync_at)) + '</dd></div></dl>' +
         '<div class="pp-btn-row">' +
-        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">Create Lightroom Album</button>' +
-        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Photos</button>' +
+        '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">' +
+          ((lrWs && lrWs.external_id) ? 'Reuse Lightroom Album' : 'Create Lightroom Album') + '</button>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-open" data-pp-id="' + esc(p.id) + '">Open Album</button>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Album</button>' +
         '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="adobe-disconnect">Disconnect</button></div></section>'
       : '';
 
@@ -1477,18 +1485,32 @@
     }
     if (act === 'sync' && p) {
       var svc = global.AdobeLightroomService;
-      if (svc && svc.syncWorkspace) {
-        await svc.syncWorkspace({ businessId: businessId(), projectId: p.id });
-      } else if (svc) {
-        await svc.syncProject({ businessId: businessId(), projectId: p.id });
+      var lrWsSync = getWorkspace(p, 'adobe_lightroom');
+      var syncRes = null;
+      if (svc && svc.syncProject) {
+        syncRes = await svc.syncProject({
+          businessId: businessId(),
+          projectId: p.id,
+          albumId: (lrWsSync && lrWsSync.external_id) || undefined,
+          catalogId: (lrWsSync && lrWsSync.metadata && lrWsSync.metadata.catalog_id) || undefined,
+        });
+      }
+      var syncMeta = Object.assign({}, (lrWsSync || {}).metadata || {});
+      if (syncRes && syncRes.ok && syncRes.data && syncRes.data.workspaceMetadata) {
+        Object.assign(syncMeta, syncRes.data.workspaceMetadata);
+      } else {
+        syncMeta.last_sync_request = new Date().toISOString();
       }
       upsertWorkspaceLocal(p, {
         provider: 'adobe_lightroom',
-        display_name: (p.lightroom && p.lightroom.album_name) || p.name,
-        sync_state: 'pending',
-        metadata: Object.assign({}, (getWorkspace(p, 'adobe_lightroom') || {}).metadata || {}, { last_sync_request: new Date().toISOString() })
+        display_name: (p.lightroom && p.lightroom.album_name) || (lrWsSync && lrWsSync.display_name) || p.name,
+        external_id: (syncRes && syncRes.data && syncRes.data.albumId) || (lrWsSync && lrWsSync.external_id) || null,
+        sync_state: (syncRes && syncRes.ok) ? 'synced' : 'pending',
+        last_sync_at: (syncRes && syncRes.data && syncRes.data.lastSyncAt) || null,
+        metadata: syncMeta
       });
-      addActivity(p, 'Sync requested', 'Adobe Lightroom Connected App — connection required for live sync');
+      addActivity(p, 'Sync ' + ((syncRes && syncRes.ok) ? 'complete' : 'requested'),
+        (syncRes && syncRes.message) || 'Adobe Lightroom Connected App');
       return saveAndRefresh(p, st);
     }
     if (act === 'deliver' && p) {
@@ -1640,24 +1662,53 @@
     }
     if (act === 'lr-create-album' && p) {
       var svcA = global.AdobeLightroomService;
-      if (svcA) await svcA.createAlbum({ businessId: businessId() || '', projectId: p.id, name: p.name });
+      var existingWs = getWorkspace(p, 'adobe_lightroom');
+      var createRes = null;
+      if (svcA && svcA.createAlbum) {
+        createRes = await svcA.createAlbum({
+          businessId: businessId() || '',
+          projectId: p.id,
+          name: p.name,
+        });
+      }
       p.lightroom = p.lightroom || {};
-      p.lightroom.album_name = p.name;
-      var extId = 'pending-' + String(p.id).replace(/-/g, '').slice(-8);
+      var albumName = (createRes && createRes.data && createRes.data.name) || p.name;
+      var albumId = (createRes && createRes.data && createRes.data.id) ||
+        (existingWs && existingWs.external_id) || null;
+      p.lightroom.album_name = albumName;
+      if (albumId) p.lightroom.album_id = albumId;
       upsertWorkspaceLocal(p, {
         provider: 'adobe_lightroom',
-        display_name: p.name,
-        external_id: extId,
-        sync_state: 'pending',
-        metadata: { album_name: p.name, album_id: extId }
+        display_name: albumName,
+        external_id: albumId,
+        sync_state: albumId ? 'linked' : 'pending',
+        metadata: Object.assign({}, (existingWs || {}).metadata || {}, {
+          album_name: albumName,
+          album_id: albumId,
+          catalog_id: (createRes && createRes.data && createRes.data.catalogId) ||
+            ((existingWs && existingWs.metadata) || {}).catalog_id || null,
+          reused: !!(createRes && createRes.meta && createRes.meta.reused),
+        })
       });
-      p.lightroom_status = 'album_ready';
-      addActivity(p, 'Lightroom prepared', 'Connected App ready — connect Adobe to sync RAWs');
-      toast('Lightroom prepared on the project. Connect Adobe to sync.');
+      p.lightroom_status = albumId ? 'album_ready' : 'not_connected';
+      addActivity(p, albumId ? 'Lightroom album linked' : 'Lightroom prepare failed',
+        (createRes && createRes.message) || albumName);
       return saveAndRefresh(p, st);
     }
     if (act === 'lr-open') {
-      toast('Open Adobe Lightroom on your desktop — Hubly keeps the Connected App link here.');
+      p = p || findProject(st.projectId);
+      var svcO = global.AdobeLightroomService;
+      var openWs = p ? getWorkspace(p, 'adobe_lightroom') : null;
+      if (svcO && svcO.openAlbum) {
+        await svcO.openAlbum({
+          businessId: businessId() || '',
+          projectId: p && p.id,
+          albumId: openWs && openWs.external_id,
+          catalogId: openWs && openWs.metadata && openWs.metadata.catalog_id,
+        });
+      } else {
+        toast('Open Adobe Lightroom → Connections to find this Hubly project album.');
+      }
       return;
     }
     if (act === 'gal-publish' && p) {
