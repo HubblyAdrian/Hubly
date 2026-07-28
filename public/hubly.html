@@ -321,12 +321,22 @@ body:has(#p-storefront.active) > .theme-toggle{display:none!important}
 #v-editor .bw-input,
 #v-editor .bw-sec input,
 #v-editor .bw-sec textarea,
-#v-editor .bw-sec select{
+#v-editor .bw-sec select,
+#v-editor .bw-addon-row input,
+#v-editor .bw-where-pick input,
+#v-editor .bw-trust-edit input{
   background:#fff!important;
   color:#141B2B!important;
   border-color:#E6E8EC!important;
   color-scheme:light;
   -webkit-text-fill-color:#141B2B;
+}
+#v-editor .bw-input::placeholder,
+#v-editor .bw-sec input::placeholder,
+#v-editor .bw-addon-row input::placeholder{
+  color:#9CA3AF!important;
+  -webkit-text-fill-color:#9CA3AF;
+  opacity:1;
 }
 #v-editor .bw-pkg-ro{
   background:#fff!important;
@@ -335,12 +345,38 @@ body:has(#p-storefront.active) > .theme-toggle{display:none!important}
 #v-editor .bw-pkg-ro span{color:#D9632D!important}
 #v-editor .bw-sec,
 #v-editor .bw-addon-row,
-#v-editor .bw-card{
+#v-editor .bw-card,
+#v-editor .bw-where-pick button{
   background:#fff!important;
   border-color:#E5E7EB!important;
 }
+#v-editor .bw-where-pick button.on{
+  border-color:#D9632D!important;
+  box-shadow:0 0 0 2px color-mix(in srgb,#D9632D 18%,transparent)!important;
+}
 #v-editor .bw-check{color:#141B2B!important}
 #v-editor .bw-trust-edit .chk{color:#16a34a!important}
+#v-editor .ed-book-hub .btn-out,
+#v-editor .bw-sec .btn-out,
+#v-editor .bw-addon-row .btn-out,
+#v-editor .bw-sec-h .btn-out{
+  color:#141B2B!important;
+  background:#fff!important;
+  border-color:#D1D5DB!important;
+  -webkit-text-fill-color:#141B2B;
+}
+#v-editor .ed-book-hub .btn-out:hover,
+#v-editor .bw-sec .btn-out:hover{
+  border-color:#D9632D!important;
+  color:#D9632D!important;
+}
+#v-editor .ed-book-hub .btn-brand,
+#v-editor .bw-sec .btn-brand{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff;
+}
+#v-editor .bw-addon-row .tog-sl{background:#D1D5DB!important}
+#v-editor .bw-addon-row .tog input:checked+.tog-sl{background:#141B2B!important}
 /* Leave phone preview dark — intentional customer chrome */
 
 /* Customize questions hub: day-readable ink on white panels (night theme safe) */
