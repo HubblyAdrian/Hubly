@@ -14281,7 +14281,7 @@
         }).join('') +
         '</div>' +
         '<button type="button" class="jos-icon-btn" data-jos-act="go-settings" title="Settings" aria-label="Settings">⚙</button>' +
-        '<button type="button" class="jos-btn jos-btn-brand jos-jobs-new" data-jos-act="jobs-create">+ New Job</button>' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-jobs-new jos-gcal-create-btn" data-jos-act="jobs-gcal-create-menu" aria-haspopup="menu" aria-expanded="false"><span class="jos-gcal-create-plus" aria-hidden="true">+</span> Create</button>' +
         '</div></div>' +
         renderJobsCalendar(root, calView, calAnchor, selectedId) +
         '<div class="jos-jobs-cal-legend jos-muted" style="margin-top:12px;font-size:12px">Scheduled · In Progress · Completed · Pending · Cancelled · Travel Time · <em>Drag &amp; drop to reschedule</em></div>' +
@@ -14452,7 +14452,7 @@
       '</div>' +
       '<div class="jos-jobs-drawer-backdrop' + (drawerOpen ? ' open' : '') + '" data-jos-act="jobs-drawer-close"></div>' +
       drawer + statusMenu + rowMenu + gcalCreatePop +
-      '<button type="button" class="jos-jobs-fab" data-jos-act="jobs-create" aria-label="New Job">+</button>' +
+      '<button type="button" class="jos-jobs-fab" data-jos-act="' + (mainView === 'calendar' ? 'jobs-gcal-create-menu' : 'jobs-create') + '" aria-label="' + (mainView === 'calendar' ? 'Create' : 'New Job') + '">+</button>' +
       '</div>';
 
     bindRoot(root);
@@ -14767,7 +14767,7 @@
 
     root.addEventListener('pointerdown', function (e) {
       if (e.button != null && e.button !== 0) return;
-      if (e.target.closest('#jos-gcal-create-pop')) return;
+      if (e.target.closest('#jos-gcal-create-pop') || e.target.closest('#jos-gcal-create-menu')) return;
       var resizeHandle = e.target.closest('[data-jos-gcal-resize]');
       var eventEl = e.target.closest('.jos-gcal-event[data-jos-job-id]');
       var col = e.target.closest('.jos-gcal-col');
@@ -14882,8 +14882,9 @@
         if (active && active._josGcalPopIgnoreClick) return;
         var pop = el('jos-gcal-create-pop');
         if (!pop || pop.hidden) return;
-        if (e.target.closest('#jos-gcal-create-pop') || e.target.closest('.jos-gcal-board') || e.target.closest('.jos-gcal-slot-add')) return;
+        if (e.target.closest('#jos-gcal-create-pop') || e.target.closest('#jos-gcal-create-menu') || e.target.closest('.jos-gcal-board') || e.target.closest('.jos-gcal-slot-add') || e.target.closest('.jos-gcal-create-btn') || e.target.closest('[data-jos-act="jobs-gcal-create-menu"]')) return;
         closeGcalCreatePop();
+        closeGcalCreateMenu();
       });
     }
 
@@ -15129,6 +15130,7 @@
   function calEventTitle(j) {
     if (j.isGoogle) return j.service || 'Google';
     if (j.isBlock) return j.service || 'Blocked';
+    if (j.isTask) return j.service || j.customer || 'Task';
     return j.customer || j.service || 'Job';
   }
   function calEventSub(j) {
@@ -15173,12 +15175,186 @@
   function closeGcalCreatePop() {
     var pop = el('jos-gcal-create-pop');
     if (pop) pop.hidden = true;
+    closeGcalCreateMenu();
     var root = jobsOsRoot();
-    if (root) root._josGcalPending = null;
+    if (root) {
+      root._josGcalPending = null;
+      root._josGcalPeople = [];
+    }
     document.querySelectorAll('.jos-gcal-draft').forEach(function (n) { n.remove(); });
     document.querySelectorAll('.jos-gcal-board.is-dragging, .jos-gcal-col.is-dragging').forEach(function (n) {
       n.classList.remove('is-dragging');
     });
+  }
+
+  function closeGcalCreateMenu() {
+    var menu = el('jos-gcal-create-menu');
+    if (menu) menu.hidden = true;
+    document.querySelectorAll('.jos-gcal-create-btn[aria-expanded="true"]').forEach(function (b) {
+      b.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  function ensureGcalCreateMenu() {
+    var menu = el('jos-gcal-create-menu');
+    if (menu && menu.parentElement === document.body) return menu;
+    if (menu) menu.remove();
+    menu = document.createElement('div');
+    menu.id = 'jos-gcal-create-menu';
+    menu.className = 'jos-gcal-create-menu';
+    menu.hidden = true;
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute('aria-label', 'Create on calendar');
+    menu.innerHTML =
+      '<button type="button" role="menuitem" data-jos-act="jobs-gcal-menu-pick" data-jos-gcal-type="job">Job</button>' +
+      '<button type="button" role="menuitem" data-jos-act="jobs-gcal-menu-pick" data-jos-gcal-type="task">Task</button>' +
+      '<button type="button" role="menuitem" data-jos-act="jobs-gcal-menu-pick" data-jos-gcal-type="block">Block time</button>';
+    document.body.appendChild(menu);
+    bindRoot(menu);
+    return menu;
+  }
+
+  function openGcalCreateMenu(anchorEl) {
+    var root = jobsOsRoot();
+    if (!root) return;
+    closeGcalCreatePop();
+    var menu = ensureGcalCreateMenu();
+    var r = (anchorEl && anchorEl.getBoundingClientRect) ? anchorEl.getBoundingClientRect() : { left: 24, bottom: 120, width: 120 };
+    menu.hidden = false;
+    var left = Math.min(Math.max(12, r.left), window.innerWidth - 220);
+    var top = Math.min(Math.max(12, r.bottom + 6), window.innerHeight - 160);
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    if (anchorEl && anchorEl.setAttribute) anchorEl.setAttribute('aria-expanded', 'true');
+    root._josGcalPopIgnoreClick = true;
+    setTimeout(function () { root._josGcalPopIgnoreClick = false; }, 0);
+  }
+
+  function gcalPeopleCandidates(q) {
+    q = String(q || '').trim().toLowerCase();
+    var out = [];
+    var seen = {};
+    function push(kind, id, name, email, phone) {
+      var key = kind + ':' + id;
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push({ kind: kind, id: id, name: name || '', email: email || '', phone: phone || '' });
+    }
+    customers().forEach(function (c) {
+      if (!c) return;
+      var email = String(c.email || '').trim();
+      var name = String(c.name || '').trim();
+      var phone = String(c.phone || '').trim();
+      if (!email && !name) return;
+      if (q) {
+        var blob = (name + ' ' + email + ' ' + phone).toLowerCase();
+        if (blob.indexOf(q) < 0) return;
+      }
+      push('customer', c.id, name, email, phone);
+    });
+    try {
+      leadsOsList().forEach(function (l) {
+        if (!l) return;
+        var email = String(l.email || '').trim();
+        if (!email && q) {
+          /* still allow name match, but prefer people with email when searching empty? show leads with email first */
+        }
+        var name = String(l.name || '').trim();
+        var phone = String(l.phone || '').trim();
+        if (!name && !email) return;
+        if (q) {
+          var blob2 = (name + ' ' + email + ' ' + phone).toLowerCase();
+          if (blob2.indexOf(q) < 0) return;
+        }
+        push('lead', l.id || l.key, name, email, phone);
+      });
+    } catch (eLead) {}
+    out.sort(function (a, b) {
+      var ae = a.email ? 0 : 1;
+      var be = b.email ? 0 : 1;
+      if (ae !== be) return ae - be;
+      return String(a.name).localeCompare(String(b.name));
+    });
+    return out.slice(0, 8);
+  }
+
+  function renderGcalPeopleUI(root) {
+    root = root || jobsOsRoot();
+    var chips = el('jos-gcal-people-chips');
+    var people = (root && root._josGcalPeople) || [];
+    if (chips) {
+      chips.innerHTML = people.map(function (p, i) {
+        var label = p.name || p.email || 'Person';
+        var meta = p.email ? p.email : (p.kind === 'lead' ? 'Lead' : 'Customer');
+        return '<span class="jos-gcal-chip">' + esc(label) +
+          '<small>' + esc(meta) + '</small>' +
+          '<button type="button" data-jos-act="jobs-gcal-people-remove" data-jos-people-i="' + i + '" aria-label="Remove">×</button></span>';
+      }).join('');
+    }
+  }
+
+  function renderGcalPeopleResults(q) {
+    var box = el('jos-gcal-people-results');
+    if (!box) return;
+    var list = gcalPeopleCandidates(q);
+    if (!list.length) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    box.hidden = false;
+    box.innerHTML = list.map(function (p) {
+      var sub = p.email || (p.kind === 'lead' ? 'Lead · no email' : 'Customer · no email');
+      return '<button type="button" class="jos-gcal-people-hit" data-jos-act="jobs-gcal-people-pick"' +
+        ' data-jos-people-kind="' + esc(p.kind) + '"' +
+        ' data-jos-people-id="' + esc(String(p.id)) + '"' +
+        ' data-jos-people-name="' + esc(p.name) + '"' +
+        ' data-jos-people-email="' + esc(p.email) + '"' +
+        ' data-jos-people-phone="' + esc(p.phone) + '">' +
+        '<strong>' + esc(p.name || p.email || 'Unknown') + '</strong>' +
+        '<span>' + esc(sub) + (p.kind === 'lead' ? ' · Lead' : ' · Customer') + '</span></button>';
+    }).join('');
+  }
+
+  function gcalRepeatDates(startDate, repeat) {
+    var start = String(startDate || todayStr()).slice(0, 10);
+    if (!repeat || repeat === 'none') return [start];
+    var out = [];
+    var i;
+    if (repeat === 'daily') {
+      for (i = 0; i < 7; i++) out.push(addDaysStr(start, i));
+    } else if (repeat === 'weekdays') {
+      var d = start;
+      var guard = 0;
+      while (out.length < 10 && guard < 40) {
+        var dt = new Date(d + 'T12:00:00');
+        var day = dt.getDay();
+        if (day !== 0 && day !== 6) out.push(d);
+        d = addDaysStr(d, 1);
+        guard++;
+      }
+    } else if (repeat === 'weekly') {
+      for (i = 0; i < 4; i++) out.push(addDaysStr(start, i * 7));
+    } else if (repeat === 'monthly') {
+      for (i = 0; i < 3; i++) {
+        var x = new Date(start + 'T12:00:00');
+        x.setMonth(x.getMonth() + i);
+        out.push(x.toISOString().slice(0, 10));
+      }
+    } else {
+      out.push(start);
+    }
+    return out.length ? out : [start];
+  }
+
+  function gcalRepeatLabel(repeat) {
+    return ({
+      none: 'Does not repeat',
+      daily: 'Daily',
+      weekdays: 'Every weekday',
+      weekly: 'Weekly',
+      monthly: 'Monthly'
+    })[repeat] || 'Does not repeat';
   }
 
   function ensureGcalCreatePop() {
@@ -15190,33 +15366,95 @@
       else if (pop && node !== pop) node.remove();
     });
     pop = el('jos-gcal-create-pop');
-    if (pop && pop.parentElement === document.body) return pop;
+    if (pop && pop.parentElement === document.body && pop.querySelector('#jos-gcal-create-repeat')) return pop;
     if (pop) pop.remove();
     pop = document.createElement('div');
     pop.id = 'jos-gcal-create-pop';
-    pop.className = 'jos-gcal-create-pop';
+    pop.className = 'jos-gcal-create-pop jos-gcal-create-pop--rich';
     pop.hidden = true;
     pop.setAttribute('role', 'dialog');
-    pop.setAttribute('aria-label', 'Create calendar event');
+    pop.setAttribute('aria-label', 'Create on calendar');
     pop.innerHTML =
-      '<p class="jos-gcal-create-kicker">New on calendar</p>' +
+      '<button type="button" class="jos-gcal-create-x" data-jos-act="jobs-gcal-create-cancel" aria-label="Close">×</button>' +
+      '<input type="text" id="jos-gcal-create-title" class="jos-gcal-create-title" placeholder="Add title" autocomplete="off">' +
+      '<div class="jos-gcal-create-types" role="tablist" aria-label="Type">' +
+      '<button type="button" role="tab" data-jos-act="jobs-gcal-set-type" data-jos-gcal-type="job" class="on">Job</button>' +
+      '<button type="button" role="tab" data-jos-act="jobs-gcal-set-type" data-jos-gcal-type="task">Task</button>' +
+      '<button type="button" role="tab" data-jos-act="jobs-gcal-set-type" data-jos-gcal-type="block">Block</button>' +
+      '</div>' +
+      '<div class="jos-gcal-create-row">' +
+      '<span class="jos-gcal-create-ico" aria-hidden="true">◷</span>' +
+      '<div class="jos-gcal-create-row-body">' +
       '<p class="jos-gcal-create-range" id="jos-gcal-create-range"></p>' +
-      '<label for="jos-gcal-create-title">Name</label>' +
-      '<input type="text" id="jos-gcal-create-title" placeholder="Customer, job, or block title" autocomplete="off">' +
-      '<div class="jos-btn-row">' +
-      '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="jobs-gcal-create-job">Create job</button>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-gcal-create-block">Block time</button>' +
+      '<label class="jos-gcal-create-subtle" for="jos-gcal-create-repeat">Repeat</label>' +
+      '<select id="jos-gcal-create-repeat" aria-label="Repeat">' +
+      '<option value="none">Does not repeat</option>' +
+      '<option value="daily">Daily</option>' +
+      '<option value="weekdays">Every weekday (Mon–Fri)</option>' +
+      '<option value="weekly">Weekly</option>' +
+      '<option value="monthly">Monthly</option>' +
+      '</select>' +
+      '</div></div>' +
+      '<div class="jos-gcal-create-row jos-gcal-create-people-row" id="jos-gcal-people-row">' +
+      '<span class="jos-gcal-create-ico" aria-hidden="true">👤</span>' +
+      '<div class="jos-gcal-create-row-body">' +
+      '<label class="jos-gcal-create-subtle" for="jos-gcal-create-people">Add people</label>' +
+      '<input type="search" id="jos-gcal-create-people" placeholder="Customer or lead by name or email" autocomplete="off">' +
+      '<div id="jos-gcal-people-results" class="jos-gcal-people-results" hidden></div>' +
+      '<div id="jos-gcal-people-chips" class="jos-gcal-people-chips"></div>' +
+      '<p class="jos-gcal-create-hint">Pick someone with an email when you can — Hubly uses it for reminders.</p>' +
+      '</div></div>' +
+      '<div class="jos-gcal-create-foot">' +
       '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-gcal-create-cancel">Cancel</button>' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="jobs-gcal-create-save">Save</button>' +
       '</div>';
     document.body.appendChild(pop);
     bindRoot(pop);
+    if (!pop._josGcalPeopleBound) {
+      pop._josGcalPeopleBound = true;
+      pop.addEventListener('input', function (e) {
+        if (e.target && e.target.id === 'jos-gcal-create-people') {
+          renderGcalPeopleResults(e.target.value);
+        }
+      });
+      pop.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          var res = el('jos-gcal-people-results');
+          if (res && !res.hidden) {
+            res.hidden = true;
+            e.stopPropagation();
+            return;
+          }
+          closeGcalCreatePop();
+        }
+      });
+    }
     return pop;
+  }
+
+  function setGcalCreateType(type) {
+    var root = jobsOsRoot();
+    type = type || 'job';
+    if (root && root._josGcalPending) root._josGcalPending.type = type;
+    var pop = el('jos-gcal-create-pop');
+    if (!pop) return;
+    pop.querySelectorAll('[data-jos-gcal-type]').forEach(function (btn) {
+      btn.classList.toggle('on', btn.getAttribute('data-jos-gcal-type') === type);
+    });
+    var peopleRow = el('jos-gcal-people-row');
+    if (peopleRow) peopleRow.hidden = (type === 'block');
+    var titleEl = el('jos-gcal-create-title');
+    if (titleEl) {
+      titleEl.placeholder = type === 'block' ? 'Block title (e.g. Doctor appointment)'
+        : (type === 'task' ? 'Task title' : 'Add title');
+    }
   }
 
   function openGcalCreatePop(root, opts) {
     opts = opts || {};
     root = root || jobsOsRoot();
     if (!root) return;
+    closeGcalCreateMenu();
     var startMin = Math.min(opts.startMin, opts.endMin);
     var endMin = Math.max(opts.startMin, opts.endMin);
     if (!(endMin > startMin)) {
@@ -15227,25 +15465,36 @@
     root._josGcalPending = {
       date: opts.date || root._josCalAnchor || todayStr(),
       startMin: startMin,
-      endMin: endMin
+      endMin: endMin,
+      type: opts.type || 'job'
     };
+    root._josGcalPeople = [];
     root._josCalAnchor = root._josGcalPending.date;
     var pop = ensureGcalCreatePop();
     var rangeEl = el('jos-gcal-create-range');
     var titleEl = el('jos-gcal-create-title');
+    var repeatEl = el('jos-gcal-create-repeat');
+    var peopleEl = el('jos-gcal-create-people');
     if (!pop) return;
+    setGcalCreateType(root._josGcalPending.type);
     if (rangeEl) {
-      rangeEl.textContent = root._josGcalPending.date + ' · ' +
-        formatJobMinutes(startMin) + ' – ' + formatJobMinutes(endMin) +
-        ' (' + Math.round((endMin - startMin) / 60 * 10) / 10 + 'h)';
+      var d = new Date(root._josGcalPending.date + 'T12:00:00');
+      var dayLbl = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+      rangeEl.textContent = dayLbl + ' · ' +
+        formatJobMinutes(startMin) + ' – ' + formatJobMinutes(endMin);
     }
+    if (repeatEl) repeatEl.value = 'none';
+    if (peopleEl) peopleEl.value = '';
+    renderGcalPeopleResults('');
+    var resBox = el('jos-gcal-people-results');
+    if (resBox) { resBox.hidden = true; resBox.innerHTML = ''; }
+    renderGcalPeopleUI(root);
     if (titleEl) {
       titleEl.value = opts.title || '';
-      titleEl.placeholder = opts.placeholder || 'Customer, job, or block title';
       titleEl.onkeydown = function (ev) {
         if (ev.key === 'Enter') {
           ev.preventDefault();
-          var btn = pop.querySelector('[data-jos-act="jobs-gcal-create-job"]');
+          var btn = pop.querySelector('[data-jos-act="jobs-gcal-create-save"]');
           if (btn) btn.click();
         }
       };
@@ -15254,30 +15503,35 @@
     root._josGcalPopIgnoreClick = true;
     setTimeout(function () { root._josGcalPopIgnoreClick = false; }, 0);
     pop.hidden = false;
-    var left = Math.min(Math.max(12, (opts.clientX || (window.innerWidth / 2)) - 140), window.innerWidth - 332);
-    var top = Math.min(Math.max(12, (opts.clientY || 120) + 12), window.innerHeight - 220);
+    var left = Math.min(Math.max(12, (opts.clientX || (window.innerWidth / 2)) - 180), window.innerWidth - 380);
+    var top = Math.min(Math.max(12, (opts.clientY || 100) + 8), window.innerHeight - 420);
     pop.style.left = left + 'px';
     pop.style.top = top + 'px';
     setTimeout(function () { if (titleEl) titleEl.focus(); }, 30);
   }
-  function createJobAtRange(root, date, startMin, endMin, title) {
+
+  function createJobAtRange(root, date, startMin, endMin, title, opts) {
     ensureJobsOsState();
+    opts = opts || {};
     var time = formatJobMinutes(startMin);
     var durationMin = Math.max(15, endMin - startMin);
     var bookCheck = isBookableSlot(date, time);
-    if (!bookCheck.ok) {
+    if (!bookCheck.ok && !opts.skipHoursConfirm) {
       toast(bookCheck.reason || 'Outside business hours');
-      if (!window.confirm((bookCheck.reason || 'Outside hours') + '\n\nCreate job anyway?')) return null;
+      if (!window.confirm((bookCheck.reason || 'Outside hours') + '\n\nCreate anyway?')) return null;
     }
-    var name = String(title || '').trim() || 'New Customer';
+    var person = opts.person || null;
+    var name = String(title || '').trim() || (person && person.name) || (opts.isTask ? 'Task' : 'New Customer');
     var nj = {
-      id: 'JOB-' + String(1000 + jobsAll().length + 1),
+      id: 'JOB-' + String(1000 + jobsAll().length + 1) + '_' + Math.random().toString(36).slice(2, 5),
       customer: name,
-      email: '',
-      phone: '',
+      customerId: (person && person.kind === 'customer' && person.id) || null,
+      leadId: (person && person.kind === 'lead' && person.id) || null,
+      email: (person && person.email) || '',
+      phone: (person && person.phone) || '',
       vehicle: '',
-      service: (S().services && S().services[0] && S().services[0].name) || 'Detail',
-      amount: 180,
+      service: opts.isTask ? (String(title || '').trim() || 'Task') : ((S().services && S().services[0] && S().services[0].name) || 'Detail'),
+      amount: opts.isTask ? 0 : 180,
       date: date,
       time: time,
       status: 'scheduled',
@@ -15286,28 +15540,92 @@
       depositStatus: 'none',
       deposit: 0,
       durationMin: durationMin,
-      tags: ['manual'],
+      tags: (opts.isTask ? ['task'] : ['manual']).concat(opts.recurring ? ['recurring'] : []),
+      isTask: !!opts.isTask,
+      recurring: !!opts.recurring,
       checklist: DEFAULT_CHECKLIST.map(function (label, i) { return { id: 'cl_new_' + i, label: label, done: false }; }),
       photos: { before: [], after: [] },
       internalNotes: [],
       customerNotes: [],
       voiceNotes: [],
       products: [],
-      timeline: [{ type: 'created', label: 'Job Created', at: new Date().toLocaleString() }, { type: 'scheduled', label: 'Scheduled ' + time + ' · ' + durationMin + 'm', at: new Date().toLocaleString() }],
+      timeline: [{ type: 'created', label: opts.isTask ? 'Task created' : 'Job Created', at: new Date().toLocaleString() }, { type: 'scheduled', label: 'Scheduled ' + time + ' · ' + durationMin + 'm', at: new Date().toLocaleString() }],
       routeOrder: jobsAll().length + 1
     };
+    if (person && person.kind === 'customer') {
+      var cust = customers().find(function (c) { return String(c.id) === String(person.id); });
+      if (cust && cust.address) nj.address = cust.address;
+    }
     S().jobs.unshift(nj);
-    root._josJobId = nj.id;
-    root._josDrawerOpen = true;
-    root._josJobWorkspace = 'overview';
-    root._josJobsListView = 'all';
-    root._josJobsMainView = 'calendar';
-    pushJobNotif('upcoming', 'New job created');
-    toast('Job created · ' + formatJobMinutes(startMin) + ' – ' + formatJobMinutes(endMin));
-    try {
-      if (typeof global.maybeDelightLargestJob === 'function') global.maybeDelightLargestJob(nj.amount);
-    } catch (eDelight) {}
+    if (!opts.quiet) {
+      root._josJobId = nj.id;
+      root._josDrawerOpen = !opts.isTask;
+      root._josJobWorkspace = 'overview';
+      root._josJobsListView = 'all';
+      root._josJobsMainView = 'calendar';
+      pushJobNotif('upcoming', opts.isTask ? 'Task created' : 'New job created');
+      toast((opts.isTask ? 'Task' : 'Job') + ' created · ' + formatJobMinutes(startMin) + ' – ' + formatJobMinutes(endMin));
+      try {
+        if (!opts.isTask && typeof global.maybeDelightLargestJob === 'function') global.maybeDelightLargestJob(nj.amount);
+      } catch (eDelight) {}
+    }
     return nj;
+  }
+
+  function saveGcalCreate(root) {
+    root = root || jobsOsRoot();
+    if (!root) return;
+    var pending = root._josGcalPending;
+    if (!pending) {
+      closeGcalCreatePop();
+      return toast('Pick a time on the calendar first');
+    }
+    var titleEl = el('jos-gcal-create-title');
+    var repeatEl = el('jos-gcal-create-repeat');
+    var title = (titleEl && titleEl.value || '').trim();
+    var type = pending.type || 'job';
+    var repeat = (repeatEl && repeatEl.value) || 'none';
+    var dates = gcalRepeatDates(pending.date, repeat);
+    var people = root._josGcalPeople || [];
+    var person = people[0] || null;
+    if (type !== 'block' && !title && person && person.name) title = person.name;
+    var pStart = pending.startMin;
+    var pEnd = pending.endMin;
+    closeGcalCreatePop();
+
+    if (type === 'block') {
+      var days = 1;
+      if (repeat === 'daily') days = 7;
+      else if (repeat === 'weekdays') days = 5;
+      else if (repeat === 'weekly') days = 7;
+      else if (repeat === 'monthly') days = 30;
+      if (repeat === 'weekly' || repeat === 'weekdays') {
+        dates.forEach(function (ds, idx) {
+          createBlockJob(ds, formatJobMinutes(pStart), Math.max(15, pEnd - pStart), title || 'Time blocked', { days: 1 });
+        });
+      } else if (repeat === 'none') {
+        createBlockJob(pending.date, formatJobMinutes(pStart), Math.max(15, pEnd - pStart), title || 'Time blocked', { days: 1 });
+      } else {
+        createBlockJob(pending.date, formatJobMinutes(pStart), Math.max(15, pEnd - pStart), title || 'Time blocked', { days: days });
+      }
+      toast('Blocked · ' + gcalRepeatLabel(repeat));
+      root._josJobsMainView = 'calendar';
+      return rerenderJobsOsFrom(root);
+    }
+
+    var created = 0;
+    dates.forEach(function (ds, idx) {
+      var job = createJobAtRange(root, ds, pStart, pEnd, title, {
+        person: person,
+        isTask: type === 'task',
+        recurring: repeat !== 'none',
+        quiet: idx > 0,
+        skipHoursConfirm: idx > 0
+      });
+      if (job) created++;
+    });
+    if (created > 1) toast(created + ' ' + (type === 'task' ? 'tasks' : 'jobs') + ' · ' + gcalRepeatLabel(repeat));
+    return rerenderJobsOsFrom(root);
   }
 
   function calTimedEventHtml(j, gridStartMin, pxPerMin, selectedId) {
@@ -15862,30 +16180,76 @@
         });
         return;
       }
-      if (act === 'jobs-gcal-create-cancel') {
-        closeGcalCreatePop();
+      if (act === 'jobs-gcal-create-menu') {
+        var menuOpen = el('jos-gcal-create-menu');
+        if (menuOpen && !menuOpen.hidden) {
+          closeGcalCreateMenu();
+          return;
+        }
+        root._josJobsMainView = 'calendar';
+        openGcalCreateMenu(t);
         return;
       }
-      if (act === 'jobs-gcal-create-job' || act === 'jobs-gcal-create-block') {
-        var pending = root._josGcalPending;
-        if (!pending) {
-          closeGcalCreatePop();
-          return toast('Pick a time on the calendar first');
+      if (act === 'jobs-gcal-menu-pick') {
+        var pickType = (t && t.getAttribute('data-jos-gcal-type')) || 'job';
+        closeGcalCreateMenu();
+        var menuDate = root._josCalAnchor || todayStr();
+        var menuStart = 10 * 60;
+        try {
+          var nowM = calNowMinutes();
+          menuStart = snapJobMinutes(Math.max(nowM + 30, 9 * 60), 30);
+        } catch (eNow) {}
+        openGcalCreatePop(root, {
+          date: menuDate,
+          startMin: menuStart,
+          endMin: menuStart + 60,
+          type: pickType,
+          clientX: (t && t.getBoundingClientRect && t.getBoundingClientRect().left) || (window.innerWidth / 2),
+          clientY: (t && t.getBoundingClientRect && t.getBoundingClientRect().bottom) || 160
+        });
+        return;
+      }
+      if (act === 'jobs-gcal-set-type') {
+        setGcalCreateType((t && t.getAttribute('data-jos-gcal-type')) || 'job');
+        return;
+      }
+      if (act === 'jobs-gcal-people-pick') {
+        root._josGcalPeople = root._josGcalPeople || [];
+        var pick = {
+          kind: t.getAttribute('data-jos-people-kind') || 'customer',
+          id: t.getAttribute('data-jos-people-id') || '',
+          name: t.getAttribute('data-jos-people-name') || '',
+          email: t.getAttribute('data-jos-people-email') || '',
+          phone: t.getAttribute('data-jos-people-phone') || ''
+        };
+        if (!pick.email) {
+          toast('That person has no email on file — you can still add them');
         }
-        var titleEl = el('jos-gcal-create-title');
-        var title = (titleEl && titleEl.value || '').trim();
-        var pDate = pending.date;
-        var pStart = pending.startMin;
-        var pEnd = pending.endMin;
+        root._josGcalPeople = [pick];
+        var titleFill = el('jos-gcal-create-title');
+        if (titleFill && !String(titleFill.value || '').trim() && pick.name) titleFill.value = pick.name;
+        var peopleInp = el('jos-gcal-create-people');
+        if (peopleInp) peopleInp.value = '';
+        var resHide = el('jos-gcal-people-results');
+        if (resHide) { resHide.hidden = true; resHide.innerHTML = ''; }
+        renderGcalPeopleUI(root);
+        return;
+      }
+      if (act === 'jobs-gcal-people-remove') {
+        var ri = parseInt(t.getAttribute('data-jos-people-i'), 10);
+        if (root._josGcalPeople && Number.isFinite(ri)) root._josGcalPeople.splice(ri, 1);
+        renderGcalPeopleUI(root);
+        return;
+      }
+      if (act === 'jobs-gcal-create-cancel') {
         closeGcalCreatePop();
-        if (act === 'jobs-gcal-create-block') {
-          createBlockJob(pDate, formatJobMinutes(pStart), Math.max(15, pEnd - pStart), title || 'Time blocked', { days: 1 });
-          toast('Blocked ' + formatJobMinutes(pStart) + ' – ' + formatJobMinutes(pEnd));
-          root._josJobsMainView = 'calendar';
-          return rerender();
-        }
-        createJobAtRange(root, pDate, pStart, pEnd, title);
-        return rerender();
+        closeGcalCreateMenu();
+        return;
+      }
+      if (act === 'jobs-gcal-create-save' || act === 'jobs-gcal-create-job' || act === 'jobs-gcal-create-block') {
+        if (act === 'jobs-gcal-create-block' && root._josGcalPending) root._josGcalPending.type = 'block';
+        if (act === 'jobs-gcal-create-job' && root._josGcalPending) root._josGcalPending.type = 'job';
+        return saveGcalCreate(root);
       }
       if (act === 'jobs-create') {
         var createSlot = t && (t.closest('[data-jos-drop-date]') || t.closest('[data-jos-slot-time]'));
