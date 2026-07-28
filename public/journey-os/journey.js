@@ -14877,6 +14877,7 @@
       if (e.key === 'Escape') {
         if (root._josGcalDrag) endGcalPointer(e, false);
         closeGcalCreatePop();
+        closeGcalCreateMenu();
       }
     });
 
@@ -14885,9 +14886,8 @@
       document.addEventListener('click', function (e) {
         var active = jobsOsRoot();
         if (active && active._josGcalPopIgnoreClick) return;
-        var pop = el('jos-gcal-create-pop');
-        if (!pop || pop.hidden) return;
-        if (e.target.closest('#jos-gcal-create-pop') || e.target.closest('#jos-gcal-create-menu') || e.target.closest('.jos-gcal-board') || e.target.closest('.jos-gcal-slot-add') || e.target.closest('.jos-gcal-create-btn') || e.target.closest('[data-jos-act="jobs-gcal-create-menu"]')) return;
+        var inUi = e.target.closest('#jos-gcal-create-pop, #jos-gcal-create-menu, .jos-gcal-create-btn, [data-jos-act="jobs-gcal-create-menu"], .jos-gcal-board, .jos-gcal-slot-add');
+        if (inUi) return;
         closeGcalCreatePop();
         closeGcalCreateMenu();
       });

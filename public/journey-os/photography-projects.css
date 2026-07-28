@@ -345,7 +345,15 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
 }
 
 .pp-btn-ghost {
-  background: transparent;
+  background: #fff;
+  border-color: var(--pp-border-strong);
+  color: var(--pp-ink);
+}
+
+.pp-btn-ghost:hover {
+  border-color: var(--pp-brand);
+  color: var(--pp-brand);
+  background: var(--pp-brand-soft, #FDF0E8);
 }
 
 .pp-btn-lg {
