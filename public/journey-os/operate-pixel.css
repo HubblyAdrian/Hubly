@@ -4406,6 +4406,7 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-jobs-inline-status.ok{background:#ECFDF3;color:#15803D;border-color:#BBF7D0}
 .jos-jobs-inline-status.warn{background:#FFF7ED;color:#C2410C;border-color:#FED7AA}
 .jos-jobs-inline-status.hot{background:#FEF2F2;color:#B91C1C;border-color:#FECACA}
+.jos-jobs-inline-status.mute{background:#F3F4F6;color:#6B7280;border-color:#E5E7EB}
 .jos-jobs-more-wrap{display:flex;align-items:center;gap:4px;justify-content:flex-end}
 .jos-jd-profile{display:flex;gap:12px;align-items:flex-start}
 .jos-jd-svc{padding:12px;border:1px solid var(--jos-border);border-radius:12px;background:var(--jos-surface-2)}
