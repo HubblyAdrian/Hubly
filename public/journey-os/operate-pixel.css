@@ -34,6 +34,7 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 
 #p-app.jos-pixel #v-dashboard.jos-pixel-owned > :not(#jos-dash-root),
 #p-app.jos-pixel #v-jobs.jos-pixel-owned > :not(#jos-jobs-root),
+#p-app.jos-pixel #v-photo-projects.jos-pixel-owned > :not(#jos-photo-projects-root),
 #p-app.jos-pixel #v-chats.jos-pixel-owned > :not(#jos-inbox-root),
 #p-app.jos-pixel #v-money.jos-pixel-owned > :not(#jos-revenue-root),
 #p-app.jos-pixel #v-leads.jos-pixel-owned > :not(#jos-leads-root),

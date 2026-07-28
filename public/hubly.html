@@ -30,6 +30,7 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=live-op-polish-1">
+<link rel="stylesheet" href="/journey-os/photography-projects.css?v=photo-projects-1">
 <style>
 :root{
   --brand:#D9632D;--brand-dark:#B84E1F;--brand-light:#FDF0E8;
@@ -9822,6 +9823,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="jobs" onclick="switchV(this)" title="Jobs &amp; Calendar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl">Jobs &amp; Calendar</span>
       </div>
+      <div class="ni" data-v="photo-projects" onclick="switchV(this)" title="Photography Projects" hidden aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="ni-lbl">Photography</span>
+      </div>
       <div class="ni" data-v="leads" onclick="switchV(this)" title="Leads">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="ni-lbl">Leads</span><span class="nav-count-badge hidden" id="nav-leads-badge">0</span>
       </div>
@@ -9926,6 +9930,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <div id="v-jobs" class="body hidden">
         <div id="jos-jobs-root"></div>
+      </div>
+
+      <!-- PHOTOGRAPHY PROJECTS — independent of Jobs; Lightroom optional -->
+      <div id="v-photo-projects" class="body hidden">
+        <div id="jos-photo-projects-root"></div>
       </div>
 
       <!-- LEADS — directory + side detail (Pipeline is its own page) -->
@@ -11728,6 +11737,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
 <script defer src="/journey-os/journey.js?v=live-op-polish-1"></script>
+<script defer src="/journey-os/adobe-lightroom-service.js?v=photo-projects-1"></script>
+<script defer src="/journey-os/photography-projects.js?v=photo-projects-1"></script>
 <!-- ceo-demo.js loads on-demand only for owner-authorized /hubly-ceo -->
 <script defer src="/booking-wizard/ui.js"></script>
 <link rel="stylesheet" href="/booking-wizard/mock-skin.css">
@@ -12810,6 +12821,7 @@ async function loadBusiness(opts={}){
       if(data.section_order)applySectionOrderFromDb(data.section_order);
       await loadServicesFromDb();
       ensureWebsiteCopy();
+      try{syncPhotographyProjectsNav();}catch(e){}
       if(!parseBizMeta(data.meta)?.website)generateWebsiteCopyLocal();
       // Never regenerate AI copy on refresh when the owner already saved writing —
       // Instant Site often leaves gen_hero_headline null, which used to wipe pe-edits.
@@ -15706,6 +15718,18 @@ function isPhotoLedTrade(){
   if(id==='photography'||id.includes('photo')||id==='weddings')return true;
   return blueprintHas('clientGalleries');
 }
+function syncPhotographyProjectsNav(){
+  try{
+    if(window.HublyPhotographyProjects?.syncNav)return HublyPhotographyProjects.syncNav();
+    if(window.HublyJourneyOS?.syncPhotographyNav)return HublyJourneyOS.syncPhotographyNav();
+    const nav=document.querySelector('.ni[data-v="photo-projects"]');
+    if(!nav)return;
+    const show=!!isPhotoLedTrade();
+    nav.hidden=!show;
+    nav.setAttribute('aria-hidden',show?'false':'true');
+    nav.classList.toggle('jos-nav-hidden',!show);
+  }catch(e){}
+}
 function getObServiceCatalog(){
   if(typeof HublyBlueprints!=='undefined'){
     const names=HublyBlueprints.serviceNames(S.businessType||HublyBlueprints.getDefaultId());
@@ -15989,6 +16013,7 @@ function applyCdBlueprint(id,{forceMedia=true,source='who',seedServices}={}){
   S.businessType=id;
   S._blueprintConfirmed=true;
   S._blueprintSource=source;
+  try{syncPhotographyProjectsNav();}catch(e){}
   if(S._ownerUploadedMedia)forceMedia=false;
   const bp=getActiveBlueprint();
   // Skin (colors/type) from Blueprint — composition (structure) is separate.
@@ -35258,7 +35283,9 @@ function toggleOperateNavRail(){
   syncOperateNavTitles(expanded);
 }
 document.addEventListener('DOMContentLoaded',initOperateNavRail);
+document.addEventListener('DOMContentLoaded',function(){try{syncPhotographyProjectsNav();}catch(e){}});
 try{initOperateNavRail();}catch(e){}
+try{syncPhotographyProjectsNav();}catch(e){}
 document.addEventListener('DOMContentLoaded',function(){
   try{
     const badge=document.getElementById('nav-inbox-badge');
@@ -35310,7 +35337,7 @@ function switchV(el){
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
   const titles={
-    dashboard:'Home',jobs:'Jobs & Calendar',leads:'Leads',customers:t('customers'),
+    dashboard:'Home',jobs:'Jobs & Calendar','photo-projects':'Photography Projects',leads:'Leads',customers:t('customers'),
     pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
     quotes:'Quick Quote',money:'Revenue',chats:'Inbox',marketplace:'Marketplace',
     editor:'Website editor',settings:'Settings',reviews:'Reviews',marketing:'Marketing',
@@ -35323,6 +35350,7 @@ function switchV(el){
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
   if(v==='dashboard'){try{HublyJourneyOS?.enhanceDashboard?.();}catch(e){try{renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();syncDashSiteLink();}catch(e2){}}}
   if(v==='jobs'){try{HublyJourneyOS?.renderJobs?.();}catch(e){try{renderCal();renderJobsPanel();}catch(e2){}}}
+  if(v==='photo-projects'){try{HublyJourneyOS?.renderPhotoProjects?.()||HublyPhotographyProjects?.render?.();}catch(e){console.warn(e);}}
   if(v==='leads'){try{HublyJourneyOS?.renderLeadsList?.();}catch(e){}}
   if(v==='customers'){try{HublyJourneyOS.renderCustomersPage()}catch(e){renderCustomersView()}}
   if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}

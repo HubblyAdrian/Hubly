@@ -11067,6 +11067,7 @@
     dashboard: { title: 'Home', sub: '' },
     chats: { title: 'Inbox', sub: 'Every conversation in one place.' },
     jobs: { title: 'Jobs', sub: 'Manage and track every job in one place.' },
+    'photo-projects': { title: 'Photography Projects', sub: 'Projects from booking through delivery.' },
     leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
     customers: { title: 'Customers', sub: 'People, vehicles, and history.' },
     pipeline: { title: 'Pipeline', sub: 'Quotes, bookings, and completed jobs.' },
@@ -14506,6 +14507,14 @@
     // or force a different sidebar width when switching pages.
     setPipelineMode(v === 'pipeline');
     setJobsMode(v === 'jobs');
+    if (typeof global.HublyJourneyOS?.setPhotoProjectsMode === 'function') {
+      global.HublyJourneyOS.setPhotoProjectsMode(v === 'photo-projects');
+    } else if (typeof global.HublyPhotographyProjects?.setMode === 'function') {
+      global.HublyPhotographyProjects.setMode(v === 'photo-projects');
+    } else {
+      var appPp = el('p-app');
+      if (appPp) appPp.classList.toggle('jos-photo-projects-mode', v === 'photo-projects');
+    }
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');
     setCustomersMode(v === 'customers');
@@ -14535,6 +14544,14 @@
       dashboard: enhanceDashboard,
       chats: renderInbox,
       jobs: renderJobs,
+      'photo-projects': function () {
+        if (typeof global.HublyPhotographyProjects?.render === 'function') {
+          return global.HublyPhotographyProjects.render();
+        }
+        if (typeof HublyJourneyOS !== 'undefined' && typeof HublyJourneyOS.renderPhotoProjects === 'function') {
+          return HublyJourneyOS.renderPhotoProjects();
+        }
+      },
       editor: restoreWebsiteEditor
     };
     if (map[v]) try { map[v](); } catch (e) { console.warn('HublyJourneyOS', v, e); }
@@ -14749,6 +14766,23 @@
     renderInbox: renderInbox,
     renderJobs: renderJobs,
     handleJobsAct: handleJobsAct,
+    renderPhotoProjects: function () {
+      if (typeof global.HublyPhotographyProjects?.render === 'function') {
+        return global.HublyPhotographyProjects.render();
+      }
+    },
+    syncPhotographyNav: function () {
+      if (typeof global.HublyPhotographyProjects?.syncNav === 'function') {
+        return global.HublyPhotographyProjects.syncNav();
+      }
+    },
+    setPhotoProjectsMode: function (on) {
+      if (typeof global.HublyPhotographyProjects?.setMode === 'function') {
+        return global.HublyPhotographyProjects.setMode(on);
+      }
+      var app = el('p-app');
+      if (app) app.classList.toggle('jos-photo-projects-mode', !!on);
+    },
     renderStorefront: renderStorefront,
     restoreWebsiteEditor: restoreWebsiteEditor,
     handleStorefrontAct: handleStorefrontAct,
