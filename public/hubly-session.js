@@ -309,8 +309,8 @@
     var scored = scoreIntent(t, preferredPath || 'business');
     var ready =
       scored.intent === 'hire_pro'
-        ? t.trim().length >= 10 && scored.confidence >= 0.55
-        : t.trim().length >= 16 && (!!trade || !!businessName || !!location || scored.confidence >= 0.7 || foundImports.length > 0);
+        ? t.trim().length >= 6
+        : t.trim().length >= 8 || !!trade || !!businessName || !!location || foundImports.length > 0;
 
     return {
       text: t,
