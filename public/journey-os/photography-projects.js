@@ -973,6 +973,7 @@
   /* ─── Dashboard ─────────────────────────────────────────────────────── */
 
   function renderDashboard(root, list, st) {
+    var profile = projectWorkspaceProfile();
     var filtered = projectsFiltered(list, st);
     var photogs = photographers(list);
     var m = metrics(list);
@@ -1880,7 +1881,18 @@
       list = _cache.projects || [];
     }
 
-    paintProjectsView(root, list, st, { soft: soft || hasCache });
+    try {
+      paintProjectsView(root, list, st, { soft: soft || hasCache });
+    } catch (paintErr) {
+      console.warn('Projects paint failed', paintErr);
+      st.error = (paintErr && paintErr.message) || 'Could not render projects.';
+      root.innerHTML = '<div class="pp-shell pp-shell-static" style="background:var(--pp-bg);min-height:100vh">' +
+        '<div class="pp-empty"><h2>Couldn\u2019t open Projects</h2>' +
+        '<p class="pp-muted">' + esc(st.error) + '</p>' +
+        '<div class="pp-btn-row" style="justify-content:center">' +
+        '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="new">+ New Project</button></div></div></div>';
+      try { bindPhotoProjects(root); } catch (e2) {}
+    }
   }
 
   /** Soft re-paint from cache (tabs, saves, wizard steps) — no loading flash. */

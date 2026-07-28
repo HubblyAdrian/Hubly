@@ -150,7 +150,8 @@ describe('Hubly Projects module', () => {
     assert.match(js, /Quick Project/);
     assert.match(js, /Create Project/);
     assert.match(journey, /photo-quick/);
-    assert.match(js, /profile\.title/);
+    assert.match(js, /var profile = projectWorkspaceProfile\(\)/);
+    assert.match(js, /profile\.teamFilterLabel/);
     assert.match(js, /title: 'Projects'/);
     assert.match(apps, /Connect the tools you already use/);
     assert.match(apps, /What happens after you connect/);
