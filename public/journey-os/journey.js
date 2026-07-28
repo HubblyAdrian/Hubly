@@ -2154,7 +2154,7 @@
       { label: 'Business', value: city, act: 'set-tab-business', icon: 'biz', tone: 'purple' },
       { label: 'Team', value: String(teamN) + ' users', act: 'set-tab-team', icon: 'team', tone: 'green' },
       { label: 'Status', value: plan, act: 'set-tab-billing', icon: 'plan', tone: 'blue' },
-      { label: 'Integrations', value: 'Stripe · Google · SMS', act: 'set-tab-integrations', icon: 'plug', tone: 'violet', badge: 'Setup' },
+      { label: 'Integrations', value: 'Payments · Stripe · Google', act: 'set-tab-integrations', icon: 'plug', tone: 'violet', badge: 'Setup' },
       { label: 'AI Defaults', value: String(os.ai.tone || 'helpful_pro'), act: 'set-tab-ai', icon: 'ai', tone: 'amber' },
       { label: 'Security', value: mfaOff ? 'MFA: off' : 'MFA: on', act: 'set-tab-security', icon: 'shield', tone: 'red', danger: mfaOff }
     ].map(function (c) {
