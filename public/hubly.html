@@ -7135,6 +7135,17 @@ body.ed-editor-open .app-nav{z-index:2600!important;}
 body.ed-editor-open .bar-title-block,
 body.ed-pe-open .bar-title-block{visibility:hidden!important;}
 body.ed-pe-open .app-bar{display:none!important;}
+/* Editor fills the viewport once the Home app-bar is hidden — no 54px Home strip */
+body.ed-editor-open #v-editor,
+body.ed-editor-open .ed-shell,
+body.ed-editor-open .ed-shell.ed-canvas-mode{
+  height:100vh!important;
+  min-height:100vh!important;
+  position:relative;
+  z-index:2;
+  isolation:isolate;
+  background:#eef1f5;
+}
 /* Backdrop never steals clicks — whether mounted on body or still inside
    .ed-shell (desktop used to only disable body-mounted backdrop, so the
    in-shell copy ate Site / Packages / Book Now). Close via × only. */
@@ -27128,16 +27139,22 @@ function syncEdCtrlTop(){
   try{
     const app=document.querySelector('.app-bar');
     const topBar=document.querySelector('#v-editor .ed-top-bar, .ed-shell.ed-canvas-mode .ed-top-bar');
-    let top=54;
+    const editorOpen=document.body.classList.contains('ed-editor-open')||document.body.classList.contains('ed-pe-open');
+    let top=editorOpen?0:54;
     if(app){
-      const r=app.getBoundingClientRect();
-      top=Math.max(top,Math.ceil(r.bottom));
+      const cs=getComputedStyle(app);
+      const hidden=cs.display==='none'||cs.visibility==='hidden'||app.offsetHeight===0;
+      if(!hidden){
+        const r=app.getBoundingClientRect();
+        top=Math.max(top,Math.ceil(r.bottom));
+      }
     }
     if(topBar&&getComputedStyle(topBar).display!=='none'){
       const r2=topBar.getBoundingClientRect();
       top=Math.max(top,Math.ceil(r2.bottom));
     }
-    top=Math.max(54,Math.min(top+2,Math.round(window.innerHeight*0.45)));
+    const floor=editorOpen?0:54;
+    top=Math.max(floor,Math.min(top+2,Math.round(window.innerHeight*0.45)));
     document.documentElement.style.setProperty('--ed-ctrl-top',top+'px');
     const editor=document.getElementById('v-editor');
     if(editor)editor.style.setProperty('--ed-ctrl-top',top+'px');

@@ -3989,12 +3989,16 @@ html[data-theme="night"] .jos-mem-form select{
   --jos-jobs-rail:320px;
   --jos-jobs-bg:#F7F8FA;
 }
-#p-app.jos-pixel.jos-jobs-mode .app-main{margin-left:var(--nav);background:var(--jos-jobs-bg)}
+#p-app.jos-pixel.jos-jobs-mode .app-main{margin-left:var(--nav);background:var(--jos-jobs-bg)!important}
 #p-app.jos-pixel.jos-jobs-mode .app-bar{display:none!important}
+/* Opaque full-viewport shell — Home must not bleed through Jobs / Calendar */
 #p-app.jos-pixel.jos-jobs-mode #v-jobs.body,
 #p-app.jos-pixel.jos-jobs-mode #jos-jobs-root{
-  min-height:100vh;height:100vh;padding:0!important;overflow:hidden;background:var(--jos-jobs-bg);
+  min-height:100vh;height:100vh;padding:0!important;overflow:hidden;
+  background:var(--jos-jobs-bg);
+  position:relative;z-index:2;isolation:isolate;
 }
+#p-app.jos-pixel.jos-jobs-mode #v-jobs.body > :not(#jos-jobs-root){display:none!important}
 #p-app.jos-pixel.jos-jobs-mode .app-nav{
   width:var(--nav);background:linear-gradient(180deg,var(--jos-sidebar) 0%,#0C111A 100%);
 }
@@ -4008,7 +4012,12 @@ html[data-theme="night"] .jos-mem-form select{
 
 .jos-jobs-shell{
   height:100vh;max-width:1728px;margin:0 auto;display:flex;flex-direction:column;
-  background:var(--jos-jobs-bg,#F7F8FA);animation:josHomeIn .35s ease both;overflow:hidden;
+  background:var(--jos-jobs-bg,#F7F8FA);overflow:hidden;
+  /* Do not fade the shell — opacity:0 lets Home paint through during enter */
+  animation:none;
+}
+.jos-jobs-shell > .jos-jobs-layout{
+  animation:josHomeIn .28s ease both;
 }
 .jos-jobs-layout{
   flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:0;overflow:hidden;
@@ -4043,21 +4052,30 @@ html[data-theme="night"] .jos-mem-form select{
   font:inherit;font-size:11px;font-weight:800;cursor:pointer;
 }
 
-.jos-jobs-filters{
-  background:#fff;border-radius:18px;box-shadow:0 8px 30px rgba(0,0,0,.04);padding:24px;margin-bottom:20px;
-  min-height:92px;border:1px solid #ECECEC;
+.jos-jobs-toolbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;
 }
-.jos-jobs-filter-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.jos-jobs-toolbar .jos-jobs-search{
+  flex:1;min-width:min(100%,240px);height:42px;display:flex;align-items:center;
+  border:1px solid var(--jos-border);border-radius:12px;background:#fff;padding:0 14px;
+}
+.jos-jobs-toolbar .jos-jobs-search input{border:0;outline:0;width:100%;background:transparent;font:inherit;font-size:13px}
+.jos-jobs-filters{
+  display:none;background:#fff;border-radius:14px;box-shadow:none;padding:12px;margin-bottom:12px;
+  min-height:0;border:1px solid #ECECEC;
+}
+.jos-jobs-filters.is-open{display:block}
+.jos-jobs-filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .jos-jobs-filter-row.two{margin-top:12px}
 .jos-jobs-dt{gap:6px!important}
 .jos-jobs-dt span{display:inline-flex;align-items:center;gap:6px}
 .jos-jobs-dt svg{flex-shrink:0;color:var(--jos-ink-3)}
 .jos-jobs-dd{
-  width:150px;height:44px;border:1px solid var(--jos-border);border-radius:12px;background:#fff;
-  padding:0 12px;font:inherit;font-size:13px;font-weight:650;color:var(--jos-navy);
+  width:auto;min-width:120px;max-width:168px;height:38px;border:1px solid var(--jos-border);border-radius:10px;background:#fff;
+  padding:0 10px;font:inherit;font-size:12px;font-weight:650;color:var(--jos-navy);
 }
 .jos-jobs-search{
-  flex:1;min-width:200px;height:44px;display:flex;align-items:center;border:1px solid var(--jos-border);
+  flex:1;min-width:200px;height:42px;display:flex;align-items:center;border:1px solid var(--jos-border);
   border-radius:12px;background:var(--jos-surface-2);padding:0 14px;
 }
 .jos-jobs-search input{border:0;outline:0;width:100%;background:transparent;font:inherit;font-size:13px}
@@ -4072,52 +4090,68 @@ html[data-theme="night"] .jos-mem-form select{
   height:40px;border:1px solid var(--jos-border);border-radius:10px;padding:0 10px;font:inherit;font-size:13px;text-transform:none;font-weight:650;
 }
 
-.jos-jobs-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:20px;margin-bottom:20px}
-.jos-jobs-kpi{
-  height:110px;appearance:none;border:1px solid #ECECEC;background:#fff;border-radius:18px;padding:18px;
-  display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;font:inherit;
-  box-shadow:0 8px 30px rgba(0,0,0,.04);transition:transform .15s,box-shadow .15s;
+/* Legacy KPI cards kept for safety but unused — compact meta chips replace them */
+.jos-jobs-kpis{display:none!important}
+.jos-jobs-table-card.jos-jobs-first{margin-top:0}
+.jos-jobs-table-head{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:12px 16px;flex-wrap:wrap;
+  margin-bottom:4px;
 }
-.jos-jobs-kpi:hover{transform:translateY(-4px);box-shadow:0 14px 36px rgba(0,0,0,.08)}
-.jos-jobs-kpi-ico{
-  width:48px;height:48px;border-radius:14px;flex-shrink:0;
-  background:var(--jos-brand-soft);color:var(--jos-brand);
-  display:inline-flex;align-items:center;justify-content:center;
+.jos-jobs-table-head .jos-jobs-table-tabs{
+  margin-bottom:0;border-bottom:0;height:auto;flex-wrap:wrap;gap:2px;width:100%;
 }
-.jos-jobs-kpi-svg{width:24px;height:24px}
-.jos-jobs-kpi.tone-ok .jos-jobs-kpi-ico{background:#ECFDF3;color:#15803D}
-.jos-jobs-kpi.tone-warn .jos-jobs-kpi-ico{background:#FFF7ED;color:#C2410C}
-.jos-jobs-kpi.tone-info .jos-jobs-kpi-ico{background:#F3E8FF;color:#7C3AED}
-.jos-jobs-kpi.tone-blue .jos-jobs-kpi-ico{background:#EFF6FF;color:#2563EB}
-.jos-jobs-kpi .lbl{display:block;font-size:12px;font-weight:700;color:var(--jos-ink-3)}
-.jos-jobs-kpi strong{display:block;font-size:26px;font-weight:800;color:var(--jos-navy);letter-spacing:-.03em;margin-top:2px}
-.jos-jobs-kpi .trend{display:block;font-size:11px;font-weight:700;color:#15803D;margin-top:2px}
+.jos-jobs-foot{
+  margin-top:16px;padding-top:14px;border-top:1px solid #F0F1F3;
+}
+.jos-jobs-meta{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-start;
+}
+.jos-jobs-meta-chip{
+  appearance:none;border:1px solid #E8EAED;background:#F8F9FA;border-radius:999px;
+  padding:5px 9px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:inherit;
+  max-width:100%;min-width:0;
+}
+.jos-jobs-meta-chip span{
+  font-size:11px;font-weight:700;color:var(--jos-ink-3);letter-spacing:.01em;white-space:nowrap;
+}
+.jos-jobs-meta-chip strong{
+  font-size:12px;font-weight:800;color:var(--jos-navy);letter-spacing:-.02em;white-space:nowrap;
+  max-width:7.5ch;overflow:hidden;text-overflow:ellipsis;
+}
+.jos-jobs-meta-chip.revenue strong{max-width:9ch;color:var(--jos-brand)}
+.jos-jobs-meta-chip:hover{border-color:rgba(217,99,45,.35);background:#FFF8F3}
 
 .jos-jobs-table-card{
-  background:#fff;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,.04);padding:24px;border:1px solid #ECECEC;
+  background:#fff;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,.04);padding:20px 20px 24px;border:1px solid #ECECEC;
 }
 .jos-jobs-table-tabs{display:flex;gap:4px;border-bottom:1px solid var(--jos-border);margin-bottom:12px;height:50px;align-items:stretch}
 .jos-jobs-ttab{
-  appearance:none;border:0;background:transparent;padding:0 14px;font:inherit;font-size:13px;font-weight:750;
+  appearance:none;border:0;background:transparent;padding:0 12px;font:inherit;font-size:13px;font-weight:750;
   color:var(--jos-ink-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
-  transition:color .2s,border-color .2s;
+  transition:color .2s,border-color .2s;white-space:nowrap;
 }
 .jos-jobs-ttab.on{color:var(--jos-brand);border-bottom-color:var(--jos-brand)}
 .jos-jobs-table-wrap{overflow:auto;max-height:none}
 .jos-jobs-cards{display:none;gap:12px}
-.jos-jobs-table{width:100%;border-collapse:collapse;min-width:980px}
+.jos-jobs-table{width:100%;border-collapse:collapse;min-width:760px;table-layout:fixed}
 .jos-jobs-table thead th{
-  position:sticky;top:0;z-index:2;height:54px;background:#fff;text-align:left;padding:0 10px;
+  position:sticky;top:0;z-index:2;height:48px;background:#fff;text-align:left;padding:0 10px;
   font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--jos-ink-3);
   border-bottom:1px solid var(--jos-border);
 }
-.jos-jobs-row{min-height:92px;height:auto;border-bottom:1px solid var(--jos-border);border-left:3px solid transparent;transition:background .15s}
+.jos-jobs-table .col-cust{width:28%}
+.jos-jobs-table .col-svc{width:22%}
+.jos-jobs-table .col-date{width:18%}
+.jos-jobs-table .col-status{width:14%}
+.jos-jobs-table .col-amt{width:12%}
+.jos-jobs-table .col-act{width:6%}
+.jos-jobs-row{min-height:76px;height:auto;border-bottom:1px solid var(--jos-border);border-left:3px solid transparent;transition:background .15s}
 .jos-jobs-row.tone-ok{border-left-color:#15803D}
 .jos-jobs-row.tone-info{border-left-color:#2563EB}
 .jos-jobs-row.tone-warn{border-left-color:var(--jos-brand)}
 .jos-jobs-row.tone-hot{border-left-color:#DC2626}
 .jos-jobs-row:hover{background:#F8FAFC}
-.jos-jobs-table td{padding:10px;vertical-align:middle;min-width:0}
+.jos-jobs-table td{padding:12px 10px;vertical-align:middle;min-width:0}
 .jos-jobs-table td .jos-linkish,.jos-jobs-cust{
   display:flex;flex-direction:column;align-items:flex-start;gap:2px;appearance:none;border:0;background:transparent;
   font:inherit;cursor:pointer;text-align:left;color:inherit;padding:0;max-width:100%;min-width:0;
@@ -4127,8 +4161,12 @@ html[data-theme="night"] .jos-mem-form select{
   min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .jos-jobs-cust{flex-direction:row;align-items:center;gap:10px}
-.jos-jobs-cust > span{display:flex;flex-direction:column;white-space:normal}
+.jos-jobs-cust > span{display:flex;flex-direction:column;white-space:normal;min-width:0}
 .jos-jobs-cust > span span{white-space:nowrap}
+.jos-jobs-status{
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  text-transform:capitalize;font-size:11px;padding:5px 8px;display:inline-block;
+}
 .jos-jobs-ava{
   width:40px;height:40px;border-radius:50%;background:linear-gradient(145deg,#2A3348,#141B2B);color:#fff;
   display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;
@@ -4250,6 +4288,26 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-jd-stack{display:grid;gap:12px}
 .jos-jd-kv{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--jos-border);font-size:13px}
 .jos-jd-kv span{color:var(--jos-ink-3);font-weight:700}
+.jos-jd-head-acts{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.jos-jd-tabs.is-disabled{opacity:.55;pointer-events:none}
+.jos-je-form{padding-bottom:12px}
+.jos-je-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;width:100%;
+}
+.jos-je-field{
+  display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--jos-ink-2);
+}
+.jos-je-field.full{grid-column:1/-1}
+.jos-je-field input,.jos-je-field select{
+  height:40px;border:1px solid var(--jos-border);border-radius:12px;padding:0 12px;
+  font:inherit;font-size:13px;font-weight:600;color:var(--jos-navy);background:#F9FAFB;
+}
+.jos-je-field input:focus,.jos-je-field select:focus{
+  outline:none;border-color:rgba(217,99,45,.45);background:#fff;box-shadow:0 0 0 3px rgba(217,99,45,.12);
+}
+@media(max-width:720px){
+  .jos-je-grid{grid-template-columns:1fr}
+}
 .jos-jd-profile{display:flex;gap:12px;align-items:flex-start}
 .jos-jd-svc{padding:12px;border:1px solid var(--jos-border);border-radius:12px;background:var(--jos-surface-2)}
 .jos-jd-tl{

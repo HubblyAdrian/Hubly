@@ -13530,10 +13530,57 @@
   }
 
   function jobNumber(j) {
-    var id = String(j.id || '');
+    if (j && j.jobNumber) return String(j.jobNumber);
+    var id = String((j && j.id) || '');
     if (/^JOB-/i.test(id)) return id.toUpperCase();
     var n = id.replace(/\D/g, '').slice(-4) || '0000';
     return 'JOB-' + n;
+  }
+
+  function jobEditField(id, label, value, opts) {
+    opts = opts || {};
+    var type = opts.type || 'text';
+    var ph = opts.placeholder || '';
+    var full = opts.full ? ' full' : '';
+    if (opts.kind === 'select') {
+      var options = (opts.options || []).map(function (o) {
+        var v = typeof o === 'string' ? o : o.value;
+        var lab = typeof o === 'string' ? o : (o.label || o.value);
+        return '<option value="' + esc(v) + '"' + (String(v) === String(value || '') ? ' selected' : '') + '>' + esc(lab) + '</option>';
+      }).join('');
+      return '<label class="jos-je-field' + full + '"><span>' + esc(label) + '</span><select id="' + esc(id) + '">' + options + '</select></label>';
+    }
+    return '<label class="jos-je-field' + full + '"><span>' + esc(label) + '</span><input id="' + esc(id) + '" type="' + esc(type) + '" value="' + esc(value == null ? '' : value) + '" placeholder="' + esc(ph) + '"' + (opts.autofocus ? ' autofocus' : '') + '></label>';
+  }
+
+  function renderJobEditForm(j) {
+    var services = ((S().services || []).map(function (s) { return s && s.name; }).filter(Boolean));
+    if (!services.length) services = [j.service || 'Detail', 'Detail', 'Interior', 'Exterior'];
+    if (j.service && services.indexOf(j.service) < 0) services.unshift(j.service);
+    var team = (jobsTeam() || []).map(function (m) { return m && m.name; }).filter(Boolean);
+    if (!team.length) team = ['Unassigned'];
+    if (j.assignedTo && team.indexOf(j.assignedTo) < 0) team.unshift(j.assignedTo);
+    if (team.indexOf('Unassigned') < 0) team.unshift('Unassigned');
+    return '<div class="jos-jd-stack jos-je-form">' +
+      '<p class="jos-muted" style="margin:0 0 8px">Edit the job details Hubly will use for scheduling, CRM, and invoices.</p>' +
+      '<div class="jos-je-grid">' +
+      jobEditField('jos-je-number', 'Job #', jobNumber(j), { placeholder: 'JOB-1001' }) +
+      jobEditField('jos-je-customer', 'Customer', j.customer || '', { placeholder: 'Customer name', autofocus: true }) +
+      jobEditField('jos-je-phone', 'Phone', j.phone || '', { placeholder: '(555) 000-0000' }) +
+      jobEditField('jos-je-email', 'Email', j.email || '', { type: 'email', placeholder: 'name@email.com' }) +
+      jobEditField('jos-je-address', 'Address', j.address || '', { full: true, placeholder: 'Service address' }) +
+      jobEditField('jos-je-vehicle', 'Vehicle / property', j.vehicle || '', { placeholder: 'Optional' }) +
+      jobEditField('jos-je-service', 'Service', j.service || '', { kind: 'select', options: services }) +
+      jobEditField('jos-je-amount', 'Amount', j.amount != null ? j.amount : '', { type: 'number', placeholder: '0' }) +
+      jobEditField('jos-je-date', 'Date', j.date || '', { type: 'date' }) +
+      jobEditField('jos-je-time', 'Time', j.time || '', { placeholder: '10:00 AM' }) +
+      jobEditField('jos-je-duration', 'Duration (min)', j.durationMin || 120, { type: 'number' }) +
+      jobEditField('jos-je-assigned', 'Assigned to', j.assignedTo || 'Unassigned', { kind: 'select', options: team }) +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' +
+      btn('jobs-edit-save', 'Save job', 'jos-btn-brand jos-btn-sm') +
+      btn('jobs-edit-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
+      '</div></div>';
   }
 
   function jobsPageSize(root) { return root._josJobsPageSize || 25; }
@@ -13544,6 +13591,15 @@
     if (!root) return;
     setJobsMode(true);
     updateChrome('jobs');
+    try {
+      var bar = el('bar-title');
+      var sub = el('bar-sub');
+      if (root._josJobsMainView === 'calendar') {
+        if (bar) bar.textContent = 'Calendar';
+        if (sub) sub.textContent = 'Day · week · month · agenda — manage your schedule.';
+        try { if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle('Calendar'); } catch (eT) {}
+      }
+    } catch (eChrome) {}
     /* Avoid full-page flash when only switching drawer tabs */
     if (root._josJobsSkipLoading) {
       root._josJobsSkipLoading = false;
@@ -13591,29 +13647,33 @@
 
   function renderJobDrawer(root, j, workspaceTab) {
     workspaceTab = workspaceTab || 'overview';
+    var editing = !!root._josJobEditOpen && !(j.isBlock || j.isGoogle);
     var tabs = [
       ['overview', 'Overview'], ['customer', 'Customer'], ['services', 'Services'], ['photos', 'Photos'],
       ['checklist', 'Checklist'], ['messages', 'Messages'], ['invoice', 'Invoice'], ['timeline', 'Timeline'], ['activity', 'Activity']
     ];
-    var tabBar = '<div class="jos-jd-tabs">' + tabs.map(function (t) {
-      return '<button type="button" class="jos-jd-tab' + (workspaceTab === t[0] ? ' on' : '') + '" data-jos-job-ws="' + t[0] + '">' + esc(t[1]) + '</button>';
+    var tabBar = '<div class="jos-jd-tabs' + (editing ? ' is-disabled' : '') + '">' + tabs.map(function (t) {
+      return '<button type="button" class="jos-jd-tab' + (workspaceTab === t[0] ? ' on' : '') + '" data-jos-job-ws="' + t[0] + '"' + (editing ? ' disabled' : '') + '>' + esc(t[1]) + '</button>';
     }).join('') + '</div>';
 
     var body = '';
-    if (workspaceTab === 'overview') {
+    if (editing) {
+      body = renderJobEditForm(j);
+    } else if (workspaceTab === 'overview') {
       body = '<div class="jos-jd-stack">' +
         '<div class="jos-jd-kv"><span>Job #</span><strong>' + esc(jobNumber(j)) + '</strong></div>' +
         '<div class="jos-jd-kv"><span>Status</span><button type="button" class="jos-pill ' + jobStatusTone(j.status) + '" data-jos-act="jobs-status-menu" data-jos-job-id="' + esc(j.id) + '">' + esc(j.status) + '</button></div>' +
         '<div class="jos-jd-kv"><span>Customer</span><button type="button" class="jos-linkish" data-jos-act="jobs-open-customer" data-jos-job-id="' + esc(j.id) + '">' + esc(j.customer) + '</button></div>' +
         '<div class="jos-jd-kv"><span>Vehicle</span><strong>' + esc(j.vehicle || '—') + '</strong></div>' +
         '<div class="jos-jd-kv"><span>Address</span><button type="button" class="jos-linkish" data-jos-act="jobs-nav" data-jos-job-id="' + esc(j.id) + '">' + esc(j.address || '—') + '</button></div>' +
-        '<div class="jos-jd-kv"><span>Travel</span><strong>~8.2 mi</strong></div>' +
+        '<div class="jos-jd-kv"><span>Date / time</span><strong>' + esc((j.date || '—') + ' · ' + (j.time || '')) + '</strong></div>' +
         '<div class="jos-jd-kv"><span>Assigned</span><strong>' + esc(j.assignedTo || 'Unassigned') + '</strong></div>' +
         '<div class="jos-jd-kv"><span>Revenue</span><button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '">' + esc(money(j.amount) || '$0') + '</button></div>' +
         '<div class="jos-jd-kv"><span>Duration</span><strong>' + esc(String(j.durationMin || 120)) + ' min</strong></div>' +
         '<div class="jos-muted jos-mt">' + esc((j.internalNotes && j.internalNotes[0]) || 'No notes yet') + '</div>' +
         '<div class="jos-btn-row jos-mt">' +
-        btn('jobs-start', 'Start', 'jos-btn-brand jos-btn-sm') +
+        btn('jobs-edit', 'Edit details', 'jos-btn-brand jos-btn-sm') +
+        btn('jobs-start', 'Start', 'jos-btn jos-btn-sm') +
         btn('jobs-reschedule', 'Reschedule', 'jos-btn jos-btn-sm') +
         btn('jobs-complete', 'Complete', 'jos-btn jos-btn-sm') +
         btn('jobs-message', 'Message', 'jos-btn jos-btn-sm') +
@@ -13626,10 +13686,10 @@
         '<div><button type="button" class="jos-linkish" data-jos-act="jobs-email" data-jos-job-id="' + esc(j.id) + '">' + esc(j.email || 'No email') + '</button></div>' +
         '<div class="jos-muted">' + esc(j.address || '') + '</div></div></div>' +
         '<div class="jos-muted">Vehicle · ' + esc(j.vehicle || '—') + ' · Past jobs & LTV in CRM</div>' +
-        '<div class="jos-btn-row">' + btn('jobs-open-customer', 'Open Customer', 'jos-btn-brand jos-btn-sm') + btn('go-chats', 'Messages', 'jos-btn jos-btn-sm') + btn('go-reviews', 'Reviews', 'jos-btn jos-btn-sm') + '</div></div>';
+        '<div class="jos-btn-row">' + btn('jobs-edit', 'Edit details', 'jos-btn-brand jos-btn-sm') + btn('jobs-open-customer', 'Open Customer', 'jos-btn jos-btn-sm') + btn('go-chats', 'Messages', 'jos-btn jos-btn-sm') + '</div></div>';
     } else if (workspaceTab === 'services') {
       body = '<div class="jos-jd-stack"><div class="jos-jd-svc"><strong>' + esc(j.service) + '</strong><div class="jos-muted">Qty 1 · ' + esc(money(j.amount)) + ' · Tax/discount editable · ' + esc(String(j.durationMin || 120)) + ' min</div></div>' +
-        '<div class="jos-btn-row">' + btn('jobs-edit', 'Edit service', 'jos-btn jos-btn-sm') + btn('jobs-invoice-create', 'Add Service / Invoice', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+        '<div class="jos-btn-row">' + btn('jobs-edit', 'Edit details', 'jos-btn jos-btn-sm') + btn('jobs-invoice-create', 'Add Service / Invoice', 'jos-btn-brand jos-btn-sm') + '</div></div>';
     } else if (workspaceTab === 'photos') {
       body = '<div class="jos-jd-stack"><div class="jos-kicker">Before</div><div class="jos-photo-grid">' +
         ((j.photos && j.photos.before && j.photos.before.length ? j.photos.before : []).map(function (p, i) {
@@ -13669,9 +13729,12 @@
       body = '<div class="jos-muted">Select a tab</div>';
     }
 
-    return '<aside class="jos-jobs-drawer open" id="jos-jobs-drawer">' +
-      '<div class="jos-jd-head"><div><div class="jos-kicker">Job Details</div><h2>' + esc(j.customer || 'Customer') + '</h2><div class="jos-muted">' + esc(j.service || '') + ' · ' + esc(jobNumber(j)) + '</div></div>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="jobs-drawer-close" aria-label="Close">✕</button></div>' +
+    return '<aside class="jos-jobs-drawer open' + (editing ? ' is-editing' : '') + '" id="jos-jobs-drawer">' +
+      '<div class="jos-jd-head"><div><div class="jos-kicker">' + (editing ? 'Edit job' : 'Job Details') + '</div><h2>' + esc(j.customer || 'Customer') + '</h2><div class="jos-muted">' + esc(j.service || '') + ' · ' + esc(jobNumber(j)) + '</div></div>' +
+      '<div class="jos-jd-head-acts">' +
+      (editing || j.isBlock || j.isGoogle ? '' : '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-edit">Edit</button>') +
+      '<button type="button" class="jos-icon-btn" data-jos-act="jobs-drawer-close" aria-label="Close">✕</button>' +
+      '</div></div>' +
       tabBar +
       '<div class="jos-jd-body">' + body + '</div></aside>';
   }
@@ -13724,7 +13787,7 @@
         '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span><span><strong class="jos-jobs-name">' + esc(j.customer || 'Customer') + '</strong><span class="jos-muted">' + esc(j.phone || j.email || '') + '</span></span></button></td>' +
         '<td class="col-svc"><button type="button" class="jos-linkish" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><strong class="jos-jobs-name">' + esc(j.service || 'Service') + '</strong><span class="jos-muted">' + esc(j.vehicle || '') + (j.durationMin ? (' · ' + j.durationMin + 'm') : '') + '</span></button></td>' +
         '<td class="col-date"><button type="button" class="jos-linkish jos-jobs-dt" data-jos-act="jobs-cal-day" data-jos-day="' + esc(j.date || '') + '"><strong class="jos-jobs-name">' + esc(j.date || '—') + '</strong><span class="jos-muted">' + esc(j.time || '') + ' · ' + esc(jobNumber(j)) + '</span></button></td>' +
-        '<td class="col-status"><button type="button" class="jos-pill ' + jobStatusTone(j.status) + '" data-jos-act="jobs-status-menu" data-jos-job-id="' + esc(j.id) + '">' + esc(j.status) + '</button></td>' +
+        '<td class="col-status"><button type="button" class="jos-pill jos-jobs-status ' + jobStatusTone(j.status) + '" data-jos-act="jobs-status-menu" data-jos-job-id="' + esc(j.id) + '">' + esc(String(j.status || '').replace(/_/g, ' ')) + '</button></td>' +
         '<td class="col-amt"><button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '"><strong class="jos-jobs-name">' + esc(money(j.amount) || '$0') + '</strong></button></td>' +
         '<td class="col-act"><div class="jos-jobs-more-wrap">' +
         '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋯</button>' +
@@ -13738,7 +13801,7 @@
         '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span>' +
         '<span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(jobNumber(j)) + ' · ' + esc(j.service || '') + '</span>' +
         '<span class="jos-muted">' + esc(j.date || '') + ' · ' + esc(j.time || '') + '</span></span>' +
-        '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></button>' +
+        '<span class="jos-pill jos-jobs-status ' + jobStatusTone(j.status) + '">' + esc(String(j.status || '').replace(/_/g, ' ')) + '</span></button>' +
         '<div class="jos-jobs-card-foot">' +
         '<button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '">' + esc(money(j.amount) || '$0') + '</button>' +
         '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋯</button>' +
@@ -13784,71 +13847,77 @@
       mainBody =
         '<section class="jos-jobs-cal-full">' +
         '<div class="jos-between jos-jobs-cal-toolbar">' +
-        '<div><h2 class="jos-jobs-cal-title">Calendar</h2><p class="jos-muted">Day · week · month · agenda — click a job to open it.</p></div>' +
-        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-list-view">← Back to list</button>' +
+        '<div><h2 class="jos-jobs-cal-title">' + esc((calView.charAt(0).toUpperCase() + calView.slice(1)) + ' view') + '</h2><p class="jos-muted">Drag empty time to create · click a job to edit details.</p></div>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-list-view">← Back to Jobs list</button>' +
         '</div>' +
         renderJobsCalendar(root, calView, calAnchor, selectedId) +
         '</section>';
     } else {
+      var filtersOpen = !!root._josJobsFiltersOpen;
+      var activeFilterCount = 0;
+      if ((root._josJobsDateFilter || 'all') !== 'all') activeFilterCount++;
+      if ((root._josJobsStatus || 'all') !== 'all') activeFilterCount++;
+      if ((root._josJobsService || 'all') !== 'all') activeFilterCount++;
+      if ((root._josJobsEmployee || 'all') !== 'all') activeFilterCount++;
+      if ((root._josJobsLocation || 'all') !== 'all') activeFilterCount++;
+      if ((root._josJobsSource || 'all') !== 'all') activeFilterCount++;
+      if ((root._josJobsTag || 'all') !== 'all') activeFilterCount++;
+
+      var metaHtml =
+        '<div class="jos-jobs-meta" aria-label="Jobs summary">' +
+        '<button type="button" class="jos-jobs-meta-chip" data-jos-act="jobs-kpi-all"><span>All</span><strong>' + total + '</strong></button>' +
+        '<button type="button" class="jos-jobs-meta-chip" data-jos-act="jobs-kpi-scheduled"><span>Scheduled</span><strong>' + scheduled + '</strong></button>' +
+        '<button type="button" class="jos-jobs-meta-chip" data-jos-act="jobs-kpi-progress"><span>Active</span><strong>' + inProgress + '</strong></button>' +
+        '<button type="button" class="jos-jobs-meta-chip" data-jos-act="jobs-kpi-completed"><span>Done</span><strong>' + completed + '</strong></button>' +
+        '<button type="button" class="jos-jobs-meta-chip revenue" data-jos-act="jobs-kpi-revenue"><span>Revenue</span><strong>' + esc(money(revenue || 0) || '$0') + '</strong></button>' +
+        '</div>';
+
       mainBody =
-      '<section class="jos-jobs-filters">' +
+      '<section class="jos-jobs-toolbar">' +
+      '<label class="jos-jobs-search"><input id="jos-jobs-search" type="search" placeholder="Search jobs, customers, phone…" value="' + esc(root._josJobsQ || '') + '"></label>' +
+      '<button type="button" class="jos-btn jos-btn-sm' + (filtersOpen || activeFilterCount ? ' jos-btn-brand' : '') + '" data-jos-act="jobs-filters-toggle" aria-expanded="' + (filtersOpen ? 'true' : 'false') + '">' +
+      (activeFilterCount ? ('Filters · ' + activeFilterCount) : 'Filters') +
+      '</button>' +
+      '</section>' +
+
+      (filtersOpen ? (
+      '<section class="jos-jobs-filters is-open" id="jos-jobs-filters">' +
       '<div class="jos-jobs-filter-row">' +
-      '<select id="jos-jobs-filter-date" class="jos-jobs-dd"><option value="all">Date</option><option value="today"' + ((root._josJobsDateFilter || '') === 'today' ? ' selected' : '') + '>Today</option><option value="week"' + ((root._josJobsDateFilter || '') === 'week' ? ' selected' : '') + '>This week</option></select>' +
-      '<select id="jos-jobs-filter-status" class="jos-jobs-dd"><option value="all">Status</option>' + ['scheduled', 'in_progress', 'completed', 'cancelled', 'pending'].map(function (s) {
-        return '<option value="' + s + '"' + ((root._josJobsStatus || 'all') === s ? ' selected' : '') + '>' + s + '</option>';
+      '<select id="jos-jobs-filter-date" class="jos-jobs-dd"><option value="all">Any date</option><option value="today"' + ((root._josJobsDateFilter || '') === 'today' ? ' selected' : '') + '>Today</option><option value="week"' + ((root._josJobsDateFilter || '') === 'week' ? ' selected' : '') + '>This week</option></select>' +
+      '<select id="jos-jobs-filter-status" class="jos-jobs-dd"><option value="all">Any status</option>' + ['scheduled', 'in_progress', 'completed', 'cancelled', 'pending'].map(function (s) {
+        return '<option value="' + s + '"' + ((root._josJobsStatus || 'all') === s ? ' selected' : '') + '>' + s.replace(/_/g, ' ') + '</option>';
       }).join('') + '</select>' +
-      '<select id="jos-jobs-filter-service" class="jos-jobs-dd"><option value="all">Services</option>' + services.map(function (s) {
+      '<select id="jos-jobs-filter-service" class="jos-jobs-dd"><option value="all">Any service</option>' + services.map(function (s) {
         return '<option value="' + esc(s) + '"' + ((root._josJobsService || 'all') === s ? ' selected' : '') + '>' + esc(s) + '</option>';
       }).join('') + '</select>' +
-      '<select id="jos-jobs-filter-employee" class="jos-jobs-dd"><option value="all">Team</option>' + jobsTeam().map(function (t) {
+      '<select id="jos-jobs-filter-employee" class="jos-jobs-dd"><option value="all">Any teammate</option>' + jobsTeam().map(function (t) {
         return '<option value="' + esc(t.name) + '"' + ((root._josJobsEmployee || 'all') === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
       }).join('') + '</select>' +
-      '<select id="jos-jobs-filter-location" class="jos-jobs-dd"><option value="all">Locations</option>' + locations.map(function (l) {
+      '<select id="jos-jobs-filter-location" class="jos-jobs-dd"><option value="all">Any location</option>' + locations.map(function (l) {
         return '<option value="' + esc(l) + '"' + ((root._josJobsLocation || 'all') === l ? ' selected' : '') + '>' + esc(l) + '</option>';
       }).join('') + '</select>' +
-      '<label class="jos-jobs-search"><input id="jos-jobs-search" type="search" placeholder="Search customer, address, phone..." value="' + esc(root._josJobsQ || '') + '"></label>' +
-      '</div>' +
-      '<div class="jos-jobs-filter-row two">' +
-      '<select id="jos-jobs-filter-source" class="jos-jobs-dd"><option value="all">Source</option><option value="booking">Booking</option><option value="manual">Manual</option><option value="from-quote">Quote</option></select>' +
-      '<select id="jos-jobs-filter-tag" class="jos-jobs-dd"><option value="all">Tags</option><option value="booking">booking</option><option value="manual">manual</option><option value="from-quote">from-quote</option><option value="priority">priority</option></select>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-clear-filters">Clear Filters</button>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-adv-toggle">Advanced Filters</button>' +
-      '<button type="button" class="jos-btn jos-btn-sm jos-btn-brand" data-jos-act="jobs-full-calendar">View Full Calendar</button>' +
-      '</div></section>' +
+      '<select id="jos-jobs-filter-source" class="jos-jobs-dd"><option value="all">Any source</option><option value="booking"' + ((root._josJobsSource || '') === 'booking' ? ' selected' : '') + '>Booking</option><option value="manual"' + ((root._josJobsSource || '') === 'manual' ? ' selected' : '') + '>Manual</option><option value="from-quote"' + ((root._josJobsSource || '') === 'from-quote' ? ' selected' : '') + '>Quote</option></select>' +
+      '<select id="jos-jobs-filter-tag" class="jos-jobs-dd"><option value="all">Any tag</option><option value="booking">booking</option><option value="manual">manual</option><option value="from-quote">from-quote</option><option value="priority">priority</option></select>' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-clear-filters">Clear</button>' +
+      '</div></section>'
+      ) : '') +
 
       (advOpen ? '<aside class="jos-jobs-adv">' +
         '<div class="jos-between"><div class="jos-kicker">Advanced Filters</div><button type="button" class="jos-icon-btn" data-jos-act="jobs-adv-toggle">✕</button></div>' +
         '<label>Revenue Range<input type="text" placeholder="$0 – $1000" id="jos-jobs-adv-rev"></label>' +
         '<label>Travel Radius<input type="text" placeholder="25 miles" id="jos-jobs-adv-radius"></label>' +
         '<label>Customer Type<select id="jos-jobs-adv-ctype"><option>Any</option><option>New</option><option>Returning</option><option>Member</option></select></label>' +
-        '<label>Vehicle Type<select><option>Any</option><option>Sedan</option><option>SUV</option><option>Truck</option></select></label>' +
-        '<label class="jos-check-row"><input type="checkbox" id="jos-jobs-adv-recurring"> Recurring Only</label>' +
-        '<label>Job Value<select><option>Any</option><option>Under $200</option><option>$200–$500</option><option>$500+</option></select></label>' +
-        '<label>Employee<select id="jos-jobs-adv-emp"><option value="all">Any</option>' + jobsTeam().map(function (t) { return '<option value="' + esc(t.name) + '">' + esc(t.name) + '</option>'; }).join('') + '</select></label>' +
-        '<label>Weather<select><option>Any</option><option>Clear</option><option>Rain risk</option></select></label>' +
-        '<label>Lead Source<select><option>Any</option><option>Website</option><option>Instagram</option><option>Google</option></select></label>' +
         '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="jobs-adv-apply">Apply</button>' +
         '</aside>' : '') +
 
-      '<section class="jos-jobs-kpis">' +
-      [['jobs-kpi-all', 'Total Jobs', total, 'briefcase', 'brand', total ? '' : '—'],
-        ['jobs-kpi-completed', 'Completed', completed, 'check', 'ok', completed ? '' : '—'],
-        ['jobs-kpi-progress', 'In Progress', inProgress, 'clock', 'warn', inProgress ? 'Active' : '—'],
-        ['jobs-kpi-scheduled', 'Scheduled', scheduled, 'cal', 'info', scheduled ? 'Next 7d' : '—'],
-        ['jobs-kpi-revenue', 'Revenue', money(revenue || 0), 'dollar', 'blue', revenue ? '' : '—']].map(function (k) {
-        return '<button type="button" class="jos-jobs-kpi tone-' + k[4] + '" data-jos-act="' + k[0] + '">' +
-          '<span class="jos-jobs-kpi-ico" aria-hidden="true">' + jobKpiIcon(k[3]) + '</span>' +
-          '<span><span class="lbl">' + esc(k[1]) + '</span><strong>' + esc(String(k[2])) + '</strong><span class="trend">' + esc(k[5]) + '</span></span></button>';
-      }).join('') +
-      '</section>' +
-
-      '<section class="jos-jobs-table-card">' +
-      tabsHtml +
+      '<section class="jos-jobs-table-card jos-jobs-first">' +
+      '<div class="jos-jobs-table-head">' + tabsHtml + '</div>' +
       (pageRows.length
         ? '<div class="jos-jobs-table-wrap"><table class="jos-jobs-table"><thead><tr>' +
-          '<th>Customer</th><th>Service</th><th>Date &amp; Time</th><th>Status</th><th>Amount</th><th>Actions</th>' +
+          '<th>Customer</th><th>Service</th><th>When</th><th>Status</th><th>Amount</th><th></th>' +
           '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' + mobileCards + pager
         : emptyTable) +
+      '<div class="jos-jobs-foot">' + metaHtml + '</div>' +
       '</section>';
     }
 
@@ -13857,7 +13926,9 @@
       '<div class="jos-jobs-layout">' +
       '<main class="jos-jobs-main">' +
       '<header class="jos-jobs-header">' +
-      '<div><h1>Jobs</h1><p>Manage and track every job in one place.</p></div>' +
+      (mainView === 'calendar'
+        ? '<div><h1>Calendar</h1><p>Day · week · month · agenda — drag to create, click a job to open it.</p></div>'
+        : '<div><h1>Jobs</h1><p>Manage and track every job in one place.</p></div>') +
       '<div class="jos-jobs-header-actions">' +
       '<div class="jos-jobs-export-wrap">' +
       '<button type="button" class="jos-btn jos-jobs-export" data-jos-act="jobs-export-toggle">' + jobUiIcon('download') + ' Export</button>' +
@@ -13889,7 +13960,7 @@
             return '<button type="button" class="jos-jobs-up-card" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
               '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span>' +
               '<span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(j.time) + ' · ' + esc(j.service) + '</span><span class="jos-muted">' + esc(j.vehicle || '') + '</span></span>' +
-              '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></button>';
+              '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(String(j.status || '').replace(/_/g, ' ')) + '</span></button>';
           }).join('') : '<div class="jos-muted">No upcoming jobs</div>') +
           '</div></section>' +
           '<section class="jos-jobs-rail-card jos-rail-panel' + (railTab === 'summary' ? ' on' : '') + '" data-jos-rail-panel="summary"><div class="jos-kicker">Business Summary</div>' +
@@ -14699,11 +14770,13 @@
       if (act === 'jobs-drawer-close') {
         root._josDrawerOpen = false;
         root._josJobId = null;
+        root._josJobEditOpen = false;
         return renderJobs();
       }
       if (act === 'jobs-open') {
         root._josJobId = jobId || root._josJobId;
         root._josDrawerOpen = true;
+        root._josJobEditOpen = false;
         root._josJobWorkspace = 'overview';
         return renderJobs();
       }
@@ -14731,6 +14804,10 @@
       if (act === 'jobs-message') {
         toast('Opening messages…');
         return switchNav('chats');
+      }
+      if (act === 'jobs-filters-toggle') {
+        root._josJobsFiltersOpen = !root._josJobsFiltersOpen;
+        return renderJobs();
       }
       if (act === 'jobs-clear-filters') {
         root._josJobsQ = '';
@@ -14836,6 +14913,7 @@
         }
         var nj = {
           id: 'JOB-' + String(1000 + jobsAll().length + 1),
+          jobNumber: 'JOB-' + String(1000 + jobsAll().length + 1),
           customer: 'New Customer',
           email: '',
           phone: '',
@@ -14845,7 +14923,7 @@
           date: createDate,
           time: createTime,
           status: 'scheduled',
-          address: S().city || 'San Diego, CA',
+          address: '',
           assignedTo: (jobsTeam()[0] && jobsTeam()[0].name) || 'Unassigned',
           depositStatus: 'none',
           deposit: 0,
@@ -14864,17 +14942,52 @@
         root._josJobId = nj.id;
         root._josDrawerOpen = true;
         root._josJobWorkspace = 'overview';
+        root._josJobEditOpen = true;
         root._josJobsListView = 'all';
         pushJobNotif('upcoming', 'New job created');
-        toast('Job created');
+        toast('Add customer & job details');
         return renderJobs();
       }
       if (act === 'jobs-edit') {
         if (!job) return toast('Select a job');
-        job.service = job.service || 'Detail';
-        job.internalNotes.push('Edited job details');
-        pushJobTimeline(job, 'note', 'Job edited');
+        if (job.isBlock || job.isGoogle) return toast('Calendar blocks can’t be edited here');
+        root._josJobId = job.id;
+        root._josDrawerOpen = true;
+        root._josJobWorkspace = 'overview';
+        root._josJobEditOpen = true;
+        return renderJobs();
+      }
+      if (act === 'jobs-edit-cancel') {
+        root._josJobEditOpen = false;
+        return renderJobs();
+      }
+      if (act === 'jobs-edit-save') {
+        if (!job) return toast('Select a job');
+        var custName = String((el('jos-je-customer') || {}).value || '').trim();
+        if (!custName) return toast('Customer name is required');
+        var numVal = String((el('jos-je-number') || {}).value || '').trim();
+        if (numVal) job.jobNumber = numVal;
+        job.customer = custName;
+        job.phone = String((el('jos-je-phone') || {}).value || '').trim();
+        job.email = String((el('jos-je-email') || {}).value || '').trim();
+        job.address = String((el('jos-je-address') || {}).value || '').trim();
+        job.vehicle = String((el('jos-je-vehicle') || {}).value || '').trim();
+        job.service = String((el('jos-je-service') || {}).value || job.service || '').trim();
+        var amtRaw = String((el('jos-je-amount') || {}).value || '').trim();
+        if (amtRaw !== '') job.amount = parseFloat(amtRaw) || 0;
+        var dateVal = String((el('jos-je-date') || {}).value || '').trim();
+        if (dateVal) job.date = dateVal;
+        var timeVal = String((el('jos-je-time') || {}).value || '').trim();
+        if (timeVal) job.time = timeVal;
+        var durRaw = parseInt(String((el('jos-je-duration') || {}).value || ''), 10);
+        if (Number.isFinite(durRaw) && durRaw > 0) job.durationMin = durRaw;
+        job.assignedTo = String((el('jos-je-assigned') || {}).value || job.assignedTo || 'Unassigned').trim();
+        pushJobTimeline(job, 'note', 'Job details updated');
+        root._josJobEditOpen = false;
         toast('Job updated');
+        try {
+          if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon();
+        } catch (eSaveJob) {}
         return renderJobs();
       }
       if (act === 'jobs-resize') {
@@ -15191,6 +15304,11 @@
     if (nav && typeof global.switchV === 'function') global.switchV(nav);
   }
   function onSwitchView(v) {
+    try {
+      el('jos-search-pop')?.classList.remove('open');
+      el('jos-notif-pop')?.classList.remove('open');
+      el('jos-quick-pop')?.classList.remove('open');
+    } catch (ePop) {}
     updateChrome(v);
     // Always reset Operate chrome modes so leftover classes cannot leave a huge left gap
     // or force a different sidebar width when switching pages.
