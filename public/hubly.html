@@ -261,6 +261,109 @@ body:has(#p-storefront.active) > .theme-toggle{display:none!important}
 #v-editor #mem-editor-list select{
   background:#fff;color:#141B2B;border-color:#E6E8EC;color-scheme:light;
 }
+/* Payments / Stripe / account sheets: day-readable ink on white cards */
+#v-editor #ed-payment-acc,
+#v-editor #ed-stripe-acc,
+#v-editor #ed-dirty-acc,
+#v-editor #ed-payment-acc .bk-acc-body,
+#v-editor #ed-stripe-acc .bk-acc-body,
+#v-editor #ed-dirty-acc .bk-acc-body,
+#v-editor #ed-payment-acc .pay-opt-card,
+#v-editor #ed-stripe-acc .stripe-conn-card{
+  color:#141B2B;
+}
+#v-editor #ed-payment-acc > .bk-acc-h,
+#v-editor #ed-stripe-acc > .bk-acc-h,
+#v-editor #ed-dirty-acc > .bk-acc-h,
+#v-editor #ed-payment-acc .bk-acc-body,
+#v-editor #ed-stripe-acc .bk-acc-body,
+#v-editor #ed-dirty-acc .bk-acc-body{
+  color:#141B2B!important;
+  background:#fff!important;
+}
+#v-editor #ed-payment-acc .bk-acc-body [style*="--ink-3"],
+#v-editor #ed-stripe-acc .bk-acc-body [style*="--ink-3"],
+#v-editor #ed-dirty-acc .bk-acc-body [style*="--ink-3"],
+#v-editor #ed-payment-acc .stripe-conn-sub,
+#v-editor #ed-stripe-acc .stripe-conn-sub,
+#v-editor #ed-stripe-acc .stripe-conn-hint,
+#v-editor #ed-stripe-acc .stripe-conn-link.is-quiet{
+  color:#4B5563!important;
+}
+#v-editor #ed-payment-acc .bk-acc-body [style*="--ink-2"],
+#v-editor #ed-stripe-acc .bk-acc-body [style*="--ink-2"],
+#v-editor #ed-dirty-acc .tog-lbl,
+#v-editor #ed-payment-acc .field label,
+#v-editor #ed-stripe-acc .stripe-conn-title{
+  color:#374151!important;
+}
+#v-editor #ed-payment-acc .pay-opt-card [style*="font-weight:600"],
+#v-editor #ed-payment-acc .bk-acc-body strong,
+#v-editor #ed-stripe-acc .bk-acc-body strong{
+  color:#141B2B!important;
+}
+#v-editor #ed-payment-acc .pay-opt-card{
+  background:#fff!important;
+  border-color:#E5E7EB!important;
+  color:#141B2B!important;
+}
+#v-editor #ed-payment-acc .pay-opt-card:hover{border-color:#9CA3AF!important}
+#v-editor #ed-payment-acc .pay-opt-card.active{
+  background:#F8FAFC!important;
+  border-color:#141B2B!important;
+}
+#v-editor #ed-payment-acc .pay-opt-radio{border-color:#D1D5DB!important;background:#fff!important}
+#v-editor #ed-payment-acc .pay-opt-card.active .pay-opt-radio{
+  border-color:#141B2B!important;
+  background:#141B2B!important;
+}
+#v-editor #ed-payment-acc .dep-type-btn{
+  background:#fff!important;
+  color:#374151!important;
+  border-color:#E5E7EB!important;
+}
+#v-editor #ed-payment-acc .dep-type-btn.active{
+  background:#141B2B!important;
+  color:#fff!important;
+  border-color:#141B2B!important;
+  -webkit-text-fill-color:#fff;
+}
+#v-editor #ed-payment-acc #dep-val,
+#v-editor #ed-payment-acc .field input,
+#v-editor #ed-payment-acc .field textarea,
+#v-editor #ed-payment-acc .pfx input{
+  background:#fff!important;
+  color:#141B2B!important;
+  border-color:#E5E7EB!important;
+  -webkit-text-fill-color:#141B2B;
+  color-scheme:light;
+}
+#v-editor #ed-payment-acc .field textarea::placeholder{
+  color:#9CA3AF!important;
+  -webkit-text-fill-color:#9CA3AF;
+  opacity:1;
+}
+#v-editor #ed-stripe-acc .stripe-conn-card{
+  background:#fff!important;
+  border-color:#E5E7EB!important;
+  color:#141B2B!important;
+}
+#v-editor #ed-stripe-acc .stripe-conn-link{color:#D9632D!important}
+#v-editor #ed-stripe-acc .cal-conn-badge{
+  color:#141B2B!important;
+}
+#v-editor #ed-dirty-acc .btn-out{
+  color:#141B2B!important;
+  background:#fff!important;
+  border-color:#D1D5DB!important;
+  -webkit-text-fill-color:#141B2B;
+}
+#v-editor #ed-payment-acc #ed-stripe-pay-warn{
+  color:#374151!important;
+}
+#v-editor #ed-payment-acc #ed-stripe-pay-warn button{
+  color:#9A3412!important;
+}
 #v-editor .svc-ed-card{
   border:1px solid #E6E8EC;border-radius:14px;box-shadow:0 4px 16px rgba(15,23,42,.04);
 }
