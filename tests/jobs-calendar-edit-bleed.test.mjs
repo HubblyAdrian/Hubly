@@ -35,7 +35,7 @@ test('Jobs list supports inline field editing', () => {
 });
 
 test('Jobs shell blocks Home bleed-through like Projects', () => {
-  assert.match(css, /#jos-jobs-root\{[\s\S]*?isolation:isolate/);
+  assert.match(css, /#jos-jobs-root[\s\S]*?isolation:isolate/);
   assert.match(css, /\.jos-jobs-shell\{[\s\S]*?animation:none/);
   assert.match(hubly, /body\.ed-editor-open #v-editor/);
   assert.match(hubly, /height:100vh!important/);

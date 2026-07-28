@@ -710,3 +710,114 @@ body.ed-editor-open .ed-shell.ed-canvas-mode .ed-prev {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── True inline editing ── */
+#ed-ws-preview .ws-pe-inline-editing{
+  outline:2px solid #2563EB !important;
+  outline-offset:3px;
+  box-shadow:0 0 0 4px rgba(37,99,235,.14);
+  cursor:text;
+  min-width:1ch;
+}
+body.ed-editor-open.ed-edit-mode #ed-ws-preview .ws-pe-target[data-pe="headline"],
+body.ed-editor-open.ed-edit-mode #ed-ws-preview .ws-pe-target[data-pe="tagline"],
+body.ed-editor-open.ed-edit-mode #ed-ws-preview .ws-pe-target[data-pe="cta"],
+body.ed-editor-open.ed-edit-mode #ed-ws-preview .ws-pe-target[data-pe="biz-name"]{
+  cursor:text;
+}
+
+/* Contextual toolbar — website first */
+#ws-pe-context-bar button[data-pe-act="style"]{color:#93C5FD}
+#ws-pe-context-bar button[data-pe-act="delete"]{color:#FCA5A5}
+#ws-pe-context-bar button[data-pe-act="photo"]{color:#FDBA74}
+
+/* Inspector only when Style opens sheet */
+body.ed-editor-open .ed-shell.ed-canvas-mode:not(.ed-sheet-open) .ed-ctrl{
+  pointer-events:none;
+  opacity:0;
+  transform:translateX(24px);
+}
+body.ed-editor-open .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl{
+  opacity:1;
+  transform:none;
+  transition:opacity .2s ease, transform .22s ease;
+}
+
+/* ── Business Pulse ── */
+.jos-business-pulse{
+  appearance:none;border:1px solid var(--hub-border,#E6E8EC);background:#fff;
+  height:38px;padding:0 12px;border-radius:10px;cursor:pointer;font:inherit;
+  display:inline-flex;align-items:center;gap:8px;color:var(--jos-navy,#141B2B);
+}
+.jos-business-pulse:hover{border-color:rgba(217,99,45,.4);background:#FFF8F3}
+.jos-business-pulse .pulse-dot{
+  width:8px;height:8px;border-radius:50%;background:#22c55e;
+  box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:hubPulseBeat 1.8s ease infinite;
+}
+@keyframes hubPulseBeat{
+  0%{box-shadow:0 0 0 0 rgba(34,197,94,.45)}
+  70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}
+  100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}
+}
+.jos-business-pulse .pulse-stars{font-size:11px;letter-spacing:.02em;color:#D97706;font-weight:800}
+.jos-business-pulse .pulse-lbl{font-size:12px;font-weight:750;color:var(--jos-ink-2,#4A5160)}
+.jos-pulse-pop{
+  position:fixed;z-index:12600;width:min(340px,92vw);background:#fff;
+  border:1px solid var(--hub-border,#E6E8EC);border-radius:16px;
+  box-shadow:0 18px 48px rgba(15,23,42,.16);padding:16px;display:none;
+}
+.jos-pulse-pop.open{display:block;animation:josHomeIn .2s ease both}
+.jos-pulse-pop h3{margin:0;font-size:15px;font-weight:800;color:var(--jos-navy,#141B2B)}
+.jos-pulse-pop .stars{margin:6px 0 12px;color:#D97706;font-weight:800;letter-spacing:.04em}
+.jos-pulse-metrics{display:grid;gap:8px;margin:0 0 12px}
+.jos-pulse-metrics .row{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--jos-ink-2)}
+.jos-pulse-metrics strong{color:var(--jos-navy);font-weight:800}
+.jos-pulse-metrics .up{color:#15803d}
+.jos-pulse-alert{
+  font-size:13px;font-weight:650;color:#9A3412;background:#FFF7ED;
+  border:1px solid #FED7AA;border-radius:12px;padding:10px 12px;margin-bottom:10px;
+}
+.jos-pulse-opp{
+  font-size:13px;font-weight:650;color:#3730A3;background:#EEF2FF;
+  border:1px solid #C7D2FE;border-radius:12px;padding:10px 12px;
+}
+.jos-pulse-opp .kicker{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px;opacity:.8}
+
+/* ── Delight toasts ── */
+#toast.is-delight{
+  background:linear-gradient(135deg,#141B2B,#1f2937);
+  font-weight:700;padding:14px 22px;border-radius:16px;
+  box-shadow:0 16px 40px rgba(15,23,42,.35);
+}
+#toast.is-delight.is-ok{background:linear-gradient(135deg,#15803d,#166534)}
+
+/* Page AI FAB label */
+#jos-ask-fab .jos-ask-fab-lbl{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.ed-editor-open .jos-business-pulse,
+#p-app.jos-pixel.jos-ask-mode .jos-business-pulse{display:none!important}
+#p-app.jos-pixel.jos-jobs-mode .jos-business-pulse,
+#p-app.jos-pixel.jos-inbox-mode .jos-business-pulse{
+  /* still available on jobs/inbox when app-bar hidden — pulse lives in page chrome later */
+}
+#p-app.jos-pixel.jos-jobs-mode .app-bar,
+#p-app.jos-pixel.jos-inbox-mode .app-bar{/* unchanged */}
+
+/* Keep Business Pulse reachable when Operate pages hide the app bar */
+#p-app.jos-pixel.jos-jobs-mode .jos-business-pulse,
+#p-app.jos-pixel.jos-inbox-mode .jos-business-pulse,
+#p-app.jos-pixel.jos-marketing-mode .jos-business-pulse,
+#p-app.jos-pixel.jos-reviews-mode .jos-business-pulse,
+#p-app.jos-pixel.jos-memberships-mode .jos-business-pulse,
+#p-app.jos-pixel.jos-revenue-mode .jos-business-pulse,
+#p-app.jos-pixel.jos-reports-mode .jos-business-pulse{
+  position:fixed;top:14px;right:18px;z-index:12450;
+  display:inline-flex!important;
+  box-shadow:0 8px 24px rgba(15,23,42,.12);
+}
+@media(max-width:800px){
+  #p-app.jos-pixel.jos-jobs-mode .jos-business-pulse,
+  #p-app.jos-pixel.jos-inbox-mode .jos-business-pulse{
+    top:10px;right:10px;padding:0 10px;height:34px;
+  }
+  #p-app.jos-pixel.jos-jobs-mode .jos-business-pulse .pulse-lbl{display:none}
+}

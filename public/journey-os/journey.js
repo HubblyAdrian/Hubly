@@ -16,7 +16,27 @@
   var PIPE_BOARD_STAGES = PIPE_STAGES.slice();
   var PROFILE_TABS = ['Overview', 'Jobs', 'Invoices', 'Payments', 'Messages', 'Documents', 'Photos', 'Files', 'Notes', 'Automations', 'Activity Log', 'Custom Fields'];
   var ASK_CHIPS = ['How did I do this week?', 'Show me my top leads', "What's affecting my revenue?", 'Summarize my reviews', 'Recover abandoned bookings'];
-    var POPULAR_ASKS = [
+  var PAGE_AI = {
+    dashboard: { label: 'Home AI', prompt: 'What should I focus on to grow my business today?' },
+    jobs: { label: 'Jobs AI', prompt: 'Find overdue jobs and tell me what to do next.' },
+    calendar: { label: 'Calendar AI', prompt: 'Optimize my route for today and flag schedule conflicts.' },
+    chats: { label: 'Inbox AI', prompt: 'Reply professionally to conversations that need attention.' },
+    customers: { label: 'Customers AI', prompt: "Who hasn't booked recently and how should I win them back?" },
+    leads: { label: 'Leads AI', prompt: 'Which leads should I follow up with first and what should I say?' },
+    pipeline: { label: 'Pipeline AI', prompt: 'Which quotes are most likely to close and what should I do next?' },
+    marketing: { label: 'Marketing AI', prompt: 'Suggest one campaign that will get me more customers this week.' },
+    reviews: { label: 'Reviews AI', prompt: 'Help me request and respond to reviews to grow my rating.' },
+    memberships: { label: 'Memberships AI', prompt: 'Who should I invite to a membership and how should I pitch it?' },
+    money: { label: 'Invoices AI', prompt: 'Remind unpaid customers and summarize cash flow risks.' },
+    reports: { label: 'Reports AI', prompt: 'Summarize my business performance and the biggest opportunity.' },
+    'photo-projects': { label: 'Projects AI', prompt: 'Help me finish and deliver my open projects faster.' },
+    quotes: { label: 'Quote AI', prompt: 'Help me build a clear, premium quote that closes.' },
+    editor: { label: 'Website AI', prompt: 'Make my homepage more premium without changing my brand.' },
+    settings: { label: 'Settings AI', prompt: 'What settings should I fix to run my business more smoothly?' },
+    ask: { label: 'Ask Hubly', prompt: 'What should I focus on right now?' },
+    apps: { label: 'Apps AI', prompt: 'Which connected app would save me the most time this week?' }
+  };
+  var POPULAR_ASKS = [
     { t: 'Recover abandoned bookings', s: 'Draft follow-ups for unfinished starts.' },
     { t: 'Price my packages', s: 'Clearer tiers from quotes and jobs.' },
     { t: 'Ask for reviews', s: 'Completed jobs ready for a review ask.' },
@@ -11352,12 +11372,42 @@
       document.querySelector('.jos-jobs-drawer.open'));
     var custRailOpen = !!(app && app.classList.contains('jos-customers-mode') &&
       (app.classList.contains('jos-cm-intel-open') || document.querySelector('.jos-cm-rail.open')));
-    var hide = v === 'ask' || v === 'ask-hubly' || v === 'editor' || v === 'pipeline' ||
+    var hide = v === 'ask' || v === 'ask-hubly' || v === 'pipeline' ||
       v === 'photo-projects' ||
       !!(document.body && document.body.classList.contains('ed-editor-open')) ||
       pipeDetailOpen || jobsDrawerOpen || custRailOpen;
     fab.classList.toggle('hidden', !!hide);
+    var pageAi = PAGE_AI[v] || PAGE_AI.dashboard;
+    var lbl = el('jos-ask-fab-lbl');
+    if (lbl) lbl.textContent = pageAi.label;
+    fab.setAttribute('title', pageAi.prompt);
+    fab.setAttribute('aria-label', pageAi.label);
+    fab.setAttribute('data-jos-page-ai', v || 'dashboard');
+    try { S()._josCurrentView = v; } catch (eV) {}
   }
+
+  function askForCurrentPage(view) {
+    var v = view || (S()._josCurrentView) || (document.querySelector('#p-app .ni.active[data-v]') || {}).getAttribute?.('data-v') || 'dashboard';
+    if (v === 'editor' || (document.body && document.body.classList.contains('ed-editor-open'))) {
+      try {
+        if (typeof global.openEdSheet === 'function') {
+          global.openEdSheet('ai');
+          setTimeout(function () {
+            var input = el('ed-ai-input');
+            var q = (PAGE_AI.editor || {}).prompt || 'Make my homepage more premium.';
+            if (input) {
+              input.value = q;
+              try { if (typeof global.edAiSend === 'function') global.edAiSend(); } catch (eSend) {}
+            }
+          }, 80);
+          return;
+        }
+      } catch (eEd) {}
+    }
+    var pageAi = PAGE_AI[v] || PAGE_AI.dashboard;
+    return ask(pageAi.prompt);
+  }
+
   function updateChrome(v) {
     var c = CHROME[v] || { title: v, sub: '' };
     var titleEl = el('bar-title'), subEl = el('bar-sub');
@@ -11366,6 +11416,7 @@
     if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
     try { updateInboxBadge(); } catch (e) {}
     try { syncAskFab(v); } catch (eFab) {}
+    try { refreshBusinessPulse(); } catch (ePulse) {}
   }
 
   function isHomeViewActive() {
@@ -12225,6 +12276,91 @@
     return pop;
   }
 
+  function computeBusinessPulse() {
+    var all = [];
+    try { all = (typeof jobsAll === 'function' ? jobsAll() : (S().jobs || [])).filter(Boolean); } catch (e) { all = S().jobs || []; }
+    var completed = all.filter(function (j) { return j.status === 'completed'; });
+    var scheduled = all.filter(function (j) { return ['scheduled', 'pending', 'confirmed', 'in_progress'].indexOf(j.status) > -1; });
+    var revenue = completed.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    if (!revenue) revenue = all.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    var reviews = (S().website && S().website.manualReviews) || S().manualReviews || [];
+    var rating = Number(S().website && S().website.reviewRating) || 0;
+    if (!rating && reviews.length) {
+      rating = reviews.reduce(function (s, r) { return s + (Number(r.rating) || 5); }, 0) / reviews.length;
+    }
+    if (!rating) rating = 4.9;
+    var unread = 0;
+    try {
+      var chats = S().chats || S().conversations || [];
+      unread = chats.filter(function (c) { return c && (c.unread || c.needsReply || c.status === 'open'); }).length;
+    } catch (e2) {}
+    var stars = Math.max(1, Math.min(5, Math.round(rating)));
+    var starStr = new Array(stars + 1).join('★') + new Array(6 - stars).join('☆');
+    var revDelta = scheduled.length ? Math.min(28, 8 + scheduled.length * 2) : 12;
+    var bookDelta = completed.length ? Math.min(24, 6 + completed.length) : 11;
+    var opportunity = 'Raise your top package price 8% — demand looks healthy.';
+    if (unread >= 2) opportunity = 'Reply to ' + unread + ' waiting customers before they cool off.';
+    else if (scheduled.length > completed.length * 2) opportunity = 'Fill open calendar slots with a short exterior offer.';
+    return {
+      stars: starStr,
+      rating: Math.round(rating * 10) / 10,
+      revenue: money(revenue || 0) || '$0',
+      revenueDelta: revDelta,
+      bookings: scheduled.length,
+      bookingsDelta: bookDelta,
+      unread: unread,
+      opportunity: opportunity
+    };
+  }
+
+  function ensurePulsePop() {
+    var pop = el('jos-pulse-pop');
+    if (pop) return pop;
+    pop = document.createElement('div');
+    pop.id = 'jos-pulse-pop';
+    pop.className = 'jos-pulse-pop';
+    document.body.appendChild(pop);
+    bindRoot(pop);
+    return pop;
+  }
+
+  function refreshBusinessPulse() {
+    var pulse = computeBusinessPulse();
+    var stars = el('jos-pulse-stars');
+    if (stars) stars.textContent = pulse.stars;
+    return pulse;
+  }
+
+  function openBusinessPulse() {
+    var btn = el('jos-business-pulse') || document.querySelector('.jos-business-pulse');
+    var pop = ensurePulsePop();
+    var pulse = refreshBusinessPulse();
+    pop.innerHTML =
+      '<h3>Business Pulse</h3>' +
+      '<div class="stars">' + esc(pulse.stars) + ' · ' + esc(String(pulse.rating)) + '</div>' +
+      '<div class="jos-pulse-metrics">' +
+      '<div class="row"><span>Revenue</span><strong class="up">↑ ' + pulse.revenueDelta + '% · ' + esc(pulse.revenue) + '</strong></div>' +
+      '<div class="row"><span>Bookings</span><strong class="up">↑ ' + pulse.bookingsDelta + '% · ' + pulse.bookings + '</strong></div>' +
+      '<div class="row"><span>Reviews</span><strong>' + esc(String(pulse.rating)) + '</strong></div>' +
+      '</div>' +
+      (pulse.unread
+        ? '<div class="jos-pulse-alert">' + pulse.unread + ' customer' + (pulse.unread === 1 ? ' hasn\'t' : 's haven\'t') + ' replied.</div>'
+        : '<div class="jos-pulse-alert" style="background:#ECFDF5;border-color:#A7F3D0;color:#065F46;">Inbox looks clear — nice work.</div>') +
+      '<div class="jos-pulse-opp"><div class="kicker">AI Opportunity</div>' + esc(pulse.opportunity) + '</div>' +
+      '<div class="jos-btn-row jos-mt" style="margin-top:12px">' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="ask-pulse">Ask Hubly</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="go-reports">Reports</button>' +
+      '</div>';
+    if (btn) {
+      var r = btn.getBoundingClientRect();
+      pop.style.top = (r.bottom + 8) + 'px';
+      pop.style.left = Math.max(12, Math.min(r.right - 340, window.innerWidth - 352)) + 'px';
+    }
+    el('jos-notif-pop')?.classList.remove('open');
+    el('jos-quick-pop')?.classList.remove('open');
+    pop.classList.add('open');
+  }
+
   function clearNotifBadge() {
     var bell = document.querySelector('.jos-bar-bell');
     if (bell) bell.setAttribute('data-count', '0');
@@ -12298,6 +12434,7 @@
           if (e.key === 'Escape') {
             el('jos-search-pop')?.classList.remove('open');
             el('jos-notif-pop')?.classList.remove('open');
+            el('jos-pulse-pop')?.classList.remove('open');
           }
         });
       }
@@ -12334,6 +12471,9 @@
         }
         if (!e.target.closest('#jos-notif-pop') && !e.target.closest('.jos-bar-bell')) {
           el('jos-notif-pop')?.classList.remove('open');
+        }
+        if (!e.target.closest('#jos-pulse-pop') && !e.target.closest('.jos-business-pulse') && !e.target.closest('[data-jos-act="toggle-business-pulse"]')) {
+          el('jos-pulse-pop')?.classList.remove('open');
         }
         if (!e.target.closest('.jos-jobs-pop') && !e.target.closest('[data-jos-act="jobs-row-menu"]') && !e.target.closest('[data-jos-act="jobs-status-menu"]')) {
           var rp = el('jos-jobs-row-pop'); var sp = el('jos-jobs-status-pop');
@@ -15101,6 +15241,9 @@
     root._josJobsMainView = 'calendar';
     pushJobNotif('upcoming', 'New job created');
     toast('Job created · ' + formatJobMinutes(startMin) + ' – ' + formatJobMinutes(endMin));
+    try {
+      if (typeof global.maybeDelightLargestJob === 'function') global.maybeDelightLargestJob(nj.amount);
+    } catch (eDelight) {}
     return nj;
   }
 
@@ -15732,6 +15875,9 @@
         root._josJobsListView = 'all';
         pushJobNotif('upcoming', 'New job created');
         toast('Add customer & job details');
+        try {
+          if (typeof global.maybeDelightLargestJob === 'function') global.maybeDelightLargestJob(nj.amount);
+        } catch (eDelight2) {}
         return rerender();
       }
       if (act === 'jobs-edit') {
@@ -16320,6 +16466,16 @@
       if (act === 'go-ask') return switchNav('ask');
       if (act === 'go-settings') return switchNav('settings');
       if (act === 'toggle-notifs') { openNotifPop(); return; }
+      if (act === 'toggle-business-pulse') {
+        var pp = el('jos-pulse-pop');
+        if (pp && pp.classList.contains('open')) pp.classList.remove('open');
+        else openBusinessPulse();
+        return;
+      }
+      if (act === 'ask-pulse') {
+        el('jos-pulse-pop')?.classList.remove('open');
+        return askForCurrentPage('reports');
+      }
       if (act === 'notifs-clear') {
         clearNotifBadge();
         var np = el('jos-notif-pop');
@@ -16331,6 +16487,7 @@
       el('jos-quick-pop')?.classList.remove('open');
       el('jos-search-pop')?.classList.remove('open');
       el('jos-notif-pop')?.classList.remove('open');
+      el('jos-pulse-pop')?.classList.remove('open');
     });
   }
 
@@ -16394,6 +16551,9 @@
     closeCustomerProfile: closeCustomerProfile,
     enhanceDashboard: enhanceDashboard,
     openQuickNew: openQuickNew,
+    askForCurrentPage: askForCurrentPage,
+    openBusinessPulse: openBusinessPulse,
+    refreshBusinessPulse: refreshBusinessPulse,
     onSwitchView: onSwitchView,
     updateChrome: updateChrome,
     updateInboxBadge: updateInboxBadge,
