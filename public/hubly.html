@@ -7343,9 +7343,8 @@ body.ed-sheet-open > #ed-sheet-backdrop{
 .ed-shell.ed-canvas-mode .ed-sf-desktop{
   display:block!important;padding:0!important;margin:0!important;max-width:none!important;
 }
-.ed-shell.ed-canvas-mode .ed-pe-hint{
-  margin:0;border-radius:0;border:none;border-bottom:1px solid #c7d2fe;padding:10px 20px;background:#eef2ff;
-}
+.ed-shell.ed-canvas-mode .ed-pe-hint,
+.ed-pe-hint{display:none!important}
 .ed-site-url-wrap{background:transparent!important;border:none!important;padding:0!important;border-radius:0!important;box-shadow:none!important;display:block;}
 .ws-svc-card.has-photo .ws-svc-img{display:block!important;}
 .ws-svc-card.has-photo .ws-svc-ico{display:none!important;}
@@ -8228,18 +8227,19 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 .ed-prev.ed-preview-phone .ed-ws-preview .ws-header-lang{display:none!important}
 .ed-prev.ed-preview-phone .ed-ws-preview .ws-hero-actions{flex-wrap:wrap}
 .ed-prev.ed-preview-phone .ed-ws-preview .ws-trust{grid-template-columns:1fr}
-.ed-prev.ed-preview-phone .ed-pe-hint{font-size:11px;padding:8px 14px}
 .ed-shell.ed-canvas-mode .ed-prev.ed-preview-phone .ed-sf-desktop,
 .ed-shell.ed-canvas-mode .ed-prev.ed-preview-phone .ed-ws-preview{max-width:390px!important}
-/* Click-to-edit preview (Phase C) */
+/* Click-to-edit preview — outline only (no purple word chips; they cluttered the canvas). */
 .ed-ws-preview .ws-pe-target,
 #edph-screen .ws-site .ws-pe-target{position:relative;cursor:pointer;transition:outline-color .15s,box-shadow .15s}
 .ed-ws-preview .ws-pe-target:hover,
-#edph-screen .ws-site .ws-pe-target:hover{outline:2px dashed rgba(99,102,241,.65);outline-offset:3px;box-shadow:0 0 0 4px rgba(99,102,241,.08)}
+#edph-screen .ws-site .ws-pe-target:hover{
+  outline:2px dashed rgba(99,102,241,.55);
+  outline-offset:-3px;
+  box-shadow:inset 0 0 0 3px rgba(99,102,241,.1);
+}
 .ed-ws-preview .ws-pe-target[data-pe]::before,
-#edph-screen .ws-site .ws-pe-target[data-pe]::before{content:attr(data-pe-label);position:absolute;top:-10px;left:8px;z-index:5;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#fff;background:#4f46e5;padding:2px 7px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .15s;white-space:nowrap}
-.ed-ws-preview .ws-pe-target:hover::before,
-#edph-screen .ws-site .ws-pe-target:hover::before{opacity:1}
+#edph-screen .ws-site .ws-pe-target[data-pe]::before{display:none!important;content:none!important}
 .ws-pe-add-svc{display:flex;align-items:center;justify-content:center;min-height:120px;width:100%;border:2px dashed #cbd5e1;border-radius:var(--ws-radius,16px);background:rgba(248,250,252,.8);color:#64748b;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
 .ws-pe-add-svc:hover{border-color:#6366f1;color:#4f46e5;background:#eef2ff}
 .ws-pe-pop{position:fixed;z-index:6000;min-width:260px;max-width:320px;background:#fff;border:1px solid #E5E7EB;border-radius:14px;padding:14px;box-shadow:0 16px 48px rgba(15,23,42,.16);color:#141B2B}
@@ -8310,7 +8310,6 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 #ws-pe-pop:has(textarea){max-width:360px;}
 .ws-pe-inp:focus,.ws-pe-pop select:focus{border-color:#6366f1}
 .ws-pe-pop-actions{display:flex;gap:8px;justify-content:flex-end}
-.ed-pe-hint{margin:0;padding:10px 20px;border-radius:0;background:#eef2ff;border:none;border-bottom:1px solid #c7d2fe;font-size:12px;color:#4338ca;line-height:1.45}
 .ws-mini{font-size:10px}
 .ws-mini .ws-hero{min-height:200px}
 .ws-mini .ws-hero h1{font-size:16px}
@@ -11226,7 +11225,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <!-- Website desktop preview -->
             <div id="ed-sf-desktop-wrap" class="ed-sf-desktop">
-              <div class="ed-pe-hint" id="ed-pe-hint">Click anything on your website to edit it. name, logo, services, and more.</div>
               <div class="ed-ws-preview" id="ed-ws-preview"></div>
             </div>
 
@@ -27184,14 +27182,11 @@ function pulseWsPeTargets(nodes){
   });
 }
 function setEdPeGuideHint(msg){
-  const hint=document.getElementById('ed-pe-hint');
-  if(!hint)return;
-  try{S._wsPeHintDismissed=false;}catch(e){}
-  hint.style.display='';
-  hint.style.background='#FFF7ED';
-  hint.style.borderBottomColor='#FED7AA';
-  hint.style.color='#9A3412';
-  hint.innerHTML=msg;
+  // Purple pe-hint bar removed — surface guidance via toast only.
+  try{
+    const plain=String(msg||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+    if(plain)toast(plain);
+  }catch(e){}
 }
 function guideWebsiteInlineEdit(kind){
   const root=edPreviewRoot();
