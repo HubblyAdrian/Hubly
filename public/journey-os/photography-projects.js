@@ -157,81 +157,48 @@
     return 'ws_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
   }
   function businessId() {
-    return (global.currentBusiness && global.currentBusiness.id) ||
-      S().businessId || S().bizId || null;
+    try {
+      // Prefer window/global — hubly.html now exposes currentBusiness as a var.
+      if (global.currentBusiness && global.currentBusiness.id) {
+        return String(global.currentBusiness.id);
+      }
+    } catch (e) {}
+    try {
+      // Lexical fallback if another script still holds a let binding.
+      if (typeof currentBusiness !== 'undefined' && currentBusiness && currentBusiness.id) {
+        return String(currentBusiness.id);
+      }
+    } catch (e2) {}
+    try {
+      if (global.HublyJourney && typeof global.HublyJourney.getActiveBusinessId === 'function') {
+        var fromJourney = global.HublyJourney.getActiveBusinessId();
+        if (fromJourney) return String(fromJourney);
+      }
+    } catch (e3) {}
+    var st = S() || {};
+    return st.businessId || st.bizId || (st.business && st.business.id) || null;
   }
   function isSignedIn() {
     try {
       if (global.currentUser && (global.currentUser.id || global.currentUser.email)) return true;
-      if (S().userId || S().uid) return true;
-    } catch (e) {}
-    return false;
-  }
-  /** Clear CTA when create fails — toast alone never explained where to sign in. */
-  function requireBusinessSession(opts) {
-    if (businessId()) return true;
-    var signedIn = isSignedIn();
-    var title = signedIn ? 'Choose a business' : 'Sign in to save projects';
-    var body = signedIn
-      ? 'You\u2019re signed in, but Hubly doesn\u2019t have an active business yet. Open Home or finish setup, then create your project.'
-      : 'Projects save to your Hubly business. Sign in (or create a free account), then come back here to create a project.';
-    showAuthGate({
-      title: title,
-      body: body,
-      primaryLabel: signedIn ? 'Go to Home' : 'Sign in',
-      primaryAct: signedIn ? 'go-home' : 'go-signin',
-      secondaryLabel: 'Not now'
-    });
-    if (opts && opts.toast !== false) {
-      toast(signedIn
-        ? 'Open a business on Home, then create your project.'
-        : 'Sign in from the Hubly login page to save projects.');
-    }
-    return false;
-  }
-  function showAuthGate(cfg) {
-    var root = ownRoot();
-    if (!root) return;
-    var existing = root.querySelector('.pp-auth-gate');
-    if (existing) existing.remove();
-    var gate = document.createElement('div');
-    gate.className = 'pp-auth-gate';
-    gate.setAttribute('role', 'dialog');
-    gate.setAttribute('aria-modal', 'true');
-    gate.innerHTML =
-      '<div class="pp-auth-card">' +
-        '<h2>' + esc(cfg.title) + '</h2>' +
-        '<p>' + esc(cfg.body) + '</p>' +
-        '<div class="pp-btn-row">' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="auth-dismiss">Not now</button>' +
-          '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="' + esc(cfg.primaryAct) + '">' + esc(cfg.primaryLabel) + '</button>' +
-        '</div>' +
-      '</div>';
-    gate.addEventListener('click', function (e) {
-      if (e.target === gate) gate.remove();
-    });
-    root.appendChild(gate);
-  }
-  function goSignIn() {
-    try {
-      if (typeof global.showP === 'function') {
-        global.showP('p-signin', { replaceRoute: true });
-        return;
-      }
-    } catch (e) {}
-    try { global.location.href = '/login'; } catch (e2) {}
-  }
-  function goHome() {
-    try {
-      var nav = document.querySelector('.ni[data-v="dashboard"]');
-      if (nav && typeof global.switchV === 'function') {
-        global.switchV(nav);
-        return;
-      }
     } catch (e) {}
     try {
-      if (typeof global.showP === 'function') global.showP('p-app');
+      if (typeof currentUser !== 'undefined' && currentUser && (currentUser.id || currentUser.email)) return true;
     } catch (e2) {}
+    try {
+      if (S().userId || S().uid) return true;
+    } catch (e3) {}
+    return false;
+  }
+  /**
+   * Soft guard only — owners are already in Hubly Operate.
+   * Never send them to Hubly login from Projects create.
+   * Adobe / Lightroom sign-in is a separate Connect Adobe flow.
+   */
+  function ensureBusinessForSave() {
+    if (businessId()) return true;
+    toast('Couldn\u2019t find your business yet — refresh the page, then try again.');
+    return false;
   }
   async function dbClient() {
     if (typeof global.waitForDb === 'function') return global.waitForDb(8000);
@@ -741,10 +708,7 @@
   async function insertProject(p) {
     var bid = businessId();
     if (!bid) {
-      requireBusinessSession();
-      throw new Error(isSignedIn()
-        ? 'Open a business on Home, then create your project.'
-        : 'Sign in to save projects — use the Sign in button.');
+      throw new Error('Couldn\u2019t find your business yet — refresh the page, then try again.');
     }
     var db = await dbClient();
     if (!db) throw new Error('Hubly could not reach the database.');
@@ -754,14 +718,16 @@
     if (res.error) throw res.error;
     var created = rowToProject(res.data);
     created.workspaces = p.workspaces || [];
-    // Ensure a pending Lightroom Connected App link exists (optional until connected).
-    upsertWorkspaceLocal(created, {
-      provider: 'adobe_lightroom',
-      display_name: created.name,
-      sync_state: 'pending',
-      metadata: { album_name: created.name }
-    });
-    await upsertExternalWorkspace(db, created, getWorkspace(created, 'adobe_lightroom'));
+    // Lightroom link is optional — only seed when the business has Lightroom.
+    if (hasLightroomCapability()) {
+      upsertWorkspaceLocal(created, {
+        provider: 'adobe_lightroom',
+        display_name: created.name,
+        sync_state: 'pending',
+        metadata: { album_name: created.name }
+      });
+      await upsertExternalWorkspace(db, created, getWorkspace(created, 'adobe_lightroom'));
+    }
     await insertActivityRow(db, created, 'Project created', created.name);
     _cache.projects = [created].concat(_cache.projects.filter(function (x) { return x.id !== created.id; }));
     _cache.loaded = true;
@@ -1779,26 +1745,11 @@
     var id = t.getAttribute('data-pp-id');
     var p = id ? findProject(id) : (st.projectId ? findProject(st.projectId) : null);
 
-    if (act === 'auth-dismiss') {
-      var gate = root.querySelector('.pp-auth-gate');
-      if (gate) gate.remove();
-      return;
-    }
-    if (act === 'go-signin') {
-      goSignIn();
-      return;
-    }
-    if (act === 'go-home') {
-      goHome();
-      return;
-    }
     if (act === 'new') {
-      if (!requireBusinessSession()) return;
       st.view = 'wizard'; st.wizardStep = 1; st.wizard = blankWizard(); st.quickOpen = false;
       return renderPhotoProjects();
     }
     if (act === 'quick') {
-      if (!requireBusinessSession()) return;
       st.quickOpen = true; st.quick = { name: '', files: [] };
       return renderPhotoProjects();
     }
@@ -1807,7 +1758,7 @@
       return renderPhotoProjects();
     }
     if (act === 'quick-create') {
-      if (!requireBusinessSession()) return;
+      if (!ensureBusinessForSave()) return;
       try {
         var createdQ = await createQuickProject(st);
         if (!createdQ) return;
@@ -1818,7 +1769,6 @@
         toast('Project saved');
         return renderPhotoProjects();
       } catch (err) {
-        if (!businessId()) requireBusinessSession({ toast: false });
         toast((err && err.message) || 'Could not create project');
         return;
       }
@@ -1843,14 +1793,13 @@
       return renderPhotoProjects();
     }
     if (act === 'wiz-create') {
-      if (!requireBusinessSession()) return;
+      if (!ensureBusinessForSave()) return;
       try {
         var created = await persistProject(buildProjectFromWizard(st.wizard || blankWizard()));
         st.view = 'command'; st.projectId = created.id; st.tab = 'overview'; st.wizard = null;
         toast('Project created');
         return renderPhotoProjects();
       } catch (err) {
-        if (!businessId()) requireBusinessSession({ toast: false });
         toast((err && err.message) || 'Could not create project');
         return;
       }
@@ -1915,16 +1864,22 @@
       return saveAndRefresh(p, st);
     }
     if (act === 'adobe-connect') {
+      // Adobe Lightroom sign-in — NOT Hubly login. Owner is already in Hubly.
       if (!hasLightroomCapability()) {
-        toast('Lightroom is available for photography businesses. Connect Canva from Creative.');
+        toast('Lightroom unlocks for photography businesses. Open Connected Apps to connect Canva instead.');
         return;
       }
       var svcC = global.AdobeLightroomService;
       var bizId = businessId() || '';
-      if (!svcC) {
-        toast('Editing app isn’t connected yet. Projects still work in Hubly.');
+      if (!bizId) {
+        toast('Couldn\u2019t find your business yet — refresh, then connect Lightroom.');
         return;
       }
+      if (!svcC) {
+        toast('Adobe Lightroom isn\u2019t ready yet. Projects still work in Hubly.');
+        return;
+      }
+      toast('Opening Adobe to sign in to Lightroom\u2026');
       var connectRes = await (svcC.connectAndRedirect
         ? svcC.connectAndRedirect({
           businessId: bizId,
@@ -1952,6 +1907,11 @@
         }
         return;
       }
+      if (connectRes && connectRes.code === 'PROVIDER_NOT_CONFIGURED') {
+        toast('Adobe Lightroom isn\u2019t configured yet (missing Adobe credentials).');
+        return;
+      }
+      toast((connectRes && connectRes.message) || 'Could not start Adobe Lightroom sign-in.');
       return;
     }
     if (act === 'canva-connect' || act === 'connect-app') {

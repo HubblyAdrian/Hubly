@@ -37,12 +37,15 @@ describe('Projects Operate UI fixes', () => {
     assert.match(html, /onProjects/);
   });
 
-  it('offers a Sign in CTA when create has no business session', () => {
+  it('does not force Hubly login on New Project; Lightroom is Adobe Connect', () => {
     const js = read('public/journey-os/photography-projects.js');
-    assert.match(js, /function requireBusinessSession/);
-    assert.match(js, /function showAuthGate/);
-    assert.match(js, /go-signin/);
-    assert.match(js, /showP\('p-signin'/);
-    assert.match(js, /if \(!requireBusinessSession\(\)\) return;/);
+    const html = read('public/hubly.html');
+    assert.match(html, /var currentBusiness = null/);
+    assert.match(js, /function ensureBusinessForSave/);
+    assert.match(js, /Opening Adobe to sign in to Lightroom/);
+    assert.match(js, /act === 'adobe-connect'/);
+    assert.doesNotMatch(js, /function requireBusinessSession/);
+    assert.doesNotMatch(js, /Sign in to save projects/);
+    assert.doesNotMatch(js, /showP\('p-signin'/);
   });
 });
