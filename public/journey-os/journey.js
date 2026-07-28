@@ -8010,6 +8010,10 @@
   function setLeadsMode(on) {
     var app = el('p-app');
     if (!app) return;
+    if (on) {
+      app.classList.add('jos-pixel');
+      try { document.body.classList.add('jos-pixel'); } catch (e) {}
+    }
     app.classList.toggle('jos-leads-mode', !!on);
   }
 
@@ -8054,13 +8058,18 @@
     }
     var f = root._josLeadFilters || {};
     var bulkOpen = !!root._josLeadBulkOpen;
-    var owner = S().ownerName || 'Adrian';
     var wsOpen = !!sel && !!root._josLeadId;
+    var moreFiltersOpen = !!root._josLeadFilterOpen;
+    var activeFilterCount = 0;
+    ['source', 'service', 'assigned', 'status', 'vehicle', 'property', 'aiScore', 'tags', 'created', 'lastContacted', 'pipeline', 'quoteStatus', 'valueMin', 'valueMax'].forEach(function (k) {
+      var v = f[k];
+      if (v != null && v !== '' && v !== 'all') activeFilterCount++;
+    });
 
     var statusTabs = '<div class="jos-ld-status-tabs">' + LEADS_TABS.map(function (t) {
       var count = all.filter(function (l) { return leadMatchesTab(l, t[0]); }).length;
       return '<button type="button" class="jos-ld-stab' + (tab === t[0] ? ' on' : '') + (t[0] === 'recovery' ? ' recover' : '') + '" data-jos-leads-tab="' + t[0] + '">' +
-        esc(t[1]) + (t[0] !== 'all' ? ' <em>(' + count + ')</em>' : '') + '</button>';
+        esc(t[1]) + ' (' + count + ')</button>';
     }).join('') + '</div>';
 
     var listHtml = visible.length
@@ -8071,13 +8080,11 @@
 
     root.innerHTML =
       '<div class="jos-ld-shell' + (wsOpen ? ' ws-open' : '') + '">' +
-      '<header class="jos-ld-header">' +
-      '<div class="jos-ld-header-left"><h1>Leads</h1><p>Capture, qualify, and convert more demand.</p></div>' +
-      '<label class="jos-ld-global-search"><span class="jos-ld-search-ico" aria-hidden="true"></span>' +
-      '<input id="jos-leads-global-search" type="search" placeholder="Search leads, customers, phone, email..." value="' + esc(root._josLeadsGlobalQ || '') + '">' +
-      '<kbd>⌘K</kbd></label>' +
-      '<div class="jos-ld-header-actions">' +
-      '<button type="button" class="jos-btn jos-btn-brand jos-ld-new" data-jos-act="leads-add-open">+ New Lead</button>' +
+      '<div class="jos-ld-page">' +
+      '<header class="jos-ld-header hub-page-header">' +
+      '<div><h1 class="hub-page-title">Leads</h1><p class="hub-page-sub">Capture, qualify, and convert more demand.</p></div>' +
+      '<div class="jos-ld-header-actions hub-page-actions">' +
+      '<button type="button" class="jos-btn jos-ld-export" data-jos-act="leads-export">' + jobUiIcon('download') + ' Export</button>' +
       '<div class="jos-ld-bulk-wrap">' +
       '<button type="button" class="jos-btn jos-ld-bulk" data-jos-act="leads-bulk-toggle">Bulk Actions</button>' +
       (bulkOpen ? '<div class="jos-ld-bulk-menu">' +
@@ -8085,32 +8092,29 @@
           return '<button type="button" data-jos-act="' + x[0] + '">' + x[1] + '</button>';
         }).join('') + '</div>' : '') +
       '</div>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
-      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></button>' +
-      '<button type="button" class="jos-ld-biz" data-jos-act="go-settings" title="Business">' + esc((S().businessName || "Adrian's Lawn Care").slice(0, 18)) + '</button>' +
-      '<button type="button" class="jos-ld-ava-btn" data-jos-act="go-settings" title="Profile">' + esc(initials(owner)) + '</button>' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-ld-new" data-jos-act="leads-add-open">+ New Lead</button>' +
       '</div></header>' +
 
-      statusTabs +
-
-      '<div class="jos-ld-filters">' +
-      '<label class="jos-ld-filter-search"><input id="jos-leads-search" type="search" placeholder="Search by name..." value="' + esc(root._josLeadsQ || '') + '"></label>' +
-      '<select id="jos-ld-filter-source" class="jos-ld-dd"><option value="all">All Sources</option>' +
+      '<section class="jos-ld-toolbar">' +
+      '<label class="jos-ld-filter-search"><input id="jos-leads-search" type="search" placeholder="Search leads, customers, phone, or email..." value="' + esc(root._josLeadsQ || '') + '"></label>' +
+      '<select id="jos-ld-filter-source" class="jos-ld-dd" aria-label="Sources"><option value="all">All Sources</option>' +
       uniqueLeadValues('source').map(function (s) {
         return '<option value="' + esc(s) + '"' + ((f.source || 'all') === s ? ' selected' : '') + '>' + esc(srcLabel(s)) + '</option>';
       }).join('') + '</select>' +
-      '<select id="jos-ld-filter-service" class="jos-ld-dd"><option value="all">All Services</option>' +
+      '<select id="jos-ld-filter-service" class="jos-ld-dd" aria-label="Services"><option value="all">All Services</option>' +
       uniqueLeadValues('service').map(function (s) {
         return '<option value="' + esc(s) + '"' + ((f.service || 'all') === s ? ' selected' : '') + '>' + esc(s) + '</option>';
       }).join('') + '</select>' +
-      '<select id="jos-ld-filter-assigned" class="jos-ld-dd"><option value="all">All Assignments</option>' +
+      '<select id="jos-ld-filter-assigned" class="jos-ld-dd" aria-label="Assignments"><option value="all">All Assignments</option>' +
       uniqueLeadValues('assignedTo').map(function (s) {
         return '<option value="' + esc(s) + '"' + ((f.assigned || 'all') === s ? ' selected' : '') + '>' + esc(s) + '</option>';
       }).join('') + '</select>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-filter-open">More Filters</button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="leads-export" title="Export" aria-label="Export">' +
-      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg></button>' +
-      '</div>' +
+      '<button type="button" class="jos-btn jos-btn-sm' + (moreFiltersOpen || activeFilterCount ? ' jos-btn-brand' : '') + '" data-jos-act="leads-filter-open" aria-expanded="' + (moreFiltersOpen ? 'true' : 'false') + '">' +
+      (activeFilterCount ? ('More Filters · ' + activeFilterCount) : 'More Filters') +
+      '</button>' +
+      '</section>' +
+
+      statusTabs +
 
       (tab === 'recovery'
         ? '<div class="jos-ld-recover-strip"><strong>Lead Recovery</strong><span>People who started booking and didn’t finish — text them while intent is warm.' +
@@ -8131,6 +8135,7 @@
       '</section>' +
       '<section class="jos-ld-main">' + renderLeadWorkspace(root, sel, ws) + '</section>' +
       renderLeadRightPanel(root, sel, all, filtered) +
+      '</div>' +
       '</div>' +
 
       renderLeadsFilterDrawer(root) +
@@ -8292,9 +8297,8 @@
     });
 
     root.addEventListener('input', function (e) {
-      if (e.target && (e.target.id === 'jos-leads-search' || e.target.id === 'jos-leads-global-search')) {
+      if (e.target && e.target.id === 'jos-leads-search') {
         root._josLeadsQ = e.target.value;
-        if (e.target.id === 'jos-leads-global-search') root._josLeadsGlobalQ = e.target.value;
         root._josLeadsLimit = 25;
         clearTimeout(root._josLeadsSearchT);
         root._josLeadsSearchT = setTimeout(function () { renderLeads(); }, 140);
@@ -8352,7 +8356,6 @@
         if (root._josLeadCtx && root._josLeadCtx.open) { root._josLeadCtx = null; renderLeads(); return; }
         if (root._josLeadsQ) {
           root._josLeadsQ = '';
-          root._josLeadsGlobalQ = '';
           renderLeads();
         }
       }
@@ -8364,7 +8367,7 @@
       }
       if (e.key === '/' && !/input|textarea|select/i.test((e.target || {}).tagName || '')) {
         e.preventDefault();
-        var inp = el('jos-leads-search') || el('jos-leads-global-search');
+        var inp = el('jos-leads-search');
         if (inp) inp.focus();
       }
     });

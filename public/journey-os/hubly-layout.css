@@ -265,7 +265,8 @@
 #p-app.jos-pixel .jos-ah-mc-header h1,
 #p-app.jos-pixel .jos-set-mc-header h1,
 #p-app.jos-pixel .pp-mc-header h1,
-#p-app.jos-pixel .jos-jobs-header h1 {
+#p-app.jos-pixel .jos-jobs-header h1,
+#p-app.jos-pixel .jos-ld-header h1 {
   font-size: var(--hub-title) !important;
   font-weight: var(--hub-title-weight) !important;
   line-height: var(--hub-title-lh) !important;
@@ -279,7 +280,8 @@
 #p-app.jos-pixel .jos-mem-mc-header p,
 #p-app.jos-pixel .jos-rve-mc-header p,
 #p-app.jos-pixel .jos-rpt-mc-header p,
-#p-app.jos-pixel .jos-jobs-header p {
+#p-app.jos-pixel .jos-jobs-header p,
+#p-app.jos-pixel .jos-ld-header p {
   margin-top: var(--hub-title-to-sub) !important;
   font-size: var(--hub-sub) !important;
   line-height: 1.5 !important;
@@ -291,7 +293,8 @@
 #p-app.jos-pixel .jos-mem-mc-header,
 #p-app.jos-pixel .jos-rve-mc-header,
 #p-app.jos-pixel .jos-rpt-mc-header,
-#p-app.jos-pixel .jos-jobs-header {
+#p-app.jos-pixel .jos-jobs-header,
+#p-app.jos-pixel .jos-ld-header {
   margin-bottom: var(--hub-header-to-content) !important;
   min-height: 0 !important;
 }
@@ -300,7 +303,10 @@
 #p-app.jos-pixel .jos-mkt-mc-new,
 #p-app.jos-pixel .jos-btn.hub-btn,
 #p-app.jos-pixel .jos-jobs-new,
-#p-app.jos-pixel .jos-jobs-export {
+#p-app.jos-pixel .jos-jobs-export,
+#p-app.jos-pixel .jos-ld-new,
+#p-app.jos-pixel .jos-ld-export,
+#p-app.jos-pixel .jos-ld-bulk {
   height: var(--hub-btn-h) !important;
 }
 
