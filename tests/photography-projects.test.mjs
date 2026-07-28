@@ -1,5 +1,5 @@
 /**
- * Smoke test — Photography Projects + Hubly Core Connected Apps / Creative Engine.
+ * Smoke test — Hubly Projects (universal workspace) + Connected Apps / Creative Engine.
  */
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
@@ -9,7 +9,7 @@ import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-describe('Photography Projects module', () => {
+describe('Hubly Projects module', () => {
   it('ships ProjectWorkspace (Connected Apps project links) migration', () => {
     const mig = join(root, 'supabase/migrations/20260728060000_photography_project_workspaces.sql');
     assert.equal(existsSync(mig), true);
@@ -86,12 +86,33 @@ describe('Photography Projects module', () => {
     assert.match(html, /photography-projects\.js/);
   });
 
-  it('gates Photography nav on capabilities.projects', () => {
+  it('Projects is a core module; Lightroom is feature-gated', () => {
     const html = readFileSync(join(root, 'public/hubly.html'), 'utf8');
     const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
     assert.match(html, /function hasBusinessCapability/);
-    assert.match(html, /hasBusinessCapability\('projects'\)/);
-    assert.match(js, /hasCapability\('projects'\)|hasProjectsCapability/);
+    assert.match(html, /if\(key==='projects'\)return true/);
+    assert.match(html, /ni-lbl">Projects</);
+    assert.match(js, /hasProjectsCapability\(\) \{\s*return true;/);
+    assert.match(js, /hasLightroomCapability/);
+    assert.match(js, /projectWorkspaceProfile/);
+    assert.match(js, /global\.HublyProjects/);
+    assert.doesNotMatch(js, /Photography Projects/);
+    assert.doesNotMatch(js, /Photography Agreement/);
+  });
+
+  it('uses universal center-of-work tabs', () => {
+    const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
+    assert.match(js, /\['overview', 'Overview'\]/);
+    assert.match(js, /\['media', 'Media'\]/);
+    assert.match(js, /\['creative', 'Creative'\]/);
+    assert.match(js, /\['files', 'Files'\]/);
+    assert.match(js, /\['deliverables', 'Deliverables'\]/);
+    assert.match(js, /\['apps', 'Connected Apps'\]/);
+    assert.match(js, /\['timeline', 'Timeline'\]/);
+    assert.match(js, /\['assistant', 'AI Assistant'\]/);
+    assert.match(js, /renderMediaTab/);
+    assert.match(js, /renderFilesTab/);
+    assert.match(js, /renderAiAssistantTab/);
   });
 
   it('ships dashboard metrics, Connected Apps hero, Creative tab, and Quick Project', () => {
@@ -103,6 +124,8 @@ describe('Photography Projects module', () => {
     assert.match(js, /Create Marketing Asset/);
     assert.match(js, /Quick Project/);
     assert.match(journey, /photo-quick/);
+    assert.match(js, /profile\.title/);
+    assert.match(js, /title: 'Projects'/);
   });
 
   it('enables projects + lightroom on photography blueprint', () => {

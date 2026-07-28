@@ -1,12 +1,10 @@
 /**
- * Hubly Photography Projects — Operate module
- * Independent of Jobs. Supabase is SSOT for project records.
- * localStorage may ONLY cache UI preferences (sort, filters, tab).
- *
- * Connected Apps (product): Projects attach providers (Lightroom, Canva,
- * Dropbox, Drive, …). Internal rows may live in photography_project_workspaces.
- * Hubly Core owns the Connected Apps + Creative engines — reusable by every industry.
- * Gated by businesses.capabilities.projects (not trade heuristics).
+ * Hubly Projects — universal media & creative workspace (Operate).
+ * Every Hubly business gets Projects. Industry capabilities unlock tools:
+ * Lightroom / galleries (photo), before/after (detailing), property albums
+ * (windows), job docs (pressure wash), Canva for everyone.
+ * Supabase is SSOT for project records; localStorage only caches UI prefs.
+ * Table names remain photography_* for compatibility — product label is Projects.
  */
 (function (global) {
   'use strict';
@@ -18,7 +16,7 @@
   var STATUSES = [
     'Lead', 'Booked', 'Scheduled', 'Shooting', 'Editing', 'Proofing', 'Delivered', 'Archived'
   ];
-  var TIMELINE_DEFAULTS = [
+  var TIMELINE_DEFAULTS_PHOTO = [
     { event_key: 'booking', label: 'Booking' },
     { event_key: 'contract_sent', label: 'Contract Sent' },
     { event_key: 'contract_signed', label: 'Contract Signed' },
@@ -32,6 +30,21 @@
     { event_key: 'review_requested', label: 'Review Requested' },
     { event_key: 'referral_sent', label: 'Referral Sent' }
   ];
+  var TIMELINE_DEFAULTS_JOB = [
+    { event_key: 'booking', label: 'Booking' },
+    { event_key: 'contract_sent', label: 'Contract Sent' },
+    { event_key: 'contract_signed', label: 'Contract Signed' },
+    { event_key: 'deposit_paid', label: 'Deposit Paid' },
+    { event_key: 'job_scheduled', label: 'Job Scheduled' },
+    { event_key: 'job_started', label: 'Job Started' },
+    { event_key: 'job_completed', label: 'Job Completed' },
+    { event_key: 'media_ready', label: 'Media Ready' },
+    { event_key: 'delivered', label: 'Deliverables Sent' },
+    { event_key: 'final_payment', label: 'Final Payment' },
+    { event_key: 'review_requested', label: 'Review Requested' },
+    { event_key: 'referral_sent', label: 'Referral Sent' }
+  ];
+  var TIMELINE_DEFAULTS = TIMELINE_DEFAULTS_JOB;
   var MARKETING_CHANNELS = [
     { channel: 'instagram', title: 'Instagram' },
     { channel: 'facebook', title: 'Facebook' },
@@ -52,7 +65,7 @@
     { id: 'timeline', label: 'Timeline' },
     { id: 'shot_list', label: 'Shot List' },
     { id: 'gallery', label: 'Gallery' },
-    { id: 'marketing', label: 'AI Marketing Workflow' },
+    { id: 'marketing', label: 'Marketing Workflow' },
     { id: 'canva', label: 'Canva', hint: 'Connected App — Creative Engine' }
   ];
   var POST_EDIT_PIPELINE = [
@@ -112,9 +125,10 @@
   }
   function countdownLabel(dateStr) {
     var d = daysUntil(dateStr);
-    if (d == null) return 'No shoot date';
-    if (d === 0) return 'Shoot today';
-    if (d > 0) return d + ' day' + (d === 1 ? '' : 's') + ' to shoot';
+    var noun = isPhotoTrade() ? 'Shoot' : 'Job';
+    if (d == null) return 'No ' + noun.toLowerCase() + ' date';
+    if (d === 0) return noun + ' today';
+    if (d > 0) return d + ' day' + (d === 1 ? '' : 's') + ' to ' + noun.toLowerCase();
     return Math.abs(d) + ' day' + (Math.abs(d) === 1 ? '' : 's') + ' ago';
   }
   function statusTone(st) {
@@ -151,7 +165,7 @@
     return global._hublyDb || (global.window && global.window._hublyDb) || null;
   }
 
-  /* ─── Capabilities (Runtime-style) ──────────────────────────────────── */
+  /* ─── Capabilities + trade profile (features gate — module is core) ─── */
 
   function businessCapabilities() {
     var biz = global.currentBusiness || {};
@@ -159,6 +173,8 @@
     return caps;
   }
   function hasCapability(key) {
+    // Projects is a core Hubly module — always on.
+    if (key === 'projects') return true;
     if (typeof global.hasBusinessCapability === 'function') {
       try { return !!global.hasBusinessCapability(key); } catch (e) {}
     }
@@ -170,7 +186,183 @@
     return false;
   }
   function hasProjectsCapability() {
-    return hasCapability('projects');
+    return true;
+  }
+  function tradeId() {
+    var biz = global.currentBusiness || {};
+    return String(S().businessType || biz.business_type || biz.type || '').toLowerCase();
+  }
+  function isPhotoTrade() {
+    try {
+      if (typeof global.isPhotoLedTrade === 'function' && global.isPhotoLedTrade()) return true;
+    } catch (e) {}
+    var id = tradeId();
+    return id === 'photography' || id.indexOf('photo') >= 0 || id === 'weddings' || id === 'wedding' ||
+      id.indexOf('video') >= 0;
+  }
+  function isDetailTrade() {
+    var id = tradeId();
+    return id.indexOf('detail') >= 0 || id.indexOf('ceramic') >= 0 || id === 'auto';
+  }
+  function isWindowTrade() {
+    return tradeId().indexOf('window') >= 0;
+  }
+  function isPressureWashTrade() {
+    var id = tradeId();
+    return id.indexOf('pressure') >= 0 || id.indexOf('powerwash') >= 0 || id.indexOf('power wash') >= 0;
+  }
+  function hasLightroomCapability() {
+    return hasCapability('lightroom') || isPhotoTrade();
+  }
+  /** Industry-adaptive workspace profile — same module, different tools. */
+  function projectWorkspaceProfile() {
+    if (isPhotoTrade()) {
+      return {
+        industry: 'photography',
+        eyebrow: 'Projects',
+        title: 'Projects',
+        subtitle: 'The home for every job — media, creative, files, apps, and deliverables.',
+        dateLabel: 'Shoot',
+        projectTypes: PROJECT_TYPES.slice(),
+        defaultType: 'Wedding',
+        emptyHint: 'Create a project — Lightroom is optional until you connect Adobe.',
+        teamFilterLabel: 'Photographers',
+        quickPlaceholder: 'Johnson Wedding',
+        quickHint: 'Name it, add media, done — about 30 seconds.',
+        mediaLabel: 'Photos',
+        deliverables: [
+          { id: 'd_gallery', title: 'Gallery', kind: 'gallery', status: 'pending' },
+          { id: 'd_album', title: 'Album', kind: 'album', status: 'pending' },
+          { id: 'd_prints', title: 'Prints', kind: 'prints', status: 'pending' },
+          { id: 'd_invoice', title: 'Invoice', kind: 'invoice', status: 'pending' }
+        ],
+        afterConnect: [
+          'Create Lightroom Album', 'Upload RAW Photos', 'Sync Edited Images',
+          'Deliver Galleries', 'Create Canva graphics', 'Publish Website', 'Request Reviews'
+        ],
+        features: { galleries: true, lightroom: true, beforeAfter: false, propertyAlbums: false, jobDocs: false }
+      };
+    }
+    if (isDetailTrade()) {
+      return {
+        industry: 'detailing',
+        eyebrow: 'Projects',
+        title: 'Projects',
+        subtitle: 'The home for every job — media, creative, files, apps, and deliverables.',
+        dateLabel: 'Job',
+        projectTypes: ['Ceramic Coating', 'Full Detail', 'Paint Correction', 'Interior', 'Fleet', 'Other'],
+        defaultType: 'Ceramic Coating',
+        emptyHint: 'Create a project for a job — upload before/after media and deliver marketing assets.',
+        teamFilterLabel: 'Technicians',
+        quickPlaceholder: 'Johnson Ceramic Coating',
+        quickHint: 'Name it, add media, done — about 30 seconds.',
+        mediaLabel: 'Photos',
+        deliverables: [
+          { id: 'd_gallery', title: 'Gallery', kind: 'gallery', status: 'pending' },
+          { id: 'd_ba', title: 'Before / After', kind: 'before_after', status: 'pending' },
+          { id: 'd_mkt', title: 'Marketing', kind: 'marketing', status: 'pending' },
+          { id: 'd_social', title: 'Social', kind: 'social', status: 'pending' },
+          { id: 'd_invoice', title: 'Invoice', kind: 'invoice', status: 'pending' }
+        ],
+        afterConnect: [
+          'Upload before & after photos', 'Generate Before / After graphics in Canva',
+          'Publish to social', 'Update Google Business', 'Request Reviews'
+        ],
+        features: { galleries: true, lightroom: false, beforeAfter: true, propertyAlbums: false, jobDocs: true }
+      };
+    }
+    if (isWindowTrade()) {
+      return {
+        industry: 'windows',
+        eyebrow: 'Projects',
+        title: 'Projects',
+        subtitle: 'The home for every job — media, creative, files, apps, and deliverables.',
+        dateLabel: 'Job',
+        projectTypes: ['Residential', 'Commercial', 'New Construction', 'Other'],
+        defaultType: 'Residential',
+        emptyHint: 'Create a property project — document the job and share albums with the client.',
+        teamFilterLabel: 'Crew',
+        quickPlaceholder: '123 Oak St Windows',
+        quickHint: 'Name it, add media, done — about 30 seconds.',
+        mediaLabel: 'Photos',
+        deliverables: [
+          { id: 'd_album', title: 'Property Album', kind: 'gallery', status: 'pending' },
+          { id: 'd_docs', title: 'Job Documentation', kind: 'docs', status: 'pending' },
+          { id: 'd_invoice', title: 'Invoice', kind: 'invoice', status: 'pending' }
+        ],
+        afterConnect: [
+          'Upload property photos', 'Build property album', 'Share with client', 'Create Canva graphics'
+        ],
+        features: { galleries: true, lightroom: false, beforeAfter: true, propertyAlbums: true, jobDocs: true }
+      };
+    }
+    if (isPressureWashTrade()) {
+      return {
+        industry: 'pressure_wash',
+        eyebrow: 'Projects',
+        title: 'Projects',
+        subtitle: 'The home for every job — media, creative, files, apps, and deliverables.',
+        dateLabel: 'Job',
+        projectTypes: ['Driveway', 'House Wash', 'Roof', 'Commercial Lot', 'Other'],
+        defaultType: 'House Wash',
+        emptyHint: 'Create a project to document the job — before/after and client delivery.',
+        teamFilterLabel: 'Crew',
+        quickPlaceholder: 'Smith House Wash',
+        quickHint: 'Name it, add media, done — about 30 seconds.',
+        mediaLabel: 'Photos',
+        deliverables: [
+          { id: 'd_docs', title: 'Job Documentation', kind: 'docs', status: 'pending' },
+          { id: 'd_ba', title: 'Before / After', kind: 'before_after', status: 'pending' },
+          { id: 'd_gallery', title: 'Gallery', kind: 'gallery', status: 'pending' },
+          { id: 'd_invoice', title: 'Invoice', kind: 'invoice', status: 'pending' }
+        ],
+        afterConnect: [
+          'Upload job photos', 'Build before/after set', 'Share documentation', 'Request Reviews'
+        ],
+        features: { galleries: true, lightroom: false, beforeAfter: true, propertyAlbums: false, jobDocs: true }
+      };
+    }
+    return {
+      industry: 'home_service',
+      eyebrow: 'Projects',
+      title: 'Projects',
+      subtitle: 'The home for every job — media, creative, files, apps, and deliverables.',
+      dateLabel: 'Job',
+      projectTypes: ['Residential', 'Commercial', 'Maintenance', 'Other'],
+      defaultType: 'Residential',
+      emptyHint: 'Create a project — connect Canva, Drive, and more as you go.',
+      teamFilterLabel: 'Team',
+      quickPlaceholder: 'Johnson Job',
+      quickHint: 'Name it, add media, done — about 30 seconds.',
+      mediaLabel: 'Media',
+      deliverables: [
+        { id: 'd_gallery', title: 'Gallery', kind: 'gallery', status: 'pending' },
+        { id: 'd_mkt', title: 'Marketing', kind: 'marketing', status: 'pending' },
+        { id: 'd_social', title: 'Social', kind: 'social', status: 'pending' },
+        { id: 'd_invoice', title: 'Invoice', kind: 'invoice', status: 'pending' }
+      ],
+      afterConnect: [
+        'Upload job photos', 'Create Canva graphics', 'Share with client', 'Request Reviews'
+      ],
+      features: { galleries: true, lightroom: false, beforeAfter: true, propertyAlbums: false, jobDocs: true }
+    };
+  }
+  function createAssetsForProfile() {
+    var profile = projectWorkspaceProfile();
+    var assets = CREATE_ASSETS.filter(function (a) {
+      if (a.id === 'lightroom') return hasLightroomCapability() || profile.features.lightroom;
+      if (a.id === 'shot_list') return isPhotoTrade();
+      return true;
+    });
+    return assets;
+  }
+  function visibleConnectedProviders() {
+    return WORKSPACE_PROVIDERS.filter(function (prov) {
+      if (prov.id === 'adobe_lightroom') return hasLightroomCapability();
+      if (prov.id === 'canva') return true;
+      if (prov.id === 'frame_io') return isPhotoTrade();
+      return true;
+    });
   }
 
   /* ─── UI prefs only (localStorage) ──────────────────────────────────── */
@@ -199,18 +391,10 @@
   function defaultWorkspace(partial) {
     return Object.assign({
       team: { lead: '', second: '', assistant: '', editor: '' },
-      timeline: TIMELINE_DEFAULTS.map(function (t, i) {
-        return Object.assign({}, t, {
-          id: 'tl_' + i,
-          completed: false,
-          occurred_at: null,
-          notes: '',
-          sort_order: i
-        });
-      }),
+      timeline: timelineDefaults(),
       gallery: {
         ai_favorites: [],
-        albums: [{ name: 'All Photos', count: 0 }, { name: 'Selects', count: 0 }],
+        albums: [{ name: 'All Media', count: 0 }, { name: 'Selects', count: 0 }],
         client_gallery: true,
         private_gallery: true,
         downloads: false,
@@ -237,10 +421,15 @@
       contracts: [],
       invoices: [],
       questionnaire: { status: 'draft', title: 'Client Questionnaire', answers: {} },
-      deliverables: [
-        { id: 'd_gallery', title: 'Client Gallery', kind: 'gallery', status: 'pending' },
-        { id: 'd_selects', title: 'Edited Selects', kind: 'cloud', status: 'pending' }
-      ],
+      deliverables: (function () {
+        try { return projectWorkspaceProfile().deliverables.slice(); }
+        catch (e) {
+          return [
+            { id: 'd_gallery', title: 'Gallery', kind: 'gallery', status: 'pending' },
+            { id: 'd_mkt', title: 'Marketing', kind: 'marketing', status: 'pending' }
+          ];
+        }
+      })(),
       marketing: MARKETING_CHANNELS.map(function (c) {
         return Object.assign({}, c, { status: 'idle', body: '' });
       }),
@@ -249,6 +438,19 @@
       local_uploads: [],
       workspaces: []
     }, partial || {});
+  }
+
+  function timelineDefaults() {
+    var src = isPhotoTrade() ? TIMELINE_DEFAULTS_PHOTO : TIMELINE_DEFAULTS_JOB;
+    return src.map(function (t, i) {
+      return Object.assign({}, t, {
+        id: 'tl_' + i,
+        completed: false,
+        occurred_at: null,
+        notes: '',
+        sort_order: i
+      });
+    });
   }
 
   function getWorkspace(p, provider) {
@@ -447,7 +649,7 @@
     } catch (err) {
       _cache.loading = null;
       _cache.loaded = false;
-      console.warn('Photography projects load failed', err);
+      console.warn('Projects load failed', err);
       throw err;
     }
   }
@@ -730,39 +932,42 @@
         '<div class="pp-card-body">' +
           '<h3 class="pp-card-title">' + esc(p.name) + '</h3>' +
           '<div class="pp-card-meta"><span>' + esc(p.client_name || 'No client') + '</span><span class="pp-dot"></span><span>' + esc(p.project_type) + '</span></div>' +
-          '<div class="pp-card-row"><span class="pp-label">Shoot</span><strong>' + esc(formatDate(p.shoot_date)) + '</strong></div>' +
+          '<div class="pp-card-row"><span class="pp-label">' + esc(projectWorkspaceProfile().dateLabel) + '</span><strong>' + esc(formatDate(p.shoot_date)) + '</strong></div>' +
           '<div class="pp-card-pills">' +
-            '<span class="pp-pill">' + esc(lrLabel(p.lightroom_status)) + '</span>' +
+            (hasLightroomCapability() ? '<span class="pp-pill">' + esc(lrLabel(p.lightroom_status)) + '</span>' : '') +
             '<span class="pp-pill">' + esc(galLabel(p.gallery_status)) + '</span>' +
             '<span class="pp-pill">' + esc(invLabel(p.invoice_status)) + '</span>' +
           '</div>' +
           '<div class="pp-card-stats">' +
-            '<div><span class="pp-label">Photos</span><strong>' + esc(String(p.photo_count || 0)) + '</strong></div>' +
+            '<div><span class="pp-label">Assets</span><strong>' + esc(String(p.photo_count || 0)) + '</strong></div>' +
             '<div><span class="pp-label">Last sync</span><strong>' + esc(formatRelative(p.last_sync_at)) + '</strong></div>' +
           '</div>' +
           '<div class="pp-card-actions" onclick="event.stopPropagation()">' +
             '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="open" data-pp-id="' + esc(p.id) + '">Open</button>' +
-            '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Lightroom</button>' +
+            (hasLightroomCapability()
+              ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Lightroom</button>'
+              : '') +
             '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gallery" data-pp-id="' + esc(p.id) + '">Gallery</button>' +
             '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="invoice" data-pp-id="' + esc(p.id) + '">Invoice</button>' +
             '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver</button>' +
           '</div></div></article>';
     }).join('');
 
+    var profile = projectWorkspaceProfile();
     return '<div class="pp-shell pp-dash">' +
       '<header class="pp-dash-head">' +
-        '<div><p class="pp-eyebrow">Photography</p><h1 class="pp-title">Photography Projects</h1>' +
-        '<p class="pp-sub">Open the project — Connected Apps (Lightroom, Canva, Drive…) sync to Hubly.</p></div>' +
+        '<div><p class="pp-eyebrow">' + esc(profile.eyebrow) + '</p><h1 class="pp-title">' + esc(profile.title) + '</h1>' +
+        '<p class="pp-sub">' + esc(profile.subtitle) + '</p></div>' +
         '<div class="pp-dash-actions">' +
           '<button type="button" class="pp-btn pp-btn-ghost pp-btn-lg" data-pp-act="quick">Quick Project</button>' +
           '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="new">+ New Project</button>' +
         '</div></header>' +
       '<div class="pp-metrics">' +
         metric('Projects', String(m.projects)) +
-        metric('Editing', String(m.editing)) +
+        metric('In progress', String(m.editing)) +
         metric('Awaiting Delivery', String(m.awaiting)) +
         metric('Revenue', money(m.revenue)) +
-        metric('Images', Number(m.images).toLocaleString()) +
+        metric('Assets', Number(m.images).toLocaleString()) +
       '</div>' +
       '<div class="pp-toolbar">' +
         '<label class="pp-search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
@@ -775,12 +980,12 @@
           '<option value="upcoming"' + (st.dateFilter === 'upcoming' ? ' selected' : '') + '>Upcoming</option>' +
           '<option value="this_month"' + (st.dateFilter === 'this_month' ? ' selected' : '') + '>This month</option>' +
           '<option value="past"' + (st.dateFilter === 'past' ? ' selected' : '') + '>Past</option></select>' +
-        '<select data-pp-field="photographerFilter" aria-label="Photographer"><option value="all">All photographers</option>' +
+        '<select data-pp-field="photographerFilter" aria-label="Team"><option value="all">All ' + esc(profile.teamFilterLabel.toLowerCase()) + '</option>' +
           photogs.map(function (n) { return '<option value="' + esc(n) + '"' + (st.photographerFilter === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') +
         '</select>' +
         '<select data-pp-field="sort" aria-label="Sort">' +
-          '<option value="shoot_date_desc"' + (st.sort === 'shoot_date_desc' ? ' selected' : '') + '>Shoot date ↓</option>' +
-          '<option value="shoot_date_asc"' + (st.sort === 'shoot_date_asc' ? ' selected' : '') + '>Shoot date ↑</option>' +
+          '<option value="shoot_date_desc"' + (st.sort === 'shoot_date_desc' ? ' selected' : '') + '>' + esc(profile.dateLabel) + ' date ↓</option>' +
+          '<option value="shoot_date_asc"' + (st.sort === 'shoot_date_asc' ? ' selected' : '') + '>' + esc(profile.dateLabel) + ' date ↑</option>' +
           '<option value="name"' + (st.sort === 'name' ? ' selected' : '') + '>Name</option>' +
           '<option value="status"' + (st.sort === 'status' ? ' selected' : '') + '>Status</option>' +
           '<option value="updated"' + (st.sort === 'updated' ? ' selected' : '') + '>Recently updated</option></select>' +
@@ -790,7 +995,7 @@
         ? '<div class="pp-grid">' + cards + '</div>'
         : '<div class="pp-empty"><div class="pp-empty-art" aria-hidden="true"></div>' +
           '<h2>No projects yet</h2>' +
-          '<p>Create a project in about 30 seconds — or run the full wizard. Adobe Lightroom is optional.</p>' +
+          '<p>' + esc(profile.emptyHint) + '</p>' +
           '<div class="pp-btn-row" style="justify-content:center">' +
           '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="quick">Quick Project</button>' +
           '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="new">+ New Project</button></div></div>') +
@@ -804,14 +1009,15 @@
 
   function renderQuickModal(st) {
     var q = st.quick || { name: '', files: [] };
+    var profile = projectWorkspaceProfile();
     return '<div class="pp-modal-bg" data-pp-act="quick-close">' +
       '<div class="pp-modal" onclick="event.stopPropagation()">' +
         '<div class="pp-modal-h"><h2>Quick Project</h2><button type="button" class="pp-icon-x" data-pp-act="quick-close" aria-label="Close">×</button></div>' +
-        '<p class="pp-muted">Name it, add photos, done — about 30 seconds. Saved to Hubly immediately.</p>' +
+        '<p class="pp-muted">' + esc(profile.quickHint || 'Name it, add media, done — about 30 seconds.') + ' Saved to Hubly immediately.</p>' +
         '<label class="pp-field pp-field-full"><span>Project Name</span>' +
-          '<input type="text" data-pp-quick="name" value="' + esc(q.name) + '" placeholder="Johnson Wedding" autofocus></label>' +
-        '<label class="pp-field pp-field-full"><span>Upload Photos</span>' +
-          '<input type="file" accept="image/*" multiple data-pp-quick-files>' +
+          '<input type="text" data-pp-quick="name" value="' + esc(q.name) + '" placeholder="' + esc(profile.quickPlaceholder || 'Project name') + '" autofocus></label>' +
+        '<label class="pp-field pp-field-full"><span>Upload media</span>' +
+          '<input type="file" accept="image/*,video/*" multiple data-pp-quick-files>' +
           '<small class="pp-muted">' + (q.files && q.files.length ? q.files.length + ' selected' : 'Optional — add later from the project') + '</small></label>' +
         '<div class="pp-wizard-foot">' +
           '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="quick-close">Cancel</button>' +
@@ -822,14 +1028,16 @@
   /* ─── Wizard ────────────────────────────────────────────────────────── */
 
   function blankWizard() {
+    var profile = projectWorkspaceProfile();
+    var lrOn = hasLightroomCapability();
     return {
-      name: '', project_type: 'Portrait', shoot_date: '', location: '', estimated_photos: '', notes: '',
+      name: '', project_type: profile.defaultType || 'Residential', shoot_date: '', location: '', estimated_photos: '', notes: '',
       client_mode: 'new', client_name: '', client_email: '', client_phone: '', client_address: '',
       client_relationship: '', existing_client: '',
       team: { lead: '', second: '', assistant: '', editor: '' },
       assets: {
-        lightroom: true, folder: true, contract: true, invoice: true,
-        questionnaire: true, timeline: true, shot_list: true, gallery: true, marketing: true, canva: true
+        lightroom: lrOn, folder: true, contract: true, invoice: true,
+        questionnaire: true, timeline: true, shot_list: isPhotoTrade(), gallery: true, marketing: true, canva: true
       }
     };
   }
@@ -840,17 +1048,19 @@
     var w = st.wizard || blankWizard();
     st.wizard = w;
     var step = st.wizardStep || 1;
+    var profile = projectWorkspaceProfile();
+    var types = profile.projectTypes || PROJECT_TYPES;
     var clients = Array.from(new Set(list.map(function (p) { return p.client_name; }).filter(Boolean)));
     var body = '';
     if (step === 1) {
       body = '<div class="pp-form-grid">' +
-        field('Project Name', '<input type="text" data-pp-w="name" value="' + esc(w.name) + '" placeholder="Elena & Marcus Wedding">') +
-        field('Project Type', '<select data-pp-w="project_type">' + PROJECT_TYPES.map(function (t) {
+        field('Project Name', '<input type="text" data-pp-w="name" value="' + esc(w.name) + '" placeholder="Johnson Ceramic Coating">') +
+        field('Project Type', '<select data-pp-w="project_type">' + types.map(function (t) {
           return '<option' + (w.project_type === t ? ' selected' : '') + '>' + esc(t) + '</option>';
         }).join('') + '</select>') +
-        field('Shoot Date', '<input type="date" data-pp-w="shoot_date" value="' + esc(w.shoot_date) + '">') +
+        field(profile.dateLabel + ' Date', '<input type="date" data-pp-w="shoot_date" value="' + esc(w.shoot_date) + '">') +
         field('Location', '<input type="text" data-pp-w="location" value="' + esc(w.location) + '">') +
-        field('Estimated Photos', '<input type="number" min="0" data-pp-w="estimated_photos" value="' + esc(w.estimated_photos) + '">') +
+        field('Estimated Assets', '<input type="number" min="0" data-pp-w="estimated_photos" value="' + esc(w.estimated_photos) + '">') +
         field('Notes', '<textarea data-pp-w="notes" rows="3">' + esc(w.notes) + '</textarea>', true) + '</div>';
     } else if (step === 2) {
       body = '<div class="pp-seg">' +
@@ -870,13 +1080,15 @@
       }
     } else if (step === 3) {
       body = '<div class="pp-form-grid">' +
-        field('Lead Photographer', '<input type="text" data-pp-w="team.lead" value="' + esc(w.team.lead) + '">') +
-        field('Second Shooter', '<input type="text" data-pp-w="team.second" value="' + esc(w.team.second) + '">') +
+        field('Lead', '<input type="text" data-pp-w="team.lead" value="' + esc(w.team.lead) + '">') +
+        field('Second', '<input type="text" data-pp-w="team.second" value="' + esc(w.team.second) + '">') +
         field('Assistant', '<input type="text" data-pp-w="team.assistant" value="' + esc(w.team.assistant) + '">') +
-        field('Editor', '<input type="text" data-pp-w="team.editor" value="' + esc(w.team.editor) + '">') + '</div>';
+        field('Editor / Creative', '<input type="text" data-pp-w="team.editor" value="' + esc(w.team.editor) + '">') + '</div>';
     } else {
-      body = '<p class="pp-help">Hubly prepares the project OS. Connect Adobe Lightroom, Canva, Dropbox, and more later — the Project stays primary.</p><div class="pp-checks">' +
-        CREATE_ASSETS.map(function (a) {
+      body = '<p class="pp-help">Hubly prepares the project workspace. Connect Canva' +
+        (hasLightroomCapability() ? ', Lightroom' : '') +
+        ', Drive, and more later — the Project stays primary.</p><div class="pp-checks">' +
+        createAssetsForProfile().map(function (a) {
           return '<label class="pp-check"><input type="checkbox" data-pp-asset="' + a.id + '"' + (w.assets[a.id] ? ' checked' : '') + '>' +
             '<span><strong>' + esc(a.label) + '</strong>' + (a.hint ? '<small>' + esc(a.hint) + '</small>' : '') + '</span></label>';
         }).join('') + '</div>';
@@ -903,18 +1115,34 @@
   }
   function renderCommand(root, st, p) {
     var tab = st.tab || 'overview';
+    // Universal center-of-work IA — same for every industry.
     var tabs = [
-      ['overview', 'Overview'], ['timeline', 'Timeline'], ['lightroom', 'Connected Apps'],
-      ['creative', 'Creative'], ['gallery', 'Gallery'], ['contracts', 'Contracts'], ['invoices', 'Invoices'],
-      ['questionnaire', 'Questionnaire'], ['deliverables', 'Deliverables'],
-      ['marketing', 'Marketing'], ['notes', 'Notes'], ['activity', 'Activity']
+      ['overview', 'Overview'],
+      ['media', 'Media'],
+      ['creative', 'Creative'],
+      ['files', 'Files'],
+      ['deliverables', 'Deliverables'],
+      ['apps', 'Connected Apps'],
+      ['timeline', 'Timeline'],
+      ['assistant', 'AI Assistant']
     ];
+    // Legacy tab ids still resolve in renderTab.
+    if (tab === 'lightroom' || tab === 'gallery' || tab === 'contracts' ||
+        tab === 'invoices' || tab === 'questionnaire' || tab === 'marketing' ||
+        tab === 'notes' || tab === 'activity') {
+      if (tab === 'lightroom') tab = 'apps';
+      else if (tab === 'gallery') tab = 'media';
+      else if (tab === 'contracts' || tab === 'invoices' || tab === 'questionnaire') tab = 'files';
+      else if (tab === 'marketing' || tab === 'notes' || tab === 'activity') tab = 'assistant';
+      st.tab = tab;
+    }
     return '<div class="pp-shell pp-cc"><button type="button" class="pp-back" data-pp-act="back-dash">← All projects</button>' +
       '<header class="pp-hero" style="' + coverStyle(p) + '"><div class="pp-hero-veil"></div><div class="pp-hero-content">' +
       '<div class="pp-hero-top"><span class="pp-status pp-status-' + statusTone(p.status) + '">' + esc(p.status) + '</span>' +
       '<select class="pp-status-select" data-pp-act="set-status" data-pp-id="' + esc(p.id) + '">' +
       STATUSES.map(function (s) { return '<option value="' + esc(s) + '"' + (p.status === s ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') +
       '</select></div>' +
+      '<p class="pp-eyebrow pp-hero-eyebrow">Projects</p>' +
       '<h1 class="pp-hero-title">' + esc(p.name) + '</h1>' +
       '<p class="pp-hero-sub">' + esc(p.client_name || 'No client') + ' · ' + esc(p.project_type) + ' · ' + esc(formatDate(p.shoot_date)) +
       (workspaceSummary(p) ? ' · ' + esc(workspaceSummary(p)) : '') + '</p>' +
@@ -922,8 +1150,8 @@
       kpi('Countdown', countdownLabel(p.shoot_date)) +
       kpi('Revenue', money(p.revenue_cents)) +
       kpi('Outstanding', money(p.outstanding_cents)) +
-      kpi('Photos', String(p.photo_count || 0)) +
-      kpi('Editing', (p.editing_progress || 0) + '%') +
+      kpi('Media', String(p.photo_count || 0)) +
+      kpi('Progress', (p.editing_progress || 0) + '%') +
       '</div></div></header>' +
       '<nav class="pp-tabs" role="tablist">' + tabs.map(function (t) {
         return '<button type="button" role="tab" class="pp-tab' + (tab === t[0] ? ' on' : '') + '" data-pp-act="tab" data-pp-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
@@ -933,16 +1161,12 @@
 
   function renderTab(p, tab) {
     if (tab === 'timeline') return renderTimelineTab(p);
-    if (tab === 'lightroom') return renderConnectedAppsTab(p);
+    if (tab === 'apps' || tab === 'lightroom') return renderConnectedAppsTab(p);
     if (tab === 'creative') return renderCreativeTab(p);
-    if (tab === 'gallery') return renderGalleryTab(p);
-    if (tab === 'contracts') return renderContractsTab(p);
-    if (tab === 'invoices') return renderInvoicesTab(p);
-    if (tab === 'questionnaire') return renderQuestionnaireTab(p);
+    if (tab === 'media' || tab === 'gallery') return renderMediaTab(p);
+    if (tab === 'files' || tab === 'contracts' || tab === 'invoices' || tab === 'questionnaire') return renderFilesTab(p);
     if (tab === 'deliverables') return renderDeliverablesTab(p);
-    if (tab === 'marketing') return renderMarketingTab(p);
-    if (tab === 'notes') return renderNotesTab(p);
-    if (tab === 'activity') return renderActivityTab(p);
+    if (tab === 'assistant' || tab === 'marketing' || tab === 'notes' || tab === 'activity') return renderAiAssistantTab(p);
     return renderOverviewTab(p);
   }
 
@@ -959,7 +1183,15 @@
   }
 
   function renderOverviewTab(p) {
-    return '<div class="pp-panel-grid"><section class="pp-panel"><h3>Project</h3><dl class="pp-dl">' +
+    var profile = projectWorkspaceProfile();
+    var appsHtml = visibleConnectedProviders().map(function (prov) {
+      var w = getWorkspace(p, prov.id);
+      var on = w && (w.sync_state === 'linked' || w.sync_state === 'synced' || w.sync_state === 'pending');
+      return '<li class="' + (on ? 'on' : '') + '">' + (on ? '\u2713 ' : '') + esc(prov.label) + '</li>';
+    }).join('');
+    var dels = (p.deliverables && p.deliverables.length) ? p.deliverables : profile.deliverables;
+    return '<div class="pp-panel-grid">' +
+      '<section class="pp-panel"><h3>Project</h3><dl class="pp-dl">' +
       '<div><dt>Location</dt><dd>' + esc(p.location || '—') + '</dd></div>' +
       '<div><dt>Type</dt><dd>' + esc(p.project_type) + '</dd></div>' +
       '<div><dt>Lead</dt><dd>' + esc((p.team && p.team.lead) || '—') + '</dd></div>' +
@@ -969,12 +1201,21 @@
       '<div><dt>Name</dt><dd>' + esc(p.client_name || '—') + '</dd></div>' +
       '<div><dt>Email</dt><dd>' + esc(p.client_email || '—') + '</dd></div>' +
       '<div><dt>Phone</dt><dd>' + esc(p.client_phone || '—') + '</dd></div></dl></section>' +
-      '<section class="pp-panel"><h3>Editing progress</h3><div class="pp-progress"><i style="width:' + (p.editing_progress || 0) + '%"></i></div>' +
+      '<section class="pp-panel"><h3>Connected Apps</h3><ul class="pp-queue pp-apps-check">' +
+      (appsHtml || '<li class="pp-muted">No apps available</li>') + '</ul></section>' +
+      '<section class="pp-panel"><h3>Media</h3><dl class="pp-dl">' +
+      '<div><dt>Assets</dt><dd>' + esc(String(p.photo_count || 0)) + '</dd></div>' +
+      '<div><dt>Last sync</dt><dd>' + esc(formatRelative(p.last_sync_at)) + '</dd></div></dl></section>' +
+      '<section class="pp-panel"><h3>Deliverables</h3><ul class="pp-queue">' +
+      dels.map(function (d) {
+        return '<li><strong>' + esc(d.title) + '</strong><span>' + esc(d.status || 'pending') + '</span></li>';
+      }).join('') + '</ul></section>' +
+      '<section class="pp-panel"><h3>Progress</h3><div class="pp-progress"><i style="width:' + (p.editing_progress || 0) + '%"></i></div>' +
       '<div class="pp-progress-meta"><span>' + (p.editing_progress || 0) + '% complete</span>' +
       '<input type="range" min="0" max="100" value="' + (p.editing_progress || 0) + '" data-pp-act="edit-progress" data-pp-id="' + esc(p.id) + '"></div></section>' +
       '<section class="pp-panel"><h3>Quick actions</h3><div class="pp-btn-row">' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="lightroom">Lightroom</button>' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="gallery">Gallery</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="media">Media</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="apps">Connected Apps</button>' +
       '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver</button></div></section></div>';
   }
 
@@ -997,19 +1238,23 @@
   }
 
   function renderConnectedAppsTab(p) {
+    var profile = projectWorkspaceProfile();
     var lr = p.lightroom || {};
     var lrWs = getWorkspace(p, 'adobe_lightroom');
     var adobeConnected = lrWs && (lrWs.sync_state === 'linked' || lrWs.sync_state === 'synced');
+    var showLr = hasLightroomCapability();
+    var providersList = visibleConnectedProviders();
 
     var hero = '<section class="pp-lr-hero">' +
       '<div class="pp-lr-hero-copy">' +
         '<p class="pp-eyebrow">Connected Apps</p>' +
         '<h2>Connect the tools you already use</h2>' +
         '<p class="pp-lr-lead">Hubly stays the home for ' + esc(p.name) + '.</p>' +
-        '<p>Connect Adobe Lightroom, Canva, Dropbox, and more — then keep working inside this project.</p>' +
+        '<p>Connect Canva' + (showLr ? ', Adobe Lightroom' : '') +
+        ', Drive, and more — then keep working inside this project.</p>' +
         '<div class="pp-btn-row">' +
-          '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="adobe-connect">Connect Adobe</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="canva-connect">Connect Canva</button>' +
+          (showLr ? '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="adobe-connect">Connect Adobe</button>' : '') +
+          '<button type="button" class="pp-btn ' + (showLr ? 'pp-btn-ghost' : 'pp-btn-brand pp-btn-lg') + '" data-pp-act="canva-connect">Connect Canva</button>' +
           '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="creative">Open Creative</button>' +
         '</div>' +
       '</div>' +
@@ -1017,14 +1262,14 @@
         '<div class="pp-lr-twin">' +
           '<div><span class="pp-label">Hubly Project</span><strong>' + esc(p.name) + '</strong><small>Primary record</small></div>' +
           '<div class="pp-lr-twin-join" aria-hidden="true">↔</div>' +
-          '<div><span class="pp-label">Connected Apps</span><strong>' + esc(workspaceSummary(p) || 'None yet') + '</strong><small>Editing · Creative · Storage</small></div>' +
+          '<div><span class="pp-label">Connected Apps</span><strong>' + esc(workspaceSummary(p) || 'None yet') + '</strong><small>Creative · Storage · Editing</small></div>' +
         '</div>' +
       '</div></section>';
 
     var providers = '<section class="pp-panel pp-panel-wide"><h3>Connected Apps</h3>' +
-      '<p class="pp-muted">A project can connect multiple apps. Actions come from each app\u2019s capabilities.</p>' +
+      '<p class="pp-muted">Same Projects module — tools appear based on your business capabilities.</p>' +
       '<div class="pp-ws-grid">' +
-      WORKSPACE_PROVIDERS.map(function (prov) {
+      providersList.map(function (prov) {
         var w = getWorkspace(p, prov.id);
         var connected = w && (w.sync_state === 'linked' || w.sync_state === 'synced' || w.sync_state === 'pending');
         var mark = connected ? '\u2713 Connected' : (prov.available ? '\u25cb Connect' : '\u25cb Soon');
@@ -1039,7 +1284,7 @@
       }).join('') +
       '</div></section>';
 
-    var lrDetail = adobeConnected
+    var lrDetail = (showLr && adobeConnected)
       ? '<section class="pp-panel pp-panel-wide"><h3>Adobe Lightroom</h3><dl class="pp-dl">' +
         '<div><dt>Status</dt><dd>' + esc(lrLabel(p.lightroom_status)) + '</dd></div>' +
         '<div><dt>Album</dt><dd>' + esc(lr.album_name || (lrWs && lrWs.display_name) || '\u2014') + '</dd></div>' +
@@ -1061,8 +1306,7 @@
     var after = '<section class="pp-panel pp-panel-wide pp-lr-after">' +
       '<h3>What happens after you connect?</h3>' +
       '<ul class="pp-lr-checklist">' +
-      ['Create Lightroom Album', 'Upload RAW Photos', 'Sync Edited Images', 'Deliver Galleries',
-        'Create Canva graphics', 'Publish Website', 'Request Reviews'].map(function (item) {
+      (profile.afterConnect || []).map(function (item) {
         return '<li><span class="pp-check-ico" aria-hidden="true">\u2713</span><span>' + esc(item) + '</span></li>';
       }).join('') +
       '</ul></section>';
@@ -1072,6 +1316,7 @@
 
   function connectActionForProvider(providerId) {
     // Prefer facade registry — plugins register facades instead of editing this switch forever.
+    if (providerId === 'adobe_lightroom' && !hasLightroomCapability()) return '';
     var facade = global.HublyConnectedApps && global.HublyConnectedApps.getFacade
       ? global.HublyConnectedApps.getFacade(providerId)
       : null;
@@ -1112,7 +1357,11 @@
         { id: 'canva', name: 'Canva', role: 'Creative' },
         { id: 'adobe_lightroom', name: 'Adobe Lightroom', role: 'Editing' },
         { id: 'frame_io', name: 'Frame.io', role: 'Review' }
-      ]).map(function (a) {
+      ]).filter(function (a) {
+        if (a.id === 'adobe_lightroom') return hasLightroomCapability();
+        if (a.id === 'frame_io') return isPhotoTrade();
+        return true;
+      }).map(function (a) {
         var w = getWorkspace(p, a.id);
         var connected = w && (w.sync_state === 'linked' || w.sync_state === 'synced' || w.sync_state === 'pending');
         var connectAct = connectActionForProvider(a.id);
@@ -1157,28 +1406,68 @@
     }).join('') + '</ul>';
   }
 
-  function renderGalleryTab(p) {
+  function renderMediaTab(p) {
+    var profile = projectWorkspaceProfile();
     var g = p.gallery || {};
-    return '<div class="pp-panel-grid"><section class="pp-panel"><h3>AI Favorites</h3>' +
-      '<p class="pp-muted">' + ((g.ai_favorites && g.ai_favorites.length) ? g.ai_favorites.length + ' favorites ready' : 'AI favorites appear after editing.') + '</p>' +
-      '<div class="pp-fav-grid">' + [1, 2, 3, 4].map(function () { return '<div class="pp-fav-ph"></div>'; }).join('') + '</div></section>' +
-      '<section class="pp-panel"><h3>Albums</h3><ul class="pp-queue">' + (g.albums || []).map(function (a) {
-        return '<li><strong>' + esc(a.name) + '</strong><span>' + esc(String(a.count || 0)) + ' photos</span></li>';
-      }).join('') + '</ul></section>' +
-      '<section class="pp-panel"><h3>Client &amp; Private</h3><dl class="pp-dl">' +
-      '<div><dt>Client Gallery</dt><dd>' + (g.client_gallery ? 'On' : 'Off') + '</dd></div>' +
-      '<div><dt>Private Gallery</dt><dd>' + (g.private_gallery ? 'On' : 'Off') + '</dd></div>' +
-      '<div><dt>Downloads</dt><dd>' + (g.downloads ? 'Enabled' : 'Disabled') + '</dd></div>' +
-      '<div><dt>Delivery</dt><dd>' + esc(g.delivery_status || p.gallery_status) + '</dd></div></dl></section>' +
-      '<section class="pp-panel"><h3>Watermark</h3>' +
-      '<label class="pp-check"><input type="checkbox" data-pp-act="gal-wm" data-pp-id="' + esc(p.id) + '"' + ((g.watermark && g.watermark.enabled) ? ' checked' : '') + '><span>Enable watermark</span></label>' +
-      '<input class="pp-input" type="text" placeholder="Watermark text" value="' + esc((g.watermark && g.watermark.text) || '') + '" data-pp-act="gal-wm-text" data-pp-id="' + esc(p.id) + '">' +
-      '<div class="pp-btn-row pp-mt">' +
-      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Publish</button>' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-share" data-pp-id="' + esc(p.id) + '">Share</button>' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-download" data-pp-id="' + esc(p.id) + '">Download</button>' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-hide" data-pp-id="' + esc(p.id) + '">Hide</button>' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-feature" data-pp-id="' + esc(p.id) + '">Feature</button></div></section></div>';
+    var uploads = (p.workspace && p.workspace.local_uploads) || p.local_uploads || [];
+    var mediaHead = '<section class="pp-panel pp-panel-wide"><div class="pp-between"><h3>Media</h3>' +
+      '<span class="pp-pill">' + esc(String(p.photo_count || uploads.length || 0)) + ' assets</span></div>' +
+      '<p class="pp-muted">Photos, video, and job documentation for this project. Connected Apps sync media back here.</p>' +
+      '<div class="pp-fav-grid">' + [1, 2, 3, 4].map(function () { return '<div class="pp-fav-ph"></div>'; }).join('') + '</div></section>';
+
+    var galleryBlock = '';
+    if (profile.features.galleries || isPhotoTrade()) {
+      galleryBlock = '<div class="pp-panel-grid">' +
+        '<section class="pp-panel"><h3>Galleries</h3>' +
+        '<p class="pp-muted">' + ((g.ai_favorites && g.ai_favorites.length) ? g.ai_favorites.length + ' favorites ready' : 'Client galleries and selects live here.') + '</p>' +
+        '<div class="pp-fav-grid">' + [1, 2, 3, 4].map(function () { return '<div class="pp-fav-ph"></div>'; }).join('') + '</div></section>' +
+        '<section class="pp-panel"><h3>Albums</h3><ul class="pp-queue">' + (g.albums || []).map(function (a) {
+          return '<li><strong>' + esc(a.name) + '</strong><span>' + esc(String(a.count || 0)) + ' items</span></li>';
+        }).join('') + '</ul></section>' +
+        '<section class="pp-panel"><h3>Client &amp; Private</h3><dl class="pp-dl">' +
+        '<div><dt>Client Gallery</dt><dd>' + (g.client_gallery ? 'On' : 'Off') + '</dd></div>' +
+        '<div><dt>Private Gallery</dt><dd>' + (g.private_gallery ? 'On' : 'Off') + '</dd></div>' +
+        '<div><dt>Downloads</dt><dd>' + (g.downloads ? 'Enabled' : 'Disabled') + '</dd></div>' +
+        '<div><dt>Delivery</dt><dd>' + esc(g.delivery_status || p.gallery_status) + '</dd></div></dl></section>' +
+        '<section class="pp-panel"><h3>Watermark</h3>' +
+        '<label class="pp-check"><input type="checkbox" data-pp-act="gal-wm" data-pp-id="' + esc(p.id) + '"' + ((g.watermark && g.watermark.enabled) ? ' checked' : '') + '><span>Enable watermark</span></label>' +
+        '<input class="pp-input" type="text" placeholder="Watermark text" value="' + esc((g.watermark && g.watermark.text) || '') + '" data-pp-act="gal-wm-text" data-pp-id="' + esc(p.id) + '">' +
+        '<div class="pp-btn-row pp-mt">' +
+        '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Publish</button>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-share" data-pp-id="' + esc(p.id) + '">Share</button>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-download" data-pp-id="' + esc(p.id) + '">Download</button></div></section></div>';
+    } else if (profile.features.beforeAfter) {
+      galleryBlock = '<section class="pp-panel pp-panel-wide"><h3>Before / After</h3>' +
+        '<p class="pp-muted">Capture job documentation and pair before/after sets for marketing and client delivery.</p>' +
+        '<div class="pp-fav-grid">' + [1, 2, 3, 4].map(function () { return '<div class="pp-fav-ph"></div>'; }).join('') + '</div></section>';
+    }
+
+    return mediaHead + galleryBlock;
+  }
+
+  function renderFilesTab(p) {
+    return '<div class="pp-panel-grid">' +
+      '<div class="pp-panel-wide">' + renderContractsTab(p) + '</div>' +
+      '<div class="pp-panel-wide">' + renderInvoicesTab(p) + '</div>' +
+      '<div class="pp-panel-wide">' + renderQuestionnaireTab(p) + '</div></div>';
+  }
+
+  function renderAiAssistantTab(p) {
+    return '<div class="pp-panel-grid">' +
+      '<section class="pp-panel pp-panel-wide"><h3>AI Assistant</h3>' +
+      '<p class="pp-muted">Ask Hubly to draft updates, plan deliverables, or kick off creative from this project.</p>' +
+      '<div class="pp-btn-row">' +
+      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="tab" data-pp-tab="creative">Create marketing asset</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Prepare delivery</button>' +
+      '</div></section>' +
+      renderMarketingTab(p) +
+      renderNotesTab(p) +
+      renderActivityTab(p) +
+      '</div>';
+  }
+
+  function renderGalleryTab(p) {
+    return renderMediaTab(p);
   }
 
   function renderContractsTab(p) {
@@ -1196,7 +1485,7 @@
       '<div class="pp-hero-kpis pp-mb">' + kpi('Revenue', money(p.revenue_cents)) + kpi('Outstanding', money(p.outstanding_cents)) + '</div>' +
       (list.length ? '<ul class="pp-queue">' + list.map(function (inv) {
         return '<li><strong>' + esc(inv.label) + '</strong><span>' + money(inv.amount_cents) + ' · ' + esc(inv.status) + '</span></li>';
-      }).join('') + '</ul>' : '<p class="pp-muted">Add a deposit or balance anytime — Adobe not required.</p>') + '</section>';
+      }).join('') + '</ul>' : '<p class="pp-muted">Add a deposit or balance anytime.</p>') + '</section>';
   }
   function renderQuestionnaireTab(p) {
     var q = p.questionnaire || {};
@@ -1214,10 +1503,10 @@
   }
   function renderMarketingTab(p) {
     var editingDone = (p.editing_progress || 0) >= 100 || p.status === 'Proofing' || p.status === 'Delivered';
-    return '<section class="pp-panel pp-panel-wide"><h3>AI Marketing</h3>' +
+    return '<section class="pp-panel pp-panel-wide"><h3>Marketing</h3>' +
       '<p class="pp-muted">' + (editingDone
-        ? 'Editing looks complete — these workflows will fire from Connected Apps later.'
-        : 'When editing finishes on this project, Hubly can generate campaigns automatically.') + '</p>' +
+        ? 'Media looks ready — these workflows can fire from Connected Apps.'
+        : 'When media is ready on this project, Hubly can generate campaigns automatically.') + '</p>' +
       '<div class="pp-mkt-grid">' + (p.marketing || []).map(function (m) {
         return '<div class="pp-mkt-card"><div class="pp-mkt-top"><strong>' + esc(m.title) + '</strong><span class="pp-pill">' + esc(m.status) + '</span></div>' +
           '<p class="pp-muted">Placeholder — AI generation comes next.</p>' +
@@ -1241,19 +1530,15 @@
     var root = ownRoot();
     if (!root) return;
     setPhotoProjectsMode(true);
+    var profile = projectWorkspaceProfile();
     try {
       var titleEl = el('bar-title'), subEl = el('bar-sub');
-      if (titleEl) titleEl.textContent = 'Photography Projects';
-      if (subEl) subEl.textContent = 'Open the project — Connected Apps sync editors, creative, and files to Hubly.';
-      if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle('Photography Projects');
+      if (titleEl) titleEl.textContent = 'Projects';
+      if (subEl) subEl.textContent = profile.subtitle;
+      if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle('Projects');
     } catch (e) {}
 
     var st = getState(root);
-    if (!hasProjectsCapability()) {
-      root.innerHTML = '<div class="pp-shell"><div class="pp-empty"><h2>Projects capability not enabled</h2>' +
-        '<p>Enable <code>capabilities.projects</code> on this business to use Photography Projects.</p></div></div>';
-      return;
-    }
 
     root.innerHTML = '<div class="pp-shell"><div class="pp-empty"><p class="pp-muted">Loading projects…</p></div></div>';
     var list = [];
@@ -1285,7 +1570,7 @@
       team: Object.assign({}, w.team),
       activity: [{ id: 'act_new', action: 'Project created', detail: w.name || 'Untitled Project', created_at: new Date().toISOString() }]
     });
-    if (w.assets.contract) ws.contracts.push({ id: 'c1', title: 'Photography Agreement', status: 'draft' });
+    if (w.assets.contract) ws.contracts.push({ id: 'c1', title: 'Service Agreement', status: 'draft' });
     if (w.assets.invoice) ws.invoices.push({ id: 'i1', label: 'Deposit', kind: 'deposit', status: 'draft', amount_cents: 0 });
     if (w.assets.shot_list) ws.shot_list = [{ id: 's1', title: 'Must-have shots', items: [] }];
     if (w.assets.lightroom) {
@@ -1526,6 +1811,10 @@
       return saveAndRefresh(p, st);
     }
     if (act === 'adobe-connect') {
+      if (!hasLightroomCapability()) {
+        toast('Lightroom is available for photography businesses. Connect Canva from Creative.');
+        return;
+      }
       var svcC = global.AdobeLightroomService;
       var bizId = businessId() || '';
       if (!svcC) {
@@ -1739,7 +2028,7 @@
       return saveAndRefresh(p, st);
     }
     if (act === 'contract-add' && p) {
-      p.contracts.push({ id: 'c_' + Date.now(), title: 'Photography Agreement', status: 'draft' });
+      p.contracts.push({ id: 'c_' + Date.now(), title: 'Service Agreement', status: 'draft' });
       addActivity(p, 'Contract added', 'Draft');
       return saveAndRefresh(p, st);
     }
@@ -1908,17 +2197,22 @@
 
   /* ─── Nav / exports ─────────────────────────────────────────────────── */
 
-  function syncPhotographyNav() {
-    var nav = document.querySelector('.ni[data-v="photo-projects"]');
+  function syncProjectsNav() {
+    var nav = document.querySelector('.ni[data-v="photo-projects"], .ni[data-v="projects"]');
     if (!nav) return;
-    var show = hasProjectsCapability();
-    nav.hidden = !show;
-    nav.setAttribute('aria-hidden', show ? 'false' : 'true');
-    nav.classList.toggle('jos-nav-hidden', !show);
+    // Projects is a core Hubly module — always visible.
+    nav.hidden = false;
+    nav.setAttribute('aria-hidden', 'false');
+    nav.classList.remove('jos-nav-hidden');
+    var lbl = nav.querySelector('.ni-lbl');
+    if (lbl) lbl.textContent = 'Projects';
+    nav.setAttribute('title', 'Projects');
   }
+  // Back-compat alias
+  function syncPhotographyNav() { return syncProjectsNav(); }
 
   function openQuickProject() {
-    var nav = document.querySelector('.ni[data-v="photo-projects"]');
+    var nav = document.querySelector('.ni[data-v="photo-projects"], .ni[data-v="projects"]');
     if (nav && typeof global.switchV === 'function') global.switchV(nav);
     setTimeout(function () {
       var root = el('jos-photo-projects-root');
@@ -1932,32 +2226,39 @@
   }
 
   function attach() {
-    global.HublyPhotographyProjects = {
+    var api = {
       render: renderPhotoProjects,
-      syncNav: syncPhotographyNav,
+      syncNav: syncProjectsNav,
       setMode: setPhotoProjectsMode,
       openQuickProject: openQuickProject,
       hasCapability: hasProjectsCapability,
       reload: function () { return loadProjectsFromSupabase(true); }
     };
+    // Public name: HublyProjects. Legacy alias kept for existing call sites.
+    global.HublyProjects = api;
+    global.HublyPhotographyProjects = api;
     if (global.HublyJourneyOS) {
       global.HublyJourneyOS.renderPhotoProjects = renderPhotoProjects;
-      global.HublyJourneyOS.syncPhotographyNav = syncPhotographyNav;
+      global.HublyJourneyOS.renderProjects = renderPhotoProjects;
+      global.HublyJourneyOS.syncPhotographyNav = syncProjectsNav;
+      global.HublyJourneyOS.syncProjectsNav = syncProjectsNav;
       global.HublyJourneyOS.setPhotoProjectsMode = setPhotoProjectsMode;
+      global.HublyJourneyOS.setProjectsMode = setPhotoProjectsMode;
       global.HublyJourneyOS.openPhotographyQuickProject = openQuickProject;
+      global.HublyJourneyOS.openProjectsQuick = openQuickProject;
     }
-    syncPhotographyNav();
+    syncProjectsNav();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
   else attach();
   setTimeout(attach, 0);
   setTimeout(attach, 500);
-  setTimeout(syncPhotographyNav, 800);
-  setTimeout(syncPhotographyNav, 2000);
+  setTimeout(syncProjectsNav, 800);
+  setTimeout(syncProjectsNav, 2000);
   global.addEventListener('hubly:business-loaded', function () {
     _cache.loaded = false;
-    syncPhotographyNav();
+    syncProjectsNav();
   });
-  global.addEventListener('hubly:blueprint-changed', syncPhotographyNav);
+  global.addEventListener('hubly:blueprint-changed', syncProjectsNav);
 })(typeof window !== 'undefined' ? window : globalThis);

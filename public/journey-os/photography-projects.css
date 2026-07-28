@@ -1,5 +1,5 @@
-/* Photography Projects — premium Operate module
-   Designed for professional photographers. Lightroom enhances; never required. */
+/* Projects — universal media & creative workspace.
+   Industry tools adapt via capabilities. Lightroom is optional / photo-led. */
 
 :root {
   --pp-ink: #0c0d10;
@@ -579,6 +579,15 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   letter-spacing: -0.035em;
   font-weight: 760;
   max-width: 16ch;
+}
+
+.pp-hero-eyebrow {
+  margin: 0 0 6px;
+  color: rgba(255,255,255,0.72);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .pp-hero-sub {

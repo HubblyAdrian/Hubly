@@ -30,8 +30,8 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=live-op-polish-1">
-<link rel="stylesheet" href="/journey-os/photography-projects.css?v=photo-projects-10">
-<link rel="stylesheet" href="/journey-os/app-marketplace.css?v=photo-projects-10">
+<link rel="stylesheet" href="/journey-os/photography-projects.css?v=projects-2">
+<link rel="stylesheet" href="/journey-os/app-marketplace.css?v=projects-2">
 <style>
 :root{
   --brand:#D9632D;--brand-dark:#B84E1F;--brand-light:#FDF0E8;
@@ -10166,8 +10166,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="jobs" onclick="switchV(this)" title="Jobs &amp; Calendar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl">Jobs &amp; Calendar</span>
       </div>
-      <div class="ni" data-v="photo-projects" onclick="switchV(this)" title="Photography Projects" hidden aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="ni-lbl">Photography</span>
+      <div class="ni" data-v="photo-projects" onclick="switchV(this)" title="Projects">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="ni-lbl">Projects</span>
       </div>
       <div class="ni" data-v="customers" onclick="switchV(this)" title="Completed Customers">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg><span class="ni-lbl">Customers</span>
@@ -10279,7 +10279,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="jos-jobs-root"></div>
       </div>
 
-      <!-- PHOTOGRAPHY PROJECTS — independent of Jobs; Lightroom optional -->
+      <!-- PROJECTS — universal media & creative workspace; tools adapt by capability -->
       <div id="v-photo-projects" class="body hidden">
         <div id="jos-photo-projects-root"></div>
       </div>
@@ -12086,14 +12086,14 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
 <script defer src="/journey-os/journey.js?v=live-op-polish-3"></script>
-<script defer src="/journey-os/adobe-lightroom-service.js?v=photo-projects-10"></script>
-<script defer src="/journey-os/connected-apps-catalog.generated.js?v=photo-projects-10"></script>
-<script defer src="/journey-os/connected-apps.js?v=photo-projects-10"></script>
-<script defer src="/journey-os/hubly-action-engine.js?v=photo-projects-10"></script>
-<script defer src="/journey-os/hubly-intent-engine.js?v=photo-projects-10"></script>
-<script defer src="/journey-os/canva-connected-app.js?v=photo-projects-10"></script>
-<script defer src="/journey-os/app-marketplace.js?v=photo-projects-10"></script>
-<script defer src="/journey-os/photography-projects.js?v=photo-projects-10"></script>
+<script defer src="/journey-os/adobe-lightroom-service.js?v=projects-2"></script>
+<script defer src="/journey-os/connected-apps-catalog.generated.js?v=projects-2"></script>
+<script defer src="/journey-os/connected-apps.js?v=projects-2"></script>
+<script defer src="/journey-os/hubly-action-engine.js?v=projects-2"></script>
+<script defer src="/journey-os/hubly-intent-engine.js?v=projects-2"></script>
+<script defer src="/journey-os/canva-connected-app.js?v=projects-2"></script>
+<script defer src="/journey-os/app-marketplace.js?v=projects-2"></script>
+<script defer src="/journey-os/photography-projects.js?v=projects-2"></script>
 <!-- ceo-demo.js loads on-demand only for owner-authorized /hubly-ceo -->
 <script defer src="/booking-wizard/ui.js"></script>
 <link rel="stylesheet" href="/booking-wizard/mock-skin.css">
@@ -16081,8 +16081,10 @@ function isPhotoLedTrade(){
   if(id==='photography'||id.includes('photo')||id==='weddings')return true;
   return blueprintHas('clientGalleries');
 }
-/** Runtime-style Business Capabilities — e.g. capabilities.projects / lightroom */
+/** Runtime-style Business Capabilities — e.g. capabilities.lightroom */
 function hasBusinessCapability(key){
+  // Projects is a core Hubly module for every business.
+  if(key==='projects')return true;
   const caps=Object.assign(
     {},
     (S&&S.capabilities)||{},
@@ -16090,29 +16092,33 @@ function hasBusinessCapability(key){
   );
   if(caps&&caps[key]===true)return true;
   try{if(typeof blueprintHas==='function'&&blueprintHas(key))return true;}catch(e){}
+  // Lightroom unlocks for photo-led trades even before capabilities JSON is backfilled.
+  if(key==='lightroom'&&typeof isPhotoLedTrade==='function'&&isPhotoLedTrade())return true;
   return false;
 }
 function syncPhotographyProjectsNav(){
   try{
     if(window.HublyPhotographyProjects?.syncNav)return HublyPhotographyProjects.syncNav();
     if(window.HublyJourneyOS?.syncPhotographyNav)return HublyJourneyOS.syncPhotographyNav();
-    const nav=document.querySelector('.ni[data-v="photo-projects"]');
+    const nav=document.querySelector('.ni[data-v="photo-projects"],.ni[data-v="projects"]');
     if(!nav)return;
-    const show=!!hasBusinessCapability('projects');
-    nav.hidden=!show;
-    nav.setAttribute('aria-hidden',show?'false':'true');
-    nav.classList.toggle('jos-nav-hidden',!show);
+    nav.hidden=false;
+    nav.setAttribute('aria-hidden','false');
+    nav.classList.remove('jos-nav-hidden');
+    const lbl=nav.querySelector('.ni-lbl');
+    if(lbl)lbl.textContent='Projects';
+    nav.setAttribute('title','Projects');
   }catch(e){}
 }
-/** Persist projects/lightroom capability flags when blueprint enables them. */
+/** Persist projects for every business; lightroom only when photo-led / blueprint. */
 async function ensureProjectsCapabilityOnBusiness(){
   try{
-    if(!hasBusinessCapability('projects')&&!blueprintHas('projects'))return;
     if(!currentBusiness?.id)return;
+    const photoLed=typeof isPhotoLedTrade==='function'&&isPhotoLedTrade();
     const caps=Object.assign({},currentBusiness.capabilities||S.capabilities||{});
     let dirty=false;
-    if(blueprintHas('projects')&&caps.projects!==true){caps.projects=true;dirty=true;}
-    if(blueprintHas('lightroom')&&caps.lightroom!==true){caps.lightroom=true;dirty=true;}
+    if(caps.projects!==true){caps.projects=true;dirty=true;}
+    if((blueprintHas('lightroom')||photoLed)&&caps.lightroom!==true){caps.lightroom=true;dirty=true;}
     if(!dirty)return;
     S.capabilities=caps;
     currentBusiness.capabilities=caps;
@@ -35786,7 +35792,7 @@ function switchV(el){
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
   const titles={
-    dashboard:'Home',jobs:'Jobs & Calendar','photo-projects':'Photography Projects',leads:'Leads',customers:'Completed Customers',
+    dashboard:'Home',jobs:'Jobs & Calendar','photo-projects':'Projects',leads:'Leads',customers:'Completed Customers',
     pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
     quotes:'Quick Quote',money:'Revenue',chats:'Inbox',marketplace:'Marketplace',apps:'Apps',
     editor:'Website editor',settings:'Settings',reviews:'Reviews',marketing:'Marketing',
