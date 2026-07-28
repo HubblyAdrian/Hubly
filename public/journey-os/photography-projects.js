@@ -170,7 +170,11 @@
     return false;
   }
   function hasProjectsCapability() {
-    return hasCapability('projects');
+    if (hasCapability('projects')) return true;
+    try {
+      if (typeof global.isPhotoLedTrade === 'function' && global.isPhotoLedTrade()) return true;
+    } catch (e) {}
+    return false;
   }
 
   /* ─── UI prefs only (localStorage) ──────────────────────────────────── */
