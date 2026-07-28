@@ -79,6 +79,27 @@ Payloads are plain objects with ids/references only (Rule #15 / #19) — never w
 
 ---
 
+## Connected Apps + Event Bus (Hubly Core)
+
+| Event | Typical publisher | Example consumers |
+|-------|-------------------|-------------------|
+| `project.created` | Photography Projects | CRM, Timeline |
+| `project.booked` | Photography Projects | Calendar, Messaging |
+| `project.editing_complete` | Photography Projects | Creative Engine (capability: creative) |
+| `project.delivered` | Photography Projects | Creative · Publishing · Reviews · Messaging |
+| `gallery.published` | Galleries | Website, Marketing |
+| `gallery.delivered` | Galleries / Projects | Creative · Reviews · Messaging |
+| `app.connected` | Apps Marketplace | Action Engine, Settings |
+| `app.disconnected` | Apps Marketplace | Action Engine |
+| `creative.asset_planned` | Creative Engine | Marketing (capability plan) |
+| `creative.asset_created` | Creative Engine | Publishing / Scheduling |
+
+**Capability subscriptions:** engines subscribe to events *and* required capabilities (`creative`, `publishing`, `reviews`, …). The Connected Apps registry picks a vendor — AI never hardcodes “Use Canva.”
+
+Shared server contract: `supabase/functions/_shared/hubly_event_bus.ts` · Action Engine: `hubly_action_engine.ts` · Marketplace UI: `public/journey-os/app-marketplace.js`.
+
+---
+
 ## Reviews (Module 9) publishes
 
 | Event | When |

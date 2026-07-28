@@ -30,7 +30,8 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=live-op-polish-1">
-<link rel="stylesheet" href="/journey-os/photography-projects.css?v=photo-projects-4">
+<link rel="stylesheet" href="/journey-os/photography-projects.css?v=photo-projects-5">
+<link rel="stylesheet" href="/journey-os/app-marketplace.css?v=photo-projects-5">
 <style>
 :root{
   --brand:#D9632D;--brand-dark:#B84E1F;--brand-light:#FDF0E8;
@@ -9859,6 +9860,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="ask" onclick="switchV(this)" title="Ask Hubly">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="3"/><path d="M9 10h.01M15 10h.01M9.5 14a3.5 3.5 0 0 0 5 0"/></svg><span class="ni-lbl">Ask Hubly</span>
       </div>
+      <div class="ni" data-v="apps" onclick="switchV(this)" title="Apps Marketplace">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="ni-lbl">Apps</span>
+      </div>
       <div class="ni" data-v="settings" onclick="switchV(this)" title="Settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0-4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span class="ni-lbl">Settings</span>
       </div>
@@ -9935,6 +9939,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- PHOTOGRAPHY PROJECTS — independent of Jobs; Lightroom optional -->
       <div id="v-photo-projects" class="body hidden">
         <div id="jos-photo-projects-root"></div>
+      </div>
+      <div id="v-apps" class="body hidden">
+        <div id="jos-apps-root"></div>
       </div>
 
       <!-- LEADS — directory + side detail (Pipeline is its own page) -->
@@ -11737,10 +11744,12 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
 <script defer src="/journey-os/journey.js?v=live-op-polish-1"></script>
-<script defer src="/journey-os/adobe-lightroom-service.js?v=photo-projects-4"></script>
-<script defer src="/journey-os/connected-apps.js?v=photo-projects-4"></script>
-<script defer src="/journey-os/canva-connected-app.js?v=photo-projects-4"></script>
-<script defer src="/journey-os/photography-projects.js?v=photo-projects-4"></script>
+<script defer src="/journey-os/adobe-lightroom-service.js?v=photo-projects-5"></script>
+<script defer src="/journey-os/connected-apps.js?v=photo-projects-5"></script>
+<script defer src="/journey-os/hubly-action-engine.js?v=photo-projects-5"></script>
+<script defer src="/journey-os/canva-connected-app.js?v=photo-projects-5"></script>
+<script defer src="/journey-os/app-marketplace.js?v=photo-projects-5"></script>
+<script defer src="/journey-os/photography-projects.js?v=photo-projects-5"></script>
 <!-- ceo-demo.js loads on-demand only for owner-authorized /hubly-ceo -->
 <script defer src="/booking-wizard/ui.js"></script>
 <link rel="stylesheet" href="/booking-wizard/mock-skin.css">
@@ -35377,7 +35386,7 @@ function switchV(el){
   const titles={
     dashboard:'Home',jobs:'Jobs & Calendar','photo-projects':'Photography Projects',leads:'Leads',customers:t('customers'),
     pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
-    quotes:'Quick Quote',money:'Revenue',chats:'Inbox',marketplace:'Marketplace',
+    quotes:'Quick Quote',money:'Revenue',chats:'Inbox',marketplace:'Marketplace',apps:'Apps',
     editor:'Website editor',settings:'Settings',reviews:'Reviews',marketing:'Marketing',
     memberships:'Memberships',reports:'Reports',growth:'Growth','booking-wizard':'Website · Book Now'
   };
@@ -35389,6 +35398,7 @@ function switchV(el){
   if(v==='dashboard'){try{HublyJourneyOS?.enhanceDashboard?.();}catch(e){try{renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();syncDashSiteLink();}catch(e2){}}}
   if(v==='jobs'){try{HublyJourneyOS?.renderJobs?.();}catch(e){try{renderCal();renderJobsPanel();}catch(e2){}}}
   if(v==='photo-projects'){try{HublyJourneyOS?.renderPhotoProjects?.()||HublyPhotographyProjects?.render?.();}catch(e){console.warn(e);}}
+  if(v==='apps'){try{HublyAppMarketplace?.render?.();}catch(e){console.warn(e);}}
   if(v==='leads'){try{HublyJourneyOS?.renderLeadsList?.();}catch(e){}}
   if(v==='customers'){try{HublyJourneyOS.renderCustomersPage()}catch(e){renderCustomersView()}}
   if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}

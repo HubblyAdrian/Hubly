@@ -147,61 +147,119 @@ export function listConnectedAppsByCapability(
   return listConnectedApps().filter((p) => p.capabilities().includes(capability));
 }
 
-/** Catalog metadata for product UI (Connected Apps grid). */
-export const CONNECTED_APP_CATALOG: {
+/** Catalog metadata for product UI (Connected Apps / Apps Marketplace). */
+export type ConnectedAppCatalogEntry = {
   id: ConnectedAppId;
   name: string;
   role: string;
   capabilities: ConnectedAppCapability[];
-}[] = [
+  /** Product-facing capability labels — what AI and Marketplace show. */
+  productCapabilities: string[];
+  /** Available in Marketplace even before a provider class is registered. */
+  marketplaceAvailable?: boolean;
+};
+
+export const CONNECTED_APP_CATALOG: ConnectedAppCatalogEntry[] = [
   {
     id: "adobe_lightroom",
     name: "Adobe Lightroom",
     role: "Editing",
     capabilities: ["editing", "assets_import", "assets_export"],
+    productCapabilities: ["RAW Editing", "Albums", "Metadata", "Photo Sync"],
+    marketplaceAvailable: true,
   },
   {
     id: "canva",
     name: "Canva",
     role: "Creative",
     capabilities: ["creative", "templates", "publishing", "assets_import", "assets_export"],
+    productCapabilities: [
+      "Marketing Graphics",
+      "Social Graphics",
+      "Flyers",
+      "Brand Assets",
+      "Templates",
+    ],
+    marketplaceAvailable: true,
   },
   {
     id: "frame_io",
     name: "Frame.io",
     role: "Review",
     capabilities: ["creative", "assets_import", "reviews"],
+    productCapabilities: ["Review links", "Asset comments", "Client review"],
+    marketplaceAvailable: true,
   },
   {
     id: "dropbox",
     name: "Dropbox",
     role: "Storage",
     capabilities: ["storage", "assets_import", "assets_export"],
+    productCapabilities: ["File Storage", "Folder Sync", "Asset Delivery"],
+    marketplaceAvailable: true,
   },
   {
     id: "google_drive",
     name: "Google Drive",
     role: "Storage",
     capabilities: ["storage", "assets_import", "assets_export"],
+    productCapabilities: ["File Storage", "Folder Sync", "Shared drives"],
+    marketplaceAvailable: true,
   },
   {
     id: "meta",
     name: "Meta",
     role: "Publishing",
     capabilities: ["publishing", "messaging", "scheduling"],
+    productCapabilities: ["Instagram", "Facebook", "Messenger", "Publishing"],
+    marketplaceAvailable: true,
   },
   {
     id: "google_business",
     name: "Google Business",
     role: "Local",
     capabilities: ["publishing", "reviews"],
+    productCapabilities: ["Google listing", "Reviews", "Local posts"],
+    marketplaceAvailable: true,
   },
   {
     id: "capture_one",
     name: "Capture One",
     role: "Editing",
     capabilities: ["editing", "assets_import", "assets_export"],
+    productCapabilities: ["RAW Editing", "Tethered Capture", "Photo Sync"],
+    marketplaceAvailable: true,
   },
+  {
+    id: "stripe",
+    name: "Stripe",
+    role: "Payments",
+    capabilities: ["payments"],
+    productCapabilities: ["Payments", "Invoices", "Payouts"],
+    marketplaceAvailable: true,
+  },
+  {
+    id: "twilio",
+    name: "Twilio",
+    role: "Messaging",
+    capabilities: ["messaging"],
+    productCapabilities: ["SMS", "Messaging"],
+    marketplaceAvailable: true,
+  },
+];
+
+/** Extra Marketplace-only catalog rows (no ConnectedAppId yet / coming soon). */
+export const MARKETPLACE_SOON: {
+  id: string;
+  name: string;
+  role: string;
+  productCapabilities: string[];
+}[] = [
+  { id: "tiktok", name: "TikTok", role: "Publishing", productCapabilities: ["TikTok Publishing", "Short video"] },
+  { id: "pinterest", name: "Pinterest", role: "Publishing", productCapabilities: ["Pins", "Idea pins"] },
+  { id: "quickbooks", name: "QuickBooks", role: "Accounting", productCapabilities: ["Invoices", "Expenses", "Taxes"] },
+  { id: "zoom", name: "Zoom", role: "Meetings", productCapabilities: ["Video meetings", "Scheduling"] },
+  { id: "google", name: "Google", role: "Workspace", productCapabilities: ["Calendar", "Drive", "Business Profile"] },
 ];
 
 export function requireConnectedAppEnv(

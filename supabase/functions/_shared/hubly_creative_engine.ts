@@ -22,6 +22,7 @@ import {
   type ConnectedAppAction,
   type ConnectedAppProvider,
 } from "./hubly_connected_apps.ts";
+import { resolveProviderForCapability } from "./hubly_action_engine.ts";
 import { ensureCanvaConnectedApp } from "./hubly_provider_canva.ts";
 import {
   providerError,
@@ -98,20 +99,23 @@ export function creativeCatalog(): CreativeEngineCatalogItem[] {
 }
 
 /**
- * Create a marketing asset via the Connected Apps creative provider.
- * Fails honestly when the vendor is not configured — never fakes a Canva design.
+ * Create a marketing asset via a creative-capable Connected App.
+ * Prefer capability resolution over hardcoded provider ids (AI never says “Use Canva”).
+ * Fails honestly when no creative provider is configured.
  */
 export async function createMarketingAsset(
   input: CreateMarketingAssetInput,
 ): Promise<HublyProviderResult<CreateMarketingAssetResult>> {
   ensureCreativeProvidersRegistered();
-  const providerId = input.providerId || "canva";
-  const provider = getConnectedApp(providerId);
+  const provider =
+    (input.providerId ? getConnectedApp(input.providerId) : null) ||
+    resolveProviderForCapability("creative") ||
+    resolveProviderForCapability("templates");
   if (!provider) {
     return providerError(
       "creative_engine",
-      "PROVIDER_UNKNOWN",
-      `Connected App “${providerId}” is not registered.`,
+      "CAPABILITY_UNAVAILABLE",
+      "Need: Marketing Graphics. Install a creative Connected App from the Apps Marketplace.",
       { retryable: false },
     );
   }
@@ -120,7 +124,7 @@ export async function createMarketingAsset(
     return providerError(
       "creative_engine",
       "CAPABILITY_MISSING",
-      `${provider.name} does not declare creative/templates capabilities.`,
+      `Need: Marketing Graphics. The selected app does not declare creative capabilities.`,
       { retryable: false },
     );
   }
@@ -132,21 +136,21 @@ export async function createMarketingAsset(
         kind: input.kind,
         status: "not_configured" as const,
       },
-      `${provider.name} isn’t configured yet. Add credentials to create designs. Hubly still stores the project plan.`,
-      { adobeRequired: false, canvaRequired: provider.id === "canva" },
+      "Need: Marketing Graphics. Connect a creative app to create designs. Hubly still stores the project plan.",
+      { capability: "creative", providerRequired: true },
     );
   }
 
-  // Vendor-specific create lives on the provider (CanvaProvider.createDesign, etc.)
-  const canva = provider as ConnectedAppProvider & {
+  // Vendor-specific create lives on the provider (CanvaProvider.createDesign, …)
+  const creative = provider as ConnectedAppProvider & {
     createDesign?: (opts: Record<string, unknown>) => Promise<HublyProviderResult<{
       id: string;
       editUrl?: string;
       exportUrl?: string;
     }>>;
   };
-  if (typeof canva.createDesign === "function") {
-    const created = await canva.createDesign({
+  if (typeof creative.createDesign === "function") {
+    const created = await creative.createDesign({
       businessId: input.businessId,
       projectId: input.projectId,
       title: input.title || input.kind,
@@ -168,14 +172,14 @@ export async function createMarketingAsset(
         kind: input.kind,
         status: "created" as const,
       },
-      `Design created in ${provider.name}`,
+      "Marketing graphic created via Connected Apps.",
     );
   }
 
   return providerError(
     "creative_engine",
     "CREATE_NOT_SUPPORTED",
-    `${provider.name} does not implement createDesign yet.`,
+    "Need: Marketing Graphics. Connected creative app does not implement design creation yet.",
     { retryable: false },
   );
 }

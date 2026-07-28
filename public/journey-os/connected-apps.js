@@ -2,27 +2,42 @@
  * Hubly Core — Connected Apps (client catalog)
  * Product language: Connected Apps. Internal project links may use workspace rows.
  * UI renders actions from declared capabilities — avoid provider-specific branches.
+ * AI / Action Engine speaks capability labels, never hardcodes vendor names.
  */
 (function (global) {
   'use strict';
 
   var CATALOG = [
     {
+      id: 'google',
+      name: 'Google',
+      role: 'Workspace',
+      capabilities: ['calendar', 'storage', 'publishing', 'reviews'],
+      productCapabilities: ['Calendar', 'Drive', 'Business Profile', 'Reviews'],
+      installable: true
+    },
+    {
+      id: 'stripe',
+      name: 'Stripe',
+      role: 'Payments',
+      capabilities: ['payments'],
+      productCapabilities: ['Payments', 'Invoices', 'Payouts'],
+      installable: true
+    },
+    {
       id: 'adobe_lightroom',
       name: 'Adobe Lightroom',
       role: 'Editing',
       capabilities: ['editing', 'assets_import', 'assets_export'],
-      actions: [
-        { id: 'create_album', label: 'Create Lightroom Album', capability: 'editing' },
-        { id: 'sync_photos', label: 'Sync Photos', capability: 'assets_import' },
-        { id: 'open_lightroom', label: 'Open Lightroom', capability: 'editing' }
-      ]
+      productCapabilities: ['RAW Editing', 'Albums', 'Metadata', 'Photo Sync'],
+      installable: true
     },
     {
       id: 'canva',
       name: 'Canva',
       role: 'Creative',
       capabilities: ['creative', 'templates', 'publishing', 'assets_import', 'assets_export'],
+      productCapabilities: ['Marketing Graphics', 'Social Graphics', 'Flyers', 'Brand Assets', 'Templates'],
       actions: [
         { id: 'instagram_carousel', label: 'Create Instagram Carousel', capability: 'creative' },
         { id: 'facebook_post', label: 'Create Facebook Post', capability: 'creative' },
@@ -31,63 +46,112 @@
         { id: 'gift_card', label: 'Create Gift Certificate', capability: 'creative' },
         { id: 'thank_you', label: 'Create Thank You Card', capability: 'creative' },
         { id: 'before_after', label: 'Create Before & After Graphic', capability: 'creative' }
-      ]
+      ],
+      installable: true
     },
     {
       id: 'frame_io',
       name: 'Frame.io',
       role: 'Review',
       capabilities: ['creative', 'assets_import', 'reviews'],
-      actions: [
-        { id: 'open_review', label: 'Open Review', capability: 'reviews' }
-      ]
+      productCapabilities: ['Review links', 'Asset comments', 'Client review'],
+      actions: [{ id: 'open_review', label: 'Open Review', capability: 'reviews' }],
+      installable: true
     },
     {
       id: 'dropbox',
       name: 'Dropbox',
       role: 'Storage',
       capabilities: ['storage', 'assets_import', 'assets_export'],
-      actions: [{ id: 'sync_folder', label: 'Sync Folder', capability: 'storage' }]
+      productCapabilities: ['File Storage', 'Folder Sync', 'Asset Delivery'],
+      actions: [{ id: 'sync_folder', label: 'Sync Folder', capability: 'storage' }],
+      installable: true
     },
     {
       id: 'google_drive',
       name: 'Google Drive',
       role: 'Storage',
       capabilities: ['storage', 'assets_import', 'assets_export'],
-      actions: [{ id: 'sync_folder', label: 'Sync Folder', capability: 'storage' }]
+      productCapabilities: ['File Storage', 'Folder Sync', 'Shared drives'],
+      actions: [{ id: 'sync_folder', label: 'Sync Folder', capability: 'storage' }],
+      installable: true
     },
     {
       id: 'meta',
       name: 'Meta',
       role: 'Publishing',
       capabilities: ['publishing', 'messaging', 'scheduling'],
-      actions: [{ id: 'schedule_post', label: 'Schedule Post', capability: 'scheduling' }]
+      productCapabilities: ['Instagram', 'Facebook', 'Messenger', 'Publishing'],
+      actions: [{ id: 'schedule_post', label: 'Schedule Post', capability: 'scheduling' }],
+      installable: true
     },
     {
       id: 'google_business',
       name: 'Google Business',
       role: 'Local',
       capabilities: ['publishing', 'reviews'],
-      actions: [{ id: 'update_gbp', label: 'Update listing', capability: 'publishing' }]
+      productCapabilities: ['Google listing', 'Reviews', 'Local posts'],
+      actions: [{ id: 'update_gbp', label: 'Update listing', capability: 'publishing' }],
+      installable: true
+    },
+    {
+      id: 'tiktok',
+      name: 'TikTok',
+      role: 'Publishing',
+      capabilities: ['publishing', 'scheduling'],
+      productCapabilities: ['TikTok Publishing', 'Short video'],
+      installable: false,
+      soon: true
+    },
+    {
+      id: 'pinterest',
+      name: 'Pinterest',
+      role: 'Publishing',
+      capabilities: ['publishing'],
+      productCapabilities: ['Pins', 'Idea pins'],
+      installable: false,
+      soon: true
+    },
+    {
+      id: 'quickbooks',
+      name: 'QuickBooks',
+      role: 'Accounting',
+      capabilities: ['payments', 'analytics'],
+      productCapabilities: ['Invoices', 'Expenses', 'Taxes'],
+      installable: false,
+      soon: true
+    },
+    {
+      id: 'zoom',
+      name: 'Zoom',
+      role: 'Meetings',
+      capabilities: ['calendar', 'scheduling'],
+      productCapabilities: ['Video meetings', 'Scheduling'],
+      installable: false,
+      soon: true
     },
     {
       id: 'capture_one',
       name: 'Capture One',
       role: 'Editing',
       capabilities: ['editing', 'assets_import', 'assets_export'],
-      actions: [{ id: 'sync_photos', label: 'Sync Photos', capability: 'assets_import' }]
+      productCapabilities: ['RAW Editing', 'Tethered Capture', 'Photo Sync'],
+      installable: false,
+      soon: true
     }
   ];
 
   var MARKETING_KINDS = [
-    { id: 'instagram_carousel', label: 'Instagram Carousel' },
-    { id: 'facebook_post', label: 'Facebook Post' },
-    { id: 'story', label: 'Story' },
-    { id: 'flyer', label: 'Flyer' },
-    { id: 'gift_card', label: 'Gift Card' },
-    { id: 'thank_you', label: 'Thank You Card' },
-    { id: 'before_after', label: 'Before & After Graphic' }
+    { id: 'instagram_carousel', label: 'Instagram Carousel', capability: 'creative' },
+    { id: 'facebook_post', label: 'Facebook Post', capability: 'creative' },
+    { id: 'story', label: 'Story', capability: 'creative' },
+    { id: 'flyer', label: 'Flyer', capability: 'creative' },
+    { id: 'gift_card', label: 'Gift Card', capability: 'creative' },
+    { id: 'thank_you', label: 'Thank You Card', capability: 'creative' },
+    { id: 'before_after', label: 'Before & After Graphic', capability: 'creative' }
   ];
+
+  var DEFAULT_INSTALLED = ['google', 'stripe', 'canva', 'adobe_lightroom'];
 
   function list() { return CATALOG.slice(); }
 
@@ -111,17 +175,108 @@
 
   function marketingKinds() { return MARKETING_KINDS.slice(); }
 
+  function prefsKey(businessId) {
+    return 'hubly_apps_installed_' + String(businessId || 'anon');
+  }
+
+  function readInstalled(businessId) {
+    try {
+      var raw = global.localStorage && localStorage.getItem(prefsKey(businessId));
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (_) {}
+    return DEFAULT_INSTALLED.slice();
+  }
+
+  function writeInstalled(businessId, ids) {
+    try {
+      if (global.localStorage) {
+        localStorage.setItem(prefsKey(businessId), JSON.stringify(ids || []));
+      }
+    } catch (_) {}
+  }
+
+  function isInstalled(businessId, appId) {
+    return readInstalled(businessId).indexOf(appId) !== -1;
+  }
+
+  function install(businessId, appId) {
+    var ids = readInstalled(businessId);
+    if (ids.indexOf(appId) === -1) ids.push(appId);
+    writeInstalled(businessId, ids);
+    publishAppEvent('app.connected', { businessId: businessId, appId: appId });
+    return ids;
+  }
+
+  function uninstall(businessId, appId) {
+    var ids = readInstalled(businessId).filter(function (id) { return id !== appId; });
+    writeInstalled(businessId, ids);
+    publishAppEvent('app.disconnected', { businessId: businessId, appId: appId });
+    return ids;
+  }
+
+  function publishAppEvent(type, payload) {
+    try {
+      if (global.HublyEvents && typeof global.HublyEvents.publish === 'function') {
+        global.HublyEvents.publish(type, payload);
+      }
+    } catch (_) {}
+  }
+
+  function installedApps(businessId) {
+    var ids = readInstalled(businessId);
+    return ids.map(get).filter(Boolean);
+  }
+
+  function availableApps(businessId) {
+    var ids = readInstalled(businessId);
+    return CATALOG.filter(function (a) {
+      return ids.indexOf(a.id) === -1;
+    });
+  }
+
   /**
-   * Plan a marketing asset. Calls Canva when available; otherwise returns an
-   * honest not_configured plan Hubly can still track on the project.
+   * Plan a marketing asset by capability (creative), not by hardcoding Canva.
+   * Prefer Action Engine when present.
    */
   async function createMarketingAsset(opts) {
     opts = opts || {};
-    var providerId = opts.providerId || 'canva';
     var kind = opts.kind || 'instagram_carousel';
-    var canva = global.CanvaConnectedApp;
-    if (providerId === 'canva' && canva && typeof canva.createDesign === 'function') {
-      var res = await canva.createDesign({
+    var capability = opts.capability || 'creative';
+
+    if (global.HublyActionEngine && typeof global.HublyActionEngine.resolveForCapability === 'function') {
+      var resolved = global.HublyActionEngine.resolveForCapability(capability, {
+        businessId: opts.businessId,
+        preferredProviderId: opts.providerId
+      });
+      if (resolved && resolved.appId === 'canva' && global.CanvaConnectedApp) {
+        var canvaRes = await global.CanvaConnectedApp.createDesign({
+          businessId: opts.businessId,
+          projectId: opts.projectId,
+          title: opts.title || kind,
+          brand: opts.brand,
+          assetUrls: opts.photoUrls,
+          copy: opts.copy
+        });
+        return canvaRes;
+      }
+      if (resolved && resolved.status === 'not_configured') {
+        return {
+          ok: false,
+          status: 'not_configured',
+          provider: resolved.appId || null,
+          message: 'Need: Marketing Graphics. Connect a creative app — Hubly saved the request on the project.',
+          data: { kind: kind, status: 'planned', capability: capability }
+        };
+      }
+    }
+
+    // Fallback: first creative catalog app (still capability-driven, not “Canva” in the message).
+    var creative = byCapability(capability)[0];
+    if (creative && creative.id === 'canva' && global.CanvaConnectedApp && typeof global.CanvaConnectedApp.createDesign === 'function') {
+      return global.CanvaConnectedApp.createDesign({
         businessId: opts.businessId,
         projectId: opts.projectId,
         title: opts.title || kind,
@@ -129,15 +284,14 @@
         assetUrls: opts.photoUrls,
         copy: opts.copy
       });
-      return res;
     }
+
     return {
       ok: false,
       status: 'not_configured',
-      provider: providerId,
-      message: 'Connect ' + ((get(providerId) && get(providerId).name) || providerId) + ' to create this asset. Hubly saved the request on the project.',
-      data: { kind: kind, status: 'planned' },
-      meta: { canvaRequired: providerId === 'canva' }
+      provider: null,
+      message: 'Need: Marketing Graphics. Install a creative Connected App from the Apps Marketplace.',
+      data: { kind: kind, status: 'planned', capability: capability }
     };
   }
 
@@ -148,6 +302,13 @@
     creativeApps: creativeApps,
     marketingKinds: marketingKinds,
     createMarketingAsset: createMarketingAsset,
-    catalog: CATALOG
+    catalog: CATALOG,
+    installedApps: installedApps,
+    availableApps: availableApps,
+    isInstalled: isInstalled,
+    install: install,
+    uninstall: uninstall,
+    readInstalled: readInstalled,
+    DEFAULT_INSTALLED: DEFAULT_INSTALLED
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -111,7 +111,18 @@
       SETTINGS_UPDATED: 'settings.updated',
       SETTINGS_TEAM_INVITED: 'settings.team.invited',
       SETTINGS_INTEGRATION_TOGGLED: 'settings.integration.toggled',
-      SETTINGS_SECURITY_AUDITED: 'settings.security.audited'
+      SETTINGS_SECURITY_AUDITED: 'settings.security.audited',
+      /* Projects + Connected Apps (Hubly Core) */
+      PROJECT_CREATED: 'project.created',
+      PROJECT_BOOKED: 'project.booked',
+      PROJECT_EDITING_COMPLETE: 'project.editing_complete',
+      PROJECT_DELIVERED: 'project.delivered',
+      GALLERY_PUBLISHED: 'gallery.published',
+      GALLERY_DELIVERED: 'gallery.delivered',
+      APP_CONNECTED: 'app.connected',
+      APP_DISCONNECTED: 'app.disconnected',
+      CREATIVE_ASSET_PLANNED: 'creative.asset_planned',
+      CREATIVE_ASSET_CREATED: 'creative.asset_created'
     })
   };
 })(typeof window !== 'undefined' ? window : globalThis);

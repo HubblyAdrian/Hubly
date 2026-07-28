@@ -87,6 +87,14 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
+  function publishBus(type, payload) {
+    try {
+      if (global.HublyEvents && typeof global.HublyEvents.publish === 'function') {
+        global.HublyEvents.publish(type, Object.assign({ businessId: businessId() }, payload || {}));
+      }
+    } catch (_) {}
+  }
+
   function toast(msg) {
     try { if (typeof global.toast === 'function') global.toast(msg); } catch (e) {}
   }
@@ -1484,6 +1492,8 @@
       if (p.gallery) p.gallery.delivery_status = 'delivered';
       (p.deliverables || []).forEach(function (d) { if (d.kind === 'gallery') d.status = 'delivered'; });
       addActivity(p, 'Gallery delivered', 'Client delivery marked complete');
+      publishBus('gallery.delivered', { projectId: p.id, galleryId: 'main' });
+      publishBus('project.delivered', { projectId: p.id });
       st.view = 'command'; st.projectId = p.id; st.tab = 'gallery';
       toast('Marked delivered');
       return saveAndRefresh(p, st);
@@ -1512,10 +1522,7 @@
     }
     if (act === 'creative-create' && p) {
       var kind = t.getAttribute('data-pp-kind') || 'instagram_carousel';
-      var providerId = t.getAttribute('data-pp-provider') || 'canva';
-      var providerMeta = (global.HublyConnectedApps && global.HublyConnectedApps.get)
-        ? global.HublyConnectedApps.get(providerId)
-        : null;
+      var providerId = t.getAttribute('data-pp-provider') || '';
       var brand = {
         name: (S().biz || S().businessName || ''),
         primaryColor: S().color || '#D9632D',
@@ -1526,7 +1533,8 @@
         res = await global.HublyConnectedApps.createMarketingAsset({
           businessId: businessId(),
           projectId: p.id,
-          providerId: providerId,
+          providerId: providerId || undefined,
+          capability: 'creative',
           kind: kind,
           title: p.name + ' · ' + kind,
           brand: brand,
@@ -1535,21 +1543,33 @@
       }
       p.workspace = p.workspace || defaultWorkspace();
       p.workspace.creative_requests = p.workspace.creative_requests || [];
+      var boundId = (res && res.provider) || providerId || null;
       p.workspace.creative_requests.push({
         kind: kind,
         status: (res && res.ok) ? 'created' : 'planned',
-        provider: providerId,
+        capability: 'creative',
+        provider: boundId,
         at: new Date().toISOString(),
         message: res && res.message
       });
-      upsertWorkspaceLocal(p, {
-        provider: providerId,
-        display_name: (providerMeta && providerMeta.name) || providerId,
-        sync_state: 'pending',
-        metadata: { last_creative_kind: kind, role: 'creative' }
+      if (boundId) {
+        var providerMeta = (global.HublyConnectedApps && global.HublyConnectedApps.get)
+          ? global.HublyConnectedApps.get(boundId)
+          : null;
+        upsertWorkspaceLocal(p, {
+          provider: boundId,
+          display_name: (providerMeta && providerMeta.name) || boundId,
+          sync_state: 'pending',
+          metadata: { last_creative_kind: kind, role: 'creative' }
+        });
+      }
+      publishBus((res && res.ok) ? 'creative.asset_created' : 'creative.asset_planned', {
+        projectId: p.id,
+        kind: kind,
+        capability: 'creative'
       });
-      addActivity(p, 'Creative asset requested', kind + ' via ' + ((providerMeta && providerMeta.name) || providerId));
-      toast((res && res.message) || 'Creative request saved on the project');
+      addActivity(p, 'Creative asset requested', 'Need: Marketing Graphics · ' + kind);
+      toast((res && res.message) || 'Need: Marketing Graphics — request saved on the project');
       st.tab = 'creative';
       return saveAndRefresh(p, st);
     }
