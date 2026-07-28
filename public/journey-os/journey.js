@@ -2154,7 +2154,7 @@
       { label: 'Business', value: city, act: 'set-tab-business', icon: 'biz', tone: 'purple' },
       { label: 'Team', value: String(teamN) + ' users', act: 'set-tab-team', icon: 'team', tone: 'green' },
       { label: 'Status', value: plan, act: 'set-tab-billing', icon: 'plan', tone: 'blue' },
-      { label: 'Integrations', value: 'Stripe · Google · SMS', act: 'set-tab-integrations', icon: 'plug', tone: 'violet', badge: 'Setup' },
+      { label: 'Integrations', value: 'Payments · Stripe · Google', act: 'set-tab-integrations', icon: 'plug', tone: 'violet', badge: 'Setup' },
       { label: 'AI Defaults', value: String(os.ai.tone || 'helpful_pro'), act: 'set-tab-ai', icon: 'ai', tone: 'amber' },
       { label: 'Security', value: mfaOff ? 'MFA: off' : 'MFA: on', act: 'set-tab-security', icon: 'shield', tone: 'red', danger: mfaOff }
     ].map(function (c) {
@@ -2246,12 +2246,46 @@
       '<div class="jos-set-kpis jos-mt"><div><span>Seats</span><strong>' + esc(String(b.usage.seats || 0)) + '</strong></div><div><span>Jobs (ref)</span><strong>' + esc(String(b.usage.jobsThisMonth || 0)) + '</strong></div><div><span>AI actions</span><strong>' + esc(String(b.usage.aiActions || 0)) + '</strong></div></div></div>' +
       '<div class="jos-card"><div class="jos-kicker">Platform invoices</div><div class="jos-set-rows jos-mt">' + inv + '</div></div></div>';
   }
+  function renderSetPayMode() {
+    var st = S();
+    var pay = String(st.paymentSetting || 'later');
+    if (!['full', 'deposit', 'later', 'choice'].includes(pay)) pay = 'later';
+    var dtype = st.depositType === 'flat' ? 'flat' : 'pct';
+    var dval = Number(st.depositVal != null ? st.depositVal : 25) || 25;
+    var opts = [
+      { id: 'full', title: 'Full payment now', sub: 'Client pays the full amount at booking' },
+      { id: 'deposit', title: 'Deposit to hold', sub: 'Client pays a deposit now, rest on the day' },
+      { id: 'later', title: 'Pay in person only', sub: 'Client pays on the day' },
+      { id: 'choice', title: "Client's choice", sub: 'Pay now or pay in person' }
+    ];
+    var cards = opts.map(function (o) {
+      return '<button type="button" class="jos-set-pay-opt' + (pay === o.id ? ' on' : '') + '" data-jos-act="set-pay-mode" data-jos-pay="' + esc(o.id) + '">' +
+        '<strong>' + esc(o.title) + '</strong><span>' + esc(o.sub) + '</span></button>';
+    }).join('');
+    var dep = '<div class="jos-set-pay-deposit' + (pay === 'deposit' ? ' on' : '') + '" id="jos-set-pay-deposit">' +
+      '<div class="jos-set-pay-dep-row">' +
+        '<button type="button" class="jos-set-pay-chip' + (dtype === 'pct' ? ' on' : '') + '" data-jos-act="set-pay-dep-type" data-jos-dep-type="pct">Percentage %</button>' +
+        '<button type="button" class="jos-set-pay-chip' + (dtype === 'flat' ? ' on' : '') + '" data-jos-act="set-pay-dep-type" data-jos-dep-type="flat">Flat amount $</button>' +
+      '</div>' +
+      '<label class="jos-set-pay-dep-val">Deposit amount<input id="jos-set-dep-val" type="number" min="1" value="' + esc(String(dval)) + '"></label>' +
+      '<div class="jos-btn-row">' + dsBtn('set-pay-dep-val', 'Save deposit amount', 'jos-btn jos-btn-sm') + '</div>' +
+      '</div>';
+    var msg = esc(st.depositMessage || '');
+    return '<div class="jos-card jos-set-pay-wrap" id="jos-set-pay-mode">' +
+      '<div class="jos-kicker">Payment mode</div>' +
+      '<p class="jos-set-integ-lead">How clients pay when they book — lives with Stripe, not the Website editor.</p>' +
+      '<div class="jos-set-pay-grid jos-mt">' + cards + '</div>' +
+      dep +
+      '<label class="jos-set-pay-msg">Deposit message <span>(optional)</span><textarea id="jos-set-dep-msg" rows="2" placeholder="e.g. I’ll call to take a deposit to hold your appointment.">' + msg + '</textarea></label>' +
+      '<div class="jos-btn-row jos-mt">' + dsBtn('set-pay-msg-save', 'Save deposit message', 'jos-btn-brand jos-btn-sm') + '</div>' +
+      '</div>';
+  }
   function renderSetIntegrations() {
     var root = el('jos-settings-root');
     var setupKey = root && root._josIntegSetup;
     var integ = syncLiveIntegrations();
     var catalog = [
-      { key: 'stripe', blurb: 'Payments · deposits · invoices' },
+      { key: 'stripe', blurb: 'Card checkout · Connect account' },
       { key: 'google', blurb: 'Calendar sync · availability' },
       { key: 'meta', blurb: 'Facebook · Instagram inbox' },
       { key: 'twilio', blurb: 'SMS reminders · replies' },
@@ -2312,7 +2346,8 @@
     var hooks = (integ.webhooks || []).map(function (w) {
       return '<div class="jos-set-row"><div><strong>' + esc(w.url) + '</strong><div class="jos-muted">' + esc(w.event || 'settings.updated') + '</div></div>' + setStatusBadge('Active', 'ok') + '</div>';
     }).join('');
-    return '<div class="jos-card jos-set-integ-wrap"><div class="jos-kicker">Integrations</div>' +
+    return renderSetPayMode() +
+      '<div class="jos-card jos-set-integ-wrap jos-mt"><div class="jos-kicker">Integrations</div>' +
       '<p class="jos-set-integ-lead">Connect the tools you already use. Stripe and Google open their real setup flow; SMS and email save your keys here.</p>' +
       '<div class="jos-set-integ-grid jos-mt">' + cards + '</div></div>' +
       '<div class="jos-card jos-mt"><div class="jos-kicker">Webhooks</div><div class="jos-set-form jos-mt"><label>Endpoint URL<input id="jos-set-hook-url" type="text" placeholder="https://your-site.com/hooks/hubly"></label>' +
@@ -2526,6 +2561,39 @@
       if (act === 'set-integ-stripe-disconnect') {
         if (typeof window.disconnectStripe === 'function') return window.disconnectStripe().then(function () { renderSettings(); });
         return;
+      }
+      if (act === 'set-pay-mode') {
+        var mode = (t && t.getAttribute('data-jos-pay')) || '';
+        if (typeof window.setMoneyPaySetting === 'function') {
+          return Promise.resolve(window.setMoneyPaySetting(mode)).then(function () { renderSettings(); });
+        }
+        S().paymentSetting = mode;
+        return renderSettings();
+      }
+      if (act === 'set-pay-dep-type') {
+        var depType = (t && t.getAttribute('data-jos-dep-type')) || 'pct';
+        if (typeof window.setMoneyDepositType === 'function') {
+          return Promise.resolve(window.setMoneyDepositType(depType)).then(function () { renderSettings(); });
+        }
+        S().depositType = depType === 'flat' ? 'flat' : 'pct';
+        return renderSettings();
+      }
+      if (act === 'set-pay-dep-val') {
+        var depVal = Number(setVal('jos-set-dep-val'));
+        if (typeof window.setMoneyDepositVal === 'function') {
+          return Promise.resolve(window.setMoneyDepositVal(depVal)).then(function () { renderSettings(); });
+        }
+        if (Number.isFinite(depVal) && depVal > 0) S().depositVal = depVal;
+        return renderSettings();
+      }
+      if (act === 'set-pay-msg-save') {
+        var msgEl = el('jos-set-dep-msg');
+        S().depositMessage = msgEl ? String(msgEl.value || '') : '';
+        if (typeof window.saveMoneyPaymentPrefs === 'function') {
+          return Promise.resolve(window.saveMoneyPaymentPrefs('Deposit message')).then(function () { renderSettings(); });
+        }
+        toast('Deposit message saved');
+        return renderSettings();
       }
       if (act === 'set-integ-google-connect') {
         if (typeof window.connectGoogleCalendar === 'function') return window.connectGoogleCalendar();

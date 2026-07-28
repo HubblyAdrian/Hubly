@@ -10763,7 +10763,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="ed-settings-item" data-ed-nav="book" data-ed-kind="workspace" onclick="goEdSettingsNav('book')">Book Now</button>
                 <button type="button" class="ed-settings-item" data-ed-nav="quote" data-ed-kind="workspace" onclick="goEdSettingsNav('quote')">Questions</button>
                 <button type="button" class="ed-settings-item" data-ed-nav="addons" data-ed-kind="workspace" onclick="goEdSettingsNav('addons')">Add-ons</button>
-                <button type="button" class="ed-settings-item" data-ed-nav="payment" onclick="goEdSettingsNav('payment')">Payments</button>
               </div>
               <div class="ed-settings-group">
                 <div class="ed-settings-group-label">Integrations</div>
@@ -11037,10 +11036,10 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               
-<div class="bk-acc-item" data-sheet="account" id="ed-payment-acc">
+<div class="bk-acc-item hidden" data-sheet="account" id="ed-payment-acc" hidden aria-hidden="true">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">A1</span><span>Payment &amp; deposits</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">How clients pay when they book. Connect Stripe under <strong>Integrations</strong> for card checkout.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">How clients pay when they book. Prefer <strong>Settings → Integrations</strong> for payment mode + Stripe. Connect Stripe under Integrations for card checkout.</div>
 
                 <div id="ed-stripe-pay-warn" class="hidden" style="margin:0 0 12px;padding:10px 12px;border-radius:10px;background:var(--brand-light);border:1px solid color-mix(in srgb,var(--brand) 28%,var(--border));font-size:12px;color:var(--ink-2);line-height:1.45;">
                   Online deposits &amp; full payment need Stripe ready.
@@ -11073,7 +11072,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="bk-acc-item" data-sheet="account" id="ed-stripe-acc">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">A1b</span><span>Stripe</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Connect Stripe so clients can pay by card on booking. Payment mode (full / deposit / in person) lives under <strong>Payments</strong>.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Connect Stripe so clients can pay by card on booking. Payment mode (full / deposit / in person) lives in <strong>Settings → Integrations</strong>.</div>
                 <div class="stripe-conn-card" id="ed-stripe-card" data-stripe-root data-state="unknown">
                   <div class="stripe-conn-top">
                     <div class="stripe-conn-logo" aria-hidden="true">
@@ -27159,7 +27158,10 @@ function goEdSettingsNav(nav){
     syncEdSettingsRail('addons');
     return;
   }
-  if(id==='payment'||id==='account'){openFocused('account');return;}
+  if(id==='payment'||id==='account'){
+    try{goToPaymentSettings();}catch(e){openFocused('account');}
+    return;
+  }
   if(id==='stripe'){openFocused('account');return;}
   if(id==='calendar'){
     try{closeEdSheet();}catch(e){}
@@ -28006,21 +28008,19 @@ async function setMoneyDepositVal(val){
   await saveMoneyPaymentPrefs('Deposit amount');
 }
 function goToPaymentSettings(){
-  try{goEdSettingsNav('payment');}catch(e){
-    const nav=document.querySelector('[data-v="editor"]');
-    if(nav)switchV(nav);
-    setTimeout(()=>{
-      try{openEdSheet('account');}catch(err){}
-      setTimeout(()=>{
-        const payAcc=document.getElementById('ed-payment-acc')||document.querySelector('#ed-tab-sf .bk-acc-item[data-sheet="account"]');
-        if(payAcc){
-          document.querySelectorAll('#ed-tab-sf .bk-acc-item').forEach(el=>el.classList.remove('open'));
-          payAcc.classList.add('open');
-          payAcc.scrollIntoView({behavior:'smooth',block:'start'});
-        }
-      },120);
-    },100);
-  }
+  const nav=document.querySelector('[data-v="settings"]');
+  if(nav)switchV(nav);
+  setTimeout(()=>{
+    try{
+      const root=document.getElementById('jos-settings-root');
+      if(root){
+        root._josSetTab='integrations';
+        try{if(window.S&&S.settingsOs)S.settingsOs.tab='integrations';}catch(e){}
+        if(window.HublyJourneyOS&&typeof HublyJourneyOS.renderSettings==='function')HublyJourneyOS.renderSettings();
+      }
+      document.getElementById('jos-set-pay-mode')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(e){}
+  },120);
 }
 function syncDashSiteLink(){
   const url=publicProfileUrl(S.slug||currentBusiness?.slug||'your-business');
