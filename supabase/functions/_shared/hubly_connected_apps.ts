@@ -17,6 +17,7 @@ import {
   envTruthy,
   type HublyProviderResult,
 } from "./hubly_providers.ts";
+import catalogPack from "./connected_apps_catalog.json" with { type: "json" };
 
 /** Capability tags a Connected App may declare. */
 export type ConnectedAppCapability =
@@ -195,110 +196,39 @@ export type ConnectedAppCatalogEntry = {
   productCapabilities: string[];
   /** Available in Marketplace even before a provider class is registered. */
   marketplaceAvailable?: boolean;
+  installable?: boolean;
+  soon?: boolean;
+  actions?: ConnectedAppAction[];
 };
 
-export const CONNECTED_APP_CATALOG: ConnectedAppCatalogEntry[] = [
-  {
-    id: "adobe_lightroom",
-    name: "Adobe Lightroom",
-    role: "Editing",
-    capabilities: ["editing", "assets_import", "assets_export"],
-    productCapabilities: ["RAW Editing", "Albums", "Metadata", "Photo Sync"],
-    marketplaceAvailable: true,
-  },
-  {
-    id: "canva",
-    name: "Canva",
-    role: "Creative",
-    capabilities: ["creative", "templates", "publishing", "assets_import", "assets_export"],
-    productCapabilities: [
-      "Marketing Graphics",
-      "Social Graphics",
-      "Flyers",
-      "Brand Assets",
-      "Templates",
-    ],
-    marketplaceAvailable: true,
-  },
-  {
-    id: "frame_io",
-    name: "Frame.io",
-    role: "Review",
-    capabilities: ["creative", "assets_import", "reviews"],
-    productCapabilities: ["Review links", "Asset comments", "Client review"],
-    marketplaceAvailable: true,
-  },
-  {
-    id: "dropbox",
-    name: "Dropbox",
-    role: "Storage",
-    capabilities: ["storage", "assets_import", "assets_export"],
-    productCapabilities: ["File Storage", "Folder Sync", "Asset Delivery"],
-    marketplaceAvailable: true,
-  },
-  {
-    id: "google_drive",
-    name: "Google Drive",
-    role: "Storage",
-    capabilities: ["storage", "assets_import", "assets_export"],
-    productCapabilities: ["File Storage", "Folder Sync", "Shared drives"],
-    marketplaceAvailable: true,
-  },
-  {
-    id: "meta",
-    name: "Meta",
-    role: "Publishing",
-    capabilities: ["publishing", "messaging", "scheduling"],
-    productCapabilities: ["Instagram", "Facebook", "Messenger", "Publishing"],
-    marketplaceAvailable: true,
-  },
-  {
-    id: "google_business",
-    name: "Google Business",
-    role: "Local",
-    capabilities: ["publishing", "reviews"],
-    productCapabilities: ["Google listing", "Reviews", "Local posts"],
-    marketplaceAvailable: true,
-  },
-  {
-    id: "capture_one",
-    name: "Capture One",
-    role: "Editing",
-    capabilities: ["editing", "assets_import", "assets_export"],
-    productCapabilities: ["RAW Editing", "Tethered Capture", "Photo Sync"],
-    marketplaceAvailable: true,
-  },
-  {
-    id: "stripe",
-    name: "Stripe",
-    role: "Payments",
-    capabilities: ["payments"],
-    productCapabilities: ["Payments", "Invoices", "Payouts"],
-    marketplaceAvailable: true,
-  },
-  {
-    id: "twilio",
-    name: "Twilio",
-    role: "Messaging",
-    capabilities: ["messaging"],
-    productCapabilities: ["SMS", "Messaging"],
-    marketplaceAvailable: true,
-  },
-];
+type CatalogPack = {
+  version: number;
+  defaultInstalled: string[];
+  marketingKinds: { id: string; label: string; capability: string }[];
+  apps: ConnectedAppCatalogEntry[];
+};
 
-/** Extra Marketplace-only catalog rows (no ConnectedAppId yet / coming soon). */
-export const MARKETPLACE_SOON: {
-  id: string;
-  name: string;
-  role: string;
-  productCapabilities: string[];
-}[] = [
-  { id: "tiktok", name: "TikTok", role: "Publishing", productCapabilities: ["TikTok Publishing", "Short video"] },
-  { id: "pinterest", name: "Pinterest", role: "Publishing", productCapabilities: ["Pins", "Idea pins"] },
-  { id: "quickbooks", name: "QuickBooks", role: "Accounting", productCapabilities: ["Invoices", "Expenses", "Taxes"] },
-  { id: "zoom", name: "Zoom", role: "Meetings", productCapabilities: ["Video meetings", "Scheduling"] },
-  { id: "google", name: "Google", role: "Workspace", productCapabilities: ["Calendar", "Drive", "Business Profile"] },
-];
+const pack = catalogPack as CatalogPack;
+
+/** SSOT loaded from hubly-core/connected-apps-catalog.json (synced). */
+export const CONNECTED_APP_CATALOG: ConnectedAppCatalogEntry[] = (pack.apps || []).map((a) => ({
+  ...a,
+  marketplaceAvailable: a.installable !== false && !a.soon ? true : a.marketplaceAvailable,
+}));
+
+export const CONNECTED_APP_DEFAULT_INSTALLED: string[] = pack.defaultInstalled || [];
+
+export const CONNECTED_APP_MARKETING_KINDS = pack.marketingKinds || [];
+
+/** @deprecated Prefer CONNECTED_APP_CATALOG filtered by soon — kept for callers. */
+export const MARKETPLACE_SOON = CONNECTED_APP_CATALOG
+  .filter((a) => a.soon || a.installable === false)
+  .map((a) => ({
+    id: a.id,
+    name: a.name,
+    role: a.role,
+    productCapabilities: a.productCapabilities,
+  }));
 
 export function requireConnectedAppEnv(
   providerId: string,

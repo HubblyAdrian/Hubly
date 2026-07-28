@@ -1,8 +1,9 @@
 /**
  * Hubly Core — Intent Engine (client)
  *
- * Ask Hubly → Intent → Planner → Resolver → Event Bus → Execution
+ * Ask Hubly → Intent → Planner → Resolver → Execution Plan → Event Bus → Providers
  *
+ * Execution Plans are draft until Approve — then Execute.
  * AI speaks only Intent + Capabilities. Never vendor names.
  */
 (function (global) {
@@ -84,6 +85,8 @@
     }
   ];
 
+  var _plans = Object.create(null);
+
   function get(id) {
     return INTENTS.find(function (i) { return i.id === id; }) || null;
   }
@@ -114,10 +117,55 @@
     }
   }
 
-  /**
-   * Intent → Planner (capabilities) → Resolver (Connected Apps).
-   * Returns AI view without vendor names + internal execution bindings.
-   */
+  function planId() {
+    return 'xplan_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function buildExecutionPlan(recognized, plan, aiPlan, opts) {
+    var needs = (plan.needs || []).map(function (n) {
+      return { label: n.label, capability: n.capability, required: !!n.required };
+    });
+    var steps = (plan.steps || []).map(function (s, i) {
+      return {
+        id: 'step_' + i + '_' + s.capability,
+        capability: s.capability,
+        label: s.label,
+        required: !!s.required,
+        status: s.status,
+        providerId: s._appId,
+        message: s.message
+      };
+    });
+    var missing = steps.filter(function (s) {
+      return s.required && (s.status === 'blocked' || s.status === 'not_configured');
+    }).map(function (s) { return s.label; });
+
+    var preview =
+      'Intent: ' + recognized.intent.label + '.\n' +
+      'Capabilities needed: ' + aiPlan.need.join(', ') + '.\n' +
+      (missing.length
+        ? 'Missing: ' + missing.join(', ') + '. Connect apps that provide these capabilities, then Approve.\n'
+        : 'Ready to Approve.\n') +
+      'Status: draft (preview — nothing has run yet).';
+
+    var now = new Date().toISOString();
+    var xp = {
+      id: planId(),
+      intentId: recognized.intent.id,
+      intentLabel: recognized.intent.label,
+      businessId: businessId(opts),
+      projectId: opts.projectId || null,
+      status: 'draft',
+      needs: needs,
+      steps: steps,
+      preview: preview,
+      createdAt: now,
+      updatedAt: now
+    };
+    _plans[xp.id] = xp;
+    return xp;
+  }
+
   function run(intentIdOrText, opts) {
     opts = opts || {};
     var recognized = null;
@@ -137,8 +185,9 @@
           capabilities: [],
           required: [],
           optional: [],
-          prompt: 'Intent: ' + recognized.intent.label + '. Action Engine not loaded.'
+          prompt: 'Intent: ' + recognized.intent.label + '. Planner not loaded.'
         },
+        executionPlan: null,
         execution: { steps: [], ready: false }
       };
     }
@@ -150,13 +199,7 @@
     var aiPlan = AE.forAi(plan);
     var required = (plan.needs || []).filter(function (n) { return n.required; }).map(function (n) { return n.label; });
     var optional = (plan.needs || []).filter(function (n) { return !n.required; }).map(function (n) { return n.label; });
-
-    var prompt =
-      'Intent: ' + recognized.intent.label + '.\n' +
-      'Capabilities needed: ' + aiPlan.need.join(', ') + '.\n' +
-      (aiPlan.missing.length
-        ? 'Missing: ' + aiPlan.missing.join(', ') + '. Connect apps that provide these capabilities, then Execute.'
-        : 'Ready to Execute.');
+    var executionPlan = buildExecutionPlan(recognized, plan, aiPlan, opts);
 
     var ready = (plan.steps || []).every(function (s) {
       if (!s.required) return true;
@@ -171,17 +214,11 @@
         capabilities: aiPlan.need,
         required: required,
         optional: optional,
-        prompt: prompt
+        prompt: executionPlan.preview
       },
+      executionPlan: executionPlan,
       execution: {
-        steps: (plan.steps || []).map(function (s) {
-          return {
-            capability: s.capability,
-            label: s.label,
-            status: s.status,
-            providerId: s._appId
-          };
-        }),
+        steps: executionPlan.steps,
         ready: ready
       }
     };
@@ -193,6 +230,7 @@
             intent: recognized.intent.id,
             intentLabel: recognized.intent.label,
             capabilities: aiPlan.need,
+            executionPlanId: executionPlan.id,
             businessId: businessId(opts),
             projectId: opts.projectId || null
           });
@@ -203,13 +241,43 @@
     return result;
   }
 
-  /**
-   * Execute: Event Bus signal. Providers run via Connected Apps — not named here.
-   */
+  function approve(executionPlanId) {
+    var xp = _plans[executionPlanId];
+    if (!xp || xp.status !== 'draft') return null;
+    xp.status = 'approved';
+    xp.approvedAt = new Date().toISOString();
+    xp.updatedAt = xp.approvedAt;
+    xp.preview = xp.preview.replace(/Status: draft.*/, 'Status: approved — ready to Execute.');
+    return xp;
+  }
+
+  function cancel(executionPlanId) {
+    var xp = _plans[executionPlanId];
+    if (!xp || (xp.status !== 'draft' && xp.status !== 'approved')) return null;
+    xp.status = 'cancelled';
+    xp.cancelledAt = new Date().toISOString();
+    xp.updatedAt = xp.cancelledAt;
+    xp.preview = xp.preview.replace(/Status:.*/, 'Status: cancelled.');
+    return xp;
+  }
+
   function execute(pipeline, opts) {
     opts = opts || {};
     if (!pipeline || !pipeline.ai) {
       return { ok: false, message: 'No intent pipeline to execute.' };
+    }
+    var xp = pipeline.executionPlan;
+    if (xp && xp.status === 'draft') {
+      approve(xp.id);
+      xp = _plans[xp.id];
+    }
+    if (xp && xp.status !== 'approved' && xp.status !== 'executing') {
+      return { ok: false, message: 'Approve the Execution Plan before Execute.' };
+    }
+    if (xp) {
+      xp.status = 'executing';
+      xp.executedAt = new Date().toISOString();
+      xp.updatedAt = xp.executedAt;
     }
     try {
       if (global.HublyEvents && global.HublyEvents.publish) {
@@ -219,6 +287,7 @@
             : null,
           intentLabel: pipeline.ai.intent,
           capabilities: pipeline.ai.capabilities,
+          executionPlanId: xp ? xp.id : null,
           businessId: businessId(opts),
           projectId: opts.projectId || null,
           ready: !!(pipeline.execution && pipeline.execution.ready)
@@ -227,34 +296,44 @@
     } catch (_) {}
 
     if (!pipeline.execution || !pipeline.execution.ready) {
-      return { ok: false, message: pipeline.ai.prompt };
+      if (xp) xp.status = 'failed';
+      return { ok: false, message: pipeline.ai.prompt, executionPlan: xp };
     }
+    if (xp) xp.status = 'completed';
     return {
       ok: true,
       message: 'Intent: ' + pipeline.ai.intent + '. Executing capabilities: ' +
-        pipeline.ai.capabilities.join(', ') + '.'
+        pipeline.ai.capabilities.join(', ') + '.',
+      executionPlan: xp
     };
   }
 
-  /** One-shot for Ask Hubly: recognize → plan → AI reply text. */
   function handleAsk(text, opts) {
     var pipeline = run(text, opts);
     if (!pipeline) return null;
+    var reply = pipeline.ai.prompt +
+      '\n\nSay “approve” to Approve this Execution Plan, or “cancel” to discard it.';
     return {
       pipeline: pipeline,
-      reply: pipeline.ai.prompt,
+      reply: reply,
       intentId: pipeline.recognized.intent.id,
-      intentLabel: pipeline.ai.intent
+      intentLabel: pipeline.ai.intent,
+      executionPlanId: pipeline.executionPlan && pipeline.executionPlan.id
     };
   }
+
+  function getPlan(id) { return _plans[id] || null; }
 
   global.HublyIntentEngine = {
     list: list,
     get: get,
     recognize: recognize,
     run: run,
+    approve: approve,
+    cancel: cancel,
     execute: execute,
     handleAsk: handleAsk,
+    getPlan: getPlan,
     INTENTS: INTENTS
   };
 })(typeof window !== 'undefined' ? window : globalThis);

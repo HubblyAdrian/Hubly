@@ -1499,19 +1499,45 @@
       openLeadsRecovery();
       return;
     }
-    // Intent Engine first — Ask Hubly speaks Intent → Capabilities → Execute (never vendors).
+    // Intent Engine first — Ask Hubly speaks Intent → Capabilities → Execution Plan.
     try {
       var IE = global.HublyIntentEngine;
       if (IE && typeof IE.handleAsk === 'function') {
+        // Approve / cancel latest draft plan by short commands
+        var osIntent = ensureAskHublyOsState();
+        var pendingPlanId = osIntent._pendingExecutionPlanId;
+        if (pendingPlanId && /^(approve|yes|confirm|run it|execute)\b/i.test(text)) {
+          var approved = IE.approve(pendingPlanId);
+          if (approved) {
+            var pipe = { ai: { intent: approved.intentLabel, capabilities: (approved.needs || []).map(function (n) { return n.label; }), prompt: approved.preview }, recognized: { intent: { id: approved.intentId, label: approved.intentLabel } }, execution: { ready: true }, executionPlan: approved };
+            var ran = IE.execute(pipe, {});
+            ahAddMessage('assistant', (ran && ran.message) || approved.preview);
+            osIntent._pendingExecutionPlanId = null;
+            ahPublish('ai.action.confirmed', { executionPlanId: pendingPlanId, intent: approved.intentId });
+            renderAskHubly();
+            return;
+          }
+        }
+        if (pendingPlanId && /^(cancel|no|discard)\b/i.test(text)) {
+          var cancelled = IE.cancel(pendingPlanId);
+          ahAddMessage('assistant', cancelled ? cancelled.preview : 'Execution Plan cancelled.');
+          osIntent._pendingExecutionPlanId = null;
+          ahPublish('ai.action.cancelled', { executionPlanId: pendingPlanId });
+          renderAskHubly();
+          return;
+        }
         var intentHandled = IE.handleAsk(text, {});
         if (intentHandled && intentHandled.reply) {
           ahAddMessage('assistant', intentHandled.reply);
+          if (intentHandled.executionPlanId) osIntent._pendingExecutionPlanId = intentHandled.executionPlanId;
           ahMemoryNote('intent', 'Intent: ' + (intentHandled.intentLabel || intentHandled.intentId), {
             module: 'ask',
-            intent: intentHandled.intentId
-          });
-          ahPushActivity('ai.action.proposed', 'Intent: ' + (intentHandled.intentLabel || 'Hubly'), {
             intent: intentHandled.intentId,
+            executionPlanId: intentHandled.executionPlanId || null
+          });
+          ahPushActivity('ai.action.proposed', 'Execution Plan: ' + (intentHandled.intentLabel || 'Hubly'), {
+            intent: intentHandled.intentId,
+            executionPlanId: intentHandled.executionPlanId || null,
             capabilities: (intentHandled.pipeline && intentHandled.pipeline.ai && intentHandled.pipeline.ai.capabilities) || []
           });
           renderAskHubly();

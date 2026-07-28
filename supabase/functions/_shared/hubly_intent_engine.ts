@@ -28,6 +28,15 @@ import {
   type CapabilityNeed,
 } from "./hubly_action_engine.ts";
 import { emit, type HublyBusinessEventType } from "./hubly_event_bus.ts";
+import {
+  approveExecutionPlan,
+  buildExecutionPlan,
+  cancelExecutionPlan,
+  executionPlanForAi,
+  markExecutionPlanCompleted,
+  markExecutionPlanExecuting,
+  type ExecutionPlan,
+} from "./hubly_execution_plan.ts";
 
 export type HublyIntentId = ActionIntent;
 
@@ -147,7 +156,8 @@ export type IntentPipelineResult = {
   recognized: RecognizedIntent;
   plan: ActionPlan;
   ai: IntentAiView;
-  /** Internal resolve bindings — not for AI prompts. */
+  /** Previewable / approvable plan — nothing runs until approved + executed. */
+  executionPlan: ExecutionPlan;
   execution: {
     steps: { capability: string; label: string; status: string; providerId?: string }[];
     ready: boolean;
@@ -197,8 +207,8 @@ export function describeIntentForAi(
     `Intent: ${label}.\n` +
     `Capabilities needed: ${aiPlan.need.join(", ")}.\n` +
     (aiPlan.missing.length
-      ? `Missing: ${aiPlan.missing.join(", ")}. Connect apps that provide these capabilities, then Execute.`
-      : `Ready to Execute.`);
+      ? `Missing: ${aiPlan.missing.join(", ")}. Connect apps that provide these capabilities, then Approve the Execution Plan.`
+      : `Execution Plan ready — Approve to run, or Cancel.`);
   return {
     intent: label,
     capabilities: aiPlan.need,
@@ -210,9 +220,9 @@ export function describeIntentForAi(
 
 /**
  * Full pipeline:
- *   Intent → Planner (capabilities) → Resolver (Connected Apps) → Event Bus signal
+ *   Intent → Planner → Resolver → Execution Plan (draft) → (Approve) → Event Bus → Providers
  *
- * AI surfaces use `ai` only. Executors use `execution` / `plan.steps`.
+ * AI surfaces use `ai` + `executionPlan.preview` only.
  */
 export async function runIntentPipeline(input: {
   intentId?: HublyIntentId;
@@ -238,6 +248,23 @@ export async function runIntentPipeline(input: {
   });
   const ai = describeIntentForAi(recognized.intent.id, plan);
 
+  const executionPlan = buildExecutionPlan({
+    intentId: recognized.intent.id,
+    intentLabel: recognized.intent.label,
+    businessId: input.businessId,
+    projectId: input.projectId,
+    needs: plan.needs,
+    steps: plan.steps.map((s, i) => ({
+      capability: s.capability,
+      label: s.label,
+      status: s.status,
+      providerId: s.providerId,
+      message: s.message,
+      required: !!plan.needs[i]?.required,
+    })),
+  });
+  ai.prompt = executionPlan.preview;
+
   if (input.emitEvent !== false) {
     await emit("ai.action.proposed", {
       businessId: input.businessId,
@@ -245,6 +272,7 @@ export async function runIntentPipeline(input: {
         intent: recognized.intent.id,
         intentLabel: recognized.intent.label,
         capabilities: ai.capabilities,
+        executionPlanId: executionPlan.id,
         projectId: input.projectId || null,
       },
       capabilities: plan.needs.map((n: CapabilityNeed) => n.capability),
@@ -259,6 +287,7 @@ export async function runIntentPipeline(input: {
     recognized,
     plan,
     ai,
+    executionPlan,
     execution: {
       steps: plan.steps.map((s) => ({
         capability: s.capability,
@@ -272,21 +301,43 @@ export async function runIntentPipeline(input: {
 }
 
 /**
- * Execute a prepared intent plan: emit execution event.
- * Vendor calls stay inside Connected App providers — this layer only signals.
+ * Approve a draft Execution Plan (still does not run providers).
+ */
+export function approveIntentPlan(executionPlanId: string): ExecutionPlan | null {
+  return approveExecutionPlan(executionPlanId);
+}
+
+export function cancelIntentPlan(executionPlanId: string): ExecutionPlan | null {
+  return cancelExecutionPlan(executionPlanId);
+}
+
+/**
+ * Execute an approved plan: Event Bus signal. Providers run via Connected Apps.
  */
 export async function executeIntent(input: {
   businessId: string;
   projectId?: string;
   pipeline: IntentPipelineResult;
-}): Promise<{ ok: boolean; message: string }> {
+}): Promise<{ ok: boolean; message: string; executionPlan?: ExecutionPlan }> {
   const { pipeline } = input;
+  const planId = pipeline.executionPlan?.id;
+  if (planId) {
+    const approved = pipeline.executionPlan.status === "approved"
+      ? pipeline.executionPlan
+      : approveExecutionPlan(planId);
+    if (!approved) {
+      return { ok: false, message: "Execution Plan must be approved before Execute." };
+    }
+    markExecutionPlanExecuting(planId);
+  }
+
   await emit("ai.action.executed", {
     businessId: input.businessId,
     payload: {
       intent: pipeline.recognized.intent.id,
       intentLabel: pipeline.recognized.intent.label,
       capabilities: pipeline.ai.capabilities,
+      executionPlanId: planId || null,
       projectId: input.projectId || null,
       ready: pipeline.execution.ready,
     },
@@ -294,15 +345,19 @@ export async function executeIntent(input: {
   });
 
   if (!pipeline.execution.ready) {
+    if (planId) markExecutionPlanCompleted(planId, false);
     return {
       ok: false,
       message: pipeline.ai.prompt,
+      executionPlan: planId ? pipeline.executionPlan : undefined,
     };
   }
+  if (planId) markExecutionPlanCompleted(planId, true);
   return {
     ok: true,
     message:
       `Intent: ${pipeline.ai.intent}. Executing capabilities: ${pipeline.ai.capabilities.join(", ")}.`,
+    executionPlan: planId ? pipeline.executionPlan : undefined,
   };
 }
 
@@ -312,6 +367,9 @@ export const HublyIntentEngine = {
   recognizeIntent,
   describeIntentForAi,
   runIntentPipeline,
+  approveIntentPlan,
+  cancelIntentPlan,
   executeIntent,
+  executionPlanForAi,
   HUBLY_INTENTS,
 };

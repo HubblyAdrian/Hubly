@@ -84,12 +84,12 @@
     var ai = pipeline.ai;
     return '<section class="am-panel am-ai">' +
       '<p class="am-eyebrow">Intent Engine</p>' +
-      '<h2>Ask Hubly → Intent → Capabilities → Execute</h2>' +
-      '<p class="am-lead">AI never names apps. It only declares intent and needed capabilities — Connected Apps resolve the rest.</p>' +
+      '<h2>Ask Hubly → Intent → Capabilities → Execution Plan</h2>' +
+      '<p class="am-lead">AI never names apps. It proposes an Execution Plan you can Approve, Cancel, or Execute.</p>' +
       '<ol class="am-pipeline">' +
         '<li><strong>Intent</strong> ' + esc(ai.intent) + '</li>' +
         '<li><strong>Capabilities</strong> ' + esc((ai.capabilities || []).join(' · ')) + '</li>' +
-        '<li><strong>Execute</strong> Event Bus → Connected Apps</li>' +
+        '<li><strong>Execution Plan</strong> draft → approve → Event Bus → Providers</li>' +
       '</ol>' +
       '<div class="am-need-box">' +
         '<p class="am-need-k">Intent</p>' +
@@ -102,8 +102,8 @@
           ? '<p class="am-muted am-mt">Optional: ' + esc(ai.optional.join(', ')) + '</p>'
           : '') +
         ((pipeline.execution && !pipeline.execution.ready) || (ai.prompt && /Missing:/.test(ai.prompt))
-          ? '<p class="am-missing">Connect apps that provide missing capabilities, then Execute.</p>'
-          : '<p class="am-ok">Ready to Execute via Connected Apps.</p>') +
+          ? '<p class="am-missing">Connect apps that provide missing capabilities, then Approve.</p>'
+          : '<p class="am-ok">Execution Plan ready — Approve to run.</p>') +
       '</div>' +
       '<pre class="am-prompt">' + esc(ai.prompt) + '</pre>' +
       '</section>';

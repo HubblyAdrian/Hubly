@@ -63,8 +63,9 @@ describe('Connected Apps architecture freeze', () => {
     assert.match(md, /ARCHITECTURE FREEZE/);
     assert.match(md, /Intent Engine/);
     assert.match(md, /ConnectedAppProvider/);
-    assert.match(md, /plugin recipe/i);
-    assert.match(md, /Do not say/);
+    assert.match(md, /Lock rule/);
+    assert.match(md, /hubly-core\/connected-apps-catalog\.json/);
+    assert.match(md, /Execution Plan/);
     assert.match(md, /External Workspace/);
   });
 

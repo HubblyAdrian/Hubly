@@ -44,26 +44,53 @@ describe('Hubly Event Bus + Apps Marketplace', () => {
     assert.match(intent, /HublyIntentEngine/);
     assert.match(intent, /recognizeIntent/);
     assert.match(intent, /runIntentPipeline/);
-    assert.match(intent, /Intent: \$\{label\}/);
+    assert.match(intent, /executionPlan/);
     assert.match(intent, /Promote Project/);
     assert.doesNotMatch(intent, /Use Canva/);
     assert.match(client, /HublyIntentEngine/);
     assert.match(client, /handleAsk/);
-    assert.match(client, /Intent: /);
+    assert.match(client, /approve/);
+    assert.match(client, /Execution Plan/);
     assert.match(html, /hubly-intent-engine\.js/);
     assert.match(journey, /HublyIntentEngine/);
     assert.match(apps, /Intent Engine/);
-    assert.match(apps, /Ask Hubly → Intent → Capabilities → Execute/);
+    assert.match(apps, /Execution Plan/);
+  });
+
+  it('catalog SSOT is hubly-core and copies stay in sync', () => {
+    const ssot = readFileSync(join(root, 'hubly-core/connected-apps-catalog.json'), 'utf8');
+    const pub = readFileSync(join(root, 'public/journey-os/connected-apps-catalog.json'), 'utf8');
+    const shared = readFileSync(join(root, 'supabase/functions/_shared/connected_apps_catalog.json'), 'utf8');
+    assert.equal(ssot, pub);
+    assert.equal(ssot, shared);
+    assert.match(ssot, /"apps"/);
+    const gen = readFileSync(join(root, 'public/journey-os/connected-apps-catalog.generated.js'), 'utf8');
+    assert.match(gen, /HUBLY_CONNECTED_APPS_CATALOG/);
+    const html = readFileSync(join(root, 'public/hubly.html'), 'utf8');
+    assert.match(html, /connected-apps-catalog\.generated\.js/);
+    const client = readFileSync(join(root, 'public/journey-os/connected-apps.js'), 'utf8');
+    assert.match(client, /HUBLY_CONNECTED_APPS_CATALOG/);
+    assert.doesNotMatch(client, /var CATALOG = \[/);
+  });
+
+  it('Execution Plan module supports draft → approve → execute', () => {
+    const xp = readFileSync(join(root, 'supabase/functions/_shared/hubly_execution_plan.ts'), 'utf8');
+    assert.match(xp, /buildExecutionPlan/);
+    assert.match(xp, /approveExecutionPlan/);
+    assert.match(xp, /cancelExecutionPlan/);
+    assert.match(xp, /Status: draft/);
+    assert.match(xp, /executionPlanForAi/);
   });
 
   it('catalog declares productCapabilities for Marketplace + AI', () => {
+    const ssot = readFileSync(join(root, 'hubly-core/connected-apps-catalog.json'), 'utf8');
     const core = readFileSync(join(root, 'supabase/functions/_shared/hubly_connected_apps.ts'), 'utf8');
-    assert.match(core, /productCapabilities/);
-    assert.match(core, /RAW Editing/);
-    assert.match(core, /Marketing Graphics/);
-    assert.match(core, /MARKETPLACE_SOON/);
+    assert.match(ssot, /productCapabilities/);
+    assert.match(ssot, /RAW Editing/);
+    assert.match(ssot, /Marketing Graphics/);
+    assert.match(core, /CONNECTED_APP_CATALOG/);
+    assert.match(core, /connected_apps_catalog\.json/);
     const client = readFileSync(join(root, 'public/journey-os/connected-apps.js'), 'utf8');
-    assert.match(client, /productCapabilities/);
     assert.match(client, /HublyConnectedApps/);
     assert.match(client, /install:/);
   });
