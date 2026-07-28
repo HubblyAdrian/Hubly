@@ -29,9 +29,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
-<link rel="stylesheet" href="/journey-os/operate-pixel.css?v=cal-create-1">
+<link rel="stylesheet" href="/journey-os/operate-pixel.css?v=ui-audit-1">
 <link rel="stylesheet" href="/journey-os/hubly-layout.css?v=ui-polish-1">
-<link rel="stylesheet" href="/journey-os/photography-projects.css?v=projects-8">
+<link rel="stylesheet" href="/journey-os/photography-projects.css?v=ui-audit-1">
 <link rel="stylesheet" href="/journey-os/app-marketplace.css?v=projects-7">
 <style>
 :root{
@@ -6390,6 +6390,19 @@ html{scroll-behavior:smooth}
   box-shadow:0 0 0 3px rgba(217,99,45,.12);
 }
 .ws-gal-album-add-plus{font-size:26px;line-height:1;font-weight:500;color:inherit}
+.ws-gal-new-bucket{
+  appearance:none;-webkit-appearance:none;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  margin:0;padding:9px 14px;border-radius:10px;cursor:pointer;font:inherit;
+  font-size:13px;font-weight:700;letter-spacing:-.01em;
+  color:#141B2B!important;background:#fff!important;border:1.5px solid #CBD5E1!important;
+}
+.ws-gal-new-bucket:hover{border-color:#D9632D!important;color:#D9632D!important;background:#FDF0E8!important}
+.ws-sec-ink-light .ws-gal-new-bucket,
+.ws-theme-dark .ws-gal-new-bucket,
+.ws-site[data-ws-tone="dark"] .ws-gal-new-bucket{
+  color:#f8fafc!important;background:rgba(248,250,252,.1)!important;border-color:rgba(248,250,252,.45)!important;
+}
 .ws-gal-album-grid .ws-gal-album-add{width:100%;aspect-ratio:1;min-height:0}
 .ws-gal-album-rail .ws-gal-album-add{
   flex:0 0 min(78%,280px);max-width:300px;min-height:140px;scroll-snap-align:start;
@@ -12355,7 +12368,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/hubly-session.js"></script>
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
-<script defer src="/journey-os/journey.js?v=cal-create-1"></script>
+<script defer src="/journey-os/journey.js?v=ui-audit-1"></script>
 <script defer src="/journey-os/adobe-lightroom-service.js?v=projects-7"></script>
 <script defer src="/journey-os/connected-apps-catalog.generated.js?v=projects-7"></script>
 <script defer src="/journey-os/connected-apps.js?v=projects-7"></script>
@@ -34907,7 +34920,7 @@ function renderWebsiteGallery(targetId){
         <div class="ws-gal-album-h"><div class="ws-gal-album-title"><h3>${escPeHtml(alb.name)}</h3>${rename}</div></div>
         <div class="${railClass}">${cards}</div>
       </div>`;
-    }).join('')+(editing?`<div class="ws-gal-album-actions" style="margin-top:4px;">${addTile}<button type="button" class="btn btn-out btn-sm" onclick="openAddGalleryAlbumFlow(this)">+ New bucket</button></div>`:'');
+    }).join('')+(editing?`<div class="ws-gal-album-actions" style="margin-top:4px;">${addTile}<button type="button" class="ws-gal-new-bucket" onclick="openAddGalleryAlbumFlow(this)">+ New bucket</button></div>`:'');
     return;
   }
   el.classList.remove('ws-gal-albums','ws-gal-marquee');
