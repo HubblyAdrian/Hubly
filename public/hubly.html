@@ -343,6 +343,79 @@ body:has(#p-storefront.active) > .theme-toggle{display:none!important}
 #v-editor .bw-trust-edit .chk{color:#16a34a!important}
 /* Leave phone preview dark — intentional customer chrome */
 
+/* Customize questions hub: day-readable ink on white panels (night theme safe) */
+#v-editor #ed-quote-setup,
+#v-editor #ed-quote-setup .sq-setup-section,
+#v-editor #ed-quote-setup .sq-setup-row,
+#v-editor #ed-quote-setup .sq-setup-add,
+#v-editor #ed-quote-setup .ed-quote-job,
+#v-editor #ed-quote-setup .ed-quote-pkg-strip,
+#v-editor #ed-quote-setup .sq-setup-surcharge-row{
+  color:#141B2B;
+}
+#v-editor #ed-quote-setup .ed-quote-job{
+  color:#374151!important;
+  background:#FFF7ED!important;
+  border-color:#FED7AA!important;
+}
+#v-editor #ed-quote-setup .ed-quote-job strong,
+#v-editor #ed-quote-setup .sq-lbl,
+#v-editor #ed-quote-setup .sq-setup-row strong,
+#v-editor #ed-quote-setup .sq-setup-surcharge-row strong,
+#v-editor #ed-quote-setup .sq-setup-pkg-ro strong{
+  color:#141B2B!important;
+}
+#v-editor #ed-quote-setup .sq-muted,
+#v-editor #ed-quote-setup .sq-setup-row em,
+#v-editor #ed-quote-setup .sq-setup-surcharge-row em,
+#v-editor #ed-quote-setup .sq-setup-pkg-ro span,
+#v-editor #ed-quote-setup .sq-setup-add .sq-muted{
+  color:#4B5563!important;
+}
+#v-editor #ed-quote-setup .sq-setup-row,
+#v-editor #ed-quote-setup .sq-setup-surcharge-row,
+#v-editor #ed-quote-setup .ed-quote-pkg-strip,
+#v-editor #ed-quote-setup .sq-setup-pkg-ro{
+  background:#fff!important;
+  border-color:#E5E7EB!important;
+}
+#v-editor #ed-quote-setup .sq-setup-add{
+  background:#F8FAFC!important;
+  border-color:#D1D5DB!important;
+  color:#141B2B!important;
+}
+#v-editor #ed-quote-setup .sq-setup-add input,
+#v-editor #ed-quote-setup .sq-setup-add select,
+#v-editor #ed-quote-setup .sq-setup-surcharge-row input,
+#v-editor #ed-quote-setup .sq-setup-add textarea{
+  background:#fff!important;
+  color:#141B2B!important;
+  border-color:#E5E7EB!important;
+  -webkit-text-fill-color:#141B2B;
+  color-scheme:light;
+}
+#v-editor #ed-quote-setup .sq-setup-add input::placeholder,
+#v-editor #ed-quote-setup .sq-setup-add textarea::placeholder{
+  color:#9CA3AF!important;
+  -webkit-text-fill-color:#9CA3AF;
+  opacity:1;
+}
+#v-editor #ed-quote-setup .sq-setup-custom-tag{
+  color:#D9632D!important;
+  background:color-mix(in srgb,#D9632D 12%,#fff)!important;
+}
+#v-editor #ed-quote-setup .btn-out{
+  color:#141B2B!important;
+  background:#fff!important;
+  border-color:#D1D5DB!important;
+  -webkit-text-fill-color:#141B2B;
+}
+#v-editor #ed-quote-setup .btn-out:hover{
+  border-color:#D9632D!important;
+  color:#D9632D!important;
+}
+/* Estimate preview side stays dark — intentional */
+
 body{font-family:var(--font);background:var(--surface-2);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
 /* Marketing paints instantly; public slugs paint a blank surface — never a Hubly logo splash. */
 #p-boot.page.active{background:var(--surface-2)!important}
