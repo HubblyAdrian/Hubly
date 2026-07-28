@@ -11,16 +11,34 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel) => readFileSync(join(root, rel), 'utf8');
 
 describe('Connected Apps owner UI', () => {
-  it('Apps page is owner-facing Connected Apps, not Intent Engine hero', () => {
+  it('Apps page is owner-facing Connected Apps with business + creative split', () => {
     const js = read('public/journey-os/app-marketplace.js');
     assert.match(js, /Connected Apps/);
-    assert.match(js, /Available integrations/);
+    assert.match(js, /Connect the tools you already use/);
+    assert.match(js, /Business apps/);
+    assert.match(js, /Creative & project apps/);
+    assert.match(js, /What happens after you connect/);
     assert.match(js, /Last sync/);
-    assert.match(js, /data-am-act="settings"/);
     assert.match(js, /data-am-act="connect"/);
     assert.match(js, /data-am-act="disconnect"/);
     assert.match(js, /Developer · Intent pipeline/);
+    assert.match(js, /relevantApps/);
     assert.doesNotMatch(js, /Ask Hubly → Intent → Capabilities → Execution Plan/);
+  });
+
+  it('catalog scopes business vs project apps', () => {
+    const catalog = JSON.parse(read('hubly-core/connected-apps-catalog.json'));
+    const byId = Object.fromEntries(catalog.apps.map((a) => [a.id, a]));
+    assert.equal(byId.google.scope, 'business');
+    assert.equal(byId.stripe.scope, 'business');
+    assert.equal(byId.twilio.scope, 'business');
+    assert.equal(byId.meta.scope, 'business');
+    assert.equal(byId.google_business.scope, 'business');
+    assert.equal(byId.adobe_lightroom.scope, 'project');
+    assert.equal(byId.canva.scope, 'project');
+    assert.equal(byId.frame_io.scope, 'project');
+    assert.equal(byId.dropbox.scope, 'project');
+    assert.equal(byId.google_drive.scope, 'project');
   });
 
   it('Projects nav is always available; Lightroom is feature-gated', () => {

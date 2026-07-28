@@ -1,6 +1,6 @@
 /**
  * Hubly Apps — Connected Apps (owner-facing).
- * Overview · status · available integrations · connect/disconnect · last sync · settings.
+ * Business-wide tools + project/creative tools relevant to this trade.
  * Intent pipeline stays available as an internal developer tool (collapsed).
  */
 (function (global) {
@@ -23,6 +23,15 @@
       }
       var S = global.S || {};
       return S.businessId || S.bizId || (S.business && S.business.id) || '';
+    } catch (_) {
+      return '';
+    }
+  }
+  function tradeId() {
+    try {
+      var biz = global.currentBusiness || {};
+      var S = global.S || {};
+      return String(S.businessType || biz.business_type || biz.type || '').toLowerCase();
     } catch (_) {
       return '';
     }
@@ -66,7 +75,6 @@
   }
 
   async function liveStatusFor(app) {
-    // Feature gate: Lightroom only when business has lightroom capability (or photo-led).
     if (app && app.id === 'adobe_lightroom') {
       var allowLr = false;
       try {
@@ -114,7 +122,8 @@
     return base;
   }
 
-  function statusPill(st) {
+  function statusPill(st, soon) {
+    if (soon) return '<span class="am-pill">Soon</span>';
     if (st.health === 'not_configured') {
       return '<span class="am-pill am-pill-warn">Needs setup</span>';
     }
@@ -130,45 +139,46 @@
       '</section>';
   }
 
-  function renderAppRow(app, st, installed) {
+  function renderAppCard(app, st, installed) {
     var soon = !!app.soon;
+    var connected = !!(st.connected || installed);
     var actions = '';
     if (soon) {
       actions = '<button type="button" class="am-btn am-btn-ghost" disabled>Soon</button>';
-    } else if (st.connected || installed) {
+    } else if (connected) {
       actions =
         '<button type="button" class="am-btn am-btn-brand" data-am-act="connect" data-am-id="' + esc(app.id) + '">Manage</button>' +
-        '<button type="button" class="am-btn am-btn-ghost" data-am-act="disconnect" data-am-id="' + esc(app.id) + '">Disconnect</button>' +
-        '<button type="button" class="am-btn am-btn-ghost" data-am-act="settings" data-am-id="' + esc(app.id) + '">Settings</button>';
+        '<button type="button" class="am-btn am-btn-ghost" data-am-act="disconnect" data-am-id="' + esc(app.id) + '">Disconnect</button>';
     } else {
       actions =
-        '<button type="button" class="am-btn am-btn-brand" data-am-act="connect" data-am-id="' + esc(app.id) + '">Connect</button>' +
-        '<button type="button" class="am-btn am-btn-ghost" data-am-act="settings" data-am-id="' + esc(app.id) + '">Settings</button>';
+        '<button type="button" class="am-btn am-btn-brand" data-am-act="connect" data-am-id="' + esc(app.id) + '">Connect</button>';
     }
 
-    var account = st.accountLabel
-      ? '<p class="am-account">' + esc(st.accountLabel) + '</p>'
-      : '';
-    var sync = '<p class="am-sync">Last sync · ' + esc(formatWhen(st.lastSyncAt)) + '</p>';
+    var mark = connected ? '✓ Connected' : (soon ? 'Coming soon' : '○ Connect');
     var caps = (app.productCapabilities || []).slice(0, 3);
-    var capsHtml = caps.length
-      ? '<p class="am-caps-line">' + esc(caps.join(' · ')) + '</p>'
-      : '';
-
-    return '<article class="am-row' + (st.connected ? ' is-on' : '') + '">' +
-      '<div class="am-row-main">' +
-        '<div class="am-row-title">' +
-          '<h3>' + esc(app.name) + '</h3>' +
-          statusPill(st) +
-        '</div>' +
-        '<p class="am-role">' + esc(app.role || 'Connected App') + '</p>' +
-        account +
-        capsHtml +
-        sync +
-        (st.message && !st.connected ? '<p class="am-muted">' + esc(st.message) + '</p>' : '') +
+    return '<article class="am-card' + (connected ? ' is-on' : '') + '">' +
+      '<div class="am-card-top">' +
+        '<strong>' + esc(app.name) + '</strong>' +
+        statusPill(st, soon) +
       '</div>' +
-      '<div class="am-row-actions">' + actions + '</div>' +
+      '<p class="am-role">' + esc(app.role || 'Connected App') + '</p>' +
+      '<p class="am-muted">' + esc(mark) +
+        (st.accountLabel ? ' · ' + esc(st.accountLabel) : '') + '</p>' +
+      (caps.length ? '<p class="am-caps-line">' + esc(caps.join(' · ')) + '</p>' : '') +
+      '<p class="am-sync">Last sync · ' + esc(formatWhen(st.lastSyncAt)) + '</p>' +
+      '<div class="am-card-actions">' + actions + '</div>' +
       '</article>';
+  }
+
+  function renderSection(title, lead, rows) {
+    return '<section class="am-panel">' +
+      '<h2>' + esc(title) + '</h2>' +
+      (lead ? '<p class="am-muted am-section-lead">' + esc(lead) + '</p>' : '') +
+      '<div class="am-grid">' +
+        (rows.length
+          ? rows.map(function (r) { return renderAppCard(r.app, r.st, r.installed); }).join('')
+          : '<p class="am-muted">Nothing to show for this business yet.</p>') +
+      '</div></section>';
   }
 
   function renderDeveloperTool(bizId) {
@@ -190,7 +200,7 @@
     return '<details class="am-dev">' +
       '<summary>Developer · Intent pipeline</summary>' +
       '<div class="am-dev-body">' +
-        '<p class="am-muted">Internal tool — owners use Connected Apps above. AI speaks Intent + Capabilities only.</p>' +
+        '<p class="am-muted">Internal tool — Intent Engine for developers. Owners use Apps above. AI speaks Intent + Capabilities only.</p>' +
         '<ol class="am-pipeline">' +
           '<li><strong>Intent</strong> ' + esc(ai.intent) + '</li>' +
           '<li><strong>Capabilities</strong> ' + esc((ai.capabilities || []).join(' · ')) + '</li>' +
@@ -201,20 +211,43 @@
       '</details>';
   }
 
+  function primaryConnectCtas(rows) {
+    var prefer = ['adobe_lightroom', 'canva', 'google', 'stripe'];
+    var out = [];
+    prefer.forEach(function (id) {
+      var row = rows.find(function (r) { return r.app.id === id && !r.app.soon && !r.st.connected; });
+      if (row) out.push(row);
+    });
+    if (!out.length) {
+      var first = rows.find(function (r) { return !r.app.soon && !r.st.connected; });
+      if (first) out.push(first);
+    }
+    return out.slice(0, 2).map(function (r) {
+      var brand = r.app.id === 'adobe_lightroom' || r.app.id === 'canva';
+      return '<button type="button" class="am-btn ' + (brand ? 'am-btn-brand am-btn-lg' : 'am-btn-ghost am-btn-lg') +
+        '" data-am-act="connect" data-am-id="' + esc(r.app.id) + '">Connect ' + esc(r.app.name) + '</button>';
+    }).join('');
+  }
+
   async function render() {
     var root = el('jos-apps-root');
     if (!root) return;
     var CA = Apps();
     var bizId = businessId();
-    var catalog = CA ? CA.list() : [];
+    var tid = tradeId();
+    var catalog = CA
+      ? (typeof CA.relevantApps === 'function' ? CA.relevantApps(tid) : CA.list())
+      : [];
     var installedIds = CA ? CA.installedApps(bizId).map(function (a) { return a.id; }) : [];
 
     root.innerHTML =
       '<div class="am-shell">' +
-        '<header class="am-hero">' +
-          '<p class="am-eyebrow">Connected Apps</p>' +
-          '<h1>Your tools, connected</h1>' +
-          '<p class="am-lead">Connect the apps you already use. Hubly stays the operating system — status, sync, and settings live here.</p>' +
+        '<header class="am-hero-banner">' +
+          '<div class="am-hero-copy">' +
+            '<p class="am-eyebrow">Apps</p>' +
+            '<h1>Connect the tools you already use</h1>' +
+            '<p class="am-lead">Hubly stays the operating system. Connect business tools once, and creative apps for Projects — only what fits your trade.</p>' +
+          '</div>' +
         '</header>' +
         '<p class="am-muted">Loading connection status…</p>' +
       '</div>';
@@ -235,7 +268,6 @@
       rows.push({ app: app, st: st, installed: installed });
     }
 
-    // Connected first, then available, then soon
     rows.sort(function (a, b) {
       var as = a.st.connected ? 0 : (a.app.soon ? 2 : 1);
       var bs = b.st.connected ? 0 : (b.app.soon ? 2 : 1);
@@ -249,32 +281,54 @@
       lastSyncLabel: latestSync ? formatWhen(new Date(latestSync).toISOString()) : 'Never',
     });
 
-    var connectedRows = rows.filter(function (r) { return r.st.connected; });
-    var availableRows = rows.filter(function (r) { return !r.st.connected; });
+    function scopeOf(r) {
+      return (CA && typeof CA.appScope === 'function') ? CA.appScope(r.app) : (r.app.scope || 'business');
+    }
+    var businessRows = rows.filter(function (r) { return scopeOf(r) === 'business'; });
+    var projectRows = rows.filter(function (r) { return scopeOf(r) === 'project'; });
+    var connectedSummary = rows.filter(function (r) { return r.st.connected; })
+      .map(function (r) { return r.app.name; }).slice(0, 3).join(', ') || 'None yet';
+
+    var ctas = primaryConnectCtas(rows);
 
     root.innerHTML =
       '<div class="am-shell">' +
-        '<header class="am-hero">' +
-          '<p class="am-eyebrow">Connected Apps</p>' +
-          '<h1>Your tools, connected</h1>' +
-          '<p class="am-lead">Connect the apps you already use. Hubly stays the operating system — status, sync, and settings live here.</p>' +
+        '<header class="am-hero-banner">' +
+          '<div class="am-hero-copy">' +
+            '<p class="am-eyebrow">Apps</p>' +
+            '<h1>Connect the tools you already use</h1>' +
+            '<p class="am-lead">Hubly stays the home for your business. Connect Canva' +
+              (projectRows.some(function (r) { return r.app.id === 'adobe_lightroom'; }) ? ', Adobe Lightroom' : '') +
+              ', Drive, and more — then keep working inside Projects.</p>' +
+            '<div class="am-btn-row">' + ctas + '</div>' +
+          '</div>' +
+          '<div class="am-hero-side">' +
+            '<div class="am-twin">' +
+              '<div><span class="am-label">Hubly</span><strong>Your business</strong><small>Operating system</small></div>' +
+              '<div class="am-twin-join" aria-hidden="true">↔</div>' +
+              '<div><span class="am-label">Connected Apps</span><strong>' + esc(connectedSummary) + '</strong><small>Business · Creative</small></div>' +
+            '</div>' +
+          '</div>' +
         '</header>' +
         overview +
-        '<section class="am-panel">' +
-          '<h2>Connected</h2>' +
-          '<div class="am-list">' +
-            (connectedRows.length
-              ? connectedRows.map(function (r) { return renderAppRow(r.app, r.st, true); }).join('')
-              : '<p class="am-muted">Nothing connected yet — pick an app below.</p>') +
-          '</div>' +
-        '</section>' +
-        '<section class="am-panel">' +
-          '<h2>Available integrations</h2>' +
-          '<div class="am-list">' +
-            (availableRows.length
-              ? availableRows.map(function (r) { return renderAppRow(r.app, r.st, r.installed); }).join('')
-              : '<p class="am-muted">You\u2019re caught up.</p>') +
-          '</div>' +
+        renderSection(
+          'Business apps',
+          'Settings-level tools for the whole business — payments, messaging, and listings.',
+          businessRows
+        ) +
+        renderSection(
+          'Creative & project apps',
+          'Use these from Projects after you drop media. Only apps that fit your trade are shown.',
+          projectRows
+        ) +
+        '<section class="am-panel am-after">' +
+          '<h2>What happens after you connect?</h2>' +
+          '<ul class="am-checklist">' +
+            '<li><span class="am-check-ico" aria-hidden="true">✓</span><span>Drop media into a Project</span></li>' +
+            '<li><span class="am-check-ico" aria-hidden="true">✓</span><span>Sync to Lightroom or Drive when you need it</span></li>' +
+            '<li><span class="am-check-ico" aria-hidden="true">✓</span><span>Create Canva graphics from project photos</span></li>' +
+            '<li><span class="am-check-ico" aria-hidden="true">✓</span><span>Deliver galleries and request reviews</span></li>' +
+          '</ul>' +
         '</section>' +
         renderDeveloperTool(bizId) +
       '</div>';
@@ -326,7 +380,7 @@
     var app = CA && CA.get(id);
     var name = (app && app.name) || id;
     if (id === 'adobe_lightroom') {
-      toast(name + ' settings — use Projects → Connected Apps for album sync, or reconnect from here.');
+      toast(name + ' — connect here, then create albums and sync from a Project → Creative.');
       return;
     }
     toast(name + ' settings — manage connection from this page. Deeper settings open inside each workflow.');

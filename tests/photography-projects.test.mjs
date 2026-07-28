@@ -58,7 +58,7 @@ describe('Hubly Projects module', () => {
     assert.match(types, /Connected Apps/);
   });
 
-  it('product UI says Connected Apps (not External Workspace)', () => {
+  it('product UI keeps Connected Apps language for Apps page, not project tabs', () => {
     const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
     const clientApps = readFileSync(join(root, 'public/journey-os/connected-apps.js'), 'utf8');
     const canvaClient = readFileSync(join(root, 'public/journey-os/canva-connected-app.js'), 'utf8');
@@ -69,13 +69,15 @@ describe('Hubly Projects module', () => {
     assert.doesNotMatch(js, /twin_key|twin_status|twinKey\(/);
     assert.doesNotMatch(js, /digital twin/i);
     assert.doesNotMatch(js, /External Workspace/);
-    assert.match(js, /Connected Apps/);
     assert.match(js, /renderCreativeTab/);
     assert.match(js, /creative-create/);
     assert.match(js, /canva-connect/);
     assert.match(js, /\['creative', 'Creative'\]/);
+    assert.match(js, /renderMediaTab/);
+    assert.match(js, /pp-dropzone/);
     assert.match(clientApps, /HublyConnectedApps/);
     assert.match(clientApps, /createMarketingAsset/);
+    assert.match(clientApps, /relevantApps/);
     assert.match(canvaClient, /CanvaConnectedApp/);
   });
 
@@ -100,32 +102,40 @@ describe('Hubly Projects module', () => {
     assert.doesNotMatch(js, /Photography Agreement/);
   });
 
-  it('uses universal center-of-work tabs', () => {
+  it('uses media-first center-of-work tabs (no Connected Apps tab)', () => {
     const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
     assert.match(js, /\['overview', 'Overview'\]/);
     assert.match(js, /\['media', 'Media'\]/);
+    assert.match(js, /\['client', 'Client'\]/);
     assert.match(js, /\['creative', 'Creative'\]/);
-    assert.match(js, /\['files', 'Files'\]/);
     assert.match(js, /\['deliverables', 'Deliverables'\]/);
-    assert.match(js, /\['apps', 'Connected Apps'\]/);
     assert.match(js, /\['timeline', 'Timeline'\]/);
+    assert.match(js, /\['activity', 'Activity'\]/);
     assert.match(js, /\['assistant', 'AI Assistant'\]/);
+    assert.doesNotMatch(js, /\['apps', 'Connected Apps'\]/);
+    assert.doesNotMatch(js, /\['files', 'Files'\]/);
     assert.match(js, /renderMediaTab/);
-    assert.match(js, /renderFilesTab/);
     assert.match(js, /renderAiAssistantTab/);
+    assert.match(js, /st\.tab = 'media'/);
+    assert.match(js, /Math\.min\(3,/);
   });
 
-  it('ships dashboard metrics, Connected Apps hero, Creative tab, and Quick Project', () => {
+  it('ships dashboard metrics, Media upload, Creative tab, and Quick Project', () => {
     const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
     const journey = readFileSync(join(root, 'public/journey-os/journey.js'), 'utf8');
+    const apps = readFileSync(join(root, 'public/journey-os/app-marketplace.js'), 'utf8');
     assert.match(js, /Awaiting Delivery/);
-    assert.match(js, /Connect the tools you already use/);
-    assert.match(js, /What happens after you connect/);
+    assert.match(js, /Drag &amp; drop here/);
     assert.match(js, /Create Marketing Asset/);
     assert.match(js, /Quick Project/);
+    assert.match(js, /Create Project/);
     assert.match(journey, /photo-quick/);
     assert.match(js, /profile\.title/);
     assert.match(js, /title: 'Projects'/);
+    assert.match(apps, /Connect the tools you already use/);
+    assert.match(apps, /What happens after you connect/);
+    assert.match(apps, /Business apps/);
+    assert.match(apps, /Creative & project apps/);
   });
 
   it('enables projects + lightroom on photography blueprint', () => {

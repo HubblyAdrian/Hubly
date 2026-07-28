@@ -1167,6 +1167,109 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   .pp-lr-twin-join { justify-self: center; transform: rotate(90deg); }
 }
 
+/* Media — Lightroom-style upload + grids */
+.pp-file-btn {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+}
+.pp-file-btn input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.pp-dropzone {
+  margin-top: 16px;
+  padding: 36px 22px;
+  border-radius: 20px;
+  border: 2px dashed var(--pp-border-strong);
+  background: var(--pp-surface-2);
+  text-align: center;
+  display: grid;
+  gap: 6px;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.pp-dropzone strong {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: var(--pp-navy);
+}
+.pp-dropzone span {
+  color: var(--pp-ink-2);
+  font-size: 13px;
+}
+.pp-dropzone.is-empty {
+  padding: 56px 24px;
+  background:
+    radial-gradient(420px 160px at 50% 0%, rgba(217,99,45,0.08), transparent 70%),
+    var(--pp-surface-2);
+}
+.pp-dropzone.is-drag {
+  border-color: var(--pp-brand);
+  background: rgba(217, 99, 45, 0.08);
+  transform: scale(1.01);
+}
+.pp-media-section {
+  margin-top: 18px;
+  padding: 18px 20px;
+  background: var(--pp-surface);
+  border: 1px solid var(--pp-border);
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(15,20,31,0.04);
+  animation: pp-rise 0.4s ease both;
+}
+.pp-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+.pp-media-tile {
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--pp-border);
+  background: var(--pp-surface-2);
+}
+.pp-media-thumb {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #1c2438, #2a3348);
+  color: #fff;
+  overflow: hidden;
+}
+.pp-media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pp-media-kind {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.pp-media-name {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--pp-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pp-media-hero .pp-muted {
+  margin: 4px 0 0;
+}
+
 /* Ask Hubly + coach must not cover Projects CTAs */
 #p-app.jos-photo-projects-mode #jos-ask-fab,
 #p-app.jos-photo-projects-mode .hubly-coach {

@@ -261,7 +261,7 @@
         industry: 'photography',
         eyebrow: 'Projects',
         title: 'Projects',
-        subtitle: 'The home for every job — media, creative, files, apps, and deliverables.',
+        subtitle: 'The home for every job — start with media, then creative and deliverables.',
         dateLabel: 'Shoot',
         projectTypes: PROJECT_TYPES.slice(),
         defaultType: 'Wedding',
@@ -288,7 +288,7 @@
         industry: 'detailing',
         eyebrow: 'Projects',
         title: 'Projects',
-        subtitle: 'The home for every job — media, creative, files, apps, and deliverables.',
+        subtitle: 'The home for every job — start with media, then creative and deliverables.',
         dateLabel: 'Job',
         projectTypes: ['Ceramic Coating', 'Full Detail', 'Paint Correction', 'Interior', 'Fleet', 'Other'],
         defaultType: 'Ceramic Coating',
@@ -316,7 +316,7 @@
         industry: 'windows',
         eyebrow: 'Projects',
         title: 'Projects',
-        subtitle: 'The home for every job — media, creative, files, apps, and deliverables.',
+        subtitle: 'The home for every job — start with media, then creative and deliverables.',
         dateLabel: 'Job',
         projectTypes: ['Residential', 'Commercial', 'New Construction', 'Other'],
         defaultType: 'Residential',
@@ -341,7 +341,7 @@
         industry: 'pressure_wash',
         eyebrow: 'Projects',
         title: 'Projects',
-        subtitle: 'The home for every job — media, creative, files, apps, and deliverables.',
+        subtitle: 'The home for every job — start with media, then creative and deliverables.',
         dateLabel: 'Job',
         projectTypes: ['Driveway', 'House Wash', 'Roof', 'Commercial Lot', 'Other'],
         defaultType: 'House Wash',
@@ -1111,7 +1111,6 @@
         }).join('') + '</select>') +
         field(profile.dateLabel + ' Date', '<input type="date" data-pp-w="shoot_date" value="' + esc(w.shoot_date) + '">') +
         field('Location', '<input type="text" data-pp-w="location" value="' + esc(w.location) + '">') +
-        field('Estimated Assets', '<input type="number" min="0" data-pp-w="estimated_photos" value="' + esc(w.estimated_photos) + '">') +
         field('Notes', '<textarea data-pp-w="notes" rows="3">' + esc(w.notes) + '</textarea>', true) + '</div>';
     } else if (step === 2) {
       body = '<div class="pp-seg">' +
@@ -1129,31 +1128,24 @@
           field('Address', '<input type="text" data-pp-w="client_address" value="' + esc(w.client_address) + '">') +
           field('Relationship', '<input type="text" data-pp-w="client_relationship" value="' + esc(w.client_relationship) + '">') + '</div>';
       }
-    } else if (step === 3) {
+    } else {
       body = '<div class="pp-form-grid">' +
         field('Lead', '<input type="text" data-pp-w="team.lead" value="' + esc(w.team.lead) + '">') +
         field('Second', '<input type="text" data-pp-w="team.second" value="' + esc(w.team.second) + '">') +
         field('Assistant', '<input type="text" data-pp-w="team.assistant" value="' + esc(w.team.assistant) + '">') +
-        field('Editor / Creative', '<input type="text" data-pp-w="team.editor" value="' + esc(w.team.editor) + '">') + '</div>';
-    } else {
-      body = '<p class="pp-help">Hubly prepares the project workspace. Connect Canva' +
-        (hasLightroomCapability() ? ', Lightroom' : '') +
-        ', Drive, and more later — the Project stays primary.</p><div class="pp-checks">' +
-        createAssetsForProfile().map(function (a) {
-          return '<label class="pp-check"><input type="checkbox" data-pp-asset="' + a.id + '"' + (w.assets[a.id] ? ' checked' : '') + '>' +
-            '<span><strong>' + esc(a.label) + '</strong>' + (a.hint ? '<small>' + esc(a.hint) + '</small>' : '') + '</span></label>';
-        }).join('') + '</div>';
+        field('Editor / Creative', '<input type="text" data-pp-w="team.editor" value="' + esc(w.team.editor) + '">') + '</div>' +
+        '<p class="pp-help pp-mt">Hubly prepares contracts, invoices, timeline, gallery, and marketing for this project automatically. Next you\u2019ll land on Media to drop photos.</p>';
     }
     return '<div class="pp-shell pp-wizard"><button type="button" class="pp-back" data-pp-act="wiz-cancel">← Projects</button>' +
       '<div class="pp-wizard-card"><div class="pp-steps">' +
-      [1, 2, 3, 4].map(function (n) {
-        var labels = ['Details', 'Client', 'Team', 'Assets'];
+      [1, 2, 3].map(function (n) {
+        var labels = ['Details', 'Client', 'Team'];
         return '<div class="pp-step' + (n === step ? ' on' : '') + (n < step ? ' done' : '') + '"><i>' + n + '</i><span>' + labels[n - 1] + '</span></div>';
       }).join('') + '</div>' +
-      '<h2 class="pp-wizard-title">' + (['', 'Project Details', 'Client', 'Team', 'Create Assets'][step] || '') + '</h2>' + body +
+      '<h2 class="pp-wizard-title">' + (['', 'Project Details', 'Client', 'Team'][step] || '') + '</h2>' + body +
       '<div class="pp-wizard-foot">' +
       (step > 1 ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="wiz-prev">Back</button>' : '<span></span>') +
-      (step < 4
+      (step < 3
         ? '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="wiz-next">Continue</button>'
         : '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="wiz-create">Create Project</button>') +
       '</div></div></div>';
@@ -1165,26 +1157,26 @@
     return '<div class="pp-kpi"><span>' + esc(label) + '</span><strong>' + esc(value) + '</strong></div>';
   }
   function renderCommand(root, st, p) {
-    var tab = st.tab || 'overview';
-    // Universal center-of-work IA — same for every industry.
+    var tab = st.tab || 'media';
+    // Media-first center of work. Connected Apps live under Operate → Apps.
     var tabs = [
       ['overview', 'Overview'],
       ['media', 'Media'],
-      ['creative', 'Creative'],
-      ['files', 'Files'],
+      ['client', 'Client'],
       ['deliverables', 'Deliverables'],
-      ['apps', 'Connected Apps'],
+      ['creative', 'Creative'],
       ['timeline', 'Timeline'],
+      ['activity', 'Activity'],
       ['assistant', 'AI Assistant']
     ];
     // Legacy tab ids still resolve in renderTab.
-    if (tab === 'lightroom' || tab === 'gallery' || tab === 'contracts' ||
-        tab === 'invoices' || tab === 'questionnaire' || tab === 'marketing' ||
-        tab === 'notes' || tab === 'activity') {
-      if (tab === 'lightroom') tab = 'apps';
+    if (tab === 'lightroom' || tab === 'apps' || tab === 'gallery' || tab === 'contracts' ||
+        tab === 'invoices' || tab === 'questionnaire' || tab === 'files' ||
+        tab === 'marketing' || tab === 'notes') {
+      if (tab === 'lightroom' || tab === 'apps') tab = 'creative';
       else if (tab === 'gallery') tab = 'media';
-      else if (tab === 'contracts' || tab === 'invoices' || tab === 'questionnaire') tab = 'files';
-      else if (tab === 'marketing' || tab === 'notes' || tab === 'activity') tab = 'assistant';
+      else if (tab === 'contracts' || tab === 'invoices' || tab === 'questionnaire' || tab === 'files') tab = 'deliverables';
+      else if (tab === 'marketing' || tab === 'notes') tab = 'assistant';
       st.tab = tab;
     }
     return '<div class="pp-shell pp-cc"><button type="button" class="pp-back" data-pp-act="back-dash">← All projects</button>' +
@@ -1195,13 +1187,12 @@
       '</select></div>' +
       '<p class="pp-eyebrow pp-hero-eyebrow">Projects</p>' +
       '<h1 class="pp-hero-title">' + esc(p.name) + '</h1>' +
-      '<p class="pp-hero-sub">' + esc(p.client_name || 'No client') + ' · ' + esc(p.project_type) + ' · ' + esc(formatDate(p.shoot_date)) +
-      (workspaceSummary(p) ? ' · ' + esc(workspaceSummary(p)) : '') + '</p>' +
+      '<p class="pp-hero-sub">' + esc(p.client_name || 'No client') + ' · ' + esc(p.project_type) + ' · ' + esc(formatDate(p.shoot_date)) + '</p>' +
       '<div class="pp-hero-kpis">' +
       kpi('Countdown', countdownLabel(p.shoot_date)) +
       kpi('Revenue', money(p.revenue_cents)) +
       kpi('Outstanding', money(p.outstanding_cents)) +
-      kpi('Media', String(p.photo_count || 0)) +
+      kpi('Media', String(p.photo_count || ((p.local_uploads || []).length) || 0)) +
       kpi('Progress', (p.editing_progress || 0) + '%') +
       '</div></div></header>' +
       '<nav class="pp-tabs" role="tablist">' + tabs.map(function (t) {
@@ -1212,12 +1203,14 @@
 
   function renderTab(p, tab) {
     if (tab === 'timeline') return renderTimelineTab(p);
-    if (tab === 'apps' || tab === 'lightroom') return renderConnectedAppsTab(p);
     if (tab === 'creative') return renderCreativeTab(p);
     if (tab === 'media' || tab === 'gallery') return renderMediaTab(p);
+    if (tab === 'client') return renderClientTab(p);
     if (tab === 'files' || tab === 'contracts' || tab === 'invoices' || tab === 'questionnaire') return renderFilesTab(p);
     if (tab === 'deliverables') return renderDeliverablesTab(p);
-    if (tab === 'assistant' || tab === 'marketing' || tab === 'notes' || tab === 'activity') return renderAiAssistantTab(p);
+    if (tab === 'activity') return renderActivityTab(p);
+    if (tab === 'assistant' || tab === 'marketing' || tab === 'notes') return renderAiAssistantTab(p);
+    if (tab === 'apps' || tab === 'lightroom') return renderCreativeTab(p);
     return renderOverviewTab(p);
   }
 
@@ -1235,28 +1228,23 @@
 
   function renderOverviewTab(p) {
     var profile = projectWorkspaceProfile();
-    var appsHtml = visibleConnectedProviders().map(function (prov) {
-      var w = getWorkspace(p, prov.id);
-      var on = w && (w.sync_state === 'linked' || w.sync_state === 'synced' || w.sync_state === 'pending');
-      return '<li class="' + (on ? 'on' : '') + '">' + (on ? '\u2713 ' : '') + esc(prov.label) + '</li>';
-    }).join('');
+    var uploads = (p.workspace && p.workspace.local_uploads) || p.local_uploads || [];
     var dels = (p.deliverables && p.deliverables.length) ? p.deliverables : profile.deliverables;
     return '<div class="pp-panel-grid">' +
       '<section class="pp-panel"><h3>Project</h3><dl class="pp-dl">' +
       '<div><dt>Location</dt><dd>' + esc(p.location || '—') + '</dd></div>' +
       '<div><dt>Type</dt><dd>' + esc(p.project_type) + '</dd></div>' +
-      '<div><dt>Lead</dt><dd>' + esc((p.team && p.team.lead) || '—') + '</dd></div>' +
-      '<div><dt>Connected Apps</dt><dd>' + esc(workspaceSummary(p) || 'None connected') + '</dd></div></dl>' +
+      '<div><dt>Lead</dt><dd>' + esc((p.team && p.team.lead) || '—') + '</dd></div></dl>' +
       '<p class="pp-muted">' + esc(p.notes || 'No notes yet.') + '</p></section>' +
       '<section class="pp-panel"><h3>Client</h3><dl class="pp-dl">' +
       '<div><dt>Name</dt><dd>' + esc(p.client_name || '—') + '</dd></div>' +
       '<div><dt>Email</dt><dd>' + esc(p.client_email || '—') + '</dd></div>' +
-      '<div><dt>Phone</dt><dd>' + esc(p.client_phone || '—') + '</dd></div></dl></section>' +
-      '<section class="pp-panel"><h3>Connected Apps</h3><ul class="pp-queue pp-apps-check">' +
-      (appsHtml || '<li class="pp-muted">No apps available</li>') + '</ul></section>' +
+      '<div><dt>Phone</dt><dd>' + esc(p.client_phone || '—') + '</dd></div></dl>' +
+      '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="tab" data-pp-tab="client">Open client</button></section>' +
       '<section class="pp-panel"><h3>Media</h3><dl class="pp-dl">' +
-      '<div><dt>Assets</dt><dd>' + esc(String(p.photo_count || 0)) + '</dd></div>' +
-      '<div><dt>Last sync</dt><dd>' + esc(formatRelative(p.last_sync_at)) + '</dd></div></dl></section>' +
+      '<div><dt>Assets</dt><dd>' + esc(String(p.photo_count || uploads.length || 0)) + '</dd></div>' +
+      '<div><dt>Last sync</dt><dd>' + esc(formatRelative(p.last_sync_at)) + '</dd></div></dl>' +
+      '<button type="button" class="pp-btn pp-btn-brand pp-btn-sm" data-pp-act="tab" data-pp-tab="media">Add media</button></section>' +
       '<section class="pp-panel"><h3>Deliverables</h3><ul class="pp-queue">' +
       dels.map(function (d) {
         return '<li><strong>' + esc(d.title) + '</strong><span>' + esc(d.status || 'pending') + '</span></li>';
@@ -1265,9 +1253,18 @@
       '<div class="pp-progress-meta"><span>' + (p.editing_progress || 0) + '% complete</span>' +
       '<input type="range" min="0" max="100" value="' + (p.editing_progress || 0) + '" data-pp-act="edit-progress" data-pp-id="' + esc(p.id) + '"></div></section>' +
       '<section class="pp-panel"><h3>Quick actions</h3><div class="pp-btn-row">' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="media">Media</button>' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="apps">Connected Apps</button>' +
-      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver</button></div></section></div>';
+      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="tab" data-pp-tab="media">Upload media</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="creative">Creative</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver</button></div></section></div>';
+  }
+
+  function renderClientTab(p) {
+    return '<section class="pp-panel pp-panel-wide"><h3>Client</h3><dl class="pp-dl">' +
+      '<div><dt>Name</dt><dd>' + esc(p.client_name || '—') + '</dd></div>' +
+      '<div><dt>Email</dt><dd>' + esc(p.client_email || '—') + '</dd></div>' +
+      '<div><dt>Phone</dt><dd>' + esc(p.client_phone || '—') + '</dd></div>' +
+      '<div><dt>Location</dt><dd>' + esc(p.location || '—') + '</dd></div></dl>' +
+      '<p class="pp-muted">' + esc(p.notes || 'Notes about this client appear here.') + '</p></section>';
   }
 
   function renderTimelineTab(p) {
@@ -1382,8 +1379,11 @@
     var apps = (HubCA && HubCA.creativeApps) ? HubCA.creativeApps() : [];
     var kinds = (HubCA && HubCA.marketingKinds) ? HubCA.marketingKinds() : [];
     var planned = ((p.workspace && p.workspace.creative_requests) || []).slice().reverse();
+    var lr = p.lightroom || {};
+    var lrWs = getWorkspace(p, 'adobe_lightroom');
+    var adobeConnected = lrWs && (lrWs.sync_state === 'linked' || lrWs.sync_state === 'synced');
 
-    // Dynamic actions from every creative Connected App (not Canva-hardcoded UI).
+    // Dynamic actions from every creative app (not Canva-hardcoded UI).
     var dynamicActions = [];
     apps.forEach(function (a) {
       (a.actions || []).forEach(function (act) {
@@ -1403,44 +1403,41 @@
       });
     }
 
-    var appCards = '<div class="pp-ws-grid">' +
-      (apps.length ? apps : [
-        { id: 'canva', name: 'Canva', role: 'Creative' },
-        { id: 'adobe_lightroom', name: 'Adobe Lightroom', role: 'Editing' },
-        { id: 'frame_io', name: 'Frame.io', role: 'Review' }
-      ]).filter(function (a) {
-        if (a.id === 'adobe_lightroom') return hasLightroomCapability();
-        if (a.id === 'frame_io') return isPhotoTrade();
-        return true;
-      }).map(function (a) {
-        var w = getWorkspace(p, a.id);
-        var connected = w && (w.sync_state === 'linked' || w.sync_state === 'synced' || w.sync_state === 'pending');
-        var connectAct = connectActionForProvider(a.id);
-        return '<div class="pp-ws-card' + (connected ? ' on' : '') + '">' +
-          '<div class="pp-mkt-top"><strong>' + esc(a.name) + '</strong><span class="pp-pill">' + (connected ? '\u2713 Connected' : '\u25cb Connect') + '</span></div>' +
-          '<p class="pp-muted">' + esc(a.role || 'Creative') + '</p>' +
-          (connectAct
-            ? '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="' + connectAct + '">' + (connected ? 'Manage' : 'Connect') + '</button>'
-            : '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" disabled>Soon</button>') +
-          '</div>';
-      }).join('') + '</div>';
-
     var actions = '<div class="pp-mkt-grid pp-mt">' +
       dynamicActions.map(function (k) {
         return '<div class="pp-mkt-card">' +
           '<div class="pp-mkt-top"><strong>' + esc(k.label) + '</strong><span class="pp-pill">' + esc(k.providerName || '') + '</span></div>' +
-          '<p class="pp-muted">Routed through Connected Apps capabilities.</p>' +
+          '<p class="pp-muted">Uses media from this project + your brand.</p>' +
           '<button type="button" class="pp-btn pp-btn-brand pp-btn-sm" data-pp-act="creative-create" data-pp-id="' + esc(p.id) +
           '" data-pp-kind="' + esc(k.id) + '" data-pp-provider="' + esc(k.providerId || 'canva') + '">Create</button>' +
           '</div>';
       }).join('') + '</div>';
 
-    return '<section class="pp-panel pp-panel-wide">' +
+    var lrBlock = hasLightroomCapability()
+      ? '<section class="pp-panel pp-panel-wide">' +
+        '<div class="pp-between"><h3>Adobe Lightroom</h3>' +
+        '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="open-apps">Connect in Apps</button></div>' +
+        '<p class="pp-muted">Connect Adobe under Apps, then create an album and sync for <strong>' + esc(p.name) + '</strong>.</p>' +
+        '<dl class="pp-dl">' +
+        '<div><dt>Album</dt><dd>' + esc(lr.album_name || (lrWs && lrWs.display_name) || '\u2014') + '</dd></div>' +
+        '<div><dt>Last sync</dt><dd>' + esc(formatRelative((lrWs && lrWs.last_sync_at) || p.last_sync_at)) + '</dd></div></dl>' +
+        '<div class="pp-btn-row">' +
+        '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">' +
+          ((lrWs && lrWs.external_id) ? 'Reuse Lightroom Album' : 'Create Lightroom Album') + '</button>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '"' +
+          (adobeConnected ? '' : ' disabled') + '>Sync Now</button></div></section>'
+      : '';
+
+    return lrBlock +
+      '<section class="pp-panel pp-panel-wide">' +
       '<h3>Creative</h3>' +
-      '<p class="pp-muted">Creative Engine is Hubly Core \u2014 every industry can use it. Providers plug in through Connected Apps.</p>' +
-      appCards +
+      '<p class="pp-muted">Media first \u2014 then design. Connect Canva and other creative tools under <strong>Apps</strong>.</p>' +
+      '<div class="pp-btn-row">' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="media">Open Media</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="open-apps">Open Apps</button>' +
+      '</div>' +
       '<h3 class="pp-mt">Create Marketing Asset</h3>' +
-      '<p class="pp-muted">Hubly sends project photos, brand colors, and copy to the creative Connected App \u2014 you never start from a blank canvas.</p>' +
+      '<p class="pp-muted">Hubly sends project photos, brand colors, and copy to Canva \u2014 you never start from a blank canvas.</p>' +
       actions +
       (planned.length
         ? '<h3 class="pp-mt">Planned on this project</h3><ul class="pp-queue">' + planned.map(function (r) {
@@ -1457,43 +1454,67 @@
     }).join('') + '</ul>';
   }
 
-  function renderMediaTab(p) {
-    var profile = projectWorkspaceProfile();
-    var g = p.gallery || {};
-    var uploads = (p.workspace && p.workspace.local_uploads) || p.local_uploads || [];
-    var mediaHead = '<section class="pp-panel pp-panel-wide"><div class="pp-between"><h3>Media</h3>' +
-      '<span class="pp-pill">' + esc(String(p.photo_count || uploads.length || 0)) + ' assets</span></div>' +
-      '<p class="pp-muted">Photos, video, and job documentation for this project. Connected Apps sync media back here.</p>' +
-      '<div class="pp-fav-grid">' + [1, 2, 3, 4].map(function () { return '<div class="pp-fav-ph"></div>'; }).join('') + '</div></section>';
+  function mediaKind(item) {
+    var t = String((item && (item.type || item.mime)) || '').toLowerCase();
+    var n = String((item && item.name) || '').toLowerCase();
+    if (t.indexOf('video') === 0 || /\.(mp4|mov|webm|m4v)$/.test(n)) return 'video';
+    if (t.indexOf('image') === 0 || /\.(jpe?g|png|gif|webp|heic|raw|dng|cr2|nef)$/.test(n)) return 'photo';
+    return 'doc';
+  }
 
-    var galleryBlock = '';
-    if (profile.features.galleries || isPhotoTrade()) {
-      galleryBlock = '<div class="pp-panel-grid">' +
-        '<section class="pp-panel"><h3>Galleries</h3>' +
-        '<p class="pp-muted">' + ((g.ai_favorites && g.ai_favorites.length) ? g.ai_favorites.length + ' favorites ready' : 'Client galleries and selects live here.') + '</p>' +
-        '<div class="pp-fav-grid">' + [1, 2, 3, 4].map(function () { return '<div class="pp-fav-ph"></div>'; }).join('') + '</div></section>' +
-        '<section class="pp-panel"><h3>Albums</h3><ul class="pp-queue">' + (g.albums || []).map(function (a) {
-          return '<li><strong>' + esc(a.name) + '</strong><span>' + esc(String(a.count || 0)) + ' items</span></li>';
-        }).join('') + '</ul></section>' +
-        '<section class="pp-panel"><h3>Client &amp; Private</h3><dl class="pp-dl">' +
-        '<div><dt>Client Gallery</dt><dd>' + (g.client_gallery ? 'On' : 'Off') + '</dd></div>' +
-        '<div><dt>Private Gallery</dt><dd>' + (g.private_gallery ? 'On' : 'Off') + '</dd></div>' +
-        '<div><dt>Downloads</dt><dd>' + (g.downloads ? 'Enabled' : 'Disabled') + '</dd></div>' +
-        '<div><dt>Delivery</dt><dd>' + esc(g.delivery_status || p.gallery_status) + '</dd></div></dl></section>' +
-        '<section class="pp-panel"><h3>Watermark</h3>' +
-        '<label class="pp-check"><input type="checkbox" data-pp-act="gal-wm" data-pp-id="' + esc(p.id) + '"' + ((g.watermark && g.watermark.enabled) ? ' checked' : '') + '><span>Enable watermark</span></label>' +
-        '<input class="pp-input" type="text" placeholder="Watermark text" value="' + esc((g.watermark && g.watermark.text) || '') + '" data-pp-act="gal-wm-text" data-pp-id="' + esc(p.id) + '">' +
-        '<div class="pp-btn-row pp-mt">' +
-        '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Publish</button>' +
-        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-share" data-pp-id="' + esc(p.id) + '">Share</button>' +
-        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-download" data-pp-id="' + esc(p.id) + '">Download</button></div></section></div>';
-    } else if (profile.features.beforeAfter) {
-      galleryBlock = '<section class="pp-panel pp-panel-wide"><h3>Before / After</h3>' +
-        '<p class="pp-muted">Capture job documentation and pair before/after sets for marketing and client delivery.</p>' +
-        '<div class="pp-fav-grid">' + [1, 2, 3, 4].map(function () { return '<div class="pp-fav-ph"></div>'; }).join('') + '</div></section>';
+  function renderMediaTile(item) {
+    var kind = mediaKind(item);
+    var preview = item.previewUrl || item.url || '';
+    var inner = preview && kind === 'photo'
+      ? '<img src="' + esc(preview) + '" alt="' + esc(item.name || 'Photo') + '" loading="lazy">'
+      : '<span class="pp-media-kind">' + (kind === 'video' ? 'Video' : kind === 'doc' ? 'File' : 'Photo') + '</span>';
+    return '<article class="pp-media-tile kind-' + kind + '" title="' + esc(item.name || '') + '">' +
+      '<div class="pp-media-thumb">' + inner + '</div>' +
+      '<p class="pp-media-name">' + esc(item.name || 'Untitled') + '</p></article>';
+  }
+
+  function renderMediaTab(p) {
+    var uploads = ((p.workspace && p.workspace.local_uploads) || p.local_uploads || []).slice();
+    var photos = uploads.filter(function (u) { return mediaKind(u) === 'photo'; });
+    var videos = uploads.filter(function (u) { return mediaKind(u) === 'video'; });
+    var docs = uploads.filter(function (u) { return mediaKind(u) === 'doc'; });
+    var total = uploads.length || p.photo_count || 0;
+
+    function section(title, items, empty) {
+      return '<section class="pp-media-section">' +
+        '<div class="pp-between"><h3>' + esc(title) + '</h3><span class="pp-pill">' + esc(String(items.length)) + '</span></div>' +
+        (items.length
+          ? '<div class="pp-media-grid">' + items.map(renderMediaTile).join('') + '</div>'
+          : '<p class="pp-muted">' + esc(empty) + '</p>') +
+        '</section>';
     }
 
-    return mediaHead + galleryBlock;
+    return '<section class="pp-panel pp-panel-wide pp-media-hero">' +
+      '<div class="pp-between">' +
+        '<div><h3>Media</h3><p class="pp-muted">Drop photos and videos for this job. Everything else — Lightroom, galleries, Canva — builds from here.</p></div>' +
+        '<span class="pp-pill">' + esc(String(total)) + ' assets</span>' +
+      '</div>' +
+      '<div class="pp-btn-row pp-mt">' +
+        '<label class="pp-btn pp-btn-brand pp-btn-lg pp-file-btn">+ Upload Photos' +
+          '<input type="file" accept="image/*,.heic,.raw,.dng,.cr2,.nef" multiple data-pp-media-files data-pp-id="' + esc(p.id) + '" data-pp-kind="photo" hidden></label>' +
+        '<label class="pp-btn pp-btn-ghost pp-btn-lg pp-file-btn">+ Upload Videos' +
+          '<input type="file" accept="video/*" multiple data-pp-media-files data-pp-id="' + esc(p.id) + '" data-pp-kind="video" hidden></label>' +
+        '<label class="pp-btn pp-btn-ghost pp-file-btn">+ Files' +
+          '<input type="file" accept="image/*,video/*,.pdf,.doc,.docx" multiple capture="environment" data-pp-media-files data-pp-id="' + esc(p.id) + '" data-pp-kind="any" hidden></label>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="media-import-drive" data-pp-id="' + esc(p.id) + '">Import from Google Drive</button>' +
+      '</div>' +
+      '<div class="pp-dropzone' + (total ? '' : ' is-empty') + '" data-pp-dropzone data-pp-id="' + esc(p.id) + '">' +
+        '<strong>Drag &amp; drop here</strong>' +
+        '<span>Photos, videos, or documents — or use the buttons above.</span>' +
+      '</div></section>' +
+      section('Photos', photos, 'No photos yet — upload or drag them in.') +
+      section('Videos', videos, 'No videos yet.') +
+      section('Documents', docs, 'No documents yet.') +
+      (isPhotoTrade() || projectWorkspaceProfile().features.galleries
+        ? '<section class="pp-panel pp-panel-wide"><div class="pp-between"><h3>Galleries &amp; delivery</h3>' +
+          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Publish gallery</button></div>' +
+          '<p class="pp-muted">After media is in, Hubly can build client galleries and sync to Lightroom from Apps.</p></section>'
+        : '');
   }
 
   function renderFilesTab(p) {
@@ -1506,14 +1527,14 @@
   function renderAiAssistantTab(p) {
     return '<div class="pp-panel-grid">' +
       '<section class="pp-panel pp-panel-wide"><h3>AI Assistant</h3>' +
-      '<p class="pp-muted">Ask Hubly to draft updates, plan deliverables, or kick off creative from this project.</p>' +
+      '<p class="pp-muted">Ask Hubly to organize media, draft updates, or kick off creative from this project.</p>' +
       '<div class="pp-btn-row">' +
-      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="tab" data-pp-tab="creative">Create marketing asset</button>' +
+      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="tab" data-pp-tab="media">Start with media</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="creative">Create marketing asset</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Prepare delivery</button>' +
       '</div></section>' +
       renderMarketingTab(p) +
       renderNotesTab(p) +
-      renderActivityTab(p) +
       '</div>';
   }
 
@@ -1556,7 +1577,7 @@
     var editingDone = (p.editing_progress || 0) >= 100 || p.status === 'Proofing' || p.status === 'Delivered';
     return '<section class="pp-panel pp-panel-wide"><h3>Marketing</h3>' +
       '<p class="pp-muted">' + (editingDone
-        ? 'Media looks ready — these workflows can fire from Connected Apps.'
+        ? 'Media looks ready — kick off campaigns from Creative or Apps.'
         : 'When media is ready on this project, Hubly can generate campaigns automatically.') + '</p>' +
       '<div class="pp-mkt-grid">' + (p.marketing || []).map(function (m) {
         return '<div class="pp-mkt-card"><div class="pp-mkt-top"><strong>' + esc(m.title) + '</strong><span class="pp-pill">' + esc(m.status) + '</span></div>' +
@@ -1721,6 +1742,28 @@
       root.addEventListener('click', onClick);
       root.addEventListener('change', onChange);
       root.addEventListener('input', onInput);
+      root.addEventListener('dragover', function (e) {
+        var zone = e.target.closest('[data-pp-dropzone]');
+        if (!zone) return;
+        e.preventDefault();
+        zone.classList.add('is-drag');
+      });
+      root.addEventListener('dragleave', function (e) {
+        var zone = e.target.closest('[data-pp-dropzone]');
+        if (!zone) return;
+        zone.classList.remove('is-drag');
+      });
+      root.addEventListener('drop', function (e) {
+        var zone = e.target.closest('[data-pp-dropzone]');
+        if (!zone) return;
+        e.preventDefault();
+        zone.classList.remove('is-drag');
+        var id = zone.getAttribute('data-pp-id');
+        var files = e.dataTransfer && e.dataTransfer.files
+          ? Array.prototype.slice.call(e.dataTransfer.files)
+          : [];
+        ingestMediaFiles(id, files, 'any');
+      });
     }
   }
 
@@ -1765,8 +1808,8 @@
         st.quickOpen = false;
         st.view = 'command';
         st.projectId = createdQ.id;
-        st.tab = 'overview';
-        toast('Project saved');
+        st.tab = 'media';
+        toast('Project saved — add more media anytime');
         return renderPhotoProjects();
       } catch (err) {
         toast((err && err.message) || 'Could not create project');
@@ -1789,15 +1832,15 @@
       if ((st.wizardStep || 1) === 1 && !(st.wizard && String(st.wizard.name || '').trim())) {
         toast('Add a project name'); return;
       }
-      st.wizardStep = Math.min(4, (st.wizardStep || 1) + 1);
+      st.wizardStep = Math.min(3, (st.wizardStep || 1) + 1);
       return renderPhotoProjects();
     }
     if (act === 'wiz-create') {
       if (!ensureBusinessForSave()) return;
       try {
         var created = await persistProject(buildProjectFromWizard(st.wizard || blankWizard()));
-        st.view = 'command'; st.projectId = created.id; st.tab = 'overview'; st.wizard = null;
-        toast('Project created');
+        st.view = 'command'; st.projectId = created.id; st.tab = 'media'; st.wizard = null;
+        toast('Project created — drop your media here');
         return renderPhotoProjects();
       } catch (err) {
         toast((err && err.message) || 'Could not create project');
@@ -1805,7 +1848,7 @@
       }
     }
     if (act === 'open' && id) {
-      st.view = 'command'; st.projectId = id; st.tab = 'overview'; persistUiPrefs(st);
+      st.view = 'command'; st.projectId = id; st.tab = 'media'; persistUiPrefs(st);
       return renderPhotoProjects();
     }
     if (act === 'tab') {
@@ -1866,7 +1909,7 @@
     if (act === 'adobe-connect') {
       // Adobe Lightroom sign-in — NOT Hubly login. Owner is already in Hubly.
       if (!hasLightroomCapability()) {
-        toast('Lightroom unlocks for photography businesses. Open Connected Apps to connect Canva instead.');
+        toast('Lightroom unlocks for photography businesses. Open Apps to connect Canva instead.');
         return;
       }
       var svcC = global.AdobeLightroomService;
@@ -2116,6 +2159,82 @@
       (p.marketing || []).forEach(function (m) { if (m.channel === ch) m.status = 'ready'; });
       return saveAndRefresh(p, st);
     }
+    if (act === 'media-import-drive' && p) {
+      toast('Google Drive import — connect Drive from Apps, then import into this project.');
+      return openAppsView();
+    }
+    if (act === 'open-apps') {
+      return openAppsView();
+    }
+  }
+
+  function openAppsView() {
+    try {
+      var appsNav = document.querySelector('.ni[data-v="apps"]');
+      if (appsNav && typeof global.switchV === 'function') {
+        global.switchV(appsNav);
+        return;
+      }
+    } catch (e) {}
+    toast('Open Apps from the sidebar to connect tools.');
+  }
+
+  async function ingestMediaFiles(projectId, fileList, kindHint) {
+    var root = el('jos-photo-projects-root');
+    if (!root) return;
+    var st = getState(root);
+    var p = findProject(projectId);
+    if (!p || !fileList || !fileList.length) return;
+    if (!ensureBusinessForSave()) return;
+
+    p.workspace = p.workspace || defaultWorkspace();
+    p.local_uploads = p.local_uploads || p.workspace.local_uploads || [];
+    var db = await dbClient();
+    var bid = businessId() || 'anon';
+    var added = 0;
+
+    for (var i = 0; i < fileList.length; i++) {
+      var file = fileList[i];
+      if (!file) continue;
+      var previewUrl = '';
+      try {
+        if (file.type && file.type.indexOf('image') === 0) previewUrl = URL.createObjectURL(file);
+      } catch (e) {}
+      var item = {
+        id: 'up_' + Date.now().toString(36) + '_' + i,
+        name: file.name || ('file-' + (i + 1)),
+        size: file.size || 0,
+        type: file.type || kindHint || 'application/octet-stream',
+        previewUrl: previewUrl,
+        url: '',
+        added_at: new Date().toISOString()
+      };
+      // Best-effort cloud store — metadata always saves even if bucket is missing.
+      if (db && db.storage && file) {
+        try {
+          var path = bid + '/' + p.id + '/' + Date.now() + '_' + String(file.name || 'file').replace(/[^\w.\-]+/g, '_');
+          var up = await db.storage.from('brand-assets').upload(path, file, {
+            upsert: false,
+            contentType: file.type || undefined
+          });
+          if (!up.error) {
+            var pub = db.storage.from('brand-assets').getPublicUrl(path);
+            item.url = (pub && pub.data && pub.data.publicUrl) || '';
+            if (item.url) item.previewUrl = item.url;
+          }
+        } catch (eUp) {}
+      }
+      p.local_uploads.push(item);
+      added += 1;
+    }
+    p.workspace.local_uploads = p.local_uploads;
+    p.photo_count = p.local_uploads.length;
+    addActivity(p, 'Media added', added + ' file' + (added === 1 ? '' : 's'));
+    toast(added + ' file' + (added === 1 ? '' : 's') + ' added to Media');
+    st.view = 'command';
+    st.projectId = p.id;
+    st.tab = 'media';
+    return saveAndRefresh(p, st);
   }
 
   function onChange(e) {
@@ -2143,6 +2262,12 @@
       st.quick = st.quick || { name: '', files: [] };
       st.quick.files = Array.prototype.slice.call(t.files || []);
       return renderPhotoProjects();
+    }
+    if (t.hasAttribute('data-pp-media-files')) {
+      var mediaId = t.getAttribute('data-pp-id');
+      var files = Array.prototype.slice.call(t.files || []);
+      t.value = '';
+      return ingestMediaFiles(mediaId, files, t.getAttribute('data-pp-kind') || 'any');
     }
     if (t.getAttribute('data-pp-act') === 'set-status') {
       p = findProject(t.getAttribute('data-pp-id'));
@@ -2195,7 +2320,7 @@
       if (p) {
         p.editing_progress = Number(t.value) || 0;
         if (p.editing_progress >= 100) {
-          addActivity(p, 'Editing finished', 'Connected Apps ready for gallery → creative → marketing');
+          addActivity(p, 'Editing finished', 'Media ready for gallery → creative → marketing');
         }
         return saveAndRefresh(p, st);
       }

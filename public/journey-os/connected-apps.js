@@ -43,6 +43,72 @@
     return Object.keys(map).map(function (k) { return map[k]; });
   }
 
+  function appScope(app) {
+    if (!app) return 'business';
+    if (app.scope === 'project' || app.scope === 'business') return app.scope;
+    // Legacy fallback by id when catalog predates scope.
+    if (['adobe_lightroom', 'canva', 'frame_io', 'dropbox', 'google_drive', 'capture_one'].indexOf(app.id) !== -1) {
+      return 'project';
+    }
+    return 'business';
+  }
+
+  function businessApps() {
+    return CATALOG.filter(function (a) { return appScope(a) === 'business'; });
+  }
+
+  function projectApps() {
+    return CATALOG.filter(function (a) { return appScope(a) === 'project'; });
+  }
+
+  function tradeIdHint() {
+    try {
+      var biz = global.currentBusiness || {};
+      var S = global.S || {};
+      return String(S.businessType || biz.business_type || biz.type || '').toLowerCase();
+    } catch (_) {
+      return '';
+    }
+  }
+
+  /** Only show project/creative apps that fit this trade (Lightroom for photo, etc.). */
+  function isRelevantForTrade(app, tradeId) {
+    if (!app) return false;
+    var tid = String(tradeId || tradeIdHint() || '').toLowerCase();
+    var photo = tid === 'photography' || tid.indexOf('photo') >= 0 || tid === 'weddings' ||
+      tid === 'wedding' || tid.indexOf('video') >= 0;
+    try {
+      if (typeof global.isPhotoLedTrade === 'function' && global.isPhotoLedTrade()) photo = true;
+    } catch (_) {}
+    if (app.id === 'adobe_lightroom') {
+      try {
+        if (typeof global.hasBusinessCapability === 'function' && global.hasBusinessCapability('lightroom')) return true;
+      } catch (_) {}
+      return photo;
+    }
+    if (Array.isArray(app.trades) && app.trades.length) {
+      if (!tid && !photo) {
+        // Unknown trade — show universal project apps only (no trades list = universal).
+        return false;
+      }
+      return app.trades.some(function (t) {
+        var x = String(t || '').toLowerCase();
+        return tid === x || tid.indexOf(x) >= 0 || (photo && (x.indexOf('photo') >= 0 || x === 'wedding' || x === 'weddings' || x === 'video'));
+      });
+    }
+    return true;
+  }
+
+  function relevantApps(tradeId) {
+    return CATALOG.filter(function (a) {
+      if (appScope(a) === 'business') {
+        // Hide "soon" business apps from the default owner surface.
+        return !a.soon;
+      }
+      return isRelevantForTrade(a, tradeId);
+    });
+  }
+
   function marketingKinds() { return MARKETING_KINDS.slice(); }
 
   function prefsKey(businessId) {
@@ -157,6 +223,11 @@
     get: get,
     byCapability: byCapability,
     creativeApps: creativeApps,
+    businessApps: businessApps,
+    projectApps: projectApps,
+    appScope: appScope,
+    isRelevantForTrade: isRelevantForTrade,
+    relevantApps: relevantApps,
     marketingKinds: marketingKinds,
     createMarketingAsset: createMarketingAsset,
     catalog: CATALOG,

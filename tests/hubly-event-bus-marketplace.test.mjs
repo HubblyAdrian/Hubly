@@ -53,7 +53,7 @@ describe('Hubly Event Bus + Apps Marketplace', () => {
     assert.match(client, /Execution Plan/);
     assert.match(html, /hubly-intent-engine\.js/);
     assert.match(journey, /HublyIntentEngine/);
-    assert.match(apps, /Intent Engine/);
+    assert.match(apps, /Intent Engine|Intent pipeline/);
     assert.match(apps, /Execution Plan/);
   });
 
@@ -100,11 +100,11 @@ describe('Hubly Event Bus + Apps Marketplace', () => {
     assert.equal(existsSync(join(root, 'public/journey-os/app-marketplace.css')), true);
     const js = readFileSync(join(root, 'public/journey-os/app-marketplace.js'), 'utf8');
     const html = readFileSync(join(root, 'public/hubly.html'), 'utf8');
-    assert.match(js, /Hubly Marketplace/);
-    assert.match(js, /Installed/);
-    assert.match(js, /Available/);
-    assert.match(js, /Capabilities/);
-    assert.match(js, /HublyActionEngine/);
+    assert.match(js, /HublyAppMarketplace/);
+    assert.match(js, /Business apps/);
+    assert.match(js, /Creative & project apps/);
+    assert.match(js, /Connect the tools you already use/);
+    assert.match(js, /HublyActionEngine|HublyIntentEngine/);
     assert.match(html, /data-v="apps"/);
     assert.match(html, /jos-apps-root/);
     assert.match(html, /app-marketplace\.js/);
