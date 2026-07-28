@@ -13860,6 +13860,17 @@
     var drawer = drawerOpen && selected ? renderJobDrawer(root, selected, workspaceTab) : '';
     var statusMenu = '<div class="jos-jobs-pop" id="jos-jobs-status-pop" hidden></div>';
     var rowMenu = '<div class="jos-jobs-pop" id="jos-jobs-row-pop" hidden></div>';
+    var gcalCreatePop =
+      '<div class="jos-gcal-create-pop" id="jos-gcal-create-pop" hidden role="dialog" aria-label="Create calendar event">' +
+      '<p class="jos-gcal-create-kicker">New on calendar</p>' +
+      '<p class="jos-gcal-create-range" id="jos-gcal-create-range"></p>' +
+      '<label for="jos-gcal-create-title">Name</label>' +
+      '<input type="text" id="jos-gcal-create-title" placeholder="Customer, job, or block title" autocomplete="off">' +
+      '<div class="jos-btn-row">' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="jobs-gcal-create-job">Create job</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-gcal-create-block">Block time</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-gcal-create-cancel">Cancel</button>' +
+      '</div></div>';
     var mainView = root._josJobsMainView === 'calendar' ? 'calendar' : 'list';
     var calView = root._josCalView || 'week';
 
@@ -13868,7 +13879,7 @@
       mainBody =
         '<section class="jos-jobs-cal-full">' +
         '<div class="jos-between jos-jobs-cal-toolbar">' +
-        '<div><h2 class="jos-jobs-cal-title">' + esc((calView.charAt(0).toUpperCase() + calView.slice(1)) + ' view') + '</h2><p class="jos-muted">Drag empty time to create · click a job to edit details.</p></div>' +
+        '<div><h2 class="jos-jobs-cal-title">' + esc((calView.charAt(0).toUpperCase() + calView.slice(1)) + ' view') + '</h2><p class="jos-muted">Drag empty time to create · name it as a job or block · drag the bottom edge to resize · click a job to edit.</p></div>' +
         '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-list-view">← Back to Jobs list</button>' +
         '</div>' +
         renderJobsCalendar(root, calView, calAnchor, selectedId) +
@@ -13995,7 +14006,7 @@
       '</aside>' +
       '</div>' +
       '<div class="jos-jobs-drawer-backdrop' + (drawerOpen ? ' open' : '') + '" data-jos-act="jobs-drawer-close"></div>' +
-      drawer + statusMenu + rowMenu +
+      drawer + statusMenu + rowMenu + gcalCreatePop +
       '<button type="button" class="jos-jobs-fab" data-jos-act="jobs-create" aria-label="New Job">+</button>' +
       '</div>';
 
@@ -14054,6 +14065,13 @@
       }
       var calPill = e.target.closest('.jos-cal-pill[data-jos-job-id], .jos-cal-event[data-jos-job-id], .jos-gcal-event[data-jos-job-id]');
       if (calPill) {
+        if (e.target.closest('[data-jos-gcal-resize]')) return;
+        if (root._josGcalSuppressClick) {
+          root._josGcalSuppressClick = false;
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
         root._josJobId = calPill.getAttribute('data-jos-job-id');
         root._josDrawerOpen = true;
         root._josJobWorkspace = 'overview';
@@ -14099,8 +14117,16 @@
       }
     });
     root.addEventListener('dragstart', function (e) {
+      if (root._josGcalDrag) {
+        e.preventDefault();
+        return;
+      }
       var pill = e.target.closest('[data-jos-job-id][draggable]');
       if (!pill) return;
+      if (e.target.closest('[data-jos-gcal-resize]')) {
+        e.preventDefault();
+        return;
+      }
       root._josDragJobId = pill.getAttribute('data-jos-job-id');
       try { e.dataTransfer.setData('text/plain', root._josDragJobId); e.dataTransfer.effectAllowed = 'move'; } catch (err) {}
     });
@@ -14138,6 +14164,173 @@
       toast('Rescheduled to ' + newDate + ' · ' + newTime);
       renderJobs();
     });
+
+    /* Google Calendar–style drag-to-create + edge resize */
+    function endGcalPointer(e, commit) {
+      var drag = root._josGcalDrag;
+      if (!drag) return;
+      try { if (drag.pointerId != null) root.releasePointerCapture(drag.pointerId); } catch (errCap) {}
+      root._josGcalDrag = null;
+      if (drag.board) drag.board.classList.remove('is-dragging');
+      if (drag.col) drag.col.classList.remove('is-dragging');
+      if (!commit) {
+        if (drag.draftEl) drag.draftEl.remove();
+        return;
+      }
+      if (drag.mode === 'resize') {
+        var rj = findJob(drag.jobId);
+        if (rj && Number.isFinite(drag.endMin)) {
+          var newDur = Math.max(15, drag.endMin - parseJobMinutes(rj.time));
+          if (newDur !== (rj.durationMin || 0)) {
+            rj.durationMin = newDur;
+            pushJobTimeline(rj, 'note', 'Duration resized to ' + newDur + 'm');
+            toast('Resized to ' + Math.round(newDur / 60 * 10) / 10 + 'h');
+            root._josGcalSuppressClick = true;
+            renderJobs();
+          } else if (drag.draftEl) {
+            drag.draftEl.remove();
+            renderJobs();
+          }
+        }
+        return;
+      }
+      var a = Math.min(drag.startMin, drag.curMin);
+      var b = Math.max(drag.startMin, drag.curMin);
+      var moved = Math.abs((e && e.clientY || 0) - drag.originY) >= 8 || (b - a) >= 30;
+      if (!moved) {
+        /* Treat as click: open create at that hour for 1h */
+        b = a + 60;
+      } else if (b - a < 15) {
+        b = a + 15;
+      }
+      if (drag.draftEl) drag.draftEl.remove();
+      root._josGcalSuppressClick = true;
+      openGcalCreatePop(root, {
+        date: drag.date,
+        startMin: a,
+        endMin: b,
+        clientX: e && e.clientX,
+        clientY: e && e.clientY
+      });
+    }
+
+    root.addEventListener('pointerdown', function (e) {
+      if (e.button != null && e.button !== 0) return;
+      if (e.target.closest('#jos-gcal-create-pop')) return;
+      var resizeHandle = e.target.closest('[data-jos-gcal-resize]');
+      var eventEl = e.target.closest('.jos-gcal-event[data-jos-job-id]');
+      var col = e.target.closest('.jos-gcal-col');
+      var board = e.target.closest('.jos-gcal-board');
+      if (!board || !col) return;
+
+      if (resizeHandle && eventEl) {
+        e.preventDefault();
+        e.stopPropagation();
+        var jobId = eventEl.getAttribute('data-jos-job-id');
+        var job = findJob(jobId);
+        if (!job || job.isGoogle) return;
+        var startMin = parseJobMinutes(job.time);
+        var endMin = startMin + Math.max(15, Number(job.durationMin) || 60);
+        root._josGcalDrag = {
+          mode: 'resize',
+          jobId: jobId,
+          date: job.date,
+          startMin: startMin,
+          curMin: endMin,
+          endMin: endMin,
+          board: board,
+          col: col,
+          originY: e.clientY,
+          pointerId: e.pointerId,
+          draftEl: null
+        };
+        board.classList.add('is-dragging');
+        col.classList.add('is-dragging');
+        try { root.setPointerCapture(e.pointerId); } catch (errSet) {}
+        return;
+      }
+
+      if (eventEl) return; /* moving existing events stays HTML5 drag */
+      if (e.target.closest('.jos-gcal-dow') || e.target.closest('[data-jos-cal-view]') || e.target.closest('[data-jos-act]')) {
+        /* Allow + button (jobs-gcal-new) to use its own act — but pointer drag on slot should still work.
+           If they clicked the + button specifically, don't start a drag. */
+        if (e.target.closest('.jos-gcal-slot-add') || e.target.closest('[data-jos-act]')) return;
+      }
+
+      e.preventDefault();
+      var date = col.getAttribute('data-jos-drop-date') || root._josCalAnchor || todayStr();
+      var startMin = gcalYToMinutes(board, col, e.clientY);
+      var draft = document.createElement('div');
+      draft.className = 'jos-gcal-draft';
+      draft.setAttribute('aria-hidden', 'true');
+      col.appendChild(draft);
+      gcalPaintDraft(draft, board, startMin, startMin + 60, 'New');
+      root._josGcalDrag = {
+        mode: 'create',
+        date: date,
+        startMin: startMin,
+        curMin: startMin + 60,
+        board: board,
+        col: col,
+        draftEl: draft,
+        originY: e.clientY,
+        pointerId: e.pointerId
+      };
+      board.classList.add('is-dragging');
+      col.classList.add('is-dragging');
+      try { root.setPointerCapture(e.pointerId); } catch (errSet2) {}
+    });
+
+    root.addEventListener('pointermove', function (e) {
+      var drag = root._josGcalDrag;
+      if (!drag || !drag.board || !drag.col) return;
+      var mins = gcalYToMinutes(drag.board, drag.col, e.clientY);
+      if (drag.mode === 'resize') {
+        drag.curMin = Math.max(drag.startMin + 15, mins);
+        drag.endMin = drag.curMin;
+        var ev = null;
+        try {
+          if (typeof CSS !== 'undefined' && CSS.escape) {
+            ev = drag.col.querySelector('.jos-gcal-event[data-jos-job-id="' + CSS.escape(String(drag.jobId)) + '"]');
+          }
+        } catch (errEsc) {}
+        if (!ev) {
+          ev = Array.prototype.find.call(drag.col.querySelectorAll('.jos-gcal-event[data-jos-job-id]'), function (n) {
+            return String(n.getAttribute('data-jos-job-id')) === String(drag.jobId);
+          });
+        }
+        if (ev) {
+          var meta = gcalBoardMeta(drag.board);
+          var top = Math.max(0, (drag.startMin - meta.startMin) * (meta.pxPerHour / 60));
+          var height = Math.max(22, (drag.curMin - drag.startMin) * (meta.pxPerHour / 60) - 2);
+          ev.style.top = top + 'px';
+          ev.style.height = height + 'px';
+        }
+        return;
+      }
+      drag.curMin = mins;
+      if (drag.draftEl) {
+        gcalPaintDraft(drag.draftEl, drag.board, drag.startMin, drag.curMin, 'New');
+      }
+    });
+
+    root.addEventListener('pointerup', function (e) { endGcalPointer(e, true); });
+    root.addEventListener('pointercancel', function (e) { endGcalPointer(e, false); });
+
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        if (root._josGcalDrag) endGcalPointer(e, false);
+        closeGcalCreatePop();
+      }
+    });
+
+    document.addEventListener('click', function (e) {
+      var pop = el('jos-gcal-create-pop');
+      if (!pop || pop.hidden) return;
+      if (e.target.closest('#jos-gcal-create-pop') || e.target.closest('.jos-gcal-board')) return;
+      closeGcalCreatePop();
+    });
+
     root.addEventListener('input', function (e) {
       if (e.target && e.target.id === 'jos-jobs-search') {
         root._josJobsQ = e.target.value;
@@ -14387,6 +14580,135 @@
     var t = (j.time || '').replace(' AM', 'a').replace(' PM', 'p');
     return t + (j.service ? ' · ' + j.service : '');
   }
+  function snapJobMinutes(mins, step) {
+    step = step || 15;
+    var n = Math.round(Number(mins) / step) * step;
+    return Math.max(0, Math.min(24 * 60 - step, n));
+  }
+  function gcalBoardMeta(board) {
+    var startH = parseInt(board && board.getAttribute('data-jos-gcal-start'), 10);
+    var px = parseFloat(board && board.getAttribute('data-jos-gcal-px'));
+    var endH = parseInt(board && board.getAttribute('data-jos-gcal-end'), 10);
+    if (!Number.isFinite(startH)) startH = 6;
+    if (!Number.isFinite(px) || px <= 0) px = 56;
+    if (!Number.isFinite(endH)) endH = 21;
+    return { startH: startH, endH: endH, pxPerHour: px, startMin: startH * 60, endMin: endH * 60 };
+  }
+  function gcalYToMinutes(board, col, clientY) {
+    var meta = gcalBoardMeta(board);
+    var rect = col.getBoundingClientRect();
+    var y = clientY - rect.top;
+    var mins = meta.startMin + (y / meta.pxPerHour) * 60;
+    return snapJobMinutes(Math.max(meta.startMin, Math.min(meta.endMin, mins)));
+  }
+  function gcalPaintDraft(draftEl, board, startMin, endMin, label) {
+    if (!draftEl || !board) return;
+    var meta = gcalBoardMeta(board);
+    var a = Math.min(startMin, endMin);
+    var b = Math.max(startMin, endMin);
+    if (b - a < 15) b = a + 15;
+    var top = Math.max(0, (a - meta.startMin) * (meta.pxPerHour / 60));
+    var height = Math.max(22, (b - a) * (meta.pxPerHour / 60) - 2);
+    draftEl.style.top = top + 'px';
+    draftEl.style.height = height + 'px';
+    draftEl.innerHTML = '<strong>' + esc(label || 'New') + '</strong><span>' +
+      esc(formatJobMinutes(a) + ' – ' + formatJobMinutes(b)) + '</span>';
+  }
+  function closeGcalCreatePop() {
+    var pop = el('jos-gcal-create-pop');
+    if (pop) pop.hidden = true;
+    var root = el('jos-jobs-root');
+    if (root) root._josGcalPending = null;
+    document.querySelectorAll('.jos-gcal-draft').forEach(function (n) { n.remove(); });
+    document.querySelectorAll('.jos-gcal-board.is-dragging, .jos-gcal-col.is-dragging').forEach(function (n) {
+      n.classList.remove('is-dragging');
+    });
+  }
+  function openGcalCreatePop(root, opts) {
+    opts = opts || {};
+    var startMin = Math.min(opts.startMin, opts.endMin);
+    var endMin = Math.max(opts.startMin, opts.endMin);
+    if (endMin - startMin < 15) endMin = startMin + 60;
+    root._josGcalPending = {
+      date: opts.date || root._josCalAnchor || todayStr(),
+      startMin: startMin,
+      endMin: endMin
+    };
+    root._josCalAnchor = root._josGcalPending.date;
+    var pop = el('jos-gcal-create-pop');
+    var rangeEl = el('jos-gcal-create-range');
+    var titleEl = el('jos-gcal-create-title');
+    if (!pop) return;
+    if (rangeEl) {
+      rangeEl.textContent = root._josGcalPending.date + ' · ' +
+        formatJobMinutes(startMin) + ' – ' + formatJobMinutes(endMin) +
+        ' (' + Math.round((endMin - startMin) / 60 * 10) / 10 + 'h)';
+    }
+    if (titleEl) {
+      titleEl.value = opts.title || '';
+      titleEl.placeholder = opts.placeholder || 'Customer, job, or block title';
+      titleEl.onkeydown = function (ev) {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          var btn = pop.querySelector('[data-jos-act="jobs-gcal-create-job"]');
+          if (btn) btn.click();
+        }
+      };
+    }
+    pop.hidden = false;
+    var left = Math.min(Math.max(12, (opts.clientX || (window.innerWidth / 2)) - 140), window.innerWidth - 332);
+    var top = Math.min(Math.max(12, (opts.clientY || 120) + 12), window.innerHeight - 220);
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    setTimeout(function () { if (titleEl) titleEl.focus(); }, 30);
+  }
+  function createJobAtRange(root, date, startMin, endMin, title) {
+    ensureJobsOsState();
+    var time = formatJobMinutes(startMin);
+    var durationMin = Math.max(15, endMin - startMin);
+    var bookCheck = isBookableSlot(date, time);
+    if (!bookCheck.ok) {
+      toast(bookCheck.reason || 'Outside business hours');
+      if (!window.confirm((bookCheck.reason || 'Outside hours') + '\n\nCreate job anyway?')) return null;
+    }
+    var name = String(title || '').trim() || 'New Customer';
+    var nj = {
+      id: 'JOB-' + String(1000 + jobsAll().length + 1),
+      customer: name,
+      email: '',
+      phone: '',
+      vehicle: '',
+      service: (S().services && S().services[0] && S().services[0].name) || 'Detail',
+      amount: 180,
+      date: date,
+      time: time,
+      status: 'scheduled',
+      address: S().city || 'San Diego, CA',
+      assignedTo: (jobsTeam()[0] && jobsTeam()[0].name) || 'Unassigned',
+      depositStatus: 'none',
+      deposit: 0,
+      durationMin: durationMin,
+      tags: ['manual'],
+      checklist: DEFAULT_CHECKLIST.map(function (label, i) { return { id: 'cl_new_' + i, label: label, done: false }; }),
+      photos: { before: [], after: [] },
+      internalNotes: [],
+      customerNotes: [],
+      voiceNotes: [],
+      products: [],
+      timeline: [{ type: 'created', label: 'Job Created', at: new Date().toLocaleString() }, { type: 'scheduled', label: 'Scheduled ' + time + ' · ' + durationMin + 'm', at: new Date().toLocaleString() }],
+      routeOrder: jobsAll().length + 1
+    };
+    S().jobs.unshift(nj);
+    root._josJobId = nj.id;
+    root._josDrawerOpen = true;
+    root._josJobWorkspace = 'overview';
+    root._josJobsListView = 'all';
+    root._josJobsMainView = 'calendar';
+    pushJobNotif('upcoming', 'New job created');
+    toast('Job created · ' + formatJobMinutes(startMin) + ' – ' + formatJobMinutes(endMin));
+    return nj;
+  }
+
   function calTimedEventHtml(j, gridStartMin, pxPerMin, selectedId) {
     var start = parseJobMinutes(j.time);
     var dur = Math.max(30, Number(j.durationMin) || 60);
@@ -14397,6 +14719,7 @@
     return '<button type="button" class="jos-gcal-event ' + tone + on + '" style="top:' + top + 'px;height:' + height + 'px" draggable="true" data-jos-job-id="' + esc(j.id) + '">' +
       '<strong>' + esc(calEventTitle(j)) + '</strong>' +
       (height >= 36 ? '<span>' + esc(calEventSub(j)) + '</span>' : '') +
+      ((j.isGoogle) ? '' : '<i class="jos-gcal-resize" data-jos-gcal-resize title="Drag to resize"></i>') +
       '</button>';
   }
   function calNowLineHtml(gridStartMin, gridEndMin, pxPerMin, dateStr) {
@@ -14500,7 +14823,7 @@
             return a.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
           })();
 
-      html += '<div class="jos-gcal-board jos-mt' + (isWeek ? ' is-week' : ' is-day') + '">';
+      html += '<div class="jos-gcal-board jos-mt' + (isWeek ? ' is-week' : ' is-day') + '" data-jos-gcal-start="' + gridStartH + '" data-jos-gcal-end="' + gridEndH + '" data-jos-gcal-px="' + pxPerHour + '">';
       html += '<div class="jos-gcal-range">' + esc(rangeLabel) + '</div>';
       html += '<div class="jos-gcal-head"><div class="jos-gcal-gutter"></div>';
       days.forEach(function (ds) {
@@ -14535,7 +14858,7 @@
           var out = bh.closed || blocked || sh * 60 < bh.openMin || sh * 60 >= bh.closeMin;
           html += '<div class="jos-gcal-slot' + (out ? ' outside' : '') + '" style="top:' + ((sh - gridStartH) * pxPerHour) + 'px;height:' + pxPerHour + 'px" ' +
             'data-jos-drop-date="' + esc(ds) + '" data-jos-drop-slot="' + esc(slotLbl) + '" data-jos-slot-time="' + esc(slotLbl) + '">' +
-            (out ? '' : '<button type="button" class="jos-gcal-slot-add" data-jos-act="jobs-create" data-jos-slot-time="' + esc(slotLbl) + '" title="Create job">+</button>') +
+            (out ? '' : '<button type="button" class="jos-gcal-slot-add" data-jos-act="jobs-gcal-new" data-jos-slot-time="' + esc(slotLbl) + '" title="Create or block">+</button>') +
             '</div>';
         }
         dayJobs.forEach(function (j) {
@@ -14546,7 +14869,7 @@
 
       html += '</div></div></div>';
     }
-    html += '<p class="jos-muted jos-mt">Matches your business hours and Google Calendar blocks. Drag jobs to reschedule · Block time to keep Hubly from booking over you.</p></div>';
+    html += '<p class="jos-muted jos-mt">Drag empty time to set a range (e.g. 9 AM → 1 PM), then name it as a job or block. Drag events to move · drag the bottom edge to resize.</p></div>';
     return html;
   }
 
@@ -14915,6 +15238,48 @@
         pop.style.left = left + 'px';
         document.body.classList.add('jos-jobs-menu-open');
         return;
+      }
+      if (act === 'jobs-gcal-new') {
+        var newSlot = t && (t.closest('[data-jos-drop-date]') || t.closest('.jos-gcal-col'));
+        var newDate = (newSlot && newSlot.getAttribute('data-jos-drop-date')) || root._josCalAnchor || todayStr();
+        var newTime = (t && t.getAttribute('data-jos-slot-time')) ||
+          (newSlot && newSlot.getAttribute('data-jos-drop-slot')) ||
+          '9:00 AM';
+        var startM = parseJobMinutes(newTime);
+        root._josJobsMainView = 'calendar';
+        openGcalCreatePop(root, {
+          date: newDate,
+          startMin: startM,
+          endMin: startM + 60,
+          clientX: (t && t.getBoundingClientRect && t.getBoundingClientRect().left) || (window.innerWidth / 2),
+          clientY: (t && t.getBoundingClientRect && t.getBoundingClientRect().bottom) || 160
+        });
+        return;
+      }
+      if (act === 'jobs-gcal-create-cancel') {
+        closeGcalCreatePop();
+        return;
+      }
+      if (act === 'jobs-gcal-create-job' || act === 'jobs-gcal-create-block') {
+        var pending = root._josGcalPending;
+        if (!pending) {
+          closeGcalCreatePop();
+          return toast('Pick a time on the calendar first');
+        }
+        var titleEl = el('jos-gcal-create-title');
+        var title = (titleEl && titleEl.value || '').trim();
+        var pDate = pending.date;
+        var pStart = pending.startMin;
+        var pEnd = pending.endMin;
+        closeGcalCreatePop();
+        if (act === 'jobs-gcal-create-block') {
+          createBlockJob(pDate, formatJobMinutes(pStart), Math.max(15, pEnd - pStart), title || 'Time blocked', { days: 1 });
+          toast('Blocked ' + formatJobMinutes(pStart) + ' – ' + formatJobMinutes(pEnd));
+          root._josJobsMainView = 'calendar';
+          return renderJobs();
+        }
+        createJobAtRange(root, pDate, pStart, pEnd, title);
+        return renderJobs();
       }
       if (act === 'jobs-create') {
         var createSlot = t && (t.closest('[data-jos-drop-date]') || t.closest('[data-jos-slot-time]'));
