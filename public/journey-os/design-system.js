@@ -57,14 +57,51 @@
 
   /** Page header block */
   function pageHeader(title, sub, actionsHtml) {
-    return '<div class="jos-page-head"><div><h1>' + esc(title) + '</h1>' +
-      (sub ? '<p>' + esc(sub) + '</p>' : '') + '</div>' +
-      (actionsHtml ? '<div class="jos-page-actions">' + actionsHtml + '</div>' : '') + '</div>';
+    return '<div class="jos-page-head hub-page-header"><div><h1 class="hub-page-title">' + esc(title) + '</h1>' +
+      (sub ? '<p class="hub-page-sub">' + esc(sub) + '</p>' : '') + '</div>' +
+      (actionsHtml ? '<div class="jos-page-actions hub-page-actions">' + actionsHtml + '</div>' : '') + '</div>';
   }
 
   /** Search input */
   function searchBar(id, placeholder, value) {
-    return '<label class="jos-ds-search"><input id="' + esc(id) + '" type="search" placeholder="' + esc(placeholder || 'Search…') + '" value="' + esc(value || '') + '"></label>';
+    return '<label class="jos-ds-search hub-page-search"><input id="' + esc(id) + '" type="search" placeholder="' + esc(placeholder || 'Search…') + '" value="' + esc(value || '') + '"></label>';
+  }
+
+  /** Shared page shell — title / actions / optional stats / search / content */
+  function pageLayout(opts) {
+    opts = opts || {};
+    return '<div class="hub-page' + (opts.className ? (' ' + esc(opts.className)) : '') + '">' +
+      pageHeader(opts.title || '', opts.sub || '', opts.actionsHtml || '') +
+      (opts.statsHtml ? '<div class="hub-stats-row">' + opts.statsHtml + '</div>' : '') +
+      (opts.filterHtml ? '<div class="hub-filter-bar">' + opts.filterHtml + '</div>' : '') +
+      (opts.searchHtml || '') +
+      '<div class="hub-content-area">' + (opts.contentHtml || '') + '</div></div>';
+  }
+
+  function pageActions(html) {
+    return '<div class="hub-page-actions">' + (html || '') + '</div>';
+  }
+
+  function pageSearch(id, placeholder, value) {
+    return searchBar(id, placeholder, value);
+  }
+
+  function statsRow(cardsHtml) {
+    return '<div class="hub-stats-row">' + (cardsHtml || '') + '</div>';
+  }
+
+  function filterBar(html) {
+    return '<div class="hub-filter-bar">' + (html || '') + '</div>';
+  }
+
+  function contentArea(html) {
+    return '<div class="hub-content-area">' + (html || '') + '</div>';
+  }
+
+  function kpiCard(label, value, trend) {
+    return '<div class="hub-kpi-card"><div class="hub-kpi-lbl">' + esc(label) + '</div>' +
+      '<div class="hub-kpi-v">' + esc(value) + '</div>' +
+      (trend ? '<div class="hub-kpi-trend">' + esc(trend) + '</div>' : '') + '</div>';
   }
 
   /** Filter drawer shell — bodyHtml is field markup; act prefix e.g. pipe-filter */
@@ -148,9 +185,10 @@
   }
 
   /** Empty state */
-  function emptyState(title, body) {
-    return '<div class="jos-empty">' + (title ? '<strong>' + esc(title) + '</strong>' : '') +
-      (body ? '<p class="jos-muted">' + esc(body) + '</p>' : '') + '</div>';
+  function emptyState(title, body, actionsHtml) {
+    return '<div class="jos-empty hub-empty">' + (title ? '<h3>' + esc(title) + '</h3>' : '') +
+      (body ? '<p>' + esc(body) + '</p>' : '') +
+      (actionsHtml ? '<div class="jos-btn-row">' + actionsHtml + '</div>' : '') + '</div>';
   }
 
   /** Lead card (list / board) */
@@ -210,7 +248,7 @@
   }
 
   var HublyDS = {
-    version: '1.0.0',
+    version: '1.1.0',
     esc: esc,
     initials: initials,
     actionButton: actionButton,
@@ -218,8 +256,15 @@
     statusBadge: statusBadge,
     scoreRing: scoreRing,
     metricCard: metricCard,
+    kpiCard: kpiCard,
     sectionHeader: sectionHeader,
     pageHeader: pageHeader,
+    pageLayout: pageLayout,
+    pageActions: pageActions,
+    pageSearch: pageSearch,
+    statsRow: statsRow,
+    filterBar: filterBar,
+    contentArea: contentArea,
     searchBar: searchBar,
     filterDrawer: filterDrawer,
     profileHeader: profileHeader,

@@ -30,6 +30,7 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=live-op-polish-1">
+<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=ui-polish-1">
 <link rel="stylesheet" href="/journey-os/photography-projects.css?v=projects-7">
 <link rel="stylesheet" href="/journey-os/app-marketplace.css?v=projects-7">
 <style>
@@ -10413,8 +10414,11 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="leads" onclick="switchV(this)" title="Leads">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="ni-lbl">Leads</span><span class="nav-count-badge hidden" id="nav-leads-badge">0</span>
       </div>
-      <div class="ni" data-v="jobs" onclick="switchV(this)" title="Jobs &amp; Calendar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl">Jobs &amp; Calendar</span>
+      <div class="ni" data-v="jobs" onclick="switchV(this)" title="Jobs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg><span class="ni-lbl">Jobs</span>
+      </div>
+      <div class="ni" data-v="calendar" onclick="switchV(this)" title="Calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl">Calendar</span>
       </div>
       <div class="ni" data-v="photo-projects" onclick="switchV(this)" title="Projects">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="ni-lbl">Projects</span>
@@ -10502,6 +10506,11 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div class="bar-r">
           <button type="button" class="btn btn-brand btn-sm jos-bar-new" id="jos-bar-new" onclick="HublyJourneyOS?.openQuickNew?.()||openM('m-new-job')">+ New</button>
+          <button type="button" class="jos-business-pulse" id="jos-business-pulse" data-jos-act="toggle-business-pulse" title="Business Pulse" aria-label="Business Pulse">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            <span class="pulse-lbl">Pulse</span>
+            <span class="pulse-stars" id="jos-pulse-stars">★★★★★</span>
+          </button>
           <button class="btn btn-brand btn-sm btn-newjob jos-legacy-bar" onclick="openM('m-new-job')">+ New Job</button>
           <button type="button" class="btn btn-out btn-sm jos-legacy-bar" id="bar-qq-btn" onclick="openSmartQuote()">Quick Quote</button>
           <button type="button" class="btn btn-out btn-sm jos-legacy-bar" onclick="openBlockTimeModal()">🚫 <span data-i18n="blockTimeBtn">Block time</span></button>
@@ -10527,6 +10536,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <div id="v-jobs" class="body hidden">
         <div id="jos-jobs-root"></div>
+      </div>
+      <div id="v-calendar" class="body hidden">
+        <div id="jos-calendar-root"></div>
       </div>
 
       <!-- PROJECTS — universal media & creative workspace; tools adapt by capability -->
@@ -10854,6 +10866,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
+              <button type="button" class="ed-edit-mode-btn" id="ed-edit-mode-btn" onclick="toggleEdEditMode()" title="Edit Mode (Space)">Edit Mode</button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
           </div>
@@ -11475,14 +11488,14 @@ document.addEventListener('DOMContentLoaded', function() {
     </button>
   </div>
   <!-- Website editor AI bubble — edit by hand, ask AI to switch structure/look -->
-  <button type="button" id="ed-ai-fab" class="ed-ai-fab hidden" onclick="openEdSheet('ai')" title="Ask AI to change your site" aria-label="Ask AI">
+  <button type="button" id="ed-ai-fab" class="ed-ai-fab hidden" onclick="openEdSheet('ai');setTimeout(function(){var i=document.getElementById('ed-ai-input');if(i&&!i.value){i.value='Make my homepage more premium without changing my brand.';}},40)" title="Website AI — improve this page" aria-label="Website AI">
     <span class="ed-ai-fab-ico" aria-hidden="true">AI</span>
-    <span>Ask AI</span>
+    <span>Website AI</span>
   </button>
-  <!-- Global Ask Hubly bubble (left nav tab stays; top-bar Ask Hubly removed) -->
-  <button type="button" id="jos-ask-fab" class="jos-ask-fab" onclick="document.querySelector('.ni[data-v=\'ask\']')?.click()" title="Ask Hubly" aria-label="Ask Hubly">
+  <!-- Global Ask Hubly bubble — label becomes page-specific AI -->
+  <button type="button" id="jos-ask-fab" class="jos-ask-fab" onclick="HublyJourneyOS?.askForCurrentPage?.()||document.querySelector('.ni[data-v=\'ask\']')?.click()" title="Ask Hubly" aria-label="Ask Hubly">
     <span class="jos-ask-fab-ico" aria-hidden="true">AI</span>
-    <span class="jos-ask-fab-lbl">Ask Hubly</span>
+    <span class="jos-ask-fab-lbl" id="jos-ask-fab-lbl">Ask Hubly</span>
   </button>
 </div>
 
@@ -12086,7 +12099,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </label>
           <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;font-weight:550;cursor:pointer;">
             <input type="radio" name="ls-role" value="won" onchange="onLeadStageRoleChange()" style="margin-top:3px;">
-            <span><strong>Won → Jobs &amp; Calendar</strong><br><span style="font-weight:450;color:var(--ink-3);">Dropping a lead here converts them to a job</span></span>
+            <span><strong>Won → Jobs</strong><br><span style="font-weight:450;color:var(--ink-3);">Dropping a lead here converts them to a job</span></span>
           </label>
           <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;font-weight:550;cursor:pointer;">
             <input type="radio" name="ls-role" value="lost" onchange="onLeadStageRoleChange()" style="margin-top:3px;">
@@ -15523,6 +15536,8 @@ async function saveStorefront(){
     g.completed=true;g.active=false;
     renderEditorGuide();
     toast(t('toastPublishedLive'));
+    try{delightOnce('website_ready','✨ Your website is ready.');}catch(e){}
+    try{maybeDelightReviews();}catch(e){}
     try{if(!S._postPublishPkgNudge){S._postPublishPkgNudge=true;setTimeout(()=>toast(t('toastNextPackages')),900);}}catch(e){}
     // Stay on Site after publish; toast nudges Packages next (Spanish-aware via t()).
     try{
@@ -31289,13 +31304,59 @@ function escPeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&
 function initWsPeEditor(){
   if(S._wsPeEditorInit)return;
   S._wsPeEditorInit=true;
+  bindWsPeInlineHandlers();
   document.getElementById('ed-preview-area')?.addEventListener('click',onWsPePreviewClick,true);
   document.addEventListener('click',e=>{
     const pop=document.getElementById('ws-pe-pop');
-    if(!pop||pop.classList.contains('hidden'))return;
-    if(e.target.closest('#ws-pe-pop')||e.target.closest('.ws-pe-target'))return;
-    closeWsPePop();
+    const bar=document.getElementById('ws-pe-context-bar');
+    const inPe=e.target.closest('#ws-pe-pop')||e.target.closest('.ws-pe-target')||e.target.closest('#ws-pe-context-bar')||e.target.closest('.ed-ctrl');
+    if(S._wsPeInlineEl&&!inPe)finishWsPeInlineEdit(false);
+    if(pop&&!pop.classList.contains('hidden')&&!inPe)closeWsPePop();
+    if(!inPe&&!e.target.closest('.ed-settings-rail')){
+      hideWsPeContextBar();
+      clearWsPeSelection();
+      /* Auto-collapse inspector when clicking the website (not Style) */
+      if(e.target.closest('#ed-ws-preview,.ed-prev')&&document.getElementById('ed-shell')?.classList.contains('ed-sheet-open')){
+        try{closeEdSheet();}catch(err){}
+      }
+    }
   });
+  document.addEventListener('keydown',e=>{
+    if(!isEditorViewOpen())return;
+    if(e.code!=='Space'&&e.key!==' ')return;
+    if(S._wsPeInlineEl)return;
+    const tag=(e.target&&e.target.tagName||'').toLowerCase();
+    if(tag==='input'||tag==='textarea'||tag==='select'||e.target?.isContentEditable)return;
+    if(e.target.closest('#ws-pe-pop,.ed-ctrl'))return;
+    e.preventDefault();
+    toggleEdEditMode();
+  });
+}
+function isWebsitePeEnabled(){
+  return isEditorViewOpen() && !!S.edEditMode;
+}
+function setEdEditMode(on){
+  S.edEditMode=!!on;
+  document.body.classList.toggle('ed-edit-mode',!!on);
+  const btn=document.getElementById('ed-edit-mode-btn');
+  if(btn){
+    btn.textContent=on?'Editing':'Edit Mode';
+    btn.setAttribute('aria-pressed',on?'true':'false');
+  }
+  if(!on){
+    hideWsPeContextBar();
+    clearWsPeSelection();
+    closeWsPePop();
+    try{closeEdSheet();}catch(e){}
+  }
+  try{
+    const preview=document.getElementById('ed-ws-preview');
+    if(preview)markWebsitePreviewEditable(preview);
+  }catch(e){}
+  try{updateEdPeHint();}catch(e){}
+}
+function toggleEdEditMode(){
+  setEdEditMode(!S.edEditMode);
 }
 function updateEdPeHint(){
   const hint=document.getElementById('ed-pe-hint');
@@ -31308,6 +31369,11 @@ function updateEdPeHint(){
     hint.style.background='#fff7ed';
     hint.style.borderBottomColor='#fed7aa';
     hint.style.color='#9a3412';
+  }else if(!S.edEditMode){
+    hint.textContent='Hold Space or click Edit Mode to edit your website directly.';
+    hint.style.background='';
+    hint.style.borderBottomColor='';
+    hint.style.color='';
   }else{
     hint.textContent='Click anything on your website to edit it. name, logo, services, and more.';
     hint.style.background='';
@@ -31319,8 +31385,331 @@ function dismissEdPeHint(){
   S._wsPeHintDismissed=true;
   updateEdPeHint();
 }
+function ensureWsPeContextBar(){
+  let bar=document.getElementById('ws-pe-context-bar');
+  if(bar)return bar;
+  bar=document.createElement('div');
+  bar.id='ws-pe-context-bar';
+  bar.setAttribute('role','toolbar');
+  bar.setAttribute('aria-label','Edit tools');
+  document.body.appendChild(bar);
+  bar.addEventListener('click',e=>{
+    const btn=e.target.closest('button[data-pe-act]');
+    if(!btn)return;
+    e.preventDefault();
+    e.stopPropagation();
+    const target=S._wsPeSelectedEl;
+    if(!target)return;
+    const act=btn.getAttribute('data-pe-act');
+    const pe=target.dataset.pe||'';
+    if(act==='edit'){
+      if(isWsPeInlineType(pe))return startWsPeInlineEdit(target,{selectAll:true});
+      return handleWsPeClick(pe,target);
+    }
+    if(act==='photo'||act==='replace'){
+      closeWsPePop();
+      if(pe==='hero-bg'||pe==='profile-bg'){try{pickHeroBanner();}catch(err){handleWsPeClick(pe,target);}return;}
+      if(pe==='logo'){try{pickProfileLogo();}catch(err){handleWsPeClick(pe,target);}return;}
+      if(pe==='owner-photo'||pe==='gallery')return handleWsPeClick(pe,target);
+      return handleWsPeClick(pe,target);
+    }
+    if(act==='style'){
+      /* Inspector opens only from Style — never from a plain click */
+      try{openEdSheet('layout',{focus:'styles'});}catch(err){}
+      return;
+    }
+    if(act==='ai'){
+      const prompts={
+        headline:'Rewrite this homepage headline to feel more premium and clear.',
+        tagline:'Make this subheadline friendlier and more persuasive.',
+        cta:'Suggest a stronger CTA for this button.',
+        service:'Improve this service name and short description.',
+        'hero-bg':'Suggest a better hero photo composition for a home-service business.'
+      };
+      const q=prompts[pe]||('Improve this '+((WS_PE_LABELS[pe]||'section').replace(/^Edit\s+/i,''))+' for my website.');
+      try{openEdSheet('ai');}catch(err){}
+      setTimeout(()=>{
+        const input=document.getElementById('ed-ai-input');
+        if(input){input.value=q;try{edAiSend();}catch(e2){}}
+      },80);
+      return;
+    }
+    if(act==='duplicate'){
+      if(pe==='service'&&target.dataset.svcId){
+        try{duplicateEditorService?.(target.dataset.svcId)||toast('Duplicate coming soon');}catch(err){toast('Could not duplicate');}
+        return;
+      }
+      toast('Duplicate is available for services and sections soon');
+      return;
+    }
+    if(act==='delete'){
+      if(pe==='service'&&target.dataset.svcId){
+        if(!confirm('Remove this service from your website?'))return;
+        try{removeEditorService?.(target.dataset.svcId);}catch(err){}
+        try{renderWebsitePreview();}catch(err){}
+        hideWsPeContextBar();clearWsPeSelection();
+        toast('Service removed');
+        return;
+      }
+      toast('Use Style or Business mode for advanced deletes');
+      return;
+    }
+    if(act==='more'){
+      handleWsPeClick(pe,target);
+    }
+  });
+  return bar;
+}
+function wsPeToolbarActions(pe){
+  const acts=[{id:'edit',label:'✏ Edit'}];
+  if(pe==='hero-bg'||pe==='profile-bg'||pe==='logo'||pe==='owner-photo'||pe==='gallery'){
+    acts[0]={id:'photo',label:'🖼 Replace Photo'};
+    acts.unshift({id:'edit',label:'✏ Edit'});
+  }
+  if(pe==='hero-bg'||pe==='profile-bg')acts[0]={id:'photo',label:'🖼 Replace Photo'};
+  acts.push({id:'style',label:'🎨 Style'},{id:'ai',label:'✨ AI',ai:true});
+  if(pe==='service')acts.push({id:'duplicate',label:'Duplicate'},{id:'delete',label:'Delete'});
+  else acts.push({id:'more',label:'⋯'});
+  /* Deduplicate edit+photo for media */
+  if(pe==='hero-bg'||pe==='profile-bg'||pe==='logo'||pe==='owner-photo'){
+    return [
+      {id:'photo',label:'🖼 Replace Photo'},
+      {id:'style',label:'🎨 Style'},
+      {id:'ai',label:'✨ AI',ai:true},
+      {id:'more',label:'⋯'}
+    ];
+  }
+  if(pe==='headline'||pe==='tagline'||pe==='cta'||pe==='biz-name'||pe==='sec-title'||pe==='sec-sub'||pe==='owner-bio'||pe==='owner-name'||pe==='footer-cta'||pe==='footer-tag'){
+    return [
+      {id:'edit',label:'✏ Edit Text'},
+      {id:'style',label:'🎨 Style'},
+      {id:'ai',label:'✨ AI',ai:true},
+      {id:'more',label:'⋯'}
+    ];
+  }
+  return acts;
+}
+function showWsPeContextBar(anchor){
+  if(!anchor||!isWebsitePeEnabled())return hideWsPeContextBar();
+  const bar=ensureWsPeContextBar();
+  const pe=anchor.dataset.pe||'';
+  const acts=wsPeToolbarActions(pe);
+  bar.innerHTML=acts.map(a=>'<button type="button" data-pe-act="'+a.id+'"'+(a.ai?' data-pe-ai="1"':'')+'>'+a.label+'</button>').join('');
+  const rect=anchor.getBoundingClientRect();
+  const top=Math.max(12,rect.top+window.scrollY-52);
+  const left=Math.min(window.scrollX+window.innerWidth-320,Math.max(12,rect.left+window.scrollX));
+  bar.style.top=top+'px';
+  bar.style.left=left+'px';
+  bar.classList.add('is-open');
+}
+function hideWsPeContextBar(){
+  const bar=document.getElementById('ws-pe-context-bar');
+  if(bar)bar.classList.remove('is-open');
+}
+function clearWsPeSelection(){
+  document.querySelectorAll('.ws-pe-target.is-pe-selected').forEach(el=>el.classList.remove('is-pe-selected'));
+  S._wsPeSelectedEl=null;
+}
+const WS_PE_INLINE_TYPES=new Set([
+  'headline','tagline','cta','biz-name','owner-name','owner-bio','about-name',
+  'sec-title','sec-sub','footer-cta','footer-tag','promo','ticker'
+]);
+function isWsPeInlineType(type){return WS_PE_INLINE_TYPES.has(String(type||''));}
+function wsPeInlineNode(target){
+  if(!target)return null;
+  const pe=target.dataset.pe;
+  if(pe==='service')return target.querySelector('h3, .ws-svc-name, .ws-svc-title')||target;
+  if(pe==='faq-item')return target.querySelector('.ws-faq-q, summary, h3, h4')||target;
+  if(pe==='review')return target.querySelector('.ws-review-text, .ws-review-body, p')||target;
+  if(pe==='membership')return target.querySelector('h3, .ws-membership-name')||target;
+  return target;
+}
+function startWsPeInlineEdit(target,opts){
+  opts=opts||{};
+  if(!target||!isWebsitePeEnabled())return;
+  const pe=target.dataset.pe||'';
+  const node=wsPeInlineNode(target);
+  if(!node)return;
+  if(pe==='hero-bg'||pe==='logo'||pe==='gallery'||pe==='hours'||pe==='contact'||pe==='social'||pe==='area'){
+    return handleWsPeClick(pe,target);
+  }
+  if(!isWsPeInlineType(pe)&&pe!=='service'&&pe!=='faq-item'&&pe!=='review'&&pe!=='membership'){
+    return handleWsPeClick(pe,target);
+  }
+  finishWsPeInlineEdit(true);
+  S._wsPeInlineEl=node;
+  S._wsPeInlineTarget=target;
+  S._wsPeInlineType=pe;
+  S._wsPeInlineOriginal=node.textContent||'';
+  node.setAttribute('contenteditable','plaintext-only');
+  try{node.contentEditable='plaintext-only';}catch(e){node.contentEditable='true';}
+  node.classList.add('ws-pe-inline-editing');
+  node.focus({preventScroll:true});
+  if(opts.selectAll!==false){
+    try{
+      const range=document.createRange();
+      range.selectNodeContents(node);
+      const sel=window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }catch(e){}
+  }
+}
+function finishWsPeInlineEdit(cancel){
+  const node=S._wsPeInlineEl;
+  const target=S._wsPeInlineTarget;
+  const pe=S._wsPeInlineType;
+  if(!node)return;
+  const text=String(node.textContent||'').replace(/\u00a0/g,' ').trim();
+  node.removeAttribute('contenteditable');
+  node.contentEditable='false';
+  node.classList.remove('ws-pe-inline-editing');
+  S._wsPeInlineEl=null;
+  S._wsPeInlineTarget=null;
+  S._wsPeInlineType=null;
+  if(cancel){
+    if(S._wsPeInlineOriginal!=null)node.textContent=S._wsPeInlineOriginal;
+    S._wsPeInlineOriginal=null;
+    return;
+  }
+  S._wsPeInlineOriginal=null;
+  commitWsPeInlineValue(pe,text,target,node);
+}
+function commitWsPeInlineValue(pe,text,target,node){
+  ensureWebsiteCopy();
+  if(pe==='headline'){
+    const ed=document.getElementById('ed-ws-hero-headline');
+    if(ed)ed.value=text;
+    S.website.heroHeadline=text;
+    S.website.customHeroHeadline=!!text;
+    onWebsiteFieldChange();
+    return;
+  }
+  if(pe==='tagline'){
+    const ed=document.getElementById('ed-ws-hero-sub');
+    if(ed)ed.value=text;
+    S.website.heroSub=text;
+    S.website.customHeroSub=!!text;
+    onWebsiteFieldChange();
+    return;
+  }
+  if(pe==='biz-name'){
+    if(!text||(typeof isPlaceholderBizName==='function'&&isPlaceholderBizName(text))){
+      if(node)node.textContent=S.biz||'Your business';
+      return;
+    }
+    liveWsPeBizName(text);
+    const ed=document.getElementById('ed-name');
+    if(ed)ed.value=text;
+    try{onEdNameInput();}catch(e){}
+    return;
+  }
+  if(pe==='cta'){
+    S.ctaText=text||'Book Now';
+    document.querySelectorAll('#ed-ws-preview #ws-hero-cta, #ed-ws-preview #ws-header-cta, #ed-ws-preview .ws-header-cta').forEach(el=>{el.textContent=S.ctaText;});
+    try{onWebsiteFieldChange();}catch(e){}
+    return;
+  }
+  if(pe==='owner-name'||pe==='about-name'){
+    S.website.ownerTitle=text||S.website.ownerTitle;
+    S.website.customOwnerTitle=true;
+    try{onWebsiteFieldChange();}catch(e){}
+    return;
+  }
+  if(pe==='owner-bio'){
+    S.website.ownerBio=text;
+    S.about=text;
+    const edField=document.getElementById('ed-ws-owner-bio');
+    if(edField)edField.value=text;
+    try{onWebsiteFieldChange();}catch(e){}
+    return;
+  }
+  if(pe==='footer-cta'){
+    S.website.footerCtaTitle=text;
+    try{onWebsiteFieldChange();}catch(e){}
+    return;
+  }
+  if(pe==='footer-tag'){
+    S.website.footerTagline=text;
+    try{onWebsiteFieldChange();}catch(e){}
+    return;
+  }
+  if(pe==='sec-title'||pe==='sec-sub'){
+    const sec=target?.dataset?.peSection||'';
+    if(sec){
+      S.website.sectionCopy=S.website.sectionCopy||{};
+      S.website.sectionCopy[sec]=S.website.sectionCopy[sec]||{};
+      if(pe==='sec-title')S.website.sectionCopy[sec].title=text;
+      else S.website.sectionCopy[sec].sub=text;
+    }
+    try{onWebsiteFieldChange();}catch(e){}
+    return;
+  }
+  if(pe==='service'&&target?.dataset?.svcId){
+    const svc=(S.editorSvcs||[]).find(s=>String(s.id)===String(target.dataset.svcId));
+    if(svc){
+      svc.name=text||'Service';
+      try{syncEditorPackagesToServices?.();}catch(e){}
+      try{renderSvcEditorList?.();}catch(e){}
+    }
+    return;
+  }
+  if(pe==='faq-item'){
+    const idx=parseInt(target?.dataset?.faqIdx||target?.dataset?.idx||'-1',10);
+    const faqs=S.website?.faqs||S.faqs||[];
+    if(idx>=0&&faqs[idx]){faqs[idx].q=text;try{onWebsiteFieldChange();}catch(e){}}
+    return;
+  }
+  if(pe==='review'){
+    const idx=parseInt(target?.dataset?.reviewIdx||'0',10)||0;
+    const list=S.website?.manualReviews||[];
+    if(list[idx]){list[idx].text=text;list[idx].body=text;try{onWebsiteFieldChange();}catch(e){}}
+    return;
+  }
+  if(pe==='membership'&&target?.dataset?.planId){
+    const plans=typeof ensureMembershipOffers==='function'?ensureMembershipOffers():(S.website?.memberships||[]);
+    const plan=plans.find(p=>String(p.id)===String(target.dataset.planId));
+    if(plan){plan.name=text;try{onWebsiteFieldChange();}catch(e){}}
+  }
+}
+function bindWsPeInlineHandlers(){
+  if(S._wsPeInlineBound)return;
+  S._wsPeInlineBound=true;
+  document.addEventListener('keydown',e=>{
+    if(!S._wsPeInlineEl)return;
+    if(e.key==='Escape'){
+      e.preventDefault();
+      finishWsPeInlineEdit(true);
+      return;
+    }
+    if(e.key==='Enter'&&!e.shiftKey){
+      const pe=S._wsPeInlineType;
+      if(pe==='owner-bio'||pe==='tagline')return;
+      e.preventDefault();
+      finishWsPeInlineEdit(false);
+    }
+  },true);
+  document.addEventListener('focusout',e=>{
+    if(!S._wsPeInlineEl)return;
+    if(e.relatedTarget&&(e.relatedTarget.closest?.('#ws-pe-context-bar')||e.relatedTarget.closest?.('#ws-pe-pop')))return;
+    setTimeout(()=>{
+      if(!S._wsPeInlineEl)return;
+      if(document.activeElement===S._wsPeInlineEl)return;
+      if(document.activeElement?.closest?.('#ws-pe-context-bar,#ws-pe-pop'))return;
+      finishWsPeInlineEdit(false);
+    },0);
+  },true);
+}
 function markWebsitePreviewEditable(root){
   if(!root||!isEditorViewOpen())return;
+  if(!isWebsitePeEnabled()){
+    root.querySelectorAll('.ws-pe-target').forEach(el=>{
+      el.classList.remove('ws-pe-target','is-pe-selected');
+      delete el.dataset.pe;
+      delete el.dataset.peLabel;
+    });
+    return;
+  }
   const mark=(sel,type)=>{
     root.querySelectorAll(sel).forEach(el=>{
       el.dataset.pe=type;
@@ -31420,7 +31809,8 @@ function markWebsitePreviewEditable(root){
 }
 function onWsPePreviewClick(e){
   if(!isEditorViewOpen())return;
-  if(e.target.closest('.ws-re-btn,.ws-logo-handle,.ws-hero-focus-layer,.ws-pe-pop'))return;
+  if(!isWebsitePeEnabled())return;
+  if(e.target.closest('.ws-re-btn,.ws-logo-handle,.ws-hero-focus-layer,.ws-pe-pop,#ws-pe-context-bar'))return;
   const inPreview=e.target.closest('#ed-ws-preview, #edph-screen .ws-site');
   if(!inPreview)return;
   const navA=e.target.closest('.ws-header-nav a[href^="#"]');
@@ -31432,11 +31822,32 @@ function onWsPePreviewClick(e){
     return;
   }
   const target=e.target.closest('[data-pe]');
-  if(!target)return;
+  if(!target){
+    if(S._wsPeInlineEl)finishWsPeInlineEdit(false);
+    clearWsPeSelection();
+    hideWsPeContextBar();
+    try{closeEdSheet();}catch(err){}
+    return;
+  }
   e.preventDefault();
   e.stopPropagation();
   dismissEdPeHint();
-  handleWsPeClick(target.dataset.pe,target);
+  clearWsPeSelection();
+  target.classList.add('is-pe-selected');
+  S._wsPeSelectedEl=target;
+  showWsPeContextBar(target);
+  const pe=target.dataset.pe||'';
+  /* Text types: edit directly on the website — no popover */
+  if(isWsPeInlineType(pe)||pe==='service'||pe==='faq-item'||pe==='review'||pe==='membership'){
+    startWsPeInlineEdit(target,{selectAll:true});
+    return;
+  }
+  /* Media: replace flows stay one click away via toolbar; don't auto-open inspector */
+  if(pe==='hero-bg'||pe==='profile-bg'||pe==='logo'||pe==='owner-photo'||pe==='gallery'){
+    return;
+  }
+  /* Complex types still use the focused popover */
+  handleWsPeClick(pe,target);
 }
 function closeWsPePop(){
   const pop=document.getElementById('ws-pe-pop');
@@ -36052,7 +36463,7 @@ function switchV(el){
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
   const titles={
-    dashboard:'Home',jobs:'Jobs & Calendar','photo-projects':'Projects',leads:'Leads',customers:'Completed Customers',
+    dashboard:'Home',jobs:'Jobs',calendar:'Calendar','photo-projects':'Projects',leads:'Leads',customers:'Completed Customers',
     pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
     quotes:'Quick Quote',money:'Revenue',chats:'Inbox',marketplace:'Marketplace',apps:'Apps',
     editor:'Website editor',settings:'Settings',reviews:'Reviews',marketing:'Marketing',
@@ -36065,6 +36476,7 @@ function switchV(el){
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
   if(v==='dashboard'){try{HublyJourneyOS?.enhanceDashboard?.();}catch(e){try{renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();syncDashSiteLink();}catch(e2){}}}
   if(v==='jobs'){try{HublyJourneyOS?.renderJobs?.();}catch(e){try{renderCal();renderJobsPanel();}catch(e2){}}}
+  if(v==='calendar'){try{HublyJourneyOS?.renderCalendar?.();}catch(e){try{HublyJourneyOS?.renderJobs?.();}catch(e2){}}}
   if(v==='photo-projects'){try{HublyJourneyOS?.renderPhotoProjects?.()||HublyPhotographyProjects?.render?.();}catch(e){console.warn(e);}}
   if(v==='apps'){try{HublyAppMarketplace?.render?.();}catch(e){console.warn(e);}}
   if(v==='leads'){try{HublyJourneyOS?.renderLeadsList?.();}catch(e){}}
@@ -36158,14 +36570,12 @@ function mountEdChrome(){
   document.body.classList.add('ed-editor-open');
   try{closeEdSheet();}catch(e){}
   try{
-    if(isEdSettingsRailMobile())closeEdSettingsRail();
-    else {
-      // Entering Website editor: open the Website submenu by default
-      openEdSettingsRail();
-    }
+    // Website-first: collapse chrome by default; expand only when needed
+    closeEdSettingsRail({persist:false});
     syncEdSettingsRail((S&&(S._edSettingsNav||S._edHubTab))||'');
     syncEdCtrlTop();
   }catch(e){}
+  try{setEdEditMode(!!S.edEditMode);}catch(e){}
   // Floating pill retired — keep node hidden if present
   if(bar){
     bar.hidden=true;
@@ -36175,10 +36585,11 @@ function mountEdChrome(){
 }
 function unmountEdChrome(){
   closeEdSheet();
+  try{hideWsPeContextBar();}catch(e){}
   try{
     if(isEdSettingsRailMobile())closeEdSettingsRail({persist:false});
   }catch(e){}
-  document.body.classList.remove('ed-editor-open');
+  document.body.classList.remove('ed-editor-open','ed-edit-mode');
   document.getElementById('ed-shell')?.classList.remove('ed-canvas-mode');
   const shell=document.getElementById('ed-shell');
   const bar=document.getElementById('ed-float-bar');
@@ -38612,7 +39023,7 @@ function jobStatusCopy(j,ui){
   const thing=u.thing||'appointment';
   if(j?.isBlock)return {badge:'Blocked',txt:'This time is blocked on your calendar.',cls:''};
   if(j?.status==='completed')return {badge:'Completed',txt:`This ${thing} is done.`,cls:'done'};
-  if(j?.status==='pending')return {badge:'Needs confirm',txt:`Accept to put this on Jobs & Calendar.`,cls:'pend'};
+  if(j?.status==='pending')return {badge:'Needs confirm',txt:`Accept to put this on Jobs.`,cls:'pend'};
   return {badge:'Scheduled',txt:`This ${thing} is scheduled and upcoming.`,cls:''};
 }
 function viewJob(id){
@@ -39039,7 +39450,7 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   if(error){if(!silent)toast('❌ '+error.message);return;}
   try{await pushJobToGoogleCalendar(data.id);}catch(e){}
   await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
-  // Leave Leads — accepted work lives on Jobs & Calendar until complete → Customers.
+  // Leave Leads — accepted work lives on Jobs until complete → Customers.
   try{
     removeLeadFromBoard('br:'+reqId);
     if(data?.id)removeLeadFromBoard('job:'+data.id);
@@ -39078,7 +39489,7 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   goJobsAfterAccept(j.date,j.time);
   renderDashToday();renderDashNewBookings();updateKPIs();
   try{if(typeof renderLeadsBoard==='function')renderLeadsBoard({refresh:true});}catch(e){}
-  toast('Accepted — now on Jobs & Calendar');
+  toast('Accepted — now on Jobs');
 }
 function focusAcceptedJob(date,time){
   S.jobFilter='scheduled';
@@ -40860,7 +41271,7 @@ function goJobsAfterAccept(date,time){
   if(nav)switchV(nav);
   focusAcceptedJob(date,time);
 }
-/** Leads board = pre-accept only. Accepted jobs live on Jobs & Calendar. */
+/** Leads board = pre-accept only. Accepted jobs live on Jobs. */
 function collectPipelineLeads(){
   const pipe=ensurePipelineState();
   const deleted=new Set(pipe.deleted.map(String));
@@ -41371,7 +41782,7 @@ function leadStageRoleHint(role){
   return ({
     open:'Leads stay on this column until you move them.',
     quote:'Good for quotes / proposals. Quick Quotes land here by default when this role is set.',
-    won:'Dropping a lead here sends them to Jobs & Calendar.',
+    won:'Dropping a lead here sends them to Jobs.',
     lost:'Marks the lead lost (optional reason).',
   })[role]||'';
 }
@@ -41509,7 +41920,7 @@ async function renderLeadsBoard(opts={}){
     const isWon=!!(st.role==='won'||st.convertsToJobs||st.id==='won');
     const isLost=!!(st.role==='lost'||st.isLost||st.id==='lost');
     const emptyMsg=isWon
-      ?`<div style="font-size:12px;color:#15803d;padding:18px 8px;text-align:center;line-height:1.4;">Drop a lead here to send them to <strong>Jobs &amp; Calendar</strong></div>`
+      ?`<div style="font-size:12px;color:#15803d;padding:18px 8px;text-align:center;line-height:1.4;">Drop a lead here to send them to <strong>Jobs</strong></div>`
       :(isLost
         ?`<div style="font-size:12px;color:var(--ink-3);padding:18px 8px;text-align:center;">No lost leads</div>`
         :`<div style="font-size:12px;color:var(--ink-3);padding:18px 8px;text-align:center;">No leads</div>`);
@@ -41567,7 +41978,7 @@ async function onLeadDrop(e,stage){
   if(!key||!getLeadStages().some(s=>s.id===stage))return;
   const route=leadStageDropRoute(stage);
   if(route.action==='convert_to_jobs'){
-    toast('Sending to Jobs & Calendar…');
+    toast('Sending to Jobs…');
     await convertLeadOnBoard(key);
     return;
   }
@@ -41629,7 +42040,7 @@ async function acceptAbandonedLead(lead){
   await loadJobs();
   goJobsAfterAccept(date,time);
   renderDashToday();renderDashNewBookings();updateKPIs();
-  toast('Accepted — now on Jobs & Calendar');
+  toast('Accepted — now on Jobs');
 }
 function scheduleLeadOnBoard(key){
   const lead=collectPipelineLeads().find(l=>l.key===key);
@@ -44705,24 +45116,51 @@ function toast(msg,opts){
   const text=String(msg||'').trim();
   if(!text)return;
   el.textContent=text;
-  el.classList.toggle('is-ok',o.ok===true||o.variant==='ok'||o.variant==='success');
+  el.classList.toggle('is-ok',o.ok===true||o.variant==='ok'||o.variant==='success'||o.delight===true);
   el.classList.toggle('is-err',o.err===true||o.variant==='err'||o.variant==='error');
-  el.classList.toggle('is-wrap',text.length>42||!!o.wrap||(typeof window.matchMedia==='function'&&window.matchMedia('(max-width:900px)').matches));
+  el.classList.toggle('is-wrap',text.length>42||!!o.wrap||!!o.delight||(typeof window.matchMedia==='function'&&window.matchMedia('(max-width:900px)').matches));
+  el.classList.toggle('is-delight',!!o.delight);
   el.classList.add('show');
   clearTimeout(toastT);
-  const ms=Math.max(1800,Number(o.ms)||(o.ok||o.variant==='ok'||o.variant==='success'?4200:2800));
+  const ms=Math.max(1800,Number(o.ms)||(o.delight?5200:(o.ok||o.variant==='ok'||o.variant==='success'?4200:2800)));
   toastT=setTimeout(()=>{
     el.classList.remove('show');
-    setTimeout(()=>{el.classList.remove('is-ok','is-err','is-wrap');},320);
+    setTimeout(()=>{el.classList.remove('is-ok','is-err','is-wrap','is-delight');},320);
   },ms);
   try{
-    if(o.ok||o.variant==='ok'||o.variant==='success'){
-      if(navigator.vibrate)navigator.vibrate(12);
+    if(o.ok||o.delight||o.variant==='ok'||o.variant==='success'){
+      if(navigator.vibrate)navigator.vibrate(o.delight?[12,40,12]:12);
     }
   }catch(e){}
 }
 function notifyDone(msg,opts){
   toast(msg,{ok:true,wrap:true,ms:4500,...(opts||{})});
+}
+function delightToast(msg,opts){
+  toast(msg,{ok:true,delight:true,wrap:true,ms:5200,...(opts||{})});
+}
+function delightOnce(key,msg,opts){
+  const k='hubly_delight_'+String(key||'');
+  try{if(localStorage.getItem(k)==='1')return false;}catch(e){}
+  try{localStorage.setItem(k,'1');}catch(e){}
+  delightToast(msg,opts);
+  return true;
+}
+function maybeDelightReviews(){
+  const n=Number(S?.website?.reviewCount)||(S?.website?.manualReviews||[]).length||0;
+  const milestones=[5,10,25,50,100];
+  for(const m of milestones){
+    if(n>=m)delightOnce('reviews_'+m,(m>=100?'🎉 You reached '+m+' reviews.':'🎉 '+m+' reviews — keep the streak going.'));
+  }
+}
+function maybeDelightLargestJob(amount){
+  const amt=Number(amount)||0;
+  if(amt<=0)return;
+  let max=0;
+  try{max=Number(localStorage.getItem('hubly_delight_max_job')||0)||0;}catch(e){}
+  if(amt<=max)return;
+  try{localStorage.setItem('hubly_delight_max_job',String(amt));}catch(e){}
+  if(max>0)delightToast('💰 Largest booking this month — $'+Math.round(amt)+'.');
 }
 function gcalAccessRequestedKey(){
   return currentBusiness?.id?('hubly_gcal_access_requested_'+currentBusiness.id):'hubly_gcal_access_requested';
@@ -45026,7 +45464,7 @@ const T = {
     themeSwitchNight:'Switch to night mode',
     themeDayOn:'Day mode',
     themeNightOn:'Night mode',
-    jobs:'Jobs & Calendar',
+    jobs:'Jobs',calendar:'Calendar',
     customers:'Customers',
     money:'Revenue',
     chats:'Chats',
