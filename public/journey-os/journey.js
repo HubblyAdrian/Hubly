@@ -11299,9 +11299,18 @@
     try { syncAskFab(v); } catch (eFab) {}
   }
 
+  function isHomeViewActive() {
+    var dashView = el('v-dashboard');
+    if (dashView && !dashView.classList.contains('hidden')) return true;
+    var activeNi = document.querySelector('#p-app .ni.active[data-v]');
+    return !!(activeNi && activeNi.getAttribute('data-v') === 'dashboard');
+  }
+
   function enhanceDashboard() {
     var root = ownPixelView('v-dashboard', 'jos-dash-root');
     if (!root) return;
+    /* Never steal chrome / mode classes while the owner is on another Operate tab. */
+    if (!isHomeViewActive()) return;
     setJobsMode(false);
     setInboxMode(false);
     setLeadsMode(false);
@@ -11991,6 +12000,7 @@
         if (root.classList.contains('jos-customize-on')) return;
         if (root.querySelector('.jos-wmenu-pop:not([hidden])')) return;
         if (el('jos-home-cc-input') && document.activeElement === el('jos-home-cc-input')) return;
+        if (!isHomeViewActive()) return;
         // Lightweight pulse: re-render on a gentle cadence for live feel
         if (!root._josLiveTick) root._josLiveTick = 0;
         root._josLiveTick += 1;
