@@ -1006,11 +1006,8 @@
           '</div></div></article>';
     }).join('');
 
-    var profile = projectWorkspaceProfile();
     return '<div class="pp-shell pp-dash">' +
-      '<header class="pp-dash-head">' +
-        '<div><p class="pp-eyebrow">' + esc(profile.eyebrow) + '</p><h1 class="pp-title">' + esc(profile.title) + '</h1>' +
-        '<p class="pp-sub">' + esc(profile.subtitle) + '</p></div>' +
+      '<header class="pp-dash-head pp-dash-head--actions">' +
         '<div class="pp-dash-actions">' +
           '<button type="button" class="pp-btn pp-btn-ghost pp-btn-lg" data-pp-act="quick">Quick Project</button>' +
           '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="new">+ New Project</button>' +
