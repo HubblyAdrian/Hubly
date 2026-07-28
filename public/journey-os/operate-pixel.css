@@ -5243,9 +5243,11 @@ html[data-theme="night"] .jos-mem-form select{
 }
 .jos-job-card-sub,.jos-jobs-cust .jos-muted,.jos-jd-svc .jos-muted{color:#4B5563!important;font-weight:550}
 .jos-job-card.is-block .jos-job-card-title,
-.jos-cal-event.block strong{color:#fff!important}
-.jos-cal-event.block{background:#374151;color:#fff;border-radius:8px;padding:8px 10px}
+.jos-cal-event.block strong,
+.jos-gcal-event.block strong{color:#fff!important}
+.jos-cal-event.block,.jos-gcal-event.block{background:#374151;color:#fff;border-radius:8px;padding:8px 10px}
 .jos-cal-event.block .jos-muted{color:rgba(255,255,255,.75)!important}
+.jos-gcal-event strong,.jos-gcal-event span{color:#fff!important}
 
 /* Actions menu: keep above content but clear of Ask Hubly FAB */
 .jos-jobs-pop{z-index:14000;min-width:200px;box-shadow:0 12px 32px rgba(15,23,42,.18)}
