@@ -3389,6 +3389,38 @@ html[data-theme="night"] .jos-mem-form select{
   height:40px;border:1px solid var(--jos-border);border-radius:10px;padding:0 12px;
   font:inherit;font-size:13px;font-weight:600;color:#141B2B;background:#fff;
 }
+.jos-set-pay-wrap .jos-set-integ-lead{margin:8px 0 0}
+.jos-set-pay-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;
+}
+.jos-set-pay-opt{
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;
+  padding:14px 14px;border:1.5px solid var(--jos-border);border-radius:14px;background:#fff;
+  cursor:pointer;font:inherit;color:#141B2B;transition:border-color .15s,background .15s,box-shadow .15s;
+}
+.jos-set-pay-opt:hover{border-color:#D9632D;box-shadow:0 4px 14px rgba(217,99,45,.08)}
+.jos-set-pay-opt.on{
+  border-color:#D9632D;background:color-mix(in srgb,#D9632D 8%,#fff);
+  box-shadow:0 0 0 3px rgba(217,99,45,.12);
+}
+.jos-set-pay-opt strong{font-size:14px;font-weight:800;letter-spacing:-.01em}
+.jos-set-pay-opt span{font-size:12px;font-weight:550;color:#4A5160;line-height:1.35}
+.jos-set-pay-deposit{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--jos-border);gap:10px}
+.jos-set-pay-deposit.on{display:grid}
+.jos-set-pay-dep-row{display:flex;flex-wrap:wrap;gap:8px}
+.jos-set-pay-chip{
+  border:1.5px solid var(--jos-border);background:#fff;border-radius:999px;padding:8px 12px;
+  font:inherit;font-size:12px;font-weight:750;color:#141B2B;cursor:pointer;
+}
+.jos-set-pay-chip.on{border-color:#D9632D;background:color-mix(in srgb,#D9632D 10%,#fff);color:#9a3412}
+.jos-set-pay-dep-val,.jos-set-pay-msg{
+  display:grid;gap:6px;font-size:11px;font-weight:800;color:#141B2B;text-transform:uppercase;letter-spacing:.04em;margin-top:4px;
+}
+.jos-set-pay-dep-val input,.jos-set-pay-msg textarea{
+  font:inherit;font-size:14px;font-weight:600;text-transform:none;letter-spacing:0;
+  padding:10px 12px;border:1.5px solid var(--jos-border);border-radius:10px;background:#fff;color:#141B2B;width:100%;box-sizing:border-box;
+}
+.jos-set-pay-msg span{font-weight:600;text-transform:none;letter-spacing:0;color:#6B7280}
 .jos-jobs-cal-full{margin-top:4px}
 .jos-jobs-cal-toolbar{margin-bottom:12px;gap:12px;flex-wrap:wrap}
 .jos-jobs-cal-title{margin:0;font-size:20px;font-weight:800;color:var(--jos-navy);letter-spacing:-.02em}
