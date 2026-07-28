@@ -13571,36 +13571,153 @@
       }).join('');
       return '<label class="jos-je-field' + full + '"><span>' + esc(label) + '</span><select id="' + esc(id) + '">' + options + '</select></label>';
     }
+    if (opts.kind === 'textarea') {
+      return '<label class="jos-je-field' + full + '"><span>' + esc(label) + '</span><textarea id="' + esc(id) + '" rows="' + (opts.rows || 3) + '" placeholder="' + esc(ph) + '">' + esc(value == null ? '' : value) + '</textarea></label>';
+    }
     return '<label class="jos-je-field' + full + '"><span>' + esc(label) + '</span><input id="' + esc(id) + '" type="' + esc(type) + '" value="' + esc(value == null ? '' : value) + '" placeholder="' + esc(ph) + '"' + (opts.autofocus ? ' autofocus' : '') + '></label>';
   }
 
-  function renderJobEditForm(j) {
+  function jobServiceOptions(j) {
     var services = ((S().services || []).map(function (s) { return s && s.name; }).filter(Boolean));
     if (!services.length) services = [j.service || 'Detail', 'Detail', 'Interior', 'Exterior'];
     if (j.service && services.indexOf(j.service) < 0) services.unshift(j.service);
+    return services;
+  }
+
+  function jobTeamOptions(j) {
     var team = (jobsTeam() || []).map(function (m) { return m && m.name; }).filter(Boolean);
     if (!team.length) team = ['Unassigned'];
     if (j.assignedTo && team.indexOf(j.assignedTo) < 0) team.unshift(j.assignedTo);
     if (team.indexOf('Unassigned') < 0) team.unshift('Unassigned');
-    return '<div class="jos-jd-stack jos-je-form">' +
-      '<p class="jos-muted" style="margin:0 0 8px">Edit the job details Hubly will use for scheduling, CRM, and invoices.</p>' +
+    return team;
+  }
+
+  function jobStatusOptions() {
+    return [
+      { value: 'scheduled', label: 'scheduled' },
+      { value: 'in_progress', label: 'in progress' },
+      { value: 'completed', label: 'completed' },
+      { value: 'cancelled', label: 'cancelled' },
+      { value: 'pending', label: 'pending' }
+    ];
+  }
+
+  function applyJobEditFormToJob(job) {
+    if (!job) return { ok: false, error: 'Select a job' };
+    var custEl = el('jos-je-customer');
+    if (custEl) {
+      var custName = String(custEl.value || '').trim();
+      if (!custName) return { ok: false, error: 'Customer name is required' };
+      job.customer = custName;
+    }
+    var numEl = el('jos-je-number');
+    if (numEl) {
+      var numVal = String(numEl.value || '').trim();
+      if (numVal) job.jobNumber = numVal;
+    }
+    var phoneEl = el('jos-je-phone');
+    if (phoneEl) job.phone = String(phoneEl.value || '').trim();
+    var emailEl = el('jos-je-email');
+    if (emailEl) job.email = String(emailEl.value || '').trim();
+    var addrEl = el('jos-je-address');
+    if (addrEl) job.address = String(addrEl.value || '').trim();
+    var vehEl = el('jos-je-vehicle');
+    if (vehEl) job.vehicle = String(vehEl.value || '').trim();
+    var svcEl = el('jos-je-service');
+    if (svcEl) job.service = String(svcEl.value || job.service || '').trim();
+    var amtEl = el('jos-je-amount');
+    if (amtEl) {
+      var amtRaw = String(amtEl.value || '').trim();
+      if (amtRaw !== '') job.amount = parseFloat(amtRaw) || 0;
+    }
+    var dateEl = el('jos-je-date');
+    if (dateEl) {
+      var dateVal = String(dateEl.value || '').trim();
+      if (dateVal) job.date = dateVal;
+    }
+    var timeEl = el('jos-je-time');
+    if (timeEl) {
+      var timeVal = String(timeEl.value || '').trim();
+      if (timeVal) job.time = timeVal;
+    }
+    var durEl = el('jos-je-duration');
+    if (durEl) {
+      var durRaw = parseInt(String(durEl.value || ''), 10);
+      if (Number.isFinite(durRaw) && durRaw > 0) job.durationMin = durRaw;
+    }
+    var asgEl = el('jos-je-assigned');
+    if (asgEl) job.assignedTo = String(asgEl.value || job.assignedTo || 'Unassigned').trim();
+    var statusEl = el('jos-je-status');
+    if (statusEl && statusEl.value) job.status = String(statusEl.value);
+    var notesEl = el('jos-je-notes');
+    if (notesEl) {
+      var notesVal = String(notesEl.value || '').trim();
+      if (!Array.isArray(job.internalNotes)) job.internalNotes = [];
+      if (notesVal) {
+        if (job.internalNotes[0] !== notesVal) job.internalNotes = [notesVal].concat(job.internalNotes.slice(1));
+      } else if (job.internalNotes.length) {
+        job.internalNotes = job.internalNotes.slice(1);
+      }
+    }
+    return { ok: true };
+  }
+
+  function applyJobListField(input) {
+    if (!input) return { ok: false };
+    var jobId = input.getAttribute('data-jos-job-id');
+    var field = input.getAttribute('data-jos-job-field');
+    var job = findJob(jobId);
+    if (!job || job.isBlock || job.isGoogle || !field) return { ok: false };
+    var val = String(input.value || '').trim();
+    if (field === 'customer') {
+      if (!val) return { ok: false, error: 'Customer name is required' };
+      job.customer = val;
+    } else if (field === 'phone') job.phone = val;
+    else if (field === 'service') job.service = val || job.service;
+    else if (field === 'date') { if (val) job.date = val; }
+    else if (field === 'time') job.time = val;
+    else if (field === 'amount') job.amount = val === '' ? (job.amount || 0) : (parseFloat(val) || 0);
+    else if (field === 'status') { if (val) job.status = val; }
+    else return { ok: false };
+    return { ok: true, job: job };
+  }
+
+  function persistJobSoon() {
+    try {
+      if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon();
+    } catch (ePersistJob) {}
+  }
+
+  function renderJobEditForm(j, opts) {
+    opts = opts || {};
+    var inline = !!opts.inline;
+    var note = (j.internalNotes && j.internalNotes[0]) ? String(j.internalNotes[0]) : '';
+    return '<div class="jos-jd-stack jos-je-form' + (inline ? ' is-inline' : '') + '">' +
+      (inline ? '' : '<p class="jos-muted" style="margin:0 0 8px">Edit the job details Hubly will use for scheduling, CRM, and invoices.</p>') +
       '<div class="jos-je-grid">' +
       jobEditField('jos-je-number', 'Job #', jobNumber(j), { placeholder: 'JOB-1001' }) +
-      jobEditField('jos-je-customer', 'Customer', j.customer || '', { placeholder: 'Customer name', autofocus: true }) +
+      jobEditField('jos-je-status', 'Status', j.status || 'scheduled', { kind: 'select', options: jobStatusOptions() }) +
+      jobEditField('jos-je-customer', 'Customer', j.customer || '', { placeholder: 'Customer name', autofocus: !inline }) +
       jobEditField('jos-je-phone', 'Phone', j.phone || '', { placeholder: '(555) 000-0000' }) +
       jobEditField('jos-je-email', 'Email', j.email || '', { type: 'email', placeholder: 'name@email.com' }) +
       jobEditField('jos-je-address', 'Address', j.address || '', { full: true, placeholder: 'Service address' }) +
       jobEditField('jos-je-vehicle', 'Vehicle / property', j.vehicle || '', { placeholder: 'Optional' }) +
-      jobEditField('jos-je-service', 'Service', j.service || '', { kind: 'select', options: services }) +
+      jobEditField('jos-je-service', 'Service', j.service || '', { kind: 'select', options: jobServiceOptions(j) }) +
       jobEditField('jos-je-amount', 'Amount', j.amount != null ? j.amount : '', { type: 'number', placeholder: '0' }) +
       jobEditField('jos-je-date', 'Date', j.date || '', { type: 'date' }) +
       jobEditField('jos-je-time', 'Time', j.time || '', { placeholder: '10:00 AM' }) +
       jobEditField('jos-je-duration', 'Duration (min)', j.durationMin || 120, { type: 'number' }) +
-      jobEditField('jos-je-assigned', 'Assigned to', j.assignedTo || 'Unassigned', { kind: 'select', options: team }) +
+      jobEditField('jos-je-assigned', 'Assigned to', j.assignedTo || 'Unassigned', { kind: 'select', options: jobTeamOptions(j) }) +
+      jobEditField('jos-je-notes', 'Notes', note, { kind: 'textarea', full: true, placeholder: 'Internal notes…', rows: 3 }) +
       '</div>' +
       '<div class="jos-btn-row jos-mt">' +
-      btn('jobs-edit-save', 'Save job', 'jos-btn-brand jos-btn-sm') +
-      btn('jobs-edit-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
+      btn('jobs-edit-save', inline ? 'Save changes' : 'Save job', 'jos-btn-brand jos-btn-sm') +
+      (inline
+        ? btn('jobs-start', 'Start', 'jos-btn jos-btn-sm') +
+          btn('jobs-reschedule', 'Reschedule', 'jos-btn jos-btn-sm') +
+          btn('jobs-complete', 'Complete', 'jos-btn jos-btn-sm') +
+          btn('jobs-message', 'Message', 'jos-btn jos-btn-sm')
+        : btn('jobs-edit-cancel', 'Cancel', 'jos-btn jos-btn-sm')) +
       '</div></div>';
   }
 
@@ -13668,49 +13785,53 @@
 
   function renderJobDrawer(root, j, workspaceTab) {
     workspaceTab = workspaceTab || 'overview';
-    var editing = !!root._josJobEditOpen && !(j.isBlock || j.isGoogle);
+    var canEdit = !(j.isBlock || j.isGoogle);
     var tabs = [
       ['overview', 'Overview'], ['customer', 'Customer'], ['services', 'Services'], ['photos', 'Photos'],
       ['checklist', 'Checklist'], ['messages', 'Messages'], ['invoice', 'Invoice'], ['timeline', 'Timeline'], ['activity', 'Activity']
     ];
-    var tabBar = '<div class="jos-jd-tabs' + (editing ? ' is-disabled' : '') + '">' + tabs.map(function (t) {
-      return '<button type="button" class="jos-jd-tab' + (workspaceTab === t[0] ? ' on' : '') + '" data-jos-job-ws="' + t[0] + '"' + (editing ? ' disabled' : '') + '>' + esc(t[1]) + '</button>';
+    var tabBar = '<div class="jos-jd-tabs">' + tabs.map(function (t) {
+      return '<button type="button" class="jos-jd-tab' + (workspaceTab === t[0] ? ' on' : '') + '" data-jos-job-ws="' + t[0] + '">' + esc(t[1]) + '</button>';
     }).join('') + '</div>';
 
     var body = '';
-    if (editing) {
-      body = renderJobEditForm(j);
-    } else if (workspaceTab === 'overview') {
-      body = '<div class="jos-jd-stack">' +
-        '<div class="jos-jd-kv"><span>Job #</span><strong>' + esc(jobNumber(j)) + '</strong></div>' +
-        '<div class="jos-jd-kv"><span>Status</span><button type="button" class="jos-pill ' + jobStatusTone(j.status) + '" data-jos-act="jobs-status-menu" data-jos-job-id="' + esc(j.id) + '">' + esc(j.status) + '</button></div>' +
-        '<div class="jos-jd-kv"><span>Customer</span><button type="button" class="jos-linkish" data-jos-act="jobs-open-customer" data-jos-job-id="' + esc(j.id) + '">' + esc(j.customer) + '</button></div>' +
-        '<div class="jos-jd-kv"><span>Vehicle</span><strong>' + esc(j.vehicle || '—') + '</strong></div>' +
-        '<div class="jos-jd-kv"><span>Address</span><button type="button" class="jos-linkish" data-jos-act="jobs-nav" data-jos-job-id="' + esc(j.id) + '">' + esc(j.address || '—') + '</button></div>' +
-        '<div class="jos-jd-kv"><span>Date / time</span><strong>' + esc((j.date || '—') + ' · ' + (j.time || '')) + '</strong></div>' +
-        '<div class="jos-jd-kv"><span>Assigned</span><strong>' + esc(j.assignedTo || 'Unassigned') + '</strong></div>' +
-        '<div class="jos-jd-kv"><span>Revenue</span><button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '">' + esc(money(j.amount) || '$0') + '</button></div>' +
-        '<div class="jos-jd-kv"><span>Duration</span><strong>' + esc(String(j.durationMin || 120)) + ' min</strong></div>' +
-        '<div class="jos-muted jos-mt">' + esc((j.internalNotes && j.internalNotes[0]) || 'No notes yet') + '</div>' +
-        '<div class="jos-btn-row jos-mt">' +
-        btn('jobs-edit', 'Edit details', 'jos-btn-brand jos-btn-sm') +
-        btn('jobs-start', 'Start', 'jos-btn jos-btn-sm') +
-        btn('jobs-reschedule', 'Reschedule', 'jos-btn jos-btn-sm') +
-        btn('jobs-complete', 'Complete', 'jos-btn jos-btn-sm') +
-        btn('jobs-message', 'Message', 'jos-btn jos-btn-sm') +
-        '</div></div>';
+    if (workspaceTab === 'overview') {
+      body = canEdit
+        ? renderJobEditForm(j, { inline: true })
+        : '<div class="jos-jd-stack">' +
+          '<div class="jos-jd-kv"><span>Job #</span><strong>' + esc(jobNumber(j)) + '</strong></div>' +
+          '<div class="jos-jd-kv"><span>Status</span><strong>' + esc(j.status || '—') + '</strong></div>' +
+          '<div class="jos-jd-kv"><span>When</span><strong>' + esc((j.date || '—') + ' · ' + (j.time || '')) + '</strong></div>' +
+          '<div class="jos-muted jos-mt">Calendar blocks are managed on the schedule.</div></div>';
     } else if (workspaceTab === 'customer') {
-      body = '<div class="jos-jd-stack">' +
-        '<div class="jos-jd-profile"><div class="jos-jobs-ava lg">' + esc(jobInitials(j.customer)) + '</div><div>' +
-        '<strong>' + esc(j.customer) + '</strong>' +
-        '<div><button type="button" class="jos-linkish" data-jos-act="jobs-call" data-jos-job-id="' + esc(j.id) + '">' + esc(j.phone || 'No phone') + '</button></div>' +
-        '<div><button type="button" class="jos-linkish" data-jos-act="jobs-email" data-jos-job-id="' + esc(j.id) + '">' + esc(j.email || 'No email') + '</button></div>' +
-        '<div class="jos-muted">' + esc(j.address || '') + '</div></div></div>' +
-        '<div class="jos-muted">Vehicle · ' + esc(j.vehicle || '—') + ' · Past jobs & LTV in CRM</div>' +
-        '<div class="jos-btn-row">' + btn('jobs-edit', 'Edit details', 'jos-btn-brand jos-btn-sm') + btn('jobs-open-customer', 'Open Customer', 'jos-btn jos-btn-sm') + btn('go-chats', 'Messages', 'jos-btn jos-btn-sm') + '</div></div>';
+      body = canEdit
+        ? '<div class="jos-jd-stack jos-je-form is-inline">' +
+          '<div class="jos-je-grid">' +
+          jobEditField('jos-je-customer', 'Customer', j.customer || '', { placeholder: 'Customer name' }) +
+          jobEditField('jos-je-phone', 'Phone', j.phone || '', { placeholder: '(555) 000-0000' }) +
+          jobEditField('jos-je-email', 'Email', j.email || '', { type: 'email', placeholder: 'name@email.com' }) +
+          jobEditField('jos-je-address', 'Address', j.address || '', { full: true, placeholder: 'Service address' }) +
+          jobEditField('jos-je-vehicle', 'Vehicle / property', j.vehicle || '', { full: true, placeholder: 'Optional' }) +
+          '</div>' +
+          '<div class="jos-btn-row jos-mt">' +
+          btn('jobs-edit-save', 'Save changes', 'jos-btn-brand jos-btn-sm') +
+          btn('jobs-open-customer', 'Open Customer', 'jos-btn jos-btn-sm') +
+          btn('go-chats', 'Messages', 'jos-btn jos-btn-sm') +
+          '</div></div>'
+        : '<div class="jos-muted">No customer profile on this block.</div>';
     } else if (workspaceTab === 'services') {
-      body = '<div class="jos-jd-stack"><div class="jos-jd-svc"><strong>' + esc(j.service) + '</strong><div class="jos-muted">Qty 1 · ' + esc(money(j.amount)) + ' · Tax/discount editable · ' + esc(String(j.durationMin || 120)) + ' min</div></div>' +
-        '<div class="jos-btn-row">' + btn('jobs-edit', 'Edit details', 'jos-btn jos-btn-sm') + btn('jobs-invoice-create', 'Add Service / Invoice', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+      body = canEdit
+        ? '<div class="jos-jd-stack jos-je-form is-inline">' +
+          '<div class="jos-je-grid">' +
+          jobEditField('jos-je-service', 'Service', j.service || '', { kind: 'select', options: jobServiceOptions(j), full: true }) +
+          jobEditField('jos-je-amount', 'Amount', j.amount != null ? j.amount : '', { type: 'number', placeholder: '0' }) +
+          jobEditField('jos-je-duration', 'Duration (min)', j.durationMin || 120, { type: 'number' }) +
+          '</div>' +
+          '<div class="jos-btn-row jos-mt">' +
+          btn('jobs-edit-save', 'Save changes', 'jos-btn-brand jos-btn-sm') +
+          btn('jobs-invoice-create', 'Add Service / Invoice', 'jos-btn jos-btn-sm') +
+          '</div></div>'
+        : '<div class="jos-muted">No services on this block.</div>';
     } else if (workspaceTab === 'photos') {
       body = '<div class="jos-jd-stack"><div class="jos-kicker">Before</div><div class="jos-photo-grid">' +
         ((j.photos && j.photos.before && j.photos.before.length ? j.photos.before : []).map(function (p, i) {
@@ -13750,10 +13871,9 @@
       body = '<div class="jos-muted">Select a tab</div>';
     }
 
-    return '<aside class="jos-jobs-drawer open' + (editing ? ' is-editing' : '') + '" id="jos-jobs-drawer">' +
-      '<div class="jos-jd-head"><div><div class="jos-kicker">' + (editing ? 'Edit job' : 'Job Details') + '</div><h2>' + esc(j.customer || 'Customer') + '</h2><div class="jos-muted">' + esc(j.service || '') + ' · ' + esc(jobNumber(j)) + '</div></div>' +
+    return '<aside class="jos-jobs-drawer open" id="jos-jobs-drawer">' +
+      '<div class="jos-jd-head"><div><div class="jos-kicker">Job Details</div><h2>' + esc(j.customer || 'Customer') + '</h2><div class="jos-muted">' + esc(j.service || '') + ' · ' + esc(jobNumber(j)) + '</div></div>' +
       '<div class="jos-jd-head-acts">' +
-      (editing || j.isBlock || j.isGoogle ? '' : '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-edit">Edit</button>') +
       '<button type="button" class="jos-icon-btn" data-jos-act="jobs-drawer-close" aria-label="Close">✕</button>' +
       '</div></div>' +
       tabBar +
@@ -13803,14 +13923,39 @@
     var rowsHtml = pageRows.length ? pageRows.map(function (j) {
       var tone = jobRowTone(j.status);
       var created = (j.timeline && j.timeline[0] && j.timeline[0].at) || j.date || '';
+      var locked = !!(j.isBlock || j.isGoogle);
+      if (locked) {
+        return '<tr class="jos-jobs-row tone-' + tone + '" data-jos-job-id="' + esc(j.id) + '">' +
+          '<td class="col-cust"><button type="button" class="jos-jobs-cust" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
+          '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span><span><strong class="jos-jobs-name">' + esc(j.customer || 'Block') + '</strong><span class="jos-muted">' + esc(j.phone || j.email || '') + '</span></span></button></td>' +
+          '<td class="col-svc"><strong class="jos-jobs-name">' + esc(j.service || 'Block') + '</strong></td>' +
+          '<td class="col-date"><strong class="jos-jobs-name">' + esc(j.date || '—') + '</strong><span class="jos-muted">' + esc(j.time || '') + '</span></td>' +
+          '<td class="col-status"><span class="jos-pill jos-jobs-status ' + jobStatusTone(j.status) + '">' + esc(String(j.status || '').replace(/_/g, ' ')) + '</span></td>' +
+          '<td class="col-amt"><strong class="jos-jobs-name">' + esc(money(j.amount) || '—') + '</strong></td>' +
+          '<td class="col-act"></td></tr>';
+      }
       return '<tr class="jos-jobs-row tone-' + tone + '" data-jos-job-id="' + esc(j.id) + '">' +
-        '<td class="col-cust"><button type="button" class="jos-jobs-cust" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
-        '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span><span><strong class="jos-jobs-name">' + esc(j.customer || 'Customer') + '</strong><span class="jos-muted">' + esc(j.phone || j.email || '') + '</span></span></button></td>' +
-        '<td class="col-svc"><button type="button" class="jos-linkish" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><strong class="jos-jobs-name">' + esc(j.service || 'Service') + '</strong><span class="jos-muted">' + esc(j.vehicle || '') + (j.durationMin ? (' · ' + j.durationMin + 'm') : '') + '</span></button></td>' +
-        '<td class="col-date"><button type="button" class="jos-linkish jos-jobs-dt" data-jos-act="jobs-cal-day" data-jos-day="' + esc(j.date || '') + '"><strong class="jos-jobs-name">' + esc(j.date || '—') + '</strong><span class="jos-muted">' + esc(j.time || '') + ' · ' + esc(jobNumber(j)) + '</span></button></td>' +
-        '<td class="col-status"><button type="button" class="jos-pill jos-jobs-status ' + jobStatusTone(j.status) + '" data-jos-act="jobs-status-menu" data-jos-job-id="' + esc(j.id) + '">' + esc(String(j.status || '').replace(/_/g, ' ')) + '</button></td>' +
-        '<td class="col-amt"><button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '"><strong class="jos-jobs-name">' + esc(money(j.amount) || '$0') + '</strong></button></td>' +
+        '<td class="col-cust"><div class="jos-jobs-inline-cust">' +
+        '<button type="button" class="jos-jobs-ava" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '" title="Open details">' + esc(jobInitials(j.customer)) + '</button>' +
+        '<div class="jos-jobs-inline-stack">' +
+        '<input class="jos-jobs-inline" type="text" data-jos-job-field="customer" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.customer || '') + '" placeholder="Customer" aria-label="Customer">' +
+        '<input class="jos-jobs-inline muted" type="text" data-jos-job-field="phone" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.phone || '') + '" placeholder="Phone" aria-label="Phone">' +
+        '</div></div></td>' +
+        '<td class="col-svc"><div class="jos-jobs-inline-stack">' +
+        '<input class="jos-jobs-inline" type="text" data-jos-job-field="service" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.service || '') + '" placeholder="Service" aria-label="Service">' +
+        '<span class="jos-muted">' + esc(j.vehicle || '') + (j.durationMin ? (' · ' + j.durationMin + 'm') : '') + '</span>' +
+        '</div></td>' +
+        '<td class="col-date"><div class="jos-jobs-inline-stack">' +
+        '<input class="jos-jobs-inline" type="date" data-jos-job-field="date" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.date || '') + '" aria-label="Date">' +
+        '<input class="jos-jobs-inline muted" type="text" data-jos-job-field="time" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.time || '') + '" placeholder="Time" aria-label="Time">' +
+        '</div></td>' +
+        '<td class="col-status"><select class="jos-jobs-inline jos-jobs-inline-status ' + jobStatusTone(j.status) + '" data-jos-job-field="status" data-jos-job-id="' + esc(j.id) + '" aria-label="Status">' +
+        jobStatusOptions().map(function (s) {
+          return '<option value="' + esc(s.value) + '"' + ((j.status || '') === s.value ? ' selected' : '') + '>' + esc(s.label) + '</option>';
+        }).join('') + '</select></td>' +
+        '<td class="col-amt"><input class="jos-jobs-inline jos-jobs-inline-amt" type="number" step="0.01" data-jos-job-field="amount" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.amount != null ? j.amount : '') + '" placeholder="0" aria-label="Amount"></td>' +
         '<td class="col-act"><div class="jos-jobs-more-wrap">' +
+        '<button type="button" class="jos-icon-btn" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '" title="Open details" aria-label="Open details">↗</button>' +
         '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋯</button>' +
         '</div></td></tr>';
     }).join('') : '';
@@ -14108,12 +14253,94 @@
         return;
       }
       var jobEl = e.target.closest('tr[data-jos-job-id]');
-      if (jobEl && !e.target.closest('[data-jos-act]')) {
+      if (jobEl && !e.target.closest('[data-jos-act], .jos-jobs-inline, .jos-jobs-inline-stack, .jos-jobs-more-wrap')) {
         root._josJobId = jobEl.getAttribute('data-jos-job-id');
         root._josDrawerOpen = true;
         root._josJobWorkspace = 'overview';
+        root._josJobEditOpen = false;
         renderJobs();
         e.stopPropagation();
+      }
+    });
+    function saveInlineListField(input, opts) {
+      opts = opts || {};
+      var result = applyJobListField(input);
+      if (!result.ok) {
+        if (result.error && !opts.quiet) toast(result.error);
+        return;
+      }
+      persistJobSoon();
+      if (opts.rerender) {
+        root._josJobsSkipLoading = true;
+        root._josJobId = result.job.id;
+        renderJobs();
+      } else if (input.getAttribute('data-jos-job-field') === 'customer') {
+        var head = el('jos-jobs-drawer');
+        if (head) {
+          var h2 = head.querySelector('.jos-jd-head h2');
+          if (h2) h2.textContent = result.job.customer || 'Customer';
+        }
+      }
+    }
+    function saveDrawerForm(opts) {
+      opts = opts || {};
+      var job = findJob(root._josJobId);
+      if (!job || job.isBlock || job.isGoogle) return;
+      var result = applyJobEditFormToJob(job);
+      if (!result.ok) {
+        if (!opts.quiet) toast(result.error || 'Could not save');
+        return false;
+      }
+      persistJobSoon();
+      if (!opts.quiet) toast('Saved');
+      if (opts.rerender) {
+        root._josJobsSkipLoading = true;
+        renderJobs();
+      } else {
+        var drawer = el('jos-jobs-drawer');
+        if (drawer) {
+          var h2 = drawer.querySelector('.jos-jd-head h2');
+          var sub = drawer.querySelector('.jos-jd-head .jos-muted');
+          if (h2) h2.textContent = job.customer || 'Customer';
+          if (sub) sub.textContent = (job.service || '') + ' · ' + jobNumber(job);
+        }
+      }
+      return true;
+    }
+    root.addEventListener('change', function (e) {
+      var listField = e.target.closest('[data-jos-job-field]');
+      if (listField) {
+        saveInlineListField(listField, { quiet: true, rerender: listField.getAttribute('data-jos-job-field') === 'status' });
+        e.stopPropagation();
+        return;
+      }
+      if (e.target.closest('.jos-je-form') && e.target.matches('select, input[type="date"], input[type="number"]')) {
+        saveDrawerForm({ quiet: true, rerender: false });
+      }
+    });
+    root.addEventListener('focusout', function (e) {
+      var listField = e.target.closest('[data-jos-job-field]');
+      if (listField && e.target.matches('input')) {
+        saveInlineListField(listField, { quiet: true, rerender: false });
+        return;
+      }
+      if (e.target.closest('.jos-je-form') && e.target.matches('input, textarea')) {
+        var next = e.relatedTarget;
+        if (next && next.closest && next.closest('.jos-je-form')) return;
+        saveDrawerForm({ quiet: true, rerender: false });
+      }
+    });
+    root.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      var listField = e.target.closest('[data-jos-job-field]');
+      if (listField && e.target.matches('input') && e.target.type !== 'date') {
+        e.preventDefault();
+        e.target.blur();
+        return;
+      }
+      if (e.target.closest('.jos-je-form') && e.target.matches('input') && e.target.type !== 'date') {
+        e.preventDefault();
+        e.target.blur();
       }
     });
     root.addEventListener('dragstart', function (e) {
@@ -15328,7 +15555,7 @@
         root._josJobId = nj.id;
         root._josDrawerOpen = true;
         root._josJobWorkspace = 'overview';
-        root._josJobEditOpen = true;
+        root._josJobEditOpen = false;
         root._josJobsListView = 'all';
         pushJobNotif('upcoming', 'New job created');
         toast('Add customer & job details');
@@ -15340,7 +15567,7 @@
         root._josJobId = job.id;
         root._josDrawerOpen = true;
         root._josJobWorkspace = 'overview';
-        root._josJobEditOpen = true;
+        root._josJobEditOpen = false;
         return renderJobs();
       }
       if (act === 'jobs-edit-cancel') {
@@ -15349,31 +15576,12 @@
       }
       if (act === 'jobs-edit-save') {
         if (!job) return toast('Select a job');
-        var custName = String((el('jos-je-customer') || {}).value || '').trim();
-        if (!custName) return toast('Customer name is required');
-        var numVal = String((el('jos-je-number') || {}).value || '').trim();
-        if (numVal) job.jobNumber = numVal;
-        job.customer = custName;
-        job.phone = String((el('jos-je-phone') || {}).value || '').trim();
-        job.email = String((el('jos-je-email') || {}).value || '').trim();
-        job.address = String((el('jos-je-address') || {}).value || '').trim();
-        job.vehicle = String((el('jos-je-vehicle') || {}).value || '').trim();
-        job.service = String((el('jos-je-service') || {}).value || job.service || '').trim();
-        var amtRaw = String((el('jos-je-amount') || {}).value || '').trim();
-        if (amtRaw !== '') job.amount = parseFloat(amtRaw) || 0;
-        var dateVal = String((el('jos-je-date') || {}).value || '').trim();
-        if (dateVal) job.date = dateVal;
-        var timeVal = String((el('jos-je-time') || {}).value || '').trim();
-        if (timeVal) job.time = timeVal;
-        var durRaw = parseInt(String((el('jos-je-duration') || {}).value || ''), 10);
-        if (Number.isFinite(durRaw) && durRaw > 0) job.durationMin = durRaw;
-        job.assignedTo = String((el('jos-je-assigned') || {}).value || job.assignedTo || 'Unassigned').trim();
+        var saveResult = applyJobEditFormToJob(job);
+        if (!saveResult.ok) return toast(saveResult.error || 'Could not save');
         pushJobTimeline(job, 'note', 'Job details updated');
         root._josJobEditOpen = false;
         toast('Job updated');
-        try {
-          if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon();
-        } catch (eSaveJob) {}
+        persistJobSoon();
         return renderJobs();
       }
       if (act === 'jobs-resize') {
