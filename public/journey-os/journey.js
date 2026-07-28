@@ -11284,6 +11284,7 @@
     var custRailOpen = !!(app && app.classList.contains('jos-customers-mode') &&
       (app.classList.contains('jos-cm-intel-open') || document.querySelector('.jos-cm-rail.open')));
     var hide = v === 'ask' || v === 'ask-hubly' || v === 'editor' || v === 'pipeline' ||
+      v === 'photo-projects' ||
       !!(document.body && document.body.classList.contains('ed-editor-open')) ||
       pipeDetailOpen || jobsDrawerOpen || custRailOpen;
     fab.classList.toggle('hidden', !!hide);

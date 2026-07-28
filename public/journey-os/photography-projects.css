@@ -4,40 +4,56 @@
 :root {
   --pp-ink: #0c0d10;
   --pp-ink-2: #3d4450;
-  --pp-ink-3: #8b919c;
+  --pp-ink-3: #6b7280;
   --pp-surface: #ffffff;
-  --pp-surface-2: #f6f5f3;
-  --pp-surface-3: #eceae6;
-  --pp-border: #e6e3de;
+  --pp-surface-2: #f4f5f7;
+  --pp-surface-3: #e8eaee;
+  --pp-border: #c9ced6;
+  --pp-border-strong: #9aa3b2;
   --pp-brand: #D9632D;
   --pp-brand-dark: #B84E1F;
   --pp-navy: #141B2B;
   --pp-radius: 20px;
   --pp-shadow: 0 18px 50px rgba(15, 20, 31, 0.07);
   --pp-font: 'DM Sans', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --pp-bg: #F4F5F7;
 }
 
 #p-app.jos-pixel #v-photo-projects.jos-pixel-owned > :not(#jos-photo-projects-root) {
   display: none !important;
 }
 
+/* Opaque full-viewport shell — Home must not bleed through */
 #p-app.jos-photo-projects-mode .app-main,
 body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
-  background:
-    radial-gradient(1200px 480px at 10% -10%, rgba(217, 99, 45, 0.06), transparent 55%),
-    radial-gradient(900px 420px at 90% 0%, rgba(20, 27, 43, 0.05), transparent 50%),
-    var(--pp-surface-2);
+  background: var(--pp-bg) !important;
+}
+#p-app.jos-pixel.jos-photo-projects-mode #v-photo-projects.body,
+#p-app.jos-pixel.jos-photo-projects-mode #jos-photo-projects-root {
+  min-height: 100vh;
+  height: auto;
+  padding: 0 !important;
+  background: var(--pp-bg);
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
 }
 
 #jos-photo-projects-root {
   font-family: var(--pp-font);
   color: var(--pp-ink);
-  min-height: calc(100vh - 72px);
-  animation: pp-fade-in 0.45s ease both;
+  min-height: 100vh;
+  background: var(--pp-bg);
+  /* Fade children only — never leave the root transparent over Home */
+  animation: none;
+}
+
+#jos-photo-projects-root > .pp-shell {
+  animation: pp-fade-in 0.35s ease both;
 }
 
 @keyframes pp-fade-in {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
 
@@ -49,7 +65,10 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
 .pp-shell {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 28px 28px 64px;
+  padding: 28px 28px 120px;
+  min-height: 100vh;
+  box-sizing: border-box;
+  background: transparent;
 }
 
 .pp-eyebrow {
@@ -151,7 +170,7 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
 
 .pp-card {
   background: var(--pp-surface);
-  border: 1px solid var(--pp-border);
+  border: 1.5px solid var(--pp-border-strong);
   border-radius: var(--pp-radius);
   overflow: hidden;
   box-shadow: var(--pp-shadow);
@@ -198,10 +217,10 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
 }
 
 .pp-dot {
-  width: 3px;
-  height: 3px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  background: var(--pp-ink-3);
+  background: var(--pp-border-strong);
 }
 
 .pp-card-row {
@@ -227,20 +246,21 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
 .pp-pill {
   display: inline-flex;
   align-items: center;
-  padding: 5px 9px;
+  padding: 5px 10px;
   border-radius: 999px;
-  background: var(--pp-surface-2);
-  border: 1px solid var(--pp-border);
+  background: #fff;
+  border: 1.5px solid var(--pp-border-strong);
   font-size: 11px;
-  font-weight: 650;
-  color: var(--pp-ink-2);
+  font-weight: 700;
+  color: var(--pp-navy);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
 }
 
 .pp-card-stats {
   justify-content: space-between;
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid var(--pp-border);
+  border-top: 1.5px solid var(--pp-border);
 }
 
 .pp-card-stats strong {
@@ -259,7 +279,7 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
 
 .pp-btn {
   appearance: none;
-  border: 1px solid var(--pp-border);
+  border: 1.5px solid var(--pp-border-strong);
   background: var(--pp-surface);
   color: var(--pp-ink);
   border-radius: 12px;
@@ -317,30 +337,32 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   position: absolute;
   top: 14px;
   left: 14px;
-  padding: 6px 10px;
+  padding: 6px 11px;
   border-radius: 999px;
   font-size: 11px;
-  font-weight: 720;
+  font-weight: 740;
   letter-spacing: 0.02em;
   backdrop-filter: blur(10px);
-  background: rgba(255,255,255,0.88);
+  background: rgba(255,255,255,0.96);
+  border: 1.5px solid var(--pp-border-strong);
   color: var(--pp-navy);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
 
-.pp-status-lead { color: #475569; }
-.pp-status-booked { color: #1d4ed8; }
-.pp-status-scheduled { color: #0369a1; }
-.pp-status-shooting { color: #b45309; }
-.pp-status-editing { color: #7c3aed; }
-.pp-status-proofing { color: #c2410c; }
-.pp-status-delivered { color: #15803d; }
-.pp-status-archived { color: #64748b; }
+.pp-status-lead { color: #334155; background: #f1f5f9; border-color: #94a3b8; }
+.pp-status-booked { color: #1e3a8a; background: #dbeafe; border-color: #60a5fa; }
+.pp-status-scheduled { color: #0c4a6e; background: #e0f2fe; border-color: #38bdf8; }
+.pp-status-shooting { color: #92400e; background: #ffedd5; border-color: #fb923c; }
+.pp-status-editing { color: #5b21b6; background: #ede9fe; border-color: #a78bfa; }
+.pp-status-proofing { color: #9a3412; background: #ffedd5; border-color: #fb923c; }
+.pp-status-delivered { color: #14532d; background: #dcfce7; border-color: #4ade80; }
+.pp-status-archived { color: #475569; background: #f1f5f9; border-color: #94a3b8; }
 
 .pp-empty {
   text-align: center;
   padding: 72px 24px;
   background: var(--pp-surface);
-  border: 1px dashed var(--pp-border);
+  border: 1.5px dashed var(--pp-border-strong);
   border-radius: var(--pp-radius);
 }
 
@@ -913,7 +935,7 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   gap: 0;
   margin-bottom: 24px;
   background: var(--pp-surface);
-  border: 1px solid var(--pp-border);
+  border: 1.5px solid var(--pp-border-strong);
   border-radius: 22px;
   overflow: hidden;
   box-shadow: var(--pp-shadow);
@@ -921,7 +943,7 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
 }
 .pp-metric {
   padding: 18px 20px;
-  border-right: 1px solid var(--pp-border);
+  border-right: 1.5px solid var(--pp-border);
 }
 .pp-metric:last-child { border-right: 0; }
 .pp-metric-label {
@@ -1127,7 +1149,7 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
 }
 
 @media (max-width: 960px) {
-  .pp-shell { padding: 18px 16px 48px; }
+  .pp-shell { padding: 18px 16px 120px; }
   .pp-dash-head { flex-direction: column; align-items: stretch; }
   .pp-toolbar { grid-template-columns: 1fr 1fr; }
   .pp-search { grid-column: 1 / -1; }
@@ -1136,11 +1158,52 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   .pp-hero-kpis,
   .pp-metrics,
   .pp-lr-hero { grid-template-columns: 1fr; }
-  .pp-metric { border-right: 0; border-bottom: 1px solid var(--pp-border); }
+  .pp-metric { border-right: 0; border-bottom: 1.5px solid var(--pp-border); }
   .pp-metric:last-child { border-bottom: 0; }
   .pp-tl-row { grid-template-columns: 22px 1fr; }
   .pp-tl-notes { grid-column: 2; }
   .pp-fav-grid { grid-template-columns: repeat(2, 1fr); }
   .pp-lr-twin { grid-template-columns: 1fr; }
   .pp-lr-twin-join { justify-self: center; transform: rotate(90deg); }
+}
+
+/* Ask Hubly + coach must not cover Projects CTAs */
+#p-app.jos-photo-projects-mode #jos-ask-fab,
+#p-app.jos-photo-projects-mode .hubly-coach {
+  display: none !important;
+}
+
+/* Auth gate modal */
+.pp-auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 14000;
+  background: rgba(15, 20, 31, 0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.pp-auth-card {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 20px;
+  border: 1.5px solid var(--pp-border-strong);
+  box-shadow: 0 24px 60px rgba(15, 20, 31, 0.22);
+  padding: 28px 24px 22px;
+}
+.pp-auth-card h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+  color: var(--pp-navy);
+}
+.pp-auth-card p {
+  margin: 0 0 18px;
+  color: var(--pp-ink-2);
+  line-height: 1.5;
+  font-size: 14px;
+}
+.pp-auth-card .pp-btn-row {
+  justify-content: flex-end;
 }

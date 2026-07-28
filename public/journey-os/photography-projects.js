@@ -160,6 +160,79 @@
     return (global.currentBusiness && global.currentBusiness.id) ||
       S().businessId || S().bizId || null;
   }
+  function isSignedIn() {
+    try {
+      if (global.currentUser && (global.currentUser.id || global.currentUser.email)) return true;
+      if (S().userId || S().uid) return true;
+    } catch (e) {}
+    return false;
+  }
+  /** Clear CTA when create fails — toast alone never explained where to sign in. */
+  function requireBusinessSession(opts) {
+    if (businessId()) return true;
+    var signedIn = isSignedIn();
+    var title = signedIn ? 'Choose a business' : 'Sign in to save projects';
+    var body = signedIn
+      ? 'You\u2019re signed in, but Hubly doesn\u2019t have an active business yet. Open Home or finish setup, then create your project.'
+      : 'Projects save to your Hubly business. Sign in (or create a free account), then come back here to create a project.';
+    showAuthGate({
+      title: title,
+      body: body,
+      primaryLabel: signedIn ? 'Go to Home' : 'Sign in',
+      primaryAct: signedIn ? 'go-home' : 'go-signin',
+      secondaryLabel: 'Not now'
+    });
+    if (opts && opts.toast !== false) {
+      toast(signedIn
+        ? 'Open a business on Home, then create your project.'
+        : 'Sign in from the Hubly login page to save projects.');
+    }
+    return false;
+  }
+  function showAuthGate(cfg) {
+    var root = ownRoot();
+    if (!root) return;
+    var existing = root.querySelector('.pp-auth-gate');
+    if (existing) existing.remove();
+    var gate = document.createElement('div');
+    gate.className = 'pp-auth-gate';
+    gate.setAttribute('role', 'dialog');
+    gate.setAttribute('aria-modal', 'true');
+    gate.innerHTML =
+      '<div class="pp-auth-card">' +
+        '<h2>' + esc(cfg.title) + '</h2>' +
+        '<p>' + esc(cfg.body) + '</p>' +
+        '<div class="pp-btn-row">' +
+          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="auth-dismiss">Not now</button>' +
+          '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="' + esc(cfg.primaryAct) + '">' + esc(cfg.primaryLabel) + '</button>' +
+        '</div>' +
+      '</div>';
+    gate.addEventListener('click', function (e) {
+      if (e.target === gate) gate.remove();
+    });
+    root.appendChild(gate);
+  }
+  function goSignIn() {
+    try {
+      if (typeof global.showP === 'function') {
+        global.showP('p-signin', { replaceRoute: true });
+        return;
+      }
+    } catch (e) {}
+    try { global.location.href = '/login'; } catch (e2) {}
+  }
+  function goHome() {
+    try {
+      var nav = document.querySelector('.ni[data-v="dashboard"]');
+      if (nav && typeof global.switchV === 'function') {
+        global.switchV(nav);
+        return;
+      }
+    } catch (e) {}
+    try {
+      if (typeof global.showP === 'function') global.showP('p-app');
+    } catch (e2) {}
+  }
   async function dbClient() {
     if (typeof global.waitForDb === 'function') return global.waitForDb(8000);
     return global._hublyDb || (global.window && global.window._hublyDb) || null;
@@ -667,7 +740,12 @@
 
   async function insertProject(p) {
     var bid = businessId();
-    if (!bid) throw new Error('Sign in and open a business to save projects.');
+    if (!bid) {
+      requireBusinessSession();
+      throw new Error(isSignedIn()
+        ? 'Open a business on Home, then create your project.'
+        : 'Sign in to save projects — use the Sign in button.');
+    }
     var db = await dbClient();
     if (!db) throw new Error('Hubly could not reach the database.');
     var row = projectToRow(p);
@@ -797,6 +875,13 @@
       try { document.body.classList.add('jos-pixel'); } catch (e) {}
     }
     app.classList.toggle('jos-photo-projects-mode', !!on);
+    try {
+      if (typeof global.renderHublyCoach === 'function') global.renderHublyCoach();
+    } catch (e2) {}
+    try {
+      var fab = el('jos-ask-fab');
+      if (fab) fab.classList.toggle('hidden', !!on);
+    } catch (e3) {}
   }
   function getState(root) {
     var prefs = loadPrefs();
@@ -1694,11 +1779,26 @@
     var id = t.getAttribute('data-pp-id');
     var p = id ? findProject(id) : (st.projectId ? findProject(st.projectId) : null);
 
+    if (act === 'auth-dismiss') {
+      var gate = root.querySelector('.pp-auth-gate');
+      if (gate) gate.remove();
+      return;
+    }
+    if (act === 'go-signin') {
+      goSignIn();
+      return;
+    }
+    if (act === 'go-home') {
+      goHome();
+      return;
+    }
     if (act === 'new') {
+      if (!requireBusinessSession()) return;
       st.view = 'wizard'; st.wizardStep = 1; st.wizard = blankWizard(); st.quickOpen = false;
       return renderPhotoProjects();
     }
     if (act === 'quick') {
+      if (!requireBusinessSession()) return;
       st.quickOpen = true; st.quick = { name: '', files: [] };
       return renderPhotoProjects();
     }
@@ -1707,6 +1807,7 @@
       return renderPhotoProjects();
     }
     if (act === 'quick-create') {
+      if (!requireBusinessSession()) return;
       try {
         var createdQ = await createQuickProject(st);
         if (!createdQ) return;
@@ -1717,6 +1818,7 @@
         toast('Project saved');
         return renderPhotoProjects();
       } catch (err) {
+        if (!businessId()) requireBusinessSession({ toast: false });
         toast((err && err.message) || 'Could not create project');
         return;
       }
@@ -1741,12 +1843,14 @@
       return renderPhotoProjects();
     }
     if (act === 'wiz-create') {
+      if (!requireBusinessSession()) return;
       try {
         var created = await persistProject(buildProjectFromWizard(st.wizard || blankWizard()));
         st.view = 'command'; st.projectId = created.id; st.tab = 'overview'; st.wizard = null;
         toast('Project created');
         return renderPhotoProjects();
       } catch (err) {
+        if (!businessId()) requireBusinessSession({ toast: false });
         toast((err && err.message) || 'Could not create project');
         return;
       }
