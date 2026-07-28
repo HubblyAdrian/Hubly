@@ -14537,7 +14537,7 @@
       }
       var calPill = e.target.closest('.jos-cal-pill[data-jos-job-id], .jos-cal-event[data-jos-job-id], .jos-gcal-event[data-jos-job-id]');
       if (calPill) {
-        if (e.target.closest('[data-jos-gcal-resize]')) return;
+        if (e.target.closest('[data-jos-gcal-resize], [data-jos-act="jobs-delete"], .jos-gcal-del')) return;
         if (root._josGcalSuppressClick) {
           root._josGcalSuppressClick = false;
           e.preventDefault();
@@ -14771,6 +14771,7 @@
     root.addEventListener('pointerdown', function (e) {
       if (e.button != null && e.button !== 0) return;
       if (e.target.closest('#jos-gcal-create-pop')) return;
+      if (e.target.closest('[data-jos-act="jobs-delete"], .jos-gcal-del')) return;
       var resizeHandle = e.target.closest('[data-jos-gcal-resize]');
       var eventEl = e.target.closest('.jos-gcal-event[data-jos-job-id]');
       var col = e.target.closest('.jos-gcal-col');
@@ -14857,8 +14858,9 @@
           var meta = gcalBoardMeta(drag.board);
           var top = Math.max(0, (drag.startMin - meta.startMin) * (meta.pxPerHour / 60));
           var height = Math.max(22, (drag.curMin - drag.startMin) * (meta.pxPerHour / 60) - 2);
-          ev.style.top = top + 'px';
-          ev.style.height = height + 'px';
+          var wrap = ev.closest('.jos-gcal-event-wrap') || ev;
+          wrap.style.top = top + 'px';
+          wrap.style.height = height + 'px';
         }
         return;
       }
@@ -15320,11 +15322,16 @@
     var height = Math.max(22, dur * pxPerMin - 2);
     var tone = (j.isBlock || j.isGoogle) ? 'block' : jobStatusTone(j.status);
     var on = selectedId && String(selectedId) === String(j.id) ? ' on' : '';
-    return '<button type="button" class="jos-gcal-event ' + tone + on + '" style="top:' + top + 'px;height:' + height + 'px" draggable="true" data-jos-job-id="' + esc(j.id) + '">' +
+    var del = j.isGoogle
+      ? ''
+      : '<button type="button" class="jos-gcal-del" data-jos-act="jobs-delete" data-jos-job-id="' + esc(j.id) + '" title="Delete" aria-label="Delete from calendar">×</button>';
+    return '<div class="jos-gcal-event-wrap" style="top:' + top + 'px;height:' + height + 'px">' +
+      '<button type="button" class="jos-gcal-event ' + tone + on + '" draggable="true" data-jos-job-id="' + esc(j.id) + '">' +
       '<strong>' + esc(calEventTitle(j)) + '</strong>' +
       (height >= 36 ? '<span>' + esc(calEventSub(j)) + '</span>' : '') +
       ((j.isGoogle) ? '' : '<i class="jos-gcal-resize" data-jos-gcal-resize title="Drag to resize"></i>') +
-      '</button>';
+      '</button>' + del +
+      '</div>';
   }
   function calNowLineHtml(gridStartMin, gridEndMin, pxPerMin, dateStr) {
     if (dateStr !== todayStr()) return '';
@@ -15525,6 +15532,7 @@
       btn('jobs-resume', 'Resume', 'jos-btn jos-btn-sm') +
       btn('jobs-complete', 'Complete', 'jos-btn jos-btn-sm') +
       btn('jobs-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
+      btn('jobs-delete', 'Delete', 'jos-btn-sm jos-btn-danger') +
       btn('jobs-duplicate', 'Duplicate', 'jos-btn jos-btn-sm') +
       btn('jobs-reschedule', 'Reschedule', 'jos-btn jos-btn-sm') +
       btn('jobs-resize', 'Resize +30m', 'jos-btn jos-btn-sm') +
@@ -15831,7 +15839,7 @@
         if (!pop) return;
         var items = act === 'jobs-status-menu'
           ? [['jobs-start', 'In Progress'], ['jobs-complete', 'Completed'], ['jobs-reschedule', 'Reschedule'], ['jobs-assign', 'Assign Tech'], ['jobs-cancel', 'Cancel'], ['jobs-duplicate', 'Duplicate']]
-          : [['jobs-open', 'View Job'], ['jobs-edit', 'Edit'], ['jobs-duplicate', 'Duplicate'], ['jobs-invoice-create', 'Invoice'], ['jobs-invoice-paid', 'Collect Payment'], ['jobs-assign', 'Assign Employee'], ['jobs-message', 'Send Reminder'], ['jobs-message', 'Message Customer'], ['jobs-photo-before', 'Photos'], ['jobs-check-add', 'Checklist'], ['jobs-cancel', 'Delete']];
+          : [['jobs-open', 'View Job'], ['jobs-edit', 'Edit'], ['jobs-duplicate', 'Duplicate'], ['jobs-invoice-create', 'Invoice'], ['jobs-invoice-paid', 'Collect Payment'], ['jobs-assign', 'Assign Employee'], ['jobs-message', 'Send Reminder'], ['jobs-message', 'Message Customer'], ['jobs-photo-before', 'Photos'], ['jobs-check-add', 'Checklist'], ['jobs-delete', 'Delete']];
         pop.innerHTML = items.map(function (x) {
           return '<button type="button" data-jos-act="' + esc(x[0]) + '" data-jos-job-id="' + esc(jobId || '') + '">' + esc(x[1]) + '</button>';
         }).join('');
@@ -16020,6 +16028,28 @@
         pushJobTimeline(job, 'note', 'Cancelled');
         pushJobNotif('cancelled', job.customer + ' cancelled');
         toast('Job cancelled');
+        return rerender();
+      }
+      if (act === 'jobs-delete') {
+        var delId = jobId || (job && job.id);
+        var delJob = delId ? findJob(delId) : job;
+        if (!delJob) return toast('Select a job');
+        if (delJob.isGoogle) return toast('Google events can\u2019t be deleted here');
+        var label = delJob.isBlock
+          ? (delJob.service || 'Blocked time')
+          : (delJob.customer || delJob.service || 'this job');
+        try {
+          if (typeof global.confirm === 'function' && !global.confirm('Delete \u201c' + label + '\u201d from your calendar?')) {
+            return;
+          }
+        } catch (eConfirm) {}
+        S().jobs = (S().jobs || []).filter(function (j) { return String(j.id) !== String(delJob.id); });
+        if (String(root._josJobId) === String(delJob.id)) {
+          root._josJobId = null;
+          root._josDrawerOpen = false;
+        }
+        if (root._josBulk && root._josBulk[String(delJob.id)]) delete root._josBulk[String(delJob.id)];
+        toast(delJob.isBlock ? 'Block deleted' : 'Deleted');
         return rerender();
       }
       if (act === 'jobs-duplicate') {
