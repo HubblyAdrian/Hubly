@@ -2,7 +2,10 @@
  * Hubly Photography Projects — Operate module
  * Independent of Jobs. Supabase is SSOT for project records.
  * localStorage may ONLY cache UI preferences (sort, filters, tab).
- * Adobe Lightroom is a digital twin — enhances, never required.
+ *
+ * External Workspaces: a Project may link one or more providers
+ * (Adobe Lightroom, Dropbox, Google Drive, Capture One, Canva, …).
+ * The Project remains Hubly’s primary record; externals synchronize to it.
  * Gated by businesses.capabilities.projects (not trade heuristics).
  */
 (function (global) {
@@ -41,7 +44,7 @@
     { channel: 'before_after', title: 'Before & After Carousel' }
   ];
   var CREATE_ASSETS = [
-    { id: 'lightroom', label: 'Lightroom Album', hint: 'Digital twin — optional until Adobe connects' },
+    { id: 'lightroom', label: 'Lightroom Workspace', hint: 'External Workspace — optional until Adobe connects' },
     { id: 'folder', label: 'Client Folder', hint: 'Hubly project workspace' },
     { id: 'contract', label: 'Contract' },
     { id: 'invoice', label: 'Invoice' },
@@ -60,6 +63,14 @@
     'Review Sent',
     'Referral Campaign',
     'Anniversary Reminder'
+  ];
+
+  var WORKSPACE_PROVIDERS = [
+    { id: 'adobe_lightroom', label: 'Adobe Lightroom', role: 'Editing', available: true },
+    { id: 'capture_one', label: 'Capture One', role: 'Editing', available: false },
+    { id: 'dropbox', label: 'Dropbox', role: 'Files', available: false },
+    { id: 'google_drive', label: 'Google Drive', role: 'Files', available: false },
+    { id: 'canva', label: 'Canva', role: 'Design', available: false }
   ];
 
   var _cache = { businessId: null, projects: [], loaded: false, loading: null };
@@ -115,8 +126,8 @@
     if (ms < 86400000) return Math.floor(ms / 3600000) + 'h ago';
     return Math.floor(ms / 86400000) + 'd ago';
   }
-  function twinKey() {
-    return 'twin_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+  function workspaceId() {
+    return 'ws_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
   }
   function businessId() {
     return (global.currentBusiness && global.currentBusiness.id) ||
@@ -222,8 +233,28 @@
       }),
       activity: [],
       shot_list: [],
-      local_uploads: []
+      local_uploads: [],
+      workspaces: []
     }, partial || {});
+  }
+
+  function getWorkspace(p, provider) {
+    var list = (p && p.workspaces) || [];
+    return list.find(function (w) { return w.provider === provider; }) || null;
+  }
+
+  function upsertWorkspaceLocal(p, patch) {
+    p.workspaces = p.workspaces || [];
+    var i = p.workspaces.findIndex(function (w) { return w.provider === patch.provider; });
+    var next = Object.assign(
+      i >= 0 ? p.workspaces[i] : { id: workspaceId(), provider: patch.provider, sync_state: 'pending' },
+      patch
+    );
+    if (i >= 0) p.workspaces[i] = next;
+    else p.workspaces.push(next);
+    p.workspace = p.workspace || defaultWorkspace();
+    p.workspace.workspaces = p.workspaces;
+    return next;
   }
 
   function rowToProject(row) {
@@ -253,10 +284,7 @@
       gallery_status: row.gallery_status || 'draft',
       invoice_status: row.invoice_status || 'none',
       last_sync_at: row.last_sync_at,
-      twin_key: row.twin_key,
-      twin_status: row.twin_status || 'unlinked',
-      lightroom_catalog_id: row.lightroom_catalog_id,
-      lightroom_album_id: row.lightroom_album_id,
+      workspaces: Array.isArray(ws.workspaces) ? ws.workspaces : [],
       workspace: ws,
       team: ws.team,
       timeline: ws.timeline,
@@ -287,7 +315,8 @@
       marketing: p.marketing || (p.workspace && p.workspace.marketing),
       activity: p.activity || (p.workspace && p.workspace.activity) || [],
       shot_list: p.shot_list || (p.workspace && p.workspace.shot_list) || [],
-      local_uploads: (p.workspace && p.workspace.local_uploads) || []
+      local_uploads: (p.workspace && p.workspace.local_uploads) || [],
+      workspaces: p.workspaces || (p.workspace && p.workspace.workspaces) || []
     });
     return {
       name: p.name,
@@ -311,10 +340,6 @@
       gallery_status: p.gallery_status || 'draft',
       invoice_status: p.invoice_status || 'none',
       last_sync_at: p.last_sync_at || null,
-      twin_key: p.twin_key || null,
-      twin_status: p.twin_status || 'unlinked',
-      lightroom_catalog_id: p.lightroom_catalog_id || null,
-      lightroom_album_id: p.lightroom_album_id || null,
       workspace: ws
     };
   }
@@ -352,6 +377,52 @@
         .order('updated_at', { ascending: false });
       if (res.error) throw res.error;
       var list = (res.data || []).map(rowToProject);
+      var ids = list.map(function (p) { return p.id; });
+      if (ids.length) {
+        var wsRes = await db.from('photography_project_workspaces')
+          .select('*')
+          .in('project_id', ids);
+        if (!wsRes.error && wsRes.data) {
+          var byProject = {};
+          (wsRes.data || []).forEach(function (w) {
+            byProject[w.project_id] = byProject[w.project_id] || [];
+            byProject[w.project_id].push({
+              id: w.id,
+              provider: w.provider,
+              external_id: w.external_id,
+              display_name: w.display_name,
+              sync_state: w.sync_state,
+              last_sync_at: w.last_sync_at,
+              metadata: w.metadata || {}
+            });
+          });
+          list.forEach(function (p) {
+            p.workspaces = byProject[p.id] || p.workspaces || [];
+            p.workspace = p.workspace || defaultWorkspace();
+            p.workspace.workspaces = p.workspaces;
+            var lrWs = getWorkspace(p, 'adobe_lightroom');
+            if (lrWs) {
+              p.lightroom_status = mapSyncToLightroomStatus(lrWs.sync_state);
+              p.last_sync_at = lrWs.last_sync_at || p.last_sync_at;
+              p.lightroom = Object.assign({}, p.lightroom || {}, {
+                album_name: lrWs.display_name || (lrWs.metadata && lrWs.metadata.album_name),
+                album_id: lrWs.external_id,
+                catalog_id: lrWs.metadata && lrWs.metadata.catalog_id,
+                adobe_account_email: lrWs.metadata && lrWs.metadata.adobe_account_email,
+                connection_status: lrWs.sync_state === 'linked' || lrWs.sync_state === 'synced' ? 'connected' : 'not_connected',
+                last_sync_at: lrWs.last_sync_at,
+                photo_count: (lrWs.metadata && lrWs.metadata.photo_count) || 0,
+                edited_count: (lrWs.metadata && lrWs.metadata.edited_count) || 0,
+                favorites: (lrWs.metadata && lrWs.metadata.favorites_count) || 0,
+                sync_activity: (lrWs.metadata && lrWs.metadata.sync_activity) || [],
+                upload_queue: (lrWs.metadata && lrWs.metadata.upload_queue) || [],
+                import_queue: (lrWs.metadata && lrWs.metadata.import_queue) || [],
+                export_queue: (lrWs.metadata && lrWs.metadata.export_queue) || []
+              });
+            }
+          });
+        }
+      }
       _cache.projects = list;
       _cache.loaded = true;
       _cache.loading = null;
@@ -368,6 +439,17 @@
     }
   }
 
+  function mapSyncToLightroomStatus(state) {
+    return ({
+      unlinked: 'not_connected',
+      pending: 'album_ready',
+      linked: 'connected',
+      syncing: 'syncing',
+      synced: 'synced',
+      error: 'error'
+    })[state] || 'not_connected';
+  }
+
   async function insertProject(p) {
     var bid = businessId();
     if (!bid) throw new Error('Sign in and open a business to save projects.');
@@ -375,12 +457,18 @@
     if (!db) throw new Error('Hubly could not reach the database.');
     var row = projectToRow(p);
     row.business_id = bid;
-    if (!row.twin_key) row.twin_key = twinKey();
-    if (!row.twin_status || row.twin_status === 'unlinked') row.twin_status = 'pending';
     var res = await db.from('photography_projects').insert(row).select('*').single();
     if (res.error) throw res.error;
     var created = rowToProject(res.data);
-    await upsertLightroomTwin(db, created);
+    created.workspaces = p.workspaces || [];
+    // Ensure a pending Lightroom External Workspace exists (optional until connected).
+    upsertWorkspaceLocal(created, {
+      provider: 'adobe_lightroom',
+      display_name: created.name,
+      sync_state: 'pending',
+      metadata: { album_name: created.name }
+    });
+    await upsertExternalWorkspace(db, created, getWorkspace(created, 'adobe_lightroom'));
     await insertActivityRow(db, created, 'Project created', created.name);
     _cache.projects = [created].concat(_cache.projects.filter(function (x) { return x.id !== created.id; }));
     _cache.loaded = true;
@@ -402,7 +490,14 @@
       .single();
     if (res.error) throw res.error;
     var updated = rowToProject(res.data);
-    await upsertLightroomTwin(db, updated);
+    updated.workspaces = p.workspaces || [];
+    var lr = getWorkspace(updated, 'adobe_lightroom');
+    if (lr) await upsertExternalWorkspace(db, updated, lr);
+    (updated.workspaces || []).forEach(function (w) {
+      if (w.provider !== 'adobe_lightroom') {
+        upsertExternalWorkspace(db, updated, w).catch(function () {});
+      }
+    });
     _cache.projects = _cache.projects.map(function (x) {
       return x.id === updated.id ? updated : x;
     });
@@ -410,35 +505,48 @@
   }
 
   async function persistProject(p) {
-    if (p.id && !String(p.id).startsWith('pp_')) return updateProject(p);
+    if (p.id && !String(p.id).startsWith('pp_') && !String(p.id).startsWith('ws_')) return updateProject(p);
+    // UUIDs from Supabase don't start with pp_
+    if (p.id && /^[0-9a-f-]{36}$/i.test(String(p.id))) return updateProject(p);
     return insertProject(p);
   }
 
-  async function upsertLightroomTwin(db, p) {
+  async function upsertExternalWorkspace(db, p, ws) {
+    if (!ws || !ws.provider) return null;
     try {
-      var lr = p.lightroom || {};
-      await db.from('photography_project_lightroom').upsert({
+      var payload = {
         project_id: p.id,
         business_id: p.business_id || businessId(),
-        adobe_account_email: lr.adobe_account_email || null,
-        album_name: lr.album_name || p.name,
-        album_id: p.lightroom_album_id || lr.album_id || null,
-        catalog_id: p.lightroom_catalog_id || lr.catalog_id || null,
-        twin_key: p.twin_key,
-        twin_status: p.twin_status || 'pending',
-        photo_count: lr.photo_count || p.photo_count || 0,
-        edited_count: lr.edited_count || 0,
-        favorites_count: lr.favorites || 0,
-        connection_status: lr.connection_status || p.lightroom_status || 'not_connected',
-        last_sync_at: lr.last_sync_at || p.last_sync_at || null,
-        upload_queue: lr.upload_queue || [],
-        import_queue: lr.import_queue || [],
-        export_queue: lr.export_queue || [],
-        sync_activity: lr.sync_activity || [],
-        meta: { digital_twin: true }
-      }, { onConflict: 'project_id' });
+        provider: ws.provider,
+        external_id: ws.external_id || null,
+        display_name: ws.display_name || p.name,
+        sync_state: ws.sync_state || 'pending',
+        last_sync_at: ws.last_sync_at || null,
+        metadata: Object.assign({}, ws.metadata || {}, {
+          album_name: (p.lightroom && p.lightroom.album_name) || ws.display_name || p.name,
+          connection_status: p.lightroom_status || 'not_connected'
+        })
+      };
+      var res = await db.from('photography_project_workspaces')
+        .upsert(payload, { onConflict: 'project_id,provider' })
+        .select('*')
+        .maybeSingle();
+      if (res.error) throw res.error;
+      if (res.data) {
+        upsertWorkspaceLocal(p, {
+          id: res.data.id,
+          provider: res.data.provider,
+          external_id: res.data.external_id,
+          display_name: res.data.display_name,
+          sync_state: res.data.sync_state,
+          last_sync_at: res.data.last_sync_at,
+          metadata: res.data.metadata || {}
+        });
+      }
+      return res.data;
     } catch (e) {
-      console.warn('Lightroom twin upsert', e);
+      console.warn('External workspace upsert', e);
+      return null;
     }
   }
 
@@ -631,7 +739,7 @@
     return '<div class="pp-shell pp-dash">' +
       '<header class="pp-dash-head">' +
         '<div><p class="pp-eyebrow">Photography</p><h1 class="pp-title">Photography Projects</h1>' +
-        '<p class="pp-sub">Open the project — not Lightroom. Hubly is the twin before and after editing.</p></div>' +
+        '<p class="pp-sub">Open the project — not the editor. External workspaces (Lightroom, Drive, …) sync to Hubly.</p></div>' +
         '<div class="pp-dash-actions">' +
           '<button type="button" class="pp-btn pp-btn-ghost pp-btn-lg" data-pp-act="quick">Quick Project</button>' +
           '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="new">+ New Project</button>' +
@@ -754,7 +862,7 @@
         field('Assistant', '<input type="text" data-pp-w="team.assistant" value="' + esc(w.team.assistant) + '">') +
         field('Editor', '<input type="text" data-pp-w="team.editor" value="' + esc(w.team.editor) + '">') + '</div>';
     } else {
-      body = '<p class="pp-help">Hubly prepares the project OS. Lightroom becomes the digital twin when you connect Adobe.</p><div class="pp-checks">' +
+      body = '<p class="pp-help">Hubly prepares the project OS. Link Adobe Lightroom (or Dropbox, Drive, …) later as External Workspaces — the Project stays primary.</p><div class="pp-checks">' +
         CREATE_ASSETS.map(function (a) {
           return '<label class="pp-check"><input type="checkbox" data-pp-asset="' + a.id + '"' + (w.assets[a.id] ? ' checked' : '') + '>' +
             '<span><strong>' + esc(a.label) + '</strong>' + (a.hint ? '<small>' + esc(a.hint) + '</small>' : '') + '</span></label>';
@@ -796,7 +904,7 @@
       '</select></div>' +
       '<h1 class="pp-hero-title">' + esc(p.name) + '</h1>' +
       '<p class="pp-hero-sub">' + esc(p.client_name || 'No client') + ' · ' + esc(p.project_type) + ' · ' + esc(formatDate(p.shoot_date)) +
-      (p.twin_key ? ' · Twin ' + esc(String(p.twin_key).slice(0, 10)) : '') + '</p>' +
+      (workspaceSummary(p) ? ' · ' + esc(workspaceSummary(p)) : '') + '</p>' +
       '<div class="pp-hero-kpis">' +
       kpi('Countdown', countdownLabel(p.shoot_date)) +
       kpi('Revenue', money(p.revenue_cents)) +
@@ -824,12 +932,24 @@
     return renderOverviewTab(p);
   }
 
+  function workspaceSummary(p) {
+    var linked = (p.workspaces || []).filter(function (w) {
+      return w.sync_state === 'linked' || w.sync_state === 'synced' || w.sync_state === 'pending';
+    });
+    if (!linked.length) return '';
+    if (linked.length === 1) {
+      var lab = WORKSPACE_PROVIDERS.find(function (x) { return x.id === linked[0].provider; });
+      return (lab ? lab.label : linked[0].provider) + ' workspace';
+    }
+    return linked.length + ' workspaces';
+  }
+
   function renderOverviewTab(p) {
     return '<div class="pp-panel-grid"><section class="pp-panel"><h3>Project</h3><dl class="pp-dl">' +
       '<div><dt>Location</dt><dd>' + esc(p.location || '—') + '</dd></div>' +
       '<div><dt>Type</dt><dd>' + esc(p.project_type) + '</dd></div>' +
       '<div><dt>Lead</dt><dd>' + esc((p.team && p.team.lead) || '—') + '</dd></div>' +
-      '<div><dt>Digital twin</dt><dd>' + esc(p.twin_status || 'pending') + '</dd></div></dl>' +
+      '<div><dt>Workspaces</dt><dd>' + esc(workspaceSummary(p) || 'None linked') + '</dd></div></dl>' +
       '<p class="pp-muted">' + esc(p.notes || 'No notes yet.') + '</p></section>' +
       '<section class="pp-panel"><h3>Client</h3><dl class="pp-dl">' +
       '<div><dt>Name</dt><dd>' + esc(p.client_name || '—') + '</dd></div>' +
@@ -864,28 +984,48 @@
 
   function renderLightroomTab(p) {
     var lr = p.lightroom || {};
-    var linked = p.twin_status === 'linked' || p.twin_status === 'synced' ||
-      lr.connection_status === 'connected' || lr.connection_status === 'synced';
+    var lrWs = getWorkspace(p, 'adobe_lightroom');
+    var linked = lrWs && (lrWs.sync_state === 'linked' || lrWs.sync_state === 'synced' || lrWs.sync_state === 'pending') &&
+      (lr.connection_status === 'connected' || lr.connection_status === 'synced' || lrWs.sync_state === 'synced' || lrWs.sync_state === 'linked');
+    // Treat pending as "workspace prepared" but not Adobe-connected for hero CTAs
+    var adobeConnected = lrWs && (lrWs.sync_state === 'linked' || lrWs.sync_state === 'synced');
 
     var hero = '<section class="pp-lr-hero">' +
       '<div class="pp-lr-hero-copy">' +
-        '<p class="pp-eyebrow">Digital twin</p>' +
+        '<p class="pp-eyebrow">External Workspace</p>' +
         '<h2>Lightroom Workspace</h2>' +
         '<p class="pp-lr-lead">Professional editing powered by Adobe Lightroom.</p>' +
-        '<p>Hubly organizes every project before and after editing. Open <strong>' + esc(p.name) + '</strong> — not Lightroom — and the twin stays in sync.</p>' +
+        '<p>Hubly organizes every project before and after editing. Open <strong>' + esc(p.name) + '</strong> — Lightroom is one linked workspace among many.</p>' +
         '<div class="pp-btn-row">' +
           '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="adobe-connect">Connect Adobe</button>' +
-          (linked ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Photos</button>' : '') +
+          (adobeConnected ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Photos</button>' : '') +
           '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="gallery">Continue in Hubly</button>' +
         '</div>' +
       '</div>' +
       '<div class="pp-lr-hero-side">' +
         '<div class="pp-lr-twin">' +
-          '<div><span class="pp-label">Hubly</span><strong>' + esc(p.name) + '</strong><small>Client · Invoices · Gallery · Marketing</small></div>' +
+          '<div><span class="pp-label">Hubly Project</span><strong>' + esc(p.name) + '</strong><small>Client · Invoices · Gallery · Marketing</small></div>' +
           '<div class="pp-lr-twin-join" aria-hidden="true">↔</div>' +
-          '<div><span class="pp-label">Lightroom</span><strong>' + esc(lr.album_name || p.name) + '</strong><small>RAWs · Edits · Favorites · Ratings</small></div>' +
+          '<div><span class="pp-label">External Workspace</span><strong>' + esc((lrWs && lrWs.display_name) || lr.album_name || p.name) + '</strong><small>Adobe Lightroom · RAWs · Edits · Favorites</small></div>' +
         '</div>' +
-        '<p class="pp-muted">Twin key · ' + esc(p.twin_key || 'assigning…') + '</p>' +
+        '<p class="pp-muted">Workspace · ' + esc((lrWs && lrWs.sync_state) || 'pending') +
+          (lrWs && lrWs.external_id ? ' · ' + esc(String(lrWs.external_id).slice(0, 14)) : '') + '</p>' +
+      '</div></section>';
+
+    var providers = '<section class="pp-panel pp-panel-wide"><h3>Linked workspaces</h3>' +
+      '<p class="pp-muted">A project can connect to multiple providers at once. Hubly stays the primary record.</p>' +
+      '<div class="pp-ws-grid">' +
+      WORKSPACE_PROVIDERS.map(function (prov) {
+        var w = getWorkspace(p, prov.id);
+        var state = w ? w.sync_state : 'unlinked';
+        return '<div class="pp-ws-card' + (prov.id === 'adobe_lightroom' ? ' on' : '') + '">' +
+          '<div class="pp-mkt-top"><strong>' + esc(prov.label) + '</strong><span class="pp-pill">' + esc(prov.role) + '</span></div>' +
+          '<p class="pp-muted">' + (w ? ('Status · ' + esc(state)) : (prov.available ? 'Not linked' : 'Coming soon')) + '</p>' +
+          (prov.id === 'adobe_lightroom'
+            ? '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="adobe-connect">Connect</button>'
+            : '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" disabled>Soon</button>') +
+          '</div>';
+      }).join('') +
       '</div></section>';
 
     var after = '<section class="pp-panel pp-panel-wide pp-lr-after">' +
@@ -905,19 +1045,19 @@
         return '<div class="pp-pipe-step' + (done ? ' done' : '') + '"><i>' + (i + 1) + '</i><span>' + esc(step) + '</span></div>';
       }).join('') + '</div></section>';
 
-    if (!linked) return hero + after + pipeline;
+    if (!adobeConnected) return hero + providers + after + pipeline;
 
-    return hero +
+    return hero + providers +
       '<div class="pp-panel-grid">' +
-      '<section class="pp-panel"><h3>Connection</h3><dl class="pp-dl">' +
+      '<section class="pp-panel"><h3>Adobe Lightroom</h3><dl class="pp-dl">' +
       '<div><dt>Status</dt><dd>' + esc(lrLabel(p.lightroom_status)) + '</dd></div>' +
       '<div><dt>Adobe Account</dt><dd>' + esc(lr.adobe_account_email || '—') + '</dd></div>' +
       '<div><dt>Album</dt><dd>' + esc(lr.album_name || '—') + '</dd></div>' +
-      '<div><dt>Album ID</dt><dd>' + esc(p.lightroom_album_id || lr.album_id || '—') + '</dd></div>' +
+      '<div><dt>External ID</dt><dd>' + esc((lrWs && lrWs.external_id) || lr.album_id || '—') + '</dd></div>' +
       '<div><dt>Photos</dt><dd>' + esc(String(lr.photo_count || p.photo_count || 0)) + '</dd></div>' +
       '<div><dt>Edited</dt><dd>' + esc(String(lr.edited_count || 0)) + '</dd></div>' +
       '<div><dt>Favorites</dt><dd>' + esc(String(lr.favorites || 0)) + '</dd></div>' +
-      '<div><dt>Last Sync</dt><dd>' + esc(formatRelative(lr.last_sync_at || p.last_sync_at)) + '</dd></div></dl>' +
+      '<div><dt>Last Sync</dt><dd>' + esc(formatRelative((lrWs && lrWs.last_sync_at) || lr.last_sync_at || p.last_sync_at)) + '</dd></div></dl>' +
       '<div class="pp-btn-row">' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">Create Lightroom Album</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Photos</button>' +
@@ -996,7 +1136,7 @@
     var editingDone = (p.editing_progress || 0) >= 100 || p.status === 'Proofing' || p.status === 'Delivered';
     return '<section class="pp-panel pp-panel-wide"><h3>AI Marketing</h3>' +
       '<p class="pp-muted">' + (editingDone
-        ? 'Editing looks complete — these workflows will fire from the digital twin later.'
+        ? 'Editing looks complete — these workflows will fire from linked External Workspaces later.'
         : 'When editing finishes on this project, Hubly can generate campaigns automatically.') + '</p>' +
       '<div class="pp-mkt-grid">' + (p.marketing || []).map(function (m) {
         return '<div class="pp-mkt-card"><div class="pp-mkt-top"><strong>' + esc(m.title) + '</strong><span class="pp-pill">' + esc(m.status) + '</span></div>' +
@@ -1024,7 +1164,7 @@
     try {
       var titleEl = el('bar-title'), subEl = el('bar-sub');
       if (titleEl) titleEl.textContent = 'Photography Projects';
-      if (subEl) subEl.textContent = 'Open the project — Hubly is the twin before and after Lightroom.';
+      if (subEl) subEl.textContent = 'Open the project — External Workspaces sync editors and files to Hubly.';
       if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle('Photography Projects');
     } catch (e) {}
 
@@ -1075,7 +1215,7 @@
     if (!w.assets.marketing) {
       ws.marketing = ws.marketing.map(function (m) { return Object.assign({}, m, { status: 'skipped' }); });
     }
-    return {
+    var p = {
       name: w.name || 'Untitled Project',
       project_type: w.project_type || 'Other',
       status: 'Lead',
@@ -1102,10 +1242,15 @@
       workspace: ws,
       invoice_status: w.assets.invoice ? 'draft' : 'none',
       gallery_status: w.assets.gallery ? 'draft' : 'draft',
-      lightroom_status: 'not_connected',
-      twin_status: 'pending',
-      twin_key: twinKey()
+      lightroom_status: 'not_connected'
     };
+    upsertWorkspaceLocal(p, {
+      provider: 'adobe_lightroom',
+      display_name: p.name,
+      sync_state: w.assets.lightroom ? 'pending' : 'unlinked',
+      metadata: { album_name: p.name }
+    });
+    return p;
   }
 
   async function createQuickProject(st) {
@@ -1141,10 +1286,14 @@
       deliverables: ws.deliverables,
       marketing: ws.marketing,
       activity: ws.activity,
-      lightroom_status: 'not_connected',
-      twin_status: 'pending',
-      twin_key: twinKey()
+      lightroom_status: 'not_connected'
     };
+    upsertWorkspaceLocal(p, {
+      provider: 'adobe_lightroom',
+      display_name: name,
+      sync_state: 'pending',
+      metadata: { album_name: name, photo_count: fileCount }
+    });
     return persistProject(p);
   }
 
@@ -1256,9 +1405,18 @@
     }
     if (act === 'sync' && p) {
       var svc = global.AdobeLightroomService;
-      if (svc) await svc.syncProject({ businessId: businessId(), projectId: p.id });
-      addActivity(p, 'Sync requested', 'Lightroom twin sync — Adobe connection required for live sync');
-      p.twin_status = 'pending';
+      if (svc && svc.syncWorkspace) {
+        await svc.syncWorkspace({ businessId: businessId(), projectId: p.id });
+      } else if (svc) {
+        await svc.syncProject({ businessId: businessId(), projectId: p.id });
+      }
+      upsertWorkspaceLocal(p, {
+        provider: 'adobe_lightroom',
+        display_name: (p.lightroom && p.lightroom.album_name) || p.name,
+        sync_state: 'pending',
+        metadata: Object.assign({}, (getWorkspace(p, 'adobe_lightroom') || {}).metadata || {}, { last_sync_request: new Date().toISOString() })
+      });
+      addActivity(p, 'Sync requested', 'Adobe Lightroom External Workspace — connection required for live sync');
       return saveAndRefresh(p, st);
     }
     if (act === 'deliver' && p) {
@@ -1278,7 +1436,17 @@
       return;
     }
     if (act === 'adobe-disconnect') {
-      toast('Adobe disconnect will clear the twin link when OAuth is wired.');
+      upsertWorkspaceLocal(p || findProject(st.projectId) || {}, {
+        provider: 'adobe_lightroom',
+        sync_state: 'unlinked'
+      });
+      if (p) {
+        p.lightroom_status = 'not_connected';
+        addActivity(p, 'Workspace disconnected', 'Adobe Lightroom');
+        toast('Adobe workspace will unlink when OAuth is wired.');
+        return saveAndRefresh(p, st);
+      }
+      toast('Adobe disconnect will clear the External Workspace when OAuth is wired.');
       return;
     }
     if (act === 'lr-create-album' && p) {
@@ -1286,10 +1454,17 @@
       if (svcA) await svcA.createAlbum({ businessId: businessId() || '', projectId: p.id, name: p.name });
       p.lightroom = p.lightroom || {};
       p.lightroom.album_name = p.name;
-      p.lightroom_album_id = p.lightroom_album_id || ('pending-' + String(p.twin_key || p.id).slice(-8));
-      p.twin_status = 'pending';
-      addActivity(p, 'Lightroom album prepared', 'Digital twin ready — connect Adobe to sync RAWs');
-      toast('Album prepared on the Hubly twin. Connect Adobe to sync.');
+      var extId = 'pending-' + String(p.id).replace(/-/g, '').slice(-8);
+      upsertWorkspaceLocal(p, {
+        provider: 'adobe_lightroom',
+        display_name: p.name,
+        external_id: extId,
+        sync_state: 'pending',
+        metadata: { album_name: p.name, album_id: extId }
+      });
+      p.lightroom_status = 'album_ready';
+      addActivity(p, 'Lightroom workspace prepared', 'External Workspace ready — connect Adobe to sync RAWs');
+      toast('Lightroom workspace prepared on the project. Connect Adobe to sync.');
       return saveAndRefresh(p, st);
     }
     if (act === 'lr-open') {
@@ -1427,7 +1602,7 @@
       if (p) {
         p.editing_progress = Number(t.value) || 0;
         if (p.editing_progress >= 100) {
-          addActivity(p, 'Editing finished', 'Digital twin ready for gallery → invoice → marketing');
+          addActivity(p, 'Editing finished', 'External Workspaces ready for gallery → invoice → marketing');
         }
         return saveAndRefresh(p, st);
       }

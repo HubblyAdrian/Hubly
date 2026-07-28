@@ -1,8 +1,9 @@
 /**
  * AdobeLightroomService — vendor boundary for Adobe Lightroom Classic / Cloud.
  *
- * Hubly is the OS around Lightroom. Photographers edit in Adobe;
- * Hubly manages everything before and after.
+ * Attaches an External Workspace (provider = adobe_lightroom) to a Hubly
+ * Photography Project. The Project remains Hubly’s primary record; Lightroom
+ * is one synchronized workspace among many (Dropbox, Drive, Capture One, …).
  *
  * Production-First:
  * - Interface + honest "Provider not configured" until Adobe credentials exist
@@ -20,6 +21,10 @@ import {
   providerOk,
   type HublyProviderResult,
 } from "./hubly_providers.ts";
+import type {
+  ExternalWorkspaceProvider,
+  ProjectWorkspace,
+} from "./hubly_project_workspace.ts";
 
 export type LightroomAlbum = {
   id: string;
@@ -120,8 +125,8 @@ export interface LightroomProvider {
  * Methods return PROVIDER_NOT_CONFIGURED until Adobe OAuth secrets exist.
  * When credentials are present, real Adobe API wiring lands here — not in the UI.
  */
-export class AdobeLightroomService implements LightroomProvider {
-  readonly id = "adobe_lightroom";
+export class AdobeLightroomService implements LightroomProvider, ExternalWorkspaceProvider {
+  readonly id = "adobe_lightroom" as const;
 
   missingEnv(): string[] {
     const missing: string[] = [];
@@ -312,6 +317,73 @@ export class AdobeLightroomService implements LightroomProvider {
       { archived: true as const },
       "Project archived in Hubly. Adobe archive sync is optional and not wired yet.",
       { adobeRequired: false },
+    );
+  }
+
+  /** ExternalWorkspaceProvider — attach Adobe as one of many project workspaces. */
+  async connectWorkspace(opts: {
+    businessId: string;
+    projectId: string;
+    returnTo?: string;
+  }): Promise<HublyProviderResult<{ authorizeUrl?: string; workspace?: ProjectWorkspace }>> {
+    const connected = await this.connect({
+      businessId: opts.businessId,
+      returnTo: opts.returnTo,
+    });
+    if (!connected.ok) {
+      return connected as HublyProviderResult<{ authorizeUrl?: string; workspace?: ProjectWorkspace }>;
+    }
+    return providerOk(
+      this.id,
+      {
+        authorizeUrl: connected.data?.authorizeUrl,
+        workspace: {
+          id: "",
+          projectId: opts.projectId,
+          businessId: opts.businessId,
+          provider: "adobe_lightroom",
+          syncState: "pending",
+          metadata: { via: "AdobeLightroomService.connectWorkspace" },
+        },
+      },
+      "Adobe Lightroom External Workspace connection started",
+      { adobeRequired: true },
+    );
+  }
+
+  async disconnectWorkspace(opts: {
+    businessId: string;
+    projectId: string;
+    workspaceId?: string;
+  }): Promise<HublyProviderResult<{ disconnected: true }>> {
+    return this.disconnect({ businessId: opts.businessId });
+  }
+
+  async syncWorkspace(opts: {
+    businessId: string;
+    projectId: string;
+    workspaceId?: string;
+  }): Promise<HublyProviderResult<ProjectWorkspace>> {
+    const synced = await this.syncProject({
+      businessId: opts.businessId,
+      projectId: opts.projectId,
+    });
+    if (!synced.ok) {
+      return synced as HublyProviderResult<ProjectWorkspace>;
+    }
+    return providerOk(
+      this.id,
+      {
+        id: opts.workspaceId || "",
+        projectId: opts.projectId,
+        businessId: opts.businessId,
+        provider: "adobe_lightroom",
+        externalId: synced.data?.albumId || null,
+        syncState: "synced",
+        lastSyncAt: synced.data?.lastSyncAt || new Date().toISOString(),
+        metadata: { sync: synced.data },
+      },
+      "Lightroom External Workspace synced",
     );
   }
 }

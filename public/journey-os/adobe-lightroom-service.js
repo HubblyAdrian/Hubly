@@ -1,9 +1,7 @@
 /**
  * Client-facing AdobeLightroomService facade.
  * UI components call this only — never Adobe APIs directly.
- * Delegates to Edge Functions when available; otherwise returns honest not_configured.
- *
- * Architecture: Adobe Lightroom enhances Hubly Photography Projects.
+ * Attaches an External Workspace (provider = adobe_lightroom) to a Hubly Project.
  * Projects, galleries, invoices, and delivery work without Adobe.
  */
 (function (global) {
@@ -136,6 +134,18 @@
     getFavorites: async function (opts) {
       await invokeEdge('adobe-lightroom', Object.assign({ action: 'getFavorites' }, opts || {}));
       return notConfigured({ data: [] });
+    },
+
+    syncWorkspace: async function (opts) {
+      return AdobeLightroomService.syncProject(opts);
+    },
+
+    connectWorkspace: async function (opts) {
+      return AdobeLightroomService.connect(opts);
+    },
+
+    disconnectWorkspace: async function (opts) {
+      return AdobeLightroomService.disconnect(opts);
     },
 
     publishGallery: async function (opts) {

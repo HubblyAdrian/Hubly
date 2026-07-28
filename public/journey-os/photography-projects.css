@@ -864,11 +864,22 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
     linear-gradient(135deg, var(--pp-surface-3), #d9d4cc);
 }
 
-.pp-mkt-grid {
+.pp-ws-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 12px;
-  margin-top: 14px;
+  margin-top: 12px;
+}
+.pp-ws-card {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--pp-border);
+  background: var(--pp-surface-2);
+}
+.pp-ws-card.on {
+  border-color: rgba(217,99,45,0.35);
+  background: linear-gradient(180deg, #fff, var(--pp-surface-2));
+  box-shadow: 0 8px 24px rgba(15,20,31,0.05);
 }
 
 .pp-mkt-card {
