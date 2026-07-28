@@ -11243,7 +11243,7 @@
     dashboard: { title: 'Home', sub: '' },
     chats: { title: 'Inbox', sub: 'Every conversation in one place.' },
     jobs: { title: 'Jobs', sub: 'Manage and track every job in one place.' },
-    'photo-projects': { title: 'Projects', sub: 'The home for every job — media, creative, files, apps, and deliverables.' },
+    'photo-projects': { title: 'Projects', sub: 'The home for every job — start with media, then creative and deliverables.' },
     leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
     customers: { title: 'Completed Customers', sub: 'People you\'ve successfully serviced.' },
     pipeline: { title: 'Pipeline', sub: 'Quotes, bookings, and completed jobs.' },

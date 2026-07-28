@@ -366,7 +366,7 @@
       industry: 'home_service',
       eyebrow: 'Projects',
       title: 'Projects',
-      subtitle: 'The home for every job — media, creative, files, apps, and deliverables.',
+      subtitle: 'The home for every job — start with media, then creative and deliverables.',
       dateLabel: 'Job',
       projectTypes: ['Residential', 'Commercial', 'Maintenance', 'Other'],
       defaultType: 'Residential',
