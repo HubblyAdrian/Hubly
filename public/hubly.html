@@ -9816,14 +9816,11 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni active" data-v="dashboard" onclick="switchV(this)" title="Home">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span class="ni-lbl">Home</span>
       </div>
-      <div class="ni" data-v="chats" onclick="switchV(this)" title="Inbox">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span class="ni-lbl">Inbox</span><span class="nav-count-badge hidden" id="nav-inbox-badge">0</span>
+      <div class="ni" data-v="leads" onclick="switchV(this)" title="Leads">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="ni-lbl">Leads</span><span class="nav-count-badge hidden" id="nav-leads-badge">0</span>
       </div>
       <div class="ni" data-v="jobs" onclick="switchV(this)" title="Jobs &amp; Calendar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl">Jobs &amp; Calendar</span>
-      </div>
-      <div class="ni" data-v="leads" onclick="switchV(this)" title="Leads">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="ni-lbl">Leads</span><span class="nav-count-badge hidden" id="nav-leads-badge">0</span>
       </div>
       <div class="ni" data-v="customers" onclick="switchV(this)" title="Customers">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg><span class="ni-lbl">Customers</span>
@@ -9831,26 +9828,39 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="pipeline" onclick="switchV(this)" title="Pipeline">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h14"/><circle cx="18" cy="12" r="2"/><circle cx="20" cy="18" r="2"/></svg><span class="ni-lbl">Pipeline</span>
       </div>
-      <div class="ni" data-v="quotes" onclick="switchV(this)" title="Quick Quote">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg><span class="ni-lbl">Quick Quote</span>
+      <div class="ni" data-v="chats" onclick="switchV(this)" title="Inbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span class="ni-lbl">Inbox</span><span class="nav-count-badge hidden" id="nav-inbox-badge">0</span>
       </div>
+
+      <div class="nav-grow" id="nav-grow">
+        <button type="button" class="nav-grow-toggle" id="nav-grow-toggle" onclick="toggleNavGrowSection()" aria-expanded="false" title="Grow">
+          <span class="nav-grow-ico" aria-hidden="true">▾</span>
+          <span class="ni-lbl">Grow</span>
+        </button>
+        <div class="nav-grow-items">
+          <div class="ni" data-v="marketing" onclick="switchV(this)" title="Marketing">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a2 2 0 0 0 2 2h1l6 4V5L6 9H5a2 2 0 0 0-2 2z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 7a7 7 0 0 1 0 10"/></svg><span class="ni-lbl">Marketing</span>
+          </div>
+          <div class="ni" data-v="reviews" onclick="switchV(this)" title="Reviews">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3L22 9.3l-5 4.8 1.2 7L12 17.8 5.8 21l1.2-7-5-4.8 7.1-1L12 2z"/></svg><span class="ni-lbl">Reviews</span>
+          </div>
+          <div class="ni" data-v="memberships" onclick="switchV(this)" title="Memberships">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16l3-8 4 4 4-6 3 10"/><path d="M3 20h18"/></svg><span class="ni-lbl">Memberships</span>
+          </div>
+          <div class="ni" data-v="money" onclick="switchV(this)" title="Revenue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c.8-1 2-1.5 2.5-1.5s1.7.4 1.7 1.5-1 1.4-2.2 1.8-2.5.8-2.5 2.1 1.2 2.1 2.5 2.1 2-.5 2.5-1.4"/></svg><span class="ni-lbl">Revenue</span>
+          </div>
+          <div class="ni" data-v="reports" onclick="switchV(this)" title="Reports">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-3"/></svg><span class="ni-lbl">Reports</span>
+          </div>
+          <div class="ni" data-v="quotes" onclick="switchV(this)" title="Quick Quote">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg><span class="ni-lbl">Quick Quote</span>
+          </div>
+        </div>
+      </div>
+
       <div class="ni" data-v="editor" onclick="try{S._edHubTab='site'}catch(e){};switchV(this)" title="Website editor">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.7 3.6 5.7 3.6 9s-1.2 6.3-3.6 9c-2.4-2.7-3.6-5.7-3.6-9s1.2-6.3 3.6-9z"/></svg><span class="ni-lbl">Website editor</span>
-      </div>
-      <div class="ni" data-v="marketing" onclick="switchV(this)" title="Marketing">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a2 2 0 0 0 2 2h1l6 4V5L6 9H5a2 2 0 0 0-2 2z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 7a7 7 0 0 1 0 10"/></svg><span class="ni-lbl">Marketing</span>
-      </div>
-      <div class="ni" data-v="reviews" onclick="switchV(this)" title="Reviews">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3L22 9.3l-5 4.8 1.2 7L12 17.8 5.8 21l1.2-7-5-4.8 7.1-1L12 2z"/></svg><span class="ni-lbl">Reviews</span>
-      </div>
-      <div class="ni" data-v="memberships" onclick="switchV(this)" title="Memberships">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16l3-8 4 4 4-6 3 10"/><path d="M3 20h18"/></svg><span class="ni-lbl">Memberships</span>
-      </div>
-      <div class="ni" data-v="money" onclick="switchV(this)" title="Revenue">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c.8-1 2-1.5 2.5-1.5s1.7.4 1.7 1.5-1 1.4-2.2 1.8-2.5.8-2.5 2.1 1.2 2.1 2.5 2.1 2-.5 2.5-1.4"/></svg><span class="ni-lbl">Revenue</span>
-      </div>
-      <div class="ni" data-v="reports" onclick="switchV(this)" title="Reports">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-3"/></svg><span class="ni-lbl">Reports</span>
       </div>
       <div class="ni" data-v="ask" onclick="switchV(this)" title="Ask Hubly">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="3"/><path d="M9 10h.01M15 10h.01M9.5 14a3.5 3.5 0 0 0 5 0"/></svg><span class="ni-lbl">Ask Hubly</span>
@@ -9909,7 +9919,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <span class="theme-lbl" id="theme-label-app">Night</span>
           </button>
           <button type="button" class="btn btn-out btn-sm lang-bar-btn lang-has-tip jos-legacy-bar" id="lang-btn-app" onclick="toggleLang()" title="Language / Idioma" aria-label="Language / Idioma" data-lang-tip="Language / Idioma — tap to switch">🌐 <span id="lang-label-app">ES</span></button>
-          <button type="button" class="jos-bar-bell" aria-label="Notifications" title="Notifications">
+          <button type="button" class="jos-bar-bell" data-count="0" data-jos-act="toggle-notifs" aria-label="Notifications" title="Notifications">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
           </button>
           <div class="jos-bar-biz" title="Your business">
@@ -35257,8 +35267,33 @@ function toggleOperateNavRail(){
   }
   syncOperateNavTitles(expanded);
 }
+function initNavGrowSection(){
+  const grow=document.getElementById('nav-grow');
+  const btn=document.getElementById('nav-grow-toggle');
+  if(!grow||!btn)return;
+  let pref='collapsed';
+  try{pref=localStorage.getItem('hubly_nav_grow')||'collapsed';}catch(e){}
+  const open=pref==='expanded';
+  grow.classList.toggle('open',open);
+  btn.setAttribute('aria-expanded',open?'true':'false');
+}
+function toggleNavGrowSection(){
+  const grow=document.getElementById('nav-grow');
+  const btn=document.getElementById('nav-grow-toggle');
+  if(!grow||!btn)return;
+  const open=grow.classList.toggle('open');
+  try{localStorage.setItem('hubly_nav_grow',open?'expanded':'collapsed');}catch(e){}
+  btn.setAttribute('aria-expanded',open?'true':'false');
+  // Expand rail when opening Grow so labels are readable
+  if(open){
+    const app=document.getElementById('p-app');
+    if(app&&!app.classList.contains('jos-nav-expanded'))toggleOperateNavRail();
+  }
+}
 document.addEventListener('DOMContentLoaded',initOperateNavRail);
+document.addEventListener('DOMContentLoaded',initNavGrowSection);
 try{initOperateNavRail();}catch(e){}
+try{initNavGrowSection();}catch(e){}
 document.addEventListener('DOMContentLoaded',function(){
   try{
     const badge=document.getElementById('nav-inbox-badge');
@@ -35309,6 +35344,21 @@ function switchV(el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
+  /* Auto-expand Grow when a Grow nav item is selected */
+  try{
+    const growViews={marketing:1,reviews:1,memberships:1,money:1,reports:1,quotes:1};
+    if(growViews[v]){
+      const grow=document.getElementById('nav-grow');
+      const gbtn=document.getElementById('nav-grow-toggle');
+      if(grow&&!grow.classList.contains('open')){
+        grow.classList.add('open');
+        if(gbtn)gbtn.setAttribute('aria-expanded','true');
+        try{localStorage.setItem('hubly_nav_grow','expanded');}catch(eG){}
+        const app=document.getElementById('p-app');
+        if(app&&!app.classList.contains('jos-nav-expanded'))toggleOperateNavRail();
+      }
+    }
+  }catch(eGrow){}
   const titles={
     dashboard:'Home',jobs:'Jobs & Calendar',leads:'Leads',customers:t('customers'),
     pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
@@ -35932,7 +35982,41 @@ function selTime(el,val,label){
   S.bkTimeVal=val;S.bkTimeLabel=label;
   document.getElementById('bk-time').value=val;
 }
-function timeToMin(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+(m||0);}
+function timeToMin(t){if(!t)return 0;const[h,m]=String(t).split(':').map(Number);return h*60+(m||0);}
+function fmtSlotLabel(mins){
+  let h=Math.floor(mins/60),m=mins%60,ap=h>=12?'PM':'AM';
+  let hh=h%12;if(!hh)hh=12;
+  return hh+':'+(m<10?'0':'')+m+' '+ap;
+}
+function hoursForBookingDate(dateVal){
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const d=new Date(String(dateVal).slice(0,10)+'T12:00:00');
+  const key=days[isNaN(d.getTime())?new Date().getDay():d.getDay()];
+  const sh=(typeof S_hours!=='undefined'&&S_hours)?S_hours:null;
+  if(sh&&sh[key]){
+    if(sh[key].closed)return{closed:true,open:0,close:0};
+    return{closed:false,open:timeToMin(sh[key].open||'08:00'),close:timeToMin(sh[key].close||'17:00')};
+  }
+  return{closed:false,open:8*60,close:17*60};
+}
+function rebuildBookingTimeGrid(dateVal){
+  const grid=document.getElementById('time-grid');
+  if(!grid)return;
+  const hours=hoursForBookingDate(dateVal||document.getElementById('bk-date')?.value);
+  if(hours.closed){
+    grid.innerHTML='<div class="jos-muted" style="padding:12px;font-size:13px;color:#64748b;">Closed this day — Hubly won’t take bookings.</div>';
+    return;
+  }
+  let html='';
+  for(let m=hours.open;m<hours.close;m+=60){
+    const hh=String(Math.floor(m/60)).padStart(2,'0');
+    const mm=String(m%60).padStart(2,'0');
+    const val=hh+':'+mm;
+    const label=fmtSlotLabel(m);
+    html+=`<div class="vtype-opt" onclick="selTime(this,'${val}','${label}')"><div style="font-size:14px;font-weight:600;">${label}</div></div>`;
+  }
+  grid.innerHTML=html||'<div class="jos-muted" style="padding:12px;">No open hours set for this day.</div>';
+}
 function windowsOverlap(aStart,aEnd,bStart,bEnd){return aStart<bEnd&&aEnd>bStart;}
 async function fetchBusyWindows(dateVal){
   if(!dateVal||!currentBusiness)return[];
@@ -35951,6 +36035,7 @@ async function fetchBusyWindows(dateVal){
 }
 async function checkTimeAvailability(){
   const dateVal=document.getElementById('bk-date').value;
+  rebuildBookingTimeGrid(dateVal);
   const slots=document.querySelectorAll('#time-grid .vtype-opt');
   const hint=document.getElementById('bk-slot-hint');
   slots.forEach(s=>{
@@ -35959,10 +36044,19 @@ async function checkTimeAvailability(){
     s.removeAttribute('data-busy-label');
   });
   if(hint)hint.textContent='';
-  if(!dateVal||!currentBusiness)return;
+  if(!dateVal)return;
+  const hours=hoursForBookingDate(dateVal);
+  if(hours.closed){
+    if(hint)hint.textContent='Closed — no bookable times on this day.';
+    return;
+  }
+  if(!currentBusiness){
+    if(hint)hint.textContent='Open '+fmtSlotLabel(hours.open)+' – '+fmtSlotLabel(hours.close)+'. Pick a time inside business hours.';
+    return;
+  }
   const busyWindows=await fetchBusyWindows(dateVal);
   if(!busyWindows.length){
-    if(hint)hint.textContent='All listed times look open for this date.';
+    if(hint)hint.textContent='Open '+fmtSlotLabel(hours.open)+' – '+fmtSlotLabel(hours.close)+'. All listed times look open.';
     return;
   }
   const myDurMin=Math.round((Number(S.bkSvcObj?.dur)||2)*60);
