@@ -14506,7 +14506,6 @@ async function refreshOpenAppViews(){
   await loadJobs();
   try{await refreshLeadsSources();}catch(e){}
   try{await loadCustomers();}catch(e){}
-  try{HublyJourneyOS?.enhanceDashboard?.();}catch(e){renderDashToday();renderDashNewBookings();updateKPIs();}
   try{
     if(viewIsOpen('v-jobs')){
       if(typeof renderCal==='function')renderCal();
@@ -14540,6 +14539,7 @@ async function refreshOpenAppViews(){
       try{HublyJourneyOS?.enhanceDashboard?.();}catch(e2){
         if(typeof renderDashToday==='function')renderDashToday();
         if(typeof renderDashNewBookings==='function')renderDashNewBookings();
+        if(typeof updateKPIs==='function')updateKPIs();
       }
     }
   }catch(e){}
@@ -44784,8 +44784,8 @@ const T = {
     bkNoAddonsYet:'No add-ons yet',
     brandLbl:'Brand',
     socialLinksLbl:'Social links',
-    // Dashboard
-    dashboard:'Dashboard',
+    // Dashboard / Operate Home chrome
+    dashboard:'Home',
     themeDay:'Day',
     themeNight:'Night',
     themeSwitchDay:'Switch to day mode',
@@ -45720,7 +45720,7 @@ const T = {
     brandLbl:'Marca',
     socialLinksLbl:'Redes sociales',
     // Dashboard
-    dashboard:'Panel principal',
+    dashboard:'Inicio',
     themeDay:'Día',
     themeNight:'Noche',
     themeSwitchDay:'Cambiar a modo día',
@@ -46807,6 +46807,8 @@ function applyTranslations(){
   navItems.forEach(ni=>{
     const v=ni.dataset.v;
     if(!navMap[v])return;
+    const lbl=ni.querySelector('.ni-lbl');
+    if(lbl){lbl.textContent=navMap[v];return;}
     const textNode=[...ni.childNodes].reverse().find(n=>n.nodeType===3&&n.textContent.trim());
     if(textNode)textNode.textContent=' '+navMap[v];
   });
