@@ -1481,7 +1481,7 @@ img{max-width:100%;display:block}
           placeholder="Tell me about your business..."
           aria-label="Tell Hubly about your business">
         <div class="ask-pill-acts">
-          <button class="btn btn-brand is-disabled" type="button" id="heroCta" disabled>Continue Building</button>
+          <button class="btn btn-brand" type="button" id="heroCta">Continue Building</button>
         </div>
       </div>
       <p class="hero-status" id="heroStatus" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="heroStatusText"></span></p>
@@ -2064,10 +2064,12 @@ img{max-width:100%;display:block}
       if(u.ready && u.intent === 'hire_pro' && path === 'business') label = copy.help.ctaReady;
       if(u.ready && u.intent === 'build_business' && path === 'help') label = copy.business.ctaReady;
       heroCta.textContent = label;
-      heroCta.disabled = !u.ready;
-      heroCta.classList.toggle('is-disabled', !u.ready);
+      /* Always clickable — Hubly Session carries whatever they typed (even empty → /signup or /get-done) */
+      heroCta.disabled = false;
+      heroCta.removeAttribute('disabled');
+      heroCta.classList.remove('is-disabled');
       heroCta.classList.toggle('is-ready', !!u.ready);
-      if(u.ready) heroCta.setAttribute('aria-label', u.destination === 'marketplace_concierge' ? 'Continue to AI Concierge' : 'Continue Building your business');
+      heroCta.setAttribute('aria-label', autoPath === 'help' ? 'Continue to AI Concierge' : 'Continue Building your business');
     }
     /* Real import pipeline — begin the moment URLs are detected */
     if(u.imports && u.imports.length && Intent.startImportPipeline){
@@ -2185,16 +2187,12 @@ img{max-width:100%;display:block}
   function goBuild(){ goWithSession('build'); }
   function goHelp(){ goWithSession('hire'); }
   function goPrimary(){
-    var u = refreshUnderstanding() || lastUnderstanding;
-    if(!u || !u.ready){
-      if(heroStatus && heroStatusText){
-        heroStatusText.textContent = path === 'help'
-          ? 'Hubly is learning about your project…'
-          : 'Hubly is learning about your business…';
-        heroStatus.classList.add('is-on', 'is-learning');
-      }
-      return;
+    var u = refreshUnderstanding() || lastUnderstanding || (Intent && Intent.understand(input ? input.value : '', path));
+    if(!u){
+      if(path === 'help') return goHelp();
+      return goBuild();
     }
+    /* Never soft-block — continue with whatever Hubly has learned so far */
     if(u.intent === 'hire_pro' || u.destination === 'marketplace_concierge') return goHelp();
     if(u.intent === 'build_business' || u.destination === 'business_builder') return goBuild();
     if(path === 'business') goBuild();
