@@ -86,12 +86,15 @@ describe('Photography Projects module', () => {
     assert.match(html, /photography-projects\.js/);
   });
 
-  it('gates Photography nav on capabilities.projects', () => {
+  it('Projects is a core module; Lightroom is feature-gated', () => {
     const html = readFileSync(join(root, 'public/hubly.html'), 'utf8');
     const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
     assert.match(html, /function hasBusinessCapability/);
-    assert.match(html, /hasBusinessCapability\('projects'\)/);
-    assert.match(js, /hasCapability\('projects'\)|hasProjectsCapability/);
+    assert.match(html, /if\(key==='projects'\)return true/);
+    assert.match(html, /ni-lbl">Projects</);
+    assert.match(js, /hasProjectsCapability\(\) \{\s*return true;/);
+    assert.match(js, /hasLightroomCapability/);
+    assert.match(js, /projectWorkspaceProfile/);
   });
 
   it('ships dashboard metrics, Connected Apps hero, Creative tab, and Quick Project', () => {
@@ -103,6 +106,8 @@ describe('Photography Projects module', () => {
     assert.match(js, /Create Marketing Asset/);
     assert.match(js, /Quick Project/);
     assert.match(journey, /photo-quick/);
+    assert.match(js, /profile\.title/);
+    assert.match(js, /title: 'Projects'/);
   });
 
   it('enables projects + lightroom on photography blueprint', () => {

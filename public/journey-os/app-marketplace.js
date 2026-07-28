@@ -66,6 +66,24 @@
   }
 
   async function liveStatusFor(app) {
+    // Feature gate: Lightroom only when business has lightroom capability (or photo-led).
+    if (app && app.id === 'adobe_lightroom') {
+      var allowLr = false;
+      try {
+        if (typeof global.hasBusinessCapability === 'function') allowLr = !!global.hasBusinessCapability('lightroom');
+        else if (typeof global.isPhotoLedTrade === 'function') allowLr = !!global.isPhotoLedTrade();
+      } catch (_) {}
+      if (!allowLr) {
+        return {
+          connected: false,
+          health: 'hidden',
+          accountLabel: null,
+          lastSyncAt: null,
+          message: 'Not available for this business',
+          hidden: true,
+        };
+      }
+    }
     var facade = Apps() && Apps().getFacade(app.id);
     var meta = readConnectionMeta(app.id);
     var base = {
@@ -207,6 +225,7 @@
     for (var i = 0; i < catalog.length; i++) {
       var app = catalog[i];
       var st = await liveStatusFor(app);
+      if (st && st.hidden) continue;
       var installed = installedIds.indexOf(app.id) !== -1;
       if (st.connected) connectedCount += 1;
       if (st.lastSyncAt) {
@@ -307,7 +326,7 @@
     var app = CA && CA.get(id);
     var name = (app && app.name) || id;
     if (id === 'adobe_lightroom') {
-      toast(name + ' settings — use Photography → Connected Apps for album sync, or reconnect from here.');
+      toast(name + ' settings — use Projects → Connected Apps for album sync, or reconnect from here.');
       return;
     }
     toast(name + ' settings — manage connection from this page. Deeper settings open inside each workflow.');

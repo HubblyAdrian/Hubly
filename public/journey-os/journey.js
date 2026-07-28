@@ -11243,7 +11243,7 @@
     dashboard: { title: 'Home', sub: '' },
     chats: { title: 'Inbox', sub: 'Every conversation in one place.' },
     jobs: { title: 'Jobs', sub: 'Manage and track every job in one place.' },
-    'photo-projects': { title: 'Photography Projects', sub: 'Projects from booking through delivery.' },
+    'photo-projects': { title: 'Projects', sub: 'Media, Connected Apps, and deliverables for every job.' },
     leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
     customers: { title: 'Completed Customers', sub: 'People you\'ve successfully serviced.' },
     pipeline: { title: 'Pipeline', sub: 'Quotes, bookings, and completed jobs.' },
@@ -12293,17 +12293,17 @@
       ['new-invoice', 'New Invoice'],
       ['go-editor', 'New Service']
     ];
-    var hasProjects = false;
+    var hasProjects = true;
     try {
       if (typeof global.hasBusinessCapability === 'function') hasProjects = !!global.hasBusinessCapability('projects');
       else if (global.HublyPhotographyProjects && typeof global.HublyPhotographyProjects.hasCapability === 'function') {
         hasProjects = !!global.HublyPhotographyProjects.hasCapability();
       }
-    } catch (e) {}
+    } catch (e) { hasProjects = true; }
     if (hasProjects) {
       items.push(['sep-photo', '──────────']);
-      items.push(['photo-quick', 'Photography Project']);
-      items.push(['photo-new', 'New Photography Project']);
+      items.push(['photo-quick', 'Quick Project']);
+      items.push(['photo-new', 'New Project']);
     }
     pop.innerHTML = items.map(function (x) {
       if (x[0] === 'sep-photo') return '<div class="jos-quick-sep" aria-hidden="true">' + esc(x[1]) + '</div>';
