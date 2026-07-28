@@ -1572,7 +1572,7 @@
       cards.push({
         title: 'Connect Adobe',
         body: 'Link your Lightroom account to sync this project.',
-        cta: 'Connect Adobe',
+        cta: 'Connect Adobe Account',
         act: 'adobe-connect'
       });
     } else if (!sync.albumId) {
