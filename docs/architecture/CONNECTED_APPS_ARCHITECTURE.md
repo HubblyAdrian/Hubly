@@ -111,10 +111,10 @@ Freeze plugin test: `tests/connected-apps-architecture-freeze.test.mjs`
 |----------|------|--------|
 | 1 | ~~Unify catalogs~~ | Done — `hubly-core/connected-apps-catalog.json` |
 | 2 | Durable Event Log | Append-only store · replay · retry · audit (Stripe-webhook style) |
-| 3 | Provider OAuth | Meta / Google / Adobe / Canva as Provider + OAuth + Capabilities |
+| 3 | Provider OAuth | ~~Adobe Lightroom OAuth~~ done · Meta / Canva next (same recipe) |
 | 4 | Provider SDK layout | `providers/<vendor>/` · future `hubly-provider-*` packages |
 
-Do **not** start Meta/Canva/Adobe feature work until OAuth fits the plugin recipe.
+**Adobe Lightroom OAuth (live recipe):** `adobe-oauth-start` → IMS authorize → `adobe-oauth-callback` (`verify_jwt = false`) → tokens in `adobe_lightroom_connections` (service-role only) · public status via `hubly_app_connections` + `adobe-oauth-disconnect` action=status. Credentials: `ADOBE_CLIENT_ID` / `ADOBE_CLIENT_SECRET` from env only.
 
 ---
 

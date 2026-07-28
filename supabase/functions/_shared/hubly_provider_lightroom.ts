@@ -152,43 +152,66 @@ export class AdobeLightroomService
     return providerNotConfigured(this.id, this.missingEnv()) as HublyProviderResult<T>;
   }
 
-  async connect(_opts: {
+  /**
+   * OAuth start is Edge-owned (CSRF state + token vault).
+   * Clients: POST adobe-oauth-start → navigate to returned `url`.
+   * Callback: /functions/v1/adobe-oauth-callback (verify_jwt = false).
+   */
+  async connect(opts: {
     businessId: string;
     returnTo?: string;
   }): Promise<HublyProviderResult<{ authorizeUrl: string }>> {
     if (!this.isConfigured()) return this.notReady();
-    // Future: build Adobe IMS authorize URL → Edge Function oauth-callback
-    // Production callback pattern matches Google Calendar:
-    // https://{project}.supabase.co/functions/v1/adobe-oauth-callback
-    return providerError(
+    if (!opts.businessId) {
+      return providerError(this.id, "BUSINESS_REQUIRED", "businessId is required to connect Adobe", {
+        retryable: false,
+      });
+    }
+    return providerOk(
       this.id,
-      "ADOBE_OAUTH_NOT_IMPLEMENTED",
-      "Adobe Lightroom OAuth is designed but not wired yet. Projects still work without Adobe.",
-      { retryable: false },
+      { authorizeUrl: "" },
+      "Adobe OAuth is live — invoke Edge Function adobe-oauth-start with business_id (and optional return_to / project_id) to receive the IMS authorize URL.",
+      {
+        adobeRequired: true,
+        edgeFunction: "adobe-oauth-start",
+        callbackFunction: "adobe-oauth-callback",
+        businessId: opts.businessId,
+        returnTo: opts.returnTo || null,
+      },
     );
   }
 
-  async disconnect(_opts: {
+  async disconnect(opts: {
     businessId: string;
   }): Promise<HublyProviderResult<{ disconnected: true }>> {
     if (!this.isConfigured()) return this.notReady();
-    return providerError(
+    if (!opts.businessId) {
+      return providerError(this.id, "BUSINESS_REQUIRED", "businessId is required", {
+        retryable: false,
+      });
+    }
+    return providerOk(
       this.id,
-      "ADOBE_OAUTH_NOT_IMPLEMENTED",
-      "Adobe disconnect is not wired yet.",
-      { retryable: false },
+      { disconnected: true as const },
+      "Invoke Edge Function adobe-oauth-disconnect with action=disconnect to revoke tokens and clear the connection.",
+      { edgeFunction: "adobe-oauth-disconnect", businessId: opts.businessId },
     );
   }
 
-  async refreshToken(_opts: {
+  async refreshToken(opts: {
     businessId: string;
   }): Promise<HublyProviderResult<{ expiresAt?: string }>> {
     if (!this.isConfigured()) return this.notReady();
-    return providerError(
+    if (!opts.businessId) {
+      return providerError(this.id, "BUSINESS_REQUIRED", "businessId is required", {
+        retryable: false,
+      });
+    }
+    return providerOk(
       this.id,
-      "ADOBE_OAUTH_NOT_IMPLEMENTED",
-      "Adobe token refresh is not wired yet.",
-      { retryable: false },
+      { expiresAt: undefined },
+      "Invoke Edge Function adobe-oauth-refresh (or adobe-oauth-disconnect action=refresh) to rotate the access token. Tokens never leave the server.",
+      { edgeFunction: "adobe-oauth-refresh", businessId: opts.businessId },
     );
   }
 
@@ -438,7 +461,7 @@ export class AdobeLightroomService
     );
   }
 
-  async status(_opts: {
+  async status(opts: {
     businessId: string;
     projectId?: string;
   }): Promise<HublyProviderResult<ConnectedAppStatus>> {
@@ -449,18 +472,21 @@ export class AdobeLightroomService
         message: "Add ADOBE_CLIENT_ID and ADOBE_CLIENT_SECRET to connect Lightroom.",
       }, "Lightroom not configured");
     }
+    // Live connected/account state is service-role only — use adobe-oauth-disconnect action=status.
     return providerOk(this.id, {
       connected: false,
       health: "disconnected",
-      message: "Lightroom is configured but not connected yet.",
-    }, "Lightroom disconnected");
+      message: opts.businessId
+        ? "Credentials present. Call adobe-oauth-disconnect action=status for live connection state (tokens stay server-side)."
+        : "Credentials present. Connect via adobe-oauth-start.",
+    }, "Lightroom OAuth ready");
   }
 
   async health(): Promise<HublyProviderResult<ConnectedAppHealth>> {
     if (!this.isConfigured()) {
       return providerOk(this.id, "not_configured" as const, "Lightroom not configured");
     }
-    return providerOk(this.id, "disconnected" as const, "Lightroom ready for OAuth");
+    return providerOk(this.id, "healthy" as const, "Adobe credentials configured — OAuth via Edge Functions");
   }
 }
 

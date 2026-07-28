@@ -4,6 +4,10 @@
 [functions.google-calendar-oauth-callback]
 verify_jwt = false
 
+# Adobe IMS redirects here without a Hubly JWT; CSRF state is validated in-function
+[functions.adobe-oauth-callback]
+verify_jwt = false
+
 # Google Calendar push notifications have no Hubly JWT
 [functions.google-calendar-webhook]
 verify_jwt = false

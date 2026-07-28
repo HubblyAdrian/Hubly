@@ -1505,8 +1505,38 @@
     }
     if (act === 'adobe-connect') {
       var svcC = global.AdobeLightroomService;
-      if (svcC) await svcC.connect({ businessId: businessId() || '' });
-      else toast('Editing app isn’t connected yet. Projects still work in Hubly.');
+      var bizId = businessId() || '';
+      if (!svcC) {
+        toast('Editing app isn’t connected yet. Projects still work in Hubly.');
+        return;
+      }
+      var connectRes = await (svcC.connectAndRedirect
+        ? svcC.connectAndRedirect({
+          businessId: bizId,
+          projectId: (p && p.id) || st.projectId || undefined,
+        })
+        : svcC.connect({
+          businessId: bizId,
+          projectId: (p && p.id) || st.projectId || undefined,
+        }));
+      if (connectRes && connectRes.ok && connectRes.data && connectRes.data.authorizeUrl) {
+        if (p) {
+          upsertWorkspaceLocal(p, {
+            provider: 'adobe_lightroom',
+            display_name: 'Adobe Lightroom',
+            sync_state: 'pending',
+            metadata: Object.assign({}, (getWorkspace(p, 'adobe_lightroom') || {}).metadata || {}, {
+              connect_started_at: new Date().toISOString(),
+            }),
+          });
+          addActivity(p, 'Adobe connect started', 'Continue in Adobe to link Lightroom');
+          await saveAndRefresh(p, st);
+        }
+        if (!svcC.connectAndRedirect) {
+          try { global.location.href = connectRes.data.authorizeUrl; } catch (e) {}
+        }
+        return;
+      }
       return;
     }
     if (act === 'canva-connect' || act === 'connect-app') {
@@ -1592,15 +1622,21 @@
     }
     if (act === 'adobe-disconnect') {
       p = p || findProject(st.projectId);
-      if (!p) { toast('Open a project first'); return; }
-      upsertWorkspaceLocal(p, {
-        provider: 'adobe_lightroom',
-        sync_state: 'unlinked'
-      });
-      p.lightroom_status = 'not_connected';
-      addActivity(p, 'Workspace disconnected', 'Adobe Lightroom');
-      toast('Adobe workspace will unlink when OAuth is wired.');
-      return saveAndRefresh(p, st);
+      var svcD = global.AdobeLightroomService;
+      if (svcD && svcD.disconnect) {
+        await svcD.disconnect({ businessId: businessId() || '' });
+      }
+      if (p) {
+        upsertWorkspaceLocal(p, {
+          provider: 'adobe_lightroom',
+          sync_state: 'unlinked'
+        });
+        p.lightroom_status = 'not_connected';
+        addActivity(p, 'Workspace disconnected', 'Adobe Lightroom');
+        return saveAndRefresh(p, st);
+      }
+      toast('Adobe Lightroom disconnected');
+      return;
     }
     if (act === 'lr-create-album' && p) {
       var svcA = global.AdobeLightroomService;
