@@ -40316,17 +40316,35 @@ function collectPipelineLeads(){
   const deleted=new Set(pipe.deleted.map(String));
   const out=[];
   const seen=new Set();
+  const markSeenKeys=(...ks)=>{
+    ks.forEach(k=>{
+      const s=String(k||'').trim();
+      if(!s)return;
+      seen.add(s);
+    });
+  };
+  const isTaken=(...ks)=>ks.some(k=>{
+    const s=String(k||'').trim();
+    return !s?false:(deleted.has(s)||seen.has(s));
+  });
 
   (pipe.manual||[]).forEach(m=>{
-    const key='manual:'+m.id;
-    if(deleted.has(key)||seen.has(key))return;
-    seen.add(key);
+    if(!m)return;
+    const id=String(m.id||'');
+    const reqId=m.reqId?String(m.reqId):'';
+    const abandoned=!!(m.isAbandoned||m.source==='abandoned'||m.jobStatus==='abandoned');
+    let key=m.key&&/^(manual|br|chat):/.test(String(m.key))?String(m.key)
+      :(abandoned&&(reqId||id)?('br:'+(reqId||id)):('manual:'+(id||reqId||Math.random())));
+    if(isTaken(key,id,reqId,reqId&&('br:'+reqId),id&&('manual:'+id),id&&('br:'+id)))return;
+    markSeenKeys(key,id,reqId,reqId&&('br:'+reqId),id&&('manual:'+id),id&&('br:'+id));
     out.push({
       key,id:m.id,name:m.name||'Lead',phone:m.phone||'',email:m.email||'',
       service:m.service||'',address:m.address||'',amount:m.amount!=null?Number(m.amount):null,
-      notes:m.notes||'',source:m.source||'manual',createdAt:m.createdAt||null,
-      jobId:null,reqId:null,chatId:null,jobStatus:null,date:null,time:null,chatBooked:false,
-      canAccept:false,canSchedule:true,
+      notes:m.notes||'',source:m.source||(abandoned?'abandoned':'manual'),createdAt:m.createdAt||null,
+      jobId:null,reqId:reqId||null,chatId:null,jobStatus:m.jobStatus||null,date:null,time:null,chatBooked:false,
+      canAccept:abandoned,canSchedule:!abandoned,
+      unread:m.unread!=null?Number(m.unread):undefined,
+      isAbandoned:abandoned,
     });
   });
 
@@ -40337,8 +40355,8 @@ function collectPipelineLeads(){
     if(j.status!=='pending'||!j.reqId)return;
     if(!j.isMembershipSignup&&shouldSkipLeadsBoard({name:j.customer,phone:j.phone,email:j.email},j.notes))return;
     const key='br:'+j.reqId;
-    if(deleted.has(key)||seen.has(key))return;
-    seen.add(key);
+    if(isTaken(key,j.reqId,j.id,j.id&&('manual:'+j.id)))return;
+    markSeenKeys(key,j.reqId,j.id,j.id&&('manual:'+j.id));
     const notes=String(j.notes||'');
     const isQuote=/\[source:smart_quote\]/i.test(notes);
     out.push({
@@ -40355,15 +40373,15 @@ function collectPipelineLeads(){
 
   (S.abandonedLeads||[]).forEach(r=>{
     const key='br:'+r.id;
-    if(deleted.has(key)||seen.has(key))return;
-    seen.add(key);
+    if(isTaken(key,r.id,r.id&&('manual:'+r.id)))return;
+    markSeenKeys(key,r.id,r.id&&('manual:'+r.id));
     out.push({
       key,id:r.id,name:r.customer_name||r.customer_phone||'Lead',
       phone:r.customer_phone||'',email:r.customer_email||'',
       service:r.service_name||'',address:r.address||'',amount:null,notes:r.notes||'',
       source:'abandoned',createdAt:r.created_at||null,jobId:null,reqId:r.id,chatId:null,
       jobStatus:'abandoned',date:r.requested_date||null,time:r.requested_time||null,chatBooked:false,
-      canAccept:true,canSchedule:false,
+      canAccept:true,canSchedule:false,isAbandoned:true,
     });
   });
 
@@ -40371,8 +40389,8 @@ function collectPipelineLeads(){
   chats.forEach(c=>{
     if(c.resulted_in_booking)return; // already booked → Jobs, not Leads
     const key='chat:'+c.id;
-    if(deleted.has(key)||seen.has(key))return;
-    seen.add(key);
+    if(isTaken(key,c.id,c.id&&('manual:'+c.id)))return;
+    markSeenKeys(key,c.id,c.id&&('manual:'+c.id));
     out.push({
       key,id:c.id,name:c.customer_name||c.customer_phone||c.customer_email||'Chat lead',
       phone:c.customer_phone||'',email:c.customer_email||'',
@@ -40391,7 +40409,7 @@ function collectPipelineLeads(){
     return {
       ...withEdits,
       stage,
-      lostReason:pipe.lostReasons[l.key]||'',
+      lostReason:pipe.lostReasons[l.key]||pipe.lostReasons[l.id]||'',
       isReturning:!!meta.isReturning,
       isRecurring:!!meta.isRecurring,
     };
@@ -40415,18 +40433,68 @@ function updateLeadsNavBadge(leads){
   const badge=document.getElementById('nav-leads-badge');
   if(!badge)return;
   const inbox=leadInboxStageId();
-  const seen=(ensurePipelineState().seen)||{};
-  const n=(leads||[]).filter(l=>l.stage===inbox&&!seen[l.key]).length;
+  const n=(leads||[]).filter(l=>{
+    if(l.stage&&l.stage!==inbox)return false;
+    if(Number(l.unread)===0&&(l._seenCleared||l.seen))return false;
+    return !isLeadSeen(l);
+  }).length;
   badge.textContent=String(n);
   badge.classList.toggle('hidden',n<=0);
   badge.classList.toggle('pulse',n>0);
 }
-function markLeadSeen(key){
-  if(!key)return;
+/** All identity keys a lead might be stored under (manual / booking / chat / raw id). */
+function leadIdentityKeys(leadOrKey){
+  const keys=[];
+  const add=(k)=>{const s=String(k||'').trim();if(s&&keys.indexOf(s)<0)keys.push(s);};
+  if(leadOrKey==null)return keys;
+  if(typeof leadOrKey==='string'||typeof leadOrKey==='number'){
+    const raw=String(leadOrKey);
+    add(raw);
+    if(/^(manual|br|chat):/.test(raw))add(raw.replace(/^(manual|br|chat):/,''));
+    else{
+      add('manual:'+raw);
+      add('br:'+raw);
+      add('chat:'+raw);
+    }
+    return keys;
+  }
+  const l=leadOrKey;
+  add(l.key);
+  add(l.id);
+  if(l.reqId){add(l.reqId);add('br:'+l.reqId);}
+  if(l.chatId){add(l.chatId);add('chat:'+l.chatId);}
+  if(l.id){add('manual:'+l.id);add('br:'+l.id);}
+  return keys;
+}
+function isLeadSeen(leadOrKey){
+  const pipe=ensurePipelineState();
+  const seen=pipe.seen||{};
+  return leadIdentityKeys(leadOrKey).some(k=>!!seen[k]);
+}
+function markLeadSeen(keyOrLead){
+  if(!keyOrLead)return;
   const pipe=ensurePipelineState();
   if(!pipe.seen||typeof pipe.seen!=='object')pipe.seen={};
-  if(pipe.seen[key])return;
-  pipe.seen[key]=true;
+  const aliases=leadIdentityKeys(keyOrLead);
+  if(!aliases.length)return;
+  let changed=false;
+  aliases.forEach(k=>{
+    if(!pipe.seen[k]){pipe.seen[k]=true;changed=true;}
+  });
+  // Keep Journey OS unread in sync when the lead lives on pipeline.manual
+  try{
+    (pipe.manual||[]).forEach(m=>{
+      if(!m)return;
+      if(leadIdentityKeys(m).some(k=>aliases.indexOf(k)>=0)){
+        if(Number(m.unread)!==0){m.unread=0;changed=true;}
+        m._seenCleared=true;
+      }
+    });
+  }catch(e){}
+  if(!changed){
+    try{updateLeadsNavBadge(collectPipelineLeads());}catch(e){}
+    return;
+  }
   persistPipelineSoon();
   try{updateLeadsNavBadge(collectPipelineLeads());}catch(e){}
 }
