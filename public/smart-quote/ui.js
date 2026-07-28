@@ -42,6 +42,19 @@
     return st._sq;
   }
 
+  function resolveServiceImage(s) {
+    if (!s || typeof s !== 'object') return '';
+    const direct = s.image || s.imgUrl || s.photo || s.photoUrl || s.cover || s.coverImage || '';
+    if (direct) return String(direct);
+    if (Array.isArray(s.photos) && s.photos.length) {
+      const first = s.photos.find((p) => p && (typeof p === 'string' || p.url || p.src));
+      if (!first) return '';
+      return typeof first === 'string' ? first : String(first.url || first.src || '');
+    }
+    if (Array.isArray(s.images) && s.images[0]) return String(s.images[0]);
+    return '';
+  }
+
   function activeServices() {
     const st = appState();
     if (!st) return [];
@@ -55,18 +68,23 @@
     }
     return list
       .filter((x) => x && x.name)
-      .map((x) => ({
-        // Always string — onclick attrs and packageIds must match (numeric Date.now ids broke clicks).
-        id: String(x.id != null && x.id !== '' ? x.id : HublySmartQuote && HublySmartQuote.slug(x.name)),
-        name: x.name,
-        price: x.price != null ? x.price : x.defaultPrice,
-        pricingType: x.pricingType === 'variable' ? 'variable' : 'flat',
-        varPrices: x.varPrices && typeof x.varPrices === 'object' ? Object.assign({}, x.varPrices) : {},
-        dur: x.dur,
-        desc: x.desc,
-        category: x.category,
-        image: x.image || x.imgUrl,
-      }));
+      .map((x) => {
+        const image = resolveServiceImage(x);
+        return {
+          // Always string — onclick attrs and packageIds must match (numeric Date.now ids broke clicks).
+          id: String(x.id != null && x.id !== '' ? x.id : HublySmartQuote && HublySmartQuote.slug(x.name)),
+          name: x.name,
+          price: x.price != null ? x.price : x.defaultPrice,
+          pricingType: x.pricingType === 'variable' ? 'variable' : 'flat',
+          varPrices: x.varPrices && typeof x.varPrices === 'object' ? Object.assign({}, x.varPrices) : {},
+          dur: x.dur,
+          desc: x.desc,
+          category: x.category,
+          image,
+          imgUrl: image,
+          photos: Array.isArray(x.photos) ? x.photos.slice() : [],
+        };
+      });
   }
 
   function activeAddons() {

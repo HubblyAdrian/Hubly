@@ -708,6 +708,19 @@
     return cfg;
   }
 
+  function resolvePkgImage(s) {
+    if (!s || typeof s !== 'object') return '';
+    const direct = s.image || s.imgUrl || s.photo || s.photoUrl || s.cover || s.coverImage || '';
+    if (direct) return String(direct);
+    if (Array.isArray(s.photos) && s.photos.length) {
+      const first = s.photos.find((p) => p && (typeof p === 'string' || p.url || p.src));
+      if (!first) return '';
+      return typeof first === 'string' ? first : String(first.url || first.src || '');
+    }
+    if (Array.isArray(s.images) && s.images[0]) return String(s.images[0]);
+    return '';
+  }
+
   function packagesFromServices(services, cfg) {
     const list = Array.isArray(services) ? services : [];
     const out = [];
@@ -730,7 +743,7 @@
         dur: s.dur || s.duration || '',
         desc: s.desc || s.description || '',
         category: s.category || 'Packages',
-        image: s.image || s.imgUrl || '',
+        image: resolvePkgImage(s),
       });
     });
     (cfg.customPackages || []).forEach((p) => {
@@ -744,7 +757,7 @@
         dur: p.dur || '',
         desc: p.desc || '',
         category: p.category || 'Custom',
-        image: p.image || '',
+        image: resolvePkgImage(p),
         custom: true,
       });
     });
