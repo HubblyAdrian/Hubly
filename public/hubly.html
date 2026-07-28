@@ -6290,7 +6290,10 @@ html{scroll-behavior:smooth}
 }
 .ws-gal-album{width:100%;min-width:0}
 .ws-gal-album-h{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;flex-wrap:wrap;
+  display:flex;align-items:center;justify-content:flex-start;gap:10px;margin:0 0 12px;flex-wrap:wrap;
+}
+.ws-gal-album-title{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;
 }
 .ws-gal-album-h h3{
   margin:0;font-size:15px;font-weight:750;letter-spacing:-.02em;color:var(--ws-heading,#0f172a);
@@ -6351,57 +6354,61 @@ html{scroll-behavior:smooth}
 .ws-sec-ink-light .ws-review-quote{color:rgba(248,250,252,.78)!important}
 .ws-sec-ink-light .ws-review-author,
 .ws-sec-ink-light .ws-area-cities-empty{color:rgba(248,250,252,.9)!important}
-/* Dark gallery chrome — Add photos / Rename must stay readable */
-.ws-sec-ink-light .ws-gal-album-actions .btn-out,
-.ws-sec-ink-light .ws-gal-album-h .btn-out,
-.ws-theme-dark .ws-gal-album-actions .btn-out,
-.ws-theme-bold .ws-gal-album-actions .btn-out,
-.ws-site[data-ws-tone="dark"] .ws-gal-album-actions .btn-out,
-.ws-layout-editorial #ws-sec-gallery .ws-gal-album-actions .btn-out,
-.ws-layout-premium-dark #ws-sec-gallery .ws-gal-album-actions .btn-out,
-.ws-layout-obsidian-gold #ws-sec-gallery .ws-gal-album-actions .btn-out,
-.ws-layout-neon-nights #ws-sec-gallery .ws-gal-album-actions .btn-out,
-/* clear-view gallery is light — keep dark readable buttons (do not force white text) */
-.ws-layout-clear-view #ws-sec-gallery .ws-gal-album-actions .btn-out{
-  color:#141B2B!important;
-  border-color:#CBD5E1!important;
-  background:#fff!important;
+/* Album chrome: Rename sits beside the title; Add photos is a grid tile */
+.ws-gal-album-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ws-gal-rename-btn{
+  appearance:none;-webkit-appearance:none;
+  margin:0;padding:0;border:none;background:transparent;cursor:pointer;
+  font:inherit;font-size:13px;font-weight:650;letter-spacing:-.01em;
+  color:#64748b!important;text-decoration:underline;text-underline-offset:3px;
 }
-.ws-sec-ink-light .ws-gal-album-actions .btn-out:hover,
-.ws-sec-ink-light .ws-gal-album-h .btn-out:hover,
-.ws-theme-dark .ws-gal-album-actions .btn-out:hover,
-.ws-site[data-ws-tone="dark"] .ws-gal-album-actions .btn-out:hover{
-  background:rgba(248,250,252,.18)!important;
-  border-color:rgba(248,250,252,.55)!important;
+.ws-gal-rename-btn:hover{color:#D9632D!important}
+.ws-sec-ink-light .ws-gal-rename-btn,
+.ws-theme-dark .ws-gal-rename-btn,
+.ws-theme-bold .ws-gal-rename-btn,
+.ws-site[data-ws-tone="dark"] .ws-gal-rename-btn,
+.ws-layout-editorial #ws-sec-gallery .ws-gal-rename-btn,
+.ws-layout-premium-dark #ws-sec-gallery .ws-gal-rename-btn,
+.ws-layout-obsidian-gold #ws-sec-gallery .ws-gal-rename-btn,
+.ws-layout-neon-nights #ws-sec-gallery .ws-gal-rename-btn{
+  color:rgba(248,250,252,.78)!important;
 }
-.ws-sec-ink-light .ws-gal-album-actions .btn-ghost,
-.ws-sec-ink-light .ws-gal-album-h .btn-ghost,
-.ws-theme-dark .ws-gal-album-actions .btn-ghost,
-.ws-theme-dark .ws-gal-album-h .btn-ghost,
-.ws-site[data-ws-tone="dark"] .ws-gal-album-actions .btn-ghost,
-.ws-site[data-ws-tone="dark"] .ws-gal-album-h .btn-ghost,
-.ws-layout-editorial #ws-sec-gallery .ws-gal-album-h .btn-ghost,
-.ws-layout-premium-dark #ws-sec-gallery .ws-gal-album-h .btn-ghost,
-.ws-layout-obsidian-gold #ws-sec-gallery .ws-gal-album-h .btn-ghost,
-.ws-layout-neon-nights #ws-sec-gallery .ws-gal-album-h .btn-ghost,
-.ws-layout-clear-view #ws-sec-gallery .ws-gal-album-h .btn-ghost{
-  color:rgba(248,250,252,.88)!important;
+.ws-sec-ink-light .ws-gal-rename-btn:hover,
+.ws-theme-dark .ws-gal-rename-btn:hover,
+.ws-site[data-ws-tone="dark"] .ws-gal-rename-btn:hover{
+  color:#fdba74!important;
 }
-.ws-sec-ink-light .ws-gal-album-actions a,
-.ws-sec-ink-light .ws-gal-album-h a,
-.ws-theme-dark .ws-gal-album-actions a,
-.ws-theme-dark .ws-gal-album-h a,
-.ws-site[data-ws-tone="dark"] .ws-gal-album-actions a,
-.ws-site[data-ws-tone="dark"] .ws-gal-album-h a{
-  color:rgba(248,250,252,.88)!important;
+.ws-gal-album-add{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  box-sizing:border-box;min-height:120px;padding:16px 12px;border-radius:12px;
+  border:2px dashed #94a3b8;background:#f8fafc;color:#141B2B;
+  font:inherit;font-size:13px;font-weight:750;letter-spacing:-.01em;cursor:pointer;
+  transition:border-color .15s,color .15s,background .15s,box-shadow .15s;
 }
-.ws-gal-album-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.ws-gal-rename-btn,
-#ed-ws-preview .ws-gal-album-actions .ws-gal-rename-btn,
-#edph-screen .ws-gal-album-actions .ws-gal-rename-btn{
-  color:#141B2B!important;border-color:#CBD5E1!important;background:#fff!important;font-weight:700!important;
+.ws-gal-album-add:hover{
+  border-color:#D9632D;color:#D9632D;background:#FDF0E8;
+  box-shadow:0 0 0 3px rgba(217,99,45,.12);
 }
-.ws-gal-rename-btn:hover{border-color:#D9632D!important;color:#D9632D!important}
+.ws-gal-album-add-plus{font-size:26px;line-height:1;font-weight:500;color:inherit}
+.ws-gal-album-grid .ws-gal-album-add{width:100%;aspect-ratio:1;min-height:0}
+.ws-gal-album-rail .ws-gal-album-add{
+  flex:0 0 min(78%,280px);max-width:300px;min-height:140px;scroll-snap-align:start;
+}
+.ws-sec-ink-light .ws-gal-album-add,
+.ws-theme-dark .ws-gal-album-add,
+.ws-theme-bold .ws-gal-album-add,
+.ws-site[data-ws-tone="dark"] .ws-gal-album-add,
+.ws-layout-editorial #ws-sec-gallery .ws-gal-album-add,
+.ws-layout-premium-dark #ws-sec-gallery .ws-gal-album-add,
+.ws-layout-obsidian-gold #ws-sec-gallery .ws-gal-album-add,
+.ws-layout-neon-nights #ws-sec-gallery .ws-gal-album-add{
+  background:rgba(248,250,252,.08);border-color:rgba(248,250,252,.5);color:#f8fafc;
+}
+.ws-sec-ink-light .ws-gal-album-add:hover,
+.ws-theme-dark .ws-gal-album-add:hover,
+.ws-site[data-ws-tone="dark"] .ws-gal-album-add:hover{
+  border-color:#D9632D;color:#fdba74;background:rgba(217,99,45,.16);
+}
 /* Booking already has in-sidebar “Chat with us” — hide the floating bubble there */
 body:has(#p-booking.active) #ws-chat-bubble,
 body:has(#p-booking.active) #ws-chat-teaser,
@@ -7676,7 +7683,9 @@ body.ed-owner-preview-open #p-storefront .ws-pe-add-tile,
 body.ed-owner-preview-open #p-storefront .ws-profile-tab-add{display:none!important;}
 body.ed-owner-preview-open #p-storefront .ws-pe-target{outline:none!important;cursor:inherit;}
 body.ed-owner-preview-open #p-storefront .ws-pe-target[data-pe]::before{display:none!important;}
-body.ed-owner-preview-open #p-storefront .ws-gal-album-actions{display:none!important;}
+body.ed-owner-preview-open #p-storefront .ws-gal-album-actions,
+body.ed-owner-preview-open #p-storefront .ws-gal-album-add,
+body.ed-owner-preview-open #p-storefront .ws-gal-rename-btn{display:none!important;}
 body.ed-owner-preview-open #p-storefront .ws-pe-add-tile{display:none!important;}
 
 /* Unified fixed editor toolbar — never show the floating pill in Website editor */
@@ -34885,13 +34894,18 @@ function renderWebsiteGallery(targetId){
     const railClass=editing?'ws-gal-album-grid':'ws-gal-album-rail';
     el.innerHTML=visible.map(alb=>{
       const urls=alb.urls||[];
-      const actions=editing?`<div class="ws-gal-album-actions">
-        <button type="button" class="btn btn-out btn-sm" onclick="event.stopPropagation();pickGalleryPhotosForAlbum('${escPeHtml(alb.id)}')">Add photos</button>
-        <button type="button" class="btn btn-out btn-sm ws-gal-rename-btn" onclick="event.stopPropagation();openRenameGalleryAlbum('${escPeHtml(alb.id)}',this)">Rename</button>
-      </div>`:'';
+      const rename=editing
+        ?`<button type="button" class="ws-gal-rename-btn" onclick="event.stopPropagation();openRenameGalleryAlbum('${escPeHtml(alb.id)}',this)">Rename</button>`
+        :'';
+      const addBtn=editing
+        ?`<button type="button" class="ws-gal-album-add" onclick="event.stopPropagation();pickGalleryPhotosForAlbum('${escPeHtml(alb.id)}')" aria-label="Add photos to ${escPeHtml(alb.name)}"><span class="ws-gal-album-add-plus" aria-hidden="true">+</span><span>Add photos</span></button>`
+        :'';
+      const cards=urls.length
+        ?urls.map((u,i)=>portCard(u,i,urls.length,alb.id)).join('')+addBtn
+        :(editing?addBtn:'');
       return `<div class="ws-gal-album" data-album-id="${escPeHtml(alb.id)}">
-        <div class="ws-gal-album-h"><h3>${escPeHtml(alb.name)}</h3>${actions}</div>
-        <div class="${railClass}">${urls.length?urls.map((u,i)=>portCard(u,i,urls.length,alb.id)).join(''):(editing?`<div class="ws-profile-empty" style="grid-column:1/-1;cursor:pointer" onclick="pickGalleryPhotosForAlbum('${escPeHtml(alb.id)}')">No photos yet — tap Add photos</div>`:'')}</div>
+        <div class="ws-gal-album-h"><div class="ws-gal-album-title"><h3>${escPeHtml(alb.name)}</h3>${rename}</div></div>
+        <div class="${railClass}">${cards}</div>
       </div>`;
     }).join('')+(editing?`<div class="ws-gal-album-actions" style="margin-top:4px;">${addTile}<button type="button" class="btn btn-out btn-sm" onclick="openAddGalleryAlbumFlow(this)">+ New bucket</button></div>`:'');
     return;
