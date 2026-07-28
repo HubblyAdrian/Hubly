@@ -9825,7 +9825,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="leads" onclick="switchV(this)" title="Leads">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="ni-lbl">Leads</span><span class="nav-count-badge hidden" id="nav-leads-badge">0</span>
       </div>
-      <div class="ni" data-v="customers" onclick="switchV(this)" title="Customers">
+      <div class="ni" data-v="customers" onclick="switchV(this)" title="Completed Customers">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg><span class="ni-lbl">Customers</span>
       </div>
       <div class="ni" data-v="pipeline" onclick="switchV(this)" title="Pipeline">
@@ -35310,7 +35310,7 @@ function switchV(el){
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
   const titles={
-    dashboard:'Home',jobs:'Jobs & Calendar',leads:'Leads',customers:t('customers'),
+    dashboard:'Home',jobs:'Jobs & Calendar',leads:'Leads',customers:'Completed Customers',
     pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
     quotes:'Quick Quote',money:'Revenue',chats:'Inbox',marketplace:'Marketplace',
     editor:'Website editor',settings:'Settings',reviews:'Reviews',marketing:'Marketing',
@@ -39136,6 +39136,10 @@ function renderCustList(filter){
   renderCustomersView();
 }
 function viewCustomer(id){
+  /* 3-level architecture: default entry is Command Center (Level 2), never Full Profile. */
+  if(window.HublyJourneyOS&&typeof HublyJourneyOS.openCustomerCommandCenter==='function'){
+    return HublyJourneyOS.openCustomerCommandCenter(id);
+  }
   document.querySelectorAll('.cust-table tr').forEach(el=>el.classList.remove('sel'));
   document.querySelector(`.cust-table tr[data-cid="${id}"]`)?.classList.add('sel');
   const c=S.customers.find(c=>String(c.id)===String(id));if(!c)return;
@@ -39206,7 +39210,7 @@ function viewCustomer(id){
         <div class="field full"><label>Notes</label><textarea id="cd-notes" rows="3">${escapeHtml(c.notes||'')}</textarea></div>
       </div>
       <div class="crm-edit-actions">
-        <button type="button" class="btn btn-brand btn-sm" onclick="HublyJourneyOS&&HublyJourneyOS.openCustomerProfile('${c.id}')">Full profile</button>
+        <button type="button" class="btn btn-brand btn-sm" onclick="HublyJourneyOS&&HublyJourneyOS.openFullCustomerProfile('${c.id}')">Open Full Profile →</button>
         <button type="button" class="btn btn-ink btn-sm" onclick="saveCustomerDetail()">Save customer</button>
         <button type="button" class="btn btn-out btn-sm" onclick="openNewJobForCustomer('${c.id}')">${schedLbl}</button>
       </div>

@@ -14,7 +14,7 @@
     { id: 'completed', label: 'Complete', dot: 'completed', tone: 'gray' }
   ];
   var PIPE_BOARD_STAGES = PIPE_STAGES.slice();
-  var PROFILE_TABS = ['Overview', 'Timeline', 'Jobs', 'Payments', 'Photos', 'Messages', 'Membership', 'Reviews', 'Documents', 'Notes'];
+  var PROFILE_TABS = ['Overview', 'Jobs', 'Invoices', 'Payments', 'Messages', 'Documents', 'Photos', 'Files', 'Notes', 'Automations', 'Activity Log', 'Custom Fields'];
   var ASK_CHIPS = ['How did I do this week?', 'Show me my top leads', "What's affecting my revenue?", 'Summarize my reviews', 'Recover abandoned bookings'];
     var POPULAR_ASKS = [
     { t: 'Recover abandoned bookings', s: 'Draft follow-ups for unfinished starts.' },
@@ -8424,31 +8424,10 @@
         });
         return;
       }
-      if (act === 'leads-convert-customer') {
-        mutateLead(function (l) {
-          var st = S();
-          st.customers = st.customers || [];
-          var exists = st.customers.find(function (c) { return c.phone === l.phone || c.name === l.name; });
-          if (!exists) {
-            st.customers.unshift({
-              id: 'cust_' + (l.id || Date.now()),
-              name: l.name, phone: l.phone, email: l.email,
-              vehicle: vehicleOf(l), preferredService: l.service, address: l.address,
-              notes: (l.notesList || []).join('\n'), tags: (l.tags || []).slice()
-            });
-          }
-          l.crmStatus = 'won';
-          l.won = true;
-          l.converted = true;
-          l.stage = 'archived';
-          l.osStage = 'archived';
-          l.status = 'won';
-          pushLeadActivity(l, 'convert', 'Converted to customer');
-        });
-        toast('Converted to customer');
-        return;
-      }
-      if (act === 'leads-convert-job') {
+      if (act === 'leads-convert-job' || act === 'leads-convert-customer') {
+        if (act === 'leads-convert-customer') {
+          toast('Book a job first — they become a Customer after the job is completed');
+        }
         mutateLead(function (l) {
           var st = S();
           st.jobs = st.jobs || [];
@@ -8459,12 +8438,16 @@
             date: todayStr(), time: '10:00 AM', status: 'scheduled',
             amount: l.estimatedValue || l.amount || 0, assignedTo: l.assignedTo
           });
-          l.stage = 'won';
+          l.crmStatus = 'qualified';
+          l.stage = 'archived';
           l.osStage = 'archived';
           l.status = 'archived';
-          pushLeadActivity(l, 'convert', 'Converted to job');
+          l.booked = true;
+          pushLeadActivity(l, 'convert', 'Booked as job');
         });
-        toast('Converted to job');
+        toast('Booked on Jobs & Calendar');
+        root._josLeadId = null;
+        setTimeout(function () { switchNav('jobs'); }, 40);
         return;
       }
       if (act === 'leads-create-quote') {
@@ -8715,29 +8698,25 @@
     return renderLeads();
   }
 
-  var CUST_TABS = [
-    ['all', 'All Customers'],
-    ['active', 'Active'],
-    ['new', 'New'],
-    ['past', 'Past'],
+  /* ─── 3-Level Customer Architecture ───────────────────────────────
+   * Level 1 Completed Customers — browse (Who are my customers?)
+   * Level 2 Command Center — daily workspace (What should I do now?)
+   * Level 3 Full Profile — permanent record (complete history)
+   * A person becomes a Customer only after ≥1 completed job.
+   * Design: ops platform, not a traditional CRM. Most time = Level 2.
+   * ─────────────────────────────────────────────────────────────── */
+  var CUST_SMART_FILTERS = [
+    ['all', 'All'],
+    ['memberships', 'Memberships'],
+    ['one_time', 'One-Time'],
+    ['visit_2', '2nd Visit'],
+    ['visit_3', '3rd Visit'],
+    ['visit_5', '5+'],
     ['vip', 'VIP'],
-    ['lost', 'Lost']
-  ];
-  var CUST_WS_TABS = [
-    ['Overview', 'Overview'],
-    ['Jobs', 'Jobs'],
-    ['Messages', 'Messages'],
-    ['Notes', 'Notes'],
-    ['Files', 'Files'],
-    ['Payments', 'Payments']
-  ];
-  var CUST_SEGMENTS = [
-    ['vip', 'VIP'],
-    ['high_ltv', 'High LTV'],
-    ['new', 'New'],
-    ['at_risk', 'At Risk'],
-    ['seasonal', 'Seasonal'],
-    ['repeat', 'Repeat']
+    ['top_spenders', 'Top Spenders'],
+    ['upcoming', 'Upcoming Appointment'],
+    ['inactive', 'Inactive'],
+    ['winback', 'Needs Win Back']
   ];
   var CUST_PERM_ROLES = [
     { role: 'Owner', view: '✅', edit: '✅', book: '✅', archive: '✅', assign: '✅' },
@@ -8746,6 +8725,14 @@
     { role: 'Sales', view: '✅', edit: '✅', book: '✅', archive: '—', assign: '—' },
     { role: 'Read Only', view: '✅', edit: '—', book: '—', archive: '—', assign: '—' }
   ];
+
+  function addDaysStrSafe(ds, n) {
+    try {
+      var d = new Date(String(ds).slice(0, 10) + 'T12:00:00');
+      d.setDate(d.getDate() + n);
+      return d.toISOString().slice(0, 10);
+    } catch (e) { return ds; }
+  }
 
   function ensureCustomersOsState() {
     var st = S();
@@ -8762,12 +8749,18 @@
     if (!Array.isArray(st.customersOs.savedFilters)) st.customersOs.savedFilters = [];
     if (!st.customers.length && allowDemoSeed()) {
       st.customers = [
-        { id: 'demo_james', name: 'James Anderson', phone: '(619) 555-0188', email: 'james.anderson@email.com', vehicle: 'Range Rover', preferredService: 'Full Detail', preferredDay: 'Weekends', preferredTime: 'Mornings', city: 'San Diego', address: 'La Jolla, CA', favorite: true, statusOverride: 'vip', status: 'active', customerType: 'recurring', membership: 'VIP Detail Plan', tags: ['VIP', 'Repeat Customer', 'High Value', 'SUV Owner', 'Weekend Customer'], lifetimeValue: 650, rating: 4.9, reviewCount: 12, createdAt: '2024-01-15T12:00:00', lastActivityAt: new Date().toISOString(), notesList: ['Prefers weekends. Always tips well. Range Rover needs ceramic top-up soon.'], payments: [{ amount: 325, status: 'paid', at: '2024-05-18' }, { amount: 325, status: 'paid', at: '2024-03-02' }] },
-        { id: 'demo_sarah', name: 'Sarah Mitchell', phone: '(619) 555-0142', email: 'sarah.m@email.com', vehicle: 'Tesla Model Y', preferredService: 'Interior Detail', city: 'San Diego', tags: ['Interior', 'New'], status: 'active', lifetimeValue: 280, createdAt: new Date(Date.now() - 86400000 * 12).toISOString(), lastActivityAt: new Date(Date.now() - 86400000).toISOString() },
-        { id: 'demo_mike', name: 'Michael Brown', phone: '(619) 555-0177', email: 'mike.b@email.com', vehicle: 'BMW X5', preferredService: 'Ceramic Coating', city: 'San Diego', tags: ['High Value'], status: 'active', lifetimeValue: 890, favorite: true, createdAt: '2023-11-02T12:00:00', lastActivityAt: new Date(Date.now() - 86400000 * 2).toISOString() },
-        { id: 'demo_emily', name: 'Emily Chen', phone: '(619) 555-0111', email: 'emily.c@email.com', vehicle: 'Audi Q5', preferredService: 'Exterior Wash', city: 'San Diego', tags: ['Past'], status: 'inactive', lifetimeValue: 120, createdAt: '2023-06-01T12:00:00', lastActivityAt: new Date(Date.now() - 86400000 * 120).toISOString() },
-        { id: 'demo_alex', name: 'Alex Rivera', phone: '(619) 555-0133', email: 'alex.r@email.com', vehicle: 'Honda Civic', preferredService: 'Full Detail', city: 'San Diego', tags: ['Lost'], status: 'lost', lifetimeValue: 95, createdAt: '2023-03-10T12:00:00', lastActivityAt: new Date(Date.now() - 86400000 * 200).toISOString() }
+        { id: 'demo_james', name: 'James Anderson', phone: '(619) 555-0188', email: 'james.anderson@email.com', vehicle: 'Range Rover', preferredService: 'Full Detail', preferredDay: 'Weekends', preferredTime: 'Mornings', city: 'San Diego', address: 'La Jolla, CA', favorite: true, statusOverride: 'vip', status: 'active', customerType: 'recurring', membership: 'Gold Member', tags: ['VIP', 'Repeat Customer', 'High Value'], lifetimeValue: 4860, rating: 4.9, reviewCount: 12, createdAt: '2023-01-15T12:00:00', lastActivityAt: new Date().toISOString(), customerSince: '2023-01-15', completedJobsCount: 12, notesList: ['Prefers weekends. Always tips well.', 'Asked about ceramic last visit.'], payments: [{ amount: 325, status: 'paid', at: '2024-05-18', label: 'Full Detail', method: 'Card', stripeId: 'pi_demo_james_1', receipt: true }, { amount: 325, status: 'paid', at: '2024-03-02', label: 'Full Detail', method: 'Card', stripeId: 'pi_demo_james_2', receipt: true }], invoices: [{ amount: 325, status: 'paid', at: '2024-05-18', pdf: true }, { amount: 325, status: 'paid', at: '2024-03-02', pdf: true }], likes: ['Interior Detail', 'Weekend mornings'], dislikes: ['Late starts'], commPref: 'Text', outstandingBalance: 0, referralSource: 'Google', photos: [{ name: 'Before detail', at: '2024-05-18' }, { name: 'After detail', at: '2024-05-18' }, { name: 'Interior', at: '2024-03-02' }], documents: [{ name: 'Warranty.pdf', kind: 'warranty' }, { name: 'Service agreement.pdf', kind: 'contract' }], activity: [
+          { type: 'invoice', label: 'Invoice Paid', at: 'Today' },
+          { type: 'message', label: 'Message · Confirmed tomorrow', at: 'Yesterday' },
+          { type: 'appointment', label: 'Appointment scheduled', at: '3 days ago' },
+          { type: 'membership', label: 'Membership Renewed', at: 'Last month' },
+          { type: 'job', label: 'Job completed · Full Detail', at: 'May 18' }
+        ] },
+        { id: 'demo_sarah', name: 'Sarah Mitchell', phone: '(619) 555-0142', email: 'sarah.m@email.com', vehicle: 'Tesla Model Y', preferredService: 'Interior Detail', city: 'San Diego', address: 'Mission Valley, CA', tags: ['Interior'], status: 'active', lifetimeValue: 560, completedJobsCount: 2, createdAt: new Date(Date.now() - 86400000 * 90).toISOString(), lastActivityAt: new Date(Date.now() - 86400000).toISOString(), customerSince: new Date(Date.now() - 86400000 * 90).toISOString().slice(0, 10), rating: 5, commPref: 'Text', activity: [{ type: 'job', label: 'Job completed · Interior Detail', at: 'Yesterday' }, { type: 'created', label: 'Became a customer after first completed job', at: '3 months ago' }] },
+        { id: 'demo_mike', name: 'Michael Brown', phone: '(619) 555-0177', email: 'mike.b@email.com', vehicle: 'BMW X5', preferredService: 'Ceramic Coating', city: 'San Diego', address: 'UTC, CA', tags: ['High Value'], status: 'active', lifetimeValue: 1780, completedJobsCount: 5, favorite: true, createdAt: '2023-11-02T12:00:00', lastActivityAt: new Date(Date.now() - 86400000 * 2).toISOString(), customerSince: '2023-11-02', rating: 4.8, outstandingBalance: 220, activity: [{ type: 'invoice', label: 'Invoice outstanding · $220', at: '2 days ago' }, { type: 'job', label: 'Job completed · Full Detail', at: 'Jul 1' }] },
+        { id: 'demo_emily', name: 'Emily Chen', phone: '(619) 555-0111', email: 'emily.c@email.com', vehicle: 'Audi Q5', preferredService: 'Exterior Wash', city: 'San Diego', tags: ['Inactive'], status: 'inactive', lifetimeValue: 240, completedJobsCount: 3, createdAt: '2023-06-01T12:00:00', lastActivityAt: new Date(Date.now() - 86400000 * 120).toISOString(), customerSince: '2023-06-01', rating: 4.6, activity: [{ type: 'winback', label: 'Needs Win Back', at: '120 days ago' }, { type: 'job', label: 'Job completed · Exterior Wash', at: 'Aug 2023' }] }
       ];
+      seedDemoCompletedJobs(st);
     }
     var team = st.team;
     st.customers.forEach(function (c, idx) {
@@ -8776,12 +8769,8 @@
       if (c.favorite == null) c.favorite = !!(c.statusOverride === 'vip' || c.isVip);
       if (!Array.isArray(c.tags)) c.tags = c.tags ? String(c.tags).split(/[,\s]+/).filter(Boolean) : [];
       if (c.statusOverride === 'vip' && c.tags.indexOf('VIP') < 0) c.tags.push('VIP');
-      if (!c.membership) {
-        c.membership = c.customerType === 'recurring' ? (c.preferredService ? c.preferredService + ' Plan' : 'Monthly Plan') : '';
-      }
-      if (!Array.isArray(c.vehicles)) {
-        c.vehicles = c.vehicle ? [{ label: String(c.vehicle), type: '' }] : [];
-      }
+      if (!c.membership) c.membership = c.customerType === 'recurring' ? (c.preferredService ? c.preferredService + ' Plan' : 'Monthly Plan') : '';
+      if (!Array.isArray(c.vehicles)) c.vehicles = c.vehicle ? [{ label: String(c.vehicle), type: '' }] : [];
       if (!c.vehicle && c.vehicles[0]) c.vehicle = c.vehicles[0].label || c.vehicles[0].name || '';
       if (!c.city) {
         var addr = String(c.address || '');
@@ -8789,28 +8778,67 @@
         c.city = m ? m[1].trim() : (st.city || '');
       }
       if (!c.assignedTo) c.assignedTo = team.length ? (team[idx % team.length] || team[0]).name : '';
-      if (c.aiScore == null) {
-        var base = 50 + (c.customerType === 'recurring' ? 20 : 0) + (c.favorite ? 8 : 0);
-        c.aiScore = Math.max(5, Math.min(99, base + (idx % 19)));
-      }
+      if (c.aiScore == null) c.aiScore = Math.max(5, Math.min(99, 50 + (c.customerType === 'recurring' ? 20 : 0) + (c.favorite ? 8 : 0) + (idx % 19)));
       if (c.unread == null) c.unread = 0;
       if (!Array.isArray(c.notesList)) c.notesList = c.notes ? [String(c.notes)] : [];
       if (!Array.isArray(c.documents)) c.documents = [];
       if (!Array.isArray(c.photos)) c.photos = [];
       if (!Array.isArray(c.payments)) c.payments = [];
+      if (!Array.isArray(c.invoices)) c.invoices = [];
+      if (!Array.isArray(c.automations)) c.automations = [];
+      if (!Array.isArray(c.customFields)) c.customFields = [];
+      if (!Array.isArray(c.likes)) c.likes = [];
+      if (!Array.isArray(c.dislikes)) c.dislikes = [];
+      if (!c.commPref) c.commPref = c.preferredContact || 'Text';
+      if (c.outstandingBalance == null) c.outstandingBalance = 0;
       if (!c.property) c.property = '';
       if (!Array.isArray(c.activity) || !c.activity.length) {
-        c.activity = [{ type: 'created', label: 'Customer record created', at: String(c.createdAt || todayStr()).slice(0, 16).replace('T', ' ') }];
+        c.activity = [{ type: 'created', label: 'Became a customer after first completed job', at: String(c.customerSince || c.createdAt || todayStr()).slice(0, 16).replace('T', ' ') }];
       }
-      if (c.lifetimeValue == null) {
-        var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
-        c.lifetimeValue = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-        if (!c.lifetimeValue && c.payments && c.payments.length) {
-          c.lifetimeValue = c.payments.reduce(function (s, p) { return s + (parseFloat(p.amount) || 0); }, 0);
-        }
-      }
+      syncCustomerStatsFromJobs(c);
     });
     return st;
+  }
+
+  function seedDemoCompletedJobs(st) {
+    if (!Array.isArray(st.jobs)) st.jobs = [];
+    if (st.jobs.some(function (j) { return j && String(j.id || '').indexOf('demo_cj_') === 0; })) return;
+    [
+      { id: 'demo_cj_james_1', customer: 'James Anderson', customerId: 'demo_james', service: 'Full Detail', amount: 325, date: '2024-05-18', time: '10:00 AM', status: 'completed' },
+      { id: 'demo_cj_james_2', customer: 'James Anderson', customerId: 'demo_james', service: 'Interior Detail', amount: 180, date: '2024-03-02', time: '9:00 AM', status: 'completed' },
+      { id: 'demo_cj_james_3', customer: 'James Anderson', customerId: 'demo_james', service: 'Full Detail', amount: 325, date: addDaysStrSafe(todayStr(), 1), time: '9:00 AM', status: 'scheduled' },
+      { id: 'demo_cj_sarah_1', customer: 'Sarah Mitchell', customerId: 'demo_sarah', service: 'Interior Detail', amount: 280, date: '2024-06-01', time: '11:00 AM', status: 'completed' },
+      { id: 'demo_cj_sarah_2', customer: 'Sarah Mitchell', customerId: 'demo_sarah', service: 'Interior Detail', amount: 280, date: '2024-07-10', time: '11:00 AM', status: 'completed' },
+      { id: 'demo_cj_mike_1', customer: 'Michael Brown', customerId: 'demo_mike', service: 'Ceramic Coating', amount: 899, date: '2024-04-12', time: '8:00 AM', status: 'completed' },
+      { id: 'demo_cj_mike_2', customer: 'Michael Brown', customerId: 'demo_mike', service: 'Full Detail', amount: 220, date: '2024-07-01', time: '2:00 PM', status: 'completed' },
+      { id: 'demo_cj_emily_1', customer: 'Emily Chen', customerId: 'demo_emily', service: 'Exterior Wash', amount: 80, date: '2023-08-15', time: '10:00 AM', status: 'completed' }
+    ].forEach(function (j) {
+      j.assignedTo = 'Adrian Lopez'; j.durationMin = 120; j.tags = ['demo'];
+      st.jobs.unshift(j);
+    });
+  }
+
+  function syncCustomerStatsFromJobs(c) {
+    var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
+    var fromJobs = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    if (fromJobs) c.lifetimeValue = fromJobs;
+    else if (c.lifetimeValue == null) {
+      c.lifetimeValue = (c.payments || []).reduce(function (s, p) { return s + (parseFloat(p.amount) || 0); }, 0);
+    }
+    c.completedJobsCount = Math.max(Number(c.completedJobsCount) || 0, done.length);
+    if (!c.customerSince && done.length) {
+      var first = done.slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); })[0];
+      c.customerSince = String(first.date || c.createdAt || '').slice(0, 10);
+    }
+    if (!c.createdAt && c.customerSince) c.createdAt = c.customerSince + 'T12:00:00';
+  }
+
+  function custCompletedCount(c) {
+    return Math.max(custJobsFor(c).filter(function (j) { return j.status === 'completed'; }).length, Number(c.completedJobsCount) || 0);
+  }
+
+  function isCompletedCustomer(c) {
+    return !!(c && !c.deleted && custCompletedCount(c) >= 1);
   }
 
   function customersOsList() {
@@ -8818,37 +8846,67 @@
     return customers().filter(function (c) { return !c.deleted; });
   }
 
+  function completedCustomersList() {
+    return customersOsList().filter(isCompletedCustomer);
+  }
+
   function findCustomer(id) {
     return customersOsList().find(function (c) { return String(c.id) === String(id); }) || null;
+  }
+
+  function promoteCompletedJobToCustomer(job) {
+    if (!job || job.isBlock || job.isGoogle) return null;
+    ensureCustomersOsState();
+    var st = S();
+    var name = String(job.customer || '').trim();
+    if (!name || /^new customer$/i.test(name) || /^blocked$/i.test(name)) return null;
+    var existing = st.customers.find(function (c) {
+      if (job.customerId && String(c.id) === String(job.customerId)) return true;
+      if (c.name && name && c.name.toLowerCase() === name.toLowerCase()) return true;
+      if (c.phone && job.phone && String(c.phone).replace(/\D/g, '') === String(job.phone).replace(/\D/g, '')) return true;
+      return false;
+    });
+    var amt = parseFloat(job.amount) || 0;
+    if (existing) {
+      job.customerId = existing.id;
+      if (!existing.customerSince) existing.customerSince = String(job.date || todayStr()).slice(0, 10);
+      existing.lastActivityAt = new Date().toISOString();
+      existing.preferredService = existing.preferredService || job.service || '';
+      if (job.vehicle) existing.vehicle = existing.vehicle || job.vehicle;
+      existing.activity = existing.activity || [];
+      existing.activity.unshift({ type: 'job', label: 'Job completed · ' + (job.service || 'Service'), at: new Date().toLocaleString() });
+      if (amt) {
+        existing.payments = existing.payments || [];
+        existing.payments.unshift({ amount: amt, status: 'paid', at: job.date || todayStr(), label: job.service || 'Job' });
+      }
+      syncCustomerStatsFromJobs(existing);
+      return existing;
+    }
+    var id = 'cust_' + Date.now();
+    var cust = {
+      id: id, name: name, phone: job.phone || '', email: job.email || '',
+      vehicle: job.vehicle || '', preferredService: job.service || '',
+      address: job.address || '', city: st.city || '', status: 'active',
+      customerType: 'one_off', membership: '', tags: [], lifetimeValue: amt,
+      completedJobsCount: 1, customerSince: String(job.date || todayStr()).slice(0, 10),
+      createdAt: new Date().toISOString(), lastActivityAt: new Date().toISOString(),
+      notesList: [], documents: [], photos: [],
+      payments: amt ? [{ amount: amt, status: 'paid', at: job.date || todayStr(), label: job.service || 'Job' }] : [],
+      invoices: [], outstandingBalance: 0, likes: [], dislikes: [], commPref: 'Text',
+      activity: [{ type: 'created', label: 'Became a customer after first completed job', at: new Date().toLocaleString() }],
+      assignedTo: job.assignedTo || '', aiScore: 62
+    };
+    job.customerId = id;
+    st.customers.unshift(cust);
+    return cust;
   }
 
   function custIsVip(c) {
     return !!(c.statusOverride === 'vip' || c.isVip || (c.tags || []).some(function (t) { return /vip/i.test(String(t)); }));
   }
-
   function custIsMember(c) {
     return c.customerType === 'recurring' || !!(c.membership && String(c.membership).trim());
   }
-
-  function custSegmentOf(c) {
-    var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
-    var ltv = custLifetime(c);
-    var created = String(c.createdAt || '').slice(0, 10);
-    var daysNew = todayStr();
-    try {
-      var d = new Date(todayStr() + 'T12:00:00');
-      d.setDate(d.getDate() - 30);
-      daysNew = d.toISOString().slice(0, 10);
-    } catch (e) {}
-    if (custIsVip(c)) return 'vip';
-    if (ltv >= 500 || done.length >= 4) return 'high_ltv';
-    if (created && created >= daysNew) return 'new';
-    if ((c.aiScore != null && c.aiScore < 45) || /at.?risk|abandoned/i.test((c.tags || []).join(' '))) return 'at_risk';
-    if (/seasonal/i.test((c.tags || []).join(' ')) || c.seasonal) return 'seasonal';
-    if (done.length >= 2) return 'repeat';
-    return 'new';
-  }
-
   function custLifetime(c) {
     if (c && c.lifetimeValue != null && c.lifetimeValue > 0) return Number(c.lifetimeValue) || 0;
     var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
@@ -8856,134 +8914,125 @@
     if (fromJobs) return fromJobs;
     return (c.payments || []).reduce(function (s, p) { return s + (parseFloat(p.amount) || 0); }, 0);
   }
-
-  function custCrmSegment(c) {
-    if (c.status === 'lost' || /lost/i.test((c.tags || []).join(' '))) return 'lost';
-    if (custIsVip(c)) return 'vip';
-    if (c.status === 'inactive' || c.archived) return 'past';
-    var created = String(c.createdAt || '').slice(0, 10);
-    var cut = todayStr();
+  function custDaysSinceLast(c) {
+    var last = lastJob(c);
+    var raw = last && last.date ? last.date : (c.lastActivityAt || c.createdAt || '');
     try {
-      var d = new Date(todayStr() + 'T12:00:00');
-      d.setDate(d.getDate() - 45);
-      cut = d.toISOString().slice(0, 10);
-    } catch (e) {}
-    if (created && created >= cut) return 'new';
-    return 'active';
+      var d = new Date(String(raw).slice(0, 10) + 'T12:00:00');
+      if (isNaN(d.getTime())) return 999;
+      return Math.round((Date.now() - d.getTime()) / 86400000);
+    } catch (e) { return 999; }
   }
-
-  function custMatchesTab(c, tab, segment) {
+  function custMatchesSmartFilter(c, tab) {
     if (!tab || tab === 'all') return true;
-    if (tab === 'active') return (c.status === 'active' || !c.status) && !c.archived && custCrmSegment(c) !== 'lost';
-    if (tab === 'new') return custCrmSegment(c) === 'new';
-    if (tab === 'past') return custCrmSegment(c) === 'past';
-    if (tab === 'vip') return custIsVip(c);
-    if (tab === 'lost') return custCrmSegment(c) === 'lost';
+    var doneN = custCompletedCount(c);
+    var next = nextJob(c);
     if (tab === 'memberships') return custIsMember(c);
-    if (tab === 'vehicles') return !!(c.vehicle || (c.vehicles && c.vehicles.length) || c.property);
-    if (tab === 'favorites') return !!c.favorite;
-    if (tab === 'segments') {
-      var seg = segment || 'vip';
-      return custSegmentOf(c) === seg || (seg === 'vip' && custIsVip(c));
-    }
+    if (tab === 'one_time') return !custIsMember(c) && doneN === 1;
+    if (tab === 'visit_2') return doneN === 2;
+    if (tab === 'visit_3') return doneN === 3;
+    if (tab === 'visit_5') return doneN >= 5;
+    if (tab === 'vip') return custIsVip(c);
+    if (tab === 'top_spenders') return custLifetime(c) >= 500;
+    if (tab === 'upcoming') return !!next;
+    if (tab === 'inactive') return c.status === 'inactive' || c.archived || custDaysSinceLast(c) >= 90;
+    if (tab === 'winback') return !next && custDaysSinceLast(c) >= 60 && doneN >= 1;
     return true;
   }
-
   function custRelativeTime(c) {
     var raw = String(c.lastActivityAt || c.createdAt || '');
     if (!raw) return '—';
     try {
       var d = new Date(raw);
       if (isNaN(d.getTime())) return raw.slice(0, 10);
-      var mins = Math.round((Date.now() - d.getTime()) / 60000);
-      if (mins < 60) return 'Today';
-      var hrs = Math.round(mins / 60);
-      if (hrs < 24) return 'Today';
-      var days = Math.round(hrs / 24);
+      var days = Math.round((Date.now() - d.getTime()) / 86400000);
+      if (days < 1) return 'Today';
       if (days === 1) return 'Yesterday';
       if (days < 7) return days + ' days ago';
       return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     } catch (e) { return raw.slice(0, 10); }
   }
-
-  function custMatchesFilters(c, root) {
-    var f = root._josCustFilters || {};
-    if (f.active === 'active' && c.status === 'inactive') return false;
-    if (f.active === 'inactive' && c.status !== 'inactive') return false;
-    if (f.membership === 'yes' && !custIsMember(c)) return false;
-    if (f.membership === 'no' && custIsMember(c)) return false;
-    if (f.ltv === 'high' && !(custLifetime(c) >= 500)) return false;
-    if (f.ltv === 'med' && !(custLifetime(c) >= 200 && custLifetime(c) < 500)) return false;
-    if (f.ltv === 'low' && !(custLifetime(c) < 200)) return false;
-    if (f.lastJob && f.lastJob !== 'all') {
-      var last = lastJob(c);
-      var ld = last && last.date ? String(last.date).slice(0, 10) : '';
-      if (f.lastJob === 'none' && ld) return false;
-      if (f.lastJob === '30') {
-        var cut30 = todayStr();
-        try {
-          var d30 = new Date(todayStr() + 'T12:00:00');
-          d30.setDate(d30.getDate() - 30);
-          cut30 = d30.toISOString().slice(0, 10);
-        } catch (e) {}
-        if (!ld || ld < cut30) return false;
-      }
-      if (f.lastJob === 'stale') {
-        var cut90 = todayStr();
-        try {
-          var d90 = new Date(todayStr() + 'T12:00:00');
-          d90.setDate(d90.getDate() - 90);
-          cut90 = d90.toISOString().slice(0, 10);
-        } catch (e2) {}
-        if (ld && ld >= cut90) return false;
-      }
-    }
-    if (f.city && f.city !== 'all' && String(c.city || '') !== f.city) return false;
-    if (f.assigned && f.assigned !== 'all' && c.assignedTo !== f.assigned) return false;
-    if (f.service && f.service !== 'all' && String(c.preferredService || '') !== f.service) return false;
-    if (f.vehicle && String(c.vehicle || vehicleOf(c) || '').toLowerCase().indexOf(String(f.vehicle).toLowerCase()) < 0) return false;
-    if (f.tags && String(f.tags).trim()) {
-      var want = String(f.tags).toLowerCase().split(/[,\s]+/).filter(Boolean);
-      var have = (c.tags || []).map(function (t) { return String(t).toLowerCase(); });
-      if (!want.every(function (w) { return have.some(function (h) { return h.indexOf(w) >= 0; }); })) return false;
-    }
-    return true;
-  }
-
-  function custSearchHay(c) {
-    var veh = (c.vehicles || []).map(function (v) { return v.label || v.name || v; }).join(' ');
-    return [
-      c.name, c.phone, c.email, c.address, c.city, c.vehicle, veh, c.property,
-      c.membership, (c.tags || []).join(' '), c.notes, (c.notesList || []).join(' '),
-      c.preferredService, c.assignedTo
-    ].join(' ').toLowerCase();
-  }
-
-  function filterCustomersList(root) {
+  function filterCompletedCustomers(root) {
     var tab = root._josCustTab || 'all';
-    var seg = root._josCustSegment || 'vip';
-    var q = String(root._josCustQ || '').trim().toLowerCase();
-    var sort = root._josCustSort || 'recent';
-    var tagFilter = root._josCustTagFilter || 'all';
-    var list = customersOsList().filter(function (c) { return custMatchesTab(c, tab, seg); });
-    list = list.filter(function (c) { return custMatchesFilters(c, root); });
-    if (tagFilter && tagFilter !== 'all') {
+    var q = String(root._josCustGlobalQ || root._josCustQ || '').trim().toLowerCase();
+    var list = completedCustomersList().filter(function (c) { return custMatchesSmartFilter(c, tab); });
+    if (q) {
       list = list.filter(function (c) {
-        return (c.tags || []).some(function (t) { return String(t).toLowerCase() === String(tagFilter).toLowerCase(); });
+        return [c.name, c.phone, c.email, c.vehicle, (c.tags || []).join(' '), c.membership, c.preferredService].join(' ').toLowerCase().indexOf(q) >= 0;
       });
     }
-    if (q) list = list.filter(function (c) { return custSearchHay(c).indexOf(q) > -1; });
+    var sort = root._josCustSort || 'recent';
     return list.slice().sort(function (a, b) {
       if (sort === 'name') return String(a.name || '').localeCompare(String(b.name || ''));
       if (sort === 'ltv') return custLifetime(b) - custLifetime(a);
-      if (sort === 'jobs') return custJobsFor(b).length - custJobsFor(a).length;
-      return String(b.lastActivityAt || b.createdAt || '').localeCompare(String(a.lastActivityAt || a.createdAt || '')) || custLifetime(b) - custLifetime(a);
+      if (sort === 'jobs') return custCompletedCount(b) - custCompletedCount(a);
+      return String(b.lastActivityAt || b.createdAt || '').localeCompare(String(a.lastActivityAt || a.createdAt || ''));
     });
+  }
+  /* Back-compat aliases used by older handlers */
+  function filterCustomersList(root) { return filterCompletedCustomers(root); }
+  function custMatchesTab(c, tab) { return isCompletedCustomer(c) && custMatchesSmartFilter(c, tab); }
+
+  function custKpiStats(all) {
+    var revenue = all.reduce(function (s, c) { return s + custLifetime(c); }, 0);
+    var jobsN = all.reduce(function (s, c) { return s + custCompletedCount(c); }, 0);
+    var members = all.filter(custIsMember).length;
+    var rated = all.filter(function (c) { return c.rating != null; });
+    var avgRating = rated.length ? (rated.reduce(function (s, c) { return s + Number(c.rating); }, 0) / rated.length) : 0;
+    var repeats = all.filter(function (c) { return custCompletedCount(c) >= 2; }).length;
+    return { count: all.length, revenue: revenue, jobs: jobsN, members: members, rating: avgRating, repeatRate: all.length ? Math.round((repeats / all.length) * 100) : 0 };
+  }
+
+  function custNextBestAction(c) {
+    var next = nextJob(c);
+    var done = custCompletedCount(c);
+    var days = custDaysSinceLast(c);
+    var bal = Number(c.outstandingBalance) || 0;
+    if (next) {
+      var when = String(next.date || '');
+      if (when === todayStr()) return { label: "Confirm today's appointment", detail: (next.service || 'Job') + ' · ' + (next.time || ''), act: 'go-jobs', tone: 'brand' };
+      if (when === addDaysStrSafe(todayStr(), 1)) return { label: "Confirm tomorrow's appointment", detail: (next.service || 'Job') + ' · ' + (next.time || ''), act: 'go-jobs', tone: 'brand' };
+      return { label: 'Prep upcoming visit', detail: dateLong(when) + ' · ' + (next.service || 'Job'), act: 'go-jobs', tone: 'info' };
+    }
+    if (bal > 0) return { label: 'Collect payment', detail: money(bal) + ' outstanding', act: 'cust-invoice', tone: 'warn' };
+    if (days >= 60) return { label: 'Send Win Back', detail: days + ' days since last service', act: 'cust-winback', tone: 'warn' };
+    if (done >= 1 && days <= 7) return { label: 'Ask for review', detail: 'Experience is still fresh', act: 'ask-review', tone: 'ok' };
+    if (!custIsMember(c) && done >= 2) return { label: 'Upsell membership', detail: 'Strong fit for recurring plan', act: 'go-mem', tone: 'brand' };
+    if (done >= 3) return { label: 'Upsell Ceramic Coating', detail: 'High-ticket add-on fit', act: 'cust-quote', tone: 'brand' };
+    return { label: 'Schedule next visit', detail: 'Keep the relationship warm', act: 'new-job-cust', tone: 'brand' };
+  }
+
+  function custAiInsights(c) {
+    var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
+    var booked = custJobsFor(c).filter(function (j) { return j.status !== 'completed' && j.status !== 'cancelled'; });
+    var ltv = custLifetime(c);
+    var nbaObj = custNextBestAction(c);
+    var avgTicket = done.length ? Math.round(ltv / done.length) : 0;
+    var months = 4;
+    try {
+      if (c.customerSince || c.createdAt) {
+        months = Math.max(1, Math.round((Date.now() - new Date(String(c.customerSince || c.createdAt).slice(0, 10)).getTime()) / (86400000 * 30)));
+      }
+    } catch (e) {}
+    return {
+      summary: done.length
+        ? (c.name + ' · customer since ' + (c.customerSince ? dateLong(String(c.customerSince).slice(0, 10)) : (months + ' mo')) + ' · ' + done.length + ' completed jobs · avg ticket ' + money(avgTicket) + (c.preferredService ? ' · usually books ' + c.preferredService : '') + '.')
+        : aiCustomerSummary(c, done, booked),
+      tags: aiTags(c, done, ltv).slice(0, 4),
+      churn: Math.max(8, Math.min(92, 100 - (c.aiScore || 50) + (done.length ? 0 : 15))),
+      upsell: custIsMember(c) ? 'Recommend Ceramic Upgrade' : 'Potential Membership Candidate',
+      nba: nbaObj.label, nbaDetail: nbaObj.detail, nbaAct: nbaObj.act, nbaTone: nbaObj.tone,
+      membership: custIsMember(c) ? (c.membership || 'Keep current plan') : 'Monthly Interior · best fit',
+      forecast: Math.round(ltv * 0.35 + (custIsMember(c) ? 400 : 120)),
+      reviewOdds: done.length >= 2 ? 78 : (done.length ? 55 : 28),
+      tip: c.preferredDay === 'Weekends' ? 'Usually books weekends · Responds best to text' : nbaObj.label,
+      avgTicket: avgTicket, months: months
+    };
   }
 
   function uniqueCustValues(field) {
     var set = {};
-    customersOsList().forEach(function (c) {
+    completedCustomersList().forEach(function (c) {
       var v = field === 'service' ? c.preferredService : c[field];
       if (v) set[String(v)] = true;
     });
@@ -8991,296 +9040,173 @@
   }
 
   function renderCustomersFilterDrawer(root) {
-    var f = root._josCustFilters || {};
     if (!root._josCustFilterOpen) return '';
-    function opt(list, cur, allLabel) {
-      return '<option value="all"' + (!cur || cur === 'all' ? ' selected' : '') + '>' + (allLabel || 'All') + '</option>' +
-        list.map(function (v) {
-          return '<option value="' + esc(v) + '"' + (cur === v ? ' selected' : '') + '>' + esc(v) + '</option>';
-        }).join('');
-    }
     return '<div class="jos-cust-drawer" id="jos-cust-drawer">' +
-      '<div class="jos-between"><div class="jos-kicker">Filters</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-filter-close">Close</button></div>' +
-      '<div class="jos-cust-filter-grid">' +
-      '<label>Status<select id="jos-cf-active">' + opt(['active', 'inactive'], f.active, 'Any') + '</select></label>' +
-      '<label>Membership<select id="jos-cf-membership">' + opt(['yes', 'no'], f.membership, 'Any') + '</select></label>' +
-      '<label>Lifetime Value<select id="jos-cf-ltv">' + opt(['high', 'med', 'low'], f.ltv, 'Any') + '</select></label>' +
-      '<label>Last Job<select id="jos-cf-lastjob">' + opt(['30', 'stale', 'none'], f.lastJob, 'Any') + '</select></label>' +
-      '<label>City<select id="jos-cf-city">' + opt(uniqueCustValues('city'), f.city) + '</select></label>' +
-      '<label>Assigned Employee<select id="jos-cf-assigned">' + opt(uniqueCustValues('assignedTo'), f.assigned, 'Anyone') + '</select></label>' +
-      '<label>Service<select id="jos-cf-service">' + opt(uniqueCustValues('service'), f.service) + '</select></label>' +
-      '<label>Vehicle<input id="jos-cf-vehicle" type="text" value="' + esc(f.vehicle || '') + '" placeholder="Vehicle…"></label>' +
-      '<label>Tags<input id="jos-cf-tags" type="text" value="' + esc(f.tags || '') + '" placeholder="VIP, Member"></label>' +
-      '</div>' +
-      '<div class="jos-btn-row jos-mt">' +
-      btn('cust-filter-apply', 'Apply', 'jos-btn-brand jos-btn-sm') +
-      btn('cust-filter-reset', 'Reset', 'jos-btn jos-btn-sm') +
-      btn('cust-filter-save', 'Save Filter', 'jos-btn jos-btn-sm') +
-      '</div></div>';
+      '<div class="jos-between"><div class="jos-kicker">More filters</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-filter-close">Close</button></div>' +
+      '<p class="jos-muted">Smart filters above cover membership, visits, VIP, spend, and win-back. Sort from the table header.</p>' +
+      '<div class="jos-btn-row jos-mt">' + btn('cust-filter-close', 'Done', 'jos-btn-brand jos-btn-sm') + '</div></div>';
   }
 
   function renderCustomersAddModal(root) {
-    if (!root._josCustAddOpen) return '';
-    var d = root._josCustDraft || {};
-    var team = S().team || [];
-    return '<div class="jos-cust-modal-backdrop" data-jos-cust-backdrop="1" role="presentation">' +
-      '<div class="jos-cust-modal" role="dialog" aria-modal="true" aria-labelledby="jos-ca-title">' +
-      '<div class="jos-between jos-cust-modal-head"><h3 id="jos-ca-title">Add Customer</h3><button type="button" class="jos-cust-modal-x" data-jos-act="cust-add-cancel" aria-label="Close">×</button></div>' +
-      '<div class="jos-cust-form">' +
-      '<label>Name<input id="jos-ca-name" value="' + esc(d.name || '') + '" placeholder="Full name"></label>' +
-      '<label>Phone<span class="jos-phone-dial">' + esc(phoneCountryDial()) + '</span><input id="jos-ca-phone" type="tel" inputmode="tel" value="' + esc(formatPhoneValue(d.phone || '')) + '" placeholder="888-888-8888" autocomplete="tel"></label>' +
-      '<label>Email<input id="jos-ca-email" value="' + esc(d.email || '') + '" placeholder="name@email.com"></label>' +
-      '<label>Address<input id="jos-ca-address" value="' + esc(d.address || '') + '" placeholder="Service address"></label>' +
-      '<label>Vehicle / Property<input id="jos-ca-vehicle" value="' + esc(d.vehicle || '') + '" placeholder="Vehicle or property"></label>' +
-      '<label>Tags<input id="jos-ca-tags" value="' + esc(d.tags || '') + '" placeholder="VIP, Member"></label>' +
-      '<label>Membership<select id="jos-ca-membership">' +
-        [['', 'None'], ['Monthly Interior', 'Monthly Interior'], ['Monthly Exterior', 'Monthly Exterior'], ['Annual Ceramic', 'Annual Ceramic']].map(function (s) {
-          return '<option value="' + esc(s[0]) + '"' + ((d.membership || '') === s[0] ? ' selected' : '') + '>' + esc(s[1]) + '</option>';
-        }).join('') +
-      '</select></label>' +
-      '<label>Assigned<select id="jos-ca-assigned">' +
-        '<option value="">—</option>' +
-        team.map(function (t) {
-          return '<option value="' + esc(t.name) + '"' + ((d.assignedTo || '') === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
-        }).join('') +
-      '</select></label>' +
-      '<label class="jos-cust-span2">Notes<textarea id="jos-ca-notes" class="jos-textarea" placeholder="Notes…">' + esc(d.notes || '') + '</textarea></label>' +
-      '</div>' +
-      '<div class="jos-btn-row jos-mt jos-cust-modal-actions">' +
-      btn('cust-add-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
-      btn('cust-add-save', 'Save', 'jos-btn-brand jos-btn-sm') +
-      '</div></div></div>';
+    /* Level 1 does not add leads/customers manually — Schedule Job instead */
+    return '';
   }
 
-  function renderCustomerCard(c, selectedId) {
-    var on = selectedId && String(c.id) === String(selectedId);
-    var jobsN = custJobsFor(c).length;
-    var ltv = custLifetime(c);
-    var contact = c.phone ? displayPhone(c.phone) : (c.email || 'No contact');
-    return '<button type="button" class="jos-cm-card' + (on ? ' on' : '') + '" data-jos-cust-row="' + esc(String(c.id)) + '">' +
-      '<span class="jos-cm-ava">' + esc(initials(c.name)) + '</span>' +
-      '<span class="jos-cm-card-body">' +
-      '<span class="jos-cm-card-top"><strong>' + esc(c.name || 'Customer') + '</strong>' +
-      (custIsVip(c) ? '<span class="jos-cm-vip">VIP</span>' : '') +
-      '<span class="jos-cm-when">' + esc(custRelativeTime(c)) + '</span></span>' +
-      '<span class="jos-cm-card-contact">' + esc(contact) + '</span>' +
-      '<span class="jos-cm-card-meta">' + jobsN + ' job' + (jobsN === 1 ? '' : 's') + ' · ' + esc(money(ltv) || '$0') + ' lifetime</span>' +
-      '</span></button>';
-  }
-
-  function custAiInsights(c) {
-    var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
-    var booked = custJobsFor(c).filter(function (j) { return j.status !== 'completed' && j.status !== 'cancelled'; });
-    var ltv = custLifetime(c);
-    var churn = Math.max(8, Math.min(92, 100 - (c.aiScore || 50) + (done.length ? 0 : 15)));
-    var upsell = c.customerType === 'recurring' ? 'Recommend Ceramic Upgrade' : 'Potential Membership Candidate';
-    var nba = booked.length ? 'Confirm upcoming visit 24h ahead' : (c.unread ? 'Reply to unread messages' : 'Likely to rebook in 3 weeks');
-    var memSug = custIsMember(c) ? (c.membership || 'Keep current plan') : 'Monthly Interior · best fit from visit pattern';
-    var forecast = Math.round(ltv * 0.35 + (custIsMember(c) ? 400 : 120));
-    var reviewOdds = done.length >= 2 || /review/i.test((c.tags || []).join(' ')) ? 78 : (done.length ? 55 : 28);
-    var months = 4;
-    try {
-      if (c.createdAt) {
-        months = Math.max(1, Math.round((Date.now() - new Date(c.createdAt).getTime()) / (86400000 * 30)));
-      }
-    } catch (e) {}
-    return {
-      summary: done.length
-        ? ('This customer has been loyal for ' + months + ' month' + (months === 1 ? '' : 's') + ' and has completed ' + done.length + ' service' + (done.length === 1 ? '' : 's') + '.')
-        : aiCustomerSummary(c, done, booked),
-      tags: aiTags(c, done, ltv).concat(done.length >= 2 ? ['On-Time Payer'] : []).slice(0, 4),
-      churn: churn,
-      upsell: upsell,
-      nba: nba,
-      membership: memSug,
-      forecast: forecast,
-      reviewOdds: reviewOdds,
-      tip: c.preferredDay === 'Weekends' || /weekend/i.test((c.tags || []).join(' ')) ? 'Usually books weekends · Responds best to text' : upsell
-    };
-  }
-
-  function renderCustomerWorkspace(root, c) {
-    if (!c) {
-      return '<div class="jos-cm-empty-ws"><div class="jos-cm-empty-art" aria-hidden="true"></div><h3>Select a customer</h3><p>Pick someone from the list to see history, value, and next actions.</p></div>';
-    }
-    var last = lastJob(c);
-    var next = nextJob(c);
-    var ltv = custLifetime(c) || (allowDemoSeed() ? 650 : 0);
-    var jobsAll = custJobsFor(c);
-    var done = jobsAll.filter(function (j) { return j.status === 'completed'; });
-    var ai = custAiInsights(c);
-    var tab = root._josCustProfileTab || 'Overview';
-    var editing = !!root._josCustEditOpen && String(root._josCustId) === String(c.id);
-    var since = c.createdAt ? dateLong(String(c.createdAt).slice(0, 10)) : '—';
-    var statusLabel = c.status === 'lost' ? 'Lost' : (c.status === 'inactive' ? 'Inactive' : (custIsVip(c) ? 'VIP' : 'Active'));
-    var statusTone = c.status === 'lost' ? 'hot' : (c.status === 'inactive' ? 'mute' : 'ok');
-
-    var head = '';
-    if (editing) {
-      head = '<div class="jos-cm-ws-head jos-cm-edit-head">' +
-        '<div class="jos-cm-edit-grid">' +
-        '<label>Name<input id="jos-ce-name" type="text" value="' + esc(c.name || '') + '" autocomplete="name"></label>' +
-        '<label>Phone<span class="jos-phone-dial">' + esc(phoneCountryDial()) + '</span><input id="jos-ce-phone" type="tel" inputmode="tel" value="' + esc(formatPhoneValue(c.phone || '')) + '" placeholder="888-888-8888" autocomplete="tel"></label>' +
-        '<label>Email<input id="jos-ce-email" type="email" value="' + esc(c.email || '') + '" placeholder="name@email.com" autocomplete="email"></label>' +
-        '<label>Address<input id="jos-ce-address" type="text" value="' + esc(c.address || '') + '" placeholder="Service address"></label>' +
-        '<label>Preferred service<input id="jos-ce-service" type="text" value="' + esc(c.preferredService || '') + '" placeholder="Full Detail"></label>' +
-        '<label>Preferred day<input id="jos-ce-day" type="text" value="' + esc(c.preferredDay || '') + '" placeholder="Weekends"></label>' +
-        '<label>Preferred time<input id="jos-ce-time" type="text" value="' + esc(c.preferredTime || '') + '" placeholder="Mornings"></label>' +
-        '<label>Vehicle<input id="jos-ce-vehicle" type="text" value="' + esc(c.vehicle || vehicleOf(c) || '') + '" placeholder="Vehicle"></label>' +
-        '</div>' +
-        '<div class="jos-btn-row jos-cm-edit-actions">' +
-        btn('cust-edit-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
-        btn('cust-edit-save', 'Save changes', 'jos-btn-brand jos-btn-sm') +
-        '</div></div>';
-    } else {
-      head = '<div class="jos-cm-ws-head">' +
-        '<div class="jos-cm-ws-id">' +
-        '<span class="jos-cm-ava lg">' + esc(initials(c.name)) + '</span>' +
-        '<div><div class="jos-cm-ws-name"><strong>' + esc(c.name || 'Customer') + '</strong>' +
-        (custIsVip(c) ? '<span class="jos-cm-vip dark">VIP</span>' : '') +
-        '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-edit" title="Edit" aria-label="Edit">✎</button></div>' +
-        '<div class="jos-muted">' + esc(c.email || '—') + ' · ' + esc(c.phone ? displayPhone(c.phone) : '—') + '</div>' +
-        '<div class="jos-muted">Customer since ' + esc(since) + ' · <button type="button" class="jos-pill ' + statusTone + '" data-jos-act="cust-status-menu">' + esc(statusLabel) + '</button></div>' +
-        '</div></div>' +
-        '<div class="jos-cm-ws-acts">' +
-        '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="go-chats">Message</button>' +
-        '<button type="button" class="jos-icon-btn" data-jos-act="cust-more-menu" aria-label="More">⋯</button>' +
-        '</div></div>' +
-        '<div class="jos-cm-note-bar"><input id="jos-cm-quick-note" type="text" placeholder="Add a note about this customer..." value=""><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-quick-note">Save</button></div>';
-    }
-
-    var stats = '<div class="jos-cm-stats">' +
-      [['Total Spent', money(ltv) || '$650', '+12%', 'go-reports'],
-        ['Total Jobs', String(jobsAll.length || done.length || 2), '', 'go-jobs'],
-        ['Last Job', last && last.date ? dateLong(last.date) : 'May 18, 2024', '', 'go-jobs'],
-        ['Customer Since', since !== '—' ? since : 'Jan 15, 2024', '', 'cust-ws-tab'],
-        ['Status', statusLabel, '', 'cust-status-menu']].map(function (x, i) {
-        return '<button type="button" class="jos-cm-stat" data-jos-act="' + x[3] + '"' + (x[3] === 'cust-ws-tab' ? ' data-jos-cust-ws-tab="Overview"' : '') + '>' +
-          '<span class="lbl">' + esc(x[0]) + '</span><strong>' + esc(x[1]) + '</strong>' +
-          (x[2] ? '<span class="trend">' + esc(x[2]) + '</span>' : '') + '</button>';
+  /* ─── LEVEL 1: Completed Customers browse ───────────────────────── */
+  function renderCompletedCustomersKpis(all) {
+    var k = custKpiStats(all);
+    return '<div class="jos-cc1-kpis">' +
+      [['Completed Customers', String(k.count)],
+        ['Lifetime Revenue', money(k.revenue) || '$0'],
+        ['Completed Jobs', String(k.jobs)],
+        ['Membership Customers', String(k.members)],
+        ['Average Rating', k.rating ? k.rating.toFixed(1) : '—'],
+        ['Repeat Rate', k.repeatRate + '%']].map(function (x) {
+        return '<div class="jos-cc1-kpi"><span class="lbl">' + esc(x[0]) + '</span><strong>' + esc(x[1]) + '</strong></div>';
       }).join('') + '</div>';
-
-    var tabBar = '<div class="jos-cm-ws-tabs">' + CUST_WS_TABS.map(function (t) {
-      var count = '';
-      if (t[0] === 'Jobs') count = ' (' + jobsAll.length + ')';
-      if (t[0] === 'Notes') count = ' (' + ((c.notesList || []).length) + ')';
-      if (t[0] === 'Files') count = ' (' + (((c.documents || []).length) + ((c.photos || []).length)) + ')';
-      if (t[0] === 'Payments') count = ' (' + ((c.payments || []).length) + ')';
-      if (t[0] === 'Messages') count = ' (5)';
-      return '<button type="button" class="jos-cm-ws-tab' + (tab === t[0] ? ' on' : '') + '" data-jos-act="cust-ws-tab" data-jos-cust-ws-tab="' + esc(t[0]) + '">' + esc(t[1]) + count + '</button>';
-    }).join('') + '</div>';
-
-    var body = '';
-    if (tab === 'Overview') {
-      body = '<div class="jos-cm-overview">' +
-        '<section class="jos-cm-card-block">' +
-        '<div class="jos-kicker">Customer Insights</div>' +
-        '<div class="jos-cm-insight-tags">' + (ai.tags || []).map(function (tg, i) {
-          var tone = i === 0 ? 'mint' : (i === 1 ? 'gold' : 'blue');
-          return '<span class="jos-cm-itag ' + tone + '">' + esc(tg) + '</span>';
-        }).join('') + '</div>' +
-        '<p class="jos-cm-insight-copy">' + esc(ai.summary) + '</p>' +
-        '<p class="jos-cm-insight-tip">' + esc(ai.tip || ai.nba) + '</p></section>' +
-        '<section class="jos-cm-card-block">' +
-        '<div class="jos-between"><div class="jos-kicker">Preferences</div><button type="button" class="jos-linkish" data-jos-act="cust-edit">' + (editing ? 'Editing…' : 'Edit') + '</button></div>' +
-        [['Preferred Service', c.preferredService || 'Full Detail'], ['Preferred Day', c.preferredDay || 'Weekends'], ['Preferred Time', c.preferredTime || 'Mornings'], ['Vehicle', c.vehicle || vehicleOf(c) || '—']].map(function (r) {
-          return '<div class="jos-cm-pref"><span>' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong></div>';
-        }).join('') + '</section>' +
-        '<section class="jos-cm-card-block span2">' +
-        '<div class="jos-between"><div class="jos-kicker">Recent Activity</div><button type="button" class="jos-linkish" data-jos-act="cust-ws-tab" data-jos-cust-ws-tab="Overview">View All Activity →</button></div>' +
-        '<div class="jos-cm-timeline">' + ((c.activity || []).slice(0, 5).map(function (a) {
-          return '<div class="jos-cm-tl"><i class="t-' + esc(String(a.type || 'act')) + '"></i><span><strong>' + esc(a.label) + '</strong><span class="jos-muted">' + esc(a.at || '') + '</span></span></div>';
-        }).join('') || '<div class="jos-muted">No activity yet</div>') + '</div></section>' +
-        '<section class="jos-cm-card-block span2">' +
-        '<div class="jos-between"><div class="jos-kicker">Notes</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-add-note">+ Add Note</button></div>' +
-        ((c.notesList || []).length ? '<div class="jos-cm-notes">' + c.notesList.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') + '</div>' : '<p class="jos-muted">No notes yet</p>') +
-        '</section></div>';
-    } else if (tab === 'Jobs') {
-      body = '<div class="jos-cm-table-wrap"><table class="jos-cm-table"><thead><tr><th>Job</th><th>Vehicle</th><th>Service</th><th>Status</th><th>Technician</th><th>Revenue</th><th>Date</th></tr></thead><tbody>' +
-        (jobsAll.length ? jobsAll.map(function (j) {
-          return '<tr data-jos-act="go-jobs"><td><strong>' + esc(j.id || 'Job') + '</strong></td><td>' + esc(vehicleOf(j) || c.vehicle || '—') + '</td><td>' + esc(j.service || '—') + '</td><td><span class="jos-pill info">' + esc(j.status || '—') + '</span></td><td>' + esc(j.assignedTo || '—') + '</td><td>' + esc(money(j.amount) || '—') + '</td><td>' + esc(j.date || '—') + '</td></tr>';
-        }).join('') : '<tr><td colspan="7" class="jos-muted">No jobs yet — ' + btn('new-job-cust', 'Book Job', 'jos-btn-brand jos-btn-sm') + '</td></tr>') +
-        '</tbody></table></div>';
-    } else if (tab === 'Messages') {
-      body = '<div class="jos-cm-msg-split"><div class="jos-cm-msg-list"><div class="jos-note">SMS · Email · Inbox threads</div><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="go-chats">Open Inbox</button></div>' +
-        '<div class="jos-cm-msg-pane"><p class="jos-muted">Select a conversation or open Inbox focused on ' + esc(c.name) + '.</p>' +
-        '<div class="jos-btn-row">' + btn('cust-sms', 'Text', 'jos-btn jos-btn-sm') + btn('cust-email', 'Email', 'jos-btn jos-btn-sm') + btn('ask-cust', 'AI Reply', 'jos-btn jos-btn-sm') + '</div></div></div>';
-    } else if (tab === 'Notes') {
-      body = '<div class="jos-stack">' +
-        ((c.notesList || []).length ? c.notesList.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') : '<div class="jos-muted">No notes yet</div>') +
-        '<div class="jos-chat-input"><input id="jos-cm-note-new" placeholder="Add note…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-add-note">Add</button></div></div>';
-    } else if (tab === 'Files') {
-      var files = (c.documents || []).concat(c.photos || []);
-      body = '<div class="jos-cm-files">' +
-        (files.length ? files.map(function (f) { return '<div class="jos-cm-file">' + esc(f.name || f.url || f) + '</div>'; }).join('') : '<div class="jos-muted">No files yet</div>') +
-        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="cust-file-add">Upload</button></div>';
-    } else {
-      var pays = c.payments || [];
-      var paid = pays.filter(function (p) { return p.status === 'paid'; }).reduce(function (s, p) { return s + (parseFloat(p.amount) || 0); }, 0);
-      body = '<div class="jos-cm-pay-grid">' +
-        '<div class="jos-cm-card-block"><div class="jos-kicker">Lifetime Revenue</div><strong class="jos-cm-big">' + esc(money(ltv || paid) || '$0') + '</strong></div>' +
-        '<div class="jos-cm-card-block"><div class="jos-kicker">Paid</div><strong class="jos-cm-big">' + esc(money(paid) || money(ltv) || '$0') + '</strong></div>' +
-        '<div class="jos-cm-card-block span2"><div class="jos-kicker">Invoices</div>' +
-        (pays.length ? pays.map(function (p) { return '<div class="jos-between jos-note"><span>' + esc(money(p.amount)) + ' · ' + esc(p.status || 'paid') + '</span><span class="jos-muted">' + esc(p.at || '') + '</span></div>'; }).join('') : '<div class="jos-muted">No invoices yet</div>') +
-        '</div></div>';
-    }
-
-    return '<div class="jos-cm-workspace' + (editing ? ' is-editing' : '') + '" data-jos-cust-id="' + esc(String(c.id)) + '">' + head + (editing ? '' : stats) + tabBar + '<div class="jos-cm-ws-body">' + body + '</div></div>';
   }
 
-  function renderCustomerSidebar(c) {
-    if (!c) {
-      return '<aside class="jos-cm-rail"><div class="jos-cm-widget"><div class="jos-muted">Select a customer to see value, tags, and satisfaction.</div></div></aside>';
+  function renderCompletedCustomersTable(pageRows) {
+    if (!pageRows.length) {
+      return '<div class="jos-cc1-empty"><strong>No completed customers yet</strong><p>People appear here only after their first completed job. Finish a job in Jobs &amp; Calendar to create a customer.</p>' + btn('go-jobs', 'Open Jobs & Calendar', 'jos-btn-brand jos-btn-sm') + '</div>';
     }
-    var ltv = custLifetime(c) || (allowDemoSeed() ? 650 : 0);
-    var jobsN = Math.max(1, custJobsFor(c).length || 2);
-    var avg = Math.round(ltv / jobsN);
+    return '<div class="jos-cc1-table-wrap"><table class="jos-cc1-table"><thead><tr>' +
+      '<th></th><th>Customer</th><th>Completed Jobs</th><th>Membership</th><th>Lifetime Value</th><th>Upcoming Appointment</th><th>Last Service</th><th>Tags</th><th>Actions</th>' +
+      '</tr></thead><tbody>' + pageRows.map(function (c) {
+        var next = nextJob(c);
+        var last = lastJob(c);
+        var tags = (c.tags || []).slice(0, 3);
+        return '<tr class="jos-cc1-row" data-jos-cust-row="' + esc(String(c.id)) + '" tabindex="0">' +
+          '<td><span class="jos-cm-ava">' + esc(initials(c.name)) + '</span></td>' +
+          '<td><strong>' + esc(c.name || 'Customer') + '</strong>' +
+          (custIsVip(c) ? '<span class="jos-cm-vip">VIP</span>' : '') +
+          '<div class="jos-muted">' + esc(c.phone ? displayPhone(c.phone) : (c.email || '')) + '</div></td>' +
+          '<td>' + custCompletedCount(c) + '</td>' +
+          '<td>' + (custIsMember(c) ? esc(c.membership || 'Member') : '<span class="jos-muted">One-time</span>') + '</td>' +
+          '<td><strong>' + esc(money(custLifetime(c)) || '$0') + '</strong></td>' +
+          '<td>' + (next ? esc(dateLong(next.date) + (next.time ? ' · ' + next.time : '')) : '<span class="jos-muted">—</span>') + '</td>' +
+          '<td>' + (last && last.date ? esc(dateLong(last.date)) : '—') + '</td>' +
+          '<td class="jos-cc1-tags">' + (tags.length ? tags.map(function (t) { return '<span class="jos-tag">' + esc(t) + '</span>'; }).join('') : '<span class="jos-muted">—</span>') + '</td>' +
+          '<td class="jos-cc1-acts" onclick="event.stopPropagation()">' +
+          '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-open-command" data-jos-cust="' + esc(String(c.id)) + '">Open</button>' +
+          '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="new-job-cust" data-jos-cust="' + esc(String(c.id)) + '">Schedule</button>' +
+          '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  /* ─── LEVEL 2: Customer Command Center ──────────────────────────── */
+  function renderCustomerCommandCenter(root, c) {
+    if (!c) return '<div class="jos-cc2-empty">Select a completed customer.</div>';
+    var ai = custAiInsights(c);
     var next = nextJob(c);
-    var rating = c.rating != null ? Number(c.rating) : 4.9;
-    var revN = c.reviewCount || 12;
-    var tags = Array.isArray(c.tags) ? c.tags.filter(Boolean) : [];
+    var last = lastJob(c);
+    var doneN = custCompletedCount(c);
+    var ltv = custLifetime(c);
+    var hs = healthScore(c);
+    var jobsAll = custJobsFor(c);
+    var recentJobs = jobsAll.filter(function (j) { return j.status === 'completed'; }).slice().sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); }).slice(0, 4);
+    var msgs = (c.notesList || []).slice(0, 3);
+    var pays = (c.payments || []).slice(0, 3);
+    var photos = (c.photos || []).slice(0, 6);
+    var invoices = (c.invoices || []).slice(0, 3);
+    if (!invoices.length && pays.length) invoices = pays.map(function (p) { return { amount: p.amount, status: p.status || 'paid', at: p.at }; });
 
-    return '<aside class="jos-cm-rail">' +
-      '<section class="jos-cm-widget">' +
-      '<div class="jos-kicker">Customer Value</div>' +
-      '<strong class="jos-cm-vip-line">' + (custIsVip(c) ? 'VIP Customer' : 'Customer') + '</strong>' +
-      '<p class="jos-muted">Top 15% of your customers.</p>' +
-      '<div class="jos-cm-prog"><i style="width:78%"></i></div>' +
-      '<div class="jos-cm-val-grid">' +
-      '<div><span>Lifetime Spend</span><strong>' + esc(money(ltv)) + '</strong></div>' +
-      '<div><span>Avg. Job Value</span><strong>' + esc(money(avg)) + '</strong></div>' +
-      '<div><span>Frequency</span><strong>' + jobsN + 'x</strong></div>' +
-      '<div><span>Retention</span><strong>100%</strong></div>' +
+    var head = '<header class="jos-cc2-head">' +
+      '<button type="button" class="jos-linkish jos-cc2-back" data-jos-act="cust-back-list">← Completed Customers</button>' +
+      '<div class="jos-cc2-id">' +
+      '<span class="jos-cm-ava xl">' + esc(initials(c.name)) + '</span>' +
+      '<div><div class="jos-cc2-name"><strong>' + esc(c.name || 'Customer') + '</strong>' +
+      (custIsMember(c) ? '<span class="jos-pill ok">' + esc(c.membership || 'Member') + '</span>' : '') +
+      (custIsVip(c) ? '<span class="jos-cm-vip dark">VIP</span>' : '') +
       '</div>' +
-      '<button type="button" class="jos-btn jos-btn-sm jos-mt" data-jos-act="go-reports" style="width:100%">View Full Analytics</button></section>' +
+      '<div class="jos-cc2-meta">' +
+      '<span><b>' + esc(money(ltv) || '$0') + '</b> Lifetime</span>' +
+      '<span><b>' + doneN + '</b> Completed Jobs</span>' +
+      (next ? '<span class="next"><b>Next</b> ' + esc(dateLong(next.date) + (next.time ? ' · ' + next.time : '')) + '</span>' : '') +
+      (next && String(next.date) === todayStr() ? '<span class="jos-pill warn">Today\'s Job</span>' : '') +
+      '</div></div></div>' +
+      '<div class="jos-cc2-acts">' +
+      btn('go-chats', 'Send Message', 'jos-btn jos-btn-sm') +
+      btn('new-job-cust', 'Schedule Job', 'jos-btn-brand jos-btn-sm') +
+      btn('cust-invoice', 'Create Invoice', 'jos-btn jos-btn-sm') +
+      '<button type="button" class="jos-icon-btn" data-jos-act="cust-more-menu" aria-label="More">⋯</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-cc2-full" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(c.id)) + '">Open Full Profile →</button>' +
+      '</div></header>';
 
-      '<section class="jos-cm-widget">' +
-      '<div class="jos-kicker">Tags</div>' +
-      '<div class="jos-cm-tags">' + (tags.length
-        ? tags.map(function (tg, i) {
-          return '<button type="button" class="jos-cm-tag" data-jos-act="cust-tag-remove" data-jos-tag-i="' + i + '" title="Remove tag">' + esc(tg) + '<span class="jos-cm-tag-x" aria-hidden="true">×</span></button>';
-        }).join('')
-        : '<span class="jos-muted">No tags yet</span>') +
-      '<button type="button" class="jos-cm-tag add" data-jos-act="cust-add-tag">+ Add Tag</button></div></section>' +
+    var nba = '<section class="jos-cc2-nba">' +
+      '<div class="jos-kicker">Next Best Action</div>' +
+      '<div class="jos-cc2-nba-row">' +
+      '<div><strong>' + esc(ai.nba) + '</strong><p class="jos-muted">' + esc(ai.nbaDetail || ai.tip) + '</p></div>' +
+      '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="' + esc(ai.nbaAct || 'new-job-cust') + '">Do it</button>' +
+      '</div></section>';
 
-      '<section class="jos-cm-widget">' +
-      '<div class="jos-kicker">Upcoming</div>' +
-      (next
-        ? '<div class="jos-cm-up"><strong>Next Job</strong><div class="jos-muted">' + esc(dateLong(next.date)) + '</div><div>' + esc(next.service || c.preferredService || 'Service') + ' · ' + esc(vehicleOf(next) || c.vehicle || '') + '</div></div>'
-        : '<div class="jos-cm-up"><strong>Next Job</strong><div class="jos-muted">Jun 15, 2024</div><div>' + esc(c.preferredService || 'Full Detail') + ' · ' + esc(c.vehicle || 'Vehicle') + '</div></div>') +
-      '<button type="button" class="jos-linkish jos-mt" data-jos-act="go-jobs">View Calendar</button></section>' +
+    var dash = '<div class="jos-cc2-dash">' +
+      '<div class="jos-cc2-card"><div class="jos-kicker">Today\'s Appointment</div>' +
+      (next && String(next.date) === todayStr()
+        ? '<strong>' + esc(next.service || 'Job') + '</strong><div class="jos-muted">' + esc(next.time || '') + '</div>'
+        : '<span class="jos-muted">None today</span>') + '</div>' +
+      '<div class="jos-cc2-card"><div class="jos-kicker">Open Invoice</div>' +
+      (Number(c.outstandingBalance) > 0
+        ? '<strong>' + esc(money(c.outstandingBalance)) + '</strong><div class="jos-muted">Outstanding</div>'
+        : '<span class="jos-muted">All clear</span>') + '</div>' +
+      '<div class="jos-cc2-card"><div class="jos-kicker">Membership</div><strong>' + esc(custIsMember(c) ? (c.membership || 'Active') : 'None') + '</strong></div>' +
+      '<div class="jos-cc2-card"><div class="jos-kicker">Current Vehicle</div><strong>' + esc(c.vehicle || vehicleOf(c) || '—') + '</strong></div>' +
+      '<div class="jos-cc2-card"><div class="jos-kicker">Customer Health</div><strong>' + hs + '</strong><div class="jos-muted">/ 100</div></div>' +
+      '<div class="jos-cc2-card"><div class="jos-kicker">Outstanding Balance</div><strong>' + esc(money(c.outstandingBalance || 0) || '$0') + '</strong></div>' +
+      '<div class="jos-cc2-card"><div class="jos-kicker">Recent Messages</div>' +
+      (msgs.length ? msgs.slice(0, 2).map(function (m) { return '<div class="jos-muted">' + esc(String(m).slice(0, 60)) + '</div>'; }).join('') : '<span class="jos-muted">No messages</span>') + '</div>' +
+      '<div class="jos-cc2-card"><div class="jos-kicker">Recent Jobs</div>' +
+      (recentJobs.length ? recentJobs.slice(0, 2).map(function (j) { return '<div class="jos-muted">' + esc((j.service || 'Job') + ' · ' + (j.date || '')) + '</div>'; }).join('') : '<span class="jos-muted">None</span>') + '</div>' +
+      '</div>';
 
-      '<section class="jos-cm-widget">' +
-      '<div class="jos-kicker">Customer Satisfaction</div>' +
-      '<div class="jos-cm-sat"><strong>' + esc(String(rating)) + '</strong><div class="jos-cm-stars" aria-label="' + esc(String(rating)) + ' stars">★★★★★</div></div>' +
-      '<div class="jos-cm-sat-bars">' +
-      [[5, 10], [4, 2], [3, 0], [2, 0], [1, 0]].map(function (r) {
-        var pct = revN ? Math.round((r[1] / revN) * 100) : (r[0] === 5 ? 83 : (r[0] === 4 ? 17 : 0));
-        return '<div class="jos-cm-sat-row"><span>' + r[0] + '★</span><span class="bar"><i style="width:' + pct + '%"></i></span><span>' + r[1] + '</span></div>';
-      }).join('') +
-      '</div><div class="jos-muted jos-mt">' + revN + ' reviews</div></section></aside>';
+    var summary = '<section class="jos-cc2-ai"><div class="jos-kicker">AI Summary</div><p>' + esc(ai.summary) + '</p>' +
+      '<div class="jos-tag-row">' + (ai.tags || []).map(function (t) { return '<span class="jos-tag">' + esc(t) + '</span>'; }).join('') + '</div></section>';
+
+    var timeline = '<section class="jos-cc2-tl"><div class="jos-kicker">Timeline</div><div class="jos-cc2-tl-list">' +
+      ((c.activity || []).slice(0, 8).map(function (a) {
+        return '<div class="jos-cc2-tl-item"><span class="when">' + esc(a.at || '') + '</span><strong>' + esc(a.label || a.type || 'Activity') + '</strong></div>';
+      }).join('') || '<div class="jos-muted">No activity yet</div>') +
+      '</div></section>';
+
+    function mod(title, items, empty, viewAct) {
+      return '<section class="jos-cc2-mod"><div class="jos-between"><div class="jos-kicker">' + esc(title) + '</div>' +
+        '<button type="button" class="jos-linkish" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(c.id)) + '" data-jos-tab="' + esc(viewAct) + '">View All</button></div>' +
+        (items || empty) + '</section>';
+    }
+    var modules = '<div class="jos-cc2-mods">' +
+      mod('Messages', msgs.length ? msgs.map(function (m) { return '<div class="jos-note">' + esc(String(m).slice(0, 100)) + '</div>'; }).join('') : '', '<div class="jos-muted">No messages</div>', 'Messages') +
+      mod('Photos', photos.length ? '<div class="jos-cc2-photos">' + photos.map(function (p) { return '<div class="jos-photo">' + esc(p.name || p.label || 'Photo') + '</div>'; }).join('') + '</div>' : '', '<div class="jos-muted">No photos</div>', 'Photos') +
+      mod('Invoices', invoices.length ? invoices.map(function (inv) { return '<div class="jos-between jos-note"><span>' + esc(money(inv.amount) || '$0') + '</span><span class="jos-muted">' + esc(inv.status || '') + '</span></div>'; }).join('') : '', '<div class="jos-muted">No invoices</div>', 'Invoices') +
+      mod('Payments', pays.length ? pays.map(function (p) { return '<div class="jos-between jos-note"><span>' + esc(money(p.amount) || '$0') + '</span><span class="jos-muted">' + esc(String(p.at || '').slice(0, 10)) + '</span></div>'; }).join('') : '', '<div class="jos-muted">No payments</div>', 'Payments') +
+      mod('Notes', (c.notesList || []).slice(0, 3).map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') || '', '<div class="jos-muted">No notes</div>', 'Notes') +
+      mod('Files', (c.documents || []).slice(0, 3).map(function (d) { return '<div class="jos-note">' + esc(d.name || d) + '</div>'; }).join('') || '', '<div class="jos-muted">No files</div>', 'Files') +
+      '</div>';
+
+    var rail = '<aside class="jos-cc2-rail">' +
+      '<section class="jos-cc2-rail-card"><div class="jos-kicker">Customer Health</div><div class="jos-cc2-health"><strong>' + hs + '</strong><span>/100</span></div>' +
+      '<div class="jos-progress"><i style="width:' + hs + '%"></i></div></section>' +
+      '<section class="jos-cc2-rail-card"><div class="jos-kicker">Next Best Action</div><strong>' + esc(ai.nba) + '</strong><p class="jos-muted">' + esc(ai.nbaDetail || '') + '</p>' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm jos-mt" data-jos-act="' + esc(ai.nbaAct || 'new-job-cust') + '" style="width:100%">Do it</button></section>' +
+      '<section class="jos-cc2-rail-card"><div class="jos-kicker">Preferences</div>' +
+      '<div class="jos-cc2-pref"><span>Likes</span><strong>' + esc((c.likes || []).join(', ') || c.preferredService || '—') + '</strong></div>' +
+      '<div class="jos-cc2-pref"><span>Dislikes</span><strong>' + esc((c.dislikes || []).join(', ') || '—') + '</strong></div>' +
+      '<div class="jos-cc2-pref"><span>Communication</span><strong>' + esc(c.commPref || 'Text') + '</strong></div></section>' +
+      '<section class="jos-cc2-rail-card"><div class="jos-kicker">Upsell Suggestions</div><p>' + esc(ai.upsell) + '</p></section>' +
+      '<section class="jos-cc2-rail-card"><div class="jos-kicker">Membership Status</div><strong>' + esc(custIsMember(c) ? (c.membership || 'Active') : 'Not enrolled') + '</strong></section>' +
+      '</aside>';
+
+    return '<div class="jos-cc2-shell" data-jos-cust-id="' + esc(String(c.id)) + '">' +
+      '<div class="jos-cc2-main">' + head + nba + dash + summary + timeline + modules + '</div>' + rail +
+      '</div>';
   }
 
+  /* Keep name used by older codepaths — maps to Command Center */
+  function renderCustomerWorkspace(root, c) {
+    return renderCustomerCommandCenter(root, c);
+  }
+  function renderCustomerSidebar(c) {
+    return ''; /* rail is inside Command Center */
+  }
   function renderCustomersContextMenu(root) {
     var menu = root._josCustCtx;
     if (!menu || !menu.open) return '';
@@ -9293,7 +9219,7 @@
       '<button type="button" data-jos-act="go-chats">Message</button>' +
       '<button type="button" data-jos-act="cust-favorite">Favorite</button>' +
       '<button type="button" data-jos-act="cust-archive">Archive</button>' +
-      '<button type="button" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(menu.id || '')) + '">Open Profile</button>' +
+      '<button type="button" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(menu.id || '')) + '">Open Full Profile</button>' +
       '</div>';
   }
 
@@ -9323,33 +9249,51 @@
   function renderCustomersPageInner(root) {
     ensureCustomersOsState();
     if (!root._josCustTab) root._josCustTab = 'all';
+    if (S()._josPendingCustCommand) {
+      root._josCustId = S()._josPendingCustCommand;
+      root._josCustLevel = 'command';
+      S()._josPendingCustCommand = null;
+    }
+    if (!root._josCustLevel) root._josCustLevel = 'list'; /* list = Level 1, command = Level 2 */
+    var level = root._josCustLevel;
     var tab = root._josCustTab || 'all';
-    var all = customersOsList();
-    var filtered = filterCustomersList(root);
+    var allCompleted = completedCustomersList();
+    var filtered = filterCompletedCustomers(root);
     var pageSize = root._josCustPageSize || 25;
     var page = root._josCustPage || 1;
     var pages = Math.max(1, Math.ceil(filtered.length / pageSize));
     if (page > pages) { page = pages; root._josCustPage = page; }
     var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
-    var selectedId = root._josCustId || (pageRows[0] && pageRows[0].id) || null;
+    var selectedId = root._josCustId || null;
     var sel = selectedId ? findCustomer(selectedId) : null;
-    if (selectedId && !sel) {
-      selectedId = pageRows[0] ? pageRows[0].id : null;
-      root._josCustId = selectedId;
-      sel = selectedId ? findCustomer(selectedId) : null;
+    if (sel && !isCompletedCustomer(sel)) {
+      sel = null; root._josCustId = null; selectedId = null; level = 'list'; root._josCustLevel = 'list';
     }
     if (sel) {
       S().activeCustId = sel.id;
       if (sel.unread) sel.unread = 0;
     }
-    var owner = S().ownerName || 'Adrian';
-    var allTags = [];
-    all.forEach(function (c) { (c.tags || []).forEach(function (t) { if (allTags.indexOf(t) < 0) allTags.push(t); }); });
+    if (level === 'command' && !sel) {
+      level = 'list'; root._josCustLevel = 'list';
+    }
 
-    var segTabs = '<div class="jos-cm-segments">' + CUST_TABS.map(function (t) {
-      var count = all.filter(function (c) { return custMatchesTab(c, t[0]); }).length;
-      return '<button type="button" class="jos-cm-seg' + (tab === t[0] ? ' on' : '') + '" data-jos-cust-tab="' + t[0] + '">' +
-        esc(t[1]) + ' <em>(' + count + ')</em></button>';
+    /* LEVEL 2 — Command Center (full page, not a CRM split view) */
+    if (level === 'command' && sel) {
+      root.innerHTML =
+        '<div class="jos-cm-shell jos-cc-level-2">' +
+        renderCustomerCommandCenter(root, sel) +
+        renderCustomersContextMenu(root) +
+        '</div>';
+      bindRoot(root);
+      wireCustomersRoot(root);
+      return;
+    }
+
+    /* LEVEL 1 — Completed Customers browse */
+    var smartFilters = '<div class="jos-cc1-filters">' + CUST_SMART_FILTERS.map(function (t) {
+      var count = allCompleted.filter(function (c) { return custMatchesSmartFilter(c, t[0]); }).length;
+      return '<button type="button" class="jos-cc1-filter' + (tab === t[0] ? ' on' : '') + '" data-jos-cust-tab="' + t[0] + '">' +
+        esc(t[1]) + ' <em>' + count + '</em></button>';
     }).join('') + '</div>';
 
     var pager = '';
@@ -9362,56 +9306,32 @@
       pager = '<div class="jos-cm-pager">' +
         '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-page-prev" aria-label="Previous">‹</button>' +
         buttons +
-        '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-page-next" aria-label="Next">›</button></div>';
+        '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-page-next" aria-label="Next">›</button>' +
+        '<span class="jos-muted jos-cc1-count">' + filtered.length + ' customer' + (filtered.length === 1 ? '' : 's') + '</span></div>';
     }
 
     root.innerHTML =
-      '<div class="jos-cm-shell' + (sel ? ' ws-open' : '') + '">' +
-      '<header class="jos-cm-header">' +
-      '<div class="jos-cm-header-left"><h1>Customers</h1><p>Manage and grow your customer relationships.</p></div>' +
+      '<div class="jos-cm-shell jos-cc-level-1">' +
+      '<header class="jos-cm-header jos-cc1-header">' +
+      '<div class="jos-cm-header-left"><h1>Completed Customers</h1><p>People you\'ve successfully serviced.</p></div>' +
       '<label class="jos-cm-global-search"><span class="jos-cm-search-ico" aria-hidden="true"></span>' +
-      '<input id="jos-cust-global-search" type="search" placeholder="Search customers by name, phone, email, or tags..." value="' + esc(root._josCustGlobalQ || '') + '">' +
+      '<input id="jos-cust-global-search" type="search" placeholder="Search customers…" value="' + esc(root._josCustGlobalQ || '') + '">' +
       '</label>' +
       '<div class="jos-cm-header-actions">' +
-      '<button type="button" class="jos-btn jos-btn-brand jos-cm-add" data-jos-act="cust-add-open">+ Add Customer</button>' +
-      '<button type="button" class="jos-btn jos-cm-import" data-jos-act="cust-import">↑ Import</button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications" aria-label="Notifications">' +
-      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></button>' +
-      '<button type="button" class="jos-cm-ava-btn" data-jos-act="go-settings" title="Profile">' + esc(initials(owner)) + '</button>' +
+      '<button type="button" class="jos-btn jos-cm-import" data-jos-act="cust-export">Export</button>' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-cm-add" data-jos-act="new-job-cust">Schedule Job</button>' +
       '</div></header>' +
-
-      segTabs +
-
-      '<div class="jos-cm-layout">' +
-      '<section class="jos-cm-list-card">' +
-      '<div class="jos-cm-list-tools">' +
-      '<label class="jos-cm-list-search"><input id="jos-cust-search" type="search" placeholder="Search customers..." value="' + esc(root._josCustQ || '') + '"></label>' +
-      '<button type="button" class="jos-icon-btn sm" data-jos-act="cust-filter-open" title="Filters" aria-label="Filters">☰</button>' +
-      '</div>' +
-      '<div class="jos-cm-list-filters">' +
-      '<select id="jos-cm-tag-filter" class="jos-cm-dd"><option value="all">All Tags</option>' +
-      allTags.map(function (t) {
-        return '<option value="' + esc(t) + '"' + ((root._josCustTagFilter || 'all') === t ? ' selected' : '') + '>' + esc(t) + '</option>';
-      }).join('') + '</select>' +
+      renderCompletedCustomersKpis(allCompleted) +
+      smartFilters +
+      '<div class="jos-cc1-toolbar">' +
       '<select id="jos-cm-sort" class="jos-cm-dd">' +
       [['recent', 'Sort: Recent'], ['name', 'Sort: Name'], ['ltv', 'Sort: Lifetime'], ['jobs', 'Sort: Jobs']].map(function (s) {
         return '<option value="' + s[0] + '"' + ((root._josCustSort || 'recent') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
       }).join('') + '</select></div>' +
-      '<div class="jos-cm-list">' +
-      (pageRows.length ? pageRows.map(function (c) { return renderCustomerCard(c, selectedId); }).join('') :
-        '<div class="jos-cm-empty-list"><strong>No customers yet</strong><p>Add your first customer to build the CRM.</p>' + btn('cust-add-open', 'Add Customer', 'jos-btn-brand jos-btn-sm') + '</div>') +
-      '</div>' + pager +
-      '</section>' +
-      '<section class="jos-cm-main">' + renderCustomerWorkspace(root, sel) + '</section>' +
-      renderCustomerSidebar(sel) +
-      '</div>' +
-
+      renderCompletedCustomersTable(pageRows) +
+      pager +
       renderCustomersFilterDrawer(root) +
-      renderCustomersAddModal(root) +
       renderCustomersContextMenu(root) +
-      '<div class="jos-cm-intel-backdrop" data-jos-act="cust-intel-close" hidden></div>' +
-      '<button type="button" class="jos-cm-fab" data-jos-act="cust-add-open" aria-label="Add Customer">+</button>' +
-      '<button type="button" class="jos-cm-intel-toggle" data-jos-act="cust-intel-toggle">Intelligence</button>' +
       '</div>';
 
     bindRoot(root);
@@ -9433,34 +9353,32 @@
   }
 
   function saveNewCustomer() {
+    /* Architecture rule: a Customer only exists after ≥1 completed job. */
+    toast('Schedule a job first — they become a Customer after completion');
     var root = el('jos-customers-root');
-    var d = readCustAddDraft();
-    if (!String(d.name || '').trim()) { toast('Name is required'); return; }
+    if (root) { root._josCustAddOpen = false; root._josCustDraft = null; }
+    return switchNav('jobs');
+  }
+
+  function openCustomerCommandCenter(id) {
     ensureCustomersOsState();
-    var st = S();
-    var id = 'cust_' + Date.now();
-    var city = '';
-    var m = String(d.address || '').match(/,\s*([^,]+),\s*[A-Z]{2}\b/);
-    if (m) city = m[1].trim();
-    var cust = {
-      id: id, name: d.name.trim(), phone: formatPhoneValue(d.phone || ''), email: d.email, address: d.address, city: city,
-      vehicle: d.vehicle, vehicles: d.vehicle ? [{ label: d.vehicle, type: '' }] : [],
-      property: /property|office|home/i.test(d.vehicle) ? d.vehicle : '',
-      tags: String(d.tags || '').split(/[,\s]+/).filter(Boolean),
-      membership: d.membership, customerType: d.membership ? 'recurring' : 'one_off',
-      assignedTo: d.assignedTo, notes: d.notes, notesList: d.notes ? [d.notes] : [],
-      status: 'active', favorite: false, aiScore: 55, unread: 0,
-      documents: [], photos: [], payments: [],
-      createdAt: new Date().toISOString(),
-      activity: [{ type: 'created', label: 'Customer added', at: new Date().toLocaleString() }]
-    };
-    st.customers.unshift(cust);
-    root._josCustAddOpen = false;
-    root._josCustDraft = null;
-    root._josCustId = id;
-    root._josCustTab = 'all';
-    toast('Customer saved');
-    renderCustomers();
+    var c = findCustomer(id) || customers().find(function (x) { return String(x.id) === String(id); });
+    if (!c) { toast('Customer not found'); return; }
+    if (!isCompletedCustomer(c)) {
+      toast('Customers appear after their first completed job');
+      return switchNav('jobs');
+    }
+    closeCustomerProfile();
+    S().activeCustId = c.id;
+    S()._josPendingCustCommand = c.id;
+    switchNav('customers');
+    var root = el('jos-customers-root');
+    if (root) {
+      root._josCustId = c.id;
+      root._josCustLevel = 'command';
+      S()._josPendingCustCommand = null;
+      renderCustomers();
+    }
   }
 
   function wireCustomersRoot(root) {
@@ -9487,10 +9405,9 @@
       var card = e.target.closest('[data-jos-cust-row]');
       if (card && !e.target.closest('[data-jos-act]')) {
         var id = card.getAttribute('data-jos-cust-row');
-        if (String(id) !== String(root._josCustId || '')) root._josCustEditOpen = false;
         root._josCustId = id;
+        root._josCustLevel = 'command'; /* Level 1 → Level 2 Command Center */
         root._josCustCtx = null;
-        root._josCustProfileTab = 'Overview';
         S().activeCustId = id;
         var found = findCustomer(id);
         if (found) found.unread = 0;
@@ -9500,7 +9417,7 @@
     });
 
     root.addEventListener('contextmenu', function (e) {
-      var card = e.target.closest('.jos-cm-card[data-jos-cust-row]');
+      var card = e.target.closest('[data-jos-cust-row]');
       if (!card) return;
       e.preventDefault();
       root._josCustId = card.getAttribute('data-jos-cust-row');
@@ -9537,26 +9454,24 @@
 
     root.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
+        if (root._josCustLevel === 'command') { root._josCustLevel = 'list'; renderCustomers(); return; }
         if (root._josCustEditOpen) { root._josCustEditOpen = false; renderCustomers(); return; }
         if (root._josCustAddOpen) { root._josCustAddOpen = false; renderCustomers(); return; }
         if (root._josCustFilterOpen) { root._josCustFilterOpen = false; renderCustomers(); return; }
         if (root._josCustCtx && root._josCustCtx.open) { root._josCustCtx = null; renderCustomers(); return; }
         if (root.classList.contains('intel-open')) { root.classList.remove('intel-open'); return; }
-        if (root._josCustQ) {
+        if (root._josCustQ || root._josCustGlobalQ) {
           root._josCustQ = '';
           root._josCustGlobalQ = '';
           renderCustomers();
         }
       }
-      if ((e.key === 'n' || e.key === 'N') && !e.metaKey && !e.ctrlKey && !/input|textarea|select/i.test((e.target || {}).tagName || '')) {
-        e.preventDefault();
-        root._josCustAddOpen = true;
-        root._josCustDraft = {};
-        renderCustomers();
+      if (e.key === 'Enter' && e.target && e.target.closest && e.target.closest('[data-jos-cust-row]')) {
+        e.target.closest('[data-jos-cust-row]').click();
       }
       if (e.key === '/' && !/input|textarea|select/i.test((e.target || {}).tagName || '')) {
         e.preventDefault();
-        var inp = el('jos-cust-search') || el('jos-cust-global-search');
+        var inp = el('jos-cust-global-search') || el('jos-cust-search');
         if (inp) inp.focus();
       }
     });
@@ -9582,6 +9497,38 @@
     root._josCustCtx = null;
 
     try {
+      if (act === 'cust-open-command') {
+        var openId = (t && t.getAttribute && t.getAttribute('data-jos-cust')) || root._josCustId;
+        if (!openId) return toast('Select a customer');
+        root._josCustId = openId;
+        root._josCustLevel = 'command';
+        S().activeCustId = openId;
+        return renderCustomers();
+      }
+      if (act === 'cust-back-list') {
+        root._josCustLevel = 'list';
+        return renderCustomers();
+      }
+      if (act === 'cust-export') {
+        var rowsEx = filterCompletedCustomers(root).map(function (x) {
+          return [x.name, x.phone, x.email, custCompletedCount(x), custLifetime(x), x.membership || '', (x.tags || []).join(';')].join(',');
+        });
+        try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText('name,phone,email,completed_jobs,lifetime,membership,tags\n' + rowsEx.join('\n')); } catch (eEx) {}
+        toast('Exported ' + rowsEx.length + ' customers');
+        return;
+      }
+      if (act === 'cust-winback') {
+        if (!c) return toast('Select a customer');
+        toast('Win-back drafted for ' + c.name);
+        pushCustActivity(c, 'winback', 'Win-back started');
+        return switchNav('chats');
+      }
+      if (act === 'cust-invoice') {
+        if (!c) return toast('Select a customer');
+        toast('Invoice draft for ' + c.name);
+        pushCustActivity(c, 'invoice', 'Invoice created');
+        return;
+      }
       if (act === 'cust-filter-open') { root._josCustFilterOpen = true; return renderCustomers(); }
       if (act === 'cust-filter-close') { root._josCustFilterOpen = false; return renderCustomers(); }
       if (act === 'cust-filter-apply') {
@@ -9758,8 +9705,10 @@
         var cidFull = t.getAttribute('data-jos-cust') || root._josCustId || S().activeCustId;
         if (cidFull) {
           root._josCustId = cidFull;
+          root._josCustLevel = 'command'; /* never skip Command Center context */
           S().activeCustId = cidFull;
-          return openCustomerProfile(cidFull);
+          var tabFull = t.getAttribute('data-jos-tab') || 'Overview';
+          return openFullCustomerProfile(cidFull, tabFull);
         }
         return toast('Select a customer first');
       }
@@ -9851,10 +9800,11 @@
   }
   function ensureProfileShell() {
     var shell = el('jos-customer-profile'); if (shell) return shell;
-    shell = document.createElement('div'); shell.id = 'jos-customer-profile'; shell.className = 'jos-profile';
-    shell.innerHTML = '<div class="jos-profile-panel" role="dialog" aria-modal="true"><div class="jos-profile-top">' +
+    shell = document.createElement('div'); shell.id = 'jos-customer-profile'; shell.className = 'jos-profile jos-cc-level-3';
+    shell.innerHTML = '<div class="jos-profile-panel jos-cc3-panel" role="dialog" aria-modal="true"><div class="jos-profile-top">' +
+      '<div class="jos-cc3-eyebrow">Full Customer Profile · Permanent record</div>' +
       '<div class="jos-profile-top-row"><div class="jos-profile-av" id="jos-cp-av">?</div><div style="min-width:0;flex:1"><div class="jos-profile-name-row"><div class="jos-profile-name" id="jos-cp-name">Customer</div><span id="jos-cp-pill"></span></div><div class="jos-profile-meta" id="jos-cp-meta"></div></div>' +
-      '<div class="jos-profile-acts">' + btn('new-job-cust', 'New Job', 'jos-btn-brand jos-btn-sm') + '<button type="button" class="jos-profile-close" data-jos-act="close-profile" aria-label="Close">×</button></div></div>' +
+      '<div class="jos-profile-acts">' + btn('new-job-cust', 'Schedule Job', 'jos-btn-brand jos-btn-sm') + '<button type="button" class="jos-profile-close" data-jos-act="close-profile" aria-label="Close">×</button></div></div>' +
       '<div class="jos-cp-stats" id="jos-cp-stats"></div><div class="jos-profile-tabs" id="jos-cp-tabs"></div></div><div class="jos-profile-body" id="jos-cp-body"></div></div>';
     document.body.appendChild(shell);
     shell.addEventListener('click', function (e) { if (e.target === shell) closeCustomerProfile(); });
@@ -9896,7 +9846,12 @@
     return '<div class="jos-stack">' + list.map(function (j) {
       var id = j.id || j.reqId || '';
       var on = selectedId != null && String(selectedId) === String(id);
-      return '<div class="jos-card jos-card-tight jos-card-hover' + (on ? ' on' : '') + '" data-jos-job="' + esc(String(id)) + '" role="button" tabindex="0"><div class="jos-between"><strong>' + esc(j.service || 'Job') + '</strong><span class="jos-pill won">Completed</span></div><div class="jos-muted jos-mt">' + esc((j.date ? dateLong(j.date) : '—') + (j.amount != null ? ' · ' + money(j.amount) : '')) + '</div></div>';
+      var dur = j.durationMin ? (Math.round(j.durationMin / 60 * 10) / 10 + ' hrs') : (j.dur || '—');
+      return '<div class="jos-card jos-card-tight jos-card-hover' + (on ? ' on' : '') + '" data-jos-job="' + esc(String(id)) + '" role="button" tabindex="0"><div class="jos-between"><strong>' + esc(j.service || 'Job') + '</strong><span class="jos-pill won">Completed</span></div>' +
+        '<div class="jos-detail-rows jos-mt"><div><span>Date</span><strong>' + esc(j.date ? dateLong(j.date) : '—') + '</strong></div>' +
+        '<div><span>Revenue</span><strong>' + esc(j.amount != null ? money(j.amount) : '—') + '</strong></div>' +
+        '<div><span>Technician</span><strong>' + esc(j.assignedTo || '—') + '</strong></div>' +
+        '<div><span>Duration</span><strong>' + esc(dur) + '</strong></div></div></div>';
     }).join('') + '</div>';
   }
   function listBookings(list, selectedId) {
@@ -9925,22 +9880,36 @@
     var html = '';
 
     if (tab === 'Overview') {
-      var tags = aiTags(c, completed, lifetime);
-      var recent = completed.slice(0, 5);
-      var custQuotes = quotes().filter(function (q) { return q.customerName === c.name || (c.phone && q.customerPhone === c.phone); }).filter(function (q) { return q.status !== 'booked' && q.status !== 'accepted'; }).slice(0, 3);
-      var ai = custAiInsights(c);
-      html = '<div class="jos-ov-kpi"><div class="jos-health"><div class="jos-health-ring" style="--jos-pct:' + hs + '"><span>' + hs + '</span></div><div><div class="jos-kpi-lbl">Customer Health</div><div class="jos-muted">From jobs & membership</div></div></div>' +
-        [['Lifetime Value', money(lifetime) || '$0'], ['Last Visit', last && last.date ? dateLong(last.date) : '—'], ['Next Appointment', next && next.date ? dateLong(next.date) : '—'], ['Membership', custIsMember(c) ? (c.membership || 'Active') : 'None']].map(function (x) {
-          return '<div class="jos-kpi"><div class="jos-kpi-lbl">' + esc(x[0]) + '</div><div class="jos-kpi-v" style="font-size:16px">' + esc(x[1]) + '</div></div>';
-        }).join('') + '</div><div class="jos-ov-grid"><div class="jos-stack"><div class="jos-profile-ai"><div class="sk">AI Summary</div><p>' + esc(aiCustomerSummary(c, completed, booked)) + '</p><div class="jos-tag-row">' + tags.map(function (t) { return '<span class="jos-tag">' + esc(t) + '</span>'; }).join('') + '</div>' +
-        '<div class="jos-muted jos-mt" style="font-size:12px">Churn ' + ai.churn + '% · Upsell: ' + esc(ai.upsell) + ' · NBA: ' + esc(ai.nba) + '</div></div>' +
-        '<div class="jos-card"><div class="jos-kicker">Recent Activity</div><div class="jos-stack jos-mt">' + (recent.length ? recent.map(function (j) {
-          return '<div class="jos-between"><div><strong>' + esc(j.service || 'Job') + '</strong><div class="jos-muted">' + esc(j.date ? dateLong(j.date) : '') + '</div></div><span>' + esc(j.amount != null ? money(j.amount) : '') + '</span></div>';
-        }).join('') : '<div class="jos-muted">No jobs yet.</div>') + '</div></div></div><div class="jos-stack"><div class="jos-card"><div class="jos-kicker">Favorite Vehicle</div><div class="jos-mt" style="font-size:15px;font-weight:750">' + esc(c.vehicle || vehicleOf(last) || '—') + '</div><div class="jos-muted jos-mt">Preferred: ' + esc(c.preferredService || '—') + '</div></div>' +
-        '<div class="jos-card"><div class="jos-kicker">Outstanding Quotes</div><div class="jos-stack jos-mt">' + (custQuotes.length ? custQuotes.map(function (q) {
-          return '<div class="jos-between"><div><strong>' + esc((q.packageNames && q.packageNames[0]) || 'Quote') + '</strong><div class="jos-muted">' + esc(q.status || 'open') + '</div></div><span class="jos-pipe-amt">' + esc(money(q.amount || 0)) + '</span></div>';
-        }).join('') : '<div class="jos-muted">No open quotes.</div>') + '</div></div>' +
-        '<div class="jos-card"><div class="jos-kicker">AI Recommendations</div><div class="jos-stack jos-mt"><div class="jos-between"><span style="font-size:13px">Create a follow-up while the visit is fresh.</span>' + btn('ask-cust', 'Create Follow-up', 'jos-btn-brand jos-btn-sm') + '</div><div class="jos-between"><span style="font-size:13px">See membership & rebook opportunities.</span>' + btn('go-opps', 'Create Follow-up', 'jos-btn-ink jos-btn-sm') + '</div></div></div></div></div>';
+      var infoRows = [
+        ['Name', c.name || '—'],
+        ['Phone', c.phone ? displayPhone(c.phone) : '—'],
+        ['Email', c.email || '—'],
+        ['Address', c.address || '—'],
+        ['City', c.city || '—'],
+        ['Referral Source', c.referralSource || '—'],
+        ['Preferred Contact', c.commPref || c.preferredContact || 'Text'],
+        ['Vehicle', c.vehicle || vehicleOf(last) || '—'],
+        ['Preferred Service', c.preferredService || '—'],
+        ['Membership', custIsMember(c) ? (c.membership || 'Active') : 'None'],
+        ['Customer Since', c.customerSince ? dateLong(String(c.customerSince).slice(0, 10)) : '—'],
+        ['Lifetime Value', money(lifetime) || '$0']
+      ];
+      var customRows = (c.customFields && c.customFields.length) ? c.customFields : [
+        { k: 'Gate code', v: c.gateCode || '—' },
+        { k: 'Notes', v: (c.notesList && c.notesList[0]) || c.notes || '—' }
+      ];
+      html = '<div class="jos-cc3-overview"><div class="jos-card jos-cc3-info"><div class="jos-kicker">Customer Information</div><div class="jos-detail-rows jos-mt">' +
+        infoRows.map(function (r) {
+          return '<div><span>' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong></div>';
+        }).join('') + '</div></div>' +
+        '<div class="jos-card jos-cc3-info"><div class="jos-kicker">Custom Fields</div><div class="jos-detail-rows jos-mt">' +
+        customRows.map(function (f) {
+          return '<div><span>' + esc(f.k) + '</span><strong>' + esc(f.v) + '</strong></div>';
+        }).join('') + '</div></div>' +
+        '<div class="jos-card"><div class="jos-kicker">Snapshot</div><div class="jos-ov-kpi jos-mt" style="grid-template-columns:repeat(4,minmax(0,1fr))">' +
+        [['Health', String(hs)], ['Completed Jobs', String(completed.length || custCompletedCount(c))], ['Last Visit', last && last.date ? dateLong(last.date) : '—'], ['Next Appointment', next && next.date ? dateLong(next.date) : '—']].map(function (x) {
+          return '<div class="jos-kpi"><div class="jos-kpi-lbl">' + esc(x[0]) + '</div><div class="jos-kpi-v" style="font-size:15px">' + esc(x[1]) + '</div></div>';
+        }).join('') + '</div></div></div>';
     } else if (tab === 'Timeline' || tab === 'History') {
       var nodes = [];
       quotes().filter(function (q) { return q.customerName === c.name; }).forEach(function (q) {
@@ -9982,11 +9951,16 @@
         '<div class="jos-btn-row jos-mt">' + btn('new-job-cust', 'Book Job', 'jos-btn-brand jos-btn-sm') + btn('smart-quote', 'Quote', 'jos-btn jos-btn-sm') + '</div></div>';
     } else if (tab === 'Payments') {
       var pays = (c.payments && c.payments.length) ? c.payments.slice() : completed.map(function (j, i) {
-        return { id: 'jp_' + i, amount: j.amount, status: 'paid', at: j.date, method: 'Card', label: j.service };
+        return { id: 'jp_' + i, amount: j.amount, status: 'paid', at: j.date, method: 'Card', label: j.service, stripeId: 'pi_demo_' + i, receipt: true };
       });
       html = '<div class="jos-stack"><div class="jos-between"><div class="jos-kicker">Payments</div>' + btn('cust-pay-refund', 'Refund (Stage 2)', 'jos-btn jos-btn-sm') + '</div>' +
         (pays.length ? pays.map(function (p) {
-          return '<div class="jos-between jos-note"><div><strong>' + esc(money(p.amount) || '$0') + '</strong><div class="jos-muted">' + esc(p.label || p.method || 'Payment') + ' · ' + esc(String(p.at || '').slice(0, 10)) + '</div></div><span class="jos-pill ' + (p.status === 'paid' ? 'won' : 'quote') + '">' + esc(p.status || 'paid') + '</span></div>';
+          return '<div class="jos-card jos-card-tight"><div class="jos-between"><strong>' + esc(money(p.amount) || '$0') + '</strong><span class="jos-pill ' + (p.status === 'paid' ? 'won' : (p.status === 'refunded' ? 'lost' : 'quote')) + '">' + esc(p.status || 'paid') + '</span></div>' +
+            '<div class="jos-detail-rows jos-mt"><div><span>Date</span><strong>' + esc(String(p.at || '').slice(0, 10) || '—') + '</strong></div>' +
+            '<div><span>Method</span><strong>' + esc(p.method || 'Card') + '</strong></div>' +
+            '<div><span>Stripe ID</span><strong>' + esc(p.stripeId || '—') + '</strong></div>' +
+            '<div><span>Receipt</span><strong>' + (p.receipt !== false ? 'Available' : '—') + '</strong></div>' +
+            '<div><span>Label</span><strong>' + esc(p.label || 'Payment') + '</strong></div></div></div>';
         }).join('') : '<div class="jos-empty">No payments on file.</div>') +
         '<p class="jos-muted" style="font-size:12px">Live processor refunds are Stage 2 — placeholder only, not connected.</p></div>';
     } else if (tab === 'Photos') {
@@ -10052,6 +10026,46 @@
       html = acts.length ? '<div class="jos-activity">' + acts.map(function (j) {
         return '<div class="jos-act"><div class="jos-act-ico ' + (j.status === 'completed' ? 'book' : 'quote') + '">' + (j.status === 'completed' ? '✓' : '·') + '</div><div><div class="jos-act-t">' + esc((j.status || 'job') + ' · ' + (j.service || 'Service')) + '</div><div class="jos-act-s">' + esc((j.date ? dateLong(j.date) : '') + (j.amount != null ? ' · ' + money(j.amount) : '')) + '</div></div></div>';
       }).join('') + '</div>' : '<div class="jos-empty">No activity yet.</div>';
+    } else if (tab === 'Invoices') {
+      var invs = (c.invoices && c.invoices.length) ? c.invoices : (c.payments || []).map(function (p) {
+        return { amount: p.amount, status: p.status || 'paid', at: p.at, pdf: true };
+      });
+      html = '<div class="jos-stack"><div class="jos-kicker">Invoices</div>' +
+        (invs.length ? invs.map(function (inv) {
+          return '<div class="jos-between jos-note"><div><strong>' + esc(money(inv.amount) || '$0') + '</strong><div class="jos-muted">' + esc(String(inv.at || '').slice(0, 10)) + (inv.pdf ? ' · PDF' : '') + '</div></div><span class="jos-pill ' + (inv.status === 'paid' ? 'won' : (inv.status === 'refunded' ? 'lost' : 'quote')) + '">' + esc(inv.status || 'open') + '</span></div>';
+        }).join('') : '<div class="jos-empty">No invoices yet.</div>') + '</div>';
+    } else if (tab === 'Automations') {
+      var autos = (c.automations && c.automations.length) ? c.automations : [
+        { label: 'Review Requests', on: true },
+        { label: 'Follow Ups', on: true },
+        { label: 'Birthday Campaigns', on: false },
+        { label: 'Membership Renewals', on: custIsMember(c) },
+        { label: 'Win Back Campaigns', on: custDaysSinceLast(c) >= 60 }
+      ];
+      html = '<div class="jos-stack"><div class="jos-kicker">Automations</div>' + autos.map(function (a) {
+        return '<div class="jos-between jos-note"><strong>' + esc(a.label) + '</strong><span class="jos-pill ' + (a.on ? 'won' : 'mute') + '">' + (a.on ? 'On' : 'Off') + '</span></div>';
+      }).join('') + '</div>';
+    } else if (tab === 'Activity Log') {
+      var log = (c.activity || []).slice();
+      html = '<div class="jos-stack"><div class="jos-kicker">Activity Log</div><p class="jos-muted">Permanent record — never deleted.</p>' +
+        (log.length ? log.map(function (a) {
+          return '<div class="jos-between jos-note"><strong>' + esc(a.label || a.type) + '</strong><span class="jos-muted">' + esc(a.at || '') + '</span></div>';
+        }).join('') : '<div class="jos-empty">No activity yet.</div>') + '</div>';
+    } else if (tab === 'Custom Fields') {
+      var fields = (c.customFields && c.customFields.length) ? c.customFields : [
+        { k: 'Gate code', v: c.gateCode || '—' },
+        { k: 'Referral source', v: c.referralSource || '—' },
+        { k: 'Preferred contact', v: c.commPref || 'Text' }
+      ];
+      html = '<div class="jos-stack"><div class="jos-kicker">Custom Fields</div>' + fields.map(function (f) {
+        return '<div class="jos-between jos-note"><span>' + esc(f.k) + '</span><strong>' + esc(f.v) + '</strong></div>';
+      }).join('') + '</div>';
+    } else if (tab === 'Files') {
+      var filesOnly = (c.documents || []).concat(c.photos || []);
+      html = '<div class="jos-stack"><div class="jos-kicker">Files</div>' +
+        (filesOnly.length ? filesOnly.map(function (d) {
+          return '<div class="jos-file-row"><strong>' + esc(d.name || d.label || d) + '</strong></div>';
+        }).join('') : '<div class="jos-empty">No files yet.</div>') + '</div>';
     } else {
       html = '<div class="jos-empty">Nothing here yet.</div>';
     }
@@ -10064,27 +10078,41 @@
     bindRoot(body);
   }
 
-  function openCustomerProfile(id, tab) {
+  function openFullCustomerProfile(id, tab) {
     ensureCustomersOsState();
     var c = findCustomer(id) || customers().find(function (x) { return String(x.id) === String(id); });
     if (!c) { toast('Customer not found'); return; }
+    if (!isCompletedCustomer(c)) {
+      toast('Full Profile is for completed customers only');
+      return;
+    }
     var shell = ensureProfileShell();
     S().activeCustId = c.id; S()._josProfileTab = tab || 'Overview'; shell._josCustId = c.id; shell._josJobId = null;
-    var custRoot = el('jos-customers-root'); if (custRoot) custRoot._josCustId = c.id;
+    var custRoot = el('jos-customers-root');
+    if (custRoot) {
+      custRoot._josCustId = c.id;
+      if (custRoot._josCustLevel !== 'command') custRoot._josCustLevel = 'command';
+    }
     el('jos-cp-av').textContent = initials(c.name); el('jos-cp-name').textContent = c.name || 'Customer';
     el('jos-cp-pill').innerHTML = statusPill(c);
-    el('jos-cp-meta').textContent = [c.phone, c.email, c.city].filter(Boolean).join(' · ') || 'No contact info';
+    el('jos-cp-meta').textContent = 'Full Customer Profile · ' + ([c.phone, c.email, c.city].filter(Boolean).join(' · ') || 'Permanent record');
     var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; });
     var spent = done.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0) || custLifetime(c);
-    var since = c.createdAt || c.customerSince || (done.length ? done.slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); })[0].date : null);
+    var since = c.customerSince || c.createdAt || (done.length ? done.slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); })[0].date : null);
     var last = lastJob(c);
-    el('jos-cp-stats').innerHTML = [['Customer since', since ? dateLong(String(since).slice(0, 10)) : '—'], ['Total spent', money(spent) || '$0'], ['Jobs', String(done.length)], ['Last service', last && last.date ? dateLong(last.date) : '—'], ['Membership', custIsMember(c) ? (c.membership || 'Active') : 'None']].map(function (x) {
+    el('jos-cp-stats').innerHTML = [['Customer since', since ? dateLong(String(since).slice(0, 10)) : '—'], ['Lifetime value', money(spent) || '$0'], ['Completed jobs', String(Math.max(done.length, custCompletedCount(c)))], ['Last service', last && last.date ? dateLong(last.date) : '—'], ['Membership', custIsMember(c) ? (c.membership || 'Active') : 'None']].map(function (x) {
       return '<div class="jos-cp-stat"><div class="l">' + esc(x[0]) + '</div><div class="v">' + esc(x[1]) + '</div></div>';
     }).join('');
     el('jos-cp-tabs').innerHTML = PROFILE_TABS.map(function (t) {
       return '<button type="button" class="jos-profile-tab' + ((S()._josProfileTab || 'Overview') === t ? ' on' : '') + '" data-jos-tab="' + esc(t) + '">' + esc(t) + '</button>';
     }).join('');
     renderProfileTab(c, S()._josProfileTab || 'Overview'); shell.classList.add('open');
+  }
+
+  /* Default entry: Command Center (Level 2). Pass a tab to open Full Profile (Level 3). */
+  function openCustomerProfile(id, tab) {
+    if (tab) return openFullCustomerProfile(id, tab);
+    return openCustomerCommandCenter(id);
   }
 
   var STOREFRONT_TABS = [
@@ -11068,7 +11096,7 @@
     chats: { title: 'Inbox', sub: 'Every conversation in one place.' },
     jobs: { title: 'Jobs', sub: 'Manage and track every job in one place.' },
     leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
-    customers: { title: 'Customers', sub: 'People, vehicles, and history.' },
+    customers: { title: 'Completed Customers', sub: 'People you\'ve successfully serviced.' },
     pipeline: { title: 'Pipeline', sub: 'Quotes, bookings, and completed jobs.' },
     editor: { title: 'Website editor', sub: 'Edit your site, packages, and Book Now.' },
     quotes: { title: 'Quick Quote', sub: 'Draft and send quotes from the field.' },
@@ -14242,7 +14270,14 @@
         (job.checklist || []).forEach(function (c) { c.done = true; });
         pushJobTimeline(job, 'completed', 'Completed');
         pushJobNotif('completed', job.customer + ' completed');
-        toast('Job completed');
+        var promoted = null;
+        try { promoted = promoteCompletedJobToCustomer(job); } catch (ePromo) { console.warn(ePromo); }
+        try {
+          if (typeof global.promoteJobLeadToCustomer === 'function') {
+            Promise.resolve(global.promoteJobLeadToCustomer(job)).catch(function () {});
+          }
+        } catch (ePromo2) {}
+        toast(promoted ? 'Job completed — added to Completed Customers' : 'Job completed');
         return renderJobs();
       }
       if (act === 'jobs-cancel') {
@@ -14626,9 +14661,9 @@
         var crow = el('jos-customers-root');
         if (crow) {
           crow._josCustId = t.getAttribute('data-jos-cust-row');
+          crow._josCustLevel = 'command'; /* Level 1 → Level 2 only — never skip to Full Profile */
           S().activeCustId = crow._josCustId;
           renderCustomers();
-          openCustomerProfile(crow._josCustId);
         }
         return;
       }
@@ -14753,6 +14788,8 @@
     restoreWebsiteEditor: restoreWebsiteEditor,
     handleStorefrontAct: handleStorefrontAct,
     openCustomerProfile: openCustomerProfile,
+    openCustomerCommandCenter: openCustomerCommandCenter,
+    openFullCustomerProfile: openFullCustomerProfile,
     handleCustomersAct: handleCustomersAct,
     closeCustomerProfile: closeCustomerProfile,
     enhanceDashboard: enhanceDashboard,
