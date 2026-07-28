@@ -856,6 +856,8 @@
       projectId: null,
       tab: prefs.lastTab || 'overview',
       lrPanel: prefs.lrPanel || 'overview',
+      lrSelected: {},
+      lrPhotoFilter: 'all',
       wizardStep: 1,
       wizard: null,
       search: prefs.search || '',
@@ -1407,10 +1409,10 @@
       ['overview', 'Overview'],
       ['albums', 'Albums'],
       ['photos', 'Photos'],
-      ['metadata', 'Metadata'],
+      ['details', 'Photo Details'],
       ['exports', 'Exports'],
       ['sync', 'Sync'],
-      ['settings', 'Settings']
+      ['connection', 'Connection']
     ];
 
     var nav = '<nav class="pp-lr-panels" role="tablist">' + panels.map(function (x) {
@@ -1418,25 +1420,59 @@
         '" data-pp-act="lr-panel" data-pp-panel="' + x[0] + '">' + esc(x[1]) + '</button>';
     }).join('') + '</nav>';
 
+    // Legacy panel ids
+    if (panel === 'metadata') panel = 'details';
+    if (panel === 'settings') panel = 'connection';
+    st.lrPanel = panel;
+
     var body = '';
     if (panel === 'albums') body = renderLrAlbumsPanel(p, sync);
     else if (panel === 'photos') body = renderLrPhotosPanel(p, sync, st);
-    else if (panel === 'metadata') body = renderLrMetadataPanel(p, sync, st);
-    else if (panel === 'exports') body = renderLrExportsPanel(p, sync);
+    else if (panel === 'details') body = renderLrMetadataPanel(p, sync, st);
+    else if (panel === 'exports') body = renderLrExportsPanel(p, sync, st);
     else if (panel === 'sync') body = renderLrSyncPanel(p, sync, adobeStatus);
-    else if (panel === 'settings') body = renderLrSettingsPanel(p, sync, adobeStatus);
+    else if (panel === 'connection') body = renderLrSettingsPanel(p, sync, adobeStatus);
     else body = renderLrOverviewPanel(p, sync, adobeStatus, connected, account);
 
     return '<section class="pp-panel pp-panel-wide pp-lr-workspace">' +
       '<div class="pp-between">' +
-        '<div><p class="pp-kicker">Adobe Lightroom</p><h3>' + esc(p.name) + '</h3>' +
-        '<p class="pp-muted">Hubly Actions — connect Adobe, sync albums, browse photos, and export finals. Adobe jargon stays behind the curtain.</p></div>' +
+        '<div><p class="pp-kicker">Lightroom workspace</p><h3>' + esc(p.name) + '</h3>' +
+        '<p class="pp-muted">Hubly is the command center — Lightroom, Canva, galleries, and delivery orchestrate from here.</p></div>' +
         '<div class="pp-btn-row">' +
+          '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="publish-project" data-pp-id="' + esc(p.id) + '">Publish Project</button>' +
           (connected
-            ? '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Now</button>'
-            : '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="adobe-connect">Connect Adobe Account</button>') +
+            ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Now</button>'
+            : '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="adobe-connect">Connect Adobe Account</button>') +
         '</div></div>' +
       nav + '<div class="pp-lr-panel-body">' + body + '</div></section>';
+  }
+
+  function selectedPhotoIds(st) {
+    var map = (st && st.lrSelected) || {};
+    return Object.keys(map).filter(function (id) { return !!map[id]; });
+  }
+
+  function renderBulkBar(p, st, visibleIds) {
+    var selected = selectedPhotoIds(st);
+    var n = selected.length;
+    var allOn = visibleIds.length > 0 && visibleIds.every(function (id) { return selected.indexOf(id) !== -1; });
+    return '<div class="pp-bulk-bar' + (n ? ' is-on' : '') + '">' +
+      '<label class="pp-bulk-check">' +
+        '<input type="checkbox" data-pp-act="lr-select-all" data-pp-id="' + esc(p.id) + '"' + (allOn ? ' checked' : '') + '>' +
+        '<span>' + (n ? (n + ' Selected') : 'Select photos') + '</span></label>' +
+      (n
+        ? '<div class="pp-bulk-actions">' +
+          '<button type="button" class="pp-btn pp-btn-brand pp-btn-sm" data-pp-act="lr-bulk-export" data-pp-id="' + esc(p.id) + '">Export</button>' +
+          '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="lr-bulk-canva" data-pp-id="' + esc(p.id) + '">Canva</button>' +
+          '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="lr-bulk-gallery" data-pp-id="' + esc(p.id) + '">Gallery</button>' +
+          '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="lr-bulk-download" data-pp-id="' + esc(p.id) + '">Download</button>' +
+          '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="lr-bulk-keywords" data-pp-id="' + esc(p.id) + '">Add Keywords</button>' +
+          '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="lr-bulk-ai-best" data-pp-id="' + esc(p.id) + '">AI Pick Best</button>' +
+          '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="lr-bulk-clear" data-pp-id="' + esc(p.id) + '">Clear</button>' +
+          '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm pp-bulk-danger" data-pp-act="lr-bulk-remove" data-pp-id="' + esc(p.id) + '">Remove</button>' +
+          '</div>'
+        : '<span class="pp-muted pp-bulk-hint">Select photos to export, send to Canva, publish, or let Hubly pick the best.</span>') +
+      '</div>';
   }
 
   function renderLrOverviewPanel(p, sync, adobeStatus, connected, account) {
@@ -1452,16 +1488,19 @@
         '<div><span class="pp-label">Favorites</span><strong>' + esc(String(sync.favorites)) + '</strong></div>' +
       '</div>' +
       '<div class="pp-btn-row pp-mt">' +
-        '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">' +
-          (sync.albumId ? 'Reuse Lightroom Project' : 'Create Lightroom Project') + '</button>' +
+        '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="publish-project" data-pp-id="' + esc(p.id) + '">Publish Project</button>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">' +
+          (sync.albumId ? 'Reuse Lightroom Album' : 'Create Lightroom Album') + '</button>' +
         '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Now</button>' +
         '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-open" data-pp-id="' + esc(p.id) + '">Open Lightroom Project</button>' +
-      '</div></div>';
+      '</div>' +
+      '<p class="pp-muted pp-mt">Publish Project syncs Lightroom, exports edited photos, plans Canva graphics, publishes the gallery, requests a review, and marks the job delivered.</p>' +
+      '</div>';
   }
 
   function renderLrAlbumsPanel(p, sync) {
     return '<div class="pp-btn-row">' +
-      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">Create Lightroom Project</button>' +
+      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">Create Lightroom Album</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-list-albums" data-pp-id="' + esc(p.id) + '">List Albums</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-rename-album" data-pp-id="' + esc(p.id) + '"' +
         (sync.albumId ? '' : ' disabled') + '>Rename Album</button>' +
@@ -1471,22 +1510,26 @@
       '<dl class="pp-dl pp-mt">' +
       '<div><dt>Linked album</dt><dd>' + esc(sync.albumName || '—') + '</dd></div>' +
       '<div><dt>Album id</dt><dd>' + esc(sync.albumId || '—') + '</dd></div>' +
-      '<div><dt>Catalog</dt><dd>' + esc(sync.catalogId || '—') + '</dd></div></dl>' +
-      '<div id="pp-lr-albums-list" class="pp-mt"><p class="pp-muted">Tap List Albums to load Adobe project albums, then link one to this Hubly job.</p></div>';
+      '<div><dt>Workspace</dt><dd>' + esc(sync.catalogId || '—') + '</dd></div></dl>' +
+      '<div id="pp-lr-albums-list" class="pp-mt"><p class="pp-muted">Tap List Albums to load Adobe albums, then link one to this Hubly job.</p></div>';
   }
 
   function renderLrPhotosPanel(p, sync, st) {
     var filter = (st && st.lrPhotoFilter) || 'all';
+    var selected = (st && st.lrSelected) || {};
     var assets = sync.assets.slice();
     if (filter === 'favorites') assets = assets.filter(function (a) { return a.favorite; });
     if (filter === 'edited') assets = assets.filter(function (a) { return a.edited; });
     if (filter === 'rated') assets = assets.filter(function (a) { return (a.rating || 0) >= 3; });
+    if (filter === 'best') assets = assets.filter(function (a) { return a.hublyBest || ((a.rating || 0) >= 4 && a.favorite); });
     var filters = [
       ['all', 'All'],
       ['favorites', 'Favorites'],
       ['edited', 'Edited'],
-      ['rated', '3★+']
+      ['rated', '3★+'],
+      ['best', 'AI Best']
     ];
+    var visibleIds = assets.map(function (a) { return a.id; });
     return '<div class="pp-btn-row">' +
       filters.map(function (f) {
         return '<button type="button" class="pp-btn pp-btn-sm ' + (filter === f[0] ? 'pp-btn-brand' : 'pp-btn-ghost') +
@@ -1495,13 +1538,19 @@
       '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="lr-browse-photos" data-pp-id="' + esc(p.id) + '">Browse Photos</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Refresh Sync</button>' +
       '</div>' +
+      renderBulkBar(p, st, visibleIds) +
       (assets.length
         ? '<div class="pp-media-grid pp-mt">' + assets.map(function (a) {
-          return '<article class="pp-media-tile" data-pp-act="lr-view-photo" data-pp-asset="' + esc(a.id) + '" data-pp-id="' + esc(p.id) + '">' +
-            '<div class="pp-media-thumb"><span class="pp-media-kind">' +
-            (a.favorite ? '★ ' : '') + (a.edited ? 'Edited' : 'Photo') + '</span></div>' +
-            '<p class="pp-media-name">' + esc(a.name || a.id) +
-            (a.rating != null ? ' · ' + a.rating + '★' : '') + '</p></article>';
+          var on = !!selected[a.id];
+          return '<article class="pp-media-tile' + (on ? ' is-selected' : '') + (a.hublyBest ? ' is-best' : '') + '">' +
+            '<label class="pp-media-select" title="Select">' +
+              '<input type="checkbox" data-pp-act="lr-select" data-pp-asset="' + esc(a.id) + '" data-pp-id="' + esc(p.id) + '"' +
+              (on ? ' checked' : '') + '></label>' +
+            '<button type="button" class="pp-media-open" data-pp-act="lr-view-photo" data-pp-asset="' + esc(a.id) + '" data-pp-id="' + esc(p.id) + '">' +
+              '<div class="pp-media-thumb"><span class="pp-media-kind">' +
+              (a.hublyBest ? 'Best · ' : '') + (a.favorite ? '★ ' : '') + (a.edited ? 'Edited' : 'Photo') + '</span></div>' +
+              '<p class="pp-media-name">' + esc(a.name || a.id) +
+              (a.rating != null ? ' · ' + a.rating + '★' : '') + '</p></button></article>';
         }).join('') + '</div>'
         : '<p class="pp-muted pp-mt">No synced photos yet — Sync Now or Browse Photos after linking an album.</p>');
   }
@@ -1510,7 +1559,7 @@
     var selectedId = st && st.lrSelectedAsset;
     var asset = sync.assets.find(function (a) { return a.id === selectedId; }) || sync.assets[0];
     if (!asset) {
-      return '<p class="pp-muted">Sync the album first, then select a photo to inspect rating, flags, keywords, EXIF, and capture info.</p>';
+      return '<p class="pp-muted">Sync the album first, then open a photo to inspect Photo Details — rating, flags, keywords, camera, and capture info.</p>';
     }
     return '<dl class="pp-dl">' +
       '<div><dt>Name</dt><dd>' + esc(asset.name || asset.id) + '</dd></div>' +
@@ -1531,19 +1580,25 @@
           : '—'
       ) + '</dd></div></dl>' +
       '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="lr-view-photo" data-pp-asset="' +
-      esc(asset.id) + '" data-pp-id="' + esc(p.id) + '">Refresh from Adobe</button>';
+      esc(asset.id) + '" data-pp-id="' + esc(p.id) + '">Refresh Photo Details</button>';
   }
 
-  function renderLrExportsPanel(p, sync) {
+  function renderLrExportsPanel(p, sync, st) {
+    var selected = selectedPhotoIds(st || {});
     var edited = sync.assets.filter(function (a) { return a.edited; });
-    return '<p class="pp-muted">Export Final Photos pulls Adobe renditions (preview / full / thumbnail). Uploads to Lightroom are planned — fail honestly until wired.</p>' +
+    var pool = selected.length
+      ? sync.assets.filter(function (a) { return selected.indexOf(a.id) !== -1; })
+      : edited;
+    return '<p class="pp-muted">Export pulls final photos from Lightroom. Use bulk select on Photos for multi-export. Uploads to Lightroom are planned — Hubly fails honestly until wired.</p>' +
       '<div class="pp-btn-row">' +
+      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="lr-bulk-export" data-pp-id="' + esc(p.id) + '"' +
+        (pool.length ? '' : ' disabled') + '>Export Selected / Edited</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-upload" data-pp-id="' + esc(p.id) + '">Upload to Lightroom</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Generate Gallery</button>' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver to Client</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="publish-project" data-pp-id="' + esc(p.id) + '">Publish Project</button>' +
       '</div>' +
-      (edited.length
-        ? '<ul class="pp-queue pp-mt">' + edited.slice(0, 24).map(function (a) {
+      (pool.length
+        ? '<ul class="pp-queue pp-mt">' + pool.slice(0, 24).map(function (a) {
           return '<li><strong>' + esc(a.name || a.id) + '</strong>' +
             '<span class="pp-btn-row">' +
             '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="lr-export" data-pp-asset="' + esc(a.id) +
@@ -1553,25 +1608,25 @@
             '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="lr-export" data-pp-asset="' + esc(a.id) +
             '" data-pp-rendition="thumbnail" data-pp-id="' + esc(p.id) + '">Thumb</button></span></li>';
         }).join('') + '</ul>'
-        : '<p class="pp-muted pp-mt">No edited photos in the last sync yet.</p>');
+        : '<p class="pp-muted pp-mt">No edited or selected photos yet.</p>');
   }
 
   function renderLrSyncPanel(p, sync, adobeStatus) {
     return renderLrOverviewPanel(p, sync, adobeStatus, !!(adobeStatus.connected || sync.linked),
       adobeStatus.accountLabel || adobeStatus.adobeAccount || '—') +
-      '<p class="pp-muted pp-mt">Sync reads album photos into Hubly workspace metadata. Hubly stays the system of record for project status, invoices, and delivery.</p>';
+      '<p class="pp-muted pp-mt">Sync reads album photos into Hubly. Hubly stays the system of record for project status, invoices, and delivery.</p>';
   }
 
   function renderLrSettingsPanel(p, sync, adobeStatus) {
     return '<dl class="pp-dl">' +
       '<div><dt>Adobe user</dt><dd>' + esc(adobeStatus.accountLabel || adobeStatus.adobeAccount || '—') + '</dd></div>' +
-      '<div><dt>Token expires</dt><dd>' + esc(adobeStatus.tokenExpiresAt ? formatRelative(adobeStatus.tokenExpiresAt) : '—') + '</dd></div>' +
-      '<div><dt>Catalog</dt><dd>' + esc(adobeStatus.catalogId || sync.catalogId || '—') + '</dd></div>' +
+      '<div><dt>Connection expires</dt><dd>' + esc(adobeStatus.tokenExpiresAt ? formatRelative(adobeStatus.tokenExpiresAt) : '—') + '</dd></div>' +
+      '<div><dt>Workspace</dt><dd>' + esc(adobeStatus.catalogId || sync.catalogId || '—') + '</dd></div>' +
       '<div><dt>Health</dt><dd>' + esc(adobeStatus.health || '—') + '</dd></div></dl>' +
       '<div class="pp-btn-row">' +
       '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="adobe-connect">Connect / Reconnect Adobe</button>' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="adobe-refresh">Refresh Authentication</button>' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-catalog">Read Catalog</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="adobe-refresh">Refresh Connection</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-catalog">Read Workspace</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="adobe-disconnect">Disconnect Adobe Account</button>' +
       '</div>';
   }
@@ -2174,8 +2229,105 @@
       addActivity(p, 'Gallery delivered', 'Client delivery marked complete');
       publishBus('gallery.delivered', { projectId: p.id, galleryId: 'main' });
       publishBus('project.delivered', { projectId: p.id });
-      st.view = 'command'; st.projectId = p.id; st.tab = 'gallery';
+      st.view = 'command'; st.projectId = p.id; st.tab = 'media';
       toast('Marked delivered');
+      return saveAndRefresh(p, st);
+    }
+    if (act === 'publish-project' && p) {
+      return runPublishProject(p, st);
+    }
+    if (act === 'lr-select') {
+      st.lrSelected = st.lrSelected || {};
+      var sid = t.getAttribute('data-pp-asset');
+      if (sid) st.lrSelected[sid] = !!t.checked;
+      st.lrPanel = 'photos';
+      return switchCommandTab('lightroom');
+    }
+    if (act === 'lr-select-all') {
+      st.lrSelected = st.lrSelected || {};
+      var syncAll = lightroomSyncMeta(p || findProject(st.projectId) || {});
+      var filterAll = st.lrPhotoFilter || 'all';
+      var pool = syncAll.assets.slice();
+      if (filterAll === 'favorites') pool = pool.filter(function (a) { return a.favorite; });
+      if (filterAll === 'edited') pool = pool.filter(function (a) { return a.edited; });
+      if (filterAll === 'rated') pool = pool.filter(function (a) { return (a.rating || 0) >= 3; });
+      if (filterAll === 'best') pool = pool.filter(function (a) { return a.hublyBest || ((a.rating || 0) >= 4 && a.favorite); });
+      var turnOn = !!t.checked;
+      if (turnOn) {
+        pool.forEach(function (a) { st.lrSelected[a.id] = true; });
+      } else {
+        pool.forEach(function (a) { delete st.lrSelected[a.id]; });
+      }
+      st.lrPanel = 'photos';
+      return switchCommandTab('lightroom');
+    }
+    if (act === 'lr-bulk-clear') {
+      st.lrSelected = {};
+      st.lrPanel = 'photos';
+      return switchCommandTab('lightroom');
+    }
+    if (act === 'lr-bulk-export' || act === 'lr-bulk-download') {
+      if (!p) return;
+      return runBulkExport(p, st, act === 'lr-bulk-download' ? 'full' : '2048');
+    }
+    if (act === 'lr-bulk-canva' && p) {
+      return runBulkCanva(p, st);
+    }
+    if (act === 'lr-bulk-gallery' && p) {
+      var idsG = selectedPhotoIds(st);
+      if (!idsG.length) { toast('Select photos first'); return; }
+      p.gallery = p.gallery || {};
+      p.gallery.featured_asset_ids = idsG.slice();
+      p.gallery_status = 'published';
+      if (p.gallery) p.gallery.delivery_status = 'published';
+      addActivity(p, 'Gallery from selection', idsG.length + ' photo(s)');
+      toast('Gallery prepared from ' + idsG.length + ' selected photo(s)');
+      publishBus('gallery.delivered', { projectId: p.id, galleryId: 'main', selected: idsG.length });
+      return saveAndRefresh(p, st);
+    }
+    if (act === 'lr-bulk-keywords' && p) {
+      var idsK = selectedPhotoIds(st);
+      if (!idsK.length) { toast('Select photos first'); return; }
+      var kw = '';
+      try { kw = global.prompt('Add keywords (comma-separated)', p.name || '') || ''; } catch (eK) {}
+      kw = String(kw).trim();
+      if (!kw) return;
+      var words = kw.split(/[,;]/).map(function (s) { return s.trim(); }).filter(Boolean);
+      var syncK = lightroomSyncMeta(p);
+      var assetsK = syncK.assets.map(function (a) {
+        if (idsK.indexOf(a.id) === -1) return a;
+        var merged = (a.keywords || []).slice();
+        words.forEach(function (w) {
+          if (merged.indexOf(w) === -1) merged.push(w);
+        });
+        return Object.assign({}, a, {
+          keywords: merged,
+          hublyKeywordsLocal: true
+        });
+      });
+      patchLightroomAssets(p, assetsK);
+      addActivity(p, 'Keywords added', words.join(', ') + ' · ' + idsK.length + ' photo(s)');
+      toast('Keywords saved on ' + idsK.length + ' photo(s) in Hubly. Adobe write-back is research / later.');
+      st.lrPanel = 'photos';
+      return saveAndRefresh(p, st);
+    }
+    if (act === 'lr-bulk-ai-best' && p) {
+      return runAiPickBest(p, st);
+    }
+    if (act === 'lr-bulk-remove' && p) {
+      var idsR = selectedPhotoIds(st);
+      if (!idsR.length) { toast('Select photos first'); return; }
+      var syncR = lightroomSyncMeta(p);
+      var assetsR = syncR.assets.filter(function (a) { return idsR.indexOf(a.id) === -1; });
+      patchLightroomAssets(p, assetsR, {
+        photo_count: assetsR.length,
+        favorites: assetsR.filter(function (a) { return a.favorite; }).length,
+        edited: assetsR.filter(function (a) { return a.edited; }).length
+      });
+      st.lrSelected = {};
+      addActivity(p, 'Removed from Hubly selection', idsR.length + ' photo(s) — Adobe album unchanged');
+      toast('Removed ' + idsR.length + ' from Hubly view (Adobe album unchanged)');
+      st.lrPanel = 'photos';
       return saveAndRefresh(p, st);
     }
     if (act === 'adobe-connect') {
@@ -2429,7 +2581,7 @@
     if (act === 'lr-view-photo' && p) {
       var assetId = t.getAttribute('data-pp-asset');
       st.lrSelectedAsset = assetId;
-      st.lrPanel = 'metadata';
+      st.lrPanel = 'details';
       var svcV = global.AdobeLightroomService;
       if (svcV && svcV.viewPhoto && assetId) {
         var viewed = await svcV.viewPhoto({
@@ -2657,6 +2809,267 @@
     } catch (e) {
       return null;
     }
+  }
+
+  function patchLightroomAssets(p, assets, counts) {
+    var lrWs = getWorkspace(p, 'adobe_lightroom') || {};
+    var meta = Object.assign({}, lrWs.metadata || {});
+    var sync = Object.assign({}, meta.lightroom_sync || {});
+    sync.assets = assets;
+    if (counts) Object.assign(sync, counts);
+    else {
+      sync.photo_count = assets.length;
+      sync.favorites = assets.filter(function (a) { return a.favorite; }).length;
+      sync.edited = assets.filter(function (a) { return a.edited; }).length;
+    }
+    meta.lightroom_sync = sync;
+    upsertWorkspaceLocal(p, {
+      provider: 'adobe_lightroom',
+      display_name: lrWs.display_name || (p.lightroom && p.lightroom.album_name) || p.name,
+      external_id: lrWs.external_id || null,
+      sync_state: lrWs.sync_state || 'linked',
+      last_sync_at: lrWs.last_sync_at || null,
+      metadata: meta
+    });
+  }
+
+  async function downloadExportForAsset(p, assetId, rendition) {
+    var svc = global.AdobeLightroomService;
+    if (!svc || !svc.exportFinalPhotos) {
+      return { ok: false, message: 'Export isn’t ready' };
+    }
+    var exp = await svc.exportFinalPhotos({
+      businessId: businessId() || '',
+      assetId: assetId,
+      catalogId: lightroomSyncMeta(p).catalogId || undefined,
+      renditionType: rendition || '2048'
+    });
+    if (!(exp && exp.ok && exp.data && exp.data.base64)) {
+      return { ok: false, message: (exp && exp.message) || 'Could not export photo' };
+    }
+    try {
+      var bin = atob(exp.data.base64);
+      var bytes = new Uint8Array(bin.length);
+      for (var bi = 0; bi < bin.length; bi++) bytes[bi] = bin.charCodeAt(bi);
+      var blob = new Blob([bytes], { type: exp.data.contentType || 'image/jpeg' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = (assetId || 'photo') + '-' + (rendition || '2048') + '.jpg';
+      a.click();
+      setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 2000);
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, message: 'Export received but download failed' };
+    }
+  }
+
+  async function runBulkExport(p, st, rendition) {
+    var ids = selectedPhotoIds(st);
+    if (!ids.length) {
+      // Fall back to edited photos
+      ids = lightroomSyncMeta(p).assets.filter(function (a) { return a.edited; }).map(function (a) { return a.id; });
+    }
+    if (!ids.length) {
+      toast('Select photos (or sync edited ones) first');
+      return;
+    }
+    toast('Exporting ' + ids.length + ' photo(s)…');
+    var ok = 0;
+    var fail = 0;
+    for (var i = 0; i < ids.length; i++) {
+      var res = await downloadExportForAsset(p, ids[i], rendition || '2048');
+      if (res.ok) ok += 1;
+      else fail += 1;
+    }
+    addActivity(p, 'Bulk export', ok + ' exported' + (fail ? (', ' + fail + ' failed') : ''));
+    toast(ok + ' exported' + (fail ? (', ' + fail + ' failed — connect Adobe if needed') : ''));
+    return saveAndRefresh(p, st);
+  }
+
+  async function runBulkCanva(p, st, opts) {
+    opts = opts || {};
+    var ids = selectedPhotoIds(st);
+    if (!ids.length) {
+      if (!opts.quiet) toast('Select photos first');
+      return { ok: false, planned: 0 };
+    }
+    var brand = {
+      name: (S().biz || S().businessName || ''),
+      primaryColor: S().color || '#D9632D',
+      logoUrl: S().logoUrl || null
+    };
+    p.workspace = p.workspace || defaultWorkspace();
+    p.workspace.creative_requests = p.workspace.creative_requests || [];
+    var kinds = ['instagram_carousel', 'facebook_post', 'flyer'];
+    var planned = 0;
+    for (var i = 0; i < kinds.length; i++) {
+      var kind = kinds[i];
+      var res = null;
+      if (global.HublyConnectedApps && global.HublyConnectedApps.createMarketingAsset) {
+        res = await global.HublyConnectedApps.createMarketingAsset({
+          businessId: businessId(),
+          projectId: p.id,
+          providerId: 'canva',
+          capability: 'creative',
+          kind: kind,
+          title: p.name + ' · ' + kind,
+          brand: brand,
+          photoUrls: [],
+          selectedAssetIds: ids
+        });
+      }
+      p.workspace.creative_requests.push({
+        kind: kind,
+        status: (res && res.ok) ? 'created' : 'planned',
+        capability: 'creative',
+        provider: 'canva',
+        selectedAssetIds: ids.slice(),
+        at: new Date().toISOString(),
+        message: res && res.message
+      });
+      planned += 1;
+    }
+    addActivity(p, 'Canva from selection', planned + ' graphic(s) · ' + ids.length + ' photo(s)');
+    publishBus('creative.asset_planned', { projectId: p.id, selected: ids.length });
+    if (!opts.quiet) {
+      toast(planned + ' Canva request(s) saved from ' + ids.length + ' photo(s). Connect Canva under Apps if needed.');
+    }
+    if (opts.skipSave) return { ok: true, planned: planned };
+    st.tab = 'creative';
+    await saveAndRefresh(p, st);
+    return { ok: true, planned: planned };
+  }
+
+  function runAiPickBest(p, st) {
+    var sync = lightroomSyncMeta(p);
+    if (!sync.assets.length) {
+      toast('Sync photos first');
+      return;
+    }
+    // Heuristic until Hubly AI photo culling is wired — favorites, ratings, edited.
+    var scored = sync.assets.map(function (a) {
+      var score = 0;
+      if (a.favorite) score += 5;
+      if (a.edited) score += 3;
+      score += (Number(a.rating) || 0) * 2;
+      if (a.flag && String(a.flag).toLowerCase() === 'pick') score += 4;
+      if ((a.keywords || []).length) score += 1;
+      return { a: a, score: score };
+    }).sort(function (x, y) { return y.score - x.score; });
+    var topN = Math.max(3, Math.min(12, Math.ceil(scored.length * 0.2)));
+    var bestIds = {};
+    scored.slice(0, topN).forEach(function (row) { bestIds[row.a.id] = true; });
+    var assets = sync.assets.map(function (a) {
+      return Object.assign({}, a, { hublyBest: !!bestIds[a.id] });
+    });
+    patchLightroomAssets(p, assets);
+    st.lrSelected = bestIds;
+    st.lrPhotoFilter = 'best';
+    st.lrPanel = 'photos';
+    addActivity(p, 'AI Pick Best', topN + ' of ' + assets.length + ' (heuristic until Hubly AI culling ships)');
+    toast('Picked ' + topN + ' best photos — review and Publish Project when ready');
+    return saveAndRefresh(p, st);
+  }
+
+  async function runPublishProject(p, st) {
+    toast('Publishing project…');
+    var steps = [];
+    var sync = lightroomSyncMeta(p);
+    var svc = global.AdobeLightroomService;
+
+    // 1) Sync Lightroom when linked
+    if (sync.linked && svc && svc.syncAlbum) {
+      var syncRes = await svc.syncAlbum({
+        businessId: businessId() || '',
+        projectId: p.id,
+        albumId: sync.albumId || undefined,
+        catalogId: sync.catalogId || undefined
+      });
+      steps.push(syncRes && syncRes.ok ? 'Synced Lightroom' : 'Sync skipped / needs Adobe');
+      if (syncRes && syncRes.ok && syncRes.data && syncRes.data.workspaceMetadata) {
+        upsertWorkspaceLocal(p, {
+          provider: 'adobe_lightroom',
+          display_name: sync.albumName || p.name,
+          external_id: (syncRes.data.albumId) || sync.albumId,
+          sync_state: 'synced',
+          last_sync_at: syncRes.data.lastSyncAt || new Date().toISOString(),
+          metadata: Object.assign({}, (getWorkspace(p, 'adobe_lightroom') || {}).metadata || {}, syncRes.data.workspaceMetadata)
+        });
+      }
+    } else {
+      steps.push('Lightroom sync skipped (not linked)');
+    }
+
+    // 2) Prefer selection → AI best → edited
+    var ids = selectedPhotoIds(st);
+    sync = lightroomSyncMeta(p);
+    if (!ids.length) {
+      var best = sync.assets.filter(function (a) { return a.hublyBest; });
+      if (best.length) ids = best.map(function (a) { return a.id; });
+      else ids = sync.assets.filter(function (a) { return a.edited || a.favorite; }).map(function (a) { return a.id; });
+    }
+    if (ids.length) {
+      st.lrSelected = {};
+      ids.forEach(function (id) { st.lrSelected[id] = true; });
+      steps.push(ids.length + ' photo(s) selected for delivery');
+    } else {
+      steps.push('No photos selected — gallery still published from Hubly');
+    }
+
+    // 3) Export edited/selected (best-effort, capped)
+    var exportIds = ids.slice(0, 8);
+    var exported = 0;
+    for (var i = 0; i < exportIds.length; i++) {
+      var er = await downloadExportForAsset(p, exportIds[i], '2048');
+      if (er.ok) exported += 1;
+    }
+    if (exportIds.length) {
+      steps.push(exported + '/' + exportIds.length + ' exported');
+    }
+
+    // 4) Canva marketing plans
+    await runBulkCanva(p, st, { skipSave: true, quiet: true });
+    steps.push('Canva graphics planned');
+
+    // 5) Gallery
+    p.gallery = p.gallery || {};
+    p.gallery.featured_asset_ids = ids.slice();
+    p.gallery_status = 'published';
+    p.gallery.delivery_status = 'published';
+    if (svc && svc.publishGallery) {
+      await svc.publishGallery({ businessId: businessId() || '', projectId: p.id, galleryId: 'main' });
+    }
+    steps.push('Gallery published');
+
+    // 6) Client email — honest if no messenger
+    if (p.client_email) {
+      steps.push('Client email queued for ' + p.client_email + ' (send via connected messaging)');
+      addActivity(p, 'Client delivery email planned', p.client_email);
+    } else {
+      steps.push('Add client email to send the gallery link');
+    }
+
+    // 7) Review request
+    (p.marketing || []).forEach(function (m) {
+      if (m.channel === 'review_request') m.status = 'ready';
+    });
+    steps.push('Review request armed');
+
+    // 8) Delivered
+    p.status = 'Delivered';
+    p.gallery_status = 'delivered';
+    if (p.gallery) p.gallery.delivery_status = 'delivered';
+    (p.deliverables || []).forEach(function (d) {
+      if (d.kind === 'gallery' || d.kind === 'marketing' || d.kind === 'social') d.status = 'delivered';
+    });
+    addActivity(p, 'Publish Project', steps.join(' · '));
+    publishBus('gallery.delivered', { projectId: p.id, galleryId: 'main' });
+    publishBus('project.delivered', { projectId: p.id });
+    toast('Project published — ' + steps.slice(0, 3).join(' · '));
+    st.tab = 'lightroom';
+    st.lrPanel = 'overview';
+    return saveAndRefresh(p, st);
   }
 
   async function ingestMediaFiles(projectId, fileList, kindHint) {

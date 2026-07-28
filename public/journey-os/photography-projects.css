@@ -1256,6 +1256,14 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   overflow: hidden;
   border: 1px solid var(--pp-border);
   background: var(--pp-surface-2);
+  position: relative;
+}
+.pp-media-tile.is-selected {
+  outline: 2px solid var(--pp-brand);
+  outline-offset: 1px;
+}
+.pp-media-tile.is-best .pp-media-kind {
+  color: #fdba74;
 }
 .pp-media-thumb {
   aspect-ratio: 1;
@@ -1350,6 +1358,63 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   margin-top: 2px;
   color: var(--pp-ink-3);
   font-size: 12px;
+}
+
+.pp-bulk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--pp-border);
+  background: var(--pp-surface-2);
+}
+.pp-bulk-bar.is-on {
+  border-color: rgba(217, 99, 45, 0.35);
+  background: linear-gradient(180deg, #fff 0%, #fdf6f1 100%);
+}
+.pp-bulk-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.pp-bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+.pp-bulk-hint { font-size: 13px; }
+.pp-bulk-danger { color: #991b1b !important; }
+.pp-media-select {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.92);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.pp-media-select input { margin: 0; cursor: pointer; }
+.pp-media-open {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
 }
 
 /* Ask Hubly + coach must not cover Projects CTAs */

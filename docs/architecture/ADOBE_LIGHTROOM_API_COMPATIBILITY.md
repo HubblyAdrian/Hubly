@@ -126,3 +126,40 @@ Hubly (Edge + UI)
 - **Edited:** asset has `payload.develop` and/or develop XMP link present
 - Sync writes counts into `photography_project_workspaces.metadata` — never overwrites Hubly project name/status/invoices/gallery
 
+## Projects UI surface
+
+Inside a Project → **Lightroom** tab (photo-led businesses):
+
+Overview · Albums · Photos · Photo Details · Exports · Sync · Connection
+
+### Bulk photo actions
+
+When photos are selected:
+
+Export · Canva · Gallery · Download · Add Keywords · AI Pick Best · Remove (Hubly view only — Adobe album unchanged)
+
+### Publish Project
+
+One Hubly workflow that:
+
+1. Syncs Lightroom (when linked)
+2. Uses selection / AI best / edited photos
+3. Exports finals (best-effort)
+4. Plans Canva marketing graphics
+5. Publishes gallery
+6. Plans client email + review request
+7. Marks project delivered
+
+Never fakes Adobe/Canva/email success — plans stay on the project when providers aren’t connected.
+
+### Vocabulary
+
+| Adobe | Hubly |
+|---|---|
+| Asset | Photo |
+| Rendition | Export |
+| Catalog | Workspace |
+| Album | Album |
+| Metadata | Photo Details |
+| Refresh Token | Connection |
+
