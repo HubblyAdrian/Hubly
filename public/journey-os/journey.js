@@ -177,6 +177,21 @@
   function setCardStageId(cardId, stageId) {
     ensurePipelineOsState();
     S().pipeline.stages[cardId] = stageId;
+    /* Persist onto the underlying job so Complete doesn’t snap back to Booked/scheduled */
+    var card = (el('jos-pipeline-root') && el('jos-pipeline-root')._josCards || []).find(function (c) {
+      return String(c.id) === String(cardId);
+    });
+    var jobId = card && card.jobId;
+    if (!jobId && String(cardId).indexOf('job:') === 0) jobId = String(cardId).slice(4);
+    if (jobId) {
+      var j = jobs().find(function (x) { return String(x.id) === String(jobId) || String(x.reqId) === String(jobId); });
+      if (j) {
+        if (stageId === 'completed') j.status = 'completed';
+        else if (stageId === 'booked' && (j.status === 'completed' || j.status === 'done' || j.status === 'cancelled')) j.status = 'scheduled';
+      }
+    }
+    try { if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon(); } catch (e) {}
+    try { if (typeof global.saveState === 'function') global.saveState(); } catch (e2) {}
   }
 
   function pipeCardTags(card) {
@@ -532,12 +547,12 @@
     var all = buildPipelineCards();
     var cards = filterPipelineCards(root, all);
     root._josCards = all;
-    var selectedId = root._josPipeId;
-    if (selectedId && !cards.some(function (c) { return String(c.id) === String(selectedId); })) {
-      selectedId = cards[0] ? cards[0].id : null;
-      root._josPipeId = selectedId;
+    var selectedId = root._josPipeId || null;
+    /* Side panel only when user clicks a card — never auto-open first deal */
+    if (selectedId && !all.some(function (c) { return String(c.id) === String(selectedId); })) {
+      selectedId = null;
+      root._josPipeId = null;
     }
-    if (!selectedId && cards[0]) { selectedId = cards[0].id; root._josPipeId = selectedId; }
     var sel = selectedId ? all.find(function (c) { return String(c.id) === String(selectedId); }) : null;
     var sortOpen = !!root._josPipeSortOpen;
 
@@ -629,6 +644,7 @@
       if (e.key === 'Escape') {
         if (root._josPipeFilterOpen) { root._josPipeFilterOpen = false; return renderPipeline(); }
         if (root._josPipeSortOpen) { root._josPipeSortOpen = false; return renderPipeline(); }
+        if (root._josPipeId) { root._josPipeId = null; return renderPipeline(); }
         if (root._josPipeQ) {
           root._josPipeQ = '';
           var inp = el('jos-pipe-search');
@@ -4377,8 +4393,27 @@
     return out;
   }
   function memCatalogServices() {
-    try { return storefrontCatalog().filter(function (s) { return s.status !== 'archived'; }); }
-    catch (e) { return []; }
+    var out = [];
+    var seen = {};
+    function add(s) {
+      if (!s) return;
+      var name = typeof s === 'string' ? s : (s.name || s.title || s.label || '');
+      if (!name) return;
+      var id = (typeof s === 'object' && (s.id || s.serviceId)) || ('svc_' + String(name).toLowerCase().replace(/\s+/g, '_'));
+      var key = String(id).toLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push(typeof s === 'object' ? Object.assign({ id: id, name: name, status: s.status || 'active' }, s) : { id: id, name: name, status: 'active' });
+    }
+    try { (storefrontCatalog() || []).forEach(add); } catch (e) {}
+    try { (S().services || []).forEach(add); } catch (e2) {}
+    try {
+      var w = (S().website || {});
+      [w.services, w.packages, w.offers].forEach(function (arr) {
+        if (Array.isArray(arr)) arr.forEach(add);
+      });
+    } catch (e3) {}
+    return out.filter(function (s) { return s.status !== 'archived'; });
   }
   function memFindCatalogService(v, catalog) {
     var raw = String(v || '').trim().toLowerCase();
@@ -11137,7 +11172,7 @@
     customers: { title: 'Completed Customers', sub: 'People you\'ve successfully serviced.' },
     pipeline: { title: 'Pipeline', sub: 'Quotes, bookings, and completed jobs.' },
     editor: { title: 'Website editor', sub: 'Edit your site, packages, and Book Now.' },
-    quotes: { title: 'Quick Quote', sub: 'Draft and send quotes from the field.' },
+    quotes: { title: 'Quick Quote', sub: 'Build a price, then send it.' },
     marketing: { title: 'Marketing', sub: 'Campaigns that attract, convert, and keep customers coming back.' },
     reviews: { title: 'Reviews', sub: 'Reputation and request flows.' },
     memberships: { title: 'Memberships', sub: 'Recurring revenue. Happy clients. Less admin.' },
@@ -12014,7 +12049,16 @@
     var bell = document.querySelector('.jos-bar-bell');
     if (bell) bell.setAttribute('data-count', '0');
     try { S()._notifBadgeCleared = true; } catch (e) {}
-    try { localStorage.setItem('hubly_notif_cleared', '1'); } catch (e2) {}
+    try {
+      localStorage.setItem('hubly_notif_cleared', '1');
+      localStorage.setItem('hubly_notif_cleared_at', String(Date.now()));
+    } catch (e2) {}
+    try {
+      var homeBell = el('jos-home-notifs');
+      if (homeBell) homeBell.classList.add('cleared');
+      var dash = el('jos-dash-root');
+      if (dash) dash.classList.remove('jos-notifs-open');
+    } catch (e3) {}
   }
 
   function notifBadgeCleared() {
@@ -12089,6 +12133,8 @@
             count = unreadN > 0 ? Math.min(9, unreadN) : 0;
           } catch (eN) {}
         }
+      } else {
+        count = 0;
       }
       bell.setAttribute('data-count', String(count));
       if (!bell._josWired) {
@@ -12096,12 +12142,7 @@
         bell.addEventListener('click', function (e) {
           e.stopPropagation();
           openNotifPop();
-          var dash = el('jos-dash-root');
-          if (dash) {
-            dash.classList.add('jos-notifs-open');
-            var panel = el('jos-home-notifs');
-            if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
+          /* Do not auto-scroll/open home notifs panel — badge clear is enough */
         });
       }
     }
@@ -12113,6 +12154,11 @@
         }
         if (!e.target.closest('#jos-notif-pop') && !e.target.closest('.jos-bar-bell')) {
           el('jos-notif-pop')?.classList.remove('open');
+        }
+        if (!e.target.closest('.jos-jobs-pop') && !e.target.closest('[data-jos-act="jobs-row-menu"]') && !e.target.closest('[data-jos-act="jobs-status-menu"]')) {
+          var rp = el('jos-jobs-row-pop'); var sp = el('jos-jobs-status-pop');
+          if (rp) rp.hidden = true; if (sp) sp.hidden = true;
+          document.body.classList.remove('jos-jobs-menu-open');
         }
       });
     }
@@ -13368,6 +13414,11 @@
     if (!root) return;
     setJobsMode(true);
     updateChrome('jobs');
+    /* Avoid full-page flash when only switching drawer tabs */
+    if (root._josJobsSkipLoading) {
+      root._josJobsSkipLoading = false;
+      try { renderJobsPage(root); return; } catch (errSkip) { console.warn(errSkip); }
+    }
     root.innerHTML = '<div class="jos-jobs-shell"><div class="jos-home-loading">Loading Jobs…</div></div>';
     try { renderJobsPage(root); }
     catch (err) {
@@ -13489,7 +13540,7 @@
     }
 
     return '<aside class="jos-jobs-drawer open" id="jos-jobs-drawer">' +
-      '<div class="jos-jd-head"><div><div class="jos-kicker">Job Details</div><h2>' + esc(jobNumber(j)) + ' · ' + esc(j.customer) + '</h2></div>' +
+      '<div class="jos-jd-head"><div><div class="jos-kicker">Job Details</div><h2>' + esc(j.customer || 'Customer') + '</h2><div class="jos-muted">' + esc(j.service || '') + ' · ' + esc(jobNumber(j)) + '</div></div>' +
       '<button type="button" class="jos-icon-btn" data-jos-act="jobs-drawer-close" aria-label="Close">✕</button></div>' +
       tabBar +
       '<div class="jos-jd-body">' + body + '</div></aside>';
@@ -13539,13 +13590,12 @@
       var tone = jobRowTone(j.status);
       var created = (j.timeline && j.timeline[0] && j.timeline[0].at) || j.date || '';
       return '<tr class="jos-jobs-row tone-' + tone + '" data-jos-job-id="' + esc(j.id) + '">' +
-        '<td class="col-job"><button type="button" class="jos-linkish" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><strong>' + esc(jobNumber(j)) + '</strong><span class="jos-muted">' + esc(String(created).slice(0, 16)) + '</span></button></td>' +
-        '<td class="col-cust"><button type="button" class="jos-jobs-cust" data-jos-act="jobs-open-customer" data-jos-job-id="' + esc(j.id) + '">' +
-        '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span><span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(j.email || '—') + '</span><span class="jos-muted">' + esc(j.phone || '—') + '</span></span></button></td>' +
-        '<td class="col-svc"><button type="button" class="jos-linkish" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><strong>' + esc(j.service || 'Service') + '</strong><span class="jos-muted">' + esc(j.vehicle || 'Vehicle') + ' · ' + esc(String(j.durationMin || 120)) + 'm</span></button></td>' +
-        '<td class="col-date"><button type="button" class="jos-linkish jos-jobs-dt" data-jos-act="jobs-cal-day" data-jos-day="' + esc(j.date || '') + '"><span>' + jobUiIcon('cal') + ' ' + esc(j.date || '—') + '</span><span class="jos-muted">' + jobUiIcon('clock') + ' ' + esc(j.time || '—') + '</span></button></td>' +
+        '<td class="col-cust"><button type="button" class="jos-jobs-cust" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
+        '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span><span><strong class="jos-jobs-name">' + esc(j.customer || 'Customer') + '</strong><span class="jos-muted">' + esc(j.phone || j.email || '') + '</span></span></button></td>' +
+        '<td class="col-svc"><button type="button" class="jos-linkish" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><strong class="jos-jobs-name">' + esc(j.service || 'Service') + '</strong><span class="jos-muted">' + esc(j.vehicle || '') + (j.durationMin ? (' · ' + j.durationMin + 'm') : '') + '</span></button></td>' +
+        '<td class="col-date"><button type="button" class="jos-linkish jos-jobs-dt" data-jos-act="jobs-cal-day" data-jos-day="' + esc(j.date || '') + '"><strong class="jos-jobs-name">' + esc(j.date || '—') + '</strong><span class="jos-muted">' + esc(j.time || '') + ' · ' + esc(jobNumber(j)) + '</span></button></td>' +
         '<td class="col-status"><button type="button" class="jos-pill ' + jobStatusTone(j.status) + '" data-jos-act="jobs-status-menu" data-jos-job-id="' + esc(j.id) + '">' + esc(j.status) + '</button></td>' +
-        '<td class="col-amt"><button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '">' + esc(money(j.amount) || '$0') + '</button></td>' +
+        '<td class="col-amt"><button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '"><strong class="jos-jobs-name">' + esc(money(j.amount) || '$0') + '</strong></button></td>' +
         '<td class="col-act"><div class="jos-jobs-more-wrap">' +
         '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋯</button>' +
         '</div></td></tr>';
@@ -13666,7 +13716,7 @@
       tabsHtml +
       (pageRows.length
         ? '<div class="jos-jobs-table-wrap"><table class="jos-jobs-table"><thead><tr>' +
-          '<th style="width:120px">Job #</th><th style="width:280px">Customer</th><th style="width:200px">Service</th><th style="width:220px">Date &amp; Time</th><th style="width:150px">Status</th><th style="width:120px">Amount</th><th style="width:80px">Actions</th>' +
+          '<th>Customer</th><th>Service</th><th>Date &amp; Time</th><th>Status</th><th>Amount</th><th>Actions</th>' +
           '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' + mobileCards + pager
         : emptyTable) +
       '</section>';
@@ -13797,7 +13847,20 @@
       if (ws) {
         root._josJobWorkspace = ws.getAttribute('data-jos-job-ws');
         root._josDrawerOpen = true;
-        renderJobs();
+        root._josJobsSkipLoading = true;
+        /* Prefer in-place drawer update to avoid page flash */
+        var job = findJob(root._josJobId);
+        var drawer = el('jos-jobs-drawer');
+        if (job && drawer) {
+          var next = renderJobDrawer(root, job, root._josJobWorkspace);
+          var wrap = document.createElement('div');
+          wrap.innerHTML = next;
+          var fresh = wrap.firstChild;
+          if (fresh) drawer.replaceWith(fresh);
+          bindRoot(el('jos-jobs-drawer') || root);
+        } else {
+          renderJobs();
+        }
         e.stopPropagation();
         return;
       }
@@ -13888,7 +13951,40 @@
 
   function jobsCalendarEvents() {
     ensureJobsOsState();
-    return (S().jobs || []).filter(function (j) { return j.status !== 'cancelled'; });
+    var list = (S().jobs || []).filter(function (j) { return j && j.status !== 'cancelled'; });
+    /* Google personal events → busy blocks (doctor appts, etc.) */
+    try {
+      var g = S().googleEvents || S().gcalEvents || [];
+      if (Array.isArray(g)) {
+        g.forEach(function (ev, i) {
+          if (!ev) return;
+          var id = 'gcal_' + (ev.id || i);
+          if (list.some(function (j) { return String(j.id) === id || j.googleEventId === ev.id; })) return;
+          list.push({
+            id: id,
+            googleEventId: ev.id,
+            customer: ev.title || ev.summary || 'Google Calendar',
+            service: ev.title || ev.summary || 'Busy',
+            date: String(ev.date || ev.start || '').slice(0, 10),
+            time: ev.time || ev.startTime || '9:00 AM',
+            durationMin: ev.durationMin || ev.duration || 60,
+            status: 'scheduled',
+            isBlock: true,
+            isGoogle: true,
+            amount: 0,
+            tags: ['google', 'block']
+          });
+        });
+      }
+    } catch (eG) {}
+    /* Also treat any job already flagged from inbound Google sync */
+    list.forEach(function (j) {
+      if (j && (j.source === 'google' || j.fromGoogle) && !j.isGoogle) {
+        j.isGoogle = true;
+        j.isBlock = true;
+      }
+    });
+    return list;
   }
 
   function bizHoursForDate(ds) {
@@ -13932,35 +14028,96 @@
   function isDayBlocked(ds) {
     ensureJobsOsState();
     var a = S().availability || {};
+    if ((a.blocked || []).indexOf('__forever__') > -1 && a.foreverFrom && String(ds) >= String(a.foreverFrom)) return true;
     return (a.blocked || []).indexOf(ds) > -1 || (a.holidays || []).indexOf(ds) > -1;
   }
 
-  function createBlockJob(date, time, durationMin, reason) {
+  function createBlockJob(date, time, durationMin, reason, opts) {
     ensureJobsOsState();
+    opts = opts || {};
     var st = S();
-    var id = 'block_' + Date.now();
-    st.jobs.unshift({
-      id: id,
-      customer: 'Blocked',
-      service: reason || 'Time blocked',
-      date: date || todayStr(),
-      time: time || '9:00 AM',
-      durationMin: durationMin || 60,
-      status: 'scheduled',
-      isBlock: true,
-      amount: 0,
-      address: '',
-      assignedTo: '',
-      tags: ['block'],
-      checklist: [],
-      photos: { before: [], after: [] },
-      internalNotes: [reason || 'Blocked'],
-      customerNotes: [],
-      voiceNotes: [],
-      products: [],
-      timeline: [{ type: 'created', label: 'Time blocked', at: new Date().toLocaleString() }]
-    });
-    return id;
+    var id = 'block_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    var startDate = date || todayStr();
+    var days = Math.max(1, Number(opts.days) || 1);
+    var forever = !!opts.forever;
+    var title = reason || (forever ? 'Blocked forever' : (days > 1 ? ('Blocked · ' + days + ' days') : 'Time blocked'));
+    /* Multi-day / forever: create one block per day (or mark day blocked) */
+    if (forever) {
+      st.availability = st.availability || { blocked: [], holidays: [], vacation: [], manual: [] };
+      st.availability.blocked = st.availability.blocked || [];
+      if (st.availability.blocked.indexOf('__forever__') < 0) st.availability.blocked.push('__forever__');
+      st.availability.foreverFrom = startDate;
+      st.availability.foreverReason = title;
+    }
+    var created = [];
+    for (var d = 0; d < days; d++) {
+      var ds = addDaysStr(startDate, d);
+      if (days > 1 || forever) {
+        st.availability = st.availability || { blocked: [], holidays: [], vacation: [], manual: [] };
+        st.availability.blocked = st.availability.blocked || [];
+        if (st.availability.blocked.indexOf(ds) < 0) st.availability.blocked.push(ds);
+      }
+      var bid = id + (d ? ('_' + d) : '');
+      st.jobs.unshift({
+        id: bid,
+        customer: title,
+        service: title,
+        date: ds,
+        time: time || '8:00 AM',
+        durationMin: durationMin || (days > 1 ? 600 : 60),
+        status: 'scheduled',
+        isBlock: true,
+        amount: 0,
+        address: '',
+        assignedTo: '',
+        tags: ['block'].concat(forever ? ['forever'] : []).concat(opts.source === 'google' ? ['google'] : []),
+        checklist: [],
+        photos: { before: [], after: [] },
+        internalNotes: [title],
+        customerNotes: [],
+        voiceNotes: [],
+        products: [],
+        timeline: [{ type: 'created', label: title, at: new Date().toLocaleString() }]
+      });
+      created.push(bid);
+      if (forever) break; /* day list + forever flag is enough */
+    }
+    return created[0] || id;
+  }
+
+  function openBlockTimeDialog(root, slotTime) {
+    var startDate = (root && root._josCalAnchor) || todayStr();
+    var startTime = slotTime || '9:00 AM';
+    var reason = window.prompt('Event / block title', 'Personal · Doctor appointment') || 'Time blocked';
+    var choice = window.prompt(
+      'How long?\n1 = 1 hour\n2 = 2 hours\n4 = 4 hours\n8 = All day\nd = Multiple days\nw = 1 week\nf = Forever (from this day)',
+      '1'
+    );
+    if (choice == null) return;
+    choice = String(choice).trim().toLowerCase();
+    var durationMin = 60;
+    var days = 1;
+    var forever = false;
+    if (choice === '2') durationMin = 120;
+    else if (choice === '4') durationMin = 240;
+    else if (choice === '8' || choice === 'day' || choice === 'all day') durationMin = 600;
+    else if (choice === 'd' || choice === 'days') {
+      var n = parseInt(window.prompt('How many days?', '3'), 10);
+      days = Math.max(1, Math.min(90, n || 3));
+      durationMin = 600;
+    } else if (choice === 'w' || choice === 'week') {
+      days = 7;
+      durationMin = 600;
+    } else if (choice === 'f' || choice === 'forever') {
+      forever = true;
+      days = 1;
+      durationMin = 600;
+    } else {
+      var hrs = parseFloat(choice);
+      if (Number.isFinite(hrs) && hrs > 0) durationMin = Math.round(hrs * 60);
+    }
+    createBlockJob(startDate, startTime, durationMin, reason, { days: days, forever: forever });
+    toast(forever ? 'Blocked forever from ' + startDate : (days > 1 ? ('Blocked ' + days + ' days') : ('Blocked ' + Math.round(durationMin / 60) + 'h')));
   }
 
   function isBookableSlot(ds, timeLabel) {
@@ -14013,8 +14170,8 @@
       }
       html += '</div>';
     } else if (calView === 'agenda') {
-      html += '<div class="jos-stack jos-mt">' + all.filter(function (j) { return !j.isBlock; }).slice().sort(function (a, b) { return String(a.date).localeCompare(b.date); }).slice(0, 20).map(function (j) {
-        return jobCardHtml(j, selectedId, true);
+      html += '<div class="jos-stack jos-mt">' + all.slice().sort(function (a, b) { return String(a.date).localeCompare(b.date); }).slice(0, 30).map(function (j) {
+        return jobCardHtml(j, selectedId, false);
       }).join('') + '</div>';
     } else if (calView === 'day') {
       /* Google-style full day grid; outside hours shaded so booking rules are visible */
@@ -14080,18 +14237,27 @@
 
   function jobCardHtml(j, selectedId, withBulk) {
     var on = selectedId && String(selectedId) === String(j.id);
-    return '<div class="jos-card jos-job-card' + (on ? ' on' : '') + '" data-jos-job-id="' + esc(j.id) + '" draggable="true">' +
-      (withBulk || true ? '<label class="jos-bulk-check"><input type="checkbox" class="jos-job-bulk" data-jos-job-id="' + esc(j.id) + '"></label>' : '') +
-      '<div class="jos-between"><strong>' + esc(j.customer || 'Customer') + '</strong><span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></div>' +
-      '<div class="jos-muted jos-mt">' + esc(j.service || '') + ' · ' + esc(j.date || '') + ' · ' + esc(j.time || '') + '</div>' +
-      '<div class="jos-muted">' + esc(j.assignedTo || 'Unassigned') + ' · ' + esc(j.address || '') + '</div>' +
-      '<div class="jos-between jos-mt"><span class="jos-pipe-amt">' + esc(money(j.amount)) + '</span><span class="jos-pill ' + (j.depositStatus === 'paid' ? 'ok' : (j.depositStatus === 'due' ? 'warn' : 'info')) + '">Deposit ' + esc(j.depositStatus) + '</span></div>' +
-      '<div class="jos-btn-row jos-mt">' +
-        btn('jobs-start', 'Start', 'jos-btn-brand jos-btn-sm') +
-        btn('jobs-edit', 'Edit', 'jos-btn jos-btn-sm') +
-        btn('jobs-reschedule', 'Reschedule', 'jos-btn jos-btn-sm') +
-        btn('jobs-complete', 'Complete', 'jos-btn jos-btn-sm') +
-      '</div></div>';
+    var title = j.isBlock || j.isGoogle
+      ? (j.service || j.customer || 'Blocked')
+      : (j.customer || 'Customer');
+    var sub = j.isBlock || j.isGoogle
+      ? ((j.date || '') + ' · ' + (j.time || '') + (j.durationMin ? (' · ' + Math.round(j.durationMin / 60) + 'h') : ''))
+      : ((j.service || '') + ' · ' + (j.date || '') + ' · ' + (j.time || ''));
+    return '<div class="jos-card jos-job-card' + (on ? ' on' : '') + (j.isBlock || j.isGoogle ? ' is-block' : '') + '" data-jos-job-id="' + esc(j.id) + '" draggable="true">' +
+      (withBulk && !(j.isBlock || j.isGoogle) ? '<label class="jos-bulk-check"><input type="checkbox" class="jos-job-bulk" data-jos-job-id="' + esc(j.id) + '"></label>' : '') +
+      '<div class="jos-between"><strong class="jos-job-card-title">' + esc(title) + '</strong><span class="jos-pill ' + (j.isBlock || j.isGoogle ? 'block' : jobStatusTone(j.status)) + '">' + esc(j.isGoogle ? 'Google' : (j.isBlock ? 'Blocked' : j.status)) + '</span></div>' +
+      '<div class="jos-job-card-sub jos-mt">' + esc(sub) + '</div>' +
+      (j.isBlock || j.isGoogle ? '' : (
+        '<div class="jos-job-card-sub">' + esc(j.assignedTo || 'Unassigned') + ' · ' + esc(j.address || '') + '</div>' +
+        '<div class="jos-between jos-mt"><span class="jos-pipe-amt">' + esc(money(j.amount)) + '</span><span class="jos-pill ' + (j.depositStatus === 'paid' ? 'ok' : (j.depositStatus === 'due' ? 'warn' : 'info')) + '">Deposit ' + esc(j.depositStatus || 'none') + '</span></div>' +
+        '<div class="jos-btn-row jos-mt">' +
+          btn('jobs-start', 'Start', 'jos-btn-brand jos-btn-sm') +
+          btn('jobs-edit', 'Edit', 'jos-btn jos-btn-sm') +
+          btn('jobs-reschedule', 'Reschedule', 'jos-btn jos-btn-sm') +
+          btn('jobs-complete', 'Complete', 'jos-btn jos-btn-sm') +
+        '</div>'
+      )) +
+      '</div>';
   }
 
   function renderJobsListPanel(root, selectedId) {
@@ -14417,9 +14583,16 @@
           return '<button type="button" data-jos-act="' + esc(x[0]) + '" data-jos-job-id="' + esc(jobId || '') + '">' + esc(x[1]) + '</button>';
         }).join('');
         var r = t.getBoundingClientRect();
-        pop.style.top = (r.bottom + 6) + 'px';
-        pop.style.left = Math.max(12, Math.min(r.left, window.innerWidth - 220)) + 'px';
         pop.hidden = false;
+        /* Measure after show so we can flip above Ask Hubly FAB */
+        var popH = pop.offsetHeight || 280;
+        var popW = pop.offsetWidth || 200;
+        var top = r.bottom + 6;
+        if (top + popH > window.innerHeight - 88) top = Math.max(12, r.top - popH - 6);
+        var left = Math.min(Math.max(12, r.right - popW), window.innerWidth - popW - 12);
+        pop.style.top = top + 'px';
+        pop.style.left = left + 'px';
+        document.body.classList.add('jos-jobs-menu-open');
         return;
       }
       if (act === 'jobs-create') {
@@ -14707,9 +14880,7 @@
       }
       if (act === 'jobs-block-slot') {
         var slotTime = (t && t.getAttribute('data-jos-slot-time')) || '9:00 AM';
-        var reason = window.prompt('Block reason (optional)', 'Personal / unavailable') || 'Time blocked';
-        createBlockJob(root._josCalAnchor || todayStr(), slotTime, 60, reason);
-        toast('Time blocked · Hubly won’t book over this');
+        openBlockTimeDialog(root, slotTime);
         root._josJobsMainView = 'calendar';
         return renderJobs();
       }

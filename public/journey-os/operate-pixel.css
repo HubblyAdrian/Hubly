@@ -5150,3 +5150,42 @@ html[data-theme="night"] .jos-mem-form select{
 @media(max-width:720px){
   .jos-cc3-info .jos-detail-rows{grid-template-columns:1fr}
 }
+
+/* ── Operate UX fixes batch ─────────────────────────────────────── */
+.jos-job-card-title,.jos-jobs-name,.jos-jobs-cust strong,.jos-jobs-table td strong,
+.jos-jobs-table td .jos-linkish,.jos-jobs-cust,.jos-jd-svc strong,.jos-jd-kv strong,
+.jos-cal-dayview .jos-cal-event strong,.jos-cal-pill{
+  color:#141B2B!important;font-weight:750;
+}
+.jos-job-card-sub,.jos-jobs-cust .jos-muted,.jos-jd-svc .jos-muted{color:#4B5563!important;font-weight:550}
+.jos-job-card.is-block .jos-job-card-title,
+.jos-cal-event.block strong{color:#fff!important}
+.jos-cal-event.block{background:#374151;color:#fff;border-radius:8px;padding:8px 10px}
+.jos-cal-event.block .jos-muted{color:rgba(255,255,255,.75)!important}
+
+/* Actions menu: keep above content but clear of Ask Hubly FAB */
+.jos-jobs-pop{z-index:14000;min-width:200px;box-shadow:0 12px 32px rgba(15,23,42,.18)}
+body.jos-jobs-menu-open #jos-ask-fab,
+#p-app.jos-jobs-mode.jos-jobs-menu-open #jos-ask-fab{opacity:.15;pointer-events:none}
+#p-app.jos-jobs-mode #jos-ask-fab,
+#p-app.jos-pipeline-mode #jos-ask-fab{bottom:24px;right:24px}
+
+/* Pipeline side panel — light inputs, drawer feel, no auto-black */
+.jos-pk-field input,.jos-pk-field textarea,
+.jos-pk-edit input,.jos-pk-edit textarea{
+  background:#fff!important;color:#141B2B!important;border:1px solid #E5E7EB!important;
+  -webkit-text-fill-color:#141B2B;
+}
+.jos-pk-ws{
+  background:#fff;border:1px solid #E5E7EB;border-radius:16px;
+  box-shadow:0 8px 28px rgba(15,23,42,.08);z-index:20;
+  max-height:calc(100vh - 120px);overflow:auto;padding-bottom:88px;
+}
+.jos-pk-ws-empty{padding:48px 16px}
+#p-app.jos-pipeline-mode #jos-ask-fab{z-index:30}
+
+/* Drawer tab switches: no slide flash when already open */
+.jos-jobs-drawer.open{animation:none}
+
+/* Hide Grow leftovers if any */
+#p-app.jos-pixel .nav-grow{display:none!important}
