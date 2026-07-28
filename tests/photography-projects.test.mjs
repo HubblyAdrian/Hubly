@@ -126,10 +126,15 @@ describe('Hubly Projects module', () => {
     const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
     const svc = readFileSync(join(root, 'public/journey-os/adobe-lightroom-service.js'), 'utf8');
     const edge = readFileSync(join(root, 'supabase/functions/adobe-lightroom/index.ts'), 'utf8');
-    assert.match(js, /Export Final Photos|lr-export/);
+    assert.match(js, /Export Final Photos|lr-export|lr-bulk-export/);
     assert.match(js, /Browse Photos|lr-browse-photos/);
     assert.match(js, /Open Lightroom Project/);
     assert.match(js, /Connect Adobe Account/);
+    assert.match(js, /Publish Project/);
+    assert.match(js, /runPublishProject/);
+    assert.match(js, /lr-bulk-canva/);
+    assert.match(js, /lr-bulk-ai-best/);
+    assert.match(js, /Photo Details/);
     assert.match(svc, /connectAccount/);
     assert.match(svc, /browsePhotos/);
     assert.match(svc, /exportFinalPhotos/);
@@ -138,6 +143,46 @@ describe('Hubly Projects module', () => {
     assert.match(edge, /exportFinalPhotos/);
     assert.match(edge, /unlinkAlbum/);
     assert.match(edge, /linkAlbum/);
+  });
+
+  it('supports bulk photo selection actions', () => {
+    const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
+    const css = readFileSync(join(root, 'public/journey-os/photography-projects.css'), 'utf8');
+    assert.match(js, /function renderBulkBar/);
+    assert.match(js, /Selected/);
+    assert.match(js, /lr-select-all/);
+    assert.match(js, /lr-bulk-export/);
+    assert.match(js, /lr-bulk-gallery/);
+    assert.match(js, /lr-bulk-download/);
+    assert.match(js, /lr-bulk-keywords/);
+    assert.match(js, /AI Pick Best/);
+    assert.match(css, /pp-bulk-bar/);
+  });
+
+  it('ships premium Lightroom command-center workspace', () => {
+    const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
+    const css = readFileSync(join(root, 'public/journey-os/photography-projects.css'), 'utf8');
+    assert.match(js, /function renderLrHero/);
+    assert.match(js, /Sync Now/);
+    assert.match(js, /Manage Connection/);
+    assert.match(js, /Next Actions/);
+    assert.match(js, /Recent Activity/);
+    assert.match(js, /Sync Center/);
+    assert.match(js, /Export Final Photos/);
+    assert.match(js, /Connected Adobe Account/);
+    assert.match(js, /Connect Adobe Lightroom/);
+    assert.match(js, /pp-lr-album-card|pp-lr-album-grid/);
+    assert.match(js, /pp-lr-photo-grid/);
+    assert.match(js, /Photo Details/);
+    assert.match(js, /Check Workspace Health/);
+    assert.match(js, /Refresh Workspace/);
+    assert.doesNotMatch(js, /Download Rendition/);
+    assert.doesNotMatch(js, /\bOAuth\b/);
+    assert.doesNotMatch(js, /\bEndpoint\b/);
+    assert.match(css, /pp-lr-hero/);
+    assert.match(css, /pp-lr-stats/);
+    assert.match(css, /pp-lr-sync-compare/);
+    assert.match(css, /pp-lr-drawer/);
   });
 
   it('ships dashboard metrics, Media upload, Creative tab, and Quick Project', () => {

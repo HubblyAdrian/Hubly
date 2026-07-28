@@ -126,3 +126,53 @@ Hubly (Edge + UI)
 - **Edited:** asset has `payload.develop` and/or develop XMP link present
 - Sync writes counts into `photography_project_workspaces.metadata` — never overwrites Hubly project name/status/invoices/gallery
 
+## Projects UI surface
+
+Inside a Project → **Lightroom** tab (photo-led businesses) — premium command center, not a settings/API console:
+
+**Command** · Albums · Photos · Sync · Export · Account
+
+Hero always answers: connected? synced? photo/edit counts? last sync? next action?
+
+| Surface | Hubly Actions discoverable |
+|---|---|
+| Hero / Command | Sync Now, Publish Project, Open Lightroom Project, Browse Photos, Create Album, Browse Albums, Export Final Photos, Check Workspace Health, Refresh Workspace, Upload to Lightroom |
+| Albums | Create / Browse / Open / Rename / Sync / Link / Unlink |
+| Photos | Browse, filters, multi-select bulk, Photo Details drawer, Export / Download / Canva |
+| Sync Center | Sync Now, Browse Photos, health + workspace refresh |
+| Export | Destination exports (Instagram → RAW), Publish Gallery / Project, Upload |
+| Account | Connect / Reconnect / Refresh Connection / Disconnect / health / workspace |
+
+**Adobe review rule:** every shipped Adobe capability in this matrix must have a discoverable user-facing workflow — never API-only.
+
+### Bulk photo actions
+
+When photos are selected:
+
+Export · Canva · Gallery · Download · Add Keywords · AI Pick Best · Remove (Hubly view only — Adobe album unchanged)
+
+### Publish Project
+
+One Hubly workflow that:
+
+1. Syncs Lightroom (when linked)
+2. Uses selection / AI best / edited photos
+3. Exports finals (best-effort)
+4. Plans Canva marketing graphics
+5. Publishes gallery
+6. Plans client email + review request
+7. Marks project delivered
+
+Never fakes Adobe/Canva/email success — plans stay on the project when providers aren’t connected.
+
+### Vocabulary
+
+| Adobe | Hubly |
+|---|---|
+| Asset | Photo |
+| Rendition | Export |
+| Catalog | Workspace |
+| Album | Album |
+| Metadata | Photo Details |
+| Refresh Token | Connection |
+
