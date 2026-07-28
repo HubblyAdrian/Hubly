@@ -35363,21 +35363,6 @@ function switchV(el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
-  /* Auto-expand Grow when a Grow nav item is selected */
-  try{
-    const growViews={marketing:1,reviews:1,memberships:1,money:1,reports:1,quotes:1};
-    if(growViews[v]){
-      const grow=document.getElementById('nav-grow');
-      const gbtn=document.getElementById('nav-grow-toggle');
-      if(grow&&!grow.classList.contains('open')){
-        grow.classList.add('open');
-        if(gbtn)gbtn.setAttribute('aria-expanded','true');
-        try{localStorage.setItem('hubly_nav_grow','expanded');}catch(eG){}
-        const app=document.getElementById('p-app');
-        if(app&&!app.classList.contains('jos-nav-expanded'))toggleOperateNavRail();
-      }
-    }
-  }catch(eGrow){}
   const titles={
     dashboard:'Home',jobs:'Jobs & Calendar',leads:'Leads',customers:'Completed Customers',
     pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
