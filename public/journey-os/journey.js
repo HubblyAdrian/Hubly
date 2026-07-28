@@ -12031,13 +12031,14 @@
 
   function ensureQuickPop() {
     var pop = el('jos-quick-pop');
-    if (pop) return pop;
+    if (pop) {
+      try { refreshQuickPopItems(pop); } catch (e) {}
+      return pop;
+    }
     pop = document.createElement('div');
     pop.id = 'jos-quick-pop';
     pop.className = 'jos-quick-pop';
-    pop.innerHTML = [['new-job-cust', 'New Job'], ['manual-lead', 'New Lead'], ['add-cust', 'New Customer'], ['smart-quote', 'New Quote'], ['new-invoice', 'New Invoice'], ['go-editor', 'New Service']].map(function (x) {
-      return '<button type="button" data-jos-act="' + esc(x[0]) + '">' + esc(x[1]) + '</button>';
-    }).join('');
+    refreshQuickPopItems(pop);
     document.body.appendChild(pop);
     bindRoot(pop);
     document.addEventListener('click', function (e) {
@@ -12045,6 +12046,34 @@
       if (!pop.contains(e.target) && e.target.id !== 'jos-bar-new' && !e.target.closest('#jos-bar-new')) pop.classList.remove('open');
     });
     return pop;
+  }
+
+  function refreshQuickPopItems(pop) {
+    if (!pop) return;
+    var items = [
+      ['new-job-cust', 'New Job'],
+      ['manual-lead', 'New Lead'],
+      ['add-cust', 'New Customer'],
+      ['smart-quote', 'New Quote'],
+      ['new-invoice', 'New Invoice'],
+      ['go-editor', 'New Service']
+    ];
+    var hasProjects = false;
+    try {
+      if (typeof global.hasBusinessCapability === 'function') hasProjects = !!global.hasBusinessCapability('projects');
+      else if (global.HublyPhotographyProjects && typeof global.HublyPhotographyProjects.hasCapability === 'function') {
+        hasProjects = !!global.HublyPhotographyProjects.hasCapability();
+      }
+    } catch (e) {}
+    if (hasProjects) {
+      items.push(['sep-photo', '──────────']);
+      items.push(['photo-quick', 'Photography Project']);
+      items.push(['photo-new', 'New Photography Project']);
+    }
+    pop.innerHTML = items.map(function (x) {
+      if (x[0] === 'sep-photo') return '<div class="jos-quick-sep" aria-hidden="true">' + esc(x[1]) + '</div>';
+      return '<button type="button" data-jos-act="' + esc(x[0]) + '">' + esc(x[1]) + '</button>';
+    }).join('');
   }
 
   function openQuickNew() {
@@ -14548,9 +14577,6 @@
         if (typeof global.HublyPhotographyProjects?.render === 'function') {
           return global.HublyPhotographyProjects.render();
         }
-        if (typeof HublyJourneyOS !== 'undefined' && typeof HublyJourneyOS.renderPhotoProjects === 'function') {
-          return HublyJourneyOS.renderPhotoProjects();
-        }
       },
       editor: restoreWebsiteEditor
     };
@@ -14710,6 +14736,27 @@
         var cid = S().activeCustId || el('jos-customer-profile')?._josCustId || el('jos-customers-root')?._josCustId;
         if (cid && typeof global.openNewJobForCustomer === 'function') return global.openNewJobForCustomer(cid);
         return typeof global.openM === 'function' ? global.openM('m-new-job') : toast('New job');
+      }
+      if (act === 'photo-quick') {
+        el('jos-quick-pop')?.classList.remove('open');
+        if (global.HublyPhotographyProjects?.openQuickProject) return global.HublyPhotographyProjects.openQuickProject();
+        if (global.HublyJourneyOS?.openPhotographyQuickProject) return global.HublyJourneyOS.openPhotographyQuickProject();
+        return switchNav('photo-projects');
+      }
+      if (act === 'photo-new') {
+        el('jos-quick-pop')?.classList.remove('open');
+        switchNav('photo-projects');
+        setTimeout(function () {
+          var root = el('jos-photo-projects-root');
+          if (!root) return;
+          if (global.HublyPhotographyProjects?.render) {
+            root._pp = root._pp || {};
+            root._pp.view = 'wizard';
+            root._pp.wizardStep = 1;
+            global.HublyPhotographyProjects.render();
+          }
+        }, 80);
+        return;
       }
       if (act === 'go-opps') { closeCustomerProfile(); return switchNav('opportunities'); }
       if (act === 'go-reviews') return switchNav('reviews');

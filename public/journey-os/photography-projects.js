@@ -1,6 +1,9 @@
 /**
  * Hubly Photography Projects — Operate module
- * Independent of Jobs. Adobe Lightroom enhances; never required.
+ * Independent of Jobs. Supabase is SSOT for project records.
+ * localStorage may ONLY cache UI preferences (sort, filters, tab).
+ * Adobe Lightroom is a digital twin — enhances, never required.
+ * Gated by businesses.capabilities.projects (not trade heuristics).
  */
 (function (global) {
   'use strict';
@@ -9,11 +12,9 @@
     'Wedding', 'Portrait', 'Family', 'Sports', 'Commercial',
     'Product', 'Real Estate', 'Graduation', 'Event', 'Other'
   ];
-
   var STATUSES = [
     'Lead', 'Booked', 'Scheduled', 'Shooting', 'Editing', 'Proofing', 'Delivered', 'Archived'
   ];
-
   var TIMELINE_DEFAULTS = [
     { event_key: 'booking', label: 'Booking' },
     { event_key: 'contract_sent', label: 'Contract Sent' },
@@ -28,7 +29,6 @@
     { event_key: 'review_requested', label: 'Review Requested' },
     { event_key: 'referral_sent', label: 'Referral Sent' }
   ];
-
   var MARKETING_CHANNELS = [
     { channel: 'instagram', title: 'Instagram' },
     { channel: 'facebook', title: 'Facebook' },
@@ -40,9 +40,8 @@
     { channel: 'referral', title: 'Referral Campaign' },
     { channel: 'before_after', title: 'Before & After Carousel' }
   ];
-
   var CREATE_ASSETS = [
-    { id: 'lightroom', label: 'Lightroom Album', hint: 'Optional — needs Adobe later' },
+    { id: 'lightroom', label: 'Lightroom Album', hint: 'Digital twin — optional until Adobe connects' },
     { id: 'folder', label: 'Client Folder', hint: 'Hubly project workspace' },
     { id: 'contract', label: 'Contract' },
     { id: 'invoice', label: 'Invoice' },
@@ -52,6 +51,18 @@
     { id: 'gallery', label: 'Gallery' },
     { id: 'marketing', label: 'AI Marketing Workflow' }
   ];
+  var POST_EDIT_PIPELINE = [
+    'Gallery Created',
+    'Invoice Sent',
+    'Instagram Generated',
+    'Blog Generated',
+    'Google Business Updated',
+    'Review Sent',
+    'Referral Campaign',
+    'Anniversary Reminder'
+  ];
+
+  var _cache = { businessId: null, projects: [], loaded: false, loading: null };
 
   function el(id) { return document.getElementById(id); }
   function S() { return global.S || {}; }
@@ -67,12 +78,7 @@
     var n = (Number(cents) || 0) / 100;
     return n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   }
-  function uid() {
-    return 'pp_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
-  }
-  function todayISO() {
-    return new Date().toISOString().slice(0, 10);
-  }
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
   function daysUntil(dateStr) {
     if (!dateStr) return null;
     var t = new Date(String(dateStr).slice(0, 10) + 'T12:00:00');
@@ -88,128 +94,90 @@
     return Math.abs(d) + ' day' + (Math.abs(d) === 1 ? '' : 's') + ' ago';
   }
   function statusTone(st) {
-    var m = {
+    return ({
       Lead: 'lead', Booked: 'booked', Scheduled: 'scheduled', Shooting: 'shooting',
       Editing: 'editing', Proofing: 'proofing', Delivered: 'delivered', Archived: 'archived'
-    };
-    return m[st] || 'lead';
+    })[st] || 'lead';
   }
-  function storageKey() {
-    var bid = S().businessId || S().bizId || 'local';
-    return 'hubly_photography_projects_' + bid;
+  function formatDate(d) {
+    if (!d) return 'TBD';
+    try {
+      return new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString(undefined, {
+        month: 'short', day: 'numeric', year: 'numeric'
+      });
+    } catch (e) { return String(d); }
   }
-  function lightroom() {
-    return global.AdobeLightroomService || null;
+  function formatRelative(iso) {
+    if (!iso) return 'Never';
+    var ms = Date.now() - new Date(iso).getTime();
+    if (ms < 60000) return 'Just now';
+    if (ms < 3600000) return Math.floor(ms / 60000) + 'm ago';
+    if (ms < 86400000) return Math.floor(ms / 3600000) + 'h ago';
+    return Math.floor(ms / 86400000) + 'd ago';
+  }
+  function twinKey() {
+    return 'twin_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+  }
+  function businessId() {
+    return (global.currentBusiness && global.currentBusiness.id) ||
+      S().businessId || S().bizId || null;
+  }
+  async function dbClient() {
+    if (typeof global.waitForDb === 'function') return global.waitForDb(8000);
+    return global._hublyDb || (global.window && global.window._hublyDb) || null;
   }
 
-  function loadStore() {
+  /* ─── Capabilities (Runtime-style) ──────────────────────────────────── */
+
+  function businessCapabilities() {
+    var biz = global.currentBusiness || {};
+    var caps = Object.assign({}, S().capabilities || {}, biz.capabilities || {});
+    return caps;
+  }
+  function hasCapability(key) {
+    if (typeof global.hasBusinessCapability === 'function') {
+      try { return !!global.hasBusinessCapability(key); } catch (e) {}
+    }
+    var caps = businessCapabilities();
+    if (caps && caps[key] === true) return true;
     try {
-      var raw = localStorage.getItem(storageKey());
+      if (typeof global.blueprintHas === 'function' && global.blueprintHas(key)) return true;
+    } catch (e2) {}
+    return false;
+  }
+  function hasProjectsCapability() {
+    return hasCapability('projects');
+  }
+
+  /* ─── UI prefs only (localStorage) ──────────────────────────────────── */
+
+  function prefsKey() {
+    return 'hubly_pp_ui_prefs_' + (businessId() || 'anon');
+  }
+  function loadPrefs() {
+    try {
+      var raw = localStorage.getItem(prefsKey());
       if (raw) {
-        var parsed = JSON.parse(raw);
-        if (parsed && Array.isArray(parsed.projects)) return parsed;
+        var p = JSON.parse(raw);
+        if (p && typeof p === 'object') return p;
       }
     } catch (e) {}
-    return { projects: [], adobeConnected: false, adobeAccount: null };
+    return {};
+  }
+  function savePrefs(partial) {
+    var next = Object.assign(loadPrefs(), partial || {});
+    try { localStorage.setItem(prefsKey(), JSON.stringify(next)); } catch (e) {}
+    return next;
   }
 
-  function saveStore(store) {
-    try { localStorage.setItem(storageKey(), JSON.stringify(store)); } catch (e) {}
-  }
+  /* ─── Workspace helpers (nested state in Supabase row) ──────────────── */
 
-  function ensureSeed(store) {
-    if (store.projects.length) return store;
-    var demo = [
-      seedProject({
-        name: 'Elena & Marcus Wedding',
-        project_type: 'Wedding',
-        status: 'Editing',
-        shoot_date: addDays(14),
-        client_name: 'Elena Vargas',
-        client_email: 'elena@email.com',
-        location: 'Temecula Vineyard',
-        photo_count: 1842,
-        editing_progress: 62,
-        revenue_cents: 480000,
-        outstanding_cents: 120000,
-        lightroom_status: 'synced',
-        gallery_status: 'private',
-        invoice_status: 'partial',
-        last_sync_at: new Date(Date.now() - 3600000).toISOString()
-      }),
-      seedProject({
-        name: 'Chen Family Session',
-        project_type: 'Family',
-        status: 'Scheduled',
-        shoot_date: addDays(5),
-        client_name: 'Priya Chen',
-        location: 'Balboa Park',
-        photo_count: 0,
-        estimated_photos: 120,
-        revenue_cents: 65000,
-        outstanding_cents: 32500,
-        lightroom_status: 'not_connected',
-        gallery_status: 'draft',
-        invoice_status: 'sent'
-      }),
-      seedProject({
-        name: 'Northwind Product Launch',
-        project_type: 'Commercial',
-        status: 'Proofing',
-        shoot_date: addDays(-3),
-        client_name: 'Northwind Co.',
-        location: 'Studio B',
-        photo_count: 486,
-        editing_progress: 100,
-        revenue_cents: 320000,
-        outstanding_cents: 0,
-        lightroom_status: 'album_ready',
-        gallery_status: 'published',
-        invoice_status: 'paid',
-        last_sync_at: new Date(Date.now() - 86400000).toISOString()
-      })
-    ];
-    store.projects = demo;
-    saveStore(store);
-    return store;
-  }
-
-  function addDays(n) {
-    var d = new Date();
-    d.setDate(d.getDate() + n);
-    return d.toISOString().slice(0, 10);
-  }
-
-  function seedProject(partial) {
-    var id = uid();
-    var p = Object.assign({
-      id: id,
-      name: 'Untitled Project',
-      project_type: 'Portrait',
-      status: 'Lead',
-      shoot_date: null,
-      location: '',
-      estimated_photos: null,
-      photo_count: 0,
-      notes: '',
-      cover_photo_url: null,
-      client_name: '',
-      client_email: '',
-      client_phone: '',
-      client_address: '',
-      client_relationship: '',
-      client_mode: 'new',
-      revenue_cents: 0,
-      outstanding_cents: 0,
-      editing_progress: 0,
-      lightroom_status: 'not_connected',
-      gallery_status: 'draft',
-      invoice_status: 'none',
-      last_sync_at: null,
+  function defaultWorkspace(partial) {
+    return Object.assign({
       team: { lead: '', second: '', assistant: '', editor: '' },
       timeline: TIMELINE_DEFAULTS.map(function (t, i) {
         return Object.assign({}, t, {
-          id: uid(),
+          id: 'tl_' + i,
           completed: false,
           occurred_at: null,
           notes: '',
@@ -230,6 +198,7 @@
         adobe_account_email: null,
         album_name: null,
         album_id: null,
+        catalog_id: null,
         photo_count: 0,
         edited_count: 0,
         favorites: 0,
@@ -238,45 +207,257 @@
         sync_activity: [],
         upload_queue: [],
         import_queue: [],
-        export_queue: []
+        export_queue: [],
+        post_edit_pipeline: []
       },
       contracts: [],
       invoices: [],
       questionnaire: { status: 'draft', title: 'Client Questionnaire', answers: {} },
       deliverables: [
-        { id: uid(), title: 'Client Gallery', kind: 'gallery', status: 'pending' },
-        { id: uid(), title: 'Edited Selects', kind: 'cloud', status: 'pending' }
+        { id: 'd_gallery', title: 'Client Gallery', kind: 'gallery', status: 'pending' },
+        { id: 'd_selects', title: 'Edited Selects', kind: 'cloud', status: 'pending' }
       ],
       marketing: MARKETING_CHANNELS.map(function (c) {
         return Object.assign({}, c, { status: 'idle', body: '' });
       }),
       activity: [],
       shot_list: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      local_uploads: []
     }, partial || {});
-
-    if (partial && partial.status) {
-      var doneThrough = {
-        Lead: 0, Booked: 1, Scheduled: 4, Shooting: 5,
-        Editing: 6, Proofing: 7, Delivered: 9, Archived: 12
-      };
-      var n = doneThrough[partial.status] || 0;
-      p.timeline.forEach(function (t, i) {
-        if (i < n) {
-          t.completed = true;
-          t.occurred_at = new Date(Date.now() - (n - i) * 86400000).toISOString();
-        }
-      });
-    }
-    p.activity.push({
-      id: uid(),
-      action: 'Project created',
-      detail: p.name,
-      created_at: p.created_at
-    });
-    return p;
   }
+
+  function rowToProject(row) {
+    if (!row) return null;
+    var ws = defaultWorkspace(row.workspace || {});
+    return {
+      id: row.id,
+      business_id: row.business_id,
+      name: row.name,
+      project_type: row.project_type,
+      status: row.status,
+      shoot_date: row.shoot_date,
+      location: row.location || '',
+      estimated_photos: row.estimated_photos,
+      photo_count: row.photo_count || 0,
+      notes: row.notes || '',
+      cover_photo_url: row.cover_photo_url,
+      client_name: row.client_name || '',
+      client_email: row.client_email || '',
+      client_phone: row.client_phone || '',
+      client_address: row.client_address || '',
+      client_relationship: row.client_relationship || '',
+      revenue_cents: row.revenue_cents || 0,
+      outstanding_cents: row.outstanding_cents || 0,
+      editing_progress: row.editing_progress || 0,
+      lightroom_status: row.lightroom_status || 'not_connected',
+      gallery_status: row.gallery_status || 'draft',
+      invoice_status: row.invoice_status || 'none',
+      last_sync_at: row.last_sync_at,
+      twin_key: row.twin_key,
+      twin_status: row.twin_status || 'unlinked',
+      lightroom_catalog_id: row.lightroom_catalog_id,
+      lightroom_album_id: row.lightroom_album_id,
+      workspace: ws,
+      team: ws.team,
+      timeline: ws.timeline,
+      gallery: ws.gallery,
+      lightroom: ws.lightroom,
+      contracts: ws.contracts,
+      invoices: ws.invoices,
+      questionnaire: ws.questionnaire,
+      deliverables: ws.deliverables,
+      marketing: ws.marketing,
+      activity: ws.activity,
+      shot_list: ws.shot_list,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    };
+  }
+
+  function projectToRow(p) {
+    var ws = Object.assign(defaultWorkspace(), p.workspace || {}, {
+      team: p.team || (p.workspace && p.workspace.team),
+      timeline: p.timeline || (p.workspace && p.workspace.timeline),
+      gallery: p.gallery || (p.workspace && p.workspace.gallery),
+      lightroom: p.lightroom || (p.workspace && p.workspace.lightroom),
+      contracts: p.contracts || (p.workspace && p.workspace.contracts) || [],
+      invoices: p.invoices || (p.workspace && p.workspace.invoices) || [],
+      questionnaire: p.questionnaire || (p.workspace && p.workspace.questionnaire),
+      deliverables: p.deliverables || (p.workspace && p.workspace.deliverables),
+      marketing: p.marketing || (p.workspace && p.workspace.marketing),
+      activity: p.activity || (p.workspace && p.workspace.activity) || [],
+      shot_list: p.shot_list || (p.workspace && p.workspace.shot_list) || [],
+      local_uploads: (p.workspace && p.workspace.local_uploads) || []
+    });
+    return {
+      name: p.name,
+      project_type: p.project_type || 'Other',
+      status: p.status || 'Lead',
+      shoot_date: p.shoot_date || null,
+      location: p.location || null,
+      estimated_photos: p.estimated_photos != null ? Number(p.estimated_photos) : null,
+      photo_count: Number(p.photo_count) || 0,
+      notes: p.notes || null,
+      cover_photo_url: p.cover_photo_url || null,
+      client_name: p.client_name || null,
+      client_email: p.client_email || null,
+      client_phone: p.client_phone || null,
+      client_address: p.client_address || null,
+      client_relationship: p.client_relationship || null,
+      revenue_cents: Number(p.revenue_cents) || 0,
+      outstanding_cents: Number(p.outstanding_cents) || 0,
+      editing_progress: Number(p.editing_progress) || 0,
+      lightroom_status: p.lightroom_status || 'not_connected',
+      gallery_status: p.gallery_status || 'draft',
+      invoice_status: p.invoice_status || 'none',
+      last_sync_at: p.last_sync_at || null,
+      twin_key: p.twin_key || null,
+      twin_status: p.twin_status || 'unlinked',
+      lightroom_catalog_id: p.lightroom_catalog_id || null,
+      lightroom_album_id: p.lightroom_album_id || null,
+      workspace: ws
+    };
+  }
+
+  function addActivity(p, action, detail) {
+    p.activity = p.activity || [];
+    p.activity.push({
+      id: 'act_' + Date.now().toString(36),
+      action: action,
+      detail: detail || '',
+      created_at: new Date().toISOString()
+    });
+    p.workspace = p.workspace || defaultWorkspace();
+    p.workspace.activity = p.activity;
+  }
+
+  /* ─── Supabase SSOT ─────────────────────────────────────────────────── */
+
+  async function loadProjectsFromSupabase(force) {
+    var bid = businessId();
+    if (!bid) {
+      _cache = { businessId: null, projects: [], loaded: true, loading: null };
+      return [];
+    }
+    if (!force && _cache.loaded && _cache.businessId === bid) return _cache.projects;
+    if (_cache.loading && _cache.businessId === bid) return _cache.loading;
+
+    _cache.businessId = bid;
+    _cache.loading = (async function () {
+      var db = await dbClient();
+      if (!db) throw new Error('Hubly could not reach the database.');
+      var res = await db.from('photography_projects')
+        .select('*')
+        .eq('business_id', bid)
+        .order('updated_at', { ascending: false });
+      if (res.error) throw res.error;
+      var list = (res.data || []).map(rowToProject);
+      _cache.projects = list;
+      _cache.loaded = true;
+      _cache.loading = null;
+      return list;
+    })();
+
+    try {
+      return await _cache.loading;
+    } catch (err) {
+      _cache.loading = null;
+      _cache.loaded = false;
+      console.warn('Photography projects load failed', err);
+      throw err;
+    }
+  }
+
+  async function insertProject(p) {
+    var bid = businessId();
+    if (!bid) throw new Error('Sign in and open a business to save projects.');
+    var db = await dbClient();
+    if (!db) throw new Error('Hubly could not reach the database.');
+    var row = projectToRow(p);
+    row.business_id = bid;
+    if (!row.twin_key) row.twin_key = twinKey();
+    if (!row.twin_status || row.twin_status === 'unlinked') row.twin_status = 'pending';
+    var res = await db.from('photography_projects').insert(row).select('*').single();
+    if (res.error) throw res.error;
+    var created = rowToProject(res.data);
+    await upsertLightroomTwin(db, created);
+    await insertActivityRow(db, created, 'Project created', created.name);
+    _cache.projects = [created].concat(_cache.projects.filter(function (x) { return x.id !== created.id; }));
+    _cache.loaded = true;
+    _cache.businessId = bid;
+    return created;
+  }
+
+  async function updateProject(p) {
+    var bid = businessId();
+    if (!bid || !p.id) throw new Error('Project save failed — missing business or id.');
+    var db = await dbClient();
+    if (!db) throw new Error('Hubly could not reach the database.');
+    var row = projectToRow(p);
+    var res = await db.from('photography_projects')
+      .update(row)
+      .eq('id', p.id)
+      .eq('business_id', bid)
+      .select('*')
+      .single();
+    if (res.error) throw res.error;
+    var updated = rowToProject(res.data);
+    await upsertLightroomTwin(db, updated);
+    _cache.projects = _cache.projects.map(function (x) {
+      return x.id === updated.id ? updated : x;
+    });
+    return updated;
+  }
+
+  async function persistProject(p) {
+    if (p.id && !String(p.id).startsWith('pp_')) return updateProject(p);
+    return insertProject(p);
+  }
+
+  async function upsertLightroomTwin(db, p) {
+    try {
+      var lr = p.lightroom || {};
+      await db.from('photography_project_lightroom').upsert({
+        project_id: p.id,
+        business_id: p.business_id || businessId(),
+        adobe_account_email: lr.adobe_account_email || null,
+        album_name: lr.album_name || p.name,
+        album_id: p.lightroom_album_id || lr.album_id || null,
+        catalog_id: p.lightroom_catalog_id || lr.catalog_id || null,
+        twin_key: p.twin_key,
+        twin_status: p.twin_status || 'pending',
+        photo_count: lr.photo_count || p.photo_count || 0,
+        edited_count: lr.edited_count || 0,
+        favorites_count: lr.favorites || 0,
+        connection_status: lr.connection_status || p.lightroom_status || 'not_connected',
+        last_sync_at: lr.last_sync_at || p.last_sync_at || null,
+        upload_queue: lr.upload_queue || [],
+        import_queue: lr.import_queue || [],
+        export_queue: lr.export_queue || [],
+        sync_activity: lr.sync_activity || [],
+        meta: { digital_twin: true }
+      }, { onConflict: 'project_id' });
+    } catch (e) {
+      console.warn('Lightroom twin upsert', e);
+    }
+  }
+
+  async function insertActivityRow(db, p, action, detail) {
+    try {
+      await db.from('photography_project_activity').insert({
+        project_id: p.id,
+        business_id: p.business_id || businessId(),
+        action: action,
+        detail: detail || null
+      });
+    } catch (e) {}
+  }
+
+  function findProject(id) {
+    return _cache.projects.find(function (p) { return p.id === id; }) || null;
+  }
+
+  /* ─── View state ────────────────────────────────────────────────────── */
 
   function ownRoot() {
     var view = el('v-photo-projects');
@@ -285,7 +466,6 @@
     view.classList.add('jos-pixel-owned');
     return root;
   }
-
   function setPhotoProjectsMode(on) {
     var app = el('p-app');
     if (!app) return;
@@ -295,50 +475,61 @@
     }
     app.classList.toggle('jos-photo-projects-mode', !!on);
   }
-
   function getState(root) {
+    var prefs = loadPrefs();
     root._pp = root._pp || {
       view: 'dashboard',
       projectId: null,
-      tab: 'overview',
+      tab: prefs.lastTab || 'overview',
       wizardStep: 1,
       wizard: null,
-      search: '',
-      statusFilter: 'all',
-      dateFilter: 'all',
-      photographerFilter: 'all',
-      sort: 'shoot_date_desc'
+      search: prefs.search || '',
+      statusFilter: prefs.statusFilter || 'all',
+      dateFilter: prefs.dateFilter || 'all',
+      photographerFilter: prefs.photographerFilter || 'all',
+      sort: prefs.sort || 'shoot_date_desc',
+      quickOpen: false,
+      quick: { name: '', files: [] },
+      error: null
     };
     return root._pp;
   }
+  function persistUiPrefs(st) {
+    savePrefs({
+      search: st.search,
+      statusFilter: st.statusFilter,
+      dateFilter: st.dateFilter,
+      photographerFilter: st.photographerFilter,
+      sort: st.sort,
+      lastTab: st.tab
+    });
+  }
 
-  function projectsFiltered(store, st) {
-    var list = store.projects.slice();
+  function projectsFiltered(list, st) {
+    var out = list.slice();
     var q = String(st.search || '').trim().toLowerCase();
     if (q) {
-      list = list.filter(function (p) {
+      out = out.filter(function (p) {
         return [p.name, p.client_name, p.project_type, p.location, p.status]
           .join(' ').toLowerCase().indexOf(q) !== -1;
       });
     }
     if (st.statusFilter && st.statusFilter !== 'all') {
-      list = list.filter(function (p) { return p.status === st.statusFilter; });
+      out = out.filter(function (p) { return p.status === st.statusFilter; });
     }
     if (st.dateFilter === 'upcoming') {
-      list = list.filter(function (p) { return daysUntil(p.shoot_date) != null && daysUntil(p.shoot_date) >= 0; });
+      out = out.filter(function (p) { return daysUntil(p.shoot_date) != null && daysUntil(p.shoot_date) >= 0; });
     } else if (st.dateFilter === 'past') {
-      list = list.filter(function (p) { return daysUntil(p.shoot_date) != null && daysUntil(p.shoot_date) < 0; });
+      out = out.filter(function (p) { return daysUntil(p.shoot_date) != null && daysUntil(p.shoot_date) < 0; });
     } else if (st.dateFilter === 'this_month') {
       var ym = todayISO().slice(0, 7);
-      list = list.filter(function (p) { return String(p.shoot_date || '').slice(0, 7) === ym; });
+      out = out.filter(function (p) { return String(p.shoot_date || '').slice(0, 7) === ym; });
     }
     if (st.photographerFilter && st.photographerFilter !== 'all') {
-      list = list.filter(function (p) {
-        return (p.team && p.team.lead) === st.photographerFilter;
-      });
+      out = out.filter(function (p) { return (p.team && p.team.lead) === st.photographerFilter; });
     }
     var sort = st.sort || 'shoot_date_desc';
-    list.sort(function (a, b) {
+    out.sort(function (a, b) {
       if (sort === 'name') return String(a.name).localeCompare(String(b.name));
       if (sort === 'status') return String(a.status).localeCompare(String(b.status));
       if (sort === 'updated') return String(b.updated_at || '').localeCompare(String(a.updated_at || ''));
@@ -346,110 +537,29 @@
       var bd = b.shoot_date || '';
       return sort === 'shoot_date_asc' ? ad.localeCompare(bd) : bd.localeCompare(ad);
     });
-    return list;
+    return out;
   }
 
-  function findProject(store, id) {
-    return store.projects.find(function (p) { return p.id === id; }) || null;
-  }
-
-  function photographers(store) {
+  function photographers(list) {
     var set = {};
-    store.projects.forEach(function (p) {
-      if (p.team && p.team.lead) set[p.team.lead] = true;
-    });
+    list.forEach(function (p) { if (p.team && p.team.lead) set[p.team.lead] = true; });
     return Object.keys(set).sort();
   }
 
-  /* ─── Dashboard ─────────────────────────────────────────────────────── */
-
-  function renderDashboard(root, store, st) {
-    var list = projectsFiltered(store, st);
-    var photogs = photographers(store);
-
-    var cards = list.map(function (p) {
-      return '<article class="pp-card" data-pp-act="open" data-pp-id="' + esc(p.id) + '">' +
-        '<div class="pp-card-cover" style="' + coverStyle(p) + '">' +
-          '<span class="pp-status pp-status-' + statusTone(p.status) + '">' + esc(p.status) + '</span>' +
-        '</div>' +
-        '<div class="pp-card-body">' +
-          '<h3 class="pp-card-title">' + esc(p.name) + '</h3>' +
-          '<div class="pp-card-meta">' +
-            '<span>' + esc(p.client_name || 'No client') + '</span>' +
-            '<span class="pp-dot"></span>' +
-            '<span>' + esc(p.project_type) + '</span>' +
-          '</div>' +
-          '<div class="pp-card-row">' +
-            '<span class="pp-label">Shoot</span><strong>' + esc(formatDate(p.shoot_date)) + '</strong>' +
-          '</div>' +
-          '<div class="pp-card-pills">' +
-            '<span class="pp-pill">' + esc(lrLabel(p.lightroom_status)) + '</span>' +
-            '<span class="pp-pill">' + esc(galLabel(p.gallery_status)) + '</span>' +
-            '<span class="pp-pill">' + esc(invLabel(p.invoice_status)) + '</span>' +
-          '</div>' +
-          '<div class="pp-card-stats">' +
-            '<div><span class="pp-label">Photos</span><strong>' + esc(String(p.photo_count || 0)) + '</strong></div>' +
-            '<div><span class="pp-label">Last sync</span><strong>' + esc(formatRelative(p.last_sync_at)) + '</strong></div>' +
-          '</div>' +
-          '<div class="pp-card-actions" onclick="event.stopPropagation()">' +
-            '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="open" data-pp-id="' + esc(p.id) + '">Open</button>' +
-            '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Lightroom</button>' +
-            '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gallery" data-pp-id="' + esc(p.id) + '">Gallery</button>' +
-            '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="invoice" data-pp-id="' + esc(p.id) + '">Invoice</button>' +
-            '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver</button>' +
-          '</div>' +
-        '</div></article>';
-    }).join('');
-
-    return '<div class="pp-shell pp-dash">' +
-      '<header class="pp-dash-head">' +
-        '<div>' +
-          '<p class="pp-eyebrow">Photography</p>' +
-          '<h1 class="pp-title">Photography Projects</h1>' +
-          '<p class="pp-sub">From booking to delivery — Lightroom stays where you edit.</p>' +
-        '</div>' +
-        '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="new">+ New Project</button>' +
-      '</header>' +
-      '<div class="pp-toolbar">' +
-        '<label class="pp-search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
-          '<input type="search" placeholder="Search projects, clients…" value="' + esc(st.search) + '" data-pp-field="search">' +
-        '</label>' +
-        '<select data-pp-field="statusFilter" aria-label="Status">' +
-          '<option value="all">All statuses</option>' +
-          STATUSES.map(function (s) {
-            return '<option value="' + esc(s) + '"' + (st.statusFilter === s ? ' selected' : '') + '>' + esc(s) + '</option>';
-          }).join('') +
-        '</select>' +
-        '<select data-pp-field="dateFilter" aria-label="Date">' +
-          '<option value="all"' + (st.dateFilter === 'all' ? ' selected' : '') + '>Any date</option>' +
-          '<option value="upcoming"' + (st.dateFilter === 'upcoming' ? ' selected' : '') + '>Upcoming</option>' +
-          '<option value="this_month"' + (st.dateFilter === 'this_month' ? ' selected' : '') + '>This month</option>' +
-          '<option value="past"' + (st.dateFilter === 'past' ? ' selected' : '') + '>Past</option>' +
-        '</select>' +
-        '<select data-pp-field="photographerFilter" aria-label="Photographer">' +
-          '<option value="all">All photographers</option>' +
-          photogs.map(function (n) {
-            return '<option value="' + esc(n) + '"' + (st.photographerFilter === n ? ' selected' : '') + '>' + esc(n) + '</option>';
-          }).join('') +
-        '</select>' +
-        '<select data-pp-field="sort" aria-label="Sort">' +
-          '<option value="shoot_date_desc"' + (st.sort === 'shoot_date_desc' ? ' selected' : '') + '>Shoot date ↓</option>' +
-          '<option value="shoot_date_asc"' + (st.sort === 'shoot_date_asc' ? ' selected' : '') + '>Shoot date ↑</option>' +
-          '<option value="name"' + (st.sort === 'name' ? ' selected' : '') + '>Name</option>' +
-          '<option value="status"' + (st.sort === 'status' ? ' selected' : '') + '>Status</option>' +
-          '<option value="updated"' + (st.sort === 'updated' ? ' selected' : '') + '>Recently updated</option>' +
-        '</select>' +
-      '</div>' +
-      (list.length
-        ? '<div class="pp-grid">' + cards + '</div>'
-        : '<div class="pp-empty">' +
-            '<div class="pp-empty-art" aria-hidden="true"></div>' +
-            '<h2>No projects yet</h2>' +
-            '<p>Create a project to manage the shoot, gallery, invoices, and delivery — with or without Adobe Lightroom.</p>' +
-            '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="new">+ New Project</button>' +
-          '</div>') +
-      '</div>';
+  function metrics(list) {
+    var active = list.filter(function (p) { return p.status !== 'Archived'; });
+    return {
+      projects: active.length,
+      editing: active.filter(function (p) { return p.status === 'Editing' || p.status === 'Proofing'; }).length,
+      awaiting: active.filter(function (p) {
+        return p.status === 'Proofing' || p.gallery_status === 'published' || p.gallery_status === 'private';
+      }).filter(function (p) { return p.status !== 'Delivered'; }).length,
+      revenue: active.reduce(function (s, p) { return s + (Number(p.revenue_cents) || 0); }, 0),
+      images: active.reduce(function (s, p) { return s + (Number(p.photo_count) || 0); }, 0)
+    };
   }
+
+  /* ─── Labels / cover ────────────────────────────────────────────────── */
 
   function coverStyle(p) {
     if (p.cover_photo_url) return 'background-image:url(' + JSON.stringify(String(p.cover_photo_url)) + ')';
@@ -467,25 +577,6 @@
     };
     return 'background-image:' + (hues[p.project_type] || hues.Other);
   }
-
-  function formatDate(d) {
-    if (!d) return 'TBD';
-    try {
-      return new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString(undefined, {
-        month: 'short', day: 'numeric', year: 'numeric'
-      });
-    } catch (e) { return String(d); }
-  }
-
-  function formatRelative(iso) {
-    if (!iso) return 'Never';
-    var ms = Date.now() - new Date(iso).getTime();
-    if (ms < 60000) return 'Just now';
-    if (ms < 3600000) return Math.floor(ms / 60000) + 'm ago';
-    if (ms < 86400000) return Math.floor(ms / 3600000) + 'h ago';
-    return Math.floor(ms / 86400000) + 'd ago';
-  }
-
   function lrLabel(s) {
     return ({
       not_connected: 'Lightroom · Off',
@@ -503,23 +594,117 @@
     return ({ none: 'Invoice · —', draft: 'Invoice · Draft', sent: 'Invoice · Sent', partial: 'Invoice · Partial', paid: 'Invoice · Paid', overdue: 'Invoice · Overdue' })[s] || 'Invoice';
   }
 
+  /* ─── Dashboard ─────────────────────────────────────────────────────── */
+
+  function renderDashboard(root, list, st) {
+    var filtered = projectsFiltered(list, st);
+    var photogs = photographers(list);
+    var m = metrics(list);
+
+    var cards = filtered.map(function (p) {
+      return '<article class="pp-card" data-pp-act="open" data-pp-id="' + esc(p.id) + '">' +
+        '<div class="pp-card-cover" style="' + coverStyle(p) + '">' +
+          '<span class="pp-status pp-status-' + statusTone(p.status) + '">' + esc(p.status) + '</span>' +
+        '</div>' +
+        '<div class="pp-card-body">' +
+          '<h3 class="pp-card-title">' + esc(p.name) + '</h3>' +
+          '<div class="pp-card-meta"><span>' + esc(p.client_name || 'No client') + '</span><span class="pp-dot"></span><span>' + esc(p.project_type) + '</span></div>' +
+          '<div class="pp-card-row"><span class="pp-label">Shoot</span><strong>' + esc(formatDate(p.shoot_date)) + '</strong></div>' +
+          '<div class="pp-card-pills">' +
+            '<span class="pp-pill">' + esc(lrLabel(p.lightroom_status)) + '</span>' +
+            '<span class="pp-pill">' + esc(galLabel(p.gallery_status)) + '</span>' +
+            '<span class="pp-pill">' + esc(invLabel(p.invoice_status)) + '</span>' +
+          '</div>' +
+          '<div class="pp-card-stats">' +
+            '<div><span class="pp-label">Photos</span><strong>' + esc(String(p.photo_count || 0)) + '</strong></div>' +
+            '<div><span class="pp-label">Last sync</span><strong>' + esc(formatRelative(p.last_sync_at)) + '</strong></div>' +
+          '</div>' +
+          '<div class="pp-card-actions" onclick="event.stopPropagation()">' +
+            '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="open" data-pp-id="' + esc(p.id) + '">Open</button>' +
+            '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Lightroom</button>' +
+            '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gallery" data-pp-id="' + esc(p.id) + '">Gallery</button>' +
+            '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="invoice" data-pp-id="' + esc(p.id) + '">Invoice</button>' +
+            '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver</button>' +
+          '</div></div></article>';
+    }).join('');
+
+    return '<div class="pp-shell pp-dash">' +
+      '<header class="pp-dash-head">' +
+        '<div><p class="pp-eyebrow">Photography</p><h1 class="pp-title">Photography Projects</h1>' +
+        '<p class="pp-sub">Open the project — not Lightroom. Hubly is the twin before and after editing.</p></div>' +
+        '<div class="pp-dash-actions">' +
+          '<button type="button" class="pp-btn pp-btn-ghost pp-btn-lg" data-pp-act="quick">Quick Project</button>' +
+          '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="new">+ New Project</button>' +
+        '</div></header>' +
+      '<div class="pp-metrics">' +
+        metric('Projects', String(m.projects)) +
+        metric('Editing', String(m.editing)) +
+        metric('Awaiting Delivery', String(m.awaiting)) +
+        metric('Revenue', money(m.revenue)) +
+        metric('Images', Number(m.images).toLocaleString()) +
+      '</div>' +
+      '<div class="pp-toolbar">' +
+        '<label class="pp-search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
+          '<input type="search" placeholder="Search projects, clients…" value="' + esc(st.search) + '" data-pp-field="search"></label>' +
+        '<select data-pp-field="statusFilter" aria-label="Status"><option value="all">All statuses</option>' +
+          STATUSES.map(function (s) { return '<option value="' + esc(s) + '"' + (st.statusFilter === s ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') +
+        '</select>' +
+        '<select data-pp-field="dateFilter" aria-label="Date">' +
+          '<option value="all"' + (st.dateFilter === 'all' ? ' selected' : '') + '>Any date</option>' +
+          '<option value="upcoming"' + (st.dateFilter === 'upcoming' ? ' selected' : '') + '>Upcoming</option>' +
+          '<option value="this_month"' + (st.dateFilter === 'this_month' ? ' selected' : '') + '>This month</option>' +
+          '<option value="past"' + (st.dateFilter === 'past' ? ' selected' : '') + '>Past</option></select>' +
+        '<select data-pp-field="photographerFilter" aria-label="Photographer"><option value="all">All photographers</option>' +
+          photogs.map(function (n) { return '<option value="' + esc(n) + '"' + (st.photographerFilter === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') +
+        '</select>' +
+        '<select data-pp-field="sort" aria-label="Sort">' +
+          '<option value="shoot_date_desc"' + (st.sort === 'shoot_date_desc' ? ' selected' : '') + '>Shoot date ↓</option>' +
+          '<option value="shoot_date_asc"' + (st.sort === 'shoot_date_asc' ? ' selected' : '') + '>Shoot date ↑</option>' +
+          '<option value="name"' + (st.sort === 'name' ? ' selected' : '') + '>Name</option>' +
+          '<option value="status"' + (st.sort === 'status' ? ' selected' : '') + '>Status</option>' +
+          '<option value="updated"' + (st.sort === 'updated' ? ' selected' : '') + '>Recently updated</option></select>' +
+      '</div>' +
+      (st.error ? '<div class="pp-banner-error">' + esc(st.error) + '</div>' : '') +
+      (filtered.length
+        ? '<div class="pp-grid">' + cards + '</div>'
+        : '<div class="pp-empty"><div class="pp-empty-art" aria-hidden="true"></div>' +
+          '<h2>No projects yet</h2>' +
+          '<p>Create a project in about 30 seconds — or run the full wizard. Adobe Lightroom is optional.</p>' +
+          '<div class="pp-btn-row" style="justify-content:center">' +
+          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="quick">Quick Project</button>' +
+          '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="new">+ New Project</button></div></div>') +
+      (st.quickOpen ? renderQuickModal(st) : '') +
+      '</div>';
+  }
+
+  function metric(label, value) {
+    return '<div class="pp-metric"><span class="pp-metric-label">' + esc(label) + '</span><strong class="pp-metric-value">' + esc(value) + '</strong></div>';
+  }
+
+  function renderQuickModal(st) {
+    var q = st.quick || { name: '', files: [] };
+    return '<div class="pp-modal-bg" data-pp-act="quick-close">' +
+      '<div class="pp-modal" onclick="event.stopPropagation()">' +
+        '<div class="pp-modal-h"><h2>Quick Project</h2><button type="button" class="pp-icon-x" data-pp-act="quick-close" aria-label="Close">×</button></div>' +
+        '<p class="pp-muted">Name it, add photos, done — about 30 seconds. Saved to Hubly immediately.</p>' +
+        '<label class="pp-field pp-field-full"><span>Project Name</span>' +
+          '<input type="text" data-pp-quick="name" value="' + esc(q.name) + '" placeholder="Johnson Wedding" autofocus></label>' +
+        '<label class="pp-field pp-field-full"><span>Upload Photos</span>' +
+          '<input type="file" accept="image/*" multiple data-pp-quick-files>' +
+          '<small class="pp-muted">' + (q.files && q.files.length ? q.files.length + ' selected' : 'Optional — add later from the project') + '</small></label>' +
+        '<div class="pp-wizard-foot">' +
+          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="quick-close">Cancel</button>' +
+          '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="quick-create">Done</button>' +
+        '</div></div></div>';
+  }
+
   /* ─── Wizard ────────────────────────────────────────────────────────── */
 
   function blankWizard() {
     return {
-      name: '',
-      project_type: 'Portrait',
-      shoot_date: '',
-      location: '',
-      estimated_photos: '',
-      notes: '',
-      client_mode: 'new',
-      client_name: '',
-      client_email: '',
-      client_phone: '',
-      client_address: '',
-      client_relationship: '',
-      existing_client: '',
+      name: '', project_type: 'Portrait', shoot_date: '', location: '', estimated_photos: '', notes: '',
+      client_mode: 'new', client_name: '', client_email: '', client_phone: '', client_address: '',
+      client_relationship: '', existing_client: '',
       team: { lead: '', second: '', assistant: '', editor: '' },
       assets: {
         lightroom: true, folder: true, contract: true, invoice: true,
@@ -527,97 +712,75 @@
       }
     };
   }
-
-  function renderWizard(root, store, st) {
+  function field(label, control, full) {
+    return '<label class="pp-field' + (full ? ' pp-field-full' : '') + '"><span>' + esc(label) + '</span>' + control + '</label>';
+  }
+  function renderWizard(root, list, st) {
     var w = st.wizard || blankWizard();
     st.wizard = w;
     var step = st.wizardStep || 1;
-    var clients = Array.from(new Set(store.projects.map(function (p) { return p.client_name; }).filter(Boolean)));
-
+    var clients = Array.from(new Set(list.map(function (p) { return p.client_name; }).filter(Boolean)));
     var body = '';
     if (step === 1) {
       body = '<div class="pp-form-grid">' +
-        field('Project Name', '<input type="text" data-pp-w="name" value="' + esc(w.name) + '" placeholder="Elena & Marcus Wedding" required>') +
-        field('Project Type', '<select data-pp-w="project_type">' +
-          PROJECT_TYPES.map(function (t) {
-            return '<option' + (w.project_type === t ? ' selected' : '') + '>' + esc(t) + '</option>';
-          }).join('') + '</select>') +
+        field('Project Name', '<input type="text" data-pp-w="name" value="' + esc(w.name) + '" placeholder="Elena & Marcus Wedding">') +
+        field('Project Type', '<select data-pp-w="project_type">' + PROJECT_TYPES.map(function (t) {
+          return '<option' + (w.project_type === t ? ' selected' : '') + '>' + esc(t) + '</option>';
+        }).join('') + '</select>') +
         field('Shoot Date', '<input type="date" data-pp-w="shoot_date" value="' + esc(w.shoot_date) + '">') +
-        field('Location', '<input type="text" data-pp-w="location" value="' + esc(w.location) + '" placeholder="Venue or studio">') +
-        field('Estimated Photos', '<input type="number" min="0" data-pp-w="estimated_photos" value="' + esc(w.estimated_photos) + '" placeholder="e.g. 800">') +
-        field('Notes', '<textarea data-pp-w="notes" rows="3" placeholder="Creative direction, must-have shots…">' + esc(w.notes) + '</textarea>', true) +
-        '</div>';
+        field('Location', '<input type="text" data-pp-w="location" value="' + esc(w.location) + '">') +
+        field('Estimated Photos', '<input type="number" min="0" data-pp-w="estimated_photos" value="' + esc(w.estimated_photos) + '">') +
+        field('Notes', '<textarea data-pp-w="notes" rows="3">' + esc(w.notes) + '</textarea>', true) + '</div>';
     } else if (step === 2) {
       body = '<div class="pp-seg">' +
         '<button type="button" class="pp-seg-btn' + (w.client_mode === 'existing' ? ' on' : '') + '" data-pp-act="wiz-client-mode" data-pp-mode="existing">Existing Client</button>' +
-        '<button type="button" class="pp-seg-btn' + (w.client_mode === 'new' ? ' on' : '') + '" data-pp-act="wiz-client-mode" data-pp-mode="new">Create New Client</button>' +
-        '</div>';
+        '<button type="button" class="pp-seg-btn' + (w.client_mode === 'new' ? ' on' : '') + '" data-pp-act="wiz-client-mode" data-pp-mode="new">Create New Client</button></div>';
       if (w.client_mode === 'existing') {
-        body += '<div class="pp-form-grid">' +
-          field('Client', '<select data-pp-w="existing_client"><option value="">Select…</option>' +
-            clients.map(function (c) {
-              return '<option value="' + esc(c) + '"' + (w.existing_client === c ? ' selected' : '') + '>' + esc(c) + '</option>';
-            }).join('') + '</select>', true) +
-          '</div>';
+        body += '<div class="pp-form-grid">' + field('Client', '<select data-pp-w="existing_client"><option value="">Select…</option>' +
+          clients.map(function (c) { return '<option value="' + esc(c) + '"' + (w.existing_client === c ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') +
+          '</select>', true) + '</div>';
       } else {
         body += '<div class="pp-form-grid">' +
-          field('Name', '<input type="text" data-pp-w="client_name" value="' + esc(w.client_name) + '" placeholder="Full name">') +
+          field('Name', '<input type="text" data-pp-w="client_name" value="' + esc(w.client_name) + '">') +
           field('Email', '<input type="email" data-pp-w="client_email" value="' + esc(w.client_email) + '">') +
           field('Phone', '<input type="tel" data-pp-w="client_phone" value="' + esc(w.client_phone) + '">') +
           field('Address', '<input type="text" data-pp-w="client_address" value="' + esc(w.client_address) + '">') +
-          field('Relationship', '<input type="text" data-pp-w="client_relationship" value="' + esc(w.client_relationship) + '" placeholder="Bride, agency, parent…">') +
-          '</div>';
+          field('Relationship', '<input type="text" data-pp-w="client_relationship" value="' + esc(w.client_relationship) + '">') + '</div>';
       }
     } else if (step === 3) {
       body = '<div class="pp-form-grid">' +
-        field('Lead Photographer', '<input type="text" data-pp-w="team.lead" value="' + esc(w.team.lead) + '" placeholder="You">') +
+        field('Lead Photographer', '<input type="text" data-pp-w="team.lead" value="' + esc(w.team.lead) + '">') +
         field('Second Shooter', '<input type="text" data-pp-w="team.second" value="' + esc(w.team.second) + '">') +
         field('Assistant', '<input type="text" data-pp-w="team.assistant" value="' + esc(w.team.assistant) + '">') +
-        field('Editor', '<input type="text" data-pp-w="team.editor" value="' + esc(w.team.editor) + '">') +
-        '</div>';
+        field('Editor', '<input type="text" data-pp-w="team.editor" value="' + esc(w.team.editor) + '">') + '</div>';
     } else {
-      body = '<p class="pp-help">Choose what Hubly should prepare. Lightroom is optional — everything else works today.</p>' +
-        '<div class="pp-checks">' +
+      body = '<p class="pp-help">Hubly prepares the project OS. Lightroom becomes the digital twin when you connect Adobe.</p><div class="pp-checks">' +
         CREATE_ASSETS.map(function (a) {
-          return '<label class="pp-check">' +
-            '<input type="checkbox" data-pp-asset="' + a.id + '"' + (w.assets[a.id] ? ' checked' : '') + '>' +
-            '<span><strong>' + esc(a.label) + '</strong>' +
-            (a.hint ? '<small>' + esc(a.hint) + '</small>' : '') +
-            '</span></label>';
-        }).join('') +
-        '</div>';
+          return '<label class="pp-check"><input type="checkbox" data-pp-asset="' + a.id + '"' + (w.assets[a.id] ? ' checked' : '') + '>' +
+            '<span><strong>' + esc(a.label) + '</strong>' + (a.hint ? '<small>' + esc(a.hint) + '</small>' : '') + '</span></label>';
+        }).join('') + '</div>';
     }
-
-    return '<div class="pp-shell pp-wizard">' +
-      '<button type="button" class="pp-back" data-pp-act="wiz-cancel">← Projects</button>' +
-      '<div class="pp-wizard-card">' +
-        '<div class="pp-steps">' +
-          [1, 2, 3, 4].map(function (n) {
-            var labels = ['Details', 'Client', 'Team', 'Assets'];
-            return '<div class="pp-step' + (n === step ? ' on' : '') + (n < step ? ' done' : '') + '">' +
-              '<i>' + n + '</i><span>' + labels[n - 1] + '</span></div>';
-          }).join('') +
-        '</div>' +
-        '<h2 class="pp-wizard-title">' +
-          (['', 'Project Details', 'Client', 'Team', 'Create Assets'][step] || '') +
-        '</h2>' +
-        body +
-        '<div class="pp-wizard-foot">' +
-          (step > 1 ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="wiz-prev">Back</button>' : '<span></span>') +
-          (step < 4
-            ? '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="wiz-next">Continue</button>'
-            : '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="wiz-create">Create Project</button>') +
-        '</div>' +
-      '</div></div>';
-  }
-
-  function field(label, control, full) {
-    return '<label class="pp-field' + (full ? ' pp-field-full' : '') + '"><span>' + esc(label) + '</span>' + control + '</label>';
+    return '<div class="pp-shell pp-wizard"><button type="button" class="pp-back" data-pp-act="wiz-cancel">← Projects</button>' +
+      '<div class="pp-wizard-card"><div class="pp-steps">' +
+      [1, 2, 3, 4].map(function (n) {
+        var labels = ['Details', 'Client', 'Team', 'Assets'];
+        return '<div class="pp-step' + (n === step ? ' on' : '') + (n < step ? ' done' : '') + '"><i>' + n + '</i><span>' + labels[n - 1] + '</span></div>';
+      }).join('') + '</div>' +
+      '<h2 class="pp-wizard-title">' + (['', 'Project Details', 'Client', 'Team', 'Create Assets'][step] || '') + '</h2>' + body +
+      '<div class="pp-wizard-foot">' +
+      (step > 1 ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="wiz-prev">Back</button>' : '<span></span>') +
+      (step < 4
+        ? '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="wiz-next">Continue</button>'
+        : '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="wiz-create">Create Project</button>') +
+      '</div></div></div>';
   }
 
   /* ─── Command Center ────────────────────────────────────────────────── */
 
-  function renderCommand(root, store, st, p) {
+  function kpi(label, value) {
+    return '<div class="pp-kpi"><span>' + esc(label) + '</span><strong>' + esc(value) + '</strong></div>';
+  }
+  function renderCommand(root, st, p) {
     var tab = st.tab || 'overview';
     var tabs = [
       ['overview', 'Overview'], ['timeline', 'Timeline'], ['lightroom', 'Lightroom'],
@@ -625,47 +788,31 @@
       ['questionnaire', 'Questionnaire'], ['deliverables', 'Deliverables'],
       ['marketing', 'Marketing'], ['notes', 'Notes'], ['activity', 'Activity']
     ];
-
-    return '<div class="pp-shell pp-cc">' +
-      '<button type="button" class="pp-back" data-pp-act="back-dash">← All projects</button>' +
-      '<header class="pp-hero" style="' + coverStyle(p) + '">' +
-        '<div class="pp-hero-veil"></div>' +
-        '<div class="pp-hero-content">' +
-          '<div class="pp-hero-top">' +
-            '<span class="pp-status pp-status-' + statusTone(p.status) + '">' + esc(p.status) + '</span>' +
-            '<select class="pp-status-select" data-pp-act="set-status" data-pp-id="' + esc(p.id) + '" aria-label="Change status">' +
-              STATUSES.map(function (s) {
-                return '<option value="' + esc(s) + '"' + (p.status === s ? ' selected' : '') + '>' + esc(s) + '</option>';
-              }).join('') +
-            '</select>' +
-          '</div>' +
-          '<h1 class="pp-hero-title">' + esc(p.name) + '</h1>' +
-          '<p class="pp-hero-sub">' + esc(p.client_name || 'No client') + ' · ' + esc(p.project_type) + ' · ' + esc(formatDate(p.shoot_date)) + '</p>' +
-          '<div class="pp-hero-kpis">' +
-            kpi('Countdown', countdownLabel(p.shoot_date)) +
-            kpi('Revenue', money(p.revenue_cents)) +
-            kpi('Outstanding', money(p.outstanding_cents)) +
-            kpi('Photos', String(p.photo_count || 0)) +
-            kpi('Editing', (p.editing_progress || 0) + '%') +
-          '</div>' +
-        '</div>' +
-      '</header>' +
-      '<nav class="pp-tabs" role="tablist">' +
-        tabs.map(function (t) {
-          return '<button type="button" role="tab" class="pp-tab' + (tab === t[0] ? ' on' : '') + '" data-pp-act="tab" data-pp-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
-        }).join('') +
-      '</nav>' +
-      '<div class="pp-tab-body">' + renderTab(p, tab, store) + '</div>' +
-      '</div>';
+    return '<div class="pp-shell pp-cc"><button type="button" class="pp-back" data-pp-act="back-dash">← All projects</button>' +
+      '<header class="pp-hero" style="' + coverStyle(p) + '"><div class="pp-hero-veil"></div><div class="pp-hero-content">' +
+      '<div class="pp-hero-top"><span class="pp-status pp-status-' + statusTone(p.status) + '">' + esc(p.status) + '</span>' +
+      '<select class="pp-status-select" data-pp-act="set-status" data-pp-id="' + esc(p.id) + '">' +
+      STATUSES.map(function (s) { return '<option value="' + esc(s) + '"' + (p.status === s ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') +
+      '</select></div>' +
+      '<h1 class="pp-hero-title">' + esc(p.name) + '</h1>' +
+      '<p class="pp-hero-sub">' + esc(p.client_name || 'No client') + ' · ' + esc(p.project_type) + ' · ' + esc(formatDate(p.shoot_date)) +
+      (p.twin_key ? ' · Twin ' + esc(String(p.twin_key).slice(0, 10)) : '') + '</p>' +
+      '<div class="pp-hero-kpis">' +
+      kpi('Countdown', countdownLabel(p.shoot_date)) +
+      kpi('Revenue', money(p.revenue_cents)) +
+      kpi('Outstanding', money(p.outstanding_cents)) +
+      kpi('Photos', String(p.photo_count || 0)) +
+      kpi('Editing', (p.editing_progress || 0) + '%') +
+      '</div></div></header>' +
+      '<nav class="pp-tabs" role="tablist">' + tabs.map(function (t) {
+        return '<button type="button" role="tab" class="pp-tab' + (tab === t[0] ? ' on' : '') + '" data-pp-act="tab" data-pp-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+      }).join('') + '</nav>' +
+      '<div class="pp-tab-body">' + renderTab(p, tab) + '</div></div>';
   }
 
-  function kpi(label, value) {
-    return '<div class="pp-kpi"><span>' + esc(label) + '</span><strong>' + esc(value) + '</strong></div>';
-  }
-
-  function renderTab(p, tab, store) {
+  function renderTab(p, tab) {
     if (tab === 'timeline') return renderTimelineTab(p);
-    if (tab === 'lightroom') return renderLightroomTab(p, store);
+    if (tab === 'lightroom') return renderLightroomTab(p);
     if (tab === 'gallery') return renderGalleryTab(p);
     if (tab === 'contracts') return renderContractsTab(p);
     if (tab === 'invoices') return renderInvoicesTab(p);
@@ -678,115 +825,109 @@
   }
 
   function renderOverviewTab(p) {
-    return '<div class="pp-panel-grid">' +
-      '<section class="pp-panel">' +
-        '<h3>Project</h3>' +
-        '<dl class="pp-dl">' +
-          '<div><dt>Location</dt><dd>' + esc(p.location || '—') + '</dd></div>' +
-          '<div><dt>Type</dt><dd>' + esc(p.project_type) + '</dd></div>' +
-          '<div><dt>Lead</dt><dd>' + esc((p.team && p.team.lead) || '—') + '</dd></div>' +
-          '<div><dt>Est. photos</dt><dd>' + esc(String(p.estimated_photos != null ? p.estimated_photos : '—')) + '</dd></div>' +
-        '</dl>' +
-        '<p class="pp-muted">' + esc(p.notes || 'No notes yet.') + '</p>' +
-      '</section>' +
-      '<section class="pp-panel">' +
-        '<h3>Client</h3>' +
-        '<dl class="pp-dl">' +
-          '<div><dt>Name</dt><dd>' + esc(p.client_name || '—') + '</dd></div>' +
-          '<div><dt>Email</dt><dd>' + esc(p.client_email || '—') + '</dd></div>' +
-          '<div><dt>Phone</dt><dd>' + esc(p.client_phone || '—') + '</dd></div>' +
-          '<div><dt>Relationship</dt><dd>' + esc(p.client_relationship || '—') + '</dd></div>' +
-        '</dl>' +
-      '</section>' +
-      '<section class="pp-panel">' +
-        '<h3>Editing progress</h3>' +
-        '<div class="pp-progress"><i style="width:' + (p.editing_progress || 0) + '%"></i></div>' +
-        '<div class="pp-progress-meta">' +
-          '<span>' + (p.editing_progress || 0) + '% complete</span>' +
-          '<input type="range" min="0" max="100" value="' + (p.editing_progress || 0) + '" data-pp-act="edit-progress" data-pp-id="' + esc(p.id) + '">' +
-        '</div>' +
-      '</section>' +
-      '<section class="pp-panel">' +
-        '<h3>Quick actions</h3>' +
-        '<div class="pp-btn-row">' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="lightroom">Lightroom</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="gallery">Gallery</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="invoices">Invoice</button>' +
-          '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver</button>' +
-        '</div>' +
-      '</section></div>';
+    return '<div class="pp-panel-grid"><section class="pp-panel"><h3>Project</h3><dl class="pp-dl">' +
+      '<div><dt>Location</dt><dd>' + esc(p.location || '—') + '</dd></div>' +
+      '<div><dt>Type</dt><dd>' + esc(p.project_type) + '</dd></div>' +
+      '<div><dt>Lead</dt><dd>' + esc((p.team && p.team.lead) || '—') + '</dd></div>' +
+      '<div><dt>Digital twin</dt><dd>' + esc(p.twin_status || 'pending') + '</dd></div></dl>' +
+      '<p class="pp-muted">' + esc(p.notes || 'No notes yet.') + '</p></section>' +
+      '<section class="pp-panel"><h3>Client</h3><dl class="pp-dl">' +
+      '<div><dt>Name</dt><dd>' + esc(p.client_name || '—') + '</dd></div>' +
+      '<div><dt>Email</dt><dd>' + esc(p.client_email || '—') + '</dd></div>' +
+      '<div><dt>Phone</dt><dd>' + esc(p.client_phone || '—') + '</dd></div></dl></section>' +
+      '<section class="pp-panel"><h3>Editing progress</h3><div class="pp-progress"><i style="width:' + (p.editing_progress || 0) + '%"></i></div>' +
+      '<div class="pp-progress-meta"><span>' + (p.editing_progress || 0) + '% complete</span>' +
+      '<input type="range" min="0" max="100" value="' + (p.editing_progress || 0) + '" data-pp-act="edit-progress" data-pp-id="' + esc(p.id) + '"></div></section>' +
+      '<section class="pp-panel"><h3>Quick actions</h3><div class="pp-btn-row">' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="lightroom">Lightroom</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="gallery">Gallery</button>' +
+      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver</button></div></section></div>';
   }
 
   function renderTimelineTab(p) {
     var rows = (p.timeline || []).map(function (t, i) {
-      return '<label class="pp-tl-row">' +
-        '<input type="checkbox" data-pp-act="tl-toggle" data-pp-id="' + esc(p.id) + '" data-pp-tl="' + i + '"' + (t.completed ? ' checked' : '') + '>' +
-        '<div class="pp-tl-main">' +
-          '<input class="pp-tl-label" type="text" value="' + esc(t.label) + '" data-pp-act="tl-label" data-pp-id="' + esc(p.id) + '" data-pp-tl="' + i + '">' +
-          '<input class="pp-tl-date" type="datetime-local" value="' + esc(toLocalInput(t.occurred_at)) + '" data-pp-act="tl-date" data-pp-id="' + esc(p.id) + '" data-pp-tl="' + i + '">' +
-        '</div>' +
-        '<input class="pp-tl-notes" type="text" placeholder="Notes" value="' + esc(t.notes || '') + '" data-pp-act="tl-notes" data-pp-id="' + esc(p.id) + '" data-pp-tl="' + i + '">' +
-        '</label>';
+      return '<label class="pp-tl-row"><input type="checkbox" data-pp-act="tl-toggle" data-pp-id="' + esc(p.id) + '" data-pp-tl="' + i + '"' + (t.completed ? ' checked' : '') + '>' +
+        '<div class="pp-tl-main"><input class="pp-tl-label" type="text" value="' + esc(t.label) + '" data-pp-act="tl-label" data-pp-id="' + esc(p.id) + '" data-pp-tl="' + i + '">' +
+        '<input class="pp-tl-date" type="datetime-local" value="' + esc(toLocalInput(t.occurred_at)) + '" data-pp-act="tl-date" data-pp-id="' + esc(p.id) + '" data-pp-tl="' + i + '"></div>' +
+        '<input class="pp-tl-notes" type="text" placeholder="Notes" value="' + esc(t.notes || '') + '" data-pp-act="tl-notes" data-pp-id="' + esc(p.id) + '" data-pp-tl="' + i + '"></label>';
     }).join('');
-    return '<section class="pp-panel pp-panel-wide"><h3>Timeline</h3><p class="pp-muted">Everything is editable — mark complete, change labels, dates, and notes.</p><div class="pp-tl">' + rows + '</div></section>';
+    return '<section class="pp-panel pp-panel-wide"><h3>Timeline</h3><p class="pp-muted">Everything is editable.</p><div class="pp-tl">' + rows + '</div></section>';
   }
-
   function toLocalInput(iso) {
     if (!iso) return '';
     try {
       var d = new Date(iso);
-      var off = d.getTimezoneOffset();
-      var local = new Date(d.getTime() - off * 60000);
+      var local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
       return local.toISOString().slice(0, 16);
     } catch (e) { return ''; }
   }
 
-  function renderLightroomTab(p, store) {
+  function renderLightroomTab(p) {
     var lr = p.lightroom || {};
-    var connected = !!(store.adobeConnected || lr.connection_status === 'connected' || lr.connection_status === 'synced' || lr.connection_status === 'album_ready');
+    var linked = p.twin_status === 'linked' || p.twin_status === 'synced' ||
+      lr.connection_status === 'connected' || lr.connection_status === 'synced';
 
-    if (!connected) {
-      return '<section class="pp-lr-onboard">' +
-        '<div class="pp-lr-mark" aria-hidden="true"></div>' +
-        '<h2>Hubly works with Adobe Lightroom</h2>' +
-        '<p>Keep editing in Lightroom. Hubly runs everything before and after — leads, contracts, galleries, invoices, and delivery.</p>' +
-        '<p class="pp-muted">Adobe is optional. You can upload photos, publish galleries, and deliver to clients in Hubly without connecting Lightroom.</p>' +
+    var hero = '<section class="pp-lr-hero">' +
+      '<div class="pp-lr-hero-copy">' +
+        '<p class="pp-eyebrow">Digital twin</p>' +
+        '<h2>Lightroom Workspace</h2>' +
+        '<p class="pp-lr-lead">Professional editing powered by Adobe Lightroom.</p>' +
+        '<p>Hubly organizes every project before and after editing. Open <strong>' + esc(p.name) + '</strong> — not Lightroom — and the twin stays in sync.</p>' +
         '<div class="pp-btn-row">' +
-          '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="adobe-connect">Connect Adobe</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="gallery">Continue without Adobe</button>' +
+          '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="adobe-connect">Connect Adobe</button>' +
+          (linked ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Photos</button>' : '') +
+          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="gallery">Continue in Hubly</button>' +
         '</div>' +
-        '</section>';
-    }
+      '</div>' +
+      '<div class="pp-lr-hero-side">' +
+        '<div class="pp-lr-twin">' +
+          '<div><span class="pp-label">Hubly</span><strong>' + esc(p.name) + '</strong><small>Client · Invoices · Gallery · Marketing</small></div>' +
+          '<div class="pp-lr-twin-join" aria-hidden="true">↔</div>' +
+          '<div><span class="pp-label">Lightroom</span><strong>' + esc(lr.album_name || p.name) + '</strong><small>RAWs · Edits · Favorites · Ratings</small></div>' +
+        '</div>' +
+        '<p class="pp-muted">Twin key · ' + esc(p.twin_key || 'assigning…') + '</p>' +
+      '</div></section>';
 
-    return '<div class="pp-panel-grid">' +
-      '<section class="pp-panel">' +
-        '<h3>Connection</h3>' +
-        '<dl class="pp-dl">' +
-          '<div><dt>Status</dt><dd>' + esc(lrLabel(p.lightroom_status)) + '</dd></div>' +
-          '<div><dt>Adobe Account</dt><dd>' + esc(lr.adobe_account_email || store.adobeAccount || '—') + '</dd></div>' +
-          '<div><dt>Album Name</dt><dd>' + esc(lr.album_name || '—') + '</dd></div>' +
-          '<div><dt>Album ID</dt><dd>' + esc(lr.album_id || '—') + '</dd></div>' +
-          '<div><dt>Photo Count</dt><dd>' + esc(String(lr.photo_count || 0)) + '</dd></div>' +
-          '<div><dt>Edited</dt><dd>' + esc(String(lr.edited_count || 0)) + '</dd></div>' +
-          '<div><dt>Favorites</dt><dd>' + esc(String(lr.favorites || 0)) + '</dd></div>' +
-          '<div><dt>Last Sync</dt><dd>' + esc(formatRelative(lr.last_sync_at || p.last_sync_at)) + '</dd></div>' +
-        '</dl>' +
-        '<div class="pp-btn-row">' +
-          '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="adobe-connect">Connect Adobe</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">Create Lightroom Album</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Photos</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-open">Open Lightroom</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="adobe-disconnect">Disconnect</button>' +
-        '</div>' +
-      '</section>' +
-      '<section class="pp-panel">' +
-        '<h3>Recent Sync Activity</h3>' +
-        queueList(lr.sync_activity, 'No sync activity yet') +
-      '</section>' +
+    var after = '<section class="pp-panel pp-panel-wide pp-lr-after">' +
+      '<h3>What happens after connecting?</h3>' +
+      '<ul class="pp-lr-checklist">' +
+      ['Create Lightroom Album', 'Upload RAW Photos', 'Sync Edited Images', 'Deliver Galleries',
+        'Publish Website', 'Create Instagram Posts', 'Request Reviews'].map(function (item) {
+        return '<li><span class="pp-check-ico" aria-hidden="true">✓</span><span>' + esc(item) + '</span></li>';
+      }).join('') +
+      '</ul>' +
+      '<p class="pp-muted">When editing finishes, Hubly can create the gallery, send the invoice, generate marketing, and request the review — while you stay inside this project.</p>' +
+      '</section>';
+
+    var pipeline = '<section class="pp-panel pp-panel-wide"><h3>After editing finishes</h3>' +
+      '<div class="pp-pipeline">' + POST_EDIT_PIPELINE.map(function (step, i) {
+        var done = (p.editing_progress || 0) >= 100 && i < 1;
+        return '<div class="pp-pipe-step' + (done ? ' done' : '') + '"><i>' + (i + 1) + '</i><span>' + esc(step) + '</span></div>';
+      }).join('') + '</div></section>';
+
+    if (!linked) return hero + after + pipeline;
+
+    return hero +
+      '<div class="pp-panel-grid">' +
+      '<section class="pp-panel"><h3>Connection</h3><dl class="pp-dl">' +
+      '<div><dt>Status</dt><dd>' + esc(lrLabel(p.lightroom_status)) + '</dd></div>' +
+      '<div><dt>Adobe Account</dt><dd>' + esc(lr.adobe_account_email || '—') + '</dd></div>' +
+      '<div><dt>Album</dt><dd>' + esc(lr.album_name || '—') + '</dd></div>' +
+      '<div><dt>Album ID</dt><dd>' + esc(p.lightroom_album_id || lr.album_id || '—') + '</dd></div>' +
+      '<div><dt>Photos</dt><dd>' + esc(String(lr.photo_count || p.photo_count || 0)) + '</dd></div>' +
+      '<div><dt>Edited</dt><dd>' + esc(String(lr.edited_count || 0)) + '</dd></div>' +
+      '<div><dt>Favorites</dt><dd>' + esc(String(lr.favorites || 0)) + '</dd></div>' +
+      '<div><dt>Last Sync</dt><dd>' + esc(formatRelative(lr.last_sync_at || p.last_sync_at)) + '</dd></div></dl>' +
+      '<div class="pp-btn-row">' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">Create Lightroom Album</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Photos</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-open">Open Lightroom</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="adobe-disconnect">Disconnect</button></div></section>' +
+      '<section class="pp-panel"><h3>Recent Sync Activity</h3>' + queueList(lr.sync_activity, 'No sync activity yet') + '</section>' +
       '<section class="pp-panel"><h3>Upload Queue</h3>' + queueList(lr.upload_queue, 'Upload queue empty') + '</section>' +
       '<section class="pp-panel"><h3>Import Queue</h3>' + queueList(lr.import_queue, 'Import queue empty') + '</section>' +
-      '<section class="pp-panel"><h3>Export Queue</h3>' + queueList(lr.export_queue, 'Export queue empty') + '</section>' +
-      '</div>';
+      '<section class="pp-panel"><h3>Export Queue</h3>' + queueList(lr.export_queue, 'Export queue empty') + '</section></div>' +
+      after + pipeline;
   }
 
   function queueList(items, empty) {
@@ -798,42 +939,26 @@
 
   function renderGalleryTab(p) {
     var g = p.gallery || {};
-    return '<div class="pp-panel-grid">' +
-      '<section class="pp-panel">' +
-        '<h3>AI Favorites</h3>' +
-        '<p class="pp-muted">' + ((g.ai_favorites && g.ai_favorites.length) ? g.ai_favorites.length + ' favorites ready' : 'AI favorites will appear after editing.') + '</p>' +
-        '<div class="pp-fav-grid">' +
-          [1, 2, 3, 4].map(function () { return '<div class="pp-fav-ph"></div>'; }).join('') +
-        '</div>' +
-      '</section>' +
-      '<section class="pp-panel">' +
-        '<h3>Albums</h3>' +
-        '<ul class="pp-queue">' + (g.albums || []).map(function (a) {
-          return '<li><strong>' + esc(a.name) + '</strong><span>' + esc(String(a.count || 0)) + ' photos</span></li>';
-        }).join('') + '</ul>' +
-      '</section>' +
-      '<section class="pp-panel">' +
-        '<h3>Client &amp; Private</h3>' +
-        '<dl class="pp-dl">' +
-          '<div><dt>Client Gallery</dt><dd>' + (g.client_gallery ? 'On' : 'Off') + '</dd></div>' +
-          '<div><dt>Private Gallery</dt><dd>' + (g.private_gallery ? 'On' : 'Off') + '</dd></div>' +
-          '<div><dt>Downloads</dt><dd>' + (g.downloads ? 'Enabled' : 'Disabled') + '</dd></div>' +
-          '<div><dt>Delivery</dt><dd>' + esc(g.delivery_status || p.gallery_status) + '</dd></div>' +
-          '<div><dt>Expiration</dt><dd>' + esc(g.expires_at ? formatDate(g.expires_at) : 'None') + '</dd></div>' +
-        '</dl>' +
-      '</section>' +
-      '<section class="pp-panel">' +
-        '<h3>Watermark</h3>' +
-        '<label class="pp-check"><input type="checkbox" data-pp-act="gal-wm" data-pp-id="' + esc(p.id) + '"' + ((g.watermark && g.watermark.enabled) ? ' checked' : '') + '><span>Enable watermark</span></label>' +
-        '<input class="pp-input" type="text" placeholder="Watermark text" value="' + esc((g.watermark && g.watermark.text) || '') + '" data-pp-act="gal-wm-text" data-pp-id="' + esc(p.id) + '">' +
-        '<div class="pp-btn-row pp-mt">' +
-          '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Publish</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-share" data-pp-id="' + esc(p.id) + '">Share</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-download" data-pp-id="' + esc(p.id) + '">Download</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-hide" data-pp-id="' + esc(p.id) + '">Hide</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-feature" data-pp-id="' + esc(p.id) + '">Feature</button>' +
-        '</div>' +
-      '</section></div>';
+    return '<div class="pp-panel-grid"><section class="pp-panel"><h3>AI Favorites</h3>' +
+      '<p class="pp-muted">' + ((g.ai_favorites && g.ai_favorites.length) ? g.ai_favorites.length + ' favorites ready' : 'AI favorites appear after editing.') + '</p>' +
+      '<div class="pp-fav-grid">' + [1, 2, 3, 4].map(function () { return '<div class="pp-fav-ph"></div>'; }).join('') + '</div></section>' +
+      '<section class="pp-panel"><h3>Albums</h3><ul class="pp-queue">' + (g.albums || []).map(function (a) {
+        return '<li><strong>' + esc(a.name) + '</strong><span>' + esc(String(a.count || 0)) + ' photos</span></li>';
+      }).join('') + '</ul></section>' +
+      '<section class="pp-panel"><h3>Client &amp; Private</h3><dl class="pp-dl">' +
+      '<div><dt>Client Gallery</dt><dd>' + (g.client_gallery ? 'On' : 'Off') + '</dd></div>' +
+      '<div><dt>Private Gallery</dt><dd>' + (g.private_gallery ? 'On' : 'Off') + '</dd></div>' +
+      '<div><dt>Downloads</dt><dd>' + (g.downloads ? 'Enabled' : 'Disabled') + '</dd></div>' +
+      '<div><dt>Delivery</dt><dd>' + esc(g.delivery_status || p.gallery_status) + '</dd></div></dl></section>' +
+      '<section class="pp-panel"><h3>Watermark</h3>' +
+      '<label class="pp-check"><input type="checkbox" data-pp-act="gal-wm" data-pp-id="' + esc(p.id) + '"' + ((g.watermark && g.watermark.enabled) ? ' checked' : '') + '><span>Enable watermark</span></label>' +
+      '<input class="pp-input" type="text" placeholder="Watermark text" value="' + esc((g.watermark && g.watermark.text) || '') + '" data-pp-act="gal-wm-text" data-pp-id="' + esc(p.id) + '">' +
+      '<div class="pp-btn-row pp-mt">' +
+      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Publish</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-share" data-pp-id="' + esc(p.id) + '">Share</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-download" data-pp-id="' + esc(p.id) + '">Download</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-hide" data-pp-id="' + esc(p.id) + '">Hide</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-feature" data-pp-id="' + esc(p.id) + '">Feature</button></div></section></div>';
   }
 
   function renderContractsTab(p) {
@@ -842,138 +967,118 @@
       '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="contract-add" data-pp-id="' + esc(p.id) + '">+ Contract</button></div>' +
       (list.length ? '<ul class="pp-queue">' + list.map(function (c) {
         return '<li><strong>' + esc(c.title) + '</strong><span>' + esc(c.status) + '</span></li>';
-      }).join('') + '</ul>' : '<p class="pp-muted">No contracts yet. Create one without leaving the project.</p>') +
-      '</section>';
+      }).join('') + '</ul>' : '<p class="pp-muted">No contracts yet.</p>') + '</section>';
   }
-
   function renderInvoicesTab(p) {
     var list = p.invoices || [];
     return '<section class="pp-panel pp-panel-wide"><div class="pp-between"><h3>Invoices</h3>' +
       '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="invoice-add" data-pp-id="' + esc(p.id) + '">+ Invoice</button></div>' +
-      '<div class="pp-hero-kpis pp-mb">' +
-        kpi('Revenue', money(p.revenue_cents)) +
-        kpi('Outstanding', money(p.outstanding_cents)) +
-        kpi('Status', invLabel(p.invoice_status).replace('Invoice · ', '')) +
-      '</div>' +
+      '<div class="pp-hero-kpis pp-mb">' + kpi('Revenue', money(p.revenue_cents)) + kpi('Outstanding', money(p.outstanding_cents)) + '</div>' +
       (list.length ? '<ul class="pp-queue">' + list.map(function (inv) {
         return '<li><strong>' + esc(inv.label) + '</strong><span>' + money(inv.amount_cents) + ' · ' + esc(inv.status) + '</span></li>';
-      }).join('') + '</ul>' : '<p class="pp-muted">Add a deposit or balance invoice anytime — Adobe not required.</p>') +
-      '</section>';
+      }).join('') + '</ul>' : '<p class="pp-muted">Add a deposit or balance anytime — Adobe not required.</p>') + '</section>';
   }
-
   function renderQuestionnaireTab(p) {
     var q = p.questionnaire || {};
-    return '<section class="pp-panel pp-panel-wide"><div class="pp-between"><h3>' + esc(q.title || 'Questionnaire') + '</h3>' +
-      '<span class="pp-pill">' + esc(q.status || 'draft') + '</span></div>' +
-      '<p class="pp-muted">Collect preferences, shot lists, and family details before the shoot.</p>' +
-      '<div class="pp-btn-row">' +
-        '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="q-send" data-pp-id="' + esc(p.id) + '">Send to client</button>' +
-        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="q-complete" data-pp-id="' + esc(p.id) + '">Mark completed</button>' +
-      '</div></section>';
+    return '<section class="pp-panel pp-panel-wide"><div class="pp-between"><h3>' + esc(q.title || 'Questionnaire') + '</h3><span class="pp-pill">' + esc(q.status || 'draft') + '</span></div>' +
+      '<div class="pp-btn-row"><button type="button" class="pp-btn pp-btn-brand" data-pp-act="q-send" data-pp-id="' + esc(p.id) + '">Send to client</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="q-complete" data-pp-id="' + esc(p.id) + '">Mark completed</button></div></section>';
   }
-
   function renderDeliverablesTab(p) {
-    var list = p.deliverables || [];
-    return '<section class="pp-panel pp-panel-wide"><h3>Deliverables</h3>' +
-      '<ul class="pp-queue">' + list.map(function (d, i) {
-        return '<li><strong>' + esc(d.title) + '</strong>' +
-          '<select data-pp-act="del-status" data-pp-id="' + esc(p.id) + '" data-pp-del="' + i + '">' +
-          ['pending', 'in_progress', 'ready', 'delivered'].map(function (s) {
-            return '<option value="' + s + '"' + (d.status === s ? ' selected' : '') + '>' + s + '</option>';
-          }).join('') + '</select></li>';
-      }).join('') + '</ul></section>';
+    return '<section class="pp-panel pp-panel-wide"><h3>Deliverables</h3><ul class="pp-queue">' + (p.deliverables || []).map(function (d, i) {
+      return '<li><strong>' + esc(d.title) + '</strong><select data-pp-act="del-status" data-pp-id="' + esc(p.id) + '" data-pp-del="' + i + '">' +
+        ['pending', 'in_progress', 'ready', 'delivered'].map(function (s) {
+          return '<option value="' + s + '"' + (d.status === s ? ' selected' : '') + '>' + s + '</option>';
+        }).join('') + '</select></li>';
+    }).join('') + '</ul></section>';
   }
-
   function renderMarketingTab(p) {
     var editingDone = (p.editing_progress || 0) >= 100 || p.status === 'Proofing' || p.status === 'Delivered';
-    return '<section class="pp-panel pp-panel-wide">' +
-      '<h3>AI Marketing</h3>' +
+    return '<section class="pp-panel pp-panel-wide"><h3>AI Marketing</h3>' +
       '<p class="pp-muted">' + (editingDone
-        ? 'Editing looks complete — these workflows will trigger AI campaigns later.'
-        : 'Once editing is complete, Hubly will help turn selects into campaigns.') + '</p>' +
-      '<div class="pp-mkt-grid">' +
-      (p.marketing || []).map(function (m) {
-        return '<div class="pp-mkt-card">' +
-          '<div class="pp-mkt-top"><strong>' + esc(m.title) + '</strong><span class="pp-pill">' + esc(m.status) + '</span></div>' +
+        ? 'Editing looks complete — these workflows will fire from the digital twin later.'
+        : 'When editing finishes on this project, Hubly can generate campaigns automatically.') + '</p>' +
+      '<div class="pp-mkt-grid">' + (p.marketing || []).map(function (m) {
+        return '<div class="pp-mkt-card"><div class="pp-mkt-top"><strong>' + esc(m.title) + '</strong><span class="pp-pill">' + esc(m.status) + '</span></div>' +
           '<p class="pp-muted">Placeholder — AI generation comes next.</p>' +
-          '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="mkt-ready" data-pp-id="' + esc(p.id) + '" data-pp-ch="' + esc(m.channel) + '">Mark ready</button>' +
-          '</div>';
-      }).join('') +
-      '</div></section>';
+          '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="mkt-ready" data-pp-id="' + esc(p.id) + '" data-pp-ch="' + esc(m.channel) + '">Mark ready</button></div>';
+      }).join('') + '</div></section>';
   }
-
   function renderNotesTab(p) {
-    return '<section class="pp-panel pp-panel-wide"><h3>Notes</h3>' +
-      '<textarea class="pp-notes" rows="10" data-pp-act="notes" data-pp-id="' + esc(p.id) + '" placeholder="Creative notes, shot list ideas, delivery preferences…">' +
-      esc(p.notes || '') + '</textarea></section>';
+    return '<section class="pp-panel pp-panel-wide"><h3>Notes</h3><textarea class="pp-notes" rows="10" data-pp-act="notes" data-pp-id="' + esc(p.id) + '">' + esc(p.notes || '') + '</textarea></section>';
   }
-
   function renderActivityTab(p) {
     var list = (p.activity || []).slice().reverse();
     return '<section class="pp-panel pp-panel-wide"><h3>Activity</h3>' +
       (list.length ? '<ul class="pp-queue">' + list.map(function (a) {
         return '<li><strong>' + esc(a.action) + '</strong><span>' + esc(a.detail || '') + ' · ' + esc(formatRelative(a.created_at)) + '</span></li>';
-      }).join('') + '</ul>' : '<p class="pp-muted">No activity yet.</p>') +
-      '</section>';
+      }).join('') + '</ul>' : '<p class="pp-muted">No activity yet.</p>') + '</section>';
   }
 
-  /* ─── Render / actions ──────────────────────────────────────────────── */
+  /* ─── Render ────────────────────────────────────────────────────────── */
 
-  function renderPhotoProjects() {
+  async function renderPhotoProjects() {
     var root = ownRoot();
     if (!root) return;
     setPhotoProjectsMode(true);
     try {
-      if (global.HublyJourneyOS && typeof global.HublyJourneyOS.updateChrome === 'function') {
-        /* chrome updated via CHROME map if present */
-      }
-      var titleEl = el('bar-title');
-      var subEl = el('bar-sub');
+      var titleEl = el('bar-title'), subEl = el('bar-sub');
       if (titleEl) titleEl.textContent = 'Photography Projects';
-      if (subEl) subEl.textContent = 'Projects from booking through delivery.';
+      if (subEl) subEl.textContent = 'Open the project — Hubly is the twin before and after Lightroom.';
       if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle('Photography Projects');
     } catch (e) {}
 
-    var store = ensureSeed(loadStore());
     var st = getState(root);
+    if (!hasProjectsCapability()) {
+      root.innerHTML = '<div class="pp-shell"><div class="pp-empty"><h2>Projects capability not enabled</h2>' +
+        '<p>Enable <code>capabilities.projects</code> on this business to use Photography Projects.</p></div></div>';
+      return;
+    }
+
+    root.innerHTML = '<div class="pp-shell"><div class="pp-empty"><p class="pp-muted">Loading projects…</p></div></div>';
+    var list = [];
+    try {
+      list = await loadProjectsFromSupabase(false);
+      st.error = null;
+    } catch (err) {
+      st.error = (err && err.message) || 'Could not load projects from Hubly.';
+      list = _cache.projects || [];
+    }
+
     var html = '';
-    if (st.view === 'wizard') {
-      html = renderWizard(root, store, st);
-    } else if (st.view === 'command' && st.projectId) {
-      var p = findProject(store, st.projectId);
-      if (!p) {
-        st.view = 'dashboard';
-        st.projectId = null;
-        html = renderDashboard(root, store, st);
-      } else {
-        html = renderCommand(root, store, st, p);
-      }
+    if (st.view === 'wizard') html = renderWizard(root, list, st);
+    else if (st.view === 'command' && st.projectId) {
+      var p = findProject(st.projectId);
+      if (!p) { st.view = 'dashboard'; st.projectId = null; html = renderDashboard(root, list, st); }
+      else html = renderCommand(root, st, p);
     } else {
       st.view = 'dashboard';
-      html = renderDashboard(root, store, st);
+      html = renderDashboard(root, list, st);
     }
     root.innerHTML = html;
     bindPhotoProjects(root);
   }
 
-  function persistProject(store, project) {
-    project.updated_at = new Date().toISOString();
-    var i = store.projects.findIndex(function (x) { return x.id === project.id; });
-    if (i >= 0) store.projects[i] = project;
-    else store.projects.unshift(project);
-    saveStore(store);
-  }
-
-  function addActivity(p, action, detail) {
-    p.activity = p.activity || [];
-    p.activity.push({ id: uid(), action: action, detail: detail || '', created_at: new Date().toISOString() });
-  }
-
-  function createFromWizard(store, w) {
+  function buildProjectFromWizard(w) {
     var clientName = w.client_mode === 'existing' ? w.existing_client : w.client_name;
-    var p = seedProject({
+    var ws = defaultWorkspace({
+      team: Object.assign({}, w.team),
+      activity: [{ id: 'act_new', action: 'Project created', detail: w.name || 'Untitled Project', created_at: new Date().toISOString() }]
+    });
+    if (w.assets.contract) ws.contracts.push({ id: 'c1', title: 'Photography Agreement', status: 'draft' });
+    if (w.assets.invoice) ws.invoices.push({ id: 'i1', label: 'Deposit', kind: 'deposit', status: 'draft', amount_cents: 0 });
+    if (w.assets.shot_list) ws.shot_list = [{ id: 's1', title: 'Must-have shots', items: [] }];
+    if (w.assets.lightroom) {
+      ws.lightroom.album_name = w.name || 'Untitled Project';
+      ws.lightroom.connection_status = 'not_connected';
+    }
+    if (!w.assets.marketing) {
+      ws.marketing = ws.marketing.map(function (m) { return Object.assign({}, m, { status: 'skipped' }); });
+    }
+    return {
       name: w.name || 'Untitled Project',
       project_type: w.project_type || 'Other',
+      status: 'Lead',
       shoot_date: w.shoot_date || null,
       location: w.location || '',
       estimated_photos: w.estimated_photos ? Number(w.estimated_photos) : null,
@@ -983,41 +1088,67 @@
       client_phone: w.client_phone || '',
       client_address: w.client_address || '',
       client_relationship: w.client_relationship || '',
-      team: Object.assign({}, w.team),
-      status: 'Lead'
-    });
-
-    if (w.assets.contract) {
-      p.contracts.push({ id: uid(), title: 'Photography Agreement', status: 'draft' });
-    }
-    if (w.assets.invoice) {
-      p.invoices.push({ id: uid(), label: 'Deposit', kind: 'deposit', status: 'draft', amount_cents: 0 });
-      p.invoice_status = 'draft';
-    }
-    if (w.assets.questionnaire) {
-      p.questionnaire = { status: 'draft', title: 'Client Questionnaire', answers: {} };
-    }
-    if (w.assets.shot_list) {
-      p.shot_list = [{ id: uid(), title: 'Must-have shots', items: [] }];
-    }
-    if (w.assets.gallery) {
-      p.gallery_status = 'draft';
-    }
-    if (w.assets.lightroom) {
-      p.lightroom.album_name = p.name;
-      p.lightroom_status = 'not_connected';
-    }
-    if (!w.assets.timeline) {
-      /* keep defaults anyway — timeline is core */
-    }
-    if (!w.assets.marketing) {
-      p.marketing = p.marketing.map(function (m) { return Object.assign({}, m, { status: 'skipped' }); });
-    }
-
-    addActivity(p, 'Project created', p.name);
-    persistProject(store, p);
-    return p;
+      team: ws.team,
+      timeline: ws.timeline,
+      gallery: ws.gallery,
+      lightroom: ws.lightroom,
+      contracts: ws.contracts,
+      invoices: ws.invoices,
+      questionnaire: ws.questionnaire,
+      deliverables: ws.deliverables,
+      marketing: ws.marketing,
+      activity: ws.activity,
+      shot_list: ws.shot_list,
+      workspace: ws,
+      invoice_status: w.assets.invoice ? 'draft' : 'none',
+      gallery_status: w.assets.gallery ? 'draft' : 'draft',
+      lightroom_status: 'not_connected',
+      twin_status: 'pending',
+      twin_key: twinKey()
+    };
   }
+
+  async function createQuickProject(st) {
+    var name = String((st.quick && st.quick.name) || '').trim();
+    if (!name) { toast('Add a project name'); return null; }
+    var fileCount = (st.quick && st.quick.files && st.quick.files.length) || 0;
+    var ws = defaultWorkspace({
+      local_uploads: (st.quick.files || []).map(function (f) {
+        return { name: f.name, size: f.size, type: f.type };
+      }),
+      activity: [{
+        id: 'act_q',
+        action: 'Quick Project created',
+        detail: fileCount ? fileCount + ' photos attached (metadata)' : 'Created in ~30 seconds',
+        created_at: new Date().toISOString()
+      }],
+      lightroom: Object.assign(defaultWorkspace().lightroom, { album_name: name })
+    });
+    var p = {
+      name: name,
+      project_type: 'Other',
+      status: 'Lead',
+      photo_count: fileCount,
+      estimated_photos: fileCount || null,
+      workspace: ws,
+      team: ws.team,
+      timeline: ws.timeline,
+      gallery: ws.gallery,
+      lightroom: ws.lightroom,
+      contracts: [],
+      invoices: [],
+      questionnaire: ws.questionnaire,
+      deliverables: ws.deliverables,
+      marketing: ws.marketing,
+      activity: ws.activity,
+      lightroom_status: 'not_connected',
+      twin_status: 'pending',
+      twin_key: twinKey()
+    };
+    return persistProject(p);
+  }
+
+  /* ─── Events ────────────────────────────────────────────────────────── */
 
   function bindPhotoProjects(root) {
     if (!root._ppBound) {
@@ -1028,27 +1159,56 @@
     }
   }
 
-  function onClick(e) {
+  async function saveAndRefresh(p, st) {
+    try {
+      await persistProject(p);
+      st.error = null;
+    } catch (err) {
+      st.error = (err && err.message) || 'Could not save project.';
+      toast(st.error);
+    }
+    return renderPhotoProjects();
+  }
+
+  async function onClick(e) {
     var t = e.target.closest('[data-pp-act]');
     if (!t) return;
     var act = t.getAttribute('data-pp-act');
     var root = el('jos-photo-projects-root');
     if (!root) return;
-    var store = ensureSeed(loadStore());
     var st = getState(root);
     var id = t.getAttribute('data-pp-id');
-    var p = id ? findProject(store, id) : (st.projectId ? findProject(store, st.projectId) : null);
+    var p = id ? findProject(id) : (st.projectId ? findProject(st.projectId) : null);
 
     if (act === 'new') {
-      st.view = 'wizard';
-      st.wizardStep = 1;
-      st.wizard = blankWizard();
+      st.view = 'wizard'; st.wizardStep = 1; st.wizard = blankWizard(); st.quickOpen = false;
       return renderPhotoProjects();
     }
+    if (act === 'quick') {
+      st.quickOpen = true; st.quick = { name: '', files: [] };
+      return renderPhotoProjects();
+    }
+    if (act === 'quick-close') {
+      st.quickOpen = false;
+      return renderPhotoProjects();
+    }
+    if (act === 'quick-create') {
+      try {
+        var createdQ = await createQuickProject(st);
+        if (!createdQ) return;
+        st.quickOpen = false;
+        st.view = 'command';
+        st.projectId = createdQ.id;
+        st.tab = 'overview';
+        toast('Project saved');
+        return renderPhotoProjects();
+      } catch (err) {
+        toast((err && err.message) || 'Could not create project');
+        return;
+      }
+    }
     if (act === 'wiz-cancel' || act === 'back-dash') {
-      st.view = 'dashboard';
-      st.projectId = null;
-      st.wizard = null;
+      st.view = 'dashboard'; st.projectId = null; st.wizard = null;
       return renderPhotoProjects();
     }
     if (act === 'wiz-client-mode') {
@@ -1060,144 +1220,133 @@
       return renderPhotoProjects();
     }
     if (act === 'wiz-next') {
-      if ((st.wizardStep || 1) === 1 && !(st.wizard && st.wizard.name.trim())) {
-        toast('Add a project name');
-        return;
+      if ((st.wizardStep || 1) === 1 && !(st.wizard && String(st.wizard.name || '').trim())) {
+        toast('Add a project name'); return;
       }
       st.wizardStep = Math.min(4, (st.wizardStep || 1) + 1);
       return renderPhotoProjects();
     }
     if (act === 'wiz-create') {
-      var created = createFromWizard(store, st.wizard || blankWizard());
-      st.view = 'command';
-      st.projectId = created.id;
-      st.tab = 'overview';
-      st.wizard = null;
-      toast('Project created');
-      return renderPhotoProjects();
+      try {
+        var created = await persistProject(buildProjectFromWizard(st.wizard || blankWizard()));
+        st.view = 'command'; st.projectId = created.id; st.tab = 'overview'; st.wizard = null;
+        toast('Project created');
+        return renderPhotoProjects();
+      } catch (err) {
+        toast((err && err.message) || 'Could not create project');
+        return;
+      }
     }
     if (act === 'open' && id) {
-      st.view = 'command';
-      st.projectId = id;
-      st.tab = 'overview';
+      st.view = 'command'; st.projectId = id; st.tab = 'overview'; persistUiPrefs(st);
       return renderPhotoProjects();
     }
     if (act === 'tab') {
       st.tab = t.getAttribute('data-pp-tab') || 'overview';
+      persistUiPrefs(st);
       return renderPhotoProjects();
     }
     if (act === 'gallery' && p) {
-      st.view = 'command';
-      st.projectId = p.id;
-      st.tab = 'gallery';
+      st.view = 'command'; st.projectId = p.id; st.tab = 'gallery'; persistUiPrefs(st);
       return renderPhotoProjects();
     }
     if (act === 'invoice' && p) {
-      st.view = 'command';
-      st.projectId = p.id;
-      st.tab = 'invoices';
+      st.view = 'command'; st.projectId = p.id; st.tab = 'invoices'; persistUiPrefs(st);
       return renderPhotoProjects();
     }
     if (act === 'sync' && p) {
-      return syncLightroom(store, p).then(function () { renderPhotoProjects(); });
+      var svc = global.AdobeLightroomService;
+      if (svc) await svc.syncProject({ businessId: businessId(), projectId: p.id });
+      addActivity(p, 'Sync requested', 'Lightroom twin sync — Adobe connection required for live sync');
+      p.twin_status = 'pending';
+      return saveAndRefresh(p, st);
     }
     if (act === 'deliver' && p) {
       p.gallery_status = 'delivered';
       p.status = 'Delivered';
       if (p.gallery) p.gallery.delivery_status = 'delivered';
-      (p.deliverables || []).forEach(function (d) {
-        if (d.kind === 'gallery') d.status = 'delivered';
-      });
+      (p.deliverables || []).forEach(function (d) { if (d.kind === 'gallery') d.status = 'delivered'; });
       addActivity(p, 'Gallery delivered', 'Client delivery marked complete');
-      persistProject(store, p);
+      st.view = 'command'; st.projectId = p.id; st.tab = 'gallery';
       toast('Marked delivered');
-      st.view = 'command';
-      st.projectId = p.id;
-      st.tab = 'gallery';
-      return renderPhotoProjects();
+      return saveAndRefresh(p, st);
     }
     if (act === 'adobe-connect') {
-      return connectAdobe(store).then(function () { renderPhotoProjects(); });
+      var svcC = global.AdobeLightroomService;
+      if (svcC) await svcC.connect({ businessId: businessId() || '' });
+      else toast('Adobe Lightroom isn’t connected yet. Projects still work in Hubly.');
+      return;
     }
     if (act === 'adobe-disconnect') {
-      store.adobeConnected = false;
-      store.adobeAccount = null;
-      store.projects.forEach(function (proj) {
-        if (proj.lightroom) proj.lightroom.connection_status = 'not_connected';
-        proj.lightroom_status = 'not_connected';
-      });
-      saveStore(store);
-      toast('Adobe disconnected in Hubly');
-      return renderPhotoProjects();
+      toast('Adobe disconnect will clear the twin link when OAuth is wired.');
+      return;
     }
     if (act === 'lr-create-album' && p) {
-      return createAlbum(store, p).then(function () { renderPhotoProjects(); });
+      var svcA = global.AdobeLightroomService;
+      if (svcA) await svcA.createAlbum({ businessId: businessId() || '', projectId: p.id, name: p.name });
+      p.lightroom = p.lightroom || {};
+      p.lightroom.album_name = p.name;
+      p.lightroom_album_id = p.lightroom_album_id || ('pending-' + String(p.twin_key || p.id).slice(-8));
+      p.twin_status = 'pending';
+      addActivity(p, 'Lightroom album prepared', 'Digital twin ready — connect Adobe to sync RAWs');
+      toast('Album prepared on the Hubly twin. Connect Adobe to sync.');
+      return saveAndRefresh(p, st);
     }
     if (act === 'lr-open') {
-      toast('Open Adobe Lightroom on your desktop to continue editing');
+      toast('Open Adobe Lightroom on your desktop — Hubly keeps the twin here.');
       return;
     }
     if (act === 'gal-publish' && p) {
-      return publishGallery(store, p).then(function () { renderPhotoProjects(); });
+      var svcP = global.AdobeLightroomService;
+      if (svcP) await svcP.publishGallery({ businessId: businessId() || '', projectId: p.id, galleryId: 'main' });
+      p.gallery_status = 'published';
+      if (p.gallery) p.gallery.delivery_status = 'published';
+      addActivity(p, 'Gallery published', 'Client gallery live');
+      toast('Gallery published');
+      return saveAndRefresh(p, st);
     }
     if (act === 'gal-share' && p) {
       p.gallery_status = 'published';
       addActivity(p, 'Gallery shared', 'Share link ready');
-      persistProject(store, p);
-      toast('Share link ready (preview)');
-      return renderPhotoProjects();
+      return saveAndRefresh(p, st);
     }
     if (act === 'gal-download' && p) {
       if (p.gallery) p.gallery.downloads = true;
-      persistProject(store, p);
-      toast('Downloads enabled');
-      return renderPhotoProjects();
+      return saveAndRefresh(p, st);
     }
     if (act === 'gal-hide' && p) {
       p.gallery_status = 'private';
       if (p.gallery) p.gallery.delivery_status = 'private';
-      persistProject(store, p);
-      toast('Gallery hidden');
-      return renderPhotoProjects();
+      return saveAndRefresh(p, st);
     }
     if (act === 'gal-feature' && p) {
       addActivity(p, 'Featured selects', 'Marked for marketing');
-      persistProject(store, p);
-      toast('Featured for marketing');
-      return renderPhotoProjects();
+      return saveAndRefresh(p, st);
     }
     if (act === 'contract-add' && p) {
-      p.contracts.push({ id: uid(), title: 'Photography Agreement', status: 'draft' });
+      p.contracts.push({ id: 'c_' + Date.now(), title: 'Photography Agreement', status: 'draft' });
       addActivity(p, 'Contract added', 'Draft');
-      persistProject(store, p);
-      return renderPhotoProjects();
+      return saveAndRefresh(p, st);
     }
     if (act === 'invoice-add' && p) {
-      p.invoices.push({ id: uid(), label: 'Balance', kind: 'balance', status: 'draft', amount_cents: p.outstanding_cents || 0 });
+      p.invoices.push({ id: 'i_' + Date.now(), label: 'Balance', kind: 'balance', status: 'draft', amount_cents: p.outstanding_cents || 0 });
       p.invoice_status = 'draft';
       addActivity(p, 'Invoice added', 'Draft');
-      persistProject(store, p);
-      return renderPhotoProjects();
+      return saveAndRefresh(p, st);
     }
     if (act === 'q-send' && p) {
       p.questionnaire.status = 'sent';
       addActivity(p, 'Questionnaire sent', p.client_email || p.client_name || '');
-      persistProject(store, p);
-      toast('Questionnaire marked sent');
-      return renderPhotoProjects();
+      return saveAndRefresh(p, st);
     }
     if (act === 'q-complete' && p) {
       p.questionnaire.status = 'completed';
-      persistProject(store, p);
-      return renderPhotoProjects();
+      return saveAndRefresh(p, st);
     }
     if (act === 'mkt-ready' && p) {
       var ch = t.getAttribute('data-pp-ch');
-      (p.marketing || []).forEach(function (m) {
-        if (m.channel === ch) m.status = 'ready';
-      });
-      persistProject(store, p);
-      return renderPhotoProjects();
+      (p.marketing || []).forEach(function (m) { if (m.channel === ch) m.status = 'ready'; });
+      return saveAndRefresh(p, st);
     }
   }
 
@@ -1205,11 +1354,12 @@
     var t = e.target;
     var root = el('jos-photo-projects-root');
     if (!root) return;
-    var store = ensureSeed(loadStore());
     var st = getState(root);
+    var p, idx;
 
     if (t.hasAttribute('data-pp-field')) {
       st[t.getAttribute('data-pp-field')] = t.value;
+      persistUiPrefs(st);
       return renderPhotoProjects();
     }
     if (t.hasAttribute('data-pp-w')) {
@@ -1221,57 +1371,65 @@
       w.assets[t.getAttribute('data-pp-asset')] = !!t.checked;
       return;
     }
-    if (t.getAttribute('data-pp-act') === 'set-status') {
-      var p = findProject(store, t.getAttribute('data-pp-id'));
-      if (!p) return;
-      p.status = t.value;
-      addActivity(p, 'Status changed', p.status);
-      persistProject(store, p);
+    if (t.hasAttribute('data-pp-quick-files')) {
+      st.quick = st.quick || { name: '', files: [] };
+      st.quick.files = Array.prototype.slice.call(t.files || []);
       return renderPhotoProjects();
     }
+    if (t.getAttribute('data-pp-act') === 'set-status') {
+      p = findProject(t.getAttribute('data-pp-id'));
+      if (!p) return;
+      p.status = t.value;
+      if (p.status === 'Editing' || p.status === 'Proofing') {
+        addActivity(p, 'Status changed', p.status);
+      }
+      if ((p.editing_progress || 0) >= 100 || p.status === 'Proofing') {
+        addActivity(p, 'Post-edit pipeline armed', POST_EDIT_PIPELINE.join(' → '));
+      }
+      addActivity(p, 'Status changed', p.status);
+      return saveAndRefresh(p, st);
+    }
     if (t.getAttribute('data-pp-act') === 'tl-toggle') {
-      p = findProject(store, t.getAttribute('data-pp-id'));
-      var idx = Number(t.getAttribute('data-pp-tl'));
+      p = findProject(t.getAttribute('data-pp-id'));
+      idx = Number(t.getAttribute('data-pp-tl'));
       if (p && p.timeline[idx]) {
         p.timeline[idx].completed = !!t.checked;
         p.timeline[idx].occurred_at = t.checked ? new Date().toISOString() : null;
-        persistProject(store, p);
-        return renderPhotoProjects();
+        return saveAndRefresh(p, st);
       }
     }
     if (t.getAttribute('data-pp-act') === 'tl-date') {
-      p = findProject(store, t.getAttribute('data-pp-id'));
+      p = findProject(t.getAttribute('data-pp-id'));
       idx = Number(t.getAttribute('data-pp-tl'));
       if (p && p.timeline[idx]) {
         p.timeline[idx].occurred_at = t.value ? new Date(t.value).toISOString() : null;
-        persistProject(store, p);
+        return saveAndRefresh(p, st);
       }
-      return;
     }
     if (t.getAttribute('data-pp-act') === 'gal-wm') {
-      p = findProject(store, t.getAttribute('data-pp-id'));
+      p = findProject(t.getAttribute('data-pp-id'));
       if (p && p.gallery) {
         p.gallery.watermark = p.gallery.watermark || {};
         p.gallery.watermark.enabled = !!t.checked;
-        persistProject(store, p);
+        return saveAndRefresh(p, st);
       }
-      return;
     }
     if (t.getAttribute('data-pp-act') === 'del-status') {
-      p = findProject(store, t.getAttribute('data-pp-id'));
+      p = findProject(t.getAttribute('data-pp-id'));
       idx = Number(t.getAttribute('data-pp-del'));
       if (p && p.deliverables[idx]) {
         p.deliverables[idx].status = t.value;
-        persistProject(store, p);
-        return renderPhotoProjects();
+        return saveAndRefresh(p, st);
       }
     }
     if (t.getAttribute('data-pp-act') === 'edit-progress') {
-      p = findProject(store, t.getAttribute('data-pp-id'));
+      p = findProject(t.getAttribute('data-pp-id'));
       if (p) {
         p.editing_progress = Number(t.value) || 0;
-        persistProject(store, p);
-        return renderPhotoProjects();
+        if (p.editing_progress >= 100) {
+          addActivity(p, 'Editing finished', 'Digital twin ready for gallery → invoice → marketing');
+        }
+        return saveAndRefresh(p, st);
       }
     }
   }
@@ -1280,13 +1438,17 @@
     var t = e.target;
     var root = el('jos-photo-projects-root');
     if (!root) return;
-    var store = ensureSeed(loadStore());
     var st = getState(root);
-
     if (t.getAttribute('data-pp-field') === 'search') {
       st.search = t.value;
+      persistUiPrefs(st);
       clearTimeout(root._ppSearchT);
       root._ppSearchT = setTimeout(function () { renderPhotoProjects(); }, 180);
+      return;
+    }
+    if (t.hasAttribute('data-pp-quick')) {
+      st.quick = st.quick || { name: '', files: [] };
+      st.quick[t.getAttribute('data-pp-quick')] = t.value;
       return;
     }
     if (t.hasAttribute('data-pp-w')) {
@@ -1294,25 +1456,28 @@
       return;
     }
     var act = t.getAttribute('data-pp-act');
-    var p = findProject(store, t.getAttribute('data-pp-id'));
+    var p = findProject(t.getAttribute('data-pp-id'));
     if (!p) return;
     if (act === 'tl-label' || act === 'tl-notes') {
       var idx = Number(t.getAttribute('data-pp-tl'));
       if (p.timeline[idx]) {
         if (act === 'tl-label') p.timeline[idx].label = t.value;
         else p.timeline[idx].notes = t.value;
-        persistProject(store, p);
+        clearTimeout(root._ppSaveT);
+        root._ppSaveT = setTimeout(function () { saveAndRefresh(p, st); }, 500);
       }
     }
     if (act === 'notes') {
       p.notes = t.value;
-      persistProject(store, p);
+      clearTimeout(root._ppSaveT);
+      root._ppSaveT = setTimeout(function () { saveAndRefresh(p, st); }, 500);
     }
     if (act === 'gal-wm-text') {
       p.gallery = p.gallery || {};
       p.gallery.watermark = p.gallery.watermark || {};
       p.gallery.watermark.text = t.value;
-      persistProject(store, p);
+      clearTimeout(root._ppSaveT);
+      root._ppSaveT = setTimeout(function () { saveAndRefresh(p, st); }, 500);
     }
   }
 
@@ -1326,96 +1491,58 @@
     cur[parts[parts.length - 1]] = value;
   }
 
-  async function connectAdobe(store) {
-    var svc = lightroom();
-    var bid = S().businessId || '';
-    if (svc) {
-      var res = await svc.connect({ businessId: bid });
-      if (res && res.ok && res.data && res.data.authorizeUrl) {
-        location.href = res.data.authorizeUrl;
-        return;
-      }
-    }
-    // Honest: Adobe APIs not wired. Do not fake a live Adobe session.
-    toast('Adobe Lightroom isn’t connected yet. Projects, galleries, and delivery still work in Hubly.');
-  }
-
-  async function createAlbum(store, p) {
-    var svc = lightroom();
-    if (svc) await svc.createAlbum({ businessId: S().businessId || '', projectId: p.id, name: p.name });
-    p.lightroom = p.lightroom || {};
-    p.lightroom.album_name = p.name;
-    p.lightroom.album_id = p.lightroom.album_id || ('local-' + p.id.slice(-6));
-    addActivity(p, 'Album prepared', 'Hubly project album ready — Lightroom sync when Adobe is connected');
-    persistProject(store, p);
-    toast('Project album ready in Hubly. Connect Adobe to sync with Lightroom.');
-  }
-
-  async function syncLightroom(store, p) {
-    var svc = lightroom();
-    if (svc) await svc.syncProject({ businessId: S().businessId || '', projectId: p.id });
-    addActivity(p, 'Sync requested', 'Lightroom sync requires Adobe connection');
-    persistProject(store, p);
-    toast('Connect Adobe to sync Lightroom. You can still upload and deliver in Hubly.');
-  }
-
-  async function publishGallery(store, p) {
-    var svc = lightroom();
-    if (svc) await svc.publishGallery({ businessId: S().businessId || '', projectId: p.id, galleryId: 'main' });
-    p.gallery_status = 'published';
-    if (p.gallery) p.gallery.delivery_status = 'published';
-    addActivity(p, 'Gallery published', 'Client gallery live');
-    persistProject(store, p);
-    toast('Gallery published');
-  }
+  /* ─── Nav / exports ─────────────────────────────────────────────────── */
 
   function syncPhotographyNav() {
     var nav = document.querySelector('.ni[data-v="photo-projects"]');
     if (!nav) return;
-    var show = false;
-    try {
-      if (typeof global.isPhotoLedTrade === 'function') show = !!global.isPhotoLedTrade();
-      else {
-        var id = String((S().businessType || '')).toLowerCase();
-        show = id === 'photography' || id.indexOf('photo') !== -1 || id === 'weddings';
-      }
-    } catch (e) {}
+    var show = hasProjectsCapability();
     nav.hidden = !show;
     nav.setAttribute('aria-hidden', show ? 'false' : 'true');
     nav.classList.toggle('jos-nav-hidden', !show);
   }
 
-  function setPhotoProjectsModeExport(on) {
-    setPhotoProjectsMode(on);
+  function openQuickProject() {
+    var nav = document.querySelector('.ni[data-v="photo-projects"]');
+    if (nav && typeof global.switchV === 'function') global.switchV(nav);
+    setTimeout(function () {
+      var root = el('jos-photo-projects-root');
+      if (!root) return;
+      var st = getState(root);
+      st.quickOpen = true;
+      st.quick = { name: '', files: [] };
+      st.view = 'dashboard';
+      renderPhotoProjects();
+    }, 60);
   }
 
-  // Attach to JourneyOS when ready
   function attach() {
     global.HublyPhotographyProjects = {
       render: renderPhotoProjects,
       syncNav: syncPhotographyNav,
-      setMode: setPhotoProjectsModeExport
+      setMode: setPhotoProjectsMode,
+      openQuickProject: openQuickProject,
+      hasCapability: hasProjectsCapability,
+      reload: function () { return loadProjectsFromSupabase(true); }
     };
     if (global.HublyJourneyOS) {
       global.HublyJourneyOS.renderPhotoProjects = renderPhotoProjects;
       global.HublyJourneyOS.syncPhotographyNav = syncPhotographyNav;
-      global.HublyJourneyOS.setPhotoProjectsMode = setPhotoProjectsModeExport;
+      global.HublyJourneyOS.setPhotoProjectsMode = setPhotoProjectsMode;
+      global.HublyJourneyOS.openPhotographyQuickProject = openQuickProject;
     }
     syncPhotographyNav();
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', attach);
-  } else {
-    attach();
-  }
-  // Re-attach after journey.js if it loads later
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+  else attach();
   setTimeout(attach, 0);
   setTimeout(attach, 500);
   setTimeout(syncPhotographyNav, 800);
   setTimeout(syncPhotographyNav, 2000);
-
-  global.addEventListener('hubly:business-loaded', syncPhotographyNav);
+  global.addEventListener('hubly:business-loaded', function () {
+    _cache.loaded = false;
+    syncPhotographyNav();
+  });
   global.addEventListener('hubly:blueprint-changed', syncPhotographyNav);
-
 })(typeof window !== 'undefined' ? window : globalThis);

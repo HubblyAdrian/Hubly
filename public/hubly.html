@@ -30,7 +30,7 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=live-op-polish-1">
-<link rel="stylesheet" href="/journey-os/photography-projects.css?v=photo-projects-1">
+<link rel="stylesheet" href="/journey-os/photography-projects.css?v=photo-projects-2">
 <style>
 :root{
   --brand:#D9632D;--brand-dark:#B84E1F;--brand-light:#FDF0E8;
@@ -11737,8 +11737,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
 <script defer src="/journey-os/journey.js?v=live-op-polish-1"></script>
-<script defer src="/journey-os/adobe-lightroom-service.js?v=photo-projects-1"></script>
-<script defer src="/journey-os/photography-projects.js?v=photo-projects-1"></script>
+<script defer src="/journey-os/adobe-lightroom-service.js?v=photo-projects-2"></script>
+<script defer src="/journey-os/photography-projects.js?v=photo-projects-2"></script>
 <!-- ceo-demo.js loads on-demand only for owner-authorized /hubly-ceo -->
 <script defer src="/booking-wizard/ui.js"></script>
 <link rel="stylesheet" href="/booking-wizard/mock-skin.css">
@@ -12815,13 +12815,17 @@ async function loadBusiness(opts={}){
       S.serviceAreaCities=Array.isArray(data.service_area_cities)?data.service_area_cities:[];
       S.tier=data.tier||'starter';
       S.businessType=data.business_type||null;
+      S.capabilities=Object.assign({},data.capabilities||{});
+      if(currentBusiness)currentBusiness.capabilities=S.capabilities;
       applyBizMeta(parseBizMeta(data.meta));
       S.logoUrl=data.logo_url||S.logoUrl||null;
       S.bannerUrl=data.banner_url||S.bannerUrl||null;
       if(data.section_order)applySectionOrderFromDb(data.section_order);
       await loadServicesFromDb();
       ensureWebsiteCopy();
+      try{await ensureProjectsCapabilityOnBusiness();}catch(e){}
       try{syncPhotographyProjectsNav();}catch(e){}
+      try{window.dispatchEvent(new CustomEvent('hubly:business-loaded'));}catch(e){}
       if(!parseBizMeta(data.meta)?.website)generateWebsiteCopyLocal();
       // Never regenerate AI copy on refresh when the owner already saved writing —
       // Instant Site often leaves gen_hero_headline null, which used to wipe pe-edits.
@@ -15718,17 +15722,48 @@ function isPhotoLedTrade(){
   if(id==='photography'||id.includes('photo')||id==='weddings')return true;
   return blueprintHas('clientGalleries');
 }
+/** Runtime-style Business Capabilities — e.g. capabilities.projects / lightroom */
+function hasBusinessCapability(key){
+  const caps=Object.assign(
+    {},
+    (S&&S.capabilities)||{},
+    (typeof currentBusiness!=='undefined'&&currentBusiness&&currentBusiness.capabilities)||{}
+  );
+  if(caps&&caps[key]===true)return true;
+  try{if(typeof blueprintHas==='function'&&blueprintHas(key))return true;}catch(e){}
+  return false;
+}
 function syncPhotographyProjectsNav(){
   try{
     if(window.HublyPhotographyProjects?.syncNav)return HublyPhotographyProjects.syncNav();
     if(window.HublyJourneyOS?.syncPhotographyNav)return HublyJourneyOS.syncPhotographyNav();
     const nav=document.querySelector('.ni[data-v="photo-projects"]');
     if(!nav)return;
-    const show=!!isPhotoLedTrade();
+    const show=!!hasBusinessCapability('projects');
     nav.hidden=!show;
     nav.setAttribute('aria-hidden',show?'false':'true');
     nav.classList.toggle('jos-nav-hidden',!show);
   }catch(e){}
+}
+/** Persist projects/lightroom capability flags when blueprint enables them. */
+async function ensureProjectsCapabilityOnBusiness(){
+  try{
+    if(!hasBusinessCapability('projects')&&!blueprintHas('projects'))return;
+    if(!currentBusiness?.id)return;
+    const caps=Object.assign({},currentBusiness.capabilities||S.capabilities||{});
+    let dirty=false;
+    if(blueprintHas('projects')&&caps.projects!==true){caps.projects=true;dirty=true;}
+    if(blueprintHas('lightroom')&&caps.lightroom!==true){caps.lightroom=true;dirty=true;}
+    if(!dirty)return;
+    S.capabilities=caps;
+    currentBusiness.capabilities=caps;
+    const db=typeof getDb==='function'?getDb():null;
+    if(db){
+      await db.from('businesses').update({capabilities:caps}).eq('id',currentBusiness.id);
+    }
+    syncPhotographyProjectsNav();
+    try{window.dispatchEvent(new CustomEvent('hubly:business-loaded'));}catch(e){}
+  }catch(e){console.warn('ensureProjectsCapabilityOnBusiness',e);}
 }
 function getObServiceCatalog(){
   if(typeof HublyBlueprints!=='undefined'){
@@ -16013,6 +16048,7 @@ function applyCdBlueprint(id,{forceMedia=true,source='who',seedServices}={}){
   S.businessType=id;
   S._blueprintConfirmed=true;
   S._blueprintSource=source;
+  try{ensureProjectsCapabilityOnBusiness();}catch(e){}
   try{syncPhotographyProjectsNav();}catch(e){}
   if(S._ownerUploadedMedia)forceMedia=false;
   const bp=getActiveBlueprint();

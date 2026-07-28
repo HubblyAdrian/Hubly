@@ -580,6 +580,10 @@ body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
   padding:10px 12px;border-radius:10px;font:inherit;font-size:13px;font-weight:650;cursor:pointer;color:var(--jos-navy);
 }
 .jos-quick-pop button:hover{background:var(--jos-brand-soft);color:var(--jos-brand-dark)}
+.jos-quick-sep{
+  padding:8px 12px 4px;font-size:11px;font-weight:700;letter-spacing:.08em;
+  color:var(--jos-ink-3);user-select:none;
+}
 
 @media(max-width:900px){
   #p-app.jos-pixel .app-main{margin-left:0}
