@@ -212,6 +212,17 @@
     return { hasAddons: !!(activeAddons() || []).length };
   }
 
+  function setQuoteWorkspaceOpen(on) {
+    document.getElementById('v-quotes')?.classList.toggle('sq-workspace-open', !!on);
+    if (on) {
+      document.getElementById('sq-workspace')?.classList.remove('hidden');
+      document.getElementById('sq-list-wrap')?.classList.add('hidden');
+    } else {
+      document.getElementById('sq-workspace')?.classList.add('hidden');
+      document.getElementById('sq-list-wrap')?.classList.remove('hidden');
+    }
+  }
+
   function openNew() {
     const SQ = global.HublySmartQuote;
     const app = appState();
@@ -230,8 +241,7 @@
       snapshot: null,
       customer: { name: '', phone: '', email: '', notes: '' },
     };
-    document.getElementById('sq-workspace')?.classList.remove('hidden');
-    document.getElementById('sq-list-wrap')?.classList.add('hidden');
+    setQuoteWorkspaceOpen(true);
     const flow = getQuickQuoteFlow();
     const start =
       typeof SQ.firstUsefulChromeIndex === 'function'
@@ -287,8 +297,7 @@
   }
 
   function closeWorkspace() {
-    document.getElementById('sq-workspace')?.classList.add('hidden');
-    document.getElementById('sq-list-wrap')?.classList.remove('hidden');
+    setQuoteWorkspaceOpen(false);
     renderList();
   }
 
@@ -344,7 +353,7 @@
   }
 
   function resolveAccent(cfg) {
-    let accent = (cfg && cfg.accent) || '#7c3aed';
+    let accent = (cfg && cfg.accent) || '#D9632D';
     try {
       if (typeof getAccentColor === 'function') {
         const a = getAccentColor();
@@ -607,9 +616,9 @@
     root.innerHTML = `
       <div class="sq-head sq-qq-head" style="--sq-accent:${esc(accent)}">
         <div>
-          <div class="sq-kicker">${esc(flow.title || 'Quick Quote')}</div>
-          <h2>${esc(flow.title || 'Quick Quote')}</h2>
-          <p>${esc(flow.tagline || 'Fast. Simple. Mobile.')}</p>
+          <div class="sq-kicker">Step ${st.step + 1} of ${cfg.steps.length}</div>
+          <h2>${esc(stepTitle || flow.title || 'Quick Quote')}</h2>
+          <p>${esc(stepBlurb || flow.tagline || 'Fast. Simple. Mobile.')}</p>
         </div>
         <div class="sq-head-actions">
           <button type="button" class="btn btn-ink btn-sm sq-draft-btn" onclick="HublySmartQuoteUI.saveDraft()">Save draft</button>
@@ -618,7 +627,6 @@
         </div>
       </div>
       <div class="sq-prog sq-qq-prog">${prog}</div>
-      <div class="sq-step-title"><h3>${esc(stepTitle)}</h3><p>${esc(stepBlurb)}</p></div>
       <div class="sq-body">${body}</div>
       <div class="sq-foot">
         <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.backStep()">${
@@ -988,7 +996,7 @@ ${biz}`,
     };
     if (!quotes.length) {
       el.innerHTML =
-        '<div class="empty" style="padding:28px;"><div class="empty-msg">No quotes yet — start a Quick Quote for a customer. Close anytime to keep an unfinished draft.</div></div>';
+        '<div class="sq-empty"><div class="sq-empty-msg">No quotes yet — start a Quick Quote for a customer. Close anytime to keep an unfinished draft.</div></div>';
       return;
     }
     el.innerHTML = `
@@ -1041,8 +1049,7 @@ ${biz}`,
         notes: rec.notes || '',
       },
     };
-    document.getElementById('sq-workspace')?.classList.remove('hidden');
-    document.getElementById('sq-list-wrap')?.classList.add('hidden');
+    setQuoteWorkspaceOpen(true);
     renderWorkspace();
   }
 
@@ -1921,8 +1928,7 @@ ${biz}`,
       badge.style.background = resolveAccent(cfg);
     }
     renderList();
-    document.getElementById('sq-workspace')?.classList.add('hidden');
-    document.getElementById('sq-list-wrap')?.classList.remove('hidden');
+    setQuoteWorkspaceOpen(false);
   }
 
   global.HublySmartQuoteUI = {

@@ -3745,29 +3745,35 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
   .jobs-gcal-card{order:2}
 }
 /* Smart Quote */
-.sq-trade-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;color:#fff;font-size:11px;font-weight:700;text-transform:capitalize;background:#7c3aed}
+.sq-trade-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;color:#fff;font-size:11px;font-weight:700;text-transform:capitalize;background:var(--brand,#D9632D)}
+.sq-page-blurb{margin:0;font-size:14px;line-height:1.45;color:#4B5563;font-weight:550;max-width:42rem}
+.sq-list-hint{font-size:12px;color:#6B7280;font-weight:500}
+.sq-list-card{border:1px solid #E5E7EB;border-radius:14px;overflow:hidden;background:#fff}
+.sq-list-card .sc-h{background:#fff}
+.sq-list-card .sc-t{font-family:var(--font-d,'DM Sans'),sans-serif;font-size:15px;font-weight:750;color:#141B2B}
+#v-quotes.sq-workspace-open .sq-page-actions{display:none}
 .sq-workspace{margin-top:4px}
 .sq-layout{display:grid;grid-template-columns:minmax(0,1fr) min(340px,36%);gap:18px;align-items:start}
 @media(max-width:960px){.sq-layout{grid-template-columns:1fr}}
 .sq-main{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 18px 12px;min-height:420px}
 .sq-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
-.sq-kicker{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--sq-accent,#7c3aed);margin-bottom:4px}
-.sq-head h2{margin:0;font-size:22px;font-weight:750}
-.sq-head p{margin:4px 0 0;font-size:13px;color:var(--ink-3)}
+.sq-kicker{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--sq-accent,var(--brand,#D9632D));margin-bottom:4px}
+.sq-head h2{margin:0;font-size:22px;font-weight:750;font-family:var(--font-d,'DM Sans'),sans-serif;color:#141B2B;letter-spacing:-.02em}
+.sq-head p{margin:4px 0 0;font-size:13px;color:#6B7280}
 .sq-prog{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:8px}
 .sq-prog-step{appearance:none;border:1px solid var(--border);background:var(--surface-2);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:650;color:var(--ink-3);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px}
 .sq-prog-step span{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#e2e8f0;font-size:10px;font-weight:800;flex-shrink:0}
-.sq-prog-step.on{border-color:var(--sq-accent,#7c3aed);color:var(--ink);background:color-mix(in srgb,var(--sq-accent,#7c3aed) 10%,#fff)}
-.sq-prog-step.on span,.sq-prog-step.done span{background:var(--sq-accent,#7c3aed);color:#fff}
+.sq-prog-step.on{border-color:var(--sq-accent,var(--brand,#D9632D));color:var(--ink);background:color-mix(in srgb,var(--sq-accent,var(--brand,#D9632D)) 10%,#fff)}
+.sq-prog-step.on span,.sq-prog-step.done span{background:var(--sq-accent,var(--brand,#D9632D));color:#fff}
 .sq-qq-prog{gap:10px}
 .sq-qq-step{align-items:flex-start;min-width:140px;padding:10px 12px;white-space:normal}
 .sq-qq-step-copy{display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left}
 .sq-qq-step-copy strong{font-size:12px;font-weight:800;color:inherit;line-height:1.2}
 .sq-qq-step-copy em{font-size:10px;font-style:normal;font-weight:500;color:var(--ink-3);line-height:1.25}
-.sq-qq-step.on .sq-qq-step-copy em{color:color-mix(in srgb,var(--sq-accent,#7c3aed) 70%,#64748b)}
-.sq-qq-head .sq-kicker{letter-spacing:.08em;text-transform:uppercase;font-size:10px;font-weight:800;color:var(--sq-accent,#7c3aed)}
-.sq-step-title h3{margin:0 0 4px;font-size:18px}
-.sq-step-title p{margin:0 0 14px;font-size:13px;color:var(--ink-3)}
+.sq-qq-step.on .sq-qq-step-copy em{color:color-mix(in srgb,var(--sq-accent,var(--brand,#D9632D)) 70%,#64748b)}
+.sq-qq-head .sq-kicker{letter-spacing:.08em;text-transform:uppercase;font-size:10px;font-weight:800;color:var(--sq-accent,var(--brand,#D9632D))}
+.sq-step-title h3{margin:0 0 4px;font-size:18px;font-family:var(--font-d,'DM Sans'),sans-serif;color:#141B2B}
+.sq-step-title p{margin:0 0 14px;font-size:13px;color:#6B7280}
 .sq-field{margin:0 0 14px}
 .sq-field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .sq-lbl{font-size:12px;font-weight:700;margin:0 0 8px;color:var(--ink-2)}
@@ -3785,6 +3791,12 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
   background:#fff;color:#141B2B;
 }
 #v-quotes .sq-tile span,#v-quotes .sq-tile em,#v-quotes .sq-muted{color:#4B5563!important}
+#v-quotes .sq-empty{
+  padding:36px 24px;text-align:center;background:#fff;border-radius:12px;
+}
+#v-quotes .sq-empty-msg{
+  margin:0;font-size:14px;line-height:1.5;color:#4B5563;font-weight:550;max-width:28rem;margin-inline:auto;
+}
 #v-quotes .sq-field input[type=text],
 #v-quotes .sq-field input[type=tel],
 #v-quotes .sq-field input[type=email],
@@ -6828,9 +6840,15 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
   display:block!important;visibility:visible!important;opacity:1!important;
 }
 /* App chrome must stay above the Styles sheet — otherwise a full-width sheet
-   (narrow viewport / DevTools) silently eats every click. */
-body.ed-editor-open .app-bar{z-index:2600!important;}
+   (narrow viewport / DevTools) silently eats every click.
+   Hide the global app-bar in the website editor so "Home" never bleeds through
+   overlays / photo popovers (editor has its own chrome). */
+body.ed-editor-open .app-bar{display:none!important;}
 body.ed-editor-open .app-nav{z-index:2600!important;}
+/* Extra safety: never let sticky Home chrome paint over editor popovers */
+body.ed-editor-open .bar-title-block,
+body.ed-pe-open .bar-title-block{visibility:hidden!important;}
+body.ed-pe-open .app-bar{display:none!important;}
 /* Backdrop never steals clicks — whether mounted on body or still inside
    .ed-shell (desktop used to only disable body-mounted backdrop, so the
    in-shell copy ate Site / Packages / Book Now). Close via × only. */
@@ -7812,7 +7830,7 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 #edph-screen .ws-site .ws-pe-target:hover::before{opacity:1}
 .ws-pe-add-svc{display:flex;align-items:center;justify-content:center;min-height:120px;width:100%;border:2px dashed #cbd5e1;border-radius:var(--ws-radius,16px);background:rgba(248,250,252,.8);color:#64748b;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
 .ws-pe-add-svc:hover{border-color:#6366f1;color:#4f46e5;background:#eef2ff}
-.ws-pe-pop{position:fixed;z-index:6000;min-width:260px;max-width:320px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 16px 48px rgba(15,23,42,.16)}
+.ws-pe-pop{position:fixed;z-index:6000;min-width:260px;max-width:320px;background:#fff;border:1px solid #E5E7EB;border-radius:14px;padding:14px;box-shadow:0 16px 48px rgba(15,23,42,.16);color:#141B2B}
 /* Direct manipulators in the editor preview */
 .ed-ws-preview .ws-header-logo,
 #edph-screen .ws-site .ws-header-logo,
@@ -7854,13 +7872,27 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 .ws-svc-card,.ws-gallery-card{position:relative}
 .ws-focus-presets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
 .ws-focus-presets button{font-size:11px;padding:7px 6px}
+/* First-screen photo / pe popovers: always dark readable ink on white (night theme safe) */
+.ws-pe-pop,.ws-pe-pop *{color:#141B2B}
+.ws-pe-pop .ws-pe-pop-lbl{color:#6B7280!important}
+.ws-pe-pop .btn-out,.ws-pe-pop button.btn-out{
+  color:#141B2B!important;background:#fff!important;border:1.5px solid #D1D5DB!important;
+  -webkit-text-fill-color:#141B2B;
+}
+.ws-pe-pop .btn-out:hover{border-color:#D9632D!important;color:#D9632D!important}
+.ws-pe-pop .btn-ink{color:#fff!important;background:#141B2B!important}
+.ws-pe-pop .btn-brand{color:#fff!important}
+.ws-pe-pop label,.ws-pe-pop .ws-pe-hint{color:#4B5563!important}
+.ws-pe-pop .ws-pe-inp,.ws-pe-pop select,.ws-pe-pop input[type=range]{
+  color:#141B2B!important;background:#fff!important;
+}
 body.ed-pe-open #ed-float-bar,
 body.ed-pe-open .ed-float-bar{opacity:.35;pointer-events:none;}
 .ws-pe-stars{display:flex;gap:4px;margin-bottom:10px;}
 .ws-pe-star{border:none;background:transparent;font-size:28px;line-height:1;color:#d1d5db;cursor:pointer;padding:0 2px;transition:color .12s,transform .12s;}
 .ws-pe-star:hover,.ws-pe-star.on{color:#fbbf24;transform:scale(1.08);}
 .ws-pe-pop.hidden{display:none}
-.ws-pe-pop-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:8px}
+.ws-pe-pop-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7280;margin-bottom:8px}
 .ws-pe-inp,.ws-pe-pop select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;outline:none;margin-bottom:10px}
 textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 #ws-pe-pop:has(textarea){max-width:360px;}
@@ -10021,10 +10053,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- QUOTES / SMART QUOTE -->
       <div id="v-quotes" class="body hidden">
-        <div class="flex ai-c jc-b" style="margin-bottom:16px;gap:12px;flex-wrap:wrap;">
-          <div>
-            <div style="font-family:var(--font-d);font-size:20px;font-weight:700;">Quick Quote</div>
-            <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">Build a price for someone you just met — then send it. Same packages as your site.</div>
+        <div class="sq-page-actions flex ai-c jc-b" style="margin-bottom:16px;gap:12px;flex-wrap:wrap;">
+          <div class="sq-page-lead">
+            <p class="sq-page-blurb">Build a price for someone you just met — then send it. Same packages as your site.</p>
           </div>
           <div class="flex ai-c" style="gap:8px;flex-wrap:wrap;">
             <span class="sq-trade-badge" id="sq-trade-badge">trade</span>
@@ -10034,7 +10065,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div id="sq-list-wrap">
-          <div class="sc"><div class="sc-h"><div class="sc-t">Your quotes</div><div style="font-size:12px;color:var(--ink-3);font-weight:500;">Unfinished drafts stay here when you Close mid-quote — text them anytime.</div></div><div class="sc-b" id="sq-list"></div></div>
+          <div class="sc sq-list-card"><div class="sc-h"><div class="sc-t">Your quotes</div><div class="sq-list-hint">Unfinished drafts stay here when you Close mid-quote — text them anytime.</div></div><div class="sc-b" id="sq-list"></div></div>
         </div>
         <div id="sq-workspace" class="sq-workspace hidden">
           <div class="sq-layout">
@@ -30829,7 +30860,7 @@ function handleWsPeClick(type,el){
       <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="pickHeroBanner()">Replace photo</button>
       ${S.bannerUrl?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px;" onclick="clearHeroBanner()">Remove photo</button>`:''}
       <button type="button" class="btn btn-brand btn-sm" style="width:100%;margin-bottom:10px;" onclick="closeWsPePop();startHeroFocusDrag()">Drag to reframe →</button>
-      <div style="font-size:11px;font-weight:700;color:var(--ink-3);margin:0 0 6px;">Focus</div>
+      <div class="ws-pe-pop-lbl" style="margin-top:4px;text-transform:none;letter-spacing:0;">Focus</div>
       <div class="ws-focus-presets">
         <button type="button" class="btn btn-out btn-sm" onclick="setHeroFocus(50,20)">Top</button>
         <button type="button" class="btn btn-out btn-sm" onclick="setHeroFocus(50,50)">Center</button>
@@ -30838,11 +30869,11 @@ function handleWsPeClick(type,el){
         <button type="button" class="btn btn-out btn-sm" onclick="setHeroFocus(50,40)">Subject</button>
         <button type="button" class="btn btn-out btn-sm" onclick="setHeroFocus(78,45)">Right</button>
       </div>
-      <label style="font-size:11px;color:var(--ink-3);display:block;margin-top:8px;">Horizontal ${Math.round(f.x)}%</label>
-      <input type="range" min="0" max="100" value="${f.x}" oninput="setHeroFocus(this.value,getHeroFocus().y)" style="width:100%;accent-color:#4f46e5;">
-      <label style="font-size:11px;color:var(--ink-3);display:block;margin-top:6px;">Vertical ${Math.round(f.y)}%</label>
-      <input type="range" min="0" max="100" value="${f.y}" oninput="setHeroFocus(getHeroFocus().x,this.value)" style="width:100%;accent-color:#4f46e5;margin-bottom:8px;">
-      <div style="font-size:11px;color:var(--ink-3);line-height:1.4;margin-bottom:8px;">Drag the photo itself in the preview, or use these presets / sliders.</div>
+      <label class="ws-pe-hint" style="font-size:12px;font-weight:650;display:block;margin-top:8px;">Horizontal ${Math.round(f.x)}%</label>
+      <input type="range" min="0" max="100" value="${f.x}" oninput="setHeroFocus(this.value,getHeroFocus().y)" style="width:100%;accent-color:#D9632D;">
+      <label class="ws-pe-hint" style="font-size:12px;font-weight:650;display:block;margin-top:6px;">Vertical ${Math.round(f.y)}%</label>
+      <input type="range" min="0" max="100" value="${f.y}" oninput="setHeroFocus(getHeroFocus().x,this.value)" style="width:100%;accent-color:#D9632D;margin-bottom:8px;">
+      <div class="ws-pe-hint" style="font-size:12px;line-height:1.4;margin-bottom:8px;">Drag the photo itself in the preview, or use these presets / sliders.</div>
       <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`,true);
     return;
   }

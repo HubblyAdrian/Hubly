@@ -11200,8 +11200,16 @@
   function syncAskFab(v) {
     var fab = el('jos-ask-fab');
     if (!fab) return;
-    var hide = v === 'ask' || v === 'ask-hubly' || v === 'editor' ||
-      !!(document.body && document.body.classList.contains('ed-editor-open'));
+    var app = el('p-app');
+    var pipeDetailOpen = !!(app && app.classList.contains('jos-pipeline-mode') &&
+      document.querySelector('.jos-pk-ws') && !document.querySelector('.jos-pk-ws-empty'));
+    var jobsDrawerOpen = !!(app && app.classList.contains('jos-jobs-mode') &&
+      document.querySelector('.jos-jobs-drawer.open'));
+    var custRailOpen = !!(app && app.classList.contains('jos-customers-mode') &&
+      (app.classList.contains('jos-cm-intel-open') || document.querySelector('.jos-cm-rail.open')));
+    var hide = v === 'ask' || v === 'ask-hubly' || v === 'editor' || v === 'pipeline' ||
+      !!(document.body && document.body.classList.contains('ed-editor-open')) ||
+      pipeDetailOpen || jobsDrawerOpen || custRailOpen;
     fab.classList.toggle('hidden', !!hide);
   }
   function updateChrome(v) {
@@ -13813,12 +13821,15 @@
         return;
       }
       var calDayBtn = e.target.closest('[data-jos-cal-day]');
-      if (calDayBtn) {
+      if (calDayBtn && !e.target.closest('[data-jos-act], .jos-gcal-event, .jos-cal-pill, .jos-cal-event, .jos-gcal-slot-add')) {
         var cds = calDayBtn.getAttribute('data-jos-cal-day') || '';
         if (cds) {
           root._josCalAnchor = cds;
-          if (root._josJobsMainView === 'calendar') root._josCalView = 'day';
-          else {
+          if (root._josJobsMainView === 'calendar' && !calDayBtn.classList.contains('jos-gcal-dow')) root._josCalView = 'day';
+          else if (root._josJobsMainView === 'calendar' && calDayBtn.classList.contains('jos-gcal-dow')) {
+            root._josCalAnchor = cds;
+            /* Keep week view when clicking a week header day — only jump to day on second intent via Day tab */
+          } else {
             root._josJobsDateFilter = cds;
             root._josJobsPage = 1;
           }
@@ -13827,7 +13838,7 @@
         e.stopPropagation();
         return;
       }
-      var calPill = e.target.closest('.jos-cal-pill[data-jos-job-id], .jos-cal-event[data-jos-job-id]');
+      var calPill = e.target.closest('.jos-cal-pill[data-jos-job-id], .jos-cal-event[data-jos-job-id], .jos-gcal-event[data-jos-job-id]');
       if (calPill) {
         root._josJobId = calPill.getAttribute('data-jos-job-id');
         root._josDrawerOpen = true;
@@ -14139,6 +14150,71 @@
     return { ok: true };
   }
 
+
+  var CAL_DOW = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  function calDowLabel(ds) {
+    var d = new Date(String(ds).slice(0, 10) + 'T12:00:00');
+    return CAL_DOW[d.getDay()] || '';
+  }
+  function calDayNum(ds) {
+    return String(parseInt(String(ds).slice(8, 10), 10) || '');
+  }
+  function calNowMinutes() {
+    var n = new Date();
+    return n.getHours() * 60 + n.getMinutes();
+  }
+  function calEventTitle(j) {
+    if (j.isGoogle) return j.service || 'Google';
+    if (j.isBlock) return j.service || 'Blocked';
+    return j.customer || j.service || 'Job';
+  }
+  function calEventSub(j) {
+    if (j.isBlock || j.isGoogle) return j.customer || 'Busy';
+    var t = (j.time || '').replace(' AM', 'a').replace(' PM', 'p');
+    return t + (j.service ? ' · ' + j.service : '');
+  }
+  function calTimedEventHtml(j, gridStartMin, pxPerMin, selectedId) {
+    var start = parseJobMinutes(j.time);
+    var dur = Math.max(30, Number(j.durationMin) || 60);
+    var top = Math.max(0, (start - gridStartMin) * pxPerMin);
+    var height = Math.max(22, dur * pxPerMin - 2);
+    var tone = (j.isBlock || j.isGoogle) ? 'block' : jobStatusTone(j.status);
+    var on = selectedId && String(selectedId) === String(j.id) ? ' on' : '';
+    return '<button type="button" class="jos-gcal-event ' + tone + on + '" style="top:' + top + 'px;height:' + height + 'px" draggable="true" data-jos-job-id="' + esc(j.id) + '">' +
+      '<strong>' + esc(calEventTitle(j)) + '</strong>' +
+      (height >= 36 ? '<span>' + esc(calEventSub(j)) + '</span>' : '') +
+      '</button>';
+  }
+  function calNowLineHtml(gridStartMin, gridEndMin, pxPerMin, dateStr) {
+    if (dateStr !== todayStr()) return '';
+    var now = calNowMinutes();
+    if (now < gridStartMin || now > gridEndMin) return '';
+    var top = (now - gridStartMin) * pxPerMin;
+    return '<div class="jos-gcal-now" style="top:' + top + 'px" aria-hidden="true"><i></i></div>';
+  }
+  function calHourLinesHtml(startH, endH, pxPerHour) {
+    var html = '';
+    for (var h = startH; h < endH; h++) {
+      html += '<div class="jos-gcal-hline" style="top:' + ((h - startH) * pxPerHour) + 'px"></div>';
+    }
+    return html;
+  }
+  function calOutsideBandsHtml(bh, dayBlocked, startH, endH, pxPerHour) {
+    if (dayBlocked || bh.closed) {
+      return '<div class="jos-gcal-outside" style="top:0;height:' + ((endH - startH) * pxPerHour) + 'px"></div>';
+    }
+    var html = '';
+    var openH = bh.openMin / 60;
+    var closeH = bh.closeMin / 60;
+    if (openH > startH) {
+      html += '<div class="jos-gcal-outside" style="top:0;height:' + ((openH - startH) * pxPerHour) + 'px"></div>';
+    }
+    if (closeH < endH) {
+      html += '<div class="jos-gcal-outside" style="top:' + ((closeH - startH) * pxPerHour) + 'px;height:' + ((endH - closeH) * pxPerHour) + 'px"></div>';
+    }
+    return html;
+  }
+
   function renderJobsCalendar(root, calView, anchor, selectedId) {
     var hours = bizHoursForDate(anchor);
     var views = '<div class="jos-btn-row jos-cal-toolbar">' + JOBS_CAL_VIEWS.map(function (v) {
@@ -14173,63 +14249,88 @@
       html += '<div class="jos-stack jos-mt">' + all.slice().sort(function (a, b) { return String(a.date).localeCompare(b.date); }).slice(0, 30).map(function (j) {
         return jobCardHtml(j, selectedId, false);
       }).join('') + '</div>';
-    } else if (calView === 'day') {
-      /* Google-style full day grid; outside hours shaded so booking rules are visible */
-      var dayStartH = 6;
-      var dayEndH = 21;
-      if (!hours.closed) {
-        dayStartH = Math.min(dayStartH, Math.floor(hours.openMin / 60));
-        dayEndH = Math.max(dayEndH, Math.ceil(hours.closeMin / 60));
+    } else if (calView === 'day' || calView === 'week') {
+      /* Google Calendar–style timed grid (day + week) */
+      var isWeek = calView === 'week';
+      var days = [];
+      if (isWeek) {
+        var ws = startOfWeek(anchor);
+        for (var d = 0; d < 7; d++) days.push(addDaysStr(ws, d));
+      } else {
+        days = [anchor];
       }
-      html += '<div class="jos-cal-dayview jos-gcal-day jos-mt">';
-      for (var h = dayStartH; h < dayEndH; h++) {
-        var label = formatJobMinutes(h * 60);
-        var mins = h * 60;
-        var outside = hours.closed || dayBlocked || mins < hours.openMin || mins >= hours.closeMin;
-        var slotJobs = all.filter(function (j) { return j.date === anchor && Math.floor(parseJobMinutes(j.time) / 60) === h; });
-        html += '<div class="jos-cal-slot' + (outside ? ' outside' : '') + '" data-jos-drop-slot="' + esc(label) + '" data-jos-drop-date="' + esc(anchor) + '" data-jos-slot-hour="' + h + '">' +
-          '<div class="t">' + esc(label) + '</div><div class="slot">' +
-          (slotJobs.length ? slotJobs.map(function (j) {
-            var tone = (j.isBlock || j.isGoogle) ? 'block' : jobStatusTone(j.status);
-            return '<div class="jos-cal-event ' + tone + '" draggable="true" data-jos-job-id="' + esc(j.id) + '">' +
-              '<strong>' + esc(j.isGoogle ? (j.service || 'Google') : (j.isBlock ? (j.service || 'Blocked') : j.customer)) + '</strong>' +
-              '<div class="jos-muted">' + esc(j.isBlock || j.isGoogle ? (j.customer || 'Busy') : ((j.service || '') + ' · ' + (j.durationMin || 60) + 'm')) + '</div>' +
-              (j.isBlock || j.isGoogle ? '' : '<div class="jos-btn-row jos-mt">' + btn('jobs-edit', 'Edit', 'jos-btn jos-btn-sm') + btn('jobs-resize', '+30m', 'jos-btn jos-btn-sm') + '</div>') +
-              '</div>';
-          }).join('') : (outside ? '<span class="jos-cal-closed">Outside hours</span>' : '<button type="button" class="jos-cal-add" data-jos-act="jobs-block-slot" data-jos-slot-time="' + esc(label) + '">+ Block time</button> <button type="button" class="jos-cal-add brand" data-jos-act="jobs-create" data-jos-slot-time="' + esc(label) + '">+ Job</button>')) +
-          '</div></div>';
-      }
-      html += '</div>';
-    } else {
-      var ws = startOfWeek(anchor);
-      var days = []; for (var d = 0; d < 7; d++) days.push(addDaysStr(ws, d));
-      var weekOpen = 6, weekClose = 21;
+      var gridStartH = 6, gridEndH = 21;
       days.forEach(function (ds) {
-        var bh = bizHoursForDate(ds);
-        if (!bh.closed) {
-          weekOpen = Math.min(weekOpen, Math.floor(bh.openMin / 60));
-          weekClose = Math.max(weekClose, Math.ceil(bh.closeMin / 60));
+        var bh0 = bizHoursForDate(ds);
+        if (!bh0.closed) {
+          gridStartH = Math.min(gridStartH, Math.floor(bh0.openMin / 60));
+          gridEndH = Math.max(gridEndH, Math.ceil(bh0.closeMin / 60));
         }
       });
-      html += '<div class="jos-cal-week jos-gcal-week jos-mt"><div class="jos-cal-week-head"><div></div>' + days.map(function (ds) {
+      gridStartH = Math.max(0, gridStartH);
+      gridEndH = Math.min(24, Math.max(gridStartH + 1, gridEndH));
+      var pxPerHour = 56;
+      var pxPerMin = pxPerHour / 60;
+      var gridStartMin = gridStartH * 60;
+      var gridEndMin = gridEndH * 60;
+      var gridH = (gridEndH - gridStartH) * pxPerHour;
+      var rangeLabel = isWeek
+        ? (function () {
+            var a = new Date(days[0] + 'T12:00:00');
+            var b = new Date(days[6] + 'T12:00:00');
+            var opts = { month: 'short', day: 'numeric' };
+            return a.toLocaleDateString(undefined, opts) + ' – ' + b.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+          })()
+        : (function () {
+            var a = new Date(anchor + 'T12:00:00');
+            return a.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+          })();
+
+      html += '<div class="jos-gcal-board jos-mt' + (isWeek ? ' is-week' : ' is-day') + '">';
+      html += '<div class="jos-gcal-range">' + esc(rangeLabel) + '</div>';
+      html += '<div class="jos-gcal-head"><div class="jos-gcal-gutter"></div>';
+      days.forEach(function (ds) {
         var bh = bizHoursForDate(ds);
-        return '<button type="button" class="jos-cal-week-h' + (ds === todayStr() ? ' today' : '') + (bh.closed ? ' closed' : '') + '" data-jos-cal-day="' + ds + '">' + esc(ds.slice(5)) + (bh.closed ? '<span class="sub">Closed</span>' : '') + '</button>';
-      }).join('') + '</div>';
-      for (var hour = weekOpen; hour < weekClose; hour++) {
-        html += '<div class="jos-cal-week-row"><div class="t">' + esc(formatJobMinutes(hour * 60)) + '</div>';
-        days.forEach(function (ds) {
-          var bh = bizHoursForDate(ds);
-          var outside = bh.closed || isDayBlocked(ds) || hour * 60 < bh.openMin || hour * 60 >= bh.closeMin;
-          var cellJobs = all.filter(function (j) { return j.date === ds && Math.floor(parseJobMinutes(j.time) / 60) === hour; });
-          html += '<div class="jos-cal-week-cell' + (outside ? ' outside' : '') + '" data-jos-cal-day="' + ds + '" data-jos-drop-date="' + esc(ds) + '" data-jos-drop-slot="' + esc(formatJobMinutes(hour * 60)) + '">' +
-            cellJobs.map(function (j) {
-              var cls = (j.isBlock || j.isGoogle) ? 'block' : jobStatusTone(j.status);
-              return '<div class="jos-cal-pill ' + cls + '" draggable="true" data-jos-job-id="' + esc(j.id) + '">' + esc((j.customer || j.service || 'Busy').split(' ')[0]) + '</div>';
-            }).join('') + '</div>';
-        });
-        html += '</div>';
+        var isToday = ds === todayStr();
+        html += '<button type="button" class="jos-gcal-dow' + (isToday ? ' today' : '') + (bh.closed || isDayBlocked(ds) ? ' closed' : '') + '" data-jos-cal-day="' + ds + '">' +
+          '<span class="wd">' + esc(calDowLabel(ds)) + '</span>' +
+          '<span class="num">' + esc(calDayNum(ds)) + '</span>' +
+          (bh.closed || isDayBlocked(ds) ? '<span class="sub">Closed</span>' : '') +
+          '</button>';
+      });
+      html += '</div>';
+
+      html += '<div class="jos-gcal-scroll"><div class="jos-gcal-grid" style="height:' + gridH + 'px;--jos-gcal-cols:' + days.length + '">';
+      html += '<div class="jos-gcal-times">';
+      for (var th = gridStartH; th < gridEndH; th++) {
+        html += '<div class="jos-gcal-time" style="height:' + pxPerHour + 'px"><span>' + esc(formatJobMinutes(th * 60).replace(':00', '')) + '</span></div>';
       }
       html += '</div>';
+
+      days.forEach(function (ds) {
+        var bh = bizHoursForDate(ds);
+        var blocked = isDayBlocked(ds);
+        var dayJobs = all.filter(function (j) { return j.date === ds; });
+        html += '<div class="jos-gcal-col" data-jos-drop-date="' + esc(ds) + '" style="height:' + gridH + 'px">';
+        html += calHourLinesHtml(gridStartH, gridEndH, pxPerHour);
+        html += calOutsideBandsHtml(bh, blocked, gridStartH, gridEndH, pxPerHour);
+        html += calNowLineHtml(gridStartMin, gridEndMin, pxPerMin, ds);
+        /* Clickable hour slots for create / block / drop */
+        for (var sh = gridStartH; sh < gridEndH; sh++) {
+          var slotLbl = formatJobMinutes(sh * 60);
+          var out = bh.closed || blocked || sh * 60 < bh.openMin || sh * 60 >= bh.closeMin;
+          html += '<div class="jos-gcal-slot' + (out ? ' outside' : '') + '" style="top:' + ((sh - gridStartH) * pxPerHour) + 'px;height:' + pxPerHour + 'px" ' +
+            'data-jos-drop-date="' + esc(ds) + '" data-jos-drop-slot="' + esc(slotLbl) + '" data-jos-slot-time="' + esc(slotLbl) + '">' +
+            (out ? '' : '<button type="button" class="jos-gcal-slot-add" data-jos-act="jobs-create" data-jos-slot-time="' + esc(slotLbl) + '" title="Create job">+</button>') +
+            '</div>';
+        }
+        dayJobs.forEach(function (j) {
+          html += calTimedEventHtml(j, gridStartMin, pxPerMin, selectedId);
+        });
+        html += '</div>';
+      });
+
+      html += '</div></div></div>';
     }
     html += '<p class="jos-muted jos-mt">Matches your business hours and Google Calendar blocks. Drag jobs to reschedule · Block time to keep Hubly from booking over you.</p></div>';
     return html;
@@ -14596,8 +14697,15 @@
         return;
       }
       if (act === 'jobs-create') {
-        var createDate = root._josCalAnchor || todayStr();
-        var createTime = (t && t.getAttribute('data-jos-slot-time')) || '10:00 AM';
+        var createSlot = t && (t.closest('[data-jos-drop-date]') || t.closest('[data-jos-slot-time]'));
+        var createDate = (createSlot && createSlot.getAttribute('data-jos-drop-date')) ||
+          (t && t.getAttribute('data-jos-drop-date')) ||
+          root._josCalAnchor || todayStr();
+        var createTime = (t && t.getAttribute('data-jos-slot-time')) ||
+          (createSlot && createSlot.getAttribute('data-jos-slot-time')) ||
+          (createSlot && createSlot.getAttribute('data-jos-drop-slot')) ||
+          '10:00 AM';
+        root._josCalAnchor = createDate;
         var bookCheck = isBookableSlot(createDate, createTime);
         if (!bookCheck.ok) {
           toast(bookCheck.reason || 'Outside business hours');
@@ -14616,7 +14724,7 @@
           time: createTime,
           status: 'scheduled',
           address: S().city || 'San Diego, CA',
-          assignedTo: jobsTeam()[0].name,
+          assignedTo: (jobsTeam()[0] && jobsTeam()[0].name) || 'Unassigned',
           depositStatus: 'none',
           deposit: 0,
           durationMin: 120,
@@ -14732,7 +14840,7 @@
           time: '1:00 PM',
           status: 'scheduled',
           address: S().city || '',
-          assignedTo: jobsTeam()[0].name,
+          assignedTo: (jobsTeam()[0] && jobsTeam()[0].name) || 'Unassigned',
           depositStatus: 'due',
           deposit: Math.round((q.amount || 0) * 0.25),
           tags: ['from-quote'],
@@ -14879,7 +14987,13 @@
         return renderJobs();
       }
       if (act === 'jobs-block-slot') {
-        var slotTime = (t && t.getAttribute('data-jos-slot-time')) || '9:00 AM';
+        var blockSlot = t && t.closest('[data-jos-drop-date]');
+        if (blockSlot && blockSlot.getAttribute('data-jos-drop-date')) {
+          root._josCalAnchor = blockSlot.getAttribute('data-jos-drop-date');
+        }
+        var slotTime = (t && t.getAttribute('data-jos-slot-time')) ||
+          (blockSlot && blockSlot.getAttribute('data-jos-drop-slot')) ||
+          '9:00 AM';
         openBlockTimeDialog(root, slotTime);
         root._josJobsMainView = 'calendar';
         return renderJobs();
@@ -14903,6 +15017,7 @@
         var ids = selectedJobIds(root);
         if (!ids.length) return toast('Select job(s) first');
         var tech = jobsTeam()[(act === 'jobs-reassign') ? 1 : 0] || jobsTeam()[0];
+        if (!tech || !tech.name) return toast('Add a team member in Settings first');
         ids.forEach(function (id) {
           var j = findJob(id);
           if (j) { j.assignedTo = tech.name; pushJobTimeline(j, 'note', 'Assigned to ' + tech.name); }
