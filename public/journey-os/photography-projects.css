@@ -28,12 +28,19 @@
 body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   background: var(--pp-bg) !important;
 }
+#p-app.jos-photo-projects-mode .body:not(#v-photo-projects),
+#p-app.jos-pixel.jos-photo-projects-mode .body:not(#v-photo-projects) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
 #p-app.jos-pixel.jos-photo-projects-mode #v-photo-projects.body,
 #p-app.jos-pixel.jos-photo-projects-mode #jos-photo-projects-root {
   min-height: 100vh;
   height: auto;
   padding: 0 !important;
-  background: var(--pp-bg);
+  background: var(--pp-bg) !important;
   position: relative;
   z-index: 2;
   isolation: isolate;
@@ -50,6 +57,21 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
 
 #jos-photo-projects-root > .pp-shell {
   animation: pp-fade-in 0.35s ease both;
+}
+/* Soft / in-place paints — no fade replay (tab switches, saves) */
+#jos-photo-projects-root > .pp-shell.pp-shell-static,
+#jos-photo-projects-root > .pp-shell.pp-shell-static .pp-panel,
+#jos-photo-projects-root > .pp-shell.pp-shell-static .pp-media-section,
+#jos-photo-projects-root > .pp-shell.pp-shell-static .pp-metrics,
+#jos-photo-projects-root > .pp-shell.pp-shell-static .pp-hero,
+#jos-photo-projects-root > .pp-shell.pp-shell-static .pp-lr-hero {
+  animation: none !important;
+}
+/* Tab body swaps should never rise/fade */
+.pp-tab-body .pp-panel,
+.pp-tab-body .pp-media-section,
+.pp-tab-body .pp-media-hero {
+  animation: none !important;
 }
 
 @keyframes pp-fade-in {

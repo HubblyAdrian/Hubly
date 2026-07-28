@@ -1598,9 +1598,7 @@
 
   /* ─── Render ────────────────────────────────────────────────────────── */
 
-  async function renderPhotoProjects() {
-    var root = ownRoot();
-    if (!root) return;
+  function applyProjectsChrome() {
     setPhotoProjectsMode(true);
     var profile = projectWorkspaceProfile();
     try {
@@ -1609,31 +1607,106 @@
       if (subEl) subEl.textContent = profile.subtitle;
       if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle('Projects');
     } catch (e) {}
+    // Keep Home (and every other Operate body) fully out of the way — no bleed / flash.
+    try {
+      document.querySelectorAll('#p-app .body[id^="v-"]').forEach(function (node) {
+        if (node.id === 'v-photo-projects') return;
+        node.classList.add('hidden');
+      });
+      var home = el('v-dashboard') || el('v-home');
+      if (home) home.classList.add('hidden');
+    } catch (e2) {}
+  }
+
+  function paintProjectsView(root, list, st, opts) {
+    opts = opts || {};
+    var html = '';
+    if (st.view === 'wizard') html = renderWizard(root, list, st);
+    else if (st.view === 'command' && st.projectId) {
+      var p = findProject(st.projectId);
+      if (!p) {
+        st.view = 'dashboard';
+        st.projectId = null;
+        html = renderDashboard(root, list, st);
+      } else {
+        html = renderCommand(root, st, p);
+      }
+    } else {
+      st.view = 'dashboard';
+      html = renderDashboard(root, list, st);
+    }
+    // Soft paints skip enter animations so tab / save updates don't flash.
+    if (opts.soft) {
+      html = html.replace('class="pp-shell', 'class="pp-shell pp-shell-static');
+    }
+    root.innerHTML = html;
+    bindPhotoProjects(root);
+  }
+
+  /** Swap only the active tab + body — no full shell rebuild, no Home flash. */
+  function switchCommandTab(tabId) {
+    var root = el('jos-photo-projects-root');
+    if (!root) return;
+    var st = getState(root);
+    var shell = root.querySelector('.pp-cc');
+    var p = st.projectId ? findProject(st.projectId) : null;
+    if (!shell || !p || st.view !== 'command') {
+      st.tab = tabId || 'media';
+      return paintProjectsView(root, _cache.projects || [], st, { soft: true });
+    }
+
+    var tab = tabId || 'media';
+    // Legacy remaps (same as renderCommand).
+    if (tab === 'lightroom' || tab === 'apps') tab = 'creative';
+    else if (tab === 'gallery') tab = 'media';
+    else if (tab === 'contracts' || tab === 'invoices' || tab === 'questionnaire' || tab === 'files') tab = 'deliverables';
+    else if (tab === 'marketing' || tab === 'notes') tab = 'assistant';
+    st.tab = tab;
+    persistUiPrefs(st);
+
+    shell.querySelectorAll('.pp-tab').forEach(function (btn) {
+      var on = btn.getAttribute('data-pp-tab') === tab;
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    var body = shell.querySelector('.pp-tab-body');
+    if (body) body.innerHTML = renderTab(p, tab);
+  }
+
+  async function renderPhotoProjects(opts) {
+    opts = opts || {};
+    var root = ownRoot();
+    if (!root) return;
+    applyProjectsChrome();
 
     var st = getState(root);
+    var soft = !!opts.soft;
+    var hasCache = !!(_cache.loaded && _cache.businessId === businessId());
 
-    root.innerHTML = '<div class="pp-shell"><div class="pp-empty"><p class="pp-muted">Loading projects…</p></div></div>';
+    // Never blank the UI when we already have something painted / cached.
+    if (!hasCache && !root.querySelector('.pp-shell')) {
+      root.innerHTML = '<div class="pp-shell pp-shell-static" style="background:var(--pp-bg);min-height:100vh"><div class="pp-empty"><p class="pp-muted">Loading projects…</p></div></div>';
+    }
+
     var list = [];
     try {
-      list = await loadProjectsFromSupabase(false);
+      list = await loadProjectsFromSupabase(!!opts.force);
       st.error = null;
     } catch (err) {
       st.error = (err && err.message) || 'Could not load projects from Hubly.';
       list = _cache.projects || [];
     }
 
-    var html = '';
-    if (st.view === 'wizard') html = renderWizard(root, list, st);
-    else if (st.view === 'command' && st.projectId) {
-      var p = findProject(st.projectId);
-      if (!p) { st.view = 'dashboard'; st.projectId = null; html = renderDashboard(root, list, st); }
-      else html = renderCommand(root, st, p);
-    } else {
-      st.view = 'dashboard';
-      html = renderDashboard(root, list, st);
-    }
-    root.innerHTML = html;
-    bindPhotoProjects(root);
+    paintProjectsView(root, list, st, { soft: soft || hasCache });
+  }
+
+  /** Soft re-paint from cache (tabs, saves, wizard steps) — no loading flash. */
+  function refreshProjectsView() {
+    var root = el('jos-photo-projects-root') || ownRoot();
+    if (!root) return;
+    applyProjectsChrome();
+    var st = getState(root);
+    paintProjectsView(root, _cache.projects || [], st, { soft: true });
   }
 
   function buildProjectFromWizard(w) {
@@ -1775,7 +1848,8 @@
       st.error = (err && err.message) || 'Could not save project.';
       toast(st.error);
     }
-    return renderPhotoProjects();
+    // Soft refresh — keep shell, avoid Home flash / fade replay.
+    return refreshProjectsView();
   }
 
   async function onClick(e) {
@@ -1790,15 +1864,15 @@
 
     if (act === 'new') {
       st.view = 'wizard'; st.wizardStep = 1; st.wizard = blankWizard(); st.quickOpen = false;
-      return renderPhotoProjects();
+      return refreshProjectsView();
     }
     if (act === 'quick') {
       st.quickOpen = true; st.quick = { name: '', files: [] };
-      return renderPhotoProjects();
+      return refreshProjectsView();
     }
     if (act === 'quick-close') {
       st.quickOpen = false;
-      return renderPhotoProjects();
+      return refreshProjectsView();
     }
     if (act === 'quick-create') {
       if (!ensureBusinessForSave()) return;
@@ -1810,7 +1884,7 @@
         st.projectId = createdQ.id;
         st.tab = 'media';
         toast('Project saved — add more media anytime');
-        return renderPhotoProjects();
+        return refreshProjectsView();
       } catch (err) {
         toast((err && err.message) || 'Could not create project');
         return;
@@ -1818,22 +1892,22 @@
     }
     if (act === 'wiz-cancel' || act === 'back-dash') {
       st.view = 'dashboard'; st.projectId = null; st.wizard = null;
-      return renderPhotoProjects();
+      return refreshProjectsView();
     }
     if (act === 'wiz-client-mode') {
       st.wizard.client_mode = t.getAttribute('data-pp-mode') || 'new';
-      return renderPhotoProjects();
+      return refreshProjectsView();
     }
     if (act === 'wiz-prev') {
       st.wizardStep = Math.max(1, (st.wizardStep || 1) - 1);
-      return renderPhotoProjects();
+      return refreshProjectsView();
     }
     if (act === 'wiz-next') {
       if ((st.wizardStep || 1) === 1 && !(st.wizard && String(st.wizard.name || '').trim())) {
         toast('Add a project name'); return;
       }
       st.wizardStep = Math.min(3, (st.wizardStep || 1) + 1);
-      return renderPhotoProjects();
+      return refreshProjectsView();
     }
     if (act === 'wiz-create') {
       if (!ensureBusinessForSave()) return;
@@ -1841,7 +1915,7 @@
         var created = await persistProject(buildProjectFromWizard(st.wizard || blankWizard()));
         st.view = 'command'; st.projectId = created.id; st.tab = 'media'; st.wizard = null;
         toast('Project created — drop your media here');
-        return renderPhotoProjects();
+        return refreshProjectsView();
       } catch (err) {
         toast((err && err.message) || 'Could not create project');
         return;
@@ -1849,20 +1923,18 @@
     }
     if (act === 'open' && id) {
       st.view = 'command'; st.projectId = id; st.tab = 'media'; persistUiPrefs(st);
-      return renderPhotoProjects();
+      return refreshProjectsView();
     }
     if (act === 'tab') {
-      st.tab = t.getAttribute('data-pp-tab') || 'overview';
-      persistUiPrefs(st);
-      return renderPhotoProjects();
+      return switchCommandTab(t.getAttribute('data-pp-tab') || 'overview');
     }
     if (act === 'gallery' && p) {
-      st.view = 'command'; st.projectId = p.id; st.tab = 'gallery'; persistUiPrefs(st);
-      return renderPhotoProjects();
+      st.view = 'command'; st.projectId = p.id; st.tab = 'media'; persistUiPrefs(st);
+      return switchCommandTab('media');
     }
     if (act === 'invoice' && p) {
-      st.view = 'command'; st.projectId = p.id; st.tab = 'invoices'; persistUiPrefs(st);
-      return renderPhotoProjects();
+      st.view = 'command'; st.projectId = p.id; st.tab = 'deliverables'; persistUiPrefs(st);
+      return switchCommandTab('deliverables');
     }
     if (act === 'sync' && p) {
       var svc = global.AdobeLightroomService;
@@ -2247,7 +2319,7 @@
     if (t.hasAttribute('data-pp-field')) {
       st[t.getAttribute('data-pp-field')] = t.value;
       persistUiPrefs(st);
-      return renderPhotoProjects();
+      return refreshProjectsView();
     }
     if (t.hasAttribute('data-pp-w')) {
       setWizardPath(st.wizard || (st.wizard = blankWizard()), t.getAttribute('data-pp-w'), t.value);
@@ -2261,7 +2333,7 @@
     if (t.hasAttribute('data-pp-quick-files')) {
       st.quick = st.quick || { name: '', files: [] };
       st.quick.files = Array.prototype.slice.call(t.files || []);
-      return renderPhotoProjects();
+      return refreshProjectsView();
     }
     if (t.hasAttribute('data-pp-media-files')) {
       var mediaId = t.getAttribute('data-pp-id');
@@ -2336,7 +2408,7 @@
       st.search = t.value;
       persistUiPrefs(st);
       clearTimeout(root._ppSearchT);
-      root._ppSearchT = setTimeout(function () { renderPhotoProjects(); }, 180);
+      root._ppSearchT = setTimeout(function () { refreshProjectsView(); }, 180);
       return;
     }
     if (t.hasAttribute('data-pp-quick')) {
@@ -2410,17 +2482,22 @@
       st.quickOpen = true;
       st.quick = { name: '', files: [] };
       st.view = 'dashboard';
-      renderPhotoProjects();
+      refreshProjectsView();
     }, 60);
   }
 
   function attach() {
     var api = {
       render: renderPhotoProjects,
+      remount: function () { return renderPhotoProjects({ force: true }); },
+      refresh: refreshProjectsView,
+      switchTab: switchCommandTab,
       syncNav: syncProjectsNav,
       setMode: setPhotoProjectsMode,
+      openQuick: openQuickProject,
       openQuickProject: openQuickProject,
       hasCapability: hasProjectsCapability,
+      hasLightroom: hasLightroomCapability,
       reload: function () { return loadProjectsFromSupabase(true); }
     };
     // Public name: HublyProjects. Legacy alias kept for existing call sites.

@@ -17,6 +17,8 @@ describe('Projects Operate UI fixes', () => {
     assert.match(css, /#jos-photo-projects-root/);
     assert.match(css, /background: var\(--pp-bg\)/);
     assert.match(css, /min-height: 100vh/);
+    assert.match(css, /\.body:not\(#v-photo-projects\)/);
+    assert.match(css, /pp-shell-static/);
     assert.doesNotMatch(css, /#jos-photo-projects-root \{[^}]*animation: pp-fade-in/);
   });
 
@@ -35,6 +37,15 @@ describe('Projects Operate UI fixes', () => {
     assert.match(css, /jos-photo-projects-mode \.hubly-coach/);
     assert.match(journey, /v === 'photo-projects'/);
     assert.match(html, /onProjects/);
+  });
+
+  it('switches project tabs in place without full reload flash', () => {
+    const js = read('public/journey-os/photography-projects.js');
+    assert.match(js, /function switchCommandTab/);
+    assert.match(js, /function refreshProjectsView/);
+    assert.match(js, /act === 'tab'[\s\S]*switchCommandTab/);
+    assert.match(js, /pp-shell-static/);
+    assert.doesNotMatch(js, /act === 'tab'[\s\S]{0,120}renderPhotoProjects\(\)/);
   });
 
   it('does not force Hubly login on New Project; Lightroom is Adobe Connect', () => {
