@@ -27,3 +27,15 @@ test('Jobs shell blocks Home bleed-through like Projects', () => {
   assert.match(hubly, /body\.ed-editor-open #v-editor/);
   assert.match(hubly, /height:100vh!important/);
 });
+
+test('Jobs list is jobs-first with collapsed filters and compact stats', () => {
+  assert.match(journey, /data-jos-act="jobs-filters-toggle"/);
+  assert.match(journey, /act === 'jobs-filters-toggle'/);
+  assert.match(journey, /_josJobsFiltersOpen/);
+  assert.match(journey, /jos-jobs-table-card jos-jobs-first/);
+  assert.match(journey, /jos-jobs-meta-chip/);
+  assert.match(journey, /jos-jobs-foot/);
+  assert.match(css, /\.jos-jobs-kpis\{display:none!important\}/);
+  assert.match(css, /\.jos-jobs-meta-chip/);
+  assert.doesNotMatch(journey, /class="jos-jobs-kpis"/);
+});

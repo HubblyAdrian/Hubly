@@ -13787,7 +13787,7 @@
         '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span><span><strong class="jos-jobs-name">' + esc(j.customer || 'Customer') + '</strong><span class="jos-muted">' + esc(j.phone || j.email || '') + '</span></span></button></td>' +
         '<td class="col-svc"><button type="button" class="jos-linkish" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><strong class="jos-jobs-name">' + esc(j.service || 'Service') + '</strong><span class="jos-muted">' + esc(j.vehicle || '') + (j.durationMin ? (' · ' + j.durationMin + 'm') : '') + '</span></button></td>' +
         '<td class="col-date"><button type="button" class="jos-linkish jos-jobs-dt" data-jos-act="jobs-cal-day" data-jos-day="' + esc(j.date || '') + '"><strong class="jos-jobs-name">' + esc(j.date || '—') + '</strong><span class="jos-muted">' + esc(j.time || '') + ' · ' + esc(jobNumber(j)) + '</span></button></td>' +
-        '<td class="col-status"><button type="button" class="jos-pill ' + jobStatusTone(j.status) + '" data-jos-act="jobs-status-menu" data-jos-job-id="' + esc(j.id) + '">' + esc(j.status) + '</button></td>' +
+        '<td class="col-status"><button type="button" class="jos-pill jos-jobs-status ' + jobStatusTone(j.status) + '" data-jos-act="jobs-status-menu" data-jos-job-id="' + esc(j.id) + '">' + esc(String(j.status || '').replace(/_/g, ' ')) + '</button></td>' +
         '<td class="col-amt"><button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '"><strong class="jos-jobs-name">' + esc(money(j.amount) || '$0') + '</strong></button></td>' +
         '<td class="col-act"><div class="jos-jobs-more-wrap">' +
         '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋯</button>' +
@@ -13801,7 +13801,7 @@
         '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span>' +
         '<span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(jobNumber(j)) + ' · ' + esc(j.service || '') + '</span>' +
         '<span class="jos-muted">' + esc(j.date || '') + ' · ' + esc(j.time || '') + '</span></span>' +
-        '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></button>' +
+        '<span class="jos-pill jos-jobs-status ' + jobStatusTone(j.status) + '">' + esc(String(j.status || '').replace(/_/g, ' ')) + '</span></button>' +
         '<div class="jos-jobs-card-foot">' +
         '<button type="button" class="jos-linkish" data-jos-act="jobs-invoice-view" data-jos-job-id="' + esc(j.id) + '">' + esc(money(j.amount) || '$0') + '</button>' +
         '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋯</button>' +
@@ -13853,65 +13853,71 @@
         renderJobsCalendar(root, calView, calAnchor, selectedId) +
         '</section>';
     } else {
+      var filtersOpen = !!root._josJobsFiltersOpen;
+      var activeFilterCount = 0;
+      if ((root._josJobsDateFilter || 'all') !== 'all') activeFilterCount++;
+      if ((root._josJobsStatus || 'all') !== 'all') activeFilterCount++;
+      if ((root._josJobsService || 'all') !== 'all') activeFilterCount++;
+      if ((root._josJobsEmployee || 'all') !== 'all') activeFilterCount++;
+      if ((root._josJobsLocation || 'all') !== 'all') activeFilterCount++;
+      if ((root._josJobsSource || 'all') !== 'all') activeFilterCount++;
+      if ((root._josJobsTag || 'all') !== 'all') activeFilterCount++;
+
+      var metaHtml =
+        '<div class="jos-jobs-meta" aria-label="Jobs summary">' +
+        '<button type="button" class="jos-jobs-meta-chip" data-jos-act="jobs-kpi-all"><span>All</span><strong>' + total + '</strong></button>' +
+        '<button type="button" class="jos-jobs-meta-chip" data-jos-act="jobs-kpi-scheduled"><span>Scheduled</span><strong>' + scheduled + '</strong></button>' +
+        '<button type="button" class="jos-jobs-meta-chip" data-jos-act="jobs-kpi-progress"><span>Active</span><strong>' + inProgress + '</strong></button>' +
+        '<button type="button" class="jos-jobs-meta-chip" data-jos-act="jobs-kpi-completed"><span>Done</span><strong>' + completed + '</strong></button>' +
+        '<button type="button" class="jos-jobs-meta-chip revenue" data-jos-act="jobs-kpi-revenue"><span>Revenue</span><strong>' + esc(money(revenue || 0) || '$0') + '</strong></button>' +
+        '</div>';
+
       mainBody =
-      '<section class="jos-jobs-filters">' +
+      '<section class="jos-jobs-toolbar">' +
+      '<label class="jos-jobs-search"><input id="jos-jobs-search" type="search" placeholder="Search jobs, customers, phone…" value="' + esc(root._josJobsQ || '') + '"></label>' +
+      '<button type="button" class="jos-btn jos-btn-sm' + (filtersOpen || activeFilterCount ? ' jos-btn-brand' : '') + '" data-jos-act="jobs-filters-toggle" aria-expanded="' + (filtersOpen ? 'true' : 'false') + '">' +
+      (activeFilterCount ? ('Filters · ' + activeFilterCount) : 'Filters') +
+      '</button>' +
+      '</section>' +
+
+      (filtersOpen ? (
+      '<section class="jos-jobs-filters is-open" id="jos-jobs-filters">' +
       '<div class="jos-jobs-filter-row">' +
-      '<select id="jos-jobs-filter-date" class="jos-jobs-dd"><option value="all">Date</option><option value="today"' + ((root._josJobsDateFilter || '') === 'today' ? ' selected' : '') + '>Today</option><option value="week"' + ((root._josJobsDateFilter || '') === 'week' ? ' selected' : '') + '>This week</option></select>' +
-      '<select id="jos-jobs-filter-status" class="jos-jobs-dd"><option value="all">Status</option>' + ['scheduled', 'in_progress', 'completed', 'cancelled', 'pending'].map(function (s) {
-        return '<option value="' + s + '"' + ((root._josJobsStatus || 'all') === s ? ' selected' : '') + '>' + s + '</option>';
+      '<select id="jos-jobs-filter-date" class="jos-jobs-dd"><option value="all">Any date</option><option value="today"' + ((root._josJobsDateFilter || '') === 'today' ? ' selected' : '') + '>Today</option><option value="week"' + ((root._josJobsDateFilter || '') === 'week' ? ' selected' : '') + '>This week</option></select>' +
+      '<select id="jos-jobs-filter-status" class="jos-jobs-dd"><option value="all">Any status</option>' + ['scheduled', 'in_progress', 'completed', 'cancelled', 'pending'].map(function (s) {
+        return '<option value="' + s + '"' + ((root._josJobsStatus || 'all') === s ? ' selected' : '') + '>' + s.replace(/_/g, ' ') + '</option>';
       }).join('') + '</select>' +
-      '<select id="jos-jobs-filter-service" class="jos-jobs-dd"><option value="all">Services</option>' + services.map(function (s) {
+      '<select id="jos-jobs-filter-service" class="jos-jobs-dd"><option value="all">Any service</option>' + services.map(function (s) {
         return '<option value="' + esc(s) + '"' + ((root._josJobsService || 'all') === s ? ' selected' : '') + '>' + esc(s) + '</option>';
       }).join('') + '</select>' +
-      '<select id="jos-jobs-filter-employee" class="jos-jobs-dd"><option value="all">Team</option>' + jobsTeam().map(function (t) {
+      '<select id="jos-jobs-filter-employee" class="jos-jobs-dd"><option value="all">Any teammate</option>' + jobsTeam().map(function (t) {
         return '<option value="' + esc(t.name) + '"' + ((root._josJobsEmployee || 'all') === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
       }).join('') + '</select>' +
-      '<select id="jos-jobs-filter-location" class="jos-jobs-dd"><option value="all">Locations</option>' + locations.map(function (l) {
+      '<select id="jos-jobs-filter-location" class="jos-jobs-dd"><option value="all">Any location</option>' + locations.map(function (l) {
         return '<option value="' + esc(l) + '"' + ((root._josJobsLocation || 'all') === l ? ' selected' : '') + '>' + esc(l) + '</option>';
       }).join('') + '</select>' +
-      '<label class="jos-jobs-search"><input id="jos-jobs-search" type="search" placeholder="Search customer, address, phone..." value="' + esc(root._josJobsQ || '') + '"></label>' +
-      '</div>' +
-      '<div class="jos-jobs-filter-row two">' +
-      '<select id="jos-jobs-filter-source" class="jos-jobs-dd"><option value="all">Source</option><option value="booking">Booking</option><option value="manual">Manual</option><option value="from-quote">Quote</option></select>' +
-      '<select id="jos-jobs-filter-tag" class="jos-jobs-dd"><option value="all">Tags</option><option value="booking">booking</option><option value="manual">manual</option><option value="from-quote">from-quote</option><option value="priority">priority</option></select>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-clear-filters">Clear Filters</button>' +
-      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-adv-toggle">Advanced Filters</button>' +
-      '<button type="button" class="jos-btn jos-btn-sm jos-btn-brand" data-jos-act="jobs-full-calendar">View Full Calendar</button>' +
-      '</div></section>' +
+      '<select id="jos-jobs-filter-source" class="jos-jobs-dd"><option value="all">Any source</option><option value="booking"' + ((root._josJobsSource || '') === 'booking' ? ' selected' : '') + '>Booking</option><option value="manual"' + ((root._josJobsSource || '') === 'manual' ? ' selected' : '') + '>Manual</option><option value="from-quote"' + ((root._josJobsSource || '') === 'from-quote' ? ' selected' : '') + '>Quote</option></select>' +
+      '<select id="jos-jobs-filter-tag" class="jos-jobs-dd"><option value="all">Any tag</option><option value="booking">booking</option><option value="manual">manual</option><option value="from-quote">from-quote</option><option value="priority">priority</option></select>' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-clear-filters">Clear</button>' +
+      '</div></section>'
+      ) : '') +
 
       (advOpen ? '<aside class="jos-jobs-adv">' +
         '<div class="jos-between"><div class="jos-kicker">Advanced Filters</div><button type="button" class="jos-icon-btn" data-jos-act="jobs-adv-toggle">✕</button></div>' +
         '<label>Revenue Range<input type="text" placeholder="$0 – $1000" id="jos-jobs-adv-rev"></label>' +
         '<label>Travel Radius<input type="text" placeholder="25 miles" id="jos-jobs-adv-radius"></label>' +
         '<label>Customer Type<select id="jos-jobs-adv-ctype"><option>Any</option><option>New</option><option>Returning</option><option>Member</option></select></label>' +
-        '<label>Vehicle Type<select><option>Any</option><option>Sedan</option><option>SUV</option><option>Truck</option></select></label>' +
-        '<label class="jos-check-row"><input type="checkbox" id="jos-jobs-adv-recurring"> Recurring Only</label>' +
-        '<label>Job Value<select><option>Any</option><option>Under $200</option><option>$200–$500</option><option>$500+</option></select></label>' +
-        '<label>Employee<select id="jos-jobs-adv-emp"><option value="all">Any</option>' + jobsTeam().map(function (t) { return '<option value="' + esc(t.name) + '">' + esc(t.name) + '</option>'; }).join('') + '</select></label>' +
-        '<label>Weather<select><option>Any</option><option>Clear</option><option>Rain risk</option></select></label>' +
-        '<label>Lead Source<select><option>Any</option><option>Website</option><option>Instagram</option><option>Google</option></select></label>' +
         '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="jobs-adv-apply">Apply</button>' +
         '</aside>' : '') +
 
-      '<section class="jos-jobs-kpis">' +
-      [['jobs-kpi-all', 'Total Jobs', total, 'briefcase', 'brand', total ? '' : '—'],
-        ['jobs-kpi-completed', 'Completed', completed, 'check', 'ok', completed ? '' : '—'],
-        ['jobs-kpi-progress', 'In Progress', inProgress, 'clock', 'warn', inProgress ? 'Active' : '—'],
-        ['jobs-kpi-scheduled', 'Scheduled', scheduled, 'cal', 'info', scheduled ? 'Next 7d' : '—'],
-        ['jobs-kpi-revenue', 'Revenue', money(revenue || 0), 'dollar', 'blue', revenue ? '' : '—']].map(function (k) {
-        return '<button type="button" class="jos-jobs-kpi tone-' + k[4] + '" data-jos-act="' + k[0] + '">' +
-          '<span class="jos-jobs-kpi-ico" aria-hidden="true">' + jobKpiIcon(k[3]) + '</span>' +
-          '<span><span class="lbl">' + esc(k[1]) + '</span><strong>' + esc(String(k[2])) + '</strong><span class="trend">' + esc(k[5]) + '</span></span></button>';
-      }).join('') +
-      '</section>' +
-
-      '<section class="jos-jobs-table-card">' +
-      tabsHtml +
+      '<section class="jos-jobs-table-card jos-jobs-first">' +
+      '<div class="jos-jobs-table-head">' + tabsHtml + '</div>' +
       (pageRows.length
         ? '<div class="jos-jobs-table-wrap"><table class="jos-jobs-table"><thead><tr>' +
-          '<th>Customer</th><th>Service</th><th>Date &amp; Time</th><th>Status</th><th>Amount</th><th>Actions</th>' +
+          '<th>Customer</th><th>Service</th><th>When</th><th>Status</th><th>Amount</th><th></th>' +
           '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' + mobileCards + pager
         : emptyTable) +
+      '<div class="jos-jobs-foot">' + metaHtml + '</div>' +
       '</section>';
     }
 
@@ -13954,7 +13960,7 @@
             return '<button type="button" class="jos-jobs-up-card" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
               '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span>' +
               '<span><strong>' + esc(j.customer) + '</strong><span class="jos-muted">' + esc(j.time) + ' · ' + esc(j.service) + '</span><span class="jos-muted">' + esc(j.vehicle || '') + '</span></span>' +
-              '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></button>';
+              '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(String(j.status || '').replace(/_/g, ' ')) + '</span></button>';
           }).join('') : '<div class="jos-muted">No upcoming jobs</div>') +
           '</div></section>' +
           '<section class="jos-jobs-rail-card jos-rail-panel' + (railTab === 'summary' ? ' on' : '') + '" data-jos-rail-panel="summary"><div class="jos-kicker">Business Summary</div>' +
@@ -14798,6 +14804,10 @@
       if (act === 'jobs-message') {
         toast('Opening messages…');
         return switchNav('chats');
+      }
+      if (act === 'jobs-filters-toggle') {
+        root._josJobsFiltersOpen = !root._josJobsFiltersOpen;
+        return renderJobs();
       }
       if (act === 'jobs-clear-filters') {
         root._josJobsQ = '';
