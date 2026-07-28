@@ -12536,7 +12536,10 @@
     var selectedId = root._josInboxId || (all[0] && all[0].id) || null;
     if (root._josDockCollapsed == null) root._josDockCollapsed = true;
     var dockCollapsed = !!root._josDockCollapsed;
-    var hubOpen = root._josHubOpen !== false;
+    if (root._josHubOpen == null) {
+      root._josHubOpen = typeof window !== 'undefined' && window.innerWidth >= 1200;
+    }
+    var hubOpen = !!root._josHubOpen;
     var noteMode = !!root._josNoteMode;
     var scrollKeep = root._josChatScroll || 0;
 
@@ -12702,11 +12705,10 @@
         '</div></section>';
     }
 
-    // Intelligence hub
+    // Intelligence hub — only when a conversation is open (never covers empty chat)
     var hubHtml = '';
-    if (!sel) {
-      hubHtml = '<aside class="jos-ibx-hub"><div class="jos-empty">Intelligence Hub appears when a conversation is open.</div></aside>';
-    } else {
+    var hubBackdrop = '';
+    if (sel) {
       var vehicle = sel.vehicle || (cust && (cust.vehicle || cust.vehicles)) || 'Tesla Model 3';
       var phone = sel.phone || sel.customer_phone || (cust && cust.phone) || '(619) 555-0100';
       var email = sel.email || sel.customer_email || (cust && cust.email) || 'alex@email.com';
@@ -12746,8 +12748,11 @@
       ];
 
       hubHtml =
-        '<aside class="jos-ibx-hub' + (hubOpen ? '' : ' collapsed') + '" id="jos-inbox-hub">' +
+        '<aside class="jos-ibx-hub' + (hubOpen ? '' : ' collapsed') + '" id="jos-inbox-hub" aria-label="Intelligence Hub">' +
+        '<div class="jos-ibx-hub-head">' +
+        '<div class="jos-kicker">Intelligence Hub</div>' +
         '<button type="button" class="jos-ibx-hub-close" data-jos-act="inbox-hub-toggle" aria-label="Close hub">✕</button>' +
+        '</div>' +
         '<article class="jos-ibx-hcard" data-jos-act="inbox-open-customer">' +
         '<div class="jos-kicker">Customer Profile</div>' +
         '<div class="jos-ibx-profile">' +
@@ -12836,6 +12841,9 @@
         }).join('') +
         '</div></article>' +
         '</aside>';
+      if (hubOpen) {
+        hubBackdrop = '<div class="jos-ibx-hub-backdrop" data-jos-act="inbox-hub-toggle" aria-hidden="true"></div>';
+      }
     }
 
     var kpis = [
@@ -12867,10 +12875,13 @@
       '<button type="button" class="jos-icon-btn" data-jos-act="inbox-filter-panel" title="Filter">⚙</button>' +
       '<button type="button" class="jos-icon-btn" data-jos-act="toggle-notifs" title="Notifications">🔔</button>' +
       '<button type="button" class="jos-ibx-ava-btn" data-jos-act="go-settings" title="Profile">' + esc(inboxInitials(S().ownerName || 'Adrian')) + '</button>' +
-      '<button type="button" class="jos-btn jos-btn-sm jos-ibx-hub-btn" data-jos-act="inbox-hub-toggle">Hub</button>' +
+      (sel
+        ? '<button type="button" class="jos-btn jos-btn-sm jos-ibx-hub-btn' + (hubOpen ? ' on' : '') + '" data-jos-act="inbox-hub-toggle" aria-pressed="' + (hubOpen ? 'true' : 'false') + '">' + (hubOpen ? 'Hide Hub' : 'Hub') + '</button>'
+        : '') +
       '</div></header>' +
       tabsHtml +
-      '<div class="jos-ibx-body">' + listCol + chatCol + hubHtml + '</div>' +
+      '<div class="jos-ibx-body' + (hubHtml && hubOpen ? ' has-hub' : ' no-hub') + '">' + listCol + chatCol + hubHtml + '</div>' +
+      hubBackdrop +
       dock +
       '<div class="jos-ibx-ctx" id="jos-inbox-ctx" hidden></div>' +
       '</div>';
@@ -13025,7 +13036,7 @@
       return renderInbox();
     }
     if (act === 'inbox-hub-toggle') {
-      if (root) root._josHubOpen = !(root._josHubOpen !== false);
+      if (root) root._josHubOpen = !root._josHubOpen;
       return renderInbox();
     }
     if (act === 'inbox-note-toggle') {
