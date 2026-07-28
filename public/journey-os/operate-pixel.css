@@ -235,6 +235,7 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
   align-items:center;
 }
 #p-app.jos-pixel .bar-title-block{min-width:0}
+#p-app.jos-pixel .bar-title-block[hidden]{display:none!important}
 #p-app.jos-pixel .bar-title{
   font-size:18px;font-weight:800;color:var(--jos-navy);letter-spacing:-.02em;line-height:1.15;
 }
