@@ -3989,12 +3989,16 @@ html[data-theme="night"] .jos-mem-form select{
   --jos-jobs-rail:320px;
   --jos-jobs-bg:#F7F8FA;
 }
-#p-app.jos-pixel.jos-jobs-mode .app-main{margin-left:var(--nav);background:var(--jos-jobs-bg)}
+#p-app.jos-pixel.jos-jobs-mode .app-main{margin-left:var(--nav);background:var(--jos-jobs-bg)!important}
 #p-app.jos-pixel.jos-jobs-mode .app-bar{display:none!important}
+/* Opaque full-viewport shell — Home must not bleed through Jobs / Calendar */
 #p-app.jos-pixel.jos-jobs-mode #v-jobs.body,
 #p-app.jos-pixel.jos-jobs-mode #jos-jobs-root{
-  min-height:100vh;height:100vh;padding:0!important;overflow:hidden;background:var(--jos-jobs-bg);
+  min-height:100vh;height:100vh;padding:0!important;overflow:hidden;
+  background:var(--jos-jobs-bg);
+  position:relative;z-index:2;isolation:isolate;
 }
+#p-app.jos-pixel.jos-jobs-mode #v-jobs.body > :not(#jos-jobs-root){display:none!important}
 #p-app.jos-pixel.jos-jobs-mode .app-nav{
   width:var(--nav);background:linear-gradient(180deg,var(--jos-sidebar) 0%,#0C111A 100%);
 }
@@ -4008,7 +4012,12 @@ html[data-theme="night"] .jos-mem-form select{
 
 .jos-jobs-shell{
   height:100vh;max-width:1728px;margin:0 auto;display:flex;flex-direction:column;
-  background:var(--jos-jobs-bg,#F7F8FA);animation:josHomeIn .35s ease both;overflow:hidden;
+  background:var(--jos-jobs-bg,#F7F8FA);overflow:hidden;
+  /* Do not fade the shell — opacity:0 lets Home paint through during enter */
+  animation:none;
+}
+.jos-jobs-shell > .jos-jobs-layout{
+  animation:josHomeIn .28s ease both;
 }
 .jos-jobs-layout{
   flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:0;overflow:hidden;
@@ -4250,6 +4259,26 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-jd-stack{display:grid;gap:12px}
 .jos-jd-kv{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--jos-border);font-size:13px}
 .jos-jd-kv span{color:var(--jos-ink-3);font-weight:700}
+.jos-jd-head-acts{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.jos-jd-tabs.is-disabled{opacity:.55;pointer-events:none}
+.jos-je-form{padding-bottom:12px}
+.jos-je-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;width:100%;
+}
+.jos-je-field{
+  display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--jos-ink-2);
+}
+.jos-je-field.full{grid-column:1/-1}
+.jos-je-field input,.jos-je-field select{
+  height:40px;border:1px solid var(--jos-border);border-radius:12px;padding:0 12px;
+  font:inherit;font-size:13px;font-weight:600;color:var(--jos-navy);background:#F9FAFB;
+}
+.jos-je-field input:focus,.jos-je-field select:focus{
+  outline:none;border-color:rgba(217,99,45,.45);background:#fff;box-shadow:0 0 0 3px rgba(217,99,45,.12);
+}
+@media(max-width:720px){
+  .jos-je-grid{grid-template-columns:1fr}
+}
 .jos-jd-profile{display:flex;gap:12px;align-items:flex-start}
 .jos-jd-svc{padding:12px;border:1px solid var(--jos-border);border-radius:12px;background:var(--jos-surface-2)}
 .jos-jd-tl{
