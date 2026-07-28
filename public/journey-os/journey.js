@@ -7088,12 +7088,19 @@
         if (!(existing.tags || []).some(function (t) { return /abandon/i.test(String(t)); })) {
           existing.tags = (existing.tags || []).concat(['abandoned']);
         }
+        try {
+          if (typeof global.isLeadSeen === 'function' && global.isLeadSeen(existing)) existing.unread = 0;
+        } catch (eSeenEx) {}
         return;
       }
       var created = r.created_at || r.createdAt || new Date().toISOString();
       var name = r.customer_name || r.customer_phone || r.name || 'Website visitor';
       var service = r.service_name || r.service || 'Service';
       var notes = r.notes || 'Started booking and left before finishing.';
+      var alreadySeen = false;
+      try {
+        alreadySeen = typeof global.isLeadSeen === 'function' && global.isLeadSeen({ key: key, id: id, reqId: id });
+      } catch (eSeenNew) {}
       pipe.unshift({
         id: id,
         key: key,
@@ -7118,7 +7125,7 @@
         notes: notes,
         notesList: [notes],
         tags: ['abandoned', 'recovery'],
-        unread: 1,
+        unread: alreadySeen ? 0 : 1,
         aiScore: 58,
         aiQualified: false,
         quoteStatus: 'draft',
@@ -7258,7 +7265,9 @@
     ensureLeadsOsState();
     var pipe = S().pipeline.manual;
     var demoIds = {
-      lead_jordan: 1, lead_sarah: 1, lead_mike: 1, lead_alex: 1, lead_emily: 1, lead_pat: 1
+      lead_jordan: 1, lead_sarah: 1, lead_mike: 1, lead_alex: 1, lead_emily: 1, lead_pat: 1,
+      lead_recover_jordan: 1, lead_incomplete: 1, lead_google: 1, lead_ig: 1, lead_fb: 1,
+      lead_website: 1, lead_referral: 1
     };
     var demoNames = {
       'jordan lee': 1, 'sarah chen': 1, 'mike torres': 1, 'alex rivera': 1, 'emily wilson': 1, 'pat nguyen': 1
@@ -7266,12 +7275,25 @@
     if (!allowDemoSeed()) {
       // Never invent fake people for real accounts; strip leftover demo rows.
       if (Array.isArray(pipe) && pipe.length) {
+        var before = pipe.length;
         S().pipeline.manual = pipe.filter(function (l) {
           if (!l) return false;
-          if (demoIds[String(l.id || '')] || demoIds[String(l.key || '')]) return false;
+          var id = String(l.id || '');
+          var key = String(l.key || '');
+          if (demoIds[id] || demoIds[key] || demoIds[key.replace(/^(manual|br|chat):/, '')]) return false;
           if (demoNames[String(l.name || '').trim().toLowerCase()]) return false;
           return true;
         });
+        if (S().pipeline.manual.length !== before) {
+          try {
+            if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon();
+          } catch (ePersist) {}
+          try {
+            if (typeof global.updateLeadsNavBadge === 'function' && typeof global.collectPipelineLeads === 'function') {
+              global.updateLeadsNavBadge(global.collectPipelineLeads());
+            }
+          } catch (eBadge) {}
+        }
       }
       return;
     }
@@ -7937,8 +7959,9 @@
     }
     if (sel) {
       sel.unread = 0;
+      sel._seenCleared = true;
       try {
-        if (typeof global.markLeadSeen === 'function') global.markLeadSeen(sel.key || sel.id);
+        if (typeof global.markLeadSeen === 'function') global.markLeadSeen(sel);
       } catch (eSeen0) {}
     }
     var f = root._josLeadFilters || {};
@@ -8033,8 +8056,12 @@
     try {
       var badge = el('nav-leads-badge');
       if (badge) {
-        /* Badge = unread only. Opening a lead clears unread so the orange count drops. */
-        var n = all.filter(function (l) { return Number(l.unread) > 0 && normalizeCrmStatus(l) !== 'lost'; }).length;
+        /* Badge = unseen / unread only. Opening a lead clears so the orange count drops. */
+        var n = all.filter(function (l) {
+          if (normalizeCrmStatus(l) === 'lost') return false;
+          if (typeof global.isLeadSeen === 'function' && global.isLeadSeen(l)) return false;
+          return Number(l.unread) > 0;
+        }).length;
         badge.textContent = String(n);
         badge.classList.toggle('hidden', !n);
         badge.classList.toggle('pulse', n > 0);
@@ -8144,7 +8171,7 @@
         if (lead) {
           lead.unread = 0;
           try {
-            if (typeof global.markLeadSeen === 'function') global.markLeadSeen(lead.key || lead.id);
+            if (typeof global.markLeadSeen === 'function') global.markLeadSeen(lead);
           } catch (eSeen) {}
         }
         root.querySelector('.jos-ld-shell') && root.querySelector('.jos-ld-shell').classList.add('ws-open');
@@ -11282,6 +11309,13 @@
     updateChrome('dashboard');
     root.classList.add('jos-home-root');
     try {
+      /* Strip leftover demo leads before Home KPIs / nav badge paint. */
+      seedDemoLeadsIfEmpty();
+      try {
+        if (typeof global.updateLeadsNavBadge === 'function' && typeof global.collectPipelineLeads === 'function') {
+          global.updateLeadsNavBadge(global.collectPipelineLeads());
+        }
+      } catch (eBadgeHome) {}
       renderHomeDashboard(root);
     } catch (err) {
       console.warn('HublyJourneyOS Home', err);
@@ -11530,8 +11564,17 @@
     root._josRevRange = revRange;
     var sparkRev = [yestRev * 0.7, yestRev * 0.85, yestRev, todayRev * 0.6, todayRev * 0.8, todayRev * 0.9, todayRev].map(function (n) { return Math.max(8, Math.round(n / 40)); });
     var leadList = collectLeads();
-    var openLeads = leadList.length || (ceoDemo ? 5 : 0);
-    var leadValue = leadList.reduce(function (s, l) { return s + (parseFloat(l.value || l.amount || l.estimate) || 0); }, 0) || (ceoDemo ? 920 : 0);
+    var inboxId = (typeof global.leadInboxStageId === 'function' && global.leadInboxStageId()) || 'new';
+    var openLeads = leadList.filter(function (l) {
+      if (l.stage && l.stage !== inboxId) return false;
+      if (typeof global.isLeadSeen === 'function') return !global.isLeadSeen(l);
+      return Number(l.unread) > 0;
+    }).length;
+    if (ceoDemo && !openLeads && !leadList.length) openLeads = 5;
+    var leadValue = leadList.filter(function (l) {
+      if (typeof global.isLeadSeen === 'function') return !global.isLeadSeen(l);
+      return true;
+    }).reduce(function (s, l) { return s + (parseFloat(l.value || l.amount || l.estimate) || 0); }, 0) || (ceoDemo && openLeads ? 920 : 0);
     var reviews = (S().website && S().website.manualReviews) || [];
     var rating = Number(S().website && S().website.reviewRating) || (reviews[0] && reviews[0].rating) || (ceoDemo ? 4.9 : 0);
     var reviewCount = Number(S().website && S().website.reviewCount) || reviews.length || (ceoDemo ? 128 : 0);
