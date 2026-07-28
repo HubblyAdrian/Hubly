@@ -14770,12 +14770,8 @@
 
     root.addEventListener('pointerdown', function (e) {
       if (e.button != null && e.button !== 0) return;
-<<<<<<< HEAD
-      if (e.target.closest('#jos-gcal-create-pop')) return;
-      if (e.target.closest('[data-jos-act="jobs-delete"], .jos-gcal-del')) return;
-=======
       if (e.target.closest('#jos-gcal-create-pop') || e.target.closest('#jos-gcal-create-menu')) return;
->>>>>>> origin/cursor/calendar-create-gcal-flow-0640
+      if (e.target.closest('[data-jos-act="jobs-delete"], .jos-gcal-del')) return;
       var resizeHandle = e.target.closest('[data-jos-gcal-resize]');
       var eventEl = e.target.closest('.jos-gcal-event[data-jos-job-id]');
       var col = e.target.closest('.jos-gcal-col');
