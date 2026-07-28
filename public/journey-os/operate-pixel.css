@@ -4359,6 +4359,7 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-jd-head-acts{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .jos-jd-tabs.is-disabled{opacity:.55;pointer-events:none}
 .jos-je-form{padding-bottom:12px}
+.jos-je-form.is-inline .jos-muted{margin:0}
 .jos-je-grid{
   display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;width:100%;
 }
@@ -4366,16 +4367,47 @@ html[data-theme="night"] .jos-mem-form select{
   display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--jos-ink-2);
 }
 .jos-je-field.full{grid-column:1/-1}
-.jos-je-field input,.jos-je-field select{
+.jos-je-field input,.jos-je-field select,.jos-je-field textarea{
   height:40px;border:1px solid var(--jos-border);border-radius:12px;padding:0 12px;
-  font:inherit;font-size:13px;font-weight:600;color:var(--jos-navy);background:#F9FAFB;
+  font:inherit;font-size:13px;font-weight:600;color:var(--jos-navy);background:#F9FAFB;width:100%;box-sizing:border-box;
 }
-.jos-je-field input:focus,.jos-je-field select:focus{
+.jos-je-field textarea{height:auto;min-height:72px;padding:10px 12px;resize:vertical;line-height:1.4}
+.jos-je-field input:focus,.jos-je-field select:focus,.jos-je-field textarea:focus{
   outline:none;border-color:rgba(217,99,45,.45);background:#fff;box-shadow:0 0 0 3px rgba(217,99,45,.12);
 }
 @media(max-width:720px){
   .jos-je-grid{grid-template-columns:1fr}
 }
+.jos-jobs-inline-cust{
+  display:flex;align-items:center;gap:10px;min-width:0;
+}
+.jos-jobs-inline-cust .jos-jobs-ava{
+  flex-shrink:0;border:0;cursor:pointer;
+}
+.jos-jobs-inline-stack{
+  display:flex;flex-direction:column;gap:4px;min-width:0;width:100%;
+}
+.jos-jobs-inline{
+  width:100%;min-width:0;height:32px;border:1px solid transparent;border-radius:8px;
+  background:transparent;padding:0 8px;font:inherit;font-size:13px;font-weight:700;color:var(--jos-navy);
+  box-sizing:border-box;
+}
+.jos-jobs-inline.muted{font-size:12px;font-weight:600;color:var(--jos-ink-2);height:28px}
+.jos-jobs-inline:hover{border-color:#E5E7EB;background:#F9FAFB}
+.jos-jobs-inline:focus{
+  outline:none;border-color:rgba(217,99,45,.45);background:#fff;box-shadow:0 0 0 3px rgba(217,99,45,.12);
+}
+.jos-jobs-inline-amt{font-variant-numeric:tabular-nums;max-width:7.5rem}
+.jos-jobs-inline-status{
+  appearance:none;height:30px;border-radius:999px;padding:0 10px;font-size:11px;font-weight:800;
+  text-transform:capitalize;cursor:pointer;border:1px solid #E5E7EB;background:#F3F4F6;color:#374151;
+}
+.jos-jobs-inline-status.info{background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE}
+.jos-jobs-inline-status.ok{background:#ECFDF3;color:#15803D;border-color:#BBF7D0}
+.jos-jobs-inline-status.warn{background:#FFF7ED;color:#C2410C;border-color:#FED7AA}
+.jos-jobs-inline-status.hot{background:#FEF2F2;color:#B91C1C;border-color:#FECACA}
+.jos-jobs-inline-status.mute{background:#F3F4F6;color:#6B7280;border-color:#E5E7EB}
+.jos-jobs-more-wrap{display:flex;align-items:center;gap:4px;justify-content:flex-end}
 .jos-jd-profile{display:flex;gap:12px;align-items:flex-start}
 .jos-jd-svc{padding:12px;border:1px solid var(--jos-border);border-radius:12px;background:var(--jos-surface-2)}
 .jos-jd-tl{

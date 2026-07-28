@@ -11,14 +11,25 @@ test('Jobs calendar mode titles the page Calendar', () => {
   assert.match(journey, /bar\.textContent = 'Calendar'/);
 });
 
-test('New jobs open an editable details form', () => {
+test('Job details Overview is always editable without Edit mode', () => {
   assert.match(journey, /function renderJobEditForm/);
   assert.match(journey, /jos-je-customer/);
   assert.match(journey, /jos-je-address/);
   assert.match(journey, /jos-je-number/);
-  assert.match(journey, /_josJobEditOpen = true/);
+  assert.match(journey, /renderJobEditForm\(j, \{ inline: true \}\)/);
+  assert.match(journey, /function applyJobEditFormToJob/);
   assert.match(journey, /act === 'jobs-edit-save'/);
   assert.match(journey, /Customer name is required/);
+  assert.doesNotMatch(journey, /data-jos-act="jobs-edit">Edit</);
+  assert.doesNotMatch(journey, /Edit details/);
+});
+
+test('Jobs list supports inline field editing', () => {
+  assert.match(journey, /data-jos-job-field="customer"/);
+  assert.match(journey, /data-jos-job-field="service"/);
+  assert.match(journey, /data-jos-job-field="amount"/);
+  assert.match(journey, /function applyJobListField/);
+  assert.match(css, /\.jos-jobs-inline\{/);
 });
 
 test('Jobs shell blocks Home bleed-through like Projects', () => {
