@@ -328,6 +328,7 @@ body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
 #p-app.jos-pixel #jos-customers-root,
 #p-app.jos-pixel #jos-inbox-root,
 #p-app.jos-pixel #jos-jobs-root,
+#p-app.jos-pixel #jos-calendar-root,
 #p-app.jos-pixel #jos-money-root,
 #p-app.jos-pixel #jos-revenue-root,
 #p-app.jos-pixel #jos-pipeline-root,
@@ -4093,12 +4094,15 @@ html[data-theme="night"] .jos-mem-form select{
 #p-app.jos-pixel.jos-jobs-mode .app-bar{display:none!important}
 /* Opaque full-viewport shell — Home must not bleed through Jobs / Calendar */
 #p-app.jos-pixel.jos-jobs-mode #v-jobs.body,
-#p-app.jos-pixel.jos-jobs-mode #jos-jobs-root{
+#p-app.jos-pixel.jos-jobs-mode #jos-jobs-root,
+#p-app.jos-pixel.jos-jobs-mode #v-calendar.body,
+#p-app.jos-pixel.jos-jobs-mode #jos-calendar-root{
   min-height:100vh;height:100vh;padding:0!important;overflow:hidden;
   background:var(--jos-jobs-bg);
   position:relative;z-index:2;isolation:isolate;
 }
-#p-app.jos-pixel.jos-jobs-mode #v-jobs.body > :not(#jos-jobs-root){display:none!important}
+#p-app.jos-pixel.jos-jobs-mode #v-jobs.body > :not(#jos-jobs-root),
+#p-app.jos-pixel.jos-jobs-mode #v-calendar.body > :not(#jos-calendar-root){display:none!important}
 #p-app.jos-pixel.jos-jobs-mode .app-nav{
   width:var(--nav);background:linear-gradient(180deg,var(--jos-sidebar) 0%,#0C111A 100%);
 }

@@ -1,0 +1,712 @@
+/**
+ * Hubly Operate layout tokens + shared page primitives.
+ * Inbox (.jos-ibx-*) stays exempt — it is the visual rhythm reference.
+ */
+:root,
+#p-app.jos-pixel {
+  /* Spacing scale */
+  --hub-space-4: 4px;
+  --hub-space-8: 8px;
+  --hub-space-12: 12px;
+  --hub-space-16: 16px;
+  --hub-space-20: 20px;
+  --hub-space-24: 24px;
+  --hub-space-32: 32px;
+  --hub-space-40: 40px;
+  --hub-space-48: 48px;
+  --hub-space-64: 64px;
+
+  /* Typography */
+  --hub-title: 32px;
+  --hub-title-weight: 700;
+  --hub-title-lh: 1.15;
+  --hub-title-tracking: -0.03em;
+  --hub-section: 22px;
+  --hub-card-title: 16px;
+  --hub-body: 15px;
+  --hub-secondary: 14px;
+  --hub-label: 12px;
+  --hub-sub: 16px;
+  --hub-sub-color: var(--jos-ink-2, #4A5160);
+
+  /* Controls */
+  --hub-btn-h: 44px;
+  --hub-icon-btn: 40px;
+  --hub-input-h: 48px;
+  --hub-filter-h: 44px;
+  --hub-chip-h: 36px;
+  --hub-search-radius: 14px;
+  --hub-search-pad-x: 16px;
+
+  /* Surfaces */
+  --hub-radius: 14px;
+  --hub-radius-sm: 10px;
+  --hub-radius-lg: 16px;
+  --hub-border: var(--jos-border, #E6E8EC);
+  --hub-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+  --hub-card-pad: 20px;
+  --hub-kpi-h: 92px;
+  --hub-kpi-metric: 42px;
+  --hub-page-max: 1400px;
+  --hub-section-gap: var(--hub-space-24);
+  --hub-header-to-content: var(--hub-space-24);
+  --hub-title-to-sub: 6px;
+
+  /* Icons */
+  --hub-icon-nav: 20px;
+  --hub-icon-card: 18px;
+  --hub-icon-btn-size: 16px;
+  --hub-icon-status: 14px;
+}
+
+/* ── Shared page layout primitives ── */
+.hub-page,
+.jos-page.hub-page {
+  max-width: var(--hub-page-max);
+  margin: 0 auto;
+  padding: var(--hub-space-20) var(--hub-space-24) var(--hub-space-40);
+  box-sizing: border-box;
+}
+
+.hub-page-header,
+.jos-page-head.hub-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--hub-space-16);
+  flex-wrap: wrap;
+  margin: 0 0 var(--hub-header-to-content);
+}
+
+.hub-page-header h1,
+.jos-page-head.hub-page-header h1,
+.hub-page-title {
+  margin: 0;
+  font-size: var(--hub-title);
+  font-weight: var(--hub-title-weight);
+  line-height: var(--hub-title-lh);
+  letter-spacing: var(--hub-title-tracking);
+  color: var(--jos-navy, #141B2B);
+}
+
+.hub-page-header p,
+.jos-page-head.hub-page-header p,
+.hub-page-sub {
+  margin: var(--hub-title-to-sub) 0 0;
+  font-size: var(--hub-sub);
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--hub-sub-color);
+  max-width: 56ch;
+}
+
+.hub-page-actions,
+.jos-page-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--hub-space-12);
+  flex-wrap: wrap;
+}
+
+.hub-page-search,
+.jos-ds-search.hub-page-search {
+  display: flex;
+  align-items: center;
+  height: var(--hub-input-h);
+  border-radius: var(--hub-search-radius);
+  border: 1px solid var(--hub-border);
+  background: #fff;
+  padding: 0 var(--hub-search-pad-x);
+  gap: var(--hub-space-12);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hub-page-search input,
+.jos-ds-search.hub-page-search input {
+  border: 0;
+  outline: 0;
+  width: 100%;
+  background: transparent;
+  font: inherit;
+  font-size: var(--hub-secondary);
+  color: var(--jos-navy, #141B2B);
+}
+
+.hub-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--hub-space-12);
+  flex-wrap: wrap;
+  margin: 0 0 var(--hub-space-16);
+}
+
+.hub-filter-bar select,
+.hub-filter-bar .hub-filter-dd {
+  height: var(--hub-filter-h);
+  border-radius: var(--hub-radius-sm);
+  border: 1px solid var(--hub-border);
+  background: #fff;
+  padding: 0 var(--hub-space-12);
+  font: inherit;
+  font-size: var(--hub-secondary);
+  font-weight: 650;
+  color: var(--jos-navy, #141B2B);
+}
+
+.hub-filter-chip {
+  height: var(--hub-chip-h);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hub-space-8);
+  padding: 0 var(--hub-space-12);
+  border-radius: 999px;
+  border: 1px solid var(--hub-border);
+  background: #fff;
+  font-size: var(--hub-secondary);
+  font-weight: 650;
+}
+
+.hub-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--hub-space-12);
+  margin: 0 0 var(--hub-space-16);
+}
+
+.hub-kpi-card,
+.jos-kpi.hub-kpi-card {
+  min-height: var(--hub-kpi-h);
+  height: var(--hub-kpi-h);
+  padding: var(--hub-card-pad);
+  border-radius: var(--hub-radius);
+  border: 1px solid var(--hub-border);
+  background: #fff;
+  box-shadow: var(--hub-shadow);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--hub-space-4);
+}
+
+.hub-kpi-card .lbl,
+.hub-kpi-card .hub-kpi-lbl {
+  font-size: var(--hub-label);
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--jos-ink-3, #8A909C);
+}
+
+.hub-kpi-card .v,
+.hub-kpi-card .hub-kpi-v {
+  font-size: var(--hub-kpi-metric);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--jos-navy, #141B2B);
+}
+
+.hub-kpi-card .trend,
+.hub-kpi-card .hub-kpi-trend {
+  font-size: var(--hub-secondary);
+  font-weight: 650;
+  color: var(--jos-ink-2, #4A5160);
+}
+
+.hub-content-area {
+  margin-top: 0;
+}
+
+.hub-section-title {
+  margin: 0 0 var(--hub-space-12);
+  font-size: var(--hub-section);
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: var(--jos-navy, #141B2B);
+}
+
+.hub-empty,
+.jos-empty.hub-empty {
+  max-height: 300px;
+  padding: var(--hub-space-32) var(--hub-space-24);
+  text-align: center;
+  border: 1px solid var(--hub-border);
+  border-radius: var(--hub-radius);
+  background: #fff;
+  box-shadow: var(--hub-shadow);
+}
+
+.hub-empty h3 {
+  margin: 0 0 var(--hub-space-8);
+  font-size: var(--hub-card-title);
+  font-weight: 750;
+}
+
+.hub-empty p {
+  margin: 0 0 var(--hub-space-16);
+  font-size: var(--hub-secondary);
+  color: var(--hub-sub-color);
+}
+
+/* Standardize Operate page heroes (Inbox exempt) */
+#p-app.jos-pixel .jos-page-head h1,
+#p-app.jos-pixel .jos-mkt-mc-header h1,
+#p-app.jos-pixel .jos-mkt-mc-subhead h1,
+#p-app.jos-pixel .jos-rev-mc-title h1,
+#p-app.jos-pixel .jos-mem-mc-header h1,
+#p-app.jos-pixel .jos-rve-mc-header h1,
+#p-app.jos-pixel .jos-rpt-mc-header h1,
+#p-app.jos-pixel .jos-pipe-page > .jos-page-head h1,
+#p-app.jos-pixel .jos-cust-page > .jos-page-head h1,
+#p-app.jos-pixel .jos-leads-page > .jos-page-head h1,
+#p-app.jos-pixel .jos-ah-mc-header h1,
+#p-app.jos-pixel .jos-set-mc-header h1,
+#p-app.jos-pixel .pp-mc-header h1,
+#p-app.jos-pixel .jos-jobs-header h1 {
+  font-size: var(--hub-title) !important;
+  font-weight: var(--hub-title-weight) !important;
+  line-height: var(--hub-title-lh) !important;
+  letter-spacing: var(--hub-title-tracking) !important;
+}
+
+#p-app.jos-pixel .jos-page-head p,
+#p-app.jos-pixel .jos-mkt-mc-header p,
+#p-app.jos-pixel .jos-mkt-mc-subhead p,
+#p-app.jos-pixel .jos-rev-mc-title p,
+#p-app.jos-pixel .jos-mem-mc-header p,
+#p-app.jos-pixel .jos-rve-mc-header p,
+#p-app.jos-pixel .jos-rpt-mc-header p,
+#p-app.jos-pixel .jos-jobs-header p {
+  margin-top: var(--hub-title-to-sub) !important;
+  font-size: var(--hub-sub) !important;
+  line-height: 1.5 !important;
+}
+
+#p-app.jos-pixel .jos-page-head,
+#p-app.jos-pixel .jos-mkt-mc-header,
+#p-app.jos-pixel .jos-rev-mc-header,
+#p-app.jos-pixel .jos-mem-mc-header,
+#p-app.jos-pixel .jos-rve-mc-header,
+#p-app.jos-pixel .jos-rpt-mc-header,
+#p-app.jos-pixel .jos-jobs-header {
+  margin-bottom: var(--hub-header-to-content) !important;
+  min-height: 0 !important;
+}
+
+/* Compress oversized KPI / CTA heroes */
+#p-app.jos-pixel .jos-mkt-mc-new,
+#p-app.jos-pixel .jos-btn.hub-btn,
+#p-app.jos-pixel .jos-jobs-new,
+#p-app.jos-pixel .jos-jobs-export {
+  height: var(--hub-btn-h) !important;
+}
+
+#p-app.jos-pixel .jos-mkt-mc-kpi,
+#p-app.jos-pixel .jos-kpi:not(.jos-ibx-kpi) {
+  min-height: var(--hub-kpi-h);
+  padding: var(--hub-card-pad);
+  border-radius: var(--hub-radius);
+  box-shadow: var(--hub-shadow);
+  border-color: var(--hub-border);
+}
+
+#p-app.jos-pixel .jos-empty:not(.jos-ibx-empty) {
+  max-height: 300px;
+  padding: var(--hub-space-32) var(--hub-space-24);
+}
+
+/* Jobs / Calendar denser workspace */
+#p-app.jos-pixel.jos-jobs-mode .jos-jobs-main {
+  padding: var(--hub-space-24) var(--hub-space-24) var(--hub-space-32);
+}
+
+#p-app.jos-pixel.jos-jobs-mode .jos-jobs-toolbar .jos-jobs-search,
+#p-app.jos-pixel.jos-jobs-mode .jos-jobs-search {
+  height: var(--hub-input-h);
+  border-radius: var(--hub-search-radius);
+  padding: 0 var(--hub-search-pad-x);
+  background: #fff;
+}
+
+#p-app.jos-pixel.jos-jobs-mode .jos-jobs-dd {
+  height: var(--hub-filter-h);
+  border-radius: var(--hub-radius-sm);
+}
+
+#p-app.jos-pixel.jos-jobs-mode .jos-jobs-table-card,
+#p-app.jos-pixel.jos-jobs-mode .jos-jobs-rail-card {
+  border-radius: var(--hub-radius-lg);
+  border-color: var(--hub-border);
+  box-shadow: var(--hub-shadow);
+}
+
+/* Job summary sidebar (list tab) */
+.jos-jobs-sum-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--hub-space-12);
+  margin-top: var(--hub-space-12);
+}
+
+.jos-jobs-sum-kpi {
+  min-height: 84px;
+  padding: var(--hub-space-16);
+  border: 1px solid var(--hub-border);
+  border-radius: var(--hub-radius);
+  background: #F8F9FB;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+}
+
+.jos-jobs-sum-kpi:hover {
+  border-color: rgba(217, 99, 45, 0.35);
+  background: #FFF8F3;
+}
+
+.jos-jobs-sum-kpi .lbl {
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--jos-ink-3);
+}
+
+.jos-jobs-sum-kpi strong {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--jos-navy);
+  line-height: 1;
+}
+
+.jos-jobs-donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--hub-space-16);
+  margin-top: var(--hub-space-12);
+}
+
+.jos-jobs-donut {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: conic-gradient(
+    #22c55e 0 var(--jos-donut-sched, 33%),
+    #3b82f6 var(--jos-donut-sched, 33%) var(--jos-donut-prog, 58%),
+    #f59e0b var(--jos-donut-prog, 58%) var(--jos-donut-pend, 70%),
+    #94a3b8 var(--jos-donut-pend, 70%) var(--jos-donut-done, 95%),
+    #ef4444 var(--jos-donut-done, 95%) 100%
+  );
+  mask: radial-gradient(circle 34px at center, transparent 98%, #000 100%);
+  -webkit-mask: radial-gradient(circle 34px at center, transparent 98%, #000 100%);
+}
+
+.jos-jobs-donut-legend {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--jos-ink-2);
+}
+
+.jos-jobs-donut-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jos-jobs-donut-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.jos-jobs-insight {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--hub-border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--jos-navy);
+  margin-top: 8px;
+  background: #fff;
+}
+
+.jos-jobs-insight.warn { background: #FFF7ED; border-color: #FED7AA; color: #9A3412; }
+.jos-jobs-insight.alert { background: #FEF3C7; border-color: #FDE68A; color: #92400E; }
+.jos-jobs-insight.info { background: #EFF6FF; border-color: #BFDBFE; color: #1E40AF; }
+
+.jos-jobs-help-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: var(--jos-ink-2);
+  line-height: 1.45;
+}
+
+.jos-jobs-help-card a {
+  color: var(--jos-brand);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* Calendar-specific chrome */
+.jos-jobs-shell.is-calendar .jos-jobs-cal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.jos-jobs-cal-views {
+  display: inline-flex;
+  border: 1px solid var(--hub-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.jos-jobs-cal-views button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  height: 40px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--jos-ink-2);
+  cursor: pointer;
+}
+
+.jos-jobs-cal-views button.on {
+  background: var(--jos-brand);
+  color: #fff;
+}
+
+.jos-jobs-travel-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--jos-ink-2);
+}
+
+.jos-jobs-travel-toggle input {
+  accent-color: var(--jos-brand);
+  width: 18px;
+  height: 18px;
+}
+
+.jos-cal-ai-card {
+  background: linear-gradient(135deg, #F5F3FF, #EEF2FF);
+  border: 1px solid #E0E7FF;
+  border-radius: var(--hub-radius);
+  padding: var(--hub-space-16);
+  margin-top: var(--hub-space-12);
+}
+
+.jos-cal-ai-card p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #3730A3;
+  line-height: 1.45;
+}
+
+.jos-cal-today-sum {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.jos-cal-today-sum .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--jos-ink-2);
+}
+
+.jos-cal-today-sum strong {
+  color: var(--jos-navy);
+  font-weight: 800;
+}
+
+.jos-jobs-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.jos-jobs-agenda-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  appearance: none;
+  border: 1px solid var(--hub-border);
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.jos-jobs-agenda-item:hover {
+  border-color: rgba(217, 99, 45, 0.35);
+  background: #FFF8F3;
+}
+
+.jos-jobs-agenda-item .meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jos-jobs-agenda-item strong {
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--jos-navy);
+}
+
+.jos-jobs-agenda-item span {
+  font-size: 12px;
+  color: var(--jos-ink-3);
+}
+
+/* Editor v2 — Edit Mode */
+body.ed-editor-open:not(.ed-edit-mode) #ed-ws-preview .ws-pe-target {
+  outline: none !important;
+  cursor: default;
+}
+
+body.ed-editor-open:not(.ed-edit-mode) #ed-ws-preview .ws-pe-target:hover {
+  outline: none !important;
+}
+
+body.ed-editor-open.ed-edit-mode #ed-ws-preview .ws-pe-target {
+  cursor: text;
+}
+
+body.ed-editor-open.ed-edit-mode #ed-ws-preview .ws-pe-target:hover {
+  outline: 2px solid rgba(37, 99, 235, 0.55);
+  outline-offset: 2px;
+}
+
+body.ed-editor-open.ed-edit-mode #ed-ws-preview .ws-pe-target.is-pe-selected {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+#ws-pe-context-bar {
+  position: absolute;
+  z-index: 14000;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(15, 20, 31, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+  transform: translateY(-8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+#ws-pe-context-bar.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+#ws-pe-context-bar button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#ws-pe-context-bar button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#ws-pe-context-bar button[data-pe-ai] {
+  color: #FDBA74;
+}
+
+.ed-edit-mode-btn {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #E6E8EC);
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  color: var(--ink-2, #4A5160);
+}
+
+body.ed-edit-mode .ed-edit-mode-btn {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+  color: #1D4ED8;
+}
+
+/* Website-first: keep canvas dominant when inspector closed */
+body.ed-editor-open .ed-shell.ed-canvas-mode:not(.ed-sheet-open) {
+  grid-template-columns: auto minmax(0, 1fr) !important;
+}
+
+body.ed-editor-open .ed-shell.ed-canvas-mode.ed-settings-collapsed:not(.ed-sheet-open) {
+  grid-template-columns: 0 minmax(0, 1fr) !important;
+}
+
+body.ed-editor-open .ed-shell.ed-canvas-mode .ed-prev {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  :root,
+  #p-app.jos-pixel {
+    --hub-title: 28px;
+  }
+
+  .jos-jobs-sum-grid {
+    grid-template-columns: 1fr;
+  }
+}
