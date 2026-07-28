@@ -47,6 +47,17 @@
         return String(global.currentBusiness.id).trim();
       }
     } catch (e) {}
+    try {
+      if (typeof currentBusiness !== 'undefined' && currentBusiness && currentBusiness.id) {
+        return String(currentBusiness.id).trim();
+      }
+    } catch (e2) {}
+    try {
+      var S = global.S || {};
+      if (S.businessId) return String(S.businessId).trim();
+      if (S.bizId) return String(S.bizId).trim();
+      if (S.business && S.business.id) return String(S.business.id).trim();
+    } catch (e3) {}
     return '';
   }
 
