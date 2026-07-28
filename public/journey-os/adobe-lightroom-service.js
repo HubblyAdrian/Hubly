@@ -1,7 +1,7 @@
 /**
  * Client-facing AdobeLightroomService facade.
  * UI components call this only — never Adobe APIs directly.
- * Attaches an External Workspace (provider = adobe_lightroom) to a Hubly Project.
+ * Attaches Adobe Lightroom as a Connected App on a Hubly Project.
  * Projects, galleries, invoices, and delivery work without Adobe.
  */
 (function (global) {

@@ -1,17 +1,13 @@
 /**
- * AdobeLightroomService — vendor boundary for Adobe Lightroom Classic / Cloud.
+ * AdobeLightroomService — Connected App (editing) for Hubly Core.
  *
- * Attaches an External Workspace (provider = adobe_lightroom) to a Hubly
- * Photography Project. The Project remains Hubly’s primary record; Lightroom
- * is one synchronized workspace among many (Dropbox, Drive, Capture One, …).
+ * Product: Connected Apps. Internal project link may use workspace rows.
+ * Lightroom is one provider among many (Canva, Dropbox, Drive, Frame.io, …).
  *
  * Production-First:
- * - Interface + honest "Provider not configured" until Adobe credentials exist
+ * - Honest "Provider not configured" until Adobe credentials exist
  * - NEVER simulate successful Adobe API calls
- * - Projects work fully without Adobe — Lightroom enhances, never required
- *
- * UI must call through this service (or an Edge Function that uses it).
- * Do not call Adobe APIs from browser components.
+ * - Projects work fully without Adobe
  */
 
 import {
@@ -21,6 +17,15 @@ import {
   providerOk,
   type HublyProviderResult,
 } from "./hubly_providers.ts";
+import {
+  registerConnectedApp,
+  type ConnectedAppAction,
+  type ConnectedAppCapability,
+  type ConnectedAppHealth,
+  type ConnectedAppPermission,
+  type ConnectedAppProvider,
+  type ConnectedAppStatus,
+} from "./hubly_connected_apps.ts";
 import type {
   ExternalWorkspaceProvider,
   ProjectWorkspace,
@@ -125,8 +130,11 @@ export interface LightroomProvider {
  * Methods return PROVIDER_NOT_CONFIGURED until Adobe OAuth secrets exist.
  * When credentials are present, real Adobe API wiring lands here — not in the UI.
  */
-export class AdobeLightroomService implements LightroomProvider, ExternalWorkspaceProvider {
+export class AdobeLightroomService
+  implements LightroomProvider, ExternalWorkspaceProvider, ConnectedAppProvider
+{
   readonly id = "adobe_lightroom" as const;
+  readonly name = "Adobe Lightroom";
 
   missingEnv(): string[] {
     const missing: string[] = [];
@@ -346,7 +354,7 @@ export class AdobeLightroomService implements LightroomProvider, ExternalWorkspa
           metadata: { via: "AdobeLightroomService.connectWorkspace" },
         },
       },
-      "Adobe Lightroom External Workspace connection started",
+      "Adobe Lightroom Connected App connection started",
       { adobeRequired: true },
     );
   }
@@ -383,15 +391,86 @@ export class AdobeLightroomService implements LightroomProvider, ExternalWorkspa
         lastSyncAt: synced.data?.lastSyncAt || new Date().toISOString(),
         metadata: { sync: synced.data },
       },
-      "Lightroom External Workspace synced",
+      "Lightroom Connected App synced",
     );
+  }
+
+  /* ─── ConnectedAppProvider ─────────────────────────────────────────── */
+
+  permissions(): ConnectedAppPermission[] {
+    return [
+      { id: "catalog:read", label: "Read catalogs", required: true },
+      { id: "assets:read", label: "Read photos", required: true },
+      { id: "assets:write", label: "Upload / sync photos", required: true },
+    ];
+  }
+
+  capabilities(): ConnectedAppCapability[] {
+    return ["editing", "assets_import", "assets_export"];
+  }
+
+  actions(): ConnectedAppAction[] {
+    return [
+      { id: "create_album", label: "Create Lightroom Album", capability: "editing" },
+      { id: "sync_photos", label: "Sync Photos", capability: "assets_import" },
+      { id: "open_lightroom", label: "Open Lightroom", capability: "editing" },
+    ];
+  }
+
+  async sync(opts: {
+    businessId: string;
+    projectId?: string;
+  }): Promise<HublyProviderResult<{ lastSyncAt: string }>> {
+    if (!opts.projectId) {
+      return providerError(this.id, "PROJECT_REQUIRED", "projectId required to sync Lightroom", {
+        retryable: false,
+      });
+    }
+    const res = await this.syncProject({
+      businessId: opts.businessId,
+      projectId: opts.projectId,
+    });
+    if (!res.ok) return res as HublyProviderResult<{ lastSyncAt: string }>;
+    return providerOk(
+      this.id,
+      { lastSyncAt: res.data?.lastSyncAt || new Date().toISOString() },
+      "Lightroom sync requested",
+    );
+  }
+
+  async status(_opts: {
+    businessId: string;
+    projectId?: string;
+  }): Promise<HublyProviderResult<ConnectedAppStatus>> {
+    if (!this.isConfigured()) {
+      return providerOk(this.id, {
+        connected: false,
+        health: "not_configured",
+        message: "Add ADOBE_CLIENT_ID and ADOBE_CLIENT_SECRET to connect Lightroom.",
+      }, "Lightroom not configured");
+    }
+    return providerOk(this.id, {
+      connected: false,
+      health: "disconnected",
+      message: "Lightroom is configured but not connected yet.",
+    }, "Lightroom disconnected");
+  }
+
+  async health(): Promise<HublyProviderResult<ConnectedAppHealth>> {
+    if (!this.isConfigured()) {
+      return providerOk(this.id, "not_configured" as const, "Lightroom not configured");
+    }
+    return providerOk(this.id, "disconnected" as const, "Lightroom ready for OAuth");
   }
 }
 
 let _singleton: AdobeLightroomService | null = null;
 
 export function getAdobeLightroomService(): AdobeLightroomService {
-  if (!_singleton) _singleton = new AdobeLightroomService();
+  if (!_singleton) {
+    _singleton = new AdobeLightroomService();
+    registerConnectedApp(_singleton);
+  }
   return _singleton;
 }
 

@@ -1,22 +1,18 @@
 /**
- * ProjectWorkspace — provider-agnostic external workspace attached to a
- * Photography Project.
+ * Project-scoped Connected Apps links (internal: workspaces).
  *
- * Hubly Project is always primary. External systems (Adobe Lightroom,
- * Capture One, Dropbox, Google Drive, Canva, …) synchronize as workspaces.
- * A project may have one or more linked workspaces at the same time.
+ * Product language: Connected Apps (“Connect Dropbox”).
+ * Table: photography_project_workspaces (and future generic project_connections).
+ *
+ * Hubly Core owns the Connected Apps engine; Projects attach providers.
+ * Reusable across industries — photography is the first consumer, not the owner.
  */
 
 import type { HublyProviderResult } from "./hubly_providers.ts";
+import type { ConnectedAppId } from "./hubly_connected_apps.ts";
 
-export type ProjectWorkspaceProvider =
-  | "adobe_lightroom"
-  | "capture_one"
-  | "dropbox"
-  | "google_drive"
-  | "canva"
-  | "frame_io"
-  | "other";
+/** @deprecated Prefer ConnectedAppId — kept for existing workspace rows. */
+export type ProjectWorkspaceProvider = ConnectedAppId | "other";
 
 export type ProjectWorkspaceSyncState =
   | "unlinked"
@@ -50,14 +46,13 @@ export type ProjectWorkspaceUpsert = {
 };
 
 /**
- * Capability-facing interface for attaching / syncing external workspaces.
- * Vendor providers (AdobeLightroomService, future DropboxService, …) implement this.
+ * @deprecated Prefer ConnectedAppProvider from hubly_connected_apps.ts.
+ * Kept so Adobe Lightroom workspace helpers keep compiling during cutover.
  */
 export interface ExternalWorkspaceProvider {
   readonly id: ProjectWorkspaceProvider;
   isConfigured(): boolean;
   missingEnv(): string[];
-  /** Start or resume a connection that yields an External Workspace link. */
   connectWorkspace(opts: {
     businessId: string;
     projectId: string;
@@ -75,15 +70,18 @@ export interface ExternalWorkspaceProvider {
   }): Promise<HublyProviderResult<ProjectWorkspace>>;
 }
 
+/** Product catalog for Connected Apps UI (project scope). */
 export const PROJECT_WORKSPACE_PROVIDERS: {
   id: ProjectWorkspaceProvider;
   label: string;
   role: string;
 }[] = [
   { id: "adobe_lightroom", label: "Adobe Lightroom", role: "Editing" },
-  { id: "capture_one", label: "Capture One", role: "Editing" },
-  { id: "dropbox", label: "Dropbox", role: "Files" },
-  { id: "google_drive", label: "Google Drive", role: "Files" },
-  { id: "canva", label: "Canva", role: "Design" },
+  { id: "canva", label: "Canva", role: "Creative" },
   { id: "frame_io", label: "Frame.io", role: "Review" },
+  { id: "dropbox", label: "Dropbox", role: "Storage" },
+  { id: "google_drive", label: "Google Drive", role: "Storage" },
+  { id: "capture_one", label: "Capture One", role: "Editing" },
+  { id: "meta", label: "Meta", role: "Publishing" },
+  { id: "google_business", label: "Google Business", role: "Local" },
 ];

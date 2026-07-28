@@ -3,9 +3,9 @@
  * Independent of Jobs. Supabase is SSOT for project records.
  * localStorage may ONLY cache UI preferences (sort, filters, tab).
  *
- * External Workspaces: a Project may link one or more providers
- * (Adobe Lightroom, Dropbox, Google Drive, Capture One, Canva, …).
- * The Project remains Hubly’s primary record; externals synchronize to it.
+ * Connected Apps (product): Projects attach providers (Lightroom, Canva,
+ * Dropbox, Drive, …). Internal rows may live in photography_project_workspaces.
+ * Hubly Core owns the Connected Apps + Creative engines — reusable by every industry.
  * Gated by businesses.capabilities.projects (not trade heuristics).
  */
 (function (global) {
@@ -44,7 +44,7 @@
     { channel: 'before_after', title: 'Before & After Carousel' }
   ];
   var CREATE_ASSETS = [
-    { id: 'lightroom', label: 'Lightroom Workspace', hint: 'External Workspace — optional until Adobe connects' },
+    { id: 'lightroom', label: 'Lightroom', hint: 'Connected App — optional until Adobe connects' },
     { id: 'folder', label: 'Client Folder', hint: 'Hubly project workspace' },
     { id: 'contract', label: 'Contract' },
     { id: 'invoice', label: 'Invoice' },
@@ -52,7 +52,8 @@
     { id: 'timeline', label: 'Timeline' },
     { id: 'shot_list', label: 'Shot List' },
     { id: 'gallery', label: 'Gallery' },
-    { id: 'marketing', label: 'AI Marketing Workflow' }
+    { id: 'marketing', label: 'AI Marketing Workflow' },
+    { id: 'canva', label: 'Canva', hint: 'Connected App — Creative Engine' }
   ];
   var POST_EDIT_PIPELINE = [
     'Gallery Created',
@@ -65,13 +66,17 @@
     'Anniversary Reminder'
   ];
 
-  var WORKSPACE_PROVIDERS = [
-    { id: 'adobe_lightroom', label: 'Adobe Lightroom', role: 'Editing', available: true },
-    { id: 'capture_one', label: 'Capture One', role: 'Editing', available: false },
-    { id: 'dropbox', label: 'Dropbox', role: 'Files', available: false },
-    { id: 'google_drive', label: 'Google Drive', role: 'Files', available: false },
-    { id: 'canva', label: 'Canva', role: 'Design', available: false }
-  ];
+  var WORKSPACE_PROVIDERS = (global.HublyConnectedApps && global.HublyConnectedApps.list)
+    ? global.HublyConnectedApps.list().map(function (a) {
+      return { id: a.id, label: a.name, role: a.role, available: a.id === 'adobe_lightroom' || a.id === 'canva' };
+    })
+    : [
+      { id: 'adobe_lightroom', label: 'Adobe Lightroom', role: 'Editing', available: true },
+      { id: 'canva', label: 'Canva', role: 'Creative', available: true },
+      { id: 'frame_io', label: 'Frame.io', role: 'Review', available: false },
+      { id: 'dropbox', label: 'Dropbox', role: 'Storage', available: false },
+      { id: 'google_drive', label: 'Google Drive', role: 'Storage', available: false }
+    ];
 
   var _cache = { businessId: null, projects: [], loaded: false, loading: null };
 
@@ -461,7 +466,7 @@
     if (res.error) throw res.error;
     var created = rowToProject(res.data);
     created.workspaces = p.workspaces || [];
-    // Ensure a pending Lightroom External Workspace exists (optional until connected).
+    // Ensure a pending Lightroom Connected App link exists (optional until connected).
     upsertWorkspaceLocal(created, {
       provider: 'adobe_lightroom',
       display_name: created.name,
@@ -739,7 +744,7 @@
     return '<div class="pp-shell pp-dash">' +
       '<header class="pp-dash-head">' +
         '<div><p class="pp-eyebrow">Photography</p><h1 class="pp-title">Photography Projects</h1>' +
-        '<p class="pp-sub">Open the project — not the editor. External workspaces (Lightroom, Drive, …) sync to Hubly.</p></div>' +
+        '<p class="pp-sub">Open the project — Connected Apps (Lightroom, Canva, Drive…) sync to Hubly.</p></div>' +
         '<div class="pp-dash-actions">' +
           '<button type="button" class="pp-btn pp-btn-ghost pp-btn-lg" data-pp-act="quick">Quick Project</button>' +
           '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="new">+ New Project</button>' +
@@ -816,7 +821,7 @@
       team: { lead: '', second: '', assistant: '', editor: '' },
       assets: {
         lightroom: true, folder: true, contract: true, invoice: true,
-        questionnaire: true, timeline: true, shot_list: true, gallery: true, marketing: true
+        questionnaire: true, timeline: true, shot_list: true, gallery: true, marketing: true, canva: true
       }
     };
   }
@@ -862,7 +867,7 @@
         field('Assistant', '<input type="text" data-pp-w="team.assistant" value="' + esc(w.team.assistant) + '">') +
         field('Editor', '<input type="text" data-pp-w="team.editor" value="' + esc(w.team.editor) + '">') + '</div>';
     } else {
-      body = '<p class="pp-help">Hubly prepares the project OS. Link Adobe Lightroom (or Dropbox, Drive, …) later as External Workspaces — the Project stays primary.</p><div class="pp-checks">' +
+      body = '<p class="pp-help">Hubly prepares the project OS. Connect Adobe Lightroom, Canva, Dropbox, and more later — the Project stays primary.</p><div class="pp-checks">' +
         CREATE_ASSETS.map(function (a) {
           return '<label class="pp-check"><input type="checkbox" data-pp-asset="' + a.id + '"' + (w.assets[a.id] ? ' checked' : '') + '>' +
             '<span><strong>' + esc(a.label) + '</strong>' + (a.hint ? '<small>' + esc(a.hint) + '</small>' : '') + '</span></label>';
@@ -891,8 +896,8 @@
   function renderCommand(root, st, p) {
     var tab = st.tab || 'overview';
     var tabs = [
-      ['overview', 'Overview'], ['timeline', 'Timeline'], ['lightroom', 'Lightroom'],
-      ['gallery', 'Gallery'], ['contracts', 'Contracts'], ['invoices', 'Invoices'],
+      ['overview', 'Overview'], ['timeline', 'Timeline'], ['lightroom', 'Connected Apps'],
+      ['creative', 'Creative'], ['gallery', 'Gallery'], ['contracts', 'Contracts'], ['invoices', 'Invoices'],
       ['questionnaire', 'Questionnaire'], ['deliverables', 'Deliverables'],
       ['marketing', 'Marketing'], ['notes', 'Notes'], ['activity', 'Activity']
     ];
@@ -920,7 +925,8 @@
 
   function renderTab(p, tab) {
     if (tab === 'timeline') return renderTimelineTab(p);
-    if (tab === 'lightroom') return renderLightroomTab(p);
+    if (tab === 'lightroom') return renderConnectedAppsTab(p);
+    if (tab === 'creative') return renderCreativeTab(p);
     if (tab === 'gallery') return renderGalleryTab(p);
     if (tab === 'contracts') return renderContractsTab(p);
     if (tab === 'invoices') return renderInvoicesTab(p);
@@ -939,9 +945,9 @@
     if (!linked.length) return '';
     if (linked.length === 1) {
       var lab = WORKSPACE_PROVIDERS.find(function (x) { return x.id === linked[0].provider; });
-      return (lab ? lab.label : linked[0].provider) + ' workspace';
+      return (lab ? lab.label : linked[0].provider);
     }
-    return linked.length + ' workspaces';
+    return linked.length + ' apps';
   }
 
   function renderOverviewTab(p) {
@@ -949,7 +955,7 @@
       '<div><dt>Location</dt><dd>' + esc(p.location || '—') + '</dd></div>' +
       '<div><dt>Type</dt><dd>' + esc(p.project_type) + '</dd></div>' +
       '<div><dt>Lead</dt><dd>' + esc((p.team && p.team.lead) || '—') + '</dd></div>' +
-      '<div><dt>Workspaces</dt><dd>' + esc(workspaceSummary(p) || 'None linked') + '</dd></div></dl>' +
+      '<div><dt>Connected Apps</dt><dd>' + esc(workspaceSummary(p) || 'None connected') + '</dd></div></dl>' +
       '<p class="pp-muted">' + esc(p.notes || 'No notes yet.') + '</p></section>' +
       '<section class="pp-panel"><h3>Client</h3><dl class="pp-dl">' +
       '<div><dt>Name</dt><dd>' + esc(p.client_name || '—') + '</dd></div>' +
@@ -982,92 +988,145 @@
     } catch (e) { return ''; }
   }
 
-  function renderLightroomTab(p) {
+  function renderConnectedAppsTab(p) {
     var lr = p.lightroom || {};
     var lrWs = getWorkspace(p, 'adobe_lightroom');
-    var linked = lrWs && (lrWs.sync_state === 'linked' || lrWs.sync_state === 'synced' || lrWs.sync_state === 'pending') &&
-      (lr.connection_status === 'connected' || lr.connection_status === 'synced' || lrWs.sync_state === 'synced' || lrWs.sync_state === 'linked');
-    // Treat pending as "workspace prepared" but not Adobe-connected for hero CTAs
     var adobeConnected = lrWs && (lrWs.sync_state === 'linked' || lrWs.sync_state === 'synced');
 
     var hero = '<section class="pp-lr-hero">' +
       '<div class="pp-lr-hero-copy">' +
-        '<p class="pp-eyebrow">External Workspace</p>' +
-        '<h2>Lightroom Workspace</h2>' +
-        '<p class="pp-lr-lead">Professional editing powered by Adobe Lightroom.</p>' +
-        '<p>Hubly organizes every project before and after editing. Open <strong>' + esc(p.name) + '</strong> — Lightroom is one linked workspace among many.</p>' +
+        '<p class="pp-eyebrow">Connected Apps</p>' +
+        '<h2>Connect the tools you already use</h2>' +
+        '<p class="pp-lr-lead">Hubly stays the home for ' + esc(p.name) + '.</p>' +
+        '<p>Connect Adobe Lightroom, Canva, Dropbox, and more — then keep working inside this project.</p>' +
         '<div class="pp-btn-row">' +
           '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="adobe-connect">Connect Adobe</button>' +
-          (adobeConnected ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Photos</button>' : '') +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="gallery">Continue in Hubly</button>' +
+          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="canva-connect">Connect Canva</button>' +
+          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="creative">Open Creative</button>' +
         '</div>' +
       '</div>' +
       '<div class="pp-lr-hero-side">' +
         '<div class="pp-lr-twin">' +
-          '<div><span class="pp-label">Hubly Project</span><strong>' + esc(p.name) + '</strong><small>Client · Invoices · Gallery · Marketing</small></div>' +
+          '<div><span class="pp-label">Hubly Project</span><strong>' + esc(p.name) + '</strong><small>Primary record</small></div>' +
           '<div class="pp-lr-twin-join" aria-hidden="true">↔</div>' +
-          '<div><span class="pp-label">External Workspace</span><strong>' + esc((lrWs && lrWs.display_name) || lr.album_name || p.name) + '</strong><small>Adobe Lightroom · RAWs · Edits · Favorites</small></div>' +
+          '<div><span class="pp-label">Connected Apps</span><strong>' + esc(workspaceSummary(p) || 'None yet') + '</strong><small>Editing · Creative · Storage</small></div>' +
         '</div>' +
-        '<p class="pp-muted">Workspace · ' + esc((lrWs && lrWs.sync_state) || 'pending') +
-          (lrWs && lrWs.external_id ? ' · ' + esc(String(lrWs.external_id).slice(0, 14)) : '') + '</p>' +
       '</div></section>';
 
-    var providers = '<section class="pp-panel pp-panel-wide"><h3>Linked workspaces</h3>' +
-      '<p class="pp-muted">A project can connect to multiple providers at once. Hubly stays the primary record.</p>' +
+    var providers = '<section class="pp-panel pp-panel-wide"><h3>Connected Apps</h3>' +
+      '<p class="pp-muted">A project can connect multiple apps. Actions come from each app\u2019s capabilities.</p>' +
       '<div class="pp-ws-grid">' +
       WORKSPACE_PROVIDERS.map(function (prov) {
         var w = getWorkspace(p, prov.id);
-        var state = w ? w.sync_state : 'unlinked';
-        return '<div class="pp-ws-card' + (prov.id === 'adobe_lightroom' ? ' on' : '') + '">' +
+        var connected = w && (w.sync_state === 'linked' || w.sync_state === 'synced' || w.sync_state === 'pending');
+        var mark = connected ? '\u2713 Connected' : (prov.available ? '\u25cb Connect' : '\u25cb Soon');
+        var act = connectActionForProvider(prov.id);
+        return '<div class="pp-ws-card' + (connected ? ' on' : '') + '">' +
           '<div class="pp-mkt-top"><strong>' + esc(prov.label) + '</strong><span class="pp-pill">' + esc(prov.role) + '</span></div>' +
-          '<p class="pp-muted">' + (w ? ('Status · ' + esc(state)) : (prov.available ? 'Not linked' : 'Coming soon')) + '</p>' +
-          (prov.id === 'adobe_lightroom'
-            ? '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="adobe-connect">Connect</button>'
+          '<p class="pp-muted">' + esc(mark) + '</p>' +
+          (act
+            ? '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="' + act + '">' + (connected ? 'Manage' : 'Connect') + '</button>'
             : '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" disabled>Soon</button>') +
           '</div>';
       }).join('') +
       '</div></section>';
 
+    var lrDetail = adobeConnected
+      ? '<section class="pp-panel pp-panel-wide"><h3>Adobe Lightroom</h3><dl class="pp-dl">' +
+        '<div><dt>Status</dt><dd>' + esc(lrLabel(p.lightroom_status)) + '</dd></div>' +
+        '<div><dt>Album</dt><dd>' + esc(lr.album_name || '\u2014') + '</dd></div>' +
+        '<div><dt>Last Sync</dt><dd>' + esc(formatRelative((lrWs && lrWs.last_sync_at) || p.last_sync_at)) + '</dd></div></dl>' +
+        '<div class="pp-btn-row">' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">Create Lightroom Album</button>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Photos</button>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="adobe-disconnect">Disconnect</button></div></section>'
+      : '';
+
     var after = '<section class="pp-panel pp-panel-wide pp-lr-after">' +
-      '<h3>What happens after connecting?</h3>' +
+      '<h3>What happens after you connect?</h3>' +
       '<ul class="pp-lr-checklist">' +
       ['Create Lightroom Album', 'Upload RAW Photos', 'Sync Edited Images', 'Deliver Galleries',
-        'Publish Website', 'Create Instagram Posts', 'Request Reviews'].map(function (item) {
-        return '<li><span class="pp-check-ico" aria-hidden="true">✓</span><span>' + esc(item) + '</span></li>';
+        'Create Canva graphics', 'Publish Website', 'Request Reviews'].map(function (item) {
+        return '<li><span class="pp-check-ico" aria-hidden="true">\u2713</span><span>' + esc(item) + '</span></li>';
       }).join('') +
-      '</ul>' +
-      '<p class="pp-muted">When editing finishes, Hubly can create the gallery, send the invoice, generate marketing, and request the review — while you stay inside this project.</p>' +
+      '</ul></section>';
+
+    return hero + providers + lrDetail + after;
+  }
+
+  function connectActionForProvider(providerId) {
+    if (providerId === 'canva') return 'canva-connect';
+    if (providerId === 'adobe_lightroom') return 'adobe-connect';
+    return '';
+  }
+
+  function renderCreativeTab(p) {
+    var HubCA = global.HublyConnectedApps;
+    var apps = (HubCA && HubCA.creativeApps) ? HubCA.creativeApps() : [];
+    var kinds = (HubCA && HubCA.marketingKinds) ? HubCA.marketingKinds() : [];
+    var planned = ((p.workspace && p.workspace.creative_requests) || []).slice().reverse();
+
+    // Dynamic actions from every creative Connected App (not Canva-hardcoded UI).
+    var dynamicActions = [];
+    apps.forEach(function (a) {
+      (a.actions || []).forEach(function (act) {
+        if (act.capability === 'creative' || act.capability === 'templates') {
+          dynamicActions.push({
+            id: act.id,
+            label: act.label,
+            providerId: a.id,
+            providerName: a.name
+          });
+        }
+      });
+    });
+    if (!dynamicActions.length) {
+      dynamicActions = kinds.map(function (k) {
+        return { id: k.id, label: k.label, providerId: 'canva', providerName: 'Canva' };
+      });
+    }
+
+    var appCards = '<div class="pp-ws-grid">' +
+      (apps.length ? apps : [
+        { id: 'canva', name: 'Canva', role: 'Creative' },
+        { id: 'adobe_lightroom', name: 'Adobe Lightroom', role: 'Editing' },
+        { id: 'frame_io', name: 'Frame.io', role: 'Review' }
+      ]).map(function (a) {
+        var w = getWorkspace(p, a.id);
+        var connected = w && (w.sync_state === 'linked' || w.sync_state === 'synced' || w.sync_state === 'pending');
+        var connectAct = connectActionForProvider(a.id);
+        return '<div class="pp-ws-card' + (connected ? ' on' : '') + '">' +
+          '<div class="pp-mkt-top"><strong>' + esc(a.name) + '</strong><span class="pp-pill">' + (connected ? '\u2713 Connected' : '\u25cb Connect') + '</span></div>' +
+          '<p class="pp-muted">' + esc(a.role || 'Creative') + '</p>' +
+          (connectAct
+            ? '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" data-pp-act="' + connectAct + '">' + (connected ? 'Manage' : 'Connect') + '</button>'
+            : '<button type="button" class="pp-btn pp-btn-ghost pp-btn-sm" disabled>Soon</button>') +
+          '</div>';
+      }).join('') + '</div>';
+
+    var actions = '<div class="pp-mkt-grid pp-mt">' +
+      dynamicActions.map(function (k) {
+        return '<div class="pp-mkt-card">' +
+          '<div class="pp-mkt-top"><strong>' + esc(k.label) + '</strong><span class="pp-pill">' + esc(k.providerName || '') + '</span></div>' +
+          '<p class="pp-muted">Routed through Connected Apps capabilities.</p>' +
+          '<button type="button" class="pp-btn pp-btn-brand pp-btn-sm" data-pp-act="creative-create" data-pp-id="' + esc(p.id) +
+          '" data-pp-kind="' + esc(k.id) + '" data-pp-provider="' + esc(k.providerId || 'canva') + '">Create</button>' +
+          '</div>';
+      }).join('') + '</div>';
+
+    return '<section class="pp-panel pp-panel-wide">' +
+      '<h3>Creative</h3>' +
+      '<p class="pp-muted">Creative Engine is Hubly Core \u2014 every industry can use it. Providers plug in through Connected Apps.</p>' +
+      appCards +
+      '<h3 class="pp-mt">Create Marketing Asset</h3>' +
+      '<p class="pp-muted">Hubly sends project photos, brand colors, and copy to the creative Connected App \u2014 you never start from a blank canvas.</p>' +
+      actions +
+      (planned.length
+        ? '<h3 class="pp-mt">Planned on this project</h3><ul class="pp-queue">' + planned.map(function (r) {
+          return '<li><strong>' + esc(r.kind || 'Asset') + '</strong><span>' + esc(r.status || 'planned') + ' \u00b7 ' + esc(formatRelative(r.at)) + '</span></li>';
+        }).join('') + '</ul>'
+        : '') +
       '</section>';
-
-    var pipeline = '<section class="pp-panel pp-panel-wide"><h3>After editing finishes</h3>' +
-      '<div class="pp-pipeline">' + POST_EDIT_PIPELINE.map(function (step, i) {
-        var done = (p.editing_progress || 0) >= 100 && i < 1;
-        return '<div class="pp-pipe-step' + (done ? ' done' : '') + '"><i>' + (i + 1) + '</i><span>' + esc(step) + '</span></div>';
-      }).join('') + '</div></section>';
-
-    if (!adobeConnected) return hero + providers + after + pipeline;
-
-    return hero + providers +
-      '<div class="pp-panel-grid">' +
-      '<section class="pp-panel"><h3>Adobe Lightroom</h3><dl class="pp-dl">' +
-      '<div><dt>Status</dt><dd>' + esc(lrLabel(p.lightroom_status)) + '</dd></div>' +
-      '<div><dt>Adobe Account</dt><dd>' + esc(lr.adobe_account_email || '—') + '</dd></div>' +
-      '<div><dt>Album</dt><dd>' + esc(lr.album_name || '—') + '</dd></div>' +
-      '<div><dt>External ID</dt><dd>' + esc((lrWs && lrWs.external_id) || lr.album_id || '—') + '</dd></div>' +
-      '<div><dt>Photos</dt><dd>' + esc(String(lr.photo_count || p.photo_count || 0)) + '</dd></div>' +
-      '<div><dt>Edited</dt><dd>' + esc(String(lr.edited_count || 0)) + '</dd></div>' +
-      '<div><dt>Favorites</dt><dd>' + esc(String(lr.favorites || 0)) + '</dd></div>' +
-      '<div><dt>Last Sync</dt><dd>' + esc(formatRelative((lrWs && lrWs.last_sync_at) || lr.last_sync_at || p.last_sync_at)) + '</dd></div></dl>' +
-      '<div class="pp-btn-row">' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">Create Lightroom Album</button>' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Photos</button>' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-open">Open Lightroom</button>' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="adobe-disconnect">Disconnect</button></div></section>' +
-      '<section class="pp-panel"><h3>Recent Sync Activity</h3>' + queueList(lr.sync_activity, 'No sync activity yet') + '</section>' +
-      '<section class="pp-panel"><h3>Upload Queue</h3>' + queueList(lr.upload_queue, 'Upload queue empty') + '</section>' +
-      '<section class="pp-panel"><h3>Import Queue</h3>' + queueList(lr.import_queue, 'Import queue empty') + '</section>' +
-      '<section class="pp-panel"><h3>Export Queue</h3>' + queueList(lr.export_queue, 'Export queue empty') + '</section></div>' +
-      after + pipeline;
   }
 
   function queueList(items, empty) {
@@ -1136,7 +1195,7 @@
     var editingDone = (p.editing_progress || 0) >= 100 || p.status === 'Proofing' || p.status === 'Delivered';
     return '<section class="pp-panel pp-panel-wide"><h3>AI Marketing</h3>' +
       '<p class="pp-muted">' + (editingDone
-        ? 'Editing looks complete — these workflows will fire from linked External Workspaces later.'
+        ? 'Editing looks complete — these workflows will fire from Connected Apps later.'
         : 'When editing finishes on this project, Hubly can generate campaigns automatically.') + '</p>' +
       '<div class="pp-mkt-grid">' + (p.marketing || []).map(function (m) {
         return '<div class="pp-mkt-card"><div class="pp-mkt-top"><strong>' + esc(m.title) + '</strong><span class="pp-pill">' + esc(m.status) + '</span></div>' +
@@ -1164,7 +1223,7 @@
     try {
       var titleEl = el('bar-title'), subEl = el('bar-sub');
       if (titleEl) titleEl.textContent = 'Photography Projects';
-      if (subEl) subEl.textContent = 'Open the project — External Workspaces sync editors and files to Hubly.';
+      if (subEl) subEl.textContent = 'Open the project — Connected Apps sync editors, creative, and files to Hubly.';
       if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle('Photography Projects');
     } catch (e) {}
 
@@ -1416,7 +1475,7 @@
         sync_state: 'pending',
         metadata: Object.assign({}, (getWorkspace(p, 'adobe_lightroom') || {}).metadata || {}, { last_sync_request: new Date().toISOString() })
       });
-      addActivity(p, 'Sync requested', 'Adobe Lightroom External Workspace — connection required for live sync');
+      addActivity(p, 'Sync requested', 'Adobe Lightroom Connected App — connection required for live sync');
       return saveAndRefresh(p, st);
     }
     if (act === 'deliver' && p) {
@@ -1435,19 +1494,76 @@
       else toast('Adobe Lightroom isn’t connected yet. Projects still work in Hubly.');
       return;
     }
+    if (act === 'canva-connect') {
+      var canva = global.CanvaConnectedApp;
+      if (canva && canva.connect) await canva.connect({ businessId: businessId() || '', projectId: (p && p.id) || st.projectId });
+      else toast('Canva isn’t connected yet. Creative plans still save on the project.');
+      if (p) {
+        upsertWorkspaceLocal(p, {
+          provider: 'canva',
+          display_name: 'Canva',
+          sync_state: 'pending',
+          metadata: { role: 'creative' }
+        });
+        addActivity(p, 'Canva connect requested', 'Creative Connected App');
+        return saveAndRefresh(p, st);
+      }
+      return;
+    }
+    if (act === 'creative-create' && p) {
+      var kind = t.getAttribute('data-pp-kind') || 'instagram_carousel';
+      var providerId = t.getAttribute('data-pp-provider') || 'canva';
+      var providerMeta = (global.HublyConnectedApps && global.HublyConnectedApps.get)
+        ? global.HublyConnectedApps.get(providerId)
+        : null;
+      var brand = {
+        name: (S().biz || S().businessName || ''),
+        primaryColor: S().color || '#D9632D',
+        logoUrl: S().logoUrl || null
+      };
+      var res = null;
+      if (global.HublyConnectedApps && global.HublyConnectedApps.createMarketingAsset) {
+        res = await global.HublyConnectedApps.createMarketingAsset({
+          businessId: businessId(),
+          projectId: p.id,
+          providerId: providerId,
+          kind: kind,
+          title: p.name + ' · ' + kind,
+          brand: brand,
+          photoUrls: []
+        });
+      }
+      p.workspace = p.workspace || defaultWorkspace();
+      p.workspace.creative_requests = p.workspace.creative_requests || [];
+      p.workspace.creative_requests.push({
+        kind: kind,
+        status: (res && res.ok) ? 'created' : 'planned',
+        provider: providerId,
+        at: new Date().toISOString(),
+        message: res && res.message
+      });
+      upsertWorkspaceLocal(p, {
+        provider: providerId,
+        display_name: (providerMeta && providerMeta.name) || providerId,
+        sync_state: 'pending',
+        metadata: { last_creative_kind: kind, role: 'creative' }
+      });
+      addActivity(p, 'Creative asset requested', kind + ' via ' + ((providerMeta && providerMeta.name) || providerId));
+      toast((res && res.message) || 'Creative request saved on the project');
+      st.tab = 'creative';
+      return saveAndRefresh(p, st);
+    }
     if (act === 'adobe-disconnect') {
-      upsertWorkspaceLocal(p || findProject(st.projectId) || {}, {
+      p = p || findProject(st.projectId);
+      if (!p) { toast('Open a project first'); return; }
+      upsertWorkspaceLocal(p, {
         provider: 'adobe_lightroom',
         sync_state: 'unlinked'
       });
-      if (p) {
-        p.lightroom_status = 'not_connected';
-        addActivity(p, 'Workspace disconnected', 'Adobe Lightroom');
-        toast('Adobe workspace will unlink when OAuth is wired.');
-        return saveAndRefresh(p, st);
-      }
-      toast('Adobe disconnect will clear the External Workspace when OAuth is wired.');
-      return;
+      p.lightroom_status = 'not_connected';
+      addActivity(p, 'Workspace disconnected', 'Adobe Lightroom');
+      toast('Adobe workspace will unlink when OAuth is wired.');
+      return saveAndRefresh(p, st);
     }
     if (act === 'lr-create-album' && p) {
       var svcA = global.AdobeLightroomService;
@@ -1463,12 +1579,12 @@
         metadata: { album_name: p.name, album_id: extId }
       });
       p.lightroom_status = 'album_ready';
-      addActivity(p, 'Lightroom workspace prepared', 'External Workspace ready — connect Adobe to sync RAWs');
-      toast('Lightroom workspace prepared on the project. Connect Adobe to sync.');
+      addActivity(p, 'Lightroom prepared', 'Connected App ready — connect Adobe to sync RAWs');
+      toast('Lightroom prepared on the project. Connect Adobe to sync.');
       return saveAndRefresh(p, st);
     }
     if (act === 'lr-open') {
-      toast('Open Adobe Lightroom on your desktop — Hubly keeps the twin here.');
+      toast('Open Adobe Lightroom on your desktop — Hubly keeps the Connected App link here.');
       return;
     }
     if (act === 'gal-publish' && p) {
@@ -1602,7 +1718,7 @@
       if (p) {
         p.editing_progress = Number(t.value) || 0;
         if (p.editing_progress >= 100) {
-          addActivity(p, 'Editing finished', 'External Workspaces ready for gallery → invoice → marketing');
+          addActivity(p, 'Editing finished', 'Connected Apps ready for gallery → creative → marketing');
         }
         return saveAndRefresh(p, st);
       }

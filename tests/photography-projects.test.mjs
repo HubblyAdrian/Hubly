@@ -1,5 +1,5 @@
 /**
- * Smoke test — Photography Projects External Workspaces + Supabase SSOT.
+ * Smoke test — Photography Projects + Hubly Core Connected Apps / Creative Engine.
  */
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 describe('Photography Projects module', () => {
-  it('ships ProjectWorkspace (external workspaces) migration', () => {
+  it('ships ProjectWorkspace (Connected Apps project links) migration', () => {
     const mig = join(root, 'supabase/migrations/20260728060000_photography_project_workspaces.sql');
     assert.equal(existsSync(mig), true);
     const sql = readFileSync(mig, 'utf8');
@@ -26,27 +26,64 @@ describe('Photography Projects module', () => {
     assert.match(sql, /A project may link one or more/i);
   });
 
-  it('defines shared ProjectWorkspace types and Adobe as ExternalWorkspaceProvider', () => {
-    const types = readFileSync(join(root, 'supabase/functions/_shared/hubly_project_workspace.ts'), 'utf8');
-    const adobe = readFileSync(join(root, 'supabase/functions/_shared/hubly_provider_lightroom.ts'), 'utf8');
-    assert.match(types, /export type ProjectWorkspace/);
-    assert.match(types, /ExternalWorkspaceProvider/);
-    assert.match(adobe, /implements LightroomProvider, ExternalWorkspaceProvider/);
-    assert.match(adobe, /connectWorkspace/);
-    assert.match(adobe, /syncWorkspace/);
-    assert.match(adobe, /disconnectWorkspace/);
+  it('ships Hubly Core hubly_app_connections migration', () => {
+    const mig = join(root, 'supabase/migrations/20260728070000_hubly_connected_apps_core.sql');
+    assert.equal(existsSync(mig), true);
+    const sql = readFileSync(mig, 'utf8');
+    assert.match(sql, /hubly_app_connections/);
+    assert.match(sql, /business_id/);
+    assert.match(sql, /provider text not null/);
+    assert.match(sql, /canva/);
+    assert.match(sql, /meta/);
+    assert.match(sql, /google_business/);
+    assert.match(sql, /Connected Apps/i);
   });
 
-  it('persists projects in Supabase and links External Workspaces', () => {
+  it('defines ConnectedAppProvider + Creative Engine + CanvaProvider', () => {
+    const core = readFileSync(join(root, 'supabase/functions/_shared/hubly_connected_apps.ts'), 'utf8');
+    const creative = readFileSync(join(root, 'supabase/functions/_shared/hubly_creative_engine.ts'), 'utf8');
+    const canva = readFileSync(join(root, 'supabase/functions/_shared/hubly_provider_canva.ts'), 'utf8');
+    const adobe = readFileSync(join(root, 'supabase/functions/_shared/hubly_provider_lightroom.ts'), 'utf8');
+    const types = readFileSync(join(root, 'supabase/functions/_shared/hubly_project_workspace.ts'), 'utf8');
+
+    assert.match(core, /interface ConnectedAppProvider/);
+    assert.match(core, /registerConnectedApp/);
+    assert.match(core, /capabilities\(\)/);
+    assert.match(creative, /createMarketingAsset/);
+    assert.match(creative, /HublyCreativeEngine/);
+    assert.match(canva, /class CanvaProvider implements ConnectedAppProvider/);
+    assert.match(canva, /createDesign/);
+    assert.match(adobe, /implements LightroomProvider, ExternalWorkspaceProvider, ConnectedAppProvider/);
+    assert.match(types, /export type ProjectWorkspace/);
+    assert.match(types, /Connected Apps/);
+  });
+
+  it('product UI says Connected Apps (not External Workspace)', () => {
     const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
+    const clientApps = readFileSync(join(root, 'public/journey-os/connected-apps.js'), 'utf8');
+    const canvaClient = readFileSync(join(root, 'public/journey-os/canva-connected-app.js'), 'utf8');
     assert.match(js, /from\('photography_projects'\)/);
     assert.match(js, /from\('photography_project_workspaces'\)/);
     assert.match(js, /upsertExternalWorkspace/);
     assert.match(js, /hubly_pp_ui_prefs_/);
     assert.doesNotMatch(js, /twin_key|twin_status|twinKey\(/);
     assert.doesNotMatch(js, /digital twin/i);
-    assert.match(js, /External Workspace/);
-    assert.match(js, /Linked workspaces/);
+    assert.doesNotMatch(js, /External Workspace/);
+    assert.match(js, /Connected Apps/);
+    assert.match(js, /renderCreativeTab/);
+    assert.match(js, /creative-create/);
+    assert.match(js, /canva-connect/);
+    assert.match(js, /\['creative', 'Creative'\]/);
+    assert.match(clientApps, /HublyConnectedApps/);
+    assert.match(clientApps, /createMarketingAsset/);
+    assert.match(canvaClient, /CanvaConnectedApp/);
+  });
+
+  it('loads Connected Apps + Canva scripts from hubly.html', () => {
+    const html = readFileSync(join(root, 'public/hubly.html'), 'utf8');
+    assert.match(html, /connected-apps\.js/);
+    assert.match(html, /canva-connected-app\.js/);
+    assert.match(html, /photography-projects\.js/);
   });
 
   it('gates Photography nav on capabilities.projects', () => {
@@ -57,12 +94,13 @@ describe('Photography Projects module', () => {
     assert.match(js, /hasCapability\('projects'\)|hasProjectsCapability/);
   });
 
-  it('ships dashboard metrics, Lightroom workspace hero, and Quick Project', () => {
+  it('ships dashboard metrics, Connected Apps hero, Creative tab, and Quick Project', () => {
     const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
     const journey = readFileSync(join(root, 'public/journey-os/journey.js'), 'utf8');
     assert.match(js, /Awaiting Delivery/);
-    assert.match(js, /Lightroom Workspace/);
-    assert.match(js, /What happens after connecting/);
+    assert.match(js, /Connect the tools you already use/);
+    assert.match(js, /What happens after you connect/);
+    assert.match(js, /Create Marketing Asset/);
     assert.match(js, /Quick Project/);
     assert.match(journey, /photo-quick/);
   });
