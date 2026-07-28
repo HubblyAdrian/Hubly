@@ -11358,10 +11358,6 @@
     return 'Good evening';
   }
 
-  function homeChromeSub() {
-    return timeOfDayGreeting() + ' \u2014 let\u2019s grow your business today.';
-  }
-
   function syncAskFab(v) {
     var fab = el('jos-ask-fab');
     if (!fab) return;
@@ -11411,8 +11407,15 @@
   function updateChrome(v) {
     var c = CHROME[v] || { title: v, sub: '' };
     var titleEl = el('bar-title'), subEl = el('bar-sub');
+    var titleBlock = titleEl && (titleEl.closest('.bar-title-block') || titleEl.parentElement);
+    // Home page already has “Good morning …” — hide the duplicate app-bar title/sub.
+    var hideTitle = (v === 'dashboard');
+    if (titleBlock) {
+      titleBlock.hidden = hideTitle;
+      titleBlock.setAttribute('aria-hidden', hideTitle ? 'true' : 'false');
+    }
     if (titleEl) titleEl.textContent = c.title;
-    if (subEl) subEl.textContent = (v === 'dashboard') ? homeChromeSub() : c.sub;
+    if (subEl) subEl.textContent = hideTitle ? '' : c.sub;
     if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle(c.title);
     try { updateInboxBadge(); } catch (e) {}
     try { syncAskFab(v); } catch (eFab) {}
