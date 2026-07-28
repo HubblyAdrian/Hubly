@@ -126,6 +126,16 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   margin-bottom: 28px;
 }
 
+/* Top Operate chrome already shows Projects + subtitle — actions only here. */
+.pp-dash-head--actions {
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 18px;
+}
+.pp-dash-head--actions .pp-dash-actions {
+  margin-left: auto;
+}
+
 .pp-toolbar {
   display: grid;
   grid-template-columns: minmax(220px, 1.4fr) repeat(4, minmax(120px, 0.7fr));
