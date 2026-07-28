@@ -34,6 +34,7 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 
 #p-app.jos-pixel #v-dashboard.jos-pixel-owned > :not(#jos-dash-root),
 #p-app.jos-pixel #v-jobs.jos-pixel-owned > :not(#jos-jobs-root),
+#p-app.jos-pixel #v-photo-projects.jos-pixel-owned > :not(#jos-photo-projects-root),
 #p-app.jos-pixel #v-chats.jos-pixel-owned > :not(#jos-inbox-root),
 #p-app.jos-pixel #v-money.jos-pixel-owned > :not(#jos-revenue-root),
 #p-app.jos-pixel #v-leads.jos-pixel-owned > :not(#jos-leads-root),
@@ -599,6 +600,10 @@ body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
   padding:10px 12px;border-radius:10px;font:inherit;font-size:13px;font-weight:650;cursor:pointer;color:var(--jos-navy);
 }
 .jos-quick-pop button:hover{background:var(--jos-brand-soft);color:var(--jos-brand-dark)}
+.jos-quick-sep{
+  padding:8px 12px 4px;font-size:11px;font-weight:700;letter-spacing:.08em;
+  color:var(--jos-ink-3);user-select:none;
+}
 
 @media(max-width:900px){
   #p-app.jos-pixel .app-main{margin-left:0}

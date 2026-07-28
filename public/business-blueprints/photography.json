@@ -290,7 +290,9 @@
     "staffScheduling": false,
     "giftCards": false,
     "emergencyBanner": false,
-    "stickyPhone": false
+    "stickyPhone": false,
+    "projects": true,
+    "lightroom": true
   },
   "customerJourney": [
     "Discover",

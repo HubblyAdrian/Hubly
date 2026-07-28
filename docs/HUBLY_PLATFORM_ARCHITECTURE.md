@@ -10,6 +10,9 @@ Everything from here builds on **Hubly Platform v1** — one platform, shared en
 
 **Phase 6.5 public front door:** `docs/PLATFORM_ENTRY.md` — `/` · `/marketplace` · `/pro` · `/enter` (approved).
 
+**Connected Apps (integration platform) — ARCHITECTURE FREEZE:**  
+`docs/architecture/CONNECTED_APPS_ARCHITECTURE.md` — Intent → Capabilities → Connected Apps → Event Bus → Execution. Add providers as plugins; do not invent parallel integration frameworks.
+
 **Next Consumer design:** `docs/MY_HUB.md` — My Hub (defined, not implemented).
 
 ---

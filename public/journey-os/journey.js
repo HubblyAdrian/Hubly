@@ -1515,6 +1515,54 @@
       openLeadsRecovery();
       return;
     }
+    // Intent Engine first — Ask Hubly speaks Intent → Capabilities → Execution Plan.
+    try {
+      var IE = global.HublyIntentEngine;
+      if (IE && typeof IE.handleAsk === 'function') {
+        // Approve / cancel latest draft plan by short commands
+        var osIntent = ensureAskHublyOsState();
+        var pendingPlanId = osIntent._pendingExecutionPlanId;
+        if (pendingPlanId && /^(approve|yes|confirm|run it|execute)\b/i.test(text)) {
+          var approved = IE.approve(pendingPlanId);
+          if (approved) {
+            var pipe = { ai: { intent: approved.intentLabel, capabilities: (approved.needs || []).map(function (n) { return n.label; }), prompt: approved.preview }, recognized: { intent: { id: approved.intentId, label: approved.intentLabel } }, execution: { ready: true }, executionPlan: approved };
+            var ran = IE.execute(pipe, {});
+            ahAddMessage('assistant', (ran && ran.message) || approved.preview);
+            osIntent._pendingExecutionPlanId = null;
+            ahPublish('ai.action.confirmed', { executionPlanId: pendingPlanId, intent: approved.intentId });
+            renderAskHubly();
+            return;
+          }
+        }
+        if (pendingPlanId && /^(cancel|no|discard)\b/i.test(text)) {
+          var cancelled = IE.cancel(pendingPlanId);
+          ahAddMessage('assistant', cancelled ? cancelled.preview : 'Execution Plan cancelled.');
+          osIntent._pendingExecutionPlanId = null;
+          ahPublish('ai.action.cancelled', { executionPlanId: pendingPlanId });
+          renderAskHubly();
+          return;
+        }
+        var intentHandled = IE.handleAsk(text, {});
+        if (intentHandled && intentHandled.reply) {
+          ahAddMessage('assistant', intentHandled.reply);
+          if (intentHandled.executionPlanId) osIntent._pendingExecutionPlanId = intentHandled.executionPlanId;
+          ahMemoryNote('intent', 'Intent: ' + (intentHandled.intentLabel || intentHandled.intentId), {
+            module: 'ask',
+            intent: intentHandled.intentId,
+            executionPlanId: intentHandled.executionPlanId || null
+          });
+          ahPushActivity('ai.action.proposed', 'Execution Plan: ' + (intentHandled.intentLabel || 'Hubly'), {
+            intent: intentHandled.intentId,
+            executionPlanId: intentHandled.executionPlanId || null,
+            capabilities: (intentHandled.pipeline && intentHandled.pipeline.ai && intentHandled.pipeline.ai.capabilities) || []
+          });
+          renderAskHubly();
+          return;
+        }
+      }
+    } catch (intentErr) {
+      console.warn('Intent Engine', intentErr);
+    }
     var parsed = ahParseAsk(text);
     if (parsed) return ahProposeAction(parsed.type, parsed.payload);
     var answer = 'Here is the current operating context: ' + ahContextLine() + ' I can answer safely, generate drafts, or propose confirmed actions into the owning modules.';
@@ -11168,6 +11216,7 @@
     dashboard: { title: 'Home', sub: '' },
     chats: { title: 'Inbox', sub: 'Every conversation in one place.' },
     jobs: { title: 'Jobs', sub: 'Manage and track every job in one place.' },
+    'photo-projects': { title: 'Photography Projects', sub: 'Projects from booking through delivery.' },
     leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
     customers: { title: 'Completed Customers', sub: 'People you\'ve successfully serviced.' },
     pipeline: { title: 'Pipeline', sub: 'Quotes, bookings, and completed jobs.' },
@@ -12174,13 +12223,14 @@
 
   function ensureQuickPop() {
     var pop = el('jos-quick-pop');
-    if (pop) return pop;
+    if (pop) {
+      try { refreshQuickPopItems(pop); } catch (e) {}
+      return pop;
+    }
     pop = document.createElement('div');
     pop.id = 'jos-quick-pop';
     pop.className = 'jos-quick-pop';
-    pop.innerHTML = [['new-job-cust', 'New Job'], ['manual-lead', 'New Lead'], ['add-cust', 'New Customer'], ['smart-quote', 'New Quote'], ['new-invoice', 'New Invoice'], ['go-editor', 'New Service']].map(function (x) {
-      return '<button type="button" data-jos-act="' + esc(x[0]) + '">' + esc(x[1]) + '</button>';
-    }).join('');
+    refreshQuickPopItems(pop);
     document.body.appendChild(pop);
     bindRoot(pop);
     document.addEventListener('click', function (e) {
@@ -12188,6 +12238,34 @@
       if (!pop.contains(e.target) && e.target.id !== 'jos-bar-new' && !e.target.closest('#jos-bar-new')) pop.classList.remove('open');
     });
     return pop;
+  }
+
+  function refreshQuickPopItems(pop) {
+    if (!pop) return;
+    var items = [
+      ['new-job-cust', 'New Job'],
+      ['manual-lead', 'New Lead'],
+      ['add-cust', 'New Customer'],
+      ['smart-quote', 'New Quote'],
+      ['new-invoice', 'New Invoice'],
+      ['go-editor', 'New Service']
+    ];
+    var hasProjects = false;
+    try {
+      if (typeof global.hasBusinessCapability === 'function') hasProjects = !!global.hasBusinessCapability('projects');
+      else if (global.HublyPhotographyProjects && typeof global.HublyPhotographyProjects.hasCapability === 'function') {
+        hasProjects = !!global.HublyPhotographyProjects.hasCapability();
+      }
+    } catch (e) {}
+    if (hasProjects) {
+      items.push(['sep-photo', '──────────']);
+      items.push(['photo-quick', 'Photography Project']);
+      items.push(['photo-new', 'New Photography Project']);
+    }
+    pop.innerHTML = items.map(function (x) {
+      if (x[0] === 'sep-photo') return '<div class="jos-quick-sep" aria-hidden="true">' + esc(x[1]) + '</div>';
+      return '<button type="button" data-jos-act="' + esc(x[0]) + '">' + esc(x[1]) + '</button>';
+    }).join('');
   }
 
   function openQuickNew() {
@@ -15074,6 +15152,14 @@
     // or force a different sidebar width when switching pages.
     setPipelineMode(v === 'pipeline');
     setJobsMode(v === 'jobs');
+    if (typeof global.HublyJourneyOS?.setPhotoProjectsMode === 'function') {
+      global.HublyJourneyOS.setPhotoProjectsMode(v === 'photo-projects');
+    } else if (typeof global.HublyPhotographyProjects?.setMode === 'function') {
+      global.HublyPhotographyProjects.setMode(v === 'photo-projects');
+    } else {
+      var appPp = el('p-app');
+      if (appPp) appPp.classList.toggle('jos-photo-projects-mode', v === 'photo-projects');
+    }
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');
     setCustomersMode(v === 'customers');
@@ -15103,6 +15189,11 @@
       dashboard: enhanceDashboard,
       chats: renderInbox,
       jobs: renderJobs,
+      'photo-projects': function () {
+        if (typeof global.HublyPhotographyProjects?.render === 'function') {
+          return global.HublyPhotographyProjects.render();
+        }
+      },
       editor: restoreWebsiteEditor
     };
     if (map[v]) try { map[v](); } catch (e) { console.warn('HublyJourneyOS', v, e); }
@@ -15262,6 +15353,27 @@
         if (cid && typeof global.openNewJobForCustomer === 'function') return global.openNewJobForCustomer(cid);
         return typeof global.openM === 'function' ? global.openM('m-new-job') : toast('New job');
       }
+      if (act === 'photo-quick') {
+        el('jos-quick-pop')?.classList.remove('open');
+        if (global.HublyPhotographyProjects?.openQuickProject) return global.HublyPhotographyProjects.openQuickProject();
+        if (global.HublyJourneyOS?.openPhotographyQuickProject) return global.HublyJourneyOS.openPhotographyQuickProject();
+        return switchNav('photo-projects');
+      }
+      if (act === 'photo-new') {
+        el('jos-quick-pop')?.classList.remove('open');
+        switchNav('photo-projects');
+        setTimeout(function () {
+          var root = el('jos-photo-projects-root');
+          if (!root) return;
+          if (global.HublyPhotographyProjects?.render) {
+            root._pp = root._pp || {};
+            root._pp.view = 'wizard';
+            root._pp.wizardStep = 1;
+            global.HublyPhotographyProjects.render();
+          }
+        }, 80);
+        return;
+      }
       if (act === 'go-opps') { closeCustomerProfile(); return switchNav('opportunities'); }
       if (act === 'go-reviews') return switchNav('reviews');
       if (act === 'go-mem') return switchNav('memberships');
@@ -15324,6 +15436,23 @@
     renderInbox: renderInbox,
     renderJobs: renderJobs,
     handleJobsAct: handleJobsAct,
+    renderPhotoProjects: function () {
+      if (typeof global.HublyPhotographyProjects?.render === 'function') {
+        return global.HublyPhotographyProjects.render();
+      }
+    },
+    syncPhotographyNav: function () {
+      if (typeof global.HublyPhotographyProjects?.syncNav === 'function') {
+        return global.HublyPhotographyProjects.syncNav();
+      }
+    },
+    setPhotoProjectsMode: function (on) {
+      if (typeof global.HublyPhotographyProjects?.setMode === 'function') {
+        return global.HublyPhotographyProjects.setMode(on);
+      }
+      var app = el('p-app');
+      if (app) app.classList.toggle('jos-photo-projects-mode', !!on);
+    },
     renderStorefront: renderStorefront,
     restoreWebsiteEditor: restoreWebsiteEditor,
     handleStorefrontAct: handleStorefrontAct,

@@ -79,6 +79,43 @@ Payloads are plain objects with ids/references only (Rule #15 / #19) — never w
 
 ---
 
+## Connected Apps + Event Bus (Hubly Core)
+
+### Pipeline (Intent Engine)
+
+```
+Ask Hubly
+  → Intent            (Promote Project)
+  → Planner           (required capabilities)
+  → Resolver          (Connected Apps by capability)
+  → Event Bus
+  → Execution
+```
+
+AI / Ask Hubly never names vendors (Canva, Meta, Google, …).  
+It only says: **Intent → Capabilities → Execute**.
+
+| Event | Typical publisher | Example consumers |
+|-------|-------------------|-------------------|
+| `project.created` | Photography Projects | CRM, Timeline |
+| `project.booked` | Photography Projects | Calendar, Messaging |
+| `project.editing_complete` | Photography Projects | Creative Engine (capability: creative) |
+| `project.delivered` | Photography Projects | Intent `promote_project` → Creative · Publishing · Reviews |
+| `gallery.published` | Galleries | Website, Marketing |
+| `gallery.delivered` | Galleries / Projects | Intent Engine · Creative · Reviews |
+| `app.connected` | Apps Marketplace | Action Engine, Settings |
+| `app.disconnected` | Apps Marketplace | Action Engine |
+| `creative.asset_planned` | Creative Engine | Marketing (capability plan) |
+| `creative.asset_created` | Creative Engine | Publishing / Scheduling |
+| `ai.action.proposed` | Intent Engine | Ask Hubly confirm · Automation |
+| `ai.action.executed` | Intent Engine | Connected Apps executors |
+
+**Capability subscriptions:** engines subscribe to events *and* required capabilities. The Connected Apps registry picks a vendor — Intent Engine never hardcodes it.
+
+Shared: `hubly_intent_engine.ts` · `hubly_action_engine.ts` (Planner/Resolver) · `hubly_event_bus.ts` · Marketplace UI: `app-marketplace.js`.
+
+---
+
 ## Reviews (Module 9) publishes
 
 | Event | When |
