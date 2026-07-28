@@ -376,8 +376,16 @@
     const app = appState();
     if (app) app._bwHubSec = id;
     renderNav();
+    renderEditor();
+    renderPreview();
     const target = document.getElementById('bw-sec-' + id);
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (target) {
+      setTimeout(() => {
+        try {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (e) {}
+      }, 40);
+    }
   }
 
   function renderNav() {
@@ -385,10 +393,11 @@
     const w = ensureWizard();
     if (!nav || !w) return;
     const sec = activeSection();
+    const addonN = (w.addons || []).filter((a) => a && a.enabled !== false).length;
     const items = [
       { id: 'headline', label: 'Headline & Intro', icon: '✎' },
       { id: 'packages', label: 'Packages', icon: '▦' },
-      { id: 'addons', label: 'Add-ons', icon: '+' },
+      { id: 'addons', label: 'Add-ons', icon: '+', badge: addonN || null },
       { id: 'where', label: 'Where Options', icon: '⌖' },
       { id: 'trust', label: 'Trust & Info', icon: '✓' },
       { id: 'settings', label: 'Settings', icon: '⚙' },
@@ -398,6 +407,7 @@
         (it) => `<button type="button" class="${sec === it.id ? 'on' : ''}" onclick="HublyBookingWizardUI.setSection('${it.id}')">
         <span aria-hidden="true">${it.icon}</span>
         <span>${esc(it.label)}</span>
+        ${it.badge != null ? `<span class="badge">${esc(String(it.badge))}</span>` : ''}
       </button>`
       )
       .join('');
@@ -457,16 +467,22 @@
       .join('');
 
     const addonHtml = (w.addons || [])
-      .map(
-        (a, i) => `<div class="bw-addon-row">
-        <div class="grow">
-          <input class="bw-input" style="margin:0 0 6px" value="${esc(a.name)}" oninput="HublyBookingWizardUI.updateAddon(${i},'name',this.value)">
-          <input class="bw-input bw-price" type="number" value="${esc(a.price)}" oninput="HublyBookingWizardUI.updateAddon(${i},'price',this.value)">
-        </div>
-        <label class="tog" title="Show to customers"><input type="checkbox" ${a.enabled !== false ? 'checked' : ''} onchange="HublyBookingWizardUI.updateAddon(${i},'enabled',this.checked)"><span class="tog-sl"></span></label>
-        <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.removeAddon(${i})">×</button>
-      </div>`
-      )
+      .map((a, i) => {
+        const on = a.enabled !== false;
+        return `<div class="bw-addon-card ${on ? '' : 'is-off'}">
+          <div class="bw-addon-card-main">
+            <div class="bw-addon-fields">
+              <label>Name<input class="bw-input" value="${esc(a.name)}" oninput="HublyBookingWizardUI.updateAddon(${i},'name',this.value)" placeholder="e.g. Edging upgrade"></label>
+              <label>Price $<input class="bw-input bw-price" type="number" min="0" step="1" value="${esc(a.price)}" oninput="HublyBookingWizardUI.updateAddon(${i},'price',this.value)" placeholder="15"></label>
+            </div>
+            <div class="bw-addon-card-actions">
+              <label class="tog" title="Show to customers"><input type="checkbox" ${on ? 'checked' : ''} onchange="HublyBookingWizardUI.updateAddon(${i},'enabled',this.checked)"><span class="tog-sl"></span></label>
+              <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.removeAddon(${i})" aria-label="Remove add-on">×</button>
+            </div>
+          </div>
+          <p class="bw-addon-card-foot">${on ? 'Shown on Book Now' : 'Hidden from customers'}</p>
+        </div>`;
+      })
       .join('');
 
     const whereHtml = (w.whereOptions || [])
@@ -489,62 +505,99 @@
       )
       .join('');
 
+    const sec = activeSection();
     root.innerHTML = `
-      <section class="bw-sec" id="bw-sec-headline">
+      <section class="bw-sec ${sec === 'headline' ? 'is-focus' : ''}" id="bw-sec-headline">
         <h3>Headline &amp; Introduction</h3>
-        <label class="bw-muted" style="display:block;margin:0 0 4px">Headline</label>
+        <label class="bw-field-lbl">Headline</label>
         <input class="bw-input" value="${esc(w.headline)}" oninput="HublyBookingWizardUI.setCopy('headline',this.value)" maxlength="80">
-        <label class="bw-muted" style="display:block;margin:0 0 4px">Subheadline</label>
+        <label class="bw-field-lbl">Subheadline</label>
         <input class="bw-input" value="${esc(w.blurb)}" oninput="HublyBookingWizardUI.setCopy('blurb',this.value)" maxlength="140">
-        <label class="bw-muted" style="display:block;margin:4px 0">Benefit tags</label>
+        <label class="bw-field-lbl">Benefit tags <span>Tap to show or hide on Book Now</span></label>
         <div class="bw-benefit-row">${benefitHtml}</div>
-        <input class="bw-input" style="margin-top:10px" value="${esc(w.servicePrompt || '')}" oninput="HublyBookingWizardUI.setCopy('servicePrompt',this.value)" placeholder="Service prompt">
+        <label class="bw-field-lbl" style="margin-top:10px">Service prompt</label>
+        <input class="bw-input" value="${esc(w.servicePrompt || '')}" oninput="HublyBookingWizardUI.setCopy('servicePrompt',this.value)" placeholder="What service do you need?">
       </section>
-      <section class="bw-sec" id="bw-sec-packages">
+      <section class="bw-sec ${sec === 'packages' ? 'is-focus' : ''}" id="bw-sec-packages">
         <div class="bw-sec-h"><h3>Packages</h3>
           <button type="button" class="btn btn-brand btn-sm" onclick="HublyBookingWizardUI.openWebsiteEditorForServices()">Manage packages</button></div>
         <p class="bw-muted" style="margin:0 0 10px;">Edited under Packages so your site, Book Now, and Smart Quote stay in sync.</p>
         ${svcHtml || '<p class="bw-muted">No packages yet — add them under Packages.</p>'}
         <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.openWebsiteEditorForServices()">+ Add or reorder packages</button>
       </section>
-      <section class="bw-sec" id="bw-sec-addons">
+      <section class="bw-sec ${sec === 'addons' ? 'is-focus' : ''}" id="bw-sec-addons">
         <div class="bw-sec-h"><h3>Add-ons</h3>
-          <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.addAddon()">+ Add add-on</button></div>
-        ${addonHtml || '<p class="bw-muted">Optional extras customers can tap.</p>'}
+          <button type="button" class="btn btn-brand btn-sm" onclick="HublyBookingWizardUI.addAddon()">+ Add add-on</button></div>
+        <p class="bw-muted" style="margin:0 0 12px;">Optional extras customers can tap after they pick a package — same cards they see on Book Now.</p>
+        <div class="bw-addon-list">${addonHtml || '<div class="bw-empty-card"><strong>No add-ons yet</strong><span>Add something like Edging upgrade or Fertilizer boost.</span></div>'}</div>
       </section>
-      <section class="bw-sec" id="bw-sec-where">
-        <div class="bw-sec-h"><h3>Where options</h3>
-          <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.setSection('where')">Customize</button></div>
+      <section class="bw-sec ${sec === 'where' ? 'is-focus' : ''}" id="bw-sec-where">
+        <div class="bw-sec-h"><h3>Where options</h3></div>
+        <p class="bw-muted" style="margin:0 0 10px;">Pick the default location type for step 2.</p>
         <div class="bw-where-pick">${whereHtml || '<p class="bw-muted">Location types for step 2.</p>'}</div>
-        <label class="bw-muted" style="display:block;margin:0 0 6px;">Studio / service address</label>
+        <label class="bw-field-lbl">Studio / service address</label>
         <input class="bw-input" value="${esc(w.studioAddress || '')}" oninput="HublyBookingWizardUI.setCopy('studioAddress',this.value)" placeholder="123 Studio Lane, City, ST">
-        <input class="bw-input" value="${esc(w.whereNote || '')}" oninput="HublyBookingWizardUI.setCopy('whereNote',this.value)" placeholder="Where-step note (optional)">
+        <label class="bw-field-lbl">Where-step note <span>optional</span></label>
+        <input class="bw-input" value="${esc(w.whereNote || '')}" oninput="HublyBookingWizardUI.setCopy('whereNote',this.value)" placeholder="e.g. We’ll confirm the exact address before arrival">
       </section>
-      <section class="bw-sec" id="bw-sec-trust">
+      <section class="bw-sec ${sec === 'trust' ? 'is-focus' : ''}" id="bw-sec-trust">
         <h3>Trust &amp; review copy</h3>
         ${trustHtml || '<p class="bw-muted">Add trust lines customers see on review.</p>'}
         <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.addTrustLine()">+ Add trust line</button>
         <div class="bw-rating-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 0;">
           <div>
-            <label class="bw-muted" style="display:block;margin:0 0 4px">Star rating (sidebar)</label>
+            <label class="bw-field-lbl">Star rating</label>
             <input class="bw-input" type="number" min="1" max="5" step="0.1" value="${esc(String((appState()?.website?.rating ?? appState()?.rating ?? 4.9)))}" oninput="HublyBookingWizardUI.setSiteRating(this.value)" placeholder="4.9">
           </div>
           <div>
-            <label class="bw-muted" style="display:block;margin:0 0 4px">Review count</label>
+            <label class="bw-field-lbl">Review count</label>
             <input class="bw-input" type="number" min="0" step="1" value="${esc(String((appState()?.website?.reviewCount ?? appState()?.reviewCount ?? 0)))}" oninput="HublyBookingWizardUI.setSiteReviewCount(this.value)" placeholder="248">
           </div>
         </div>
         <p class="bw-muted" style="margin:6px 0 0;">Shown on Book Now next to the stars. Leave count at 0 to hide the reviews card until you have real ones.</p>
-        <input class="bw-input" style="margin-top:10px" value="${esc(w.helpBlurb || '')}" oninput="HublyBookingWizardUI.setCopy('helpBlurb',this.value)" placeholder="Help blurb">
+        <label class="bw-field-lbl" style="margin-top:10px">Help blurb</label>
+        <input class="bw-input" value="${esc(w.helpBlurb || '')}" oninput="HublyBookingWizardUI.setCopy('helpBlurb',this.value)" placeholder="Help blurb">
+        <label class="bw-field-lbl">Review trust line</label>
         <input class="bw-input" value="${esc(w.reviewTrust || '')}" oninput="HublyBookingWizardUI.setCopy('reviewTrust',this.value)" placeholder="Review trust line">
+        <label class="bw-field-lbl">Cancel / reschedule</label>
         <textarea class="bw-input" rows="2" oninput="HublyBookingWizardUI.setCopy('cancelBlurb',this.value)" placeholder="Cancel / reschedule blurb">${esc(w.cancelBlurb || '')}</textarea>
       </section>
-      <section class="bw-sec bw-suggest" id="bw-sec-settings">
+      <section class="bw-sec bw-suggest ${sec === 'settings' ? 'is-focus' : ''}" id="bw-sec-settings">
         <h3>Settings</h3>
         <p class="bw-muted">Packages live under the Packages tab. Suggest a different industry if this frame doesn’t fit.</p>
         <button type="button" class="btn btn-out" onclick="openSuggestIndustryModal()">Suggest my industry →</button>
       </section>`;
     renderTips(w);
+  }
+
+  function enabledQuestionLabels() {
+    try {
+      const SQ = global.HublySmartQuote;
+      const app = appState() || {};
+      if (!SQ || typeof SQ.resolveConfig !== 'function') return [];
+      let bp = null;
+      try {
+        if (typeof global.getActiveBlueprint === 'function') bp = global.getActiveBlueprint();
+      } catch (e) {}
+      const cfg = SQ.resolveConfig({
+        businessType: app.businessType || (bp && bp.id) || 'detailing',
+        blueprint: bp,
+        ownerConfig: app.quoteConfig,
+        packagesFirst: false,
+      });
+      if (!cfg || !cfg.fields) return [];
+      const disabled = new Set((app.quoteConfig && app.quoteConfig.disabledFields) || []);
+      return Object.keys(cfg.fields)
+        .map((id) => {
+          const f = cfg.fields[id] || {};
+          if (disabled.has(id) || f.disabled) return null;
+          return f.label || id;
+        })
+        .filter(Boolean)
+        .slice(0, 4);
+    } catch (e) {
+      return [];
+    }
   }
 
   function renderPreview() {
@@ -561,57 +614,94 @@
       }
     } catch (e) {}
 
+    const sec = activeSection();
     const pkgRows = (w.services || [])
       .slice(0, 5)
-      .map((s) => {
+      .map((s, i) => {
         const priceNum = Number(s.price);
         const price =
           Number.isFinite(priceNum) && priceNum > 0 ? `$${Math.round(priceNum)}` : '';
         const dur = String(s.dur || '').trim();
-        return `<div class="bw-prev-card ${s.popular ? 'pop' : ''}" style="display:grid;grid-template-columns:56px 1fr;gap:8px;align-items:center;padding:8px;margin:0 0 8px">
-          <div class="bw-prev-media" style="aspect-ratio:1;border-radius:8px">${s.image ? `<img src="${esc(s.image)}" alt="">` : ''}</div>
-          <div>
-            <strong style="padding:0;font-size:12px">${esc(s.name)}</strong>
-            <div class="bw-prev-meta" style="font-size:11px;opacity:.8">${price ? esc(price) : ''}${price && dur ? ' · ' : ''}${dur ? esc(dur) + ' hrs' : ''}</div>
+        return `<div class="bw-prev-card ${s.popular ? 'pop' : ''} ${i === 0 ? 'is-sel' : ''}">
+          <div class="bw-prev-media">${s.image ? `<img src="${esc(s.image)}" alt="">` : '<span class="bw-prev-ph" aria-hidden="true">▦</span>'}</div>
+          <div class="bw-prev-meta">
+            <strong>${esc(s.name)}</strong>
+            <span>${price ? esc(price) : ''}${price && dur ? ' · ' : ''}${dur ? esc(dur) + ' hrs' : ''}</span>
           </div>
         </div>`;
       })
       .join('');
 
-    const addonRows = (w.addons || [])
-      .filter((a) => a && a.enabled !== false)
+    const enabledAddons = (w.addons || []).filter((a) => a && a.enabled !== false);
+    const addonRows = enabledAddons
       .map(
         (a) =>
-          `<label style="display:flex;gap:8px;align-items:center;font-size:12px;margin:0 0 6px;opacity:.92"><input type="checkbox" disabled> ${esc(a.name)} <span style="margin-left:auto;font-weight:700">$${Math.round(Number(a.price) || 0)}</span></label>`
+          `<div class="bw-prev-addon">
+            <span class="bw-prev-check" aria-hidden="true"></span>
+            <div class="bw-prev-addon-copy"><strong>${esc(a.name)}</strong></div>
+            <em>+$${Math.round(Number(a.price) || 0)}</em>
+          </div>`
       )
       .join('');
 
     const whereRows = (w.whereOptions || [])
       .map((o) => {
         const on = (w.defaultWhereId || (w.whereOptions[0] && w.whereOptions[0].id)) === o.id;
-        return `<label style="display:flex;gap:8px;align-items:center;font-size:12px;margin:0 0 6px"><input type="radio" disabled ${on ? 'checked' : ''}> ${esc(o.label)}</label>`;
+        return `<div class="bw-prev-where ${on ? 'on' : ''}">
+          <span class="bw-prev-radio" aria-hidden="true"></span>
+          <strong>${esc(o.label)}</strong>
+        </div>`;
       })
       .join('');
 
     const benefits = (w.sidebarIncludes || [])
-      .slice(0, 3)
-      .map((x) => `<span style="display:inline-block;font-size:10px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.1);margin:0 4px 4px 0">${esc(x)}</span>`)
+      .slice(0, 4)
+      .map((x) => `<span class="bw-prev-benefit">${esc(x)}</span>`)
       .join('');
 
+    const asked = enabledQuestionLabels();
+    const askedHtml = asked.length
+      ? `<div class="bw-prev-block ${sec === 'headline' ? '' : ''}">
+          <div class="bw-prev-kicker">Questions</div>
+          <ul class="bw-prev-asked">${asked.map((q) => `<li>${esc(q)}</li>`).join('')}</ul>
+          <button type="button" class="bw-prev-link" onclick="openWebsiteEditorHub('quote')">Customize questions →</button>
+        </div>`
+      : `<div class="bw-prev-block">
+          <div class="bw-prev-kicker">Questions</div>
+          <p class="bw-prev-empty">No booking questions on yet.</p>
+          <button type="button" class="bw-prev-link" onclick="openWebsiteEditorHub('quote')">Add questions →</button>
+        </div>`;
+
     root.innerHTML = `
-      <div style="font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b;margin:0 0 8px">Live preview</div>
+      <div class="bw-prev-label">Live preview</div>
       <div class="bw-prev-phone">
-        <div class="bw-prev-shell" style="--bw-accent:${esc(accent)};padding:0">
-          <div class="bw-prev-brand" style="background:${esc(accent)};color:#fff;padding:12px 14px;margin:0;font-size:13px">${esc(app.biz || 'Your Business')}</div>
-          <div style="padding:14px 14px 18px">
-            <h2 style="font-size:18px;margin:0 0 6px">${esc(w.headline || 'Book with us')}</h2>
-            <p style="margin:0 0 10px;font-size:12px;color:#cbd5e1">${esc(w.blurb || '')}</p>
-            <div style="margin:0 0 12px">${benefits}</div>
-            <div class="bw-prev-prompt" style="margin:0 0 8px">${esc(w.servicePrompt || 'Choose a service')}</div>
-            <div>${pkgRows || '<div class="bw-muted">Services appear here</div>'}</div>
-            ${addonRows ? `<div style="margin:12px 0 8px;font-size:11px;font-weight:700;opacity:.7">Add-ons</div>${addonRows}` : ''}
-            ${whereRows ? `<div style="margin:12px 0 8px;font-size:11px;font-weight:700;opacity:.7">Where should we come?</div>${whereRows}` : ''}
-            <button type="button" onclick="HublyBookingWizardUI.previewLiveBooking()" style="display:block;width:100%;margin-top:14px;padding:12px;border:none;border-radius:12px;background:${esc(accent)};color:#fff;font:inherit;font-weight:750;font-size:13px;cursor:pointer">${esc(w.ctaLabel || 'Book now')}</button>
+        <div class="bw-prev-shell" style="--bw-accent:${esc(accent)}">
+          <div class="bw-prev-brand" style="background:${esc(accent)}">${esc(app.biz || 'Your Business')}</div>
+          <div class="bw-prev-body">
+            <div class="bw-prev-block ${sec === 'headline' ? 'is-focus' : ''}">
+              <h2>${esc(w.headline || 'Book with us')}</h2>
+              <p class="bw-prev-blurb">${esc(w.blurb || '')}</p>
+              ${benefits ? `<div class="bw-prev-benefits">${benefits}</div>` : ''}
+              <div class="bw-prev-prompt">${esc(w.servicePrompt || 'Choose a service')}</div>
+            </div>
+            <div class="bw-prev-block ${sec === 'packages' ? 'is-focus' : ''}">
+              <div class="bw-prev-kicker">${esc(w.packagesTitle || 'Packages')}</div>
+              <div class="bw-prev-pkgs">${pkgRows || '<div class="bw-prev-empty">Services appear here</div>'}</div>
+            </div>
+            <div class="bw-prev-block ${sec === 'addons' ? 'is-focus' : ''}">
+              <div class="bw-prev-kicker">Add-ons</div>
+              ${addonRows || '<div class="bw-prev-empty">Optional extras show here</div>'}
+            </div>
+            ${askedHtml}
+            ${
+              whereRows
+                ? `<div class="bw-prev-block ${sec === 'where' ? 'is-focus' : ''}">
+              <div class="bw-prev-kicker">Where should we come?</div>
+              <div class="bw-prev-wheres">${whereRows}</div>
+            </div>`
+                : ''
+            }
+            <button type="button" class="bw-prev-cta" style="background:${esc(accent)}" onclick="HublyBookingWizardUI.previewLiveBooking()">${esc(w.ctaLabel || 'Book now')}</button>
           </div>
         </div>
       </div>`;

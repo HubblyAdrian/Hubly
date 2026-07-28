@@ -1721,8 +1721,8 @@ ${biz}`,
       renderQuoteSidePreview(cfg, pkgs, enabledFields);
       return `
       <div class="ed-quote-job">
-        <strong>Your job here:</strong>
-        Choose which questions customers answer before they see a price. Packages stay under the Packages tab.
+        <strong>Your job here</strong>
+        Choose which questions customers answer before they see a price. Same list powers Quick Quote and Book Now.
       </div>
       <div class="sq-setup-section ed-quote-pkg-strip">
         <div>
@@ -1736,9 +1736,14 @@ ${biz}`,
         <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.openWebsiteEditorForPackages()">Edit packages →</button>
       </div>
       <div class="sq-setup-section">
-        <div class="sq-lbl">Questions for ${esc(tradeLabel)}</div>
-        <p class="sq-muted" style="margin:0 0 10px;">Flip a switch off if you don’t want that question in Quick Quote or Book Now — or add your own below.</p>
-        <div class="sq-setup-list">${fieldRows || '<div class="sq-muted">No quote questions for this industry yet.</div>'}</div>
+        <div class="sq-setup-sec-h">
+          <div>
+            <div class="sq-lbl">Questions for ${esc(tradeLabel)}</div>
+            <p class="sq-muted" style="margin:4px 0 0">Flip a switch off to hide it from Quick Quote and Book Now — or add your own below.</p>
+          </div>
+          <span class="sq-setup-count">${enabledFields.length} on</span>
+        </div>
+        <div class="sq-setup-list">${fieldRows || '<div class="bw-empty-card"><strong>No questions yet</strong><span>Add a custom question below for this trade.</span></div>'}</div>
         ${customQuestionFormHtml()}
       </div>
       ${
