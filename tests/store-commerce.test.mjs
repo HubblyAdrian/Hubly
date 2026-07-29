@@ -18,8 +18,8 @@ describe('Hubly Store commerce module', () => {
     assert.ok(mem > -1 && storeNav > mem && money > storeNav);
     assert.match(hubly, /id="v-store"/);
     assert.match(hubly, /id="jos-store-root"/);
-    assert.match(hubly, /store-commerce\.js\?v=store-2/);
-    assert.match(hubly, /store-commerce\.css\?v=store-2/);
+    assert.match(hubly, /store-commerce\.js\?v=store-3/);
+    assert.match(hubly, /store-commerce\.css\?v=store-3/);
     assert.match(hubly, /store:'Store'/);
   });
 
@@ -45,6 +45,9 @@ describe('Hubly Store commerce module', () => {
     assert.doesNotMatch(store, /data-v="marketplace"/);
     assert.match(store, /ensureStoreOsState/);
     assert.match(store, /storeOs/);
+    assert.match(store, /store-order-save/);
+    assert.match(store, /persistStoreOs/);
+    assert.match(store, /Do not invent demo catalog/);
   });
 
   it('styles Store like Jobs Operate chrome', () => {
@@ -52,10 +55,22 @@ describe('Hubly Store commerce module', () => {
     assert.match(css, /\.jos-store-header/);
     assert.match(css, /\.jos-store-tab\.on/);
     assert.match(css, /#D9632D/);
+    assert.match(css, /\.hub-storefront--website/);
   });
 
   it('loads store-commerce stylesheet with cache bust', () => {
-    assert.match(hubly, /store-commerce\.css\?v=store-2/);
-    assert.match(hubly, /store-commerce\.js\?v=store-2/);
+    assert.match(hubly, /store-commerce\.css\?v=store-3/);
+    assert.match(hubly, /store-commerce\.js\?v=store-3/);
+  });
+
+  it('embeds storefront into Instant Site and persists storeOs', () => {
+    assert.match(hubly, /id="ws-sec-store"/);
+    assert.match(hubly, /renderWsStoreSection/);
+    assert.match(hubly, /websiteEmbed:\s*true/);
+    assert.match(hubly, /storeOs:S\.storeOs/);
+    assert.match(hubly, /if\(meta\.storeOs/);
+    const sf = readFileSync(join(root, 'public/journey-os/commerce/storefront-renderer.js'), 'utf8');
+    assert.match(sf, /websiteEmbed/);
+    assert.match(sf, /hub-storefront--website/);
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Storefront renderer — Website Engine embeds this at /store.
+ * Storefront renderer — Website Engine embeds this on the Instant Site Store section.
  * Reads Store settings → collections → products → theme → widgets.
  */
 (function (global) {
@@ -29,7 +29,8 @@
       heroTitle: s.heroTitle || s.hero_title || ((st && st.biz) ? (st.biz + ' Store') : 'Store'),
       heroSubtitle: s.heroSubtitle || s.hero_subtitle || 'Products, kits, and care — from the same team that does the work.',
       theme: s.theme || {},
-      widgets: s.widgets || { aiCoach: true, learningCenter: true }
+      widgets: s.widgets || { aiCoach: true, learningCenter: true },
+      showOnWebsite: s.showOnWebsite !== false
     };
   }
 
@@ -41,7 +42,11 @@
     return list.slice(0, 8);
   }
 
-  function renderHero(settings) {
+  function renderHero(settings, opts) {
+    if (opts && opts.websiteEmbed) {
+      // Website section already has title/sub — only render product grid chrome.
+      return '';
+    }
     return '<section class="hub-storefront-hero">' +
       '<div class="hub-storefront-brand"><span class="hub-wm-hub">hub</span><span class="hub-wm-ly">ly</span> Store</div>' +
       '<h1>' + esc(settings.heroTitle) + '</h1>' +
@@ -50,33 +55,44 @@
       '</section>';
   }
 
-  function renderFeatured(products, C) {
+  function renderFeatured(products, C, opts) {
     C = C || global.HublyCommerceComponents;
-    return '<section id="hub-store-featured" class="hub-storefront-section">' +
-      '<h2>Featured products</h2>' +
+    if (!products.length) {
+      return '<div class="hub-commerce-empty">' +
+        (opts && opts.websiteEmbed
+          ? 'No products yet — add them in Store.'
+          : 'No products published yet.') +
+        '</div>';
+    }
+    return '<section id="hub-store-featured" class="hub-storefront-section' +
+      (opts && opts.websiteEmbed ? ' hub-storefront-section--embed' : '') + '">' +
+      (opts && opts.websiteEmbed ? '' : '<h2>Featured products</h2>') +
       (C ? C.ProductGrid(products) : '<div class="hub-commerce-empty">Catalog loading…</div>') +
       '</section>';
   }
 
-  function renderCollections(os, C) {
+  function renderCollections(os, C, opts) {
     C = C || global.HublyCommerceComponents;
     var cols = (os.collections || []).filter(function (c) { return c.published !== false; });
     if (!cols.length) return '';
-    return '<section class="hub-storefront-section">' +
+    return '<section class="hub-storefront-section' +
+      (opts && opts.websiteEmbed ? ' hub-storefront-section--embed' : '') + '">' +
       '<h2>Collections</h2>' +
       '<div class="hub-commerce-collection-grid">' +
       cols.map(function (c) { return C ? C.CollectionCard(c) : esc(c.name); }).join('') +
       '</div></section>';
   }
 
-  function renderAiCoach(settings, C) {
+  function renderAiCoach(settings, C, opts) {
+    if (opts && opts.websiteEmbed) return '';
     if (settings.widgets && settings.widgets.aiCoach === false) return '';
     C = C || global.HublyCommerceComponents;
     return '<section class="hub-storefront-section hub-storefront-ai">' +
       (C ? C.AIProductCoach({}) : '') + '</section>';
   }
 
-  function renderLearning(settings) {
+  function renderLearning(settings, opts) {
+    if (opts && opts.websiteEmbed) return '';
     if (settings.widgets && settings.widgets.learningCenter === false) return '';
     return '<section class="hub-storefront-section">' +
       '<h2>Learning Center</h2>' +
@@ -84,7 +100,8 @@
       '</section>';
   }
 
-  function renderFooter(st) {
+  function renderFooter(st, opts) {
+    if (opts && opts.websiteEmbed) return '';
     var name = (st && (st.biz || st.businessName)) || 'Business';
     return '<footer class="hub-storefront-footer">' +
       '<div><span class="hub-wm-hub">hub</span><span class="hub-wm-ly">ly</span></div>' +
@@ -96,6 +113,7 @@
    * @param {object} [opts.storeOs] S.storeOs
    * @param {object} [opts.state] global S
    * @param {'desktop'|'tablet'|'mobile'} [opts.device]
+   * @param {boolean} [opts.websiteEmbed] — render inside Instant Site Store section
    */
   function render(opts) {
     opts = opts || {};
@@ -107,15 +125,17 @@
     }
     var C = global.HublyCommerceComponents;
     var featured = featuredProducts(os);
-    var body = '<div class="hub-storefront device-' + esc(opts.device || 'desktop') + '">' +
-      renderHero(settings) +
-      renderFeatured(featured, C) +
-      renderCollections(os, C) +
-      renderAiCoach(settings, C) +
-      renderLearning(settings) +
-      renderFooter(st) +
+    var cls = 'hub-storefront device-' + esc(opts.device || 'desktop') +
+      (opts.websiteEmbed ? ' hub-storefront--website' : '');
+    var body = '<div class="' + cls + '">' +
+      renderHero(settings, opts) +
+      renderFeatured(featured, C, opts) +
+      renderCollections(os, C, opts) +
+      renderAiCoach(settings, C, opts) +
+      renderLearning(settings, opts) +
+      renderFooter(st, opts) +
       '</div>';
-    if (opts.preview && C && C.StorePreview) {
+    if (opts.preview && !opts.websiteEmbed && C && C.StorePreview) {
       return C.StorePreview(body, opts.device || 'desktop');
     }
     return body;

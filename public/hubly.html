@@ -30,8 +30,8 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
-<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-1">
-<link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-2">
+<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-3">
+<link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/photography-projects.css?v=projects-12">
 <link rel="stylesheet" href="/journey-os/app-marketplace.css?v=projects-7">
 <style>
@@ -10897,7 +10897,6 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
-              <button type="button" class="ed-edit-mode-btn" id="ed-edit-mode-btn" onclick="toggleEdEditMode()" title="Edit Mode (Space)">Edit Mode</button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
           </div>
@@ -11591,6 +11590,15 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="ws-section-hdr"><h2 id="ws-services-title">Our Services</h2><p id="ws-services-sub">Professional packages, ready to book online.</p></div>
         <button type="button" id="ws-quiz-entry" class="ws-quiz-btn hidden" onclick="openServiceQuiz()">Not sure what you need? Answer one question</button>
         <div class="ws-svc-grid" id="ws-services"></div>
+      </div>
+    </section>
+    <section class="ws-section" id="ws-sec-store" hidden>
+      <div class="ws-section-inner">
+        <div class="ws-section-hdr">
+          <h2 id="ws-store-title">Store</h2>
+          <p id="ws-store-sub">Products and kits from the same team.</p>
+        </div>
+        <div id="ws-store-mount" class="ws-store-mount"></div>
       </div>
     </section>
     <section class="ws-section" id="ws-sec-membership" style="display:none;">
@@ -12381,14 +12389,14 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/api.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/events.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/permissions.js?v=commerce-1"></script>
-<script defer src="/journey-os/commerce/components.js?v=commerce-1"></script>
-<script defer src="/journey-os/commerce/storefront-renderer.js?v=commerce-1"></script>
+<script defer src="/journey-os/commerce/components.js?v=commerce-2"></script>
+<script defer src="/journey-os/commerce/storefront-renderer.js?v=commerce-2"></script>
 <script defer src="/journey-os/commerce/checkout/checkout.service.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/ai/product-coach.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/ai/merchandising.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/index.js?v=commerce-1"></script>
 <script defer src="/journey-os/journey.js?v=weather-1"></script>
-<script defer src="/journey-os/store-commerce.js?v=store-2"></script>
+<script defer src="/journey-os/store-commerce.js?v=store-3"></script>
 <script defer src="/journey-os/adobe-lightroom-service.js?v=projects-12"></script>
 <script defer src="/journey-os/connected-apps-catalog.generated.js?v=projects-7"></script>
 <script defer src="/journey-os/connected-apps.js?v=projects-7"></script>
@@ -12482,6 +12490,7 @@ const S={
   leadFocusStage:null,activeLeadKey:null,activeCustId:null,
   custTab:'all',
   custRange:'all',
+  storeOs:null,
 };
 // Smart Quote / booking scripts load in separate files and cannot see `const S`.
 // Expose on window so HublySmartQuoteUI + HublyBookingSQ resolve the same state.
@@ -14082,6 +14091,7 @@ function buildBizMeta(){
     servicesMode:S._is?.servicesMode||S.servicesMode||null,
     servicesDraft:!!(S._servicesDraft||(S._is&&S._is.servicesMode&&S._is.servicesMode!=='now')),
     pipeline:ensurePipelineState(),
+    storeOs:S.storeOs&&typeof S.storeOs==='object'?S.storeOs:null,
   };
 }
 function normalizeDirtySurcharge(d){
@@ -14140,6 +14150,7 @@ function applyBizMeta(meta){
   if(meta.profileBgColor)S.profileBgColor=meta.profileBgColor;
   if(meta.headerMode)S.headerMode=meta.headerMode;
   if(meta.website)S.website=meta.website;
+  if(meta.storeOs&&typeof meta.storeOs==='object')S.storeOs=meta.storeOs;
   if(meta.galleryPairs)S.galleryPairs=meta.galleryPairs;
   if(meta.ownerUploadedMedia!=null)S._ownerUploadedMedia=!!meta.ownerUploadedMedia;
   else if((meta.portfolioUrls||[]).some(u=>/^https?:\/\//i.test(String(u||'')))
@@ -31341,7 +31352,7 @@ function goEditorFromOnboard(){
 }
 
 // ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
-const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit tagline',logo:'Change logo','hero-bg':'Change banner','profile-bg':'Background color',promo:'Edit discount',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','about-name':'Edit name','owner-name':'Edit heading','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ','faq-item':'Edit question','add-faq':'Add question',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle','our-story':'Edit our story','profile-sheet-bg':'Sheet background','profile-tab':'Edit tab','add-profile-tab':'Add tab','profile-tab-body':'Edit tab content'};
+const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit tagline',logo:'Change logo','hero-bg':'Change banner','profile-bg':'Background color',promo:'Edit discount',cta:'Button text','cta-secondary':'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','about-name':'Edit name','owner-name':'Edit heading','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ','faq-item':'Edit question','add-faq':'Add question',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle','our-story':'Edit our story','profile-sheet-bg':'Sheet background','profile-tab':'Edit tab','add-profile-tab':'Add tab','profile-tab-body':'Edit tab content','store-title':'Edit store title','store-sub':'Edit store subtitle'};
 function escPeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function initWsPeEditor(){
   if(S._wsPeEditorInit)return;
@@ -31363,29 +31374,18 @@ function initWsPeEditor(){
       }
     }
   });
-  document.addEventListener('keydown',e=>{
-    if(!isEditorViewOpen())return;
-    if(e.code!=='Space'&&e.key!==' ')return;
-    if(S._wsPeInlineEl)return;
-    const tag=(e.target&&e.target.tagName||'').toLowerCase();
-    if(tag==='input'||tag==='textarea'||tag==='select'||e.target?.isContentEditable)return;
-    if(e.target.closest('#ws-pe-pop,.ed-ctrl'))return;
-    e.preventDefault();
-    toggleEdEditMode();
-  });
 }
+/** Website editor is always click-to-edit. Public / owner-preview stays read-only via isEditorViewOpen(). */
 function isWebsitePeEnabled(){
-  return isEditorViewOpen() && !!S.edEditMode;
+  return isEditorViewOpen();
 }
 function setEdEditMode(on){
-  S.edEditMode=!!on;
-  document.body.classList.toggle('ed-edit-mode',!!on);
+  /* Always-on while the Website editor is open — no Edit Mode button. */
+  S.edEditMode=isEditorViewOpen()?true:!!on;
+  document.body.classList.toggle('ed-edit-mode',!!S.edEditMode);
   const btn=document.getElementById('ed-edit-mode-btn');
-  if(btn){
-    btn.textContent=on?'Editing':'Edit Mode';
-    btn.setAttribute('aria-pressed',on?'true':'false');
-  }
-  if(!on){
+  if(btn)btn.hidden=true;
+  if(!S.edEditMode){
     hideWsPeContextBar();
     clearWsPeSelection();
     closeWsPePop();
@@ -31398,7 +31398,8 @@ function setEdEditMode(on){
   try{updateEdPeHint();}catch(e){}
 }
 function toggleEdEditMode(){
-  setEdEditMode(!S.edEditMode);
+  /* Kept for back-compat callers — editor stays editable. */
+  setEdEditMode(true);
 }
 function updateEdPeHint(){
   const hint=document.getElementById('ed-pe-hint');
@@ -31411,13 +31412,8 @@ function updateEdPeHint(){
     hint.style.background='#fff7ed';
     hint.style.borderBottomColor='#fed7aa';
     hint.style.color='#9a3412';
-  }else if(!S.edEditMode){
-    hint.textContent='Hold Space or click Edit Mode to edit your website directly.';
-    hint.style.background='';
-    hint.style.borderBottomColor='';
-    hint.style.color='';
   }else{
-    hint.textContent='Click anything on your website to edit it. name, logo, services, and more.';
+    hint.textContent='Click anything on your website to edit it — headline, buttons, hours, and more.';
     hint.style.background='';
     hint.style.borderBottomColor='';
     hint.style.color='';
@@ -31553,8 +31549,8 @@ function clearWsPeSelection(){
   S._wsPeSelectedEl=null;
 }
 const WS_PE_INLINE_TYPES=new Set([
-  'headline','tagline','cta','biz-name','owner-name','owner-bio','about-name',
-  'sec-title','sec-sub','footer-cta','footer-tag','promo','ticker'
+  'headline','tagline','cta','cta-secondary','biz-name','owner-name','owner-bio','about-name',
+  'sec-title','sec-sub','footer-cta','footer-tag','promo','ticker','store-title','store-sub'
 ]);
 function isWsPeInlineType(type){return WS_PE_INLINE_TYPES.has(String(type||''));}
 function wsPeInlineNode(target){
@@ -31649,6 +31645,21 @@ function commitWsPeInlineValue(pe,text,target,node){
   if(pe==='cta'){
     S.ctaText=text||'Book Now';
     document.querySelectorAll('#ed-ws-preview #ws-hero-cta, #ed-ws-preview #ws-header-cta, #ed-ws-preview .ws-header-cta').forEach(el=>{el.textContent=S.ctaText;});
+    try{onWebsiteFieldChange();}catch(e){}
+    return;
+  }
+  if(pe==='cta-secondary'){
+    ensureWebsiteCopy();
+    S.website.secondaryCtaText=text||'View Packages';
+    document.querySelectorAll('#ed-ws-preview #ws-hero-cta-secondary, #ws-hero-cta-secondary').forEach(el=>{el.textContent=S.website.secondaryCtaText;});
+    try{onWebsiteFieldChange();}catch(e){}
+    return;
+  }
+  if(pe==='store-title'||pe==='store-sub'){
+    ensureWebsiteCopy();
+    S.website.storeSection=S.website.storeSection||{};
+    if(pe==='store-title')S.website.storeSection.title=text||'Store';
+    else S.website.storeSection.sub=text||'';
     try{onWebsiteFieldChange();}catch(e){}
     return;
   }
@@ -31765,9 +31776,11 @@ function markWebsitePreviewEditable(root){
   mark('[data-ws-clone-id="ws-hero-logo"], #ws-hero-logo, [data-ws-clone-id="ws-header-logo"], #ws-header-logo, .ws-header-logo','logo');
   mark('[data-ws-clone-id="ws-hero-media"], .ws-hero-media, #ws-hero-media','hero-bg');
   // Empty hero chrome (not headline/CTA) opens banner replace — media is often under the overlay.
-  mark('.ws-hero, [data-ws-clone-id="ws-hero"], #ws-hero','hero-bg');
+  // Mark CTAs before the hero shell so clicks hit buttons, not hero-bg.
   mark('[data-ws-clone-id="ws-hero-cta"], #ws-hero-cta','cta');
+  mark('[data-ws-clone-id="ws-hero-cta-secondary"], #ws-hero-cta-secondary','cta-secondary');
   mark('[data-ws-clone-id="ws-header-cta"], #ws-header-cta, .ws-header-cta','cta');
+  mark('.ws-hero, [data-ws-clone-id="ws-hero"], #ws-hero','hero-bg');
   mark('[data-ws-clone-id="ws-trust"], #ws-trust','trust-stats');
   mark('[data-ws-clone-id="ws-ticker"], #ws-ticker','ticker');
   mark('[data-ws-clone-id="ws-sec-gallery"], #ws-sec-gallery','gallery');
@@ -31780,12 +31793,15 @@ function markWebsitePreviewEditable(root){
   mark('[data-ws-clone-id="ws-footer-social-col"], #ws-footer-social-col, #ws-social','social');
   mark('[data-ws-clone-id="ws-sec-area"], #ws-sec-area','area');
   mark('[data-ws-clone-id="ws-footer-cta-title"], #ws-footer-cta-title','footer-cta');
+  mark('[data-ws-clone-id="ws-store-title"], #ws-store-title','store-title');
+  mark('[data-ws-clone-id="ws-store-sub"], #ws-store-sub','store-sub');
   [['ws-services-title','sec-title','services'],['ws-services-sub','sec-sub','services'],
    ['ws-gallery-title','sec-title','gallery'],['ws-gallery-sub','sec-sub','gallery'],
    ['ws-reviews-title','sec-title','reviews'],['ws-reviews-sub','sec-sub','reviews'],
    ['ws-why-title','sec-title','why'],['ws-why-sub','sec-sub','why'],
    ['ws-area-title','sec-title','area'],['ws-area-sub','sec-sub','area'],
-   ['ws-faq-title','sec-title','faq'],['ws-faq-sub','sec-sub','faq']].forEach(([id,type,sec])=>{
+   ['ws-faq-title','sec-title','faq'],['ws-faq-sub','sec-sub','faq'],
+   ['ws-store-title','store-title','store'],['ws-store-sub','store-sub','store']].forEach(([id,type,sec])=>{
     const el=root.querySelector('[data-ws-clone-id="'+id+'"], #'+id);
     if(!el)return;
     el.dataset.pe=type;el.dataset.peSection=sec;el.dataset.peLabel=WS_PE_LABELS[type]||'Edit';
@@ -31946,6 +31962,15 @@ function handleWsPeClick(type,el){
     const cur=S.ctaText||'Book Now';
     const opts=['Book Now','Schedule Today','Get Started','Reserve My Spot'].map(o=>`<option value="${escPeHtml(o)}"${o===cur?' selected':''}>${escPeHtml(o)}</option>`).join('');
     showWsPePop(el,`<div class="ws-pe-pop-lbl">Button text</div><select class="ws-pe-inp" id="ws-pe-inp" onchange="applyWsPeCta(this.value)">${opts}<option value="custom"${!['Book Now','Schedule Today','Get Started','Reserve My Spot'].includes(cur)?' selected':''}>Custom…</option></select><input type="text" class="ws-pe-inp" id="ws-pe-custom" value="${escPeHtml(cur)}" placeholder="Custom button text" style="display:${['Book Now','Schedule Today','Get Started','Reserve My Spot'].includes(cur)?'none':'block'}"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`);
+    document.getElementById('ws-pe-inp')?.addEventListener('change',function(){const c=document.getElementById('ws-pe-custom');if(c)c.style.display=this.value==='custom'?'block':'none';});
+    return;
+  }
+  if(type==='cta-secondary'){
+    ensureWebsiteCopy();
+    const cur=(S.website&&S.website.secondaryCtaText)||t('wsViewPackages')||'View Packages';
+    const opts=['View Packages','See Services','Browse Plans','Learn More'].map(o=>`<option value="${escPeHtml(o)}"${o===cur?' selected':''}>${escPeHtml(o)}</option>`).join('');
+    const isCustom=!['View Packages','See Services','Browse Plans','Learn More'].includes(cur);
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Secondary button</div><select class="ws-pe-inp" id="ws-pe-inp" onchange="applyWsPeSecondaryCta(this.value)">${opts}<option value="custom"${isCustom?' selected':''}>Custom…</option></select><input type="text" class="ws-pe-inp" id="ws-pe-custom" value="${escPeHtml(cur)}" placeholder="Custom button text" style="display:${isCustom?'block':'none'}" onchange="applyWsPeSecondaryCta(this.value)" onkeydown="if(event.key==='Enter')applyWsPeSecondaryCta(this.value)"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeSecondaryCta(document.getElementById('ws-pe-custom')?.value||document.getElementById('ws-pe-inp')?.value)">Save</button></div>`);
     document.getElementById('ws-pe-inp')?.addEventListener('change',function(){const c=document.getElementById('ws-pe-custom');if(c)c.style.display=this.value==='custom'?'block':'none';});
     return;
   }
@@ -33127,6 +33152,18 @@ function applyWsPeCta(val){
   updateCtaText(val);
   renderWebsitePreview();
 }
+function applyWsPeSecondaryCta(val){
+  ensureWebsiteCopy();
+  let text=String(val||'').trim();
+  if(text==='custom'){
+    text=document.getElementById('ws-pe-custom')?.value?.trim()||'';
+  }
+  if(!text)return;
+  S.website.secondaryCtaText=text;
+  try{onWebsiteFieldChange();}catch(e){}
+  renderWebsitePreview();
+  closeWsPePop();
+}
 function findEditorSvc(svcId){
   let svc=S.editorSvcs.find(s=>String(s.id)===String(svcId));
   if(!svc){
@@ -33795,6 +33832,8 @@ function ensureWebsiteCopy(){
   if(w.promoText==null)w.promoText='';
   if(w.promoCode==null)w.promoCode='';
   if(w.promoPercent==null)w.promoPercent='';
+  if(w.secondaryCtaText==null)w.secondaryCtaText='';
+  if(!w.storeSection||typeof w.storeSection!=='object')w.storeSection={title:'',sub:''};
   if(w.profileBg1==null)w.profileBg1='#1d4ed8';
   if(w.profileBg2==null)w.profileBg2='#0f766e';
   if(w.profileHeroMode==null)w.profileHeroMode='gradient';
@@ -35796,7 +35835,10 @@ function renderWebsite(prefix){
     else {cta.style.background=accent;cta.style.color=getCtaInkColor(accent);}
   }
   const secCta=wsPageEl('ws-hero-cta-secondary');
-  if(secCta)secCta.textContent=t('wsViewPackages');
+  if(secCta){
+    const secLabel=(w.secondaryCtaText&&String(w.secondaryCtaText).trim())||t('wsViewPackages');
+    secCta.textContent=secLabel;
+  }
   const hdrCtaEl=wsPageEl('ws-header-cta');
   if(hdrCtaEl){
     hdrCtaEl.textContent=wsBookCtaText();
@@ -36022,10 +36064,76 @@ function renderWebsite(prefix){
   applyHeroMediaPlacement();
   try{applyLogoScale();}catch(e){}
   if(!prefix)renderWebsiteSocial();
+  try{renderWsStoreSection(prefix);}catch(e){}
   const backTop=document.getElementById('ws-back-top');
   if(backTop){
     backTop.style.background=accent||'var(--ws-accent)';
     ensureWsBackTop();
+  }
+}
+function isStoreEnabledOnWebsite(){
+  try{
+    const os=S.storeOs;
+    if(!os||typeof os!=='object')return false;
+    const settings=os.settings||{};
+    if(settings.enabled===false||settings.showOnWebsite===false)return false;
+    const hasProducts=Array.isArray(os.products)&&os.products.some(p=>p&&p.status==='active'&&(!p.visibility||p.visibility.website!==false));
+    // Public site: only when products exist. Editor: show so owners can place/edit the section.
+    return hasProducts||(typeof isEditorViewOpen==='function'&&isEditorViewOpen());
+  }catch(e){return false;}
+}
+/** Embed Commerce storefront into the Instant Site — styled like website sections. */
+function renderWsStoreSection(prefix){
+  if(prefix)return;
+  const sec=wsPageEl('ws-sec-store');
+  const mount=wsPageEl('ws-store-mount');
+  const titleEl=wsPageEl('ws-store-title');
+  const subEl=wsPageEl('ws-store-sub');
+  const nav=wsPageEl('ws-header-nav');
+  if(!sec||!mount)return;
+  try{
+    if(window.HublyStoreCommerce&&typeof window.HublyStoreCommerce.ensureState==='function'){
+      window.HublyStoreCommerce.ensureState();
+    }
+  }catch(e){}
+  ensureWebsiteCopy();
+  const storeSec=S.website.storeSection||{};
+  const os=S.storeOs||{};
+  const settings=(os.settings&&typeof os.settings==='object')?os.settings:{};
+  const hasProducts=Array.isArray(os.products)&&os.products.some(p=>p&&p.status==='active'&&(!p.visibility||p.visibility.website!==false));
+  const inEditor=typeof isEditorViewOpen==='function'&&isEditorViewOpen();
+  const enabled=settings.enabled!==false&&settings.showOnWebsite!==false&&(hasProducts||inEditor);
+  let storeNav=nav&&nav.querySelector('a[href="#ws-sec-store"]');
+  if(enabled){
+    sec.hidden=false;
+    sec.style.display='';
+    if(titleEl)titleEl.textContent=storeSec.title||settings.heroTitle||'Store';
+    if(subEl)subEl.textContent=storeSec.sub!=null&&storeSec.sub!==''?storeSec.sub:(settings.heroSubtitle||'Products and kits from the same team.');
+    const sf=window.HublyCommerceStorefront;
+    if(sf&&typeof sf.render==='function'){
+      mount.innerHTML=sf.render({
+        storeOs:os,
+        state:S,
+        websiteEmbed:true,
+        preview:isEditorViewOpen()
+      });
+    }else{
+      mount.innerHTML='<p class="ws-muted">Add products in Store to show them here.</p>';
+    }
+    if(nav&&!storeNav){
+      storeNav=document.createElement('a');
+      storeNav.href='#ws-sec-store';
+      storeNav.textContent='Store';
+      const after=nav.querySelector('a[href="#ws-sec-services"]');
+      if(after&&after.nextSibling)nav.insertBefore(storeNav,after.nextSibling);
+      else nav.appendChild(storeNav);
+    }
+    if(storeNav)storeNav.style.display='';
+  }else{
+    sec.hidden=true;
+    sec.style.display='none';
+    mount.innerHTML='';
+    if(storeNav)storeNav.style.display='none';
   }
 }
 function applyGenerateSitePayload(g){
@@ -36623,7 +36731,7 @@ function mountEdChrome(){
     syncEdSettingsRail((S&&(S._edSettingsNav||S._edHubTab))||'');
     syncEdCtrlTop();
   }catch(e){}
-  try{setEdEditMode(!!S.edEditMode);}catch(e){}
+  try{setEdEditMode(true);}catch(e){}
   // Floating pill retired — keep node hidden if present
   if(bar){
     bar.hidden=true;

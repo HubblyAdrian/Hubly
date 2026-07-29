@@ -51,15 +51,23 @@ test('Inbox header styles remain untouched by polish overrides', () => {
   assert.doesNotMatch(layout, /\.jos-ibx-title h1/);
 });
 
-test('Editor v2 Edit Mode foundation', () => {
+test('Editor v2 always-editable (no Edit Mode toggle)', () => {
   const html = read('public/hubly.html');
   const layout = read('public/journey-os/hubly-layout.css');
   assert.match(html, /function setEdEditMode\s*\(/);
   assert.match(html, /function toggleEdEditMode\s*\(/);
   assert.match(html, /function isWebsitePeEnabled\s*\(/);
-  assert.match(html, /id="ed-edit-mode-btn"/);
+  assert.match(html, /return isEditorViewOpen\(\)/);
+  assert.doesNotMatch(html, /id="ed-edit-mode-btn"/);
+  assert.doesNotMatch(html, /Hold Space or click Edit Mode/);
   assert.match(html, /ws-pe-context-bar/);
+  assert.match(html, /cta-secondary/);
+  assert.match(html, /secondaryCtaText/);
   assert.match(html, /closeEdSettingsRail\(\{persist:false\}\)/);
-  assert.match(layout, /body\.ed-editor-open\.ed-edit-mode/);
+  assert.match(html, /id="ws-sec-store"/);
+  assert.match(html, /function renderWsStoreSection/);
+  assert.match(html, /websiteEmbed:\s*true/);
+  assert.match(layout, /body\.ed-editor-open #ed-ws-preview \.ws-pe-target:hover/);
   assert.match(layout, /#ws-pe-context-bar/);
+  assert.match(layout, /\.ed-edit-mode-btn\s*\{[^}]*display:\s*none/);
 });

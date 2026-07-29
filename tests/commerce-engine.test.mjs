@@ -33,7 +33,8 @@ describe('Commerce Engine foundation', () => {
     ];
     files.forEach((f) => assert.ok(existsSync(join(root, f)), f));
     assert.match(hubly, /commerce\/index\.js\?v=commerce-1/);
-    assert.match(hubly, /store-commerce\.js\?v=store-2/);
+    assert.match(hubly, /store-commerce\.js\?v=store-3/);
+    assert.match(hubly, /storefront-renderer\.js\?v=commerce-2/);
   });
 
   it('migration is business-scoped with core commerce tables', () => {

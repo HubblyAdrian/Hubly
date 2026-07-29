@@ -30,6 +30,22 @@
     if (typeof global.toast === 'function') return global.toast(msg);
     try { console.log('[Hubly Store]', msg); } catch (e) {}
   }
+  function persistStoreOs() {
+    try {
+      if (typeof global.saveStorefront === 'function') {
+        clearTimeout(persistStoreOs._t);
+        persistStoreOs._t = setTimeout(function () {
+          try { global.saveStorefront().catch(function () {}); } catch (e) {}
+        }, 400);
+        return;
+      }
+    } catch (e) {}
+    try {
+      if (typeof global.buildBizMeta === 'function' && global.currentBusiness) {
+        global.currentBusiness.meta = global.buildBizMeta();
+      }
+    } catch (e2) {}
+  }
   function money(n) {
     var v = Number(n) || 0;
     try {
@@ -59,17 +75,21 @@
     if (!os.settings || typeof os.settings !== 'object') {
       os.settings = {
         enabled: true,
+        showOnWebsite: true,
         storePath: '/store',
         heroTitle: '',
         heroSubtitle: '',
         widgets: { aiCoach: true, learningCenter: true }
       };
     }
-    if (!os.seeded) seedDemoStore(os, st);
+    if (os.settings.showOnWebsite == null) os.settings.showOnWebsite = true;
+    // Do not invent demo catalog — empty until the owner adds products.
+    if (!os.seeded) os.seeded = true;
     return os;
   }
 
   function seedDemoStore(os, st) {
+    // Kept for optional manual seeding — not called automatically.
     if (os.products.length) {
       os.seeded = true;
       return;
@@ -77,105 +97,14 @@
     var biz = st.biz || st.businessName || 'Your business';
     os.products = [
       {
-        id: 'prod_ceramic_kit', sku: 'CER-KIT-01', name: 'Ceramic Coating Kit',
-        type: 'physical', status: 'active', price: 89, compareAt: 119, cost: 42,
-        stock: 24, lowStock: 5, collectionIds: ['col_retail', 'col_kits'],
-        category: 'Detailing gear', vendor: biz,
-        description: 'DIY-friendly ceramic kit for customers who want a maintenance coat between visits.',
-        imageTone: 'navy', createdAt: todayStr()
-      },
-      {
-        id: 'prod_microfiber', sku: 'MF-TOWEL-12', name: 'Pro Microfiber Towel Set',
-        type: 'physical', status: 'active', price: 28, compareAt: 0, cost: 11,
-        stock: 86, lowStock: 15, collectionIds: ['col_retail'],
-        category: 'Supplies', vendor: biz,
-        description: '12-pack of edge-free microfiber towels — sell from the van or site.',
-        imageTone: 'blue', createdAt: todayStr()
-      },
-      {
-        id: 'prod_interior_spray', sku: 'INT-SPRAY-01', name: 'Interior Protectant Spray',
-        type: 'physical', status: 'active', price: 18, compareAt: 22, cost: 7,
-        stock: 4, lowStock: 8, collectionIds: ['col_retail', 'col_upsell'],
-        category: 'Chemicals', vendor: biz,
-        description: 'UV protectant for dash and trim. Perfect add-on at checkout.',
-        imageTone: 'orange', createdAt: todayStr()
-      },
-      {
-        id: 'prod_gift_100', sku: 'GIFT-100', name: '$100 Gift Card',
-        type: 'gift_card', status: 'active', price: 100, compareAt: 0, cost: 0,
-        stock: null, lowStock: null, collectionIds: ['col_digital'],
-        category: 'Gift cards', vendor: biz,
-        description: 'Digital gift card — emailed instantly after purchase.',
-        imageTone: 'green', createdAt: todayStr()
-      },
-      {
-        id: 'prod_wheel_cleaner', sku: 'WHL-CLN-01', name: 'Acid-Free Wheel Cleaner',
-        type: 'physical', status: 'draft', price: 16, compareAt: 0, cost: 6,
-        stock: 0, lowStock: 10, collectionIds: ['col_retail'],
-        category: 'Chemicals', vendor: biz,
-        description: 'Safe on coated wheels. Draft — not visible on site yet.',
-        imageTone: 'slate', createdAt: todayStr()
+        id: 'prod_starter', sku: 'STARTER-01', name: biz + ' Starter Kit',
+        type: 'physical', status: 'active', price: 49, compareAt: 0, cost: 0,
+        stock: 12, lowStock: 3, collectionIds: [], category: 'Retail',
+        vendor: biz, description: 'A starter product you can edit or replace.',
+        imageTone: 'orange', featured: true,
+        visibility: { website: true, booking: true, customerPortal: true, quoteBuilder: true, email: true, memberships: false },
+        createdAt: todayStr()
       }
-    ];
-    os.collections = [
-      { id: 'col_retail', name: 'Retail shelf', description: 'Products you sell from the van or booking site.', productIds: ['prod_ceramic_kit', 'prod_microfiber', 'prod_interior_spray', 'prod_wheel_cleaner'], published: true },
-      { id: 'col_kits', name: 'Maintenance kits', description: 'Bundled gear for DIY between appointments.', productIds: ['prod_ceramic_kit'], published: true },
-      { id: 'col_upsell', name: 'Job add-ons', description: 'Suggested at booking confirmation.', productIds: ['prod_interior_spray'], published: true },
-      { id: 'col_digital', name: 'Digital', description: 'Gift cards and downloadable products.', productIds: ['prod_gift_100'], published: true }
-    ];
-    os.orders = [
-      {
-        id: 'ord_1042', number: '#1042', status: 'paid', channel: 'Website',
-        customer: 'Sarah Johnson', email: 'sarah.johnson@gmail.com',
-        total: 117, items: [{ productId: 'prod_ceramic_kit', qty: 1, price: 89 }, { productId: 'prod_microfiber', qty: 1, price: 28 }],
-        createdAt: todayStr(), fulfillment: 'unfulfilled'
-      },
-      {
-        id: 'ord_1041', number: '#1041', status: 'paid', channel: 'In person',
-        customer: 'Mike Brown', email: 'mike.brown@email.com',
-        total: 36, items: [{ productId: 'prod_interior_spray', qty: 2, price: 18 }],
-        createdAt: todayStr(), fulfillment: 'fulfilled'
-      },
-      {
-        id: 'ord_1040', number: '#1040', status: 'pending', channel: 'Website',
-        customer: 'Chris Park', email: 'chris.park@email.com',
-        total: 100, items: [{ productId: 'prod_gift_100', qty: 1, price: 100 }],
-        createdAt: todayStr(), fulfillment: 'digital'
-      },
-      {
-        id: 'ord_1039', number: '#1039', status: 'refunded', channel: 'Website',
-        customer: 'Emily Smith', email: 'emily.smith@email.com',
-        total: 28, items: [{ productId: 'prod_microfiber', qty: 1, price: 28 }],
-        createdAt: todayStr(), fulfillment: 'cancelled'
-      }
-    ];
-    os.bundles = [
-      {
-        id: 'bun_care', title: 'Weekend Care Kit', description: 'Ceramic kit + microfiber set for DIY between visits.',
-        price: 99, discount: 18, featured: true, status: 'active',
-        productIds: ['prod_ceramic_kit', 'prod_microfiber']
-      },
-      {
-        id: 'bun_interior', title: 'Interior Refresh', description: 'Spray + towels for cabin upkeep.',
-        price: 40, discount: 6, featured: false, status: 'draft',
-        productIds: ['prod_interior_spray', 'prod_microfiber']
-      }
-    ];
-    os.discounts = [
-      { id: 'disc_spring', code: 'SHINE15', type: 'percent', value: 15, status: 'active', uses: 12, limit: 100, appliesTo: 'all', endsAt: '' },
-      { id: 'disc_kit', code: 'KIT10', type: 'fixed', value: 10, status: 'active', uses: 3, limit: 50, appliesTo: 'col_kits', endsAt: '' },
-      { id: 'disc_welcome', code: 'WELCOME20', type: 'percent', value: 20, status: 'scheduled', uses: 0, limit: 25, appliesTo: 'all', endsAt: '' },
-      { id: 'disc_old', code: 'SUMMER25', type: 'percent', value: 25, status: 'expired', uses: 48, limit: 50, appliesTo: 'all', endsAt: '2025-09-01' }
-    ];
-    os.documents = [
-      { id: 'doc_ceramic', title: 'Ceramic Kit Instructions', source_type: 'markdown', body_text: 'Apply ceramic coating on clean paint. Avoid swirl marks by using clean microfiber.' }
-    ];
-    os.settings.heroTitle = biz + ' Store';
-    os.settings.heroSubtitle = 'Retail kits and care products from the same team that details your vehicle.';
-    os.activity = [
-      { at: todayStr(), label: 'Order #1042 paid · Ceramic Coating Kit + towels' },
-      { at: todayStr(), label: 'Low stock · Interior Protectant Spray (4 left)' },
-      { at: todayStr(), label: 'Discount SHINE15 used 12 times' }
     ];
     os.seeded = true;
   }
@@ -362,10 +291,11 @@
     var s = os.settings || {};
     return '<section class="jos-store-card"><div class="jos-store-form jos-store-settings-form">' +
       '<label class="full">Store enabled<select id="jos-store-s-enabled"><option value="1"' + (s.enabled !== false ? ' selected' : '') + '>On</option><option value="0"' + (s.enabled === false ? ' selected' : '') + '>Off</option></select></label>' +
+      '<label class="full">Show on website<select id="jos-store-s-website"><option value="1"' + (s.showOnWebsite !== false ? ' selected' : '') + '>Yes — embed Store section</option><option value="0"' + (s.showOnWebsite === false ? ' selected' : '') + '>No</option></select></label>' +
       '<label>URL path<input id="jos-store-s-path" type="text" value="' + esc(s.storePath || '/store') + '"></label>' +
       '<label class="full">Hero title<input id="jos-store-s-hero" type="text" value="' + esc(s.heroTitle || '') + '"></label>' +
       '<label class="full">Hero subtitle<textarea id="jos-store-s-sub" rows="2">' + esc(s.heroSubtitle || '') + '</textarea></label>' +
-      '<p class="jos-muted full">Public URL: yourbusiness.com' + esc(s.storePath || '/store') + ' · rendered by Website Engine from Commerce.</p>' +
+      '<p class="jos-muted full">When enabled, active products appear in a Store section on your Instant Site — same look as the Website editor.</p>' +
       '<div class="jos-btn-row full"><button type="button" class="jos-btn jos-btn-brand" data-jos-act="store-settings-save">Save settings</button></div>' +
       '</div></section>';
   }
@@ -433,7 +363,8 @@
           '<td>' + statusPill(o.status) + '</td>' +
           '<td><strong>' + esc(money(o.total)) + '</strong></td></tr>';
       }).join('') + '</tbody></table></div>'
-      : '<div class="jos-store-empty"><h3>No orders yet</h3><p>When customers buy products, orders show up here.</p></div>';
+      : '<div class="jos-store-empty"><h3>No orders yet</h3><p>Create a manual order or wait for website checkout.</p>' +
+        '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="store-order-new">+ New Order</button></div>';
     return '<section class="jos-store-card">' + table + '</section>';
   }
 
@@ -541,14 +472,14 @@
     var primaryAct = tab === 'collections' ? 'store-collection-new'
       : tab === 'bundles' ? 'store-bundle-new'
         : tab === 'discounts' ? 'store-discount-new'
-          : tab === 'orders' ? 'store-export'
+          : tab === 'orders' ? 'store-order-new'
             : tab === 'inventory' ? 'store-export'
               : tab === 'settings' || tab === 'overview' || tab === 'analytics' || tab === 'ai' ? 'store-tab-products'
                 : 'store-product-new';
     var primaryLabel = tab === 'collections' ? '+ New Collection'
       : tab === 'bundles' ? '+ New Bundle'
         : tab === 'discounts' ? '+ New Discount'
-          : tab === 'orders' ? 'Export orders'
+          : tab === 'orders' ? '+ New Order'
             : tab === 'inventory' ? 'Export inventory'
               : tab === 'settings' || tab === 'overview' || tab === 'analytics' || tab === 'ai' ? 'Manage products'
                 : '+ New Product';
@@ -572,8 +503,35 @@
       body +
       '</div>' +
       renderProductModal(root, os) +
+      renderOrderModal(root, os) +
       '<button type="button" class="jos-store-fab" data-jos-act="store-product-new" aria-label="New Product">+</button>' +
       '</div>';
+  }
+
+  function renderOrderModal(root, os) {
+    if (!root._josStoreOrderModal) return '';
+    var products = (os.products || []).filter(function (p) { return p.status === 'active'; });
+    var opts = products.length
+      ? products.map(function (p) {
+        return '<option value="' + esc(p.id) + '">' + esc(p.name) + ' · ' + esc(money(p.price)) + '</option>';
+      }).join('')
+      : '<option value="">Add a product first</option>';
+    return '<div class="jos-store-modal-backdrop" data-jos-act="store-order-close">' +
+      '<div class="jos-store-modal" role="dialog" aria-label="New order" onclick="event.stopPropagation()">' +
+      '<div class="jos-between"><div><div class="jos-kicker">Store</div><h2>New order</h2></div>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="store-order-close" aria-label="Close">✕</button></div>' +
+      '<div class="jos-store-form">' +
+      '<label class="full">Customer name<input id="jos-store-o-name" type="text" placeholder="Jordan Lee" required></label>' +
+      '<label class="full">Email<input id="jos-store-o-email" type="email" placeholder="jordan@email.com"></label>' +
+      '<label>Product<select id="jos-store-o-product">' + opts + '</select></label>' +
+      '<label>Qty<input id="jos-store-o-qty" type="number" min="1" value="1"></label>' +
+      '<label>Channel<select id="jos-store-o-channel"><option>In person</option><option>Website</option><option>Phone</option></select></label>' +
+      '<label>Status<select id="jos-store-o-status"><option value="paid">Paid</option><option value="pending">Pending</option></select></label>' +
+      '</div>' +
+      '<div class="jos-btn-row jos-mt">' +
+      '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="store-order-save">Save order</button>' +
+      '<button type="button" class="jos-btn" data-jos-act="store-order-close">Cancel</button>' +
+      '</div></div></div>';
   }
 
   function readProductDraft() {
@@ -646,6 +604,7 @@
     root._josStoreProductDraft = null;
     root._josStoreProductCreateMode = 'manual';
     root._josStoreTab = 'products';
+    persistStoreOs();
     render();
   }
 
@@ -711,23 +670,124 @@
       return;
     }
     if (act === 'store-collection-new' || act === 'store-collection-edit') {
-      toast(act === 'store-collection-new' ? 'Collection builder opening soon' : 'Collection saved locally soon');
-      return;
+      var colName = window.prompt(act === 'store-collection-new' ? 'Collection name' : 'Rename collection', 'New collection');
+      if (!colName || !String(colName).trim()) return;
+      if (act === 'store-collection-new') {
+        os.collections.push({
+          id: id('col'),
+          name: String(colName).trim(),
+          description: '',
+          productIds: [],
+          published: true
+        });
+        toast('Collection saved');
+      } else {
+        var col = os.collections.find(function (c) { return c.id === t.getAttribute('data-jos-id'); });
+        if (col) { col.name = String(colName).trim(); toast('Collection updated'); }
+      }
+      persistStoreOs();
+      return render();
     }
     if (act === 'store-bundle-new' || act === 'store-bundle-edit') {
-      toast(act === 'store-bundle-new' ? 'Bundle builder — Stage 2 connect' : 'Bundle editor — Stage 2');
-      return;
+      var bunTitle = window.prompt(act === 'store-bundle-new' ? 'Bundle title' : 'Rename bundle', 'New bundle');
+      if (!bunTitle || !String(bunTitle).trim()) return;
+      if (act === 'store-bundle-new') {
+        os.bundles.push({
+          id: id('bun'),
+          title: String(bunTitle).trim(),
+          description: '',
+          price: 0,
+          discount: 0,
+          featured: false,
+          status: 'active',
+          productIds: []
+        });
+        toast('Bundle saved');
+      } else {
+        var bun = os.bundles.find(function (b) { return b.id === t.getAttribute('data-jos-id'); });
+        if (bun) { bun.title = String(bunTitle).trim(); toast('Bundle updated'); }
+      }
+      persistStoreOs();
+      return render();
     }
     if (act === 'store-discount-new' || act === 'store-discount-edit') {
-      toast(act === 'store-discount-new' ? 'Create a discount code — Stage 2 connect' : 'Discount editor — Stage 2');
-      return;
+      var code = window.prompt(act === 'store-discount-new' ? 'Discount code' : 'Update code', 'SAVE10');
+      if (!code || !String(code).trim()) return;
+      if (act === 'store-discount-new') {
+        os.discounts.push({
+          id: id('disc'),
+          code: String(code).trim().toUpperCase(),
+          type: 'percent',
+          value: 10,
+          status: 'active',
+          uses: 0,
+          limit: 100,
+          appliesTo: 'all',
+          endsAt: ''
+        });
+        toast('Discount saved');
+      } else {
+        var disc = os.discounts.find(function (d) { return d.id === t.getAttribute('data-jos-id'); });
+        if (disc) { disc.code = String(code).trim().toUpperCase(); toast('Discount updated'); }
+      }
+      persistStoreOs();
+      return render();
+    }
+    if (act === 'store-order-new') {
+      root._josStoreOrderModal = true;
+      root._josStoreTab = 'orders';
+      return render();
+    }
+    if (act === 'store-order-close') {
+      root._josStoreOrderModal = false;
+      return render();
+    }
+    if (act === 'store-order-save') {
+      var oName = String((el('jos-store-o-name') || {}).value || '').trim();
+      var oEmail = String((el('jos-store-o-email') || {}).value || '').trim();
+      var oPid = (el('jos-store-o-product') || {}).value || '';
+      var oQty = Math.max(1, Number((el('jos-store-o-qty') || {}).value) || 1);
+      var oChannel = (el('jos-store-o-channel') || {}).value || 'In person';
+      var oStatus = (el('jos-store-o-status') || {}).value || 'paid';
+      if (!oName) { toast('Customer name is required'); return; }
+      var prod = productById(oPid);
+      if (!prod) { toast('Add an active product before creating an order'); return; }
+      var total = (Number(prod.price) || 0) * oQty;
+      var nextNum = 1000 + os.orders.length + 1;
+      var order = {
+        id: id('ord'),
+        number: '#' + nextNum,
+        status: oStatus,
+        channel: oChannel,
+        customer: oName,
+        email: oEmail,
+        total: total,
+        items: [{ productId: prod.id, qty: oQty, price: Number(prod.price) || 0 }],
+        createdAt: todayStr(),
+        fulfillment: prod.type === 'gift_card' || prod.type === 'digital' ? 'digital' : 'unfulfilled'
+      };
+      os.orders.unshift(order);
+      if (prod.stock != null && prod.type !== 'gift_card') {
+        prod.stock = Math.max(0, (Number(prod.stock) || 0) - oQty);
+      }
+      publishCommerce('emitOrderCreated', order);
+      root._josStoreOrderModal = false;
+      toast('Order ' + order.number + ' saved');
+      persistStoreOs();
+      return render();
     }
     if (act === 'store-settings-save') {
       os.settings.enabled = ((el('jos-store-s-enabled') || {}).value || '1') === '1';
+      os.settings.showOnWebsite = ((el('jos-store-s-website') || {}).value || '1') === '1';
       os.settings.storePath = (el('jos-store-s-path') || {}).value || '/store';
       os.settings.heroTitle = (el('jos-store-s-hero') || {}).value || '';
       os.settings.heroSubtitle = (el('jos-store-s-sub') || {}).value || '';
-      toast('Store settings saved · preview updates now');
+      toast('Store settings saved');
+      persistStoreOs();
+      try {
+        if (typeof global.renderWebsite === 'function') global.renderWebsite();
+        if (typeof global.renderWebsitePreview === 'function') global.renderWebsitePreview();
+      } catch (eWs) {}
       root._josStoreTab = 'overview';
       return render();
     }
@@ -741,6 +801,7 @@
         productId: prod.id, before: before, after: prod.stock, reason: 'manual.adjust'
       });
       toast(prod.name + ' · ' + prod.stock + ' in stock');
+      persistStoreOs();
       return render();
     }
     if (act === 'store-import') {
@@ -815,8 +876,9 @@
       }
     });
     root.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && root._josStoreProductModal) {
+      if (e.key === 'Escape' && (root._josStoreProductModal || root._josStoreOrderModal)) {
         root._josStoreProductModal = false;
+        root._josStoreOrderModal = false;
         render();
       }
     });
