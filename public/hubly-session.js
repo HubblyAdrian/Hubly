@@ -487,7 +487,7 @@
         (sess && sess.detected && sess.detected.intent === 'hire_pro')) {
       return q ? '/get-done?q=' + q + hs : '/get-done';
     }
-    return q ? '/signup?q=' + q + hs : (hs ? '/signup?' + hs.slice(1) : '/signup');
+    return q ? '/create?q=' + q + hs : (hs ? '/create?' + hs.slice(1) : '/create');
   }
 
   function markHandedOff() {

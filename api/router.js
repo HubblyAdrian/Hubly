@@ -65,6 +65,7 @@ module.exports = async (req, res) => {
       urlPath.startsWith('/booking-wizard/') ||
       urlPath.startsWith('/smart-quote/') ||
       urlPath.startsWith('/journey-os/') ||
+      urlPath.startsWith('/create/') ||
       urlPath === '/website-ast.js' ||
       urlPath === '/landing-intent.js' ||
       urlPath === '/hubly-session.js'
@@ -146,6 +147,16 @@ module.exports = async (req, res) => {
           at: cur.time || null,
         },
       });
+    }
+
+    // Hubly Create — AI Business Builder (anonymous). Not Blueprint / Instant Site.
+    if (urlPath === '/create' || urlPath === '/create/') {
+      const createIndex = path.join(__dirname, '../public/create/index.html');
+      if (fs.existsSync(createIndex)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        return res.status(200).send(fs.readFileSync(createIndex, 'utf8'));
+      }
     }
 
     // AI-first marketplace consumer entry (no search/directory UI)

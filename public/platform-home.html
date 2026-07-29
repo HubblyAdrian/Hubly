@@ -1458,7 +1458,7 @@ img{max-width:100%;display:block}
   </nav>
   <div class="nav-acts">
     <a class="nav-login" href="/login">Sign in</a>
-    <a class="btn btn-brand" href="/signup">Build My Business</a>
+    <a class="btn btn-brand" href="/create">Build My Business</a>
   </div>
 </header>
 
@@ -1540,7 +1540,7 @@ img{max-width:100%;display:block}
     </div>
 
     <div class="journey-dests" id="how">
-      <a class="journey-dest journey-dest-primary" href="/signup" data-journey="business" id="journeyBiz">
+      <a class="journey-dest journey-dest-primary" href="/create" data-journey="business" id="journeyBiz">
         <div class="journey-role">
           <span class="journey-role-ico" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 15l-1 5 5-1 8.5-8.5a3.5 3.5 0 00-5-5L5 15z"/><path d="M12 7l5 5M8.5 15.5l-2 1 1-2"/></svg>
@@ -1806,7 +1806,7 @@ img{max-width:100%;display:block}
     </div>
 
     <div class="ind-panel">
-      <a class="ind-build" href="/signup">
+      <a class="ind-build" href="/create">
         <span class="ind-build-stars" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z"/></svg>
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z"/></svg>
@@ -1913,7 +1913,7 @@ img{max-width:100%;display:block}
     </div>
 
     <div class="imagine-ctas" id="start">
-      <a class="btn btn-brand btn-lg" href="/signup">Build My Business →</a>
+      <a class="btn btn-brand btn-lg" href="/create">Build My Business →</a>
       <a class="btn btn-ghost btn-lg" href="/get-done" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.28)">Ask Hubly →</a>
     </div>
     <p class="imagine-antis" aria-label="No setup. No templates. No complicated software.">
@@ -2178,9 +2178,9 @@ img{max-width:100%;display:block}
       var q = encodeURIComponent((u.text || '').trim());
       url = q ? '/get-done?q=' + q + '&hs=' + encodeURIComponent(session.id) : '/get-done';
     }
-    if(kind === 'build' && url.indexOf('/signup') !== 0){
+    if(kind === 'build' && url.indexOf('/create') !== 0){
       var qb = encodeURIComponent((u.text || '').trim());
-      url = qb ? '/signup?q=' + qb + '&hs=' + encodeURIComponent(session.id) : '/signup?hs=' + encodeURIComponent(session.id);
+      url = qb ? '/create?q=' + qb + '&hs=' + encodeURIComponent(session.id) : '/create?hs=' + encodeURIComponent(session.id);
     }
     window.location.href = url;
   }
@@ -2600,7 +2600,7 @@ img{max-width:100%;display:block}
     var understood = Intent ? Intent.understand(v, 'help') : null;
     if(Intent && understood) Intent.upsertSession(understood);
     var dest = understood && Intent ? Intent.routeUrl(understood) : ('/get-done?q=' + encodeURIComponent(v));
-    var goingBuilder = dest.indexOf('/signup') === 0;
+    var goingBuilder = dest.indexOf('/create') === 0;
     setTimeout(function(){
       var b = document.createElement('div');
       b.className = 'msg msg-bot';
