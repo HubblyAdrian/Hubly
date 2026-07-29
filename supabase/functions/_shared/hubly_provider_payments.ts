@@ -113,6 +113,21 @@ export class StripePaymentsProvider implements PaymentsProvider {
       );
     }
   }
+
+  /** Commerce Store checkout — same Stripe Connect destination session as bookings. */
+  async createStoreCheckout(opts: {
+    connectedAccountId: string;
+    amountCents: number;
+    currency?: string;
+    productName: string;
+    successUrl: string;
+    cancelUrl: string;
+    customerEmail?: string;
+    metadata?: Record<string, string>;
+    applicationFeeCents?: number;
+  }): Promise<HublyProviderResult<StripeCheckoutSession>> {
+    return this.createBookingCheckout(opts);
+  }
 }
 
 export function createStripePaymentsProvider(): StripePaymentsProvider {

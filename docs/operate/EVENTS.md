@@ -54,6 +54,17 @@ Benefits: audit trail · reporting · AI context · debugging.
 | `reputation.changed` | Reviews | Reports, Ask Hubly |
 | `campaign.sent` | Marketing | Reports |
 | `customer.created` | Customers | Marketing, Pipeline |
+| `product.created` | Store (Commerce) | Website `/store`, Analytics, Ask Hubly |
+| `product.updated` | Store (Commerce) | Website `/store` |
+| `inventory.changed` | Store (Commerce) | Analytics, Ask Hubly |
+| `inventory.low_stock` | Store (Commerce) | Inbox, Ask Hubly |
+| `order.created` | Store (Commerce) | Customers (timeline), Analytics |
+| `order.paid` | Store (Commerce) / Stripe webhook | Customers timeline, Revenue, Analytics, Reviews (follow-up) |
+| `order.refunded` | Store (Commerce) | Revenue, Customers, Analytics |
+| `bundle.created` | Store (Commerce) | Website `/store` |
+| `giftcard.used` | Store (Commerce) | Revenue, Customers |
+| `discount.created` | Store (Commerce) | Marketing (read), Analytics |
+| `cart.abandoned` | Store (Commerce) | Marketing, Ask Hubly |
 
 Payloads are plain objects with ids/references only (Rule #15 / #19) — never whole duplicated entities.
 

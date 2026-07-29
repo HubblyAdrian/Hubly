@@ -24,6 +24,18 @@ verify_jwt = false
 [functions.create-booking-checkout]
 verify_jwt = false
 
+# Commerce Store checkout — Stripe Connect destination; credentials checked in-function
+[functions.create-store-checkout]
+verify_jwt = false
+
+# Commerce owner API — JWT checked in-function (owner_id)
+[functions.commerce-api]
+verify_jwt = false
+
+# Nightly merchandising — HUBLY_CRON_SECRET or service-role bearer checked in-function
+[functions.commerce-merchandising]
+verify_jwt = false
+
 # Marketplace API — public list/availability/book/request; settings auth checked in-function
 [functions.marketplace]
 verify_jwt = false

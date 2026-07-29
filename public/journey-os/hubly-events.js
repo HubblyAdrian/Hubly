@@ -122,7 +122,19 @@
       APP_CONNECTED: 'app.connected',
       APP_DISCONNECTED: 'app.disconnected',
       CREATIVE_ASSET_PLANNED: 'creative.asset_planned',
-      CREATIVE_ASSET_CREATED: 'creative.asset_created'
+      CREATIVE_ASSET_CREATED: 'creative.asset_created',
+      /* Commerce Engine (Store) */
+      PRODUCT_CREATED: 'product.created',
+      PRODUCT_UPDATED: 'product.updated',
+      INVENTORY_CHANGED: 'inventory.changed',
+      INVENTORY_LOW_STOCK: 'inventory.low_stock',
+      ORDER_CREATED: 'order.created',
+      ORDER_PAID: 'order.paid',
+      ORDER_REFUNDED: 'order.refunded',
+      BUNDLE_CREATED: 'bundle.created',
+      GIFTCARD_USED: 'giftcard.used',
+      DISCOUNT_CREATED: 'discount.created',
+      CART_ABANDONED: 'cart.abandoned'
     })
   };
 })(typeof window !== 'undefined' ? window : globalThis);

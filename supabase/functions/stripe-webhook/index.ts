@@ -93,6 +93,64 @@ Deno.serve(async (req: Request) => {
         }).eq("stripe_checkout_session_id", sessionId);
       }
 
+      // Commerce Engine — mark store order paid + deduct inventory
+      const commerceOrderId = String(
+        meta.hubly_commerce_order_id || meta.commerce_order_id || "",
+      ).trim();
+      if (
+        commerceOrderId &&
+        (paymentStatus === "paid" || paymentStatus === "no_payment_required")
+      ) {
+        const { data: orderRow, error: ordErr } = await admin
+          .from("commerce_orders")
+          .update({
+            status: "paid",
+            stripe_checkout_session_id: sessionId || null,
+            stripe_payment_intent_id: pi,
+            paid_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", commerceOrderId)
+          .select("id,business_id")
+          .maybeSingle();
+        if (ordErr) {
+          console.error("stripe-webhook commerce_orders", ordErr);
+          return new Response(JSON.stringify({ error: "commerce order update failed" }), {
+            status: 500,
+            headers: { "content-type": "application/json" },
+          });
+        }
+        if (orderRow?.business_id) {
+          const { data: items } = await admin
+            .from("commerce_order_items")
+            .select("product_id,qty,title")
+            .eq("order_id", commerceOrderId);
+          try {
+            const { applyOrderInventoryDeduction } = await import(
+              "../_shared/hubly_commerce_inventory.ts"
+            );
+            await applyOrderInventoryDeduction(admin, {
+              businessId: orderRow.business_id,
+              orderId: commerceOrderId,
+              items: (items || []).map((i: { product_id?: string; qty: number; title?: string }) => ({
+                product_id: i.product_id,
+                qty: i.qty,
+                title: i.title,
+              })),
+            });
+          } catch (invErr) {
+            console.error("stripe-webhook commerce inventory", invErr);
+          }
+          const cartId = String(meta.hubly_cart_id || "").trim();
+          if (cartId) {
+            await admin.from("commerce_carts").update({
+              status: "converted",
+              updated_at: new Date().toISOString(),
+            }).eq("id", cartId);
+          }
+        }
+      }
+
       // Phase 4 — mark marketplace Booking Engine payment paid
       if (
         marketplaceBookingId &&
@@ -111,6 +169,88 @@ Deno.serve(async (req: Request) => {
           });
         }
       }
+    }
+
+    // Commerce — payment_intent.succeeded (backup path when metadata has order id)
+    if (event.type === "payment_intent.succeeded") {
+      const piObj = event.data.object;
+      const meta = (piObj.metadata || {}) as Record<string, string>;
+      const commerceOrderId = String(
+        meta.hubly_commerce_order_id || meta.commerce_order_id || "",
+      ).trim();
+      const piId = String(piObj.id || "");
+      if (commerceOrderId) {
+        const { data: orderRow } = await admin
+          .from("commerce_orders")
+          .update({
+            status: "paid",
+            stripe_payment_intent_id: piId,
+            paid_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", commerceOrderId)
+          .neq("status", "paid")
+          .select("id,business_id")
+          .maybeSingle();
+        if (orderRow?.business_id) {
+          const { data: items } = await admin
+            .from("commerce_order_items")
+            .select("product_id,qty,title")
+            .eq("order_id", commerceOrderId);
+          try {
+            const { applyOrderInventoryDeduction } = await import(
+              "../_shared/hubly_commerce_inventory.ts"
+            );
+            await applyOrderInventoryDeduction(admin, {
+              businessId: orderRow.business_id,
+              orderId: commerceOrderId,
+              items: (items || []).map((i: { product_id?: string; qty: number; title?: string }) => ({
+                product_id: i.product_id,
+                qty: i.qty,
+                title: i.title,
+              })),
+            });
+          } catch (invErr) {
+            console.error("stripe-webhook pi commerce inventory", invErr);
+          }
+        }
+      }
+    }
+
+    if (event.type === "payment_intent.payment_failed" || event.type === "payment_intent.failed") {
+      const piObj = event.data.object;
+      const meta = (piObj.metadata || {}) as Record<string, string>;
+      const commerceOrderId = String(
+        meta.hubly_commerce_order_id || meta.commerce_order_id || "",
+      ).trim();
+      if (commerceOrderId) {
+        await admin.from("commerce_orders").update({
+          notes: "payment_failed",
+          updated_at: new Date().toISOString(),
+        }).eq("id", commerceOrderId).eq("status", "pending");
+      }
+    }
+
+    if (event.type === "charge.refunded") {
+      const charge = event.data.object;
+      const pi = typeof charge.payment_intent === "string"
+        ? charge.payment_intent
+        : (charge.payment_intent as { id?: string } | null)?.id || null;
+      if (pi) {
+        await admin.from("commerce_orders").update({
+          status: "refunded",
+          fulfillment: "cancelled",
+          updated_at: new Date().toISOString(),
+        }).eq("stripe_payment_intent_id", pi);
+      }
+    }
+
+    // Recognized but handled elsewhere / Stage 2 subscribers (email, memberships)
+    if (
+      event.type === "invoice.paid" ||
+      event.type === "customer.subscription.updated"
+    ) {
+      // Revenue / Memberships engines own these; acknowledge receipt only.
     }
 
     return new Response(JSON.stringify({ received: true }), {

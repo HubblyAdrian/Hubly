@@ -1,7 +1,9 @@
 # Store (Commerce Engine)
 
 **UI label:** Store  
-**Internal name:** Commerce Engine (`S.storeOs`, `HublyStoreCommerce`)
+**Internal name:** Commerce Engine (`S.storeOs`, `HublyStoreCommerce`, `HublyCommerce`)
+
+See also [COMMERCE_ENGINE.md](./COMMERCE_ENGINE.md).
 
 ## What it is
 
@@ -15,11 +17,16 @@ Owner surface to sell **products** (gear, kits, gift cards, digital) alongside H
 
 | Tab | Owns |
 |---|---|
-| Products | SKUs, price, status, type |
+| Overview | Live `/store` preview, revenue, top product, AI suggestions |
+| Products | SKUs, price, status, type, Manual / Import / AI create |
 | Collections | Groupings for site / van / upsells |
-| Orders | Product orders + fulfillment |
-| Inventory | On-hand stock, low-stock |
+| Bundles | Kit prices + product sets |
+| Orders | Product orders + fulfillment status |
+| Inventory | On-hand stock, low-stock, adjust |
 | Discounts | Promo codes for store catalog |
+| Analytics | Revenue, AOV, top products, low stock |
+| AI | Product coach + knowledge uploader |
+| Settings | Enable store, `/store` path, hero copy |
 
 ## Boundaries
 
@@ -27,7 +34,10 @@ Owner surface to sell **products** (gear, kits, gift cards, digital) alongside H
 - **Apps** — Connected Apps marketplace
 - **Marketplace** — customer find-a-pro (hidden)
 - **Marketing coupons** — campaign discounts stay in Marketing until an explicit migrate
+- **Revenue** — Stripe payment ledger; Store does not duplicate invoices
 
 ## Production-First
 
-v1 is Operate UI + local commerce state with honest Stage-2 toasts for live publish / Stripe product sync. Done for paying customers = Provider + credentials for checkout (follow Capability → Provider pattern when wiring payments).
+Checkout: Capability → Stripe PaymentsProvider → Connect destination session.  
+Missing credentials → Provider not configured.  
+Live preview renders the real storefront component (not a mock image).

@@ -18,8 +18,8 @@ describe('Hubly Store commerce module', () => {
     assert.ok(mem > -1 && storeNav > mem && money > storeNav);
     assert.match(hubly, /id="v-store"/);
     assert.match(hubly, /id="jos-store-root"/);
-    assert.match(hubly, /store-commerce\.js\?v=store-1/);
-    assert.match(hubly, /store-commerce\.css\?v=store-1/);
+    assert.match(hubly, /store-commerce\.js\?v=store-2/);
+    assert.match(hubly, /store-commerce\.css\?v=store-2/);
     assert.match(hubly, /store:'Store'/);
   });
 
@@ -33,8 +33,10 @@ describe('Hubly Store commerce module', () => {
 
   it('exposes Commerce Engine tabs without Marketplace naming', () => {
     assert.match(store, /HublyStoreCommerce/);
+    assert.match(store, /\['overview', 'Overview'\]/);
     assert.match(store, /\['products', 'Products'\]/);
     assert.match(store, /\['collections', 'Collections'\]/);
+    assert.match(store, /\['bundles', 'Bundles'\]/);
     assert.match(store, /\['orders', 'Orders'\]/);
     assert.match(store, /\['inventory', 'Inventory'\]/);
     assert.match(store, /\['discounts', 'Discounts'\]/);
@@ -50,5 +52,10 @@ describe('Hubly Store commerce module', () => {
     assert.match(css, /\.jos-store-header/);
     assert.match(css, /\.jos-store-tab\.on/);
     assert.match(css, /#D9632D/);
+  });
+
+  it('loads store-commerce stylesheet with cache bust', () => {
+    assert.match(hubly, /store-commerce\.css\?v=store-2/);
+    assert.match(hubly, /store-commerce\.js\?v=store-2/);
   });
 });

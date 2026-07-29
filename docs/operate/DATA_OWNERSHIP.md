@@ -15,6 +15,7 @@ Other modules **read** that data — they do not own or duplicate it.
 | Campaigns | 📣 Marketing |
 | Templates / Automations / Coupons | 📣 Marketing |
 | Membership Plans / Subscribers / Visits | 🔁 Memberships |
+| Products / Collections / Bundles / Store carts / Product orders / Inventory logs / Store settings | 🛒 Store (Commerce Engine) |
 | Payments / Invoices / Deposits / Taxes / Stripe / Payouts | 💰 Revenue |
 | Dashboards / Saved definitions / Layouts / Schedules / Forecast models | 📊 Reports (Rule #21 — aggregates only; never operational copies) |
 | AI conversations / memory / actions / pending confirmations / automation allow-rules | ✨ Ask Hubly (Rule #22 — never owns operational entities) |
@@ -44,7 +45,8 @@ Other modules **read** that data — they do not own or duplicate it.
 | Leads | Lead records | — |
 | Customers | Customer profiles | — |
 | Memberships | Plans, subscribers, billing rules, visit/renewal ledgers (`S.membershipsOs`) | Customers, Jobs, Revenue, Services (catalog refs) |
-| Revenue | Payments / invoices / deposits / refunds / taxes / Stripe sync status / payouts (`S.revenueOs`) — Rule #20 | Customers, Jobs, Memberships, Services |
+| Store (Commerce) | Products, collections, bundles, carts, product orders, inventory, discounts, store settings (`S.storeOs`) | Customers (`customer_id` refs), Revenue (Stripe ledger), Website (service catalog) |
+| Revenue | Payments / invoices / deposits / refunds / taxes / Stripe sync status / payouts (`S.revenueOs`) — Rule #20 | Customers, Jobs, Memberships, Services, Store (product order refs) |
 | Reports | Dashboards, definitions, layouts, schedules, forecast models (`S.reportsOs`) | Revenue, Memberships, Pipeline, Customers, Leads, Jobs, Marketing, Reviews (aggregate only) |
 | Ask Hubly | Conversations, memory, action log, pending confirmations, automation allow-rules (`S.askHublyOs`) | Everything via owners (never source of truth for entities) |
 | Settings | Business profile, team/roles, platform billing stubs, integrations OS, notifications, branding, AI defaults, security, permissions (`S.settingsOs`) | Must not store Customers, Jobs, Revenue ledger, Services, Reviews, Campaigns (Rule #23) |
