@@ -763,6 +763,18 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   line-height: 1.5;
 }
 
+.pp-workflow-steps {
+  margin: 12px 0 0;
+  padding-left: 1.25rem;
+  color: var(--pp-ink-2);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pp-workflow-steps li {
+  margin: 0.35rem 0;
+}
+
 .pp-dl {
   display: grid;
   gap: 10px;

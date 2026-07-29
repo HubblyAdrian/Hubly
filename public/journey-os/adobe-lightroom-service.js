@@ -138,6 +138,57 @@
       if (!businessId) {
         return notConfigured({ message: 'Save your business first to connect Adobe Lightroom.' });
       }
+
+      // Quick path for tab open: Hubly DB only (adobe-oauth-disconnect). Avoids Adobe catalog
+      // round-trip that can stall the Lightroom tab for tens of seconds.
+      if (opts && opts.quick) {
+        var quickRes = await invokeEdge('adobe-oauth-disconnect', {
+          action: 'status',
+          business_id: businessId,
+        });
+        var quickEdge = quickRes.data;
+        if (!quickEdge) {
+          return notConfigured({
+            message: (quickRes.error && quickRes.error.message) ||
+              'Could not check Adobe status. Projects still work in Hubly.',
+          });
+        }
+        if (quickEdge.configured === false || quickEdge.health === 'not_configured') {
+          _configuredCache = false;
+          _connectedCache = false;
+          return notConfigured({
+            message: quickEdge.message ||
+              'Adobe Lightroom isn’t configured yet. Projects still work without Lightroom.',
+          });
+        }
+        var qConnected = !!(quickEdge.connected || (quickEdge.data && quickEdge.data.connected));
+        var qData = quickEdge.data || quickEdge;
+        _configuredCache = true;
+        _connectedCache = qConnected;
+        return result({
+          ok: true,
+          status: qConnected ? 'connected' : 'ready',
+          message: qData.message || quickEdge.message ||
+            (qConnected ? 'Connected to Adobe Lightroom' : 'Adobe is ready — connect Lightroom when you want album sync.'),
+          data: {
+            configured: true,
+            connected: qConnected,
+            health: qData.health || quickEdge.health || (qConnected ? 'healthy' : 'disconnected'),
+            accountLabel: qData.adobeAccount || qData.adobe_account || quickEdge.adobe_account ||
+              quickEdge.account_label || null,
+            adobeUserId: qData.adobeUserId || quickEdge.adobe_user_id || null,
+            tokenExpiresAt: qData.tokenExpiresAt || qData.token_expires_at ||
+              quickEdge.token_expires_at || quickEdge.access_token_expires_at || null,
+            lastRefreshAt: qData.lastRefreshAt || quickEdge.last_refresh_at || null,
+            catalogId: qData.catalogId || qData.catalog_id || quickEdge.catalog_id || null,
+            connectedAt: qData.connectedAt || quickEdge.connected_at || null,
+            lastSyncAt: qData.lastSyncAt || quickEdge.last_sync_at || null,
+            lastError: qData.lastError || quickEdge.last_error || null,
+            quick: true,
+          },
+        });
+      }
+
       // Prefer provider Edge (verifies catalog + returns token expiry / last refresh).
       var res = await invokeEdge('adobe-lightroom', {
         action: 'status',

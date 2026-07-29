@@ -178,6 +178,20 @@
     var st = S() || {};
     return st.businessId || st.bizId || (st.business && st.business.id) || null;
   }
+  /** brand-assets RLS requires first path folder = auth.uid() (same as uploadBrandAsset). */
+  function authOwnerId() {
+    try {
+      if (global.currentUser && global.currentUser.id) return String(global.currentUser.id);
+    } catch (e) {}
+    try {
+      if (typeof currentUser !== 'undefined' && currentUser && currentUser.id) return String(currentUser.id);
+    } catch (e2) {}
+    return null;
+  }
+  function isDurableMediaUrl(url) {
+    var u = String(url || '');
+    return !!(u && u.indexOf('blob:') !== 0 && u.indexOf('data:') !== 0);
+  }
   function isSignedIn() {
     try {
       if (global.currentUser && (global.currentUser.id || global.currentUser.email)) return true;
@@ -1428,7 +1442,7 @@
     return '<section class="pp-panel pp-panel-wide pp-lr-workspace">' +
       '<div class="pp-between">' +
         '<div><p class="pp-kicker">Adobe Lightroom</p><h3>' + esc(p.name) + '</h3>' +
-        '<p class="pp-muted">Sync pulls photos <strong>from Adobe into Hubly</strong>. Uploading Hubly Media into Lightroom is not available yet. Publish Gallery is Hubly-only.</p></div>' +
+        '<p class="pp-muted"><strong>Lightroom-first:</strong> import &amp; edit in Adobe, link an album here, then <strong>Sync Now</strong> pulls Adobe → Hubly. Hubly cannot upload Media-tab files into Lightroom yet.</p></div>' +
         '<div class="pp-btn-row">' +
           (connected
             ? '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Now</button>'
@@ -1456,7 +1470,13 @@
         '<div><span class="pp-label">Edited</span><strong>' + esc(String(sync.edited)) + '</strong></div>' +
         '<div><span class="pp-label">Favorites</span><strong>' + esc(String(sync.favorites)) + '</strong></div>' +
       '</div>' +
-      '<p class="pp-muted pp-mt">Sync Now downloads album metadata from Adobe into this project. It does not push your Media tab uploads to Lightroom.</p>' +
+      '<ol class="pp-muted pp-mt pp-workflow-steps">' +
+        '<li>Connect Adobe (Apps or button above).</li>' +
+        '<li>Create or link a Lightroom album to this project.</li>' +
+        '<li>Import &amp; edit photos in Adobe Lightroom (desktop or cloud).</li>' +
+        '<li><strong>Sync Now</strong> pulls that album into Hubly.</li>' +
+        '<li>Publish Hubly gallery delivers to clients from Hubly — not from Adobe.</li>' +
+      '</ol>' +
       '<div class="pp-btn-row pp-mt">' +
         '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">' +
           (sync.albumId ? 'Reuse Lightroom Project' : 'Create Lightroom Project') + '</button>' +
@@ -1542,9 +1562,9 @@
 
   function renderLrExportsPanel(p, sync) {
     var edited = sync.assets.filter(function (a) { return a.edited; });
-    return '<p class="pp-muted">Export Final Photos pulls Adobe renditions (preview / full / thumbnail). Uploading Hubly Media into Lightroom is not available yet. Generate Gallery publishes a Hubly client gallery only — it does not push to Adobe.</p>' +
+    return '<p class="pp-muted">Export Final Photos pulls Adobe renditions into Hubly. To get files <em>into</em> Adobe, import them in Lightroom itself, then Sync. Upload to Lightroom from Hubly is not available yet. Publish Hubly gallery is client delivery only.</p>' +
       '<div class="pp-btn-row">' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-upload" data-pp-id="' + esc(p.id) + '">Upload to Lightroom</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-upload" data-pp-id="' + esc(p.id) + '" title="Not available yet — import in Adobe Lightroom, then Sync">Upload to Lightroom (soon)</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Publish Hubly gallery</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver to Client</button>' +
       '</div>' +
@@ -1565,7 +1585,7 @@
   function renderLrSyncPanel(p, sync, adobeStatus) {
     return renderLrOverviewPanel(p, sync, adobeStatus, !!(adobeStatus.connected || sync.linked),
       adobeStatus.accountLabel || adobeStatus.adobeAccount || '—') +
-      '<p class="pp-muted pp-mt"><strong>Sync direction:</strong> Adobe → Hubly only. Media-tab uploads stay in Hubly until Lightroom upload ships. If Sync fails with an Edge Function error, deploy <code>adobe-lightroom</code>.</p>';
+      '<p class="pp-muted pp-mt"><strong>Sync direction:</strong> Adobe → Hubly only. Put photos into Adobe with Lightroom (desktop/cloud import). Media-tab uploads stay in Hubly until Hubly→Lightroom upload ships.</p>';
   }
 
   function renderLrSettingsPanel(p, sync, adobeStatus) {
@@ -1697,9 +1717,22 @@
     }
     if (isRawPhotoName(name) || /nef|dng|cr2|raw/i.test(mime)) {
       try {
-        var maxScan = Math.min(file.size, 12 * 1024 * 1024);
-        var buf = await file.slice(0, maxScan).arrayBuffer();
-        var jpeg = extractEmbeddedJpegFromBuffer(buf);
+        // NEF/CR2 often keep the large preview near the end — scan head then tail.
+        var chunk = 16 * 1024 * 1024;
+        var headEnd = Math.min(file.size, chunk);
+        var jpeg = extractEmbeddedJpegFromBuffer(await file.slice(0, headEnd).arrayBuffer());
+        if (!jpeg && file.size > chunk) {
+          var tailStart = Math.max(0, file.size - chunk);
+          jpeg = extractEmbeddedJpegFromBuffer(await file.slice(tailStart, file.size).arrayBuffer());
+        }
+        if (!jpeg && file.size > chunk * 2) {
+          // Middle pass for odd containers
+          var mid = Math.floor(file.size / 2);
+          var midStart = Math.max(0, mid - Math.floor(chunk / 2));
+          jpeg = extractEmbeddedJpegFromBuffer(
+            await file.slice(midStart, Math.min(file.size, midStart + chunk)).arrayBuffer()
+          );
+        }
         if (jpeg) {
           return {
             previewUrl: URL.createObjectURL(jpeg),
@@ -1716,7 +1749,9 @@
 
   function renderMediaTile(item) {
     var kind = mediaKind(item);
-    var preview = item.previewUrl || item.url || '';
+    // Never use ephemeral blob:/data: URLs from persisted workspace — they die on refresh.
+    var preview = (isDurableMediaUrl(item.previewUrl) && item.previewUrl) ||
+      (isDurableMediaUrl(item.url) && item.url) || '';
     var isRaw = !!(item.isRaw || isRawPhotoName(item.name));
     var label = kind === 'video' ? 'Video' : kind === 'doc' ? 'File' : (isRaw && !preview ? 'RAW · no preview' : isRaw ? 'RAW' : 'Photo');
     var inner = preview && kind === 'photo'
@@ -1736,6 +1771,9 @@
     var videos = uploads.filter(function (u) { return mediaKind(u) === 'video'; });
     var docs = uploads.filter(function (u) { return mediaKind(u) === 'doc'; });
     var total = uploads.length || p.photo_count || 0;
+    var missingPreview = photos.filter(function (u) {
+      return !isDurableMediaUrl(u.previewUrl) && !isDurableMediaUrl(u.url);
+    }).length;
 
     function section(title, items, empty) {
       return '<section class="pp-media-section">' +
@@ -1748,7 +1786,7 @@
 
     return '<section class="pp-panel pp-panel-wide pp-media-hero">' +
       '<div class="pp-between">' +
-        '<div><h3>Media</h3><p class="pp-muted">Drop photos and videos for this job. Everything else — Lightroom, galleries, Canva — builds from here.</p></div>' +
+        '<div><h3>Media</h3><p class="pp-muted">Drop photos and videos for this job. Client galleries build from here. Adobe Lightroom stays Lightroom-first — Sync pulls Adobe into Hubly; this tab does not push to Adobe.</p></div>' +
         '<span class="pp-pill">' + esc(String(total)) + ' assets</span>' +
       '</div>' +
       '<div class="pp-btn-row pp-mt">' +
@@ -1763,14 +1801,18 @@
       '<div class="pp-dropzone' + (total ? '' : ' is-empty') + '" data-pp-dropzone data-pp-id="' + esc(p.id) + '">' +
         '<strong>Drag &amp; drop here</strong>' +
         '<span>Photos, videos, or documents — or use the buttons above.</span>' +
-      '</div></section>' +
+      '</div>' +
+      (missingPreview
+        ? '<p class="pp-muted pp-mt">Some photos have no stored preview — re-upload them once so Hubly can save thumbnails (especially NEF/RAW).</p>'
+        : '') +
+      '</section>' +
       section('Photos', photos, 'No photos yet — upload or drag them in.') +
       section('Videos', videos, 'No videos yet.') +
       section('Documents', docs, 'No documents yet.') +
       (isPhotoTrade() || projectWorkspaceProfile().features.galleries
         ? '<section class="pp-panel pp-panel-wide"><div class="pp-between"><h3>Galleries &amp; delivery</h3>' +
           '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Publish Hubly gallery</button></div>' +
-          '<p class="pp-muted">Publishes a <strong>Hubly client gallery</strong> for this project. It does not send files to Adobe Lightroom — use the Lightroom tab → Sync Now to pull an Adobe album into Hubly.</p></section>'
+          '<p class="pp-muted"><strong>How photos get into Adobe:</strong> work in Lightroom (desktop/cloud), connect Adobe, link an album on the Lightroom tab, then <strong>Sync Now</strong> pulls Adobe → Hubly. Publish here only creates a <strong>Hubly client gallery</strong> — it never uploads files to Adobe.</p></section>'
         : '');
   }
 
@@ -2196,7 +2238,9 @@
     if (act === 'tab') {
       var nextTab = t.getAttribute('data-pp-tab') || 'overview';
       if (nextTab === 'lightroom') {
-        ensureAdobeStatus(st).then(function () { switchCommandTab('lightroom'); });
+        // Never block the tab on Adobe catalog verify — that call can take tens of seconds.
+        switchCommandTab('lightroom');
+        refreshLightroomStatusInBackground(st);
         return;
       }
       return switchCommandTab(nextTab);
@@ -2574,11 +2618,13 @@
     if (act === 'lr-upload' && p) {
       var svcUp = global.AdobeLightroomService;
       if (!svcUp) return;
-      await (svcUp.uploadToLightroom || svcUp.uploadPhotos)({
+      var upRes = await (svcUp.uploadToLightroom || svcUp.uploadPhotos)({
         businessId: businessId() || '',
         projectId: p.id,
         albumId: lightroomSyncMeta(p).albumId || undefined
       });
+      toast((upRes && upRes.message) ||
+        'Hubly → Lightroom upload is not available yet. Import photos in Adobe Lightroom, then Sync Now.');
       return;
     }
     if (act === 'adobe-disconnect') {
@@ -2725,20 +2771,41 @@
     toast('Open Apps from the sidebar to connect tools.');
   }
 
-  async function ensureAdobeStatus(st, force) {
+  async function ensureAdobeStatus(st, force, opts) {
     st = st || {};
+    opts = opts || {};
     if (!force && st.adobeStatus && st.adobeStatus._at && (Date.now() - st.adobeStatus._at) < 30000) {
       return st.adobeStatus;
     }
     var svc = global.AdobeLightroomService;
     if (!svc || !svc.viewConnectionStatus) return null;
     try {
-      var res = await svc.viewConnectionStatus({ businessId: businessId() || '' });
-      st.adobeStatus = Object.assign({}, res || {}, { _at: Date.now() });
+      var res = await svc.viewConnectionStatus({
+        businessId: businessId() || '',
+        quick: !!opts.quick,
+      });
+      st.adobeStatus = Object.assign({}, res || {}, { _at: Date.now(), _quick: !!opts.quick });
       return st.adobeStatus;
     } catch (e) {
       return null;
     }
+  }
+
+  /** Open Lightroom tab instantly; hydrate Adobe status without blocking the click. */
+  function refreshLightroomStatusInBackground(st) {
+    st = st || {};
+    if (st._lrStatusBusy) return;
+    st._lrStatusBusy = true;
+    var hadCache = !!(st.adobeStatus && st.adobeStatus.data);
+    // Fast DB status first (no Adobe catalog round-trip), then optional full verify.
+    ensureAdobeStatus(st, !hadCache, { quick: true }).then(function () {
+      if (st.tab === 'lightroom') switchCommandTab('lightroom');
+      return ensureAdobeStatus(st, true, { quick: false });
+    }).then(function () {
+      if (st.tab === 'lightroom') switchCommandTab('lightroom');
+    }).catch(function () { /* keep cached UI */ }).then(function () {
+      st._lrStatusBusy = false;
+    });
   }
 
   async function ingestMediaFiles(projectId, fileList, kindHint) {
@@ -2752,9 +2819,12 @@
     p.workspace = p.workspace || defaultWorkspace();
     p.local_uploads = p.local_uploads || p.workspace.local_uploads || [];
     var db = await dbClient();
+    var ownerId = authOwnerId();
     var bid = businessId() || 'anon';
     var added = 0;
     var rawNoPreview = 0;
+    var uploadFail = 0;
+    var stored = 0;
 
     for (var i = 0; i < fileList.length; i++) {
       var file = fileList[i];
@@ -2766,17 +2836,17 @@
         name: file.name || ('file-' + (i + 1)),
         size: file.size || 0,
         type: file.type || kindHint || 'application/octet-stream',
-        previewUrl: preview.previewUrl || '',
+        previewUrl: '',
         previewSource: preview.previewSource || 'none',
         isRaw: !!preview.isRaw,
         url: '',
         added_at: new Date().toISOString()
       };
-      // Store browser-safe JPEG/PNG in brand-assets. Full RAW files are rejected by the bucket —
-      // upload the extracted preview instead so tiles survive refresh when possible.
-      if (db && db.storage) {
+      // Store browser-safe JPEG/PNG in brand-assets under auth.uid() (RLS). Full RAW files are
+      // rejected by the bucket — upload the extracted preview instead so tiles survive refresh.
+      if (db && db.storage && ownerId) {
         try {
-          var uploadBlob = preview.previewBlob || null;
+          var uploadBlob = null;
           var uploadName = file.name || 'file';
           var contentType = file.type || undefined;
           if (preview.isRaw && preview.previewBlob) {
@@ -2785,32 +2855,63 @@
             contentType = 'image/jpeg';
           } else if (!preview.isRaw && file.type && file.type.indexOf('image/') === 0) {
             uploadBlob = file;
-          } else if (!preview.isRaw && file.type && file.type.indexOf('video/') === 0) {
-            uploadBlob = file;
+          }
+          // brand-assets only allows image/* — skip video/docs for storage previews.
+          if (uploadBlob && contentType && contentType.indexOf('image/') !== 0 &&
+              !(preview.isRaw && preview.previewBlob)) {
+            uploadBlob = null;
           }
           if (uploadBlob) {
-            var path = bid + '/' + p.id + '/' + Date.now() + '_' + String(uploadName).replace(/[^\w.\-]+/g, '_');
+            // Path must start with auth.uid() — businessId fails RLS silently.
+            var path = ownerId + '/projects/' + (bid || 'biz') + '/' + p.id + '/' +
+              Date.now() + '_' + String(uploadName).replace(/[^\w.\-]+/g, '_');
             var up = await db.storage.from('brand-assets').upload(path, uploadBlob, {
               upsert: false,
-              contentType: contentType
+              contentType: contentType || 'image/jpeg'
             });
             if (!up.error) {
               var pub = db.storage.from('brand-assets').getPublicUrl(path);
               item.url = (pub && pub.data && pub.data.publicUrl) || '';
-              if (item.url) item.previewUrl = item.url;
+              if (item.url) {
+                item.previewUrl = item.url;
+                stored += 1;
+              }
+            } else {
+              uploadFail += 1;
+              try { console.warn('Projects media upload failed', up.error); } catch (eLog) {}
             }
           }
-        } catch (eUp) {}
+        } catch (eUp) {
+          uploadFail += 1;
+          try { console.warn('Projects media upload exception', eUp); } catch (eLog2) {}
+        }
+      } else if (!ownerId) {
+        uploadFail += 1;
+      }
+      // Session-only blob for immediate UI if storage failed — stripped before persist below.
+      if (!item.previewUrl && preview.previewUrl) {
+        item.previewUrl = preview.previewUrl;
       }
       p.local_uploads.push(item);
       added += 1;
     }
+    // Never persist ephemeral blob:/data: URLs — they blank out after refresh.
+    p.local_uploads.forEach(function (u) {
+      if (!isDurableMediaUrl(u.previewUrl)) u.previewUrl = isDurableMediaUrl(u.url) ? u.url : '';
+      if (!isDurableMediaUrl(u.url)) u.url = '';
+    });
     p.workspace.local_uploads = p.local_uploads;
     p.photo_count = p.local_uploads.length;
     addActivity(p, 'Media added', added + ' file' + (added === 1 ? '' : 's'));
     var msg = added + ' file' + (added === 1 ? '' : 's') + ' added to Media';
+    if (stored) msg += ' · ' + stored + ' preview' + (stored === 1 ? '' : 's') + ' saved';
     if (rawNoPreview) {
       msg += ' · ' + rawNoPreview + ' RAW without embedded preview';
+    }
+    if (uploadFail && !stored) {
+      msg += ' · previews not stored — stay signed in and re-upload';
+    } else if (uploadFail) {
+      msg += ' · ' + uploadFail + ' preview store failed';
     }
     toast(msg);
     st.view = 'command';
