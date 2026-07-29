@@ -418,7 +418,6 @@ Deno.serve(async (req: Request) => {
         .single();
       if (error) return json({ error: error.message }, 400);
       if (bytes > 0) {
-        await admin.rpc; // no-op placeholder — bump usage via settings
         const settings = await ensureSettings();
         await admin
           .from("studio_settings")
