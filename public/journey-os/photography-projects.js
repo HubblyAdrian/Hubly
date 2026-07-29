@@ -2196,7 +2196,9 @@
     if (act === 'tab') {
       var nextTab = t.getAttribute('data-pp-tab') || 'overview';
       if (nextTab === 'lightroom') {
-        ensureAdobeStatus(st).then(function () { switchCommandTab('lightroom'); });
+        // Never block the tab on Adobe catalog verify — that call can take tens of seconds.
+        switchCommandTab('lightroom');
+        refreshLightroomStatusInBackground(st);
         return;
       }
       return switchCommandTab(nextTab);
@@ -2725,20 +2727,41 @@
     toast('Open Apps from the sidebar to connect tools.');
   }
 
-  async function ensureAdobeStatus(st, force) {
+  async function ensureAdobeStatus(st, force, opts) {
     st = st || {};
+    opts = opts || {};
     if (!force && st.adobeStatus && st.adobeStatus._at && (Date.now() - st.adobeStatus._at) < 30000) {
       return st.adobeStatus;
     }
     var svc = global.AdobeLightroomService;
     if (!svc || !svc.viewConnectionStatus) return null;
     try {
-      var res = await svc.viewConnectionStatus({ businessId: businessId() || '' });
-      st.adobeStatus = Object.assign({}, res || {}, { _at: Date.now() });
+      var res = await svc.viewConnectionStatus({
+        businessId: businessId() || '',
+        quick: !!opts.quick,
+      });
+      st.adobeStatus = Object.assign({}, res || {}, { _at: Date.now(), _quick: !!opts.quick });
       return st.adobeStatus;
     } catch (e) {
       return null;
     }
+  }
+
+  /** Open Lightroom tab instantly; hydrate Adobe status without blocking the click. */
+  function refreshLightroomStatusInBackground(st) {
+    st = st || {};
+    if (st._lrStatusBusy) return;
+    st._lrStatusBusy = true;
+    var hadCache = !!(st.adobeStatus && st.adobeStatus.data);
+    // Fast DB status first (no Adobe catalog round-trip), then optional full verify.
+    ensureAdobeStatus(st, !hadCache, { quick: true }).then(function () {
+      if (st.tab === 'lightroom') switchCommandTab('lightroom');
+      return ensureAdobeStatus(st, true, { quick: false });
+    }).then(function () {
+      if (st.tab === 'lightroom') switchCommandTab('lightroom');
+    }).catch(function () { /* keep cached UI */ }).then(function () {
+      st._lrStatusBusy = false;
+    });
   }
 
   async function ingestMediaFiles(projectId, fileList, kindHint) {
