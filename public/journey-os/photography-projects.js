@@ -1442,10 +1442,13 @@
     return '<section class="pp-panel pp-panel-wide pp-lr-workspace">' +
       '<div class="pp-between">' +
         '<div><p class="pp-kicker">Adobe Lightroom</p><h3>' + esc(p.name) + '</h3>' +
-        '<p class="pp-muted"><strong>Lightroom-first:</strong> import &amp; edit in Adobe, link an album here, then <strong>Sync Now</strong> pulls Adobe → Hubly. Hubly cannot upload Media-tab files into Lightroom yet.</p></div>' +
+        '<p class="pp-muted"><strong>Two-way media:</strong> Upload Hubly photos into the linked Lightroom album, or edit in Adobe and <strong>Sync Now</strong> to pull updates back.</p></div>' +
         '<div class="pp-btn-row">' +
           (connected
-            ? '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Now</button>'
+            ? '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Now</button>' +
+              (sync.albumId
+                ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-upload" data-pp-id="' + esc(p.id) + '">Upload to Lightroom</button>'
+                : '')
             : '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="adobe-connect">Connect Adobe Account</button>') +
         '</div></div>' +
       nav + '<div class="pp-lr-panel-body">' + body + '</div></section>';
@@ -1457,6 +1460,7 @@
     var photoLabel = adobeCount != null
       ? String(adobeCount)
       : (hublyMedia ? (hublyMedia + ' in Hubly Media') : '0');
+    var autoUpload = !!(p.workspace && p.workspace.auto_upload_to_lightroom);
     return '<div class="pp-lr-status-card">' +
       '<div class="pp-lr-status-grid">' +
         '<div><span class="pp-label">Hubly Project</span><strong>' + esc(p.name) + '</strong></div>' +
@@ -1471,16 +1475,22 @@
         '<div><span class="pp-label">Favorites</span><strong>' + esc(String(sync.favorites)) + '</strong></div>' +
       '</div>' +
       '<ol class="pp-muted pp-mt pp-workflow-steps">' +
-        '<li>Connect Adobe (Apps or button above).</li>' +
-        '<li>Create or link a Lightroom album to this project.</li>' +
-        '<li>Import &amp; edit photos in Adobe Lightroom (desktop or cloud).</li>' +
-        '<li><strong>Sync Now</strong> pulls that album into Hubly.</li>' +
-        '<li>Publish Hubly gallery delivers to clients from Hubly — not from Adobe.</li>' +
+        '<li>Connect Adobe and link a Lightroom album.</li>' +
+        '<li>Upload photos from Hubly Media → Lightroom, or import in Adobe.</li>' +
+        '<li>Edit in Lightroom, then <strong>Sync Now</strong> to pull edits into Hubly.</li>' +
+        '<li>Publish Hubly gallery delivers to clients from Hubly.</li>' +
       '</ol>' +
+      '<label class="pp-auto-upload pp-mt"><input type="checkbox" data-pp-act="lr-auto-upload" data-pp-id="' +
+        esc(p.id) + '"' + (autoUpload ? ' checked' : '') +
+        (connected && sync.albumId ? '' : ' disabled') +
+        '> Automatically upload new photos to Lightroom</label>' +
       '<div class="pp-btn-row pp-mt">' +
         '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="lr-create-album" data-pp-id="' + esc(p.id) + '">' +
           (sync.albumId ? 'Reuse Lightroom Project' : 'Create Lightroom Project') + '</button>' +
         '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Now</button>' +
+        (connected && sync.albumId
+          ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-upload" data-pp-id="' + esc(p.id) + '">Upload to Lightroom</button>'
+          : '') +
         '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-open" data-pp-id="' + esc(p.id) + '">Open Lightroom Project</button>' +
       '</div></div>';
   }
@@ -1562,9 +1572,19 @@
 
   function renderLrExportsPanel(p, sync) {
     var edited = sync.assets.filter(function (a) { return a.edited; });
-    return '<p class="pp-muted">Export Final Photos pulls Adobe renditions into Hubly. To get files <em>into</em> Adobe, import them in Lightroom itself, then Sync. Upload to Lightroom from Hubly is not available yet. Publish Hubly gallery is client delivery only.</p>' +
+    var uploads = ((p.workspace && p.workspace.local_uploads) || p.local_uploads || []);
+    var pending = uploads.filter(function (u) {
+      return mediaKind(u) === 'photo' &&
+        !(u.lightroom_asset_id && u.lightroom_upload_status === 'uploaded');
+    }).length;
+    return '<p class="pp-muted">Upload Hubly Media into the linked Lightroom album, or export Adobe renditions back into Hubly. Publish Hubly gallery is client delivery only.</p>' +
+      (pending
+        ? '<p class="pp-muted">' + esc(String(pending)) + ' Hubly photo(s) not in Lightroom yet.</p>'
+        : '<p class="pp-muted">All Hubly photos are uploaded (or none pending).</p>') +
       '<div class="pp-btn-row">' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-upload" data-pp-id="' + esc(p.id) + '" title="Not available yet — import in Adobe Lightroom, then Sync">Upload to Lightroom (soon)</button>' +
+      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="lr-upload" data-pp-id="' + esc(p.id) + '"' +
+        (sync.albumId ? '' : ' disabled title="Link a Lightroom album first"') +
+        '>Upload to Lightroom</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Publish Hubly gallery</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver to Client</button>' +
       '</div>' +
@@ -1585,7 +1605,7 @@
   function renderLrSyncPanel(p, sync, adobeStatus) {
     return renderLrOverviewPanel(p, sync, adobeStatus, !!(adobeStatus.connected || sync.linked),
       adobeStatus.accountLabel || adobeStatus.adobeAccount || '—') +
-      '<p class="pp-muted pp-mt"><strong>Sync direction:</strong> Adobe → Hubly only. Put photos into Adobe with Lightroom (desktop/cloud import). Media-tab uploads stay in Hubly until Hubly→Lightroom upload ships.</p>';
+      '<p class="pp-muted pp-mt"><strong>Sync</strong> pulls Adobe edits into Hubly (matched by Lightroom asset ID when known). <strong>Upload to Lightroom</strong> pushes Hubly Media into the linked album.</p>';
   }
 
   function renderLrSettingsPanel(p, sync, adobeStatus) {
@@ -1753,6 +1773,15 @@
     var preview = (isDurableMediaUrl(item.previewUrl) && item.previewUrl) ||
       (isDurableMediaUrl(item.url) && item.url) || '';
     var isRaw = !!(item.isRaw || isRawPhotoName(item.name));
+    var lrStatus = String(item.lightroom_upload_status || '');
+    var lrBadge = '';
+    if (lrStatus === 'uploaded' || item.lightroom_asset_id) {
+      lrBadge = '<span class="pp-lr-badge is-ok" title="In Lightroom">LR</span>';
+    } else if (lrStatus === 'uploading') {
+      lrBadge = '<span class="pp-lr-badge is-busy" title="Uploading to Lightroom">…</span>';
+    } else if (lrStatus === 'failed' || lrStatus === 'unsupported') {
+      lrBadge = '<span class="pp-lr-badge is-err" title="' + esc(item.lightroom_upload_error || 'Upload failed') + '">!</span>';
+    }
     var label = kind === 'video' ? 'Video' : kind === 'doc' ? 'File' : (isRaw && !preview ? 'RAW · no preview' : isRaw ? 'RAW' : 'Photo');
     var inner = preview && kind === 'photo'
       ? '<img src="' + esc(preview) + '" alt="' + esc(item.name || 'Photo') + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false)">' +
@@ -1761,6 +1790,7 @@
     return '<article class="pp-media-tile kind-' + kind + (isRaw ? ' is-raw' : '') + '" title="' + esc(item.name || '') + '">' +
       '<div class="pp-media-thumb">' + inner +
       (isRaw ? '<span class="pp-raw-badge">RAW</span>' : '') +
+      lrBadge +
       '</div>' +
       '<p class="pp-media-name">' + esc(item.name || 'Untitled') + '</p></article>';
   }
@@ -1786,7 +1816,7 @@
 
     return '<section class="pp-panel pp-panel-wide pp-media-hero">' +
       '<div class="pp-between">' +
-        '<div><h3>Media</h3><p class="pp-muted">Drop photos and videos for this job. Client galleries build from here. Adobe Lightroom stays Lightroom-first — Sync pulls Adobe into Hubly; this tab does not push to Adobe.</p></div>' +
+        '<div><h3>Media</h3><p class="pp-muted">Drop photos and videos for this job. Upload to Lightroom from the Lightroom tab (or enable auto-upload). Sync pulls Adobe edits back into Hubly.</p></div>' +
         '<span class="pp-pill">' + esc(String(total)) + ' assets</span>' +
       '</div>' +
       '<div class="pp-btn-row pp-mt">' +
@@ -1812,7 +1842,7 @@
       (isPhotoTrade() || projectWorkspaceProfile().features.galleries
         ? '<section class="pp-panel pp-panel-wide"><div class="pp-between"><h3>Galleries &amp; delivery</h3>' +
           '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Publish Hubly gallery</button></div>' +
-          '<p class="pp-muted"><strong>How photos get into Adobe:</strong> work in Lightroom (desktop/cloud), connect Adobe, link an album on the Lightroom tab, then <strong>Sync Now</strong> pulls Adobe → Hubly. Publish here only creates a <strong>Hubly client gallery</strong> — it never uploads files to Adobe.</p></section>'
+          '<p class="pp-muted"><strong>Galleries:</strong> Publish creates a <strong>Hubly client gallery</strong>. To send photos to Adobe, use <strong>Upload to Lightroom</strong> on the Lightroom tab (requires a linked album).</p></section>'
         : '');
   }
 
@@ -2280,6 +2310,9 @@
       } else {
         syncMeta.last_sync_request = new Date().toISOString();
       }
+      if (syncRes && syncRes.data && Array.isArray(syncRes.data.mediaPatches)) {
+        applyLightroomMediaPatches(p, syncRes.data.mediaPatches);
+      }
       upsertWorkspaceLocal(p, {
         provider: 'adobe_lightroom',
         display_name: (p.lightroom && p.lightroom.album_name) || (lrWsSync && lrWsSync.display_name) || p.name,
@@ -2616,16 +2649,13 @@
       return;
     }
     if (act === 'lr-upload' && p) {
-      var svcUp = global.AdobeLightroomService;
-      if (!svcUp) return;
-      var upRes = await (svcUp.uploadToLightroom || svcUp.uploadPhotos)({
-        businessId: businessId() || '',
-        projectId: p.id,
-        albumId: lightroomSyncMeta(p).albumId || undefined
-      });
-      toast((upRes && upRes.message) ||
-        'Hubly → Lightroom upload is not available yet. Import photos in Adobe Lightroom, then Sync Now.');
-      return;
+      return uploadProjectMediaToLightroom(p, st, {});
+    }
+    if (act === 'lr-auto-upload' && p) {
+      p.workspace = p.workspace || defaultWorkspace();
+      p.workspace.auto_upload_to_lightroom = !!t.checked;
+      addActivity(p, 'Lightroom auto-upload', p.workspace.auto_upload_to_lightroom ? 'On' : 'Off');
+      return saveAndRefresh(p, st);
     }
     if (act === 'adobe-disconnect') {
       p = p || findProject(st.projectId);
@@ -2769,6 +2799,123 @@
       }
     } catch (e) {}
     toast('Open Apps from the sidebar to connect tools.');
+  }
+
+  function applyLightroomMediaPatches(p, patches) {
+    if (!p || !patches || !patches.length) return;
+    p.workspace = p.workspace || defaultWorkspace();
+    p.local_uploads = p.local_uploads || p.workspace.local_uploads || [];
+    var byId = {};
+    patches.forEach(function (patch) {
+      if (patch && patch.id) byId[String(patch.id)] = patch;
+    });
+    p.local_uploads.forEach(function (item) {
+      var patch = byId[String(item.id || '')];
+      if (!patch) return;
+      Object.keys(patch).forEach(function (k) {
+        if (k === 'id') return;
+        item[k] = patch[k];
+      });
+    });
+    p.workspace.local_uploads = p.local_uploads;
+  }
+
+  /**
+   * Upload Hubly Media photos to the linked Lightroom album.
+   * Uploads pending items one-by-one for progress toasts; skips already-uploaded.
+   */
+  async function uploadProjectMediaToLightroom(p, st, opts) {
+    opts = opts || {};
+    var svcUp = global.AdobeLightroomService;
+    if (!svcUp || !(svcUp.uploadToLightroom || svcUp.uploadPhotos)) {
+      toast('Adobe Lightroom isn’t ready yet.');
+      return;
+    }
+    var sync = lightroomSyncMeta(p);
+    var albumId = sync.albumId || (getWorkspace(p, 'adobe_lightroom') || {}).external_id;
+    if (!albumId) {
+      toast('Link a Lightroom album before uploading.');
+      return switchCommandTab('lightroom');
+    }
+    p.workspace = p.workspace || defaultWorkspace();
+    p.local_uploads = p.local_uploads || p.workspace.local_uploads || [];
+    var pending = p.local_uploads.filter(function (u) {
+      if (mediaKind(u) !== 'photo') return false;
+      if (u.lightroom_asset_id && u.lightroom_upload_status === 'uploaded') return false;
+      if (!isDurableMediaUrl(u.url) && !isDurableMediaUrl(u.previewUrl)) return false;
+      return true;
+    });
+    if (opts.onlyIds && opts.onlyIds.length) {
+      var only = {};
+      opts.onlyIds.forEach(function (id) { only[String(id)] = true; });
+      pending = pending.filter(function (u) { return only[String(u.id)]; });
+    }
+    if (!pending.length) {
+      if (!opts.silent) toast('Nothing new to upload — all eligible photos are already in Lightroom.');
+      return;
+    }
+
+    st.lrUploadProgress = { total: pending.length, done: 0, failed: 0, uploaded: 0 };
+    if (!opts.silent) toast('Uploading ' + pending.length + ' photo(s) to Lightroom…');
+    switchCommandTab(st.tab === 'lightroom' ? 'lightroom' : 'media');
+
+    var uploadFn = svcUp.uploadToLightroom || svcUp.uploadPhotos;
+    var i;
+    for (i = 0; i < pending.length; i++) {
+      var item = pending[i];
+      item.lightroom_upload_status = 'uploading';
+      item.lightroom_upload_error = null;
+      p.workspace.local_uploads = p.local_uploads;
+      if (st.tab === 'media' || st.tab === 'lightroom') switchCommandTab(st.tab);
+
+      var upRes = await uploadFn.call(svcUp, {
+        businessId: businessId() || '',
+        projectId: p.id,
+        albumId: albumId,
+        catalogId: sync.catalogId || undefined,
+        fileRefs: [item.id],
+        silent: true
+      });
+
+      if (upRes && upRes.data && Array.isArray(upRes.data.mediaPatches)) {
+        applyLightroomMediaPatches(p, upRes.data.mediaPatches);
+      } else if (upRes && upRes.ok && upRes.data && upRes.data.results && upRes.data.results[0]) {
+        var r0 = upRes.data.results[0];
+        if (r0.lightroomAssetId) {
+          item.lightroom_asset_id = r0.lightroomAssetId;
+          item.lightroom_upload_status = 'uploaded';
+          item.lightroom_uploaded_at = new Date().toISOString();
+          item.lightroom_upload_error = null;
+        }
+      } else if (!upRes || !upRes.ok) {
+        item.lightroom_upload_status = 'failed';
+        item.lightroom_upload_error = (upRes && upRes.message) || 'Upload failed';
+        st.lrUploadProgress.failed += 1;
+      }
+
+      if (item.lightroom_upload_status === 'uploaded' || item.lightroom_upload_status === 'skipped_duplicate' ||
+          item.lightroom_upload_status === 'already_uploaded') {
+        st.lrUploadProgress.uploaded += 1;
+      } else if (item.lightroom_upload_status === 'failed' || item.lightroom_upload_status === 'unsupported') {
+        st.lrUploadProgress.failed += 1;
+      }
+      st.lrUploadProgress.done += 1;
+      p.workspace.local_uploads = p.local_uploads;
+      if (!opts.silent && pending.length > 1) {
+        toast('Lightroom upload ' + st.lrUploadProgress.done + '/' + st.lrUploadProgress.total);
+      }
+    }
+
+    addActivity(p, 'Uploaded to Lightroom',
+      st.lrUploadProgress.uploaded + ' ok · ' + st.lrUploadProgress.failed + ' failed');
+    if (!opts.silent) {
+      toast(
+        (st.lrUploadProgress.uploaded ? (st.lrUploadProgress.uploaded + ' uploaded to Lightroom') : 'Upload finished') +
+        (st.lrUploadProgress.failed ? (' · ' + st.lrUploadProgress.failed + ' failed') : '')
+      );
+    }
+    st.lrUploadProgress = null;
+    return saveAndRefresh(p, st);
   }
 
   async function ensureAdobeStatus(st, force, opts) {
@@ -2917,7 +3064,14 @@
     st.view = 'command';
     st.projectId = p.id;
     st.tab = 'media';
-    return saveAndRefresh(p, st);
+    await saveAndRefresh(p, st);
+
+    // Optional automation: push new photos to linked Lightroom album in the background.
+    if (p.workspace && p.workspace.auto_upload_to_lightroom && stored) {
+      var newIds = p.local_uploads.slice(-added).map(function (u) { return u.id; });
+      uploadProjectMediaToLightroom(p, st, { onlyIds: newIds, silent: false }).catch(function () {});
+    }
+    return;
   }
 
   function onChange(e) {
@@ -2987,6 +3141,14 @@
       if (p && p.gallery) {
         p.gallery.watermark = p.gallery.watermark || {};
         p.gallery.watermark.enabled = !!t.checked;
+        return saveAndRefresh(p, st);
+      }
+    }
+    if (t.getAttribute('data-pp-act') === 'lr-auto-upload') {
+      p = findProject(t.getAttribute('data-pp-id'));
+      if (p) {
+        p.workspace = p.workspace || defaultWorkspace();
+        p.workspace.auto_upload_to_lightroom = !!t.checked;
         return saveAndRefresh(p, st);
       }
     }

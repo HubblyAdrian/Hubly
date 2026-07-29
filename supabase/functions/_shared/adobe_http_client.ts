@@ -163,6 +163,18 @@ export class AdobeHttpClient {
     return this.request<T>("PUT", path, { body: body ?? {} });
   }
 
+  /**
+   * Binary PUT (e.g. Lightroom Create Master).
+   * Pass Content-Type / Content-Range via headers — do not JSON-encode the body.
+   */
+  putBinary<T = unknown>(
+    path: string,
+    rawBody: BodyInit,
+    headers?: Record<string, string>,
+  ) {
+    return this.request<T>("PUT", path, { rawBody, headers });
+  }
+
   post<T = unknown>(path: string, body?: unknown) {
     return this.request<T>("POST", path, { body: body ?? {} });
   }
@@ -170,6 +182,28 @@ export class AdobeHttpClient {
   delete<T = unknown>(path: string) {
     return this.request<T>("DELETE", path);
   }
+}
+
+/** Retry Adobe 429 / 5xx with exponential backoff (official guidance). */
+export async function adobeRequestWithRetry<T>(
+  fn: () => Promise<AdobeHttpResult<T>>,
+  opts?: { attempts?: number; baseMs?: number; label?: string },
+): Promise<AdobeHttpResult<T>> {
+  const attempts = opts?.attempts ?? 4;
+  const baseMs = opts?.baseMs ?? 400;
+  let last: AdobeHttpResult<T> | null = null;
+  for (let i = 0; i < attempts; i++) {
+    last = await fn();
+    if (last.ok) return last;
+    const retryable = last.status === 429 || last.status >= 500;
+    if (!retryable || i === attempts - 1) return last;
+    const wait = baseMs * Math.pow(2, i) + Math.floor(Math.random() * 100);
+    console.warn(
+      `adobe retry ${opts?.label || "request"} status=${last.status} attempt=${i + 1}/${attempts} waitMs=${wait}`,
+    );
+    await new Promise((r) => setTimeout(r, wait));
+  }
+  return last!;
 }
 
 /** Health probe against Lightroom Services. Sends X-API-Key when available (Adobe may require it). */

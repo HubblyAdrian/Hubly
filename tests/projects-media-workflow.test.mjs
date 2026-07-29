@@ -25,17 +25,16 @@ describe('Projects media previews + Adobe workflow copy', () => {
   });
 
   it('explains Lightroom-first path to get files into Adobe', () => {
-    assert.match(projects, /How photos get into Adobe/);
-    assert.match(projects, /Lightroom-first/);
-    assert.match(projects, /Import &amp; edit photos in Adobe Lightroom/);
-    assert.match(projects, /Import photos in Adobe Lightroom, then Sync Now/);
-    assert.match(projects, /Upload to Lightroom \(soon\)/);
+    assert.match(projects, /Upload to Lightroom/);
+    assert.match(projects, /Automatically upload new photos to Lightroom/);
+    assert.match(projects, /uploadProjectMediaToLightroom/);
+    assert.match(projects, /Two-way media/);
     assert.match(css, /\.pp-workflow-steps/);
   });
 
-  it('cache-busts Projects assets at projects-11', () => {
-    assert.match(hubly, /photography-projects\.js\?v=projects-11/);
-    assert.match(hubly, /photography-projects\.css\?v=projects-11/);
-    assert.match(hubly, /adobe-lightroom-service\.js\?v=projects-11/);
+  it('cache-busts Projects assets at projects-12', () => {
+    assert.match(hubly, /photography-projects\.js\?v=projects-12/);
+    assert.match(hubly, /photography-projects\.css\?v=projects-12/);
+    assert.match(hubly, /adobe-lightroom-service\.js\?v=projects-12/);
   });
 });

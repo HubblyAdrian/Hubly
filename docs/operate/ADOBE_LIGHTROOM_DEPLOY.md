@@ -24,6 +24,8 @@ SKIP_MIGRATION=1 ./scripts/deploy-adobe-oauth-edges.sh
 
 Confirm secrets: `ADOBE_CLIENT_ID`, `ADOBE_CLIENT_SECRET`.
 
+OAuth scopes (default): `openid,AdobeID,lr_partner_apis,lr_partner_rendition_apis,offline_access` — sufficient for catalog, albums, renditions, and **asset upload** per Adobe’s partner docs. No extra upload-specific scope is documented; customers still need Lightroom subscription/trial + storage.
+
 Probe after deploy — must **not** be `NOT_FOUND`:
 
 ```bash
@@ -33,6 +35,7 @@ curl -sS -o /tmp/lr.txt -w "%{http_code}\n" \
 
 ## Product notes
 
-- **Sync Now** = Adobe → Hubly pull
+- **Upload to Lightroom** = Hubly Media → linked Adobe album (`createAsset` + `uploadMaster` + album link)
+- **Sync Now** = Adobe → Hubly pull (matches by `lightroom_asset_id` when known)
 - **Publish Hubly gallery** = Hubly client gallery only (does not push to Adobe)
-- Hubly Media → Lightroom upload is still Stage 2
+- Redeploy `adobe-lightroom` after this change so production picks up upload.

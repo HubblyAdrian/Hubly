@@ -39,6 +39,7 @@ import {
 } from "./adobe_oauth.ts";
 import {
   AdobeLightroomClient,
+  LR_MASTER_CONTENT_TYPES,
   createLightroomClient,
   type LrAlbum,
   type LrAsset,
@@ -82,6 +83,46 @@ export type LightroomSyncResult = {
   lastSyncAt: string;
   /** Workspace metadata patch only — never Hubly project fields. */
   workspaceMetadata: Record<string, unknown>;
+  /** Patches for photography_projects.workspace.local_uploads matched by lightroom_asset_id. */
+  mediaPatches?: LightroomMediaPatch[];
+};
+
+export type LightroomMediaPatch = {
+  id: string;
+  lightroom_asset_id?: string;
+  lightroom_upload_status?: string;
+  lightroom_uploaded_at?: string;
+  lightroom_upload_error?: string | null;
+  lightroom_sha256?: string;
+  lightroom_edited?: boolean;
+  lightroom_favorite?: boolean;
+  lightroom_rating?: number | null;
+  lightroom_flag?: string | null;
+  lightroom_synced_at?: string;
+};
+
+export type LightroomUploadItemResult = {
+  hublyMediaId: string;
+  name?: string;
+  lightroomAssetId?: string;
+  status:
+    | "uploaded"
+    | "skipped_duplicate"
+    | "already_uploaded"
+    | "failed"
+    | "unsupported"
+    | "skipped";
+  error?: string;
+};
+
+export type LightroomUploadResult = {
+  uploaded: number;
+  skipped: number;
+  failed: number;
+  albumId: string;
+  catalogId: string;
+  results: LightroomUploadItemResult[];
+  mediaPatches: LightroomMediaPatch[];
 };
 
 export type LightroomConnectionStatus = {
@@ -213,8 +254,12 @@ export interface LightroomProvider {
     businessId: string;
     projectId: string;
     albumId?: string;
+    catalogId?: string;
     fileRefs: string[];
-  }): Promise<HublyProviderResult<{ queued: number }>>;
+    admin: AdminLike;
+    /** Optional pre-loaded Hubly media items (from photography_projects.workspace.local_uploads). */
+    mediaItems?: HublyMediaUploadItem[];
+  }): Promise<HublyProviderResult<LightroomUploadResult>>;
   openAlbum(opts: {
     businessId: string;
     albumId: string;
@@ -229,6 +274,56 @@ export interface LightroomProvider {
     businessId: string;
     projectId: string;
   }): Promise<HublyProviderResult<{ archived: true }>>;
+}
+
+/** Hubly Media tab item shape used for Lightroom upload. */
+export type HublyMediaUploadItem = {
+  id: string;
+  name?: string;
+  type?: string;
+  mime?: string;
+  url?: string;
+  previewUrl?: string;
+  size?: number;
+  isRaw?: boolean;
+  lightroom_asset_id?: string;
+  lightroom_upload_status?: string;
+  lightroom_sha256?: string;
+};
+
+async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function resolveMasterContentType(item: HublyMediaUploadItem, headerType?: string | null): string | null {
+  const candidates = [
+    headerType,
+    item.type,
+    item.mime,
+  ].map((x) => String(x || "").toLowerCase().split(";")[0].trim()).filter(Boolean);
+
+  const name = String(item.name || "").toLowerCase();
+  if (/\.jpe?g$/i.test(name)) candidates.push("image/jpeg");
+  if (/\.png$/i.test(name)) candidates.push("image/png");
+  if (/\.tiff?$/i.test(name)) candidates.push("image/tiff");
+  if (/\.dng$/i.test(name)) candidates.push("image/dng");
+  if (/\.mp4$/i.test(name)) candidates.push("video/mp4");
+  // Stored RAW previews are JPEG under brand-assets.
+  if (item.isRaw || /\.(nef|cr2|cr3|arw|orf|rw2|raw)$/i.test(name)) {
+    candidates.push("image/jpeg");
+  }
+
+  for (const c of candidates) {
+    if ((LR_MASTER_CONTENT_TYPES as readonly string[]).includes(c)) return c;
+    if (c === "image/jpg") return "image/jpeg";
+  }
+  return null;
+}
+
+function isDurableHttpUrl(url: string | undefined | null): boolean {
+  const u = String(url || "");
+  return /^https?:\/\//i.test(u);
 }
 
 export class AdobeLightroomService
@@ -768,22 +863,313 @@ export class AdobeLightroomService
     );
   }
 
-  async uploadPhotos(_opts: {
+  async uploadPhotos(opts: {
     businessId: string;
     projectId: string;
     albumId?: string;
+    catalogId?: string;
     fileRefs: string[];
-  }): Promise<HublyProviderResult<{ queued: number }>> {
-    // Adobe documents Create Asset + Create Master, but Hubly upload pipeline is deferred.
-    return notImpl(
-      "Photo upload to Lightroom is deferred. Adobe supports PUT /assets/{id} + /master — Hubly will wire this in a later step. Upload in Hubly or Lightroom for now.",
-      {
+    admin: AdminLike;
+    mediaItems?: HublyMediaUploadItem[];
+  }): Promise<HublyProviderResult<LightroomUploadResult>> {
+    if (!opts.projectId) {
+      return providerError(this.id, "PROJECT_REQUIRED", "projectId is required to upload to Lightroom", {
+        retryable: false,
+      });
+    }
+    if (!opts.admin) {
+      return providerError(this.id, "ADMIN_REQUIRED", "upload requires service-role admin", {
+        retryable: false,
+      });
+    }
+
+    const session = await this.session(opts.admin, opts.businessId);
+    if (!session.ok) return session.result as HublyProviderResult<LightroomUploadResult>;
+
+    const cat = await this.resolveCatalogId(
+      opts.admin,
+      opts.businessId,
+      session.client,
+      session.ctx,
+      opts.catalogId,
+    );
+    if (!cat.ok) return cat.result as HublyProviderResult<LightroomUploadResult>;
+
+    const albumId = opts.albumId;
+    if (!albumId) {
+      return providerError(
+        this.id,
+        "ALBUM_REQUIRED",
+        "Link a Lightroom album to this project before uploading.",
+        { retryable: false },
+      );
+    }
+
+    // Precondition: entitlement + storage (official upload guide).
+    const account = await session.client.getAccount();
+    if (!account.ok || !account.data?.id) {
+      return providerError(
+        this.id,
+        "ADOBE_ACCOUNT_FAILED",
+        account.error || "Could not read Adobe Lightroom account",
+        { retryable: true },
+      );
+    }
+    const entitlement = String(account.data.entitlementStatus || "").toLowerCase();
+    if (entitlement && entitlement !== "subscriber" && entitlement !== "trial") {
+      return providerError(
+        this.id,
+        "ADOBE_NOT_ENTITLED",
+        "This Adobe account needs an active Lightroom subscription or trial to accept uploads.",
+        { retryable: false, meta: { entitlementStatus: entitlement } },
+      );
+    }
+    const used = account.data.storageUsed ?? 0;
+    const limit = account.data.storageLimit;
+    if (typeof limit === "number" && limit > 0 && used >= limit) {
+      return providerError(
+        this.id,
+        "ADOBE_STORAGE_FULL",
+        "Adobe Lightroom storage is full — free space in Lightroom, then try again.",
+        { retryable: false, meta: { used, limit } },
+      );
+    }
+
+    const mediaItems = Array.isArray(opts.mediaItems) ? opts.mediaItems.slice() : [];
+    const refs = (opts.fileRefs || []).map(String).filter(Boolean);
+    const selected = refs.length
+      ? mediaItems.filter((m) => refs.includes(String(m.id)))
+      : mediaItems;
+
+    if (!selected.length) {
+      return providerError(
+        this.id,
+        "NO_MEDIA",
+        "No Hubly photos selected to upload. Add photos in Media first.",
+        { retryable: false },
+      );
+    }
+
+    const importedBy = session.ctx.adobeUserId || account.data.id;
+    const results: LightroomUploadItemResult[] = [];
+    const mediaPatches: LightroomMediaPatch[] = [];
+    let uploaded = 0;
+    let skipped = 0;
+    let failed = 0;
+    const newlyUploadedIds: string[] = [];
+
+    for (const item of selected) {
+      const hublyMediaId = String(item.id || "");
+      const name = item.name || hublyMediaId || "photo";
+
+      if (item.lightroom_asset_id && item.lightroom_upload_status === "uploaded") {
+        skipped += 1;
+        results.push({
+          hublyMediaId,
+          name,
+          lightroomAssetId: item.lightroom_asset_id,
+          status: "already_uploaded",
+        });
+        continue;
+      }
+
+      const sourceUrl = isDurableHttpUrl(item.url)
+        ? item.url!
+        : (isDurableHttpUrl(item.previewUrl) ? item.previewUrl! : "");
+      if (!sourceUrl) {
+        failed += 1;
+        const err = "Photo has no stored file URL — re-upload in Media, then try again.";
+        results.push({ hublyMediaId, name, status: "failed", error: err });
+        mediaPatches.push({
+          id: hublyMediaId,
+          lightroom_upload_status: "failed",
+          lightroom_upload_error: err,
+        });
+        continue;
+      }
+
+      try {
+        const fetchRes = await fetch(sourceUrl);
+        if (!fetchRes.ok) {
+          throw new Error(`Could not download Hubly media (${fetchRes.status})`);
+        }
+        const headerType = fetchRes.headers.get("content-type");
+        const contentType = resolveMasterContentType(item, headerType);
+        if (!contentType) {
+          failed += 1;
+          const err =
+            "Unsupported file type for Lightroom. Use JPEG, PNG, TIFF, DNG, or MP4.";
+          results.push({ hublyMediaId, name, status: "unsupported", error: err });
+          mediaPatches.push({
+            id: hublyMediaId,
+            lightroom_upload_status: "unsupported",
+            lightroom_upload_error: err,
+          });
+          continue;
+        }
+
+        const bytes = await fetchRes.arrayBuffer();
+        if (!bytes.byteLength) {
+          throw new Error("Empty file");
+        }
+        if (typeof limit === "number" && limit > 0 && used + bytes.byteLength > limit) {
+          failed += 1;
+          const err = "Not enough Adobe Lightroom storage for this file.";
+          results.push({ hublyMediaId, name, status: "failed", error: err });
+          mediaPatches.push({
+            id: hublyMediaId,
+            lightroom_upload_status: "failed",
+            lightroom_upload_error: err,
+          });
+          continue;
+        }
+
+        const sha256 = await sha256Hex(bytes);
+        const subtype = contentType.startsWith("video/") ? "video" as const : "image" as const;
+
+        const created = await session.client.createAsset({
+          catalogId: cat.catalogId,
+          subtype,
+          fileName: name,
+          importedBy,
+          sha256,
+        });
+
+        if (!created.ok || !created.data?.assetId) {
+          // HTTP 412 = duplicate SHA-256 in catalog — skip master upload, still try album link if possible.
+          if (created.status === 412) {
+            skipped += 1;
+            const msg = "Already in Lightroom catalog (duplicate detected).";
+            results.push({
+              hublyMediaId,
+              name,
+              status: "skipped_duplicate",
+              error: msg,
+            });
+            mediaPatches.push({
+              id: hublyMediaId,
+              lightroom_upload_status: "skipped_duplicate",
+              lightroom_upload_error: msg,
+              lightroom_sha256: sha256,
+            });
+            console.warn("adobe upload duplicate", { projectId: opts.projectId, hublyMediaId, sha256 });
+            continue;
+          }
+          throw new Error(created.error || `Create asset failed (${created.status})`);
+        }
+
+        const assetId = created.data.assetId;
+        const master = await session.client.uploadMaster({
+          catalogId: cat.catalogId,
+          assetId,
+          bytes,
+          contentType,
+        });
+        if (!master.ok) {
+          if (master.status === 413) {
+            throw new Error("Adobe Lightroom storage is full (or file too large).");
+          }
+          if (master.status === 415) {
+            throw new Error("Adobe rejected this file type — use JPEG, PNG, TIFF, DNG, or MP4.");
+          }
+          throw new Error(master.error || `Upload master failed (${master.status})`);
+        }
+
+        const linked = await session.client.addAssetToAlbum({
+          catalogId: cat.catalogId,
+          albumId,
+          assetId,
+          remoteIdPrefix: `hubly-${opts.projectId}`,
+        });
+        if (!linked.ok) {
+          throw new Error(linked.error || "Uploaded to catalog but could not add to album");
+        }
+
+        uploaded += 1;
+        newlyUploadedIds.push(assetId);
+        const uploadedAt = new Date().toISOString();
+        results.push({
+          hublyMediaId,
+          name,
+          lightroomAssetId: assetId,
+          status: "uploaded",
+        });
+        mediaPatches.push({
+          id: hublyMediaId,
+          lightroom_asset_id: assetId,
+          lightroom_upload_status: "uploaded",
+          lightroom_uploaded_at: uploadedAt,
+          lightroom_upload_error: null,
+        });
+        console.log("adobe upload ok", {
+          projectId: opts.projectId,
+          hublyMediaId,
+          assetId,
+          bytes: bytes.byteLength,
+        });
+      } catch (e) {
+        failed += 1;
+        const err = e instanceof Error ? e.message : String(e);
+        console.error("adobe upload failed", { projectId: opts.projectId, hublyMediaId, err });
+        results.push({ hublyMediaId, name, status: "failed", error: err });
+        mediaPatches.push({
+          id: hublyMediaId,
+          lightroom_upload_status: "failed",
+          lightroom_upload_error: err,
+        });
+      }
+    }
+
+    const data: LightroomUploadResult = {
+      uploaded,
+      skipped,
+      failed,
+      albumId,
+      catalogId: cat.catalogId,
+      results,
+      mediaPatches,
+    };
+
+    const ok = uploaded > 0 || (skipped > 0 && failed === 0);
+    const message = uploaded
+      ? `Uploaded ${uploaded} photo(s) to Lightroom` +
+        (skipped ? ` · ${skipped} skipped` : "") +
+        (failed ? ` · ${failed} failed` : "")
+      : failed
+      ? `Could not upload to Lightroom (${failed} failed` + (skipped ? `, ${skipped} skipped` : "") + ")"
+      : skipped
+      ? `Nothing new to upload (${skipped} already in Lightroom)`
+      : "No photos uploaded";
+
+    if (ok) {
+      return providerOk(this.id, data, message, {
         adobeEndpoints: [
           "PUT /v2/catalogs/{catalog_id}/assets/{asset_id}",
           "PUT /v2/catalogs/{catalog_id}/assets/{asset_id}/master",
+          "PUT /v2/catalogs/{catalog_id}/albums/{album_id}/assets",
+        ],
+        newlyUploadedIds,
+      });
+    }
+    return {
+      ok: false,
+      status: "error" as const,
+      provider: this.id,
+      message,
+      data,
+      error: {
+        code: "ADOBE_UPLOAD_FAILED",
+        detail: message,
+        retryable: true,
+      },
+      meta: {
+        adobeEndpoints: [
+          "PUT /v2/catalogs/{catalog_id}/assets/{asset_id}",
+          "PUT /v2/catalogs/{catalog_id}/assets/{asset_id}/master",
+          "PUT /v2/catalogs/{catalog_id}/albums/{album_id}/assets",
         ],
       },
-    );
+    };
   }
 
   async openAlbum(opts: {
@@ -810,6 +1196,7 @@ export class AdobeLightroomService
     albumId?: string;
     catalogId?: string;
     admin: AdminLike;
+    mediaItems?: HublyMediaUploadItem[];
   }): Promise<HublyProviderResult<LightroomSyncResult>> {
     const session = await this.session(opts.admin, opts.businessId);
     if (!session.ok) return session.result as HublyProviderResult<LightroomSyncResult>;
@@ -847,6 +1234,43 @@ export class AdobeLightroomService
     const favorites = assets.filter((a) => a.favorite).length;
     const edited = assets.filter((a) => a.edited).length;
     const lastSyncAt = new Date().toISOString();
+
+    // Match Hubly media by stored Lightroom asset ID first, then filename.
+    const mediaItems = Array.isArray(opts.mediaItems) ? opts.mediaItems : [];
+    const byLrId = new Map<string, HublyMediaUploadItem>();
+    const byName = new Map<string, HublyMediaUploadItem[]>();
+    for (const m of mediaItems) {
+      if (m.lightroom_asset_id) byLrId.set(String(m.lightroom_asset_id), m);
+      const key = String(m.name || "").toLowerCase();
+      if (!key) continue;
+      const list = byName.get(key) || [];
+      list.push(m);
+      byName.set(key, list);
+    }
+
+    const mediaPatches: LightroomMediaPatch[] = [];
+    for (const a of assets) {
+      let hubly = byLrId.get(a.id) || null;
+      if (!hubly) {
+        const nameKey = String(a.name || "").toLowerCase();
+        const candidates = nameKey ? (byName.get(nameKey) || []) : [];
+        hubly = candidates.find((c) => !c.lightroom_asset_id) || candidates[0] || null;
+      }
+      if (!hubly) continue;
+      mediaPatches.push({
+        id: hubly.id,
+        lightroom_asset_id: a.id,
+        lightroom_edited: a.edited,
+        lightroom_favorite: a.favorite,
+        lightroom_rating: a.rating ?? null,
+        lightroom_flag: a.flag || null,
+        lightroom_synced_at: lastSyncAt,
+        // Preserve upload status if already uploaded; otherwise mark linked via sync.
+        lightroom_upload_status: hubly.lightroom_upload_status === "uploaded"
+          ? "uploaded"
+          : (hubly.lightroom_asset_id ? hubly.lightroom_upload_status : "synced"),
+      });
+    }
 
     // Metadata only — never overwrite Hubly project name/status/gallery/invoices.
     const workspaceMetadata: Record<string, unknown> = {
@@ -888,13 +1312,14 @@ export class AdobeLightroomService
       photoCount: assets.length,
       lastSyncAt,
       workspaceMetadata,
+      mediaPatches,
     };
 
     return providerOk(
       this.id,
       data,
       `Synced ${assets.length} photo(s) · ${favorites} favorite(s) · ${edited} edited — Hubly project fields unchanged`,
-      { hublySystemOfRecord: true },
+      { hublySystemOfRecord: true, mediaMatched: mediaPatches.length },
     );
   }
 
@@ -1008,7 +1433,7 @@ export class AdobeLightroomService
     return [
       { id: "catalog:read", label: "Read catalogs", required: true },
       { id: "assets:read", label: "Read photos", required: true },
-      { id: "assets:write", label: "Upload / sync photos", required: false },
+      { id: "assets:write", label: "Upload / sync photos", required: true },
     ];
   }
 
@@ -1019,6 +1444,7 @@ export class AdobeLightroomService
   actions(): ConnectedAppAction[] {
     return [
       { id: "create_album", label: "Create Lightroom Album", capability: "editing" },
+      { id: "upload_photos", label: "Upload to Lightroom", capability: "assets_export" },
       { id: "sync_photos", label: "Sync Photos", capability: "assets_import" },
       { id: "open_lightroom", label: "Open Lightroom", capability: "editing" },
     ];
@@ -1121,12 +1547,16 @@ export const AdobeLightroom = {
     admin: AdminLike;
     albumId?: string;
     catalogId?: string;
+    mediaItems?: HublyMediaUploadItem[];
   }) => getAdobeLightroomService().syncProject(opts),
   uploadPhotos: (opts: {
     businessId: string;
     projectId: string;
     albumId?: string;
+    catalogId?: string;
     fileRefs: string[];
+    admin: AdminLike;
+    mediaItems?: HublyMediaUploadItem[];
   }) => getAdobeLightroomService().uploadPhotos(opts),
   openAlbum: (opts: { businessId: string; albumId: string; catalogId?: string }) =>
     getAdobeLightroomService().openAlbum(opts),

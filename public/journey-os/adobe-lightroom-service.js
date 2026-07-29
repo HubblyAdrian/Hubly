@@ -582,17 +582,24 @@
         business_id: currentBusinessId(opts),
         project_id: opts.projectId || opts.project_id,
         album_id: opts.albumId || opts.album_id,
+        catalog_id: opts.catalogId || opts.catalog_id,
         file_refs: opts.fileRefs || opts.file_refs || [],
       });
       var edge = res.data;
-      var msg = (edge && edge.message) ||
-        'Upload photos in Hubly or Lightroom for now. Hubly→Lightroom upload is deferred.';
-      toast(msg);
+      if (edge && edge.ok) {
+        if (!opts.silent) toast(edge.message || 'Uploaded to Lightroom');
+        return edge;
+      }
+      var msg = (edge && (edge.message || (edge.error && edge.error.detail))) ||
+        (res.error && res.error.message) ||
+        'Could not upload photos to Lightroom.';
+      if (!opts.silent) toast(String(msg));
       return edge || result({
         ok: false,
         status: 'error',
-        message: msg,
-        error: { code: 'NOT_IMPLEMENTED', detail: msg, retryable: false },
+        message: String(msg),
+        error: { code: 'ADOBE_UPLOAD_FAILED', detail: String(msg), retryable: true },
+        data: edge && edge.data,
       });
     },
 
@@ -613,7 +620,7 @@
         ok: true,
         status: 'ready',
         message:
-          'Hubly client gallery marked ready. This does not upload photos to Adobe Lightroom — use Sync Now to pull from Lightroom into Hubly.',
+          'Hubly client gallery marked ready. This does not upload photos to Adobe Lightroom — use Upload to Lightroom or Sync Now on the Lightroom tab.',
         data: { shareUrl: undefined, adobeSynced: false },
         meta: { adobeRequired: false, pushesToAdobe: false },
       });

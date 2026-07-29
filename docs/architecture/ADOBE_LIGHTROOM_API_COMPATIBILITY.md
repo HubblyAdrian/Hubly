@@ -46,8 +46,8 @@ Auth: IMS OAuth (`ADOBE_CLIENT_ID` / `ADOBE_CLIENT_SECRET`) → tokens in `adobe
 | Download Full-Resolution | `exportFinalPhotos` (`full`) | Renditions | ✅ Best-effort (Adobe type) |
 | Download Thumbnail | `exportFinalPhotos` (`thumbnail`) | Renditions | ✅ Best-effort |
 | Detect Edited vs Original | sync map | develop presence | ✅ |
-| Upload RAW / JPEG / folders | `uploadToLightroom` | Create Asset + Master | ⏳ Planned (`NOT_IMPLEMENTED`) |
-| Attach uploads to Album | `uploadToLightroom` | Album asset link | ⏳ Planned |
+| Upload RAW / JPEG / folders | `uploadToLightroom` | Create Asset + Master + album link | ✅ |
+| Attach uploads to Album | `uploadToLightroom` | `PUT .../albums/{id}/assets` | ✅ |
 | Update Keywords / Rating / Flags | — | Adobe write support? | 🔬 Research |
 | Search Photos | `browsePhotos` + filters | Album assets (+ client filter) | ✅ Client-side filters |
 | Filter rating / keyword / edited / favorites | `browsePhotos` | Assets list | ✅ |
@@ -103,8 +103,16 @@ Sync writes counts + asset summaries into `photography_project_workspaces.metada
 | `syncProject()` / `syncAlbum` | list album assets + map metadata into workspace | ✅ (composed) | ✅ |
 | `linkAlbum` / `unlinkAlbum` | Hubly workspace link (Adobe album unchanged on unlink) | ✅ | ✅ |
 | `openAlbum()` / `openLightroomProject` | — | ❌ No documented deep-link URI | ❌ `UNSUPPORTED_OPERATION` |
-| `uploadPhotos()` / `uploadToLightroom` | `PUT .../assets/{id}` + `PUT .../assets/{id}/master` | ✅ Adobe supports | ❌ Deferred — `NOT_IMPLEMENTED` |
+| `uploadPhotos()` / `uploadToLightroom` | `PUT .../assets/{id}` + `PUT .../assets/{id}/master` + `PUT .../albums/{id}/assets` | ✅ Adobe supports | ✅ Hubly → Lightroom |
 | `publishGallery()` | — | ❌ Not a Lightroom API | Hubly-local gallery |
+
+**Upload notes (official Adobe guide):**
+- Scopes required: `lr_partner_apis` (+ `lr_partner_rendition_apis` for renditions) — Hubly requests these by default.
+- Prechecks: `GET /v2/account` entitlement `subscriber|trial`, storage headroom, catalog present.
+- Supported master content types: JPEG, PNG, TIFF, DNG, MP4.
+- Duplicate SHA-256 → HTTP 412 (skip / mark skipped_duplicate).
+- Hubly media stores `lightroom_asset_id` + `lightroom_upload_status` on `workspace.local_uploads`.
+- Sync matches Hubly media by `lightroom_asset_id` first, then filename.
 
 ## Layering
 

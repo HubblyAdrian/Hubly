@@ -43,6 +43,87 @@ async function loadWorkspace(
   return data;
 }
 
+async function loadProjectMedia(
+  admin: ReturnType<typeof createClient>,
+  projectId: string,
+  businessId: string,
+) {
+  const { data, error } = await admin
+    .from("photography_projects")
+    .select("id,workspace")
+    .eq("id", projectId)
+    .eq("business_id", businessId)
+    .maybeSingle();
+  if (error) throw error;
+  const ws = (data?.workspace && typeof data.workspace === "object")
+    ? data.workspace as Record<string, unknown>
+    : {};
+  const uploads = Array.isArray(ws.local_uploads) ? ws.local_uploads : [];
+  return {
+    workspace: ws,
+    mediaItems: uploads.map((u) => {
+      const row = (u && typeof u === "object") ? u as Record<string, unknown> : {};
+      return {
+        id: String(row.id || ""),
+        name: row.name ? String(row.name) : undefined,
+        type: row.type ? String(row.type) : undefined,
+        mime: row.mime ? String(row.mime) : undefined,
+        url: row.url ? String(row.url) : undefined,
+        previewUrl: row.previewUrl ? String(row.previewUrl) : undefined,
+        size: typeof row.size === "number" ? row.size : undefined,
+        isRaw: !!row.isRaw,
+        lightroom_asset_id: row.lightroom_asset_id ? String(row.lightroom_asset_id) : undefined,
+        lightroom_upload_status: row.lightroom_upload_status
+          ? String(row.lightroom_upload_status)
+          : undefined,
+        lightroom_sha256: row.lightroom_sha256 ? String(row.lightroom_sha256) : undefined,
+      };
+    }).filter((m) => m.id),
+  };
+}
+
+async function applyMediaPatches(
+  admin: ReturnType<typeof createClient>,
+  projectId: string,
+  businessId: string,
+  patches: Array<Record<string, unknown>>,
+) {
+  if (!patches.length) return null;
+  const { data, error } = await admin
+    .from("photography_projects")
+    .select("id,workspace")
+    .eq("id", projectId)
+    .eq("business_id", businessId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const ws = (data.workspace && typeof data.workspace === "object")
+    ? { ...(data.workspace as Record<string, unknown>) }
+    : {};
+  const uploads = Array.isArray(ws.local_uploads)
+    ? (ws.local_uploads as Record<string, unknown>[]).map((u) => ({ ...u }))
+    : [];
+  const byId = new Map(patches.map((p) => [String(p.id), p]));
+  for (const item of uploads) {
+    const patch = byId.get(String(item.id || ""));
+    if (!patch) continue;
+    for (const [k, v] of Object.entries(patch)) {
+      if (k === "id") continue;
+      item[k] = v;
+    }
+  }
+  ws.local_uploads = uploads;
+  const { data: updated, error: upErr } = await admin
+    .from("photography_projects")
+    .update({ workspace: ws, updated_at: new Date().toISOString() })
+    .eq("id", projectId)
+    .eq("business_id", businessId)
+    .select("id,workspace")
+    .maybeSingle();
+  if (upErr) throw upErr;
+  return updated;
+}
+
 async function upsertWorkspace(
   admin: ReturnType<typeof createClient>,
   opts: {
@@ -414,6 +495,7 @@ Deno.serve(async (req: Request) => {
         String((ws?.metadata as Record<string, unknown> | null)?.album_id || "");
       const syncCatalogId = catalogId ||
         String((ws?.metadata as Record<string, unknown> | null)?.catalog_id || "");
+      const projectMedia = await loadProjectMedia(admin, projectId, businessId);
 
       const res = await lr.syncProject({
         businessId,
@@ -421,6 +503,7 @@ Deno.serve(async (req: Request) => {
         albumId: syncAlbumId || undefined,
         catalogId: syncCatalogId || undefined,
         admin,
+        mediaItems: projectMedia.mediaItems,
       });
       if (!res.ok || !res.data) return jsonRes(res, 400);
 
@@ -439,6 +522,15 @@ Deno.serve(async (req: Request) => {
         metadata: res.data.workspaceMetadata,
       });
 
+      if (res.data.mediaPatches?.length) {
+        await applyMediaPatches(
+          admin,
+          projectId,
+          businessId,
+          res.data.mediaPatches as unknown as Array<Record<string, unknown>>,
+        );
+      }
+
       // Update hubly_app_connections last_sync_at only — no tokens.
       await admin.from("hubly_app_connections").upsert({
         business_id: businessId,
@@ -453,13 +545,68 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "uploadPhotos") {
+      if (!projectId) return jsonRes({ error: "project_id required" }, 400);
+      const ws = await loadWorkspace(admin, projectId);
+      const uploadAlbumId = albumId || ws?.external_id ||
+        String((ws?.metadata as Record<string, unknown> | null)?.album_id || "");
+      const uploadCatalogId = catalogId ||
+        String((ws?.metadata as Record<string, unknown> | null)?.catalog_id || "");
+      if (!uploadAlbumId) {
+        return jsonRes({
+          ok: false,
+          status: "error",
+          message: "Link a Lightroom album to this project before uploading.",
+          error: { code: "ALBUM_REQUIRED", detail: "Link a Lightroom album first", retryable: false },
+        }, 400);
+      }
+
+      const projectMedia = await loadProjectMedia(admin, projectId, businessId);
+      const fileRefs = Array.isArray(body?.file_refs) ? body.file_refs.map(String) : [];
+
       const res = await lr.uploadPhotos({
         businessId,
-        projectId: projectId || "",
-        albumId: albumId || undefined,
-        fileRefs: Array.isArray(body?.file_refs) ? body.file_refs.map(String) : [],
+        projectId,
+        albumId: uploadAlbumId,
+        catalogId: uploadCatalogId || undefined,
+        fileRefs,
+        admin,
+        mediaItems: projectMedia.mediaItems,
       });
-      return jsonRes(res, 400);
+
+      const patches = res.data?.mediaPatches || [];
+      if (Array.isArray(patches) && patches.length) {
+        await applyMediaPatches(
+          admin,
+          projectId,
+          businessId,
+          patches as Array<Record<string, unknown>>,
+        );
+      }
+
+      if (res.ok && res.data) {
+        await upsertWorkspace(admin, {
+          projectId,
+          businessId,
+          albumId: res.data.albumId || uploadAlbumId,
+          albumName: String(
+            (ws?.display_name) ||
+              (ws?.metadata as Record<string, unknown> | null)?.album_name ||
+              "Lightroom Album",
+          ),
+          catalogId: res.data.catalogId || uploadCatalogId || undefined,
+          syncState: "linked",
+          metadata: {
+            last_hubly_upload_at: new Date().toISOString(),
+            last_hubly_upload: {
+              uploaded: res.data.uploaded,
+              skipped: res.data.skipped,
+              failed: res.data.failed,
+            },
+          },
+        });
+      }
+
+      return jsonRes(res, res.ok ? 200 : 400);
     }
 
     return jsonRes({

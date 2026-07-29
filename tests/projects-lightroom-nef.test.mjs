@@ -38,14 +38,14 @@ describe('Projects Lightroom + NEF fixes', () => {
 
   it('clarifies Publish is Hubly-only and Sync is Adobe→Hubly', () => {
     assert.match(projects, /Publish Hubly gallery/);
-    assert.match(projects, /How photos get into Adobe/);
-    assert.match(projects, /Lightroom-first/);
+    assert.match(projects, /Upload to Lightroom/);
+    assert.match(projects, /Two-way media/);
     assert.match(projects, /Sync Now/);
     assert.match(projects, /Hubly gallery published — not uploaded to Adobe Lightroom/);
   });
 
   it('cache-busts Projects assets', () => {
-    assert.match(hubly, /photography-projects\.js\?v=projects-11/);
-    assert.match(hubly, /photography-projects\.css\?v=projects-11/);
+    assert.match(hubly, /photography-projects\.js\?v=projects-12/);
+    assert.match(hubly, /photography-projects\.css\?v=projects-12/);
   });
 });

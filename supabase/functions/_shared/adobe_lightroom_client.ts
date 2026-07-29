@@ -9,9 +9,49 @@
 import {
   AdobeHttpClient,
   adobePublicHealth,
+  adobeRequestWithRetry,
   type AdobeHttpResult,
 } from "./adobe_http_client.ts";
 import { adobeClientId } from "./adobe_oauth.ts";
+
+/** Official Create Master content types (Adobe Lightroom Partner APIs). */
+export const LR_MASTER_CONTENT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/tiff",
+  "image/dng",
+  "image/x-adobe-dng",
+  "video/mp4",
+] as const;
+
+export type LrMasterContentType = (typeof LR_MASTER_CONTENT_TYPES)[number];
+
+export type LrAccount = {
+  id: string;
+  email?: string;
+  fullName?: string;
+  entitlementStatus?: string;
+  storageUsed?: number;
+  storageLimit?: number;
+  raw?: unknown;
+};
+
+export type LrCreateAssetOpts = {
+  catalogId: string;
+  assetId?: string;
+  /** image | video */
+  subtype?: "image" | "video";
+  fileName: string;
+  /** Adobe account id (importedBy). */
+  importedBy: string;
+  /** SHA-256 hex of master bytes (duplicate detection). */
+  sha256: string;
+  captureDate?: string;
+  importTimestamp?: string;
+};
+
+/** Adobe Create Master max bytes per invocation. */
+export const LR_MASTER_CHUNK_MAX = 200 * 1024 * 1024;
 
 export type LrCatalog = {
   id: string;
@@ -412,6 +452,209 @@ export class AdobeLightroomClient {
     const asset = mapAsset(res.data);
     if (!asset) return { ...res, ok: false, data: null, error: "Asset not found" };
     return { ...res, data: asset };
+  }
+
+  /** GET /v2/account — entitlement + storage precondition checks before upload. */
+  async getAccount(): Promise<AdobeHttpResult<LrAccount>> {
+    const res = await adobeRequestWithRetry(
+      () => this.http.get<Record<string, unknown>>("/account"),
+      { label: "getAccount" },
+    );
+    if (!res.ok || !res.data) return { ...res, data: null };
+    const entitlement = (res.data.entitlement || {}) as Record<string, unknown>;
+    const storage = (entitlement.storage || {}) as Record<string, unknown>;
+    return {
+      ...res,
+      data: {
+        id: String(res.data.id || ""),
+        email: res.data.email ? String(res.data.email) : undefined,
+        fullName: res.data.full_name ? String(res.data.full_name) : undefined,
+        entitlementStatus: entitlement.status ? String(entitlement.status) : undefined,
+        storageUsed: typeof storage.used === "number" ? storage.used : undefined,
+        storageLimit: typeof storage.limit === "number" ? storage.limit : undefined,
+        raw: res.data,
+      },
+    };
+  }
+
+  /**
+   * PUT /v2/catalogs/{catalog_id}/assets/{asset_id}
+   * Create Asset — official upload step 1.
+   * @see https://developer.adobe.com/lightroom/lightroom-api-docs/getting-started/upload-content/
+   */
+  async createAsset(opts: LrCreateAssetOpts): Promise<AdobeHttpResult<{ assetId: string }>> {
+    const assetId = opts.assetId || adobeUuid();
+    const apiKey = adobeClientId();
+    if (!apiKey) {
+      return {
+        ok: false,
+        status: 503,
+        data: null,
+        rawText: "",
+        headers: new Headers(),
+        error: "ADOBE_CLIENT_ID required",
+      };
+    }
+    const now = opts.importTimestamp || new Date().toISOString().replace(/\.\d{3}Z$/, "");
+    const body = {
+      subtype: opts.subtype || "image",
+      payload: {
+        captureDate: opts.captureDate || "0000-00-00T00:00:00",
+        importSource: {
+          fileName: opts.fileName,
+          importedOnDevice: apiKey,
+          importedBy: opts.importedBy,
+          importTimestamp: now,
+          sha256: opts.sha256,
+        },
+      },
+    };
+    const res = await adobeRequestWithRetry(
+      () =>
+        this.http.request<unknown>(
+          "PUT",
+          `/catalogs/${encodeURIComponent(opts.catalogId)}/assets/${encodeURIComponent(assetId)}`,
+          {
+            body,
+            headers: { "If-None-Match": "*" },
+          },
+        ),
+      { label: "createAsset" },
+    );
+    if (!res.ok) return { ...res, data: null };
+    return { ...res, data: { assetId } };
+  }
+
+  /**
+   * PUT /v2/catalogs/{catalog_id}/assets/{asset_id}/master
+   * Create Master — official upload step 2 (chunked when > 200MB).
+   */
+  async uploadMaster(opts: {
+    catalogId: string;
+    assetId: string;
+    bytes: ArrayBuffer | Uint8Array;
+    contentType: string;
+  }): Promise<AdobeHttpResult<{ assetId: string }>> {
+    const buf = opts.bytes instanceof Uint8Array
+      ? opts.bytes
+      : new Uint8Array(opts.bytes);
+    const total = buf.byteLength;
+    if (!total) {
+      return {
+        ok: false,
+        status: 400,
+        data: null,
+        rawText: "",
+        headers: new Headers(),
+        error: "Empty master file",
+      };
+    }
+    const ct = String(opts.contentType || "").toLowerCase();
+    if (!(LR_MASTER_CONTENT_TYPES as readonly string[]).includes(ct)) {
+      return {
+        ok: false,
+        status: 415,
+        data: null,
+        rawText: "",
+        headers: new Headers(),
+        error: `Unsupported Content-Type for Lightroom master: ${ct}`,
+      };
+    }
+
+    let offset = 0;
+    let last: AdobeHttpResult<unknown> | null = null;
+    while (offset < total) {
+      const end = Math.min(offset + LR_MASTER_CHUNK_MAX, total);
+      const chunk = buf.subarray(offset, end);
+      const contentRange = `bytes ${offset}-${end - 1}/${total}`;
+      last = await adobeRequestWithRetry(
+        () =>
+          this.http.putBinary(
+            `/catalogs/${encodeURIComponent(opts.catalogId)}/assets/${encodeURIComponent(opts.assetId)}/master`,
+            chunk,
+            {
+              "Content-Type": ct,
+              "Content-Length": String(chunk.byteLength),
+              "Content-Range": contentRange,
+            },
+          ),
+        { label: `uploadMaster:${contentRange}` },
+      );
+      if (!last.ok) return { ...last, data: null };
+      offset = end;
+    }
+    return { ...(last as AdobeHttpResult<unknown>), data: { assetId: opts.assetId } };
+  }
+
+  /**
+   * PUT /v2/catalogs/{catalog_id}/albums/{album_id}/assets
+   * Add up to 50 assets to a project album — official manage-content API.
+   */
+  async addAssetsToAlbum(opts: {
+    catalogId: string;
+    albumId: string;
+    assetIds: string[];
+    remoteIdPrefix?: string;
+  }): Promise<AdobeHttpResult<{ added: number }>> {
+    const ids = (opts.assetIds || []).filter(Boolean);
+    if (!ids.length) {
+      return {
+        ok: true,
+        status: 200,
+        data: { added: 0 },
+        rawText: "",
+        headers: new Headers(),
+      };
+    }
+    // Adobe allows up to 50 per call.
+    let added = 0;
+    for (let i = 0; i < ids.length; i += 50) {
+      const batch = ids.slice(i, i + 50);
+      const body = {
+        resources: batch.map((id, idx) => ({
+          id,
+          payload: {
+            cover: i === 0 && idx === 0,
+            order: String(i + idx),
+            publishInfo: {
+              remoteId: `${opts.remoteIdPrefix || "hubly"}-${id}`,
+            },
+          },
+        })),
+      };
+      const res = await adobeRequestWithRetry(
+        () =>
+          this.http.put(
+            `/catalogs/${encodeURIComponent(opts.catalogId)}/albums/${encodeURIComponent(opts.albumId)}/assets`,
+            body,
+          ),
+        { label: "addAssetsToAlbum" },
+      );
+      if (!res.ok) return { ...res, data: null };
+      added += batch.length;
+    }
+    return {
+      ok: true,
+      status: 200,
+      data: { added },
+      rawText: "",
+      headers: new Headers(),
+    };
+  }
+
+  /** Convenience: add a single asset to an album. */
+  async addAssetToAlbum(opts: {
+    catalogId: string;
+    albumId: string;
+    assetId: string;
+    remoteIdPrefix?: string;
+  }): Promise<AdobeHttpResult<{ added: number }>> {
+    return this.addAssetsToAlbum({
+      catalogId: opts.catalogId,
+      albumId: opts.albumId,
+      assetIds: [opts.assetId],
+      remoteIdPrefix: opts.remoteIdPrefix,
+    });
   }
 
   /**
