@@ -1,0 +1,173 @@
+/* Hubly Store — Commerce Engine (Operate). Distinct from Website Storefront. */
+
+#p-app.jos-pixel.jos-store-mode{
+  --jos-store-bg:#F7F8FA;
+}
+#p-app.jos-pixel.jos-store-mode .app-main{margin-left:var(--nav);background:var(--jos-store-bg)}
+#p-app.jos-pixel.jos-store-mode .app-bar{display:none!important}
+#p-app.jos-pixel.jos-store-mode #v-store.body,
+#p-app.jos-pixel.jos-store-mode #jos-store-root{
+  min-height:100vh;height:100vh;padding:0!important;overflow:auto;background:var(--jos-store-bg);
+}
+#p-app.jos-pixel.jos-store-mode .ni.active{background:var(--jos-brand)}
+
+.jos-store-shell{
+  min-height:100%;background:var(--jos-store-bg,#F7F8FA);animation:none;
+}
+.jos-store-page{
+  max-width:1600px;margin:0 auto;padding:32px 32px 48px;box-sizing:border-box;
+  animation:josHomeIn .28s ease both;
+}
+.jos-store-header{
+  min-height:80px;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
+  margin-bottom:20px;flex-wrap:wrap;
+}
+.jos-store-header h1,.jos-store-header .hub-page-title{
+  margin:0;font-size:28px;font-weight:800;letter-spacing:-.03em;color:var(--jos-navy,#141B2B);
+  font-family:'Plus Jakarta Sans','DM Sans',sans-serif;
+}
+.jos-store-header p,.jos-store-header .hub-page-sub{margin:6px 0 0;font-size:13px;color:var(--jos-ink-2,#5F6368);max-width:36rem}
+.jos-store-header-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.jos-store-export{
+  min-width:110px;height:44px;background:#fff;border:1px solid var(--jos-border,#E5E7EB);border-radius:12px;font-weight:750;
+}
+.jos-store-new{min-width:140px;height:44px;border-radius:12px}
+
+.jos-store-meta{
+  display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;
+}
+.jos-store-meta-chip{
+  appearance:none;border:1px solid #ECECEC;background:#fff;border-radius:12px;padding:10px 14px;
+  display:inline-flex;align-items:center;gap:10px;cursor:pointer;font:inherit;
+  transition:border-color .15s,background .15s;
+}
+.jos-store-meta-chip span{font-size:11px;font-weight:700;color:var(--jos-ink-3,#9AA0A6)}
+.jos-store-meta-chip strong{font-size:13px;font-weight:800;color:var(--jos-navy,#141B2B)}
+.jos-store-meta-chip.revenue strong{color:var(--jos-brand,#D9632D)}
+.jos-store-meta-chip:hover{border-color:rgba(217,99,45,.35);background:#FFF8F3}
+
+.jos-store-tabs{
+  display:flex;gap:4px;border-bottom:1px solid var(--jos-border,#E5E7EB);margin-bottom:16px;
+  height:50px;align-items:stretch;overflow:auto;scrollbar-width:thin;
+}
+.jos-store-tab{
+  appearance:none;border:0;background:transparent;padding:0 14px;font:inherit;font-size:13px;font-weight:750;
+  color:var(--jos-ink-3,#9AA0A6);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
+  white-space:nowrap;transition:color .2s,border-color .2s;
+}
+.jos-store-tab.on{color:var(--jos-brand,#D9632D);border-bottom-color:var(--jos-brand,#D9632D)}
+.jos-store-tab:hover{color:var(--jos-navy,#141B2B)}
+
+.jos-store-toolbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;
+}
+.jos-store-search{
+  flex:1;min-width:min(100%,240px);height:42px;display:flex;align-items:center;
+  border:1px solid var(--jos-border,#E5E7EB);border-radius:12px;background:#fff;padding:0 14px;
+}
+.jos-store-search input{border:0;outline:0;width:100%;background:transparent;font:inherit;font-size:13px}
+.jos-store-dd{
+  height:38px;min-width:120px;border:1px solid var(--jos-border,#E5E7EB);border-radius:10px;background:#fff;
+  padding:0 10px;font:inherit;font-size:12px;font-weight:650;color:var(--jos-navy,#141B2B);
+}
+
+.jos-store-card{
+  background:#fff;border:1px solid #ECECEC;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,.04);
+  padding:8px 8px 16px;overflow:hidden;
+}
+.jos-store-table-wrap{overflow:auto}
+.jos-store-table{width:100%;border-collapse:collapse;min-width:720px}
+.jos-store-table thead th{
+  text-align:left;padding:14px 12px;font-size:11px;font-weight:800;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--jos-ink-3,#9AA0A6);border-bottom:1px solid var(--jos-border,#E5E7EB);
+}
+.jos-store-table td{
+  padding:14px 12px;border-bottom:1px solid #F0F1F3;vertical-align:middle;font-size:13px;color:var(--jos-navy,#141B2B);
+}
+.jos-store-table td .jos-muted,.jos-store-table td span.jos-muted{
+  display:block;font-size:12px;color:var(--jos-ink-3,#9AA0A6);margin-top:2px;font-weight:500;
+}
+.jos-store-prod{
+  appearance:none;border:0;background:transparent;display:flex;align-items:center;gap:12px;
+  text-align:left;font:inherit;cursor:pointer;padding:0;color:inherit;
+}
+.jos-store-thumb{
+  width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.jos-store-thumb.tone-navy{background:#141B2B}
+.jos-store-thumb.tone-blue{background:#2563EB}
+.jos-store-thumb.tone-orange{background:#D9632D}
+.jos-store-thumb.tone-green{background:#15803D}
+.jos-store-thumb.tone-slate{background:#64748B}
+.jos-store-compare{text-decoration:line-through;margin-left:6px!important;display:inline!important}
+.jos-store-low{color:#B45309;font-weight:750}
+.jos-store-pill.tone-ok{background:#DCFCE7;color:#166534}
+.jos-store-pill.tone-info{background:#DBEAFE;color:#1D4ED8}
+.jos-store-pill.tone-warn{background:#FFEDD5;color:#C2410C}
+.jos-store-pill.tone-mute{background:#F3F4F6;color:#4B5563}
+
+.jos-store-coll-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;padding:8px;
+}
+.jos-store-coll{
+  border:1px solid #ECECEC;border-radius:16px;padding:16px;background:#FAFBFC;display:grid;gap:8px;
+}
+.jos-store-coll p{margin:0;font-size:13px;line-height:1.45}
+.jos-store-coll-foot{display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:12px;font-weight:700;color:var(--jos-ink-2,#5F6368)}
+
+.jos-store-alert{
+  display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;margin-bottom:12px;padding:14px 16px;
+  border-radius:14px;border:1px solid rgba(217,99,45,.28);background:linear-gradient(135deg,#FFF7ED,#fff);
+}
+.jos-store-alert strong{font-size:13px;color:#9A3412}
+.jos-store-alert span{font-size:12px;color:#6B7280}
+.jos-store-alert.ok{border-color:#BBF7D0;background:linear-gradient(135deg,#F0FDF4,#fff)}
+.jos-store-alert.ok strong{color:#166534}
+.jos-store-adj{display:inline-flex;gap:6px}
+
+.jos-store-empty{
+  text-align:center;padding:48px 24px;
+}
+.jos-store-empty h3{margin:0 0 8px;font-size:18px;color:var(--jos-navy,#141B2B)}
+.jos-store-empty p{margin:0 0 16px;font-size:13px;color:var(--jos-ink-2,#5F6368)}
+
+.jos-store-modal-backdrop{
+  position:fixed;inset:0;z-index:13000;background:rgba(15,23,42,.45);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.jos-store-modal{
+  width:min(560px,100%);background:#fff;border-radius:20px;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.2);
+  max-height:min(90vh,720px);overflow:auto;
+}
+.jos-store-modal h2{margin:4px 0 0;font-size:20px;font-weight:800;color:var(--jos-navy,#141B2B)}
+.jos-store-form{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;
+}
+.jos-store-form label{
+  display:grid;gap:6px;font-size:11px;font-weight:800;color:var(--jos-ink-2,#5F6368);text-transform:uppercase;
+}
+.jos-store-form label.full{grid-column:1/-1}
+.jos-store-form input,.jos-store-form select,.jos-store-form textarea{
+  height:40px;border:1px solid var(--jos-border,#E5E7EB);border-radius:10px;padding:0 10px;
+  font:inherit;font-size:13px;font-weight:650;text-transform:none;color:var(--jos-navy,#141B2B);
+}
+.jos-store-form textarea{height:auto;padding:10px;resize:vertical}
+
+.jos-store-fab{
+  display:none;position:fixed;right:20px;bottom:20px;width:52px;height:52px;border-radius:50%;
+  border:0;background:var(--jos-brand,#D9632D);color:#fff;font-size:28px;font-weight:700;cursor:pointer;
+  box-shadow:0 12px 28px rgba(217,99,45,.35);z-index:40;
+}
+
+@media(max-width:1023px){
+  .jos-store-page{padding:24px 16px 80px}
+  .jos-store-header h1,.jos-store-header .hub-page-title{font-size:24px}
+  .jos-store-fab{display:flex;align-items:center;justify-content:center}
+  .jos-store-form{grid-template-columns:1fr}
+}
+@media(max-width:767px){
+  #p-app.jos-pixel.jos-store-mode{--nav:0px}
+  #p-app.jos-pixel.jos-store-mode .app-nav{transform:translateX(-100%)}
+  #p-app.jos-pixel.jos-store-mode .app-main{margin-left:0}
+}

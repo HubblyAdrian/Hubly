@@ -27,6 +27,7 @@
     marketing: { label: 'Marketing AI', prompt: 'Suggest one campaign that will get me more customers this week.' },
     reviews: { label: 'Reviews AI', prompt: 'Help me request and respond to reviews to grow my rating.' },
     memberships: { label: 'Memberships AI', prompt: 'Who should I invite to a membership and how should I pitch it?' },
+    store: { label: 'Store AI', prompt: 'What products should I stock and how can I sell more retail and add-ons?' },
     money: { label: 'Invoices AI', prompt: 'Remind unpaid customers and summarize cash flow risks.' },
     reports: { label: 'Reports AI', prompt: 'Summarize my business performance and the biggest opportunity.' },
     'photo-projects': { label: 'Projects AI', prompt: 'Help me finish and deliver my open projects faster.' },
@@ -2015,7 +2016,7 @@
           { id: 'role_tech', name: 'Technician', modules: 'jobs,inbox' }
         ],
         featureAccess: { askHubly: true, reports: true, marketing: true, memberships: true },
-        moduleAccess: { home: true, inbox: true, jobs: true, leads: true, customers: true, pipeline: true, storefront: true, marketing: true, reviews: true, memberships: true, revenue: true, reports: true, ask: true, settings: true },
+        moduleAccess: { home: true, inbox: true, jobs: true, leads: true, customers: true, pipeline: true, storefront: true, store: true, marketing: true, reviews: true, memberships: true, revenue: true, reports: true, ask: true, settings: true },
         custom: []
       };
     }
@@ -11344,6 +11345,7 @@
     marketing: { title: 'Marketing', sub: 'Campaigns that attract, convert, and keep customers coming back.' },
     reviews: { title: 'Reviews', sub: 'Reputation and request flows.' },
     memberships: { title: 'Memberships', sub: 'Recurring revenue. Happy clients. Less admin.' },
+    store: { title: 'Store', sub: 'Sell products, kits, gift cards, and add-ons — alongside your services.' },
     money: { title: 'Revenue', sub: 'Payments, invoices, and cash flow.' },
     reports: { title: 'Reports', sub: 'Performance across the business.' },
     ask: { title: 'Ask Hubly', sub: 'Use smarter AI to grow your business.' },
@@ -16708,6 +16710,12 @@
     setReportsMode(v === 'reports');
     setAskHublyMode(v === 'ask' || v === 'ask-hubly');
     setSettingsMode(v === 'settings');
+    if (typeof global.HublyStoreCommerce?.setMode === 'function') {
+      global.HublyStoreCommerce.setMode(v === 'store');
+    } else {
+      var appStore = el('p-app');
+      if (appStore) appStore.classList.toggle('jos-store-mode', v === 'store');
+    }
     setStorefrontMode(false);
     var map = {
       pipeline: renderPipeline,
@@ -16717,6 +16725,11 @@
       'ask-hubly': renderAskHubly,
       marketing: renderMarketing,
       memberships: renderMemberships,
+      store: function () {
+        if (typeof global.HublyStoreCommerce?.render === 'function') {
+          return global.HublyStoreCommerce.render();
+        }
+      },
       money: renderRevenue,
       reports: renderReportsPage,
       growth: renderGrowth,
@@ -17003,6 +17016,18 @@
       }
       var app = el('p-app');
       if (app) app.classList.toggle('jos-photo-projects-mode', !!on);
+    },
+    renderStore: function () {
+      if (typeof global.HublyStoreCommerce?.render === 'function') {
+        return global.HublyStoreCommerce.render();
+      }
+    },
+    setStoreMode: function (on) {
+      if (typeof global.HublyStoreCommerce?.setMode === 'function') {
+        return global.HublyStoreCommerce.setMode(on);
+      }
+      var app = el('p-app');
+      if (app) app.classList.toggle('jos-store-mode', !!on);
     },
     renderStorefront: renderStorefront,
     restoreWebsiteEditor: restoreWebsiteEditor,

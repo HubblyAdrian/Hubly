@@ -29,8 +29,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
-<link rel="stylesheet" href="/journey-os/operate-pixel.css?v=leads-chrome-1">
-<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=leads-chrome-1">
+<link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
+<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-1">
+<link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-1">
 <link rel="stylesheet" href="/journey-os/photography-projects.css?v=ui-audit-1">
 <link rel="stylesheet" href="/journey-os/app-marketplace.css?v=projects-7">
 <style>
@@ -10464,6 +10465,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="memberships" onclick="switchV(this)" title="Memberships">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16l3-8 4 4 4-6 3 10"/><path d="M3 20h18"/></svg><span class="ni-lbl">Memberships</span>
       </div>
+      <div class="ni" data-v="store" onclick="switchV(this)" title="Store">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16l-1 12H5L4 7z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/><path d="M9 11v2M15 11v2"/></svg><span class="ni-lbl">Store</span>
+      </div>
       <div class="ni" data-v="money" onclick="switchV(this)" title="Revenue">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c.8-1 2-1.5 2.5-1.5s1.7.4 1.7 1.5-1 1.4-2.2 1.8-2.5.8-2.5 2.1 1.2 2.1 2.5 2.1 2-.5 2.5-1.4"/></svg><span class="ni-lbl">Revenue</span>
       </div>
@@ -10610,6 +10614,11 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- MEMBERSHIPS -->
       <div id="v-memberships" class="body hidden">
         <div id="jos-memberships-root"></div>
+      </div>
+
+      <!-- STORE (Commerce Engine — products / orders / inventory; not Website Storefront) -->
+      <div id="v-store" class="body hidden">
+        <div id="jos-store-root"></div>
       </div>
 
       <!-- REPORTS -->
@@ -12368,7 +12377,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/hubly-session.js"></script>
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
-<script defer src="/journey-os/journey.js?v=leads-chrome-1"></script>
+<script defer src="/journey-os/journey.js?v=store-1"></script>
+<script defer src="/journey-os/store-commerce.js?v=store-1"></script>
 <script defer src="/journey-os/adobe-lightroom-service.js?v=projects-7"></script>
 <script defer src="/journey-os/connected-apps-catalog.generated.js?v=projects-7"></script>
 <script defer src="/journey-os/connected-apps.js?v=projects-7"></script>
@@ -36494,7 +36504,7 @@ function switchV(el){
     pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
     quotes:'Quick Quote',money:'Revenue',chats:'Inbox',marketplace:'Marketplace',apps:'Apps',
     editor:'Website editor',settings:'Settings',reviews:'Reviews',marketing:'Marketing',
-    memberships:'Memberships',reports:'Reports',growth:'Growth','booking-wizard':'Website · Book Now'
+    memberships:'Memberships',store:'Store',reports:'Reports',growth:'Growth','booking-wizard':'Website · Book Now'
   };
   const tabLabel=titles[v]||v;
   document.getElementById('bar-title').textContent=tabLabel;
@@ -36506,6 +36516,7 @@ function switchV(el){
   if(v==='calendar'){try{HublyJourneyOS?.renderCalendar?.();}catch(e){try{HublyJourneyOS?.renderJobs?.();}catch(e2){}}}
   if(v==='photo-projects'){try{HublyJourneyOS?.renderPhotoProjects?.()||HublyPhotographyProjects?.render?.();}catch(e){console.warn(e);}}
   if(v==='apps'){try{HublyAppMarketplace?.render?.();}catch(e){console.warn(e);}}
+  if(v==='store'){try{HublyStoreCommerce?.render?.()||HublyJourneyOS?.renderStore?.();}catch(e){console.warn(e);}}
   if(v==='leads'){try{HublyJourneyOS?.renderLeadsList?.();}catch(e){}}
   if(v==='customers'){try{HublyJourneyOS.renderCustomersPage()}catch(e){renderCustomersView()}}
   if(v==='quotes'){try{HublyJourneyOS?.updateChrome?.('quotes')}catch(e0){};try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}

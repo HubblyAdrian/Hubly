@@ -42,6 +42,7 @@ body.jos-pixel #p-app .ni[hidden]{display:none!important}
 #p-app.jos-pixel #v-pipeline.jos-pixel-owned > :not(#jos-pipeline-root),
 #p-app.jos-pixel #v-editor.jos-pixel-owned > :not(#jos-storefront-root),
 #p-app.jos-pixel #v-marketing.jos-pixel-owned > :not(#jos-marketing-root),
+#p-app.jos-pixel #v-store.jos-pixel-owned > :not(#jos-store-root),
 #p-app.jos-pixel #v-reports.jos-pixel-owned > :not(#jos-reports-root),
 #p-app.jos-pixel #v-ask.jos-pixel-owned > :not(#jos-ask-root),
 #p-app.jos-pixel #v-settings.jos-pixel-owned > :not(#jos-settings-root){
