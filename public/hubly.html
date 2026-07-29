@@ -12377,7 +12377,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/hubly-session.js"></script>
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
-<script defer src="/journey-os/journey.js?v=store-1"></script>
+<script defer src="/journey-os/journey.js?v=weather-1"></script>
 <script defer src="/journey-os/store-commerce.js?v=store-1"></script>
 <script defer src="/journey-os/adobe-lightroom-service.js?v=projects-7"></script>
 <script defer src="/journey-os/connected-apps-catalog.generated.js?v=projects-7"></script>
@@ -12465,7 +12465,7 @@ const S={
   edPreviewDevice:'desktop',edTab:'sf',
   ownerPreview:false,
   website:null,galleryPairs:[],
-  weatherByDate:null,weatherCity:'',weatherResolvedCity:'',
+  weatherByDate:null,weatherCurrent:null,weatherCity:'',weatherResolvedCity:'',
   quotes:[],quoteConfig:{},
   bookingWizard:null,_bookingWizardDone:false,
   pipeline:{deleted:[],stages:{},lostReasons:{},manual:[],stageDefs:null,edits:{}},
@@ -42892,12 +42892,33 @@ function jobRowColor(j){
   const colorIdx=typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0);
   return JOB_COLORS[Math.abs(colorIdx)%JOB_COLORS.length];
 }
-async function loadWeatherForecast(){
+function weatherConditionLabel(code){
+  const c=Number(code)||0;
+  if(c===0)return 'Clear';
+  if(c===1)return 'Mostly clear';
+  if(c===2)return 'Partly cloudy';
+  if(c===3)return 'Cloudy';
+  if(c===45||c===48)return 'Fog';
+  if(c>=51&&c<=57)return 'Drizzle';
+  if(c>=61&&c<=67)return 'Rain';
+  if(c>=71&&c<=77)return 'Snow';
+  if(c>=80&&c<=82)return 'Showers';
+  if(c>=85&&c<=86)return 'Snow showers';
+  if(c>=95)return 'Thunderstorms';
+  return 'Fair';
+}
+async function loadWeatherForecast(opts){
+  opts=opts||{};
   try{
-    const city=(S.city||'').trim();
-    if(!city){S.weatherByDate=null;S.weatherCity='';S.weatherResolvedCity='';S.weatherError='no_city';renderDashWeatherAlert();renderWeatherBanner();return;}
-    if(S.weatherByDate&&S.weatherCity===city){renderDashWeatherAlert();renderWeatherBanner();return;}
+    const city=(S.city||S.weatherCity||'').trim();
+    if(!city){S.weatherByDate=null;S.weatherCurrent=null;S.weatherCity='';S.weatherResolvedCity='';S.weatherError='no_city';renderDashWeatherAlert();renderWeatherBanner();return;}
+    const force=!!opts.force;
+    if(!force&&S.weatherByDate&&S.weatherCity===city&&S.weatherCurrent){
+      renderDashWeatherAlert();renderWeatherBanner();
+      return;
+    }
     let byDate=null;
+    let current=null;
     let resolvedCity=city;
     // Prefer Hubly API proxy to avoid browser/network policy issues.
     try{
@@ -42905,6 +42926,7 @@ async function loadWeatherForecast(){
       if(proxied.ok){
         const payload=await proxied.json();
         byDate=payload?.byDate||null;
+        current=payload?.current||null;
         if(payload?.cityResolved)resolvedCity=payload.cityResolved;
       }
     }catch(e){}
@@ -42913,9 +42935,9 @@ async function loadWeatherForecast(){
       const geoRes=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
       const geoData=await geoRes.json();
       const loc=geoData?.results?.[0];
-      if(!loc){S.weatherByDate=null;S.weatherCity='';S.weatherResolvedCity='';S.weatherError='not_found';renderDashWeatherAlert();renderWeatherBanner();return;}
+      if(!loc){S.weatherByDate=null;S.weatherCurrent=null;S.weatherCity='';S.weatherResolvedCity='';S.weatherError='not_found';renderDashWeatherAlert();renderWeatherBanner();return;}
       resolvedCity=loc.name||city;
-      const wRes=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&daily=precipitation_probability_max,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=16`);
+      const wRes=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,weather_code,precipitation&daily=precipitation_probability_max,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=16`);
       const wData=await wRes.json();
       const fallbackByDate={};
       if(wData?.daily?.time){
@@ -42929,9 +42951,25 @@ async function loadWeatherForecast(){
         });
       }
       byDate=fallbackByDate;
+      const cur=wData?.current||{};
+      const todayKey=wData?.daily?.time?.[0];
+      const todayDaily=todayKey?fallbackByDate[todayKey]:null;
+      current={
+        tempC:cur.temperature_2m??todayDaily?.tempMax??null,
+        code:cur.weather_code??todayDaily?.code??0,
+        precipProb:todayDaily?.precipProb??0,
+        precipMm:cur.precipitation??0,
+        at:cur.time||null,
+      };
+    }
+    if(!current&&byDate){
+      const today=typeof dateStr==='function'?dateStr(new Date()):new Date().toISOString().slice(0,10);
+      const tw=byDate[today]||byDate[Object.keys(byDate).sort()[0]];
+      if(tw)current={tempC:tw.tempMax,code:tw.code,precipProb:tw.precipProb||0,precipMm:0,at:null};
     }
     S.weatherError='';
     S.weatherByDate=byDate;
+    S.weatherCurrent=current;
     S.weatherCity=city;
     S.weatherResolvedCity=resolvedCity;
     renderDashToday();
@@ -42939,6 +42977,7 @@ async function loadWeatherForecast(){
     renderDashWeatherAlert();
     renderWeatherBanner();
     if(typeof renderJobsPanel==='function')renderJobsPanel();
+    try{if(typeof HublyJourneyOS?.enhanceDashboard==='function')HublyJourneyOS.enhanceDashboard();}catch(e){}
   }catch(e){
     S.weatherError=e?.message||'fetch_failed';
     console.warn('Weather forecast unavailable:',e.message);

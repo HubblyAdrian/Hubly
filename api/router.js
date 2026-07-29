@@ -114,7 +114,7 @@ module.exports = async (req, res) => {
         return res.status(404).json({ error: 'city_not_found' });
       }
 
-      const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&daily=precipitation_probability_max,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=16`;
+      const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,weather_code,precipitation&daily=precipitation_probability_max,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=16`;
       const wRes = await fetch(forecastUrl);
       if (!wRes.ok) {
         return res.status(502).json({ error: 'forecast_fetch_failed' });
@@ -130,11 +130,21 @@ module.exports = async (req, res) => {
           tempMin: wData?.daily?.temperature_2m_min?.[i],
         };
       }
+      const cur = wData?.current || {};
+      const todayKey = times[0];
+      const todayDaily = todayKey ? byDate[todayKey] : null;
       res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=3600');
       return res.status(200).json({
         cityRequested: rawCity,
         cityResolved: loc?.name || rawCity,
         byDate,
+        current: {
+          tempC: cur.temperature_2m ?? todayDaily?.tempMax ?? null,
+          code: cur.weather_code ?? todayDaily?.code ?? 0,
+          precipProb: todayDaily?.precipProb ?? 0,
+          precipMm: cur.precipitation ?? 0,
+          at: cur.time || null,
+        },
       });
     }
 

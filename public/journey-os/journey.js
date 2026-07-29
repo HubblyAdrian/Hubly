@@ -11434,6 +11434,89 @@
     return !!(activeNi && activeNi.getAttribute('data-v') === 'dashboard');
   }
 
+  function weatherCodeLabel(code) {
+    if (typeof global.weatherConditionLabel === 'function') {
+      try { return global.weatherConditionLabel(code); } catch (e) {}
+    }
+    var c = Number(code) || 0;
+    if (c === 0) return 'Clear';
+    if (c === 1) return 'Mostly clear';
+    if (c === 2) return 'Partly cloudy';
+    if (c === 3) return 'Cloudy';
+    if (c === 45 || c === 48) return 'Fog';
+    if (c >= 51 && c <= 57) return 'Drizzle';
+    if (c >= 61 && c <= 67) return 'Rain';
+    if (c >= 71 && c <= 77) return 'Snow';
+    if (c >= 80 && c <= 82) return 'Showers';
+    if (c >= 95) return 'Thunderstorms';
+    return 'Fair';
+  }
+
+  function formatHomeTempC(celsius) {
+    if (celsius == null || !isFinite(Number(celsius))) return '';
+    if (typeof global.formatWeatherTemp === 'function') {
+      try { return global.formatWeatherTemp(celsius); } catch (e) {}
+    }
+    var useF = true;
+    try {
+      var loc = String(navigator.language || '').toLowerCase();
+      useF = loc === 'en-us' || loc.endsWith('-us');
+    } catch (e2) {}
+    var n = useF ? Math.round(Number(celsius) * 9 / 5 + 32) : Math.round(Number(celsius));
+    return n + (useF ? '°F' : '°C');
+  }
+
+  function todayWeatherKey() {
+    try {
+      if (typeof global.dateStr === 'function') return global.dateStr(new Date());
+    } catch (e) {}
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function homeWeatherSummary() {
+    var st = S();
+    var city = String(st.city || st.weatherCity || '').trim();
+    if (!city) {
+      return { tempLabel: '—', detail: 'Add city for weather', ready: false, missingCity: true };
+    }
+    var cur = st.weatherCurrent;
+    var day = st.weatherByDate && st.weatherByDate[todayWeatherKey()];
+    var tempC = cur && cur.tempC != null ? cur.tempC : (day && day.tempMax != null ? day.tempMax : null);
+    var code = cur && cur.code != null ? cur.code : (day && day.code != null ? day.code : null);
+    var precip = cur && cur.precipProb != null ? cur.precipProb : (day && day.precipProb != null ? day.precipProb : null);
+    if (tempC == null && !st.weatherByDate) {
+      return { tempLabel: '…', detail: 'Loading weather', ready: false, loading: true };
+    }
+    if (tempC == null) {
+      return { tempLabel: '—', detail: st.weatherError === 'not_found' ? 'City not found' : 'Weather unavailable', ready: false };
+    }
+    var condition = weatherCodeLabel(code);
+    var rainPct = Math.round(Number(precip) || 0);
+    return {
+      tempLabel: formatHomeTempC(tempC),
+      detail: condition + ' · ' + rainPct + '% rain',
+      ready: true,
+      city: st.weatherResolvedCity || city
+    };
+  }
+
+  function ensureHomeWeatherLoaded(root) {
+    if (!root || root._josWeatherFetchStarted) return;
+    var st = S();
+    var city = String(st.city || st.weatherCity || '').trim();
+    if (!city) return;
+    if (st.weatherByDate && st.weatherCity === city && st.weatherCurrent) return;
+    root._josWeatherFetchStarted = true;
+    var loader = typeof global.loadWeatherForecast === 'function' ? global.loadWeatherForecast : null;
+    if (!loader) return;
+    Promise.resolve(loader()).catch(function () {}).then(function () {
+      root._josWeatherFetchStarted = false;
+      if (isHomeViewActive()) {
+        try { enhanceDashboard(); } catch (e) {}
+      }
+    });
+  }
+
   function enhanceDashboard() {
     var root = ownPixelView('v-dashboard', 'jos-dash-root');
     if (!root) return;
@@ -11721,8 +11804,10 @@
       : { name: '', text: 'No reviews yet', rating: 0 });
     var reviewsNew = Math.min(6, reviews.length || 0);
     var dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-    var weatherTemp = 72;
-    var weatherLbl = 'Sunny · 0% rain';
+    var weatherSummary = homeWeatherSummary();
+    var weatherTemp = weatherSummary.tempLabel;
+    var weatherLbl = weatherSummary.detail;
+    ensureHomeWeatherLoaded(root);
     var staleCustomers = customers().filter(function (c) {
       var last = c.lastJobDate || c.lastVisit || c.updatedAt;
       if (!last) return true;
@@ -11780,7 +11865,9 @@
       '<p class="jos-home-hero-motivation">Here\'s what deserves your attention next — Hubly is watching the business with you.</p>' +
       '</div>' +
       '<div class="jos-home-hero-meta">' +
-      '<div class="jos-home-weather"><span class="jos-home-weather-temp">' + weatherTemp + '°F</span><span>' + esc(weatherLbl) + '</span></div>' +
+      '<div class="jos-home-weather" title="' + esc(weatherSummary.city || S().city || 'Weather') + '">' +
+      '<span class="jos-home-weather-temp">' + esc(weatherTemp) + '</span>' +
+      '<span>' + esc(weatherLbl) + '</span></div>' +
       '<div class="jos-home-date">' + esc(dateLabel) + '</div>' +
       '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="toggle-customize">Customize</button>' +
       '</div></header>';
