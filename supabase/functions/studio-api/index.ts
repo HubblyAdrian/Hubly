@@ -31,10 +31,19 @@ import {
   buildCampaignPlan,
   hublyTemplateCatalog,
   listCampaignGoals,
-  suggestCampaigns,
+  planToCampaignBrief,
   type BusinessCampaignContext,
   type CampaignPlan,
 } from "../_shared/hubly_campaign_engine.ts";
+import {
+  buildStudioBusinessContext,
+} from "../_shared/hubly_studio_business_context.ts";
+import { recommendCampaigns } from "../_shared/hubly_studio_recommendations.ts";
+import {
+  getV1Publisher,
+  listPublisherSlots,
+} from "../_shared/hubly_studio_publisher.ts";
+import { V1_PUBLISH_CHANNEL } from "../_shared/hubly_studio_campaign_brief.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -482,6 +491,36 @@ Deno.serve(async (req: Request) => {
           design_id: project.canva_design_id || null,
           status: "Provider not configured",
         },
+        brief: plan
+          ? planToCampaignBrief({
+              playbook_id: String(plan.playbook_id || "dt_review_spotlight"),
+              goal_id: String(plan.goal_id || "get_more_reviews"),
+              industry_id: String(plan.industry_id || "detailing"),
+              title: String(plan.title || project.title),
+              objective: String(plan.objective || ""),
+              channels: Array.isArray(plan.channels) ? plan.channels : ["email"],
+              required_assets: Array.isArray(plan.required_assets) ? plan.required_assets : [],
+              messaging_strategy: String(plan.messaging_strategy || ""),
+              cta: String(plan.cta || "Book now"),
+              timing: plan.timing || { season: "any", month: new Date().getMonth() + 1, suggest_at: new Date().toISOString(), schedule_hints: [] },
+              template_refs: Array.isArray(plan.template_refs) ? plan.template_refs : [],
+              offer: plan.offer || { type: "none", summary: "" },
+              audience: String(plan.audience || ""),
+              ai_brief: String(plan.ai_brief || ""),
+              business_inputs: plan.business_inputs || { business_name: project.title },
+              dna_inputs: plan.dna_inputs || {},
+              package: plan.package || {
+                captions: [],
+                headlines: [String(plan.title || project.title)],
+                hashtags: [],
+                email: { subject: String(plan.title || ""), body: String(plan.ai_brief || "") },
+                sms: "",
+                google_business_post: "",
+                schedule_suggestions: [],
+              },
+            } as CampaignPlan)
+          : null,
+        v1_channel: V1_PUBLISH_CHANNEL,
       });
     }
 
@@ -533,6 +572,85 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Campaign Engine ──
+    // ── V1 Business Context + Recommendation Engine ──
+    if (resource === "context" && method === "GET") {
+      const { data: biz } = await admin
+        .from("businesses")
+        .select("id,name,meta")
+        .eq("id", businessId)
+        .maybeSingle();
+      const meta = (biz?.meta || {}) as Record<string, unknown>;
+      const memory = (meta.memory || meta.businessMemory || {}) as Record<string, unknown>;
+      const dna = (meta.dna || meta.businessDna || {}) as Record<string, unknown>;
+      const { data: lastPub } = await admin
+        .from("studio_publish_queue")
+        .select("updated_at,created_at")
+        .eq("business_id", businessId)
+        .eq("status", "published")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      let daysSince: number | null = null;
+      if (lastPub) {
+        const t = new Date(String(lastPub.updated_at || lastPub.created_at)).getTime();
+        if (!isNaN(t)) daysSince = Math.floor((Date.now() - t) / 86400000);
+      }
+      const ctx = buildStudioBusinessContext({
+        business_id: businessId!,
+        business_name: (biz?.name as string) || null,
+        industry: (memory.industry as string) || (meta.industry as string) || "detailing",
+        city: (memory.city as string) || null,
+        phone: (memory.phone as string) || null,
+        services: Array.isArray(memory.services) ? (memory.services as string[]) : [],
+        tone: (dna.tone as string) || null,
+        brand_personality: (dna.personality as string) || null,
+        days_since_last_studio_publish: daysSince,
+        has_logo: true,
+      });
+      return json({ context: ctx, v1_channel: V1_PUBLISH_CHANNEL });
+    }
+
+    if (resource === "recommend" && method === "GET") {
+      const { data: biz } = await admin
+        .from("businesses")
+        .select("id,name,meta")
+        .eq("id", businessId)
+        .maybeSingle();
+      const meta = (biz?.meta || {}) as Record<string, unknown>;
+      const memory = (meta.memory || {}) as Record<string, unknown>;
+      const dna = (meta.dna || {}) as Record<string, unknown>;
+      const bodyHints = body as Record<string, unknown>;
+      const ctx = buildStudioBusinessContext({
+        business_id: businessId!,
+        business_name: (biz?.name as string) || null,
+        industry: (bodyHints.industry as string) || (memory.industry as string) || "detailing",
+        city: (memory.city as string) || null,
+        services: Array.isArray(bodyHints.services)
+          ? (bodyHints.services as string[])
+          : Array.isArray(memory.services) ? (memory.services as string[]) : ["Ceramic Coating", "Mobile Detail"],
+        tone: (dna.tone as string) || "Premium",
+        completed_jobs_week: Number(bodyHints.completed_jobs_week) || 4,
+        open_slots_tomorrow: Number(bodyHints.open_slots_tomorrow) || 0,
+        latest_review: (bodyHints.latest_review as {
+          stars: number;
+          quote: string;
+          author?: string;
+        }) || { stars: 5, quote: "Best mobile detail I've ever booked.", author: "Alex" },
+        job_photos_count: Number(bodyHints.job_photos_count) || 2,
+        has_before_after: bodyHints.has_before_after !== false,
+        service_focus: (bodyHints.service_focus as string) || "Ceramic Coatings",
+        days_since_last_studio_publish:
+          bodyHints.days_since_last_studio_publish != null
+            ? Number(bodyHints.days_since_last_studio_publish)
+            : 10,
+      });
+      return json({
+        context: ctx,
+        recommendations: recommendCampaigns(ctx),
+        v1_channel: V1_PUBLISH_CHANNEL,
+      });
+    }
+
     if (resource === "campaign" && id === "suggest" && method === "GET") {
       const { data: biz } = await admin
         .from("businesses")
@@ -542,17 +660,26 @@ Deno.serve(async (req: Request) => {
       const meta = (biz?.meta || {}) as Record<string, unknown>;
       const memory = (meta.memory || meta.businessMemory || {}) as Record<string, unknown>;
       const dna = (meta.dna || meta.businessDna || {}) as Record<string, unknown>;
-      const ctx: BusinessCampaignContext = {
-        industry: (memory.industry as string) || (meta.industry as string) || null,
+      const studioCtx = buildStudioBusinessContext({
+        business_id: businessId!,
         business_name: (biz?.name as string) || null,
+        industry: (memory.industry as string) || (meta.industry as string) || "detailing",
         city: (memory.city as string) || null,
-        dna: {
-          tone: (dna.tone as string) || null,
-          brand_personality: (dna.personality as string) || null,
-          ideal_customer: (dna.idealCustomer as string) || null,
-        },
-      };
-      return json({ suggestions: suggestCampaigns(ctx), goals: listCampaignGoals() });
+        tone: (dna.tone as string) || null,
+        brand_personality: (dna.personality as string) || null,
+        completed_jobs_week: 4,
+        has_before_after: true,
+        latest_review: { stars: 5, quote: "Best mobile detail I've ever booked.", author: "Alex" },
+        days_since_last_studio_publish: 10,
+        service_focus: "Ceramic Coatings",
+        services: ["Mobile Detail", "Ceramic Coating"],
+      });
+      return json({
+        suggestions: recommendCampaigns(studioCtx),
+        recommendations: recommendCampaigns(studioCtx),
+        goals: listCampaignGoals(),
+        v1_channel: V1_PUBLISH_CHANNEL,
+      });
     }
 
     if (resource === "campaign" && id === "plan" && method === "POST") {
@@ -640,8 +767,10 @@ Deno.serve(async (req: Request) => {
       if (error) {
         return json({
           plan,
+          brief: planToCampaignBrief(plan),
           persisted: false,
           warning: error.message,
+          v1_channel: V1_PUBLISH_CHANNEL,
         }, 200);
       }
 
@@ -693,7 +822,18 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      return json({ plan: saved, campaignPlan: plan, project }, 201);
+      const brief = planToCampaignBrief(plan, {
+        logo_url: null,
+        photo_url: null,
+      });
+
+      return json({
+        plan: saved,
+        campaignPlan: plan,
+        brief,
+        project,
+        v1_channel: V1_PUBLISH_CHANNEL,
+      }, 201);
     }
 
     if (resource === "campaign" && id === "plans" && method === "GET" && !sub) {
@@ -896,6 +1036,155 @@ Deno.serve(async (req: Request) => {
         .single();
       if (error) return json({ error: error.message }, 400);
       return json({ account: data });
+    }
+
+    // ── V1 Publish (Email only) + Analytics counters ──
+    if (resource === "publish" && method === "POST") {
+      const publisher = getV1Publisher();
+      const b = body as Record<string, unknown>;
+      const projectId = (b.project_id as string) || null;
+      let subject = String(b.subject || "").trim();
+      let emailBody = String(b.body || b.email_body || "").trim();
+      let title = String(b.title || "Studio campaign").trim();
+
+      if (projectId) {
+        const { data: project } = await admin
+          .from("studio_projects")
+          .select("*")
+          .eq("business_id", businessId)
+          .eq("id", projectId)
+          .maybeSingle();
+        if (project) {
+          title = project.title || title;
+          const canvas = (project.canvas || {}) as Record<string, unknown>;
+          const pkg = (canvas.package || {}) as Record<string, unknown>;
+          const email = (pkg.email || {}) as { subject?: string; body?: string };
+          if (!subject) subject = email.subject || `${project.title}`;
+          if (!emailBody) emailBody = email.body || String(project.prompt || "");
+        }
+      }
+
+      const toEmail = String(b.to_email || "").trim();
+      if (!toEmail) {
+        return json({
+          error: "to_email required",
+          message: "V1 publishes via Email. Provide a recipient email to send this campaign.",
+          v1_channel: V1_PUBLISH_CHANNEL,
+          publishers: listPublisherSlots(),
+        }, 400);
+      }
+
+      if (!publisher.isConfigured()) {
+        // Queue as ready — honest about provider
+        const { data: item } = await admin
+          .from("studio_publish_queue")
+          .insert({
+            business_id: businessId,
+            project_id: projectId,
+            title,
+            caption: emailBody.slice(0, 500),
+            channels: ["email"],
+            status: "ready",
+            result: { provider: "email", error: "Provider not configured" },
+          })
+          .select("*")
+          .single();
+        return json({
+          error: "Provider not configured",
+          message: "Add RESEND_API_KEY to send email. Campaign queued as ready in Hubly.",
+          item,
+          v1_channel: V1_PUBLISH_CHANNEL,
+        }, 503);
+      }
+
+      const result = await publisher.publish({
+        business_id: businessId!,
+        project_id: projectId,
+        title,
+        to_email: toEmail,
+        to_name: (b.to_name as string) || null,
+        subject: subject || title,
+        body: emailBody || title,
+        business_name: (b.business_name as string) || null,
+      });
+
+      const { data: item, error: qErr } = await admin
+        .from("studio_publish_queue")
+        .insert({
+          business_id: businessId,
+          project_id: projectId,
+          title,
+          caption: emailBody.slice(0, 500),
+          channels: ["email"],
+          status: result.ok ? "published" : "failed",
+          result: result,
+          scheduled_at: new Date().toISOString(),
+        })
+        .select("*")
+        .single();
+      if (qErr) return json({ error: qErr.message, result }, 400);
+
+      if (result.ok && projectId) {
+        await admin
+          .from("studio_projects")
+          .update({ status: "published", updated_at: new Date().toISOString() })
+          .eq("id", projectId)
+          .eq("business_id", businessId);
+      }
+
+      if (!result.ok) {
+        return json({ error: result.error, item, result, v1_channel: V1_PUBLISH_CHANNEL }, 502);
+      }
+      return json({ ok: true, item, result, v1_channel: V1_PUBLISH_CHANNEL }, 201);
+    }
+
+    if (resource === "publishers" && method === "GET") {
+      const pub = getV1Publisher();
+      return json({
+        v1_channel: V1_PUBLISH_CHANNEL,
+        publishers: listPublisherSlots(),
+        configured: { email: pub.isConfigured() },
+      });
+    }
+
+    if (resource === "analytics" && method === "GET") {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const sinceIso = since.toISOString();
+      const [{ count: created }, { count: published }, { data: pubs }] = await Promise.all([
+        admin
+          .from("studio_projects")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId)
+          .gte("created_at", sinceIso),
+        admin
+          .from("studio_publish_queue")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId)
+          .eq("status", "published")
+          .gte("created_at", sinceIso),
+        admin
+          .from("studio_publish_queue")
+          .select("created_at")
+          .eq("business_id", businessId)
+          .eq("status", "published")
+          .gte("created_at", sinceIso),
+      ]);
+      const pubCount = published || 0;
+      const postingFrequency = pubCount === 0
+        ? "No publishes yet"
+        : `${(pubCount / 4.3).toFixed(1)} per week (last 30 days)`;
+      return json({
+        period_days: 30,
+        metrics: {
+          campaigns_created: created || 0,
+          campaigns_published: pubCount,
+          posting_frequency: postingFrequency,
+        },
+        // V1: no reach/clicks/quotes/bookings/revenue
+        deferred: ["reach", "clicks", "quotes", "bookings", "revenue_attribution"],
+        publishes: (pubs || []).length,
+      });
     }
 
     return json({ error: "not_found", path: parts }, 404);

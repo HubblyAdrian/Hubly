@@ -165,6 +165,45 @@
         ]
       });
     }
+    
+    if (p === 'recommend' && method === 'GET') {
+      return Promise.resolve({
+        _local: true,
+        v1_channel: 'email',
+        recommendations: [
+          { playbook_id: 'dt_review_spotlight', goal_id: 'get_more_reviews', title: 'Review Spotlight', reason: 'New 5-star review ready', priority: 150, channel: 'email' },
+          { playbook_id: 'dt_before_after', goal_id: 'book_more_jobs', title: 'Before & After Reveal', reason: 'Job photos available', priority: 140, channel: 'email' },
+          { playbook_id: 'dt_ceramic', goal_id: 'promote_service', title: 'Promote Ceramic Coatings', reason: 'Service in your catalog', priority: 130, channel: 'email' }
+        ]
+      });
+    }
+    if (p === 'analytics' && method === 'GET') {
+      return Promise.resolve({
+        _local: true,
+        metrics: { campaigns_created: (os.projects || []).length, campaigns_published: (os.queue || []).filter(function (q) { return q.status === 'published'; }).length, posting_frequency: 'No publishes yet' },
+        deferred: ['reach', 'clicks', 'quotes', 'bookings', 'revenue_attribution']
+      });
+    }
+    if (p === 'publish' && method === 'POST') {
+      var item = {
+        id: 'q_' + Math.random().toString(36).slice(2, 9),
+        title: body.title || 'Studio campaign',
+        channels: ['email'],
+        status: 'ready',
+        project_id: body.project_id || null,
+        caption: (body.body || '').slice(0, 200)
+      };
+      os.queue = os.queue || [];
+      os.queue.unshift(item);
+      return Promise.resolve({
+        _local: true,
+        error: 'Provider not configured',
+        message: 'Add RESEND_API_KEY to send email. Campaign queued as ready in Hubly.',
+        item: item,
+        v1_channel: 'email'
+      });
+    }
+
     if (p === 'campaign/goals' && method === 'GET') {
       return Promise.resolve({
         _local: true,
@@ -228,7 +267,9 @@
       };
       os.projects = os.projects || [];
       os.projects.unshift(proj);
-      return Promise.resolve({ _local: true, campaignPlan: plan, project: proj, persisted: false });
+      var brief = { campaign: title, goal: goalId, channel: 'email', tone: 'Premium', offer: null, business_name: body.business_name || 'Your business', service_name: body.service_focus || null, review_text: null, cta: 'Book now', playbook_id: plan.playbook_id, assets: { review: null, logo: null, photo: null }, prompt_template: 'Write email copy for ' + title };
+      proj.canvas.brief = brief;
+      return Promise.resolve({ _local: true, campaignPlan: plan, brief: brief, project: proj, persisted: false, v1_channel: 'email' });
     }
     if (p.indexOf('projects/') === 0 && p.indexOf('/customize') > 0 && method === 'POST') {
       return Promise.resolve({

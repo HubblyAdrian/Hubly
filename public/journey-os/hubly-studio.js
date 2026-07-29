@@ -48,15 +48,17 @@
   ];
 
   var GOAL_TO_PLAYBOOK = {
-    get_more_reviews: 'hs_review_spotlight',
-    fill_tomorrow_schedule: 'hs_fill_schedule',
-    promote_service: 'hs_promote_service',
-    win_back_customers: 'hs_win_back',
-    seasonal_promotion: 'hs_holiday',
+    get_more_reviews: 'dt_review_spotlight',
+    fill_tomorrow_schedule: 'dt_fill_schedule',
+    promote_service: 'dt_ceramic',
+    win_back_customers: 'dt_win_back',
+    seasonal_promotion: 'dt_seasonal',
     membership_drive: 'hs_membership',
-    book_more_jobs: 'hs_before_after',
+    book_more_jobs: 'dt_before_after',
     referral: 'hs_referral'
   };
+
+  var V1_CHANNEL = 'email';
 
   function el(id) { return document.getElementById(id); }
   function S() { return global.S || {}; }
@@ -178,7 +180,7 @@
       '<div class="hs-sidebar-foot">' +
       '<div class="hs-storage"><span>Cloud Storage</span><strong>' + used + ' / ' + quota + ' GB</strong>' +
       '<div class="hs-storage-bar"><i style="width:' + pct + '%"></i></div></div>' +
-      '<div class="hs-canva-badge">Visual editing powered when connected</div>' +
+      '<div class="hs-canva-badge">Optional visual polish</div>' +
       '<button type="button" class="hs-user" data-hs-act="go-settings">' +
       '<span class="hs-avatar">' + esc(initials()) + '</span>' +
       '<span class="hs-user-meta"><strong>' + esc(ownerFirst()) + ' · ' + esc(bizName().split(/\s+/).slice(0, 2).join(' ')) + '</strong>' +
@@ -203,22 +205,11 @@
         '<span>' + esc(f.size) + '</span></button>';
     }).join('');
 
-    var recs = [
-      { title: 'Share Your Kitchen Renovation', kind: 'Instagram Carousel', tone: 'kitchen' },
-      { title: 'Summer A/C Tune-Up Special', kind: 'Local Facebook Ad', tone: 'ac' },
-      { title: 'Referral Campaign Promotion', kind: 'Direct Mailer Print', tone: 'referral' }
-    ].map(function (r) {
-      return '<article class="hs-rec-card">' +
-        '<div class="hs-rec-media tone-' + r.tone + '"></div>' +
-        '<div class="hs-rec-body"><strong>' + esc(r.title) + '</strong><span>' + esc(r.kind) + '</span>' +
-        '<button type="button" class="hs-link" data-hs-act="quick-draft" data-hs-title="' + esc(r.title) + '">Quick Draft →</button></div></article>';
-    }).join('');
-
     var recent = (os.projects || []).slice(0, 4);
     if (!recent.length) {
       recent = [
-        { id: 'demo1', title: 'Winter Pipes Checklist', format_primary: 'print_flyer', last_edited_at: new Date(Date.now() - 7200000).toISOString(), _placeholder: true },
-        { id: 'demo2', title: 'Before/After: Bathroom Leak Fix', format_primary: 'instagram_post', last_edited_at: new Date(Date.now() - 86400000).toISOString(), _placeholder: true }
+        { id: 'demo1', title: 'Ceramic Coating Spotlight', format_primary: 'instagram_post', last_edited_at: new Date(Date.now() - 7200000).toISOString(), _placeholder: true },
+        { id: 'demo2', title: 'Before/After: Full Detail', format_primary: 'instagram_post', last_edited_at: new Date(Date.now() - 86400000).toISOString(), _placeholder: true }
       ];
     }
     var recentHtml = recent.map(function (p) {
@@ -231,36 +222,59 @@
     var queue = (os.queue || []).slice(0, 4);
     if (!queue.length) {
       queue = [
-        { title: 'Check out this pristine kitchen reno…', scheduled_at: 'Today, 4:00 PM', status: 'ready', _placeholder: true },
-        { title: 'Local plumbers you can trust!', scheduled_at: 'Tomorrow, 9:00 AM', status: 'draft', _placeholder: true }
+        { title: 'Review Spotlight — email draft', scheduled_at: 'Ready to send', status: 'ready', _placeholder: true }
       ];
     }
     var queueHtml = queue.map(function (q) {
-      var st = q.status === 'ready' ? 'ready' : 'draft';
+      var st = q.status === 'published' ? 'ready' : (q.status === 'ready' ? 'ready' : 'draft');
       return '<div class="hs-queue-row">' +
-        '<div><strong>' + esc(q.scheduled_at || 'Unscheduled') + '</strong> <span class="hs-pill ' + st + '">' + esc(st === 'ready' ? 'Ready' : 'Draft') + '</span>' +
-        '<p>' + esc(q.title || q.caption || 'Scheduled post') + '</p></div></div>';
+        '<div><strong>' + esc(q.scheduled_at || 'Unscheduled') + '</strong> <span class="hs-pill ' + st + '">' + esc(q.status || 'draft') + '</span>' +
+        '<p>' + esc(q.title || q.caption || 'Email campaign') + '</p></div></div>';
     }).join('');
+
+    var recsMount = '<div id="hs-rec-mount" class="hs-rec-row"><div class="hs-muted">Loading recommendations…</div></div>';
 
     var body =
       '<header class="hs-page-head">' +
       '<div><h1>' + esc(greet) + ', ' + esc(ownerFirst()) + '.</h1>' +
-      '<p>You completed ' + completedYest + ' jobs recently. Let\'s turn today\'s work into local marketing!</p></div>' +
+      '<p>You completed ' + completedYest + ' jobs recently. Pick a recommendation — generate, optionally polish visuals, publish by email.</p></div>' +
       '</header>' +
       '<div class="hs-ai-search">' +
-      '<input type="text" id="hs-home-prompt" placeholder="What will you create today? Describe an idea or search templates…">' +
-      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="ai-draft">+ AI Draft</button>' +
+      '<input type="text" id="hs-home-prompt" placeholder="What will you create today? Or pick a recommendation below…">' +
+      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="ai-draft">+ Generate Campaign</button>' +
       '</div>' +
+      '<section class="hs-section"><h2><span class="hs-spark">✦</span> Recommended for you</h2>' +
+      '<p class="hs-muted hs-section-sub">Based on Hubly jobs, reviews, photos, and posting cadence — not external data.</p>' +
+      recsMount + '</section>' +
       '<section class="hs-section"><h2>Start from a blank canvas</h2>' +
       '<div class="hs-blank-row">' + formats + '</div></section>' +
-      '<section class="hs-section"><h2><span class="hs-spark">✦</span> AI-Powered recommendations based on recent jobs</h2>' +
-      '<div class="hs-rec-row">' + recs + '</div></section>' +
       '<div class="hs-home-split">' +
       '<section class="hs-section"><h2>Recent Projects</h2><div class="hs-card">' + recentHtml + '</div></section>' +
-      '<section class="hs-section"><h2>Scheduled Social Queue</h2><div class="hs-card">' + queueHtml + '</div></section>' +
+      '<section class="hs-section"><h2>Email Publish Queue</h2><div class="hs-card">' + queueHtml + '</div></section>' +
       '</div>';
 
     root.innerHTML = shell('home', body);
+    var mount = root.querySelector('#hs-rec-mount');
+    var Api = api();
+    function paintRecs(list) {
+      if (!mount) return;
+      var rows = (list && list.length) ? list : [
+        { title: 'Review Spotlight', reason: 'New 5-star review ready', playbook_id: 'dt_review_spotlight', goal_id: 'get_more_reviews' },
+        { title: 'Before & After Reveal', reason: 'Job photos available', playbook_id: 'dt_before_after', goal_id: 'book_more_jobs' },
+        { title: 'Promote Ceramic Coatings', reason: 'Service in your catalog', playbook_id: 'dt_ceramic', goal_id: 'promote_service' }
+      ];
+      mount.innerHTML = rows.slice(0, 3).map(function (r) {
+        return '<article class="hs-rec-card">' +
+          '<div class="hs-rec-media tone-referral"></div>' +
+          '<div class="hs-rec-body"><strong>' + esc(r.title) + '</strong><span>' + esc(r.reason || 'Recommended') + ' · Email</span>' +
+          '<button type="button" class="hs-link" data-hs-act="campaign-goal" data-hs-goal="' + esc(r.goal_id || '') + '" data-hs-playbook="' + esc(r.playbook_id || '') + '">Generate →</button></div></article>';
+      }).join('');
+    }
+    if (Api) {
+      Api.request('recommend', { method: 'GET' }).then(function (res) {
+        paintRecs((res && (res.recommendations || res.suggestions)) || []);
+      }).catch(function () { paintRecs([]); });
+    } else paintRecs([]);
   }
 
   function renderAiCreator(root) {
@@ -502,27 +516,30 @@
   function renderAnalytics(root) {
     var body =
       '<header class="hs-page-head hs-page-head-row">' +
-      '<div><h1>Analytics</h1><p>Business outcomes from Studio campaigns — not design vanity metrics.</p></div>' +
+      '<div><h1>Analytics</h1><p>V1 counters — outcomes attribution comes after publishing is live in the field.</p></div>' +
       '<div class="hs-head-actions">' +
-      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="noop">Last 30 Days</button>' +
-      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="noop">Export Report</button></div></header>' +
-      '<div class="hs-kpi-row">' +
-      [['REACH', '—', ''], ['CLICKS', '—', ''], ['QUOTES REQUESTED', '—', ''], ['JOBS BOOKED', '—', ''], ['REVENUE INFLUENCED', '—', '']].map(function (k) {
-        return '<div class="hs-kpi"><span>' + k[0] + '</span><strong>' + k[1] + '</strong><em class="hs-muted">Connect channels for live outcomes</em></div>';
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="noop">Last 30 Days</button></div></header>' +
+      '<div id="hs-analytics-mount" class="hs-kpi-row">' +
+      [['CAMPAIGNS CREATED', '—'], ['CAMPAIGNS PUBLISHED', '—'], ['POSTING FREQUENCY', '—']].map(function (k) {
+        return '<div class="hs-kpi"><span>' + k[0] + '</span><strong>' + k[1] + '</strong></div>';
       }).join('') + '</div>' +
-      '<div class="hs-analytics-grid">' +
-      '<section class="hs-card hs-pad"><h3>Top Performing Campaigns</h3><p class="hs-muted">Publish campaigns to populate this list.</p></section>' +
-      '<section class="hs-card hs-pad"><h3>Channel Breakdown</h3><p class="hs-muted">Instagram · Facebook · Google · Email · SMS — when connected.</p></section>' +
-      '</div>' +
-      '<div class="hs-analytics-grid">' +
-      '<section class="hs-card hs-pad"><h3>Engagement Over Time</h3><p class="hs-muted">No snapshot yet — Studio stores analytics only from real providers.</p>' +
-      '<div class="hs-line-ph"></div></section>' +
-      '<section class="hs-card hs-pad"><h3><span class="hs-spark">✦</span> Studio AI Insights</h3>' +
-      '<div class="hs-insight">Review spotlights often outperform generic promos for home services.</div>' +
-      '<div class="hs-insight">Campaign goals beat blank canvases — start from AI Creator.</div>' +
-      '<div class="hs-insight">Seasonal checklists convert well on Google Business.</div></section>' +
-      '</div>';
+      '<section class="hs-card hs-pad"><h3>What V1 tracks</h3>' +
+      '<p class="hs-muted">Created · Published · Posting frequency. Reach, clicks, quotes, bookings, and revenue attribution are deferred.</p></section>';
     root.innerHTML = shell('analytics', body);
+    var Api = api();
+    var mount = root.querySelector('#hs-analytics-mount');
+    if (Api && mount) {
+      Api.request('analytics', { method: 'GET' }).then(function (res) {
+        var m = (res && res.metrics) || {};
+        mount.innerHTML = [
+          ['CAMPAIGNS CREATED', m.campaigns_created != null ? m.campaigns_created : '—'],
+          ['CAMPAIGNS PUBLISHED', m.campaigns_published != null ? m.campaigns_published : '—'],
+          ['POSTING FREQUENCY', m.posting_frequency || '—']
+        ].map(function (k) {
+          return '<div class="hs-kpi"><span>' + k[0] + '</span><strong>' + esc(String(k[1])) + '</strong></div>';
+        }).join('');
+      }).catch(function () {});
+    }
   }
 
   function renderProjects(root) {
@@ -580,6 +597,7 @@
 
     var sideNav = [
       ['overview', 'Campaign Overview'],
+      ['brief', 'Campaign Brief'],
       ['assets', 'Assets'],
       ['versions', 'Versions'],
       ['comments', 'Comments'],
@@ -597,6 +615,19 @@
       leftBody = '<div class="hs-ws-panel"><h3>Assets</h3><p class="hs-muted">Job photos, logo, and reviews linked to this campaign.</p>' +
         '<ul class="hs-ws-list"><li>Brand logo</li><li>Job photos</li><li>Review quote</li></ul>' +
         '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="uploads">Manage uploads</button></div>';
+    } else if (tab === 'brief') {
+      var brief = (project.canvas && project.canvas.brief) || project.brief || null;
+      leftBody = '<div class="hs-ws-panel"><h3>Campaign Brief</h3>' +
+        (brief
+          ? '<dl class="hs-brief-dl">' +
+            '<div><dt>Campaign</dt><dd>' + esc(brief.campaign || project.title) + '</dd></div>' +
+            '<div><dt>Goal</dt><dd>' + esc(brief.goal || '') + '</dd></div>' +
+            '<div><dt>Channel</dt><dd>' + esc(brief.channel || V1_CHANNEL) + '</dd></div>' +
+            '<div><dt>Tone</dt><dd>' + esc(brief.tone || '') + '</dd></div>' +
+            '<div><dt>CTA</dt><dd>' + esc(brief.cta || '') + '</dd></div>' +
+            '</dl><p class="hs-muted hs-tiny">AI Writer uses this brief only — strategy stays in the Campaign Engine.</p>'
+          : '<p class="hs-muted">Brief is created when you generate from a playbook.</p>') +
+        '</div>';
     } else if (tab === 'versions') {
       leftBody = '<div class="hs-ws-panel"><h3>Versions</h3><p class="hs-muted">Hubly keeps version history as you generate and return from visual edits.</p>' +
         '<div class="hs-ws-version on"><strong>v1 · Created in Hubly</strong><span>' + esc(relativeEdit(project.last_edited_at || project.created_at)) + '</span></div></div>';
@@ -646,8 +677,8 @@
       '<span class="hs-pill ' + (project.status === 'ready' ? 'ready' : 'draft') + '">' + esc(project.status || 'draft') + '</span>' +
       '<button type="button" data-hs-act="close-editor" title="Close">✕</button></div>' +
       '<div class="hs-head-actions">' +
-      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="publish-queue">✈ Publish to Queue</button>' +
-      '<button type="button" class="hs-btn hs-btn-brand hs-btn-customize" data-hs-act="customize-design">Customize Design</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="publish-email">✈ Publish Email</button>' +
+      '<button type="button" class="hs-btn hs-btn-brand hs-btn-customize" data-hs-act="customize-design">Customize in Canva</button>' +
       '</div></header>' +
       '<div class="hs-canvas hs-preview-canvas">' +
       '<div class="hs-design hs-design-preview" id="hs-design">' +
@@ -783,6 +814,11 @@
           project.canvas.headline = (res.campaignPlan.package && res.campaignPlan.package.headlines && res.campaignPlan.package.headlines[0]) || project.title;
           project.prompt = res.campaignPlan.ai_brief || project.prompt;
         }
+        if (res.brief) {
+          project.canvas = project.canvas || {};
+          project.canvas.brief = res.brief;
+          project.brief = res.brief;
+        }
         if (!(os.projects || []).some(function (p) { return p.id === project.id; })) {
           os.projects.unshift(project);
         }
@@ -797,7 +833,7 @@
           prompt: plan.ai_brief,
           headline: (plan.package && plan.package.headlines && plan.package.headlines[0]) || plan.title,
           metadata: { goal_id: plan.goal_id, playbook_id: plan.playbook_id },
-          canvas: { headline: plan.title, package: plan.package }
+          canvas: { headline: plan.title, package: plan.package, brief: res.brief || null }
         });
       }
       fallbackLocal();
@@ -843,7 +879,10 @@
       return generateCampaign(goalFromPrompt);
     }
     if (act === 'campaign-goal') {
-      return generateCampaign(t.getAttribute('data-hs-goal') || 'book_more_jobs');
+      var g = t.getAttribute('data-hs-goal') || 'book_more_jobs';
+      var pb = t.getAttribute('data-hs-playbook');
+      if (pb) GOAL_TO_PLAYBOOK[g] = pb;
+      return generateCampaign(g);
     }
     if (act === 'open-project') {
       if (t.getAttribute('data-hs-placeholder') === '1') {
@@ -914,26 +953,42 @@
       toast('Studio AI — Stage 2 when Hubly AI credentials are configured');
       return;
     }
-    if (act === 'publish-queue') {
+    if (act === 'publish-email' || act === 'publish-queue') {
       var proj3 = os.projects.find(function (p) { return p.id === os.ui.editorProjectId; });
-      var title = (proj3 && proj3.title) || 'Studio post';
+      var title = (proj3 && proj3.title) || 'Studio campaign';
       var Api2 = api();
-      var item = { title: title, status: 'ready', scheduled_at: 'Today, 4:00 PM', project_id: proj3 && proj3.id, channels: ['instagram'] };
+      var pkg = (proj3 && proj3.canvas && proj3.canvas.package) || {};
+      var email = pkg.email || {};
+      var toEmail = window.prompt('V1 publishes by Email. Recipient email:', (S().ownerEmail || S().email || ''));
+      if (!toEmail) {
+        toast('Publish cancelled — email required for V1');
+        return;
+      }
+      toast('Publishing via Email…');
       if (Api2) {
-        Api2.request('queue', { method: 'POST', body: item }).then(function (res) {
+        Api2.request('publish', {
+          method: 'POST',
+          body: {
+            project_id: proj3 && proj3.id,
+            title: title,
+            to_email: toEmail,
+            subject: email.subject || title,
+            body: email.body || (proj3 && proj3.prompt) || title,
+            business_name: bizName()
+          }
+        }).then(function (res) {
           if (res && res.item) os.queue.unshift(res.item);
-          else os.queue.unshift(item);
           persistStudioMeta();
-          toast('Added to Publish queue');
+          if (res && res.error === 'Provider not configured') {
+            toast(res.message || 'Email provider not configured — queued as ready in Hubly');
+          } else if (res && res.ok) {
+            toast('Published by email');
+          } else {
+            toast((res && res.message) || (res && res.error) || 'Publish saved to queue');
+          }
         }).catch(function () {
-          os.queue.unshift(item);
-          persistStudioMeta();
-          toast('Saved to queue (local)');
+          toast('Could not publish — try again');
         });
-      } else {
-        os.queue.unshift(item);
-        persistStudioMeta();
-        toast('Saved to queue');
       }
       return;
     }

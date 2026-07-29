@@ -1,13 +1,22 @@
 /**
- * Hubly Campaign Engine — marketing knowledge + structured Campaign Plans.
+ * Hubly Campaign Engine — marketing knowledge + structured Campaign Plans / Briefs.
  *
  * Layers:
- *   Studio UI → Campaign Engine (this) → Knowledge (playbooks/calendar/triggers)
+ *   Business Context → Campaign Engine → Recommendation Engine → Project Workspace
  *
- * AI is the writer, not the strategist. Strategy comes from playbooks + business inputs.
+ * AI is the writer, not the strategist. Strategy comes from playbooks.
  * Memory (facts) and DNA (identity) stay separate in plan inputs.
  * Canva is a renderer — not part of this module.
  */
+
+import {
+  buildCampaignBrief,
+  V1_PUBLISH_CHANNEL,
+  type CampaignBrief,
+} from "./hubly_studio_campaign_brief.ts";
+
+export type { CampaignBrief };
+export { V1_PUBLISH_CHANNEL };
 
 export type CampaignChannel =
   | "instagram"
@@ -127,11 +136,27 @@ type PlaybookSeed = {
   offer_type: string;
   cta: string;
   messaging_strategy: string;
+  /** @deprecated Prefer prompt_template — kept for older call sites */
   ai_prompt: string;
+  /**
+   * Writer template — may ONLY reference Campaign Brief schema placeholders.
+   * Never open-ended strategy ("come up with a marketing campaign").
+   */
+  prompt_template: string;
   template_refs: { source: "hubly" | "canva"; id: string }[];
   priority: number;
   assets: { key: RequiredAssetKey; required: boolean; notes?: string }[];
 };
+
+const DEFAULT_PROMPT_TEMPLATE =
+  "Write {channel} copy for the {campaign} campaign for {business_name}. Goal: {goal}. Tone: {tone}. Service: {service_name}. Offer: {offer}. Review: {review_text}. CTA: {cta}. Use only these facts; do not invent a new campaign.";
+
+function withPrompt(seed: Omit<PlaybookSeed, "prompt_template"> & { prompt_template?: string }): PlaybookSeed {
+  return {
+    ...seed,
+    prompt_template: seed.prompt_template || DEFAULT_PROMPT_TEMPLATE,
+  };
+}
 
 const GOALS: { id: CampaignGoalId; label: string; description: string }[] = [
   { id: "get_more_reviews", label: "Get More Reviews", description: "Turn happy customers into public social proof." },
@@ -159,12 +184,132 @@ const INDUSTRY_ALIASES: Record<string, IndustryId> = {
   landscaping: "landscaping",
   "lawn care": "landscaping",
   detailing: "detailing",
+  "mobile detailing": "detailing",
+  "auto detailing": "detailing",
   cleaning: "cleaning",
   "home services": "home_services",
 };
 
 /** Embedded catalog mirrors SQL seed — used when DB rows are unavailable. */
-export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = [
+const _PLAYBOOK_SEEDS: Array<Omit<PlaybookSeed, "prompt_template"> & { prompt_template?: string }> = [
+  // ── Detailing-first (V1 success metric: mobile detailer) ──
+  {
+    id: "dt_review_spotlight",
+    industry_id: "detailing",
+    goal_id: "get_more_reviews",
+    title: "Review Spotlight",
+    season: "any",
+    audience: "existing_customers",
+    channels: ["email", "instagram", "facebook"],
+    offer_type: "none",
+    cta: "Book your detail",
+    messaging_strategy: "Lead with the customer quote; thank them; invite neighbors.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
+    prompt_template: DEFAULT_PROMPT_TEMPLATE,
+    template_refs: [{ source: "hubly", id: "review_highlight" }],
+    priority: 100,
+    assets: [
+      { key: "review", required: true },
+      { key: "logo", required: true },
+    ],
+  },
+  {
+    id: "dt_before_after",
+    industry_id: "detailing",
+    goal_id: "book_more_jobs",
+    title: "Before & After Reveal",
+    season: "any",
+    audience: "local_prospects",
+    channels: ["email", "instagram", "facebook"],
+    offer_type: "none",
+    cta: "Book this detail",
+    messaging_strategy: "Side-by-side proof; short outcome headline; soft CTA.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
+    prompt_template: DEFAULT_PROMPT_TEMPLATE,
+    template_refs: [{ source: "hubly", id: "before_after" }],
+    priority: 95,
+    assets: [
+      { key: "before_after", required: true },
+      { key: "logo", required: true },
+    ],
+  },
+  {
+    id: "dt_fill_schedule",
+    industry_id: "detailing",
+    goal_id: "fill_tomorrow_schedule",
+    title: "Open Slots Tomorrow",
+    season: "any",
+    audience: "local_prospects",
+    channels: ["email", "sms"],
+    offer_type: "percent_off",
+    cta: "Claim a slot",
+    messaging_strategy: "Urgency without panic; limited openings tomorrow.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
+    prompt_template: DEFAULT_PROMPT_TEMPLATE,
+    template_refs: [{ source: "hubly", id: "seasonal_offer" }],
+    priority: 90,
+    assets: [
+      { key: "offer", required: true },
+      { key: "phone", required: true },
+    ],
+  },
+  {
+    id: "dt_ceramic",
+    industry_id: "detailing",
+    goal_id: "promote_service",
+    title: "Promote Ceramic Coatings",
+    season: "any",
+    audience: "local_prospects",
+    channels: ["email", "instagram"],
+    offer_type: "none",
+    cta: "Ask about ceramic",
+    messaging_strategy: "Name ceramic coating; one benefit; proof; clear CTA.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
+    prompt_template: DEFAULT_PROMPT_TEMPLATE,
+    template_refs: [{ source: "hubly", id: "seasonal_offer" }],
+    priority: 88,
+    assets: [
+      { key: "logo", required: true },
+      { key: "job_photos", required: false },
+    ],
+  },
+  {
+    id: "dt_win_back",
+    industry_id: "detailing",
+    goal_id: "win_back_customers",
+    title: "Win Back Past Customers",
+    season: "any",
+    audience: "past_customers",
+    channels: ["email", "sms"],
+    offer_type: "percent_off",
+    cta: "Book your return detail",
+    messaging_strategy: "Warm, personal; exclusive win-back offer.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
+    prompt_template: DEFAULT_PROMPT_TEMPLATE,
+    template_refs: [{ source: "hubly", id: "membership_promotion" }],
+    priority: 85,
+    assets: [{ key: "offer", required: true }],
+  },
+  {
+    id: "dt_seasonal",
+    industry_id: "detailing",
+    goal_id: "seasonal_promotion",
+    title: "Seasonal Detail Special",
+    season: "any",
+    audience: "local_prospects",
+    channels: ["email", "instagram"],
+    offer_type: "percent_off",
+    cta: "Book seasonal special",
+    messaging_strategy: "Seasonal timing; curb appeal / paint protection framing.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
+    prompt_template: DEFAULT_PROMPT_TEMPLATE,
+    template_refs: [{ source: "hubly", id: "seasonal_offer" }],
+    priority: 80,
+    assets: [
+      { key: "logo", required: true },
+      { key: "offer", required: false },
+    ],
+  },
   {
     id: "hs_review_spotlight",
     industry_id: "home_services",
@@ -172,12 +317,11 @@ export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = [
     title: "Review Spotlight",
     season: "any",
     audience: "existing_customers",
-    channels: ["instagram", "facebook", "google_business"],
+    channels: ["email", "instagram", "facebook", "google_business"],
     offer_type: "none",
     cta: "Leave a review",
     messaging_strategy: "Lead with the customer quote; keep branding quiet; one clear review CTA.",
-    ai_prompt:
-      "Create a review spotlight graphic and caption that quotes the customer, thanks them, and invites neighbors to book.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
     template_refs: [{ source: "hubly", id: "review_highlight" }],
     priority: 100,
     assets: [
@@ -192,12 +336,11 @@ export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = [
     title: "Before & After Highlight",
     season: "any",
     audience: "local_prospects",
-    channels: ["instagram", "facebook", "google_business"],
+    channels: ["email", "instagram", "facebook", "google_business"],
     offer_type: "none",
     cta: "Book this service",
     messaging_strategy: "Side-by-side proof; short outcome headline; soft CTA.",
-    ai_prompt:
-      "Create a before/after campaign from completed job photos with a concise outcome headline and booking CTA.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
     template_refs: [{ source: "hubly", id: "before_after" }],
     priority: 95,
     assets: [
@@ -212,12 +355,11 @@ export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = [
     title: "Open Slots Tomorrow",
     season: "any",
     audience: "local_prospects",
-    channels: ["facebook", "instagram", "sms", "google_business"],
+    channels: ["email", "facebook", "instagram", "sms", "google_business"],
     offer_type: "percent_off",
     cta: "Claim a slot",
     messaging_strategy: "Urgency without panic; limited openings; same-day or next-day focus.",
-    ai_prompt:
-      "Create a same/next-day availability campaign that fills open schedule slots with a clear CTA.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
     template_refs: [{ source: "hubly", id: "seasonal_offer" }],
     priority: 90,
     assets: [
@@ -236,8 +378,7 @@ export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = [
     offer_type: "percent_off",
     cta: "Book your return visit",
     messaging_strategy: "Warm, personal; reference last service season; exclusive win-back offer.",
-    ai_prompt:
-      "Create a win-back campaign for past customers with a friendly tone and a simple return offer.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
     template_refs: [{ source: "hubly", id: "membership_promotion" }],
     priority: 85,
     assets: [{ key: "offer", required: true }],
@@ -253,8 +394,7 @@ export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = [
     offer_type: "referral_reward",
     cta: "Refer a neighbor",
     messaging_strategy: "Thank existing customers; make the reward crystal clear.",
-    ai_prompt:
-      "Create a referral campaign package with poster, caption, email, and SMS inviting referrals.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
     template_refs: [{ source: "hubly", id: "referral_campaign" }],
     priority: 80,
     assets: [
@@ -273,8 +413,7 @@ export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = [
     offer_type: "membership",
     cta: "Join the plan",
     messaging_strategy: "Benefits over price; peace of mind; what members get each year.",
-    ai_prompt:
-      "Create a membership drive campaign explaining plan benefits and a clear join CTA.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
     template_refs: [{ source: "hubly", id: "membership_promotion" }],
     priority: 75,
     assets: [{ key: "membership_details", required: true }],
@@ -290,8 +429,7 @@ export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = [
     offer_type: "percent_off",
     cta: "Book for the holidays",
     messaging_strategy: "Seasonal warmth; gift-of-service framing; deadline for holiday week.",
-    ai_prompt:
-      "Create a holiday campaign with festive but professional home-service tone and a book-by date.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
     template_refs: [{ source: "hubly", id: "holiday_campaign" }],
     priority: 70,
     assets: [
@@ -310,8 +448,7 @@ export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = [
     offer_type: "none",
     cta: "Learn more / Book",
     messaging_strategy: "Name the service; proof; one benefit; clear CTA.",
-    ai_prompt:
-      "Create a service promotion campaign featuring the named service, benefits, and booking CTA.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
     template_refs: [{ source: "hubly", id: "seasonal_offer" }],
     priority: 88,
     assets: [
@@ -331,8 +468,7 @@ export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = [
     offer_type: "percent_off",
     cta: "Book spring cleaning",
     messaging_strategy: "Fresh start; curb appeal; luxury spring cleaning tone.",
-    ai_prompt:
-      "Create a luxury spring cleaning campaign for pressure washing with seasonal offer and local pride.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
     template_refs: [{ source: "hubly", id: "seasonal_offer" }],
     priority: 100,
     assets: [
@@ -352,7 +488,7 @@ export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = [
     offer_type: "percent_off",
     cta: "Book tune-up",
     messaging_strategy: "Comfort + bill savings; book before heat wave.",
-    ai_prompt: "Create a summer A/C tune-up campaign with maintenance checklist tone.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
     template_refs: [{ source: "hubly", id: "seasonal_offer" }],
     priority: 100,
     assets: [{ key: "offer", required: true }],
@@ -368,12 +504,14 @@ export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = [
     offer_type: "none",
     cta: "Reserve your spot",
     messaging_strategy: "Warm family moments; card-ready images; book early.",
-    ai_prompt: "Create a holiday family photo campaign with reservation urgency.",
+    ai_prompt: DEFAULT_PROMPT_TEMPLATE,
     template_refs: [{ source: "hubly", id: "holiday_campaign" }],
     priority: 95,
     assets: [{ key: "job_photos", required: true }],
   },
 ];
+
+export const EMBEDDED_PLAYBOOKS: PlaybookSeed[] = _PLAYBOOK_SEEDS.map(withPrompt);
 
 type TriggerSeed = {
   id: string;
@@ -453,12 +591,13 @@ export function listCampaignGoals() {
 }
 
 export function normalizeIndustry(raw?: string | null): IndustryId {
-  if (!raw) return "home_services";
+  if (!raw) return "detailing"; // V1 success metric: mobile detailer
   const key = String(raw).trim().toLowerCase();
   if ((Object.values(INDUSTRY_ALIASES) as string[]).includes(key)) return key as IndustryId;
   for (const [alias, id] of Object.entries(INDUSTRY_ALIASES)) {
     if (key.includes(alias)) return id;
   }
+  if (/detail/.test(key)) return "detailing";
   return "home_services";
 }
 
@@ -662,6 +801,7 @@ export function buildCampaignPlan(
   });
 
   const toneNote = ctx.dna?.tone ? ` Tone: ${ctx.dna.tone}.` : "";
+  // Writer brief — filled from playbook prompt_template (Brief schema only). No strategic invention.
   const ai_brief = [
     `Campaign: ${title}`,
     `Playbook: ${playbook.id}`,
@@ -672,13 +812,17 @@ export function buildCampaignPlan(
     offer ? `Offer: ${offer}` : null,
     ctx.service_focus ? `Service focus: ${ctx.service_focus}` : null,
     ctx.latest_review?.quote ? `Review: ${ctx.latest_review.quote}` : null,
-    `Strategy: ${playbook.messaging_strategy}`,
     `CTA: ${playbook.cta}`,
-    `Writer instruction: ${playbook.ai_prompt}.${toneNote}`,
-    "Return channel copy consistent with the structured package; do not invent a new campaign type.",
+    `Writer: ${playbook.prompt_template || playbook.ai_prompt}${toneNote}`,
+    "Use only the facts above. Do not invent a new campaign type.",
   ]
     .filter(Boolean)
     .join("\n");
+
+  // V1 primary channel is email — ensure package always has email copy
+  const channels = playbook.channels.includes("email")
+    ? playbook.channels
+    : (["email", ...playbook.channels] as CampaignChannel[]);
 
   return {
     playbook_id: playbook.id,
@@ -686,7 +830,7 @@ export function buildCampaignPlan(
     industry_id,
     title,
     objective: GOALS.find((g) => g.id === playbook.goal_id)?.description || playbook.messaging_strategy,
-    channels: playbook.channels,
+    channels,
     required_assets: playbook.assets,
     messaging_strategy: playbook.messaging_strategy,
     cta: playbook.cta,
@@ -759,3 +903,32 @@ export function hublyTemplateCatalog() {
     { id: "seasonal_offer", title: "Seasonal Offer", category: "seasonal", format: "instagram_post", source: "hubly" },
   ];
 }
+
+/** Map a Campaign Plan → Campaign Brief for the AI Writer (V1 contract). */
+export function planToCampaignBrief(
+  plan: CampaignPlan,
+  opts?: { logo_url?: string | null; photo_url?: string | null },
+): CampaignBrief {
+  const goalLabel = GOALS.find((g) => g.id === plan.goal_id)?.label || String(plan.goal_id);
+  const playbook = EMBEDDED_PLAYBOOKS.find((p) => p.id === plan.playbook_id);
+  return buildCampaignBrief({
+    campaign: plan.title,
+    goal: goalLabel,
+    tone: (plan.dna_inputs.tone as string) || "Professional",
+    offer: plan.offer.summary || null,
+    business_name: String(plan.business_inputs.business_name || "Your business"),
+    service_name: (plan.business_inputs.service_focus as string) ||
+      (Array.isArray(plan.business_inputs.services) && (plan.business_inputs.services as string[])[0]) ||
+      null,
+    cta: plan.cta,
+    playbook_id: plan.playbook_id,
+    prompt_template: playbook?.prompt_template || DEFAULT_PROMPT_TEMPLATE,
+    review_text: (plan.business_inputs.latest_review as { quote?: string } | null)?.quote || null,
+    assets: {
+      review: (plan.business_inputs.latest_review as { quote?: string } | null)?.quote || null,
+      logo: opts?.logo_url || null,
+      photo: opts?.photo_url || null,
+    },
+  });
+}
+
