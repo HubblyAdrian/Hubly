@@ -1,6 +1,8 @@
 /**
  * Hubly Studio — creative OS (replaces Operate Marketing tab).
- * Screens: Home · AI Creator · Templates · Editor · Brand Kit · Publish · Analytics
+ * Screens: Home · AI Creator · Projects · Templates · Brand Kit · Publish · Analytics
+ * Project Workspace (not a canvas editor) — Canva owns visual editing via Customize Design.
+ * Campaign Engine is the marketing brain; AI writes from structured plans.
  */
 (function (global) {
   'use strict';
@@ -28,6 +30,15 @@
     { id: 'email_header', label: 'Email Header', size: '600×200', tone: 'email' }
   ];
 
+  var CAMPAIGN_GOALS = [
+    { id: 'get_more_reviews', title: 'Get More Reviews', sub: 'Turn happy jobs into public social proof.' },
+    { id: 'fill_tomorrow_schedule', title: "Fill Tomorrow's Schedule", sub: 'Convert open capacity into booked jobs.' },
+    { id: 'promote_service', title: 'Promote Ceramic Coatings', sub: 'Or any featured service — Hubly builds the package.' },
+    { id: 'win_back_customers', title: 'Win Back Old Customers', sub: 'Re-engage past customers who went quiet.' },
+    { id: 'seasonal_promotion', title: 'Seasonal Promotion', sub: 'Calendar-timed campaigns for your trade.' },
+    { id: 'membership_drive', title: 'Membership Drive', sub: 'Grow recurring plans and maintenance memberships.' }
+  ];
+
   var AI_OBJECTIVES = [
     { id: 'carousel', title: 'Carousel from Job Photos', sub: 'Turn raw photos of your install into a sequence post.' },
     { id: 'before_after', title: 'Before/After Job Highlight', sub: 'Perfect comparison layout with review citation.' },
@@ -35,6 +46,17 @@
     { id: 'gmb', title: 'Google Business Update', sub: 'Optimized update with map photo placement.' },
     { id: 'review', title: 'Review Spotlight Post', sub: 'Highlight a fresh 5-star customer review.' }
   ];
+
+  var GOAL_TO_PLAYBOOK = {
+    get_more_reviews: 'hs_review_spotlight',
+    fill_tomorrow_schedule: 'hs_fill_schedule',
+    promote_service: 'hs_promote_service',
+    win_back_customers: 'hs_win_back',
+    seasonal_promotion: 'hs_holiday',
+    membership_drive: 'hs_membership',
+    book_more_jobs: 'hs_before_after',
+    referral: 'hs_referral'
+  };
 
   function el(id) { return document.getElementById(id); }
   function S() { return global.S || {}; }
@@ -156,7 +178,7 @@
       '<div class="hs-sidebar-foot">' +
       '<div class="hs-storage"><span>Cloud Storage</span><strong>' + used + ' / ' + quota + ' GB</strong>' +
       '<div class="hs-storage-bar"><i style="width:' + pct + '%"></i></div></div>' +
-      '<div class="hs-canva-badge">Powered by Canva SDK</div>' +
+      '<div class="hs-canva-badge">Visual editing powered when connected</div>' +
       '<button type="button" class="hs-user" data-hs-act="go-settings">' +
       '<span class="hs-avatar">' + esc(initials()) + '</span>' +
       '<span class="hs-user-meta"><strong>' + esc(ownerFirst()) + ' · ' + esc(bizName().split(/\s+/).slice(0, 2).join(' ')) + '</strong>' +
@@ -242,6 +264,11 @@
   }
 
   function renderAiCreator(root) {
+    var goals = CAMPAIGN_GOALS.map(function (o) {
+      return '<button type="button" class="hs-obj-card hs-goal-card" data-hs-act="campaign-goal" data-hs-goal="' + o.id + '">' +
+        '<strong>' + esc(o.title) + '</strong><span>' + esc(o.sub) + '</span><span class="hs-obj-arrow">↗</span></button>';
+    }).join('');
+
     var objectives = AI_OBJECTIVES.map(function (o) {
       return '<button type="button" class="hs-obj-card" data-hs-act="objective" data-hs-obj="' + o.id + '">' +
         '<strong>' + esc(o.title) + '</strong><span>' + esc(o.sub) + '</span><span class="hs-obj-arrow">↗</span></button>';
@@ -250,18 +277,21 @@
     var body =
       '<header class="hs-page-head hs-page-head-row">' +
       '<div><h1>AI Creative Partner</h1>' +
-      '<p>Describe your marketing goal and let Studio AI generate a beautiful layout from your business data.</p></div>' +
+      '<p>Pick a campaign goal — Hubly builds the full package. Visual polish is optional.</p></div>' +
       '<div class="hs-head-actions">' +
       '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="studio-guide">? Studio Guide</button>' +
       '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="blank" data-hs-format="instagram_post">+ Create Custom</button>' +
       '</div></header>' +
+      '<section class="hs-section"><h2><span class="hs-spark">✦</span> Start with a campaign goal</h2>' +
+      '<p class="hs-muted hs-section-sub">Hubly is the marketing brain. You get graphics, captions, email, SMS, Google Business, and schedule ideas — then customize visuals if you want.</p>' +
+      '<div class="hs-obj-row">' + goals + '</div></section>' +
       '<div class="hs-ai-layout">' +
       '<div class="hs-ai-prompt-card">' +
       '<div class="hs-ai-active"><span class="hs-spark">✦</span> ' + esc(bizName()) + ' AI assistant active</div>' +
       '<textarea id="hs-ai-prompt" rows="4">Create an Instagram Post showcasing our latest completed job, highlighted with a 5-star review.</textarea>' +
       '<div class="hs-ai-prompt-foot">' +
       '<div class="hs-attach-pills"><span>2 Job Photos Attached</span><span>★ 5-Star Review Linked</span></div>' +
-      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="generate-layout">✦ Generate Layout</button>' +
+      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="generate-layout">✦ Generate Campaign</button>' +
       '</div></div>' +
       '<aside class="hs-ai-settings">' +
       '<h3>AI Settings</h3>' +
@@ -290,31 +320,40 @@
     var Api = api();
     var body =
       '<header class="hs-page-head hs-page-head-row">' +
-      '<div><h1>Template Studio</h1>' +
-      '<p>Access high-quality templates tailored for plumbing, HVAC, electrical, and home services.</p></div>' +
+      '<div><h1>Template Gallery</h1>' +
+      '<p>Hubly templates for home services, plus AI campaigns. Prefer goals in AI Creator over browsing.</p></div>' +
       '<div class="hs-head-actions">' +
-      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="studio-guide">? Studio Guide</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="ai">✦ Campaign Goals</button>' +
       '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="blank" data-hs-format="instagram_post">+ Create Custom</button>' +
       '</div></header>' +
+      '<div class="hs-tpl-sources">' +
+      '<button type="button" class="hs-cat on" data-hs-act="tpl-source" data-hs-source="hubly">Hubly Templates</button>' +
+      '<button type="button" class="hs-cat" data-hs-act="tpl-source" data-hs-source="ai">AI Generated Campaigns</button>' +
+      '<button type="button" class="hs-cat" data-hs-act="tpl-source" data-hs-source="canva">Design Library</button>' +
+      '</div>' +
       '<div class="hs-search-bar">' +
       '<input type="search" id="hs-tpl-search" placeholder="Search templates (e.g. clogged drain, spring promotion)…">' +
       '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="tpl-filters">Filters</button></div>' +
       '<div class="hs-cat-pills">' +
-      ['All Designs', 'Social Media', 'Print Flyers', 'Email Bulletins', 'Local Ads', 'Seasonal', 'Before & After'].map(function (c, i) {
+      ['All Designs', 'Before & After', 'Review Highlight', 'Membership', 'Holiday', 'Referral', 'Seasonal'].map(function (c, i) {
         return '<button type="button" class="hs-cat' + (i === 0 ? ' on' : '') + '" data-hs-act="tpl-cat">' + esc(c) + '</button>';
       }).join('') + '</div>' +
       '<div id="hs-tpl-mount" class="hs-tpl-mount"><div class="hs-muted">Loading templates…</div></div>';
 
     root.innerHTML = shell('templates', body);
     var mount = root.querySelector('#hs-tpl-mount');
-    function paint(templates) {
+    function paint(templates, sources) {
+      sources = sources || {};
       var featured = (templates || []).filter(function (t) { return t.featured; });
       var rest = (templates || []).filter(function (t) { return !t.featured; });
+      var canvaNote = sources.canva
+        ? ''
+        : '<p class="hs-muted hs-tiny">Design library templates connect when your creative engine is linked — Hubly templates work now.</p>';
       mount.innerHTML =
-        '<section class="hs-section"><h2>Featured layouts this week</h2>' +
-        '<div class="hs-tpl-grid">' + (featured.length ? featured : templates).slice(0, 3).map(function (t) {
+        '<section class="hs-section"><h2>Featured Hubly layouts</h2>' + canvaNote +
+        '<div class="hs-tpl-grid">' + (featured.length ? featured : templates).slice(0, 6).map(function (t) {
           return '<button type="button" class="hs-tpl-card" data-hs-act="use-template" data-hs-id="' + esc(t.id) + '" data-hs-title="' + esc(t.title) + '" data-hs-format="' + esc(t.format || 'instagram_post') + '">' +
-            '<div class="hs-tpl-thumb"></div><strong>' + esc(t.title) + '</strong><span>' + esc((t.format || t.category || '').replace(/_/g, ' ')) + '</span></button>';
+            '<div class="hs-tpl-thumb"></div><strong>' + esc(t.title) + '</strong><span>' + esc((t.format || t.category || t.source || '').replace(/_/g, ' ')) + '</span></button>';
         }).join('') + '</div></section>' +
         '<section class="hs-section"><h2>Complete Library</h2>' +
         '<div class="hs-tpl-wide">' + (rest.length ? rest : templates).slice(0, 6).map(function (t) {
@@ -324,7 +363,7 @@
     }
     if (Api) {
       Api.request('templates', { method: 'GET' }).then(function (res) {
-        paint((res && res.templates) || []);
+        paint((res && res.templates) || [], (res && res.sources) || {});
       }).catch(function () { paint([]); });
     } else paint([]);
   }
@@ -463,24 +502,24 @@
   function renderAnalytics(root) {
     var body =
       '<header class="hs-page-head hs-page-head-row">' +
-      '<div><h1>Analytics</h1><p>Performance dashboard: monitor traction and optimize branding decisions</p></div>' +
+      '<div><h1>Analytics</h1><p>Business outcomes from Studio campaigns — not design vanity metrics.</p></div>' +
       '<div class="hs-head-actions">' +
       '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="noop">Last 30 Days</button>' +
       '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="noop">Export Report</button></div></header>' +
       '<div class="hs-kpi-row">' +
-      [['TOTAL REACH', '—', ''], ['LEADS GENERATED', '—', ''], ['ENGAGEMENT', '—', ''], ['BOOKINGS', '—', ''], ['REVENUE', '—', '']].map(function (k) {
-        return '<div class="hs-kpi"><span>' + k[0] + '</span><strong>' + k[1] + '</strong><em class="hs-muted">Connect social providers for live metrics</em></div>';
+      [['REACH', '—', ''], ['CLICKS', '—', ''], ['QUOTES REQUESTED', '—', ''], ['JOBS BOOKED', '—', ''], ['REVENUE INFLUENCED', '—', '']].map(function (k) {
+        return '<div class="hs-kpi"><span>' + k[0] + '</span><strong>' + k[1] + '</strong><em class="hs-muted">Connect channels for live outcomes</em></div>';
       }).join('') + '</div>' +
+      '<div class="hs-analytics-grid">' +
+      '<section class="hs-card hs-pad"><h3>Top Performing Campaigns</h3><p class="hs-muted">Publish campaigns to populate this list.</p></section>' +
+      '<section class="hs-card hs-pad"><h3>Channel Breakdown</h3><p class="hs-muted">Instagram · Facebook · Google · Email · SMS — when connected.</p></section>' +
+      '</div>' +
       '<div class="hs-analytics-grid">' +
       '<section class="hs-card hs-pad"><h3>Engagement Over Time</h3><p class="hs-muted">No snapshot yet — Studio stores analytics only from real providers.</p>' +
       '<div class="hs-line-ph"></div></section>' +
-      '<section class="hs-card hs-pad"><h3>Channel Breakdown</h3><p class="hs-muted">Instagram · Facebook · Google — when connected.</p></section>' +
-      '</div>' +
-      '<div class="hs-analytics-grid">' +
-      '<section class="hs-card hs-pad"><h3>Top Performing Designs</h3><p class="hs-muted">Publish posts to populate this list.</p></section>' +
       '<section class="hs-card hs-pad"><h3><span class="hs-spark">✦</span> Studio AI Insights</h3>' +
       '<div class="hs-insight">Review spotlights often outperform generic promos for home services.</div>' +
-      '<div class="hs-insight">Noon posts tend to win local engagement — confirm with your data.</div>' +
+      '<div class="hs-insight">Campaign goals beat blank canvases — start from AI Creator.</div>' +
       '<div class="hs-insight">Seasonal checklists convert well on Google Business.</div></section>' +
       '</div>';
     root.innerHTML = shell('analytics', body);
@@ -504,7 +543,7 @@
   function renderSimple(root, screen, title, sub) {
     root.innerHTML = shell(screen,
       '<header class="hs-page-head"><h1>' + esc(title) + '</h1><p>' + esc(sub) + '</p></header>' +
-      '<div class="hs-card hs-pad"><p class="hs-muted">Library opens in the Editor. Use AI Creator or Templates to start a design.</p>' +
+      '<div class="hs-card hs-pad"><p class="hs-muted">Use AI Creator goals or Templates, then open a Project Workspace.</p>' +
       '<div class="hs-btn-row">' +
       '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="nav" data-hs-screen="ai">AI Creator</button>' +
       '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="templates">Browse Templates</button>' +
@@ -515,90 +554,145 @@
     var os = ensureStudioOs();
     project = project || os.projects.find(function (p) { return p.id === os.ui.editorProjectId; }) || {
       id: 'draft',
-      title: 'Kitchen Renovation — Instagram Post',
-      canvas: { headline: 'Complete Kitchen Renovation' }
+      title: 'Campaign Project',
+      status: 'draft',
+      canvas: { headline: 'Complete Kitchen Renovation' },
+      format_primary: 'instagram_post',
+      export_status: 'none',
+      canva_design_id: null
     };
     os.ui.editorProjectId = project.id;
-    var tool = os.ui.editorTool || 'ai';
-    var headline = (project.canvas && project.canvas.headline) || 'Complete Kitchen Renovation';
-    var alts = ['No Leak Too Large', 'Kitchen Plumbing Perfected', headline];
+    os.ui.workspaceTab = os.ui.workspaceTab || 'overview';
+    var tab = os.ui.workspaceTab;
+    var headline = (project.canvas && project.canvas.headline) || project.title || 'Campaign preview';
+    var pkg = (project.canvas && project.canvas.package) || {};
+    var planMeta = project.metadata || {};
+    var channels = (pkg.captions || []).map(function (c) { return c.channel; });
+    if (!channels.length) channels = [project.platform || 'instagram'];
+    var pages = [
+      { id: 'instagram_post', label: 'Instagram Post' },
+      { id: 'facebook_feed', label: 'Facebook Feed' },
+      { id: 'instagram_story', label: 'Instagram Story' },
+      { id: 'google_business', label: 'Google Business' },
+      { id: 'email_header', label: 'Email' }
+    ];
+    var activePage = os.ui.workspacePage || project.format_primary || 'instagram_post';
 
-    var tools = [
-      ['templates', 'Templates'], ['photos', 'Photos'], ['text', 'Text'], ['elements', 'Elements'],
-      ['uploads', 'Uploads'], ['brand', 'Brand Kit'], ['ai', 'AI Suite']
+    var sideNav = [
+      ['overview', 'Campaign Overview'],
+      ['assets', 'Assets'],
+      ['versions', 'Versions'],
+      ['comments', 'Comments'],
+      ['ai', 'AI Suggestions'],
+      ['exports', 'Export History']
     ].map(function (t) {
-      return '<button type="button" class="hs-tool' + (tool === t[0] ? ' on' : '') + '" data-hs-act="editor-tool" data-hs-tool="' + t[0] + '">' +
-        '<span>' + t[1].charAt(0) + '</span><em>' + esc(t[1]) + '</em></button>';
+      var disabled = t[0] === 'comments' ? ' disabled' : '';
+      return '<button type="button" class="hs-ws-nav' + (tab === t[0] ? ' on' : '') + disabled + '" data-hs-act="workspace-tab" data-hs-tab="' + t[0] + '"' +
+        (t[0] === 'comments' ? ' title="Coming soon"' : '') + '>' + esc(t[1]) +
+        (t[0] === 'comments' ? ' <em>soon</em>' : '') + '</button>';
     }).join('');
 
-    var leftPanel = tool === 'elements'
-      ? '<div class="hs-panel"><h3>Elements Library</h3>' +
-        '<input type="search" placeholder="Search graphics, stickers…" class="hs-panel-search">' +
-        '<div class="hs-lbl tiny">FREQUENTLY USED</div>' +
-        '<button type="button" class="hs-el-card" data-hs-act="noop"><div class="hs-el-thumb"></div>Water Splash</button></div>'
-      : '<div class="hs-panel hs-ai-panel"><h3>Studio AI Partner</h3>' +
-        '<div class="hs-goal">Enhancing main header typography context…</div>' +
-        '<div class="hs-lbl tiny">Generated alternatives</div>' +
+    var leftBody = '';
+    if (tab === 'assets') {
+      leftBody = '<div class="hs-ws-panel"><h3>Assets</h3><p class="hs-muted">Job photos, logo, and reviews linked to this campaign.</p>' +
+        '<ul class="hs-ws-list"><li>Brand logo</li><li>Job photos</li><li>Review quote</li></ul>' +
+        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="uploads">Manage uploads</button></div>';
+    } else if (tab === 'versions') {
+      leftBody = '<div class="hs-ws-panel"><h3>Versions</h3><p class="hs-muted">Hubly keeps version history as you generate and return from visual edits.</p>' +
+        '<div class="hs-ws-version on"><strong>v1 · Created in Hubly</strong><span>' + esc(relativeEdit(project.last_edited_at || project.created_at)) + '</span></div></div>';
+    } else if (tab === 'ai') {
+      var alts = (pkg.headlines || [headline, 'No Leak Too Large', 'Kitchen Plumbing Perfected']);
+      leftBody = '<div class="hs-ws-panel hs-ai-panel"><h3>AI Suggestions</h3>' +
+        '<div class="hs-lbl tiny">Headlines</div>' +
         alts.map(function (a, i) {
-          return '<button type="button" class="hs-alt' + (i === alts.length - 1 ? ' on' : '') + '" data-hs-act="set-headline" data-hs-text="' + esc(a) + '">' + esc(a) + '</button>';
+          return '<button type="button" class="hs-alt' + (i === 0 ? ' on' : '') + '" data-hs-act="set-headline" data-hs-text="' + esc(a) + '">' + esc(a) + '</button>';
         }).join('') +
-        '<div class="hs-lbl tiny">AI Quick Commands</div><div class="hs-cmd-wrap">' +
-        ['Make headline punchier', 'Seasonal Summer theme style', 'Rewrite for expert authority', 'Highlight discount promo code', 'Translate to Spanish', 'Vary caption 5 times'].map(function (c) {
+        '<div class="hs-lbl tiny">Quick commands</div><div class="hs-cmd-wrap">' +
+        ['Make headline punchier', 'Rewrite for expert authority', 'Vary caption 5 times'].map(function (c) {
           return '<button type="button" class="hs-cmd" data-hs-act="ai-cmd" data-hs-cmd="' + esc(c) + '">' + esc(c) + '</button>';
-        }).join('') + '</div>' +
-        '<div class="hs-ai-ask"><input type="text" id="hs-editor-ask" placeholder="Ask AI to make changes…">' +
-        '<button type="button" class="hs-send" data-hs-act="editor-ask">➤</button></div></div>';
+        }).join('') + '</div></div>';
+    } else if (tab === 'exports') {
+      leftBody = '<div class="hs-ws-panel"><h3>Export History</h3>' +
+        '<p class="hs-muted">Status: <strong>' + esc(project.export_status || 'none') + '</strong></p>' +
+        '<p class="hs-muted">Exports appear after you customize visuals and Hubly pulls finished files.</p></div>';
+    } else {
+      leftBody = '<div class="hs-ws-panel"><h3>Campaign Overview</h3>' +
+        '<p>' + esc((project.prompt || 'Structured campaign package ready for publish.').slice(0, 280)) + '</p>' +
+        '<div class="hs-lbl tiny">Channels</div><div class="hs-attach-pills">' +
+        channels.map(function (c) { return '<span>' + esc(String(c)) + '</span>'; }).join('') +
+        '</div>' +
+        (pkg.schedule_suggestions && pkg.schedule_suggestions.length
+          ? '<div class="hs-lbl tiny">Schedule ideas</div><ul class="hs-ws-list">' +
+            pkg.schedule_suggestions.slice(0, 3).map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>'
+          : '') +
+        '</div>';
+    }
 
-    var pages = [
-      ['instagram_post', 'Instagram Post'],
-      ['facebook_feed', 'Facebook Feed'],
-      ['instagram_story', 'Instagram Story'],
-      ['print_flyer', 'Print Flyer']
-    ].map(function (p, i) {
-      return '<button type="button" class="hs-page-chip' + (i === 0 ? ' on' : '') + '" data-hs-act="noop">' +
-        '<span class="hs-page-thumb"></span>' + esc(p[1]) + '</button>';
+    var pageChips = pages.map(function (p) {
+      return '<button type="button" class="hs-page-chip' + (activePage === p.id ? ' on' : '') + '" data-hs-act="workspace-page" data-hs-page="' + p.id + '">' +
+        '<span class="hs-page-thumb"></span>' + esc(p.label) + '</button>';
     }).join('');
 
     root.innerHTML =
-      '<div class="hs-editor-shell">' +
-      '<aside class="hs-tool-rail">' + tools + '</aside>' +
-      leftPanel +
+      '<div class="hs-workspace-shell hs-editor-shell">' +
+      '<aside class="hs-ws-left">' +
+      '<div class="hs-ws-back"><button type="button" class="hs-link" data-hs-act="close-editor">← Projects</button></div>' +
+      '<nav class="hs-ws-sidenav" aria-label="Project sections">' + sideNav + '</nav>' +
+      leftBody +
+      '</aside>' +
       '<div class="hs-canvas-wrap">' +
       '<header class="hs-editor-top">' +
       '<div class="hs-editor-title"><strong id="hs-editor-title">' + esc(project.title) + '</strong>' +
-      '<button type="button" data-hs-act="noop" title="Undo">↺</button>' +
+      '<span class="hs-pill ' + (project.status === 'ready' ? 'ready' : 'draft') + '">' + esc(project.status || 'draft') + '</span>' +
       '<button type="button" data-hs-act="close-editor" title="Close">✕</button></div>' +
       '<div class="hs-head-actions">' +
-      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="share-link">Share Link</button>' +
-      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="publish-queue">✈ Publish to Queue</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="publish-queue">✈ Publish to Queue</button>' +
+      '<button type="button" class="hs-btn hs-btn-brand hs-btn-customize" data-hs-act="customize-design">Customize Design</button>' +
       '</div></header>' +
-      '<div class="hs-canvas">' +
-      '<div class="hs-design" id="hs-design">' +
+      '<div class="hs-canvas hs-preview-canvas">' +
+      '<div class="hs-design hs-design-preview" id="hs-design">' +
       '<div class="hs-design-photos"><div class="hs-ph before"></div><div class="hs-ph after"></div>' +
       '<span class="hs-biz-pill">' + esc(bizName()) + '</span></div>' +
-      '<div class="hs-design-headline is-selected" data-hs-act="select-text">' +
-      '<span class="hs-ai-badge">AI Active</span>' +
-      '<h2 id="hs-canvas-headline" contenteditable="true">' + esc(headline) + '</h2></div>' +
+      '<div class="hs-design-headline">' +
+      '<h2 id="hs-canvas-headline">' + esc(headline) + '</h2></div>' +
       '<div class="hs-design-review">★★★★★ <em>“Fixed our plumbing leak in record time.” — Mrs. Miller</em></div>' +
-      '<div class="hs-design-cta"><span>NEED SERVICE?</span><strong>Call ' + esc(S().phone || '(555) 302-2849') + '</strong>' +
-      '<span class="hs-qr" aria-hidden="true"></span></div>' +
+      '<div class="hs-design-cta"><span>NEED SERVICE?</span><strong>Call ' + esc(S().phone || '(555) 302-2849') + '</strong></div>' +
+      '<div class="hs-preview-note">Preview · not a live canvas. Customize Design opens visual editing, then returns here.</div>' +
       '</div></div>' +
-      '<footer class="hs-pages-bar"><span class="hs-lbl tiny">PAGES IN SET</span><div class="hs-pages-row">' + pages +
-      '<button type="button" class="hs-page-add" data-hs-act="noop">+</button></div></footer>' +
+      '<footer class="hs-pages-bar"><span class="hs-lbl tiny">PAGES IN SET</span><div class="hs-pages-row">' + pageChips + '</div>' +
+      '<span class="hs-export-pill">Export: ' + esc(project.export_status || 'none') +
+      (project.canva_design_id ? ' · Design linked' : '') + '</span></footer>' +
       '</div>' +
-      '<aside class="hs-props">' +
-      '<h3>Text Selected</h3>' +
-      '<label>Font Family<select id="hs-font"><option>Plus Jakarta Sans</option><option>DM Sans</option><option>Outfit</option></select></label>' +
-      '<div class="hs-prop-row"><label>Size<input type="number" value="22" min="8" max="96"></label>' +
-      '<div class="hs-align"><button type="button" class="on" data-hs-act="noop">L</button><button type="button" data-hs-act="noop">C</button><button type="button" data-hs-act="noop">R</button></div></div>' +
-      '<div class="hs-lbl">Text Color</div><div class="hs-swatches">' +
-      ['#1E293B', '#D9632D', '#FFFFFF', '#D97706'].map(function (c) {
-        return '<button type="button" class="hs-swatch" style="background:' + c + '" data-hs-act="noop"></button>';
-      }).join('') + '</div>' +
-      ['Shadow Depth', 'Letter Spacing', 'Line Height', 'Opacity'].map(function (lab, i) {
-        return '<label class="hs-slider-lbl">' + lab + '<input type="range" min="0" max="100" value="' + (i === 3 ? 100 : 40) + '"></label>';
-      }).join('') +
-      '</aside></div>';
+      '<aside class="hs-props hs-ws-meta">' +
+      '<h3>Campaign</h3>' +
+      '<label>Campaign Name<input type="text" id="hs-ws-name" value="' + esc(project.title) + '" readonly></label>' +
+      '<label>Status<input type="text" value="' + esc(project.status || 'draft') + '" readonly></label>' +
+      '<div class="hs-lbl">Channels</div><div class="hs-attach-pills">' +
+      channels.map(function (c) { return '<span>' + esc(String(c)) + '</span>'; }).join('') + '</div>' +
+      '<label>Publish Date<input type="text" value="Not scheduled" readonly></label>' +
+      '<label>Brand Kit<input type="text" value="' + esc(bizName()) + '" readonly></label>' +
+      '<div class="hs-lbl">Assets Used</div><p class="hs-muted hs-tiny">Logo · Job photos · Review</p>' +
+      '<div class="hs-lbl">AI Summary</div><p class="hs-muted hs-tiny">' +
+      esc((planMeta.summary || project.prompt || 'Campaign package generated from Hubly playbooks.').slice(0, 160)) + '</p>' +
+      '<div class="hs-lbl">Performance Goals</div><p class="hs-muted hs-tiny">Quotes requested · Jobs booked · Revenue influenced</p>' +
+      '<div class="hs-ws-cta-block">' +
+      '<button type="button" class="hs-btn hs-btn-brand hs-btn-block" data-hs-act="customize-design">Customize Design</button>' +
+      '<p class="hs-muted hs-tiny">Hubly stays open. Visual edit is one step — you return to this project.</p>' +
+      '</div></aside></div>';
+
+    // Soft-hydrate workspace from API when available
+    var Api = api();
+    if (Api && project.id && String(project.id).indexOf('loc_') !== 0 && String(project.id).indexOf('demo') !== 0) {
+      Api.request('projects/' + project.id + '/workspace', { method: 'GET' }).then(function (res) {
+        if (!res || res.error || !res.project) return;
+        var idx = (os.projects || []).findIndex(function (p) { return p.id === res.project.id; });
+        if (idx >= 0) os.projects[idx] = Object.assign({}, os.projects[idx], res.project);
+        if (res.campaignPlan && os.projects[idx]) {
+          os.projects[idx].canvas = os.projects[idx].canvas || {};
+          os.projects[idx].canvas.package = res.campaignPlan.package || os.projects[idx].canvas.package;
+        }
+      }).catch(function () {});
+    }
   }
 
   function openEditorFor(project) {
@@ -607,6 +701,7 @@
     var os = ensureStudioOs();
     os.ui.screen = 'editor';
     os.ui.editorProjectId = project && project.id;
+    os.ui.workspaceTab = 'overview';
     renderEditor(root, project);
     wireRoot(root);
   }
@@ -621,7 +716,9 @@
       style: opts.style || 'bold',
       tone: opts.tone || 'expert',
       prompt: opts.prompt || '',
-      canvas: { headline: opts.headline || 'Complete Kitchen Renovation' }
+      canvas: opts.canvas || { headline: opts.headline || opts.title || 'Campaign preview' },
+      metadata: opts.metadata || {},
+      campaign_plan_id: opts.campaign_plan_id || null
     };
     function done(project) {
       var os = ensureStudioOs();
@@ -636,11 +733,75 @@
       Api.request('projects', { method: 'POST', body: payload }).then(function (res) {
         done((res && res.project) || payload);
       }).catch(function () {
-        done(Object.assign({ id: 'loc_' + Date.now(), last_edited_at: new Date().toISOString() }, payload));
+        done(Object.assign({ id: 'loc_' + Date.now(), last_edited_at: new Date().toISOString(), status: 'draft' }, payload));
       });
     } else {
-      done(Object.assign({ id: 'loc_' + Date.now(), last_edited_at: new Date().toISOString() }, payload));
+      done(Object.assign({ id: 'loc_' + Date.now(), last_edited_at: new Date().toISOString(), status: 'draft' }, payload));
     }
+  }
+
+  function generateCampaign(goalId, extra) {
+    extra = extra || {};
+    var Api = api();
+    var goal = CAMPAIGN_GOALS.find(function (g) { return g.id === goalId; });
+    toast('Building campaign package…');
+    var body = {
+      goal_id: goalId,
+      playbook_id: GOAL_TO_PLAYBOOK[goalId] || null,
+      business_name: bizName(),
+      create_project: true,
+      service_focus: goalId === 'promote_service' ? (extra.service_focus || 'Ceramic Coatings') : null,
+      latest_review: { stars: 5, quote: 'Fixed our plumbing leak in record time.', author: 'Mrs. Miller' },
+      has_before_after: true,
+      job_photos_count: 2,
+      completed_jobs_week: 4
+    };
+    function fallbackLocal() {
+      createProject({
+        title: (goal && goal.title) || 'Campaign',
+        prompt: 'Campaign goal: ' + goalId,
+        headline: (goal && goal.title) || 'Campaign',
+        metadata: { goal_id: goalId },
+        canvas: {
+          headline: (goal && goal.title) || 'Campaign',
+          package: {
+            headlines: [(goal && goal.title) || 'Campaign'],
+            captions: [{ channel: 'instagram', text: 'Campaign from Hubly Studio' }],
+            schedule_suggestions: ['Tomorrow 12:00 PM — peak local engagement window']
+          }
+        }
+      });
+    }
+    if (!Api) return fallbackLocal();
+    Api.request('campaign/plan', { method: 'POST', body: body }).then(function (res) {
+      if (res && res.project) {
+        var os = ensureStudioOs();
+        var project = res.project;
+        if (res.campaignPlan) {
+          project.canvas = project.canvas || {};
+          project.canvas.package = res.campaignPlan.package;
+          project.canvas.headline = (res.campaignPlan.package && res.campaignPlan.package.headlines && res.campaignPlan.package.headlines[0]) || project.title;
+          project.prompt = res.campaignPlan.ai_brief || project.prompt;
+        }
+        if (!(os.projects || []).some(function (p) { return p.id === project.id; })) {
+          os.projects.unshift(project);
+        }
+        persistStudioMeta();
+        openEditorFor(project);
+        return;
+      }
+      if (res && res.campaignPlan) {
+        var plan = res.campaignPlan;
+        return createProject({
+          title: plan.title,
+          prompt: plan.ai_brief,
+          headline: (plan.package && plan.package.headlines && plan.package.headlines[0]) || plan.title,
+          metadata: { goal_id: plan.goal_id, playbook_id: plan.playbook_id },
+          canvas: { headline: plan.title, package: plan.package }
+        });
+      }
+      fallbackLocal();
+    }).catch(function () { fallbackLocal(); });
   }
 
   function handleAct(act, t, root) {
@@ -673,7 +834,16 @@
     }
     if (act === 'generate-layout') {
       var p = (el('hs-ai-prompt') || {}).value || '';
-      return createProject({ prompt: p, title: 'AI Layout — ' + bizName(), headline: 'Complete Kitchen Renovation' });
+      var goalFromPrompt = /review/i.test(p) ? 'get_more_reviews'
+        : /refer/i.test(p) ? 'referral'
+        : /member/i.test(p) ? 'membership_drive'
+        : /schedule|tomorrow|open slot/i.test(p) ? 'fill_tomorrow_schedule'
+        : /before|after|job/i.test(p) ? 'book_more_jobs'
+        : 'get_more_reviews';
+      return generateCampaign(goalFromPrompt);
+    }
+    if (act === 'campaign-goal') {
+      return generateCampaign(t.getAttribute('data-hs-goal') || 'book_more_jobs');
     }
     if (act === 'open-project') {
       if (t.getAttribute('data-hs-placeholder') === '1') {
@@ -686,12 +856,41 @@
       return;
     }
     if (act === 'close-editor') {
-      os.ui.screen = 'home';
+      os.ui.screen = 'projects';
       return render();
     }
-    if (act === 'editor-tool') {
-      os.ui.editorTool = t.getAttribute('data-hs-tool') || 'ai';
+    if (act === 'workspace-tab') {
+      os.ui.workspaceTab = t.getAttribute('data-hs-tab') || 'overview';
       return openEditorFor(os.projects.find(function (p) { return p.id === os.ui.editorProjectId; }));
+    }
+    if (act === 'workspace-page') {
+      os.ui.workspacePage = t.getAttribute('data-hs-page') || 'instagram_post';
+      return openEditorFor(os.projects.find(function (p) { return p.id === os.ui.editorProjectId; }));
+    }
+    if (act === 'customize-design') {
+      var projC = os.projects.find(function (p) { return p.id === os.ui.editorProjectId; });
+      if (!projC) return toast('Open a project first');
+      var ApiC = api();
+      var correlation = String(projC.id || '').slice(0, 50);
+      toast('Preparing visual editor…');
+      if (ApiC && String(projC.id).indexOf('loc_') !== 0) {
+        ApiC.request('projects/' + projC.id + '/customize', {
+          method: 'POST',
+          body: { correlation_state: correlation }
+        }).then(function (res) {
+          if (res && res.edit_url) {
+            try { window.open(res.edit_url, '_blank', 'noopener'); } catch (e) {}
+            toast('Edit in the visual editor — you will return to this Hubly project.');
+            return;
+          }
+          toast((res && res.message) || 'Visual editor not connected yet. Your Hubly project is ready — connect the creative engine in Apps.');
+        }).catch(function () {
+          toast('Visual editor not connected yet. Connect via Apps — Hubly keeps your campaign package.');
+        });
+      } else {
+        toast('Visual editor not connected yet. Connect via Apps — Hubly keeps your campaign package.');
+      }
+      return;
     }
     if (act === 'set-headline') {
       var text = t.getAttribute('data-hs-text') || '';
@@ -747,7 +946,19 @@
       return;
     }
     if (act === 'studio-guide') {
-      toast('Studio Guide — use AI Creator to draft, Editor to refine, Publish to schedule.');
+      toast('Studio Guide — pick a campaign goal, review the package in Project Workspace, Customize Design if needed, then Publish in Hubly.');
+      return;
+    }
+    if (act === 'tpl-source') {
+      root.querySelectorAll('.hs-tpl-sources .hs-cat').forEach(function (c) { c.classList.remove('on'); });
+      t.classList.add('on');
+      if (t.getAttribute('data-hs-source') === 'ai') {
+        os.ui.screen = 'ai';
+        return render();
+      }
+      if (t.getAttribute('data-hs-source') === 'canva') {
+        toast('Design library connects when the creative engine is linked in Apps.');
+      }
       return;
     }
     if (act === 'apply-brand' || act === 'upload-logo') {
@@ -801,11 +1012,11 @@
     if (screen === 'publish') return renderPublish(root);
     if (screen === 'analytics') return renderAnalytics(root);
     if (screen === 'projects') return renderProjects(root);
-    if (screen === 'photos') return renderSimple(root, 'photos', 'Photos', 'Job photos and portfolio for Studio designs.');
-    if (screen === 'elements') return renderSimple(root, 'elements', 'Elements', 'Graphics and stickers — open in the Editor.');
+    if (screen === 'photos') return renderSimple(root, 'photos', 'Photos', 'Job photos and portfolio for Studio campaigns.');
+    if (screen === 'elements') return renderSimple(root, 'elements', 'Elements', 'Graphics for campaign packages — open a project to attach assets.');
     if (screen === 'uploads') return renderSimple(root, 'uploads', 'Uploads', 'Your uploaded brand and job media.');
     if (screen === 'settings') {
-      return renderSimple(root, 'settings', 'Studio Settings', 'Storage, Canva link, and Studio preferences.');
+      return renderSimple(root, 'settings', 'Studio Settings', 'Storage, creative engine link, and Studio preferences.');
     }
     return renderHome(root);
   }
@@ -867,7 +1078,9 @@
     ensureState: ensureStudioOs,
     open: openStudio,
     openEditor: openEditorFor,
-    createProject: createProject
+    openWorkspace: openEditorFor,
+    createProject: createProject,
+    generateCampaign: generateCampaign
   };
   global.HublyStudio = apiExport;
   if (global.HublyJourneyOS) {

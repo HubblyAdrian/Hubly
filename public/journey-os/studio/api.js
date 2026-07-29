@@ -154,14 +154,101 @@
     if (p === 'templates' && method === 'GET') {
       return Promise.resolve({
         _local: true,
+        sources: { hubly: true, canva: false, ai_generated: true },
         templates: [
-          { id: 't1', title: 'Premium Heat Checkup', category: 'print', format: 'print_flyer', featured: true },
-          { id: 't2', title: "Mrs. Miller's Review Post", category: 'social', format: 'instagram_post', featured: true },
-          { id: 't3', title: 'Emergency Leak Special', category: 'local', format: 'google_business', featured: true },
-          { id: 't4', title: 'Kitchen Restoration Classic', category: 'social', format: 'instagram_post', featured: false },
-          { id: 't5', title: 'A/C Tune-Up Seasonal Offer', category: 'email', format: 'email_header', featured: false },
-          { id: 't6', title: 'Referral Rewards Banner', category: 'print', format: 'print_flyer', featured: false }
+          { id: 'before_after', title: 'Before & After', category: 'proof', format: 'instagram_post', featured: true, source: 'hubly' },
+          { id: 'review_highlight', title: 'Review Highlight', category: 'social', format: 'instagram_post', featured: true, source: 'hubly' },
+          { id: 'membership_promotion', title: 'Membership Promotion', category: 'growth', format: 'facebook_post', featured: true, source: 'hubly' },
+          { id: 'holiday_campaign', title: 'Holiday Campaign', category: 'seasonal', format: 'instagram_post', featured: true, source: 'hubly' },
+          { id: 'referral_campaign', title: 'Referral Campaign', category: 'growth', format: 'print_flyer', featured: false, source: 'hubly' },
+          { id: 'seasonal_offer', title: 'Seasonal Offer', category: 'seasonal', format: 'instagram_post', featured: false, source: 'hubly' }
         ]
+      });
+    }
+    if (p === 'campaign/goals' && method === 'GET') {
+      return Promise.resolve({
+        _local: true,
+        goals: [
+          { id: 'get_more_reviews', label: 'Get More Reviews' },
+          { id: 'fill_tomorrow_schedule', label: "Fill Tomorrow's Schedule" },
+          { id: 'promote_service', label: 'Promote a Service' },
+          { id: 'win_back_customers', label: 'Win Back Old Customers' },
+          { id: 'seasonal_promotion', label: 'Seasonal Promotion' },
+          { id: 'membership_drive', label: 'Membership Drive' }
+        ]
+      });
+    }
+    if (p === 'campaign/plan' && method === 'POST') {
+      var goalId = body.goal_id || 'book_more_jobs';
+      var title = body.service_focus
+        ? ('Promote ' + body.service_focus)
+        : (goalId === 'get_more_reviews' ? 'Review Spotlight'
+          : goalId === 'fill_tomorrow_schedule' ? 'OpenSlots Tomorrow'.replace('OpenSlots', 'Open Slots')
+          : goalId === 'membership_drive' ? 'Membership Drive'
+          : goalId === 'win_back_customers' ? 'We Miss You'
+          : goalId === 'seasonal_promotion' ? 'Seasonal Promotion'
+          : 'Before & After Highlight');
+      var plan = {
+        playbook_id: 'local_' + goalId,
+        goal_id: goalId,
+        industry_id: 'home_services',
+        title: title,
+        objective: 'Structured local campaign plan',
+        channels: ['instagram', 'facebook', 'google_business'],
+        required_assets: [{ key: 'logo', required: true }],
+        messaging_strategy: 'Hubly playbook-driven',
+        cta: 'Book now',
+        timing: { season: 'any', month: new Date().getMonth() + 1, schedule_hints: ['Tomorrow 12:00 PM'] },
+        template_refs: [{ source: 'hubly', id: 'before_after' }],
+        offer: { type: 'none', summary: '' },
+        audience: 'local_prospects',
+        ai_brief: 'Campaign: ' + title,
+        business_inputs: { business_name: body.business_name || 'Your business' },
+        dna_inputs: {},
+        package: {
+          headlines: [title],
+          captions: [{ channel: 'instagram', text: title + ' — from Hubly Studio' }],
+          hashtags: ['#LocalBusiness'],
+          email: { subject: title, body: title },
+          sms: title.slice(0, 160),
+          google_business_post: title,
+          schedule_suggestions: ['Tomorrow 12:00 PM — peak local engagement window']
+        }
+      };
+      var proj = {
+        id: 'loc_' + Math.random().toString(36).slice(2, 9),
+        title: title,
+        status: 'draft',
+        format_primary: 'instagram_post',
+        prompt: plan.ai_brief,
+        canvas: { headline: title, package: plan.package },
+        metadata: { goal_id: goalId },
+        last_edited_at: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      };
+      os.projects = os.projects || [];
+      os.projects.unshift(proj);
+      return Promise.resolve({ _local: true, campaignPlan: plan, project: proj, persisted: false });
+    }
+    if (p.indexOf('projects/') === 0 && p.indexOf('/customize') > 0 && method === 'POST') {
+      return Promise.resolve({
+        _local: true,
+        error: 'Provider not configured',
+        message: 'Connect Canva via Apps to customize designs. Hubly keeps your project ready.'
+      });
+    }
+    if (p.indexOf('projects/') === 0 && p.indexOf('/workspace') > 0 && method === 'GET') {
+      var wid = p.split('/')[1];
+      var wproj = (os.projects || []).find(function (x) { return x.id === wid; }) || null;
+      return Promise.resolve({
+        _local: true,
+        project: wproj,
+        pages: [],
+        versions: wproj ? [{ version_number: 1, label: 'Created in Hubly Studio', source: 'hubly' }] : [],
+        exports: [],
+        assets: [],
+        campaignPlan: null,
+        canva: { linked: false, design_id: null, status: 'Provider not configured' }
       });
     }
     if (p === 'settings' && method === 'GET') {
