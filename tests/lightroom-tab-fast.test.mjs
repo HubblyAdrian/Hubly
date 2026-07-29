@@ -23,12 +23,14 @@ describe('Lightroom tab opens without waiting on Adobe', () => {
   it('supports quick DB-only Adobe status for tab open', () => {
     assert.match(adobe, /opts && opts\.quick/);
     assert.match(adobe, /adobe-oauth-disconnect/);
-    assert.match(adobe, /Avoids Adobe catalog round-trip/);
+    assert.match(adobe, /Avoids Adobe catalog/);
+    assert.match(adobe, /Quick path for tab open/);
     assert.match(projects, /quick: !!opts\.quick/);
     assert.match(projects, /quick: true/);
   });
 
-  it('cache-busts Projects script', () => {
+  it('cache-busts Projects and Adobe Lightroom scripts', () => {
     assert.match(hubly, /photography-projects\.js\?v=projects-10/);
+    assert.match(hubly, /adobe-lightroom-service\.js\?v=projects-10/);
   });
 });
