@@ -55,3 +55,7 @@ verify_jwt = false
 # Hubly Brain — Milestone 1 think pipeline + expert registry (auth optional for console/debug)
 [functions.hubly-brain]
 verify_jwt = false
+
+# Hubly Studio API — JWT checked in-function (owner_id)
+[functions.studio-api]
+verify_jwt = false

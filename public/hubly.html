@@ -32,6 +32,7 @@
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
 <link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
+<link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-1">
 <link rel="stylesheet" href="/journey-os/photography-projects.css?v=projects-12">
 <link rel="stylesheet" href="/journey-os/app-marketplace.css?v=projects-7">
 <style>
@@ -10456,9 +10457,11 @@ document.addEventListener('DOMContentLoaded', function() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span class="ni-lbl">Inbox</span><span class="nav-count-badge hidden" id="nav-inbox-badge">0</span>
       </div>
 
-      <div class="ni" data-v="marketing" onclick="switchV(this)" title="Marketing">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a2 2 0 0 0 2 2h1l6 4V5L6 9H5a2 2 0 0 0-2 2z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 7a7 7 0 0 1 0 10"/></svg><span class="ni-lbl">Marketing</span>
+      <div class="ni" data-v="studio" onclick="switchV(this)" title="Studio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M18 14l.9 2.6L21.5 17.5l-2.6.9L18 21l-.9-2.6-2.6-.9 2.6-.9L18 14z"/></svg><span class="ni-lbl">Studio</span><span class="nav-count-badge" style="background:#D9632D;color:#fff;font-size:9px;padding:2px 6px;">NEW</span>
       </div>
+      <!-- legacy Marketing deep-link → Studio -->
+      <div class="ni jos-nav-hidden" data-v="marketing" onclick="switchV(document.querySelector('[data-v=studio]')||this)" hidden aria-hidden="true"><span class="ni-lbl">Marketing</span></div>
       <div class="ni" data-v="reviews" onclick="switchV(this)" title="Reviews">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3L22 9.3l-5 4.8 1.2 7L12 17.8 5.8 21l1.2-7-5-4.8 7.1-1L12 2z"/></svg><span class="ni-lbl">Reviews</span>
       </div>
@@ -10607,7 +10610,10 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
 
       <!-- MARKETING -->
-      <div id="v-marketing" class="body hidden">
+      <div id="v-studio" class="body hidden">
+        <div id="jos-studio-root"></div>
+      </div>
+      <div id="v-marketing" class="body hidden" hidden aria-hidden="true">
         <div id="jos-marketing-root"></div>
       </div>
 
@@ -12397,6 +12403,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/index.js?v=commerce-1"></script>
 <script defer src="/journey-os/journey.js?v=weather-1"></script>
 <script defer src="/journey-os/store-commerce.js?v=store-3"></script>
+<script defer src="/journey-os/studio/api.js?v=studio-1"></script>
+<script defer src="/journey-os/hubly-studio.js?v=studio-1"></script>
 <script defer src="/journey-os/adobe-lightroom-service.js?v=projects-12"></script>
 <script defer src="/journey-os/connected-apps-catalog.generated.js?v=projects-7"></script>
 <script defer src="/journey-os/connected-apps.js?v=projects-7"></script>
@@ -12491,6 +12499,7 @@ const S={
   custTab:'all',
   custRange:'all',
   storeOs:null,
+  studioOs:null,
 };
 // Smart Quote / booking scripts load in separate files and cannot see `const S`.
 // Expose on window so HublySmartQuoteUI + HublyBookingSQ resolve the same state.
@@ -14092,6 +14101,7 @@ function buildBizMeta(){
     servicesDraft:!!(S._servicesDraft||(S._is&&S._is.servicesMode&&S._is.servicesMode!=='now')),
     pipeline:ensurePipelineState(),
     storeOs:S.storeOs&&typeof S.storeOs==='object'?S.storeOs:null,
+    studioOs:S.studioOs&&typeof S.studioOs==='object'?S.studioOs:null,
   };
 }
 function normalizeDirtySurcharge(d){
@@ -14151,6 +14161,7 @@ function applyBizMeta(meta){
   if(meta.headerMode)S.headerMode=meta.headerMode;
   if(meta.website)S.website=meta.website;
   if(meta.storeOs&&typeof meta.storeOs==='object')S.storeOs=meta.storeOs;
+  if(meta.studioOs&&typeof meta.studioOs==='object')S.studioOs=meta.studioOs;
   if(meta.galleryPairs)S.galleryPairs=meta.galleryPairs;
   if(meta.ownerUploadedMedia!=null)S._ownerUploadedMedia=!!meta.ownerUploadedMedia;
   else if((meta.portfolioUrls||[]).some(u=>/^https?:\/\//i.test(String(u||'')))
@@ -36621,7 +36632,7 @@ function switchV(el){
     dashboard:'Home',jobs:'Jobs',calendar:'Calendar','photo-projects':'Projects',leads:'Leads',customers:'Completed Customers',
     pipeline:'Pipeline',opportunities:'Opportunities',activity:'Activity',ask:'Ask Hubly',
     quotes:'Quick Quote',money:'Revenue',chats:'Inbox',marketplace:'Marketplace',apps:'Apps',
-    editor:'Website editor',settings:'Settings',reviews:'Reviews',marketing:'Marketing',
+    editor:'Website editor',settings:'Settings',reviews:'Reviews',studio:'Studio',marketing:'Studio',
     memberships:'Memberships',store:'Store',reports:'Reports',growth:'Growth','booking-wizard':'Website · Book Now'
   };
   const tabLabel=titles[v]||v;

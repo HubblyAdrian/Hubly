@@ -1884,7 +1884,7 @@
       if (act === 'ah-go-customers') return switchNav('customers');
       if (act === 'ah-go-leads') return switchNav('leads');
       if (act === 'ah-go-jobs') return switchNav('jobs');
-      if (act === 'ah-go-marketing') return switchNav('marketing');
+      if (act === 'ah-go-marketing') return switchNav('studio');
       if (act === 'ah-go-memberships') return switchNav('memberships');
       if (act === 'ah-go-reviews') return switchNav('reviews');
       if (act === 'ah-connect-calendar') { toast('Google Calendar connect is Stage 2'); return; }
@@ -2016,7 +2016,7 @@
           { id: 'role_tech', name: 'Technician', modules: 'jobs,inbox' }
         ],
         featureAccess: { askHubly: true, reports: true, marketing: true, memberships: true },
-        moduleAccess: { home: true, inbox: true, jobs: true, leads: true, customers: true, pipeline: true, storefront: true, store: true, marketing: true, reviews: true, memberships: true, revenue: true, reports: true, ask: true, settings: true },
+        moduleAccess: { home: true, inbox: true, jobs: true, leads: true, customers: true, pipeline: true, storefront: true, store: true, studio: true, marketing: true, reviews: true, memberships: true, revenue: true, reports: true, ask: true, settings: true },
         custom: []
       };
     }
@@ -4326,7 +4326,7 @@
       if (act === 'rev-qr') return toast('QR code generated');
       if (act === 'rev-nfc') return toast('NFC card preview ready');
       if (act === 'rev-poster') return toast('Printable poster ready');
-      if (act === 'rev-email-campaign' || act === 'rev-sms-campaign') return switchNav('marketing');
+      if (act === 'rev-email-campaign' || act === 'rev-sms-campaign') return switchNav('studio');
       if (act === 'rev-ai-report' || act === 'rev-ai-actions') { root._josRevKpiDrawer = 'rating'; return renderReviews(); }
       if (act === 'rev-export-csv') return toast('Export started');
       if (act === 'rev-reply-all') return toast('Reply all queued');
@@ -6968,7 +6968,7 @@
       if (act === 'rpt-go-leads') return switchNav('leads');
       if (act === 'rpt-go-customers') return switchNav('customers');
       if (act === 'rpt-go-pipeline') return switchNav('pipeline');
-      if (act === 'rpt-go-marketing') return switchNav('marketing');
+      if (act === 'rpt-go-marketing') return switchNav('studio');
       if (act === 'rpt-go-reviews') return switchNav('reviews');
     } catch (err) {
       console.warn('HublyJourneyOS rpt act', act, err);
@@ -11342,7 +11342,8 @@
     pipeline: { title: 'Pipeline', sub: 'Quotes, bookings, and completed jobs.' },
     editor: { title: 'Website editor', sub: 'Edit your site, packages, and Book Now.' },
     quotes: { title: 'Quick Quote', sub: 'Build a price, then send it.' },
-    marketing: { title: 'Marketing', sub: 'Campaigns that attract, convert, and keep customers coming back.' },
+    marketing: { title: 'Studio', sub: 'Create local marketing posts from your jobs — AI layouts, Brand Kit, Publish.' },
+    studio: { title: 'Studio', sub: 'Create local marketing posts from your jobs — AI layouts, Brand Kit, Publish.' },
     reviews: { title: 'Reviews', sub: 'Reputation and request flows.' },
     memberships: { title: 'Memberships', sub: 'Recurring revenue. Happy clients. Less admin.' },
     store: { title: 'Store', sub: 'Sell products, kits, gift cards, and add-ons — alongside your services.' },
@@ -12063,6 +12064,14 @@
       customizeHtml +
       hero +
       kpiRow +
+      '<div class="jos-studio-promo">' +
+      '<div class="jos-studio-promo-ico" aria-hidden="true">✦</div>' +
+      '<div class="jos-studio-promo-body">' +
+      '<strong>Turn recent jobs into local marketing posts</strong>' +
+      '<p>Hubly Studio designs Instagram carousels, Facebook posts, and flyers from your job details and Brand Kit. No design skills needed.</p>' +
+      '</div>' +
+      '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="open-studio">Open Studio</button>' +
+      '</div>' +
       '<div class="jos-home-row-cc">' + commandCenter + todayPanel + '</div>' +
       '<div class="jos-home-row-3">' + recentLeads + revenueSummary + businessScore + '</div>' +
       quickRow +
@@ -16768,6 +16777,15 @@
     var nav = document.querySelector('[data-v="' + v + '"]');
     if (nav && typeof global.switchV === 'function') global.switchV(nav);
   }
+  function ensureStudioScreen() {
+    try {
+      if (global.HublyStudio && typeof global.HublyStudio.ensureState === 'function') {
+        var os = global.HublyStudio.ensureState();
+        if (os && os.ui && !os.ui.screen) os.ui.screen = 'home';
+      }
+    } catch (e) {}
+  }
+
   function onSwitchView(v) {
     try {
       el('jos-search-pop')?.classList.remove('open');
@@ -16790,7 +16808,13 @@
     setInboxMode(v === 'chats');
     setLeadsMode(v === 'leads');
     setCustomersMode(v === 'customers');
-    setMarketingMode(v === 'marketing');
+    setMarketingMode(false);
+    if (typeof global.HublyStudio?.setMode === 'function') {
+      global.HublyStudio.setMode(v === 'studio' || v === 'marketing');
+    } else {
+      var appStudio = el('p-app');
+      if (appStudio) appStudio.classList.toggle('jos-studio-mode', v === 'studio' || v === 'marketing');
+    }
     setReviewsMode(v === 'reviews');
     setMembershipsMode(v === 'memberships');
     setRevenueMode(v === 'money');
@@ -16810,7 +16834,19 @@
       activity: renderActivity,
       ask: renderAskHubly,
       'ask-hubly': renderAskHubly,
-      marketing: renderMarketing,
+      marketing: function () {
+        if (typeof global.HublyStudio?.render === 'function') {
+          ensureStudioScreen();
+          return global.HublyStudio.render();
+        }
+        return renderMarketing();
+      },
+      studio: function () {
+        if (typeof global.HublyStudio?.render === 'function') {
+          return global.HublyStudio.render();
+        }
+        return renderMarketing();
+      },
       memberships: renderMemberships,
       store: function () {
         if (typeof global.HublyStoreCommerce?.render === 'function') {
@@ -17024,7 +17060,11 @@
       if (act === 'go-leads-recovery') return openLeadsRecovery();
       if (act === 'go-jobs') return switchNav('jobs');
       if (act === 'go-editor') return switchNav('editor');
-      if (act === 'go-marketing') return switchNav('marketing');
+      if (act === 'go-marketing' || act === 'go-studio') return switchNav('studio');
+      if (act === 'open-studio') {
+        if (typeof global.HublyStudio?.open === 'function') return global.HublyStudio.open('home');
+        return switchNav('studio');
+      }
       if (act === 'go-quotes') return switchNav('quotes');
       if (act === 'go-ask') return switchNav('ask');
       if (act === 'go-settings') return switchNav('settings');
