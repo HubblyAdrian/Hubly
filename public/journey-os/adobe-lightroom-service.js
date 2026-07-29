@@ -88,17 +88,37 @@
             payload = await res.error.context.json();
           }
         } catch (e) {}
+        var rawMsg = (payload && (payload.error || payload.message)) || res.error.message || 'Request failed';
+        var code = (payload && payload.code) || res.error.name || '';
+        // Undeployed / unreachable function → supabase-js FunctionsFetchError
+        if (
+          name === 'adobe-lightroom' &&
+          (/Failed to send a request to the Edge Function/i.test(String(rawMsg)) ||
+            /NOT_FOUND/i.test(String(rawMsg)) ||
+            code === 'FunctionsFetchError')
+        ) {
+          rawMsg =
+            'Adobe Lightroom sync service is not deployed (adobe-lightroom). ' +
+            'OAuth may still show Connected. Run scripts/deploy-adobe-lightroom-edge.sh, then Sync Now.';
+          code = 'EDGE_NOT_DEPLOYED';
+        }
         return {
           data: payload,
           error: {
-            message: (payload && payload.error) || res.error.message || 'Request failed',
-            code: payload && payload.code,
+            message: rawMsg,
+            code: code,
           },
         };
       }
       return { data: payload, error: null };
     } catch (e) {
-      return { data: null, error: { message: (e && e.message) || 'Request failed' } };
+      var msg = (e && e.message) || 'Request failed';
+      if (name === 'adobe-lightroom' && /Failed to send a request to the Edge Function/i.test(msg)) {
+        msg =
+          'Adobe Lightroom sync service is not deployed (adobe-lightroom). ' +
+          'Run scripts/deploy-adobe-lightroom-edge.sh, then Sync Now.';
+      }
+      return { data: null, error: { message: msg, code: 'EDGE_UNREACHABLE' } };
     }
   }
 
@@ -541,9 +561,10 @@
       return result({
         ok: true,
         status: 'ready',
-        message: 'Publish from the Gallery tab — Adobe export is optional.',
-        data: { shareUrl: undefined },
-        meta: { adobeRequired: false },
+        message:
+          'Hubly client gallery marked ready. This does not upload photos to Adobe Lightroom — use Sync Now to pull from Lightroom into Hubly.',
+        data: { shareUrl: undefined, adobeSynced: false },
+        meta: { adobeRequired: false, pushesToAdobe: false },
       });
     },
 

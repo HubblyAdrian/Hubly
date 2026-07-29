@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy Adobe Lightroom OAuth Edge Functions + apply OAuth migration.
+# Deploy Adobe Lightroom Edge Functions (OAuth + Lightroom API) + apply OAuth migration.
 #
 # Usage:
 #   export SUPABASE_ACCESS_TOKEN=sbp_...   # https://supabase.com/dashboard/account/tokens
@@ -9,7 +9,7 @@
 #   SUPABASE_PROJECT_REF=rtwxxkxpkqdrhclkozma
 #   SKIP_MIGRATION=1   # functions only
 #
-# Requires this PR branch (or a merge that includes the adobe-oauth-* functions).
+# Deploys adobe-oauth-* AND adobe-lightroom (required for Sync Now / Create Album).
 # Exits non-zero if any step fails.
 set -euo pipefail
 
@@ -18,11 +18,13 @@ cd "$ROOT"
 PROJECT_REF="${SUPABASE_PROJECT_REF:-rtwxxkxpkqdrhclkozma}"
 MIGRATION_FILE="supabase/migrations/20260728080000_adobe_lightroom_oauth.sql"
 
+# OAuth connect/disconnect first; adobe-lightroom is the sync/create API the UI calls.
 EDGES=(
   adobe-oauth-start
   adobe-oauth-callback
   adobe-oauth-refresh
   adobe-oauth-disconnect
+  adobe-lightroom
 )
 
 die() {
@@ -56,7 +58,7 @@ if [[ "${SKIP_MIGRATION:-0}" != "1" ]]; then
 fi
 
 echo
-echo "=== Deploy Adobe OAuth Edge Functions to ${PROJECT_REF} ==="
+echo "=== Deploy Adobe Edge Functions to ${PROJECT_REF} ==="
 for fn in "${EDGES[@]}"; do
   echo "--- Deploy $fn ---"
   # adobe-oauth-callback has verify_jwt=false in supabase/config.toml
@@ -83,16 +85,17 @@ for fn in "${EDGES[@]}"; do
 done
 
 if [[ "$FAILED" -ne 0 ]]; then
-  die "One or more functions still return 404 NOT_FOUND after deploy"
+  die "One or more functions still return 404 NOT_FOUND after deploy — Sync Now will fail until adobe-lightroom is live"
 fi
 
 # Callback should be reachable without Hubly JWT (verify_jwt=false).
 # Expected without ?code=&state=: redirect (302) or error page — not platform NOT_FOUND.
 echo
 echo "Callback URL: $CALLBACK"
-echo "Deploy succeeded."
+echo "Deploy succeeded (including adobe-lightroom)."
 echo
 echo "Manual steps still required:"
 echo "  1. Adobe Developer Console → Redirect URI:"
 echo "       $CALLBACK"
 echo "  2. Confirm Supabase Edge secrets: ADOBE_CLIENT_ID, ADOBE_CLIENT_SECRET"
+echo "  3. In Projects → Lightroom → Sync Now (should no longer say Edge Function failed)"
