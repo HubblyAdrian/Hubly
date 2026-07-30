@@ -30,6 +30,7 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
+<link rel="stylesheet" href="/journey-os/ai-workspace.css?v=aw-2">
 <link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-15">
@@ -1669,8 +1670,14 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   background:rgba(10,14,28,.72);
 }
 @media(min-width:900px){
-  .is-creative-grid,.is-architect-grid{grid-template-columns:minmax(300px,.92fr) minmax(0,1.2fr)}
+  .is-creative-grid,.is-architect-grid{grid-template-columns:minmax(280px,.9fr) minmax(0,1.25fr) minmax(210px,.7fr)}
 }
+.is-architect-activity{display:none}
+@media(min-width:900px){
+  .is-architect-activity{display:flex;flex-direction:column;min-width:0;min-height:0;background:rgba(8,12,24,.92);border-left:1px solid rgba(255,255,255,.1)}
+}
+.is-architect-top .aw-context{font-size:13px;font-weight:700;color:rgba(255,255,255,.78);margin-left:auto;margin-right:10px}
+.is-architect-top .aw-context span{color:#d9632d}
 .is-architect-chat{
   display:flex;flex-direction:column;min-height:0;min-width:0;
   background:linear-gradient(180deg,#10182b 0%,#0c1222 100%);
@@ -9871,30 +9878,30 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <div class="is-step" data-is="creative-build" id="is-step-creative-build" data-creative-build-experience="1" data-hubly-architect="1">
+      <div class="is-step" data-is="creative-build" id="is-step-creative-build" data-creative-build-experience="1" data-hubly-architect="1" data-hubly-ai-workspace="building">
         <div class="is-creative-canvas is-architect" id="is-creative-canvas">
           <header class="is-architect-top">
             <div class="is-architect-brand is-creative-brand">
               <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="110" height="26">
               <span class="is-architect-sync" id="is-architect-sync"><span class="pulse" aria-hidden="true"></span> Live Sync</span>
             </div>
+            <div class="aw-context" id="is-architect-context">Building <span>your business</span></div>
             <button type="button" class="is-architect-exit" onclick="isExitToLanding()">Exit</button>
           </header>
-          <h1 class="is-title is-architect-sr" id="is-creative-title">Building live with you</h1>
-          <p class="is-sub is-architect-sr" id="is-creative-sub">Conversation on the left. Your business on the right. No silent generating.</p>
-          <div class="is-creative-grid is-architect-grid">
-            <section class="is-architect-chat" aria-label="Hubly Architect conversation">
+          <h1 class="is-title is-architect-sr" id="is-creative-title">Let's keep building</h1>
+          <p class="is-sub is-architect-sr" id="is-creative-sub">AI conversation. Live workspace. Hubly activity. No modules. No wizard.</p>
+          <div class="is-creative-grid is-architect-grid" data-aw-building="1">
+            <section class="is-architect-chat" aria-label="AI Conversation">
               <div class="is-architect-chat-head">
-                <span class="who">Hubly Architect</span>
-                <span class="milestone" id="is-architect-milestone">Recommend → Build → Show</span>
+                <span class="who">AI Conversation</span>
+                <span class="milestone" id="is-architect-milestone">Current Focus · Recommend → Build → Show</span>
               </div>
               <section class="is-creative-conversation" id="is-creative-conversation" aria-live="polite"></section>
               <div class="is-creative-choice" id="is-creative-choice" hidden></div>
-              <div class="is-architect-checklist" id="is-architect-checklist" hidden></div>
               <form class="is-creative-interrupt is-architect-compose" onsubmit="event.preventDefault();isCreativeBuildInterruptSend();">
                 <button type="button" class="is-architect-upload" id="is-architect-upload-btn" onclick="isArchitectUploadPick()">Upload</button>
                 <input type="file" id="is-architect-upload" hidden multiple accept="image/*,.pdf,.csv,.txt,.doc,.docx,.png,.jpg,.jpeg,.webp">
-                <input type="text" id="is-creative-interrupt-input" placeholder="Ask Hubly to add features or style guides…" autocomplete="off">
+                <input type="text" id="is-creative-interrupt-input" placeholder="Ask Hubly anything…" autocomplete="off">
                 <button type="submit">Send</button>
               </form>
               <div class="is-creative-stage-rail" id="is-creative-stage-rail" aria-label="Build stages" hidden></div>
@@ -9905,7 +9912,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="is-creative-confidence" id="is-creative-confidence"></div>
               </aside>
             </section>
-            <section class="is-creative-live is-architect-preview" id="is-creative-live" aria-label="Live business preview">
+            <section class="is-creative-live is-architect-preview" id="is-creative-live" aria-label="Live Workspace">
               <div class="is-architect-browser">
                 <div class="is-architect-chrome">
                   <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
@@ -9913,12 +9920,21 @@ document.addEventListener('DOMContentLoaded', function() {
                   <div class="built" id="is-architect-built"><span id="is-architect-pct">0</span>% Built</div>
                 </div>
                 <div class="is-architect-viewport">
-                  <div class="live-kicker">Live Business</div>
+                  <div class="live-kicker">Live Workspace</div>
                   <div id="is-creative-preview"></div>
                   <div class="is-architect-toasts" id="is-architect-toasts" aria-live="polite"></div>
                 </div>
               </div>
             </section>
+            <aside class="is-architect-activity aw-activity" aria-label="Hubly Activity">
+              <div class="aw-pane-head"><strong>Hubly Activity</strong><em>What I'm doing now</em></div>
+              <div class="aw-doing">Waiting for your next move…</div>
+              <div class="is-architect-checklist aw-activity-list" id="is-architect-checklist">
+                <div class="aw-act is-done"><span class="mark">✓</span><span>Business Context</span></div>
+                <div class="aw-act is-on"><span class="mark"></span><span>Listening…</span></div>
+                <div class="aw-act is-next"><span class="mark"></span><span>What's next</span></div>
+              </div>
+            </aside>
           </div>
           <div class="is-creative-transition" id="is-creative-transition" hidden></div>
         </div>
@@ -10664,7 +10680,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- kept for deep-links -->
       <div class="ni jos-nav-hidden" data-v="opportunities" onclick="switchV(this)" hidden aria-hidden="true"><span class="ni-lbl">Opportunities</span></div>
       <div class="ni jos-nav-hidden" data-v="activity" onclick="switchV(this)" hidden aria-hidden="true"><span class="ni-lbl">Activity</span></div>
-      <div class="ni jos-nav-hidden" data-v="growth" onclick="switchV(this)" hidden aria-hidden="true"><span class="ni-lbl">Growth</span></div>
+      <div class="ni jos-nav-hidden" data-v="growth" onclick="switchV(this)" title="Growth" hidden aria-hidden="true"><span class="ni-lbl">Growth</span></div>
       <div class="ni jos-nav-hidden" data-v="marketplace" onclick="switchV(this)" hidden aria-hidden="true"><span class="ni-lbl">Marketplace</span></div>
       </div>
       <div class="nav-bot nav-profile-bot">
@@ -12570,7 +12586,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/ai/product-coach.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/ai/merchandising.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/index.js?v=commerce-1"></script>
-<script defer src="/journey-os/journey.js?v=weather-1"></script>
+<script defer src="/journey-os/ai-workspace.js?v=aw-2"></script>
+<script defer src="/journey-os/journey.js?v=aw-1"></script>
 <script defer src="/journey-os/store-commerce.js?v=store-3"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
 <script defer src="/journey-os/media-studio-bridge.js?v=studio-15"></script>
@@ -13058,8 +13075,10 @@ function openOperateHome(opts){
   try{S._hublyMode='operate';}catch(e){}
   try{
     document.body.classList.add('jos-pixel');
-    document.getElementById('p-app')?.classList.add('jos-pixel');
+    document.body.classList.remove('aw-building-mode');
+    document.getElementById('p-app')?.classList.add('jos-pixel','jos-ai-workspace-home');
   }catch(e){}
+  try{if(typeof HublyAIWorkspace!=='undefined')HublyAIWorkspace.markBuildingComplete?.();}catch(e){}
   S._forceAdvancedStudio=false;
   S._advancedStudio=false;
   clearOnboardOverlays();
@@ -13087,10 +13106,14 @@ function openOperateHome(opts){
   setTimeout(()=>{
     try{
       updateDashGreeting?.();
-      renderOperateHome?.();
-      renderDashToday?.();
-      updateKPIs?.();
-      renderDashNewBookings?.();
+      if(typeof HublyAIWorkspace!=='undefined'&&HublyAIWorkspace.mountOperateHome){
+        HublyAIWorkspace.mountOperateHome();
+      }else{
+        renderOperateHome?.();
+        renderDashToday?.();
+        updateKPIs?.();
+        renderDashNewBookings?.();
+      }
       applyTranslations?.();
     }catch(e){}
   },60);
@@ -18573,15 +18596,20 @@ function isArchitectRenderChecklist(items,activeIndex){
   if(!el)return;
   if(!items||!items.length){el.hidden=true;el.innerHTML='';return;}
   el.hidden=false;
-  el.innerHTML=`<div class="ck-title">Building now</div>${items.map((label,i)=>{
-    const cls=i<activeIndex?'is-done':(i===activeIndex?'is-on':'');
-    const mark=i<activeIndex?'✓':(i===activeIndex?'':'');
-    return `<div class="ck-item ${cls}"><span class="ck-mark">${mark}</span><span>${escPeHtml(label)}</span></div>`;
-  }).join('')}`;
+  el.innerHTML=(items||[]).map((label,i)=>{
+    const st=i<activeIndex?'done':(i===activeIndex?'on':'next');
+    const mark=i<activeIndex?'✓':'';
+    return `<div class="aw-act is-${st} ck-item is-${st==='done'?'done':(st==='on'?'on':'')}"><span class="mark ck-mark">${mark}</span><span>${escPeHtml(label)}</span></div>`;
+  }).join('');
+  try{
+    const ctx=document.getElementById('is-architect-context');
+    const biz=S.biz||S._is?.creativeBuild?.industryLabel||'your business';
+    if(ctx)ctx.innerHTML=`Building <span>${escPeHtml(biz)}</span>`;
+  }catch(e){}
 }
 function isArchitectStrategyHtml(strategy){
   if(!strategy)return'';
-  return `<div class="is-architect-strategy" data-architect-strategy="1"><strong>Goal:</strong> ${escPeHtml(strategy.goal)} · <strong>Milestone:</strong> ${escPeHtml(strategy.milestone)} · <strong>Showing:</strong> ${escPeHtml(strategy.showNow)} · <strong>Decision:</strong> ${escPeHtml(strategy.decision)}</div>`;
+  return `<div class="is-architect-strategy" data-architect-strategy="1"><strong>Goal:</strong> ${escPeHtml(strategy.goal)} · <strong>Current Focus:</strong> ${escPeHtml(strategy.milestone)} · <strong>Showing:</strong> ${escPeHtml(strategy.showNow)} · <strong>Decision:</strong> ${escPeHtml(strategy.decision)}</div>`;
 }
 function isCreativePush(side,text,extraHtml){
   const log=document.getElementById('is-creative-conversation');
@@ -18805,6 +18833,8 @@ async function isCreativeBuildInterruptSend(){
 async function isRunCreativeBuildExperience(seed){
   document.querySelector('#is-shell .is-wrap')?.classList.add('is-creative-wide');
   document.getElementById('is-shell')?.classList.add('is-architect-mode');
+  try{document.body.classList.add('aw-building-mode');}catch(e){}
+  try{HublyAIWorkspace?.enhanceArchitectActivity?.();}catch(e){}
   isShowStep('creative-build');
   const d=S._is?.discovery||{};
   const ctx={
@@ -18940,7 +18970,7 @@ async function isRunCreativeBuildExperience(seed){
     // Single decision beat after key milestones
     if(stage.id==='hero'||stage.id==='packages'||stage.id==='brand'){
       const fb=await isArchitectAwaitChoice(
-        `<div class="cq">What would you like to change?</div><div class="opts"><button type="button" data-choice="continue"><strong>Looks great — keep going</strong><span>Next milestone</span></button><button type="button" data-choice="tweak"><strong>Suggest a tweak</strong><span>Tell me in the chat</span></button></div>`,
+        `<div class="cq">What would you like to change?</div><div class="opts"><button type="button" data-choice="continue"><strong>Looks great — keep going</strong><span>What's next</span></button><button type="button" data-choice="tweak"><strong>Suggest a tweak</strong><span>Tell me in the chat</span></button></div>`,
         {defaultId:'continue',defaultLabel:'Looks great — keep going',timeoutMs:7000,twoCol:true}
       );
       if(fb.label)isCreativePush('owner',fb.label);
@@ -18948,7 +18978,7 @@ async function isRunCreativeBuildExperience(seed){
         isCreativePush('hubly','Tell me the tweak — upload a screenshot or type it below. I\'ll update the live preview.');
         await isArchitectSleep(900);
       }else{
-        isCreativePush('hubly','Perfect — next milestone.');
+        isCreativePush('hubly','Perfect — what\'s next.');
       }
     }
   }
