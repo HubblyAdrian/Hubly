@@ -320,6 +320,34 @@
         canva: { linked: false, design_id: null, status: 'Provider not configured' }
       });
     }
+    if (p === 'assets' && method === 'GET') {
+      return Promise.resolve({ _local: true, assets: os.assets || [] });
+    }
+    if (p === 'assets' && method === 'POST') {
+      var asset = {
+        id: 'up_' + Math.random().toString(36).slice(2, 9),
+        name: body.name || 'Upload',
+        kind: body.kind || 'upload',
+        url: body.url,
+        bytes: Number(body.bytes) || 0,
+        created_at: new Date().toISOString()
+      };
+      os.assets = os.assets || [];
+      os.assets.unshift(asset);
+      os.settings = os.settings || {};
+      os.settings.storage_used_bytes = (Number(os.settings.storage_used_bytes) || 0) + (asset.bytes || 0);
+      return Promise.resolve({ _local: true, asset: asset });
+    }
+    if (p.indexOf('assets/') === 0 && method === 'DELETE') {
+      var aid = p.split('/')[1];
+      var removed = (os.assets || []).find(function (a) { return a.id === aid; });
+      os.assets = (os.assets || []).filter(function (a) { return a.id !== aid; });
+      if (removed && removed.bytes) {
+        os.settings = os.settings || {};
+        os.settings.storage_used_bytes = Math.max(0, (Number(os.settings.storage_used_bytes) || 0) - Number(removed.bytes));
+      }
+      return Promise.resolve({ _local: true, ok: true });
+    }
     if (p === 'settings' && method === 'GET') {
       return Promise.resolve({
         _local: true,
