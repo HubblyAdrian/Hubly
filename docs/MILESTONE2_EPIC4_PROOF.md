@@ -1,28 +1,28 @@
-# Milestone 2 · Epic 4 — Creative Build Experience
+# Milestone 2 · Epic 4 — Hubly Architect
 
 **Status:** PASS  
-**Checked:** 2026-07-24T17:35:25.268Z  
+**Checked:** 2026-07-30T21:43:31.956Z  
 **Gate:** `npm run check:m2-epic4`
 
-> Watching Hubly build a business — not generate a website.  
+> Recommend → Build → Show → Get Feedback → Improve  
 > End: *I think we built something you're going to be proud of.*
 
 ## Proven
 
 | Requirement | Status |
 |-------------|--------|
-| Creative Canvas | ✅ |
+| Architect shell (chat left / live right) | ✅ |
 | Progressive stages | ✅ |
 | Live explanations | ✅ |
 | Before/After moments | ✅ |
-| Design confidence meter | ✅ |
-| Creative Decisions panel | ✅ |
-| Dual direction choice | ✅ |
-| Live conversation interrupts | ✅ |
+| % Built / confidence | ✅ |
+| Checklist / decisions | ✅ |
+| Three-direction recommend | ✅ |
+| Live interrupts + uploads | ✅ |
 | Industry-specific builds | ✅ |
-| Behind-the-scenes collaboration | ✅ |
+| Conversation strategy | ✅ |
+| Three core intents | ✅ |
 | Natural Reveal transition | ✅ |
-| Founder acceptance tests | ✅ |
 
 ## Industry sequences
 
@@ -34,7 +34,3 @@
 ## Transition
 
 > I think we built something you're going to be proud of.
-
-## Stop
-
-Do **not** begin Epic 5 until Founder Approval.

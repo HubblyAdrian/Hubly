@@ -4,11 +4,12 @@
  * Watching Hubly build a business — not generate a website.
  * Progressive stages, live explanations, industry-specific sequences.
  */
-export const CREATIVE_BUILD_VERSION = "1.0.0";
-export const CREATIVE_BUILD_LABEL = "Creative Build Experience";
+export const CREATIVE_BUILD_VERSION = "2.0.0";
+export const CREATIVE_BUILD_LABEL = "Hubly Architect";
 export const CREATIVE_BUILD_TRANSITION =
   "I think we built something you're going to be proud of.";
-export const CREATIVE_BUILD_CHOICE_PROMPT = "I have two directions. Can I show you both?";
+export const CREATIVE_BUILD_CHOICE_PROMPT =
+  "Before I build it, I have three directions I think would fit your business.";
 
 export const CREATIVE_BUILD_STAGES = [
   "structure",
@@ -35,8 +36,9 @@ export const INDUSTRY_BUILD_PACKS = {
     sequence: ["structure", "hero", "brand", "packages", "booking", "portfolio", "workspace"],
     focus: ["trust", "services", "booking", "reviews"],
     directions: [
-      { id: "luxury", label: "Luxury", hint: "High contrast, premium proof-first" },
-      { id: "friendly", label: "Friendly", hint: "Warm, approachable neighborhood brand" },
+      { id: "minimal", label: "Minimal", hint: "Clean whitespace, quiet confidence, proof without clutter" },
+      { id: "bold", label: "Bold", hint: "High energy, strong contrast, unmistakable CTA" },
+      { id: "classic", label: "Classic", hint: "Timeless trust, craftsmanship, neighborhood authority" },
     ],
     stages: {
       structure: {
@@ -118,8 +120,9 @@ export const INDUSTRY_BUILD_PACKS = {
     sequence: ["structure", "portfolio", "hero", "brand", "packages", "booking", "workspace"],
     focus: ["portfolio", "gallery", "packages", "booking"],
     directions: [
-      { id: "luxury", label: "Luxury", hint: "Editorial, quiet luxury" },
-      { id: "friendly", label: "Friendly", hint: "Warm documentary feel" },
+      { id: "minimal", label: "Minimal", hint: "Quiet editorial frames, lots of breath" },
+      { id: "bold", label: "Bold", hint: "Dramatic contrast, cinematic crops" },
+      { id: "classic", label: "Classic", hint: "Timeless storybook romance" },
     ],
     stages: {
       structure: {
@@ -198,8 +201,9 @@ export const INDUSTRY_BUILD_PACKS = {
     sequence: ["structure", "packages", "booking", "hero", "brand", "portfolio", "workspace"],
     focus: ["recurring", "reviews", "booking", "trust"],
     directions: [
-      { id: "luxury", label: "Luxury", hint: "Hotel-clean reliability" },
-      { id: "friendly", label: "Friendly", hint: "Neighborhood trusted cleaner" },
+      { id: "minimal", label: "Minimal", hint: "Hotel-clean calm, white space, reliability" },
+      { id: "bold", label: "Bold", hint: "Bright trust signals, unmistakable book path" },
+      { id: "classic", label: "Classic", hint: "Neighborhood caretaker warmth" },
     ],
     stages: {
       structure: {
@@ -278,8 +282,9 @@ export const INDUSTRY_BUILD_PACKS = {
     sequence: ["structure", "hero", "booking", "packages", "brand", "portfolio", "workspace"],
     focus: ["trust", "maintenance", "booking", "plans"],
     directions: [
-      { id: "luxury", label: "Luxury", hint: "Peace-of-mind premium" },
-      { id: "friendly", label: "Friendly", hint: "Neighborhood technician" },
+      { id: "minimal", label: "Minimal", hint: "Calm peace-of-mind, clear plans" },
+      { id: "bold", label: "Bold", hint: "Urgent trust, strong same-day CTA" },
+      { id: "classic", label: "Classic", hint: "Licensed neighborhood authority" },
     ],
     stages: {
       structure: {
@@ -358,8 +363,9 @@ export const INDUSTRY_BUILD_PACKS = {
     sequence: ["structure", "packages", "booking", "hero", "brand", "portfolio", "workspace"],
     focus: ["routes", "recurring", "booking", "reliability"],
     directions: [
-      { id: "luxury", label: "Luxury", hint: "Estate-level consistency" },
-      { id: "friendly", label: "Friendly", hint: "Neighborhood route care" },
+      { id: "minimal", label: "Minimal", hint: "Quiet outdoor precision" },
+      { id: "bold", label: "Bold", hint: "Fresh high-contrast curb appeal" },
+      { id: "classic", label: "Classic", hint: "Neighborhood route reliability" },
     ],
     stages: {
       structure: {
@@ -438,8 +444,9 @@ export const INDUSTRY_BUILD_PACKS = {
     sequence: ["structure", "brand", "booking", "packages", "hero", "portfolio", "workspace"],
     focus: ["calm", "booking", "menu", "atmosphere"],
     directions: [
-      { id: "luxury", label: "Luxury", hint: "Quiet luxury spa" },
-      { id: "friendly", label: "Friendly", hint: "Warm neighborhood wellness" },
+      { id: "minimal", label: "Minimal", hint: "Quiet luxury, soft space" },
+      { id: "bold", label: "Bold", hint: "Modern wellness with strong booking" },
+      { id: "classic", label: "Classic", hint: "Timeless spa ritual" },
     ],
     stages: {
       structure: {
@@ -540,12 +547,42 @@ export function getBuildPack(key) {
   return INDUSTRY_BUILD_PACKS[key] || DEFAULT_PACK;
 }
 
+export const ARCHITECT_INTENTS = [
+  { id: "build", label: "Build my business", hint: "Website, storefront, booking, brand — launch something new." },
+  { id: "grow", label: "Grow my business", hint: "Marketing, Studio, CRM, reviews, automation — improve what you have." },
+  { id: "get_done", label: "Get something done", hint: "Describe the job. Hubly connects you with trusted pros." },
+];
+
+export function inferArchitectIntent(seed) {
+  const t = String(seed || "").toLowerCase();
+  if (
+    /need (a |someone|help)|find (a |me )?(pro|cleaner|photographer|someone)|hire|get .+ done|house cleaning|lawn care|detailing/.test(
+      t,
+    ) &&
+    !/my (own )?business|open|launch|start/.test(t)
+  ) {
+    return "get_done";
+  }
+  if (/grow|more customers|marketing|reviews|crm|studio|analytics|automat|ads|leads/.test(t)) return "grow";
+  if (/build|launch|open|start|website|storefront|booking|brand|online|store|shop/.test(t)) return "build";
+  return null;
+}
+
+export function conversationStrategy({ goal, milestone, showNow, decision }) {
+  return {
+    goal: String(goal || ""),
+    milestone: String(milestone || ""),
+    showNow: String(showNow || ""),
+    decision: String(decision || ""),
+  };
+}
+
 export function applyInterruptToBuild(experience, text) {
   const t = String(text || "").toLowerCase();
   const updates = [];
   let direction = experience.chosenDirection || null;
   if (/premium|luxury|darker|more premium|high.?end/.test(t)) {
-    direction = "luxury";
+    direction = "bold";
     updates.push({
       kind: "interrupt",
       text: "Got it — shifting toward a more premium feel.",
@@ -553,8 +590,35 @@ export function applyInterruptToBuild(experience, text) {
       confidenceDelta: 2,
     });
   }
+  if (/minimal|clean|simpler|less clutter/.test(t)) {
+    direction = "minimal";
+    updates.push({
+      kind: "interrupt",
+      text: "Understood — simplifying toward a minimal aesthetic.",
+      surface: "brand",
+      confidenceDelta: 2,
+    });
+  }
+  if (/bold|louder|stronger|more contrast/.test(t)) {
+    direction = "bold";
+    updates.push({
+      kind: "interrupt",
+      text: "Pushing contrast and energy — bold it is.",
+      surface: "brand",
+      confidenceDelta: 2,
+    });
+  }
+  if (/classic/.test(t)) {
+    direction = "classic";
+    updates.push({
+      kind: "interrupt",
+      text: "Shifting toward a classic, timeless feel.",
+      surface: "brand",
+      confidenceDelta: 2,
+    });
+  }
   if (/friendly|warmer|brighter|less formal/.test(t)) {
-    direction = "friendly";
+    direction = "minimal";
     updates.push({
       kind: "interrupt",
       text: "Understood — warming the brand up.",
@@ -651,7 +715,7 @@ export function orchestrateCreativeBuildExperience(ctx = {}) {
   const signature = [key, sequence.join(">"), pack.focus.join(","), stageCards[0]?.explain?.slice(0, 48)].join("::");
 
   return {
-    version: CREATIVE_BUILD_VERSION,
+    version: CREATIVE_BUILD_VERSION, // Hubly Architect
     industryKey: key,
     industryLabel: pack.label,
     sequence,
@@ -689,18 +753,18 @@ export function evaluateCreativeBuildHtml(html) {
   })();
 
   const checks = {
-    creativeCanvas: ok(/data-creative-build-experience|is-creative-canvas/.test(h), "Missing Creative Canvas"),
-    conversationLive: ok(/is-creative-conversation|is-creative-live/.test(h), "Missing conversation|live layout"),
+    creativeCanvas: ok(/data-creative-build-experience|is-creative-canvas|data-hubly-architect/.test(h), "Missing Creative Canvas"),
+    conversationLive: ok(/is-creative-conversation|is-creative-live|is-architect-grid|is-architect-browser/.test(h), "Missing conversation|live layout"),
     progressiveStages: ok(
       CREATIVE_BUILD_STAGES.every((s) => h.includes(s) || /structure|hero|brand|packages|booking|portfolio|workspace/.test(h)),
       "Missing progressive stages",
     ),
     liveExplanations: ok(/is-creative-explain|I moved booking|I simplified your packages|darker colors/.test(h), "Missing live explanations"),
     beforeAfter: ok(/is-creative-ba|Original Idea|Improved Version|before.*after/i.test(h), "Missing before/after"),
-    confidenceMeter: ok(/is-creative-confidence|Design confidence|Homepage[\s\S]{0,40}\d{2}%/.test(h), "Missing confidence meter"),
-    decisionsPanel: ok(/is-creative-decisions|Creative Decisions/.test(h), "Missing decisions panel"),
-    dualChoice: ok(/Can I show you both|I have two directions|is-creative-choice/.test(h), "Missing dual direction choice"),
-    liveInterrupt: ok(/is-creative-interrupt|isCreativeBuildInterrupt|Make it feel more premium/.test(h), "Missing live interrupt"),
+    confidenceMeter: ok(/is-creative-confidence|Design confidence|is-architect-pct|% Built/.test(h), "Missing confidence meter"),
+    decisionsPanel: ok(/is-creative-decisions|Creative Decisions|is-architect-checklist/.test(h), "Missing decisions panel"),
+    dualChoice: ok(/three directions|Minimal|is-creative-choice|Before I build it/.test(h), "Missing three-direction recommend choice"),
+    liveInterrupt: ok(/is-creative-interrupt|isCreativeBuildInterrupt|Ask Hubly to add features|is-architect-upload/.test(h), "Missing live interrupt"),
     industrySpecific: ok(/orchestrateCreativeBuildExperience|INDUSTRY_BUILD|sequence/.test(h), "Missing industry sequences"),
     behindScenes: ok(/is-creative-bts|Creative Director|Switching back|darker version/.test(h), "Missing behind-the-scenes"),
     transition: ok(/I think we built something you're going to be proud of/.test(h), "Missing proud transition"),
@@ -708,16 +772,22 @@ export function evaluateCreativeBuildHtml(html) {
     thinkingHandoff: ok(/isRunCreativeBuildExperience|isDiscoveryCompleteToThinking[\s\S]{0,500}isRunCreativeBuildExperience/.test(h), "Thinking not handing off to Creative Build"),
     revealShell: ok(/is-step-reveal-shell|readyForReveal|data-reveal-shell/.test(h), "Missing soft Reveal shell"),
     wordmark: ok(/hubly-wordmark/.test(slice) || /is-creative-brand/.test(h), "Missing Hubly brand"),
+    architectShell: ok(/Live Sync|is-architect-browser|Hubly Architect|conversationStrategy|isArchitectEnsureIntent/.test(h), "Missing Hubly Architect shell/strategy"),
+    recommendBuildShow: ok(/Recommend → Build → Show|What would you like to change|three directions/.test(h), "Missing Recommend→Build→Show rhythm"),
   };
 
   return { passed: issues.length === 0, issues, checks };
 }
 
 export const HublyCreativeBuildExperience = {
-  version: CREATIVE_BUILD_VERSION,
+  version: CREATIVE_BUILD_VERSION, // Hubly Architect
   label: CREATIVE_BUILD_LABEL,
   orchestrate: orchestrateCreativeBuildExperience,
   transition: CREATIVE_BUILD_TRANSITION,
+  choicePrompt: CREATIVE_BUILD_CHOICE_PROMPT,
   stages: CREATIVE_BUILD_STAGES,
   packs: INDUSTRY_BUILD_PACKS,
+  intents: ARCHITECT_INTENTS,
+  inferIntent: inferArchitectIntent,
+  conversationStrategy,
 };
