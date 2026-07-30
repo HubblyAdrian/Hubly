@@ -24,7 +24,7 @@ const spec = readFileSync(join(root, 'docs/HUBLY_STUDIO_IMPLEMENTATION_SPEC.md')
 describe('Hubly Studio V1.0 contract', () => {
   it('ships Studio shell and frozen contract', () => {
     assert.match(hubly, /data-v="studio"/);
-    assert.match(hubly, /hubly-studio\.js\?v=studio-5/);
+    assert.match(hubly, /hubly-studio\.js\?v=studio-6/);
     assert.match(journey, /HublyStudio\.setMode/);
     assert.match(contract, /V1\.0/);
     assert.match(contract, /single channel: Email/i);
@@ -104,5 +104,16 @@ describe('Hubly Studio V1.0 contract', () => {
     assert.doesNotMatch(studio, /Mrs\. Miller/);
     assert.doesNotMatch(studio, /No Leak Too Large/);
     assert.match(studio, /Updated headlines from your campaign package/);
+  });
+
+  it('Brand Kit is editable and persists logo/color facts', () => {
+    assert.match(studio, /function ensureBrandKit/);
+    assert.match(studio, /function saveBrandKit/);
+    assert.match(studio, /brand-color-hex/);
+    assert.match(studio, /brand-voice-toggle/);
+    assert.match(studio, /upload-logo/);
+    assert.match(studio, /Applied Brand Kit to/);
+    assert.match(studio, /not mixed into Business Memory/);
+    assert.match(css, /\.hs-color-edit/);
   });
 });

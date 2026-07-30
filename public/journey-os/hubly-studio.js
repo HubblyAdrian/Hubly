@@ -494,65 +494,247 @@
     } else paint([]);
   }
 
+  function defaultBrandKit() {
+    var st = S();
+    var primary = st.color || '#D9632D';
+    var navy = '#141B2B';
+    return {
+      logos: st.logoUrl ? [{ id: 'primary', label: 'Primary', url: st.logoUrl, role: 'primary' }] : [],
+      colors: [
+        { id: 'primary', name: 'Primary', hex: primary },
+        { id: 'navy', name: 'Dark Navy', hex: navy },
+        { id: 'surface', name: 'Warm White', hex: '#FCFCFC' },
+        { id: 'accent', name: 'Accent', hex: '#D9632D' },
+        { id: 'muted', name: 'Light Gray', hex: '#F8FAFC' },
+        { id: 'success', name: 'Success Green', hex: '#10B981' }
+      ],
+      typography: { heading: 'Plus Jakarta Sans', body: 'DM Sans' },
+      voice_tones: [
+        { id: 'professional', label: 'Professional', status: 'active', blurb: 'Expert technical guidance, high quality standards.' },
+        { id: 'friendly', label: 'Friendly & Warm', status: 'active', blurb: 'Local neighborhood helper tone.' },
+        { id: 'direct', label: 'Clear & Direct', status: 'supporting', blurb: 'Straightforward quotes and checklists.' }
+      ]
+    };
+  }
+
+  function ensureBrandKit() {
+    var os = ensureStudioOs();
+    if (!os.brandKit || typeof os.brandKit !== 'object') os.brandKit = defaultBrandKit();
+    var kit = os.brandKit;
+    if (!Array.isArray(kit.colors) || !kit.colors.length) kit.colors = defaultBrandKit().colors;
+    if (!Array.isArray(kit.voice_tones) || !kit.voice_tones.length) kit.voice_tones = defaultBrandKit().voice_tones;
+    if (!kit.typography || typeof kit.typography !== 'object') kit.typography = defaultBrandKit().typography;
+    if (!Array.isArray(kit.logos)) kit.logos = [];
+    // Memory facts win for primary logo + primary color when present
+    var st = S();
+    if (st.logoUrl) {
+      var primaryLogo = kit.logos.find(function (l) { return l.role === 'primary'; });
+      if (primaryLogo) primaryLogo.url = st.logoUrl;
+      else kit.logos.unshift({ id: 'primary', label: 'Primary', url: st.logoUrl, role: 'primary' });
+    }
+    if (st.color && kit.colors[0]) {
+      kit.colors[0].hex = st.color;
+      kit.colors[0].name = kit.colors[0].name || 'Primary';
+    }
+    return kit;
+  }
+
+  function saveBrandKit(opts) {
+    opts = opts || {};
+    var kit = ensureBrandKit();
+    var os = ensureStudioOs();
+    os.brandKit = kit;
+    // Sync factual Memory fields (logo + brand color) — not voice/DNA
+    try {
+      var primary = (kit.colors || []).find(function (c) { return c.id === 'primary'; }) || (kit.colors || [])[0];
+      if (primary && primary.hex) S().color = primary.hex;
+      var logo = (kit.logos || []).find(function (l) { return l.role === 'primary'; }) || (kit.logos || [])[0];
+      if (logo && logo.url) S().logoUrl = logo.url;
+    } catch (e) {}
+    persistStudioMeta();
+    var Api = api();
+    if (Api) {
+      Api.request('brand-kit', {
+        method: 'PUT',
+        body: {
+          logos: kit.logos || [],
+          colors: kit.colors || [],
+          typography: kit.typography || {},
+          voice_tones: kit.voice_tones || []
+        }
+      }).catch(function () {});
+    }
+    // Quiet-save brand_color + logo_url onto the business when possible
+    try {
+      var biz = global.currentBusiness;
+      var db = global.db;
+      if (biz && biz.id && db) {
+        var patch = {};
+        if (S().color) patch.brand_color = S().color;
+        if (S().logoUrl && /^https?:\/\//i.test(String(S().logoUrl))) patch.logo_url = S().logoUrl;
+        if (Object.keys(patch).length) {
+          db.from('businesses').update(patch).eq('id', biz.id).then(function (res) {
+            if (!res || res.error) return;
+            Object.assign(biz, patch);
+          }).catch(function () {});
+        }
+      }
+    } catch (e) {}
+    if (opts.toast !== false) toast(opts.message || 'Brand Kit saved');
+  }
+
+  function applyBrandToDrafts() {
+    var kit = ensureBrandKit();
+    var os = ensureStudioOs();
+    var primary = (kit.colors || [])[0];
+    var logo = (kit.logos || []).find(function (l) { return l.role === 'primary'; }) || (kit.logos || [])[0];
+    var n = 0;
+    (os.projects || []).forEach(function (p) {
+      if (!p || p.status === 'published') return;
+      p.canvas = p.canvas || {};
+      p.canvas.brand = {
+        primary_color: primary && primary.hex,
+        logo_url: logo && logo.url,
+        heading_font: kit.typography && kit.typography.heading,
+        body_font: kit.typography && kit.typography.body,
+        voice: (kit.voice_tones || []).filter(function (v) { return v.status === 'active'; }).map(function (v) { return v.label; })
+      };
+      n++;
+    });
+    persistStudioMeta();
+    toast(n ? ('Applied Brand Kit to ' + n + ' draft' + (n === 1 ? '' : 's')) : 'No drafts to update — create a campaign first');
+  }
+
   function renderBrandKit(root) {
     var Api = api();
     var body =
       '<header class="hs-page-head hs-page-head-row">' +
-      '<div><h1>Brand Kit</h1><p>Centralized brand management: your brand identity, always consistent</p></div>' +
-      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="apply-brand">Apply to All Drafts</button></header>' +
-      '<div id="hs-brand-mount" class="hs-brand-mount"><div class="hs-muted">Loading brand kit…</div></div>';
+      '<div><h1>Brand Kit</h1><p>Edit logos, colors, type, and voice — Studio keeps campaigns on-brand.</p></div>' +
+      '<div class="hs-head-actions">' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="brand-save">Save Brand Kit</button>' +
+      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="apply-brand">Apply to All Drafts</button>' +
+      '</div></header>' +
+      '<div id="hs-brand-mount" class="hs-brand-mount"><div class="hs-muted">Loading brand kit…</div></div>' +
+      '<input type="file" id="hs-brand-logo-file" accept="image/*" hidden>';
     root.innerHTML = shell('brand', body);
     var mount = root.querySelector('#hs-brand-mount');
-    function paint(kit) {
-      kit = kit || {};
-      var colors = (kit.colors && kit.colors.length) ? kit.colors : [
-        { name: 'Hubly Orange', hex: '#D9632D' },
-        { name: 'Dark Navy', hex: '#1E293B' },
-        { name: 'Warm White', hex: '#FCFCFC' },
-        { name: 'Accent Orange', hex: '#D97706' },
-        { name: 'Light Gray', hex: '#F8FAFC' },
-        { name: 'Success Green', hex: '#10B981' }
-      ];
-      var tones = (kit.voice_tones && kit.voice_tones.length) ? kit.voice_tones : [
-        { label: 'Professional', status: 'active', blurb: 'Expert technical guidance, showcasing high quality parts & clean standards.' },
-        { label: 'Friendly & Warm', status: 'active', blurb: 'Local neighborhood helper tone, focusing on customer peace of mind.' },
-        { label: 'Clear & Direct', status: 'supporting', blurb: 'No complex jargon. Straightforward quotes and helpful checklist details.' }
-      ];
+
+    function paint(kitIn) {
+      var os = ensureStudioOs();
+      if (kitIn && typeof kitIn === 'object') {
+        os.brandKit = Object.assign(ensureBrandKit(), kitIn);
+        // Prefer live Memory logo/color when kit came empty from API
+        if ((!kitIn.colors || !kitIn.colors.length) && S().color) os.brandKit.colors[0].hex = S().color;
+        if ((!kitIn.logos || !kitIn.logos.length) && S().logoUrl) {
+          os.brandKit.logos = [{ id: 'primary', label: 'Primary', url: S().logoUrl, role: 'primary' }];
+        }
+      }
+      var kit = ensureBrandKit();
+      var colors = kit.colors;
+      var tones = kit.voice_tones;
       var ty = kit.typography || {};
+      var logos = kit.logos || [];
+      var primaryLogo = logos.find(function (l) { return l.role === 'primary'; }) || logos[0];
+      var logoUrl = (primaryLogo && primaryLogo.url) || S().logoUrl || '';
+      var init = (bizName().charAt(0) || 'H').toUpperCase();
+      var fontOpts = ['Plus Jakarta Sans', 'DM Sans', 'Inter', 'Poppins', 'Montserrat', 'Nunito', 'Oswald', 'Roboto Slab'];
+
+      function fontSelect(which, current) {
+        return '<select class="hs-brand-select" data-hs-act="brand-type" data-hs-type="' + which + '">' +
+          fontOpts.map(function (f) {
+            return '<option value="' + esc(f) + '"' + (f === current ? ' selected' : '') + '>' + esc(f) + '</option>';
+          }).join('') + '</select>';
+      }
+
       mount.innerHTML =
         '<div class="hs-brand-grid">' +
         '<div class="hs-brand-col">' +
-        '<section class="hs-card hs-pad"><div class="hs-between"><h3>Logo Assets</h3><button type="button" class="hs-link green" data-hs-act="upload-logo">Upload New</button></div>' +
+        '<section class="hs-card hs-pad"><div class="hs-between"><h3>Logo Assets</h3>' +
+        '<button type="button" class="hs-link green" data-hs-act="upload-logo">Upload New</button></div>' +
         '<div class="hs-logo-row">' +
-        '<div class="hs-logo-swatch light"><span class="hs-logo-mark">P</span> ' + esc(bizName()) + '<small>Primary Light</small></div>' +
-        '<div class="hs-logo-swatch dark"><span class="hs-logo-mark">P</span> ' + esc(bizName()) + '<small>Alternative Dark</small></div>' +
-        '<div class="hs-logo-swatch light"><span class="hs-logo-mark only">P</span><small>Icon Mark</small></div>' +
-        '</div></section>' +
-        '<section class="hs-card hs-pad"><h3>Brand Color Palette</h3><div class="hs-color-row">' +
-        colors.map(function (c) {
-          return '<div class="hs-color"><i style="background:' + esc(c.hex) + '"></i><strong>' + esc(c.name) + '</strong><span>' + esc(c.hex) + '</span></div>';
-        }).join('') + '</div></section>' +
+        '<button type="button" class="hs-logo-swatch light" data-hs-act="upload-logo" title="Change primary logo">' +
+        (logoUrl ? '<img src="' + esc(logoUrl) + '" alt="">' : '<span class="hs-logo-mark">' + esc(init) + '</span>') +
+        '<strong>' + esc(bizName()) + '</strong><small>Primary · click to change</small></button>' +
+        '<button type="button" class="hs-logo-swatch dark" data-hs-act="upload-logo">' +
+        (logoUrl ? '<img src="' + esc(logoUrl) + '" alt="">' : '<span class="hs-logo-mark">' + esc(init) + '</span>') +
+        '<strong>' + esc(bizName()) + '</strong><small>On dark</small></button>' +
+        '<button type="button" class="hs-logo-swatch light" data-hs-act="upload-logo">' +
+        (logoUrl ? '<img class="hs-logo-icon" src="' + esc(logoUrl) + '" alt="">' : '<span class="hs-logo-mark only">' + esc(init) + '</span>') +
+        '<small>Icon · click to change</small></button>' +
+        '</div>' +
+        (logoUrl ? '<button type="button" class="hs-link hs-tiny" data-hs-act="brand-logo-clear">Remove logo</button>' : '') +
+        '</section>' +
+        '<section class="hs-card hs-pad"><div class="hs-between"><h3>Brand Color Palette</h3>' +
+        '<button type="button" class="hs-link" data-hs-act="brand-color-add">+ Add color</button></div>' +
+        '<div class="hs-color-row hs-color-edit-row">' +
+        colors.map(function (c, i) {
+          return '<div class="hs-color hs-color-edit" data-hs-color-i="' + i + '">' +
+            '<label class="hs-color-swatch-wrap"><input type="color" value="' + esc(c.hex || '#D9632D') + '" data-hs-act="brand-color-hex" data-hs-color-i="' + i + '">' +
+            '<i style="background:' + esc(c.hex || '#D9632D') + '"></i></label>' +
+            '<input type="text" class="hs-color-name" value="' + esc(c.name || 'Color') + '" data-hs-act="brand-color-name" data-hs-color-i="' + i + '" maxlength="24">' +
+            '<input type="text" class="hs-color-hex" value="' + esc(c.hex || '') + '" data-hs-act="brand-color-hex-text" data-hs-color-i="' + i + '" maxlength="7">' +
+            '<button type="button" class="hs-color-del" data-hs-act="brand-color-del" data-hs-color-i="' + i + '" title="Remove" aria-label="Remove color">×</button>' +
+            '</div>';
+        }).join('') + '</div>' +
+        '<p class="hs-muted hs-tiny">Primary color syncs to your Hubly website brand color.</p></section>' +
         '<section class="hs-card hs-pad"><h3>Brand Typography</h3><div class="hs-type-row">' +
-        '<div><strong class="hs-type-sample">' + esc(ty.heading || 'Plus Jakarta Sans') + '</strong><p>Used for headlines, titles, and callouts (Bold, ExtraBold).</p></div>' +
-        '<div><strong class="hs-type-sample mono">' + esc(ty.body || 'DM Sans') + '</strong><p>Used for paragraphs, listings, captions, and details.</p></div>' +
+        '<div><label class="hs-lbl tiny">Headlines</label>' + fontSelect('heading', ty.heading || 'Plus Jakarta Sans') +
+        '<p class="hs-muted hs-tiny">Titles and callouts</p></div>' +
+        '<div><label class="hs-lbl tiny">Body</label>' + fontSelect('body', ty.body || 'DM Sans') +
+        '<p class="hs-muted hs-tiny">Paragraphs and details</p></div>' +
         '</div></section></div>' +
         '<div class="hs-brand-col narrow">' +
-        '<section class="hs-card hs-pad"><h3>Brand Copywriting Voice</h3>' +
-        tones.map(function (t) {
-          return '<div class="hs-voice' + (t.status === 'active' ? ' on' : '') + '"><div class="hs-between"><strong>' + esc(t.label) + '</strong>' +
-            '<span class="hs-pill ' + (t.status === 'active' ? 'ready' : 'draft') + '">' + esc(t.status === 'active' ? 'Active' : 'Supporting') + '</span></div>' +
-            '<p>' + esc(t.blurb || '') + '</p></div>';
-        }).join('') + '</section>' +
+        '<section class="hs-card hs-pad"><div class="hs-between"><h3>Brand Copywriting Voice</h3>' +
+        '<button type="button" class="hs-link" data-hs-act="brand-voice-add">+ Add</button></div>' +
+        tones.map(function (tone, i) {
+          return '<div class="hs-voice' + (tone.status === 'active' ? ' on' : '') + '">' +
+            '<div class="hs-between"><input type="text" class="hs-voice-label" value="' + esc(tone.label || '') + '" data-hs-act="brand-voice-label" data-hs-voice-i="' + i + '">' +
+            '<button type="button" class="hs-pill ' + (tone.status === 'active' ? 'ready' : 'draft') + '" data-hs-act="brand-voice-toggle" data-hs-voice-i="' + i + '">' +
+            esc(tone.status === 'active' ? 'Active' : 'Supporting') + '</button></div>' +
+            '<textarea class="hs-voice-blurb" rows="2" data-hs-act="brand-voice-blurb" data-hs-voice-i="' + i + '">' + esc(tone.blurb || '') + '</textarea>' +
+            '<button type="button" class="hs-link hs-tiny" data-hs-act="brand-voice-del" data-hs-voice-i="' + i + '">Remove</button></div>';
+        }).join('') +
+        '<p class="hs-muted hs-tiny">Voice guides Studio copy — kept in Brand Kit (not mixed into Business Memory facts).</p></section>' +
         '<section class="hs-card hs-pad"><h3>Quick Brand Templates</h3>' +
         [['Standard Dispatch Before/After', 'Instagram Square'], ['Emergency Repair Promo', 'Direct Mailer Flyer'], ['Seasonal Maintenance Offer', 'Facebook Landscape'], ['Review Spotlight', 'Instagram Story']].map(function (x) {
           return '<button type="button" class="hs-brand-tpl" data-hs-act="quick-draft" data-hs-title="' + esc(x[0]) + '"><span class="hs-recent-thumb"></span><span><strong>' + esc(x[0]) + '</strong><span>' + esc(x[1]) + '</span></span></button>';
         }).join('') + '</section></div></div>';
     }
+
+    paint(ensureBrandKit());
     if (Api) {
       Api.request('brand-kit', { method: 'GET' }).then(function (res) {
-        paint(res && res.brandKit);
-      }).catch(function () { paint(null); });
-    } else paint(null);
+        if (res && res.brandKit && (res.brandKit.colors || res.brandKit.logos || res.brandKit.voice_tones)) {
+          paint(res.brandKit);
+        }
+      }).catch(function () {});
+    }
+  }
+
+  function readLogoFile(file, done) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var dataUrl = reader.result;
+      function finish(url) {
+        var kit = ensureBrandKit();
+        var primary = kit.logos.find(function (l) { return l.role === 'primary'; });
+        if (primary) primary.url = url;
+        else kit.logos.unshift({ id: 'primary', label: 'Primary', url: url, role: 'primary' });
+        try { S().logoUrl = url; } catch (e) {}
+        saveBrandKit({ message: 'Logo updated' });
+        render();
+        if (typeof done === 'function') done(url);
+      }
+      if (typeof global.uploadBrandAsset === 'function') {
+        Promise.resolve(global.uploadBrandAsset('logo', dataUrl)).then(function (hosted) {
+          finish(hosted || dataUrl);
+        }).catch(function () { finish(dataUrl); });
+      } else {
+        finish(dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
   function renderPublish(root) {
@@ -1229,9 +1411,124 @@
       }
       return;
     }
-    if (act === 'apply-brand' || act === 'upload-logo') {
-      toast(act === 'upload-logo' ? 'Upload logo — connect brand assets storage' : 'Brand applied to open drafts locally');
+    if (act === 'apply-brand') {
+      applyBrandToDrafts();
       return;
+    }
+    if (act === 'brand-save') {
+      saveBrandKit({ message: 'Brand Kit saved' });
+      return;
+    }
+    if (act === 'upload-logo') {
+      var fileInput = el('hs-brand-logo-file');
+      if (!fileInput) {
+        toast('Logo upload unavailable — refresh Studio');
+        return;
+      }
+      fileInput.onchange = function () {
+        var f = fileInput.files && fileInput.files[0];
+        fileInput.value = '';
+        if (!f) return;
+        toast('Uploading logo…');
+        readLogoFile(f);
+      };
+      fileInput.click();
+      return;
+    }
+    if (act === 'brand-logo-clear') {
+      var kitClear = ensureBrandKit();
+      kitClear.logos = [];
+      try { S().logoUrl = null; } catch (e) {}
+      saveBrandKit({ message: 'Logo removed' });
+      return render();
+    }
+    if (act === 'brand-color-add') {
+      ensureBrandKit().colors.push({ id: 'c_' + Date.now(), name: 'New color', hex: '#D9632D' });
+      saveBrandKit({ toast: false });
+      return render();
+    }
+    if (act === 'brand-color-del') {
+      var di = parseInt(t.getAttribute('data-hs-color-i'), 10);
+      var kitDel = ensureBrandKit();
+      if (kitDel.colors.length <= 1) {
+        toast('Keep at least one brand color');
+        return;
+      }
+      if (!isNaN(di)) kitDel.colors.splice(di, 1);
+      saveBrandKit({ message: 'Color removed' });
+      return render();
+    }
+    if (act === 'brand-color-hex' || act === 'brand-color-hex-text' || act === 'brand-color-name') {
+      var ci = parseInt(t.getAttribute('data-hs-color-i'), 10);
+      var kitC = ensureBrandKit();
+      if (isNaN(ci) || !kitC.colors[ci]) return;
+      if (act === 'brand-color-name') {
+        kitC.colors[ci].name = t.value || kitC.colors[ci].name;
+      } else {
+        var hex = String(t.value || '').trim();
+        if (act === 'brand-color-hex-text' && hex && hex.charAt(0) !== '#') hex = '#' + hex;
+        if (/^#[0-9A-Fa-f]{6}$/.test(hex) || act === 'brand-color-hex') {
+          kitC.colors[ci].hex = hex;
+          var sw = t.closest('.hs-color-edit');
+          if (sw) {
+            var chip = sw.querySelector('i');
+            if (chip) chip.style.background = hex;
+            var hexField = sw.querySelector('.hs-color-hex');
+            var colorField = sw.querySelector('input[type=color]');
+            if (hexField && act !== 'brand-color-hex-text') hexField.value = hex;
+            if (colorField && act !== 'brand-color-hex') colorField.value = hex;
+          }
+        }
+      }
+      saveBrandKit({ toast: false });
+      return;
+    }
+    if (act === 'brand-type') {
+      var which = t.getAttribute('data-hs-type') || 'heading';
+      ensureBrandKit().typography[which] = t.value;
+      saveBrandKit({ toast: false });
+      return;
+    }
+    if (act === 'brand-voice-toggle') {
+      var vi = parseInt(t.getAttribute('data-hs-voice-i'), 10);
+      var kitV = ensureBrandKit();
+      if (!isNaN(vi) && kitV.voice_tones[vi]) {
+        kitV.voice_tones[vi].status = kitV.voice_tones[vi].status === 'active' ? 'supporting' : 'active';
+        saveBrandKit({ toast: false });
+        return render();
+      }
+      return;
+    }
+    if (act === 'brand-voice-label' || act === 'brand-voice-blurb') {
+      var vj = parseInt(t.getAttribute('data-hs-voice-i'), 10);
+      var kitVb = ensureBrandKit();
+      if (!isNaN(vj) && kitVb.voice_tones[vj]) {
+        if (act === 'brand-voice-label') kitVb.voice_tones[vj].label = t.value;
+        else kitVb.voice_tones[vj].blurb = t.value;
+        saveBrandKit({ toast: false });
+      }
+      return;
+    }
+    if (act === 'brand-voice-add') {
+      ensureBrandKit().voice_tones.push({
+        id: 'v_' + Date.now(),
+        label: 'New voice',
+        status: 'supporting',
+        blurb: 'Describe how this voice should sound in campaigns.'
+      });
+      saveBrandKit({ toast: false });
+      return render();
+    }
+    if (act === 'brand-voice-del') {
+      var vd = parseInt(t.getAttribute('data-hs-voice-i'), 10);
+      var kitVd = ensureBrandKit();
+      if (kitVd.voice_tones.length <= 1) {
+        toast('Keep at least one voice');
+        return;
+      }
+      if (!isNaN(vd)) kitVd.voice_tones.splice(vd, 1);
+      saveBrandKit({ message: 'Voice removed' });
+      return render();
     }
     if (act === 'set-platform' || act === 'set-style' || act === 'set-tone') {
       var group = t.parentElement;
@@ -1254,6 +1551,10 @@
     root.addEventListener('click', function (e) {
       var t = e.target && e.target.closest ? e.target.closest('[data-hs-act]') : null;
       if (!t || !root.contains(t)) return;
+      var tag = (t.tagName || '').toLowerCase();
+      // Native fields use change/input — don't steal focus or block the picker.
+      if (tag === 'select' || tag === 'textarea') return;
+      if (tag === 'input' && t.type !== 'button' && t.type !== 'submit') return;
       var act = t.getAttribute('data-hs-act') || '';
       if (!act) return;
       e.preventDefault();
@@ -1264,6 +1565,27 @@
         console.warn('Hubly Studio action failed', act, err);
         toast('That action failed — try again');
       }
+    });
+    root.addEventListener('change', function (e) {
+      var t = e.target && e.target.closest ? e.target.closest('[data-hs-act]') : null;
+      if (!t || !root.contains(t)) return;
+      var act = t.getAttribute('data-hs-act') || '';
+      if (!act) return;
+      try {
+        handleAct(act, t, root);
+      } catch (err) {
+        console.warn('Hubly Studio change failed', act, err);
+      }
+    });
+    root.addEventListener('input', function (e) {
+      var t = e.target;
+      if (!t || !t.getAttribute) return;
+      var act = t.getAttribute('data-hs-act') || '';
+      if (!act || (act.indexOf('brand-') !== 0 && act !== 'set-headline')) return;
+      if (act === 'brand-color-hex') return; // color picker fires change
+      try {
+        handleAct(act, t, root);
+      } catch (err) {}
     });
     root.addEventListener('blur', function (e) {
       if (e.target && e.target.id === 'hs-canvas-headline') {
