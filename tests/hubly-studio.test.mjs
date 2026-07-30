@@ -24,15 +24,15 @@ const spec = readFileSync(join(root, 'docs/HUBLY_STUDIO_IMPLEMENTATION_SPEC.md')
 describe('Hubly Studio V1.0 contract', () => {
   it('ships Studio shell and frozen contract', () => {
     assert.match(hubly, /data-v="studio"/);
-    assert.match(hubly, /hubly-studio\.js\?v=studio-4/);
+    assert.match(hubly, /hubly-studio\.js\?v=studio-5/);
     assert.match(journey, /HublyStudio\.setMode/);
     assert.match(contract, /V1\.0/);
     assert.match(contract, /single channel: Email/i);
     assert.match(spec, /V1\.0 frozen/);
   });
 
-  it('Project Workspace + Customize in Canva + detailing goals', () => {
-    assert.match(studio, /Customize in Canva/);
+  it('Project Workspace + Customize Design + detailing goals', () => {
+    assert.match(studio, /Customize Design/);
     assert.match(studio, /hs-workspace-shell/);
     assert.match(studio, /CAMPAIGN_GOALS/);
     assert.match(studio, /dt_review_spotlight|dt_ceramic/);
@@ -93,5 +93,16 @@ describe('Hubly Studio V1.0 contract', () => {
     assert.match(css, /\.hs-back-hubly/);
     assert.match(hubly, /jos-studio-mode/);
     assert.match(hubly, /inStudio/);
+  });
+
+  it('workspace tabs stick and preview uses business facts not plumbing placeholders', () => {
+    assert.match(studio, /refreshWorkspace/);
+    assert.match(studio, /resetWorkspace/);
+    assert.match(studio, /function bizContext/);
+    assert.match(studio, /function reviewLine/);
+    assert.doesNotMatch(studio, /Fixed our plumbing leak/);
+    assert.doesNotMatch(studio, /Mrs\. Miller/);
+    assert.doesNotMatch(studio, /No Leak Too Large/);
+    assert.match(studio, /Updated headlines from your campaign package/);
   });
 });

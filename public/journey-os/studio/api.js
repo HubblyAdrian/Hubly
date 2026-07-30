@@ -219,38 +219,53 @@
     }
     if (p === 'campaign/plan' && method === 'POST') {
       var goalId = body.goal_id || 'book_more_jobs';
+      var biz = body.business_name || 'Your business';
+      var phone = body.phone || '';
+      var city = body.city || '';
+      var review = body.latest_review && typeof body.latest_review === 'object' ? body.latest_review : null;
       var title = body.service_focus
         ? ('Promote ' + body.service_focus)
         : (goalId === 'get_more_reviews' ? 'Review Spotlight'
-          : goalId === 'fill_tomorrow_schedule' ? 'OpenSlots Tomorrow'.replace('OpenSlots', 'Open Slots')
+          : goalId === 'fill_tomorrow_schedule' ? 'Open Slots Tomorrow'
           : goalId === 'membership_drive' ? 'Membership Drive'
           : goalId === 'win_back_customers' ? 'We Miss You'
           : goalId === 'seasonal_promotion' ? 'Seasonal Promotion'
           : 'Before & After Highlight');
+      var headlines = [title];
+      if (city) headlines.push(title + ' in ' + city);
+      if (body.service_focus) headlines.push(body.service_focus + ' with ' + biz);
+      var captionText = title + ' — ' + biz + (phone ? (' · ' + phone) : '');
+      if (review && review.quote) captionText = '“' + review.quote + '” — ' + (review.author || 'Customer') + ' · ' + biz;
       var plan = {
         playbook_id: 'local_' + goalId,
         goal_id: goalId,
         industry_id: 'home_services',
         title: title,
         objective: 'Structured local campaign plan',
-        channels: ['instagram', 'facebook', 'google_business'],
+        channels: ['email', 'instagram', 'facebook', 'google_business'],
         required_assets: [{ key: 'logo', required: true }],
         messaging_strategy: 'Hubly playbook-driven',
-        cta: 'Book now',
+        cta: phone ? ('Call ' + phone) : 'Book now',
         timing: { season: 'any', month: new Date().getMonth() + 1, schedule_hints: ['Tomorrow 12:00 PM'] },
         template_refs: [{ source: 'hubly', id: 'before_after' }],
         offer: { type: 'none', summary: '' },
         audience: 'local_prospects',
-        ai_brief: 'Campaign: ' + title,
-        business_inputs: { business_name: body.business_name || 'Your business' },
+        ai_brief: 'Campaign: ' + title + '\nBusiness: ' + biz + (city ? (' (' + city + ')') : '') + (review && review.quote ? ('\nReview: ' + review.quote) : ''),
+        business_inputs: { business_name: biz, phone: phone || null, city: city || null, services: body.services || [] },
         dna_inputs: {},
         package: {
-          headlines: [title],
-          captions: [{ channel: 'instagram', text: title + ' — from Hubly Studio' }],
+          headlines: headlines,
+          captions: [
+            { channel: 'instagram', text: captionText },
+            { channel: 'facebook', text: captionText },
+            { channel: 'email', text: captionText }
+          ],
+          review: review,
+          cta: phone ? ('Call ' + phone) : 'Book now',
           hashtags: ['#LocalBusiness'],
-          email: { subject: title, body: title },
-          sms: title.slice(0, 160),
-          google_business_post: title,
+          email: { subject: title + ' — ' + biz, body: captionText + (phone ? ('\n\nCall ' + phone) : '') },
+          sms: (title + ' — ' + biz).slice(0, 160),
+          google_business_post: captionText,
           schedule_suggestions: ['Tomorrow 12:00 PM — peak local engagement window']
         }
       };
@@ -267,7 +282,20 @@
       };
       os.projects = os.projects || [];
       os.projects.unshift(proj);
-      var brief = { campaign: title, goal: goalId, channel: 'email', tone: 'Premium', offer: null, business_name: body.business_name || 'Your business', service_name: body.service_focus || null, review_text: null, cta: 'Book now', playbook_id: plan.playbook_id, assets: { review: null, logo: null, photo: null }, prompt_template: 'Write email copy for ' + title };
+      var brief = {
+        campaign: title,
+        goal: goalId,
+        channel: 'email',
+        tone: 'Premium',
+        offer: null,
+        business_name: biz,
+        service_name: body.service_focus || null,
+        review_text: review && review.quote || null,
+        cta: plan.cta,
+        playbook_id: plan.playbook_id,
+        assets: { review: review && review.quote || null, logo: null, photo: null },
+        prompt_template: 'Write email copy for ' + title + ' for ' + biz
+      };
       proj.canvas.brief = brief;
       return Promise.resolve({ _local: true, campaignPlan: plan, brief: brief, project: proj, persisted: false, v1_channel: 'email' });
     }
