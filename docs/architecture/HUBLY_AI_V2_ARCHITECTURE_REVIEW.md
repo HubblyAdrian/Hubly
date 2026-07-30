@@ -825,7 +825,9 @@ Guardrails for the team as Hubly grows:
 9. **We will not** simulate payments, shipping, bookings, or provider success when credentials are missing.  
 10. **We will not** treat Hubly as an AI website builder — the website is one output of the OS.  
 11. **We will not** build invisibly or claim progress the customer cannot see.  
-12. **We will not** restart the experience when intent shifts between Build, Grow, and Get something done.
+12. **We will not** restart the experience when intent shifts between Build, Grow, and Get something done.  
+13. **We will not** let a model provider own the product — OpenAI (or any successor) is replaceable; the Hubly experience is not (Rule #11).  
+14. **We will not** treat the AI Workspace as disposable onboarding — it is the permanent home of Hubly AI.
 
 These guardrails keep Hubly a single intelligent platform — not a collection of disconnected tools.
 
