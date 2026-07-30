@@ -89,6 +89,8 @@
       };
     }
     if (!os.ui || typeof os.ui !== 'object') os.ui = { screen: 'home', editorTool: 'ai', editorProjectId: null };
+    if (!os.elements || typeof os.elements !== 'object') os.elements = { favorites: [], cat: 'all' };
+    if (!Array.isArray(os.elements.favorites)) os.elements.favorites = [];
     return os;
   }
 
@@ -851,6 +853,120 @@
       '<div class="hs-card">' + list + '</div>');
   }
 
+  var ELEMENT_CATS = [
+    { id: 'all', label: 'All' },
+    { id: 'badges', label: 'Badges' },
+    { id: 'cta', label: 'CTAs' },
+    { id: 'offers', label: 'Offers' },
+    { id: 'proof', label: 'Social proof' },
+    { id: 'frames', label: 'Frames' }
+  ];
+
+  /** Campaign package graphics — Hubly attaches these to projects; Canva owns freeform drawing. */
+  var ELEMENT_LIBRARY = [
+    { id: 'badge_5star', cat: 'badges', label: '5-Star Badge', blurb: 'Review highlight stamp', glyph: '★', tone: 'brand' },
+    { id: 'badge_licensed', cat: 'badges', label: 'Licensed & Insured', blurb: 'Trust mark for local ads', glyph: '✓', tone: 'navy' },
+    { id: 'badge_local', cat: 'badges', label: 'Locally Owned', blurb: 'Neighborhood business chip', glyph: '⌂', tone: 'teal' },
+    { id: 'badge_same_day', cat: 'badges', label: 'Same-Day Available', blurb: 'Urgency for open slots', glyph: '⚡', tone: 'brand' },
+    { id: 'cta_book', cat: 'cta', label: 'Book Now Bar', blurb: 'Primary booking CTA strip', glyph: '→', tone: 'brand' },
+    { id: 'cta_call', cat: 'cta', label: 'Call Today', blurb: 'Phone-forward CTA', glyph: '☎', tone: 'navy' },
+    { id: 'cta_quote', cat: 'cta', label: 'Free Quote', blurb: 'Lead-gen CTA chip', glyph: '$', tone: 'teal' },
+    { id: 'cta_text', cat: 'cta', label: 'Text to Book', blurb: 'SMS-friendly CTA', glyph: '💬', tone: 'brand' },
+    { id: 'offer_pct', cat: 'offers', label: '% Off Stamp', blurb: 'Percent discount burst', glyph: '%', tone: 'brand' },
+    { id: 'offer_seasonal', cat: 'offers', label: 'Seasonal Special', blurb: 'Calendar promo ribbon', glyph: '☀', tone: 'teal' },
+    { id: 'offer_member', cat: 'offers', label: 'Members Save', blurb: 'Membership upsell chip', glyph: '◆', tone: 'navy' },
+    { id: 'offer_bundle', cat: 'offers', label: 'Package Deal', blurb: 'Bundle / combo stamp', glyph: '+', tone: 'brand' },
+    { id: 'proof_stars', cat: 'proof', label: 'Star Row', blurb: '★★★★★ under headlines', glyph: '★★★★★', tone: 'brand' },
+    { id: 'proof_quote', cat: 'proof', label: 'Quote Frame', blurb: 'Review quote card frame', glyph: '“”', tone: 'navy' },
+    { id: 'proof_count', cat: 'proof', label: 'Jobs Completed', blurb: 'Social proof counter', glyph: '#', tone: 'teal' },
+    { id: 'frame_before_after', cat: 'frames', label: 'Before / After Split', blurb: 'Two-panel photo frame', glyph: '▥', tone: 'navy' },
+    { id: 'frame_story', cat: 'frames', label: 'Story Safe Zone', blurb: 'Vertical story margins', glyph: '▮', tone: 'teal' },
+    { id: 'frame_email', cat: 'frames', label: 'Email Header Band', blurb: '600px email masthead', glyph: '▬', tone: 'brand' }
+  ];
+
+  function ensureElementsState() {
+    var os = ensureStudioOs();
+    if (!os.elements || typeof os.elements !== 'object') os.elements = { favorites: [], cat: 'all' };
+    if (!Array.isArray(os.elements.favorites)) os.elements.favorites = [];
+    if (!os.elements.cat) os.elements.cat = 'all';
+    return os.elements;
+  }
+
+  function findElement(id) {
+    return ELEMENT_LIBRARY.find(function (e) { return e.id === id; }) || null;
+  }
+
+  function attachElementToProject(project, elementId) {
+    var elDef = findElement(elementId);
+    if (!project || !elDef) return false;
+    project.canvas = project.canvas || {};
+    project.canvas.package = project.canvas.package || {};
+    var list = project.canvas.package.elements || [];
+    if (list.some(function (x) { return x && x.id === elDef.id; })) return true;
+    list.push({
+      id: elDef.id,
+      label: elDef.label,
+      cat: elDef.cat,
+      glyph: elDef.glyph,
+      tone: elDef.tone,
+      attached_at: new Date().toISOString()
+    });
+    project.canvas.package.elements = list;
+    project.last_edited_at = new Date().toISOString();
+    return true;
+  }
+
+  function renderElements(root) {
+    var st = ensureElementsState();
+    var os = ensureStudioOs();
+    var cat = st.cat || 'all';
+    var openProj = currentProject();
+    var cats = ELEMENT_CATS.map(function (c) {
+      return '<button type="button" class="hs-cat' + (cat === c.id ? ' on' : '') + '" data-hs-act="el-cat" data-hs-cat="' + c.id + '">' + esc(c.label) + '</button>';
+    }).join('');
+
+    var items = ELEMENT_LIBRARY.filter(function (e) {
+      return cat === 'all' || cat === 'favorites' || e.cat === cat;
+    });
+    if (cat === 'favorites') {
+      items = ELEMENT_LIBRARY.filter(function (e) { return st.favorites.indexOf(e.id) >= 0; });
+    }
+
+    var cards = items.map(function (e) {
+      var fav = st.favorites.indexOf(e.id) >= 0;
+      return '<article class="hs-el-card tone-' + esc(e.tone || 'brand') + '">' +
+        '<button type="button" class="hs-el-fav' + (fav ? ' on' : '') + '" data-hs-act="el-fav" data-hs-el="' + esc(e.id) + '" title="Favorite" aria-label="Favorite">★</button>' +
+        '<div class="hs-el-glyph" aria-hidden="true">' + esc(e.glyph) + '</div>' +
+        '<strong>' + esc(e.label) + '</strong>' +
+        '<span>' + esc(e.blurb) + '</span>' +
+        '<div class="hs-el-acts">' +
+        '<button type="button" class="hs-btn hs-btn-brand hs-btn-sm" data-hs-act="el-attach" data-hs-el="' + esc(e.id) + '">' +
+        (openProj ? 'Add to campaign' : 'Use in campaign') + '</button>' +
+        '</div></article>';
+    }).join('') || '<div class="hs-empty"><strong>No favorites yet</strong><p>Star elements you reuse often.</p></div>';
+
+    var favCount = st.favorites.length;
+    var body =
+      '<header class="hs-page-head hs-page-head-row">' +
+      '<div><h1>Elements</h1>' +
+      '<p>Campaign-ready graphics Hubly can attach to packages — badges, CTAs, offers, and frames. Visual freehand drawing stays in Customize Design.</p></div>' +
+      (openProj
+        ? '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="open-project" data-hs-id="' + esc(openProj.id) + '">Open current campaign</button>'
+        : '') +
+      '</header>' +
+      '<div class="hs-el-intro hs-card hs-pad">' +
+      '<strong>What Elements are for</strong>' +
+      '<p class="hs-muted">Pick a badge or CTA → Hubly attaches it to a campaign package. Open Project Workspace to see it on the Assets list and preview chips. This is not a Canva draw tool.</p>' +
+      '</div>' +
+      '<div class="hs-el-toolbar">' +
+      '<div class="hs-cats">' + cats +
+      '<button type="button" class="hs-cat' + (cat === 'favorites' ? ' on' : '') + '" data-hs-act="el-cat" data-hs-cat="favorites">Favorites' +
+      (favCount ? ' (' + favCount + ')' : '') + '</button></div></div>' +
+      '<div class="hs-el-grid">' + cards + '</div>';
+
+    root.innerHTML = shell('elements', body);
+  }
+
   function renderSimple(root, screen, title, sub) {
     root.innerHTML = shell(screen,
       '<header class="hs-page-head"><h1>' + esc(title) + '</h1><p>' + esc(sub) + '</p></header>' +
@@ -906,9 +1022,18 @@
 
     var leftBody = '';
     if (tab === 'assets') {
-      leftBody = '<div class="hs-ws-panel"><h3>Assets</h3><p class="hs-muted">Job photos, logo, and reviews linked to this campaign.</p>' +
+      var attached = ((project.canvas && project.canvas.package && project.canvas.package.elements) || []);
+      leftBody = '<div class="hs-ws-panel"><h3>Assets</h3><p class="hs-muted">Job photos, logo, reviews, and Elements attached to this campaign.</p>' +
         '<ul class="hs-ws-list"><li>Brand logo</li><li>Job photos</li><li>Review quote</li></ul>' +
-        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="uploads">Manage uploads</button></div>';
+        (attached.length
+          ? '<div class="hs-lbl tiny">Elements</div><div class="hs-attach-pills">' +
+            attached.map(function (a) { return '<span>' + esc(a.glyph || '◇') + ' ' + esc(a.label || a.id) + '</span>'; }).join('') +
+            '</div>'
+          : '<p class="hs-muted hs-tiny">No Elements yet — open the Elements tab to attach badges and CTAs.</p>') +
+        '<div class="hs-btn-row">' +
+        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="elements">Browse Elements</button>' +
+        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="uploads">Manage uploads</button>' +
+        '</div></div>';
     } else if (tab === 'brief') {
       var brief = (project.canvas && project.canvas.brief) || project.brief || null;
       leftBody = '<div class="hs-ws-panel"><h3>Campaign Brief</h3>' +
@@ -1001,6 +1126,13 @@
       (caption ? '<p class="hs-design-caption">' + esc(caption.slice(0, 180)) + '</p>' : '') +
       '<div class="hs-design-cta"><span>NEED SERVICE?</span><strong>' +
       (phone ? ('Call ' + esc(phone)) : esc((pkg.cta || 'Book now'))) + '</strong></div>' +
+      (function () {
+        var els = pkg.elements || [];
+        if (!els.length) return '';
+        return '<div class="hs-design-elements">' + els.slice(0, 4).map(function (a) {
+          return '<span class="hs-el-chip tone-' + esc(a.tone || 'brand') + '">' + esc(a.glyph || '◇') + ' ' + esc(a.label || '') + '</span>';
+        }).join('') + '</div>';
+      })() +
       '<div class="hs-preview-note">Showing ' + esc(pageLabel) + ' · Campaign Engine package (playbook). Visual polish opens in Customize Design.</div>' +
       '</div></div>' +
       '<footer class="hs-pages-bar"><span class="hs-lbl tiny">PAGES IN SET</span><div class="hs-pages-row">' + pageChips + '</div>' +
@@ -1530,6 +1662,57 @@
       saveBrandKit({ message: 'Voice removed' });
       return render();
     }
+    if (act === 'el-cat') {
+      ensureElementsState().cat = t.getAttribute('data-hs-cat') || 'all';
+      return render();
+    }
+    if (act === 'el-fav') {
+      var elId = t.getAttribute('data-hs-el');
+      var est = ensureElementsState();
+      var ix = est.favorites.indexOf(elId);
+      if (ix >= 0) est.favorites.splice(ix, 1);
+      else if (elId) est.favorites.push(elId);
+      persistStudioMeta();
+      return render();
+    }
+    if (act === 'el-attach') {
+      var attachId = t.getAttribute('data-hs-el');
+      var elDef = findElement(attachId);
+      if (!elDef) {
+        toast('Element not found');
+        return;
+      }
+      var projEl = currentProject();
+      if (projEl && attachElementToProject(projEl, attachId)) {
+        persistStudioMeta();
+        toast('Added “' + elDef.label + '” to ' + (projEl.title || 'campaign'));
+        openEditorFor(projEl, { tab: 'assets' });
+        return;
+      }
+      // No open project — create a campaign draft with this element attached
+      createProject({
+        title: bizName() + ' — ' + elDef.label,
+        prompt: 'Campaign using element: ' + elDef.label,
+        headline: elDef.label,
+        canvas: {
+          headline: elDef.label,
+          package: {
+            headlines: [elDef.label, bizName() + ' · ' + elDef.label],
+            captions: [{ channel: 'instagram', text: elDef.label + ' — ' + bizName() }],
+            elements: [{
+              id: elDef.id,
+              label: elDef.label,
+              cat: elDef.cat,
+              glyph: elDef.glyph,
+              tone: elDef.tone,
+              attached_at: new Date().toISOString()
+            }],
+            schedule_suggestions: ['Tomorrow 12:00 PM — peak local engagement window']
+          }
+        }
+      });
+      return;
+    }
     if (act === 'set-platform' || act === 'set-style' || act === 'set-tone') {
       var group = t.parentElement;
       if (group) group.querySelectorAll('.hs-pill-tog').forEach(function (b) { b.classList.remove('on'); });
@@ -1611,7 +1794,7 @@
     if (screen === 'analytics') return renderAnalytics(root);
     if (screen === 'projects') return renderProjects(root);
     if (screen === 'photos') return renderSimple(root, 'photos', 'Photos', 'Job photos and portfolio for Studio campaigns.');
-    if (screen === 'elements') return renderSimple(root, 'elements', 'Elements', 'Graphics for campaign packages — open a project to attach assets.');
+    if (screen === 'elements') return renderElements(root);
     if (screen === 'uploads') return renderSimple(root, 'uploads', 'Uploads', 'Your uploaded brand and job media.');
     if (screen === 'settings') {
       return renderSimple(root, 'settings', 'Studio Settings', 'Storage, creative engine link, and Studio preferences.');
