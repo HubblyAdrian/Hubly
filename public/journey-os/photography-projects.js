@@ -16,6 +16,18 @@
   var STATUSES = [
     'Lead', 'Booked', 'Scheduled', 'Shooting', 'Editing', 'Proofing', 'Delivered', 'Archived'
   ];
+
+  /** Create Marketing chooser — Hubly owns the campaign; Canva is optional polish. */
+  var MARKETING_FORMATS = [
+    { id: 'instagram_post', label: 'Instagram Post', goal: 'promote_service', format: 'instagram_post' },
+    { id: 'facebook_post', label: 'Facebook Post', goal: 'promote_service', format: 'facebook_post' },
+    { id: 'google_business', label: 'Google Business Post', goal: 'fill_tomorrow_schedule', format: 'google_business' },
+    { id: 'email_campaign', label: 'Email Campaign', goal: 'win_back_customers', format: 'email_header' },
+    { id: 'flyer', label: 'Flyer', goal: 'seasonal_promotion', format: 'print_flyer' },
+    { id: 'door_hanger', label: 'Door Hanger', goal: 'seasonal_promotion', format: 'print_flyer' },
+    { id: 'before_after', label: 'Before/After Carousel', goal: 'book_more_jobs', format: 'instagram_post' },
+    { id: 'review_spotlight', label: 'Review Spotlight', goal: 'get_more_reviews', format: 'instagram_post' }
+  ];
   var TIMELINE_DEFAULTS_PHOTO = [
     { event_key: 'booking', label: 'Booking' },
     { event_key: 'contract_sent', label: 'Contract Sent' },
@@ -1828,7 +1840,7 @@
     return base;
   }
 
-  function openStudioWithSelected(p, st, mode) {
+  function openStudioWithSelected(p, st, mode, campaignOpts) {
     var Bridge = global.HublyMediaStudioBridge;
     var items = selectedMediaItems(p, st);
     if (!items.length) {
@@ -1840,26 +1852,51 @@
       toast('Selected photos need a stored preview — re-upload once, then try again');
       return;
     }
+    campaignOpts = campaignOpts || {};
     var pickMode = mode || 'attach';
     if (Bridge) {
       var existing = Bridge.get() || {};
       Bridge.set({
-        mode: existing.mode === 'pick' || existing.mode === 'replace' ? existing.mode : pickMode,
+        mode: campaignOpts.formatId ? 'create_campaign' : (existing.mode === 'pick' || existing.mode === 'replace' ? existing.mode : pickMode),
         returnTo: 'studio',
-        studioProjectId: existing.studioProjectId || null,
+        studioProjectId: campaignOpts.formatId ? null : (existing.studioProjectId || null),
         slot: existing.slot || 'media',
         mediaJobId: p.id,
         mediaJobName: p.name || '',
-        selected: assets
+        selected: assets,
+        formatId: campaignOpts.formatId || null,
+        formatLabel: campaignOpts.formatLabel || null,
+        format: campaignOpts.format || null,
+        goalId: campaignOpts.goalId || null
       });
     }
     st.selectedMediaIds = [];
-    toast(assets.length + ' photo' + (assets.length === 1 ? '' : 's') + ' ready for Studio');
+    st.formatChooserOpen = false;
+    toast(campaignOpts.formatLabel
+      ? ('Building ' + campaignOpts.formatLabel + ' with ' + assets.length + ' photo' + (assets.length === 1 ? '' : 's'))
+      : (assets.length + ' photo' + (assets.length === 1 ? '' : 's') + ' ready for Studio'));
     if (Bridge && Bridge.switchToStudio()) return;
     if (global.HublyStudio && typeof global.HublyStudio.openFromMedia === 'function') {
       return global.HublyStudio.openFromMedia();
     }
     toast('Open Studio to finish the campaign with these photos');
+  }
+
+  function renderFormatChooserModal(st) {
+    var cards = MARKETING_FORMATS.map(function (f) {
+      return '<button type="button" class="pp-format-card" data-pp-act="media-format-pick" data-pp-format="' + esc(f.id) + '">' +
+        '<strong>' + esc(f.label) + '</strong>' +
+        '<span>Hubly prepares photos, brand, and copy</span></button>';
+    }).join('');
+    return '<div class="pp-modal-bg" data-pp-act="media-format-close">' +
+      '<div class="pp-modal pp-modal-formats" onclick="event.stopPropagation()" role="dialog" aria-labelledby="pp-format-title">' +
+      '<div class="pp-modal-h"><h2 id="pp-format-title">What would you like to create?</h2>' +
+      '<button type="button" class="pp-icon-x" data-pp-act="media-format-close" aria-label="Close">×</button></div>' +
+      '<p class="pp-muted">Hubly owns the campaign. Your selected Media photos, logo, brand colors, and AI copy are packed in — Canva is optional polish later.</p>' +
+      '<div class="pp-format-grid">' + cards + '</div>' +
+      '<div class="pp-wizard-foot">' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="media-format-close">Cancel</button>' +
+      '</div></div></div>';
   }
 
   function renderMediaTab(p) {
@@ -1947,7 +1984,8 @@
         ? '<section class="pp-panel pp-panel-wide"><div class="pp-between"><h3>Galleries &amp; delivery</h3>' +
           '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Publish Hubly gallery</button></div>' +
           '<p class="pp-muted"><strong>Galleries:</strong> Publish creates a <strong>Hubly client gallery</strong> from your media. Adobe Lightroom is optional — use Upload to Lightroom on the Lightroom tab only if you want pro edits synced back.</p></section>'
-        : '');
+        : '') +
+      (st.formatChooserOpen ? renderFormatChooserModal(st) : '');
   }
 
   function renderFilesTab(p) {
@@ -2621,7 +2659,6 @@
     }
     if (act === 'media-create-marketing' && p) {
       if (!(st.selectedMediaIds && st.selectedMediaIds.length)) {
-        // Prefer up to 3 recent photos when none selected
         var uploadsM = ((p.workspace && p.workspace.local_uploads) || p.local_uploads || [])
           .filter(function (u) { return mediaKind(u) === 'photo'; })
           .slice(0, 3);
@@ -2631,7 +2668,27 @@
         toast('Upload photos first, then Create Marketing');
         return switchCommandTab('media');
       }
-      return openStudioWithSelected(p, st, 'attach');
+      st.formatChooserOpen = true;
+      return switchCommandTab('media');
+    }
+    if (act === 'media-format-close') {
+      st.formatChooserOpen = false;
+      return switchCommandTab('media');
+    }
+    if (act === 'media-format-pick' && p) {
+      var fid = t.getAttribute('data-pp-format') || '';
+      var fmt = MARKETING_FORMATS.find(function (f) { return f.id === fid; });
+      if (!fmt) {
+        toast('Pick a format to continue');
+        return;
+      }
+      st.formatChooserOpen = false;
+      return openStudioWithSelected(p, st, 'create_campaign', {
+        formatId: fmt.id,
+        formatLabel: fmt.label,
+        format: fmt.format,
+        goalId: fmt.goal
+      });
     }
     if (act === 'media-ai-enhance' && p) {
       var selE = selectedMediaItems(p, st);

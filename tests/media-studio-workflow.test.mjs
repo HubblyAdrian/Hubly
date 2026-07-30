@@ -19,7 +19,7 @@ describe('Media ↔ Studio continuous workflow', () => {
     assert.match(bridge, /toStudioAsset/);
     assert.match(bridge, /switchToStudio/);
     assert.match(bridge, /switchToMedia/);
-    assert.match(hubly, /media-studio-bridge\.js\?v=studio-14/);
+    assert.match(hubly, /media-studio-bridge\.js\?v=studio-15/);
   });
 
   it('Media supports multi-select and Use in Campaign / Create Marketing', () => {
@@ -42,22 +42,43 @@ describe('Media ↔ Studio continuous workflow', () => {
   it('Studio browses Media, replaces images, and uses Edit Campaign', () => {
     const studio = read('public/journey-os/hubly-studio.js');
     assert.match(studio, /Edit Campaign/);
-    assert.match(studio, /Edit in Canva/);
+    assert.match(studio, /Polish in Canva/);
+    assert.match(studio, /Publish from Hubly/);
     assert.match(studio, /browse-media/);
     assert.match(studio, /replace-image/);
     assert.match(studio, /Browse Media/);
     assert.match(studio, /Recent Jobs/);
     assert.match(studio, /AI Generate Campaign/);
     assert.match(studio, /consumeMediaBridge/);
+    assert.match(studio, /createCampaignFromMediaBridge/);
     assert.match(studio, /openFromMedia/);
     assert.match(studio, /startBrowseMedia/);
     assert.doesNotMatch(studio, /Continue Editing/);
-    assert.match(studio, /Media owns the photos|source of truth/i);
+    assert.doesNotMatch(studio, />Edit in Canva</);
+    assert.match(studio, /Media owns the photos|system of record/i);
+  });
+
+  it('Create Marketing asks what to create then builds a ready Hubly campaign', () => {
+    const projects = read('public/journey-os/photography-projects.js');
+    const studio = read('public/journey-os/hubly-studio.js');
+    const css = read('public/journey-os/photography-projects.css');
+    assert.match(projects, /What would you like to create/);
+    assert.match(projects, /MARKETING_FORMATS/);
+    assert.match(projects, /Instagram Post/);
+    assert.match(projects, /Door Hanger/);
+    assert.match(projects, /Before\/After Carousel/);
+    assert.match(projects, /Review Spotlight/);
+    assert.match(projects, /media-format-pick/);
+    assert.match(projects, /create_campaign/);
+    assert.match(studio, /buildAiCopyFromMedia/);
+    assert.match(studio, /brandKitSnapshot/);
+    assert.match(studio, /hubly_system_of_record/);
+    assert.match(css, /\.pp-format-grid/);
   });
 
   it('cache-busts bridged assets', () => {
     const hubly = read('public/hubly.html');
-    assert.match(hubly, /hubly-studio\.js\?v=studio-14/);
-    assert.match(hubly, /photography-projects\.js\?v=projects-15/);
+    assert.match(hubly, /hubly-studio\.js\?v=studio-15/);
+    assert.match(hubly, /photography-projects\.js\?v=projects-16/);
   });
 });

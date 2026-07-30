@@ -1929,7 +1929,7 @@
       '<span class="hs-pill ' + (project.status === 'ready' ? 'ready' : 'draft') + '">' + esc(project.status || 'draft') + '</span></div>' +
       '<div class="hs-head-actions">' +
       '<button type="button" class="hs-btn hs-btn-ghost hs-btn-back-hubly" data-hs-act="leave-studio">← Back to Hubly</button>' +
-      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="publish-email">✈ Publish Email</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="publish-email">Publish from Hubly</button>' +
       workspaceEditActionsHtml() +
       '</div></header>' +
       '<div class="hs-ws-mobile-strip" aria-label="Workspace sections">' +
@@ -2018,7 +2018,7 @@
     var Api = api();
     var payload = {
       title: opts.title || (bizName() + ' — ' + (opts.format || 'instagram_post').replace(/_/g, ' ')),
-      format_primary: opts.format || 'instagram_post',
+      format_primary: opts.format_primary || opts.format || 'instagram_post',
       platform: opts.platform || 'instagram',
       style: opts.style || 'bold',
       tone: opts.tone || 'expert',
@@ -2154,7 +2154,7 @@
     var canvaOn = isCanvaLinked();
     if (canvaOn) {
       return '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="continue-edit">Edit Campaign</button>' +
-        '<button type="button" class="hs-btn hs-btn-brand hs-btn-customize" data-hs-act="customize-design">Edit in Canva</button>';
+        '<button type="button" class="hs-btn hs-btn-brand hs-btn-customize" data-hs-act="customize-design">Polish in Canva</button>';
     }
     return '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="continue-edit">Edit Campaign</button>' +
       '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="canva-connect">Connect Canva</button>';
@@ -2163,14 +2163,16 @@
   function workspacePropsCtaHtml() {
     var canvaOn = isCanvaLinked();
     if (canvaOn) {
-      return '<button type="button" class="hs-btn hs-btn-brand hs-btn-block" data-hs-act="customize-design">Edit in Canva</button>' +
+      return '<button type="button" class="hs-btn hs-btn-brand hs-btn-block" data-hs-act="publish-email">Publish from Hubly</button>' +
+        '<button type="button" class="hs-btn hs-btn-ghost hs-btn-block" data-hs-act="customize-design">Polish in Canva</button>' +
         '<button type="button" class="hs-btn hs-btn-ghost hs-btn-block" data-hs-act="continue-edit">Edit Campaign</button>' +
-        '<p class="hs-muted hs-tiny">Hubly owns the campaign. Media owns the photos. Canva is optional polish.</p>';
+        '<p class="hs-muted hs-tiny">Hubly is the system of record. Canva is optional polish — publish stays in Hubly.</p>';
     }
-    return '<button type="button" class="hs-btn hs-btn-brand hs-btn-block" data-hs-act="continue-edit">Edit Campaign</button>' +
+    return '<button type="button" class="hs-btn hs-btn-brand hs-btn-block" data-hs-act="publish-email">Publish from Hubly</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost hs-btn-block" data-hs-act="continue-edit">Edit Campaign</button>' +
       '<button type="button" class="hs-btn hs-btn-ghost hs-btn-block" data-hs-act="browse-media">Browse Media</button>' +
       '<button type="button" class="hs-btn hs-btn-ghost hs-btn-block" data-hs-act="canva-connect">Connect Canva</button>' +
-      '<p class="hs-muted hs-tiny">Keep editing in Hubly — attach Media photos, AI headlines, then publish. Never re-upload the same image.</p>';
+      '<p class="hs-muted hs-tiny">Your campaign is ready in Hubly — photos, brand, and copy included. Canva is optional.</p>';
   }
 
   function bridge() {
@@ -2207,23 +2209,259 @@
     return n;
   }
 
+  function brandKitSnapshot() {
+    var kit = ensureBrandKit();
+    var st = S();
+    var primary = (kit.colors || []).find(function (c) { return c && (c.role === 'primary' || /primary/i.test(c.name || '')); }) || (kit.colors || [])[0];
+    var logo = (kit.logos || []).find(function (l) { return l && l.role === 'primary'; }) || (kit.logos || [])[0];
+    return {
+      logoUrl: (logo && logo.url) || st.logoUrl || st.logo_url || null,
+      primaryColor: (primary && primary.hex) || st.color || '#D9632D',
+      colors: (kit.colors || []).slice(0, 6),
+      fonts: kit.fonts || null,
+      voice: kit.voice || null
+    };
+  }
+
+  function buildAiCopyFromMedia(data, ctx, brand) {
+    var label = data.formatLabel || 'Campaign';
+    var biz = ctx.business_name || bizName();
+    var city = ctx.city ? (' in ' + ctx.city) : '';
+    var phone = ctx.phone || '';
+    var service = ctx.service_focus || (ctx.services && ctx.services[0]) || 'your next job';
+    var review = ctx.latest_review;
+    var headlines = [];
+    if (data.formatId === 'review_spotlight' && review && review.quote) {
+      headlines = [
+        '“' + String(review.quote).slice(0, 72) + '”',
+        '5★ from ' + (review.author || 'a happy customer'),
+        biz + ' — trusted' + city
+      ];
+    } else if (data.formatId === 'before_after') {
+      headlines = [
+        'Before → After' + city,
+        service + ' results you can see',
+        biz + ' transforms the job'
+      ];
+    } else if (data.formatId === 'email_campaign') {
+      headlines = [
+        'A quick update from ' + biz,
+        'Ready when you are' + city,
+        service + ' — book with ' + biz
+      ];
+    } else {
+      headlines = [
+        label + ' — ' + biz,
+        service + city,
+        'Book with ' + biz + (phone ? (' · ' + phone) : '')
+      ];
+    }
+    var caption = headlines[0] + ' — ' + biz + (phone ? (' · Call ' + phone) : ' · Book now');
+    if (review && review.quote) caption += '\n\n“' + String(review.quote).slice(0, 120) + '” — ' + (review.author || 'Customer');
+    return {
+      headlines: headlines,
+      captions: [
+        { channel: 'instagram', text: caption },
+        { channel: 'facebook', text: caption },
+        { channel: 'email', text: caption }
+      ],
+      cta: phone ? ('Call ' + phone) : 'Book now',
+      email: {
+        subject: headlines[0],
+        body: headlines[0] + '\n\n' + biz + city + (phone ? ('\n' + phone) : '') +
+          (review && review.quote ? ('\n\n“' + review.quote + '” — ' + (review.author || 'Customer')) : '') +
+          '\n\nReady when you are.'
+      },
+      brand: {
+        logo_url: brand.logoUrl,
+        primary_color: brand.primaryColor,
+        colors: brand.colors
+      },
+      review: review || null,
+      schedule_suggestions: ['Tomorrow 12:00 PM — local peak window', 'Thursday evening — after-work scroll']
+    };
+  }
+
+  function createCampaignFromMediaBridge(data) {
+    var ctx = bizContext();
+    var brand = brandKitSnapshot();
+    var selected = (data.selected || []).slice();
+    var first = selected[0];
+    var format = data.format || 'instagram_post';
+    var goalId = data.goalId || 'promote_service';
+    var label = data.formatLabel || 'Campaign';
+    var title = (data.mediaJobName ? (data.mediaJobName + ' — ' + label) : (bizName() + ' — ' + label));
+    var copy = buildAiCopyFromMedia(data, ctx, brand);
+    var media = selected.map(function (a) {
+      return { id: a.id, url: a.url, name: a.name, kind: 'media', attached_at: new Date().toISOString() };
+    });
+    var pkg = Object.assign({}, copy, {
+      media: media,
+      photo_url: first && first.url,
+      logo_url: brand.logoUrl,
+      business_name: ctx.business_name,
+      phone: ctx.phone,
+      city: ctx.city,
+      services: ctx.services,
+      has_before_after: data.formatId === 'before_after' || !!ctx.has_before_after
+    });
+    if (selected[1] && data.formatId === 'before_after') {
+      pkg.before_url = selected[0].url;
+      pkg.after_url = selected[1].url;
+      pkg.photo_url = selected[1].url;
+    }
+
+    toast('Building your ' + label + ' — photos, brand, and AI copy from Hubly…');
+
+    function openBuilt(project) {
+      applyBridgeAssetsToProject(project, selected, 'media');
+      openEditorFor(project, { resetWorkspace: true, tab: 'overview' });
+      toast('Campaign ~90% ready in Hubly — edit, or publish. Canva is optional polish.');
+    }
+
+    var Api = api();
+    var body = {
+      goal_id: goalId,
+      playbook_id: GOAL_TO_PLAYBOOK[goalId] || null,
+      business_name: ctx.business_name,
+      phone: ctx.phone,
+      city: ctx.city,
+      services: ctx.services,
+      create_project: true,
+      service_focus: ctx.service_focus || (ctx.services && ctx.services[0]) || null,
+      latest_review: ctx.latest_review || null,
+      has_before_after: !!pkg.has_before_after,
+      job_photos_count: selected.length || ctx.job_photos_count || 0,
+      completed_jobs_week: ctx.completed_jobs_week || 0,
+      has_logo: !!brand.logoUrl,
+      has_membership: ctx.has_membership
+    };
+
+    function localDone() {
+      createProject({
+        title: title,
+        format: format,
+        prompt: 'Media → Studio · ' + label + ' for ' + ctx.business_name,
+        headline: copy.headlines[0],
+        metadata: {
+          goal_id: goalId,
+          from_media_job_id: data.mediaJobId || null,
+          format_id: data.formatId || null,
+          hubly_system_of_record: true
+        },
+        canvas: {
+          headline: copy.headlines[0],
+          package: pkg,
+          brief: {
+            campaign: title,
+            goal: goalId,
+            channel: data.formatId === 'email_campaign' ? 'email' : V1_CHANNEL,
+            business_name: ctx.business_name,
+            service_name: body.service_focus,
+            review_text: ctx.latest_review && ctx.latest_review.quote,
+            cta: copy.cta,
+            format: label
+          }
+        }
+      });
+      setTimeout(function () {
+        var proj = currentProject();
+        if (proj) openBuilt(proj);
+      }, 40);
+    }
+
+    if (!Api) return localDone();
+    Api.request('campaign/plan', { method: 'POST', body: body }).then(function (res) {
+      var os = ensureStudioOs();
+      var project = (res && res.project) || null;
+      var planPkg = res && res.campaignPlan && res.campaignPlan.package;
+      if (project) {
+        project.canvas = project.canvas || {};
+        project.canvas.package = Object.assign({}, planPkg || {}, pkg, {
+          headlines: (planPkg && planPkg.headlines && planPkg.headlines.length) ? planPkg.headlines : pkg.headlines,
+          captions: (planPkg && planPkg.captions && planPkg.captions.length) ? planPkg.captions : pkg.captions
+        });
+        project.canvas.headline = (project.canvas.package.headlines && project.canvas.package.headlines[0]) || title;
+        project.format_primary = format;
+        project.title = project.title || title;
+        project.metadata = Object.assign({}, project.metadata || {}, {
+          goal_id: goalId,
+          from_media_job_id: data.mediaJobId || null,
+          format_id: data.formatId || null,
+          hubly_system_of_record: true
+        });
+        if (res.brief) {
+          project.canvas.brief = res.brief;
+          project.brief = res.brief;
+        } else {
+          project.canvas.brief = {
+            campaign: title,
+            goal: goalId,
+            channel: data.formatId === 'email_campaign' ? 'email' : V1_CHANNEL,
+            business_name: ctx.business_name,
+            format: label
+          };
+        }
+        if (!(os.projects || []).some(function (p) { return p.id === project.id; })) {
+          os.projects.unshift(project);
+        }
+        persistStudioMeta();
+        openBuilt(project);
+        return;
+      }
+      if (res && res.campaignPlan) {
+        var plan = res.campaignPlan;
+        createProject({
+          title: plan.title || title,
+          format: format,
+          prompt: plan.ai_brief || title,
+          headline: (plan.package && plan.package.headlines && plan.package.headlines[0]) || copy.headlines[0],
+          metadata: {
+            goal_id: plan.goal_id || goalId,
+            playbook_id: plan.playbook_id,
+            from_media_job_id: data.mediaJobId || null,
+            format_id: data.formatId || null,
+            hubly_system_of_record: true
+          },
+          canvas: {
+            headline: (plan.package && plan.package.headlines && plan.package.headlines[0]) || copy.headlines[0],
+            package: Object.assign({}, plan.package || {}, pkg),
+            brief: res.brief || null
+          }
+        });
+        setTimeout(function () {
+          var proj2 = currentProject();
+          if (proj2) openBuilt(proj2);
+        }, 40);
+        return;
+      }
+      localDone();
+    }).catch(function () { localDone(); });
+  }
+
   function consumeMediaBridge() {
     var B = bridge();
     if (!B || !B.get) return null;
     var data = B.get();
     if (!data || !data.selected || !data.selected.length) return null;
     if (data.returnTo && data.returnTo !== 'studio') return null;
-    // Still picking in Media — wait for confirm
-    if ((data.mode === 'pick' || data.mode === 'replace') && (!data.selected || !data.selected.length)) return null;
 
     var os = ensureStudioOs();
+    var selected = data.selected.slice();
+
+    // Create Marketing path — almost-finished campaign from Media
+    if (data.mode === 'create_campaign' || data.formatId) {
+      B.clear();
+      createCampaignFromMediaBridge(data);
+      return true;
+    }
+
     var project = null;
     if (data.studioProjectId) {
       project = (os.projects || []).find(function (p) { return p.id === data.studioProjectId; }) || null;
     }
     if (!project) project = currentProject();
     var slot = data.slot || (data.mode === 'replace' ? 'replace' : 'media');
-    var selected = data.selected.slice();
 
     if (project) {
       var attached = applyBridgeAssetsToProject(project, selected, slot);
@@ -2235,42 +2473,15 @@
       return project;
     }
 
-    var first = selected[0];
-    var title = (data.mediaJobName ? (data.mediaJobName + ' — campaign') : null) ||
-      (bizName() + ' — from Media');
+    // Attach without format → still create a ready Hubly campaign
     B.clear();
-    createProject({
-      title: title,
-      headline: title,
-      canvas: {
-        headline: title,
-        package: {
-          media: selected.map(function (a) {
-            return { id: a.id, url: a.url, name: a.name, kind: 'media', attached_at: new Date().toISOString() };
-          }),
-          photo_url: first && first.url,
-          headlines: [title]
-        }
-      },
-      metadata: { from_media_job_id: data.mediaJobId || null }
-    });
-    // Seed library without requiring currentProject yet
-    selected.forEach(function (a) {
-      os.assets = os.assets || [];
-      if (a && a.url && !os.assets.some(function (x) { return x && x.url === a.url; })) {
-        os.assets.unshift({
-          id: a.id,
-          url: a.url,
-          name: a.name || 'Media photo',
-          kind: 'media',
-          source: 'hubly_media',
-          bytes: 0,
-          created_at: new Date().toISOString()
-        });
-      }
-    });
-    persistStudioMeta();
-    toast('Campaign opened with ' + selected.length + ' Media photo' + (selected.length === 1 ? '' : 's'));
+    createCampaignFromMediaBridge(Object.assign({}, data, {
+      mode: 'create_campaign',
+      formatId: 'instagram_post',
+      formatLabel: 'Instagram Post',
+      format: 'instagram_post',
+      goalId: 'promote_service'
+    }));
     return true;
   }
 
@@ -2441,17 +2652,17 @@
         }).then(function (res) {
           if (res && res.edit_url) {
             try { window.open(res.edit_url, '_blank', 'noopener'); } catch (e) {}
-            toast('Edit in Canva — you will return to this Hubly campaign.');
+            toast('Polish in Canva — you will return to this Hubly campaign.');
             return;
           }
-          toast((res && res.message) || 'Canva is not available right now. Continue editing in Hubly.');
+          toast((res && res.message) || 'Canva is not available right now. Publish from Hubly anytime.');
           refreshWorkspace({ tab: 'ai' });
         }).catch(function () {
-          toast('Could not open Canva. Continue editing in Hubly.');
+          toast('Could not open Canva. Continue in Hubly — publish when ready.');
           refreshWorkspace({ tab: 'ai' });
         });
       } else {
-        toast('Canva is optional — continue editing this campaign in Hubly.');
+        toast('Canva is optional — publish this campaign from Hubly.');
         refreshWorkspace({ tab: 'ai' });
       }
       return;

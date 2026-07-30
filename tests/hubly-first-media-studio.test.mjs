@@ -41,16 +41,16 @@ describe('Hubly-first Media + Studio architecture', () => {
     const api = read('public/journey-os/studio/api.js');
     assert.match(studio, /continue-edit/);
     assert.match(studio, /Edit Campaign/);
-    assert.match(studio, /Edit in Canva/);
-    assert.match(studio, /Keep editing the campaign in Hubly|Keep editing in Hubly/);
+    assert.match(studio, /Polish in Canva|Edit in Canva/);
+    assert.match(studio, /Keep editing the campaign in Hubly|Publish from Hubly|Keep editing in Hubly/);
     assert.doesNotMatch(studio, /Visual editor not connected yet/);
     assert.match(api, /Canva is optional/);
   });
 
   it('cache-busts Media + Studio assets', () => {
     const hubly = read('public/hubly.html');
-    assert.match(hubly, /hubly-studio\.js\?v=studio-14/);
-    assert.match(hubly, /photography-projects\.js\?v=projects-15/);
-    assert.match(hubly, /app-marketplace\.js\?v=projects-15/);
+    assert.match(hubly, /hubly-studio\.js\?v=studio-15/);
+    assert.match(hubly, /photography-projects\.js\?v=projects-16/);
+    assert.match(hubly, /app-marketplace\.js\?v=projects-16/);
   });
 });
