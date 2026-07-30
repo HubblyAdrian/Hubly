@@ -328,6 +328,9 @@
     }
 
     if (aw.surface === 'commerce') {
+      if (global.HublyCommerceRuntime && typeof global.HublyCommerceRuntime.workspaceHtml === 'function') {
+        return global.HublyCommerceRuntime.workspaceHtml({ mode: 'storefront' });
+      }
       return (
         '<div class="aw-surface-panel">' +
         '<h2>Storefront Builder</h2>' +
@@ -337,6 +340,9 @@
     }
 
     if (aw.surface === 'products') {
+      if (global.HublyCommerceRuntime && typeof global.HublyCommerceRuntime.workspaceHtml === 'function') {
+        return global.HublyCommerceRuntime.workspaceHtml({ mode: 'products' });
+      }
       return (
         '<div class="aw-surface-panel">' +
         '<h2>Product editor</h2>' +
@@ -521,13 +527,53 @@
     if (!files.length) return;
     var names = files.map(function (f) { return f.name; });
     pushMessage('owner', 'Uploaded: ' + names.join(', '));
-    pushMessage('hubly', 'Got it — this becomes Business Context. I\'ll use it in the next recommendation.');
-    setDoing('Analyzing your upload…');
+    setDoing('Building from your upload…');
     setActivity([
       { label: 'Upload received', status: 'done' },
-      { label: 'Analyzing context…', status: 'on' },
-      { label: 'Next recommendation', status: 'next' },
+      { label: 'Building from context…', status: 'on' },
+      { label: 'Show in workspace', status: 'next' },
     ]);
+    enterBuildingMode('website', { doing: 'Building from your upload…' });
+    var Consultant = global.HublyConsultant;
+    if (Consultant && typeof Consultant.buildFromContext === 'function') {
+      Consultant.buildFromContext({
+        files: files,
+        message: 'Build the homepage from this upload. Prefer visible progress over more questions.',
+        surface: 'website',
+      }).then(function (result) {
+        if (result && result.ok) {
+          pushMessage(
+            'hubly',
+            'I built from your materials — the Live Workspace is updating. What should we improve?',
+            {
+              choice: 'Build from upload',
+              confidence: 92,
+              reasoning: 'Real materials beat questionnaires — screenshots, logos, and PDFs carry brand and offer context.',
+            }
+          );
+          transition('reviewing_website', {
+            surface: 'website',
+            doing: 'Showing what I built…',
+            activity: [
+              { label: 'Built from upload', status: 'done' },
+              { label: 'Waiting for your feedback…', status: 'on' },
+            ],
+          });
+          return;
+        }
+        if (result && result.error === 'not_configured') {
+          pushMessage('hubly', 'Provider not configured yet — your upload is saved as Business Context. I\'ll build from it as soon as AI is connected.');
+          setDoing('Context saved — waiting for AI provider…');
+          return;
+        }
+        pushMessage('hubly', (result && result.message) || 'Got it — Business Context updated. Tell me what to build next.');
+        setDoing('Ready for your next goal…');
+      }).catch(function () {
+        pushMessage('hubly', 'Got it — Business Context updated. Tell me what to build next.');
+      });
+      return;
+    }
+    pushMessage('hubly', 'Got it — this becomes Business Context. I\'ll use it in the next recommendation.');
   }
 
   function chooseDirection(id, label) {
@@ -764,7 +810,7 @@
   }
 
   global.HublyAIWorkspace = {
-    version: '1.1.0',
+    version: '1.2.0',
     milestones: FOCUS_BLOCKS, // legacy alias
     focusBlocks: FOCUS_BLOCKS,
     states: STATES,

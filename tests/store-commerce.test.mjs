@@ -18,7 +18,7 @@ describe('Hubly Store commerce module', () => {
     assert.ok(mem > -1 && storeNav > mem && money > storeNav);
     assert.match(hubly, /id="v-store"/);
     assert.match(hubly, /id="jos-store-root"/);
-    assert.match(hubly, /store-commerce\.js\?v=store-3/);
+    assert.match(hubly, /store-commerce\.js\?v=store-4/);
     assert.match(hubly, /store-commerce\.css\?v=store-3/);
     assert.match(hubly, /store:'Store'/);
   });
@@ -40,7 +40,7 @@ describe('Hubly Store commerce module', () => {
     assert.match(store, /\['orders', 'Orders'\]/);
     assert.match(store, /\['inventory', 'Inventory'\]/);
     assert.match(store, /\['discounts', 'Discounts'\]/);
-    assert.match(store, /hub-page-title">Store</);
+    assert.match(store, /hub-page-title">Commerce</);
     assert.doesNotMatch(store, /Online Store/);
     assert.doesNotMatch(store, /data-v="marketplace"/);
     assert.match(store, /ensureStoreOsState/);
@@ -60,7 +60,7 @@ describe('Hubly Store commerce module', () => {
 
   it('loads store-commerce stylesheet with cache bust', () => {
     assert.match(hubly, /store-commerce\.css\?v=store-3/);
-    assert.match(hubly, /store-commerce\.js\?v=store-3/);
+    assert.match(hubly, /store-commerce\.js\?v=store-4/);
   });
 
   it('embeds storefront into Instant Site and persists storeOs', () => {

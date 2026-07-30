@@ -30,7 +30,7 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
-<link rel="stylesheet" href="/journey-os/ai-workspace.css?v=aw-2">
+<link rel="stylesheet" href="/journey-os/ai-workspace.css?v=aw-3">
 <link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-15">
@@ -12576,8 +12576,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/hubly-session.js"></script>
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
-<script defer src="/journey-os/commerce/types.js?v=commerce-1"></script>
-<script defer src="/journey-os/commerce/api.js?v=commerce-1"></script>
+<script defer src="/journey-os/commerce/types.js?v=commerce-2"></script>
+<script defer src="/journey-os/commerce/api.js?v=commerce-2"></script>
 <script defer src="/journey-os/commerce/events.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/permissions.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/components.js?v=commerce-2"></script>
@@ -12585,10 +12585,12 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/checkout/checkout.service.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/ai/product-coach.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/ai/merchandising.js?v=commerce-1"></script>
-<script defer src="/journey-os/commerce/index.js?v=commerce-1"></script>
-<script defer src="/journey-os/ai-workspace.js?v=aw-2"></script>
+<script defer src="/journey-os/commerce/runtime.js?v=commerce-2"></script>
+<script defer src="/journey-os/commerce/index.js?v=commerce-2"></script>
+<script defer src="/journey-os/hubly-consultant.js?v=consultant-1"></script>
+<script defer src="/journey-os/ai-workspace.js?v=aw-3"></script>
 <script defer src="/journey-os/journey.js?v=aw-1"></script>
-<script defer src="/journey-os/store-commerce.js?v=store-3"></script>
+<script defer src="/journey-os/store-commerce.js?v=store-4"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
 <script defer src="/journey-os/media-studio-bridge.js?v=studio-15"></script>
 <script defer src="/journey-os/hubly-studio.js?v=studio-15"></script>
@@ -17623,8 +17625,9 @@ const HUBLY_DISCOVERY = (function(){
   const MAX_CLARIFICATION_QUESTIONS = 3;
   const ASK_CONFIDENCE = 70;
   const READY_CONFIDENCE = 78;
-  const COMPLETION = "I think I understand your business now. Let me show you what I'm thinking.";
+  const COMPLETION = "I understand enough to build. I'll recommend the next step, build it, and show it in the Live Workspace — then we improve together.";
   const LEARNING_HEADER = "Here's what I'm learning...";
+  const MAX_CLARIFICATION_BEFORE_BUILD = 1; // consultant: show progress before more questions
   // Natural follow-ups — never ask twice (previouslyAsked / skipped_repeat).
   const GAPS = {
     industry: "What kind of work do you do day to day — the thing customers actually hire you for?",
@@ -17749,8 +17752,11 @@ const HUBLY_DISCOVERY = (function(){
     return{shown,delayed:qs.slice(MAX_CLARIFICATION_QUESTIONS),actions};
   }
   function pickNext(session){
+    if(session.clarificationCount>=MAX_CLARIFICATION_BEFORE_BUILD)return null;
     if(session.clarificationCount>=MAX_CLARIFICATION_QUESTIONS)return null;
     if(overall(session)>=READY_CONFIDENCE)return null;
+    /* Prefer building over grilling — if we know industry, skip remaining gaps */
+    if(catConf(session,'industry')>=70 && session.turns>=1)return null;
     const gaps=openGaps(session);
     if(!gaps.length)return null;
     const candidates=gaps.map(g=>GAPS[g]).filter(q=>q&&!session.previouslyAsked.includes(low(q)));
@@ -17927,6 +17933,18 @@ function isDiscoveryBoot(opts){
         isTalkPush('hubly',"From your site I'm already seeing: "+lines.join(' · ')+'.');
       }
     }
+    /* Consultant: skip questionnaire when Landing/seed already gave enough — recommend → build → show */
+    try{
+      if(typeof HublyConsultant!=='undefined' && HublyConsultant.shouldSkipQuestionnaire(S._is.discovery)){
+        const rec=HublyConsultant.firstRecommendation(S._is.discovery);
+        S._is.discovery.learningSummary=HUBLY_DISCOVERY.buildLearning(S._is.discovery);
+        S._is.discovery.complete=true;
+        S._is.discovery.readyForThinking=true;
+        isTalkPush('hubly',rec.message);
+        isTalkPush('hubly',HublyConsultant.encourageContext('build'));
+        setTimeout(()=>{ try{ isDiscoveryCompleteToThinking?.(); }catch(e){} }, 700);
+      }
+    }catch(e){}
   }else{
     isShowStep('talk');
     isTalkRender();
@@ -17934,8 +17952,8 @@ function isDiscoveryBoot(opts){
   step?.classList.toggle('is-convo',!!(S._is.messages||[]).length);
   isTalkSetPrompt({
     title:"What are we building together?",
-    hint:"Just talk — I’ll infer what I can. We can always change it later.",
-    placeholder:"Tell me what you’re working on…",
+    hint:"Talk like a partner — or drop a website, screenshot, PDF, or logo. I’ll build something you can see.",
+    placeholder:"Tell me what you want to accomplish…",
     autocomplete:'off',
     type:'text',
     value:'',
@@ -18790,14 +18808,42 @@ async function isArchitectEnsureIntent(experience,seed){
 function isArchitectUploadPick(){
   const input=document.getElementById('is-architect-upload');
   if(!input)return;
-  input.onchange=()=>{
+  input.onchange=async ()=>{
     const files=[...(input.files||[])];
     if(!files.length||!S._is?.creativeBuild)return;
     const names=files.map(f=>f.name);
     S._is.creativeBuild.uploads=(S._is.creativeBuild.uploads||[]).concat(names);
     isCreativePush('owner','Uploaded: '+names.join(', '));
-    isCreativePush('hubly',"Got it — I'll use "+(names.length===1?'this':'these')+" to guide the next recommendations.");
-    isArchitectToast('Context uploaded','ok');
+    isCreativePush('hubly',"Got it — I'm building from your materials now. Watch the Live Workspace.");
+    isArchitectToast('Building from upload…','ok');
+    try{
+      if(typeof HublyConsultant!=='undefined' && HublyConsultant.buildFromContext){
+        const result=await HublyConsultant.buildFromContext({
+          files,
+          message:'Use this upload as Business Context. Recommend layout/colors/CTA and generate homepage copy directions.',
+          surface:'website',
+        });
+        if(result.ok){
+          isCreativePush('hubly',"I used your upload to shape the next build. Tell me what to tweak — I'll change the workspace.");
+          if(result.kind==='generate_site' && result.data?.generated && typeof applyGenerateSitePayload==='function'){
+            try{ applyGenerateSitePayload(result.data.generated); }catch(e){}
+          }
+          if(result.data && S._is.creativeBuild.live){
+            S._is.creativeBuild.live.mode='site';
+            S._is.creativeBuild.designConfidence=Math.min(99,(S._is.creativeBuild.designConfidence||70)+8);
+            isCreativeRenderPreview(S._is.creativeBuild);
+          }
+          isArchitectToast('Built from your upload','ok');
+        }else if(result.error==='not_configured'){
+          isCreativePush('hubly',"Provider not configured yet — I've saved your upload as Business Context and will use it as soon as AI is connected.");
+          isArchitectToast('Context saved','ok');
+        }else{
+          isCreativePush('hubly',result.message||"I've got the upload. Keep talking and I'll keep building.");
+        }
+      }
+    }catch(e){
+      isCreativePush('hubly',"I've got the upload as Business Context — let's keep building.");
+    }
     input.value='';
   };
   input.click();

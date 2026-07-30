@@ -55,6 +55,22 @@
 
   var SHIPPING_MODES = Object.freeze(['pickup', 'flat_rate', 'local_delivery', 'free']);
 
+  /** Shared Commerce product kinds — one engine for retail, photo, creator, service. */
+  var PRODUCT_TYPES = Object.freeze([
+    'physical',
+    'digital',
+    'gift_card',
+    'service_addon',
+    'print',
+  ]);
+
+  var ARCHITECTURE_READY = Object.freeze({
+    gift_cards: true,
+    digital_downloads: true,
+    print_sales: true,
+    categories: true,
+  });
+
   function centsToDollars(cents) {
     return (Number(cents) || 0) / 100;
   }
@@ -99,6 +115,8 @@
     DEFAULT_VISIBILITY: DEFAULT_VISIBILITY,
     ORDER_STATUSES: ORDER_STATUSES,
     SHIPPING_MODES: SHIPPING_MODES,
+    PRODUCT_TYPES: PRODUCT_TYPES,
+    ARCHITECTURE_READY: ARCHITECTURE_READY,
     centsToDollars: centsToDollars,
     dollarsToCents: dollarsToCents,
     productFromRow: productFromRow

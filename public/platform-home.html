@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>hubly · Hubly learns how you work</title>
-<meta name="description" content="Most software makes you learn how it works. Hubly learns how you work. Ask Hubly what you need—or tell Hubly about your business and we'll build the rest.">
+<title>hubly · Talk to Hubly</title>
+<meta name="description" content="Talk to Hubly. Build your business, grow your business, or find trusted help — one AI partner that learns how you work.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -732,22 +732,26 @@ img{max-width:100%;display:block}
 }
 .hero-path-hint a{color:#fff;font-weight:750;text-decoration:underline;text-underline-offset:3px}
 .hero-path-hint a:hover{color:var(--brand)}
-.path-tabs{
-  display:inline-flex;gap:2px;padding:3px;margin-bottom:14px;
-  border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+.talk-starters{
+  display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;
   opacity:0;animation:rise .7s ease .12s forwards;
+}
+.talk-starter{
+  border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  color:rgba(255,255,255,.9);font-size:13px;font-weight:750;
+  padding:10px 14px;border-radius:14px;cursor:pointer;
+  transition:background .18s ease, border-color .18s ease, transform .18s ease;
 }
-.path-tab{
-  border:0;background:transparent;color:rgba(255,255,255,.72);
-  font-size:12px;font-weight:750;padding:8px 14px;border-radius:999px;cursor:pointer;
-  transition:background .18s ease, color .18s ease;
+.talk-starter:hover{background:rgba(255,255,255,.16);transform:translateY(-1px)}
+.talk-starter.is-on{
+  background:rgba(255,255,255,.96);color:var(--navy);
+  border-color:transparent;box-shadow:0 10px 24px rgba(0,0,0,.22);
 }
-.path-tab.is-on{
-  background:rgba(255,255,255,.94);color:var(--navy);
-  box-shadow:0 6px 16px rgba(0,0,0,.18);
+.talk-prompt-label{
+  font-size:13px;font-weight:700;color:rgba(255,255,255,.7);
+  margin:0 0 10px;opacity:0;animation:rise .7s ease .16s forwards;
 }
-.path-tab:hover:not(.is-on){color:#fff}
 .chips-label{
   width:100%;font-size:11px;font-weight:700;letter-spacing:.06em;
   text-transform:uppercase;color:rgba(255,255,255,.48);margin:4px 0 2px;
@@ -1458,7 +1462,7 @@ img{max-width:100%;display:block}
   </nav>
   <div class="nav-acts">
     <a class="nav-login" href="/login">Sign in</a>
-    <a class="btn btn-brand" href="/signup">Build My Business</a>
+    <a class="btn btn-brand" href="/signup">Talk to Hubly</a>
   </div>
 </header>
 
@@ -1469,26 +1473,28 @@ img{max-width:100%;display:block}
       <p class="hero-mark">
         <span class="hubly-lockup hero-lockup">hub<span class="ly">ly</span></span>
       </p>
-      <div class="path-tabs" role="tablist" aria-label="What are you trying to do?">
-        <button type="button" class="path-tab" role="tab" aria-selected="false" data-path="help" id="pathHelp">I need to hire someone</button>
-        <button type="button" class="path-tab is-on" role="tab" aria-selected="true" data-path="business" id="pathBiz">I want to grow my business</button>
+      <div class="talk-starters" role="group" aria-label="How can Hubly help?">
+        <button type="button" class="talk-starter is-on" data-path="build" id="pathBuild" data-starter="build">🚀 Build My Business</button>
+        <button type="button" class="talk-starter" data-path="business" id="pathBiz" data-starter="grow">📈 Grow My Business</button>
+        <button type="button" class="talk-starter" data-path="help" id="pathHelp" data-starter="help">✅ Find Help</button>
       </div>
-      <h1 id="heroTitle">Tell Hubly about your business.<br><em>We’ll build the rest.</em></h1>
-      <p class="hero-lead" id="heroLead">Talk naturally. Hubly researches your market and builds your website, booking, pricing, services, and operating system while you chat.</p>
+      <p class="talk-prompt-label" id="talkPromptLabel">What can I help you accomplish today?</p>
+      <h1 id="heroTitle">Talk to Hubly.<br><em>We’ll build with you.</em></h1>
+      <p class="hero-lead" id="heroLead">One AI partner — build a business, grow a business, or find trusted help. Start a conversation. Watch the workspace change.</p>
 
       <div class="ask-pill" id="ask">
         <input id="heroInput" type="text" autocomplete="off"
-          placeholder="Tell me about your business..."
-          aria-label="Tell Hubly about your business">
+          placeholder="What can I help you accomplish today?"
+          aria-label="Talk to Hubly">
         <div class="ask-pill-acts">
-          <button class="btn btn-brand" type="button" id="heroCta">Continue Building</button>
+          <button class="btn btn-brand" type="button" id="heroCta">Talk to Hubly</button>
         </div>
       </div>
       <p class="hero-status" id="heroStatus" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="heroStatusText"></span></p>
       <p class="hero-brand-line">Most software makes you learn how it works.<br><em>Hubly learns how you work.</em></p>
 
-      <div class="chips" id="chips" aria-label="Popular trades">
-        <span class="chips-label" id="chipsLabel">Popular Trades</span>
+      <div class="chips" id="chips" aria-label="Suggested starters">
+        <span class="chips-label" id="chipsLabel">Try saying</span>
       </div>
     </div>
 
@@ -1534,9 +1540,9 @@ img{max-width:100%;display:block}
 <section class="journeys-band" id="journeys">
   <div class="wrap">
     <div class="sec-head">
-      <h2 class="sec-title">One AI. <span class="two-exp">Two experiences.</span></h2>
-      <p class="sec-lead">Helping homeowners get work done and helping local businesses grow.</p>
-      <p class="journeys-ask">How can Hubly help <em>today?</em></p>
+      <h2 class="sec-title">Talk once. <span class="two-exp">Get outcomes.</span></h2>
+      <p class="sec-lead">Build. Grow. Find help. Same conversation — Hubly changes what you see next.</p>
+      <p class="journeys-ask">What should we accomplish <em>today?</em></p>
     </div>
 
     <div class="journey-dests" id="how">
@@ -1545,20 +1551,20 @@ img{max-width:100%;display:block}
           <span class="journey-role-ico" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 15l-1 5 5-1 8.5-8.5a3.5 3.5 0 00-5-5L5 15z"/><path d="M12 7l5 5M8.5 15.5l-2 1 1-2"/></svg>
           </span>
-          <span class="journey-role-label">For business owners</span>
+          <span class="journey-role-label">Build &amp; grow</span>
         </div>
-        <h3>I want to grow my <em>business</em></h3>
-        <p class="journey-desc">Tell Hubly about your business. We’ll build everything else.</p>
+        <h3>Build or grow my <em>business</em></h3>
+        <p class="journey-desc">Website, storefront, booking, customers, campaigns — Hubly builds while you talk.</p>
         <ol class="journey-steps how-lane" data-step>
-          <li><strong>Describe</strong></li>
-          <li><strong>Hubly learns how you work</strong></li>
-          <li><strong>Hubly builds everything</strong></li>
-          <li><strong>Start growing</strong></li>
+          <li><strong>Talk</strong></li>
+          <li><strong>Hubly recommends</strong></li>
+          <li><strong>You see it live</strong></li>
+          <li><strong>Keep building</strong></li>
         </ol>
         <div class="journey-cta-wrap">
-          <span class="btn-journey">Continue Building →</span>
+          <span class="btn-journey">Talk to Hubly →</span>
         </div>
-        <p class="journey-foot">AI Business Builder · Operating System</p>
+        <p class="journey-foot">One partner · Live workspace</p>
       </a>
 
       <a class="journey-dest journey-dest-help" href="/get-done" data-journey="help" id="journeyHelp">
@@ -1566,20 +1572,20 @@ img{max-width:100%;display:block}
           <span class="journey-role-ico" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"/></svg>
           </span>
-          <span class="journey-role-label">For customers</span>
+          <span class="journey-role-label">Find help</span>
         </div>
-        <h3>I need to hire <em>someone</em></h3>
-        <p class="journey-desc">Describe what you need. Hubly’s AI Concierge finds the right local pro.</p>
+        <h3>Find trusted <em>help</em></h3>
+        <p class="journey-desc">Describe the job. Hubly matches you with the right local pro — still one conversation.</p>
         <ol class="journey-steps how-lane" data-step>
-          <li><strong>Describe</strong></li>
-          <li><strong>Hubly understands</strong></li>
-          <li><strong>Hubly finds the right pro</strong></li>
+          <li><strong>Describe the job</strong></li>
+          <li><strong>Hubly matches</strong></li>
+          <li><strong>See trusted pros</strong></li>
           <li><strong>Book</strong></li>
         </ol>
         <div class="journey-cta-wrap">
-          <span class="btn-journey">Get Something Done →</span>
+          <span class="btn-journey">Find Help →</span>
         </div>
-        <p class="journey-foot">AI Concierge · Customer Booking</p>
+        <p class="journey-foot">Trusted pros · Instant match</p>
       </a>
     </div>
 
@@ -1615,9 +1621,9 @@ img{max-width:100%;display:block}
 <section class="xform" id="transform">
   <div class="wrap">
     <div class="sec-head">
-      <p class="kicker">The transformation</p>
-      <h2 class="sec-title">One conversation.<br><em>Everything changes.</em></h2>
-      <p class="sec-lead">You describe your business. Hubly <strong>builds the rest.</strong></p>
+      <p class="kicker">Working with Hubly</p>
+      <h2 class="sec-title">One conversation.<br><em>Visible progress.</em></h2>
+      <p class="sec-lead">You talk. Hubly recommends, builds, and shows the result — then asks what to improve.</p>
     </div>
 
     <div class="xform-compare">
@@ -1989,48 +1995,80 @@ img{max-width:100%;display:block}
   var heroStatus = document.getElementById('heroStatus');
   var heroStatusText = document.getElementById('heroStatusText');
 
+  var pathBuild = document.getElementById('pathBuild');
+  var starter = 'build';
   var copy = {
     help: {
       title: 'What do you need done <em>today?</em>',
-      lead: 'Talk naturally. Hubly’s AI Concierge finds the right local pro and helps you book.',
+      lead: 'Describe the job. Hubly finds trusted local help — still one conversation.',
       placeholder: 'I need my windows cleaned this Friday…',
-      cta: 'Find someone',
-      ctaReady: '✨ Find someone',
-      chipsLabel: 'Need inspiration?'
+      cta: 'Find Help',
+      ctaReady: 'Find Help',
+      chipsLabel: 'Try saying',
+      prompt: 'What can I help you get done today?'
     },
     business: {
-      title: 'Tell Hubly about your business.<br><em>We’ll build the rest.</em>',
-      lead: 'Talk naturally. Hubly researches your market and builds your website, booking, pricing, services, and operating system while you chat.',
-      placeholder: 'Tell me about your business...',
-      cta: 'Continue Building',
-      ctaReady: '✨ Continue Building',
-      chipsLabel: 'Popular Trades'
+      title: 'Talk to Hubly.<br><em>We’ll grow with you.</em>',
+      lead: 'More customers, sharper brand, campaigns, storefront — Hubly recommends, builds, and shows it live.',
+      placeholder: 'I want more bookings this month…',
+      cta: 'Talk to Hubly',
+      ctaReady: 'Talk to Hubly',
+      chipsLabel: 'Try saying',
+      prompt: 'What can I help you accomplish today?'
+    },
+    build: {
+      title: 'Talk to Hubly.<br><em>We’ll build with you.</em>',
+      lead: 'Website, booking, storefront, customers — start the conversation. Watch Hubly build in the live workspace.',
+      placeholder: "I'm starting a photography studio in Austin…",
+      cta: 'Talk to Hubly',
+      ctaReady: 'Talk to Hubly',
+      chipsLabel: 'Try saying',
+      prompt: 'What can I help you accomplish today?'
     }
   };
 
-  function setPath(next){
-    var nextPath = next === 'business' ? 'business' : 'help';
-    var changed = nextPath !== path;
+  function setPath(next, nextStarter){
+    var nextPath = next === 'help' ? 'help' : 'business';
+    var changed = nextPath !== path || (nextStarter && nextStarter !== starter);
     path = nextPath;
-    var c = copy[path];
+    starter = nextStarter || (nextPath === 'help' ? 'help' : (starter === 'grow' ? 'grow' : 'build'));
+    if(nextStarter === 'grow') starter = 'grow';
+    if(nextStarter === 'build') starter = 'build';
+    if(nextStarter === 'help') starter = 'help';
+    var c = copy[starter === 'grow' ? 'business' : (starter === 'help' ? 'help' : 'build')];
     if(heroTitle) heroTitle.innerHTML = c.title;
     if(heroLead) heroLead.textContent = c.lead;
     if(chipsLabel) chipsLabel.textContent = c.chipsLabel;
+    var promptLabel = document.getElementById('talkPromptLabel');
+    if(promptLabel) promptLabel.textContent = c.prompt;
     if(input && !userTouched) input.setAttribute('placeholder', c.placeholder);
-    if(input) input.setAttribute('aria-label', path === 'help' ? 'Describe what you need' : 'Tell Hubly about your business');
-    if(pathHelp){
-      pathHelp.classList.toggle('is-on', path === 'help');
-      pathHelp.setAttribute('aria-selected', path === 'help' ? 'true' : 'false');
-    }
-    if(pathBiz){
-      pathBiz.classList.toggle('is-on', path === 'business');
-      pathBiz.setAttribute('aria-selected', path === 'business' ? 'true' : 'false');
+    if(input) input.setAttribute('aria-label', 'Talk to Hubly');
+    if(pathHelp) pathHelp.classList.toggle('is-on', starter === 'help');
+    if(pathBiz) pathBiz.classList.toggle('is-on', starter === 'grow');
+    if(pathBuild) pathBuild.classList.toggle('is-on', starter === 'build');
+    if(starter === 'grow' && input && !userTouched){
+      /* seed grow intent without forcing a questionnaire */
     }
     refreshUnderstanding();
     if(changed && typeof restartDemo === 'function') restartDemo();
   }
-  if(pathHelp) pathHelp.addEventListener('click', function(){ setPath('help'); });
-  if(pathBiz) pathBiz.addEventListener('click', function(){ setPath('business'); });
+  if(pathHelp) pathHelp.addEventListener('click', function(){ setPath('help', 'help'); });
+  if(pathBiz) pathBiz.addEventListener('click', function(){
+    setPath('business', 'grow');
+    if(input && !input.value){
+      input.value = 'I want to grow my business — more customers and a stronger brand';
+      userTouched = true;
+      refreshUnderstanding();
+    }
+  });
+  if(pathBuild) pathBuild.addEventListener('click', function(){
+    setPath('business', 'build');
+    if(input && !input.value){
+      input.value = "I'm building my business and need Hubly to build with me";
+      userTouched = true;
+      refreshUnderstanding();
+    }
+  });
 
   function paintStatus(u, session){
     if(!heroStatus || !heroStatusText) return;
@@ -2069,7 +2107,7 @@ img{max-width:100%;display:block}
       heroCta.removeAttribute('disabled');
       heroCta.classList.remove('is-disabled');
       heroCta.classList.toggle('is-ready', !!u.ready);
-      heroCta.setAttribute('aria-label', autoPath === 'help' ? 'Continue to AI Concierge' : 'Continue Building your business');
+      heroCta.setAttribute('aria-label', autoPath === 'help' ? 'Find Help with Hubly' : 'Talk to Hubly');
     }
     /* Real import pipeline — begin the moment URLs are detected */
     if(u.imports && u.imports.length && Intent.startImportPipeline){
