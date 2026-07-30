@@ -967,6 +967,191 @@
     root.innerHTML = shell('elements', body);
   }
 
+  function refreshStorageFromAssets() {
+    var os = ensureStudioOs();
+    var used = (os.assets || []).reduce(function (sum, a) { return sum + (Number(a.bytes) || 0); }, 0);
+    os.settings = os.settings || {};
+    os.settings.storage_used_bytes = used;
+  }
+
+  function jobPhotoList() {
+    var st = S();
+    var urls = [];
+    function push(u, label) {
+      if (!u || typeof u !== 'string') return;
+      if (urls.some(function (x) { return x.url === u; })) return;
+      urls.push({ id: 'job_' + urls.length, url: u, name: label || ('Job photo ' + (urls.length + 1)), source: 'jobs' });
+    }
+    (st.portfolioUrls || []).forEach(function (u, i) { push(u, 'Portfolio ' + (i + 1)); });
+    try {
+      var pairs = st.galleryPairs || (st.website && st.website.galleryPairs) || [];
+      (pairs || []).forEach(function (p, i) {
+        if (p && p.before) push(p.before, 'Before ' + (i + 1));
+        if (p && p.after) push(p.after, 'After ' + (i + 1));
+      });
+    } catch (e) {}
+    try {
+      var jobsList = typeof global.jobs === 'function' ? global.jobs() : (st.jobs || []);
+      (jobsList || []).slice(0, 20).forEach(function (j) {
+        var photos = (j && (j.photos || j.job_photos || j.media)) || [];
+        if (Array.isArray(photos)) {
+          photos.forEach(function (ph, i) {
+            var u = typeof ph === 'string' ? ph : (ph && (ph.url || ph.src));
+            push(u, (j.customer_name || j.title || 'Job') + ' · ' + (i + 1));
+          });
+        }
+      });
+    } catch (e) {}
+    return urls;
+  }
+
+  function attachMediaToProject(project, asset) {
+    if (!project || !asset || !asset.url) return false;
+    project.canvas = project.canvas || {};
+    project.canvas.package = project.canvas.package || {};
+    var media = project.canvas.package.media || [];
+    if (media.some(function (m) { return m && m.url === asset.url; })) return true;
+    media.push({
+      id: asset.id,
+      url: asset.url,
+      name: asset.name || 'Upload',
+      kind: asset.kind || 'upload',
+      attached_at: new Date().toISOString()
+    });
+    project.canvas.package.media = media;
+    // Prefer first attached photo in preview slots when empty
+    if (!project.canvas.package.photo_url) project.canvas.package.photo_url = asset.url;
+    project.last_edited_at = new Date().toISOString();
+    return true;
+  }
+
+  function renderUploads(root) {
+    var os = ensureStudioOs();
+    var assets = os.assets || [];
+    var openProj = currentProject();
+    var cards = assets.map(function (a) {
+      return '<article class="hs-media-card">' +
+        '<div class="hs-media-thumb">' +
+        (a.url ? '<img src="' + esc(a.url) + '" alt="">' : '<span class="hs-media-ph">☁</span>') +
+        '</div>' +
+        '<div class="hs-media-meta"><strong>' + esc(a.name || 'Upload') + '</strong>' +
+        '<span>' + esc(a.kind || 'upload') + (a.bytes ? (' · ' + Math.max(1, Math.round(a.bytes / 1024)) + ' KB') : '') + '</span></div>' +
+        '<div class="hs-media-acts">' +
+        '<button type="button" class="hs-btn hs-btn-brand hs-btn-sm" data-hs-act="media-attach" data-hs-asset-id="' + esc(a.id) + '">' +
+        (openProj ? 'Add to campaign' : 'Use in campaign') + '</button>' +
+        '<button type="button" class="hs-link hs-tiny" data-hs-act="media-delete" data-hs-asset-id="' + esc(a.id) + '">Remove</button>' +
+        '</div></article>';
+    }).join('');
+
+    var body =
+      '<header class="hs-page-head hs-page-head-row">' +
+      '<div><h1>Uploads</h1>' +
+      '<p>Your Studio media library — logos, job shots, and files you bring in for campaigns. Job photos already in Hubly also live under Photos.</p></div>' +
+      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="media-upload">+ Upload files</button></header>' +
+      '<input type="file" id="hs-uploads-file" accept="image/*" multiple hidden>' +
+      '<div class="hs-el-intro hs-card hs-pad">' +
+      '<strong>What Uploads are for</strong>' +
+      '<p class="hs-muted">Drop brand or job images here. Attach them to a campaign package, or start a new campaign from a file. This is your file library — not Templates or AI Creator.</p>' +
+      '</div>' +
+      '<div class="hs-upload-drop" data-hs-act="media-upload" role="button" tabindex="0">' +
+      '<strong>Click to upload</strong><span>PNG, JPG, WEBP · stored in Studio for campaigns</span></div>' +
+      (assets.length
+        ? '<div class="hs-media-grid">' + cards + '</div>'
+        : '<div class="hs-empty hs-card hs-pad"><strong>No uploads yet</strong><p>Upload a logo, before/after shot, or promo image to use across campaigns.</p>' +
+          '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="media-upload">Upload your first file</button></div>');
+
+    root.innerHTML = shell('uploads', body);
+
+    // Soft-hydrate from API
+    var Api = api();
+    if (Api && !os._assetsHydrated) {
+      Api.request('assets', { method: 'GET' }).then(function (res) {
+        if (res && Array.isArray(res.assets) && res.assets.length) {
+          os.assets = res.assets;
+          os._assetsHydrated = true;
+          refreshStorageFromAssets();
+          if ((ensureStudioOs().ui.screen || '') === 'uploads') render();
+        }
+      }).catch(function () {});
+    }
+  }
+
+  function renderPhotos(root) {
+    var photos = jobPhotoList();
+    var openProj = currentProject();
+    var cards = photos.map(function (a) {
+      return '<article class="hs-media-card">' +
+        '<div class="hs-media-thumb"><img src="' + esc(a.url) + '" alt=""></div>' +
+        '<div class="hs-media-meta"><strong>' + esc(a.name) + '</strong><span>From Hubly jobs / portfolio</span></div>' +
+        '<div class="hs-media-acts">' +
+        '<button type="button" class="hs-btn hs-btn-brand hs-btn-sm" data-hs-act="photo-attach" data-hs-photo-url="' + esc(a.url) + '" data-hs-photo-name="' + esc(a.name) + '">' +
+        (openProj ? 'Add to campaign' : 'Use in campaign') + '</button></div></article>';
+    }).join('');
+
+    var body =
+      '<header class="hs-page-head hs-page-head-row">' +
+      '<div><h1>Photos</h1>' +
+      '<p>Job and portfolio photos already in Hubly — ready for before/after and review campaigns.</p></div>' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="uploads">Go to Uploads</button></header>' +
+      '<div class="hs-el-intro hs-card hs-pad">' +
+      '<strong>Photos vs Uploads</strong>' +
+      '<p class="hs-muted">Photos pulls media Hubly already knows from jobs and portfolio. Uploads is where you add new files into Studio.</p></div>' +
+      (photos.length
+        ? '<div class="hs-media-grid">' + cards + '</div>'
+        : '<div class="hs-empty hs-card hs-pad"><strong>No job photos yet</strong><p>Complete jobs with photos, or add portfolio images on your website — they show up here. Or upload files in Uploads.</p>' +
+          '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="nav" data-hs-screen="uploads">Open Uploads</button></div>');
+
+    root.innerHTML = shell('photos', body);
+  }
+
+  function ingestUploadFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList || []);
+    if (!files.length) return;
+    toast(files.length === 1 ? 'Uploading…' : ('Uploading ' + files.length + ' files…'));
+    var os = ensureStudioOs();
+    var pending = files.length;
+    files.forEach(function (file) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var dataUrl = reader.result;
+        function finish(url) {
+          var asset = {
+            id: 'up_' + Math.random().toString(36).slice(2, 9),
+            name: file.name || 'Upload',
+            kind: 'upload',
+            url: url,
+            bytes: file.size || 0,
+            created_at: new Date().toISOString()
+          };
+          os.assets = os.assets || [];
+          os.assets.unshift(asset);
+          refreshStorageFromAssets();
+          var Api = api();
+          if (Api) {
+            Api.request('assets', {
+              method: 'POST',
+              body: { name: asset.name, kind: 'upload', url: url, bytes: asset.bytes }
+            }).then(function (res) {
+              if (res && res.asset && res.asset.id) asset.id = res.asset.id;
+              persistStudioMeta();
+            }).catch(function () { persistStudioMeta(); });
+          } else persistStudioMeta();
+          pending -= 1;
+          if (pending <= 0) {
+            toast(files.length === 1 ? 'Upload added' : (files.length + ' uploads added'));
+            render();
+          }
+        }
+        if (typeof global.uploadBrandAsset === 'function') {
+          Promise.resolve(global.uploadBrandAsset('studio', dataUrl)).then(function (hosted) {
+            finish(hosted || dataUrl);
+          }).catch(function () { finish(dataUrl); });
+        } else finish(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function renderSimple(root, screen, title, sub) {
     root.innerHTML = shell(screen,
       '<header class="hs-page-head"><h1>' + esc(title) + '</h1><p>' + esc(sub) + '</p></header>' +
@@ -1023,16 +1208,23 @@
     var leftBody = '';
     if (tab === 'assets') {
       var attached = ((project.canvas && project.canvas.package && project.canvas.package.elements) || []);
-      leftBody = '<div class="hs-ws-panel"><h3>Assets</h3><p class="hs-muted">Job photos, logo, reviews, and Elements attached to this campaign.</p>' +
+      var mediaAtt = ((project.canvas && project.canvas.package && project.canvas.package.media) || []);
+      leftBody = '<div class="hs-ws-panel"><h3>Assets</h3><p class="hs-muted">Job photos, uploads, logo, reviews, and Elements on this campaign.</p>' +
         '<ul class="hs-ws-list"><li>Brand logo</li><li>Job photos</li><li>Review quote</li></ul>' +
+        (mediaAtt.length
+          ? '<div class="hs-lbl tiny">Media</div><div class="hs-attach-pills">' +
+            mediaAtt.map(function (m) { return '<span>' + esc(m.name || 'Photo') + '</span>'; }).join('') +
+            '</div>'
+          : '<p class="hs-muted hs-tiny">No uploads attached — open Uploads or Photos.</p>') +
         (attached.length
           ? '<div class="hs-lbl tiny">Elements</div><div class="hs-attach-pills">' +
             attached.map(function (a) { return '<span>' + esc(a.glyph || '◇') + ' ' + esc(a.label || a.id) + '</span>'; }).join('') +
             '</div>'
           : '<p class="hs-muted hs-tiny">No Elements yet — open the Elements tab to attach badges and CTAs.</p>') +
         '<div class="hs-btn-row">' +
-        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="elements">Browse Elements</button>' +
-        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="uploads">Manage uploads</button>' +
+        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="uploads">Uploads</button>' +
+        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="photos">Photos</button>' +
+        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="elements">Elements</button>' +
         '</div></div>';
     } else if (tab === 'brief') {
       var brief = (project.canvas && project.canvas.brief) || project.brief || null;
@@ -1118,7 +1310,10 @@
       '</div></header>' +
       '<div class="hs-canvas hs-preview-canvas">' +
       '<div class="hs-design hs-design-preview hs-page-' + esc(activePage) + '" id="hs-design">' +
-      '<div class="hs-design-photos"><div class="hs-ph before"></div><div class="hs-ph after"></div>' +
+      '<div class="hs-design-photos">' +
+      (pkg.photo_url
+        ? '<div class="hs-ph before has-img"><img src="' + esc(pkg.photo_url) + '" alt=""></div><div class="hs-ph after"></div>'
+        : '<div class="hs-ph before"></div><div class="hs-ph after"></div>') +
       '<span class="hs-biz-pill">' + esc(bizName()) + '</span></div>' +
       '<div class="hs-design-headline">' +
       '<h2 id="hs-canvas-headline" contenteditable="true" spellcheck="false">' + esc(headline) + '</h2></div>' +
@@ -1713,6 +1908,80 @@
       });
       return;
     }
+    if (act === 'media-upload') {
+      var upInput = el('hs-uploads-file');
+      if (!upInput) {
+        // Ensure uploads screen is mounted with the file input
+        ensureStudioOs().ui.screen = 'uploads';
+        render();
+        upInput = el('hs-uploads-file');
+      }
+      if (!upInput) {
+        toast('Upload control unavailable — refresh Studio');
+        return;
+      }
+      upInput.onchange = function () {
+        var list = upInput.files;
+        upInput.value = '';
+        ingestUploadFiles(list);
+      };
+      upInput.click();
+      return;
+    }
+    if (act === 'media-delete') {
+      var delId = t.getAttribute('data-hs-asset-id');
+      var osDel = ensureStudioOs();
+      osDel.assets = (osDel.assets || []).filter(function (a) { return a.id !== delId; });
+      refreshStorageFromAssets();
+      persistStudioMeta();
+      var ApiDel = api();
+      if (ApiDel && delId && String(delId).indexOf('up_') !== 0) {
+        ApiDel.request('assets/' + delId, { method: 'DELETE' }).catch(function () {});
+      }
+      toast('Removed from Uploads');
+      return render();
+    }
+    if (act === 'media-attach' || act === 'photo-attach') {
+      var asset = null;
+      if (act === 'media-attach') {
+        var aid = t.getAttribute('data-hs-asset-id');
+        asset = (ensureStudioOs().assets || []).find(function (a) { return a.id === aid; });
+      } else {
+        asset = {
+          id: 'photo_' + Date.now(),
+          url: t.getAttribute('data-hs-photo-url'),
+          name: t.getAttribute('data-hs-photo-name') || 'Job photo',
+          kind: 'job_photo'
+        };
+      }
+      if (!asset || !asset.url) {
+        toast('Media not found');
+        return;
+      }
+      var projM = currentProject();
+      if (projM && attachMediaToProject(projM, asset)) {
+        persistStudioMeta();
+        toast('Added media to ' + (projM.title || 'campaign'));
+        openEditorFor(projM, { tab: 'assets' });
+        return;
+      }
+      createProject({
+        title: bizName() + ' — ' + (asset.name || 'Photo campaign'),
+        prompt: 'Campaign from uploaded media',
+        headline: asset.name || 'Photo spotlight',
+        canvas: {
+          headline: asset.name || 'Photo spotlight',
+          package: {
+            headlines: [asset.name || 'Photo spotlight'],
+            captions: [{ channel: 'instagram', text: (asset.name || 'New work') + ' — ' + bizName() }],
+            media: [{ id: asset.id, url: asset.url, name: asset.name, kind: asset.kind || 'upload', attached_at: new Date().toISOString() }],
+            photo_url: asset.url,
+            schedule_suggestions: ['Tomorrow 12:00 PM — peak local engagement window']
+          }
+        }
+      });
+      return;
+    }
     if (act === 'set-platform' || act === 'set-style' || act === 'set-tone') {
       var group = t.parentElement;
       if (group) group.querySelectorAll('.hs-pill-tog').forEach(function (b) { b.classList.remove('on'); });
@@ -1793,9 +2062,9 @@
     if (screen === 'publish') return renderPublish(root);
     if (screen === 'analytics') return renderAnalytics(root);
     if (screen === 'projects') return renderProjects(root);
-    if (screen === 'photos') return renderSimple(root, 'photos', 'Photos', 'Job photos and portfolio for Studio campaigns.');
+    if (screen === 'photos') return renderPhotos(root);
     if (screen === 'elements') return renderElements(root);
-    if (screen === 'uploads') return renderSimple(root, 'uploads', 'Uploads', 'Your uploaded brand and job media.');
+    if (screen === 'uploads') return renderUploads(root);
     if (screen === 'settings') {
       return renderSimple(root, 'settings', 'Studio Settings', 'Storage, creative engine link, and Studio preferences.');
     }
