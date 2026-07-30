@@ -45,7 +45,7 @@ describe('Projects Lightroom + NEF fixes', () => {
   });
 
   it('cache-busts Projects assets', () => {
-    assert.match(hubly, /photography-projects\.js\?v=projects-12/);
-    assert.match(hubly, /photography-projects\.css\?v=projects-12/);
+    assert.match(hubly, /photography-projects\.js\?v=projects-13/);
+    assert.match(hubly, /photography-projects\.css\?v=projects-13/);
   });
 });

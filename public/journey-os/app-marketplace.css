@@ -359,6 +359,7 @@
 }
 
 @media (max-width: 720px) {
+  .am-shell { padding: 18px 14px 100px; }
   .am-overview { grid-template-columns: 1fr; }
   .am-hero-banner { grid-template-columns: 1fr; }
   .am-twin { grid-template-columns: 1fr; }
@@ -369,5 +370,22 @@
   .am-row-actions {
     justify-content: flex-start;
     width: 100%;
+  }
+  .am-row-actions .am-btn {
+    min-height: 44px;
+    flex: 1 1 auto;
+  }
+  .am-grid {
+    grid-template-columns: 1fr;
+  }
+  .am-btn {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+}
+
+@media (hover: none) {
+  .am-btn-ghost:active {
+    background: #F8FAFC;
   }
 }

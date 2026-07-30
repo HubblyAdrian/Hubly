@@ -283,7 +283,14 @@
     }).join('');
 
     return '<div class="hs-shell">' +
-      '<aside class="hs-sidebar" aria-label="Studio navigation">' +
+      '<header class="hs-mobile-bar" aria-label="Studio mobile navigation">' +
+      '<button type="button" class="hs-mobile-menu" data-hs-act="toggle-nav" aria-label="Open Studio menu" aria-expanded="false">' +
+      '<span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button>' +
+      '<div class="hs-mobile-brand"><strong>Studio</strong> <span>by <span class="hs-wm-hub">hub</span><span class="hs-wm-ly">ly</span></span></div>' +
+      '<button type="button" class="hs-mobile-leave" data-hs-act="leave-studio" aria-label="Back to Hubly">← Hubly</button>' +
+      '</header>' +
+      '<button type="button" class="hs-nav-backdrop" data-hs-act="close-nav" aria-label="Close Studio menu" tabindex="-1"></button>' +
+      '<aside class="hs-sidebar" id="hs-sidebar" aria-label="Studio navigation">' +
       '<button type="button" class="hs-back-hubly" data-hs-act="leave-studio" aria-label="Back to Hubly">' +
       '<span aria-hidden="true">←</span> Back to Hubly</button>' +
       '<div class="hs-brand">' +
@@ -304,6 +311,22 @@
       '</div></aside>' +
       '<main class="hs-main">' + bodyHtml + '</main>' +
       '</div>';
+  }
+
+  function closeStudioNav(root) {
+    var shellEl = (root || ownRoot()) && (root || ownRoot()).querySelector('.hs-shell');
+    if (!shellEl) return;
+    shellEl.classList.remove('hs-nav-open');
+    var btn = shellEl.querySelector('.hs-mobile-menu');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleStudioNav(root) {
+    var shellEl = root && root.querySelector('.hs-shell');
+    if (!shellEl) return;
+    var open = shellEl.classList.toggle('hs-nav-open');
+    var btn = shellEl.querySelector('.hs-mobile-menu');
+    if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
   function renderHome(root) {
@@ -1900,6 +1923,8 @@
       '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="publish-email">✈ Publish Email</button>' +
       '<button type="button" class="hs-btn hs-btn-brand hs-btn-customize" data-hs-act="customize-design">Customize Design</button>' +
       '</div></header>' +
+      '<div class="hs-ws-mobile-strip" aria-label="Workspace sections">' +
+      '<div class="hs-ws-mobile-scroll">' + sideNav + '</div></div>' +
       '<div class="hs-canvas hs-preview-canvas">' +
       '<div class="hs-design hs-design-preview hs-page-' + esc(activePage) + '" id="hs-design">' +
       '<div class="hs-design-photos">' +
@@ -2114,15 +2139,24 @@
 
   function handleAct(act, t, root) {
     var os = ensureStudioOs();
+    if (act === 'toggle-nav') {
+      return toggleStudioNav(root);
+    }
+    if (act === 'close-nav') {
+      return closeStudioNav(root);
+    }
     if (act === 'leave-studio') {
+      closeStudioNav(root);
       return leaveStudio();
     }
     if (act === 'nav') {
       os.ui.screen = t.getAttribute('data-hs-screen') || 'home';
+      closeStudioNav(root);
       return render();
     }
     if (act === 'go-settings') {
       os.ui.screen = 'settings';
+      closeStudioNav(root);
       return render();
     }
     if (act === 'canva-connect') {
@@ -2655,6 +2689,9 @@
         }
       }
     }, true);
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeStudioNav(root);
+    });
   }
 
   function renderScreen(root) {

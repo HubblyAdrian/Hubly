@@ -76,7 +76,7 @@ describe('Hubly → Lightroom upload pipeline', () => {
     assert.doesNotMatch(adobe, /Hubly→Lightroom upload is deferred/);
     assert.match(adobe, /ADOBE_UPLOAD_FAILED/);
     assert.match(css, /\.pp-lr-badge/);
-    assert.match(hubly, /photography-projects\.js\?v=projects-12/);
-    assert.match(hubly, /adobe-lightroom-service\.js\?v=projects-12/);
+    assert.match(hubly, /photography-projects\.js\?v=projects-13/);
+    assert.match(hubly, /adobe-lightroom-service\.js\?v=projects-13/);
   });
 });

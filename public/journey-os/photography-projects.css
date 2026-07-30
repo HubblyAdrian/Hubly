@@ -196,7 +196,7 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
 
 .pp-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 22px;
 }
 
@@ -546,7 +546,7 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
 
 .pp-checks {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
   gap: 10px;
 }
 
@@ -1249,6 +1249,101 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   .pp-fav-grid { grid-template-columns: repeat(2, 1fr); }
   .pp-lr-twin { grid-template-columns: 1fr; }
   .pp-lr-twin-join { justify-self: center; transform: rotate(90deg); }
+  .pp-between {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pp-between .pp-btn-row,
+  .pp-lr-hero .pp-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pp-between .pp-btn,
+  .pp-lr-hero .pp-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+  .pp-seg {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .pp-seg-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+    text-align: center;
+  }
+  .pp-wizard-card { padding: 22px 16px; }
+  .pp-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 12;
+    background: var(--pp-bg, #f7f5f1);
+    padding-top: 4px;
+    margin-top: -4px;
+  }
+  .pp-queue li {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pp-queue li .pp-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .pp-queue li .pp-btn { min-height: 40px; }
+  .pp-card-actions .pp-btn { min-height: 40px; }
+  .pp-btn-sm { padding: 10px 12px; min-height: 40px; }
+  .pp-back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 8px 4px;
+  }
+  .pp-lr-panel-btn {
+    min-height: 40px;
+    padding: 10px 14px;
+  }
+  .pp-icon-x {
+    width: 44px;
+    height: 44px;
+  }
+  .pp-progress-meta {
+    flex-wrap: wrap;
+  }
+  .pp-progress-meta input[type="range"] {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .pp-shell { padding: 14px 12px 110px; }
+  .pp-toolbar { grid-template-columns: 1fr; }
+  .pp-grid { grid-template-columns: 1fr; gap: 14px; }
+  .pp-fav-grid { grid-template-columns: 1fr; }
+  .pp-wizard-card { padding: 18px 14px; }
+  .pp-dropzone.is-empty { padding: 36px 16px; }
+  .pp-card-cover { height: 140px; }
+  .pp-lr-panels {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .pp-lr-panels::-webkit-scrollbar { display: none; }
+  .pp-lr-panel-btn { flex-shrink: 0; }
+  .pp-lr-status-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (hover: none) {
+  .pp-card:hover {
+    transform: none;
+    box-shadow: var(--pp-shadow);
+  }
+  .pp-card:active {
+    transform: scale(0.99);
+  }
 }
 
 /* Media — Lightroom-style upload + grids */

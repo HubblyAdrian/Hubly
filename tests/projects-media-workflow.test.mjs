@@ -32,9 +32,9 @@ describe('Projects media previews + Adobe workflow copy', () => {
     assert.match(css, /\.pp-workflow-steps/);
   });
 
-  it('cache-busts Projects assets at projects-12', () => {
-    assert.match(hubly, /photography-projects\.js\?v=projects-12/);
-    assert.match(hubly, /photography-projects\.css\?v=projects-12/);
-    assert.match(hubly, /adobe-lightroom-service\.js\?v=projects-12/);
+  it('cache-busts Projects assets at projects-13', () => {
+    assert.match(hubly, /photography-projects\.js\?v=projects-13/);
+    assert.match(hubly, /photography-projects\.css\?v=projects-13/);
+    assert.match(hubly, /adobe-lightroom-service\.js\?v=projects-13/);
   });
 });
