@@ -319,7 +319,7 @@
       return Promise.resolve({
         _local: true,
         error: 'Provider not configured',
-        message: 'Connect Canva via Apps to customize designs. Hubly keeps your project ready.'
+        message: 'Canva is optional. Continue editing in Hubly — connect Canva in Apps anytime for advanced layouts.'
       });
     }
     if (p.indexOf('projects/') === 0 && p.indexOf('/workspace') > 0 && method === 'GET') {

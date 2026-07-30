@@ -1,5 +1,5 @@
 /**
- * Smoke test — Hubly Projects (universal workspace) + Connected Apps / Creative Engine.
+ * Smoke test — Hubly Media (visual asset manager) + Connected Apps / Creative Engine.
  */
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
@@ -9,7 +9,7 @@ import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-describe('Hubly Projects module', () => {
+describe('Hubly Media module', () => {
   it('ships ProjectWorkspace (Connected Apps project links) migration', () => {
     const mig = join(root, 'supabase/migrations/20260728060000_photography_project_workspaces.sql');
     assert.equal(existsSync(mig), true);
@@ -88,12 +88,12 @@ describe('Hubly Projects module', () => {
     assert.match(html, /photography-projects\.js/);
   });
 
-  it('Projects is a core module; Lightroom is feature-gated', () => {
+  it('Media is a core module; Lightroom is feature-gated', () => {
     const html = readFileSync(join(root, 'public/hubly.html'), 'utf8');
     const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
     assert.match(html, /function hasBusinessCapability/);
     assert.match(html, /if\(key==='projects'\)return true/);
-    assert.match(html, /ni-lbl">Projects</);
+    assert.match(html, /ni-lbl">Media</);
     assert.match(js, /hasProjectsCapability\(\) \{\s*return true;/);
     assert.match(js, /hasLightroomCapability/);
     assert.match(js, /projectWorkspaceProfile/);
@@ -122,14 +122,14 @@ describe('Hubly Projects module', () => {
     assert.match(js, /Math\.min\(3,/);
   });
 
-  it('exposes Hubly Lightroom Actions in Projects (not Adobe jargon)', () => {
+  it('exposes Hubly Lightroom Actions in Media (not Adobe jargon)', () => {
     const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
     const svc = readFileSync(join(root, 'public/journey-os/adobe-lightroom-service.js'), 'utf8');
     const edge = readFileSync(join(root, 'supabase/functions/adobe-lightroom/index.ts'), 'utf8');
     assert.match(js, /Export Final Photos|lr-export/);
     assert.match(js, /Browse Photos|lr-browse-photos/);
     assert.match(js, /Open Lightroom Project/);
-    assert.match(js, /Connect Adobe Account/);
+    assert.match(js, /Connect Adobe \(optional\)|Connect Adobe Account|Connect Adobe/);
     assert.match(svc, /connectAccount/);
     assert.match(svc, /browsePhotos/);
     assert.match(svc, /exportFinalPhotos/);
@@ -140,23 +140,23 @@ describe('Hubly Projects module', () => {
     assert.match(edge, /linkAlbum/);
   });
 
-  it('ships dashboard metrics, Media upload, Creative tab, and Quick Project', () => {
+  it('ships dashboard metrics, Media upload, Creative tab, and Quick add', () => {
     const js = readFileSync(join(root, 'public/journey-os/photography-projects.js'), 'utf8');
     const journey = readFileSync(join(root, 'public/journey-os/journey.js'), 'utf8');
     const apps = readFileSync(join(root, 'public/journey-os/app-marketplace.js'), 'utf8');
     assert.match(js, /Awaiting Delivery/);
     assert.match(js, /Drag &amp; drop here/);
     assert.match(js, /Create Marketing Asset/);
-    assert.match(js, /Quick Project/);
-    assert.match(js, /Create Project/);
+    assert.match(js, /Quick add/);
+    assert.match(js, /Create job|Create Project/);
     assert.match(journey, /photo-quick/);
     assert.match(js, /var profile = projectWorkspaceProfile\(\)/);
     assert.match(js, /profile\.teamFilterLabel/);
-    assert.match(js, /title: 'Projects'/);
+    assert.match(js, /title: 'Media'/);
     assert.match(apps, /Connect the tools you already use/);
     assert.match(apps, /What happens after you connect/);
     assert.match(apps, /Business apps/);
-    assert.match(apps, /Creative & project apps/);
+    assert.match(apps, /Creative & media apps|Creative & project apps/);
   });
 
   it('enables projects + lightroom on photography blueprint', () => {

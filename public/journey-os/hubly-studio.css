@@ -1061,6 +1061,13 @@
   .hs-an-kpi-grid { grid-template-columns: 1fr; }
 }
 
+.hs-ws-cta-block .hs-btn-block { margin-top: 8px; }
+.hs-ws-cta-block .hs-btn-block:first-child { margin-top: 0; }
+
+@media (max-width: 800px) {
+  .hs-ws-cta-block .hs-btn { min-height: 44px; }
+}
+
 @media (hover: none) {
   .hs-blank-card:active,
   .hs-recent-row:active,

@@ -150,7 +150,7 @@
         if (!quickEdge) {
           return notConfigured({
             message: (quickRes.error && quickRes.error.message) ||
-              'Could not check Adobe status. Projects still work in Hubly.',
+              'Could not check Adobe status. Media still works in Hubly.',
           });
         }
         if (quickEdge.configured === false || quickEdge.health === 'not_configured') {
@@ -158,7 +158,7 @@
           _connectedCache = false;
           return notConfigured({
             message: quickEdge.message ||
-              'Adobe Lightroom isn’t configured yet. Projects still work without Lightroom.',
+              'Adobe Lightroom isn’t configured yet. Media still works without Lightroom.',
           });
         }
         var qConnected = !!(quickEdge.connected || (quickEdge.data && quickEdge.data.connected));
@@ -205,7 +205,7 @@
       if (!edge) {
         return notConfigured({
           message: (res.error && res.error.message) ||
-            'Could not check Adobe status. Projects still work in Hubly.',
+            'Could not check Adobe status. Media still works in Hubly.',
         });
       }
       if (edge.configured === false || edge.health === 'not_configured' ||
@@ -214,7 +214,7 @@
         _connectedCache = false;
         return notConfigured({
           message: edge.message ||
-            'Adobe Lightroom isn’t configured yet. Projects still work without Lightroom.',
+            'Adobe Lightroom isn’t configured yet. Media still works without Lightroom.',
         });
       }
       var data = edge.data || edge;

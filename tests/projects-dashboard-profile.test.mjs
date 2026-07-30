@@ -20,5 +20,5 @@ test('renderDashboard declares profile before using it', () => {
 
 test('renderPhotoProjects recovers if paint throws', () => {
   assert.match(js, /Projects paint failed/);
-  assert.match(js, /Couldn\\u2019t open Projects|Couldn.t open Projects/);
+  assert.match(js, /Couldn\\u2019t open Media|Couldn.t open Media/);
 });

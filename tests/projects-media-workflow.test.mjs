@@ -24,17 +24,17 @@ describe('Projects media previews + Adobe workflow copy', () => {
     assert.match(projects, /Never persist ephemeral blob/);
   });
 
-  it('explains Lightroom-first path to get files into Adobe', () => {
+  it('keeps Lightroom upload optional while Hubly owns media', () => {
     assert.match(projects, /Upload to Lightroom/);
     assert.match(projects, /Automatically upload new photos to Lightroom/);
     assert.match(projects, /uploadProjectMediaToLightroom/);
-    assert.match(projects, /Two-way media/);
+    assert.match(projects, /Hubly Media works without Adobe|no Adobe required/);
     assert.match(css, /\.pp-workflow-steps/);
   });
 
-  it('cache-busts Projects assets at projects-13', () => {
-    assert.match(hubly, /photography-projects\.js\?v=projects-13/);
-    assert.match(hubly, /photography-projects\.css\?v=projects-13/);
-    assert.match(hubly, /adobe-lightroom-service\.js\?v=projects-13/);
+  it('cache-busts Projects assets at projects-14', () => {
+    assert.match(hubly, /photography-projects\.js\?v=projects-14/);
+    assert.match(hubly, /photography-projects\.css\?v=projects-14/);
+    assert.match(hubly, /adobe-lightroom-service\.js\?v=projects-14/);
   });
 });

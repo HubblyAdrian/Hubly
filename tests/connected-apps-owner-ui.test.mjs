@@ -1,5 +1,5 @@
 /**
- * Connected Apps owner UI + universal Projects module.
+ * Connected Apps owner UI + universal Media module.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -16,7 +16,7 @@ describe('Connected Apps owner UI', () => {
     assert.match(js, /Connected Apps/);
     assert.match(js, /Connect the tools you already use/);
     assert.match(js, /Business apps/);
-    assert.match(js, /Creative & project apps/);
+    assert.match(js, /Creative & media apps|Creative & project apps/);
     assert.match(js, /What happens after you connect/);
     assert.match(js, /Last sync/);
     assert.match(js, /data-am-act="connect"/);
@@ -41,13 +41,13 @@ describe('Connected Apps owner UI', () => {
     assert.equal(byId.google_drive.scope, 'project');
   });
 
-  it('Projects nav is always available; Lightroom is feature-gated', () => {
+  it('Media nav is always available; Lightroom is feature-gated', () => {
     const html = read('public/hubly.html');
     const js = read('public/journey-os/photography-projects.js');
     assert.match(html, /function hasBusinessCapability/);
     assert.match(html, /if\(key==='projects'\)return true/);
     assert.match(html, /data-v="photo-projects"/);
-    assert.match(html, /ni-lbl">Projects</);
+    assert.match(html, /ni-lbl">Media</);
     assert.match(js, /function hasProjectsCapability\(\) \{\s*return true;/);
     assert.match(js, /hasLightroomCapability/);
     assert.match(js, /projectWorkspaceProfile/);

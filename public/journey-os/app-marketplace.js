@@ -246,7 +246,7 @@
           '<div class="am-hero-copy">' +
             '<p class="am-eyebrow">Apps</p>' +
             '<h1>Connect the tools you already use</h1>' +
-            '<p class="am-lead">Hubly stays the operating system. Connect business tools once, and creative apps for Projects — only what fits your trade.</p>' +
+            '<p class="am-lead">Hubly stays the operating system. Connect business tools once, and optional creative apps for Media — only what fits your trade.</p>' +
           '</div>' +
         '</header>' +
         '<p class="am-muted">Loading connection status…</p>' +
@@ -299,7 +299,7 @@
             '<h1>Connect the tools you already use</h1>' +
             '<p class="am-lead">Hubly stays the home for your business. Connect Canva' +
               (projectRows.some(function (r) { return r.app.id === 'adobe_lightroom'; }) ? ', Adobe Lightroom' : '') +
-              ', Drive, and more — then keep working inside Projects.</p>' +
+              ', Drive, and more — optional enhancements while you keep working in Media.</p>' +
             '<div class="am-btn-row">' + ctas + '</div>' +
           '</div>' +
           '<div class="am-hero-side">' +
@@ -317,16 +317,16 @@
           businessRows
         ) +
         renderSection(
-          'Creative & project apps',
-          'Use these from Projects after you drop media. Only apps that fit your trade are shown.',
+          'Creative & media apps',
+          'Use these from Media after you drop photos. Only apps that fit your trade are shown.',
           projectRows
         ) +
         '<section class="am-panel am-after">' +
           '<h2>What happens after you connect?</h2>' +
           '<ul class="am-checklist">' +
-            '<li><span class="am-check-ico" aria-hidden="true">✓</span><span>Drop media into a Project</span></li>' +
+            '<li><span class="am-check-ico" aria-hidden="true">✓</span><span>Upload media in Hubly Media</span></li>' +
             '<li><span class="am-check-ico" aria-hidden="true">✓</span><span>Sync to Lightroom or Drive when you need it</span></li>' +
-            '<li><span class="am-check-ico" aria-hidden="true">✓</span><span>Create Canva graphics from project photos</span></li>' +
+            '<li><span class="am-check-ico" aria-hidden="true">✓</span><span>Optionally create Canva graphics from Hubly media</span></li>' +
             '<li><span class="am-check-ico" aria-hidden="true">✓</span><span>Deliver galleries and request reviews</span></li>' +
           '</ul>' +
         '</section>' +
@@ -380,7 +380,7 @@
     var app = CA && CA.get(id);
     var name = (app && app.name) || id;
     if (id === 'adobe_lightroom') {
-      toast(name + ' — connect here, then create albums and sync from a Project → Creative.');
+      toast(name + ' — connect here, then sync from Media → Lightroom tab.');
       return;
     }
     toast(name + ' settings — manage connection from this page. Deeper settings open inside each workflow.');

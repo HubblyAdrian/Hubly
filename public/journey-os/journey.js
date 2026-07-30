@@ -30,7 +30,7 @@
     store: { label: 'Store AI', prompt: 'What products should I stock and how can I sell more retail and add-ons?' },
     money: { label: 'Invoices AI', prompt: 'Remind unpaid customers and summarize cash flow risks.' },
     reports: { label: 'Reports AI', prompt: 'Summarize my business performance and the biggest opportunity.' },
-    'photo-projects': { label: 'Projects AI', prompt: 'Help me finish and deliver my open projects faster.' },
+    'photo-projects': { label: 'Media AI', prompt: 'Help me organize and deliver my media faster.' },
     quotes: { label: 'Quote AI', prompt: 'Help me build a clear, premium quote that closes.' },
     editor: { label: 'Website AI', prompt: 'Make my homepage more premium without changing my brand.' },
     settings: { label: 'Settings AI', prompt: 'What settings should I fix to run my business more smoothly?' },
@@ -11336,7 +11336,7 @@
     chats: { title: 'Inbox', sub: 'Every conversation in one place.' },
     jobs: { title: 'Jobs', sub: 'Manage and track every job in one place.' },
     calendar: { title: 'Calendar', sub: 'Plan your day. Stay on schedule. Get more done.' },
-    'photo-projects': { title: 'Projects', sub: 'The home for every job — start with media, then creative and deliverables.' },
+    'photo-projects': { title: 'Media', sub: 'Hubly’s visual asset manager — upload, organize, deliver. Lightroom and Canva are optional.' },
     leads: { title: 'Leads', sub: 'Capture and convert new demand.' },
     customers: { title: 'Completed Customers', sub: 'People you\'ve successfully serviced.' },
     pipeline: { title: 'Pipeline', sub: 'Quotes, bookings, and completed jobs.' },
@@ -12626,8 +12626,8 @@
     } catch (e) { hasProjects = true; }
     if (hasProjects) {
       items.push(['sep-photo', '──────────']);
-      items.push(['photo-quick', 'Quick Project']);
-      items.push(['photo-new', 'New Project']);
+      items.push(['photo-quick', 'Quick add']);
+      items.push(['photo-new', 'New media job']);
     }
     pop.innerHTML = items.map(function (x) {
       if (x[0] === 'sep-photo') return '<div class="jos-quick-sep" aria-hidden="true">' + esc(x[1]) + '</div>';

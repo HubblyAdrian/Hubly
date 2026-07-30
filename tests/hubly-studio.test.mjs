@@ -24,20 +24,24 @@ const spec = readFileSync(join(root, 'docs/HUBLY_STUDIO_IMPLEMENTATION_SPEC.md')
 describe('Hubly Studio V1.0 contract', () => {
   it('ships Studio shell and frozen contract', () => {
     assert.match(hubly, /data-v="studio"/);
-    assert.match(hubly, /hubly-studio\.js\?v=studio-12/);
+    assert.match(hubly, /hubly-studio\.js\?v=studio-13/);
     assert.match(journey, /HublyStudio\.setMode/);
     assert.match(contract, /V1\.0/);
     assert.match(contract, /single channel: Email/i);
     assert.match(spec, /V1\.0 frozen/);
   });
 
-  it('Project Workspace + Customize Design + detailing goals', () => {
-    assert.match(studio, /Customize Design/);
+  it('Campaign Workspace is Hubly-native; Canva is optional', () => {
+    assert.match(studio, /Continue Editing/);
+    assert.match(studio, /Edit in Canva|continue-edit/);
     assert.match(studio, /hs-workspace-shell/);
     assert.match(studio, /CAMPAIGN_GOALS/);
     assert.match(studio, /dt_review_spotlight|dt_ceramic/);
     assert.match(studio, /Publish Email|publish-email|publish'/);
     assert.match(studio, /Campaign Brief/);
+    assert.match(studio, /isCanvaLinked|workspaceEditActionsHtml/);
+    assert.doesNotMatch(studio, /Visual editor not connected yet/);
+    assert.doesNotMatch(studio, /Customize Design needs Canva/);
     assert.match(css, /\.hs-workspace-shell/);
     assert.doesNotMatch(studio, /Powered by Canva SDK/);
   });
@@ -121,7 +125,7 @@ describe('Hubly Studio V1.0 contract', () => {
     assert.match(studio, /ELEMENT_LIBRARY/);
     assert.match(studio, /el-attach/);
     assert.match(studio, /Add to campaign|Use in campaign/);
-    assert.match(studio, /not a Canva draw tool/);
+    assert.match(studio, /Open Campaign Workspace|Assets list and preview chips/);
     assert.doesNotMatch(studio, /screen === 'elements'\) return renderSimple/);
     assert.match(css, /\.hs-el-grid/);
   });
@@ -165,7 +169,7 @@ describe('Hubly Studio V1.0 contract', () => {
     assert.match(studio, /canva-connect/);
     assert.match(studio, /Connect Canva/);
     assert.match(studio, /function connectCanvaFromStudio/);
-    assert.match(studio, /never fakes a Connected status/);
+    assert.match(studio, /Studio works fully without it|Canva is an optional advanced editor/);
     assert.doesNotMatch(studio, /screen === 'settings'\) \{\s*return renderSimple/);
     assert.match(css, /\.hs-settings-canva/);
     assert.match(api, /canva_linked/);

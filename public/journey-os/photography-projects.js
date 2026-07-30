@@ -1,10 +1,10 @@
 /**
- * Hubly Projects — universal media & creative workspace (Operate).
- * Every Hubly business gets Projects. Industry capabilities unlock tools:
- * Lightroom / galleries (photo), before/after (detailing), property albums
- * (windows), job docs (pressure wash), Canva for everyone.
+ * Hubly Media — visual asset manager & job workspace (Operate).
+ * Every Hubly business gets Media. Industry capabilities unlock tools:
+ * Lightroom (optional photo edit), galleries, before/after, property albums,
+ * job docs, Canva (optional design). Hubly owns media without integrations.
  * Supabase is SSOT for project records; localStorage only caches UI prefs.
- * Table names remain photography_* for compatibility — product label is Projects.
+ * Table names remain photography_* for compatibility — product label is Media.
  */
 (function (global) {
   'use strict';
@@ -227,7 +227,7 @@
     return caps;
   }
   function hasCapability(key) {
-    // Projects is a core Hubly module — always on.
+    // Media is a core Hubly module — always on.
     if (key === 'projects') return true;
     if (typeof global.hasBusinessCapability === 'function') {
       try { return !!global.hasBusinessCapability(key); } catch (e) {}
@@ -273,13 +273,13 @@
     if (isPhotoTrade()) {
       return {
         industry: 'photography',
-        eyebrow: 'Projects',
-        title: 'Projects',
-        subtitle: 'The home for every job — start with media, then creative and deliverables.',
+        eyebrow: 'Media',
+        title: 'Media',
+        subtitle: 'Hubly’s visual asset manager — upload, organize, deliver. Lightroom and Canva are optional.',
         dateLabel: 'Shoot',
         projectTypes: PROJECT_TYPES.slice(),
         defaultType: 'Wedding',
-        emptyHint: 'Create a project — Lightroom is optional until you connect Adobe.',
+        emptyHint: 'Create a job album — upload photos here. Connect Adobe Lightroom anytime for pro editing.',
         teamFilterLabel: 'Photographers',
         quickPlaceholder: 'Johnson Wedding',
         quickHint: 'Name it, add media, done — about 30 seconds.',
@@ -300,9 +300,9 @@
     if (isDetailTrade()) {
       return {
         industry: 'detailing',
-        eyebrow: 'Projects',
-        title: 'Projects',
-        subtitle: 'The home for every job — start with media, then creative and deliverables.',
+        eyebrow: 'Media',
+        title: 'Media',
+        subtitle: 'Hubly’s visual asset manager — upload, organize, deliver. Lightroom and Canva are optional.',
         dateLabel: 'Job',
         projectTypes: ['Ceramic Coating', 'Full Detail', 'Paint Correction', 'Interior', 'Fleet', 'Other'],
         defaultType: 'Ceramic Coating',
@@ -328,9 +328,9 @@
     if (isWindowTrade()) {
       return {
         industry: 'windows',
-        eyebrow: 'Projects',
-        title: 'Projects',
-        subtitle: 'The home for every job — start with media, then creative and deliverables.',
+        eyebrow: 'Media',
+        title: 'Media',
+        subtitle: 'Hubly’s visual asset manager — upload, organize, deliver. Lightroom and Canva are optional.',
         dateLabel: 'Job',
         projectTypes: ['Residential', 'Commercial', 'New Construction', 'Other'],
         defaultType: 'Residential',
@@ -353,9 +353,9 @@
     if (isPressureWashTrade()) {
       return {
         industry: 'pressure_wash',
-        eyebrow: 'Projects',
-        title: 'Projects',
-        subtitle: 'The home for every job — start with media, then creative and deliverables.',
+        eyebrow: 'Media',
+        title: 'Media',
+        subtitle: 'Hubly’s visual asset manager — upload, organize, deliver. Lightroom and Canva are optional.',
         dateLabel: 'Job',
         projectTypes: ['Driveway', 'House Wash', 'Roof', 'Commercial Lot', 'Other'],
         defaultType: 'House Wash',
@@ -378,9 +378,9 @@
     }
     return {
       industry: 'home_service',
-      eyebrow: 'Projects',
-      title: 'Projects',
-      subtitle: 'The home for every job — start with media, then creative and deliverables.',
+      eyebrow: 'Media',
+      title: 'Media',
+      subtitle: 'Hubly’s visual asset manager — upload, organize, deliver. Lightroom and Canva are optional.',
       dateLabel: 'Job',
       projectTypes: ['Residential', 'Commercial', 'Maintenance', 'Other'],
       defaultType: 'Residential',
@@ -1011,24 +1011,25 @@
             '<div><span class="pp-label">Last sync</span><strong>' + esc(formatRelative(p.last_sync_at)) + '</strong></div>' +
           '</div>' +
           '<div class="pp-card-actions" onclick="event.stopPropagation()">' +
-            '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="open" data-pp-id="' + esc(p.id) + '">Open</button>' +
-            (hasLightroomCapability()
-              ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Lightroom</button>'
-              : '') +
+            '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="open" data-pp-id="' + esc(p.id) + '">Open</button>' +
             '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gallery" data-pp-id="' + esc(p.id) + '">Gallery</button>' +
             '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="invoice" data-pp-id="' + esc(p.id) + '">Invoice</button>' +
-            '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver</button>' +
+            '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="deliver" data-pp-id="' + esc(p.id) + '">Deliver</button>' +
+            (hasLightroomCapability() && getWorkspace(p, 'adobe_lightroom') &&
+              (getWorkspace(p, 'adobe_lightroom').sync_state === 'linked' || getWorkspace(p, 'adobe_lightroom').sync_state === 'synced')
+              ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Lightroom</button>'
+              : '') +
           '</div></div></article>';
     }).join('');
 
     return '<div class="pp-shell pp-dash">' +
       '<header class="pp-dash-head pp-dash-head--actions">' +
         '<div class="pp-dash-actions">' +
-          '<button type="button" class="pp-btn pp-btn-ghost pp-btn-lg" data-pp-act="quick">Quick Project</button>' +
-          '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="new">+ New Project</button>' +
+          '<button type="button" class="pp-btn pp-btn-ghost pp-btn-lg" data-pp-act="quick">Quick add</button>' +
+          '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="new">+ New job</button>' +
         '</div></header>' +
       '<div class="pp-metrics">' +
-        metric('Projects', String(m.projects)) +
+        metric('Jobs', String(m.projects)) +
         metric('In progress', String(m.editing)) +
         metric('Awaiting Delivery', String(m.awaiting)) +
         metric('Revenue', money(m.revenue)) +
@@ -1036,7 +1037,7 @@
       '</div>' +
       '<div class="pp-toolbar">' +
         '<label class="pp-search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
-          '<input type="search" placeholder="Search projects, clients…" value="' + esc(st.search) + '" data-pp-field="search"></label>' +
+          '<input type="search" placeholder="Search media, clients…" value="' + esc(st.search) + '" data-pp-field="search"></label>' +
         '<select data-pp-field="statusFilter" aria-label="Status"><option value="all">All statuses</option>' +
           STATUSES.map(function (s) { return '<option value="' + esc(s) + '"' + (st.statusFilter === s ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') +
         '</select>' +
@@ -1062,8 +1063,8 @@
           '<h2>No projects yet</h2>' +
           '<p>' + esc(profile.emptyHint) + '</p>' +
           '<div class="pp-btn-row" style="justify-content:center">' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="quick">Quick Project</button>' +
-          '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="new">+ New Project</button></div></div>') +
+          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="quick">Quick add</button>' +
+          '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="new">+ New job</button></div></div>') +
       (st.quickOpen ? renderQuickModal(st) : '') +
       '</div>';
   }
@@ -1077,7 +1078,7 @@
     var profile = projectWorkspaceProfile();
     return '<div class="pp-modal-bg" data-pp-act="quick-close">' +
       '<div class="pp-modal" onclick="event.stopPropagation()">' +
-        '<div class="pp-modal-h"><h2>Quick Project</h2><button type="button" class="pp-icon-x" data-pp-act="quick-close" aria-label="Close">×</button></div>' +
+        '<div class="pp-modal-h"><h2>Quick add</h2><button type="button" class="pp-icon-x" data-pp-act="quick-close" aria-label="Close">×</button></div>' +
         '<p class="pp-muted">' + esc(profile.quickHint || 'Name it, add media, done — about 30 seconds.') + ' Saved to Hubly immediately.</p>' +
         '<label class="pp-field pp-field-full"><span>Project Name</span>' +
           '<input type="text" data-pp-quick="name" value="' + esc(q.name) + '" placeholder="' + esc(profile.quickPlaceholder || 'Project name') + '" autofocus></label>' +
@@ -1150,7 +1151,7 @@
         field('Editor / Creative', '<input type="text" data-pp-w="team.editor" value="' + esc(w.team.editor) + '">') + '</div>' +
         '<p class="pp-help pp-mt">Hubly prepares contracts, invoices, timeline, gallery, and marketing for this project automatically. Next you\u2019ll land on Media to drop photos.</p>';
     }
-    return '<div class="pp-shell pp-wizard"><button type="button" class="pp-back" data-pp-act="wiz-cancel">← Projects</button>' +
+    return '<div class="pp-shell pp-wizard"><button type="button" class="pp-back" data-pp-act="wiz-cancel">← Media</button>' +
       '<div class="pp-wizard-card"><div class="pp-steps">' +
       [1, 2, 3].map(function (n) {
         var labels = ['Details', 'Client', 'Team'];
@@ -1161,7 +1162,7 @@
       (step > 1 ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="wiz-prev">Back</button>' : '<span></span>') +
       (step < 3
         ? '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="wiz-next">Continue</button>'
-        : '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="wiz-create">Create Project</button>') +
+        : '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="wiz-create">Create job</button>') +
       '</div></div></div>';
   }
 
@@ -1192,13 +1193,13 @@
       else if (tab === 'marketing' || tab === 'notes') tab = 'assistant';
       st.tab = tab;
     }
-    return '<div class="pp-shell pp-cc"><button type="button" class="pp-back" data-pp-act="back-dash">← All projects</button>' +
+    return '<div class="pp-shell pp-cc"><button type="button" class="pp-back" data-pp-act="back-dash">← All media</button>' +
       '<header class="pp-hero" style="' + coverStyle(p) + '"><div class="pp-hero-veil"></div><div class="pp-hero-content">' +
       '<div class="pp-hero-top"><span class="pp-status pp-status-' + statusTone(p.status) + '">' + esc(p.status) + '</span>' +
       '<select class="pp-status-select" data-pp-act="set-status" data-pp-id="' + esc(p.id) + '">' +
       STATUSES.map(function (s) { return '<option value="' + esc(s) + '"' + (p.status === s ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') +
       '</select></div>' +
-      '<p class="pp-eyebrow pp-hero-eyebrow">Projects</p>' +
+      '<p class="pp-eyebrow pp-hero-eyebrow">Media</p>' +
       '<h1 class="pp-hero-title">' + esc(p.name) + '</h1>' +
       '<p class="pp-hero-sub">' + esc(p.client_name || 'No client') + ' · ' + esc(p.project_type) + ' · ' + esc(formatDate(p.shoot_date)) + '</p>' +
       '<div class="pp-hero-kpis">' +
@@ -1310,26 +1311,26 @@
     var hero = '<section class="pp-lr-hero">' +
       '<div class="pp-lr-hero-copy">' +
         '<p class="pp-eyebrow">Connected Apps</p>' +
-        '<h2>Connect the tools you already use</h2>' +
-        '<p class="pp-lr-lead">Hubly stays the home for ' + esc(p.name) + '.</p>' +
-        '<p>Connect Canva' + (showLr ? ', Adobe Lightroom' : '') +
-        ', Drive, and more — then keep working inside this project.</p>' +
+        '<h2>Optional tools that extend Hubly Media</h2>' +
+        '<p class="pp-lr-lead">Hubly already owns media for ' + esc(p.name) + '.</p>' +
+        '<p>Connect Canva' + (showLr ? ' or Adobe Lightroom' : '') +
+        ' when you want advanced editing — never required to upload, organize, or deliver.</p>' +
         '<div class="pp-btn-row">' +
-          (showLr ? '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="adobe-connect">Connect Adobe</button>' : '') +
-          '<button type="button" class="pp-btn ' + (showLr ? 'pp-btn-ghost' : 'pp-btn-brand pp-btn-lg') + '" data-pp-act="canva-connect">Connect Canva</button>' +
-          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="creative">Open Creative</button>' +
+          '<button type="button" class="pp-btn pp-btn-brand pp-btn-lg" data-pp-act="tab" data-pp-tab="media">Open Media</button>' +
+          '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="canva-connect">Connect Canva</button>' +
+          (showLr ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="adobe-connect">Connect Adobe</button>' : '') +
         '</div>' +
       '</div>' +
       '<div class="pp-lr-hero-side">' +
         '<div class="pp-lr-twin">' +
-          '<div><span class="pp-label">Hubly Project</span><strong>' + esc(p.name) + '</strong><small>Primary record</small></div>' +
+          '<div><span class="pp-label">Hubly Media</span><strong>' + esc(p.name) + '</strong><small>Primary record</small></div>' +
           '<div class="pp-lr-twin-join" aria-hidden="true">↔</div>' +
-          '<div><span class="pp-label">Connected Apps</span><strong>' + esc(workspaceSummary(p) || 'None yet') + '</strong><small>Creative · Storage · Editing</small></div>' +
+          '<div><span class="pp-label">Optional apps</span><strong>' + esc(workspaceSummary(p) || 'None yet') + '</strong><small>Enhance when ready</small></div>' +
         '</div>' +
       '</div></section>';
 
     var providers = '<section class="pp-panel pp-panel-wide"><h3>Connected Apps</h3>' +
-      '<p class="pp-muted">Same Projects module — tools appear based on your business capabilities.</p>' +
+      '<p class="pp-muted">Same Media module — tools appear based on your business capabilities.</p>' +
       '<div class="pp-ws-grid">' +
       providersList.map(function (prov) {
         var w = getWorkspace(p, prov.id);
@@ -1441,15 +1442,16 @@
 
     return '<section class="pp-panel pp-panel-wide pp-lr-workspace">' +
       '<div class="pp-between">' +
-        '<div><p class="pp-kicker">Adobe Lightroom</p><h3>' + esc(p.name) + '</h3>' +
-        '<p class="pp-muted"><strong>Two-way media:</strong> Upload Hubly photos into the linked Lightroom album, or edit in Adobe and <strong>Sync Now</strong> to pull updates back.</p></div>' +
+        '<div><p class="pp-kicker">Adobe Lightroom · optional</p><h3>' + esc(p.name) + '</h3>' +
+        '<p class="pp-muted">Hubly Media works without Adobe. When connected: upload to a linked album, edit in Lightroom, then <strong>Sync Now</strong> to pull updates back.</p></div>' +
         '<div class="pp-btn-row">' +
           (connected
             ? '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="sync" data-pp-id="' + esc(p.id) + '">Sync Now</button>' +
               (sync.albumId
                 ? '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="lr-upload" data-pp-id="' + esc(p.id) + '">Upload to Lightroom</button>'
                 : '')
-            : '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="adobe-connect">Connect Adobe Account</button>') +
+            : '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="adobe-connect">Connect Adobe (optional)</button>' +
+              '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="tab" data-pp-tab="media">Continue in Hubly Media</button>') +
         '</div></div>' +
       nav + '<div class="pp-lr-panel-body">' + body + '</div></section>';
   }
@@ -1475,10 +1477,10 @@
         '<div><span class="pp-label">Favorites</span><strong>' + esc(String(sync.favorites)) + '</strong></div>' +
       '</div>' +
       '<ol class="pp-muted pp-mt pp-workflow-steps">' +
-        '<li>Connect Adobe and link a Lightroom album.</li>' +
-        '<li>Upload photos from Hubly Media → Lightroom, or import in Adobe.</li>' +
-        '<li>Edit in Lightroom, then <strong>Sync Now</strong> to pull edits into Hubly.</li>' +
-        '<li>Publish Hubly gallery delivers to clients from Hubly.</li>' +
+        '<li>Upload and organize photos in <strong>Hubly Media</strong> anytime — no Adobe required.</li>' +
+        '<li><em>Optional:</em> Connect Adobe and link a Lightroom album for pro editing.</li>' +
+        '<li>Upload Hubly photos → Lightroom, edit there, then <strong>Sync Now</strong>.</li>' +
+        '<li>Publish Hubly client galleries from Hubly Media.</li>' +
       '</ol>' +
       '<label class="pp-auto-upload pp-mt"><input type="checkbox" data-pp-act="lr-auto-upload" data-pp-id="' +
         esc(p.id) + '"' + (autoUpload ? ' checked' : '') +
@@ -1816,7 +1818,7 @@
 
     return '<section class="pp-panel pp-panel-wide pp-media-hero">' +
       '<div class="pp-between">' +
-        '<div><h3>Media</h3><p class="pp-muted">Drop photos and videos for this job. Upload to Lightroom from the Lightroom tab (or enable auto-upload). Sync pulls Adobe edits back into Hubly.</p></div>' +
+        '<div><h3>Media</h3><p class="pp-muted">Upload, organize, and deliver photos and videos in Hubly. Lightroom sync is optional when Adobe is connected.</p></div>' +
         '<span class="pp-pill">' + esc(String(total)) + ' assets</span>' +
       '</div>' +
       '<div class="pp-btn-row pp-mt">' +
@@ -1842,7 +1844,7 @@
       (isPhotoTrade() || projectWorkspaceProfile().features.galleries
         ? '<section class="pp-panel pp-panel-wide"><div class="pp-between"><h3>Galleries &amp; delivery</h3>' +
           '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="gal-publish" data-pp-id="' + esc(p.id) + '">Publish Hubly gallery</button></div>' +
-          '<p class="pp-muted"><strong>Galleries:</strong> Publish creates a <strong>Hubly client gallery</strong>. To send photos to Adobe, use <strong>Upload to Lightroom</strong> on the Lightroom tab (requires a linked album).</p></section>'
+          '<p class="pp-muted"><strong>Galleries:</strong> Publish creates a <strong>Hubly client gallery</strong> from your media. Adobe Lightroom is optional — use Upload to Lightroom on the Lightroom tab only if you want pro edits synced back.</p></section>'
         : '');
   }
 
@@ -1932,9 +1934,9 @@
     var profile = projectWorkspaceProfile();
     try {
       var titleEl = el('bar-title'), subEl = el('bar-sub');
-      if (titleEl) titleEl.textContent = 'Projects';
+      if (titleEl) titleEl.textContent = 'Media';
       if (subEl) subEl.textContent = profile.subtitle;
-      if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle('Projects');
+      if (typeof global.setHublyDocTitle === 'function') global.setHublyDocTitle('Media');
     } catch (e) {}
     // Keep Home (and every other Operate body) fully out of the way — no bleed / flash.
     try {
@@ -2030,12 +2032,12 @@
       paintProjectsView(root, list, st, { soft: soft || hasCache });
     } catch (paintErr) {
       console.warn('Projects paint failed', paintErr);
-      st.error = (paintErr && paintErr.message) || 'Could not render projects.';
+      st.error = (paintErr && paintErr.message) || 'Could not render media.';
       root.innerHTML = '<div class="pp-shell pp-shell-static" style="background:var(--pp-bg);min-height:100vh">' +
-        '<div class="pp-empty"><h2>Couldn\u2019t open Projects</h2>' +
+        '<div class="pp-empty"><h2>Couldn\u2019t open Media</h2>' +
         '<p class="pp-muted">' + esc(st.error) + '</p>' +
         '<div class="pp-btn-row" style="justify-content:center">' +
-        '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="new">+ New Project</button></div></div></div>';
+        '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="new">+ New job</button></div></div></div>';
       try { bindPhotoProjects(root); } catch (e2) {}
     }
   }
@@ -2350,7 +2352,7 @@
         return;
       }
       if (!svcC) {
-        toast('Adobe Lightroom isn\u2019t ready yet. Projects still work in Hubly.');
+        toast('Adobe Lightroom isn\u2019t ready yet. Media still works in Hubly.');
         return;
       }
       toast('Opening Adobe to sign in to Lightroom\u2026');
@@ -3234,13 +3236,13 @@
   function syncProjectsNav() {
     var nav = document.querySelector('.ni[data-v="photo-projects"], .ni[data-v="projects"]');
     if (!nav) return;
-    // Projects is a core Hubly module — always visible.
+    // Media is a core Hubly module — always visible.
     nav.hidden = false;
     nav.setAttribute('aria-hidden', 'false');
     nav.classList.remove('jos-nav-hidden');
     var lbl = nav.querySelector('.ni-lbl');
-    if (lbl) lbl.textContent = 'Projects';
-    nav.setAttribute('title', 'Projects');
+    if (lbl) lbl.textContent = 'Media';
+    nav.setAttribute('title', 'Media');
   }
   // Back-compat alias
   function syncPhotographyNav() { return syncProjectsNav(); }
@@ -3273,7 +3275,8 @@
       hasLightroom: hasLightroomCapability,
       reload: function () { return loadProjectsFromSupabase(true); }
     };
-    // Public name: HublyProjects. Legacy alias kept for existing call sites.
+    // Public name: HublyMedia. Legacy aliases kept for existing call sites.
+    global.HublyMedia = api;
     global.HublyProjects = api;
     global.HublyPhotographyProjects = api;
     if (global.HublyJourneyOS) {

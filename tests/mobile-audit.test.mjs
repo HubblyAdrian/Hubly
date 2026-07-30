@@ -29,8 +29,8 @@ describe('Operate mobile audit', () => {
       css,
       /@media \(max-width: 1200px\) \{[\s\S]*?\.hs-ws-left,\s*\.hs-props \{ display: none; \}/,
     );
-    assert.match(hubly, /hubly-studio\.js\?v=studio-12/);
-    assert.match(hubly, /hubly-studio\.css\?v=studio-12/);
+    assert.match(hubly, /hubly-studio\.js\?v=studio-13/);
+    assert.match(hubly, /hubly-studio\.css\?v=studio-13/);
   });
 
   it('Studio phone rules enlarge touch targets and wrap AI search', () => {
@@ -50,8 +50,8 @@ describe('Operate mobile audit', () => {
     assert.match(css, /\.pp-between \{[\s\S]*flex-direction: column/);
     assert.match(css, /\.pp-seg \{[\s\S]*flex-wrap: wrap/);
     assert.match(css, /\.pp-lr-panels \{[\s\S]*overflow-x: auto/);
-    assert.match(hubly, /photography-projects\.js\?v=projects-13/);
-    assert.match(hubly, /photography-projects\.css\?v=projects-13/);
+    assert.match(hubly, /photography-projects\.js\?v=projects-14/);
+    assert.match(hubly, /photography-projects\.css\?v=projects-14/);
   });
 
   it('Apps marketplace tightens phone padding and touch buttons', () => {
@@ -59,6 +59,6 @@ describe('Operate mobile audit', () => {
     const hubly = read('public/hubly.html');
     assert.match(css, /\.am-grid \{[\s\S]*grid-template-columns: 1fr/);
     assert.match(css, /\.am-btn \{[\s\S]*min-height: 44px/);
-    assert.match(hubly, /app-marketplace\.css\?v=projects-13/);
+    assert.match(hubly, /app-marketplace\.css\?v=projects-14/);
   });
 });

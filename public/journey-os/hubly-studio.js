@@ -1,7 +1,7 @@
 /**
  * Hubly Studio — creative OS (replaces Operate Marketing tab).
- * Screens: Home · AI Creator · Projects · Templates · Brand Kit · Publish · Analytics
- * Project Workspace (not a canvas editor) — Canva owns visual editing via Customize Design.
+ * Screens: Home · AI Creator · Campaigns · Templates · Brand Kit · Publish · Analytics
+ * Campaign Workspace is Hubly-native. Canva is an optional visual polish step — never required.
  * Campaign Engine is the marketing brain; AI writes from structured plans.
  */
 (function (global) {
@@ -10,7 +10,7 @@
   var NAV = [
     ['home', 'Home', '⌂'],
     ['ai', 'AI Creator', '✦', true],
-    ['projects', 'Projects', '▦'],
+    ['projects', 'Campaigns', '▦'],
     ['templates', 'Templates', '▤'],
     ['photos', 'Photos', '▣'],
     ['brand', 'Brand Kit', '◉'],
@@ -1334,14 +1334,14 @@
     var body =
       '<header class="hs-page-head hs-page-head-row">' +
       '<div><h1>Elements</h1>' +
-      '<p>Campaign-ready graphics Hubly can attach to packages — badges, CTAs, offers, and frames. Visual freehand drawing stays in Customize Design.</p></div>' +
+      '<p>Campaign-ready graphics Hubly can attach to packages — badges, CTAs, offers, and frames. Freehand drawing is optional via Canva when connected.</p></div>' +
       (openProj
         ? '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="open-project" data-hs-id="' + esc(openProj.id) + '">Open current campaign</button>'
         : '') +
       '</header>' +
       '<div class="hs-el-intro hs-card hs-pad">' +
       '<strong>What Elements are for</strong>' +
-      '<p class="hs-muted">Pick a badge or CTA → Hubly attaches it to a campaign package. Open Project Workspace to see it on the Assets list and preview chips. This is not a Canva draw tool.</p>' +
+      '<p class="hs-muted">Pick a badge or CTA → Hubly attaches it to a campaign package. Open Campaign Workspace to see it on Assets and preview chips.</p>' +
       '</div>' +
       '<div class="hs-el-toolbar">' +
       '<div class="hs-cats">' + cats +
@@ -1703,11 +1703,11 @@
       '<div class="hs-between"><h3>Canva · visual polish</h3>' +
       '<span class="hs-pill ' + (canva.linked ? 'ready' : 'draft') + '" id="hs-canva-pill">' +
       (canva.linked ? 'Connected' : 'Not connected') + '</span></div>' +
-      '<p class="hs-muted">Customize Design opens Canva for optional visual editing, then returns to your Hubly campaign. Hubly never fakes a Connected status.</p>' +
+      '<p class="hs-muted">Canva is an optional advanced editor. Connect it when you want freehand polish — Studio works fully without it.</p>' +
       '<div class="hs-settings-canva-status" id="hs-canva-status-line">' +
       (canva.linked
         ? ('<strong>Account:</strong> ' + esc(canva.accountLabel || 'Canva linked'))
-        : '<strong>Status:</strong> Not connected — campaigns still work; Customize Design needs Canva.') +
+        : '<strong>Status:</strong> Not connected — keep creating and publishing in Hubly. Connect Canva anytime.') +
       '</div>' +
       '<div class="hs-btn-row" id="hs-canva-actions">' +
       (canva.linked
@@ -1734,7 +1734,7 @@
       '<section class="hs-card hs-pad">' +
       '<h3>Studio preferences</h3>' +
       '<label class="hs-settings-check"><input type="checkbox" data-hs-act="settings-pref" data-hs-pref="open_workspace_after_generate"' +
-      (prefs.open_workspace_after_generate !== false ? ' checked' : '') + '> Open Project Workspace after generating a campaign</label>' +
+      (prefs.open_workspace_after_generate !== false ? ' checked' : '') + '> Open Campaign Workspace after generating a campaign</label>' +
       '<label class="hs-settings-check"><input type="checkbox" data-hs-act="settings-pref" data-hs-pref="show_ai_creator_badge"' +
       (prefs.show_ai_creator_badge !== false ? ' checked' : '') + '> Show NEW badge on AI Creator</label>' +
       '<label class="hs-settings-check"><input type="checkbox" data-hs-act="settings-enabled"' +
@@ -1770,7 +1770,7 @@
   function renderSimple(root, screen, title, sub) {
     root.innerHTML = shell(screen,
       '<header class="hs-page-head"><h1>' + esc(title) + '</h1><p>' + esc(sub) + '</p></header>' +
-      '<div class="hs-card hs-pad"><p class="hs-muted">Use AI Creator goals or Templates, then open a Project Workspace.</p>' +
+      '<div class="hs-card hs-pad"><p class="hs-muted">Use AI Creator goals or Templates, then open a Campaign Workspace.</p>' +
       '<div class="hs-btn-row">' +
       '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="nav" data-hs-screen="ai">AI Creator</button>' +
       '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="templates">Browse Templates</button>' +
@@ -1910,8 +1910,8 @@
       '<div class="hs-workspace-shell hs-editor-shell">' +
       '<aside class="hs-ws-left">' +
       '<div class="hs-ws-back">' +
-      '<button type="button" class="hs-link" data-hs-act="close-editor">← Projects</button></div>' +
-      '<nav class="hs-ws-sidenav" aria-label="Project sections">' + sideNav + '</nav>' +
+      '<button type="button" class="hs-link" data-hs-act="close-editor">← Campaigns</button></div>' +
+      '<nav class="hs-ws-sidenav" aria-label="Campaign sections">' + sideNav + '</nav>' +
       leftBody +
       '</aside>' +
       '<div class="hs-canvas-wrap">' +
@@ -1921,7 +1921,7 @@
       '<div class="hs-head-actions">' +
       '<button type="button" class="hs-btn hs-btn-ghost hs-btn-back-hubly" data-hs-act="leave-studio">← Back to Hubly</button>' +
       '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="publish-email">✈ Publish Email</button>' +
-      '<button type="button" class="hs-btn hs-btn-brand hs-btn-customize" data-hs-act="customize-design">Customize Design</button>' +
+      workspaceEditActionsHtml() +
       '</div></header>' +
       '<div class="hs-ws-mobile-strip" aria-label="Workspace sections">' +
       '<div class="hs-ws-mobile-scroll">' + sideNav + '</div></div>' +
@@ -1945,7 +1945,7 @@
           return '<span class="hs-el-chip tone-' + esc(a.tone || 'brand') + '">' + esc(a.glyph || '◇') + ' ' + esc(a.label || '') + '</span>';
         }).join('') + '</div>';
       })() +
-      '<div class="hs-preview-note">Showing ' + esc(pageLabel) + ' · Campaign Engine package (playbook). Visual polish opens in Customize Design.</div>' +
+      '<div class="hs-preview-note">Showing ' + esc(pageLabel) + ' · Hubly campaign package. Edit headlines and assets here — Canva is optional polish.</div>' +
       '</div></div>' +
       '<footer class="hs-pages-bar"><span class="hs-lbl tiny">PAGES IN SET</span><div class="hs-pages-row">' + pageChips + '</div>' +
       '<span class="hs-export-pill">Export: ' + esc(project.export_status || 'none') +
@@ -1964,8 +1964,7 @@
       esc((planMeta.summary || project.prompt || 'Campaign package generated from Hubly playbooks.').slice(0, 160)) + '</p>' +
       '<div class="hs-lbl">Performance Goals</div><p class="hs-muted hs-tiny">Campaigns created · Campaigns published · Posting frequency</p>' +
       '<div class="hs-ws-cta-block">' +
-      '<button type="button" class="hs-btn hs-btn-brand hs-btn-block" data-hs-act="customize-design">Customize Design</button>' +
-      '<p class="hs-muted hs-tiny">Hubly stays open. Visual edit is one step — you return to this project.</p>' +
+      workspacePropsCtaHtml() +
       '</div></aside></div>';
 
     // Soft-hydrate workspace from API when available
@@ -2137,6 +2136,33 @@
     }).catch(function () { fallbackLocal(); });
   }
 
+  function isCanvaLinked() {
+    var os = ensureStudioOs();
+    return !!(os.settings && os.settings.canva_linked);
+  }
+
+  function workspaceEditActionsHtml() {
+    var canvaOn = isCanvaLinked();
+    if (canvaOn) {
+      return '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="continue-edit">Continue Editing</button>' +
+        '<button type="button" class="hs-btn hs-btn-brand hs-btn-customize" data-hs-act="customize-design">Edit in Canva</button>';
+    }
+    return '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="continue-edit">Continue Editing</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="canva-connect">Connect Canva</button>';
+  }
+
+  function workspacePropsCtaHtml() {
+    var canvaOn = isCanvaLinked();
+    if (canvaOn) {
+      return '<button type="button" class="hs-btn hs-btn-brand hs-btn-block" data-hs-act="customize-design">Edit in Canva</button>' +
+        '<button type="button" class="hs-btn hs-btn-ghost hs-btn-block" data-hs-act="continue-edit">Continue Editing in Hubly</button>' +
+        '<p class="hs-muted hs-tiny">Hubly owns the campaign. Canva is optional polish — you always return here.</p>';
+    }
+    return '<button type="button" class="hs-btn hs-btn-brand hs-btn-block" data-hs-act="continue-edit">Continue Editing</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost hs-btn-block" data-hs-act="canva-connect">Connect Canva</button>' +
+      '<p class="hs-muted hs-tiny">Keep editing in Hubly — headlines, assets, brand, and publish. Connect Canva anytime for advanced layouts.</p>';
+  }
+
   function handleAct(act, t, root) {
     var os = ensureStudioOs();
     if (act === 'toggle-nav') {
@@ -2244,12 +2270,25 @@
     if (act === 'workspace-page') {
       return refreshWorkspace({ page: t.getAttribute('data-hs-page') || 'instagram_post' });
     }
+    if (act === 'continue-edit') {
+      var projCont = currentProject();
+      if (!projCont) {
+        os.ui.screen = 'ai';
+        return render();
+      }
+      toast('Editing in Hubly — update headlines, assets, or publish anytime.');
+      return refreshWorkspace({ tab: 'ai' });
+    }
     if (act === 'customize-design') {
       var projC = os.projects.find(function (p) { return p.id === os.ui.editorProjectId; });
-      if (!projC) return toast('Open a project first');
+      if (!projC) return toast('Open a campaign first');
+      if (!isCanvaLinked()) {
+        toast('Keep editing in Hubly — connect Canva anytime for advanced layouts.');
+        return refreshWorkspace({ tab: 'ai' });
+      }
       var ApiC = api();
       var correlation = String(projC.id || '').slice(0, 50);
-      toast('Preparing visual editor…');
+      toast('Opening Canva…');
       if (ApiC && String(projC.id).indexOf('loc_') !== 0) {
         ApiC.request('projects/' + projC.id + '/customize', {
           method: 'POST',
@@ -2257,15 +2296,18 @@
         }).then(function (res) {
           if (res && res.edit_url) {
             try { window.open(res.edit_url, '_blank', 'noopener'); } catch (e) {}
-            toast('Edit in the visual editor — you will return to this Hubly project.');
+            toast('Edit in Canva — you will return to this Hubly campaign.');
             return;
           }
-          toast((res && res.message) || 'Visual editor not connected yet. Your Hubly project is ready — connect the creative engine in Apps.');
+          toast((res && res.message) || 'Canva is not available right now. Continue editing in Hubly.');
+          refreshWorkspace({ tab: 'ai' });
         }).catch(function () {
-          toast('Visual editor not connected yet. Connect via Apps — Hubly keeps your campaign package.');
+          toast('Could not open Canva. Continue editing in Hubly.');
+          refreshWorkspace({ tab: 'ai' });
         });
       } else {
-        toast('Visual editor not connected yet. Connect via Apps — Hubly keeps your campaign package.');
+        toast('Canva is optional — continue editing this campaign in Hubly.');
+        refreshWorkspace({ tab: 'ai' });
       }
       return;
     }
@@ -2362,7 +2404,7 @@
       return;
     }
     if (act === 'studio-guide') {
-      toast('Studio Guide — pick a campaign goal, review the package in Project Workspace, Customize Design if needed, then Publish in Hubly.');
+      toast('Studio Guide — pick a campaign goal, edit the package in Hubly, optionally polish in Canva, then Publish Email.');
       return;
     }
     if (act === 'tpl-source') {

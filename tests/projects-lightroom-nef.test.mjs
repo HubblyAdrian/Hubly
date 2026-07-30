@@ -36,16 +36,16 @@ describe('Projects Lightroom + NEF fixes', () => {
     assert.match(css, /\.pp-raw-badge/);
   });
 
-  it('clarifies Publish is Hubly-only and Sync is Adobe→Hubly', () => {
+  it('clarifies Publish is Hubly-only and Lightroom sync is optional', () => {
     assert.match(projects, /Publish Hubly gallery/);
     assert.match(projects, /Upload to Lightroom/);
-    assert.match(projects, /Two-way media/);
+    assert.match(projects, /Hubly Media works without Adobe|no Adobe required/);
     assert.match(projects, /Sync Now/);
     assert.match(projects, /Hubly gallery published — not uploaded to Adobe Lightroom/);
   });
 
   it('cache-busts Projects assets', () => {
-    assert.match(hubly, /photography-projects\.js\?v=projects-13/);
-    assert.match(hubly, /photography-projects\.css\?v=projects-13/);
+    assert.match(hubly, /photography-projects\.js\?v=projects-14/);
+    assert.match(hubly, /photography-projects\.css\?v=projects-14/);
   });
 });
