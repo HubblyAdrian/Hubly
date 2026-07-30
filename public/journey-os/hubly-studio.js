@@ -92,15 +92,31 @@
     return os;
   }
 
+  /** Persist studioOs into business.meta only — never call saveStorefront (that opens Website editor). */
   function persistStudioMeta() {
     try {
-      if (typeof global.saveStorefront === 'function') {
-        clearTimeout(persistStudioMeta._t);
-        persistStudioMeta._t = setTimeout(function () {
-          try { global.saveStorefront().catch(function () {}); } catch (e) {}
-        }, 500);
-      } else if (typeof global.buildBizMeta === 'function' && global.currentBusiness) {
-        global.currentBusiness.meta = global.buildBizMeta();
+      clearTimeout(persistStudioMeta._t);
+      persistStudioMeta._t = setTimeout(function () {
+        try {
+          var biz = global.currentBusiness;
+          var db = global.db;
+          if (!biz || !biz.id || !db || typeof global.buildBizMeta !== 'function') return;
+          var meta = global.buildBizMeta();
+          db.from('businesses').update({ meta: meta }).eq('id', biz.id).then(function (res) {
+            if (!res || res.error) return;
+            biz.meta = meta;
+          }).catch(function () {});
+        } catch (e) {}
+      }, 450);
+    } catch (e) {}
+  }
+
+  function leaveStudio() {
+    try { setMode(false); } catch (e) {}
+    try {
+      if (typeof global.switchV === 'function') {
+        var dash = document.querySelector('[data-v="dashboard"]');
+        if (dash) return global.switchV(dash);
       }
     } catch (e) {}
   }
@@ -172,6 +188,8 @@
 
     return '<div class="hs-shell">' +
       '<aside class="hs-sidebar" aria-label="Studio navigation">' +
+      '<button type="button" class="hs-back-hubly" data-hs-act="leave-studio" aria-label="Back to Hubly">' +
+      '<span aria-hidden="true">←</span> Back to Hubly</button>' +
       '<div class="hs-brand">' +
       '<div class="hs-brand-mark">H</div>' +
       '<div class="hs-brand-txt"><strong>Studio</strong><span>BY <span class="hs-wm-hub">hub</span><span class="hs-wm-ly">ly</span></span></div>' +
@@ -667,16 +685,18 @@
     root.innerHTML =
       '<div class="hs-workspace-shell hs-editor-shell">' +
       '<aside class="hs-ws-left">' +
-      '<div class="hs-ws-back"><button type="button" class="hs-link" data-hs-act="close-editor">← Projects</button></div>' +
+      '<div class="hs-ws-back">' +
+      '<button type="button" class="hs-back-hubly hs-back-hubly-light" data-hs-act="leave-studio">← Back to Hubly</button>' +
+      '<button type="button" class="hs-link" data-hs-act="close-editor">← Projects</button></div>' +
       '<nav class="hs-ws-sidenav" aria-label="Project sections">' + sideNav + '</nav>' +
       leftBody +
       '</aside>' +
       '<div class="hs-canvas-wrap">' +
       '<header class="hs-editor-top">' +
       '<div class="hs-editor-title"><strong id="hs-editor-title">' + esc(project.title) + '</strong>' +
-      '<span class="hs-pill ' + (project.status === 'ready' ? 'ready' : 'draft') + '">' + esc(project.status || 'draft') + '</span>' +
-      '<button type="button" data-hs-act="close-editor" title="Close">✕</button></div>' +
+      '<span class="hs-pill ' + (project.status === 'ready' ? 'ready' : 'draft') + '">' + esc(project.status || 'draft') + '</span></div>' +
       '<div class="hs-head-actions">' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="leave-studio">← Back to Hubly</button>' +
       '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="publish-email">✈ Publish Email</button>' +
       '<button type="button" class="hs-btn hs-btn-brand hs-btn-customize" data-hs-act="customize-design">Customize in Canva</button>' +
       '</div></header>' +
@@ -729,6 +749,7 @@
   function openEditorFor(project) {
     var root = ownRoot();
     if (!root) return;
+    setMode(true);
     var os = ensureStudioOs();
     os.ui.screen = 'editor';
     os.ui.editorProjectId = project && project.id;
@@ -842,6 +863,9 @@
 
   function handleAct(act, t, root) {
     var os = ensureStudioOs();
+    if (act === 'leave-studio') {
+      return leaveStudio();
+    }
     if (act === 'nav') {
       os.ui.screen = t.getAttribute('data-hs-screen') || 'home';
       return render();
@@ -1039,9 +1063,10 @@
     root._hsBound = true;
     root.addEventListener('click', function (e) {
       var t = e.target.closest('[data-hs-act]');
-      if (!t) return;
+      if (!t || !root.contains(t)) return;
       var act = t.getAttribute('data-hs-act') || '';
       e.preventDefault();
+      e.stopPropagation();
       handleAct(act, t, root);
     });
     root.addEventListener('blur', function (e) {

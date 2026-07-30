@@ -24,7 +24,7 @@ const spec = readFileSync(join(root, 'docs/HUBLY_STUDIO_IMPLEMENTATION_SPEC.md')
 describe('Hubly Studio V1.0 contract', () => {
   it('ships Studio shell and frozen contract', () => {
     assert.match(hubly, /data-v="studio"/);
-    assert.match(hubly, /hubly-studio\.js\?v=studio-3/);
+    assert.match(hubly, /hubly-studio\.js\?v=studio-4/);
     assert.match(journey, /HublyStudio\.setMode/);
     assert.match(contract, /V1\.0/);
     assert.match(contract, /single channel: Email/i);
@@ -82,5 +82,16 @@ describe('Hubly Studio V1.0 contract', () => {
     assert.match(studio, /POSTING FREQUENCY/);
     assert.doesNotMatch(studio, /REVENUE INFLUENCED/);
     assert.doesNotMatch(studio, /QUOTES REQUESTED/);
+  });
+
+  it('Studio persist never opens Website editor; exit is Back to Hubly', () => {
+    assert.match(studio, /persistStudioMeta/);
+    assert.match(studio, /Never call saveStorefront|never call saveStorefront/i);
+    assert.doesNotMatch(studio, /saveStorefront\(\)/);
+    assert.match(studio, /leave-studio/);
+    assert.match(studio, /Back to Hubly/);
+    assert.match(css, /\.hs-back-hubly/);
+    assert.match(hubly, /jos-studio-mode/);
+    assert.match(hubly, /inStudio/);
   });
 });

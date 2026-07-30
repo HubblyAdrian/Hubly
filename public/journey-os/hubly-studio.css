@@ -44,6 +44,35 @@
   padding: 18px 12px 12px;
   overflow: auto;
 }
+.hs-back-hubly {
+  appearance: none;
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.28);
+  background: rgba(255,255,255,.1);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hs-back-hubly:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.4); }
+.hs-back-hubly-light {
+  width: auto;
+  border-color: var(--hs-line);
+  background: #fff;
+  color: var(--hs-navy);
+  margin-bottom: 10px;
+}
+.hs-back-hubly-light:hover { background: var(--hs-brand-soft); border-color: rgba(217,99,45,.35); color: var(--hs-brand); }
+.hs-ws-back { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 4px 0 12px; }
 .hs-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
 .hs-brand-mark {
   width: 34px; height: 34px; border-radius: 10px; background: var(--hs-brand);
