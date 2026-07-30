@@ -112,13 +112,107 @@
   }
 
   function leaveStudio() {
+    try {
+      var os = ensureStudioOs();
+      if (os.ui) {
+        os.ui.screen = 'home';
+        os.ui.editorProjectId = null;
+      }
+    } catch (e) {}
     try { setMode(false); } catch (e) {}
     try {
       if (typeof global.switchV === 'function') {
         var dash = document.querySelector('[data-v="dashboard"]');
-        if (dash) return global.switchV(dash);
+        if (dash) {
+          global.switchV(dash);
+          return;
+        }
       }
     } catch (e) {}
+    try { setMode(false); } catch (e2) {}
+  }
+
+  /** Factual business inputs for Campaign Engine (Memory / storefront — not DNA). */
+  function bizContext() {
+    var st = S();
+    var website = st.website || {};
+    var services = [];
+    try {
+      var cat = st.service_catalog || website.service_catalog || st.services || [];
+      if (Array.isArray(cat)) {
+        services = cat.map(function (s) {
+          return (s && (s.name || s.title || s.label)) || '';
+        }).filter(Boolean).slice(0, 12);
+      }
+    } catch (e) {}
+    var review = null;
+    try {
+      var list = [];
+      if (st.reviewsOs && Array.isArray(st.reviewsOs.reviews)) list = st.reviewsOs.reviews;
+      else if (Array.isArray(website.manualReviews)) list = website.manualReviews;
+      else if (Array.isArray(st.manualReviews)) list = st.manualReviews;
+      var withQuote = list.filter(function (r) { return r && (r.quote || r.text || r.body); });
+      if (withQuote.length) {
+        var r = withQuote[0];
+        review = {
+          stars: Number(r.stars || r.rating || 5) || 5,
+          quote: String(r.quote || r.text || r.body || '').trim(),
+          author: String(r.author || r.customer_name || r.name || 'Customer').trim()
+        };
+      }
+    } catch (e) {}
+    var jobsList = [];
+    try {
+      jobsList = typeof global.jobs === 'function' ? global.jobs() : (st.jobs || []);
+    } catch (e) {}
+    var completed = (jobsList || []).filter(function (j) { return j && j.status === 'completed'; }).length;
+    return {
+      business_name: bizName(),
+      phone: st.phone || '',
+      city: st.city || '',
+      services: services,
+      service_focus: services[0] || null,
+      latest_review: review,
+      has_logo: !!(st.logoUrl || st.logo_url),
+      job_photos_count: Array.isArray(st.portfolio) ? st.portfolio.length : (st.job_photos_count || 0),
+      has_before_after: Array.isArray(st.portfolio) ? st.portfolio.length >= 2 : false,
+      completed_jobs_week: completed || 0,
+      has_membership: !!(st.membershipsOs || st.memberships)
+    };
+  }
+
+  function reviewLine(project) {
+    var pkg = (project && project.canvas && project.canvas.package) || {};
+    var brief = (project && project.canvas && project.canvas.brief) || (project && project.brief) || {};
+    var fromPkg = pkg.review || null;
+    var fromBrief = brief.review_text || (brief.assets && brief.assets.review) || null;
+    var ctx = bizContext().latest_review;
+    var quote = (fromPkg && fromPkg.quote) || fromBrief || (ctx && ctx.quote) || '';
+    var author = (fromPkg && fromPkg.author) || (ctx && ctx.author) || 'Customer';
+    var stars = (fromPkg && fromPkg.stars) || (ctx && ctx.stars) || 5;
+    if (!quote) {
+      quote = 'Great experience with ' + bizName() + ' — highly recommend.';
+      author = 'Happy customer';
+    }
+    return { stars: stars, quote: quote, author: author };
+  }
+
+  function currentProject() {
+    var os = ensureStudioOs();
+    return (os.projects || []).find(function (p) { return p.id === os.ui.editorProjectId; }) || null;
+  }
+
+  function refreshWorkspace(opts) {
+    opts = opts || {};
+    var root = ownRoot();
+    if (!root) return;
+    setMode(true);
+    var os = ensureStudioOs();
+    os.ui.screen = 'editor';
+    if (opts.tab) os.ui.workspaceTab = opts.tab;
+    if (opts.page) os.ui.workspacePage = opts.page;
+    renderEditor(root, currentProject());
+    wireRoot(root);
   }
 
   function ownRoot() {
@@ -650,11 +744,14 @@
       leftBody = '<div class="hs-ws-panel"><h3>Versions</h3><p class="hs-muted">Hubly keeps version history as you generate and return from visual edits.</p>' +
         '<div class="hs-ws-version on"><strong>v1 · Created in Hubly</strong><span>' + esc(relativeEdit(project.last_edited_at || project.created_at)) + '</span></div></div>';
     } else if (tab === 'ai') {
-      var alts = (pkg.headlines || [headline, 'No Leak Too Large', 'Kitchen Plumbing Perfected']);
+      var alts = (pkg.headlines && pkg.headlines.length)
+        ? pkg.headlines
+        : [headline, bizName() + ' — ' + headline, headline + (S().city ? (' in ' + S().city) : '')].filter(Boolean);
       leftBody = '<div class="hs-ws-panel hs-ai-panel"><h3>AI Suggestions</h3>' +
+        '<p class="hs-muted hs-tiny">From your Campaign Engine package + business facts. Tap a headline to apply.</p>' +
         '<div class="hs-lbl tiny">Headlines</div>' +
         alts.map(function (a, i) {
-          return '<button type="button" class="hs-alt' + (i === 0 ? ' on' : '') + '" data-hs-act="set-headline" data-hs-text="' + esc(a) + '">' + esc(a) + '</button>';
+          return '<button type="button" class="hs-alt' + ((a === headline || i === 0) ? ' on' : '') + '" data-hs-act="set-headline" data-hs-text="' + esc(a) + '">' + esc(a) + '</button>';
         }).join('') +
         '<div class="hs-lbl tiny">Quick commands</div><div class="hs-cmd-wrap">' +
         ['Make headline punchier', 'Rewrite for expert authority', 'Vary caption 5 times'].map(function (c) {
@@ -682,11 +779,23 @@
         '<span class="hs-page-thumb"></span>' + esc(p.label) + '</button>';
     }).join('');
 
+    var rev = reviewLine(project);
+    var starStr = '★★★★★'.slice(0, Math.min(5, Math.max(1, Math.round(rev.stars || 5))));
+    var phone = S().phone || bizContext().phone || '';
+    var pageLabel = (pages.find(function (p) { return p.id === activePage; }) || {}).label || 'Preview';
+    var caption = '';
+    try {
+      var caps = pkg.captions || [];
+      var matchCap = caps.find(function (c) {
+        return c && String(c.channel || '').indexOf(String(activePage).split('_')[0]) === 0;
+      });
+      caption = (matchCap && matchCap.text) || (caps[0] && caps[0].text) || '';
+    } catch (e) {}
+
     root.innerHTML =
       '<div class="hs-workspace-shell hs-editor-shell">' +
       '<aside class="hs-ws-left">' +
       '<div class="hs-ws-back">' +
-      '<button type="button" class="hs-back-hubly hs-back-hubly-light" data-hs-act="leave-studio">← Back to Hubly</button>' +
       '<button type="button" class="hs-link" data-hs-act="close-editor">← Projects</button></div>' +
       '<nav class="hs-ws-sidenav" aria-label="Project sections">' + sideNav + '</nav>' +
       leftBody +
@@ -696,19 +805,21 @@
       '<div class="hs-editor-title"><strong id="hs-editor-title">' + esc(project.title) + '</strong>' +
       '<span class="hs-pill ' + (project.status === 'ready' ? 'ready' : 'draft') + '">' + esc(project.status || 'draft') + '</span></div>' +
       '<div class="hs-head-actions">' +
-      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="leave-studio">← Back to Hubly</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost hs-btn-back-hubly" data-hs-act="leave-studio">← Back to Hubly</button>' +
       '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="publish-email">✈ Publish Email</button>' +
-      '<button type="button" class="hs-btn hs-btn-brand hs-btn-customize" data-hs-act="customize-design">Customize in Canva</button>' +
+      '<button type="button" class="hs-btn hs-btn-brand hs-btn-customize" data-hs-act="customize-design">Customize Design</button>' +
       '</div></header>' +
       '<div class="hs-canvas hs-preview-canvas">' +
-      '<div class="hs-design hs-design-preview" id="hs-design">' +
+      '<div class="hs-design hs-design-preview hs-page-' + esc(activePage) + '" id="hs-design">' +
       '<div class="hs-design-photos"><div class="hs-ph before"></div><div class="hs-ph after"></div>' +
       '<span class="hs-biz-pill">' + esc(bizName()) + '</span></div>' +
       '<div class="hs-design-headline">' +
-      '<h2 id="hs-canvas-headline">' + esc(headline) + '</h2></div>' +
-      '<div class="hs-design-review">★★★★★ <em>“Fixed our plumbing leak in record time.” — Mrs. Miller</em></div>' +
-      '<div class="hs-design-cta"><span>NEED SERVICE?</span><strong>Call ' + esc(S().phone || '(555) 302-2849') + '</strong></div>' +
-      '<div class="hs-preview-note">Preview · not a live canvas. Customize Design opens visual editing, then returns here.</div>' +
+      '<h2 id="hs-canvas-headline" contenteditable="true" spellcheck="false">' + esc(headline) + '</h2></div>' +
+      '<div class="hs-design-review">' + starStr + ' <em>“' + esc(rev.quote) + '” — ' + esc(rev.author) + '</em></div>' +
+      (caption ? '<p class="hs-design-caption">' + esc(caption.slice(0, 180)) + '</p>' : '') +
+      '<div class="hs-design-cta"><span>NEED SERVICE?</span><strong>' +
+      (phone ? ('Call ' + esc(phone)) : esc((pkg.cta || 'Book now'))) + '</strong></div>' +
+      '<div class="hs-preview-note">Showing ' + esc(pageLabel) + ' · Campaign Engine package (playbook). Visual polish opens in Customize Design.</div>' +
       '</div></div>' +
       '<footer class="hs-pages-bar"><span class="hs-lbl tiny">PAGES IN SET</span><div class="hs-pages-row">' + pageChips + '</div>' +
       '<span class="hs-export-pill">Export: ' + esc(project.export_status || 'none') +
@@ -725,7 +836,7 @@
       '<div class="hs-lbl">Assets Used</div><p class="hs-muted hs-tiny">Logo · Job photos · Review</p>' +
       '<div class="hs-lbl">AI Summary</div><p class="hs-muted hs-tiny">' +
       esc((planMeta.summary || project.prompt || 'Campaign package generated from Hubly playbooks.').slice(0, 160)) + '</p>' +
-      '<div class="hs-lbl">Performance Goals</div><p class="hs-muted hs-tiny">Quotes requested · Jobs booked · Revenue influenced</p>' +
+      '<div class="hs-lbl">Performance Goals</div><p class="hs-muted hs-tiny">Campaigns created · Campaigns published · Posting frequency</p>' +
       '<div class="hs-ws-cta-block">' +
       '<button type="button" class="hs-btn hs-btn-brand hs-btn-block" data-hs-act="customize-design">Customize Design</button>' +
       '<p class="hs-muted hs-tiny">Hubly stays open. Visual edit is one step — you return to this project.</p>' +
@@ -746,15 +857,25 @@
     }
   }
 
-  function openEditorFor(project) {
+  function openEditorFor(project, opts) {
+    opts = opts || {};
     var root = ownRoot();
     if (!root) return;
     setMode(true);
     var os = ensureStudioOs();
+    var nextId = project && project.id;
+    var switching = !!(nextId && nextId !== os.ui.editorProjectId);
     os.ui.screen = 'editor';
-    os.ui.editorProjectId = project && project.id;
-    os.ui.workspaceTab = 'overview';
-    renderEditor(root, project);
+    os.ui.editorProjectId = nextId || os.ui.editorProjectId;
+    // Only reset workspace chrome when opening a different project (tab clicks must stick).
+    if (switching || opts.resetWorkspace) {
+      os.ui.workspaceTab = 'overview';
+      os.ui.workspacePage = (project && project.format_primary) || 'instagram_post';
+    }
+    if (opts.tab) os.ui.workspaceTab = opts.tab;
+    if (opts.page) os.ui.workspacePage = opts.page;
+    if (!os.ui.workspaceTab) os.ui.workspaceTab = 'overview';
+    renderEditor(root, project || currentProject());
     wireRoot(root);
   }
 
@@ -778,7 +899,7 @@
         os.projects.unshift(project);
       }
       persistStudioMeta();
-      if (thenOpen !== false) openEditorFor(project);
+      if (thenOpen !== false) openEditorFor(project, { resetWorkspace: true });
       else render();
     }
     if (Api) {
@@ -796,30 +917,55 @@
     extra = extra || {};
     var Api = api();
     var goal = CAMPAIGN_GOALS.find(function (g) { return g.id === goalId; });
+    var ctx = bizContext();
     toast('Building campaign package…');
+    var focus = extra.service_focus || ctx.service_focus || null;
+    if (goalId === 'promote_service' && !focus) focus = (ctx.services && ctx.services[0]) || 'Featured service';
     var body = {
       goal_id: goalId,
       playbook_id: GOAL_TO_PLAYBOOK[goalId] || null,
-      business_name: bizName(),
+      business_name: ctx.business_name,
+      phone: ctx.phone,
+      city: ctx.city,
+      services: ctx.services,
       create_project: true,
-      service_focus: goalId === 'promote_service' ? (extra.service_focus || 'Ceramic Coatings') : null,
-      latest_review: { stars: 5, quote: 'Fixed our plumbing leak in record time.', author: 'Mrs. Miller' },
-      has_before_after: true,
-      job_photos_count: 2,
-      completed_jobs_week: 4
+      service_focus: goalId === 'promote_service' ? focus : (extra.service_focus || null),
+      latest_review: ctx.latest_review || null,
+      has_before_after: !!ctx.has_before_after,
+      job_photos_count: ctx.job_photos_count || 0,
+      completed_jobs_week: ctx.completed_jobs_week || 0,
+      has_logo: ctx.has_logo,
+      has_membership: ctx.has_membership
     };
     function fallbackLocal() {
+      var title = (goal && goal.title) || 'Campaign';
+      var rev = ctx.latest_review;
+      var headlines = [title];
+      if (ctx.city) headlines.push(title + ' in ' + ctx.city);
+      if (focus) headlines.push(focus + ' — book with ' + ctx.business_name);
       createProject({
-        title: (goal && goal.title) || 'Campaign',
-        prompt: 'Campaign goal: ' + goalId,
-        headline: (goal && goal.title) || 'Campaign',
+        title: title,
+        prompt: 'Campaign goal: ' + goalId + ' for ' + ctx.business_name,
+        headline: title,
         metadata: { goal_id: goalId },
         canvas: {
-          headline: (goal && goal.title) || 'Campaign',
+          headline: title,
           package: {
-            headlines: [(goal && goal.title) || 'Campaign'],
-            captions: [{ channel: 'instagram', text: 'Campaign from Hubly Studio' }],
+            headlines: headlines,
+            captions: [{ channel: 'instagram', text: title + ' — ' + ctx.business_name + (ctx.phone ? (' · ' + ctx.phone) : '') }],
+            review: rev || null,
+            cta: ctx.phone ? ('Call ' + ctx.phone) : 'Book now',
+            email: { subject: title, body: title + '\n\n' + ctx.business_name + (ctx.phone ? ('\n' + ctx.phone) : '') },
             schedule_suggestions: ['Tomorrow 12:00 PM — peak local engagement window']
+          },
+          brief: {
+            campaign: title,
+            goal: goalId,
+            channel: V1_CHANNEL,
+            business_name: ctx.business_name,
+            service_name: focus,
+            review_text: rev && rev.quote,
+            cta: 'Book now'
           }
         }
       });
@@ -832,6 +978,9 @@
         if (res.campaignPlan) {
           project.canvas = project.canvas || {};
           project.canvas.package = res.campaignPlan.package;
+          if (ctx.latest_review && project.canvas.package && !project.canvas.package.review) {
+            project.canvas.package.review = ctx.latest_review;
+          }
           project.canvas.headline = (res.campaignPlan.package && res.campaignPlan.package.headlines && res.campaignPlan.package.headlines[0]) || project.title;
           project.prompt = res.campaignPlan.ai_brief || project.prompt;
         }
@@ -844,11 +993,12 @@
           os.projects.unshift(project);
         }
         persistStudioMeta();
-        openEditorFor(project);
+        openEditorFor(project, { resetWorkspace: true });
         return;
       }
       if (res && res.campaignPlan) {
         var plan = res.campaignPlan;
+        if (ctx.latest_review && plan.package && !plan.package.review) plan.package.review = ctx.latest_review;
         return createProject({
           title: plan.title,
           prompt: plan.ai_brief,
@@ -920,15 +1070,19 @@
     }
     if (act === 'close-editor') {
       os.ui.screen = 'projects';
+      os.ui.editorProjectId = null;
       return render();
     }
     if (act === 'workspace-tab') {
-      os.ui.workspaceTab = t.getAttribute('data-hs-tab') || 'overview';
-      return openEditorFor(os.projects.find(function (p) { return p.id === os.ui.editorProjectId; }));
+      var tabId = t.getAttribute('data-hs-tab') || 'overview';
+      if (tabId === 'comments' || t.classList.contains('disabled')) {
+        toast('Comments coming soon');
+        return;
+      }
+      return refreshWorkspace({ tab: tabId });
     }
     if (act === 'workspace-page') {
-      os.ui.workspacePage = t.getAttribute('data-hs-page') || 'instagram_post';
-      return openEditorFor(os.projects.find(function (p) { return p.id === os.ui.editorProjectId; }));
+      return refreshWorkspace({ page: t.getAttribute('data-hs-page') || 'instagram_post' });
     }
     if (act === 'customize-design') {
       var projC = os.projects.find(function (p) { return p.id === os.ui.editorProjectId; });
@@ -959,10 +1113,14 @@
       var text = t.getAttribute('data-hs-text') || '';
       var h = el('hs-canvas-headline');
       if (h) h.textContent = text;
-      var proj2 = os.projects.find(function (p) { return p.id === os.ui.editorProjectId; });
+      var proj2 = currentProject();
       if (proj2) {
         proj2.canvas = proj2.canvas || {};
         proj2.canvas.headline = text;
+        proj2.canvas.package = proj2.canvas.package || {};
+        var hl = proj2.canvas.package.headlines || [];
+        if (text && hl.indexOf(text) === -1) hl.unshift(text);
+        proj2.canvas.package.headlines = hl;
         persistStudioMeta();
         var Api = api();
         if (Api && String(proj2.id).indexOf('loc_') !== 0 && String(proj2.id).indexOf('demo') !== 0) {
@@ -974,7 +1132,38 @@
       return;
     }
     if (act === 'ai-cmd' || act === 'editor-ask') {
-      toast('Studio AI — Stage 2 when Hubly AI credentials are configured');
+      var cmd = t.getAttribute('data-hs-cmd') || '';
+      var projAi = currentProject();
+      if (!projAi) {
+        toast('Open a campaign project first');
+        return;
+      }
+      projAi.canvas = projAi.canvas || {};
+      projAi.canvas.package = projAi.canvas.package || {};
+      var heads = (projAi.canvas.package.headlines || [projAi.title || 'Campaign']).slice();
+      var base = heads[0] || projAi.title || 'Campaign';
+      if (/punchier/i.test(cmd)) {
+        heads = [base.replace(/\.$/, '') + ' — Book This Week', base.toUpperCase() === base ? base : (base + '!'), 'Don\'t Wait — ' + base];
+      } else if (/authority|expert/i.test(cmd)) {
+        heads = ['Trusted ' + bizName() + ': ' + base, base + ' by Local Pros', 'Expert Results from ' + bizName()];
+      } else if (/caption|vary/i.test(cmd)) {
+        var caps = [];
+        for (var i = 1; i <= 5; i++) {
+          caps.push({ channel: 'instagram', text: base + ' · Option ' + i + ' — ' + bizName() + (S().phone ? (' · ' + S().phone) : '') });
+        }
+        projAi.canvas.package.captions = caps;
+        persistStudioMeta();
+        refreshWorkspace({ tab: 'ai' });
+        toast('Generated 5 caption variations from your campaign package');
+        return;
+      } else {
+        heads = [base, bizName() + ' — ' + base, base + (S().city ? (' in ' + S().city) : '')];
+      }
+      projAi.canvas.package.headlines = heads.filter(Boolean);
+      projAi.canvas.headline = heads[0];
+      persistStudioMeta();
+      refreshWorkspace({ tab: 'ai' });
+      toast('Updated headlines from your campaign package');
       return;
     }
     if (act === 'publish-email' || act === 'publish-queue') {
@@ -1059,23 +1248,30 @@
   }
 
   function wireRoot(root) {
-    if (!root || root._hsBound) return;
+    if (!root) return;
+    if (root._hsBound) return;
     root._hsBound = true;
     root.addEventListener('click', function (e) {
-      var t = e.target.closest('[data-hs-act]');
+      var t = e.target && e.target.closest ? e.target.closest('[data-hs-act]') : null;
       if (!t || !root.contains(t)) return;
       var act = t.getAttribute('data-hs-act') || '';
+      if (!act) return;
       e.preventDefault();
       e.stopPropagation();
-      handleAct(act, t, root);
+      try {
+        handleAct(act, t, root);
+      } catch (err) {
+        console.warn('Hubly Studio action failed', act, err);
+        toast('That action failed — try again');
+      }
     });
     root.addEventListener('blur', function (e) {
       if (e.target && e.target.id === 'hs-canvas-headline') {
-        var os = ensureStudioOs();
-        var proj = os.projects.find(function (p) { return p.id === os.ui.editorProjectId; });
+        var proj = currentProject();
         if (proj) {
           proj.canvas = proj.canvas || {};
           proj.canvas.headline = e.target.textContent || '';
+          if (proj.canvas.package) proj.canvas.package.headlines = proj.canvas.package.headlines || [];
           persistStudioMeta();
         }
       }
