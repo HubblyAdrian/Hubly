@@ -146,7 +146,7 @@ describe('Hubly Media module', () => {
     const apps = readFileSync(join(root, 'public/journey-os/app-marketplace.js'), 'utf8');
     assert.match(js, /Awaiting Delivery/);
     assert.match(js, /Drag &amp; drop here/);
-    assert.match(js, /Create Marketing Asset/);
+    assert.match(js, /Create Marketing/);
     assert.match(js, /Quick add/);
     assert.match(js, /Create job|Create Project/);
     assert.match(journey, /photo-quick/);

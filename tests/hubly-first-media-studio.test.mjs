@@ -31,7 +31,7 @@ describe('Hubly-first Media + Studio architecture', () => {
     assert.match(projects, /Connect Adobe \(optional\)|Continue in Hubly Media/);
     assert.match(projects, /optional tools that extend Hubly Media/i);
     assert.match(projects, /no Adobe required/i);
-    assert.match(projects, /Lightroom sync is optional/i);
+    assert.match(projects, /Lightroom and Canva are optional|Lightroom sync is optional/i);
     // Primary card CTA is Open (brand), not Sync Lightroom
     assert.match(projects, /pp-btn-brand" data-pp-act="open"/);
   });
@@ -40,17 +40,17 @@ describe('Hubly-first Media + Studio architecture', () => {
     const studio = read('public/journey-os/hubly-studio.js');
     const api = read('public/journey-os/studio/api.js');
     assert.match(studio, /continue-edit/);
-    assert.match(studio, /Continue Editing/);
+    assert.match(studio, /Edit Campaign/);
     assert.match(studio, /Edit in Canva/);
-    assert.match(studio, /Keep editing in Hubly/);
+    assert.match(studio, /Keep editing the campaign in Hubly|Keep editing in Hubly/);
     assert.doesNotMatch(studio, /Visual editor not connected yet/);
     assert.match(api, /Canva is optional/);
   });
 
   it('cache-busts Media + Studio assets', () => {
     const hubly = read('public/hubly.html');
-    assert.match(hubly, /hubly-studio\.js\?v=studio-13/);
-    assert.match(hubly, /photography-projects\.js\?v=projects-14/);
-    assert.match(hubly, /app-marketplace\.js\?v=projects-14/);
+    assert.match(hubly, /hubly-studio\.js\?v=studio-14/);
+    assert.match(hubly, /photography-projects\.js\?v=projects-15/);
+    assert.match(hubly, /app-marketplace\.js\?v=projects-15/);
   });
 });

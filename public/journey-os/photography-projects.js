@@ -1665,16 +1665,17 @@
 
     return '<section class="pp-panel pp-panel-wide">' +
       '<h3>Creative</h3>' +
-      '<p class="pp-muted">Media first \u2014 then design. Connect Canva under <strong>Apps</strong>. Lightroom lives in its own tab.</p>' +
+      '<p class="pp-muted">Media first — then Studio. Select photos on the Media tab, then create a campaign. Canva is optional polish.</p>' +
       '<div class="pp-btn-row">' +
-      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="media">Open Media</button>' +
+      '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="media-create-marketing" data-pp-id="' + esc(p.id) + '">Create Marketing in Studio</button>' +
+      '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="tab" data-pp-tab="media">Browse Media</button>' +
       '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="open-apps">Open Apps</button>' +
       '</div>' + lrCta +
-      '<h3 class="pp-mt">Create Marketing Asset</h3>' +
-      '<p class="pp-muted">Hubly sends project photos, brand colors, and copy to Canva \u2014 you never start from a blank canvas.</p>' +
+      '<h3 class="pp-mt">Optional · Canva graphics</h3>' +
+      '<p class="pp-muted">Uses photos already on this job — Hubly never asks you to upload the same image twice.</p>' +
       actions +
       (planned.length
-        ? '<h3 class="pp-mt">Planned on this project</h3><ul class="pp-queue">' + planned.map(function (r) {
+        ? '<h3 class="pp-mt">Planned on this job</h3><ul class="pp-queue">' + planned.map(function (r) {
           return '<li><strong>' + esc(r.kind || 'Asset') + '</strong><span>' + esc(r.status || 'planned') + ' \u00b7 ' + esc(formatRelative(r.at)) + '</span></li>';
         }).join('') + '</ul>'
         : '') +
@@ -1769,12 +1770,15 @@
     return { previewUrl: '', previewSource: 'none', previewBlob: null, isRaw: false };
   }
 
-  function renderMediaTile(item) {
+  function renderMediaTile(item, opts) {
+    opts = opts || {};
     var kind = mediaKind(item);
     // Never use ephemeral blob:/data: URLs from persisted workspace — they die on refresh.
     var preview = (isDurableMediaUrl(item.previewUrl) && item.previewUrl) ||
       (isDurableMediaUrl(item.url) && item.url) || '';
     var isRaw = !!(item.isRaw || isRawPhotoName(item.name));
+    var selected = !!opts.selected;
+    var selectable = kind === 'photo' && !!preview;
     var lrStatus = String(item.lightroom_upload_status || '');
     var lrBadge = '';
     if (lrStatus === 'uploaded' || item.lightroom_asset_id) {
@@ -1789,7 +1793,11 @@
       ? '<img src="' + esc(preview) + '" alt="' + esc(item.name || 'Photo') + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false)">' +
         '<span class="pp-media-kind" hidden>' + esc(isRaw ? 'RAW · no preview' : 'Photo') + '</span>'
       : '<span class="pp-media-kind">' + esc(label) + '</span>';
-    return '<article class="pp-media-tile kind-' + kind + (isRaw ? ' is-raw' : '') + '" title="' + esc(item.name || '') + '">' +
+    var selectAttr = selectable
+      ? ' data-pp-act="media-toggle" data-pp-media-id="' + esc(item.id || '') + '" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '"'
+      : '';
+    return '<article class="pp-media-tile kind-' + kind + (isRaw ? ' is-raw' : '') + (selected ? ' is-selected' : '') + '" title="' + esc(item.name || '') + '"' + selectAttr + '>' +
+      (selectable ? '<span class="pp-media-check" aria-hidden="true">' + (selected ? '✓' : '') + '</span>' : '') +
       '<div class="pp-media-thumb">' + inner +
       (isRaw ? '<span class="pp-raw-badge">RAW</span>' : '') +
       lrBadge +
@@ -1797,7 +1805,70 @@
       '<p class="pp-media-name">' + esc(item.name || 'Untitled') + '</p></article>';
   }
 
+  function selectedMediaItems(p, st) {
+    var ids = (st && st.selectedMediaIds) || [];
+    if (!ids.length) return [];
+    var uploads = ((p.workspace && p.workspace.local_uploads) || p.local_uploads || []).slice();
+    var byId = {};
+    uploads.forEach(function (u) { if (u && u.id) byId[u.id] = u; });
+    return ids.map(function (id) { return byId[id]; }).filter(Boolean);
+  }
+
+  function mediaAssetPayload(item, jobId) {
+    var Bridge = global.HublyMediaStudioBridge;
+    var base = {
+      id: item.id,
+      url: (isDurableMediaUrl(item.url) && item.url) || (isDurableMediaUrl(item.previewUrl) && item.previewUrl) || '',
+      previewUrl: (isDurableMediaUrl(item.previewUrl) && item.previewUrl) || '',
+      name: item.name || 'Photo',
+      kind: 'media',
+      media_job_id: jobId || null
+    };
+    if (Bridge && Bridge.toStudioAsset) return Bridge.toStudioAsset(base) || base;
+    return base;
+  }
+
+  function openStudioWithSelected(p, st, mode) {
+    var Bridge = global.HublyMediaStudioBridge;
+    var items = selectedMediaItems(p, st);
+    if (!items.length) {
+      toast('Select one or more photos first');
+      return;
+    }
+    var assets = items.map(function (it) { return mediaAssetPayload(it, p.id); }).filter(function (a) { return a && a.url; });
+    if (!assets.length) {
+      toast('Selected photos need a stored preview — re-upload once, then try again');
+      return;
+    }
+    var pickMode = mode || 'attach';
+    if (Bridge) {
+      var existing = Bridge.get() || {};
+      Bridge.set({
+        mode: existing.mode === 'pick' || existing.mode === 'replace' ? existing.mode : pickMode,
+        returnTo: 'studio',
+        studioProjectId: existing.studioProjectId || null,
+        slot: existing.slot || 'media',
+        mediaJobId: p.id,
+        mediaJobName: p.name || '',
+        selected: assets
+      });
+    }
+    st.selectedMediaIds = [];
+    toast(assets.length + ' photo' + (assets.length === 1 ? '' : 's') + ' ready for Studio');
+    if (Bridge && Bridge.switchToStudio()) return;
+    if (global.HublyStudio && typeof global.HublyStudio.openFromMedia === 'function') {
+      return global.HublyStudio.openFromMedia();
+    }
+    toast('Open Studio to finish the campaign with these photos');
+  }
+
   function renderMediaTab(p) {
+    var root = el('jos-photo-projects-root');
+    var st = root ? getState(root) : { selectedMediaIds: [] };
+    st.selectedMediaIds = st.selectedMediaIds || [];
+    var Bridge = global.HublyMediaStudioBridge;
+    var bridge = Bridge && Bridge.get ? Bridge.get() : null;
+    var picking = !!(bridge && (bridge.mode === 'pick' || bridge.mode === 'replace'));
     var uploads = ((p.workspace && p.workspace.local_uploads) || p.local_uploads || []).slice();
     var photos = uploads.filter(function (u) { return mediaKind(u) === 'photo'; });
     var videos = uploads.filter(function (u) { return mediaKind(u) === 'video'; });
@@ -1806,19 +1877,43 @@
     var missingPreview = photos.filter(function (u) {
       return !isDurableMediaUrl(u.previewUrl) && !isDurableMediaUrl(u.url);
     }).length;
+    var selectedCount = st.selectedMediaIds.length;
 
     function section(title, items, empty) {
       return '<section class="pp-media-section">' +
         '<div class="pp-between"><h3>' + esc(title) + '</h3><span class="pp-pill">' + esc(String(items.length)) + '</span></div>' +
         (items.length
-          ? '<div class="pp-media-grid">' + items.map(renderMediaTile).join('') + '</div>'
+          ? '<div class="pp-media-grid">' + items.map(function (it) {
+            return renderMediaTile(it, { selected: st.selectedMediaIds.indexOf(it.id) >= 0 });
+          }).join('') + '</div>'
           : '<p class="pp-muted">' + esc(empty) + '</p>') +
         '</section>';
     }
 
-    return '<section class="pp-panel pp-panel-wide pp-media-hero">' +
+    var pickBanner = picking
+      ? '<div class="pp-studio-pick-banner">' +
+        '<div><strong>' + (bridge.mode === 'replace' ? 'Replace campaign image' : 'Pick photos for Studio') + '</strong>' +
+        '<p class="pp-muted">Hubly Media is the source of truth — select photos already in this job. No re-upload.</p></div>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="media-cancel-pick">Cancel</button>' +
+        '</div>'
+      : '';
+
+    var actionBar = selectedCount
+      ? '<div class="pp-media-actionbar" role="toolbar" aria-label="Selected media actions">' +
+        '<span class="pp-media-actionbar-count"><strong>' + selectedCount + '</strong> selected</span>' +
+        '<div class="pp-btn-row">' +
+        (picking
+          ? '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="media-confirm-pick" data-pp-id="' + esc(p.id) + '">Use in Studio</button>'
+          : '<button type="button" class="pp-btn pp-btn-brand" data-pp-act="media-use-studio" data-pp-id="' + esc(p.id) + '">Use in Campaign</button>' +
+            '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="media-create-marketing" data-pp-id="' + esc(p.id) + '">Create Marketing</button>') +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="media-clear-select">Clear</button>' +
+        '</div></div>'
+      : '';
+
+    return pickBanner +
+      '<section class="pp-panel pp-panel-wide pp-media-hero">' +
       '<div class="pp-between">' +
-        '<div><h3>Media</h3><p class="pp-muted">Upload, organize, and deliver photos and videos in Hubly. Lightroom sync is optional when Adobe is connected.</p></div>' +
+        '<div><h3>Media</h3><p class="pp-muted">Hubly owns these assets. Select photos to use in Studio — Lightroom and Canva are optional.</p></div>' +
         '<span class="pp-pill">' + esc(String(total)) + ' assets</span>' +
       '</div>' +
       '<div class="pp-btn-row pp-mt">' +
@@ -1830,6 +1925,12 @@
           '<input type="file" accept="image/*,video/*,.pdf,.doc,.docx" multiple capture="environment" data-pp-media-files data-pp-id="' + esc(p.id) + '" data-pp-kind="any" hidden></label>' +
         '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="media-import-drive" data-pp-id="' + esc(p.id) + '">Import from Google Drive</button>' +
       '</div>' +
+      '<div class="pp-media-ai-row" role="group" aria-label="Media AI actions">' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="media-ai-enhance" data-pp-id="' + esc(p.id) + '">AI Enhance</button>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="media-before-after" data-pp-id="' + esc(p.id) + '">Before/After Compare</button>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="media-use-studio" data-pp-id="' + esc(p.id) + '">Use in Studio</button>' +
+        '<button type="button" class="pp-btn pp-btn-ghost" data-pp-act="media-remove-bg" data-pp-id="' + esc(p.id) + '" disabled title="Coming soon">Remove Background · soon</button>' +
+      '</div>' +
       '<div class="pp-dropzone' + (total ? '' : ' is-empty') + '" data-pp-dropzone data-pp-id="' + esc(p.id) + '">' +
         '<strong>Drag &amp; drop here</strong>' +
         '<span>Photos, videos, or documents — or use the buttons above.</span>' +
@@ -1838,6 +1939,7 @@
         ? '<p class="pp-muted pp-mt">Some photos have no stored preview — re-upload them once so Hubly can save thumbnails (especially NEF/RAW).</p>'
         : '') +
       '</section>' +
+      actionBar +
       section('Photos', photos, 'No photos yet — upload or drag them in.') +
       section('Videos', videos, 'No videos yet.') +
       section('Documents', docs, 'No documents yet.') +
@@ -2426,6 +2528,12 @@
         primaryColor: S().color || '#D9632D',
         logoUrl: S().logoUrl || null
       };
+      var uploadsC = ((p.workspace && p.workspace.local_uploads) || p.local_uploads || []).slice();
+      var selectedC = selectedMediaItems(p, st);
+      var photoPool = selectedC.length ? selectedC : uploadsC.filter(function (u) { return mediaKind(u) === 'photo'; });
+      var photoUrls = photoPool.map(function (u) {
+        return (isDurableMediaUrl(u.url) && u.url) || (isDurableMediaUrl(u.previewUrl) && u.previewUrl) || '';
+      }).filter(Boolean).slice(0, 12);
       var res = null;
       if (global.HublyConnectedApps && global.HublyConnectedApps.createMarketingAsset) {
         res = await global.HublyConnectedApps.createMarketingAsset({
@@ -2436,7 +2544,7 @@
           kind: kind,
           title: p.name + ' · ' + kind,
           brand: brand,
-          photoUrls: []
+          photoUrls: photoUrls
         });
       }
       p.workspace = p.workspace || defaultWorkspace();
@@ -2448,7 +2556,8 @@
         capability: 'creative',
         provider: boundId,
         at: new Date().toISOString(),
-        message: res && res.message
+        message: res && res.message,
+        photo_count: photoUrls.length
       });
       if (boundId) {
         var providerMeta = (global.HublyConnectedApps && global.HublyConnectedApps.get)
@@ -2467,9 +2576,92 @@
         capability: 'creative'
       });
       addActivity(p, 'Creative asset requested', 'Need: Marketing Graphics · ' + kind);
-      toast((res && res.message) || 'Need: Marketing Graphics — request saved on the project');
+      if (!res || !res.ok) {
+        // Hubly-first fallback: open Studio with the same photos instead of dead-ending.
+        if (photoUrls.length) {
+          st.selectedMediaIds = photoPool.map(function (u) { return u.id; }).filter(Boolean).slice(0, 12);
+          toast((res && res.message) || 'Opening Studio with your Hubly Media photos');
+          return openStudioWithSelected(p, st, 'attach');
+        }
+        toast((res && res.message) || 'Saved on this job — open Media, select photos, then Use in Campaign');
+      } else {
+        toast(res.message || 'Creative asset created');
+      }
       st.tab = 'creative';
       return saveAndRefresh(p, st);
+    }
+    if (act === 'media-toggle') {
+      var mid = t.getAttribute('data-pp-media-id');
+      if (!mid) return;
+      st.selectedMediaIds = st.selectedMediaIds || [];
+      var ix = st.selectedMediaIds.indexOf(mid);
+      if (ix >= 0) st.selectedMediaIds.splice(ix, 1);
+      else st.selectedMediaIds.push(mid);
+      return switchCommandTab('media');
+    }
+    if (act === 'media-clear-select') {
+      st.selectedMediaIds = [];
+      return switchCommandTab('media');
+    }
+    if (act === 'media-cancel-pick') {
+      if (global.HublyMediaStudioBridge) global.HublyMediaStudioBridge.clear();
+      st.selectedMediaIds = [];
+      toast('Selection cancelled — Hubly Media unchanged');
+      return switchCommandTab('media');
+    }
+    if (act === 'media-confirm-pick' && p) {
+      return openStudioWithSelected(p, st, 'pick');
+    }
+    if (act === 'media-use-studio' && p) {
+      if (!(st.selectedMediaIds && st.selectedMediaIds.length)) {
+        toast('Tap photos to select them, then Use in Studio');
+        return switchCommandTab('media');
+      }
+      return openStudioWithSelected(p, st, 'attach');
+    }
+    if (act === 'media-create-marketing' && p) {
+      if (!(st.selectedMediaIds && st.selectedMediaIds.length)) {
+        // Prefer up to 3 recent photos when none selected
+        var uploadsM = ((p.workspace && p.workspace.local_uploads) || p.local_uploads || [])
+          .filter(function (u) { return mediaKind(u) === 'photo'; })
+          .slice(0, 3);
+        st.selectedMediaIds = uploadsM.map(function (u) { return u.id; }).filter(Boolean);
+      }
+      if (!(st.selectedMediaIds && st.selectedMediaIds.length)) {
+        toast('Upload photos first, then Create Marketing');
+        return switchCommandTab('media');
+      }
+      return openStudioWithSelected(p, st, 'attach');
+    }
+    if (act === 'media-ai-enhance' && p) {
+      var selE = selectedMediaItems(p, st);
+      if (!selE.length) {
+        toast('Select a photo to enhance');
+        return switchCommandTab('media');
+      }
+      toast('AI Enhance queued for ' + selE.length + ' photo' + (selE.length === 1 ? '' : 's') + ' — Hubly keeps the originals in Media');
+      addActivity(p, 'AI Enhance requested', selE.length + ' photo(s)');
+      return saveAndRefresh(p, st);
+    }
+    if (act === 'media-before-after' && p) {
+      var selBa = selectedMediaItems(p, st);
+      if (selBa.length < 2) {
+        toast('Select 2 photos for Before/After Compare');
+        return switchCommandTab('media');
+      }
+      p.workspace = p.workspace || defaultWorkspace();
+      p.workspace.before_after = {
+        before_id: selBa[0].id,
+        after_id: selBa[1].id,
+        at: new Date().toISOString()
+      };
+      addActivity(p, 'Before/After pair set', (selBa[0].name || 'Before') + ' → ' + (selBa[1].name || 'After'));
+      toast('Before/After pair saved on this job');
+      return saveAndRefresh(p, st);
+    }
+    if (act === 'media-remove-bg') {
+      toast('Remove Background is coming soon — Hubly Media keeps your originals');
+      return;
     }
     if (act === 'adobe-refresh') {
       var svcR = global.AdobeLightroomService;

@@ -1,8 +1,8 @@
 /**
  * Hubly Studio — creative OS (replaces Operate Marketing tab).
  * Screens: Home · AI Creator · Campaigns · Templates · Brand Kit · Publish · Analytics
- * Campaign Workspace is Hubly-native. Canva is an optional visual polish step — never required.
- * Campaign Engine is the marketing brain; AI writes from structured plans.
+ * Campaign Workspace is Hubly-native. Media owns assets; Studio owns campaigns.
+ * Canva is optional design polish. Lightroom edits live in Media.
  */
 (function (global) {
   'use strict';
@@ -12,7 +12,7 @@
     ['ai', 'AI Creator', '✦', true],
     ['projects', 'Campaigns', '▦'],
     ['templates', 'Templates', '▤'],
-    ['photos', 'Photos', '▣'],
+    ['photos', 'Recent Jobs', '▣'],
     ['brand', 'Brand Kit', '◉'],
     ['elements', 'Elements', '◇'],
     ['uploads', 'Uploads', '☁'],
@@ -378,7 +378,12 @@
       '</header>' +
       '<div class="hs-ai-search">' +
       '<input type="text" id="hs-home-prompt" placeholder="What will you create today? Or pick a recommendation below…">' +
-      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="ai-draft">+ Generate Campaign</button>' +
+      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="ai-draft">AI Generate Campaign</button>' +
+      '</div>' +
+      '<div class="hs-btn-row" style="margin:-12px 0 22px">' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="browse-media">Browse Media</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="photos">Recent Jobs</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="ai">Campaign Goals</button>' +
       '</div>' +
       '<section class="hs-section"><h2><span class="hs-spark">✦</span> Recommended for you</h2>' +
       '<p class="hs-muted hs-section-sub">Based on Hubly jobs, reviews, photos, and posting cadence — not external data.</p>' +
@@ -1475,16 +1480,18 @@
 
     var body =
       '<header class="hs-page-head hs-page-head-row">' +
-      '<div><h1>Photos</h1>' +
-      '<p>Job and portfolio photos already in Hubly — ready for before/after and review campaigns.</p></div>' +
-      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="uploads">Go to Uploads</button></header>' +
+      '<div><h1>Recent Jobs</h1>' +
+      '<p>Job and portfolio photos already in Hubly Media — attach without re-uploading.</p></div>' +
+      '<div class="hs-head-actions">' +
+      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="browse-media">Browse Media</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="uploads">Go to Uploads</button></div></header>' +
       '<div class="hs-el-intro hs-card hs-pad">' +
-      '<strong>Photos vs Uploads</strong>' +
-      '<p class="hs-muted">Photos pulls media Hubly already knows from jobs and portfolio. Uploads is where you add new files into Studio.</p></div>' +
+      '<strong>Media is the source of truth</strong>' +
+      '<p class="hs-muted">Browse Hubly Media to pick job photos for this campaign. Client galleries and before/after pairs live in Media — Studio only references them.</p></div>' +
       (photos.length
         ? '<div class="hs-media-grid">' + cards + '</div>'
-        : '<div class="hs-empty hs-card hs-pad"><strong>No job photos yet</strong><p>Complete jobs with photos, or add portfolio images on your website — they show up here. Or upload files in Uploads.</p>' +
-          '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="nav" data-hs-screen="uploads">Open Uploads</button></div>');
+        : '<div class="hs-empty hs-card hs-pad"><strong>No job photos yet</strong><p>Upload in Media, or add portfolio images — they show up here. Never re-upload the same file for Studio.</p>' +
+          '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="browse-media">Browse Media</button></div>');
 
     root.innerHTML = shell('photos', body);
   }
@@ -1837,9 +1844,11 @@
             '</div>'
           : '<p class="hs-muted hs-tiny">No Elements yet — open the Elements tab to attach badges and CTAs.</p>') +
         '<div class="hs-btn-row">' +
+        '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="browse-media">Browse Media</button>' +
+        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="replace-image">Replace Image</button>' +
         '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="uploads">Uploads</button>' +
-        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="photos">Photos</button>' +
-        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="elements">Elements</button>' +
+        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="photos">Recent Jobs</button>' +
+        '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="ai">AI Generate Campaign</button>' +
         '</div></div>';
     } else if (tab === 'brief') {
       var brief = (project.canvas && project.canvas.brief) || project.brief || null;
@@ -2144,10 +2153,10 @@
   function workspaceEditActionsHtml() {
     var canvaOn = isCanvaLinked();
     if (canvaOn) {
-      return '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="continue-edit">Continue Editing</button>' +
+      return '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="continue-edit">Edit Campaign</button>' +
         '<button type="button" class="hs-btn hs-btn-brand hs-btn-customize" data-hs-act="customize-design">Edit in Canva</button>';
     }
-    return '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="continue-edit">Continue Editing</button>' +
+    return '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="continue-edit">Edit Campaign</button>' +
       '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="canva-connect">Connect Canva</button>';
   }
 
@@ -2155,12 +2164,142 @@
     var canvaOn = isCanvaLinked();
     if (canvaOn) {
       return '<button type="button" class="hs-btn hs-btn-brand hs-btn-block" data-hs-act="customize-design">Edit in Canva</button>' +
-        '<button type="button" class="hs-btn hs-btn-ghost hs-btn-block" data-hs-act="continue-edit">Continue Editing in Hubly</button>' +
-        '<p class="hs-muted hs-tiny">Hubly owns the campaign. Canva is optional polish — you always return here.</p>';
+        '<button type="button" class="hs-btn hs-btn-ghost hs-btn-block" data-hs-act="continue-edit">Edit Campaign</button>' +
+        '<p class="hs-muted hs-tiny">Hubly owns the campaign. Media owns the photos. Canva is optional polish.</p>';
     }
-    return '<button type="button" class="hs-btn hs-btn-brand hs-btn-block" data-hs-act="continue-edit">Continue Editing</button>' +
+    return '<button type="button" class="hs-btn hs-btn-brand hs-btn-block" data-hs-act="continue-edit">Edit Campaign</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost hs-btn-block" data-hs-act="browse-media">Browse Media</button>' +
       '<button type="button" class="hs-btn hs-btn-ghost hs-btn-block" data-hs-act="canva-connect">Connect Canva</button>' +
-      '<p class="hs-muted hs-tiny">Keep editing in Hubly — headlines, assets, brand, and publish. Connect Canva anytime for advanced layouts.</p>';
+      '<p class="hs-muted hs-tiny">Keep editing in Hubly — attach Media photos, AI headlines, then publish. Never re-upload the same image.</p>';
+  }
+
+  function bridge() {
+    return global.HublyMediaStudioBridge || null;
+  }
+
+  function applyBridgeAssetsToProject(project, assets, slot) {
+    if (!project || !assets || !assets.length) return 0;
+    var n = 0;
+    assets.forEach(function (a, i) {
+      if (!a || !a.url) return;
+      if (attachMediaToProject(project, a)) n += 1;
+      if ((slot === 'photo_url' || slot === 'replace') && i === 0) {
+        project.canvas = project.canvas || {};
+        project.canvas.package = project.canvas.package || {};
+        project.canvas.package.photo_url = a.url;
+      }
+      // Mirror into Studio assets library so Uploads/Photos stay in sync (no re-upload).
+      var os = ensureStudioOs();
+      os.assets = os.assets || [];
+      if (!os.assets.some(function (x) { return x && (x.url === a.url || x.id === a.id); })) {
+        os.assets.unshift({
+          id: a.id,
+          url: a.url,
+          name: a.name || 'Media photo',
+          kind: 'media',
+          source: 'hubly_media',
+          bytes: 0,
+          created_at: new Date().toISOString()
+        });
+      }
+    });
+    persistStudioMeta();
+    return n;
+  }
+
+  function consumeMediaBridge() {
+    var B = bridge();
+    if (!B || !B.get) return null;
+    var data = B.get();
+    if (!data || !data.selected || !data.selected.length) return null;
+    if (data.returnTo && data.returnTo !== 'studio') return null;
+    // Still picking in Media — wait for confirm
+    if ((data.mode === 'pick' || data.mode === 'replace') && (!data.selected || !data.selected.length)) return null;
+
+    var os = ensureStudioOs();
+    var project = null;
+    if (data.studioProjectId) {
+      project = (os.projects || []).find(function (p) { return p.id === data.studioProjectId; }) || null;
+    }
+    if (!project) project = currentProject();
+    var slot = data.slot || (data.mode === 'replace' ? 'replace' : 'media');
+    var selected = data.selected.slice();
+
+    if (project) {
+      var attached = applyBridgeAssetsToProject(project, selected, slot);
+      B.clear();
+      toast(attached
+        ? ('Attached ' + attached + ' Media photo' + (attached === 1 ? '' : 's') + ' — Hubly owns both campaign and assets')
+        : 'Photos already on this campaign');
+      openEditorFor(project, { tab: 'assets' });
+      return project;
+    }
+
+    var first = selected[0];
+    var title = (data.mediaJobName ? (data.mediaJobName + ' — campaign') : null) ||
+      (bizName() + ' — from Media');
+    B.clear();
+    createProject({
+      title: title,
+      headline: title,
+      canvas: {
+        headline: title,
+        package: {
+          media: selected.map(function (a) {
+            return { id: a.id, url: a.url, name: a.name, kind: 'media', attached_at: new Date().toISOString() };
+          }),
+          photo_url: first && first.url,
+          headlines: [title]
+        }
+      },
+      metadata: { from_media_job_id: data.mediaJobId || null }
+    });
+    // Seed library without requiring currentProject yet
+    selected.forEach(function (a) {
+      os.assets = os.assets || [];
+      if (a && a.url && !os.assets.some(function (x) { return x && x.url === a.url; })) {
+        os.assets.unshift({
+          id: a.id,
+          url: a.url,
+          name: a.name || 'Media photo',
+          kind: 'media',
+          source: 'hubly_media',
+          bytes: 0,
+          created_at: new Date().toISOString()
+        });
+      }
+    });
+    persistStudioMeta();
+    toast('Campaign opened with ' + selected.length + ' Media photo' + (selected.length === 1 ? '' : 's'));
+    return true;
+  }
+
+  function openFromMedia() {
+    openStudio('home');
+    setTimeout(function () {
+      try { consumeMediaBridge(); } catch (e) { console.warn('Media→Studio bridge', e); }
+    }, 80);
+  }
+
+  function startBrowseMedia(mode) {
+    var B = bridge();
+    var proj = currentProject();
+    if (B) {
+      B.set({
+        mode: mode || 'pick',
+        returnTo: 'studio',
+        studioProjectId: proj && proj.id || null,
+        slot: mode === 'replace' ? 'replace' : 'media',
+        selected: [],
+        mediaJobId: null
+      });
+    }
+    toast(mode === 'replace' ? 'Pick a photo in Media to replace this image' : 'Browse Hubly Media — select photos, then Use in Studio');
+    if (B && B.switchToMedia) return B.switchToMedia();
+    try {
+      var ni = document.querySelector('[data-v="photo-projects"]');
+      if (ni && typeof global.switchV === 'function') global.switchV(ni);
+    } catch (e) {}
   }
 
   function handleAct(act, t, root) {
@@ -2276,14 +2415,20 @@
         os.ui.screen = 'ai';
         return render();
       }
-      toast('Editing in Hubly — update headlines, assets, or publish anytime.');
+      toast('Editing campaign in Hubly — attach Media photos, update headlines, or publish anytime.');
       return refreshWorkspace({ tab: 'ai' });
+    }
+    if (act === 'browse-media') {
+      return startBrowseMedia('pick');
+    }
+    if (act === 'replace-image') {
+      return startBrowseMedia('replace');
     }
     if (act === 'customize-design') {
       var projC = os.projects.find(function (p) { return p.id === os.ui.editorProjectId; });
       if (!projC) return toast('Open a campaign first');
       if (!isCanvaLinked()) {
-        toast('Keep editing in Hubly — connect Canva anytime for advanced layouts.');
+        toast('Keep editing the campaign in Hubly — connect Canva anytime for advanced layouts.');
         return refreshWorkspace({ tab: 'ai' });
       }
       var ApiC = api();
@@ -2765,6 +2910,14 @@
       }
     } catch (e) {}
     try {
+      var B0 = bridge();
+      var pending0 = B0 && B0.get && B0.get();
+      if (pending0 && pending0.selected && pending0.selected.length && pending0.returnTo === 'studio') {
+        consumeMediaBridge();
+        return;
+      }
+    } catch (eBridge) {}
+    try {
       renderScreen(root);
       wireRoot(root);
       // hydrate from API
@@ -2800,10 +2953,14 @@
       var ni = document.querySelector('[data-v="studio"]') || document.querySelector('[data-v="marketing"]');
       if (ni && typeof global.switchV === 'function') {
         global.switchV(ni);
+        setTimeout(function () {
+          try { consumeMediaBridge(); } catch (e) {}
+        }, 120);
         return;
       }
     } catch (e) {}
     render();
+    try { consumeMediaBridge(); } catch (e2) {}
   }
 
   var apiExport = {
@@ -2811,10 +2968,13 @@
     setMode: setMode,
     ensureState: ensureStudioOs,
     open: openStudio,
+    openFromMedia: openFromMedia,
     openEditor: openEditorFor,
     openWorkspace: openEditorFor,
     createProject: createProject,
-    generateCampaign: generateCampaign
+    generateCampaign: generateCampaign,
+    consumeMediaBridge: consumeMediaBridge,
+    browseMedia: function () { return startBrowseMedia('pick'); }
   };
   global.HublyStudio = apiExport;
   if (global.HublyJourneyOS) {

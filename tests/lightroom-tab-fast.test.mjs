@@ -30,7 +30,7 @@ describe('Lightroom tab opens without waiting on Adobe', () => {
   });
 
   it('cache-busts Projects and Adobe Lightroom scripts', () => {
-    assert.match(hubly, /photography-projects\.js\?v=projects-14/);
-    assert.match(hubly, /adobe-lightroom-service\.js\?v=projects-14/);
+    assert.match(hubly, /photography-projects\.js\?v=projects-15/);
+    assert.match(hubly, /adobe-lightroom-service\.js\?v=projects-15/);
   });
 });

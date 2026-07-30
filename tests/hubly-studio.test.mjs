@@ -24,7 +24,7 @@ const spec = readFileSync(join(root, 'docs/HUBLY_STUDIO_IMPLEMENTATION_SPEC.md')
 describe('Hubly Studio V1.0 contract', () => {
   it('ships Studio shell and frozen contract', () => {
     assert.match(hubly, /data-v="studio"/);
-    assert.match(hubly, /hubly-studio\.js\?v=studio-13/);
+    assert.match(hubly, /hubly-studio\.js\?v=studio-14/);
     assert.match(journey, /HublyStudio\.setMode/);
     assert.match(contract, /V1\.0/);
     assert.match(contract, /single channel: Email/i);
@@ -32,7 +32,7 @@ describe('Hubly Studio V1.0 contract', () => {
   });
 
   it('Campaign Workspace is Hubly-native; Canva is optional', () => {
-    assert.match(studio, /Continue Editing/);
+    assert.match(studio, /Edit Campaign/);
     assert.match(studio, /Edit in Canva|continue-edit/);
     assert.match(studio, /hs-workspace-shell/);
     assert.match(studio, /CAMPAIGN_GOALS/);
@@ -135,7 +135,7 @@ describe('Hubly Studio V1.0 contract', () => {
     assert.match(studio, /function renderPhotos/);
     assert.match(studio, /media-upload/);
     assert.match(studio, /ingestUploadFiles/);
-    assert.match(studio, /Photos vs Uploads/);
+    assert.match(studio, /Photos vs Uploads|Media is the source of truth|Browse Media/);
     assert.doesNotMatch(studio, /screen === 'uploads'\) return renderSimple/);
     assert.doesNotMatch(studio, /screen === 'photos'\) return renderSimple/);
     assert.match(css, /\.hs-upload-drop/);

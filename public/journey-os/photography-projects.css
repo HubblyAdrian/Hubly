@@ -1411,8 +1411,92 @@ body.jos-pixel #p-app.jos-photo-projects-mode .app-main {
   margin: 0;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid var(--pp-border);
+  border: 1.5px solid var(--pp-border);
   background: var(--pp-surface-2);
+  position: relative;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.pp-media-tile.is-selected {
+  border-color: var(--pp-brand);
+  box-shadow: 0 0 0 2px rgba(217,99,45,.25);
+}
+.pp-media-tile:active { transform: scale(0.98); }
+.pp-media-check {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(20,27,43,.55);
+  border: 1.5px solid rgba(255,255,255,.7);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+.pp-media-tile.is-selected .pp-media-check {
+  background: var(--pp-brand);
+  border-color: var(--pp-brand);
+}
+.pp-media-actionbar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--pp-navy);
+  color: #fff;
+  box-shadow: 0 12px 40px rgba(15,20,31,.28);
+}
+.pp-media-actionbar-count { font-size: 13px; }
+.pp-media-actionbar .pp-btn {
+  min-height: 40px;
+}
+.pp-media-actionbar .pp-btn-brand {
+  background: var(--pp-brand);
+  border-color: var(--pp-brand);
+  color: #fff;
+}
+.pp-media-actionbar .pp-btn-ghost {
+  background: rgba(255,255,255,.1);
+  border-color: rgba(255,255,255,.28);
+  color: #fff;
+}
+.pp-media-ai-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.pp-media-ai-row .pp-btn { min-height: 40px; }
+.pp-studio-pick-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(217,99,45,.35);
+  background: #FFF7F2;
+}
+.pp-studio-pick-banner strong { display: block; margin-bottom: 2px; }
+.pp-studio-pick-banner .pp-muted { margin: 0; }
+
+@media (max-width: 560px) {
+  .pp-media-actionbar { bottom: 8px; }
+  .pp-media-actionbar .pp-btn { flex: 1 1 auto; }
 }
 .pp-media-thumb {
   aspect-ratio: 1;
