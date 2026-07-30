@@ -334,17 +334,15 @@
     }).join('');
 
     var queue = (os.queue || []).slice(0, 4);
-    if (!queue.length) {
-      queue = [
-        { title: 'Review Spotlight — email draft', scheduled_at: 'Ready to send', status: 'ready', _placeholder: true }
-      ];
-    }
-    var queueHtml = queue.map(function (q) {
-      var st = q.status === 'published' ? 'ready' : (q.status === 'ready' ? 'ready' : 'draft');
-      return '<div class="hs-queue-row">' +
-        '<div><strong>' + esc(q.scheduled_at || 'Unscheduled') + '</strong> <span class="hs-pill ' + st + '">' + esc(q.status || 'draft') + '</span>' +
-        '<p>' + esc(q.title || q.caption || 'Email campaign') + '</p></div></div>';
-    }).join('');
+    var queueHtml = queue.length
+      ? queue.map(function (q) {
+        var st = q.status === 'published' ? 'ready' : (q.status === 'ready' ? 'ready' : 'draft');
+        return '<div class="hs-queue-row">' +
+          '<div><strong>' + esc(q.scheduled_at || 'Unscheduled') + '</strong> <span class="hs-pill ' + st + '">' + esc(q.status || 'draft') + '</span>' +
+          '<p>' + esc(q.title || q.caption || 'Email campaign') + '</p></div></div>';
+      }).join('')
+      : '<div class="hs-queue-row"><div><strong>Queue empty</strong><p class="hs-muted">Publish a campaign by email — nothing is faked here.</p>' +
+        '<button type="button" class="hs-link" data-hs-act="nav" data-hs-screen="publish">Open Publish →</button></div></div>';
 
     var recsMount = '<div id="hs-rec-mount" class="hs-rec-row"><div class="hs-muted">Loading recommendations…</div></div>';
 
@@ -739,71 +737,198 @@
     reader.readAsDataURL(file);
   }
 
+  function publishCampaignEmail(project) {
+    var os = ensureStudioOs();
+    var title = (project && project.title) || 'Studio campaign';
+    var Api2 = api();
+    var pkg = (project && project.canvas && project.canvas.package) || {};
+    var email = pkg.email || {};
+    var toEmail = window.prompt('V1 publishes by Email. Recipient email:', (S().ownerEmail || S().email || ''));
+    if (!toEmail) {
+      toast('Publish cancelled — email required for V1');
+      return;
+    }
+    toast('Publishing via Email…');
+    function queuedLocal(status, message) {
+      var item = {
+        id: 'q_' + Date.now(),
+        title: title,
+        channels: ['email'],
+        status: status || 'ready',
+        project_id: project && project.id,
+        caption: (email.body || (project && project.prompt) || title).slice(0, 200),
+        to_email: toEmail,
+        scheduled_at: 'Ready to send',
+        published_at: status === 'published' ? new Date().toISOString() : null
+      };
+      os.queue = os.queue || [];
+      os.queue.unshift(item);
+      if (project) project.status = status === 'published' ? 'published' : (project.status || 'ready');
+      persistStudioMeta();
+      toast(message || 'Saved to publish queue');
+      if ((os.ui.screen || '') === 'publish') render();
+    }
+    if (!Api2) {
+      queuedLocal('ready', 'Email provider unavailable — queued as ready in Hubly');
+      return;
+    }
+    Api2.request('publish', {
+      method: 'POST',
+      body: {
+        project_id: project && project.id,
+        title: title,
+        to_email: toEmail,
+        subject: email.subject || title,
+        body: email.body || (project && project.prompt) || title,
+        business_name: bizName()
+      }
+    }).then(function (res) {
+      if (res && res.item) {
+        os.queue = os.queue || [];
+        os.queue.unshift(res.item);
+      } else if (!(res && res.ok)) {
+        // Ensure something lands in the queue so Publish Center is not empty theater
+        os.queue = os.queue || [];
+        if (!os.queue.some(function (q) { return q.project_id === (project && project.id) && q.title === title; })) {
+          os.queue.unshift({
+            id: 'q_' + Date.now(),
+            title: title,
+            channels: ['email'],
+            status: (res && res.error === 'Provider not configured') ? 'ready' : 'draft',
+            project_id: project && project.id,
+            to_email: toEmail,
+            scheduled_at: 'Ready to send'
+          });
+        }
+      }
+      if (project && res && res.ok) project.status = 'published';
+      persistStudioMeta();
+      if (res && res.error === 'Provider not configured') {
+        toast(res.message || 'Email provider not configured — queued as ready in Hubly');
+      } else if (res && res.ok) {
+        toast('Published by email');
+      } else {
+        toast((res && res.message) || (res && res.error) || 'Publish saved to queue');
+      }
+      if ((ensureStudioOs().ui.screen || '') === 'publish') render();
+    }).catch(function () {
+      queuedLocal('ready', 'Could not reach publish API — queued locally');
+    });
+  }
+
+  function queueItemsByDay(year, month) {
+    var map = {};
+    (ensureStudioOs().queue || []).forEach(function (q) {
+      var raw = q.published_at || q.scheduled_at || q.created_at;
+      var dt = raw ? new Date(raw) : null;
+      if (!dt || isNaN(dt.getTime())) return;
+      if (dt.getFullYear() !== year || dt.getMonth() !== month) return;
+      var d = dt.getDate();
+      if (!map[d]) map[d] = [];
+      map[d].push(q);
+    });
+    return map;
+  }
+
   function renderPublish(root) {
     var os = ensureStudioOs();
     var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     var now = new Date();
     var monthLabel = months[now.getMonth()] + ' ' + now.getFullYear();
-    var days = [];
     var y = now.getFullYear(), m = now.getMonth();
+    var byDay = queueItemsByDay(y, m);
+    var days = [];
     var first = new Date(y, m, 1);
-    var startPad = (first.getDay() + 6) % 7; // Mon=0
+    var startPad = (first.getDay() + 6) % 7;
     var dim = new Date(y, m + 1, 0).getDate();
     var today = now.getDate();
     for (var i = 0; i < startPad; i++) days.push({ n: '', muted: true });
     for (var d = 1; d <= dim; d++) {
-      days.push({ n: d, today: d === today, posts: d === today || d === 9 || d === 24 });
+      days.push({ n: d, today: d === today, items: byDay[d] || [] });
     }
 
     var cal = days.map(function (c) {
+      var posts = (c.items || []).slice(0, 2).map(function (q) {
+        return '<div class="hs-cal-post"><span class="hs-cal-thumb"></span><span>' +
+          esc((q.title || 'Email').slice(0, 18)) + (q.title && q.title.length > 18 ? '…' : '') +
+          '<br>' + esc(q.status === 'published' ? 'Sent' : 'Email') + '</span></div>';
+      }).join('');
       return '<div class="hs-cal-cell' + (c.today ? ' today' : '') + (c.muted ? ' muted' : '') + '">' +
         (c.n ? '<span class="hs-cal-n">' + c.n + (c.today ? ' <i>TODAY</i>' : '') + '</span>' : '') +
-        (c.posts ? '<div class="hs-cal-post"><span class="hs-cal-thumb"></span><span>' + esc(bizName().slice(0, 8)) + '…<br>12:00 PM</span></div>' : '') +
+        posts +
         '</div>';
     }).join('');
 
-    var accounts = (os.socialAccounts || []).length ? os.socialAccounts : [
-      { provider: 'instagram', handle: '@' + (S().slug || 'yourbiz'), status: 'not_connected' },
-      { provider: 'facebook', handle: bizName(), status: 'not_connected' },
-      { provider: 'google_business', handle: bizName() + ' local', status: 'not_connected' }
+    var accounts = [
+      { provider: 'email', label: 'Email (V1)', handle: S().ownerEmail || S().email || 'Resend', status: 'v1' },
+      { provider: 'instagram', label: 'Instagram', handle: '@' + (S().slug || 'yourbiz'), status: 'not_connected' },
+      { provider: 'facebook', label: 'Facebook Page', handle: bizName(), status: 'not_connected' },
+      { provider: 'google_business', label: 'Google Business', handle: bizName(), status: 'not_connected' }
     ];
+
+    var queue = os.queue || [];
+    var drafts = (os.projects || []).filter(function (p) { return p && p.status !== 'published'; }).slice(0, 6);
+
+    var queueHtml = queue.length
+      ? queue.slice(0, 8).map(function (q) {
+        return '<div class="hs-pub-q">' +
+          '<span class="hs-recent-thumb"></span>' +
+          '<div><strong>' + esc(q.title || 'Campaign') + '</strong>' +
+          '<span>' + esc((q.channels || ['email']).join(', ')) +
+          ' · ' + esc(q.status || 'ready') +
+          (q.to_email ? (' · ' + q.to_email) : '') +
+          (q.scheduled_at ? (' · ' + esc(q.scheduled_at)) : '') +
+          '</span></div>' +
+          (q.project_id
+            ? '<button type="button" class="hs-link" data-hs-act="open-project" data-hs-id="' + esc(q.project_id) + '">Open</button>'
+            : '') +
+          '</div>';
+      }).join('')
+      : '<p class="hs-muted hs-tiny">Queue is empty — publish a campaign by email and it shows up here. No demo posts.</p>';
+
+    var draftHtml = drafts.length
+      ? drafts.map(function (p) {
+        return '<div class="hs-pub-q">' +
+          '<span class="hs-recent-thumb"></span>' +
+          '<div><strong>' + esc(p.title || 'Draft') + '</strong>' +
+          '<span>' + esc(p.status || 'draft') + ' · ' + esc(relativeEdit(p.last_edited_at)) + '</span></div>' +
+          '<button type="button" class="hs-btn hs-btn-brand hs-btn-sm" data-hs-act="publish-project" data-hs-id="' + esc(p.id) + '">Publish Email</button>' +
+          '</div>';
+      }).join('')
+      : '<p class="hs-muted hs-tiny">No draft campaigns yet — generate one in AI Creator first.</p>';
 
     var body =
       '<header class="hs-page-head hs-page-head-row">' +
-      '<div><h1>Publish Center</h1><p>Schedule Post dashboard: plan, preview, and coordinate your social pipelines</p></div>' +
+      '<div><h1>Publish Center</h1>' +
+      '<p>V1 publishes by <strong>Email</strong>. Social networks stay disconnected until you connect them in Apps — Hubly never fakes a send.</p></div>' +
       '<div class="hs-head-actions">' +
-      '<div class="hs-month-pill"><button type="button" data-hs-act="noop">‹</button> ' + esc(monthLabel) + ' <button type="button" data-hs-act="noop">›</button></div>' +
-      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="schedule-post">Schedule Post</button>' +
+      '<div class="hs-month-pill">' + esc(monthLabel) + '</div>' +
+      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="publish-now">✈ Publish Email</button>' +
       '</div></header>' +
+      '<div class="hs-el-intro hs-card hs-pad">' +
+      '<strong>What Publish does today</strong>' +
+      '<p class="hs-muted">Sends (or queues) a campaign email via your Email provider. Instagram / Facebook / Google scheduling is deferred — connect in Apps when ready. The calendar only shows real queue activity.</p>' +
+      '</div>' +
       '<div class="hs-publish-grid">' +
-      '<section class="hs-card hs-cal-wrap"><div class="hs-cal-head">' +
+      '<section class="hs-card hs-cal-wrap"><div class="hs-between hs-cal-legend"><h3>Activity this month</h3>' +
+      '<span class="hs-muted hs-tiny">' + (Object.keys(byDay).length ? 'From your email queue' : 'No sends yet this month') + '</span></div>' +
+      '<div class="hs-cal-head">' +
       ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(function (d) { return '<span>' + d + '</span>'; }).join('') +
       '</div><div class="hs-cal-grid">' + cal + '</div></section>' +
       '<aside class="hs-publish-side">' +
-      '<section class="hs-card hs-pad"><h3>Connected Accounts</h3>' +
+      '<section class="hs-card hs-pad"><h3>Channels</h3>' +
       accounts.map(function (a) {
-        var label = a.provider === 'instagram' ? 'Instagram' : (a.provider === 'facebook' ? 'Facebook Page' : 'Google Business');
-        var st = a.status === 'connected' || a.status === 'sync_active' ? a.status : 'not_connected';
-        var pill = st === 'not_connected' ? 'Not connected' : (st === 'sync_active' ? 'Sync Active' : 'Connected');
-        return '<div class="hs-acct-row"><span class="hs-acct-ico">' + label.charAt(0) + '</span>' +
-          '<div><strong>' + esc(label) + '</strong><span>' + esc(a.handle || '') + '</span></div>' +
-          '<span class="hs-pill ' + (st === 'not_connected' ? 'draft' : 'ready') + '">' + esc(pill) + '</span></div>';
+        var pill = a.status === 'v1' ? 'V1 live' : 'Not connected';
+        var cls = a.status === 'v1' ? 'ready' : 'draft';
+        return '<div class="hs-acct-row"><span class="hs-acct-ico">' + esc(a.label.charAt(0)) + '</span>' +
+          '<div><strong>' + esc(a.label) + '</strong><span>' + esc(a.handle || '') + '</span></div>' +
+          '<span class="hs-pill ' + cls + '">' + esc(pill) + '</span></div>';
       }).join('') +
-      '<p class="hs-muted hs-tiny">Connect accounts in Apps — Studio never fakes Connected.</p></section>' +
-      '<section class="hs-card hs-pad"><h3>Publishing Queue</h3>' +
-      ((os.queue || []).length ? os.queue : [
-        { title: 'Winter pipeline safety Checklist', scheduled_at: 'Jul 15, 12:00 PM', channels: ['Insta', 'FB'] },
-        { title: '5-Star Spotlight', scheduled_at: 'Jul 18, 9:00 AM', channels: ['Insta', 'GMB'] }
-      ]).slice(0, 3).map(function (q) {
-        return '<div class="hs-pub-q"><span class="hs-recent-thumb"></span><div><strong>' + esc(q.title) + '</strong>' +
-          '<span>' + esc(q.scheduled_at || 'Draft') + (q.channels ? ' · ' + esc((q.channels || []).join(', ')) : '') + '</span></div></div>';
-      }).join('') + '</section>' +
-      '<section class="hs-card hs-pad"><h3>Best Times to Post</h3>' +
-      '<p class="hs-muted">Based on your local audience — Stage 2 when analytics providers are connected.</p>' +
-      '<div class="hs-bars">' +
-      [40, 55, 90, 50, 45, 35].map(function (h, i) {
-        return '<div class="hs-bar' + (i === 2 ? ' peak' : '') + '"><i style="height:' + h + '%"></i><span>' + ['8a', '10a', '12p', '2p', '4p', '6p'][i] + '</span></div>';
-      }).join('') + '</div></section>' +
+      '<p class="hs-muted hs-tiny">Connect social accounts in Apps — Studio never marks them Connected without credentials.</p></section>' +
+      '<section class="hs-card hs-pad"><div class="hs-between"><h3>Ready to publish</h3>' +
+      '<button type="button" class="hs-link" data-hs-act="nav" data-hs-screen="projects">All projects</button></div>' +
+      draftHtml + '</section>' +
+      '<section class="hs-card hs-pad"><h3>Email publish queue</h3>' + queueHtml + '</section>' +
       '</aside></div>';
 
     root.innerHTML = shell('publish', body);
@@ -1675,48 +1800,31 @@
       toast('Updated headlines from your campaign package');
       return;
     }
-    if (act === 'publish-email' || act === 'publish-queue') {
-      var proj3 = os.projects.find(function (p) { return p.id === os.ui.editorProjectId; });
-      var title = (proj3 && proj3.title) || 'Studio campaign';
-      var Api2 = api();
-      var pkg = (proj3 && proj3.canvas && proj3.canvas.package) || {};
-      var email = pkg.email || {};
-      var toEmail = window.prompt('V1 publishes by Email. Recipient email:', (S().ownerEmail || S().email || ''));
-      if (!toEmail) {
-        toast('Publish cancelled — email required for V1');
+    if (act === 'publish-email' || act === 'publish-queue' || act === 'publish-project' || act === 'publish-now') {
+      var proj3 = null;
+      if (act === 'publish-project') {
+        var pid = t.getAttribute('data-hs-id');
+        proj3 = (os.projects || []).find(function (p) { return p.id === pid; });
+      } else if (act === 'publish-now') {
+        proj3 = currentProject() || (os.projects || []).find(function (p) { return p && p.status !== 'published'; }) || null;
+        if (!proj3) {
+          toast('Create a campaign in AI Creator first — then publish by email here.');
+          os.ui.screen = 'ai';
+          return render();
+        }
+      } else {
+        proj3 = (os.projects || []).find(function (p) { return p.id === os.ui.editorProjectId; });
+      }
+      if (!proj3) {
+        toast('Open or select a campaign to publish');
         return;
       }
-      toast('Publishing via Email…');
-      if (Api2) {
-        Api2.request('publish', {
-          method: 'POST',
-          body: {
-            project_id: proj3 && proj3.id,
-            title: title,
-            to_email: toEmail,
-            subject: email.subject || title,
-            body: email.body || (proj3 && proj3.prompt) || title,
-            business_name: bizName()
-          }
-        }).then(function (res) {
-          if (res && res.item) os.queue.unshift(res.item);
-          persistStudioMeta();
-          if (res && res.error === 'Provider not configured') {
-            toast(res.message || 'Email provider not configured — queued as ready in Hubly');
-          } else if (res && res.ok) {
-            toast('Published by email');
-          } else {
-            toast((res && res.message) || (res && res.error) || 'Publish saved to queue');
-          }
-        }).catch(function () {
-          toast('Could not publish — try again');
-        });
-      }
+      publishCampaignEmail(proj3);
       return;
     }
     if (act === 'schedule-post') {
-      os.ui.screen = 'ai';
-      return render();
+      toast('Social scheduling is deferred until Instagram/Facebook are connected in Apps. V1 publishes by Email.');
+      return;
     }
     if (act === 'share-link') {
       toast('Share link — available after project publish');

@@ -24,7 +24,7 @@ const spec = readFileSync(join(root, 'docs/HUBLY_STUDIO_IMPLEMENTATION_SPEC.md')
 describe('Hubly Studio V1.0 contract', () => {
   it('ships Studio shell and frozen contract', () => {
     assert.match(hubly, /data-v="studio"/);
-    assert.match(hubly, /hubly-studio\.js\?v=studio-8/);
+    assert.match(hubly, /hubly-studio\.js\?v=studio-9/);
     assert.match(journey, /HublyStudio\.setMode/);
     assert.match(contract, /V1\.0/);
     assert.match(contract, /single channel: Email/i);
@@ -137,5 +137,15 @@ describe('Hubly Studio V1.0 contract', () => {
     assert.doesNotMatch(studio, /screen === 'photos'\) return renderSimple/);
     assert.match(css, /\.hs-upload-drop/);
     assert.match(api, /p === 'assets'/);
+  });
+
+  it('Publish Center is real email queue — no fake social posts', () => {
+    assert.match(studio, /function publishCampaignEmail/);
+    assert.match(studio, /publish-now/);
+    assert.match(studio, /Ready to publish/);
+    assert.match(studio, /No demo posts/);
+    assert.doesNotMatch(studio, /Winter pipeline safety/);
+    assert.doesNotMatch(studio, /Best Times to Post/);
+    assert.doesNotMatch(studio, /d === today \|\| d === 9 \|\| d === 24/);
   });
 });
