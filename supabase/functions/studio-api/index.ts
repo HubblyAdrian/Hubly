@@ -1,5 +1,6 @@
 /**
  * Hubly Studio API — owner CRUD for projects, pages, brand kit, assets, publish queue.
+ * Campaign Engine: goals, suggestions, structured Campaign Plans (marketing brain).
  * Auth: business owner JWT. Service-role after ownership check.
  *
  * Routes:
@@ -9,9 +10,16 @@
  * GET/PATCH/DELETE /projects/:id
  * GET/POST      /projects/:id/pages
  * PATCH         /projects/:id/pages/:pageId
+ * GET           /projects/:id/workspace
+ * POST          /projects/:id/customize  (Canva — Provider not configured until OAuth)
+ * GET           /projects/:id/versions | exports
  * GET/POST      /assets
  * DELETE        /assets/:id
  * GET           /templates
+ * GET           /campaign/goals | /campaign/suggest
+ * POST          /campaign/plan
+ * GET/POST      /campaign/plans
+ * GET           /campaign/plans/:id
  * GET/POST      /queue
  * PATCH/DELETE  /queue/:id
  * GET/PUT       /social-accounts
@@ -19,6 +27,23 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildCampaignPlan,
+  hublyTemplateCatalog,
+  listCampaignGoals,
+  planToCampaignBrief,
+  type BusinessCampaignContext,
+  type CampaignPlan,
+} from "../_shared/hubly_campaign_engine.ts";
+import {
+  buildStudioBusinessContext,
+} from "../_shared/hubly_studio_business_context.ts";
+import { recommendCampaigns } from "../_shared/hubly_studio_recommendations.ts";
+import {
+  getV1Publisher,
+  listPublisherSlots,
+} from "../_shared/hubly_studio_publisher.ts";
+import { V1_PUBLISH_CHANNEL } from "../_shared/hubly_studio_campaign_brief.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -86,8 +111,13 @@ Deno.serve(async (req: Request) => {
   const sub = parts[2] || "";
   const subId = parts[3] || "";
 
-  // Global templates catalog — readable without owner when published
+  // Global templates catalog — Hubly templates + DB catalog; Canva templates when Connect is live
   if (methodOverride === "GET" && resource === "templates" && !id) {
+    const hubly = hublyTemplateCatalog().map((t) => ({
+      ...t,
+      featured: true,
+      published: true,
+    }));
     const { data, error } = await admin
       .from("studio_templates")
       .select("*")
@@ -95,8 +125,21 @@ Deno.serve(async (req: Request) => {
       .order("featured", { ascending: false })
       .order("sort_order", { ascending: true })
       .limit(100);
-    if (error) return json({ error: error.message }, 400);
-    return json({ templates: data || [] });
+    if (error) return json({ error: error.message, templates: hubly });
+    const merged = [...hubly, ...(data || []).map((t) => ({ ...t, source: t.business_id ? "business" : "hubly" }))];
+    return json({
+      templates: merged,
+      sources: {
+        hubly: true,
+        canva: false, // Connect Brand Templates when CanvaProvider is configured
+        ai_generated: true,
+      },
+    });
+  }
+
+  // Campaign goals catalog — public to authenticated owners (also available pre-auth for UI)
+  if (methodOverride === "GET" && resource === "campaign" && id === "goals") {
+    return json({ goals: listCampaignGoals() });
   }
 
   const { data: userData, error: userErr } = await userClient.auth.getUser();
@@ -259,6 +302,9 @@ Deno.serve(async (req: Request) => {
           prompt: (body as { prompt?: string }).prompt || "",
           source: (body as { source?: object }).source || {},
           canvas: (body as { canvas?: object }).canvas || {},
+          metadata: (body as { metadata?: object }).metadata || {},
+          campaign_plan_id: (body as { campaign_plan_id?: string }).campaign_plan_id || null,
+          canva_design_id: (body as { canva_design_id?: string }).canva_design_id || null,
           status: "draft",
         })
         .select("*")
@@ -272,6 +318,14 @@ Deno.serve(async (req: Request) => {
         width: w,
         height: h,
         sort_order: 0,
+      });
+      await admin.from("studio_project_versions").insert({
+        business_id: businessId,
+        project_id: project.id,
+        version_number: 1,
+        label: "Created in Hubly Studio",
+        source: "hubly",
+        snapshot: { title, format_primary: format },
       });
       return json({ project }, 201);
     }
@@ -308,6 +362,9 @@ Deno.serve(async (req: Request) => {
         "source",
         "canvas",
         "metadata",
+        "canva_design_id",
+        "campaign_plan_id",
+        "export_status",
       ]) {
         if ((body as Record<string, unknown>)[k] !== undefined) {
           patch[k] = (body as Record<string, unknown>)[k];
@@ -384,6 +441,422 @@ Deno.serve(async (req: Request) => {
         .update({ last_edited_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", id);
       return json({ page: data });
+    }
+
+    // ── project workspace / Canva customize / versions / exports ──
+    if (resource === "projects" && id && sub === "workspace" && method === "GET") {
+      const { data: project, error } = await admin
+        .from("studio_projects")
+        .select("*")
+        .eq("business_id", businessId)
+        .eq("id", id)
+        .maybeSingle();
+      if (error) return json({ error: error.message }, 400);
+      if (!project) return json({ error: "not_found" }, 404);
+      const [{ data: pages }, { data: versions }, { data: exports }, { data: assets }] =
+        await Promise.all([
+          admin.from("studio_project_pages").select("*").eq("project_id", id).order("sort_order"),
+          admin
+            .from("studio_project_versions")
+            .select("*")
+            .eq("project_id", id)
+            .order("version_number", { ascending: false })
+            .limit(20),
+          admin
+            .from("studio_project_exports")
+            .select("*")
+            .eq("project_id", id)
+            .order("created_at", { ascending: false })
+            .limit(20),
+          admin.from("studio_assets").select("*").eq("business_id", businessId).limit(40),
+        ]);
+      let plan = null;
+      if (project.campaign_plan_id) {
+        const { data: planRow } = await admin
+          .from("campaign_plans")
+          .select("*")
+          .eq("id", project.campaign_plan_id)
+          .maybeSingle();
+        plan = planRow;
+      }
+      return json({
+        project,
+        pages: pages || [],
+        versions: versions || [],
+        exports: exports || [],
+        assets: assets || [],
+        campaignPlan: plan,
+        canva: {
+          linked: false,
+          design_id: project.canva_design_id || null,
+          status: "Provider not configured",
+        },
+        brief: plan
+          ? planToCampaignBrief({
+              playbook_id: String(plan.playbook_id || "dt_review_spotlight"),
+              goal_id: String(plan.goal_id || "get_more_reviews"),
+              industry_id: String(plan.industry_id || "detailing"),
+              title: String(plan.title || project.title),
+              objective: String(plan.objective || ""),
+              channels: Array.isArray(plan.channels) ? plan.channels : ["email"],
+              required_assets: Array.isArray(plan.required_assets) ? plan.required_assets : [],
+              messaging_strategy: String(plan.messaging_strategy || ""),
+              cta: String(plan.cta || "Book now"),
+              timing: plan.timing || { season: "any", month: new Date().getMonth() + 1, suggest_at: new Date().toISOString(), schedule_hints: [] },
+              template_refs: Array.isArray(plan.template_refs) ? plan.template_refs : [],
+              offer: plan.offer || { type: "none", summary: "" },
+              audience: String(plan.audience || ""),
+              ai_brief: String(plan.ai_brief || ""),
+              business_inputs: plan.business_inputs || { business_name: project.title },
+              dna_inputs: plan.dna_inputs || {},
+              package: plan.package || {
+                captions: [],
+                headlines: [String(plan.title || project.title)],
+                hashtags: [],
+                email: { subject: String(plan.title || ""), body: String(plan.ai_brief || "") },
+                sms: "",
+                google_business_post: "",
+                schedule_suggestions: [],
+              },
+            } as CampaignPlan)
+          : null,
+        v1_channel: V1_PUBLISH_CHANNEL,
+      });
+    }
+
+    if (resource === "projects" && id && sub === "customize" && method === "POST") {
+      // Production-First: Canva Connect OAuth required — do not simulate edit URLs
+      const { data: project } = await admin
+        .from("studio_projects")
+        .select("*")
+        .eq("business_id", businessId)
+        .eq("id", id)
+        .maybeSingle();
+      if (!project) return json({ error: "not_found" }, 404);
+      const canvaConfigured = !!(Deno.env.get("CANVA_CLIENT_ID") && Deno.env.get("CANVA_CLIENT_SECRET"));
+      if (!canvaConfigured) {
+        return json({
+          error: "Provider not configured",
+          message: "Connect Canva via Apps to customize designs. Hubly keeps your project ready.",
+          project_id: id,
+          correlation_state: String((body as { correlation_state?: string }).correlation_state || id.slice(0, 50)),
+        }, 503);
+      }
+      return json({
+        error: "not_implemented",
+        message: "Canva Connect design create/edit_url lands in a follow-up once OAuth is live.",
+        project_id: id,
+      }, 501);
+    }
+
+    if (resource === "projects" && id && sub === "versions" && method === "GET") {
+      const { data, error } = await admin
+        .from("studio_project_versions")
+        .select("*")
+        .eq("business_id", businessId)
+        .eq("project_id", id)
+        .order("version_number", { ascending: false });
+      if (error) return json({ error: error.message }, 400);
+      return json({ versions: data || [] });
+    }
+
+    if (resource === "projects" && id && sub === "exports" && method === "GET") {
+      const { data, error } = await admin
+        .from("studio_project_exports")
+        .select("*")
+        .eq("business_id", businessId)
+        .eq("project_id", id)
+        .order("created_at", { ascending: false });
+      if (error) return json({ error: error.message }, 400);
+      return json({ exports: data || [] });
+    }
+
+    // ── Campaign Engine ──
+    // ── V1 Business Context + Recommendation Engine ──
+    if (resource === "context" && method === "GET") {
+      const { data: biz } = await admin
+        .from("businesses")
+        .select("id,name,meta")
+        .eq("id", businessId)
+        .maybeSingle();
+      const meta = (biz?.meta || {}) as Record<string, unknown>;
+      const memory = (meta.memory || meta.businessMemory || {}) as Record<string, unknown>;
+      const dna = (meta.dna || meta.businessDna || {}) as Record<string, unknown>;
+      const { data: lastPub } = await admin
+        .from("studio_publish_queue")
+        .select("updated_at,created_at")
+        .eq("business_id", businessId)
+        .eq("status", "published")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      let daysSince: number | null = null;
+      if (lastPub) {
+        const t = new Date(String(lastPub.updated_at || lastPub.created_at)).getTime();
+        if (!isNaN(t)) daysSince = Math.floor((Date.now() - t) / 86400000);
+      }
+      const ctx = buildStudioBusinessContext({
+        business_id: businessId!,
+        business_name: (biz?.name as string) || null,
+        industry: (memory.industry as string) || (meta.industry as string) || "detailing",
+        city: (memory.city as string) || null,
+        phone: (memory.phone as string) || null,
+        services: Array.isArray(memory.services) ? (memory.services as string[]) : [],
+        tone: (dna.tone as string) || null,
+        brand_personality: (dna.personality as string) || null,
+        days_since_last_studio_publish: daysSince,
+        has_logo: true,
+      });
+      return json({ context: ctx, v1_channel: V1_PUBLISH_CHANNEL });
+    }
+
+    if (resource === "recommend" && method === "GET") {
+      const { data: biz } = await admin
+        .from("businesses")
+        .select("id,name,meta")
+        .eq("id", businessId)
+        .maybeSingle();
+      const meta = (biz?.meta || {}) as Record<string, unknown>;
+      const memory = (meta.memory || {}) as Record<string, unknown>;
+      const dna = (meta.dna || {}) as Record<string, unknown>;
+      const bodyHints = body as Record<string, unknown>;
+      const ctx = buildStudioBusinessContext({
+        business_id: businessId!,
+        business_name: (biz?.name as string) || null,
+        industry: (bodyHints.industry as string) || (memory.industry as string) || "detailing",
+        city: (memory.city as string) || null,
+        services: Array.isArray(bodyHints.services)
+          ? (bodyHints.services as string[])
+          : Array.isArray(memory.services) ? (memory.services as string[]) : ["Ceramic Coating", "Mobile Detail"],
+        tone: (dna.tone as string) || "Premium",
+        completed_jobs_week: Number(bodyHints.completed_jobs_week) || 4,
+        open_slots_tomorrow: Number(bodyHints.open_slots_tomorrow) || 0,
+        latest_review: (bodyHints.latest_review as {
+          stars: number;
+          quote: string;
+          author?: string;
+        }) || { stars: 5, quote: "Best mobile detail I've ever booked.", author: "Alex" },
+        job_photos_count: Number(bodyHints.job_photos_count) || 2,
+        has_before_after: bodyHints.has_before_after !== false,
+        service_focus: (bodyHints.service_focus as string) || "Ceramic Coatings",
+        days_since_last_studio_publish:
+          bodyHints.days_since_last_studio_publish != null
+            ? Number(bodyHints.days_since_last_studio_publish)
+            : 10,
+      });
+      return json({
+        context: ctx,
+        recommendations: recommendCampaigns(ctx),
+        v1_channel: V1_PUBLISH_CHANNEL,
+      });
+    }
+
+    if (resource === "campaign" && id === "suggest" && method === "GET") {
+      const { data: biz } = await admin
+        .from("businesses")
+        .select("id,name,meta")
+        .eq("id", businessId)
+        .maybeSingle();
+      const meta = (biz?.meta || {}) as Record<string, unknown>;
+      const memory = (meta.memory || meta.businessMemory || {}) as Record<string, unknown>;
+      const dna = (meta.dna || meta.businessDna || {}) as Record<string, unknown>;
+      const studioCtx = buildStudioBusinessContext({
+        business_id: businessId!,
+        business_name: (biz?.name as string) || null,
+        industry: (memory.industry as string) || (meta.industry as string) || "detailing",
+        city: (memory.city as string) || null,
+        tone: (dna.tone as string) || null,
+        brand_personality: (dna.personality as string) || null,
+        completed_jobs_week: 4,
+        has_before_after: true,
+        latest_review: { stars: 5, quote: "Best mobile detail I've ever booked.", author: "Alex" },
+        days_since_last_studio_publish: 10,
+        service_focus: "Ceramic Coatings",
+        services: ["Mobile Detail", "Ceramic Coating"],
+      });
+      return json({
+        suggestions: recommendCampaigns(studioCtx),
+        recommendations: recommendCampaigns(studioCtx),
+        goals: listCampaignGoals(),
+        v1_channel: V1_PUBLISH_CHANNEL,
+      });
+    }
+
+    if (resource === "campaign" && id === "plan" && method === "POST") {
+      const b = body as Record<string, unknown>;
+      const { data: biz } = await admin
+        .from("businesses")
+        .select("id,name,meta")
+        .eq("id", businessId)
+        .maybeSingle();
+      const meta = (biz?.meta || {}) as Record<string, unknown>;
+      const memory = (b.business_inputs as Record<string, unknown>) ||
+        (meta.memory as Record<string, unknown>) ||
+        {};
+      const dnaRaw = (b.dna_inputs as Record<string, unknown>) ||
+        (meta.dna as Record<string, unknown>) ||
+        {};
+
+      const ctx: BusinessCampaignContext = {
+        industry: (b.industry as string) || (memory.industry as string) || null,
+        business_name: (b.business_name as string) || (biz?.name as string) || null,
+        city: (b.city as string) || (memory.city as string) || null,
+        phone: (b.phone as string) || (memory.phone as string) || null,
+        services: (b.services as string[]) || [],
+        offer_summary: (b.offer_summary as string) || null,
+        completed_jobs_week: Number(b.completed_jobs_week) || 0,
+        open_slots_tomorrow: Number(b.open_slots_tomorrow) || 0,
+        days_since_facebook_post: b.days_since_facebook_post != null
+          ? Number(b.days_since_facebook_post)
+          : null,
+        days_since_gbp_update: b.days_since_gbp_update != null
+          ? Number(b.days_since_gbp_update)
+          : null,
+        latest_review: (b.latest_review as BusinessCampaignContext["latest_review"]) || null,
+        job_photos_count: Number(b.job_photos_count) || 0,
+        has_before_after: !!b.has_before_after,
+        has_logo: b.has_logo !== false,
+        has_membership: !!b.has_membership,
+        goal_id: (b.goal_id as string) || null,
+        playbook_id: (b.playbook_id as string) || null,
+        service_focus: (b.service_focus as string) || null,
+        dna: {
+          tone: (dnaRaw.tone as string) || null,
+          brand_personality: (dnaRaw.brand_personality as string) ||
+            (dnaRaw.personality as string) ||
+            null,
+          ideal_customer: (dnaRaw.ideal_customer as string) ||
+            (dnaRaw.idealCustomer as string) ||
+            null,
+        },
+      };
+
+      const plan: CampaignPlan = buildCampaignPlan(ctx);
+
+      const row = {
+        business_id: businessId,
+        playbook_id: plan.playbook_id,
+        goal_id: plan.goal_id,
+        industry_id: plan.industry_id,
+        title: plan.title,
+        status: "ready",
+        objective: plan.objective,
+        channels: plan.channels,
+        required_assets: plan.required_assets,
+        messaging_strategy: plan.messaging_strategy,
+        cta: plan.cta,
+        timing: plan.timing,
+        template_refs: plan.template_refs,
+        offer: plan.offer,
+        audience: plan.audience,
+        ai_brief: plan.ai_brief,
+        business_inputs: plan.business_inputs,
+        dna_inputs: plan.dna_inputs,
+        package: plan.package,
+        metadata: { trigger_id: plan.trigger_id || null },
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data: saved, error } = await admin
+        .from("campaign_plans")
+        .insert(row)
+        .select("*")
+        .single();
+
+      // If tables not migrated yet, still return structured plan (Production honesty on persist)
+      if (error) {
+        return json({
+          plan,
+          brief: planToCampaignBrief(plan),
+          persisted: false,
+          warning: error.message,
+          v1_channel: V1_PUBLISH_CHANNEL,
+        }, 200);
+      }
+
+      // Optionally create Studio project from plan
+      let project = null;
+      if ((b.create_project as boolean) !== false) {
+        const format = String(b.format_primary || "instagram_post");
+        const { data: proj, error: pErr } = await admin
+          .from("studio_projects")
+          .insert({
+            business_id: businessId,
+            title: plan.title,
+            format_primary: format,
+            platform: plan.channels.includes("instagram") ? "instagram" : (plan.channels[0] || "instagram"),
+            style: (b.style as string) || "bold",
+            tone: (plan.dna_inputs.tone as string) || "expert",
+            prompt: plan.ai_brief,
+            source: { campaign_plan: true, playbook_id: plan.playbook_id },
+            canvas: {
+              headline: plan.package.headlines[0] || plan.title,
+              package: plan.package,
+            },
+            metadata: { campaign_plan_id: saved.id },
+            campaign_plan_id: saved.id,
+            status: "draft",
+          })
+          .select("*")
+          .single();
+        if (!pErr && proj) {
+          project = proj;
+          await admin.from("campaign_plans").update({ project_id: proj.id }).eq("id", saved.id);
+          await admin.from("studio_project_pages").insert({
+            business_id: businessId,
+            project_id: proj.id,
+            format,
+            label: format.replace(/_/g, " "),
+            width: 1080,
+            height: 1080,
+            sort_order: 0,
+          });
+          await admin.from("studio_project_versions").insert({
+            business_id: businessId,
+            project_id: proj.id,
+            version_number: 1,
+            label: "Campaign plan generated",
+            source: "hubly",
+            snapshot: { plan_id: saved.id, title: plan.title },
+          });
+        }
+      }
+
+      const brief = planToCampaignBrief(plan, {
+        logo_url: null,
+        photo_url: null,
+      });
+
+      return json({
+        plan: saved,
+        campaignPlan: plan,
+        brief,
+        project,
+        v1_channel: V1_PUBLISH_CHANNEL,
+      }, 201);
+    }
+
+    if (resource === "campaign" && id === "plans" && method === "GET" && !sub) {
+      const { data, error } = await admin
+        .from("campaign_plans")
+        .select("*")
+        .eq("business_id", businessId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) return json({ error: error.message }, 400);
+      return json({ plans: data || [] });
+    }
+
+    if (resource === "campaign" && id === "plans" && sub && method === "GET") {
+      const { data, error } = await admin
+        .from("campaign_plans")
+        .select("*")
+        .eq("business_id", businessId)
+        .eq("id", sub)
+        .maybeSingle();
+      if (error) return json({ error: error.message }, 400);
+      if (!data) return json({ error: "not_found" }, 404);
+      return json({ plan: data });
     }
 
     // ── assets ──
@@ -563,6 +1036,155 @@ Deno.serve(async (req: Request) => {
         .single();
       if (error) return json({ error: error.message }, 400);
       return json({ account: data });
+    }
+
+    // ── V1 Publish (Email only) + Analytics counters ──
+    if (resource === "publish" && method === "POST") {
+      const publisher = getV1Publisher();
+      const b = body as Record<string, unknown>;
+      const projectId = (b.project_id as string) || null;
+      let subject = String(b.subject || "").trim();
+      let emailBody = String(b.body || b.email_body || "").trim();
+      let title = String(b.title || "Studio campaign").trim();
+
+      if (projectId) {
+        const { data: project } = await admin
+          .from("studio_projects")
+          .select("*")
+          .eq("business_id", businessId)
+          .eq("id", projectId)
+          .maybeSingle();
+        if (project) {
+          title = project.title || title;
+          const canvas = (project.canvas || {}) as Record<string, unknown>;
+          const pkg = (canvas.package || {}) as Record<string, unknown>;
+          const email = (pkg.email || {}) as { subject?: string; body?: string };
+          if (!subject) subject = email.subject || `${project.title}`;
+          if (!emailBody) emailBody = email.body || String(project.prompt || "");
+        }
+      }
+
+      const toEmail = String(b.to_email || "").trim();
+      if (!toEmail) {
+        return json({
+          error: "to_email required",
+          message: "V1 publishes via Email. Provide a recipient email to send this campaign.",
+          v1_channel: V1_PUBLISH_CHANNEL,
+          publishers: listPublisherSlots(),
+        }, 400);
+      }
+
+      if (!publisher.isConfigured()) {
+        // Queue as ready — honest about provider
+        const { data: item } = await admin
+          .from("studio_publish_queue")
+          .insert({
+            business_id: businessId,
+            project_id: projectId,
+            title,
+            caption: emailBody.slice(0, 500),
+            channels: ["email"],
+            status: "ready",
+            result: { provider: "email", error: "Provider not configured" },
+          })
+          .select("*")
+          .single();
+        return json({
+          error: "Provider not configured",
+          message: "Add RESEND_API_KEY to send email. Campaign queued as ready in Hubly.",
+          item,
+          v1_channel: V1_PUBLISH_CHANNEL,
+        }, 503);
+      }
+
+      const result = await publisher.publish({
+        business_id: businessId!,
+        project_id: projectId,
+        title,
+        to_email: toEmail,
+        to_name: (b.to_name as string) || null,
+        subject: subject || title,
+        body: emailBody || title,
+        business_name: (b.business_name as string) || null,
+      });
+
+      const { data: item, error: qErr } = await admin
+        .from("studio_publish_queue")
+        .insert({
+          business_id: businessId,
+          project_id: projectId,
+          title,
+          caption: emailBody.slice(0, 500),
+          channels: ["email"],
+          status: result.ok ? "published" : "failed",
+          result: result,
+          scheduled_at: new Date().toISOString(),
+        })
+        .select("*")
+        .single();
+      if (qErr) return json({ error: qErr.message, result }, 400);
+
+      if (result.ok && projectId) {
+        await admin
+          .from("studio_projects")
+          .update({ status: "published", updated_at: new Date().toISOString() })
+          .eq("id", projectId)
+          .eq("business_id", businessId);
+      }
+
+      if (!result.ok) {
+        return json({ error: result.error, item, result, v1_channel: V1_PUBLISH_CHANNEL }, 502);
+      }
+      return json({ ok: true, item, result, v1_channel: V1_PUBLISH_CHANNEL }, 201);
+    }
+
+    if (resource === "publishers" && method === "GET") {
+      const pub = getV1Publisher();
+      return json({
+        v1_channel: V1_PUBLISH_CHANNEL,
+        publishers: listPublisherSlots(),
+        configured: { email: pub.isConfigured() },
+      });
+    }
+
+    if (resource === "analytics" && method === "GET") {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const sinceIso = since.toISOString();
+      const [{ count: created }, { count: published }, { data: pubs }] = await Promise.all([
+        admin
+          .from("studio_projects")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId)
+          .gte("created_at", sinceIso),
+        admin
+          .from("studio_publish_queue")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId)
+          .eq("status", "published")
+          .gte("created_at", sinceIso),
+        admin
+          .from("studio_publish_queue")
+          .select("created_at")
+          .eq("business_id", businessId)
+          .eq("status", "published")
+          .gte("created_at", sinceIso),
+      ]);
+      const pubCount = published || 0;
+      const postingFrequency = pubCount === 0
+        ? "No publishes yet"
+        : `${(pubCount / 4.3).toFixed(1)} per week (last 30 days)`;
+      return json({
+        period_days: 30,
+        metrics: {
+          campaigns_created: created || 0,
+          campaigns_published: pubCount,
+          posting_frequency: postingFrequency,
+        },
+        // V1: no reach/clicks/quotes/bookings/revenue
+        deferred: ["reach", "clicks", "quotes", "bookings", "revenue_attribution"],
+        publishes: (pubs || []).length,
+      });
     }
 
     return json({ error: "not_found", path: parts }, 404);
