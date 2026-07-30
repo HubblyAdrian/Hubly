@@ -334,17 +334,15 @@
     }).join('');
 
     var queue = (os.queue || []).slice(0, 4);
-    if (!queue.length) {
-      queue = [
-        { title: 'Review Spotlight — email draft', scheduled_at: 'Ready to send', status: 'ready', _placeholder: true }
-      ];
-    }
-    var queueHtml = queue.map(function (q) {
-      var st = q.status === 'published' ? 'ready' : (q.status === 'ready' ? 'ready' : 'draft');
-      return '<div class="hs-queue-row">' +
-        '<div><strong>' + esc(q.scheduled_at || 'Unscheduled') + '</strong> <span class="hs-pill ' + st + '">' + esc(q.status || 'draft') + '</span>' +
-        '<p>' + esc(q.title || q.caption || 'Email campaign') + '</p></div></div>';
-    }).join('');
+    var queueHtml = queue.length
+      ? queue.map(function (q) {
+        var st = q.status === 'published' ? 'ready' : (q.status === 'ready' ? 'ready' : 'draft');
+        return '<div class="hs-queue-row">' +
+          '<div><strong>' + esc(q.scheduled_at || 'Unscheduled') + '</strong> <span class="hs-pill ' + st + '">' + esc(q.status || 'draft') + '</span>' +
+          '<p>' + esc(q.title || q.caption || 'Email campaign') + '</p></div></div>';
+      }).join('')
+      : '<div class="hs-queue-row"><div><strong>Queue empty</strong><p class="hs-muted">Publish a campaign by email — nothing is faked here.</p>' +
+        '<button type="button" class="hs-link" data-hs-act="nav" data-hs-screen="publish">Open Publish →</button></div></div>';
 
     var recsMount = '<div id="hs-rec-mount" class="hs-rec-row"><div class="hs-muted">Loading recommendations…</div></div>';
 
