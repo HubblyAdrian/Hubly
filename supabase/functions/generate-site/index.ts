@@ -88,6 +88,8 @@ Deno.serve(async (req: Request) => {
       owner_first_name,
       business_type,
       blueprint,
+      context_notes,
+      inspiration_image,
     } = body || {};
 
     if (!business_id || !business_name) {
@@ -95,6 +97,14 @@ Deno.serve(async (req: Request) => {
         status: 400,
         headers: { ...CORS, "content-type": "application/json" },
       });
+    }
+
+    function parseDataUrl(s: unknown): { mediaType: string; data: string } | null {
+      if (typeof s !== "string" || !s.startsWith("data:")) return null;
+      const m = s.match(/^data:(image\/(?:jpeg|jpg|png|webp|gif));base64,([A-Za-z0-9+/=\s]+)$/i);
+      if (!m) return null;
+      const mediaType = m[1].toLowerCase() === "image/jpg" ? "image/jpeg" : m[1].toLowerCase();
+      return { mediaType, data: m[2].replace(/\s+/g, "") };
     }
 
     const industryLabel = blueprint?.name || business_type || "local service";
@@ -107,7 +117,27 @@ Deno.serve(async (req: Request) => {
       owner_first_name: owner_first_name || null,
       customer_journey: blueprint?.customerJourney || [],
       recommended_services: (blueprint?.serviceCatalog || []).map((s: any) => s.name).filter(Boolean),
+      context_notes: context_notes || null,
     };
+
+    const inspiration = parseDataUrl(inspiration_image);
+    const userParts: Array<Record<string, unknown>> = [
+      {
+        type: "text",
+        text:
+          `BUSINESS FACTS:\n${JSON.stringify(facts, null, 2)}\n\n` +
+          (inspiration
+            ? "An inspiration screenshot/logo/mockup is attached. Infer brand colors, layout energy, and CTA style from it — do not invent fake awards or customer counts.\n"
+            : ""),
+      },
+    ];
+    if (inspiration) {
+      userParts.push({
+        type: "image",
+        mediaType: inspiration.mediaType,
+        data: inspiration.data,
+      } as Record<string, unknown>);
+    }
 
     let rawText = "";
     try {
@@ -115,7 +145,12 @@ Deno.serve(async (req: Request) => {
         feature: "generate-site",
         task: "website_builder",
         system: buildSystemPrompt(blueprint),
-        messages: [{ role: "user", content: `BUSINESS FACTS:\n${JSON.stringify(facts, null, 2)}` }],
+        messages: [{
+          role: "user",
+          content: inspiration
+            ? (userParts as any)
+            : `BUSINESS FACTS:\n${JSON.stringify(facts, null, 2)}`,
+        }],
         maxTokens: 2000,
         jsonMode: true,
       });

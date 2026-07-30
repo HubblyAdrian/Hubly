@@ -5,7 +5,7 @@
   'use strict';
 
   var api = {
-    version: '1.0.0',
+    version: '1.1.0',
     types: function () { return global.HublyCommerceTypes; },
     api: function () { return global.HublyCommerceApi; },
     events: function () { return global.HublyCommerceEvents; },
@@ -15,6 +15,8 @@
     checkout: function () { return global.HublyCommerceCheckout; },
     ai: function () { return global.HublyCommerceAI; },
     merchandising: function () { return global.HublyCommerceMerchandising; },
+    runtime: function () { return global.HublyCommerceRuntime; },
+    capabilities: (global.HublyCommerceRuntime && global.HublyCommerceRuntime.capabilities) || {},
     /** Render live /store HTML from S.storeOs (no fakes). */
     renderStorefront: function (opts) {
       var sf = global.HublyCommerceStorefront;

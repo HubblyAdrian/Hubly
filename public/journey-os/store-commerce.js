@@ -9,11 +9,15 @@
   var STORE_TABS = [
     ['overview', 'Overview'],
     ['products', 'Products'],
+    ['services', 'Services'],
     ['collections', 'Collections'],
+    ['categories', 'Categories'],
     ['bundles', 'Bundles'],
     ['orders', 'Orders'],
+    ['customers', 'Customers'],
     ['inventory', 'Inventory'],
     ['discounts', 'Discounts'],
+    ['gift_cards', 'Gift Cards'],
     ['analytics', 'Analytics'],
     ['ai', 'AI'],
     ['settings', 'Settings']
@@ -443,7 +447,7 @@
       '<label>SKU<input id="jos-store-p-sku" type="text" value="' + esc(d.sku || '') + '" placeholder="CER-KIT-01"></label>' +
       '<label>Price<input id="jos-store-p-price" type="number" step="0.01" value="' + esc(d.price != null ? d.price : '') + '" placeholder="0"></label>' +
       '<label>Stock<input id="jos-store-p-stock" type="number" value="' + esc(d.stock != null ? d.stock : '') + '" placeholder="0"></label>' +
-      '<label>Type<select id="jos-store-p-type"><option value="physical"' + ((d.type || 'physical') === 'physical' ? ' selected' : '') + '>Physical</option><option value="gift_card"' + (d.type === 'gift_card' ? ' selected' : '') + '>Gift card</option><option value="digital"' + (d.type === 'digital' ? ' selected' : '') + '>Digital</option></select></label>' +
+      '<label>Type<select id="jos-store-p-type"><option value="physical"' + ((d.type || 'physical') === 'physical' ? ' selected' : '') + '>Physical</option><option value="service_addon"' + (d.type === 'service_addon' ? ' selected' : '') + '>Service</option><option value="gift_card"' + (d.type === 'gift_card' ? ' selected' : '') + '>Gift card</option><option value="digital"' + (d.type === 'digital' ? ' selected' : '') + '>Digital</option><option value="print"' + (d.type === 'print' ? ' selected' : '') + '>Print</option></select></label>' +
       '<label>Status<select id="jos-store-p-status"><option value="active"' + ((d.status || 'active') === 'active' ? ' selected' : '') + '>Active</option><option value="draft"' + (d.status === 'draft' ? ' selected' : '') + '>Draft</option></select></label>' +
       '<label class="full">Category<input id="jos-store-p-cat" type="text" value="' + esc(d.category || '') + '" placeholder="Detailing gear"></label>' +
       '<label class="full">Description<textarea id="jos-store-p-desc" rows="3" placeholder="What customers get…">' + esc(d.description || '') + '</textarea></label>' +
@@ -454,17 +458,52 @@
       '</div></div></div>';
   }
 
+  function renderCapabilityPanel(title, body, status) {
+    var st = status || 'architecture_ready';
+    return '<section class="jos-store-panel">' +
+      '<div class="jos-between"><div><div class="jos-kicker">Commerce Runtime</div><h2>' + esc(title) + '</h2></div>' +
+      '<span class="jos-pill">' + esc(st === 'live' ? 'Live' : 'Architecture ready') + '</span></div>' +
+      '<p class="jos-muted jos-mt">' + body + '</p>' +
+      '<p class="jos-muted">One shared engine with Website, Customers, Media, Studio, and AI — not a separate storefront product.</p>' +
+      '</section>';
+  }
+
   function renderPage(root) {
     var os = ensureStoreOsState();
+    try {
+      if (global.HublyCommerceRuntime && typeof global.HublyCommerceRuntime.syncFromApi === 'function') {
+        global.HublyCommerceRuntime.syncFromApi();
+      }
+    } catch (e) {}
     var tab = root._josStoreTab || 'overview';
     var stats = storeStats(os);
     var body = tab === 'overview' ? renderOverview(root, os)
       : tab === 'products' ? renderProducts(root, os)
+        : tab === 'services' ? renderCapabilityPanel(
+          'Services',
+          'Sellable service SKUs and add-ons live in Commerce. Booking packages stay in the Service Engine — same business, clear boundary.',
+          'live'
+        )
         : tab === 'collections' ? renderCollections(root, os)
+          : tab === 'categories' ? renderCapabilityPanel(
+            'Categories',
+            'Organize products and services for merchandising. Runtime cache is ready; dedicated category table wires next without inventing a new module.',
+            'architecture_ready'
+          )
           : tab === 'bundles' ? renderBundles(root, os)
             : tab === 'orders' ? renderOrders(root, os)
+              : tab === 'customers' ? renderCapabilityPanel(
+                'Customers',
+                'Order customers resolve through the Customer Engine — Commerce stores refs, not a second CRM.',
+                'live'
+              )
               : tab === 'inventory' ? renderInventory(root, os)
                 : tab === 'discounts' ? renderDiscounts(root, os)
+                  : tab === 'gift_cards' ? renderCapabilityPanel(
+                    'Gift Cards',
+                    'Schema and product_type=gift_card are ready. Issue/redeem providers will fail honestly until configured — no fake balances.',
+                    'architecture_ready'
+                  )
                   : tab === 'analytics' ? renderAnalytics(root, os)
                     : tab === 'ai' ? renderAiTab(root, os)
                       : renderSettings(root, os);
@@ -488,7 +527,7 @@
       '<div class="jos-store-shell">' +
       '<div class="jos-store-page">' +
       '<header class="jos-store-header hub-page-header">' +
-      '<div><h1 class="hub-page-title">Store</h1><p class="hub-page-sub">Sell products, kits, gift cards, and add-ons — alongside your services.</p></div>' +
+      '<div><h1 class="hub-page-title">Commerce</h1><p class="hub-page-sub">Products, services, collections, orders — one Hubly Commerce Runtime. Storefront editor is presentation only.</p></div>' +
       '<div class="jos-store-header-actions hub-page-actions">' +
       '<button type="button" class="jos-btn jos-store-export" data-jos-act="store-export">Export</button>' +
       '<button type="button" class="jos-btn jos-btn-brand jos-store-new" data-jos-act="' + primaryAct + '">' + esc(primaryLabel) + '</button>' +

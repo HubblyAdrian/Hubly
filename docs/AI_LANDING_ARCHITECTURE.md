@@ -4,10 +4,27 @@
 **Rules:** **#24 — Dual Product Architecture**  
 **Surface:** `public/platform-home.html` + `public/hubly-session.js`  
 **Session:** [HUBLY_SESSION.md](./HUBLY_SESSION.md) · [HUBLY_MEMORY.md](./HUBLY_MEMORY.md)  
-**Status:** 🔒 **Locked** — Stage 1 complete (merged #259)  
-**Milestone:** [Hubly AI Business Builder](./builder/README.md)
+**Status:** 🔓 **Stage 2 — Talk to Hubly** (reopened)  
+**Companion:** [HUBLY_CONSULTANT_AI.md](./architecture/HUBLY_CONSULTANT_AI.md)
 
-Do **not** redesign this module unless explicitly reopened (bug fix / Stage 2 additive work only).
+---
+
+## Stage 2 north star
+
+The landing page sells **working with Hubly**, not software.
+
+Primary CTA: **Talk to Hubly.**  
+Hero prompt: *What can I help you accomplish today?*
+
+Suggested starters:
+
+| Starter | Intent | Destination |
+|---------|--------|-------------|
+| 🚀 Build My Business | `build_business` | `/signup` → Consultant → Live Workspace |
+| 📈 Grow My Business | `build_business` (grow seed) | `/signup` → same partner, growth focus |
+| ✅ Find Help | `hire_pro` | `/get-done` → Concierge |
+
+Every section leads toward starting a conversation — not browsing feature lists.
 
 ---
 
@@ -17,137 +34,53 @@ Do **not** remove or replace the Marketplace.
 
 The landing page serves **two independent products**:
 
-1. **I want to grow my business** → AI Business Builder → Hubly Operating System (`/signup` → Instant Site / Operate)  
-2. **I need to hire someone** → AI Marketplace Concierge → Customer Booking (`/get-done`)  
+1. **Build / Grow my business** → AI Business Builder → Hubly Operating System  
+2. **Find Help** → AI Marketplace Concierge → Customer Booking  
 
-Provider Marketplace (`/marketplace`) remains a core long-term path (footer / dedicated landing). It must stay intact.
+Provider Marketplace (`/marketplace`) remains a core long-term path.
 
 ---
 
 ## Continuous AI experience
 
 ```
-Landing
+Landing (Talk to Hubly)
   ↓
 Hubly Session  (structured memory)
   ↓
-Business Builder  (consumes session — does not re-infer)
+Consultant AI  (Understand → Recommend → Build → Show)
+  ↓
+Live Workspace / Commerce Runtime / Operate
 ```
 
-Same session can later continue into Marketplace, Public Ask Hubly, and future products.
-
-One session. One memory.
+One session. One memory. One partner.
 
 ---
 
 ## Rule #24 — Dual Product Architecture
 
-Hubly serves two different users.
-
 | Persona | Job | Destination |
 |---------|-----|-------------|
-| Business Owner | Grow / build / run a business | Business Builder → Operating System |
-| Consumer | Get something done / hire someone | Marketplace Concierge → Booking |
+| Business Owner | Build / grow / run | Business Builder → OS |
+| Consumer | Get something done | Concierge → Booking |
 
-Neither flow should interfere with the other.
-
-The landing page is an **intelligent router**, not a brochure.
-
-Same chat. Different destination. One AI that understands intent.
+Same chat surface. Different destination. One AI that understands intent.
 
 ---
 
-## User-phrased options (not product jargon)
-
-| User says | Routes to |
-|-----------|-----------|
-| I want to grow my business | Business Builder |
-| I need to hire someone | Marketplace Concierge |
-
-Do not lead with “Marketplace” or “Operating System” as the primary choice labels.
-
----
-
-## What the landing AI does (Stage 1)
+## What the landing AI does
 
 Local understanding on every keystroke (no API required):
 
-- Industry / trade  
-- Location  
-- Business name  
-- Stage (startup / growing / established)  
+- Industry / trade · Location · Business name · Stage  
 - Intent (`build_business` | `hire_pro` | `unknown`)  
-- Confidence  
-- Import URLs (website, Instagram, Google, Facebook)
+- Confidence · Import URL detection  
 
-Creates an **anonymous Hubly Session** in `localStorage` (`hubly_session_v1`) before account creation.
-
-**No account is created on this screen.**
-
-### Structured handoff (required)
-
-Landing writes the Hubly Session, then navigates with `?hs=<sessionId>` (and `?q=` for display continuity).
-
-Builder / Welcome loads `HublySession.toBuilderPayload()` and applies:
-
-conversation · industry · business name · location · stage · intent · confidence · detected imports · website / Instagram / Google Business / Facebook analysis · future AI memory
-
-**Do not re-infer facts the session already learned.**
-
-### Import pipeline (required)
-
-Paste a website → analysis begins immediately via `/api/import-analyze`:
-
-Reading services… → branding… → reviews… → photos…
-
-Builder opens already knowing what was extracted. Social sources get structured partial analysis and continue enrichment in Builder.
+Then hand off to Hubly Session → Consultant (no re-quiz).
 
 ---
 
-## Routing exits
+## Filter
 
-| Intent | Exit |
-|--------|------|
-| Business / grow | `/signup?q=&hs=` → Welcome → Instant Site (session consume) |
-| Hire / get done | `/get-done?q=&hs=` → Marketplace Concierge |
-| Provider get booked | `/marketplace` (footer / dedicated — not removed) |
-
----
-
-## Session lifecycle
-
-| Event | When |
-|-------|------|
-| Created | First meaningful Landing `understand` / `upsertSession` |
-| Importing | URL detected → `startImportPipeline` |
-| Handed off | Continue Building / Find someone |
-| Upgraded | Save My Business / Create Account → `upgradeToAccount` |
-| Expires | 30 days after last update (`expiresAt`) |
-| Deleted | TTL, corrupt JSON, or `clearSession()` |
-
-Full detail: [HUBLY_SESSION.md](./HUBLY_SESSION.md).
-
----
-
-## Signature UX
-
-Subtle status line under the input:
-
-`Hubly understands: Mobile Detailing · Dallas, TX · Startup`
-
-Or while importing:
-
-`Hubly Reading services…`
-
-Continue button stays disabled until enough context, then animates to ready.
-
----
-
-## Must not
-
-- Break or remove `/marketplace`, `/get-done`, Marketplace Lite provider app  
-- Invent a new Brain layer (product-direction freeze)  
-- Require login before Hubly Session starts  
-- Hand off only raw `?q=` and re-infer in Builder  
-- Treat website/social as detect-only with no analysis job  
-- Put Marketplace in primary nav customer copy (footer / dedicated entry OK)
+Before every landing change:  
+*Does this make Hubly feel like one intelligent business partner — or another software brochure?*
