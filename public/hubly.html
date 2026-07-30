@@ -30,7 +30,7 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
-<link rel="stylesheet" href="/journey-os/ai-workspace.css?v=aw-1">
+<link rel="stylesheet" href="/journey-os/ai-workspace.css?v=aw-2">
 <link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-15">
@@ -9894,7 +9894,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <section class="is-architect-chat" aria-label="AI Conversation">
               <div class="is-architect-chat-head">
                 <span class="who">AI Conversation</span>
-                <span class="milestone" id="is-architect-milestone">Recommend → Build → Show</span>
+                <span class="milestone" id="is-architect-milestone">Current Focus · Recommend → Build → Show</span>
               </div>
               <section class="is-creative-conversation" id="is-creative-conversation" aria-live="polite"></section>
               <div class="is-creative-choice" id="is-creative-choice" hidden></div>
@@ -9927,11 +9927,12 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </section>
             <aside class="is-architect-activity aw-activity" aria-label="Hubly Activity">
-              <div class="aw-pane-head"><strong>Hubly Activity</strong><em>Always working</em></div>
+              <div class="aw-pane-head"><strong>Hubly Activity</strong><em>What I'm doing now</em></div>
+              <div class="aw-doing">Waiting for your next move…</div>
               <div class="is-architect-checklist aw-activity-list" id="is-architect-checklist">
                 <div class="aw-act is-done"><span class="mark">✓</span><span>Business Context</span></div>
                 <div class="aw-act is-on"><span class="mark"></span><span>Listening…</span></div>
-                <div class="aw-act is-next"><span class="mark"></span><span>Next recommendation</span></div>
+                <div class="aw-act is-next"><span class="mark"></span><span>What's next</span></div>
               </div>
             </aside>
           </div>
@@ -12585,7 +12586,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/ai/product-coach.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/ai/merchandising.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/index.js?v=commerce-1"></script>
-<script defer src="/journey-os/ai-workspace.js?v=aw-1"></script>
+<script defer src="/journey-os/ai-workspace.js?v=aw-2"></script>
 <script defer src="/journey-os/journey.js?v=aw-1"></script>
 <script defer src="/journey-os/store-commerce.js?v=store-3"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
@@ -18608,7 +18609,7 @@ function isArchitectRenderChecklist(items,activeIndex){
 }
 function isArchitectStrategyHtml(strategy){
   if(!strategy)return'';
-  return `<div class="is-architect-strategy" data-architect-strategy="1"><strong>Goal:</strong> ${escPeHtml(strategy.goal)} · <strong>Milestone:</strong> ${escPeHtml(strategy.milestone)} · <strong>Showing:</strong> ${escPeHtml(strategy.showNow)} · <strong>Decision:</strong> ${escPeHtml(strategy.decision)}</div>`;
+  return `<div class="is-architect-strategy" data-architect-strategy="1"><strong>Goal:</strong> ${escPeHtml(strategy.goal)} · <strong>Current Focus:</strong> ${escPeHtml(strategy.milestone)} · <strong>Showing:</strong> ${escPeHtml(strategy.showNow)} · <strong>Decision:</strong> ${escPeHtml(strategy.decision)}</div>`;
 }
 function isCreativePush(side,text,extraHtml){
   const log=document.getElementById('is-creative-conversation');
@@ -18969,7 +18970,7 @@ async function isRunCreativeBuildExperience(seed){
     // Single decision beat after key milestones
     if(stage.id==='hero'||stage.id==='packages'||stage.id==='brand'){
       const fb=await isArchitectAwaitChoice(
-        `<div class="cq">What would you like to change?</div><div class="opts"><button type="button" data-choice="continue"><strong>Looks great — keep going</strong><span>Next milestone</span></button><button type="button" data-choice="tweak"><strong>Suggest a tweak</strong><span>Tell me in the chat</span></button></div>`,
+        `<div class="cq">What would you like to change?</div><div class="opts"><button type="button" data-choice="continue"><strong>Looks great — keep going</strong><span>What's next</span></button><button type="button" data-choice="tweak"><strong>Suggest a tweak</strong><span>Tell me in the chat</span></button></div>`,
         {defaultId:'continue',defaultLabel:'Looks great — keep going',timeoutMs:7000,twoCol:true}
       );
       if(fb.label)isCreativePush('owner',fb.label);
@@ -18977,7 +18978,7 @@ async function isRunCreativeBuildExperience(seed){
         isCreativePush('hubly','Tell me the tweak — upload a screenshot or type it below. I\'ll update the live preview.');
         await isArchitectSleep(900);
       }else{
-        isCreativePush('hubly','Perfect — next milestone.');
+        isCreativePush('hubly','Perfect — what\'s next.');
       }
     }
   }
