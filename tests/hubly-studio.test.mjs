@@ -24,7 +24,7 @@ const spec = readFileSync(join(root, 'docs/HUBLY_STUDIO_IMPLEMENTATION_SPEC.md')
 describe('Hubly Studio V1.0 contract', () => {
   it('ships Studio shell and frozen contract', () => {
     assert.match(hubly, /data-v="studio"/);
-    assert.match(hubly, /hubly-studio\.js\?v=studio-9/);
+    assert.match(hubly, /hubly-studio\.js\?v=studio-10/);
     assert.match(journey, /HublyStudio\.setMode/);
     assert.match(contract, /V1\.0/);
     assert.match(contract, /single channel: Email/i);
@@ -77,9 +77,8 @@ describe('Hubly Studio V1.0 contract', () => {
   });
 
   it('V1 analytics are counters only', () => {
-    assert.match(studio, /CAMPAIGNS CREATED/);
-    assert.match(studio, /CAMPAIGNS PUBLISHED/);
-    assert.match(studio, /POSTING FREQUENCY/);
+    assert.match(studio, /buildStudioAnalytics|CAMPAIGNS CREATED|CREATED/);
+    assert.match(studio, /posting_frequency|FREQUENCY/);
     assert.doesNotMatch(studio, /REVENUE INFLUENCED/);
     assert.doesNotMatch(studio, /QUOTES REQUESTED/);
   });
@@ -147,5 +146,17 @@ describe('Hubly Studio V1.0 contract', () => {
     assert.doesNotMatch(studio, /Winter pipeline safety/);
     assert.doesNotMatch(studio, /Best Times to Post/);
     assert.doesNotMatch(studio, /d === today \|\| d === 9 \|\| d === 24/);
+  });
+
+  it('Analytics shows real Studio activity without fake attribution', () => {
+    assert.match(studio, /function buildStudioAnalytics/);
+    assert.match(studio, /function paintAnalytics/);
+    assert.match(studio, /an-range/);
+    assert.match(studio, /By campaign goal/);
+    assert.match(studio, /Recent activity/);
+    assert.match(studio, /never faked/);
+    assert.doesNotMatch(studio, /revenue attribution are deferred/);
+    assert.match(css, /\.hs-an-chart/);
+    assert.match(edge, /publish_rate/);
   });
 });

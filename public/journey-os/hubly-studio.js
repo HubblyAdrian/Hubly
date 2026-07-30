@@ -934,31 +934,266 @@
     root.innerHTML = shell('publish', body);
   }
 
+  function daysAgo(n) {
+    var d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - n);
+    return d;
+  }
+
+  function inRange(iso, since) {
+    if (!iso) return false;
+    var t = new Date(iso).getTime();
+    return !isNaN(t) && t >= since.getTime();
+  }
+
+  /** Hubly-owned Studio analytics — counters + activity only (no fake reach/revenue). */
+  function buildStudioAnalytics(periodDays) {
+    var days = periodDays || 30;
+    var since = daysAgo(days);
+    var os = ensureStudioOs();
+    var projects = os.projects || [];
+    var queue = os.queue || [];
+
+    var created = projects.filter(function (p) {
+      return inRange(p.created_at || p.last_edited_at, since);
+    });
+    var publishedQ = queue.filter(function (q) {
+      return (q.status === 'published') && inRange(q.published_at || q.created_at || q.scheduled_at, since);
+    });
+    var readyQ = queue.filter(function (q) { return q.status === 'ready' || q.status === 'queued'; });
+    var drafts = projects.filter(function (p) { return p && p.status !== 'published'; });
+    var publishedProjects = projects.filter(function (p) { return p && p.status === 'published'; });
+
+    var weeks = Math.max(1, days / 7);
+    var pubCount = publishedQ.length || publishedProjects.filter(function (p) {
+      return inRange(p.last_edited_at || p.created_at, since);
+    }).length;
+    var freq = pubCount === 0
+      ? 'No publishes yet'
+      : ((pubCount / weeks).toFixed(1) + ' / week');
+
+    var publishRate = created.length
+      ? Math.round((pubCount / created.length) * 100) + '%'
+      : (pubCount ? '—' : '0%');
+
+    // Daily series for last N days (capped display at 14 bars for readability)
+    var seriesDays = Math.min(days, 14);
+    var series = [];
+    for (var i = seriesDays - 1; i >= 0; i--) {
+      var dayStart = daysAgo(i);
+      var dayEnd = daysAgo(i - 1);
+      var c = projects.filter(function (p) {
+        var t = new Date(p.created_at || p.last_edited_at).getTime();
+        return !isNaN(t) && t >= dayStart.getTime() && t < dayEnd.getTime();
+      }).length;
+      var pcount = queue.filter(function (q) {
+        if (q.status !== 'published') return false;
+        var t = new Date(q.published_at || q.created_at).getTime();
+        return !isNaN(t) && t >= dayStart.getTime() && t < dayEnd.getTime();
+      }).length;
+      series.push({
+        label: (dayStart.getMonth() + 1) + '/' + dayStart.getDate(),
+        created: c,
+        published: pcount
+      });
+    }
+
+    var byGoal = {};
+    projects.forEach(function (p) {
+      var g = (p.metadata && (p.metadata.goal_id || p.metadata.playbook_id)) || 'other';
+      if (!byGoal[g]) byGoal[g] = { goal: g, created: 0, published: 0 };
+      byGoal[g].created += 1;
+      if (p.status === 'published') byGoal[g].published += 1;
+    });
+    var goalRows = Object.keys(byGoal).map(function (k) { return byGoal[k]; })
+      .sort(function (a, b) { return b.created - a.created; })
+      .slice(0, 6);
+
+    var GOAL_LABELS = {
+      get_more_reviews: 'Get More Reviews',
+      fill_tomorrow_schedule: "Fill Tomorrow's Schedule",
+      promote_service: 'Promote a Service',
+      win_back_customers: 'Win Back Customers',
+      seasonal_promotion: 'Seasonal Promotion',
+      membership_drive: 'Membership Drive',
+      book_more_jobs: 'Book More Jobs',
+      referral: 'Referral',
+      other: 'Other / blank'
+    };
+
+    var activity = [];
+    projects.slice(0, 12).forEach(function (p) {
+      activity.push({
+        at: p.last_edited_at || p.created_at,
+        kind: p.status === 'published' ? 'published' : 'created',
+        title: p.title || 'Campaign',
+        id: p.id
+      });
+    });
+    queue.slice(0, 12).forEach(function (q) {
+      activity.push({
+        at: q.published_at || q.created_at || q.scheduled_at,
+        kind: q.status === 'published' ? 'email_sent' : 'queued',
+        title: q.title || 'Email publish',
+        id: q.project_id
+      });
+    });
+    activity = activity.filter(function (a) { return a.at; }).sort(function (a, b) {
+      return new Date(b.at).getTime() - new Date(a.at).getTime();
+    }).slice(0, 10);
+
+    var insights = [];
+    if (!projects.length) {
+      insights.push({ tone: 'warn', text: 'No campaigns yet — generate one from AI Creator to start the counters.' });
+    } else if (pubCount === 0) {
+      insights.push({ tone: 'warn', text: 'You have ' + drafts.length + ' draft' + (drafts.length === 1 ? '' : 's') + ' but nothing published. Open Publish Center and send by email.' });
+    } else if (created.length && pubCount / Math.max(1, created.length) < 0.3) {
+      insights.push({ tone: 'tip', text: 'Publish rate is ' + publishRate + ' in this period — finish drafts in Publish to improve frequency.' });
+    } else {
+      insights.push({ tone: 'ok', text: 'Publishing cadence is ' + freq + '. Keep attaching real job photos and reviews before each send.' });
+    }
+    if (readyQ.length) {
+      insights.push({ tone: 'tip', text: readyQ.length + ' item' + (readyQ.length === 1 ? '' : 's') + ' waiting in the email queue (provider may need RESEND_API_KEY).' });
+    }
+
+    return {
+      period_days: days,
+      metrics: {
+        campaigns_created: created.length || projects.length,
+        campaigns_published: pubCount,
+        drafts: drafts.length,
+        ready_queue: readyQ.length,
+        publish_rate: publishRate,
+        posting_frequency: freq
+      },
+      series: series,
+      by_goal: goalRows.map(function (r) {
+        return {
+          goal_id: r.goal,
+          label: GOAL_LABELS[r.goal] || r.goal,
+          created: r.created,
+          published: r.published
+        };
+      }),
+      activity: activity,
+      insights: insights,
+      deferred: ['reach', 'clicks', 'quotes', 'bookings', 'revenue_attribution']
+    };
+  }
+
+  function paintAnalytics(root, data) {
+    var mount = root.querySelector('#hs-analytics-body');
+    if (!mount || !data) return;
+    var m = data.metrics || {};
+    var maxBar = 1;
+    (data.series || []).forEach(function (s) {
+      maxBar = Math.max(maxBar, s.created || 0, s.published || 0);
+    });
+
+    var kpis = [
+      ['CREATED', m.campaigns_created != null ? m.campaigns_created : '—', 'Campaigns started'],
+      ['PUBLISHED', m.campaigns_published != null ? m.campaigns_published : '—', 'Email sends / published'],
+      ['DRAFTS', m.drafts != null ? m.drafts : '—', 'Still open'],
+      ['QUEUE', m.ready_queue != null ? m.ready_queue : '—', 'Ready to send'],
+      ['PUBLISH RATE', m.publish_rate || '—', 'Published ÷ created'],
+      ['FREQUENCY', m.posting_frequency || '—', 'Pace this period']
+    ];
+
+    var seriesHtml = (data.series || []).map(function (s) {
+      var ch = Math.round(((s.created || 0) / maxBar) * 100);
+      var ph = Math.round(((s.published || 0) / maxBar) * 100);
+      return '<div class="hs-an-bar" title="' + esc(s.label) + ': ' + s.created + ' created, ' + s.published + ' published">' +
+        '<div class="hs-an-bar-stack">' +
+        '<i class="created" style="height:' + ch + '%"></i>' +
+        '<i class="published" style="height:' + ph + '%"></i>' +
+        '</div><span>' + esc(s.label) + '</span></div>';
+    }).join('');
+
+    var goalsHtml = (data.by_goal && data.by_goal.length)
+      ? data.by_goal.map(function (g) {
+        var pct = g.created ? Math.round((g.published / g.created) * 100) : 0;
+        return '<div class="hs-an-goal">' +
+          '<div class="hs-between"><strong>' + esc(g.label) + '</strong><span>' + g.published + '/' + g.created + ' published</span></div>' +
+          '<div class="hs-an-goal-track"><i style="width:' + pct + '%"></i></div></div>';
+      }).join('')
+      : '<p class="hs-muted hs-tiny">Generate campaigns with goals to see this breakdown.</p>';
+
+    var activityHtml = (data.activity && data.activity.length)
+      ? data.activity.map(function (a) {
+        var kindLabel = a.kind === 'email_sent' || a.kind === 'published' ? 'Published' : (a.kind === 'queued' ? 'Queued' : 'Created');
+        return '<button type="button" class="hs-an-act" ' +
+          (a.id ? 'data-hs-act="open-project" data-hs-id="' + esc(a.id) + '"' : 'data-hs-act="nav" data-hs-screen="publish"') + '>' +
+          '<span class="hs-pill ' + (kindLabel === 'Published' ? 'ready' : 'draft') + '">' + esc(kindLabel) + '</span>' +
+          '<strong>' + esc(a.title) + '</strong>' +
+          '<span>' + esc(relativeEdit(a.at)) + '</span></button>';
+      }).join('')
+      : '<p class="hs-muted hs-tiny">Activity shows up as you create and publish campaigns.</p>';
+
+    var insightsHtml = (data.insights || []).map(function (ins) {
+      return '<div class="hs-an-insight tone-' + esc(ins.tone || 'tip') + '">' + esc(ins.text) + '</div>';
+    }).join('');
+
+    mount.innerHTML =
+      '<div class="hs-an-kpi-grid">' + kpis.map(function (k) {
+        return '<div class="hs-kpi hs-an-kpi"><span>' + esc(k[0]) + '</span><strong>' + esc(String(k[1])) + '</strong>' +
+          '<em>' + esc(k[2]) + '</em></div>';
+      }).join('') + '</div>' +
+      '<div class="hs-an-grid">' +
+      '<section class="hs-card hs-pad">' +
+      '<div class="hs-between"><h3>Activity</h3><span class="hs-muted hs-tiny"><i class="hs-leg created"></i> Created · <i class="hs-leg published"></i> Published</span></div>' +
+      '<div class="hs-an-chart">' + (seriesHtml || '<p class="hs-muted">No dated activity in this range.</p>') + '</div>' +
+      '</section>' +
+      '<section class="hs-card hs-pad"><h3>By campaign goal</h3>' + goalsHtml + '</section>' +
+      '</div>' +
+      '<div class="hs-an-grid">' +
+      '<section class="hs-card hs-pad"><h3>Recent activity</h3><div class="hs-an-feed">' + activityHtml + '</div></section>' +
+      '<section class="hs-card hs-pad"><h3>Insights</h3>' + insightsHtml +
+      '<div class="hs-btn-row">' +
+      '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="nav" data-hs-screen="publish">Open Publish</button>' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="ai">Generate campaign</button>' +
+      '</div>' +
+      '<p class="hs-muted hs-tiny hs-an-deferred">Not in V1 (and never faked): reach, clicks, quotes requested, bookings, revenue attribution.</p>' +
+      '</section></div>';
+  }
+
   function renderAnalytics(root) {
+    var os = ensureStudioOs();
+    if (!os.ui.analyticsDays) os.ui.analyticsDays = 30;
+    var days = os.ui.analyticsDays;
     var body =
       '<header class="hs-page-head hs-page-head-row">' +
-      '<div><h1>Analytics</h1><p>V1 counters — outcomes attribution comes after publishing is live in the field.</p></div>' +
-      '<div class="hs-head-actions">' +
-      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="noop">Last 30 Days</button></div></header>' +
-      '<div id="hs-analytics-mount" class="hs-kpi-row">' +
-      [['CAMPAIGNS CREATED', '—'], ['CAMPAIGNS PUBLISHED', '—'], ['POSTING FREQUENCY', '—']].map(function (k) {
-        return '<div class="hs-kpi"><span>' + k[0] + '</span><strong>' + k[1] + '</strong></div>';
-      }).join('') + '</div>' +
-      '<section class="hs-card hs-pad"><h3>What V1 tracks</h3>' +
-      '<p class="hs-muted">Created · Published · Posting frequency. Reach, clicks, quotes, bookings, and revenue attribution are deferred.</p></section>';
+      '<div><h1>Analytics</h1>' +
+      '<p>Studio performance from your real campaigns and email publishes — not vanity social metrics.</p></div>' +
+      '<div class="hs-head-actions hs-an-range">' +
+      [7, 30, 90].map(function (d) {
+        return '<button type="button" class="hs-btn hs-btn-ghost' + (days === d ? ' on' : '') + '" data-hs-act="an-range" data-hs-days="' + d + '">Last ' + d + ' days</button>';
+      }).join('') +
+      '</div></header>' +
+      '<div id="hs-analytics-body"><div class="hs-muted">Loading analytics…</div></div>';
     root.innerHTML = shell('analytics', body);
+
+    var local = buildStudioAnalytics(days);
+    paintAnalytics(root, local);
+
     var Api = api();
-    var mount = root.querySelector('#hs-analytics-mount');
-    if (Api && mount) {
-      Api.request('analytics', { method: 'GET' }).then(function (res) {
-        var m = (res && res.metrics) || {};
-        mount.innerHTML = [
-          ['CAMPAIGNS CREATED', m.campaigns_created != null ? m.campaigns_created : '—'],
-          ['CAMPAIGNS PUBLISHED', m.campaigns_published != null ? m.campaigns_published : '—'],
-          ['POSTING FREQUENCY', m.posting_frequency || '—']
-        ].map(function (k) {
-          return '<div class="hs-kpi"><span>' + k[0] + '</span><strong>' + esc(String(k[1])) + '</strong></div>';
-        }).join('');
+    if (Api) {
+      Api.request('analytics', { method: 'GET', body: { period_days: days } }).then(function (res) {
+        if (!res || res.error) return;
+        // Merge API counters when present; keep rich local activity/goals
+        if (res.metrics) {
+          local.metrics.campaigns_created = res.metrics.campaigns_created != null ? res.metrics.campaigns_created : local.metrics.campaigns_created;
+          local.metrics.campaigns_published = res.metrics.campaigns_published != null ? res.metrics.campaigns_published : local.metrics.campaigns_published;
+          if (res.metrics.posting_frequency) local.metrics.posting_frequency = res.metrics.posting_frequency;
+          if (res.metrics.drafts != null) local.metrics.drafts = res.metrics.drafts;
+          if (res.metrics.ready_queue != null) local.metrics.ready_queue = res.metrics.ready_queue;
+          if (res.metrics.publish_rate) local.metrics.publish_rate = res.metrics.publish_rate;
+        }
+        if (Array.isArray(res.series) && res.series.length) local.series = res.series;
+        if (Array.isArray(res.by_goal) && res.by_goal.length) local.by_goal = res.by_goal;
+        if (Array.isArray(res.activity) && res.activity.length) local.activity = res.activity;
+        if (Array.isArray(res.insights) && res.insights.length) local.insights = res.insights;
+        paintAnalytics(root, local);
       }).catch(function () {});
     }
   }
@@ -1821,6 +2056,11 @@
       }
       publishCampaignEmail(proj3);
       return;
+    }
+    if (act === 'an-range') {
+      var d = parseInt(t.getAttribute('data-hs-days'), 10) || 30;
+      ensureStudioOs().ui.analyticsDays = d;
+      return render();
     }
     if (act === 'schedule-post') {
       toast('Social scheduling is deferred until Instagram/Facebook are connected in Apps. V1 publishes by Email.');
