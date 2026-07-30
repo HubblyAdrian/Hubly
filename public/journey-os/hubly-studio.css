@@ -555,6 +555,57 @@
 .hs-slider-lbl { font-size: 12px; font-weight: 700; display: block; margin-bottom: 10px; }
 .hs-slider-lbl input { width: 100%; accent-color: var(--hs-brand); margin-top: 6px; }
 
+/* Elements library */
+.hs-el-intro { margin-bottom: 16px; }
+.hs-el-intro strong { display: block; margin-bottom: 4px; }
+.hs-el-toolbar { margin-bottom: 14px; }
+.hs-el-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.hs-el-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--hs-line);
+  border-radius: 14px;
+  padding: 16px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 180px;
+}
+.hs-el-card.tone-brand { border-top: 3px solid var(--hs-brand); }
+.hs-el-card.tone-navy { border-top: 3px solid var(--hs-navy); }
+.hs-el-card.tone-teal { border-top: 3px solid #0d9488; }
+.hs-el-glyph {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--hs-navy);
+  min-height: 28px;
+}
+.hs-el-card strong { font-size: 14px; letter-spacing: -.02em; }
+.hs-el-card > span { font-size: 12px; color: var(--hs-muted); line-height: 1.35; flex: 1; }
+.hs-el-acts { margin-top: 8px; }
+.hs-btn-sm { padding: 8px 10px; font-size: 12px; width: 100%; }
+.hs-el-fav {
+  appearance: none; border: 0; background: #F1F5F9; color: #94a3b8;
+  position: absolute; top: 10px; right: 10px; width: 28px; height: 28px;
+  border-radius: 999px; cursor: pointer; font-size: 13px; line-height: 1;
+}
+.hs-el-fav.on { background: var(--hs-brand-soft); color: var(--hs-brand); }
+.hs-design-elements {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 12px;
+}
+.hs-el-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 999px;
+  background: #F1F5F9; color: #334155;
+}
+.hs-el-chip.tone-brand { background: var(--hs-brand-soft); color: var(--hs-brand); }
+.hs-el-chip.tone-navy { background: #E2E8F0; color: var(--hs-navy); }
+.hs-el-chip.tone-teal { background: #CCFBF1; color: #0f766e; }
+
 /* Operate Home — Studio promo banner */
 .jos-studio-promo {
   margin: 16px 0 0;
