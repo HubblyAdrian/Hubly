@@ -357,7 +357,10 @@
   margin-top: 6px; display: flex; gap: 6px; align-items: center; background: #fff;
   border: 1px solid var(--hs-line); border-radius: 8px; padding: 4px; font-size: 10px; line-height: 1.2;
 }
-.hs-cal-thumb { width: 22px; height: 22px; border-radius: 4px; background: #cbd5e1; flex-shrink: 0; }
+.hs-cal-legend { padding: 4px 4px 10px; align-items: baseline; }
+.hs-cal-legend h3 { margin: 0; font-size: 15px; }
+.hs-pub-q .hs-btn-sm { width: auto; white-space: nowrap; padding: 8px 10px; }
+.hs-pub-q .hs-link { flex-shrink: 0; }
 .hs-month-pill {
   display: inline-flex; align-items: center; gap: 8px; background: #EEF2F7; border-radius: 999px;
   padding: 6px 10px; font-size: 13px; font-weight: 750;
