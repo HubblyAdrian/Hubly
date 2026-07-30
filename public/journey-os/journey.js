@@ -11538,6 +11538,15 @@
           global.updateLeadsNavBadge(global.collectPipelineLeads());
         }
       } catch (eBadgeHome) {}
+      /* Phase 1 — AI Workspace is the permanent Home (Operating Mode). */
+      if (global.HublyAIWorkspace && typeof global.HublyAIWorkspace.mountOperateHome === 'function') {
+        try {
+          document.getElementById('p-app')?.classList.add('jos-ai-workspace-home');
+          document.getElementById('jos-ask-fab')?.classList.add('hidden');
+        } catch (eFab) {}
+        global.HublyAIWorkspace.mountOperateHome();
+        return;
+      }
       renderHomeDashboard(root);
     } catch (err) {
       console.warn('HublyJourneyOS Home', err);
@@ -16793,6 +16802,15 @@
       el('jos-quick-pop')?.classList.remove('open');
     } catch (ePop) {}
     updateChrome(v);
+    /* AI Workspace Operating Mode chrome only on Home — other engines keep full nav access. */
+    try {
+      var appWs = el('p-app');
+      if (appWs) {
+        var onHome = v === 'dashboard';
+        appWs.classList.toggle('jos-ai-workspace-home', onHome);
+        if (!onHome) document.getElementById('jos-ask-fab')?.classList.remove('hidden');
+      }
+    } catch (eWs) {}
     // Always reset Operate chrome modes so leftover classes cannot leave a huge left gap
     // or force a different sidebar width when switching pages.
     setPipelineMode(v === 'pipeline');
