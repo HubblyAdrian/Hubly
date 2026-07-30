@@ -1,10 +1,12 @@
 # Hubly AI V2 — Architecture Blueprint
 
-**Status:** Architecture review — expand & agree before implementation  
-**Date:** 2026-07-30 (revised)  
+**Status:** 🔒 **Architecture frozen for implementation** (pending final founder sign-off on this revision)  
+**Date:** 2026-07-30 (Constitution + visual system)  
 **PR:** #371  
 
-This document is the long-term blueprint for Hubly’s next phase. It includes current-state findings, the AI Orchestration Layer, engine inventories, Commerce Runtime, Live Workspace, migration strategy, success criteria, and hard guardrails.
+This document is the long-term blueprint for Hubly’s next phase. It includes what Hubly believes (Constitution), five-minute visual architecture, current-state findings, the AI Orchestration Layer, engine inventories, Commerce Runtime, Live Workspace, migration strategy, success criteria, and hard guardrails.
+
+**After this freeze: stop refining vision — validate through working product, one milestone at a time.**
 
 ---
 
@@ -34,6 +36,125 @@ Not “Did onboarding finish?”
 → **Did the customer feel like they built something real with Hubly?**
 
 We optimize for trust, ownership, and momentum — not fewest clicks or fastest setup.
+
+---
+
+## Visual system architecture (five-minute onboarding)
+
+If a new engineer joins Hubly tomorrow, these two diagrams are the platform.
+
+### Diagram A — System architecture
+
+<img alt="Hubly System Architecture" src="diagrams/hubly-system-architecture.png" />
+
+```text
+                    Hubly AI
+             Intent + Reasoning
+                     │
+        AI Orchestration Layer
+                     │
+────────────────────────────────────────
+ Business Context (Single Source of Truth)
+────────────────────────────────────────
+ Website · Commerce · CRM · Studio · Media
+ Marketplace · Customer · Analytics · Calendar
+────────────────────────────────────────
+          Integrations
+ Stripe · Canva · Lightroom · Google
+ QuickBooks · Twilio · Email
+```
+
+### Diagram B — Conversation flow
+
+<img alt="Hubly Conversation Flow" src="diagrams/hubly-conversation-flow.png" />
+
+```text
+User
+  ↓
+Hubly AI
+  ↓
+Intent
+  ↓
+Recommendation
+  ↓
+Customer Decision
+  ↓
+Engine Actions
+  ↓
+Live Workspace Updates
+  ↓
+Next Recommendation  ──(continuous, never restarts)──► Intent
+```
+
+Platform loop on every turn: **Recommend → Build → Show → React → Improve**
+
+---
+
+## Hubly’s Constitution (permanent engineering rules)
+
+Do not only describe what we are building. Describe what Hubly **believes**.  
+These are permanent engineering rules. Violating them is an architecture bug.
+
+### 1. AI First, Software Second
+
+The customer should never think about modules.  
+They should think about accomplishing goals.  
+The AI decides which Hubly capabilities to use.
+
+### 2. One Conversation
+
+The customer never switches applications.  
+Building a business, growing a business, and getting something done all happen inside one continuous conversation.  
+Intent changes naturally. The conversation never restarts.
+
+### 3. One Business
+
+There is only one Business Context.  
+Every engine reads from it.  
+Nothing owns its own version of the business.
+
+### 4. One Runtime
+
+Website. Commerce. CRM. Studio. Media. Marketplace. Analytics. Calendar. Customers.  
+Everything plugs into the same runtime.  
+Never create duplicate engines.
+
+### 5. AI Recommends, Humans Decide
+
+The AI should always make recommendations.  
+The customer makes the final decision.  
+This creates trust.
+
+### 6. Show, Don’t Tell
+
+If Hubly says it built something, the customer should immediately see it.  
+No invisible work. No fake progress.  
+The preview is proof.
+
+### 7. Every Interaction Creates Momentum
+
+Every conversation should leave the customer with a better business than they had five minutes ago.  
+Even small interactions should produce visible improvements.
+
+### 8. The Customer Builds With Hubly
+
+The AI is not completing forms. The AI is collaborating.  
+Every milestone should feel like two people designing a business together.
+
+### 9. Progressive Complexity
+
+Never overwhelm a customer.  
+Reveal capabilities when they become useful.  
+The software should grow with the business.
+
+### 10. Integrations Enhance Hubly
+
+Stripe. Lightroom. Canva. Google. QuickBooks. Anything else.  
+These are enhancements. They never become the foundation of the experience.  
+**Hubly always owns the business.**
+
+> Related runtime voice rules remain in [`docs/HUBLY_CONSTITUTION.md`](../HUBLY_CONSTITUTION.md) and [`CONSTITUTION_GUIDE.md`](./CONSTITUTION_GUIDE.md).  
+> This Constitution governs **platform architecture**. Those documents govern **voice and partner behavior**.
 
 ---
 
@@ -700,20 +821,31 @@ These guardrails keep Hubly a single intelligent platform — not a collection o
 
 ---
 
-## 16. Recommendation
+## 16. Architecture freeze & first implementation milestones
 
-**Approve this blueprint (or revise these sections) before implementation.**
+**Stop architecture theater. Prove the blueprint in product.**
 
-Smallest safe first implementation slice after approval:
+This document + the two visual diagrams are the freeze line. Further vision refinement without a working Live Workspace is a product risk.
 
-1. Orchestration response contract on `hubly-brain`  
-2. Live Workspace turns call Brain (packs = fallback only)  
+### Implementation order (one milestone at a time)
+
+| # | Milestone | Done looks like |
+|---|-----------|-----------------|
+| 1 | **Magical Live Workspace** | One conversation + live preview; feels like collaborating with an expert, not a wizard |
+| 2 | **Collaborative builder end-to-end** | Recommend → choose → build → show → react → improve for a real business path |
+| 3 | **Connect existing engines** | Orchestration Layer drives Website / Commerce / CRM / Studio / Media / Marketplace through one Business Context |
+| 4 | **Iterate on real usage** | Instrument momentum; fix what breaks trust |
+
+### First engineering slice (after sign-off)
+
+1. Orchestration response contract on `hubly-brain` (goal, intent, recommend, build-now, single-decision, preview-patch, memory/dna writes)  
+2. Live Workspace turns call Brain — packs = fallback only  
 3. Blueprint `recommend` (non-controlling)  
 4. Upload → Business Context pipeline  
-5. Commerce SSOT migration plan (no more storefront chrome until `commerce_*` is the only write path)
+5. Commerce SSOT migration plan (`commerce_*` only write path before more commerce UI)
 
-Until then: OpenAI works; the platform still does not let it conduct.
+Constitution (§ Hubly’s Constitution) and **What We Will Not Build** are non-negotiable during implementation.
 
 ---
 
-*End of Hubly AI V2 Architecture Blueprint.*
+*End of Hubly AI V2 Architecture Blueprint — frozen for implementation.*
