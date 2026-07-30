@@ -153,6 +153,25 @@ Stripe. Lightroom. Canva. Google. QuickBooks. Anything else.
 These are enhancements. They never become the foundation of the experience.  
 **Hubly always owns the business.**
 
+### 11. Hubly Owns The Experience
+
+OpenAI is our reasoning engine.  
+It is not our product.
+
+Hubly is responsible for:
+
+- The experience  
+- The workflow  
+- The business runtime  
+- The orchestration  
+- The preview  
+- The data model  
+- The quality  
+
+If we changed from GPT-5.5 to GPT-6, Claude, Gemini, or another model, the customer experience should remain unmistakably **Hubly**.
+
+**The AI model is replaceable. The Hubly experience is not.**
+
 > Related runtime voice rules remain in [`docs/HUBLY_CONSTITUTION.md`](../HUBLY_CONSTITUTION.md) and [`CONSTITUTION_GUIDE.md`](./CONSTITUTION_GUIDE.md).  
 > This Constitution governs **platform architecture**. Those documents govern **voice and partner behavior**.
 
@@ -821,30 +840,102 @@ These guardrails keep Hubly a single intelligent platform — not a collection o
 
 ---
 
-## 16. Architecture freeze & first implementation milestones
+## 16. Architecture freeze & implementation roadmap
 
 **Stop architecture theater. Prove the blueprint in product.**
 
-This document + the two visual diagrams are the freeze line. Further vision refinement without a working Live Workspace is a product risk.
+This document + the two visual diagrams + the Constitution (including Rule #11) are the freeze line.  
+Further vision refinement without a working AI Workspace is a product risk.
 
-### Implementation order (one milestone at a time)
+### Product requirement for every feature
 
-| # | Milestone | Done looks like |
-|---|-----------|-----------------|
-| 1 | **Magical Live Workspace** | One conversation + live preview; feels like collaborating with an expert, not a wizard |
-| 2 | **Collaborative builder end-to-end** | Recommend → choose → build → show → react → improve for a real business path |
-| 3 | **Connect existing engines** | Orchestration Layer drives Website / Commerce / CRM / Studio / Media / Marketplace through one Business Context |
-| 4 | **Iterate on real usage** | Instrument momentum; fix what breaks trust |
+Every new feature must answer:
 
-### First engineering slice (after sign-off)
+> **How does this make the conversation with Hubly better?**
 
-1. Orchestration response contract on `hubly-brain` (goal, intent, recommend, build-now, single-decision, preview-patch, memory/dna writes)  
-2. Live Workspace turns call Brain — packs = fallback only  
-3. Blueprint `recommend` (non-controlling)  
-4. Upload → Business Context pipeline  
-5. Commerce SSOT migration plan (`commerce_*` only write path before more commerce UI)
+Not “Which page should this live on?”  
+Not “Which tab owns this?”  
 
-Constitution (§ Hubly’s Constitution) and **What We Will Not Build** are non-negotiable during implementation.
+Instead: *How does Hubly naturally help the customer accomplish this through the same conversation?*
+
+That question prevents Hubly from drifting back into a collection of disconnected pages.
+
+### Three tests for every implementation
+
+Hold every change to:
+
+1. Does it feel like I’m working with an expert, not software?  
+2. Does every interaction produce visible progress?  
+3. Does it make Hubly feel more like one product instead of many products?  
+
+If all three are yes — keep going. If not — redesign before shipping.
+
+### Roadmap (phased)
+
+#### Phase 1 — AI Workspace (Milestone 0)
+
+**The workspace is the product. Everything else plugs into it.**
+
+Build the permanent home of Hubly AI — not onboarding chrome that disappears after setup.
+
+| Region | Purpose |
+|--------|---------|
+| Conversation | AI chats — one continuous thread |
+| Preview | Websites, storefronts, campaigns, job briefs appear here |
+| Activity | Checklist, sync, progress — proof Hubly is working |
+| Shared state | One Business Context for the whole session |
+
+Six months later, the same workspace is still home when the customer says:
+
+- “Build me a Christmas campaign.”  
+- “Add subscriptions.”  
+- “Find me a product photographer.”  
+
+Studio opens here. Media appears here. Marketplace searches happen here. Customers and analytics surface here.  
+**Do not think of this as onboarding. Think of it as Hubly.**
+
+#### Phase 2 — AI Orchestration
+
+Make the model the conductor (replaceable — Rule #11). Hubly owns the experience.
+
+- Business Context  
+- Intent detection  
+- Recommendations  
+- Actions through the Orchestration Layer  
+- Response contract: goal · intent · recommend · build-now · single-decision · preview-patch · memory/dna writes  
+
+#### Phase 3 — Collaborative Builder
+
+Inside the workspace, the AI builds with the customer:
+
+- Websites  
+- Commerce  
+- Booking  
+- CRM  
+- Studio  
+
+Loop: Recommend → Choose → Build → Show → React → Improve.
+
+#### Phase 4 — Engine Integration
+
+Wire existing engines into the Orchestration Layer (connect, don’t rebuild):
+
+Studio · Media · CRM · Commerce · Marketplace · Analytics · Calendar · Website · Customers
+
+#### Phase 5 — Expansion
+
+Marketing depth, commerce improvements, marketplace, automation, integrations — always as enhancements to the conversation and workspace, never as new products.
+
+### First engineering slice (Phase 1 start)
+
+1. Permanent AI Workspace shell (conversation + preview + activity + shared state)  
+2. Survive beyond “setup” — same surface for Grow / Get something done later  
+3. Then Phase 2 orchestration contract on `hubly-brain`  
+4. Blueprint `recommend` (non-controlling)  
+5. Upload → Business Context pipeline  
+6. Commerce SSOT migration when Commerce work begins (`commerce_*` only write path)
+
+Constitution (§ Hubly’s Constitution, including **Rule #11**) and **What We Will Not Build** are non-negotiable during implementation.
 
 ---
 
