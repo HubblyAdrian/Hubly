@@ -178,9 +178,25 @@
       });
     }
     if (p === 'analytics' && method === 'GET') {
+      var projects = os.projects || [];
+      var queue = os.queue || [];
+      var published = queue.filter(function (q) { return q.status === 'published'; }).length;
+      var ready = queue.filter(function (q) { return q.status === 'ready' || q.status === 'queued'; }).length;
+      var drafts = projects.filter(function (p) { return p && p.status !== 'published'; }).length;
+      var weeks = 4.3;
+      var freq = published === 0 ? 'No publishes yet' : ((published / weeks).toFixed(1) + ' / week');
+      var rate = projects.length ? Math.round((published / projects.length) * 100) + '%' : '0%';
       return Promise.resolve({
         _local: true,
-        metrics: { campaigns_created: (os.projects || []).length, campaigns_published: (os.queue || []).filter(function (q) { return q.status === 'published'; }).length, posting_frequency: 'No publishes yet' },
+        period_days: 30,
+        metrics: {
+          campaigns_created: projects.length,
+          campaigns_published: published,
+          drafts: drafts,
+          ready_queue: ready,
+          publish_rate: rate,
+          posting_frequency: freq
+        },
         deferred: ['reach', 'clicks', 'quotes', 'bookings', 'revenue_attribution']
       });
     }

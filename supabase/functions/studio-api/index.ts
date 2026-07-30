@@ -1148,10 +1148,18 @@ Deno.serve(async (req: Request) => {
     }
 
     if (resource === "analytics" && method === "GET") {
+      const periodDays = Math.min(90, Math.max(7, Number((body as { period_days?: number }).period_days) || 30));
       const since = new Date();
-      since.setDate(since.getDate() - 30);
+      since.setDate(since.getDate() - periodDays);
       const sinceIso = since.toISOString();
-      const [{ count: created }, { count: published }, { data: pubs }] = await Promise.all([
+      const [
+        { count: created },
+        { count: published },
+        { count: drafts },
+        { count: ready },
+        { data: pubs },
+        { data: recentProjects },
+      ] = await Promise.all([
         admin
           .from("studio_projects")
           .select("id", { count: "exact", head: true })
@@ -1164,23 +1172,66 @@ Deno.serve(async (req: Request) => {
           .eq("status", "published")
           .gte("created_at", sinceIso),
         admin
-          .from("studio_publish_queue")
-          .select("created_at")
+          .from("studio_projects")
+          .select("id", { count: "exact", head: true })
           .eq("business_id", businessId)
-          .eq("status", "published")
-          .gte("created_at", sinceIso),
+          .neq("status", "published"),
+        admin
+          .from("studio_publish_queue")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId)
+          .in("status", ["ready", "queued"]),
+        admin
+          .from("studio_publish_queue")
+          .select("id,title,status,created_at,project_id")
+          .eq("business_id", businessId)
+          .order("created_at", { ascending: false })
+          .limit(10),
+        admin
+          .from("studio_projects")
+          .select("id,title,status,created_at,last_edited_at,metadata")
+          .eq("business_id", businessId)
+          .order("last_edited_at", { ascending: false })
+          .limit(10),
       ]);
       const pubCount = published || 0;
+      const createdCount = created || 0;
+      const weeks = Math.max(1, periodDays / 7);
       const postingFrequency = pubCount === 0
         ? "No publishes yet"
-        : `${(pubCount / 4.3).toFixed(1)} per week (last 30 days)`;
+        : `${(pubCount / weeks).toFixed(1)} / week`;
+      const publishRate = createdCount
+        ? `${Math.round((pubCount / createdCount) * 100)}%`
+        : (pubCount ? "—" : "0%");
+      const activity = [
+        ...((recentProjects || []).map((p) => ({
+          at: p.last_edited_at || p.created_at,
+          kind: p.status === "published" ? "published" : "created",
+          title: p.title || "Campaign",
+          id: p.id,
+        }))),
+        ...((pubs || []).map((q) => ({
+          at: q.created_at,
+          kind: q.status === "published" ? "email_sent" : "queued",
+          title: q.title || "Email publish",
+          id: q.project_id,
+        }))),
+      ]
+        .filter((a) => a.at)
+        .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+        .slice(0, 10);
+
       return json({
-        period_days: 30,
+        period_days: periodDays,
         metrics: {
-          campaigns_created: created || 0,
+          campaigns_created: createdCount,
           campaigns_published: pubCount,
+          drafts: drafts || 0,
+          ready_queue: ready || 0,
+          publish_rate: publishRate,
           posting_frequency: postingFrequency,
         },
+        activity,
         // V1: no reach/clicks/quotes/bookings/revenue
         deferred: ["reach", "clicks", "quotes", "bookings", "revenue_attribution"],
         publishes: (pubs || []).length,
