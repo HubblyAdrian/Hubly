@@ -24,7 +24,7 @@ const spec = readFileSync(join(root, 'docs/HUBLY_STUDIO_IMPLEMENTATION_SPEC.md')
 describe('Hubly Studio V1.0 contract', () => {
   it('ships Studio shell and frozen contract', () => {
     assert.match(hubly, /data-v="studio"/);
-    assert.match(hubly, /hubly-studio\.js\?v=studio-10/);
+    assert.match(hubly, /hubly-studio\.js\?v=studio-11/);
     assert.match(journey, /HublyStudio\.setMode/);
     assert.match(contract, /V1\.0/);
     assert.match(contract, /single channel: Email/i);
@@ -158,5 +158,16 @@ describe('Hubly Studio V1.0 contract', () => {
     assert.doesNotMatch(studio, /revenue attribution are deferred/);
     assert.match(css, /\.hs-an-chart/);
     assert.match(edge, /publish_rate/);
+  });
+
+  it('Studio Settings shows Canva connect status and actions', () => {
+    assert.match(studio, /function renderStudioSettings/);
+    assert.match(studio, /canva-connect/);
+    assert.match(studio, /Connect Canva/);
+    assert.match(studio, /function connectCanvaFromStudio/);
+    assert.match(studio, /never fakes a Connected status/);
+    assert.doesNotMatch(studio, /screen === 'settings'\) \{\s*return renderSimple/);
+    assert.match(css, /\.hs-settings-canva/);
+    assert.match(api, /canva_linked/);
   });
 });

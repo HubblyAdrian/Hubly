@@ -369,11 +369,23 @@
         _local: true,
         settings: os.settings || {
           enabled: true,
-          storage_used_bytes: 4509715660,
+          storage_used_bytes: 0,
           storage_quota_bytes: 10737418240,
-          canva_linked: false
+          canva_linked: false,
+          preferences: {
+            default_publish_channel: 'email',
+            open_workspace_after_generate: true,
+            show_ai_creator_badge: true
+          }
         }
       });
+    }
+    if (p === 'settings' && (method === 'PATCH' || method === 'PUT')) {
+      os.settings = Object.assign({}, os.settings || {}, body || {});
+      if (body.preferences) {
+        os.settings.preferences = Object.assign({}, os.settings.preferences || {}, body.preferences);
+      }
+      return Promise.resolve({ _local: true, settings: os.settings });
     }
     return Promise.resolve({ _local: true, ok: true });
   }

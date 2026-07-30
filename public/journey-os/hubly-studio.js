@@ -294,7 +294,9 @@
       '<div class="hs-sidebar-foot">' +
       '<div class="hs-storage"><span>Cloud Storage</span><strong>' + used + ' / ' + quota + ' GB</strong>' +
       '<div class="hs-storage-bar"><i style="width:' + pct + '%"></i></div></div>' +
-      '<div class="hs-canva-badge">Optional visual polish</div>' +
+      '<button type="button" class="hs-canva-badge" data-hs-act="nav" data-hs-screen="settings">' +
+      (ensureStudioOs().settings && ensureStudioOs().settings.canva_linked ? 'Canva connected' : 'Connect Canva') +
+      '</button>' +
       '<button type="button" class="hs-user" data-hs-act="go-settings">' +
       '<span class="hs-avatar">' + esc(initials()) + '</span>' +
       '<span class="hs-user-meta"><strong>' + esc(ownerFirst()) + ' · ' + esc(bizName().split(/\s+/).slice(0, 2).join(' ')) + '</strong>' +
@@ -1512,6 +1514,236 @@
     });
   }
 
+  function studioBizId() {
+    var st = S();
+    return st.businessId || st.bizId || (global.currentBusiness && global.currentBusiness.id) || null;
+  }
+
+  function openAppsMarketplace(appId) {
+    try { setMode(false); } catch (e) {}
+    try {
+      if (appId) {
+        try { sessionStorage.setItem('hubly_apps_focus', appId); } catch (e2) {}
+      }
+      if (typeof global.switchV === 'function') {
+        var ni = document.querySelector('[data-v="apps"]');
+        if (ni) {
+          global.switchV(ni);
+          return;
+        }
+      }
+    } catch (e) {}
+    toast('Open Apps to manage connections');
+  }
+
+  function canvaStatusSync() {
+    var os = ensureStudioOs();
+    var settings = os.settings || {};
+    var CA = global.HublyConnectedApps;
+    var bizId = studioBizId();
+    var installed = !!(CA && bizId && typeof CA.isInstalled === 'function' && CA.isInstalled(bizId, 'canva'));
+    return {
+      linked: !!settings.canva_linked,
+      installed: installed,
+      accountLabel: settings.canva_account_label || null,
+      health: settings.canva_linked ? 'healthy' : 'disconnected'
+    };
+  }
+
+  function refreshCanvaStatus(done) {
+    var facade = global.CanvaConnectedApp ||
+      (global.HublyConnectedApps && typeof global.HublyConnectedApps.getFacade === 'function'
+        ? global.HublyConnectedApps.getFacade('canva')
+        : null);
+    var base = canvaStatusSync();
+    if (!facade || typeof facade.status !== 'function') {
+      if (typeof done === 'function') done(base);
+      return Promise.resolve(base);
+    }
+    return Promise.resolve(facade.status({ businessId: studioBizId() })).then(function (res) {
+      var data = (res && res.data) || {};
+      var connected = !!(data.connected || (res && res.status === 'connected'));
+      var st = {
+        linked: connected,
+        installed: base.installed,
+        accountLabel: data.accountLabel || null,
+        health: data.health || (connected ? 'healthy' : 'disconnected'),
+        message: (res && res.message) || ''
+      };
+      var os = ensureStudioOs();
+      os.settings = os.settings || {};
+      // Only set canva_linked true when provider reports connected — never fake it
+      if (connected) {
+        os.settings.canva_linked = true;
+        if (st.accountLabel) os.settings.canva_account_label = st.accountLabel;
+      } else if (os.settings.canva_linked && data.health === 'not_configured') {
+        os.settings.canva_linked = false;
+      }
+      if (typeof done === 'function') done(st);
+      return st;
+    }).catch(function () {
+      if (typeof done === 'function') done(base);
+      return base;
+    });
+  }
+
+  function connectCanvaFromStudio() {
+    var CA = global.HublyConnectedApps;
+    var bizId = studioBizId();
+    var facade = global.CanvaConnectedApp ||
+      (CA && typeof CA.getFacade === 'function' ? CA.getFacade('canva') : null);
+    toast('Connecting Canva…');
+    try {
+      if (CA && bizId && typeof CA.install === 'function') CA.install(bizId, 'canva');
+    } catch (e) {}
+    if (facade && typeof facade.connectAndRedirect === 'function') {
+      Promise.resolve(facade.connectAndRedirect({ businessId: bizId })).catch(function () {
+        openAppsMarketplace('canva');
+      });
+      return;
+    }
+    if (facade && typeof facade.connect === 'function') {
+      Promise.resolve(facade.connect({ businessId: bizId })).then(function (res) {
+        if (res && res.ok && res.data && res.data.authorizeUrl) {
+          try { global.location.href = res.data.authorizeUrl; } catch (e) {}
+          return;
+        }
+        toast((res && res.message) || 'Canva isn’t ready yet — open Apps to finish connecting.');
+        openAppsMarketplace('canva');
+      }).catch(function () {
+        openAppsMarketplace('canva');
+      });
+      return;
+    }
+    openAppsMarketplace('canva');
+  }
+
+  function disconnectCanvaFromStudio() {
+    var CA = global.HublyConnectedApps;
+    var bizId = studioBizId();
+    var facade = global.CanvaConnectedApp ||
+      (CA && typeof CA.getFacade === 'function' ? CA.getFacade('canva') : null);
+    function finish() {
+      var os = ensureStudioOs();
+      os.settings = os.settings || {};
+      os.settings.canva_linked = false;
+      os.settings.canva_account_label = null;
+      persistStudioSettings({ canva_linked: false });
+      toast('Canva disconnected from Studio');
+      render();
+    }
+    if (facade && typeof facade.disconnect === 'function') {
+      Promise.resolve(facade.disconnect({ businessId: bizId })).finally(function () {
+        try { if (CA && bizId) CA.uninstall(bizId, 'canva'); } catch (e) {}
+        finish();
+      });
+      return;
+    }
+    try { if (CA && bizId) CA.uninstall(bizId, 'canva'); } catch (e) {}
+    finish();
+  }
+
+  function persistStudioSettings(patch) {
+    var os = ensureStudioOs();
+    os.settings = Object.assign(os.settings || {}, patch || {});
+    persistStudioMeta();
+    var Api = api();
+    if (Api) {
+      Api.request('settings', { method: 'PATCH', body: Object.assign({}, os.settings, patch || {}) }).catch(function () {});
+    }
+  }
+
+  function renderStudioSettings(root) {
+    var os = ensureStudioOs();
+    os.settings = os.settings || {};
+    var settings = os.settings;
+    if (!settings.preferences || typeof settings.preferences !== 'object') {
+      settings.preferences = {
+        default_publish_channel: 'email',
+        open_workspace_after_generate: true,
+        show_ai_creator_badge: true
+      };
+    }
+    var prefs = settings.preferences;
+    var used = gb(settings.storage_used_bytes || 0);
+    var quota = gb(settings.storage_quota_bytes || 10737418240);
+    var pct = Math.min(100, Math.round(((settings.storage_used_bytes || 0) / (settings.storage_quota_bytes || 1)) * 100));
+    var canva = canvaStatusSync();
+
+    var body =
+      '<header class="hs-page-head hs-page-head-row">' +
+      '<div><h1>Studio Settings</h1>' +
+      '<p>Storage, Canva connection, and how Studio behaves for this business.</p></div>' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="settings-refresh">Refresh status</button></header>' +
+      '<div class="hs-settings-grid">' +
+      '<section class="hs-card hs-pad hs-settings-canva" id="hs-settings-canva">' +
+      '<div class="hs-between"><h3>Canva · visual polish</h3>' +
+      '<span class="hs-pill ' + (canva.linked ? 'ready' : 'draft') + '" id="hs-canva-pill">' +
+      (canva.linked ? 'Connected' : 'Not connected') + '</span></div>' +
+      '<p class="hs-muted">Customize Design opens Canva for optional visual editing, then returns to your Hubly campaign. Hubly never fakes a Connected status.</p>' +
+      '<div class="hs-settings-canva-status" id="hs-canva-status-line">' +
+      (canva.linked
+        ? ('<strong>Account:</strong> ' + esc(canva.accountLabel || 'Canva linked'))
+        : '<strong>Status:</strong> Not connected — campaigns still work; Customize Design needs Canva.') +
+      '</div>' +
+      '<div class="hs-btn-row" id="hs-canva-actions">' +
+      (canva.linked
+        ? '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="canva-disconnect">Disconnect Canva</button>' +
+          '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="canva-manage">Manage in Apps</button>'
+        : '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="canva-connect">Connect Canva</button>' +
+          '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="canva-manage">Open Apps</button>') +
+      '</div>' +
+      '<p class="hs-muted hs-tiny">If Hubly’s Canva app credentials aren’t configured yet, Connect will open Apps and explain what’s missing — we won’t pretend it worked.</p>' +
+      '</section>' +
+      '<section class="hs-card hs-pad">' +
+      '<h3>Cloud storage</h3>' +
+      '<div class="hs-settings-storage"><strong>' + used + ' / ' + quota + ' GB</strong>' +
+      '<div class="hs-storage-bar light"><i style="width:' + pct + '%"></i></div>' +
+      '<p class="hs-muted hs-tiny">Uploads and Studio assets for this business.</p>' +
+      '<button type="button" class="hs-link" data-hs-act="nav" data-hs-screen="uploads">Manage uploads →</button></div>' +
+      '</section>' +
+      '<section class="hs-card hs-pad">' +
+      '<h3>Publish</h3>' +
+      '<p class="hs-muted">V1 channel is <strong>Email</strong>. Social networks connect in Apps when you’re ready.</p>' +
+      '<label class="hs-settings-check"><input type="checkbox" data-hs-act="settings-pref" data-hs-pref="default_publish_channel" data-hs-pref-bool="0" checked disabled> Default publish channel: Email</label>' +
+      '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="nav" data-hs-screen="publish">Open Publish Center</button>' +
+      '</section>' +
+      '<section class="hs-card hs-pad">' +
+      '<h3>Studio preferences</h3>' +
+      '<label class="hs-settings-check"><input type="checkbox" data-hs-act="settings-pref" data-hs-pref="open_workspace_after_generate"' +
+      (prefs.open_workspace_after_generate !== false ? ' checked' : '') + '> Open Project Workspace after generating a campaign</label>' +
+      '<label class="hs-settings-check"><input type="checkbox" data-hs-act="settings-pref" data-hs-pref="show_ai_creator_badge"' +
+      (prefs.show_ai_creator_badge !== false ? ' checked' : '') + '> Show NEW badge on AI Creator</label>' +
+      '<label class="hs-settings-check"><input type="checkbox" data-hs-act="settings-enabled"' +
+      (settings.enabled !== false ? ' checked' : '') + '> Studio enabled for this business</label>' +
+      '</section>' +
+      '</div>';
+
+    root.innerHTML = shell('settings', body);
+
+    refreshCanvaStatus(function (st) {
+      var pill = root.querySelector('#hs-canva-pill');
+      var line = root.querySelector('#hs-canva-status-line');
+      var acts = root.querySelector('#hs-canva-actions');
+      if (pill) {
+        pill.textContent = st.linked ? 'Connected' : 'Not connected';
+        pill.className = 'hs-pill ' + (st.linked ? 'ready' : 'draft');
+      }
+      if (line) {
+        line.innerHTML = st.linked
+          ? ('<strong>Account:</strong> ' + esc(st.accountLabel || 'Canva linked'))
+          : ('<strong>Status:</strong> Not connected' + (st.message ? (' — ' + esc(st.message)) : ''));
+      }
+      if (acts) {
+        acts.innerHTML = st.linked
+          ? '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="canva-disconnect">Disconnect Canva</button>' +
+            '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="canva-manage">Manage in Apps</button>'
+          : '<button type="button" class="hs-btn hs-btn-brand" data-hs-act="canva-connect">Connect Canva</button>' +
+            '<button type="button" class="hs-btn hs-btn-ghost" data-hs-act="canva-manage">Open Apps</button>';
+      }
+    });
+  }
+
   function renderSimple(root, screen, title, sub) {
     root.innerHTML = shell(screen,
       '<header class="hs-page-head"><h1>' + esc(title) + '</h1><p>' + esc(sub) + '</p></header>' +
@@ -1890,12 +2122,37 @@
       return render();
     }
     if (act === 'go-settings') {
-      try {
-        if (typeof global.switchV === 'function') {
-          var ni = document.querySelector('[data-v="settings"]');
-          if (ni) return global.switchV(ni);
-        }
-      } catch (e) {}
+      os.ui.screen = 'settings';
+      return render();
+    }
+    if (act === 'canva-connect') {
+      connectCanvaFromStudio();
+      return;
+    }
+    if (act === 'canva-disconnect') {
+      disconnectCanvaFromStudio();
+      return;
+    }
+    if (act === 'canva-manage') {
+      openAppsMarketplace('canva');
+      return;
+    }
+    if (act === 'settings-refresh') {
+      toast('Refreshing connection status…');
+      return render();
+    }
+    if (act === 'settings-enabled') {
+      persistStudioSettings({ enabled: !!t.checked });
+      toast(t.checked ? 'Studio enabled' : 'Studio disabled for this business');
+      return;
+    }
+    if (act === 'settings-pref') {
+      var key = t.getAttribute('data-hs-pref');
+      if (!key) return;
+      os.settings = os.settings || {};
+      os.settings.preferences = os.settings.preferences || {};
+      os.settings.preferences[key] = !!t.checked;
+      persistStudioSettings({ preferences: os.settings.preferences });
       return;
     }
     if (act === 'blank') {
@@ -2414,7 +2671,7 @@
     if (screen === 'elements') return renderElements(root);
     if (screen === 'uploads') return renderUploads(root);
     if (screen === 'settings') {
-      return renderSimple(root, 'settings', 'Studio Settings', 'Storage, creative engine link, and Studio preferences.');
+      return renderStudioSettings(root);
     }
     return renderHome(root);
   }
