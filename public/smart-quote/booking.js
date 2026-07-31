@@ -419,9 +419,7 @@
     const lockBox = showPrice
       ? `<div class="bk-sum-total"><span>Total</span><b>${esc(money.formatted || '')}</b></div>`
       : '';
-    const helpRaw = w.helpBlurb || "Have questions? We're here to help!";
-    const helpLink = `<a href="#ws-chat" onclick="try{if(typeof wsChatToggle==='function')wsChatToggle(true);}catch(e){};return false;">Chat with us ›</a>`;
-    const helpIco = `<span class="bk-help-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span>`;
+    /* Chat lives on the floating #ws-chat-bubble — never mid-flow help cards. */
     const reviews = Array.isArray(app.reviews) ? app.reviews : [];
     const siteRating = app.website?.rating ?? app.rating;
     const siteCount = app.website?.reviewCount ?? app.reviewCount;
@@ -464,10 +462,6 @@
           ${includeHtml}
           ${lockBox}
         </div>
-      </div>
-      <div class="bk-help-card">
-        ${helpIco}
-        <div><strong>${esc(helpRaw)}</strong>${helpLink}</div>
       </div>
       ${reviewsCard}
     </div>`;
@@ -522,7 +516,7 @@
         </button>`;
       })
       .join('');
-    return `<div class="sq-field"><div class="sq-lbl">${esc(prompt)}</div><div class="bk-svc-pick">${cards}</div><p class="bk-svc-switch-hint">Tap another package anytime to switch.</p></div>`;
+    return `<div class="sq-field bk-svc-field"><div class="bk-svc-prompt">${esc(prompt)}</div><div class="bk-svc-pick">${cards}</div><p class="bk-svc-switch-hint">Tap another package anytime to switch.</p></div>`;
   }
 
   function pickService(name) {
