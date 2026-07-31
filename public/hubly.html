@@ -30,7 +30,7 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
-<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-5">
+<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-6">
 <link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-15">
 <link rel="stylesheet" href="/journey-os/photography-projects.css?v=projects-16">
@@ -3342,28 +3342,12 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   background:var(--brand);border:2px solid #fff;display:none;
 }
 .hubly-coach.has-todo .hubly-coach-dot{display:block}
-.ed-ai-fab{
-  position:fixed;right:20px;bottom:88px;z-index:12010;
-  min-height:52px;padding:8px 16px 8px 8px;border-radius:999px;border:none;cursor:pointer;
-  background:#141B2B;color:#fff;font:inherit;font-size:13px;font-weight:700;
-  box-shadow:0 14px 32px rgba(15,23,42,.35);
-  display:inline-flex;align-items:center;gap:10px;
-  transition:transform .15s ease,box-shadow .15s ease;
-}
-.ed-ai-fab-ico{
-  flex-shrink:0;width:36px;height:36px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  background:var(--brand,#D9632D);color:#fff;
-  font-size:11px;font-weight:800;letter-spacing:.06em;
-}
-.ed-ai-fab:hover{transform:translateY(-2px);box-shadow:0 18px 36px rgba(15,23,42,.42)}
+/* Website AI FAB retired — owners edit on the site; Styles stay in Menu. */
+#ed-ai-fab,
+.ed-ai-fab{display:none!important}
+.ed-ai-fab-ico{display:none!important}
 .ed-ai-fab.hidden{display:none!important}
-/* Bottom sheet: keep Ask AI bubble visible except when AI sheet is open (syncEdAiFab). */
-body.ed-sheet-open #ed-ai-fab{pointer-events:auto}
-@media(max-width:800px){
-  .ed-ai-fab{right:14px;bottom:calc(76px + env(safe-area-inset-bottom));padding:7px 12px 7px 7px;font-size:12px}
-  .ed-ai-fab-ico{width:32px;height:32px;font-size:10px}
-}
+body.ed-sheet-open #ed-ai-fab{display:none!important}
 .hubly-coach-panel{
   position:absolute;right:0;bottom:68px;width:min(360px,calc(100vw - 32px));
   background:#fff;border:1px solid var(--border);border-radius:16px;
@@ -5305,6 +5289,13 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
   .ed-hub-book-inner,.ed-hub-quote-inner{grid-template-columns:1fr}
   .ed-hub-tabs{max-width:100%}
   .ed-pkg-hub,.ed-book-hub{grid-template-columns:1fr}
+  .ed-pkg-preview-col{display:none}
+  .ed-pkg-edit-col{
+    border-left:none;border-top:1px solid var(--border);
+    padding:14px 14px 28px;background:#fff;
+  }
+  .ed-pkg-device{display:none!important}
+  .ed-pkg-list-head h2{font-size:18px}
   .ed-book-nav{flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border)}
   .bw-where-pick{grid-template-columns:1fr}
   .bw-addon-fields{grid-template-columns:1fr}
@@ -16873,6 +16864,25 @@ function syncEditorPackagesToServices(){
   }));
   (S.services||[]).forEach(s=>{if(s.name)SVC_PRICES[s.name]=Number(s.price)||0;});
 }
+/** Push package price/hours into Service Engine + booking, then publish. */
+function scheduleEditorCatalogPersist(){
+  try{syncEditorPackagesToServices();}catch(e){}
+  try{if(typeof buildServiceCatalogFromEditor==='function')buildServiceCatalogFromEditor();}catch(e){}
+  try{
+    if(typeof HublyBookingWizardUI!=='undefined'){
+      HublyBookingWizardUI.ensureWizard?.();
+      HublyBookingWizardUI.syncServicesOut?.();
+    }
+  }catch(e){}
+  try{clearTimeout(S._editorCatalogPersistT);}catch(e){}
+  S._editorCatalogPersistT=setTimeout(()=>{
+    try{
+      if(typeof saveStorefront==='function'&&typeof currentBusiness!=='undefined'&&currentBusiness){
+        saveStorefront().catch(()=>{});
+      }
+    }catch(e){}
+  },850);
+}
 /** Seed Website editor packages from the active industry blueprint. */
 function resetEditorPackagesFromBlueprint(){
   const trade=tradeLabelForPackages();
@@ -26334,12 +26344,10 @@ function renderHublyCoach(){
 function syncEdAiFab(){
   const fab=document.getElementById('ed-ai-fab');
   if(!fab)return;
-  const onApp=document.getElementById('p-app')?.classList.contains('active');
-  const inEditor=typeof isEditorViewOpen==='function'&&isEditorViewOpen();
-  const aiOpen=!!document.getElementById('ed-shell')?.classList.contains('ed-sheet-open')
-    && document.querySelector('#ed-shell .ed-ctrl')?.getAttribute('data-mode')==='ai';
-  // Bubble only — hide while the AI sheet itself is open.
-  fab.classList.toggle('hidden',!(onApp&&inEditor)||aiOpen);
+  /* Floating Website AI / Style chrome retired on web + mobile. */
+  fab.classList.add('hidden');
+  fab.setAttribute('aria-hidden','true');
+  fab.style.display='none';
 }
 function skipHublyCoachStep(){
   const c=ensureHublyCoach();
@@ -28013,25 +28021,21 @@ function guideWebsiteInlineEdit(kind){
   const k=String(kind||'');
   if(k==='packages'){
     wsScrollToSection('ws-sec-services');
-    const cards=root?root.querySelectorAll('.ws-svc-card[data-pe="service"], [data-pe="add-service"]'):[];
+    const cards=root?root.querySelectorAll('.ws-svc-card[data-pe="service"], [data-pe="svc-price"], [data-pe="svc-dur"], [data-pe="add-service"]'):[];
     pulseWsPeTargets(cards);
-    setEdPeGuideHint('Tap a <strong>package</strong> on your website to edit it here.');
-    try{toast('Edit packages on your website');}catch(e){}
+    setEdPeGuideHint('Tap a <strong>package name, price, or hours</strong> on your website to edit — text highlights so you can replace it.');
+    try{toast('Tap name, price, or hours on a package');}catch(e){}
     return;
   }
   if(k==='hours'){
     wsScrollToSection('ws-footer-hours-col');
     const el=root&&(root.querySelector('[data-pe="hours"]')||root.querySelector('[data-ws-clone-id="ws-footer-hours-col"]'));
     pulseWsPeTargets(el?[el]:[]);
-    setEdPeGuideHint('Hours live in your <strong>footer</strong> — tap them on the website to edit. No floating panel.');
-    try{toast('Scroll to Hours on your website');}catch(e){}
-    try{
-      if(typeof HublyJourneyOS?.updateChrome==='function')HublyJourneyOS.updateChrome('editor');
-      else{
-        const bar=document.getElementById('bar-title');
-        if(bar)bar.textContent='Website editor';
-      }
-    }catch(e){}
+    setEdPeGuideHint('Tap <strong>hours</strong> on your website to edit them.');
+    try{toast('Tap hours on your website to edit');}catch(e){}
+    setTimeout(()=>{
+      if(el&&typeof openHoursPeEditor==='function')openHoursPeEditor(el);
+    },420);
     return;
   }
   if(k==='business'||k==='area'){
@@ -30214,7 +30218,7 @@ function updatePkgHubField(i,key,value){
   if(key==='price')svc.price=Number(value)||0;
   else if(key==='popular'||key==='showPrice')svc[key]=!!value;
   else svc[key]=value;
-  syncEditorPackagesToServices();
+  try{scheduleEditorCatalogPersist();}catch(e){syncEditorPackagesToServices();}
   renderPkgHubList();
   renderPkgHubPreview();
   try{renderWebsitePreview();}catch(e){}
@@ -32126,46 +32130,15 @@ function ensureWsPeContextBar(){
   return bar;
 }
 function wsPeToolbarActions(pe){
-  const acts=[{id:'edit',label:'✏ Edit'}];
+  /* Style / AI floating chrome removed — edit happens on the site itself. */
   if(pe==='hero-bg'||pe==='profile-bg'||pe==='logo'||pe==='owner-photo'||pe==='gallery'){
-    acts[0]={id:'photo',label:'🖼 Replace Photo'};
-    acts.unshift({id:'edit',label:'✏ Edit'});
+    return [{id:'photo',label:'Replace photo'}];
   }
-  if(pe==='hero-bg'||pe==='profile-bg')acts[0]={id:'photo',label:'🖼 Replace Photo'};
-  acts.push({id:'style',label:'🎨 Style'},{id:'ai',label:'✨ AI',ai:true});
-  if(pe==='service')acts.push({id:'duplicate',label:'Duplicate'},{id:'delete',label:'Delete'});
-  else acts.push({id:'more',label:'⋯'});
-  /* Deduplicate edit+photo for media */
-  if(pe==='hero-bg'||pe==='profile-bg'||pe==='logo'||pe==='owner-photo'){
-    return [
-      {id:'photo',label:'🖼 Replace Photo'},
-      {id:'style',label:'🎨 Style'},
-      {id:'ai',label:'✨ AI',ai:true},
-      {id:'more',label:'⋯'}
-    ];
-  }
-  if(pe==='headline'||pe==='tagline'||pe==='cta'||pe==='biz-name'||pe==='sec-title'||pe==='sec-sub'||pe==='owner-bio'||pe==='owner-name'||pe==='footer-cta'||pe==='footer-tag'){
-    return [
-      {id:'edit',label:'✏ Edit Text'},
-      {id:'style',label:'🎨 Style'},
-      {id:'ai',label:'✨ AI',ai:true},
-      {id:'more',label:'⋯'}
-    ];
-  }
-  return acts;
+  return [];
 }
 function showWsPeContextBar(anchor){
-  if(!anchor||!isWebsitePeEnabled())return hideWsPeContextBar();
-  const bar=ensureWsPeContextBar();
-  const pe=anchor.dataset.pe||'';
-  const acts=wsPeToolbarActions(pe);
-  bar.innerHTML=acts.map(a=>'<button type="button" data-pe-act="'+a.id+'"'+(a.ai?' data-pe-ai="1"':'')+'>'+a.label+'</button>').join('');
-  const rect=anchor.getBoundingClientRect();
-  const top=Math.max(12,rect.top+window.scrollY-52);
-  const left=Math.min(window.scrollX+window.innerWidth-320,Math.max(12,rect.left+window.scrollX));
-  bar.style.top=top+'px';
-  bar.style.left=left+'px';
-  bar.classList.add('is-open');
+  /* Floating Edit / Style / AI bar retired on web + mobile. */
+  hideWsPeContextBar();
 }
 function hideWsPeContextBar(){
   const bar=document.getElementById('ws-pe-context-bar');
@@ -32177,17 +32150,31 @@ function clearWsPeSelection(){
 }
 const WS_PE_INLINE_TYPES=new Set([
   'headline','tagline','cta','cta-secondary','biz-name','owner-name','owner-bio','about-name',
-  'sec-title','sec-sub','footer-cta','footer-tag','promo','ticker','store-title','store-sub'
+  'sec-title','sec-sub','footer-cta','footer-tag','promo','ticker','store-title','store-sub',
+  'svc-name','svc-price','svc-dur'
 ]);
 function isWsPeInlineType(type){return WS_PE_INLINE_TYPES.has(String(type||''));}
 function wsPeInlineNode(target){
   if(!target)return null;
   const pe=target.dataset.pe;
-  if(pe==='service')return target.querySelector('h3, .ws-svc-name, .ws-svc-title')||target;
+  if(pe==='svc-name'||pe==='svc-price'||pe==='svc-dur')return target;
+  if(pe==='service')return target.querySelector('[data-pe="svc-name"], h3, .ws-svc-name, .ws-svc-title')||target;
   if(pe==='faq-item')return target.querySelector('.ws-faq-q, summary, h3, h4')||target;
   if(pe==='review')return target.querySelector('.ws-review-text, .ws-review-body, p')||target;
   if(pe==='membership')return target.querySelector('h3, .ws-membership-name')||target;
   return target;
+}
+function wsPeSelectAllContents(node){
+  if(!node)return;
+  try{node.focus({preventScroll:true});}catch(e){try{node.focus();}catch(e2){}}
+  try{
+    const range=document.createRange();
+    range.selectNodeContents(node);
+    const sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }catch(e){}
+  try{document.execCommand('selectAll',false,null);}catch(e){}
 }
 function startWsPeInlineEdit(target,opts){
   opts=opts||{};
@@ -32198,7 +32185,10 @@ function startWsPeInlineEdit(target,opts){
   if(pe==='hero-bg'||pe==='logo'||pe==='gallery'||pe==='hours'||pe==='contact'||pe==='social'||pe==='area'){
     return handleWsPeClick(pe,target);
   }
-  if(!isWsPeInlineType(pe)&&pe!=='service'&&pe!=='faq-item'&&pe!=='review'&&pe!=='membership'){
+  if(pe==='service'){
+    return editServiceFromPreview(target.dataset.svcId,target);
+  }
+  if(!isWsPeInlineType(pe)&&pe!=='faq-item'&&pe!=='review'&&pe!=='membership'){
     return handleWsPeClick(pe,target);
   }
   finishWsPeInlineEdit(true);
@@ -32206,18 +32196,24 @@ function startWsPeInlineEdit(target,opts){
   S._wsPeInlineTarget=target;
   S._wsPeInlineType=pe;
   S._wsPeInlineOriginal=node.textContent||'';
+  if(pe==='svc-price'){
+    const svc=typeof findEditorSvc==='function'?findEditorSvc(target.dataset.svcId):null;
+    const n=svc?Number(svc.price):NaN;
+    node.textContent=Number.isFinite(n)&&n>0?String(Math.round(n*100)/100):'';
+  }else if(pe==='svc-dur'){
+    const svc=typeof findEditorSvc==='function'?findEditorSvc(target.dataset.svcId):null;
+    node.textContent=svc&&svc.dur!=null&&String(svc.dur).trim()!==''?String(svc.dur):'';
+  }
   node.setAttribute('contenteditable','plaintext-only');
   try{node.contentEditable='plaintext-only';}catch(e){node.contentEditable='true';}
   node.classList.add('ws-pe-inline-editing');
-  node.focus({preventScroll:true});
+  target.classList.add('is-pe-selected');
   if(opts.selectAll!==false){
-    try{
-      const range=document.createRange();
-      range.selectNodeContents(node);
-      const sel=window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }catch(e){}
+    wsPeSelectAllContents(node);
+    setTimeout(()=>wsPeSelectAllContents(node),40);
+    setTimeout(()=>wsPeSelectAllContents(node),140);
+  }else{
+    try{node.focus({preventScroll:true});}catch(e){}
   }
 }
 function finishWsPeInlineEdit(cancel){
@@ -32325,12 +32321,26 @@ function commitWsPeInlineValue(pe,text,target,node){
     try{onWebsiteFieldChange();}catch(e){}
     return;
   }
-  if(pe==='service'&&target?.dataset?.svcId){
-    const svc=(S.editorSvcs||[]).find(s=>String(s.id)===String(target.dataset.svcId));
+  if(pe==='svc-name'||pe==='svc-price'||pe==='svc-dur'||(pe==='service'&&target?.dataset?.svcId)){
+    const id=target?.dataset?.svcId;
+    const svc=(typeof findEditorSvc==='function'?findEditorSvc(id):null)
+      ||(S.editorSvcs||[]).find(s=>String(s.id)===String(id));
     if(svc){
-      svc.name=text||'Service';
-      try{syncEditorPackagesToServices?.();}catch(e){}
+      if(pe==='svc-price'){
+        const n=parseFloat(String(text).replace(/[^0-9.]/g,''));
+        svc.price=Number.isFinite(n)?n:0;
+        svc.showPrice=true;
+        if(svc.pricingType==='variable')svc.pricingType='flat';
+      }else if(pe==='svc-dur'){
+        const n=parseFloat(String(text).replace(/[^0-9.]/g,''));
+        svc.dur=Number.isFinite(n)?String(n):(String(text||'').trim());
+      }else{
+        svc.name=text||'Service';
+      }
+      try{scheduleEditorCatalogPersist();}catch(e){}
       try{renderSvcEditorList?.();}catch(e){}
+      try{if(document.getElementById('ed-hub-packages')?.classList.contains('on'))renderPackagesHub();}catch(e){}
+      try{renderWebsitePreview();}catch(e){}
     }
     return;
   }
@@ -32520,18 +32530,26 @@ function onWsPePreviewClick(e){
   clearWsPeSelection();
   target.classList.add('is-pe-selected');
   S._wsPeSelectedEl=target;
-  showWsPeContextBar(target);
+  hideWsPeContextBar();
   const pe=target.dataset.pe||'';
-  /* Text types: edit directly on the website — no popover */
-  if(isWsPeInlineType(pe)||pe==='service'||pe==='faq-item'||pe==='review'||pe==='membership'){
+  /* Package name / price / hours: highlight + edit in place */
+  if(pe==='svc-name'||pe==='svc-price'||pe==='svc-dur'||isWsPeInlineType(pe)||pe==='faq-item'||pe==='review'||pe==='membership'){
     startWsPeInlineEdit(target,{selectAll:true});
     return;
   }
-  /* Media: replace flows stay one click away via toolbar; don't auto-open inspector */
-  if(pe==='hero-bg'||pe==='profile-bg'||pe==='logo'||pe==='owner-photo'||pe==='gallery'){
+  /* Whole package card → full editor (name, price, hours, details) — no Style/AI chrome */
+  if(pe==='service'){
+    editServiceFromPreview(target.dataset.svcId,target);
     return;
   }
-  /* Complex types still use the focused popover */
+  if(pe==='hours'){
+    openHoursPeEditor(target);
+    return;
+  }
+  /* Media: one-tap replace */
+  if(pe==='hero-bg'||pe==='profile-bg'){try{pickHeroBanner();}catch(err){handleWsPeClick(pe,target);}return;}
+  if(pe==='logo'){try{pickProfileLogo();}catch(err){handleWsPeClick(pe,target);}return;}
+  if(pe==='owner-photo'||pe==='gallery'){handleWsPeClick(pe,target);return;}
   handleWsPeClick(pe,target);
 }
 function closeWsPePop(){
@@ -33662,6 +33680,12 @@ function applyWsPeHours(){
   if(typeof renderHoursGrid==='function')renderHoursGrid('hours-grid-ed');
   closeWsPePop();
   renderWebsitePreview();
+  try{
+    clearTimeout(S._hoursPersistT);
+    S._hoursPersistT=setTimeout(()=>{
+      try{if(typeof saveStorefront==='function'&&currentBusiness)saveStorefront().catch(()=>{});}catch(e){}
+    },700);
+  }catch(e){}
   toast('Hours updated');
 }
 function applyWsPeTrustStats(){
@@ -33911,7 +33935,9 @@ function applyWsPeService(){
   else svc.includes=lines.join('\n');
   svc.popular=!!document.getElementById('ws-pe-svc-pop')?.checked;
   closeWsPePop();
-  try{if(typeof syncEditorPackagesToServices==='function')syncEditorPackagesToServices();}catch(e){}
+  try{scheduleEditorCatalogPersist();}catch(e){
+    try{if(typeof syncEditorPackagesToServices==='function')syncEditorPackagesToServices();}catch(e2){}
+  }
   renderSvcEditorList();
   renderWebsitePreview();
   toast('Service saved');
@@ -35497,19 +35523,33 @@ function wsServiceCardHtml(s,idx){
   const img=s.photos?.[0]||s.imgUrl;
   const inc=formatIncludesHtml(s,6);
   const esc=(s.name||'').replace(/'/g,"\\'");
-  const priceTxt=(showPricesOnLanding()&&s.showPrice!==false)?svcDisplayPrice(s):'';
-  const price=priceTxt?`<span class="ws-svc-price">${priceTxt}</span>`:'';
-  const dur=s.dur?`<span>⏱ ${s.dur} ${t('wsHrs')}</span>`:'';
+  const editing=isEditorViewOpen();
+  const rawPrice=typeof svcDisplayPrice==='function'?svcDisplayPrice(s):'';
+  const priceTxt=editing?(rawPrice||'Add price'):((showPricesOnLanding()&&s.showPrice!==false)?rawPrice:'');
+  const price=priceTxt
+    ?(editing
+      ?`<span class="ws-svc-price ws-pe-target" data-pe="svc-price" data-pe-label="Edit price" data-svc-id="${s.id??idx}">${priceTxt}</span>`
+      :`<span class="ws-svc-price">${priceTxt}</span>`)
+    :'';
+  const durLabel=s.dur?`⏱ ${s.dur} ${t('wsHrs')}`:(editing?'⏱ Add hours':'');
+  const dur=durLabel
+    ?(editing
+      ?`<span class="ws-svc-dur ws-pe-target" data-pe="svc-dur" data-pe-label="Edit hours" data-svc-id="${s.id??idx}">${durLabel}</span>`
+      :`<span>${durLabel}</span>`)
+    :'';
+  const nameHtml=editing
+    ?`<h3 class="ws-pe-target" data-pe="svc-name" data-pe-label="Edit name" data-svc-id="${s.id??idx}">${s.name||''}</h3>`
+    :`<h3>${s.name||''}</h3>`;
   const emptyIco=blueprintEmptyIcon();
   return `<div class="ws-svc-card ws-pe-target${img?' has-photo':''}" id="ws-svc-${idx}" data-pe="service" data-pe-label="Edit service" data-svc-id="${s.id??idx}">
-    ${isEditorViewOpen()?`<div class="ws-re-btns">
+    ${editing?`<div class="ws-re-btns">
       <button type="button" class="ws-re-btn" title="Move up" ${idx===0?'disabled':''} onclick="event.stopPropagation();moveEditorService(${idx},-1)">↑</button>
       <button type="button" class="ws-re-btn" title="Move down" onclick="event.stopPropagation();moveEditorService(${idx},1)">↓</button>
     </div>`:''}
     <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:`<span aria-hidden="true">${emptyIco}</span>`}${s.popular?`<span class="ws-svc-pop">${t('wsPopular')}</span>`:''}</div>
     <div class="ws-svc-ico" aria-hidden="true">◆</div>
     <div class="ws-svc-body">
-      <h3>${s.name||''}</h3>
+      ${nameHtml}
       <div class="ws-svc-meta">${price}${dur}</div>
       ${s.desc?`<p class="ws-svc-desc">${s.desc}</p>`:''}
       ${inc?`<div class="ws-svc-more">${inc}</div>`:''}

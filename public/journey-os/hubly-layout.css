@@ -637,9 +637,10 @@ body.ed-editor-open #ed-ws-preview .ws-pe-target[data-pe="trust-stats"] {
 }
 
 #ws-pe-context-bar {
+  /* Floating Edit / Style / AI chrome retired — keep node inert if present. */
+  display: none !important;
   position: absolute;
   z-index: 14000;
-  display: flex;
   align-items: center;
   gap: 4px;
   padding: 4px;
@@ -655,9 +656,10 @@ body.ed-editor-open #ed-ws-preview .ws-pe-target[data-pe="trust-stats"] {
 }
 
 #ws-pe-context-bar.is-open {
-  opacity: 1;
+  display: none !important;
+  opacity: 0;
   transform: translateY(0);
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 #ws-pe-context-bar button {
@@ -747,6 +749,21 @@ body.ed-editor-open .ed-shell.ed-canvas-mode .ed-prev {
   box-shadow:0 0 0 4px rgba(37,99,235,.14);
   cursor:text;
   min-width:1ch;
+  background:rgba(37,99,235,.08);
+  border-radius:4px;
+  -webkit-user-select:text;
+  user-select:text;
+}
+#ed-ws-preview .ws-svc-price.ws-pe-target,
+#ed-ws-preview .ws-svc-dur.ws-pe-target,
+#ed-ws-preview h3.ws-pe-target[data-pe="svc-name"]{
+  cursor:text;
+}
+#ed-ws-preview .ws-svc-price.ws-pe-target:hover,
+#ed-ws-preview .ws-svc-dur.ws-pe-target:hover,
+#ed-ws-preview h3.ws-pe-target[data-pe="svc-name"]:hover{
+  outline:2px dashed rgba(37,99,235,.45);
+  outline-offset:2px;
 }
 body.ed-editor-open #ed-ws-preview .ws-pe-target[data-pe="headline"],
 body.ed-editor-open #ed-ws-preview .ws-pe-target[data-pe="tagline"],
