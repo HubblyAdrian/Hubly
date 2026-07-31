@@ -13274,13 +13274,25 @@ function syncHublyRoute(id,{replace}={}){
   const route=HUBLY_PAGE_ROUTES[id];
   if(!route)return;
   try{
-    const cur=hublyPath();
-    const dirty=cur!==route.path||!!location.hash;
-    if(dirty){
-      if(replace)history.replaceState({page:id},'',route.path);
-      else history.pushState({page:id},'',route.path);
+    // Keep Operate section in the URL (/app#jobs, /app#editor/…) so refresh
+    // and in-app showP('p-app') do not wipe the owner back to Home.
+    let next=route.path;
+    if(id==='p-app'&&typeof ownerAppViewHash==='function'){
+      try{
+        const saved=(typeof readPersistedOwnerAppView==='function'&&readPersistedOwnerAppView())
+          ||(typeof parseOwnerAppViewHash==='function'&&parseOwnerAppViewHash())
+          ||null;
+        if(saved&&saved.view&&saved.view!=='dashboard'){
+          next=route.path+ownerAppViewHash(saved.view,saved);
+        }
+      }catch(e){}
     }
-    document.title=route.title;
+    const curFull=((location.pathname||'/').replace(/\/+$/,'')||'/')+(location.hash||'');
+    if(curFull!==next){
+      if(replace)history.replaceState({page:id},'',next);
+      else history.pushState({page:id},'',next);
+    }
+    if(id!=='p-app'||next===route.path)document.title=route.title;
   }catch(e){}
 }
 function showP(id,opts){
@@ -13372,6 +13384,14 @@ window.addEventListener('popstate',()=>{
       const dash=document.querySelector('[data-v="dashboard"]');
       if(dash&&typeof switchV==='function')switchV(dash);
     }catch(e){}
+    return;
+  }
+  if((dest==='p-app')&&currentUser&&!S._intentionalSignOut){
+    showP('p-app',{skipRoute:true});
+    try{restoreOwnerAppView();}catch(e){
+      const dash=document.querySelector('[data-v="dashboard"]');
+      if(dash&&typeof switchV==='function')switchV(dash);
+    }
     return;
   }
   if((dest==='p-app')&&!currentUser){
@@ -13467,7 +13487,7 @@ async function startCeoDemoMode(){
     history.replaceState({page:'p-ceo-demo',ceoDemo:true},'',base+'#home');
     document.title='Hubly · CEO Demo';
   }catch(e){}
-  openOperateHome({replaceRoute:true});
+  openOperateHome({replaceRoute:true,restore:false,forceDashboard:true});
   setTimeout(()=>{
     try{
       const biz=document.getElementById('nav-biz');
@@ -13553,21 +13573,32 @@ function openOperateHome(opts){
     if(shell)shell.style.display='none';
     document.getElementById('p-onboard')?.classList.remove('is-active');
   }catch(e){}
-  showP('p-app',{replaceRoute:opts.replaceRoute!==false});
+  showP('p-app',{replaceRoute:opts.replaceRoute!==false,skipRoute:true});
+  const wantRestore=opts.restore!==false&&!opts.forceDashboard&&!S._ceoDemo;
   try{
     if(S._ceoDemo){
       const base=isCeoDemoPath()?hublyPath():'/hubly-ceo';
       history.replaceState({page:'p-app',ceoDemo:true},'', base+'#home');
       document.title='Hubly · CEO Demo · Home';
-    }else{
+    }else if(!wantRestore){
       history.replaceState({page:'p-app'},'', '/app');
       document.title='Hubly · Home';
     }
   }catch(e){}
-  const dashNav=document.querySelector('#p-app [data-v="dashboard"]')||document.querySelector('[data-v="dashboard"]');
-  if(dashNav)switchV(dashNav);
+  if(wantRestore){
+    try{restoreOwnerAppView({forceDashboard:false});}catch(e){
+      const dashNav=document.querySelector('#p-app [data-v="dashboard"]')||document.querySelector('[data-v="dashboard"]');
+      if(dashNav)switchV(dashNav);
+    }
+  }else{
+    try{persistOwnerAppView('dashboard');}catch(e){}
+    const dashNav=document.querySelector('#p-app [data-v="dashboard"]')||document.querySelector('[data-v="dashboard"]');
+    if(dashNav)switchV(dashNav);
+  }
   setTimeout(()=>{
     try{
+      const home=document.getElementById('v-dashboard');
+      if(home&&home.classList.contains('hidden'))return;
       updateDashGreeting?.();
       renderOperateHome?.();
       renderDashToday?.();
@@ -13576,6 +13607,108 @@ function openOperateHome(opts){
       applyTranslations?.();
     }catch(e){}
   },60);
+}
+
+const HUBLY_OWNER_APP_VIEWS=new Set([
+  'dashboard','jobs','calendar','photo-projects','leads','customers','pipeline','chats','studio',
+  'reviews','memberships','store','money','reports','quotes','editor','ask','apps','settings',
+  'opportunities','activity','growth','marketplace'
+]);
+function ownerAppViewHash(view,extra){
+  const v=HUBLY_OWNER_APP_VIEWS.has(view)?view:'dashboard';
+  if(v==='dashboard')return '';
+  if(v==='editor'){
+    const hub=(extra&&extra.hub)||(typeof S!=='undefined'&&S._edHubTab)||'site';
+    const nav=(extra&&extra.settingsNav)||(typeof S!=='undefined'&&S._edSettingsNav)||'';
+    let h='#editor';
+    if(hub&&hub!=='site')h+='/'+encodeURIComponent(hub);
+    if(nav)h+='/'+encodeURIComponent(nav);
+    return h;
+  }
+  return '#'+encodeURIComponent(v);
+}
+function parseOwnerAppViewHash(){
+  const raw=(location.hash||'').replace(/^#/,'').trim();
+  if(!raw||raw==='home')return {view:'dashboard'};
+  const parts=raw.split('/').map(p=>{try{return decodeURIComponent(p);}catch(e){return p;}}).filter(Boolean);
+  const view=parts[0];
+  if(view==='editor'){
+    return {view:'editor',hub:parts[1]||'site',settingsNav:parts[2]||''};
+  }
+  if(HUBLY_OWNER_APP_VIEWS.has(view))return {view,hub:'',settingsNav:''};
+  return null;
+}
+function persistOwnerAppView(view,extra){
+  if(typeof S!=='undefined'&&S._ceoDemo)return;
+  const v=HUBLY_OWNER_APP_VIEWS.has(view)?view:'dashboard';
+  const hub=v==='editor'?((extra&&extra.hub)||S._edHubTab||'site'):'';
+  const settingsNav=v==='editor'?((extra&&extra.settingsNav)||S._edSettingsNav||''):'';
+  try{
+    sessionStorage.setItem('hubly_app_view_v1',JSON.stringify({view:v,hub,settingsNav,at:Date.now()}));
+  }catch(e){}
+  try{
+    if(hublyPath()!=='/app'&&hublyPath()!=='/dashboard')return;
+    const next='/app'+ownerAppViewHash(v,{hub,settingsNav});
+    const cur=(location.pathname||'')+(location.hash||'');
+    if(cur!==next)history.replaceState({page:'p-app',view:v,hub,settingsNav},'',next);
+    if(v!=='dashboard'){
+      const titles={
+        dashboard:'Home',jobs:'Jobs',calendar:'Calendar','photo-projects':'Media',leads:'Leads',customers:'Completed Customers',
+        pipeline:'Pipeline',ask:'Ask Hubly',quotes:'Quick Quote',money:'Revenue',chats:'Inbox',apps:'Apps',
+        editor:'Website editor',settings:'Settings',reviews:'Reviews',studio:'Studio',memberships:'Memberships',
+        store:'Store',reports:'Reports'
+      };
+      document.title='Hubly · '+(titles[v]||v);
+    }else document.title='Hubly · Home';
+  }catch(e){}
+}
+function readPersistedOwnerAppView(){
+  const fromHash=parseOwnerAppViewHash();
+  if(fromHash&&fromHash.view&&fromHash.view!=='dashboard')return fromHash;
+  if(fromHash&&fromHash.view==='dashboard'&&(location.hash||'').replace(/^#/,'')){
+    // explicit #home
+    return fromHash;
+  }
+  try{
+    const raw=sessionStorage.getItem('hubly_app_view_v1');
+    if(!raw)return fromHash;
+    const o=JSON.parse(raw);
+    if(o&&HUBLY_OWNER_APP_VIEWS.has(o.view))return o;
+  }catch(e){}
+  return fromHash;
+}
+function restoreOwnerAppView(opts){
+  opts=opts||{};
+  if(opts.forceDashboard){
+    persistOwnerAppView('dashboard');
+    const dash=document.querySelector('#p-app [data-v="dashboard"]')||document.querySelector('[data-v="dashboard"]');
+    if(dash)switchV(dash);
+    return 'dashboard';
+  }
+  const saved=readPersistedOwnerAppView()||{view:'dashboard'};
+  const view=HUBLY_OWNER_APP_VIEWS.has(saved.view)?saved.view:'dashboard';
+  if(view==='editor'){
+    try{
+      S._edHubTab=saved.hub||'site';
+      S._edHubKeepTab=true;
+      if(saved.settingsNav)S._edSettingsNav=saved.settingsNav;
+    }catch(e){}
+  }
+  const nav=document.querySelector('#p-app [data-v="'+view+'"]')||document.querySelector('[data-v="'+view+'"]');
+  if(nav&&typeof switchV==='function')switchV(nav);
+  else{
+    const dash=document.querySelector('#p-app [data-v="dashboard"]');
+    if(dash)switchV(dash);
+    return 'dashboard';
+  }
+  if(view==='editor'&&saved.settingsNav){
+    setTimeout(()=>{
+      try{
+        if(typeof goEdSettingsNav==='function')goEdSettingsNav(saved.settingsNav);
+      }catch(e){}
+    },140);
+  }
+  return view;
 }
 
 function markM2ExperienceHome(){
@@ -13645,8 +13778,8 @@ function goClassicDashboard(){
 }
 
 function goDash(){
-  // Hubly v3 — login / Home always enters Operate mode (OS chassis).
-  openOperateHome();
+  // Intentional Home — do not restore a prior section.
+  openOperateHome({restore:false,forceDashboard:true});
 }
 /** Leave Website editor and return to Operate Home (never marketing landing). */
 function leaveWebsiteEditorToHome(opts){
@@ -13660,6 +13793,7 @@ function leaveWebsiteEditorToHome(opts){
   try{
     if(opts.replaceRoute!==false)history.replaceState({page:'p-app'},'','/app');
   }catch(e){}
+  try{persistOwnerAppView('dashboard');}catch(e){}
   try{showP('p-app',{replaceRoute:true,skipRoute:true});}catch(e){}
   try{
     const dash=document.querySelector('[data-v="dashboard"]');
@@ -14229,13 +14363,13 @@ async function loadBusiness(opts={}){
           if(detected){S.timezone=detected;await db.from('businesses').update({timezone:detected}).eq('id',currentBusiness.id);const tzSel=document.getElementById('ed-timezone');if(tzSel)tzSel.value=detected;}
         }catch(e){}
       }
-      // App shell on resume. Business Home is the product — editor opens Creative Workspace.
+      // App shell on resume — restore last section (Website, Jobs, …) when possible.
       setOwnerPreview(false);
       if(opts.openEditor){
-        openProductionBusinessHome({skipDaily:true,fromDaily:true});
+        openProductionBusinessHome({skipDaily:true,fromDaily:true,restore:false,forceDashboard:true});
         setTimeout(()=>{try{isEnterCreativeWorkspace();}catch(e){}},80);
       }else{
-        goDash();
+        openOperateHome({restore:true});
       }
       try{if(window.HublyBrain&&typeof HublyBrain.syncBusinessMemory==='function')HublyBrain.syncBusinessMemory('client');}catch(e){}
     } else {
@@ -19880,7 +20014,7 @@ function isRevealContinueToWorkspace(){
   try{persistInstantSiteDraft();}catch(e){}
   // Already claimed / signed in → Operate immediately
   if(S._accountClaimed||S._is.businessSaved||(typeof currentUser!=='undefined'&&currentUser)||(typeof currentBusiness!=='undefined'&&currentBusiness?.id)){
-    openOperateHome();
+    openOperateHome({restore:false,forceDashboard:true});
     return;
   }
   isStartDelayedAccountCreation();
@@ -20100,9 +20234,9 @@ async function isDelayedAccountCompleteSave(opts){
   }
   if(welcome)welcome.textContent=flow.personalWelcome+' '+flow.ownershipLine;
 
-  // Hubly v3 — skip Launch / certificates / Daily. Create ends → Operate.
+  // Hubly v3 — skip Launch / certificates / Daily. Create ends → Operate Home.
   await new Promise(r=>setTimeout(r,450));
-  openOperateHome();
+  openOperateHome({restore:false,forceDashboard:true});
 }
 
 function isShowFounderMoment(){
@@ -20445,8 +20579,9 @@ function isLaunchChooseNext(id){
 }
 
 function isEnterBusinessHome(opts){
-  // Hubly v3 — Create ends; Operate begins on the OS dashboard.
-  openOperateHome(opts);
+  // Hubly v3 — Create ends; Operate begins on the OS dashboard (not a prior section).
+  const o=Object.assign({},opts||{},{restore:false,forceDashboard:true});
+  openOperateHome(o);
 }
 
 /* ── Milestone 2 · Epic 8 — Business Home ── */
@@ -28468,6 +28603,7 @@ function goEdSettingsNav(nav){
   const id=String(nav||'').trim();
   if(!id)return;
   try{if(window.S)S._edSettingsNav=id;}catch(e){}
+  try{persistOwnerAppView('editor',{hub:(S&&S._edHubTab)||'site',settingsNav:id});}catch(e){}
   if(isEdSettingsRailMobile())closeEdSettingsRail();
   const ensureSiteCanvas=()=>{
     try{
@@ -28748,6 +28884,7 @@ function switchWebsiteHubTab(tab){
     }
   }
   try{syncEdSettingsRail(t==='site'?'site':t);}catch(e){}
+  try{persistOwnerAppView('editor',{hub:t,settingsNav:(S&&S._edSettingsNav)||''});}catch(e){}
 }
 
 function jumpToEdSection(section){
@@ -38313,6 +38450,7 @@ function switchV(el){
   }else{
     unmountEdChrome();
   }
+  try{persistOwnerAppView(v);}catch(e){}
 }
 
 function mountEdChrome(){
