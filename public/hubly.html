@@ -9162,7 +9162,28 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 }
 .bw-draft-banner strong{display:block;margin-bottom:2px;font-weight:800}
 .bw-draft-banner.hidden{display:none!important}
-.bk-svc-prompt{font-size:16px;font-weight:800;letter-spacing:-.02em;color:var(--ink,#0f172a);margin:0 0 12px;line-height:1.3}
+.bk-selected-pkg{
+  display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:12px;align-items:center;
+  padding:12px 14px;margin:0 0 14px;border:1.5px solid #e2e8f0;border-radius:16px;background:#fff;
+}
+.bk-selected-pkg img,
+.bk-selected-pkg-ph{
+  width:56px;height:44px;border-radius:10px;object-fit:cover;background:#e2e8f0;display:block;
+}
+.bk-selected-pkg-copy{min-width:0}
+.bk-selected-pkg-copy em{
+  display:block;font-style:normal;font-size:11px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:#64748b;margin:0 0 2px;
+}
+.bk-selected-pkg-copy strong{display:block;font-size:15px;font-weight:800;color:#0f172a;line-height:1.25}
+.bk-selected-pkg-copy span{display:block;font-size:12px;color:#475569;margin-top:2px}
+.bk-selected-pkg-change{
+  appearance:none;border:none;background:none;color:var(--bk-ui-accent,#0f766e);
+  font:inherit;font-size:13px;font-weight:750;cursor:pointer;padding:6px 4px;white-space:nowrap;
+}
+#p-booking.booking-shell .bk-selected-pkg-copy strong{color:#0f172a!important;-webkit-text-fill-color:#0f172a}
+#p-booking.booking-shell .bk-selected-pkg-copy span,
+#p-booking.booking-shell .bk-selected-pkg-copy em{color:#475569!important;-webkit-text-fill-color:#475569}
 .bk-svc-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:0 0 16px}
 .bk-svc-switch-hint{margin:6px 0 14px;font-size:12px;color:var(--ink-3,#64748b);line-height:1.35}
 .bk-help-ico{width:44px;height:44px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:var(--bk-ui-accent,#0f766e);color:#fff;flex-shrink:0}
@@ -12986,7 +13007,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/photography-projects.js?v=projects-16"></script>
 <!-- ceo-demo.js loads on-demand only for owner-authorized /hubly-ceo -->
 <script defer src="/booking-wizard/ui.js"></script>
-<link rel="stylesheet" href="/booking-wizard/mock-skin.css?v=bk-contrast-2">
+<link rel="stylesheet" href="/booking-wizard/mock-skin.css?v=bk-pkg-flow-3">
 <script defer src="/themes/registry.js"></script>
 <script defer src="/themes/modern.js"></script>
 <script defer src="/themes/bold.js"></script>
@@ -16462,9 +16483,10 @@ async function loadPublicProfile(slug){
     document.documentElement.setAttribute('data-theme','day');
   }catch(e){}
   if(data.name)document.title=data.name;
+  try{applyWebsiteSeo();}catch(e){}
   showP('p-storefront');
   // Fill services without blocking first storefront paint.
-  loadServicesFromDb().then(()=>{try{syncStorefront();renderWebsite();}catch(e){}}).catch(()=>{});
+  loadServicesFromDb().then(()=>{try{syncStorefront();renderWebsite();applyWebsiteSeo();}catch(e){}}).catch(()=>{});
 }
 function isPasswordRecoveryUrl(){
   try{
@@ -36293,11 +36315,36 @@ function renderWebsiteReviews(targetId){
 }
 function applyWebsiteSeo(){
   ensureWebsiteCopy();
-  const w=S.website;
-  if(w.seoTitle)document.title=w.seoTitle;
+  const w=S.website||{};
+  const biz=String(S.biz||'').trim();
+  const title=String(w.seoTitle||'').trim()||biz||document.title;
+  const desc=String(w.seoDescription||'').trim()||String(S.tag||'').trim()||(biz?`Book with ${biz}`:'');
+  const image=String(S.bannerUrl||S.logoUrl||'').trim();
+  if(title)document.title=title;
   let meta=document.querySelector('meta[name="description"]');
   if(!meta){meta=document.createElement('meta');meta.name='description';document.head.appendChild(meta);}
-  if(w.seoDescription)meta.content=w.seoDescription;
+  if(desc)meta.content=desc;
+  const setOg=(prop,content)=>{
+    if(!content)return;
+    let el=document.querySelector(`meta[property="${prop}"]`);
+    if(!el){el=document.createElement('meta');el.setAttribute('property',prop);document.head.appendChild(el);}
+    el.setAttribute('content',content);
+  };
+  const setName=(name,content)=>{
+    if(!content)return;
+    let el=document.querySelector(`meta[name="${name}"]`);
+    if(!el){el=document.createElement('meta');el.setAttribute('name',name);document.head.appendChild(el);}
+    el.setAttribute('content',content);
+  };
+  setOg('og:title',title);
+  setOg('og:description',desc);
+  setOg('og:type','website');
+  try{setOg('og:url',location.href.split('#')[0]);}catch(e){}
+  if(image)setOg('og:image',image);
+  setName('twitter:card',image?'summary_large_image':'summary');
+  setName('twitter:title',title);
+  setName('twitter:description',desc);
+  if(image)setName('twitter:image',image);
 }
 function onSocialInput(field,val){
   S[field]=val;
@@ -38326,7 +38373,7 @@ function openBookingPage(svcName,opts={}){
       // (not the Our Services picker). Prefer popular, else first service.
       const def=getDefaultBookingService();
       if(def){
-        openBookingPage(def.name,{withPromo:!!opts.withPromo});
+        openBookingPage(def.name,{withPromo:!!opts.withPromo,autoPicked:true});
         return;
       }
       renderBookingLanding('pub');
@@ -38363,6 +38410,10 @@ function openBookingPage(svcName,opts={}){
     S.bkService=svc.name||'';
     S.bkSvcObj=svc;
     S.bkBasePrice=svc.pricingType==='variable'?0:(Number(svc.price)||0);
+    // Customer tapped a package on the site → lock it and skip re-picking.
+    // Book Now auto-pick keeps the picker so they can still choose.
+    S._bkPackageLocked=!opts.autoPicked&&!opts.fromQuote;
+    S._bkShowPackagePicker=!!opts.autoPicked&&!opts.fromQuote;
     S.bkStep=1;S.bkVType=null;S.bkVColor=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkDiscountPercent=0;S.bkDiscountCode='';S.bkTimeVal='';S.bkTimeLabel='';
     S._abandonNudgeSent=false;S._abandonedBookingReqId=null;S._abandonedBookingPhone=null;S.bkSmsConsent=false;
     document.getElementById('bk-abandon-nudge')?.classList.add('hidden');
@@ -38454,6 +38505,15 @@ function openBookingPage(svcName,opts={}){
     // Only auto-apply when this booking started from "Book with offer"
     if(S._promoBookingSession)applyWebsitePromoToBooking({toast:true});
     updateOwnerPreviewBars();
+    // Package already chosen on the website → jump to When & where.
+    if(S._bkPackageLocked&&!opts.fromQuote){
+      try{
+        document.querySelectorAll('.bk-step').forEach(s=>{s.classList.remove('active','exit-left')});
+        document.getElementById('bk-step-2')?.classList.add('active');
+        updateBkProgress(2);
+        try{if(typeof HublyBookingSQ!=='undefined')HublyBookingSQ.refreshProgressLabels(2);}catch(e){}
+      }catch(e){}
+    }
     if(useOverlay){
       document.body.classList.add('ws-booking-open');
       document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -39349,7 +39409,9 @@ function bkBack(step){
   else if(step===4)goToStep(4,3);
 }
 function bookingBack(){
-  if(S.bkStep===1){
+  // Leave booking when on first step, or when package was already picked on the site
+  // and they're on When & where (Back should return to packages on the website).
+  if(S.bkStep===1||(S.bkStep===2&&S._bkPackageLocked)){
     // Leave booking. don't dump people on the old Our Services picker
     if(document.body.classList.contains('ws-booking-open')||S.ownerPreview){
       closePublicBooking();

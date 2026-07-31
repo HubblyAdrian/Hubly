@@ -3,6 +3,9 @@ const path = require('path');
 
 // Always serve the main Hubly app. Public business profiles are resolved
 // client-side from the subdomain slug (see initApp / loadPublicProfile in hubly.html).
+// Share previews (iMessage/Slack) need OG tags injected server-side — crawlers
+// do not run the SPA JS that would otherwise set document.title.
+
 const MIME = {
   '.js': 'application/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -13,6 +16,15 @@ const MIME = {
   '.webp': 'image/webp',
   '.svg': 'image/svg+xml',
 };
+
+const SUPA_URL =
+  process.env.SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  'https://rtwxxkxpkqdrhclkozma.supabase.co';
+const SUPA_ANON =
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
 
 /** {slug}.myhubly.app / {slug}.hubly.app — owner booking sites, not platform marketing. */
 function isBusinessSubdomain(req) {
@@ -29,7 +41,99 @@ function isBusinessSubdomain(req) {
   return true;
 }
 
-function serveHublyHtml(res) {
+function businessSlugFromReq(req) {
+  if (!isBusinessSubdomain(req)) return null;
+  const raw =
+    (req.headers && (req.headers['x-forwarded-host'] || req.headers.host)) || '';
+  const host = String(raw).toLowerCase().split(',')[0].trim().split(':')[0];
+  return host.split('.')[0] || null;
+}
+
+function slugToDisplayName(slug) {
+  return String(slug || '')
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+function escAttr(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function upsertMeta(html, attr, key, content) {
+  const re = new RegExp(`<meta[^>]+${attr}=["']${key}["'][^>]*>`, 'i');
+  const tag = `<meta ${attr}="${key}" content="${escAttr(content)}">`;
+  if (re.test(html)) return html.replace(re, tag);
+  return html.replace(/<\/head>/i, `  ${tag}\n</head>`);
+}
+
+function applyBusinessShareMeta(html, meta) {
+  if (!meta || !meta.title) return html;
+  let out = html;
+  out = out.replace(/<title>[^<]*<\/title>/i, `<title>${escAttr(meta.title)}</title>`);
+  out = upsertMeta(out, 'property', 'og:title', meta.title);
+  out = upsertMeta(out, 'property', 'og:description', meta.description || '');
+  out = upsertMeta(out, 'property', 'og:type', 'website');
+  if (meta.url) out = upsertMeta(out, 'property', 'og:url', meta.url);
+  if (meta.image) out = upsertMeta(out, 'property', 'og:image', meta.image);
+  out = upsertMeta(out, 'name', 'description', meta.description || '');
+  out = upsertMeta(out, 'name', 'twitter:card', meta.image ? 'summary_large_image' : 'summary');
+  out = upsertMeta(out, 'name', 'twitter:title', meta.title);
+  out = upsertMeta(out, 'name', 'twitter:description', meta.description || '');
+  if (meta.image) out = upsertMeta(out, 'name', 'twitter:image', meta.image);
+  return out;
+}
+
+async function fetchBusinessShareMeta(slug, req) {
+  const fallbackName = slugToDisplayName(slug) || 'Book online';
+  const raw =
+    (req.headers && (req.headers['x-forwarded-host'] || req.headers.host)) || '';
+  const host = String(raw).toLowerCase().split(',')[0].trim().split(':')[0];
+  const proto =
+    (req.headers && (req.headers['x-forwarded-proto'] || '')).split(',')[0].trim() ||
+    'https';
+  const pageUrl = `${proto}://${host}/`;
+  const base = {
+    title: fallbackName,
+    description: `Book with ${fallbackName}`,
+    image: '',
+    url: pageUrl,
+  };
+  if (!SUPA_URL || !SUPA_ANON || !slug) return base;
+  try {
+    const endpoint =
+      `${SUPA_URL.replace(/\/$/, '')}/rest/v1/businesses` +
+      `?slug=eq.${encodeURIComponent(slug)}` +
+      `&select=name,tagline,about,banner_url,logo_url&limit=1`;
+    const res = await fetch(endpoint, {
+      headers: {
+        apikey: SUPA_ANON,
+        Authorization: `Bearer ${SUPA_ANON}`,
+        Accept: 'application/json',
+      },
+    });
+    if (!res.ok) return base;
+    const rows = await res.json();
+    const row = Array.isArray(rows) ? rows[0] : null;
+    if (!row) return base;
+    const name = String(row.name || '').trim() || fallbackName;
+    const desc =
+      String(row.tagline || '').trim() ||
+      String(row.about || '').trim().slice(0, 160) ||
+      `Book with ${name}`;
+    const image = String(row.banner_url || row.logo_url || '').trim();
+    return { title: name, description: desc, image, url: pageUrl };
+  } catch (e) {
+    return base;
+  }
+}
+
+async function serveHublyHtml(res, req) {
   let content = fs.readFileSync(path.join(__dirname, '../public/hubly.html'), 'utf8');
   // Owner-only CEO walkthrough — never ship an open /demo to customers.
   // Set HUBLY_CEO_DEMO_KEY in the server env, then open /hubly-ceo?k=<key>
@@ -47,6 +151,17 @@ function serveHublyHtml(res) {
   } else {
     content = inject + content;
   }
+
+  const slug = businessSlugFromReq(req || {});
+  if (slug) {
+    try {
+      const share = await fetchBusinessShareMeta(slug, req || {});
+      content = applyBusinessShareMeta(content, share);
+    } catch (e) {
+      /* keep Hubly defaults if lookup fails */
+    }
+  }
+
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
   return res.status(200).send(content);
@@ -263,7 +378,7 @@ module.exports = async (req, res) => {
       }
     }
 
-    return serveHublyHtml(res);
+    return serveHublyHtml(res, req);
   } catch (e) {
     return res.status(500).send('Error loading app: ' + e.message);
   }
@@ -271,3 +386,6 @@ module.exports = async (req, res) => {
 
 // Exported for regression tests
 module.exports.isBusinessSubdomain = isBusinessSubdomain;
+module.exports.businessSlugFromReq = businessSlugFromReq;
+module.exports.applyBusinessShareMeta = applyBusinessShareMeta;
+module.exports.slugToDisplayName = slugToDisplayName;

@@ -467,6 +467,61 @@
     </div>`;
   }
 
+  function renderSelectedPackageChip() {
+    const app = appState() || {};
+    const svc = app.bkSvcObj || {};
+    const name = app.bkService || svc.name || 'Selected package';
+    const img =
+      svc.imgUrl ||
+      svc.image ||
+      (Array.isArray(svc.photos) && svc.photos[0]) ||
+      '';
+    const priceNum = Number(svc.price != null ? svc.price : app.bkBasePrice);
+    const price =
+      Number.isFinite(priceNum) && priceNum > 0 ? `$${Math.round(priceNum)}` : '';
+    const durRaw = String(svc.dur || '').trim();
+    const dur = durRaw
+      ? `${durRaw}${/hr|hour|min/i.test(durRaw) ? '' : ' hrs'}`
+      : '';
+    const meta = [price, dur].filter(Boolean).join(' · ');
+    return `<div class="bk-selected-pkg">
+      ${img ? `<img src="${esc(img)}" alt="">` : `<div class="bk-selected-pkg-ph" aria-hidden="true"></div>`}
+      <div class="bk-selected-pkg-copy">
+        <em>You selected</em>
+        <strong>${esc(name)}</strong>
+        ${meta ? `<span>${esc(meta)}</span>` : ''}
+      </div>
+      <button type="button" class="bk-selected-pkg-change" onclick="HublyBookingSQ.changePackage()">Change</button>
+    </div>`;
+  }
+
+  function packageLocked() {
+    try {
+      const app = appState();
+      return !!(app && app._bkPackageLocked && app.bkService);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function changePackage() {
+    const app = appState();
+    if (!app) return;
+    app._bkPackageLocked = false;
+    app._bkShowPackagePicker = true;
+    // Back to Details so they can pick another package without leaving booking.
+    try {
+      if (typeof global.goToStep === 'function' && Number(app.bkStep) > 1) {
+        global.goToStep(Number(app.bkStep), 1);
+      } else if (typeof global.updateBkProgress === 'function') {
+        global.updateBkProgress(1);
+      }
+    } catch (e) {}
+    applyShellChrome();
+    renderIntake();
+    updateEstimate();
+  }
+
   function renderServicePicker() {
     const app = appState() || {};
     const w = wizardCfg();
@@ -480,6 +535,10 @@
       if (!svcs.length) svcs = (app.editorSvcs || app.services || []).filter((s) => s && s.name);
     }
     if (!svcs.length) return '';
+    // Customer already picked a package on the website — don't re-ask.
+    if (packageLocked() && !app._bkShowPackagePicker) {
+      return renderSelectedPackageChip();
+    }
     const prompt =
       (w && w.servicePrompt) ||
       'What service would you like?';
@@ -516,7 +575,7 @@
         </button>`;
       })
       .join('');
-    return `<div class="sq-field bk-svc-field"><div class="bk-svc-prompt">${esc(prompt)}</div><div class="bk-svc-pick">${cards}</div><p class="bk-svc-switch-hint">Tap another package anytime to switch.</p></div>`;
+    return `<div class="sq-field bk-svc-field"><div class="bk-svc-prompt">${esc(prompt)}</div><div class="bk-svc-pick">${cards}</div><p class="bk-svc-switch-hint">Tap a package to continue.</p></div>`;
   }
 
   function pickService(name) {
@@ -555,9 +614,19 @@
     };
     app.bkBasePrice =
       app.bkSvcObj.pricingType === 'variable' ? 0 : Number(app.bkSvcObj.price) || 0;
+    app._bkShowPackagePicker = false;
+    app._bkPackageLocked = true;
     // Stay on Details — don't restart the whole booking wizard.
     try {
       syncLegacyFromAnswers();
+    } catch (e) {}
+    // Package chosen — go straight to When & where (site → book flow).
+    try {
+      if (typeof global.goToStep === 'function') {
+        const step = Number(app.bkStep) || 1;
+        if (step === 1) global.goToStep(1, 2);
+        else if (typeof global.updateBkProgress === 'function') global.updateBkProgress(2);
+      }
     } catch (e) {}
     renderIntake();
     updateEstimate();
@@ -604,17 +673,19 @@
       null;
     const subjectStep =
       (cfg && cfg.steps && cfg.steps.find((s) => s && s.id === 'subject')) || null;
-    const titleText =
-      (typeof headline === 'string' ? headline : headline && headline.title) ||
-      (subjectStep && subjectStep.title) ||
-      'Details';
+    const titleText = packageLocked()
+      ? 'When works for you?'
+      : (typeof headline === 'string' ? headline : headline && headline.title) ||
+        (subjectStep && subjectStep.title) ||
+        'Details';
     if (titleTxt) titleTxt.textContent = titleText;
     if (sub)
-      sub.textContent =
-        (w && w.blurb) ||
-        (typeof headline === 'object' && headline && headline.blurb) ||
-        (subjectStep && subjectStep.blurb) ||
-        'Choose the service that best fits your needs.';
+      sub.textContent = packageLocked()
+        ? 'Pick a date and time for your session'
+        : (w && w.blurb) ||
+          (typeof headline === 'object' && headline && headline.blurb) ||
+          (subjectStep && subjectStep.blurb) ||
+          'Choose the service that best fits your needs.';
     if (tag) {
       const trust0 = (w && w.trustLines && w.trustLines[0]) || '';
       const tagline = trust0 || (appState() || {}).tag || '';
@@ -633,15 +704,28 @@
     document.getElementById('bk-blueprint-intake')?.classList.add('hidden');
     document.getElementById('bk-sq-intake')?.classList.remove('hidden');
     document.querySelectorAll('#p-booking .bk-step-foot .bk-trust').forEach((el) => el.remove());
+    const locked = packageLocked();
+    const addonLbl = document.querySelector('#bk-step-1 > .bk-step-inner > .bk-step-body > .bk-lbl');
+    const addonGrid = document.getElementById('bk-addon-grid');
+    if (addonLbl) addonLbl.style.display = locked ? 'none' : '';
+    if (addonGrid) addonGrid.style.display = locked ? 'none' : '';
     const labels = document.getElementById('bk-prog-labels');
     if (labels) {
       const step = currentBkStep();
-      const steps = [
-        { t: 'Details', h: 'Choose your service' },
-        { t: 'When & where', h: 'Pick date & location' },
-        { t: 'Your info', h: 'Tell us about you' },
-        { t: 'Review', h: 'Confirm & book' },
-      ];
+      const locked = packageLocked();
+      const steps = locked
+        ? [
+            { t: 'Package', h: 'Selected' },
+            { t: 'When & where', h: 'Pick date & time' },
+            { t: 'Your info', h: 'Tell us about you' },
+            { t: 'Review', h: 'Confirm & book' },
+          ]
+        : [
+            { t: 'Details', h: 'Choose your service' },
+            { t: 'When & where', h: 'Pick date & location' },
+            { t: 'Your info', h: 'Tell us about you' },
+            { t: 'Review', h: 'Confirm & book' },
+          ];
       labels.innerHTML = steps
         .map((s, i) => {
           const n = i + 1;
@@ -687,21 +771,30 @@
       .concat(SQ.fieldsForStep(cfg, 'subject'))
       .concat(SQ.fieldsForStep(cfg, 'modifiers'));
     const svcPicker = renderServicePicker();
-    // When owner packages already drive pick, skip duplicate shoot-type tiles
-    const filtered = svcPicker
+    const locked = packageLocked() && !((appState() || {})._bkShowPackagePicker);
+    // When a package is already chosen, skip duplicate shoot-type + package grids.
+    // Also hide Smart Quote modifiers that re-price a fixed website package.
+    let filtered = svcPicker
       ? fields.filter((f) => f && f.id !== 'sessionType')
       : fields;
+    if (locked) {
+      filtered = filtered.filter(
+        (f) => f && !['hours', 'secondShooter', 'travelMiles', 'sessionType'].includes(f.id)
+      );
+    }
     const parts = SQ.partitionFields(filtered);
     let html = svcPicker;
-    html +=
-      parts.primary.map(renderField).join('') ||
-      (html
-        ? ''
-        : '<p class="bk-step-sub" style="margin:0;">No extra details for this service — continue to pick a time.</p>');
-    if (parts.secondary.length) {
-      html += `<details class="sq-more"${moreOpen ? ' open' : ''}><summary>More details <span>(optional)</span></summary>${parts.secondary
-        .map(renderField)
-        .join('')}</details>`;
+    if (!locked) {
+      html +=
+        parts.primary.map(renderField).join('') ||
+        (html
+          ? ''
+          : '<p class="bk-step-sub" style="margin:0;">No extra details for this service — continue to pick a time.</p>');
+      if (parts.secondary.length) {
+        html += `<details class="sq-more"${moreOpen ? ' open' : ''}><summary>More details <span>(optional)</span></summary>${parts.secondary
+          .map(renderField)
+          .join('')}</details>`;
+      }
     }
     root.innerHTML = html;
   }
@@ -821,5 +914,7 @@
     getCfg,
     priceUnlocked,
     pickService,
+    changePackage,
+    packageLocked,
   };
 })(typeof window !== 'undefined' ? window : global);
