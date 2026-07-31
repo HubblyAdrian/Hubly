@@ -62,3 +62,70 @@ test("uploadBrandAsset authenticates and shrinks oversized phone photos", () => 
   assert.match(up, /brand-assets/);
   assert.match(up, /waitForDb/);
 });
+
+test("booking brand follows live site media and clears when owner deletes", () => {
+  const getters = html.slice(
+    html.indexOf("function getBkBanner"),
+    html.indexOf("function renderGradientPicker")
+  );
+  assert.match(getters, /isHttpsAssetUrl\(S\.bannerUrl\)/);
+  assert.match(getters, /isHttpsAssetUrl\(S\.logoUrl\)/);
+  const sync = html.slice(
+    html.indexOf("function syncBookingBrandFromSiteMedia"),
+    html.indexOf("async function hostPortfolioDataUrls")
+  );
+  assert.match(sync, /S\.bkBannerUrl=null/);
+  assert.match(sync, /S\.bkLogoUrl=null/);
+  const clearBanner = html.slice(
+    html.indexOf("function clearHeroBanner"),
+    html.indexOf("function syncWsPeLogoScaleButtons")
+  );
+  assert.match(clearBanner, /syncBookingBrandFromSiteMedia/);
+  const clearLogo = html.slice(
+    html.indexOf("function clearProfileLogo"),
+    html.indexOf("function ensureWsPeFileInputs")
+  );
+  assert.match(clearLogo, /syncBookingBrandFromSiteMedia/);
+});
+
+test("saveStorefront does not resurrect cleared banner/logo URLs", () => {
+  const save = html.slice(
+    html.indexOf("async function saveStorefront"),
+    html.indexOf("function setEdSaveStatus")
+  );
+  assert.match(save, /resolveBrandCol/);
+  assert.match(save, /if\(live==null\|\|live===''\)return null/);
+  // Meta must be built after booking brand sync so bk* matches live site.
+  const syncAt = save.indexOf("syncBookingBrandFromSiteMedia()");
+  const metaAt = save.lastIndexOf("buildPersistableBizMeta()");
+  assert.ok(syncAt >= 0 && metaAt >= 0 && syncAt < metaAt);
+});
+
+test("hostPortfolioDataUrls uploads package/service photos before strip", () => {
+  const host = html.slice(
+    html.indexOf("async function hostPortfolioDataUrls"),
+    html.indexOf("function mergePriorHttpsGalleryIntoMeta")
+  );
+  assert.match(host, /S\.editorSvcs/);
+  assert.match(host, /remapSvc/);
+  assert.match(host, /buildServiceCatalogFromEditor/);
+  const pe = html.slice(
+    html.indexOf("function handlePeSvcPhoto"),
+    html.indexOf("function applyWsPeService")
+  );
+  assert.match(pe, /scheduleEditorCatalogPersist|saveStorefront/);
+});
+
+test("load reconciles booking brand from live columns after meta", () => {
+  const loadBiz = html.slice(
+    html.indexOf("async function loadBusiness"),
+    html.indexOf("async function loadPublicProfile")
+  );
+  assert.match(loadBiz, /S\.bannerUrl=data\.banner_url/);
+  assert.match(loadBiz, /syncBookingBrandFromSiteMedia/);
+  const loadPub = html.slice(
+    html.indexOf("async function loadPublicProfile"),
+    html.indexOf("function isPasswordRecoveryUrl")
+  );
+  assert.match(loadPub, /syncBookingBrandFromSiteMedia/);
+});

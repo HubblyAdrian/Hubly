@@ -14135,6 +14135,7 @@ async function loadBusiness(opts={}){
       applyBizMeta(parseBizMeta(data.meta));
       S.logoUrl=data.logo_url||S.logoUrl||null;
       S.bannerUrl=data.banner_url||S.bannerUrl||null;
+      try{syncBookingBrandFromSiteMedia();}catch(e){}
       if(data.section_order)applySectionOrderFromDb(data.section_order);
       await loadServicesFromDb();
       ensureWebsiteCopy();
@@ -16201,11 +16202,16 @@ async function saveStorefront(opts){
     }
     // Never POST megabyte data:image blobs in meta — that hangs mobile Save.
     // Also never wipe previously published https gallery URLs when host fails.
-    let publishMeta=buildPersistableBizMeta();
     const cleanHttps=(u)=>(typeof u==='string'&&/^https?:\/\//i.test(u))?u:null;
-    // Prefer live S https URLs after host; fall back to prior published banner/logo.
+    // Prefer live S https URLs after host; if owner cleared (null/''), write null — do not resurrect.
     const priorMeta=typeof parseBizMeta==='function'?parseBizMeta(currentBusiness?.meta):null;
     syncBookingBrandFromSiteMedia();
+    let publishMeta=buildPersistableBizMeta();
+    const resolveBrandCol=(live,col,prior)=>{
+      if(isHttpsAssetUrl(live))return live;
+      if(live==null||live==='')return null;
+      return cleanHttps(col)||cleanHttps(prior)||null;
+    };
     const updates={
       name: document.getElementById('ed-name')?.value||S.biz,
       tagline: document.getElementById('ed-tag')?.value||null,
@@ -16223,8 +16229,8 @@ async function saveStorefront(opts){
       review_embed_code: S.reviewEmbedCode||null,
       payment_setting: S.paymentSetting||'later',
       deposit_message: S.depositMessage||null,
-      logo_url: cleanHttps(S.logoUrl)||cleanHttps(currentBusiness.logo_url)||cleanHttps(priorMeta?.logoUrl)||null,
-      banner_url: cleanHttps(S.bannerUrl)||cleanHttps(currentBusiness.banner_url)||cleanHttps(priorMeta?.bannerUrl)||null,
+      logo_url: resolveBrandCol(S.logoUrl,currentBusiness.logo_url,priorMeta?.logoUrl),
+      banner_url: resolveBrandCol(S.bannerUrl,currentBusiness.banner_url,priorMeta?.bannerUrl),
       slug: newSlug,
       timezone: document.getElementById('ed-timezone')?.value||S.timezone||null,
       buffer_before_min: parseInt(document.getElementById('ed-buf-before')?.value)||0,
@@ -16462,6 +16468,7 @@ async function loadPublicProfile(slug){
   applyBizMeta(parseBizMeta(data.meta));
   S.logoUrl=data.logo_url||S.logoUrl||null;
   S.bannerUrl=data.banner_url||S.bannerUrl||null;
+  try{syncBookingBrandFromSiteMedia();}catch(e){}
   if(data.section_order)applySectionOrderFromDb(data.section_order);
   // Paint the customer site as soon as core fields exist — services can follow.
   syncStorefront();
@@ -27895,8 +27902,17 @@ function applyWsCtaInk(accent){
     if(!layoutKeepsOwnCtaColor(getWebsiteLayoutId()))el.style.color=ink;
   });
 }
-function getBkBanner(){return S.bkBannerUrl||S.bannerUrl||null;}
-function getBkLogo(){return S.bkLogoUrl||S.logoUrl||null;}
+/** Prefer live website media so booking never sticks on a stale bk* URL. */
+function getBkBanner(){
+  if(isHttpsAssetUrl(S.bannerUrl))return S.bannerUrl;
+  if(isHttpsAssetUrl(S.bkBannerUrl))return S.bkBannerUrl;
+  return S.bannerUrl||S.bkBannerUrl||null;
+}
+function getBkLogo(){
+  if(isHttpsAssetUrl(S.logoUrl))return S.logoUrl;
+  if(isHttpsAssetUrl(S.bkLogoUrl))return S.bkLogoUrl;
+  return S.logoUrl||S.bkLogoUrl||null;
+}
 function renderGradientPicker(containerId){
   const el=document.getElementById(containerId);
   if(!el)return;
@@ -28901,14 +28917,19 @@ function buildPersistableBizMeta(){
   try{meta=mergePriorHttpsGalleryIntoMeta(meta);}catch(e){}
   return meta;
 }
-/** Keep booking landing on the same hero/logo the owner just set on the site. */
+/** Keep booking landing on the same hero/logo as the live site (including clears). */
 function syncBookingBrandFromSiteMedia(){
   if(isHttpsAssetUrl(S.bannerUrl)){
     S.bkBannerUrl=S.bannerUrl;
     S._seededBannerFromBp=false;
+  }else if(S.bannerUrl==null||S.bannerUrl===''){
+    // Owner deleted the site photo — booking must not keep the old bkBannerUrl.
+    S.bkBannerUrl=null;
   }
   if(isHttpsAssetUrl(S.logoUrl)){
     S.bkLogoUrl=S.logoUrl;
+  }else if(S.logoUrl==null||S.logoUrl===''){
+    S.bkLogoUrl=null;
   }
 }
 /**
@@ -28935,6 +28956,17 @@ async function hostPortfolioDataUrls(opts={}){
   (S.website?.galleryAlbums||[]).forEach(a=>(a.urls||[]).forEach(push));
   (S.galleryPairs||[]).forEach(p=>{push(p?.before);push(p?.after);});
   push(S.bannerUrl);
+  push(S.logoUrl);
+  (S.editorSvcs||[]).forEach(svc=>{
+    if(!svc)return;
+    push(svc.imgUrl);
+    (svc.photos||[]).forEach(push);
+  });
+  (S.services||[]).forEach(svc=>{
+    if(!svc)return;
+    push(svc.imgUrl);
+    (svc.photos||[]).forEach(push);
+  });
   if(!collect.length)return {changed:false,failed:0,hosted:0,pendingData:0};
   const map=new Map();
   let failed=0;
@@ -28976,9 +29008,22 @@ async function hostPortfolioDataUrls(opts={}){
     }));
   }
   if(S.bannerUrl)S.bannerUrl=remap(S.bannerUrl);
+  if(S.logoUrl)S.logoUrl=remap(S.logoUrl);
+  const remapSvc=(svc)=>{
+    if(!svc)return;
+    if(svc.imgUrl)svc.imgUrl=remap(svc.imgUrl);
+    if(Array.isArray(svc.photos))svc.photos=svc.photos.map(remap);
+    if(svc.media&&Array.isArray(svc.media.photos))svc.media.photos=svc.media.photos.map(remap);
+  };
+  (S.editorSvcs||[]).forEach(remapSvc);
+  (S.services||[]).forEach(remapSvc);
+  try{syncEditorPackagesToServices();}catch(e){}
+  try{if(typeof buildServiceCatalogFromEditor==='function')buildServiceCatalogFromEditor();}catch(e){}
+  try{syncBookingBrandFromSiteMedia();}catch(e){}
   try{syncPortfolioUrlsFromAlbums();}catch(e){}
   const pendingData=(S.portfolioUrls||[]).filter(u=>String(u||'').startsWith('data:')).length
-    +(S.website?.galleryAlbums||[]).reduce((n,a)=>n+(a.urls||[]).filter(u=>String(u||'').startsWith('data:')).length,0);
+    +(S.website?.galleryAlbums||[]).reduce((n,a)=>n+(a.urls||[]).filter(u=>String(u||'').startsWith('data:')).length,0)
+    +(S.editorSvcs||[]).reduce((n,s)=>n+(Array.isArray(s?.photos)?s.photos.filter(u=>String(u||'').startsWith('data:')).length:0)+(String(s?.imgUrl||'').startsWith('data:')?1:0),0);
   return {changed:true,failed,hosted:map.size,pendingData};
 }
 /** Keep previously published https gallery URLs when a Save would otherwise wipe them. */
@@ -31128,6 +31173,9 @@ function handleSvcPhotoEd(id,input){
       updateSvcPreview();
       renderWebsitePreview();
       toast('Photo added');
+      try{scheduleEditorCatalogPersist();}catch(err){
+        try{if(typeof saveStorefront==='function')saveStorefront({quiet:true}).catch(()=>{});}catch(e2){}
+      }
     }catch(err){toast('Could not add photo');}
     input.value='';
   };
@@ -33802,8 +33850,11 @@ function handleProfileSheetImage(input){
 }
 function clearProfileLogo(){
   S.logoUrl=null;
+  try{syncBookingBrandFromSiteMedia();}catch(e){}
   closeWsPePop();
   renderWebsitePreview();
+  try{updateSvcPreview();}catch(e){}
+  try{if(typeof renderBookingLanding==='function')renderBookingLanding('pub');}catch(e){}
   if(typeof autoSaveBrandField==='function')autoSaveBrandField('logo_url',null);
   toast('Logo removed');
 }
@@ -33851,9 +33902,12 @@ function pickHeroBanner(){
 function clearHeroBanner(){
   S.bannerUrl=null;
   S._seededBannerFromBp=false;
+  try{syncBookingBrandFromSiteMedia();}catch(e){}
   try{setHeaderMode('gradient');}catch(e){S.headerMode='gradient';}
   closeWsPePop();
   renderWebsitePreview();
+  try{updateSvcPreview();}catch(e){}
+  try{if(typeof renderBookingLanding==='function')renderBookingLanding('pub');}catch(e){}
   if(typeof autoSaveBrandField==='function')autoSaveBrandField('banner_url',null);
   toast('First-screen photo removed');
 }
@@ -34503,10 +34557,17 @@ function handlePeSvcPhoto(input){
       const url=typeof compressImageDataUrl==='function'?await compressImageDataUrl(e.target.result,720):e.target.result;
       if(svc.photos.length<4)svc.photos.push(url);
       if(!svc.imgUrl)svc.imgUrl=url;
+      if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
+      S.portfolioUrls.push(url);
+      syncEditorPackagesToServices();
       renderSvcEditorList();
       renderWebsitePreview();
+      try{updateSvcPreview();}catch(err){}
       setTimeout(()=>editServiceFromPreview(svc.id),40);
       toast('Photo added');
+      try{scheduleEditorCatalogPersist();}catch(err){
+        try{if(typeof saveStorefront==='function')saveStorefront({quiet:true}).catch(()=>{});}catch(e2){}
+      }
     }catch(err){toast('Could not add photo');}
     input.value='';
   };
