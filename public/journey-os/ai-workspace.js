@@ -100,6 +100,18 @@
     if (!aw.state) aw.state = hasFinishedFirstBuild() ? 'operating' : 'idle';
     if (!aw.mode) aw.mode = STATES[aw.state] ? STATES[aw.state].mode : 'operating';
     if (!aw.pointTarget) aw.pointTarget = null;
+    if (!aw.live) {
+      aw.live = {
+        heroTitle: '',
+        heroSub: '',
+        cta: 'Book now',
+        theme: 'minimal',
+        nav: ['Services', 'About', 'Gallery', 'Blog', 'FAQ', 'Contact', 'Book'],
+        packages: [],
+        chips: [],
+        ctaSecondary: 'Call now',
+      };
+    }
     return aw;
   }
 
@@ -221,6 +233,7 @@
       side: side,
       text: String(text || ''),
       recommendation: recommendation || null,
+      review: opts.review || null,
     });
     if (!opts.silentRender) renderIfMounted();
   }
@@ -247,9 +260,13 @@
       .map(function (m) {
         var side = m.side === 'owner' ? 'owner' : 'hubly';
         var who = side === 'owner' ? 'You' : 'Hubly';
+        var review = '';
+        if (m.review && global.HublyWebsiteQuality && global.HublyWebsiteQuality.reviewHtml) {
+          review = global.HublyWebsiteQuality.reviewHtml(m.review);
+        }
         return (
           '<div class="aw-msg ' + side + '"><span class="who">' + who + '</span>' +
-          esc(m.text) + recHtml(m.recommendation) + '</div>'
+          esc(m.text) + recHtml(m.recommendation) + review + '</div>'
         );
       })
       .join('');
@@ -320,6 +337,21 @@
     }
 
     if (aw.surface === 'website' || aw.surface === 'home') {
+      var live = aw.live || {};
+      live.heroTitle = live.heroTitle || name;
+      live.theme = live.theme || aw.chosenDirection || 'minimal';
+      if (global.HublyWebsiteQuality && typeof global.HublyWebsiteQuality.siteHtml === 'function') {
+        var site = global.HublyWebsiteQuality.siteHtml(live, { biz: name, pointTarget: point });
+        var reviewStrip = aw.selfReview && global.HublyWebsiteQuality.reviewHtml
+          ? global.HublyWebsiteQuality.reviewHtml(aw.selfReview)
+          : '';
+        return (
+          '<div class="aw-surface-panel">' + site + reviewStrip +
+          '<div class="aw-chips"><span class="aw-chip is-on">Live website</span>' +
+          (aw.quality ? '<span class="aw-chip">Quality ' + esc(String(aw.quality.overall || '')) + '</span>' : '') +
+          '</div></div>'
+        );
+      }
       var ctaCls = point === 'cta' ? ' aw-point' : '';
       var logoCls = point === 'logo' ? ' aw-point' : '';
       return (
@@ -540,8 +572,73 @@
       };
     });
 
+    root.querySelectorAll('[data-wq-act]').forEach(function (btn) {
+      btn.onclick = function () {
+        handleQualityAction(btn.getAttribute('data-wq-act'), btn.getAttribute('data-wq-improve'));
+      };
+    });
+
     var log = root.querySelector('#aw-log');
     if (log) log.scrollTop = log.scrollHeight;
+  }
+
+  function buildLiveFromDirection(id) {
+    var aw = ensureState();
+    var name = bizName();
+    var theme = id === 'luxury' || id === 'bold' ? 'bold' : (id === 'artisan' || id === 'classic' ? 'classic' : 'minimal');
+    aw.live = {
+      heroTitle: name,
+      heroSub: name + ' — built with care',
+      cta: 'Book now',
+      ctaSecondary: 'Call now',
+      theme: theme,
+      nav: ['Services', 'About', 'Gallery', 'Blog', 'FAQ', 'Contact', 'Book'],
+      packages: [
+        { name: 'Essentials', sub: 'Start here' },
+        { name: 'Most popular', sub: 'Best value' },
+        { name: 'Premium', sub: 'Full experience' },
+      ],
+      chips: [{ label: 'Direction live', on: true }],
+      quality: { spacing: 'default' },
+    };
+    return aw.live;
+  }
+
+  function runSelfReview() {
+    var aw = ensureState();
+    if (!global.HublyWebsiteQuality || !global.HublyWebsiteQuality.selfReview) return null;
+    var review = global.HublyWebsiteQuality.selfReview(aw.live || {}, { theme: (aw.live && aw.live.theme) || aw.chosenDirection });
+    aw.selfReview = review;
+    aw.quality = review.report;
+    pushMessage('hubly', review.message || review.intro, null, { review: review });
+    setDoing('Waiting on Self Review…');
+    setActivity([
+      { label: 'Homepage built', status: 'done' },
+      { label: 'Self Review ready', status: 'on' },
+      { label: 'Improve · Ignore · Compare', status: 'next' },
+    ]);
+    renderIfMounted();
+    return review;
+  }
+
+  function handleQualityAction(act, improveId) {
+    var aw = ensureState();
+    if (!global.HublyWebsiteQuality || !global.HublyWebsiteQuality.handleReviewAction) return;
+    var experience = { live: aw.live, selfReview: aw.selfReview, industryLabel: bizName() };
+    var result = global.HublyWebsiteQuality.handleReviewAction(act, improveId, experience);
+    pushMessage('owner', act === 'improve' ? 'Improve' : (act === 'compare' ? 'Compare' : 'Ignore'));
+    if (result && result.message) pushMessage('hubly', result.message, null, { review: result.review || null });
+    if (result && result.improved) {
+      aw.live = result.live || aw.live;
+      aw.selfReview = result.review;
+      aw.quality = result.review && result.review.report;
+      setDoing('Re-scoring your website…');
+      celebrate();
+    }
+    if (result && result.compare) {
+      setSurface('compare', { focusId: 'website', state: 'building_website', doing: 'Comparing versions…' });
+    }
+    renderIfMounted();
   }
 
   function ingestFiles(fileList) {
@@ -653,10 +750,14 @@
       pointTarget: 'cta',
     });
     ensureState().chosenDirection = id;
+    buildLiveFromDirection(id);
     setTimeout(function () {
       pointAt('cta');
       setDoing('Moving booking button higher…');
       if (typeof celebrate === 'function') celebrate();
+      setTimeout(function () {
+        runSelfReview();
+      }, 500);
     }, 200);
   }
 
@@ -677,7 +778,18 @@
     pushMessage('owner', t);
     var lower = t.toLowerCase();
 
-    /* Direct improve gestures — always show in workspace */
+    /* Self Review actions from chat when a review is active */
+    if (ensureState().selfReview && /^(improve|ignore|compare)\b/i.test(t.trim())) {
+      var act = /compare/i.test(lower) ? 'compare' : (/ignore/i.test(lower) ? 'ignore' : 'improve');
+      handleQualityAction(act, ensureState().selfReview.actions && ensureState().selfReview.actions[0] && ensureState().selfReview.actions[0].improve);
+      return;
+    }
+    if (/self review|review (my |the )?site|score (my |the )?site|critique/i.test(lower)) {
+      enterBuildingMode('website', { doing: 'Reviewing your website…' });
+      transition('reviewing_website', { surface: 'website', doing: 'Running Self Review…' });
+      runSelfReview();
+      return;
+    }
     if (/compare|two directions|split/.test(lower)) {
       enterBuildingMode('website', { doing: 'Splitting the workspace…' });
       pushMessage('hubly', 'Let\'s compare two homepage directions — watch the center split.');
@@ -874,7 +986,7 @@
   }
 
   global.HublyAIWorkspace = {
-    version: '1.4.0',
+    version: '1.5.0',
     milestones: FOCUS_BLOCKS, // legacy alias
     focusBlocks: FOCUS_BLOCKS,
     states: STATES,
@@ -896,6 +1008,8 @@
     hasFinishedFirstBuild: hasFinishedFirstBuild,
     handleOwnerTurn: handleOwnerTurn,
     enhanceArchitectActivity: enhanceArchitectActivity,
+    runSelfReview: runSelfReview,
+    handleQualityAction: handleQualityAction,
   };
 
   document.addEventListener('DOMContentLoaded', function () {

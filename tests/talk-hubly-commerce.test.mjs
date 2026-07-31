@@ -104,10 +104,10 @@ test("generate-site accepts inspiration uploads for OpenAI vision", () => {
 });
 
 test("hubly.html wires consultant + commerce runtime + AI workspace", () => {
-  assert.match(html, /hubly-consultant\.js\?v=consultant-3/);
+  assert.match(html, /hubly-consultant\.js\?v=consultant-4/);
   assert.match(html, /commerce\/runtime\.js\?v=commerce-2/);
-  assert.match(html, /ai-workspace\.js\?v=aw-5/);
-  assert.match(html, /hubly-taste\.js\?v=taste-1/);
+  assert.match(html, /ai-workspace\.js\?v=aw-6/);
+  assert.match(html, /hubly-taste\.js\?v=taste-2/);
   assert.match(html, /HublyConsultant\.shouldSkipQuestionnaire/);
   assert.match(html, /HublyConsultant\.buildFromContext/);
   assert.match(html, /HublyConsultant\.think/);

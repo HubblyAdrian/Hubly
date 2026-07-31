@@ -50,10 +50,12 @@ test("Example 1 — candle business gets unlocking channel question then directi
   assert.ok(t1.recommendation.reasoning);
 
   const t2 = C.think("Both — online and local markets");
-  assert.ok(t2.showProgress || (t2.actions || []).some((a) => a.type === "set_surface"));
-  assert.equal(t2.recommendation.surface, "directions");
-  assert.match(t2.replies.map((r) => r.text).join(" "), /three storefront directions/i);
-  assert.match(t2.recommendation.reasoning, /./);
+  assert.match(t2.replies.map((r) => r.text).join(" "), /gifts|themselves|enough information/i);
+  const t3 = C.think("Mostly gifts");
+  assert.ok(t3.showProgress || (t3.actions || []).some((a) => a.type === "set_surface"));
+  assert.equal(t3.recommendation.surface, "directions");
+  assert.match(t3.replies.map((r) => r.text).join(" "), /three storefront directions/i);
+  assert.match(t3.recommendation.reasoning || t3.recommendation.why, /./);
 });
 
 test("Example 2 — photography asks bookings vs prints then builds", () => {
@@ -120,9 +122,9 @@ test("hubly wires expert think path and choice chips", () => {
   assert.match(html, /HublyConsultant\.think/);
   assert.match(html, /isTalkSetChips/);
   assert.match(html, /isTalkExpertChip/);
-  assert.match(html, /hubly-consultant\.js\?v=consultant-3/);
-  assert.match(html, /ai-workspace\.js\?v=aw-5/);
-  assert.match(html, /hubly-taste\.js\?v=taste-1/);
+  assert.match(html, /hubly-consultant\.js\?v=consultant-4/);
+  assert.match(html, /ai-workspace\.js\?v=aw-6/);
+  assert.match(html, /hubly-taste\.js\?v=taste-2/);
 });
 
 test("workspace has pride celebration + emotion motion", () => {
@@ -130,5 +132,5 @@ test("workspace has pride celebration + emotion motion", () => {
   assert.match(awJs, /You built this/);
   assert.match(awCss, /aw-pride/);
   assert.match(awCss, /is-celebrate/);
-  assert.match(awJs, /version: '1\.4\.0'/);
+  assert.match(awJs, /version: '1\.5\.0'/);
 });
