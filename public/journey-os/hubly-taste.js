@@ -133,6 +133,9 @@
       out.audience = 'Shoppers discovering the brand on mobile';
       out.brandPersonality = 'maker / artisan';
       out.evidence.push('stated_offer');
+      if (/jewelry|handmade|candle|soap|artisan|maker/i.test(industry + ' ' + text) || biz.offer === 'product') {
+        out.makerBrand = true;
+      }
     } else if (/photograph/i.test(industry + ' ' + text)) {
       out.model = 'creative_services';
       out.inferences.push('Portfolio and trust convert before price');
@@ -160,6 +163,21 @@
       out.evidence.push('stated_channels');
     }
 
+    var intent = String(biz.buyerIntent || ctx.buyerIntent || '').toLowerCase();
+    if (!intent) {
+      if (/\bgift|present|wedding|anniversary/i.test(text)) intent = 'gift';
+      else if (/\b(for themselves|for myself|self[- ]?purchas|everyday wear|wear myself)/i.test(text)) intent = 'self';
+    }
+    if (intent === 'gift') {
+      out.audience = 'People buying gifts';
+      out.evidence.push('buyer_intent_gift');
+      out.inferences.push('Gift buyers need occasion framing and easy shipping');
+    } else if (intent === 'self') {
+      out.audience = 'People buying for themselves';
+      out.evidence.push('buyer_intent_self');
+      out.inferences.push('Self-purchase shoppers care about fit, everyday wear, and identity');
+    }
+
     if (ctx.goals) out.goals = out.goals.concat([].concat(ctx.goals));
     if (ctx.uploads && ctx.uploads.length) out.evidence.push('uploads');
     if (ctx.hasWebsite) out.evidence.push('existing_website');
@@ -172,6 +190,36 @@
     }
 
     return out;
+  }
+
+  /**
+   * Maker / jewelry / handmade: stated offer alone is not enough to pick a direction confidently.
+   * Real consultants ask gift vs self before pretending certainty.
+   */
+  function needsBuyerIntentClarify(understanding, ctx) {
+    understanding = understanding || {};
+    ctx = ctx || {};
+    var biz = ctx.business || {};
+    var text = String(ctx.text || ctx.seed || '').toLowerCase();
+    var blob = String(biz.industry || '') + ' ' + text;
+    var maker = understanding.makerBrand
+      || /jewelry|handmade|candle|soap|artisan|maker/i.test(blob)
+      || biz.offer === 'product';
+    if (!maker) return false;
+    var evidence = understanding.evidence || [];
+    var hasIntent = evidence.some(function (e) {
+      return e === 'buyer_intent_gift' || e === 'buyer_intent_self';
+    }) || !!biz.buyerIntent || !!ctx.buyerIntent;
+    return !hasIntent;
+  }
+
+  function buyerIntentClarifyAsk(understanding, ctx) {
+    ctx = ctx || {};
+    var text = String(ctx.text || '') + ' ' + String((ctx.business && ctx.business.industry) || '');
+    if (/jewelry/i.test(text)) {
+      return 'I have two strong ideas, but one thing would help me recommend the right one: are your customers mostly buying gifts or buying for themselves?';
+    }
+    return 'I have a couple strong directions, but I don\'t have enough information to recommend confidently yet — are people mostly buying gifts, or buying for themselves?';
   }
 
   /**
@@ -250,6 +298,16 @@
   function forWebsite(ctx, extras) {
     extras = extras || {};
     var u = understand(ctx);
+    if (!extras.skipBuyerIntentGate && needsBuyerIntentClarify(u, ctx)) {
+      return {
+        ok: false,
+        needClarify: true,
+        ask: buyerIntentClarifyAsk(u, ctx),
+        understanding: u,
+        domain: 'website',
+        confidence: 0,
+      };
+    }
     var pref = preferredStyle();
     var primary = pref === 'premium' ? 'Bold' : (pref === 'artisan' ? 'Classic' : 'Minimal');
     var why = primary === 'Minimal'
@@ -287,20 +345,37 @@
   function forCommerce(ctx, extras) {
     extras = extras || {};
     var u = understand(ctx);
+    if (!extras.skipBuyerIntentGate && needsBuyerIntentClarify(u, ctx)) {
+      return {
+        ok: false,
+        needClarify: true,
+        ask: buyerIntentClarifyAsk(u, ctx),
+        understanding: u,
+        domain: 'commerce',
+        confidence: 0,
+      };
+    }
     var channels = (ctx.business && ctx.business.channels) || '';
+    var intent = (ctx.business && ctx.business.buyerIntent) || '';
     var choice = channels === 'local' ? 'Warm artisan' : (channels === 'online' ? 'Minimal' : 'Warm artisan');
-    var why = channels === 'online'
-      ? 'Most of your customers will likely shop from mobile — this layout gets them to products faster.'
-      : channels === 'local'
-        ? 'Handmade and market shoppers buy the story — lead with maker narrative before the product grid.'
-        : 'You need both: brand for markets and a fast path to buy online for people who find you later.';
+    if (intent === 'gift') choice = 'Warm artisan';
+    if (intent === 'self' && channels === 'online') choice = 'Minimal';
+    var why = intent === 'gift'
+      ? 'Gift buyers need occasion framing and easy shipping — story first, then a clear path to purchase.'
+      : intent === 'self'
+        ? 'Self-purchase shoppers move faster when fit, everyday wear, and identity lead — less gift theater.'
+        : channels === 'online'
+          ? 'Most of your customers will likely shop from mobile — this layout gets them to products faster.'
+          : channels === 'local'
+            ? 'Handmade and market shoppers buy the story — lead with maker narrative before the product grid.'
+            : 'You need both: brand for markets and a fast path to buy online for people who find you later.';
     return make({
       domain: 'commerce',
       context: ctx,
       understanding: u,
       choice: choice,
       title: choice + ' storefront',
-      confidence: extras.confidence || (channels ? 94 : 88),
+      confidence: extras.confidence || (intent ? 94 : (channels ? 90 : 88)),
       why: extras.why || why,
       tradeoffs: extras.tradeoffs || [
         { label: 'Tradeoff', text: choice.indexOf('Minimal') === 0 ? 'Less storytelling.' : 'Slightly slower path to checkout.' },
@@ -537,7 +612,7 @@
   }
 
   global.HublyTaste = {
-    version: '1.0.0',
+    version: '1.1.0',
     STARS: STARS,
     DOMAINS: DOMAINS,
     understand: understand,
@@ -546,6 +621,8 @@
     forCommerce: forCommerce,
     forMarketplace: forMarketplace,
     forMarketing: forMarketing,
+    needsBuyerIntentClarify: needsBuyerIntentClarify,
+    buyerIntentClarifyAsk: buyerIntentClarifyAsk,
     consultPushback: consultPushback,
     coach: coach,
     celebrate: celebrate,

@@ -34,7 +34,7 @@ function load() {
 test("HublyTaste is a reusable recommendation engine", () => {
   const s = load();
   const T = s.HublyTaste;
-  assert.equal(T.version, "1.0.0");
+  assert.equal(T.version, "1.1.0");
   assert.equal(typeof T.make, "function");
   assert.equal(typeof T.understand, "function");
   assert.equal(typeof T.forWebsite, "function");
@@ -54,8 +54,8 @@ test("Understand infers commerce story from handmade candles", () => {
 test("Recommendation includes why, tradeoffs, alternatives, confidence stars", () => {
   const s = load();
   const card = s.HublyTaste.forCommerce(
-    { business: { industry: "Candles", channels: "both", offer: "product" }, text: "both" },
-    { evidence: ["stated_channels"] }
+    { business: { industry: "Candles", channels: "both", offer: "product", buyerIntent: "gift" }, text: "both gifts" },
+    { evidence: ["stated_channels", "buyer_intent_gift"] }
   );
   assert.equal(card.ok, true);
   assert.ok(card.why.length > 20);
@@ -126,7 +126,8 @@ test("Consultant uses Taste for commerce recommendations", () => {
   const s = load();
   const C = s.HublyConsultant;
   C.think("I want to build a candle company.");
-  const t2 = C.think("Both — online and local markets");
+  C.think("Both — online and local markets");
+  const t2 = C.think("Mostly gifts");
   assert.ok(t2.recommendation);
   assert.ok(t2.recommendation.why || t2.recommendation.reasoning);
   assert.ok(t2.recommendation.tradeoffs);
@@ -134,9 +135,9 @@ test("Consultant uses Taste for commerce recommendations", () => {
 });
 
 test("hubly.html loads Taste before Consultant", () => {
-  assert.match(html, /hubly-taste\.js\?v=taste-1/);
-  assert.match(html, /hubly-consultant\.js\?v=consultant-3/);
-  assert.match(html, /ai-workspace\.js\?v=aw-5/);
+  assert.match(html, /hubly-taste\.js\?v=taste-2/);
+  assert.match(html, /hubly-consultant\.js\?v=consultant-4/);
+  assert.match(html, /ai-workspace\.js\?v=aw-6/);
   const tasteIdx = html.indexOf("hubly-taste.js");
   const consIdx = html.indexOf("hubly-consultant.js");
   assert.ok(tasteIdx > -1 && consIdx > tasteIdx);
@@ -147,5 +148,5 @@ test("workspace renders Taste cards and compare hooks", () => {
   assert.match(awJs, /data-aw-compare/);
   assert.match(awJs, /rememberChoice/);
   assert.match(awCss, /aw-taste-card/);
-  assert.match(awJs, /version: '1\.4\.0'/);
+  assert.match(awJs, /version: '1\.5\.0'/);
 });

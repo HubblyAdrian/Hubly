@@ -188,6 +188,15 @@
     return '';
   }
 
+  function detectBuyerIntent(text) {
+    var t = String(text || '').toLowerCase();
+    if (/\bgifts?\b|present|wedding|anniversary|for (someone|him|her|them)/.test(t)) return 'gift';
+    if (/for themselves|for myself|self[- ]?purchas|everyday wear|wear myself|personal use/.test(t)) return 'self';
+    if (/^gifts?\b/.test(t.trim())) return 'gift';
+    if (/^themselves\b|^self\b/.test(t.trim())) return 'self';
+    return '';
+  }
+
   function updateBusinessFromText(text) {
     var mem = ensure().memory;
     var b = mem.business;
@@ -200,6 +209,8 @@
     if (ch) b.channels = ch;
     var sell = detectSellMode(text);
     if (sell) b.sells = sell;
+    var intent = detectBuyerIntent(text);
+    if (intent) b.buyerIntent = intent;
     if (/already have (a )?website|my website is|https?:\/\//i.test(text)) b.hasWebsite = true;
     var nameM = text.match(/(?:called|named)\s+([A-Z][\w\s&'-]{1,40})/);
     if (nameM) b.name = nameM[1].trim();
@@ -502,7 +513,9 @@
           }
         );
         replies.push({
-          text: 'A candle company — nice. I have a couple ideas.',
+          text: /jewelry/i.test(text + ' ' + (business.industry || ''))
+            ? 'Handmade jewelry — nice. I have a couple ideas.'
+            : 'A candle company — nice. I have a couple ideas.',
         });
         try {
           if (global.HublyTaste && global.HublyTaste.understand) {
@@ -528,14 +541,12 @@
         persist();
         return pack(replies, actions, rec, { complete: false });
       }
-      /* Product business answered channel via chip labels */
-      if (!business.channels || opts.forceChannel || /online|market|local|both/i.test(text)) {
-        if (!business.channels) {
-          business.channels = detectChannels(text) || 'both';
-          persist();
-        }
-        return thinkChannelDecision(text, business, replies);
+      /* Product business has channels — may still need gift vs self before recommending */
+      if (!business.channels) {
+        business.channels = detectChannels(text) || 'both';
+        persist();
       }
+      return thinkChannelDecision(text, business, replies);
     }
 
     /* Generic build with industry known — recommend directions and build */
@@ -580,6 +591,8 @@
     var c = ensure();
     var ch = business.channels || detectChannels(text) || 'both';
     business.channels = ch;
+    var intent = business.buyerIntent || detectBuyerIntent(text);
+    if (intent) business.buyerIntent = intent;
     persist();
     setFocus('commerce', FOCUS.storefront);
     startSession('storefront');
@@ -597,9 +610,31 @@
         {
           choices: directions,
           build: { kind: 'storefront_directions', channels: ch, directions: directions },
-          evidence: ['stated_channels', 'stated_offer'],
+          evidence: ['stated_channels', 'stated_offer'].concat(intent ? ['buyer_intent_' + intent] : []),
         }
       );
+      if (rec && rec.needClarify) {
+        replies.push({ text: 'Perfect — that changes how I\'d build your storefront.' });
+        replies.push({
+          text: rec.ask || 'I have two strong ideas, but one thing would help me recommend the right one: are your customers mostly buying gifts or buying for themselves?',
+          recommendation: {
+            choice: 'Clarify buyer intent',
+            confidence: 0,
+            confidenceLabel: 'Need more evidence',
+            why: 'Confidence should come from evidence — gift vs self-purchase changes merchandising and story.',
+            choices: [
+              { id: 'gift', label: 'Mostly gifts' },
+              { id: 'self', label: 'Mostly for themselves' },
+            ],
+            focusId: 'commerce',
+            focusLabel: FOCUS.storefront,
+          },
+        });
+        c.lastRecommendation = rec;
+        setPhase('understand');
+        persist();
+        return pack(replies, [], rec, { complete: false });
+      }
       /* Keep consultant action fields */
       rec.surface = 'directions';
       rec.focusId = 'commerce';
@@ -618,7 +653,7 @@
       });
     }
 
-    replies.push({ text: 'Perfect — that changes how I\'d build your storefront.' });
+    replies.push({ text: intent ? 'That helps — gift vs self-purchase changes how I\'d merchandize the first screen.' : 'Perfect — that changes how I\'d build your storefront.' });
     replies.push({
       text: 'I created three storefront directions. Based on what you\'ve shared, I recommend ' + (rec.title || rec.choice) + '.',
       recommendation: rec,
