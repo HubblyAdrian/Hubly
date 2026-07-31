@@ -566,15 +566,16 @@
       kit.colors[0].hex = st.color;
       kit.colors[0].name = kit.colors[0].name || 'Primary';
     }
-    /* Business Quality Brand System — inherit personality / voice / image / motion */
-    if (!kit.system && typeof global.HublyBusinessQuality !== 'undefined' && global.HublyBusinessQuality.buildBrandSystem) {
+    /* Business Craftsmanship — Brand System + Story inherit across surfaces */
+    var CraftKit = global.HublyBusinessCraftsmanship || global.HublyBusinessQuality;
+    if (!kit.system && CraftKit && CraftKit.buildBrandSystem) {
       try {
-        var system = global.HublyBusinessQuality.buildBrandSystem({
+        var system = CraftKit.buildBrandSystem({
           businessName: st.biz || st.businessName,
           industry: st.businessType || st.industry,
           direction: (st._aw && st._aw.chosenDirection) || 'minimal',
         });
-        global.HublyBusinessQuality.applyBrandSystemToKit(kit, system);
+        CraftKit.applyBrandSystemToKit(kit, system);
       } catch (e) {}
     }
     return kit;

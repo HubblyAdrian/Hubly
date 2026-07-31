@@ -7,102 +7,96 @@ import vm from "node:vm";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-const bqJs = fs.readFileSync(path.join(root, "public/journey-os/hubly-business-quality.js"), "utf8");
+const bcJs = fs.readFileSync(path.join(root, "public/journey-os/hubly-business-craftsmanship.js"), "utf8");
 const wqJs = fs.readFileSync(path.join(root, "public/journey-os/hubly-website-quality.js"), "utf8");
+const tasteJs = fs.readFileSync(path.join(root, "public/journey-os/hubly-taste.js"), "utf8");
 const awJs = fs.readFileSync(path.join(root, "public/journey-os/ai-workspace.js"), "utf8");
 const awCss = fs.readFileSync(path.join(root, "public/journey-os/ai-workspace.css"), "utf8");
 const html = fs.readFileSync(path.join(root, "public/hubly.html"), "utf8");
 
 function load() {
-  const sandbox = { window: {}, S: {}, globalThis: null };
+  const store = {};
+  const sandbox = {
+    window: {},
+    S: {},
+    localStorage: {
+      getItem(k) { return store[k] ?? null; },
+      setItem(k, v) { store[k] = String(v); },
+      removeItem(k) { delete store[k]; },
+    },
+  };
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
+  vm.runInNewContext(tasteJs, sandbox);
   vm.runInNewContext(wqJs, sandbox);
-  vm.runInNewContext(bqJs, sandbox);
+  vm.runInNewContext(bcJs, sandbox);
   return sandbox;
 }
 
-test("HublyBusinessQuality exposes Brand System and Health", () => {
+test("Business Craftsmanship is the product name (Quality is alias)", () => {
   const s = load();
-  const B = s.HublyBusinessQuality;
-  assert.equal(B.version, "1.0.0");
-  assert.equal(typeof B.buildBrandSystem, "function");
-  assert.equal(typeof B.sectionPlan, "function");
-  assert.equal(typeof B.reviewCopy, "function");
-  assert.equal(typeof B.imageDirection, "function");
-  assert.equal(typeof B.trustPlan, "function");
-  assert.equal(typeof B.launchReview, "function");
-  assert.equal(typeof B.assessHealth, "function");
+  assert.equal(s.HublyBusinessCraftsmanship.version, "2.0.0");
+  assert.equal(s.HublyBusinessCraftsmanship.name, "Business Craftsmanship");
+  assert.equal(s.HublyBusinessQuality, s.HublyBusinessCraftsmanship);
 });
 
-test("Candle company gets maker Brand System + story-first sections", () => {
+test("Business Story includes mission promise personality why different", () => {
   const s = load();
-  const brand = s.HublyBusinessQuality.buildBrandSystem({
+  const story = s.HublyBusinessCraftsmanship.discoverStory({
     industry: "Candles",
     businessName: "Glow Co",
-    direction: "minimal",
     buyerIntent: "gift",
   });
-  assert.equal(brand.model, "commerce");
-  assert.ok(brand.personality);
-  assert.ok(brand.voice.length > 20);
-  assert.ok(brand.photographyDirection);
-  assert.ok(brand.buttonStyle);
-  assert.ok(brand.motionStyle);
-
-  const plan = s.HublyBusinessQuality.sectionPlan({ industry: "Candles" });
-  assert.equal(plan.sections[0].id, "hero");
-  assert.ok(plan.sections.some((sec) => sec.id === "story" || sec.id === "products"));
-  assert.match(plan.rationale, /say first/i);
+  assert.ok(story.mission);
+  assert.ok(story.promise);
+  assert.ok(story.personality);
+  assert.ok(story.whyCustomersChooseThem);
+  assert.ok(story.whatMakesThemDifferent);
+  assert.match(story.weaveNote, /storefront|emails|marketing/i);
 });
 
-test("Copy review rewrites generic AI filler", () => {
+test("Deeper Business Voice — not just Friendly/Luxury", () => {
   const s = load();
-  const out = s.HublyBusinessQuality.reviewCopy({
-    heroSub: "Local — built with care",
-    about: "We are passionate about quality service and synergy.",
-    cta: "Learn more",
-  }, { industry: "Candles" });
-  assert.ok(out.changedCount >= 1);
-  assert.match(out.message, /reviewed the copy/i);
-  const live = { heroSub: "Local — built with care", about: "We are passionate about quality service and synergy." };
-  out.apply(live);
-  assert.notEqual(live.heroSub, "Local — built with care");
-});
-
-test("Image direction coaches lifestyle photo for makers", () => {
-  const s = load();
-  const img = s.HublyBusinessQuality.imageDirection({ industry: "handmade jewelry" }, {});
-  assert.match(img.message, /lifestyle|photo|image/i);
-  assert.equal(img.coach, true);
-});
-
-test("Business Health is honest about one review", () => {
-  const s = load();
-  const health = s.HublyBusinessQuality.assessHealth({
-    reviewCount: 1,
-    live: {
-      heroTitle: "Glow",
-      heroSub: "Nice candles",
-      cta: "Shop",
-      theme: "minimal",
-      brandSystem: s.HublyBusinessQuality.buildBrandSystem({ industry: "Candles" }),
-    },
-    brandSystem: s.HublyBusinessQuality.buildBrandSystem({ industry: "Candles" }),
+  const brand = s.HublyBusinessCraftsmanship.buildBrandSystem({
     industry: "Candles",
+    buyerIntent: "gift",
   });
-  assert.ok(health.overall);
-  assert.match(health.narrative, /trust|review/i);
-  assert.ok(health.recommendations.length >= 1);
-  assert.match(s.HublyBusinessQuality.healthHtml(health), /Business Health/);
+  assert.ok(
+    ["Trusted Neighbor", "Craftsman", "Boutique", "Modern Expert", "Local Family Business", "Creative Studio", "Adventure Brand"]
+      .includes(brand.voiceLabel)
+  );
+  assert.ok(brand.voiceTone.length > 20);
+  assert.ok(brand.consistencyToken);
+  assert.match(brand.inheritNote, /Consistency Engine|inherit/i);
 });
 
-test("Launch Review lists improvements before go-live", () => {
+test("Customer Journey Review critiques experience not just design", () => {
   const s = load();
-  const review = s.HublyBusinessQuality.launchReview(
+  const journey = s.HublyBusinessCraftsmanship.journeyReview(
+    { industry: "Candles" },
+    { heroSub: "Taking shape…", cta: "Shop", ctaSecondary: "Call" }
+  );
+  assert.ok(journey.steps.length >= 4);
+  assert.ok(journey.steps.some((st) => /understand/i.test(st.question)));
+  assert.ok(journey.steps.some((st) => /trust/i.test(st.question)));
+  assert.ok(journey.steps.some((st) => /buy|book/i.test(st.question)));
+  assert.ok(journey.steps.some((st) => /afterward/i.test(st.question)));
+  assert.ok(journey.weak.length >= 1);
+});
+
+test("Competitive Thinking is strategic consulting", () => {
+  const s = load();
+  const c = s.HublyBusinessCraftsmanship.competitiveThinking({ industry: "pressure washing" });
+  assert.match(c.categoryDefault, /low prices/i);
+  assert.match(c.recommendation, /quality and convenience/i);
+  assert.equal(c.consulting, true);
+});
+
+test("Launch Confidence percent + what moves to 95%", () => {
+  const s = load();
+  const conf = s.HublyBusinessCraftsmanship.launchConfidence(
     { industry: "Candles", reviewCount: 0 },
     {
-      heroTitle: "Glow",
       heroSub: "Taking shape…",
       cta: "Shop",
       ctaSecondary: "Call",
@@ -110,52 +104,80 @@ test("Launch Review lists improvements before go-live", () => {
       theme: "minimal",
     }
   );
-  assert.match(review.message, /reviewed everything/i);
-  assert.ok(review.improvements.length >= 2);
-  assert.equal(review.actions.map((a) => a.id).join(","), "improve,ignore,compare");
-  assert.match(s.HublyBusinessQuality.launchReviewHtml(review), /Launch Review/);
+  assert.ok(conf.percent >= 40 && conf.percent <= 99);
+  assert.match(conf.label, /Launch Confidence/);
+  assert.ok(conf.whatMovesTo95.length >= 1);
+  assert.ok(conf.scores.journey != null);
 });
 
-test("enrichExperience applies Brand System + trust defaults", () => {
+test("Business Health leads with narrative not a score headline", () => {
+  const s = load();
+  const health = s.HublyBusinessCraftsmanship.assessHealth({
+    reviewCount: 1,
+    live: { heroTitle: "Glow", cta: "Shop", theme: "minimal" },
+    brandSystem: s.HublyBusinessCraftsmanship.buildBrandSystem({ industry: "Candles" }),
+    industry: "Candles",
+  });
+  assert.match(health.narrative, /trust|opportunity|healthy/i);
+  const htmlOut = s.HublyBusinessCraftsmanship.healthHtml(health);
+  assert.match(htmlOut, /bq-narrative/);
+  assert.match(htmlOut, /See dimensions/);
+  assert.doesNotMatch(htmlOut, /8\.2\/10/);
+});
+
+test("Pride Review + Golden Rule", () => {
+  const s = load();
+  const pride = s.HublyBusinessCraftsmanship.prideReview(
+    { industry: "Candles" },
+    { heroSub: "Clear offer", cta: "Shop", theme: "minimal", trustBadges: ["Guarantee"] }
+  );
+  assert.match(pride.question, /proud/i);
+  assert.match(pride.ifHesitate, /even better/i);
+  assert.ok(pride.goldenRule.questionAgency);
+  assert.ok(pride.goldenRule.questionValue);
+  assert.equal(pride.actions.map((a) => a.id).join(","), "proud,improve,compare");
+});
+
+test("Taste evolves traits — minimal fast simple bold storytelling", () => {
+  const s = load();
+  s.HublyTaste.rememberChoice("minimal", { style: "minimal", domain: "website" });
+  s.HublyTaste.rememberChoice("simple", { domain: "website" });
+  s.HublyTaste.rememberChoice("fast checkout", { domain: "commerce" });
+  const traits = s.HublyTaste.preferredTraits();
+  assert.ok(traits.some((t) => /minimal|simple|fast/.test(t)));
+  assert.equal(s.HublyTaste.version, "1.2.0");
+});
+
+test("enrichExperience weaves story + competitive + confidence", () => {
   const s = load();
   const experience = {
     live: {
-      heroTitle: "Rinse Co",
+      heroTitle: "Glow Co",
       heroSub: "Local — built with care",
-      cta: "Book",
-      ctaSecondary: "Call now",
+      cta: "Shop",
+      ctaSecondary: "Call",
       theme: "minimal",
-      nav: ["Services", "About", "Gallery", "Blog", "FAQ", "Contact", "Book"],
+      nav: ["A", "B", "C", "D", "E", "F", "Shop"],
       chips: [],
     },
-    industryKey: "pressure_washing",
-    industryLabel: "Pressure Washing",
+    industryKey: "maker",
+    industryLabel: "Candles",
     chosenDirection: "minimal",
   };
-  s.HublyBusinessQuality.enrichExperience(experience);
-  assert.ok(experience.brandSystem);
-  assert.ok(experience.sectionPlan);
-  assert.ok(experience.health);
+  s.HublyBusinessCraftsmanship.enrichExperience(experience);
+  assert.ok(experience.story.mission);
+  assert.ok(experience.competitive.consulting);
+  assert.ok(experience.confidence.percent);
+  assert.ok(experience.journey.steps.length);
+  assert.ok(experience.pride.question);
+  assert.ok(experience.goldenRule);
   assert.notEqual(experience.live.heroSub, "Local — built with care");
-  assert.ok(experience.live.trustBadges && experience.live.trustBadges.length);
 });
 
-test("hubly.html loads Business Quality after Website Quality", () => {
-  assert.match(html, /hubly-business-quality\.js\?v=bq-1/);
-  const wq = html.indexOf("hubly-website-quality.js");
-  const bq = html.indexOf("hubly-business-quality.js");
-  const aw = html.indexOf("ai-workspace.js");
-  assert.ok(wq > -1 && bq > wq && aw > bq);
-  assert.match(html, /HublyBusinessQuality/);
-  assert.match(html, /Launch Review|Brand System|Business Quality/);
-  assert.match(html, /ai-workspace\.js\?v=aw-7/);
-});
-
-test("workspace wires Business Health + Brand System", () => {
-  assert.match(awJs, /HublyBusinessQuality/);
-  assert.match(awJs, /enrichExperience/);
-  assert.match(awJs, /assessHealth/);
-  assert.match(awJs, /version: '1\.6\.0'/);
-  assert.match(awCss, /\.bq-health/);
-  assert.match(awCss, /\.bq-brand/);
+test("hubly.html loads Craftsmanship module", () => {
+  assert.match(html, /hubly-business-craftsmanship\.js\?v=bc-1/);
+  assert.doesNotMatch(html, /hubly-business-quality\.js/);
+  assert.match(html, /Business Craftsmanship|Launch Confidence|proud to put your name/i);
+  assert.match(awJs, /HublyBusinessCraftsmanship|Craftsmanship next/);
+  assert.match(awCss, /Business Craftsmanship/);
 });

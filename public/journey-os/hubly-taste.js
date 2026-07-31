@@ -32,11 +32,13 @@
   function loadPrefs() {
     try {
       var raw = localStorage.getItem(PREFS_KEY);
-      if (!raw) return { choices: [], style: null, updatedAt: null };
+      if (!raw) return { choices: [], style: null, traits: {}, updatedAt: null };
       var p = JSON.parse(raw);
-      return p && typeof p === 'object' ? p : { choices: [], style: null, updatedAt: null };
+      if (!p || typeof p !== 'object') return { choices: [], style: null, traits: {}, updatedAt: null };
+      if (!p.traits || typeof p.traits !== 'object') p.traits = {};
+      return p;
     } catch (e) {
-      return { choices: [], style: null, updatedAt: null };
+      return { choices: [], style: null, traits: {}, updatedAt: null };
     }
   }
 
@@ -53,19 +55,26 @@
     return st._taste.prefs;
   }
 
-  /** Learn from customer choices — stop making them repeat themselves. */
+  /** Learn from customer choices — Taste evolves (minimal / fast / simple / bold / storytelling). */
   function rememberChoice(choiceId, meta) {
     meta = meta || {};
     var prefs = ensurePrefs();
     prefs.choices = prefs.choices || [];
+    prefs.traits = prefs.traits || {};
+    var style = meta.style || inferStyle(choiceId);
+    var traits = meta.traits || inferTraits(choiceId, meta);
     prefs.choices.push({
       id: String(choiceId || ''),
-      style: meta.style || inferStyle(choiceId),
+      style: style,
+      traits: traits,
       domain: meta.domain || 'general',
       at: new Date().toISOString(),
     });
     if (prefs.choices.length > 40) prefs.choices = prefs.choices.slice(-40);
     prefs.style = dominantStyle(prefs.choices) || prefs.style;
+    traits.forEach(function (t) {
+      prefs.traits[t] = (prefs.traits[t] || 0) + 1;
+    });
     prefs.updatedAt = new Date().toISOString();
     savePrefs(prefs);
     return prefs;
@@ -73,10 +82,23 @@
 
   function inferStyle(id) {
     var s = String(id || '').toLowerCase();
-    if (/minimal|simple|clean|quiet/.test(s)) return 'minimal';
+    if (/minimal|simple|clean|quiet|fast/.test(s)) return 'minimal';
     if (/luxury|premium|bold|high.?contrast/.test(s)) return 'premium';
-    if (/artisan|warm|craft|handmade|classic/.test(s)) return 'artisan';
+    if (/artisan|warm|craft|handmade|classic|story/.test(s)) return 'artisan';
     return null;
+  }
+
+  function inferTraits(id, meta) {
+    meta = meta || {};
+    var s = String(id || '') + ' ' + String(meta.label || '') + ' ' + String(meta.text || '');
+    s = s.toLowerCase();
+    var out = [];
+    if (/minimal|clean|quiet/.test(s)) out.push('minimal');
+    if (/fast|speed|quick|book.?first|convert/.test(s)) out.push('fast');
+    if (/simple|fewer|lean|simplify/.test(s)) out.push('simple');
+    if (/bold|loud|high.?contrast|unmistakable|luxury|premium/.test(s)) out.push('bold');
+    if (/story|artisan|warm|craft|handmade|narrative|maker/.test(s)) out.push('storytelling');
+    return out;
   }
 
   function dominantStyle(choices) {
@@ -90,11 +112,25 @@
     Object.keys(counts).forEach(function (k) {
       if (counts[k] > n) { n = counts[k]; best = k; }
     });
-    return n >= 2 ? best : best;
+    return best;
   }
 
   function preferredStyle() {
     return ensurePrefs().style || null;
+  }
+
+  /** Traits Taste has learned — adapts recommendations over time. */
+  function preferredTraits() {
+    var prefs = ensurePrefs();
+    var traits = prefs.traits || {};
+    return Object.keys(traits)
+      .filter(function (k) { return traits[k] >= 1; })
+      .sort(function (a, b) { return traits[b] - traits[a]; });
+  }
+
+  function hasTrait(name) {
+    var prefs = ensurePrefs();
+    return !!(prefs.traits && prefs.traits[name] >= 2);
   }
 
   function starTier(confidence) {
@@ -309,19 +345,26 @@
       };
     }
     var pref = preferredStyle();
-    var primary = pref === 'premium' ? 'Bold' : (pref === 'artisan' ? 'Classic' : 'Minimal');
+    var traits = preferredTraits();
+    var primary = pref === 'premium' || hasTrait('bold') ? 'Bold'
+      : (pref === 'artisan' || hasTrait('storytelling') ? 'Classic' : 'Minimal');
+    if (hasTrait('fast') || hasTrait('simple')) primary = 'Minimal';
     var why = primary === 'Minimal'
-      ? 'Most first-time visitors decide in seconds — a clear path to act beats a long brochure.'
+      ? (hasTrait('fast') || hasTrait('simple')
+        ? 'You\'ve been choosing fast and simple — I\'m leaning Minimal so customers act without friction.'
+        : 'Most first-time visitors decide in seconds — a clear path to act beats a long brochure.')
       : primary === 'Bold'
         ? 'A high-energy first screen matches a premium brand and makes the CTA unmistakable.'
-        : 'Warm, established presence builds trust before the ask — especially for local or handmade brands.';
+        : (hasTrait('storytelling')
+          ? 'You tend to prefer storytelling — Classic keeps warmth and narrative before the ask.'
+          : 'Warm, established presence builds trust before the ask — especially for local or handmade brands.');
     return make({
       domain: 'website',
       context: ctx,
       understanding: u,
       choice: primary,
       title: primary,
-      confidence: extras.confidence || 93,
+      confidence: extras.confidence || (traits.length ? 94 : 93),
       why: extras.why || why,
       tradeoffs: extras.tradeoffs || [
         { label: 'Tradeoff', text: primary === 'Minimal' ? 'Less storytelling up front.' : 'Slightly more visual weight.' },
@@ -333,7 +376,7 @@
         { id: 'classic', label: 'Classic', when: 'Better if trust and warmth lead' },
       ],
       factors: ['goals', 'audience', 'usability', 'conversion'],
-      evidence: extras.evidence || u.evidence,
+      evidence: (extras.evidence || u.evidence || []).concat(traits.length ? ['learned_traits:' + traits.slice(0, 3).join('+')] : []),
       choices: extras.choices,
       surface: extras.surface || 'directions',
       focusId: extras.focusId || 'website',
@@ -612,7 +655,7 @@
   }
 
   global.HublyTaste = {
-    version: '1.1.0',
+    version: '1.2.0',
     STARS: STARS,
     DOMAINS: DOMAINS,
     understand: understand,
@@ -628,6 +671,9 @@
     celebrate: celebrate,
     rememberChoice: rememberChoice,
     preferredStyle: preferredStyle,
+    preferredTraits: preferredTraits,
+    hasTrait: hasTrait,
+    inferTraits: inferTraits,
     cardHtml: cardHtml,
     fromLegacy: fromLegacy,
     ensurePrefs: ensurePrefs,

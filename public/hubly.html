@@ -12589,7 +12589,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/index.js?v=commerce-2"></script>
 <script defer src="/journey-os/hubly-taste.js?v=taste-2"></script>
 <script defer src="/journey-os/hubly-website-quality.js?v=wq-1"></script>
-<script defer src="/journey-os/hubly-business-quality.js?v=bq-1"></script>
+<script defer src="/journey-os/hubly-business-craftsmanship.js?v=bc-1"></script>
 <script defer src="/journey-os/hubly-consultant.js?v=consultant-4"></script>
 <script defer src="/journey-os/ai-workspace.js?v=aw-7"></script>
 <script defer src="/journey-os/journey.js?v=aw-1"></script>
@@ -18752,11 +18752,15 @@ function isCreativeRenderPreview(experience){
     const site=HublyWebsiteQuality.siteHtml(live,{biz,pointTarget:null});
     const reviewBlock=experience.selfReview&&HublyWebsiteQuality.reviewHtml
       ?HublyWebsiteQuality.reviewHtml(experience.selfReview):'';
-    const brandBlock=(typeof HublyBusinessQuality!=='undefined'&&experience.brandSystem&&HublyBusinessQuality.brandSystemHtml)
-      ?HublyBusinessQuality.brandSystemHtml(experience.brandSystem):'';
-    const healthBlock=(typeof HublyBusinessQuality!=='undefined'&&experience.health&&HublyBusinessQuality.healthHtml)
-      ?HublyBusinessQuality.healthHtml(experience.health):'';
-    el.innerHTML=`<div class="is-creative-preview-card is-wq">${site}${reviewBlock}${brandBlock}${healthBlock}</div>`;
+    const Craft=typeof HublyBusinessCraftsmanship!=='undefined'?HublyBusinessCraftsmanship:HublyBusinessQuality;
+    const brandBlock=(Craft&&experience.brandSystem&&Craft.brandSystemHtml)
+      ?Craft.brandSystemHtml(experience.brandSystem):'';
+    const healthBlock=(Craft&&experience.health&&Craft.healthHtml)
+      ?Craft.healthHtml(experience.health):'';
+    const confBlock=experience.confidence
+      ?`<div class="bq-launch"><div class="bq-head"><strong>Launch Confidence</strong><em>${escPeHtml(String(experience.confidence.percent))}%</em></div><p class="bq-intro">${escPeHtml(experience.confidence.label)}${experience.confidence.percent<95?' — '+escPeHtml((experience.confidence.whatMovesTo95&&experience.confidence.whatMovesTo95[0])||''):''}</p></div>`
+      :'';
+    el.innerHTML=`<div class="is-creative-preview-card is-wq">${site}${reviewBlock}${brandBlock}${healthBlock}${confBlock}</div>`;
     el.querySelectorAll('[data-wq-act]').forEach(btn=>{
       btn.onclick=()=>{
         const act=btn.getAttribute('data-wq-act');
@@ -19162,12 +19166,18 @@ async function isRunCreativeBuildExperience(seed){
     }
   }
 
-  /* Phase 2 — Business Quality: Brand System, sections, copy, images, trust, health */
-  if(typeof HublyBusinessQuality!=='undefined'&&HublyBusinessQuality.enrichExperience){
-    isArchitectSetMilestone('Business Quality');
-    HublyBusinessQuality.enrichExperience(experience);
+  /* Phase 2 — Business Craftsmanship: story, voice, consistency, journey, pride */
+  if(typeof HublyBusinessCraftsmanship!=='undefined'&&HublyBusinessCraftsmanship.enrichExperience){
+    isArchitectSetMilestone('Business Craftsmanship');
+    HublyBusinessCraftsmanship.enrichExperience(experience);
+    if(experience.story){
+      isCreativePush('hubly','Business Story locked — Mission: '+experience.story.mission+' Promise: '+experience.story.promise);
+    }
     if(experience.brandSystem){
-      isCreativePush('hubly','I locked a Brand System for '+escPeHtml(experience.brandSystem.personality)+' — voice, image direction, buttons, and motion. Every future page inherits this.');
+      isCreativePush('hubly','Voice: '+escPeHtml(experience.brandSystem.voiceLabel||experience.brandSystem.personality)+'. Consistency Engine will carry this through website, commerce, studio, emails, and marketing.');
+    }
+    if(experience.competitive){
+      isCreativePush('hubly',experience.competitive.message);
     }
     if(experience.sectionPlan){
       isCreativePush('hubly',experience.sectionPlan.rationale+' First: '+(experience.sectionPlan.sections[0]&&experience.sectionPlan.sections[0].why||''));
@@ -19178,11 +19188,17 @@ async function isRunCreativeBuildExperience(seed){
     if(experience.imageDirection){
       isCreativePush('hubly',experience.imageDirection.message);
     }
-    if(experience.conversionCoach&&experience.conversionCoach.needsSimplify){
-      isCreativePush('hubly',experience.conversionCoach.message);
+    if(experience.journey){
+      isCreativePush('hubly',experience.journey.narrative);
+    }
+    if(experience.confidence){
+      isCreativePush('hubly',experience.confidence.label+(experience.confidence.percent<95?' — '+(experience.confidence.whatMovesTo95[0]||''):''));
     }
     if(experience.health){
       isCreativePush('hubly',experience.health.narrative);
+    }
+    if(experience.goldenRule){
+      isCreativePush('hubly',experience.goldenRule.message);
     }
     isCreativeRenderPreview(experience);
     await isArchitectSleep(700);
@@ -19903,27 +19919,35 @@ async function isRunBusinessLaunchExperience(opts){
   S._is.businessLaunch=flow;
   S._is.launchPartial=!!flow.partial;
 
-  /* Phase 2 — Launch Review before celebrate */
-  if(flow.launchReview&&typeof HublyBusinessQuality!=='undefined'){
+  /* Phase 2 — Launch Confidence + Pride Review before celebrate */
+  if(flow.launchReview&&typeof HublyBusinessCraftsmanship!=='undefined'){
     try{
       const lr=flow.launchReview;
       if(typeof isCreativePush==='function'){
         isCreativePush('hubly',lr.message||lr.intro);
       }
       if(typeof isArchitectAwaitChoice==='function'){
+        const confPct=(lr.confidence&&lr.confidence.percent)!=null?lr.confidence.percent:'—';
         const picked=await isArchitectAwaitChoice(
-          `<div class="cq">I reviewed everything. What should we do before going live?</div><div class="opts">`+
-          `<button type="button" data-choice="improve"><strong>Improve</strong><span>Fix the top issue</span></button>`+
-          `<button type="button" data-choice="ignore"><strong>Launch anyway</strong><span>Keep coaching after</span></button>`+
+          `<div class="cq">Launch Confidence: ${escPeHtml(String(confPct))}%. Are you proud to put your name on this business?</div><div class="opts">`+
+          `<button type="button" data-choice="proud"><strong>Yes — I'm proud</strong><span>Put my name on it</span></button>`+
+          `<button type="button" data-choice="improve"><strong>Let's make it better</strong><span>Keep crafting</span></button>`+
           `<button type="button" data-choice="compare"><strong>Compare</strong><span>See the difference</span></button></div>`,
-          {defaultId:'improve',defaultLabel:'Improve',timeoutMs:14000}
+          {defaultId:'improve',defaultLabel:"Let's make it better",timeoutMs:16000}
         );
-        const result=HublyBusinessQuality.handleLaunchAction(picked.id||'improve',lr,{
-          live:flow.launchReview&&(S._is.creativeBuild&&S._is.creativeBuild.live)||{},
+        const result=HublyBusinessCraftsmanship.handleLaunchAction(picked.id||'improve',lr,{
+          live:(S._is.creativeBuild&&S._is.creativeBuild.live)||{},
           industryLabel:industry,
         });
         if(result&&result.message&&typeof isCreativePush==='function')isCreativePush('hubly',result.message);
         if(result&&result.review)flow.launchReview=result.review;
+        if(result&&result.suggestImprove){
+          const again=HublyBusinessCraftsmanship.handleLaunchAction('improve',lr,{
+            live:(S._is.creativeBuild&&S._is.creativeBuild.live)||{},
+            industryLabel:industry,
+          });
+          if(again&&again.message&&typeof isCreativePush==='function')isCreativePush('hubly',again.message);
+        }
       }
     }catch(e){}
   }

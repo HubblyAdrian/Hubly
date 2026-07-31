@@ -482,7 +482,7 @@ body.aw-building-mode .aw-shell{
 .wq-act[data-wq-act="improve"]{background:#d9632d;border-color:#d9632d}
 .is-creative-preview-card.is-wq{padding:0;background:transparent;border:none}
 
-/* ── Phase 2 · Business Quality ── */
+/* ── Phase 2 · Business Craftsmanship ── */
 .bq-brand,.bq-health,.bq-launch{
   margin-top:14px;padding:14px;border-radius:16px;
   background:linear-gradient(180deg,#0b1220,#141b2b);color:#fff;
@@ -538,4 +538,23 @@ body.aw-building-mode .aw-shell{
   color:#fff;font-size:12px;font-weight:800;padding:10px 14px;border-radius:11px;cursor:pointer;
 }
 .bq-act:hover{background:rgba(217,99,45,.22);border-color:rgba(217,99,45,.5)}
-.bq-act[data-bq-act="improve"]{background:#d9632d;border-color:#d9632d}
+.bq-act[data-bq-act="improve"],.bq-act[data-bq-act="proud"]{background:#d9632d;border-color:#d9632d}
+.bq-narrative{font-size:14px;font-weight:650;line-height:1.5;color:#fff}
+.bq-pride{
+  margin:12px 0;padding:12px 14px;border-radius:12px;
+  background:rgba(217,99,45,.16);border:1px solid rgba(217,99,45,.4);
+  font-size:14px;font-weight:750;line-height:1.4;color:#fff;
+}
+.bq-move{margin:0 0 12px}
+.bq-move span{
+  display:block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  color:#fdba74;margin-bottom:6px;
+}
+.bq-move ul{margin:0;padding-left:18px;color:rgba(255,255,255,.82);font-size:12.5px;line-height:1.45}
+.bq-score-details{margin-top:10px}
+.bq-score-details summary{
+  cursor:pointer;font-size:11px;font-weight:700;color:rgba(255,255,255,.5);
+  list-style:none;
+}
+.bq-score-details summary::-webkit-details-marker{display:none}
+.bq-score-details[open] summary{margin-bottom:8px;color:rgba(255,255,255,.7)}

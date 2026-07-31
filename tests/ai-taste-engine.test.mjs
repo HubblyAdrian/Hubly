@@ -34,7 +34,7 @@ function load() {
 test("HublyTaste is a reusable recommendation engine", () => {
   const s = load();
   const T = s.HublyTaste;
-  assert.equal(T.version, "1.1.0");
+  assert.equal(T.version, "1.2.0");
   assert.equal(typeof T.make, "function");
   assert.equal(typeof T.understand, "function");
   assert.equal(typeof T.forWebsite, "function");
