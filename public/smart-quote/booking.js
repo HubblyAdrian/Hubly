@@ -541,7 +541,7 @@
     }
     const prompt =
       (w && w.servicePrompt) ||
-      'What service would you like?';
+      'Choose a package';
     const current = app.bkService || '';
     const cards = svcs
       .map((s) => {
@@ -709,11 +709,28 @@
     const addonGrid = document.getElementById('bk-addon-grid');
     if (addonLbl) addonLbl.style.display = locked ? 'none' : '';
     if (addonGrid) addonGrid.style.display = locked ? 'none' : '';
+    // Keep "You selected" visible on When & where after a site package click.
+    let chipHost = document.getElementById('bk-selected-pkg-host');
+    if (!chipHost) {
+      const step2Body = document.querySelector('#bk-step-2 .bk-step-body');
+      if (step2Body) {
+        chipHost = document.createElement('div');
+        chipHost.id = 'bk-selected-pkg-host';
+        step2Body.insertBefore(chipHost, step2Body.firstChild);
+      }
+    }
+    if (chipHost) {
+      chipHost.innerHTML =
+        locked && !((appState() || {})._bkShowPackagePicker)
+          ? renderSelectedPackageChip()
+          : '';
+      chipHost.style.display = chipHost.innerHTML ? '' : 'none';
+    }
     const labels = document.getElementById('bk-prog-labels');
     if (labels) {
       const step = currentBkStep();
-      const locked = packageLocked();
-      const steps = locked
+      const lockedSteps = packageLocked();
+      const steps = lockedSteps
         ? [
             { t: 'Package', h: 'Selected' },
             { t: 'When & where', h: 'Pick date & time' },
@@ -721,7 +738,7 @@
             { t: 'Review', h: 'Confirm & book' },
           ]
         : [
-            { t: 'Details', h: 'Choose your service' },
+            { t: 'Package', h: 'Choose a package' },
             { t: 'When & where', h: 'Pick date & location' },
             { t: 'Your info', h: 'Tell us about you' },
             { t: 'Review', h: 'Confirm & book' },

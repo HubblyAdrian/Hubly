@@ -79,6 +79,10 @@ function applyBusinessShareMeta(html, meta) {
   out = upsertMeta(out, 'property', 'og:title', meta.title);
   out = upsertMeta(out, 'property', 'og:description', meta.description || '');
   out = upsertMeta(out, 'property', 'og:type', 'website');
+  out = upsertMeta(out, 'property', 'og:site_name', meta.siteName || meta.title);
+  if (meta.updatedTime) {
+    out = upsertMeta(out, 'property', 'og:updated_time', meta.updatedTime);
+  }
   if (meta.url) out = upsertMeta(out, 'property', 'og:url', meta.url);
   if (meta.image) out = upsertMeta(out, 'property', 'og:image', meta.image);
   out = upsertMeta(out, 'name', 'description', meta.description || '');
@@ -103,6 +107,8 @@ async function fetchBusinessShareMeta(slug, req) {
     description: `Book with ${fallbackName}`,
     image: '',
     url: pageUrl,
+    siteName: fallbackName,
+    updatedTime: new Date().toISOString(),
   };
   if (!SUPA_URL || !SUPA_ANON || !slug) return base;
   try {
@@ -127,7 +133,14 @@ async function fetchBusinessShareMeta(slug, req) {
       String(row.about || '').trim().slice(0, 160) ||
       `Book with ${name}`;
     const image = String(row.banner_url || row.logo_url || '').trim();
-    return { title: name, description: desc, image, url: pageUrl };
+    return {
+      title: name,
+      description: desc,
+      image,
+      url: pageUrl,
+      siteName: name,
+      updatedTime: new Date().toISOString(),
+    };
   } catch (e) {
     return base;
   }

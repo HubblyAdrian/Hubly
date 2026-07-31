@@ -21,10 +21,14 @@ test('business subdomain share meta uses business name not Hubly marketing', () 
       description: 'Timeless photos. Real moments.',
       image: 'https://example.com/banner.jpg',
       url: 'https://everlasting.myhubly.app/',
+      siteName: 'Everlasting',
+      updatedTime: '2026-07-31T00:00:00.000Z',
     }
   );
   assert.match(out, /<title>Everlasting<\/title>/);
   assert.match(out, /property="og:title" content="Everlasting"/);
+  assert.match(out, /property="og:site_name" content="Everlasting"/);
+  assert.match(out, /property="og:updated_time" content="2026-07-31T00:00:00\.000Z"/);
   assert.match(out, /property="og:description" content="Timeless photos\. Real moments\."/);
   assert.match(out, /property="og:image" content="https:\/\/example\.com\/banner\.jpg"/);
   assert.doesNotMatch(out, /Hubly · Book more jobs/);
@@ -47,10 +51,22 @@ test('client applyWebsiteSeo updates og:title for public sites', () => {
 test('site package click locks package and skips re-picker', () => {
   assert.match(html, /autoPicked:true/);
   assert.match(html, /S\._bkPackageLocked=!opts\.autoPicked&&!opts\.fromQuote/);
+  assert.match(html, /Pick a package to continue/);
+  assert.match(html, /ws-svc-card-bookable/);
   assert.match(booking, /function packageLocked/);
   assert.match(booking, /renderSelectedPackageChip/);
   assert.match(booking, /Customer already picked a package on the website/);
   assert.match(booking, /You selected/);
+  assert.match(booking, /bk-selected-pkg-host/);
   assert.match(html, /Package already chosen on the website/);
   assert.match(html, /bk-step-2/);
+});
+
+test('photography booking asks Choose a package not What kind of shoot', () => {
+  const frame = fs.readFileSync(
+    path.join(root, 'public/booking-frames/photography.json'),
+    'utf8'
+  );
+  assert.match(frame, /"servicePrompt": "Choose a package"/);
+  assert.doesNotMatch(frame, /What kind of shoot\?/);
 });
