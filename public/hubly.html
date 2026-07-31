@@ -30,7 +30,7 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
-<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-3">
+<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-4">
 <link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-15">
 <link rel="stylesheet" href="/journey-os/photography-projects.css?v=projects-16">
@@ -4971,9 +4971,17 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 /* Desktop + mobile: Settings toggle always available */
 .ed-settings-rail-toggle{
   display:inline-flex!important;align-items:center;gap:6px;
+  min-height:36px;padding:8px 12px;border-radius:10px;font-weight:750;
+  touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,.08);
+}
+.ed-settings-rail-toggle-icon{display:inline-flex;align-items:center;justify-content:center;line-height:0}
+.ed-settings-rail-toggle-label{font-size:13px;font-weight:750}
+.ed-settings-rail-toggle[aria-expanded="true"]{
+  background:#FFF1E8!important;border-color:rgba(217,99,45,.45)!important;color:#9A3412!important;
 }
 .ed-settings-rail-close{
   display:inline-flex!important;align-items:center;justify-content:center;
+  min-width:36px;min-height:36px;touch-action:manipulation;
 }
 .ed-settings-rail-scrim{
   display:none;position:fixed;inset:0;background:rgba(15,23,42,.28);z-index:2390;border:0;padding:0;cursor:pointer;
@@ -7492,6 +7500,27 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 #v-editor.ed-canvas-on .ed-settings-rail,
 .ed-shell.ed-canvas-mode .ed-settings-rail{
   display:flex!important;grid-column:1;grid-row:2;min-height:0;
+}
+/* Mobile: later canvas-mode flex must not defeat collapse (hide unless .is-open). */
+@media(max-width:900px){
+  #v-editor.ed-canvas-on .ed-settings-rail,
+  .ed-shell.ed-canvas-mode .ed-settings-rail{
+    display:none!important;position:fixed!important;left:0!important;top:54px!important;bottom:0!important;
+    width:min(288px,86vw)!important;z-index:2450!important;grid-column:unset!important;grid-row:unset!important;
+    box-shadow:16px 0 40px rgba(15,23,42,.18);border-right:1px solid var(--border);
+  }
+  #v-editor.ed-canvas-on .ed-settings-rail.is-open,
+  .ed-shell.ed-canvas-mode .ed-settings-rail.is-open{display:flex!important}
+  #v-editor.ed-canvas-on .ed-shell.ed-settings-collapsed,
+  .ed-shell.ed-canvas-mode.ed-settings-collapsed{
+    grid-template-columns:1fr!important;
+  }
+  #v-editor.ed-canvas-on .ed-settings-rail-stub,
+  .ed-shell.ed-canvas-mode .ed-settings-rail-stub,
+  #v-editor.ed-canvas-on .ed-shell.ed-settings-collapsed .ed-settings-rail-stub,
+  .ed-shell.ed-canvas-mode.ed-settings-collapsed .ed-settings-rail-stub{
+    display:none!important;
+  }
 }
 #v-editor.ed-canvas-on .ed-ctrl,
 .ed-shell.ed-canvas-mode .ed-ctrl{
@@ -11072,11 +11101,17 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
+              <button type="button" class="btn btn-ghost btn-sm ed-settings-rail-toggle" id="ed-settings-rail-toggle" onclick="toggleEdSettingsRail()" aria-label="Website menu" title="Website menu" aria-controls="ed-settings-rail" aria-expanded="false">
+                <span class="ed-settings-rail-toggle-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                </span>
+                <span class="ed-settings-rail-toggle-label">Menu</span>
+              </button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
           </div>
 
-          <!-- Collapsed rail stub — always-visible reopen when menu is hidden -->
+          <!-- Collapsed rail stub — desktop reopen when menu is hidden -->
           <button type="button" class="ed-settings-rail-stub" id="ed-settings-rail-stub" onclick="openEdSettingsRail()" aria-label="Open website menu" title="Open website menu" hidden>›</button>
 
           <!-- Left Settings: Business · Website · Booking · Integrations -->
@@ -27560,9 +27595,10 @@ function syncEdSettingsToggleUi(){
   const shell=document.getElementById('ed-shell');
   const rail=document.getElementById('ed-settings-rail');
   const stub=document.getElementById('ed-settings-rail-stub');
+  const toggle=document.getElementById('ed-settings-rail-toggle');
   const mobile=isEdSettingsRailMobile();
   const expanded=mobile?!!rail?.classList.contains('is-open'):!shell?.classList.contains('ed-settings-collapsed');
-  /* Hide menu / View profile removed — reopen collapsed desktop rail via › stub only. */
+  /* Desktop: › stub reopens collapsed rail. Mobile: top-bar Menu toggle opens/closes drawer. */
   if(stub){
     if(mobile){
       stub.hidden=true;
@@ -27571,6 +27607,13 @@ function syncEdSettingsToggleUi(){
       stub.hidden=!!expanded;
       stub.setAttribute('aria-hidden',expanded?'true':'false');
     }
+  }
+  if(toggle){
+    toggle.setAttribute('aria-expanded',expanded?'true':'false');
+    toggle.setAttribute('aria-label',expanded?'Collapse website menu':'Open website menu');
+    toggle.title=expanded?'Collapse menu':'Website menu';
+    const label=toggle.querySelector('.ed-settings-rail-toggle-label');
+    if(label)label.textContent=expanded?'Close':'Menu';
   }
 }
 function openEdSettingsRail(){
