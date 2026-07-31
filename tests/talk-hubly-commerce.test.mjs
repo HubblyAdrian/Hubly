@@ -40,8 +40,9 @@ test("HublyConsultant skips questionnaire when seed is rich", () => {
   vm.runInNewContext(consultantJs, sandbox);
   const C = sandbox.HublyConsultant;
   assert.ok(C);
-  assert.equal(C.version, "1.0.0");
+  assert.equal(C.version, "2.0.0");
   assert.deepEqual(C.pattern[0], "understand");
+  assert.equal(typeof C.think, "function");
   assert.equal(
     C.shouldSkipQuestionnaire({
       seed: "I'm starting a pressure washing business in Dallas",
@@ -96,11 +97,12 @@ test("generate-site accepts inspiration uploads for OpenAI vision", () => {
 });
 
 test("hubly.html wires consultant + commerce runtime + AI workspace", () => {
-  assert.match(html, /hubly-consultant\.js\?v=consultant-1/);
+  assert.match(html, /hubly-consultant\.js\?v=consultant-2/);
   assert.match(html, /commerce\/runtime\.js\?v=commerce-2/);
-  assert.match(html, /ai-workspace\.js\?v=aw-3/);
+  assert.match(html, /ai-workspace\.js\?v=aw-4/);
   assert.match(html, /HublyConsultant\.shouldSkipQuestionnaire/);
   assert.match(html, /HublyConsultant\.buildFromContext/);
+  assert.match(html, /HublyConsultant\.think/);
   assert.match(html, /MAX_CLARIFICATION_BEFORE_BUILD/);
 });
 
