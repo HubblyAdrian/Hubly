@@ -347,7 +347,18 @@
   .booking-shell.bk-mock .bk-where-when{grid-template-columns:1fr}
   .booking-shell.bk-mock .bk-sq-layout{grid-template-columns:1fr}
   .booking-shell.bk-mock .bk-sq-estimate{display:none}
-  .booking-shell.bk-mock .bk-sq-mobile-est{display:block;padding:10px 14px}
+  .booking-shell.bk-mock .bk-sq-mobile-est{display:none!important}
+  .booking-shell.bk-mock .bk-step-inner,
+  .booking-shell.bk-mock .bk-sq-mode .bk-step-inner{
+    margin:0!important;border:none!important;border-radius:0!important;
+    box-shadow:none!important;background:transparent!important;overflow:visible;
+  }
+  .booking-shell.bk-mock .bk-step-body{
+    overflow:visible!important;flex:none;padding:16px 16px 24px;
+  }
+  .booking-shell.bk-mock .bk-sq-layout,
+  .booking-shell.bk-mock .bk-sq-main{background:#fff}
+  .booking-shell.bk-mock{background:#fff}
 }
 .booking-shell.bk-mock .bk-col-title{
   font-size:17px;font-weight:800;letter-spacing:-.02em;margin:0 0 2px;

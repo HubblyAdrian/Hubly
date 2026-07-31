@@ -32,7 +32,7 @@ test('booking calendar parses YYYY-MM-DD as local (no UTC month slip)', () => {
 });
 
 test('mobile booking summary is compact and chat clears Continue', () => {
-  assert.match(html, /\.bk-sq-mobile-est \.bk-sum-lines[\s\S]*?display:none!important/);
+  assert.match(html, /\.bk-sq-mode \.bk-sq-mobile-est[\s\S]*?display:none!important/);
   assert.match(
     html,
     /body\.ws-booking-open \.ws-chat-widget\{[\s\S]*?bottom:calc\(84px/

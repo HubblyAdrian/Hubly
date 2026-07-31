@@ -352,7 +352,8 @@
         cfg,
       });
       if (side) side.innerHTML = cardHtml;
-      if (mobile) mobile.innerHTML = cardHtml;
+      /* Mobile: no booking-summary card — keep the flow as a real page. */
+      if (mobile) mobile.innerHTML = '';
     }
     const stickyDetail = typeof document !== 'undefined' ? document.getElementById('sticky-detail') : null;
     const stickyPrice = typeof document !== 'undefined' ? document.getElementById('sticky-price') : null;
@@ -687,10 +688,10 @@
           (subjectStep && subjectStep.blurb) ||
           'Choose the service that best fits your needs.';
     if (tag) {
-      const trust0 = (w && w.trustLines && w.trustLines[0]) || '';
-      const tagline = trust0 || (appState() || {}).tag || '';
-      tag.textContent = tagline;
-      tag.classList.toggle('is-trust', /guarantee|insured|secure/i.test(tagline));
+      /* Don't put frame trust lines (e.g. "Edited gallery included") under the brand. */
+      tag.textContent = '';
+      tag.style.display = 'none';
+      tag.classList.remove('is-trust');
     }
     if (trustRow) {
       trustRow.style.display = 'none';

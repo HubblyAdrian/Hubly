@@ -9065,51 +9065,42 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 @media(max-width:860px){
   .bk-sq-layout{grid-template-columns:1fr}
   .bk-sq-estimate{display:none}
-  .bk-sq-mode .bk-sq-mobile-est{display:block}
+  /* No booking summary strip on phones — package chip lives in the step. */
+  .bk-sq-mode .bk-sq-mobile-est,
+  .bk-sq-mobile-est{display:none!important}
   .bk-sq-mode:not(.bk-price-open) .sticky-summary .sticky-detail{display:none}
-  .bk-sq-mode:not(.bk-price-open) .bk-sq-mobile-est .sq-estimate-kicker,
-  .bk-sq-mode:not(.bk-price-open) .bk-sq-mobile-est .sq-estimate-total{display:none}
-  .bk-sq-mode .bk-step-inner{margin:8px 10px 12px;border-radius:16px;padding:0;overflow:hidden}
-  .bk-sq-mode .bk-step-body{padding:14px 14px 8px}
+  /* Full-page step (not a nested scrolling card) */
+  .bk-sq-mode .booking-steps{
+    overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  }
+  .bk-sq-mode .bk-step{
+    position:relative;inset:auto;transform:none;opacity:0;pointer-events:none;
+    display:none;min-height:100%;height:auto;flex-direction:column;
+  }
+  .bk-sq-mode .bk-step.active{
+    display:flex;opacity:1;pointer-events:all;transform:none;
+  }
+  .bk-sq-mode .bk-step.exit-left{display:none}
+  .bk-sq-mode .bk-step-inner{
+    margin:0!important;border:none!important;border-radius:0!important;
+    box-shadow:none!important;padding:0 16px!important;background:transparent!important;
+    overflow:visible;height:auto;min-height:100%;max-width:none;width:auto;flex:1;
+  }
+  .bk-sq-mode .bk-step-body{
+    overflow:visible!important;flex:none;min-height:0;padding:16px 0 24px;
+  }
+  .bk-sq-mode .bk-step-foot{
+    position:sticky;bottom:0;z-index:6;margin:0 -16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));
+    background:#fff;border-top:1px solid #eef2f7;
+    box-shadow:0 -8px 24px rgba(15,23,42,.06);
+  }
 }
 .bk-sq-mobile-est{display:none;padding:0 14px 12px;background:#fff;border-bottom:1px solid #e8eef6}
 .bk-sq-mobile-est .sq-estimate-card{border-radius:14px;padding:12px 14px;background:#0f172a}
 .bk-sq-mobile-est .sq-includes,.bk-sq-mobile-est .sq-tip{display:none}
 .bk-sq-mobile-est .sq-disclaimer{margin-top:6px}
 .bk-sq-mobile-est .sq-lines{margin-bottom:0}
-@media(max-width:860px){
-  .bk-sq-mobile-est .bk-help-card,
-  .bk-sq-mobile-est .bk-reviews-card{display:none!important}
-  .bk-sq-mobile-est .bk-sum-includes,
-  .bk-sq-mobile-est .bk-sum-lines,
-  .bk-sq-mobile-est .bk-sum-dots,
-  .bk-sq-mobile-est .bk-sum-total{display:none!important}
-  .bk-sq-mode .bk-sq-mobile-est{
-    padding:6px 10px 0;background:transparent;border-bottom:none;flex-shrink:0;
-  }
-  .bk-sq-mobile-est .bk-sum-card{
-    border-radius:12px;box-shadow:0 2px 10px rgba(15,23,42,.05);
-  }
-  .bk-sq-mobile-est .bk-sum-head{
-    padding:8px 12px;font-size:12px;
-  }
-  .bk-sq-mobile-est .bk-sum-head strong{font-size:12px;font-weight:700}
-  .bk-sq-mobile-est .bk-sum-body{padding:8px 12px 10px}
-  .bk-sq-mobile-est .bk-sum-svc{
-    margin:0;padding:0;border:none;gap:8px;
-    grid-template-columns:40px minmax(0,1fr);
-  }
-  .bk-sq-mobile-est .bk-sum-svc img,
-  .bk-sq-mobile-est .bk-sum-svc > div:first-child{
-    width:40px;height:32px;border-radius:8px;
-  }
-  .bk-sq-mobile-est .bk-sum-svc strong{font-size:13px;color:#0f172a!important}
-  .bk-sq-mobile-est .bk-sum-svc span{
-    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;
-    font-size:11px;color:#475569!important;
-  }
-}
-.booking-tag{font-size:11px;color:var(--ink-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.booking-tag{display:none!important}
 .bk-save-exit{margin-left:auto;flex-shrink:0;font-weight:700}
 .bk-where-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:0 0 8px}
 .bk-where-card{appearance:none;border:2px solid #e2e8f0;border-radius:14px;overflow:hidden;padding:0;background:#fff;cursor:pointer;text-align:left;font:inherit;position:relative}
@@ -12981,7 +12972,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/booking-frames/registry.js"></script>
 <script defer src="/smart-quote/engine.js"></script>
 <script defer src="/smart-quote/ui.js"></script>
-<script defer src="/smart-quote/booking.js?v=pkg-lock-2"></script>
+<script defer src="/smart-quote/booking.js?v=pkg-lock-3"></script>
 <script defer src="/hubly-session.js"></script>
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
