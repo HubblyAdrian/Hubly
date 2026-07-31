@@ -5602,7 +5602,7 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .bk-landing-body h2{font-family:var(--font-d);font-size:22px;font-weight:700;margin:0 0 4px}
 .bk-landing-body .bk-landing-sub{font-size:14px;color:var(--ink-3);margin-bottom:22px}
 .bk-landing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-@media(max-width:900px){.bk-landing-grid{grid-template-columns:1fr;gap:14px}.bk-land-card-img{height:160px}}
+@media(max-width:900px){.bk-landing-grid{grid-template-columns:1fr;gap:14px}.bk-land-card-img{height:auto;aspect-ratio:5/6;max-height:360px}}
 .phone-screen .bk-landing-grid,.ed-bk-phone-grid.bk-landing-grid,#edbk-land-services.bk-landing-grid{grid-template-columns:1fr!important;gap:12px!important;display:grid!important}
 .ed-bk-phone-grid .bk-land-card{border-radius:14px;box-shadow:0 2px 8px rgba(15,23,42,.08)}
 .ed-bk-phone-grid .bk-land-card-img{height:132px;font-size:32px}
@@ -5616,7 +5616,7 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .edbk-phone-body .bk-landing-sub{font-size:10px;color:var(--ink-3);margin-bottom:10px}
 .bk-land-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--surface);display:flex;flex-direction:column}
 .bk-land-card-img{height:140px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:40px;position:relative}
-.bk-land-card-img img{width:100%;height:100%;object-fit:cover}
+.bk-land-card-img img{width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block}
 .bk-land-pop{position:absolute;top:8px;right:8px;background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
 .bk-land-card-b{padding:14px;flex:1;display:flex;flex-direction:column}
 .bk-land-card-b h3{font-size:15px;font-weight:700;margin:0 0 6px}
@@ -6481,8 +6481,19 @@ html{scroll-behavior:smooth}
 .quiz-result-price{font-weight:700;margin:8px 0}
 .ws-svc-card{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,18px);overflow:hidden;transition:box-shadow .2s,transform .2s}
 .ws-svc-card:hover{box-shadow:0 12px 40px rgba(15,23,42,.08);transform:translateY(-2px)}
+.ed-share-image-preview{
+  display:flex;align-items:center;gap:12px;min-height:72px;padding:10px;border:1px solid var(--border);
+  border-radius:12px;background:var(--surface-2,#F7F8FA);
+}
+.ed-share-image-preview img{
+  width:96px;height:64px;object-fit:cover;object-position:center 18%;border-radius:8px;flex-shrink:0;background:#e5e7eb;
+}
+.ed-share-image-preview .ed-share-image-meta{min-width:0;flex:1}
+.ed-share-image-preview .ed-share-image-meta strong{display:block;font-size:13px;font-weight:700;color:var(--ink);margin:0 0 2px}
+.ed-share-image-preview .ed-share-image-meta span{display:block;font-size:12px;color:var(--ink-3);line-height:1.4}
 .ws-svc-img{height:200px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:40px;position:relative;overflow:hidden}
-.ws-svc-img img{width:100%;height:100%;object-fit:cover}
+/* Prefer top of frame so faces/heads stay visible (cover + center crops portraits). */
+.ws-svc-img img{width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block}
 .ws-svc-pop{position:absolute;top:12px;left:12px;background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase}
 .ws-svc-body{padding:20px;color:var(--ws-text,#0f172a)}
 .ws-svc-body h3{font-size:18px;font-weight:700;margin:0 0 6px;color:var(--ws-heading,#0f172a)}
@@ -8519,6 +8530,21 @@ body.ws-booking-open .ws-bk-close{display:flex}
 .ws-bk-svc-card{cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column;background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);color:var(--ws-text,#0f172a)}
 .ws-bk-svc-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,23,42,.12)}
 .ws-bk-svc-card .ws-svc-img{display:flex!important;height:160px;background:var(--ws-surface-alt,#e2e8f0)}
+.ws-bk-svc-card .ws-svc-img img{object-position:center 18%}
+@media(max-width:900px){
+  .ws-svc-img,
+  .ws-bk-svc-card .ws-svc-img{
+    height:auto!important;
+    aspect-ratio:5/6;
+    max-height:min(72vw,360px);
+  }
+  /* Stacked booking list on phones — keep a portrait-friendly media frame */
+  .ws-bk-site.ws-bk-list .ws-bk-svc-card{flex-direction:column!important}
+  .ws-bk-site.ws-bk-list .ws-bk-svc-card .ws-svc-img{
+    width:100%!important;min-width:0!important;height:auto!important;min-height:0!important;
+    aspect-ratio:5/6;max-height:min(72vw,360px);
+  }
+}
 .ws-bk-svc-card .ws-svc-ico{display:none!important}
 .ws-bk-svc-card .ws-svc-body{display:flex;flex-direction:column;gap:8px;padding:18px 18px 20px;min-height:150px;flex:1}
 .ws-bk-svc-card .ws-svc-body h3{color:var(--ws-heading,#0f172a);font-size:17px;font-weight:700;margin:0}
@@ -8583,11 +8609,11 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
   .ws-bk-hero-tag{font-size:14px;margin-bottom:10px}
   .ws-bk-body{padding:24px 16px calc(96px + env(safe-area-inset-bottom,0px))}
   .ws-bk-svc-grid{grid-template-columns:1fr;gap:12px}
-  .ws-bk-svc-card .ws-svc-img{height:148px}
+  .ws-bk-svc-card .ws-svc-img{height:auto!important;aspect-ratio:5/6;max-height:min(72vw,360px)}
   .ws-bk-svc-card .ws-svc-body{padding:14px 14px 16px;min-height:0}
   .ws-bk-svc-card .ws-svc-book{min-height:44px;width:100%}
   .ws-bk-site.ws-bk-list .ws-bk-svc-card{flex-direction:column}
-  .ws-bk-site.ws-bk-list .ws-bk-svc-card .ws-svc-img{width:100%;min-width:0;height:140px;min-height:140px}
+  .ws-bk-site.ws-bk-list .ws-bk-svc-card .ws-svc-img{width:100%;min-width:0;height:auto!important;min-height:0;aspect-ratio:5/6;max-height:min(72vw,360px)}
   .ws-bk-site.ws-bk-compact .ws-bk-hero{min-height:140px}
   .ws-bk-site.ws-bk-compact .ws-bk-hero-inner{padding:18px 16px;gap:12px}
   .bk-landing-hero{padding:28px 16px 40px}
@@ -9592,7 +9618,7 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
   .ws-section-hdr h2{font-size:clamp(22px,6vw,28px)}
   .ws-section-hdr p{font-size:14px}
   .ws-svc-grid,.ws-reviews-grid,.ws-why-grid{grid-template-columns:1fr;gap:14px}
-  .ws-svc-img{height:168px}
+  .ws-svc-img{height:auto;aspect-ratio:5/6;max-height:min(72vw,360px)}
   .ws-owner{grid-template-columns:1fr;justify-items:center;text-align:center;gap:18px}
   .ws-owner-photo{max-width:160px}
   .ws-faq-list{max-width:none}
@@ -11654,6 +11680,18 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <input class="file-input-native" type="file" id="ed-banner-file" accept="image/*" onchange="handleEdBanner(this)">
       <input class="file-input-native" type="file" id="ws-pe-banner-file" accept="image/*" onchange="handleEdBanner(this)">
+    </div>
+    <div class="field" style="margin-top:16px;margin-bottom:0;" id="ed-share-image-field">
+      <label>Link preview photo</label>
+      <p style="font-size:12px;color:var(--ink-3);margin:0 0 10px;line-height:1.45;">When someone texts or shares your link, this is the picture they see (iMessage, Messages, etc.).</p>
+      <div id="ed-share-image-preview" class="ed-share-image-preview" aria-live="polite"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+        <button type="button" class="btn btn-out btn-sm" onclick="setShareImageFromBanner()">Use first-screen photo</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="setShareImageFromLogo()">Use logo</button>
+        <button type="button" class="btn btn-ink btn-sm" onclick="pickShareImage()">Upload different photo</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="ed-share-image-clear" onclick="clearShareImage()" hidden>Clear</button>
+      </div>
+      <input class="file-input-native" type="file" id="ed-share-image-file" accept="image/*,.heic,.heif,image/heic,image/heif" onchange="handleShareImageUpload(this)">
     </div>
   </div>
 </div>
@@ -14941,6 +14979,7 @@ function populateEditorFromState(){
     const z=document.getElementById('ed-banner-zone');
     if(z){z.classList.add('has-img');z.innerHTML=`<img src="${S.bannerUrl}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
   }
+  try{syncShareImagePreview();}catch(e){}
   const nb=document.getElementById('nav-biz');if(nb)nb.textContent=S.biz||'Your Business';
   try{syncBizChromeAvatars();}catch(e){}
   if(S.bgColor)applyBgColor(S.bgColor);
@@ -28993,6 +29032,7 @@ async function hostPortfolioDataUrls(opts={}){
   (S.galleryPairs||[]).forEach(p=>{push(p?.before);push(p?.after);});
   push(S.bannerUrl);
   push(S.logoUrl);
+  push(S.website?.shareImageUrl);
   (S.editorSvcs||[]).forEach(svc=>{
     if(!svc)return;
     push(svc.imgUrl);
@@ -29045,6 +29085,7 @@ async function hostPortfolioDataUrls(opts={}){
   }
   if(S.bannerUrl)S.bannerUrl=remap(S.bannerUrl);
   if(S.logoUrl)S.logoUrl=remap(S.logoUrl);
+  if(S.website?.shareImageUrl)S.website.shareImageUrl=remap(S.website.shareImageUrl);
   const remapSvc=(svc)=>{
     if(!svc)return;
     if(svc.imgUrl)svc.imgUrl=remap(svc.imgUrl);
@@ -29282,6 +29323,7 @@ function handleEdBanner(input){
       }
       S.bannerUrl=url;
       syncBookingBrandFromSiteMedia();
+      try{syncShareImagePreview();}catch(err){}
       if(z){z.classList.add('has-img');z.innerHTML=`<img src="${url}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
       try{renderWebsitePreview();}catch(err){}
       try{updateSvcPreview();}catch(err){}
@@ -33917,6 +33959,7 @@ function ensureWsPeFileInputs(){
     // Portfolio Add photos — mobile canvas hides the Settings accordion, so this
     // input must live on <body> or iOS silently ignores .click().
     ['ed-port-file','handleEdPortfolio(this)',true],
+    ['ed-share-image-file','handleShareImageUpload(this)',false],
   ];
   const acceptImg='image/*,.heic,.heif,image/heic,image/heif';
   specs.forEach(([id,onchange,multi])=>{
@@ -36435,7 +36478,7 @@ function applyWebsiteSeo(){
   const biz=String(S.biz||'').trim();
   const title=String(w.seoTitle||'').trim()||biz||document.title;
   const desc=String(w.seoDescription||'').trim()||String(S.tag||'').trim()||(biz?`Book with ${biz}`:'');
-  const image=String(S.bannerUrl||S.logoUrl||'').trim();
+  const image=resolveShareImageUrl();
   if(title)document.title=title;
   let meta=document.querySelector('meta[name="description"]');
   if(!meta){meta=document.createElement('meta');meta.name='description';document.head.appendChild(meta);}
@@ -36461,6 +36504,126 @@ function applyWebsiteSeo(){
   setName('twitter:title',title);
   setName('twitter:description',desc);
   if(image)setName('twitter:image',image);
+}
+/** Link-preview image for iMessage / social — owner pick, else banner, else logo. */
+function resolveShareImageUrl(){
+  ensureWebsiteCopy();
+  const custom=String(S.website?.shareImageUrl||'').trim();
+  if(custom&&(/^https?:\/\//i.test(custom)||custom.startsWith('data:')))return custom;
+  const banner=String(S.bannerUrl||'').trim();
+  if(banner)return banner;
+  const logo=String(S.logoUrl||'').trim();
+  return logo||'';
+}
+function syncShareImagePreview(){
+  const host=document.getElementById('ed-share-image-preview');
+  const clearBtn=document.getElementById('ed-share-image-clear');
+  if(!host)return;
+  ensureWebsiteCopy();
+  const custom=String(S.website.shareImageUrl||'').trim();
+  const resolved=resolveShareImageUrl();
+  const source=custom
+    ?'Custom upload'
+    :(S.bannerUrl?'First-screen photo':(S.logoUrl?'Logo':'Not set yet'));
+  if(resolved){
+    const safe=typeof escPeHtml==='function'?escPeHtml(resolved):String(resolved).replace(/"/g,'&quot;');
+    host.innerHTML=`<img src="${safe}" alt="Link preview"><div class="ed-share-image-meta"><strong>${source}</strong><span>Shown when your link is shared</span></div>`;
+  }else{
+    host.innerHTML=`<div class="ed-share-image-meta"><strong>No photo yet</strong><span>Add a first-screen photo or upload one here</span></div>`;
+  }
+  if(clearBtn)clearBtn.hidden=!custom;
+}
+function setShareImageFromBanner(){
+  ensureWebsiteCopy();
+  if(!S.bannerUrl){toast('Add a first-screen photo first');return;}
+  S.website.shareImageUrl=null;
+  syncShareImagePreview();
+  try{applyWebsiteSeo();}catch(e){}
+  try{scheduleWebsitePersist({delay:400});}catch(e){}
+  toast('Link preview uses your first-screen photo');
+}
+function setShareImageFromLogo(){
+  ensureWebsiteCopy();
+  if(!S.logoUrl){toast('Add a logo first');return;}
+  S.website.shareImageUrl=S.logoUrl;
+  syncShareImagePreview();
+  try{applyWebsiteSeo();}catch(e){}
+  try{scheduleWebsitePersist({delay:400});}catch(e){}
+  toast('Link preview uses your logo');
+}
+function clearShareImage(){
+  ensureWebsiteCopy();
+  S.website.shareImageUrl=null;
+  syncShareImagePreview();
+  try{applyWebsiteSeo();}catch(e){}
+  try{scheduleWebsitePersist({delay:400});}catch(e){}
+  toast('Link preview cleared — using first-screen photo');
+}
+function pickShareImage(){
+  ensureWsPeFileInputs();
+  let inp=document.getElementById('ed-share-image-file');
+  if(!inp){
+    inp=document.createElement('input');
+    inp.type='file';
+    inp.id='ed-share-image-file';
+    inp.accept='image/*,.heic,.heif,image/heic,image/heif';
+    inp.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;opacity:0';
+    inp.setAttribute('onchange','handleShareImageUpload(this)');
+    document.body.appendChild(inp);
+  }else if(inp.parentElement!==document.body){
+    document.body.appendChild(inp);
+  }
+  try{
+    if(typeof inp.showPicker==='function')inp.showPicker();
+    else inp.click();
+  }catch(e){
+    try{inp.click();}catch(e2){toast('Could not open photo picker');}
+  }
+}
+async function handleShareImageUpload(input){
+  const f=input?.files?.[0];
+  if(!f)return;
+  if(typeof isLikelyImageFile==='function'&&!isLikelyImageFile(f)){
+    toast('Pick an image file');
+    input.value='';
+    return;
+  }
+  try{
+    setEdSaveStatus('saving');
+    const dataUrl=await new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=()=>resolve(r.result);
+      r.onerror=()=>reject(new Error('read failed'));
+      r.readAsDataURL(f);
+    });
+    let compressed=dataUrl;
+    try{
+      if(typeof compressImageDataUrl==='function')compressed=await compressImageDataUrl(dataUrl,1400);
+    }catch(e){}
+    ensureWebsiteCopy();
+    S.website.shareImageUrl=compressed;
+    syncShareImagePreview();
+    const hosted=await hostBrandImage('share-og',compressed);
+    if(!isHttpsAssetUrl(hosted)){
+      toast(t('imageSaveWarn')||'Photo still uploading — keep this page open');
+      setEdSaveStatus('error');
+      try{scheduleWebsitePersist({delay:1200});}catch(e){}
+      input.value='';
+      return;
+    }
+    S.website.shareImageUrl=hosted;
+    syncShareImagePreview();
+    try{applyWebsiteSeo();}catch(e){}
+    try{scheduleWebsitePersist({delay:200});}catch(e){}
+    setEdSaveStatus('saved');
+    toast('Link preview photo saved');
+  }catch(e){
+    console.warn('handleShareImageUpload',e);
+    toast('Could not upload that photo');
+    setEdSaveStatus('error');
+  }finally{
+    input.value='';
+  }
 }
 function onSocialInput(field,val){
   S[field]=val;

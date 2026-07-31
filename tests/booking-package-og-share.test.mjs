@@ -46,6 +46,17 @@ test('client applyWebsiteSeo updates og:title for public sites', () => {
   assert.match(html, /function applyWebsiteSeo/);
   assert.match(html, /setOg\('og:title',title\)/);
   assert.match(html, /applyWebsiteSeo\(\)/);
+  assert.match(html, /function resolveShareImageUrl/);
+  assert.match(html, /resolveShareImageUrl\(\)/);
+  assert.match(html, /shareImageUrl/);
+  assert.match(html, /function handleShareImageUpload/);
+  assert.match(html, /Link preview photo/);
+});
+
+test('mobile package cards keep faces in frame (taller crop + top position)', () => {
+  assert.match(html, /object-position:center 18%/);
+  assert.match(html, /\.ws-svc-img\{height:auto;aspect-ratio:5\/6/);
+  assert.match(html, /\.ws-bk-svc-card \.ws-svc-img\{height:auto!important;aspect-ratio:5\/6/);
 });
 
 test('site package click locks package and skips re-picker', () => {

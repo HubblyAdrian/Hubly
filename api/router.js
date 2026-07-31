@@ -115,7 +115,7 @@ async function fetchBusinessShareMeta(slug, req) {
     const endpoint =
       `${SUPA_URL.replace(/\/$/, '')}/rest/v1/businesses` +
       `?slug=eq.${encodeURIComponent(slug)}` +
-      `&select=name,tagline,about,banner_url,logo_url&limit=1`;
+      `&select=name,tagline,about,banner_url,logo_url,meta&limit=1`;
     const res = await fetch(endpoint, {
       headers: {
         apikey: SUPA_ANON,
@@ -132,7 +132,17 @@ async function fetchBusinessShareMeta(slug, req) {
       String(row.tagline || '').trim() ||
       String(row.about || '').trim().slice(0, 160) ||
       `Book with ${name}`;
-    const image = String(row.banner_url || row.logo_url || '').trim();
+    let meta = row.meta;
+    if (typeof meta === 'string') {
+      try { meta = JSON.parse(meta); } catch (e) { meta = {}; }
+    }
+    const shareCustom = String(meta?.website?.shareImageUrl || meta?.shareImageUrl || '').trim();
+    const image = String(
+      (/^https?:\/\//i.test(shareCustom) ? shareCustom : '') ||
+      row.banner_url ||
+      row.logo_url ||
+      ''
+    ).trim();
     return {
       title: name,
       description: desc,
