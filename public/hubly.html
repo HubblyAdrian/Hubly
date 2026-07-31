@@ -6689,6 +6689,22 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ed-site-url-copy{font-size:11px;font-weight:800;color:#141B2B;background:#EEF0F3;border:1px solid #D1D5DB;border-radius:8px;padding:5px 10px;flex-shrink:0;}
 .ed-site-url:hover .ed-site-url-copy{background:#E5E7EB;}
 .ed-site-url.copied .ed-site-url-copy{background:#166534;border-color:#166534;color:#fff;}
+.ed-save-status{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:36px;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:750;
+  color:#6B7280;background:transparent;border:1px solid transparent;white-space:nowrap;
+  cursor:pointer;font-family:inherit;
+}
+.ed-save-status[data-state="saving"]{color:#9A3412;background:#FFF7ED;border-color:#FDBA74;}
+.ed-save-status[data-state="saved"]{color:#166534;background:#ECFDF5;border-color:#A7F3D0;}
+.ed-save-status[data-state="error"]{color:#991B1B;background:#FEF2F2;border-color:#FECACA;}
+#v-editor .ed-save-status{color:#6B7280;}
+#v-editor .ed-save-status[data-state="saving"]{color:#9A3412!important;}
+#v-editor .ed-save-status[data-state="saved"]{color:#166534!important;}
+#v-editor .ed-save-status[data-state="error"]{color:#991B1B!important;}
+/* Auto-save is the default — Save & publish stays as a quiet fallback via the status chip */
+#v-editor .ed-top-actions .btn-save-main{display:none!important}
+#v-editor .ed-save-status{display:inline-flex!important}
 .ws-ticker-off{display:none!important;}
 .ws-footer-bottom{margin-top:32px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);text-align:center;font-size:12px;color:rgba(255,255,255,.38)}
 /* Layout variants. structure + feel per template */
@@ -7973,12 +7989,12 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
   /* Legacy Edit/Preview tabs fight canvas-mode — hide them */
   #v-editor.ed-canvas-on .ed-mobile-tabs,
   .ed-shell.ed-canvas-mode .ed-mobile-tabs{display:none!important}
-  /* Compact single-row toolbar: Home · Menu · URL · Save */
+  /* Compact toolbar: Home · Menu · Saved · full-width link row */
   #v-editor.ed-canvas-on .ed-top-bar,
   .ed-shell.ed-canvas-mode .ed-top-bar{
     position:sticky!important;top:0!important;z-index:5200!important;
-    display:flex!important;flex-wrap:nowrap!important;align-items:center!important;
-    gap:6px!important;padding:8px 10px!important;
+    display:flex!important;flex-wrap:wrap!important;align-items:center!important;
+    gap:6px 8px!important;padding:8px 10px!important;
     padding-top:max(8px,env(safe-area-inset-top,0px))!important;
     background:#fff!important;color:#141B2B!important;
     border-bottom:1px solid #E5E7EB!important;
@@ -7995,36 +8011,52 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
   }
   #v-editor.ed-canvas-on .ed-settings-rail-toggle-label,
   .ed-shell.ed-canvas-mode .ed-settings-rail-toggle-label{display:none!important}
-  #v-editor.ed-canvas-on .ed-site-url-wrap,
-  .ed-shell.ed-canvas-mode .ed-site-url-wrap{
-    order:2!important;flex:1 1 auto!important;min-width:0!important;max-width:none!important;
-  }
-  #v-editor.ed-canvas-on .ed-site-url,
-  .ed-shell.ed-canvas-mode .ed-site-url{
-    min-height:40px;padding:6px 8px;gap:6px;
-  }
-  #v-editor.ed-canvas-on .ed-site-url-label,
-  .ed-shell.ed-canvas-mode .ed-site-url-label{display:none!important}
-  #v-editor.ed-canvas-on .ed-site-url-copy,
-  .ed-shell.ed-canvas-mode .ed-site-url-copy{padding:4px 8px;font-size:10px}
-  /* Already on a phone — Phone/PC switch just steals chrome */
-  #v-editor.ed-canvas-on .ed-device-bar,
-  .ed-shell.ed-canvas-mode .ed-device-bar{display:none!important}
   #v-editor.ed-canvas-on .ed-top-actions,
   .ed-shell.ed-canvas-mode .ed-top-actions{
-    order:3!important;flex:0 0 auto!important;width:auto!important;
+    order:2!important;flex:1 1 auto!important;width:auto!important;margin-left:auto!important;
     flex-wrap:nowrap!important;gap:6px!important;z-index:5201!important;
+    justify-content:flex-end!important;
   }
   #v-editor.ed-canvas-on .ed-top-actions .btn,
   .ed-shell.ed-canvas-mode .ed-top-actions .btn{
     flex:0 0 auto!important;padding:8px 10px!important;font-size:12px!important;
     min-height:40px;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,.08);
   }
+  /* Auto-save replaces Save & publish on phones — status chip only */
   #v-editor.ed-canvas-on .ed-top-actions .btn-save-main,
-  .ed-shell.ed-canvas-mode .ed-top-actions .btn-save-main{
-    flex:0 0 auto!important;width:auto!important;min-width:0!important;
-    order:unset!important;margin:0!important;white-space:nowrap;
+  .ed-shell.ed-canvas-mode .ed-top-actions .btn-save-main{display:none!important}
+  #v-editor.ed-canvas-on .ed-save-status,
+  .ed-shell.ed-canvas-mode .ed-save-status{
+    display:inline-flex!important;min-height:40px;padding:8px 12px;font-size:12px;
   }
+  /* Own row so the full link is readable (not crushed into two truncated words) */
+  #v-editor.ed-canvas-on .ed-site-url-wrap,
+  .ed-shell.ed-canvas-mode .ed-site-url-wrap{
+    order:10!important;flex:1 1 100%!important;width:100%!important;min-width:0!important;max-width:none!important;
+  }
+  #v-editor.ed-canvas-on .ed-site-url,
+  .ed-shell.ed-canvas-mode .ed-site-url{
+    width:100%;min-height:40px;padding:8px 10px;gap:8px;
+    background:#F7F8FA!important;border:1px solid #E5E7EB!important;border-radius:12px!important;
+    align-items:flex-start;
+  }
+  #v-editor.ed-canvas-on .ed-site-url-label,
+  .ed-shell.ed-canvas-mode .ed-site-url-label{
+    display:block!important;width:100%;flex:0 0 auto;order:-1;font-size:10px;margin:0 0 2px;
+  }
+  #v-editor.ed-canvas-on .ed-site-url-text,
+  .ed-shell.ed-canvas-mode .ed-site-url-text{
+    flex:1 1 auto!important;min-width:0!important;max-width:none!important;
+    white-space:normal!important;overflow:visible!important;text-overflow:clip!important;
+    word-break:break-all;font-size:12px!important;line-height:1.35;font-weight:650;
+  }
+  #v-editor.ed-canvas-on .ed-site-url-copy,
+  .ed-shell.ed-canvas-mode .ed-site-url-copy{
+    padding:8px 12px;font-size:12px;min-height:36px;align-self:center;
+  }
+  /* Already on a phone — Phone/PC switch just steals chrome */
+  #v-editor.ed-canvas-on .ed-device-bar,
+  .ed-shell.ed-canvas-mode .ed-device-bar{display:none!important}
   /* Menu drawer above canvas + inspector; not under a phantom 54px app bar */
   #v-editor.ed-canvas-on .ed-settings-rail,
   .ed-shell.ed-canvas-mode .ed-settings-rail{
@@ -11288,8 +11320,8 @@ document.addEventListener('DOMContentLoaded', function() {
               <span class="ed-settings-rail-toggle-label">Menu</span>
             </button>
             <div class="ed-site-url-wrap">
-              <button type="button" class="ed-site-url" id="ed-site-url-bar" onclick="copyEdSiteUrl()" title="Click to copy your live URL">
-                <span class="ed-site-url-label">Your site</span>
+              <button type="button" class="ed-site-url" id="ed-site-url-bar" onclick="copyEdSiteUrl()" title="Tap to copy your live link" aria-label="Copy your live website link">
+                <span class="ed-site-url-label">Your link</span>
                 <span class="ed-site-url-text" id="ed-site-url-text">your-slug.myhubly.app</span>
                 <span class="ed-site-url-copy" id="ed-site-url-copy">Copy</span>
               </button>
@@ -11305,6 +11337,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
+              <button type="button" class="ed-save-status" id="ed-save-status" data-state="idle" onclick="saveStorefront()" title="Changes save automatically — tap to save now" aria-live="polite">Saved</button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
           </div>
@@ -15340,6 +15373,7 @@ function applyCtaText(text){
   const pubBtn=document.getElementById('sf-pub-book-btn');if(pubBtn)pubBtn.textContent=text;
   const bookBtn=document.getElementById('edph-book-btn');if(bookBtn)bookBtn.textContent=text;
   renderWebsitePreview();
+  try{scheduleWebsitePersist({delay:700});}catch(e){}
 }
 
 function parseCityListInput(raw){
@@ -15922,20 +15956,32 @@ async function wsChatSend(){
     if(sendBtn)sendBtn.disabled=false;
   }
 }
-async function saveStorefront(){
-  if(S._saveStorefrontBusy)return;
-  if(!currentBusiness){toast('Not logged in');return;}
+async function saveStorefront(opts){
+  opts=opts||{};
+  const quiet=!!opts.quiet;
+  if(S._saveStorefrontBusy){
+    S._saveStorefrontQueued=true;
+    S._saveStorefrontQueuedQuiet=quiet||!!S._saveStorefrontQueuedQuiet;
+    return;
+  }
+  if(!currentBusiness){if(!quiet)toast('Not logged in');return;}
   const saveBtns=[...document.querySelectorAll('.btn-save-main, #ed-sheet-publish')].filter(Boolean);
   const prevLabels=saveBtns.map(b=>b.textContent);
   const setBusy=(busy,label)=>{
     S._saveStorefrontBusy=!!busy;
+    if(quiet){
+      if(busy)setEdSaveStatus('saving');
+      return;
+    }
     saveBtns.forEach((b,i)=>{
       b.disabled=!!busy;
       b.setAttribute('aria-busy',busy?'true':'false');
       if(busy&&label)b.textContent=label;
       else if(!busy)b.textContent=prevLabels[i]||(typeof t==='function'?t('savePublish'):'Save & publish');
     });
+    if(busy)setEdSaveStatus('saving');
   };
+  let saveOk=false;
   setBusy(true,typeof t==='function'?t('savingPublish')||'Publishing…':'Publishing…');
   try{
     syncEditorFieldsToState();
@@ -15943,18 +15989,22 @@ async function saveStorefront(){
     // Ensure logo/banner/portfolio are hosted https URLs before publish (data URLs get stripped / fail).
     try{await persistHostedBrandFields();}catch(e){}
     try{
-      setBusy(true,'Uploading photos…');
+      if(!quiet)setBusy(true,'Uploading photos…');
       const host=await hostPortfolioDataUrls({timeoutMs:25000,retries:2,onProgress:(i,n)=>{
-        if(n>1)setBusy(true,`Uploading photos ${i}/${n}…`);
+        if(!quiet&&n>1)setBusy(true,`Uploading photos ${i}/${n}…`);
       }});
       if(host?.failed||host?.pendingData){
         console.warn('saveStorefront portfolio host failures',host);
-        toast(host.hosted
-          ?'Some photos need another Save on Wi‑Fi'
-          :'Photos still uploading — tap Save again if they disappear');
+        if(!quiet){
+          toast(host.hosted
+            ?'Some photos need another Save on Wi‑Fi'
+            :'Photos still uploading — tap Save again if they disappear');
+        }else{
+          setEdSaveStatus('error');
+        }
       }
     }catch(e){console.warn('saveStorefront host portfolio',e);}
-    setBusy(true,'Publishing…');
+    if(!quiet)setBusy(true,'Publishing…');
     try{
       if(S.logoUrl&&String(S.logoUrl).startsWith('data:')){
         const hosted=await uploadBrandAsset('logo',S.logoUrl);
@@ -15963,6 +16013,10 @@ async function saveStorefront(){
       if(S.bannerUrl&&String(S.bannerUrl).startsWith('data:')){
         const hosted=await uploadBrandAsset('banner',S.bannerUrl);
         if(hosted)S.bannerUrl=hosted;
+      }
+      if(S.website?.ownerPhotoUrl&&String(S.website.ownerPhotoUrl).startsWith('data:')){
+        const hosted=await uploadBrandAsset('owner',S.website.ownerPhotoUrl);
+        if(hosted)S.website.ownerPhotoUrl=hosted;
       }
     }catch(e){console.warn('saveStorefront host brand',e);}
     // If URL is still the old name+hex junk, replace it with the business name
@@ -15981,7 +16035,8 @@ async function saveStorefront(){
     if(newSlug!==currentBusiness.slug){
       const {data:conflict}=await db.from('businesses').select('id').eq('slug',newSlug).maybeSingle();
       if(conflict&&conflict.id!==currentBusiness.id){
-        toast('❌ That URL is already taken. choose another');
+        if(!quiet)toast('❌ That URL is already taken. choose another');
+        setEdSaveStatus('error');
         const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='That URL is taken. try another';msg.style.color='#c0392b';}
         return;
       }
@@ -16032,13 +16087,15 @@ async function saveStorefront(){
     try{maybeHealBusinessTypeFromServices();}catch(e){}
     if(S.businessType)updates.business_type=S.businessType;
     if(typeof db==='undefined'||!db){
-      toast('Still connecting — try Save again in a moment');
+      if(!quiet)toast('Still connecting — try Save again in a moment');
+      setEdSaveStatus('error');
       return;
     }
     const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
     if(error){
-      if(error.code==='23505'){toast('❌ That URL is already taken. choose another');}
-      else{toast('❌ '+error.message);}
+      if(error.code==='23505'){if(!quiet)toast('❌ That URL is already taken. choose another');}
+      else{if(!quiet)toast('❌ '+error.message);}
+      setEdSaveStatus('error');
       return;
     }
     Object.assign(currentBusiness,updates);
@@ -16055,27 +16112,70 @@ async function saveStorefront(){
     const g=ensureEditorGuide();
     g.completed=true;g.active=false;
     renderEditorGuide();
-    toast(t('toastPublishedLive'));
-    try{delightOnce('website_ready','✨ Your website is ready.');}catch(e){}
-    try{maybeDelightReviews();}catch(e){}
-    try{if(!S._postPublishPkgNudge){S._postPublishPkgNudge=true;setTimeout(()=>toast(t('toastNextPackages')),900);}}catch(e){}
-    // Stay on Site after publish; toast nudges Packages next (Spanish-aware via t()).
-    // Never yank the owner out of Hubly Studio into the website editor.
-    try{
-      const app=document.getElementById('p-app');
-      const studioView=document.getElementById('v-studio');
-      const inStudio=!!(app?.classList.contains('jos-studio-mode')||
-        (studioView&&!studioView.classList.contains('hidden')));
-      if(!inStudio&&typeof openWebsiteEditorHub==='function'&&app?.classList.contains('active')){
-        openWebsiteEditorHub('site');
-      }
-    }catch(e){}
+    setEdSaveStatus('saved');
+    saveOk=true;
+    if(!quiet){
+      toast(t('toastPublishedLive'));
+      try{delightOnce('website_ready','✨ Your website is ready.');}catch(e){}
+      try{maybeDelightReviews();}catch(e){}
+      try{if(!S._postPublishPkgNudge){S._postPublishPkgNudge=true;setTimeout(()=>toast(t('toastNextPackages')),900);}}catch(e){}
+      // Stay on Site after publish; toast nudges Packages next (Spanish-aware via t()).
+      // Never yank the owner out of Hubly Studio into the website editor.
+      try{
+        const app=document.getElementById('p-app');
+        const studioView=document.getElementById('v-studio');
+        const inStudio=!!(app?.classList.contains('jos-studio-mode')||
+          (studioView&&!studioView.classList.contains('hidden')));
+        if(!inStudio&&typeof openWebsiteEditorHub==='function'&&app?.classList.contains('active')){
+          openWebsiteEditorHub('site');
+        }
+      }catch(e){}
+    }
   }catch(e){
     console.warn('saveStorefront',e);
-    toast(e?.message?('Save failed: '+e.message):'Save failed — try again');
+    setEdSaveStatus('error');
+    if(!quiet)toast(e?.message?('Save failed: '+e.message):'Save failed — try again');
   }finally{
     setBusy(false);
+    if(!saveOk&&document.getElementById('ed-save-status')?.dataset.state!=='error'){
+      /* early returns already set error or left saving — normalize */
+    }else if(saveOk){
+      setEdSaveStatus('saved');
+    }
+    if(S._saveStorefrontQueued){
+      const qQuiet=!!S._saveStorefrontQueuedQuiet;
+      S._saveStorefrontQueued=false;
+      S._saveStorefrontQueuedQuiet=false;
+      setTimeout(()=>{saveStorefront({quiet:qQuiet}).catch(()=>{});},60);
+    }
   }
+}
+
+function setEdSaveStatus(state){
+  const el=document.getElementById('ed-save-status');
+  if(!el)return;
+  const map={idle:'Saved',saving:'Saving…',saved:'Saved',error:'Retry save'};
+  el.dataset.state=state||'idle';
+  el.textContent=map[state]||map.idle;
+  el.title=state==='error'
+    ?'Save failed — tap to try again'
+    :'Changes save automatically — tap to save now';
+}
+/** Debounced quiet publish for copy / photos / CTA so refresh keeps edits. */
+function scheduleWebsitePersist(opts){
+  opts=opts||{};
+  const delay=Math.max(200,Number(opts.delay)||900);
+  try{clearTimeout(S._websitePersistT);}catch(e){}
+  setEdSaveStatus('saving');
+  S._websitePersistT=setTimeout(()=>{
+    try{
+      if(typeof saveStorefront==='function'&&typeof currentBusiness!=='undefined'&&currentBusiness){
+        saveStorefront({quiet:true}).catch(()=>setEdSaveStatus('error'));
+      }else{
+        setEdSaveStatus('idle');
+      }
+    }catch(e){setEdSaveStatus('error');}
+  },delay);
 }
 
 
@@ -17011,8 +17111,9 @@ function scheduleEditorCatalogPersist(){
   try{clearTimeout(S._editorCatalogPersistT);}catch(e){}
   S._editorCatalogPersistT=setTimeout(()=>{
     try{
-      if(typeof saveStorefront==='function'&&typeof currentBusiness!=='undefined'&&currentBusiness){
-        saveStorefront().catch(()=>{});
+      if(typeof scheduleWebsitePersist==='function')scheduleWebsitePersist({delay:100});
+      else if(typeof saveStorefront==='function'&&typeof currentBusiness!=='undefined'&&currentBusiness){
+        saveStorefront({quiet:true}).catch(()=>{});
       }
     }catch(e){}
   },850);
@@ -28711,12 +28812,14 @@ async function autoSaveBrandField(field,value){
     const payload={[field]:value};
     if(field==='logo_url'||field==='banner_url')payload.meta=buildBizMeta();
     const {error}=await db.from('businesses').update(payload).eq('id',currentBusiness.id);
-    if(error){toast(t('imageSaveWarn'));return false;}
+    if(error){toast(t('imageSaveWarn'));try{setEdSaveStatus('error');}catch(e){}return false;}
     currentBusiness[field]=value;
     if(payload.meta)currentBusiness.meta=payload.meta;
+    try{setEdSaveStatus('saved');}catch(e){}
     return true;
   }catch(e){
     toast(t('imageSaveWarn'));
+    try{setEdSaveStatus('error');}catch(e2){}
     return false;
   }
 }
@@ -28736,7 +28839,7 @@ async function handleSidebarLogo(input){
       const ok=await autoSaveBrandField('logo_url',url);
       if(ok){
         if(/^https?:\/\//i.test(url))toast(t('logoUpdated'));
-        else toast(t('imageSaveWarn')||'Logo preview updated — tap Save & publish if it doesn’t stick');
+        else toast(t('imageSaveWarn')||'Logo preview updated — checking connection…');
       }
       input.value='';
     }catch(err){
@@ -28771,9 +28874,9 @@ function handleEdLogo(input){
       applyLogoPreview(url);
       try{renderWebsitePreview();}catch(err){}
       const ok=await autoSaveBrandField('logo_url',url);
-      if(!ok&&!currentBusiness)toast('Logo ready — finish setup / Save & publish so it sticks');
+      if(!ok&&!currentBusiness)toast('Logo ready — finish setup so it sticks');
       else if(ok&&!/^https?:\/\//i.test(url))toast(t('imageSaveWarn'));
-      else if(ok)toast(t('logoUpdated')||'Logo saved');
+      else if(ok){setEdSaveStatus('saved');toast(t('logoUpdated')||'Logo saved');}
       checkEditorGuideProgress();
       input.value='';
     }catch(err){
@@ -31126,7 +31229,10 @@ async function handleEdPortfolio(input){
       try{
         const host=await hostPortfolioDataUrls();
         if(host.failed&&host.failed===urls.length){
-          toast('Photos added locally — tap Save & publish (upload to cloud failed)');
+          toast('Photos added — still uploading to the cloud. Stay on this page a moment.');
+          try{scheduleWebsitePersist({delay:800});}catch(e){}
+        }else{
+          setEdSaveStatus('saved');
         }
         if(currentBusiness?.id&&typeof buildBizMeta==='function'&&typeof db!=='undefined'&&db){
           let meta=buildBizMeta();
@@ -31596,10 +31702,16 @@ function renderEdPortGrid(){
   g.innerHTML=(S.portfolioUrls||[]).map((u,i)=>`<div class="port-item"><img src="${u}" alt=""><button type="button" class="rm-port" onclick="removeEdPort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('ed-port-file').click()" title="Add photos">+</div>`;
 }
 function removeEdPort(i){
-  S.portfolioUrls.splice(i,1);
+  const removed=(S.portfolioUrls||[]).splice(i,1)[0];
   S._ownerUploadedMedia=!!(S.portfolioUrls||[]).length||!!S.logoUrl;
+  if(removed&&S.website?.galleryAlbums){
+    S.website.galleryAlbums.forEach(a=>{
+      if(Array.isArray(a.urls))a.urls=a.urls.filter(u=>u!==removed);
+    });
+  }
   renderEdPortGrid();
   updateEdPrev();
+  try{scheduleWebsitePersist({delay:400});}catch(e){}
 }
 function onTrustBadgesChange(){
   ensureWebsiteCopy();
@@ -32296,7 +32408,7 @@ function clearWsPeSelection(){
   S._wsPeSelectedEl=null;
 }
 const WS_PE_INLINE_TYPES=new Set([
-  'headline','tagline','cta','cta-secondary','biz-name','owner-name','owner-bio','about-name',
+  'headline','tagline','biz-name','owner-name','owner-bio','about-name',
   'sec-title','sec-sub','footer-cta','footer-tag','promo','ticker','store-title','store-sub',
   'svc-name','svc-price','svc-dur'
 ]);
@@ -32329,7 +32441,7 @@ function startWsPeInlineEdit(target,opts){
   const pe=target.dataset.pe||'';
   const node=wsPeInlineNode(target);
   if(!node)return;
-  if(pe==='hero-bg'||pe==='logo'||pe==='gallery'||pe==='hours'||pe==='contact'||pe==='social'||pe==='area'){
+  if(pe==='hero-bg'||pe==='logo'||pe==='gallery'||pe==='hours'||pe==='contact'||pe==='social'||pe==='area'||pe==='cta'||pe==='cta-secondary'){
     return handleWsPeClick(pe,target);
   }
   if(pe==='service'){
@@ -32681,6 +32793,10 @@ function onWsPePreviewClick(e){
   hideWsPeContextBar();
   const pe=target.dataset.pe||'';
   /* Package name / price / hours: edit in place — caret only, no forced highlight */
+  if(pe==='cta'||pe==='cta-secondary'){
+    handleWsPeClick(pe,target);
+    return;
+  }
   if(pe==='svc-name'||pe==='svc-price'||pe==='svc-dur'||isWsPeInlineType(pe)||pe==='faq-item'||pe==='review'||pe==='membership'){
     startWsPeInlineEdit(target,{selectAll:false});
     return;
@@ -32753,18 +32869,28 @@ function handleWsPeClick(type,el){
   }
   if(type==='cta'){
     const cur=S.ctaText||'Book Now';
-    const opts=['Book Now','Schedule Today','Get Started','Reserve My Spot'].map(o=>`<option value="${escPeHtml(o)}"${o===cur?' selected':''}>${escPeHtml(o)}</option>`).join('');
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">Button text</div><select class="ws-pe-inp" id="ws-pe-inp" onchange="applyWsPeCta(this.value)">${opts}<option value="custom"${!['Book Now','Schedule Today','Get Started','Reserve My Spot'].includes(cur)?' selected':''}>Custom…</option></select><input type="text" class="ws-pe-inp" id="ws-pe-custom" value="${escPeHtml(cur)}" placeholder="Custom button text" style="display:${['Book Now','Schedule Today','Get Started','Reserve My Spot'].includes(cur)?'none':'block'}"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`);
-    document.getElementById('ws-pe-inp')?.addEventListener('change',function(){const c=document.getElementById('ws-pe-custom');if(c)c.style.display=this.value==='custom'?'block':'none';});
+    const chips=['Book Now','Schedule Today','Get Started','Reserve My Spot']
+      .map(o=>`<button type="button" class="btn btn-out btn-sm ws-pe-cta-chip" onclick="document.getElementById('ws-pe-inp').value='${escPeHtml(o)}';liveWsPeCta('${escPeHtml(o)}')">${escPeHtml(o)}</button>`)
+      .join('');
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Book Now button</div>
+      <p class="ws-pe-hint" style="margin:0 0 8px;font-size:12px;color:var(--ink-3);line-height:1.4;">Change the words customers tap to book.</p>
+      <input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(cur)}" placeholder="Book Now" maxlength="40" oninput="liveWsPeCta(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();applyWsPeCtaSave();}">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px;">${chips}</div>
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeCtaSave()">Save</button></div>`);
+    setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();},30);
     return;
   }
   if(type==='cta-secondary'){
     ensureWebsiteCopy();
     const cur=(S.website&&S.website.secondaryCtaText)||t('wsViewPackages')||'View Packages';
-    const opts=['View Packages','See Services','Browse Plans','Learn More'].map(o=>`<option value="${escPeHtml(o)}"${o===cur?' selected':''}>${escPeHtml(o)}</option>`).join('');
-    const isCustom=!['View Packages','See Services','Browse Plans','Learn More'].includes(cur);
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">Secondary button</div><select class="ws-pe-inp" id="ws-pe-inp" onchange="applyWsPeSecondaryCta(this.value)">${opts}<option value="custom"${isCustom?' selected':''}>Custom…</option></select><input type="text" class="ws-pe-inp" id="ws-pe-custom" value="${escPeHtml(cur)}" placeholder="Custom button text" style="display:${isCustom?'block':'none'}" onchange="applyWsPeSecondaryCta(this.value)" onkeydown="if(event.key==='Enter')applyWsPeSecondaryCta(this.value)"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeSecondaryCta(document.getElementById('ws-pe-custom')?.value||document.getElementById('ws-pe-inp')?.value)">Save</button></div>`);
-    document.getElementById('ws-pe-inp')?.addEventListener('change',function(){const c=document.getElementById('ws-pe-custom');if(c)c.style.display=this.value==='custom'?'block':'none';});
+    const chips=['View Packages','See Services','Browse Plans','Learn More']
+      .map(o=>`<button type="button" class="btn btn-out btn-sm ws-pe-cta-chip" onclick="document.getElementById('ws-pe-inp').value='${escPeHtml(o)}';">${escPeHtml(o)}</button>`)
+      .join('');
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Secondary button</div>
+      <input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(cur)}" placeholder="View Packages" maxlength="40" onkeydown="if(event.key==='Enter'){event.preventDefault();applyWsPeSecondaryCta(document.getElementById('ws-pe-inp')?.value);}">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px;">${chips}</div>
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeSecondaryCta(document.getElementById('ws-pe-inp')?.value)">Save</button></div>`);
+    setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
     return;
   }
   if(type==='logo'){
@@ -33145,6 +33271,7 @@ function applyWsPeAboutName(){
   if(ed)ed.value=v;
   closeWsPePop();
   renderWebsitePreview();
+  try{scheduleWebsitePersist({delay:500});}catch(e){}
   toast('Name updated');
 }
 function applyWsPeOwnerTitle(){
@@ -33831,7 +33958,10 @@ function applyWsPeHours(){
   try{
     clearTimeout(S._hoursPersistT);
     S._hoursPersistT=setTimeout(()=>{
-      try{if(typeof saveStorefront==='function'&&currentBusiness)saveStorefront().catch(()=>{});}catch(e){}
+      try{
+        if(typeof scheduleWebsitePersist==='function')scheduleWebsitePersist({delay:100});
+        else if(typeof saveStorefront==='function'&&currentBusiness)saveStorefront({quiet:true}).catch(()=>{});
+      }catch(e){}
     },700);
   }catch(e){}
   toast('Hours updated');
@@ -33938,7 +34068,13 @@ function updateEdSiteUrlBar(){
   const el=document.getElementById('ed-site-url-text');
   if(!el)return;
   const slug=S.slug||document.getElementById('ed-slug')?.value||'your-business';
-  el.textContent=publicProfileUrl(slug);
+  const host=publicProfileUrl(slug);
+  const full=publicProfileHref(slug);
+  /* Show full https link so owners can read the whole URL on mobile */
+  el.textContent=full.replace(/^https:\/\//,'');
+  el.title=full;
+  const bar=document.getElementById('ed-site-url-bar');
+  if(bar)bar.setAttribute('aria-label','Copy your live link '+host);
 }
 function applyWsPeCta(val){
   if(val==='custom'){
@@ -33951,6 +34087,17 @@ function applyWsPeCta(val){
   updateCtaText(val);
   renderWebsitePreview();
 }
+function liveWsPeCta(val){
+  const text=String(val||'').trim()||'Book Now';
+  S.ctaText=text;
+  document.querySelectorAll('#ed-ws-preview #ws-hero-cta, #ed-ws-preview #ws-header-cta, #ed-ws-preview .ws-header-cta, #ws-hero-cta, #ws-header-cta').forEach(el=>{el.textContent=text;});
+}
+function applyWsPeCtaSave(){
+  const text=(document.getElementById('ws-pe-inp')?.value||'').trim()||'Book Now';
+  applyCtaText(text);
+  closeWsPePop();
+  try{scheduleWebsitePersist({delay:400});}catch(e){}
+}
 function applyWsPeSecondaryCta(val){
   ensureWebsiteCopy();
   let text=String(val||'').trim();
@@ -33962,6 +34109,7 @@ function applyWsPeSecondaryCta(val){
   try{onWebsiteFieldChange();}catch(e){}
   renderWebsitePreview();
   closeWsPePop();
+  try{scheduleWebsitePersist({delay:400});}catch(e){}
 }
 function findEditorSvc(svcId){
   let svc=S.editorSvcs.find(s=>String(s.id)===String(svcId));
@@ -36074,12 +36222,17 @@ async function handleEdOwnerPhoto(input){
   const r=new FileReader();
   r.onload=async e=>{
     try{
-      const url=await compressImageDataUrl(e.target.result);
+      const compressed=await compressImageDataUrl(e.target.result);
       ensureWebsiteCopy();
-      S.website.ownerPhotoUrl=url;
+      S.website.ownerPhotoUrl=compressed;
       const z=document.getElementById('ed-owner-photo-zone');
-      if(z){z.classList.add('has-img');z.innerHTML=`<img src="${url}" style="max-height:80px;width:auto;display:block;margin:0 auto;border-radius:8px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
+      if(z){z.classList.add('has-img');z.innerHTML=`<img src="${compressed}" style="max-height:80px;width:auto;display:block;margin:0 auto;border-radius:8px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
       renderWebsitePreview();
+      const url=await hostBrandImage('owner',compressed);
+      if(url)S.website.ownerPhotoUrl=url;
+      if(z&&url){z.innerHTML=`<img src="${url}" style="max-height:80px;width:auto;display:block;margin:0 auto;border-radius:8px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
+      renderWebsitePreview();
+      try{scheduleWebsitePersist({delay:300});}catch(e){}
       input.value='';
     }catch(err){toast(t('imageSaveWarn'));}
   };
@@ -37136,6 +37289,7 @@ function onWebsiteFieldChange(){
   S.about=S.website.ownerBio;
   try{const faq=JSON.parse(document.getElementById('ed-ws-faq-json')?.value||'[]');if(Array.isArray(faq))S.website.faq=faq;}catch(e){}
   renderWebsitePreview();
+  try{scheduleWebsitePersist({delay:1100});}catch(e){}
 }
 function renderWebsitePreview(){
   try{applyEdPreviewDeviceShowOnly();}catch(e){}
