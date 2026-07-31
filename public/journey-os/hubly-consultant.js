@@ -188,6 +188,15 @@
     return '';
   }
 
+  function detectBuyerIntent(text) {
+    var t = String(text || '').toLowerCase();
+    if (/\bgifts?\b|present|wedding|anniversary|for (someone|him|her|them)/.test(t)) return 'gift';
+    if (/for themselves|for myself|self[- ]?purchas|everyday wear|wear myself|personal use/.test(t)) return 'self';
+    if (/^gifts?\b/.test(t.trim())) return 'gift';
+    if (/^themselves\b|^self\b/.test(t.trim())) return 'self';
+    return '';
+  }
+
   function updateBusinessFromText(text) {
     var mem = ensure().memory;
     var b = mem.business;
@@ -200,6 +209,8 @@
     if (ch) b.channels = ch;
     var sell = detectSellMode(text);
     if (sell) b.sells = sell;
+    var intent = detectBuyerIntent(text);
+    if (intent) b.buyerIntent = intent;
     if (/already have (a )?website|my website is|https?:\/\//i.test(text)) b.hasWebsite = true;
     var nameM = text.match(/(?:called|named)\s+([A-Z][\w\s&'-]{1,40})/);
     if (nameM) b.name = nameM[1].trim();
@@ -210,16 +221,44 @@
   }
 
   function confLabel(n) {
-    if (n >= 90) return 'Highly Recommended';
+    if (global.HublyTaste && global.HublyTaste.starTier) {
+      return global.HublyTaste.starTier(n).label;
+    }
+    if (n >= 90) return 'Strong Recommendation';
     if (n >= 78) return 'Worth Comparing';
-    return 'Alternative Direction';
+    return 'Possible Direction';
   }
 
   function recommendation(choice, reasoning, confidence, extras) {
     extras = extras || {};
+    if (global.HublyTaste && typeof global.HublyTaste.make === 'function') {
+      var card = global.HublyTaste.make({
+        choice: choice,
+        title: extras.title || choice,
+        confidence: confidence,
+        why: reasoning,
+        tradeoffs: extras.tradeoffs,
+        alternatives: extras.alternatives,
+        domain: extras.domain || 'general',
+        surface: extras.surface,
+        focusId: extras.focusId,
+        focusLabel: extras.focusLabel,
+        choices: extras.choices,
+        build: extras.build,
+        pointTarget: extras.pointTarget,
+        celebrate: extras.celebrate,
+        nextAction: extras.nextLead,
+        evidence: extras.evidence || ['conversation'],
+        allowWithoutEvidence: true,
+        context: extras.context,
+        factors: extras.factors,
+      });
+      if (card && card.ok) return card;
+    }
     return {
       choice: choice,
       reasoning: reasoning,
+      why: reasoning,
       confidence: confidence,
       confidenceLabel: confLabel(confidence),
       surface: extras.surface || null,
@@ -230,6 +269,8 @@
       pointTarget: extras.pointTarget || null,
       celebrate: !!extras.celebrate,
       nextLead: extras.nextLead || null,
+      tradeoffs: extras.tradeoffs || [],
+      alternatives: extras.alternatives || [],
     };
   }
 
@@ -275,6 +316,33 @@
     var replies = [];
     var actions = [];
     var rec = null;
+
+    /* AI Taste — consultative pushback (never "No.") */
+    try {
+      if (global.HublyTaste && global.HublyTaste.consultPushback) {
+        var pb = global.HublyTaste.consultPushback(text, { business: business });
+        if (pb && pb.pushback) {
+          replies.push({ text: pb.message, recommendation: pb.recommendation || null });
+          if (pb.recommendation && pb.recommendation.nextAction) {
+            replies.push({ text: pb.recommendation.nextAction });
+          }
+          c.lastRecommendation = pb.recommendation;
+          setPhase('recommend');
+          persist();
+          return pack(replies, [{ type: 'set_surface', surface: 'compare' }], pb.recommendation, {
+            complete: false,
+            showProgress: true,
+          });
+        }
+      }
+    } catch (e) {}
+
+    /* First-time owner — build confidence */
+    if (/never (owned|run|had) a business|first (time|business)|brand new to this/i.test(text)) {
+      replies.push({
+        text: 'That\'s okay. I\'ll explain every recommendation I make — and you\'ll always have the final decision.',
+      });
+    }
 
     /* Storefront / shop — morph center immediately */
     if (/\b(storefront|build.*(shop|store)|open.*(shop|store))\b/i.test(text) || /^build my storefront/i.test(text)) {
@@ -445,8 +513,20 @@
           }
         );
         replies.push({
-          text: 'A candle company — nice. I have a couple ideas.',
+          text: /jewelry/i.test(text + ' ' + (business.industry || ''))
+            ? 'Handmade jewelry — nice. I have a couple ideas.'
+            : 'A candle company — nice. I have a couple ideas.',
         });
+        try {
+          if (global.HublyTaste && global.HublyTaste.understand) {
+            var u = global.HublyTaste.understand({ business: ensure().memory.business, text: t });
+            if (u.inferences && u.inferences.length) {
+              replies.push({
+                text: 'From what you\'ve shared I\'m already thinking: ' + u.inferences.slice(0, 3).join(' · ') + '.',
+              });
+            }
+          }
+        } catch (e) {}
         replies.push({
           text: 'Are you planning to sell mostly online, at local markets, or both? That changes how I\'d build your storefront.',
           recommendation: rec,
@@ -461,14 +541,12 @@
         persist();
         return pack(replies, actions, rec, { complete: false });
       }
-      /* Product business answered channel via chip labels */
-      if (!business.channels || opts.forceChannel || /online|market|local|both/i.test(text)) {
-        if (!business.channels) {
-          business.channels = detectChannels(text) || 'both';
-          persist();
-        }
-        return thinkChannelDecision(text, business, replies);
+      /* Product business has channels — may still need gift vs self before recommending */
+      if (!business.channels) {
+        business.channels = detectChannels(text) || 'both';
+        persist();
       }
+      return thinkChannelDecision(text, business, replies);
     }
 
     /* Generic build with industry known — recommend directions and build */
@@ -513,48 +591,77 @@
     var c = ensure();
     var ch = business.channels || detectChannels(text) || 'both';
     business.channels = ch;
+    var intent = business.buyerIntent || detectBuyerIntent(text);
+    if (intent) business.buyerIntent = intent;
     persist();
     setFocus('commerce', FOCUS.storefront);
     startSession('storefront');
 
-    var layoutWhy = ch === 'online'
-      ? 'Most of your customers will discover you on mobile — I\'d lead with a clean product grid and fast checkout.'
-      : ch === 'local'
-        ? 'Local markets need a brand-forward look that feels premium in person — and a simple way to reorder online later.'
-        : 'You\'ll need both: a strong brand for markets and an easy online shop for people who find you after.';
-
     var directions = [
       { id: 'minimal', label: 'Minimal', hint: 'Quiet product photography, lots of space', recommended: ch === 'online' },
-      { id: 'warm', label: 'Warm artisan', hint: 'Craft, texture, handmade feel', recommended: ch === 'local' || ch === 'both' },
+      { id: 'warm', label: 'Warm artisan', hint: 'Craft, texture, handmade character', recommended: ch === 'local' || ch === 'both' },
       { id: 'bold', label: 'Bold brand', hint: 'High contrast, unforgettable name lockup', recommended: false },
     ];
-    var top = directions.find(function (d) { return d.recommended; }) || directions[0];
 
-    var rec = recommendation(
-      top.label + ' storefront',
-      layoutWhy,
-      ch === 'both' ? 90 : 94,
-      {
-        surface: 'directions',
-        focusId: 'commerce',
-        focusLabel: FOCUS.storefront,
-        build: { kind: 'storefront_directions', channels: ch, directions: directions },
-        choices: directions.map(function (d) {
-          return { id: d.id, label: d.label, hint: d.hint, recommended: d.recommended };
-        }),
-        celebrate: false,
-        nextLead: 'Pick a direction and I\'ll build it live in the workspace.',
+    var rec;
+    if (global.HublyTaste && global.HublyTaste.forCommerce) {
+      rec = global.HublyTaste.forCommerce(
+        { business: business, text: text },
+        {
+          choices: directions,
+          build: { kind: 'storefront_directions', channels: ch, directions: directions },
+          evidence: ['stated_channels', 'stated_offer'].concat(intent ? ['buyer_intent_' + intent] : []),
+        }
+      );
+      if (rec && rec.needClarify) {
+        replies.push({ text: 'Perfect — that changes how I\'d build your storefront.' });
+        replies.push({
+          text: rec.ask || 'I have two strong ideas, but one thing would help me recommend the right one: are your customers mostly buying gifts or buying for themselves?',
+          recommendation: {
+            choice: 'Clarify buyer intent',
+            confidence: 0,
+            confidenceLabel: 'Need more evidence',
+            why: 'Confidence should come from evidence — gift vs self-purchase changes merchandising and story.',
+            choices: [
+              { id: 'gift', label: 'Mostly gifts' },
+              { id: 'self', label: 'Mostly for themselves' },
+            ],
+            focusId: 'commerce',
+            focusLabel: FOCUS.storefront,
+          },
+        });
+        c.lastRecommendation = rec;
+        setPhase('understand');
+        persist();
+        return pack(replies, [], rec, { complete: false });
       }
-    );
+      /* Keep consultant action fields */
+      rec.surface = 'directions';
+      rec.focusId = 'commerce';
+      rec.focusLabel = FOCUS.storefront;
+      rec.choices = directions;
+      rec.build = { kind: 'storefront_directions', channels: ch, directions: directions };
+      rec.nextLead = rec.nextAction;
+    } else {
+      var top = directions.find(function (d) { return d.recommended; }) || directions[0];
+      rec = recommendation(top.label + ' storefront', 'Channel fit drives layout.', 94, {
+        surface: 'directions', focusId: 'commerce', focusLabel: FOCUS.storefront,
+        build: { kind: 'storefront_directions', channels: ch, directions: directions },
+        choices: directions,
+        nextLead: 'Pick a direction and I\'ll build it live in the workspace.',
+        domain: 'commerce',
+      });
+    }
 
+    replies.push({ text: intent ? 'That helps — gift vs self-purchase changes how I\'d merchandize the first screen.' : 'Perfect — that changes how I\'d build your storefront.' });
     replies.push({
-      text: 'Perfect — that changes how I\'d build your storefront.',
-    });
-    replies.push({
-      text: 'I created three storefront directions I think fit a ' + (business.industry || 'product') + ' business. ' + layoutWhy,
+      text: 'I created three storefront directions. Based on what you\'ve shared, I recommend ' + (rec.title || rec.choice) + '.',
       recommendation: rec,
     });
-    replies.push({ text: rec.nextLead });
+    if (global.HublyTaste && global.HublyTaste.celebrate) {
+      replies.push({ text: global.HublyTaste.celebrate('progress') });
+    }
+    replies.push({ text: rec.nextLead || rec.nextAction || 'Pick a direction and I\'ll build it live.' });
 
     c.lastRecommendation = rec;
     setPhase('recommend');
@@ -751,30 +858,51 @@
     setFocus('website', FOCUS.website);
     startSession('website');
 
-    var rec = recommendation(
-      'Three homepage directions',
-      'People choose better than they invent — three concrete directions beat open-ended design questions, and local trust converts faster with a clear next step.',
-      93,
-      {
-        surface: 'directions',
-        focusId: 'website',
-        focusLabel: FOCUS.website,
-        build: { kind: 'website_directions', industry: ind },
-        choices: [
-          { id: 'minimal', label: 'Minimal', hint: 'Clean, calm, book-first', recommended: true },
-          { id: 'bold', label: 'Bold', hint: 'High energy, unmistakable CTA' },
-          { id: 'classic', label: 'Classic', hint: 'Warm, established, trust-led' },
-        ],
-        nextLead: 'Pick one and I\'ll build it live — then we\'ll improve together.',
-      }
-    );
+    var choices = [
+      { id: 'minimal', label: 'Minimal', hint: 'Clean, calm, book-first', recommended: true },
+      { id: 'bold', label: 'Bold', hint: 'High energy, unmistakable CTA' },
+      { id: 'classic', label: 'Classic', hint: 'Warm, established, trust-led' },
+    ];
 
-    replies.push({ text: 'I understand ' + ind + '. Here\'s what I\'d do first.' });
+    var rec;
+    if (global.HublyTaste && global.HublyTaste.forWebsite) {
+      rec = global.HublyTaste.forWebsite(
+        { business: business, text: text, industry: ind },
+        {
+          choices: choices,
+          build: { kind: 'website_directions', industry: ind },
+          evidence: ['stated_offer', 'conversation'],
+        }
+      );
+      rec.surface = 'directions';
+      rec.focusId = 'website';
+      rec.focusLabel = FOCUS.website;
+      rec.choices = choices;
+      rec.build = { kind: 'website_directions', industry: ind };
+      rec.nextLead = rec.nextAction;
+    } else {
+      rec = recommendation(
+        'Minimal',
+        'A clear path to act beats a long brochure for first-time visitors.',
+        93,
+        {
+          surface: 'directions',
+          focusId: 'website',
+          focusLabel: FOCUS.website,
+          build: { kind: 'website_directions', industry: ind },
+          choices: choices,
+          nextLead: 'Pick one and I\'ll build it live — then we\'ll improve together.',
+          domain: 'website',
+        }
+      );
+    }
+
+    replies.push({ text: 'I understand ' + ind + '. Based on what you\'ve shared, here\'s what I\'d do first.' });
     replies.push({
-      text: 'I created three directions for your homepage. I recommend Minimal because a clear path to act beats a long brochure for first-time visitors.',
+      text: 'I recommend ' + (rec.title || rec.choice) + '.',
       recommendation: rec,
     });
-    replies.push({ text: rec.nextLead });
+    replies.push({ text: rec.nextLead || 'Pick one and I\'ll build it live.' });
 
     c.lastRecommendation = rec;
     setPhase('recommend');

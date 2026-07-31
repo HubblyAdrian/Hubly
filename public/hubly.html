@@ -30,7 +30,7 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
-<link rel="stylesheet" href="/journey-os/ai-workspace.css?v=aw-4">
+<link rel="stylesheet" href="/journey-os/ai-workspace.css?v=aw-6">
 <link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-15">
@@ -12587,8 +12587,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/ai/merchandising.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/runtime.js?v=commerce-2"></script>
 <script defer src="/journey-os/commerce/index.js?v=commerce-2"></script>
-<script defer src="/journey-os/hubly-consultant.js?v=consultant-2"></script>
-<script defer src="/journey-os/ai-workspace.js?v=aw-4"></script>
+<script defer src="/journey-os/hubly-taste.js?v=taste-2"></script>
+<script defer src="/journey-os/hubly-website-quality.js?v=wq-1"></script>
+<script defer src="/journey-os/hubly-consultant.js?v=consultant-4"></script>
+<script defer src="/journey-os/ai-workspace.js?v=aw-6"></script>
 <script defer src="/journey-os/journey.js?v=aw-1"></script>
 <script defer src="/journey-os/store-commerce.js?v=store-4"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
@@ -18745,6 +18747,26 @@ function isCreativeRenderPreview(experience){
     el.innerHTML=`<div class="is-creative-preview-card"><div class="concepts">${dirs.map(d=>`<div class="concept"><div class="swatch" style="background:${swatches[d.id]||swatches.minimal}"></div><div class="meta">${escPeHtml(d.label)}<span>${escPeHtml(d.hint||'')}</span></div></div>`).join('')}</div></div>`;
     return;
   }
+  if(typeof HublyWebsiteQuality!=='undefined'&&HublyWebsiteQuality.siteHtml){
+    const site=HublyWebsiteQuality.siteHtml(live,{biz,pointTarget:null});
+    const reviewBlock=experience.selfReview&&HublyWebsiteQuality.reviewHtml
+      ?HublyWebsiteQuality.reviewHtml(experience.selfReview):'';
+    el.innerHTML=`<div class="is-creative-preview-card is-wq">${site}${reviewBlock}</div>`;
+    el.querySelectorAll('[data-wq-act]').forEach(btn=>{
+      btn.onclick=()=>{
+        const act=btn.getAttribute('data-wq-act');
+        const improve=btn.getAttribute('data-wq-improve');
+        const result=HublyWebsiteQuality.handleReviewAction(act,improve,experience);
+        if(result&&result.message)isCreativePush('hubly',result.message);
+        if(result&&result.compare){
+          experience.live=experience.live||{};
+          experience.live.compareMode=true;
+        }
+        isCreativeRenderPreview(experience);
+      };
+    });
+    return;
+  }
   const theme=isCreativeThemeClass(live.theme||experience.chosenDirection||'minimal');
   const nav=(live.nav&&live.nav.length?live.nav:['Services','About','Reviews','Book']).map(n=>`<span>${escPeHtml(n)}</span>`).join('');
   const pkgs=(live.packages||[]).map(p=>`<div class="pkg">${escPeHtml(p.name||p)}<span>${escPeHtml(p.sub||'Ready to book')}</span></div>`).join('');
@@ -18768,7 +18790,7 @@ function isCreativeApplyStage(experience,stage){
   if(stage.id==='structure'||stage.surface==='website'){
     live.heroTitle=live.heroTitle||biz;
     live.heroSub=live.heroSub||(area?`Trusted ${experience.industryLabel||'service'} in ${area}`:`${experience.industryLabel||'Local'} — built with care`);
-    live.nav=live.nav.length?live.nav:['Services','About','Reviews','Book'];
+    live.nav=live.nav.length?live.nav:['Services','About','Gallery','Blog','FAQ','Contact','Book'];
     live.surfaces.website=true;
   }
   if(stage.id==='hero'){
@@ -18794,6 +18816,7 @@ function isCreativeApplyStage(experience,stage){
   }
   if(stage.id==='booking'||stage.surface==='booking'){
     live.cta=experience.industryKey==='spa'?'Book online':(experience.industryKey==='photography'?'Inquire':'Book / Get quote');
+    live.ctaSecondary=live.ctaSecondary||'Call now';
     if(!live.chips.some(c=>/Booking|payments/i.test(c.label)))live.chips.push({label:'Booking ready',on:true});
   }
   if(stage.id==='portfolio'||stage.surface==='portfolio'){
@@ -19084,6 +19107,29 @@ async function isRunCreativeBuildExperience(seed){
       }else{
         isCreativePush('hubly','Perfect — what\'s next.');
       }
+    }
+  }
+
+  /* Sprint 3 — AI Self Review before reveal */
+  if(typeof HublyWebsiteQuality!=='undefined'&&HublyWebsiteQuality.reviewCreativeBuild){
+    isArchitectSetMilestone('Self Review');
+    const review=HublyWebsiteQuality.reviewCreativeBuild(experience);
+    isCreativeRenderPreview(experience);
+    if(review){
+      isCreativePush('hubly',review.message||review.intro);
+      const improveId=(review.actions&&review.actions[0]&&review.actions[0].improve)||'trust_strip';
+      const picked=await isArchitectAwaitChoice(
+        `<div class="cq">Before we move on — I reviewed your website. What should we do?</div><div class="opts">`+
+        `<button type="button" data-choice="improve"><strong>Improve</strong><span>Fix ${escPeHtml(HublyWebsiteQuality.labelDim(review.weakest)||'the weakest score')}</span></button>`+
+        `<button type="button" data-choice="ignore"><strong>Ignore</strong><span>Leave it for now</span></button>`+
+        `<button type="button" data-choice="compare"><strong>Compare</strong><span>See before / after</span></button></div>`,
+        {defaultId:'improve',defaultLabel:'Improve',timeoutMs:12000,twoCol:false}
+      );
+      if(picked.label)isCreativePush('owner',picked.label);
+      const result=HublyWebsiteQuality.handleReviewAction(picked.id||'improve',improveId,experience);
+      if(result&&result.message)isCreativePush('hubly',result.message);
+      isCreativeRenderPreview(experience);
+      await isArchitectSleep(600);
     }
   }
 
