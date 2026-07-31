@@ -11915,7 +11915,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">12</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
                 <div class="field" style="margin-bottom:4px;">
-                  <div class="url-bar" style="margin:0;"><span>🔗</span><input type="text" id="ed-slug" value="" oninput="onEdSlugInput(this)" style="border:none;background:transparent;font:inherit;color:inherit;padding:0;flex:1;min-width:0;outline:none;"><span class="dom" id="ed-slug-dom">.hubly.app</span></div>
+                  <div class="url-bar" style="margin:0;"><span>🔗</span><input type="text" id="ed-slug" value="" oninput="onEdSlugInput(this)" style="border:none;background:transparent;font:inherit;color:inherit;padding:0;flex:1;min-width:0;outline:none;"><span class="dom" id="ed-slug-dom">.myhubly.app</span></div>
                 </div>
                 <div id="ed-slug-msg" style="font-size:11px;min-height:14px;margin-bottom:8px;"></div>
                 <div id="ed-full-url" style="font-size:12px;color:var(--ink-2);word-break:break-all;margin-bottom:10px;padding:8px 10px;background:var(--surface-2);border-radius:8px;border:1px solid var(--border);"></div>
@@ -16379,8 +16379,7 @@ async function signOut(){
 
 // Check if already logged in on page load
 function getHublyDomain(){
-  const host=(location.hostname||'').toLowerCase();
-  if(host.endsWith('.hubly.app')||host==='hubly.app')return 'hubly.app';
+  // Live customer sites are always on myhubly.app (wildcard Let's Encrypt on Vercel).
   return 'myhubly.app';
 }
 function syncDomainLabels(){
@@ -16388,7 +16387,8 @@ function syncDomainLabels(){
   document.querySelectorAll('.url-bar .dom').forEach(el=>el.textContent=dom);
 }
 function publicProfileHost(slug){
-  return (slug||'your-business')+'.'+getHublyDomain();
+  const clean=String(slug||'your-business').toLowerCase().replace(/[^a-z0-9-]/g,'').replace(/^-+|-+$/g,'')||'your-business';
+  return clean+'.'+getHublyDomain();
 }
 function publicProfileUrl(slug){
   return publicProfileHost(slug);
@@ -31910,8 +31910,12 @@ function renameGalleryAlbum(albumId,name){
 }
 function pickGalleryPhotosForAlbum(albumId){
   S._pendingGalleryAlbumId=albumId||ensureGalleryAlbums()[0]?.id||null;
-  closeWsPePop();
-  document.getElementById('ed-port-file')?.click();
+  ensureWsPeFileInputs();
+  const inp=document.getElementById('ed-port-file');
+  if(!inp){toast('Could not open photo picker');return;}
+  // Click must stay in the user-gesture stack (Safari/iOS). Close pop after.
+  inp.click();
+  setTimeout(()=>closeWsPePop(),0);
 }
 function openAddGalleryAlbumFlow(anchor){
   ensureGalleryAlbums();
@@ -32056,7 +32060,7 @@ function syncLogoScaleButtons(){
 function renderEdPortGrid(){
   const g=document.getElementById('ed-port-grid');
   if(!g)return;
-  g.innerHTML=(S.portfolioUrls||[]).map((u,i)=>`<div class="port-item"><img src="${u}" alt=""><button type="button" class="rm-port" onclick="removeEdPort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('ed-port-file').click()" title="Add photos">+</div>`;
+  g.innerHTML=(S.portfolioUrls||[]).map((u,i)=>`<div class="port-item"><img src="${u}" alt=""><button type="button" class="rm-port" onclick="removeEdPort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="ensureWsPeFileInputs();document.getElementById('ed-port-file').click()" title="Add photos">+</div>`;
 }
 function removeEdPort(i){
   const removed=(S.portfolioUrls||[]).splice(i,1)[0];
@@ -33861,26 +33865,34 @@ function clearProfileLogo(){
 function ensureWsPeFileInputs(){
   // File inputs must not live inside a hidden page (#p-storefront) or browsers block .click().
   const specs=[
-    ['ws-pe-logo-file','handleEdLogo(this)'],
-    ['ws-pe-banner-file','handleEdBanner(this)'],
-    ['ed-banner-file','handleEdBanner(this)'],
-    ['ws-pe-profile-hero-file','handleProfileHeroImage(this)'],
-    ['ws-pe-profile-sheet-file','handleProfileSheetImage(this)'],
+    ['ws-pe-logo-file','handleEdLogo(this)',false],
+    ['ws-pe-banner-file','handleEdBanner(this)',false],
+    ['ed-banner-file','handleEdBanner(this)',false],
+    ['ws-pe-profile-hero-file','handleProfileHeroImage(this)',false],
+    ['ws-pe-profile-sheet-file','handleProfileSheetImage(this)',false],
+    // Portfolio Add photos — mobile canvas hides the Settings accordion, so this
+    // input must live on <body> or iOS silently ignores .click().
+    ['ed-port-file','handleEdPortfolio(this)',true],
   ];
-  specs.forEach(([id,onchange])=>{
+  specs.forEach(([id,onchange,multi])=>{
     let inp=document.getElementById(id);
     if(!inp){
       inp=document.createElement('input');
       inp.type='file';
       inp.id=id;
       inp.accept='image/*';
+      if(multi)inp.multiple=true;
       inp.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;opacity:0';
       inp.setAttribute('onchange',onchange);
       document.body.appendChild(inp);
       return;
     }
-    if(inp.closest('#p-storefront, .page:not(.active), [aria-hidden="true"], [style*="display:none"]')){
+    if(multi)inp.multiple=true;
+    // Always keep on <body> — mobile canvas / hidden accordion / aria-hidden parents
+    // cause Safari to ignore programmatic .click() on buried file inputs.
+    if(inp.parentElement!==document.body){
       inp.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;opacity:0';
+      if(inp.getAttribute('onchange')!==onchange)inp.setAttribute('onchange',onchange);
       document.body.appendChild(inp);
     }
   });

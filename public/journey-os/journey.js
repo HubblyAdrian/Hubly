@@ -10485,6 +10485,7 @@
   }
 
   function storefrontUrl() {
+    // Always myhubly.app — legacy alternate hosts lack Vercel SSL and trip browser privacy warnings.
     return storefrontSlug() + '.myhubly.app';
   }
 
@@ -10517,7 +10518,8 @@
   }
 
   function storefrontPublicUrl() {
-    return storefrontSlug() + '.hubly.site';
+    // Same live host as booking/share links (myhubly.app wildcard cert).
+    return storefrontUrl();
   }
 
   function sfSnapshotState() {
@@ -11151,7 +11153,12 @@
         if (typeof global.previewBookingPage === 'function') return global.previewBookingPage();
         return toast('Booking preview not available');
       }
-      if (act === 'sf-copy-url') return copyText('https://' + storefrontUrl());
+      if (act === 'sf-copy-url') {
+        var sfHref = typeof global.publicProfileHref === 'function'
+          ? global.publicProfileHref(storefrontSlug())
+          : ('https://' + storefrontUrl());
+        return copyText(sfHref);
+      }
       if (act === 'sf-site-save') {
         sfPushUndo(root);
         sfApplyLiveFields(root);
@@ -17014,9 +17021,19 @@
       if (act === 'new-invoice') return typeof global.openM === 'function' ? global.openM('m-new-invoice') : toast('New invoice');
       if (act === 'smart-quote') return typeof global.openSmartQuote === 'function' ? global.openSmartQuote() : toast('Quick Quote');
       if (act === 'preview') return typeof global.previewProfile === 'function' ? global.previewProfile() : null;
-      if (act === 'home-copy-site') return copyText('https://' + storefrontPublicUrl());
+      if (act === 'home-copy-site') {
+        var href = typeof global.publicProfileHref === 'function'
+          ? global.publicProfileHref(storefrontSlug())
+          : ('https://' + storefrontUrl());
+        return copyText(href);
+      }
       if (act === 'stripe') return typeof global.goStripeConnect === 'function' ? global.goStripeConnect() : ask('Connect Stripe');
-      if (act === 'copy-link') return copyText('https://' + storefrontPublicUrl());
+      if (act === 'copy-link') {
+        var href2 = typeof global.publicProfileHref === 'function'
+          ? global.publicProfileHref(storefrontSlug())
+          : ('https://' + storefrontUrl());
+        return copyText(href2);
+      }
       if (act === 'ask-share') return ask('Draft a message to share my booking link with past customers');
       if (act === 'ask-mem') return ask('Improve my membership plans');
       if (act === 'ask-growth') return ask('What should I do next to grow?');
