@@ -30,7 +30,7 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
-<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-4">
+<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-5">
 <link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-15">
 <link rel="stylesheet" href="/journey-os/photography-projects.css?v=projects-16">
@@ -3746,15 +3746,17 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
   .ed-shell.ed-canvas-mode{grid-template-columns:1fr!important}
   #v-editor.ed-canvas-on .ed-settings-rail,
   .ed-shell.ed-canvas-mode .ed-settings-rail{
-    display:none!important;position:fixed!important;left:0!important;top:54px!important;bottom:0!important;
-    width:min(288px,86vw)!important;z-index:2450!important;grid-column:unset!important;grid-row:unset!important;
+    display:none!important;position:fixed!important;left:0!important;top:0!important;bottom:0!important;
+    width:min(300px,88vw)!important;z-index:5300!important;grid-column:unset!important;grid-row:unset!important;
     box-shadow:16px 0 40px rgba(15,23,42,.18);border-right:1px solid var(--border);
+    padding-top:env(safe-area-inset-top,0px);
   }
   #v-editor.ed-canvas-on .ed-settings-rail.is-open,
   .ed-shell.ed-canvas-mode .ed-settings-rail.is-open{display:flex!important}
   .ed-settings-rail-close{display:inline-flex!important}
   .ed-settings-rail-toggle{display:inline-flex!important}
-  .ed-settings-rail-scrim.is-open{display:block}
+  .ed-settings-rail-scrim{z-index:5250!important}
+  .ed-settings-rail-scrim.is-open{display:block!important}
   #v-editor.ed-canvas-on .ed-prev,
   .ed-shell.ed-canvas-mode .ed-prev,
   #v-editor.ed-canvas-on .ed-shell.ed-hub-alt .ed-hub-panel.on,
@@ -7505,9 +7507,10 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 @media(max-width:900px){
   #v-editor.ed-canvas-on .ed-settings-rail,
   .ed-shell.ed-canvas-mode .ed-settings-rail{
-    display:none!important;position:fixed!important;left:0!important;top:54px!important;bottom:0!important;
-    width:min(288px,86vw)!important;z-index:2450!important;grid-column:unset!important;grid-row:unset!important;
+    display:none!important;position:fixed!important;left:0!important;top:0!important;bottom:0!important;
+    width:min(300px,88vw)!important;z-index:5300!important;grid-column:unset!important;grid-row:unset!important;
     box-shadow:16px 0 40px rgba(15,23,42,.18);border-right:1px solid var(--border);
+    padding-top:env(safe-area-inset-top,0px);
   }
   #v-editor.ed-canvas-on .ed-settings-rail.is-open,
   .ed-shell.ed-canvas-mode .ed-settings-rail.is-open{display:flex!important}
@@ -7953,6 +7956,134 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
 }
 /* Floating pill retired — actions live in .ed-top-bar */
 
+/* ── iPhone / narrow Website editor (must follow all canvas-mode rules) ──
+   Desktop right-panel .ed-ctrl (z-index 5050, top:--ed-ctrl-top) was winning
+   over earlier mobile bottom-sheet rules and covered the Menu button.
+   Toolbar also wrapped into a cluttered multi-row chrome on small phones. */
+@media(max-width:900px){
+  body.ed-editor-open #v-editor,
+  body.ed-editor-open .ed-shell,
+  body.ed-editor-open .ed-shell.ed-canvas-mode{
+    height:100dvh!important;
+    min-height:100dvh!important;
+    max-height:100dvh!important;
+    overflow:hidden!important;
+  }
+  #v-editor.ed-canvas-on .ed-shell,
+  .ed-shell.ed-canvas-mode{
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:auto minmax(0,1fr)!important;
+  }
+  /* Legacy Edit/Preview tabs fight canvas-mode — hide them */
+  #v-editor.ed-canvas-on .ed-mobile-tabs,
+  .ed-shell.ed-canvas-mode .ed-mobile-tabs{display:none!important}
+  /* Compact single-row toolbar: URL · Menu · Save */
+  #v-editor.ed-canvas-on .ed-top-bar,
+  .ed-shell.ed-canvas-mode .ed-top-bar{
+    position:sticky!important;top:0!important;z-index:5200!important;
+    display:flex!important;flex-wrap:nowrap!important;align-items:center!important;
+    gap:8px!important;padding:8px 10px!important;
+    padding-top:max(8px,env(safe-area-inset-top,0px))!important;
+    background:#fff!important;color:#141B2B!important;
+    border-bottom:1px solid #E5E7EB!important;
+  }
+  #v-editor.ed-canvas-on .ed-site-url-wrap,
+  .ed-shell.ed-canvas-mode .ed-site-url-wrap{
+    order:0!important;flex:1 1 auto!important;min-width:0!important;max-width:none!important;
+  }
+  #v-editor.ed-canvas-on .ed-site-url,
+  .ed-shell.ed-canvas-mode .ed-site-url{
+    min-height:40px;padding:6px 8px;gap:6px;
+  }
+  #v-editor.ed-canvas-on .ed-site-url-label,
+  .ed-shell.ed-canvas-mode .ed-site-url-label{display:none!important}
+  #v-editor.ed-canvas-on .ed-site-url-copy,
+  .ed-shell.ed-canvas-mode .ed-site-url-copy{padding:4px 8px;font-size:10px}
+  /* Already on a phone — Phone/PC switch just steals chrome */
+  #v-editor.ed-canvas-on .ed-device-bar,
+  .ed-shell.ed-canvas-mode .ed-device-bar{display:none!important}
+  #v-editor.ed-canvas-on .ed-top-actions,
+  .ed-shell.ed-canvas-mode .ed-top-actions{
+    order:0!important;flex:0 0 auto!important;width:auto!important;
+    flex-wrap:nowrap!important;gap:6px!important;z-index:5201!important;
+  }
+  #v-editor.ed-canvas-on .ed-top-actions .btn,
+  .ed-shell.ed-canvas-mode .ed-top-actions .btn{
+    flex:0 0 auto!important;padding:8px 10px!important;font-size:12px!important;
+    min-height:40px;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,.08);
+  }
+  #v-editor.ed-canvas-on .ed-top-actions .btn-save-main,
+  .ed-shell.ed-canvas-mode .ed-top-actions .btn-save-main{
+    flex:0 0 auto!important;width:auto!important;min-width:0!important;
+    order:unset!important;margin:0!important;white-space:nowrap;
+  }
+  #v-editor.ed-canvas-on .ed-settings-rail-toggle,
+  .ed-shell.ed-canvas-mode .ed-settings-rail-toggle{
+    display:inline-flex!important;position:relative;z-index:5202!important;
+    min-width:44px;min-height:40px;
+  }
+  /* Menu drawer above canvas + inspector; not under a phantom 54px app bar */
+  #v-editor.ed-canvas-on .ed-settings-rail,
+  .ed-shell.ed-canvas-mode .ed-settings-rail{
+    display:none!important;position:fixed!important;left:0!important;top:0!important;bottom:0!important;
+    width:min(300px,88vw)!important;max-width:88vw!important;z-index:5300!important;
+    grid-column:unset!important;grid-row:unset!important;
+    box-shadow:16px 0 40px rgba(15,23,42,.22);border-right:1px solid #E5E7EB;
+    padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+    background:#F7F8FA!important;
+  }
+  #v-editor.ed-canvas-on .ed-settings-rail.is-open,
+  .ed-shell.ed-canvas-mode .ed-settings-rail.is-open{display:flex!important}
+  #ed-settings-rail-scrim.ed-settings-rail-scrim,
+  .ed-settings-rail-scrim{
+    z-index:5250!important;
+  }
+  .ed-settings-rail-scrim.is-open{display:block!important}
+  /* Bottom sheet inspector — beat desktop right-panel (top/z-index 5050) */
+  #v-editor.ed-canvas-on .ed-ctrl,
+  .ed-shell.ed-canvas-mode .ed-ctrl,
+  #v-editor.ed-canvas-on.ed-sheet-open .ed-ctrl,
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl,
+  body.ed-editor-open .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl{
+    position:fixed!important;left:0!important;right:0!important;
+    top:auto!important;bottom:0!important;
+    width:100%!important;max-width:none!important;
+    height:auto!important;max-height:min(58dvh,520px)!important;
+    border-left:none!important;border-radius:18px 18px 0 0!important;
+    border-top:1px solid #E5E7EB!important;
+    box-shadow:0 -12px 40px rgba(15,23,42,.18)!important;
+    z-index:5100!important; /* below Menu toolbar (5200) so Menu stays tappable */
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    opacity:1!important;transform:none!important;pointer-events:auto!important;
+  }
+  #v-editor.ed-canvas-on:not(.ed-sheet-open) .ed-ctrl,
+  .ed-shell.ed-canvas-mode:not(.ed-sheet-open) .ed-ctrl{
+    display:none!important;pointer-events:none!important;
+  }
+  #v-editor.ed-canvas-on.ed-sheet-open .ed-ctrl,
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl{
+    display:flex!important;
+  }
+  #v-editor.ed-canvas-on .ed-shell.ed-hub-alt .ed-ctrl,
+  #v-editor.ed-canvas-on .ed-shell.ed-hub-alt.ed-sheet-open .ed-ctrl,
+  .ed-shell.ed-canvas-mode.ed-hub-alt .ed-ctrl,
+  .ed-shell.ed-canvas-mode.ed-hub-alt.ed-sheet-open .ed-ctrl{
+    display:none!important;
+  }
+  /* Single scroll surface: the site canvas */
+  #v-editor.ed-canvas-on .ed-prev,
+  .ed-shell.ed-canvas-mode .ed-prev{
+    display:flex!important;grid-column:1!important;grid-row:2!important;
+    min-height:0!important;height:100%!important;max-height:none!important;
+    overflow-x:hidden!important;overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+    padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))!important;
+  }
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-prev{
+    max-height:none!important;min-height:0!important;
+  }
+  body.ed-editor-open #toast{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+}
 
 /* Dark layout section polish. readable cards across remaining layouts */
 .ws-layout-neon-nights .ws-section,
@@ -11101,7 +11232,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
-              <button type="button" class="btn btn-ghost btn-sm ed-settings-rail-toggle" id="ed-settings-rail-toggle" onclick="toggleEdSettingsRail()" aria-label="Website menu" title="Website menu" aria-controls="ed-settings-rail" aria-expanded="false">
+              <button type="button" class="btn btn-ghost btn-sm ed-settings-rail-toggle" id="ed-settings-rail-toggle" onclick="toggleEdSettingsRail(event)" aria-label="Website menu" title="Website menu" aria-controls="ed-settings-rail" aria-expanded="false">
                 <span class="ed-settings-rail-toggle-icon" aria-hidden="true">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
                 </span>
@@ -27621,8 +27752,11 @@ function openEdSettingsRail(){
   const scrim=document.getElementById('ed-settings-rail-scrim');
   const shell=document.getElementById('ed-shell');
   if(isEdSettingsRailMobile()){
+    /* Inspector sheet used to sit above Menu — close it so the drawer is usable. */
+    try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
     rail?.classList.add('is-open');
     scrim?.classList.add('is-open');
+    try{document.body.classList.add('ed-settings-rail-open');}catch(e){}
   }else{
     shell?.classList.remove('ed-settings-collapsed');
     try{localStorage.setItem('hubly_ed_settings_rail','open');}catch(e){}
@@ -27638,6 +27772,7 @@ function closeEdSettingsRail(opts){
   if(isEdSettingsRailMobile()){
     rail?.classList.remove('is-open');
     scrim?.classList.remove('is-open');
+    try{document.body.classList.remove('ed-settings-rail-open');}catch(e){}
   }else{
     shell?.classList.add('ed-settings-collapsed');
     if(persist){
@@ -27647,7 +27782,9 @@ function closeEdSettingsRail(opts){
   syncEdSettingsToggleUi();
   setTimeout(()=>{try{syncEdCtrlTop();}catch(e){}},40);
 }
-function toggleEdSettingsRail(){
+function toggleEdSettingsRail(ev){
+  try{if(ev&&typeof ev.preventDefault==='function')ev.preventDefault();}catch(e){}
+  try{if(ev&&typeof ev.stopPropagation==='function')ev.stopPropagation();}catch(e){}
   if(isEdSettingsRailMobile()){
     const rail=document.getElementById('ed-settings-rail');
     if(rail?.classList.contains('is-open'))closeEdSettingsRail();
@@ -27663,6 +27800,11 @@ function restoreEdSettingsRailPref(){
   if(!shell)return;
   if(isEdSettingsRailMobile()){
     shell.classList.remove('ed-settings-collapsed');
+    try{document.body.classList.remove('ed-settings-rail-open');}catch(e){}
+    const rail=document.getElementById('ed-settings-rail');
+    const scrim=document.getElementById('ed-settings-rail-scrim');
+    rail?.classList.remove('is-open');
+    scrim?.classList.remove('is-open');
     syncEdSettingsToggleUi();
     return;
   }

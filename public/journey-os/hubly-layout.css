@@ -700,6 +700,29 @@ body.ed-editor-open .ed-shell.ed-canvas-mode.ed-settings-collapsed:not(.ed-sheet
   body.ed-editor-open .ed-shell.ed-canvas-mode.ed-settings-collapsed:not(.ed-sheet-open) {
     grid-template-columns: minmax(0, 1fr) !important;
   }
+
+  /* iPhone: inspector is a bottom sheet — never a full-height right panel */
+  body.ed-editor-open .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: min(58dvh, 520px) !important;
+    z-index: 5100 !important;
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+  }
+
+  body.ed-editor-open #v-editor,
+  body.ed-editor-open .ed-shell.ed-canvas-mode {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
 }
 
 body.ed-editor-open .ed-shell.ed-canvas-mode .ed-prev {
