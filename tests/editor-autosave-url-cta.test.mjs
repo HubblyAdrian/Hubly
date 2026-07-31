@@ -8,14 +8,18 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 const html = fs.readFileSync(path.join(root, "public/hubly.html"), "utf8");
 
-test("mobile site link gets its own full-width readable row", () => {
-  const marker = "Own row so the full link is readable";
+test("mobile site link is a compact single-row ellipsis + Copy (not a huge crushed column)", () => {
+  const marker = "Compact link row under Home/Menu";
   assert.match(html, new RegExp(marker));
-  const block = html.slice(html.indexOf(marker), html.indexOf(marker) + 1400);
-  assert.match(block, /flex:\s*1 1 100%!important/);
-  assert.match(block, /word-break:break-all/);
-  assert.match(block, /white-space:normal!important/);
-  assert.match(html, /function updateEdSiteUrlBar[\s\S]*?publicProfileHref/);
+  const block = html.slice(html.indexOf(marker), html.indexOf(marker) + 1800);
+  assert.match(block, /flex-direction:row!important/);
+  assert.match(block, /flex-wrap:nowrap!important/);
+  assert.match(block, /text-overflow:ellipsis!important/);
+  assert.match(block, /white-space:nowrap!important/);
+  assert.match(block, /max-height:44px/);
+  // Label must not claim width:100% in a row flex (that crushed the URL)
+  assert.doesNotMatch(block, /ed-site-url-label[\s\S]{0,120}width:100%/);
+  assert.match(html, /function updateEdSiteUrlBar[\s\S]*?normalizePublicSiteHref|function updateEdSiteUrlBar[\s\S]*?publicProfileHref/);
   assert.match(html, /Your link/);
 });
 
