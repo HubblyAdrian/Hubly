@@ -3189,6 +3189,8 @@
     render: render,
     setMode: setMode,
     ensureState: ensureStudioOs,
+    ensureBrandKit: ensureBrandKit,
+    saveBrandKit: saveBrandKit,
     open: openStudio,
     openFromMedia: openFromMedia,
     openEditor: openEditorFor,
