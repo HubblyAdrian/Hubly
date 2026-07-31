@@ -4898,6 +4898,11 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .ed-shell{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,420px);grid-template-rows:auto 1fr;height:calc(100vh - 54px);overflow:hidden;background:#eef1f5}
 .ed-mobile-tabs{display:none;grid-column:1/-1}
 .ed-top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;border-radius:0;box-shadow:none;margin:0;flex-wrap:wrap;}
+.ed-back-home{
+  flex:0 0 auto;min-height:40px;padding:8px 12px;font-weight:750;white-space:nowrap;
+  touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,.08);
+}
+#v-editor .ed-back-home{color:#141B2B!important;border-color:#D1D5DB!important;background:#fff!important}
 .ed-top-bar .ed-tab-switch{min-width:280px;max-width:340px;margin:0;background:transparent;border:none;padding:0;box-shadow:none;}
 .ed-top-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;position:relative;z-index:6}
 .ed-top-actions .btn-save-main{padding:9px 16px;font-size:13px;font-weight:600;border-radius:10px;white-space:nowrap;position:relative;z-index:7;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,.08)}
@@ -11205,6 +11210,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <!-- Unified toolbar -->
           <div class="ed-top-bar">
+            <button type="button" class="btn btn-ghost btn-sm ed-back-home" id="ed-back-home" onclick="leaveWebsiteEditorToHome()" aria-label="Back to Home" title="Back to Home">← Home</button>
             <div class="ed-site-url-wrap">
               <button type="button" class="ed-site-url" id="ed-site-url-bar" onclick="copyEdSiteUrl()" title="Click to copy your live URL">
                 <span class="ed-site-url-label">Your site</span>
@@ -13004,10 +13010,12 @@ function showP(id,opts){
         const siEmail=document.querySelector('#p-signin input[type="email"]');
         if(siEmail && !siEmail.value)siEmail.value=creds.email;
         // Instant Site / post-claim: don't leave the owner staring at a password wall.
-        if(creds.password&&!opts.skipDraftResume&&!currentUser){
+        // Never after an intentional Sign out — that used to bounce them straight back in.
+        if(creds.password&&!opts.skipDraftResume&&!S._intentionalSignOut&&!currentUser){
           setTimeout(()=>{
             // They may have clicked Back to home already — don't steal marketing.
             if(!document.getElementById('p-signin')?.classList.contains('active'))return;
+            if(S._intentionalSignOut)return;
             try{resumeDraftSessionIfNeeded();}catch(e){}
           },80);
         }
@@ -13049,13 +13057,29 @@ window.addEventListener('popstate',()=>{
     startCreateDemoMode();
     return;
   }
+  /* Logged-in owners: browser Back must never dump them on marketing / Welcome / Login. */
+  if(currentUser&&!S._intentionalSignOut&&(dest==='p-landing'||dest==='p-signup'||dest==='p-signin')){
+    try{
+      if(document.body.classList.contains('ed-editor-open')&&typeof leaveWebsiteEditorToHome==='function'){
+        leaveWebsiteEditorToHome({replaceRoute:true});
+        return;
+      }
+    }catch(e){}
+    try{history.replaceState({page:'p-app'},'','/app');}catch(e){}
+    showP('p-app',{skipRoute:true});
+    try{
+      const dash=document.querySelector('[data-v="dashboard"]');
+      if(dash&&typeof switchV==='function')switchV(dash);
+    }catch(e){}
+    return;
+  }
   if((dest==='p-app')&&!currentUser){
     // Instant Site draft / claimed owner — try silent resume before forcing login.
-    if(readOwnerLogin()?.password||readDraftLogin()?.password){
+    if(!S._intentionalSignOut&&(readOwnerLogin()?.password||readDraftLogin()?.password)){
       resumeDraftSessionIfNeeded();
       return;
     }
-    showP('p-signin',{skipRoute:true,replaceRoute:true});
+    showP('p-signin',{skipRoute:true,replaceRoute:true,skipDraftResume:!!S._intentionalSignOut});
     syncHublyRoute('p-signin',{replace:true});
     return;
   }
@@ -13323,6 +13347,27 @@ function goDash(){
   // Hubly v3 — login / Home always enters Operate mode (OS chassis).
   openOperateHome();
 }
+/** Leave Website editor and return to Operate Home (never marketing landing). */
+function leaveWebsiteEditorToHome(opts){
+  opts=opts||{};
+  try{closeWsPePop();}catch(e){}
+  try{hideWsPeContextBar();}catch(e){}
+  try{closeEdSheet();}catch(e){}
+  try{closeEdSettingsRail({persist:false});}catch(e){}
+  try{unmountEdChrome();}catch(e){}
+  try{setOwnerPreview(false);}catch(e){}
+  try{
+    if(opts.replaceRoute!==false)history.replaceState({page:'p-app'},'','/app');
+  }catch(e){}
+  try{showP('p-app',{replaceRoute:true,skipRoute:true});}catch(e){}
+  try{
+    const dash=document.querySelector('[data-v="dashboard"]');
+    if(dash&&typeof switchV==='function')switchV(dash);
+    else goDash();
+  }catch(e){
+    try{goDash();}catch(e2){}
+  }
+}
 function setOwnerPreview(on){
   S.ownerPreview=!!on;
   if(S.ownerPreview)document.body.classList.add('ed-owner-preview-open');
@@ -13366,6 +13411,7 @@ async function signIn(btn){
     const dbClient=await waitForDb();
     const {data,error} = await dbClient.auth.signInWithPassword({email,password});
     if(error){toast('❌ '+error.message);return;}
+    S._intentionalSignOut=false;
     currentUser=data.user;
     // Persist creds so /app refresh can re-auth if the JWT storage is wiped.
     if(!isDraftAuthEmail(email)){
@@ -13418,6 +13464,17 @@ function readDraftLogin(){
   return null;
 }
 function clearDraftLogin(){
+  try{sessionStorage.removeItem('hubly_draft_login');}catch(e){}
+  try{localStorage.removeItem('hubly_draft_login');}catch(e){}
+}
+function clearOwnerLogin(){
+  try{sessionStorage.removeItem('hubly_owner_login');}catch(e){}
+  try{localStorage.removeItem('hubly_owner_login');}catch(e){}
+}
+/** Wipe every auto-login stash so Sign out actually sticks. */
+function clearStoredAuthCredentials(){
+  clearDraftLogin();
+  clearOwnerLogin();
   try{sessionStorage.removeItem('hubly_draft_login');}catch(e){}
   try{localStorage.removeItem('hubly_draft_login');}catch(e){}
 }
@@ -13706,11 +13763,13 @@ async function trySignInWithStored(dbClient,creds,{asDraft=false}={}){
   }
 }
 async function tryRestoreDraftSession(dbClient){
+  if(S._intentionalSignOut)return false;
   // Prefer claimed owner credentials so refresh works after Publish / Keep editing signup.
   if(await trySignInWithStored(dbClient,readOwnerLogin(),{asDraft:false}))return true;
   return trySignInWithStored(dbClient,readDraftLogin(),{asDraft:true});
 }
 async function resumeDraftSessionIfNeeded(){
+  if(S._intentionalSignOut)return false;
   if(currentUser||S._draftResumeBusy)return false;
   // Never yank people off the public marketing site.
   const routeDest=pageForHublyPath(hublyPath());
@@ -15965,15 +16024,21 @@ async function saveBusiness(updates){
 
 async function signOut(){
   try{closeMobileNav();}catch(e){}
-  unsubscribeRealtimeUpdates();
-  await db.auth.signOut();
-  currentUser=null;currentBusiness=null;
+  try{unsubscribeRealtimeUpdates();}catch(e){}
+  /* Must clear before showP('p-signin') — that screen auto-resumes stored passwords. */
+  S._intentionalSignOut=true;
+  currentUser=null;
+  currentBusiness=null;
+  try{clearStoredAuthCredentials();}catch(e){}
   try{
-    sessionStorage.removeItem('hubly_draft_login');
-    localStorage.removeItem('hubly_draft_login');
-  }catch(e){}
+    if(db?.auth?.signOut){
+      try{await db.auth.signOut({scope:'local'});}catch(e){await db.auth.signOut();}
+      try{await db.auth.signOut({scope:'global'});}catch(e){}
+    }
+  }catch(e){console.warn('signOut',e);}
   // Owners expect to land on Log in so they can switch accounts quickly.
-  showP('p-signin',{replaceRoute:true});
+  showP('p-signin',{replaceRoute:true,skipDraftResume:true});
+  try{toast('Signed out');}catch(e){}
 }
 
 // Check if already logged in on page load
