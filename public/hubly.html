@@ -5819,15 +5819,33 @@ html{scroll-behavior:smooth}
   display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;
 }
 .ws-gal-marquee-chip{
-  font-size:12px;font-weight:650;letter-spacing:.02em;
-  padding:6px 11px;border-radius:999px;
+  appearance:none;-webkit-appearance:none;margin:0;
+  font:inherit;font-size:12px;font-weight:650;letter-spacing:.02em;line-height:1.2;
+  padding:8px 12px;border-radius:999px;cursor:pointer;
   background:rgba(15,23,42,.06);color:var(--ws-heading,#0f172a);
   border:1px solid var(--ws-border,#e2e8f0);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.ws-gal-marquee-chip:hover{background:rgba(15,23,42,.1)}
+.ws-gal-marquee-chip.is-on{
+  background:var(--ws-cta,var(--brand,#D9632D));
+  color:#fff;
+  border-color:transparent;
 }
 .ws-theme-dark .ws-gal-marquee-chip,
 .ws-site[data-ws-tone="dark"] .ws-gal-marquee-chip,
 .ws-sec-ink-light .ws-gal-marquee-chip{
   background:rgba(255,255,255,.08);color:#f8fafc;border-color:rgba(255,255,255,.14);
+}
+.ws-theme-dark .ws-gal-marquee-chip:hover,
+.ws-site[data-ws-tone="dark"] .ws-gal-marquee-chip:hover,
+.ws-sec-ink-light .ws-gal-marquee-chip:hover{background:rgba(255,255,255,.14)}
+.ws-theme-dark .ws-gal-marquee-chip.is-on,
+.ws-site[data-ws-tone="dark"] .ws-gal-marquee-chip.is-on,
+.ws-sec-ink-light .ws-gal-marquee-chip.is-on{
+  background:var(--ws-cta,var(--brand,#D9632D));
+  color:#fff;border-color:transparent;
 }
 @keyframes wsGalMarquee{
   from{transform:translate3d(0,0,0)}
@@ -36473,6 +36491,25 @@ function wsPageEl(id){
   }
   return document.getElementById(id);
 }
+function selectWsGalMarqueeAlbum(albumId,ev){
+  try{if(ev&&typeof ev.preventDefault==='function')ev.preventDefault();}catch(e){}
+  try{if(ev&&typeof ev.stopPropagation==='function')ev.stopPropagation();}catch(e){}
+  const id=String(albumId||'').trim();
+  try{
+    // Tap active chip again → show all work again.
+    if(id&&S._wsGalMarqueeAlbum===id)S._wsGalMarqueeAlbum='';
+    else S._wsGalMarqueeAlbum=id;
+  }catch(e){try{S._wsGalMarqueeAlbum=id;}catch(e2){}}
+  try{renderWebsiteGallery('ws-gallery');}catch(e){}
+  try{
+    const track=wsPageEl('ws-gallery')?.querySelector('.ws-gal-marquee-track');
+    if(track){
+      track.style.animation='none';
+      void track.offsetWidth;
+      track.style.animation='';
+    }
+  }catch(e){}
+}
 function renderWebsiteGallery(targetId){
   const el=targetId==='ws-gallery'?wsPageEl('ws-gallery'):document.getElementById(targetId);
   if(!el)return;
@@ -36508,6 +36545,12 @@ function renderWebsiteGallery(targetId){
       ||(typeof isPhotoLedTrade==='function'&&isPhotoLedTrade())
       ||(typeof blueprintHas==='function'&&blueprintHas('clientGalleries')));
     if(portfolioMode){
+      const albumsWithPhotos=albums.filter(a=>(a.urls||[]).length);
+      let selected=String((typeof S!=='undefined'&&S._wsGalMarqueeAlbum)||'').trim();
+      if(selected&&!albumsWithPhotos.some(a=>a.id===selected)){
+        selected='';
+        try{S._wsGalMarqueeAlbum='';}catch(e){}
+      }
       const stripUrls=[];
       const seen=new Set();
       const pushUrl=u=>{
@@ -36516,16 +36559,29 @@ function renderWebsiteGallery(targetId){
         seen.add(url);
         stripUrls.push(url);
       };
-      if(hasAlbums)albums.forEach(a=>(a.urls||[]).forEach(pushUrl));
-      singles.forEach(pushUrl);
+      if(hasAlbums){
+        const source=selected?albumsWithPhotos.filter(a=>a.id===selected):albumsWithPhotos;
+        source.forEach(a=>(a.urls||[]).forEach(pushUrl));
+        // Empty selection fallback: show everything rather than a blank strip.
+        if(!stripUrls.length)albumsWithPhotos.forEach(a=>(a.urls||[]).forEach(pushUrl));
+      }
+      if(!selected)singles.forEach(pushUrl);
       if(stripUrls.length){
         el.classList.remove('ws-gal-albums','ws-gal-grid');
         el.classList.add('ws-gal-marquee');
-        const labels=hasAlbums
-          ?`<div class="ws-gal-marquee-labels">${albums.filter(a=>(a.urls||[]).length).map(a=>`<span class="ws-gal-marquee-chip">${escPeHtml(a.name)}</span>`).join('')}</div>`
+        const labels=albumsWithPhotos.length
+          ?`<div class="ws-gal-marquee-labels" role="tablist" aria-label="Portfolio albums">
+              <button type="button" class="ws-gal-marquee-chip${!selected?' is-on':''}" role="tab" aria-selected="${!selected?'true':'false'}" onclick="selectWsGalMarqueeAlbum('',event)">All</button>
+              ${albumsWithPhotos.map(a=>{
+                const on=selected===a.id;
+                return `<button type="button" class="ws-gal-marquee-chip${on?' is-on':''}" role="tab" aria-selected="${on?'true':'false'}" data-album-id="${escPeHtml(a.id)}" onclick="selectWsGalMarqueeAlbum('${escPeHtml(a.id)}',event)">${escPeHtml(a.name)}</button>`;
+              }).join('')}
+            </div>`
           :'';
         const cards=stripUrls.map(u=>`<div class="ws-gallery-card"><div class="ws-gallery-single"><img src="${escPeHtml(u)}" alt="" loading="lazy" decoding="async"></div></div>`).join('');
-        el.innerHTML=`${labels}<div class="ws-gal-marquee-track" aria-label="Portfolio gallery">${cards}${cards}</div>`;
+        // Duplicate cards when there are enough to make the slow loop feel continuous.
+        const loop=stripUrls.length>=2?cards+cards:cards+cards;
+        el.innerHTML=`${labels}<div class="ws-gal-marquee-track" aria-label="Portfolio gallery">${loop}</div>`;
         return;
       }
     }
