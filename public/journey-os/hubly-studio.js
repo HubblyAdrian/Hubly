@@ -332,7 +332,13 @@
   function renderHome(root) {
     var os = ensureStudioOs();
     var hour = new Date().getHours();
-    var greet = hour < 12 ? 'Good morning' : (hour < 17 ? 'Good afternoon' : 'Good evening');
+    try {
+      if (typeof global.businessHourNow === 'function') hour = Number(global.businessHourNow()) || hour;
+    } catch (eH) {}
+    hour = Math.max(0, Math.min(23, hour | 0));
+    var greet = (typeof global.dashGreetingWord === 'function')
+      ? global.dashGreetingWord()
+      : ((hour >= 5 && hour < 12) ? 'Good morning' : ((hour >= 12 && hour < 17) ? 'Good afternoon' : 'Good evening'));
     var completedYest = (typeof global.jobs === 'function' ? global.jobs() : (S().jobs || []))
       .filter(function (j) { return j && j.status === 'completed'; }).length;
     if (!completedYest) completedYest = 4;

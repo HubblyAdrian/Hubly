@@ -1607,7 +1607,13 @@
       if (typeof global.businessHourNow === 'function') h = Number(global.businessHourNow()) || h;
     } catch (e) {}
     h = Math.max(0, Math.min(23, h | 0));
-    var part = h < 12 ? 'Good morning' : (h < 17 ? 'Good afternoon' : 'Good evening');
+    // Prefer hour-accurate dash greeting (avoids “Good morning” at 2am).
+    try {
+      if (typeof global.dashGreetingWord === 'function') {
+        return global.dashGreetingWord() + ', ' + ahOwnerFirstName();
+      }
+    } catch (e2) {}
+    var part = (h >= 5 && h < 12) ? 'Good morning' : ((h >= 12 && h < 17) ? 'Good afternoon' : 'Good evening');
     return part + ', ' + ahOwnerFirstName();
   }
   function ahRenderUnifiedChat() {
@@ -11154,9 +11160,11 @@
         return toast('Booking preview not available');
       }
       if (act === 'sf-copy-url') {
-        var sfHref = typeof global.publicProfileHref === 'function'
-          ? global.publicProfileHref(storefrontSlug())
-          : ('https://' + storefrontUrl());
+        var sfHref = typeof global.normalizePublicSiteHref === 'function'
+          ? global.normalizePublicSiteHref(storefrontUrl())
+          : (typeof global.publicProfileHref === 'function'
+            ? global.publicProfileHref(storefrontSlug())
+            : ('https://' + storefrontUrl()));
         return copyText(sfHref);
       }
       if (act === 'sf-site-save') {
@@ -11366,8 +11374,12 @@
       if (typeof global.businessHourNow === 'function') h = Number(global.businessHourNow()) || h;
     } catch (e) {}
     h = Math.max(0, Math.min(23, h | 0));
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
+    try {
+      if (typeof global.dashGreetingWord === 'function') return global.dashGreetingWord();
+    } catch (e2) {}
+    // Late night (0–4) is evening — never “Good morning” at 2am.
+    if (h >= 5 && h < 12) return 'Good morning';
+    if (h >= 12 && h < 17) return 'Good afternoon';
     return 'Good evening';
   }
 
@@ -11781,10 +11793,19 @@
 
     var scores = homeScores();
     var greet = timeOfDayGreeting();
-    var owner = S().ownerName || S().ownerFirst || (S().biz ? String(S().biz).split(/[\s'-]/)[0] : '') || 'there';
+    // Person first — never greet with the business name (e.g. “Good evening Everlasting”).
+    var owner = S().ownerName || S().ownerFirst || S().ownerFirstName || '';
+    try {
+      if (!owner && typeof currentUser !== 'undefined' && currentUser) {
+        owner = (currentUser.user_metadata && (currentUser.user_metadata.full_name || currentUser.user_metadata.name))
+          || (currentUser.email && String(currentUser.email).split('@')[0])
+          || '';
+      }
+    } catch (eOwn) {}
     if (typeof owner === 'string' && owner.indexOf('@') > -1) owner = owner.split('@')[0];
     if (owner.indexOf(' ') > -1) owner = owner.split(' ')[0];
     if (/^adrian'?s$/i.test(owner) && S().ownerName) owner = String(S().ownerName).split(/\s+/)[0];
+    if (!owner || /^your.?business$/i.test(owner)) owner = 'there';
     var bizName = S().biz || 'Your business';
     var layout = homeLayout() || { widgets: {}, revRange: 'month', layoutPreset: 'owner' };
     if (!layout.widgets) layout.widgets = {};
@@ -11858,9 +11879,14 @@
     }
 
     var siteUrl = storefrontPublicUrl();
+    try {
+      if (typeof global.normalizePublicSiteHref === 'function') {
+        siteUrl = String(global.normalizePublicSiteHref(siteUrl)).replace(/^https?:\/\//i, '');
+      }
+    } catch (eUrl) {}
     var hero = '<header class="jos-home-hero" data-jos-widget="hero">' +
       '<div class="jos-home-hero-main">' +
-      '<h1>' + esc(greet) + ' ' + esc(owner) + ' <span aria-hidden="true">👋</span></h1>' +
+      '<h1>' + esc(greet) + (owner && owner !== 'there' ? (', ' + esc(owner)) : '') + ' <span aria-hidden="true">👋</span></h1>' +
       '<p class="jos-home-hero-biz">' + esc(bizName) + '</p>' +
       '<div class="jos-home-site" title="Your website">' +
       '<button type="button" class="jos-home-site-link" data-jos-act="preview" aria-label="View website">' +
@@ -17022,16 +17048,20 @@
       if (act === 'smart-quote') return typeof global.openSmartQuote === 'function' ? global.openSmartQuote() : toast('Quick Quote');
       if (act === 'preview') return typeof global.previewProfile === 'function' ? global.previewProfile() : null;
       if (act === 'home-copy-site') {
-        var href = typeof global.publicProfileHref === 'function'
-          ? global.publicProfileHref(storefrontSlug())
-          : ('https://' + storefrontUrl());
+        var href = typeof global.normalizePublicSiteHref === 'function'
+          ? global.normalizePublicSiteHref(storefrontUrl())
+          : (typeof global.publicProfileHref === 'function'
+            ? global.publicProfileHref(storefrontSlug())
+            : ('https://' + storefrontUrl()));
         return copyText(href);
       }
       if (act === 'stripe') return typeof global.goStripeConnect === 'function' ? global.goStripeConnect() : ask('Connect Stripe');
       if (act === 'copy-link') {
-        var href2 = typeof global.publicProfileHref === 'function'
-          ? global.publicProfileHref(storefrontSlug())
-          : ('https://' + storefrontUrl());
+        var href2 = typeof global.normalizePublicSiteHref === 'function'
+          ? global.normalizePublicSiteHref(storefrontUrl())
+          : (typeof global.publicProfileHref === 'function'
+            ? global.publicProfileHref(storefrontSlug())
+            : ('https://' + storefrontUrl()));
         return copyText(href2);
       }
       if (act === 'ask-share') return ask('Draft a message to share my booking link with past customers');
