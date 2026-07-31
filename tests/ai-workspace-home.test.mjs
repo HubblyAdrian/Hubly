@@ -16,8 +16,11 @@ const stateMachine = fs.readFileSync(
 );
 
 function loadWorkspace() {
+  const store = {};
   const sandbox = {
     window: {},
+    setTimeout(fn) { try { fn(); } catch (e) {} },
+    clearTimeout() {},
     document: {
       body: { classList: { add() {}, remove() {}, toggle() {} } },
       addEventListener() {},
@@ -26,24 +29,25 @@ function loadWorkspace() {
       contains() { return false; },
     },
     localStorage: {
-      _m: {},
-      getItem(k) { return this._m[k] ?? null; },
-      setItem(k, v) { this._m[k] = String(v); },
+      getItem(k) { return store[k] ?? null; },
+      setItem(k, v) { store[k] = String(v); },
     },
   };
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
   sandbox.S = {};
+  const consultant = fs.readFileSync(path.join(root, "public/journey-os/hubly-consultant.js"), "utf8");
+  vm.runInNewContext(consultant, sandbox);
   vm.runInNewContext(js, sandbox);
   return sandbox;
 }
 
 test("AI Workspace assets are linked from hubly.html", () => {
-  assert.match(html, /ai-workspace\.css\?v=aw-3/);
-  assert.match(html, /ai-workspace\.js\?v=aw-3/);
+  assert.match(html, /ai-workspace\.css\?v=aw-4/);
+  assert.match(html, /ai-workspace\.js\?v=aw-4/);
   assert.match(html, /data-hubly-ai-workspace="building"/);
   assert.match(html, /is-architect-activity/);
-  assert.match(html, /Ask Hubly anything/);
+  assert.match(html, /Ask Hubly anything|Tell me what you want to accomplish/);
 });
 
 test("Building Mode is three panes: conversation, live workspace, activity", () => {
@@ -80,7 +84,7 @@ test("HublyAIWorkspace exposes state machine + Current Focus blocks", () => {
   const sandbox = loadWorkspace();
   const AW = sandbox.HublyAIWorkspace;
   assert.ok(AW);
-  assert.equal(AW.version, "1.2.0");
+  assert.equal(AW.version, "1.3.0");
   assert.equal(AW.focusBlocks.length, 10);
   assert.equal(AW.focusBlocks[0].id, "vision");
   assert.equal(AW.focusBlocks[9].id, "home");

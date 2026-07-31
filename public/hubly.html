@@ -30,7 +30,7 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
-<link rel="stylesheet" href="/journey-os/ai-workspace.css?v=aw-3">
+<link rel="stylesheet" href="/journey-os/ai-workspace.css?v=aw-4">
 <link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-15">
@@ -12587,8 +12587,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/ai/merchandising.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/runtime.js?v=commerce-2"></script>
 <script defer src="/journey-os/commerce/index.js?v=commerce-2"></script>
-<script defer src="/journey-os/hubly-consultant.js?v=consultant-1"></script>
-<script defer src="/journey-os/ai-workspace.js?v=aw-3"></script>
+<script defer src="/journey-os/hubly-consultant.js?v=consultant-2"></script>
+<script defer src="/journey-os/ai-workspace.js?v=aw-4"></script>
 <script defer src="/journey-os/journey.js?v=aw-1"></script>
 <script defer src="/journey-os/store-commerce.js?v=store-4"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
@@ -17923,6 +17923,15 @@ function isDiscoveryBoot(opts){
       }
     }
     isTalkPush('hubly',opener);
+    /* Welcome back — conversation memory */
+    try{
+      if(typeof HublyConsultant!=='undefined' && HublyConsultant.welcomeBack){
+        const wb=HublyConsultant.welcomeBack();
+        if(wb && wb.text && (HublyConsultant.ensure().memory.finished||[]).length){
+          isTalkPush('hubly', wb.text);
+        }
+      }
+    }catch(e){}
     if(hs&&hs.imports&&hs.imports.website&&hs.imports.website.analysis){
       const a=hs.imports.website.analysis;
       const lines=[];
@@ -17998,25 +18007,74 @@ async function isDiscoverySend(text){
   isTalkPush('owner',text);
   if(input)input.value='';
   isDiscoverySetTyping(true);
-  await isSleep(280+Math.min(420,String(text).length*4));
-  const result=HUBLY_DISCOVERY.ingestDiscoveryTurn(S._is.discovery,text);
-  isDiscoverySetTyping(false);
-  for(const r of (result.replies||[])){
-    if(r.kind==='learning'){
-      S._is.discovery.learningSummary={header:r.text,lines:r.lines||[]};
-      isRenderUnderstandingPanel();
-      const preview=(r.lines||[]).slice(0,3).map(l=>'• '+l).join('\n');
-      isTalkPush('hubly',r.text+(preview?'\n'+preview:''));
-    }else if(r.text){
-      isTalkPush('hubly',r.text);
+  await isSleep(220+Math.min(360,String(text).length*3));
+
+  /* Keep fact inference for Business Context — but replies come from expert reasoning, not gap scripts */
+  let discoveryResult=null;
+  try{
+    discoveryResult=HUBLY_DISCOVERY.ingestDiscoveryTurn(S._is.discovery,text);
+  }catch(e){}
+
+  let expert=null;
+  try{
+    if(typeof HublyConsultant!=='undefined' && HublyConsultant.think){
+      expert=HublyConsultant.think(text,{});
     }
-    if(r.kind==='question'||r.kind==='moment'||r.kind==='emotion')await isSleep(160);
+  }catch(e){}
+
+  isDiscoverySetTyping(false);
+
+  if(expert && expert.replies && expert.replies.length){
+    for(const r of expert.replies){
+      if(!r||!r.text)continue;
+      const rec=r.recommendation||null;
+      if(rec){
+        isTalkPush('hubly', r.text + (rec.reasoning && r.text.indexOf(rec.reasoning)<0 ? '\n\n' + rec.reasoning : '') + (rec.confidenceLabel ? '\n(' + rec.confidenceLabel + ' · ' + rec.confidence + '%)' : ''));
+        if(rec.choices && rec.choices.length){
+          try{
+            if(typeof isTalkSetChips==='function' && rec.choices && rec.choices.length){
+              isTalkSetChips(rec.choices);
+            }
+          }catch(e){}
+        }
+      }else{
+        isTalkPush('hubly',r.text);
+      }
+      await isSleep(120);
+    }
+    try{
+      if(expert.showProgress && typeof HublyConsultant.applyToWorkspace==='function'){
+        HublyConsultant.applyToWorkspace(expert);
+      }
+    }catch(e){}
+    /* Ready to build when expert recommends directions / builds */
+    if(expert.complete || (expert.recommendation && expert.recommendation.build && expert.recommendation.surface==='directions')){
+      S._is.discovery.complete=true;
+      S._is.discovery.readyForThinking=true;
+      if(!S._is.discovery.learningSummary){
+        try{ S._is.discovery.learningSummary=HUBLY_DISCOVERY.buildLearning(S._is.discovery); }catch(e){}
+      }
+    }
+  }else if(discoveryResult){
+    for(const r of (discoveryResult.replies||[])){
+      if(r.kind==='learning'){
+        S._is.discovery.learningSummary={header:r.text,lines:r.lines||[]};
+        isRenderUnderstandingPanel();
+        const preview=(r.lines||[]).slice(0,3).map(l=>'• '+l).join('\n');
+        isTalkPush('hubly',r.text+(preview?'\n'+preview:''));
+      }else if(r.text){
+        isTalkPush('hubly',r.text);
+      }
+      if(r.kind==='question'||r.kind==='moment'||r.kind==='emotion')await isSleep(160);
+    }
+    if(discoveryResult.complete) S._is.discovery.readyForThinking=true;
   }
+
   isRenderUnderstandingPanel();
   schedulePersistInstantSiteDraft();
   S._is._talkBusy=false;
-  if(result.complete||S._is.discovery.readyForThinking){
-    await isSleep(600);
+  if(S._is.discovery.complete||S._is.discovery.readyForThinking){
+    await isSleep(500);
     await isDiscoveryCompleteToThinking();
   }else{
     setTimeout(()=>document.getElementById('is-talk-input')?.focus(),40);
@@ -22104,6 +22162,30 @@ function isTalkAcceptCustomBusiness(desc,opts={}){
 function isTalkClearChips(){
   const chips=document.getElementById('is-talk-chips');
   if(chips)chips.innerHTML='';
+}
+/** Expert choice chips — one click = owner turn (unlocking answers, not a form). */
+function isTalkSetChips(items){
+  const chips=document.getElementById('is-talk-chips');
+  if(!chips)return;
+  const list=(items||[]).filter(Boolean).slice(0,6);
+  if(!list.length){chips.innerHTML='';return;}
+  chips.innerHTML=list.map((c,i)=>{
+    const label=escPeHtml(c.label||c.value||c.id||'Option');
+    const val=String(c.value||c.label||c.id||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const rec=c.recommended?' is-rec':'';
+    return `<button type="button" class="is-chip${rec}" data-expert-chip="${i}" onclick="isTalkExpertChip('${val}')">${label}</button>`;
+  }).join('');
+}
+function isTalkExpertChip(label){
+  isTalkClearChips();
+  const text=String(label||'').trim();
+  if(!text)return;
+  if(isDiscoveryActive()) isDiscoverySend(text);
+  else if(typeof isTalkSend==='function') isTalkSend(text);
+  else {
+    const input=document.getElementById('is-talk-input');
+    if(input){input.value=text;document.getElementById('is-talk-send')?.click();}
+  }
 }
 function isTalkServiceChips(){
   const chips=document.getElementById('is-talk-chips');

@@ -227,11 +227,13 @@
 
   function recHtml(rec) {
     if (!rec) return '';
+    var conf = rec.confidence != null ? rec.confidence : '—';
+    var label = rec.confidenceLabel || (conf >= 90 ? 'Highly Recommended' : conf >= 78 ? 'Worth Comparing' : 'Alternative Direction');
     return (
       '<div class="aw-rec" data-aw-rec="1">' +
       '<p class="aw-rec-why">' + esc(rec.reasoning || '') + '</p>' +
       '<div class="aw-rec-meta"><span>' + esc(rec.choice || 'Recommendation') + '</span>' +
-      '<span class="aw-conf">Confidence <b>' + esc(String(rec.confidence != null ? rec.confidence : '—')) + '%</b></span>' +
+      '<span class="aw-conf">' + esc(label) + ' · <b>' + esc(String(conf)) + '%</b></span>' +
       '</div></div>'
     );
   }
@@ -379,23 +381,32 @@
     var name = bizName();
     var surface = SURFACES[aw.surface] || SURFACES.home;
     var modeLabel = aw.mode === 'building' ? 'Building Mode' : '';
+    var focusLabel = '';
+    try {
+      if (global.HublyConsultant && global.HublyConsultant.ensure) {
+        focusLabel = global.HublyConsultant.ensure().memory.focusLabel || '';
+      }
+    } catch (e) {}
     return (
-      '<div class="aw-shell" data-aw-mode="' + esc(aw.mode) + '" data-aw-state="' + esc(aw.state) + '" data-hubly-ai-workspace="1">' +
+      '<div class="aw-shell' + (aw.celebrate ? ' is-celebrate' : '') + '" data-aw-mode="' + esc(aw.mode) + '" data-aw-state="' + esc(aw.state) + '" data-hubly-ai-workspace="1">' +
       '<header class="aw-top">' +
       '<div class="aw-brand">' +
       '<img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="110" height="26">' +
       '<span class="aw-sync"><i></i> Live Sync</span>' +
       (modeLabel ? '<span class="aw-mode-pill">' + esc(modeLabel) + '</span>' : '') +
       '</div>' +
-      '<div class="aw-context">' + (aw.mode === 'building' ? 'Building' : 'Running') + ' <span>' + esc(name) + '</span></div>' +
+      '<div class="aw-context">' +
+      (focusLabel ? '<em class="aw-focus-live">' + esc(focusLabel) + '</em> · ' : '') +
+      (aw.mode === 'building' ? 'Building' : 'Running') + ' <span>' + esc(name) + '</span></div>' +
       '</header>' +
+      (aw.celebrate ? '<div class="aw-pride" role="status">You built this.</div>' : '') +
       '<div class="aw-grid">' +
       '<section class="aw-chat" aria-label="AI Conversation">' +
       '<div class="aw-pane-head"><strong>Conversation</strong><em>Guides the workspace</em></div>' +
       '<div class="aw-log" id="aw-log" aria-live="polite">' + messagesHtml(aw) + '</div>' +
       '<form class="aw-compose" id="aw-compose">' +
       '<div class="aw-compose-box">' +
-      '<textarea id="aw-input" rows="2" placeholder="Ask Hubly anything…"></textarea>' +
+      '<textarea id="aw-input" rows="2" placeholder="Tell me what you want to accomplish…"></textarea>' +
       '<div class="aw-compose-bar">' +
       '<div class="aw-compose-tools">' +
       '<button type="button" class="aw-tool" data-aw-tool="upload">Upload</button>' +
@@ -604,68 +615,31 @@
     }, 200);
   }
 
+  function celebrate() {
+    var aw = ensureState();
+    aw.celebrate = true;
+    aw.doing = aw.doing || 'Looking good…';
+    renderIfMounted();
+    setTimeout(function () {
+      aw.celebrate = false;
+      renderIfMounted();
+    }, 2200);
+  }
+
   function handleOwnerTurn(text) {
     var t = String(text || '').trim();
     if (!t) return;
     pushMessage('owner', t);
     var lower = t.toLowerCase();
 
-    if (/storefront|store|shop|commerce|sell /.test(lower)) {
-      enterBuildingMode('storefront', { doing: 'Opening Storefront Builder…' });
-      pushMessage(
-        'hubly',
-        'Awesome. Before we build it I\'d love your opinion — I created three directions. The workspace is becoming your storefront builder now.',
-        {
-          choice: 'Show three storefront directions',
-          confidence: 91,
-          reasoning: 'People choose better than they invent — three concrete directions beat open-ended design questions.',
-        }
-      );
-      setSurface('directions', { focusId: 'commerce', state: 'building_commerce', doing: 'Preparing three directions…' });
-      setActivity([
-        { label: 'Entered Building Mode', status: 'done' },
-        { label: 'Preparing three directions…', status: 'on' },
-        { label: 'Products next', status: 'next' },
-      ]);
-      return;
-    }
-
-    if (/campaign|marketing|studio|christmas|holiday|promotion/.test(lower)) {
-      enterBuildingMode('campaign', { doing: 'Opening Studio…' });
-      pushMessage(
-        'hubly',
-        'Building Mode is back. Studio is opening in the center — same home, new project.',
-        {
-          choice: 'Open Studio canvas',
-          confidence: 90,
-          reasoning: 'Major creative work deserves Building Mode — no sidebar, no distraction.',
-        }
-      );
-      setActivity([
-        { label: 'Re-entered Building Mode', status: 'done' },
-        { label: 'Opening Studio…', status: 'on' },
-        { label: 'Campaign draft', status: 'next' },
-      ]);
-      return;
-    }
-
-    if (/photograph|find (a |me )?(pro|someone)|cleaning|lawn|get .+ done|hire/.test(lower)) {
-      enterBuildingMode('marketplace', { doing: 'Preparing job brief…' });
-      pushMessage('hubly', 'Describe the job. I\'ll keep recommendations live in the workspace — still one conversation.');
-      setActivity([
-        { label: 'Job brief', status: 'on' },
-        { label: 'Trusted pros', status: 'next' },
-      ]);
-      return;
-    }
-
+    /* Direct improve gestures — always show in workspace */
     if (/compare|two directions|split/.test(lower)) {
       enterBuildingMode('website', { doing: 'Splitting the workspace…' });
       pushMessage('hubly', 'Let\'s compare two homepage directions — watch the center split.');
       setSurface('compare', { focusId: 'website', state: 'building_website', doing: 'Comparing homepage directions…' });
+      celebrate();
       return;
     }
-
     if (/logo larger|bigger logo/.test(lower)) {
       enterBuildingMode('website', { doing: 'Making your logo larger…' });
       transition('reviewing_website', {
@@ -679,9 +653,9 @@
           reasoning: 'Brand-first presence builds recognition before the offer — especially for local service businesses.',
         },
       });
+      celebrate();
       return;
     }
-
     if (/booking (button )?higher|move booking|cta higher/.test(lower)) {
       enterBuildingMode('website', { doing: 'Moving booking button higher…' });
       transition('reviewing_website', {
@@ -695,13 +669,13 @@
           reasoning: 'Trust plus an obvious book path converts faster for local businesses than burying the CTA.',
         },
       });
+      celebrate();
       return;
     }
-
     if (/love it|looks great|perfect|continue|keep going|^yes\b/.test(lower)) {
       pushMessage(
         'hubly',
-        'Perfect. Let\'s build your products. Generate, import, PDF, screenshot, or website — what do you prefer?',
+        'Perfect — that\'s the feeling. Next I\'d build your products so the shop (or packages) matches the site. Prefer generate, import a PDF, or paste a website?',
         {
           choice: 'Move to products',
           confidence: 89,
@@ -713,12 +687,15 @@
         activity: [
           { label: 'Website reviewed', status: 'done' },
           { label: 'Preparing product editor…', status: 'on' },
-          { label: 'Payments next', status: 'next' },
+          { label: 'What\'s next', status: 'next' },
         ],
       });
+      if (global.HublyConsultant && global.HublyConsultant.markFinished) {
+        global.HublyConsultant.markFinished('Website');
+      }
+      celebrate();
       return;
     }
-
     if (/done building|back to (home|operating)|finish building|run (my|the) business/.test(lower)) {
       enterOperatingMode({
         message: 'Back to Operating Mode. Start any major project and I\'ll re-enter Building Mode automatically.',
@@ -726,9 +703,40 @@
       return;
     }
 
+    /* Expert reasoning — default path */
+    var Consultant = global.HublyConsultant;
+    if (Consultant && typeof Consultant.think === 'function') {
+      var result = Consultant.think(t, {});
+      (result.replies || []).forEach(function (r) {
+        if (!r || !r.text) return;
+        pushMessage('hubly', r.text, r.recommendation || result.recommendation || null);
+      });
+      if (typeof Consultant.applyToWorkspace === 'function') {
+        Consultant.applyToWorkspace(result);
+      } else {
+        (result.actions || []).forEach(function (a) {
+          if (!a) return;
+          if (a.type === 'enter_building') enterBuildingMode(a.project);
+          if (a.type === 'set_surface') setSurface(a.surface);
+          if (a.type === 'point') pointAt(a.target);
+          if (a.type === 'celebrate') celebrate();
+        });
+      }
+      if (result.pride) celebrate();
+      if (result.recommendation && result.recommendation.focusId) {
+        ensureState().focusId = result.recommendation.focusId;
+      }
+      setActivity([
+        { label: result.phase === 'show' ? 'Shown in workspace' : 'Understood', status: 'done' },
+        { label: (result.recommendation && result.recommendation.choice) || 'Working…', status: 'on' },
+        { label: (result.recommendation && result.recommendation.nextLead) || 'What\'s next', status: 'next' },
+      ]);
+      return;
+    }
+
     pushMessage(
       'hubly',
-      'I\'m with you. Ask me to build a storefront, campaign, or tweak the site — I\'ll morph the workspace and show my reasoning.',
+      'I\'m with you. Tell me what you want to accomplish — I\'ll recommend, build, and show it live.',
       {
         choice: 'Keep building in the workspace',
         confidence: 86,
@@ -781,8 +789,19 @@
     var root = document.getElementById('jos-dash-root');
     if (!root) return null;
     var aw = ensureState();
+    /* Welcome back once per mount when memory has finished work */
+    try {
+      if (global.HublyConsultant && global.HublyConsultant.welcomeBack && !aw._welcomed) {
+        var wb = global.HublyConsultant.welcomeBack();
+        var mem = global.HublyConsultant.ensure().memory;
+        if (wb && wb.text && (mem.finished || []).length) {
+          aw.messages = aw.messages || [];
+          aw.messages.unshift({ side: 'hubly', text: wb.text, recommendation: wb.recommendation || null });
+          aw._welcomed = true;
+        }
+      }
+    } catch (e) {}
     if (aw.mode === 'building') {
-      /* Recurring Building Mode can own the home surface too */
       return renderInto(root, { mode: 'building', state: aw.state });
     }
     return renderInto(root, { mode: 'operating', state: 'operating' });
@@ -810,7 +829,7 @@
   }
 
   global.HublyAIWorkspace = {
-    version: '1.2.0',
+    version: '1.3.0',
     milestones: FOCUS_BLOCKS, // legacy alias
     focusBlocks: FOCUS_BLOCKS,
     states: STATES,
@@ -827,6 +846,7 @@
     setMilestone: function (id) { ensureState().focusId = id; renderIfMounted(); },
     setMode: applyMode,
     pointAt: pointAt,
+    celebrate: celebrate,
     markBuildingComplete: markBuildingComplete,
     hasFinishedFirstBuild: hasFinishedFirstBuild,
     handleOwnerTurn: handleOwnerTurn,
