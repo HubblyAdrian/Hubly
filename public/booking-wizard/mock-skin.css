@@ -358,16 +358,16 @@
 /* Mini calendar */
 .bk-cal{border:1px solid var(--bk-mock-border);border-radius:16px;padding:12px;background:#fff;margin:0 0 14px}
 .bk-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.bk-cal-head strong{font-size:14px;font-weight:750}
+.bk-cal-head strong{font-size:14px;font-weight:750;color:#0f172a}
 .bk-cal-head button{
   appearance:none;border:1px solid #e2e8f0;background:#fff;border-radius:8px;
-  width:30px;height:30px;cursor:pointer;font-weight:700;color:#475569;
+  width:30px;height:30px;cursor:pointer;font-weight:700;color:#334155;
 }
 .bk-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.bk-cal-dow{font-size:10px;font-weight:700;color:#94a3b8;text-align:center;padding:4px 0}
+.bk-cal-dow{font-size:10px;font-weight:700;color:#64748b;text-align:center;padding:4px 0}
 .bk-cal-day{
   appearance:none;border:none;background:transparent;border-radius:999px;
-  aspect-ratio:1;font-size:12px;font-weight:650;color:#334155;cursor:pointer;
+  aspect-ratio:1;font-size:12px;font-weight:650;color:#0f172a;cursor:pointer;
 }
 .bk-cal-day.mute{color:#cbd5e1;cursor:default}
 .bk-cal-day.sel{background:var(--bk-ui-accent);color:#fff}
@@ -424,9 +424,11 @@
 .booking-shell.bk-mock .bk-sum-lines{display:flex;flex-direction:column;gap:8px;margin:0 0 12px}
 .booking-shell.bk-mock .bk-sum-line{
   display:flex;justify-content:space-between;gap:8px;align-items:flex-start;
-  font-size:12px;color:#334155;line-height:1.35;
+  font-size:12px;color:#0f172a;line-height:1.35;
 }
-.booking-shell.bk-mock .bk-sum-line em{font-style:normal;color:var(--bk-mock-muted);font-size:11px}
+.booking-shell.bk-mock .bk-sum-line span,
+.booking-shell.bk-mock .bk-sum-line strong{color:#0f172a}
+.booking-shell.bk-mock .bk-sum-line em{font-style:normal;color:#475569;font-size:11px}
 .booking-shell.bk-mock .bk-sum-includes{margin:0;padding:0;list-style:none}
 .booking-shell.bk-mock .bk-sum-includes li{
   position:relative;padding:0 0 8px 18px;font-size:12px;color:#334155;line-height:1.4;

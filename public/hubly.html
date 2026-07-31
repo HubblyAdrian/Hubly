@@ -570,12 +570,78 @@ body{font-family:var(--font);background:var(--surface-2);color:var(--ink);line-h
 /* Marketing paints instantly; public slugs paint a blank surface — never a Hubly logo splash. */
 #p-boot.page.active{background:var(--surface-2)!important}
 #p-boot .ob-boot-splash{display:none}
+html.hubly-public-boot,
+html.hubly-public-site{
+  color-scheme:light!important;
+  --ink:#0f172a;--ink-2:#334155;--ink-3:#64748b;--ink-4:#94a3b8;
+  --surface:#ffffff;--surface-2:#f3f5f8;--surface-3:#e8eef6;
+  --border:#e6ebf2;--border-2:#dbe3ee;
+}
 html.hubly-public-boot body{background:var(--surface-2)}
 html.hubly-public-boot #lang-btn-float,
 html.hubly-public-boot #toast,
 html.hubly-public-boot #mkt-chat,
 html.hubly-public-boot #mkt-back-top{display:none!important}
 html.hubly-public-boot #p-landing{display:none!important}
+/* Booking is always a light form — never inherit Hubly night / website dark tokens */
+#p-booking.booking-shell,
+.booking-shell.bk-mock{
+  color-scheme:light!important;
+  --ink:#0f172a!important;
+  --ink-2:#334155!important;
+  --ink-3:#64748b!important;
+  --ink-4:#94a3b8!important;
+  --bk-mock-ink:#0f172a;
+  --bk-mock-muted:#475569;
+  --surface:#ffffff;
+  --surface-2:#f3f5f8;
+  --surface-3:#e8eef6;
+  --border:#e6ebf2;
+  --border-2:#dbe3ee;
+  color:#0f172a!important;
+  background:#f3f5f8;
+}
+#p-booking.booking-shell .bk-sum-line,
+#p-booking.booking-shell .bk-sum-line span,
+#p-booking.booking-shell .bk-sum-line strong,
+#p-booking.booking-shell .bk-sum-includes li,
+#p-booking.booking-shell .bk-sum-svc strong,
+#p-booking.booking-shell .bk-svc-prompt,
+#p-booking.booking-shell .bk-step-title,
+#p-booking.booking-shell .sq-lbl,
+#p-booking.booking-shell .sq-tile,
+#p-booking.booking-shell .sq-tile strong,
+#p-booking.booking-shell .bk-svc-card,
+#p-booking.booking-shell .bk-svc-card strong,
+#p-booking.booking-shell .bk-cal-head strong,
+#p-booking.booking-shell .bk-cal-day,
+#p-booking.booking-shell .addon-item,
+#p-booking.booking-shell .bk-lbl,
+#p-booking.booking-shell .bk-col-title,
+#p-booking.booking-shell .field label{
+  color:#0f172a!important;
+  -webkit-text-fill-color:#0f172a;
+}
+#p-booking.booking-shell .bk-sum-svc span,
+#p-booking.booking-shell .bk-sum-line em,
+#p-booking.booking-shell .sq-tile span,
+#p-booking.booking-shell .sq-tile em,
+#p-booking.booking-shell .bk-svc-card > span,
+#p-booking.booking-shell .bk-step-sub,
+#p-booking.booking-shell .bk-col-sub,
+#p-booking.booking-shell .bk-cal-dow,
+#p-booking.booking-shell .bk-svc-switch-hint{
+  color:#475569!important;
+  -webkit-text-fill-color:#475569;
+}
+#p-booking.booking-shell .bk-cal-day.mute{
+  color:#cbd5e1!important;
+  -webkit-text-fill-color:#cbd5e1;
+}
+#p-booking.booking-shell .bk-cal-day.sel{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff;
+}
 input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .hidden{display:none!important}
 /* Safari/iOS: display:none file inputs ignore .click() and <label for>. Keep in the layout tree. */
@@ -6579,17 +6645,22 @@ html{scroll-behavior:smooth}
 /* Booking: keep floating chat bubble (no mid-flow help card). Hide nudge teaser only. */
 body:has(#p-booking.active) #ws-chat-teaser,
 body.ws-booking-open #ws-chat-teaser{display:none!important}
+/* Keep chat FAB clear of the Continue row */
 body:has(#p-booking.active) .ws-chat-widget,
 body.ws-booking-open .ws-chat-widget{
   z-index:1200;
-  bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  bottom:calc(84px + env(safe-area-inset-bottom,0px));
   right:16px;
 }
 @media(max-width:720px){
   body:has(#p-booking.active) .ws-chat-widget,
   body.ws-booking-open .ws-chat-widget{
-    right:14px;
-    bottom:calc(18px + env(safe-area-inset-bottom,0px));
+    right:12px;
+    bottom:calc(92px + env(safe-area-inset-bottom,0px));
+  }
+  body:has(#p-booking.active) .bk-step-foot,
+  body.ws-booking-open .bk-step-foot{
+    padding-right:68px;
   }
 }
 /* Trade buckets (detailing Interior / Exterior / Wax…): labeled + sideways strip */
@@ -9006,13 +9077,33 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 @media(max-width:860px){
   .bk-sq-mobile-est .bk-help-card,
   .bk-sq-mobile-est .bk-reviews-card{display:none!important}
-  .bk-sq-mobile-est .bk-sum-includes{display:none}
+  .bk-sq-mobile-est .bk-sum-includes,
+  .bk-sq-mobile-est .bk-sum-lines,
+  .bk-sq-mobile-est .bk-sum-dots,
+  .bk-sq-mobile-est .bk-sum-total{display:none!important}
   .bk-sq-mode .bk-sq-mobile-est{
-    padding:8px 10px 0;background:transparent;border-bottom:none;
+    padding:6px 10px 0;background:transparent;border-bottom:none;flex-shrink:0;
   }
-  .bk-sq-mobile-est .bk-sum-body{padding:10px 12px 12px}
+  .bk-sq-mobile-est .bk-sum-card{
+    border-radius:12px;box-shadow:0 2px 10px rgba(15,23,42,.05);
+  }
+  .bk-sq-mobile-est .bk-sum-head{
+    padding:8px 12px;font-size:12px;
+  }
+  .bk-sq-mobile-est .bk-sum-head strong{font-size:12px;font-weight:700}
+  .bk-sq-mobile-est .bk-sum-body{padding:8px 12px 10px}
+  .bk-sq-mobile-est .bk-sum-svc{
+    margin:0;padding:0;border:none;gap:8px;
+    grid-template-columns:40px minmax(0,1fr);
+  }
+  .bk-sq-mobile-est .bk-sum-svc img,
+  .bk-sq-mobile-est .bk-sum-svc > div:first-child{
+    width:40px;height:32px;border-radius:8px;
+  }
+  .bk-sq-mobile-est .bk-sum-svc strong{font-size:13px;color:#0f172a!important}
   .bk-sq-mobile-est .bk-sum-svc span{
-    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;
+    font-size:11px;color:#475569!important;
   }
 }
 .booking-tag{font-size:11px;color:var(--ink-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
@@ -9831,6 +9922,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var sub=parts[0];
     if(!sub||sub==='www'||sub==='myhubly'||sub==='hubly')return;
     document.documentElement.classList.add('hubly-public-boot');
+    /* Customer sites stay light — phone dark mode must not bleach booking text */
+    document.documentElement.setAttribute('data-theme','day');
     try{document.title='\u00a0';}catch(e){}
     if(land)land.classList.remove('active');
     if(boot)boot.classList.add('active');
@@ -12893,7 +12986,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/photography-projects.js?v=projects-16"></script>
 <!-- ceo-demo.js loads on-demand only for owner-authorized /hubly-ceo -->
 <script defer src="/booking-wizard/ui.js"></script>
-<link rel="stylesheet" href="/booking-wizard/mock-skin.css">
+<link rel="stylesheet" href="/booking-wizard/mock-skin.css?v=bk-contrast-2">
 <script defer src="/themes/registry.js"></script>
 <script defer src="/themes/modern.js"></script>
 <script defer src="/themes/bold.js"></script>
@@ -16363,7 +16456,11 @@ async function loadPublicProfile(slug){
   if(topBar)topBar.style.display='none';
   const langFloat=document.getElementById('lang-btn-float');
   if(langFloat)langFloat.style.display='none';
-  try{document.documentElement.classList.remove('hubly-public-boot');}catch(e){}
+  try{
+    document.documentElement.classList.remove('hubly-public-boot');
+    document.documentElement.classList.add('hubly-public-site');
+    document.documentElement.setAttribute('data-theme','day');
+  }catch(e){}
   if(data.name)document.title=data.name;
   showP('p-storefront');
   // Fill services without blocking first storefront paint.
@@ -38309,6 +38406,7 @@ function openBookingPage(svcName,opts={}){
     }
     const bkTime=document.getElementById('bk-time');if(bkTime)bkTime.value='';
     const bkDate=document.getElementById('bk-date');if(bkDate)bkDate.value=dateStr(new Date());
+    S._bkCalMonth=null;
     updateBkProgress(1);
     S.bkIntake={};
     configureBookingIntakeFromBlueprint();
@@ -38347,7 +38445,7 @@ function openBookingPage(svcName,opts={}){
     try{if(typeof HublyBookingSQ!=='undefined')HublyBookingSQ.updateEstimate();}catch(e){}
     updateStickyPrice();
     try{renderBkWhereGrid();}catch(e){}
-    try{renderBkCalendar();}catch(e){}
+    try{renderBkCalendar(new Date());}catch(e){}
     try{renderBkFrameInfoFields();}catch(e){}
     document.getElementById('booking-confirmed-overlay')?.classList.remove('active');
     renderBkAddonGrid();
@@ -39045,6 +39143,21 @@ function syncBkWhereAddressUI(){
     cust?.classList.remove('hidden');
   }
 }
+function parseBkLocalDate(value){
+  if(value instanceof Date){
+    const d=new Date(value.getTime());
+    return Number.isNaN(d.getTime())?null:d;
+  }
+  if(value==null||value==='')return null;
+  const s=String(value).trim();
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m){
+    const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));
+    return Number.isNaN(d.getTime())?null:d;
+  }
+  const d=new Date(s);
+  return Number.isNaN(d.getTime())?null:d;
+}
 function renderBkCalendar(baseDate){
   const root=document.getElementById('bk-calendar');
   const dateInp=document.getElementById('bk-date');
@@ -39052,10 +39165,12 @@ function renderBkCalendar(baseDate){
   const now=new Date();
   now.setHours(0,0,0,0);
   let focus=baseDate instanceof Date?new Date(baseDate):null;
-  if(!focus&&S._bkCalMonth)focus=new Date(S._bkCalMonth);
-  if(!focus&&dateInp&&dateInp.value)focus=new Date(dateInp.value+'T00:00:00');
+  /* Prefer the selected booking date over a cached month (avoids UTC off-by-one → May). */
+  if(!focus&&dateInp&&dateInp.value)focus=parseBkLocalDate(dateInp.value);
+  if(!focus&&S._bkCalMonth)focus=parseBkLocalDate(S._bkCalMonth);
   if(!focus||Number.isNaN(focus.getTime()))focus=new Date(now);
-  S._bkCalMonth=dateStr(new Date(focus.getFullYear(),focus.getMonth(),1));
+  focus=new Date(focus.getFullYear(),focus.getMonth(),1);
+  S._bkCalMonth=dateStr(focus);
   const y=focus.getFullYear();
   const m=focus.getMonth();
   const first=new Date(y,m,1);
@@ -39085,7 +39200,7 @@ function renderBkCalendar(baseDate){
   }
 }
 function shiftBkCalendar(delta){
-  const base=S._bkCalMonth?new Date(S._bkCalMonth+'T00:00:00'):new Date();
+  const base=parseBkLocalDate(S._bkCalMonth)||new Date();
   base.setMonth(base.getMonth()+Number(delta||0));
   renderBkCalendar(base);
 }
@@ -39095,8 +39210,9 @@ function selBkCalDate(ds){
     dateInp.value=ds;
     dateInp.dispatchEvent(new Event('change'));
   }
-  S._bkCalMonth=ds.slice(0,8)+'01';
-  renderBkCalendar(new Date(ds+'T00:00:00'));
+  const focus=parseBkLocalDate(ds)||new Date();
+  S._bkCalMonth=dateStr(new Date(focus.getFullYear(),focus.getMonth(),1));
+  renderBkCalendar(focus);
   try{checkTimeAvailability();}catch(e){}
 }
 function getWizardInfoFields(){
