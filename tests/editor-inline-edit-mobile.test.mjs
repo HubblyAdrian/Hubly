@@ -39,8 +39,9 @@ test("package cards expose inline name, price, and hours targets", () => {
   assert.match(html, /'svc-name','svc-price','svc-dur'/);
 });
 
-test("inline edits select all text and persist catalog to booking", () => {
+test("inline edits focus the caret and persist catalog to booking", () => {
   assert.match(html, /function wsPeSelectAllContents\(/);
+  assert.match(html, /opts\.selectAll===true/);
   assert.match(html, /scheduleEditorCatalogPersist/);
   assert.match(html, /HublyBookingWizardUI\.syncServicesOut/);
   const commit = html.slice(

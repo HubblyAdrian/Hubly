@@ -7973,19 +7973,31 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
   /* Legacy Edit/Preview tabs fight canvas-mode — hide them */
   #v-editor.ed-canvas-on .ed-mobile-tabs,
   .ed-shell.ed-canvas-mode .ed-mobile-tabs{display:none!important}
-  /* Compact single-row toolbar: URL · Menu · Save */
+  /* Compact single-row toolbar: Home · Menu · URL · Save */
   #v-editor.ed-canvas-on .ed-top-bar,
   .ed-shell.ed-canvas-mode .ed-top-bar{
     position:sticky!important;top:0!important;z-index:5200!important;
     display:flex!important;flex-wrap:nowrap!important;align-items:center!important;
-    gap:8px!important;padding:8px 10px!important;
+    gap:6px!important;padding:8px 10px!important;
     padding-top:max(8px,env(safe-area-inset-top,0px))!important;
     background:#fff!important;color:#141B2B!important;
     border-bottom:1px solid #E5E7EB!important;
   }
+  #v-editor.ed-canvas-on .ed-back-home,
+  .ed-shell.ed-canvas-mode .ed-back-home{
+    order:0!important;flex:0 0 auto!important;min-width:0;padding:8px 10px!important;
+    font-size:12px!important;min-height:40px;z-index:5202!important;
+  }
+  #v-editor.ed-canvas-on .ed-settings-rail-toggle,
+  .ed-shell.ed-canvas-mode .ed-settings-rail-toggle{
+    order:1!important;display:inline-flex!important;position:relative;z-index:5202!important;
+    min-width:44px;min-height:40px;flex:0 0 auto!important;padding:8px 10px!important;
+  }
+  #v-editor.ed-canvas-on .ed-settings-rail-toggle-label,
+  .ed-shell.ed-canvas-mode .ed-settings-rail-toggle-label{display:none!important}
   #v-editor.ed-canvas-on .ed-site-url-wrap,
   .ed-shell.ed-canvas-mode .ed-site-url-wrap{
-    order:0!important;flex:1 1 auto!important;min-width:0!important;max-width:none!important;
+    order:2!important;flex:1 1 auto!important;min-width:0!important;max-width:none!important;
   }
   #v-editor.ed-canvas-on .ed-site-url,
   .ed-shell.ed-canvas-mode .ed-site-url{
@@ -8000,7 +8012,7 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
   .ed-shell.ed-canvas-mode .ed-device-bar{display:none!important}
   #v-editor.ed-canvas-on .ed-top-actions,
   .ed-shell.ed-canvas-mode .ed-top-actions{
-    order:0!important;flex:0 0 auto!important;width:auto!important;
+    order:3!important;flex:0 0 auto!important;width:auto!important;
     flex-wrap:nowrap!important;gap:6px!important;z-index:5201!important;
   }
   #v-editor.ed-canvas-on .ed-top-actions .btn,
@@ -8012,11 +8024,6 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
   .ed-shell.ed-canvas-mode .ed-top-actions .btn-save-main{
     flex:0 0 auto!important;width:auto!important;min-width:0!important;
     order:unset!important;margin:0!important;white-space:nowrap;
-  }
-  #v-editor.ed-canvas-on .ed-settings-rail-toggle,
-  .ed-shell.ed-canvas-mode .ed-settings-rail-toggle{
-    display:inline-flex!important;position:relative;z-index:5202!important;
-    min-width:44px;min-height:40px;
   }
   /* Menu drawer above canvas + inspector; not under a phantom 54px app bar */
   #v-editor.ed-canvas-on .ed-settings-rail,
@@ -8436,6 +8443,46 @@ body.ws-booking-open .addon-item.sel{border-color:var(--bk-accent);background:co
 body.ws-booking-open .addon-item.sel .addon-check{background:var(--bk-accent);border-color:var(--bk-accent);color:#fff}
 body.ws-booking-open .addon-item.sel .addon-price{color:var(--bk-accent)}
 body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(--surface-3);color:var(--ink-3)}
+/* Public booking + landing — phone-first for customers booking through Hubly */
+@media(max-width:900px){
+  .ws-bk-close{
+    top:max(10px,env(safe-area-inset-top,0px));right:12px;
+    width:44px;height:44px;
+  }
+  .ws-bk-hero{min-height:min(36vh,260px)}
+  .ws-bk-hero-inner{padding:22px 16px 26px}
+  .ws-bk-hero-logo{width:60px;height:60px;font-size:18px;margin-bottom:10px}
+  .ws-bk-hero-inner h1{font-size:clamp(22px,6.5vw,30px)}
+  .ws-bk-hero-tag{font-size:14px;margin-bottom:10px}
+  .ws-bk-body{padding:24px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+  .ws-bk-svc-grid{grid-template-columns:1fr;gap:12px}
+  .ws-bk-svc-card .ws-svc-img{height:148px}
+  .ws-bk-svc-card .ws-svc-body{padding:14px 14px 16px;min-height:0}
+  .ws-bk-svc-card .ws-svc-book{min-height:44px;width:100%}
+  .ws-bk-site.ws-bk-list .ws-bk-svc-card{flex-direction:column}
+  .ws-bk-site.ws-bk-list .ws-bk-svc-card .ws-svc-img{width:100%;min-width:0;height:140px;min-height:140px}
+  .ws-bk-site.ws-bk-compact .ws-bk-hero{min-height:140px}
+  .ws-bk-site.ws-bk-compact .ws-bk-hero-inner{padding:18px 16px;gap:12px}
+  .bk-landing-hero{padding:28px 16px 40px}
+  .bk-landing-bizcard{padding:18px 16px;border-radius:14px}
+  .bk-landing-bizcard h1{font-size:20px}
+  .bk-landing-body{padding:20px 16px 28px}
+  .bk-landing-body h2{font-size:20px}
+  .bk-landing-page{min-height:100dvh}
+  .booking-shell{height:100dvh;max-height:100dvh}
+  .booking-header{
+    padding:10px 12px;gap:8px;
+    padding-top:max(10px,env(safe-area-inset-top,0px));
+  }
+  .booking-brand{gap:8px;min-width:0}
+  .booking-biz{font-size:13px}
+  .bk-prog-lbl{display:none}
+  .booking-prog-wrap{gap:4px}
+  .bk-prog-num{width:26px;height:26px;font-size:11px}
+  .bk-prog-line{width:12px}
+  .sticky-summary{padding:10px 14px;font-size:12px}
+  .bk-step-inner{padding:0 10px}
+}
 .ed-bk-style-opt{border:2px solid var(--border);border-radius:12px;padding:12px;cursor:pointer;background:#fff;transition:border-color .15s,box-shadow .15s;text-align:left;font-family:inherit;width:100%}
 .ed-bk-style-opt:hover{border-color:#94a3b8}
 .ed-bk-style-opt.sel{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
@@ -8679,6 +8726,19 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 .ed-prev.ed-preview-phone .ed-ws-preview .ws-trust{grid-template-columns:1fr}
 .ed-shell.ed-canvas-mode .ed-prev.ed-preview-phone .ed-sf-desktop,
 .ed-shell.ed-canvas-mode .ed-prev.ed-preview-phone .ed-ws-preview{max-width:390px!important}
+/* On a real phone the device already IS mobile — full-bleed canvas, no inset frame */
+@media(max-width:900px){
+  .ed-prev.ed-preview-phone{
+    background:transparent!important;padding:0!important;justify-content:stretch!important;
+  }
+  .ed-prev.ed-preview-phone .ed-sf-desktop,
+  .ed-prev.ed-preview-phone .ed-ws-preview,
+  .ed-shell.ed-canvas-mode .ed-prev.ed-preview-phone .ed-sf-desktop,
+  .ed-shell.ed-canvas-mode .ed-prev.ed-preview-phone .ed-ws-preview{
+    max-width:none!important;width:100%!important;margin:0!important;
+    border-radius:0!important;box-shadow:none!important;border:none!important;
+  }
+}
 /* Click-to-edit preview — outline only (no purple word chips; they cluttered the canvas). */
 .ed-ws-preview .ws-pe-target,
 #edph-screen .ws-site .ws-pe-target{position:relative;cursor:pointer;transition:outline-color .15s,box-shadow .15s}
@@ -9212,23 +9272,33 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
   .booking-shell{height:100dvh}
   .bk-step-inner{padding:0 12px}
 
-  /* App: hamburger + slide-out drawer (not a crowded bottom tab bar) */
+  /* App: hamburger (left) opens drawer from the same side */
   .nav-menu-btn{display:inline-flex}
   .nav-drawer-close{display:inline-flex}
-  .app-nav{
-    top:0;right:0;left:auto;bottom:0;width:min(320px,86vw);height:100%;
+  .app-nav,
+  #p-app.jos-pixel .app-nav{
+    top:0;left:0;right:auto;bottom:0;width:min(320px,86vw)!important;height:100%;
     flex-direction:column;align-items:stretch;justify-content:flex-start;
     padding:0 0 calc(12px + env(safe-area-inset-bottom));
-    border-top:none;border-left:1px solid rgba(255,255,255,.08);
+    border-top:none;border-right:1px solid rgba(255,255,255,.08);border-left:none;
     overflow-y:auto;overflow-x:hidden;z-index:200;
-    box-shadow:-18px 0 48px rgba(0,0,0,.35);
-    transform:translateX(105%);
+    box-shadow:18px 0 48px rgba(0,0,0,.35);
+    transform:translateX(-105%);
     transition:transform .28s cubic-bezier(.22,.8,.28,1);
     -webkit-overflow-scrolling:touch;
     pointer-events:none;
   }
-  body.nav-drawer-open .app-nav{
-    transform:translateX(0);pointer-events:auto;
+  body.nav-drawer-open .app-nav,
+  body.nav-drawer-open #p-app.jos-pixel .app-nav,
+  body.nav-drawer-open #p-app.jos-pixel.jos-pipeline-mode .app-nav,
+  body.nav-drawer-open #p-app.jos-pixel.jos-storefront-mode .app-nav,
+  body.nav-drawer-open #p-app.jos-pixel.jos-marketing-mode .app-nav,
+  body.nav-drawer-open #p-app.jos-pixel.jos-settings-mode .app-nav,
+  body.nav-drawer-open #p-app.jos-pixel.jos-jobs-mode .app-nav,
+  body.nav-drawer-open #p-app.jos-pixel.jos-leads-mode .app-nav,
+  body.nav-drawer-open #p-app.jos-pixel.jos-customers-mode .app-nav{
+    transform:translateX(0)!important;pointer-events:auto;
+    left:0!important;right:auto!important;width:min(320px,86vw)!important;
   }
   .nav-top{
     display:flex!important;padding:18px 52px 16px 16px;margin:0;
@@ -11208,9 +11278,15 @@ document.addEventListener('DOMContentLoaded', function() {
             <button type="button" class="btn btn-ghost btn-sm" id="ed-mobile-preview" onclick="setEdMobileView('preview')" data-i18n="editorPreviewTab">Preview</button>
           </div>
 
-          <!-- Unified toolbar -->
+          <!-- Unified toolbar — Menu sits with Home (left) to match left drawer -->
           <div class="ed-top-bar">
             <button type="button" class="btn btn-ghost btn-sm ed-back-home" id="ed-back-home" onclick="leaveWebsiteEditorToHome()" aria-label="Back to Home" title="Back to Home">← Home</button>
+            <button type="button" class="btn btn-ghost btn-sm ed-settings-rail-toggle" id="ed-settings-rail-toggle" onclick="toggleEdSettingsRail(event)" aria-label="Website menu" title="Website menu" aria-controls="ed-settings-rail" aria-expanded="false">
+              <span class="ed-settings-rail-toggle-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+              </span>
+              <span class="ed-settings-rail-toggle-label">Menu</span>
+            </button>
             <div class="ed-site-url-wrap">
               <button type="button" class="ed-site-url" id="ed-site-url-bar" onclick="copyEdSiteUrl()" title="Click to copy your live URL">
                 <span class="ed-site-url-label">Your site</span>
@@ -11229,12 +11305,6 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
-              <button type="button" class="btn btn-ghost btn-sm ed-settings-rail-toggle" id="ed-settings-rail-toggle" onclick="toggleEdSettingsRail(event)" aria-label="Website menu" title="Website menu" aria-controls="ed-settings-rail" aria-expanded="false">
-                <span class="ed-settings-rail-toggle-icon" aria-hidden="true">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-                </span>
-                <span class="ed-settings-rail-toggle-label">Menu</span>
-              </button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
           </div>
@@ -16691,7 +16761,6 @@ function promptForBizName({thenLayout}={}){
   setTimeout(()=>{
     const inp=document.getElementById('ws-pe-inp');
     inp?.focus();
-    inp?.select();
   },40);
 }
 
@@ -27765,11 +27834,24 @@ function switchEdTab(tab){
 }
 function setEdPreviewDevice(device){
   S.edPreviewDevice=device==='desktop'?'desktop':'phone';
+  S._edPreviewDeviceUserSet=true;
   applyEdPreviewDevice();
   updateEdPrev();
 }
 
+function preferEdPhonePreview(){
+  return !!(window.matchMedia&&window.matchMedia('(max-width:900px)').matches);
+}
+
+function ensureEdPhonePreviewDefault(){
+  /* On phones, show the site as customers see it on mobile — unless owner picked PC. */
+  if(!preferEdPhonePreview())return;
+  if(S._edPreviewDeviceUserSet&&S.edPreviewDevice==='desktop')return;
+  S.edPreviewDevice='phone';
+}
+
 function applyEdPreviewDevice(){
+  ensureEdPhonePreviewDefault();
   const device=S.edPreviewDevice||'desktop';
   const phoneBtn=document.getElementById('ed-view-phone');
   const deskBtn=document.getElementById('ed-view-desktop');
@@ -32137,7 +32219,7 @@ function ensureWsPeContextBar(){
     const act=btn.getAttribute('data-pe-act');
     const pe=target.dataset.pe||'';
     if(act==='edit'){
-      if(isWsPeInlineType(pe))return startWsPeInlineEdit(target,{selectAll:true});
+      if(isWsPeInlineType(pe))return startWsPeInlineEdit(target,{selectAll:false});
       return handleWsPeClick(pe,target);
     }
     if(act==='photo'||act==='replace'){
@@ -32273,12 +32355,13 @@ function startWsPeInlineEdit(target,opts){
   try{node.contentEditable='plaintext-only';}catch(e){node.contentEditable='true';}
   node.classList.add('ws-pe-inline-editing');
   target.classList.add('is-pe-selected');
-  if(opts.selectAll!==false){
+  /* Default: place caret — do not force-select all (owner chooses highlight / edits). */
+  if(opts.selectAll===true){
     wsPeSelectAllContents(node);
     setTimeout(()=>wsPeSelectAllContents(node),40);
     setTimeout(()=>wsPeSelectAllContents(node),140);
   }else{
-    try{node.focus({preventScroll:true});}catch(e){}
+    try{node.focus({preventScroll:true});}catch(e){try{node.focus();}catch(e2){}}
   }
 }
 function finishWsPeInlineEdit(cancel){
@@ -32597,9 +32680,9 @@ function onWsPePreviewClick(e){
   S._wsPeSelectedEl=target;
   hideWsPeContextBar();
   const pe=target.dataset.pe||'';
-  /* Package name / price / hours: highlight + edit in place */
+  /* Package name / price / hours: edit in place — caret only, no forced highlight */
   if(pe==='svc-name'||pe==='svc-price'||pe==='svc-dur'||isWsPeInlineType(pe)||pe==='faq-item'||pe==='review'||pe==='membership'){
-    startWsPeInlineEdit(target,{selectAll:true});
+    startWsPeInlineEdit(target,{selectAll:false});
     return;
   }
   /* Whole package card → full editor (name, price, hours, details) — no Style/AI chrome */
@@ -32653,13 +32736,13 @@ function handleWsPeClick(type,el){
     const raw=getEditorBizName()||'';
     const val=isPlaceholderBizName(raw)?'':raw;
     showWsPePop(el,`<div class="ws-pe-pop-lbl">Business name</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="AquaSpeed Detailing" oninput="liveWsPeBizName(this.value)"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeBizName()">Save</button></div>`);
-    setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();inp?.select();},30);
+    setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();},30);
     return;
   }
   if(type==='headline'){
     const val=document.getElementById('ed-ws-hero-headline')?.value||S.website?.heroHeadline||'';
     showWsPePop(el,`<div class="ws-pe-pop-lbl">Hero headline</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="Quality service that comes to you" oninput="liveWsPeHeadline(this.value)"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeHeadline()">Save</button></div>`);
-    setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();inp?.select();},30);
+    setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();},30);
     return;
   }
   if(type==='tagline'){
@@ -37075,6 +37158,7 @@ function renderWebsitePreview(){
 
 /** Show the Site canvas without re-entering renderWebsitePreview (avoids recursion). */
 function applyEdPreviewDeviceShowOnly(){
+  try{ensureEdPhonePreviewDefault();}catch(e){}
   const sfPhoneStage=document.getElementById('ed-phone-stage');
   const sfDesk=document.getElementById('ed-sf-desktop-wrap');
   if(sfPhoneStage)sfPhoneStage.style.display='none';
@@ -37463,6 +37547,7 @@ function mountEdChrome(){
     syncEdSettingsRail((S&&(S._edSettingsNav||S._edHubTab))||'');
     syncEdCtrlTop();
   }catch(e){}
+  try{ensureEdPhonePreviewDefault();applyEdPreviewDevice();}catch(e){}
   try{setEdEditMode(true);}catch(e){}
   // Floating pill retired — keep node hidden if present
   if(bar){

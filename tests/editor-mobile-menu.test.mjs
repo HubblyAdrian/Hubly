@@ -14,6 +14,9 @@ test("website editor ships a Menu toggle that calls toggleEdSettingsRail", () =>
   assert.match(html, /onclick="toggleEdSettingsRail\(event\)"/);
   assert.match(html, /class="[^"]*ed-settings-rail-toggle/);
   assert.match(html, /aria-controls="ed-settings-rail"/);
+  // Menu lives next to Home so the control matches the left drawer
+  const bar = html.slice(html.indexOf('class="ed-top-bar"'), html.indexOf("<!-- Collapsed rail stub"));
+  assert.ok(bar.indexOf("ed-back-home") < bar.indexOf("ed-settings-rail-toggle"));
 });
 
 test("mobile canvas-mode CSS can hide the settings rail unless is-open", () => {
