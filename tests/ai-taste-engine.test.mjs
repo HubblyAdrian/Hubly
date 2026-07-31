@@ -34,7 +34,7 @@ function load() {
 test("HublyTaste is a reusable recommendation engine", () => {
   const s = load();
   const T = s.HublyTaste;
-  assert.equal(T.version, "1.1.0");
+  assert.equal(T.version, "1.2.0");
   assert.equal(typeof T.make, "function");
   assert.equal(typeof T.understand, "function");
   assert.equal(typeof T.forWebsite, "function");
@@ -137,7 +137,7 @@ test("Consultant uses Taste for commerce recommendations", () => {
 test("hubly.html loads Taste before Consultant", () => {
   assert.match(html, /hubly-taste\.js\?v=taste-2/);
   assert.match(html, /hubly-consultant\.js\?v=consultant-4/);
-  assert.match(html, /ai-workspace\.js\?v=aw-6/);
+  assert.match(html, /ai-workspace\.js\?v=aw-7/);
   const tasteIdx = html.indexOf("hubly-taste.js");
   const consIdx = html.indexOf("hubly-consultant.js");
   assert.ok(tasteIdx > -1 && consIdx > tasteIdx);
@@ -148,5 +148,5 @@ test("workspace renders Taste cards and compare hooks", () => {
   assert.match(awJs, /data-aw-compare/);
   assert.match(awJs, /rememberChoice/);
   assert.match(awCss, /aw-taste-card/);
-  assert.match(awJs, /version: '1\.5\.0'/);
+  assert.match(awJs, /version: '1\.6\.0'/);
 });

@@ -481,3 +481,80 @@ body.aw-building-mode .aw-shell{
 .wq-act:hover{background:rgba(217,99,45,.22);border-color:rgba(217,99,45,.5);transform:translateY(-1px)}
 .wq-act[data-wq-act="improve"]{background:#d9632d;border-color:#d9632d}
 .is-creative-preview-card.is-wq{padding:0;background:transparent;border:none}
+
+/* ── Phase 2 · Business Craftsmanship ── */
+.bq-brand,.bq-health,.bq-launch{
+  margin-top:14px;padding:14px;border-radius:16px;
+  background:linear-gradient(180deg,#0b1220,#141b2b);color:#fff;
+  border:1px solid rgba(255,255,255,.1);
+  animation:awSurfaceIn .5s cubic-bezier(.22,1,.36,1) both;
+}
+.bq-head{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:12px;
+}
+.bq-head strong{font-size:13px;font-weight:800;letter-spacing:-.02em}
+.bq-head em{font-style:normal;font-size:11px;color:rgba(255,255,255,.55);font-weight:650}
+.bq-intro{margin:0 0 12px;font-size:13px;line-height:1.45;color:rgba(255,255,255,.82);font-weight:550}
+.bq-brand-row{margin:0 0 10px}
+.bq-brand-row span{
+  display:block;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:rgba(255,255,255,.45);margin-bottom:3px;
+}
+.bq-brand-row p{margin:0;font-size:13px;line-height:1.4;color:rgba(255,255,255,.9);font-weight:550}
+.bq-note{margin:12px 0 0;font-size:12px;color:#fdba74;font-weight:650}
+.bq-scores{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px;
+}
+@media(max-width:640px){.bq-scores{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.bq-score{
+  padding:10px;border-radius:12px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
+}
+.bq-score span{display:block;font-size:10px;font-weight:700;color:rgba(255,255,255,.55);letter-spacing:.04em;text-transform:uppercase}
+.bq-score strong{display:block;margin-top:4px;font-size:20px;font-weight:800;letter-spacing:-.03em}
+.bq-score.is-weak{border-color:rgba(217,99,45,.55);background:rgba(217,99,45,.14)}
+.bq-score.is-weak strong{color:#fdba74}
+.bq-recs{display:grid;gap:8px}
+.bq-rec{
+  padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+}
+.bq-rec strong{display:block;font-size:12px;font-weight:800;margin-bottom:4px}
+.bq-rec p{margin:0;font-size:12px;line-height:1.4;color:rgba(255,255,255,.75)}
+.bq-items{display:grid;gap:8px;margin-bottom:12px}
+.bq-item{
+  padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+}
+.bq-item span{
+  display:inline-block;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:#d9632d;margin-bottom:4px;
+}
+.bq-item strong{display:block;font-size:13px;font-weight:800;margin-bottom:4px}
+.bq-item p{margin:0;font-size:12px;line-height:1.4;color:rgba(255,255,255,.78)}
+.bq-acts{display:flex;flex-wrap:wrap;gap:8px}
+.bq-act{
+  appearance:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);
+  color:#fff;font-size:12px;font-weight:800;padding:10px 14px;border-radius:11px;cursor:pointer;
+}
+.bq-act:hover{background:rgba(217,99,45,.22);border-color:rgba(217,99,45,.5)}
+.bq-act[data-bq-act="improve"],.bq-act[data-bq-act="proud"]{background:#d9632d;border-color:#d9632d}
+.bq-narrative{font-size:14px;font-weight:650;line-height:1.5;color:#fff}
+.bq-pride{
+  margin:12px 0;padding:12px 14px;border-radius:12px;
+  background:rgba(217,99,45,.16);border:1px solid rgba(217,99,45,.4);
+  font-size:14px;font-weight:750;line-height:1.4;color:#fff;
+}
+.bq-move{margin:0 0 12px}
+.bq-move span{
+  display:block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  color:#fdba74;margin-bottom:6px;
+}
+.bq-move ul{margin:0;padding-left:18px;color:rgba(255,255,255,.82);font-size:12.5px;line-height:1.45}
+.bq-score-details{margin-top:10px}
+.bq-score-details summary{
+  cursor:pointer;font-size:11px;font-weight:700;color:rgba(255,255,255,.5);
+  list-style:none;
+}
+.bq-score-details summary::-webkit-details-marker{display:none}
+.bq-score-details[open] summary{margin-bottom:8px;color:rgba(255,255,255,.7)}

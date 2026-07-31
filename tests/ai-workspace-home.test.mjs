@@ -44,8 +44,8 @@ function loadWorkspace() {
 }
 
 test("AI Workspace assets are linked from hubly.html", () => {
-  assert.match(html, /ai-workspace\.css\?v=aw-6/);
-  assert.match(html, /ai-workspace\.js\?v=aw-6/);
+  assert.match(html, /ai-workspace\.css\?v=aw-7/);
+  assert.match(html, /ai-workspace\.js\?v=aw-7/);
   assert.match(html, /data-hubly-ai-workspace="building"/);
   assert.match(html, /is-architect-activity/);
   assert.match(html, /Ask Hubly anything|Tell me what you want to accomplish/);
@@ -85,7 +85,7 @@ test("HublyAIWorkspace exposes state machine + Current Focus blocks", () => {
   const sandbox = loadWorkspace();
   const AW = sandbox.HublyAIWorkspace;
   assert.ok(AW);
-  assert.equal(AW.version, "1.5.0");
+  assert.equal(AW.version, "1.6.0");
   assert.equal(AW.focusBlocks.length, 10);
   assert.equal(AW.focusBlocks[0].id, "vision");
   assert.equal(AW.focusBlocks[9].id, "home");

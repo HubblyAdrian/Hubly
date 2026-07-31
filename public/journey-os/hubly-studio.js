@@ -566,6 +566,18 @@
       kit.colors[0].hex = st.color;
       kit.colors[0].name = kit.colors[0].name || 'Primary';
     }
+    /* Business Craftsmanship — Brand System + Story inherit across surfaces */
+    var CraftKit = global.HublyBusinessCraftsmanship || global.HublyBusinessQuality;
+    if (!kit.system && CraftKit && CraftKit.buildBrandSystem) {
+      try {
+        var system = CraftKit.buildBrandSystem({
+          businessName: st.biz || st.businessName,
+          industry: st.businessType || st.industry,
+          direction: (st._aw && st._aw.chosenDirection) || 'minimal',
+        });
+        CraftKit.applyBrandSystemToKit(kit, system);
+      } catch (e) {}
+    }
     return kit;
   }
 
@@ -3178,6 +3190,8 @@
     render: render,
     setMode: setMode,
     ensureState: ensureStudioOs,
+    ensureBrandKit: ensureBrandKit,
+    saveBrandKit: saveBrandKit,
     open: openStudio,
     openFromMedia: openFromMedia,
     openEditor: openEditorFor,
