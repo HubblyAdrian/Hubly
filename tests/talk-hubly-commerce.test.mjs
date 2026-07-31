@@ -34,12 +34,19 @@ test("landing journeys lead to conversation outcomes", () => {
 });
 
 test("HublyConsultant skips questionnaire when seed is rich", () => {
-  const sandbox = { window: {}, S: {} };
+  const sandbox = {
+    window: {},
+    S: {},
+    localStorage: { getItem() { return null; }, setItem() {} },
+  };
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
+  const tasteJs = fs.readFileSync(path.join(root, "public/journey-os/hubly-taste.js"), "utf8");
+  vm.runInNewContext(tasteJs, sandbox);
   vm.runInNewContext(consultantJs, sandbox);
   const C = sandbox.HublyConsultant;
   assert.ok(C);
+  assert.ok(sandbox.HublyTaste);
   assert.equal(C.version, "2.0.0");
   assert.deepEqual(C.pattern[0], "understand");
   assert.equal(typeof C.think, "function");
@@ -61,7 +68,7 @@ test("HublyConsultant skips questionnaire when seed is rich", () => {
     },
   });
   assert.ok(rec.confidence >= 80);
-  assert.ok(String(rec.reasoning).length > 20);
+  assert.ok(String(rec.reasoning || rec.why || "").length > 20);
 });
 
 test("Commerce Runtime exposes shared capabilities", () => {
@@ -97,9 +104,10 @@ test("generate-site accepts inspiration uploads for OpenAI vision", () => {
 });
 
 test("hubly.html wires consultant + commerce runtime + AI workspace", () => {
-  assert.match(html, /hubly-consultant\.js\?v=consultant-2/);
+  assert.match(html, /hubly-consultant\.js\?v=consultant-3/);
   assert.match(html, /commerce\/runtime\.js\?v=commerce-2/);
-  assert.match(html, /ai-workspace\.js\?v=aw-4/);
+  assert.match(html, /ai-workspace\.js\?v=aw-5/);
+  assert.match(html, /hubly-taste\.js\?v=taste-1/);
   assert.match(html, /HublyConsultant\.shouldSkipQuestionnaire/);
   assert.match(html, /HublyConsultant\.buildFromContext/);
   assert.match(html, /HublyConsultant\.think/);

@@ -227,11 +227,15 @@
 
   function recHtml(rec) {
     if (!rec) return '';
+    if (global.HublyTaste && typeof global.HublyTaste.cardHtml === 'function') {
+      var card = rec.stars ? rec : (global.HublyTaste.fromLegacy ? global.HublyTaste.fromLegacy(rec) : rec);
+      return global.HublyTaste.cardHtml(card, esc);
+    }
     var conf = rec.confidence != null ? rec.confidence : '—';
-    var label = rec.confidenceLabel || (conf >= 90 ? 'Highly Recommended' : conf >= 78 ? 'Worth Comparing' : 'Alternative Direction');
+    var label = rec.confidenceLabel || (conf >= 90 ? 'Strong Recommendation' : conf >= 78 ? 'Worth Comparing' : 'Possible Direction');
     return (
       '<div class="aw-rec" data-aw-rec="1">' +
-      '<p class="aw-rec-why">' + esc(rec.reasoning || '') + '</p>' +
+      '<p class="aw-rec-why">' + esc(rec.why || rec.reasoning || '') + '</p>' +
       '<div class="aw-rec-meta"><span>' + esc(rec.choice || 'Recommendation') + '</span>' +
       '<span class="aw-conf">' + esc(label) + ' · <b>' + esc(String(conf)) + '%</b></span>' +
       '</div></div>'
@@ -529,6 +533,13 @@
       };
     });
 
+    root.querySelectorAll('[data-aw-compare]').forEach(function (btn) {
+      btn.onclick = function () {
+        var alt = btn.getAttribute('data-aw-compare');
+        handleOwnerTurn('Compare with ' + alt);
+      };
+    });
+
     var log = root.querySelector('#aw-log');
     if (log) log.scrollTop = log.scrollHeight;
   }
@@ -589,15 +600,48 @@
 
   function chooseDirection(id, label) {
     pushMessage('owner', String(label || id));
+    try {
+      if (global.HublyTaste && global.HublyTaste.rememberChoice) {
+        global.HublyTaste.rememberChoice(id, { style: id, domain: 'website' });
+      }
+    } catch (e) {}
+    var why = 'I recommend leading with a strong book path because your goal is getting customers quickly — not browsing.';
+    var tradeoffs = [
+      { label: 'Tradeoff', text: 'Less decorative storytelling on the first screen.' },
+      { label: 'Gain', text: 'Faster path to Book — usually higher conversion.' },
+    ];
+    var rec = {
+      choice: String(label || id) + ' direction',
+      confidence: 93,
+      reasoning: why,
+      why: why,
+      tradeoffs: tradeoffs,
+      alternatives: [{ id: 'compare', label: 'Luxury', when: 'If you want more brand theater first' }],
+      confidenceLabel: 'Strong Recommendation',
+      stars: '★★★★★',
+    };
+    try {
+      if (global.HublyTaste && global.HublyTaste.make) {
+        rec = global.HublyTaste.make({
+          choice: String(label || id) + ' direction',
+          confidence: 93,
+          why: why,
+          tradeoffs: tradeoffs,
+          alternatives: [{ id: 'luxury', label: 'Luxury', when: 'If you want more brand theater first' }],
+          domain: 'website',
+          evidence: ['customer_choice', 'conversation'],
+          allowWithoutEvidence: true,
+        });
+      }
+    } catch (e2) {}
     pushMessage(
       'hubly',
       'Nice choice. I\'m applying ' + (label || id) + ' and moving your booking button higher so customers can act fast.',
-      {
-        choice: String(label || id) + ' direction',
-        confidence: 93,
-        reasoning: 'I recommend leading with a strong book path because your goal is getting customers quickly — not browsing.',
-      }
+      rec
     );
+    if (global.HublyTaste && global.HublyTaste.celebrate) {
+      pushMessage('hubly', global.HublyTaste.celebrate('website'));
+    }
     transition('reviewing_website', {
       surface: 'website',
       doing: 'Building your homepage…',
@@ -612,6 +656,7 @@
     setTimeout(function () {
       pointAt('cta');
       setDoing('Moving booking button higher…');
+      if (typeof celebrate === 'function') celebrate();
     }, 200);
   }
 
@@ -829,7 +874,7 @@
   }
 
   global.HublyAIWorkspace = {
-    version: '1.3.0',
+    version: '1.4.0',
     milestones: FOCUS_BLOCKS, // legacy alias
     focusBlocks: FOCUS_BLOCKS,
     states: STATES,

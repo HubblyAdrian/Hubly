@@ -157,6 +157,32 @@ body.aw-building-mode .aw-shell{
 .aw-rec .aw-conf{color:#86efac}
 .aw-rec .aw-conf b{color:#fff}
 
+/* AI Taste recommendation card */
+.aw-taste-card{padding:12px 12px 11px}
+.aw-taste-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.aw-taste-badge{
+  font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  color:#fff;background:var(--aw-brand);padding:4px 8px;border-radius:999px;
+}
+.aw-taste-stars{color:#fbbf24;font-size:12px;letter-spacing:.06em}
+.aw-taste-title{font-size:14px;font-weight:800;color:#fff;margin:0 0 2px}
+.aw-taste-conf{font-size:11px;font-weight:700;color:#86efac;margin:0 0 8px}
+.aw-taste-trade{margin-top:8px;font-size:12px;color:rgba(255,255,255,.78)}
+.aw-taste-trade strong{display:block;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:4px}
+.aw-taste-tradeoffs{margin:0;padding-left:16px}
+.aw-taste-tradeoffs li{margin:0 0 4px}
+.aw-taste-compare{
+  margin-top:10px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  font-size:12px;
+}
+.aw-taste-compare .lbl{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.45)}
+.aw-taste-compare-btn{
+  appearance:none;border:1px solid rgba(217,99,45,.45);background:rgba(217,99,45,.12);
+  color:#fff;border-radius:999px;padding:6px 10px;font:inherit;font-size:11px;font-weight:750;cursor:pointer;
+}
+.aw-taste-compare-btn:hover{background:rgba(217,99,45,.22)}
+.aw-taste-compare .hint{font-size:11px;color:rgba(255,255,255,.5)}
+
 /* ChatGPT-class compose */
 .aw-compose{
   border-top:1px solid var(--aw-line);padding:12px;flex-shrink:0;

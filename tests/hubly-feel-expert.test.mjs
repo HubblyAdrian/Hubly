@@ -25,6 +25,8 @@ function loadConsultant() {
   };
   sandbox.window = sandbox;
   sandbox.globalThis = sandbox;
+  const taste = fs.readFileSync(path.join(root, "public/journey-os/hubly-taste.js"), "utf8");
+  vm.runInNewContext(taste, sandbox);
   vm.runInNewContext(consultantJs, sandbox);
   return sandbox;
 }
@@ -118,8 +120,9 @@ test("hubly wires expert think path and choice chips", () => {
   assert.match(html, /HublyConsultant\.think/);
   assert.match(html, /isTalkSetChips/);
   assert.match(html, /isTalkExpertChip/);
-  assert.match(html, /hubly-consultant\.js\?v=consultant-2/);
-  assert.match(html, /ai-workspace\.js\?v=aw-4/);
+  assert.match(html, /hubly-consultant\.js\?v=consultant-3/);
+  assert.match(html, /ai-workspace\.js\?v=aw-5/);
+  assert.match(html, /hubly-taste\.js\?v=taste-1/);
 });
 
 test("workspace has pride celebration + emotion motion", () => {
@@ -127,5 +130,5 @@ test("workspace has pride celebration + emotion motion", () => {
   assert.match(awJs, /You built this/);
   assert.match(awCss, /aw-pride/);
   assert.match(awCss, /is-celebrate/);
-  assert.match(awJs, /version: '1\.3\.0'/);
+  assert.match(awJs, /version: '1\.4\.0'/);
 });
