@@ -691,8 +691,15 @@ body.ed-editor-open .ed-shell.ed-canvas-mode:not(.ed-sheet-open) {
   grid-template-columns: auto minmax(0, 1fr) !important;
 }
 
+/* Keep 44px stub so collapsed Website menu can reopen on desktop */
 body.ed-editor-open .ed-shell.ed-canvas-mode.ed-settings-collapsed:not(.ed-sheet-open) {
-  grid-template-columns: 0 minmax(0, 1fr) !important;
+  grid-template-columns: 44px minmax(0, 1fr) !important;
+}
+@media (max-width: 900px) {
+  body.ed-editor-open .ed-shell.ed-canvas-mode:not(.ed-sheet-open),
+  body.ed-editor-open .ed-shell.ed-canvas-mode.ed-settings-collapsed:not(.ed-sheet-open) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
 }
 
 body.ed-editor-open .ed-shell.ed-canvas-mode .ed-prev {
