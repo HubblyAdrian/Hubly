@@ -30,7 +30,7 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
-<link rel="stylesheet" href="/journey-os/ai-workspace.css?v=aw-6">
+<link rel="stylesheet" href="/journey-os/ai-workspace.css?v=aw-7">
 <link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-15">
@@ -12589,8 +12589,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/index.js?v=commerce-2"></script>
 <script defer src="/journey-os/hubly-taste.js?v=taste-2"></script>
 <script defer src="/journey-os/hubly-website-quality.js?v=wq-1"></script>
+<script defer src="/journey-os/hubly-business-quality.js?v=bq-1"></script>
 <script defer src="/journey-os/hubly-consultant.js?v=consultant-4"></script>
-<script defer src="/journey-os/ai-workspace.js?v=aw-6"></script>
+<script defer src="/journey-os/ai-workspace.js?v=aw-7"></script>
 <script defer src="/journey-os/journey.js?v=aw-1"></script>
 <script defer src="/journey-os/store-commerce.js?v=store-4"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
@@ -18751,7 +18752,11 @@ function isCreativeRenderPreview(experience){
     const site=HublyWebsiteQuality.siteHtml(live,{biz,pointTarget:null});
     const reviewBlock=experience.selfReview&&HublyWebsiteQuality.reviewHtml
       ?HublyWebsiteQuality.reviewHtml(experience.selfReview):'';
-    el.innerHTML=`<div class="is-creative-preview-card is-wq">${site}${reviewBlock}</div>`;
+    const brandBlock=(typeof HublyBusinessQuality!=='undefined'&&experience.brandSystem&&HublyBusinessQuality.brandSystemHtml)
+      ?HublyBusinessQuality.brandSystemHtml(experience.brandSystem):'';
+    const healthBlock=(typeof HublyBusinessQuality!=='undefined'&&experience.health&&HublyBusinessQuality.healthHtml)
+      ?HublyBusinessQuality.healthHtml(experience.health):'';
+    el.innerHTML=`<div class="is-creative-preview-card is-wq">${site}${reviewBlock}${brandBlock}${healthBlock}</div>`;
     el.querySelectorAll('[data-wq-act]').forEach(btn=>{
       btn.onclick=()=>{
         const act=btn.getAttribute('data-wq-act');
@@ -18792,6 +18797,15 @@ function isCreativeApplyStage(experience,stage){
     live.heroSub=live.heroSub||(area?`Trusted ${experience.industryLabel||'service'} in ${area}`:`${experience.industryLabel||'Local'} — built with care`);
     live.nav=live.nav.length?live.nav:['Services','About','Gallery','Blog','FAQ','Contact','Book'];
     live.surfaces.website=true;
+    if(typeof HublyBusinessQuality!=='undefined'&&HublyBusinessQuality.sectionPlan){
+      const plan=HublyBusinessQuality.sectionPlan({
+        industry:experience.industryLabel||experience.industryKey,
+        industryKey:experience.industryKey,
+      });
+      live.sectionPlan=plan;
+      experience.sectionPlan=plan;
+      live.sectionOrder=plan.sections.map(s=>s.id);
+    }
   }
   if(stage.id==='hero'){
     live.heroTitle=biz;
@@ -18801,7 +18815,22 @@ function isCreativeApplyStage(experience,stage){
   }
   if(stage.id==='brand'||stage.surface==='brand'){
     live.theme=experience.chosenDirection||'minimal';
-    if(!live.chips.some(c=>/Brand/.test(c.label)))live.chips.push({label:'Brand applied',on:true});
+    if(typeof HublyBusinessQuality!=='undefined'&&HublyBusinessQuality.buildBrandSystem){
+      const system=HublyBusinessQuality.buildBrandSystem({
+        industry:experience.industryLabel||experience.industryKey,
+        industryKey:experience.industryKey,
+        direction:experience.chosenDirection||live.theme,
+        businessName:biz,
+      });
+      live.brandSystem=system;
+      experience.brandSystem=system;
+      try{
+        if(typeof HublyStudio!=='undefined'&&HublyStudio.ensureBrandKit){
+          HublyBusinessQuality.applyBrandSystemToKit(HublyStudio.ensureBrandKit(),system);
+        }
+      }catch(e){}
+    }
+    if(!live.chips.some(c=>/Brand/.test(c.label)))live.chips.push({label:'Brand System',on:true});
   }
   if(stage.id==='packages'||stage.surface==='packages'){
     const pkgs=experience.industryKey==='photography'
@@ -19131,6 +19160,32 @@ async function isRunCreativeBuildExperience(seed){
       isCreativeRenderPreview(experience);
       await isArchitectSleep(600);
     }
+  }
+
+  /* Phase 2 — Business Quality: Brand System, sections, copy, images, trust, health */
+  if(typeof HublyBusinessQuality!=='undefined'&&HublyBusinessQuality.enrichExperience){
+    isArchitectSetMilestone('Business Quality');
+    HublyBusinessQuality.enrichExperience(experience);
+    if(experience.brandSystem){
+      isCreativePush('hubly','I locked a Brand System for '+escPeHtml(experience.brandSystem.personality)+' — voice, image direction, buttons, and motion. Every future page inherits this.');
+    }
+    if(experience.sectionPlan){
+      isCreativePush('hubly',experience.sectionPlan.rationale+' First: '+(experience.sectionPlan.sections[0]&&experience.sectionPlan.sections[0].why||''));
+    }
+    if(experience.copyReview&&experience.copyReview.changedCount){
+      isCreativePush('hubly',experience.copyReview.message);
+    }
+    if(experience.imageDirection){
+      isCreativePush('hubly',experience.imageDirection.message);
+    }
+    if(experience.conversionCoach&&experience.conversionCoach.needsSimplify){
+      isCreativePush('hubly',experience.conversionCoach.message);
+    }
+    if(experience.health){
+      isCreativePush('hubly',experience.health.narrative);
+    }
+    isCreativeRenderPreview(experience);
+    await isArchitectSleep(700);
   }
 
   isCreativeRenderStages(experience,null);
@@ -19781,12 +19836,24 @@ const HUBLY_BUSINESS_LAUNCH = (function(){
     const futureTimeline=FUTURE_TIMELINE.map(m=>({...m,done:m.id==='created'||m.id==='launched'?true:!!m.done}));
     const letter=buildFounderLetter(ctx);
     const firstName=certificate.owner.split(/\s+/)[0]||'there';
+    let qualityReview=null;
+    if(typeof HublyBusinessQuality!=='undefined'&&HublyBusinessQuality.launchReview){
+      qualityReview=HublyBusinessQuality.launchReview({
+        industry:ctx.industry||ctx.businessType||key,
+        industryKey:key,
+        businessName:ctx.businessName||ctx.biz,
+        reviewCount:ctx.reviewCount,
+        brandSystem:ctx.brandSystem,
+        live:ctx.live,
+      }, ctx.live||{});
+    }
     return{
       version:'1.0.0',industryKey:key,animationTitle:LAUNCH_ANIMATION_TITLE,deploySteps:deployment.deploySteps,
       celebrationLead:'Congratulations, '+firstName+'.',celebration:LAUNCH_CELEBRATION,
       summary:deployment.summary,issues:deployment.issues,partial:deployment.partial,advice,
       nextSteps:NEXT_STEPS.map(n=>({...n})),timeline,futureTimeline,certificate,founderLetter:letter,
       homeTransition:HOME_TRANSITION,noFakeSuccess:true,
+      launchReview:qualityReview,
       signature:[key,advice[0]?.title?.slice(0,40),certificate.businessName].join('::'),
     };
   }
@@ -19829,9 +19896,37 @@ async function isRunBusinessLaunchExperience(opts){
     websiteLive:opts?.websiteLive!==false,
     memoryActive:opts?.memoryActive!==false,
     versionProtected:opts?.versionProtected!==false,
+    live:(S._is.creativeBuild&&S._is.creativeBuild.live)||(S._aw&&S._aw.live)||{},
+    brandSystem:(S._is.creativeBuild&&S._is.creativeBuild.brandSystem)||null,
+    reviewCount:S.reviewCount||opts?.reviewCount,
   });
   S._is.businessLaunch=flow;
   S._is.launchPartial=!!flow.partial;
+
+  /* Phase 2 — Launch Review before celebrate */
+  if(flow.launchReview&&typeof HublyBusinessQuality!=='undefined'){
+    try{
+      const lr=flow.launchReview;
+      if(typeof isCreativePush==='function'){
+        isCreativePush('hubly',lr.message||lr.intro);
+      }
+      if(typeof isArchitectAwaitChoice==='function'){
+        const picked=await isArchitectAwaitChoice(
+          `<div class="cq">I reviewed everything. What should we do before going live?</div><div class="opts">`+
+          `<button type="button" data-choice="improve"><strong>Improve</strong><span>Fix the top issue</span></button>`+
+          `<button type="button" data-choice="ignore"><strong>Launch anyway</strong><span>Keep coaching after</span></button>`+
+          `<button type="button" data-choice="compare"><strong>Compare</strong><span>See the difference</span></button></div>`,
+          {defaultId:'improve',defaultLabel:'Improve',timeoutMs:14000}
+        );
+        const result=HublyBusinessQuality.handleLaunchAction(picked.id||'improve',lr,{
+          live:flow.launchReview&&(S._is.creativeBuild&&S._is.creativeBuild.live)||{},
+          industryLabel:industry,
+        });
+        if(result&&result.message&&typeof isCreativePush==='function')isCreativePush('hubly',result.message);
+        if(result&&result.review)flow.launchReview=result.review;
+      }
+    }catch(e){}
+  }
 
   // Reset phases
   ['is-launch-phase-celebrate','is-launch-phase-summary','is-launch-phase-advice','is-launch-phase-next',
@@ -20122,6 +20217,34 @@ const HUBLY_BUSINESS_HOME = (function(){
     const v=Number(n);if(!Number.isFinite(v))return fallback;return Math.max(0,Math.min(100,Math.round(v)));
   }
   function buildBusinessHealth(ctx){
+    if(typeof HublyBusinessQuality!=='undefined'&&HublyBusinessQuality.assessHealth){
+      const h=HublyBusinessQuality.assessHealth({
+        live:ctx.live||(typeof S!=='undefined'&&S._aw&&S._aw.live)||{},
+        reviewCount:ctx.reviewCount,
+        hasEmailCapture:ctx.hasEmailCapture,
+        brandSystem:ctx.brandSystem,
+        websiteLive:ctx.websiteLive,
+        stripeConnected:ctx.stripeConnected,
+        industry:ctx.industry||ctx.industryKey||ctx.businessType,
+        websiteScore:ctx.websiteScore,
+        bookingCount:ctx.bookingCount,
+        revenueLabel:ctx.revenueLabel,
+      });
+      return{
+        overall:h.overall,
+        label:h.label==='Healthy'?'Your business is healthy':('Business Health · '+h.label),
+        narrative:h.narrative,
+        dimensions:h.dimensions.map(d=>({
+          id:d.id,label:d.label,score:d.score,why:d.why,
+          recommendation:(h.recommendations.find(r=>r.id===d.id)||{}).detail||('Improve '+d.label.toLowerCase()+' with one focused action.'),
+          ask:'Why is my '+d.label+' Score '+d.score+'?',
+        })),
+        recommendations:h.recommendations,
+        evidenceNotes:h.evidenceNotes,
+        explain:h.narrative,
+        source:'hubly_business_quality',
+      };
+    }
     const scores={trust:clampScore(ctx.trustScore,95),bookings:clampScore(ctx.bookingsScore,90),growth:clampScore(ctx.growthScore,88),operations:clampScore(ctx.operationsScore,94),brand:clampScore(ctx.brandScore,91)};
     if(ctx.stripeConnected===false)scores.bookings=Math.min(scores.bookings,72);
     if(ctx.hasPortfolio===false)scores.trust=Math.min(scores.trust,78);

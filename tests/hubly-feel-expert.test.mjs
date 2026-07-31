@@ -123,7 +123,7 @@ test("hubly wires expert think path and choice chips", () => {
   assert.match(html, /isTalkSetChips/);
   assert.match(html, /isTalkExpertChip/);
   assert.match(html, /hubly-consultant\.js\?v=consultant-4/);
-  assert.match(html, /ai-workspace\.js\?v=aw-6/);
+  assert.match(html, /ai-workspace\.js\?v=aw-7/);
   assert.match(html, /hubly-taste\.js\?v=taste-2/);
 });
 
@@ -132,5 +132,5 @@ test("workspace has pride celebration + emotion motion", () => {
   assert.match(awJs, /You built this/);
   assert.match(awCss, /aw-pride/);
   assert.match(awCss, /is-celebrate/);
-  assert.match(awJs, /version: '1\.5\.0'/);
+  assert.match(awJs, /version: '1\.6\.0'/);
 });

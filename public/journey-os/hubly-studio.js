@@ -566,6 +566,17 @@
       kit.colors[0].hex = st.color;
       kit.colors[0].name = kit.colors[0].name || 'Primary';
     }
+    /* Business Quality Brand System — inherit personality / voice / image / motion */
+    if (!kit.system && typeof global.HublyBusinessQuality !== 'undefined' && global.HublyBusinessQuality.buildBrandSystem) {
+      try {
+        var system = global.HublyBusinessQuality.buildBrandSystem({
+          businessName: st.biz || st.businessName,
+          industry: st.businessType || st.industry,
+          direction: (st._aw && st._aw.chosenDirection) || 'minimal',
+        });
+        global.HublyBusinessQuality.applyBrandSystemToKit(kit, system);
+      } catch (e) {}
+    }
     return kit;
   }
 

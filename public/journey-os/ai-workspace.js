@@ -234,6 +234,7 @@
       text: String(text || ''),
       recommendation: recommendation || null,
       review: opts.review || null,
+      health: opts.health || null,
     });
     if (!opts.silentRender) renderIfMounted();
   }
@@ -264,9 +265,13 @@
         if (m.review && global.HublyWebsiteQuality && global.HublyWebsiteQuality.reviewHtml) {
           review = global.HublyWebsiteQuality.reviewHtml(m.review);
         }
+        var health = '';
+        if (m.health && global.HublyBusinessQuality && global.HublyBusinessQuality.healthHtml) {
+          health = global.HublyBusinessQuality.healthHtml(m.health);
+        }
         return (
           '<div class="aw-msg ' + side + '"><span class="who">' + who + '</span>' +
-          esc(m.text) + recHtml(m.recommendation) + review + '</div>'
+          esc(m.text) + recHtml(m.recommendation) + review + health + '</div>'
         );
       })
       .join('');
@@ -345,10 +350,17 @@
         var reviewStrip = aw.selfReview && global.HublyWebsiteQuality.reviewHtml
           ? global.HublyWebsiteQuality.reviewHtml(aw.selfReview)
           : '';
+        var brandStrip = aw.brandSystem && global.HublyBusinessQuality && global.HublyBusinessQuality.brandSystemHtml
+          ? global.HublyBusinessQuality.brandSystemHtml(aw.brandSystem)
+          : '';
+        var healthStrip = aw.health && global.HublyBusinessQuality && global.HublyBusinessQuality.healthHtml
+          ? global.HublyBusinessQuality.healthHtml(aw.health)
+          : '';
         return (
-          '<div class="aw-surface-panel">' + site + reviewStrip +
+          '<div class="aw-surface-panel">' + site + reviewStrip + brandStrip + healthStrip +
           '<div class="aw-chips"><span class="aw-chip is-on">Live website</span>' +
           (aw.quality ? '<span class="aw-chip">Quality ' + esc(String(aw.quality.overall || '')) + '</span>' : '') +
+          (aw.health ? '<span class="aw-chip">Health ' + esc(String(aw.health.overall || '')) + '</span>' : '') +
           '</div></div>'
         );
       }
@@ -611,11 +623,38 @@
     aw.selfReview = review;
     aw.quality = review.report;
     pushMessage('hubly', review.message || review.intro, null, { review: review });
+
+    /* Phase 2 — Business Quality after website self-review */
+    if (global.HublyBusinessQuality && global.HublyBusinessQuality.enrichExperience) {
+      var experience = {
+        live: aw.live,
+        industryKey: aw.project,
+        industryLabel: bizName(),
+        chosenDirection: aw.chosenDirection,
+        reviewCount: 0,
+      };
+      global.HublyBusinessQuality.enrichExperience(experience);
+      aw.live = experience.live;
+      aw.brandSystem = experience.brandSystem;
+      aw.sectionPlan = experience.sectionPlan;
+      aw.health = experience.health;
+      aw.imageDirection = experience.imageDirection;
+      if (experience.brandSystem) {
+        pushMessage('hubly', 'Brand System locked: ' + experience.brandSystem.personality + '. Every future page inherits voice, image direction, buttons, and motion.');
+      }
+      if (experience.imageDirection) {
+        pushMessage('hubly', experience.imageDirection.message);
+      }
+      if (experience.health) {
+        pushMessage('hubly', experience.health.narrative, null, { health: experience.health });
+      }
+    }
+
     setDoing('Waiting on Self Review…');
     setActivity([
       { label: 'Homepage built', status: 'done' },
       { label: 'Self Review ready', status: 'on' },
-      { label: 'Improve · Ignore · Compare', status: 'next' },
+      { label: 'Business Quality next', status: 'next' },
     ]);
     renderIfMounted();
     return review;
@@ -788,6 +827,39 @@
       enterBuildingMode('website', { doing: 'Reviewing your website…' });
       transition('reviewing_website', { surface: 'website', doing: 'Running Self Review…' });
       runSelfReview();
+      return;
+    }
+    if (/business health|how (is|healthy)|health (of|score)|am i healthy/i.test(lower)) {
+      enterBuildingMode('website', { doing: 'Checking Business Health…' });
+      if (global.HublyBusinessQuality && global.HublyBusinessQuality.assessHealth) {
+        var health = global.HublyBusinessQuality.assessHealth({
+          live: ensureState().live,
+          brandSystem: ensureState().brandSystem,
+          reviewCount: 0,
+          industry: bizName(),
+        });
+        ensureState().health = health;
+        pushMessage('hubly', health.narrative, null, { health: health });
+        setDoing('Business Health ready…');
+        renderIfMounted();
+      } else {
+        pushMessage('hubly', 'I\'ll score Business Health once your site is in the workspace.');
+      }
+      return;
+    }
+    if (/launch review|before (we )?launch|ready to (go )?live/i.test(lower)) {
+      enterBuildingMode('website', { doing: 'Running Launch Review…' });
+      if (global.HublyBusinessQuality && global.HublyBusinessQuality.launchReview) {
+        var lr = global.HublyBusinessQuality.launchReview({
+          industry: bizName(),
+          brandSystem: ensureState().brandSystem,
+          live: ensureState().live,
+        }, ensureState().live || {});
+        ensureState().launchReview = lr;
+        pushMessage('hubly', lr.message || lr.intro);
+        setDoing('Launch Review ready…');
+        renderIfMounted();
+      }
       return;
     }
     if (/compare|two directions|split/.test(lower)) {
@@ -986,7 +1058,7 @@
   }
 
   global.HublyAIWorkspace = {
-    version: '1.5.0',
+    version: '1.6.0',
     milestones: FOCUS_BLOCKS, // legacy alias
     focusBlocks: FOCUS_BLOCKS,
     states: STATES,

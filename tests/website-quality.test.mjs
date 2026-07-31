@@ -153,7 +153,7 @@ test("workspace wires Self Review loop", () => {
   assert.match(awJs, /HublyWebsiteQuality/);
   assert.match(awJs, /runSelfReview/);
   assert.match(awJs, /handleQualityAction/);
-  assert.match(awJs, /version: '1\.5\.0'/);
+  assert.match(awJs, /version: '1\.6\.0'/);
   assert.match(awCss, /\.wq-review/);
   assert.match(awCss, /\.wq-site/);
 });
