@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>hubly · Hubly learns how you work</title>
-<meta name="description" content="Most software makes you learn how it works. Hubly learns how you work. Ask Hubly what you need—or tell Hubly about your business and we'll build the rest.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
+<title>hubly · Built to help. Built to grow.</title>
+<meta name="description" content="Need work done? Building a business? Hubly helps with both. Tell Hubly what you need and it takes it from there.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23090b12'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,2643 +13,592 @@
 :root{
   --brand:#D9632D;
   --brand-dark:#B84E1F;
-  --navy:#141B2B;
-  --ink:#0f172a;
-  --ink-2:#475569;
-  --ink-3:#64748b;
-  --line:rgba(15,23,42,.10);
+  --bg:#06070c;
+  --bg-1:#0a0c14;
+  --bg-2:#12151f;
+  --bg-3:#171b28;
+  --line:rgba(255,255,255,.09);
+  --line-soft:rgba(255,255,255,.15);
+  --ink:#f5f6f8;
+  --ink-2:rgba(245,246,248,.68);
+  --ink-3:rgba(245,246,248,.46);
   --font:'DM Sans',system-ui,sans-serif;
   --display:'Plus Jakarta Sans',system-ui,sans-serif;
-  --radius:22px;
+  --page-x:clamp(18px,4.5vw,64px);
   --nav-h:64px;
-  --page-x:clamp(16px,4vw,64px);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
   font-family:var(--font);color:var(--ink);
-  background:#fff;-webkit-font-smoothing:antialiased;
+  background:var(--bg);-webkit-font-smoothing:antialiased;
   overflow-x:hidden;
 }
 a{color:inherit;text-decoration:none}
 button,input{font:inherit}
 button{cursor:pointer}
 img{max-width:100%;display:block}
+section{position:relative}
+.wrap{width:min(1200px,100%);margin:0 auto;padding:0 var(--page-x)}
 
-.hubly-mark{height:22px;width:auto;display:block}
-
-/* Wordmark lockup — single text run so hub/ly share one baseline */
 .hubly-lockup{
   font-family:var(--display);font-weight:800;letter-spacing:-.06em;
-  font-size:22px;line-height:1;color:#fff;display:inline-block;
-  white-space:nowrap;
+  font-size:22px;line-height:1;color:#fff;display:inline-block;white-space:nowrap;
 }
 .hubly-lockup .ly{color:var(--brand)}
-.nav .hubly-lockup{font-size:22px}
-.footer .hubly-lockup{font-size:18px;opacity:.95}
-.ask-panel-head .hubly-lockup{font-size:16px}
-.hero-lockup{
-  font-size:clamp(42px,9vw,72px);
-  letter-spacing:-.07em;
-  line-height:1;
-  color:#fff;
-  text-shadow:0 12px 40px rgba(0,0,0,.35);
-  opacity:0;animation:rise .7s ease .05s forwards;
-}
-.hero-mark{margin:0 0 18px;display:block}
-
-.nav .hubly-mark{height:24px}
-.footer .hubly-mark{height:20px;opacity:.95}
 
 /* —— Nav —— */
 .nav{
   position:fixed;top:0;left:0;right:0;z-index:60;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  min-height:var(--nav-h);
-  padding:12px var(--page-x);
-  background:transparent;
-  border-bottom:1px solid transparent;
-  transition:background .28s ease, border-color .28s ease, backdrop-filter .28s ease;
+  display:flex;align-items:center;justify-content:space-between;
+  min-height:var(--nav-h);padding:14px var(--page-x);
+  background:rgba(6,7,12,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid transparent;transition:border-color .25s ease,background .25s ease;
 }
-.nav.is-scrolled{
-  background:rgba(10,14,24,.88);
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  border-bottom-color:rgba(255,255,255,.08);
+.nav.is-scrolled{border-bottom-color:var(--line);background:rgba(6,7,12,.92)}
+.nav-signin{
+  color:rgba(255,255,255,.82);font-size:14px;font-weight:650;
+  padding:8px 4px;transition:color .18s ease;
 }
-.nav-brand{flex-shrink:0;display:inline-flex;align-items:center}
-.nav-links{display:none;gap:26px;align-items:center}
-.nav-links a{
-  color:rgba(255,255,255,.86);font-size:14px;font-weight:600;
-  transition:color .18s ease;
-}
-.nav-links a:hover{color:#fff}
-.nav-acts{display:flex;gap:8px;align-items:center;flex-shrink:0}
-.nav-login{color:#fff;font-size:13px;font-weight:650;padding:8px 6px;white-space:nowrap}
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  border-radius:999px;padding:10px 16px;font-size:13px;font-weight:750;
-  border:1px solid transparent;transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
-  white-space:nowrap;
-}
-.btn:hover{transform:translateY(-1px)}
-.btn-brand{
-  background:var(--brand);color:#fff;
-  box-shadow:0 10px 24px rgba(217,99,45,.28);
-}
-.btn-brand:hover{background:var(--brand-dark)}
-.btn-ghost{
-  background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.22);
-}
-.btn-ghost:hover{background:rgba(255,255,255,.18)}
-.btn-lg{padding:14px 22px;font-size:15px}
+.nav-signin:hover{color:#fff}
 
 /* —— Hero —— */
 .hero{
-  position:relative;
-  min-height:0;
-  display:flex;align-items:flex-start;
-  overflow:visible;color:#fff;
-  background:#0a0f1a;
-  isolation:isolate;
-  padding-top:var(--nav-h);
+  padding:calc(var(--nav-h) + 56px) 0 64px;
+  background:var(--bg);overflow:hidden;isolation:isolate;
 }
-@media(min-width:1100px){
-  .hero{overflow:hidden}
+.hero-bg{
+  position:absolute;inset:0;z-index:-2;
+  background-image:radial-gradient(rgba(255,255,255,.055) 1px,transparent 1px);
+  background-size:28px 28px;background-position:-4px -4px;
+  -webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 20%,#000 45%,transparent 92%);
+  mask-image:radial-gradient(ellipse 80% 70% at 50% 20%,#000 45%,transparent 92%);
 }
-.hero-media{
-  position:absolute;inset:0;z-index:0;
-  background:
-    url('https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=2400&q=90') center/cover no-repeat;
-  transform:scale(1.02);
-}
-.hero-media::before{
-  content:'';position:absolute;inset:0;
-  background:
-    linear-gradient(180deg,rgba(10,15,26,.58) 0%,rgba(10,15,26,.42) 38%,rgba(10,15,26,.88) 100%),
-    linear-gradient(115deg,rgba(10,15,26,.94) 0%,rgba(10,15,26,.55) 48%,rgba(20,27,43,.28) 100%),
-    radial-gradient(ellipse 55% 45% at 18% 70%,rgba(217,99,45,.22),transparent 70%);
-}
-.hero-media::after{
-  content:'';position:absolute;inset:0;pointer-events:none;
-  background:
-    repeating-linear-gradient(
-      -12deg,
-      transparent 0,
-      transparent 11px,
-      rgba(255,255,255,.015) 11px,
-      rgba(255,255,255,.015) 12px
-    );
-  opacity:.55;mix-blend-mode:overlay;
-}
-@media(min-width:1100px){
-  .hero-media{animation:ken 28s ease-in-out infinite alternate}
-}
-@keyframes ken{from{transform:scale(1.02)}to{transform:scale(1.07) translate(-0.8%,-0.4%)}}
+.hero-constellation{position:absolute;inset:0;z-index:-1;opacity:.55;pointer-events:none}
+.hero-copy{max-width:760px;margin:0 auto;text-align:center;padding:0 var(--page-x)}
 
-.hero-inner{
-  position:relative;z-index:2;width:min(1200px,100%);
-  margin:0 auto;
-  padding:clamp(18px,3vh,32px) var(--page-x) clamp(24px,4vh,40px);
-  display:grid;gap:22px;
+.eyebrow-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid var(--line-soft);background:rgba(255,255,255,.03);
+  border-radius:999px;padding:8px 16px 8px 12px;
+  font-size:12.5px;font-weight:650;color:var(--ink-2);margin-bottom:22px;
 }
-.hero-copy{max-width:720px;min-width:0}
-.eyebrow{
-  display:inline-block;font-size:11px;font-weight:800;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--brand);margin-bottom:12px;
-  opacity:0;animation:rise .7s ease .1s forwards;
-}
+.eyebrow-badge svg{width:14px;height:14px;flex-shrink:0;color:var(--brand)}
+
 .hero h1{
   font-family:var(--display);font-weight:800;letter-spacing:-.045em;
-  font-size:clamp(28px,5.8vw,52px);line-height:1.06;margin-bottom:12px;max-width:16ch;
-  opacity:0;animation:rise .75s ease .18s forwards;
+  font-size:clamp(34px,7vw,60px);line-height:1.08;margin-bottom:18px;
 }
-.hero h1 em{font-style:normal;color:var(--brand)}
-.hero-lead{
-  font-size:clamp(15px,2.1vw,18px);line-height:1.5;color:rgba(255,255,255,.84);
-  max-width:38ch;margin-bottom:18px;font-weight:450;
-  opacity:0;animation:rise .75s ease .28s forwards;
-}
-@keyframes rise{
-  from{opacity:0;transform:translateY(14px)}
-  to{opacity:1;transform:none}
-}
-.ask-pill{
-  display:flex;flex-direction:column;align-items:stretch;gap:10px;
-  background:#fff;border-radius:22px;padding:12px;
-  box-shadow:0 24px 56px rgba(0,0,0,.38), 0 0 0 1px rgba(255,255,255,.08);
-  max-width:640px;
-  opacity:0;animation:rise .75s ease .38s forwards;
-}
-.ask-pill input{
-  width:100%;min-width:0;border:0;outline:none;background:transparent;
-  padding:10px 10px;font-size:16px;color:var(--ink);
-}
-.ask-pill input::placeholder{color:#94a3b8}
-.ask-pill-acts{
-  display:grid;grid-template-columns:1fr;gap:8px;
-}
-.ask-pill-acts .btn{width:100%;padding:14px 18px;border-radius:14px}
-.ask-pill .btn-ghost{
-  background:#f1f5f9;color:var(--ink);border-color:#e2e8f0;
-}
-.ask-pill .btn-ghost:hover{background:#e2e8f0}
-.ask-pill .btn[disabled],.ask-pill .btn.is-disabled{
-  opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;
-}
-.ask-pill .btn.is-ready{
-  box-shadow:0 12px 28px rgba(217,99,45,.42);
-  animation:ctaReady .55s ease both;
-}
-@keyframes ctaReady{
-  from{transform:translateY(4px);filter:saturate(.8)}
-  to{transform:none;filter:none}
-}
-.hero-status{
-  min-height:22px;margin:10px 2px 0;font-size:13px;font-weight:650;
-  color:rgba(255,255,255,.82);letter-spacing:-.01em;
-  opacity:0;transition:opacity .25s ease;
-}
-.hero-status.is-on{opacity:1}
-.hero-status .dot{
-  display:inline-block;width:8px;height:8px;border-radius:999px;
-  background:#22c55e;margin-right:8px;box-shadow:0 0 0 4px rgba(34,197,94,.18);
-}
-.hero-status.is-learning .dot{background:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,.18)}
-@media(min-width:640px){
-  .ask-pill{
-    flex-direction:row;align-items:center;gap:0;
-    border-radius:999px;padding:6px 6px 6px 20px;
-    display:flex;
-  }
-  .ask-pill input{padding:14px 12px 14px 0;font-size:15px;flex:1}
-  .ask-pill-acts{
-    display:block;flex-shrink:0;
-  }
-  .ask-pill-acts .btn{width:auto;border-radius:999px;padding:14px 22px}
+.hero h1 .grow{color:var(--brand)}
+.hero-sub{
+  font-size:clamp(15px,2vw,18px);line-height:1.55;color:var(--ink-2);
+  max-width:46ch;margin:0 auto 34px;font-weight:450;
 }
 
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center;min-height:36px}
-.chip{
-  border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);
-  backdrop-filter:blur(8px);border-radius:999px;padding:7px 12px;
-  font-size:11px;font-weight:650;color:rgba(255,255,255,.88);
-  opacity:0;transform:translateY(8px);
-  transition:background .18s ease, transform .18s ease, opacity .4s ease;
+/* Ask input */
+.ask-wrap{position:relative;max-width:640px;margin:0 auto}
+.ask-glow{
+  position:absolute;left:50%;top:50%;width:120%;height:220%;
+  transform:translate(-50%,-50%);
+  background:radial-gradient(closest-side,rgba(217,99,45,.38),rgba(217,99,45,0) 72%);
+  filter:blur(6px);z-index:-1;pointer-events:none;
 }
-.chip.in{opacity:1;transform:none}
-.chip:hover{background:rgba(255,255,255,.2);transform:translateY(-1px)}
+.ask-box{
+  position:relative;background:var(--bg-2);border:1px solid var(--line-soft);
+  border-radius:24px;box-shadow:0 30px 70px rgba(0,0,0,.55);
+  padding:20px 18px 60px;text-align:left;
+}
+.ask-box input{
+  width:100%;border:0;outline:none;background:transparent;color:var(--ink);
+  font-size:16px;padding:4px 2px;
+}
+.ask-box input::placeholder{color:var(--ink-3)}
+.ask-icon-left{
+  position:absolute;left:18px;bottom:14px;width:22px;height:22px;
+  color:var(--ink-3);display:flex;align-items:center;justify-content:center;
+}
+.ask-submit{
+  position:absolute;right:12px;bottom:10px;width:42px;height:42px;border-radius:50%;
+  background:var(--brand);border:0;display:flex;align-items:center;justify-content:center;
+  color:#fff;box-shadow:0 10px 24px rgba(217,99,45,.45);
+  transition:transform .18s ease,background .18s ease;
+}
+.ask-submit:hover{background:var(--brand-dark);transform:translateY(-1px)}
+.ask-submit svg{width:18px;height:18px}
 
-/* Live AI demo — one continuous workflow, motion connects scenes */
-.hero-float{display:none}
-@media(min-width:1100px){
-  /* Shorter than the viewport so “How it works” peeks — not a dead full-screen site */
-  .hero{
-    height:auto;
-    min-height:0;
-    max-height:none;
-  }
-  .hero-inner{
-    grid-template-columns:minmax(0,1.15fr) 340px;
-    align-items:start;gap:28px;
-    padding-top:clamp(8px,1.6vh,16px);
-    padding-bottom:clamp(18px,2.8vh,28px);
-    width:min(1200px,100%);
-    height:auto;
-  }
-  .hero-float{
-    display:block;
-    width:340px;
-    height:460px;
-    justify-self:end;
-    align-self:start;
-    margin-top:2px;
-    opacity:0;animation:rise .85s ease .45s forwards;
-  }
+/* Capability row */
+.cap-row{
+  margin-top:64px;display:grid;grid-template-columns:repeat(5,1fr);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
 }
-.ai-flow{
-  position:relative;
-  width:100%;
-  height:100%;
-  display:flex;
-  flex-direction:column;
+.cap-item{
+  padding:26px 18px;text-align:center;border-left:1px solid var(--line);
 }
-.ai-demo{
-  background:rgba(20,27,43,.92);backdrop-filter:blur(16px);
-  border:1px solid rgba(255,255,255,.12);border-radius:24px;
-  padding:18px 18px 16px;color:#fff;
-  box-shadow:0 28px 64px rgba(0,0,0,.4);
-  width:100%;
-  height:220px;
-  min-height:220px;
-  max-height:220px;
-  overflow:hidden;
-  display:flex;flex-direction:column;
-  flex-shrink:0;
-  transition:box-shadow .5s ease, border-color .5s ease;
+.cap-item:first-child{border-left:0}
+.cap-ico{
+  width:26px;height:26px;margin:0 auto 12px;color:#fff;
 }
-.ai-demo.searching{
-  border-color:rgba(217,99,45,.35);
-  box-shadow:0 28px 64px rgba(0,0,0,.4), 0 0 36px rgba(217,99,45,.18);
+.cap-ico .accent{color:var(--brand);fill:var(--brand)}
+.cap-item h3{font-family:var(--display);font-size:14px;font-weight:750;margin-bottom:6px;letter-spacing:-.01em}
+.cap-item p{font-size:12.5px;line-height:1.45;color:var(--ink-3)}
+
+/* Popular services */
+.services-head{display:flex;align-items:baseline;justify-content:space-between;margin:64px 0 18px;padding:0 var(--page-x)}
+.services-head h2{font-family:var(--display);font-size:18px;font-weight:750}
+.services-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:12px;padding:0 var(--page-x);
 }
-.ai-demo-head{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;
-  flex-shrink:0;
+.svc-tile{
+  position:relative;aspect-ratio:3/4;border-radius:14px;overflow:hidden;
+  background-size:cover;background-position:center;border:1px solid var(--line);
 }
-.ai-demo-head strong{
-  font-family:var(--display);font-size:13px;font-weight:800;letter-spacing:-.02em;
+.svc-tile::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(6,7,12,0) 45%,rgba(6,7,12,.88) 100%);
 }
-.ai-live{
-  display:inline-flex;align-items:center;gap:6px;
-  font-size:11px;font-weight:700;color:rgba(255,255,255,.55);
+.svc-tile-label{
+  position:absolute;left:9px;bottom:9px;z-index:1;display:flex;align-items:center;gap:6px;
 }
-.ai-live .pulse{
-  width:7px;height:7px;border-radius:50%;background:var(--brand);
-  box-shadow:0 0 0 0 rgba(217,99,45,.4);
-  animation:pulse 2.6s ease infinite;
+.svc-tile-label svg{width:14px;height:14px;color:#fff;flex-shrink:0}
+.svc-tile-label span{font-size:11.5px;font-weight:700;color:#fff;letter-spacing:-.01em}
+.services-more{padding:0 var(--page-x);margin-top:16px}
+.services-more a{color:var(--brand);font-size:13.5px;font-weight:700}
+
+@media(max-width:980px){
+  .cap-row{grid-template-columns:repeat(3,1fr)}
+  .cap-item:nth-child(3n+1){border-left:0}
+  .cap-item:nth-child(n+4){border-top:1px solid var(--line)}
+  .services-grid{grid-template-columns:repeat(4,1fr)}
 }
-@keyframes pulse{
-  0%{box-shadow:0 0 0 0 rgba(217,99,45,.4)}
-  70%{box-shadow:0 0 0 8px rgba(217,99,45,0)}
-  100%{box-shadow:0 0 0 0 rgba(217,99,45,0)}
-}
-.ai-user{
-  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
-  border-radius:14px;padding:11px 12px;font-size:13px;line-height:1.4;
-  color:rgba(255,255,255,.92);height:52px;min-height:52px;max-height:52px;
-  margin-bottom:12px;flex-shrink:0;overflow:hidden;
-}
-.ai-user .cursor{
-  display:inline-block;width:2px;height:1em;background:var(--brand);
-  margin-left:2px;vertical-align:-2px;animation:blink 1s step-end infinite;
-}
-@keyframes blink{50%{opacity:0}}
-.ai-tags{
-  display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px;
-  margin-bottom:10px;height:56px;min-height:56px;max-height:56px;
-  overflow:hidden;flex-shrink:0;
-}
-.ai-tag{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;
-  background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.28);
-  opacity:0;transform:translateY(4px);
-  transition:opacity .45s ease, transform .45s ease;
-}
-.ai-tag.in{opacity:1;transform:none}
-.ai-status{
-  font-size:12px;font-weight:650;color:rgba(255,255,255,.62);
-  display:flex;align-items:center;gap:8px;height:22px;min-height:22px;
-  margin-top:auto;flex-shrink:0;overflow:hidden;
-}
-.ai-status .dots span{
-  display:inline-block;width:4px;height:4px;border-radius:50%;
-  background:rgba(255,255,255,.55);margin-right:3px;
-  animation:dot 1.4s ease infinite;
-}
-.ai-status .dots span:nth-child(2){animation-delay:.18s}
-.ai-status .dots span:nth-child(3){animation-delay:.36s}
-@keyframes dot{
-  0%,80%,100%{opacity:.3;transform:translateY(0)}
-  40%{opacity:1;transform:translateY(-2px)}
+@media(max-width:640px){
+  .services-grid{grid-template-columns:repeat(2,1fr)}
+  .cap-row{grid-template-columns:repeat(2,1fr)}
+  .cap-item:nth-child(3n+1){border-left:1px solid var(--line)}
+  .cap-item:nth-child(2n+1){border-left:0}
+  .cap-item:nth-child(n+3){border-top:1px solid var(--line)}
 }
 
-/* Motion connector — no arrows/lines; orange intelligence travels down */
-.ai-beam{
-  position:relative;
-  height:56px;
-  flex-shrink:0;
-  overflow:hidden;
-  pointer-events:none;
-}
-.ai-beam .orb{
-  position:absolute;
-  left:50%;
-  top:0;
-  width:14px;height:14px;
-  margin-left:-7px;
-  border-radius:50%;
-  background:radial-gradient(circle at 35% 35%,#ffb089 0%,var(--brand) 55%,#b84e1f 100%);
-  box-shadow:
-    0 0 18px 6px rgba(217,99,45,.55),
-    0 0 42px 14px rgba(217,99,45,.22);
-  opacity:0;
-  transform:translateY(-6px) scale(.55);
-  filter:blur(.2px);
-}
-.ai-beam .trail{
-  position:absolute;
-  left:50%;
-  top:0;
-  width:3px;
-  height:0;
-  margin-left:-1.5px;
-  border-radius:999px;
-  background:linear-gradient(180deg,rgba(217,99,45,0),rgba(217,99,45,.55),rgba(217,99,45,0));
-  opacity:0;
-}
-.ai-beam.run .orb{
-  animation:aiOrb 1.15s cubic-bezier(.45,.05,.25,1) forwards;
-}
-.ai-beam.run .trail{
-  animation:aiTrail 1.15s cubic-bezier(.45,.05,.25,1) forwards;
-}
-@keyframes aiOrb{
-  0%{opacity:0;transform:translateY(-6px) scale(.55)}
-  12%{opacity:1;transform:translateY(2px) scale(1)}
-  78%{opacity:1;transform:translateY(38px) scale(1)}
-  100%{opacity:0;transform:translateY(52px) scale(.7)}
-}
-@keyframes aiTrail{
-  0%{opacity:0;height:0;transform:translateY(0)}
-  18%{opacity:.9;height:18px}
-  70%{opacity:.55;height:40px;transform:translateY(8px)}
-  100%{opacity:0;height:10px;transform:translateY(42px)}
+/* Section shell */
+.sec{padding:80px 0}
+.sec-head{max-width:640px;margin:0 auto 44px;text-align:center}
+.sec-head .kicker{color:var(--brand);font-size:12px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.sec-head h2{font-family:var(--display);font-weight:800;letter-spacing:-.03em;font-size:clamp(26px,4vw,38px);margin-bottom:12px}
+.sec-head p{color:var(--ink-2);font-size:15.5px;line-height:1.6}
+
+/* Section 5 — transform */
+.xform-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:920px;margin:0 auto}
+.xform-card{background:var(--bg-2);border:1px solid var(--line);border-radius:20px;padding:28px 26px}
+.xform-card.is-ready{border-color:rgba(217,99,45,.4);box-shadow:0 0 0 1px rgba(217,99,45,.12) inset,0 24px 48px rgba(217,99,45,.08)}
+.xform-card h3{font-family:var(--display);font-size:16px;font-weight:750;margin-bottom:16px}
+.xform-card ul{list-style:none;display:flex;flex-direction:column;gap:12px}
+.xform-card li{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink-2)}
+.xform-card li svg{width:16px;height:16px;flex-shrink:0;color:var(--ink-3)}
+.xform-card.is-ready li svg{color:var(--brand)}
+.xform-card.is-ready li{color:var(--ink)}
+.xform-notes{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:920px;margin:40px auto 0}
+.xform-note{display:flex;align-items:flex-start;gap:10px}
+.xform-note svg{width:18px;height:18px;color:var(--brand);flex-shrink:0;margin-top:1px}
+.xform-note span{font-size:13.5px;color:var(--ink-2);line-height:1.5}
+@media(max-width:760px){
+  .xform-grid{grid-template-columns:1fr}
+  .xform-notes{grid-template-columns:1fr}
 }
 
-/* Match result — only appears after Hubly finds a match (never a dimmed ghost) */
-.ai-result{
-  height:184px;
-  min-height:184px;
-  max-height:184px;
-  position:relative;
-  border-radius:24px;
-  background:rgba(20,27,43,.94);
-  border:1px solid rgba(255,255,255,.16);
-  overflow:hidden;
-  flex-shrink:0;
-  opacity:0;
-  visibility:hidden;
-  pointer-events:none;
-  transform:translateY(8px);
-  transition:opacity .55s ease, visibility .55s ease, transform .55s ease, box-shadow .7s ease;
+/* Section 6 — categories */
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.cat-card{
+  display:flex;align-items:center;gap:12px;background:var(--bg-2);border:1px solid var(--line);
+  border-radius:14px;padding:16px 16px;transition:border-color .18s ease,transform .18s ease;
 }
-.ai-result.waiting{
-  opacity:0;
-  visibility:hidden;
-  pointer-events:none;
-  transform:translateY(8px);
-  box-shadow:none;
-}
-.ai-result.lit{
-  opacity:1;
-  visibility:visible;
-  pointer-events:auto;
-  transform:none;
-  box-shadow:0 28px 64px rgba(0,0,0,.42), 0 0 40px rgba(217,99,45,.22);
-}
-.ai-result.lit.hold{
-  animation:resultGlow 3.6s ease-in-out infinite;
-}
-@keyframes resultGlow{
-  0%,100%{box-shadow:0 28px 64px rgba(0,0,0,.42), 0 0 36px rgba(217,99,45,.16)}
-  50%{box-shadow:0 28px 64px rgba(0,0,0,.42), 0 0 52px rgba(217,99,45,.28)}
-}
-.ai-result:not(.lit) .ai-result-card{
-  opacity:0!important;
-  visibility:hidden!important;
-  pointer-events:none!important;
-}
-.ai-result-card{
-  position:absolute;inset:12px;
-  background:#fff;
-  color:var(--ink);
-  border-radius:18px;
-  padding:14px 14px 12px;
-  display:flex;flex-direction:column;
-  box-shadow:0 16px 36px rgba(0,0,0,.22);
-  opacity:0;
-  transform:translateY(10px);
-  transition:opacity .75s cubic-bezier(.22,1,.36,1), transform .75s cubic-bezier(.22,1,.36,1);
-  pointer-events:none;
-}
-.ai-result-card.show{
-  opacity:1;
-  transform:none;
-}
-.result-found{
-  display:flex;align-items:center;gap:6px;
-  font-size:12px;font-weight:800;color:var(--brand);
-  margin-bottom:12px;letter-spacing:-.01em;
-  opacity:0;transform:translateY(6px);
-  transition:opacity .45s ease, transform .45s ease;
-}
-.ai-result-card.show .result-found{opacity:1;transform:none;transition-delay:.05s}
-.result-found .check{
-  display:inline-grid;place-items:center;
-  width:16px;height:16px;border-radius:50%;
-  background:rgba(217,99,45,.12);color:var(--brand);
-  font-size:10px;line-height:1;
-}
-.result-body{
-  display:grid;
-  grid-template-columns:72px 1fr;
-  gap:12px;
-  align-items:start;
-  margin-bottom:12px;
-}
-.result-thumb{
-  width:72px;height:72px;border-radius:12px;object-fit:cover;
-  background:#e2e8f0;display:block;
-  opacity:0;transform:scale(.96);
-  transition:opacity .5s ease, transform .5s ease;
-}
-.ai-result-card.show .result-thumb{opacity:1;transform:none;transition-delay:.12s}
-.result-info{min-width:0}
-.result-name{
-  font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:-.03em;
-  color:var(--navy);line-height:1.2;margin-bottom:5px;
-  opacity:0;transform:translateY(6px);
-  transition:opacity .45s ease, transform .45s ease;
-}
-.ai-result-card.show .result-name{opacity:1;transform:none;transition-delay:.2s}
-.result-rating{
-  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
-  font-size:11px;font-weight:700;color:#f59e0b;margin-bottom:8px;
-  opacity:0;transform:translateY(6px);
-  transition:opacity .45s ease, transform .45s ease;
-}
-.ai-result-card.show .result-rating{opacity:1;transform:none;transition-delay:.28s}
-.result-rating .score{color:var(--ink);font-weight:800}
-.result-rating .reviews{color:var(--ink-3);font-weight:600}
-.result-line{
-  font-size:12px;color:var(--ink-2);font-weight:650;line-height:1.35;margin-bottom:3px;
-  opacity:0;transform:translateY(6px);
-  transition:opacity .45s ease, transform .45s ease;
-}
-.ai-result-card.show .result-line{opacity:1;transform:none;transition-delay:.36s}
-.ai-result-card.show .result-line + .result-line{transition-delay:.44s}
-.result-line strong{color:var(--ink);font-weight:800}
-.result-cta{
-  margin-top:auto;
-  display:block;text-align:center;
-  background:var(--brand);color:#fff;
-  border-radius:999px;padding:11px 14px;
-  font-size:13px;font-weight:800;
-  opacity:0;transform:translateY(8px);
-  transition:opacity .55s ease, transform .55s ease;
-}
-.ai-result-card.show .result-cta{opacity:1;transform:none;transition-delay:.55s}
-.result-trust{
-  margin-top:10px;
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  font-size:10px;font-weight:650;color:var(--ink-3);
-  opacity:0;transition:opacity .45s ease;
-}
-.ai-result-card.show .result-trust{opacity:1;transition-delay:.7s}
-.result-trust svg{width:12px;height:12px;flex-shrink:0;color:var(--brand)}
+.cat-card:hover{border-color:var(--line-soft);transform:translateY(-1px)}
+.cat-card svg{width:20px;height:20px;color:#fff;flex-shrink:0}
+.cat-card span{font-size:14px;font-weight:650}
+@media(max-width:900px){.cat-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
 
-/* —— Shared —— */
-.wrap{width:min(1180px,100%);margin:0 auto;padding:clamp(40px,6vh,84px) var(--page-x)}
-.band{background:#fff;position:relative;z-index:1}
-.band-soft{background:#f7f8fa;position:relative;z-index:1}
-.kicker{
-  font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--brand);margin-bottom:10px;
-}
-.sec-title{
-  font-family:var(--display);font-weight:800;letter-spacing:-.045em;
-  font-size:clamp(28px,5.2vw,52px);line-height:1.06;margin-bottom:12px;
-}
-.sec-title em{font-style:normal;color:var(--brand)}
-.sec-lead{color:var(--ink-2);font-size:clamp(15px,2vw,18px);line-height:1.55;max-width:44ch;margin-bottom:28px;font-weight:450}
-.sec-head{margin-bottom:26px;text-align:center}
-.sec-head .sec-lead{margin-left:auto;margin-right:auto;margin-bottom:0}
+/* Section 7 — features */
+.feat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.feat-card{background:var(--bg-2);border:1px solid var(--line);border-radius:18px;padding:24px 20px}
+.feat-ico{width:26px;height:26px;color:var(--brand);margin-bottom:16px}
+.feat-card h3{font-family:var(--display);font-size:15px;font-weight:750;margin-bottom:8px}
+.feat-card p{font-size:13.5px;line-height:1.5;color:var(--ink-3)}
+@media(max-width:900px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.feat-grid{grid-template-columns:1fr}}
 
-/* —— Industries (adapts blueprints) —— */
-.band-industries{
-  background:
-    radial-gradient(ellipse 70% 50% at 50% -10%,rgba(217,99,45,.18),transparent 55%),
-    radial-gradient(ellipse 40% 35% at 100% 80%,rgba(217,99,45,.08),transparent 50%),
-    linear-gradient(180deg,#10151f 0%,#0a0e16 100%);
-  color:#fff;
-  position:relative;z-index:1;
-  overflow:hidden;
-}
-.band-industries .sec-head{margin-bottom:32px}
-.band-industries .sec-title{
-  color:#fff;max-width:18ch;margin-left:auto;margin-right:auto;
-}
-.band-industries .sec-title em{color:var(--brand)}
-.band-industries .sec-lead{
-  color:rgba(255,255,255,.72);max-width:46ch;margin-left:auto;margin-right:auto;
-}
-.ind-compact-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;
-}
-@media(min-width:720px){
-  .ind-compact-grid{grid-template-columns:repeat(3,1fr);gap:14px}
-}
-@media(min-width:1100px){
-  .ind-compact-grid{grid-template-columns:repeat(5,1fr);gap:14px}
-}
-.ind-sm{
-  position:relative;aspect-ratio:4/5;border-radius:18px;overflow:hidden;
-  isolation:isolate;color:#fff;display:block;
-  box-shadow:0 14px 32px rgba(0,0,0,.24);
-  transition:transform .35s ease, box-shadow .35s ease;
-}
-.ind-sm-bg{
-  position:absolute;inset:0;background-size:cover;background-position:center;
-  transition:transform .7s ease;
-}
-.ind-sm-shade{
-  position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(8,11,18,.18) 0%,transparent 36%,rgba(8,11,18,.92) 100%);
-}
-.ind-sm-top{
-  position:absolute;top:12px;left:12px;z-index:2;
-}
-.ind-sm .ind-ico{
-  width:34px;height:34px;border-radius:999px;
-  background:rgba(20,27,43,.72);border:1px solid rgba(255,255,255,.14);
-  color:var(--brand);backdrop-filter:blur(8px);
-  display:grid;place-items:center;
-}
-.ind-sm .ind-ico svg{width:16px;height:16px}
-.ind-sm-body{
-  position:absolute;left:0;right:0;bottom:0;z-index:1;
-  padding:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;
-}
-.ind-sm-copy{min-width:0}
-.ind-sm h3{
-  margin:0;font-size:15px;font-weight:800;letter-spacing:-.015em;line-height:1.15;
-}
-.ind-sm-sub{
-  display:block;margin-top:3px;font-size:11px;font-weight:600;
-  color:rgba(255,255,255,.72);letter-spacing:.01em;
-}
-.ind-go{
-  width:32px;height:32px;border-radius:50%;flex-shrink:0;
-  display:grid;place-items:center;
-  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
-  color:#fff;transition:background .25s ease, transform .25s ease, border-color .25s ease;
-}
-.ind-go svg{width:14px;height:14px}
-@media(hover:hover){
-  .ind-sm:hover{transform:translateY(-3px);box-shadow:0 18px 36px rgba(0,0,0,.32)}
-  .ind-sm:hover .ind-sm-bg{transform:scale(1.07)}
-  .ind-sm:hover .ind-go{background:var(--brand);border-color:var(--brand)}
-}
+/* Section 8 — bottom CTA + footer */
+.bottom-cta{text-align:center;padding:88px 0}
+.bottom-cta h2{font-family:var(--display);font-weight:800;letter-spacing:-.03em;font-size:clamp(26px,4vw,38px);margin-bottom:12px}
+.bottom-cta p{color:var(--ink-2);font-size:15.5px;margin-bottom:34px}
 
-.ind-panel{
-  display:grid;gap:0;margin-top:4px;
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.1);
-  border-radius:20px;overflow:hidden;
-}
-@media(min-width:900px){
-  .ind-panel{grid-template-columns:1.15fr repeat(4,1fr)}
-}
-.ind-build{
-  display:flex;flex-direction:column;align-items:flex-start;gap:12px;
-  padding:22px 20px;text-decoration:none;color:#fff;
-  background:rgba(217,99,45,.06);
-  border:1px solid rgba(217,99,45,.45);
-  border-radius:18px;margin:10px;
-}
-@media(min-width:900px){
-  .ind-build{margin:12px;height:calc(100% - 24px);box-sizing:border-box}
-}
-.ind-build-stars{
-  display:flex;gap:4px;color:var(--brand);
-}
-.ind-build-stars svg{width:12px;height:12px}
-.ind-build h3{
-  font-family:var(--display);font-size:clamp(20px,2.2vw,24px);
-  font-weight:800;letter-spacing:-.03em;line-height:1.15;margin:0;color:#fff;
-}
-.ind-build h3 em{font-style:normal;color:var(--brand)}
-.ind-build p{
-  margin:0;font-size:13px;line-height:1.4;color:rgba(255,255,255,.68);
-}
-.ind-build-btn{
-  display:inline-flex;align-items:center;gap:6px;margin-top:4px;
-  padding:10px 14px;border-radius:12px;
-  background:var(--brand);color:#fff;font-weight:800;font-size:13px;
-  box-shadow:0 8px 18px rgba(217,99,45,.35);
-}
-.ind-cap{
-  display:flex;flex-direction:column;align-items:center;text-align:center;
-  gap:10px;padding:22px 16px;color:#fff;
-}
-@media(min-width:900px){
-  .ind-cap + .ind-cap{border-left:1px solid rgba(255,255,255,.08)}
-}
-@media(max-width:899px){
-  .ind-cap{align-items:flex-start;text-align:left;border-top:1px solid rgba(255,255,255,.08)}
-  .ind-build{margin:12px 12px 0}
-}
-.ind-cap-ico{
-  width:40px;height:40px;border-radius:12px;
-  display:grid;place-items:center;color:var(--brand);
-  background:rgba(217,99,45,.12);border:1px solid rgba(217,99,45,.22);
-}
-.ind-cap-ico svg{width:20px;height:20px}
-.ind-cap h4{
-  margin:0;font-size:14px;font-weight:800;letter-spacing:-.02em;color:#fff;
-}
-.ind-cap p{
-  margin:0;font-size:12px;line-height:1.45;color:rgba(255,255,255,.62);max-width:22ch;
-}
-@media(min-width:900px){
-  .ind-cap p{margin-left:auto;margin-right:auto}
-}
-.ind-trust-pill{
-  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 18px;
-  margin-top:16px;padding:14px 18px;border-radius:999px;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-}
-.ind-trust-left{
-  display:flex;align-items:center;gap:10px;
-  color:rgba(255,255,255,.78);font-size:13px;font-weight:600;line-height:1.35;
-}
-.ind-trust-left svg{width:18px;height:18px;color:var(--brand);flex-shrink:0}
-.ind-trust-checks{
-  display:flex;flex-wrap:wrap;gap:10px 16px;list-style:none;margin:0;padding:0;
-}
-.ind-trust-checks li{
-  display:flex;align-items:center;gap:6px;
-  color:rgba(255,255,255,.88);font-size:12px;font-weight:700;
-}
-.ind-trust-checks li::before{
-  content:"✓";color:#22c55e;font-weight:800;
-}
-
-/* —— Journey —— */
-.journey{
-  position:relative;
-  display:grid;grid-template-columns:1fr;gap:8px;
-  max-width:980px;margin:0 auto;padding-top:4px;
-}
-@media(min-width:720px){
-  .journey{grid-template-columns:1fr 1fr;gap:12px 18px;padding-top:8px}
-}
-.hero-path-hint{
-  margin-top:12px;font-size:13px;font-weight:550;color:rgba(255,255,255,.68);
-  max-width:48ch;line-height:1.45;
-  opacity:0;animation:rise .75s ease .42s forwards;
-}
-.hero-path-hint a{color:#fff;font-weight:750;text-decoration:underline;text-underline-offset:3px}
-.hero-path-hint a:hover{color:var(--brand)}
-.path-tabs{
-  display:inline-flex;gap:2px;padding:3px;margin-bottom:14px;
-  border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
-  opacity:0;animation:rise .7s ease .12s forwards;
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-}
-.path-tab{
-  border:0;background:transparent;color:rgba(255,255,255,.72);
-  font-size:12px;font-weight:750;padding:8px 14px;border-radius:999px;cursor:pointer;
-  transition:background .18s ease, color .18s ease;
-}
-.path-tab.is-on{
-  background:rgba(255,255,255,.94);color:var(--navy);
-  box-shadow:0 6px 16px rgba(0,0,0,.18);
-}
-.path-tab:hover:not(.is-on){color:#fff}
-.chips-label{
-  width:100%;font-size:11px;font-weight:700;letter-spacing:.06em;
-  text-transform:uppercase;color:rgba(255,255,255,.48);margin:4px 0 2px;
-}
-.browse-more{
-  display:inline-flex;align-items:center;font-size:13px;font-weight:750;
-  color:#fff;text-decoration:underline;text-underline-offset:3px;margin-left:4px;
-}
-.browse-more:hover{color:var(--brand)}
-
-/* —— Journey destinations (not feature columns) —— */
-.trust-strip-lead,
-.trust-strip{display:none}
-.journeys-band{
-  background:
-    radial-gradient(ellipse 60% 40% at 50% 0%,rgba(217,99,45,.06),transparent 55%),
-    linear-gradient(180deg,#f8f6f4 0%,#fff 70%);
-  padding:clamp(36px,5.5vh,64px) var(--page-x);
-  border-bottom:1px solid var(--line);
-  position:relative;z-index:1;
-}
-.journeys-band .sec-head{margin-bottom:24px}
-.journeys-band .sec-title{
-  font-size:clamp(28px,4.4vw,44px);margin-bottom:10px;
-}
-.journeys-band .sec-title .two-exp{
-  font-style:normal;color:var(--brand);
-}
-.journeys-band .sec-lead{
-  max-width:36rem;margin:0 auto 14px;color:var(--ink-2);
-  font-size:clamp(15px,1.9vw,17px);
-}
-.journeys-ask{
-  font-family:var(--display);font-weight:800;letter-spacing:-.03em;
-  font-size:clamp(18px,2.6vw,24px);color:var(--ink);margin:0;
-}
-.journeys-ask em{font-style:normal;color:var(--brand)}
-.journey-dests{
-  display:grid;gap:16px;max-width:980px;margin:0 auto;
-}
-@media(min-width:860px){
-  .journey-dests{grid-template-columns:1fr 1fr;gap:18px;align-items:stretch}
-}
-.journey-dest{
-  --journey-accent:var(--brand);
-  position:relative;overflow:hidden;
-  display:flex;flex-direction:column;align-items:flex-start;gap:10px;
-  height:100%;box-sizing:border-box;
-  text-align:left;padding:24px 22px 20px;
-  border:1px solid rgba(15,23,42,.08);border-radius:24px;
-  box-shadow:0 10px 28px rgba(15,23,42,.05);
-  transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-  color:inherit;cursor:pointer;text-decoration:none;
-}
-.journey-dest:hover{
-  transform:translateY(-3px);
-  box-shadow:0 18px 40px rgba(15,23,42,.1);
-  border-color:color-mix(in srgb, var(--journey-accent) 42%, transparent);
-}
-.journey-dest:focus-visible{
-  outline:2px solid var(--journey-accent);outline-offset:3px;
-}
-.journey-dest-primary{
-  --journey-accent:var(--brand);
-  background:linear-gradient(165deg,#fff9f5 0%,#fff 58%);
-  border-color:rgba(217,99,45,.3);
-}
-.journey-dest-help{
-  --journey-accent:var(--navy);
-  background:linear-gradient(165deg,#f4f6fa 0%,#fff 58%);
-  border-color:rgba(20,27,43,.16);
-}
-.journey-role{
-  display:inline-flex;align-items:center;gap:8px;
-}
-.journey-role-ico{
-  width:32px;height:32px;border-radius:10px;
-  display:grid;place-items:center;color:#fff;background:var(--journey-accent);
-}
-.journey-role-ico svg{width:16px;height:16px;display:block}
-.journey-role-label{
-  font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--journey-accent);
-}
-.journey-dest h3{
-  font-family:var(--display);font-weight:800;letter-spacing:-.035em;
-  font-size:clamp(22px,3vw,28px);margin:0;color:var(--ink);line-height:1.1;
-}
-.journey-dest-primary h3 em{font-style:normal;color:var(--brand)}
-.journey-dest-help h3 em{font-style:normal;color:var(--navy)}
-.journey-dest > p.journey-desc{
-  margin:0;color:var(--ink-2);font-size:14px;line-height:1.45;max-width:34ch;
-  min-height:2.9em;
-}
-.journey-steps{
-  list-style:none;margin:2px 0 0;padding:0;display:grid;gap:6px;width:100%;
-  flex:1;
-}
-.journey-steps li{
-  display:flex;align-items:center;gap:8px;
-  font-size:13px;line-height:1.3;color:var(--ink);font-weight:700;
-}
-.journey-steps li::before{
-  content:"✓";width:18px;height:18px;border-radius:999px;flex-shrink:0;
-  display:grid;place-items:center;
-  background:color-mix(in srgb, var(--journey-accent) 14%, #fff);
-  color:var(--journey-accent);font-weight:800;font-size:11px;
-}
-.journey-steps strong{font-weight:800}
-.journey-cta-wrap{margin-top:auto;padding-top:12px;width:100%}
-.journey-dest .btn-journey{
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  width:100%;
-  background:var(--journey-accent);color:#fff;border:none;
-  border-radius:12px;padding:12px 16px;
-  font-weight:800;font-size:14px;letter-spacing:-.01em;
-  box-shadow:0 8px 18px color-mix(in srgb, var(--journey-accent) 26%, transparent);
-}
-.journey-foot{
-  margin:0;font-size:12px;font-weight:650;color:var(--ink-3);min-height:1.2em;
-}
-.journey-trustbar{
-  display:grid;gap:8px;max-width:980px;margin:18px auto 0;
-  grid-template-columns:1fr 1fr;
-}
-@media(min-width:800px){
-  .journey-trustbar{grid-template-columns:repeat(4,1fr);gap:10px}
-}
-.journey-trust-item{
-  display:flex;align-items:center;gap:10px;
-  padding:12px 12px;border-radius:14px;
-  background:transparent;border:1px solid rgba(15,23,42,.08);
-}
-.journey-trust-ico{
-  width:30px;height:30px;border-radius:10px;flex-shrink:0;
-  display:grid;place-items:center;color:#fff;
-}
-.journey-trust-ico svg{width:15px;height:15px}
-.journey-trust-ico.ai{background:var(--brand)}
-.journey-trust-ico.pro{background:var(--navy)}
-.journey-trust-ico.lock{background:#16a34a}
-.journey-trust-ico.both{background:#334155}
-.journey-trust-item p{
-  margin:0;font-size:12px;line-height:1.25;color:var(--ink-3);font-weight:550;
-}
-.journey-trust-item strong{
-  display:block;color:var(--ink);font-weight:800;font-size:13px;margin-bottom:1px;
-  letter-spacing:-.02em;
-}
-.band.trust-band{padding:clamp(28px,4vh,48px) 0}
-.band-industries{padding:clamp(36px,6vh,64px) 0}
-.xform{
-  padding:clamp(52px,8vh,96px) var(--page-x);
-  background:
-    radial-gradient(ellipse 50% 30% at 80% 0%,rgba(217,99,45,.05),transparent 50%),
-    linear-gradient(180deg,#f3f1ee 0%,#f7f8fa 100%);
-  border-bottom:1px solid var(--line);
-  position:relative;z-index:1;
-}
-.xform .sec-head{margin-bottom:32px}
-.xform .sec-title{font-size:clamp(32px,5.2vw,52px);margin-bottom:12px}
-.xform .sec-lead{
-  max-width:36rem;margin:0 auto;color:var(--ink-2);
-  font-size:clamp(16px,2.2vw,19px);line-height:1.45;
-}
-.xform .sec-lead strong{color:var(--brand);font-weight:800}
-.xform-compare{
-  display:grid;gap:14px;max-width:1040px;margin:0 auto;
-  align-items:stretch;
-}
-@media(min-width:900px){
-  .xform-compare{
-    grid-template-columns:1fr 44px 1fr;
-    gap:18px;align-items:start;
-  }
-}
-.xform-card{
-  background:transparent;border:1px solid rgba(15,23,42,.1);
-  border-radius:24px;padding:22px 20px 18px;
-  box-shadow:none;
-}
-.xform-card.after{
-  border-color:rgba(217,99,45,.28);
-  background:rgba(255,255,255,.72);
-  box-shadow:0 16px 40px rgba(217,99,45,.08);
-}
-.xform-card.before{
-  background:rgba(255,255,255,.45);
-}
-.xform-badge{
-  display:inline-flex;align-items:center;
-  font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
-  border-radius:999px;padding:6px 12px;margin-bottom:14px;
-  white-space:nowrap;
-}
-.xform-card.before .xform-badge{
-  background:#e8edf3;color:#64748b;
-}
-.xform-card.after .xform-badge{
-  background:var(--brand);color:#fff;
-}
-.xform-card-title{
-  font-family:var(--display);font-weight:800;letter-spacing:-.035em;
-  font-size:clamp(22px,2.8vw,28px);line-height:1.15;
-  color:var(--ink);margin:0 0 18px;min-height:1.15em;
-}
-.xform-card.before .xform-card-title em{
-  font-style:normal;color:#94a3b8;
-}
-.xform-card.after .xform-card-title em{
-  font-style:normal;color:var(--brand);
-}
-.xform-rows{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.xform-row{
-  display:grid;grid-template-columns:28px 1fr 28px;align-items:center;gap:10px;
-  min-height:48px;padding:8px 6px;border-radius:14px;
-}
-.xform-mark{
-  width:28px;height:28px;border-radius:999px;
-  display:grid;place-items:center;flex-shrink:0;
-  font-size:13px;font-weight:800;line-height:1;
-}
-.xform-card.before .xform-mark{
-  background:#eef2f6;color:#94a3b8;
-}
-.xform-card.after .xform-mark{
-  background:rgba(217,99,45,.12);color:var(--brand);
-}
-.xform-row span{
-  font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em;
-}
-.xform-ico{
-  width:24px;height:24px;display:grid;place-items:center;justify-self:end;
-}
-.xform-ico svg{width:20px;height:20px;display:block}
-.xform-card.before .xform-ico{color:#cbd5e1}
-.xform-card.after .xform-ico{color:var(--brand)}
-.xform-arrows{
-  display:none;padding-top:92px;
-}
-@media(min-width:900px){
-  .xform-arrows{
-    display:grid;gap:8px;align-content:start;justify-items:center;
-  }
-}
-.xform-arrows span{
-  width:44px;height:48px;display:grid;place-items:center;
-  color:var(--brand);font-size:22px;font-weight:800;line-height:1;
-}
-.xform-mobile-arrow{
-  display:grid;place-items:center;color:var(--brand);
-  font-size:28px;font-weight:800;padding:2px 0;
-}
-@media(min-width:900px){
-  .xform-mobile-arrow{display:none}
-}
-.xform-benefits{
-  display:grid;gap:0;max-width:1040px;margin:28px auto 0;
-  background:transparent;border-radius:0;overflow:visible;
-  border:0;border-top:1px solid rgba(15,23,42,.1);
-}
-@media(min-width:800px){
-  .xform-benefits{grid-template-columns:repeat(3,1fr)}
-}
-.xform-benefit{
-  display:flex;align-items:flex-start;gap:14px;
-  padding:20px 22px;
-}
-@media(min-width:800px){
-  .xform-benefit + .xform-benefit{border-left:1px solid rgba(15,23,42,.1)}
-}
-@media(max-width:799px){
-  .xform-benefit + .xform-benefit{border-top:1px solid rgba(15,23,42,.1)}
-}
-.xform-benefit-ico{
-  width:40px;height:40px;border-radius:999px;flex-shrink:0;
-  display:grid;place-items:center;
-  background:var(--brand);color:#fff;
-}
-.xform-benefit-ico svg{width:18px;height:18px;display:block}
-.xform-benefit p{
-  margin:0;font-size:14px;line-height:1.45;color:var(--ink-2);font-weight:550;
-}
-.xform-benefit strong{
-  display:block;color:var(--ink);font-weight:800;letter-spacing:-.02em;
-  font-size:15px;margin-bottom:2px;
-}
-.imagine-band{
-  background:
-    radial-gradient(ellipse 70% 45% at 50% -5%, rgba(217,99,45,.28), transparent 58%),
-    radial-gradient(ellipse 40% 30% at 90% 80%, rgba(217,99,45,.1), transparent 50%),
-    linear-gradient(180deg,#0c121c 0%,#141B2B 55%,#0a0f18 100%);
-  color:#fff;
-  min-height:min(92vh,920px);
-  display:flex;align-items:center;
-  padding:clamp(48px,7vh,88px) var(--page-x);
-  position:relative;z-index:1;
-  overflow:hidden;
-}
-.imagine-band::before{
-  content:'';position:absolute;inset:0;pointer-events:none;opacity:.4;
-  background:
-    repeating-linear-gradient(
-      105deg,
-      transparent 0,
-      transparent 18px,
-      rgba(255,255,255,.012) 18px,
-      rgba(255,255,255,.012) 19px
-    );
-}
-.imagine-band .wrap{width:100%;text-align:center}
-.imagine-band .sec-title{
-  color:#fff;
-  font-size:clamp(30px,5.4vw,52px);line-height:1.08;margin-bottom:14px;
-  max-width:18ch;margin-left:auto;margin-right:auto;
-}
-.imagine-band .sec-title em{font-style:normal;color:var(--brand)}
-.imagine-promise{
-  margin:0 auto 10px;max-width:36rem;
-  font-size:clamp(15px,2.1vw,18px);line-height:1.45;font-weight:650;
-  color:rgba(255,255,255,.88);
-}
-.imagine-promise em{font-style:normal;color:var(--brand)}
-.imagine-band .sec-lead{
-  color:rgba(255,255,255,.72);max-width:36ch;margin:0 auto 28px;
-  font-size:clamp(15px,2vw,17px);
-}
-.imagine-caps{
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 14px;
-  max-width:980px;margin:0 auto 32px;
-}
-@media(min-width:720px){
-  .imagine-caps{grid-template-columns:repeat(3,1fr)}
-}
-@media(min-width:1000px){
-  .imagine-caps{grid-template-columns:repeat(6,1fr);gap:12px}
-}
-.imagine-cap{
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  text-align:center;
-}
-.imagine-cap-ico{
-  width:48px;height:48px;border-radius:999px;
-  display:grid;place-items:center;
-  border:1.5px solid rgba(217,99,45,.55);color:var(--brand);
-  background:rgba(217,99,45,.08);
-}
-.imagine-cap-ico svg{width:20px;height:20px}
-.imagine-cap strong{
-  display:block;font-size:13px;font-weight:800;letter-spacing:-.015em;color:#fff;
-}
-.imagine-cap span{
-  display:block;font-size:12px;line-height:1.35;color:rgba(255,255,255,.58);max-width:16ch;
-}
-.imagine-ctas{
-  display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:16px;
-}
-.imagine-ctas .btn-lg{min-width:200px}
-.imagine-antis{
-  display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px 0;
-  margin:0 auto 24px;color:rgba(255,255,255,.7);font-size:13px;font-weight:650;
-}
-.imagine-antis span{padding:0 12px}
-.imagine-antis span + span{border-left:1px solid rgba(255,255,255,.2)}
-.imagine-banner{
-  display:inline-flex;align-items:center;gap:10px;
-  margin:0 auto;padding:14px 20px;border-radius:0;
-  background:transparent;border:0;border-top:1px solid rgba(255,255,255,.14);
-  font-size:15px;font-weight:700;color:rgba(255,255,255,.92);
-  padding-top:20px;
-}
-.imagine-banner svg{width:16px;height:16px;color:var(--brand);flex-shrink:0}
-.imagine-banner em{font-style:normal;color:var(--brand)}
-.imagine-readiness{
-  margin:22px auto 0;max-width:40rem;
-  font-size:12px;line-height:1.45;color:rgba(255,255,255,.55);
-}
-.imagine-readiness strong{color:rgba(255,255,255,.85);font-weight:750}
-.imagine-readiness a{
-  color:rgba(255,255,255,.7);text-decoration:underline;text-underline-offset:3px;
-}
-.one-ai-bridge{display:none}
-.how-twin{display:none}
-.how-lane-kicker,.how-lane-note,.built-list,.built-note{display:none}
-.hero-brand-line{
-  margin-top:18px;max-width:36ch;
-  font-family:var(--display);
-  font-size:clamp(15px,2.2vw,18px);line-height:1.4;font-weight:700;
-  letter-spacing:-.02em;
-  color:rgba(255,255,255,.9);
-  opacity:0;animation:rise .75s ease .48s forwards;
-}
-.hero-brand-line em{font-style:normal;color:var(--brand)}
-.imagine-list{
-  display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;
-  max-width:480px;margin:28px auto 20px;text-align:left;
-  color:rgba(255,255,255,.9);font-size:15px;font-weight:650;
-}
-@media(min-width:640px){.imagine-list{grid-template-columns:repeat(3,1fr)}}
-.imagine-list li{list-style:none;display:flex;align-items:center;gap:8px}
-.imagine-list li::before{content:"✓";color:var(--brand);font-weight:800}
-.footer-cta{
-  background:#fff;text-align:center;padding:clamp(40px,6vh,72px) var(--page-x);
-  border-top:1px solid var(--line);position:relative;z-index:1;
-}
-.footer-cta h2{
-  font-family:var(--display);font-weight:800;letter-spacing:-.04em;
-  font-size:clamp(24px,4vw,40px);margin-bottom:10px;
-}
-.footer-cta p{color:var(--ink-2);font-size:16px;margin-bottom:20px}
-@media(min-width:1100px){
-  .journey{grid-template-columns:repeat(4,1fr);gap:12px;padding-top:16px}
-}
-.journey-wave{display:none;position:absolute;left:6%;right:6%;top:40px;height:40px;pointer-events:none}
-@media(min-width:1100px){.journey-wave{display:block}}
-.journey-wave path{
-  fill:none;stroke:rgba(217,99,45,.4);stroke-width:2;stroke-dasharray:5 10;
-  stroke-dashoffset:0;animation:dash 18s linear infinite;
-}
-@keyframes dash{to{stroke-dashoffset:-120}}
-.step{
-  text-align:center;position:relative;z-index:1;
-  opacity:0;transform:translateY(18px);
-  transition:opacity .65s ease, transform .65s ease;
-  padding:16px 10px;
-}
-.step.in{opacity:1;transform:none}
-.step-num{
-  width:34px;height:34px;border-radius:50%;margin:0 auto 12px;
-  background:var(--brand);color:#fff;
-  display:grid;place-items:center;
-  font-family:var(--display);font-weight:800;font-size:13px;
-  box-shadow:0 8px 20px rgba(217,99,45,.3);
-}
-.step-ico{
-  width:58px;height:58px;border-radius:16px;margin:0 auto 12px;
-  background:#fff7ed;border:1px solid #ffedd5;
-  display:grid;place-items:center;color:var(--brand);
-  transition:transform .35s ease;
-}
-.step.in .step-ico{animation:pop .5s ease both}
-@keyframes pop{
-  0%{transform:scale(.86)}
-  60%{transform:scale(1.06)}
-  100%{transform:scale(1)}
-}
-.step-ico svg{width:26px;height:26px}
-.step h3{
-  font-family:var(--display);font-weight:800;letter-spacing:-.03em;
-  font-size:16px;margin-bottom:6px;
-}
-.step p{color:var(--ink-3);font-size:13px;line-height:1.45;max-width:18ch;margin:0 auto;font-weight:450}
-.step-arrow{
-  display:none;color:var(--brand);font-size:18px;font-weight:700;opacity:.55;
-}
-@media(min-width:1100px){
-  .step-arrow{
-    display:block;position:absolute;right:-6px;top:52px;
-  }
-  .step:last-child .step-arrow{display:none}
-}
-
-
-/* —— Trust band —— */
-.trust-band{padding:clamp(40px,7vh,72px) 0}
-.trust-grid{
-  display:grid;grid-template-columns:1fr;gap:14px;max-width:920px;margin:0 auto;
-}
-@media(min-width:720px){
-  .trust-grid{grid-template-columns:1fr 1fr;gap:16px}
-}
-.trust-card{
-  display:flex;gap:14px;align-items:flex-start;
-  padding:18px 16px;border-radius:18px;
-  background:#fff;border:1px solid var(--line);
-  transition:transform .25s ease, box-shadow .25s ease;
-}
-@media(hover:hover){
-  .trust-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,23,42,.08)}
-}
-.trust-card .trust-ico{
-  width:40px;height:40px;border-radius:12px;
-  background:rgba(217,99,45,.1);border:1px solid rgba(217,99,45,.2);
-  display:grid;place-items:center;color:var(--brand);flex-shrink:0;
-}
-.trust-card .trust-ico svg{width:18px;height:18px}
-.trust-card h3{
-  font-family:var(--display);font-weight:800;letter-spacing:-.02em;
-  font-size:16px;margin-bottom:4px;
-}
-.trust-card p{font-size:13px;line-height:1.45;color:var(--ink-2);font-weight:450;margin:0}
-
-/* —— Ready to grow —— */
-.grow-head{text-align:center;max-width:640px;margin:0 auto 28px}
-.grow-head .sec-lead{margin-left:auto;margin-right:auto}
-.grow-banners{display:grid;grid-template-columns:1fr;gap:14px}
-@media(min-width:900px){
-  .grow-banners{grid-template-columns:1fr 1fr;gap:18px}
-}
-.banner{
-  display:grid;grid-template-columns:1fr;min-height:0;
-  border-radius:20px;overflow:hidden;
-  box-shadow:0 14px 36px rgba(15,23,42,.1);
-  background:#f3f4f6;
-  transition:transform .35s ease, box-shadow .35s ease;
-}
-@media(min-width:560px){
-  .banner{grid-template-columns:1.05fr .95fr;min-height:210px}
-}
-@media(hover:hover){.banner:hover{transform:translateY(-4px);box-shadow:0 20px 44px rgba(15,23,42,.14)}}
-.banner-copy{padding:22px 20px;display:flex;flex-direction:column;justify-content:center;order:1}
-.banner-a{background:#f3f4f6}
-.banner-b{background:#fff7ed}
-.banner h3{
-  font-family:var(--display);font-weight:800;letter-spacing:-.03em;
-  font-size:clamp(20px,3vw,26px);margin-bottom:8px;
-}
-.banner p{font-size:14px;color:var(--ink-2);line-height:1.5;margin-bottom:12px;font-weight:450}
-.banner-link{color:var(--brand);font-weight:750;font-size:14px}
-.banner-media{
-  background-size:cover;background-position:center;min-height:150px;order:0;
-  transition:transform .7s ease;
-}
-@media(hover:hover){.banner:hover .banner-media{transform:scale(1.04)}}
-@media(min-width:560px){
-  .banner-media{min-height:100%;order:2}
-}
-.banner-a .banner-media{
-  /* Unique painter-at-work — not reused elsewhere on this page */
-  background-image:url('https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=900&q=90');
-}
-.banner-b .banner-media{
-  /* Unique business-ops shot — not the hero / industry pressure-wash photo */
-  background-image:url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=90');
-}
-
-/* —— Business Readiness —— */
-.band-readiness{
-  padding:clamp(32px,5.5vh,64px) var(--page-x);
-  background:
-    radial-gradient(ellipse 50% 40% at 0% 50%,rgba(217,99,45,.05),transparent 55%),
-    #f7f5f2;
-  border-bottom:1px solid var(--line);
-  position:relative;z-index:1;
-}
-.readiness{
-  display:grid;gap:20px;align-items:stretch;
-  max-width:1040px;margin:0 auto;
-  background:transparent;border:0;border-radius:0;
-  padding:0;box-shadow:none;
-}
-@media(min-width:800px){
-  .readiness{
-    grid-template-columns:1.15fr .85fr;gap:32px;padding:0;
-    align-items:center;
-  }
-}
-.readiness-copy{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
-.readiness .kicker{color:var(--ink-3);margin:0}
-.readiness .sec-title{
-  font-size:clamp(24px,3.6vw,34px);margin:0;text-align:left;
-  max-width:16ch;line-height:1.12;
-}
-.readiness .sec-lead{
-  font-size:15px;line-height:1.5;margin:0;max-width:42ch;text-align:left;
-  color:var(--ink-2);
-}
-.notify{display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%;margin-top:4px}
-.notify input{
-  flex:1;min-width:0;width:100%;border:1px solid var(--line);border-radius:999px;
-  padding:13px 16px;font-size:16px;outline:none;background:#fff;
-}
-@media(min-width:480px){.notify input{min-width:200px;font-size:14px}}
-.notify input:focus{border-color:rgba(217,99,45,.45);box-shadow:0 0 0 3px rgba(217,99,45,.12)}
-.notify button{
-  border:0;border-radius:999px;padding:13px 18px;white-space:nowrap;
-  background:var(--brand);color:#fff;font-weight:800;font-size:14px;
-  box-shadow:0 8px 18px rgba(217,99,45,.28);
-}
-.notify button:disabled{opacity:.85}
-.readiness-photo{
-  border-radius:20px;overflow:hidden;min-height:220px;
-  background:url('https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=900&q=85') center/cover;
-  box-shadow:0 20px 48px rgba(15,23,42,.12);
-}
-@media(min-width:800px){.readiness-photo{min-height:100%;align-self:stretch}}
-.imagine-readiness{display:none}
-
-/* —— Footer —— */
-.footer{
-  background:var(--navy);color:rgba(255,255,255,.55);
-  padding:28px var(--page-x) calc(84px + env(safe-area-inset-bottom,0px));
-  display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center;
-  position:relative;z-index:1;
-}
-@media(min-width:1100px){
-  .footer{padding-bottom:40px}
-}
-.footer nav{display:flex;flex-wrap:wrap;gap:16px}
-.footer a{font-size:13px;font-weight:650}
-.footer a:hover{color:#fff}
-
-/* —— Ask FAB —— */
-.ask-fab{
-  position:fixed;right:max(16px,env(safe-area-inset-right));
-  bottom:max(16px,env(safe-area-inset-bottom));
-  z-index:75;
-  display:inline-flex;align-items:center;gap:8px;
-  background:var(--navy);color:#fff;border:1px solid rgba(255,255,255,.14);
-  border-radius:999px;
-  padding:12px 16px 12px 14px;font-weight:800;font-size:13px;
-  box-shadow:0 16px 36px rgba(0,0,0,.28);
-  transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
-}
-.ask-fab .fab-dot{
-  width:8px;height:8px;border-radius:50%;background:#22c55e;
-  box-shadow:0 0 0 3px rgba(34,197,94,.2);flex-shrink:0;
-}
-.ask-fab:hover{
-  transform:translateY(-2px);
-  background:#1a2336;
-  box-shadow:0 20px 40px rgba(0,0,0,.34);
-}
-.ask-fab[aria-expanded="true"]{
-  background:var(--brand);border-color:transparent;
-  box-shadow:0 16px 36px rgba(217,99,45,.35);
-}
-.ask-panel-float{
-  position:fixed;
-  right:max(16px,env(safe-area-inset-right));
-  bottom:calc(72px + env(safe-area-inset-bottom,0px));
-  z-index:80;width:min(360px,calc(100vw - 28px));
-  max-height:min(70vh,480px);
-  background:#fff;border-radius:22px;box-shadow:0 24px 56px rgba(15,23,42,.28);
-  border:1px solid var(--line);overflow:hidden;
-  opacity:0;visibility:hidden;pointer-events:none;
-  transform:translateX(28px);
-  transition:opacity .28s ease, transform .32s cubic-bezier(.22,1,.36,1), visibility 0s linear .32s;
-}
-.ask-panel-float.open{
-  opacity:1;visibility:visible;pointer-events:auto;
-  transform:translateX(0);
-  transition:opacity .28s ease, transform .32s cubic-bezier(.22,1,.36,1), visibility 0s;
-}
-@media(min-width:1100px){
-  .ask-panel-float{
-    top:auto;
-    bottom:calc(72px + env(safe-area-inset-bottom,0px));
-    right:max(24px,env(safe-area-inset-right));
-    max-height:min(64vh,480px);
-    transform:translateX(110%);
-  }
-  .ask-panel-float.open{transform:translateX(0)}
-}
-.ask-panel-float[hidden]{display:none!important}
-.ask-panel-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px;background:var(--navy);color:#fff;
-}
-.ask-panel-head .hubly-mark{height:16px}
-.ask-close{background:transparent;border:0;color:rgba(255,255,255,.7);font-size:20px;padding:4px}
-.ask-msgs{padding:14px;max-height:min(40vh,240px);overflow:auto;display:grid;gap:8px;background:#f8fafc}
-.msg{padding:11px 13px;border-radius:14px;font-size:14px;line-height:1.45;max-width:90%}
-.msg-bot{background:#fff;border:1px solid var(--line)}
-.msg-user{background:var(--brand);color:#fff;margin-left:auto}
-.ask-compose{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
-.ask-compose input{
-  flex:1;border:1px solid var(--line);border-radius:999px;padding:10px 14px;font-size:16px;outline:none;
-}
-.ask-compose button{
-  border:0;border-radius:999px;padding:0 14px;background:var(--brand);color:#fff;font-weight:750;font-size:13px;
-}
-
-@media(min-width:900px){.nav-links{display:flex}}
-@media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation:none!important;transition:none!important}
-  .chip,.hero h1,.hero-lead,.hero-brand-line,.hero-lockup,.ask-pill,.hero-float{opacity:1!important;transform:none!important}
-  /* Match card stays hidden until .lit — never force a ghost payoff */
-  .ai-result.waiting{
-    opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:none!important;
-  }
-  .ai-result.lit{
-    opacity:1!important;visibility:visible!important;transform:none!important;
-  }
-  .ai-result.lit .ai-result-card.show{opacity:1!important;transform:none!important}
-  .ai-result.lit .ai-result-card.show .result-found,
-  .ai-result.lit .ai-result-card.show .result-thumb,
-  .ai-result.lit .ai-result-card.show .result-name,
-  .ai-result.lit .ai-result-card.show .result-rating,
-  .ai-result.lit .ai-result-card.show .result-line,
-  .ai-result.lit .ai-result-card.show .result-cta,
-  .ai-result.lit .ai-result-card.show .result-trust{
-    opacity:1!important;transform:none!important;filter:none!important;
-  }
+.footer{border-top:1px solid var(--line);padding:48px 0 32px}
+.footer-top{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:24px;margin-bottom:36px}
+.footer-cols h4{font-size:12px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
+.footer-cols ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.footer-cols a{font-size:13.5px;color:var(--ink-2);transition:color .18s ease}
+.footer-cols a:hover{color:#fff}
+.footer-cols span.static{font-size:13.5px;color:var(--ink-3)}
+.footer-bottom{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  padding-top:24px;border-top:1px solid var(--line);
+}
+.footer-bottom p{font-size:12.5px;color:var(--ink-3)}
+@media(max-width:860px){
+  .footer-top{grid-template-columns:1fr 1fr}
+}
+@media(max-width:520px){
+  .footer-top{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
 <header class="nav">
-  <a href="/" class="nav-brand" aria-label="hubly home">
+  <a href="/" aria-label="hubly home">
     <span class="hubly-lockup">hub<span class="ly">ly</span></span>
   </a>
-  <nav class="nav-links" aria-label="Primary">
-    <a href="#journeys">Who are you?</a>
-    <a href="/get-done">Ask Hubly</a>
-    <a href="#grow">Build My Business</a>
-  </nav>
-  <div class="nav-acts">
-    <a class="nav-login" href="/login">Sign in</a>
-    <a class="btn btn-brand" href="/signup">Build My Business</a>
-  </div>
+  <a class="nav-signin" href="/login">Sign in</a>
 </header>
 
+<!--
+  Sections 3 & 4 ("One platform. Every side of the job." / "The AI Business Workspace")
+  are intentionally deferred — spec requires a real, owner-approved business account for
+  permanent public display, and no such account exists yet. Pro Shine Detailing is a
+  personal test/demo account and is not appropriate (same Production-First issue as
+  inventing one). Build these once a real account is confirmed; do not fill with
+  fabricated names, ratings, prices, or copy in the meantime.
+-->
+
 <section class="hero" id="top">
-  <div class="hero-media" aria-hidden="true"></div>
-  <div class="hero-inner">
-    <div class="hero-copy">
-      <p class="hero-mark">
-        <span class="hubly-lockup hero-lockup">hub<span class="ly">ly</span></span>
-      </p>
-      <div class="path-tabs" role="tablist" aria-label="What are you trying to do?">
-        <button type="button" class="path-tab" role="tab" aria-selected="false" data-path="help" id="pathHelp">I need to hire someone</button>
-        <button type="button" class="path-tab is-on" role="tab" aria-selected="true" data-path="business" id="pathBiz">I want to grow my business</button>
-      </div>
-      <h1 id="heroTitle">Tell Hubly about your business.<br><em>We’ll build the rest.</em></h1>
-      <p class="hero-lead" id="heroLead">Talk naturally. Hubly researches your market and builds your website, booking, pricing, services, and operating system while you chat.</p>
+  <div class="hero-bg" aria-hidden="true"></div>
+  <svg class="hero-constellation" aria-hidden="true" viewBox="0 0 1200 640" preserveAspectRatio="xMidYMin slice">
+    <g stroke="#D9632D" stroke-width="1" fill="none">
+      <path d="M120 90 L260 150 L210 260" opacity=".35"/>
+      <path d="M980 60 L1040 170 L950 230 L1080 260" opacity=".3"/>
+      <path d="M70 380 L180 340 L160 460" opacity=".25"/>
+      <path d="M1020 400 L940 470 L1060 520" opacity=".22"/>
+    </g>
+    <g fill="#D9632D">
+      <circle cx="120" cy="90" r="2.4" opacity=".55"/>
+      <circle cx="260" cy="150" r="2" opacity=".45"/>
+      <circle cx="210" cy="260" r="2.2" opacity=".4"/>
+      <circle cx="980" cy="60" r="2.4" opacity=".5"/>
+      <circle cx="1040" cy="170" r="2" opacity=".4"/>
+      <circle cx="950" cy="230" r="2.2" opacity=".4"/>
+      <circle cx="1080" cy="260" r="1.8" opacity=".35"/>
+      <circle cx="70" cy="380" r="2" opacity=".4"/>
+      <circle cx="180" cy="340" r="2.2" opacity=".4"/>
+      <circle cx="160" cy="460" r="1.8" opacity=".35"/>
+      <circle cx="1020" cy="400" r="2" opacity=".4"/>
+      <circle cx="940" cy="470" r="2.2" opacity=".35"/>
+      <circle cx="1060" cy="520" r="1.8" opacity=".3"/>
+    </g>
+  </svg>
 
-      <div class="ask-pill" id="ask">
-        <input id="heroInput" type="text" autocomplete="off"
-          placeholder="Tell me about your business..."
-          aria-label="Tell Hubly about your business">
-        <div class="ask-pill-acts">
-          <button class="btn btn-brand" type="button" id="heroCta">Continue Building</button>
-        </div>
-      </div>
-      <p class="hero-status" id="heroStatus" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="heroStatusText"></span></p>
-      <p class="hero-brand-line">Most software makes you learn how it works.<br><em>Hubly learns how you work.</em></p>
+  <div class="hero-copy">
+    <span class="eyebrow-badge">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>
+      AI built to help. Built to grow.
+    </span>
+    <h1>Built to help.<br><span class="grow">Built to grow.</span></h1>
+    <p class="hero-sub">Need work done? Building a business? Hubly helps with both.</p>
 
-      <div class="chips" id="chips" aria-label="Popular trades">
-        <span class="chips-label" id="chipsLabel">Popular Trades</span>
+    <div class="ask-wrap">
+      <div class="ask-glow" aria-hidden="true"></div>
+      <div class="ask-box">
+        <input id="heroInput" type="text" autocomplete="off" placeholder="What can Hubly help you with today?" aria-label="What can Hubly help you with today?">
+        <span class="ask-icon-left" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>
+        </span>
+        <button type="button" class="ask-submit" id="heroSubmit" aria-label="Continue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
       </div>
     </div>
 
-    <div class="hero-float" aria-label="Live Hubly building a business">
-      <div class="ai-flow" id="aiFlow">
-        <div class="ai-demo" id="aiDemo">
-          <div class="ai-demo-head">
-            <strong id="demoHeadLabel">Built around your business</strong>
-            <span class="ai-live"><span class="pulse" aria-hidden="true"></span> <span id="demoLiveLabel">Building</span></span>
-          </div>
-          <div class="ai-user" id="aiUser" aria-live="polite"></div>
-          <div class="ai-tags" id="aiTags" aria-hidden="true"></div>
-          <div class="ai-status" id="aiStatus"></div>
-        </div>
-        <div class="ai-beam" id="aiBeam" aria-hidden="true">
-          <span class="trail"></span>
-          <span class="orb"></span>
-        </div>
-        <div class="ai-result waiting" id="aiResult" aria-hidden="true">
-          <div class="ai-result-card" id="resultCard">
-            <div class="result-found"><span class="check" aria-hidden="true">✓</span> <span id="resultFoundLabel">Ready.</span></div>
-            <div class="result-body">
-              <img class="result-thumb" id="resultThumb" src="" alt="" width="72" height="72">
-              <div class="result-info">
-                <div class="result-name" id="resultName"></div>
-                <div class="result-rating" id="resultRating"></div>
-                <div class="result-line"><strong id="resultWhen"></strong></div>
-                <div class="result-line" id="resultPrice"></div>
-              </div>
-            </div>
-            <div class="result-cta" id="resultCtaLabel">Your business is live →</div>
-            <div class="result-trust">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/></svg>
-              <span id="resultTrustLabel">Website · Booking · CRM · Payments</span>
-            </div>
-          </div>
-        </div>
+    <div class="cap-row">
+      <div class="cap-item">
+        <span class="cap-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-5-5" class="accent" stroke="#D9632D"/></svg>
+        </span>
+        <h3>Discover</h3>
+        <p>Find the right pros for any home service.</p>
       </div>
+      <div class="cap-item">
+        <span class="cap-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/><circle cx="7" cy="6.5" r=".6" fill="#D9632D" stroke="none" class="accent"/></svg>
+        </span>
+        <h3>Build</h3>
+        <p>Create your brand, website, and services.</p>
+      </div>
+      <div class="cap-item">
+        <span class="cap-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6" /><path d="M9 16h4" class="accent" stroke="#D9632D"/></svg>
+        </span>
+        <h3>Manage</h3>
+        <p>Manage jobs, customers, payments, and communication.</p>
+      </div>
+      <div class="cap-item">
+        <span class="cap-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V13M11 19V9M18 19v-6"/><path d="M15 6l3-3 3 3" class="accent" stroke="#D9632D"/><path d="M18 3v7" class="accent" stroke="#D9632D"/></svg>
+        </span>
+        <h3>Grow</h3>
+        <p>Automated reminders and follow-ups keep you top of mind.</p>
+      </div>
+      <div class="cap-item">
+        <span class="cap-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8.5 15l2 2 4-4" class="accent" stroke="#D9632D"/></svg>
+        </span>
+        <h3>Book</h3>
+        <p>Smart booking and scheduling that just works.</p>
+      </div>
+    </div>
+
+    <div class="services-head">
+      <h2>Popular services</h2>
     </div>
   </div>
-</section>
 
-<section class="journeys-band" id="journeys">
-  <div class="wrap">
-    <div class="sec-head">
-      <h2 class="sec-title">One AI. <span class="two-exp">Two experiences.</span></h2>
-      <p class="sec-lead">Helping homeowners get work done and helping local businesses grow.</p>
-      <p class="journeys-ask">How can Hubly help <em>today?</em></p>
-    </div>
-
-    <div class="journey-dests" id="how">
-      <a class="journey-dest journey-dest-primary" href="/signup" data-journey="business" id="journeyBiz">
-        <div class="journey-role">
-          <span class="journey-role-ico" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 15l-1 5 5-1 8.5-8.5a3.5 3.5 0 00-5-5L5 15z"/><path d="M12 7l5 5M8.5 15.5l-2 1 1-2"/></svg>
-          </span>
-          <span class="journey-role-label">For business owners</span>
-        </div>
-        <h3>I want to grow my <em>business</em></h3>
-        <p class="journey-desc">Tell Hubly about your business. We’ll build everything else.</p>
-        <ol class="journey-steps how-lane" data-step>
-          <li><strong>Describe</strong></li>
-          <li><strong>Hubly learns how you work</strong></li>
-          <li><strong>Hubly builds everything</strong></li>
-          <li><strong>Start growing</strong></li>
-        </ol>
-        <div class="journey-cta-wrap">
-          <span class="btn-journey">Continue Building →</span>
-        </div>
-        <p class="journey-foot">AI Business Builder · Operating System</p>
-      </a>
-
-      <a class="journey-dest journey-dest-help" href="/get-done" data-journey="help" id="journeyHelp">
-        <div class="journey-role">
-          <span class="journey-role-ico" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"/></svg>
-          </span>
-          <span class="journey-role-label">For customers</span>
-        </div>
-        <h3>I need to hire <em>someone</em></h3>
-        <p class="journey-desc">Describe what you need. Hubly’s AI Concierge finds the right local pro.</p>
-        <ol class="journey-steps how-lane" data-step>
-          <li><strong>Describe</strong></li>
-          <li><strong>Hubly understands</strong></li>
-          <li><strong>Hubly finds the right pro</strong></li>
-          <li><strong>Book</strong></li>
-        </ol>
-        <div class="journey-cta-wrap">
-          <span class="btn-journey">Get Something Done →</span>
-        </div>
-        <p class="journey-foot">AI Concierge · Customer Booking</p>
-      </a>
-    </div>
-
-    <div class="journey-trustbar" aria-label="Why both sides trust Hubly">
-      <div class="journey-trust-item">
-        <span class="journey-trust-ico ai" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.6 5.2L19 9l-5.4 1.8L12 16l-1.6-5.2L5 9l5.4-1.8L12 2z"/></svg>
-        </span>
-        <p><strong>AI that understands</strong></p>
-      </div>
-      <div class="journey-trust-item">
-        <span class="journey-trust-ico pro" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/><path d="M9.5 12l2 2 3.5-4"/></svg>
-        </span>
-        <p><strong>Trusted professionals</strong></p>
-      </div>
-      <div class="journey-trust-item">
-        <span class="journey-trust-ico lock" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>
-        </span>
-        <p><strong>Secure &amp; protected</strong></p>
-      </div>
-      <div class="journey-trust-item">
-        <span class="journey-trust-ico both" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c1.2-3 3.4-4.5 6-4.5s4.8 1.5 6 4.5M14 15.5c1.6 0 3.2.8 4.5 2.5"/></svg>
-        </span>
-        <p><strong>Built for both sides</strong></p>
-      </div>
-    </div>
+  <div class="services-grid">
+    <a class="svc-tile" href="/get-done?cat=detailing" style="background-image:url('/assets/landing/detailing.jpg')">
+      <span class="svc-tile-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l2-5h10l3 5v5H3v-5z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/></svg><span>Detailing</span></span>
+    </a>
+    <a class="svc-tile" href="/get-done?cat=windows" style="background-image:url('/assets/landing/window-cleaning.jpg')">
+      <span class="svc-tile-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h18M12 3v18"/></svg><span>Window Cleaning</span></span>
+    </a>
+    <a class="svc-tile" href="/get-done?cat=photography" style="background-image:url('/assets/landing/photography.jpg')">
+      <span class="svc-tile-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l1.6-2.5h4.8L16 7"/><circle cx="12" cy="13.5" r="3.5"/></svg><span>Photography</span></span>
+    </a>
+    <a class="svc-tile" href="/get-done?cat=hvac" style="background-image:url('/assets/landing/hvac.jpg')">
+      <span class="svc-tile-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c2 3 2 5 0 8 2 0 4 1 5 3-3 0-5 1-7 3-2-2-4-3-7-3 1-2 3-3 5-3-2-3-2-5 0-8z"/></svg><span>HVAC</span></span>
+    </a>
+    <a class="svc-tile" href="/get-done?cat=cleaning" style="background-image:url('/assets/landing/cleaning.jpg')">
+      <span class="svc-tile-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20h4l9-9a2.1 2.1 0 00-3-3L6 17v3z"/><path d="M14 6l3 3"/></svg><span>Cleaning</span></span>
+    </a>
+    <a class="svc-tile" href="/get-done?cat=roofing" style="background-image:url('/assets/landing/roofing.jpg')">
+      <span class="svc-tile-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12L12 4l9 8"/><path d="M6 11v9h12v-9"/></svg><span>Roofing</span></span>
+    </a>
+    <a class="svc-tile" href="/get-done?cat=lawn" style="background-image:url('/assets/landing/lawn-care.jpg')">
+      <span class="svc-tile-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12M12 12C8 12 5 9 5 5c4 0 7 3 7 7zm0 0c4 0 7-3 7-7-4 0-7 3-7 7z"/></svg><span>Lawn Care</span></span>
+    </a>
   </div>
+  <div class="services-more"><a href="#categories">See all services →</a></div>
 </section>
 
-<section class="xform" id="transform">
+<section class="sec" id="transform">
   <div class="wrap">
     <div class="sec-head">
-      <p class="kicker">The transformation</p>
-      <h2 class="sec-title">One conversation.<br><em>Everything changes.</em></h2>
-      <p class="sec-lead">You describe your business. Hubly <strong>builds the rest.</strong></p>
+      <h2>One conversation. Everything changes.</h2>
+      <p>You describe your business. Hubly builds the rest.</p>
     </div>
-
-    <div class="xform-compare">
-      <article class="xform-card before" aria-label="Before">
-        <span class="xform-badge">Before</span>
-        <h3 class="xform-card-title">Starting from <em>scratch.</em></h3>
-        <ul class="xform-rows">
-          <li class="xform-row">
-            <span class="xform-mark" aria-hidden="true">✕</span>
-            <span>No website</span>
-            <span class="xform-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2.5 2"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
-          </li>
-          <li class="xform-row">
-            <span class="xform-mark" aria-hidden="true">✕</span>
-            <span>No bookings</span>
-            <span class="xform-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2.5 2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
-          </li>
-          <li class="xform-row">
-            <span class="xform-mark" aria-hidden="true">✕</span>
-            <span>No CRM</span>
-            <span class="xform-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2.5 2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg></span>
-          </li>
-          <li class="xform-row">
-            <span class="xform-mark" aria-hidden="true">✕</span>
-            <span>No payments</span>
-            <span class="xform-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2.5 2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/></svg></span>
-          </li>
-          <li class="xform-row">
-            <span class="xform-mark" aria-hidden="true">✕</span>
-            <span>No marketing</span>
-            <span class="xform-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2.5 2"><path d="M3 11v2a2 2 0 002 2h2l5 4V5L7 9H5a2 2 0 00-2 2z"/><path d="M16 9.5a3.5 3.5 0 010 5M18.5 7a7 7 0 010 10"/></svg></span>
-          </li>
-          <li class="xform-row">
-            <span class="xform-mark" aria-hidden="true">✕</span>
-            <span>Starting from zero</span>
-            <span class="xform-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2.5 2"><path d="M12 20a8 8 0 108-8"/><path d="M12 12l5-3"/></svg></span>
-          </li>
+    <div class="xform-grid">
+      <div class="xform-card">
+        <h3>Starting from scratch</h3>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>No website</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>No bookings</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>No CRM</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>No payments</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>No marketing</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>Starting from zero</li>
         </ul>
-      </article>
-
-      <div class="xform-mobile-arrow" aria-hidden="true">↓</div>
-      <div class="xform-arrows" aria-hidden="true">
-        <span>→</span><span>→</span><span>→</span><span>→</span><span>→</span><span>→</span>
       </div>
-
-      <article class="xform-card after" aria-label="After one conversation">
-        <span class="xform-badge">After one conversation</span>
-        <h3 class="xform-card-title">Ready to <em>grow.</em></h3>
-        <ul class="xform-rows">
-          <li class="xform-row">
-            <span class="xform-mark" aria-hidden="true">✓</span>
-            <span>Live website</span>
-            <span class="xform-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
-          </li>
-          <li class="xform-row">
-            <span class="xform-mark" aria-hidden="true">✓</span>
-            <span>Customers can book</span>
-            <span class="xform-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
-          </li>
-          <li class="xform-row">
-            <span class="xform-mark" aria-hidden="true">✓</span>
-            <span>CRM ready</span>
-            <span class="xform-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg></span>
-          </li>
-          <li class="xform-row">
-            <span class="xform-mark" aria-hidden="true">✓</span>
-            <span>Payments connected</span>
-            <span class="xform-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/></svg></span>
-          </li>
-          <li class="xform-row">
-            <span class="xform-mark" aria-hidden="true">✓</span>
-            <span>AI marketing ready</span>
-            <span class="xform-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 16l4-4 3 3 6-7"/><path d="M14 8h5v5"/></svg></span>
-          </li>
-          <li class="xform-row">
-            <span class="xform-mark" aria-hidden="true">✓</span>
-            <span>Ready for customers</span>
-            <span class="xform-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c1.2-3 3.4-4.5 6-4.5s4.8 1.5 6 4.5M14 15.5c1.6 0 3.2.8 4.5 2.5"/></svg></span>
-          </li>
+      <div class="xform-card is-ready">
+        <h3>Ready to grow</h3>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>Live website</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>Customers can book</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>CRM ready</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>Payments connected</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>AI marketing ready</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>Ready for customers</li>
         </ul>
-      </article>
+      </div>
     </div>
-
-    <div class="xform-benefits" aria-label="Why the transformation matters">
-      <div class="xform-benefit">
-        <span class="xform-benefit-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h7l-1 8 10-13h-7l1-7z"/></svg>
-        </span>
-        <p><strong>From idea to live business</strong> in minutes, not months.</p>
+    <div class="xform-notes">
+      <div class="xform-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>
+        <span>Built from one conversation — no forms to fill out.</span>
       </div>
-      <div class="xform-benefit">
-        <span class="xform-benefit-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
-        </span>
-        <p><strong>Save time. Get more customers.</strong> Grow your business faster.</p>
+      <div class="xform-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        <span>Works for any home service business.</span>
       </div>
-      <div class="xform-benefit">
-        <span class="xform-benefit-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/><path d="M9.5 12l2 2 3.5-4"/></svg>
-        </span>
-        <p><strong>Secure. Reliable. Built for you.</strong> Everything you need, in one place.</p>
+      <div class="xform-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/></svg>
+        <span>You stay in control — nothing goes live without your OK.</span>
       </div>
     </div>
   </div>
 </section>
 
-<section class="band-industries" id="industries">
+<section class="sec" id="categories">
   <div class="wrap">
     <div class="sec-head">
-      <p class="kicker">Built around your business</p>
-      <h2 class="sec-title">Businesses already built with <em>Hubly</em>.</h2>
-      <p class="sec-lead">These are just a few. If yours is different, we’ll learn it together.</p>
+      <p class="kicker">Every trade, one platform</p>
+      <h2>Built for every home service</h2>
     </div>
-
-    <div class="ind-compact-grid ind-feature-grid">
-      <a class="ind-sm" href="/get-done?cat=detailing">
-        <div class="ind-sm-bg" style="background-image:url('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=900&q=90')"></div>
-        <div class="ind-sm-shade"></div>
-        <div class="ind-sm-top">
-          <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l2-5h10l3 5v5H3v-5z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/></svg></span>
-        </div>
-        <div class="ind-sm-body">
-          <div class="ind-sm-copy">
-            <h3>Detailing</h3>
-            <span class="ind-sm-sub">Book a Pro</span>
-          </div>
-          <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
-      <a class="ind-sm" href="/get-done?cat=hvac">
-        <div class="ind-sm-bg" style="background-image:url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=900&q=90')"></div>
-        <div class="ind-sm-shade"></div>
-        <div class="ind-sm-top">
-          <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c2 3 2 5 0 8 2 0 4 1 5 3-3 0-5 1-7 3-2-2-4-3-7-3 1-2 3-3 5-3-2-3-2-5 0-8z"/></svg></span>
-        </div>
-        <div class="ind-sm-body">
-          <div class="ind-sm-copy">
-            <h3>HVAC</h3>
-            <span class="ind-sm-sub">Book a Pro</span>
-          </div>
-          <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
-      <a class="ind-sm" href="/get-done?cat=cleaning">
-        <div class="ind-sm-bg" style="background-image:url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=90')"></div>
-        <div class="ind-sm-shade"></div>
-        <div class="ind-sm-top">
-          <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20h4l9-9a2.1 2.1 0 00-3-3L6 17v3z"/><path d="M14 6l3 3"/></svg></span>
-        </div>
-        <div class="ind-sm-body">
-          <div class="ind-sm-copy">
-            <h3>Cleaning</h3>
-            <span class="ind-sm-sub">Book a Pro</span>
-          </div>
-          <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
-      <a class="ind-sm" href="/get-done?cat=lawn">
-        <div class="ind-sm-bg" style="background-image:url('https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=900&q=90')"></div>
-        <div class="ind-sm-shade"></div>
-        <div class="ind-sm-top">
-          <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12M12 12C8 12 5 9 5 5c4 0 7 3 7 7zm0 0c4 0 7-3 7-7-4 0-7 3-7 7z"/></svg></span>
-        </div>
-        <div class="ind-sm-body">
-          <div class="ind-sm-copy">
-            <h3>Lawn Care</h3>
-            <span class="ind-sm-sub">Book a Pro</span>
-          </div>
-          <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
-      <a class="ind-sm" href="/get-done?cat=windows">
-        <div class="ind-sm-bg" style="background-image:url('https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=900&q=90')"></div>
-        <div class="ind-sm-shade"></div>
-        <div class="ind-sm-top">
-          <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h18M12 3v18"/></svg></span>
-        </div>
-        <div class="ind-sm-body">
-          <div class="ind-sm-copy">
-            <h3>Window Washing</h3>
-            <span class="ind-sm-sub">Book a Pro</span>
-          </div>
-          <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
-    </div>
-
-    <div class="ind-panel">
-      <a class="ind-build" href="/signup">
-        <span class="ind-build-stars" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z"/></svg>
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z"/></svg>
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z"/></svg>
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z"/></svg>
-        </span>
-        <h3>Your <em>Business</em></h3>
-        <p>We’ll learn it together</p>
-        <span class="ind-build-btn">Get Started →</span>
-      </a>
-      <div class="ind-cap">
-        <span class="ind-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9.5 8.5a2.5 2.5 0 115 0c0 1.5-1.2 2.2-2 3-.6.6-1 1.3-1 2.2"/><circle cx="12.5" cy="17.5" r=".8" fill="currentColor"/><path d="M5 10a7 7 0 0014 0"/></svg></span>
-        <h4>Learns your business</h4>
-        <p>Understands your services, customers, and goals.</p>
-      </div>
-      <div class="ind-cap">
-        <span class="ind-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L4 14h7l-1 8 10-13h-7l1-7z"/></svg></span>
-        <h4>Builds everything</h4>
-        <p>Website, booking, payments, CRM, and more.</p>
-      </div>
-      <div class="ind-cap">
-        <span class="ind-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V10M10 19V5M16 19v-7M20 19V8"/><path d="M3 19h18"/></svg></span>
-        <h4>Helps you grow</h4>
-        <p>AI insights and marketing that drive real results.</p>
-      </div>
-      <div class="ind-cap">
-        <span class="ind-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c1.2-3 3.4-4.5 6-4.5s4.8 1.5 6 4.5M14 15.5c1.6 0 3.2.8 4.5 2.5"/></svg></span>
-        <h4>Sends you customers</h4>
-        <p>Get matched with more customers every day.</p>
-      </div>
-    </div>
-
-    <div class="ind-trust-pill" aria-label="Business trust signals">
-      <div class="ind-trust-left">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/></svg>
-        <span>Trusted by local businesses. Built with security. Backed by support.</span>
-      </div>
-      <ul class="ind-trust-checks">
-        <li>Verified Pros</li>
-        <li>Secure Payments</li>
-        <li>Human Support</li>
-      </ul>
+    <div class="cat-grid">
+      <a class="cat-card" href="/get-done?cat=cleaning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20h4l9-9a2.1 2.1 0 00-3-3L6 17v3z"/><path d="M14 6l3 3"/></svg><span>Cleaning</span></a>
+      <a class="cat-card" href="/get-done?cat=lawn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22V12M12 12C8 12 5 9 5 5c4 0 7 3 7 7zm0 0c4 0 7-3 7-7-4 0-7 3-7 7z"/></svg><span>Lawn Care</span></a>
+      <a class="cat-card" href="/get-done?cat=plumbing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L4.6 16.4l3 3 4.7-4.7a4 4 0 005.4-5.4l-2.15 2.15-2-2 2.15-2.15z"/></svg><span>Plumbing</span></a>
+      <a class="cat-card" href="/get-done?cat=hvac"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c2 3 2 5 0 8 2 0 4 1 5 3-3 0-5 1-7 3-2-2-4-3-7-3 1-2 3-3 5-3-2-3-2-5 0-8z"/></svg><span>HVAC</span></a>
+      <a class="cat-card" href="/get-done?cat=electrical"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L4 14h7l-1 8 10-13h-7l1-7z"/></svg><span>Electrical</span></a>
+      <a class="cat-card" href="/get-done?cat=moving"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 16V8h9v8"/><path d="M12 11h4l3 3v2h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg><span>Moving</span></a>
+      <a class="cat-card" href="/get-done?cat=detailing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-5h10l3 5v5H3v-5z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/></svg><span>Detailing</span></a>
+      <a class="cat-card" href="/get-done?cat=windows"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h18M12 3v18"/></svg><span>Window Cleaning</span></a>
+      <a class="cat-card" href="/get-done?cat=photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l1.6-2.5h4.8L16 7"/><circle cx="12" cy="13.5" r="3.5"/></svg><span>Photography</span></a>
+      <a class="cat-card" href="/get-done?cat=pest-control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="13" r="4"/><path d="M12 9V5M9 7l-2-2M15 7l2-2M8 13H4M20 13h-4M9 17l-2 2M15 17l2 2"/></svg><span>Pest Control</span></a>
+      <a class="cat-card" href="/get-done?cat=painting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21l3-3 9-9-3-3-9 9-3 3 3 3z"/><path d="M14 8l3-3 3 3-3 3"/></svg><span>Painting</span></a>
+      <a class="cat-card" href="/get-done?cat=roofing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12L12 4l9 8"/><path d="M6 11v9h12v-9"/></svg><span>Roofing</span></a>
+      <a class="cat-card" href="/get-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>And more</span></a>
     </div>
   </div>
 </section>
 
-<section class="band-readiness" id="readiness">
+<section class="sec" id="features">
   <div class="wrap">
-    <div class="readiness">
-      <div class="readiness-copy">
-        <p class="kicker">Looking ahead</p>
-        <h2 class="sec-title">Starting a home service business?</h2>
-        <p class="sec-lead">Business Readiness is coming soon. Eventually Hubly will walk you through licensing, insurance, equipment, pricing, your website, and customers—everything needed to launch. Built around your business from day one.</p>
-        <form class="notify" id="notifyForm">
-          <input type="email" name="email" placeholder="Enter your email" autocomplete="email" required aria-label="Email for Business Readiness">
-          <button type="submit">Notify me</button>
-        </form>
+    <div class="sec-head">
+      <h2>Everything you need in one place</h2>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <svg class="feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>
+        <h3>Website Builder</h3>
+        <p>A professional website built and updated for you automatically.</p>
       </div>
-      <div class="readiness-photo" role="img" aria-label="Fresh lawn outside a home"></div>
+      <div class="feat-card">
+        <svg class="feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        <h3>Online Booking</h3>
+        <p>Customers book appointments straight from your site, day or night.</p>
+      </div>
+      <div class="feat-card">
+        <svg class="feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3"/><path d="M3 20c1.2-3 3.4-4.5 6-4.5s4.8 1.5 6 4.5"/><circle cx="17" cy="9" r="2.3"/></svg>
+        <h3>CRM</h3>
+        <p>Every customer, job, and conversation organized in one place.</p>
+      </div>
+      <div class="feat-card">
+        <svg class="feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10.5h19"/></svg>
+        <h3>Payments</h3>
+        <p>Accept and track payments without juggling extra apps.</p>
+      </div>
+      <div class="feat-card">
+        <svg class="feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V13M11 19V9M18 19v-6"/><path d="M15 6l3-3 3 3"/><path d="M18 3v7"/></svg>
+        <h3>Marketing</h3>
+        <p>AI-generated posts, flyers, and promotions ready to send.</p>
+      </div>
+      <div class="feat-card">
+        <svg class="feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="3.4"/></svg>
+        <h3>Automations</h3>
+        <p>Reminders and follow-ups that happen without you lifting a finger.</p>
+      </div>
+      <div class="feat-card">
+        <svg class="feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/><path d="M19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg>
+        <h3>AI Growth Coach</h3>
+        <p>Ongoing guidance on what to do next to grow your business.</p>
+      </div>
+      <div class="feat-card">
+        <svg class="feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v11H8l-4 4V5z"/></svg>
+        <h3>Customer Messaging</h3>
+        <p>Text and chat with customers directly from your dashboard.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="imagine-band" id="imagine">
-  <div class="wrap" id="grow">
-    <div class="sec-head">
-      <p class="kicker" style="color:var(--brand)">Your next move</p>
-      <h2 class="sec-title">Your business deserves software that <em>learns you.</em></h2>
-      <p class="imagine-promise">Most software makes you learn how it works.<br><em>Hubly learns how you work.</em></p>
-      <p class="sec-lead">Tell Hubly what you do. We’ll build everything else together.</p>
-    </div>
-
-    <div class="imagine-caps" aria-label="What Hubly builds">
-      <div class="imagine-cap">
-        <span class="imagine-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 6h10a3 3 0 013 3v4a3 3 0 01-3 3H10l-4 3v-3H5a2 2 0 01-2-2V8a2 2 0 012-2z"/></svg></span>
-        <strong>Tell Hubly</strong>
-        <span>Share what you do and who you serve.</span>
+<section class="bottom-cta" id="get-started">
+  <div class="wrap">
+    <h2>Ready to get started?</h2>
+    <p>Tell us what you need or about your business.</p>
+    <div class="ask-wrap">
+      <div class="ask-glow" aria-hidden="true"></div>
+      <div class="ask-box">
+        <input id="ctaInput" type="text" autocomplete="off" placeholder="What can Hubly help you with today?" aria-label="What can Hubly help you with today?">
+        <span class="ask-icon-left" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>
+        </span>
+        <button type="button" class="ask-submit" id="ctaSubmit" aria-label="Continue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
       </div>
-      <div class="imagine-cap">
-        <span class="imagine-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9.5 8.5a2.5 2.5 0 115 0c0 1.5-1.2 2.2-2 3-.6.6-1 1.3-1 2.2"/><circle cx="12.5" cy="17.5" r=".8" fill="currentColor"/><path d="M5 10a7 7 0 0014 0"/></svg></span>
-        <strong>Hubly learns</strong>
-        <span>Our AI understands your business.</span>
-      </div>
-      <div class="imagine-cap">
-        <span class="imagine-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M3 12h18M12 4a14 14 0 010 16M12 4a14 14 0 000 16"/></svg></span>
-        <strong>Website built</strong>
-        <span>A professional website made for you.</span>
-      </div>
-      <div class="imagine-cap">
-        <span class="imagine-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
-        <strong>Booking goes live</strong>
-        <span>Customers can book with you instantly.</span>
-      </div>
-      <div class="imagine-cap">
-        <span class="imagine-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg></span>
-        <strong>CRM is ready</strong>
-        <span>Your leads and customers are organized.</span>
-      </div>
-      <div class="imagine-cap">
-        <span class="imagine-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/></svg></span>
-        <strong>Accept payments</strong>
-        <span>Take payments securely and get paid.</span>
-      </div>
-    </div>
-
-    <div class="imagine-ctas" id="start">
-      <a class="btn btn-brand btn-lg" href="/signup">Build My Business →</a>
-      <a class="btn btn-ghost btn-lg" href="/get-done" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.28)">Ask Hubly →</a>
-    </div>
-    <p class="imagine-antis" aria-label="No setup. No templates. No complicated software.">
-      <span>No setup</span>
-      <span>No templates</span>
-      <span>No complicated software</span>
-    </p>
-
-    <div class="imagine-banner">
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.4 4.4L18 8l-4.6 1.6L12 14l-1.4-4.4L6 8l4.6-1.6L12 2z"/></svg>
-      <span><strong>Built around your business.</strong> <em>Not the other way around.</em></span>
     </div>
   </div>
 </section>
 
 <footer class="footer">
-  <a href="/" aria-label="hubly home">
-    <span class="hubly-lockup">hub<span class="ly">ly</span></span>
-  </a>
-  <nav aria-label="Footer">
-    <a href="/get-done">Ask Hubly</a>
-    <a href="/marketplace">Get Found by Customers</a>
-    <a href="#how">How it works</a>
-    <a href="#grow">Build My Business</a>
-    <a href="/login">Sign in</a>
-  </nav>
-  <p>© <span id="y"></span> Hubly · Built around your business</p>
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-cols">
+        <span class="hubly-lockup">hub<span class="ly">ly</span></span>
+      </div>
+      <div class="footer-cols">
+        <h4>For Customers</h4>
+        <ul>
+          <li><a href="/get-done">Find a Pro</a></li>
+          <li><a href="#top">Popular Services</a></li>
+          <li><a href="#categories">Categories</a></li>
+        </ul>
+      </div>
+      <div class="footer-cols">
+        <h4>For Businesses</h4>
+        <ul>
+          <li><a href="/signup">Build My Business</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="/login">Sign in</a></li>
+        </ul>
+      </div>
+      <div class="footer-cols">
+        <h4>Company</h4>
+        <ul>
+          <li><span class="static">About</span></li>
+          <li><span class="static">Contact</span></li>
+        </ul>
+      </div>
+      <div class="footer-cols">
+        <h4>Legal</h4>
+        <ul>
+          <li><span class="static">Privacy Policy</span></li>
+          <li><span class="static">Terms of Service</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span id="y"></span> Hubly</p>
+      <p>Built with ❤️ for service businesses like yours.</p>
+    </div>
+  </div>
 </footer>
-
-<button type="button" class="ask-fab" id="askFab" aria-expanded="false" aria-controls="askFloat"><span class="fab-dot" aria-hidden="true"></span> Ask Hubly</button>
-<div class="ask-panel-float" id="askFloat" role="dialog" aria-label="Ask Hubly" aria-hidden="true" hidden>
-  <div class="ask-panel-head">
-    <span class="hubly-lockup">hub<span class="ly">ly</span></span>
-    <button type="button" class="ask-close" id="askClose" aria-label="Close">×</button>
-  </div>
-  <div class="ask-msgs" id="askMsgs">
-    <div class="msg msg-bot">Hi—I’m Hubly. Tell me what you need done, or tell me about your business.</div>
-  </div>
-  <form class="ask-compose" id="askForm">
-    <input type="text" id="askInput" placeholder="I need my windows cleaned…" autocomplete="off" aria-label="Message">
-    <button type="submit">Send</button>
-  </form>
-</div>
 
 <script src="/hubly-session.js"></script>
 <script>
 (function(){
   document.getElementById('y').textContent = new Date().getFullYear();
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* Transparent nav over hero; solid only after scroll */
   var nav = document.querySelector('.nav');
-  function syncNav(){
-    if(!nav) return;
-    nav.classList.toggle('is-scrolled', window.scrollY > 20);
-  }
+  function syncNav(){ if(nav) nav.classList.toggle('is-scrolled', window.scrollY > 12); }
   syncNav();
-  window.addEventListener('scroll', syncNav, { passive: true });
+  window.addEventListener('scroll', syncNav, { passive:true });
 
-  /* Rule #24 — Dual Product Architecture: grow business | hire someone */
   var Intent = window.HublySession || window.HublyLandingIntent;
-  var importKick = null;
-  var path = 'business';
-  var userTouched = false;
-  var lastUnderstanding = null;
-  var input = document.getElementById('heroInput');
-  var heroCta = document.getElementById('heroCta');
-  var heroTitle = document.getElementById('heroTitle');
-  var heroLead = document.getElementById('heroLead');
-  var chipsLabel = document.getElementById('chipsLabel');
-  var pathHelp = document.getElementById('pathHelp');
-  var pathBiz = document.getElementById('pathBiz');
-  var heroStatus = document.getElementById('heroStatus');
-  var heroStatusText = document.getElementById('heroStatusText');
 
-  var copy = {
-    help: {
-      title: 'What do you need done <em>today?</em>',
-      lead: 'Talk naturally. Hubly’s AI Concierge finds the right local pro and helps you book.',
-      placeholder: 'I need my windows cleaned this Friday…',
-      cta: 'Find someone',
-      ctaReady: '✨ Find someone',
-      chipsLabel: 'Need inspiration?'
-    },
-    business: {
-      title: 'Tell Hubly about your business.<br><em>We’ll build the rest.</em>',
-      lead: 'Talk naturally. Hubly researches your market and builds your website, booking, pricing, services, and operating system while you chat.',
-      placeholder: 'Tell me about your business...',
-      cta: 'Continue Building',
-      ctaReady: '✨ Continue Building',
-      chipsLabel: 'Popular Trades'
-    }
-  };
-
-  function setPath(next){
-    var nextPath = next === 'business' ? 'business' : 'help';
-    var changed = nextPath !== path;
-    path = nextPath;
-    var c = copy[path];
-    if(heroTitle) heroTitle.innerHTML = c.title;
-    if(heroLead) heroLead.textContent = c.lead;
-    if(chipsLabel) chipsLabel.textContent = c.chipsLabel;
-    if(input && !userTouched) input.setAttribute('placeholder', c.placeholder);
-    if(input) input.setAttribute('aria-label', path === 'help' ? 'Describe what you need' : 'Tell Hubly about your business');
-    if(pathHelp){
-      pathHelp.classList.toggle('is-on', path === 'help');
-      pathHelp.setAttribute('aria-selected', path === 'help' ? 'true' : 'false');
-    }
-    if(pathBiz){
-      pathBiz.classList.toggle('is-on', path === 'business');
-      pathBiz.setAttribute('aria-selected', path === 'business' ? 'true' : 'false');
-    }
-    refreshUnderstanding();
-    if(changed && typeof restartDemo === 'function') restartDemo();
-  }
-  if(pathHelp) pathHelp.addEventListener('click', function(){ setPath('help'); });
-  if(pathBiz) pathBiz.addEventListener('click', function(){ setPath('business'); });
-
-  function paintStatus(u, session){
-    if(!heroStatus || !heroStatusText) return;
-    var line = (Intent && Intent.statusLine) ? Intent.statusLine(u || {}) : (u && u.statusLine) || '';
-    if(!line && session && session.importProgress && session.importProgress.length){
-      line = 'Hubly ' + session.importProgress[session.importProgress.length - 1];
-    }
-    if(line){
-      heroStatusText.textContent = line;
-      heroStatus.classList.add('is-on');
-      var learning = !(u && u.ready) || (session && session.status === 'importing');
-      heroStatus.classList.toggle('is-learning', !!learning);
-    } else {
-      heroStatusText.textContent = '';
-      heroStatus.classList.remove('is-on', 'is-learning');
-    }
-  }
-
-  function refreshUnderstanding(){
-    if(!Intent || !input) return;
-    var u = Intent.understand(input.value, path);
-    lastUnderstanding = u;
-    var session = Intent.upsertSession(u);
-    u.statusLine = Intent.statusLine(u);
-    paintStatus(u, session);
-    if(heroCta){
-      var autoPath = u.intent === 'hire_pro' ? 'help' : (u.intent === 'build_business' ? 'business' : path);
-      var label = autoPath === 'help'
-        ? (u.ready ? copy.help.ctaReady : copy.help.cta)
-        : (u.ready ? copy.business.ctaReady : copy.business.cta);
-      if(u.ready && u.intent === 'hire_pro' && path === 'business') label = copy.help.ctaReady;
-      if(u.ready && u.intent === 'build_business' && path === 'help') label = copy.business.ctaReady;
-      heroCta.textContent = label;
-      /* Always clickable — Hubly Session carries whatever they typed (even empty → /signup or /get-done) */
-      heroCta.disabled = false;
-      heroCta.removeAttribute('disabled');
-      heroCta.classList.remove('is-disabled');
-      heroCta.classList.toggle('is-ready', !!u.ready);
-      heroCta.setAttribute('aria-label', autoPath === 'help' ? 'Continue to AI Concierge' : 'Continue Building your business');
-    }
-    /* Real import pipeline — begin the moment URLs are detected */
-    if(u.imports && u.imports.length && Intent.startImportPipeline){
-      clearTimeout(importKick);
-      importKick = setTimeout(function(){
-        Intent.startImportPipeline(function(){
-          paintStatus(lastUnderstanding, Intent.loadSession());
-        });
-      }, 220);
-    }
-    return u;
-  }
-
-  /* Popular trades — seed the AI box; do not start onboarding */
-  var chipEl = document.getElementById('chips');
-  var tradeChips = Intent ? Intent.tradeCatalog() : [
-    { label: 'Detailing', phrase: "I'm starting a mobile detailing company" },
-    { label: 'Cleaning', phrase: "I'm starting a cleaning company" },
-    { label: 'Pressure Washing', phrase: "I'm starting a pressure washing business" },
-    { label: 'Window Cleaning', phrase: "I'm starting a window cleaning business" },
-    { label: 'Photography', phrase: "I'm starting a photography business" },
-    { label: 'HVAC', phrase: "I'm starting an HVAC business" },
-    { label: 'Lawn Care', phrase: "I'm starting a lawn care business" }
-  ];
-  var hireSeeds = {
-    Detailing: 'I need ceramic coating for my Tesla…',
-    Cleaning: 'I need my house cleaned tomorrow…',
-    'Pressure Washing': 'I need my driveway pressure washed…',
-    'Window Cleaning': 'I need my windows cleaned…',
-    Photography: 'Find a photographer…',
-    HVAC: 'I need HVAC repair…',
-    'Lawn Care': 'I need lawn care this weekend…'
-  };
-  tradeChips.forEach(function(c, i){
-    var b = document.createElement('button');
-    b.type = 'button'; b.className = 'chip'; b.textContent = c.label;
-    b.addEventListener('click', function(){
-      userTouched = true;
-      if(path === 'help'){
-        input.value = hireSeeds[c.label] || ('I need ' + c.label.toLowerCase() + '…');
-      } else {
-        input.value = c.phrase || ("I'm starting a " + c.label.toLowerCase() + ' business');
-      }
-      Intent && Intent.track('trade_selected', { trade: c.label, path: path });
-      refreshUnderstanding();
-      input.focus();
-    });
-    chipEl.appendChild(b);
-    if(reduce) b.classList.add('in');
-    else setTimeout(function(){ b.classList.add('in'); }, 520 + i * 90);
-  });
-  var viewAll = document.createElement('a');
-  viewAll.href = path === 'help' ? '/get-done' : '#industries';
-  viewAll.className = 'browse-more';
-  viewAll.id = 'chipsMore';
-  viewAll.textContent = 'View All →';
-  chipEl.appendChild(viewAll);
-
-  /* Rotating example prompts */
-  var prompts = [
-    'I need my windows cleaned…',
-    'I need pressure washing this week…',
-    'Find me a reliable plumber…',
-    'I need lawn care this weekend…',
-    'I need a house cleaner…',
-    'Book HVAC repair…'
-  ];
-  var bizPrompts = [
-    "I'm starting a mobile detailing company",
-    'I own a pressure washing business in Dallas…',
-    'I clean houses in Austin…',
-    'I already have a website — I want more customers…',
-    "Here's my Instagram…"
-  ];
-  var pi = 0, char = 0, deleting = false, pause = 0;
-  function rotatePlaceholder(){
-    if(reduce || userTouched || document.activeElement === input) return;
-    var list = path === 'business' ? bizPrompts : prompts;
-    var full = list[pi % list.length];
-    if(pause > 0){ pause--; return; }
-    if(!deleting){
-      char++;
-      input.setAttribute('placeholder', full.slice(0, char));
-      if(char >= full.length){ deleting = true; pause = 26; }
-    } else {
-      char--;
-      input.setAttribute('placeholder', full.slice(0, char));
-      if(char <= 0){ deleting = false; pi = (pi + 1) % list.length; pause = 8; }
-    }
-  }
-  if(!reduce) setInterval(rotatePlaceholder, 42);
-  input.addEventListener('focus', function(){ userTouched = true; });
-  input.addEventListener('input', function(){
-    userTouched = true;
-    refreshUnderstanding();
-  });
-
-  function goWithSession(kind){
-    var u = refreshUnderstanding() || lastUnderstanding || Intent.understand(input.value, path);
+  function go(inputEl){
+    if(!Intent){ window.location.href = '/get-done'; return; }
+    var text = (inputEl.value || '').trim();
+    var u = Intent.understand(text);
     var session = Intent.upsertSession(u);
     if(Intent.markHandedOff) Intent.markHandedOff();
-    Intent.track(kind === 'hire' ? 'continue_hire' : 'continue_build', { hs: session && session.id, intent: u.intent });
-    var url = Intent.routeUrl(u, session);
-    /* Ensure hire/build exit matches kind when caller is explicit */
-    if(kind === 'hire' && url.indexOf('/get-done') !== 0){
-      var q = encodeURIComponent((u.text || '').trim());
-      url = q ? '/get-done?q=' + q + '&hs=' + encodeURIComponent(session.id) : '/get-done';
-    }
-    if(kind === 'build' && url.indexOf('/signup') !== 0){
-      var qb = encodeURIComponent((u.text || '').trim());
-      url = qb ? '/signup?q=' + qb + '&hs=' + encodeURIComponent(session.id) : '/signup?hs=' + encodeURIComponent(session.id);
-    }
-    window.location.href = url;
-  }
-  function goBuild(){ goWithSession('build'); }
-  function goHelp(){ goWithSession('hire'); }
-  function goPrimary(){
-    var u = refreshUnderstanding() || lastUnderstanding || (Intent && Intent.understand(input ? input.value : '', path));
-    if(!u){
-      if(path === 'help') return goHelp();
-      return goBuild();
-    }
-    /* Never soft-block — continue with whatever Hubly has learned so far */
-    if(u.intent === 'hire_pro' || u.destination === 'marketplace_concierge') return goHelp();
-    if(u.intent === 'build_business' || u.destination === 'business_builder') return goBuild();
-    if(path === 'business') goBuild();
-    else goHelp();
-  }
-  if(heroCta) heroCta.addEventListener('click', goPrimary);
-  input.addEventListener('keydown', function(e){
-    if(e.key === 'Enter') goPrimary();
-  });
-
-  /* Restore anonymous Hubly Session after refresh */
-  try {
-    var existing = Intent && Intent.loadSession();
-    if(existing && existing.lastText && input && !input.value){
-      input.value = existing.lastText;
-      userTouched = true;
-      if(existing.detected && existing.detected.intent === 'hire_pro') setPath('help');
-    }
-  } catch (_) {}
-  refreshUnderstanding();
-  Intent && Intent.track('landing_view', { path: path });
-
-  /* Live AI demo — business builds OR Ask Hubly matches, synced to path tabs */
-  var restartDemo = null;
-  var bizDemos = [
-    {
-      text: 'I own a pressure washing company.',
-      reply: 'Got it. Understanding your business…',
-      understand: ['Pressure Washing', 'Mobile Business', 'Residential', 'Premium Pricing'],
-      tags: [
-        'Creating website…',
-        'Creating booking…',
-        'CRM ready…',
-        'Website published…'
-      ],
-      name: 'Dallas Pressure Pros',
-      rating: '',
-      reviews: '',
-      when: 'Website published',
-      price: 'Booking · CRM · Payments ready',
-      thumb: 'https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=200&q=80'
-    },
-    {
-      text: 'I own a mobile detailing business.',
-      reply: 'Awesome. Learning how you work…',
-      understand: ['Mobile Detailing', 'Cars & Boats', 'On-site Service', 'Premium Packages'],
-      tags: [
-        'Creating website…',
-        'Creating booking…',
-        'CRM ready…',
-        'Website published…'
-      ],
-      name: 'Forge Mobile Detail',
-      rating: '',
-      reviews: '',
-      when: 'Website published',
-      price: 'Booking · CRM · Payments ready',
-      thumb: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=200&q=80'
-    },
-    {
-      text: 'I clean houses in Austin.',
-      reply: 'Perfect. Building around your business…',
-      understand: ['House Cleaning', 'Residential', 'Recurring Plans', 'Trusted Pros'],
-      tags: [
-        'Creating website…',
-        'Creating booking…',
-        'CRM ready…',
-        'Website published…'
-      ],
-      name: 'Austin Home Clean Co.',
-      rating: '',
-      reviews: '',
-      when: 'Website published',
-      price: 'Booking · CRM · Payments ready',
-      thumb: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=80'
-    }
-  ];
-  var helpDemos = [
-    {
-      text: 'Find me a house cleaner this week.',
-      reply: 'Got it. Finding the right pro…',
-      understand: [],
-      tags: ['Reviews', 'Repeat customers', 'Response time', 'AI fit score'],
-      name: 'Sparkle Home Clean',
-      rating: '★★★★★',
-      reviews: '210',
-      when: 'Thu · 1—3pm',
-      price: 'From $120',
-      thumb: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=80'
-    },
-    {
-      text: 'I need my windows cleaned Friday.',
-      reply: 'On it. Matching local pros…',
-      understand: [],
-      tags: ['Reviews', 'Repeat customers', 'Response time', 'AI fit score'],
-      name: 'ClearView Windows',
-      rating: '★★★★★',
-      reviews: '148',
-      when: 'Fri · 9—11am',
-      price: 'From $95',
-      thumb: 'https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=200&q=80'
-    },
-    {
-      text: 'Pressure washing for my driveway.',
-      reply: 'Matching you with verified pros…',
-      understand: [],
-      tags: ['Reviews', 'Repeat customers', 'Response time', 'AI fit score'],
-      name: 'Bright Path Wash',
-      rating: '★★★★★',
-      reviews: '326',
-      when: 'Sat · 10—12pm',
-      price: 'From $150',
-      thumb: 'https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=200&q=80'
-    }
-  ];
-  var demoChrome = {
-    business: {
-      head: 'Built around your business',
-      live: 'Building',
-      found: 'Ready.',
-      cta: 'Your business is live →',
-      trust: 'Website · Booking · CRM · Payments',
-      float: 'Live Hubly building a business',
-      midStatus: 'Building your business…',
-      beamStatus: 'Publishing…',
-      doneStatus: 'Ready.'
-    },
-    help: {
-      head: 'Finding the right pro',
-      live: 'Matching',
-      found: 'Perfect match found',
-      cta: 'Book Now →',
-      trust: 'Verified · Rated · Available',
-      float: 'Live Hubly matching a local pro',
-      midStatus: 'Matching you with pros…',
-      beamStatus: 'Matching…',
-      doneStatus: 'Perfect match found.'
-    }
-  };
-  function activeDemos(){ return path === 'help' ? helpDemos : bizDemos; }
-  function activeChrome(){ return demoChrome[path] || demoChrome.business; }
-  function syncDemoChrome(){
-    var ch = activeChrome();
-    var head = document.getElementById('demoHeadLabel');
-    var live = document.getElementById('demoLiveLabel');
-    var found = document.getElementById('resultFoundLabel');
-    var cta = document.getElementById('resultCtaLabel');
-    var trust = document.getElementById('resultTrustLabel');
-    var float = document.querySelector('.hero-float');
-    if(head) head.textContent = ch.head;
-    if(live) live.textContent = ch.live;
-    if(found) found.textContent = ch.found;
-    if(cta) cta.textContent = ch.cta;
-    if(trust) trust.textContent = ch.trust;
-    if(float) float.setAttribute('aria-label', ch.float);
-  }
-  var aiDemo = document.getElementById('aiDemo');
-  var aiUser = document.getElementById('aiUser');
-  var aiTags = document.getElementById('aiTags');
-  var aiStatus = document.getElementById('aiStatus');
-  var aiBeam = document.getElementById('aiBeam');
-  var aiResult = document.getElementById('aiResult');
-  var resultCard = document.getElementById('resultCard');
-  var resultThumb = document.getElementById('resultThumb');
-  var resultRating = document.getElementById('resultRating');
-  var resultName = document.getElementById('resultName');
-  var resultWhen = document.getElementById('resultWhen');
-  var resultPrice = document.getElementById('resultPrice');
-  var demoIdx = 0;
-  var demoTimers = [];
-  var typeInterval = null;
-
-  function later(ms, fn){
-    var id = setTimeout(fn, ms);
-    demoTimers.push(id);
-    return id;
-  }
-  function clearDemoTimers(){
-    demoTimers.forEach(clearTimeout);
-    demoTimers = [];
-    if(typeInterval){ clearInterval(typeInterval); typeInterval = null; }
-  }
-  function setStatus(html){
-    if(aiStatus) aiStatus.innerHTML = html;
-  }
-  function hideMatchCard(){
-    if(aiResult){
-      aiResult.classList.remove('lit', 'hold');
-      aiResult.classList.add('waiting');
-      aiResult.setAttribute('aria-hidden', 'true');
-    }
-    if(resultCard){
-      resultCard.classList.remove('show', 'dim');
-    }
-  }
-  function resetResult(){
-    if(aiBeam) aiBeam.classList.remove('run');
-    if(aiDemo) aiDemo.classList.remove('searching');
-    hideMatchCard();
-  }
-  function showMatch(demo){
-    syncDemoChrome();
-    if(resultThumb && demo.thumb) resultThumb.src = demo.thumb;
-    if(resultRating){
-      resultRating.innerHTML = demo.rating
-        ? (demo.rating + (demo.reviews ? ' <span style="opacity:.7">(' + demo.reviews + ')</span>' : ''))
-        : '';
-    }
-    if(resultName) resultName.textContent = demo.name;
-    if(resultWhen) resultWhen.textContent = demo.when;
-    if(resultPrice) resultPrice.textContent = demo.price;
-    if(aiResult){
-      aiResult.setAttribute('aria-hidden', 'false');
-      aiResult.classList.remove('waiting');
-      aiResult.classList.add('lit');
-    }
-    if(resultCard){
-      resultCard.classList.remove('dim', 'show');
-      void resultCard.offsetWidth;
-      resultCard.classList.add('show');
-    }
-    later(reduce ? 0 : 900, function(){
-      if(aiResult) aiResult.classList.add('hold');
-    });
-  }
-  function clearDemo(){
-    if(aiUser) aiUser.innerHTML = '';
-    if(aiTags) aiTags.innerHTML = '';
-    setStatus('');
-    resetResult();
-  }
-  function runBeamThenMatch(demo, done){
-    var ch = activeChrome();
-    if(reduce){
-      showMatch(demo);
-      setStatus(ch.doneStatus);
-      done();
-      return;
-    }
-    if(aiDemo) aiDemo.classList.add('searching');
-    setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> ' + ch.beamStatus);
-    later(560, function(){
-      if(aiBeam){
-        aiBeam.classList.remove('run');
-        void aiBeam.offsetWidth;
-        aiBeam.classList.add('run');
-      }
-      later(1180, function(){
-        showMatch(demo);
-        setStatus(ch.doneStatus);
-        later(700, function(){
-          if(aiDemo) aiDemo.classList.remove('searching');
-          if(aiBeam) aiBeam.classList.remove('run');
-        });
-        done();
-      });
-    });
-  }
-  function typeDemo(demo, done){
-    var ch = activeChrome();
-    function pushTags(list, then){
-      if(aiTags) aiTags.innerHTML = '';
-      if(!list || !list.length){ then(); return; }
-      list.forEach(function(tag, ti){
-        later(ti * 380, function(){
-          var s = document.createElement('span');
-          s.className = 'ai-tag';
-          s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
-          aiTags.appendChild(s);
-          requestAnimationFrame(function(){ s.classList.add('in'); });
-        });
-      });
-      later(list.length * 380 + 420, then);
-    }
-    if(reduce){
-      aiUser.textContent = demo.text;
-      (demo.understand || []).concat(demo.tags || []).slice(0, 4).forEach(function(tag){
-        var s = document.createElement('span');
-        s.className = 'ai-tag in';
-        s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
-        aiTags.appendChild(s);
-      });
-      runBeamThenMatch(demo, done);
-      return;
-    }
-    var i = 0;
-    aiUser.innerHTML = '<span class="typed"></span><span class="cursor" aria-hidden="true"></span>';
-    var typed = aiUser.querySelector('.typed');
-    setStatus('Listening…');
-    typeInterval = setInterval(function(){
-      i++;
-      typed.textContent = demo.text.slice(0, i);
-      if(i >= demo.text.length){
-        clearInterval(typeInterval); typeInterval = null;
-        var cur = aiUser.querySelector('.cursor');
-        if(cur) cur.remove();
-        later(420, function(){
-          setStatus(demo.reply || ch.midStatus);
-          later(520, function(){
-            pushTags(demo.understand || [], function(){
-              setStatus(ch.midStatus);
-              pushTags(demo.tags || [], function(){
-                runBeamThenMatch(demo, done);
-              });
-            });
-          });
-        });
-      }
-    }, 48);
-  }
-  function runDemoLoop(){
-    if(!aiUser) return;
-    clearDemoTimers();
-    clearDemo();
-    syncDemoChrome();
-    var demos = activeDemos();
-    var demo = demos[demoIdx % demos.length];
-    var next = demos[(demoIdx + 1) % demos.length];
-    if(next && next.thumb){
-      var img = new Image();
-      img.src = next.thumb;
-    }
-    typeDemo(demo, function(){
-      later(reduce ? 4800 : 4600, function(){
-        demoIdx++;
-        runDemoLoop();
-      });
-    });
-  }
-  restartDemo = function(){
-    demoIdx = 0;
-    runDemoLoop();
-  };
-  if(aiResult){
-    aiResult.classList.add('waiting');
-    aiResult.setAttribute('aria-hidden', 'true');
-  }
-  setPath('business');
-  if(aiUser) runDemoLoop();
-
-  /* Journey reveal */
-  var steps = document.querySelectorAll('[data-step]');
-  if('IntersectionObserver' in window){
-    var jo = new IntersectionObserver(function(entries){
-      entries.forEach(function(e){
-        if(e.isIntersecting){
-          var list = Array.prototype.slice.call(steps);
-          var idx = list.indexOf(e.target);
-          setTimeout(function(){ e.target.classList.add('in'); }, Math.max(0, idx) * 140);
-          jo.unobserve(e.target);
-        }
-      });
-    }, {threshold: 0.28});
-    steps.forEach(function(s){ jo.observe(s); });
-  } else {
-    steps.forEach(function(s){ s.classList.add('in'); });
+    if(Intent.track) Intent.track('landing_v2_continue', { hs: session && session.id, intent: u.intent });
+    window.location.href = Intent.routeUrl(u, session);
   }
 
-  /* Ask Hubly — closed by default; slides in only when invited */
-  var fab = document.getElementById('askFab');
-  var panel = document.getElementById('askFloat');
-  var msgs = document.getElementById('askMsgs');
-  function setOpen(open){
-    if(!panel) return;
-    if(open){
-      panel.hidden = false;
-      // next frame so slide-in transition runs
-      requestAnimationFrame(function(){
-        requestAnimationFrame(function(){
-          panel.classList.add('open');
-          panel.setAttribute('aria-hidden', 'false');
-        });
-      });
-    } else {
-      panel.classList.remove('open');
-      panel.setAttribute('aria-hidden', 'true');
-      setTimeout(function(){
-        if(!panel.classList.contains('open')) panel.hidden = true;
-      }, 320);
-    }
-    if(fab) fab.setAttribute('aria-expanded', open ? 'true' : 'false');
+  function wire(inputId, btnId){
+    var input = document.getElementById(inputId);
+    var btn = document.getElementById(btnId);
+    if(!input || !btn) return;
+    btn.addEventListener('click', function(){ go(input); });
+    input.addEventListener('keydown', function(e){ if(e.key === 'Enter') go(input); });
   }
-  function openChat(){
-    setOpen(true);
-    setTimeout(function(){
-      var inp = document.getElementById('askInput');
-      if(inp) inp.focus();
-    }, 80);
-  }
-  // Ensure closed on load
-  setOpen(false);
-  if(fab) fab.addEventListener('click', function(){ setOpen(!panel.classList.contains('open')); });
-  document.getElementById('askClose').addEventListener('click', function(){ setOpen(false); });
-  document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape' && panel && panel.classList.contains('open')) setOpen(false);
-  });
-  document.getElementById('askForm').addEventListener('submit', function(e){
-    e.preventDefault();
-    var v = document.getElementById('askInput').value.trim();
-    if(!v) return;
-    var u = document.createElement('div');
-    u.className = 'msg msg-user'; u.textContent = v;
-    msgs.appendChild(u);
-    document.getElementById('askInput').value = '';
-    var understood = Intent ? Intent.understand(v, 'help') : null;
-    if(Intent && understood) Intent.upsertSession(understood);
-    var dest = understood && Intent ? Intent.routeUrl(understood) : ('/get-done?q=' + encodeURIComponent(v));
-    var goingBuilder = dest.indexOf('/signup') === 0;
-    setTimeout(function(){
-      var b = document.createElement('div');
-      b.className = 'msg msg-bot';
-      b.textContent = goingBuilder
-        ? 'Got it—you sound like a business owner. Opening the Business Builder…'
-        : 'Got it—opening Get Done with your request…';
-      msgs.appendChild(b);
-      msgs.scrollTop = msgs.scrollHeight;
-      setTimeout(function(){
-        window.location.href = dest;
-      }, 650);
-    }, 350);
-    msgs.scrollTop = msgs.scrollHeight;
-  });
-
-  var notifyForm = document.getElementById('notifyForm');
-  if(notifyForm) notifyForm.addEventListener('submit', function(e){
-    e.preventDefault();
-    var form = e.target;
-    var input = form.querySelector('input[name="email"]');
-    var btn = form.querySelector('button');
-    var email = (input && input.value || '').trim();
-    if(!email) return;
-    var prev = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Saving…';
-    fetch('/api/notify-readiness', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, source: 'business-readiness' })
-    }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, json: j }; }); })
-      .then(function(res){
-        if(res.ok && res.json && res.json.ok){
-          btn.textContent = 'You’re on the list';
-          if(input) input.disabled = true;
-          return;
-        }
-        btn.disabled = false;
-        btn.textContent = prev;
-        var msg = (res.json && (res.json.error || res.json.reason)) || 'Could not save — try again';
-        if(msg === 'not_configured') msg = 'Notify list isn’t configured yet — email support@myhubly.app';
-        alert(msg);
-      })
-      .catch(function(){
-        btn.disabled = false;
-        btn.textContent = prev;
-        alert('Could not save — try again');
-      });
-  });
+  wire('heroInput', 'heroSubmit');
+  wire('ctaInput', 'ctaSubmit');
 })();
 </script>
 </body>
