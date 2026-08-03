@@ -19,9 +19,13 @@
 //   accepted and threaded through so Business Memory / DNA can be wired in
 //   later (via HublyAICallOpts.memory / .dna) without changing this contract.
 // - Public contract stays minimal and stable: the client only ever sees
-//   `reply`, `actions`, and `understanding`. `messages` is opaque — resent
-//   verbatim, never parsed structurally beyond `role`, so internal
-//   orchestration can change without breaking any consumer.
+//   `reply`, `actions`, `interimMessages`, and `understanding`. `messages` is
+//   opaque — resent verbatim, never parsed structurally beyond `role`, so
+//   internal orchestration can change without breaking any consumer.
+// - Experience 1's opening line is the one deterministic exception to "the
+//   model decides everything" — fixed exact text, no model call, whenever a
+//   conversation has no prior Hubly reply yet. Every turn after that is
+//   fully open — no other scripted flow anywhere in this file.
 // - Business Understanding is patch-based, like a CRDT or Git history: the
 //   client sends its current accumulated state each turn (so the model knows
 //   what's already established and never re-emits it), and the response
@@ -42,12 +46,27 @@
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
 import { findAction, buildCapabilitiesPromptBlock } from "../_shared/hubly_capability_registry.ts";
+import { HUBLY_CORE_DEFINITION } from "../_shared/hubly_core_definition.ts";
 import {
   type BusinessUnderstandingPatch,
   UNDERSTANDING_CATEGORIES,
   mergeUnderstandingPatch,
   isEmptyPatch,
 } from "../_shared/hubly_business_understanding.ts";
+
+// Experience 1's opening line is fixed, not model-generated — this is the
+// first thing anyone ever sees from Hubly, too important to leave to
+// per-turn variance. Returned whenever a conversation has no prior Hubly
+// reply yet, regardless of what the person's first message said. Every turn
+// after this one belongs entirely to the model — no scripted flow beyond it.
+const DETERMINISTIC_OPENING =
+  "I'd love to help.\n\nBefore I make recommendations or build anything, I'd like to learn about your business.\n\nYou can paste a website, your Google Business Profile, Facebook page, Instagram, upload screenshots, or simply tell me you're starting from scratch.";
+
+function buildCoreDefinitionPromptBlock(): string {
+  return HUBLY_CORE_DEFINITION.map(
+    (c) => `- ${c.name}: ${c.purpose} (${c.customerValue})`,
+  ).join("\n");
+}
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -96,10 +115,18 @@ Whenever you've just gathered new information (from a capability result, or from
 ABSOLUTE RULE — HONESTY OVER APPEARING INTELLIGENT
 You must never imply that analysis happened unless it actually happened. If a capability result says something could not be read, say so plainly and explain what would need to change for you to read it (e.g. "there's no live connection to Instagram yet, so I can't read what's actually on the page — connecting it in the future will let me look at it properly"). Never invent findings, never say something is "being processed" or "continuing in the background" unless a real process is genuinely running. Trust matters more than sounding capable.
 
-HUBLY CAPABILITIES AVAILABLE TO YOU
+WHAT HUBLY IS BUILT AROUND
+This is the full shape of Hubly's platform — use it to understand what generally matters to a service business and to guide your judgment about what's worth asking or noticing. This is background knowledge, NOT a list of things you can do:
+${buildCoreDefinitionPromptBlock()}
+
+HUBLY CAPABILITIES YOU CAN ACTUALLY INVOKE RIGHT NOW
+This is the only list of things you can actually DO. Never claim, promise, or imply you can do something from the list above unless it also appears here:
 ${buildCapabilitiesPromptBlock()}
 
 Photos or screenshots someone attaches are visible to you directly in the conversation — look at them and describe honestly what you can actually see. That doesn't require a capability call.
+
+RECOMMENDING A CAPABILITY
+Never recommend or invoke a capability just because it exists. Only bring one up when it genuinely helps with what the person actually said they need. If nothing in your available capabilities is relevant to what they're asking, don't force one in — just help them in conversation.
 
 BUSINESS UNDERSTANDING — YOUR EVOLVING MENTAL MODEL OF THIS BUSINESS
 Alongside your reply, you maintain a shared, structured understanding of this business across categories: business, industry, services, website, brand, scheduling, crm, payments, goals. This becomes visible to the person as "What I've Learned" and, eventually, Business DNA.
@@ -126,10 +153,6 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return jsonRes({ ok: false, error: "POST required" }, 405);
 
-  if (!HublyAI.isConfigured("openai")) {
-    return jsonRes({ ok: false, error: "Hubly Conversation is not configured yet." }, 503);
-  }
-
   let body: any;
   try {
     body = await req.json();
@@ -139,6 +162,18 @@ Deno.serve(async (req) => {
 
   const incoming: HublyMessage[] = Array.isArray(body?.messages) ? body.messages : [];
   if (!incoming.length) return jsonRes({ ok: false, error: "messages_required" }, 400);
+
+  // The deterministic opening needs no model call at all, so it must never
+  // be gated behind provider configuration — check for it before the
+  // isConfigured guard below, not after.
+  if (!incoming.some((m) => m.role === "assistant")) {
+    const history = [...incoming, { role: "assistant" as const, content: DETERMINISTIC_OPENING }];
+    return jsonRes({ ok: true, reply: DETERMINISTIC_OPENING, messages: history, actions: [], interimMessages: [] });
+  }
+
+  if (!HublyAI.isConfigured("openai")) {
+    return jsonRes({ ok: false, error: "Hubly Conversation is not configured yet." }, 503);
+  }
 
   // Reserved for future Business Memory / DNA wiring — accepted and threaded
   // through, unused today. Adding it later means passing it into
@@ -157,6 +192,10 @@ Deno.serve(async (req) => {
   // accumulate into a single consolidated patch for the response — the client
   // only sees one round-trip per call, so it should only see one patch too.
   let turnPatch: BusinessUnderstandingPatch = {};
+  // "Let me take a look..."-style lines said before the final reply this
+  // turn, in order — the client can render these as a natural pacing beat
+  // ahead of the final message.
+  const interimMessages: string[] = [];
 
   try {
     for (let round = 0; round < MAX_CAPABILITY_ROUNDS; round++) {
@@ -185,7 +224,10 @@ Deno.serve(async (req) => {
 
       if (decision?.action === "invoke" && decision.capability && decision.capabilityAction) {
         const said = String(decision.message || "").trim();
-        if (said) history.push({ role: "assistant", content: said });
+        if (said) {
+          history.push({ role: "assistant", content: said });
+          interimMessages.push(said);
+        }
 
         // Pure dispatch by name — no capability-specific logic here. If it
         // doesn't exist in the registry, that's reported honestly like any
@@ -221,6 +263,7 @@ Deno.serve(async (req) => {
         reply: finalText,
         messages: history,
         actions,
+        interimMessages,
         ...(isEmptyPatch(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
       });
     }
@@ -232,6 +275,7 @@ Deno.serve(async (req) => {
       reply: "I've gathered what I can for now — what would you like to do next?",
       messages: history,
       actions,
+      interimMessages,
       ...(isEmptyPatch(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
     });
   } catch (err) {
