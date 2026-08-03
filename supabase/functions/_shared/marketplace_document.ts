@@ -12,6 +12,7 @@ import {
 } from "./marketplace_lifecycle.ts";
 import { assembleProviderPublic } from "./marketplace_provider.ts";
 import { listBookingServices, toAiSummary } from "./service_engine.ts";
+import { getBusinessMeta } from "./hubly_business_meta.ts";
 
 export type ReadinessItem = {
   key: string;
@@ -55,7 +56,7 @@ export function buildReadinessChecklist(
   business: Record<string, unknown>,
   lifecycle: ReturnType<typeof buildLifecycleSnapshot>,
 ): { items: ReadinessItem[]; ready_score: number; marketplace_ready: boolean } {
-  const meta = (business.meta || {}) as Record<string, unknown>;
+  const meta = getBusinessMeta(business);
   const website = (meta.website || {}) as Record<string, unknown>;
   const services = listBookingServices(business, "marketplace");
   const photos = asArray(meta.portfolioUrls).length
@@ -151,7 +152,7 @@ export function buildProviderDocument(input: ProviderDocumentInput) {
   const { provider, business } = input;
   const publicDto = assembleProviderPublic(provider, business);
   const lifecycle = publicDto.lifecycle;
-  const meta = (business.meta || {}) as Record<string, unknown>;
+  const meta = getBusinessMeta(business);
   const website = (meta.website || {}) as Record<string, unknown>;
   const services = serviceSummary(business);
   const aiCatalog = toAiSummary(business);

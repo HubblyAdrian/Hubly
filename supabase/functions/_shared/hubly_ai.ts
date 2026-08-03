@@ -685,7 +685,7 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
 
   const body: Record<string, unknown> = {
     model: opts.model,
-    max_tokens: opts.maxTokens ?? 700,
+    max_completion_tokens: opts.maxTokens ?? 700,
     messages,
   };
   if (typeof opts.temperature === "number") body.temperature = opts.temperature;

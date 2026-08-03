@@ -191,6 +191,40 @@ img{max-width:100%;display:block}
 .footer-contact a{font-size:13.5px;color:var(--ink-2);transition:color .18s ease}
 .footer-contact a:hover{color:#fff}
 .footer-copy{font-size:12.5px;color:var(--ink-3)}
+
+/* Experience 1 — Hubly Conversation. No loading screen, no splash — the
+   hero fades, this fades in over it. URL never changes, page never reloads. */
+.hero.hc-transforming .hero-copy{opacity:0;transform:translateY(-12px);transition:opacity .4s ease,transform .4s ease;pointer-events:none}
+body.hc-active #categories,body.hc-active .footer{display:none}
+.hc-app{
+  display:none;position:fixed;inset:0;top:var(--nav-h);z-index:40;
+  background:var(--bg);opacity:0;transition:opacity .35s ease;
+}
+.hc-app.is-active{display:flex;opacity:1}
+.hc-app-left{flex:1 1 58%;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--line)}
+.hc-app-right{flex:1 1 42%;min-width:0;padding:32px clamp(20px,3vw,40px);overflow-y:auto}
+.hc-thread{flex:1;overflow-y:auto;padding:32px clamp(20px,4vw,56px) 16px;display:flex;flex-direction:column;gap:18px}
+.hc-msg{max-width:620px;font-size:15.5px;line-height:1.6;white-space:pre-wrap}
+.hc-msg.hubly{color:var(--ink)}
+.hc-msg.user{color:var(--ink-2);align-self:flex-end;text-align:right}
+.hc-msg.typing{color:var(--ink-3);font-style:italic}
+.hc-input-bar{padding:14px clamp(20px,4vw,56px) 26px;flex-shrink:0}
+.hc-input-bar .ask-box{padding:14px 16px 14px 16px;border-radius:18px}
+.hc-input-bar .ask-box input{padding:6px 40px 6px 2px}
+.hc-input-bar .ask-icon-left{bottom:auto;top:50%;transform:translateY(-50%);left:16px}
+.hc-input-bar .ask-submit{bottom:auto;top:50%;transform:translateY(-50%);right:10px;width:36px;height:36px}
+.hc-panel-title{font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:-.01em;margin-bottom:22px;color:var(--ink)}
+.hc-field{padding:12px 0;border-bottom:1px solid var(--line)}
+.hc-field:last-child{border-bottom:0}
+.hc-field-label{font-size:11px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.hc-field-value{font-size:14px;color:var(--ink-3)}
+.hc-field-value.is-known{color:var(--ink);font-weight:600}
+.hc-field-value.is-known::before{content:'✓ ';color:var(--brand)}
+@media(max-width:860px){
+  .hc-app{flex-direction:column}
+  .hc-app-left{border-right:0;border-bottom:1px solid var(--line);flex:1 1 58%}
+  .hc-app-right{flex:1 1 42%}
+}
 </style>
 </head>
 <body>
@@ -250,6 +284,37 @@ img{max-width:100%;display:block}
     </div>
   </div>
 </section>
+
+<!--
+  Experience 1 — Hubly Conversation. Activated in place when the hero input
+  is first submitted; no navigation, URL never changes. Left panel is the
+  conversation (permanent for the session); right panel is "What I've
+  Learned" — a live rendering of accumulated Business Understanding, not a
+  progress checklist. See supabase/functions/hubly-conversation/index.ts.
+-->
+<div class="hc-app" id="hcApp" aria-hidden="true">
+  <div class="hc-app-left">
+    <div class="hc-thread" id="hcThread"></div>
+    <div class="hc-input-bar">
+      <div class="ask-wrap">
+        <div class="ask-glow" aria-hidden="true"></div>
+        <div class="ask-box">
+          <input id="hcInput" type="text" autocomplete="off" placeholder="Reply to Hubly…" aria-label="Reply to Hubly">
+          <span class="ask-icon-left" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>
+          </span>
+          <button type="button" class="ask-submit" id="hcSubmit" aria-label="Send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="hc-app-right">
+    <div class="hc-panel-title">What I've Learned</div>
+    <div id="hcUnderstanding"></div>
+  </div>
+</div>
 
 <section class="sec" id="categories">
   <div class="wrap">
@@ -321,7 +386,6 @@ img{max-width:100%;display:block}
   </div>
 </footer>
 
-<script src="/hubly-session.js"></script>
 <script>
 (function(){
   document.getElementById('y').textContent = new Date().getFullYear();
@@ -331,23 +395,187 @@ img{max-width:100%;display:block}
   syncNav();
   window.addEventListener('scroll', syncNav, { passive:true });
 
-  var Intent = window.HublySession || window.HublyLandingIntent;
+  // ————————————————————————————————————————————————————————————
+  // Experience 1 — Hubly Conversation
+  // The hero input's ONLY job now is to start this. No navigation, no
+  // Legacy intent-engine routing — this page transforms in place.
+  // Contract this talks to: supabase/functions/hubly-conversation/index.ts
+  // (response: {reply, messages, actions, interimMessages, understanding?}).
+  // `messages` is opaque — stored and resent verbatim, never parsed for
+  // display. Chat bubbles are built only from what Hubly actually said
+  // (interimMessages, reply) and what the person typed, never derived from
+  // `messages`.
+  // ————————————————————————————————————————————————————————————
+  var SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
+  var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
+  var HC_CATEGORY_ORDER = ['business','industry','services','website','brand','scheduling','crm','payments','goals'];
+  var HC_CATEGORY_LABELS = { business:'Business', industry:'Industry', services:'Services', website:'Website', brand:'Brand', scheduling:'Scheduling', crm:'CRM', payments:'Payments', goals:'Goals' };
 
-  function go(inputEl){
-    if(!Intent){ window.location.href = '/get-done'; return; }
-    var text = (inputEl.value || '').trim();
-    var u = Intent.understand(text);
-    var session = Intent.upsertSession(u);
-    if(Intent.markHandedOff) Intent.markHandedOff();
-    if(Intent.track) Intent.track('landing_v3_continue', { hs: session && session.id, intent: u.intent });
-    window.location.href = Intent.routeUrl(u, session);
+  var hc = { messages: [], understanding: {}, active: false, busy: false };
+
+  function hcMergePatch(base, patch){
+    if(!patch || typeof patch !== 'object') return base;
+    var next = {};
+    for(var k in base){ if(base.hasOwnProperty(k)) next[k] = base[k]; }
+    HC_CATEGORY_ORDER.forEach(function(key){
+      if(!(key in patch)) return;
+      var value = patch[key];
+      if(Array.isArray(value)){
+        next[key] = value;
+      } else if(value && typeof value === 'object'){
+        next[key] = Object.assign({}, next[key] || {}, value);
+      } else {
+        next[key] = value;
+      }
+    });
+    return next;
   }
 
-  var input = document.getElementById('heroInput');
-  var btn = document.getElementById('heroSubmit');
-  if(input && btn){
-    btn.addEventListener('click', function(){ go(input); });
-    input.addEventListener('keydown', function(e){ if(e.key === 'Enter') go(input); });
+  function hcEscape(s){
+    var d = document.createElement('div');
+    d.textContent = (s === null || s === undefined) ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  function hcFieldDisplay(key, value){
+    if(key === 'business'){
+      return (value && value.name) ? { known:true, text: value.name } : { known:false, text:'Not discussed yet' };
+    }
+    if(key === 'industry'){
+      return value ? { known:true, text: value } : { known:false, text:'Not discussed yet' };
+    }
+    if(key === 'services'){
+      return (Array.isArray(value) && value.length) ? { known:true, text: value.join(', ') } : { known:false, text:'Not discussed yet' };
+    }
+    if(key === 'website'){
+      return (value && value.status === 'found') ? { known:true, text:'Found' + (value.url ? ' — ' + value.url : '') } : { known:false, text:'Not discussed yet' };
+    }
+    if(key === 'brand'){
+      return (value && value.colors && value.colors.length) ? { known:true, text: value.colors.join(', ') } : { known:false, text:'Not discussed yet' };
+    }
+    if(key === 'scheduling' || key === 'crm' || key === 'payments'){
+      return (value && value.current_system) ? { known:true, text:'Using ' + value.current_system } : { known:false, text:'Not discussed yet' };
+    }
+    if(key === 'goals'){
+      return (Array.isArray(value) && value.length) ? { known:true, text: value.join(', ') } : { known:false, text:'Not discussed yet' };
+    }
+    return { known:false, text:'Not discussed yet' };
+  }
+
+  function hcRenderUnderstanding(){
+    var el = document.getElementById('hcUnderstanding');
+    if(!el) return;
+    el.innerHTML = HC_CATEGORY_ORDER.map(function(key){
+      var d = hcFieldDisplay(key, hc.understanding[key]);
+      return '<div class="hc-field"><div class="hc-field-label">' + HC_CATEGORY_LABELS[key] + '</div>' +
+        '<div class="hc-field-value' + (d.known ? ' is-known' : '') + '">' + hcEscape(d.text) + '</div></div>';
+    }).join('');
+  }
+
+  function hcAppendMessage(role, text){
+    var thread = document.getElementById('hcThread');
+    if(!thread) return;
+    var div = document.createElement('div');
+    div.className = 'hc-msg ' + (role === 'user' ? 'user' : 'hubly');
+    div.textContent = text;
+    thread.appendChild(div);
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  function hcAppendTyping(){
+    var thread = document.getElementById('hcThread');
+    if(!thread) return null;
+    var div = document.createElement('div');
+    div.className = 'hc-msg hubly typing';
+    div.textContent = 'Hubly is thinking…';
+    thread.appendChild(div);
+    thread.scrollTop = thread.scrollHeight;
+    return div;
+  }
+
+  function hcActivate(){
+    if(hc.active) return;
+    hc.active = true;
+    var hero = document.querySelector('.hero');
+    if(hero) hero.classList.add('hc-transforming');
+    setTimeout(function(){
+      document.body.classList.add('hc-active');
+      var app = document.getElementById('hcApp');
+      if(app){ app.classList.add('is-active'); app.setAttribute('aria-hidden', 'false'); }
+      hcRenderUnderstanding();
+      var input = document.getElementById('hcInput');
+      if(input) input.focus();
+    }, 420);
+  }
+
+  function hcCall(){
+    if(hc.busy) return;
+    hc.busy = true;
+    var typingEl = hcAppendTyping();
+    fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'apikey': SUPA_ANON_KEY,
+        'authorization': 'Bearer ' + SUPA_ANON_KEY
+      },
+      body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding })
+    })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+        hc.busy = false;
+        if(!data || data.ok !== true){
+          hcAppendMessage('hubly', "I'm having trouble connecting right now — mind trying again in a moment?");
+          return;
+        }
+        hc.messages = Array.isArray(data.messages) ? data.messages : hc.messages;
+        if(data.understanding && data.understanding.patch){
+          hc.understanding = hcMergePatch(hc.understanding, data.understanding.patch);
+          hcRenderUnderstanding();
+        }
+        var interim = Array.isArray(data.interimMessages) ? data.interimMessages : [];
+        var i = 0;
+        function showNext(){
+          if(i < interim.length){
+            hcAppendMessage('hubly', interim[i]);
+            i++;
+            setTimeout(showNext, 550);
+          } else if(data.reply){
+            hcAppendMessage('hubly', data.reply);
+          }
+        }
+        showNext();
+      })
+      .catch(function(){
+        if(typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+        hc.busy = false;
+        hcAppendMessage('hubly', "I'm having trouble connecting right now — mind trying again in a moment?");
+      });
+  }
+
+  function hcSend(inputEl){
+    var text = (inputEl.value || '').trim();
+    if(!text || hc.busy) return;
+    inputEl.value = '';
+    hcActivate();
+    hcAppendMessage('user', text);
+    hc.messages.push({ role: 'user', content: text });
+    hcCall();
+  }
+
+  var heroInput = document.getElementById('heroInput');
+  var heroSubmit = document.getElementById('heroSubmit');
+  if(heroInput && heroSubmit){
+    heroSubmit.addEventListener('click', function(){ hcSend(heroInput); });
+    heroInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') hcSend(heroInput); });
+  }
+
+  var hcInput = document.getElementById('hcInput');
+  var hcSubmit = document.getElementById('hcSubmit');
+  if(hcInput && hcSubmit){
+    hcSubmit.addEventListener('click', function(){ hcSend(hcInput); });
+    hcInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') hcSend(hcInput); });
   }
 })();
 </script>

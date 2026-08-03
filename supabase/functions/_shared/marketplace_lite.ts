@@ -9,6 +9,7 @@ import { listCatalogServices } from "./booking_engine.ts";
 import { buildLifecycleSnapshot } from "./marketplace_lifecycle.ts";
 import { assembleProviderPublic } from "./marketplace_provider.ts";
 import { listServices } from "./service_engine.ts";
+import { getBusinessMeta } from "./hubly_business_meta.ts";
 
 type Admin = SupabaseClient;
 
@@ -35,7 +36,7 @@ export function buildMarketplaceHealth(opts: {
   const pub = assembleProviderPublic(opts.provider, opts.business);
   const services = listServices(opts.business, { channel: "owner", includeInactive: true });
   const packages = listCatalogServices(opts.business);
-  const meta = (opts.business.meta || {}) as Record<string, unknown>;
+  const meta = getBusinessMeta(opts.business);
   const photos = Array.isArray(meta.portfolioUrls)
     ? meta.portfolioUrls
     : (Array.isArray(meta.galleryPairs) ? meta.galleryPairs : []);

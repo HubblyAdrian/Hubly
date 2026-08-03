@@ -13,6 +13,7 @@ import {
 } from "./marketplace_industry_knowledge.ts";
 import { buildLifecycleSnapshot } from "./marketplace_lifecycle.ts";
 import { assembleProviderPublic } from "./marketplace_provider.ts";
+import { getBusinessMeta } from "./hubly_business_meta.ts";
 import { listServices, toMatchDto } from "./service_engine.ts";
 import type { HublyBusinessDNAInput } from "./hubly_brain_dna.ts";
 import type { HublyCustomerProfileInput } from "./hubly_brain_customer_profile.ts";
@@ -765,7 +766,7 @@ export function rankMarketplaceMatches(input: RankInput): {
     const catalogServices = listServices(row.business, { channel: "marketplace" }).map((s) =>
       toMatchDto(row.business, s)
     );
-    const meta = (row.business.meta || {}) as Record<string, unknown>;
+    const meta = getBusinessMeta(row.business);
     const website = (meta.website || {}) as Record<string, unknown>;
 
     let score = 40;

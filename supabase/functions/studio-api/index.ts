@@ -27,6 +27,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getBusinessMeta } from "../_shared/hubly_business_meta.ts";
 import {
   buildCampaignPlan,
   hublyTemplateCatalog,
@@ -579,7 +580,7 @@ Deno.serve(async (req: Request) => {
         .select("id,name,meta")
         .eq("id", businessId)
         .maybeSingle();
-      const meta = (biz?.meta || {}) as Record<string, unknown>;
+      const meta = getBusinessMeta(biz);
       const memory = (meta.memory || meta.businessMemory || {}) as Record<string, unknown>;
       const dna = (meta.dna || meta.businessDna || {}) as Record<string, unknown>;
       const { data: lastPub } = await admin
@@ -616,7 +617,7 @@ Deno.serve(async (req: Request) => {
         .select("id,name,meta")
         .eq("id", businessId)
         .maybeSingle();
-      const meta = (biz?.meta || {}) as Record<string, unknown>;
+      const meta = getBusinessMeta(biz);
       const memory = (meta.memory || {}) as Record<string, unknown>;
       const dna = (meta.dna || {}) as Record<string, unknown>;
       const bodyHints = body as Record<string, unknown>;
@@ -657,7 +658,7 @@ Deno.serve(async (req: Request) => {
         .select("id,name,meta")
         .eq("id", businessId)
         .maybeSingle();
-      const meta = (biz?.meta || {}) as Record<string, unknown>;
+      const meta = getBusinessMeta(biz);
       const memory = (meta.memory || meta.businessMemory || {}) as Record<string, unknown>;
       const dna = (meta.dna || meta.businessDna || {}) as Record<string, unknown>;
       const studioCtx = buildStudioBusinessContext({
@@ -689,7 +690,7 @@ Deno.serve(async (req: Request) => {
         .select("id,name,meta")
         .eq("id", businessId)
         .maybeSingle();
-      const meta = (biz?.meta || {}) as Record<string, unknown>;
+      const meta = getBusinessMeta(biz);
       const memory = (b.business_inputs as Record<string, unknown>) ||
         (meta.memory as Record<string, unknown>) ||
         {};
