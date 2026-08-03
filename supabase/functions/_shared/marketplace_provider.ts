@@ -8,6 +8,7 @@ import {
 } from "./marketplace_lifecycle.ts";
 import { computeMarketplaceScore } from "./marketplace_score.ts";
 import { listBookingServices } from "./service_engine.ts";
+import { getBusinessMeta } from "./hubly_business_meta.ts";
 
 export type AdminClient = SupabaseClient;
 
@@ -120,7 +121,7 @@ export function assembleProviderPublic(
   provider: Record<string, unknown>,
   business: Record<string, unknown>,
 ) {
-  const meta = (business.meta || {}) as Record<string, unknown>;
+  const meta = getBusinessMeta(business);
   const website = (meta.website || {}) as Record<string, unknown>;
   // Service Engine is the source of truth. Wire key "packages" is deprecated naming.
   const services = listBookingServices(business, "marketplace");

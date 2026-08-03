@@ -7,6 +7,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getBusinessMeta } from "./hubly_business_meta.ts";
 import {
   formatBusinessMemory,
   normalizeBusinessMemory,
@@ -452,9 +453,7 @@ export async function publishBusinessWebsite(opts: {
       .eq("id", businessId)
       .maybeSingle();
     if (!existing) throw new Error("Business not found");
-    const prevMeta = (existing.meta && typeof existing.meta === "object")
-      ? existing.meta as Record<string, unknown>
-      : {};
+    const prevMeta = getBusinessMeta(existing);
     const meta = {
       ...prevMeta,
       website,

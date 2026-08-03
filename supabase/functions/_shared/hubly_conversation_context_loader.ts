@@ -18,6 +18,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { toAiSummary } from "./service_engine.ts";
 import { findAction } from "./hubly_capability_registry.ts";
+import { getBusinessMeta } from "./hubly_business_meta.ts";
 
 // --- The Conversation Context contract -------------------------------
 
@@ -118,9 +119,10 @@ export async function loadConciergeContext(
     return { ok: false, error: "Business not found." };
   }
 
-  const meta = typeof biz.meta === "string" ? JSON.parse(biz.meta || "{}") : (biz.meta || {});
-  const faq = Array.isArray(meta?.website?.faq) ? meta.website.faq : [];
-  const hours = meta?.hours || null;
+  const meta = getBusinessMeta(biz);
+  const website = (meta.website || {}) as Record<string, unknown>;
+  const faq = Array.isArray(website.faq) ? website.faq : [];
+  const hours = (meta.hours || null) as ConciergeGroundTruth["hours"];
   const cities = Array.isArray(biz.service_area_cities) ? biz.service_area_cities : [];
   const isPro = biz.tier === "pro";
   const services = toAiSummary({ ...biz, meta }, "website");

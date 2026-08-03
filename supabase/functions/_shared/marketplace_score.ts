@@ -1,4 +1,5 @@
 import { getCatalog } from "./service_engine.ts";
+import { getBusinessMeta } from "./hubly_business_meta.ts";
 
 /** Marketplace score engine (0–100). Reuses Hubly business profile data. */
 
@@ -61,7 +62,7 @@ function hasServices(meta: Record<string, unknown> | null | undefined): boolean 
  * Weighted marketplace score. Weights sum to 100.
  */
 export function computeMarketplaceScore(input: ScoreInputs): ScoreResult {
-  const meta = (input.business.meta || {}) as Record<string, unknown>;
+  const meta = getBusinessMeta(input.business);
   const breakdown: Record<string, number> = {};
 
   // Profile complete — 15

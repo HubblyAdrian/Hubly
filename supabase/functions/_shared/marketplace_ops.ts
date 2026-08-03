@@ -9,6 +9,7 @@ import { listCatalogServices } from "./booking_engine.ts";
 import { buildMarketplaceHealth } from "./marketplace_lite.ts";
 import { buildLifecycleSnapshot } from "./marketplace_lifecycle.ts";
 import { assembleProviderPublic } from "./marketplace_provider.ts";
+import { getBusinessMeta } from "./hubly_business_meta.ts";
 
 type Admin = SupabaseClient;
 
@@ -27,7 +28,7 @@ export function missingRequirements(
   stripe?: { charges_enabled?: boolean | null; stripe_account_id?: string | null } | null,
 ): string[] {
   const missing: string[] = [];
-  const meta = (business.meta || {}) as Record<string, unknown>;
+  const meta = getBusinessMeta(business);
   const packages = listCatalogServices(business);
   const photos = Array.isArray(meta.portfolioUrls)
     ? meta.portfolioUrls
@@ -333,7 +334,7 @@ export async function buildOpsProvider360(
       instant_booking: !!provider.instant_booking,
       accepting_new_jobs: provider.accepting_new_jobs !== false,
       weekend_jobs: provider.weekend_jobs !== false,
-      hours: ((business.meta || {}) as Record<string, unknown>).hours || null,
+      hours: getBusinessMeta(business).hours || null,
     },
     risk_flags: flags || [],
     internal_notes: notes || [],

@@ -9,6 +9,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getBusinessMeta } from "./hubly_business_meta.ts";
 import { notifyBookingCreated } from "./booking_notifications.ts";
 import { syncEnginePushCreate } from "./google_calendar_sync_engine.ts";
 import {
@@ -114,7 +115,7 @@ export function resolvePaymentRule(business: Record<string, unknown>): {
   deposit_val: number;
   message: string | null;
 } {
-  const meta = (business.meta || {}) as Record<string, unknown>;
+  const meta = getBusinessMeta(business);
   const setting = normalize(meta.paymentSetting || "later");
   let rule: PaymentRule = "pay_after_service";
   if (setting === "full" || setting === "pay_in_full" || setting === "upfront") {
@@ -231,7 +232,7 @@ export async function loadAvailabilityContext(
     .select("id,meta")
     .eq("id", businessId)
     .maybeSingle();
-  const meta = ((business?.meta || {}) as Record<string, unknown>);
+  const meta = getBusinessMeta(business);
   const hours = (meta.hours || null) as Record<string, DayHours> | null;
 
   const { data: gconn } = await admin

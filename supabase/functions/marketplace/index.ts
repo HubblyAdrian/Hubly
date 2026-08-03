@@ -24,6 +24,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getBusinessMeta } from "../_shared/hubly_business_meta.ts";
 import {
   buildPaymentSummary,
   createBooking,
@@ -110,7 +111,7 @@ async function buildAvailabilityForBusiness(
   provider: Record<string, unknown> | null,
   business: Record<string, unknown>,
 ) {
-  const meta = (business.meta || {}) as Record<string, unknown>;
+  const meta = getBusinessMeta(business);
   const hours = (meta.hours || null) as Record<
     string,
     { open?: string; close?: string; closed?: boolean }
@@ -459,7 +460,7 @@ async function handleAvailability(
   const business = await loadBusinessBundle(admin, bizId);
   if (!business) return jsonRes({ error: "Business not found" }, 404);
 
-  const meta = (business.meta || {}) as Record<string, unknown>;
+  const meta = getBusinessMeta(business);
   const hours = (meta.hours || null) as Record<string, { open?: string; close?: string; closed?: boolean }> | null;
 
   const googleConnected = !!(await refreshCalendarConnected(admin, bizId));
@@ -1569,7 +1570,7 @@ async function handleLiteServicesSave(req: Request, body: Record<string, unknown
     .maybeSingle();
   if (error || !business) return jsonRes({ error: "Business not found" }, 404);
 
-  const priorMeta = { ...((business.meta || {}) as Record<string, unknown>) };
+  const priorMeta = { ...getBusinessMeta(business) };
   const priorCatalog = getCatalog({ ...business, meta: priorMeta });
   const catalog = catalogFromOwnerServicesPayload(servicesIn, priorCatalog);
   const meta = buildCatalogWritePayload(catalog, priorMeta);
@@ -1939,7 +1940,7 @@ async function handleLiteProfileSave(req: Request, body: Record<string, unknown>
   const business = await loadBusinessBundle(admin, businessId);
   if (!business) return jsonRes({ error: "Business not found" }, 404);
 
-  const meta = { ...((business.meta || {}) as Record<string, unknown>) };
+  const meta = { ...getBusinessMeta(business) };
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (body.name != null) patch.name = String(body.name).trim() || business.name;
   if (body.tagline != null) patch.tagline = String(body.tagline).trim() || null;
@@ -2011,7 +2012,7 @@ async function handleLiteHoursSave(req: Request, body: Record<string, unknown>) 
     };
   }
 
-  const meta = { ...((business.meta || {}) as Record<string, unknown>), hours };
+  const meta = { ...getBusinessMeta(business), hours };
   const { error } = await admin
     .from("businesses")
     .update({ meta, updated_at: new Date().toISOString() })
@@ -2044,7 +2045,7 @@ async function handleLiteSubmitVerification(req: Request, body: Record<string, u
   const business = await loadBusinessBundle(admin, businessId);
   if (!business) return jsonRes({ error: "Business not found" }, 404);
   const services = listCatalogServices(business);
-  const meta = (business.meta || {}) as Record<string, unknown>;
+  const meta = getBusinessMeta(business);
   const blockers: string[] = [];
   if (!business.name) blockers.push("Business name");
   if (!services.length) blockers.push("At least one service");

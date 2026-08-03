@@ -7,6 +7,8 @@
  * See docs/SERVICE_ENGINE.md
  */
 
+import { getBusinessMeta } from "./hubly_business_meta.ts";
+
 export type ServiceStatus = "active" | "inactive" | "archived";
 export type PricingMode = "fixed" | "from" | "variable" | "quote_required";
 
@@ -530,7 +532,7 @@ function normalizeCanonicalAddon(raw: Record<string, unknown>, index: number): H
  * Prefers meta.service_catalog; otherwise migrates legacy editorSvcs/addons in-memory.
  */
 export function getCatalog(business: Record<string, unknown>): ServiceCatalog {
-  const meta = (business.meta || {}) as Record<string, unknown>;
+  const meta = getBusinessMeta(business);
   const existing = meta.service_catalog;
   if (existing && typeof existing === "object") {
     const cat = existing as ServiceCatalog;
