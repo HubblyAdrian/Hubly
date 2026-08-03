@@ -61,7 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
-import { findAction, buildCapabilitiesPromptBlock } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -141,6 +141,22 @@ const CUSTOMER_UNDERSTANDING_SCHEMA = `{
 }`;
 
 type ConversationContextName = "dashboard" | "customer";
+
+// Per docs/HUBLY_CONVERSATION_CONTEXT_MODEL.md Section 6: two enforcement
+// points, not one. This list is the prompt-level advertisement (used below
+// to filter what buildCapabilitiesPromptBlock shows); the SAME list is
+// checked again at dispatch time, right before findAction() is ever called,
+// so a context is bounded structurally — never just by what the prompt
+// happened to omit.
+const CONTEXT_CAPABILITY_ALLOWLIST: Record<ConversationContextName, string[]> = {
+  dashboard: ["website", "online_presence"],
+  customer: ["booking"],
+};
+
+function getAllowedCapabilities(context: ConversationContextName) {
+  const allow = new Set(CONTEXT_CAPABILITY_ALLOWLIST[context]);
+  return HUBLY_CAPABILITY_REGISTRY.filter((c) => allow.has(c.name));
+}
 
 // The one dispatch point where "engine stays generic, only the schema
 // changes" becomes real code, not just a design principle: every place the
@@ -255,14 +271,14 @@ When it's useful to understand the business before helping (e.g. someone asks fo
           }),
         );
 
-  // No capability today is customer-facing (the two Registry entries that
-  // exist — website.analyze, online_presence.analyze_* — are owner actions),
-  // so a "customer" context is honestly shown none rather than ones it must
-  // never actually use.
-  const capabilitiesBlock =
-    context === "customer"
-      ? "(No customer-facing capabilities are registered yet.)"
-      : buildCapabilitiesPromptBlock();
+  // Prompt-level half of the two-point enforcement — see
+  // CONTEXT_CAPABILITY_ALLOWLIST above. website.analyze/online_presence.* are
+  // owner actions, never shown to "customer"; booking is customer-facing,
+  // never shown to "dashboard".
+  const allowedCapabilities = getAllowedCapabilities(context);
+  const capabilitiesBlock = allowedCapabilities.length
+    ? buildCapabilitiesPromptBlock(allowedCapabilities)
+    : "(No capabilities are registered for this context yet.)";
 
   return `${intro}
 
@@ -423,18 +439,38 @@ Deno.serve(async (req) => {
 
         // Pure dispatch by name — no capability-specific logic here. If it
         // doesn't exist in the registry, that's reported honestly like any
-        // other result, not special-cased.
+        // other result, not special-cased. Dispatch-level half of the
+        // two-point enforcement (see CONTEXT_CAPABILITY_ALLOWLIST): checked
+        // here regardless of what the prompt advertised, so this context is
+        // structurally bounded even if a decision somehow requests something
+        // outside it.
         const capabilityName = String(decision.capability);
         const actionName = String(decision.capabilityAction);
-        const found = findAction(capabilityName, actionName);
+        const allowedInContext = CONTEXT_CAPABILITY_ALLOWLIST[context].includes(capabilityName);
+        const found = allowedInContext ? findAction(capabilityName, actionName) : undefined;
+        // businessId is structural context, not something the model was ever
+        // shown a real value for — it must never be trusted to transcribe a
+        // UUID correctly. The engine injects the real one whenever it's known,
+        // overriding whatever placeholder the model put in its own args.
+        const dispatchArgs: Record<string, unknown> = { ...(decision.args || {}) };
+        if (capabilityName === "booking" && businessId) {
+          dispatchArgs.businessId = businessId;
+        }
         const result = found
-          ? await found.handler(decision.args || {})
-          : { ok: false, real: false, summary: "That capability or action does not exist.", error: "unknown_capability_action" };
+          ? await found.handler(dispatchArgs)
+          : {
+            ok: false,
+            real: false,
+            summary: allowedInContext
+              ? "That capability or action does not exist."
+              : "That capability is not available in this conversation.",
+            error: allowedInContext ? "unknown_capability_action" : "capability_not_allowed_in_context",
+          };
 
         actions.push({
           capability: capabilityName,
           capabilityAction: actionName,
-          args: decision.args || {},
+          args: dispatchArgs,
           ok: !!result.ok,
           real: !!result.real,
         });

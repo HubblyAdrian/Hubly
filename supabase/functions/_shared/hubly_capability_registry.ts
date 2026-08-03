@@ -77,6 +77,23 @@ async function callImportAnalyze(type: string, url: string): Promise<any> {
   return await res.json().catch(() => null);
 }
 
+// Same reuse pattern as callImportAnalyze above, one function over: the
+// booking capability wraps the marketplace Edge Function's real,
+// already-production booking_slots/booking_create actions over HTTP,
+// exactly like a real customer-facing caller would — no booking logic
+// lives here, no calendar/provider logic is touched or duplicated.
+async function callMarketplace(action: string, payload: Record<string, unknown>): Promise<any> {
+  const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  if (!supabaseUrl || !serviceKey) return null;
+  const res = await fetch(`${supabaseUrl}/functions/v1/marketplace`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${serviceKey}` },
+    body: JSON.stringify({ action, ...payload }),
+  });
+  return await res.json().catch(() => null);
+}
+
 function isValidUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
 }
@@ -85,6 +102,22 @@ const urlArgSchema = (description: string): CapabilityActionArgSchema => ({
   type: "object",
   properties: { url: { type: "string", description } },
   required: ["url"],
+});
+
+const bookingArgSchema = (
+  extra: Record<string, { type: string; description: string }>,
+  required: string[],
+): CapabilityActionArgSchema => ({
+  type: "object",
+  properties: {
+    businessId: {
+      type: "string",
+      description:
+        "Automatically supplied by the system before this runs — you do not know the real value and never need to. Put any placeholder here (e.g. \"current_business\"); do not decline to invoke just because you don't have a real business id.",
+    },
+    ...extra,
+  },
+  required: ["businessId", ...required],
 });
 
 /** Shared by the three social/listing actions — none have a real integration yet. */
@@ -170,6 +203,112 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           "Looks at a Google Business Profile URL. No live integration exists yet — this can only recognize the link itself, not read its content. Always disclose that limitation honestly.",
         argsSchema: urlArgSchema("The business's Google Business Profile URL."),
         handler: socialStopgapHandler("google_business"),
+      },
+    ],
+  },
+  {
+    name: "booking",
+    description:
+      "Real availability and real booking creation, reused as-is from the production Marketplace booking engine — no calendar or provider logic lives here, this only wraps what already exists.",
+    actions: [
+      {
+        name: "getAvailability",
+        description:
+          "Real bookable time slots for this business, computed from their actual schedule, connected calendar, and business hours. Returns real slots or an honest reason none exist yet — never invented times.",
+        argsSchema: bookingArgSchema(
+          {
+            serviceId: { type: "string", description: "Which service to check availability for. Omit to use the business's first bookable service." },
+            date: { type: "string", description: "A specific date (YYYY-MM-DD) to check. Omit to get the soonest available times." },
+          },
+          [],
+        ),
+        handler: async (args) => {
+          const businessId = String(args?.businessId || "").trim();
+          if (!businessId) {
+            return { ok: false, real: false, summary: "No business was specified.", error: "missing_business_id" };
+          }
+          const r = await callMarketplace("booking_slots", {
+            business_id: businessId,
+            service_id: String(args?.serviceId || "").trim() || undefined,
+            date: String(args?.date || "").trim() || undefined,
+          });
+          if (!r) {
+            return { ok: false, real: false, summary: "Availability could not be checked right now.", error: "marketplace_unreachable" };
+          }
+          if (!r.ok) {
+            // A real, honest outcome (e.g. this business isn't set up for
+            // real-time booking yet) — not a client input error, so ok:true,
+            // real:false, same convention as the website-couldn't-be-reached case.
+            return {
+              ok: true,
+              real: false,
+              summary: r.error === "Provider not found" || r.error === "Business not found"
+                ? "This business isn't set up for real-time booking yet."
+                : (r.error || "No availability could be found."),
+              raw: r,
+            };
+          }
+          const slotCount = Array.isArray(r.slots) ? r.slots.length : 0;
+          return {
+            ok: true,
+            real: true,
+            summary: slotCount
+              ? `Found ${slotCount} real available time${slotCount === 1 ? "" : "s"} for ${r.service?.name || "this service"}, starting ${r.nextAvailable || "soon"}.`
+              : `No real availability found for ${r.service?.name || "this service"} right now.`,
+            raw: r,
+          };
+        },
+      },
+      {
+        name: "create",
+        description:
+          "Creates a real booking — writes a real record, triggers real calendar sync and a real confirmation email. Only call this once the customer has chosen a real time from getAvailability and given their contact details.",
+        argsSchema: bookingArgSchema(
+          {
+            serviceId: { type: "string", description: "Which service is being booked." },
+            startsAt: { type: "string", description: "The exact start time the customer chose — must be a real slot from getAvailability, never invented." },
+            customerName: { type: "string", description: "The customer's name." },
+            customerEmail: { type: "string", description: "The customer's email, if given." },
+            customerPhone: { type: "string", description: "The customer's phone, if given." },
+            address: { type: "string", description: "Service address, if relevant/given." },
+            notes: { type: "string", description: "Any special requests or notes the customer mentioned." },
+          },
+          ["serviceId", "startsAt", "customerName"],
+        ),
+        handler: async (args) => {
+          const businessId = String(args?.businessId || "").trim();
+          const serviceId = String(args?.serviceId || "").trim();
+          const startsAt = String(args?.startsAt || "").trim();
+          const customerName = String(args?.customerName || "").trim();
+          if (!businessId || !serviceId || !startsAt || !customerName) {
+            return { ok: false, real: false, summary: "Missing required booking details.", error: "missing_required_args" };
+          }
+          const r = await callMarketplace("booking_create", {
+            business_id: businessId,
+            service_id: serviceId,
+            starts_at: startsAt,
+            customer_name: customerName,
+            customer_email: String(args?.customerEmail || "").trim() || undefined,
+            customer_phone: String(args?.customerPhone || "").trim() || undefined,
+            address: String(args?.address || "").trim() || undefined,
+            notes: String(args?.notes || "").trim() || undefined,
+          });
+          if (!r) {
+            return { ok: false, real: false, summary: "The booking could not be created right now.", error: "marketplace_unreachable" };
+          }
+          if (!r.ok) {
+            return { ok: true, real: false, summary: r.error || "The booking could not be created.", raw: r };
+          }
+          const needsCheckout = !!r.checkout?.required;
+          return {
+            ok: true,
+            real: true,
+            summary: needsCheckout
+              ? `Real booking created (${r.confirmation?.status || "pending"}) — a payment of $${((r.checkout.amount_cents || 0) / 100).toFixed(2)} (${r.checkout.charge_kind}) is required to confirm it.`
+              : `Real booking confirmed for ${r.confirmation?.starts_at || startsAt}.`,
+            raw: r,
+          };
+        },
       },
     ],
   },
