@@ -37,6 +37,17 @@
 //   returns only what changed THIS turn. The server never stores or merges
 //   this itself — the client owns the accumulated state. This accumulated
 //   state is the seed of Business DNA.
+// - Understanding is generic; the schema is what changes per context (see
+//   docs/HUBLY_CONVERSATION_CONTEXT_MODEL.md Section 7). "context" in the
+//   request selects which schema is active — "dashboard" (default) uses
+//   Business Understanding; "customer" uses Customer Understanding
+//   (hubly_customer_understanding.ts). Both flow through the exact same
+//   patch/merge mechanism (getUnderstandingAdapter below) — there is no
+//   second orchestration path, only a second schema plugged into the first.
+// - Entry Intent is Patch Zero, not a separate concept: an entry point that
+//   already knows something (a service page, a returning customer) supplies
+//   it as `entryIntent` in the request, merged in before turn one through
+//   the same mechanism the model uses to emit any other patch.
 // - Not an onboarding script. The same endpoint serves "I need help with my
 //   business", "help me build a website", "I want more customers", etc. —
 //   any future Hubly Core capability becomes reachable by registering it in
@@ -61,6 +72,12 @@ import {
   mergeUnderstandingPatch,
   isEmptyPatch,
 } from "../_shared/hubly_business_understanding.ts";
+import {
+  type CustomerUnderstandingPatch,
+  CUSTOMER_UNDERSTANDING_CATEGORIES,
+  mergeCustomerUnderstandingPatch,
+  isEmptyCustomerUnderstandingPatch,
+} from "../_shared/hubly_customer_understanding.ts";
 
 // Experience 1's opening line is fixed, not model-generated — this is the
 // first thing anyone ever sees from Hubly, too important to leave to
@@ -105,6 +122,72 @@ const UNDERSTANDING_SCHEMA = `{
   "goals"?: string[]
 }`;
 
+// Mirrors CustomerUnderstandingPatch in hubly_customer_understanding.ts
+// exactly — hand-kept in sync for the same reason as UNDERSTANDING_SCHEMA above.
+const CUSTOMER_UNDERSTANDING_SCHEMA = `{
+  "customer"?: { "name"?: string, "phone"?: string, "email"?: string },
+  "intent"?: "booking" | "quote" | "question" | "support",
+  "selectedService"?: { "id"?: string, "name"?: string, "price"?: string, "duration"?: string, "addOns"?: string[] },
+  "selectedPackage"?: { "id"?: string, "name"?: string, "price"?: string },
+  "vehicleOrProperty"?: string,
+  "address"?: string,
+  "preferredDate"?: string,
+  "preferredTime"?: string,
+  "budget"?: string,
+  "photos"?: string[],
+  "specialRequests"?: string,
+  "conversationStatus"?: "gathering_info" | "ready_to_book" | "booked" | "abandoned",
+  "bookingStatus"?: { "status"?: string, "bookingId"?: string }
+}`;
+
+type ConversationContextName = "dashboard" | "customer";
+
+// The one dispatch point where "engine stays generic, only the schema
+// changes" becomes real code, not just a design principle: every place the
+// engine needs to read, merge, or describe Understanding goes through
+// whichever adapter is active — never a hardcoded BusinessUnderstandingPatch
+// reference outside this function. Adding a third context (Marketplace
+// Understanding) means adding a third branch here, never a new loop, a new
+// parser, or a duplicated merge function.
+type UnderstandingAdapter = {
+  // Deliberately loose here: this glue layer's whole point is not to know
+  // which concrete schema is active. Type safety for each schema lives in
+  // its own file (hubly_business_understanding.ts / hubly_customer_understanding.ts).
+  isEmpty: (patch: any) => boolean;
+  merge: (base: any, patch: any) => any;
+  schemaText: string;
+  categories: readonly string[];
+  label: string;
+  description: string;
+  businessFieldNote: string;
+};
+
+function getUnderstandingAdapter(context: ConversationContextName): UnderstandingAdapter {
+  if (context === "customer") {
+    return {
+      isEmpty: isEmptyCustomerUnderstandingPatch,
+      merge: mergeCustomerUnderstandingPatch,
+      schemaText: CUSTOMER_UNDERSTANDING_SCHEMA,
+      categories: CUSTOMER_UNDERSTANDING_CATEGORIES as readonly string[],
+      label: "CUSTOMER UNDERSTANDING — WHAT YOU'VE LEARNED ABOUT THIS CUSTOMER AND THEIR JOB",
+      description:
+        "Alongside your reply, you maintain a shared, structured understanding of this customer and what they need across categories: customer, intent, selectedService, selectedPackage, vehicleOrProperty, address, preferredDate, preferredTime, budget, photos, specialRequests, conversationStatus, bookingStatus.",
+      businessFieldNote:
+        '"business" fields do not exist in this schema — this context already knows which business it is; only note this if asked to.',
+    };
+  }
+  return {
+    isEmpty: isEmptyPatch,
+    merge: mergeUnderstandingPatch,
+    schemaText: UNDERSTANDING_SCHEMA,
+    categories: UNDERSTANDING_CATEGORIES as readonly string[],
+    label: "BUSINESS UNDERSTANDING — YOUR EVOLVING MENTAL MODEL OF THIS BUSINESS",
+    description:
+      "Alongside your reply, you maintain a shared, structured understanding of this business across categories: business, industry, services, website, brand, scheduling, crm, payments, goals. This becomes visible to the person as \"What I've Learned\" and, eventually, Business DNA.",
+    businessFieldNote: '"business" only ever holds "name" — richer context belongs in your conversational reply, never invented as extra fields here.',
+  };
+}
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -132,70 +215,102 @@ function extractJson(rawText: string): string {
 const MAX_CAPABILITY_ROUNDS = 4;
 const MAX_HISTORY = 40;
 
-function buildSystemPrompt(currentUnderstanding: BusinessUnderstandingPatch, latestUserMessage: string | null): string {
-  const knownSoFar = isEmptyPatch(currentUnderstanding)
-    ? "Nothing yet — this is the start of understanding this business."
+function buildSystemPrompt(
+  context: ConversationContextName,
+  currentUnderstanding: BusinessUnderstandingPatch | CustomerUnderstandingPatch,
+  latestUserMessage: string | null,
+): string {
+  const adapter = getUnderstandingAdapter(context);
+  const knownSoFar = adapter.isEmpty(currentUnderstanding as any)
+    ? "Nothing yet — this is the start of understanding."
     : JSON.stringify(currentUnderstanding, null, 2);
 
-  // Selective, deterministic — never the whole Knowledge Base. This is what
-  // keeps the prompt small and stable as the Knowledge Base grows; see
-  // _shared/hubly_capability_knowledge_loader.ts.
-  const relevantCapabilities = selectRelevantCapabilityKnowledge({
-    understanding: currentUnderstanding,
-    userMessage: latestUserMessage,
-  });
+  const intro =
+    context === "customer"
+      ? `You are Hubly — the AI concierge helping this business's customer, not the business owner. Your job is to understand what this customer needs, answer their questions honestly, and move them toward booking when they're ready. Never talk to them as if they were the business owner.
 
-  return `You are Hubly — a conversational business partner, not a piece of software someone has to learn. You are the primary interface to the Hubly platform: every capability Hubly has should feel reachable by simply telling you what's needed, in plain conversation.
+If you don't have specific information about this business's services, pricing, hours, or policies, say so honestly instead of guessing — never invent details about the business you don't actually know.`
+      : `You are Hubly — a conversational business partner, not a piece of software someone has to learn. You are the primary interface to the Hubly platform: every capability Hubly has should feel reachable by simply telling you what's needed, in plain conversation.
 
-You are general-purpose. You are not an onboarding wizard and you must not behave like one. People may open a conversation with you for many different reasons — "I need help with my business", "help me build a website", "I want more customers", "I need a storefront", "help me price my services", or anything else. Respond to what the person actually asked for. Never force a scripted sequence of questions.
+You are general-purpose. You are not an onboarding wizard and you must not behave like one. People may open a conversation with you for many different reasons — "I need help with my business", "help me build a website", "I want more customers", "I need a storefront", "help me price my services", or anything else. Respond to what the person actually asked for. Never force a scripted sequence of questions.`;
+
+  const learningSection =
+    context === "customer"
+      ? `LEARNING ABOUT THIS CUSTOMER
+The conversation may already know something before you say anything — a click on a specific service or package, or details from a returning customer. Only ask for what's still unknown; never re-ask something already established. If nothing is known yet, ask naturally what they're looking for.`
+      : `LEARNING ABOUT A BUSINESS
+When it's useful to understand the business before helping (e.g. someone asks for general help, or wants recommendations), you can ask them to paste a website, a Google Business Profile link, a Facebook or Instagram page, upload photos or screenshots, or simply say they're starting from scratch. All of those are valid — never insist on one over another.`;
+
+  // Selective, deterministic — never the whole Knowledge Base. Only meaningful
+  // against Business Understanding today (its signals are keyed to that
+  // schema's fields) — skipped honestly for "customer" rather than run
+  // against a schema it wasn't built for. See _shared/hubly_capability_knowledge_loader.ts.
+  const capabilityKnowledgeBlock =
+    context === "customer"
+      ? "(Not loaded for this context yet — Capability Knowledge selection is currently built against Business Understanding only.)"
+      : buildCapabilityKnowledgePromptBlock(
+          selectRelevantCapabilityKnowledge({
+            understanding: currentUnderstanding as BusinessUnderstandingPatch,
+            userMessage: latestUserMessage,
+          }),
+        );
+
+  // No capability today is customer-facing (the two Registry entries that
+  // exist — website.analyze, online_presence.analyze_* — are owner actions),
+  // so a "customer" context is honestly shown none rather than ones it must
+  // never actually use.
+  const capabilitiesBlock =
+    context === "customer"
+      ? "(No customer-facing capabilities are registered yet.)"
+      : buildCapabilitiesPromptBlock();
+
+  return `${intro}
 
 TONE
 Warm, direct, and competent — like sitting down with a good consultant, not filling out a form. Short paragraphs. No corporate filler. Never say "as an AI".
 
-LEARNING ABOUT A BUSINESS
-When it's useful to understand the business before helping (e.g. someone asks for general help, or wants recommendations), you can ask them to paste a website, a Google Business Profile link, a Facebook or Instagram page, upload photos or screenshots, or simply say they're starting from scratch. All of those are valid — never insist on one over another.
+${learningSection}
 
-Whenever you've just gathered new information (from a capability result, or from what someone told you directly), reflect it back naturally and move forward — do NOT stop and ask permission to share it (never "would it be okay if I showed you what I found?" or similar). Just say what you noticed, then keep the conversation moving, e.g. "I took a look at your site. Here's what I noticed — [...]. What's the biggest challenge you're trying to solve right now?" Findings are shared immediately, not gated behind a question. Only ask a real question when you genuinely need the person's input to proceed — for example after a capability could NOT read something, redirect naturally instead ("I can't read that yet — is there a website I could look at instead?").
+Whenever you've just gathered new information (from a capability result, or from what someone told you directly), reflect it back naturally and move forward — do NOT stop and ask permission to share it (never "would it be okay if I showed you what I found?" or similar). Just say what you noticed, then keep the conversation moving. Findings are shared immediately, not gated behind a question. Only ask a real question when you genuinely need the person's input to proceed.
 
 ABSOLUTE RULE — HONESTY OVER APPEARING INTELLIGENT
-You must never imply that analysis happened unless it actually happened. If a capability result says something could not be read, say so plainly and explain what would need to change for you to read it (e.g. "there's no live connection to Instagram yet, so I can't read what's actually on the page — connecting it in the future will let me look at it properly"). Never invent findings, never say something is "being processed" or "continuing in the background" unless a real process is genuinely running. Trust matters more than sounding capable.
+You must never imply that analysis happened unless it actually happened. If a capability result says something could not be read, say so plainly and explain what would need to change for you to read it. Never invent findings, never say something is "being processed" or "continuing in the background" unless a real process is genuinely running. Trust matters more than sounding capable.
 
 CAPABILITY KNOWLEDGE RELEVANT TO THIS CONVERSATION
 This is knowledge about what Hubly genuinely offers, selected for what's come up so far — NOT a list of things you can invoke (see the next section for that). Use it to recommend the right thing at the right moment, with the right caveat when one is noted. Never recommend something outside this list without genuine evidence it's relevant; if nothing here fits, just help in conversation:
-${buildCapabilityKnowledgePromptBlock(relevantCapabilities)}
+${capabilityKnowledgeBlock}
 
 HUBLY CAPABILITIES YOU CAN ACTUALLY INVOKE RIGHT NOW
 This is the only list of things you can actually DO. Never claim, promise, or imply you can do something from the list above unless it also appears here:
-${buildCapabilitiesPromptBlock()}
+${capabilitiesBlock}
 
 Photos or screenshots someone attaches are visible to you directly in the conversation — look at them and describe honestly what you can actually see. That doesn't require a capability call.
 
 RECOMMENDING A CAPABILITY
 Never recommend or invoke a capability just because it exists. Only bring one up when it genuinely helps with what the person actually said they need. If nothing in your available capabilities is relevant to what they're asking, don't force one in — just help them in conversation.
 
-BUSINESS UNDERSTANDING — YOUR EVOLVING MENTAL MODEL OF THIS BUSINESS
-Alongside your reply, you maintain a shared, structured understanding of this business across categories: business, industry, services, website, brand, scheduling, crm, payments, goals. This becomes visible to the person as "What I've Learned" and, eventually, Business DNA.
+${adapter.label}
+${adapter.description}
 
-What's already known about this business (do not repeat any of this — only report NEW or CHANGED information):
+What's already known (do not repeat any of this — only report NEW or CHANGED information):
 ${knownSoFar}
 
 Every patch you emit MUST match this exact schema — no other fields, no different nesting:
-${UNDERSTANDING_SCHEMA}
+${adapter.schemaText}
 
 Rules for understanding patches:
 - Only include a category in your patch if you learned something NEW or CHANGED this turn. Never re-send something already listed above.
-- Never guess or fabricate a value. "industry" and "goals" often require your own judgment from context — that's fine, but only when there's real evidence for it (e.g. a business offering "drain cleaning" and "water heater repair" genuinely supports "industry": "Plumbing"). Don't infer without evidence.
-- "scheduling.current_system" / "crm.current_system" / "payments.current_system" record a tool the business told you they currently use — a fact, not a claim that Hubly is connected to it. Never write these unless the person or a capability result genuinely stated it.
-- "services" and "goals" are arrays that REPLACE the previous value entirely, not merge with it — whenever you include one, write out the complete current list (everything already known plus whatever's new), never just the new item.
-- "website", "brand", "scheduling", "crm", and "payments" are objects that are shallow-merged onto what's already known — you only need to include the field(s) that are new or changed within them, not the whole object.
-- "business" only ever holds "name" — richer context you learn about the business (what they do, where, how long, etc.) belongs in your conversational reply, never invented as extra fields here.
+- Never guess or fabricate a value — only record what was actually stated, shown, or already known from how this conversation began.
+- Array fields REPLACE the previous value entirely, not merge with it — whenever you include one, write out the complete current list (everything already known plus whatever's new), never just the new item.
+- Object fields are shallow-merged onto what's already known — you only need to include the field(s) that are new or changed within them, not the whole object.
+- ${adapter.businessFieldNote}
 - If nothing new was learned this turn, omit "understanding" entirely from your response.
 
 RESPONSE FORMAT — YOU MUST ALWAYS REPLY WITH ONLY THIS JSON SHAPE, NOTHING ELSE:
 To invoke a capability action: {"action":"invoke","capability":"<capability name>","capabilityAction":"<action name>","args":{...matching that action's parameters...},"message":"<what you say to the person while this runs, e.g. 'Let me take a look at that...'>","understanding":{"patch":{...}}}
 To reply normally: {"action":"reply","message":"<your full reply to the person>","understanding":{"patch":{...}}}
 
-"understanding" is optional on both — include it only when you learned something new this turn, matching the categories above (${UNDERSTANDING_CATEGORIES.join(", ")}).
+"understanding" is optional on both — include it only when you learned something new this turn, matching the categories above (${adapter.categories.join(", ")}).
 
 Only invoke a capability when someone has actually given you something to act on (e.g. a URL, an explicit request). Never invoke one speculatively.`;
 }
@@ -214,13 +329,25 @@ Deno.serve(async (req) => {
   const incoming: HublyMessage[] = Array.isArray(body?.messages) ? body.messages : [];
   if (!incoming.length) return jsonRes({ ok: false, error: "messages_required" }, 400);
 
+  // Which Understanding schema is active — the one thing that changes per
+  // context. Defaults to "dashboard" so every existing caller (nothing sends
+  // "context" yet) behaves exactly as before.
+  const context: ConversationContextName = body?.context === "customer" ? "customer" : "dashboard";
+  const adapter = getUnderstandingAdapter(context);
+
   // The deterministic opening needs no model call at all, so it must never
   // be gated behind provider configuration — check for it before the
   // isConfigured guard below, not after. Only takes this path when there's
   // no prior Hubly reply AND the first message is a generic opener with
   // nothing real to respond to yet — otherwise it falls through to the
-  // model below, same as any other turn.
-  if (!incoming.some((m) => m.role === "assistant") && isGenericOpener(incoming[0]?.content)) {
+  // model below, same as any other turn. Dashboard-only: no deterministic
+  // opening has been designed for "customer" yet, so that context always
+  // goes straight to the model rather than reusing Dashboard's canned line.
+  if (
+    context === "dashboard" &&
+    !incoming.some((m) => m.role === "assistant") &&
+    isGenericOpener(incoming[0]?.content)
+  ) {
     const history = [...incoming, { role: "assistant" as const, content: DETERMINISTIC_OPENING }];
     return jsonRes({ ok: true, reply: DETERMINISTIC_OPENING, messages: history, actions: [], interimMessages: [] });
   }
@@ -234,11 +361,17 @@ Deno.serve(async (req) => {
   // HublyAI.chat({ memory, dna, ... }) below, not changing this contract.
   const businessId = body?.businessId ? String(body.businessId) : null;
 
-  // The client's current accumulated Business Understanding — this server
-  // never stores it. Fed into the prompt so the model knows what's already
-  // known and only emits a patch for what's new.
-  const currentUnderstanding: BusinessUnderstandingPatch =
+  // Entry Intent is Patch Zero — applied as the floor, before whatever the
+  // client's own accumulated understanding merges on top. This ordering
+  // matters: if a client mistakenly resent entryIntent on a later turn, real
+  // accumulated understanding still wins, since it's merged AFTER, never before.
+  const entryIntent = body?.entryIntent && typeof body.entryIntent === "object" ? body.entryIntent : null;
+  const clientUnderstanding =
     body?.understanding && typeof body.understanding === "object" ? body.understanding : {};
+  const currentUnderstanding = adapter.merge(
+    entryIntent ? adapter.merge({}, entryIntent) : {},
+    clientUnderstanding,
+  );
 
   let history: HublyMessage[] = incoming.slice(-MAX_HISTORY);
   // Fixed for the whole turn, including any internal capability rounds
@@ -250,7 +383,7 @@ Deno.serve(async (req) => {
   // Patches emitted across internal capability rounds within this one request
   // accumulate into a single consolidated patch for the response — the client
   // only sees one round-trip per call, so it should only see one patch too.
-  let turnPatch: BusinessUnderstandingPatch = {};
+  let turnPatch: Record<string, unknown> = {};
   // "Let me take a look..."-style lines said before the final reply this
   // turn, in order — the client can render these as a natural pacing beat
   // ahead of the final message.
@@ -260,7 +393,7 @@ Deno.serve(async (req) => {
     for (let round = 0; round < MAX_CAPABILITY_ROUNDS; round++) {
       const ai = await HublyAI.chat({
         feature: "hubly-conversation",
-        system: buildSystemPrompt(mergeUnderstandingPatch(currentUnderstanding, turnPatch), latestUserMessage),
+        system: buildSystemPrompt(context, adapter.merge(currentUnderstanding, turnPatch), latestUserMessage),
         messages: history,
         jsonMode: true,
         maxTokens: 900,
@@ -278,7 +411,7 @@ Deno.serve(async (req) => {
       }
 
       if (decision?.understanding?.patch && typeof decision.understanding.patch === "object") {
-        turnPatch = mergeUnderstandingPatch(turnPatch, decision.understanding.patch);
+        turnPatch = adapter.merge(turnPatch, decision.understanding.patch);
       }
 
       if (decision?.action === "invoke" && decision.capability && decision.capabilityAction) {
@@ -323,7 +456,7 @@ Deno.serve(async (req) => {
         messages: history,
         actions,
         interimMessages,
-        ...(isEmptyPatch(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
+        ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
       });
     }
 
@@ -335,7 +468,7 @@ Deno.serve(async (req) => {
       messages: history,
       actions,
       interimMessages,
-      ...(isEmptyPatch(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
+      ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
     });
   } catch (err) {
     console.error("hubly-conversation error:", err);
