@@ -1,14 +1,22 @@
 // supabase/functions/_shared/hubly_capability_knowledge_loader.ts
 //
 // Selects the slice of the Hubly Capability Knowledge Base relevant to THIS
-// turn — current Business Understanding plus the latest user message — so
-// the system prompt stays small and stable no matter how large the
+// turn, so the system prompt stays small and stable no matter how large the
 // Knowledge Base grows. As the Knowledge Base grows, this file does not
 // need to change; only hubly_capability_knowledge_base.ts does.
 //
-// Deliberately deterministic, not a second AI call: scoring is keyword and
-// data-driven, same principle as the Hubly Planner (one reasoning engine in
-// the platform; everything downstream of it is deterministic).
+// PRIMARY signal is Business Understanding — matching the platform's actual
+// data flow, Conversation -> Business Understanding -> Capability
+// Knowledge -> Capability Registry. The latest user message is a SECONDARY
+// signal only: a nudge/tiebreaker within one turn, never the reason a
+// capability gets selected on its own. See scoreEntry() below for the
+// weighting that enforces this.
+//
+// Deliberately deterministic, not a second AI call: scoring is data-driven
+// pattern matching over structured fields, same principle as the Hubly
+// Planner (one reasoning engine in the platform; everything downstream of
+// it is deterministic) — this is reasoning over structured knowledge, not
+// keyword search.
 //
 // This has no awareness of the Capability Registry — it selects KNOWLEDGE
 // for the model to reason over, never anything to invoke.
@@ -36,25 +44,55 @@ const MAX_LOADED_CAPABILITIES = 6;
 const FOUNDATIONAL_IDS = ["website.generation", "storefront.serviceCatalog", "booking.creation"];
 const MIN_BEFORE_BACKFILL = 3;
 
+// Weights encode the architecture's actual data flow: Conversation ->
+// Business Understanding -> Capability Knowledge -> Capability Registry.
+// Business Understanding is what the AI has actually established about
+// this business; the latest message is one turn of raw conversation that
+// hasn't been distilled into anything yet. So structured-understanding
+// signals dominate, and the message only nudges/breaks ties — it must
+// never be the reason something gets selected on its own.
+const PRIMARY_SIGNAL_WEIGHT = 4;
+const SECONDARY_MESSAGE_WEIGHT = 1;
+
+function fieldMatchesPattern(
+  understanding: BusinessUnderstandingPatch,
+  field: keyof BusinessUnderstandingPatch,
+  pattern: RegExp,
+): boolean {
+  const value = (understanding as Record<string, unknown>)[field];
+  if (value == null) return false;
+  if (Array.isArray(value)) return value.some((v) => pattern.test(String(v)));
+  if (typeof value === "object") return pattern.test(JSON.stringify(value));
+  return pattern.test(String(value));
+}
+
 function scoreEntry(entry: CapabilityKnowledgeEntry, input: CapabilityKnowledgeLoaderInput): number {
   let score = 0;
 
-  const text = (input.userMessage || "").toLowerCase();
-  if (text) {
-    for (const keyword of entry.triggerKeywords) {
-      if (text.includes(keyword)) score += 3;
-    }
-  }
-
+  // --- Primary: Business Understanding ---------------------------------
   const industry = String(input.understanding.industry || "").toLowerCase();
   if (industry && !entry.industries.includes("all")) {
     const matches = entry.industries.some((i) => industry.includes(i) || i.includes(industry));
-    if (matches) score += 2;
+    if (matches) score += PRIMARY_SIGNAL_WEIGHT;
   }
 
   if (entry.relevantWhenMissing) {
     for (const key of entry.relevantWhenMissing) {
-      if ((input.understanding as Record<string, unknown>)[key] == null) score += 1;
+      if ((input.understanding as Record<string, unknown>)[key] == null) score += PRIMARY_SIGNAL_WEIGHT;
+    }
+  }
+
+  if (entry.relevantWhenFieldMatches) {
+    for (const rule of entry.relevantWhenFieldMatches) {
+      if (fieldMatchesPattern(input.understanding, rule.field, rule.pattern)) score += PRIMARY_SIGNAL_WEIGHT;
+    }
+  }
+
+  // --- Secondary: the latest message, as a nudge only -------------------
+  const text = (input.userMessage || "").toLowerCase();
+  if (text) {
+    for (const keyword of entry.triggerKeywords) {
+      if (text.includes(keyword)) score += SECONDARY_MESSAGE_WEIGHT;
     }
   }
 

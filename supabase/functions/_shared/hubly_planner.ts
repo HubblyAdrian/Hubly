@@ -97,8 +97,10 @@ type CapabilityRule = {
 
 // Specific growth phrases, not loose substrings — "customer service" must
 // never match just because it contains "custom". Each pattern requires a
-// growth-shaped phrase, not a single word.
-const GROWTH_GOAL_PATTERN =
+// growth-shaped phrase, not a single word. Exported so other consumers
+// reasoning over Business Understanding goals (e.g. the Capability
+// Knowledge loader) reuse this instead of a near-duplicate pattern.
+export const GROWTH_GOAL_PATTERN =
   /\b(more|new|get(ting)?|find(ing)?|attract(ing)?)\s+(customers?|clients?|leads?|business)\b|\bgenerate\s+leads?\b|\bgrow(ing)?\s+(the\s+)?business\b|\bincrease\s+(revenue|sales)\b|\bfill\s+(my|the|our)?\s*calendar\b|\bbook\s+more\b/i;
 
 // Extensible rule table — one entry per capability that needs more than the

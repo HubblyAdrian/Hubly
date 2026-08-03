@@ -18,6 +18,13 @@
 // array. It should never mean growing a prompt string by hand.
 
 import type { BusinessUnderstandingPatch } from "./hubly_business_understanding.ts";
+import { GROWTH_GOAL_PATTERN } from "./hubly_planner.ts";
+
+// A stated payments.current_system naming a manual/limited method is itself
+// a Business Understanding signal that Payments/Checkout capabilities are
+// relevant — distinct from relevantWhenMissing, which fires when nothing
+// about payments is known yet at all.
+const MANUAL_PAYMENT_PATTERN = /\b(cash|check|checks|venmo|zelle|cash\s*app|paypal)\b/i;
 
 export type CapabilityKnowledgeStatus = "production_ready" | "partial";
 
@@ -38,10 +45,24 @@ export type CapabilityKnowledgeEntry = {
   status: CapabilityKnowledgeStatus;
   /** Required when status is "partial" — the caveat that must travel with any recommendation. */
   statusNote?: string;
-  /** Deterministic retrieval signal — lowercase phrases. Never used to power a second AI call. */
+  /**
+   * Secondary retrieval signal only — lowercase phrases checked against the
+   * latest user message. Business Understanding (relevantWhenMissing /
+   * relevantWhenFieldMatches) is the primary driver; this exists to nudge
+   * relevance within one turn, never to replace it. Never used to power a
+   * second AI call.
+   */
   triggerKeywords: string[];
-  /** Business Understanding top-level keys whose absence makes this MORE relevant to bring up. */
+  /** PRIMARY signal: Business Understanding top-level keys whose absence makes this MORE relevant to bring up. */
   relevantWhenMissing?: (keyof BusinessUnderstandingPatch)[];
+  /**
+   * PRIMARY signal: this capability is more relevant when a Business
+   * Understanding field's current VALUE matches a pattern — e.g. a stated
+   * goal that's growth-shaped, or a payments.current_system that names a
+   * manual/limited method. Reasoning over structured understanding, not
+   * the raw conversational message.
+   */
+  relevantWhenFieldMatches?: Array<{ field: keyof BusinessUnderstandingPatch; pattern: RegExp }>;
 };
 
 export const HUBLY_CAPABILITY_KNOWLEDGE_BASE: CapabilityKnowledgeEntry[] = [
@@ -306,6 +327,7 @@ export const HUBLY_CAPABILITY_KNOWLEDGE_BASE: CapabilityKnowledgeEntry[] = [
     status: "production_ready",
     statusNote: "Plans and generates creative packages; does not execute/send a campaign on its own beyond Studio Email Publish.",
     triggerKeywords: ["more customers", "more bookings", "marketing plan", "campaign", "promotion", "slow season"],
+    relevantWhenFieldMatches: [{ field: "goals", pattern: GROWTH_GOAL_PATTERN }],
   },
   {
     id: "marketing.customerEmail",
@@ -353,6 +375,7 @@ export const HUBLY_CAPABILITY_KNOWLEDGE_BASE: CapabilityKnowledgeEntry[] = [
     statusNote: "The hard dependency almost every payment-related capability sits behind.",
     triggerKeywords: ["accept payments", "get paid", "stripe", "collect money", "take payments"],
     relevantWhenMissing: ["payments"],
+    relevantWhenFieldMatches: [{ field: "payments", pattern: MANUAL_PAYMENT_PATTERN }],
   },
   {
     id: "payments.statusAndPayouts",
