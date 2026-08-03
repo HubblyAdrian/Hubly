@@ -1,34 +1,40 @@
 // supabase/functions/_shared/hubly_planner.ts
 //
 // Hubly Planner — produces "Hubly Plan," the structured comparison of a
-// business's current Business Understanding against Hubly Core. Deliberately
-// NOT an LLM service. The conversation AI already does the one reasoning
-// step this platform needs (turning free text into structured Business
-// Understanding); the planner only compares already-structured facts against
-// the Capability Registry. Deterministic, cheap, and fully testable without
-// any model credentials.
+// business's current Business Understanding against Hubly Core DEFINITION
+// (_shared/hubly_core_definition.ts) — the product-level list of what Hubly
+// capabilities are, not the Capability Registry's list of what's actually
+// executable today. Deliberately NOT an LLM service: the conversation AI
+// already does the one reasoning step this platform needs (turning free
+// text into structured Business Understanding); the planner only compares
+// already-structured facts against a static product definition. Fully
+// deterministic and testable without any model credentials.
+//
+// This file has NO dependency on the Capability Registry, on purpose. What
+// Hubly product decides a business needs and what engineering has actually
+// shipped are two different conversations, per Apple's iPhone-feature vs.
+// iOS-ship-date framing: the planner can honestly say a business needs
+// Analytics whether or not Analytics has a single line of backend code yet.
+// Cross-referencing a plan against what's actually executable — if that's
+// ever needed — is a separate, later concern, not this module's job.
 //
 // Responsibilities:
 // - Consume Business Understanding.
-// - Compare it against Hubly Core (the Capability Registry — only
-//   capabilities that actually exist there are ever evaluated; nothing
-//   aspirational is invented here).
+// - Compare it against Hubly Core Definition — every defined capability
+//   gets evaluated, not just implemented ones.
 // - Produce a structured plan.
 // - Never invoke a capability. Never call an LLM. Never duplicate reasoning
-//   the conversation AI already performed.
+//   the conversation AI already performed. Never reference the Capability
+//   Registry.
 //
-// What's deliberately NOT in the public contract: no `registryReady` flag,
-// no notion of "is this implemented yet." Whether a capability exists in the
-// registry is why it's evaluated at all — a business never sees an
-// engineering-readiness signal, only a plan about their business. As more
-// capabilities are added to the registry (built on demand, per the standing
-// rule), the plan's coverage grows automatically — nothing here needs to
-// change for that to happen.
+// What's deliberately NOT in the public contract: no notion of "is this
+// implemented yet." A business never sees an engineering-readiness signal,
+// only a plan about their business.
 //
 // Turning this into a numbered, verb-phrased "Today's Priorities" list is a
 // presentation concern, not this module's job — that's Experience 2.
 
-import { HUBLY_CAPABILITY_REGISTRY } from "./hubly_capability_registry.ts";
+import { HUBLY_CORE_DEFINITION } from "./hubly_core_definition.ts";
 import type { BusinessUnderstandingPatch } from "./hubly_business_understanding.ts";
 
 export type PlanItemStatus = "already_exists" | "external_tool_in_use" | "recommend";
@@ -75,11 +81,12 @@ export function genericDetermine(capability: string, understanding: BusinessUnde
       reason: `The business said they currently use ${field.current_system} for this.`,
     };
   }
+  const def = HUBLY_CORE_DEFINITION.find((c) => c.name === capability);
   return {
     capability,
     status: "recommend",
     priority: "normal",
-    reason: `Nothing has come up about this yet — Hubly can offer it.`,
+    reason: def ? `Not set up yet. ${def.customerValue}` : `Nothing has come up about this yet.`,
   };
 }
 
@@ -119,7 +126,7 @@ export const CAPABILITY_RULES: CapabilityRule[] = [
 ];
 
 export function buildHublyPlan(understanding: BusinessUnderstandingPatch): HublyPlan {
-  const items: PlanItem[] = HUBLY_CAPABILITY_REGISTRY.map((cap) => {
+  const items: PlanItem[] = HUBLY_CORE_DEFINITION.map((cap) => {
     const rule = CAPABILITY_RULES.find((r) => r.capability === cap.name);
     return rule ? rule.determine(understanding) : genericDetermine(cap.name, understanding);
   });
