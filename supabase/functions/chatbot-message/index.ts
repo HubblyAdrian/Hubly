@@ -9,17 +9,15 @@
 // key, which is why those tables have no public RLS policies.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { toAiSummary } from "../_shared/service_engine.ts";
+import type { toAiSummary } from "../_shared/service_engine.ts";
 import { HublyAI } from "../_shared/hubly_ai.ts";
+import { loadConciergeContext } from "../_shared/hubly_conversation_context_loader.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-const MAX_MESSAGES_PER_CONVERSATION = 30;
-const MAX_CONVERSATIONS_PER_HOUR = 20;
 
 function jsonRes(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, "content-type": "application/json" } });
@@ -166,24 +164,17 @@ Deno.serve(async (req: Request) => {
       return jsonRes({ error: "the last message must be from the customer" }, 400);
     }
 
-    const { data: biz, error: bizError } = await supabase
-      .from("businesses")
-      .select("name, phone, email, tier, meta, service_area_cities")
-      .eq("id", business_id)
-      .single();
-    if (bizError || !biz) {
-      console.error("chatbot-message rejected: business not found. business_id:", business_id, "bizError:", bizError?.message);
+    // Context Loader — the only place this function touches a data
+    // source. See _shared/hubly_conversation_context_loader.ts.
+    const loaded = await loadConciergeContext(supabase, business_id);
+    if (!loaded.ok) {
+      console.error("chatbot-message rejected: business not found. business_id:", business_id, "error:", loaded.error);
       return jsonRes({ error: "Business not found." }, 404);
     }
-
-    const meta = typeof biz.meta === "string" ? JSON.parse(biz.meta || "{}") : (biz.meta || {});
-    const faq = Array.isArray(meta?.website?.faq) ? meta.website.faq : [];
-    const hours = meta?.hours || null;
-    const cities = Array.isArray(biz.service_area_cities) ? biz.service_area_cities : [];
-    const isPro = biz.tier === "pro";
-
-    // Service Engine — website channel. Never invent; catalog always wins.
-    const catalogSummary = toAiSummary({ ...biz, meta }, "website");
+    const context = loaded.context;
+    const { business: biz, services: catalogSummary, faq, hours, cities } = context.groundTruth;
+    const isPro = !!context.policies.tierGating?.isPro;
+    const rateLimit = context.policies.rateLimit;
 
     // Rate limits -- checked before any AI call, so a rejection never
     // spends a token. Reuses the same redirect_contact shape a genuine
@@ -196,7 +187,7 @@ Deno.serve(async (req: Request) => {
         .select("id", { count: "exact", head: true })
         .eq("business_id", business_id)
         .gte("started_at", oneHourAgo);
-      if ((count || 0) >= MAX_CONVERSATIONS_PER_HOUR) {
+      if ((count || 0) >= rateLimit!.maxConversationsPerHour) {
         return jsonRes({ conversation_id: null, ...redirectReply(biz.name, biz.phone, biz.email) });
       }
     } else {
@@ -213,7 +204,7 @@ Deno.serve(async (req: Request) => {
         .from("chatbot_messages")
         .select("id", { count: "exact", head: true })
         .eq("conversation_id", conversation_id);
-      if ((count || 0) >= MAX_MESSAGES_PER_CONVERSATION) {
+      if ((count || 0) >= rateLimit!.maxMessagesPerConversation) {
         await supabase.from("chatbot_conversations").update({ ended_at: new Date().toISOString() }).eq("id", conversation_id);
         return jsonRes({ conversation_id, ...redirectReply(biz.name, biz.phone, biz.email) });
       }
