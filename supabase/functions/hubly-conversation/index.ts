@@ -51,7 +51,10 @@
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
 import { findAction, buildCapabilitiesPromptBlock } from "../_shared/hubly_capability_registry.ts";
-import { HUBLY_CORE_DEFINITION } from "../_shared/hubly_core_definition.ts";
+import {
+  selectRelevantCapabilityKnowledge,
+  buildCapabilityKnowledgePromptBlock,
+} from "../_shared/hubly_capability_knowledge_loader.ts";
 import {
   type BusinessUnderstandingPatch,
   UNDERSTANDING_CATEGORIES,
@@ -85,12 +88,6 @@ const GENERIC_OPENER_PATTERNS: RegExp[] = [
 function isGenericOpener(content: unknown): boolean {
   if (typeof content !== "string") return false;
   return GENERIC_OPENER_PATTERNS.some((re) => re.test(content));
-}
-
-function buildCoreDefinitionPromptBlock(): string {
-  return HUBLY_CORE_DEFINITION.map(
-    (c) => `- ${c.name}: ${c.purpose} (${c.customerValue})`,
-  ).join("\n");
 }
 
 // Mirrors BusinessUnderstandingPatch in hubly_business_understanding.ts
@@ -135,10 +132,18 @@ function extractJson(rawText: string): string {
 const MAX_CAPABILITY_ROUNDS = 4;
 const MAX_HISTORY = 40;
 
-function buildSystemPrompt(currentUnderstanding: BusinessUnderstandingPatch): string {
+function buildSystemPrompt(currentUnderstanding: BusinessUnderstandingPatch, latestUserMessage: string | null): string {
   const knownSoFar = isEmptyPatch(currentUnderstanding)
     ? "Nothing yet — this is the start of understanding this business."
     : JSON.stringify(currentUnderstanding, null, 2);
+
+  // Selective, deterministic — never the whole Knowledge Base. This is what
+  // keeps the prompt small and stable as the Knowledge Base grows; see
+  // _shared/hubly_capability_knowledge_loader.ts.
+  const relevantCapabilities = selectRelevantCapabilityKnowledge({
+    understanding: currentUnderstanding,
+    userMessage: latestUserMessage,
+  });
 
   return `You are Hubly — a conversational business partner, not a piece of software someone has to learn. You are the primary interface to the Hubly platform: every capability Hubly has should feel reachable by simply telling you what's needed, in plain conversation.
 
@@ -155,9 +160,9 @@ Whenever you've just gathered new information (from a capability result, or from
 ABSOLUTE RULE — HONESTY OVER APPEARING INTELLIGENT
 You must never imply that analysis happened unless it actually happened. If a capability result says something could not be read, say so plainly and explain what would need to change for you to read it (e.g. "there's no live connection to Instagram yet, so I can't read what's actually on the page — connecting it in the future will let me look at it properly"). Never invent findings, never say something is "being processed" or "continuing in the background" unless a real process is genuinely running. Trust matters more than sounding capable.
 
-WHAT HUBLY IS BUILT AROUND
-This is the full shape of Hubly's platform — use it to understand what generally matters to a service business and to guide your judgment about what's worth asking or noticing. This is background knowledge, NOT a list of things you can do:
-${buildCoreDefinitionPromptBlock()}
+CAPABILITY KNOWLEDGE RELEVANT TO THIS CONVERSATION
+This is knowledge about what Hubly genuinely offers, selected for what's come up so far — NOT a list of things you can invoke (see the next section for that). Use it to recommend the right thing at the right moment, with the right caveat when one is noted. Never recommend something outside this list without genuine evidence it's relevant; if nothing here fits, just help in conversation:
+${buildCapabilityKnowledgePromptBlock(relevantCapabilities)}
 
 HUBLY CAPABILITIES YOU CAN ACTUALLY INVOKE RIGHT NOW
 This is the only list of things you can actually DO. Never claim, promise, or imply you can do something from the list above unless it also appears here:
@@ -236,6 +241,11 @@ Deno.serve(async (req) => {
     body?.understanding && typeof body.understanding === "object" ? body.understanding : {};
 
   let history: HublyMessage[] = incoming.slice(-MAX_HISTORY);
+  // Fixed for the whole turn, including any internal capability rounds
+  // below — those are server-internal continuations of this one user
+  // message, not new input, so the relevance signal shouldn't shift mid-turn.
+  const lastIncomingUser = [...incoming].reverse().find((m) => m.role === "user");
+  const latestUserMessage = typeof lastIncomingUser?.content === "string" ? lastIncomingUser.content : null;
   const actions: Array<{ capability: string; capabilityAction: string; args: unknown; ok: boolean; real: boolean }> = [];
   // Patches emitted across internal capability rounds within this one request
   // accumulate into a single consolidated patch for the response — the client
@@ -250,7 +260,7 @@ Deno.serve(async (req) => {
     for (let round = 0; round < MAX_CAPABILITY_ROUNDS; round++) {
       const ai = await HublyAI.chat({
         feature: "hubly-conversation",
-        system: buildSystemPrompt(mergeUnderstandingPatch(currentUnderstanding, turnPatch)),
+        system: buildSystemPrompt(mergeUnderstandingPatch(currentUnderstanding, turnPatch), latestUserMessage),
         messages: history,
         jsonMode: true,
         maxTokens: 900,
