@@ -23,9 +23,14 @@
 //   opaque — resent verbatim, never parsed structurally beyond `role`, so
 //   internal orchestration can change without breaking any consumer.
 // - Experience 1's opening line is the one deterministic exception to "the
-//   model decides everything" — fixed exact text, no model call, whenever a
-//   conversation has no prior Hubly reply yet. Every turn after that is
-//   fully open — no other scripted flow anywhere in this file.
+//   model decides everything" — fixed exact text, no model call, but ONLY
+//   when the very first message is a generic conversation starter ("I need
+//   help with my business", "hi", etc.) with nothing real to respond to yet.
+//   If the first message is an actual question or business content, it
+//   skips the canned line and goes straight to the model, which answers it
+//   naturally while still beginning Business Understanding normally. Every
+//   turn after the first is fully open regardless — no other scripted flow
+//   anywhere in this file.
 // - Business Understanding is patch-based, like a CRDT or Git history: the
 //   client sends its current accumulated state each turn (so the model knows
 //   what's already established and never re-emits it), and the response
@@ -56,17 +61,52 @@ import {
 
 // Experience 1's opening line is fixed, not model-generated — this is the
 // first thing anyone ever sees from Hubly, too important to leave to
-// per-turn variance. Returned whenever a conversation has no prior Hubly
-// reply yet, regardless of what the person's first message said. Every turn
-// after this one belongs entirely to the model — no scripted flow beyond it.
+// per-turn variance. Returned only when the first message is a generic
+// opener with nothing specific to respond to (see isGenericOpener below).
+// Every turn after this one belongs entirely to the model — no scripted
+// flow beyond it.
 const DETERMINISTIC_OPENING =
   "I'd love to help.\n\nBefore I make recommendations or build anything, I'd like to learn about your business.\n\nYou can paste a website, your Google Business Profile, Facebook page, Instagram, upload screenshots, or simply tell me you're starting from scratch.";
+
+// A first message counts as a "generic opener" only if it's one of a small
+// set of content-free ways people start this conversation — not a real
+// question or any actual business content, which the model should answer
+// directly instead. Deliberately a plain pattern check, not a second model
+// call: the architecture allows exactly one reasoning engine in this stack,
+// and this distinction is simple enough not to need one.
+const GENERIC_OPENER_PATTERNS: RegExp[] = [
+  /^\s*(hi|hey|hello)(\s+there)?[.,!]?\s*$/i,
+  /^\s*i'?d?\s*(need|want|like\s+(some\s+)?)\s*help(\s+with\s+(my|our)\s+business)?[.,!?]*\s*$/i,
+  /^\s*(can|could)\s+you\s+help(\s+me)?(\s+with\s+(my|our)\s+business)?[.,!?]*\s*$/i,
+  /^\s*help(\s+me)?(\s+with\s+(my|our)\s+business)?[.,!?]*\s*$/i,
+  /^\s*(let'?s|lets)\s+get\s+started[.,!?]*\s*$/i,
+];
+
+function isGenericOpener(content: unknown): boolean {
+  if (typeof content !== "string") return false;
+  return GENERIC_OPENER_PATTERNS.some((re) => re.test(content));
+}
 
 function buildCoreDefinitionPromptBlock(): string {
   return HUBLY_CORE_DEFINITION.map(
     (c) => `- ${c.name}: ${c.purpose} (${c.customerValue})`,
   ).join("\n");
 }
+
+// Mirrors BusinessUnderstandingPatch in hubly_business_understanding.ts
+// exactly — that's a compile-time-only type with no runtime form to derive
+// this from, so it's hand-kept in sync. If that type changes, update this too.
+const UNDERSTANDING_SCHEMA = `{
+  "business"?: { "name"?: string },
+  "industry"?: string,
+  "services"?: string[],
+  "website"?: { "status"?: "found" | "not_found", "url"?: string },
+  "brand"?: { "colors"?: string[] },
+  "scheduling"?: { "current_system"?: string },
+  "crm"?: { "current_system"?: string },
+  "payments"?: { "current_system"?: string },
+  "goals"?: string[]
+}`;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -134,10 +174,16 @@ Alongside your reply, you maintain a shared, structured understanding of this bu
 What's already known about this business (do not repeat any of this — only report NEW or CHANGED information):
 ${knownSoFar}
 
+Every patch you emit MUST match this exact schema — no other fields, no different nesting:
+${UNDERSTANDING_SCHEMA}
+
 Rules for understanding patches:
 - Only include a category in your patch if you learned something NEW or CHANGED this turn. Never re-send something already listed above.
 - Never guess or fabricate a value. "industry" and "goals" often require your own judgment from context — that's fine, but only when there's real evidence for it (e.g. a business offering "drain cleaning" and "water heater repair" genuinely supports "industry": "Plumbing"). Don't infer without evidence.
 - "scheduling.current_system" / "crm.current_system" / "payments.current_system" record a tool the business told you they currently use — a fact, not a claim that Hubly is connected to it. Never write these unless the person or a capability result genuinely stated it.
+- "services" and "goals" are arrays that REPLACE the previous value entirely, not merge with it — whenever you include one, write out the complete current list (everything already known plus whatever's new), never just the new item.
+- "website", "brand", "scheduling", "crm", and "payments" are objects that are shallow-merged onto what's already known — you only need to include the field(s) that are new or changed within them, not the whole object.
+- "business" only ever holds "name" — richer context you learn about the business (what they do, where, how long, etc.) belongs in your conversational reply, never invented as extra fields here.
 - If nothing new was learned this turn, omit "understanding" entirely from your response.
 
 RESPONSE FORMAT — YOU MUST ALWAYS REPLY WITH ONLY THIS JSON SHAPE, NOTHING ELSE:
@@ -165,8 +211,11 @@ Deno.serve(async (req) => {
 
   // The deterministic opening needs no model call at all, so it must never
   // be gated behind provider configuration — check for it before the
-  // isConfigured guard below, not after.
-  if (!incoming.some((m) => m.role === "assistant")) {
+  // isConfigured guard below, not after. Only takes this path when there's
+  // no prior Hubly reply AND the first message is a generic opener with
+  // nothing real to respond to yet — otherwise it falls through to the
+  // model below, same as any other turn.
+  if (!incoming.some((m) => m.role === "assistant") && isGenericOpener(incoming[0]?.content)) {
     const history = [...incoming, { role: "assistant" as const, content: DETERMINISTIC_OPENING }];
     return jsonRes({ ok: true, reply: DETERMINISTIC_OPENING, messages: history, actions: [], interimMessages: [] });
   }
