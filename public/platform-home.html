@@ -126,7 +126,11 @@ img{max-width:100%;display:block}
 .ask-icon-left{
   position:absolute;left:18px;bottom:14px;width:20px;height:20px;
   color:var(--ink-3);display:flex;align-items:center;justify-content:center;
+  background:none;border:0;padding:0;margin:0;cursor:default;
 }
+button.ask-icon-left{cursor:pointer;border-radius:6px;transition:color .15s ease,background .15s ease}
+button.ask-icon-left:hover,button.ask-icon-left[aria-expanded="true"]{color:var(--brand);background:rgba(217,99,45,.12)}
+button.ask-icon-left:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .ask-submit{
   position:absolute;right:12px;bottom:10px;width:42px;height:42px;border-radius:50%;
   background:var(--brand);border:0;display:flex;align-items:center;justify-content:center;
@@ -201,8 +205,14 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   background:var(--bg);opacity:0;transition:opacity .35s ease;
 }
 .hc-app.is-active{display:flex;opacity:1}
-.hc-app-left{flex:1 1 56%;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--line)}
-.hc-app-right{flex:1 1 44%;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:#0d0f16}
+.hc-app-left{flex:1 1 56%;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--line);transition:flex-basis .35s ease}
+.hc-app-right{flex:1 1 44%;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:#0d0f16;transition:flex-basis .35s ease}
+/* Once there's a real site to look at, the canvas becomes the point — "the
+   visible change is the explanation" only works if it has the room to be
+   seen. Chat stays comfortable to read, just no longer fighting for equal
+   space with the thing it's actually describing. */
+.hc-app.hc-has-draft .hc-app-left{flex:0 1 30%;min-width:340px}
+.hc-app.hc-has-draft .hc-app-right{flex:1 1 70%}
 .hc-thread{flex:1;overflow-y:auto;padding:36px clamp(22px,4vw,60px) 18px;display:flex;flex-direction:column;gap:22px}
 .hc-msg{max-width:640px;font-size:16px;line-height:1.65;white-space:pre-wrap}
 .hc-msg.hubly{color:var(--ink)}
@@ -218,9 +228,25 @@ body.hc-active #categories,body.hc-active .footer{display:none}
 @keyframes hcPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
 .hc-input-bar{padding:16px clamp(22px,4vw,60px) 28px;flex-shrink:0}
 .hc-input-bar .ask-box{padding:14px 16px 14px 16px;border-radius:18px}
-.hc-input-bar .ask-box input{padding:6px 40px 6px 2px}
+.hc-input-bar .ask-box input{padding:6px 40px 6px 40px}
 .hc-input-bar .ask-icon-left{bottom:auto;top:50%;transform:translateY(-50%);left:16px}
 .hc-input-bar .ask-submit{bottom:auto;top:50%;transform:translateY(-50%);right:10px;width:36px;height:36px}
+
+/* Persistent attach affordance — reachable the whole conversation, not a
+   one-time offer, so the AI is never claiming a capability the input bar
+   doesn't actually have (see hcInspirationAct — same handler either way). */
+.hc-attach-menu{
+  position:absolute;left:0;bottom:calc(100% + 10px);z-index:20;
+  background:#12151f;border:1px solid rgba(255,255,255,.14);border-radius:12px;
+  box-shadow:0 16px 40px -10px rgba(0,0,0,.6);padding:6px;min-width:200px;
+  display:flex;flex-direction:column;gap:2px;
+}
+.hc-attach-menu[hidden]{display:none}
+.hc-attach-menu button{
+  display:flex;align-items:center;gap:9px;text-align:left;border:0;background:none;
+  color:rgba(245,246,248,.88);font-size:13px;padding:9px 10px;border-radius:8px;cursor:pointer;
+}
+.hc-attach-menu button:hover,.hc-attach-menu button:focus-visible{background:rgba(217,99,45,.14);color:#fff;outline:none}
 
 /* Live canvas — "the thing we're building together," never Business
    Understanding as data. Default: quiet placeholder. Once a real business
@@ -347,8 +373,10 @@ body.hc-active #categories,body.hc-active .footer{display:none}
 .hc-insp-back:hover{color:#fff}
 @media(max-width:860px){
   .hc-app{flex-direction:column}
-  .hc-app-left{border-right:0;border-bottom:1px solid var(--line);flex:1 1 52%}
+  .hc-app-left{border-right:0;border-bottom:1px solid var(--line);flex:1 1 52%;min-width:0}
   .hc-app-right{flex:1 1 48%}
+  .hc-app.hc-has-draft .hc-app-left{flex:1 1 40%;min-width:0}
+  .hc-app.hc-has-draft .hc-app-right{flex:1 1 60%}
   .hc-insp-grid{grid-template-columns:1fr}
   .hc-insp-card.hc-insp-primary{grid-column:auto}
 }
@@ -433,9 +461,17 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         <div class="ask-glow" aria-hidden="true"></div>
         <div class="ask-box">
           <input id="hcInput" type="text" autocomplete="off" placeholder="Reply to Hubly…" aria-label="Reply to Hubly">
-          <span class="ask-icon-left" aria-hidden="true">
+          <button type="button" class="ask-icon-left" id="hcAttachBtn" aria-label="Attach a reference or find inspiration" aria-haspopup="true" aria-expanded="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>
-          </span>
+          </button>
+          <div class="hc-attach-menu" id="hcAttachMenu" role="menu" hidden>
+            <button type="button" role="menuitem" data-act="url">🔗 Website URL</button>
+            <button type="button" role="menuitem" data-act="screenshot">🖼️ Screenshot</button>
+            <button type="button" role="menuitem" data-act="pdf">📄 PDF</button>
+            <button type="button" role="menuitem" data-act="figma">🎨 Figma</button>
+            <button type="button" role="menuitem" data-act="pinterest">📌 Pinterest</button>
+            <button type="button" role="menuitem" data-act="auto">✨ Find inspiration for me</button>
+          </div>
           <button type="button" class="ask-submit" id="hcSubmit" aria-label="Send">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
@@ -910,14 +946,24 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         if(data.draftBusiness && data.draftBusiness.id && data.draftBusiness.url){
           hc.draftBusiness = data.draftBusiness;
         }
-        if(!hadDraft && hc.draftBusiness){
-          hc.canvasStage = 'site';
-          hcRenderCanvas();
-        } else if(touchedBusiness && hc.draftBusiness){
-          hcRefreshCanvasFrame();
-        } else if(!hc.draftBusiness && Array.isArray(data.concepts) && data.concepts.length){
+        // Concepts take priority regardless of whether a draft already
+        // exists — "show me different directions" is a legitimate request
+        // after a site is live, not just before. This used to be gated on
+        // !hc.draftBusiness, which meant the model could correctly say "A
+        // few different directions:" and return real concepts, and the
+        // client would silently drop them because a draft already existed
+        // — the chat text rendered fine (unconditional), the canvas just
+        // never updated. Real bug, confirmed live, fixed by reordering.
+        if(Array.isArray(data.concepts) && data.concepts.length){
           hc.canvasStage = 'concepts';
           hcRenderConcepts(data.concepts);
+        } else if(!hadDraft && hc.draftBusiness){
+          hc.canvasStage = 'site';
+          hcRenderCanvas();
+          var hcAppEl = document.getElementById('hcApp');
+          if(hcAppEl) hcAppEl.classList.add('hc-has-draft');
+        } else if(touchedBusiness && hc.draftBusiness){
+          hcRefreshCanvasFrame();
         } else if(!hc.draftBusiness && data.askInspiration === true){
           hc.canvasStage = 'inspiration';
           hcRenderInspiration();
@@ -1013,6 +1059,52 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   }
   hcWireFileInput('hcFileInput', 'image', 'Here\'s a screenshot for inspiration.');
   hcWireFileInput('hcPdfInput', 'document', 'Here\'s a PDF for inspiration.');
+
+  // The persistent attach menu — always reachable, unlike the one-time
+  // inspiration card grid (hcRenderInspiration), which is destructive to
+  // the canvas and only right for the very first ask. Link options here
+  // never touch the canvas: they just point the person at the one place
+  // that already handles a pasted link correctly, the chat input itself.
+  var HC_LINK_PLACEHOLDERS = {
+    url: 'Paste your website URL…',
+    figma: 'Paste your Figma link…',
+    pinterest: 'Paste your Pinterest link…'
+  };
+  function hcAttachMenuAct(act){
+    if(act === 'auto' || act === 'screenshot' || act === 'pdf'){ hcInspirationAct(act); return; }
+    var placeholder = HC_LINK_PLACEHOLDERS[act];
+    if(!placeholder) return;
+    var input = document.getElementById('hcInput') || document.getElementById('heroInput');
+    if(input){
+      input.placeholder = placeholder;
+      input.focus();
+    }
+  }
+
+  var hcAttachBtn = document.getElementById('hcAttachBtn');
+  var hcAttachMenu = document.getElementById('hcAttachMenu');
+  function hcCloseAttachMenu(){
+    if(!hcAttachMenu || hcAttachMenu.hidden) return;
+    hcAttachMenu.hidden = true;
+    if(hcAttachBtn) hcAttachBtn.setAttribute('aria-expanded', 'false');
+  }
+  if(hcAttachBtn && hcAttachMenu){
+    hcAttachBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var open = hcAttachMenu.hidden;
+      hcAttachMenu.hidden = !open;
+      hcAttachBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    Array.prototype.forEach.call(hcAttachMenu.querySelectorAll('button[data-act]'), function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        hcCloseAttachMenu();
+        hcAttachMenuAct(btn.getAttribute('data-act'));
+      });
+    });
+    document.addEventListener('click', hcCloseAttachMenu);
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') hcCloseAttachMenu(); });
+  }
 
   // Logo upload is its own path, not hcSendContent — the image has to reach
   // business.setLogo directly (see uploadDraftLogo's comment: a model can't
