@@ -220,6 +220,9 @@ body.hc-active #categories,body.hc-active .footer{display:none}
 .hc-field-value{font-size:14px;color:var(--ink-3)}
 .hc-field-value.is-known{color:var(--ink);font-weight:600}
 .hc-field-value.is-known::before{content:'✓ ';color:var(--brand)}
+.hc-empty{font-size:13px;color:var(--ink-3);font-style:italic}
+@keyframes hcFieldReveal{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+.hc-field-new{animation:hcFieldReveal .5s ease}
 @media(max-width:860px){
   .hc-app{flex-direction:column}
   .hc-app-left{border-right:0;border-bottom:1px solid var(--line);flex:1 1 58%}
@@ -311,7 +314,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     </div>
   </div>
   <div class="hc-app-right">
-    <div class="hc-panel-title">What I've Learned</div>
+    <div class="hc-panel-title">Business Understanding</div>
     <div id="hcUnderstanding"></div>
   </div>
 </div>
@@ -411,7 +414,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   var HC_CATEGORY_ORDER = ['business','industry','services','website','brand','scheduling','crm','payments','goals'];
   var HC_CATEGORY_LABELS = { business:'Business', industry:'Industry', services:'Services', website:'Website', brand:'Brand', scheduling:'Scheduling', crm:'CRM', payments:'Payments', goals:'Goals' };
 
-  var hc = { messages: [], understanding: {}, active: false, busy: false };
+  var hc = { messages: [], understanding: {}, understandingOrder: [], active: false, busy: false };
 
   function hcMergePatch(base, patch){
     if(!patch || typeof patch !== 'object') return base;
@@ -462,14 +465,48 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     return { known:false, text:'Not discussed yet' };
   }
 
-  function hcRenderUnderstanding(){
+  // Snapshot of each category's known display text (null when not yet known)
+  // — used to diff before/after a merge so the panel can tell "just learned
+  // or changed" apart from "already knew this," which is what makes
+  // discoveries animate instead of the whole panel silently repainting.
+  function hcSnapshotDisplay(understanding){
+    var snap = {};
+    HC_CATEGORY_ORDER.forEach(function(key){
+      var d = hcFieldDisplay(key, understanding[key]);
+      snap[key] = d.known ? d.text : null;
+    });
+    return snap;
+  }
+
+  // Only known categories render — unknowns are hidden entirely rather than
+  // shown as "Not discussed yet" — and they render most-recently-learned
+  // first, via hc.understandingOrder, so the panel reads as Hubly actively
+  // building understanding rather than a fixed form filling in.
+  function hcRenderUnderstanding(justUpdated){
     var el = document.getElementById('hcUnderstanding');
     if(!el) return;
-    el.innerHTML = HC_CATEGORY_ORDER.map(function(key){
+    justUpdated = justUpdated || [];
+    var knownKeys = hc.understandingOrder.filter(function(key){
+      return hcFieldDisplay(key, hc.understanding[key]).known;
+    });
+    if(!knownKeys.length){
+      el.innerHTML = '<div class="hc-empty">Getting to know your business…</div>';
+      return;
+    }
+    el.innerHTML = knownKeys.map(function(key){
       var d = hcFieldDisplay(key, hc.understanding[key]);
-      return '<div class="hc-field"><div class="hc-field-label">' + HC_CATEGORY_LABELS[key] + '</div>' +
-        '<div class="hc-field-value' + (d.known ? ' is-known' : '') + '">' + hcEscape(d.text) + '</div></div>';
+      var isNew = justUpdated.indexOf(key) !== -1;
+      return '<div class="hc-field' + (isNew ? ' hc-field-new' : '') + '"><div class="hc-field-label">' + HC_CATEGORY_LABELS[key] + '</div>' +
+        '<div class="hc-field-value is-known">' + hcEscape(d.text) + '</div></div>';
     }).join('');
+    if(justUpdated.length){
+      // Strip the animation class once it's played so it doesn't replay on
+      // the next unrelated re-render of this same field.
+      setTimeout(function(){
+        var animated = el.querySelectorAll('.hc-field-new');
+        for(var i = 0; i < animated.length; i++) animated[i].classList.remove('hc-field-new');
+      }, 700);
+    }
   }
 
   function hcAppendMessage(role, text){
@@ -531,8 +568,18 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         }
         hc.messages = Array.isArray(data.messages) ? data.messages : hc.messages;
         if(data.understanding && data.understanding.patch){
+          var hcBefore = hcSnapshotDisplay(hc.understanding);
           hc.understanding = hcMergePatch(hc.understanding, data.understanding.patch);
-          hcRenderUnderstanding();
+          var hcAfter = hcSnapshotDisplay(hc.understanding);
+          var hcJustUpdated = HC_CATEGORY_ORDER.filter(function(key){
+            return hcAfter[key] !== null && hcAfter[key] !== hcBefore[key];
+          });
+          hcJustUpdated.forEach(function(key){
+            var idx = hc.understandingOrder.indexOf(key);
+            if(idx !== -1) hc.understandingOrder.splice(idx, 1);
+            hc.understandingOrder.unshift(key);
+          });
+          hcRenderUnderstanding(hcJustUpdated);
         }
         var interim = Array.isArray(data.interimMessages) ? data.interimMessages : [];
         var i = 0;
