@@ -407,6 +407,56 @@ async function reserveCalendarJob(
 }
 
 /**
+ * A non-instant marketplace booking's real "pending" record — mirrors the
+ * exact payload shape the working, direct-booking flow already uses (see
+ * hubly.html's membership-signup and normal booking_requests inserts), so
+ * the dashboard's existing accept/decline pipeline picks this up with zero
+ * changes on that side. Never write a jobs row for a pending booking — see
+ * the comment at this function's one call site.
+ */
+async function reserveBookingRequest(
+  admin: Admin,
+  opts: {
+    businessId: string;
+    customerName: string;
+    customerEmail: string | null;
+    customerPhone: string | null;
+    serviceName: string;
+    requestedDate: string;
+    requestedTime: string;
+    address: string | null;
+    notes: string | null;
+  },
+): Promise<string | null> {
+  try {
+    const { data, error } = await admin
+      .from("booking_requests")
+      .insert({
+        business_id: opts.businessId,
+        customer_name: opts.customerName,
+        customer_phone: opts.customerPhone || "",
+        customer_email: opts.customerEmail,
+        service_name: opts.serviceName,
+        requested_date: opts.requestedDate,
+        requested_time: opts.requestedTime,
+        address: opts.address,
+        notes: opts.notes,
+        status: "pending",
+      })
+      .select("id")
+      .single();
+    if (error) {
+      console.warn("booking_engine reserve booking_request", error.message);
+      return null;
+    }
+    return data?.id ? String(data.id) : null;
+  } catch (e) {
+    console.warn("booking_engine reserve booking_request", e);
+    return null;
+  }
+}
+
+/**
  * Create a booking through the engine.
  * Instant Book → confirmed + calendar reservation.
  * Otherwise → requested (provider accepts later).
@@ -546,28 +596,38 @@ export async function createBooking(
     booking.conversation_id = convo.id;
   }
 
-  // Calendar reservation (prevents double booking via jobs + availability)
-  const jobId = await reserveCalendarJob(admin, {
-    businessId,
-    customerName,
-    customerEmail: row.customer_email,
-    customerPhone: row.customer_phone,
-    serviceName: service.name,
-    startsAt,
-    durationMinutes: service.duration_minutes,
-    address: row.address,
-    notes: row.notes,
-    status: instant ? "scheduled" : "pending",
-  });
-  if (jobId) {
-    await admin.from("marketplace_bookings").update({
-      job_id: jobId,
-      updated_at: new Date().toISOString(),
-    }).eq("id", booking.id);
-    booking.job_id = jobId;
+  // Two-stage pipeline, matching the one the dashboard's accept/decline UI
+  // already depends on for every other booking source (see hubly.html's
+  // acceptBookingRequest/quickAccept, keyed on a real booking_requests
+  // reqId). Instant Book has nothing to review — it goes straight to a
+  // real, confirmed jobs row. Anything else becomes a real booking_requests
+  // row instead: a jobs row with status:'pending' has no reqId, so the
+  // dashboard's Accept button on it silently misfires against whichever
+  // unrelated job happens to match undefined===undefined first. Availability
+  // is unaffected either way — loadAvailabilityContext above already blocks
+  // on marketplace_bookings directly (status in requested/confirmed/
+  // in_progress), independent of whether a jobs row exists yet.
+  if (instant) {
+    const jobId = await reserveCalendarJob(admin, {
+      businessId,
+      customerName,
+      customerEmail: row.customer_email,
+      customerPhone: row.customer_phone,
+      serviceName: service.name,
+      startsAt,
+      durationMinutes: service.duration_minutes,
+      address: row.address,
+      notes: row.notes,
+      status: "scheduled",
+    });
+    if (jobId) {
+      await admin.from("marketplace_bookings").update({
+        job_id: jobId,
+        updated_at: new Date().toISOString(),
+      }).eq("id", booking.id);
+      booking.job_id = jobId;
 
-    // Push to Google Calendar when Instant Book confirms (best-effort)
-    if (instant) {
+      // Push to Google Calendar when Instant Book confirms (best-effort)
       try {
         const gcal = await syncEnginePushCreate(admin, {
           businessId,
@@ -584,6 +644,18 @@ export async function createBooking(
         console.warn("booking_engine gcal push", e);
       }
     }
+  } else {
+    await reserveBookingRequest(admin, {
+      businessId,
+      customerName,
+      customerEmail: row.customer_email,
+      customerPhone: row.customer_phone,
+      serviceName: service.name,
+      requestedDate: date,
+      requestedTime: time,
+      address: row.address,
+      notes: row.notes,
+    });
   }
 
   // Notify provider + customer (best-effort)
