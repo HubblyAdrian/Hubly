@@ -252,29 +252,78 @@ body.hc-active #categories,body.hc-active .footer{display:none}
 .hc-canvas-loading .hc-live-dot{animation:hcPulse 1s infinite}
 
 /* Concept cards — real directions to look at and pick, not prose to read.
-   Each swatch is an honest sketch of the real direction's character (color,
-   type, mood) — not a claim that this is the final render; picking one
-   triggers the real build via business.startDraft. */
-.hc-concepts{flex:1;overflow-y:auto;padding:26px clamp(18px,3vw,30px);display:flex;flex-direction:column;gap:14px}
-.hc-concepts-head{font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:750;margin-bottom:4px}
+   Large, side-by-side, each a small mock homepage (nav/hero/cta/services
+   strip) in the real direction's character — not a claim that this is the
+   final render; picking one triggers the real build via business.startDraft. */
+.hc-concepts{flex:1;overflow-y:auto;padding:28px clamp(20px,3vw,34px);display:flex;flex-direction:column;gap:16px}
+.hc-concepts-head{font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:750;margin-bottom:2px}
+.hc-concepts-grid{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;align-content:start}
 .hc-concept-card{
-  border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;
-  background:#12151f;transition:transform .15s ease,border-color .15s ease;text-align:left;
-  padding:0;width:100%;color:inherit;
+  border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;
+  background:#12151f;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;text-align:left;
+  padding:0;width:100%;color:inherit;display:flex;flex-direction:column;
 }
-.hc-concept-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.32)}
+.hc-concept-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.35);box-shadow:0 16px 40px -12px rgba(0,0,0,.55)}
 .hc-concept-card:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
-.hc-concept-swatch{height:104px;display:flex;flex-direction:column;justify-content:center;padding:16px 18px;position:relative;overflow:hidden}
-.hc-concept-swatch .cs-eyebrow{font-size:9px;letter-spacing:.12em;text-transform:uppercase;opacity:.72;margin-bottom:6px;font-weight:700}
-.hc-concept-swatch .cs-headline{font-weight:800;font-size:14.5px;line-height:1.25;max-width:80%}
-.hc-concept-swatch .cs-cta{position:absolute;right:14px;bottom:12px;font-size:9px;font-weight:700;padding:5px 10px;border-radius:20px}
-.hc-concept-meta{padding:12px 14px}
-.hc-concept-name{font-size:13px;font-weight:750;color:rgba(245,246,248,.94);margin-bottom:2px}
-.hc-concept-character{font-size:11.5px;color:var(--ink-3);line-height:1.4}
+.hc-concept-swatch{
+  min-height:280px;flex:1;display:flex;flex-direction:column;padding:22px 22px 18px;
+  position:relative;overflow:hidden;
+}
+.hc-concept-swatch .cs-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:auto;padding-bottom:22px}
+.hc-concept-swatch .cs-brand{font-size:11px;font-weight:800;letter-spacing:.01em;opacity:.9}
+.hc-concept-swatch .cs-navcta{font-size:8.5px;font-weight:700;border:1px solid currentColor;opacity:.6;padding:3px 8px;border-radius:20px}
+.hc-concept-swatch .cs-eyebrow{font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.68;margin-bottom:9px;font-weight:700}
+.hc-concept-swatch .cs-headline{font-weight:800;font-size:19px;line-height:1.2;margin-bottom:10px;max-width:92%}
+.hc-concept-swatch .cs-sub{font-size:10.5px;opacity:.68;line-height:1.5;max-width:85%;margin-bottom:16px}
+.hc-concept-swatch .cs-cta{align-self:flex-start;font-size:9.5px;font-weight:700;padding:7px 14px;border-radius:8px}
+.hc-concept-swatch .cs-strip{display:flex;gap:6px;margin-top:16px}
+.hc-concept-swatch .cs-chip{font-size:8px;padding:4px 8px;border-radius:20px;border:1px solid currentColor;opacity:.55}
+.hc-concept-meta{padding:14px 16px}
+.hc-concept-name{font-size:14px;font-weight:750;color:rgba(245,246,248,.96);margin-bottom:2px}
+.hc-concept-character{font-size:12px;color:var(--ink-3);line-height:1.4}
+.hc-concepts-more{
+  align-self:flex-start;font-size:12px;color:var(--ink-3);background:none;border:1px solid var(--line-2,rgba(255,255,255,.14));
+  padding:8px 14px;border-radius:20px;cursor:pointer;transition:border-color .15s,color .15s;
+}
+.hc-concepts-more:hover{color:#fff;border-color:rgba(255,255,255,.4)}
+
+/* Inspiration picker — Step 1. Real, premium, visual entry points; never a
+   text question the person has to answer by typing. */
+.hc-inspiration{flex:1;overflow-y:auto;padding:28px clamp(20px,3vw,34px);display:flex;flex-direction:column;gap:16px}
+.hc-inspiration-head{font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:-.01em;color:#fff}
+.hc-inspiration-sub{font-size:13px;color:var(--ink-3);margin-top:-8px}
+.hc-insp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.hc-insp-card{
+  border:1px solid var(--line);border-radius:14px;background:#12151f;color:inherit;
+  padding:18px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;
+  cursor:pointer;transition:transform .15s ease,border-color .15s ease;text-align:left;
+}
+.hc-insp-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.32)}
+.hc-insp-card:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.hc-insp-card .ic{width:30px;height:30px;border-radius:9px;background:rgba(217,99,45,.12);border:1px solid rgba(217,99,45,.35);display:flex;align-items:center;justify-content:center;color:var(--brand)}
+.hc-insp-card .ic svg{width:15px;height:15px}
+.hc-insp-card .it{font-size:13px;font-weight:700;color:rgba(245,246,248,.94)}
+.hc-insp-card .id{font-size:11px;color:var(--ink-3);line-height:1.4}
+.hc-insp-card.hc-insp-primary{grid-column:1 / -1;background:linear-gradient(135deg,rgba(217,99,45,.16),rgba(217,99,45,.05));border-color:rgba(217,99,45,.4)}
+.hc-insp-card.hc-insp-primary .ic{background:var(--brand);border-color:var(--brand);color:#fff}
+.hc-insp-inline{display:flex;gap:8px;padding-top:2px}
+.hc-insp-inline input{
+  flex:1;border:1px solid var(--line-2,rgba(255,255,255,.16));background:#12151f;color:var(--ink);
+  border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;
+}
+.hc-insp-inline input:focus{outline:none;border-color:var(--brand)}
+.hc-insp-inline button{
+  border:none;background:var(--brand);color:#fff;border-radius:10px;padding:0 16px;
+  font-size:12.5px;font-weight:700;cursor:pointer;
+}
+.hc-insp-back{align-self:flex-start;font-size:11.5px;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:0}
+.hc-insp-back:hover{color:#fff}
 @media(max-width:860px){
   .hc-app{flex-direction:column}
   .hc-app-left{border-right:0;border-bottom:1px solid var(--line);flex:1 1 52%}
   .hc-app-right{flex:1 1 48%}
+  .hc-insp-grid{grid-template-columns:1fr}
+  .hc-insp-card.hc-insp-primary{grid-column:auto}
 }
 </style>
 </head>
@@ -339,9 +388,10 @@ body.hc-active #categories,body.hc-active .footer{display:none}
 <!--
   Experience 1 — Hubly Conversation. Activated in place when the hero input
   is first submitted; no navigation, URL never changes. Left panel is the
-  conversation (permanent for the session); right panel is "What I've
-  Learned" — a live rendering of accumulated Business Understanding, not a
-  progress checklist. See supabase/functions/hubly-conversation/index.ts.
+  conversation (permanent for the session); right panel is a live canvas —
+  always the real thing being built (inspiration picker, then real visual
+  directions, then the real live site), never Business Understanding as
+  data. See supabase/functions/hubly-conversation/index.ts.
 -->
 <div class="hc-app" id="hcApp" aria-hidden="true">
   <div class="hc-app-left">
@@ -362,6 +412,8 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     </div>
   </div>
   <div class="hc-app-right" id="hcCanvas"></div>
+  <input type="file" id="hcFileInput" accept="image/*" style="display:none">
+  <input type="file" id="hcPdfInput" accept="application/pdf" style="display:none">
 </div>
 
 <section class="sec" id="categories">
@@ -553,20 +605,27 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   };
   var HC_SWATCH_DEFAULT = { bg:'#1a1d27', fg:'#f2f2f2', accent:'#D9632D', font:"'DM Sans',sans-serif" };
 
+  // Large, side-by-side concept cards — each a small honest mock homepage
+  // (nav / headline / cta / a hint of a services row) in the real
+  // direction's character, not a tiny swatch and not prose.
   function hcRenderConcepts(list){
     var root = document.getElementById('hcCanvas');
     if(!root || !Array.isArray(list) || !list.length) return;
     root.innerHTML =
       '<div class="hc-concepts">' +
         '<div class="hc-concepts-head">A few directions</div>' +
+        '<div class="hc-concepts-grid">' +
         list.map(function(c){
           var sw = HC_SWATCH[c.id] || HC_SWATCH_DEFAULT;
           return (
             '<button type="button" class="hc-concept-card" data-name="' + hcEscape(c.name) + '">' +
               '<div class="hc-concept-swatch" style="background:' + sw.bg + ';color:' + sw.fg + ';font-family:' + sw.font + '">' +
+                '<div class="cs-nav"><span class="cs-brand">Your Business</span><span class="cs-navcta">Menu</span></div>' +
                 '<div class="cs-eyebrow">' + hcEscape(c.name) + '</div>' +
                 '<div class="cs-headline">Your business, done right.</div>' +
+                '<div class="cs-sub">' + hcEscape(c.character || '') + '</div>' +
                 '<div class="cs-cta" style="background:' + sw.accent + ';color:' + sw.bg + '">Book Now</div>' +
+                '<div class="cs-strip"><span class="cs-chip">Service</span><span class="cs-chip">Service</span><span class="cs-chip">Service</span></div>' +
               '</div>' +
               '<div class="hc-concept-meta">' +
                 '<div class="hc-concept-name">' + hcEscape(c.name) + '</div>' +
@@ -575,23 +634,128 @@ body.hc-active #categories,body.hc-active .footer{display:none}
             '</button>'
           );
         }).join('') +
+        '</div>' +
+        '<button type="button" class="hc-concepts-more" id="hcConceptsMore">Show me different directions</button>' +
       '</div>';
     Array.prototype.forEach.call(root.querySelectorAll('.hc-concept-card'), function(btn){
       btn.addEventListener('click', function(){
         hcSendText('I like the "' + btn.getAttribute('data-name') + '" direction.');
       });
     });
+    var moreBtn = document.getElementById('hcConceptsMore');
+    if(moreBtn) moreBtn.addEventListener('click', function(){
+      hcSendText('None of these quite fit — show me a few different directions.');
+    });
+  }
+
+  // Step 1 — real, premium, visual entry points. Never a text question the
+  // person has to type an answer to.
+  var HC_INSP_ICONS = {
+    link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6M10 6l1-1a4 4 0 015.7 5.7l-1 1M14 18l-1 1A4 4 0 017.3 13.3l1-1"/></svg>',
+    image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5.5-5.5L4 21"/></svg>',
+    doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14 3v5h5"/></svg>',
+    figma: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="15" cy="15" r="3"/><path d="M9 3h6v6H9a3 3 0 010-6zM9 9h6v6H9a3 3 0 010-6zM9 15h3a3 3 0 110 6H9v-6z"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 00-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 00-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>',
+    spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/></svg>'
+  };
+  function hcRenderInspiration(){
+    var root = document.getElementById('hcCanvas');
+    if(!root || hc.draftBusiness) return;
+    root.innerHTML =
+      '<div class="hc-inspiration">' +
+        '<div class="hc-inspiration-head">Do you have inspiration?</div>' +
+        '<div class="hc-inspiration-sub">Any of these work — or skip straight to a few directions.</div>' +
+        '<div class="hc-insp-grid">' +
+          '<button type="button" class="hc-insp-card hc-insp-primary" data-act="auto">' +
+            '<span class="ic">' + HC_INSP_ICONS.spark + '</span>' +
+            '<span class="it">Find inspiration for me</span>' +
+            '<span class="id">Hubly sketches a few real directions to start from</span>' +
+          '</button>' +
+          '<button type="button" class="hc-insp-card" data-act="url">' +
+            '<span class="ic">' + HC_INSP_ICONS.link + '</span>' +
+            '<span class="it">Website URL</span>' +
+            '<span class="id">A site you already like</span>' +
+          '</button>' +
+          '<button type="button" class="hc-insp-card" data-act="screenshot">' +
+            '<span class="ic">' + HC_INSP_ICONS.image + '</span>' +
+            '<span class="it">Screenshot</span>' +
+            '<span class="id">Upload an image</span>' +
+          '</button>' +
+          '<button type="button" class="hc-insp-card" data-act="pdf">' +
+            '<span class="ic">' + HC_INSP_ICONS.doc + '</span>' +
+            '<span class="it">PDF</span>' +
+            '<span class="id">A brand deck or brief</span>' +
+          '</button>' +
+          '<button type="button" class="hc-insp-card" data-act="figma">' +
+            '<span class="ic">' + HC_INSP_ICONS.figma + '</span>' +
+            '<span class="it">Figma</span>' +
+            '<span class="id">A file or share link</span>' +
+          '</button>' +
+          '<button type="button" class="hc-insp-card" data-act="pinterest">' +
+            '<span class="ic">' + HC_INSP_ICONS.pin + '</span>' +
+            '<span class="it">Pinterest</span>' +
+            '<span class="id">A board or a pin</span>' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+    Array.prototype.forEach.call(root.querySelectorAll('.hc-insp-card'), function(btn){
+      btn.addEventListener('click', function(){ hcInspirationAct(btn.getAttribute('data-act')); });
+    });
+  }
+
+  function hcInspirationAct(act){
+    if(act === 'auto'){
+      hcSendText('Find inspiration for me — surprise me with a few directions.');
+      return;
+    }
+    if(act === 'screenshot'){ var fi = document.getElementById('hcFileInput'); if(fi) fi.click(); return; }
+    if(act === 'pdf'){ var pi = document.getElementById('hcPdfInput'); if(pi) pi.click(); return; }
+    var copy = {
+      url: { label: 'Website URL', placeholder: 'https://yourbusiness.com' },
+      figma: { label: 'Figma link', placeholder: 'https://figma.com/file/…' },
+      pinterest: { label: 'Pinterest link', placeholder: 'https://pinterest.com/…' }
+    }[act];
+    if(copy) hcRenderInspirationLink(copy.label, copy.placeholder);
+  }
+
+  function hcRenderInspirationLink(label, placeholder){
+    var root = document.getElementById('hcCanvas');
+    if(!root) return;
+    root.innerHTML =
+      '<div class="hc-inspiration">' +
+        '<button type="button" class="hc-insp-back" id="hcInspBack">← Back</button>' +
+        '<div class="hc-inspiration-head">' + hcEscape(label) + '</div>' +
+        '<div class="hc-insp-inline">' +
+          '<input type="text" id="hcInspLinkInput" placeholder="' + hcEscape(placeholder) + '" autocomplete="off">' +
+          '<button type="button" id="hcInspLinkGo">Use this</button>' +
+        '</div>' +
+      '</div>';
+    var back = document.getElementById('hcInspBack');
+    if(back) back.addEventListener('click', hcRenderInspiration);
+    var go = document.getElementById('hcInspLinkGo');
+    var input = document.getElementById('hcInspLinkInput');
+    function submit(){
+      var v = (input.value || '').trim();
+      if(!v) return;
+      hcSendText(v);
+    }
+    if(go) go.addEventListener('click', submit);
+    if(input){
+      input.addEventListener('keydown', function(e){ if(e.key === 'Enter') submit(); });
+      setTimeout(function(){ input.focus(); }, 30);
+    }
   }
 
   // Shown only before any real draft exists — an honest "composing" beat,
-  // never implying a web/image search that isn't real. Copy adapts to
-  // whether directions have already been shown (picking one -> building)
-  // or not (first ask -> sketching).
+  // never implying a web/image search that isn't real. Copy adapts to what
+  // stage the canvas was already in — no generic label before there's
+  // anything to be "sketching" yet.
   function hcRenderCanvasThinking(){
     if(hc.draftBusiness) return;
+    var label = hc.canvasStage === 'concepts' ? 'Building it…' : (hc.canvasStage === 'inspiration' ? 'Finding inspiration…' : null);
+    if(!label) return;
     var root = document.getElementById('hcCanvas');
     if(!root) return;
-    var label = hc.canvasStage === 'concepts' ? 'Building it…' : 'Sketching a few directions…';
     root.innerHTML =
       '<div class="hc-canvas-loading" style="position:static;flex:1"><span class="hc-live-dot"></span>&nbsp;' + label + '</div>';
   }
@@ -675,7 +839,10 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         } else if(!hc.draftBusiness && Array.isArray(data.concepts) && data.concepts.length){
           hc.canvasStage = 'concepts';
           hcRenderConcepts(data.concepts);
-        } else if(!hc.draftBusiness && hc.canvasStage !== 'concepts'){
+        } else if(!hc.draftBusiness && data.askInspiration === true){
+          hc.canvasStage = 'inspiration';
+          hcRenderInspiration();
+        } else if(!hc.draftBusiness && hc.canvasStage !== 'concepts' && hc.canvasStage !== 'inspiration'){
           hcRenderCanvas();
         }
         var interim = Array.isArray(data.interimMessages) ? data.interimMessages : [];
@@ -713,6 +880,54 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     inputEl.value = '';
     hcSendText(text);
   }
+
+  // A screenshot/PDF becomes a real multimodal content part — the model
+  // sees it directly (per the conversation prompt: "Photos or screenshots
+  // someone attaches are visible to you directly"). displayText is what the
+  // person sees in their own chat bubble; the real file goes to the model.
+  function hcSendContent(parts, displayText){
+    if(hc.busy) return;
+    hcActivate();
+    hcAppendMessage('user', displayText);
+    hc.messages.push({ role: 'user', content: parts });
+    hcCall();
+  }
+
+  function hcFileToBase64(file){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(){
+        var result = String(reader.result || '');
+        var comma = result.indexOf(',');
+        resolve(comma !== -1 ? result.slice(comma + 1) : result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function hcWireFileInput(inputId, mediaKind, caption){
+    var input = document.getElementById(inputId);
+    if(!input) return;
+    input.addEventListener('change', function(){
+      var file = input.files && input.files[0];
+      input.value = '';
+      if(!file) return;
+      hcFileToBase64(file).then(function(data){
+        hcSendContent(
+          [
+            { type: 'text', text: caption },
+            { type: mediaKind, mediaType: file.type || (mediaKind === 'document' ? 'application/pdf' : 'image/png'), data: data }
+          ],
+          caption + ' (' + file.name + ')'
+        );
+      }).catch(function(){
+        hcAppendMessage('hubly', "That file couldn't be read — mind trying a different one?");
+      });
+    });
+  }
+  hcWireFileInput('hcFileInput', 'image', 'Here\'s a screenshot for inspiration.');
+  hcWireFileInput('hcPdfInput', 'document', 'Here\'s a PDF for inspiration.');
 
   var heroInput = document.getElementById('heroInput');
   var heroSubmit = document.getElementById('heroSubmit');

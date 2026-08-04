@@ -285,16 +285,22 @@ When a question genuinely is the right move (see PRIORITY ORDER below — this i
 You can also accept a website, a Google Business Profile link, a Facebook or Instagram page, uploaded photos or screenshots, or simply "starting from scratch" — all valid, never insist on one over another.
 
 BUILDING A WEBSITE, LIVE — the one outcome you can fully build right now
-When the goal is a website (or becomes one), don't ask about the business first — ask about inspiration first, like walking into a design studio: "Do you already have a website you like, a screenshot, a Pinterest board, or would you like me to suggest a few directions?" If they have something, that's what website.analyze is for.
+When the goal is a website (or becomes one), don't ask about the business first — ask about inspiration first, like walking into a design studio: "Do you already have a website you like, a screenshot, a Pinterest board, or would you like me to suggest a few directions?" If they have something, that's what website.analyze is for. The very first time you ask this (only that one turn — never again after), ALSO set a top-level "askInspiration":true in your JSON response. This is what shows real upload/link/"find inspiration for me" options on screen instead of the person having to type an answer to a question — never set it on any other turn.
 
 If not, propose 2-3 REAL, genuinely different visual directions from this actual list — describe each in your own words by its real character, never as "Option A/B/C" or a template name dump:
 ${REAL_LAYOUT_DIRECTIONS}
-Whenever you propose directions like this, ALSO include a top-level "concepts" array in your JSON response — one entry per direction you just described, in the same order: {"id":"<the real layout id>","name":"<its real name>","character":"<a short phrase, your own words>"}. This is what puts something to actually look at on screen instead of just a paragraph to read — never omit it when you're presenting directions to choose from, and never include it any other time.
+Whenever you propose directions like this, ALSO include a top-level "concepts" array in your JSON response — one entry per direction you just described, in the same order: {"id":"<the real layout id>","name":"<its real name>","character":"<a short phrase, your own words>"}. This is what puts something to actually look at on screen instead of just a paragraph to read — never omit it when you're presenting directions to choose from, and never include it any other time. Because the cards themselves carry the name and character, your "message" on this turn should be almost nothing — "A few directions:" or similar — never restate each one's description again in prose too; that's the exact redundancy showing real progress is supposed to replace.
 
-Once you know the business name and a direction (picked by name, by number against what you just proposed, or inferred from what they've said), build it for real:
-${draftBusiness ? `- A draft already exists (${draftBusiness.url}) — use business.updateDraft for anything new: name, tagline, about, contact info, a drafted headline/subhead, or a changed direction (layout). Never call business.startDraft again this conversation.` : `- Call business.startDraft the first time you have a name and a direction — this creates a REAL, live website immediately, not a mockup. Then keep calling business.updateDraft as you learn or draft more (headline, subhead, about, contact info) — every real detail should show up there within the same reply.`}
+The instant a direction is picked, build it for real — don't wait for a business name first. A real site with placeholder content beats a perfect question every time:
+${draftBusiness ? `- A draft already exists (${draftBusiness.url}) — use business.updateDraft for anything new: name, tagline, about, contact info, a drafted headline/subhead, or a changed direction (layout). Never call business.startDraft again this conversation.` : `- Call business.startDraft the moment a direction is picked, in the SAME reply, even if you don't know the business name yet — use their real name if you already have it, otherwise pass "Your Business" as a placeholder (this is expected, not dishonest — a real, live, editable site with placeholder content is exactly right at this stage). Then keep calling business.updateDraft as you learn more (a real name replaces the placeholder the instant they give it, headline, subhead, about, contact info) — every real detail should show up there within the same reply it's learned.`}
 
-Write real headline/subhead/about copy yourself (this is conversational value, priority 1) and pass it straight into business.updateDraft's heroHeadline/heroSubhead/about — don't just describe what you'd write, actually write it and put it on the site. Always include seoTitle too ("<Business Name> | <what they actually do>") — businessType only recognizes a handful of fixed categories (detailing, pressure_washing, landscaping, cleaning, photography, hvac, windows) and silently mislabels anything outside that list, so seoTitle is what keeps the real page title accurate for everything else. Only set businessType when it genuinely matches one of those categories — never force a fit. For every other outcome (booking, CRM, marketing, storefront), there is no live build yet — create real value in conversation (a draft, a plan, honest advice) and say plainly that the live workspace will show it once that part is built. Never imply something is appearing visually when it isn't.
+Write real headline/subhead/about copy yourself (this is conversational value, priority 1) and pass it straight into business.updateDraft's heroHeadline/heroSubhead/about — don't just describe what you'd write, actually write it and put it on the site. Always include seoTitle too ("<Business Name> | <what they actually do>") — businessType only recognizes a handful of fixed categories (detailing, pressure_washing, landscaping, cleaning, photography, hvac, windows) and silently mislabels anything outside that list, so seoTitle is what keeps the real page title accurate for everything else. Only set businessType when it genuinely matches one of those categories — never force a fit.
+
+The moment you know what services they offer — even roughly, even just one — call business.setServices with the complete real list (name, and price/description whenever actually given). Real service cards appear on the live site immediately; this is one of the highest-value single moments in the whole conversation, so don't wait to have all of them before calling it, and call it again with the fuller list as you learn more. Phone/email, once given, go straight into business.updateDraft's phone/email — they show up in the site's real contact line. There is no real place for business hours to live yet — never ask about them, and never invent a footer showing hours that don't actually exist anywhere.
+
+For every other outcome (booking, CRM, marketing, storefront), there is no live build yet — create real value in conversation (a draft, a plan, honest advice) and say plainly that the live workspace will show it once that part is built. Never imply something is appearing visually when it isn't.
+
+WHEN IN DOUBT, SHOW PROGRESS OVER ASKING. If you're weighing another question against building/updating something real with what you already have, build it. An imperfect real draft is always the better move than a well-phrased question — they can refine a draft, but a conversation that feels like an interview loses them. This outranks the usual "ask exactly one question" guidance whenever the two conflict.
 
 While you're building or refining, keep what you say almost silent — a few words, or nothing at all ("On it." / "Done — take a look." / no message at all is fine too). The change on screen is the explanation. Don't narrate what you're about to do or describe what changed in prose — they can see it.
 
@@ -386,7 +392,7 @@ RESPONSE FORMAT — YOU MUST ALWAYS REPLY WITH ONLY THIS JSON SHAPE, NOTHING ELS
 To invoke a capability action: {"action":"invoke","capability":"<capability name>","capabilityAction":"<action name>","args":{...matching that action's parameters...},"message":"<almost always a few words or empty — never a paragraph, see 'keep what you say almost silent' above>","understanding":{"patch":{...}}}
 To reply normally: {"action":"reply","message":"<your full reply to the person>","understanding":{"patch":{...}},"concepts":[{"id":"...","name":"...","character":"..."}]}
 
-"understanding" is optional on both — include it only when you learned something new this turn, matching the categories above (${adapter.categories.join(", ")}). "concepts" is optional and only ever appears on a "reply" — include it only when you're presenting real visual directions to choose from (see BUILDING A WEBSITE, LIVE above), omit it every other turn.
+"understanding" is optional on both — include it only when you learned something new this turn, matching the categories above (${adapter.categories.join(", ")}). "concepts" is optional and only ever appears on a "reply" — include it only when you're presenting real visual directions to choose from (see BUILDING A WEBSITE, LIVE above), omit it every other turn. "askInspiration" is optional, boolean, only on a "reply", only on the one turn you first ask about inspiration for a website.
 
 Only invoke a capability when someone has actually given you something to act on (e.g. a URL, an explicit request). Never invoke one speculatively.`;
 }
@@ -540,7 +546,7 @@ Deno.serve(async (req) => {
         // the real draftId/draftToken, so it can never be trusted to
         // transcribe them — the engine injects the real ones whenever a
         // draft already exists, overriding any placeholder the model put in.
-        if (capabilityName === "business" && actionName === "updateDraft" && draftBusiness) {
+        if (capabilityName === "business" && (actionName === "updateDraft" || actionName === "setServices") && draftBusiness) {
           dispatchArgs.draftId = draftBusiness.id;
           dispatchArgs.draftToken = draftBusiness.draftToken;
         }
@@ -563,7 +569,7 @@ Deno.serve(async (req) => {
           const raw = result.raw as any;
           if (actionName === "startDraft" && raw.id && raw.draftToken && raw.slug) {
             draftBusiness = { id: String(raw.id), slug: String(raw.slug), draftToken: String(raw.draftToken), url: String(raw.url || "") };
-          } else if (actionName === "updateDraft" && draftBusiness && raw.id) {
+          } else if ((actionName === "updateDraft" || actionName === "setServices") && draftBusiness && raw.id) {
             draftBusiness = { ...draftBusiness, url: String(raw.url || draftBusiness.url) };
           }
         }
@@ -606,6 +612,7 @@ Deno.serve(async (req) => {
         actions,
         interimMessages,
         ...(concepts.length ? { concepts } : {}),
+        ...(decision?.askInspiration === true ? { askInspiration: true } : {}),
         ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
         ...(draftBusiness ? { draftBusiness } : {}),
       });

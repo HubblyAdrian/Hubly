@@ -463,6 +463,56 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           };
         },
       },
+      {
+        name: "setServices",
+        description:
+          "Writes the real services list — the live site's Services section renders these for real, immediately. Pass the COMPLETE current list every time (replaces what's there, same convention as everything else here) — never just the newly-mentioned one.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: {
+              type: "string",
+              description: "Automatically supplied by the system before this runs — you do not know the real value and never need to. Put any placeholder here; do not decline to invoke just because you don't have a real id.",
+            },
+            services: {
+              type: "array",
+              description: "Every service currently known, in order. Each: { name (required), price (number, omit if truly unknown), description (one line, optional) }.",
+              items: {},
+            } as any,
+          },
+          required: ["services"],
+        },
+        handler: async (args) => {
+          const draftId = String(args?.draftId || "").trim();
+          const draftToken = String((args as any)?.draftToken || "").trim();
+          if (!draftId || !draftToken) {
+            return { ok: false, real: false, summary: "No draft business exists yet — call startDraft first.", error: "missing_draft" };
+          }
+          const list = Array.isArray(args?.services) ? args.services : [];
+          const services = list
+            .filter((s: any) => s && typeof s.name === "string" && s.name.trim())
+            .map((s: any) => ({
+              name: String(s.name).trim(),
+              price: typeof s.price === "number" && Number.isFinite(s.price) ? s.price : undefined,
+              description: typeof s.description === "string" && s.description.trim() ? s.description.trim() : undefined,
+            }));
+          const r = await callBusinessRpc("set_business_draft_services", {
+            p_id: draftId,
+            p_draft_token: draftToken,
+            p_services: services,
+          });
+          if (!r || r.ok !== true) {
+            return { ok: false, real: false, summary: "The services list could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
+          }
+          const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
+          return {
+            ok: true,
+            real: true,
+            summary: `Real update — ${url} now shows ${r.count} real service${r.count === 1 ? "" : "s"}.`,
+            raw: { id: r.id, slug: r.slug, url, count: r.count },
+          };
+        },
+      },
     ],
   },
 ];
