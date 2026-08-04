@@ -250,6 +250,27 @@ body.hc-active #categories,body.hc-active .footer{display:none}
 }
 .hc-canvas-loading.is-hidden{opacity:0;pointer-events:none}
 .hc-canvas-loading .hc-live-dot{animation:hcPulse 1s infinite}
+
+/* Concept cards — real directions to look at and pick, not prose to read.
+   Each swatch is an honest sketch of the real direction's character (color,
+   type, mood) — not a claim that this is the final render; picking one
+   triggers the real build via business.startDraft. */
+.hc-concepts{flex:1;overflow-y:auto;padding:26px clamp(18px,3vw,30px);display:flex;flex-direction:column;gap:14px}
+.hc-concepts-head{font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:750;margin-bottom:4px}
+.hc-concept-card{
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;
+  background:#12151f;transition:transform .15s ease,border-color .15s ease;text-align:left;
+  padding:0;width:100%;color:inherit;
+}
+.hc-concept-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.32)}
+.hc-concept-card:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.hc-concept-swatch{height:104px;display:flex;flex-direction:column;justify-content:center;padding:16px 18px;position:relative;overflow:hidden}
+.hc-concept-swatch .cs-eyebrow{font-size:9px;letter-spacing:.12em;text-transform:uppercase;opacity:.72;margin-bottom:6px;font-weight:700}
+.hc-concept-swatch .cs-headline{font-weight:800;font-size:14.5px;line-height:1.25;max-width:80%}
+.hc-concept-swatch .cs-cta{position:absolute;right:14px;bottom:12px;font-size:9px;font-weight:700;padding:5px 10px;border-radius:20px}
+.hc-concept-meta{padding:12px 14px}
+.hc-concept-name{font-size:13px;font-weight:750;color:rgba(245,246,248,.94);margin-bottom:2px}
+.hc-concept-character{font-size:11.5px;color:var(--ink-3);line-height:1.4}
 @media(max-width:860px){
   .hc-app{flex-direction:column}
   .hc-app-left{border-right:0;border-bottom:1px solid var(--line);flex:1 1 52%}
@@ -441,7 +462,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   // created (business.startDraft) — { id, slug, draftToken, url }. Threaded
   // back to the server every turn exactly like `messages`; the server never
   // persists it either. This is what makes the canvas real instead of a mockup.
-  var hc = { messages: [], understanding: {}, draftBusiness: null, active: false, busy: false };
+  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false };
 
   function hcMergePatch(base, patch){
     if(!patch || typeof patch !== 'object') return base;
@@ -510,6 +531,71 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     frame.src = frame.src;
   }
 
+  // Honest sketch styling per real layout id — a mood swatch, not a claim
+  // of pixel-accuracy. Unlisted ids (the vertical-specific ones the model
+  // rarely reaches for) fall back to a neutral default rather than guessing.
+  var HC_SWATCH = {
+    'premium-dark':  { bg:'#15171d', fg:'#f2eee2', accent:'#c9a24a', font:"'DM Sans',sans-serif" },
+    'obsidian-gold': { bg:'#0e0e0e', fg:'#f4e9c9', accent:'#d4af37', font:"'DM Sans',sans-serif" },
+    'calm-service':  { bg:'#eef1e9', fg:'#2b3327', accent:'#5c7a5a', font:"'DM Sans',sans-serif" },
+    'editorial':     { bg:'#f5f2ec', fg:'#20201d', accent:'#8a6a4f', font:"Georgia,serif" },
+    'classic-trust': { bg:'#1c2e4a', fg:'#f2f4f8', accent:'#c8501f', font:"Georgia,serif" },
+    'clean-modern':  { bg:'#ffffff', fg:'#12151f', accent:'#2563eb', font:"'DM Sans',sans-serif" },
+    'minimal-pro':   { bg:'#fafafa', fg:'#18181b', accent:'#18181b', font:"'DM Sans',sans-serif" },
+    'bold-impact':   { bg:'#e11d2e', fg:'#ffffff', accent:'#111111', font:"'Plus Jakarta Sans',sans-serif" },
+    'warm-local':    { bg:'#f7ede1', fg:'#3a2a1a', accent:'#c8641f', font:"'DM Sans',sans-serif" },
+    'vibrant-pop':   { bg:'#fff2b8', fg:'#1a1a1a', accent:'#ff5a8a', font:"'Plus Jakarta Sans',sans-serif" },
+    'aurora-gradient':{ bg:'linear-gradient(135deg,#3a3f8f,#8a4fc9)', fg:'#ffffff', accent:'#ffd166', font:"'DM Sans',sans-serif" },
+    'garage-industrial':{ bg:'#232323', fg:'#f0e9d8', accent:'#e0a13a', font:"'DM Sans',sans-serif" },
+    'estate-green':  { bg:'#1f2e21', fg:'#eef3ea', accent:'#8fae6e', font:"Georgia,serif" },
+    'crystal-pane':  { bg:'#eaf3f7', fg:'#12242c', accent:'#2b93b8', font:"'DM Sans',sans-serif" },
+    'rinse-force':   { bg:'#0d2b4a', fg:'#eaf4ff', accent:'#39b6e0', font:"'DM Sans',sans-serif" },
+  };
+  var HC_SWATCH_DEFAULT = { bg:'#1a1d27', fg:'#f2f2f2', accent:'#D9632D', font:"'DM Sans',sans-serif" };
+
+  function hcRenderConcepts(list){
+    var root = document.getElementById('hcCanvas');
+    if(!root || !Array.isArray(list) || !list.length) return;
+    root.innerHTML =
+      '<div class="hc-concepts">' +
+        '<div class="hc-concepts-head">A few directions</div>' +
+        list.map(function(c){
+          var sw = HC_SWATCH[c.id] || HC_SWATCH_DEFAULT;
+          return (
+            '<button type="button" class="hc-concept-card" data-name="' + hcEscape(c.name) + '">' +
+              '<div class="hc-concept-swatch" style="background:' + sw.bg + ';color:' + sw.fg + ';font-family:' + sw.font + '">' +
+                '<div class="cs-eyebrow">' + hcEscape(c.name) + '</div>' +
+                '<div class="cs-headline">Your business, done right.</div>' +
+                '<div class="cs-cta" style="background:' + sw.accent + ';color:' + sw.bg + '">Book Now</div>' +
+              '</div>' +
+              '<div class="hc-concept-meta">' +
+                '<div class="hc-concept-name">' + hcEscape(c.name) + '</div>' +
+                '<div class="hc-concept-character">' + hcEscape(c.character || '') + '</div>' +
+              '</div>' +
+            '</button>'
+          );
+        }).join('') +
+      '</div>';
+    Array.prototype.forEach.call(root.querySelectorAll('.hc-concept-card'), function(btn){
+      btn.addEventListener('click', function(){
+        hcSendText('I like the "' + btn.getAttribute('data-name') + '" direction.');
+      });
+    });
+  }
+
+  // Shown only before any real draft exists — an honest "composing" beat,
+  // never implying a web/image search that isn't real. Copy adapts to
+  // whether directions have already been shown (picking one -> building)
+  // or not (first ask -> sketching).
+  function hcRenderCanvasThinking(){
+    if(hc.draftBusiness) return;
+    var root = document.getElementById('hcCanvas');
+    if(!root) return;
+    var label = hc.canvasStage === 'concepts' ? 'Building it…' : 'Sketching a few directions…';
+    root.innerHTML =
+      '<div class="hc-canvas-loading" style="position:static;flex:1"><span class="hc-live-dot"></span>&nbsp;' + label + '</div>';
+  }
+
   function hcAppendMessage(role, text){
     var thread = document.getElementById('hcThread');
     if(!thread) return;
@@ -549,6 +635,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   function hcCall(){
     if(hc.busy) return;
     hc.busy = true;
+    if(!hc.draftBusiness) hcRenderCanvasThinking();
     var typingEl = hcAppendTyping();
     fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
       method: 'POST',
@@ -581,9 +668,15 @@ body.hc-active #categories,body.hc-active .footer{display:none}
           hc.draftBusiness = data.draftBusiness;
         }
         if(!hadDraft && hc.draftBusiness){
+          hc.canvasStage = 'site';
           hcRenderCanvas();
         } else if(touchedBusiness && hc.draftBusiness){
           hcRefreshCanvasFrame();
+        } else if(!hc.draftBusiness && Array.isArray(data.concepts) && data.concepts.length){
+          hc.canvasStage = 'concepts';
+          hcRenderConcepts(data.concepts);
+        } else if(!hc.draftBusiness && hc.canvasStage !== 'concepts'){
+          hcRenderCanvas();
         }
         var interim = Array.isArray(data.interimMessages) ? data.interimMessages : [];
         var i = 0;
@@ -605,14 +698,20 @@ body.hc-active #categories,body.hc-active .footer{display:none}
       });
   }
 
-  function hcSend(inputEl){
-    var text = (inputEl.value || '').trim();
+  function hcSendText(text){
+    text = (text || '').trim();
     if(!text || hc.busy) return;
-    inputEl.value = '';
     hcActivate();
     hcAppendMessage('user', text);
     hc.messages.push({ role: 'user', content: text });
     hcCall();
+  }
+
+  function hcSend(inputEl){
+    var text = (inputEl.value || '').trim();
+    if(!text || hc.busy) return;
+    inputEl.value = '';
+    hcSendText(text);
   }
 
   var heroInput = document.getElementById('heroInput');
