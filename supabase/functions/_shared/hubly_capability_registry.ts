@@ -457,6 +457,21 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!r || r.ok !== true) {
             return { ok: false, real: false, summary: "The business record could not be created right now.", error: r?.error || "rpc_unreachable" };
           }
+          // Structural safety net, not reliance on the model remembering to
+          // set seoTitle on the very same turn: businessType defaults to
+          // 'detailing' at the schema level, and the legacy blueprint
+          // fallback silently mislabels anything else as "Auto Detailing"
+          // (see 20260803... history) — without this, the very first paint,
+          // before anything is really known yet, can show a wrong category
+          // in the browser tab. A neutral, honest title (just the name)
+          // beats that every time; updateDraft can always make it richer
+          // once the business is actually understood.
+          await callBusinessRpc("patch_business_in_progress", {
+            p_id: r.id,
+            p_draft_token: r.draft_token,
+            p_patch: {},
+            p_website_meta: { seoTitle: name },
+          });
           const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
           return {
             ok: true,
