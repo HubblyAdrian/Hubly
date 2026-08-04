@@ -109,52 +109,18 @@ async function buildAvailabilityForBusiness(
   admin: ReturnType<typeof adminClient>,
   businessId: string,
   provider: Record<string, unknown> | null,
-  business: Record<string, unknown>,
+  _business: Record<string, unknown>,
 ) {
-  const meta = getBusinessMeta(business);
-  const hours = (meta.hours || null) as Record<
-    string,
-    { open?: string; close?: string; closed?: boolean }
-  > | null;
-  const googleConnected = !!(await refreshCalendarConnected(admin, businessId));
-  const base = new Date().toISOString().slice(0, 10);
-  const start = new Date(base + "T00:00:00.000Z");
-  const end = new Date(start);
-  end.setUTCDate(end.getUTCDate() + 14);
-  const startStr = start.toISOString().slice(0, 10);
-  const endStr = end.toISOString().slice(0, 10);
-
-  const { data: jobs } = await admin
-    .from("jobs")
-    .select("scheduled_date,scheduled_time,duration_hours,status,service_name")
-    .eq("business_id", businessId)
-    .gte("scheduled_date", startStr)
-    .lte("scheduled_date", endStr);
-
-  let googleEvents: Record<string, unknown>[] = [];
-  if (googleConnected) {
-    const { data: ev } = await admin
-      .from("google_calendar_events")
-      .select(
-        "start_at,end_at,all_day,local_date,local_start_time,duration_hours,summary,status",
-      )
-      .eq("business_id", businessId)
-      .gte("start_at", new Date(startStr + "T00:00:00.000Z").toISOString())
-      .lte("start_at", new Date(endStr + "T23:59:59.999Z").toISOString());
-    googleEvents = ev || [];
-  }
-
-  return getAvailability({
-    date: base,
-    durationMinutes: 120,
-    weekendJobs: provider?.weekend_jobs !== false,
-    hours,
-    jobs: jobs || [],
-    googleEvents,
-    googleConnected,
-    outlookConnected: false,
-    acceptingNewJobs: provider?.accepting_new_jobs !== false,
-  });
+  // Was its own independent jobs-only query — the exact gap this function
+  // existed to explain: it fed the cached ai_document (provider search/
+  // matching snapshot) without ever accounting for a pending
+  // marketplace_bookings hold, so a slot with a real pending request on it
+  // could still show as available in search results. Reuses the one
+  // proven-correct computation instead (loadAvailabilityContext in
+  // booking_engine.ts — the same one createBooking's own double-book guard
+  // runs), so this can't drift out of sync with it again.
+  const ctx = await loadAvailabilityContext(admin, businessId, provider, 120);
+  return ctx.result;
 }
 
 async function rebuildAndCacheDocument(
@@ -460,54 +426,18 @@ async function handleAvailability(
   const business = await loadBusinessBundle(admin, bizId);
   if (!business) return jsonRes({ error: "Business not found" }, 404);
 
-  const meta = getBusinessMeta(business);
-  const hours = (meta.hours || null) as Record<string, { open?: string; close?: string; closed?: boolean }> | null;
-
-  const googleConnected = !!(await refreshCalendarConnected(admin, bizId));
-
-  // Load jobs ±14 days around target
+  // Was its own independent jobs-only query (no marketplace_bookings
+  // check) — a public, uncached endpoint, so this gap had zero lag excuse:
+  // every single call could show a slot as available that a real pending
+  // request already held. Reuses the one proven-correct computation
+  // instead (loadAvailabilityContext in booking_engine.ts).
   const base = date || new Date().toISOString().slice(0, 10);
-  const start = new Date(base + "T00:00:00.000Z");
-  const end = new Date(start);
-  end.setUTCDate(end.getUTCDate() + 14);
-  const startStr = start.toISOString().slice(0, 10);
-  const endStr = end.toISOString().slice(0, 10);
-
-  const { data: jobs } = await admin
-    .from("jobs")
-    .select("scheduled_date,scheduled_time,duration_hours,status,service_name")
-    .eq("business_id", bizId)
-    .gte("scheduled_date", startStr)
-    .lte("scheduled_date", endStr);
-
-  let googleEvents: Record<string, unknown>[] = [];
-  if (googleConnected) {
-    const { data: ev } = await admin
-      .from("google_calendar_events")
-      .select(
-        "start_at,end_at,all_day,local_date,local_start_time,duration_hours,summary,status",
-      )
-      .eq("business_id", bizId)
-      .gte("start_at", new Date(startStr + "T00:00:00.000Z").toISOString())
-      .lte("start_at", new Date(endStr + "T23:59:59.999Z").toISOString());
-    googleEvents = ev || [];
-  }
+  const ctx = await loadAvailabilityContext(admin, bizId, provider, durationMinutes, base);
+  const result = ctx.result;
 
   const life = provider ? buildLifecycleSnapshot(provider) : null;
   // Calendar engine always runs; marketplace lead acceptance is a separate flag.
   const marketplaceAccepting = !!(life && life.can_accept_leads);
-
-  const result = getAvailability({
-    date: base,
-    durationMinutes,
-    weekendJobs: provider?.weekend_jobs !== false,
-    hours,
-    jobs: jobs || [],
-    googleEvents,
-    googleConnected,
-    outlookConnected: false, // Outlook Connect not shipped yet
-    acceptingNewJobs: provider?.accepting_new_jobs !== false,
-  });
 
   return jsonRes({
     business_id: bizId,
@@ -695,6 +625,14 @@ async function handleBookingCreate(
       channel: "marketplace",
       match_why: Array.isArray(body.why) ? body.why.map(String) : [],
     });
+
+    // Best-effort: rebuildAndCacheDocument otherwise only runs on 6 unrelated
+    // triggers (profile edits, owner dashboard opens) — none of them fire on
+    // a new booking. Without this, the fixed availability data above would
+    // still sit stale in the cached document until one of those happens to
+    // fire, even though the underlying computation is now correct. Never
+    // blocks the actual booking confirmation on a cache-refresh hiccup.
+    await rebuildAndCacheDocument(admin, String(provider.id)).catch(() => null);
 
     return jsonRes({
       ok: true,
