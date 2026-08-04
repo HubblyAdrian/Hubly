@@ -242,14 +242,29 @@ body.hc-active #categories,body.hc-active .footer{display:none}
 .hc-canvas-url .hc-live-dot{width:6px;height:6px;border-radius:50%;background:#3ecf7a;box-shadow:0 0 6px rgba(62,207,122,.7);flex-shrink:0}
 .hc-canvas-url a{color:rgba(245,246,248,.75);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hc-canvas-url a:hover{color:#fff;text-decoration:underline}
-.hc-canvas-frame-wrap{flex:1;position:relative;background:#fff;min-height:0}
-.hc-canvas-frame-wrap iframe{width:100%;height:100%;border:0;display:block}
+.hc-canvas-frame-wrap{flex:1;position:relative;background:#fff;min-height:0;overflow:hidden}
+/* Two stacked iframes, crossfaded — an update loads invisibly in the
+   standby frame, then swaps in once ready. The person watches the real
+   change land; they never see a blank reload. */
+.hc-canvas-frame-wrap iframe{
+  position:absolute;inset:0;width:100%;height:100%;border:0;display:block;
+  z-index:1;opacity:0;transition:opacity .5s ease;pointer-events:none;
+}
+.hc-canvas-frame-wrap iframe.is-live{z-index:2;opacity:1;pointer-events:auto}
 .hc-canvas-loading{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;
   background:#0d0f16;color:var(--ink-3);font-size:12.5px;transition:opacity .3s ease;gap:8px;
 }
 .hc-canvas-loading.is-hidden{opacity:0;pointer-events:none}
 .hc-canvas-loading .hc-live-dot{animation:hcPulse 1s infinite}
+/* A quiet flash on the frame's edge the instant an update actually lands —
+   real feedback tied to a real change, not a decorative loop. */
+.hc-canvas-frame-wrap.hc-just-updated::after{
+  content:'';position:absolute;inset:0;z-index:4;pointer-events:none;
+  box-shadow:inset 0 0 0 3px var(--brand);opacity:0;
+  animation:hcUpdatedPulse 1.15s ease;
+}
+@keyframes hcUpdatedPulse{0%{opacity:0}18%{opacity:.9}100%{opacity:0}}
 .hc-logo-fab{
   position:absolute;top:14px;right:14px;z-index:5;
   display:inline-flex;align-items:center;gap:7px;
@@ -271,7 +286,9 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;
   background:#12151f;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;text-align:left;
   padding:0;width:100%;color:inherit;display:flex;flex-direction:column;
+  opacity:0;animation:hcCardIn .5s cubic-bezier(.16,.8,.3,1) forwards;
 }
+@keyframes hcCardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .hc-concept-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.35);box-shadow:0 16px 40px -12px rgba(0,0,0,.55)}
 .hc-concept-card:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .hc-concept-swatch{
@@ -306,6 +323,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   border:1px solid var(--line);border-radius:14px;background:#12151f;color:inherit;
   padding:18px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;
   cursor:pointer;transition:transform .15s ease,border-color .15s ease;text-align:left;
+  opacity:0;animation:hcCardIn .45s cubic-bezier(.16,.8,.3,1) forwards;
 }
 .hc-insp-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.32)}
 .hc-insp-card:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
@@ -333,6 +351,11 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   .hc-app-right{flex:1 1 48%}
   .hc-insp-grid{grid-template-columns:1fr}
   .hc-insp-card.hc-insp-primary{grid-column:auto}
+}
+@media (prefers-reduced-motion: reduce){
+  .hc-concept-card,.hc-insp-card{animation:none;opacity:1}
+  .hc-canvas-frame-wrap iframe,.hc-canvas-loading{transition:none}
+  .hc-canvas-frame-wrap.hc-just-updated::after{animation:none}
 }
 </style>
 </head>
@@ -571,16 +594,24 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     var url = hc.draftBusiness.url;
     root.innerHTML =
       '<div class="hc-canvas-url"><span class="hc-live-dot"></span><a href="' + hcEscape(url) + '" target="_blank" rel="noopener">' + hcEscape(url.replace(/^https?:\/\//,'')) + '</a></div>' +
-      '<div class="hc-canvas-frame-wrap">' +
+      '<div class="hc-canvas-frame-wrap" id="hcCanvasFrameWrap">' +
         '<div class="hc-canvas-loading" id="hcCanvasLoading"><span class="hc-live-dot"></span>&nbsp;Loading your site…</div>' +
-        '<iframe id="hcCanvasFrame" src="' + hcEscape(url) + '" title="Live preview"></iframe>' +
+        '<iframe class="is-live" id="hcCanvasFrameA" src="' + hcEscape(hcBust(url)) + '" title="Live preview"></iframe>' +
+        '<iframe id="hcCanvasFrameB" title="Live preview"></iframe>' +
       '</div>';
-    var frame = document.getElementById('hcCanvasFrame');
+    hc.activeFrame = 'A';
+    var frameA = document.getElementById('hcCanvasFrameA');
     var loading = document.getElementById('hcCanvasLoading');
-    if(frame && loading){
-      frame.addEventListener('load', function(){ loading.classList.add('is-hidden'); }, { once:true });
+    if(frameA && loading){
+      frameA.addEventListener('load', function(){ loading.classList.add('is-hidden'); }, { once:true });
     }
     hcMountLogoFab();
+  }
+
+  // Cache-busts so the exact same URL always forces a real fresh navigation
+  // — without this, re-setting an unchanged-looking src can silently no-op.
+  function hcBust(url){
+    return url + (url.indexOf('?') === -1 ? '?' : '&') + '_r=' + Date.now();
   }
 
   // A real upload affordance, not a text question — shown once Hubly asks
@@ -604,15 +635,29 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     wrap.appendChild(btn);
   }
 
-  // Reloads the live iframe in place (not a full canvas rebuild) — used
-  // after a turn that actually changed the draft, so the person watches the
-  // real site update instead of wondering if anything happened.
+  // Loads the update into the hidden standby frame, then crossfades it in
+  // once it's actually ready — used after a turn that really changed the
+  // draft. The person watches the real change land; they never see a blank
+  // reload, and the pulse on swap is tied to a confirmed real update, not a
+  // decorative loop.
   function hcRefreshCanvasFrame(){
-    var frame = document.getElementById('hcCanvasFrame');
-    var loading = document.getElementById('hcCanvasLoading');
-    if(!frame) { hcRenderCanvas(); return; }
-    if(loading) loading.classList.remove('is-hidden');
-    frame.src = frame.src;
+    var wrap = document.getElementById('hcCanvasFrameWrap');
+    var frameA = document.getElementById('hcCanvasFrameA');
+    var frameB = document.getElementById('hcCanvasFrameB');
+    if(!wrap || !frameA || !frameB || !hc.draftBusiness){ hcRenderCanvas(); return; }
+    var activeIsA = hc.activeFrame !== 'B';
+    var active = activeIsA ? frameA : frameB;
+    var standby = activeIsA ? frameB : frameA;
+    standby.addEventListener('load', function onLoad(){
+      standby.removeEventListener('load', onLoad);
+      standby.classList.add('is-live');
+      active.classList.remove('is-live');
+      hc.activeFrame = activeIsA ? 'B' : 'A';
+      wrap.classList.remove('hc-just-updated');
+      void wrap.offsetWidth; // restart the pulse animation even if it's already mid-run
+      wrap.classList.add('hc-just-updated');
+    }, { once: true });
+    standby.src = hcBust(hc.draftBusiness.url);
   }
 
   // Honest sketch styling per real layout id — a mood swatch, not a claim
@@ -647,10 +692,10 @@ body.hc-active #categories,body.hc-active .footer{display:none}
       '<div class="hc-concepts">' +
         '<div class="hc-concepts-head">A few directions</div>' +
         '<div class="hc-concepts-grid">' +
-        list.map(function(c){
+        list.map(function(c, ci){
           var sw = HC_SWATCH[c.id] || HC_SWATCH_DEFAULT;
           return (
-            '<button type="button" class="hc-concept-card" data-name="' + hcEscape(c.name) + '">' +
+            '<button type="button" class="hc-concept-card" data-name="' + hcEscape(c.name) + '" style="animation-delay:' + (ci * 90) + 'ms">' +
               '<div class="hc-concept-swatch" style="background:' + sw.bg + ';color:' + sw.fg + ';font-family:' + sw.font + '">' +
                 '<div class="cs-nav"><span class="cs-brand">Your Business</span><span class="cs-navcta">Menu</span></div>' +
                 '<div class="cs-eyebrow">' + hcEscape(c.name) + '</div>' +
@@ -698,32 +743,32 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         '<div class="hc-inspiration-head">Do you have inspiration?</div>' +
         '<div class="hc-inspiration-sub">Any of these work — or skip straight to a few directions.</div>' +
         '<div class="hc-insp-grid">' +
-          '<button type="button" class="hc-insp-card hc-insp-primary" data-act="auto">' +
+          '<button type="button" class="hc-insp-card hc-insp-primary" data-act="auto" style="animation-delay:0ms">' +
             '<span class="ic">' + HC_INSP_ICONS.spark + '</span>' +
             '<span class="it">Find inspiration for me</span>' +
             '<span class="id">Hubly sketches a few real directions to start from</span>' +
           '</button>' +
-          '<button type="button" class="hc-insp-card" data-act="url">' +
+          '<button type="button" class="hc-insp-card" data-act="url" style="animation-delay:70ms">' +
             '<span class="ic">' + HC_INSP_ICONS.link + '</span>' +
             '<span class="it">Website URL</span>' +
             '<span class="id">A site you already like</span>' +
           '</button>' +
-          '<button type="button" class="hc-insp-card" data-act="screenshot">' +
+          '<button type="button" class="hc-insp-card" data-act="screenshot" style="animation-delay:140ms">' +
             '<span class="ic">' + HC_INSP_ICONS.image + '</span>' +
             '<span class="it">Screenshot</span>' +
             '<span class="id">Upload an image</span>' +
           '</button>' +
-          '<button type="button" class="hc-insp-card" data-act="pdf">' +
+          '<button type="button" class="hc-insp-card" data-act="pdf" style="animation-delay:210ms">' +
             '<span class="ic">' + HC_INSP_ICONS.doc + '</span>' +
             '<span class="it">PDF</span>' +
             '<span class="id">A brand deck or brief</span>' +
           '</button>' +
-          '<button type="button" class="hc-insp-card" data-act="figma">' +
+          '<button type="button" class="hc-insp-card" data-act="figma" style="animation-delay:280ms">' +
             '<span class="ic">' + HC_INSP_ICONS.figma + '</span>' +
             '<span class="it">Figma</span>' +
             '<span class="id">A file or share link</span>' +
           '</button>' +
-          '<button type="button" class="hc-insp-card" data-act="pinterest">' +
+          '<button type="button" class="hc-insp-card" data-act="pinterest" style="animation-delay:350ms">' +
             '<span class="ic">' + HC_INSP_ICONS.pin + '</span>' +
             '<span class="it">Pinterest</span>' +
             '<span class="id">A board or a pin</span>' +
