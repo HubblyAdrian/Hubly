@@ -94,6 +94,29 @@ async function callMarketplace(action: string, payload: Record<string, unknown>)
   return await res.json().catch(() => null);
 }
 
+// Same reuse pattern one function over again: the business capability wraps
+// the real start_business_in_progress / patch_business_in_progress Postgres
+// functions (20260803120000_business_in_progress.sql) directly over
+// PostgREST's /rpc/ endpoint — no business-record logic lives here.
+async function callBusinessRpc(fn: string, payload: Record<string, unknown>): Promise<any> {
+  const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  if (!supabaseUrl || !serviceKey) return null;
+  const res = await fetch(`${supabaseUrl}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${serviceKey}`,
+      apikey: serviceKey,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) return null;
+  return await res.json().catch(() => null);
+}
+
+const HUBLY_DOMAIN = (Deno.env.get("HUBLY_PUBLIC_DOMAIN") || "").trim() || "myhubly.app";
+
 function isValidUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
 }
@@ -307,6 +330,136 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
               ? `Real booking created (${r.confirmation?.status || "pending"}) — a payment of $${((r.checkout.amount_cents || 0) / 100).toFixed(2)} (${r.checkout.charge_kind}) is required to confirm it.`
               : `Real booking confirmed for ${r.confirmation?.starts_at || startsAt}.`,
             raw: r,
+          };
+        },
+      },
+    ],
+  },
+  {
+    name: "business",
+    description:
+      "Create and grow a real, live business record and website — even before the person has an account. Reuses the real renderer (25 layouts) and the real businesses table, just with owner_id left unset until they actually sign up.",
+    actions: [
+      {
+        name: "startDraft",
+        description:
+          "Creates a REAL business row and a real live website at <slug>.myhubly.app — visitable immediately, even with almost nothing filled in yet. Call this once, the first time you have a business name and (ideally) a chosen visual direction — not before. Calling it again for the same conversation creates a second, unwanted business — use updateDraft after this point, never call startDraft twice.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            name: { type: "string", description: "The business's real name, exactly as given." },
+            businessType: {
+              type: "string",
+              description:
+                "One short lowercase category if it's genuinely clear (e.g. \"detailing\", \"landscaping\", \"cleaning\", \"photography\", \"windows\", \"pressure_washing\"). Omit if unclear — never guess.",
+            },
+          },
+          required: ["name"],
+        },
+        handler: async (args) => {
+          const name = String(args?.name || "").trim();
+          if (!name) {
+            return { ok: false, real: false, summary: "No business name was given.", error: "missing_name" };
+          }
+          const businessType = String(args?.businessType || "").trim() || undefined;
+          const r = await callBusinessRpc("start_business_in_progress", {
+            p_name: name,
+            p_business_type: businessType || null,
+          });
+          if (!r || r.ok !== true) {
+            return { ok: false, real: false, summary: "The business record could not be created right now.", error: r?.error || "rpc_unreachable" };
+          }
+          const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
+          return {
+            ok: true,
+            real: true,
+            summary: `Real business created and live at ${url} — this is a real, visitable site, not a mockup.`,
+            raw: { id: r.id, slug: r.slug, draftToken: r.draft_token, url },
+          };
+        },
+      },
+      {
+        name: "updateDraft",
+        description:
+          "Updates the real business/website created by startDraft — real headline, subhead, about copy, contact info, or visual direction (layout). Every call here changes what's actually live at the site right now. Only ever call this after startDraft has already run in this conversation.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: {
+              type: "string",
+              description: "Automatically supplied by the system before this runs — you do not know the real value and never need to. Put any placeholder here; do not decline to invoke just because you don't have a real id.",
+            },
+            name: { type: "string", description: "Updated business name, if it changed." },
+            tagline: { type: "string", description: "A short real tagline, if you drafted one." },
+            about: { type: "string", description: "A real about/description paragraph, if you drafted one." },
+            businessType: { type: "string", description: "Updated category, only if it's now clearer than before." },
+            phone: { type: "string", description: "Phone number, if given." },
+            email: { type: "string", description: "Email, if given." },
+            city: { type: "string", description: "City / service area, if given." },
+            brandColor: { type: "string", description: "A hex color, only if the person actually specified or approved one." },
+            heroHeadline: { type: "string", description: "The real homepage headline you're drafting or refining right now." },
+            heroSubhead: { type: "string", description: "The real homepage subheadline." },
+            seoTitle: {
+              type: "string",
+              description:
+                "Always include this alongside heroHeadline: a short, accurate title like \"<Business Name> | <what they actually do>\" (e.g. \"Bark and Bubbles | Dog Grooming\"). businessType only recognizes a handful of fixed categories and silently mislabels anything outside them, so this is what makes the browser tab and page title actually correct.",
+            },
+            layout: {
+              type: "string",
+              description: "The chosen real visual direction's id (from the real layout list you were given) — only when the person picked or changed direction.",
+            },
+          },
+          required: [],
+        },
+        handler: async (args) => {
+          const draftId = String(args?.draftId || "").trim();
+          const draftToken = String((args as any)?.draftToken || "").trim();
+          if (!draftId || !draftToken) {
+            return { ok: false, real: false, summary: "No draft business exists yet to update — call startDraft first.", error: "missing_draft" };
+          }
+          const patch: Record<string, unknown> = {};
+          const map: Record<string, string> = {
+            name: "name", tagline: "tagline", about: "about", businessType: "business_type",
+            phone: "phone", email: "email", city: "city", brandColor: "brand_color",
+            heroHeadline: "gen_hero_headline", heroSubhead: "gen_hero_subhead", seoTitle: "gen_seo_title",
+          };
+          for (const [argKey, col] of Object.entries(map)) {
+            const v = args?.[argKey];
+            if (typeof v === "string" && v.trim()) patch[col] = v.trim();
+          }
+          // The renderer (public/hubly.html: applyBizMeta -> "if(meta.website)
+          // S.website=meta.website") reads hero headline/subhead/SEO title
+          // from meta.website, NOT from the gen_* columns above — those are
+          // a separate AI-draft staging area that only reaches the live site
+          // through a different, owner-authenticated flow. Writing here is
+          // what actually makes the live preview change.
+          const layout = String(args?.layout || "").trim();
+          const heroHeadline = typeof args?.heroHeadline === "string" ? args.heroHeadline.trim() : "";
+          const heroSub = typeof args?.heroSubhead === "string" ? args.heroSubhead.trim() : "";
+          const seoTitle = typeof args?.seoTitle === "string" ? args.seoTitle.trim() : "";
+          const websiteMeta: Record<string, unknown> = {};
+          if (layout) websiteMeta.layout = layout;
+          if (heroHeadline) { websiteMeta.heroHeadline = heroHeadline; websiteMeta.customHeroHeadline = true; }
+          if (heroSub) { websiteMeta.heroSub = heroSub; websiteMeta.customHeroSub = true; }
+          if (seoTitle) websiteMeta.seoTitle = seoTitle;
+          const r = await callBusinessRpc("patch_business_in_progress", {
+            p_id: draftId,
+            p_draft_token: draftToken,
+            p_patch: patch,
+            p_website_meta: Object.keys(websiteMeta).length ? websiteMeta : null,
+          });
+          if (!r || r.ok !== true) {
+            return { ok: false, real: false, summary: "The business record could not be updated — the draft may have already been claimed.", error: "rpc_failed" };
+          }
+          const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
+          const changed = Object.keys(patch).concat(layout ? ["layout"] : []);
+          return {
+            ok: true,
+            real: true,
+            summary: changed.length
+              ? `Real update applied — ${url} now reflects: ${changed.join(", ")}.`
+              : `No fields changed — nothing new was given to update.`,
+            raw: { id: r.id, slug: r.slug, url },
           };
         },
       },

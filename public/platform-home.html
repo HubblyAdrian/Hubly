@@ -201,32 +201,59 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   background:var(--bg);opacity:0;transition:opacity .35s ease;
 }
 .hc-app.is-active{display:flex;opacity:1}
-.hc-app-left{flex:1 1 58%;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--line)}
-.hc-app-right{flex:1 1 42%;min-width:0;padding:32px clamp(20px,3vw,40px);overflow-y:auto}
-.hc-thread{flex:1;overflow-y:auto;padding:32px clamp(20px,4vw,56px) 16px;display:flex;flex-direction:column;gap:18px}
-.hc-msg{max-width:620px;font-size:15.5px;line-height:1.6;white-space:pre-wrap}
+.hc-app-left{flex:1 1 56%;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--line)}
+.hc-app-right{flex:1 1 44%;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:#0d0f16}
+.hc-thread{flex:1;overflow-y:auto;padding:36px clamp(22px,4vw,60px) 18px;display:flex;flex-direction:column;gap:22px}
+.hc-msg{max-width:640px;font-size:16px;line-height:1.65;white-space:pre-wrap}
 .hc-msg.hubly{color:var(--ink)}
 .hc-msg.user{color:var(--ink-2);align-self:flex-end;text-align:right}
 .hc-msg.typing{color:var(--ink-3);font-style:italic}
-.hc-input-bar{padding:14px clamp(20px,4vw,56px) 26px;flex-shrink:0}
+.hc-work-chip{
+  align-self:flex-start;display:inline-flex;align-items:center;gap:7px;
+  font-size:11.5px;letter-spacing:.03em;color:var(--brand);
+  background:rgba(217,99,45,.1);border:1px solid rgba(217,99,45,.35);
+  padding:5px 11px 5px 9px;border-radius:20px;
+}
+.hc-work-chip .hc-dot{width:6px;height:6px;border-radius:50%;background:var(--brand);animation:hcPulse 1.3s infinite}
+@keyframes hcPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.hc-input-bar{padding:16px clamp(22px,4vw,60px) 28px;flex-shrink:0}
 .hc-input-bar .ask-box{padding:14px 16px 14px 16px;border-radius:18px}
 .hc-input-bar .ask-box input{padding:6px 40px 6px 2px}
 .hc-input-bar .ask-icon-left{bottom:auto;top:50%;transform:translateY(-50%);left:16px}
 .hc-input-bar .ask-submit{bottom:auto;top:50%;transform:translateY(-50%);right:10px;width:36px;height:36px}
-.hc-panel-title{font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:-.01em;margin-bottom:22px;color:var(--ink)}
-.hc-field{padding:12px 0;border-bottom:1px solid var(--line)}
-.hc-field:last-child{border-bottom:0}
-.hc-field-label{font-size:11px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
-.hc-field-value{font-size:14px;color:var(--ink-3)}
-.hc-field-value.is-known{color:var(--ink);font-weight:600}
-.hc-field-value.is-known::before{content:'✓ ';color:var(--brand)}
-.hc-empty{font-size:13px;color:var(--ink-3);font-style:italic}
-@keyframes hcFieldReveal{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
-.hc-field-new{animation:hcFieldReveal .5s ease}
+
+/* Live canvas — "the thing we're building together," never Business
+   Understanding as data. Default: quiet placeholder. Once a real business
+   draft exists, this is a real iframe onto the real renderer at its real
+   <slug>.myhubly.app URL — not a mockup. */
+.hc-canvas{flex:1;display:flex;flex-direction:column;min-height:0}
+.hc-canvas-empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;gap:12px;padding:30px;color:var(--ink-3);
+}
+.hc-canvas-empty svg{width:30px;height:30px;opacity:.4}
+.hc-canvas-empty h3{font-family:var(--display);font-size:15px;color:rgba(245,246,248,.8);font-weight:700}
+.hc-canvas-empty p{font-size:13px;max-width:32ch;line-height:1.5}
+.hc-canvas-url{
+  display:flex;align-items:center;gap:8px;padding:11px 16px;
+  border-bottom:1px solid var(--line);font-size:11.5px;color:var(--ink-3);
+  font-family:ui-monospace,'SF Mono',Menlo,monospace;flex-shrink:0;
+}
+.hc-canvas-url .hc-live-dot{width:6px;height:6px;border-radius:50%;background:#3ecf7a;box-shadow:0 0 6px rgba(62,207,122,.7);flex-shrink:0}
+.hc-canvas-url a{color:rgba(245,246,248,.75);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hc-canvas-url a:hover{color:#fff;text-decoration:underline}
+.hc-canvas-frame-wrap{flex:1;position:relative;background:#fff;min-height:0}
+.hc-canvas-frame-wrap iframe{width:100%;height:100%;border:0;display:block}
+.hc-canvas-loading{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:#0d0f16;color:var(--ink-3);font-size:12.5px;transition:opacity .3s ease;gap:8px;
+}
+.hc-canvas-loading.is-hidden{opacity:0;pointer-events:none}
+.hc-canvas-loading .hc-live-dot{animation:hcPulse 1s infinite}
 @media(max-width:860px){
   .hc-app{flex-direction:column}
-  .hc-app-left{border-right:0;border-bottom:1px solid var(--line);flex:1 1 58%}
-  .hc-app-right{flex:1 1 42%}
+  .hc-app-left{border-right:0;border-bottom:1px solid var(--line);flex:1 1 52%}
+  .hc-app-right{flex:1 1 48%}
 }
 </style>
 </head>
@@ -313,10 +340,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
       </div>
     </div>
   </div>
-  <div class="hc-app-right">
-    <div class="hc-panel-title">Business Understanding</div>
-    <div id="hcUnderstanding"></div>
-  </div>
+  <div class="hc-app-right" id="hcCanvas"></div>
 </div>
 
 <section class="sec" id="categories">
@@ -412,9 +436,12 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   var SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
   var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
   var HC_CATEGORY_ORDER = ['business','industry','services','website','brand','scheduling','crm','payments','goals'];
-  var HC_CATEGORY_LABELS = { business:'Business', industry:'Industry', services:'Services', website:'Website', brand:'Brand', scheduling:'Scheduling', crm:'CRM', payments:'Payments', goals:'Goals' };
 
-  var hc = { messages: [], understanding: {}, understandingOrder: [], active: false, busy: false };
+  // draftBusiness: the real, unclaimed businesses row Hubly may have already
+  // created (business.startDraft) — { id, slug, draftToken, url }. Threaded
+  // back to the server every turn exactly like `messages`; the server never
+  // persists it either. This is what makes the canvas real instead of a mockup.
+  var hc = { messages: [], understanding: {}, draftBusiness: null, active: false, busy: false };
 
   function hcMergePatch(base, patch){
     if(!patch || typeof patch !== 'object') return base;
@@ -440,73 +467,47 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     return d.innerHTML;
   }
 
-  function hcFieldDisplay(key, value){
-    if(key === 'business'){
-      return (value && value.name) ? { known:true, text: value.name } : { known:false, text:'Not discussed yet' };
-    }
-    if(key === 'industry'){
-      return value ? { known:true, text: value } : { known:false, text:'Not discussed yet' };
-    }
-    if(key === 'services'){
-      return (Array.isArray(value) && value.length) ? { known:true, text: value.join(', ') } : { known:false, text:'Not discussed yet' };
-    }
-    if(key === 'website'){
-      return (value && value.status === 'found') ? { known:true, text:'Found' + (value.url ? ' — ' + value.url : '') } : { known:false, text:'Not discussed yet' };
-    }
-    if(key === 'brand'){
-      return (value && value.colors && value.colors.length) ? { known:true, text: value.colors.join(', ') } : { known:false, text:'Not discussed yet' };
-    }
-    if(key === 'scheduling' || key === 'crm' || key === 'payments'){
-      return (value && value.current_system) ? { known:true, text:'Using ' + value.current_system } : { known:false, text:'Not discussed yet' };
-    }
-    if(key === 'goals'){
-      return (Array.isArray(value) && value.length) ? { known:true, text: value.join(', ') } : { known:false, text:'Not discussed yet' };
-    }
-    return { known:false, text:'Not discussed yet' };
-  }
-
-  // Snapshot of each category's known display text (null when not yet known)
-  // — used to diff before/after a merge so the panel can tell "just learned
-  // or changed" apart from "already knew this," which is what makes
-  // discoveries animate instead of the whole panel silently repainting.
-  function hcSnapshotDisplay(understanding){
-    var snap = {};
-    HC_CATEGORY_ORDER.forEach(function(key){
-      var d = hcFieldDisplay(key, understanding[key]);
-      snap[key] = d.known ? d.text : null;
-    });
-    return snap;
-  }
-
-  // Only known categories render — unknowns are hidden entirely rather than
-  // shown as "Not discussed yet" — and they render most-recently-learned
-  // first, via hc.understandingOrder, so the panel reads as Hubly actively
-  // building understanding rather than a fixed form filling in.
-  function hcRenderUnderstanding(justUpdated){
-    var el = document.getElementById('hcUnderstanding');
-    if(!el) return;
-    justUpdated = justUpdated || [];
-    var knownKeys = hc.understandingOrder.filter(function(key){
-      return hcFieldDisplay(key, hc.understanding[key]).known;
-    });
-    if(!knownKeys.length){
-      el.innerHTML = '<div class="hc-empty">Getting to know your business…</div>';
+  // The live canvas — "the thing we're building together," per outcome.
+  // Today only the website outcome has a real build behind it
+  // (business.startDraft/updateDraft → a real businesses row → the real
+  // renderer at <slug>.myhubly.app); everything else stays conversational
+  // until it has one too, so the canvas honestly stays a placeholder rather
+  // than pretending to show progress that isn't real.
+  function hcRenderCanvas(){
+    var root = document.getElementById('hcCanvas');
+    if(!root) return;
+    if(!hc.draftBusiness || !hc.draftBusiness.url){
+      root.innerHTML =
+        '<div class="hc-canvas-empty">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>' +
+          '<h3>Nothing to show yet</h3>' +
+          '<p>As soon as there\'s something real to build, it\'ll come alive right here.</p>' +
+        '</div>';
       return;
     }
-    el.innerHTML = knownKeys.map(function(key){
-      var d = hcFieldDisplay(key, hc.understanding[key]);
-      var isNew = justUpdated.indexOf(key) !== -1;
-      return '<div class="hc-field' + (isNew ? ' hc-field-new' : '') + '"><div class="hc-field-label">' + HC_CATEGORY_LABELS[key] + '</div>' +
-        '<div class="hc-field-value is-known">' + hcEscape(d.text) + '</div></div>';
-    }).join('');
-    if(justUpdated.length){
-      // Strip the animation class once it's played so it doesn't replay on
-      // the next unrelated re-render of this same field.
-      setTimeout(function(){
-        var animated = el.querySelectorAll('.hc-field-new');
-        for(var i = 0; i < animated.length; i++) animated[i].classList.remove('hc-field-new');
-      }, 700);
+    var url = hc.draftBusiness.url;
+    root.innerHTML =
+      '<div class="hc-canvas-url"><span class="hc-live-dot"></span><a href="' + hcEscape(url) + '" target="_blank" rel="noopener">' + hcEscape(url.replace(/^https?:\/\//,'')) + '</a></div>' +
+      '<div class="hc-canvas-frame-wrap">' +
+        '<div class="hc-canvas-loading" id="hcCanvasLoading"><span class="hc-live-dot"></span>&nbsp;Loading your site…</div>' +
+        '<iframe id="hcCanvasFrame" src="' + hcEscape(url) + '" title="Live preview"></iframe>' +
+      '</div>';
+    var frame = document.getElementById('hcCanvasFrame');
+    var loading = document.getElementById('hcCanvasLoading');
+    if(frame && loading){
+      frame.addEventListener('load', function(){ loading.classList.add('is-hidden'); }, { once:true });
     }
+  }
+
+  // Reloads the live iframe in place (not a full canvas rebuild) — used
+  // after a turn that actually changed the draft, so the person watches the
+  // real site update instead of wondering if anything happened.
+  function hcRefreshCanvasFrame(){
+    var frame = document.getElementById('hcCanvasFrame');
+    var loading = document.getElementById('hcCanvasLoading');
+    if(!frame) { hcRenderCanvas(); return; }
+    if(loading) loading.classList.remove('is-hidden');
+    frame.src = frame.src;
   }
 
   function hcAppendMessage(role, text){
@@ -539,7 +540,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
       document.body.classList.add('hc-active');
       var app = document.getElementById('hcApp');
       if(app){ app.classList.add('is-active'); app.setAttribute('aria-hidden', 'false'); }
-      hcRenderUnderstanding();
+      hcRenderCanvas();
       var input = document.getElementById('hcInput');
       if(input) input.focus();
     }, 420);
@@ -556,7 +557,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         'apikey': SUPA_ANON_KEY,
         'authorization': 'Bearer ' + SUPA_ANON_KEY
       },
-      body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding })
+      body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness })
     })
       .then(function(r){ return r.json(); })
       .then(function(data){
@@ -568,18 +569,21 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         }
         hc.messages = Array.isArray(data.messages) ? data.messages : hc.messages;
         if(data.understanding && data.understanding.patch){
-          var hcBefore = hcSnapshotDisplay(hc.understanding);
           hc.understanding = hcMergePatch(hc.understanding, data.understanding.patch);
-          var hcAfter = hcSnapshotDisplay(hc.understanding);
-          var hcJustUpdated = HC_CATEGORY_ORDER.filter(function(key){
-            return hcAfter[key] !== null && hcAfter[key] !== hcBefore[key];
-          });
-          hcJustUpdated.forEach(function(key){
-            var idx = hc.understandingOrder.indexOf(key);
-            if(idx !== -1) hc.understandingOrder.splice(idx, 1);
-            hc.understandingOrder.unshift(key);
-          });
-          hcRenderUnderstanding(hcJustUpdated);
+        }
+        // The canvas only needs to know: is there a real draft, and did this
+        // turn actually touch it (vs. an unrelated reply where nothing
+        // visible should move). Reload in place only in the latter case —
+        // never on every turn, which would just flicker for no reason.
+        var hadDraft = !!hc.draftBusiness;
+        var touchedBusiness = Array.isArray(data.actions) && data.actions.some(function(a){ return a.capability === 'business'; });
+        if(data.draftBusiness && data.draftBusiness.id && data.draftBusiness.url){
+          hc.draftBusiness = data.draftBusiness;
+        }
+        if(!hadDraft && hc.draftBusiness){
+          hcRenderCanvas();
+        } else if(touchedBusiness && hc.draftBusiness){
+          hcRefreshCanvasFrame();
         }
         var interim = Array.isArray(data.interimMessages) ? data.interimMessages : [];
         var i = 0;

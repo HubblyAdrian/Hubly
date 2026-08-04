@@ -149,9 +149,27 @@ type ConversationContextName = "dashboard" | "customer";
 // so a context is bounded structurally — never just by what the prompt
 // happened to omit.
 const CONTEXT_CAPABILITY_ALLOWLIST: Record<ConversationContextName, string[]> = {
-  dashboard: ["website", "online_presence"],
+  dashboard: ["website", "online_presence", "business"],
   customer: ["booking"],
 };
+
+// Real, distinct visual directions the renderer can actually show today
+// (public/layouts/*.js) — not invented. A representative spread, not the
+// full catalog, so the model can honestly describe 2-3 real directions by
+// name and character instead of picking blind or inventing one.
+const REAL_LAYOUT_DIRECTIONS = `- premium-dark ("Premium Dark") — upscale, moody, dark
+- obsidian-gold ("Obsidian Gold") — luxury, black & gold
+- calm-service ("Calm Service") — soft, spacious, calm
+- editorial ("Boutique Editorial") — image-led, restrained, magazine-like
+- classic-trust ("Classic Trust") — traditional, dependable
+- clean-modern ("Clean Pro") — crisp, neutral, professional
+- minimal-pro ("Modern Minimal") — quiet, minimal, lots of whitespace
+- bold-impact ("Bold & Unmissable") — high-contrast, direct, loud CTA
+- warm-local ("Neighborhood Favorite") — warm, friendly, approachable
+- vibrant-pop ("Bright & Energetic") — colorful, energetic
+- aurora-gradient ("Soft Aurora") — soft gradient, dreamy
+- garage-industrial ("Workshop Industrial") — rugged, industrial
+(Plus a few vertical-specific ones — estate-green for landscaping, crystal-pane for windows, rinse-force for pressure washing — offer these only when the business is actually that vertical.)`;
 
 function getAllowedCapabilities(context: ConversationContextName) {
   const allow = new Set(CONTEXT_CAPABILITY_ALLOWLIST[context]);
@@ -235,6 +253,7 @@ function buildSystemPrompt(
   context: ConversationContextName,
   currentUnderstanding: BusinessUnderstandingPatch | CustomerUnderstandingPatch,
   latestUserMessage: string | null,
+  draftBusiness: { id: string; slug: string; url: string } | null,
 ): string {
   const adapter = getUnderstandingAdapter(context);
   const knownSoFar = adapter.isEmpty(currentUnderstanding as any)
@@ -248,7 +267,9 @@ function buildSystemPrompt(
 If you don't have specific information about this business's services, pricing, hours, or policies, say so honestly instead of guessing — never invent details about the business you don't actually know.`
       : `You are Hubly — a conversational business partner, not a piece of software someone has to learn. You are the primary interface to the Hubly platform: every capability Hubly has should feel reachable by simply telling you what's needed, in plain conversation.
 
-You are general-purpose. You are not an onboarding wizard and you must not behave like one. People may open a conversation with you for many different reasons — "I need help with my business", "help me build a website", "I want more customers", "I need a storefront", "help me price my services", or anything else. Respond to what the person actually asked for. Never force a scripted sequence of questions.`;
+You are general-purpose. You are not an onboarding wizard and you must not behave like one. People may open a conversation with you for many different reasons — "I need help with my business", "help me build a website", "I want more customers", "I need a storefront", "help me price my services", or anything else. Respond to what the person actually asked for. Never force a scripted sequence of questions.
+
+NOBODY COMES TO HUBLY BECAUSE THEY WANT SOFTWARE. They come because they need something accomplished — a website, a way to get booked, more customers, a storefront. The requested outcome is the center of every conversation, from the first message. Business Understanding is what you naturally pick up while helping — it is never the reason you ask a question. If a question doesn't directly help build the thing they just asked for, don't ask it.`;
 
   const learningSection =
     context === "customer"
@@ -259,7 +280,18 @@ Don't introduce Hubly capabilities, features, or a list of things you can help w
 
 When a question genuinely is the right move (see PRIORITY ORDER below — this is priority 3, the fallback, not the default), ask exactly ONE — the single question that would most change what you can create or do next. No fixed order and no script: don't default to the same question every time (e.g. never reflexively ask "are you just getting started?"). Optimize for discovering why they actually came to Hubly today — "what's the biggest challenge you're dealing with right now?" is often more valuable than a demographic fact like how long they've been in business — but choose based on the actual conversation in front of you, not a template.
 
-You can also accept a website, a Google Business Profile link, a Facebook or Instagram page, uploaded photos or screenshots, or simply "starting from scratch" — all valid, never insist on one over another.`;
+You can also accept a website, a Google Business Profile link, a Facebook or Instagram page, uploaded photos or screenshots, or simply "starting from scratch" — all valid, never insist on one over another.
+
+BUILDING A WEBSITE, LIVE — the one outcome you can fully build right now
+When the goal is a website (or becomes one), don't ask about the business first — ask about inspiration first, like walking into a design studio: "Do you already have a website you like, a screenshot, a Pinterest board, or would you like me to suggest a few directions?" If they have something, that's what website.analyze is for. If not, propose 2-3 REAL, genuinely different visual directions from this actual list — describe each in your own words by its real character, never as "Option A/B/C" or a template name dump:
+${REAL_LAYOUT_DIRECTIONS}
+
+Once you know the business name and a direction (chosen or inferred from what they've said), build it for real:
+${draftBusiness ? `- A draft already exists (${draftBusiness.url}) — use business.updateDraft for anything new: name, tagline, about, contact info, a drafted headline/subhead, or a changed direction (layout). Never call business.startDraft again this conversation.` : `- Call business.startDraft the first time you have a name and a direction — this creates a REAL, live website immediately, not a mockup. Then keep calling business.updateDraft as you learn or draft more (headline, subhead, about, contact info) — every real detail should show up there within the same reply.`}
+
+Write real headline/subhead/about copy yourself (this is conversational value, priority 1) and pass it straight into business.updateDraft's heroHeadline/heroSubhead/about — don't just describe what you'd write, actually write it and put it on the site. Always include seoTitle too ("<Business Name> | <what they actually do>") — businessType only recognizes a handful of fixed categories (detailing, pressure_washing, landscaping, cleaning, photography, hvac, windows) and silently mislabels anything outside that list, so seoTitle is what keeps the real page title accurate for everything else. Only set businessType when it genuinely matches one of those categories — never force a fit. For every other outcome (booking, CRM, marketing, storefront), there is no live build yet — create real value in conversation (a draft, a plan, honest advice) and say plainly that the live workspace will show it once that part is built. Never imply something is appearing visually when it isn't.
+
+NATURAL NEXT STEP — once a website has real content live (a name, a headline, and at least one more real detail), say so plainly and suggest the next concrete thing their business needs — usually booking, since that's what a finished website's visitors do next. Frame it as the obvious next step in building their business, never as a feature list or an upsell: "Your website's looking real. The next thing your customers will experience is booking — want to set that up?" is right; "Hubly also offers CRM, Marketing, Reviews..." is wrong.`;
 
   // Selective, deterministic — never the whole Knowledge Base. Only meaningful
   // against Business Understanding today (its signals are keyed to that
@@ -398,6 +430,26 @@ Deno.serve(async (req) => {
   // HublyAI.chat({ memory, dna, ... }) below, not changing this contract.
   const businessId = body?.businessId ? String(body.businessId) : null;
 
+  // Business in Progress — the real, unclaimed businesses row this
+  // conversation may have already created via business.startDraft (see
+  // 20260803120000_business_in_progress.sql). Stateless like everything
+  // else here: the client echoes back exactly what it was given last turn,
+  // this function never persists it. draftToken never reaches the model —
+  // it's structural context, same treatment as businessId for booking below.
+  let draftBusiness: { id: string; slug: string; draftToken: string; url: string } | null =
+    body?.draftBusiness &&
+    typeof body.draftBusiness === "object" &&
+    body.draftBusiness.id &&
+    body.draftBusiness.draftToken &&
+    body.draftBusiness.slug
+      ? {
+          id: String(body.draftBusiness.id),
+          slug: String(body.draftBusiness.slug),
+          draftToken: String(body.draftBusiness.draftToken),
+          url: String(body.draftBusiness.url || `https://${body.draftBusiness.slug}.myhubly.app`),
+        }
+      : null;
+
   // Entry Intent is Patch Zero — applied as the floor, before whatever the
   // client's own accumulated understanding merges on top. This ordering
   // matters: if a client mistakenly resent entryIntent on a later turn, real
@@ -430,7 +482,7 @@ Deno.serve(async (req) => {
     for (let round = 0; round < MAX_CAPABILITY_ROUNDS; round++) {
       const ai = await HublyAI.chat({
         feature: "hubly-conversation",
-        system: buildSystemPrompt(context, adapter.merge(currentUnderstanding, turnPatch), latestUserMessage),
+        system: buildSystemPrompt(context, adapter.merge(currentUnderstanding, turnPatch), latestUserMessage, draftBusiness),
         messages: history,
         jsonMode: true,
         maxTokens: 900,
@@ -477,6 +529,14 @@ Deno.serve(async (req) => {
         if (capabilityName === "booking" && businessId) {
           dispatchArgs.businessId = businessId;
         }
+        // Same treatment as booking's businessId above: the model never sees
+        // the real draftId/draftToken, so it can never be trusted to
+        // transcribe them — the engine injects the real ones whenever a
+        // draft already exists, overriding any placeholder the model put in.
+        if (capabilityName === "business" && actionName === "updateDraft" && draftBusiness) {
+          dispatchArgs.draftId = draftBusiness.id;
+          dispatchArgs.draftToken = draftBusiness.draftToken;
+        }
         const result = found
           ? await found.handler(dispatchArgs)
           : {
@@ -488,10 +548,26 @@ Deno.serve(async (req) => {
             error: allowedInContext ? "unknown_capability_action" : "capability_not_allowed_in_context",
           };
 
+        // Capture the real draft identity the moment it exists — startDraft
+        // returns it fresh; updateDraft just confirms it's still the same
+        // draft. Either way, the response below must carry the current,
+        // real value forward so the client can keep threading it.
+        if (capabilityName === "business" && result.ok && result.real && result.raw) {
+          const raw = result.raw as any;
+          if (actionName === "startDraft" && raw.id && raw.draftToken && raw.slug) {
+            draftBusiness = { id: String(raw.id), slug: String(raw.slug), draftToken: String(raw.draftToken), url: String(raw.url || "") };
+          } else if (actionName === "updateDraft" && draftBusiness && raw.id) {
+            draftBusiness = { ...draftBusiness, url: String(raw.url || draftBusiness.url) };
+          }
+        }
+
         actions.push({
           capability: capabilityName,
           capabilityAction: actionName,
-          args: dispatchArgs,
+          // draftToken is a write credential, not display data — never echo
+          // it back inside the actions log even though the client already
+          // has it (draftBusiness below is the one legitimate place it travels).
+          args: dispatchArgs.draftToken ? { ...dispatchArgs, draftToken: "[redacted]" } : dispatchArgs,
           ok: !!result.ok,
           real: !!result.real,
         });
@@ -514,6 +590,7 @@ Deno.serve(async (req) => {
         actions,
         interimMessages,
         ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
+        ...(draftBusiness ? { draftBusiness } : {}),
       });
     }
 
@@ -526,6 +603,7 @@ Deno.serve(async (req) => {
       actions,
       interimMessages,
       ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
+      ...(draftBusiness ? { draftBusiness } : {}),
     });
   } catch (err) {
     console.error("hubly-conversation error:", err);
