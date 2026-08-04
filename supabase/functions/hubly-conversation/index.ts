@@ -61,7 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, uploadDraftLogo } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -298,6 +298,8 @@ Write real headline/subhead/about copy yourself (this is conversational value, p
 
 The moment you know what services they offer — even roughly, even just one — call business.setServices with the complete real list (name, and price/description whenever actually given). Real service cards appear on the live site immediately; this is one of the highest-value single moments in the whole conversation, so don't wait to have all of them before calling it, and call it again with the fuller list as you learn more. Phone/email, once given, go straight into business.updateDraft's phone/email — they show up in the site's real contact line. There is no real place for business hours to live yet — never ask about them, and never invent a footer showing hours that don't actually exist anywhere.
 
+Once services are set, ask if they already have a logo to upload — a real image file, not a description. This is the one thing you cannot build yourself in conversation (you can't invoke logo upload — the person has to attach the actual file), so when you ask this ONE time, ALSO set a top-level "askLogo":true on that reply so a real upload option appears on screen. Never ask again after the first time. Until they upload one, the header already shows their initials automatically — that's real and correct, not a gap to apologize for.
+
 For every other outcome (booking, CRM, marketing, storefront), there is no live build yet — create real value in conversation (a draft, a plan, honest advice) and say plainly that the live workspace will show it once that part is built. Never imply something is appearing visually when it isn't.
 
 WHEN IN DOUBT, SHOW PROGRESS OVER ASKING. If you're weighing another question against building/updating something real with what you already have, build it. An imperfect real draft is always the better move than a well-phrased question — they can refine a draft, but a conversation that feels like an interview loses them. This outranks the usual "ask exactly one question" guidance whenever the two conflict.
@@ -392,7 +394,7 @@ RESPONSE FORMAT — YOU MUST ALWAYS REPLY WITH ONLY THIS JSON SHAPE, NOTHING ELS
 To invoke a capability action: {"action":"invoke","capability":"<capability name>","capabilityAction":"<action name>","args":{...matching that action's parameters...},"message":"<almost always a few words or empty — never a paragraph, see 'keep what you say almost silent' above>","understanding":{"patch":{...}}}
 To reply normally: {"action":"reply","message":"<your full reply to the person>","understanding":{"patch":{...}},"concepts":[{"id":"...","name":"...","character":"..."}]}
 
-"understanding" is optional on both — include it only when you learned something new this turn, matching the categories above (${adapter.categories.join(", ")}). "concepts" is optional and only ever appears on a "reply" — include it only when you're presenting real visual directions to choose from (see BUILDING A WEBSITE, LIVE above), omit it every other turn. "askInspiration" is optional, boolean, only on a "reply", only on the one turn you first ask about inspiration for a website.
+"understanding" is optional on both — include it only when you learned something new this turn, matching the categories above (${adapter.categories.join(", ")}). "concepts" is optional and only ever appears on a "reply" — include it only when you're presenting real visual directions to choose from (see BUILDING A WEBSITE, LIVE above), omit it every other turn. "askInspiration" is optional, boolean, only on a "reply", only on the one turn you first ask about inspiration for a website. "askLogo" is the same shape, only on the one turn you first ask about an existing logo.
 
 Only invoke a capability when someone has actually given you something to act on (e.g. a URL, an explicit request). Never invoke one speculatively.`;
 }
@@ -490,6 +492,28 @@ Deno.serve(async (req) => {
   // turn, in order — the client can render these as a natural pacing beat
   // ahead of the final message.
   const interimMessages: string[] = [];
+
+  // Logo upload is client-triggered, not model-decided — see uploadDraftLogo's
+  // own comment for why. Dispatched directly here, then folded into history
+  // as a normal CAPABILITY RESULT so the model narrates it exactly like any
+  // capability it did choose to invoke — same convention, different trigger.
+  const logoUpload =
+    body?.logoUpload && typeof body.logoUpload === "object" && typeof body.logoUpload.imageBase64 === "string"
+      ? { imageBase64: body.logoUpload.imageBase64, mediaType: String(body.logoUpload.mediaType || "image/png") }
+      : null;
+  if (logoUpload) {
+    const logoResult = await uploadDraftLogo(
+      draftBusiness?.id || "",
+      draftBusiness?.draftToken || "",
+      logoUpload.imageBase64,
+      logoUpload.mediaType,
+    );
+    actions.push({ capability: "business", capabilityAction: "setLogo", args: {}, ok: !!logoResult.ok, real: !!logoResult.real });
+    history.push({
+      role: "system",
+      content: `CAPABILITY RESULT for business.setLogo: ${JSON.stringify(logoResult)}\nOnly report what "summary" and "raw" actually show. Do not claim anything beyond this.`,
+    });
+  }
 
   try {
     for (let round = 0; round < MAX_CAPABILITY_ROUNDS; round++) {
@@ -613,6 +637,7 @@ Deno.serve(async (req) => {
         interimMessages,
         ...(concepts.length ? { concepts } : {}),
         ...(decision?.askInspiration === true ? { askInspiration: true } : {}),
+        ...(decision?.askLogo === true ? { askLogo: true } : {}),
         ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
         ...(draftBusiness ? { draftBusiness } : {}),
       });

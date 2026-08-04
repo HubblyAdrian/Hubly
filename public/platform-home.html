@@ -250,6 +250,15 @@ body.hc-active #categories,body.hc-active .footer{display:none}
 }
 .hc-canvas-loading.is-hidden{opacity:0;pointer-events:none}
 .hc-canvas-loading .hc-live-dot{animation:hcPulse 1s infinite}
+.hc-logo-fab{
+  position:absolute;top:14px;right:14px;z-index:5;
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(13,15,22,.92);border:1px solid rgba(255,255,255,.18);color:#fff;
+  padding:8px 14px 8px 10px;border-radius:20px;font-size:12px;font-weight:650;cursor:pointer;
+  box-shadow:0 8px 22px rgba(0,0,0,.35);transition:border-color .15s,transform .15s;
+}
+.hc-logo-fab:hover{border-color:var(--brand);transform:translateY(-1px)}
+.hc-logo-fab svg{width:14px;height:14px;color:var(--brand)}
 
 /* Concept cards — real directions to look at and pick, not prose to read.
    Large, side-by-side, each a small mock homepage (nav/hero/cta/services
@@ -414,6 +423,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   <div class="hc-app-right" id="hcCanvas"></div>
   <input type="file" id="hcFileInput" accept="image/*" style="display:none">
   <input type="file" id="hcPdfInput" accept="application/pdf" style="display:none">
+  <input type="file" id="hcLogoInput" accept="image/*" style="display:none">
 </div>
 
 <section class="sec" id="categories">
@@ -514,7 +524,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   // created (business.startDraft) — { id, slug, draftToken, url }. Threaded
   // back to the server every turn exactly like `messages`; the server never
   // persists it either. This is what makes the canvas real instead of a mockup.
-  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false };
+  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, showLogoFab: false };
 
   function hcMergePatch(base, patch){
     if(!patch || typeof patch !== 'object') return base;
@@ -570,6 +580,28 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     if(frame && loading){
       frame.addEventListener('load', function(){ loading.classList.add('is-hidden'); }, { once:true });
     }
+    hcMountLogoFab();
+  }
+
+  // A real upload affordance, not a text question — shown once Hubly asks
+  // about a logo (askLogo) and removed the moment they act on it. Mounted
+  // separately from hcRenderCanvas so it can also appear after an in-place
+  // iframe refresh without disturbing the live preview.
+  function hcMountLogoFab(){
+    var existing = document.querySelector('.hc-logo-fab');
+    if(existing) existing.remove();
+    if(!hc.showLogoFab || !hc.draftBusiness) return;
+    var wrap = document.querySelector('.hc-canvas-frame-wrap');
+    if(!wrap) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'hc-logo-fab';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5.5-5.5L4 21"/></svg>Upload logo';
+    btn.addEventListener('click', function(){
+      var input = document.getElementById('hcLogoInput');
+      if(input) input.click();
+    });
+    wrap.appendChild(btn);
   }
 
   // Reloads the live iframe in place (not a full canvas rebuild) — used
@@ -801,6 +833,8 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     hc.busy = true;
     if(!hc.draftBusiness) hcRenderCanvasThinking();
     var typingEl = hcAppendTyping();
+    var logoUploadForThisCall = hc.pendingLogoUpload || null;
+    hc.pendingLogoUpload = null; // one-shot — never resent on a later, unrelated call
     fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
       method: 'POST',
       headers: {
@@ -808,7 +842,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         'apikey': SUPA_ANON_KEY,
         'authorization': 'Bearer ' + SUPA_ANON_KEY
       },
-      body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness })
+      body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, logoUpload: logoUploadForThisCall })
     })
       .then(function(r){ return r.json(); })
       .then(function(data){
@@ -844,6 +878,12 @@ body.hc-active #categories,body.hc-active .footer{display:none}
           hcRenderInspiration();
         } else if(!hc.draftBusiness && hc.canvasStage !== 'concepts' && hc.canvasStage !== 'inspiration'){
           hcRenderCanvas();
+        }
+        // Independent of the chain above — logo can be asked about on the
+        // same turn the site first appears or refreshes.
+        if(data.askLogo === true && hc.draftBusiness){
+          hc.showLogoFab = true;
+          hcMountLogoFab();
         }
         var interim = Array.isArray(data.interimMessages) ? data.interimMessages : [];
         var i = 0;
@@ -928,6 +968,28 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   }
   hcWireFileInput('hcFileInput', 'image', 'Here\'s a screenshot for inspiration.');
   hcWireFileInput('hcPdfInput', 'document', 'Here\'s a PDF for inspiration.');
+
+  // Logo upload is its own path, not hcSendContent — the image has to reach
+  // business.setLogo directly (see uploadDraftLogo's comment: a model can't
+  // reliably reproduce base64 image data as generated output), so it travels
+  // as a sibling `logoUpload` field on the request, not as message content.
+  var hcLogoInput = document.getElementById('hcLogoInput');
+  if(hcLogoInput){
+    hcLogoInput.addEventListener('change', function(){
+      var file = hcLogoInput.files && hcLogoInput.files[0];
+      hcLogoInput.value = '';
+      if(!file || hc.busy || !hc.draftBusiness) return;
+      hcFileToBase64(file).then(function(data){
+        hc.showLogoFab = false;
+        var fab = document.querySelector('.hc-logo-fab');
+        if(fab) fab.remove();
+        hc.pendingLogoUpload = { imageBase64: data, mediaType: file.type || 'image/png' };
+        hcSendText('Here\'s our logo.');
+      }).catch(function(){
+        hcAppendMessage('hubly', "That image couldn't be read — mind trying a different one?");
+      });
+    });
+  }
 
   var heroInput = document.getElementById('heroInput');
   var heroSubmit = document.getElementById('heroSubmit');

@@ -117,6 +117,94 @@ async function callBusinessRpc(fn: string, payload: Record<string, unknown>): Pr
 
 const HUBLY_DOMAIN = (Deno.env.get("HUBLY_PUBLIC_DOMAIN") || "").trim() || "myhubly.app";
 
+const LOGO_EXT_BY_MEDIA_TYPE: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/svg+xml": "svg",
+};
+
+/**
+ * Uploads a draft's logo directly to real Storage (the same brand-assets
+ * bucket the authenticated editor uses — see hostBrandImage/uploadBrandAsset
+ * in public/hubly.html) and patches the real businesses.logo_url.
+ *
+ * Deliberately NOT a CapabilityAction the model invokes via the JSON tool
+ * schema, unlike everything else in this file. A model cannot reliably
+ * reproduce a multi-KB base64 image as generated output — asking it to
+ * would risk silently corrupting the upload, which is worse than not
+ * offering the tool at all. The image bytes are supplied directly by the
+ * client and passed straight through server-side (hubly-conversation/
+ * index.ts calls this directly, outside the model's decision loop) — the
+ * model only ever sees and narrates the real result afterward, the same
+ * CAPABILITY RESULT convention as every other action here.
+ */
+export async function uploadDraftLogo(
+  draftId: string,
+  draftToken: string,
+  imageBase64: string,
+  mediaType: string,
+): Promise<CapabilityActionResult> {
+  const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  if (!supabaseUrl || !serviceKey) {
+    return { ok: false, real: false, summary: "Storage isn't configured right now.", error: "storage_unconfigured" };
+  }
+  if (!draftId || !draftToken) {
+    return { ok: false, real: false, summary: "No draft business exists yet to attach a logo to.", error: "missing_draft" };
+  }
+
+  let bytes: Uint8Array;
+  try {
+    const binary = atob(imageBase64.replace(/^data:[^,]+,/, ""));
+    bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    if (bytes.length < 16) throw new Error("too small to be a real image");
+  } catch {
+    return { ok: false, real: false, summary: "That image couldn't be read.", error: "invalid_image_data" };
+  }
+
+  const type = (mediaType || "image/png").trim().toLowerCase();
+  const ext = LOGO_EXT_BY_MEDIA_TYPE[type] || "png";
+  const path = `drafts/${draftId}/logo-${Date.now()}.${ext}`;
+
+  const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/brand-assets/${path}`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${serviceKey}`,
+      apikey: serviceKey,
+      "content-type": type,
+      "x-upsert": "true",
+    },
+    // Deno's runtime fetch accepts a Uint8Array body fine — this cast is
+    // purely for the DOM lib typings used here, not a runtime concern.
+    body: bytes as unknown as BodyInit,
+  });
+  if (!uploadRes.ok) {
+    return { ok: false, real: false, summary: "The logo could not be uploaded right now.", error: "storage_upload_failed" };
+  }
+
+  const url = `${supabaseUrl}/storage/v1/object/public/brand-assets/${path}`;
+  const r = await callBusinessRpc("patch_business_in_progress", {
+    p_id: draftId,
+    p_draft_token: draftToken,
+    p_patch: { logo_url: url },
+    p_website_meta: null,
+  });
+  if (!r || r.ok !== true) {
+    return { ok: false, real: false, summary: "The logo uploaded but couldn't be attached to the business — the draft may have already been claimed.", error: "rpc_failed" };
+  }
+  const siteUrl = `https://${r.slug}.${HUBLY_DOMAIN}`;
+  return {
+    ok: true,
+    real: true,
+    summary: `Real logo uploaded and live — ${siteUrl} now shows it in the header.`,
+    raw: { id: r.id, slug: r.slug, url: siteUrl, logoUrl: url },
+  };
+}
+
 function isValidUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
 }
