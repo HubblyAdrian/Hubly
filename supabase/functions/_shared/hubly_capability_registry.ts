@@ -529,7 +529,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
       {
         name: "generateDocument",
         description:
-          "Generates a real, live Hubly Document — a validated, fully-editable page (not a template pick) — for the draft business, using OpenAI to compose real layout, copy, typography, color, and imagery from what's actually known. Call this once, the moment there's enough to build from (a real business name/type and, ideally, a chosen direction or real reference data from website.analyze) — never call it again for the same conversation, use updateDocumentNode or a conversational edit after this point. Every element it produces stays individually editable afterward.",
+          "Generates a real, live Hubly Document — a validated, fully-editable page (not a template pick) — for the draft business, using OpenAI to compose real layout, copy, typography, color, and imagery from what's actually known. Call this once, the moment there's enough to build from (a real business name/type and, ideally, a chosen direction or real reference data from website.analyze) — never call it again for the same conversation, use website.patchDocument for any change after this point. Runs in the background and genuinely takes about a minute — the result you get back this turn confirms it STARTED, not that it's done (real:false on purpose). Say something honest and brief about that ('Building it now — it'll appear in a moment' or similar), never imply the page is already live or ready to look at.",
         argsSchema: {
           type: "object",
           properties: {

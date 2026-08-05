@@ -399,6 +399,12 @@ export type HublyAICallOpts = {
   temperature?: number;
   /** Prefer JSON-shaped replies when the provider supports it (OpenAI). */
   jsonMode?: boolean;
+  /** OpenAI reasoning-tier models only. Directly bounds how many hidden
+   *  reasoning tokens a call spends before it starts producing visible
+   *  output — the actual latency lever for a reasoning model, distinct
+   *  from maxTokens (which bounds reasoning + output combined, and doesn't
+   *  by itself make the model reason less). Unset = provider default. */
+  reasoningEffort?: "low" | "medium" | "high";
   /** Phase 7.1 — Business Memory (facts). Injected into system automatically. */
   memory?: HublyBusinessMemoryInput | null;
   /** Phase 7.6 — Business DNA (identity). Injected separately — never merged into Memory. */
@@ -448,6 +454,7 @@ type TaskRoute = {
   model: string;
   maxTokens: number;
   jsonMode?: boolean;
+  reasoningEffort?: "low" | "medium" | "high";
 };
 
 /**
@@ -479,7 +486,14 @@ const TASK_ROUTES: Record<HublyAITask, TaskRoute> = {
   // a much smaller ask (a handful of ops against an existing tree), hence
   // the lower budget — worth the same scrutiny if patches start coming
   // back empty too.
-  document_generate: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 20000, jsonMode: true },
+  // reasoningEffort:"low" is the actual latency fix here, not maxTokens —
+  // confirmed live that even in the background (EdgeRuntime.waitUntil,
+  // itself capped at ~150s on the free tier, same ceiling as a foreground
+  // request), a real generation call can still fail to finish. A page tree
+  // in this format is closer to structured content generation than deep
+  // logical reasoning, so a lower effort level should cost little in
+  // quality while cutting the dominant cost (hidden reasoning tokens).
+  document_generate: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 20000, jsonMode: true, reasoningEffort: "low" },
   document_patch: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 4000, jsonMode: true },
 };
 
@@ -704,6 +718,7 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
   };
   if (typeof opts.temperature === "number") body.temperature = opts.temperature;
   if (opts.jsonMode) body.response_format = { type: "json_object" };
+  if (opts.reasoningEffort) body.reasoning_effort = opts.reasoningEffort;
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -769,6 +784,7 @@ function resolveInternal(opts: HublyAICallOpts, fallbackTask: HublyAITask): Inte
     model,
     maxTokens: opts.maxTokens ?? route.maxTokens,
     jsonMode: opts.jsonMode ?? route.jsonMode,
+    reasoningEffort: opts.reasoningEffort ?? route.reasoningEffort,
   };
 }
 

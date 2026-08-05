@@ -629,16 +629,45 @@ Deno.serve(async (req) => {
           dispatchArgs.draftId = draftBusiness.id;
           dispatchArgs.draftToken = draftBusiness.draftToken;
         }
-        const result = found
-          ? await found.handler(dispatchArgs)
-          : {
-            ok: false,
+        // Real page generation can run well past what a single request
+        // should block on (confirmed live: 100-150+s, right at/over
+        // Supabase's function timeout). generateDocument specifically runs
+        // as a background task instead of being awaited here — the
+        // capability result returned THIS turn is honestly "started", not
+        // "done" (see its description in the registry, which the model
+        // reads and is expected to say something honest about, like
+        // "building now" rather than declaring it finished). The client
+        // polls business_documents (already publicly readable) until the
+        // real version appears.
+        let result;
+        if (capabilityName === "website" && actionName === "generateDocument" && found) {
+          const bgTask = found.handler(dispatchArgs);
+          bgTask.catch((e) => console.error("background generateDocument failed", e));
+          try {
+            // EdgeRuntime is a Supabase Edge Functions / Deno Deploy global,
+            // not in the standard lib types.
+            // deno-lint-ignore no-explicit-any
+            const rt = (globalThis as any).EdgeRuntime;
+            if (rt && typeof rt.waitUntil === "function") rt.waitUntil(bgTask);
+          } catch (_e) { /* best effort — bgTask still runs either way, just not guaranteed past response if this fails */ }
+          result = {
+            ok: true,
             real: false,
-            summary: allowedInContext
-              ? "That capability or action does not exist."
-              : "That capability is not available in this conversation.",
-            error: allowedInContext ? "unknown_capability_action" : "capability_not_allowed_in_context",
+            summary: "Real page generation started in the background — this takes about a minute to produce a complete, real page. It will appear as soon as it's ready.",
+            raw: { status: "building" },
           };
+        } else {
+          result = found
+            ? await found.handler(dispatchArgs)
+            : {
+              ok: false,
+              real: false,
+              summary: allowedInContext
+                ? "That capability or action does not exist."
+                : "That capability is not available in this conversation.",
+              error: allowedInContext ? "unknown_capability_action" : "capability_not_allowed_in_context",
+            };
+        }
 
         // Capture the real draft identity the moment it exists — startDraft
         // returns it fresh; updateDraft just confirms it's still the same
