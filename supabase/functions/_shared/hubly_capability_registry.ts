@@ -126,6 +126,61 @@ const LOGO_EXT_BY_MEDIA_TYPE: Record<string, string> = {
   "image/svg+xml": "svg",
 };
 
+type StorageUploadOutcome =
+  | { ok: true; url: string }
+  | { ok: false; result: CapabilityActionResult };
+
+/**
+ * Shared by uploadDraftLogo and uploadDraftHeroImage — the only two places
+ * that ever handle raw image bytes, both direct-dispatched outside the
+ * model's decision loop for the same reason (see uploadDraftLogo's comment
+ * below). Everything about the upload itself lives here once, not
+ * duplicated per field.
+ */
+async function uploadImageToStorage(
+  draftId: string,
+  imageBase64: string,
+  mediaType: string,
+  fileLabel: string,
+): Promise<StorageUploadOutcome> {
+  const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  if (!supabaseUrl || !serviceKey) {
+    return { ok: false, result: { ok: false, real: false, summary: "Storage isn't configured right now.", error: "storage_unconfigured" } };
+  }
+
+  let bytes: Uint8Array;
+  try {
+    const binary = atob(imageBase64.replace(/^data:[^,]+,/, ""));
+    bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    if (bytes.length < 16) throw new Error("too small to be a real image");
+  } catch {
+    return { ok: false, result: { ok: false, real: false, summary: "That image couldn't be read.", error: "invalid_image_data" } };
+  }
+
+  const type = (mediaType || "image/png").trim().toLowerCase();
+  const ext = LOGO_EXT_BY_MEDIA_TYPE[type] || "png";
+  const path = `drafts/${draftId}/${fileLabel}-${Date.now()}.${ext}`;
+
+  const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/brand-assets/${path}`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${serviceKey}`,
+      apikey: serviceKey,
+      "content-type": type,
+      "x-upsert": "true",
+    },
+    // Deno's runtime fetch accepts a Uint8Array body fine — this cast is
+    // purely for the DOM lib typings used here, not a runtime concern.
+    body: bytes as unknown as BodyInit,
+  });
+  if (!uploadRes.ok) {
+    return { ok: false, result: { ok: false, real: false, summary: "The image could not be uploaded right now.", error: "storage_upload_failed" } };
+  }
+  return { ok: true, url: `${supabaseUrl}/storage/v1/object/public/brand-assets/${path}` };
+}
+
 /**
  * Uploads a draft's logo directly to real Storage (the same brand-assets
  * bucket the authenticated editor uses — see hostBrandImage/uploadBrandAsset
@@ -147,50 +202,16 @@ export async function uploadDraftLogo(
   imageBase64: string,
   mediaType: string,
 ): Promise<CapabilityActionResult> {
-  const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
-  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
-  if (!supabaseUrl || !serviceKey) {
-    return { ok: false, real: false, summary: "Storage isn't configured right now.", error: "storage_unconfigured" };
-  }
   if (!draftId || !draftToken) {
     return { ok: false, real: false, summary: "No draft business exists yet to attach a logo to.", error: "missing_draft" };
   }
+  const uploaded = await uploadImageToStorage(draftId, imageBase64, mediaType, "logo");
+  if (!uploaded.ok) return uploaded.result;
 
-  let bytes: Uint8Array;
-  try {
-    const binary = atob(imageBase64.replace(/^data:[^,]+,/, ""));
-    bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    if (bytes.length < 16) throw new Error("too small to be a real image");
-  } catch {
-    return { ok: false, real: false, summary: "That image couldn't be read.", error: "invalid_image_data" };
-  }
-
-  const type = (mediaType || "image/png").trim().toLowerCase();
-  const ext = LOGO_EXT_BY_MEDIA_TYPE[type] || "png";
-  const path = `drafts/${draftId}/logo-${Date.now()}.${ext}`;
-
-  const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/brand-assets/${path}`, {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${serviceKey}`,
-      apikey: serviceKey,
-      "content-type": type,
-      "x-upsert": "true",
-    },
-    // Deno's runtime fetch accepts a Uint8Array body fine — this cast is
-    // purely for the DOM lib typings used here, not a runtime concern.
-    body: bytes as unknown as BodyInit,
-  });
-  if (!uploadRes.ok) {
-    return { ok: false, real: false, summary: "The logo could not be uploaded right now.", error: "storage_upload_failed" };
-  }
-
-  const url = `${supabaseUrl}/storage/v1/object/public/brand-assets/${path}`;
   const r = await callBusinessRpc("patch_business_in_progress", {
     p_id: draftId,
     p_draft_token: draftToken,
-    p_patch: { logo_url: url },
+    p_patch: { logo_url: uploaded.url },
     p_website_meta: null,
   });
   if (!r || r.ok !== true) {
@@ -201,7 +222,45 @@ export async function uploadDraftLogo(
     ok: true,
     real: true,
     summary: `Real logo uploaded and live — ${siteUrl} now shows it in the header.`,
-    raw: { id: r.id, slug: r.slug, url: siteUrl, logoUrl: url },
+    raw: { id: r.id, slug: r.slug, url: siteUrl, logoUrl: uploaded.url },
+  };
+}
+
+/**
+ * Same shape as uploadDraftLogo, for the hero image specifically — the
+ * canvas's inline "click the hero photo" edit. banner_url alone isn't
+ * enough to make the renderer actually show it: wsPageEl('ws-hero-media')
+ * only paints a photo when S.headerMode is also 'banner' (confirmed by
+ * reading hubly.html directly, not assumed) — meta.headerMode is set here
+ * in the same patch, the same way meta.businessType already is.
+ */
+export async function uploadDraftHeroImage(
+  draftId: string,
+  draftToken: string,
+  imageBase64: string,
+  mediaType: string,
+): Promise<CapabilityActionResult> {
+  if (!draftId || !draftToken) {
+    return { ok: false, real: false, summary: "No draft business exists yet to attach a hero image to.", error: "missing_draft" };
+  }
+  const uploaded = await uploadImageToStorage(draftId, imageBase64, mediaType, "hero");
+  if (!uploaded.ok) return uploaded.result;
+
+  const r = await callBusinessRpc("patch_business_in_progress", {
+    p_id: draftId,
+    p_draft_token: draftToken,
+    p_patch: { banner_url: uploaded.url, header_mode: "banner" },
+    p_website_meta: null,
+  });
+  if (!r || r.ok !== true) {
+    return { ok: false, real: false, summary: "The image uploaded but couldn't be attached to the business — the draft may have already been claimed.", error: "rpc_failed" };
+  }
+  const siteUrl = `https://${r.slug}.${HUBLY_DOMAIN}`;
+  return {
+    ok: true,
+    real: true,
+    summary: `Real hero image uploaded and live — ${siteUrl} now shows it.`,
+    raw: { id: r.id, slug: r.slug, url: siteUrl, bannerUrl: uploaded.url },
   };
 }
 

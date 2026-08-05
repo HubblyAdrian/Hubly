@@ -61,7 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, uploadDraftLogo } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, uploadDraftLogo, uploadDraftHeroImage } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -512,6 +512,53 @@ Deno.serve(async (req) => {
     history.push({
       role: "system",
       content: `CAPABILITY RESULT for business.setLogo: ${JSON.stringify(logoResult)}\nOnly report what "summary" and "raw" actually show. Do not claim anything beyond this.`,
+    });
+  }
+
+  // Inline canvas edit — click headline/subhead/hero-image directly inside
+  // the live preview and save. Same registry action(s) as chat
+  // (business.updateDraft / the same image-upload path as the logo), same
+  // security — just a different trigger. Short-circuits before the model
+  // loop entirely: the person already supplied the exact value themselves
+  // (typed it, or picked a file), so there's nothing for the model to
+  // decide. No chat message, no LLM call — the canvas update is the whole
+  // response.
+  const DIRECT_EDIT_TEXT_FIELDS = new Set(["heroHeadline", "heroSubhead"]);
+  const directEdit =
+    body?.directEdit && typeof body.directEdit === "object" &&
+    typeof body.directEdit.field === "string" && DIRECT_EDIT_TEXT_FIELDS.has(body.directEdit.field) &&
+    typeof body.directEdit.value === "string"
+      ? { field: String(body.directEdit.field), value: String(body.directEdit.value) }
+      : null;
+  const directImageEdit =
+    body?.directImageEdit && typeof body.directImageEdit === "object" &&
+    body.directImageEdit.field === "heroImage" && typeof body.directImageEdit.imageBase64 === "string"
+      ? { imageBase64: String(body.directImageEdit.imageBase64), mediaType: String(body.directImageEdit.mediaType || "image/png") }
+      : null;
+
+  if (directEdit || directImageEdit) {
+    if (!draftBusiness) {
+      return jsonRes({ ok: false, error: "no_draft_to_edit" }, 400);
+    }
+    let result: { ok: boolean; real: boolean; summary: string; raw?: unknown; error?: string };
+    let actionName: string;
+    if (directEdit) {
+      actionName = "updateDraft";
+      const found = findAction("business", "updateDraft");
+      result = found
+        ? await found.handler({ draftId: draftBusiness.id, draftToken: draftBusiness.draftToken, [directEdit.field]: directEdit.value })
+        : { ok: false, real: false, summary: "That action is not available.", error: "unknown_action" };
+    } else {
+      actionName = "setHeroImage";
+      result = await uploadDraftHeroImage(draftBusiness.id, draftBusiness.draftToken, directImageEdit!.imageBase64, directImageEdit!.mediaType);
+    }
+    return jsonRes({
+      ok: true,
+      reply: "",
+      messages: incoming,
+      actions: [{ capability: "business", capabilityAction: actionName, args: {}, ok: !!result.ok, real: !!result.real }],
+      interimMessages: [],
+      draftBusiness,
     });
   }
 

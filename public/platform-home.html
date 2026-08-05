@@ -647,7 +647,10 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   // Cache-busts so the exact same URL always forces a real fresh navigation
   // — without this, re-setting an unchanged-looking src can silently no-op.
   function hcBust(url){
-    return url + (url.indexOf('?') === -1 ? '?' : '&') + '_r=' + Date.now();
+    // hcEdit=1 is what tells hubly.html it's safe to enable the inline
+    // click-to-edit listeners — only ever set here, only ever true when
+    // this exact page is embedded as the live Experience 1 canvas.
+    return url + (url.indexOf('?') === -1 ? '?' : '&') + '_r=' + Date.now() + '&hcEdit=1';
   }
 
   // A real upload affordance, not a text question — shown once Hubly asks
@@ -1059,6 +1062,46 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   }
   hcWireFileInput('hcFileInput', 'image', 'Here\'s a screenshot for inspiration.');
   hcWireFileInput('hcPdfInput', 'document', 'Here\'s a PDF for inspiration.');
+
+  // Inline canvas edit — click headline/subhead/hero-image directly inside
+  // the live preview. hubly.html (a separate origin) posts the new value
+  // here; this is the only side that ever talks to the server, using the
+  // exact same request shape hcCall already uses, just a leaner
+  // server-side path (see hubly-conversation/index.ts: directEdit /
+  // directImageEdit short-circuit before the model loop — no chat message,
+  // no typing indicator, the canvas update is the whole response).
+  function hcSendDirectEdit(payload){
+    if(hc.busy || !hc.draftBusiness) return;
+    hc.busy = true;
+    fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'apikey': SUPA_ANON_KEY, 'authorization': 'Bearer ' + SUPA_ANON_KEY },
+      body: JSON.stringify(Object.assign({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness }, payload))
+    })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        hc.busy = false;
+        if(data && data.ok && data.draftBusiness){
+          hc.draftBusiness = data.draftBusiness;
+          hcRefreshCanvasFrame();
+        }
+      })
+      .catch(function(){ hc.busy = false; });
+  }
+
+  window.addEventListener('message', function(event){
+    if(!hc.draftBusiness) return;
+    var expectedOrigin;
+    try{ expectedOrigin = new URL(hc.draftBusiness.url).origin; }catch(e){ return; }
+    if(event.origin !== expectedOrigin) return;
+    var data = event.data;
+    if(!data || typeof data !== 'object') return;
+    if(data.type === 'hcInlineEdit' && (data.field === 'heroHeadline' || data.field === 'heroSubhead') && typeof data.value === 'string'){
+      hcSendDirectEdit({ directEdit: { field: data.field, value: data.value } });
+    } else if(data.type === 'hcInlineImageEdit' && data.field === 'heroImage' && typeof data.imageBase64 === 'string'){
+      hcSendDirectEdit({ directImageEdit: { field: 'heroImage', imageBase64: data.imageBase64, mediaType: data.mediaType || 'image/png' } });
+    }
+  });
 
   // The persistent attach menu — always reachable, unlike the one-time
   // inspiration card grid (hcRenderInspiration), which is destructive to

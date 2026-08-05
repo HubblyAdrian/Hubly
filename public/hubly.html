@@ -50312,5 +50312,132 @@ if(document.readyState==='loading'){
 }
 
 </script>
+
+<!--
+  Inline canvas editing — Experience 1 only, added narrow-scoped (option 1):
+  headline, subhead, hero image. Nothing above this point was touched —
+  this is a wholly separate, additive script block: a new listener for a
+  couple of new postMessage events, not a change to how anything renders.
+
+  Gated behind an explicit ?hcEdit=1 the parent (platform-home.html) only
+  ever sets when embedding this exact page as the live Experience 1 canvas
+  — a normal visitor to any real published site never has this param, so
+  never sees or pays for any of this.
+
+  On click: a small inline editor (headline/subhead) or a native file
+  picker (hero image) appears, rendered here because this iframe's own DOM
+  is the only thing that can draw inside itself — the parent page is a
+  different origin and can't reach in. On save, the real value is
+  postMessage'd to the parent, which calls the exact same
+  business.updateDraft / hero-image-upload path chat already uses. No new
+  write path, no new validation — this file only ever decides *when* to
+  ask, never what happens with the answer.
+-->
+<script>
+(function(){
+  function hcEditEnabled(){
+    try{ return new URL(location.href).searchParams.get('hcEdit')==='1'; }catch(e){ return false; }
+  }
+  if(!hcEditEnabled()) return;
+
+  var TEXT_FIELDS = {
+    'ws-hero-headline': 'heroHeadline',
+    'ws-hero-sub': 'heroSubhead'
+  };
+
+  function post(msg){
+    try{ window.parent.postMessage(msg, '*'); }catch(e){}
+  }
+
+  var overlay = null;
+  function closeOverlay(){
+    if(overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    overlay = null;
+  }
+
+  function openTextEditor(el, field){
+    closeOverlay();
+    var rect = el.getBoundingClientRect();
+    overlay = document.createElement('div');
+    overlay.setAttribute('data-hc-edit-overlay', '1');
+    overlay.style.cssText =
+      'position:fixed;z-index:999999;top:' + (rect.bottom + window.scrollY + 8) + 'px;' +
+      'left:' + Math.max(8, rect.left + window.scrollX) + 'px;' +
+      'max-width:min(480px,90vw);background:#12151f;border:1px solid rgba(255,255,255,.18);' +
+      'border-radius:12px;padding:10px;box-shadow:0 20px 50px -12px rgba(0,0,0,.6);' +
+      'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;';
+    var ta = document.createElement('textarea');
+    ta.value = el.textContent || '';
+    ta.style.cssText =
+      'width:100%;min-height:64px;background:#0d0f16;color:#f5f6f8;' +
+      'border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:8px;' +
+      'font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;';
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;margin-top:8px;justify-content:flex-end;';
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button'; cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText =
+      'background:none;border:1px solid rgba(255,255,255,.2);color:#c9cbd1;' +
+      'padding:7px 12px;border-radius:7px;font-size:12.5px;cursor:pointer;';
+    var saveBtn = document.createElement('button');
+    saveBtn.type = 'button'; saveBtn.textContent = 'Save';
+    saveBtn.style.cssText =
+      'background:#D9632D;border:none;color:#fff;padding:7px 14px;' +
+      'border-radius:7px;font-size:12.5px;font-weight:700;cursor:pointer;';
+    cancelBtn.addEventListener('click', closeOverlay);
+    saveBtn.addEventListener('click', function(){
+      var value = ta.value.trim();
+      if(value){
+        el.textContent = value; // optimistic local paint; the parent's real save still runs
+        post({ type: 'hcInlineEdit', field: field, value: value });
+      }
+      closeOverlay();
+    });
+    document.addEventListener('keydown', function escClose(e){
+      if(e.key === 'Escape'){ closeOverlay(); document.removeEventListener('keydown', escClose); }
+    });
+    row.appendChild(cancelBtn); row.appendChild(saveBtn);
+    overlay.appendChild(ta); overlay.appendChild(row);
+    document.body.appendChild(overlay);
+    ta.focus(); ta.select();
+  }
+
+  var fileInput = document.createElement('input');
+  fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.style.display = 'none';
+  fileInput.setAttribute('data-hc-edit-file-input', '1');
+  document.body.appendChild(fileInput);
+  fileInput.addEventListener('change', function(){
+    var file = fileInput.files && fileInput.files[0];
+    fileInput.value = '';
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      var result = String(reader.result || '');
+      var comma = result.indexOf(',');
+      var data = comma !== -1 ? result.slice(comma + 1) : result;
+      post({ type: 'hcInlineImageEdit', field: 'heroImage', imageBase64: data, mediaType: file.type || 'image/png' });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.addEventListener('click', function(e){
+    var target = e.target && e.target.closest ? e.target.closest('#ws-hero-headline, #ws-hero-sub, #ws-hero-media') : null;
+    if(!target) return;
+    if(target.id === 'ws-hero-media') fileInput.click();
+    else openTextEditor(target, TEXT_FIELDS[target.id]);
+  }, true);
+
+  // Hover affordance only — signals "this is editable," never alters what
+  // renders. Marked once per element so re-renders don't stack listeners.
+  document.addEventListener('mouseover', function(e){
+    var target = e.target && e.target.closest ? e.target.closest('#ws-hero-headline, #ws-hero-sub, #ws-hero-media') : null;
+    if(!target || target.hasAttribute('data-hc-editable-marked')) return;
+    target.setAttribute('data-hc-editable-marked', '1');
+    target.style.cursor = 'pointer';
+    target.addEventListener('mouseenter', function(){ target.style.outline = '2px dashed rgba(217,99,45,.7)'; target.style.outlineOffset = '3px'; });
+    target.addEventListener('mouseleave', function(){ target.style.outline = ''; });
+  }, true);
+})();
+</script>
 </body>
 </html>
