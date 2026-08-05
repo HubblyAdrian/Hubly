@@ -1100,6 +1100,14 @@ body.hc-active #categories,body.hc-active .footer{display:none}
       hcSendDirectEdit({ directEdit: { field: data.field, value: data.value } });
     } else if(data.type === 'hcInlineImageEdit' && data.field === 'heroImage' && typeof data.imageBase64 === 'string'){
       hcSendDirectEdit({ directImageEdit: { field: 'heroImage', imageBase64: data.imageBase64, mediaType: data.mediaType || 'image/png' } });
+    } else if(data.type === 'hcDocInlineEdit' && (data.op === 'update_text' || data.op === 'update_attrs') && typeof data.id === 'string' && data.id){
+      // Hubly Document click-to-edit — same direct-dispatch shape as the
+      // two branches above, generalized to any node id instead of the
+      // three hardcoded legacy fields.
+      var patchOp = { op: data.op, id: data.id };
+      if(typeof data.text === 'string') patchOp.text = data.text;
+      if(data.attrs && typeof data.attrs === 'object') patchOp.attrs = data.attrs;
+      hcSendDirectEdit({ directDocumentPatch: patchOp });
     }
   });
 

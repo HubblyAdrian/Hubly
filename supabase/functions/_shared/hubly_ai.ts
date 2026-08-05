@@ -359,7 +359,9 @@ export type HublyAITask =
   | "photo_analysis"
   | "memory"
   | "lightweight"
-  | "planner";
+  | "planner"
+  | "document_generate"
+  | "document_patch";
 
 export type HublyTextPart = { type: "text"; text: string };
 export type HublyImagePart = {
@@ -467,6 +469,18 @@ const TASK_ROUTES: Record<HublyAITask, TaskRoute> = {
   memory: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 800 },
   lightweight: { provider: "openai", model: DEFAULT_LIGHTWEIGHT_MODEL, maxTokens: 600 },
   planner: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2000, jsonMode: true },
+  // DEFAULT_REASONING_MODEL is a reasoning-tier model — max_completion_tokens
+  // covers hidden reasoning tokens AND the visible completion combined, not
+  // just the output. Confirmed empirically: at 6000, a real page-generation
+  // call spent the entire budget on reasoning and returned an EMPTY
+  // completion (content: null) after ~66s — not a truncated-JSON failure,
+  // a fully-consumed-budget one. 20000 leaves real headroom for both a
+  // full page tree and the reasoning it takes to compose one. Patches are
+  // a much smaller ask (a handful of ops against an existing tree), hence
+  // the lower budget — worth the same scrutiny if patches start coming
+  // back empty too.
+  document_generate: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 20000, jsonMode: true },
+  document_patch: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 4000, jsonMode: true },
 };
 
 function env(name: string): string {

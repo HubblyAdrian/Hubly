@@ -61,7 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, uploadDraftLogo, uploadDraftHeroImage } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, uploadDraftLogo, uploadDraftHeroImage, applyDirectDocumentPatch } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -153,23 +153,6 @@ const CONTEXT_CAPABILITY_ALLOWLIST: Record<ConversationContextName, string[]> = 
   customer: ["booking"],
 };
 
-// Real, distinct visual directions the renderer can actually show today
-// (public/layouts/*.js) — not invented. A representative spread, not the
-// full catalog, so the model can honestly describe 2-3 real directions by
-// name and character instead of picking blind or inventing one.
-const REAL_LAYOUT_DIRECTIONS = `- premium-dark ("Premium Dark") — upscale, moody, dark
-- obsidian-gold ("Obsidian Gold") — luxury, black & gold
-- calm-service ("Calm Service") — soft, spacious, calm
-- editorial ("Boutique Editorial") — image-led, restrained, magazine-like
-- classic-trust ("Classic Trust") — traditional, dependable
-- clean-modern ("Clean Pro") — crisp, neutral, professional
-- minimal-pro ("Modern Minimal") — quiet, minimal, lots of whitespace
-- bold-impact ("Bold & Unmissable") — high-contrast, direct, loud CTA
-- warm-local ("Neighborhood Favorite") — warm, friendly, approachable
-- vibrant-pop ("Bright & Energetic") — colorful, energetic
-- aurora-gradient ("Soft Aurora") — soft gradient, dreamy
-- garage-industrial ("Workshop Industrial") — rugged, industrial
-(Plus a few vertical-specific ones — estate-green for landscaping, crystal-pane for windows, rinse-force for pressure washing — offer these only when the business is actually that vertical.)`;
 
 function getAllowedCapabilities(context: ConversationContextName) {
   const allow = new Set(CONTEXT_CAPABILITY_ALLOWLIST[context]);
@@ -289,14 +272,14 @@ When the goal is a website (or becomes one), don't ask about the business first 
 
 When a website.analyze result comes back real, let it actually shape what you build — not just which direction you happen to propose. Look at what genuinely came back in that CAPABILITY RESULT: a real brandColors entry becomes the brandColor you pass to business.startDraft/updateDraft, instead of a generic pick; real headline text (headlines) is a real signal for the heroHeadline you write — let it anchor your own words rather than defaulting to a generic line, though you should still write it yourself, not paste it verbatim if it doesn't fit their business; a real services list seeds business.setServices directly, not industry guesswork. Brand color, headline text, and services are the only three things actually read — only ever describe something as "from your reference" or "pulled from your site" for those three, never for anything else (font pairing, layout structure, imagery style are NOT captured by this, so never say or imply they were, even in passing — "matches their layout" or "captures the same feel" are claims you can't back up here). If the analyze result came back with none of those three meaningfully present — a failed fetch, an empty result, a screenshot with nothing legible — say so plainly and fall back to your own judgment the same way you would with no reference at all; never imply real inspiration shaped something it didn't.
 
-If not, propose 2-3 REAL, genuinely different visual directions from this actual list — describe each in your own words by its real character, never as "Option A/B/C" or a template name dump:
-${REAL_LAYOUT_DIRECTIONS}
-Whenever you propose directions like this, ALSO include a top-level "concepts" array in your JSON response — one entry per direction you just described, in the same order: {"id":"<the real layout id>","name":"<its real name>","character":"<a short phrase, your own words>"}. This is what puts something to actually look at on screen instead of just a paragraph to read — never omit it when you're presenting directions to choose from, and never include it any other time. Because the cards themselves carry the name and character, your "message" on this turn should be almost nothing — "A few directions:" or similar — never restate each one's description again in prose too; that's the exact redundancy showing real progress is supposed to replace.
+There is no template or direction to pick anymore — don't propose "a few directions" and don't describe archetypes. Website building now works like this: gather just enough (a real business name if you have it — "Your Business" as an honest placeholder is fine if you don't yet — the business type, and anything real from website.analyze above) and then build it for real:
+${draftBusiness ? `- A draft already exists (${draftBusiness.url}). If no document exists yet on it, call website.generateDocument now. If one already exists, never call generateDocument again this conversation — any change, however small, goes through website.patchDocument instead (see below). business.updateDraft is still how name/tagline/about/phone/email/businessType/brandColor get captured as real business facts, independent of the page — but its heroHeadline/heroSubhead/layout fields no longer do anything meaningful once a document exists; don't set them.` : `- Call business.startDraft the moment you have a real or placeholder business name, in the SAME reply. Then call website.generateDocument in that same reply too — don't wait for a follow-up turn. Never call business.startDraft again this conversation.`}
 
-The instant a direction is picked, build it for real — don't wait for a business name first. A real site with placeholder content beats a perfect question every time:
-${draftBusiness ? `- A draft already exists (${draftBusiness.url}) — use business.updateDraft for anything new: name, tagline, about, contact info, a drafted headline/subhead, or a changed direction (layout). Never call business.startDraft again this conversation.` : `- Call business.startDraft the moment a direction is picked, in the SAME reply, even if you don't know the business name yet — use their real name if you already have it, otherwise pass "Your Business" as a placeholder (this is expected, not dishonest — a real, live, editable site with placeholder content is exactly right at this stage). Then keep calling business.updateDraft as you learn more (a real name replaces the placeholder the instant they give it, headline, subhead, about, contact info) — every real detail should show up there within the same reply it's learned.`}
+website.generateDocument takes one thing: a rich "brief" — write it yourself, in full sentences, covering everything you actually know: the real business name and type, city, tone, and — critically — any REAL brandColors/headline text/services from a website.analyze result, cited as real (see above; only those three fields are real from analysis, never claim more). The richer the brief, the better the real page it produces — don't under-write it to save a sentence.
 
-Write real headline/subhead/about copy yourself (this is conversational value, priority 1) and pass it straight into business.updateDraft's heroHeadline/heroSubhead/about — don't just describe what you'd write, actually write it and put it on the site. Always include seoTitle too ("<Business Name> | <what they actually do>") — businessType only recognizes a handful of fixed categories (detailing, pressure_washing, landscaping, cleaning, photography, hvac, windows) and silently mislabels anything outside that list, so seoTitle is what keeps the real page title accurate for everything else. Only set businessType when it genuinely matches one of those categories — never force a fit.
+Once a document exists, EVERY change — a headline edit, a color change, adding or removing a section, moving something — goes through website.patchDocument with a plain-language instruction ("make the headline larger", "remove the FAQ section"). Never call generateDocument again to make an edit; that regenerates the whole page instead of changing the one thing asked for, which is the opposite of what should happen.
+
+The moment you know what services they offer — even roughly, even just one — call business.setServices with the complete real list (name, and price/description whenever actually given); this is a real business fact independent of the page, and feeds future generation/edits. seoTitle still matters — pass it via business.updateDraft ("<Business Name> | <what they actually do>") since businessType only recognizes a handful of fixed categories and silently mislabels anything outside that list.
 
 The moment you know what services they offer — even roughly, even just one — call business.setServices with the complete real list (name, and price/description whenever actually given). Real service cards appear on the live site immediately; this is one of the highest-value single moments in the whole conversation, so don't wait to have all of them before calling it, and call it again with the fuller list as you learn more. Phone/email, once given, go straight into business.updateDraft's phone/email — they show up in the site's real contact line. There is no real place for business hours to live yet — never ask about them, and never invent a footer showing hours that don't actually exist anywhere.
 
@@ -538,7 +521,24 @@ Deno.serve(async (req) => {
       ? { imageBase64: String(body.directImageEdit.imageBase64), mediaType: String(body.directImageEdit.mediaType || "image/png") }
       : null;
 
-  if (directEdit || directImageEdit) {
+  // Same short-circuit family, generalized to any node in a Hubly Document
+  // instead of the three hardcoded legacy fields above — a click already
+  // supplies the exact target id and new value, so there's nothing for a
+  // model to decide here either.
+  const DIRECT_DOC_OPS = new Set(["update_text", "update_attrs"]);
+  const directDocumentPatch =
+    body?.directDocumentPatch && typeof body.directDocumentPatch === "object" &&
+    typeof body.directDocumentPatch.op === "string" && DIRECT_DOC_OPS.has(body.directDocumentPatch.op) &&
+    typeof body.directDocumentPatch.id === "string" && body.directDocumentPatch.id
+      ? {
+          op: String(body.directDocumentPatch.op),
+          id: String(body.directDocumentPatch.id),
+          ...(typeof body.directDocumentPatch.text === "string" ? { text: String(body.directDocumentPatch.text) } : {}),
+          ...(body.directDocumentPatch.attrs && typeof body.directDocumentPatch.attrs === "object" ? { attrs: body.directDocumentPatch.attrs } : {}),
+        }
+      : null;
+
+  if (directEdit || directImageEdit || directDocumentPatch) {
     if (!draftBusiness) {
       return jsonRes({ ok: false, error: "no_draft_to_edit" }, 400);
     }
@@ -550,15 +550,18 @@ Deno.serve(async (req) => {
       result = found
         ? await found.handler({ draftId: draftBusiness.id, draftToken: draftBusiness.draftToken, [directEdit.field]: directEdit.value })
         : { ok: false, real: false, summary: "That action is not available.", error: "unknown_action" };
-    } else {
+    } else if (directImageEdit) {
       actionName = "setHeroImage";
-      result = await uploadDraftHeroImage(draftBusiness.id, draftBusiness.draftToken, directImageEdit!.imageBase64, directImageEdit!.mediaType);
+      result = await uploadDraftHeroImage(draftBusiness.id, draftBusiness.draftToken, directImageEdit.imageBase64, directImageEdit.mediaType);
+    } else {
+      actionName = "patchDocument";
+      result = await applyDirectDocumentPatch(draftBusiness.id, draftBusiness.draftToken, directDocumentPatch!);
     }
     return jsonRes({
       ok: true,
       reply: "",
       messages: incoming,
-      actions: [{ capability: "business", capabilityAction: actionName, args: {}, ok: !!result.ok, real: !!result.real }],
+      actions: [{ capability: directDocumentPatch ? "website" : "business", capabilityAction: actionName, args: {}, ok: !!result.ok, real: !!result.real }],
       interimMessages: [],
       draftBusiness,
     });
@@ -619,7 +622,10 @@ Deno.serve(async (req) => {
         // the real draftId/draftToken, so it can never be trusted to
         // transcribe them — the engine injects the real ones whenever a
         // draft already exists, overriding any placeholder the model put in.
-        if (capabilityName === "business" && (actionName === "updateDraft" || actionName === "setServices") && draftBusiness) {
+        const NEEDS_DRAFT_INJECTION =
+          (capabilityName === "business" && (actionName === "updateDraft" || actionName === "setServices")) ||
+          (capabilityName === "website" && (actionName === "generateDocument" || actionName === "patchDocument"));
+        if (NEEDS_DRAFT_INJECTION && draftBusiness) {
           dispatchArgs.draftId = draftBusiness.id;
           dispatchArgs.draftToken = draftBusiness.draftToken;
         }

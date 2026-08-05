@@ -37,6 +37,15 @@
 // here. New capabilities (booking, crm, marketing, ...) get added as they're
 // actually built, per "build on demand," not stubbed in speculatively.
 
+import { HublyAI, extractJson } from "./hubly_ai.ts";
+import {
+  validateHublyDocument,
+  renderHublyDocument,
+  buildDocumentSchemaPromptBlock,
+  applyPatchOps,
+  type HublyDocument,
+} from "./hubly_document.ts";
+
 const APP_ORIGIN = (Deno.env.get("HUBLY_APP_ORIGIN") || "").trim() || "https://myhubly.app";
 
 export type CapabilityActionArgSchema = {
@@ -113,6 +122,178 @@ async function callBusinessRpc(fn: string, payload: Record<string, unknown>): Pr
   });
   if (!res.ok) return null;
   return await res.json().catch(() => null);
+}
+
+/** Same service-role pattern as callBusinessRpc, for a plain read instead
+ *  of a mutation — render context (real name/phone) and the latest stored
+ *  Hubly Document both need this. */
+async function selectOne(table: string, filterCol: string, filterVal: string, columns: string): Promise<any> {
+  const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  if (!supabaseUrl || !serviceKey) return null;
+  const url = `${supabaseUrl}/rest/v1/${table}?${filterCol}=eq.${encodeURIComponent(filterVal)}&select=${encodeURIComponent(columns)}&limit=1`;
+  const res = await fetch(url, { headers: { authorization: `Bearer ${serviceKey}`, apikey: serviceKey } });
+  if (!res.ok) return null;
+  const rows = await res.json().catch(() => null);
+  return Array.isArray(rows) && rows.length ? rows[0] : null;
+}
+
+async function selectLatestBusinessDocument(businessId: string, tag: string): Promise<{ version: number; document: HublyDocument } | null> {
+  const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  if (!supabaseUrl || !serviceKey) return null;
+  const url = `${supabaseUrl}/rest/v1/business_documents?business_id=eq.${encodeURIComponent(businessId)}&tag=eq.${encodeURIComponent(tag)}&select=version,document&order=version.desc&limit=1`;
+  const res = await fetch(url, { headers: { authorization: `Bearer ${serviceKey}`, apikey: serviceKey } });
+  if (!res.ok) return null;
+  const rows = await res.json().catch(() => null);
+  if (!Array.isArray(rows) || !rows.length) return null;
+  return { version: rows[0].version, document: rows[0].document as HublyDocument };
+}
+
+type DocGenOutcome = { ok: true; document: HublyDocument } | { ok: false; errors: { path: string; message: string }[] };
+
+/** Calls the model once, validates; on failure, retries exactly once with
+ *  the real validation errors fed back verbatim so the model can fix the
+ *  specific thing it got wrong, rather than guessing again blind. Never
+ *  trusts model output as final — the validator is the actual gate, not
+ *  jsonMode, which only guarantees parseable JSON, not a matching shape. */
+async function generateAndValidateDocument(system: string, brief: string, businessId: string, tag: string): Promise<DocGenOutcome> {
+  const attempt = async (messages: { role: "user" | "assistant"; content: string }[]): Promise<{ candidate: unknown; raw: string } | null> => {
+    const ai = await HublyAI.complete({ feature: "hubly-document-generate", task: "document_generate", system, messages, jsonMode: true });
+    const raw = String(ai.text || "");
+    if (!raw) {
+      // Reasoning-tier models can spend their whole token budget on hidden
+      // reasoning and return an empty completion under a tight budget —
+      // confirmed empirically at document_generate's old 6000-token cap.
+      // Logged, not surfaced to the caller — a budget problem, not a shape one.
+      console.error("hubly-document-generate: empty completion (reasoning budget likely exhausted)");
+      return null;
+    }
+    try {
+      return { candidate: JSON.parse(extractJson(raw)), raw };
+    } catch {
+      console.error("hubly-document-generate: unparseable JSON, length=", raw.length);
+      return null;
+    }
+  };
+
+  const first = await attempt([{ role: "user", content: brief }]);
+  if (!first) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON" }] };
+  const firstResult = validateHublyDocument(first.candidate, { businessId, tag, version: 1, generatedBy: "ai" });
+  if (firstResult.ok) return { ok: true, document: firstResult.document };
+
+  const retryMsg = `Your previous output had these validation errors — fix exactly these, nothing else:\n${firstResult.errors.map((e) => `- ${e.path}: ${e.message}`).join("\n")}\n\nReturn a corrected FULL root node (same shape as before, not just the fixed part).`;
+  const second = await attempt([
+    { role: "user", content: brief },
+    { role: "assistant", content: first.raw },
+    { role: "user", content: retryMsg },
+  ]);
+  if (!second) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON on retry" }] };
+  const secondResult = validateHublyDocument(second.candidate, { businessId, tag, version: 1, generatedBy: "ai" });
+  return secondResult.ok ? { ok: true, document: secondResult.document } : { ok: false, errors: secondResult.errors };
+}
+
+/** Same one-retry-with-real-errors discipline as generateAndValidateDocument,
+ *  applied to a patch instead of a full generation. The model never sees or
+ *  returns the whole document again — only a short op list, targeted by the
+ *  ids already in the current document. */
+async function generateAndApplyPatch(document: HublyDocument, instruction: string): Promise<DocGenOutcome> {
+  const system = `You make ONE targeted edit to an existing Hubly Document. You do not regenerate the page — you return a short list of patch operations that change ONLY what the instruction actually asks for, nothing else.
+
+Return a JSON OBJECT of exactly this shape: {"ops": [<one or more operations>]}
+Each operation is one of:
+{"op":"update_text","id":"<existing id>","text":"<new text>"}
+{"op":"update_attrs","id":"<existing id>","attrs":{"class":"<new utility classes>"}}
+{"op":"move_node","id":"<existing id>","newParentId":"<existing id>","index":<number>}
+{"op":"remove_node","id":"<existing id>"}
+{"op":"add_node","parentId":"<existing id>","index":<number>,"node":{<a full new node, same node shape as generation>}}
+{"op":"replace_node","id":"<existing id>","node":{<a full replacement node>}}
+
+Only use ids that already appear in the current document below — never invent one for update/move/remove/replace (add_node's new node doesn't need a real id, the system assigns one). Only use the same utility-class vocabulary already present in the document's existing classes.
+
+CURRENT DOCUMENT:
+${JSON.stringify(document.root)}`;
+
+  const attempt = async (messages: { role: "user" | "assistant"; content: string }[]): Promise<{ ops: unknown; raw: string } | null> => {
+    const ai = await HublyAI.complete({ feature: "hubly-document-patch", task: "document_patch", system, messages, jsonMode: true });
+    const raw = String(ai.text || "");
+    try {
+      const parsed = JSON.parse(extractJson(raw));
+      return { ops: parsed?.ops, raw };
+    } catch {
+      return null;
+    }
+  };
+
+  const runPatch = (ops: unknown): DocGenOutcome => {
+    if (!Array.isArray(ops) || !ops.length) return { ok: false, errors: [{ path: "$", message: "no patch operations returned" }] };
+    const result = applyPatchOps(document, ops as any);
+    return result.ok ? { ok: true, document: result.document } : { ok: false, errors: result.errors };
+  };
+
+  const first = await attempt([{ role: "user", content: instruction }]);
+  if (!first) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON" }] };
+  const firstOutcome = runPatch(first.ops);
+  if (firstOutcome.ok) return firstOutcome;
+
+  const retryMsg = `That patch could not be applied — errors:\n${firstOutcome.errors.map((e) => `- ${e.path}: ${e.message}`).join("\n")}\n\nReturn a corrected {"ops":[...]} using only real ids from the document above.`;
+  const second = await attempt([
+    { role: "user", content: instruction },
+    { role: "assistant", content: first.raw },
+    { role: "user", content: retryMsg },
+  ]);
+  if (!second) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON on retry" }] };
+  return runPatch(second.ops);
+}
+
+export type DirectPatchOpInput = { op: string; id?: string; text?: string; attrs?: Record<string, string> };
+
+/** Click-to-edit's counterpart to website.patchDocument — the exact target
+ *  and new value are already known (the click supplied them directly), so
+ *  there's nothing for a model to decide. Applies one op straight through
+ *  applyPatchOps, no OpenAI call, same as directEdit/directImageEdit does
+ *  for the three hardcoded legacy fields — this is that same pattern
+ *  generalized to any node in a Hubly Document. */
+export async function applyDirectDocumentPatch(
+  draftId: string,
+  draftToken: string,
+  op: DirectPatchOpInput,
+): Promise<CapabilityActionResult> {
+  if (!draftId || !draftToken) {
+    return { ok: false, real: false, summary: "No draft business exists yet to edit.", error: "missing_draft" };
+  }
+  if (op.op !== "update_text" && op.op !== "update_attrs") {
+    // Click-to-edit only ever needs these two — move/remove/add/replace are
+    // conversational-edit territory (they require judgment about what else
+    // on the page should shift), not something a single click unambiguously means.
+    return { ok: false, real: false, summary: "That kind of edit isn't supported via direct click.", error: "unsupported_op" };
+  }
+  if (!op.id) {
+    return { ok: false, real: false, summary: "No element was specified to edit.", error: "missing_id" };
+  }
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest) {
+    return { ok: false, real: false, summary: "No page exists yet to edit.", error: "no_document" };
+  }
+  const patchResult = applyPatchOps(latest.document, [op as any]);
+  if (!patchResult.ok) {
+    return { ok: false, real: false, summary: "That edit could not be applied safely — nothing changed.", error: "patch_failed", raw: patchResult.errors };
+  }
+  const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug");
+  const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined });
+  const r = await callBusinessRpc("create_business_document", {
+    p_business_id: draftId,
+    p_draft_token: draftToken,
+    p_tag: "website",
+    p_document: patchResult.document,
+    p_rendered_html: html,
+    p_created_by: "patch",
+  });
+  if (!r || r.ok !== true) {
+    return { ok: false, real: false, summary: "The edit was computed but could not be saved.", error: "rpc_failed" };
+  }
+  const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
+  return { ok: true, real: true, summary: `Real edit applied — ${url} now reflects it (version ${r.version}).`, raw: { id: r.id, version: r.version, url } };
 }
 
 const HUBLY_DOMAIN = (Deno.env.get("HUBLY_PUBLIC_DOMAIN") || "").trim() || "myhubly.app";
@@ -345,8 +526,121 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           };
         },
       },
-      // generate / update / publish actions land here once their backend
-      // capabilities exist as callable services — not stubbed speculatively.
+      {
+        name: "generateDocument",
+        description:
+          "Generates a real, live Hubly Document — a validated, fully-editable page (not a template pick) — for the draft business, using OpenAI to compose real layout, copy, typography, color, and imagery from what's actually known. Call this once, the moment there's enough to build from (a real business name/type and, ideally, a chosen direction or real reference data from website.analyze) — never call it again for the same conversation, use updateDocumentNode or a conversational edit after this point. Every element it produces stays individually editable afterward.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: {
+              type: "string",
+              description: "Automatically supplied by the system before this runs — you do not know the real value and never need to. Put any placeholder here; do not decline to invoke just because you don't have a real id.",
+            },
+            brief: {
+              type: "string",
+              description:
+                "Everything relevant to building this page, written richly: business name, type, city, tone/character or chosen direction, real services if known, and — critically — any REAL brandColors/headline text/services from a prior website.analyze result, cited as real. This is the only context the generation step receives; don't under-write it.",
+            },
+          },
+          required: ["brief"],
+        },
+        handler: async (args) => {
+          const draftId = String(args?.draftId || "").trim();
+          const draftToken = String((args as any)?.draftToken || "").trim();
+          const brief = String(args?.brief || "").trim();
+          if (!draftId || !draftToken) {
+            return { ok: false, real: false, summary: "No draft business exists yet to generate a page for — call business.startDraft first.", error: "missing_draft" };
+          }
+          if (!brief) {
+            return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
+          }
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug");
+          const schemaBlock = buildDocumentSchemaPromptBlock();
+          const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${schemaBlock}`;
+          const genResult = await generateAndValidateDocument(system, brief, draftId, "website");
+          if (!genResult.ok) {
+            return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: genResult.errors };
+          }
+          const html = renderHublyDocument(genResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined });
+          const r = await callBusinessRpc("create_business_document", {
+            p_business_id: draftId,
+            p_draft_token: draftToken,
+            p_tag: "website",
+            p_document: genResult.document,
+            p_rendered_html: html,
+            p_created_by: "ai",
+          });
+          if (!r || r.ok !== true) {
+            return { ok: false, real: false, summary: "The page was generated but could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
+          }
+          const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
+          return {
+            ok: true,
+            real: true,
+            summary: `Real page generated and live — ${url} (version ${r.version}). Every element on it is individually editable.`,
+            raw: { id: r.id, version: r.version, url },
+          };
+        },
+      },
+      {
+        name: "patchDocument",
+        description:
+          "Applies a targeted edit to the live Hubly Document — changes ONLY the specific element(s) the request refers to, never regenerates the page. Use this for any conversational edit once a document exists (a headline change, moving an image, removing a section, adding one). Never call generateDocument again to make an edit.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: {
+              type: "string",
+              description: "Automatically supplied by the system before this runs — you do not know the real value and never need to. Put any placeholder here; do not decline to invoke just because you don't have a real id.",
+            },
+            instruction: {
+              type: "string",
+              description: "The person's edit request, in their own words or your restatement of it — e.g. \"make the headline larger\" or \"remove the FAQ section\".",
+            },
+          },
+          required: ["instruction"],
+        },
+        handler: async (args) => {
+          const draftId = String(args?.draftId || "").trim();
+          const draftToken = String((args as any)?.draftToken || "").trim();
+          const instruction = String(args?.instruction || "").trim();
+          if (!draftId || !draftToken) {
+            return { ok: false, real: false, summary: "No draft business exists yet — call business.startDraft and generateDocument first.", error: "missing_draft" };
+          }
+          if (!instruction) {
+            return { ok: false, real: false, summary: "No edit instruction was given.", error: "missing_instruction" };
+          }
+          const latest = await selectLatestBusinessDocument(draftId, "website");
+          if (!latest) {
+            return { ok: false, real: false, summary: "No page exists yet to edit — call generateDocument first.", error: "no_document" };
+          }
+          const patchResult = await generateAndApplyPatch(latest.document, instruction);
+          if (!patchResult.ok) {
+            return { ok: false, real: false, summary: "That edit could not be applied safely — nothing changed.", error: "patch_failed", raw: patchResult.errors };
+          }
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug");
+          const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined });
+          const r = await callBusinessRpc("create_business_document", {
+            p_business_id: draftId,
+            p_draft_token: draftToken,
+            p_tag: "website",
+            p_document: patchResult.document,
+            p_rendered_html: html,
+            p_created_by: "patch",
+          });
+          if (!r || r.ok !== true) {
+            return { ok: false, real: false, summary: "The edit was computed but could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
+          }
+          const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
+          return {
+            ok: true,
+            real: true,
+            summary: `Real edit applied — ${url} now reflects it (version ${r.version}). Nothing else on the page changed.`,
+            raw: { id: r.id, version: r.version, url },
+          };
+        },
+      },
     ],
   },
   {
