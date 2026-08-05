@@ -9,16 +9,24 @@ const http = require('http');
 const { URL } = require('url');
 
 // 900KB was sized for the original analysis (title/meta/h1s — all near the
-// top of <head>). Structure extraction needs real <body> content, which on
-// a bloated real-world page (inline design-system CSS, page-builder markup)
-// can start well past 900KB — confirmed on a real fixture where <head>
-// alone ran 1.57MB, so <body> never arrived at the old cap and every
-// structural field came back an honest-looking but wrong "not found".
-// Raised, not removed, to keep this bounded.
-const MAX_BYTES = 3000000;
+// top of <head>) and stays the default for every existing caller. Structure
+// extraction needs real <body> content, which on a bloated real-world page
+// (inline design-system CSS, page-builder markup) can start well past
+// 900KB — confirmed on a real fixture where <head> alone ran 1.57MB, so
+// <body> never arrived at the old cap and every structural field came back
+// an honest-looking but wrong "not found". STRUCTURE_MAX_BYTES exists for
+// that case specifically and is only ever passed by the includeStructure
+// path below — the already-live, model-facing analyzeWebsite() call keeps
+// its original 900KB behavior untouched, byte for byte, since raising it
+// for everyone would mean its regex passes run over up to 3x more text on
+// any bloated page it happens to hit, for a benefit (structure fields) that
+// call never uses.
+const DEFAULT_MAX_BYTES = 900000;
+const STRUCTURE_MAX_BYTES = 3000000;
 const TIMEOUT_MS = 8000;
 
-function fetchText(url) {
+function fetchText(url, maxBytes) {
+  const cap = maxBytes || DEFAULT_MAX_BYTES;
   return new Promise((resolve, reject) => {
     let parsed;
     try {
@@ -47,14 +55,14 @@ function fetchText(url) {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           const next = new URL(res.headers.location, parsed).toString();
           res.resume();
-          fetchText(next).then(resolve, reject);
+          fetchText(next, cap).then(resolve, reject);
           return;
         }
         const chunks = [];
         let size = 0;
         res.on('data', (c) => {
           size += c.length;
-          if (size <= MAX_BYTES) chunks.push(c);
+          if (size <= cap) chunks.push(c);
         });
         res.on('end', () => {
           resolve({
@@ -739,7 +747,7 @@ module.exports = async (req, res) => {
 
   try {
     if (type === 'website') {
-      const fetched = await fetchText(url);
+      const fetched = await fetchText(url, includeStructure ? STRUCTURE_MAX_BYTES : DEFAULT_MAX_BYTES);
       if (!fetched.body || fetched.status >= 400) {
         return res.status(200).json({
           ok: true,
