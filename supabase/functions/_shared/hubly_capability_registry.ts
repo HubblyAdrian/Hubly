@@ -150,16 +150,35 @@ async function selectLatestBusinessDocument(businessId: string, tag: string): Pr
   return { version: rows[0].version, document: rows[0].document as HublyDocument };
 }
 
-type DocGenOutcome = { ok: true; document: HublyDocument } | { ok: false; errors: { path: string; message: string }[] };
+type UsageTotal = { promptTokens: number; completionTokens: number; reasoningTokens: number; calls: number };
+type DocGenOutcome =
+  | { ok: true; document: HublyDocument; usage: UsageTotal }
+  | { ok: false; errors: { path: string; message: string }[]; usage: UsageTotal };
+
+function emptyUsage(): UsageTotal {
+  return { promptTokens: 0, completionTokens: 0, reasoningTokens: 0, calls: 0 };
+}
+function addUsage(total: UsageTotal, u?: { promptTokens: number; completionTokens: number; reasoningTokens?: number }) {
+  if (!u) return;
+  total.promptTokens += u.promptTokens;
+  total.completionTokens += u.completionTokens;
+  total.reasoningTokens += u.reasoningTokens || 0;
+  total.calls += 1;
+}
 
 /** Calls the model once, validates; on failure, retries exactly once with
  *  the real validation errors fed back verbatim so the model can fix the
  *  specific thing it got wrong, rather than guessing again blind. Never
  *  trusts model output as final — the validator is the actual gate, not
- *  jsonMode, which only guarantees parseable JSON, not a matching shape. */
+ *  jsonMode, which only guarantees parseable JSON, not a matching shape.
+ *  usage accumulates real token counts across every attempt (including a
+ *  failed/retried one) — the only honest basis for a real cost figure,
+ *  not an estimate. */
 async function generateAndValidateDocument(system: string, brief: string, businessId: string, tag: string): Promise<DocGenOutcome> {
+  const usage = emptyUsage();
   const attempt = async (messages: { role: "user" | "assistant"; content: string }[]): Promise<{ candidate: unknown; raw: string } | null> => {
     const ai = await HublyAI.complete({ feature: "hubly-document-generate", task: "document_generate", system, messages, jsonMode: true });
+    addUsage(usage, ai.usage);
     const raw = String(ai.text || "");
     if (!raw) {
       // Reasoning-tier models can spend their whole token budget on hidden
@@ -178,9 +197,9 @@ async function generateAndValidateDocument(system: string, brief: string, busine
   };
 
   const first = await attempt([{ role: "user", content: brief }]);
-  if (!first) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON" }] };
+  if (!first) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON" }], usage };
   const firstResult = validateHublyDocument(first.candidate, { businessId, tag, version: 1, generatedBy: "ai" });
-  if (firstResult.ok) return { ok: true, document: firstResult.document };
+  if (firstResult.ok) return { ok: true, document: firstResult.document, usage };
 
   const retryMsg = `Your previous output had these validation errors — fix exactly these, nothing else:\n${firstResult.errors.map((e) => `- ${e.path}: ${e.message}`).join("\n")}\n\nReturn a corrected FULL root node (same shape as before, not just the fixed part).`;
   const second = await attempt([
@@ -188,9 +207,9 @@ async function generateAndValidateDocument(system: string, brief: string, busine
     { role: "assistant", content: first.raw },
     { role: "user", content: retryMsg },
   ]);
-  if (!second) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON on retry" }] };
+  if (!second) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON on retry" }], usage };
   const secondResult = validateHublyDocument(second.candidate, { businessId, tag, version: 1, generatedBy: "ai" });
-  return secondResult.ok ? { ok: true, document: secondResult.document } : { ok: false, errors: secondResult.errors };
+  return secondResult.ok ? { ok: true, document: secondResult.document, usage } : { ok: false, errors: secondResult.errors, usage };
 }
 
 /** Same one-retry-with-real-errors discipline as generateAndValidateDocument,
@@ -214,8 +233,10 @@ Only use ids that already appear in the current document below — never invent 
 CURRENT DOCUMENT:
 ${JSON.stringify(document.root)}`;
 
+  const usage = emptyUsage();
   const attempt = async (messages: { role: "user" | "assistant"; content: string }[]): Promise<{ ops: unknown; raw: string } | null> => {
     const ai = await HublyAI.complete({ feature: "hubly-document-patch", task: "document_patch", system, messages, jsonMode: true });
+    addUsage(usage, ai.usage);
     const raw = String(ai.text || "");
     try {
       const parsed = JSON.parse(extractJson(raw));
@@ -226,13 +247,13 @@ ${JSON.stringify(document.root)}`;
   };
 
   const runPatch = (ops: unknown): DocGenOutcome => {
-    if (!Array.isArray(ops) || !ops.length) return { ok: false, errors: [{ path: "$", message: "no patch operations returned" }] };
+    if (!Array.isArray(ops) || !ops.length) return { ok: false, errors: [{ path: "$", message: "no patch operations returned" }], usage };
     const result = applyPatchOps(document, ops as any);
-    return result.ok ? { ok: true, document: result.document } : { ok: false, errors: result.errors };
+    return result.ok ? { ok: true, document: result.document, usage } : { ok: false, errors: result.errors, usage };
   };
 
   const first = await attempt([{ role: "user", content: instruction }]);
-  if (!first) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON" }] };
+  if (!first) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON" }], usage };
   const firstOutcome = runPatch(first.ops);
   if (firstOutcome.ok) return firstOutcome;
 
@@ -242,7 +263,7 @@ ${JSON.stringify(document.root)}`;
     { role: "assistant", content: first.raw },
     { role: "user", content: retryMsg },
   ]);
-  if (!second) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON on retry" }] };
+  if (!second) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON on retry" }], usage };
   return runPatch(second.ops);
 }
 
@@ -582,9 +603,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug");
           const schemaBlock = buildDocumentSchemaPromptBlock();
           const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${schemaBlock}`;
+          const genStarted = Date.now();
           const genResult = await generateAndValidateDocument(system, brief, draftId, "website");
+          const generationMs = Date.now() - genStarted;
           if (!genResult.ok) {
-            return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: genResult.errors };
+            return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: { errors: genResult.errors, usage: genResult.usage, generationMs } };
           }
           const html = renderHublyDocument(genResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined });
           const r = await callBusinessRpc("create_business_document", {
@@ -603,7 +626,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             ok: true,
             real: true,
             summary: `Real page generated and live — ${url} (version ${r.version}). Every element on it is individually editable.`,
-            raw: { id: r.id, version: r.version, url },
+            raw: { id: r.id, version: r.version, url, usage: genResult.usage, generationMs },
           };
         },
       },
@@ -639,9 +662,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!latest) {
             return { ok: false, real: false, summary: "No page exists yet to edit — call generateDocument first.", error: "no_document" };
           }
+          const patchStarted = Date.now();
           const patchResult = await generateAndApplyPatch(latest.document, instruction);
+          const patchMs = Date.now() - patchStarted;
           if (!patchResult.ok) {
-            return { ok: false, real: false, summary: "That edit could not be applied safely — nothing changed.", error: "patch_failed", raw: patchResult.errors };
+            return { ok: false, real: false, summary: "That edit could not be applied safely — nothing changed.", error: "patch_failed", raw: { errors: patchResult.errors, usage: patchResult.usage, patchMs } };
           }
           const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug");
           const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined });
@@ -661,7 +686,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             ok: true,
             real: true,
             summary: `Real edit applied — ${url} now reflects it (version ${r.version}). Nothing else on the page changed.`,
-            raw: { id: r.id, version: r.version, url },
+            raw: { id: r.id, version: r.version, url, usage: patchResult.usage, patchMs },
           };
         },
       },

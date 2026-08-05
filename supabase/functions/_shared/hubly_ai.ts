@@ -436,6 +436,12 @@ export type HublyAIResult = {
   /** Conversation Memory after Brain updated it. */
   conversation?: HublyConversationMemory | null;
   memoryUpdated?: boolean;
+  /** Real token usage from the provider response — the only honest basis
+   *  for a cost figure. reasoningTokens is a subset of completionTokens
+   *  (OpenAI bills reasoning tokens as output tokens), broken out
+   *  separately because it's usually the dominant cost for a reasoning
+   *  model and worth seeing on its own. */
+  usage?: { promptTokens: number; completionTokens: number; reasoningTokens?: number };
 };
 
 /** @deprecated use HublySkillId */
@@ -737,12 +743,21 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
 
   const data = await res.json();
   const text = String(data?.choices?.[0]?.message?.content || "").trim();
+  const rawUsage = data?.usage;
+  const usage = rawUsage
+    ? {
+      promptTokens: Number(rawUsage.prompt_tokens) || 0,
+      completionTokens: Number(rawUsage.completion_tokens) || 0,
+      reasoningTokens: Number(rawUsage.completion_tokens_details?.reasoning_tokens) || undefined,
+    }
+    : undefined;
   return {
     text,
     provider: "openai",
     model: opts.model,
     task: opts.task,
     memoryKeys: memoryKeys(opts.memory),
+    usage,
   };
 }
 
