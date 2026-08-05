@@ -1158,6 +1158,8 @@ body.hc-active #categories,body.hc-active .footer{display:none}
       if(typeof data.text === 'string') patchOp.text = data.text;
       if(data.attrs && typeof data.attrs === 'object') patchOp.attrs = data.attrs;
       hcSendDirectEdit({ directDocumentPatch: patchOp });
+    } else if(data.type === 'hcDocInlineImageEdit' && typeof data.id === 'string' && data.id && typeof data.imageBase64 === 'string'){
+      hcSendDirectEdit({ directDocumentImageEdit: { id: data.id, imageBase64: data.imageBase64, mediaType: data.mediaType || 'image/png' } });
     }
   });
 

@@ -362,6 +362,30 @@ async function uploadImageToStorage(
   return { ok: true, url: `${supabaseUrl}/storage/v1/object/public/brand-assets/${path}` };
 }
 
+/** Click-to-replace for any <img> node in a Hubly Document — the click
+ *  already supplies the exact target, so no model call. Real upload (same
+ *  storage path as the logo/hero-image uploads), then the exact same
+ *  applyDirectDocumentPatch used for text edits, just with a new "src".
+ *  The uploaded URL always starts with this project's own storage origin,
+ *  so it passes the validator's media-origin check without special-casing. */
+export async function uploadAndPatchDocumentImage(
+  draftId: string,
+  draftToken: string,
+  nodeId: string,
+  imageBase64: string,
+  mediaType: string,
+): Promise<CapabilityActionResult> {
+  if (!draftId || !draftToken) {
+    return { ok: false, real: false, summary: "No draft business exists yet to edit.", error: "missing_draft" };
+  }
+  if (!nodeId) {
+    return { ok: false, real: false, summary: "No image was specified to replace.", error: "missing_id" };
+  }
+  const uploaded = await uploadImageToStorage(draftId, imageBase64, mediaType, "doc-image");
+  if (!uploaded.ok) return uploaded.result;
+  return applyDirectDocumentPatch(draftId, draftToken, { op: "update_attrs", id: nodeId, attrs: { src: uploaded.url } });
+}
+
 /**
  * Uploads a draft's logo directly to real Storage (the same brand-assets
  * bucket the authenticated editor uses — see hostBrandImage/uploadBrandAsset

@@ -50518,6 +50518,39 @@ function wireHublyDocumentClickToEdit(){
     overlay = null;
   }
 
+  // Same closed vocabulary the validator enforces (see UTILITY_CLASSES /
+  // COLOR_ROLES in hubly_document.ts) — a deliberately small, representative
+  // subset for a one-click picker, not the full set. Any token sent here
+  // will pass validation because it's already a real, known token, not
+  // because click-to-edit gets a separate, looser rule.
+  var COLOR_SWATCHES = [
+    { label: 'Dark', token: 'ink-900', hex: '#1a1a1a' },
+    { label: 'Muted', token: 'ink-400', hex: '#8a8a8a' },
+    { label: 'White', token: 'white', hex: '#ffffff' },
+    { label: 'Brand', token: 'brand-600', hex: '#D9632D' },
+    { label: 'Brand Dark', token: 'brand-800', hex: '#8a3f1c' },
+  ];
+  var FONT_OPTIONS = [
+    { label: 'Sans', token: 'font-sans' },
+    { label: 'Serif', token: 'font-serif' },
+    { label: 'Mono', token: 'font-mono' },
+  ];
+  var COLOR_TOKEN_RE = /^text-(ink-900|ink-700|ink-400|ink-100|white|brand-100|brand-300|brand-500|brand-600|brand-700|brand-800|brand-900)$/;
+  function withColorToken(classStr, colorToken){
+    var kept = (classStr || '').split(/\s+/).filter(Boolean).filter(function(t){ return !COLOR_TOKEN_RE.test(t); });
+    kept.push('text-' + colorToken);
+    return kept.join(' ');
+  }
+  function withFontToken(classStr, fontToken){
+    var kept = (classStr || '').split(/\s+/).filter(Boolean).filter(function(t){ return t !== 'font-sans' && t !== 'font-serif' && t !== 'font-mono'; });
+    kept.push(fontToken);
+    return kept.join(' ');
+  }
+  function applyAttrPatch(el, id, newClass){
+    el.setAttribute('class', newClass); // optimistic local paint
+    post({ type: 'hcDocInlineEdit', op: 'update_attrs', id: id, attrs: { class: newClass } });
+  }
+
   function openTextEditor(el){
     closeOverlay();
     var id = el.getAttribute('data-node');
@@ -50536,6 +50569,38 @@ function wireHublyDocumentClickToEdit(){
       'width:100%;min-height:64px;background:#0d0f16;color:#f5f6f8;' +
       'border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:8px;' +
       'font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;';
+
+    var styleRow = document.createElement('div');
+    styleRow.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;';
+    var colorLabel = document.createElement('span');
+    colorLabel.textContent = 'Color';
+    colorLabel.style.cssText = 'font-size:10.5px;color:#8a8d98;margin-right:2px;';
+    styleRow.appendChild(colorLabel);
+    COLOR_SWATCHES.forEach(function(c){
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.title = c.label;
+      btn.style.cssText = 'width:20px;height:20px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:' + c.hex + ';cursor:pointer;padding:0;';
+      btn.addEventListener('click', function(){
+        var newClass = withColorToken(el.getAttribute('class') || '', c.token);
+        applyAttrPatch(el, id, newClass);
+      });
+      styleRow.appendChild(btn);
+    });
+    var fontLabel = document.createElement('span');
+    fontLabel.textContent = 'Font';
+    fontLabel.style.cssText = 'font-size:10.5px;color:#8a8d98;margin:0 2px 0 8px;';
+    styleRow.appendChild(fontLabel);
+    FONT_OPTIONS.forEach(function(f){
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.textContent = f.label;
+      btn.style.cssText = 'background:none;border:1px solid rgba(255,255,255,.2);color:#c9cbd1;padding:3px 8px;border-radius:6px;font-size:11px;cursor:pointer;';
+      btn.addEventListener('click', function(){
+        var newClass = withFontToken(el.getAttribute('class') || '', f.token);
+        applyAttrPatch(el, id, newClass);
+      });
+      styleRow.appendChild(btn);
+    });
+
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:8px;margin-top:8px;justify-content:flex-end;';
     var cancelBtn = document.createElement('button');
@@ -50557,16 +50622,44 @@ function wireHublyDocumentClickToEdit(){
       if(e.key === 'Escape'){ closeOverlay(); document.removeEventListener('keydown', escClose); }
     });
     row.appendChild(cancelBtn); row.appendChild(saveBtn);
-    overlay.appendChild(ta); overlay.appendChild(row);
+    overlay.appendChild(ta); overlay.appendChild(styleRow); overlay.appendChild(row);
     document.body.appendChild(overlay);
     ta.focus(); ta.select();
   }
+
+  // Click-to-replace for images — a file picker, not a text overlay, since
+  // there's nothing to type. Same postMessage-out pattern, a different
+  // message type because a real upload has to happen before this becomes
+  // a patch (see uploadAndPatchDocumentImage in the registry).
+  var imgFileInput = document.createElement('input');
+  imgFileInput.type = 'file'; imgFileInput.accept = 'image/*'; imgFileInput.style.display = 'none';
+  imgFileInput.setAttribute('data-hc-doc-image-input', '1');
+  document.body.appendChild(imgFileInput);
+  var pendingImageNodeId = null;
+  imgFileInput.addEventListener('change', function(){
+    var file = imgFileInput.files && imgFileInput.files[0];
+    imgFileInput.value = '';
+    if(!file || !pendingImageNodeId) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      var result = String(reader.result || '');
+      var comma = result.indexOf(',');
+      var data = comma !== -1 ? result.slice(comma + 1) : result;
+      post({ type: 'hcDocInlineImageEdit', id: pendingImageNodeId, imageBase64: data, mediaType: file.type || 'image/png' });
+    };
+    reader.readAsDataURL(file);
+  });
 
   root.addEventListener('click', function(e){
     var target = e.target && e.target.closest ? e.target.closest('[data-node]') : null;
     if(!target || !root.contains(target)) return;
     if(target.closest('[data-hubly-element]')) return; // reserved elements aren't AI/user-editable text
-    if(target.children.length > 0) return; // only leaf text nodes for this pass
+    if(target.tagName && target.tagName.toLowerCase() === 'img'){
+      pendingImageNodeId = target.getAttribute('data-node');
+      imgFileInput.click();
+      return;
+    }
+    if(target.children.length > 0) return; // only leaf nodes for this pass
     if(!target.textContent || !target.textContent.trim()) return;
     openTextEditor(target);
   }, true);

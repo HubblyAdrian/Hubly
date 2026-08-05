@@ -61,7 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, uploadDraftLogo, uploadDraftHeroImage, applyDirectDocumentPatch } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, uploadDraftLogo, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -537,13 +537,26 @@ Deno.serve(async (req) => {
           ...(body.directDocumentPatch.attrs && typeof body.directDocumentPatch.attrs === "object" ? { attrs: body.directDocumentPatch.attrs } : {}),
         }
       : null;
+  // Image replacement needs a real upload before it's a patch — same
+  // click-already-supplies-everything shape, one extra real step.
+  const directDocumentImageEdit =
+    body?.directDocumentImageEdit && typeof body.directDocumentImageEdit === "object" &&
+    typeof body.directDocumentImageEdit.id === "string" && body.directDocumentImageEdit.id &&
+    typeof body.directDocumentImageEdit.imageBase64 === "string"
+      ? {
+          id: String(body.directDocumentImageEdit.id),
+          imageBase64: String(body.directDocumentImageEdit.imageBase64),
+          mediaType: String(body.directDocumentImageEdit.mediaType || "image/png"),
+        }
+      : null;
 
-  if (directEdit || directImageEdit || directDocumentPatch) {
+  if (directEdit || directImageEdit || directDocumentPatch || directDocumentImageEdit) {
     if (!draftBusiness) {
       return jsonRes({ ok: false, error: "no_draft_to_edit" }, 400);
     }
     let result: { ok: boolean; real: boolean; summary: string; raw?: unknown; error?: string };
     let actionName: string;
+    let isDocumentAction = false;
     if (directEdit) {
       actionName = "updateDraft";
       const found = findAction("business", "updateDraft");
@@ -553,7 +566,12 @@ Deno.serve(async (req) => {
     } else if (directImageEdit) {
       actionName = "setHeroImage";
       result = await uploadDraftHeroImage(draftBusiness.id, draftBusiness.draftToken, directImageEdit.imageBase64, directImageEdit.mediaType);
+    } else if (directDocumentImageEdit) {
+      isDocumentAction = true;
+      actionName = "patchDocument";
+      result = await uploadAndPatchDocumentImage(draftBusiness.id, draftBusiness.draftToken, directDocumentImageEdit.id, directDocumentImageEdit.imageBase64, directDocumentImageEdit.mediaType);
     } else {
+      isDocumentAction = true;
       actionName = "patchDocument";
       result = await applyDirectDocumentPatch(draftBusiness.id, draftBusiness.draftToken, directDocumentPatch!);
     }
@@ -561,7 +579,7 @@ Deno.serve(async (req) => {
       ok: true,
       reply: "",
       messages: incoming,
-      actions: [{ capability: directDocumentPatch ? "website" : "business", capabilityAction: actionName, args: {}, ok: !!result.ok, real: !!result.real }],
+      actions: [{ capability: isDocumentAction ? "website" : "business", capabilityAction: actionName, args: {}, ok: !!result.ok, real: !!result.real }],
       interimMessages: [],
       draftBusiness,
     });
