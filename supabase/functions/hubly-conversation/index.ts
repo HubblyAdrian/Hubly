@@ -140,6 +140,27 @@ const CUSTOMER_UNDERSTANDING_SCHEMA = `{
   "bookingStatus"?: { "status"?: string, "bookingId"?: string }
 }`;
 
+// Legacy (pre-document-generation) template-picker directions — restored
+// verbatim from main, not rewritten. Used only in LEGACY_WEBSITE_SECTION
+// below, when HUBLY_DOCUMENT_GENERATION_ENABLED is off, so real businesses
+// on the un-flagged path keep exactly the flow they have today; the
+// underlying business.updateDraft heroHeadline/heroSubhead/layout/seoTitle
+// fields this depends on were never removed from the capability registry,
+// only superseded in the prompt by the newer document-generation text.
+const LEGACY_LAYOUT_DIRECTIONS = `- premium-dark ("Premium Dark") — upscale, moody, dark
+- obsidian-gold ("Obsidian Gold") — luxury, black & gold
+- calm-service ("Calm Service") — soft, spacious, calm
+- editorial ("Boutique Editorial") — image-led, restrained, magazine-like
+- classic-trust ("Classic Trust") — traditional, dependable
+- clean-modern ("Clean Pro") — crisp, neutral, professional
+- minimal-pro ("Modern Minimal") — quiet, minimal, lots of whitespace
+- bold-impact ("Bold & Unmissable") — high-contrast, direct, loud CTA
+- warm-local ("Neighborhood Favorite") — warm, friendly, approachable
+- vibrant-pop ("Bright & Energetic") — colorful, energetic
+- aurora-gradient ("Soft Aurora") — soft gradient, dreamy
+- garage-industrial ("Workshop Industrial") — rugged, industrial
+(Plus a few vertical-specific ones — estate-green for landscaping, crystal-pane for windows, rinse-force for pressure washing — offer these only when the business is actually that vertical.)`;
+
 type ConversationContextName = "dashboard" | "customer";
 
 // Per docs/HUBLY_CONVERSATION_CONTEXT_MODEL.md Section 6: two enforcement
@@ -157,6 +178,29 @@ const CONTEXT_CAPABILITY_ALLOWLIST: Record<ConversationContextName, string[]> = 
 function getAllowedCapabilities(context: ConversationContextName) {
   const allow = new Set(CONTEXT_CAPABILITY_ALLOWLIST[context]);
   return HUBLY_CAPABILITY_REGISTRY.filter((c) => allow.has(c.name));
+}
+
+// Real AI website generation — merged to main but deliberately shipped
+// dark. Nothing in this whole feature (generation, the styling layer, the
+// designRationale prompting, the benchmark) has ever been exercised by a
+// real customer; every verification pass has been a manual/test-harness
+// call. A global, explicit env flag (not a per-business rollout tier,
+// which wasn't scoped or asked for) is the deliberate switch for turning
+// it on for real traffic, kept separate from the decision to merge the
+// code. Unset/anything other than "true" = off, the safe default.
+const DOCUMENT_GENERATION_ENABLED = (Deno.env.get("HUBLY_DOCUMENT_GENERATION_ENABLED") || "").trim() === "true";
+const GATED_WEBSITE_ACTIONS = new Set(["generateDocument", "patchDocument"]);
+
+/** Second half of the "advertise or don't" gate — strips the gated actions
+ *  out of what the model is even told exists, same discipline as
+ *  CONTEXT_CAPABILITY_ALLOWLIST already applies at the whole-capability
+ *  level. Shallow-copies the "website" capability so the shared, global
+ *  HUBLY_CAPABILITY_REGISTRY is never mutated. */
+function withDocumentGenerationGate(capabilities: typeof HUBLY_CAPABILITY_REGISTRY) {
+  if (DOCUMENT_GENERATION_ENABLED) return capabilities;
+  return capabilities.map((c) =>
+    c.name === "website" ? { ...c, actions: c.actions.filter((a) => !GATED_WEBSITE_ACTIONS.has(a.name)) } : c
+  );
 }
 
 // The one dispatch point where "engine stays generic, only the schema
@@ -272,12 +316,19 @@ When the goal is a website (or becomes one), don't ask about the business first 
 
 When a website.analyze result comes back real, let it actually shape what you build — not just which direction you happen to propose. Look at what genuinely came back in that CAPABILITY RESULT: a real brandColors entry becomes the brandColor you pass to business.startDraft/updateDraft, instead of a generic pick; real headline text (headlines) is a real signal for the heroHeadline you write — let it anchor your own words rather than defaulting to a generic line, though you should still write it yourself, not paste it verbatim if it doesn't fit their business; a real services list seeds business.setServices directly, not industry guesswork. Brand color, headline text, and services are the only three things actually read — only ever describe something as "from your reference" or "pulled from your site" for those three, never for anything else (font pairing, layout structure, imagery style are NOT captured by this, so never say or imply they were, even in passing — "matches their layout" or "captures the same feel" are claims you can't back up here). If the analyze result came back with none of those three meaningfully present — a failed fetch, an empty result, a screenshot with nothing legible — say so plainly and fall back to your own judgment the same way you would with no reference at all; never imply real inspiration shaped something it didn't.
 
-There is no template or direction to pick anymore — don't propose "a few directions" and don't describe archetypes. Website building now works like this: gather just enough (a real business name if you have it — "Your Business" as an honest placeholder is fine if you don't yet — the business type, and anything real from website.analyze above) and then build it for real:
+${DOCUMENT_GENERATION_ENABLED ? `There is no template or direction to pick anymore — don't propose "a few directions" and don't describe archetypes. Website building now works like this: gather just enough (a real business name if you have it — "Your Business" as an honest placeholder is fine if you don't yet — the business type, and anything real from website.analyze above) and then build it for real:
 ${draftBusiness ? `- A draft already exists (${draftBusiness.url}). If no document exists yet on it, call website.generateDocument now. If one already exists, never call generateDocument again this conversation — any change, however small, goes through website.patchDocument instead (see below). business.updateDraft is still how name/tagline/about/phone/email/businessType/brandColor get captured as real business facts, independent of the page — but its heroHeadline/heroSubhead/layout fields no longer do anything meaningful once a document exists; don't set them.` : `- Call business.startDraft the moment you have a real or placeholder business name, in the SAME reply. Then call website.generateDocument in that same reply too — don't wait for a follow-up turn. Never call business.startDraft again this conversation.`}
 
 website.generateDocument takes one thing: a rich "brief" — write it yourself, in full sentences, covering everything you actually know: the real business name and type, city, tone, and — critically — any REAL brandColors/headline text/services from a website.analyze result, cited as real (see above; only those three fields are real from analysis, never claim more). The richer the brief, the better the real page it produces — don't under-write it to save a sentence.
 
-Once a document exists, EVERY change — a headline edit, a color change, adding or removing a section, moving something — goes through website.patchDocument with a plain-language instruction ("make the headline larger", "remove the FAQ section"). Never call generateDocument again to make an edit; that regenerates the whole page instead of changing the one thing asked for, which is the opposite of what should happen.
+Once a document exists, EVERY change — a headline edit, a color change, adding or removing a section, moving something — goes through website.patchDocument with a plain-language instruction ("make the headline larger", "remove the FAQ section"). Never call generateDocument again to make an edit; that regenerates the whole page instead of changing the one thing asked for, which is the opposite of what should happen.` : `If not, propose 2-3 REAL, genuinely different visual directions from this actual list — describe each in your own words by its real character, never as "Option A/B/C" or a template name dump:
+${LEGACY_LAYOUT_DIRECTIONS}
+Whenever you propose directions like this, ALSO include a top-level "concepts" array in your JSON response — one entry per direction you just described, in the same order: {"id":"<the real layout id>","name":"<its real name>","character":"<a short phrase, your own words>"}. This is what puts something to actually look at on screen instead of just a paragraph to read — never omit it when you're presenting directions to choose from, and never include it any other time. Because the cards themselves carry the name and character, your "message" on this turn should be almost nothing — "A few directions:" or similar — never restate each one's description again in prose too; that's the exact redundancy showing real progress is supposed to replace.
+
+The instant a direction is picked, build it for real — don't wait for a business name first. A real site with placeholder content beats a perfect question every time:
+${draftBusiness ? `- A draft already exists (${draftBusiness.url}) — use business.updateDraft for anything new: name, tagline, about, contact info, a drafted headline/subhead, or a changed direction (layout). Never call business.startDraft again this conversation.` : `- Call business.startDraft the moment a direction is picked, in the SAME reply, even if you don't know the business name yet — use their real name if you already have it, otherwise pass "Your Business" as a placeholder (this is expected, not dishonest — a real, live, editable site with placeholder content is exactly right at this stage). Then keep calling business.updateDraft as you learn more (a real name replaces the placeholder the instant they give it, headline, subhead, about, contact info) — every real detail should show up there within the same reply it's learned.`}
+
+Write real headline/subhead/about copy yourself (this is conversational value, priority 1) and pass it straight into business.updateDraft's heroHeadline/heroSubhead/about — don't just describe what you'd write, actually write it and put it on the site. Always include seoTitle too ("<Business Name> | <what they actually do>") — businessType only recognizes a handful of fixed categories (detailing, pressure_washing, landscaping, cleaning, photography, hvac, windows) and silently mislabels anything outside that list, so seoTitle is what keeps the real page title accurate for everything else. Only set businessType when it genuinely matches one of those categories — never force a fit.`}
 
 The moment you know what services they offer — even roughly, even just one — call business.setServices with the complete real list (name, and price/description whenever actually given); this is a real business fact independent of the page, and feeds future generation/edits. seoTitle still matters — pass it via business.updateDraft ("<Business Name> | <what they actually do>") since businessType only recognizes a handful of fixed categories and silently mislabels anything outside that list.
 
@@ -311,7 +362,7 @@ NATURAL NEXT STEP — never a feature offer ("Would you like Booking? CRM? Revie
   // CONTEXT_CAPABILITY_ALLOWLIST above. website.analyze/online_presence.* are
   // owner actions, never shown to "customer"; booking is customer-facing,
   // never shown to "dashboard".
-  const allowedCapabilities = getAllowedCapabilities(context);
+  const allowedCapabilities = withDocumentGenerationGate(getAllowedCapabilities(context));
   const capabilitiesBlock = allowedCapabilities.length
     ? buildCapabilitiesPromptBlock(allowedCapabilities)
     : "(No capabilities are registered for this context yet.)";
@@ -554,6 +605,13 @@ Deno.serve(async (req) => {
     if (!draftBusiness) {
       return jsonRes({ ok: false, error: "no_draft_to_edit" }, 400);
     }
+    // Click-to-edit only ever operates on an already-generated document, so
+    // this path can't structurally be reached while the feature is dark —
+    // but checked explicitly anyway, same discipline as the other two
+    // enforcement points, not relying on that precondition alone.
+    if ((directDocumentPatch || directDocumentImageEdit) && !DOCUMENT_GENERATION_ENABLED) {
+      return jsonRes({ ok: false, error: "document_generation_disabled" }, 400);
+    }
     let result: { ok: boolean; real: boolean; summary: string; raw?: unknown; error?: string };
     let actionName: string;
     let isDocumentAction = false;
@@ -627,7 +685,12 @@ Deno.serve(async (req) => {
         const capabilityName = String(decision.capability);
         const actionName = String(decision.capabilityAction);
         const allowedInContext = CONTEXT_CAPABILITY_ALLOWLIST[context].includes(capabilityName);
-        const found = allowedInContext ? findAction(capabilityName, actionName) : undefined;
+        // Third enforcement point, same discipline as the two documented
+        // above: generateDocument/patchDocument are structurally blocked
+        // here regardless of what the prompt advertised or what a decision
+        // requests, whenever the feature is shipped dark.
+        const isGatedDocAction = capabilityName === "website" && GATED_WEBSITE_ACTIONS.has(actionName);
+        const found = allowedInContext && !(isGatedDocAction && !DOCUMENT_GENERATION_ENABLED) ? findAction(capabilityName, actionName) : undefined;
         // businessId is structural context, not something the model was ever
         // shown a real value for — it must never be trusted to transcribe a
         // UUID correctly. The engine injects the real one whenever it's known,
