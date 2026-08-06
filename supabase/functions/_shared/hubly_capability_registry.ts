@@ -311,8 +311,8 @@ export async function applyDirectDocumentPatch(
   if (!patchResult.ok) {
     return { ok: false, real: false, summary: "That edit could not be applied safely — nothing changed.", error: "patch_failed", raw: patchResult.errors };
   }
-  const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug");
-  const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined });
+  const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color");
+  const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined });
   const r = await callBusinessRpc("create_business_document", {
     p_business_id: draftId,
     p_draft_token: draftToken,
@@ -611,7 +611,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!brief) {
             return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
           }
-          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug");
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color");
           const schemaBlock = buildDocumentSchemaPromptBlock();
           const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${schemaBlock}`;
           // __benchmarkModel is intentionally absent from argsSchema/description —
@@ -626,7 +626,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!genResult.ok) {
             return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: { errors: genResult.errors, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed } };
           }
-          const html = renderHublyDocument(genResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined });
+          const html = renderHublyDocument(genResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined });
           const r = await callBusinessRpc("create_business_document", {
             p_business_id: draftId,
             p_draft_token: draftToken,
@@ -685,8 +685,8 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!patchResult.ok) {
             return { ok: false, real: false, summary: "That edit could not be applied safely — nothing changed.", error: "patch_failed", raw: { errors: patchResult.errors, usage: patchResult.usage, patchMs, firstAttemptOk: patchResult.firstAttemptOk, firstAttemptErrors: patchResult.firstAttemptErrors } };
           }
-          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug");
-          const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined });
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color");
+          const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined });
           const r = await callBusinessRpc("create_business_document", {
             p_business_id: draftId,
             p_draft_token: draftToken,
