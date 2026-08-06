@@ -157,7 +157,7 @@ type UsageTotal = { promptTokens: number; completionTokens: number; reasoningTok
  *  inferred from call count alone (a retry can also be triggered by an
  *  empty completion or unparseable JSON, which look identical from the
  *  outside without this). */
-type DocGenOutcome =
+export type DocGenOutcome =
   | { ok: true; document: HublyDocument; usage: UsageTotal; firstAttemptOk: boolean; firstAttemptErrors?: { path: string; message: string }[]; modelUsed?: string }
   | { ok: false; errors: { path: string; message: string }[]; usage: UsageTotal; firstAttemptOk: boolean; firstAttemptErrors?: { path: string; message: string }[]; modelUsed?: string };
 
@@ -180,7 +180,7 @@ function addUsage(total: UsageTotal, u?: { promptTokens: number; completionToken
  *  usage accumulates real token counts across every attempt (including a
  *  failed/retried one) — the only honest basis for a real cost figure,
  *  not an estimate. */
-async function generateAndValidateDocument(system: string, brief: string, businessId: string, tag: string, modelOverride?: string): Promise<DocGenOutcome> {
+export async function generateAndValidateDocument(system: string, brief: string, businessId: string, tag: string, modelOverride?: string): Promise<DocGenOutcome> {
   const usage = emptyUsage();
   let modelUsed: string | undefined;
   const attempt = async (messages: { role: "user" | "assistant"; content: string }[]): Promise<{ candidate: unknown; raw: string } | null> => {
