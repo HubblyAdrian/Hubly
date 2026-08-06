@@ -113,7 +113,14 @@ function scale(prefix: string, values: string[]): string[] {
   return values.map((v) => `${prefix}-${v}`);
 }
 
-const SPACING_SCALE = ["0", "1", "2", "3", "4", "6", "8", "10", "12", "16", "20", "24", "32"];
+// "5" and margin "auto" were missing from earlier versions of this scale —
+// confirmed via 5/5 real generations (landscaping, photography, detailing,
+// plumbing, dental) each failing first-attempt validation on exactly these
+// two tokens (mx-auto every time, gap-5 in 3/5), because mx-auto is one of
+// the most deeply ingrained real-world Tailwind idioms (centering a content
+// wrapper) and the model reaches for it regardless of the closed-grammar
+// prompt. Not a prompting problem — a real grammar gap, closed here.
+const SPACING_SCALE = ["0", "1", "2", "3", "4", "5", "6", "8", "10", "12", "16", "20", "24", "32"];
 const SPACING_PREFIXES = ["p", "pt", "pb", "pl", "pr", "px", "py", "m", "mt", "mb", "ml", "mr", "mx", "my", "gap"];
 const TEXT_SIZES = ["xs", "sm", "base", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl"];
 const FONT_WEIGHTS = ["normal", "medium", "semibold", "bold", "black"];
@@ -152,6 +159,11 @@ function buildUtilityClassSet(): Set<string> {
     "shadow", "shadow-md", "shadow-lg", "shadow-xl",
     "border", "border-2",
     "relative", "absolute", "inset-0",
+    // margin "auto" is a distinct CSS value, not a spacing-scale number —
+    // real Tailwind only defines it for margin (m/mx/my), never padding or
+    // gap, so it's listed explicitly here rather than folded into the
+    // numeric SPACING_SCALE loop above.
+    "m-auto", "mx-auto", "my-auto",
     "bg-gradient-to-br", "bg-gradient-to-r", "bg-gradient-to-b",
     "from-brand-500", "from-brand-600", "from-brand-700", "from-brand-800",
     "to-brand-600", "to-brand-700", "to-brand-800", "to-brand-900",
@@ -510,7 +522,7 @@ RESERVED HUBLY ELEMENTS (you configure appearance only, never behavior): ${reser
 Use these for booking, reviews, customer portal, contact forms, and maps — never write your own <form> or interactive markup for these; place the reserved element instead. Their real data and functionality are Hubly's, not yours to invent.
 
 STYLING — every value must be one of these exact tokens (space-separated in "class"), nothing invented:
-- Spacing: ${SPACING_PREFIXES.join("/")}-{${SPACING_SCALE.join(",")}} (e.g. "py-16", "px-8", "gap-6")
+- Spacing: ${SPACING_PREFIXES.join("/")}-{${SPACING_SCALE.join(",")}} (e.g. "py-16", "px-8", "gap-6"); margin also allows "auto" (m-auto, mx-auto, my-auto) for centering — this is the ONLY non-numeric spacing value
 - Text size: text-{${TEXT_SIZES.join(",")}}
 - Font weight: font-{${FONT_WEIGHTS.join(",")}}; also font-serif, font-sans, font-mono, italic
 - Tracking: tracking-{${TRACKING.join(",")}}; leading: leading-{${LEADING.join(",")}}
