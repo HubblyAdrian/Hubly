@@ -360,6 +360,8 @@ export type HublyAITask =
   | "memory"
   | "lightweight"
   | "planner"
+  | "document_generate"
+  | "document_patch"
   | "lead_extract";
 
 export type HublyTextPart = { type: "text"; text: string };
@@ -398,6 +400,12 @@ export type HublyAICallOpts = {
   temperature?: number;
   /** Prefer JSON-shaped replies when the provider supports it (OpenAI). */
   jsonMode?: boolean;
+  /** OpenAI reasoning-tier models only. Directly bounds how many hidden
+   *  reasoning tokens a call spends before it starts producing visible
+   *  output — the actual latency lever for a reasoning model, distinct
+   *  from maxTokens (which bounds reasoning + output combined, and doesn't
+   *  by itself make the model reason less). Unset = provider default. */
+  reasoningEffort?: "low" | "medium" | "high";
   /** Phase 7.1 — Business Memory (facts). Injected into system automatically. */
   memory?: HublyBusinessMemoryInput | null;
   /** Phase 7.6 — Business DNA (identity). Injected separately — never merged into Memory. */
@@ -429,6 +437,12 @@ export type HublyAIResult = {
   /** Conversation Memory after Brain updated it. */
   conversation?: HublyConversationMemory | null;
   memoryUpdated?: boolean;
+  /** Real token usage from the provider response — the only honest basis
+   *  for a cost figure. reasoningTokens is a subset of completionTokens
+   *  (OpenAI bills reasoning tokens as output tokens), broken out
+   *  separately because it's usually the dominant cost for a reasoning
+   *  model and worth seeing on its own. */
+  usage?: { promptTokens: number; completionTokens: number; reasoningTokens?: number };
 };
 
 /** @deprecated use HublySkillId */
@@ -447,6 +461,7 @@ type TaskRoute = {
   model: string;
   maxTokens: number;
   jsonMode?: boolean;
+  reasoningEffort?: "low" | "medium" | "high";
 };
 
 /**
@@ -468,6 +483,25 @@ const TASK_ROUTES: Record<HublyAITask, TaskRoute> = {
   memory: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 800 },
   lightweight: { provider: "openai", model: DEFAULT_LIGHTWEIGHT_MODEL, maxTokens: 600 },
   planner: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2000, jsonMode: true },
+  // DEFAULT_REASONING_MODEL is a reasoning-tier model — max_completion_tokens
+  // covers hidden reasoning tokens AND the visible completion combined, not
+  // just the output. Confirmed empirically: at 6000, a real page-generation
+  // call spent the entire budget on reasoning and returned an EMPTY
+  // completion (content: null) after ~66s — not a truncated-JSON failure,
+  // a fully-consumed-budget one. 20000 leaves real headroom for both a
+  // full page tree and the reasoning it takes to compose one. Patches are
+  // a much smaller ask (a handful of ops against an existing tree), hence
+  // the lower budget — worth the same scrutiny if patches start coming
+  // back empty too.
+  // reasoningEffort:"low" is the actual latency fix here, not maxTokens —
+  // confirmed live that even in the background (EdgeRuntime.waitUntil,
+  // itself capped at ~150s on the free tier, same ceiling as a foreground
+  // request), a real generation call can still fail to finish. A page tree
+  // in this format is closer to structured content generation than deep
+  // logical reasoning, so a lower effort level should cost little in
+  // quality while cutting the dominant cost (hidden reasoning tokens).
+  document_generate: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 20000, jsonMode: true, reasoningEffort: "low" },
+  document_patch: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 4000, jsonMode: true },
   // Small structured-extraction task (paste a text/DM, pull out name/phone/
   // email/service) — deliberately the lightweight tier, not the reasoning
   // model used for page generation. No reasoning effort: this isn't deep
@@ -722,6 +756,7 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
   };
   if (typeof opts.temperature === "number") body.temperature = opts.temperature;
   if (opts.jsonMode) body.response_format = { type: "json_object" };
+  if (opts.reasoningEffort) body.reasoning_effort = opts.reasoningEffort;
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -740,12 +775,21 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
 
   const data = await res.json();
   const text = String(data?.choices?.[0]?.message?.content || "").trim();
+  const rawUsage = data?.usage;
+  const usage = rawUsage
+    ? {
+      promptTokens: Number(rawUsage.prompt_tokens) || 0,
+      completionTokens: Number(rawUsage.completion_tokens) || 0,
+      reasoningTokens: Number(rawUsage.completion_tokens_details?.reasoning_tokens) || undefined,
+    }
+    : undefined;
   return {
     text,
     provider: "openai",
     model: opts.model,
     task: opts.task,
     memoryKeys: memoryKeys(opts.memory),
+    usage,
   };
 }
 
@@ -793,6 +837,7 @@ function resolveInternal(opts: HublyAICallOpts, fallbackTask: HublyAITask): Inte
     model,
     maxTokens: opts.maxTokens ?? route.maxTokens,
     jsonMode: opts.jsonMode ?? route.jsonMode,
+    reasoningEffort: opts.reasoningEffort ?? route.reasoningEffort,
   };
 }
 

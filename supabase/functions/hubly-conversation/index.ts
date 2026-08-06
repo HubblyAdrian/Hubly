@@ -61,7 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, uploadDraftLogo, uploadDraftHeroImage } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, uploadDraftLogo, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -140,24 +140,14 @@ const CUSTOMER_UNDERSTANDING_SCHEMA = `{
   "bookingStatus"?: { "status"?: string, "bookingId"?: string }
 }`;
 
-type ConversationContextName = "dashboard" | "customer";
-
-// Per docs/HUBLY_CONVERSATION_CONTEXT_MODEL.md Section 6: two enforcement
-// points, not one. This list is the prompt-level advertisement (used below
-// to filter what buildCapabilitiesPromptBlock shows); the SAME list is
-// checked again at dispatch time, right before findAction() is ever called,
-// so a context is bounded structurally — never just by what the prompt
-// happened to omit.
-const CONTEXT_CAPABILITY_ALLOWLIST: Record<ConversationContextName, string[]> = {
-  dashboard: ["website", "online_presence", "business"],
-  customer: ["booking"],
-};
-
-// Real, distinct visual directions the renderer can actually show today
-// (public/layouts/*.js) — not invented. A representative spread, not the
-// full catalog, so the model can honestly describe 2-3 real directions by
-// name and character instead of picking blind or inventing one.
-const REAL_LAYOUT_DIRECTIONS = `- premium-dark ("Premium Dark") — upscale, moody, dark
+// Legacy (pre-document-generation) template-picker directions — restored
+// verbatim from main, not rewritten. Used only in LEGACY_WEBSITE_SECTION
+// below, when HUBLY_DOCUMENT_GENERATION_ENABLED is off, so real businesses
+// on the un-flagged path keep exactly the flow they have today; the
+// underlying business.updateDraft heroHeadline/heroSubhead/layout/seoTitle
+// fields this depends on were never removed from the capability registry,
+// only superseded in the prompt by the newer document-generation text.
+const LEGACY_LAYOUT_DIRECTIONS = `- premium-dark ("Premium Dark") — upscale, moody, dark
 - obsidian-gold ("Obsidian Gold") — luxury, black & gold
 - calm-service ("Calm Service") — soft, spacious, calm
 - editorial ("Boutique Editorial") — image-led, restrained, magazine-like
@@ -171,9 +161,46 @@ const REAL_LAYOUT_DIRECTIONS = `- premium-dark ("Premium Dark") — upscale, moo
 - garage-industrial ("Workshop Industrial") — rugged, industrial
 (Plus a few vertical-specific ones — estate-green for landscaping, crystal-pane for windows, rinse-force for pressure washing — offer these only when the business is actually that vertical.)`;
 
+type ConversationContextName = "dashboard" | "customer";
+
+// Per docs/HUBLY_CONVERSATION_CONTEXT_MODEL.md Section 6: two enforcement
+// points, not one. This list is the prompt-level advertisement (used below
+// to filter what buildCapabilitiesPromptBlock shows); the SAME list is
+// checked again at dispatch time, right before findAction() is ever called,
+// so a context is bounded structurally — never just by what the prompt
+// happened to omit.
+const CONTEXT_CAPABILITY_ALLOWLIST: Record<ConversationContextName, string[]> = {
+  dashboard: ["website", "online_presence", "business"],
+  customer: ["booking"],
+};
+
+
 function getAllowedCapabilities(context: ConversationContextName) {
   const allow = new Set(CONTEXT_CAPABILITY_ALLOWLIST[context]);
   return HUBLY_CAPABILITY_REGISTRY.filter((c) => allow.has(c.name));
+}
+
+// Real AI website generation — merged to main but deliberately shipped
+// dark. Nothing in this whole feature (generation, the styling layer, the
+// designRationale prompting, the benchmark) has ever been exercised by a
+// real customer; every verification pass has been a manual/test-harness
+// call. A global, explicit env flag (not a per-business rollout tier,
+// which wasn't scoped or asked for) is the deliberate switch for turning
+// it on for real traffic, kept separate from the decision to merge the
+// code. Unset/anything other than "true" = off, the safe default.
+const DOCUMENT_GENERATION_ENABLED = (Deno.env.get("HUBLY_DOCUMENT_GENERATION_ENABLED") || "").trim() === "true";
+const GATED_WEBSITE_ACTIONS = new Set(["generateDocument", "patchDocument"]);
+
+/** Second half of the "advertise or don't" gate — strips the gated actions
+ *  out of what the model is even told exists, same discipline as
+ *  CONTEXT_CAPABILITY_ALLOWLIST already applies at the whole-capability
+ *  level. Shallow-copies the "website" capability so the shared, global
+ *  HUBLY_CAPABILITY_REGISTRY is never mutated. */
+function withDocumentGenerationGate(capabilities: typeof HUBLY_CAPABILITY_REGISTRY) {
+  if (DOCUMENT_GENERATION_ENABLED) return capabilities;
+  return capabilities.map((c) =>
+    c.name === "website" ? { ...c, actions: c.actions.filter((a) => !GATED_WEBSITE_ACTIONS.has(a.name)) } : c
+  );
 }
 
 // The one dispatch point where "engine stays generic, only the schema
@@ -289,14 +316,21 @@ When the goal is a website (or becomes one), don't ask about the business first 
 
 When a website.analyze result comes back real, let it actually shape what you build — not just which direction you happen to propose. Look at what genuinely came back in that CAPABILITY RESULT: a real brandColors entry becomes the brandColor you pass to business.startDraft/updateDraft, instead of a generic pick; real headline text (headlines) is a real signal for the heroHeadline you write — let it anchor your own words rather than defaulting to a generic line, though you should still write it yourself, not paste it verbatim if it doesn't fit their business; a real services list seeds business.setServices directly, not industry guesswork. Brand color, headline text, and services are the only three things actually read — only ever describe something as "from your reference" or "pulled from your site" for those three, never for anything else (font pairing, layout structure, imagery style are NOT captured by this, so never say or imply they were, even in passing — "matches their layout" or "captures the same feel" are claims you can't back up here). If the analyze result came back with none of those three meaningfully present — a failed fetch, an empty result, a screenshot with nothing legible — say so plainly and fall back to your own judgment the same way you would with no reference at all; never imply real inspiration shaped something it didn't.
 
-If not, propose 2-3 REAL, genuinely different visual directions from this actual list — describe each in your own words by its real character, never as "Option A/B/C" or a template name dump:
-${REAL_LAYOUT_DIRECTIONS}
+${DOCUMENT_GENERATION_ENABLED ? `There is no template or direction to pick anymore — don't propose "a few directions" and don't describe archetypes. Website building now works like this: gather just enough (a real business name if you have it — "Your Business" as an honest placeholder is fine if you don't yet — the business type, and anything real from website.analyze above) and then build it for real:
+${draftBusiness ? `- A draft already exists (${draftBusiness.url}). If no document exists yet on it, call website.generateDocument now. If one already exists, never call generateDocument again this conversation — any change, however small, goes through website.patchDocument instead (see below). business.updateDraft is still how name/tagline/about/phone/email/businessType/brandColor get captured as real business facts, independent of the page — but its heroHeadline/heroSubhead/layout fields no longer do anything meaningful once a document exists; don't set them.` : `- Call business.startDraft the moment you have a real or placeholder business name, in the SAME reply. Then call website.generateDocument in that same reply too — don't wait for a follow-up turn. Never call business.startDraft again this conversation.`}
+
+website.generateDocument takes one thing: a rich "brief" — write it yourself, in full sentences, covering everything you actually know: the real business name and type, city, tone, and — critically — any REAL brandColors/headline text/services from a website.analyze result, cited as real (see above; only those three fields are real from analysis, never claim more). The richer the brief, the better the real page it produces — don't under-write it to save a sentence.
+
+Once a document exists, EVERY change — a headline edit, a color change, adding or removing a section, moving something — goes through website.patchDocument with a plain-language instruction ("make the headline larger", "remove the FAQ section"). Never call generateDocument again to make an edit; that regenerates the whole page instead of changing the one thing asked for, which is the opposite of what should happen.` : `If not, propose 2-3 REAL, genuinely different visual directions from this actual list — describe each in your own words by its real character, never as "Option A/B/C" or a template name dump:
+${LEGACY_LAYOUT_DIRECTIONS}
 Whenever you propose directions like this, ALSO include a top-level "concepts" array in your JSON response — one entry per direction you just described, in the same order: {"id":"<the real layout id>","name":"<its real name>","character":"<a short phrase, your own words>"}. This is what puts something to actually look at on screen instead of just a paragraph to read — never omit it when you're presenting directions to choose from, and never include it any other time. Because the cards themselves carry the name and character, your "message" on this turn should be almost nothing — "A few directions:" or similar — never restate each one's description again in prose too; that's the exact redundancy showing real progress is supposed to replace.
 
 The instant a direction is picked, build it for real — don't wait for a business name first. A real site with placeholder content beats a perfect question every time:
 ${draftBusiness ? `- A draft already exists (${draftBusiness.url}) — use business.updateDraft for anything new: name, tagline, about, contact info, a drafted headline/subhead, or a changed direction (layout). Never call business.startDraft again this conversation.` : `- Call business.startDraft the moment a direction is picked, in the SAME reply, even if you don't know the business name yet — use their real name if you already have it, otherwise pass "Your Business" as a placeholder (this is expected, not dishonest — a real, live, editable site with placeholder content is exactly right at this stage). Then keep calling business.updateDraft as you learn more (a real name replaces the placeholder the instant they give it, headline, subhead, about, contact info) — every real detail should show up there within the same reply it's learned.`}
 
-Write real headline/subhead/about copy yourself (this is conversational value, priority 1) and pass it straight into business.updateDraft's heroHeadline/heroSubhead/about — don't just describe what you'd write, actually write it and put it on the site. Always include seoTitle too ("<Business Name> | <what they actually do>") — businessType only recognizes a handful of fixed categories (detailing, pressure_washing, landscaping, cleaning, photography, hvac, windows) and silently mislabels anything outside that list, so seoTitle is what keeps the real page title accurate for everything else. Only set businessType when it genuinely matches one of those categories — never force a fit.
+Write real headline/subhead/about copy yourself (this is conversational value, priority 1) and pass it straight into business.updateDraft's heroHeadline/heroSubhead/about — don't just describe what you'd write, actually write it and put it on the site. Always include seoTitle too ("<Business Name> | <what they actually do>") — businessType only recognizes a handful of fixed categories (detailing, pressure_washing, landscaping, cleaning, photography, hvac, windows) and silently mislabels anything outside that list, so seoTitle is what keeps the real page title accurate for everything else. Only set businessType when it genuinely matches one of those categories — never force a fit.`}
+
+The moment you know what services they offer — even roughly, even just one — call business.setServices with the complete real list (name, and price/description whenever actually given); this is a real business fact independent of the page, and feeds future generation/edits. seoTitle still matters — pass it via business.updateDraft ("<Business Name> | <what they actually do>") since businessType only recognizes a handful of fixed categories and silently mislabels anything outside that list.
 
 The moment you know what services they offer — even roughly, even just one — call business.setServices with the complete real list (name, and price/description whenever actually given). Real service cards appear on the live site immediately; this is one of the highest-value single moments in the whole conversation, so don't wait to have all of them before calling it, and call it again with the fuller list as you learn more. Phone/email, once given, go straight into business.updateDraft's phone/email — they show up in the site's real contact line. There is no real place for business hours to live yet — never ask about them, and never invent a footer showing hours that don't actually exist anywhere.
 
@@ -328,7 +362,7 @@ NATURAL NEXT STEP — never a feature offer ("Would you like Booking? CRM? Revie
   // CONTEXT_CAPABILITY_ALLOWLIST above. website.analyze/online_presence.* are
   // owner actions, never shown to "customer"; booking is customer-facing,
   // never shown to "dashboard".
-  const allowedCapabilities = getAllowedCapabilities(context);
+  const allowedCapabilities = withDocumentGenerationGate(getAllowedCapabilities(context));
   const capabilitiesBlock = allowedCapabilities.length
     ? buildCapabilitiesPromptBlock(allowedCapabilities)
     : "(No capabilities are registered for this context yet.)";
@@ -538,27 +572,72 @@ Deno.serve(async (req) => {
       ? { imageBase64: String(body.directImageEdit.imageBase64), mediaType: String(body.directImageEdit.mediaType || "image/png") }
       : null;
 
-  if (directEdit || directImageEdit) {
+  // Same short-circuit family, generalized to any node in a Hubly Document
+  // instead of the three hardcoded legacy fields above — a click already
+  // supplies the exact target id and new value, so there's nothing for a
+  // model to decide here either.
+  const DIRECT_DOC_OPS = new Set(["update_text", "update_attrs"]);
+  const directDocumentPatch =
+    body?.directDocumentPatch && typeof body.directDocumentPatch === "object" &&
+    typeof body.directDocumentPatch.op === "string" && DIRECT_DOC_OPS.has(body.directDocumentPatch.op) &&
+    typeof body.directDocumentPatch.id === "string" && body.directDocumentPatch.id
+      ? {
+          op: String(body.directDocumentPatch.op),
+          id: String(body.directDocumentPatch.id),
+          ...(typeof body.directDocumentPatch.text === "string" ? { text: String(body.directDocumentPatch.text) } : {}),
+          ...(body.directDocumentPatch.attrs && typeof body.directDocumentPatch.attrs === "object" ? { attrs: body.directDocumentPatch.attrs } : {}),
+        }
+      : null;
+  // Image replacement needs a real upload before it's a patch — same
+  // click-already-supplies-everything shape, one extra real step.
+  const directDocumentImageEdit =
+    body?.directDocumentImageEdit && typeof body.directDocumentImageEdit === "object" &&
+    typeof body.directDocumentImageEdit.id === "string" && body.directDocumentImageEdit.id &&
+    typeof body.directDocumentImageEdit.imageBase64 === "string"
+      ? {
+          id: String(body.directDocumentImageEdit.id),
+          imageBase64: String(body.directDocumentImageEdit.imageBase64),
+          mediaType: String(body.directDocumentImageEdit.mediaType || "image/png"),
+        }
+      : null;
+
+  if (directEdit || directImageEdit || directDocumentPatch || directDocumentImageEdit) {
     if (!draftBusiness) {
       return jsonRes({ ok: false, error: "no_draft_to_edit" }, 400);
     }
+    // Click-to-edit only ever operates on an already-generated document, so
+    // this path can't structurally be reached while the feature is dark —
+    // but checked explicitly anyway, same discipline as the other two
+    // enforcement points, not relying on that precondition alone.
+    if ((directDocumentPatch || directDocumentImageEdit) && !DOCUMENT_GENERATION_ENABLED) {
+      return jsonRes({ ok: false, error: "document_generation_disabled" }, 400);
+    }
     let result: { ok: boolean; real: boolean; summary: string; raw?: unknown; error?: string };
     let actionName: string;
+    let isDocumentAction = false;
     if (directEdit) {
       actionName = "updateDraft";
       const found = findAction("business", "updateDraft");
       result = found
         ? await found.handler({ draftId: draftBusiness.id, draftToken: draftBusiness.draftToken, [directEdit.field]: directEdit.value })
         : { ok: false, real: false, summary: "That action is not available.", error: "unknown_action" };
-    } else {
+    } else if (directImageEdit) {
       actionName = "setHeroImage";
-      result = await uploadDraftHeroImage(draftBusiness.id, draftBusiness.draftToken, directImageEdit!.imageBase64, directImageEdit!.mediaType);
+      result = await uploadDraftHeroImage(draftBusiness.id, draftBusiness.draftToken, directImageEdit.imageBase64, directImageEdit.mediaType);
+    } else if (directDocumentImageEdit) {
+      isDocumentAction = true;
+      actionName = "patchDocument";
+      result = await uploadAndPatchDocumentImage(draftBusiness.id, draftBusiness.draftToken, directDocumentImageEdit.id, directDocumentImageEdit.imageBase64, directDocumentImageEdit.mediaType);
+    } else {
+      isDocumentAction = true;
+      actionName = "patchDocument";
+      result = await applyDirectDocumentPatch(draftBusiness.id, draftBusiness.draftToken, directDocumentPatch!);
     }
     return jsonRes({
       ok: true,
       reply: "",
       messages: incoming,
-      actions: [{ capability: "business", capabilityAction: actionName, args: {}, ok: !!result.ok, real: !!result.real }],
+      actions: [{ capability: isDocumentAction ? "website" : "business", capabilityAction: actionName, args: {}, ok: !!result.ok, real: !!result.real }],
       interimMessages: [],
       draftBusiness,
     });
@@ -606,7 +685,12 @@ Deno.serve(async (req) => {
         const capabilityName = String(decision.capability);
         const actionName = String(decision.capabilityAction);
         const allowedInContext = CONTEXT_CAPABILITY_ALLOWLIST[context].includes(capabilityName);
-        const found = allowedInContext ? findAction(capabilityName, actionName) : undefined;
+        // Third enforcement point, same discipline as the two documented
+        // above: generateDocument/patchDocument are structurally blocked
+        // here regardless of what the prompt advertised or what a decision
+        // requests, whenever the feature is shipped dark.
+        const isGatedDocAction = capabilityName === "website" && GATED_WEBSITE_ACTIONS.has(actionName);
+        const found = allowedInContext && !(isGatedDocAction && !DOCUMENT_GENERATION_ENABLED) ? findAction(capabilityName, actionName) : undefined;
         // businessId is structural context, not something the model was ever
         // shown a real value for — it must never be trusted to transcribe a
         // UUID correctly. The engine injects the real one whenever it's known,
@@ -619,20 +703,52 @@ Deno.serve(async (req) => {
         // the real draftId/draftToken, so it can never be trusted to
         // transcribe them — the engine injects the real ones whenever a
         // draft already exists, overriding any placeholder the model put in.
-        if (capabilityName === "business" && (actionName === "updateDraft" || actionName === "setServices") && draftBusiness) {
+        const NEEDS_DRAFT_INJECTION =
+          (capabilityName === "business" && (actionName === "updateDraft" || actionName === "setServices")) ||
+          (capabilityName === "website" && (actionName === "generateDocument" || actionName === "patchDocument"));
+        if (NEEDS_DRAFT_INJECTION && draftBusiness) {
           dispatchArgs.draftId = draftBusiness.id;
           dispatchArgs.draftToken = draftBusiness.draftToken;
         }
-        const result = found
-          ? await found.handler(dispatchArgs)
-          : {
-            ok: false,
+        // Real page generation can run well past what a single request
+        // should block on (confirmed live: 100-150+s, right at/over
+        // Supabase's function timeout). generateDocument specifically runs
+        // as a background task instead of being awaited here — the
+        // capability result returned THIS turn is honestly "started", not
+        // "done" (see its description in the registry, which the model
+        // reads and is expected to say something honest about, like
+        // "building now" rather than declaring it finished). The client
+        // polls business_documents (already publicly readable) until the
+        // real version appears.
+        let result;
+        if (capabilityName === "website" && actionName === "generateDocument" && found) {
+          const bgTask = found.handler(dispatchArgs);
+          bgTask.catch((e) => console.error("background generateDocument failed", e));
+          try {
+            // EdgeRuntime is a Supabase Edge Functions / Deno Deploy global,
+            // not in the standard lib types.
+            // deno-lint-ignore no-explicit-any
+            const rt = (globalThis as any).EdgeRuntime;
+            if (rt && typeof rt.waitUntil === "function") rt.waitUntil(bgTask);
+          } catch (_e) { /* best effort — bgTask still runs either way, just not guaranteed past response if this fails */ }
+          result = {
+            ok: true,
             real: false,
-            summary: allowedInContext
-              ? "That capability or action does not exist."
-              : "That capability is not available in this conversation.",
-            error: allowedInContext ? "unknown_capability_action" : "capability_not_allowed_in_context",
+            summary: "Real page generation started in the background — this takes about a minute to produce a complete, real page. It will appear as soon as it's ready.",
+            raw: { status: "building" },
           };
+        } else {
+          result = found
+            ? await found.handler(dispatchArgs)
+            : {
+              ok: false,
+              real: false,
+              summary: allowedInContext
+                ? "That capability or action does not exist."
+                : "That capability is not available in this conversation.",
+              error: allowedInContext ? "unknown_capability_action" : "capability_not_allowed_in_context",
+            };
+        }
 
         // Capture the real draft identity the moment it exists — startDraft
         // returns it fresh; updateDraft just confirms it's still the same

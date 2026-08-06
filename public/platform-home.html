@@ -862,6 +862,51 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     }
   }
 
+  // website.generateDocument runs in the background on the server (a real
+  // page generation can take past a minute, longer than a single request
+  // should block on) — the capability result that comes back is honestly
+  // "started", not "done". This is what fills the gap between that and the
+  // real page actually existing: an honest loading state, then polling the
+  // same public, already-readable business_documents table (no new
+  // endpoint) until the real version appears, then handing off to the
+  // normal hcRenderCanvas() path exactly as if it had loaded instantly.
+  var hcDocPollTimer = null;
+  function hcRenderDocumentBuilding(){
+    var root = document.getElementById('hcCanvas');
+    if(!root) return;
+    root.innerHTML =
+      '<div class="hc-canvas-loading" style="position:static;flex:1"><span class="hc-live-dot"></span>&nbsp;Building your real page — this can take about a minute…</div>';
+  }
+  function hcPollForDocument(businessId, attempt){
+    if(hcDocPollTimer){ clearTimeout(hcDocPollTimer); hcDocPollTimer = null; }
+    if(!hc.draftBusiness || hc.draftBusiness.id !== businessId) return; // superseded by a newer turn
+    var MAX_ATTEMPTS = 40; // ~40 * 4s = ~160s of polling before giving up honestly
+    fetch(SUPA_URL + '/rest/v1/business_documents?business_id=eq.' + encodeURIComponent(businessId) + '&tag=eq.website&select=version&order=version.desc&limit=1', {
+      headers: { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY }
+    })
+      .then(function(r){ return r.json(); })
+      .then(function(rows){
+        if(!hc.draftBusiness || hc.draftBusiness.id !== businessId) return;
+        if(Array.isArray(rows) && rows.length){
+          hc.canvasStage = 'site';
+          hcRenderCanvas();
+          var hcAppEl = document.getElementById('hcApp');
+          if(hcAppEl) hcAppEl.classList.add('hc-has-draft');
+          return;
+        }
+        if(attempt >= MAX_ATTEMPTS){
+          var root = document.getElementById('hcCanvas');
+          if(root) root.innerHTML = '<div class="hc-canvas-loading" style="position:static;flex:1">This is taking longer than expected — try asking again in a moment.</div>';
+          return;
+        }
+        hcDocPollTimer = setTimeout(function(){ hcPollForDocument(businessId, attempt + 1); }, 4000);
+      })
+      .catch(function(){
+        if(attempt >= MAX_ATTEMPTS) return;
+        hcDocPollTimer = setTimeout(function(){ hcPollForDocument(businessId, attempt + 1); }, 4000);
+      });
+  }
+
   // Shown only before any real draft exists — an honest "composing" beat,
   // never implying a web/image search that isn't real. Copy adapts to what
   // stage the canvas was already in — no generic label before there's
@@ -949,15 +994,20 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         if(data.draftBusiness && data.draftBusiness.id && data.draftBusiness.url){
           hc.draftBusiness = data.draftBusiness;
         }
-        // Concepts take priority regardless of whether a draft already
-        // exists — "show me different directions" is a legitimate request
-        // after a site is live, not just before. This used to be gated on
-        // !hc.draftBusiness, which meant the model could correctly say "A
-        // few different directions:" and return real concepts, and the
-        // client would silently drop them because a draft already existed
-        // — the chat text rendered fine (unconditional), the canvas just
-        // never updated. Real bug, confirmed live, fixed by reordering.
-        if(Array.isArray(data.concepts) && data.concepts.length){
+        // generateDocument just started (real:false, raw.status==='building')
+        // — the page doesn't exist yet, so there's nothing for the normal
+        // render/refresh branches below to show. Highest priority: this
+        // response is otherwise indistinguishable from "nothing happened".
+        var generatingDocument = Array.isArray(data.actions) && data.actions.some(function(a){
+          return a.capability === 'website' && a.capabilityAction === 'generateDocument' && a.real === false;
+        });
+        if(generatingDocument && hc.draftBusiness){
+          hc.canvasStage = 'site';
+          hcRenderDocumentBuilding();
+          var hcAppElBuild = document.getElementById('hcApp');
+          if(hcAppElBuild) hcAppElBuild.classList.add('hc-has-draft');
+          hcPollForDocument(hc.draftBusiness.id, 0);
+        } else if(Array.isArray(data.concepts) && data.concepts.length){
           hc.canvasStage = 'concepts';
           hcRenderConcepts(data.concepts);
         } else if(!hadDraft && hc.draftBusiness){
@@ -1100,6 +1150,16 @@ body.hc-active #categories,body.hc-active .footer{display:none}
       hcSendDirectEdit({ directEdit: { field: data.field, value: data.value } });
     } else if(data.type === 'hcInlineImageEdit' && data.field === 'heroImage' && typeof data.imageBase64 === 'string'){
       hcSendDirectEdit({ directImageEdit: { field: 'heroImage', imageBase64: data.imageBase64, mediaType: data.mediaType || 'image/png' } });
+    } else if(data.type === 'hcDocInlineEdit' && (data.op === 'update_text' || data.op === 'update_attrs') && typeof data.id === 'string' && data.id){
+      // Hubly Document click-to-edit — same direct-dispatch shape as the
+      // two branches above, generalized to any node id instead of the
+      // three hardcoded legacy fields.
+      var patchOp = { op: data.op, id: data.id };
+      if(typeof data.text === 'string') patchOp.text = data.text;
+      if(data.attrs && typeof data.attrs === 'object') patchOp.attrs = data.attrs;
+      hcSendDirectEdit({ directDocumentPatch: patchOp });
+    } else if(data.type === 'hcDocInlineImageEdit' && typeof data.id === 'string' && data.id && typeof data.imageBase64 === 'string'){
+      hcSendDirectEdit({ directDocumentImageEdit: { id: data.id, imageBase64: data.imageBase64, mediaType: data.mediaType || 'image/png' } });
     }
   });
 

@@ -35,6 +35,7 @@
 <link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-15">
 <link rel="stylesheet" href="/journey-os/photography-projects.css?v=projects-16">
 <link rel="stylesheet" href="/journey-os/app-marketplace.css?v=projects-16">
+<link rel="stylesheet" href="/journey-os/hubly-document.css?v=1">
 <style>
 :root{
   --brand:#D9632D;--brand-dark:#B84E1F;--brand-light:#FDF0E8;
@@ -10014,6 +10015,18 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 
+<!--
+  Hubly Document rendering — a wholly separate page from p-storefront
+  (the legacy archetype renderer) on purpose. When a business has a real,
+  validated Hubly Document, loadPublicProfile injects its already-rendered,
+  already-validated HTML directly here and shows this page instead of
+  running any of the legacy S.*/syncStorefront/renderWebsite machinery —
+  the two rendering systems never interleave or share DOM.
+-->
+<div id="p-hubly-document" class="page" style="background:#fff;">
+  <div id="hc-doc-root"></div>
+</div>
+
 <!-- Public profile not live yet (subdomain with no saved business) -->
 <div id="p-public-unavailable" class="page" style="background:var(--surface-2,#F7F7F5);">
   <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
@@ -16689,6 +16702,28 @@ function getSlugFromHost(){
   if(!sub||['www','myhubly','hubly'].includes(sub))return null;
   return sub;
 }
+// Reads the latest already-validated, already-rendered HTML for a business's
+// Hubly Document, if one exists. Returns null (not an error) when none does
+// — that's the normal, expected case for any business still on the legacy
+// archetype renderer, not a failure.
+async function loadLatestBusinessDocumentHtml(businessId,tag){
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient
+      .from('business_documents')
+      .select('rendered_html')
+      .eq('business_id',businessId)
+      .eq('tag',tag||'website')
+      .order('version',{ascending:false})
+      .limit(1)
+      .maybeSingle();
+    if(error||!data||!data.rendered_html)return null;
+    return data.rendered_html;
+  }catch(e){
+    console.warn('loadLatestBusinessDocumentHtml failed',e);
+    return null;
+  }
+}
 async function loadPublicProfile(slug){
   const dbClient=await waitForDb();
   const {data,error}=await dbClient.from('businesses').select('*').eq('slug',slug).single();
@@ -16701,6 +16736,19 @@ async function loadPublicProfile(slug){
     showP('p-public-unavailable');
     return;
   }
+  currentBusiness=data;
+  try{
+    const rendered=await loadLatestBusinessDocumentHtml(data.id,'website');
+    if(rendered){
+      const root=document.getElementById('hc-doc-root');
+      if(root)root.innerHTML=rendered;
+      if(data.name)document.title=data.name;
+      try{document.documentElement.setAttribute('data-theme','day');}catch(e){}
+      showP('p-hubly-document');
+      try{wireHublyDocumentClickToEdit();}catch(e){}
+      return;
+    }
+  }catch(e){console.warn('loadPublicProfile: hubly document check failed, falling back to legacy renderer',e);}
   currentBusiness=data;
   S.biz=data.name||'';S.tag=data.tagline||'';S.phone=data.phone||'';
   S.email=data.email||'';S.city=data.city||'';S.about=data.about||'';
@@ -50633,6 +50681,195 @@ if(document.readyState==='loading'){
     target.addEventListener('mouseleave', function(){ target.style.outline = ''; });
   }, true);
 })();
+</script>
+
+<!--
+  Hubly Document click-to-edit — generalized version of the block above,
+  for the new render path (#hc-doc-root) instead of the three hardcoded
+  legacy fields. Every rendered node carries a real data-node attribute
+  (see renderHublyDocument in hubly_document.ts), so there's no separate id
+  registry to keep in sync — the DOM the person is looking at IS the map
+  from "what did I click" to "which node is that." Same gating, same
+  postMessage-to-parent pattern as above; scoped to leaf text nodes only
+  for this pass (a click unambiguously means "edit this text," the same
+  way it did for headline/subhead before) — attribute-level edits (color,
+  size, spacing) go through the conversational path today.
+-->
+<script>
+function wireHublyDocumentClickToEdit(){
+  try{
+    if(new URL(location.href).searchParams.get('hcEdit') !== '1') return;
+  }catch(e){ return; }
+  var root = document.getElementById('hc-doc-root');
+  if(!root || root.getAttribute('data-hc-wired') === '1') return;
+  root.setAttribute('data-hc-wired', '1');
+
+  function post(msg){
+    try{ window.parent.postMessage(msg, '*'); }catch(e){}
+  }
+
+  var overlay = null;
+  function closeOverlay(){
+    if(overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    overlay = null;
+  }
+
+  // Same closed vocabulary the validator enforces (see UTILITY_CLASSES /
+  // COLOR_ROLES in hubly_document.ts) — a deliberately small, representative
+  // subset for a one-click picker, not the full set. Any token sent here
+  // will pass validation because it's already a real, known token, not
+  // because click-to-edit gets a separate, looser rule.
+  var COLOR_SWATCHES = [
+    { label: 'Dark', token: 'ink-900', hex: '#1a1a1a' },
+    { label: 'Muted', token: 'ink-400', hex: '#8a8a8a' },
+    { label: 'White', token: 'white', hex: '#ffffff' },
+    { label: 'Brand', token: 'brand-600', hex: '#D9632D' },
+    { label: 'Brand Dark', token: 'brand-800', hex: '#8a3f1c' },
+  ];
+  var FONT_OPTIONS = [
+    { label: 'Sans', token: 'font-sans' },
+    { label: 'Serif', token: 'font-serif' },
+    { label: 'Mono', token: 'font-mono' },
+  ];
+  var COLOR_TOKEN_RE = /^text-(ink-900|ink-700|ink-400|ink-100|white|brand-100|brand-300|brand-500|brand-600|brand-700|brand-800|brand-900)$/;
+  function withColorToken(classStr, colorToken){
+    var kept = (classStr || '').split(/\s+/).filter(Boolean).filter(function(t){ return !COLOR_TOKEN_RE.test(t); });
+    kept.push('text-' + colorToken);
+    return kept.join(' ');
+  }
+  function withFontToken(classStr, fontToken){
+    var kept = (classStr || '').split(/\s+/).filter(Boolean).filter(function(t){ return t !== 'font-sans' && t !== 'font-serif' && t !== 'font-mono'; });
+    kept.push(fontToken);
+    return kept.join(' ');
+  }
+  function applyAttrPatch(el, id, newClass){
+    el.setAttribute('class', newClass); // optimistic local paint
+    post({ type: 'hcDocInlineEdit', op: 'update_attrs', id: id, attrs: { class: newClass } });
+  }
+
+  function openTextEditor(el){
+    closeOverlay();
+    var id = el.getAttribute('data-node');
+    overlay = document.createElement('div');
+    overlay.setAttribute('data-hc-edit-overlay', '1');
+    var rect = el.getBoundingClientRect();
+    overlay.style.cssText =
+      'position:fixed;z-index:999999;top:' + (rect.bottom + window.scrollY + 8) + 'px;' +
+      'left:' + Math.max(8, rect.left + window.scrollX) + 'px;' +
+      'max-width:min(480px,90vw);background:#12151f;border:1px solid rgba(255,255,255,.18);' +
+      'border-radius:12px;padding:10px;box-shadow:0 20px 50px -12px rgba(0,0,0,.6);' +
+      'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;';
+    var ta = document.createElement('textarea');
+    ta.value = el.textContent || '';
+    ta.style.cssText =
+      'width:100%;min-height:64px;background:#0d0f16;color:#f5f6f8;' +
+      'border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:8px;' +
+      'font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;';
+
+    var styleRow = document.createElement('div');
+    styleRow.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;';
+    var colorLabel = document.createElement('span');
+    colorLabel.textContent = 'Color';
+    colorLabel.style.cssText = 'font-size:10.5px;color:#8a8d98;margin-right:2px;';
+    styleRow.appendChild(colorLabel);
+    COLOR_SWATCHES.forEach(function(c){
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.title = c.label;
+      btn.style.cssText = 'width:20px;height:20px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:' + c.hex + ';cursor:pointer;padding:0;';
+      btn.addEventListener('click', function(){
+        var newClass = withColorToken(el.getAttribute('class') || '', c.token);
+        applyAttrPatch(el, id, newClass);
+      });
+      styleRow.appendChild(btn);
+    });
+    var fontLabel = document.createElement('span');
+    fontLabel.textContent = 'Font';
+    fontLabel.style.cssText = 'font-size:10.5px;color:#8a8d98;margin:0 2px 0 8px;';
+    styleRow.appendChild(fontLabel);
+    FONT_OPTIONS.forEach(function(f){
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.textContent = f.label;
+      btn.style.cssText = 'background:none;border:1px solid rgba(255,255,255,.2);color:#c9cbd1;padding:3px 8px;border-radius:6px;font-size:11px;cursor:pointer;';
+      btn.addEventListener('click', function(){
+        var newClass = withFontToken(el.getAttribute('class') || '', f.token);
+        applyAttrPatch(el, id, newClass);
+      });
+      styleRow.appendChild(btn);
+    });
+
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;margin-top:8px;justify-content:flex-end;';
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button'; cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'background:none;border:1px solid rgba(255,255,255,.2);color:#c9cbd1;padding:7px 12px;border-radius:7px;font-size:12.5px;cursor:pointer;';
+    var saveBtn = document.createElement('button');
+    saveBtn.type = 'button'; saveBtn.textContent = 'Save';
+    saveBtn.style.cssText = 'background:#D9632D;border:none;color:#fff;padding:7px 14px;border-radius:7px;font-size:12.5px;font-weight:700;cursor:pointer;';
+    cancelBtn.addEventListener('click', closeOverlay);
+    saveBtn.addEventListener('click', function(){
+      var value = ta.value.trim();
+      if(value && id){
+        el.textContent = value; // optimistic local paint
+        post({ type: 'hcDocInlineEdit', op: 'update_text', id: id, text: value });
+      }
+      closeOverlay();
+    });
+    document.addEventListener('keydown', function escClose(e){
+      if(e.key === 'Escape'){ closeOverlay(); document.removeEventListener('keydown', escClose); }
+    });
+    row.appendChild(cancelBtn); row.appendChild(saveBtn);
+    overlay.appendChild(ta); overlay.appendChild(styleRow); overlay.appendChild(row);
+    document.body.appendChild(overlay);
+    ta.focus(); ta.select();
+  }
+
+  // Click-to-replace for images — a file picker, not a text overlay, since
+  // there's nothing to type. Same postMessage-out pattern, a different
+  // message type because a real upload has to happen before this becomes
+  // a patch (see uploadAndPatchDocumentImage in the registry).
+  var imgFileInput = document.createElement('input');
+  imgFileInput.type = 'file'; imgFileInput.accept = 'image/*'; imgFileInput.style.display = 'none';
+  imgFileInput.setAttribute('data-hc-doc-image-input', '1');
+  document.body.appendChild(imgFileInput);
+  var pendingImageNodeId = null;
+  imgFileInput.addEventListener('change', function(){
+    var file = imgFileInput.files && imgFileInput.files[0];
+    imgFileInput.value = '';
+    if(!file || !pendingImageNodeId) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      var result = String(reader.result || '');
+      var comma = result.indexOf(',');
+      var data = comma !== -1 ? result.slice(comma + 1) : result;
+      post({ type: 'hcDocInlineImageEdit', id: pendingImageNodeId, imageBase64: data, mediaType: file.type || 'image/png' });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  root.addEventListener('click', function(e){
+    var target = e.target && e.target.closest ? e.target.closest('[data-node]') : null;
+    if(!target || !root.contains(target)) return;
+    if(target.closest('[data-hubly-element]')) return; // reserved elements aren't AI/user-editable text
+    if(target.tagName && target.tagName.toLowerCase() === 'img'){
+      pendingImageNodeId = target.getAttribute('data-node');
+      imgFileInput.click();
+      return;
+    }
+    if(target.children.length > 0) return; // only leaf nodes for this pass
+    if(!target.textContent || !target.textContent.trim()) return;
+    openTextEditor(target);
+  }, true);
+
+  root.addEventListener('mouseover', function(e){
+    var target = e.target && e.target.closest ? e.target.closest('[data-node]') : null;
+    if(!target || !root.contains(target) || target.hasAttribute('data-hc-editable-marked')) return;
+    if(target.closest('[data-hubly-element]') || target.children.length > 0) return;
+    target.setAttribute('data-hc-editable-marked', '1');
+    target.style.cursor = 'pointer';
+    target.addEventListener('mouseenter', function(){ target.style.outline = '2px dashed rgba(217,99,45,.7)'; target.style.outlineOffset = '3px'; });
+    target.addEventListener('mouseleave', function(){ target.style.outline = ''; });
+  }, true);
+}
 </script>
 </body>
 </html>
