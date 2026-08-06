@@ -39457,12 +39457,18 @@ function updateBkNotesCount(){
 function persistBookingSmsConsent(name,phone,email){
   rememberSmsConsentLocal(phone);
   try{
+    // silent: this fires from the public booking flow, mid-confirmation —
+    // a customer should never see an internal CRM-record error ("could not
+    // save customer") after being shown a booking confirmation. The actual
+    // booking is booking_requests (handled, awaited, with its own honest
+    // error state in submitBooking) — this is a best-effort denormalized
+    // sync, logged on failure, never customer-facing.
     upsertCustomer({
       name:name||phone||'Customer',
       phone:phone||'',
       email:email||'',
       smsConsent:true,
-    });
+    },{silent:true});
   }catch(e){}
 }
 function bkHasSmsConsent(){
@@ -42138,7 +42144,8 @@ function mapCustRow(row){
     createdAt: row.created_at||null,
   };
 }
-async function upsertCustomer(data){
+async function upsertCustomer(data,opts){
+  opts=opts||{};
   let c=data.id!=null?S.customers.find(x=>String(x.id)===String(data.id)):null;
   if(!c&&data.name)c=S.customers.find(x=>x.name.toLowerCase()===String(data.name).toLowerCase());
   const recurringPlan=data.recurringPlan!==undefined?data.recurringPlan:(c?.recurringPlan||null);
@@ -42176,15 +42183,31 @@ async function upsertCustomer(data){
       if(error)throw error;
       Object.assign(c,mapCustRow(updated));
       return c;
-    }else{
+    }else if(currentUser){
       const {data:inserted,error}=await db.from('customers').insert({...payload,business_id:currentBusiness.id}).select().single();
       if(error)throw error;
       const row=mapCustRow(inserted);
       if(c){Object.assign(c,row)}else{c=row;S.customers.push(c);updateCustDL()}
       return c;
+    }else{
+      // Anonymous caller (e.g. the public booking flow) — customers has no
+      // SELECT policy for anon, only INSERT, deliberately (real PII: name/
+      // phone/email — no public read access, same posture as booking_requests
+      // which was fixed the same way). insert().select() would fail under
+      // RLS-under-RETURNING even with a working INSERT policy, so generate
+      // the id client-side and insert without .select(), mirroring
+      // writeAbandonedBookingRequest's booking_requests pattern.
+      const newId=crypto.randomUUID();
+      const insertPayload={...payload,id:newId,business_id:currentBusiness.id};
+      const {error}=await db.from('customers').insert(insertPayload);
+      if(error)throw error;
+      const row=mapCustRow({...insertPayload,created_at:new Date().toISOString()});
+      if(c){Object.assign(c,row)}else{c=row;S.customers.push(c);updateCustDL()}
+      return c;
     }
   }catch(e){
-    toast('⚠️ Could not save customer. check connection and try again');
+    if(opts.silent)console.warn('upsertCustomer failed (silent)',e?.message||e);
+    else toast('⚠️ Could not save customer. check connection and try again');
     if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
     c.notes=stripCustomerMetaNotes(c.notes);
     c.recurringPlan=recurringPlan||c.recurringPlan||null;
