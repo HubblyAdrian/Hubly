@@ -180,11 +180,11 @@ function addUsage(total: UsageTotal, u?: { promptTokens: number; completionToken
  *  usage accumulates real token counts across every attempt (including a
  *  failed/retried one) — the only honest basis for a real cost figure,
  *  not an estimate. */
-export async function generateAndValidateDocument(system: string, brief: string, businessId: string, tag: string, modelOverride?: string): Promise<DocGenOutcome> {
+export async function generateAndValidateDocument(system: string, brief: string, businessId: string, tag: string, modelOverride?: string, reasoningEffortOverride?: "low" | "medium" | "high"): Promise<DocGenOutcome> {
   const usage = emptyUsage();
   let modelUsed: string | undefined;
   const attempt = async (messages: { role: "user" | "assistant"; content: string }[]): Promise<{ candidate: unknown; raw: string } | null> => {
-    const ai = await HublyAI.complete({ feature: "hubly-document-generate", task: "document_generate", system, messages, jsonMode: true, model: modelOverride || undefined });
+    const ai = await HublyAI.complete({ feature: "hubly-document-generate", task: "document_generate", system, messages, jsonMode: true, model: modelOverride || undefined, reasoningEffort: reasoningEffortOverride || undefined });
     addUsage(usage, ai.usage);
     modelUsed = ai.model;
     const raw = String(ai.text || "");
