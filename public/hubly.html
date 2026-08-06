@@ -907,6 +907,20 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .contact-import-paste{width:100%;min-height:56px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;resize:vertical;background:var(--surface);font-family:inherit;box-sizing:border-box}
 .contact-import-hint{font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.4}
 
+/* Quick-add-a-lead-from-pasted-text: paste-first flow, manual fields
+   collapsed until extraction runs or the person opts into manual entry. */
+.lead-quick-add{margin:0 0 14px;padding:14px;border:1.5px solid var(--border);border-radius:var(--r-md);background:var(--surface-2)}
+.lead-quick-add-label{font-size:13px;font-weight:650;color:var(--ink-1);margin-bottom:8px}
+.lead-quick-add-paste{width:100%;min-height:88px;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;resize:vertical;background:var(--surface);font-family:inherit;box-sizing:border-box}
+.lead-quick-add-actions{display:flex;align-items:center;gap:10px;margin-top:10px}
+.lead-quick-add-extract-btn{flex:1}
+.lead-quick-add-manual-link{font-size:12px;color:var(--ink-3);text-decoration:underline;cursor:pointer;background:none;border:none;padding:6px 4px;white-space:nowrap}
+.lead-quick-add-status{font-size:12px;margin-top:10px;line-height:1.4;display:none}
+.lead-quick-add-status.show{display:block}
+.lead-quick-add-status.degraded{color:#92600a}
+.lead-quick-add-status.not-lead{color:#b42318}
+.lead-manual-fields.collapsed{display:none}
+
 .auth-glow{position:absolute;right:-80px;top:50%;transform:translateY(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(232,160,32,.1) 0%,transparent 70%);border-radius:50%;pointer-events:none}
 .auth-r{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
 .auth-form{width:100%;max-width:380px}
@@ -12754,24 +12768,28 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="modal">
     <div class="modal-h"><div class="modal-t">New lead</div><button class="modal-x" onclick="closeM('m-new-lead')">×</button></div>
     <div class="modal-b">
-      <div class="contact-import">
-        <div class="contact-import-actions">
-          <button type="button" class="btn btn-out btn-sm" onclick="pasteContactInto('lead')">Paste from text</button>
+      <div class="lead-quick-add">
+        <div class="lead-quick-add-label">Paste a text or DM — we’ll pull out the lead info</div>
+        <textarea id="nl-paste" class="lead-quick-add-paste" placeholder="Paste the message here…"></textarea>
+        <div class="lead-quick-add-actions">
+          <button type="button" class="btn btn-brand lead-quick-add-extract-btn" id="nl-extract-btn" onclick="extractNewLeadFromPaste()">Extract lead info</button>
+          <button type="button" class="lead-quick-add-manual-link" onclick="revealManualLeadFields()">Enter manually</button>
         </div>
-        <textarea id="nl-paste" class="contact-import-paste" rows="2" placeholder="Paste a text thread or contact…" onpaste="queueApplyPastedContact('lead')"></textarea>
-        <div class="contact-import-hint">Got a text? Paste it — we’ll pull name and phone into a lead.</div>
+        <div id="nl-extract-status" class="lead-quick-add-status"></div>
       </div>
-      <div class="field"><label>Name *</label><input type="text" id="nl-name" placeholder="Sarah Johnson"></div>
-      <div class="field-row">
-        <div class="field"><label>Phone</label><input type="tel" id="nl-phone" placeholder="888-888-8888" oninput="formatPhone(this)"></div>
-        <div class="field"><label>Email</label><input type="email" id="nl-email" placeholder="sarah@email.com"></div>
+      <div class="lead-manual-fields collapsed" id="nl-manual-fields">
+        <div class="field"><label>Name *</label><input type="text" id="nl-name" placeholder="Sarah Johnson"></div>
+        <div class="field-row">
+          <div class="field"><label>Phone</label><input type="tel" id="nl-phone" placeholder="888-888-8888" oninput="formatPhone(this)"></div>
+          <div class="field"><label>Email</label><input type="email" id="nl-email" placeholder="sarah@email.com"></div>
+        </div>
+        <div class="field"><label id="nl-svc-lbl">Package</label><select id="nl-service" onchange="onNlSvcChange()"><option value="">Select a package…</option></select>
+          <div id="nl-svc-hint" style="font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.4;">From your Website editor packages — same list as Jobs.</div>
+        </div>
+        <div class="field"><label id="nl-addr-lbl">Location / address</label><input type="text" id="nl-address" placeholder="Lehi, UT"></div>
+        <div class="field"><label>Estimated amount <span class="opt">(optional)</span></label><input type="number" id="nl-amount" placeholder="189" min="0" step="1"></div>
+        <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nl-notes" rows="2" placeholder="How they found you, what they asked…"></textarea></div>
       </div>
-      <div class="field"><label id="nl-svc-lbl">Package</label><select id="nl-service" onchange="onNlSvcChange()"><option value="">Select a package…</option></select>
-        <div id="nl-svc-hint" style="font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.4;">From your Website editor packages — same list as Jobs.</div>
-      </div>
-      <div class="field"><label id="nl-addr-lbl">Location / address</label><input type="text" id="nl-address" placeholder="Lehi, UT"></div>
-      <div class="field"><label>Estimated amount <span class="opt">(optional)</span></label><input type="number" id="nl-amount" placeholder="189" min="0" step="1"></div>
-      <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nl-notes" rows="2" placeholder="How they found you, what they asked…"></textarea></div>
     </div>
     <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-new-lead')">Cancel</button><button class="btn btn-ink" onclick="submitNewLead()">Add lead</button></div>
   </div>
@@ -15479,6 +15497,8 @@ async function loadJobs(){
     paid: j.paid,
     payMethod: j.pay_method,
     payNotes: j.pay_notes||'',
+    depositCents: j.deposit_cents!=null?j.deposit_cents:null,
+    depositStatus: j.deposit_status||null,
     paidAt: j.paid_at?fmtDateLong(normalizeJobDate(j.paid_at)||String(j.paid_at).slice(0,10)):null,
     fromBooking: j.from_booking,
     phone: j.phone,
@@ -40236,6 +40256,11 @@ async function submitBooking(){
         address: addr||null,
         notes: notesWithRp||null,
         status: 'pending',
+        // Real configured deposit amount (or null — no deposit chosen).
+        // The notes tag above stays for backward compatibility/display;
+        // this is the real, structured value acceptBookingRequest carries
+        // onto the job instead of guessing from job amount.
+        deposit_cents: m.pay==='deposit'?Math.round(m.depositAmt*100):null,
       };
       // Online card checkout via Stripe Connect (Stripe deposits / full / client chose online)
       const depositViaStripe=m.pay!=='deposit'||depositCollectMethod()==='stripe';
@@ -40287,16 +40312,24 @@ async function submitBooking(){
             p_condition:needsV?(S.bkCondName||null):null, p_notes:notesWithRp||null,
             p_requested_date:date||null, p_requested_time:S.bkTimeVal||null,
             p_address:addr||null,
+            p_deposit_cents:m.pay==='deposit'?Math.round(m.depositAmt*100):null,
           });
           error=rpcErr||(!data?.ok?new Error('completion rejected'):null);
-          if(error)console.warn('complete_abandoned_booking failed, falling back to insert:',error.message||error);
           if(error){
+            const failReason=(error.message||String(error)||'unknown').slice(0,120);
+            console.warn('complete_abandoned_booking failed, falling back to insert:',failReason);
+            // console.warn alone is invisible in production -- nobody looks at a
+            // customer's browser console. Tag the fallback lead's notes (the
+            // app's existing bracketed-marker convention, e.g. [DEPOSIT:...])
+            // so the failure is actually visible to the business owner, in the
+            // same CRM/Jobs view they already look at, instead of a silent gap.
+            const fallbackPayload={...payload,notes:[`[RESUME_FAILED:${failReason}]`,payload.notes].filter(Boolean).join('\n')};
             if(canSelect){
-              const {data:fallbackRow,error:fallbackErr}=await dbClient.from('booking_requests').insert(payload).select('id').single();
+              const {data:fallbackRow,error:fallbackErr}=await dbClient.from('booking_requests').insert(fallbackPayload).select('id').single();
               error=fallbackErr;
               insertedReqId=fallbackRow?.id||null;
             }else{
-              const {error:fallbackErr}=await dbClient.from('booking_requests').insert(payload);
+              const {error:fallbackErr}=await dbClient.from('booking_requests').insert(fallbackPayload);
               error=fallbackErr;
             }
           }else{
@@ -40362,8 +40395,17 @@ async function submitBooking(){
     }
     const svcDescConfirm=S.bkSvcObj?.desc||'';
     const discLine=m.discPct>0?`<div class="flex ai-c g8"><span>🏷️</span>${m.discPct}% off${S.bkDiscountCode?` (${S.bkDiscountCode})`:''}. saved $${m.discAmt.toFixed(2)}</div>`:'';
+    // Reaching this confirmation with pay==='deposit' means online checkout
+    // either wasn't attempted or fell through — the honest thing to tell
+    // the customer here is what happens next for the balance, using the
+    // business's own real deposit message if they set one, never a
+    // generic line that implies a live "pay now" action that didn't happen.
+    const depositFollowup=(S.depositMessage&&S.depositMessage.trim())
+      ?escPeHtml(S.depositMessage.trim())
+      :`${escPeHtml(S.biz||'We')} will call to collect the deposit.`;
     const payLine=m.pay==='deposit'
-      ?`<div class="flex ai-c g8"><span>💵</span>Deposit due: <strong>$${m.depositAmt.toFixed(2)}</strong> · remaining $${m.remaining.toFixed(2)}</div>`
+      ?`<div class="flex ai-c g8"><span>💵</span>Deposit required: <strong>$${m.depositAmt.toFixed(2)}</strong> · remaining $${m.remaining.toFixed(2)} due at service</div>
+        <div style="font-size:12px;color:var(--ink-3);margin:-4px 0 2px 26px;">${depositFollowup}</div>`
       :`<div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${m.pay==='later'||S.bkPayType==='later'?'Pay after service':'Pay now'})</div>`;
     detailsEl.innerHTML=`
       <div style="display:flex;flex-direction:column;gap:7px;">
@@ -41432,6 +41474,24 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   const durationHours=jobDurationHours(j);
   const acceptAmount=j.amount!=null&&j.amount!==''?Number(j.amount):bookingAmountFromNotes(j.notes);
   const acceptAddr=resolveJobDisplayAddress(j)||j.address||null;
+  // Fresh fetch, not the possibly-stale in-memory lead — the Stripe webhook
+  // confirms payment asynchronously and may have landed after this list was
+  // last loaded. deposit_status is derived here from real, persisted data
+  // only: 'paid_online' requires payment_status==='paid', which the webhook
+  // only ever sets on a genuine checkout.session.completed event.
+  let depositCents=null,depositStatus='none';
+  try{
+    const {data:reqRow}=await db.from('booking_requests').select('deposit_cents,payment_status,amount_paid_cents').eq('id',reqId).maybeSingle();
+    if(reqRow?.deposit_cents!=null){
+      if(reqRow.payment_status==='paid'){
+        depositStatus='paid_online';
+        depositCents=reqRow.amount_paid_cents!=null?reqRow.amount_paid_cents:reqRow.deposit_cents;
+      }else{
+        depositStatus='due';
+        depositCents=reqRow.deposit_cents;
+      }
+    }
+  }catch(e){}
   const payload={
     business_id: currentBusiness.id,
     customer_name: j.customer,
@@ -41447,6 +41507,8 @@ async function _acceptBookingRequestInner(reqId,opts={}){
     email: j.email||null,
     vehicle: vehicleLabel,
     vehicle_color: j.vehicleColor||null,
+    deposit_cents: depositCents,
+    deposit_status: depositStatus,
     duration_hours: durationHours,
   };
   const {data,error}=await db.from('jobs').insert(payload).select().single();
@@ -43964,7 +44026,7 @@ async function renderLeadsBoard(opts={}){
         </div>
         <div class="lead-col-money">${moneyLbl}</div>
       </div>
-      <div class="lead-col-body">${cards}${isWon?'':`<div class="lead-col-add"><button type="button" onclick="openM('m-new-lead')">+ Add lead</button></div>`}</div>
+      <div class="lead-col-body">${cards}${isWon?'':`<div class="lead-col-add"><button type="button" onclick="openNewLeadModal()">+ Add lead</button></div>`}</div>
     </div>`;
   }).join('')+`<button type="button" class="lead-add-col" onclick="addLeadStage()">+ Add stage</button>`;
   if(S.activeLeadKey){
@@ -44227,10 +44289,120 @@ async function deleteLead(key){
   renderDashFollowUps();
   toast('Lead removed');
 }
+
+// ============================================================================
+// DEAD CODE — unreachable. Do not build against this.
+//
+// revealManualLeadFields() through submitNewLead() (this block, ending at the
+// closing brace of submitNewLead below) targets the #m-new-lead modal and
+// renderLeadsBoard()/#leads-board Kanban system, which is never mounted —
+// nothing in the live app renders a #leads-board element, so this entire
+// code path (manual add, paste-to-extract, submit) never runs for a real
+// user no matter how correct it looks.
+//
+// The real, live Leads page — including the working paste-to-extract quick
+// add — is implemented in journey-os/journey.js (see renderLeadsPage(),
+// renderLeadsAddModal(), and the 'leads-paste-parse' action handler in
+// handleLeadsAct()). That's where any future Leads/add-lead work belongs.
+//
+// This block is left in place only as an artifact of building against dead
+// code earlier in the 2026-08-06 Leads redesign pass, before that mistake
+// was caught. Safe to delete once confirmed nothing references it.
+// ============================================================================
+function revealManualLeadFields(){
+  document.getElementById('nl-manual-fields')?.classList.remove('collapsed');
+  document.getElementById('nl-name')?.focus();
+}
+function nlExtractStatus(msg,cls){
+  const el=document.getElementById('nl-extract-status');
+  if(!el)return;
+  if(!msg){el.className='lead-quick-add-status';el.textContent='';return;}
+  el.className='lead-quick-add-status show'+(cls?' '+cls:'');
+  el.textContent=msg;
+}
+/** Best-effort match of the AI's free-text service guess to a real package
+ *  — never force-selects an unrelated package. No match = the guess goes
+ *  into Notes instead so nothing extracted is silently dropped. */
+function matchLeadServiceToPackage(guess){
+  const g=String(guess||'').trim().toLowerCase();
+  if(!g)return null;
+  const svcs=getBookingServices();
+  const exact=svcs.find(s=>String(s.name||'').toLowerCase()===g);
+  if(exact)return exact.name;
+  const contains=svcs.find(s=>{
+    const n=String(s.name||'').toLowerCase();
+    return n&&(g.includes(n)||n.includes(g));
+  });
+  return contains?contains.name:null;
+}
+function applyExtractedLeadFields(fields){
+  populateNlSvc();
+  const setVal=(id,v)=>{const el=document.getElementById(id);if(el&&v)el.value=v;};
+  setVal('nl-name',fields.name);
+  if(fields.phone){const ph=document.getElementById('nl-phone');if(ph){ph.value=fields.phone;formatPhone(ph);}}
+  setVal('nl-email',fields.email);
+  const matched=matchLeadServiceToPackage(fields.service);
+  if(matched){
+    const sel=document.getElementById('nl-service');
+    if(sel)sel.value=matched;
+    onNlSvcChange();
+  }
+  const notesParts=[];
+  if(fields.notes)notesParts.push(fields.notes);
+  if(fields.service&&!matched)notesParts.push(`Interested in: ${fields.service}`);
+  if(notesParts.length){
+    const notesEl=document.getElementById('nl-notes');
+    if(notesEl)notesEl.value=notesParts.join(' · ');
+  }
+  revealManualLeadFields();
+}
+const NL_EXTRACT_TIMEOUT_MS=10000;
+async function extractNewLeadFromPaste(){
+  const pasteEl=document.getElementById('nl-paste');
+  const text=String(pasteEl?.value||'').trim();
+  if(!text){toast('Paste a message first');pasteEl?.focus();return;}
+  const btn=document.getElementById('nl-extract-btn');
+  const btnLabel=btn?.textContent||'Extract lead info';
+  if(btn){btn.disabled=true;btn.textContent='Extracting…';}
+  nlExtractStatus('');
+  let handled=false;
+  try{
+    const dbClient=await waitForDb();
+    const result=await Promise.race([
+      dbClient.functions.invoke('lead-extract',{body:{text}}).then(r=>r?.data),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('client_timeout')),NL_EXTRACT_TIMEOUT_MS)),
+    ]);
+    if(result?.ok&&result.fields){
+      handled=true;
+      applyExtractedLeadFields(result.fields);
+      if(result.looksLikeLead===false){
+        nlExtractStatus('This doesn’t look like a lead inquiry — double-check before saving.','not-lead');
+      }
+    }
+  }catch(e){
+    // Falls through to the regex fallback below — never blocks the flow.
+  }
+  if(!handled){
+    const parsed=parseContactText(text);
+    revealManualLeadFields();
+    if(parsed)fillParsedContact('lead',parsed);
+    nlExtractStatus('Quick extract unavailable, pulled what we could — check the fields below.','degraded');
+  }
+  if(btn){btn.disabled=false;btn.textContent=btnLabel;}
+}
+
+function openNewLeadModal(){
+  ['nl-name','nl-phone','nl-email','nl-service','nl-address','nl-amount','nl-notes','nl-paste'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('nl-manual-fields')?.classList.add('collapsed');
+  nlExtractStatus('');
+  openM('m-new-lead');
+  setTimeout(()=>document.getElementById('nl-paste')?.focus(),30);
+}
 function submitNewLead(){
   const name=document.getElementById('nl-name')?.value?.trim()||'';
   const phone=formatPhoneValue(document.getElementById('nl-phone')?.value||'');
   const email=document.getElementById('nl-email')?.value?.trim()||'';
+  if(!name||(!phone&&!email))revealManualLeadFields();
   if(!name){toast('Add a name');return;}
   if(!phone&&!email){toast('Add a phone or email');return;}
   const pipe=ensurePipelineState();
