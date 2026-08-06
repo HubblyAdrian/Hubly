@@ -645,6 +645,18 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: { errors: genResult.errors, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale } };
           }
           const html = renderHublyDocument(genResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined });
+          // generateDocument runs as a fire-and-forget background task in
+          // hubly-conversation (EdgeRuntime.waitUntil) -- nothing awaits or
+          // reads this handler's return value, only errors get caught. The
+          // real designRationale text was previously computed and then
+          // discarded every time. Logged here (visible in real time via
+          // function logs) AND persisted below (queryable after the fact,
+          // tied to the exact version it explains) -- this is the actual
+          // debugging tool for "why did it make that choice", not optional
+          // polish, confirmed live: a real conversation-driven generation
+          // produced a correctly-reasoned document with no way to see why
+          // afterward, before this fix.
+          console.log(`hubly-document-generate rationale [${draftId}]:`, genResult.rationale || "(none captured)");
           const r = await callBusinessRpc("create_business_document", {
             p_business_id: draftId,
             p_draft_token: draftToken,
@@ -652,6 +664,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_document: genResult.document,
             p_rendered_html: html,
             p_created_by: "ai",
+            p_design_rationale: genResult.rationale || null,
           });
           if (!r || r.ok !== true) {
             return { ok: false, real: false, summary: "The page was generated but could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
