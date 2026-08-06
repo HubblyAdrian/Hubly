@@ -40315,14 +40315,21 @@ async function submitBooking(){
             p_deposit_cents:m.pay==='deposit'?Math.round(m.depositAmt*100):null,
           });
           error=rpcErr||(!data?.ok?new Error('completion rejected'):null);
-          if(error)console.warn('complete_abandoned_booking failed, falling back to insert:',error.message||error);
           if(error){
+            const failReason=(error.message||String(error)||'unknown').slice(0,120);
+            console.warn('complete_abandoned_booking failed, falling back to insert:',failReason);
+            // console.warn alone is invisible in production -- nobody looks at a
+            // customer's browser console. Tag the fallback lead's notes (the
+            // app's existing bracketed-marker convention, e.g. [DEPOSIT:...])
+            // so the failure is actually visible to the business owner, in the
+            // same CRM/Jobs view they already look at, instead of a silent gap.
+            const fallbackPayload={...payload,notes:[`[RESUME_FAILED:${failReason}]`,payload.notes].filter(Boolean).join('\n')};
             if(canSelect){
-              const {data:fallbackRow,error:fallbackErr}=await dbClient.from('booking_requests').insert(payload).select('id').single();
+              const {data:fallbackRow,error:fallbackErr}=await dbClient.from('booking_requests').insert(fallbackPayload).select('id').single();
               error=fallbackErr;
               insertedReqId=fallbackRow?.id||null;
             }else{
-              const {error:fallbackErr}=await dbClient.from('booking_requests').insert(payload);
+              const {error:fallbackErr}=await dbClient.from('booking_requests').insert(fallbackPayload);
               error=fallbackErr;
             }
           }else{
