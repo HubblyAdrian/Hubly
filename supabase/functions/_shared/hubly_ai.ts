@@ -359,7 +359,8 @@ export type HublyAITask =
   | "photo_analysis"
   | "memory"
   | "lightweight"
-  | "planner";
+  | "planner"
+  | "lead_extract";
 
 export type HublyTextPart = { type: "text"; text: string };
 export type HublyImagePart = {
@@ -467,6 +468,18 @@ const TASK_ROUTES: Record<HublyAITask, TaskRoute> = {
   memory: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 800 },
   lightweight: { provider: "openai", model: DEFAULT_LIGHTWEIGHT_MODEL, maxTokens: 600 },
   planner: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2000, jsonMode: true },
+  // Small structured-extraction task (paste a text/DM, pull out name/phone/
+  // email/service) — deliberately the lightweight tier, not the reasoning
+  // model used for page generation. No reasoning effort: this isn't deep
+  // reasoning, it's fast field extraction, and the real anti-hallucination
+  // guarantee for phone/email is a post-response structural check against
+  // the source text (see leadExtractFromText), not the model's discretion.
+  // 800 not 500: gpt-5-mini (the lightweight tier) is itself a reasoning-
+  // tier model — see hubly-intent-classify's own empirical note that 600
+  // was the minimum reliable budget for a 3-field JSON response before
+  // reasoning tokens ate a tight budget and left an empty completion. This
+  // schema has 5 fields plus looksLikeLead/reason, so it gets more room.
+  lead_extract: { provider: "openai", model: DEFAULT_LIGHTWEIGHT_MODEL, maxTokens: 800, jsonMode: true },
 };
 
 function env(name: string): string {
@@ -516,12 +529,31 @@ function openaiLightweightModel(): string {
   return env("HUBLY_AI_LIGHTWEIGHT_MODEL") || DEFAULT_LIGHTWEIGHT_MODEL;
 }
 
+/** Per-task model override env var, e.g. document_generate -> HUBLY_AI_MODEL_DOCUMENT_GENERATE.
+ *  Lets a single task's model be swapped (for a benchmark, a rollout, a
+ *  regression) without touching code or retargeting every other task that
+ *  shares the same tier-level env var below. */
+function taskModelEnvKey(task: HublyAITask): string {
+  return `HUBLY_AI_MODEL_${task.toUpperCase()}`;
+}
+
 function resolveTaskRoute(task: HublyAITask): TaskRoute {
   const base = { ...TASK_ROUTES[task] };
-  // Env can retarget the primary reasoning model without editing every task.
-  if (base.provider === "openai") {
-    if (task === "lightweight") base.model = openaiLightweightModel();
-    else base.model = openaiReasoningModel();
+  // Resolution order: per-task override > tier-level env override > hardcoded default.
+  // Unset (the default today) resolves identically to before this existed —
+  // this is additive plumbing, not a behavior change.
+  const perTaskOverride = env(taskModelEnvKey(task));
+  if (perTaskOverride) {
+    base.model = perTaskOverride;
+  } else if (base.provider === "openai") {
+    // Tier is decided by what TASK_ROUTES actually configured this task to
+    // use, not by hardcoding task name — checking task==='lightweight'
+    // literally would silently upgrade every other lightweight-tier task
+    // (e.g. lead_extract) to the expensive reasoning model the moment it
+    // stopped being the only one.
+    base.model = TASK_ROUTES[task].model === DEFAULT_LIGHTWEIGHT_MODEL
+      ? openaiLightweightModel()
+      : openaiReasoningModel();
   } else {
     base.model = claudeFallbackModel();
   }
@@ -743,9 +775,15 @@ function resolveInternal(opts: HublyAICallOpts, fallbackTask: HublyAITask): Inte
   // Low-level complete() without task may still prefer Claude for unmigrated features
   // when HUBLY_AI_PROVIDER is unset and caller didn't set task — handled by callers.
   const provider = normalizeProvider(opts.provider) || route.provider;
+  // route.model already carries the correct resolution (per-task override >
+  // tier env > default) as long as opts.provider didn't override the
+  // provider away from what route resolved for — recompute only in that
+  // edge case, otherwise reuse route.model rather than duplicating its logic.
   const model = (opts.model || "").trim() ||
-    (provider === "openai"
-      ? (task === "lightweight" ? openaiLightweightModel() : openaiReasoningModel())
+    (provider === route.provider
+      ? route.model
+      : provider === "openai"
+      ? (TASK_ROUTES[task].model === DEFAULT_LIGHTWEIGHT_MODEL ? openaiLightweightModel() : openaiReasoningModel())
       : claudeFallbackModel());
   return {
     ...opts,

@@ -2832,8 +2832,7 @@
     ['vip', 'VIP / favorites'],
     ['members', 'Members'],
     ['win_back', 'Win-back'],
-    ['open_leads', 'Open leads'],
-    ['ai_qualified_leads', 'AI qualified leads']
+    ['open_leads', 'Open leads']
   ];
   var MKT_CHANNEL_LABEL = { email: 'Email', sms: 'SMS', social: 'Social', meta: 'Meta Ads', multi: 'Multi-channel', linkedin: 'LinkedIn', instagram: 'Instagram', facebook: 'Facebook' };
   var MKT_STATUS_TONE = { draft: 'quote', scheduled: 'info', active: 'ok', running: 'ok', paused: 'warn', done: 'lost', completed: 'lost' };
@@ -2922,7 +2921,6 @@
       }).length;
     }
     if (key === 'open_leads') return pipelineLeadSource().length;
-    if (key === 'ai_qualified_leads') return pipelineLeadSource().filter(function (l) { return l.aiQualified; }).length;
     return 0;
   }
 
@@ -7099,7 +7097,7 @@
     if (s === 'lost') return 'lost';
     if (s === 'unqualified' || s === 'spam') return 'unqualified';
     if (s === 'archived' && (lead.converted || lead.won)) return 'won';
-    if (/quote_viewed|qualified/.test(s) || (lead.aiQualified && lead.aiScore >= 70)) return 'qualified';
+    if (/quote_viewed|qualified/.test(s)) return 'qualified';
     if (/quote_sent|quote_expired|waiting|contacted/.test(s) || (lead.messages && lead.messages.some(function (m) { return m.dir === 'out'; }))) return 'contacted';
     return 'new';
   }
@@ -7221,12 +7219,9 @@
         notesList: [notes],
         tags: ['abandoned', 'recovery'],
         unread: alreadySeen ? 0 : 1,
-        aiScore: 58,
-        aiQualified: false,
         quoteStatus: 'draft',
         estimatedValue: 0,
-        buyingIntent: 'med',
-        assignedTo: (st.team && st.team[0] && st.team[0].name) || '',
+        assignedTo: '',
         messages: [
           { dir: 'in', text: 'Started booking ' + service + ' on website', at: 'Earlier' },
           { dir: 'sys', text: notes, at: 'Earlier' }
@@ -7323,13 +7318,6 @@
     }
   }
 
-  function leadScoreBand(score) {
-    score = Number(score) || 0;
-    if (score >= 80) return { tone: 'ok', label: 'High' };
-    if (score >= 60) return { tone: 'warn', label: 'Med' };
-    return { tone: 'hot', label: 'Low' };
-  }
-
   function leadChecklist(lead) {
     return [
       { id: 'responded', label: 'Responded to outreach', done: !!(lead.messages && lead.messages.some(function (m) { return m.dir === 'out'; })) || normalizeCrmStatus(lead) !== 'new' },
@@ -7339,8 +7327,15 @@
     ];
   }
 
+  // score-driven branches removed (2026-08-06) along with aiScore — they
+  // asserted specific unverified claims about the lead ("they provided a
+  // budget, requested a specific service...") tied only to a fabricated
+  // number, regardless of whether any of that was actually true. What's
+  // left only ever states things checkable against real fields. A
+  // checklist-driven version (leadChecklist() below is already real —
+  // responded/budget/service/ready are all genuine field checks) could
+  // replace this honestly, but wasn't built without being asked for.
   function leadAiRecommendation(lead) {
-    var score = Number(lead.aiScore) || 0;
     var status = normalizeCrmStatus(lead);
     if (isRecoveryLead(lead)) {
       var step = leadDropStep(lead);
@@ -7351,9 +7346,7 @@
       };
     }
     if (status === 'won') return { title: 'Lead converted', body: 'This lead is won. Keep the relationship warm with a review request or membership offer.', primary: 'Request Review' };
-    if (score >= 80) return { title: 'Likely to convert', body: 'They provided a budget, requested a specific service, and want quick turnaround. Contact now while intent is high.', primary: 'Contact Now' };
-    if (score >= 60) return { title: 'Nurture this lead', body: 'Good fit so far. Send an estimate and confirm preferred contact time to move them to Qualified.', primary: 'Send Estimate' };
-    return { title: 'Qualify before pitching', body: 'Ask about budget and service scope. AI will refresh the score as details come in.', primary: 'Send Follow-up' };
+    return { title: 'Follow up', body: 'Review this lead’s details and decide on a next step.', primary: 'Send Follow-up' };
   }
 
   function seedDemoLeadsIfEmpty() {
@@ -7483,18 +7476,19 @@
         else if (lead.quote && lead.quote.status) lead.quoteStatus = lead.quote.status;
         else lead.quoteStatus = 'none';
       }
-      if (!lead.assignedTo) {
-        var team = (st.team && st.team.length) ? st.team : (allowDemoSeed() ? LEADS_TEAM : []);
-        lead.assignedTo = team.length ? (team[idx % team.length] || team[0]).name : '';
-      }
+      // assignedTo is only ever set by a real human action — the "Add lead"
+      // form's Assigned User field, or the workspace's manual reassign
+      // control (see jos-la-assigned / jos-ld-assigned below). A lead with
+      // no human assignment stays genuinely unassigned; never auto-filled
+      // via a round-robin index, which was silently showing leads as
+      // "assigned" to someone who never touched them.
+      if (lead.assignedTo == null) lead.assignedTo = '';
       if (!Array.isArray(lead.tags)) lead.tags = lead.tags ? [String(lead.tags)] : [];
-      if (lead.aiScore == null) {
-        var base = lead.aiQualified ? 75 : 45;
-        if (lead.amount || lead.estimatedValue) base += 10;
-        if (lead.unread) base += 5;
-        lead.aiScore = Math.max(5, Math.min(99, base + (idx % 17)));
-      }
-      if (lead.aiQualified == null) lead.aiQualified = lead.aiScore >= 70;
+      // aiScore / aiQualified / buyingIntent removed entirely (2026-08-06) —
+      // the previous formula (base + idx % 17) had no real signal behind
+      // it and was shown to real business owners as if it meant something.
+      // No replacement was built without being asked for one — see the
+      // fabrication-audit report for what a real version could look like.
       if (lead.unread == null) lead.unread = 0;
       if (!lead.lastMessage) {
         if (lead.messages && lead.messages.length) lead.lastMessage = lead.messages[lead.messages.length - 1].text || '';
@@ -7523,9 +7517,6 @@
         };
       }
       if (lead.estimatedValue == null) lead.estimatedValue = parseFloat(lead.amount) || 0;
-      if (!lead.buyingIntent) {
-        lead.buyingIntent = lead.aiScore >= 80 ? 'high' : (lead.aiScore >= 55 ? 'med' : (lead.aiScore >= 20 ? 'low' : 'none'));
-      }
       if (!lead.lastContacted) lead.lastContacted = lead.createdAt || todayStr();
       if (!lead.property) lead.property = lead.address || '';
       if (lead.followUpAt == null) lead.followUpAt = '';
@@ -7582,9 +7573,6 @@
     if (f.service && f.service !== 'all' && lead.service !== f.service) return false;
     if (f.vehicle && String(vehicleOf(lead) || '').toLowerCase().indexOf(String(f.vehicle).toLowerCase()) < 0) return false;
     if (f.property && String(lead.property || lead.address || '').toLowerCase().indexOf(String(f.property).toLowerCase()) < 0) return false;
-    if (f.aiScore === 'high' && !(lead.aiScore >= 80)) return false;
-    if (f.aiScore === 'med' && !(lead.aiScore >= 50 && lead.aiScore < 80)) return false;
-    if (f.aiScore === 'low' && !(lead.aiScore < 50)) return false;
     if (f.tags && String(f.tags).trim()) {
       var want = String(f.tags).toLowerCase().split(/[,\s]+/).filter(Boolean);
       var have = (lead.tags || []).map(function (t) { return String(t).toLowerCase(); });
@@ -7645,7 +7633,6 @@
     list = list.filter(function (l) { return leadMatchesFilters(l, root); });
     if (q) list = list.filter(function (l) { return leadSearchHay(l).indexOf(q) > -1; });
     list = list.slice().sort(function (a, b) {
-      if (sort === 'score') return (b.aiScore || 0) - (a.aiScore || 0);
       if (sort === 'oldest') return String(a.lastContacted || a.createdAt || '').localeCompare(String(b.lastContacted || b.createdAt || ''));
       return String(b.lastContacted || b.createdAt || '').localeCompare(String(a.lastContacted || a.createdAt || ''));
     });
@@ -7692,7 +7679,6 @@
       '<label>Service<select id="jos-lf-service">' + opt(uniqueLeadValues('service'), f.service) + '</select></label>' +
       '<label>Vehicle<input id="jos-lf-vehicle" type="text" value="' + esc(f.vehicle || '') + '" placeholder="Vehicle…"></label>' +
       '<label>Property<input id="jos-lf-property" type="text" value="' + esc(f.property || '') + '" placeholder="Property…"></label>' +
-      '<label>AI Score<select id="jos-lf-aiscore">' + opt(['high', 'med', 'low'], f.aiScore, 'Any') + '</select></label>' +
       '<label>Tags<input id="jos-lf-tags" type="text" value="' + esc(f.tags || '') + '" placeholder="hot, ceramic"></label>' +
       '<label>Date Created<select id="jos-lf-created">' + opt(['today', 'week', 'month'], f.created, 'Any time') + '</select></label>' +
       '<label>Last Contacted<select id="jos-lf-contacted">' + opt(['today', 'stale'], f.lastContacted, 'Any') + '</select></label>' +
@@ -7772,25 +7758,60 @@
     return out;
   }
 
-  function renderLeadCard(lead, selectedId) {
+  function renderLeadCard(lead, selectedId, bulkOpen, bulkSelected) {
     var on = selectedId && (String(lead.id) === String(selectedId) || String(lead.key) === String(selectedId));
     var crm = normalizeCrmStatus(lead);
     var unread = Number(lead.unread) > 0;
     var recover = isRecoveryLead(lead);
+    var leadKey = String(lead.id || lead.key);
+    var checked = !!(bulkSelected && bulkSelected[leadKey]);
     var pill = recover
       ? '<span class="jos-pill warn">Recover</span>'
       : '<span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span>';
     var sub = recover
       ? ('Left at ' + leadDropStep(lead) + (lead.service ? ' · ' + lead.service : ''))
       : (lead.service || lead.industry || 'New lead');
-    return '<button type="button" class="jos-ld-card' + (on ? ' on' : '') + (unread ? ' unread' : '') + (recover ? ' recover' : '') + '" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' +
+    // Checkbox is a sibling, not nested in the button — a real <input>
+    // inside a <button> is invalid HTML and would fight the card's own
+    // click-to-select handler.
+    return '<div class="jos-ld-card-wrap' + (bulkOpen ? ' bulk-open' : '') + '">' +
+      (bulkOpen ? '<label class="jos-ld-card-check"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '"' + (checked ? ' checked' : '') + '></label>' : '') +
+      '<button type="button" class="jos-ld-card' + (on ? ' on' : '') + (unread ? ' unread' : '') + (recover ? ' recover' : '') + '" data-jos-lead-id="' + esc(leadKey) + '">' +
       (unread ? '<i class="jos-ld-unread" aria-hidden="true"></i>' : '') +
       '<span class="jos-ld-ava' + (recover ? ' recover' : '') + '">' + esc(initials(lead.name)) + '</span>' +
       '<span class="jos-ld-card-body">' +
       '<span class="jos-ld-card-top"><strong>' + esc(lead.name || 'Lead') + '</strong>' + pill + '</span>' +
       '<span class="jos-ld-card-sub">' + esc(sub) + '</span>' +
       '<span class="jos-ld-card-meta"><span>' + esc(lead.phone ? displayPhone(lead.phone) : 'No phone') + '</span><span>' + esc(leadRelativeTime(lead)) + '</span></span>' +
-      '</span></button>';
+      '</span></button></div>';
+  }
+
+  // Real spreadsheet-style view, same underlying filtered/sorted list as
+  // the card list — every column is a real field already on the lead
+  // object (no score/owner-avatar/last-activity/next-action columns, those
+  // were explicitly deferred, not built).
+  function renderLeadsTable(list, selectedId, bulkOpen, bulkSelected) {
+    if (!list.length) return '';
+    var rows = list.map(function (lead) {
+      var leadKey = String(lead.id || lead.key);
+      var on = selectedId && leadKey === String(selectedId);
+      var crm = normalizeCrmStatus(lead);
+      var checked = !!(bulkSelected && bulkSelected[leadKey]);
+      return '<tr class="jos-ld-trow' + (on ? ' on' : '') + '" data-jos-lead-id="' + esc(leadKey) + '">' +
+        (bulkOpen ? '<td class="jos-ld-tcheck"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '"' + (checked ? ' checked' : '') + '></td>' : '') +
+        '<td><strong>' + esc(lead.name || 'Lead') + '</strong></td>' +
+        '<td>' + esc(lead.phone ? displayPhone(lead.phone) : '') + (lead.email ? '<div class="jos-muted">' + esc(lead.email) + '</div>' : '') + '</td>' +
+        '<td>' + esc(srcLabel(srcKind(lead.source, lead))) + '</td>' +
+        '<td>' + esc(lead.service || '—') + '</td>' +
+        '<td><span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span></td>' +
+        '<td>' + esc(lead.assignedTo || 'Unassigned') + '</td>' +
+        '<td>' + esc(String(lead.createdAt || '').slice(0, 10)) + '</td>' +
+        '</tr>';
+    }).join('');
+    return '<table class="jos-ld-table"><thead><tr>' +
+      (bulkOpen ? '<th></th>' : '') +
+      '<th>Lead</th><th>Contact</th><th>Source</th><th>Service</th><th>Status</th><th>Assigned</th><th>Created</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
   function renderLeadWorkspace(root, lead, ws) {
@@ -7798,11 +7819,8 @@
       return '<div class="jos-ld-empty-ws"><div class="jos-ld-empty-art" aria-hidden="true"></div><h3>Select a lead</h3><p>Pick a lead from the inbox to qualify, score, and convert.</p></div>';
     }
     var crm = normalizeCrmStatus(lead);
-    var band = leadScoreBand(lead.aiScore);
     var checklist = leadChecklist(lead);
     var rec = leadAiRecommendation(lead);
-    var score = Number(lead.aiScore) || 0;
-    var circ = Math.round((score / 100) * 100);
 
     var tabBar = '<div class="jos-ld-ws-tabs">' + LEADS_WS_TABS.map(function (t) {
       return '<button type="button" class="jos-ld-ws-tab' + (ws === t[0] ? ' on' : '') + '" data-jos-lead-ws="' + t[0] + '">' + t[1] + '</button>';
@@ -7864,8 +7882,7 @@
         }).join('') +
         '</section>' +
         '<section class="jos-ld-score-card">' +
-        '<div class="jos-kicker">Lead Score</div>' +
-        '<div class="jos-ld-ring tone-' + band.tone + '" style="--p:' + circ + '"><div class="jos-ld-ring-inner"><strong>' + esc(String(score)) + '</strong><span>' + esc(band.label) + '</span></div></div>' +
+        '<div class="jos-kicker">Checklist</div>' +
         '<ul class="jos-ld-check">' + checklist.map(function (c) {
           return '<li class="' + (c.done ? 'done' : '') + '">' + (c.done ? '✓' : '○') + ' ' + esc(c.label) + '</li>';
         }).join('') + '</ul></section></div>' +
@@ -8065,13 +8082,34 @@
     }
     var f = root._josLeadFilters || {};
     var bulkOpen = !!root._josLeadBulkOpen;
+    var viewMode = root._josLeadsView === 'table' ? 'table' : 'list';
     var wsOpen = !!sel && !!root._josLeadId;
     var moreFiltersOpen = !!root._josLeadFilterOpen;
     var activeFilterCount = 0;
-    ['source', 'service', 'assigned', 'status', 'vehicle', 'property', 'aiScore', 'tags', 'created', 'lastContacted', 'pipeline', 'quoteStatus', 'valueMin', 'valueMax'].forEach(function (k) {
+    ['source', 'service', 'assigned', 'status', 'vehicle', 'property', 'tags', 'created', 'lastContacted', 'pipeline', 'quoteStatus', 'valueMin', 'valueMax'].forEach(function (k) {
       var v = f[k];
       if (v != null && v !== '' && v !== 'all') activeFilterCount++;
     });
+
+    // Real counts only — same leadMatchesTab() the tabs above use, no
+    // separate/fabricated math. wonCount comes from normalizeCrmStatus
+    // directly (not a tab, since Won leads convert off this board).
+    var newCount = all.filter(function (l) { return leadMatchesTab(l, 'new'); }).length;
+    var qualifiedCount = all.filter(function (l) { return leadMatchesTab(l, 'qualified'); }).length;
+    var lostCount = all.filter(function (l) { return leadMatchesTab(l, 'lost'); }).length;
+    var wonCount = all.filter(function (l) { return normalizeCrmStatus(l) === 'won'; }).length;
+    var totalCount = all.length;
+    var conversionRate = totalCount ? Math.round((wonCount / totalCount) * 1000) / 10 : 0;
+    var kpiRow = '<div class="jos-ld-kpis">' + [
+      ['Total Leads', totalCount, ''],
+      ['New', newCount, ''],
+      ['Qualified', qualifiedCount, ''],
+      ['Lost', lostCount, ''],
+      ['Won', wonCount, ''],
+      ['Conversion Rate', conversionRate + '%', ''],
+    ].map(function (k) {
+      return '<div class="jos-ld-kpi-card"><div class="jos-kicker">' + esc(k[0]) + '</div><strong>' + esc(String(k[1])) + '</strong></div>';
+    }).join('') + '</div>';
 
     var statusTabs = '<div class="jos-ld-status-tabs">' + LEADS_TABS.map(function (t) {
       var count = all.filter(function (l) { return leadMatchesTab(l, t[0]); }).length;
@@ -8080,7 +8118,7 @@
     }).join('') + '</div>';
 
     var listHtml = visible.length
-      ? visible.map(function (l) { return renderLeadCard(l, selectedId); }).join('')
+      ? visible.map(function (l) { return renderLeadCard(l, selectedId, bulkOpen, root._josLeadBulkSelected); }).join('')
       : (tab === 'recovery'
         ? '<div class="jos-ld-empty-list"><strong>No unfinished bookings</strong><p>When someone starts booking and leaves, they show up here for follow-up.</p></div>'
         : '<div class="jos-ld-empty-list"><strong>No leads yet</strong><p>Create your first lead or connect a form.</p>' + btn('leads-add-open', 'New Lead', 'jos-btn-brand jos-btn-sm') + '</div>');
@@ -8092,15 +8130,19 @@
       '<div><h1 class="hub-page-title">Leads</h1><p class="hub-page-sub">Capture, qualify, and convert more demand.</p></div>' +
       '<div class="jos-ld-header-actions hub-page-actions">' +
       '<button type="button" class="jos-btn jos-ld-export" data-jos-act="leads-export">' + jobUiIcon('download') + ' Export</button>' +
+      '<button type="button" class="jos-btn" data-jos-act="leads-import-open">Import</button>' +
       '<div class="jos-ld-bulk-wrap">' +
       '<button type="button" class="jos-btn jos-ld-bulk" data-jos-act="leads-bulk-toggle">Bulk Actions</button>' +
       (bulkOpen ? '<div class="jos-ld-bulk-menu">' +
+        '<div class="jos-muted" id="jos-ld-bulk-count">' + Object.keys(root._josLeadBulkSelected || {}).length + ' selected</div>' +
         [['leads-bulk-assign', 'Assign'], ['leads-bulk-archive', 'Archive'], ['leads-bulk-export', 'Export selected'], ['leads-bulk-tag', 'Add tag']].map(function (x) {
           return '<button type="button" data-jos-act="' + x[0] + '">' + x[1] + '</button>';
         }).join('') + '</div>' : '') +
       '</div>' +
       '<button type="button" class="jos-btn jos-btn-brand jos-ld-new" data-jos-act="leads-add-open">+ New Lead</button>' +
       '</div></header>' +
+
+      kpiRow +
 
       '<section class="jos-ld-toolbar">' +
       '<label class="jos-ld-filter-search"><input id="jos-leads-search" type="search" placeholder="Search leads, customers, phone, or email..." value="' + esc(root._josLeadsQ || '') + '"></label>' +
@@ -8129,13 +8171,19 @@
         : '') +
 
       '<div class="jos-ld-layout">' +
-      '<section class="jos-ld-inbox">' +
+      '<section class="jos-ld-inbox' + (viewMode === 'table' ? ' is-table' : '') + '">' +
       '<div class="jos-ld-inbox-head"><strong>' + filtered.length + (tab === 'recovery' ? ' to recover' : ' Leads') + '</strong>' +
+      '<div class="jos-ld-view-toggle" role="group" aria-label="View">' +
+      '<button type="button" class="jos-ld-view-btn' + (viewMode !== 'table' ? ' on' : '') + '" data-jos-leads-view="list">List</button>' +
+      '<button type="button" class="jos-ld-view-btn' + (viewMode === 'table' ? ' on' : '') + '" data-jos-leads-view="table">Table</button>' +
+      '</div>' +
       '<select id="jos-ld-sort" class="jos-ld-sort">' +
-      [['newest', 'Newest'], ['oldest', 'Oldest'], ['score', 'Highest score']].map(function (s) {
+      [['newest', 'Newest'], ['oldest', 'Oldest']].map(function (s) {
         return '<option value="' + s[0] + '"' + ((root._josLeadsSort || 'newest') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
       }).join('') + '</select></div>' +
-      '<div class="jos-ld-list">' + listHtml + '</div>' +
+      (viewMode === 'table'
+        ? renderLeadsTable(visible, selectedId, bulkOpen, root._josLeadBulkSelected)
+        : '<div class="jos-ld-list">' + listHtml + '</div>') +
       (filtered.length > visible.length
         ? '<button type="button" class="jos-btn jos-ld-loadmore" data-jos-act="leads-load-more">Load More Leads</button>'
         : (filtered.length ? '<div class="jos-muted jos-ld-end">End of list</div>' : '')) +
@@ -8147,6 +8195,7 @@
 
       renderLeadsFilterDrawer(root) +
       renderLeadsAddModal(root) +
+      renderLeadsImportModal(root) +
       renderLeadsContextMenu(root) +
       '<button type="button" class="jos-ld-fab" data-jos-act="leads-add-open" aria-label="New Lead">+</button>' +
       '</div>';
@@ -8202,10 +8251,10 @@
       tags: String(d.tags || '').split(/[,\s]+/).filter(Boolean),
       stage: 'new', osStage: 'new', status: 'new', crmStatus: 'new', createdAt: new Date().toISOString(),
       lastContacted: new Date().toISOString(), lastMessage: d.notes || 'Manual lead created',
-      aiScore: 50, aiQualified: false, unread: 1, quoteStatus: 'none', estimatedValue: 0,
+      unread: 1, quoteStatus: 'none', estimatedValue: 0,
       industry: 'Residential', budget: '', bestTime: '',
       messages: [], tasks: [], files: [], appointments: [], activity: [{ type: 'created', label: 'Manual lead created', at: new Date().toLocaleString() }],
-      estimate: { labor: 0, materials: 0, total: 0, notes: '' }, buyingIntent: 'med'
+      estimate: { labor: 0, materials: 0, total: 0, notes: '' }
     };
     st.pipeline.manual.unshift(lead);
     try {
@@ -8229,6 +8278,135 @@
     renderLeads();
   }
 
+  // Minimal RFC4180-ish CSV parser — handles quoted fields (with embedded
+  // commas/newlines/escaped quotes). Good enough for exports from Google
+  // Sheets and common CRMs, which is the real v1 scope (generic importer,
+  // not per-platform integrations).
+  function parseCsv(text) {
+    var rows = [];
+    var row = [];
+    var field = '';
+    var inQuotes = false;
+    var s = String(text || '').replace(/\r\n/g, '\n');
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (s[i + 1] === '"') { field += '"'; i++; } else inQuotes = false;
+        } else field += c;
+      } else if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); field = ''; rows.push(row); row = []; }
+      else field += c;
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(function (r) { return r.some(function (v) { return String(v || '').trim(); }); });
+  }
+
+  var LEAD_IMPORT_FIELDS = [
+    ['skip', 'Don’t import'], ['name', 'Name'], ['phone', 'Phone'], ['email', 'Email'],
+    ['service', 'Service'], ['source', 'Source'], ['notes', 'Notes'], ['amount', 'Estimated amount'],
+  ];
+
+  // Best-effort only — this is a starting point for the mapping UI, never
+  // the final word. A wrong guess costs one dropdown click; the row's real
+  // data is never dropped or misused, since the person confirms every
+  // mapping before anything imports.
+  function guessImportMapping(header) {
+    var h = String(header || '').toLowerCase().trim();
+    if (/name/.test(h)) return 'name';
+    if (/phone|mobile|cell|tel\b/.test(h)) return 'phone';
+    if (/email/.test(h)) return 'email';
+    if (/service|package|interest|want|need|looking for|job/.test(h)) return 'service';
+    if (/source|channel|referral|found|hear about|where from/.test(h)) return 'source';
+    if (/note|comment|message|detail/.test(h)) return 'notes';
+    if (/amount|price|value|budget|quote/.test(h)) return 'amount';
+    return 'skip';
+  }
+
+  function renderLeadsImportModal(root) {
+    if (!root._josLeadImportOpen) return '';
+    var headers = root._josLeadImportHeaders || [];
+    var rows = root._josLeadImportRows || [];
+    var mapping = root._josLeadImportMapping || {};
+    if (!headers.length) {
+      return '<div class="jos-leads-modal-backdrop" data-jos-lead-import-backdrop="1" role="presentation">' +
+        '<div class="jos-leads-modal" role="dialog" aria-modal="true">' +
+        '<div class="jos-between jos-leads-modal-head"><h3>Import Leads</h3><button type="button" class="jos-leads-modal-x" data-jos-act="leads-import-cancel" aria-label="Close">×</button></div>' +
+        '<p class="jos-muted">Upload a CSV export from Google Sheets or another CRM. You’ll match columns to real fields on the next step — nothing is imported until you confirm.</p>' +
+        '<input type="file" id="jos-li-file" accept=".csv,text/csv">' +
+        '</div></div>';
+    }
+    var previewRows = rows.slice(0, 5);
+    return '<div class="jos-leads-modal-backdrop" data-jos-lead-import-backdrop="1" role="presentation">' +
+      '<div class="jos-leads-modal jos-leads-modal-lg" role="dialog" aria-modal="true">' +
+      '<div class="jos-between jos-leads-modal-head"><h3>Match columns</h3><button type="button" class="jos-leads-modal-x" data-jos-act="leads-import-cancel" aria-label="Close">×</button></div>' +
+      '<p class="jos-muted">' + rows.length + ' row' + (rows.length === 1 ? '' : 's') + ' found. Tell us what each column really is — unmatched columns are ignored, not guessed.</p>' +
+      '<div class="jos-li-map-grid">' + headers.map(function (h, i) {
+        return '<div class="jos-li-map-row"><span class="jos-li-map-src">' + esc(h || 'Column ' + (i + 1)) + '</span>' +
+          '<select data-jos-li-map="' + i + '">' + LEAD_IMPORT_FIELDS.map(function (f) {
+            return '<option value="' + f[0] + '"' + ((mapping[i] || guessImportMapping(h)) === f[0] ? ' selected' : '') + '>' + f[1] + '</option>';
+          }).join('') + '</select></div>';
+      }).join('') + '</div>' +
+      '<div class="jos-li-preview"><div class="jos-kicker">Preview (first ' + previewRows.length + ')</div>' +
+      '<table class="jos-ld-table"><thead><tr>' + headers.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead>' +
+      '<tbody>' + previewRows.map(function (r) { return '<tr>' + r.map(function (v) { return '<td>' + esc(String(v || '').slice(0, 40)) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>' +
+      '<div class="jos-btn-row jos-mt jos-leads-modal-actions">' +
+      btn('leads-import-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
+      btn('leads-import-commit', 'Import ' + rows.length + ' leads', 'jos-btn-brand jos-btn-sm') +
+      '</div></div></div>';
+  }
+
+  function commitLeadsImport(root) {
+    var headers = root._josLeadImportHeaders || [];
+    var rows = root._josLeadImportRows || [];
+    var mapping = root._josLeadImportMapping || {};
+    var colFor = function (field) {
+      for (var i = 0; i < headers.length; i++) { if ((mapping[i] || guessImportMapping(headers[i])) === field) return i; }
+      return -1;
+    };
+    var nameCol = colFor('name'), phoneCol = colFor('phone'), emailCol = colFor('email'),
+      serviceCol = colFor('service'), sourceCol = colFor('source'), notesCol = colFor('notes'), amountCol = colFor('amount');
+    ensureLeadsOsState();
+    var st = S();
+    if (!Array.isArray(st.pipeline.manual)) st.pipeline.manual = [];
+    var existing = leadsOsList();
+    var existingPhones = {}, existingEmails = {};
+    existing.forEach(function (l) {
+      if (l.phone) existingPhones[String(l.phone).replace(/\D/g, '')] = true;
+      if (l.email) existingEmails[String(l.email).toLowerCase()] = true;
+    });
+    var imported = 0, skippedDup = 0, skippedInvalid = 0;
+    rows.forEach(function (r, idx) {
+      var name = nameCol > -1 ? String(r[nameCol] || '').trim() : '';
+      var phoneRaw = phoneCol > -1 ? String(r[phoneCol] || '').trim() : '';
+      var phone = phoneRaw ? formatPhoneValue(phoneRaw) : '';
+      var email = emailCol > -1 ? String(r[emailCol] || '').trim() : '';
+      if (!name && !phone && !email) { skippedInvalid++; return; }
+      var phoneDigits = phone.replace(/\D/g, '');
+      if ((phoneDigits && existingPhones[phoneDigits]) || (email && existingEmails[email.toLowerCase()])) { skippedDup++; return; }
+      var id = 'lead_import_' + Date.now() + '_' + idx;
+      var lead = {
+        id: id, key: id, name: name || phone || email || 'Imported lead', phone: phone, email: email,
+        service: serviceCol > -1 ? String(r[serviceCol] || '').trim() : '',
+        source: sourceCol > -1 ? (String(r[sourceCol] || '').trim() || 'import') : 'import',
+        notes: notesCol > -1 ? String(r[notesCol] || '').trim() : '',
+        estimatedValue: amountCol > -1 ? (parseFloat(String(r[amountCol] || '').replace(/[^0-9.]/g, '')) || 0) : 0,
+        stage: 'new', osStage: 'new', status: 'new', crmStatus: 'new', createdAt: new Date().toISOString(),
+        lastContacted: new Date().toISOString(), lastMessage: 'Imported from CSV',
+        unread: 0, quoteStatus: 'none', tags: ['imported'],
+        messages: [], tasks: [], files: [], appointments: [], activity: [{ type: 'created', label: 'Imported from CSV', at: new Date().toLocaleString() }],
+        estimate: { labor: 0, materials: 0, total: 0, notes: '' },
+      };
+      st.pipeline.manual.unshift(lead);
+      if (phoneDigits) existingPhones[phoneDigits] = true;
+      if (email) existingEmails[email.toLowerCase()] = true;
+      imported++;
+    });
+    try { if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon(); } catch (ePersistImp) {}
+    toast('Imported ' + imported + (skippedDup ? ' · ' + skippedDup + ' duplicate' + (skippedDup === 1 ? '' : 's') + ' skipped' : '') + (skippedInvalid ? ' · ' + skippedInvalid + ' skipped (no name/phone/email)' : ''));
+  }
+
   function wireLeadsRoot(root) {
     if (root._josLeadsBoundV3) return;
     root._josLeadsBoundV3 = true;
@@ -8237,6 +8415,15 @@
       if (e.target && e.target.getAttribute && e.target.getAttribute('data-jos-lead-backdrop') === '1') {
         root._josLeadAddOpen = false;
         root._josLeadDraft = null;
+        renderLeads();
+        e.stopPropagation();
+        return;
+      }
+      if (e.target && e.target.getAttribute && e.target.getAttribute('data-jos-lead-import-backdrop') === '1') {
+        root._josLeadImportOpen = false;
+        root._josLeadImportHeaders = null;
+        root._josLeadImportRows = null;
+        root._josLeadImportMapping = {};
         renderLeads();
         e.stopPropagation();
         return;
@@ -8258,6 +8445,13 @@
       var wsBtn = e.target.closest('[data-jos-lead-ws]');
       if (wsBtn) {
         root._josLeadWorkspace = wsBtn.getAttribute('data-jos-lead-ws');
+        renderLeads();
+        e.stopPropagation();
+        return;
+      }
+      var viewBtn = e.target.closest('[data-jos-leads-view]');
+      if (viewBtn) {
+        root._josLeadsView = viewBtn.getAttribute('data-jos-leads-view');
         renderLeads();
         e.stopPropagation();
         return;
@@ -8352,6 +8546,34 @@
           pushLeadActivity(l, 'assign', 'Assigned to ' + name);
         });
         toast('Assigned to ' + name);
+      }
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-bulk')) {
+        root._josLeadBulkSelected = root._josLeadBulkSelected || {};
+        var bulkKey = e.target.getAttribute('data-jos-lead-bulk');
+        if (e.target.checked) root._josLeadBulkSelected[bulkKey] = true;
+        else delete root._josLeadBulkSelected[bulkKey];
+        // Re-render just the count in the menu, not the whole list — a
+        // full renderLeads() here would rebuild the checkbox the user is
+        // mid-click on.
+        var countEl = el('jos-ld-bulk-count');
+        if (countEl) countEl.textContent = Object.keys(root._josLeadBulkSelected).length + ' selected';
+      }
+      if (e.target && e.target.id === 'jos-li-file' && e.target.files && e.target.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          var parsed = parseCsv(String(reader.result || ''));
+          if (parsed.length < 2) { toast('That file doesn’t look like a CSV with a header row + data'); return; }
+          root._josLeadImportHeaders = parsed[0];
+          root._josLeadImportRows = parsed.slice(1);
+          root._josLeadImportMapping = {};
+          renderLeads();
+        };
+        reader.onerror = function () { toast('Could not read that file'); };
+        reader.readAsText(e.target.files[0]);
+      }
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-li-map')) {
+        root._josLeadImportMapping = root._josLeadImportMapping || {};
+        root._josLeadImportMapping[e.target.getAttribute('data-jos-li-map')] = e.target.value;
       }
     });
 
@@ -8490,7 +8712,6 @@
           service: (el('jos-lf-service') || {}).value || 'all',
           vehicle: (el('jos-lf-vehicle') || {}).value || '',
           property: (el('jos-lf-property') || {}).value || '',
-          aiScore: (el('jos-lf-aiscore') || {}).value || 'all',
           tags: (el('jos-lf-tags') || {}).value || '',
           created: (el('jos-lf-created') || {}).value || 'all',
           lastContacted: (el('jos-lf-contacted') || {}).value || 'all',
@@ -8519,12 +8740,71 @@
       }
       if (act === 'leads-add-open') { root._josLeadAddOpen = true; root._josLeadDraft = {}; return renderLeads(); }
       if (act === 'leads-add-cancel') { root._josLeadAddOpen = false; return renderLeads(); }
-      if (act === 'leads-paste-parse') {
-        var parsed = parseLeadPasteText((el('jos-la-paste') || {}).value || '');
-        root._josLeadDraft = Object.assign({}, root._josLeadDraft || {}, parsed, { paste: (el('jos-la-paste') || {}).value || '' });
-        if (parsed.name || parsed.phone || parsed.email) toast('Filled what we could find — check the fields');
-        else toast('Couldn’t find name/phone yet — edit fields manually');
+      if (act === 'leads-import-open') {
+        root._josLeadImportOpen = true;
+        root._josLeadImportHeaders = null;
+        root._josLeadImportRows = null;
+        root._josLeadImportMapping = {};
         return renderLeads();
+      }
+      if (act === 'leads-import-cancel') {
+        root._josLeadImportOpen = false;
+        root._josLeadImportHeaders = null;
+        root._josLeadImportRows = null;
+        root._josLeadImportMapping = {};
+        return renderLeads();
+      }
+      if (act === 'leads-import-commit') {
+        commitLeadsImport(root);
+        root._josLeadImportOpen = false;
+        root._josLeadImportHeaders = null;
+        root._josLeadImportRows = null;
+        root._josLeadImportMapping = {};
+        return renderLeads();
+      }
+      if (act === 'leads-paste-parse') {
+        var pasteText = (el('jos-la-paste') || {}).value || '';
+        var pasteBtn = t;
+        var pasteBtnLabel = pasteBtn ? pasteBtn.textContent : 'Fill from paste';
+        if (pasteBtn) { pasteBtn.disabled = true; pasteBtn.textContent = 'Extracting…'; }
+        (async function () {
+          var handled = false;
+          try {
+            var dbClient = typeof db !== 'undefined' ? db : (window.db || null);
+            if (dbClient) {
+              var invokeResult = await Promise.race([
+                dbClient.functions.invoke('lead-extract', { body: { text: pasteText } }).then(function (r) { return r && r.data; }),
+                new Promise(function (_, rej) { setTimeout(function () { rej(new Error('client_timeout')); }, 10000); }),
+              ]);
+              if (invokeResult && invokeResult.ok && invokeResult.fields) {
+                handled = true;
+                var f = invokeResult.fields;
+                root._josLeadDraft = Object.assign({}, root._josLeadDraft || {}, {
+                  name: f.name || (root._josLeadDraft || {}).name || '',
+                  phone: f.phone || (root._josLeadDraft || {}).phone || '',
+                  email: f.email || (root._josLeadDraft || {}).email || '',
+                  service: f.service || (root._josLeadDraft || {}).service || '',
+                  notes: f.notes || (root._josLeadDraft || {}).notes || '',
+                  paste: pasteText,
+                });
+                if (invokeResult.looksLikeLead === false) {
+                  toast('This doesn’t look like a lead inquiry — check the fields before saving');
+                } else {
+                  toast('Filled what we could find — check the fields');
+                }
+              }
+            }
+          } catch (eExtract) { /* falls through to regex below */ }
+          if (!handled) {
+            var parsed = parseLeadPasteText(pasteText);
+            root._josLeadDraft = Object.assign({}, root._josLeadDraft || {}, parsed, { paste: pasteText });
+            toast(parsed.name || parsed.phone || parsed.email
+              ? 'Quick extract unavailable, pulled what we could — check the fields'
+              : 'Couldn’t find name/phone yet — edit fields manually');
+          }
+          renderLeads();
+        })();
+        return;
       }
       if (act === 'leads-add-save') return saveNewLead(false);
       if (act === 'leads-add-quote') return saveNewLead(true);
@@ -8535,9 +8815,9 @@
       }
       if (act === 'leads-export') {
         var rows = filterLeadsList(root).map(function (l) {
-          return [l.name, l.phone, l.email, normalizeCrmStatus(l), l.service, l.source, l.assignedTo, l.aiScore].join(',');
+          return [l.name, l.phone, l.email, normalizeCrmStatus(l), l.service, l.source, l.assignedTo].join(',');
         });
-        var csv = 'name,phone,email,status,service,source,assigned,score\n' + rows.join('\n');
+        var csv = 'name,phone,email,status,service,source,assigned\n' + rows.join('\n');
         try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(csv); } catch (eExp) {}
         toast('Exported ' + rows.length + ' leads');
         return;
@@ -8563,8 +8843,44 @@
       }
       if (act === 'leads-ai-dismiss') { toast('Recommendation dismissed'); return; }
       if (act === 'leads-bulk-assign' || act === 'leads-bulk-archive' || act === 'leads-bulk-export' || act === 'leads-bulk-tag') {
+        var selectedKeys = Object.keys(root._josLeadBulkSelected || {});
+        if (!selectedKeys.length) { toast('Select at least one lead first'); return; }
+        var selectedLeads = leadsOsList().filter(function (l) { return selectedKeys.indexOf(String(l.id || l.key)) > -1; });
+        if (act === 'leads-bulk-archive') {
+          selectedLeads.forEach(function (l) {
+            l.stage = 'archived'; l.osStage = 'archived'; l.status = 'archived'; l.archived = true;
+            pushLeadActivity(l, 'archive', 'Archived (bulk)');
+          });
+          toast('Archived ' + selectedLeads.length + ' lead' + (selectedLeads.length === 1 ? '' : 's'));
+        } else if (act === 'leads-bulk-tag') {
+          var bulkTag = window.prompt('Tag name', 'follow-up');
+          if (!bulkTag) return;
+          selectedLeads.forEach(function (l) {
+            l.tags = l.tags || [];
+            l.tags.push(String(bulkTag).trim());
+            pushLeadActivity(l, 'tag', 'Tagged ' + bulkTag + ' (bulk)');
+          });
+          toast('Tagged ' + selectedLeads.length + ' lead' + (selectedLeads.length === 1 ? '' : 's'));
+        } else if (act === 'leads-bulk-assign') {
+          var teamForBulk = (S().team && S().team.length ? S().team : LEADS_TEAM);
+          var bulkName = window.prompt('Assign to (' + teamForBulk.map(function (tm) { return tm.name; }).join(', ') + ')', teamForBulk[0] ? teamForBulk[0].name : '');
+          if (!bulkName) return;
+          selectedLeads.forEach(function (l) {
+            l.assignedTo = bulkName;
+            pushLeadActivity(l, 'assign', 'Assigned to ' + bulkName + ' (bulk)');
+          });
+          toast('Assigned ' + selectedLeads.length + ' lead' + (selectedLeads.length === 1 ? '' : 's') + ' to ' + bulkName);
+        } else if (act === 'leads-bulk-export') {
+          var bulkRows = selectedLeads.map(function (l) {
+            return [l.name, l.phone, l.email, normalizeCrmStatus(l), l.service, l.source, l.assignedTo].join(',');
+          });
+          var bulkCsv = 'name,phone,email,status,service,source,assigned\n' + bulkRows.join('\n');
+          try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(bulkCsv); } catch (eBulkExp) {}
+          toast('Exported ' + selectedLeads.length + ' selected lead' + (selectedLeads.length === 1 ? '' : 's'));
+        }
         root._josLeadBulkOpen = false;
-        toast('Bulk action ready — select leads in Stage 2');
+        root._josLeadBulkSelected = {};
+        try { if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon(); } catch (ePersistBulk) {}
         return renderLeads();
       }
 
@@ -8836,23 +9152,6 @@
         toast('Email send placeholder — not claiming connected');
         return;
       }
-      if (act === 'leads-recalc-score') {
-        mutateLead(function (l) {
-          var score = 40;
-          if (l.messages && l.messages.length) score += Math.min(20, l.messages.length * 4);
-          if (l.quoteStatus && l.quoteStatus !== 'none') score += 15;
-          if (l.estimatedValue >= 400) score += 15;
-          if (l.unread) score += 5;
-          if (l.spam) score = 5;
-          if (l.duplicateOf) score = Math.min(score, 50);
-          l.aiScore = Math.max(5, Math.min(99, score));
-          l.aiQualified = l.aiScore >= 70;
-          l.buyingIntent = l.aiScore >= 80 ? 'high' : (l.aiScore >= 55 ? 'med' : 'low');
-          pushLeadActivity(l, 'ai', 'Score recalculated · ' + l.aiScore);
-        });
-        toast('Lead score recalculated');
-        return;
-      }
       if (act === 'leads-ai-summary') return ask('Summarize lead ' + (lead && lead.name) + ' and recommend next action');
       if (act === 'leads-ai-followup') return ask('Recommend the best follow-up message for lead ' + (lead && lead.name));
       if (act === 'leads-ai-intent') return ask('What is the buying intent for lead ' + (lead && lead.name) + '?');
@@ -8883,7 +9182,7 @@
       if (act === 'leads-ai-spam') {
         mutateLead(function (l) {
           var blob = [l.name, l.email, l.lastMessage, l.notes].join(' ').toLowerCase();
-          var spammy = /seo|crypto|bot|buy cheap|viagra|casino/.test(blob) || (l.aiScore || 0) < 15;
+          var spammy = /seo|crypto|bot|buy cheap|viagra|casino/.test(blob);
           l.spam = spammy;
           if (spammy) {
             l.stage = 'spam';
@@ -8987,8 +9286,11 @@
         var m = addr.match(/,\s*([^,]+),\s*[A-Z]{2}\b/) || addr.match(/,\s*([^,]+)$/);
         c.city = m ? m[1].trim() : (st.city || '');
       }
-      if (!c.assignedTo) c.assignedTo = team.length ? (team[idx % team.length] || team[0]).name : '';
-      if (c.aiScore == null) c.aiScore = Math.max(5, Math.min(99, 50 + (c.customerType === 'recurring' ? 20 : 0) + (c.favorite ? 8 : 0) + (idx % 19)));
+      // assignedTo / aiScore fabrication removed (2026-08-06) — same bug as
+      // Leads (round-robin by array index, and a formula with no real
+      // signal behind it), found during the audit the Leads fix prompted.
+      // A customer stays genuinely unassigned until a human assigns them.
+      if (c.assignedTo == null) c.assignedTo = '';
       if (c.unread == null) c.unread = 0;
       if (!Array.isArray(c.notesList)) c.notesList = c.notes ? [String(c.notes)] : [];
       if (!Array.isArray(c.documents)) c.documents = [];
@@ -9229,8 +9531,13 @@
         ? (c.name + ' · customer since ' + (c.customerSince ? dateLong(String(c.customerSince).slice(0, 10)) : (months + ' mo')) + ' · ' + done.length + ' completed jobs · avg ticket ' + money(avgTicket) + (c.preferredService ? ' · usually books ' + c.preferredService : '') + '.')
         : aiCustomerSummary(c, done, booked),
       tags: aiTags(c, done, ltv).slice(0, 4),
-      churn: Math.max(8, Math.min(92, 100 - (c.aiScore || 50) + (done.length ? 0 : 15))),
-      upsell: custIsMember(c) ? 'Recommend Ceramic Upgrade' : 'Potential Membership Candidate',
+      // churn removed (2026-08-06) — derived from the fabricated aiScore
+      // the exact way buyingIntent derived from Leads' fake score. Never
+      // actually rendered anywhere (checked every custAiInsights() call
+      // site before removing), so nothing else needed fixing for this one.
+      // upsell removed (2026-08-06) — a hardcoded static suggestion, not
+      // real personalization. The real version of this idea is a booking-
+      // time add-ons feature (separate, scoped on its own).
       nba: nbaObj.label, nbaDetail: nbaObj.detail, nbaAct: nbaObj.act, nbaTone: nbaObj.tone,
       membership: custIsMember(c) ? (c.membership || 'Keep current plan') : 'Monthly Interior · best fit',
       forecast: Math.round(ltv * 0.35 + (custIsMember(c) ? 400 : 120)),
@@ -9312,7 +9619,6 @@
     var last = lastJob(c);
     var doneN = custCompletedCount(c);
     var ltv = custLifetime(c);
-    var hs = healthScore(c);
     var jobsAll = custJobsFor(c);
     var recentJobs = jobsAll.filter(function (j) { return j.status === 'completed'; }).slice().sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); }).slice(0, 4);
     var msgs = (c.notesList || []).slice(0, 3);
@@ -9361,7 +9667,6 @@
         : '<span class="jos-muted">All clear</span>') + '</div>' +
       '<div class="jos-cc2-card"><div class="jos-kicker">Membership</div><strong>' + esc(custIsMember(c) ? (c.membership || 'Active') : 'None') + '</strong></div>' +
       '<div class="jos-cc2-card"><div class="jos-kicker">Current Vehicle</div><strong>' + esc(c.vehicle || vehicleOf(c) || '—') + '</strong></div>' +
-      '<div class="jos-cc2-card"><div class="jos-kicker">Customer Health</div><strong>' + hs + '</strong><div class="jos-muted">/ 100</div></div>' +
       '<div class="jos-cc2-card"><div class="jos-kicker">Outstanding Balance</div><strong>' + esc(money(c.outstandingBalance || 0) || '$0') + '</strong></div>' +
       '<div class="jos-cc2-card"><div class="jos-kicker">Recent Messages</div>' +
       (msgs.length ? msgs.slice(0, 2).map(function (m) { return '<div class="jos-muted">' + esc(String(m).slice(0, 60)) + '</div>'; }).join('') : '<span class="jos-muted">No messages</span>') + '</div>' +
@@ -9393,15 +9698,12 @@
       '</div>';
 
     var rail = '<aside class="jos-cc2-rail">' +
-      '<section class="jos-cc2-rail-card"><div class="jos-kicker">Customer Health</div><div class="jos-cc2-health"><strong>' + hs + '</strong><span>/100</span></div>' +
-      '<div class="jos-progress"><i style="width:' + hs + '%"></i></div></section>' +
       '<section class="jos-cc2-rail-card"><div class="jos-kicker">Next Best Action</div><strong>' + esc(ai.nba) + '</strong><p class="jos-muted">' + esc(ai.nbaDetail || '') + '</p>' +
       '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm jos-mt" data-jos-act="' + esc(ai.nbaAct || 'new-job-cust') + '" style="width:100%">Do it</button></section>' +
       '<section class="jos-cc2-rail-card"><div class="jos-kicker">Preferences</div>' +
       '<div class="jos-cc2-pref"><span>Likes</span><strong>' + esc((c.likes || []).join(', ') || c.preferredService || '—') + '</strong></div>' +
       '<div class="jos-cc2-pref"><span>Dislikes</span><strong>' + esc((c.dislikes || []).join(', ') || '—') + '</strong></div>' +
       '<div class="jos-cc2-pref"><span>Communication</span><strong>' + esc(c.commPref || 'Text') + '</strong></div></section>' +
-      '<section class="jos-cc2-rail-card"><div class="jos-kicker">Upsell Suggestions</div><p>' + esc(ai.upsell) + '</p></section>' +
       '<section class="jos-cc2-rail-card"><div class="jos-kicker">Membership Status</div><strong>' + esc(custIsMember(c) ? (c.membership || 'Active') : 'Not enrolled') + '</strong></section>' +
       '</aside>';
 
@@ -9997,13 +10299,6 @@
         toast('Customer archived');
         return renderCustomers();
       }
-      if (act === 'cust-ai-refresh') {
-        if (!c) return toast('Select a customer');
-        c.aiScore = Math.max(5, Math.min(99, (c.aiScore || 50) + (Math.floor(Math.random() * 7) - 3)));
-        pushCustActivity(c, 'ai', 'AI insights refreshed');
-        toast('Insights refreshed');
-        return renderCustomers();
-      }
       if (act === 'cust-pay-refund') return toast('Refund · Stage 2 placeholder (not connected)');
       if (act === 'cust-review-sync') return toast('Review sync · Stage 2 placeholder (not connected)');
       if (act === 'cust-doc-cloud') return toast('Cloud docs · Stage 2 placeholder (not connected)');
@@ -10031,11 +10326,6 @@
     var today = typeof global.dateStr === 'function' ? global.dateStr(new Date()) : new Date().toISOString().slice(0, 10);
     return custJobsFor(c).filter(function (j) { return j.status !== 'completed' && j.status !== 'cancelled' && String(j.date || '') >= today; })
       .slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); })[0] || null;
-  }
-  function healthScore(c) {
-    var done = custJobsFor(c).filter(function (j) { return j.status === 'completed'; }).length;
-    var score = 60 + Math.min(20, done * 6) + (c.customerType === 'recurring' ? 12 : 0) + (nextJob(c) ? 4 : 0);
-    return Math.max(60, Math.min(96, score));
   }
   function statusPill(c) {
     if (custIsVip(c)) return '<span class="jos-status-pill vip">VIP</span>';
@@ -10121,7 +10411,7 @@
     var upcoming = booked.concat(pending).slice().sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); });
     var lifetime = completed.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
     if (!lifetime) lifetime = custLifetime(c);
-    var hs = healthScore(c), last = lastJob(c), next = nextJob(c);
+    var last = lastJob(c), next = nextJob(c);
     var selId = shell && shell._josJobId;
     var html = '';
 
@@ -10152,8 +10442,8 @@
         customRows.map(function (f) {
           return '<div><span>' + esc(f.k) + '</span><strong>' + esc(f.v) + '</strong></div>';
         }).join('') + '</div></div>' +
-        '<div class="jos-card"><div class="jos-kicker">Snapshot</div><div class="jos-ov-kpi jos-mt" style="grid-template-columns:repeat(4,minmax(0,1fr))">' +
-        [['Health', String(hs)], ['Completed Jobs', String(completed.length || custCompletedCount(c))], ['Last Visit', last && last.date ? dateLong(last.date) : '—'], ['Next Appointment', next && next.date ? dateLong(next.date) : '—']].map(function (x) {
+        '<div class="jos-card"><div class="jos-kicker">Snapshot</div><div class="jos-ov-kpi jos-mt" style="grid-template-columns:repeat(3,minmax(0,1fr))">' +
+        [['Completed Jobs', String(completed.length || custCompletedCount(c))], ['Last Visit', last && last.date ? dateLong(last.date) : '—'], ['Next Appointment', next && next.date ? dateLong(next.date) : '—']].map(function (x) {
           return '<div class="jos-kpi"><div class="jos-kpi-lbl">' + esc(x[0]) + '</div><div class="jos-kpi-v" style="font-size:15px">' + esc(x[1]) + '</div></div>';
         }).join('') + '</div></div></div>';
     } else if (tab === 'Timeline' || tab === 'History') {
@@ -13706,9 +13996,20 @@
       if (!j.id) j.id = 'job_auto_' + idx;
       if (!j.status) j.status = 'scheduled';
       if (!j.address) j.address = (j.location || (S().city ? S().city : 'San Diego, CA'));
-      if (!j.assignedTo) j.assignedTo = st.team.length ? (st.team[idx % st.team.length] || st.team[0]).name : '';
-      if (j.depositStatus == null) j.depositStatus = j.status === 'completed' ? 'paid' : (parseFloat(j.amount) >= 300 ? 'due' : 'none');
-      if (j.deposit == null) j.deposit = j.depositStatus === 'none' ? 0 : Math.round((parseFloat(j.amount) || 0) * 0.25);
+      // Round-robin auto-assignment removed (2026-08-06) — same bug as
+      // Leads/Customers. Every real display site already falls back to
+      // "Unassigned" (esc(j.assignedTo || 'Unassigned')), so this needed no
+      // further UI changes — a job just stays genuinely unassigned until a
+      // human assigns it via jobEditField / the reassign action.
+      if (j.assignedTo == null) j.assignedTo = '';
+      // depositStatus/deposit (2026-08-06) — real now, not guessed. Both
+      // columns are set once, honestly, at acceptBookingRequest() time from
+      // the actual booking_requests row (real configured amount, and
+      // payment_status only ever 'paid' on a genuine Stripe-webhook-
+      // confirmed event). A job with no deposit column set genuinely never
+      // had one configured — 'none' is correct, not a fallback guess.
+      if (j.depositStatus == null) j.depositStatus = 'none';
+      if (j.deposit == null) j.deposit = j.depositCents != null ? j.depositCents / 100 : 0;
       if (!Array.isArray(j.checklist) || !j.checklist.length) {
         j.checklist = DEFAULT_CHECKLIST.map(function (label, i) {
           return { id: 'cl_' + j.id + '_' + i, label: label, done: j.status === 'completed' };
@@ -13730,7 +14031,8 @@
         ];
         if (j.status === 'in_progress' || j.status === 'completed') j.timeline.push({ type: 'started', label: 'Started', at: (j.date || todayStr()) + ' ' + (j.time || '9:00 AM') });
         if (j.status === 'completed') j.timeline.push({ type: 'completed', label: 'Completed', at: (j.date || todayStr()) + ' end' });
-        if (j.depositStatus === 'paid') j.timeline.push({ type: 'paid', label: 'Paid', at: (j.date || todayStr()) + ' paid' });
+        if (j.depositStatus === 'paid_online') j.timeline.push({ type: 'paid', label: 'Deposit paid online', at: (j.date || todayStr()) + ' paid' });
+        else if (j.depositStatus === 'collected') j.timeline.push({ type: 'paid', label: 'Deposit collected', at: (j.date || todayStr()) + ' collected' });
       }
       if (j.recurring == null) j.recurring = /membership|recurring/i.test(String(j.service || '')) || false;
       if (j.routeOrder == null) j.routeOrder = idx + 1;
@@ -13745,6 +14047,12 @@
   }
   function jobsTeam() { ensureJobsOsState(); return (S().team && S().team.length) ? S().team : (allowDemoSeed() ? DEFAULT_TEAM : []); }
   function findJob(id) { return jobsAll().find(function (j) { return String(j.id) === String(id); }) || null; }
+  function depositStatusLabel(status) {
+    if (status === 'due') return 'Deposit due';
+    if (status === 'paid_online') return 'Deposit paid online';
+    if (status === 'collected') return 'Deposit collected';
+    return '';
+  }
   function jobStatusTone(st) {
     /* Pill colors: Completed green · Scheduled blue · In Progress orange · Cancelled gray */
     st = String(st || '').toLowerCase();
@@ -15950,7 +16258,10 @@
       '<div class="jos-job-card-sub jos-mt">' + esc(sub) + '</div>' +
       (j.isBlock || j.isGoogle ? '' : (
         '<div class="jos-job-card-sub">' + esc(j.assignedTo || 'Unassigned') + ' · ' + esc(j.address || '') + '</div>' +
-        '<div class="jos-between jos-mt"><span class="jos-pipe-amt">' + esc(money(j.amount)) + '</span><span class="jos-pill ' + (j.depositStatus === 'paid' ? 'ok' : (j.depositStatus === 'due' ? 'warn' : 'info')) + '">Deposit ' + esc(j.depositStatus || 'none') + '</span></div>' +
+        '<div class="jos-between jos-mt"><span class="jos-pipe-amt">' + esc(money(j.amount)) + '</span>' +
+        (j.depositStatus && j.depositStatus !== 'none'
+          ? '<span class="jos-pill ' + (j.depositStatus === 'paid_online' || j.depositStatus === 'collected' ? 'ok' : 'warn') + '">' + esc(depositStatusLabel(j.depositStatus)) + '</span>'
+          : '') + '</div>' +
         '<div class="jos-btn-row jos-mt">' +
           btn('jobs-start', 'Start', 'jos-btn-brand jos-btn-sm') +
           btn('jobs-edit', 'Edit', 'jos-btn jos-btn-sm') +
@@ -15996,7 +16307,12 @@
         '<div><div class="jos-kicker">Address</div>' + esc(j.address || '—') + ' ' + (j.address ? '<a class="jos-btn jos-btn-sm" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(j.address) + '" target="_blank" rel="noopener">Open</a>' : '') + '</div>' +
         '<div><div class="jos-kicker">Service</div>' + esc(j.service || '') + '</div>' +
         '<div><div class="jos-kicker">Technician</div>' + esc(j.assignedTo || 'Unassigned') + '</div>' +
-        '<div class="jos-between"><div><div class="jos-kicker">Price</div>' + esc(money(j.amount)) + '</div><div><div class="jos-kicker">Deposit</div>' + esc(money(j.deposit)) + ' · ' + esc(j.depositStatus) + '</div></div>' +
+        '<div class="jos-between"><div><div class="jos-kicker">Price</div>' + esc(money(j.amount)) + '</div>' +
+        (j.depositStatus && j.depositStatus !== 'none'
+          ? '<div><div class="jos-kicker">Deposit</div>' + esc(money(j.deposit)) + ' · ' + esc(depositStatusLabel(j.depositStatus)) +
+            (j.depositStatus === 'due' ? ' <button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-mark-deposit-collected">Mark collected</button>' : '') +
+            '</div>'
+          : '') + '</div>' +
         '<div><div class="jos-kicker">Status</div><span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></div>' +
         '<div><div class="jos-kicker">Tags</div>' + (j.tags || []).map(function (t) { return '<span class="jos-pill info">' + esc(t) + '</span>'; }).join(' ') +
         ' <button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-add-tag">Add tag</button></div>' +
@@ -16480,6 +16796,17 @@
         job.durationMin = (job.durationMin || 120) + 30;
         pushJobTimeline(job, 'note', 'Duration resized to ' + job.durationMin + 'm');
         toast('Job resized (+30 min)');
+        return rerender();
+      }
+      if (act === 'jobs-mark-deposit-collected') {
+        if (!job) return toast('Select a job');
+        if (job.depositStatus !== 'due') return toast('No deposit due to collect');
+        job.depositStatus = 'collected';
+        pushJobTimeline(job, 'paid', 'Deposit collected');
+        toast('Deposit marked collected');
+        try {
+          if (db && job.dbId) db.from('jobs').update({ deposit_status: 'collected' }).eq('id', job.dbId);
+        } catch (eDep) {}
         return rerender();
       }
       if (act === 'jobs-start') {
