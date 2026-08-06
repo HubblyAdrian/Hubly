@@ -564,6 +564,25 @@ STRUCTURE: exactly one <h1> in the whole document — the hero headline. Every n
 REASONING: on nodes where you made a real design choice (not on every trivial span), include "reasoning": {"source":"ai","reason":"<one sentence, honest, specific>","confidence":<0-1>}. This isn't decoration — it's what lets you explain your own choices later if asked "why is this here."`;
 }
 
+/** Standard approach for document_generate (see generateAndValidateDocument)
+ *  as of 2026-08-06 — adopted after a real benchmark comparing it against
+ *  reasoningEffort:"medium": designRationale moved the actual measured
+ *  target (cross-business class-usage overlap, 65.1% -> 58.2%) further
+ *  than the 45%-costlier reasoning bump did (which only reached 62.8%),
+ *  while running at or below the baseline's cost/latency — the model's
+ *  differentiation reasoning was already available almost for free once
+ *  asked for explicitly in-band, not hiding behind a reasoning-token
+ *  budget it wasn't using anyway (confirmed empirically: ~1% of
+ *  completion tokens were reasoning tokens under the shipped "low"
+ *  setting, before this change).
+ *
+ *  Kept separate from buildDocumentSchemaPromptBlock() (patchDocument
+ *  doesn't use this — forcing a full rationale on a small targeted edit
+ *  isn't what was tested or approved). */
+export function buildDesignRationaleInstructions(): string {
+  return `\n\nBEFORE you decide on the page's structure, think through — in your own words, as real text in the "designRationale" field below — what makes THIS business's page different from a generic template: which sections it actually needs (and which common ones it doesn't), what the visual/structural approach should emphasize given its specific character, and at least one deliberate way this page should NOT look like a default template. This includes deciding whether each reserved Hubly element (booking, reviews, contact form, map, customer portal) genuinely belongs on this page — only include one because your own stated reasoning justifies it for THIS business, never by default or because a similar business would typically have one; if you include one, your designRationale must say why. Then apply that reasoning when you build the tree.\n\nReturn a single JSON object: { "designRationale": "<3-6 sentences, your real reasoning, specific to this business>", "root": <the root node, exactly as specified above> } — "root" must still be exactly the ROOT node shape described above. Nothing else in the response.`;
+}
+
 // ---------------------------------------------------------------------------
 // Patch application — editing is patches, not regeneration.
 //

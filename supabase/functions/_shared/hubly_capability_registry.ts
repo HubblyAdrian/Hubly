@@ -42,6 +42,7 @@ import {
   validateHublyDocument,
   renderHublyDocument,
   buildDocumentSchemaPromptBlock,
+  buildDesignRationaleInstructions,
   applyPatchOps,
   type HublyDocument,
 } from "./hubly_document.ts";
@@ -158,8 +159,8 @@ type UsageTotal = { promptTokens: number; completionTokens: number; reasoningTok
  *  empty completion or unparseable JSON, which look identical from the
  *  outside without this). */
 export type DocGenOutcome =
-  | { ok: true; document: HublyDocument; usage: UsageTotal; firstAttemptOk: boolean; firstAttemptErrors?: { path: string; message: string }[]; modelUsed?: string }
-  | { ok: false; errors: { path: string; message: string }[]; usage: UsageTotal; firstAttemptOk: boolean; firstAttemptErrors?: { path: string; message: string }[]; modelUsed?: string };
+  | { ok: true; document: HublyDocument; usage: UsageTotal; firstAttemptOk: boolean; firstAttemptErrors?: { path: string; message: string }[]; modelUsed?: string; rationale?: string | null }
+  | { ok: false; errors: { path: string; message: string }[]; usage: UsageTotal; firstAttemptOk: boolean; firstAttemptErrors?: { path: string; message: string }[]; modelUsed?: string; rationale?: string | null };
 
 function emptyUsage(): UsageTotal {
   return { promptTokens: 0, completionTokens: 0, reasoningTokens: 0, calls: 0 };
@@ -183,8 +184,14 @@ function addUsage(total: UsageTotal, u?: { promptTokens: number; completionToken
 export async function generateAndValidateDocument(system: string, brief: string, businessId: string, tag: string, modelOverride?: string, reasoningEffortOverride?: "low" | "medium" | "high"): Promise<DocGenOutcome> {
   const usage = emptyUsage();
   let modelUsed: string | undefined;
-  const attempt = async (messages: { role: "user" | "assistant"; content: string }[]): Promise<{ candidate: unknown; raw: string } | null> => {
-    const ai = await HublyAI.complete({ feature: "hubly-document-generate", task: "document_generate", system, messages, jsonMode: true, model: modelOverride || undefined, reasoningEffort: reasoningEffortOverride || undefined });
+  // Standard approach as of 2026-08-06 (see buildDesignRationaleInstructions'
+  // header comment for the real benchmark this was decided from) — the
+  // model must state its structural reasoning, in-band, as part of the same
+  // call, before/alongside the tree. Baked in here rather than left to each
+  // caller to remember, since it's now the default behavior, not an opt-in.
+  const fullSystem = system + buildDesignRationaleInstructions();
+  const attempt = async (messages: { role: "user" | "assistant"; content: string }[]): Promise<{ candidate: any; raw: string } | null> => {
+    const ai = await HublyAI.complete({ feature: "hubly-document-generate", task: "document_generate", system: fullSystem, messages, jsonMode: true, model: modelOverride || undefined, reasoningEffort: reasoningEffortOverride || undefined });
     addUsage(usage, ai.usage);
     modelUsed = ai.model;
     const raw = String(ai.text || "");
@@ -204,22 +211,33 @@ export async function generateAndValidateDocument(system: string, brief: string,
     }
   };
 
-  const first = await attempt([{ role: "user", content: brief }]);
-  if (!first) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON" }], usage, firstAttemptOk: false, firstAttemptErrors: [{ path: "$", message: "empty completion or unparseable JSON" }], modelUsed };
-  const firstResult = validateHublyDocument(first.candidate, { businessId, tag, version: 1, generatedBy: "ai" });
-  if (firstResult.ok) return { ok: true, document: firstResult.document, usage, firstAttemptOk: true, modelUsed };
+  // The model returns { designRationale, root } — designRationale is real
+  // (used by the caller for observability, e.g. logging why a reserved
+  // element was included), but it is never itself validated or trusted as
+  // a gate. root is the only thing that ever reaches validateHublyDocument
+  // — the actual, unmodified validator, same as every other caller.
+  const rootOf = (candidate: any) => candidate?.root;
+  const rationaleOf = (candidate: any) => (typeof candidate?.designRationale === "string" ? candidate.designRationale : null);
 
-  const retryMsg = `Your previous output had these validation errors — fix exactly these, nothing else:\n${firstResult.errors.map((e) => `- ${e.path}: ${e.message}`).join("\n")}\n\nReturn a corrected FULL root node (same shape as before, not just the fixed part).`;
+  const first = await attempt([{ role: "user", content: brief }]);
+  if (!first) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON" }], usage, firstAttemptOk: false, firstAttemptErrors: [{ path: "$", message: "empty completion or unparseable JSON" }], modelUsed, rationale: null };
+  if (!rootOf(first.candidate)) return { ok: false, errors: [{ path: "$.root", message: "response was missing the required root field" }], usage, firstAttemptOk: false, firstAttemptErrors: [{ path: "$.root", message: "missing root field" }], modelUsed, rationale: rationaleOf(first.candidate) };
+  const firstResult = validateHublyDocument(rootOf(first.candidate), { businessId, tag, version: 1, generatedBy: "ai" });
+  if (firstResult.ok) return { ok: true, document: firstResult.document, usage, firstAttemptOk: true, modelUsed, rationale: rationaleOf(first.candidate) };
+
+  const retryMsg = `Your previous output's "root" field had these validation errors — fix exactly these, nothing else:\n${firstResult.errors.map((e) => `- ${e.path}: ${e.message}`).join("\n")}\n\nReturn the same { "designRationale": ..., "root": ... } shape, with root corrected (a full corrected root node, not just the fixed part).`;
   const second = await attempt([
     { role: "user", content: brief },
     { role: "assistant", content: first.raw },
     { role: "user", content: retryMsg },
   ]);
-  if (!second) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON on retry" }], usage, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed };
-  const secondResult = validateHublyDocument(second.candidate, { businessId, tag, version: 1, generatedBy: "ai" });
+  if (!second) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON on retry" }], usage, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed, rationale: rationaleOf(first.candidate) };
+  if (!rootOf(second.candidate)) return { ok: false, errors: [{ path: "$.root", message: "retry response was missing the required root field" }], usage, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed, rationale: rationaleOf(first.candidate) };
+  const secondResult = validateHublyDocument(rootOf(second.candidate), { businessId, tag, version: 1, generatedBy: "ai" });
+  const rationale = rationaleOf(second.candidate) ?? rationaleOf(first.candidate);
   return secondResult.ok
-    ? { ok: true, document: secondResult.document, usage, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed }
-    : { ok: false, errors: secondResult.errors, usage, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed };
+    ? { ok: true, document: secondResult.document, usage, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed, rationale }
+    : { ok: false, errors: secondResult.errors, usage, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed, rationale };
 }
 
 /** Same one-retry-with-real-errors discipline as generateAndValidateDocument,
@@ -624,7 +642,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const genResult = await generateAndValidateDocument(system, brief, draftId, "website", benchmarkModel);
           const generationMs = Date.now() - genStarted;
           if (!genResult.ok) {
-            return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: { errors: genResult.errors, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed } };
+            return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: { errors: genResult.errors, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale } };
           }
           const html = renderHublyDocument(genResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined });
           const r = await callBusinessRpc("create_business_document", {
@@ -643,7 +661,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             ok: true,
             real: true,
             summary: `Real page generated and live — ${url} (version ${r.version}). Every element on it is individually editable.`,
-            raw: { id: r.id, version: r.version, url, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed },
+            raw: { id: r.id, version: r.version, url, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale },
           };
         },
       },
