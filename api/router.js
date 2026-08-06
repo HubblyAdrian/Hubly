@@ -183,6 +183,24 @@ async function serveHublyHtml(res, req) {
     } catch (e) {
       /* keep Hubly defaults if lookup fails */
     }
+    // The static HTML ships with #p-landing pre-marked active — a deliberate
+    // choice for the marketing host (see the "never sit on a boot logo
+    // splash" comment in initApp) so its own visitors see content
+    // immediately. But that's the Hubly platform marketing page, not a
+    // business's site — on a business subdomain it was flashing before
+    // loadPublicProfile() swapped in the real page a moment later. Business
+    // subdomains never take the marketing-host code path in initApp at all,
+    // so nothing else re-activates #p-landing; swapping which page starts
+    // active is safe and sufficient. #p-boot is the neutral splash already
+    // built for exactly this gap.
+    content = content.replace(
+      '<div id="p-landing" class="page active">',
+      '<div id="p-landing" class="page">'
+    );
+    content = content.replace(
+      '<div id="p-boot" class="page" style="background:var(--surface-2,#F7F7F5);">',
+      '<div id="p-boot" class="page active" style="background:var(--surface-2,#F7F7F5);">'
+    );
   }
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
