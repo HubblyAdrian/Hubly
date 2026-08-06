@@ -184,6 +184,7 @@ Deno.serve(async (req: Request) => {
         payment_status: "pending_checkout",
         amount_due_cents: amountCents,
         currency: "usd",
+        deposit_cents: chargeKind === "deposit" ? amountCents : null,
       };
       const { data: inserted, error: insErr } = await admin
         .from("booking_requests")
