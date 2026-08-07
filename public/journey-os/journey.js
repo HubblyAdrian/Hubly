@@ -8084,12 +8084,11 @@
   }
 
   function renderLeadWorkspace(root, lead, ws) {
-    if (!lead) {
-      return '<div class="jos-ld-empty-ws"><div class="jos-ld-empty-art" aria-hidden="true"></div><h3>Select a lead</h3><p>Pick a lead from the inbox to qualify, score, and convert.</p></div>';
-    }
+    if (!lead) return '';
     var crm = normalizeCrmStatus(lead);
     var checklist = leadChecklist(lead);
     var rec = leadAiRecommendation(lead);
+    var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
 
     var tabBar = '<div class="jos-ld-ws-tabs">' + LEADS_WS_TABS.map(function (t) {
       return '<button type="button" class="jos-ld-ws-tab' + (ws === t[0] ? ' on' : '') + '" data-jos-lead-ws="' + t[0] + '">' + t[1] + '</button>';
@@ -8098,9 +8097,9 @@
     var recover = isRecoveryLead(lead);
     var head = '<div class="jos-ld-ws-head">' +
       '<div class="jos-ld-ws-identity">' +
-      '<span class="jos-ld-ava lg' + (recover ? ' recover' : '') + '">' + esc(initials(lead.name)) + '</span>' +
+      '<span class="jos-ld-ava' + (recover ? ' recover' : '') + '">' + esc(initials(lead.name)) + '</span>' +
       '<div><div class="jos-ld-ws-name"><strong>' + esc(lead.name || 'Lead') + '</strong>' +
-      (recover ? '<span class="jos-pill warn">Recover</span>' : '<span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span>') +
+      (recover ? '<span class="jos-pill warn">Recover</span>' : '') +
       '</div>' +
       '<div class="jos-muted">' + esc(recover ? ('Incomplete booking · Left at ' + leadDropStep(lead)) : ((lead.industry || 'Residential') + ' · ' + (lead.service || 'Service'))) + '</div></div></div>' +
       '<div class="jos-ld-qa">' +
@@ -8111,7 +8110,28 @@
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-email" title="Email" aria-label="Email">' +
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></button>' +
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-more-menu" title="More" aria-label="More">⋯</button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-detail-close" title="Close" aria-label="Close">✕</button>' +
       '</div></div>';
+
+    // Real per-lead properties (status/assigned/tags) as one compact strip
+    // at the top of the panel — replaces what used to be three separate
+    // full-size "widget" cards in a permanent third column.
+    var props = '<div class="jos-ld-props">' +
+      '<label class="jos-ld-prop"><span>Status</span><select id="jos-ld-status" class="jos-ld-select">' +
+      LEADS_CRM_STATUSES.map(function (s) {
+        return '<option value="' + s + '"' + (crm === s ? ' selected' : '') + '>' + esc(LEADS_STATUS_LABEL[s]) + '</option>';
+      }).join('') + '</select></label>' +
+      '<label class="jos-ld-prop"><span>Assigned</span><select id="jos-ld-assigned" class="jos-ld-select">' +
+      '<option value=""' + (!lead.assignedTo ? ' selected' : '') + '>Unassigned</option>' +
+      team.map(function (t) {
+        return '<option value="' + esc(t.name) + '"' + (lead.assignedTo === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+      }).join('') + '</select></label>' +
+      '<div class="jos-ld-prop jos-ld-prop-tags"><span>Tags</span><div class="jos-ld-tags">' +
+      ((lead.tags && lead.tags.length) ? lead.tags.map(function (tg, i) {
+        return '<button type="button" class="jos-ld-tag" data-jos-act="leads-tag-remove" data-jos-tag-i="' + i + '">' + esc(tg) + ' ×</button>';
+      }).join('') : '<span class="jos-muted">No tags</span>') +
+      '<button type="button" class="jos-ld-tag add" data-jos-act="leads-add-tag">+ Add</button>' +
+      '</div></div></div>';
 
     var body = '';
     if (ws === 'overview') {
@@ -8120,19 +8140,18 @@
         ['Email', lead.email || '—', 'leads-email'],
         ['Address', lead.address || lead.property || '—', ''],
         ['Source', srcLabel(srcKind(lead.source, lead)), ''],
-        ['Service Interested', lead.service || '—', ''],
+        ['Interested In', lead.service || '—', ''],
         ['Dropped at', recover ? leadDropStep(lead) : '—', ''],
         ['Budget', lead.budget || money(lead.estimatedValue || lead.amount) || '—', ''],
         ['Best Time to Contact', lead.bestTime || '—', ''],
         ['Notes', (lead.notesList && lead.notesList[0]) || lead.notes || '—', '']
       ];
       if (!recover) fields = fields.filter(function (f) { return f[0] !== 'Dropped at'; });
-      var recoverBanner = recover
-        ? '<section class="jos-ld-recover-banner">' +
-          '<div class="jos-ld-recover-copy"><span class="jos-kicker">Lead Recovery</span>' +
-          '<strong>They started booking and didn’t finish</strong>' +
-          '<p>Left at <b>' + esc(leadDropStep(lead)) + '</b>' + (lead.service ? ' · ' + esc(lead.service) : '') +
-          ' · ' + esc(leadRelativeTime(lead)) + '. Send a short follow-up while intent is still warm.</p></div>' +
+      // Recovery gets a slim, neutral-toned inline note with real actions —
+      // not a full-width colored banner competing with the rest of the panel.
+      var recoverNote = recover
+        ? '<section class="jos-ld-recover-note">' +
+          '<p><strong>Started booking, didn’t finish</strong> — left at ' + esc(leadDropStep(lead)) + (lead.service ? ' · ' + esc(lead.service) : '') + ' · ' + esc(leadRelativeTime(lead)) + '</p>' +
           '<div class="jos-btn-row">' +
           btn('leads-recover-sms', 'Send Recovery Text', 'jos-btn-brand jos-btn-sm') +
           btn('leads-recover-resume', 'Finish booking', 'jos-btn jos-btn-sm') +
@@ -8140,7 +8159,7 @@
           btn('leads-recover-lost', 'Mark lost', 'jos-btn jos-btn-sm') +
           '</div></section>'
         : '';
-      body = recoverBanner + '<div class="jos-ld-overview">' +
+      body = recoverNote + '<div class="jos-ld-overview">' +
         '<section class="jos-ld-info">' +
         '<div class="jos-kicker">Lead Information</div>' +
         fields.map(function (f) {
@@ -8204,83 +8223,7 @@
         '<div class="jos-mt">' + btn('leads-file-add', 'Add File', 'jos-btn-brand jos-btn-sm') + '</div></div>';
     }
 
-    return '<div class="jos-ld-workspace" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' + head + tabBar + '<div class="jos-ld-ws-body">' + body + '</div></div>';
-  }
-
-  function renderLeadRightPanel(root, lead, all, filtered) {
-    var total = all.length;
-    var counts = {};
-    LEADS_CRM_STATUSES.forEach(function (s) { counts[s] = 0; });
-    all.forEach(function (l) { counts[normalizeCrmStatus(l)] = (counts[normalizeCrmStatus(l)] || 0) + 1; });
-    var sources = { website: 0, google: 0, facebook: 0, referral: 0, instagram: 0, other: 0 };
-    all.forEach(function (l) {
-      var k = srcKind(l.source, l);
-      if (sources[k] == null) sources.other += 1;
-      else sources[k] += 1;
-    });
-    var srcTotal = Math.max(1, total);
-    var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
-    var crm = lead ? normalizeCrmStatus(lead) : 'new';
-    var maxPipe = Math.max(1, Math.max.apply(null, LEADS_CRM_STATUSES.map(function (s) { return counts[s] || 0; })));
-
-    var recoverN = all.filter(isRecoveryLead).length;
-    return '<aside class="jos-ld-rail">' +
-      '<button type="button" class="jos-ld-widget jos-ld-recover-rail" data-jos-leads-tab="recovery">' +
-      '<div class="jos-kicker">Lead Recovery</div>' +
-      '<div class="jos-ld-sum-num">' + recoverN + '</div>' +
-      '<div class="jos-muted">Unfinished bookings to follow up</div>' +
-      '<span class="jos-ld-recover-rail-cta">Open queue →</span></button>' +
-
-      '<section class="jos-ld-widget">' +
-      '<div class="jos-kicker">Lead Status</div>' +
-      '<select id="jos-ld-status" class="jos-ld-select"' + (lead ? '' : ' disabled') + '>' +
-      LEADS_CRM_STATUSES.map(function (s) {
-        return '<option value="' + s + '"' + (crm === s ? ' selected' : '') + '>' + esc(LEADS_STATUS_LABEL[s]) + '</option>';
-      }).join('') + '</select></section>' +
-
-      '<section class="jos-ld-widget">' +
-      '<div class="jos-kicker">Assigned To</div>' +
-      '<select id="jos-ld-assigned" class="jos-ld-select"' + (lead ? '' : ' disabled') + '>' +
-      team.map(function (t) {
-        return '<option value="' + esc(t.name) + '"' + ((lead && lead.assignedTo) === t.name ? ' selected' : '') + '>' + esc(t.name) + (t.role ? ' · ' + esc(t.role) : '') + '</option>';
-      }).join('') + '</select></section>' +
-
-      '<section class="jos-ld-widget">' +
-      '<div class="jos-kicker">Tags</div>' +
-      '<div class="jos-ld-tags">' +
-      ((lead && lead.tags && lead.tags.length) ? lead.tags.map(function (tg, i) {
-        return '<button type="button" class="jos-ld-tag" data-jos-act="leads-tag-remove" data-jos-tag-i="' + i + '">' + esc(tg) + ' ×</button>';
-      }).join('') : '<span class="jos-muted">No tags</span>') +
-      '<button type="button" class="jos-ld-tag add" data-jos-act="leads-add-tag">+ Add Tag</button>' +
-      '</div></section>' +
-
-      '<button type="button" class="jos-ld-widget jos-ld-summary" data-jos-act="go-reports">' +
-      '<div class="jos-kicker">Lead Summary</div>' +
-      '<div class="jos-ld-sum-num">' + total + '</div>' +
-      '<div class="jos-ld-sum-trend"><span class="up">+12% this week</span></div>' +
-      '<div class="jos-ld-spark" aria-hidden="true"><i style="height:35%"></i><i style="height:48%"></i><i style="height:42%"></i><i style="height:60%"></i><i style="height:55%"></i><i style="height:72%"></i><i style="height:68%"></i></div>' +
-      '</button>' +
-
-      '<section class="jos-ld-widget">' +
-      '<div class="jos-kicker">Conversion Pipeline</div>' +
-      '<div class="jos-ld-pipe">' + LEADS_CRM_STATUSES.filter(function (s) { return s !== 'unqualified'; }).map(function (s) {
-        var n = counts[s] || 0;
-        var pct = Math.round((n / maxPipe) * 100);
-        return '<button type="button" class="jos-ld-pipe-row" data-jos-leads-tab="' + s + '">' +
-          '<span>' + esc(LEADS_STATUS_LABEL[s]) + '</span><span class="n">' + n + '</span>' +
-          '<span class="bar"><i class="tone-' + leadStatusTone(s) + '" style="width:' + pct + '%"></i></span></button>';
-      }).join('') + '</div></section>' +
-
-      '<section class="jos-ld-widget">' +
-      '<div class="jos-kicker">Lead Sources</div>' +
-      '<div class="jos-ld-donut" style="--w:' + Math.round(sources.website / srcTotal * 100) + ';--g:' + Math.round(sources.google / srcTotal * 100) + ';--f:' + Math.round(sources.facebook / srcTotal * 100) + ';--r:' + Math.round(sources.referral / srcTotal * 100) + ';--i:' + Math.round(sources.instagram / srcTotal * 100) + '">' +
-      '<div class="jos-ld-donut-hole"><strong>' + total + '</strong><span>leads</span></div></div>' +
-      '<div class="jos-ld-src-legend">' +
-      [['website', 'Website'], ['google', 'Google'], ['facebook', 'Facebook'], ['referral', 'Referral'], ['instagram', 'Instagram']].map(function (s) {
-        var pct = Math.round((sources[s[0]] || 0) / srcTotal * 100);
-        return '<button type="button" class="jos-ld-src-row" data-jos-act="leads-filter-source" data-jos-source="' + s[0] + '"><i class="src-' + s[0] + '"></i><span>' + s[1] + '</span><strong>' + pct + '%</strong></button>';
-      }).join('') +
-      '</div></section></aside>';
+    return '<div class="jos-ld-workspace" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' + head + props + tabBar + '<div class="jos-ld-ws-body">' + body + '</div></div>';
   }
 
   function renderLeadsContextMenu(root) {
@@ -8354,12 +8297,13 @@
     var recoveryCount = all.filter(isRecoveryLead).length;
     var filtered = filterLeadsList(root);
     var visible = filtered.slice(0, root._josLeadsLimit || 25);
-    var selectedId = root._josLeadId || (visible[0] && (visible[0].id || visible[0].key)) || null;
+    // No lead is selected by default — the detail panel only slides in once
+    // someone actually clicks a row, so the table gets full width until then.
+    var selectedId = root._josLeadId || null;
     var sel = selectedId ? findLead(selectedId) : null;
     if (selectedId && !sel) {
-      selectedId = visible[0] ? (visible[0].id || visible[0].key) : null;
-      root._josLeadId = selectedId;
-      sel = selectedId ? findLead(selectedId) : null;
+      selectedId = null;
+      root._josLeadId = null;
     }
     if (sel) {
       sel.unread = 0;
@@ -8389,16 +8333,17 @@
     var lostCount = all.filter(function (l) { return leadMatchesTab(l, 'lost'); }).length;
     var wonCount = all.filter(function (l) { return normalizeCrmStatus(l) === 'won'; }).length;
     var totalCount = all.length;
-    var conversionRate = totalCount ? Math.round((wonCount / totalCount) * 1000) / 10 : 0;
+    // Compact single-line chip row, not full-height cards — Total/New/
+    // Qualified/Lost/Recovery/Converted, real counts only.
     var kpiRow = '<div class="jos-ld-kpis">' + [
-      ['Total Leads', totalCount, ''],
-      ['New', newCount, ''],
-      ['Qualified', qualifiedCount, ''],
-      ['Lost', lostCount, ''],
-      ['Won', wonCount, ''],
-      ['Conversion Rate', conversionRate + '%', ''],
+      ['Total', totalCount],
+      ['New', newCount],
+      ['Qualified', qualifiedCount],
+      ['Lost', lostCount],
+      ['Recovery', recoveryCount],
+      ['Converted', wonCount],
     ].map(function (k) {
-      return '<div class="jos-ld-kpi-card"><div class="jos-kicker">' + esc(k[0]) + '</div><strong>' + esc(String(k[1])) + '</strong></div>';
+      return '<span class="jos-ld-kpi-chip"><span class="lbl">' + esc(k[0]) + '</span><strong>' + esc(String(k[1])) + '</strong></span>';
     }).join('') + '</div>';
 
     var statusTabs = '<div class="jos-ld-status-tabs">' + LEADS_TABS.map(function (t) {
@@ -8455,11 +8400,6 @@
 
       statusTabs +
 
-      (tab === 'recovery'
-        ? '<div class="jos-ld-recover-strip"><strong>Lead Recovery</strong><span>People who started booking and didn’t finish — text them while intent is warm.' +
-          (recoveryCount ? ' <em>' + recoveryCount + ' waiting</em>' : '') + '</span></div>'
-        : '') +
-
       '<div class="jos-ld-layout">' +
       '<section class="jos-ld-inbox' + (viewMode === 'table' ? ' is-table' : '') + '">' +
       '<div class="jos-ld-inbox-head"><strong>' + filtered.length + (tab === 'recovery' ? ' to recover' : ' Leads') + '</strong>' +
@@ -8480,8 +8420,7 @@
         ? '<button type="button" class="jos-btn jos-ld-loadmore" data-jos-act="leads-load-more">Load More Leads</button>'
         : (filtered.length ? '<div class="jos-muted jos-ld-end">End of list</div>' : '')) +
       '</section>' +
-      '<section class="jos-ld-main">' + renderLeadWorkspace(root, sel, ws) + '</section>' +
-      renderLeadRightPanel(root, sel, all, filtered) +
+      (sel ? '<section class="jos-ld-main">' + renderLeadWorkspace(root, sel, ws) + '</section>' : '') +
       '</div>' +
       '</div>' +
 
@@ -9248,6 +9187,12 @@
     root._josLeadCtx = null;
 
     try {
+      if (act === 'leads-detail-close') {
+        root._josLeadId = null;
+        root.querySelector('.jos-ld-shell') && root.querySelector('.jos-ld-shell').classList.remove('ws-open');
+        renderLeads();
+        return;
+      }
       if (act === 'leads-recover-sms') {
         if (!lead) return toast('Select a lead first');
         var sms = leadRecoverySms(lead);

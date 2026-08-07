@@ -4712,12 +4712,12 @@ html[data-theme="night"] .jos-mem-form select{
 }
 .jos-ld-page{
   flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;
-  padding:32px 32px 0;max-width:1728px;width:100%;margin:0 auto;box-sizing:border-box;
+  padding:18px 24px 0;max-width:1728px;width:100%;margin:0 auto;box-sizing:border-box;
   animation:josHomeIn .28s ease both;
 }
 .jos-ld-header{
-  min-height:80px;flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
-  margin-bottom:20px;flex-wrap:wrap;background:transparent;border:0;position:static;height:auto;padding:0;
+  min-height:0;flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
+  margin-bottom:12px;flex-wrap:wrap;background:transparent;border:0;position:static;height:auto;padding:0;
 }
 .jos-ld-header h1,.jos-ld-header .hub-page-title{
   margin:0;font-size:28px;font-weight:800;letter-spacing:-.03em;color:var(--jos-navy);
@@ -4744,33 +4744,34 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-bulk-menu button:hover{background:var(--jos-brand-soft)}
 
 .jos-ld-toolbar{
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;flex-shrink:0;padding:0;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;flex-shrink:0;padding:0;
 }
 .jos-ld-toolbar .jos-ld-filter-search{
-  flex:1;min-width:min(100%,240px);height:42px;display:flex;align-items:center;
-  border:1px solid var(--jos-border);border-radius:12px;background:#fff;padding:0 14px;
+  flex:1;min-width:min(100%,240px);height:34px;display:flex;align-items:center;
+  border:1px solid var(--jos-border);border-radius:10px;background:#fff;padding:0 12px;
 }
 .jos-ld-toolbar .jos-ld-filter-search input{border:0;outline:0;width:100%;background:transparent;font:inherit;font-size:13px}
 .jos-ld-toolbar .jos-ld-dd{
-  width:auto;min-width:120px;max-width:168px;height:38px;border:1px solid var(--jos-border);border-radius:10px;background:#fff;
+  width:auto;min-width:110px;max-width:160px;height:34px;border:1px solid var(--jos-border);border-radius:10px;background:#fff;
   padding:0 10px;font:inherit;font-size:12px;font-weight:650;color:var(--jos-navy);
 }
 
 .jos-ld-kpis{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:8px;margin:0 0 10px;flex-shrink:0;
+  display:flex;align-items:center;gap:6px;margin:0 0 8px;flex-shrink:0;flex-wrap:wrap;
 }
-.jos-ld-kpi-card{
-  padding:8px 12px;border-radius:12px;border:1px solid var(--jos-border);background:#fff;
+.jos-ld-kpi-chip{
+  display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;
+  border:1px solid #ECEDEF;background:#fff;font-size:12px;
 }
-.jos-ld-kpi-card .jos-kicker{font-size:10px}
-.jos-ld-kpi-card strong{display:block;margin-top:2px;font-size:16px;font-weight:800;color:var(--jos-navy)}
+.jos-ld-kpi-chip .lbl{color:#8B909A;font-weight:600}
+.jos-ld-kpi-chip strong{color:var(--jos-navy);font-weight:800}
 .jos-ld-status-tabs{
-  display:flex;gap:4px;padding:0;margin:0 0 12px;flex-shrink:0;overflow:auto;scrollbar-width:thin;
-  border-bottom:1px solid var(--jos-border);height:50px;align-items:stretch;
+  display:flex;gap:4px;padding:0;margin:0 0 8px;flex-shrink:0;overflow:auto;scrollbar-width:thin;
+  border-bottom:1px solid var(--jos-border);height:36px;align-items:stretch;
 }
 .jos-ld-stab{
-  appearance:none;border:0;background:transparent;padding:0 12px;border-radius:0;
-  font:inherit;font-size:13px;font-weight:750;color:var(--jos-ink-3);cursor:pointer;white-space:nowrap;
+  appearance:none;border:0;background:transparent;padding:0 10px;border-radius:0;
+  font:inherit;font-size:12.5px;font-weight:750;color:var(--jos-ink-3);cursor:pointer;white-space:nowrap;
   border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .2s,border-color .2s;
 }
 .jos-ld-stab em{font-style:normal;font-weight:650;opacity:.75}
@@ -4781,33 +4782,16 @@ html[data-theme="night"] .jos-mem-form select{
 }
 .jos-ld-stab.recover{background:transparent;color:#9A3412}
 .jos-ld-stab.recover.on{background:transparent;color:var(--jos-brand);border-bottom-color:var(--jos-brand)}
-.jos-ld-recover-strip{
-  margin:0 0 12px;padding:12px 16px;border-radius:14px;border:1px solid rgba(217,99,45,.28);
-  background:linear-gradient(135deg,#FFF7ED,#fff);
-  display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;flex-shrink:0;
+/* Recovery is a workflow (a filter tab + a slim inline note when you open
+   one), not the biggest object on the page — no more full-width banner. */
+.jos-ld-recover-note{
+  margin:0 0 14px;padding:10px 12px;border-radius:10px;border:1px solid #F1DEC8;background:#FBF3EC;
 }
-.jos-ld-recover-strip strong{font-size:13px;font-weight:850;color:#9A3412}
-.jos-ld-recover-strip span{font-size:12px;color:#6B7280;line-height:1.4}
-.jos-ld-recover-strip em{font-style:normal;font-weight:800;color:var(--jos-brand)}
-.jos-ld-recover-banner{
-  margin:0 0 16px;padding:16px 18px;border-radius:16px;border:1px solid rgba(217,99,45,.3);
-  background:linear-gradient(145deg,#FFF7ED 0%,#fff 70%);
-  display:flex;flex-direction:column;gap:12px;
-}
-.jos-ld-recover-copy .jos-kicker{color:#C2410C}
-.jos-ld-recover-copy strong{display:block;font-size:16px;font-weight:850;color:#141B2B;margin-top:2px}
-.jos-ld-recover-copy p{margin:6px 0 0;font-size:13px;line-height:1.45;color:#4B5563}
-.jos-ld-recover-copy b{color:#9A3412;font-weight:800}
+.jos-ld-recover-note p{margin:0 0 8px;font-size:12.5px;line-height:1.4;color:#7C4A22}
+.jos-ld-recover-note strong{color:#7C4A22}
 .jos-ld-card.recover{border-color:#FDBA74;background:#FFFBF5}
 .jos-ld-card.recover.on{border-color:var(--jos-brand);background:var(--jos-brand-soft)}
 .jos-ld-ava.recover{background:linear-gradient(145deg,#F97316,#D9632D)}
-.jos-ld-recover-rail{
-  text-align:left;cursor:pointer;border-color:rgba(217,99,45,.28)!important;
-  background:linear-gradient(160deg,#FFF7ED,#fff)!important;
-}
-.jos-ld-recover-rail .jos-kicker{color:#C2410C}
-.jos-ld-recover-rail-cta{display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:var(--jos-brand)}
-.jos-ld-recover-rail:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(217,99,45,.12)}
 
 .jos-ld-filters{
   display:none;
@@ -4828,24 +4812,26 @@ html[data-theme="night"] .jos-mem-form select{
   outline:none;border-color:#9CA8BD;box-shadow:0 0 0 3px rgba(100,116,139,.14);
 }
 
+/* The table is the primary surface and gets the whole row by default —
+   no permanent second/third column. A detail panel exists only once a
+   lead is actually selected (.ws-open below), and even then it's a
+   single ~400px pane, not two stacked side panels. */
 .jos-ld-layout{
-  flex:1;min-height:0;display:grid;grid-template-columns:minmax(180px,240px) minmax(0,1fr) minmax(160px,220px);gap:10px;
-  padding:0 0 12px;overflow-x:hidden;width:100%;max-width:100%;box-sizing:border-box;
+  flex:1;min-height:0;display:grid;grid-template-columns:1fr;gap:10px;
+  padding:0 0 10px;overflow-x:hidden;width:100%;max-width:100%;box-sizing:border-box;
 }
-/* Table view: the table is the primary focus of the page — give it the
-   width, keep the record/rail panes present but no longer dominant. */
-.jos-ld-layout:has(.jos-ld-inbox.is-table){
-  grid-template-columns:minmax(0,1fr) minmax(380px,460px) minmax(160px,220px);
+.jos-ld-shell.ws-open .jos-ld-layout{
+  grid-template-columns:minmax(0,1fr) minmax(360px,400px);
 }
-.jos-ld-inbox,.jos-ld-main,.jos-ld-rail{min-height:0;min-width:0}
+.jos-ld-inbox,.jos-ld-main{min-height:0;min-width:0}
 .jos-ld-inbox{
   background:#fff;border:1px solid #ECECEC;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.04);
   display:flex;flex-direction:column;overflow:hidden;
 }
 .jos-ld-inbox-head{
-  display:flex;justify-content:space-between;align-items:center;padding:16px 16px 10px;flex-shrink:0;
+  display:flex;justify-content:space-between;align-items:center;padding:10px 12px 8px;flex-shrink:0;
 }
-.jos-ld-inbox-head strong{font-size:14px;color:var(--jos-navy)}
+.jos-ld-inbox-head strong{font-size:13px;color:var(--jos-navy)}
 .jos-ld-sort{
   height:32px;border:1px solid var(--jos-border);border-radius:8px;background:#fff;
   font:inherit;font-size:12px;font-weight:650;padding:0 8px;
@@ -4982,41 +4968,53 @@ html[data-theme="night"] .jos-mem-form select{
 
 .jos-ld-main{
   background:#fff;border:1px solid #ECECEC;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.04);
-  overflow:auto;padding:0;
+  overflow:auto;padding:0;animation:josLdSlideIn .18s ease both;
 }
+@keyframes josLdSlideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+@media (prefers-reduced-motion:reduce){.jos-ld-main{animation:none}}
 .jos-ld-workspace{display:flex;flex-direction:column;min-height:100%}
 .jos-ld-ws-head{
-  display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:24px 24px 12px;flex-wrap:wrap;
+  display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:16px 16px 10px;flex-wrap:wrap;
 }
-.jos-ld-ws-identity{display:flex;gap:14px;align-items:center}
-.jos-ld-ws-name{display:flex;align-items:center;gap:10px}
-.jos-ld-ws-name strong{font-size:20px;font-weight:800;color:var(--jos-navy);letter-spacing:-.02em}
-.jos-ld-qa{display:flex;gap:8px}
+.jos-ld-ws-identity{display:flex;gap:10px;align-items:center}
+.jos-ld-ws-name{display:flex;align-items:center;gap:8px}
+.jos-ld-ws-name strong{font-size:16px;font-weight:800;color:var(--jos-navy);letter-spacing:-.02em}
+.jos-ld-qa{display:flex;gap:4px}
+.jos-ld-props{
+  display:flex;flex-wrap:wrap;gap:10px 16px;padding:0 16px 12px;margin-bottom:2px;border-bottom:1px solid #F3F4F6;
+}
+.jos-ld-prop{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;color:#8B909A;text-transform:uppercase;letter-spacing:.03em}
+.jos-ld-prop .jos-ld-select{margin-top:0;height:30px;font-size:12.5px;min-width:120px}
+.jos-ld-prop-tags{flex:1;min-width:160px}
+.jos-ld-prop-tags .jos-ld-tags{margin-top:0}
 .jos-ld-ws-tabs{
   display:flex;gap:2px;padding:0 16px;border-bottom:1px solid var(--jos-border);overflow:auto;flex-shrink:0;
 }
 .jos-ld-ws-tab{
-  appearance:none;border:0;background:transparent;padding:12px 14px;font:inherit;font-size:13px;font-weight:750;
+  appearance:none;border:0;background:transparent;padding:9px 10px;font:inherit;font-size:12.5px;font-weight:750;
   color:var(--jos-ink-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;
   transition:color .2s,border-color .2s;
 }
 .jos-ld-ws-tab.on{color:var(--jos-brand);border-bottom-color:var(--jos-brand)}
-.jos-ld-ws-body{padding:20px 24px 28px;display:grid;gap:20px}
+.jos-ld-ws-body{padding:14px 16px 20px;display:grid;gap:14px}
 .jos-ld-empty-ws{padding:64px 24px;text-align:center}
 .jos-ld-empty-art{
   width:72px;height:72px;margin:0 auto 16px;border-radius:20px;
   background:linear-gradient(145deg,#FFF4ED,#FFE8D9);border:1px solid rgba(217,99,45,.18);
 }
-.jos-ld-overview{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}
+.jos-ld-overview{display:grid;grid-template-columns:1fr;gap:14px}
 .jos-ld-info,.jos-ld-score-card,.jos-ld-msg-card,.jos-ld-ai-card{
-  background:#fff;border:1px solid #ECECEC;border-radius:16px;padding:24px;box-shadow:0 4px 16px rgba(0,0,0,.03);
+  background:#fff;border:1px solid #ECECEC;border-radius:14px;padding:14px 16px;box-shadow:0 4px 16px rgba(0,0,0,.03);
 }
+/* Label above value, never a cramped horizontal split — a fixed-width
+   label column was forcing long values (emails especially) to wrap
+   character-by-character in a ~150px-wide detail panel. */
 .jos-ld-field{
-  display:grid;grid-template-columns:132px 1fr;gap:12px;align-items:start;
-  padding:12px 0;border-bottom:1px solid #F3F4F6;font-size:13px;
+  display:flex;flex-direction:column;gap:3px;align-items:flex-start;
+  padding:8px 0;border-bottom:1px solid #F3F4F6;font-size:13px;
 }
-.jos-ld-field span{color:#6B7280;font-weight:700}
-.jos-ld-field strong{color:#141B2B;font-weight:750;text-align:left;word-break:break-word}
+.jos-ld-field span{color:#8B909A;font-weight:650;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+.jos-ld-field strong{color:#141B2B;font-weight:650;text-align:left;overflow-wrap:anywhere;line-height:1.4}
 .jos-ld-field.is-empty strong{color:#9CA3AF;font-weight:600}
 .jos-ld-edit{display:none}
 .jos-ld-field.clickable{cursor:pointer}
