@@ -4903,6 +4903,8 @@ html[data-theme="night"] .jos-mem-form select{
   transition:background-color .1s ease;
 }
 .jos-ld-col-menu > button:hover{background:#F5F6F7}
+.jos-ld-col-menu > button:disabled{color:#C7CCD3;cursor:default}
+.jos-ld-col-menu > button:disabled:hover{background:transparent}
 
 /* Status pill — static by default, double-click to edit */
 .jos-ld-status-pill{

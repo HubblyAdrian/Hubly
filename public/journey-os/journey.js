@@ -8058,6 +8058,9 @@
               '<label class="jos-ld-col-menu-rename">Column name' +
               '<input type="text" id="jos-ld-col-rename-input" value="' + esc(c.label) + '" maxlength="40"></label>' +
               '<button type="button" data-jos-act="leads-col-rename-save" data-jos-col-key="' + esc(c.key) + '">Save name</button>' +
+              '<button type="button" data-jos-act="leads-col-move-left" data-jos-col-key="' + esc(c.key) + '"' + (i === 0 ? ' disabled' : '') + '>Move left</button>' +
+              '<button type="button" data-jos-act="leads-col-move-right" data-jos-col-key="' + esc(c.key) + '"' + (i === cols.length - 1 ? ' disabled' : '') + '>Move right</button>' +
+              '<button type="button" data-jos-act="leads-col-reset-width" data-jos-col-key="' + esc(c.key) + '">Reset width</button>' +
               '<button type="button" data-jos-act="leads-col-hide" data-jos-col-key="' + esc(c.key) + '">Hide column</button>' +
               '</div>'
             : '') +
@@ -8218,11 +8221,136 @@
     if (!root) return;
     setLeadsMode(true);
     updateChrome('leads');
-    root.innerHTML = '<div class="jos-ld-shell"><div class="jos-home-loading">Loading Leads…</div></div>';
+    // No loading-stub wipe here on purpose: renderLeadsPage() morphs the new
+    // markup into root's EXISTING children (see morphLeadsInto below) so an
+    // already-painted table/panel is patched in place, not destroyed and
+    // rebuilt. Clearing root first would defeat that — the morph would just
+    // be diffing against an empty stub every time, i.e. a full rebuild again.
+    if (!root.firstChild) root.innerHTML = '<div class="jos-ld-shell"><div class="jos-home-loading">Loading Leads…</div></div>';
     try { renderLeadsPage(root); }
     catch (err) {
       console.warn('HublyJourneyOS Leads', err);
       root.innerHTML = '<div class="jos-ld-shell"><div class="jos-empty jos-error-state"><strong>Leads could not load</strong><p class="jos-muted">Refresh and try again.</p><div class="jos-mt"><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" onclick="HublyJourneyOS.renderLeads()">Retry</button></div></div></div>';
+    }
+  }
+
+  // ---- Leads DOM morphing --------------------------------------------
+  // renderLeadsPage() still builds one big HTML string per render (that
+  // logic is unchanged) but instead of `root.innerHTML = html` — which
+  // destroys and recreates every node on every keystroke/click, dropping
+  // scroll position, focus, and mid-edit <select>s along the way — the new
+  // markup is diffed into root's existing DOM: unchanged nodes are left
+  // alone, changed attributes/text are patched in place, and only nodes
+  // that genuinely need to appear/disappear are inserted/removed. Table
+  // rows (by data-jos-lead-id) and cells (by data-jos-col-key) are matched
+  // by key so sorting/filtering/column-drag moves real DOM nodes instead
+  // of overwriting whichever node happens to sit at that index — that's
+  // what keeps a mid-edit cell, a focused input, or the table's own scroll
+  // container intact across a re-render instead of resetting it.
+  var LEADS_MORPH_KEY_ATTR = { TR: 'data-jos-lead-id', TH: 'data-jos-col-key', TD: 'data-jos-col-key' };
+  function leadsMorphKeyFor(node) {
+    if (!node || node.nodeType !== 1) return null;
+    var attr = LEADS_MORPH_KEY_ATTR[node.tagName];
+    return attr ? node.getAttribute(attr) : null;
+  }
+  function morphLeadsInto(root, html) {
+    var tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    morphLeadsChildren(root, tmp);
+  }
+  function morphLeadsAttrsAndProps(oldEl, newEl) {
+    var i, name;
+    var oldAttrs = oldEl.attributes;
+    for (i = oldAttrs.length - 1; i >= 0; i--) {
+      name = oldAttrs[i].name;
+      if (!newEl.hasAttribute(name)) oldEl.removeAttribute(name);
+    }
+    var newAttrs = newEl.attributes;
+    for (i = 0; i < newAttrs.length; i++) {
+      name = newAttrs[i].name;
+      var val = newAttrs[i].value;
+      if (oldEl.getAttribute(name) !== val) oldEl.setAttribute(name, val);
+    }
+    // Attributes alone don't reliably drive live form state on an already-
+    // attached, already-interacted-with control — a changed `selected`/
+    // `checked`/`value` attribute can silently no-op once the browser has
+    // its own live property state. Sync the properties explicitly instead,
+    // skipping the element the user is actively typing/selecting in so an
+    // in-flight keystroke or open picker isn't clobbered mid-interaction.
+    var tag = oldEl.tagName;
+    var isActive = document.activeElement === oldEl;
+    if (tag === 'INPUT') {
+      var type = (oldEl.getAttribute('type') || 'text').toLowerCase();
+      if (type === 'checkbox' || type === 'radio') {
+        if (oldEl.checked !== newEl.checked) oldEl.checked = newEl.checked;
+      } else if (!isActive && oldEl.value !== newEl.value) {
+        oldEl.value = newEl.value;
+      }
+    } else if (tag === 'TEXTAREA') {
+      if (!isActive && oldEl.value !== newEl.value) oldEl.value = newEl.value;
+    } else if (tag === 'SELECT') {
+      if (!isActive && oldEl.value !== newEl.value) oldEl.value = newEl.value;
+    } else if (tag === 'OPTION') {
+      if (oldEl.selected !== newEl.selected) oldEl.selected = newEl.selected;
+    }
+  }
+  function morphLeadsNode(parent, oldNode, newNode) {
+    if (oldNode.nodeType !== newNode.nodeType || (oldNode.nodeType === 1 && oldNode.tagName !== newNode.tagName)) {
+      parent.replaceChild(newNode, oldNode);
+      return;
+    }
+    if (oldNode.nodeType === 3 || oldNode.nodeType === 8) {
+      if (oldNode.nodeValue !== newNode.nodeValue) oldNode.nodeValue = newNode.nodeValue;
+      return;
+    }
+    if (oldNode.nodeType !== 1) return;
+    morphLeadsAttrsAndProps(oldNode, newNode);
+    morphLeadsChildren(oldNode, newNode);
+  }
+  function morphLeadsKeyedChildren(parent, oldKids, newKids) {
+    var oldByKey = {};
+    oldKids.forEach(function (n) {
+      var k = leadsMorphKeyFor(n);
+      if (k != null) oldByKey[k] = n;
+    });
+    var usedKeys = {};
+    var ref = parent.firstChild;
+    newKids.forEach(function (newNode) {
+      var key = leadsMorphKeyFor(newNode);
+      var match = key != null ? oldByKey[key] : null;
+      if (match) {
+        usedKeys[key] = true;
+        morphLeadsAttrsAndProps(match, newNode);
+        morphLeadsChildren(match, newNode);
+        if (match !== ref) parent.insertBefore(match, ref);
+        else ref = ref.nextSibling;
+      } else {
+        parent.insertBefore(newNode, ref);
+      }
+    });
+    Object.keys(oldByKey).forEach(function (k) {
+      if (!usedKeys[k]) {
+        var n = oldByKey[k];
+        if (n.parentNode === parent) parent.removeChild(n);
+      }
+    });
+  }
+  function morphLeadsChildren(oldParent, newParent) {
+    var oldKids = Array.prototype.slice.call(oldParent.childNodes);
+    var newKids = Array.prototype.slice.call(newParent.childNodes);
+    var keyable = newKids.length > 0 && newKids.every(function (n) { return n.nodeType !== 1 || leadsMorphKeyFor(n) != null; })
+      && oldKids.some(function (n) { return leadsMorphKeyFor(n) != null; });
+    if (keyable) {
+      morphLeadsKeyedChildren(oldParent, oldKids, newKids);
+      return;
+    }
+    var max = Math.max(oldKids.length, newKids.length);
+    for (var i = 0; i < max; i++) {
+      var oldNode = oldParent.childNodes[i];
+      var newNode = newKids[i];
+      if (!newNode) { if (oldNode) oldParent.removeChild(oldNode); continue; }
+      if (!oldNode) { oldParent.appendChild(newNode); continue; }
+      morphLeadsNode(oldParent, oldNode, newNode);
     }
   }
 
@@ -8362,7 +8490,7 @@
         ? '<div class="jos-ld-empty-list"><strong>No unfinished bookings</strong><p>When someone starts booking and leaves, they show up here for follow-up.</p></div>'
         : '<div class="jos-ld-empty-list"><strong>No leads yet</strong><p>Create your first lead or connect a form.</p>' + btn('leads-add-open', 'New Lead', 'jos-btn-brand jos-btn-sm') + '</div>');
 
-    root.innerHTML =
+    morphLeadsInto(root,
       '<div class="jos-ld-shell' + (wsOpen ? ' ws-open' : '') + '">' +
       '<div class="jos-ld-page">' +
       '<header class="jos-ld-header hub-page-header">' +
@@ -8433,7 +8561,7 @@
       renderLeadsImportModal(root) +
       renderLeadsContextMenu(root) +
       '<button type="button" class="jos-ld-fab" data-jos-act="leads-add-open" aria-label="New Lead">+</button>' +
-      '</div>';
+      '</div>');
 
     bindRoot(root);
     wireLeadsRoot(root);
@@ -8698,7 +8826,7 @@
             if (prevCell && prevCell !== clickedGridCell) prevCell.setAttribute('tabindex', '-1');
           }
           clickedGridCell.setAttribute('tabindex', '0');
-          clickedGridCell.focus();
+          clickedGridCell.focus({ preventScroll: true });
           root._josLeadsActiveCell = { leadId: clickedRow.getAttribute('data-jos-lead-id'), colKey: clickedGridCell.getAttribute('data-jos-col-key') };
         }
       }
@@ -8931,23 +9059,62 @@
       }
     });
 
+    // Columns actually reorder live as you drag over a neighbor — not just
+    // a static highlight that jumps on drop — because morphLeadsInto (see
+    // renderLeads) makes a re-render cheap enough to call on every crossed
+    // boundary: keyed diffing moves the real <th>/<td> nodes into their new
+    // slots (CSS transitions the width/position change) instead of tearing
+    // the table down, which is what makes the reorder look animated rather
+    // than jumpy. If the drag is released outside any column (no 'drop'),
+    // dragend reverts to the order captured at dragstart so an abandoned
+    // drag never leaves the (unsaved) live order on screen.
     root.addEventListener('dragstart', function (e) {
       var th = e.target.closest('[data-jos-col-key]');
       if (!th) return;
+      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
       root._josLeadsColDragKey = th.getAttribute('data-jos-col-key');
+      root._josLeadsColDragOverKey = root._josLeadsColDragKey;
+      root._josLeadsColDragOriginalOrder = root._josLeadsColumns.slice();
+      root._josLeadsColDropCommitted = false;
       th.classList.add('is-dragging');
       try { e.dataTransfer.setData('text/plain', root._josLeadsColDragKey); e.dataTransfer.effectAllowed = 'move'; } catch (err) {}
     });
     root.addEventListener('dragend', function (e) {
-      var th = e.target.closest('[data-jos-col-key]');
-      if (th) th.classList.remove('is-dragging');
-      root.querySelectorAll('.jos-ld-th.drop-target').forEach(function (n) { n.classList.remove('drop-target'); });
+      root.querySelectorAll('.jos-ld-th.is-dragging,.jos-ld-th.drop-target').forEach(function (n) { n.classList.remove('is-dragging', 'drop-target'); });
+      if (!root._josLeadsColDropCommitted && root._josLeadsColDragOriginalOrder) {
+        root._josLeadsColumns = root._josLeadsColDragOriginalOrder;
+        renderLeads();
+      }
+      root._josLeadsColDragKey = null;
+      root._josLeadsColDragOverKey = null;
+      root._josLeadsColDragOriginalOrder = null;
     });
     root.addEventListener('dragover', function (e) {
       var th = e.target.closest('[data-jos-col-key]');
       if (!th) return;
       e.preventDefault();
+      root.querySelectorAll('.jos-ld-th.drop-target').forEach(function (n) { if (n !== th) n.classList.remove('drop-target'); });
       th.classList.add('drop-target');
+      var dragKey = root._josLeadsColDragKey;
+      var overKey = th.getAttribute('data-jos-col-key');
+      if (!dragKey || dragKey === overKey || overKey === root._josLeadsColDragOverKey) return;
+      root._josLeadsColDragOverKey = overKey;
+      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+      var liveCols = root._josLeadsColumns;
+      var liveFromI = liveCols.findIndex(function (c) { return c.key === dragKey; });
+      var liveToI = liveCols.findIndex(function (c) { return c.key === overKey; });
+      if (liveFromI < 0 || liveToI < 0) return;
+      var liveMoved = liveCols.splice(liveFromI, 1)[0];
+      liveCols.splice(liveToI, 0, liveMoved);
+      renderLeads();
+      // The re-render above morphs the header row's class attribute back to
+      // its plain rendered value, which silently drops the is-dragging/
+      // drop-target classes that only ever existed as JS-applied state —
+      // reapply them to the (keyed, same-instance) <th> nodes post-render.
+      var freshDragTh = root.querySelector('.jos-ld-th[data-jos-col-key="' + CSS.escape(dragKey) + '"]');
+      if (freshDragTh) freshDragTh.classList.add('is-dragging');
+      var freshTh = root.querySelector('.jos-ld-th[data-jos-col-key="' + CSS.escape(overKey) + '"]');
+      if (freshTh) freshTh.classList.add('drop-target');
     });
     root.addEventListener('dragleave', function (e) {
       var th = e.target.closest('[data-jos-col-key]');
@@ -8958,18 +9125,11 @@
       root.querySelectorAll('.jos-ld-th.drop-target').forEach(function (n) { n.classList.remove('drop-target'); });
       if (!th) return;
       e.preventDefault();
-      var dragKey = root._josLeadsColDragKey;
-      try { dragKey = dragKey || e.dataTransfer.getData('text/plain'); } catch (err) {}
-      var dropKey = th.getAttribute('data-jos-col-key');
-      if (!dragKey || dragKey === dropKey) return;
+      // The array is already in its final order from the live dragover
+      // reorder above — drop just commits it to storage.
+      root._josLeadsColDropCommitted = true;
       if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
-      var cols = root._josLeadsColumns;
-      var fromI = cols.findIndex(function (c) { return c.key === dragKey; });
-      var toI = cols.findIndex(function (c) { return c.key === dropKey; });
-      if (fromI < 0 || toI < 0) return;
-      var moved = cols.splice(fromI, 1)[0];
-      cols.splice(toI, 0, moved);
-      saveLeadsColumns(cols);
+      saveLeadsColumns(root._josLeadsColumns);
       renderLeads();
     });
 
@@ -9136,7 +9296,7 @@
     if (colKey) root._josLeadsActiveCell = { leadId: leadId, colKey: colKey };
     renderLeads();
     var sel = root.querySelector('select[data-jos-lead-field="' + key + '"][data-jos-lead-id="' + CSS.escape(leadId) + '"]');
-    if (sel) { sel.focus(); try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
+    if (sel) { sel.focus({ preventScroll: true }); try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
   }
 
   function cancelLeadsCellEdit(root) {
@@ -9171,7 +9331,7 @@
     if (!active) return;
     var row = root.querySelector('tr[data-jos-lead-id="' + CSS.escape(active.leadId) + '"]');
     var cell = row && row.querySelector('td[data-jos-col-key="' + CSS.escape(active.colKey) + '"]');
-    if (cell) cell.focus();
+    if (cell) cell.focus({ preventScroll: true });
   }
 
   // Arrow-key grid navigation — a roving tabindex move, not a re-render:
@@ -9443,6 +9603,32 @@
         if (hideCol) hideCol.hidden = true;
         saveLeadsColumns(root._josLeadsColumns);
         root._josLeadsColMenuKey = null;
+        return renderLeads();
+      }
+      if (act === 'leads-col-move-left' || act === 'leads-col-move-right') {
+        var moveKey = t.getAttribute('data-jos-col-key');
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+        var mcols = root._josLeadsColumns;
+        var mi = mcols.findIndex(function (c) { return c.key === moveKey; });
+        if (mi < 0) return;
+        var dir = act === 'leads-col-move-left' ? -1 : 1;
+        // Swap with the next VISIBLE neighbor in that direction, not just the
+        // adjacent array slot — a hidden column sitting between two visible
+        // ones shouldn't count as a stop, or Move Left/Right would silently
+        // do nothing while a hidden column happens to be next in the array.
+        var swapI = mi + dir;
+        while (swapI >= 0 && swapI < mcols.length && mcols[swapI].hidden) swapI += dir;
+        if (swapI < 0 || swapI >= mcols.length) return;
+        var tmpCol = mcols[mi]; mcols[mi] = mcols[swapI]; mcols[swapI] = tmpCol;
+        saveLeadsColumns(mcols);
+        return renderLeads();
+      }
+      if (act === 'leads-col-reset-width') {
+        var rwKey = t.getAttribute('data-jos-col-key');
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+        var rwCol = root._josLeadsColumns.find(function (c) { return c.key === rwKey; });
+        if (rwCol) delete rwCol.width;
+        saveLeadsColumns(root._josLeadsColumns);
         return renderLeads();
       }
       if (act === 'leads-col-show') {
