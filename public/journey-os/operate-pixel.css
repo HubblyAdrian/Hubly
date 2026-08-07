@@ -4757,12 +4757,13 @@ html[data-theme="night"] .jos-mem-form select{
 }
 
 .jos-ld-kpis{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:0 0 14px;flex-shrink:0;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:8px;margin:0 0 10px;flex-shrink:0;
 }
 .jos-ld-kpi-card{
-  padding:12px 14px;border-radius:14px;border:1px solid var(--jos-border);background:#fff;
+  padding:8px 12px;border-radius:12px;border:1px solid var(--jos-border);background:#fff;
 }
-.jos-ld-kpi-card strong{display:block;margin-top:4px;font-size:20px;font-weight:800;color:var(--jos-navy)}
+.jos-ld-kpi-card .jos-kicker{font-size:10px}
+.jos-ld-kpi-card strong{display:block;margin-top:2px;font-size:16px;font-weight:800;color:var(--jos-navy)}
 .jos-ld-status-tabs{
   display:flex;gap:4px;padding:0;margin:0 0 12px;flex-shrink:0;overflow:auto;scrollbar-width:thin;
   border-bottom:1px solid var(--jos-border);height:50px;align-items:stretch;
@@ -4825,6 +4826,11 @@ html[data-theme="night"] .jos-mem-form select{
   flex:1;min-height:0;display:grid;grid-template-columns:minmax(180px,240px) minmax(0,1fr) minmax(160px,220px);gap:10px;
   padding:0 0 12px;overflow-x:hidden;width:100%;max-width:100%;box-sizing:border-box;
 }
+/* Table view: the table is the primary focus of the page — give it the
+   width, keep the record/rail panes present but no longer dominant. */
+.jos-ld-layout:has(.jos-ld-inbox.is-table){
+  grid-template-columns:minmax(0,1fr) minmax(380px,460px) minmax(160px,220px);
+}
 .jos-ld-inbox,.jos-ld-main,.jos-ld-rail{min-height:0;min-width:0}
 .jos-ld-inbox{
   background:#fff;border:1px solid #ECECEC;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.04);
@@ -4842,13 +4848,66 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-view-toggle{display:inline-flex;border:1px solid var(--jos-border);border-radius:10px;overflow:hidden;margin-left:auto}
 .jos-ld-view-btn{appearance:none;border:0;background:#fff;padding:6px 12px;font:inherit;font-size:12px;font-weight:700;color:var(--jos-ink-3);cursor:pointer}
 .jos-ld-view-btn.on{background:var(--jos-brand-soft);color:var(--jos-brand)}
+.jos-ld-table-wrap{flex:1;overflow:auto}
 .jos-ld-table{width:100%;border-collapse:collapse;font-size:13px}
-.jos-ld-table th{text-align:left;padding:8px 10px;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--jos-ink-3);border-bottom:1px solid var(--jos-border)}
-.jos-ld-table td{padding:10px;border-bottom:1px solid var(--jos-border);vertical-align:middle}
+.jos-ld-table thead th{
+  position:sticky;top:0;z-index:2;text-align:left;padding:0 10px;height:34px;
+  font-size:10.5px;font-weight:750;letter-spacing:.05em;text-transform:uppercase;color:var(--jos-ink-3);
+  background:#fff;border-bottom:1px solid #EEF0F2;white-space:nowrap;
+}
+.jos-ld-table td{padding:7px 10px;border-bottom:1px solid #F2F3F5;vertical-align:middle;line-height:1.35}
 .jos-ld-trow{cursor:pointer}
-.jos-ld-trow:hover{background:#F9FAFB}
+.jos-ld-trow:hover{background:#FAFAFB}
 .jos-ld-trow.on{background:var(--jos-brand-soft)}
+.jos-ld-trow.on:hover{background:var(--jos-brand-soft)}
 .jos-ld-tcheck{width:32px}
+
+/* Column headers — drag to reorder, click ▾ for rename/hide */
+.jos-ld-th{position:relative;cursor:grab;user-select:none}
+.jos-ld-th.is-dragging{opacity:.4}
+.jos-ld-th.drop-target{background:var(--jos-brand-soft)}
+.jos-ld-th-label{pointer-events:none}
+.jos-ld-th-menu-btn{
+  appearance:none;border:0;background:transparent;color:var(--jos-ink-3);font-size:10px;cursor:pointer;
+  margin-left:4px;padding:2px 3px;border-radius:4px;opacity:0;transition:opacity .12s;
+}
+.jos-ld-th:hover .jos-ld-th-menu-btn,.jos-ld-th.menu-open .jos-ld-th-menu-btn{opacity:1}
+.jos-ld-th-menu-btn:hover{background:#EEF0F2}
+.jos-ld-th-add{width:36px;text-align:center;position:relative}
+.jos-ld-col-menu{
+  position:fixed;z-index:60;min-width:180px;
+  background:#fff;border:1px solid var(--jos-border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.12);
+  padding:8px;display:flex;flex-direction:column;gap:6px;text-transform:none;letter-spacing:normal;
+  visibility:hidden;
+}
+.jos-ld-col-menu.jos-positioned{visibility:visible}
+.jos-ld-col-menu-rename{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--jos-ink-3);text-transform:uppercase;letter-spacing:.04em;padding:2px 4px}
+.jos-ld-col-menu-rename input{
+  height:32px;border:1px solid var(--jos-border);border-radius:8px;padding:0 8px;font:inherit;font-size:13px;
+  font-weight:600;color:var(--jos-navy);text-transform:none;letter-spacing:normal;
+}
+.jos-ld-col-menu > button{
+  appearance:none;border:0;background:transparent;text-align:left;padding:8px;border-radius:8px;
+  font:inherit;font-size:13px;font-weight:650;color:var(--jos-navy);cursor:pointer;text-transform:none;letter-spacing:normal;
+}
+.jos-ld-col-menu > button:hover{background:#F5F6F8}
+
+/* Inline-editable cells (status / assigned) */
+.jos-ld-cell-inline{
+  appearance:none;height:26px;border-radius:999px;padding:0 10px;font:inherit;font-size:11px;font-weight:750;
+  cursor:pointer;border:1px solid #E5E7EB;background:#F3F4F6;color:#374151;max-width:100%;
+}
+.jos-ld-cell-inline:hover{border-color:#D1D5DB}
+.jos-ld-cell-inline:focus{outline:none;border-color:rgba(217,99,45,.45);box-shadow:0 0 0 3px rgba(217,99,45,.12)}
+.jos-ld-cell-inline.ok{background:#ECFDF3;color:#15803D;border-color:#BBF7D0}
+.jos-ld-cell-inline.brand{background:var(--jos-brand-soft);color:var(--jos-brand-dark);border-color:rgba(217,99,45,.25)}
+.jos-ld-cell-inline.info{background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE}
+.jos-ld-cell-inline.warn{background:#FFF7ED;color:#C2410C;border-color:#FED7AA}
+.jos-ld-cell-inline.mute{background:#F3F4F6;color:#6B7280;border-color:#E5E7EB}
+td > .jos-ld-cell-inline[data-jos-lead-field="assignedTo"]{
+  background:transparent;border-color:transparent;font-weight:600;color:var(--jos-navy);padding:0 6px 0 0;
+}
+td > .jos-ld-cell-inline[data-jos-lead-field="assignedTo"]:hover{background:#F5F6F8;border-color:#EEF0F2}
 .jos-ld-card-wrap{display:flex;align-items:center;gap:8px}
 .jos-ld-card-wrap.bulk-open .jos-ld-card{flex:1}
 .jos-ld-card-check{display:flex;align-items:center;padding:0 2px;cursor:pointer;flex-shrink:0}

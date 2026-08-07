@@ -7183,6 +7183,39 @@
       '<div class="jos-px-side-body"><div class="jos-px-side-stats"><div class="jos-px-side-stat"><div class="l">Estimate</div><div class="v">' + esc(lead.amount != null ? money(lead.amount) : '—') + '</div></div><div class="jos-px-side-stat"><div class="l">Created</div><div class="v">' + esc(lead.createdAt ? String(lead.createdAt).slice(0, 10) : '—') + '</div></div></div>' +
       '<div class="jos-px-side-actions">' + btn('manual-lead', 'Edit lead', 'jos-btn jos-btn-sm') + (lead.key ? '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-lead="' + esc(lead.key) + '">Open full lead</button>' : '') + '</div></div>';
   }
+  var LEADS_DEFAULT_COLUMNS = [
+    { key: 'name', label: 'Lead' },
+    { key: 'contact', label: 'Contact' },
+    { key: 'source', label: 'Source' },
+    { key: 'service', label: 'Service' },
+    { key: 'status', label: 'Status' },
+    { key: 'assigned', label: 'Assigned' },
+    { key: 'created', label: 'Created' }
+  ];
+  function leadsColumnsStorageKey() {
+    return 'hubly_leads_columns_v1_' + (S().slug || 'default');
+  }
+  function loadLeadsColumns() {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(leadsColumnsStorageKey()) || 'null'); } catch (e) { saved = null; }
+    if (!Array.isArray(saved) || !saved.length) return LEADS_DEFAULT_COLUMNS.map(function (c) { return { key: c.key, label: c.label, hidden: false }; });
+    // Merge saved order/labels/hidden with defaults so a newly-added default
+    // column (a future code change) still shows up for existing businesses,
+    // and any column key that no longer exists is dropped safely.
+    var byKey = {};
+    LEADS_DEFAULT_COLUMNS.forEach(function (c) { byKey[c.key] = c; });
+    var out = saved.filter(function (s) { return byKey[s.key]; }).map(function (s) {
+      return { key: s.key, label: s.label || byKey[s.key].label, hidden: !!s.hidden };
+    });
+    var seen = {};
+    out.forEach(function (c) { seen[c.key] = true; });
+    LEADS_DEFAULT_COLUMNS.forEach(function (c) { if (!seen[c.key]) out.push({ key: c.key, label: c.label, hidden: false }); });
+    return out;
+  }
+  function saveLeadsColumns(cols) {
+    try { localStorage.setItem(leadsColumnsStorageKey(), JSON.stringify(cols)); } catch (e) {}
+  }
+
   var LEADS_TABS = [
     ['all', 'All Leads'],
     ['recovery', 'Lead Recovery'],
@@ -7948,28 +7981,76 @@
   // the card list — every column is a real field already on the lead
   // object (no score/owner-avatar/last-activity/next-action columns, those
   // were explicitly deferred, not built).
-  function renderLeadsTable(list, selectedId, bulkOpen, bulkSelected) {
+  function leadTableCellHtml(lead, colKey, leadKey) {
+    var crm = normalizeCrmStatus(lead);
+    if (colKey === 'name') return '<strong>' + esc(lead.name || 'Lead') + '</strong>';
+    if (colKey === 'contact') {
+      return esc(lead.phone ? displayPhone(lead.phone) : '') + (lead.email ? '<div class="jos-muted">' + esc(lead.email) + '</div>' : '');
+    }
+    if (colKey === 'source') return esc(srcLabel(srcKind(lead.source, lead)));
+    if (colKey === 'service') return esc(lead.service || '—');
+    if (colKey === 'status') {
+      return '<select class="jos-ld-cell-inline ' + leadStatusTone(crm) + '" data-jos-lead-field="status" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Status" onclick="event.stopPropagation()">' +
+        LEADS_CRM_STATUSES.map(function (s) {
+          return '<option value="' + s + '"' + (crm === s ? ' selected' : '') + '>' + esc(LEADS_STATUS_LABEL[s]) + '</option>';
+        }).join('') + '</select>';
+    }
+    if (colKey === 'assigned') {
+      var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
+      return '<select class="jos-ld-cell-inline" data-jos-lead-field="assignedTo" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Assigned to" onclick="event.stopPropagation()">' +
+        '<option value=""' + (!lead.assignedTo ? ' selected' : '') + '>Unassigned</option>' +
+        team.map(function (t) {
+          return '<option value="' + esc(t.name) + '"' + (lead.assignedTo === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+        }).join('') + '</select>';
+    }
+    if (colKey === 'created') return esc(String(lead.createdAt || '').slice(0, 10)) || '—';
+    return '—';
+  }
+
+  function renderLeadsTable(root, list, selectedId, bulkOpen, bulkSelected, columns) {
     if (!list.length) return '';
+    var cols = (columns || LEADS_DEFAULT_COLUMNS).filter(function (c) { return !c.hidden; });
+    var openKey = root._josLeadsColMenuKey || null;
     var rows = list.map(function (lead) {
       var leadKey = String(lead.id || lead.key);
       var on = selectedId && leadKey === String(selectedId);
-      var crm = normalizeCrmStatus(lead);
       var checked = !!(bulkSelected && bulkSelected[leadKey]);
       return '<tr class="jos-ld-trow' + (on ? ' on' : '') + '" data-jos-lead-id="' + esc(leadKey) + '">' +
-        (bulkOpen ? '<td class="jos-ld-tcheck"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '"' + (checked ? ' checked' : '') + '></td>' : '') +
-        '<td><strong>' + esc(lead.name || 'Lead') + '</strong></td>' +
-        '<td>' + esc(lead.phone ? displayPhone(lead.phone) : '') + (lead.email ? '<div class="jos-muted">' + esc(lead.email) + '</div>' : '') + '</td>' +
-        '<td>' + esc(srcLabel(srcKind(lead.source, lead))) + '</td>' +
-        '<td>' + esc(lead.service || '—') + '</td>' +
-        '<td><span class="jos-pill ' + leadStatusTone(crm) + '">' + esc(leadCrmLabel(lead)) + '</span></td>' +
-        '<td>' + esc(lead.assignedTo || 'Unassigned') + '</td>' +
-        '<td>' + esc(String(lead.createdAt || '').slice(0, 10)) + '</td>' +
+        (bulkOpen ? '<td class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '"' + (checked ? ' checked' : '') + '></td>' : '') +
+        cols.map(function (c) { return '<td class="jos-ld-tcell-' + esc(c.key) + '">' + leadTableCellHtml(lead, c.key, leadKey) + '</td>'; }).join('') +
         '</tr>';
     }).join('');
-    return '<table class="jos-ld-table"><thead><tr>' +
-      (bulkOpen ? '<th></th>' : '') +
-      '<th>Lead</th><th>Contact</th><th>Source</th><th>Service</th><th>Status</th><th>Assigned</th><th>Created</th>' +
-      '</tr></thead><tbody>' + rows + '</tbody></table>';
+    var headCells = (bulkOpen ? '<th class="jos-ld-tcheck"></th>' : '') +
+      cols.map(function (c, i) {
+        return '<th class="jos-ld-th' + (openKey === c.key ? ' menu-open' : '') + '" data-jos-col-key="' + esc(c.key) + '" data-jos-col-i="' + i + '" draggable="true">' +
+          '<span class="jos-ld-th-label">' + esc(c.label) + '</span>' +
+          '<button type="button" class="jos-ld-th-menu-btn" data-jos-act="leads-col-menu" data-jos-col-key="' + esc(c.key) + '" aria-label="Column options for ' + esc(c.label) + '">▾</button>' +
+          (openKey === c.key
+            ? '<div class="jos-ld-col-menu">' +
+              '<label class="jos-ld-col-menu-rename">Column name' +
+              '<input type="text" id="jos-ld-col-rename-input" value="' + esc(c.label) + '" maxlength="40"></label>' +
+              '<button type="button" data-jos-act="leads-col-rename-save" data-jos-col-key="' + esc(c.key) + '">Save name</button>' +
+              '<button type="button" data-jos-act="leads-col-hide" data-jos-col-key="' + esc(c.key) + '">Hide column</button>' +
+              '</div>'
+            : '') +
+          '</th>';
+      }).join('') +
+      '<th class="jos-ld-th-add">' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-col-add-menu" title="Show hidden columns" aria-label="Show hidden columns">+</button>' +
+      (root._josLeadsColAddOpen ? renderLeadsColumnAddMenu(cols, columns) : '') +
+      '</th>';
+    return '<div class="jos-ld-table-wrap"><table class="jos-ld-table"><thead><tr>' + headCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  function renderLeadsColumnAddMenu(visibleCols, allColumns) {
+    var hidden = (allColumns || []).filter(function (c) { return c.hidden; });
+    return '<div class="jos-ld-col-menu jos-ld-col-add-menu">' +
+      (hidden.length
+        ? hidden.map(function (c) {
+          return '<button type="button" data-jos-act="leads-col-show" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</button>';
+        }).join('')
+        : '<div class="jos-muted" style="padding:8px 10px;white-space:nowrap">All columns are visible</div>') +
+      '</div>';
   }
 
   function renderLeadWorkspace(root, lead, ws) {
@@ -8212,6 +8293,25 @@
     }
   }
 
+  // Column menus render fixed-position so a menu near the right edge of the
+  // (often horizontally-scrolled) table never gets clipped by the inbox
+  // card's overflow:hidden — same reasoning as the Calendar create-popover.
+  function positionLeadsColMenu(root) {
+    var menu = root.querySelector('.jos-ld-col-menu');
+    if (!menu) return;
+    var trigger = root._josLeadsColMenuKey
+      ? root.querySelector('.jos-ld-th-menu-btn[data-jos-col-key="' + root._josLeadsColMenuKey + '"]')
+      : root.querySelector('[data-jos-act="leads-col-add-menu"]');
+    if (!trigger) return;
+    var tr = trigger.getBoundingClientRect();
+    var mw = menu.offsetWidth || 180;
+    var left = Math.min(tr.left, window.innerWidth - mw - 12);
+    left = Math.max(12, left);
+    menu.style.top = (tr.bottom + 4) + 'px';
+    menu.style.left = left + 'px';
+    menu.classList.add('jos-positioned');
+  }
+
   function renderLeadsPage(root) {
     seedDemoLeadsIfEmpty();
     syncAbandonedLeadsIntoPipeline();
@@ -8241,6 +8341,8 @@
     var f = root._josLeadFilters || {};
     var bulkOpen = !!root._josLeadBulkOpen;
     var viewMode = root._josLeadsView === 'table' ? 'table' : 'list';
+    if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+    var leadsColumns = root._josLeadsColumns;
     var wsOpen = !!sel && !!root._josLeadId;
     var moreFiltersOpen = !!root._josLeadFilterOpen;
     var activeFilterCount = 0;
@@ -8340,7 +8442,9 @@
         return '<option value="' + s[0] + '"' + ((root._josLeadsSort || 'newest') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
       }).join('') + '</select></div>' +
       (viewMode === 'table'
-        ? renderLeadsTable(visible, selectedId, bulkOpen, root._josLeadBulkSelected)
+        ? (visible.length
+          ? renderLeadsTable(root, visible, selectedId, bulkOpen, root._josLeadBulkSelected, leadsColumns)
+          : '<div class="jos-ld-list">' + listHtml + '</div>')
         : '<div class="jos-ld-list">' + listHtml + '</div>') +
       (filtered.length > visible.length
         ? '<button type="button" class="jos-btn jos-ld-loadmore" data-jos-act="leads-load-more">Load More Leads</button>'
@@ -8360,6 +8464,7 @@
 
     bindRoot(root);
     wireLeadsRoot(root);
+    positionLeadsColMenu(root);
     try {
       var badge = el('nav-leads-badge');
       if (badge) {
@@ -8591,6 +8696,16 @@
         renderLeads();
         return;
       }
+      if (!e.target.closest('.jos-ld-th') && root._josLeadsColMenuKey) {
+        root._josLeadsColMenuKey = null;
+        renderLeads();
+        return;
+      }
+      if (!e.target.closest('.jos-ld-th-add') && root._josLeadsColAddOpen) {
+        root._josLeadsColAddOpen = false;
+        renderLeads();
+        return;
+      }
       var tabBtn = e.target.closest('[data-jos-leads-tab]');
       if (tabBtn) {
         root._josLeadsTab = tabBtn.getAttribute('data-jos-leads-tab');
@@ -8705,6 +8820,25 @@
         });
         toast('Assigned to ' + name);
       }
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-field')) {
+        var fieldKey = e.target.getAttribute('data-jos-lead-field');
+        var fieldLeadId = e.target.getAttribute('data-jos-lead-id');
+        var fieldVal = e.target.value;
+        mutateLeadById(fieldLeadId, function (l) {
+          if (fieldKey === 'status') {
+            l.crmStatus = fieldVal; l.status = fieldVal;
+            if (fieldVal === 'lost') { l.osStage = 'lost'; l.stage = 'lost'; }
+            else if (fieldVal === 'unqualified') { l.osStage = 'spam'; l.stage = 'unqualified'; }
+            else { l.osStage = 'new'; l.stage = fieldVal; }
+            pushLeadActivity(l, 'status', 'Status → ' + (LEADS_STATUS_LABEL[fieldVal] || fieldVal));
+          } else if (fieldKey === 'assignedTo') {
+            l.assignedTo = fieldVal;
+            pushLeadActivity(l, 'assign', fieldVal ? ('Assigned to ' + fieldVal) : 'Unassigned');
+          }
+        });
+        toast(fieldKey === 'status' ? 'Status updated' : (fieldVal ? 'Assigned to ' + fieldVal : 'Unassigned'));
+        return;
+      }
       if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-bulk')) {
         root._josLeadBulkSelected = root._josLeadBulkSelected || {};
         var bulkKey = e.target.getAttribute('data-jos-lead-bulk');
@@ -8740,6 +8874,8 @@
         if (root._josLeadAddOpen) { root._josLeadAddOpen = false; renderLeads(); return; }
         if (root._josLeadFilterOpen) { root._josLeadFilterOpen = false; renderLeads(); return; }
         if (root._josLeadBulkOpen) { root._josLeadBulkOpen = false; renderLeads(); return; }
+        if (root._josLeadsColMenuKey) { root._josLeadsColMenuKey = null; renderLeads(); return; }
+        if (root._josLeadsColAddOpen) { root._josLeadsColAddOpen = false; renderLeads(); return; }
         if (root._josLeadCtx && root._josLeadCtx.open) { root._josLeadCtx = null; renderLeads(); return; }
         if (root._josLeadsQ) {
           root._josLeadsQ = '';
@@ -8758,6 +8894,48 @@
         if (inp) inp.focus();
       }
     });
+
+    root.addEventListener('dragstart', function (e) {
+      var th = e.target.closest('[data-jos-col-key]');
+      if (!th) return;
+      root._josLeadsColDragKey = th.getAttribute('data-jos-col-key');
+      th.classList.add('is-dragging');
+      try { e.dataTransfer.setData('text/plain', root._josLeadsColDragKey); e.dataTransfer.effectAllowed = 'move'; } catch (err) {}
+    });
+    root.addEventListener('dragend', function (e) {
+      var th = e.target.closest('[data-jos-col-key]');
+      if (th) th.classList.remove('is-dragging');
+      root.querySelectorAll('.jos-ld-th.drop-target').forEach(function (n) { n.classList.remove('drop-target'); });
+    });
+    root.addEventListener('dragover', function (e) {
+      var th = e.target.closest('[data-jos-col-key]');
+      if (!th) return;
+      e.preventDefault();
+      th.classList.add('drop-target');
+    });
+    root.addEventListener('dragleave', function (e) {
+      var th = e.target.closest('[data-jos-col-key]');
+      if (th && !th.contains(e.relatedTarget)) th.classList.remove('drop-target');
+    });
+    root.addEventListener('drop', function (e) {
+      var th = e.target.closest('[data-jos-col-key]');
+      root.querySelectorAll('.jos-ld-th.drop-target').forEach(function (n) { n.classList.remove('drop-target'); });
+      if (!th) return;
+      e.preventDefault();
+      var dragKey = root._josLeadsColDragKey;
+      try { dragKey = dragKey || e.dataTransfer.getData('text/plain'); } catch (err) {}
+      var dropKey = th.getAttribute('data-jos-col-key');
+      if (!dragKey || dragKey === dropKey) return;
+      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+      var cols = root._josLeadsColumns;
+      var fromI = cols.findIndex(function (c) { return c.key === dragKey; });
+      var toI = cols.findIndex(function (c) { return c.key === dropKey; });
+      if (fromI < 0 || toI < 0) return;
+      var moved = cols.splice(fromI, 1)[0];
+      cols.splice(toI, 0, moved);
+      saveLeadsColumns(cols);
+      renderLeads();
+    });
   }
 
   function selectedLead() {
@@ -8773,6 +8951,15 @@
     ensureLeadsOsState();
     mutator(lead);
     if (root) renderLeads();
+    return lead;
+  }
+
+  function mutateLeadById(id, mutator, opts) {
+    var lead = findLead(id);
+    if (!lead) return null;
+    ensureLeadsOsState();
+    mutator(lead);
+    if (!(opts && opts.quiet)) renderLeads();
     return lead;
   }
 
@@ -8967,6 +9154,47 @@
       if (act === 'leads-add-save') return saveNewLead(false);
       if (act === 'leads-add-quote') return saveNewLead(true);
       if (act === 'leads-bulk-toggle') { root._josLeadBulkOpen = !root._josLeadBulkOpen; return renderLeads(); }
+      if (act === 'leads-col-menu') {
+        var clickedKey = t.getAttribute('data-jos-col-key');
+        root._josLeadsColMenuKey = root._josLeadsColMenuKey === clickedKey ? null : clickedKey;
+        root._josLeadsColAddOpen = false;
+        return renderLeads();
+      }
+      if (act === 'leads-col-add-menu') {
+        root._josLeadsColAddOpen = !root._josLeadsColAddOpen;
+        root._josLeadsColMenuKey = null;
+        return renderLeads();
+      }
+      if (act === 'leads-col-rename-save') {
+        var renameKey = t.getAttribute('data-jos-col-key');
+        var renameInput = el('jos-ld-col-rename-input');
+        var newLabel = renameInput ? String(renameInput.value || '').trim() : '';
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+        var renameCol = root._josLeadsColumns.find(function (c) { return c.key === renameKey; });
+        if (renameCol && newLabel) renameCol.label = newLabel;
+        saveLeadsColumns(root._josLeadsColumns);
+        root._josLeadsColMenuKey = null;
+        return renderLeads();
+      }
+      if (act === 'leads-col-hide') {
+        var hideKey = t.getAttribute('data-jos-col-key');
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+        var visibleN = root._josLeadsColumns.filter(function (c) { return !c.hidden; }).length;
+        if (visibleN <= 1) { toast('At least one column must stay visible'); root._josLeadsColMenuKey = null; return renderLeads(); }
+        var hideCol = root._josLeadsColumns.find(function (c) { return c.key === hideKey; });
+        if (hideCol) hideCol.hidden = true;
+        saveLeadsColumns(root._josLeadsColumns);
+        root._josLeadsColMenuKey = null;
+        return renderLeads();
+      }
+      if (act === 'leads-col-show') {
+        var showKey = t.getAttribute('data-jos-col-key');
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+        var showCol = root._josLeadsColumns.find(function (c) { return c.key === showKey; });
+        if (showCol) showCol.hidden = false;
+        saveLeadsColumns(root._josLeadsColumns);
+        return renderLeads();
+      }
       if (act === 'leads-load-more') {
         root._josLeadsLimit = (root._josLeadsLimit || 25) + 25;
         return renderLeads();
