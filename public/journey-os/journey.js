@@ -7358,17 +7358,90 @@
   };
 
   // ---- Leads: the first table wired onto the engine above ---------------
+  // Schema, not switch statements: every column fully describes its own
+  // type, capabilities, and how to read/write its value — leadTableCellHtml,
+  // the commit handler, and cancel-restore all read this instead of
+  // branching on colKey. get() defaults to a plain lead[key] property read
+  // when omitted (see leadsColFieldGet) — only columns that don't map 1:1
+  // onto a real lead property (firstName/lastName split lead.name; status
+  // needs CRM normalization) define one explicitly.
   var LEADS_DEFAULT_COLUMNS = [
-    { key: 'firstName', label: 'First Name' },
-    { key: 'lastName', label: 'Last Name' },
-    { key: 'phone', label: 'Phone' },
-    { key: 'email', label: 'Email' },
-    { key: 'source', label: 'Source' },
-    { key: 'service', label: 'Service' },
-    { key: 'status', label: 'Status' },
-    { key: 'assigned', label: 'Assigned' },
-    { key: 'tags', label: 'Tags', hidden: true },
-    { key: 'created', label: 'Created' }
+    {
+      key: 'firstName', label: 'First Name', type: 'text', width: 130,
+      editable: true, searchable: true, filterable: false, sortable: true,
+      get: function (lead) { return splitLeadName(lead.name).first; },
+      set: function (lead, value) {
+        var parts = splitLeadName(lead.name);
+        lead.name = (String(value || '').trim() + ' ' + parts.last).trim();
+        return 'Name → ' + (lead.name || '—');
+      }
+    },
+    {
+      key: 'lastName', label: 'Last Name', type: 'text', width: 130,
+      editable: true, searchable: true, filterable: false, sortable: true,
+      get: function (lead) { return splitLeadName(lead.name).last; },
+      set: function (lead, value) {
+        var parts = splitLeadName(lead.name);
+        lead.name = (parts.first + ' ' + String(value || '').trim()).trim();
+        return 'Name → ' + (lead.name || '—');
+      }
+    },
+    {
+      key: 'phone', label: 'Phone', type: 'phone', width: 150,
+      editable: true, searchable: true, filterable: false, sortable: false,
+      set: function (lead, value) { lead.phone = String(value || '').trim(); return 'Phone → ' + (lead.phone || '—'); }
+    },
+    {
+      key: 'email', label: 'Email', type: 'email', width: 190,
+      editable: true, searchable: true, filterable: false, sortable: false,
+      set: function (lead, value) { lead.email = String(value || '').trim(); return 'Email → ' + (lead.email || '—'); }
+    },
+    {
+      key: 'source', label: 'Source', type: 'text', width: 110,
+      editable: false, searchable: true, filterable: true, sortable: true,
+      get: function (lead) { return srcLabel(srcKind(lead.source, lead)); }
+    },
+    {
+      key: 'service', label: 'Service', type: 'text', width: 150,
+      editable: true, searchable: true, filterable: true, sortable: true,
+      set: function (lead, value) { lead.service = String(value || '').trim(); return 'Service → ' + (lead.service || '—'); }
+    },
+    {
+      key: 'status', label: 'Status', type: 'select', width: 130,
+      editable: true, searchable: false, filterable: true, sortable: true,
+      options: function () {
+        return LEADS_CRM_STATUSES.map(function (s) { return { value: s, label: LEADS_STATUS_LABEL[s], tone: leadStatusTone(s) }; });
+      },
+      get: function (lead) { return normalizeCrmStatus(lead); },
+      set: function (lead, value) {
+        lead.crmStatus = value; lead.status = value;
+        if (value === 'lost') { lead.osStage = 'lost'; lead.stage = 'lost'; }
+        else if (value === 'unqualified') { lead.osStage = 'spam'; lead.stage = 'unqualified'; }
+        else { lead.osStage = 'new'; lead.stage = value; }
+        return 'Status → ' + (LEADS_STATUS_LABEL[value] || value);
+      }
+    },
+    {
+      key: 'assigned', label: 'Assigned', type: 'select', width: 150,
+      editable: true, searchable: true, filterable: true, sortable: true, allowEmpty: 'Unassigned',
+      options: function () {
+        var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
+        return team.map(function (t) { return { value: t.name, label: t.name }; });
+      },
+      get: function (lead) { return lead.assignedTo || ''; },
+      set: function (lead, value) { lead.assignedTo = value; return value ? ('Assigned to ' + value) : 'Unassigned'; }
+    },
+    {
+      key: 'tags', label: 'Tags', type: 'tags', width: 180, hidden: true,
+      editable: true, searchable: true, filterable: false, sortable: false,
+      get: function (lead) { return Array.isArray(lead.tags) ? lead.tags : []; },
+      set: function (lead, value) { lead.tags = value; return 'Tags → ' + (value.length ? value.join(', ') : 'none'); }
+    },
+    {
+      key: 'created', label: 'Created', type: 'text', width: 110,
+      editable: false, searchable: false, filterable: false, sortable: true,
+      get: function (lead) { return String(lead.createdAt || '').slice(0, 10) || '—'; }
+    }
   ];
   // Custom fields (business_table_config, scope 'business' — shared by
   // every employee, not a personal preference): a business can define real
@@ -7407,15 +7480,44 @@
   function isLeadsCustomFieldKey(key) {
     return typeof key === 'string' && key.indexOf('cf_') === 0;
   }
+  // Every custom field TYPE Leads currently offers at creation time. Value
+  // storage is always lead.customFields[fieldId] — only the type (and, for
+  // select, the option list) varies per field, so one generic get/set
+  // covers all of them: real per-type behavior (parsing, checkbox toggling,
+  // pill styling) lives entirely in rendererRegistry, not here.
+  var LEADS_CUSTOM_FIELD_TYPES = [
+    ['text', 'Text'], ['number', 'Number'], ['date', 'Date'],
+    ['checkbox', 'Checkbox'], ['select', 'Select'],
+    ['phone', 'Phone'], ['email', 'Email'], ['url', 'URL']
+  ];
+  function customFieldColumnDef(f) {
+    return {
+      key: f.id, label: f.label, hidden: false, custom: true,
+      type: f.type || 'text', options: f.options,
+      editable: true, searchable: true, filterable: false, sortable: false,
+      get: function (lead) { return lead.customFields ? lead.customFields[f.id] : undefined; },
+      set: function (lead, value) {
+        lead.customFields = lead.customFields || {};
+        lead.customFields[f.id] = value;
+        return f.label + ' updated';
+      }
+    };
+  }
   // The full column universe for Leads right now: builtins + whatever
   // custom fields this business has defined, in tablePreferences.normalize's
   // schema shape. This is the ONE place Leads-specific columns and dynamic
   // custom fields get combined into a schema — everything downstream
   // (load, save, render) goes through the generic engine from here.
   function leadsColumnSchema(customFields) {
-    return LEADS_DEFAULT_COLUMNS.concat((customFields || []).map(function (f) {
-      return { key: f.id, label: f.label, hidden: false, custom: true };
-    }));
+    return LEADS_DEFAULT_COLUMNS.concat((customFields || []).map(customFieldColumnDef));
+  }
+  function leadsSchemaMap(customFields) {
+    var map = {};
+    leadsColumnSchema(customFields).forEach(function (c) { map[c.key] = c; });
+    return map;
+  }
+  function findLeadsColumnDef(root, key) {
+    return leadsSchemaMap(root && root._josLeadsCustomFields)[key] || null;
   }
   // root is optional — passed so a late-arriving server value can patch
   // live state and re-render, instead of only taking effect on the next
@@ -8027,10 +8129,15 @@
 
   function leadSearchHay(lead) {
     var msgBlob = (lead.messages || []).map(function (m) { return m.text || m.content || ''; }).join(' ');
+    // Custom field values fold in generically — whatever a business has
+    // defined (HOA, Gate Code, Venue, ...), searchable without this
+    // function needing to know the field names, matching the schema's
+    // searchable:true intent for custom fields.
+    var customBlob = lead.customFields ? Object.keys(lead.customFields).map(function (k) { return lead.customFields[k]; }).join(' ') : '';
     return [
       lead.name, lead.phone, lead.email, vehicleOf(lead), lead.property, lead.address,
       lead.service, lead.source, lead.notes, (lead.notesList || []).join(' '),
-      lead.lastMessage, msgBlob, (lead.tags || []).join(' '), lead.assignedTo
+      lead.lastMessage, msgBlob, (lead.tags || []).join(' '), lead.assignedTo, customBlob
     ].join(' ').toLowerCase();
   }
 
@@ -8201,112 +8308,148 @@
     return { first: parts[0], last: parts.slice(1).join(' ') };
   }
 
-  // Real spreadsheet-style view, same underlying filtered/sorted list as
-  // the card list — every column is a real field already on the lead
-  // object (no score/owner-avatar/last-activity/next-action columns, those
-  // were explicitly deferred, not built).
-  function leadTableCellHtml(lead, colKey, leadKey, editingField) {
-    var crm = normalizeCrmStatus(lead);
-    if (colKey === 'firstName' || colKey === 'lastName') {
-      // First/Last aren't stored separately — lead.name stays the single
-      // source of truth everywhere else (avatar initials, search, the
-      // detail panel header, ...), these two columns just split it on
-      // read and recompose it on write, so editing is direct (no comma-
-      // separated parsing) without a data-model migration touching every
-      // other place lead.name is read.
-      var nameParts = splitLeadName(lead.name);
-      var partVal = colKey === 'firstName' ? nameParts.first : nameParts.last;
-      var partLabel = colKey === 'firstName' ? 'First name' : 'Last name';
-      if (editingField === colKey) {
-        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + colKey + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + partLabel + '" value="' + esc(partVal) + '" onclick="event.stopPropagation()">';
+  // ---- Generic cell renderer registry ------------------------------------
+  // One renderer per field TYPE, not per column — reused by every column of
+  // that type, built-in or custom, this table or (eventually) another
+  // module's. A renderer owns: display() (static, click-to-edit span),
+  // edit() (the live input/select — omitted for types like checkbox that
+  // commit immediately on click instead of opening a separate edit mode),
+  // and optionally readValue()/writeValue() for types where the DOM
+  // element's value isn't already the right shape (tags: comma-separated
+  // text <-> array; number: string <-> Number). Adding a field type means
+  // adding one entry here — not hunting through render/commit/cancel code
+  // for a colKey to special-case. Not Leads-prefixed on purpose: a second
+  // table reuses this exact object for its own schema's types.
+  var rendererRegistry = {
+    text: {
+      display: function (value, col, leadKey) {
+        var v = value || '';
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Click to add') + '</span>';
+      },
+      edit: function (value, col, leadKey) {
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
       }
-      if (colKey === 'firstName') {
-        return '<strong class="jos-ld-name-cell' + (partVal ? '' : ' is-empty') + '" data-jos-lead-field="firstName" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (partVal ? esc(partVal) : 'Add') + '</strong>';
+    },
+    phone: {
+      display: function (value, col, leadKey) {
+        var v = value ? displayPhone(value) : '';
+        return '<span class="jos-ld-contact-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Add phone') + '</span>';
+      },
+      edit: function (value, col, leadKey) {
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Phone" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
       }
-      return '<span class="jos-ld-name-cell' + (partVal ? '' : ' is-empty') + '" data-jos-lead-field="lastName" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (partVal ? esc(partVal) : 'Add') + '</span>';
+    },
+    email: {
+      display: function (value, col, leadKey) {
+        var v = value || '';
+        return '<span class="jos-ld-contact-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Add email') + '</span>';
+      },
+      edit: function (value, col, leadKey) {
+        return '<input type="email" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Email" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
+      }
+    },
+    url: {
+      display: function (value, col, leadKey) {
+        var v = value || '';
+        return '<span class="jos-ld-url-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Add link') + '</span>';
+      },
+      edit: function (value, col, leadKey) {
+        return '<input type="url" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
+      }
+    },
+    number: {
+      display: function (value, col, leadKey) {
+        var v = (value === '' || value == null) ? '' : String(value);
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Click to add') + '</span>';
+      },
+      edit: function (value, col, leadKey) {
+        return '<input type="number" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value === '' || value == null ? '' : value) + '" onclick="event.stopPropagation()">';
+      },
+      readValue: function (el) { var n = parseFloat(el.value); return isNaN(n) ? '' : n; }
+    },
+    date: {
+      display: function (value, col, leadKey) {
+        var v = value || '';
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Click to add') + '</span>';
+      },
+      edit: function (value, col, leadKey) {
+        return '<input type="date" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
+      }
+    },
+    checkbox: {
+      // No edit() — a checkbox is its own commit, no separate open-edit-
+      // mode step makes sense for a binary value. The click handler
+      // special-cases col.type==='checkbox' to toggle+commit directly.
+      display: function (value, col, leadKey) {
+        return '<span class="jos-ld-checkbox-cell' + (value ? ' is-checked' : '') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to toggle">' + (value ? '☑' : '☐') + '</span>';
+      }
+    },
+    tags: {
+      display: function (value, col, leadKey) {
+        var list = Array.isArray(value) ? value : [];
+        return '<span class="jos-ld-tags-cell' + (list.length ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + (list.length ? list.map(function (tg) { return '<span class="jos-ld-tag-chip">' + esc(tg) + '</span>'; }).join('') : 'No tags') + '</span>';
+      },
+      edit: function (value, col, leadKey) {
+        var list = Array.isArray(value) ? value : [];
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Tags" value="' + esc(list.join(', ')) + '" placeholder="Comma-separated" onclick="event.stopPropagation()">';
+      },
+      readValue: function (el) { return String(el.value || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean); },
+      writeValue: function (el, value) { el.value = (Array.isArray(value) ? value : []).join(', '); }
+    },
+    // Doubles as Status (options carry a `tone` -> pill styling) and any
+    // plain custom-field dropdown (no tone -> plain text). `col.options` is
+    // an array of {value,label,tone?} or a function returning one (for
+    // dynamic option lists, e.g. the current team for Assigned).
+    select: {
+      resolveOptions: function (col) { return typeof col.options === 'function' ? col.options() : (col.options || []); },
+      display: function (value, col, leadKey) {
+        var opts = rendererRegistry.select.resolveOptions(col);
+        var match = null;
+        for (var i = 0; i < opts.length; i++) { if (opts[i].value === value) { match = opts[i]; break; } }
+        var label = match ? match.label : (value || '');
+        if (match && match.tone) {
+          return '<span class="jos-ld-status-pill ' + match.tone + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + esc(label) + '</span>';
+        }
+        var isEmpty = !value;
+        return '<span class="jos-ld-name-cell' + (isEmpty ? ' is-empty' : '') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + esc(label || col.allowEmpty || 'Unassigned') + '</span>';
+      },
+      edit: function (value, col, leadKey) {
+        var opts = rendererRegistry.select.resolveOptions(col);
+        return '<select class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" onclick="event.stopPropagation()">' +
+          (col.allowEmpty ? '<option value=""' + (!value ? ' selected' : '') + '>' + esc(col.allowEmpty) + '</option>' : '') +
+          opts.map(function (o) { return '<option value="' + esc(o.value) + '"' + (value === o.value ? ' selected' : '') + '>' + esc(o.label) + '</option>'; }).join('') +
+          '</select>';
+      }
     }
-    if (colKey === 'phone') {
-      if (editingField === 'phone') {
-        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="phone" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Phone" value="' + esc(lead.phone || '') + '" onclick="event.stopPropagation()">';
-      }
-      return '<span class="jos-ld-contact-cell' + (lead.phone ? '' : ' is-empty') + '" data-jos-lead-field="phone" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (lead.phone ? esc(displayPhone(lead.phone)) : 'Add phone') + '</span>';
-    }
-    if (colKey === 'email') {
-      if (editingField === 'email') {
-        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="email" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Email" value="' + esc(lead.email || '') + '" onclick="event.stopPropagation()">';
-      }
-      return '<span class="jos-ld-contact-cell' + (lead.email ? '' : ' is-empty') + '" data-jos-lead-field="email" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (lead.email ? esc(lead.email) : 'Add email') + '</span>';
-    }
-    if (colKey === 'source') return esc(srcLabel(srcKind(lead.source, lead)));
-    if (colKey === 'service') {
-      if (editingField === 'service') {
-        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="service" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Service" value="' + esc(lead.service || '') + '" onclick="event.stopPropagation()">';
-      }
-      return '<span class="jos-ld-service-cell' + (lead.service ? '' : ' is-empty') + '" data-jos-lead-field="service" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + esc(lead.service || 'Add service') + '</span>';
-    }
-    if (colKey === 'status') {
-      if (editingField === 'status') {
-        return '<select class="jos-ld-cell-inline ' + leadStatusTone(crm) + ' jos-ld-editing" data-jos-lead-field="status" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Status" onclick="event.stopPropagation()">' +
-          LEADS_CRM_STATUSES.map(function (s) {
-            return '<option value="' + s + '"' + (crm === s ? ' selected' : '') + '>' + esc(LEADS_STATUS_LABEL[s]) + '</option>';
-          }).join('') + '</select>';
-      }
-      return '<span class="jos-ld-status-pill ' + leadStatusTone(crm) + '" data-jos-lead-field="status" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + esc(LEADS_STATUS_LABEL[crm] || crm) + '</span>';
-    }
-    if (colKey === 'assigned') {
-      if (editingField === 'assignedTo') {
-        var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
-        return '<select class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="assignedTo" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Assigned to" onclick="event.stopPropagation()">' +
-          '<option value=""' + (!lead.assignedTo ? ' selected' : '') + '>Unassigned</option>' +
-          team.map(function (t) {
-            return '<option value="' + esc(t.name) + '"' + (lead.assignedTo === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
-          }).join('') + '</select>';
-      }
-      return '<span class="jos-ld-assigned-text' + (lead.assignedTo ? '' : ' is-empty') + '" data-jos-lead-field="assignedTo" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + esc(lead.assignedTo || 'Unassigned') + '</span>';
-    }
-    if (colKey === 'tags') {
-      var tagsList = Array.isArray(lead.tags) ? lead.tags : [];
-      if (editingField === 'tags') {
-        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="tags" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Tags" value="' + esc(tagsList.join(', ')) + '" placeholder="Comma-separated" onclick="event.stopPropagation()">';
-      }
-      return '<span class="jos-ld-tags-cell' + (tagsList.length ? '' : ' is-empty') + '" data-jos-lead-field="tags" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + (tagsList.length ? tagsList.map(function (tg) { return '<span class="jos-ld-tag-chip">' + esc(tg) + '</span>'; }).join('') : 'No tags') + '</span>';
-    }
-    if (colKey === 'created') return esc(String(lead.createdAt || '').slice(0, 10)) || '—';
-    if (isLeadsCustomFieldKey(colKey)) {
-      // Business-defined field (HOA, Gate Code, Venue, ...) — values live
-      // in their own bag on the lead, keyed by the field's stable id, so
-      // renaming the column later never orphans already-saved data. Same
-      // simple click-to-edit text input as Name/Service; no special case
-      // needed beyond reading/writing lead.customFields instead of a
-      // top-level lead property.
-      var cfVal = (lead.customFields && lead.customFields[colKey]) || '';
-      if (editingField === colKey) {
-        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(colKey) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Custom field" value="' + esc(cfVal) + '" onclick="event.stopPropagation()">';
-      }
-      return '<span class="jos-ld-name-cell' + (cfVal ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(colKey) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (cfVal ? esc(cfVal) : 'Click to add') + '</span>';
-    }
-    return '—';
-  }
+  };
 
-  var LEADS_COL_DEFAULT_WIDTH = { firstName: 130, lastName: 130, phone: 150, email: 190, source: 110, service: 150, status: 130, assigned: 150, tags: 180, created: 110 };
-  var LEADS_COL_MIN_WIDTH = 72;
-  // Column key <-> lead field, single source for both directions so the
-  // inline-editable columns (click a cell -> edit -> Enter/blur -> saved)
-  // and the roving-tabindex active-cell tracking never drift out of sync.
-  // firstName/lastName are symbolic (split from/recomposed into lead.name,
-  // not real lead properties on their own) — special-cased wherever a real
-  // field name is needed, same idea as 'contact' used to be before Phone
-  // and Email became genuinely separate columns.
-  var LEADS_COL_TO_FIELD = { firstName: 'firstName', lastName: 'lastName', phone: 'phone', email: 'email', service: 'service', status: 'status', assigned: 'assignedTo', tags: 'tags' };
-  // ^ most keys map to a field of the same conceptual name — LEADS_FIELD_TO_COL
-  // below inverts this 1:1, so those fields resolve straight back to their
-  // own column, same as status/assignedTo/tags already did.
-  var LEADS_FIELD_TO_COL = {};
-  Object.keys(LEADS_COL_TO_FIELD).forEach(function (colKey) { LEADS_FIELD_TO_COL[LEADS_COL_TO_FIELD[colKey]] = colKey; });
+  // Real spreadsheet-style view, same underlying filtered/sorted list as
+  // the card list. `col` is a full schema entry (type/get/set/options/...),
+  // not just a key — leadTableCellHtml itself no longer knows what a
+  // status or a tag is, it just asks the registry for that column's type.
+  function leadTableCellHtml(lead, col, leadKey, isEditing) {
+    var value = col.get ? col.get(lead) : lead[col.key];
+    if (col.editable === false) {
+      // Deliberately skip the renderer entirely, not just its edit() half
+      // — every display() still stamps data-jos-lead-field (so click-to-
+      // edit and the "already editing" guard can find it), which would
+      // wrongly make the row-open click handler treat this cell as a
+      // field to exclude even though it can never actually be edited.
+      // Plain, non-interactive text, same as Source/Created always were.
+      var plain = (value == null || value === '') ? '—' : String(value);
+      return esc(plain);
+    }
+    var renderer = rendererRegistry[col.type] || rendererRegistry.text;
+    if (isEditing && renderer.edit) return renderer.edit(value, col, leadKey);
+    return renderer.display(value, col, leadKey);
+  }
+  function leadsColFieldGet(col, lead) { return col.get ? col.get(lead) : lead[col.key]; }
+  function leadsColFieldSet(col, lead, value) { return col.set ? col.set(lead, value) : (lead[col.key] = value, col.label + ' updated'); }
 
   function renderLeadsTable(root, list, selectedId, bulkOpen, bulkSelected, columns) {
     if (!list.length) return '';
     var cols = (columns || LEADS_DEFAULT_COLUMNS).filter(function (c) { return !c.hidden; });
+    var schemaMap = leadsSchemaMap(root._josLeadsCustomFields);
     var openKey = root._josLeadsColMenuKey || null;
     var editing = root._josLeadsEditCell || null;
     var renamingKey = root._josLeadsColRenaming || null;
@@ -8321,7 +8464,7 @@
     var active = root._josLeadsActiveCell;
 
     var colGroup = '<colgroup>' + (bulkOpen ? '<col style="width:32px">' : '') +
-      cols.map(function (c) { return '<col data-jos-col-key="' + esc(c.key) + '" style="width:' + (c.width || LEADS_COL_DEFAULT_WIDTH[c.key] || 140) + 'px">'; }).join('') +
+      cols.map(function (c) { var def = schemaMap[c.key]; return '<col data-jos-col-key="' + esc(c.key) + '" style="width:' + (c.width || (def && def.width) || 140) + 'px">'; }).join('') +
       '<col style="width:36px"></colgroup>';
     var rows = list.map(function (lead) {
       var leadKey = String(lead.id || lead.key);
@@ -8330,11 +8473,12 @@
       return '<tr class="jos-ld-trow' + (on ? ' on' : '') + '" role="row" data-jos-lead-id="' + esc(leadKey) + '">' +
         (bulkOpen ? '<td class="jos-ld-tcheck" role="gridcell" onclick="event.stopPropagation()"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '" aria-label="Select ' + esc(lead.name || 'lead') + '"' + (checked ? ' checked' : '') + '></td>' : '') +
         cols.map(function (c) {
-          var fieldForCol = LEADS_COL_TO_FIELD[c.key] || (c.custom ? c.key : null);
-          var isEditingThis = editing && editing.leadId === leadKey && fieldForCol && editing.field === fieldForCol;
+          var def = schemaMap[c.key];
+          if (!def) return '<td class="jos-ld-tcell-' + esc(c.key) + '" role="gridcell" tabindex="-1" data-jos-col-key="' + esc(c.key) + '">—</td>';
+          var isEditingThis = !!(editing && editing.leadId === leadKey && editing.field === c.key);
           var isActive = active.leadId === leadKey && active.colKey === c.key;
           return '<td class="jos-ld-tcell-' + esc(c.key) + '" role="gridcell" tabindex="' + (isActive ? '0' : '-1') + '" data-jos-col-key="' + esc(c.key) + '">' +
-            leadTableCellHtml(lead, c.key, leadKey, isEditingThis ? fieldForCol : null) + '</td>';
+            leadTableCellHtml(lead, def, leadKey, isEditingThis) + '</td>';
         }).join('') +
         '</tr>';
     }).join('');
@@ -9356,14 +9500,12 @@
       if (id === 'jos-ld-bulk-status-select') {
         var bulkStatusVal = e.target.value;
         if (!bulkStatusVal) return;
+        var bulkStatusCol = findLeadsColumnDef(root, 'status');
         var bulkStatusKeys = Object.keys(root._josLeadBulkSelected || {});
         var bulkStatusLeads = leadsOsList().filter(function (l) { return bulkStatusKeys.indexOf(String(l.id || l.key)) > -1; });
         bulkStatusLeads.forEach(function (l) {
-          l.crmStatus = bulkStatusVal; l.status = bulkStatusVal;
-          if (bulkStatusVal === 'lost') { l.osStage = 'lost'; l.stage = 'lost'; }
-          else if (bulkStatusVal === 'unqualified') { l.osStage = 'spam'; l.stage = 'unqualified'; }
-          else { l.osStage = 'new'; l.stage = bulkStatusVal; }
-          pushLeadActivity(l, 'status', 'Status → ' + (LEADS_STATUS_LABEL[bulkStatusVal] || bulkStatusVal) + ' (bulk)');
+          var label = leadsColFieldSet(bulkStatusCol, l, bulkStatusVal);
+          pushLeadActivity(l, 'edit', label + ' (bulk)');
         });
         root._josLeadBulkStatusOpen = false;
         root._josLeadBulkOpen = false;
@@ -9375,58 +9517,17 @@
       if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-field')) {
         var fieldKey = e.target.getAttribute('data-jos-lead-field');
         var fieldLeadId = e.target.getAttribute('data-jos-lead-id');
-        var fieldVal = e.target.value;
+        var fieldCol = findLeadsColumnDef(root, fieldKey);
+        var fieldRenderer = fieldCol ? (rendererRegistry[fieldCol.type] || rendererRegistry.text) : rendererRegistry.text;
+        var fieldVal = fieldRenderer.readValue ? fieldRenderer.readValue(e.target) : e.target.value;
         root._josLeadsEditCell = null;
         root._josLeadsGridFocusPending = true;
+        var fieldActivityLabel = '';
         mutateLeadById(fieldLeadId, function (l) {
-          if (fieldKey === 'status') {
-            l.crmStatus = fieldVal; l.status = fieldVal;
-            if (fieldVal === 'lost') { l.osStage = 'lost'; l.stage = 'lost'; }
-            else if (fieldVal === 'unqualified') { l.osStage = 'spam'; l.stage = 'unqualified'; }
-            else { l.osStage = 'new'; l.stage = fieldVal; }
-            pushLeadActivity(l, 'status', 'Status → ' + (LEADS_STATUS_LABEL[fieldVal] || fieldVal));
-          } else if (fieldKey === 'assignedTo') {
-            l.assignedTo = fieldVal;
-            pushLeadActivity(l, 'assign', fieldVal ? ('Assigned to ' + fieldVal) : 'Unassigned');
-          } else if (fieldKey === 'tags') {
-            l.tags = String(fieldVal || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean);
-            pushLeadActivity(l, 'tag', 'Tags → ' + (l.tags.length ? l.tags.join(', ') : 'none'));
-          } else if (fieldKey === 'firstName' || fieldKey === 'lastName') {
-            // No separate storage — recompose lead.name from whichever half
-            // just changed plus the OTHER half's current value, so
-            // everything else that reads lead.name (avatar initials,
-            // search, the detail panel header) stays correct without
-            // knowing first/last are edited as separate columns.
-            var curParts = splitLeadName(l.name);
-            var nextFirst = fieldKey === 'firstName' ? String(fieldVal || '').trim() : curParts.first;
-            var nextLast = fieldKey === 'lastName' ? String(fieldVal || '').trim() : curParts.last;
-            l.name = (nextFirst + ' ' + nextLast).trim();
-            pushLeadActivity(l, 'edit', 'Name → ' + (l.name || '—'));
-          } else if (fieldKey === 'phone') {
-            l.phone = String(fieldVal || '').trim();
-            pushLeadActivity(l, 'edit', 'Phone → ' + (l.phone || '—'));
-          } else if (fieldKey === 'email') {
-            l.email = String(fieldVal || '').trim();
-            pushLeadActivity(l, 'edit', 'Email → ' + (l.email || '—'));
-          } else if (fieldKey === 'service') {
-            l.service = String(fieldVal || '').trim();
-            pushLeadActivity(l, 'edit', 'Service → ' + (l.service || '—'));
-          } else if (isLeadsCustomFieldKey(fieldKey)) {
-            l.customFields = l.customFields || {};
-            l.customFields[fieldKey] = String(fieldVal || '').trim();
-            pushLeadActivity(l, 'edit', 'Custom field updated');
-          }
+          fieldActivityLabel = fieldCol ? leadsColFieldSet(fieldCol, l, fieldVal) : '';
+          pushLeadActivity(l, 'edit', fieldActivityLabel || 'Updated');
         });
-        toast(
-          fieldKey === 'status' ? 'Status updated' :
-          fieldKey === 'tags' ? 'Tags updated' :
-          fieldKey === 'firstName' || fieldKey === 'lastName' ? 'Name updated' :
-          fieldKey === 'phone' ? 'Phone updated' :
-          fieldKey === 'email' ? 'Email updated' :
-          fieldKey === 'service' ? 'Service updated' :
-          fieldKey === 'assignedTo' ? (fieldVal ? 'Assigned to ' + fieldVal : 'Unassigned') :
-          'Updated'
-        );
+        toast(fieldActivityLabel ? (fieldCol.label + ' updated') : 'Updated');
         return;
       }
       if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-bulk')) {
@@ -9564,18 +9665,31 @@
       renderLeads();
     });
 
-    // Click a Status/Assigned cell to edit — spreadsheet-style, one click,
-    // not two. Everywhere else it's a plain, static-looking cell, not a
-    // form control sitting open. Only one cell edits at a time:
-    // _josLeadsEditCell holds at most one {leadId,field}, so opening a new
-    // one always implicitly closes the last one in the same render — no
-    // separate "close the old one" step.
+    // Click a cell to edit — spreadsheet-style, one click, not two.
+    // Everywhere else it's a plain, static-looking cell, not a form control
+    // sitting open. Only one cell edits at a time: _josLeadsEditCell holds
+    // at most one {leadId,field}, so opening a new one always implicitly
+    // closes the last one in the same render — no separate "close the old
+    // one" step. Non-editable columns (Source, Created) never open at all.
+    // Checkbox-type columns skip the open-edit-mode step entirely — a
+    // binary value commits on the click itself, there's nothing to type.
     root.addEventListener('click', function (e) {
       var field = e.target.closest('[data-jos-lead-field]');
       if (!field || field.classList.contains('jos-ld-editing')) return; /* already open — don't reopen and discard in-progress typing */
       var leadId = field.getAttribute('data-jos-lead-id');
       var key = field.getAttribute('data-jos-lead-field');
       if (!leadId || !key) return;
+      var col = findLeadsColumnDef(root, key);
+      if (!col || col.editable === false) return;
+      if (col.type === 'checkbox') {
+        var toggled = '';
+        mutateLeadById(leadId, function (l) {
+          toggled = leadsColFieldSet(col, l, !leadsColFieldGet(col, l));
+        });
+        toast(toggled || (col.label + ' updated'));
+        e.stopPropagation();
+        return;
+      }
       openLeadsCellEdit(root, leadId, key);
       e.stopPropagation();
     });
@@ -9726,22 +9840,19 @@
   // before this edit started (arrow-key selection on a native <select>
   // commits immediately, so by the time Escape is pressed the value may
   // already have changed; this actually rolls it back, not just closes).
-  // (LEADS_FIELD_TO_COL is defined once, near LEADS_COL_DEFAULT_WIDTH.)
 
   // Shared by dblclick and Enter-on-focused-gridcell — same open path
-  // either way, so the two entry points can't drift out of sync.
+  // either way, so the two entry points can't drift out of sync. key IS
+  // the column key now (no separate "field" concept) — get()/set() on the
+  // column's own schema entry own everything type-specific.
   function openLeadsCellEdit(root, leadId, key) {
     var editingLead = findLead(leadId);
     if (!editingLead) return;
-    var originalValue = key === 'status' ? normalizeCrmStatus(editingLead)
-      : key === 'tags' ? (Array.isArray(editingLead.tags) ? editingLead.tags.slice() : [])
-      : key === 'firstName' ? splitLeadName(editingLead.name).first
-      : key === 'lastName' ? splitLeadName(editingLead.name).last
-      : isLeadsCustomFieldKey(key) ? ((editingLead.customFields && editingLead.customFields[key]) || '')
-      : editingLead[key];
+    var col = findLeadsColumnDef(root, key);
+    if (!col || col.editable === false) return;
+    var originalValue = leadsColFieldGet(col, editingLead);
     root._josLeadsEditCell = { leadId: leadId, field: key, originalValue: originalValue };
-    var colKey = LEADS_FIELD_TO_COL[key] || (isLeadsCustomFieldKey(key) ? key : null);
-    if (colKey) root._josLeadsActiveCell = { leadId: leadId, colKey: colKey };
+    root._josLeadsActiveCell = { leadId: leadId, colKey: key };
     renderLeads();
     var sel = root.querySelector('[data-jos-lead-field="' + key + '"][data-jos-lead-id="' + CSS.escape(leadId) + '"].jos-ld-editing');
     if (sel) {
@@ -9756,29 +9867,27 @@
     if (!editing) return;
     var lead = findLead(editing.leadId);
     if (lead) {
-      if (editing.field === 'status' && normalizeCrmStatus(lead) !== editing.originalValue) {
-        var prev = editing.originalValue || 'new';
-        lead.crmStatus = prev; lead.status = prev;
-        if (prev === 'lost') { lead.osStage = 'lost'; lead.stage = 'lost'; }
-        else if (prev === 'unqualified') { lead.osStage = 'spam'; lead.stage = 'unqualified'; }
-        else { lead.osStage = 'new'; lead.stage = prev; }
-      } else if (editing.field === 'assignedTo' && lead.assignedTo !== editing.originalValue) {
-        lead.assignedTo = editing.originalValue || '';
-      } else if (editing.field === 'tags') {
-        // Nothing has been written to the lead yet — Tags only commits on
-        // blur/'change', not per keystroke. But removing this still-focused
-        // <input> below (via the renderLeads() call) can itself synthesize
-        // a native 'change' event carrying whatever was typed, which would
-        // silently save the just-cancelled edit. Reset the live input back
-        // to its original value first so that stray commit is a no-op.
-        var tagsInput = root.querySelector('input[data-jos-lead-field="tags"][data-jos-lead-id="' + CSS.escape(editing.leadId) + '"]');
-        if (tagsInput) tagsInput.value = (editing.originalValue || []).join(', ');
-      } else if (editing.field === 'firstName' || editing.field === 'lastName' || editing.field === 'phone' || editing.field === 'email' || editing.field === 'service' || isLeadsCustomFieldKey(editing.field)) {
-        // Same reasoning as tags — reset the live input before the render
-        // below removes it, so a stray 'change' synthesized by that removal
-        // is a no-op instead of saving the just-cancelled edit.
-        var plainInput = root.querySelector('input[data-jos-lead-field="' + editing.field + '"][data-jos-lead-id="' + CSS.escape(editing.leadId) + '"]');
-        if (plainInput) plainInput.value = editing.originalValue || '';
+      var col = findLeadsColumnDef(root, editing.field);
+      if (col && col.type === 'select') {
+        // A live <select> commits the instant an option is picked (native
+        // 'change'), so by the time Escape is pressed the lead may already
+        // hold the new value — roll it back for real.
+        var currentValue = leadsColFieldGet(col, lead);
+        if (currentValue !== editing.originalValue) leadsColFieldSet(col, lead, editing.originalValue);
+      } else if (col) {
+        // Every other type only commits on blur/'change', never per
+        // keystroke — nothing has been written to the lead yet. But
+        // removing this still-focused <input> below (via the renderLeads()
+        // call) can itself synthesize a native 'change' event carrying
+        // whatever was typed, which would silently save the just-cancelled
+        // edit. Reset the live input back to its original value first so
+        // that stray commit is a no-op.
+        var renderer = rendererRegistry[col.type] || rendererRegistry.text;
+        var liveEl = root.querySelector('[data-jos-lead-field="' + editing.field + '"][data-jos-lead-id="' + CSS.escape(editing.leadId) + '"].jos-ld-editing');
+        if (liveEl) {
+          if (renderer.writeValue) renderer.writeValue(liveEl, editing.originalValue);
+          else liveEl.value = editing.originalValue == null ? '' : editing.originalValue;
+        }
       }
     }
     root._josLeadsEditCell = null;
@@ -10117,14 +10226,24 @@
         var newFieldLabel = window.prompt('Field name (e.g. "HOA", "Gate Code", "Venue")');
         newFieldLabel = newFieldLabel ? String(newFieldLabel).trim() : '';
         if (!newFieldLabel) return;
-        var newFieldId = leadsCustomFieldKey();
-        root._josLeadsCustomFields = (root._josLeadsCustomFields || []).concat([{ id: newFieldId, label: newFieldLabel }]);
+        var typeNames = LEADS_CUSTOM_FIELD_TYPES.map(function (t) { return t[0]; });
+        var typeRaw = window.prompt('Field type: ' + typeNames.join(', ') + ' (blank = text)', 'text');
+        var typeKey = String(typeRaw || 'text').trim().toLowerCase();
+        if (typeNames.indexOf(typeKey) < 0) typeKey = 'text';
+        var newField = { id: leadsCustomFieldKey(), label: newFieldLabel, type: typeKey };
+        if (typeKey === 'select') {
+          var optionsRaw = window.prompt('Options, comma-separated (e.g. "Sedan, SUV, Truck")');
+          var optionValues = String(optionsRaw || '').split(',').map(function (o) { return o.trim(); }).filter(Boolean);
+          if (!optionValues.length) { toast('Select fields need at least one option — field not created'); return; }
+          newField.options = optionValues.map(function (o) { return { value: o, label: o }; });
+        }
+        root._josLeadsCustomFields = (root._josLeadsCustomFields || []).concat([newField]);
         saveLeadsCustomFields(root._josLeadsCustomFields);
         // Business-wide field, but this user should see it immediately too
         // — append to their own column list rather than waiting on the
         // normalize-on-next-load merge.
         if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root, root._josLeadsCustomFields);
-        root._josLeadsColumns = root._josLeadsColumns.concat([{ key: newFieldId, label: newFieldLabel, hidden: false, custom: true }]);
+        root._josLeadsColumns = root._josLeadsColumns.concat([{ key: newField.id, label: newFieldLabel, hidden: false, custom: true }]);
         saveLeadsColumns(root._josLeadsColumns);
         root._josLeadsColAddOpen = false;
         toast('Added field "' + newFieldLabel + '"');
