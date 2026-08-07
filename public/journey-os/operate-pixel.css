@@ -4782,13 +4782,8 @@ html[data-theme="night"] .jos-mem-form select{
 }
 .jos-ld-stab.recover{background:transparent;color:#9A3412}
 .jos-ld-stab.recover.on{background:transparent;color:var(--jos-brand);border-bottom-color:var(--jos-brand)}
-/* Recovery is a workflow (a filter tab + a slim inline note when you open
-   one), not the biggest object on the page — no more full-width banner. */
-.jos-ld-recover-note{
-  margin:0 0 14px;padding:10px 12px;border-radius:10px;border:1px solid #F1DEC8;background:#FBF3EC;
-}
-.jos-ld-recover-note p{margin:0 0 8px;font-size:12.5px;line-height:1.4;color:#7C4A22}
-.jos-ld-recover-note strong{color:#7C4A22}
+/* Recovery is a workflow (a filter tab + a header description line + one
+   quick-action button), not the biggest object on the page — no banner. */
 .jos-ld-card.recover{border-color:#FDBA74;background:#FFFBF5}
 .jos-ld-card.recover.on{border-color:var(--jos-brand);background:var(--jos-brand-soft)}
 .jos-ld-ava.recover{background:linear-gradient(145deg,#F97316,#D9632D)}
@@ -4812,18 +4807,23 @@ html[data-theme="night"] .jos-mem-form select{
   outline:none;border-color:#9CA8BD;box-shadow:0 0 0 3px rgba(100,116,139,.14);
 }
 
-/* The table is the primary surface and gets the whole row by default —
-   no permanent second/third column. A detail panel exists only once a
-   lead is actually selected (.ws-open below), and even then it's a
-   single ~400px pane, not two stacked side panels. */
+/* Flex, not grid: the table (.jos-ld-inbox) is flex:1 and the panel
+   (.jos-ld-main) has an explicit, transitioned width. Because flex
+   continuously recomputes how much space flex:1 gets from whatever's
+   left, animating the panel's own width is enough to make the table
+   visibly resize in lockstep — no separate transition needed on the
+   table side, no grid-template-columns animation (unreliable across
+   engines for that property). This is what makes "table shrinks to
+   make room" / "table expands back to full width" actually animate
+   instead of snapping — a table-primary layout by default: the panel
+   claims space only while it's genuinely open, and even then it's a
+   single ~400px pane, not two stacked side panels.  */
 .jos-ld-layout{
-  flex:1;min-height:0;display:grid;grid-template-columns:1fr;gap:10px;
-  padding:0 0 10px;overflow-x:hidden;width:100%;max-width:100%;box-sizing:border-box;
+  flex:1;min-height:0;display:flex;gap:10px;
+  padding:0 0 10px;overflow:hidden;width:100%;max-width:100%;box-sizing:border-box;
 }
-.jos-ld-shell.ws-open .jos-ld-layout{
-  grid-template-columns:minmax(0,1fr) minmax(360px,400px);
-}
-.jos-ld-inbox,.jos-ld-main{min-height:0;min-width:0}
+.jos-ld-inbox,.jos-ld-main{min-height:0}
+.jos-ld-inbox{flex:1;min-width:0}
 .jos-ld-inbox{
   background:#fff;border:1px solid #ECECEC;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.04);
   display:flex;flex-direction:column;overflow:hidden;
@@ -4966,12 +4966,18 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-empty-list{padding:32px 16px;text-align:center;color:var(--jos-ink-2)}
 .jos-ld-empty-list strong{display:block;color:var(--jos-navy);margin-bottom:6px}
 
+/* Starts at width:0 (collapsed, invisible, not interactable) and is
+   flipped to .is-open one frame after insertion — see
+   animateLeadsPanelOpen(). Width is what drives the table's resize
+   (flex:1 sibling), transform+opacity are the actual "slide" feel. */
 .jos-ld-main{
   background:#fff;border:1px solid #ECECEC;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.04);
-  overflow:auto;padding:0;animation:josLdSlideIn .18s ease both;
+  overflow:hidden;padding:0;flex:0 0 auto;width:0;opacity:0;transform:translateX(10px);
+  transition:width .2s ease,opacity .16s ease,transform .2s ease;
 }
-@keyframes josLdSlideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
-@media (prefers-reduced-motion:reduce){.jos-ld-main{animation:none}}
+.jos-ld-main.is-open{width:400px;opacity:1;transform:translateX(0);overflow:auto}
+@media(max-width:1279px){.jos-ld-main.is-open{width:340px}}
+@media (prefers-reduced-motion:reduce){.jos-ld-main{transition:none}}
 .jos-ld-workspace{display:flex;flex-direction:column;min-height:100%}
 .jos-ld-ws-head{
   display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:16px 16px 10px;flex-wrap:wrap;
@@ -4979,14 +4985,13 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-ws-identity{display:flex;gap:10px;align-items:center}
 .jos-ld-ws-name{display:flex;align-items:center;gap:8px}
 .jos-ld-ws-name strong{font-size:16px;font-weight:800;color:var(--jos-navy);letter-spacing:-.02em}
-.jos-ld-qa{display:flex;gap:4px}
-.jos-ld-props{
-  display:flex;flex-wrap:wrap;gap:10px 16px;padding:0 16px 12px;margin-bottom:2px;border-bottom:1px solid #F3F4F6;
-}
-.jos-ld-prop{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;color:#8B909A;text-transform:uppercase;letter-spacing:.03em}
-.jos-ld-prop .jos-ld-select{margin-top:0;height:30px;font-size:12.5px;min-width:120px}
-.jos-ld-prop-tags{flex:1;min-width:160px}
-.jos-ld-prop-tags .jos-ld-tags{margin-top:0}
+.jos-ld-status-badge{appearance:none;border:0;cursor:pointer;transition:filter .12s ease}
+.jos-ld-status-badge:hover{filter:brightness(.96)}
+.jos-ld-select-inline{height:24px;font-size:11px;padding:0 8px;border-radius:999px}
+/* Quick Actions — compact icon buttons only, nothing that reads as a form. */
+.jos-ld-qa{display:flex;gap:4px;padding:0 16px 12px}
+.jos-ld-qa-recover{color:#B4692D}
+.jos-ld-qa-recover:hover{background:#FBF3EC}
 .jos-ld-ws-tabs{
   display:flex;gap:2px;padding:0 16px;border-bottom:1px solid var(--jos-border);overflow:auto;flex-shrink:0;
 }
@@ -5002,10 +5007,9 @@ html[data-theme="night"] .jos-mem-form select{
   width:72px;height:72px;margin:0 auto 16px;border-radius:20px;
   background:linear-gradient(145deg,#FFF4ED,#FFE8D9);border:1px solid rgba(217,99,45,.18);
 }
-.jos-ld-overview{display:grid;grid-template-columns:1fr;gap:14px}
-.jos-ld-info,.jos-ld-score-card,.jos-ld-msg-card,.jos-ld-ai-card{
-  background:#fff;border:1px solid #ECECEC;border-radius:14px;padding:14px 16px;box-shadow:0 4px 16px rgba(0,0,0,.03);
-}
+/* A persistent, always-visible read-only section below whichever tab is
+   active — not a floating card, just the next section of the same panel. */
+.jos-ld-info{padding:12px 16px 16px;border-top:1px solid #F3F4F6}
 /* Label above value, never a cramped horizontal split — a fixed-width
    label column was forcing long values (emails especially) to wrap
    character-by-character in a ~150px-wide detail panel. */
@@ -5149,22 +5153,23 @@ html[data-theme="night"] .jos-mem-form select{
 }
 .jos-leads-ctx button:hover{background:var(--jos-brand-soft);color:var(--jos-brand-dark)}
 
-@media(max-width:1399px){
-  .jos-ld-layout{grid-template-columns:300px minmax(0,1fr);grid-template-rows:auto auto}
-  .jos-ld-rail{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));max-height:none}
-}
+/* Below desktop widths, the panel overlays as a fixed pane instead of
+   squeezing the table via flex — same "never permanently reserve
+   space" rule, just an overlay instead of a shrink at this size. */
 @media(max-width:1023px){
   #p-app.jos-pixel.jos-leads-mode:not(.jos-nav-expanded){--nav:80px}
   #p-app.jos-pixel.jos-leads-mode:not(.jos-nav-expanded) .ni .ni-lbl,
   #p-app.jos-pixel.jos-leads-mode:not(.jos-nav-expanded) .nav-profile-meta{display:none!important}
   .jos-ld-page{padding:24px 16px 0}
-  .jos-ld-layout{grid-template-columns:1fr}
-  .jos-ld-inbox{max-height:42vh}
   .jos-ld-header{gap:16px}
   .jos-ld-header h1,.jos-ld-header .hub-page-title{font-size:24px}
   .jos-ld-export,.jos-ld-new,.jos-ld-bulk{width:auto;min-width:0;padding:0 14px}
   .jos-ld-fab{display:flex;align-items:center;justify-content:center}
-  .jos-ld-overview{grid-template-columns:1fr}
+  .jos-ld-main{
+    position:fixed;top:0;right:0;bottom:0;z-index:200;border-radius:0;
+    box-shadow:-12px 0 40px rgba(0,0,0,.12);
+  }
+  .jos-ld-main.is-open{width:min(400px,92vw)}
 }
 @media(max-width:767px){
   #p-app.jos-pixel.jos-leads-mode{--nav:0px}
@@ -5172,9 +5177,6 @@ html[data-theme="night"] .jos-mem-form select{
   #p-app.jos-pixel.jos-leads-mode .app-main{margin-left:0}
   .jos-ld-page{padding:16px 12px 0}
   .jos-ld-layout{padding:0 0 80px}
-  .jos-ld-main{display:none}
-  .jos-ld-shell.ws-open .jos-ld-inbox{display:none}
-  .jos-ld-shell.ws-open .jos-ld-main{display:block}
 }
 
 /* ─── Customers CRM Command Center ───────────────────────────────── */

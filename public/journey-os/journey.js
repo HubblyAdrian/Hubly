@@ -7226,12 +7226,10 @@
     ['unqualified', 'Unqualified']
   ];
   var LEADS_WS_TABS = [
-    ['overview', 'Overview'],
-    ['activity', 'Activity'],
+    ['timeline', 'Timeline'],
     ['notes', 'Notes'],
-    ['appointments', 'Appointments'],
     ['tasks', 'Tasks'],
-    ['files', 'Files']
+    ['appointments', 'Appointments']
   ];
   /* Won is not a lead tab — booked work lives in Jobs; finished people become Customers. */
   var LEADS_CRM_STATUSES = ['new', 'contacted', 'qualified', 'lost', 'unqualified'];
@@ -7342,6 +7340,7 @@
       if (!root) return;
       root._josLeadsTab = 'recovery';
       root._josLeadId = null;
+      root._josLeadPanelOpen = false;
       try { renderLeads(); } catch (e) {}
     };
     if (typeof global.requestAnimationFrame === 'function') global.requestAnimationFrame(apply);
@@ -8083,147 +8082,108 @@
       '</div>';
   }
 
+  // A customer profile, not a settings form: header (identity + status +
+  // close) → compact quick actions → tabs (Timeline default) → a short,
+  // always-visible, read-only Information list. No standalone recovery
+  // banner, checklist card, message card, or AI card — recovery gets one
+  // quick-action button plus a line in the header description; everything
+  // else either lives in a tab or didn't earn a permanent spot.
   function renderLeadWorkspace(root, lead, ws) {
     if (!lead) return '';
     var crm = normalizeCrmStatus(lead);
-    var checklist = leadChecklist(lead);
-    var rec = leadAiRecommendation(lead);
-    var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
+    var leadKey = String(lead.id || lead.key);
+    var recover = isRecoveryLead(lead);
+    var statusEditing = !!root._josLeadStatusEditing;
+    var assignedEditing = !!root._josLeadAssignedEditing;
+
+    var shortDesc = recover
+      ? ('Incomplete booking · Left at ' + leadDropStep(lead))
+      : ((lead.industry || 'Residential') + ' · ' + (lead.service || 'Service'));
+
+    var statusBadge = statusEditing
+      ? '<select id="jos-ld-status" class="jos-ld-select jos-ld-select-inline" autofocus>' +
+        LEADS_CRM_STATUSES.map(function (s) {
+          return '<option value="' + s + '"' + (crm === s ? ' selected' : '') + '>' + esc(LEADS_STATUS_LABEL[s]) + '</option>';
+        }).join('') + '</select>'
+      : '<button type="button" class="jos-pill ' + leadStatusTone(crm) + ' jos-ld-status-badge" data-jos-act="leads-status-edit-open" title="Click to change status">' + esc(leadCrmLabel(lead)) + '</button>';
+
+    var head = '<div class="jos-ld-ws-head">' +
+      '<div class="jos-ld-ws-identity">' +
+      '<span class="jos-ld-ava' + (recover ? ' recover' : '') + '">' + esc(initials(lead.name)) + '</span>' +
+      '<div><div class="jos-ld-ws-name"><strong>' + esc(lead.name || 'Lead') + '</strong>' + statusBadge + '</div>' +
+      '<div class="jos-muted">' + esc(shortDesc) + '</div></div></div>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-detail-close" title="Close" aria-label="Close">✕</button>' +
+      '</div>';
+
+    var quickActions = '<div class="jos-ld-qa">' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-call" title="Call" aria-label="Call">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.4 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.6A2 2 0 0 1 22 16.9z"/></svg></button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-sms" title="Text" aria-label="Text">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-email" title="Email" aria-label="Email">' +
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></button>' +
+      (recover
+        ? '<button type="button" class="jos-icon-btn jos-ld-qa-recover" data-jos-act="leads-recover-sms" title="Recover Booking" aria-label="Recover Booking">' +
+          '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>'
+        : '') +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-more-menu" title="More" aria-label="More">⋯</button>' +
+      '</div>';
 
     var tabBar = '<div class="jos-ld-ws-tabs">' + LEADS_WS_TABS.map(function (t) {
       return '<button type="button" class="jos-ld-ws-tab' + (ws === t[0] ? ' on' : '') + '" data-jos-lead-ws="' + t[0] + '">' + t[1] + '</button>';
     }).join('') + '</div>';
 
-    var recover = isRecoveryLead(lead);
-    var head = '<div class="jos-ld-ws-head">' +
-      '<div class="jos-ld-ws-identity">' +
-      '<span class="jos-ld-ava' + (recover ? ' recover' : '') + '">' + esc(initials(lead.name)) + '</span>' +
-      '<div><div class="jos-ld-ws-name"><strong>' + esc(lead.name || 'Lead') + '</strong>' +
-      (recover ? '<span class="jos-pill warn">Recover</span>' : '') +
-      '</div>' +
-      '<div class="jos-muted">' + esc(recover ? ('Incomplete booking · Left at ' + leadDropStep(lead)) : ((lead.industry || 'Residential') + ' · ' + (lead.service || 'Service'))) + '</div></div></div>' +
-      '<div class="jos-ld-qa">' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="leads-call" title="Call" aria-label="Call">' +
-      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.4 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.6A2 2 0 0 1 22 16.9z"/></svg></button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="' + (recover ? 'leads-recover-sms' : 'leads-sms') + '" title="SMS" aria-label="SMS">' +
-      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="leads-email" title="Email" aria-label="Email">' +
-      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="leads-more-menu" title="More" aria-label="More">⋯</button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="leads-detail-close" title="Close" aria-label="Close">✕</button>' +
-      '</div></div>';
-
-    // Real per-lead properties (status/assigned/tags) as one compact strip
-    // at the top of the panel — replaces what used to be three separate
-    // full-size "widget" cards in a permanent third column.
-    var props = '<div class="jos-ld-props">' +
-      '<label class="jos-ld-prop"><span>Status</span><select id="jos-ld-status" class="jos-ld-select">' +
-      LEADS_CRM_STATUSES.map(function (s) {
-        return '<option value="' + s + '"' + (crm === s ? ' selected' : '') + '>' + esc(LEADS_STATUS_LABEL[s]) + '</option>';
-      }).join('') + '</select></label>' +
-      '<label class="jos-ld-prop"><span>Assigned</span><select id="jos-ld-assigned" class="jos-ld-select">' +
-      '<option value=""' + (!lead.assignedTo ? ' selected' : '') + '>Unassigned</option>' +
-      team.map(function (t) {
-        return '<option value="' + esc(t.name) + '"' + (lead.assignedTo === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
-      }).join('') + '</select></label>' +
-      '<div class="jos-ld-prop jos-ld-prop-tags"><span>Tags</span><div class="jos-ld-tags">' +
-      ((lead.tags && lead.tags.length) ? lead.tags.map(function (tg, i) {
-        return '<button type="button" class="jos-ld-tag" data-jos-act="leads-tag-remove" data-jos-tag-i="' + i + '">' + esc(tg) + ' ×</button>';
-      }).join('') : '<span class="jos-muted">No tags</span>') +
-      '<button type="button" class="jos-ld-tag add" data-jos-act="leads-add-tag">+ Add</button>' +
-      '</div></div></div>';
-
     var body = '';
-    if (ws === 'overview') {
-      var fields = [
-        ['Phone', displayPhone(lead.phone), 'leads-call'],
-        ['Email', lead.email || '—', 'leads-email'],
-        ['Address', lead.address || lead.property || '—', ''],
-        ['Source', srcLabel(srcKind(lead.source, lead)), ''],
-        ['Interested In', lead.service || '—', ''],
-        ['Dropped at', recover ? leadDropStep(lead) : '—', ''],
-        ['Budget', lead.budget || money(lead.estimatedValue || lead.amount) || '—', ''],
-        ['Best Time to Contact', lead.bestTime || '—', ''],
-        ['Notes', (lead.notesList && lead.notesList[0]) || lead.notes || '—', '']
-      ];
-      if (!recover) fields = fields.filter(function (f) { return f[0] !== 'Dropped at'; });
-      // Recovery gets a slim, neutral-toned inline note with real actions —
-      // not a full-width colored banner competing with the rest of the panel.
-      var recoverNote = recover
-        ? '<section class="jos-ld-recover-note">' +
-          '<p><strong>Started booking, didn’t finish</strong> — left at ' + esc(leadDropStep(lead)) + (lead.service ? ' · ' + esc(lead.service) : '') + ' · ' + esc(leadRelativeTime(lead)) + '</p>' +
-          '<div class="jos-btn-row">' +
-          btn('leads-recover-sms', 'Send Recovery Text', 'jos-btn-brand jos-btn-sm') +
-          btn('leads-recover-resume', 'Finish booking', 'jos-btn jos-btn-sm') +
-          btn('leads-recover-done', 'Mark recovered', 'jos-btn jos-btn-sm') +
-          btn('leads-recover-lost', 'Mark lost', 'jos-btn jos-btn-sm') +
-          '</div></section>'
-        : '';
-      body = recoverNote + '<div class="jos-ld-overview">' +
-        '<section class="jos-ld-info">' +
-        '<div class="jos-kicker">Lead Information</div>' +
-        fields.map(function (f) {
-          var val = f[1];
-          var isEmpty = !val || val === '—';
-          return '<div class="jos-ld-field' + (f[2] ? ' clickable' : '') + (isEmpty ? ' is-empty' : '') + '"' + (f[2] ? ' data-jos-act="' + f[2] + '"' : '') + '>' +
-            '<span>' + esc(f[0]) + '</span><strong>' + esc(val) + '</strong></div>';
-        }).join('') +
-        '</section>' +
-        '<section class="jos-ld-score-card">' +
-        '<div class="jos-kicker">Checklist</div>' +
-        '<ul class="jos-ld-check">' + checklist.map(function (c) {
-          return '<li class="' + (c.done ? 'done' : '') + '">' + (c.done ? '✓' : '○') + ' ' + esc(c.label) + '</li>';
-        }).join('') + '</ul></section></div>' +
-        '<section class="jos-ld-msg-card">' +
-        '<div class="jos-kicker">' + (recover ? 'Recovery message draft' : 'Latest Message') + '</div>' +
-        '<p>' + esc(recover ? leadRecoverySms(lead) : (lead.lastMessage || 'No messages yet')) + '</p>' +
-        (recover
-          ? '<div class="jos-btn-row">' + btn('leads-recover-sms', 'Send this text', 'jos-btn-brand jos-btn-sm') + btn('go-chats', 'Open Inbox', 'jos-btn jos-btn-sm') + '</div>'
-          : '<button type="button" class="jos-linkish" data-jos-act="go-chats">View Conversation</button>') +
-        '</section>' +
-        '<section class="jos-ld-ai-card">' +
-        '<div class="jos-ld-ai-badge">AI</div>' +
-        '<strong>' + esc(rec.title) + '</strong>' +
-        '<p>' + esc(rec.body) + '</p>' +
-        '<div class="jos-btn-row">' +
-        (recover
-          ? btn('leads-recover-sms', 'Send Recovery Text', 'jos-btn-brand jos-btn-sm') +
-            btn('leads-recover-resume', 'Finish booking', 'jos-btn jos-btn-sm') +
-            btn('leads-call', 'Call Now', 'jos-btn jos-btn-sm')
-          : btn('leads-call', 'Contact Now', 'jos-btn-brand jos-btn-sm') +
-            btn('leads-create-quote', 'Send Estimate', 'jos-btn jos-btn-sm') +
-            btn('leads-followup', 'Schedule Appointment', 'jos-btn jos-btn-sm') +
-            btn('leads-ai-dismiss', 'Dismiss', 'jos-btn jos-btn-sm')) +
-        '</div></section>';
-    } else if (ws === 'activity') {
-      body = '<div class="jos-ld-timeline">' + ((lead.activity || []).map(function (a) {
-        return '<button type="button" class="jos-ld-tl" data-jos-act="leads-ai-summary"><i></i><span><strong>' + esc(a.label) + '</strong><span class="jos-muted">' + esc(a.at || '') + '</span></span></button>';
-      }).join('') || '<div class="jos-muted">No activity yet</div>') + '</div>';
-    } else if (ws === 'notes') {
+    if (ws === 'notes') {
       body = '<div class="jos-stack">' +
         ((lead.notesList || []).length ? lead.notesList.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') : '<div class="jos-muted">No notes yet</div>') +
         '<div class="jos-chat-input jos-mt"><input id="jos-leads-note-new" placeholder="Add note…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-note-add">Add</button></div></div>';
-    } else if (ws === 'appointments') {
-      body = '<div class="jos-stack">' +
-        ((lead.appointments || []).length ? lead.appointments.map(function (a) {
-          return '<div class="jos-note"><strong>' + esc(a.label || 'Appointment') + '</strong><div class="jos-muted">' + esc(a.when || '') + '</div></div>';
-        }).join('') : '<div class="jos-muted">No appointments yet</div>') +
-        '<div class="jos-btn-row">' + btn('leads-followup', 'Schedule Appointment', 'jos-btn-brand jos-btn-sm') + btn('leads-convert-job', 'Convert to Job', 'jos-btn jos-btn-sm') + '</div></div>';
     } else if (ws === 'tasks') {
       body = '<div class="jos-stack">' +
         ((lead.tasks || []).length ? lead.tasks.map(function (t, i) {
           return '<label class="jos-check-row"><input type="checkbox" data-jos-act="leads-task-toggle" data-jos-task-i="' + i + '"' + (t.done ? ' checked' : '') + '> ' + esc(t.label) + '</label>';
         }).join('') : '<div class="jos-empty">No tasks yet</div>') +
         '<div class="jos-chat-input jos-mt"><input id="jos-leads-task-new" placeholder="New task…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-task-add">Add</button></div></div>';
-    } else {
+    } else if (ws === 'appointments') {
       body = '<div class="jos-stack">' +
-        ((lead.files || []).length ? lead.files.map(function (f, i) {
-          return '<div class="jos-between jos-note"><div>' + esc(f.name || f) + '</div><button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-file-del" data-jos-file-i="' + i + '">Remove</button></div>';
-        }).join('') : '<div class="jos-empty">No files attached</div>') +
-        '<div class="jos-mt">' + btn('leads-file-add', 'Add File', 'jos-btn-brand jos-btn-sm') + '</div></div>';
+        ((lead.appointments || []).length ? lead.appointments.map(function (a) {
+          return '<div class="jos-note"><strong>' + esc(a.label || 'Appointment') + '</strong><div class="jos-muted">' + esc(a.when || '') + '</div></div>';
+        }).join('') : '<div class="jos-muted">No appointments yet</div>') +
+        '<div class="jos-btn-row">' + btn('leads-followup', 'Schedule Appointment', 'jos-btn-brand jos-btn-sm') + btn('leads-convert-job', 'Convert to Job', 'jos-btn jos-btn-sm') + '</div></div>';
+    } else { // timeline (default)
+      body = '<div class="jos-ld-timeline">' + ((lead.activity || []).map(function (a) {
+        return '<button type="button" class="jos-ld-tl" data-jos-act="leads-ai-summary"><i></i><span><strong>' + esc(a.label) + '</strong><span class="jos-muted">' + esc(a.at || '') + '</span></span></button>';
+      }).join('') || '<div class="jos-muted">No activity yet</div>') + '</div>';
     }
 
-    return '<div class="jos-ld-workspace" data-jos-lead-id="' + esc(String(lead.id || lead.key)) + '">' + head + props + tabBar + '<div class="jos-ld-ws-body">' + body + '</div></div>';
+    var infoFields = [
+      ['Phone', displayPhone(lead.phone), 'leads-call'],
+      ['Email', lead.email || '—', 'leads-email'],
+      ['Address', lead.address || lead.property || '—', ''],
+      ['Service', lead.service || '—', ''],
+      ['Source', srcLabel(srcKind(lead.source, lead)), '']
+    ];
+    var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
+    var assignedRow = assignedEditing
+      ? '<div class="jos-ld-field"><span>Assigned To</span><select id="jos-ld-assigned" class="jos-ld-select jos-ld-select-inline" autofocus>' +
+        '<option value=""' + (!lead.assignedTo ? ' selected' : '') + '>Unassigned</option>' +
+        team.map(function (t) {
+          return '<option value="' + esc(t.name) + '"' + (lead.assignedTo === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+        }).join('') + '</select></div>'
+      : '<div class="jos-ld-field clickable" data-jos-act="leads-assigned-edit-open" title="Click to change">' +
+        '<span>Assigned To</span><strong' + (lead.assignedTo ? '' : ' class="is-empty"') + '>' + esc(lead.assignedTo || 'Unassigned') + '</strong></div>';
+
+    var infoSection = '<section class="jos-ld-info">' +
+      '<div class="jos-kicker">Information</div>' +
+      infoFields.map(function (f) {
+        var val = f[1];
+        var isEmpty = !val || val === '—';
+        return '<div class="jos-ld-field' + (f[2] ? ' clickable' : '') + (isEmpty ? ' is-empty' : '') + '"' + (f[2] ? ' data-jos-act="' + f[2] + '"' : '') + '>' +
+          '<span>' + esc(f[0]) + '</span><strong>' + esc(val) + '</strong></div>';
+      }).join('') + assignedRow +
+      '</section>';
+
+    return '<div class="jos-ld-workspace" data-jos-lead-id="' + esc(leadKey) + '">' + head + quickActions + tabBar + '<div class="jos-ld-ws-body">' + body + '</div>' + infoSection + '</div>';
   }
 
   function renderLeadsContextMenu(root) {
@@ -8285,6 +8245,40 @@
     menu.classList.add('jos-positioned');
   }
 
+  // Panel starts rendered at width:0 (see the panelJustOpened branch in
+  // renderLeadsPage); forcing a layout read here before adding .is-open
+  // is what makes the browser actually animate the 0→open width change
+  // instead of just painting the end state directly on insert.
+  function animateLeadsPanelOpen(root) {
+    var panel = root.querySelector('.jos-ld-main');
+    if (!panel) return;
+    void panel.offsetWidth;
+    panel.classList.add('is-open');
+  }
+
+  function prefersReducedMotion() {
+    try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+  }
+
+  // Close is animated then removed, not removed-then-would-be-animated:
+  // play the slide-out on the real node first, and only null the selection
+  // state (which triggers the re-render that actually drops the node from
+  // the DOM) once the transition has genuinely finished.
+  function closeLeadsDetailPanel(root) {
+    var panel = root.querySelector('.jos-ld-main');
+    var finish = function () {
+      root._josLeadPanelOpen = false;
+      root._josLeadPanelWasOpen = false;
+      renderLeads();
+    };
+    if (!panel || prefersReducedMotion()) return finish();
+    var done = false;
+    var settle = function () { if (done) return; done = true; finish(); };
+    panel.classList.remove('is-open');
+    panel.addEventListener('transitionend', settle, { once: true });
+    setTimeout(settle, 260); // fallback in case transitionend never fires
+  }
+
   function renderLeadsPage(root) {
     seedDemoLeadsIfEmpty();
     syncAbandonedLeadsIntoPipeline();
@@ -8292,7 +8286,7 @@
     ensureLeadsOsState();
     if (!root._josLeadsTab) root._josLeadsTab = 'all';
     var tab = root._josLeadsTab || 'all';
-    var ws = root._josLeadWorkspace || 'overview';
+    var ws = root._josLeadWorkspace || 'timeline';
     var all = leadsOsList();
     var recoveryCount = all.filter(isRecoveryLead).length;
     var filtered = filterLeadsList(root);
@@ -8304,6 +8298,7 @@
     if (selectedId && !sel) {
       selectedId = null;
       root._josLeadId = null;
+      root._josLeadPanelOpen = false;
     }
     if (sel) {
       sel.unread = 0;
@@ -8317,7 +8312,16 @@
     var viewMode = root._josLeadsView === 'table' ? 'table' : 'list';
     if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
     var leadsColumns = root._josLeadsColumns;
-    var wsOpen = !!sel && !!root._josLeadId;
+    // Selection and panel-open are separate: closing the panel keeps the
+    // row highlighted (per spec — "keep the selected row highlighted until
+    // another row is selected"), it just hides the panel.
+    var wsOpen = !!sel && !!root._josLeadPanelOpen;
+    // A freshly-opened panel starts at width:0 and animates in (see
+    // animateLeadsPanelOpen below). Every OTHER render while it's already
+    // open (switching tabs, editing a field) renders straight into the
+    // open state — otherwise the slide-in would replay on every keystroke.
+    var panelJustOpened = wsOpen && !root._josLeadPanelWasOpen;
+    root._josLeadPanelWasOpen = wsOpen;
     var moreFiltersOpen = !!root._josLeadFilterOpen;
     var activeFilterCount = 0;
     ['source', 'service', 'assigned', 'status', 'vehicle', 'property', 'tags', 'created', 'lastContacted', 'pipeline', 'quoteStatus', 'valueMin', 'valueMax'].forEach(function (k) {
@@ -8420,7 +8424,7 @@
         ? '<button type="button" class="jos-btn jos-ld-loadmore" data-jos-act="leads-load-more">Load More Leads</button>'
         : (filtered.length ? '<div class="jos-muted jos-ld-end">End of list</div>' : '')) +
       '</section>' +
-      (sel ? '<section class="jos-ld-main">' + renderLeadWorkspace(root, sel, ws) + '</section>' : '') +
+      (wsOpen ? '<section class="jos-ld-main' + (panelJustOpened ? '' : ' is-open') + '">' + renderLeadWorkspace(root, sel, ws) + '</section>' : '') +
       '</div>' +
       '</div>' +
 
@@ -8435,6 +8439,7 @@
     wireLeadsRoot(root);
     positionLeadsColMenu(root);
     restoreLeadsGridFocus(root);
+    if (panelJustOpened) animateLeadsPanelOpen(root);
     try {
       var badge = el('nav-leads-badge');
       if (badge) {
@@ -8496,6 +8501,7 @@
     root._josLeadAddOpen = false;
     root._josLeadDraft = null;
     root._josLeadId = id;
+    root._josLeadPanelOpen = true;
     root._josLeadsTab = 'all';
     if (andQuote) {
       lead.quote = { id: 'q_' + id, amount: 0, status: 'draft', packageName: lead.service || 'Service', sentAt: todayStr() };
@@ -8753,7 +8759,8 @@
       var card = e.target.closest('[data-jos-lead-id]');
       if (card && !e.target.closest('[data-jos-act]') && !e.target.closest('[data-jos-lead-field]')) {
         root._josLeadId = card.getAttribute('data-jos-lead-id');
-        root._josLeadWorkspace = 'overview';
+        root._josLeadPanelOpen = true;
+        root._josLeadWorkspace = 'timeline';
         root._josLeadCtx = null;
         var lead = findLead(root._josLeadId);
         if (lead) {
@@ -8824,6 +8831,7 @@
         var leadSt = selectedLead();
         if (!leadSt) return;
         var next = e.target.value;
+        root._josLeadStatusEditing = false;
         mutateLead(function (l) {
           l.crmStatus = next;
           l.status = next;
@@ -8837,11 +8845,13 @@
       }
       if (id === 'jos-ld-assigned') {
         var name = e.target.value;
+        root._josLeadAssignedEditing = false;
         mutateLead(function (l) {
           l.assignedTo = name;
-          pushLeadActivity(l, 'assign', 'Assigned to ' + name);
+          pushLeadActivity(l, 'assign', name ? ('Assigned to ' + name) : 'Unassigned');
         });
-        toast('Assigned to ' + name);
+        toast(name ? ('Assigned to ' + name) : 'Unassigned');
+        return;
       }
       if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-field')) {
         var fieldKey = e.target.getAttribute('data-jos-lead-field');
@@ -8997,6 +9007,19 @@
           renderLeads();
         }
       }, 0);
+    }, true);
+    // Same panel, different fields: clicking away from the Status/Assigned
+    // inline editors without picking a new value should just close them —
+    // a real <select> already fires 'change' (handled above) when the
+    // value actually moves, this only needs to catch the no-change case.
+    root.addEventListener('blur', function (e) {
+      var t2 = e.target;
+      if (!t2 || !t2.id) return;
+      if (t2.id === 'jos-ld-status' && root._josLeadStatusEditing) {
+        setTimeout(function () { if (root._josLeadStatusEditing) { root._josLeadStatusEditing = false; renderLeads(); } }, 0);
+      } else if (t2.id === 'jos-ld-assigned' && root._josLeadAssignedEditing) {
+        setTimeout(function () { if (root._josLeadAssignedEditing) { root._josLeadAssignedEditing = false; renderLeads(); } }, 0);
+      }
     }, true);
     root.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
@@ -9188,9 +9211,22 @@
 
     try {
       if (act === 'leads-detail-close') {
-        root._josLeadId = null;
-        root.querySelector('.jos-ld-shell') && root.querySelector('.jos-ld-shell').classList.remove('ws-open');
+        // Row stays selected/highlighted — only the panel closes.
+        closeLeadsDetailPanel(root);
+        return;
+      }
+      if (act === 'leads-status-edit-open') {
+        root._josLeadStatusEditing = true;
         renderLeads();
+        var statusSel = el('jos-ld-status');
+        if (statusSel) statusSel.focus();
+        return;
+      }
+      if (act === 'leads-assigned-edit-open') {
+        root._josLeadAssignedEditing = true;
+        renderLeads();
+        var assignedSel = el('jos-ld-assigned');
+        if (assignedSel) assignedSel.focus();
         return;
       }
       if (act === 'leads-recover-sms') {
@@ -9230,7 +9266,7 @@
           l.lastContacted = new Date().toISOString();
           pushLeadActivity(l, 'recover', 'Opened finish-booking path');
         });
-        root._josLeadWorkspace = 'overview';
+        root._josLeadWorkspace = 'timeline';
         try {
           if (typeof global.openSmartQuote === 'function') global.openSmartQuote();
           else if (typeof global.switchV === 'function') switchNav('quotes');
@@ -9671,6 +9707,7 @@
           }
         });
         root._josLeadId = null;
+        root._josLeadPanelOpen = false;
         toast('Lead deleted');
         return renderLeads();
       }
@@ -9690,6 +9727,7 @@
         copy.key = copy.id;
         st2.pipeline.manual.unshift(copy);
         root._josLeadId = copy.id;
+        root._josLeadPanelOpen = true;
         toast('Lead duplicated');
         return renderLeads();
       }
@@ -18111,10 +18149,13 @@
         var lwRoot = el('jos-leads-root'); if (lwRoot) { lwRoot._josLeadWorkspace = t.getAttribute('data-jos-lead-ws'); renderLeads(); }
         return;
       }
-      if (t.hasAttribute('data-jos-lead-id')) {
-        var liRoot = el('jos-leads-root'); if (liRoot) { liRoot._josLeadId = t.getAttribute('data-jos-lead-id'); liRoot._josLeadWorkspace = liRoot._josLeadWorkspace || 'overview'; renderLeads(); }
-        return;
-      }
+      // data-jos-lead-id is NOT handled here: wireLeadsRoot() (journey.js,
+      // called right after bindRoot() for the leads root) owns row-open
+      // for leads with the full logic (markLeadSeen, ctx-menu clear, grid
+      // focus). bindRoot fires first since it's wired one line earlier, so
+      // handling it here too caused every row click to render leads TWICE —
+      // the 2nd render saw the panel as already-open and skipped the
+      // open animation entirely, snapping straight to the end state.
       if (t.hasAttribute('data-jos-card')) {
         var cards = el('jos-pipeline-root')?._josCards || [];
         return openCard(cards.find(function (c) { return String(c.id) === String(t.getAttribute('data-jos-card')); }));
@@ -18129,7 +18170,7 @@
         return;
       }
       if (t.hasAttribute('data-jos-lead-row')) {
-        var lr = el('jos-leads-root'); if (lr) { lr._josLeadId = t.getAttribute('data-jos-lead-row') || t.getAttribute('data-jos-lead-id'); renderLeads(); }
+        var lr = el('jos-leads-root'); if (lr) { lr._josLeadId = t.getAttribute('data-jos-lead-row') || t.getAttribute('data-jos-lead-id'); lr._josLeadPanelOpen = true; renderLeads(); }
         return;
       }
       if (t.hasAttribute('data-jos-lead')) { var key = t.getAttribute('data-jos-lead'); if (key && typeof global.viewLead === 'function') global.viewLead(key); return; }
