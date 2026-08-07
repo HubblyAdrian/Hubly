@@ -7190,6 +7190,7 @@
     { key: 'service', label: 'Service' },
     { key: 'status', label: 'Status' },
     { key: 'assigned', label: 'Assigned' },
+    { key: 'tags', label: 'Tags', hidden: true },
     { key: 'created', label: 'Created' }
   ];
   function leadsColumnsStorageKey() {
@@ -7198,10 +7199,12 @@
   function loadLeadsColumns() {
     var saved = null;
     try { saved = JSON.parse(localStorage.getItem(leadsColumnsStorageKey()) || 'null'); } catch (e) { saved = null; }
-    if (!Array.isArray(saved) || !saved.length) return LEADS_DEFAULT_COLUMNS.map(function (c) { return { key: c.key, label: c.label, hidden: false }; });
+    if (!Array.isArray(saved) || !saved.length) return LEADS_DEFAULT_COLUMNS.map(function (c) { return { key: c.key, label: c.label, hidden: !!c.hidden }; });
     // Merge saved order/labels/hidden with defaults so a newly-added default
     // column (a future code change) still shows up for existing businesses,
-    // and any column key that no longer exists is dropped safely.
+    // and any column key that no longer exists is dropped safely. A newly
+    // added column's own default `hidden` is respected (e.g. Tags ships
+    // hidden-by-default) rather than always forced visible.
     var byKey = {};
     LEADS_DEFAULT_COLUMNS.forEach(function (c) { byKey[c.key] = c; });
     var out = saved.filter(function (s) { return byKey[s.key]; }).map(function (s) {
@@ -7209,11 +7212,28 @@
     });
     var seen = {};
     out.forEach(function (c) { seen[c.key] = true; });
-    LEADS_DEFAULT_COLUMNS.forEach(function (c) { if (!seen[c.key]) out.push({ key: c.key, label: c.label, hidden: false }); });
+    LEADS_DEFAULT_COLUMNS.forEach(function (c) { if (!seen[c.key]) out.push({ key: c.key, label: c.label, hidden: !!c.hidden }); });
     return out;
   }
   function saveLeadsColumns(cols) {
     try { localStorage.setItem(leadsColumnsStorageKey(), JSON.stringify(cols)); } catch (e) {}
+  }
+  // Freeze panes, spreadsheet-style: "freeze up to here" pins that column
+  // and everything left of it while the rest scrolls horizontally underneath.
+  // Stored as a count (how many leading visible columns are frozen), not a
+  // per-column flag — freezing is inherently about position, not identity,
+  // so if columns get reordered, whichever ends up leading stays frozen.
+  function leadsFrozenCountStorageKey() {
+    return 'hubly_leads_frozen_v1_' + (S().slug || 'default');
+  }
+  function loadLeadsFrozenCount() {
+    try {
+      var n = parseInt(localStorage.getItem(leadsFrozenCountStorageKey()) || '0', 10);
+      return (isFinite(n) && n > 0) ? n : 0;
+    } catch (e) { return 0; }
+  }
+  function saveLeadsFrozenCount(n) {
+    try { localStorage.setItem(leadsFrozenCountStorageKey(), String(n || 0)); } catch (e) {}
   }
 
   var LEADS_TABS = [
@@ -8008,18 +8028,26 @@
       }
       return '<span class="jos-ld-assigned-text' + (lead.assignedTo ? '' : ' is-empty') + '" data-jos-lead-field="assignedTo" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + esc(lead.assignedTo || 'Unassigned') + '</span>';
     }
+    if (colKey === 'tags') {
+      var tagsList = Array.isArray(lead.tags) ? lead.tags : [];
+      if (editingField === 'tags') {
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="tags" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Tags" value="' + esc(tagsList.join(', ')) + '" placeholder="Comma-separated" onclick="event.stopPropagation()">';
+      }
+      return '<span class="jos-ld-tags-cell' + (tagsList.length ? '' : ' is-empty') + '" data-jos-lead-field="tags" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + (tagsList.length ? tagsList.map(function (tg) { return '<span class="jos-ld-tag-chip">' + esc(tg) + '</span>'; }).join('') : 'No tags') + '</span>';
+    }
     if (colKey === 'created') return esc(String(lead.createdAt || '').slice(0, 10)) || '—';
     return '—';
   }
 
-  var LEADS_COL_DEFAULT_WIDTH = { name: 170, contact: 190, source: 110, service: 150, status: 130, assigned: 150, created: 110 };
+  var LEADS_COL_DEFAULT_WIDTH = { name: 170, contact: 190, source: 110, service: 150, status: 130, assigned: 150, tags: 180, created: 110 };
   var LEADS_COL_MIN_WIDTH = 72;
 
-  function renderLeadsTable(root, list, selectedId, bulkOpen, bulkSelected, columns) {
+  function renderLeadsTable(root, list, selectedId, bulkOpen, bulkSelected, columns, frozenCount) {
     if (!list.length) return '';
     var cols = (columns || LEADS_DEFAULT_COLUMNS).filter(function (c) { return !c.hidden; });
     var openKey = root._josLeadsColMenuKey || null;
     var editing = root._josLeadsEditCell || null;
+    frozenCount = Math.max(0, Math.min(frozenCount || 0, cols.length));
 
     // Roving tabindex (standard ARIA grid pattern, same as Attio/Sheets):
     // exactly one cell in the whole table is a Tab stop; arrow keys move
@@ -8030,6 +8058,25 @@
     }
     var active = root._josLeadsActiveCell;
 
+    // Freeze panes: sticky-positioned cells need an explicit `left` in px,
+    // which means walking the actual configured widths (not just letting
+    // the browser's table layout figure it out) to get each frozen
+    // column's cumulative offset from the left edge — including the bulk
+    // checkbox column, which is itself pinned the moment anything is frozen
+    // (otherwise it would scroll away while Name stays, leaving a gap).
+    var checkboxW = bulkOpen ? 32 : 0;
+    var colWidths = cols.map(function (c) { return c.width || LEADS_COL_DEFAULT_WIDTH[c.key] || 140; });
+    var leftOffsets = [];
+    var accW = checkboxW;
+    for (var wi = 0; wi < colWidths.length; wi++) { leftOffsets.push(accW); accW += colWidths[wi]; }
+    function frozenStyle(i) {
+      return i < frozenCount ? (' style="left:' + leftOffsets[i] + 'px"') : '';
+    }
+    function frozenClass(i) {
+      if (i >= frozenCount) return '';
+      return ' frozen' + (i === frozenCount - 1 ? ' frozen-edge' : '');
+    }
+
     var colGroup = '<colgroup>' + (bulkOpen ? '<col style="width:32px">' : '') +
       cols.map(function (c) { return '<col data-jos-col-key="' + esc(c.key) + '" style="width:' + (c.width || LEADS_COL_DEFAULT_WIDTH[c.key] || 140) + 'px">'; }).join('') +
       '<col style="width:36px"></colgroup>';
@@ -8038,19 +8085,19 @@
       var on = selectedId && leadKey === String(selectedId);
       var checked = !!(bulkSelected && bulkSelected[leadKey]);
       return '<tr class="jos-ld-trow' + (on ? ' on' : '') + '" role="row" data-jos-lead-id="' + esc(leadKey) + '">' +
-        (bulkOpen ? '<td class="jos-ld-tcheck" role="gridcell" onclick="event.stopPropagation()"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '" aria-label="Select ' + esc(lead.name || 'lead') + '"' + (checked ? ' checked' : '') + '></td>' : '') +
-        cols.map(function (c) {
-          var fieldForCol = c.key === 'status' ? 'status' : (c.key === 'assigned' ? 'assignedTo' : null);
+        (bulkOpen ? '<td class="jos-ld-tcheck' + (frozenCount > 0 ? ' frozen' : '') + '" role="gridcell" style="left:0" onclick="event.stopPropagation()"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '" aria-label="Select ' + esc(lead.name || 'lead') + '"' + (checked ? ' checked' : '') + '></td>' : '') +
+        cols.map(function (c, i) {
+          var fieldForCol = c.key === 'status' ? 'status' : (c.key === 'assigned' ? 'assignedTo' : (c.key === 'tags' ? 'tags' : null));
           var isEditingThis = editing && editing.leadId === leadKey && fieldForCol && editing.field === fieldForCol;
           var isActive = active.leadId === leadKey && active.colKey === c.key;
-          return '<td class="jos-ld-tcell-' + esc(c.key) + '" role="gridcell" tabindex="' + (isActive ? '0' : '-1') + '" data-jos-col-key="' + esc(c.key) + '">' +
+          return '<td class="jos-ld-tcell-' + esc(c.key) + frozenClass(i) + '" role="gridcell" tabindex="' + (isActive ? '0' : '-1') + '" data-jos-col-key="' + esc(c.key) + '"' + frozenStyle(i) + '>' +
             leadTableCellHtml(lead, c.key, leadKey, isEditingThis ? fieldForCol : null) + '</td>';
         }).join('') +
         '</tr>';
     }).join('');
-    var headCells = (bulkOpen ? '<th class="jos-ld-tcheck"></th>' : '') +
+    var headCells = (bulkOpen ? '<th class="jos-ld-tcheck' + (frozenCount > 0 ? ' frozen' : '') + '" style="left:0"></th>' : '') +
       cols.map(function (c, i) {
-        return '<th class="jos-ld-th' + (openKey === c.key ? ' menu-open' : '') + '" data-jos-col-key="' + esc(c.key) + '" data-jos-col-i="' + i + '" draggable="true">' +
+        return '<th class="jos-ld-th' + (openKey === c.key ? ' menu-open' : '') + frozenClass(i) + '" data-jos-col-key="' + esc(c.key) + '" data-jos-col-i="' + i + '" draggable="true"' + frozenStyle(i) + '>' +
           '<span class="jos-ld-th-label">' + esc(c.label) + '</span>' +
           '<button type="button" class="jos-ld-th-menu-btn" data-jos-act="leads-col-menu" data-jos-col-key="' + esc(c.key) + '" aria-label="Column options for ' + esc(c.label) + '">▾</button>' +
           (openKey === c.key
@@ -8061,6 +8108,7 @@
               '<button type="button" data-jos-act="leads-col-move-left" data-jos-col-key="' + esc(c.key) + '"' + (i === 0 ? ' disabled' : '') + '>Move left</button>' +
               '<button type="button" data-jos-act="leads-col-move-right" data-jos-col-key="' + esc(c.key) + '"' + (i === cols.length - 1 ? ' disabled' : '') + '>Move right</button>' +
               '<button type="button" data-jos-act="leads-col-reset-width" data-jos-col-key="' + esc(c.key) + '">Reset width</button>' +
+              '<button type="button" data-jos-act="' + (i < frozenCount ? 'leads-col-unfreeze' : 'leads-col-freeze') + '" data-jos-col-key="' + esc(c.key) + '">' + (i < frozenCount ? 'Unfreeze columns' : 'Freeze up to here') + '</button>' +
               '<button type="button" data-jos-act="leads-col-hide" data-jos-col-key="' + esc(c.key) + '">Hide column</button>' +
               '</div>'
             : '') +
@@ -8082,6 +8130,34 @@
           return '<button type="button" data-jos-act="leads-col-show" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</button>';
         }).join('')
         : '<div class="jos-muted" style="padding:8px 10px;white-space:nowrap">All columns are visible</div>') +
+      '</div>';
+  }
+
+  // Gmail/Salesforce-style: no action list until something is actually
+  // selected. The old top-button dropdown showed the same actions the
+  // instant "Bulk Actions" was toggled, before any row was checked —
+  // this only appears once selectedCount > 0, floats over the table, and
+  // disappears the moment the selection is cleared.
+  function renderLeadsBulkBar(root, bulkOpen) {
+    var selected = root._josLeadBulkSelected || {};
+    var count = Object.keys(selected).length;
+    if (!bulkOpen || !count) return '';
+    var statusOpen = !!root._josLeadBulkStatusOpen;
+    return '<div class="jos-ld-bulk-bar" role="toolbar" aria-label="Bulk actions">' +
+      '<span class="jos-ld-bulk-bar-count">' + count + ' selected</span>' +
+      '<span class="jos-ld-bulk-bar-sep"></span>' +
+      '<button type="button" data-jos-act="leads-bulk-assign">Assign</button>' +
+      (statusOpen
+        ? '<select id="jos-ld-bulk-status-select" class="jos-ld-select jos-ld-select-inline" autofocus>' +
+          '<option value="" selected disabled>Change status…</option>' +
+          LEADS_CRM_STATUSES.map(function (s) { return '<option value="' + s + '">' + esc(LEADS_STATUS_LABEL[s]) + '</option>'; }).join('') +
+          '</select>'
+        : '<button type="button" data-jos-act="leads-bulk-status-open">Change Status</button>') +
+      '<button type="button" data-jos-act="leads-bulk-tag">Add Tag</button>' +
+      '<button type="button" data-jos-act="leads-bulk-export">Export</button>' +
+      '<span class="jos-ld-bulk-bar-sep"></span>' +
+      '<button type="button" class="jos-ld-bulk-bar-danger" data-jos-act="leads-bulk-delete">Delete</button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-bulk-clear" title="Clear selection" aria-label="Clear selection">✕</button>' +
       '</div>';
   }
 
@@ -8344,13 +8420,23 @@
       morphLeadsKeyedChildren(oldParent, oldKids, newKids);
       return;
     }
-    var max = Math.max(oldKids.length, newKids.length);
-    for (var i = 0; i < max; i++) {
-      var oldNode = oldParent.childNodes[i];
-      var newNode = newKids[i];
-      if (!newNode) { if (oldNode) oldParent.removeChild(oldNode); continue; }
-      if (!oldNode) { oldParent.appendChild(newNode); continue; }
-      morphLeadsNode(oldParent, oldNode, newNode);
+    // Two separate passes, not one index-driven loop: removeChild shifts
+    // every later index down by one, so interleaving removals into the
+    // same `childNodes[i]` walk silently skips every other stale node
+    // (found live — switching List->Table view left every other old
+    // .jos-ld-card behind as an orphan under the new <table>). Morph the
+    // shared prefix in place, append any new extras, then pop excess old
+    // nodes off the *end* — which never shifts an index still to be
+    // visited, so nothing gets skipped.
+    var minLen = Math.min(oldKids.length, newKids.length);
+    for (var i = 0; i < minLen; i++) {
+      morphLeadsNode(oldParent, oldParent.childNodes[i], newKids[i]);
+    }
+    for (var j = minLen; j < newKids.length; j++) {
+      oldParent.appendChild(newKids[j]);
+    }
+    while (oldParent.childNodes.length > newKids.length) {
+      oldParent.removeChild(oldParent.lastChild);
     }
   }
 
@@ -8440,6 +8526,7 @@
     var viewMode = root._josLeadsView === 'table' ? 'table' : 'list';
     if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
     var leadsColumns = root._josLeadsColumns;
+    if (root._josLeadsFrozenCount == null) root._josLeadsFrozenCount = loadLeadsFrozenCount();
     // Selection and panel-open are separate: closing the panel keeps the
     // row highlighted (per spec — "keep the selected row highlighted until
     // another row is selected"), it just hides the panel.
@@ -8499,12 +8586,7 @@
       '<button type="button" class="jos-btn jos-ld-export" data-jos-act="leads-export">' + jobUiIcon('download') + ' Export</button>' +
       '<button type="button" class="jos-btn" data-jos-act="leads-import-open">Import</button>' +
       '<div class="jos-ld-bulk-wrap">' +
-      '<button type="button" class="jos-btn jos-ld-bulk" data-jos-act="leads-bulk-toggle">Bulk Actions</button>' +
-      (bulkOpen ? '<div class="jos-ld-bulk-menu">' +
-        '<div class="jos-muted" id="jos-ld-bulk-count">' + Object.keys(root._josLeadBulkSelected || {}).length + ' selected</div>' +
-        [['leads-bulk-assign', 'Assign'], ['leads-bulk-archive', 'Archive'], ['leads-bulk-export', 'Export selected'], ['leads-bulk-tag', 'Add tag']].map(function (x) {
-          return '<button type="button" data-jos-act="' + x[0] + '">' + x[1] + '</button>';
-        }).join('') + '</div>' : '') +
+      '<button type="button" class="jos-btn jos-ld-bulk' + (bulkOpen ? ' jos-btn-brand' : '') + '" data-jos-act="leads-bulk-toggle">Bulk Actions</button>' +
       '</div>' +
       '<button type="button" class="jos-btn jos-btn-brand jos-ld-new" data-jos-act="leads-add-open">+ New Lead</button>' +
       '</div></header>' +
@@ -8545,7 +8627,7 @@
       }).join('') + '</select></div>' +
       (viewMode === 'table'
         ? (visible.length
-          ? renderLeadsTable(root, visible, selectedId, bulkOpen, root._josLeadBulkSelected, leadsColumns)
+          ? renderLeadsTable(root, visible, selectedId, bulkOpen, root._josLeadBulkSelected, leadsColumns, root._josLeadsFrozenCount)
           : '<div class="jos-ld-list">' + listHtml + '</div>')
         : '<div class="jos-ld-list">' + listHtml + '</div>') +
       (filtered.length > visible.length
@@ -8554,6 +8636,7 @@
       '</section>' +
       (wsOpen ? '<section class="jos-ld-main' + (panelJustOpened ? '' : ' is-open') + '">' + renderLeadWorkspace(root, sel, ws) + '</section>' : '') +
       '</div>' +
+      renderLeadsBulkBar(root, bulkOpen) +
       '</div>' +
 
       renderLeadsFilterDrawer(root) +
@@ -8800,8 +8883,10 @@
             root._josLeadBulkSelected[keys[ri]] = true;
             allBoxes[ri].checked = true;
           }
-          var rangeCountEl = el('jos-ld-bulk-count');
-          if (rangeCountEl) rangeCountEl.textContent = Object.keys(root._josLeadBulkSelected).length + ' selected';
+          // The actually-clicked checkbox still fires its own native
+          // 'change' right after this (capture-phase click handler, not
+          // prevented), which is what triggers the real render — this
+          // just needs the rest of the range's state set first.
         }
       }
       root._josLeadBulkLastClicked = clickedBulkKey;
@@ -8846,7 +8931,7 @@
         e.stopPropagation();
         return;
       }
-      if (!e.target.closest('.jos-ld-bulk-wrap') && root._josLeadBulkOpen) {
+      if (!e.target.closest('.jos-ld-bulk-wrap') && !e.target.closest('.jos-ld-bulk-bar') && root._josLeadBulkOpen && !Object.keys(root._josLeadBulkSelected || {}).length) {
         root._josLeadBulkOpen = false;
         renderLeads();
         return;
@@ -8981,6 +9066,25 @@
         toast(name ? ('Assigned to ' + name) : 'Unassigned');
         return;
       }
+      if (id === 'jos-ld-bulk-status-select') {
+        var bulkStatusVal = e.target.value;
+        if (!bulkStatusVal) return;
+        var bulkStatusKeys = Object.keys(root._josLeadBulkSelected || {});
+        var bulkStatusLeads = leadsOsList().filter(function (l) { return bulkStatusKeys.indexOf(String(l.id || l.key)) > -1; });
+        bulkStatusLeads.forEach(function (l) {
+          l.crmStatus = bulkStatusVal; l.status = bulkStatusVal;
+          if (bulkStatusVal === 'lost') { l.osStage = 'lost'; l.stage = 'lost'; }
+          else if (bulkStatusVal === 'unqualified') { l.osStage = 'spam'; l.stage = 'unqualified'; }
+          else { l.osStage = 'new'; l.stage = bulkStatusVal; }
+          pushLeadActivity(l, 'status', 'Status → ' + (LEADS_STATUS_LABEL[bulkStatusVal] || bulkStatusVal) + ' (bulk)');
+        });
+        root._josLeadBulkStatusOpen = false;
+        root._josLeadBulkOpen = false;
+        root._josLeadBulkSelected = {};
+        toast('Updated status for ' + bulkStatusLeads.length + ' lead' + (bulkStatusLeads.length === 1 ? '' : 's'));
+        try { if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon(); } catch (ePersistBulkSt) {}
+        return renderLeads();
+      }
       if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-field')) {
         var fieldKey = e.target.getAttribute('data-jos-lead-field');
         var fieldLeadId = e.target.getAttribute('data-jos-lead-id');
@@ -8997,9 +9101,12 @@
           } else if (fieldKey === 'assignedTo') {
             l.assignedTo = fieldVal;
             pushLeadActivity(l, 'assign', fieldVal ? ('Assigned to ' + fieldVal) : 'Unassigned');
+          } else if (fieldKey === 'tags') {
+            l.tags = String(fieldVal || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+            pushLeadActivity(l, 'tag', 'Tags → ' + (l.tags.length ? l.tags.join(', ') : 'none'));
           }
         });
-        toast(fieldKey === 'status' ? 'Status updated' : (fieldVal ? 'Assigned to ' + fieldVal : 'Unassigned'));
+        toast(fieldKey === 'status' ? 'Status updated' : fieldKey === 'tags' ? 'Tags updated' : (fieldVal ? 'Assigned to ' + fieldVal : 'Unassigned'));
         return;
       }
       if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-bulk')) {
@@ -9007,11 +9114,13 @@
         var bulkKey = e.target.getAttribute('data-jos-lead-bulk');
         if (e.target.checked) root._josLeadBulkSelected[bulkKey] = true;
         else delete root._josLeadBulkSelected[bulkKey];
-        // Re-render just the count in the menu, not the whole list — a
-        // full renderLeads() here would rebuild the checkbox the user is
-        // mid-click on.
-        var countEl = el('jos-ld-bulk-count');
-        if (countEl) countEl.textContent = Object.keys(root._josLeadBulkSelected).length + ' selected';
+        // Used to hand-patch a count label instead of calling renderLeads()
+        // here, back when any render tore down and rebuilt the whole table
+        // (including the checkbox mid-click). Now that renderLeads() morphs
+        // instead of replacing, a real render is safe — and it's what makes
+        // the floating bulk bar actually appear/update/disappear as the
+        // selection changes, not just a count text node.
+        renderLeads();
       }
       if (e.target && e.target.id === 'jos-li-file' && e.target.files && e.target.files[0]) {
         var reader = new FileReader();
@@ -9141,7 +9250,7 @@
     // separate "close the old one" step.
     root.addEventListener('click', function (e) {
       var field = e.target.closest('[data-jos-lead-field]');
-      if (!field || field.tagName === 'SELECT') return;
+      if (!field || field.tagName === 'SELECT' || field.tagName === 'INPUT') return;
       var leadId = field.getAttribute('data-jos-lead-id');
       var key = field.getAttribute('data-jos-lead-field');
       if (!leadId || !key) return;
@@ -9179,12 +9288,21 @@
         setTimeout(function () { if (root._josLeadStatusEditing) { root._josLeadStatusEditing = false; renderLeads(); } }, 0);
       } else if (t2.id === 'jos-ld-assigned' && root._josLeadAssignedEditing) {
         setTimeout(function () { if (root._josLeadAssignedEditing) { root._josLeadAssignedEditing = false; renderLeads(); } }, 0);
+      } else if (t2.id === 'jos-ld-bulk-status-select' && root._josLeadBulkStatusOpen) {
+        setTimeout(function () { if (root._josLeadBulkStatusOpen) { root._josLeadBulkStatusOpen = false; renderLeads(); } }, 0);
       }
     }, true);
     root.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
       if (!(e.target && e.target.classList && e.target.classList.contains('jos-ld-editing'))) return;
       e.preventDefault();
+      // A <select>'s value is already committed the instant an option is
+      // picked (native 'change'), so Enter here just needs to close the
+      // editor. A free-text field (Tags) only commits on blur/'change' —
+      // blur() *is* the commit for those, so let it run through the same
+      // 'change' handler that saves status/assignedTo instead of closing
+      // the editor here first without ever having saved the typed value.
+      if (e.target.tagName === 'INPUT') { e.target.blur(); return; }
       root._josLeadsEditCell = null;
       root._josLeadsGridFocusPending = true;
       renderLeads();
@@ -9283,20 +9401,26 @@
   // before this edit started (arrow-key selection on a native <select>
   // commits immediately, so by the time Escape is pressed the value may
   // already have changed; this actually rolls it back, not just closes).
-  var LEADS_FIELD_TO_COL = { status: 'status', assignedTo: 'assigned' };
+  var LEADS_FIELD_TO_COL = { status: 'status', assignedTo: 'assigned', tags: 'tags' };
 
   // Shared by dblclick and Enter-on-focused-gridcell — same open path
   // either way, so the two entry points can't drift out of sync.
   function openLeadsCellEdit(root, leadId, key) {
     var editingLead = findLead(leadId);
     if (!editingLead) return;
-    var originalValue = key === 'status' ? normalizeCrmStatus(editingLead) : editingLead[key];
+    var originalValue = key === 'status' ? normalizeCrmStatus(editingLead)
+      : key === 'tags' ? (Array.isArray(editingLead.tags) ? editingLead.tags.slice() : [])
+      : editingLead[key];
     root._josLeadsEditCell = { leadId: leadId, field: key, originalValue: originalValue };
     var colKey = LEADS_FIELD_TO_COL[key];
     if (colKey) root._josLeadsActiveCell = { leadId: leadId, colKey: colKey };
     renderLeads();
-    var sel = root.querySelector('select[data-jos-lead-field="' + key + '"][data-jos-lead-id="' + CSS.escape(leadId) + '"]');
-    if (sel) { sel.focus({ preventScroll: true }); try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
+    var sel = root.querySelector('[data-jos-lead-field="' + key + '"][data-jos-lead-id="' + CSS.escape(leadId) + '"].jos-ld-editing');
+    if (sel) {
+      sel.focus({ preventScroll: true });
+      if (sel.tagName === 'SELECT') { try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
+      else if (sel.tagName === 'INPUT') { try { sel.select(); } catch (eSelText) {} }
+    }
   }
 
   function cancelLeadsCellEdit(root) {
@@ -9312,6 +9436,15 @@
         else { lead.osStage = 'new'; lead.stage = prev; }
       } else if (editing.field === 'assignedTo' && lead.assignedTo !== editing.originalValue) {
         lead.assignedTo = editing.originalValue || '';
+      } else if (editing.field === 'tags') {
+        // Nothing has been written to the lead yet — Tags only commits on
+        // blur/'change', not per keystroke. But removing this still-focused
+        // <input> below (via the renderLeads() call) can itself synthesize
+        // a native 'change' event carrying whatever was typed, which would
+        // silently save the just-cancelled edit. Reset the live input back
+        // to its original value first so that stray commit is a no-op.
+        var tagsInput = root.querySelector('input[data-jos-lead-field="tags"][data-jos-lead-id="' + CSS.escape(editing.leadId) + '"]');
+        if (tagsInput) tagsInput.value = (editing.originalValue || []).join(', ');
       }
     }
     root._josLeadsEditCell = null;
@@ -9631,6 +9764,23 @@
         saveLeadsColumns(root._josLeadsColumns);
         return renderLeads();
       }
+      if (act === 'leads-col-freeze') {
+        var freezeKey = t.getAttribute('data-jos-col-key');
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+        var visCols = root._josLeadsColumns.filter(function (c) { return !c.hidden; });
+        var freezeI = visCols.findIndex(function (c) { return c.key === freezeKey; });
+        if (freezeI < 0) return;
+        root._josLeadsFrozenCount = freezeI + 1;
+        saveLeadsFrozenCount(root._josLeadsFrozenCount);
+        root._josLeadsColMenuKey = null;
+        return renderLeads();
+      }
+      if (act === 'leads-col-unfreeze') {
+        root._josLeadsFrozenCount = 0;
+        saveLeadsFrozenCount(0);
+        root._josLeadsColMenuKey = null;
+        return renderLeads();
+      }
       if (act === 'leads-col-show') {
         var showKey = t.getAttribute('data-jos-col-key');
         if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
@@ -9711,6 +9861,42 @@
         root._josLeadBulkOpen = false;
         root._josLeadBulkSelected = {};
         try { if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon(); } catch (ePersistBulk) {}
+        return renderLeads();
+      }
+      if (act === 'leads-bulk-status-open') {
+        root._josLeadBulkStatusOpen = true;
+        renderLeads();
+        var bulkStatusSel = el('jos-ld-bulk-status-select');
+        if (bulkStatusSel) bulkStatusSel.focus({ preventScroll: true });
+        return;
+      }
+      if (act === 'leads-bulk-clear') {
+        root._josLeadBulkSelected = {};
+        root._josLeadBulkStatusOpen = false;
+        return renderLeads();
+      }
+      if (act === 'leads-bulk-delete') {
+        var delKeys = Object.keys(root._josLeadBulkSelected || {});
+        if (!delKeys.length) { toast('Select at least one lead first'); return; }
+        if (!window.confirm('Delete ' + delKeys.length + ' lead' + (delKeys.length === 1 ? '' : 's') + '? This cannot be undone.')) return;
+        var stDel = S();
+        if (stDel.pipeline && Array.isArray(stDel.pipeline.manual)) {
+          stDel.pipeline.deleted = stDel.pipeline.deleted || [];
+          stDel.pipeline.manual = stDel.pipeline.manual.filter(function (x) {
+            var k = String(x.id || x.key);
+            if (delKeys.indexOf(k) < 0) return true;
+            stDel.pipeline.deleted.push(x.id || x.key);
+            return false;
+          });
+        }
+        if (root._josLeadId && delKeys.indexOf(String(root._josLeadId)) > -1) {
+          root._josLeadId = null;
+          root._josLeadPanelOpen = false;
+        }
+        root._josLeadBulkOpen = false;
+        root._josLeadBulkSelected = {};
+        toast('Deleted ' + delKeys.length + ' lead' + (delKeys.length === 1 ? '' : 's'));
+        try { if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon(); } catch (ePersistDel) {}
         return renderLeads();
       }
 

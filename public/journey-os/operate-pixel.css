@@ -4743,6 +4743,31 @@ html[data-theme="night"] .jos-mem-form select{
 }
 .jos-ld-bulk-menu button:hover{background:var(--jos-brand-soft)}
 
+/* Floating bulk-action bar (Leads table) — appears once rows are actually
+   checked, not the moment "Bulk Actions" is toggled, and floats centered
+   over the content area (offsetting for the left nav rail) instead of
+   anchoring to the toolbar button that opened select-mode. */
+.jos-ld-bulk-bar{
+  position:fixed;left:calc(50% + var(--nav, 220px) / 2);bottom:24px;transform:translateX(-50%);
+  z-index:120;display:flex;align-items:center;gap:4px;padding:8px;border-radius:14px;
+  background:#fff;border:1px solid #ECECEC;box-shadow:0 16px 40px rgba(15,23,42,.16);
+  animation:josLdBulkBarIn .16s ease both;
+}
+@keyframes josLdBulkBarIn{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.jos-ld-bulk-bar-count{padding:0 10px;font-size:12.5px;font-weight:700;color:var(--jos-navy);white-space:nowrap}
+.jos-ld-bulk-bar-sep{width:1px;align-self:stretch;margin:4px 2px;background:#EDEEF1}
+.jos-ld-bulk-bar > button{
+  appearance:none;border:0;background:transparent;padding:8px 12px;border-radius:9px;
+  font:inherit;font-size:12.5px;font-weight:650;color:var(--jos-navy);cursor:pointer;white-space:nowrap;
+  transition:background-color .12s ease;
+}
+.jos-ld-bulk-bar > button:hover{background:#F5F6F7}
+.jos-ld-bulk-bar-danger{color:#B42318!important}
+.jos-ld-bulk-bar-danger:hover{background:#FEF3F2!important}
+.jos-ld-bulk-bar .jos-icon-btn{margin-left:2px}
+.jos-ld-bulk-bar .jos-ld-select-inline{height:32px;font-size:12.5px}
+@media(max-width:1023px){.jos-ld-bulk-bar{left:50%}}
+
 .jos-ld-toolbar{
   display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;flex-shrink:0;padding:0;
 }
@@ -4859,9 +4884,25 @@ html[data-theme="night"] .jos-mem-form select{
 }
 .jos-ld-trow{cursor:pointer;transition:background-color .12s ease;position:relative}
 .jos-ld-trow:hover{background:rgba(15,23,42,.018)}
-.jos-ld-trow.on{background:var(--jos-brand-soft);box-shadow:inset 2px 0 0 var(--jos-brand)}
-.jos-ld-trow.on:hover{background:var(--jos-brand-soft)}
+/* Selection is a neutral system state, not a branded action — a restrained
+   blue (matching Attio) instead of the orange brand tint keeps it legible
+   as "selected" without reading as a call-to-action. Thin 1px accent, not
+   the heavier 2-3px bars used for CTAs elsewhere. */
+.jos-ld-trow.on{background:#F0F6FF;box-shadow:inset 1px 0 0 #2563EB}
+.jos-ld-trow.on:hover{background:#EAF2FE}
 .jos-ld-tcheck{width:32px}
+
+/* Freeze panes: a sticky cell needs its own opaque background (it's no
+   longer "transparent cell over a colored row" once it's pinned out of
+   normal flow) — restated per row state so a frozen Name column doesn't
+   go flat white while the rest of a hovered/selected row is tinted. */
+.jos-ld-table td.frozen,.jos-ld-table th.frozen{position:sticky;z-index:1;background:#fff}
+.jos-ld-table thead th.frozen{z-index:3}
+.jos-ld-trow:hover td.frozen{background:#FDFDFE}
+.jos-ld-trow.on td.frozen{background:#F0F6FF}
+.jos-ld-trow.on:hover td.frozen{background:#EAF2FE}
+.frozen-edge{box-shadow:2px 0 6px -2px rgba(15,23,42,.15)}
+.jos-ld-table thead th.frozen-edge{box-shadow:2px 0 6px -2px rgba(15,23,42,.15),0 1px 0 rgba(15,23,42,.07)}
 
 /* Column headers — drag to reorder, click ▾ for rename/hide */
 .jos-ld-th{position:relative;cursor:grab;user-select:none;transition:background-color .16s ease,opacity .18s ease,transform .18s ease,box-shadow .18s ease}
@@ -4918,6 +4959,12 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-status-pill.mute{background:#F1F2F4;color:#8B909A}
 .jos-ld-assigned-text{color:var(--jos-navy);font-weight:550;cursor:default}
 .jos-ld-assigned-text.is-empty{color:#9CA3AF;font-weight:500}
+.jos-ld-tags-cell{display:inline-flex;flex-wrap:wrap;gap:4px;cursor:default;max-width:100%}
+.jos-ld-tags-cell.is-empty{color:#9CA3AF;font-weight:500}
+.jos-ld-tag-chip{
+  display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;
+  background:#F1F2F4;color:#5B6270;font-size:11px;font-weight:650;white-space:nowrap;
+}
 
 /* Inline-editable cells (status / assigned) — only shown mid-edit */
 .jos-ld-cell-inline{
@@ -4980,8 +5027,8 @@ html[data-theme="night"] .jos-mem-form select{
   overflow:hidden;padding:0;flex:0 0 auto;width:0;opacity:0;transform:translateX(10px);
   transition:width .2s ease,opacity .16s ease,transform .2s ease;
 }
-.jos-ld-main.is-open{width:360px;opacity:1;transform:translateX(0);overflow:auto}
-@media(max-width:1279px){.jos-ld-main.is-open{width:320px}}
+.jos-ld-main.is-open{width:340px;opacity:1;transform:translateX(0);overflow:auto}
+@media(max-width:1279px){.jos-ld-main.is-open{width:300px}}
 @media (prefers-reduced-motion:reduce){.jos-ld-main{transition:none}}
 .jos-ld-workspace{display:flex;flex-direction:column;min-height:100%}
 .jos-ld-ws-head{
@@ -5174,7 +5221,7 @@ html[data-theme="night"] .jos-mem-form select{
     position:fixed;top:0;right:0;bottom:0;z-index:200;border-radius:0;
     box-shadow:-12px 0 40px rgba(0,0,0,.12);
   }
-  .jos-ld-main.is-open{width:min(360px,92vw)}
+  .jos-ld-main.is-open{width:min(340px,92vw)}
 }
 @media(max-width:767px){
   #p-app.jos-pixel.jos-leads-mode{--nav:0px}
