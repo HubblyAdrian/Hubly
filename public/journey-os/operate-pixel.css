@@ -4743,6 +4743,17 @@ html[data-theme="night"] .jos-mem-form select{
 }
 .jos-ld-bulk-menu button:hover{background:var(--jos-brand-soft)}
 
+.jos-ld-overflow-wrap{position:relative;flex-shrink:0}
+.jos-ld-overflow-menu{
+  position:absolute;top:38px;right:0;z-index:30;width:170px;background:#fff;border:1px solid var(--jos-border);
+  border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.12);padding:6px;
+}
+.jos-ld-overflow-menu button{
+  width:100%;appearance:none;border:0;background:transparent;text-align:left;padding:9px 10px;border-radius:8px;
+  font:inherit;font-size:13px;font-weight:650;cursor:pointer;color:var(--jos-navy);display:flex;align-items:center;gap:8px;
+}
+.jos-ld-overflow-menu button:hover{background:#F5F6F7}
+
 /* Floating bulk-action bar (Leads table) — appears once rows are actually
    checked, not the moment "Bulk Actions" is toggled, and floats centered
    over the content area (offsetting for the left nav rail) instead of
@@ -4780,6 +4791,12 @@ html[data-theme="night"] .jos-mem-form select{
   width:auto;min-width:110px;max-width:160px;height:34px;border:1px solid var(--jos-border);border-radius:10px;background:#fff;
   padding:0 10px;font:inherit;font-size:12px;font-weight:650;color:var(--jos-navy);
 }
+/* Search leads the row now (title/subtitle removed), so every control in
+   it — including the primary action — matches the same 34px height rather
+   than the taller buttons a standalone page header used to allow. */
+.jos-ld-toolbar .jos-ld-new{min-width:0;height:34px;padding:0 14px;border-radius:10px;font-size:13px}
+.jos-ld-toolbar > .jos-btn-sm{height:34px;border-radius:10px}
+.jos-ld-toolbar .jos-ld-overflow-wrap .jos-icon-btn{width:34px;height:34px;border:1px solid var(--jos-border);border-radius:10px;background:#fff}
 
 .jos-ld-kpis{
   display:flex;align-items:baseline;gap:18px;margin:0 0 10px;flex-shrink:0;flex-wrap:wrap;
@@ -4892,24 +4909,17 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-trow.on:hover{background:#EAF2FE}
 .jos-ld-tcheck{width:32px}
 
-/* Freeze panes: a sticky cell needs its own opaque background (it's no
-   longer "transparent cell over a colored row" once it's pinned out of
-   normal flow) — restated per row state so a frozen Name column doesn't
-   go flat white while the rest of a hovered/selected row is tinted. */
-.jos-ld-table td.frozen,.jos-ld-table th.frozen{position:sticky;z-index:1;background:#fff}
-.jos-ld-table thead th.frozen{z-index:3}
-.jos-ld-trow:hover td.frozen{background:#FDFDFE}
-.jos-ld-trow.on td.frozen{background:#F0F6FF}
-.jos-ld-trow.on:hover td.frozen{background:#EAF2FE}
-.frozen-edge{box-shadow:2px 0 6px -2px rgba(15,23,42,.15)}
-.jos-ld-table thead th.frozen-edge{box-shadow:2px 0 6px -2px rgba(15,23,42,.15),0 1px 0 rgba(15,23,42,.07)}
-
-/* Column headers — drag to reorder, click ▾ for rename/hide */
+/* Column headers — drag to reorder, double-click label to rename, ▾ to hide */
 .jos-ld-th{position:relative;cursor:grab;user-select:none;transition:background-color .16s ease,opacity .18s ease,transform .18s ease,box-shadow .18s ease}
 .jos-ld-th.is-dragging{opacity:.55;transform:scale(.98);box-shadow:0 6px 16px rgba(15,23,42,.14);background:#fff}
 .jos-ld-th.drop-target{background:#F5F6F7}
 .jos-ld-th.drop-target::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:#7C8291}
-.jos-ld-th-label{pointer-events:none;overflow:hidden;text-overflow:ellipsis;display:inline-block;max-width:calc(100% - 14px);vertical-align:middle}
+.jos-ld-th-label{overflow:hidden;text-overflow:ellipsis;display:inline-block;max-width:calc(100% - 14px);vertical-align:middle;cursor:text}
+.jos-ld-th-rename-input{
+  height:22px;max-width:calc(100% - 14px);border:1px solid #9CA8BD;border-radius:6px;padding:0 6px;
+  font:inherit;font-size:10.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--jos-navy);
+  background:#fff;box-shadow:0 0 0 3px rgba(100,116,139,.14);vertical-align:middle;
+}
 .jos-ld-th-menu-btn{
   appearance:none;border:0;background:transparent;color:#9CA3AF;font-size:10px;cursor:pointer;
   margin-left:4px;padding:2px 3px;border-radius:4px;opacity:0;transition:opacity .15s ease,background-color .12s ease;
@@ -4932,12 +4942,6 @@ html[data-theme="night"] .jos-mem-form select{
   visibility:hidden;
 }
 .jos-ld-col-menu.jos-positioned{visibility:visible}
-.jos-ld-col-menu-rename{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.04em;padding:2px 4px}
-.jos-ld-col-menu-rename input{
-  height:32px;border:1px solid #E5E7EB;border-radius:8px;padding:0 8px;font:inherit;font-size:13px;
-  font-weight:600;color:var(--jos-navy);text-transform:none;letter-spacing:normal;
-}
-.jos-ld-col-menu-rename input:focus{outline:none;border-color:#C7CCD3;box-shadow:0 0 0 3px rgba(148,163,184,.16)}
 .jos-ld-col-menu > button{
   appearance:none;border:0;background:transparent;text-align:left;padding:8px;border-radius:8px;
   font:inherit;font-size:13px;font-weight:600;color:var(--jos-navy);cursor:pointer;text-transform:none;letter-spacing:normal;
@@ -4965,6 +4969,8 @@ html[data-theme="night"] .jos-mem-form select{
   display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;
   background:#F1F2F4;color:#5B6270;font-size:11px;font-weight:650;white-space:nowrap;
 }
+.jos-ld-name-cell,.jos-ld-contact-cell,.jos-ld-service-cell{cursor:default;display:inline-block;max-width:100%}
+.jos-ld-name-cell.is-empty,.jos-ld-contact-cell.is-empty,.jos-ld-service-cell.is-empty{color:#9CA3AF;font-weight:500}
 
 /* Inline-editable cells (status / assigned) — only shown mid-edit */
 .jos-ld-cell-inline{

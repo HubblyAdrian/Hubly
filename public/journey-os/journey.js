@@ -7183,6 +7183,129 @@
       '<div class="jos-px-side-body"><div class="jos-px-side-stats"><div class="jos-px-side-stat"><div class="l">Estimate</div><div class="v">' + esc(lead.amount != null ? money(lead.amount) : '—') + '</div></div><div class="jos-px-side-stat"><div class="l">Created</div><div class="v">' + esc(lead.createdAt ? String(lead.createdAt).slice(0, 10) : '—') + '</div></div></div>' +
       '<div class="jos-px-side-actions">' + btn('manual-lead', 'Edit lead', 'jos-btn jos-btn-sm') + (lead.key ? '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-lead="' + esc(lead.key) + '">Open full lead</button>' : '') + '</div></div>';
   }
+  // ---- Generic per-user table preferences (Supabase-backed) -------------
+  // One reusable persistence model for every configurable table in Hubly —
+  // column order/width/hidden/labels, row density, sort order, saved views
+  // — keyed by an arbitrary `tableKey` ('leads' today; 'customers', 'jobs',
+  // 'calendar', 'storefront_orders', 'products', 'invoices' later reuse this
+  // exact module, no new persistence code per module). Backed by
+  // public.user_table_preferences (see
+  // supabase/migrations/20260807020000_table_preferences_foundation.sql) —
+  // per-user, per-business, per-table_key, RLS-scoped to the owning user.
+  //
+  // Model, per product direction ("the database is the source of truth, the
+  // browser is a cache"):
+  //   1. Instant UI — callers mutate their own in-memory state and re-render
+  //      BEFORE calling queueTablePrefsSync; this module never blocks that.
+  //   2. Local cache — queueTablePrefsSync writes localStorage synchronously,
+  //      purely so a refresh before the server responds doesn't revert to
+  //      defaults. Never treated as authoritative.
+  //   3. Background sync — a debounced (450ms, matching persistPipelineSoon
+  //      in hubly.html) direct write to Supabase. Failures retry with
+  //      backoff up to 3 times, keeping the optimistic UI as-is; a toast
+  //      only fires once retries are exhausted, not on every failed attempt.
+  //   4. Source of truth — loadTablePreferences returns whatever's cached
+  //      RIGHT NOW (or null) for an instant first paint, and separately
+  //      kicks off a real fetch; the caller's onRemote fires if the server
+  //      value differs, and the server always wins over the cache.
+  // Business-wide config (custom fields, renamed defaults — shared by every
+  // employee, NOT a personal preference) is a deliberately separate table,
+  // public.business_table_config, reserved by the same migration but not
+  // yet written to by any client code — no custom-fields UI exists yet.
+  function tablePrefsCacheKey(tableKey) {
+    var biz = (global.currentBusiness && global.currentBusiness.id) || S().slug || 'default';
+    return 'hubly_table_prefs_v1_' + tableKey + '_' + biz;
+  }
+  function loadTablePrefsCache(tableKey) {
+    try {
+      var raw = localStorage.getItem(tablePrefsCacheKey(tableKey));
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function saveTablePrefsCache(tableKey, prefs) {
+    try { localStorage.setItem(tablePrefsCacheKey(tableKey), JSON.stringify(prefs)); } catch (e) {}
+  }
+  function tablePrefsIdentity() {
+    var biz = global.currentBusiness, user = global.currentUser;
+    if (!biz || !biz.id || !user || !user.id) return null; // demo/unauthenticated — cache-only, no Supabase identity to write against
+    return { businessId: biz.id, userId: user.id };
+  }
+  async function tablePrefsDb() {
+    try {
+      if (typeof global.waitForDb === 'function') await global.waitForDb();
+      return (typeof global.getDb === 'function' ? global.getDb() : global.db) || null;
+    } catch (e) { return null; }
+  }
+  var _tablePrefsSyncTimers = {};
+  var _tablePrefsRetryCounts = {};
+  function queueTablePrefsSync(tableKey, prefs) {
+    saveTablePrefsCache(tableKey, prefs);
+    clearTimeout(_tablePrefsSyncTimers[tableKey]);
+    _tablePrefsSyncTimers[tableKey] = setTimeout(function () {
+      writeTablePrefsToSupabase(tableKey, prefs, 0);
+    }, 450);
+  }
+  function writeTablePrefsToSupabase(tableKey, prefs, attempt) {
+    var id = tablePrefsIdentity();
+    if (!id) return;
+    tablePrefsDb().then(function (dbClient) {
+      if (!dbClient) return;
+      return dbClient.from('user_table_preferences').upsert({
+        business_id: id.businessId,
+        user_id: id.userId,
+        table_key: tableKey,
+        preferences: prefs
+      }, { onConflict: 'business_id,user_id,table_key' });
+    }).then(function (res) {
+      if (res && res.error) throw res.error;
+      _tablePrefsRetryCounts[tableKey] = 0;
+    }).catch(function (err) {
+      var count = (_tablePrefsRetryCounts[tableKey] || 0) + 1;
+      _tablePrefsRetryCounts[tableKey] = count;
+      console.warn('table preferences sync failed (' + tableKey + '), attempt ' + count, (err && err.message) || err);
+      if (count <= 3) {
+        setTimeout(function () { writeTablePrefsToSupabase(tableKey, prefs, count); }, Math.min(2000 * count, 8000));
+      } else {
+        _tablePrefsRetryCounts[tableKey] = 0; // next edit starts a fresh retry chain, not an escalating one
+        try { if (typeof toast === 'function') toast('Couldn’t save your table layout — will keep trying in the background'); } catch (eToast) {}
+      }
+    });
+  }
+  function fetchTablePrefsFromSupabase(tableKey) {
+    var id = tablePrefsIdentity();
+    if (!id) return Promise.resolve(null);
+    return tablePrefsDb().then(function (dbClient) {
+      if (!dbClient) return null;
+      return dbClient.from('user_table_preferences')
+        .select('preferences')
+        .eq('business_id', id.businessId)
+        .eq('user_id', id.userId)
+        .eq('table_key', tableKey)
+        .maybeSingle()
+        .then(function (res) {
+          if (res && res.error) throw res.error;
+          return res && res.data ? res.data.preferences : null;
+        });
+    }).catch(function (err) {
+      console.warn('table preferences fetch failed (' + tableKey + ')', (err && err.message) || err);
+      return null;
+    });
+  }
+  // Public entry point. Returns the cached value (or null) synchronously so
+  // first paint never waits on a network call, and separately resolves the
+  // real server value in the background — onRemote only fires when the
+  // server actually returned something, so a fetch failure or a
+  // not-yet-authenticated demo session just silently keeps the cache/default.
+  function loadTablePreferences(tableKey, onRemote) {
+    var cached = loadTablePrefsCache(tableKey);
+    fetchTablePrefsFromSupabase(tableKey).then(function (remote) {
+      if (remote == null) return;
+      saveTablePrefsCache(tableKey, remote);
+      if (typeof onRemote === 'function') onRemote(remote);
+    });
+    return cached;
+  }
+
   var LEADS_DEFAULT_COLUMNS = [
     { key: 'name', label: 'Lead' },
     { key: 'contact', label: 'Contact' },
@@ -7193,18 +7316,13 @@
     { key: 'tags', label: 'Tags', hidden: true },
     { key: 'created', label: 'Created' }
   ];
-  function leadsColumnsStorageKey() {
-    return 'hubly_leads_columns_v1_' + (S().slug || 'default');
-  }
-  function loadLeadsColumns() {
-    var saved = null;
-    try { saved = JSON.parse(localStorage.getItem(leadsColumnsStorageKey()) || 'null'); } catch (e) { saved = null; }
+  // Merge saved order/labels/hidden/width with defaults so a newly-added
+  // default column (a future code change) still shows up for existing
+  // businesses, and any column key that no longer exists is dropped safely.
+  // A newly added column's own default `hidden` is respected (e.g. Tags
+  // ships hidden-by-default) rather than always forced visible.
+  function normalizeLeadsColumns(saved) {
     if (!Array.isArray(saved) || !saved.length) return LEADS_DEFAULT_COLUMNS.map(function (c) { return { key: c.key, label: c.label, hidden: !!c.hidden }; });
-    // Merge saved order/labels/hidden with defaults so a newly-added default
-    // column (a future code change) still shows up for existing businesses,
-    // and any column key that no longer exists is dropped safely. A newly
-    // added column's own default `hidden` is respected (e.g. Tags ships
-    // hidden-by-default) rather than always forced visible.
     var byKey = {};
     LEADS_DEFAULT_COLUMNS.forEach(function (c) { byKey[c.key] = c; });
     var out = saved.filter(function (s) { return byKey[s.key]; }).map(function (s) {
@@ -7215,25 +7333,22 @@
     LEADS_DEFAULT_COLUMNS.forEach(function (c) { if (!seen[c.key]) out.push({ key: c.key, label: c.label, hidden: !!c.hidden }); });
     return out;
   }
+  // root is optional — passed so a late-arriving server value (which may
+  // differ from whatever localStorage had cached) can patch live state and
+  // re-render, instead of only taking effect on the next full page load.
+  function loadLeadsColumns(root) {
+    var cached = loadTablePreferences('leads', function (remote) {
+      var remoteCols = normalizeLeadsColumns(remote && remote.columns);
+      if (!root) return;
+      if (JSON.stringify(remoteCols) !== JSON.stringify(root._josLeadsColumns)) {
+        root._josLeadsColumns = remoteCols;
+        renderLeads();
+      }
+    });
+    return normalizeLeadsColumns(cached && cached.columns);
+  }
   function saveLeadsColumns(cols) {
-    try { localStorage.setItem(leadsColumnsStorageKey(), JSON.stringify(cols)); } catch (e) {}
-  }
-  // Freeze panes, spreadsheet-style: "freeze up to here" pins that column
-  // and everything left of it while the rest scrolls horizontally underneath.
-  // Stored as a count (how many leading visible columns are frozen), not a
-  // per-column flag — freezing is inherently about position, not identity,
-  // so if columns get reordered, whichever ends up leading stays frozen.
-  function leadsFrozenCountStorageKey() {
-    return 'hubly_leads_frozen_v1_' + (S().slug || 'default');
-  }
-  function loadLeadsFrozenCount() {
-    try {
-      var n = parseInt(localStorage.getItem(leadsFrozenCountStorageKey()) || '0', 10);
-      return (isFinite(n) && n > 0) ? n : 0;
-    } catch (e) { return 0; }
-  }
-  function saveLeadsFrozenCount(n) {
-    try { localStorage.setItem(leadsFrozenCountStorageKey(), String(n || 0)); } catch (e) {}
+    queueTablePrefsSync('leads', { columns: cols });
   }
 
   var LEADS_TABS = [
@@ -8002,12 +8117,30 @@
   // were explicitly deferred, not built).
   function leadTableCellHtml(lead, colKey, leadKey, editingField) {
     var crm = normalizeCrmStatus(lead);
-    if (colKey === 'name') return '<strong>' + esc(lead.name || 'Lead') + '</strong>';
+    if (colKey === 'name') {
+      if (editingField === 'name') {
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="name" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Lead name" value="' + esc(lead.name || '') + '" onclick="event.stopPropagation()">';
+      }
+      return '<strong class="jos-ld-name-cell" data-jos-lead-field="name" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + esc(lead.name || 'Lead') + '</strong>';
+    }
     if (colKey === 'contact') {
-      return esc(lead.phone ? displayPhone(lead.phone) : '') + (lead.email ? '<div class="jos-muted">' + esc(lead.email) + '</div>' : '');
+      if (editingField === 'contact') {
+        var contactVal = [lead.phone || '', lead.email || ''].filter(Boolean).join(', ');
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="contact" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Phone, email" value="' + esc(contactVal) + '" placeholder="Phone, email" onclick="event.stopPropagation()">';
+      }
+      var hasContact = lead.phone || lead.email;
+      return '<span class="jos-ld-contact-cell' + (hasContact ? '' : ' is-empty') + '" data-jos-lead-field="contact" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' +
+        (hasContact
+          ? esc(lead.phone ? displayPhone(lead.phone) : '') + (lead.email ? '<div class="jos-muted">' + esc(lead.email) + '</div>' : '')
+          : 'Add contact info') + '</span>';
     }
     if (colKey === 'source') return esc(srcLabel(srcKind(lead.source, lead)));
-    if (colKey === 'service') return esc(lead.service || '—');
+    if (colKey === 'service') {
+      if (editingField === 'service') {
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="service" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Service" value="' + esc(lead.service || '') + '" onclick="event.stopPropagation()">';
+      }
+      return '<span class="jos-ld-service-cell' + (lead.service ? '' : ' is-empty') + '" data-jos-lead-field="service" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + esc(lead.service || 'Add service') + '</span>';
+    }
     if (colKey === 'status') {
       if (editingField === 'status') {
         return '<select class="jos-ld-cell-inline ' + leadStatusTone(crm) + ' jos-ld-editing" data-jos-lead-field="status" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Status" onclick="event.stopPropagation()">' +
@@ -8041,13 +8174,26 @@
 
   var LEADS_COL_DEFAULT_WIDTH = { name: 170, contact: 190, source: 110, service: 150, status: 130, assigned: 150, tags: 180, created: 110 };
   var LEADS_COL_MIN_WIDTH = 72;
+  // Column key <-> lead field, single source for both directions so the
+  // inline-editable columns (click a cell -> edit -> Enter/blur -> saved)
+  // and the roving-tabindex active-cell tracking never drift out of sync.
+  // 'contact' is symbolic, not a real lead property — it edits phone+email
+  // together, special-cased wherever a real field name is needed.
+  var LEADS_COL_TO_FIELD = { name: 'name', contact: 'contact', service: 'service', status: 'status', assigned: 'assignedTo', tags: 'tags' };
+  // ^ 'name'/'contact'/'service' map to a field of the same conceptual
+  // name — LEADS_FIELD_TO_COL below inverts this 1:1, so 'name'/'service'
+  // fields resolve straight back to their own column, and 'contact' (a
+  // symbolic field — it edits phone+email together) resolves to the
+  // contact column, same as status/assignedTo/tags already did.
+  var LEADS_FIELD_TO_COL = {};
+  Object.keys(LEADS_COL_TO_FIELD).forEach(function (colKey) { LEADS_FIELD_TO_COL[LEADS_COL_TO_FIELD[colKey]] = colKey; });
 
-  function renderLeadsTable(root, list, selectedId, bulkOpen, bulkSelected, columns, frozenCount) {
+  function renderLeadsTable(root, list, selectedId, bulkOpen, bulkSelected, columns) {
     if (!list.length) return '';
     var cols = (columns || LEADS_DEFAULT_COLUMNS).filter(function (c) { return !c.hidden; });
     var openKey = root._josLeadsColMenuKey || null;
     var editing = root._josLeadsEditCell || null;
-    frozenCount = Math.max(0, Math.min(frozenCount || 0, cols.length));
+    var renamingKey = root._josLeadsColRenaming || null;
 
     // Roving tabindex (standard ARIA grid pattern, same as Attio/Sheets):
     // exactly one cell in the whole table is a Tab stop; arrow keys move
@@ -8058,25 +8204,6 @@
     }
     var active = root._josLeadsActiveCell;
 
-    // Freeze panes: sticky-positioned cells need an explicit `left` in px,
-    // which means walking the actual configured widths (not just letting
-    // the browser's table layout figure it out) to get each frozen
-    // column's cumulative offset from the left edge — including the bulk
-    // checkbox column, which is itself pinned the moment anything is frozen
-    // (otherwise it would scroll away while Name stays, leaving a gap).
-    var checkboxW = bulkOpen ? 32 : 0;
-    var colWidths = cols.map(function (c) { return c.width || LEADS_COL_DEFAULT_WIDTH[c.key] || 140; });
-    var leftOffsets = [];
-    var accW = checkboxW;
-    for (var wi = 0; wi < colWidths.length; wi++) { leftOffsets.push(accW); accW += colWidths[wi]; }
-    function frozenStyle(i) {
-      return i < frozenCount ? (' style="left:' + leftOffsets[i] + 'px"') : '';
-    }
-    function frozenClass(i) {
-      if (i >= frozenCount) return '';
-      return ' frozen' + (i === frozenCount - 1 ? ' frozen-edge' : '');
-    }
-
     var colGroup = '<colgroup>' + (bulkOpen ? '<col style="width:32px">' : '') +
       cols.map(function (c) { return '<col data-jos-col-key="' + esc(c.key) + '" style="width:' + (c.width || LEADS_COL_DEFAULT_WIDTH[c.key] || 140) + 'px">'; }).join('') +
       '<col style="width:36px"></colgroup>';
@@ -8085,30 +8212,32 @@
       var on = selectedId && leadKey === String(selectedId);
       var checked = !!(bulkSelected && bulkSelected[leadKey]);
       return '<tr class="jos-ld-trow' + (on ? ' on' : '') + '" role="row" data-jos-lead-id="' + esc(leadKey) + '">' +
-        (bulkOpen ? '<td class="jos-ld-tcheck' + (frozenCount > 0 ? ' frozen' : '') + '" role="gridcell" style="left:0" onclick="event.stopPropagation()"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '" aria-label="Select ' + esc(lead.name || 'lead') + '"' + (checked ? ' checked' : '') + '></td>' : '') +
-        cols.map(function (c, i) {
-          var fieldForCol = c.key === 'status' ? 'status' : (c.key === 'assigned' ? 'assignedTo' : (c.key === 'tags' ? 'tags' : null));
+        (bulkOpen ? '<td class="jos-ld-tcheck" role="gridcell" onclick="event.stopPropagation()"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '" aria-label="Select ' + esc(lead.name || 'lead') + '"' + (checked ? ' checked' : '') + '></td>' : '') +
+        cols.map(function (c) {
+          var fieldForCol = LEADS_COL_TO_FIELD[c.key] || null;
           var isEditingThis = editing && editing.leadId === leadKey && fieldForCol && editing.field === fieldForCol;
           var isActive = active.leadId === leadKey && active.colKey === c.key;
-          return '<td class="jos-ld-tcell-' + esc(c.key) + frozenClass(i) + '" role="gridcell" tabindex="' + (isActive ? '0' : '-1') + '" data-jos-col-key="' + esc(c.key) + '"' + frozenStyle(i) + '>' +
+          return '<td class="jos-ld-tcell-' + esc(c.key) + '" role="gridcell" tabindex="' + (isActive ? '0' : '-1') + '" data-jos-col-key="' + esc(c.key) + '">' +
             leadTableCellHtml(lead, c.key, leadKey, isEditingThis ? fieldForCol : null) + '</td>';
         }).join('') +
         '</tr>';
     }).join('');
-    var headCells = (bulkOpen ? '<th class="jos-ld-tcheck' + (frozenCount > 0 ? ' frozen' : '') + '" style="left:0"></th>' : '') +
+    var headCells = (bulkOpen ? '<th class="jos-ld-tcheck"></th>' : '') +
       cols.map(function (c, i) {
-        return '<th class="jos-ld-th' + (openKey === c.key ? ' menu-open' : '') + frozenClass(i) + '" data-jos-col-key="' + esc(c.key) + '" data-jos-col-i="' + i + '" draggable="true"' + frozenStyle(i) + '>' +
-          '<span class="jos-ld-th-label">' + esc(c.label) + '</span>' +
+        // Direct manipulation, not menus: drag the header to reorder, drag
+        // the right-edge handle to resize, double-click the label to
+        // rename. The ▾ menu is only for the one thing without an obvious
+        // gesture — hiding a column.
+        var labelHtml = renamingKey === c.key
+          ? '<input type="text" class="jos-ld-th-rename-input jos-ld-editing" id="jos-ld-th-rename-input" value="' + esc(c.label) + '" maxlength="40" data-jos-col-key="' + esc(c.key) + '" onclick="event.stopPropagation()" ondblclick="event.stopPropagation()">'
+          : '<span class="jos-ld-th-label" data-jos-col-key="' + esc(c.key) + '" title="Double-click to rename">' + esc(c.label) + '</span>';
+        return '<th class="jos-ld-th' + (openKey === c.key ? ' menu-open' : '') + '" data-jos-col-key="' + esc(c.key) + '" data-jos-col-i="' + i + '" draggable="' + (renamingKey === c.key ? 'false' : 'true') + '">' +
+          labelHtml +
           '<button type="button" class="jos-ld-th-menu-btn" data-jos-act="leads-col-menu" data-jos-col-key="' + esc(c.key) + '" aria-label="Column options for ' + esc(c.label) + '">▾</button>' +
           (openKey === c.key
             ? '<div class="jos-ld-col-menu">' +
-              '<label class="jos-ld-col-menu-rename">Column name' +
-              '<input type="text" id="jos-ld-col-rename-input" value="' + esc(c.label) + '" maxlength="40"></label>' +
-              '<button type="button" data-jos-act="leads-col-rename-save" data-jos-col-key="' + esc(c.key) + '">Save name</button>' +
-              '<button type="button" data-jos-act="leads-col-move-left" data-jos-col-key="' + esc(c.key) + '"' + (i === 0 ? ' disabled' : '') + '>Move left</button>' +
-              '<button type="button" data-jos-act="leads-col-move-right" data-jos-col-key="' + esc(c.key) + '"' + (i === cols.length - 1 ? ' disabled' : '') + '>Move right</button>' +
+              '<button type="button" data-jos-act="leads-col-rename-open" data-jos-col-key="' + esc(c.key) + '">Rename</button>' +
               '<button type="button" data-jos-act="leads-col-reset-width" data-jos-col-key="' + esc(c.key) + '">Reset width</button>' +
-              '<button type="button" data-jos-act="' + (i < frozenCount ? 'leads-col-unfreeze' : 'leads-col-freeze') + '" data-jos-col-key="' + esc(c.key) + '">' + (i < frozenCount ? 'Unfreeze columns' : 'Freeze up to here') + '</button>' +
               '<button type="button" data-jos-act="leads-col-hide" data-jos-col-key="' + esc(c.key) + '">Hide column</button>' +
               '</div>'
             : '') +
@@ -8524,9 +8653,8 @@
     var f = root._josLeadFilters || {};
     var bulkOpen = !!root._josLeadBulkOpen;
     var viewMode = root._josLeadsView === 'table' ? 'table' : 'list';
-    if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+    if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
     var leadsColumns = root._josLeadsColumns;
-    if (root._josLeadsFrozenCount == null) root._josLeadsFrozenCount = loadLeadsFrozenCount();
     // Selection and panel-open are separate: closing the panel keeps the
     // row highlighted (per spec — "keep the selected row highlighted until
     // another row is selected"), it just hides the panel.
@@ -8580,21 +8708,13 @@
     morphLeadsInto(root,
       '<div class="jos-ld-shell' + (wsOpen ? ' ws-open' : '') + '">' +
       '<div class="jos-ld-page">' +
-      '<header class="jos-ld-header hub-page-header">' +
-      '<div><h1 class="hub-page-title">Leads</h1><p class="hub-page-sub">Capture, qualify, and convert more demand.</p></div>' +
-      '<div class="jos-ld-header-actions hub-page-actions">' +
-      '<button type="button" class="jos-btn jos-ld-export" data-jos-act="leads-export">' + jobUiIcon('download') + ' Export</button>' +
-      '<button type="button" class="jos-btn" data-jos-act="leads-import-open">Import</button>' +
-      '<div class="jos-ld-bulk-wrap">' +
-      '<button type="button" class="jos-btn jos-ld-bulk' + (bulkOpen ? ' jos-btn-brand' : '') + '" data-jos-act="leads-bulk-toggle">Bulk Actions</button>' +
-      '</div>' +
-      '<button type="button" class="jos-btn jos-btn-brand jos-ld-new" data-jos-act="leads-add-open">+ New Lead</button>' +
-      '</div></header>' +
 
-      kpiRow +
-
+      // No page title/subtitle — once you're inside Leads, "Leads" as a
+      // giant heading doesn't help you work with leads. The table is the
+      // product; everything here exists only to search/filter/act on it,
+      // so search leads the row and the table starts as soon as possible.
       '<section class="jos-ld-toolbar">' +
-      '<label class="jos-ld-filter-search"><input id="jos-leads-search" type="search" placeholder="Search leads, customers, phone, or email..." value="' + esc(root._josLeadsQ || '') + '"></label>' +
+      '<label class="jos-ld-filter-search"><input id="jos-leads-search" type="search" placeholder="Search leads, phone, or email…" value="' + esc(root._josLeadsQ || '') + '"></label>' +
       '<select id="jos-ld-filter-source" class="jos-ld-dd" aria-label="Sources"><option value="all">All Sources</option>' +
       uniqueLeadValues('source').map(function (s) {
         return '<option value="' + esc(s) + '"' + ((f.source || 'all') === s ? ' selected' : '') + '>' + esc(srcLabel(s)) + '</option>';
@@ -8603,14 +8723,27 @@
       uniqueLeadValues('service').map(function (s) {
         return '<option value="' + esc(s) + '"' + ((f.service || 'all') === s ? ' selected' : '') + '>' + esc(s) + '</option>';
       }).join('') + '</select>' +
-      '<select id="jos-ld-filter-assigned" class="jos-ld-dd" aria-label="Assignments"><option value="all">All Assignments</option>' +
+      '<select id="jos-ld-filter-assigned" class="jos-ld-dd" aria-label="Owner"><option value="all">All Owners</option>' +
       uniqueLeadValues('assignedTo').map(function (s) {
         return '<option value="' + esc(s) + '"' + ((f.assigned || 'all') === s ? ' selected' : '') + '>' + esc(s) + '</option>';
       }).join('') + '</select>' +
       '<button type="button" class="jos-btn jos-btn-sm' + (moreFiltersOpen || activeFilterCount ? ' jos-btn-brand' : '') + '" data-jos-act="leads-filter-open" aria-expanded="' + (moreFiltersOpen ? 'true' : 'false') + '">' +
-      (activeFilterCount ? ('More Filters · ' + activeFilterCount) : 'More Filters') +
+      (activeFilterCount ? ('Filters · ' + activeFilterCount) : 'Filters') +
       '</button>' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-ld-new" data-jos-act="leads-add-open">+ New Lead</button>' +
+      '<div class="jos-ld-overflow-wrap">' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="leads-overflow-toggle" aria-label="More actions" aria-expanded="' + (root._josLeadOverflowOpen ? 'true' : 'false') + '">⋯</button>' +
+      (root._josLeadOverflowOpen
+        ? '<div class="jos-ld-overflow-menu">' +
+          '<button type="button" data-jos-act="leads-export">' + jobUiIcon('download') + ' Export</button>' +
+          '<button type="button" data-jos-act="leads-import-open">Import</button>' +
+          '<button type="button" data-jos-act="leads-bulk-toggle">' + (bulkOpen ? 'Exit Bulk Select' : 'Bulk Select') + '</button>' +
+          '</div>'
+        : '') +
+      '</div>' +
       '</section>' +
+
+      kpiRow +
 
       statusTabs +
 
@@ -8627,7 +8760,7 @@
       }).join('') + '</select></div>' +
       (viewMode === 'table'
         ? (visible.length
-          ? renderLeadsTable(root, visible, selectedId, bulkOpen, root._josLeadBulkSelected, leadsColumns, root._josLeadsFrozenCount)
+          ? renderLeadsTable(root, visible, selectedId, bulkOpen, root._josLeadBulkSelected, leadsColumns)
           : '<div class="jos-ld-list">' + listHtml + '</div>')
         : '<div class="jos-ld-list">' + listHtml + '</div>') +
       (filtered.length > visible.length
@@ -8931,8 +9064,27 @@
         e.stopPropagation();
         return;
       }
-      if (!e.target.closest('.jos-ld-bulk-wrap') && !e.target.closest('.jos-ld-bulk-bar') && root._josLeadBulkOpen && !Object.keys(root._josLeadBulkSelected || {}).length) {
+      // Export/Import/Bulk Select all live in the overflow menu, and every
+      // one of their handlers closes that menu (root._josLeadOverflowOpen =
+      // false) as part of handling the SAME click — bindRoot's generic
+      // dispatcher runs first, and its renderLeads() call morphs the menu
+      // (and whichever of these three buttons was just clicked) out of the
+      // DOM before this second listener ever runs. A detached node's
+      // closest() can't find ANY ancestor anymore (no parentNode left to
+      // walk), so an "is e.target outside .jos-ld-overflow-wrap" check
+      // would wrongly say yes and misfire below. Checking the clicked
+      // element's own data-jos-act survives detachment (closest() checks
+      // the node itself first, no parent walk needed) — so both guards
+      // below bail out on these three actions before ever needing a parent
+      // that may no longer exist.
+      var overflowActionEl = e.target.closest('[data-jos-act="leads-bulk-toggle"],[data-jos-act="leads-export"],[data-jos-act="leads-import-open"]');
+      if (!overflowActionEl && !e.target.closest('.jos-ld-overflow-wrap') && !e.target.closest('.jos-ld-bulk-bar') && root._josLeadBulkOpen && !Object.keys(root._josLeadBulkSelected || {}).length) {
         root._josLeadBulkOpen = false;
+        renderLeads();
+        return;
+      }
+      if (!overflowActionEl && !e.target.closest('.jos-ld-overflow-wrap') && root._josLeadOverflowOpen) {
+        root._josLeadOverflowOpen = false;
         renderLeads();
         return;
       }
@@ -8990,6 +9142,18 @@
     });
 
     root.addEventListener('dblclick', function (e) {
+      // Direct manipulation: double-click a column header label to rename
+      // it in place — no "Rename Column" menu round-trip.
+      var thLabel = e.target.closest('.jos-ld-th-label');
+      if (thLabel) {
+        root._josLeadsColRenaming = thLabel.getAttribute('data-jos-col-key');
+        root._josLeadsColMenuKey = null;
+        renderLeads();
+        var rin = el('jos-ld-th-rename-input');
+        if (rin) { rin.focus({ preventScroll: true }); rin.select(); }
+        e.preventDefault();
+        return;
+      }
       if (e.target.closest('[data-jos-lead-field]')) return; /* table cell edit, not "open profile" */
       var card = e.target.closest('[data-jos-lead-id]');
       if (!card) return;
@@ -9104,9 +9268,35 @@
           } else if (fieldKey === 'tags') {
             l.tags = String(fieldVal || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean);
             pushLeadActivity(l, 'tag', 'Tags → ' + (l.tags.length ? l.tags.join(', ') : 'none'));
+          } else if (fieldKey === 'name') {
+            l.name = String(fieldVal || '').trim();
+            pushLeadActivity(l, 'edit', 'Name → ' + (l.name || '—'));
+          } else if (fieldKey === 'service') {
+            l.service = String(fieldVal || '').trim();
+            pushLeadActivity(l, 'edit', 'Service → ' + (l.service || '—'));
+          } else if (fieldKey === 'contact') {
+            // One free-text field, split into phone/email on commit — same
+            // "comma-separated" convention as Tags. Classify by '@' rather
+            // than by position so "email, phone" and "phone, email" both work.
+            var contactParts = String(fieldVal || '').split(',').map(function (p) { return p.trim(); }).filter(Boolean);
+            var newPhone = '', newEmail = '';
+            contactParts.forEach(function (p) {
+              if (p.indexOf('@') > -1) newEmail = p;
+              else if (!newPhone) newPhone = p;
+            });
+            l.phone = newPhone;
+            l.email = newEmail;
+            pushLeadActivity(l, 'edit', 'Contact info updated');
           }
         });
-        toast(fieldKey === 'status' ? 'Status updated' : fieldKey === 'tags' ? 'Tags updated' : (fieldVal ? 'Assigned to ' + fieldVal : 'Unassigned'));
+        toast(
+          fieldKey === 'status' ? 'Status updated' :
+          fieldKey === 'tags' ? 'Tags updated' :
+          fieldKey === 'name' ? 'Name updated' :
+          fieldKey === 'service' ? 'Service updated' :
+          fieldKey === 'contact' ? 'Contact updated' :
+          (fieldVal ? 'Assigned to ' + fieldVal : 'Unassigned')
+        );
         return;
       }
       if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-bulk')) {
@@ -9146,7 +9336,9 @@
         if (root._josLeadAddOpen) { root._josLeadAddOpen = false; renderLeads(); return; }
         if (root._josLeadFilterOpen) { root._josLeadFilterOpen = false; renderLeads(); return; }
         if (root._josLeadBulkOpen) { root._josLeadBulkOpen = false; renderLeads(); return; }
+        if (root._josLeadOverflowOpen) { root._josLeadOverflowOpen = false; renderLeads(); return; }
         if (root._josLeadsColMenuKey) { root._josLeadsColMenuKey = null; renderLeads(); return; }
+        if (root._josLeadsColRenaming) { root._josLeadsColRenaming = null; renderLeads(); return; }
         if (root._josLeadsEditCell) { cancelLeadsCellEdit(root); return; }
         if (root._josLeadsColAddOpen) { root._josLeadsColAddOpen = false; renderLeads(); return; }
         if (root._josLeadCtx && root._josLeadCtx.open) { root._josLeadCtx = null; renderLeads(); return; }
@@ -9180,7 +9372,7 @@
     root.addEventListener('dragstart', function (e) {
       var th = e.target.closest('[data-jos-col-key]');
       if (!th) return;
-      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
       root._josLeadsColDragKey = th.getAttribute('data-jos-col-key');
       root._josLeadsColDragOverKey = root._josLeadsColDragKey;
       root._josLeadsColDragOriginalOrder = root._josLeadsColumns.slice();
@@ -9208,7 +9400,7 @@
       var overKey = th.getAttribute('data-jos-col-key');
       if (!dragKey || dragKey === overKey || overKey === root._josLeadsColDragOverKey) return;
       root._josLeadsColDragOverKey = overKey;
-      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
       var liveCols = root._josLeadsColumns;
       var liveFromI = liveCols.findIndex(function (c) { return c.key === dragKey; });
       var liveToI = liveCols.findIndex(function (c) { return c.key === overKey; });
@@ -9237,7 +9429,7 @@
       // The array is already in its final order from the live dragover
       // reorder above — drop just commits it to storage.
       root._josLeadsColDropCommitted = true;
-      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
       saveLeadsColumns(root._josLeadsColumns);
       renderLeads();
     });
@@ -9250,7 +9442,7 @@
     // separate "close the old one" step.
     root.addEventListener('click', function (e) {
       var field = e.target.closest('[data-jos-lead-field]');
-      if (!field || field.tagName === 'SELECT' || field.tagName === 'INPUT') return;
+      if (!field || field.classList.contains('jos-ld-editing')) return; /* already open — don't reopen and discard in-progress typing */
       var leadId = field.getAttribute('data-jos-lead-id');
       var key = field.getAttribute('data-jos-lead-field');
       if (!leadId || !key) return;
@@ -9290,6 +9482,9 @@
         setTimeout(function () { if (root._josLeadAssignedEditing) { root._josLeadAssignedEditing = false; renderLeads(); } }, 0);
       } else if (t2.id === 'jos-ld-bulk-status-select' && root._josLeadBulkStatusOpen) {
         setTimeout(function () { if (root._josLeadBulkStatusOpen) { root._josLeadBulkStatusOpen = false; renderLeads(); } }, 0);
+      } else if (t2.id === 'jos-ld-th-rename-input' && root._josLeadsColRenaming) {
+        var renamingAtBlur = root._josLeadsColRenaming;
+        setTimeout(function () { if (root._josLeadsColRenaming === renamingAtBlur) commitLeadsColRename(root); }, 0);
       }
     }, true);
     root.addEventListener('keydown', function (e) {
@@ -9355,7 +9550,7 @@
         document.removeEventListener('mouseup', onUp);
         handle.classList.remove('is-resizing');
         col.classList.remove('jos-no-resize-anim'); // future programmatic width changes animate again
-        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
         var target = root._josLeadsColumns.find(function (c) { return c.key === key; });
         if (target) target.width = col.offsetWidth;
         saveLeadsColumns(root._josLeadsColumns);
@@ -9401,7 +9596,7 @@
   // before this edit started (arrow-key selection on a native <select>
   // commits immediately, so by the time Escape is pressed the value may
   // already have changed; this actually rolls it back, not just closes).
-  var LEADS_FIELD_TO_COL = { status: 'status', assignedTo: 'assigned', tags: 'tags' };
+  // (LEADS_FIELD_TO_COL is defined once, near LEADS_COL_DEFAULT_WIDTH.)
 
   // Shared by dblclick and Enter-on-focused-gridcell — same open path
   // either way, so the two entry points can't drift out of sync.
@@ -9410,6 +9605,7 @@
     if (!editingLead) return;
     var originalValue = key === 'status' ? normalizeCrmStatus(editingLead)
       : key === 'tags' ? (Array.isArray(editingLead.tags) ? editingLead.tags.slice() : [])
+      : key === 'contact' ? { phone: editingLead.phone || '', email: editingLead.email || '' }
       : editingLead[key];
     root._josLeadsEditCell = { leadId: leadId, field: key, originalValue: originalValue };
     var colKey = LEADS_FIELD_TO_COL[key];
@@ -9445,10 +9641,41 @@
         // to its original value first so that stray commit is a no-op.
         var tagsInput = root.querySelector('input[data-jos-lead-field="tags"][data-jos-lead-id="' + CSS.escape(editing.leadId) + '"]');
         if (tagsInput) tagsInput.value = (editing.originalValue || []).join(', ');
+      } else if (editing.field === 'name' || editing.field === 'service') {
+        // Same reasoning as tags — reset the live input before the render
+        // below removes it, so a stray 'change' synthesized by that removal
+        // is a no-op instead of saving the just-cancelled edit.
+        var plainInput = root.querySelector('input[data-jos-lead-field="' + editing.field + '"][data-jos-lead-id="' + CSS.escape(editing.leadId) + '"]');
+        if (plainInput) plainInput.value = editing.originalValue || '';
+      } else if (editing.field === 'contact') {
+        var contactInput = root.querySelector('input[data-jos-lead-field="contact"][data-jos-lead-id="' + CSS.escape(editing.leadId) + '"]');
+        if (contactInput) {
+          var ov = editing.originalValue || {};
+          contactInput.value = [ov.phone || '', ov.email || ''].filter(Boolean).join(', ');
+        }
       }
     }
     root._josLeadsEditCell = null;
     root._josLeadsGridFocusPending = true;
+    renderLeads();
+  }
+
+  // Double-click a header label -> type -> Enter/blur -> saved. Shares the
+  // 'jos-ld-editing' Enter-blurs-itself convention with cell edits above,
+  // but commits through its own path since it writes to the column config,
+  // not a lead field.
+  function commitLeadsColRename(root) {
+    var key = root._josLeadsColRenaming;
+    if (!key) return;
+    var input = el('jos-ld-th-rename-input');
+    var newLabel = input ? String(input.value || '').trim() : '';
+    if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
+    var col = root._josLeadsColumns.find(function (c) { return c.key === key; });
+    if (col && newLabel && newLabel !== col.label) {
+      col.label = newLabel;
+      saveLeadsColumns(root._josLeadsColumns);
+    }
+    root._josLeadsColRenaming = null;
     renderLeads();
   }
 
@@ -9641,6 +9868,7 @@
         root._josLeadImportHeaders = null;
         root._josLeadImportRows = null;
         root._josLeadImportMapping = {};
+        root._josLeadOverflowOpen = false;
         return renderLeads();
       }
       if (act === 'leads-import-cancel') {
@@ -9704,7 +9932,15 @@
       }
       if (act === 'leads-add-save') return saveNewLead(false);
       if (act === 'leads-add-quote') return saveNewLead(true);
-      if (act === 'leads-bulk-toggle') { root._josLeadBulkOpen = !root._josLeadBulkOpen; return renderLeads(); }
+      if (act === 'leads-bulk-toggle') {
+        root._josLeadBulkOpen = !root._josLeadBulkOpen;
+        root._josLeadOverflowOpen = false;
+        return renderLeads();
+      }
+      if (act === 'leads-overflow-toggle') {
+        root._josLeadOverflowOpen = !root._josLeadOverflowOpen;
+        return renderLeads();
+      }
       if (act === 'leads-col-menu') {
         var clickedKey = t.getAttribute('data-jos-col-key');
         root._josLeadsColMenuKey = root._josLeadsColMenuKey === clickedKey ? null : clickedKey;
@@ -9716,20 +9952,9 @@
         root._josLeadsColMenuKey = null;
         return renderLeads();
       }
-      if (act === 'leads-col-rename-save') {
-        var renameKey = t.getAttribute('data-jos-col-key');
-        var renameInput = el('jos-ld-col-rename-input');
-        var newLabel = renameInput ? String(renameInput.value || '').trim() : '';
-        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
-        var renameCol = root._josLeadsColumns.find(function (c) { return c.key === renameKey; });
-        if (renameCol && newLabel) renameCol.label = newLabel;
-        saveLeadsColumns(root._josLeadsColumns);
-        root._josLeadsColMenuKey = null;
-        return renderLeads();
-      }
       if (act === 'leads-col-hide') {
         var hideKey = t.getAttribute('data-jos-col-key');
-        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
         var visibleN = root._josLeadsColumns.filter(function (c) { return !c.hidden; }).length;
         if (visibleN <= 1) { toast('At least one column must stay visible'); root._josLeadsColMenuKey = null; return renderLeads(); }
         var hideCol = root._josLeadsColumns.find(function (c) { return c.key === hideKey; });
@@ -9738,52 +9963,25 @@
         root._josLeadsColMenuKey = null;
         return renderLeads();
       }
-      if (act === 'leads-col-move-left' || act === 'leads-col-move-right') {
-        var moveKey = t.getAttribute('data-jos-col-key');
-        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
-        var mcols = root._josLeadsColumns;
-        var mi = mcols.findIndex(function (c) { return c.key === moveKey; });
-        if (mi < 0) return;
-        var dir = act === 'leads-col-move-left' ? -1 : 1;
-        // Swap with the next VISIBLE neighbor in that direction, not just the
-        // adjacent array slot — a hidden column sitting between two visible
-        // ones shouldn't count as a stop, or Move Left/Right would silently
-        // do nothing while a hidden column happens to be next in the array.
-        var swapI = mi + dir;
-        while (swapI >= 0 && swapI < mcols.length && mcols[swapI].hidden) swapI += dir;
-        if (swapI < 0 || swapI >= mcols.length) return;
-        var tmpCol = mcols[mi]; mcols[mi] = mcols[swapI]; mcols[swapI] = tmpCol;
-        saveLeadsColumns(mcols);
-        return renderLeads();
-      }
       if (act === 'leads-col-reset-width') {
         var rwKey = t.getAttribute('data-jos-col-key');
-        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
         var rwCol = root._josLeadsColumns.find(function (c) { return c.key === rwKey; });
         if (rwCol) delete rwCol.width;
         saveLeadsColumns(root._josLeadsColumns);
         return renderLeads();
       }
-      if (act === 'leads-col-freeze') {
-        var freezeKey = t.getAttribute('data-jos-col-key');
-        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
-        var visCols = root._josLeadsColumns.filter(function (c) { return !c.hidden; });
-        var freezeI = visCols.findIndex(function (c) { return c.key === freezeKey; });
-        if (freezeI < 0) return;
-        root._josLeadsFrozenCount = freezeI + 1;
-        saveLeadsFrozenCount(root._josLeadsFrozenCount);
+      if (act === 'leads-col-rename-open') {
+        root._josLeadsColRenaming = t.getAttribute('data-jos-col-key');
         root._josLeadsColMenuKey = null;
-        return renderLeads();
-      }
-      if (act === 'leads-col-unfreeze') {
-        root._josLeadsFrozenCount = 0;
-        saveLeadsFrozenCount(0);
-        root._josLeadsColMenuKey = null;
-        return renderLeads();
+        renderLeads();
+        var renameInput = el('jos-ld-th-rename-input');
+        if (renameInput) { renameInput.focus({ preventScroll: true }); renameInput.select(); }
+        return;
       }
       if (act === 'leads-col-show') {
         var showKey = t.getAttribute('data-jos-col-key');
-        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
         var showCol = root._josLeadsColumns.find(function (c) { return c.key === showKey; });
         if (showCol) showCol.hidden = false;
         saveLeadsColumns(root._josLeadsColumns);
@@ -9800,7 +9998,8 @@
         var csv = 'name,phone,email,status,service,source,assigned\n' + rows.join('\n');
         try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(csv); } catch (eExp) {}
         toast('Exported ' + rows.length + ' leads');
-        return;
+        root._josLeadOverflowOpen = false;
+        return renderLeads();
       }
       if (act === 'leads-filter-source') {
         root._josLeadFilters = root._josLeadFilters || {};
