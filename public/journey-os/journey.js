@@ -7183,23 +7183,35 @@
       '<div class="jos-px-side-body"><div class="jos-px-side-stats"><div class="jos-px-side-stat"><div class="l">Estimate</div><div class="v">' + esc(lead.amount != null ? money(lead.amount) : '—') + '</div></div><div class="jos-px-side-stat"><div class="l">Created</div><div class="v">' + esc(lead.createdAt ? String(lead.createdAt).slice(0, 10) : '—') + '</div></div></div>' +
       '<div class="jos-px-side-actions">' + btn('manual-lead', 'Edit lead', 'jos-btn jos-btn-sm') + (lead.key ? '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-lead="' + esc(lead.key) + '">Open full lead</button>' : '') + '</div></div>';
   }
-  // ---- Generic per-user table preferences (Supabase-backed) -------------
+  // ---- Generic table preferences / config (Supabase-backed) -------------
   // One reusable persistence model for every configurable table in Hubly —
-  // column order/width/hidden/labels, row density, sort order, saved views
-  // — keyed by an arbitrary `tableKey` ('leads' today; 'customers', 'jobs',
-  // 'calendar', 'storefront_orders', 'products', 'invoices' later reuse this
-  // exact module, no new persistence code per module). Backed by
-  // public.user_table_preferences (see
-  // supabase/migrations/20260807020000_table_preferences_foundation.sql) —
-  // per-user, per-business, per-table_key, RLS-scoped to the owning user.
+  // column order/width/hidden/labels, custom field definitions, row
+  // density, sort order, saved views — keyed by an arbitrary `tableKey`
+  // ('leads' today; 'customers', 'jobs', 'calendar', 'storefront_orders',
+  // 'products', 'invoices' later reuse this exact module, no new
+  // persistence code per module) and a `scope`:
+  //   'user'     -> public.user_table_preferences, per-user/per-business,
+  //                 RLS-scoped to the owning user. Column order/width/
+  //                 hidden/personal-label, never shared.
+  //   'business' -> public.business_table_config, per-business only —
+  //                 custom field DEFINITIONS, shared by every employee.
+  // (Both tables added by
+  // supabase/migrations/20260807020000_table_preferences_foundation.sql.)
   //
   // Model, per product direction ("the database is the source of truth, the
   // browser is a cache"):
   //   1. Instant UI — callers mutate their own in-memory state and re-render
   //      BEFORE calling queueTablePrefsSync; this module never blocks that.
-  //   2. Local cache — queueTablePrefsSync writes localStorage synchronously,
-  //      purely so a refresh before the server responds doesn't revert to
-  //      defaults. Never treated as authoritative.
+  //   2. Session cache — queueTablePrefsSync stashes the value on S()
+  //      (the app's existing in-memory store), not localStorage. A cache
+  //      that outlives the tab is exactly the failure mode being avoided
+  //      here: open Computer A stale, edit on Computer B, reopen Computer A
+  //      days later — localStorage would paint the stale Computer-A layout
+  //      for a beat before the real fetch corrects it. An in-memory cache
+  //      can't do that; it's gone the moment the tab closes, so a fresh
+  //      page load always waits on the real fetch (or shows defaults)
+  //      rather than ever risking a stale-across-days paint. Within the
+  //      current tab session it still makes repeat reads instant.
   //   3. Background sync — a debounced (450ms, matching persistPipelineSoon
   //      in hubly.html) direct write to Supabase. Failures retry with
   //      backoff up to 3 times, keeping the optimistic UI as-is; a toast
@@ -7208,22 +7220,22 @@
   //      RIGHT NOW (or null) for an instant first paint, and separately
   //      kicks off a real fetch; the caller's onRemote fires if the server
   //      value differs, and the server always wins over the cache.
-  // Business-wide config (custom fields, renamed defaults — shared by every
-  // employee, NOT a personal preference) is a deliberately separate table,
-  // public.business_table_config, reserved by the same migration but not
-  // yet written to by any client code — no custom-fields UI exists yet.
-  function tablePrefsCacheKey(tableKey) {
+  function tablePrefsMemStore() {
+    var st = S();
+    if (!st._tablePrefsCache || typeof st._tablePrefsCache !== 'object') st._tablePrefsCache = {};
+    return st._tablePrefsCache;
+  }
+  function tablePrefsCacheKey(scope, tableKey) {
     var biz = (global.currentBusiness && global.currentBusiness.id) || S().slug || 'default';
-    return 'hubly_table_prefs_v1_' + tableKey + '_' + biz;
+    return scope + '_' + tableKey + '_' + biz;
   }
-  function loadTablePrefsCache(tableKey) {
-    try {
-      var raw = localStorage.getItem(tablePrefsCacheKey(tableKey));
-      return raw ? JSON.parse(raw) : null;
-    } catch (e) { return null; }
+  function loadTablePrefsCache(scope, tableKey) {
+    var store = tablePrefsMemStore();
+    var key = tablePrefsCacheKey(scope, tableKey);
+    return Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null;
   }
-  function saveTablePrefsCache(tableKey, prefs) {
-    try { localStorage.setItem(tablePrefsCacheKey(tableKey), JSON.stringify(prefs)); } catch (e) {}
+  function saveTablePrefsCache(scope, tableKey, data) {
+    tablePrefsMemStore()[tablePrefsCacheKey(scope, tableKey)] = data;
   }
   function tablePrefsIdentity() {
     var biz = global.currentBusiness, user = global.currentUser;
@@ -7236,58 +7248,58 @@
       return (typeof global.getDb === 'function' ? global.getDb() : global.db) || null;
     } catch (e) { return null; }
   }
+  function tablePrefsTableName(scope) { return scope === 'business' ? 'business_table_config' : 'user_table_preferences'; }
+  function tablePrefsPayloadKey(scope) { return scope === 'business' ? 'config' : 'preferences'; }
   var _tablePrefsSyncTimers = {};
   var _tablePrefsRetryCounts = {};
-  function queueTablePrefsSync(tableKey, prefs) {
-    saveTablePrefsCache(tableKey, prefs);
-    clearTimeout(_tablePrefsSyncTimers[tableKey]);
-    _tablePrefsSyncTimers[tableKey] = setTimeout(function () {
-      writeTablePrefsToSupabase(tableKey, prefs, 0);
+  function queueTablePrefsSync(scope, tableKey, data) {
+    saveTablePrefsCache(scope, tableKey, data);
+    var timerKey = scope + '_' + tableKey;
+    clearTimeout(_tablePrefsSyncTimers[timerKey]);
+    _tablePrefsSyncTimers[timerKey] = setTimeout(function () {
+      writeTablePrefsToSupabase(scope, tableKey, data, 0);
     }, 450);
   }
-  function writeTablePrefsToSupabase(tableKey, prefs, attempt) {
+  function writeTablePrefsToSupabase(scope, tableKey, data, attempt) {
     var id = tablePrefsIdentity();
     if (!id) return;
+    var timerKey = scope + '_' + tableKey;
     tablePrefsDb().then(function (dbClient) {
       if (!dbClient) return;
-      return dbClient.from('user_table_preferences').upsert({
-        business_id: id.businessId,
-        user_id: id.userId,
-        table_key: tableKey,
-        preferences: prefs
-      }, { onConflict: 'business_id,user_id,table_key' });
+      var row = { business_id: id.businessId, table_key: tableKey };
+      if (scope !== 'business') row.user_id = id.userId;
+      row[tablePrefsPayloadKey(scope)] = data;
+      return dbClient.from(tablePrefsTableName(scope)).upsert(row, {
+        onConflict: scope === 'business' ? 'business_id,table_key' : 'business_id,user_id,table_key'
+      });
     }).then(function (res) {
       if (res && res.error) throw res.error;
-      _tablePrefsRetryCounts[tableKey] = 0;
+      _tablePrefsRetryCounts[timerKey] = 0;
     }).catch(function (err) {
-      var count = (_tablePrefsRetryCounts[tableKey] || 0) + 1;
-      _tablePrefsRetryCounts[tableKey] = count;
-      console.warn('table preferences sync failed (' + tableKey + '), attempt ' + count, (err && err.message) || err);
+      var count = (_tablePrefsRetryCounts[timerKey] || 0) + 1;
+      _tablePrefsRetryCounts[timerKey] = count;
+      console.warn('table preferences sync failed (' + timerKey + '), attempt ' + count, (err && err.message) || err);
       if (count <= 3) {
-        setTimeout(function () { writeTablePrefsToSupabase(tableKey, prefs, count); }, Math.min(2000 * count, 8000));
+        setTimeout(function () { writeTablePrefsToSupabase(scope, tableKey, data, count); }, Math.min(2000 * count, 8000));
       } else {
-        _tablePrefsRetryCounts[tableKey] = 0; // next edit starts a fresh retry chain, not an escalating one
-        try { if (typeof toast === 'function') toast('Couldn’t save your table layout — will keep trying in the background'); } catch (eToast) {}
+        _tablePrefsRetryCounts[timerKey] = 0; // next edit starts a fresh retry chain, not an escalating one
+        try { if (typeof toast === 'function') toast(scope === 'business' ? 'Couldn’t save that field change — will keep trying in the background' : 'Couldn’t save your table layout — will keep trying in the background'); } catch (eToast) {}
       }
     });
   }
-  function fetchTablePrefsFromSupabase(tableKey) {
+  function fetchTablePrefsFromSupabase(scope, tableKey) {
     var id = tablePrefsIdentity();
     if (!id) return Promise.resolve(null);
     return tablePrefsDb().then(function (dbClient) {
       if (!dbClient) return null;
-      return dbClient.from('user_table_preferences')
-        .select('preferences')
-        .eq('business_id', id.businessId)
-        .eq('user_id', id.userId)
-        .eq('table_key', tableKey)
-        .maybeSingle()
-        .then(function (res) {
-          if (res && res.error) throw res.error;
-          return res && res.data ? res.data.preferences : null;
-        });
+      var q = dbClient.from(tablePrefsTableName(scope)).select(tablePrefsPayloadKey(scope)).eq('business_id', id.businessId).eq('table_key', tableKey);
+      if (scope !== 'business') q = q.eq('user_id', id.userId);
+      return q.maybeSingle().then(function (res) {
+        if (res && res.error) throw res.error;
+        return res && res.data ? res.data[tablePrefsPayloadKey(scope)] : null;
+      });
     }).catch(function (err) {
-      console.warn('table preferences fetch failed (' + tableKey + ')', (err && err.message) || err);
+      console.warn('table preferences fetch failed (' + scope + '/' + tableKey + ')', (err && err.message) || err);
       return null;
     });
   }
@@ -7296,11 +7308,11 @@
   // real server value in the background — onRemote only fires when the
   // server actually returned something, so a fetch failure or a
   // not-yet-authenticated demo session just silently keeps the cache/default.
-  function loadTablePreferences(tableKey, onRemote) {
-    var cached = loadTablePrefsCache(tableKey);
-    fetchTablePrefsFromSupabase(tableKey).then(function (remote) {
+  function loadTablePreferences(scope, tableKey, onRemote) {
+    var cached = loadTablePrefsCache(scope, tableKey);
+    fetchTablePrefsFromSupabase(scope, tableKey).then(function (remote) {
       if (remote == null) return;
-      saveTablePrefsCache(tableKey, remote);
+      saveTablePrefsCache(scope, tableKey, remote);
       if (typeof onRemote === 'function') onRemote(remote);
     });
     return cached;
@@ -7316,39 +7328,82 @@
     { key: 'tags', label: 'Tags', hidden: true },
     { key: 'created', label: 'Created' }
   ];
-  // Merge saved order/labels/hidden/width with defaults so a newly-added
-  // default column (a future code change) still shows up for existing
-  // businesses, and any column key that no longer exists is dropped safely.
-  // A newly added column's own default `hidden` is respected (e.g. Tags
-  // ships hidden-by-default) rather than always forced visible.
-  function normalizeLeadsColumns(saved) {
-    if (!Array.isArray(saved) || !saved.length) return LEADS_DEFAULT_COLUMNS.map(function (c) { return { key: c.key, label: c.label, hidden: !!c.hidden }; });
+  // Custom fields (business_table_config, scope 'business' — shared by
+  // every employee, not a personal preference): a business can define real
+  // fields specific to how they work — HOA, Gate Code, Water Source for a
+  // pressure-washing company; Venue, Shoot Type for a photographer — which
+  // then behave as first-class columns through the exact same column
+  // system as the built-ins (reorder/hide/rename/inline-edit all reuse the
+  // machinery below, not a parallel implementation).
+  function normalizeCustomFields(saved) {
+    return Array.isArray(saved) ? saved.filter(function (f) { return f && f.id && f.label; }) : [];
+  }
+  // root is optional — passed so a late-arriving server value can patch
+  // live state and re-render (a teammate defining a new field should show
+  // up for you without a page reload), not just take effect next load.
+  function loadLeadsCustomFields(root) {
+    var cached = loadTablePreferences('business', 'leads', function (remote) {
+      var remoteFields = normalizeCustomFields(remote && remote.customFields);
+      if (!root) return;
+      if (JSON.stringify(remoteFields) !== JSON.stringify(root._josLeadsCustomFields)) {
+        root._josLeadsCustomFields = remoteFields;
+        // A brand-new field from a teammate isn't in this user's saved
+        // column list yet — merge it in (visible by default) the same way
+        // normalizeLeadsColumns already merges in newly-added builtins.
+        root._josLeadsColumns = normalizeLeadsColumns(root._josLeadsColumns, remoteFields);
+        renderLeads();
+      }
+    });
+    return normalizeCustomFields(cached && cached.customFields);
+  }
+  function saveLeadsCustomFields(fields) {
+    queueTablePrefsSync('business', 'leads', { customFields: fields });
+  }
+  function leadsCustomFieldKey() {
+    return 'cf_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+  function isLeadsCustomFieldKey(key) {
+    return typeof key === 'string' && key.indexOf('cf_') === 0;
+  }
+  // Merge saved order/labels/hidden/width with the current column universe
+  // (builtins + custom fields) so a newly-added builtin (a future code
+  // change) or a newly-defined custom field (a teammate, or this user a
+  // moment ago) still shows up, and any column key that no longer exists
+  // (a deleted custom field) is dropped safely. A newly added column's own
+  // default `hidden` is respected (e.g. Tags ships hidden-by-default; a
+  // fresh custom field defaults to visible) rather than always forced one
+  // way.
+  function normalizeLeadsColumns(saved, customFields) {
+    var allDefs = LEADS_DEFAULT_COLUMNS.concat((customFields || []).map(function (f) {
+      return { key: f.id, label: f.label, hidden: false, custom: true };
+    }));
+    if (!Array.isArray(saved) || !saved.length) return allDefs.map(function (c) { return { key: c.key, label: c.label, hidden: !!c.hidden, custom: !!c.custom }; });
     var byKey = {};
-    LEADS_DEFAULT_COLUMNS.forEach(function (c) { byKey[c.key] = c; });
+    allDefs.forEach(function (c) { byKey[c.key] = c; });
     var out = saved.filter(function (s) { return byKey[s.key]; }).map(function (s) {
-      return { key: s.key, label: s.label || byKey[s.key].label, hidden: !!s.hidden, width: s.width || undefined };
+      return { key: s.key, label: s.label || byKey[s.key].label, hidden: !!s.hidden, width: s.width || undefined, custom: !!byKey[s.key].custom };
     });
     var seen = {};
     out.forEach(function (c) { seen[c.key] = true; });
-    LEADS_DEFAULT_COLUMNS.forEach(function (c) { if (!seen[c.key]) out.push({ key: c.key, label: c.label, hidden: !!c.hidden }); });
+    allDefs.forEach(function (c) { if (!seen[c.key]) out.push({ key: c.key, label: c.label, hidden: !!c.hidden, custom: !!c.custom }); });
     return out;
   }
-  // root is optional — passed so a late-arriving server value (which may
-  // differ from whatever localStorage had cached) can patch live state and
-  // re-render, instead of only taking effect on the next full page load.
-  function loadLeadsColumns(root) {
-    var cached = loadTablePreferences('leads', function (remote) {
-      var remoteCols = normalizeLeadsColumns(remote && remote.columns);
+  // root is optional — passed so a late-arriving server value can patch
+  // live state and re-render, instead of only taking effect on the next
+  // full page load.
+  function loadLeadsColumns(root, customFields) {
+    var cached = loadTablePreferences('user', 'leads', function (remote) {
+      var remoteCols = normalizeLeadsColumns(remote && remote.columns, root && root._josLeadsCustomFields);
       if (!root) return;
       if (JSON.stringify(remoteCols) !== JSON.stringify(root._josLeadsColumns)) {
         root._josLeadsColumns = remoteCols;
         renderLeads();
       }
     });
-    return normalizeLeadsColumns(cached && cached.columns);
+    return normalizeLeadsColumns(cached && cached.columns, customFields);
   }
   function saveLeadsColumns(cols) {
-    queueTablePrefsSync('leads', { columns: cols });
+    queueTablePrefsSync('user', 'leads', { columns: cols });
   }
 
   var LEADS_TABS = [
@@ -8169,6 +8224,19 @@
       return '<span class="jos-ld-tags-cell' + (tagsList.length ? '' : ' is-empty') + '" data-jos-lead-field="tags" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + (tagsList.length ? tagsList.map(function (tg) { return '<span class="jos-ld-tag-chip">' + esc(tg) + '</span>'; }).join('') : 'No tags') + '</span>';
     }
     if (colKey === 'created') return esc(String(lead.createdAt || '').slice(0, 10)) || '—';
+    if (isLeadsCustomFieldKey(colKey)) {
+      // Business-defined field (HOA, Gate Code, Venue, ...) — values live
+      // in their own bag on the lead, keyed by the field's stable id, so
+      // renaming the column later never orphans already-saved data. Same
+      // simple click-to-edit text input as Name/Service; no special case
+      // needed beyond reading/writing lead.customFields instead of a
+      // top-level lead property.
+      var cfVal = (lead.customFields && lead.customFields[colKey]) || '';
+      if (editingField === colKey) {
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(colKey) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Custom field" value="' + esc(cfVal) + '" onclick="event.stopPropagation()">';
+      }
+      return '<span class="jos-ld-name-cell' + (cfVal ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(colKey) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (cfVal ? esc(cfVal) : 'Click to add') + '</span>';
+    }
     return '—';
   }
 
@@ -8214,7 +8282,7 @@
       return '<tr class="jos-ld-trow' + (on ? ' on' : '') + '" role="row" data-jos-lead-id="' + esc(leadKey) + '">' +
         (bulkOpen ? '<td class="jos-ld-tcheck" role="gridcell" onclick="event.stopPropagation()"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '" aria-label="Select ' + esc(lead.name || 'lead') + '"' + (checked ? ' checked' : '') + '></td>' : '') +
         cols.map(function (c) {
-          var fieldForCol = LEADS_COL_TO_FIELD[c.key] || null;
+          var fieldForCol = LEADS_COL_TO_FIELD[c.key] || (c.custom ? c.key : null);
           var isEditingThis = editing && editing.leadId === leadKey && fieldForCol && editing.field === fieldForCol;
           var isActive = active.leadId === leadKey && active.colKey === c.key;
           return '<td class="jos-ld-tcell-' + esc(c.key) + '" role="gridcell" tabindex="' + (isActive ? '0' : '-1') + '" data-jos-col-key="' + esc(c.key) + '">' +
@@ -8239,6 +8307,7 @@
               '<button type="button" data-jos-act="leads-col-rename-open" data-jos-col-key="' + esc(c.key) + '">Rename</button>' +
               '<button type="button" data-jos-act="leads-col-reset-width" data-jos-col-key="' + esc(c.key) + '">Reset width</button>' +
               '<button type="button" data-jos-act="leads-col-hide" data-jos-col-key="' + esc(c.key) + '">Hide column</button>' +
+              (c.custom ? '<button type="button" class="jos-ld-col-menu-danger" data-jos-act="leads-col-delete-field" data-jos-col-key="' + esc(c.key) + '">Delete field</button>' : '') +
               '</div>'
             : '') +
           '<span class="jos-ld-col-resize" data-jos-col-resize="' + esc(c.key) + '" onclick="event.stopPropagation()"></span>' +
@@ -8259,6 +8328,8 @@
           return '<button type="button" data-jos-act="leads-col-show" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</button>';
         }).join('')
         : '<div class="jos-muted" style="padding:8px 10px;white-space:nowrap">All columns are visible</div>') +
+      '<div class="jos-ld-col-menu-sep"></div>' +
+      '<button type="button" data-jos-act="leads-col-add-custom-field">+ Add custom field</button>' +
       '</div>';
   }
 
@@ -8653,7 +8724,11 @@
     var f = root._josLeadFilters || {};
     var bulkOpen = !!root._josLeadBulkOpen;
     var viewMode = root._josLeadsView === 'table' ? 'table' : 'list';
-    if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
+    // Custom fields load before columns so the very first normalize pass
+    // already knows about them (not just once the business-config fetch
+    // happens to resolve and re-triggers a merge).
+    if (!root._josLeadsCustomFields) root._josLeadsCustomFields = loadLeadsCustomFields(root);
+    if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root, root._josLeadsCustomFields);
     var leadsColumns = root._josLeadsColumns;
     // Selection and panel-open are separate: closing the panel keeps the
     // row highlighted (per spec — "keep the selected row highlighted until
@@ -9287,6 +9362,10 @@
             l.phone = newPhone;
             l.email = newEmail;
             pushLeadActivity(l, 'edit', 'Contact info updated');
+          } else if (isLeadsCustomFieldKey(fieldKey)) {
+            l.customFields = l.customFields || {};
+            l.customFields[fieldKey] = String(fieldVal || '').trim();
+            pushLeadActivity(l, 'edit', 'Custom field updated');
           }
         });
         toast(
@@ -9295,7 +9374,8 @@
           fieldKey === 'name' ? 'Name updated' :
           fieldKey === 'service' ? 'Service updated' :
           fieldKey === 'contact' ? 'Contact updated' :
-          (fieldVal ? 'Assigned to ' + fieldVal : 'Unassigned')
+          fieldKey === 'assignedTo' ? (fieldVal ? 'Assigned to ' + fieldVal : 'Unassigned') :
+          'Updated'
         );
         return;
       }
@@ -9372,7 +9452,7 @@
     root.addEventListener('dragstart', function (e) {
       var th = e.target.closest('[data-jos-col-key]');
       if (!th) return;
-      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
+      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root, root._josLeadsCustomFields);
       root._josLeadsColDragKey = th.getAttribute('data-jos-col-key');
       root._josLeadsColDragOverKey = root._josLeadsColDragKey;
       root._josLeadsColDragOriginalOrder = root._josLeadsColumns.slice();
@@ -9400,7 +9480,7 @@
       var overKey = th.getAttribute('data-jos-col-key');
       if (!dragKey || dragKey === overKey || overKey === root._josLeadsColDragOverKey) return;
       root._josLeadsColDragOverKey = overKey;
-      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
+      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root, root._josLeadsCustomFields);
       var liveCols = root._josLeadsColumns;
       var liveFromI = liveCols.findIndex(function (c) { return c.key === dragKey; });
       var liveToI = liveCols.findIndex(function (c) { return c.key === overKey; });
@@ -9429,7 +9509,7 @@
       // The array is already in its final order from the live dragover
       // reorder above — drop just commits it to storage.
       root._josLeadsColDropCommitted = true;
-      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
+      if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root, root._josLeadsCustomFields);
       saveLeadsColumns(root._josLeadsColumns);
       renderLeads();
     });
@@ -9550,7 +9630,7 @@
         document.removeEventListener('mouseup', onUp);
         handle.classList.remove('is-resizing');
         col.classList.remove('jos-no-resize-anim'); // future programmatic width changes animate again
-        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root, root._josLeadsCustomFields);
         var target = root._josLeadsColumns.find(function (c) { return c.key === key; });
         if (target) target.width = col.offsetWidth;
         saveLeadsColumns(root._josLeadsColumns);
@@ -9606,9 +9686,10 @@
     var originalValue = key === 'status' ? normalizeCrmStatus(editingLead)
       : key === 'tags' ? (Array.isArray(editingLead.tags) ? editingLead.tags.slice() : [])
       : key === 'contact' ? { phone: editingLead.phone || '', email: editingLead.email || '' }
+      : isLeadsCustomFieldKey(key) ? ((editingLead.customFields && editingLead.customFields[key]) || '')
       : editingLead[key];
     root._josLeadsEditCell = { leadId: leadId, field: key, originalValue: originalValue };
-    var colKey = LEADS_FIELD_TO_COL[key];
+    var colKey = LEADS_FIELD_TO_COL[key] || (isLeadsCustomFieldKey(key) ? key : null);
     if (colKey) root._josLeadsActiveCell = { leadId: leadId, colKey: colKey };
     renderLeads();
     var sel = root.querySelector('[data-jos-lead-field="' + key + '"][data-jos-lead-id="' + CSS.escape(leadId) + '"].jos-ld-editing');
@@ -9641,7 +9722,7 @@
         // to its original value first so that stray commit is a no-op.
         var tagsInput = root.querySelector('input[data-jos-lead-field="tags"][data-jos-lead-id="' + CSS.escape(editing.leadId) + '"]');
         if (tagsInput) tagsInput.value = (editing.originalValue || []).join(', ');
-      } else if (editing.field === 'name' || editing.field === 'service') {
+      } else if (editing.field === 'name' || editing.field === 'service' || isLeadsCustomFieldKey(editing.field)) {
         // Same reasoning as tags — reset the live input before the render
         // below removes it, so a stray 'change' synthesized by that removal
         // is a no-op instead of saving the just-cancelled edit.
@@ -9669,7 +9750,7 @@
     if (!key) return;
     var input = el('jos-ld-th-rename-input');
     var newLabel = input ? String(input.value || '').trim() : '';
-    if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
+    if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root, root._josLeadsCustomFields);
     var col = root._josLeadsColumns.find(function (c) { return c.key === key; });
     if (col && newLabel && newLabel !== col.label) {
       col.label = newLabel;
@@ -9954,7 +10035,7 @@
       }
       if (act === 'leads-col-hide') {
         var hideKey = t.getAttribute('data-jos-col-key');
-        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root, root._josLeadsCustomFields);
         var visibleN = root._josLeadsColumns.filter(function (c) { return !c.hidden; }).length;
         if (visibleN <= 1) { toast('At least one column must stay visible'); root._josLeadsColMenuKey = null; return renderLeads(); }
         var hideCol = root._josLeadsColumns.find(function (c) { return c.key === hideKey; });
@@ -9965,7 +10046,7 @@
       }
       if (act === 'leads-col-reset-width') {
         var rwKey = t.getAttribute('data-jos-col-key');
-        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root, root._josLeadsCustomFields);
         var rwCol = root._josLeadsColumns.find(function (c) { return c.key === rwKey; });
         if (rwCol) delete rwCol.width;
         saveLeadsColumns(root._josLeadsColumns);
@@ -9981,10 +10062,40 @@
       }
       if (act === 'leads-col-show') {
         var showKey = t.getAttribute('data-jos-col-key');
-        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root);
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root, root._josLeadsCustomFields);
         var showCol = root._josLeadsColumns.find(function (c) { return c.key === showKey; });
         if (showCol) showCol.hidden = false;
         saveLeadsColumns(root._josLeadsColumns);
+        return renderLeads();
+      }
+      if (act === 'leads-col-add-custom-field') {
+        var newFieldLabel = window.prompt('Field name (e.g. "HOA", "Gate Code", "Venue")');
+        newFieldLabel = newFieldLabel ? String(newFieldLabel).trim() : '';
+        if (!newFieldLabel) return;
+        var newFieldId = leadsCustomFieldKey();
+        root._josLeadsCustomFields = (root._josLeadsCustomFields || []).concat([{ id: newFieldId, label: newFieldLabel }]);
+        saveLeadsCustomFields(root._josLeadsCustomFields);
+        // Business-wide field, but this user should see it immediately too
+        // — append to their own column list rather than waiting on the
+        // normalize-on-next-load merge.
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns(root, root._josLeadsCustomFields);
+        root._josLeadsColumns = root._josLeadsColumns.concat([{ key: newFieldId, label: newFieldLabel, hidden: false, custom: true }]);
+        saveLeadsColumns(root._josLeadsColumns);
+        root._josLeadsColAddOpen = false;
+        toast('Added field "' + newFieldLabel + '"');
+        return renderLeads();
+      }
+      if (act === 'leads-col-delete-field') {
+        var delFieldKey = t.getAttribute('data-jos-col-key');
+        if (!isLeadsCustomFieldKey(delFieldKey)) return;
+        var delFieldCol = (root._josLeadsColumns || []).find(function (c) { return c.key === delFieldKey; });
+        if (!window.confirm('Delete the field "' + (delFieldCol ? delFieldCol.label : delFieldKey) + '"? This removes it for everyone at this business. This cannot be undone.')) return;
+        root._josLeadsCustomFields = (root._josLeadsCustomFields || []).filter(function (f) { return f.id !== delFieldKey; });
+        saveLeadsCustomFields(root._josLeadsCustomFields);
+        root._josLeadsColumns = (root._josLeadsColumns || []).filter(function (c) { return c.key !== delFieldKey; });
+        saveLeadsColumns(root._josLeadsColumns);
+        root._josLeadsColMenuKey = null;
+        toast('Field deleted');
         return renderLeads();
       }
       if (act === 'leads-load-more') {

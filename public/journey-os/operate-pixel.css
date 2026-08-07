@@ -4950,6 +4950,9 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-col-menu > button:hover{background:#F5F6F7}
 .jos-ld-col-menu > button:disabled{color:#C7CCD3;cursor:default}
 .jos-ld-col-menu > button:disabled:hover{background:transparent}
+.jos-ld-col-menu-sep{height:1px;background:#EDEEF1;margin:2px 0}
+.jos-ld-col-menu-danger{color:#B42318!important}
+.jos-ld-col-menu-danger:hover{background:#FEF3F2!important}
 
 /* Status pill — static by default, double-click to edit */
 .jos-ld-status-pill{
