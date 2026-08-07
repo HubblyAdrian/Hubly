@@ -7303,24 +7303,66 @@
       return null;
     });
   }
-  // Public entry point. Returns the cached value (or null) synchronously so
-  // first paint never waits on a network call, and separately resolves the
-  // real server value in the background — onRemote only fires when the
-  // server actually returned something, so a fetch failure or a
-  // not-yet-authenticated demo session just silently keeps the cache/default.
-  function loadTablePreferences(scope, tableKey, onRemote) {
-    var cached = loadTablePrefsCache(scope, tableKey);
-    fetchTablePrefsFromSupabase(scope, tableKey).then(function (remote) {
-      if (remote == null) return;
-      saveTablePrefsCache(scope, tableKey, remote);
-      if (typeof onRemote === 'function') onRemote(remote);
-    });
-    return cached;
-  }
+  // Public API — schema-driven, not Leads-driven. Every configurable table
+  // in Hubly (Customers, Jobs, Calendar, Products, Invoices, Storefront
+  // Orders, Assets, ...) is meant to call these same three functions with
+  // its OWN tableKey and its OWN schema array; nothing in here ever
+  // references "leads" or knows what a lead is. The Leads-specific
+  // wrappers just below (leadsColumnSchema/loadLeadsColumns/...) are the
+  // first, proof-of-concept CALLER of this API, not part of it — if a
+  // second table ever needed to duplicate logic instead of just handing in
+  // a different schema, that would mean this object still has Leads
+  // assumptions baked in.
+  var tablePreferences = {
+    // Returns the cached value (or null) synchronously so first paint
+    // never waits on a network call, and separately resolves the real
+    // server value in the background — onRemote(rawPrefs) only fires when
+    // the server actually returned something, so a fetch failure or a
+    // not-yet-authenticated demo session just silently keeps the
+    // cache/default. rawPrefs is whatever shape the caller saved (e.g.
+    // { columns: [...] } or { customFields: [...] }) — this layer doesn't
+    // know or care about columns specifically.
+    load: function (scope, tableKey, onRemote) {
+      var cached = loadTablePrefsCache(scope, tableKey);
+      fetchTablePrefsFromSupabase(scope, tableKey).then(function (remote) {
+        if (remote == null) return;
+        saveTablePrefsCache(scope, tableKey, remote);
+        if (typeof onRemote === 'function') onRemote(remote);
+      });
+      return cached;
+    },
+    save: function (scope, tableKey, data) {
+      queueTablePrefsSync(scope, tableKey, data);
+    },
+    // Merges a saved column list against `schema` (the CURRENT full column
+    // universe for this table — builtins plus any dynamic entries, e.g.
+    // custom fields, the caller already folded in) so a newly-added schema
+    // entry (a future code change, a teammate's new custom field) still
+    // shows up, and any column key no longer in the schema (a deleted
+    // custom field) is dropped safely. A newly-added entry's own default
+    // `hidden` is respected rather than always forced one way. Pure
+    // function, no table-specific logic — this is the piece every table
+    // reuses verbatim.
+    normalize: function (schema, saved) {
+      if (!Array.isArray(saved) || !saved.length) return schema.map(function (c) { return { key: c.key, label: c.label, hidden: !!c.hidden, custom: !!c.custom }; });
+      var byKey = {};
+      schema.forEach(function (c) { byKey[c.key] = c; });
+      var out = saved.filter(function (s) { return byKey[s.key]; }).map(function (s) {
+        return { key: s.key, label: s.label || byKey[s.key].label, hidden: !!s.hidden, width: s.width || undefined, custom: !!byKey[s.key].custom };
+      });
+      var seen = {};
+      out.forEach(function (c) { seen[c.key] = true; });
+      schema.forEach(function (c) { if (!seen[c.key]) out.push({ key: c.key, label: c.label, hidden: !!c.hidden, custom: !!c.custom }); });
+      return out;
+    }
+  };
 
+  // ---- Leads: the first table wired onto the engine above ---------------
   var LEADS_DEFAULT_COLUMNS = [
-    { key: 'name', label: 'Lead' },
-    { key: 'contact', label: 'Contact' },
+    { key: 'firstName', label: 'First Name' },
+    { key: 'lastName', label: 'Last Name' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'email', label: 'Email' },
     { key: 'source', label: 'Source' },
     { key: 'service', label: 'Service' },
     { key: 'status', label: 'Status' },
@@ -7342,22 +7384,22 @@
   // live state and re-render (a teammate defining a new field should show
   // up for you without a page reload), not just take effect next load.
   function loadLeadsCustomFields(root) {
-    var cached = loadTablePreferences('business', 'leads', function (remote) {
+    var cached = tablePreferences.load('business', 'leads', function (remote) {
       var remoteFields = normalizeCustomFields(remote && remote.customFields);
       if (!root) return;
       if (JSON.stringify(remoteFields) !== JSON.stringify(root._josLeadsCustomFields)) {
         root._josLeadsCustomFields = remoteFields;
         // A brand-new field from a teammate isn't in this user's saved
-        // column list yet — merge it in (visible by default) the same way
-        // normalizeLeadsColumns already merges in newly-added builtins.
-        root._josLeadsColumns = normalizeLeadsColumns(root._josLeadsColumns, remoteFields);
+        // column list yet — merge it in (visible by default) via the same
+        // schema-driven normalize every table uses.
+        root._josLeadsColumns = tablePreferences.normalize(leadsColumnSchema(remoteFields), root._josLeadsColumns);
         renderLeads();
       }
     });
     return normalizeCustomFields(cached && cached.customFields);
   }
   function saveLeadsCustomFields(fields) {
-    queueTablePrefsSync('business', 'leads', { customFields: fields });
+    tablePreferences.save('business', 'leads', { customFields: fields });
   }
   function leadsCustomFieldKey() {
     return 'cf_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -7365,45 +7407,32 @@
   function isLeadsCustomFieldKey(key) {
     return typeof key === 'string' && key.indexOf('cf_') === 0;
   }
-  // Merge saved order/labels/hidden/width with the current column universe
-  // (builtins + custom fields) so a newly-added builtin (a future code
-  // change) or a newly-defined custom field (a teammate, or this user a
-  // moment ago) still shows up, and any column key that no longer exists
-  // (a deleted custom field) is dropped safely. A newly added column's own
-  // default `hidden` is respected (e.g. Tags ships hidden-by-default; a
-  // fresh custom field defaults to visible) rather than always forced one
-  // way.
-  function normalizeLeadsColumns(saved, customFields) {
-    var allDefs = LEADS_DEFAULT_COLUMNS.concat((customFields || []).map(function (f) {
+  // The full column universe for Leads right now: builtins + whatever
+  // custom fields this business has defined, in tablePreferences.normalize's
+  // schema shape. This is the ONE place Leads-specific columns and dynamic
+  // custom fields get combined into a schema — everything downstream
+  // (load, save, render) goes through the generic engine from here.
+  function leadsColumnSchema(customFields) {
+    return LEADS_DEFAULT_COLUMNS.concat((customFields || []).map(function (f) {
       return { key: f.id, label: f.label, hidden: false, custom: true };
     }));
-    if (!Array.isArray(saved) || !saved.length) return allDefs.map(function (c) { return { key: c.key, label: c.label, hidden: !!c.hidden, custom: !!c.custom }; });
-    var byKey = {};
-    allDefs.forEach(function (c) { byKey[c.key] = c; });
-    var out = saved.filter(function (s) { return byKey[s.key]; }).map(function (s) {
-      return { key: s.key, label: s.label || byKey[s.key].label, hidden: !!s.hidden, width: s.width || undefined, custom: !!byKey[s.key].custom };
-    });
-    var seen = {};
-    out.forEach(function (c) { seen[c.key] = true; });
-    allDefs.forEach(function (c) { if (!seen[c.key]) out.push({ key: c.key, label: c.label, hidden: !!c.hidden, custom: !!c.custom }); });
-    return out;
   }
   // root is optional — passed so a late-arriving server value can patch
   // live state and re-render, instead of only taking effect on the next
   // full page load.
   function loadLeadsColumns(root, customFields) {
-    var cached = loadTablePreferences('user', 'leads', function (remote) {
-      var remoteCols = normalizeLeadsColumns(remote && remote.columns, root && root._josLeadsCustomFields);
+    var cached = tablePreferences.load('user', 'leads', function (remote) {
+      var remoteCols = tablePreferences.normalize(leadsColumnSchema(root && root._josLeadsCustomFields), remote && remote.columns);
       if (!root) return;
       if (JSON.stringify(remoteCols) !== JSON.stringify(root._josLeadsColumns)) {
         root._josLeadsColumns = remoteCols;
         renderLeads();
       }
     });
-    return normalizeLeadsColumns(cached && cached.columns, customFields);
+    return tablePreferences.normalize(leadsColumnSchema(customFields), cached && cached.columns);
   }
   function saveLeadsColumns(cols) {
-    queueTablePrefsSync('user', 'leads', { columns: cols });
+    tablePreferences.save('user', 'leads', { columns: cols });
   }
 
   var LEADS_TABS = [
@@ -8166,28 +8195,47 @@
       '</span></button></div>';
   }
 
+  function splitLeadName(name) {
+    var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return { first: '', last: '' };
+    return { first: parts[0], last: parts.slice(1).join(' ') };
+  }
+
   // Real spreadsheet-style view, same underlying filtered/sorted list as
   // the card list — every column is a real field already on the lead
   // object (no score/owner-avatar/last-activity/next-action columns, those
   // were explicitly deferred, not built).
   function leadTableCellHtml(lead, colKey, leadKey, editingField) {
     var crm = normalizeCrmStatus(lead);
-    if (colKey === 'name') {
-      if (editingField === 'name') {
-        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="name" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Lead name" value="' + esc(lead.name || '') + '" onclick="event.stopPropagation()">';
+    if (colKey === 'firstName' || colKey === 'lastName') {
+      // First/Last aren't stored separately — lead.name stays the single
+      // source of truth everywhere else (avatar initials, search, the
+      // detail panel header, ...), these two columns just split it on
+      // read and recompose it on write, so editing is direct (no comma-
+      // separated parsing) without a data-model migration touching every
+      // other place lead.name is read.
+      var nameParts = splitLeadName(lead.name);
+      var partVal = colKey === 'firstName' ? nameParts.first : nameParts.last;
+      var partLabel = colKey === 'firstName' ? 'First name' : 'Last name';
+      if (editingField === colKey) {
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + colKey + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + partLabel + '" value="' + esc(partVal) + '" onclick="event.stopPropagation()">';
       }
-      return '<strong class="jos-ld-name-cell" data-jos-lead-field="name" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + esc(lead.name || 'Lead') + '</strong>';
+      if (colKey === 'firstName') {
+        return '<strong class="jos-ld-name-cell' + (partVal ? '' : ' is-empty') + '" data-jos-lead-field="firstName" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (partVal ? esc(partVal) : 'Add') + '</strong>';
+      }
+      return '<span class="jos-ld-name-cell' + (partVal ? '' : ' is-empty') + '" data-jos-lead-field="lastName" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (partVal ? esc(partVal) : 'Add') + '</span>';
     }
-    if (colKey === 'contact') {
-      if (editingField === 'contact') {
-        var contactVal = [lead.phone || '', lead.email || ''].filter(Boolean).join(', ');
-        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="contact" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Phone, email" value="' + esc(contactVal) + '" placeholder="Phone, email" onclick="event.stopPropagation()">';
+    if (colKey === 'phone') {
+      if (editingField === 'phone') {
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="phone" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Phone" value="' + esc(lead.phone || '') + '" onclick="event.stopPropagation()">';
       }
-      var hasContact = lead.phone || lead.email;
-      return '<span class="jos-ld-contact-cell' + (hasContact ? '' : ' is-empty') + '" data-jos-lead-field="contact" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' +
-        (hasContact
-          ? esc(lead.phone ? displayPhone(lead.phone) : '') + (lead.email ? '<div class="jos-muted">' + esc(lead.email) + '</div>' : '')
-          : 'Add contact info') + '</span>';
+      return '<span class="jos-ld-contact-cell' + (lead.phone ? '' : ' is-empty') + '" data-jos-lead-field="phone" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (lead.phone ? esc(displayPhone(lead.phone)) : 'Add phone') + '</span>';
+    }
+    if (colKey === 'email') {
+      if (editingField === 'email') {
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="email" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Email" value="' + esc(lead.email || '') + '" onclick="event.stopPropagation()">';
+      }
+      return '<span class="jos-ld-contact-cell' + (lead.email ? '' : ' is-empty') + '" data-jos-lead-field="email" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (lead.email ? esc(lead.email) : 'Add email') + '</span>';
     }
     if (colKey === 'source') return esc(srcLabel(srcKind(lead.source, lead)));
     if (colKey === 'service') {
@@ -8240,19 +8288,19 @@
     return '—';
   }
 
-  var LEADS_COL_DEFAULT_WIDTH = { name: 170, contact: 190, source: 110, service: 150, status: 130, assigned: 150, tags: 180, created: 110 };
+  var LEADS_COL_DEFAULT_WIDTH = { firstName: 130, lastName: 130, phone: 150, email: 190, source: 110, service: 150, status: 130, assigned: 150, tags: 180, created: 110 };
   var LEADS_COL_MIN_WIDTH = 72;
   // Column key <-> lead field, single source for both directions so the
   // inline-editable columns (click a cell -> edit -> Enter/blur -> saved)
   // and the roving-tabindex active-cell tracking never drift out of sync.
-  // 'contact' is symbolic, not a real lead property — it edits phone+email
-  // together, special-cased wherever a real field name is needed.
-  var LEADS_COL_TO_FIELD = { name: 'name', contact: 'contact', service: 'service', status: 'status', assigned: 'assignedTo', tags: 'tags' };
-  // ^ 'name'/'contact'/'service' map to a field of the same conceptual
-  // name — LEADS_FIELD_TO_COL below inverts this 1:1, so 'name'/'service'
-  // fields resolve straight back to their own column, and 'contact' (a
-  // symbolic field — it edits phone+email together) resolves to the
-  // contact column, same as status/assignedTo/tags already did.
+  // firstName/lastName are symbolic (split from/recomposed into lead.name,
+  // not real lead properties on their own) — special-cased wherever a real
+  // field name is needed, same idea as 'contact' used to be before Phone
+  // and Email became genuinely separate columns.
+  var LEADS_COL_TO_FIELD = { firstName: 'firstName', lastName: 'lastName', phone: 'phone', email: 'email', service: 'service', status: 'status', assigned: 'assignedTo', tags: 'tags' };
+  // ^ most keys map to a field of the same conceptual name — LEADS_FIELD_TO_COL
+  // below inverts this 1:1, so those fields resolve straight back to their
+  // own column, same as status/assignedTo/tags already did.
   var LEADS_FIELD_TO_COL = {};
   Object.keys(LEADS_COL_TO_FIELD).forEach(function (colKey) { LEADS_FIELD_TO_COL[LEADS_COL_TO_FIELD[colKey]] = colKey; });
 
@@ -9343,25 +9391,26 @@
           } else if (fieldKey === 'tags') {
             l.tags = String(fieldVal || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean);
             pushLeadActivity(l, 'tag', 'Tags → ' + (l.tags.length ? l.tags.join(', ') : 'none'));
-          } else if (fieldKey === 'name') {
-            l.name = String(fieldVal || '').trim();
+          } else if (fieldKey === 'firstName' || fieldKey === 'lastName') {
+            // No separate storage — recompose lead.name from whichever half
+            // just changed plus the OTHER half's current value, so
+            // everything else that reads lead.name (avatar initials,
+            // search, the detail panel header) stays correct without
+            // knowing first/last are edited as separate columns.
+            var curParts = splitLeadName(l.name);
+            var nextFirst = fieldKey === 'firstName' ? String(fieldVal || '').trim() : curParts.first;
+            var nextLast = fieldKey === 'lastName' ? String(fieldVal || '').trim() : curParts.last;
+            l.name = (nextFirst + ' ' + nextLast).trim();
             pushLeadActivity(l, 'edit', 'Name → ' + (l.name || '—'));
+          } else if (fieldKey === 'phone') {
+            l.phone = String(fieldVal || '').trim();
+            pushLeadActivity(l, 'edit', 'Phone → ' + (l.phone || '—'));
+          } else if (fieldKey === 'email') {
+            l.email = String(fieldVal || '').trim();
+            pushLeadActivity(l, 'edit', 'Email → ' + (l.email || '—'));
           } else if (fieldKey === 'service') {
             l.service = String(fieldVal || '').trim();
             pushLeadActivity(l, 'edit', 'Service → ' + (l.service || '—'));
-          } else if (fieldKey === 'contact') {
-            // One free-text field, split into phone/email on commit — same
-            // "comma-separated" convention as Tags. Classify by '@' rather
-            // than by position so "email, phone" and "phone, email" both work.
-            var contactParts = String(fieldVal || '').split(',').map(function (p) { return p.trim(); }).filter(Boolean);
-            var newPhone = '', newEmail = '';
-            contactParts.forEach(function (p) {
-              if (p.indexOf('@') > -1) newEmail = p;
-              else if (!newPhone) newPhone = p;
-            });
-            l.phone = newPhone;
-            l.email = newEmail;
-            pushLeadActivity(l, 'edit', 'Contact info updated');
           } else if (isLeadsCustomFieldKey(fieldKey)) {
             l.customFields = l.customFields || {};
             l.customFields[fieldKey] = String(fieldVal || '').trim();
@@ -9371,9 +9420,10 @@
         toast(
           fieldKey === 'status' ? 'Status updated' :
           fieldKey === 'tags' ? 'Tags updated' :
-          fieldKey === 'name' ? 'Name updated' :
+          fieldKey === 'firstName' || fieldKey === 'lastName' ? 'Name updated' :
+          fieldKey === 'phone' ? 'Phone updated' :
+          fieldKey === 'email' ? 'Email updated' :
           fieldKey === 'service' ? 'Service updated' :
-          fieldKey === 'contact' ? 'Contact updated' :
           fieldKey === 'assignedTo' ? (fieldVal ? 'Assigned to ' + fieldVal : 'Unassigned') :
           'Updated'
         );
@@ -9685,7 +9735,8 @@
     if (!editingLead) return;
     var originalValue = key === 'status' ? normalizeCrmStatus(editingLead)
       : key === 'tags' ? (Array.isArray(editingLead.tags) ? editingLead.tags.slice() : [])
-      : key === 'contact' ? { phone: editingLead.phone || '', email: editingLead.email || '' }
+      : key === 'firstName' ? splitLeadName(editingLead.name).first
+      : key === 'lastName' ? splitLeadName(editingLead.name).last
       : isLeadsCustomFieldKey(key) ? ((editingLead.customFields && editingLead.customFields[key]) || '')
       : editingLead[key];
     root._josLeadsEditCell = { leadId: leadId, field: key, originalValue: originalValue };
@@ -9722,18 +9773,12 @@
         // to its original value first so that stray commit is a no-op.
         var tagsInput = root.querySelector('input[data-jos-lead-field="tags"][data-jos-lead-id="' + CSS.escape(editing.leadId) + '"]');
         if (tagsInput) tagsInput.value = (editing.originalValue || []).join(', ');
-      } else if (editing.field === 'name' || editing.field === 'service' || isLeadsCustomFieldKey(editing.field)) {
+      } else if (editing.field === 'firstName' || editing.field === 'lastName' || editing.field === 'phone' || editing.field === 'email' || editing.field === 'service' || isLeadsCustomFieldKey(editing.field)) {
         // Same reasoning as tags — reset the live input before the render
         // below removes it, so a stray 'change' synthesized by that removal
         // is a no-op instead of saving the just-cancelled edit.
         var plainInput = root.querySelector('input[data-jos-lead-field="' + editing.field + '"][data-jos-lead-id="' + CSS.escape(editing.leadId) + '"]');
         if (plainInput) plainInput.value = editing.originalValue || '';
-      } else if (editing.field === 'contact') {
-        var contactInput = root.querySelector('input[data-jos-lead-field="contact"][data-jos-lead-id="' + CSS.escape(editing.leadId) + '"]');
-        if (contactInput) {
-          var ov = editing.originalValue || {};
-          contactInput.value = [ov.phone || '', ov.email || ''].filter(Boolean).join(', ');
-        }
       }
     }
     root._josLeadsEditCell = null;
