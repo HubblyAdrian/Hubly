@@ -3750,6 +3750,46 @@ html[data-theme="night"] .jos-mem-form select{
   gap:var(--jos-gap);margin-bottom:var(--jos-gap);
 }
 .jos-leads-card,.jos-revsum-card,.jos-score-card{min-height:320px}
+
+/* Per-KPI icon colors, matching the dashboard mockup's visual language
+   (each metric gets its own color, not one uniform brand-orange square). */
+.jos-kpi-ico-orange{background:var(--jos-brand-soft);color:var(--jos-brand)}
+.jos-kpi-ico-green{background:rgba(34,197,94,.14);color:#15803D}
+.jos-kpi-ico-blue{background:rgba(37,99,235,.12);color:#2563EB}
+.jos-kpi-ico-purple{background:rgba(124,58,237,.12);color:#7C3AED}
+.jos-kpi-ico-amber{background:rgba(245,158,11,.14);color:#B45309}
+
+/* Compact Business Score ring KPI card (4th headline KPI, mockup's
+   design) -- the full expandable detail card (.jos-score-card) stays
+   exactly as it was; this is a summary/entry point to it, not a
+   replacement. */
+.jos-kpi-card-score .jos-kpi-hit{display:flex;flex-direction:column}
+.jos-kpi-score-body{display:flex;align-items:center;gap:12px;margin-top:8px}
+.jos-score-ring.sm{width:52px;height:52px}
+.jos-score-ring.sm::before{inset:5px}
+.jos-score-ring.sm span{font-size:15px}
+.jos-kpi-score-side{display:flex;flex-direction:column;gap:2px}
+.jos-kpi-score-side strong{font-size:14px;font-weight:800;color:var(--jos-navy)}
+
+/* Rating -- demoted from a headline KPI to a secondary strip (kept on the
+   page, not removed; see renderHomeDashboard's homeRatingStrip). */
+.jos-rating-strip{padding:0;overflow:hidden;margin-bottom:var(--jos-gap)}
+.jos-rating-strip-hit{
+  width:100%;display:flex;align-items:center;gap:14px;appearance:none;border:0;background:transparent;
+  padding:14px 18px;cursor:pointer;font:inherit;color:inherit;text-align:left;
+}
+.jos-rating-strip-body{flex:1;min-width:0}
+.jos-rating-strip-top{display:flex;align-items:baseline;gap:8px}
+.jos-rating-strip-top strong{font-size:20px;font-weight:800;color:var(--jos-navy)}
+.jos-rating-strip-quote{font-size:12px;color:var(--jos-ink-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Recent Jobs + Jobs by Status -- new, additive row (mockup's ideas,
+   layered in without removing anything already shipped). */
+.jos-home-row-jobs{
+  display:grid;grid-template-columns:minmax(0,1.6fr) minmax(240px,.75fr);
+  gap:var(--jos-gap);margin-bottom:var(--jos-gap);
+}
+.jos-jobstatus-card{min-height:220px}
 .jos-table-wrap{overflow:auto;margin-top:12px;max-height:240px}
 .jos-home-table{width:100%;border-collapse:collapse;font-size:12px}
 .jos-home-table th{
@@ -3823,7 +3863,7 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-home-fab,.jos-home-fab-sheet{display:none}
 @media(max-width:1100px){
   .jos-home-kpi-row{grid-template-columns:1fr 1fr!important}
-  .jos-home-row-cc,.jos-home-row-3{grid-template-columns:1fr}
+  .jos-home-row-cc,.jos-home-row-3,.jos-home-row-jobs{grid-template-columns:1fr}
 }
 @media(max-width:720px){
   .jos-home-v2.jos-page{padding:16px 14px 110px}

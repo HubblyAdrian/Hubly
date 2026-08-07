@@ -12197,9 +12197,9 @@
       '</div></header>';
 
     var kpiRow = '<div class="jos-home-kpis jos-home-kpi-row">' +
-      cardShell('kpi-revenue', 'jos-kpi-card', 
+      cardShell('kpi-revenue', 'jos-kpi-card',
         '<button type="button" class="jos-kpi-hit" data-jos-act="go-money">' +
-        '<div class="jos-kpi-top"><span class="jos-kpi-ico" aria-hidden="true">$</span><span class="lbl">Revenue</span></div>' +
+        '<div class="jos-kpi-top"><span class="jos-kpi-ico jos-kpi-ico-orange" aria-hidden="true">$</span><span class="lbl">Revenue</span></div>' +
         '<div class="v">' + esc(canViewRevenue() ? money(todayRev) : '•••') + '</div>' +
         '<div class="jos-kpi-lines"><span>Today · ' + esc(canViewRevenue() ? money(todayRev) : 'Hidden') + '</span><span>Month · ' + esc(canViewRevenue() ? money(monthRev) : 'Hidden') + '</span></div>' +
         '<div class="s">' + (revDelta >= 0 ? '+' : '') + revDelta + '% growth</div>' +
@@ -12207,7 +12207,7 @@
         '<span class="jos-kpi-cta">View Revenue →</span></button>') +
       cardShell('kpi-jobs', 'jos-kpi-card',
         '<button type="button" class="jos-kpi-hit" data-jos-act="go-jobs">' +
-        '<div class="jos-kpi-top"><span class="jos-kpi-ico" aria-hidden="true">✓</span><span class="lbl">Jobs Completed</span></div>' +
+        '<div class="jos-kpi-top"><span class="jos-kpi-ico jos-kpi-ico-green" aria-hidden="true">✓</span><span class="lbl">Jobs Completed</span></div>' +
         '<div class="v">' + (completedToday.length || (ceoDemo ? 2 : 0)) + '</div>' +
         '<div class="jos-kpi-lines"><span>Today · ' + completedToday.length + '</span><span>Week · ' + weekJobsDone + '</span><span>Month · ' + monthJobsDone + '</span></div>' +
         '<div class="s">' + completionPct + '% completion</div>' +
@@ -12215,21 +12215,35 @@
         '<span class="jos-kpi-cta">Jobs Analytics →</span></button>') +
       cardShell('kpi-leads', 'jos-kpi-card',
         '<button type="button" class="jos-kpi-hit" data-jos-act="go-leads">' +
-        '<div class="jos-kpi-top"><span class="jos-kpi-ico" aria-hidden="true">◎</span><span class="lbl">New Leads</span></div>' +
+        '<div class="jos-kpi-top"><span class="jos-kpi-ico jos-kpi-ico-blue" aria-hidden="true">◎</span><span class="lbl">New Leads</span></div>' +
         '<div class="v">' + openLeads + '</div>' +
         '<div class="jos-kpi-lines"><span>Response · —</span><span>Conversion · —</span></div>' +
         '<div class="s">Newest first ready</div>' +
         sparkSvg([1, 2, 2, 4, 3, 5, openLeads || 3], '#B84E1F') +
         '<span class="jos-kpi-cta">Open Leads →</span></button>') +
-      cardShell('kpi-rating', 'jos-kpi-card',
-        '<button type="button" class="jos-kpi-hit" data-jos-act="go-reviews">' +
-        '<div class="jos-kpi-top"><span class="jos-kpi-ico" aria-hidden="true">★</span><span class="lbl">Rating</span></div>' +
-        '<div class="v">' + Number(rating).toFixed(1) + '</div>' +
-        '<div class="jos-kpi-lines"><span>Google · ' + Number(rating).toFixed(1) + '</span><span>' + reviewCount + ' reviews</span></div>' +
-        '<div class="s jos-kpi-quote">“' + esc(String(recentReview.text || recentReview.body || 'Great work').slice(0, 48)) + (String(recentReview.text || '').length > 48 ? '…' : '') + '”</div>' +
-        sparkSvg([scores.reviews - 8, scores.reviews - 5, scores.reviews - 2, scores.reviews], '#15803D') +
-        '<span class="jos-kpi-cta">Review Center →</span></button>') +
+      // Compact Business Score ring replaces Rating as the 4th headline KPI
+      // (mockup's visual) -- the full expandable Business Score detail card
+      // lower on the page is unchanged, this is the summary/entry point to
+      // it, not a replacement for it. Rating moves to homeRatingStrip below,
+      // a secondary card, not removed from the page.
+      cardShell('kpi-score', 'jos-kpi-card jos-kpi-card-score',
+        '<button type="button" class="jos-kpi-hit" data-jos-act="score-jump">' +
+        '<div class="jos-kpi-top"><span class="jos-kpi-ico jos-kpi-ico-purple" aria-hidden="true">◆</span><span class="lbl">Business Score</span></div>' +
+        '<div class="jos-kpi-score-body">' +
+        '<div class="jos-score-ring sm" style="--jos-pct:' + scores.overall + '"><span>' + scores.overall + '</span></div>' +
+        '<div class="jos-kpi-score-side"><strong>' + (scores.overall >= 85 ? 'Excellent' : (scores.overall >= 70 ? 'Strong' : 'Needs focus')) + '</strong>' +
+        '<span class="jos-kpi-lines"><span>0–100 health</span></span></div></div>' +
+        '<span class="jos-kpi-cta">See what\'s behind it →</span></button>') +
       '</div>';
+
+    var homeRatingStrip = cardShell('kpi-rating', 'jos-rating-strip',
+      '<button type="button" class="jos-rating-strip-hit" data-jos-act="go-reviews">' +
+      '<span class="jos-kpi-ico jos-kpi-ico-amber" aria-hidden="true">★</span>' +
+      '<div class="jos-rating-strip-body">' +
+      '<div class="jos-rating-strip-top"><strong>' + Number(rating).toFixed(1) + '</strong><span class="jos-muted">Google · ' + reviewCount + ' reviews</span></div>' +
+      '<div class="jos-rating-strip-quote">“' + esc(String(recentReview.text || recentReview.body || 'Great work').slice(0, 72)) + (String(recentReview.text || '').length > 72 ? '…' : '') + '”</div>' +
+      '</div>' +
+      '<span class="jos-kpi-cta">Review Center →</span></button>');
 
     var ccRows = ccActions.map(function (a, i) {
       return '<div class="jos-cc-row tone-' + esc(a.tone || 'brand') + '">' +
@@ -12294,6 +12308,53 @@
         ? '<div class="jos-table-wrap"><table class="jos-home-table"><thead><tr><th>Customer</th><th>Service</th><th>Location</th><th>Time</th><th>Status</th><th>Value</th></tr></thead><tbody>' + leadRows + '</tbody></table></div>'
         : '<div class="jos-empty-action"><strong>No leads yet</strong><p>Let\'s get your first customer.</p><div class="jos-btn-row">' + btn('go-editor', 'Generate Website', 'jos-btn-brand jos-btn-sm') + btn('go-marketing', 'Run Marketing Campaign', 'jos-btn jos-btn-sm') + btn('copy-link', 'Share Booking Link', 'jos-btn jos-btn-sm') + '</div></div>'));
 
+    // Recent Jobs + Jobs by Status -- new, additive (mockup shows these,
+    // live didn't have them). Reuses real allJobs already computed above,
+    // and the same conic-gradient donut technique already shipped on the
+    // real Jobs page (.jos-jobs-donut, hubly-layout.css) rather than
+    // inventing a new component. Buckets are mutually exclusive (unlike
+    // the Jobs page's own donut, where 'pending' is double-counted inside
+    // both the "Scheduled" and "Pending" buckets) -- not fixing that
+    // existing page here, just not reproducing it in new code.
+    var jobStatusScheduled = allJobs.filter(function (j) { return j.status === 'scheduled' || j.status === 'confirmed'; }).length;
+    var jobStatusProgress = allJobs.filter(function (j) { return j.status === 'in_progress' || j.status === 'paused' || j.status === 'running'; }).length;
+    var jobStatusPending = allJobs.filter(function (j) { return j.status === 'pending'; }).length;
+    var jobStatusDone = allJobs.filter(function (j) { return j.status === 'completed'; }).length;
+    var jobStatusDenom = Math.max(1, jobStatusScheduled + jobStatusProgress + jobStatusPending + jobStatusDone);
+    var jsDonutSched = Math.round((jobStatusScheduled / jobStatusDenom) * 100);
+    var jsDonutProg = jsDonutSched + Math.round((jobStatusProgress / jobStatusDenom) * 100);
+    var jsDonutPend = jsDonutProg + Math.round((jobStatusPending / jobStatusDenom) * 100);
+
+    var recentJobsRows = allJobs.slice(0, 6).map(function (j) {
+      var st = j.status === 'in_progress' || j.status === 'running' ? 'info' : (j.status === 'completed' ? 'ok' : 'warn');
+      var stLbl = j.status === 'in_progress' || j.status === 'running' ? 'In Progress' : (j.status === 'completed' ? 'Completed' : (j.status === 'pending' ? 'Pending' : 'Scheduled'));
+      return '<tr class="jos-leads-row">' +
+        '<td><button type="button" class="jos-linkish" data-jos-act="go-jobs" data-jos-job-id="' + esc(j.id || '') + '">#' + esc(j.id || '—') + '</button></td>' +
+        '<td>' + esc(j.service || 'Job') + '</td>' +
+        '<td><button type="button" class="jos-pill ' + st + '" data-jos-act="go-jobs">' + esc(stLbl) + '</button></td>' +
+        '<td>' + esc(j.time || j.startTime || '—') + '</td>' +
+        '<td>' + esc(money(parseFloat(j.amount) || 0)) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    var recentJobsPanel = cardShell('recent-jobs', 'jos-leads-card',
+      '<div class="jos-between"><div><div class="jos-kicker">Recent Jobs</div><h3 class="jos-card-title">Latest activity</h3></div>' +
+      btn('go-jobs', 'View All Jobs', 'jos-btn jos-btn-sm') + '</div>' +
+      (recentJobsRows
+        ? '<div class="jos-table-wrap"><table class="jos-home-table"><thead><tr><th>Job</th><th>Service</th><th>Status</th><th>Time</th><th>Amount</th></tr></thead><tbody>' + recentJobsRows + '</tbody></table></div>'
+        : '<div class="jos-empty-action"><strong>No jobs yet</strong><p>Create your first job to see it here.</p><div class="jos-btn-row">' + btn('new-job-cust', 'New Job', 'jos-btn-brand jos-btn-sm') + '</div></div>'));
+
+    var jobsByStatusPanel = cardShell('jobs-by-status', 'jos-jobstatus-card',
+      '<div class="jos-kicker">Jobs by Status</div><h3 class="jos-card-title">This month</h3>' +
+      '<div class="jos-jobs-donut-wrap" style="--jos-donut-sched:' + jsDonutSched + '%;--jos-donut-prog:' + jsDonutProg + '%;--jos-donut-pend:' + jsDonutPend + '%;--jos-donut-done:100%">' +
+      '<div class="jos-jobs-donut" aria-hidden="true"></div>' +
+      '<div class="jos-jobs-donut-legend">' +
+      '<span><i style="background:#22c55e"></i>Scheduled ' + Math.round((jobStatusScheduled / jobStatusDenom) * 100) + '%</span>' +
+      '<span><i style="background:#3b82f6"></i>In Progress ' + Math.round((jobStatusProgress / jobStatusDenom) * 100) + '%</span>' +
+      '<span><i style="background:#f59e0b"></i>Pending ' + Math.round((jobStatusPending / jobStatusDenom) * 100) + '%</span>' +
+      '<span><i style="background:#94a3b8"></i>Completed ' + Math.round((jobStatusDone / jobStatusDenom) * 100) + '%</span>' +
+      '</div></div>');
+
     var revFilters = ['week', 'month', 'quarter', 'year'].map(function (r) {
       return '<button type="button" class="jos-chip' + (revRange === r ? ' on' : '') + '" data-jos-act="rev-range" data-jos-range="' + r + '">' + (r.charAt(0).toUpperCase() + r.slice(1)) + '</button>';
     }).join('');
@@ -12354,7 +12415,7 @@
         return '<button type="button" class="jos-chip' + ((layout.layoutPreset || 'owner') === p[0] ? ' on' : '') + '" data-jos-act="layout-preset" data-jos-preset="' + p[0] + '">' + p[1] + '</button>';
       }).join('') + '</div>' +
       '<div class="jos-customize-grid">' +
-      [['kpi-revenue', 'Revenue'], ['kpi-jobs', 'Jobs'], ['kpi-leads', 'Leads'], ['kpi-rating', 'Rating'], ['command', 'Command Center'], ['today', 'Today'], ['recent-leads', 'Recent Leads'], ['revenue-chart', 'Revenue Chart'], ['biz-score', 'Business Score'], ['quick', 'Quick Actions']].map(function (w) {
+      [['kpi-revenue', 'Revenue'], ['kpi-jobs', 'Jobs'], ['kpi-leads', 'Leads'], ['kpi-score', 'Business Score (KPI)'], ['kpi-rating', 'Rating'], ['command', 'Command Center'], ['today', 'Today'], ['recent-jobs', 'Recent Jobs'], ['jobs-by-status', 'Jobs by Status'], ['recent-leads', 'Recent Leads'], ['revenue-chart', 'Revenue Chart'], ['biz-score', 'Business Score'], ['quick', 'Quick Actions']].map(function (w) {
         return '<label><input type="checkbox" data-jos-widget-toggle="' + w[0] + '"' + (W[w[0]] === false ? '' : ' checked') + '> ' + w[1] + '</label>';
       }).join('') +
       '</div></div>';
@@ -12387,6 +12448,7 @@
       customizeHtml +
       hero +
       kpiRow +
+      homeRatingStrip +
       '<div class="jos-studio-promo">' +
       '<div class="jos-studio-promo-ico" aria-hidden="true">✦</div>' +
       '<div class="jos-studio-promo-body">' +
@@ -12396,6 +12458,7 @@
       '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="open-studio">Open Studio</button>' +
       '</div>' +
       '<div class="jos-home-row-cc">' + commandCenter + todayPanel + '</div>' +
+      '<div class="jos-home-row-jobs">' + recentJobsPanel + jobsByStatusPanel + '</div>' +
       '<div class="jos-home-row-3">' + recentLeads + revenueSummary + businessScore + '</div>' +
       quickRow +
       fab +
@@ -12489,6 +12552,13 @@
           lr.revRange = root._josRevRange;
           saveHomeLayout(lr);
           enhanceDashboard();
+          e.stopPropagation();
+          return;
+        }
+        var scoreJumpBtn = e.target.closest('[data-jos-act="score-jump"]');
+        if (scoreJumpBtn) {
+          var scoreDetailCard = root.querySelector('.jos-score-card');
+          if (scoreDetailCard && scoreDetailCard.scrollIntoView) scoreDetailCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
           e.stopPropagation();
           return;
         }
