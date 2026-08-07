@@ -4757,14 +4757,16 @@ html[data-theme="night"] .jos-mem-form select{
 }
 
 .jos-ld-kpis{
-  display:flex;align-items:center;gap:6px;margin:0 0 8px;flex-shrink:0;flex-wrap:wrap;
+  display:flex;align-items:baseline;gap:18px;margin:0 0 10px;flex-shrink:0;flex-wrap:wrap;
 }
 .jos-ld-kpi-chip{
-  display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;
-  border:1px solid #ECEDEF;background:#fff;font-size:12px;
+  display:inline-flex;align-items:baseline;gap:5px;font-size:12.5px;position:relative;
 }
-.jos-ld-kpi-chip .lbl{color:#8B909A;font-weight:600}
-.jos-ld-kpi-chip strong{color:var(--jos-navy);font-weight:800}
+.jos-ld-kpi-chip:not(:first-child)::before{
+  content:'';position:absolute;left:-10px;top:2px;bottom:2px;width:1px;background:rgba(15,23,42,.09);
+}
+.jos-ld-kpi-chip .lbl{color:#9CA3AF;font-weight:650}
+.jos-ld-kpi-chip strong{color:var(--jos-navy);font-weight:800;font-size:13px}
 .jos-ld-status-tabs{
   display:flex;gap:4px;padding:0;margin:0 0 8px;flex-shrink:0;overflow:auto;scrollbar-width:thin;
   border-bottom:1px solid var(--jos-border);height:36px;align-items:stretch;
@@ -4841,23 +4843,24 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-view-btn{appearance:none;border:0;background:#fff;padding:6px 12px;font:inherit;font-size:12px;font-weight:700;color:var(--jos-ink-3);cursor:pointer}
 .jos-ld-view-btn.on{background:var(--jos-brand-soft);color:var(--jos-brand)}
 .jos-ld-table-wrap{flex:1;overflow:auto;position:relative}
-.jos-ld-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;table-layout:fixed}
+.jos-ld-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;table-layout:fixed}
 .jos-ld-table thead th{
-  position:sticky;top:0;z-index:2;text-align:left;padding:0 14px;height:32px;
-  font-size:10.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:#8B909A;
-  background:#fff;border-bottom:1px solid #EDEEF1;white-space:nowrap;
+  position:sticky;top:0;z-index:2;text-align:left;padding:0 16px;height:34px;
+  font-size:10.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:#9CA3AF;
+  background:#fff;border-bottom:1px solid rgba(15,23,42,.07);white-space:nowrap;
   transition:box-shadow .15s ease;
 }
-.jos-ld-table-wrap.is-scrolled thead th{box-shadow:0 1px 0 #E5E7EB,0 6px 12px -6px rgba(15,23,42,.08)}
-.jos-ld-table td{height:44px;padding:0 14px;border-bottom:1px solid #F4F5F6;vertical-align:middle;line-height:1.35;overflow:hidden}
+.jos-ld-table-wrap.is-scrolled thead th{box-shadow:0 1px 0 rgba(15,23,42,.07),0 6px 12px -6px rgba(15,23,42,.06)}
+.jos-ld-table td{height:54px;padding:0 16px;border-bottom:1px solid rgba(15,23,42,.04);vertical-align:middle;line-height:1.4;overflow:hidden;color:#3D4451}
+.jos-ld-table td strong{color:#141B2B;font-weight:650}
 .jos-ld-table td[role="gridcell"]{outline:none}
 .jos-ld-table td[role="gridcell"]:focus-visible{
   outline:none;box-shadow:inset 0 0 0 2px #6B7280;background:#F9FAFB;
 }
-.jos-ld-trow{cursor:pointer;transition:background-color .16s ease;position:relative}
-.jos-ld-trow:hover{background:#FAFAFA}
-.jos-ld-trow.on{background:#F9FAFB;box-shadow:inset 3px 0 0 var(--jos-brand)}
-.jos-ld-trow.on:hover{background:#F5F6F7}
+.jos-ld-trow{cursor:pointer;transition:background-color .12s ease;position:relative}
+.jos-ld-trow:hover{background:rgba(15,23,42,.018)}
+.jos-ld-trow.on{background:var(--jos-brand-soft);box-shadow:inset 2px 0 0 var(--jos-brand)}
+.jos-ld-trow.on:hover{background:var(--jos-brand-soft)}
 .jos-ld-tcheck{width:32px}
 
 /* Column headers — drag to reorder, click ▾ for rename/hide */
@@ -4975,8 +4978,8 @@ html[data-theme="night"] .jos-mem-form select{
   overflow:hidden;padding:0;flex:0 0 auto;width:0;opacity:0;transform:translateX(10px);
   transition:width .2s ease,opacity .16s ease,transform .2s ease;
 }
-.jos-ld-main.is-open{width:400px;opacity:1;transform:translateX(0);overflow:auto}
-@media(max-width:1279px){.jos-ld-main.is-open{width:340px}}
+.jos-ld-main.is-open{width:360px;opacity:1;transform:translateX(0);overflow:auto}
+@media(max-width:1279px){.jos-ld-main.is-open{width:320px}}
 @media (prefers-reduced-motion:reduce){.jos-ld-main{transition:none}}
 .jos-ld-workspace{display:flex;flex-direction:column;min-height:100%}
 .jos-ld-ws-head{
@@ -5169,7 +5172,7 @@ html[data-theme="night"] .jos-mem-form select{
     position:fixed;top:0;right:0;bottom:0;z-index:200;border-radius:0;
     box-shadow:-12px 0 40px rgba(0,0,0,.12);
   }
-  .jos-ld-main.is-open{width:min(400px,92vw)}
+  .jos-ld-main.is-open{width:min(360px,92vw)}
 }
 @media(max-width:767px){
   #p-app.jos-pixel.jos-leads-mode{--nav:0px}

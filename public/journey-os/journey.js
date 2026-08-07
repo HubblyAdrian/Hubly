@@ -7995,7 +7995,7 @@
             return '<option value="' + s + '"' + (crm === s ? ' selected' : '') + '>' + esc(LEADS_STATUS_LABEL[s]) + '</option>';
           }).join('') + '</select>';
       }
-      return '<span class="jos-ld-status-pill ' + leadStatusTone(crm) + '" data-jos-lead-field="status" data-jos-lead-id="' + esc(leadKey) + '" title="Double-click to change">' + esc(LEADS_STATUS_LABEL[crm] || crm) + '</span>';
+      return '<span class="jos-ld-status-pill ' + leadStatusTone(crm) + '" data-jos-lead-field="status" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + esc(LEADS_STATUS_LABEL[crm] || crm) + '</span>';
     }
     if (colKey === 'assigned') {
       if (editingField === 'assignedTo') {
@@ -8006,7 +8006,7 @@
             return '<option value="' + esc(t.name) + '"' + (lead.assignedTo === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
           }).join('') + '</select>';
       }
-      return '<span class="jos-ld-assigned-text' + (lead.assignedTo ? '' : ' is-empty') + '" data-jos-lead-field="assignedTo" data-jos-lead-id="' + esc(leadKey) + '" title="Double-click to change">' + esc(lead.assignedTo || 'Unassigned') + '</span>';
+      return '<span class="jos-ld-assigned-text' + (lead.assignedTo ? '' : ' is-empty') + '" data-jos-lead-field="assignedTo" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + esc(lead.assignedTo || 'Unassigned') + '</span>';
     }
     if (colKey === 'created') return esc(String(lead.createdAt || '').slice(0, 10)) || '—';
     return '—';
@@ -8973,12 +8973,13 @@
       renderLeads();
     });
 
-    // Double-click a Status/Assigned cell to edit — everywhere else it's
-    // a plain, static-looking cell, not a form control sitting open.
-    // Only one cell edits at a time: _josLeadsEditCell holds at most one
-    // {leadId,field}, so opening a new one always implicitly closes the
-    // last one in the same render — no separate "close the old one" step.
-    root.addEventListener('dblclick', function (e) {
+    // Click a Status/Assigned cell to edit — spreadsheet-style, one click,
+    // not two. Everywhere else it's a plain, static-looking cell, not a
+    // form control sitting open. Only one cell edits at a time:
+    // _josLeadsEditCell holds at most one {leadId,field}, so opening a new
+    // one always implicitly closes the last one in the same render — no
+    // separate "close the old one" step.
+    root.addEventListener('click', function (e) {
       var field = e.target.closest('[data-jos-lead-field]');
       if (!field || field.tagName === 'SELECT') return;
       var leadId = field.getAttribute('data-jos-lead-id');
@@ -8987,15 +8988,14 @@
       openLeadsCellEdit(root, leadId, key);
       e.stopPropagation();
     });
-    // Blur is deferred to a fresh tick — real double-clicking a *different*
+    // Blur is deferred to a fresh tick — clicking a *different* editable
     // cell while one is open fires this blur first (mousedown moves focus
-    // before the click/dblclick pair even lands), and re-rendering
-    // synchronously right there would swap out the DOM node the incoming
-    // second click needs to land on, so the browser never pairs it into a
-    // dblclick at all and the new cell silently never opens. Deferring
-    // lets the dblclick handler run first and claim _josLeadsEditCell; by
-    // the time this fires, if editCell has already moved on to a
-    // different cell, there's nothing left for this blur to close.
+    // before the click above even lands), and closing synchronously right
+    // there would swap out the DOM node the incoming click needs to land
+    // on. Deferring lets the click handler above run first and claim
+    // _josLeadsEditCell; by the time this fires, if editCell has already
+    // moved on to a different cell, there's nothing left for this blur to
+    // close.
     root.addEventListener('blur', function (e) {
       if (!(e.target && e.target.classList && e.target.classList.contains('jos-ld-editing'))) return;
       var closingCell = root._josLeadsEditCell;
