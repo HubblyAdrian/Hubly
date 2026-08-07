@@ -7389,17 +7389,27 @@
     {
       key: 'phone', label: 'Phone', type: 'phone', width: 150,
       editable: true, searchable: true, filterable: false, sortable: false,
-      set: function (lead, value) { lead.phone = String(value || '').trim(); return 'Phone → ' + (lead.phone || '—'); }
+      // value arrives already parsed to canonical digits via
+      // rendererRegistry.phone.readValue() — set() just stores it, it
+      // doesn't re-derive anything.
+      set: function (lead, value) { lead.phone = value || ''; return 'Phone → ' + (rendererRegistry.phone.format(lead.phone) || '—'); }
     },
     {
       key: 'email', label: 'Email', type: 'email', width: 190,
       editable: true, searchable: true, filterable: false, sortable: false,
-      set: function (lead, value) { lead.email = String(value || '').trim(); return 'Email → ' + (lead.email || '—'); }
+      // value arrives already parsed (trimmed + lowercased) via
+      // rendererRegistry.email.readValue().
+      set: function (lead, value) { lead.email = value || ''; return 'Email → ' + (lead.email || '—'); }
     },
     {
       key: 'source', label: 'Source', type: 'text', width: 110,
       editable: false, searchable: true, filterable: true, sortable: true,
-      get: function (lead) { return srcLabel(srcKind(lead.source, lead)); }
+      get: function (lead) { return srcLabel(srcKind(lead.source, lead)); },
+      // The Source filter dropdown compares against the raw kind (e.g.
+      // 'google'), not the human label ('Google') get() returns for
+      // display — a genuine case where filtering needs a different value
+      // than rendering does, not just a formatted version of the same one.
+      filterValue: function (lead) { return srcKind(lead.source, lead); }
     },
     {
       key: 'service', label: 'Service', type: 'text', width: 150,
@@ -7440,7 +7450,13 @@
     {
       key: 'created', label: 'Created', type: 'text', width: 110,
       editable: false, searchable: false, filterable: false, sortable: true,
-      get: function (lead) { return String(lead.createdAt || '').slice(0, 10) || '—'; }
+      get: function (lead) { return String(lead.createdAt || '').slice(0, 10) || '—'; },
+      // Sorting needs the full, real-precision timestamp (and falls back to
+      // lastContacted, matching the existing "most recently active" sort
+      // intent) — get() truncates to a YYYY-MM-DD display string, which
+      // would silently tie-break same-day leads in whatever order they
+      // happened to already be in.
+      sortValue: function (lead) { return lead.lastContacted || lead.createdAt || ''; }
     }
   ];
   // Custom fields (business_table_config, scope 'business' — shared by
@@ -8076,12 +8092,19 @@
     return normalizeCrmStatus(lead) === tab;
   }
 
-  function leadMatchesFilters(lead, root) {
+  function leadMatchesFilters(lead, root, schema) {
     var f = root._josLeadFilters || {};
+    var byKey = {};
+    (schema || leadsColumnSchema(root && root._josLeadsCustomFields)).forEach(function (c) { byKey[c.key] = c; });
+    // f.status is a pipeline-stage concept (new/quoted/waiting/lost/...),
+    // NOT the same vocabulary as the table's Status column (CRM status:
+    // new/contacted/qualified/...) despite the shared name — pre-existing
+    // distinction in this app, left as its own check rather than force-fit
+    // onto the 'status' schema column, which means something different.
     if (f.status && f.status !== 'all' && String(lead.status || '') !== f.status) return false;
-    if (f.source && f.source !== 'all' && srcKind(lead.source, lead) !== f.source) return false;
-    if (f.assigned && f.assigned !== 'all' && lead.assignedTo !== f.assigned) return false;
-    if (f.service && f.service !== 'all' && lead.service !== f.service) return false;
+    if (f.source && f.source !== 'all' && byKey.source && leadsColFieldFilter(byKey.source, lead) !== f.source) return false;
+    if (f.assigned && f.assigned !== 'all' && byKey.assigned && leadsColFieldFilter(byKey.assigned, lead) !== f.assigned) return false;
+    if (f.service && f.service !== 'all' && byKey.service && leadsColFieldFilter(byKey.service, lead) !== f.service) return false;
     if (f.vehicle && String(vehicleOf(lead) || '').toLowerCase().indexOf(String(f.vehicle).toLowerCase()) < 0) return false;
     if (f.property && String(lead.property || lead.address || '').toLowerCase().indexOf(String(f.property).toLowerCase()) < 0) return false;
     if (f.tags && String(f.tags).trim()) {
@@ -8127,17 +8150,21 @@
     return true;
   }
 
-  function leadSearchHay(lead) {
+  // schema-driven for every column marked searchable:true (built-ins and
+  // custom fields alike, via the exact same searchValue()/get() every
+  // other operation uses) — plus a handful of fields that are genuinely
+  // searchable but aren't table columns at all (vehicle, property,
+  // address, notes, message history), which stay hand-listed since they
+  // have no schema entry to drive them from.
+  function leadSearchHay(lead, schema) {
     var msgBlob = (lead.messages || []).map(function (m) { return m.text || m.content || ''; }).join(' ');
-    // Custom field values fold in generically — whatever a business has
-    // defined (HOA, Gate Code, Venue, ...), searchable without this
-    // function needing to know the field names, matching the schema's
-    // searchable:true intent for custom fields.
-    var customBlob = lead.customFields ? Object.keys(lead.customFields).map(function (k) { return lead.customFields[k]; }).join(' ') : '';
+    var schemaBlob = (schema || leadsColumnSchema(null)).filter(function (c) { return c.searchable; }).map(function (c) {
+      var v = leadsColFieldSearch(c, lead);
+      return Array.isArray(v) ? v.join(' ') : (v == null ? '' : String(v));
+    }).join(' ');
     return [
-      lead.name, lead.phone, lead.email, vehicleOf(lead), lead.property, lead.address,
-      lead.service, lead.source, lead.notes, (lead.notesList || []).join(' '),
-      lead.lastMessage, msgBlob, (lead.tags || []).join(' '), lead.assignedTo, customBlob
+      schemaBlob, vehicleOf(lead), lead.property, lead.address,
+      lead.notes, (lead.notesList || []).join(' '), lead.lastMessage, msgBlob
     ].join(' ').toLowerCase();
   }
 
@@ -8145,13 +8172,15 @@
     var tab = root._josLeadsTab || 'all';
     var q = String(root._josLeadsQ || '').trim().toLowerCase();
     var sort = root._josLeadsSort || 'newest';
+    // Built once per call, not once per lead — leadMatchesFilters/
+    // leadSearchHay both take it so the O(columns) schema build doesn't
+    // happen inside an O(leads) filter loop.
+    var schema = leadsColumnSchema(root._josLeadsCustomFields);
+    var createdCol = schema.filter(function (c) { return c.key === 'created'; })[0];
     var list = leadsOsList().filter(function (l) { return leadMatchesTab(l, tab); });
-    list = list.filter(function (l) { return leadMatchesFilters(l, root); });
-    if (q) list = list.filter(function (l) { return leadSearchHay(l).indexOf(q) > -1; });
-    list = list.slice().sort(function (a, b) {
-      if (sort === 'oldest') return String(a.lastContacted || a.createdAt || '').localeCompare(String(b.lastContacted || b.createdAt || ''));
-      return String(b.lastContacted || b.createdAt || '').localeCompare(String(a.lastContacted || a.createdAt || ''));
-    });
+    list = list.filter(function (l) { return leadMatchesFilters(l, root, schema); });
+    if (q) list = list.filter(function (l) { return leadSearchHay(l, schema).indexOf(q) > -1; });
+    list = createdCol ? leadsSortBy(list, createdCol, sort === 'oldest' ? 'asc' : 'desc') : list.slice();
     return list;
   }
 
@@ -8330,23 +8359,39 @@
         return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
       }
     },
+    // storage -> parse -> format -> renderer. Storage is always canonical
+    // 10-digit national digits (whatever phoneDigits() would normalize any
+    // input to), never the raw typed string — that's what makes export/
+    // import/API/AI workflows able to rely on one shape instead of
+    // re-parsing "555-123-4567" vs "(555) 123-4567" vs "5551234567" every
+    // time they touch a phone value. parse() runs on commit (readValue),
+    // format() runs for display and for showing the typed-editable value.
     phone: {
+      parse: function (raw) { return phoneDigits(raw); },
+      format: function (value) { return value ? displayPhone(value) : ''; },
       display: function (value, col, leadKey) {
-        var v = value ? displayPhone(value) : '';
+        var v = rendererRegistry.phone.format(value);
         return '<span class="jos-ld-contact-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Add phone') + '</span>';
       },
       edit: function (value, col, leadKey) {
-        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Phone" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
-      }
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Phone" value="' + esc(rendererRegistry.phone.format(value)) + '" onclick="event.stopPropagation()">';
+      },
+      readValue: function (el) { return rendererRegistry.phone.parse(el.value); },
+      writeValue: function (el, value) { el.value = rendererRegistry.phone.format(value); }
     },
+    // Light parse only (trim + lowercase) — email storage should be
+    // consistent for dedupe/matching, but there's no separate display
+    // format worth a formatter step the way phone has one.
     email: {
+      parse: function (raw) { return String(raw || '').trim().toLowerCase(); },
       display: function (value, col, leadKey) {
         var v = value || '';
         return '<span class="jos-ld-contact-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Add email') + '</span>';
       },
       edit: function (value, col, leadKey) {
         return '<input type="email" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Email" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
-      }
+      },
+      readValue: function (el) { return rendererRegistry.email.parse(el.value); }
     },
     url: {
       display: function (value, col, leadKey) {
@@ -8445,6 +8490,26 @@
   }
   function leadsColFieldGet(col, lead) { return col.get ? col.get(lead) : lead[col.key]; }
   function leadsColFieldSet(col, lead, value) { return col.set ? col.set(lead, value) : (lead[col.key] = value, col.label + ' updated'); }
+  // searchValue/filterValue/sortValue all default to get() — most columns
+  // filter/sort/search on exactly what they display. Only override when a
+  // column genuinely needs a different value for that operation (Source
+  // filters on the raw kind, not the display label; Created sorts on the
+  // full timestamp, not the truncated display date).
+  function leadsColFieldSearch(col, lead) { return col.searchValue ? col.searchValue(lead) : leadsColFieldGet(col, lead); }
+  function leadsColFieldFilter(col, lead) { return col.filterValue ? col.filterValue(lead) : leadsColFieldGet(col, lead); }
+  function leadsColFieldSort(col, lead) { return col.sortValue ? col.sortValue(lead) : leadsColFieldGet(col, lead); }
+  // Generic — any column (schema entry with an optional sortValue/get) can
+  // be sorted on, not just the one 'created' column currently wired to a
+  // UI control. list is copied, never sorted in place.
+  function leadsSortBy(list, col, direction) {
+    return list.slice().sort(function (a, b) {
+      var av = leadsColFieldSort(col, a), bv = leadsColFieldSort(col, b);
+      if (av == null) av = '';
+      if (bv == null) bv = '';
+      var cmp = (typeof av === 'number' && typeof bv === 'number') ? (av - bv) : String(av).localeCompare(String(bv));
+      return direction === 'desc' ? -cmp : cmp;
+    });
+  }
 
   function renderLeadsTable(root, list, selectedId, bulkOpen, bulkSelected, columns) {
     if (!list.length) return '';
