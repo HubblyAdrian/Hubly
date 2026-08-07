@@ -452,10 +452,15 @@
     var open = cards.filter(function (c) { var i = pipeStageIndex(boardStageId(c)); return i >= 0 && i < 3; }).length;
     var won = cards.filter(function (c) { return boardStageId(c) === 'completed'; }).length;
     var quotesN = cards.filter(function (c) { return boardStageId(c) === 'quote' || boardStageId(c) === 'incomplete'; }).length;
+    var bookedN = cards.filter(function (c) { return boardStageId(c) === 'booked'; }).length;
+    var conversionRate = cards.length ? Math.round(((bookedN + won) / cards.length) * 100) : 0;
+    var avgJobValue = cards.length ? Math.round(totalVal / cards.length) : 0;
     return '<div class="jos-pk-kpis">' +
       [['pipe-kpi-open', 'Open deals', String(open), 'Quotes + booked', 'Filters board to open deals'],
         ['pipe-kpi-value', 'Pipeline value', money(totalVal) || '$0', quotesN + ' quotes', 'Total estimated revenue'],
         ['pipe-kpi-won', 'Complete', String(won), won ? 'Finished jobs' : 'None yet', 'Completed jobs'],
+        ['pipe-kpi-conversion', 'Conversion rate', conversionRate + '%', 'Booked or complete', 'Share of deals that reached booked or complete'],
+        ['pipe-kpi-avg', 'Avg. deal value', money(avgJobValue) || '$0', 'Across all deals', 'Total pipeline value ÷ deal count'],
         ['pipe-kpi-stages', 'Stages', String(PIPE_BOARD_STAGES.length), 'Quotes → Complete', 'Pipeline stages']].map(function (k) {
         return '<button type="button" class="jos-pk-kpi" data-jos-act="' + k[0] + '" title="' + esc(k[4]) + '">' +
           '<span class="lbl">' + esc(k[1]) + '</span><strong>' + esc(k[2]) + '</strong>' +
@@ -492,6 +497,62 @@
         '</div>' +
         '<button type="button" class="jos-pk-col-add" data-jos-act="' + addAct + '" data-pipe-stage="' + esc(st.id) + '">' + addLabel + '</button></div>';
     }).join('') + '</div>';
+  }
+
+  function pipeStatusTone(sid) {
+    if (sid === 'quote') return 'warn';
+    if (sid === 'incomplete') return 'purple';
+    if (sid === 'booked') return 'ok';
+    if (sid === 'completed') return 'gray';
+    return 'info';
+  }
+
+  function renderPipelineTable(root, cards, selectedId, page, pageSize) {
+    var sorted = cards.slice().sort(function (a, b) {
+      return String(b.date || '').localeCompare(String(a.date || ''));
+    });
+    var pages = Math.max(1, Math.ceil(sorted.length / pageSize));
+    if (page > pages) page = pages;
+    var pageRows = sorted.slice((page - 1) * pageSize, page * pageSize);
+
+    if (!sorted.length) {
+      return '<div class="jos-pk-empty muted">No deals match this view.</div>';
+    }
+
+    var rows = pageRows.map(function (c) {
+      var sid = boardStageId(c);
+      var on = selectedId && String(selectedId) === String(c.id);
+      var tags = pipeCardTags(c).slice(0, 3);
+      var when = c.date ? (dateLong(c.date) + (c.time ? ' · ' + c.time : '')) : '—';
+      return '<tr class="jos-cc1-row' + (on ? ' on' : '') + '" data-jos-pipe-card="' + esc(c.id) + '" tabindex="0">' +
+        '<td><span class="jos-cm-ava">' + esc(initials(c.name)) + '</span><strong>' + esc(c.name || 'Deal') + '</strong></td>' +
+        '<td>' + esc(c.service || '—') + '</td>' +
+        '<td><span class="jos-pill ' + esc(pipeStatusTone(sid)) + '">' + esc(pipeStageLabel(sid)) + '</span></td>' +
+        '<td>' + esc(when) + '</td>' +
+        '<td><strong>' + esc(money(c.amount) || '$0') + '</strong></td>' +
+        '<td>' + esc(srcLabel(c.source)) + '</td>' +
+        '<td class="jos-cc1-tags">' + (tags.length ? tags.map(function (t) { return '<span class="jos-tag">' + esc(t) + '</span>'; }).join('') : '<span class="jos-muted">—</span>') + '</td>' +
+        '<td><button type="button" class="jos-icon-btn" data-jos-pipe-card="' + esc(c.id) + '" title="Open deal" aria-label="Open deal">↗</button></td>' +
+        '</tr>';
+    }).join('');
+
+    var pager = '';
+    if (pages > 1) {
+      var buttons = '';
+      for (var p = 1; p <= pages && p <= 8; p++) {
+        buttons += '<button type="button" class="jos-jobs-pagebtn' + (p === page ? ' on' : '') + '" data-jos-act="pipe-table-page" data-jos-page="' + p + '">' + p + '</button>';
+      }
+      pager = '<div class="jos-jobs-pager">' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="pipe-table-page-prev"' + (page <= 1 ? ' disabled' : '') + '>Previous</button>' +
+        buttons +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="pipe-table-page-next"' + (page >= pages ? ' disabled' : '') + '>Next</button>' +
+        '<span class="jos-muted jos-cc1-count">' + sorted.length + ' deal' + (sorted.length === 1 ? '' : 's') + '</span></div>';
+    }
+
+    return '<div class="jos-cc1-table-wrap" style="max-height:none">' +
+      '<table class="jos-cc1-table"><thead><tr>' +
+      '<th>Customer</th><th>Service</th><th>Status</th><th>When</th><th>Value</th><th>Source</th><th>Tags</th><th>Actions</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' + pager;
   }
 
   function renderPipelineDetail(root, card) {
@@ -557,6 +618,64 @@
       (card.jobId ? 'Open job' : 'Convert to job') + '</button></aside>';
   }
 
+  function renderPipelineInsights(root, all) {
+    var total = Math.max(1, all.length);
+    var stageCounts = PIPE_BOARD_STAGES.map(function (st) {
+      var n = all.filter(function (c) { return boardStageId(c) === st.id; }).length;
+      return { st: st, n: n, pct: Math.round((n / total) * 100) };
+    });
+    var STAGE_HEX = { orange: '#D9632D', purple: '#7C3AED', green: '#22C55E', gray: '#94A3B8' };
+    var acc = 0;
+    var gradientStops = stageCounts.map(function (s) {
+      var from = acc, to = acc + (s.n / total) * 360;
+      acc = to;
+      return (STAGE_HEX[s.st.tone] || '#94A3B8') + ' ' + from + 'deg ' + to + 'deg';
+    }).join(',');
+
+    var upcoming = jobsAll().filter(function (j) {
+      return j.status !== 'cancelled' && j.status !== 'completed' && String(j.date || '') >= todayStr();
+    }).sort(function (a, b) {
+      return String(a.date).localeCompare(String(b.date)) || parseJobMinutes(a.time) - parseJobMinutes(b.time);
+    }).slice(0, 4);
+
+    var activity = [];
+    jobsAll().forEach(function (j) {
+      (j.timeline || []).forEach(function (ev) {
+        activity.push({ at: ev.at || '', label: (ev.label || 'Update') + (j.customer ? ' · ' + j.customer : ''), type: ev.type || 'job' });
+      });
+    });
+    activity.sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
+    activity = activity.slice(0, 5);
+
+    return '<aside class="jos-pk-ws jos-pk-insights">' +
+      '<section class="jos-pk-sec"><div class="jos-kicker">Pipeline Insights</div>' +
+      '<div class="jos-jobs-donut-wrap">' +
+      '<div class="jos-jobs-donut" style="background:conic-gradient(' + (gradientStops || '#94A3B8 0deg 360deg') + ')" aria-hidden="true"></div>' +
+      '<div class="jos-jobs-donut-legend">' +
+      '<div style="font-size:20px;font-weight:800;color:#141B2B;margin-bottom:2px">' + all.length + '</div>' +
+      '<div class="jos-muted" style="margin-bottom:6px">Total Deals</div>' +
+      stageCounts.map(function (s) {
+        return '<span><i style="background:' + (STAGE_HEX[s.st.tone] || '#94A3B8') + '"></i>' + esc(s.st.label) + ' ' + s.n + ' (' + s.pct + '%)</span>';
+      }).join('') +
+      '</div></div></section>' +
+
+      '<section class="jos-pk-sec"><div class="jos-between"><div class="jos-kicker">Upcoming Appointments</div>' +
+      '<button type="button" class="jos-linkish" data-jos-act="go-calendar">View calendar →</button></div>' +
+      (upcoming.length ? '<div class="jos-jobs-agenda">' + upcoming.map(function (j) {
+        return '<div class="jos-jobs-agenda-item" style="cursor:default">' +
+          '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span>' +
+          '<span class="meta"><strong>' + esc(j.service || 'Job') + '</strong><span>' + esc(j.customer || '') + ' · ' + esc(dateLong(j.date)) + (j.time ? ' · ' + esc(j.time) : '') + '</span></span>' +
+          '</div>';
+      }).join('') + '</div>' : '<div class="jos-muted">No upcoming appointments</div>') +
+      '</section>' +
+
+      '<section class="jos-pk-sec"><div class="jos-kicker">Recent Activity</div>' +
+      (activity.length ? '<div class="jos-cust-bar-list">' + activity.map(function (a) {
+        return '<div class="jos-jobs-insight info" style="margin-top:0"><span>' + esc(a.label) + '</span></div>';
+      }).join('') + '</div>' : '<div class="jos-muted">No recent activity</div>') +
+      '</section></aside>';
+  }
+
   function setPipelineMode(on) {
     var app = el('p-app');
     if (!app) return;
@@ -576,6 +695,9 @@
     }
     var sel = selectedId ? all.find(function (c) { return String(c.id) === String(selectedId); }) : null;
     var sortOpen = !!root._josPipeSortOpen;
+    var pipeView = root._josPipeView === 'table' ? 'table' : 'board';
+    var tablePage = root._josPipeTablePage || 1;
+    var tablePageSize = 10;
 
     root.innerHTML =
       '<div class="jos-pk-shell jos-pipe-page">' +
@@ -597,6 +719,10 @@
         [['recent', 'Recent'], ['value', 'Highest value'], ['name', 'Name A–Z']].map(function (s) {
           return '<button type="button" data-jos-act="pipe-sort-set" data-jos-sort="' + s[0] + '">' + s[1] + '</button>';
         }).join('') + '</div>' : '') +
+      '</div>' +
+      '<div class="jos-ld-view-toggle" role="group" aria-label="View">' +
+      '<button type="button" class="jos-ld-view-btn' + (pipeView !== 'table' ? ' on' : '') + '" data-jos-pipe-view="board">Kanban</button>' +
+      '<button type="button" class="jos-ld-view-btn' + (pipeView === 'table' ? ' on' : '') + '" data-jos-pipe-view="table">Table</button>' +
       '</div></div>' +
 
       renderPipelineMobileTabs(root, all) +
@@ -604,9 +730,13 @@
       renderPipelineKpis(cards) +
 
       '<div class="jos-pk-layout jos-pipe-layout">' +
-      '<div class="jos-pk-main">' + renderPipelineBoard(cards, selectedId) +
-      '<div class="jos-pk-tip">Drag deals between Quotes → Incomplete → Booked → Complete. Tap a card to edit job, money, and time.</div></div>' +
-      renderPipelineDetail(root, sel) +
+      '<div class="jos-pk-main">' +
+      (pipeView === 'table'
+        ? renderPipelineTable(root, cards, selectedId, tablePage, tablePageSize)
+        : (renderPipelineBoard(cards, selectedId) +
+          '<div class="jos-pk-tip">Drag deals between Quotes → Incomplete → Booked → Complete. Tap a card to edit job, money, and time.</div>')) +
+      '</div>' +
+      (sel ? renderPipelineDetail(root, sel) : renderPipelineInsights(root, all)) +
       '</div></div>';
 
     bindRoot(root);
@@ -647,6 +777,14 @@
     if (root._josPipeBound) return;
     root._josPipeBound = true;
     root.addEventListener('click', function (e) {
+      var viewBtn = e.target.closest('[data-jos-pipe-view]');
+      if (viewBtn) {
+        root._josPipeView = viewBtn.getAttribute('data-jos-pipe-view');
+        root._josPipeTablePage = 1;
+        renderPipeline();
+        e.stopPropagation();
+        return;
+      }
       var card = e.target.closest('[data-jos-pipe-card]');
       if (card && !e.target.closest('[data-jos-act]')) {
         root._josPipeId = card.getAttribute('data-jos-pipe-card');
@@ -794,8 +932,28 @@
         toast('Pipeline stages: Quotes → Incomplete → Booked → Complete. Drag cards to update.');
         return;
       }
+      if (act === 'pipe-kpi-conversion') {
+        toast('Share of all deals that reached Booked or Complete.');
+        return;
+      }
+      if (act === 'pipe-kpi-avg') {
+        toast('Total pipeline value divided by number of deals.');
+        return;
+      }
       if (act === 'pipe-mobile-stage') {
         root._josPipeMobileStage = stageId || '';
+        return renderPipeline();
+      }
+      if (act === 'pipe-table-page') {
+        root._josPipeTablePage = parseInt(t.getAttribute('data-jos-page'), 10) || 1;
+        return renderPipeline();
+      }
+      if (act === 'pipe-table-page-prev') {
+        root._josPipeTablePage = Math.max(1, (root._josPipeTablePage || 1) - 1);
+        return renderPipeline();
+      }
+      if (act === 'pipe-table-page-next') {
+        root._josPipeTablePage = (root._josPipeTablePage || 1) + 1;
         return renderPipeline();
       }
       if (act === 'pipe-deal-save' && card) {
@@ -17676,6 +17834,7 @@
       if (act === 'go-leads') return switchNav('leads');
       if (act === 'go-leads-recovery') return openLeadsRecovery();
       if (act === 'go-jobs') return switchNav('jobs');
+      if (act === 'go-calendar') return switchNav('calendar');
       if (act === 'go-editor') return switchNav('editor');
       if (act === 'go-marketing' || act === 'go-studio') return switchNav('studio');
       if (act === 'open-studio') {

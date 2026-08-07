@@ -516,6 +516,8 @@ body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
 .jos-pill.warn{background:#FFF7ED;color:#C2410C}
 .jos-pill.info{background:#EFF6FF;color:#1D4ED8}
 .jos-pill.hot{background:#FEF2F2;color:#B91C1C}
+.jos-pill.purple{background:#F5F3FF;color:#6D28D9}
+.jos-pill.gray{background:#F3F4F6;color:#374151}
 .jos-pill.mute{background:#F3F4F6;color:#6B7280}
 .jos-pill.brand{background:var(--jos-brand-soft);color:var(--jos-brand-dark)}
 .jos-pill.booked{background:var(--jos-brand-soft);color:var(--jos-brand-dark)}
