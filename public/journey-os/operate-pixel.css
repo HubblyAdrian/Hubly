@@ -4848,66 +4848,89 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-view-toggle{display:inline-flex;border:1px solid var(--jos-border);border-radius:10px;overflow:hidden;margin-left:auto}
 .jos-ld-view-btn{appearance:none;border:0;background:#fff;padding:6px 12px;font:inherit;font-size:12px;font-weight:700;color:var(--jos-ink-3);cursor:pointer}
 .jos-ld-view-btn.on{background:var(--jos-brand-soft);color:var(--jos-brand)}
-.jos-ld-table-wrap{flex:1;overflow:auto}
-.jos-ld-table{width:100%;border-collapse:collapse;font-size:13px}
+.jos-ld-table-wrap{flex:1;overflow:auto;position:relative}
+.jos-ld-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;table-layout:fixed}
 .jos-ld-table thead th{
-  position:sticky;top:0;z-index:2;text-align:left;padding:0 10px;height:34px;
-  font-size:10.5px;font-weight:750;letter-spacing:.05em;text-transform:uppercase;color:var(--jos-ink-3);
-  background:#fff;border-bottom:1px solid #EEF0F2;white-space:nowrap;
+  position:sticky;top:0;z-index:2;text-align:left;padding:0 14px;height:32px;
+  font-size:10.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:#8B909A;
+  background:#fff;border-bottom:1px solid #EDEEF1;white-space:nowrap;
+  transition:box-shadow .15s ease;
 }
-.jos-ld-table td{padding:7px 10px;border-bottom:1px solid #F2F3F5;vertical-align:middle;line-height:1.35}
-.jos-ld-trow{cursor:pointer}
-.jos-ld-trow:hover{background:#FAFAFB}
-.jos-ld-trow.on{background:var(--jos-brand-soft)}
-.jos-ld-trow.on:hover{background:var(--jos-brand-soft)}
+.jos-ld-table-wrap.is-scrolled thead th{box-shadow:0 1px 0 #E5E7EB,0 6px 12px -6px rgba(15,23,42,.08)}
+.jos-ld-table td{padding:5px 14px;border-bottom:1px solid #F4F5F6;vertical-align:middle;line-height:1.35;overflow:hidden}
+.jos-ld-trow{cursor:pointer;transition:background-color .1s ease-out}
+.jos-ld-trow:hover{background:#FAFAFA}
+.jos-ld-trow.on{background:#F4F6FA}
+.jos-ld-trow.on:hover{background:#EFF2F7}
 .jos-ld-tcheck{width:32px}
 
 /* Column headers — drag to reorder, click ▾ for rename/hide */
-.jos-ld-th{position:relative;cursor:grab;user-select:none}
-.jos-ld-th.is-dragging{opacity:.4}
-.jos-ld-th.drop-target{background:var(--jos-brand-soft)}
-.jos-ld-th-label{pointer-events:none}
+.jos-ld-th{position:relative;cursor:grab;user-select:none;transition:background-color .12s ease,opacity .15s ease}
+.jos-ld-th.is-dragging{opacity:.45;background:#F8F9FA}
+.jos-ld-th.drop-target{background:#EEF1F5}
+.jos-ld-th-label{pointer-events:none;overflow:hidden;text-overflow:ellipsis;display:inline-block;max-width:calc(100% - 14px);vertical-align:middle}
 .jos-ld-th-menu-btn{
-  appearance:none;border:0;background:transparent;color:var(--jos-ink-3);font-size:10px;cursor:pointer;
-  margin-left:4px;padding:2px 3px;border-radius:4px;opacity:0;transition:opacity .12s;
+  appearance:none;border:0;background:transparent;color:#9CA3AF;font-size:10px;cursor:pointer;
+  margin-left:4px;padding:2px 3px;border-radius:4px;opacity:0;transition:opacity .15s ease,background-color .12s ease;
 }
 .jos-ld-th:hover .jos-ld-th-menu-btn,.jos-ld-th.menu-open .jos-ld-th-menu-btn{opacity:1}
 .jos-ld-th-menu-btn:hover{background:#EEF0F2}
 .jos-ld-th-add{width:36px;text-align:center;position:relative}
+.jos-ld-col-resize{
+  position:absolute;top:0;right:0;bottom:0;width:7px;cursor:col-resize;z-index:1;
+}
+.jos-ld-col-resize::after{content:'';position:absolute;top:6px;bottom:6px;right:2px;width:2px;border-radius:2px;background:transparent;transition:background-color .12s ease}
+.jos-ld-th:hover .jos-ld-col-resize::after{background:#E5E7EB}
+.jos-ld-col-resize:hover::after,.jos-ld-col-resize.is-resizing::after{background:var(--jos-brand)}
 .jos-ld-col-menu{
   position:fixed;z-index:60;min-width:180px;
-  background:#fff;border:1px solid var(--jos-border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.12);
+  background:#fff;border:1px solid #ECEDEF;border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.1);
   padding:8px;display:flex;flex-direction:column;gap:6px;text-transform:none;letter-spacing:normal;
   visibility:hidden;
 }
 .jos-ld-col-menu.jos-positioned{visibility:visible}
-.jos-ld-col-menu-rename{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--jos-ink-3);text-transform:uppercase;letter-spacing:.04em;padding:2px 4px}
+.jos-ld-col-menu-rename{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.04em;padding:2px 4px}
 .jos-ld-col-menu-rename input{
-  height:32px;border:1px solid var(--jos-border);border-radius:8px;padding:0 8px;font:inherit;font-size:13px;
+  height:32px;border:1px solid #E5E7EB;border-radius:8px;padding:0 8px;font:inherit;font-size:13px;
   font-weight:600;color:var(--jos-navy);text-transform:none;letter-spacing:normal;
 }
+.jos-ld-col-menu-rename input:focus{outline:none;border-color:#C7CCD3;box-shadow:0 0 0 3px rgba(148,163,184,.16)}
 .jos-ld-col-menu > button{
   appearance:none;border:0;background:transparent;text-align:left;padding:8px;border-radius:8px;
-  font:inherit;font-size:13px;font-weight:650;color:var(--jos-navy);cursor:pointer;text-transform:none;letter-spacing:normal;
+  font:inherit;font-size:13px;font-weight:600;color:var(--jos-navy);cursor:pointer;text-transform:none;letter-spacing:normal;
+  transition:background-color .1s ease;
 }
-.jos-ld-col-menu > button:hover{background:#F5F6F8}
+.jos-ld-col-menu > button:hover{background:#F5F6F7}
 
-/* Inline-editable cells (status / assigned) */
+/* Status pill — static by default, double-click to edit */
+.jos-ld-status-pill{
+  display:inline-flex;align-items:center;height:24px;border-radius:999px;padding:0 10px;font-size:11px;font-weight:650;
+  cursor:default;background:#F1F2F4;color:#5B6270;
+}
+.jos-ld-status-pill.ok{background:#EFFAF3;color:#1E8A4C}
+.jos-ld-status-pill.brand{background:#EEF1F5;color:#4B5565}
+.jos-ld-status-pill.info{background:#EFF4FC;color:#3465C4}
+.jos-ld-status-pill.warn{background:#FBF3EC;color:#B4692D}
+.jos-ld-status-pill.mute{background:#F1F2F4;color:#8B909A}
+.jos-ld-assigned-text{color:var(--jos-navy);font-weight:550;cursor:default}
+.jos-ld-assigned-text.is-empty{color:#9CA3AF;font-weight:500}
+
+/* Inline-editable cells (status / assigned) — only shown mid-edit */
 .jos-ld-cell-inline{
-  appearance:none;height:26px;border-radius:999px;padding:0 10px;font:inherit;font-size:11px;font-weight:750;
-  cursor:pointer;border:1px solid #E5E7EB;background:#F3F4F6;color:#374151;max-width:100%;
+  appearance:none;height:26px;border-radius:999px;padding:0 10px;font:inherit;font-size:11px;font-weight:650;
+  cursor:pointer;border:1px solid #E5E7EB;background:#F1F2F4;color:#5B6270;max-width:100%;
 }
-.jos-ld-cell-inline:hover{border-color:#D1D5DB}
-.jos-ld-cell-inline:focus{outline:none;border-color:rgba(217,99,45,.45);box-shadow:0 0 0 3px rgba(217,99,45,.12)}
-.jos-ld-cell-inline.ok{background:#ECFDF3;color:#15803D;border-color:#BBF7D0}
-.jos-ld-cell-inline.brand{background:var(--jos-brand-soft);color:var(--jos-brand-dark);border-color:rgba(217,99,45,.25)}
-.jos-ld-cell-inline.info{background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE}
-.jos-ld-cell-inline.warn{background:#FFF7ED;color:#C2410C;border-color:#FED7AA}
-.jos-ld-cell-inline.mute{background:#F3F4F6;color:#6B7280;border-color:#E5E7EB}
-td > .jos-ld-cell-inline[data-jos-lead-field="assignedTo"]{
-  background:transparent;border-color:transparent;font-weight:600;color:var(--jos-navy);padding:0 6px 0 0;
+.jos-ld-cell-inline:hover{border-color:#D5D8DD}
+.jos-ld-cell-inline:focus{outline:none;border-color:#9CA8BD;box-shadow:0 0 0 3px rgba(100,116,139,.14)}
+.jos-ld-cell-inline.ok{background:#EFFAF3;color:#1E8A4C;border-color:#CFEFDB}
+.jos-ld-cell-inline.brand{background:#EEF1F5;color:#4B5565;border-color:#E1E4E9}
+.jos-ld-cell-inline.info{background:#EFF4FC;color:#3465C4;border-color:#D6E3F8}
+.jos-ld-cell-inline.warn{background:#FBF3EC;color:#B4692D;border-color:#F1DEC8}
+.jos-ld-cell-inline.mute{background:#F1F2F4;color:#8B909A;border-color:#E5E7EB}
+.jos-ld-cell-inline[data-jos-lead-field="assignedTo"]{
+  background:transparent;border-color:transparent;font-weight:550;color:var(--jos-navy);padding:0 6px 0 0;
 }
-td > .jos-ld-cell-inline[data-jos-lead-field="assignedTo"]:hover{background:#F5F6F8;border-color:#EEF0F2}
+.jos-ld-cell-inline[data-jos-lead-field="assignedTo"]:hover{background:#F5F6F7;border-color:#EEF0F2}
 .jos-ld-card-wrap{display:flex;align-items:center;gap:8px}
 .jos-ld-card-wrap.bulk-open .jos-ld-card{flex:1}
 .jos-ld-card-check{display:flex;align-items:center;padding:0 2px;cursor:pointer;flex-shrink:0}

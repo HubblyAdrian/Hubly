@@ -7205,7 +7205,7 @@
     var byKey = {};
     LEADS_DEFAULT_COLUMNS.forEach(function (c) { byKey[c.key] = c; });
     var out = saved.filter(function (s) { return byKey[s.key]; }).map(function (s) {
-      return { key: s.key, label: s.label || byKey[s.key].label, hidden: !!s.hidden };
+      return { key: s.key, label: s.label || byKey[s.key].label, hidden: !!s.hidden, width: s.width || undefined };
     });
     var seen = {};
     out.forEach(function (c) { seen[c.key] = true; });
@@ -7981,7 +7981,7 @@
   // the card list — every column is a real field already on the lead
   // object (no score/owner-avatar/last-activity/next-action columns, those
   // were explicitly deferred, not built).
-  function leadTableCellHtml(lead, colKey, leadKey) {
+  function leadTableCellHtml(lead, colKey, leadKey, editingField) {
     var crm = normalizeCrmStatus(lead);
     if (colKey === 'name') return '<strong>' + esc(lead.name || 'Lead') + '</strong>';
     if (colKey === 'contact') {
@@ -7990,34 +7990,51 @@
     if (colKey === 'source') return esc(srcLabel(srcKind(lead.source, lead)));
     if (colKey === 'service') return esc(lead.service || '—');
     if (colKey === 'status') {
-      return '<select class="jos-ld-cell-inline ' + leadStatusTone(crm) + '" data-jos-lead-field="status" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Status" onclick="event.stopPropagation()">' +
-        LEADS_CRM_STATUSES.map(function (s) {
-          return '<option value="' + s + '"' + (crm === s ? ' selected' : '') + '>' + esc(LEADS_STATUS_LABEL[s]) + '</option>';
-        }).join('') + '</select>';
+      if (editingField === 'status') {
+        return '<select class="jos-ld-cell-inline ' + leadStatusTone(crm) + ' jos-ld-editing" data-jos-lead-field="status" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Status" onclick="event.stopPropagation()">' +
+          LEADS_CRM_STATUSES.map(function (s) {
+            return '<option value="' + s + '"' + (crm === s ? ' selected' : '') + '>' + esc(LEADS_STATUS_LABEL[s]) + '</option>';
+          }).join('') + '</select>';
+      }
+      return '<span class="jos-ld-status-pill ' + leadStatusTone(crm) + '" data-jos-lead-field="status" data-jos-lead-id="' + esc(leadKey) + '" title="Double-click to change">' + esc(LEADS_STATUS_LABEL[crm] || crm) + '</span>';
     }
     if (colKey === 'assigned') {
-      var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
-      return '<select class="jos-ld-cell-inline" data-jos-lead-field="assignedTo" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Assigned to" onclick="event.stopPropagation()">' +
-        '<option value=""' + (!lead.assignedTo ? ' selected' : '') + '>Unassigned</option>' +
-        team.map(function (t) {
-          return '<option value="' + esc(t.name) + '"' + (lead.assignedTo === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
-        }).join('') + '</select>';
+      if (editingField === 'assignedTo') {
+        var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
+        return '<select class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="assignedTo" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Assigned to" onclick="event.stopPropagation()">' +
+          '<option value=""' + (!lead.assignedTo ? ' selected' : '') + '>Unassigned</option>' +
+          team.map(function (t) {
+            return '<option value="' + esc(t.name) + '"' + (lead.assignedTo === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+          }).join('') + '</select>';
+      }
+      return '<span class="jos-ld-assigned-text' + (lead.assignedTo ? '' : ' is-empty') + '" data-jos-lead-field="assignedTo" data-jos-lead-id="' + esc(leadKey) + '" title="Double-click to change">' + esc(lead.assignedTo || 'Unassigned') + '</span>';
     }
     if (colKey === 'created') return esc(String(lead.createdAt || '').slice(0, 10)) || '—';
     return '—';
   }
 
+  var LEADS_COL_DEFAULT_WIDTH = { name: 170, contact: 190, source: 110, service: 150, status: 130, assigned: 150, created: 110 };
+  var LEADS_COL_MIN_WIDTH = 72;
+
   function renderLeadsTable(root, list, selectedId, bulkOpen, bulkSelected, columns) {
     if (!list.length) return '';
     var cols = (columns || LEADS_DEFAULT_COLUMNS).filter(function (c) { return !c.hidden; });
     var openKey = root._josLeadsColMenuKey || null;
+    var editing = root._josLeadsEditCell || null;
+    var colGroup = '<colgroup>' + (bulkOpen ? '<col style="width:32px">' : '') +
+      cols.map(function (c) { return '<col data-jos-col-key="' + esc(c.key) + '" style="width:' + (c.width || LEADS_COL_DEFAULT_WIDTH[c.key] || 140) + 'px">'; }).join('') +
+      '<col style="width:36px"></colgroup>';
     var rows = list.map(function (lead) {
       var leadKey = String(lead.id || lead.key);
       var on = selectedId && leadKey === String(selectedId);
       var checked = !!(bulkSelected && bulkSelected[leadKey]);
       return '<tr class="jos-ld-trow' + (on ? ' on' : '') + '" data-jos-lead-id="' + esc(leadKey) + '">' +
         (bulkOpen ? '<td class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '"' + (checked ? ' checked' : '') + '></td>' : '') +
-        cols.map(function (c) { return '<td class="jos-ld-tcell-' + esc(c.key) + '">' + leadTableCellHtml(lead, c.key, leadKey) + '</td>'; }).join('') +
+        cols.map(function (c) {
+          var fieldForCol = c.key === 'status' ? 'status' : (c.key === 'assigned' ? 'assignedTo' : null);
+          var isEditingThis = editing && editing.leadId === leadKey && fieldForCol && editing.field === fieldForCol;
+          return '<td class="jos-ld-tcell-' + esc(c.key) + '">' + leadTableCellHtml(lead, c.key, leadKey, isEditingThis ? fieldForCol : null) + '</td>';
+        }).join('') +
         '</tr>';
     }).join('');
     var headCells = (bulkOpen ? '<th class="jos-ld-tcheck"></th>' : '') +
@@ -8033,13 +8050,14 @@
               '<button type="button" data-jos-act="leads-col-hide" data-jos-col-key="' + esc(c.key) + '">Hide column</button>' +
               '</div>'
             : '') +
+          '<span class="jos-ld-col-resize" data-jos-col-resize="' + esc(c.key) + '" onclick="event.stopPropagation()"></span>' +
           '</th>';
       }).join('') +
       '<th class="jos-ld-th-add">' +
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-col-add-menu" title="Show hidden columns" aria-label="Show hidden columns">+</button>' +
       (root._josLeadsColAddOpen ? renderLeadsColumnAddMenu(cols, columns) : '') +
       '</th>';
-    return '<div class="jos-ld-table-wrap"><table class="jos-ld-table"><thead><tr>' + headCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    return '<div class="jos-ld-table-wrap"><table class="jos-ld-table">' + colGroup + '<thead><tr>' + headCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   function renderLeadsColumnAddMenu(visibleCols, allColumns) {
@@ -8730,7 +8748,7 @@
         return;
       }
       var card = e.target.closest('[data-jos-lead-id]');
-      if (card && !e.target.closest('[data-jos-act]')) {
+      if (card && !e.target.closest('[data-jos-act]') && !e.target.closest('[data-jos-lead-field]')) {
         root._josLeadId = card.getAttribute('data-jos-lead-id');
         root._josLeadWorkspace = 'overview';
         root._josLeadCtx = null;
@@ -8748,6 +8766,7 @@
     });
 
     root.addEventListener('dblclick', function (e) {
+      if (e.target.closest('[data-jos-lead-field]')) return; /* table cell edit, not "open profile" */
       var card = e.target.closest('[data-jos-lead-id]');
       if (!card) return;
       var id = card.getAttribute('data-jos-lead-id');
@@ -8824,6 +8843,7 @@
         var fieldKey = e.target.getAttribute('data-jos-lead-field');
         var fieldLeadId = e.target.getAttribute('data-jos-lead-id');
         var fieldVal = e.target.value;
+        root._josLeadsEditCell = null;
         mutateLeadById(fieldLeadId, function (l) {
           if (fieldKey === 'status') {
             l.crmStatus = fieldVal; l.status = fieldVal;
@@ -8875,6 +8895,7 @@
         if (root._josLeadFilterOpen) { root._josLeadFilterOpen = false; renderLeads(); return; }
         if (root._josLeadBulkOpen) { root._josLeadBulkOpen = false; renderLeads(); return; }
         if (root._josLeadsColMenuKey) { root._josLeadsColMenuKey = null; renderLeads(); return; }
+        if (root._josLeadsEditCell) { root._josLeadsEditCell = null; renderLeads(); return; }
         if (root._josLeadsColAddOpen) { root._josLeadsColAddOpen = false; renderLeads(); return; }
         if (root._josLeadCtx && root._josLeadCtx.open) { root._josLeadCtx = null; renderLeads(); return; }
         if (root._josLeadsQ) {
@@ -8936,6 +8957,65 @@
       saveLeadsColumns(cols);
       renderLeads();
     });
+
+    // Double-click a Status/Assigned cell to edit — everywhere else it's
+    // a plain, static-looking cell, not a form control sitting open.
+    root.addEventListener('dblclick', function (e) {
+      var field = e.target.closest('[data-jos-lead-field]');
+      if (!field || field.tagName === 'SELECT') return;
+      var leadId = field.getAttribute('data-jos-lead-id');
+      var key = field.getAttribute('data-jos-lead-field');
+      if (!leadId || !key) return;
+      root._josLeadsEditCell = { leadId: leadId, field: key };
+      renderLeads();
+      var sel = root.querySelector('select[data-jos-lead-field="' + key + '"][data-jos-lead-id="' + CSS.escape(leadId) + '"]');
+      if (sel) { sel.focus(); try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
+      e.stopPropagation();
+    });
+    root.addEventListener('blur', function (e) {
+      if (e.target && e.target.classList && e.target.classList.contains('jos-ld-editing') && root._josLeadsEditCell) {
+        root._josLeadsEditCell = null;
+        renderLeads();
+      }
+    }, true);
+
+    // Column resize — plain mouse events (not HTML5 DnD, which is for the
+    // reorder drag above); live-resizes the <col> during drag, commits +
+    // persists on mouseup.
+    root.addEventListener('mousedown', function (e) {
+      var handle = e.target.closest('[data-jos-col-resize]');
+      if (!handle) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var key = handle.getAttribute('data-jos-col-resize');
+      var col = root.querySelector('.jos-ld-table col[data-jos-col-key="' + key + '"]');
+      if (!col) return;
+      var startX = e.clientX;
+      var startW = col.offsetWidth;
+      handle.classList.add('is-resizing');
+      function onMove(ev) {
+        var w = Math.max(LEADS_COL_MIN_WIDTH, startW + (ev.clientX - startX));
+        col.style.width = w + 'px';
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        handle.classList.remove('is-resizing');
+        if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
+        var target = root._josLeadsColumns.find(function (c) { return c.key === key; });
+        if (target) target.width = col.offsetWidth;
+        saveLeadsColumns(root._josLeadsColumns);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    // Sticky header gets a subtle shadow once the table has scrolled under it.
+    root.addEventListener('scroll', function (e) {
+      var wrap = e.target.closest && e.target.closest('.jos-ld-table-wrap');
+      if (!wrap) return;
+      wrap.classList.toggle('is-scrolled', wrap.scrollTop > 0);
+    }, true);
   }
 
   function selectedLead() {
@@ -17866,6 +17946,12 @@
   function bindRoot(root) {
     if (!root || root._josBound) return; root._josBound = true;
     root.addEventListener('click', function (e) {
+      // Leads table cells (status pill / assigned text) manage their own
+      // click/dblclick behavior — don't let the generic row-open dispatch
+      // below re-render on every click, which breaks native dblclick
+      // detection (the browser won't pair two clicks into a dblclick once
+      // the target element gets replaced by a re-render in between).
+      if (e.target.closest('[data-jos-lead-field]')) return;
       var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-rve-tab],[data-jos-rpt-tab],[data-jos-ah-tab],[data-jos-set-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
       if (t.hasAttribute('data-jos-inbox-tab')) {
         var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
