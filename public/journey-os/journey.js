@@ -9041,12 +9041,15 @@
       '<div class="jos-ld-shell' + (wsOpen ? ' ws-open' : '') + '">' +
       '<div class="jos-ld-page">' +
 
-      // No page title/subtitle — once you're inside Leads, "Leads" as a
-      // giant heading doesn't help you work with leads. The table is the
-      // product; everything here exists only to search/filter/act on it,
-      // so search leads the row and the table starts as soon as possible.
+      // Compact "LEADS" label top-left (not the old giant standalone page
+      // header) with the search bar directly underneath it; the rest of
+      // the toolbar (source/service/owner filters, + New Lead, overflow)
+      // sits on the label's row so the whole thing stays two lines, not a
+      // separate header block pushing the table down.
       '<section class="jos-ld-toolbar">' +
-      '<label class="jos-ld-filter-search"><input id="jos-leads-search" type="search" placeholder="Search leads, phone, or email…" value="' + esc(root._josLeadsQ || '') + '"></label>' +
+      '<div class="jos-ld-toolbar-top">' +
+      '<h1 class="jos-ld-title">Leads</h1>' +
+      '<div class="jos-ld-toolbar-actions">' +
       '<select id="jos-ld-filter-source" class="jos-ld-dd" aria-label="Sources"><option value="all">All Sources</option>' +
       uniqueLeadValues('source').map(function (s) {
         return '<option value="' + esc(s) + '"' + ((f.source || 'all') === s ? ' selected' : '') + '>' + esc(srcLabel(s)) + '</option>';
@@ -9073,6 +9076,9 @@
           '</div>'
         : '') +
       '</div>' +
+      '</div>' +
+      '</div>' +
+      '<label class="jos-ld-filter-search"><input id="jos-leads-search" type="search" placeholder="Search leads, phone, or email…" value="' + esc(root._josLeadsQ || '') + '"></label>' +
       '</section>' +
 
       kpiRow +
