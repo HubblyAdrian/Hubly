@@ -8021,6 +8021,16 @@
     var cols = (columns || LEADS_DEFAULT_COLUMNS).filter(function (c) { return !c.hidden; });
     var openKey = root._josLeadsColMenuKey || null;
     var editing = root._josLeadsEditCell || null;
+
+    // Roving tabindex (standard ARIA grid pattern, same as Attio/Sheets):
+    // exactly one cell in the whole table is a Tab stop; arrow keys move
+    // which one that is. Keeps Tab a single stop into/out of the grid
+    // instead of stair-stepping through every cell.
+    if (!root._josLeadsActiveCell || !list.some(function (l) { return String(l.id || l.key) === root._josLeadsActiveCell.leadId; })) {
+      root._josLeadsActiveCell = { leadId: String(list[0].id || list[0].key), colKey: cols[0].key };
+    }
+    var active = root._josLeadsActiveCell;
+
     var colGroup = '<colgroup>' + (bulkOpen ? '<col style="width:32px">' : '') +
       cols.map(function (c) { return '<col data-jos-col-key="' + esc(c.key) + '" style="width:' + (c.width || LEADS_COL_DEFAULT_WIDTH[c.key] || 140) + 'px">'; }).join('') +
       '<col style="width:36px"></colgroup>';
@@ -8028,12 +8038,14 @@
       var leadKey = String(lead.id || lead.key);
       var on = selectedId && leadKey === String(selectedId);
       var checked = !!(bulkSelected && bulkSelected[leadKey]);
-      return '<tr class="jos-ld-trow' + (on ? ' on' : '') + '" data-jos-lead-id="' + esc(leadKey) + '">' +
-        (bulkOpen ? '<td class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '"' + (checked ? ' checked' : '') + '></td>' : '') +
+      return '<tr class="jos-ld-trow' + (on ? ' on' : '') + '" role="row" data-jos-lead-id="' + esc(leadKey) + '">' +
+        (bulkOpen ? '<td class="jos-ld-tcheck" role="gridcell" onclick="event.stopPropagation()"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '" aria-label="Select ' + esc(lead.name || 'lead') + '"' + (checked ? ' checked' : '') + '></td>' : '') +
         cols.map(function (c) {
           var fieldForCol = c.key === 'status' ? 'status' : (c.key === 'assigned' ? 'assignedTo' : null);
           var isEditingThis = editing && editing.leadId === leadKey && fieldForCol && editing.field === fieldForCol;
-          return '<td class="jos-ld-tcell-' + esc(c.key) + '">' + leadTableCellHtml(lead, c.key, leadKey, isEditingThis ? fieldForCol : null) + '</td>';
+          var isActive = active.leadId === leadKey && active.colKey === c.key;
+          return '<td class="jos-ld-tcell-' + esc(c.key) + '" role="gridcell" tabindex="' + (isActive ? '0' : '-1') + '" data-jos-col-key="' + esc(c.key) + '">' +
+            leadTableCellHtml(lead, c.key, leadKey, isEditingThis ? fieldForCol : null) + '</td>';
         }).join('') +
         '</tr>';
     }).join('');
@@ -8057,7 +8069,7 @@
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-col-add-menu" title="Show hidden columns" aria-label="Show hidden columns">+</button>' +
       (root._josLeadsColAddOpen ? renderLeadsColumnAddMenu(cols, columns) : '') +
       '</th>';
-    return '<div class="jos-ld-table-wrap"><table class="jos-ld-table">' + colGroup + '<thead><tr>' + headCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    return '<div class="jos-ld-table-wrap"><table class="jos-ld-table" role="grid" aria-label="Leads">' + colGroup + '<thead><tr>' + headCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   function renderLeadsColumnAddMenu(visibleCols, allColumns) {
@@ -8483,6 +8495,7 @@
     bindRoot(root);
     wireLeadsRoot(root);
     positionLeadsColMenu(root);
+    restoreLeadsGridFocus(root);
     try {
       var badge = el('nav-leads-badge');
       if (badge) {
@@ -8692,7 +8705,58 @@
     if (root._josLeadsBoundV3) return;
     root._josLeadsBoundV3 = true;
 
+    // Capture phase, deliberately: the bulk-select <td> carries an inline
+    // onclick="event.stopPropagation()" (so a checkbox click doesn't also
+    // trigger "open this lead"), which stops the click from ever bubbling
+    // up to root at all. A capture-phase listener sees the click on its
+    // way down, before that stopPropagation() can run during the bubble
+    // phase back up — same reasoning as the dblclick-vs-blur race fixed
+    // earlier, just the opposite phase.
     root.addEventListener('click', function (e) {
+      if (!(e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-bulk'))) return;
+      var clickedBulkKey = e.target.getAttribute('data-jos-lead-bulk');
+      if (e.shiftKey && root._josLeadBulkLastClicked) {
+        var allBoxes = Array.prototype.slice.call(root.querySelectorAll('[data-jos-lead-bulk]'));
+        var keys = allBoxes.map(function (b) { return b.getAttribute('data-jos-lead-bulk'); });
+        var fromI = keys.indexOf(root._josLeadBulkLastClicked);
+        var toI = keys.indexOf(clickedBulkKey);
+        if (fromI > -1 && toI > -1) {
+          var lo = Math.min(fromI, toI), hi = Math.max(fromI, toI);
+          root._josLeadBulkSelected = root._josLeadBulkSelected || {};
+          for (var ri = lo; ri <= hi; ri++) {
+            root._josLeadBulkSelected[keys[ri]] = true;
+            allBoxes[ri].checked = true;
+          }
+          var rangeCountEl = el('jos-ld-bulk-count');
+          if (rangeCountEl) rangeCountEl.textContent = Object.keys(root._josLeadBulkSelected).length + ' selected';
+        }
+      }
+      root._josLeadBulkLastClicked = clickedBulkKey;
+    }, true);
+
+    root.addEventListener('click', function (e) {
+      // A mouse click also sets the "current cell" for keyboard nav
+      // afterward — same as Sheets/Attio: click somewhere, then arrow
+      // keys continue from there, not from wherever a stale Tab-cycle
+      // left off.
+      var clickedGridCell = e.target.closest('td[role="gridcell"][data-jos-col-key]');
+      // Skip while the click landed on the live <select> a cell is mid-edit
+      // with — focusing the parent td would yank focus off the select and
+      // break clicking it open in the first place.
+      if (clickedGridCell && e.target.tagName !== 'SELECT') {
+        var clickedRow = clickedGridCell.closest('tr[data-jos-lead-id]');
+        if (clickedRow) {
+          var prevActive = root._josLeadsActiveCell;
+          if (prevActive) {
+            var prevRow = root.querySelector('tr[data-jos-lead-id="' + CSS.escape(prevActive.leadId) + '"]');
+            var prevCell = prevRow && prevRow.querySelector('td[data-jos-col-key="' + CSS.escape(prevActive.colKey) + '"]');
+            if (prevCell && prevCell !== clickedGridCell) prevCell.setAttribute('tabindex', '-1');
+          }
+          clickedGridCell.setAttribute('tabindex', '0');
+          clickedGridCell.focus();
+          root._josLeadsActiveCell = { leadId: clickedRow.getAttribute('data-jos-lead-id'), colKey: clickedGridCell.getAttribute('data-jos-col-key') };
+        }
+      }
       if (e.target && e.target.getAttribute && e.target.getAttribute('data-jos-lead-backdrop') === '1') {
         root._josLeadAddOpen = false;
         root._josLeadDraft = null;
@@ -8760,6 +8824,7 @@
           } catch (eSeen) {}
         }
         root.querySelector('.jos-ld-shell') && root.querySelector('.jos-ld-shell').classList.add('ws-open');
+        if (clickedGridCell) root._josLeadsGridFocusPending = true; // this same click already focused a gridcell above; the renderLeads() below would otherwise silently drop that focus
         renderLeads();
         e.stopPropagation();
       }
@@ -8844,6 +8909,7 @@
         var fieldLeadId = e.target.getAttribute('data-jos-lead-id');
         var fieldVal = e.target.value;
         root._josLeadsEditCell = null;
+        root._josLeadsGridFocusPending = true;
         mutateLeadById(fieldLeadId, function (l) {
           if (fieldKey === 'status') {
             l.crmStatus = fieldVal; l.status = fieldVal;
@@ -8969,12 +9035,7 @@
       var leadId = field.getAttribute('data-jos-lead-id');
       var key = field.getAttribute('data-jos-lead-field');
       if (!leadId || !key) return;
-      var editingLead = findLead(leadId);
-      var originalValue = editingLead ? (key === 'status' ? normalizeCrmStatus(editingLead) : editingLead[key]) : undefined;
-      root._josLeadsEditCell = { leadId: leadId, field: key, originalValue: originalValue };
-      renderLeads();
-      var sel = root.querySelector('select[data-jos-lead-field="' + key + '"][data-jos-lead-id="' + CSS.escape(leadId) + '"]');
-      if (sel) { sel.focus(); try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
+      openLeadsCellEdit(root, leadId, key);
       e.stopPropagation();
     });
     // Blur is deferred to a fresh tick — real double-clicking a *different*
@@ -8993,6 +9054,7 @@
       setTimeout(function () {
         if (root._josLeadsEditCell === closingCell) {
           root._josLeadsEditCell = null;
+          root._josLeadsGridFocusPending = true;
           renderLeads();
         }
       }, 0);
@@ -9002,7 +9064,31 @@
       if (!(e.target && e.target.classList && e.target.classList.contains('jos-ld-editing'))) return;
       e.preventDefault();
       root._josLeadsEditCell = null;
+      root._josLeadsGridFocusPending = true;
       renderLeads();
+    });
+
+    // Roving-tabindex grid navigation — Tab enters/exits the table as a
+    // single stop; Arrow keys move the active cell; Enter opens the same
+    // edit dblclick would on an editable cell. Guarded on the event
+    // *target itself* carrying role=gridcell (not .closest()) so arrow
+    // keys inside an open <select> — which lives inside a gridcell <td> —
+    // are left alone for the browser's native option list.
+    root.addEventListener('keydown', function (e) {
+      if (!(e.target && e.target.getAttribute && e.target.getAttribute('role') === 'gridcell')) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); moveLeadsGridFocus(root, 1, 0); return; }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); moveLeadsGridFocus(root, -1, 0); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); moveLeadsGridFocus(root, 0, 1); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); moveLeadsGridFocus(root, 0, -1); return; }
+      if (e.key === 'Enter') {
+        var tr = e.target.closest('tr[data-jos-lead-id]');
+        var leadId = tr && tr.getAttribute('data-jos-lead-id');
+        var colKey = e.target.getAttribute('data-jos-col-key');
+        var field = colKey === 'status' ? 'status' : (colKey === 'assigned' ? 'assignedTo' : null);
+        if (!leadId || !field) return;
+        e.preventDefault();
+        openLeadsCellEdit(root, leadId, field);
+      }
     });
 
     // Column resize — plain mouse events (not HTML5 DnD, which is for the
@@ -9075,6 +9161,22 @@
   // before this edit started (arrow-key selection on a native <select>
   // commits immediately, so by the time Escape is pressed the value may
   // already have changed; this actually rolls it back, not just closes).
+  var LEADS_FIELD_TO_COL = { status: 'status', assignedTo: 'assigned' };
+
+  // Shared by dblclick and Enter-on-focused-gridcell — same open path
+  // either way, so the two entry points can't drift out of sync.
+  function openLeadsCellEdit(root, leadId, key) {
+    var editingLead = findLead(leadId);
+    if (!editingLead) return;
+    var originalValue = key === 'status' ? normalizeCrmStatus(editingLead) : editingLead[key];
+    root._josLeadsEditCell = { leadId: leadId, field: key, originalValue: originalValue };
+    var colKey = LEADS_FIELD_TO_COL[key];
+    if (colKey) root._josLeadsActiveCell = { leadId: leadId, colKey: colKey };
+    renderLeads();
+    var sel = root.querySelector('select[data-jos-lead-field="' + key + '"][data-jos-lead-id="' + CSS.escape(leadId) + '"]');
+    if (sel) { sel.focus(); try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
+  }
+
   function cancelLeadsCellEdit(root) {
     var editing = root._josLeadsEditCell;
     if (!editing) return;
@@ -9091,7 +9193,51 @@
       }
     }
     root._josLeadsEditCell = null;
+    root._josLeadsGridFocusPending = true;
     renderLeads();
+  }
+
+  // After any render that should return keyboard focus to the grid (an
+  // edit just closed, or an arrow key moved the active cell) — restoring
+  // focus is opt-in via this flag so routine re-renders (search-as-you-
+  // type, changing a filter dropdown) never yank focus into the table
+  // out from under whatever the user was actually using.
+  function restoreLeadsGridFocus(root) {
+    if (!root._josLeadsGridFocusPending) return;
+    root._josLeadsGridFocusPending = false;
+    var active = root._josLeadsActiveCell;
+    if (!active) return;
+    var row = root.querySelector('tr[data-jos-lead-id="' + CSS.escape(active.leadId) + '"]');
+    var cell = row && row.querySelector('td[data-jos-col-key="' + CSS.escape(active.colKey) + '"]');
+    if (cell) cell.focus();
+  }
+
+  // Arrow-key grid navigation — a roving tabindex move, not a re-render:
+  // flips tabindex on the old/new cell directly and focuses the new one,
+  // so arrowing through a large table stays cheap and instant.
+  function moveLeadsGridFocus(root, dCol, dRow) {
+    var active = root._josLeadsActiveCell;
+    if (!active) return;
+    var table = root.querySelector('.jos-ld-table');
+    if (!table) return;
+    var colKeys = Array.prototype.map.call(table.querySelectorAll('thead th[data-jos-col-key]'), function (th) { return th.getAttribute('data-jos-col-key'); });
+    var rowEls = Array.prototype.slice.call(table.querySelectorAll('tbody tr[data-jos-lead-id]'));
+    var rowIds = rowEls.map(function (tr) { return tr.getAttribute('data-jos-lead-id'); });
+    var colI = colKeys.indexOf(active.colKey);
+    var rowI = rowIds.indexOf(active.leadId);
+    if (colI < 0 || rowI < 0) return;
+    var nextColI = Math.max(0, Math.min(colKeys.length - 1, colI + dCol));
+    var nextRowI = Math.max(0, Math.min(rowIds.length - 1, rowI + dRow));
+    if (nextColI === colI && nextRowI === rowI) return;
+    var nextColKey = colKeys[nextColI];
+    var nextLeadId = rowIds[nextRowI];
+    var oldCell = rowEls[rowI] && rowEls[rowI].querySelector('td[data-jos-col-key="' + CSS.escape(active.colKey) + '"]');
+    if (oldCell) oldCell.setAttribute('tabindex', '-1');
+    var newCell = rowEls[nextRowI] && rowEls[nextRowI].querySelector('td[data-jos-col-key="' + CSS.escape(nextColKey) + '"]');
+    if (!newCell) return;
+    newCell.setAttribute('tabindex', '0');
+    newCell.focus();
+    root._josLeadsActiveCell = { leadId: nextLeadId, colKey: nextColKey };
   }
 
   function handleLeadsAct(act, t) {
