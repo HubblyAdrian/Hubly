@@ -444,7 +444,8 @@
 
 .jos-jobs-insight {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 6px;
   align-items: flex-start;
   padding: 10px 12px;
   border-radius: 12px;
@@ -459,6 +460,7 @@
 .jos-jobs-insight.warn { background: #FFF7ED; border-color: #FED7AA; color: #9A3412; }
 .jos-jobs-insight.alert { background: #FEF3C7; border-color: #FDE68A; color: #92400E; }
 .jos-jobs-insight.info { background: #EFF6FF; border-color: #BFDBFE; color: #1E40AF; }
+.jos-jobs-insight .jos-linkish { font-size: 12px; font-weight: 700; }
 
 .jos-jobs-help-card {
   display: flex;

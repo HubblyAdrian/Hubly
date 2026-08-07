@@ -14224,7 +14224,8 @@
         if (!j.recurring) return false;
       }
       if (status !== 'all' && j.status !== status) return false;
-      if (employee !== 'all' && j.assignedTo !== employee) return false;
+      if (employee === '__unassigned__') { if (j.assignedTo) return false; }
+      else if (employee !== 'all' && j.assignedTo !== employee) return false;
       if (service !== 'all' && j.service !== service) return false;
       if (location !== 'all' && String(j.address || j.location || '').indexOf(location) === -1) return false;
       if (source !== 'all' && !((j.tags || []).indexOf(source) > -1 || String(j.source || '') === source)) return false;
@@ -14690,12 +14691,17 @@
         return '<tr class="jos-jobs-row tone-' + tone + '" data-jos-job-id="' + esc(j.id) + '">' +
           '<td class="col-cust"><button type="button" class="jos-jobs-cust" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
           '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span><span><strong class="jos-jobs-name">' + esc(j.customer || 'Block') + '</strong><span class="jos-muted">' + esc(j.phone || j.email || '') + '</span></span></button></td>' +
+          '<td class="col-jobnum"></td>' +
           '<td class="col-svc"><strong class="jos-jobs-name">' + esc(j.service || 'Block') + '</strong></td>' +
+          '<td class="col-tech"></td>' +
           '<td class="col-date"><strong class="jos-jobs-name">' + esc(j.date || '—') + '</strong><span class="jos-muted">' + esc(j.time || '') + '</span></td>' +
           '<td class="col-status"><span class="jos-pill jos-jobs-status ' + jobStatusTone(j.status) + '">' + esc(String(j.status || '').replace(/_/g, ' ')) + '</span></td>' +
           '<td class="col-amt"><strong class="jos-jobs-name">' + esc(money(j.amount) || '—') + '</strong></td>' +
+          '<td class="col-bal"></td>' +
           '<td class="col-act"></td></tr>';
       }
+      var jobBalance = (j.invoice && j.invoice.status === 'paid') ? 0 :
+        Math.max(0, (parseFloat(j.amount) || 0) - (((j.depositStatus === 'collected' || j.depositStatus === 'paid_online') ? (parseFloat(j.deposit) || 0) : 0)));
       return '<tr class="jos-jobs-row tone-' + tone + '" data-jos-job-id="' + esc(j.id) + '">' +
         '<td class="col-cust"><div class="jos-jobs-inline-cust">' +
         '<button type="button" class="jos-jobs-ava" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '" title="Open details">' + esc(jobInitials(j.customer)) + '</button>' +
@@ -14703,10 +14709,12 @@
         '<input class="jos-jobs-inline" type="text" data-jos-job-field="customer" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.customer || '') + '" placeholder="Customer" aria-label="Customer">' +
         '<input class="jos-jobs-inline muted" type="text" data-jos-job-field="phone" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.phone || '') + '" placeholder="Phone" aria-label="Phone">' +
         '</div></div></td>' +
+        '<td class="col-jobnum"><span class="jos-muted">' + esc(jobNumber(j)) + '</span></td>' +
         '<td class="col-svc"><div class="jos-jobs-inline-stack">' +
         '<input class="jos-jobs-inline" type="text" data-jos-job-field="service" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.service || '') + '" placeholder="Service" aria-label="Service">' +
         '<span class="jos-muted">' + esc(j.vehicle || '') + (j.durationMin ? (' · ' + j.durationMin + 'm') : '') + '</span>' +
         '</div></td>' +
+        '<td class="col-tech"><span class="jos-jobs-name">' + esc(j.assignedTo || 'Unassigned') + '</span></td>' +
         '<td class="col-date"><div class="jos-jobs-inline-stack">' +
         '<input class="jos-jobs-inline" type="date" data-jos-job-field="date" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.date || '') + '" aria-label="Date">' +
         '<input class="jos-jobs-inline muted" type="text" data-jos-job-field="time" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.time || '') + '" placeholder="Time" aria-label="Time">' +
@@ -14716,6 +14724,7 @@
           return '<option value="' + esc(s.value) + '"' + ((j.status || '') === s.value ? ' selected' : '') + '>' + esc(s.label) + '</option>';
         }).join('') + '</select></td>' +
         '<td class="col-amt"><input class="jos-jobs-inline jos-jobs-inline-amt" type="number" step="0.01" data-jos-job-field="amount" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.amount != null ? j.amount : '') + '" placeholder="0" aria-label="Amount"></td>' +
+        '<td class="col-bal"><span class="jos-jobs-name' + (jobBalance > 0 ? ' jos-jobs-bal-due' : '') + '">' + esc(jobBalance > 0 ? money(jobBalance) : 'Paid') + '</span></td>' +
         '<td class="col-act"><div class="jos-jobs-more-wrap">' +
         '<button type="button" class="jos-icon-btn" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '" title="Open details" aria-label="Open details">↗</button>' +
         '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋯</button>' +
@@ -14782,7 +14791,7 @@
         '<section class="jos-jobs-cal-full">' +
         '<div class="jos-jobs-cal-toolbar">' +
         '<div class="jos-jobs-cal-toolbar-left">' +
-        '<select id="jos-jobs-filter-employee" class="jos-jobs-dd" aria-label="Technicians"><option value="all">All Technicians</option>' + teamOpts.map(function (t) {
+        '<select id="jos-jobs-filter-employee" class="jos-jobs-dd" aria-label="Technicians"><option value="all">All Technicians</option><option value="__unassigned__"' + ((root._josJobsEmployee || 'all') === '__unassigned__' ? ' selected' : '') + '>Unassigned</option>' + teamOpts.map(function (t) {
           return '<option value="' + esc(t.name) + '"' + ((root._josJobsEmployee || 'all') === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
         }).join('') + '</select>' +
         '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-filters-toggle">Filters</button>' +
@@ -14824,7 +14833,7 @@
       mainBody =
       '<section class="jos-jobs-toolbar">' +
       '<label class="jos-jobs-search"><input id="jos-jobs-search" type="search" placeholder="Search jobs, customers, services, or locations..." value="' + esc(root._josJobsQ || '') + '"></label>' +
-      '<select id="jos-jobs-filter-employee" class="jos-jobs-dd" aria-label="Technicians"><option value="all">All Technicians</option>' + jobsTeam().map(function (t) {
+      '<select id="jos-jobs-filter-employee" class="jos-jobs-dd" aria-label="Technicians"><option value="all">All Technicians</option><option value="__unassigned__"' + ((root._josJobsEmployee || 'all') === '__unassigned__' ? ' selected' : '') + '>Unassigned</option>' + jobsTeam().map(function (t) {
         return '<option value="' + esc(t.name) + '"' + ((root._josJobsEmployee || 'all') === t.name ? ' selected' : '') + '>' + esc(t.name) + '</option>';
       }).join('') + '</select>' +
       '<select id="jos-jobs-filter-status" class="jos-jobs-dd" aria-label="Statuses"><option value="all">All Statuses</option>' + ['scheduled', 'in_progress', 'completed', 'cancelled', 'pending'].map(function (s) {
@@ -14863,7 +14872,7 @@
       '<div class="jos-jobs-table-head">' + tabsHtml + '</div>' +
       (pageRows.length
         ? '<div class="jos-jobs-table-wrap"><table class="jos-jobs-table"><thead><tr>' +
-          '<th>Customer</th><th>Service</th><th>When</th><th>Status</th><th>Amount</th><th></th>' +
+          '<th>Customer</th><th>Job #</th><th>Service</th><th>Technician</th><th>When</th><th>Status</th><th>Amount</th><th>Balance</th><th></th>' +
           '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' + mobileCards + pager
         : emptyTable) +
       '</section>';
@@ -14901,9 +14910,9 @@
       '</div></div></section>' +
       '<section class="jos-jobs-rail-card">' +
       '<div class="jos-kicker">Insights</div>' +
-      (unassigned ? '<div class="jos-jobs-insight warn">You have ' + unassigned + ' job' + (unassigned === 1 ? '' : 's') + ' without an assignee.</div>' : '') +
-      (pending ? '<div class="jos-jobs-insight alert">' + pending + ' job' + (pending === 1 ? ' is' : 's are') + ' pending confirmation.</div>' : '') +
-      '<div class="jos-jobs-insight info">Your completion rate this month is ' + completionRate + '%.</div>' +
+      (unassigned ? '<div class="jos-jobs-insight warn">You have ' + unassigned + ' job' + (unassigned === 1 ? '' : 's') + ' without an assignee.<button type="button" class="jos-linkish" data-jos-act="jobs-insight-unassigned">View unassigned jobs →</button></div>' : '') +
+      (pending ? '<div class="jos-jobs-insight alert">' + pending + ' job' + (pending === 1 ? ' is' : 's are') + ' pending confirmation.<button type="button" class="jos-linkish" data-jos-act="jobs-insight-pending">Review pending jobs →</button></div>' : '') +
+      '<div class="jos-jobs-insight info">Your completion rate this month is ' + completionRate + '%.<button type="button" class="jos-linkish" data-jos-act="go-reports">View reports →</button></div>' +
       '</section>' +
       '<section class="jos-jobs-rail-card">' +
       '<div class="jos-jobs-help-card"><span aria-hidden="true">📘</span><div><strong>Need Help?</strong><div>Learn how to manage jobs, assign technicians, and track progress.</div><a href="#" data-jos-act="ask">Visit Help Center</a></div></div>' +
@@ -16655,6 +16664,8 @@
       if (act === 'jobs-kpi-progress') { root._josJobsListView = 'in_progress'; root._josJobsPage = 1; return rerender(); }
       if (act === 'jobs-kpi-scheduled') { root._josJobsListView = 'scheduled'; root._josJobsPage = 1; return rerender(); }
       if (act === 'jobs-kpi-revenue') return switchNav('money');
+      if (act === 'jobs-insight-unassigned') { root._josJobsListView = 'all'; root._josJobsStatus = 'all'; root._josJobsEmployee = '__unassigned__'; root._josJobsPage = 1; return rerender(); }
+      if (act === 'jobs-insight-pending') { root._josJobsListView = 'all'; root._josJobsEmployee = 'all'; root._josJobsStatus = 'pending'; root._josJobsPage = 1; return rerender(); }
       if (act === 'jobs-page') {
         root._josJobsPage = parseInt(t.getAttribute('data-jos-page'), 10) || 1;
         return rerender();
