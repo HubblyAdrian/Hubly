@@ -14926,6 +14926,24 @@
     var driveLabel = driveMin >= 60 ? (Math.floor(driveMin / 60) + 'h ' + (driveMin % 60) + 'm') : (driveMin + 'm');
     var openSlots = Math.max(0, 3 - Math.max(0, todayJobs.length - 4));
 
+    var calTeamCounts = jobsTeam().map(function (t) {
+      var n = all.filter(function (j) { return j.assignedTo === t.name && j.status !== 'cancelled'; }).length;
+      return { name: t.name, role: t.role || '', count: n };
+    });
+    var calTeamMax = Math.max(1, calTeamCounts.reduce(function (m, t) { return Math.max(m, t.count); }, 0));
+    var techScheduleCard = calTeamCounts.length
+      ? '<section class="jos-jobs-rail-card"><div class="jos-kicker">Technician Schedule</div>' +
+        '<div class="jos-cal-tech-list">' + calTeamCounts.map(function (t) {
+          var pct = Math.round((t.count / calTeamMax) * 100);
+          return '<div class="jos-cal-tech-row">' +
+            '<span class="jos-jobs-ava">' + esc(jobInitials(t.name)) + '</span>' +
+            '<div class="jos-cal-tech-mid"><strong>' + esc(t.name) + '</strong>' +
+            '<div class="jos-cal-tech-bar"><span style="width:' + pct + '%"></span></div></div>' +
+            '<span class="jos-muted jos-cal-tech-count">' + t.count + ' job' + (t.count === 1 ? '' : 's') + '</span>' +
+            '</div>';
+        }).join('') + '</div></section>'
+      : '';
+
     var calRail =
       '<aside class="jos-jobs-rail jos-jobs-rail--cal">' +
       '<section class="jos-jobs-rail-card"><div class="jos-kicker">Calendar</div>' + renderJobsMiniCal(root, calAnchor, all) + '</section>' +
@@ -14935,7 +14953,8 @@
       (todayJobs.length ? todayJobs.slice(0, 8).map(function (j) {
         return '<button type="button" class="jos-jobs-agenda-item" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
           '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span>' +
-          '<span class="meta"><strong>' + esc(j.customer) + '</strong><span>' + esc(j.time || '') + ' · ' + esc(j.service || '') + '</span></span>' +
+          '<span class="meta"><strong>' + esc(j.customer) + '</strong><span>' + esc(j.time || '') + ' · ' + esc(j.service || '') + '</span>' +
+          (j.address ? '<span class="jos-cal-agenda-addr">📍 ' + esc(j.address) + '</span>' : '') + '</span>' +
           '<span aria-hidden="true">›</span></button>';
       }).join('') : '<div class="jos-muted">No jobs today</div>') +
       '</div></section>' +
@@ -14947,7 +14966,8 @@
       '<div class="row"><span>Jobs</span><strong>' + todayJobs.length + '</strong></div>' +
       '<div class="row"><span>Est. Revenue</span><strong>' + esc(money(todayRevenue || 0) || '$0') + '</strong></div>' +
       '<div class="row"><span>Drive Time</span><strong>' + esc(driveLabel) + '</strong></div>' +
-      '</div></section></aside>';
+      '</div></section>' +
+      techScheduleCard + '</aside>';
 
     root.innerHTML =
       '<div class="jos-jobs-shell' + (mainView === 'calendar' ? ' is-calendar' : '') + '">' +
@@ -16225,11 +16245,18 @@
         var ds = addDaysStr(start, i);
         var dayJobs = all.filter(function (j) { return j.date === ds; });
         var dh = bizHoursForDate(ds);
-        html += '<button type="button" class="jos-cal-day' + (ds === todayStr() ? ' today' : '') + (dh.closed || isDayBlocked(ds) ? ' closed' : '') + '" data-jos-cal-day="' + ds + '"><div class="d">' + ds.slice(8) + '</div>' +
+        html += '<button type="button" class="jos-cal-day' + (ds === todayStr() ? ' today' : '') + (dh.closed || isDayBlocked(ds) ? ' closed' : '') + '" data-jos-cal-day="' + ds + '"><div class="jos-between d"><span>' + ds.slice(8) + '</span>' +
+          (dayJobs.length ? '<span class="jos-cal-day-count">' + dayJobs.length + ' job' + (dayJobs.length === 1 ? '' : 's') + '</span>' : '') + '</div>' +
           dayJobs.slice(0, 3).map(function (j) {
             var cls = j.isBlock || j.isGoogle ? 'block' : jobStatusTone(j.status);
-            return '<div class="jos-cal-pill ' + cls + '" draggable="true" data-jos-job-id="' + esc(j.id) + '">' + esc((j.time || '').replace(' AM', 'a').replace(' PM', 'p')) + ' ' + esc((j.customer || '').split(' ')[0]) + '</div>';
-          }).join('') + '</button>';
+            var techFirst = j.assignedTo ? esc(j.assignedTo.split(' ')[0]) + (j.assignedTo.split(' ')[1] ? ' ' + esc(j.assignedTo.split(' ')[1][0]) + '.' : '') : '';
+            return '<div class="jos-cal-pill ' + cls + '" draggable="true" data-jos-job-id="' + esc(j.id) + '">' +
+              '<span class="jos-cal-pill-svc">' + esc(j.service || j.customer || 'Job') + '</span>' +
+              '<span class="jos-cal-pill-sub">' + esc((j.time || '').replace(' AM', ' AM').replace(' PM', ' PM')) + (techFirst ? ' · ' + techFirst : '') + '</span>' +
+              '</div>';
+          }).join('') +
+          (dayJobs.length > 3 ? '<div class="jos-cal-pill-more">+' + (dayJobs.length - 3) + ' more</div>' : '') +
+          '</button>';
       }
       html += '</div>';
     } else if (calView === 'agenda') {
