@@ -8895,7 +8895,7 @@
         if (root._josLeadFilterOpen) { root._josLeadFilterOpen = false; renderLeads(); return; }
         if (root._josLeadBulkOpen) { root._josLeadBulkOpen = false; renderLeads(); return; }
         if (root._josLeadsColMenuKey) { root._josLeadsColMenuKey = null; renderLeads(); return; }
-        if (root._josLeadsEditCell) { root._josLeadsEditCell = null; renderLeads(); return; }
+        if (root._josLeadsEditCell) { cancelLeadsCellEdit(root); return; }
         if (root._josLeadsColAddOpen) { root._josLeadsColAddOpen = false; renderLeads(); return; }
         if (root._josLeadCtx && root._josLeadCtx.open) { root._josLeadCtx = null; renderLeads(); return; }
         if (root._josLeadsQ) {
@@ -8960,24 +8960,50 @@
 
     // Double-click a Status/Assigned cell to edit — everywhere else it's
     // a plain, static-looking cell, not a form control sitting open.
+    // Only one cell edits at a time: _josLeadsEditCell holds at most one
+    // {leadId,field}, so opening a new one always implicitly closes the
+    // last one in the same render — no separate "close the old one" step.
     root.addEventListener('dblclick', function (e) {
       var field = e.target.closest('[data-jos-lead-field]');
       if (!field || field.tagName === 'SELECT') return;
       var leadId = field.getAttribute('data-jos-lead-id');
       var key = field.getAttribute('data-jos-lead-field');
       if (!leadId || !key) return;
-      root._josLeadsEditCell = { leadId: leadId, field: key };
+      var editingLead = findLead(leadId);
+      var originalValue = editingLead ? (key === 'status' ? normalizeCrmStatus(editingLead) : editingLead[key]) : undefined;
+      root._josLeadsEditCell = { leadId: leadId, field: key, originalValue: originalValue };
       renderLeads();
       var sel = root.querySelector('select[data-jos-lead-field="' + key + '"][data-jos-lead-id="' + CSS.escape(leadId) + '"]');
       if (sel) { sel.focus(); try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
       e.stopPropagation();
     });
+    // Blur is deferred to a fresh tick — real double-clicking a *different*
+    // cell while one is open fires this blur first (mousedown moves focus
+    // before the click/dblclick pair even lands), and re-rendering
+    // synchronously right there would swap out the DOM node the incoming
+    // second click needs to land on, so the browser never pairs it into a
+    // dblclick at all and the new cell silently never opens. Deferring
+    // lets the dblclick handler run first and claim _josLeadsEditCell; by
+    // the time this fires, if editCell has already moved on to a
+    // different cell, there's nothing left for this blur to close.
     root.addEventListener('blur', function (e) {
-      if (e.target && e.target.classList && e.target.classList.contains('jos-ld-editing') && root._josLeadsEditCell) {
-        root._josLeadsEditCell = null;
-        renderLeads();
-      }
+      if (!(e.target && e.target.classList && e.target.classList.contains('jos-ld-editing'))) return;
+      var closingCell = root._josLeadsEditCell;
+      if (!closingCell) return;
+      setTimeout(function () {
+        if (root._josLeadsEditCell === closingCell) {
+          root._josLeadsEditCell = null;
+          renderLeads();
+        }
+      }, 0);
     }, true);
+    root.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      if (!(e.target && e.target.classList && e.target.classList.contains('jos-ld-editing'))) return;
+      e.preventDefault();
+      root._josLeadsEditCell = null;
+      renderLeads();
+    });
 
     // Column resize — plain mouse events (not HTML5 DnD, which is for the
     // reorder drag above); live-resizes the <col> during drag, commits +
@@ -8993,6 +9019,7 @@
       var startX = e.clientX;
       var startW = col.offsetWidth;
       handle.classList.add('is-resizing');
+      col.classList.add('jos-no-resize-anim'); // live drag tracks the cursor 1:1 — no lag from a transition mid-drag
       function onMove(ev) {
         var w = Math.max(LEADS_COL_MIN_WIDTH, startW + (ev.clientX - startX));
         col.style.width = w + 'px';
@@ -9001,6 +9028,7 @@
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
         handle.classList.remove('is-resizing');
+        col.classList.remove('jos-no-resize-anim'); // future programmatic width changes animate again
         if (!root._josLeadsColumns) root._josLeadsColumns = loadLeadsColumns();
         var target = root._josLeadsColumns.find(function (c) { return c.key === key; });
         if (target) target.width = col.offsetWidth;
@@ -9041,6 +9069,29 @@
     mutator(lead);
     if (!(opts && opts.quiet)) renderLeads();
     return lead;
+  }
+
+  // Escape while editing a table cell — revert to whatever the field held
+  // before this edit started (arrow-key selection on a native <select>
+  // commits immediately, so by the time Escape is pressed the value may
+  // already have changed; this actually rolls it back, not just closes).
+  function cancelLeadsCellEdit(root) {
+    var editing = root._josLeadsEditCell;
+    if (!editing) return;
+    var lead = findLead(editing.leadId);
+    if (lead) {
+      if (editing.field === 'status' && normalizeCrmStatus(lead) !== editing.originalValue) {
+        var prev = editing.originalValue || 'new';
+        lead.crmStatus = prev; lead.status = prev;
+        if (prev === 'lost') { lead.osStage = 'lost'; lead.stage = 'lost'; }
+        else if (prev === 'unqualified') { lead.osStage = 'spam'; lead.stage = 'unqualified'; }
+        else { lead.osStage = 'new'; lead.stage = prev; }
+      } else if (editing.field === 'assignedTo' && lead.assignedTo !== editing.originalValue) {
+        lead.assignedTo = editing.originalValue || '';
+      }
+    }
+    root._josLeadsEditCell = null;
+    renderLeads();
   }
 
   function handleLeadsAct(act, t) {
