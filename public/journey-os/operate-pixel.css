@@ -5097,7 +5097,7 @@ html[data-theme="night"] .jos-mem-form select{
 #p-app.jos-pixel.jos-customers-mode .ni.active{background:var(--jos-brand)}
 
 .jos-cm-shell{
-  height:100vh;max-width:1800px;margin:0 auto;display:flex;flex-direction:column;
+  min-height:100vh;max-width:1800px;margin:0 auto;display:flex;flex-direction:column;
   background:var(--jos-cm-bg,#F8F9FB);padding:0 24px 24px;animation:josHomeIn .35s ease both;
 }
 .jos-cm-header{
@@ -5506,7 +5506,7 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-cc1-toolbar{display:flex;justify-content:flex-end;margin:0 0 8px}
 .jos-cc1-table-wrap{
   background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:auto;
-  box-shadow:0 4px 20px rgba(0,0,0,.04);flex:1;min-height:0;
+  box-shadow:0 4px 20px rgba(0,0,0,.04);max-height:62vh;
 }
 .jos-cc1-table{width:100%;border-collapse:collapse;font-size:13px}
 .jos-cc1-table th{
@@ -5524,12 +5524,25 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-cc1-empty{padding:64px 24px;text-align:center;background:#fff;border:1px dashed #E5E7EB;border-radius:16px}
 .jos-cc1-empty strong{display:block;font-size:16px;margin-bottom:8px;color:#141B2B}
 .jos-cc1-count{margin-left:12px;font-size:12px}
+.jos-cc1-summary-grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--jos-gap,14px);margin-top:16px;
+}
+.jos-cust-bar-list{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.jos-cust-bar-row{display:grid;grid-template-columns:minmax(0,1fr) 2fr auto;align-items:center;gap:10px}
+.jos-cust-bar-label{font-size:12px;font-weight:700;color:#141B2B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jos-cust-bar-track{width:100%;height:6px;border-radius:999px;background:#F1F3F4;overflow:hidden}
+.jos-cust-bar-track span{display:block;height:100%;background:var(--jos-brand);border-radius:999px}
+.jos-cust-bar-val{font-size:12px;font-weight:750;color:#4B5563;white-space:nowrap}
+.jos-cust-review-avg{font-size:32px;font-weight:800;color:#141B2B;font-family:'Plus Jakarta Sans','DM Sans',sans-serif;letter-spacing:-.02em}
+.jos-cust-review-stars{color:#F59E0B;font-size:16px;letter-spacing:2px;margin-bottom:6px}
 @media(max-width:1100px){
   .jos-cc1-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .jos-cc1-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:720px){
   .jos-cc1-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .jos-cc1-acts{flex-direction:column}
+  .jos-cc1-summary-grid{grid-template-columns:1fr}
 }
 
 /* Level 2 — Customer Command Center (ops workspace) */

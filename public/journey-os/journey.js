@@ -9583,17 +9583,19 @@
       }).join('') + '</div>';
   }
 
-  function renderCompletedCustomersTable(pageRows) {
+  function renderCompletedCustomersTable(pageRows, bulkOpen, bulkSelected) {
     if (!pageRows.length) {
       return '<div class="jos-cc1-empty"><strong>No completed customers yet</strong><p>People appear here only after their first completed job. Finish a job in Jobs to create a customer.</p>' + btn('go-jobs', 'Open Jobs', 'jos-btn-brand jos-btn-sm') + '</div>';
     }
     return '<div class="jos-cc1-table-wrap"><table class="jos-cc1-table"><thead><tr>' +
-      '<th></th><th>Customer</th><th>Completed Jobs</th><th>Membership</th><th>Lifetime Value</th><th>Upcoming Appointment</th><th>Last Service</th><th>Tags</th><th>Actions</th>' +
+      (bulkOpen ? '<th></th>' : '') + '<th></th><th>Customer</th><th>Completed Jobs</th><th>Membership</th><th>Lifetime Value</th><th>Upcoming Appointment</th><th>Last Service</th><th>Tags</th><th>Actions</th>' +
       '</tr></thead><tbody>' + pageRows.map(function (c) {
         var next = nextJob(c);
         var last = lastJob(c);
         var tags = (c.tags || []).slice(0, 3);
+        var checked = !!(bulkSelected && bulkSelected[String(c.id)]);
         return '<tr class="jos-cc1-row" data-jos-cust-row="' + esc(String(c.id)) + '" tabindex="0">' +
+          (bulkOpen ? '<td class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-cust-bulk="' + esc(String(c.id)) + '"' + (checked ? ' checked' : '') + '></td>' : '') +
           '<td><span class="jos-cm-ava">' + esc(initials(c.name)) + '</span></td>' +
           '<td><strong>' + esc(c.name || 'Customer') + '</strong>' +
           (custIsVip(c) ? '<span class="jos-cm-vip">VIP</span>' : '') +
@@ -9609,6 +9611,77 @@
           '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="new-job-cust" data-jos-cust="' + esc(String(c.id)) + '">Schedule</button>' +
           '</td></tr>';
       }).join('') + '</tbody></table></div>';
+  }
+
+  function renderCustomersSummaryCards(allCompleted) {
+    if (!allCompleted.length) return '';
+
+    var memberN = allCompleted.filter(custIsMember).length;
+    var oneTimeN = allCompleted.length - memberN;
+    var breakdownTotal = Math.max(1, allCompleted.length);
+    var memberPct = Math.round((memberN / breakdownTotal) * 100);
+    var oneTimePct = 100 - memberPct;
+
+    var serviceCounts = {};
+    jobsAll().forEach(function (j) {
+      if (j.status !== 'completed' || !j.service) return;
+      serviceCounts[j.service] = (serviceCounts[j.service] || 0) + 1;
+    });
+    var topServices = Object.keys(serviceCounts).map(function (name) {
+      return { name: name, count: serviceCounts[name] };
+    }).sort(function (a, b) { return b.count - a.count; }).slice(0, 5);
+    var topServiceMax = Math.max(1, topServices.reduce(function (m, s) { return Math.max(m, s.count); }, 0));
+
+    var topCustomers = allCompleted.slice().sort(function (a, b) { return custLifetime(b) - custLifetime(a); }).slice(0, 5);
+    var topCustomerMax = Math.max(1, custLifetime(topCustomers[0]));
+
+    ensureReviewsOsState();
+    var reviews = (S().reviewsOs && S().reviewsOs.reviews) || [];
+    var reviewTotal = reviews.length;
+    var reviewAvg = reviewTotal ? (reviews.reduce(function (s, r) { return s + (Number(r.rating) || 0); }, 0) / reviewTotal) : 0;
+    var starCounts = [5, 4, 3, 2, 1].map(function (star) {
+      var n = reviews.filter(function (r) { return Math.round(Number(r.rating)) === star; }).length;
+      return { star: star, count: n, pct: reviewTotal ? Math.round((n / reviewTotal) * 100) : 0 };
+    });
+
+    return '<div class="jos-cc1-summary-grid">' +
+      '<section class="jos-jobs-rail-card"><div class="jos-kicker">Customer Breakdown</div>' +
+      '<div class="jos-jobs-donut-wrap">' +
+      '<div class="jos-jobs-donut" style="background:conic-gradient(#D9632D 0deg,#D9632D ' + (memberPct * 3.6) + 'deg,#94A3B8 ' + (memberPct * 3.6) + 'deg,#94A3B8 360deg)" aria-hidden="true"></div>' +
+      '<div class="jos-jobs-donut-legend">' +
+      '<span><i style="background:#94A3B8"></i>One-Time ' + oneTimeN + ' (' + oneTimePct + '%)</span>' +
+      '<span><i style="background:#D9632D"></i>Membership ' + memberN + ' (' + memberPct + '%)</span>' +
+      '</div></div></section>' +
+
+      '<section class="jos-jobs-rail-card"><div class="jos-kicker">Top Services</div><p class="jos-muted" style="margin:2px 0 10px;font-size:12px">By jobs completed</p>' +
+      (topServices.length ? '<div class="jos-cust-bar-list">' + topServices.map(function (s) {
+        return '<div class="jos-cust-bar-row"><span class="jos-cust-bar-label">' + esc(s.name) + '</span>' +
+          '<div class="jos-cust-bar-track"><span style="width:' + Math.round((s.count / topServiceMax) * 100) + '%"></span></div>' +
+          '<span class="jos-cust-bar-val">' + s.count + '</span></div>';
+      }).join('') + '</div>' : '<div class="jos-muted">No completed jobs yet</div>') +
+      '</section>' +
+
+      '<section class="jos-jobs-rail-card"><div class="jos-kicker">Top Customers</div><p class="jos-muted" style="margin:2px 0 10px;font-size:12px">By lifetime value</p>' +
+      '<div class="jos-cust-bar-list">' + topCustomers.map(function (c) {
+        var v = custLifetime(c);
+        return '<div class="jos-cust-bar-row"><span class="jos-cust-bar-label">' + esc(c.name || 'Customer') + '</span>' +
+          '<div class="jos-cust-bar-track"><span style="width:' + Math.round((v / topCustomerMax) * 100) + '%"></span></div>' +
+          '<span class="jos-cust-bar-val">' + esc(money(v) || '$0') + '</span></div>';
+      }).join('') + '</div></section>' +
+
+      '<section class="jos-jobs-rail-card"><div class="jos-kicker">Review Summary</div>' +
+      (reviewTotal
+        ? '<p class="jos-muted" style="margin:2px 0 10px;font-size:12px">' + reviewTotal + ' total review' + (reviewTotal === 1 ? '' : 's') + '</p>' +
+          '<div class="jos-cust-review-avg">' + reviewAvg.toFixed(1) + '</div>' +
+          '<div class="jos-cust-review-stars">' + '★'.repeat(Math.round(reviewAvg)) + '☆'.repeat(5 - Math.round(reviewAvg)) + '</div>' +
+          '<div class="jos-cust-bar-list jos-mt">' + starCounts.map(function (s) {
+            return '<div class="jos-cust-bar-row"><span class="jos-cust-bar-label">' + s.star + ' ★</span>' +
+              '<div class="jos-cust-bar-track"><span style="width:' + s.pct + '%"></span></div>' +
+              '<span class="jos-cust-bar-val">' + s.count + ' (' + s.pct + '%)</span></div>';
+          }).join('') + '</div>' +
+          '<button type="button" class="jos-linkish jos-mt" data-jos-act="go-reviews">View all reviews →</button>'
+        : '<div class="jos-muted">No reviews yet</div>') +
+      '</section></div>';
   }
 
   /* ─── LEVEL 2: Customer Command Center ──────────────────────────── */
@@ -9801,6 +9874,7 @@
     }
 
     /* LEVEL 1 — Completed Customers browse */
+    var bulkOpen = !!root._josCustBulkOpen;
     var smartFilters = '<div class="jos-cc1-filters">' + CUST_SMART_FILTERS.map(function (t) {
       var count = allCompleted.filter(function (c) { return custMatchesSmartFilter(c, t[0]); }).length;
       return '<button type="button" class="jos-cc1-filter' + (tab === t[0] ? ' on' : '') + '" data-jos-cust-tab="' + t[0] + '">' +
@@ -9824,12 +9898,20 @@
     root.innerHTML =
       '<div class="jos-cm-shell jos-cc-level-1">' +
       '<header class="jos-cm-header jos-cc1-header">' +
-      '<div class="jos-cm-header-left"><h1>Completed Customers</h1><p>People you\'ve successfully serviced.</p></div>' +
+      '<div class="jos-cm-header-left"><h1>Customers</h1><p>People you\'ve successfully serviced.</p></div>' +
       '<label class="jos-cm-global-search"><span class="jos-cm-search-ico" aria-hidden="true"></span>' +
       '<input id="jos-cust-global-search" type="search" placeholder="Search customers…" value="' + esc(root._josCustGlobalQ || '') + '">' +
       '</label>' +
       '<div class="jos-cm-header-actions">' +
       '<button type="button" class="jos-btn jos-cm-import" data-jos-act="cust-export">Export</button>' +
+      '<div class="jos-ld-bulk-wrap">' +
+      '<button type="button" class="jos-btn jos-ld-bulk" data-jos-act="cust-bulk-toggle">Bulk Actions</button>' +
+      (bulkOpen ? '<div class="jos-ld-bulk-menu">' +
+        '<div class="jos-muted" id="jos-cm-bulk-count">' + Object.keys(root._josCustBulkSelected || {}).length + ' selected</div>' +
+        [['cust-bulk-assign', 'Assign'], ['cust-bulk-archive', 'Mark inactive'], ['cust-bulk-export', 'Export selected'], ['cust-bulk-tag', 'Add tag']].map(function (x) {
+          return '<button type="button" data-jos-act="' + x[0] + '">' + x[1] + '</button>';
+        }).join('') + '</div>' : '') +
+      '</div>' +
       '<button type="button" class="jos-btn jos-btn-brand jos-cm-add" data-jos-act="new-job-cust">Schedule Job</button>' +
       '</div></header>' +
       renderCompletedCustomersKpis(allCompleted) +
@@ -9839,8 +9921,9 @@
       [['recent', 'Sort: Recent'], ['name', 'Sort: Name'], ['ltv', 'Sort: Lifetime'], ['jobs', 'Sort: Jobs']].map(function (s) {
         return '<option value="' + s[0] + '"' + ((root._josCustSort || 'recent') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
       }).join('') + '</select></div>' +
-      renderCompletedCustomersTable(pageRows) +
+      renderCompletedCustomersTable(pageRows, bulkOpen, root._josCustBulkSelected) +
       pager +
+      renderCustomersSummaryCards(allCompleted) +
       renderCustomersFilterDrawer(root) +
       renderCustomersContextMenu(root) +
       '</div>';
@@ -9980,6 +10063,14 @@
         }
         return;
       }
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-cust-bulk')) {
+        root._josCustBulkSelected = root._josCustBulkSelected || {};
+        var custBulkKey = e.target.getAttribute('data-jos-cust-bulk');
+        if (e.target.checked) root._josCustBulkSelected[custBulkKey] = true;
+        else delete root._josCustBulkSelected[custBulkKey];
+        var custCountEl = el('jos-cm-bulk-count');
+        if (custCountEl) custCountEl.textContent = Object.keys(root._josCustBulkSelected).length + ' selected';
+      }
     });
 
     root.addEventListener('keydown', function (e) {
@@ -10046,6 +10137,50 @@
         try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText('name,phone,email,completed_jobs,lifetime,membership,tags\n' + rowsEx.join('\n')); } catch (eEx) {}
         toast('Exported ' + rowsEx.length + ' customers');
         return;
+      }
+      if (act === 'cust-bulk-toggle') {
+        root._josCustBulkOpen = !root._josCustBulkOpen;
+        return renderCustomers();
+      }
+      if (act === 'cust-bulk-assign' || act === 'cust-bulk-archive' || act === 'cust-bulk-export' || act === 'cust-bulk-tag') {
+        var custSelectedKeys = Object.keys(root._josCustBulkSelected || {});
+        if (!custSelectedKeys.length) { toast('Select at least one customer first'); return; }
+        var custSelectedRows = completedCustomersList().filter(function (x) { return custSelectedKeys.indexOf(String(x.id)) > -1; });
+        if (act === 'cust-bulk-archive') {
+          custSelectedRows.forEach(function (x) {
+            x.status = 'inactive'; x.archived = true;
+            pushCustActivity(x, 'status', 'Marked inactive (bulk)');
+          });
+          toast('Marked ' + custSelectedRows.length + ' customer' + (custSelectedRows.length === 1 ? '' : 's') + ' inactive');
+        } else if (act === 'cust-bulk-tag') {
+          var custBulkTag = window.prompt('Tag name', 'follow-up');
+          if (!custBulkTag) return;
+          custSelectedRows.forEach(function (x) {
+            x.tags = x.tags || [];
+            x.tags.push(String(custBulkTag).trim());
+            pushCustActivity(x, 'tag', 'Tagged ' + custBulkTag + ' (bulk)');
+          });
+          toast('Tagged ' + custSelectedRows.length + ' customer' + (custSelectedRows.length === 1 ? '' : 's'));
+        } else if (act === 'cust-bulk-assign') {
+          var custTeamForBulk = jobsTeam();
+          var custBulkName = window.prompt('Assign to (' + custTeamForBulk.map(function (tm) { return tm.name; }).join(', ') + ')', custTeamForBulk[0] ? custTeamForBulk[0].name : '');
+          if (!custBulkName) return;
+          custSelectedRows.forEach(function (x) {
+            x.assignedTo = custBulkName;
+            pushCustActivity(x, 'assign', 'Assigned to ' + custBulkName + ' (bulk)');
+          });
+          toast('Assigned ' + custSelectedRows.length + ' customer' + (custSelectedRows.length === 1 ? '' : 's') + ' to ' + custBulkName);
+        } else if (act === 'cust-bulk-export') {
+          var custBulkRows = custSelectedRows.map(function (x) {
+            return [x.name, x.phone, x.email, custCompletedCount(x), custLifetime(x), x.membership || '', (x.tags || []).join(';')].join(',');
+          });
+          var custBulkCsv = 'name,phone,email,completed_jobs,lifetime,membership,tags\n' + custBulkRows.join('\n');
+          try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(custBulkCsv); } catch (eCustBulkExp) {}
+          toast('Exported ' + custSelectedRows.length + ' selected customer' + (custSelectedRows.length === 1 ? '' : 's'));
+        }
+        root._josCustBulkOpen = false;
+        root._josCustBulkSelected = {};
+        return renderCustomers();
       }
       if (act === 'cust-winback') {
         if (!c) return toast('Select a customer');
