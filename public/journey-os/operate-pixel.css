@@ -4726,6 +4726,17 @@ textarea.jos-je-field-input.jos-ld-cell-inline{height:auto!important;min-height:
 .jos-je-fin-editable input.jos-ld-cell-inline,.jos-je-fin-editable select.jos-ld-cell-inline{
   height:30px;font-size:15px;font-weight:800;padding:0 8px;width:100%;
 }
+.jos-je-discount-add{
+  appearance:none;border:0;background:transparent;padding:0;font:inherit;font-size:13px;font-weight:700;
+  color:var(--jos-brand-dark);cursor:pointer;text-align:left;
+}
+.jos-je-discount-edit{display:flex;flex-direction:column;gap:6px}
+.jos-je-discount-input{
+  height:32px;border:1px solid var(--jos-border);border-radius:8px;padding:0 8px;
+  font:inherit;font-size:13px;font-weight:700;color:var(--jos-navy);background:#fff;width:100%;
+}
+.jos-je-discount-error{font-size:11px;font-weight:650;color:#B42318}
+.jos-je-discount-acts{display:flex;gap:6px;justify-content:flex-end}
 /* Assignment — real computed stat under the picker, never a fabricated
    rating/availability indicator. The dot is a plain neutral accent (not
    green/red) — it's a role marker, not a live-availability signal we

@@ -11192,13 +11192,13 @@ document.addEventListener('DOMContentLoaded', function() {
           </label>
         </div>
         <div class="bar-r">
-          <button type="button" class="btn btn-brand btn-sm jos-bar-new" id="jos-bar-new" onclick="HublyJourneyOS?.openQuickNew?.()||openM('m-new-job')">+ New</button>
+          <button type="button" class="btn btn-brand btn-sm jos-bar-new" id="jos-bar-new" onclick="typeof HublyJourneyOS!=='undefined'&&HublyJourneyOS.openQuickNew?HublyJourneyOS.openQuickNew():toast('New job')">+ New</button>
           <button type="button" class="jos-business-pulse" id="jos-business-pulse" data-jos-act="toggle-business-pulse" title="Business Pulse" aria-label="Business Pulse">
             <span class="pulse-dot" aria-hidden="true"></span>
             <span class="pulse-lbl">Pulse</span>
             <span class="pulse-stars" id="jos-pulse-stars">★★★★★</span>
           </button>
-          <button class="btn btn-brand btn-sm btn-newjob jos-legacy-bar" onclick="openM('m-new-job')">+ New Job</button>
+          <button class="btn btn-brand btn-sm btn-newjob jos-legacy-bar" onclick="HublyJourneyOS?.openJobCustomerPicker?.()">+ New Job</button>
           <button type="button" class="btn btn-out btn-sm jos-legacy-bar" id="bar-qq-btn" onclick="openSmartQuote()">Quick Quote</button>
           <button type="button" class="btn btn-out btn-sm jos-legacy-bar" onclick="openBlockTimeModal()">🚫 <span data-i18n="blockTimeBtn">Block time</span></button>
           <button type="button" class="btn btn-out btn-sm theme-bar-btn jos-legacy-bar" id="theme-btn-app" onclick="toggleHublyTheme()" title="Day / Night mode" aria-label="Toggle day and night mode">
@@ -12706,50 +12706,6 @@ document.addEventListener('DOMContentLoaded', function() {
       <button type="button" class="btn btn-brand" onclick="HublySmartQuoteUI.openQuoteSmsApp()">Open Messages</button>
       <button type="button" class="btn btn-ink" onclick="HublySmartQuoteUI.confirmQuoteSmsSent()">Mark as texted</button>
     </div>
-  </div>
-</div>
-
-<div id="m-new-job" class="modal-bg hidden" onclick="mbg(event,'m-new-job')">
-  <div class="modal">
-    <div class="modal-h"><div class="modal-t">Schedule a job</div><button class="modal-x" onclick="closeM('m-new-job')">×</button></div>
-    <div class="modal-b">
-      <div class="contact-import" id="nj-contact-import">
-        <div class="contact-import-actions">
-          <button type="button" class="btn btn-out btn-sm" onclick="pasteContactInto('job')" data-i18n="pasteContactBtn">Paste contact</button>
-          <button type="button" class="btn btn-out btn-sm hidden" id="nj-pick-contact" onclick="pickContactInto('job')" data-i18n="pickContactBtn">From phone</button>
-        </div>
-        <textarea id="nj-paste" class="contact-import-paste" rows="2" data-i18n-placeholder="pasteContactPh" placeholder="Paste a name, number, or message here…" onpaste="queueApplyPastedContact('job')"></textarea>
-        <div class="contact-import-hint" data-i18n="pasteContactHint">Booked over text? Copy the contact or message, paste here, and we’ll fill the fields.</div>
-      </div>
-      <div class="field"><label>Customer name</label><input type="text" id="nj-cust" placeholder="Maria Gonzalez" list="cust-dl" oninput="onNjCustomerInput()" onchange="onNjCustomerInput()" onblur="onNjCustomerInput()"><datalist id="cust-dl"></datalist></div>
-      <div class="field-row"><div class="field"><label>Phone</label><input type="tel" id="nj-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div><div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="nj-email" placeholder="maria@email.com"></div></div>
-      <div class="field"><label id="nj-svc-lbl">Service</label><select id="nj-svc" onchange="onNjSvcChange()"><option value="">Select service...</option></select>
-        <input type="text" id="nj-svc-custom" class="hidden" style="margin-top:8px;" placeholder="Describe the one-off job…" autocomplete="off">
-      </div>
-      <div class="field-row"><div class="field"><label>Date</label><input type="date" id="nj-date"></div><div class="field"><label>Time</label><input type="time" id="nj-time" value="09:00"></div></div>
-      <div class="field"><label id="nj-addr-lbl">Address</label><input type="text" id="nj-addr" placeholder="Where is the vehicle?"></div>
-      <div id="nj-vehicle-fields">
-        <div class="field" id="nj-saved-vehicle-wrap" style="display:none;">
-          <label data-i18n="savedVehicleLbl">Saved vehicle</label>
-          <select id="nj-saved-vehicle" onchange="applySavedVehicleSelection()">
-            <option value="" data-i18n="savedVehicleSelect">Select a saved vehicle...</option>
-          </select>
-        </div>
-        <div class="field"><label>Vehicle type</label><select id="nj-vtype" onchange="onNjSvcChange()"><option value="">Select type...</option><option value="Sedan">Sedan</option><option value="Coupe">Coupe</option><option value="Crossover">Crossover</option><option value="SUV">SUV</option><option value="Truck">Truck</option><option value="Van">Van</option></select></div>
-        <div class="field-row" style="grid-template-columns:1fr 1.4fr 1.4fr;"><div class="field"><label>Year</label><input type="number" id="nj-vyear" placeholder="2022" min="1990" max="2027"></div><div class="field"><label>Make</label><input type="text" id="nj-vmake" placeholder="Honda"></div><div class="field"><label>Model</label><input type="text" id="nj-vmodel" placeholder="Civic"></div></div>
-        <div class="field"><label>Color <span class="opt">(optional)</span></label><input type="text" id="nj-vcolor" placeholder="White"></div>
-      </div>
-      <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="nj-amt" placeholder="199" oninput="onNjAmtManualEdit()"></div></div>
-      <div class="field">
-        <label>Discount code <span class="opt">(optional)</span></label>
-        <select id="nj-promo" onchange="onNjPromoChange()">
-          <option value="">No discount</option>
-        </select>
-        <div id="nj-promo-hint" style="font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.4;"></div>
-      </div>
-      <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nj-notes" placeholder="Special instructions..."></textarea></div>
-    </div>
-    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-new-job')">Cancel</button><button class="btn btn-ink" id="nj-submit-btn" onclick="addJob()">Schedule job</button></div>
   </div>
 </div>
 
@@ -38586,11 +38542,11 @@ function openJobsNew(){
     setTimeout(function(){
       if(window.HublyJourneyOS&&typeof HublyJourneyOS.handleJobsAct==='function'){
         HublyJourneyOS.handleJobsAct('jobs-create');
-      }else if(typeof openM==='function'){
-        openM('m-new-job');
+      }else if(window.HublyJourneyOS&&typeof HublyJourneyOS.openJobCustomerPicker==='function'){
+        HublyJourneyOS.openJobCustomerPicker();
       }
     },80);
-  }catch(e){try{openM('m-new-job');}catch(e2){}}
+  }catch(e){try{HublyJourneyOS?.openJobCustomerPicker?.();}catch(e2){}}
 }
 function switchV(el,opts){
   hublyBootLog('switchV',el?.dataset?.v||'?');
@@ -41118,7 +41074,7 @@ function renderJobsPanel(){
     if(titleEl)titleEl.textContent=S.selectedDay?`${t('needsReviewTitle')||'Needs review'} · ${fmtDateLong(S.selectedDay)}`:(t('needsReviewTitle')||'Needs review');
     if(legendEl)legendEl.innerHTML='';
     if(!jobs.length){
-      main.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;
+      main.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="HublyJourneyOS?.openJobCustomerPicker?.()">${t('scheduleOneBtn')}</button></div>`;
       renderJobsDayRail([],S.selectedDay||dateStr(new Date()));
       return;
     }
@@ -41156,7 +41112,7 @@ function renderJobsPanel(){
     const monthJobs=jobsInRange(jobs,'month');
     renderJobsLegend(monthJobs);
     if(!monthJobs.length){
-      main.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;
+      main.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="HublyJourneyOS?.openJobCustomerPicker?.()">${t('scheduleOneBtn')}</button></div>`;
     }else{
       const byDate={};
       monthJobs.forEach(j=>{if(!j.date)return;(byDate[j.date]=byDate[j.date]||[]).push(j);});
@@ -41684,7 +41640,6 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   });
   if(result.error){if(!silent)toast('❌ '+result.error.message);return;}
   const data=result.job;
-  try{await pushJobToGoogleCalendar(data.id);}catch(e){}
   await realtimeAwareWrite({table:'booking_requests',id:reqId,write:()=>db.from('booking_requests').update({status:'accepted'}).eq('id',reqId)});
   // Leave Leads — accepted work lives on Jobs until complete → Customers.
   try{
@@ -41862,124 +41817,6 @@ async function submitBlockTime(){
   document.getElementById('bt-date').value='';document.getElementById('bt-reason').value='';
   toast('Time blocked. offline for bookings ✓');
 }
-async function addJob(opts={}){
-  const customer=opts.customer||document.getElementById('nj-cust').value.trim();
-  let service=opts.service||document.getElementById('nj-svc').value;
-  if(service==='__custom__'){
-    service=(document.getElementById('nj-svc-custom')?.value||'').trim();
-  }
-  const date=opts.date||document.getElementById('nj-date').value;
-  const time=opts.time||document.getElementById('nj-time').value;
-  const addr=opts.address||document.getElementById('nj-addr').value;
-  let amt=opts.amount!=null?opts.amount:document.getElementById('nj-amt').value;
-  const notes=opts.notes||document.getElementById('nj-notes').value;
-  const phone=opts.phone||document.getElementById('nj-phone')?.value||'';
-  const email=opts.email||document.getElementById('nj-email')?.value||'';
-  const vYear=document.getElementById('nj-vyear')?.value||'';
-  const vMake=document.getElementById('nj-vmake')?.value||'';
-  const vModel=document.getElementById('nj-vmodel')?.value||'';
-  const vColor=document.getElementById('nj-vcolor')?.value||'';
-  const vType=document.getElementById('nj-vtype')?.value||'';
-  const ymm=[vYear,vMake,vModel].filter(Boolean).join(' ');
-  const vehicle=opts.vehicle||(ymm?(vType?`${ymm} (${vType})`:ymm):vType);
-  if(!customer){toast('Enter a customer name');return null}
-  if(!service){toast('Select a package or enter a custom job');return null}
-
-  const promoSel=document.getElementById('nj-promo');
-  const promoId=opts.promoId||promoSel?.value||'';
-  let promoEntry=promoId?ensurePromoCodes().find(p=>p.id===promoId):null;
-  if(!promoEntry&&opts.promoCode)promoEntry=findPromoByCode(opts.promoCode);
-  let discNote='';
-  if(promoEntry&&promoEntry.code){
-    if(await hasCustomerUsedPromoCode(promoEntry.code,phone,email)){
-      toast(t('discountAlreadyUsed')||'This code was already used with this phone or email.');
-      return null;
-    }
-    const base=Number(S._njBaseAmount!=null?S._njBaseAmount:amt)||0;
-    const pct=promoEntry.percent>0?promoEntry.percent:0;
-    const discAmt=pct>0?+(base*(pct/100)).toFixed(2):0;
-    const total=Math.max(0,+(base-discAmt).toFixed(2));
-    if(pct>0){
-      amt=String(total);
-      discNote=`[DISCOUNT:${promoEntry.code}|${pct}%|-\$${discAmt.toFixed(2)}|total:\$${total.toFixed(2)}]`;
-    }
-  }
-
-  const pending=S._pendingRecurringJob||null;
-  const recurringPlanId=opts.recurringPlanId||pending?.recurringPlanId||'';
-  const recurringPlanName=opts.recurringPlanName||pending?.recurringPlanName||'';
-  const recurringFlag=!!(opts.isRecurring||pending?.isRecurring);
-  const sanitizedNotes=(notes||'').replace(/\n?\[RPJOB:[^\]]+\]\s*$/,'').replace(/\n?\[DISCOUNT:[^\]]+\]/g,'').trim();
-  let taggedNotes=sanitizedNotes;
-  if(discNote)taggedNotes=`${taggedNotes}${taggedNotes?'\n':''}${discNote}`;
-  if(recurringFlag)taggedNotes=`${taggedNotes}${taggedNotes?'\n':''}[RPJOB:${recurringPlanId||'manual'}]`;
-
-  const job={id:Date.now(),customer,service,date,time,address:addr,amount:amt,notes:taggedNotes,
-    status:'scheduled',fromBooking:opts.fromBooking||false,
-    phone,email,vehicle,vehicleColor:vColor,isRecurring:recurringFlag,recurringPlanId,recurringPlanName};
-  S.jobs.push(job);
-  const smsConsentOpt=(notesHaveSmsConsent(taggedNotes)||notesHaveSmsConsent(notes))?{smsConsent:true}:{};
-
-  // Customer + job creation go through the shared creation engine
-  // (findOrCreateCustomer + createJob) instead of a separate upsertCustomer
-  // call plus this function's own insert — see the Phase 1 creation-engine
-  // consolidation. createJob() requires a business (a job has no offline
-  // fallback in any path), so the pre-existing offline/no-business
-  // behavior — upsert a local-only customer, no job row — is kept as its
-  // own branch rather than forced through createJob().
-  if(currentBusiness){
-    const result=await createJob({
-      name:customer,phone,email,vehicle,
-      vehicleType:vType,vehicleYear:vYear,vehicleMake:vMake,vehicleModel:vModel,vehicleColor:vColor,
-      service,date,time,address:addr,amount:parseFloat(amt)||null,notes:taggedNotes,
-      status:'scheduled',fromBooking:opts.fromBooking||false,
-    },smsConsentOpt);
-    if(result.job){
-      job.dbId=result.job.id;
-      job.id=result.job.id;
-      try{await pushJobToGoogleCalendar(result.job.id);}catch(e){}
-    }
-    if(promoEntry?.code)markPromoUsedLocal(promoEntry.code,phone,email);
-  }else{
-    await upsertCustomer({
-      name:customer,phone,email,vehicle,
-      vehicleType:vType,vehicleYear:vYear,vehicleMake:vMake,vehicleModel:vModel,vehicleColor:vColor,
-      ...smsConsentOpt,
-    });
-    if(promoEntry?.code)markPromoUsedLocal(promoEntry.code,phone,email);
-  }
-
-  if(date){const d=new Date(date+'T00:00:00');if(d.getMonth()===S.calMonth&&d.getFullYear()===S.calYear)renderCal()}
-  if(recurringFlag&&pending?.customerId){
-    const cust=S.customers.find(x=>String(x.id)===String(pending.customerId));
-    if(cust){
-      const plan=recurringMetaFromCustomer(cust);
-      plan.nextDueDate=nextDueFromCadence(date||plan.nextDueDate,plan.cadence||'monthly');
-      cust.recurringPlan=plan;
-      upsertCustomer({
-        name:cust.name,
-        phone:cust.phone||'',
-        email:cust.email||'',
-        customerType:'recurring',
-        preferredService:plan.serviceName||cust.preferredService||'',
-        recurringAmount:plan.defaultPrice,
-        recurringPlan:plan,
-        notes:cust.notes||'',
-      });
-    }
-  }
-  S._pendingRecurringJob=null;
-  S._njBaseAmount=null;
-  if(S._pendingLeadKey){
-    try{removeLeadFromBoard(S._pendingLeadKey);}catch(e){}
-    S._pendingLeadKey=null;
-  }
-  updateKPIs();renderDashToday();renderJobsPanel();
-  try{if(typeof renderLeadsBoard==='function')renderLeadsBoard({refresh:true});}catch(e){}
-  if(!opts.silent){closeM('m-new-job');toast(promoEntry?'Job scheduled with discount ✓':'Job scheduled ✓')}
-  return job;
-}
-
 // CUSTOMERS
 function safeJsonParse(raw,fallback){
   try{return JSON.parse(raw);}catch(e){return fallback;}
@@ -42063,7 +41900,7 @@ function contactsPickerAvailable(){
 }
 function refreshContactImportButtons(){
   const show=contactsPickerAvailable();
-  ['nc-pick-contact','nj-pick-contact'].forEach(id=>{
+  ['nc-pick-contact'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.classList.toggle('hidden',!show);
   });
@@ -42835,95 +42672,6 @@ function formatVehicleLabel(v){
   if(color)label=label?`${label} · ${color}`:color;
   return label;
 }
-function findCustomerByName(name){
-  const n=String(name||'').trim().toLowerCase();
-  if(!n)return null;
-  return (S.customers||[]).find(c=>String(c.name||'').trim().toLowerCase()===n)||null;
-}
-function getCustomerVehicles(c){
-  if(!c)return [];
-  const list=[];
-  const seen=new Set();
-  const push=(raw)=>{
-    if(!raw)return;
-    const item={
-      vehicleYear:raw.vehicleYear||raw.year||'',
-      vehicleMake:raw.vehicleMake||raw.make||'',
-      vehicleModel:raw.vehicleModel||raw.model||'',
-      vehicleType:raw.vehicleType||raw.type||'',
-      vehicleColor:raw.vehicleColor||raw.color||'',
-      vehicle:raw.vehicle||'',
-    };
-    if(!item.vehicle&&!item.vehicleYear&&!item.vehicleMake&&!item.vehicleModel&&!item.vehicleType&&!item.vehicleColor)return;
-    if(!item.vehicle)item.vehicle=formatVehicleLabel(item);
-    const key=[item.vehicleYear,item.vehicleMake,item.vehicleModel,item.vehicleType,item.vehicleColor,item.vehicle].join('|').toLowerCase();
-    if(seen.has(key))return;
-    seen.add(key);
-    list.push(item);
-  };
-  push(c);
-  (S.jobs||[]).filter(j=>j.customer===c.name&&!j.isBlock).forEach(j=>{
-    push({
-      vehicle:j.vehicle||'',
-      vehicleColor:j.vehicleColor||'',
-      vehicleType:j.vehicleType||'',
-      vehicleYear:j.vehicleYear||'',
-      vehicleMake:j.vehicleMake||'',
-      vehicleModel:j.vehicleModel||'',
-    });
-  });
-  return list;
-}
-function applyVehicleToNjForm(v){
-  if(!v)return;
-  const set=(i,val)=>{const el=document.getElementById(i);if(el)el.value=val||'';};
-  set('nj-vtype',v.vehicleType||'');
-  set('nj-vyear',v.vehicleYear||'');
-  set('nj-vmake',v.vehicleMake||'');
-  set('nj-vmodel',v.vehicleModel||'');
-  set('nj-vcolor',v.vehicleColor||'');
-  if(typeof onNjSvcChange==='function')onNjSvcChange();
-}
-function refreshNjSavedVehicles(c){
-  const wrap=document.getElementById('nj-saved-vehicle-wrap');
-  const sel=document.getElementById('nj-saved-vehicle');
-  if(!wrap||!sel)return;
-  const vehicles=c?getCustomerVehicles(c):[];
-  sel._vehicles=vehicles;
-  if(!vehicles.length){
-    wrap.style.display='none';
-    sel.innerHTML=`<option value="">${t('savedVehicleSelect')}</option>`;
-    return;
-  }
-  wrap.style.display='';
-  sel.innerHTML=`<option value="">${t('savedVehicleSelect')}</option>`+vehicles.map((v,i)=>`<option value="${i}">${escapeHtml(formatVehicleLabel(v))}</option>`).join('');
-  if(vehicles.length===1){
-    sel.value='0';
-    applyVehicleToNjForm(vehicles[0]);
-  }
-}
-function applySavedVehicleSelection(){
-  const sel=document.getElementById('nj-saved-vehicle');
-  if(!sel||sel.value==='')return;
-  const vehicles=sel._vehicles||[];
-  const v=vehicles[Number(sel.value)];
-  if(v)applyVehicleToNjForm(v);
-}
-function onNjCustomerInput(){
-  const name=document.getElementById('nj-cust')?.value||'';
-  const c=findCustomerByName(name);
-  refreshNjSavedVehicles(c);
-  if(!c)return;
-  const ph=document.getElementById('nj-phone');
-  const em=document.getElementById('nj-email');
-  if(ph){ph.value=c.phone||'';if(c.phone)formatPhone(ph);}
-  if(em)em.value=c.email||'';
-  if(c.preferredService){
-    const svc=document.getElementById('nj-svc');
-    if(svc&&!svc.value)svc.value=c.preferredService;
-  }
-}
-
 /** Owner schedules for a customer via the same Book Now flow as the live site. */
 function openBookingForCustomer(id,opts={}){
   const c=S.customers.find(x=>String(x.id)===String(id));
@@ -42936,7 +42684,7 @@ function openBookingForCustomer(id,opts={}){
   const amount=opts.amount!=null?Number(opts.amount)
     :(membershipPrice!=null?membershipPrice
     :(plan.defaultPrice!=null?Number(plan.defaultPrice):null));
-  ['m-new-job','m-kpi-drill','m-customer'].forEach(mid=>{
+  ['m-kpi-drill','m-customer'].forEach(mid=>{
     try{const el=document.getElementById(mid);if(el&&!el.classList.contains('hidden'))closeM(mid);}catch(e){}
   });
   S._bookForCustomerReturn='customers';
@@ -43017,8 +42765,8 @@ function openNewJobForCustomer(id,opts={}){
   openBookingForCustomer(id,opts);
 }
 // plan.serviceName can now be a membership plan's own name (manageRecurringPlan's
-// Service dropdown offers memberships alongside services) -- but the New Job
-// modal's #nj-svc select is only ever populated from getBookingServices(),
+// Service dropdown offers memberships alongside services) -- but the booking
+// wizard's service select is only ever populated from getBookingServices(),
 // so a membership name silently fails to select anything there, leaving the
 // owner unable to actually schedule the visit ("Select a service", blocked).
 // Resolve back to the membership's own underlying serviceName -- exactly
@@ -43029,15 +42777,15 @@ function resolveRecurringServiceName(name){
   if(svcs.some(s=>s.name===name))return name;
   // Pricing side effect fixed: see resolveRecurringServicePrice() below --
   // openNewJobForCustomer() carries the membership's real rate forward via
-  // a one-shot flag so onNjSvcChange() no longer overwrites it with the
-  // resolved service's full listed price.
+  // a one-shot flag so the booking wizard's own service-change handler no
+  // longer overwrites it with the resolved service's full listed price.
   const membership=(S.website?.membershipOffers||[]).find(m=>m.name===name);
   return membership?.serviceName||name;
 }
 // Phase 1 item A: companion to resolveRecurringServiceName() -- returns the
 // membership's actual discounted rate when `name` resolved via a membership
 // match (not a direct service lookup), so the caller can carry that price
-// forward instead of letting onNjSvcChange() overwrite it with the
+// forward instead of letting the booking wizard overwrite it with the
 // underlying service's full listed price.
 function resolveRecurringServicePrice(name){
   if(!name)return null;
@@ -43524,6 +43272,11 @@ async function createJob(input,opts){
   if(input.paid!=null)payload.paid=!!input.paid;
   var result=await persistJob(payload);
   if(result.error)return{error:result.error};
+  // Every real job-creation path gets Calendar sync automatically instead
+  // of each caller remembering to call pushJobToGoogleCalendar itself
+  // (several didn't) — it already no-ops safely when Calendar isn't
+  // connected, so this is safe to call unconditionally.
+  try{await pushJobToGoogleCalendar(result.data.id);}catch(e){}
   return{jobId:result.data.id,customerId:customer?customer.id:null,job:result.data,customer:customer};
 }
 async function persistJob(payload){
@@ -44533,8 +44286,6 @@ async function acceptAbandonedLead(lead){
     status:'scheduled',fromBooking:true,
   });
   if(result.error){toast('❌ '+result.error.message);return;}
-  const data=result.job;
-  try{await pushJobToGoogleCalendar(data.id);}catch(e){}
   await realtimeAwareWrite({table:'booking_requests',id:lead.reqId,write:()=>db.from('booking_requests').update({status:'accepted'}).eq('id',lead.reqId)});
   removeLeadFromBoard(lead.key);
   await loadJobs();
@@ -44542,24 +44293,29 @@ async function acceptAbandonedLead(lead){
   renderDashToday();renderDashNewBookings();updateKPIs();
   toast('Accepted — now on Jobs');
 }
-function scheduleLeadOnBoard(key){
+async function scheduleLeadOnBoard(key){
   const lead=collectPipelineLeads().find(l=>l.key===key);
   if(!lead){toast('Lead not found');return;}
   markLeadSeen(key);
-  populateNjSvc();
-  const set=(i,v)=>{const el=document.getElementById(i);if(el)el.value=v||'';};
-  set('nj-cust',lead.name);
-  set('nj-phone',lead.phone||'');
-  set('nj-email',lead.email||'');
-  set('nj-svc',lead.service||'');
-  set('nj-date',lead.date||dateStr(new Date()));
-  set('nj-time',lead.time||'09:00');
-  set('nj-addr',(resolveJobDisplayAddress(lead)||lead.address||''));
-  set('nj-amt',lead.amount!=null?lead.amount:'');
-  set('nj-notes',lead.notes||'');
-  S._pendingLeadKey=key;
-  openM('m-new-job');
-  toast('Set the job details, then save — they’ll leave Leads');
+  const date=lead.date||dateStr(new Date());
+  const time=lead.time||'09:00';
+  // "Who is this for?" is already answered — this lead — so this goes
+  // straight to the shared creation engine (findOrCreateCustomer +
+  // createJob) and opens Jobs, the same as every other real job-creation
+  // path, instead of re-collecting fields the drawer already edits.
+  const result=await createJob({
+    name:lead.name,phone:lead.phone||'',email:lead.email||'',
+    service:lead.service||'',date,time,
+    address:resolveJobDisplayAddress(lead)||lead.address||null,
+    amount:lead.amount!=null?lead.amount:null,
+    notes:lead.notes||'',status:'scheduled',
+  });
+  if(result.error){toast('❌ '+result.error.message);return;}
+  removeLeadFromBoard(key);
+  await loadJobs();
+  goJobsAfterAccept(date,time);
+  renderDashToday();updateKPIs();
+  toast('Scheduled — now on Jobs');
 }
 function closeLeadDetail(){
   S.activeLeadKey=null;
@@ -45802,14 +45558,10 @@ function openJobsNewJobAt(dayStr,hour,ev){
   if(ev){ev.stopPropagation();ev.preventDefault();}
   const ds=dayStr||S.selectedDay||dateStr(new Date());
   S.selectedDay=ds;
-  const dateEl=document.getElementById('nj-date');
-  const timeEl=document.getElementById('nj-time');
-  if(dateEl)dateEl.value=ds;
-  if(timeEl){
-    const h=Number.isFinite(+hour)?Math.max(0,Math.min(23,+hour)):9;
-    timeEl.value=String(h).padStart(2,'0')+':00';
-  }
-  openM('m-new-job');
+  // Date/time are now set in the Jobs drawer after the picker resolves
+  // who the job is for, not collected up front — this slot click just
+  // starts that flow instead of prefilling a form that no longer exists.
+  HublyJourneyOS?.openJobCustomerPicker?.();
 }
 function renderDailyAgendaHtml(jobs,dayStr,opts={}){
   const compact=!!opts.compact;
@@ -46672,11 +46424,7 @@ function goDashToday(){
   goDashCalendar();
 }
 function openDashNewJob(){
-  const dateEl=document.getElementById('nj-date');
-  if(dateEl)dateEl.value=dateStr(new Date());
-  const timeEl=document.getElementById('nj-time');
-  if(timeEl&&!timeEl.value)timeEl.value='09:00';
-  openM('m-new-job');
+  HublyJourneyOS?.openJobCustomerPicker?.();
 }
 function openDashBlockTime(){
   S.selectedDay=dateStr(new Date());
@@ -47453,18 +47201,6 @@ function syncTradeIntakeCopy(){
 }
 function openM(id){
   document.getElementById(id).classList.remove('hidden');
-  if(id==='m-new-job'){
-    syncVehicleIntakeFields();
-    populateNjSvc();
-    populateNjPromo();
-    refreshContactImportButtons();
-    const paste=document.getElementById('nj-paste');if(paste)paste.value='';
-    S._njBaseAmount=null;
-    const hint=document.getElementById('nj-promo-hint');if(hint)hint.textContent='';
-    // If opened blank (not via openNewJobForCustomer), hide saved-vehicle until a name matches
-    if(!document.getElementById('nj-cust')?.value)refreshNjSavedVehicles(null);
-    else onNjCustomerInput();
-  }
   if(id==='m-new-lead'){
     syncTradeIntakeCopy();
     populateNlSvc();
@@ -47570,31 +47306,6 @@ function setNcCustType(val){
     }
   }
 }
-function populateNjSvc(){
-  const sel=document.getElementById('nj-svc');
-  if(!sel)return;
-  const current=sel.value;
-  const svcs=getBookingServices();
-  const customInp=document.getElementById('nj-svc-custom');
-  sel.innerHTML='<option value="">Select service...</option>'+svcs.map(s=>{
-    const priceLabel=s.pricingType==='variable'?svcDisplayPrice(s):(s.price?'$'+s.price:'');
-    return `<option value="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}${priceLabel?'. '+priceLabel:''}</option>`;
-  }).join('')+'<option value="__custom__">Custom / one-off…</option>';
-  if(current==='__custom__'||(current&&!svcs.some(s=>s.name===current)&&current!=='')){
-    if(current&&current!=='__custom__'){
-      if(customInp){customInp.value=current;customInp.classList.remove('hidden');}
-      sel.value='__custom__';
-    }else{
-      sel.value='__custom__';
-      customInp?.classList.remove('hidden');
-    }
-  }else if(svcs.some(s=>s.name===current)){
-    sel.value=current;
-    customInp?.classList.add('hidden');
-  }else{
-    customInp?.classList.add('hidden');
-  }
-}
 function leadPackageOptionsHtml(selected){
   const svcs=getBookingServices();
   const sel=String(selected||'');
@@ -47638,83 +47349,6 @@ function onLdSvcChange(){
   const svc=getBookingServices().find(s=>s.name===sel.value);
   const price=packageFlatPrice(svc);
   if(price!=null)amt.value=price;
-}
-function populateNjPromo(){
-  const sel=document.getElementById('nj-promo');
-  if(!sel)return;
-  const cur=sel.value;
-  const codes=getActivePromoCodes();
-  sel.innerHTML='<option value="">No discount</option>'+codes.map(p=>{
-    const label=`${p.code}${p.percent?`. ${p.percent}% off`:''}${p.label?` (${p.label})`:''}`;
-    return `<option value="${String(p.id).replace(/"/g,'&quot;')}">${label.replace(/</g,'&lt;')}</option>`;
-  }).join('');
-  if(codes.some(p=>p.id===cur))sel.value=cur;
-}
-function onNjAmtManualEdit(){
-  const amt=document.getElementById('nj-amt');
-  const promo=document.getElementById('nj-promo');
-  if(!amt)return;
-  // If no promo selected, treat typed amount as the new base
-  if(!promo?.value)S._njBaseAmount=parseFloat(amt.value)||null;
-}
-function onNjPromoChange(){
-  const amt=document.getElementById('nj-amt');
-  const promo=document.getElementById('nj-promo');
-  const hint=document.getElementById('nj-promo-hint');
-  if(!amt||!promo)return;
-  const entry=promo.value?ensurePromoCodes().find(p=>p.id===promo.value):null;
-  if(S._njBaseAmount==null||S._njBaseAmount===''){
-    S._njBaseAmount=parseFloat(amt.value)||0;
-  }
-  const base=Number(S._njBaseAmount)||0;
-  if(!entry||!entry.percent){
-    if(base>0)amt.value=base;
-    if(hint)hint.textContent='';
-    return;
-  }
-  const disc=+(base*(entry.percent/100)).toFixed(2);
-  const total=Math.max(0,+(base-disc).toFixed(2));
-  amt.value=total;
-  if(hint)hint.textContent=`Applies ${entry.percent}% off $${base.toFixed(2)} → $${total.toFixed(2)} (code ${entry.code})`;
-}
-function onNjSvcChange(){
-  const sel=document.getElementById('nj-svc');
-  const amt=document.getElementById('nj-amt');
-  const customInp=document.getElementById('nj-svc-custom');
-  if(!sel||!amt)return;
-  if(sel.value==='__custom__'){
-    customInp?.classList.remove('hidden');
-    setTimeout(()=>customInp?.focus(),30);
-    return;
-  }
-  customInp?.classList.add('hidden');
-  // One-shot: only honored on the call immediately following
-  // openNewJobForCustomer()'s membership resolution -- cleared here so any
-  // later, genuine dropdown change (the user picking a different real
-  // service by hand) prices normally off that service's own listing.
-  const membershipPrice=sel.dataset.membershipPrice;
-  delete sel.dataset.membershipPrice;
-  if(membershipPrice){
-    amt.value=membershipPrice;
-    S._njBaseAmount=Number(membershipPrice)||0;
-    onNjPromoChange();
-    return;
-  }
-  const svcs=getBookingServices();
-  const svc=svcs.find(s=>s.name===sel.value);
-  if(!svc)return;
-  if(svc.pricingType==='variable'){
-    const vtype=document.getElementById('nj-vtype')?.value||'';
-    if(vtype){
-      const tier=vtypeToTier(vtype);
-      const tierPrice=Number(svc.varPrices?.[tier]);
-      if(tierPrice>0){amt.value=tierPrice;S._njBaseAmount=tierPrice;}
-    }
-  } else if(svc.price){
-    amt.value=svc.price;
-    S._njBaseAmount=Number(svc.price)||0;
-  }
-  onNjPromoChange();
 }
 function closeM(id){document.getElementById(id).classList.add('hidden')}
 function mbg(e,id){if(e.target===e.currentTarget)closeM(id)}

@@ -998,12 +998,12 @@
         return renderPipeline();
       }
       if (act === 'pipe-bulk') {
-        return typeof global.openM === 'function' ? global.openM('m-new-job') : toast('Schedule a job');
+        return openJobCustomerPicker();
       }
       if (act === 'pipe-add-in-stage') {
         if (stageId) root._josPipePreferredStage = stageId;
         if (stageId === 'booked' || stageId === 'completed') {
-          return typeof global.openM === 'function' ? global.openM('m-new-job') : toast('Schedule job');
+          return openJobCustomerPicker();
         }
         if (typeof global.openSmartQuote === 'function') return global.openSmartQuote();
         return toast('Quick Quote');
@@ -1072,7 +1072,7 @@
           }
         }
         movePipeCard(card ? card.id : '', 'booked', false);
-        return typeof global.openM === 'function' ? global.openM('m-new-job') : toast('Convert to job');
+        return openJobCustomerPicker();
       }
       if (act === 'pipe-stage-set' && stageId && card) return movePipeCard(card.id, stageId);
       if (act === 'pipe-stage-prev' && card) {
@@ -15343,7 +15343,8 @@
   // own "insert for real, reconcile the placeholder id" reasoning applies
   // here too, minus the placeholder since we wait for the real id before
   // ever touching S().jobs) and open the drawer as the one remaining editor.
-  function startJobFromPicker(input) {
+  function startJobFromPicker(input, opts) {
+    opts = opts || {};
     var pop = el('jos-job-picker');
     var st = pop ? jobPickerState(pop) : null;
     if (st) { st.busy = true; renderJobPicker(pop); }
@@ -15364,6 +15365,20 @@
       if (mapped) {
         S().jobs = Array.isArray(S().jobs) ? S().jobs : [];
         S().jobs.unshift(mapped);
+      }
+      // Same archive-not-delete outcome leads-convert-job already applies
+      // when a lead becomes a job — the lead leaves the active pipeline
+      // (booked:true, stage 'archived') instead of a job existing while
+      // its source lead still shows up as active.
+      if (opts.archiveLeadId && typeof mutateLeadById === 'function') {
+        mutateLeadById(opts.archiveLeadId, function (l) {
+          l.crmStatus = 'qualified';
+          l.stage = 'archived';
+          l.osStage = 'archived';
+          l.status = 'archived';
+          l.booked = true;
+          pushLeadActivity(l, 'convert', 'Booked as job');
+        }, { quiet: true });
       }
       switchNav('jobs');
       setTimeout(function () {
@@ -16706,7 +16721,24 @@
     var quote = (meta.source === 'smart_quote' || meta.quote_status || meta.quote)
       ? { status: meta.quote_status || '', amount: meta.quote || '' }
       : null;
-    return { clean: s, quote: quote };
+    // [DISCOUNT:CODE|15%|-$5.00|total:$45.00] — same tag convention the old
+    // m-new-job modal and the public booking checkout both write. Parsed
+    // here (not written here) purely for display; applying a new discount
+    // goes through jobs-discount-apply below.
+    var discount = null;
+    if (meta.discount) {
+      var parts = String(meta.discount).split('|');
+      var pctMatch = (parts[1] || '').match(/(-?\d+(?:\.\d+)?)%/);
+      var offMatch = (parts[2] || '').match(/-\$?([\d.]+)/);
+      var totalMatch = (parts[3] || '').match(/total:\$?([\d.]+)/i);
+      discount = {
+        code: parts[0] || '',
+        pct: pctMatch ? Number(pctMatch[1]) : null,
+        off: offMatch ? Number(offMatch[1]) : null,
+        total: totalMatch ? Number(totalMatch[1]) : null,
+      };
+    }
+    return { clean: s, quote: quote, discount: discount };
   }
   function jobServiceOptions(j) {
     // Hubly Core provides the engine, the business provides the data — no
@@ -17041,6 +17073,32 @@
     return '<div class="jos-je-field' + (opts.full ? ' full' : '') + '"><span>' + esc(label) + '</span>' + jobDrawerFieldHtml(job, jobKey, colKey, isEditing) + '</div>';
   }
 
+  // Promo/discount codes, migrated out of the old m-new-job modal's
+  // addJob() — same ensurePromoCodes/findPromoByCode/hasCustomerUsedPromoCode/
+  // markPromoUsedLocal machinery the public booking checkout already uses,
+  // just applied here from the Financial section instead of at booking
+  // time. A code is a one-shot action (lookup + async reuse check + a
+  // compound amount+notes update), not a single-column value, so it gets
+  // its own small open/cancel/apply flow instead of the generic
+  // click-to-edit field mechanism every other fin-card field uses.
+  function jobDiscountCardHtml(root, job, jobKey, discount) {
+    var edit = root._josJobDiscountEdit;
+    var editing = edit && String(edit.jobId) === String(jobKey);
+    if (editing) {
+      return '<div class="jos-je-discount-edit">' +
+        '<input type="text" class="jos-je-discount-input" placeholder="Promo code" value="' + esc(edit.code || '') + '" autocomplete="off"' + (edit.busy ? ' disabled' : '') + '>' +
+        (edit.error ? '<div class="jos-je-discount-error">' + esc(edit.error) + '</div>' : '') +
+        '<div class="jos-je-discount-acts">' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-discount-cancel"' + (edit.busy ? ' disabled' : '') + '>Cancel</button>' +
+        '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="jobs-discount-apply" data-jos-job-id="' + esc(jobKey) + '"' + (edit.busy ? ' disabled' : '') + '>' + (edit.busy ? 'Applying…' : 'Apply') + '</button>' +
+        '</div></div>';
+    }
+    if (discount && discount.code) {
+      return '<strong>' + esc(discount.code) + (discount.pct != null ? ' · -' + discount.pct + '%' : '') + (discount.off != null ? ' (-' + money(discount.off) + ')' : '') + '</strong>';
+    }
+    return '<button type="button" class="jos-je-discount-add" data-jos-act="jobs-discount-open" data-jos-job-id="' + esc(jobKey) + '">+ Apply code</button>';
+  }
+
   function loadJobsColumns(root) {
     var cached = tablePreferences.load('user', 'jobs', function (remote) {
       var remoteCols = tablePreferences.normalize(jobsColumnSchema(), remote && remote.columns);
@@ -17083,6 +17141,7 @@
     if (notesMeta.quote) {
       finCardsInner += finCard('Quote', '<strong>' + (notesMeta.quote.amount ? esc(notesMeta.quote.amount) : '') + (notesMeta.quote.status ? (notesMeta.quote.amount ? ' · ' : '') + esc(notesMeta.quote.status) : '') + '</strong>');
     }
+    finCardsInner += finCard('Discount', jobDiscountCardHtml(root, j, jobKey, notesMeta.discount));
     var financialCardsHtml = '<div class="jos-je-fin-cards">' + finCardsInner + '</div>';
 
     // Guards against the literal string 'Unassigned' being treated as a
@@ -18034,6 +18093,10 @@
     });
     root.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && root._josCombo) { closeJobsComboPicker(root); }
+      if (root._josJobDiscountEdit && e.target && e.target.classList && e.target.classList.contains('jos-je-discount-input')) {
+        if (e.key === 'Escape') { root._josJobDiscountEdit = null; rerenderJobsOsFrom(root); }
+        else if (e.key === 'Enter') { e.preventDefault(); e.target.closest('.jos-je-discount-edit')?.querySelector('[data-jos-act="jobs-discount-apply"]')?.click(); }
+      }
     });
     root.addEventListener('click', function (e) {
       var slotAdd = e.target.closest('.jos-gcal-slot-add, [data-jos-act="jobs-gcal-new"]');
@@ -19929,7 +19992,7 @@
         var jpLeadId = t.getAttribute('data-jos-lead-id');
         var jpLead = jpLeadId ? findLead(jpLeadId) : null;
         if (!jpLead) { toast('Lead not found'); return; }
-        return startJobFromPicker({ name: jpLead.name || '', phone: jpLead.phone || '', email: jpLead.email || '' });
+        return startJobFromPicker({ name: jpLead.name || '', phone: jpLead.phone || '', email: jpLead.email || '' }, { archiveLeadId: jpLead.id || jpLead.key });
       }
       if (act === 'jobs-picker-create-save') {
         var jpPopSave = el('jos-job-picker');
@@ -19940,6 +20003,75 @@
         var jpName = String((jpNameEl && jpNameEl.value) || '').trim();
         if (!jpName) { toast('This customer needs a name'); return; }
         return startJobFromPicker({ name: jpName, phone: String((jpPhoneEl && jpPhoneEl.value) || '').trim(), email: String((jpEmailEl && jpEmailEl.value) || '').trim() });
+      }
+      if (act === 'jobs-discount-open') {
+        var discJobId = t.getAttribute('data-jos-job-id') || jobId;
+        if (!discJobId) return;
+        root._josJobDiscountEdit = { jobId: discJobId, code: '', busy: false, error: '' };
+        rerender();
+        setTimeout(function () {
+          var discInput = root.querySelector('.jos-je-discount-input');
+          if (discInput) discInput.focus();
+        }, 0);
+        return;
+      }
+      if (act === 'jobs-discount-cancel') {
+        root._josJobDiscountEdit = null;
+        return rerender();
+      }
+      if (act === 'jobs-discount-apply') {
+        var applyJobId = t.getAttribute('data-jos-job-id');
+        var applyJob = applyJobId ? findJob(applyJobId) : null;
+        var discEdit = root._josJobDiscountEdit;
+        if (!applyJob || !discEdit) return;
+        var discInputEl = root.querySelector('.jos-je-discount-input');
+        var code = String((discInputEl && discInputEl.value) || '').trim();
+        if (!code) { discEdit.error = 'Enter a code'; return rerender(); }
+        if (typeof global.findPromoByCode !== 'function') { discEdit.error = 'Not available right now'; return rerender(); }
+        var promoEntry = global.findPromoByCode(code);
+        if (!promoEntry || !promoEntry.code) { discEdit.error = 'Code not found'; return rerender(); }
+        discEdit.busy = true;
+        discEdit.error = '';
+        discEdit.code = code;
+        rerender();
+        Promise.resolve(typeof global.hasCustomerUsedPromoCode === 'function' ? global.hasCustomerUsedPromoCode(promoEntry.code, applyJob.phone || '', applyJob.email || '') : false)
+          .then(function (used) {
+            if (used) {
+              discEdit.busy = false;
+              discEdit.error = 'Already used with this phone or email';
+              return rerender();
+            }
+            var base = Number(applyJob.amount) || 0;
+            var pct = promoEntry.percent > 0 ? promoEntry.percent : 0;
+            if (pct <= 0) {
+              discEdit.busy = false;
+              discEdit.error = 'This code has no discount';
+              return rerender();
+            }
+            // Same [DISCOUNT:code|pct%|-$off|total:$total] tag convention
+            // addJob() and the public booking checkout both write —
+            // parseJobNotesMeta() (above) already reads it back out.
+            var discAmt = +(base * (pct / 100)).toFixed(2);
+            var total = Math.max(0, +(base - discAmt).toFixed(2));
+            var discTag = '[DISCOUNT:' + promoEntry.code + '|' + pct + '%|-$' + discAmt.toFixed(2) + '|total:$' + total.toFixed(2) + ']';
+            var cleanNotes = parseJobNotesMeta(applyJob.notes || '').clean;
+            var taggedNotes = cleanNotes + (cleanNotes ? '\n' : '') + discTag;
+            applyJob.amount = total;
+            applyJob.notes = taggedNotes;
+            applyJob.internalNotes = [taggedNotes];
+            persistJobPatch(applyJob, { amount: total, notes: taggedNotes });
+            if (typeof global.markPromoUsedLocal === 'function') global.markPromoUsedLocal(promoEntry.code, applyJob.phone || '', applyJob.email || '');
+            root._josJobDiscountEdit = null;
+            toast('Discount applied — ' + money(total));
+            rerender();
+          })
+          .catch(function (e) {
+            console.warn('jobs-discount-apply', e);
+            discEdit.busy = false;
+            discEdit.error = 'Something went wrong — try again';
+            rerender();
+          });
+        return;
       }
       if (act === 'jobs-name-edit-open') {
         root._josJobNameEditing = true;
@@ -21220,6 +21352,7 @@
     closeCustomerProfile: closeCustomerProfile,
     enhanceDashboard: enhanceDashboard,
     openQuickNew: openQuickNew,
+    openJobCustomerPicker: openJobCustomerPicker,
     askForCurrentPage: askForCurrentPage,
     openBusinessPulse: openBusinessPulse,
     refreshBusinessPulse: refreshBusinessPulse,
