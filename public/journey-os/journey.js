@@ -9106,7 +9106,7 @@
     }
     var f = root._josLeadFilters || {};
     var bulkOpen = !!root._josLeadBulkOpen;
-    var viewMode = root._josLeadsView === 'table' ? 'table' : 'list';
+    var viewMode = root._josLeadsView === 'list' ? 'list' : 'table';
     // Custom fields load before columns so the very first normalize pass
     // already knows about them (not just once the business-config fetch
     // happens to resolve and re-triggers a merge).
@@ -16526,7 +16526,12 @@
       root._josJobsSkipLoading = false;
       try { renderJobsPage(root); return; } catch (errSkip) { console.warn(errSkip); }
     }
-    root.innerHTML = '<div class="jos-jobs-shell"><div class="jos-home-loading">Loading Jobs…</div></div>';
+    // Same rule as Leads: only stamp the loading stub on true first paint.
+    // renderJobsPage() morphs list-view markup into root's existing
+    // children now, so wiping root here on every call would defeat that —
+    // the morph would just be diffing against an empty stub each time,
+    // i.e. a full rebuild again.
+    if (!root.firstChild) root.innerHTML = '<div class="jos-jobs-shell"><div class="jos-home-loading">Loading Jobs…</div></div>';
     try { renderJobsPage(root); }
     catch (err) {
       console.warn('HublyJourneyOS Jobs', err);
@@ -17027,7 +17032,7 @@
       '</div></section>' +
       techScheduleCard + '</aside>';
 
-    root.innerHTML =
+    var jobsPageHtml =
       '<div class="jos-jobs-shell' + (mainView === 'calendar' ? ' is-calendar' : '') + '">' +
       '<div class="jos-jobs-layout">' +
       '<main class="jos-jobs-main">' +
@@ -17056,6 +17061,16 @@
       drawer + statusMenu + rowMenu + gcalCreatePop +
       '<button type="button" class="jos-jobs-fab" data-jos-act="' + (mainView === 'calendar' ? 'jobs-gcal-create-menu' : 'jobs-create') + '" aria-label="' + (mainView === 'calendar' ? 'Create' : 'New Job') + '">+</button>' +
       '</div>';
+    // List view morphs in place (same engine Leads uses — see
+    // morphTableInto above) instead of destroying and rebuilding the
+    // whole page on every click: that's what was causing the "every
+    // click renders" flash. Calendar view keeps a full replace for now —
+    // its drag-and-drop reschedule logic manipulates specific DOM nodes
+    // directly and hasn't been checked against a mid-drag morph, so this
+    // stays scoped to the table (the thing actually being compared to
+    // Leads) rather than risking the scheduler.
+    if (mainView === 'calendar') root.innerHTML = jobsPageHtml;
+    else morphTableInto(root, jobsPageHtml);
 
     bindRoot(root);
     wireJobsRoot(root);
@@ -18697,11 +18712,33 @@
   function jobsDb() {
     try { return (typeof global.getDb === 'function' ? global.getDb() : global.db) || null; } catch (e) { return null; }
   }
+  // supabase-js v2 does NOT reject/throw on a database-level failure (RLS
+  // denial, bad column, constraint violation) — a query like
+  // .update(...).eq(...) resolves to {data, error}, error set, promise
+  // still fulfilled. A bare fire-and-forget call (no .then, no .catch)
+  // silently swallows that: the UI already updated optimistically, so
+  // everything *looks* saved until the next full reload re-fetches from
+  // Supabase and the edit is just gone, with no error ever shown. Every
+  // caller here already treats persistence as fire-and-forget by design
+  // (the whole point of optimistic UI), so this doesn't change that — it
+  // only makes an actual failure loud instead of invisible.
   function persistJobPatch(job, patch) {
-    try { var d = jobsDb(); if (d && job && job.dbId) d.from('jobs').update(patch).eq('id', job.dbId); } catch (e) {}
+    try {
+      var d = jobsDb();
+      if (!d || !job || !job.dbId) return;
+      d.from('jobs').update(patch).eq('id', job.dbId).then(function (res) {
+        if (res && res.error) { console.warn('persistJobPatch', res.error); toast('Couldn’t save — check your connection and try again'); }
+      });
+    } catch (e) {}
   }
   function persistJobDelete(job) {
-    try { var d = jobsDb(); if (d && job && job.dbId) d.from('jobs').delete().eq('id', job.dbId); } catch (e) {}
+    try {
+      var d = jobsDb();
+      if (!d || !job || !job.dbId) return;
+      d.from('jobs').delete().eq('id', job.dbId).then(function (res) {
+        if (res && res.error) { console.warn('persistJobDelete', res.error); toast('Couldn’t delete — check your connection and try again'); }
+      });
+    } catch (e) {}
   }
 
   // The one place a schema-driven Jobs cell edit commits — same shape as
