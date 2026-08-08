@@ -10970,6 +10970,7 @@
             var convertBizId = global.currentBusiness && global.currentBusiness.id;
             if (convertDb && convertBizId) {
               var convertPlaceholderId = convertedJob.id;
+              if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
               convertDb.from('jobs').insert({
                 business_id: convertBizId, customer_name: convertedJob.customer || '', service_name: convertedJob.service || '',
                 scheduled_date: convertedJob.date || null, scheduled_time: convertedJob.time ? timeTo24h(convertedJob.time) : null,
@@ -17398,6 +17399,7 @@
   }
 
   function renderJobsPage(root) {
+    try { performance.mark('jos-jobs-render-start'); } catch (ePerf0) {}
     seedDemoJobsIfEmpty();
     ensureJobsOsState();
     // Custom fields must load before columns — jobsColumnSchema() (which
@@ -17435,6 +17437,7 @@
     var unassigned = all.filter(function (j) { return !j.isBlock && !j.isGoogle && j.status !== 'cancelled' && !j.assignedTo; }).length;
     var revenue = all.filter(function (j) { return j.status === 'completed'; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
     if (!revenue) revenue = all.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
+    try { performance.mark('jos-jobs-kpis-done'); } catch (ePerf1) {}
 
     var services = Array.from(new Set(all.map(function (j) { return j.service; }).filter(Boolean)));
     var locations = Array.from(new Set(all.map(function (j) { return (j.address || '').split(',')[0]; }).filter(Boolean)));
@@ -17724,8 +17727,16 @@
     // directly and hasn't been checked against a mid-drag morph, so this
     // stays scoped to the table (the thing actually being compared to
     // Leads) rather than risking the scheduler.
+    try { performance.mark('jos-jobs-html-built'); } catch (ePerf2) {}
     if (mainView === 'calendar') root.innerHTML = jobsPageHtml;
     else morphTableInto(root, jobsPageHtml);
+    try {
+      performance.mark('jos-jobs-morph-done');
+      performance.measure('jos-jobs:kpis', 'jos-jobs-render-start', 'jos-jobs-kpis-done');
+      performance.measure('jos-jobs:html-build', 'jos-jobs-kpis-done', 'jos-jobs-html-built');
+      performance.measure('jos-jobs:dom-morph', 'jos-jobs-html-built', 'jos-jobs-morph-done');
+      performance.measure('jos-jobs:render-total', 'jos-jobs-render-start', 'jos-jobs-morph-done');
+    } catch (ePerf3) {}
 
     bindRoot(root);
     wireJobsRoot(root);
@@ -19034,6 +19045,7 @@
       var rangeBizId = global.currentBusiness && global.currentBusiness.id;
       if (rangeDb && rangeBizId) {
         var rangePlaceholderId = nj.id;
+        if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
         rangeDb.from('jobs').insert({
           business_id: rangeBizId, customer_name: nj.customer || '', service_name: nj.service || '',
           scheduled_date: nj.date || null, scheduled_time: nj.time ? timeTo24h(nj.time) : null, address: nj.address || null,
@@ -19418,6 +19430,7 @@
     try {
       var d = jobsDb();
       if (!d || !job || !job.dbId) return;
+      if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
       d.from('jobs').update(patch).eq('id', job.dbId).then(function (res) {
         if (res && res.error) { console.warn('persistJobPatch', res.error); toast('Couldn’t save — check your connection and try again'); }
       });
@@ -19427,7 +19440,13 @@
     try {
       var d = jobsDb();
       if (!d || !job || !job.dbId) return;
+      if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
+      try { performance.mark('jos-jobs-delete-supabase-start'); } catch (ePerfD0) {}
       d.from('jobs').delete().eq('id', job.dbId).then(function (res) {
+        try {
+          performance.mark('jos-jobs-delete-supabase-done');
+          performance.measure('jos-jobs:delete-supabase-call', 'jos-jobs-delete-supabase-start', 'jos-jobs-delete-supabase-done');
+        } catch (ePerfD1) {}
         if (res && res.error) { console.warn('persistJobDelete', res.error); toast('Couldn’t delete — check your connection and try again'); }
       });
     } catch (e) {}
@@ -19442,6 +19461,7 @@
       var d = jobsDb();
       var dbIds = (jobs || []).map(function (j) { return j && j.dbId; }).filter(Boolean);
       if (!d || !dbIds.length) return;
+      if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
       d.from('jobs').delete().in('id', dbIds).then(function (res) {
         if (res && res.error) { console.warn('persistJobsDeleteBatch', res.error); toast('Couldn’t delete — check your connection and try again'); }
       });
@@ -20121,6 +20141,7 @@
           var createDb = jobsDb();
           var bizId = global.currentBusiness && global.currentBusiness.id;
           if (createDb && bizId) {
+            if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
             createDb.from('jobs').insert({
               // Both columns are nullable text — no reason to invent a
               // customer name or a service ("Detail" was a leftover from
@@ -20231,6 +20252,7 @@
         return rerender();
       }
       if (act === 'jobs-delete') {
+        try { performance.mark('jos-jobs-delete-click'); } catch (ePerfC0) {}
         var delId = jobId || (job && job.id);
         var delJob = delId ? findJob(delId) : job;
         if (!delJob) return toast('Select a job');
@@ -20245,6 +20267,10 @@
         } catch (eConfirm) {}
         persistJobDelete(delJob);
         S().jobs = (S().jobs || []).filter(function (j) { return String(j.id) !== String(delJob.id); });
+        try {
+          performance.mark('jos-jobs-delete-local-state-done');
+          performance.measure('jos-jobs:delete-local-state', 'jos-jobs-delete-click', 'jos-jobs-delete-local-state-done');
+        } catch (ePerfC1) {}
         if (String(root._josJobId) === String(delJob.id)) {
           root._josJobId = null;
           root._josDrawerOpen = false;
@@ -20313,6 +20339,7 @@
           var quoteBizId = global.currentBusiness && global.currentBusiness.id;
           if (quoteDb && quoteBizId) {
             var quotePlaceholderId = cj.id;
+            if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
             quoteDb.from('jobs').insert({
               business_id: quoteBizId, customer_name: cj.customer || '', service_name: cj.service || '',
               scheduled_date: cj.date || null, scheduled_time: cj.time ? timeTo24h(cj.time) : null, address: cj.address || null,
