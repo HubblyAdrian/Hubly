@@ -9430,44 +9430,43 @@
     var d = readLeadAddDraft();
     if (!String(d.name || '').trim()) { toast('Name is required'); return; }
     ensureLeadsOsState();
-    var st = S();
-    if (!st.pipeline || typeof st.pipeline !== 'object') st.pipeline = { manual: [], deleted: [], stages: {}, lostReasons: {}, edits: {} };
-    if (!Array.isArray(st.pipeline.manual)) st.pipeline.manual = [];
-    var id = 'lead_' + Date.now();
     var phone = formatPhoneValue(d.phone || '');
-    var lead = {
-      id: id, key: id, name: d.name.trim(), phone: phone, email: d.email, address: d.address,
-      vehicle: d.vehicle, property: d.address, service: d.service, source: d.source || 'manual',
-      assignedTo: d.assignedTo, notes: d.notes, notesList: d.notes ? [d.notes] : [],
+    if (typeof global.createLead !== 'function') { toast('Could not save lead'); return; }
+    // Lead creation goes through the shared creation engine (createLead,
+    // hubly.html) instead of pushing into S.pipeline.manual directly —
+    // see the Phase 1 creation-engine consolidation. Storage (which table
+    // a manual lead actually lands in) is createLead's concern, not this
+    // handler's; opts.origin:'manual' is the only thing tying it there.
+    // createLead() is always async (some origins genuinely await a
+    // network insert), so the rest of this handler runs in its .then()
+    // even though the manual-storage path itself resolves synchronously.
+    global.createLead({
+      name: d.name.trim(), phone: phone, email: d.email, address: d.address,
+      vehicle: d.vehicle, service: d.service, source: d.source || 'manual',
+      assignedTo: d.assignedTo, notes: d.notes,
       tags: String(d.tags || '').split(/[,\s]+/).filter(Boolean),
-      stage: 'new', osStage: 'new', status: 'new', crmStatus: 'new', createdAt: new Date().toISOString(),
-      lastContacted: new Date().toISOString(), lastMessage: d.notes || 'Manual lead created',
-      unread: 1, quoteStatus: 'none', estimatedValue: 0,
-      industry: 'Residential', budget: '', bestTime: '',
-      messages: [], tasks: [], files: [], appointments: [], activity: [{ type: 'created', label: 'Manual lead created', at: new Date().toLocaleString() }],
-      estimate: { labor: 0, materials: 0, total: 0, notes: '' }
-    };
-    st.pipeline.manual.unshift(lead);
-    try {
-      if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon();
-    } catch (ePersist) {}
-    root._josLeadAddOpen = false;
-    root._josLeadDraft = null;
-    root._josLeadId = id;
-    root._josLeadPanelOpen = true;
-    root._josLeadsTab = 'all';
-    if (andQuote) {
-      lead.quote = { id: 'q_' + id, amount: 0, status: 'draft', packageName: lead.service || 'Service', sentAt: todayStr() };
-      lead.quoteStatus = 'draft';
-      lead.stage = 'quote_sent';
-      lead.osStage = 'quote_sent';
-      lead.status = 'quoted';
-      pushLeadActivity(lead, 'quote', 'Draft quote created');
-      root._josLeadWorkspace = 'quote';
-      root._josLeadsTab = 'quotes';
-      toast('Lead saved · draft quote ready');
-    } else toast('Lead saved');
-    renderLeads();
+    }, { origin: 'manual' }).then(function (result) {
+      var lead = result && result.lead;
+      if (!lead) { toast('Could not save lead'); return; }
+      var id = lead.id;
+      root._josLeadAddOpen = false;
+      root._josLeadDraft = null;
+      root._josLeadId = id;
+      root._josLeadPanelOpen = true;
+      root._josLeadsTab = 'all';
+      if (andQuote) {
+        lead.quote = { id: 'q_' + id, amount: 0, status: 'draft', packageName: lead.service || 'Service', sentAt: todayStr() };
+        lead.quoteStatus = 'draft';
+        lead.stage = 'quote_sent';
+        lead.osStage = 'quote_sent';
+        lead.status = 'quoted';
+        pushLeadActivity(lead, 'quote', 'Draft quote created');
+        root._josLeadWorkspace = 'quote';
+        root._josLeadsTab = 'quotes';
+        toast('Lead saved · draft quote ready');
+      } else toast('Lead saved');
+      renderLeads();
+    });
   }
 
   // Minimal RFC4180-ish CSV parser — handles quoted fields (with embedded
@@ -9577,20 +9576,23 @@
       if (!name && !phone && !email) { skippedInvalid++; return; }
       var phoneDigits = phone.replace(/\D/g, '');
       if ((phoneDigits && existingPhones[phoneDigits]) || (email && existingEmails[email.toLowerCase()])) { skippedDup++; return; }
-      var id = 'lead_import_' + Date.now() + '_' + idx;
-      var lead = {
-        id: id, key: id, name: name || phone || email || 'Imported lead', phone: phone, email: email,
+      // Lead creation goes through the shared creation engine's manual-
+      // storage primitive instead of pushing into S.pipeline.manual
+      // directly — see the Phase 1 creation-engine consolidation.
+      // createLeadManual (not the async createLead dispatcher) is used
+      // deliberately: it's synchronous, so this loop and its "Imported N"
+      // summary toast stay correct without restructuring this whole
+      // function and its caller into async.
+      if (typeof global.createLeadManual !== 'function') { skippedInvalid++; return; }
+      global.createLeadManual({
+        id: 'lead_import_' + Date.now() + '_' + idx,
+        name: name || phone || email || 'Imported lead', phone: phone, email: email,
         service: serviceCol > -1 ? String(r[serviceCol] || '').trim() : '',
         source: sourceCol > -1 ? (String(r[sourceCol] || '').trim() || 'import') : 'import',
         notes: notesCol > -1 ? String(r[notesCol] || '').trim() : '',
         estimatedValue: amountCol > -1 ? (parseFloat(String(r[amountCol] || '').replace(/[^0-9.]/g, '')) || 0) : 0,
-        stage: 'new', osStage: 'new', status: 'new', crmStatus: 'new', createdAt: new Date().toISOString(),
-        lastContacted: new Date().toISOString(), lastMessage: 'Imported from CSV',
-        unread: 0, quoteStatus: 'none', tags: ['imported'],
-        messages: [], tasks: [], files: [], appointments: [], activity: [{ type: 'created', label: 'Imported from CSV', at: new Date().toLocaleString() }],
-        estimate: { labor: 0, materials: 0, total: 0, notes: '' },
-      };
-      st.pipeline.manual.unshift(lead);
+        lastMessage: 'Imported from CSV', activityLabel: 'Imported from CSV', tags: ['imported'], unread: 0,
+      }, { origin: 'import' });
       if (phoneDigits) existingPhones[phoneDigits] = true;
       if (email) existingEmails[email.toLowerCase()] = true;
       imported++;

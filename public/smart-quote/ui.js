@@ -821,30 +821,28 @@
   async function createQuoteLead(rec, leadOpts) {
     try {
       if (typeof currentBusiness === 'undefined' || !currentBusiness?.id) return false;
-      if (typeof waitForDb !== 'function') return false;
-      const dbClient = await waitForDb();
+      if (typeof window.createLead !== 'function') return false;
       const money = (rec && rec.amount) || 0;
       const phone = String((rec && rec.customerPhone) || '').trim();
       const email = String((rec && rec.customerEmail) || '').trim() || null;
-      const leadPhone = phone || (email ? `email:${email}` : '');
-      if (!leadPhone) return false;
-      const id = crypto.randomUUID();
+      if (!phone && !email) return false;
       const qStatus =
         (leadOpts && leadOpts.quoteStatus) ||
         (rec && (rec.emailSentAt || rec.smsOpenedAt || rec.status === 'sent') ? 'sent' : 'draft');
-      const payload = {
-        id,
-        business_id: currentBusiness.id,
-        customer_name: (rec && rec.customerName) || nameFromEmail(email) || 'Quote lead',
-        customer_phone: leadPhone,
-        customer_email: email,
-        service_name: packageNamesFromQuote(rec) || 'Quick Quote',
-        notes: `[source:smart_quote][QUOTE_STATUS:${qStatus}][QUOTE:$${Number(money).toFixed(2)}] id:${(rec && rec.id) || id}`,
-        status: 'pending',
-      };
-      const { error } = await dbClient.from('booking_requests').insert(payload);
-      if (error) {
-        console.warn('smart quote lead insert failed', error.message || error);
+      // Companion CRM lead for this quote, created through the shared
+      // creation engine instead of a bespoke booking_requests insert —
+      // see the Phase 1 creation-engine consolidation. The quote's own
+      // status/amount still ride along encoded in notes (same convention
+      // as before — restructuring that into real columns is a separate,
+      // larger change than "unify the create call").
+      const result = await window.createLead({
+        name: (rec && rec.customerName) || nameFromEmail(email) || 'Quote lead',
+        phone, email,
+        service: packageNamesFromQuote(rec) || 'Quick Quote',
+        notes: `[source:smart_quote][QUOTE_STATUS:${qStatus}][QUOTE:$${Number(money).toFixed(2)}] id:${(rec && rec.id) || ''}`,
+      }, { origin: 'quote' });
+      if (result.error) {
+        console.warn('smart quote lead insert failed', result.error.message || result.error);
         return false;
       }
       try {

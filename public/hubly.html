@@ -43527,6 +43527,100 @@ async function persistJob(payload){
 }
 window.createJob=createJob;
 window.persistJob=persistJob;
+// The one canonical "create a lead" entry point. Storage is an
+// implementation detail hidden from every caller — same principle as
+// findOrCreateCustomer() hiding whether a match came from Customers or
+// Leads. A lead from a real booking/quote/abandoned-cart source is
+// written to the real `booking_requests` table (the source of truth for
+// anything downstream that queries that table directly — webhooks,
+// analytics); a manually-added or CSV-imported lead is written to
+// businesses.meta (S.pipeline.manual), the existing mechanism for that
+// origin. opts.origin decides which — no caller should branch on
+// storage itself. Unifying the storage mechanism itself is an
+// explicitly separate, later phase (see the Phase 1 audit's "two
+// storage systems" finding) — this only unifies the create call.
+var LEAD_ORIGIN_MECHANISM={booking:'booking_requests',abandoned:'booking_requests',quote:'booking_requests',manual:'manual',import:'manual'};
+async function createLead(input,opts){
+  opts=opts||{};
+  input=input||{};
+  const mechanism=LEAD_ORIGIN_MECHANISM[opts.origin]||'manual';
+  return mechanism==='booking_requests'?createLeadBookingRequest(input,opts):createLeadManual(input,opts);
+}
+async function createLeadBookingRequest(input,opts){
+  if(!currentBusiness)return{error:new Error('Not connected')};
+  const d=await waitForDb();
+  if(!d)return{error:new Error('Not connected')};
+  const phone=String(input.phone||'').trim();
+  const email=String(input.email||'').trim()||null;
+  // A real row needs some way to reach the person — mirrors
+  // createQuoteLead's own "no phone? fall back to an email: marker so
+  // the row is never contact-less" rule, now shared instead of only
+  // living in smart-quote/ui.js.
+  const leadPhone=phone||(email?`email:${email}`:'');
+  const id=crypto.randomUUID();
+  const payload={
+    id,
+    business_id:currentBusiness.id,
+    customer_name:input.name||'',
+    customer_phone:leadPhone,
+    customer_email:email,
+    service_name:input.service||'',
+    vehicle_type:input.vehicleType||null,
+    vehicle_year:input.vehicleYear||null,
+    vehicle_make:input.vehicleMake||null,
+    vehicle_model:input.vehicleModel||null,
+    vehicle_color:input.vehicleColor||null,
+    requested_date:input.date||null,
+    requested_time:input.time||null,
+    address:input.address||null,
+    notes:input.notes||null,
+    status:input.status||'pending',
+  };
+  if(input.depositCents!=null)payload.deposit_cents=input.depositCents;
+  try{
+    // Blind insert (no .select()), client-generated id — same posture as
+    // createQuoteLead already used regardless of caller: anon RLS only
+    // grants INSERT on this table, not SELECT-after-insert, and this way
+    // works identically for both authenticated and public callers instead
+    // of branching on currentUser like the job/customer inserts do.
+    const {error}=await d.from('booking_requests').insert(payload);
+    if(error)return{error};
+    return{leadId:id,lead:payload};
+  }catch(e){return{error:e};}
+}
+function createLeadManual(input,opts){
+  ensurePipelineState();
+  const id=opts.id||('lead_'+Date.now());
+  const lead={
+    id,key:id,name:input.name||'',phone:input.phone||'',email:input.email||'',
+    address:input.address||'',vehicle:input.vehicle||'',property:input.address||'',
+    service:input.service||'',source:input.source||'manual',
+    assignedTo:input.assignedTo||'',notes:input.notes||'',
+    notesList:input.notes?[input.notes]:[],
+    tags:input.tags||[],
+    stage:'new',osStage:'new',status:'new',crmStatus:'new',
+    createdAt:new Date().toISOString(),lastContacted:new Date().toISOString(),
+    lastMessage:input.notes||input.lastMessage||'Manual lead created',
+    unread:input.unread!=null?input.unread:1,quoteStatus:'none',estimatedValue:input.estimatedValue||0,
+    industry:input.industry||'Residential',budget:input.budget||'',bestTime:input.bestTime||'',
+    messages:[],tasks:[],files:[],appointments:[],
+    activity:[{type:'created',label:input.activityLabel||'Manual lead created',at:new Date().toLocaleString()}],
+    estimate:{labor:0,materials:0,total:0,notes:''},
+  };
+  S.pipeline.manual.unshift(lead);
+  try{if(typeof persistPipelineSoon==='function')persistPipelineSoon();}catch(e){}
+  return{leadId:id,lead};
+}
+window.createLead=createLead;
+// Exposed alongside createLead() for callers that specifically need the
+// synchronous manual-storage path — e.g. a CSV-import loop creating many
+// leads at once, where forcing each one through createLead()'s async
+// contract (needed for the booking_requests mechanism's real network
+// insert, not needed here) would mean the loop's own caller has to
+// become async just to stay correct. Same relationship as
+// createJob()/persistJob() — a specific primitive exposed alongside the
+// general dispatcher, not a second implementation of the same logic.
+window.createLeadManual=createLeadManual;
 function leadReturningMeta(lead){
   const notes=String(lead?.notes||'');
   const fromNotesRecurring=/\[RPJOB:/i.test(notes)||/\[CUST:recurring\]/i.test(notes);
