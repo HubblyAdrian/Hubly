@@ -4320,9 +4320,17 @@ html[data-theme="night"] .jos-mem-form select{
   min-width:0;overflow:auto;padding:32px 32px 40px;
 }
 .jos-jobs-header{
-  min-height:80px;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:20px;flex-wrap:wrap;
+  min-height:0;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:12px;flex-wrap:wrap;
 }
-.jos-jobs-header h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.03em;color:var(--jos-navy)}
+/* Matched to .jos-ld-title exactly — Leads' page title after its
+   compact-header redesign (see docs/JOBS_LEADS_CONSISTENCY_AUDIT.md-
+   adjacent work). Jobs' header keeps its own action buttons (Export/
+   Filters/+New Job differ from Leads' toolbar), only the typography
+   is unified here, matching what was actually reported as inconsistent. */
+.jos-jobs-header h1{
+  margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--jos-navy);
+  font-family:'Plus Jakarta Sans','DM Sans',sans-serif;
+}
 .jos-jobs-header p{margin:6px 0 0;font-size:13px;color:var(--jos-ink-2)}
 .jos-jobs-header-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .jos-jobs-export{
@@ -5037,6 +5045,27 @@ textarea.jos-je-field-input.jos-ld-cell-inline{height:auto!important;min-height:
 .jos-ld-trow.on{background:#FFF6EF;box-shadow:inset 3px 0 0 var(--jos-brand)}
 .jos-ld-trow.on:hover{background:#FFEFE2}
 .jos-ld-tcheck{width:32px}
+/* Real checkbox styling, not browser-default — none of Hubly's checkboxes
+   (Jobs' and Leads' bulk-select, settings toggles) had any appearance CSS
+   at all, so they only looked "right" when a browser extension happened to
+   restyle native form controls. Incognito (most extensions off) revealed
+   the true look: plain, heavy-bordered native boxes. appearance:none takes
+   full control so this renders identically everywhere, on-brand. */
+input[type="checkbox"]{
+  appearance:none;-webkit-appearance:none;
+  width:16px;height:16px;margin:0;flex-shrink:0;
+  border:1.5px solid #D0D5DD;border-radius:5px;background:#fff;
+  cursor:pointer;position:relative;display:inline-block;vertical-align:middle;
+  transition:background-color .12s ease,border-color .12s ease;
+}
+input[type="checkbox"]:hover{border-color:#98A2B3}
+input[type="checkbox"]:checked{background:var(--jos-brand);border-color:var(--jos-brand)}
+input[type="checkbox"]:checked::after{
+  content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);
+}
+input[type="checkbox"]:focus-visible{outline:2px solid var(--jos-brand);outline-offset:2px}
+input[type="checkbox"]:disabled{opacity:.5;cursor:not-allowed}
 
 /* Column headers — drag to reorder, double-click label to rename, ▾ to hide.
    A faint hover tint on the whole cell (not just the resize handle/menu

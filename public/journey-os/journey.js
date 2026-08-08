@@ -17695,11 +17695,11 @@
       '<div class="jos-jobs-shell' + (mainView === 'calendar' ? ' is-calendar' : '') + '">' +
       '<div class="jos-jobs-layout">' +
       '<main class="jos-jobs-main">' +
-      '<header class="jos-jobs-header hub-page-header">' +
+      '<header class="jos-jobs-header">' +
       (mainView === 'calendar'
-        ? '<div><h1 class="hub-page-title">Calendar</h1><p class="hub-page-sub">Plan your day. Stay on schedule. Get more done.</p></div>'
-        : '<div><h1 class="hub-page-title">Jobs</h1><p class="hub-page-sub">Manage and track every job in one place.</p></div>') +
-      '<div class="jos-jobs-header-actions hub-page-actions">' +
+        ? '<div><h1>Calendar</h1><p>Plan your day. Stay on schedule. Get more done.</p></div>'
+        : '<div><h1>Jobs</h1><p>Manage and track every job in one place.</p></div>') +
+      '<div class="jos-jobs-header-actions">' +
       (mainView === 'calendar'
         ? ''
         : ('<div class="jos-jobs-export-wrap">' +

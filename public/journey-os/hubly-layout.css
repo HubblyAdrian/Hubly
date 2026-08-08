@@ -251,7 +251,14 @@
   color: var(--hub-sub-color);
 }
 
-/* Standardize Operate page heroes (Inbox exempt) */
+/* Standardize Operate page heroes (Inbox exempt). Jobs and Leads are
+   deliberately NOT in this list — both moved to their own compact,
+   purpose-built page-title styles (.jos-ld-title on Leads; .jos-jobs-header
+   h1 below, matched to it) and a shared !important rule here would just
+   force them back to the old generic 32px hero size, which is exactly the
+   "Jobs font is way bigger than Leads" bug: Leads' redesign escaped this
+   rule by no longer using .jos-ld-header h1 at all, but Jobs never got the
+   same redesign and was still being caught by it. */
 #p-app.jos-pixel .jos-page-head h1,
 #p-app.jos-pixel .jos-mkt-mc-header h1,
 #p-app.jos-pixel .jos-mkt-mc-subhead h1,
@@ -265,8 +272,6 @@
 #p-app.jos-pixel .jos-ah-mc-header h1,
 #p-app.jos-pixel .jos-set-mc-header h1,
 #p-app.jos-pixel .pp-mc-header h1,
-#p-app.jos-pixel .jos-jobs-header h1,
-#p-app.jos-pixel .jos-ld-header h1,
 #p-app.jos-pixel .jos-store-header h1 {
   font-size: var(--hub-title) !important;
   font-weight: var(--hub-title-weight) !important;
@@ -281,8 +286,6 @@
 #p-app.jos-pixel .jos-mem-mc-header p,
 #p-app.jos-pixel .jos-rve-mc-header p,
 #p-app.jos-pixel .jos-rpt-mc-header p,
-#p-app.jos-pixel .jos-jobs-header p,
-#p-app.jos-pixel .jos-ld-header p,
 #p-app.jos-pixel .jos-store-header p {
   margin-top: var(--hub-title-to-sub) !important;
   font-size: var(--hub-sub) !important;
@@ -295,8 +298,6 @@
 #p-app.jos-pixel .jos-mem-mc-header,
 #p-app.jos-pixel .jos-rve-mc-header,
 #p-app.jos-pixel .jos-rpt-mc-header,
-#p-app.jos-pixel .jos-jobs-header,
-#p-app.jos-pixel .jos-ld-header,
 #p-app.jos-pixel .jos-store-header {
   margin-bottom: var(--hub-header-to-content) !important;
   min-height: 0 !important;
