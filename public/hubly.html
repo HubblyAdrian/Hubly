@@ -15826,6 +15826,31 @@ function markLocalWrite(table,id){
   ids.forEach(function(oneId){ if(oneId!=null)_lastLocalWriteAt[table+':'+oneId]=Date.now(); });
 }
 window.markLocalWrite=markLocalWrite;
+// The single place a write should go through, rather than trusting every
+// call site to remember `markLocalWrite` on its own — that convention
+// already had to be re-applied by hand at ~25 sites once; a call site
+// added later with no reminder is a redundant-refresh regression waiting
+// to happen. `id` is either the row id (or array of ids) when known
+// before the write runs (update/delete), or a function `(result) => id`
+// when it's only known after (insert, where the row id comes back from
+// Supabase) — pass neither to skip marking entirely for a write with no
+// single identifiable row (e.g. a bulk filter-based update), which is
+// always the safe default.
+async function realtimeAwareWrite(opts){
+  var table=opts&&opts.table;
+  var id=opts&&opts.id;
+  var write=opts&&opts.write;
+  if(id!=null&&typeof id!=='function')markLocalWrite(table,id);
+  var result=await write();
+  if(typeof id==='function'){
+    try{
+      var resolvedId=id(result);
+      if(resolvedId!=null)markLocalWrite(table,resolvedId);
+    }catch(eResolveId){}
+  }
+  return result;
+}
+window.realtimeAwareWrite=realtimeAwareWrite;
 function onRealtimeBizChange(payload){
   try{performance.mark('jos-realtime-event-received');}catch(ePerf){}
   var table=payload&&payload.table;
@@ -31034,8 +31059,7 @@ async function cancelHublyJob(){
   j.status='cancelled';
   try{
     if(currentBusiness&&db&&jobId&&!String(jobId).startsWith('req_')&&!String(jobId).startsWith('gcal_')){
-      if(typeof markLocalWrite==='function')markLocalWrite('jobs',jobId);
-      await db.from('jobs').update({status:'cancelled'}).eq('id',jobId);
+      await realtimeAwareWrite({table:'jobs',id:jobId,write:()=>db.from('jobs').update({status:'cancelled'}).eq('id',jobId)});
     }
   }catch(e){
     console.warn('cancelHublyJob db',e);
@@ -31059,8 +31083,7 @@ async function deleteHublyJob(){
   try{await deleteJobOnGoogleCalendar(jobId,gcalId);}catch(e){}
   try{
     if(currentBusiness&&db&&jobId&&!String(jobId).startsWith('req_')&&!String(jobId).startsWith('gcal_')){
-      if(typeof markLocalWrite==='function')markLocalWrite('jobs',jobId);
-      const {error}=await db.from('jobs').delete().eq('id',jobId);
+      const {error}=await realtimeAwareWrite({table:'jobs',id:jobId,write:()=>db.from('jobs').delete().eq('id',jobId)});
       if(error)throw error;
     }
   }catch(e){
@@ -41494,8 +41517,7 @@ async function saveJobReschedule(){
     try{
       const payload={scheduled_date:date,scheduled_time:time};
       if(durationHours>0)payload.duration_hours=durationHours;
-      if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId||j.id);
-      await db.from('jobs').update(payload).eq('id',j.dbId||j.id);
+      await realtimeAwareWrite({table:'jobs',id:j.dbId||j.id,write:()=>db.from('jobs').update(payload).eq('id',j.dbId||j.id)});
       try{await updateJobOnGoogleCalendar(j.dbId||j.id);}catch(e){}
     }catch(e){toast('Couldn’t reschedule');return;}
   }
@@ -41532,8 +41554,7 @@ async function saveJobDetailEdits(){
         address:address||null,notes:notes||null,amount:amount,
       };
       if(durationHours>0)payload.duration_hours=durationHours;
-      if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId||j.id);
-      await db.from('jobs').update(payload).eq('id',j.dbId||j.id);
+      await realtimeAwareWrite({table:'jobs',id:j.dbId||j.id,write:()=>db.from('jobs').update(payload).eq('id',j.dbId||j.id)});
       try{await updateJobOnGoogleCalendar(j.dbId||j.id);}catch(e){}
     }catch(e){toast('Couldn’t save');return;}
   }
@@ -41607,8 +41628,7 @@ async function _acceptBookingRequestInner(reqId,opts={}){
       recurringPlan:plan,
       notes:noteBits,
     });
-    if(typeof markLocalWrite==='function')markLocalWrite('booking_requests',reqId);
-    await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
+    await realtimeAwareWrite({table:'booking_requests',id:reqId,write:()=>db.from('booking_requests').update({status:'accepted'}).eq('id',reqId)});
     try{
       const pipe=ensurePipelineState();
       const key='br:'+reqId;
@@ -41676,12 +41696,10 @@ async function _acceptBookingRequestInner(reqId,opts={}){
     deposit_status: depositStatus,
     duration_hours: durationHours,
   };
-  const {data,error}=await db.from('jobs').insert(payload).select().single();
+  const {data,error}=await realtimeAwareWrite({table:'jobs',id:(res)=>res&&res.data&&res.data.id,write:()=>db.from('jobs').insert(payload).select().single()});
   if(error){if(!silent)toast('❌ '+error.message);return;}
-  if(typeof markLocalWrite==='function')markLocalWrite('jobs',data.id);
   try{await pushJobToGoogleCalendar(data.id);}catch(e){}
-  if(typeof markLocalWrite==='function')markLocalWrite('booking_requests',reqId);
-  await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
+  await realtimeAwareWrite({table:'booking_requests',id:reqId,write:()=>db.from('booking_requests').update({status:'accepted'}).eq('id',reqId)});
   // Leave Leads — accepted work lives on Jobs until complete → Customers.
   try{
     removeLeadFromBoard('br:'+reqId);
@@ -41785,8 +41803,7 @@ async function completeJob(){
     if(j.dbId){
       const updatePayload={status:'completed'};
       if(newAmt!=null&&!isNaN(newAmt))updatePayload.amount=newAmt;
-      if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId);
-      await db.from('jobs').update(updatePayload).eq('id',j.dbId);
+      await realtimeAwareWrite({table:'jobs',id:j.dbId,write:()=>db.from('jobs').update(updatePayload).eq('id',j.dbId)});
     }
     await promoteJobLeadToCustomer(j);
     await loadCustomers();
@@ -41806,8 +41823,7 @@ async function saveJobAmount(){
   if(newAmt==null||isNaN(newAmt)){toast('Enter a valid amount');return;}
   j.amount=newAmt;
   if(j.dbId){
-    if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId);
-    await db.from('jobs').update({amount:newAmt}).eq('id',j.dbId);
+    await realtimeAwareWrite({table:'jobs',id:j.dbId,write:()=>db.from('jobs').update({amount:newAmt}).eq('id',j.dbId)});
   }
   closeM('m-job-detail');renderJobsPanel();renderDashToday();renderMoneyView();updateKPIs();toast('Amount updated ✓');
 }
@@ -41840,8 +41856,8 @@ async function submitBlockTime(){
       from_booking: false,
       duration_hours: duration,
     };
-    const {data}=await db.from('jobs').insert(payload).select().single();
-    if(data){if(typeof markLocalWrite==='function')markLocalWrite('jobs',data.id);job.dbId=data.id;job.id=data.id;try{await pushJobToGoogleCalendar(data.id);}catch(e){}}
+    const {data}=await realtimeAwareWrite({table:'jobs',id:(res)=>res&&res.data&&res.data.id,write:()=>db.from('jobs').insert(payload).select().single()});
+    if(data){job.dbId=data.id;job.id=data.id;try{await pushJobToGoogleCalendar(data.id);}catch(e){}}
   }
   S.selectedDay=date;
   S.jobsRange='week';
@@ -41947,9 +41963,8 @@ async function addJob(opts={}){
       vehicle: vehicle||null,
       vehicle_color: vColor||null,
     };
-    const {data} = await db.from('jobs').insert(payload).select().single();
+    const {data} = await realtimeAwareWrite({table:'jobs',id:(res)=>res&&res.data&&res.data.id,write:()=>db.from('jobs').insert(payload).select().single()});
     if(data){
-      if(typeof markLocalWrite==='function')markLocalWrite('jobs',data.id);
       job.dbId=data.id;
       job.id=data.id;
       try{await pushJobToGoogleCalendar(data.id);}catch(e){}
@@ -42364,15 +42379,13 @@ async function upsertCustomer(data,opts){
   }
   try{
     if(c&&c._persisted){
-      if(typeof markLocalWrite==='function')markLocalWrite('customers',c.id);
-      const {data:updated,error}=await db.from('customers').update(payload).eq('id',c.id).select().single();
+      const {data:updated,error}=await realtimeAwareWrite({table:'customers',id:c.id,write:()=>db.from('customers').update(payload).eq('id',c.id).select().single()});
       if(error)throw error;
       Object.assign(c,mapCustRow(updated));
       return c;
     }else if(currentUser){
-      const {data:inserted,error}=await db.from('customers').insert({...payload,business_id:currentBusiness.id}).select().single();
+      const {data:inserted,error}=await realtimeAwareWrite({table:'customers',id:(res)=>res&&res.data&&res.data.id,write:()=>db.from('customers').insert({...payload,business_id:currentBusiness.id}).select().single()});
       if(error)throw error;
-      if(typeof markLocalWrite==='function')markLocalWrite('customers',inserted.id);
       const row=mapCustRow(inserted);
       if(c){Object.assign(c,row)}else{c=row;S.customers.push(c);updateCustDL()}
       return c;
@@ -42713,10 +42726,9 @@ async function saveCustomerJobInline(jobId){
   j.status=status;j.amount=amount;j.date=date;j.service=service;
   if(currentBusiness&&db){
     try{
-      if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId||j.id);
-      await db.from('jobs').update({
+      await realtimeAwareWrite({table:'jobs',id:j.dbId||j.id,write:()=>db.from('jobs').update({
         status,amount,scheduled_date:date||null,service_name:service||null,
-      }).eq('id',j.dbId||j.id);
+      }).eq('id',j.dbId||j.id)});
       if(status==='cancelled'||status==='canceled'){
         try{await deleteJobOnGoogleCalendar(j.dbId||j.id,j.googleEventId);}catch(e){}
       }else{
@@ -44296,12 +44308,10 @@ async function acceptAbandonedLead(lead){
     phone:lead.phone||null,
     email:lead.email||null,
   };
-  const {data,error}=await db.from('jobs').insert(payload).select().single();
+  const {data,error}=await realtimeAwareWrite({table:'jobs',id:(res)=>res&&res.data&&res.data.id,write:()=>db.from('jobs').insert(payload).select().single()});
   if(error){toast('❌ '+error.message);return;}
-  if(typeof markLocalWrite==='function')markLocalWrite('jobs',data.id);
   try{await pushJobToGoogleCalendar(data.id);}catch(e){}
-  if(typeof markLocalWrite==='function')markLocalWrite('booking_requests',lead.reqId);
-  await db.from('booking_requests').update({status:'accepted'}).eq('id',lead.reqId);
+  await realtimeAwareWrite({table:'booking_requests',id:lead.reqId,write:()=>db.from('booking_requests').update({status:'accepted'}).eq('id',lead.reqId)});
   removeLeadFromBoard(lead.key);
   await loadJobs();
   goJobsAfterAccept(date,time);
@@ -44428,12 +44438,11 @@ async function saveLeadDetail(){
       if(fields.amount!=null)j.amount=fields.amount;
       if(currentBusiness&&db&&j.dbId||j.id){
         try{
-          if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId||j.id);
-          await db.from('jobs').update({
+          await realtimeAwareWrite({table:'jobs',id:j.dbId||j.id,write:()=>db.from('jobs').update({
             customer_name:fields.name,phone:fields.phone||null,email:fields.email||null,
             service_name:fields.service||null,address:fields.address||null,
             notes:fields.notes||null,amount:fields.amount,
-          }).eq('id',j.dbId||j.id);
+          }).eq('id',j.dbId||j.id)});
           try{await updateJobOnGoogleCalendar(j.dbId||j.id);}catch(e){}
         }catch(e){console.warn('lead job sync failed',e);}
       }
@@ -44441,11 +44450,10 @@ async function saveLeadDetail(){
   }
   if(lead?.jobStatus==='abandoned'&&lead.reqId&&db){
     try{
-      if(typeof markLocalWrite==='function')markLocalWrite('booking_requests',lead.reqId);
-      await db.from('booking_requests').update({
+      await realtimeAwareWrite({table:'booking_requests',id:lead.reqId,write:()=>db.from('booking_requests').update({
         customer_name:fields.name,customer_phone:fields.phone||null,customer_email:fields.email||null,
         service_name:fields.service||null,address:fields.address||null,notes:fields.notes||null,
-      }).eq('id',lead.reqId);
+      }).eq('id',lead.reqId)});
     }catch(e){}
   }
   persistPipelineSoon();
@@ -44897,9 +44905,9 @@ async function createInvoice(){
       email:email||null,
     };
     try{
-      const {data,error}=await db.from('jobs').insert(payload).select().single();
+      const {data,error}=await realtimeAwareWrite({table:'jobs',id:(res)=>res&&res.data&&res.data.id,write:()=>db.from('jobs').insert(payload).select().single()});
       if(error)throw error;
-      if(data?.id){if(typeof markLocalWrite==='function')markLocalWrite('jobs',data.id);job.id=data.id;job.dbId=data.id;}
+      if(data?.id){job.id=data.id;job.dbId=data.id;}
     }catch(e){
       console.warn('createInvoice',e);
       toast('Could not save invoice');
@@ -45090,8 +45098,7 @@ async function confirmMarkPaid(){
   const amt=parseFloat(document.getElementById('markpaid-amount')?.value||j.amount||0);
   j.amount=amt.toFixed(2);
   if(j.dbId){
-    if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId);
-    await db.from('jobs').update({paid:true,status:'completed',pay_method:j.payMethod,pay_notes:j.payNotes,paid_at:new Date().toISOString(),amount:amt}).eq('id',j.dbId);
+    await realtimeAwareWrite({table:'jobs',id:j.dbId,write:()=>db.from('jobs').update({paid:true,status:'completed',pay_method:j.payMethod,pay_notes:j.payNotes,paid_at:new Date().toISOString(),amount:amt}).eq('id',j.dbId)});
   }
   await promoteJobLeadToCustomer(j);
   await loadCustomers();
@@ -46917,8 +46924,7 @@ async function markReviewRequested(jobId){
   j.reviewRequestedAt=now;
   if(j.dbId||j.id){
     try{
-      if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId||j.id);
-      await db.from('jobs').update({review_requested_at:now}).eq('id',j.dbId||j.id);
+      await realtimeAwareWrite({table:'jobs',id:j.dbId||j.id,write:()=>db.from('jobs').update({review_requested_at:now}).eq('id',j.dbId||j.id)});
     }catch(e){
       console.error('markReviewRequested',e);
     }
