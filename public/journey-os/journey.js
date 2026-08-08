@@ -7359,10 +7359,10 @@
 
   // ---- Leads: the first table wired onto the engine above ---------------
   // Schema, not switch statements: every column fully describes its own
-  // type, capabilities, and how to read/write its value — leadTableCellHtml,
+  // type, capabilities, and how to read/write its value — tableCellHtml,
   // the commit handler, and cancel-restore all read this instead of
   // branching on colKey. get() defaults to a plain lead[key] property read
-  // when omitted (see leadsColFieldGet) — only columns that don't map 1:1
+  // when omitted (see tableColFieldGet) — only columns that don't map 1:1
   // onto a real lead property (firstName/lastName split lead.name; status
   // needs CRM normalization) define one explicitly.
   var LEADS_DEFAULT_COLUMNS = [
@@ -8115,9 +8115,9 @@
     // distinction in this app, left as its own check rather than force-fit
     // onto the 'status' schema column, which means something different.
     if (f.status && f.status !== 'all' && String(lead.status || '') !== f.status) return false;
-    if (f.source && f.source !== 'all' && byKey.source && leadsColFieldFilter(byKey.source, lead) !== f.source) return false;
-    if (f.assigned && f.assigned !== 'all' && byKey.assigned && leadsColFieldFilter(byKey.assigned, lead) !== f.assigned) return false;
-    if (f.service && f.service !== 'all' && byKey.service && leadsColFieldFilter(byKey.service, lead) !== f.service) return false;
+    if (f.source && f.source !== 'all' && byKey.source && tableColFieldFilter(byKey.source, lead) !== f.source) return false;
+    if (f.assigned && f.assigned !== 'all' && byKey.assigned && tableColFieldFilter(byKey.assigned, lead) !== f.assigned) return false;
+    if (f.service && f.service !== 'all' && byKey.service && tableColFieldFilter(byKey.service, lead) !== f.service) return false;
     if (f.vehicle && String(vehicleOf(lead) || '').toLowerCase().indexOf(String(f.vehicle).toLowerCase()) < 0) return false;
     if (f.property && String(lead.property || lead.address || '').toLowerCase().indexOf(String(f.property).toLowerCase()) < 0) return false;
     if (f.tags && String(f.tags).trim()) {
@@ -8172,7 +8172,7 @@
   function leadSearchHay(lead, schema) {
     var msgBlob = (lead.messages || []).map(function (m) { return m.text || m.content || ''; }).join(' ');
     var schemaBlob = (schema || leadsColumnSchema(null)).filter(function (c) { return c.searchable; }).map(function (c) {
-      var v = leadsColFieldSearch(c, lead);
+      var v = tableColFieldSearch(c, lead);
       return Array.isArray(v) ? v.join(' ') : (v == null ? '' : String(v));
     }).join(' ');
     return [
@@ -8193,7 +8193,7 @@
     var list = leadsOsList().filter(function (l) { return leadMatchesTab(l, tab); });
     list = list.filter(function (l) { return leadMatchesFilters(l, root, schema); });
     if (q) list = list.filter(function (l) { return leadSearchHay(l, schema).indexOf(q) > -1; });
-    list = createdCol ? leadsSortBy(list, createdCol, sort === 'oldest' ? 'asc' : 'desc') : list.slice();
+    list = createdCol ? tableSortBy(list, createdCol, sort === 'oldest' ? 'asc' : 'desc') : list.slice();
     return list;
   }
 
@@ -8334,7 +8334,7 @@
     // click-to-select handler.
     return '<div class="jos-ld-card-wrap' + (bulkOpen ? ' bulk-open' : '') + '">' +
       (bulkOpen ? '<label class="jos-ld-card-check"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '"' + (checked ? ' checked' : '') + '></label>' : '') +
-      '<button type="button" class="jos-ld-card' + (on ? ' on' : '') + (unread ? ' unread' : '') + (recover ? ' recover' : '') + '" data-jos-lead-id="' + esc(leadKey) + '">' +
+      '<button type="button" class="jos-ld-card' + (on ? ' on' : '') + (unread ? ' unread' : '') + (recover ? ' recover' : '') + '" data-jos-record-id="' + esc(leadKey) + '">' +
       (unread ? '<i class="jos-ld-unread" aria-hidden="true"></i>' : '') +
       '<span class="jos-ld-ava' + (recover ? ' recover' : '') + '">' + esc(initials(lead.name)) + '</span>' +
       '<span class="jos-ld-card-body">' +
@@ -8367,10 +8367,10 @@
       display: function (value, col, leadKey) {
         var v = value || '';
         var title = col.openOnClick ? 'Click to open · Double-click to edit' : 'Click to edit';
-        return '<span class="jos-ld-name-cell' + (col.openOnClick ? ' jos-ld-name-link' : '') + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="' + esc(title) + '">' + (v ? esc(v) : 'Click to add') + '</span>';
+        return '<span class="jos-ld-name-cell' + (col.openOnClick ? ' jos-ld-name-link' : '') + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="' + esc(title) + '">' + (v ? esc(v) : 'Click to add') + '</span>';
       },
       edit: function (value, col, leadKey) {
-        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
       }
     },
     // storage -> parse -> format -> renderer. Storage is always canonical
@@ -8385,10 +8385,10 @@
       format: function (value) { return value ? displayPhone(value) : ''; },
       display: function (value, col, leadKey) {
         var v = rendererRegistry.phone.format(value);
-        return '<span class="jos-ld-contact-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Add phone') + '</span>';
+        return '<span class="jos-ld-contact-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Add phone') + '</span>';
       },
       edit: function (value, col, leadKey) {
-        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Phone" value="' + esc(rendererRegistry.phone.format(value)) + '" onclick="event.stopPropagation()">';
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="Phone" value="' + esc(rendererRegistry.phone.format(value)) + '" onclick="event.stopPropagation()">';
       },
       readValue: function (el) { return rendererRegistry.phone.parse(el.value); },
       writeValue: function (el, value) { el.value = rendererRegistry.phone.format(value); }
@@ -8400,39 +8400,39 @@
       parse: function (raw) { return String(raw || '').trim().toLowerCase(); },
       display: function (value, col, leadKey) {
         var v = value || '';
-        return '<span class="jos-ld-contact-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Add email') + '</span>';
+        return '<span class="jos-ld-contact-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Add email') + '</span>';
       },
       edit: function (value, col, leadKey) {
-        return '<input type="email" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Email" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
+        return '<input type="email" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="Email" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
       },
       readValue: function (el) { return rendererRegistry.email.parse(el.value); }
     },
     url: {
       display: function (value, col, leadKey) {
         var v = value || '';
-        return '<span class="jos-ld-url-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Add link') + '</span>';
+        return '<span class="jos-ld-url-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Add link') + '</span>';
       },
       edit: function (value, col, leadKey) {
-        return '<input type="url" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
+        return '<input type="url" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
       }
     },
     number: {
       display: function (value, col, leadKey) {
         var v = (value === '' || value == null) ? '' : String(value);
-        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Click to add') + '</span>';
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Click to add') + '</span>';
       },
       edit: function (value, col, leadKey) {
-        return '<input type="number" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value === '' || value == null ? '' : value) + '" onclick="event.stopPropagation()">';
+        return '<input type="number" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value === '' || value == null ? '' : value) + '" onclick="event.stopPropagation()">';
       },
       readValue: function (el) { var n = parseFloat(el.value); return isNaN(n) ? '' : n; }
     },
     date: {
       display: function (value, col, leadKey) {
         var v = value || '';
-        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Click to add') + '</span>';
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Click to add') + '</span>';
       },
       edit: function (value, col, leadKey) {
-        return '<input type="date" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
+        return '<input type="date" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
       }
     },
     checkbox: {
@@ -8440,17 +8440,17 @@
       // mode step makes sense for a binary value. The click handler
       // special-cases col.type==='checkbox' to toggle+commit directly.
       display: function (value, col, leadKey) {
-        return '<span class="jos-ld-checkbox-cell' + (value ? ' is-checked' : '') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to toggle">' + (value ? '☑' : '☐') + '</span>';
+        return '<span class="jos-ld-checkbox-cell' + (value ? ' is-checked' : '') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to toggle">' + (value ? '☑' : '☐') + '</span>';
       }
     },
     tags: {
       display: function (value, col, leadKey) {
         var list = Array.isArray(value) ? value : [];
-        return '<span class="jos-ld-tags-cell' + (list.length ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + (list.length ? list.map(function (tg) { return '<span class="jos-ld-tag-chip">' + esc(tg) + '</span>'; }).join('') : 'No tags') + '</span>';
+        return '<span class="jos-ld-tags-cell' + (list.length ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to change">' + (list.length ? list.map(function (tg) { return '<span class="jos-ld-tag-chip">' + esc(tg) + '</span>'; }).join('') : 'No tags') + '</span>';
       },
       edit: function (value, col, leadKey) {
         var list = Array.isArray(value) ? value : [];
-        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="Tags" value="' + esc(list.join(', ')) + '" placeholder="Comma-separated" onclick="event.stopPropagation()">';
+        return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="Tags" value="' + esc(list.join(', ')) + '" placeholder="Comma-separated" onclick="event.stopPropagation()">';
       },
       readValue: function (el) { return String(el.value || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean); },
       writeValue: function (el, value) { el.value = (Array.isArray(value) ? value : []).join(', '); }
@@ -8467,14 +8467,14 @@
         for (var i = 0; i < opts.length; i++) { if (opts[i].value === value) { match = opts[i]; break; } }
         var label = match ? match.label : (value || '');
         if (match && match.tone) {
-          return '<span class="jos-ld-status-pill ' + match.tone + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + esc(label) + '</span>';
+          return '<span class="jos-ld-status-pill ' + match.tone + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to change">' + esc(label) + '</span>';
         }
         var isEmpty = !value;
-        return '<span class="jos-ld-name-cell jos-ld-select-cell' + (isEmpty ? ' is-empty' : '') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + esc(label || col.allowEmpty || 'Unassigned') + '</span>';
+        return '<span class="jos-ld-name-cell jos-ld-select-cell' + (isEmpty ? ' is-empty' : '') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to change">' + esc(label || col.allowEmpty || 'Unassigned') + '</span>';
       },
       edit: function (value, col, leadKey) {
         var opts = rendererRegistry.select.resolveOptions(col);
-        return '<select class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" onclick="event.stopPropagation()">' +
+        return '<select class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" onclick="event.stopPropagation()">' +
           (col.allowEmpty ? '<option value=""' + (!value ? ' selected' : '') + '>' + esc(col.allowEmpty) + '</option>' : '') +
           opts.map(function (o) { return '<option value="' + esc(o.value) + '"' + (value === o.value ? ' selected' : '') + '>' + esc(o.label) + '</option>'; }).join('') +
           '</select>';
@@ -8484,13 +8484,13 @@
 
   // Real spreadsheet-style view, same underlying filtered/sorted list as
   // the card list. `col` is a full schema entry (type/get/set/options/...),
-  // not just a key — leadTableCellHtml itself no longer knows what a
+  // not just a key — tableCellHtml itself no longer knows what a
   // status or a tag is, it just asks the registry for that column's type.
-  function leadTableCellHtml(lead, col, leadKey, isEditing) {
+  function tableCellHtml(lead, col, leadKey, isEditing) {
     var value = col.get ? col.get(lead) : lead[col.key];
     if (col.editable === false) {
       // Deliberately skip the renderer entirely, not just its edit() half
-      // — every display() still stamps data-jos-lead-field (so click-to-
+      // — every display() still stamps data-jos-field (so click-to-
       // edit and the "already editing" guard can find it), which would
       // wrongly make the row-open click handler treat this cell as a
       // field to exclude even though it can never actually be edited.
@@ -8502,22 +8502,22 @@
     if (isEditing && renderer.edit) return renderer.edit(value, col, leadKey);
     return renderer.display(value, col, leadKey);
   }
-  function leadsColFieldGet(col, lead) { return col.get ? col.get(lead) : lead[col.key]; }
-  function leadsColFieldSet(col, lead, value) { return col.set ? col.set(lead, value) : (lead[col.key] = value, col.label + ' updated'); }
+  function tableColFieldGet(col, lead) { return col.get ? col.get(lead) : lead[col.key]; }
+  function tableColFieldSet(col, lead, value) { return col.set ? col.set(lead, value) : (lead[col.key] = value, col.label + ' updated'); }
   // searchValue/filterValue/sortValue all default to get() — most columns
   // filter/sort/search on exactly what they display. Only override when a
   // column genuinely needs a different value for that operation (Source
   // filters on the raw kind, not the display label; Created sorts on the
   // full timestamp, not the truncated display date).
-  function leadsColFieldSearch(col, lead) { return col.searchValue ? col.searchValue(lead) : leadsColFieldGet(col, lead); }
-  function leadsColFieldFilter(col, lead) { return col.filterValue ? col.filterValue(lead) : leadsColFieldGet(col, lead); }
-  function leadsColFieldSort(col, lead) { return col.sortValue ? col.sortValue(lead) : leadsColFieldGet(col, lead); }
+  function tableColFieldSearch(col, lead) { return col.searchValue ? col.searchValue(lead) : tableColFieldGet(col, lead); }
+  function tableColFieldFilter(col, lead) { return col.filterValue ? col.filterValue(lead) : tableColFieldGet(col, lead); }
+  function tableColFieldSort(col, lead) { return col.sortValue ? col.sortValue(lead) : tableColFieldGet(col, lead); }
   // Generic — any column (schema entry with an optional sortValue/get) can
   // be sorted on, not just the one 'created' column currently wired to a
   // UI control. list is copied, never sorted in place.
-  function leadsSortBy(list, col, direction) {
+  function tableSortBy(list, col, direction) {
     return list.slice().sort(function (a, b) {
-      var av = leadsColFieldSort(col, a), bv = leadsColFieldSort(col, b);
+      var av = tableColFieldSort(col, a), bv = tableColFieldSort(col, b);
       if (av == null) av = '';
       if (bv == null) bv = '';
       var cmp = (typeof av === 'number' && typeof bv === 'number') ? (av - bv) : String(av).localeCompare(String(bv));
@@ -8558,7 +8558,7 @@
       var leadKey = String(lead.id || lead.key);
       var on = selectedId && leadKey === String(selectedId);
       var checked = !!(bulkSelected && bulkSelected[leadKey]);
-      return '<tr class="jos-ld-trow' + (on ? ' on' : '') + '" role="row" data-jos-lead-id="' + esc(leadKey) + '">' +
+      return '<tr class="jos-ld-trow' + (on ? ' on' : '') + '" role="row" data-jos-record-id="' + esc(leadKey) + '">' +
         (bulkOpen ? '<td class="jos-ld-tcheck" role="gridcell" onclick="event.stopPropagation()"><input type="checkbox" data-jos-lead-bulk="' + esc(leadKey) + '" aria-label="Select ' + esc(lead.name || 'lead') + '"' + (checked ? ' checked' : '') + '></td>' : '') +
         cols.map(function (c) {
           var def = schemaMap[c.key];
@@ -8566,7 +8566,7 @@
           var isEditingThis = !!(editing && editing.leadId === leadKey && editing.field === c.key);
           var isActive = active.leadId === leadKey && active.colKey === c.key;
           return '<td class="jos-ld-tcell-' + esc(c.key) + '" role="gridcell" tabindex="' + (isActive ? '0' : '-1') + '" data-jos-col-key="' + esc(c.key) + '">' +
-            leadTableCellHtml(lead, def, leadKey, isEditingThis) + '</td>';
+            tableCellHtml(lead, def, leadKey, isEditingThis) + '</td>';
         }).join('') +
         '</tr>';
     }).join('');
@@ -8777,7 +8777,7 @@
       }).join('') + assignedRow +
       '</section>';
 
-    return '<div class="jos-ld-workspace" data-jos-lead-id="' + esc(leadKey) + '">' + head + quickActions + tabBar + '<div class="jos-ld-ws-body">' + body + '</div>' + infoSection + '</div>';
+    return '<div class="jos-ld-workspace" data-jos-record-id="' + esc(leadKey) + '">' + head + quickActions + tabBar + '<div class="jos-ld-ws-body">' + body + '</div>' + infoSection + '</div>';
   }
 
   function renderLeadsContextMenu(root) {
@@ -8813,7 +8813,7 @@
     setLeadsMode(true);
     updateChrome('leads');
     // No loading-stub wipe here on purpose: renderLeadsPage() morphs the new
-    // markup into root's EXISTING children (see morphLeadsInto below) so an
+    // markup into root's EXISTING children (see morphTableInto below) so an
     // already-painted table/panel is patched in place, not destroyed and
     // rebuilt. Clearing root first would defeat that — the morph would just
     // be diffing against an empty stub every time, i.e. a full rebuild again.
@@ -8833,23 +8833,23 @@
   // markup is diffed into root's existing DOM: unchanged nodes are left
   // alone, changed attributes/text are patched in place, and only nodes
   // that genuinely need to appear/disappear are inserted/removed. Table
-  // rows (by data-jos-lead-id) and cells (by data-jos-col-key) are matched
+  // rows (by data-jos-record-id) and cells (by data-jos-col-key) are matched
   // by key so sorting/filtering/column-drag moves real DOM nodes instead
   // of overwriting whichever node happens to sit at that index — that's
   // what keeps a mid-edit cell, a focused input, or the table's own scroll
   // container intact across a re-render instead of resetting it.
-  var LEADS_MORPH_KEY_ATTR = { TR: 'data-jos-lead-id', TH: 'data-jos-col-key', TD: 'data-jos-col-key' };
-  function leadsMorphKeyFor(node) {
+  var TABLE_MORPH_KEY_ATTR = { TR: 'data-jos-record-id', TH: 'data-jos-col-key', TD: 'data-jos-col-key' };
+  function tableMorphKeyFor(node) {
     if (!node || node.nodeType !== 1) return null;
-    var attr = LEADS_MORPH_KEY_ATTR[node.tagName];
+    var attr = TABLE_MORPH_KEY_ATTR[node.tagName];
     return attr ? node.getAttribute(attr) : null;
   }
-  function morphLeadsInto(root, html) {
+  function morphTableInto(root, html) {
     var tmp = document.createElement('div');
     tmp.innerHTML = html;
-    morphLeadsChildren(root, tmp);
+    morphTableChildren(root, tmp);
   }
-  function morphLeadsAttrsAndProps(oldEl, newEl) {
+  function morphTableAttrsAndProps(oldEl, newEl) {
     var i, name;
     var oldAttrs = oldEl.attributes;
     for (i = oldAttrs.length - 1; i >= 0; i--) {
@@ -8885,7 +8885,7 @@
       if (oldEl.selected !== newEl.selected) oldEl.selected = newEl.selected;
     }
   }
-  function morphLeadsNode(parent, oldNode, newNode) {
+  function morphTableNode(parent, oldNode, newNode) {
     if (oldNode.nodeType !== newNode.nodeType || (oldNode.nodeType === 1 && oldNode.tagName !== newNode.tagName)) {
       parent.replaceChild(newNode, oldNode);
       return;
@@ -8895,24 +8895,24 @@
       return;
     }
     if (oldNode.nodeType !== 1) return;
-    morphLeadsAttrsAndProps(oldNode, newNode);
-    morphLeadsChildren(oldNode, newNode);
+    morphTableAttrsAndProps(oldNode, newNode);
+    morphTableChildren(oldNode, newNode);
   }
-  function morphLeadsKeyedChildren(parent, oldKids, newKids) {
+  function morphTableKeyedChildren(parent, oldKids, newKids) {
     var oldByKey = {};
     oldKids.forEach(function (n) {
-      var k = leadsMorphKeyFor(n);
+      var k = tableMorphKeyFor(n);
       if (k != null) oldByKey[k] = n;
     });
     var usedKeys = {};
     var ref = parent.firstChild;
     newKids.forEach(function (newNode) {
-      var key = leadsMorphKeyFor(newNode);
+      var key = tableMorphKeyFor(newNode);
       var match = key != null ? oldByKey[key] : null;
       if (match) {
         usedKeys[key] = true;
-        morphLeadsAttrsAndProps(match, newNode);
-        morphLeadsChildren(match, newNode);
+        morphTableAttrsAndProps(match, newNode);
+        morphTableChildren(match, newNode);
         if (match !== ref) parent.insertBefore(match, ref);
         else ref = ref.nextSibling;
       } else {
@@ -8926,13 +8926,13 @@
       }
     });
   }
-  function morphLeadsChildren(oldParent, newParent) {
+  function morphTableChildren(oldParent, newParent) {
     var oldKids = Array.prototype.slice.call(oldParent.childNodes);
     var newKids = Array.prototype.slice.call(newParent.childNodes);
-    var keyable = newKids.length > 0 && newKids.every(function (n) { return n.nodeType !== 1 || leadsMorphKeyFor(n) != null; })
-      && oldKids.some(function (n) { return leadsMorphKeyFor(n) != null; });
+    var keyable = newKids.length > 0 && newKids.every(function (n) { return n.nodeType !== 1 || tableMorphKeyFor(n) != null; })
+      && oldKids.some(function (n) { return tableMorphKeyFor(n) != null; });
     if (keyable) {
-      morphLeadsKeyedChildren(oldParent, oldKids, newKids);
+      morphTableKeyedChildren(oldParent, oldKids, newKids);
       return;
     }
     // Two separate passes, not one index-driven loop: removeChild shifts
@@ -8945,7 +8945,7 @@
     // visited, so nothing gets skipped.
     var minLen = Math.min(oldKids.length, newKids.length);
     for (var i = 0; i < minLen; i++) {
-      morphLeadsNode(oldParent, oldParent.childNodes[i], newKids[i]);
+      morphTableNode(oldParent, oldParent.childNodes[i], newKids[i]);
     }
     for (var j = minLen; j < newKids.length; j++) {
       oldParent.appendChild(newKids[j]);
@@ -9134,7 +9134,7 @@
       ? visible.map(function (l) { return renderLeadCard(l, selectedId, bulkOpen, root._josLeadBulkSelected); }).join('')
       : '<div class="jos-ld-empty-list">' + emptyStateInner + '</div>';
 
-    morphLeadsInto(root,
+    morphTableInto(root,
       '<div class="jos-ld-shell' + (wsOpen ? ' ws-open' : '') + '">' +
       '<div class="jos-ld-page">' +
 
@@ -9466,17 +9466,17 @@
       // with — focusing the parent td would yank focus off the select and
       // break clicking it open in the first place.
       if (clickedGridCell && e.target.tagName !== 'SELECT') {
-        var clickedRow = clickedGridCell.closest('tr[data-jos-lead-id]');
+        var clickedRow = clickedGridCell.closest('tr[data-jos-record-id]');
         if (clickedRow) {
           var prevActive = root._josLeadsActiveCell;
           if (prevActive) {
-            var prevRow = root.querySelector('tr[data-jos-lead-id="' + CSS.escape(prevActive.leadId) + '"]');
+            var prevRow = root.querySelector('tr[data-jos-record-id="' + CSS.escape(prevActive.leadId) + '"]');
             var prevCell = prevRow && prevRow.querySelector('td[data-jos-col-key="' + CSS.escape(prevActive.colKey) + '"]');
             if (prevCell && prevCell !== clickedGridCell) prevCell.setAttribute('tabindex', '-1');
           }
           clickedGridCell.setAttribute('tabindex', '0');
           clickedGridCell.focus({ preventScroll: true });
-          root._josLeadsActiveCell = { leadId: clickedRow.getAttribute('data-jos-lead-id'), colKey: clickedGridCell.getAttribute('data-jos-col-key') };
+          root._josLeadsActiveCell = { leadId: clickedRow.getAttribute('data-jos-record-id'), colKey: clickedGridCell.getAttribute('data-jos-col-key') };
         }
       }
       if (e.target && e.target.getAttribute && e.target.getAttribute('data-jos-lead-backdrop') === '1') {
@@ -9561,9 +9561,9 @@
       // Opening the panel from an arbitrary click anywhere on the row was
       // exactly the "random clicks open it" complaint — the table is the
       // primary workspace, opening the record should be a deliberate act.
-      var card = e.target.closest('[data-jos-lead-id]');
-      if (card && !e.target.closest('[data-jos-act]') && !e.target.closest('[data-jos-lead-field]')) {
-        root._josLeadId = card.getAttribute('data-jos-lead-id');
+      var card = e.target.closest('[data-jos-record-id]');
+      if (card && !e.target.closest('[data-jos-act]') && !e.target.closest('[data-jos-field]')) {
+        root._josLeadId = card.getAttribute('data-jos-record-id');
         root._josLeadCtx = null;
         if (clickedGridCell) root._josLeadsGridFocusPending = true; // this same click already focused a gridcell above; the renderLeads() below would otherwise silently drop that focus
         renderLeads();
@@ -9584,17 +9584,17 @@
         e.preventDefault();
         return;
       }
-      var dblField = e.target.closest('[data-jos-lead-field]');
+      var dblField = e.target.closest('[data-jos-field]');
       if (dblField) {
         // Name cells swapped their single-click meaning to "open the
         // panel" (openOnClick, above) — double-click is how they're still
         // edited inline, matching the header-rename pattern. Every other
         // editable cell already edits on a single click, so a second
         // click here isn't "edit," it's just noise — skip it.
-        var dblCol = findLeadsColumnDef(root, dblField.getAttribute('data-jos-lead-field'));
+        var dblCol = findLeadsColumnDef(root, dblField.getAttribute('data-jos-field'));
         if (dblCol && dblCol.openOnClick) {
           clearTimeout(root._josLeadNameClickT);
-          openLeadsCellEdit(root, dblField.getAttribute('data-jos-lead-id'), dblField.getAttribute('data-jos-lead-field'));
+          openLeadsCellEdit(root, dblField.getAttribute('data-jos-record-id'), dblField.getAttribute('data-jos-field'));
           e.preventDefault();
         }
         return;
@@ -9602,17 +9602,17 @@
       // Double-click anywhere else on the row — the power-user shortcut
       // to open the record without having to land the click precisely on
       // the name cell.
-      var card = e.target.closest('[data-jos-lead-id]');
+      var card = e.target.closest('[data-jos-record-id]');
       if (!card) return;
-      openLeadDetailPanel(root, card.getAttribute('data-jos-lead-id'));
+      openLeadDetailPanel(root, card.getAttribute('data-jos-record-id'));
       e.preventDefault();
     });
 
     root.addEventListener('contextmenu', function (e) {
-      var card = e.target.closest('.jos-ld-card[data-jos-lead-id]');
+      var card = e.target.closest('.jos-ld-card[data-jos-record-id]');
       if (!card) return;
       e.preventDefault();
-      root._josLeadId = card.getAttribute('data-jos-lead-id');
+      root._josLeadId = card.getAttribute('data-jos-record-id');
       var rect = root.getBoundingClientRect();
       root._josLeadCtx = { open: true, x: Math.max(8, e.clientX - rect.left), y: Math.max(8, e.clientY - rect.top) };
       renderLeads();
@@ -9699,7 +9699,7 @@
         var bulkStatusKeys = Object.keys(root._josLeadBulkSelected || {});
         var bulkStatusLeads = leadsOsList().filter(function (l) { return bulkStatusKeys.indexOf(String(l.id || l.key)) > -1; });
         bulkStatusLeads.forEach(function (l) {
-          var label = leadsColFieldSet(bulkStatusCol, l, bulkStatusVal);
+          var label = tableColFieldSet(bulkStatusCol, l, bulkStatusVal);
           pushLeadActivity(l, 'edit', label + ' (bulk)');
         });
         root._josLeadBulkStatusOpen = false;
@@ -9709,9 +9709,9 @@
         try { if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon(); } catch (ePersistBulkSt) {}
         return renderLeads();
       }
-      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-field')) {
-        var fieldKey = e.target.getAttribute('data-jos-lead-field');
-        var fieldLeadId = e.target.getAttribute('data-jos-lead-id');
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-field')) {
+        var fieldKey = e.target.getAttribute('data-jos-field');
+        var fieldLeadId = e.target.getAttribute('data-jos-record-id');
         var fieldCol = findLeadsColumnDef(root, fieldKey);
         var fieldRenderer = fieldCol ? (rendererRegistry[fieldCol.type] || rendererRegistry.text) : rendererRegistry.text;
         var fieldVal = fieldRenderer.readValue ? fieldRenderer.readValue(e.target) : e.target.value;
@@ -9719,7 +9719,7 @@
         root._josLeadsGridFocusPending = true;
         var fieldActivityLabel = '';
         mutateLeadById(fieldLeadId, function (l) {
-          fieldActivityLabel = fieldCol ? leadsColFieldSet(fieldCol, l, fieldVal) : '';
+          fieldActivityLabel = fieldCol ? tableColFieldSet(fieldCol, l, fieldVal) : '';
           pushLeadActivity(l, 'edit', fieldActivityLabel || 'Updated');
         });
         toast(fieldActivityLabel ? (fieldCol.label + ' updated') : 'Updated');
@@ -9793,7 +9793,7 @@
     });
 
     // Columns actually reorder live as you drag over a neighbor — not just
-    // a static highlight that jumps on drop — because morphLeadsInto (see
+    // a static highlight that jumps on drop — because morphTableInto (see
     // renderLeads) makes a re-render cheap enough to call on every crossed
     // boundary: keyed diffing moves the real <th>/<td> nodes into their new
     // slots (CSS transitions the width/position change) instead of tearing
@@ -9875,17 +9875,17 @@
     // Checkbox-type columns skip the open-edit-mode step entirely — a
     // binary value commits on the click itself, there's nothing to type.
     root.addEventListener('click', function (e) {
-      var field = e.target.closest('[data-jos-lead-field]');
+      var field = e.target.closest('[data-jos-field]');
       if (!field || field.classList.contains('jos-ld-editing')) return; /* already open — don't reopen and discard in-progress typing */
-      var leadId = field.getAttribute('data-jos-lead-id');
-      var key = field.getAttribute('data-jos-lead-field');
+      var leadId = field.getAttribute('data-jos-record-id');
+      var key = field.getAttribute('data-jos-field');
       if (!leadId || !key) return;
       var col = findLeadsColumnDef(root, key);
       if (!col || col.editable === false) return;
       if (col.type === 'checkbox') {
         var toggled = '';
         mutateLeadById(leadId, function (l) {
-          toggled = leadsColFieldSet(col, l, !leadsColFieldGet(col, l));
+          toggled = tableColFieldSet(col, l, !tableColFieldGet(col, l));
         });
         toast(toggled || (col.label + ' updated'));
         e.stopPropagation();
@@ -9978,8 +9978,8 @@
       if (e.key === 'ArrowDown') { e.preventDefault(); moveLeadsGridFocus(root, 0, 1); return; }
       if (e.key === 'ArrowUp') { e.preventDefault(); moveLeadsGridFocus(root, 0, -1); return; }
       if (e.key === 'Enter') {
-        var tr = e.target.closest('tr[data-jos-lead-id]');
-        var leadId = tr && tr.getAttribute('data-jos-lead-id');
+        var tr = e.target.closest('tr[data-jos-record-id]');
+        var leadId = tr && tr.getAttribute('data-jos-record-id');
         var colKey = e.target.getAttribute('data-jos-col-key');
         var field = colKey === 'status' ? 'status' : (colKey === 'assigned' ? 'assignedTo' : null);
         if (!leadId || !field) return;
@@ -10080,11 +10080,11 @@
     if (!editingLead) return;
     var col = findLeadsColumnDef(root, key);
     if (!col || col.editable === false) return;
-    var originalValue = leadsColFieldGet(col, editingLead);
+    var originalValue = tableColFieldGet(col, editingLead);
     root._josLeadsEditCell = { leadId: leadId, field: key, originalValue: originalValue };
     root._josLeadsActiveCell = { leadId: leadId, colKey: key };
     renderLeads();
-    var sel = root.querySelector('[data-jos-lead-field="' + key + '"][data-jos-lead-id="' + CSS.escape(leadId) + '"].jos-ld-editing');
+    var sel = root.querySelector('[data-jos-field="' + key + '"][data-jos-record-id="' + CSS.escape(leadId) + '"].jos-ld-editing');
     if (sel) {
       sel.focus({ preventScroll: true });
       if (sel.tagName === 'SELECT') { try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
@@ -10102,8 +10102,8 @@
         // A live <select> commits the instant an option is picked (native
         // 'change'), so by the time Escape is pressed the lead may already
         // hold the new value — roll it back for real.
-        var currentValue = leadsColFieldGet(col, lead);
-        if (currentValue !== editing.originalValue) leadsColFieldSet(col, lead, editing.originalValue);
+        var currentValue = tableColFieldGet(col, lead);
+        if (currentValue !== editing.originalValue) tableColFieldSet(col, lead, editing.originalValue);
       } else if (col) {
         // Every other type only commits on blur/'change', never per
         // keystroke — nothing has been written to the lead yet. But
@@ -10113,7 +10113,7 @@
         // edit. Reset the live input back to its original value first so
         // that stray commit is a no-op.
         var renderer = rendererRegistry[col.type] || rendererRegistry.text;
-        var liveEl = root.querySelector('[data-jos-lead-field="' + editing.field + '"][data-jos-lead-id="' + CSS.escape(editing.leadId) + '"].jos-ld-editing');
+        var liveEl = root.querySelector('[data-jos-field="' + editing.field + '"][data-jos-record-id="' + CSS.escape(editing.leadId) + '"].jos-ld-editing');
         if (liveEl) {
           if (renderer.writeValue) renderer.writeValue(liveEl, editing.originalValue);
           else liveEl.value = editing.originalValue == null ? '' : editing.originalValue;
@@ -10154,7 +10154,7 @@
     root._josLeadsGridFocusPending = false;
     var active = root._josLeadsActiveCell;
     if (!active) return;
-    var row = root.querySelector('tr[data-jos-lead-id="' + CSS.escape(active.leadId) + '"]');
+    var row = root.querySelector('tr[data-jos-record-id="' + CSS.escape(active.leadId) + '"]');
     var cell = row && row.querySelector('td[data-jos-col-key="' + CSS.escape(active.colKey) + '"]');
     if (cell) cell.focus({ preventScroll: true });
   }
@@ -10168,8 +10168,8 @@
     var table = root.querySelector('.jos-ld-table');
     if (!table) return;
     var colKeys = Array.prototype.map.call(table.querySelectorAll('thead th[data-jos-col-key]'), function (th) { return th.getAttribute('data-jos-col-key'); });
-    var rowEls = Array.prototype.slice.call(table.querySelectorAll('tbody tr[data-jos-lead-id]'));
-    var rowIds = rowEls.map(function (tr) { return tr.getAttribute('data-jos-lead-id'); });
+    var rowEls = Array.prototype.slice.call(table.querySelectorAll('tbody tr[data-jos-record-id]'));
+    var rowIds = rowEls.map(function (tr) { return tr.getAttribute('data-jos-record-id'); });
     var colI = colKeys.indexOf(active.colKey);
     var rowI = rowIds.indexOf(active.leadId);
     if (colI < 0 || rowI < 0) return;
@@ -19254,8 +19254,8 @@
       // below re-render on every click, which breaks native dblclick
       // detection (the browser won't pair two clicks into a dblclick once
       // the target element gets replaced by a re-render in between).
-      if (e.target.closest('[data-jos-lead-field]')) return;
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-lead-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-rve-tab],[data-jos-rpt-tab],[data-jos-ah-tab],[data-jos-set-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
+      if (e.target.closest('[data-jos-field]')) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-record-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-rve-tab],[data-jos-rpt-tab],[data-jos-ah-tab],[data-jos-set-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
       if (t.hasAttribute('data-jos-inbox-tab')) {
         var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
         return;
@@ -19272,7 +19272,7 @@
         var lwRoot = el('jos-leads-root'); if (lwRoot) { lwRoot._josLeadWorkspace = t.getAttribute('data-jos-lead-ws'); renderLeads(); }
         return;
       }
-      // data-jos-lead-id is NOT handled here: wireLeadsRoot() (journey.js,
+      // data-jos-record-id is NOT handled here: wireLeadsRoot() (journey.js,
       // called right after bindRoot() for the leads root) owns row-open
       // for leads with the full logic (markLeadSeen, ctx-menu clear, grid
       // focus). bindRoot fires first since it's wired one line earlier, so
@@ -19293,7 +19293,7 @@
         return;
       }
       if (t.hasAttribute('data-jos-lead-row')) {
-        var lr = el('jos-leads-root'); if (lr) { lr._josLeadId = t.getAttribute('data-jos-lead-row') || t.getAttribute('data-jos-lead-id'); lr._josLeadPanelOpen = true; renderLeads(); }
+        var lr = el('jos-leads-root'); if (lr) { lr._josLeadId = t.getAttribute('data-jos-lead-row') || t.getAttribute('data-jos-record-id'); lr._josLeadPanelOpen = true; renderLeads(); }
         return;
       }
       if (t.hasAttribute('data-jos-lead')) { var key = t.getAttribute('data-jos-lead'); if (key && typeof global.viewLead === 'function') global.viewLead(key); return; }
