@@ -9136,7 +9136,9 @@
       } catch (eSeen0) {}
     }
     var f = root._josLeadFilters || {};
-    var bulkOpen = !!root._josLeadBulkOpen;
+    // Always on — a checkbox next to each row is the fast, primary way to
+    // delete one or many, not a "Select" mode a user has to opt into first.
+    var bulkOpen = true;
     var viewMode = root._josLeadsView === 'list' ? 'list' : 'table';
     // Custom fields load before columns so the very first normalize pass
     // already knows about them (not just once the business-config fetch
@@ -9237,7 +9239,6 @@
       '<button type="button" class="jos-btn jos-btn-sm' + (moreFiltersOpen || activeFilterCount ? ' jos-btn-brand' : '') + '" data-jos-act="leads-filter-open" aria-expanded="' + (moreFiltersOpen ? 'true' : 'false') + '">' +
       (activeFilterCount ? ('Filters · ' + activeFilterCount) : 'Filters') +
       '</button>' +
-      '<button type="button" class="jos-btn jos-btn-sm' + (bulkOpen ? ' jos-btn-brand' : '') + '" data-jos-act="leads-bulk-toggle">' + (bulkOpen ? 'Done Selecting' : 'Select') + '</button>' +
       '<button type="button" class="jos-btn jos-btn-brand jos-ld-new" data-jos-act="leads-add-open">+ New Lead</button>' +
       '<div class="jos-ld-overflow-wrap">' +
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-overflow-toggle" aria-label="More actions" aria-expanded="' + (root._josLeadOverflowOpen ? 'true' : 'false') + '">⋯</button>' +
@@ -16992,7 +16993,7 @@
   function renderJobsBulkBar(root) {
     var selected = root._josBulk || {};
     var ids = Object.keys(selected).filter(function (k) { return selected[k]; });
-    if (!root._josJobsBulkOpen || !ids.length) return '';
+    if (!ids.length) return '';
     return '<div class="jos-ld-bulk-bar" role="toolbar" aria-label="Bulk actions">' +
       '<span class="jos-ld-bulk-bar-count">' + ids.length + ' selected</span>' +
       '<span class="jos-ld-bulk-bar-sep"></span>' +
@@ -17190,7 +17191,7 @@
 
       '<section class="jos-jobs-table-card jos-jobs-first">' +
       '<div class="jos-jobs-table-head">' + tabsHtml + '</div>' +
-      renderJobsTable(root, pageRows, selectedId, !!root._josJobsBulkOpen, root._josBulk) + mobileCards + (pageRows.length ? pager : '') +
+      renderJobsTable(root, pageRows, selectedId, true, root._josBulk) + mobileCards + (pageRows.length ? pager : '') +
       '</section>';
     }
 
@@ -17304,7 +17305,6 @@
             }).join('') + '</div>' : '') +
           '</div>' +
           '<button type="button" class="jos-btn jos-btn-sm' + (root._josJobsFiltersOpen ? ' jos-btn-brand' : '') + '" data-jos-act="jobs-filters-toggle">Filters</button>' +
-          '<button type="button" class="jos-btn jos-btn-sm' + (root._josJobsBulkOpen ? ' jos-btn-brand' : '') + '" data-jos-act="jobs-bulk-toggle">' + (root._josJobsBulkOpen ? 'Done Selecting' : 'Select') + '</button>' +
           '<button type="button" class="jos-btn jos-btn-brand jos-jobs-new" data-jos-act="jobs-create">+ New Job</button>')) +
       '</div></header>' +
       mainBody +
@@ -19160,10 +19160,6 @@
         root._josJobsFiltersOpen = !root._josJobsFiltersOpen;
         return rerender();
       }
-      if (act === 'jobs-bulk-toggle') {
-        root._josJobsBulkOpen = !root._josJobsBulkOpen;
-        return rerender();
-      }
       if (act === 'jobs-bulk-clear') {
         root._josBulk = {};
         return rerender();
@@ -19260,9 +19256,14 @@
           // arrow or the drawer itself; duplicating them here is what made
           // this menu balloon to near-page-height. True secondary actions
           // only.
+          // Delete deliberately isn't here — the row checkbox (always
+          // visible now, no "Select" mode to enter first) plus the bulk
+          // bar's Delete is the one fast path for removing a job, single
+          // or multiple, instead of a second delete button living in a
+          // menu.
           items = act === 'jobs-status-menu'
             ? [['jobs-start', 'In Progress'], ['jobs-complete', 'Completed'], ['jobs-reschedule', 'Reschedule'], ['jobs-assign', 'Assign Tech'], ['jobs-cancel', 'Cancel'], ['jobs-duplicate', 'Duplicate']]
-            : [['jobs-duplicate', 'Duplicate'], ['jobs-invoice-create', 'Invoice'], ['jobs-delete', 'Delete']];
+            : [['jobs-duplicate', 'Duplicate'], ['jobs-invoice-create', 'Invoice']];
         }
         pop.innerHTML = items.map(function (x) {
           return '<button type="button" data-jos-act="' + esc(x[0]) + '" data-jos-job-id="' + esc(jobId || '') + '">' + esc(x[1]) + '</button>';
@@ -19817,7 +19818,6 @@
         });
         S().jobs = S().jobs.filter(function (j) { return ids3.indexOf(String(j.id)) === -1; });
         root._josBulk = {};
-        root._josJobsBulkOpen = false;
         if (ids3.indexOf(String(root._josJobId)) > -1) { root._josJobId = null; root._josDrawerOpen = false; }
         toast('Deleted ' + ids3.length + ' job(s)');
         return rerender();
