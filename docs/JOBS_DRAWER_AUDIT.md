@@ -62,3 +62,48 @@ Confirmed per your instruction not to let the display fix stand in for the real 
 7. **Fix Job#/Time/Checklist-done** to either be genuinely Read-only or genuinely persist — right now they're fake-editable, which is a worse trust problem than being visibly read-only.
 8. **Rebuild or clearly label unbuilt**: Photos upload, Invoice creation/view/payment, checklist notes — all are local-only mocks today with no real backend, which is a bigger scope of work than this drawer-parity pass and should be a deliberate product decision, not something inferred from an audit.
 9. **Tech debt, tracked**: move quote metadata out of `job.notes` into real structured columns (see above).
+
+---
+
+## Implementation report
+
+Everything below this line was actually built, following a "mission control" redesign directive that went further than this audit's original recommendations (grouped sections, click-to-edit-everywhere matching the table, real computed stats, service-led header). Reconciled against the 9 recommendations above:
+
+| # | Recommendation | Outcome |
+|---|---|---|
+| 1 | Delete dead `renderJobWorkspace`/`renderJobsListPanel`/`jobCardHtml` | **Done.** `jobCardHtml` had to be restored after an over-eager first pass — it's live, used by the Calendar's Agenda view. The other two were genuinely dead, confirmed by grep before and after. |
+| 2 | Merge Customer/Services tabs into Overview | **Done.** Overview is now sectioned (Customer/Job/Assignment/Financial/Activity/Notes); the two standalone tabs are gone. |
+| 3 | Merge Timeline/Activity tabs | **Done**, but differently than proposed — rather than one remaining tab, the job.timeline feed moved *into* Overview's Activity section (part of the "everything breathes on one page" redirect), so there's no separate Activity tab at all now. Tabs are Overview/Photos/Checklist/Invoices (4, down from 9). |
+| 4 | Delete/rebuild Reschedule | **Deleted.** Not rebuilt — Date is now directly click-to-editable in the Job section, which supersedes it. |
+| 5 | Move footer Message into a tab | **Moved differently** — into the drawer's "⋯" menu (`Message Customer`) rather than a tab, since Activity absorbed the old Messages tab's slot. |
+| 6 | Build "More Actions ▾" | **Done**, reusing the existing table row-menu popover (`jos-jobs-row-pop`) rather than building a new one — same mechanism, a curated item list when triggered from the drawer (`data-jos-drawer-menu`), filtered by the job's actual status (no "Resume" on a job that isn't paused, etc). |
+| 7 | Fix fake-editable Job#/Time/Checklist-done | **Job #**: moved to the header (shown once, read-only). **Time**: now a plain read-only value next to Date, no more silently-non-saving input. **Checklist-done**: unchanged — still a real gap, not touched in this pass (see below). |
+| 8 | Rebuild or label unbuilt Photos/Invoice/checklist-notes | **Not done** — correctly out of scope, exactly as this audit called it. Still mocks. |
+| 9 | Quote metadata → structured columns | **Not done, still tracked.** `parseJobNotesMeta` (the intermediate display fix from the earlier P1 pass) is what the Financial section's Quote row and the cleaned Notes field both read from. The permanent fix — real `source`/`quoteStatus`/`quoteAmount` columns, and finding the exact job-creation call site that copies tagged notes from a lead/quote — is still not built. Do not treat the cleaner UI as having solved this. |
+
+### Buttons kept and why
+- **Start Job / Complete Job** — real, working, promoted to primary footer buttons (reversing this audit's original "put everything in a menu" instinct) because they're the two most common actions on a job and deserve one-click access, not a menu detour. Both are now conditionally shown — Start only from `scheduled`/`pending`, Complete only when not already `completed`/`cancelled` — so neither can be clicked into a nonsensical state transition.
+- **Pause / Resume / Cancel / Duplicate / Delete** (in "⋯") — real, already correctly persisting, just relocated from being invisible (table-only) to reachable from the drawer too.
+- **Close, tab switches, "+ Add Column" (table)** — unchanged, already correct.
+
+### Buttons removed and why
+- **Save changes** — removed everywhere in the drawer. Every field now commits on blur/change individually (matching the table), so a batch-save button had nothing left to do. Replaced with a static "All changes saved ✓" indicator.
+- **Reschedule** — removed (see #4 above).
+- **Edit / Cancel** (the old "enter edit mode" toggle around the whole form) — removed. There's no more separate edit mode to toggle into; every field is always click-to-edit.
+- **Open Customer, Add Service/Invoice, Send Reminder, AI Draft Reply** (old Customer/Services/Messages tab buttons) — removed along with the tabs they lived on. `Open Customer`/reminder-style actions weren't reintroduced elsewhere in this pass — flagging in case that capability is missed; wasn't clearly requested to be preserved.
+
+### Fields promoted from embedded metadata into structured data
+- **Quote** (Financial section) — `[source:smart_quote][QUOTE_STATUS:...][QUOTE:...]` parsed out of the notes string into a real display row, rather than left as raw text a user would read literally. Still not backed by real columns (tech debt #9).
+- **Deposit** and **Invoice** (Financial section) — these were already real fields (`job.depositStatus`, `job.invoice`), just never surfaced as a scannable summary before; now they are.
+- **Notes** — no longer shows any bracketed tag or `id:...` suffix, ever, regardless of which flow wrote them.
+
+### Duplicated implementations eliminated by reusing existing components
+- The entire click-to-edit/commit/cancel lifecycle (`jobDrawerFieldHtml`) reuses the table's `rendererRegistry`, `mutateJobField`, and `persistJobPatch` — no parallel persistence logic was written for the drawer.
+- The Service field's dropdown now uses the exact same schema-driven `type:'select'` + `jobServiceOptions()` the table uses — previously the table had it as free text and the (now-deleted) old drawer form faked a dropdown independently; there was never actually one shared implementation before this pass.
+- The "⋯" menu reuses the table's existing row-menu popover positioning/show/hide code (`jos-jobs-row-pop`) instead of a new popover component.
+- The header's Status pill reuses `rendererRegistry.select.display()` directly (the same tone-colored pill the table renders), rather than a separate one-off status badge.
+
+### Known gaps carried forward, not fixed in this pass
+- Checklist item completion still doesn't persist (no `persistJobPatch` call on the checkbox toggle) — same bug class as the ones fixed in P0, just a different field, not in scope for the drawer-parity work.
+- Photos upload, Invoice creation/view/payment remain local-only mocks (correctly out of scope per this audit's own #8).
+- Quote metadata's permanent fix (real columns, source call-site) remains open (tech debt #9).

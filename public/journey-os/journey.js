@@ -8399,6 +8399,16 @@
         return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
       }
     },
+    textarea: {
+      display: function (value, col, leadKey) {
+        var v = value || '';
+        var preview = v.length > 80 ? v.slice(0, 80) + '…' : v;
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(preview) : 'Click to add') + '</span>';
+      },
+      edit: function (value, col, leadKey) {
+        return '<textarea class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" rows="3" onclick="event.stopPropagation()">' + esc(value || '') + '</textarea>';
+      }
+    },
     // storage -> parse -> format -> renderer. Storage is always canonical
     // 10-digit national digits (whatever phoneDigits() would normalize any
     // input to), never the raw typed string — that's what makes export/
@@ -16251,25 +16261,6 @@
       : null;
     return { clean: s, quote: quote };
   }
-  function jobEditField(id, label, value, opts) {
-    opts = opts || {};
-    var type = opts.type || 'text';
-    var ph = opts.placeholder || '';
-    var full = opts.full ? ' full' : '';
-    if (opts.kind === 'select') {
-      var options = (opts.options || []).map(function (o) {
-        var v = typeof o === 'string' ? o : o.value;
-        var lab = typeof o === 'string' ? o : (o.label || o.value);
-        return '<option value="' + esc(v) + '"' + (String(v) === String(value || '') ? ' selected' : '') + '>' + esc(lab) + '</option>';
-      }).join('');
-      return '<label class="jos-je-field' + full + '"><span>' + esc(label) + '</span><select id="' + esc(id) + '">' + options + '</select></label>';
-    }
-    if (opts.kind === 'textarea') {
-      return '<label class="jos-je-field' + full + '"><span>' + esc(label) + '</span><textarea id="' + esc(id) + '" rows="' + (opts.rows || 3) + '" placeholder="' + esc(ph) + '">' + esc(value == null ? '' : value) + '</textarea></label>';
-    }
-    return '<label class="jos-je-field' + full + '"><span>' + esc(label) + '</span><input id="' + esc(id) + '" type="' + esc(type) + '" value="' + esc(value == null ? '' : value) + '" placeholder="' + esc(ph) + '"' + (opts.autofocus ? ' autofocus' : '') + '></label>';
-  }
-
   function jobServiceOptions(j) {
     var services = ((S().services || []).map(function (s) { return s && s.name; }).filter(Boolean));
     if (!services.length) services = [j.service || 'Detail', 'Detail', 'Interior', 'Exterior'];
@@ -16325,8 +16316,13 @@
       get: function (job) { return jobNumber(job); }
     },
     {
-      key: 'service', label: 'Service', type: 'text', width: 160,
+      // Real dropdown, matching Leads' Service column — was free text
+      // here even though the (pre-redesign) drawer form already faked a
+      // select using the same jobServiceOptions() list; now both the
+      // table cell and the drawer field are the same real dropdown.
+      key: 'service', label: 'Service', type: 'select', width: 160, allowEmpty: 'No service',
       editable: true, searchable: true, filterable: true, sortable: true, dbColumn: 'service_name',
+      options: function (job) { return jobServiceOptions(job || {}).map(function (s) { return { value: s, label: s }; }); },
       set: function (job, value) { job.service = String(value || '').trim(); return 'Service → ' + (job.service || '—'); }
     },
     {
@@ -16384,7 +16380,131 @@
     JOBS_DEFAULT_COLUMNS.forEach(function (c) { map[c.key] = c; });
     return map;
   }
-  function findJobsColumnDef(key) { return jobsSchemaMap()[key] || null; }
+  // Fields the drawer edits that aren't worth exposing as table columns
+  // (Address/Vehicle/Duration/Email, plus a First/Last split over the same
+  // job.customer the table's single Customer column already edits) — kept
+  // out of JOBS_DEFAULT_COLUMNS/jobsSchemaMap deliberately so they don't
+  // show up in the table's column picker or tablePreferences, but still
+  // resolvable through findJobsColumnDef so the drawer can drive them
+  // through the exact same click-to-edit/mutateJobField/persistJobPatch
+  // machinery the table cells already use — one interaction model, not two.
+  var JOBS_DRAWER_ONLY_COLUMNS = [
+    {
+      key: 'customerFirst', label: 'First name', type: 'text',
+      editable: true, dbColumn: 'customer_name',
+      get: function (job) { return splitLeadName(job.customer).first; },
+      set: function (job, value) {
+        var parts = splitLeadName(job.customer);
+        job.customer = (String(value || '').trim() + ' ' + parts.last).trim();
+        return 'Customer → ' + (job.customer || '—');
+      }
+    },
+    {
+      key: 'customerLast', label: 'Last name', type: 'text',
+      editable: true, dbColumn: 'customer_name',
+      get: function (job) { return splitLeadName(job.customer).last; },
+      set: function (job, value) {
+        var parts = splitLeadName(job.customer);
+        job.customer = (parts.first + ' ' + String(value || '').trim()).trim();
+        return 'Customer → ' + (job.customer || '—');
+      }
+    },
+    {
+      key: 'email', label: 'Email', type: 'email', editable: true, dbColumn: 'email',
+      set: function (job, value) { job.email = String(value || '').trim(); return 'Email → ' + (job.email || '—'); }
+    },
+    {
+      key: 'address', label: 'Address', type: 'text', editable: true, dbColumn: 'address',
+      set: function (job, value) { job.address = String(value || '').trim(); return 'Address → ' + (job.address || '—'); }
+    },
+    {
+      key: 'vehicle', label: 'Vehicle / property', type: 'text', editable: true, dbColumn: 'vehicle',
+      set: function (job, value) { job.vehicle = String(value || '').trim(); return 'Vehicle → ' + (job.vehicle || '—'); }
+    },
+    {
+      // Stored in minutes client-side (matches the pre-existing durationMin
+      // field), converted to hours on write since that's what the real
+      // duration_hours column expects.
+      key: 'durationMin', label: 'Duration (min)', type: 'number', editable: true,
+      get: function (job) { return job.durationMin || 120; },
+      set: function (job, value) { job.durationMin = parseInt(value, 10) || 120; return 'Duration → ' + job.durationMin + ' min'; },
+      dbPatch: function (job) { return { duration_hours: (job.durationMin || 120) / 60 }; }
+    },
+    {
+      // Persists the human-authored text only — embedded quote/discount/
+      // recurring tags are parsed out for display (see parseJobNotesMeta)
+      // and are not re-appended on save. The permanent fix is real
+      // source/quoteStatus/quoteAmount columns (tracked in
+      // docs/JOBS_DRAWER_AUDIT.md); until then, a field that looks
+      // editable but silently doesn't save is worse than one that saves
+      // the clean text and lets the tags go.
+      key: 'notes', label: 'Notes', type: 'textarea', editable: true, dbColumn: 'notes',
+      get: function (job) { return parseJobNotesMeta((job.internalNotes && job.internalNotes[0]) || job.notes || '').clean; },
+      set: function (job, value) {
+        var clean = String(value || '').trim();
+        job.notes = clean;
+        job.internalNotes = clean ? [clean] : [];
+        return 'Notes updated';
+      }
+    }
+  ];
+  function jobsDrawerSchemaMap() {
+    var map = {};
+    JOBS_DRAWER_ONLY_COLUMNS.forEach(function (c) { map[c.key] = c; });
+    return map;
+  }
+  function findJobsColumnDef(key) { return jobsSchemaMap()[key] || jobsDrawerSchemaMap()[key] || null; }
+
+  // Real, computed relative-day labels — string comparison against
+  // todayStr()/addDaysStr(), never touches the timeline's toLocaleString()
+  // timestamps (those aren't reliably re-parseable across browsers, so
+  // nothing in this drawer attempts elapsed-time math like "started 2h
+  // ago" — a wrong number would undermine the one thing this redesign is
+  // supposed to build: that every figure shown is trustworthy).
+  function jobRelativeDateLabel(dateStr) {
+    if (!dateStr) return '';
+    var today = todayStr();
+    if (dateStr === today) return 'Today';
+    if (dateStr === addDaysStr(today, 1)) return 'Tomorrow';
+    if (dateStr === addDaysStr(today, -1)) return 'Yesterday';
+    return dateLong(dateStr);
+  }
+  // Real count, not a fabricated "workload" score — every other job
+  // (excluding this one) currently assigned to this tech that's still in
+  // an active state.
+  function jobActiveJobsCountForTech(techName, excludeJobId) {
+    if (!techName) return 0;
+    return jobsAll().filter(function (j) {
+      return j.assignedTo === techName && String(j.id) !== String(excludeJobId) &&
+        ['scheduled', 'in_progress', 'paused', 'pending'].indexOf(j.status) > -1;
+    }).length;
+  }
+  // Renders one drawer field through the exact same rendererRegistry/
+  // mutateJobField/persistJobPatch machinery the table cells use — click
+  // to edit, commit on blur/change, no separate Save step — just with
+  // form-appropriate sizing/typography (.jos-je-field-value/-input)
+  // instead of the table's compact chip styling, which doesn't fit a
+  // spacious labeled-field context. The interaction wiring is 100%
+  // shared (same data-jos-field/data-jos-record-id attributes, same
+  // .jos-ld-editing class the existing click/blur/change listeners in
+  // wireJobsRoot already look for); only the presentation markup differs.
+  function jobDrawerFieldHtml(job, jobKey, colKey, isEditing) {
+    var col = findJobsColumnDef(colKey);
+    if (!col) return '';
+    var value = col.get ? col.get(job) : job[col.key];
+    if (isEditing) {
+      var renderer = rendererRegistry[col.type] || rendererRegistry.text;
+      var editHtml = renderer.edit ? renderer.edit(value, col, jobKey) : '';
+      return editHtml.replace('class="jos-ld-cell-inline jos-ld-editing"', 'class="jos-je-field-input jos-ld-cell-inline jos-ld-editing"');
+    }
+    var display = (value == null || value === '') ? '' : String(col.type === 'phone' ? rendererRegistry.phone.format(value) : (col.format ? col.format(value) : value));
+    return '<span class="jos-je-field-value' + (display ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(jobKey) + '" title="Click to edit">' + (display ? esc(display) : 'Click to add') + '</span>';
+  }
+  function jobDrawerField(label, colKey, job, jobKey, editingKey, opts) {
+    opts = opts || {};
+    var isEditing = editingKey === colKey;
+    return '<div class="jos-je-field' + (opts.full ? ' full' : '') + '"><span>' + esc(label) + '</span>' + jobDrawerFieldHtml(job, jobKey, colKey, isEditing) + '</div>';
+  }
 
   function loadJobsColumns(root) {
     var cached = tablePreferences.load('user', 'jobs', function (remote) {
@@ -16399,166 +16519,65 @@
   }
   function saveJobsColumns(cols) { tablePreferences.save('user', 'jobs', { columns: cols }); }
 
-  // Builds a real Supabase patch alongside the in-memory mutation — this
-  // form used to only mutate `job` and rely on persistJobSoon(), which
-  // called persistPipelineSoon() (the LEADS pipeline saver) and never
-  // touched the jobs table at all. Every edit made through this form —
-  // including Status — updated local state only and silently reverted on
-  // the next reload. `time` is deliberately excluded from the patch, same
-  // as the table's Time column: the free-text input here ("10:00 AM")
-  // isn't guaranteed to parse into Postgres's `time` column format
-  // (HH:MM, 24h), and writing it anyway would trade a "changes don't
-  // save" bug for a "changes fail or corrupt" bug. Revisit once there's a
-  // real time picker. Customer is edited as separate First/Last inputs
-  // (matching Leads) but the jobs table only has one customer_name column
-  // — same client-side split/join as Leads' firstName/lastName columns
-  // (splitLeadName), rejoined into one string here.
-  function applyJobEditFormToJob(job) {
-    if (!job) return { ok: false, error: 'Select a job' };
-    var patch = {};
-    var custFirstEl = el('jos-je-customer-first');
-    var custLastEl = el('jos-je-customer-last');
-    if (custFirstEl || custLastEl) {
-      var custName = (String((custFirstEl && custFirstEl.value) || '').trim() + ' ' + String((custLastEl && custLastEl.value) || '').trim()).trim();
-      if (!custName) return { ok: false, error: 'Customer name is required' };
-      job.customer = custName;
-      patch.customer_name = job.customer;
+  // Every field here is click-to-edit through the exact same mechanism
+  // the table uses (jobDrawerField -> jobDrawerFieldHtml -> rendererRegistry
+  // -> mutateJobField -> persistJobPatch) — no Save button, no per-field
+  // "editing" toggle to manage by hand. Status and Job # moved to the
+  // header (shown once, not duplicated here); Time stays read-only (see
+  // the Postgres-format note on jobDrawerFieldHtml's `time` column).
+  // Assignment/Financial/Activity show only values computed from real
+  // data — no fabricated availability, ratings, or confirmation state.
+  function renderJobEditForm(root, j) {
+    var editingField = root._josJobsDrawerEditField && root._josJobsDrawerEditField.field;
+    var jobKey = String(j.id);
+    var F = function (label, key, opts) { return jobDrawerField(label, key, j, jobKey, editingField, opts); };
+    function section(title, innerHtml) {
+      return '<div class="jos-je-section"><div class="jos-kicker">' + esc(title) + '</div>' + innerHtml + '</div>';
     }
-    var numEl = el('jos-je-number');
-    if (numEl) {
-      var numVal = String(numEl.value || '').trim();
-      if (numVal) job.jobNumber = numVal;
-    }
-    var phoneEl = el('jos-je-phone');
-    if (phoneEl) { job.phone = String(phoneEl.value || '').trim(); patch.phone = job.phone; }
-    var emailEl = el('jos-je-email');
-    if (emailEl) { job.email = String(emailEl.value || '').trim(); patch.email = job.email; }
-    var addrEl = el('jos-je-address');
-    if (addrEl) { job.address = String(addrEl.value || '').trim(); patch.address = job.address; }
-    var vehEl = el('jos-je-vehicle');
-    if (vehEl) { job.vehicle = String(vehEl.value || '').trim(); patch.vehicle = job.vehicle; }
-    var svcEl = el('jos-je-service');
-    if (svcEl) { job.service = String(svcEl.value || job.service || '').trim(); patch.service_name = job.service; }
-    var amtEl = el('jos-je-amount');
-    if (amtEl) {
-      var amtRaw = String(amtEl.value || '').trim();
-      if (amtRaw !== '') { job.amount = parseFloat(amtRaw) || 0; patch.amount = job.amount; }
-    }
-    var dateEl = el('jos-je-date');
-    if (dateEl) {
-      var dateVal = String(dateEl.value || '').trim();
-      if (dateVal) { job.date = dateVal; patch.scheduled_date = job.date; }
-    }
-    var timeEl = el('jos-je-time');
-    if (timeEl) {
-      var timeVal = String(timeEl.value || '').trim();
-      if (timeVal) job.time = timeVal;
-    }
-    var durEl = el('jos-je-duration');
-    if (durEl) {
-      var durRaw = parseInt(String(durEl.value || ''), 10);
-      if (Number.isFinite(durRaw) && durRaw > 0) { job.durationMin = durRaw; patch.duration_hours = durRaw / 60; }
-    }
-    var asgEl = el('jos-je-assigned');
-    if (asgEl) { job.assignedTo = String(asgEl.value || job.assignedTo || 'Unassigned').trim(); patch.assigned_to = job.assignedTo; }
-    var statusEl = el('jos-je-status');
-    if (statusEl && statusEl.value) { job.status = String(statusEl.value); patch.status = job.status; }
-    var notesEl = el('jos-je-notes');
-    if (notesEl) {
-      var notesVal = String(notesEl.value || '').trim();
-      if (!Array.isArray(job.internalNotes)) job.internalNotes = [];
-      if (notesVal) {
-        if (job.internalNotes[0] !== notesVal) job.internalNotes = [notesVal].concat(job.internalNotes.slice(1));
-      } else if (job.internalNotes.length) {
-        job.internalNotes = job.internalNotes.slice(1);
-      }
-    }
-    return { ok: true, patch: patch };
-  }
+    function grid(fieldsHtml) { return '<div class="jos-je-grid">' + fieldsHtml + '</div>'; }
 
-  // Same dbColumn mapping as applyJobEditFormToJob, same reason: this used
-  // to only mutate `job` in memory and rely on the (broken) persistJobSoon.
-  // `time` stays excluded from the patch for the same free-text/Postgres-
-  // `time`-column risk noted there.
-  var JOBS_LIST_FIELD_DB_COLUMN = { customer: 'customer_name', phone: 'phone', service: 'service_name', date: 'scheduled_date', amount: 'amount', status: 'status' };
-  function applyJobListField(input) {
-    if (!input) return { ok: false };
-    var jobId = input.getAttribute('data-jos-job-id');
-    var field = input.getAttribute('data-jos-job-field');
-    var job = findJob(jobId);
-    if (!job || job.isBlock || job.isGoogle || !field) return { ok: false };
-    var val = String(input.value || '').trim();
-    if (field === 'customer') {
-      if (!val) return { ok: false, error: 'Customer name is required' };
-      job.customer = val;
-    } else if (field === 'phone') job.phone = val;
-    else if (field === 'service') job.service = val || job.service;
-    else if (field === 'date') { if (val) job.date = val; }
-    else if (field === 'time') job.time = val;
-    else if (field === 'amount') job.amount = val === '' ? (job.amount || 0) : (parseFloat(val) || 0);
-    else if (field === 'status') { if (val) job.status = val; }
-    else return { ok: false };
-    var patch = {};
-    var dbCol = JOBS_LIST_FIELD_DB_COLUMN[field];
-    if (dbCol) patch[dbCol] = job[field];
-    return { ok: true, job: job, patch: patch };
-  }
-
-
-  function renderJobEditForm(j, opts) {
-    opts = opts || {};
-    var inline = !!opts.inline;
-    var rawNote = (j.internalNotes && j.internalNotes[0]) ? String(j.internalNotes[0]) : '';
-    var notesMeta = parseJobNotesMeta(rawNote);
-    var custName = splitLeadName(j.customer);
-    var quoteLine = notesMeta.quote
-      ? '<div class="jos-je-field full jos-je-quote-meta"><span>Quote</span><div class="jos-muted">' +
-        (notesMeta.quote.amount ? esc(notesMeta.quote.amount) : '') +
-        (notesMeta.quote.status ? (notesMeta.quote.amount ? ' · ' : '') + esc(notesMeta.quote.status) : '') +
-        '</div></div>'
+    var notesMeta = parseJobNotesMeta((j.internalNotes && j.internalNotes[0]) || j.notes || '');
+    var quoteRow = notesMeta.quote
+      ? '<div class="jos-je-scan-row"><span>Quote</span><strong>' + (notesMeta.quote.amount ? esc(notesMeta.quote.amount) : '') + (notesMeta.quote.status ? (notesMeta.quote.amount ? ' · ' : '') + esc(notesMeta.quote.status) : '') + '</strong></div>'
       : '';
-    // Grouped into named sections (same .jos-kicker label style used
-    // everywhere else in Jobs — Job Summary, Insights, etc.) instead of
-    // one long flat grid. Field set is unchanged from before this pass —
-    // this is a reorganization, not a decision about which fields to
-    // keep; that's the audit's call, not this pass's.
-    function section(title, fieldsHtml) {
-      return '<div class="jos-je-section"><div class="jos-kicker">' + esc(title) + '</div><div class="jos-je-grid">' + fieldsHtml + '</div></div>';
-    }
-    return '<div class="jos-jd-stack jos-je-form' + (inline ? ' is-inline' : '') + '">' +
-      (inline ? '' : '<p class="jos-muted" style="margin:0 0 8px">Edit the job details Hubly will use for scheduling, CRM, and invoices.</p>') +
-      section('Customer',
-        jobEditField('jos-je-customer-first', 'First name', custName.first, { placeholder: 'First name', autofocus: !inline }) +
-        jobEditField('jos-je-customer-last', 'Last name', custName.last, { placeholder: 'Last name' }) +
-        jobEditField('jos-je-phone', 'Phone', j.phone || '', { placeholder: '(555) 000-0000' }) +
-        jobEditField('jos-je-email', 'Email', j.email || '', { type: 'email', placeholder: 'name@email.com' }) +
-        jobEditField('jos-je-address', 'Address', j.address || '', { full: true, placeholder: 'Service address' })
-      ) +
-      section('Job',
-        jobEditField('jos-je-number', 'Job #', jobNumber(j), { placeholder: 'JOB-1001' }) +
-        jobEditField('jos-je-status', 'Status', j.status || 'scheduled', { kind: 'select', options: jobStatusOptions() }) +
-        jobEditField('jos-je-service', 'Service', j.service || '', { kind: 'select', options: jobServiceOptions(j) }) +
-        jobEditField('jos-je-vehicle', 'Vehicle / property', j.vehicle || '', { placeholder: 'Optional' }) +
-        jobEditField('jos-je-date', 'Date', j.date || '', { type: 'date' }) +
-        jobEditField('jos-je-time', 'Time', j.time || '', { placeholder: '10:00 AM' }) +
-        jobEditField('jos-je-duration', 'Duration (min)', j.durationMin || 120, { type: 'number' })
-      ) +
-      section('Assignment',
-        jobEditField('jos-je-assigned', 'Assigned to', j.assignedTo || 'Unassigned', { kind: 'select', options: jobTeamOptions(j) })
-      ) +
-      section('Financial',
-        jobEditField('jos-je-amount', 'Amount', j.amount != null ? j.amount : '', { type: 'number', placeholder: '0' })
-      ) +
-      section('Notes', quoteLine + jobEditField('jos-je-notes', 'Notes', notesMeta.clean, { kind: 'textarea', full: true, placeholder: 'Internal notes…', rows: 3 })) +
-      '<div class="jos-btn-row jos-mt">' +
-      btn('jobs-edit-save', inline ? 'Save changes' : 'Save job', 'jos-btn-brand jos-btn-sm') +
-      (inline
-        ? btn('jobs-start', 'Start', 'jos-btn jos-btn-sm') +
-          btn('jobs-reschedule', 'Reschedule', 'jos-btn jos-btn-sm') +
-          btn('jobs-complete', 'Complete', 'jos-btn jos-btn-sm') +
-          btn('jobs-message', 'Message', 'jos-btn jos-btn-sm')
-        : btn('jobs-edit-cancel', 'Cancel', 'jos-btn jos-btn-sm')) +
-      '</div></div>';
+    var depositLabel = depositStatusLabel(j.depositStatus);
+    var depositRow = '<div class="jos-je-scan-row"><span>Deposit</span><strong>' + esc(depositLabel || 'Not requested') + '</strong></div>';
+    var invoiceRow = '<div class="jos-je-scan-row"><span>Invoice</span><strong>' + (j.invoice ? esc(j.invoice.status) : 'None yet') + '</strong></div>';
+    var priceRow = '<div class="jos-je-scan-row"><span>Price</span><strong>' + esc(money(j.amount) || '$0') + '</strong></div>';
+
+    var assignedName = j.assignedTo || '';
+    var assignedTech = assignedName ? (jobsTeam() || []).find(function (t) { return t.name === assignedName; }) : null;
+    var assignmentStat = assignedName
+      ? '<div class="jos-je-substat">' + (assignedTech && assignedTech.role ? esc(assignedTech.role) + ' · ' : '') + jobActiveJobsCountForTech(assignedName, j.id) + ' active job' + (jobActiveJobsCountForTech(assignedName, j.id) === 1 ? '' : 's') + '</div>'
+      : '<div class="jos-je-substat is-empty">Unassigned</div>';
+
+    var activityItems = (j.timeline || []).slice().reverse();
+    var activityHtml = activityItems.length
+      ? '<div class="jos-je-activity">' + activityItems.map(function (t) {
+          return '<div class="jos-je-activity-row"><i class="jos-je-activity-dot"></i><div><strong>' + esc(t.label) + '</strong><span class="jos-muted">' + esc(t.at || '') + '</span></div></div>';
+        }).join('') + '</div>'
+      : '<div class="jos-muted">No activity yet.</div>';
+
+    return '<div class="jos-jd-stack jos-je-form is-inline">' +
+      section('Customer', grid(
+        F('First name', 'customerFirst') +
+        F('Last name', 'customerLast') +
+        F('Phone', 'phone') +
+        F('Email', 'email') +
+        F('Address', 'address', { full: true })
+      )) +
+      section('Job', grid(
+        F('Service', 'service') +
+        F('Vehicle / property', 'vehicle') +
+        F('Date', 'date') +
+        '<div class="jos-je-field"><span>Time</span><span class="jos-je-field-value is-readonly">' + (j.time ? esc(j.time) : 'Not set') + '</span></div>' +
+        F('Duration (min)', 'durationMin')
+      )) +
+      section('Assignment', grid(F('Assigned to', 'assignedTo')) + assignmentStat) +
+      section('Financial', '<div class="jos-je-scan">' + priceRow + depositRow + invoiceRow + quoteRow + '</div>') +
+      section('Activity', activityHtml) +
+      section('Notes', grid(F('Notes', 'notes', { full: true }))) +
+      '</div>';
   }
 
   function jobsPageSize(root) { return root._josJobsPageSize || 25; }
@@ -16657,12 +16676,21 @@
       '</div></div>';
   }
 
+  // Data this header/footer needs is real only — no fabricated
+  // availability, ratings, or confirmation state (see
+  // jobActiveJobsCountForTech/jobRelativeDateLabel above for the same
+  // rule applied to the Assignment section).
   function renderJobDrawer(root, j, workspaceTab) {
     workspaceTab = workspaceTab || 'overview';
     var canEdit = !(j.isBlock || j.isGoogle);
+    // Customer/Services tabs merged into Overview (same fields, now
+    // sectioned there); Timeline/Messages dropped — Timeline's job.timeline
+    // feed already lives in Overview's Activity section (see
+    // renderJobEditForm) and Messages never showed a real thread, just
+    // navigated to the global inbox, which is now a "⋯" menu item instead
+    // of its own tab.
     var tabs = [
-      ['overview', 'Overview'], ['customer', 'Customer'], ['services', 'Services'], ['photos', 'Photos'],
-      ['checklist', 'Checklist'], ['messages', 'Messages'], ['invoice', 'Invoice'], ['timeline', 'Timeline'], ['activity', 'Activity']
+      ['overview', 'Overview'], ['photos', 'Photos'], ['checklist', 'Checklist'], ['invoice', 'Invoices']
     ];
     var tabBar = '<div class="jos-jd-tabs">' + tabs.map(function (t) {
       return '<button type="button" class="jos-jd-tab' + (workspaceTab === t[0] ? ' on' : '') + '" data-jos-job-ws="' + t[0] + '">' + esc(t[1]) + '</button>';
@@ -16671,41 +16699,12 @@
     var body = '';
     if (workspaceTab === 'overview') {
       body = canEdit
-        ? renderJobEditForm(j, { inline: true })
+        ? renderJobEditForm(root, j)
         : '<div class="jos-jd-stack">' +
           '<div class="jos-jd-kv"><span>Job #</span><strong>' + esc(jobNumber(j)) + '</strong></div>' +
           '<div class="jos-jd-kv"><span>Status</span><strong>' + esc(j.status || '—') + '</strong></div>' +
           '<div class="jos-jd-kv"><span>When</span><strong>' + esc((j.date || '—') + ' · ' + (j.time || '')) + '</strong></div>' +
           '<div class="jos-muted jos-mt">Calendar blocks are managed on the schedule.</div></div>';
-    } else if (workspaceTab === 'customer') {
-      body = canEdit
-        ? '<div class="jos-jd-stack jos-je-form is-inline">' +
-          '<div class="jos-je-grid">' +
-          jobEditField('jos-je-customer', 'Customer', j.customer || '', { placeholder: 'Customer name' }) +
-          jobEditField('jos-je-phone', 'Phone', j.phone || '', { placeholder: '(555) 000-0000' }) +
-          jobEditField('jos-je-email', 'Email', j.email || '', { type: 'email', placeholder: 'name@email.com' }) +
-          jobEditField('jos-je-address', 'Address', j.address || '', { full: true, placeholder: 'Service address' }) +
-          jobEditField('jos-je-vehicle', 'Vehicle / property', j.vehicle || '', { full: true, placeholder: 'Optional' }) +
-          '</div>' +
-          '<div class="jos-btn-row jos-mt">' +
-          btn('jobs-edit-save', 'Save changes', 'jos-btn-brand jos-btn-sm') +
-          btn('jobs-open-customer', 'Open Customer', 'jos-btn jos-btn-sm') +
-          btn('go-chats', 'Messages', 'jos-btn jos-btn-sm') +
-          '</div></div>'
-        : '<div class="jos-muted">No customer profile on this block.</div>';
-    } else if (workspaceTab === 'services') {
-      body = canEdit
-        ? '<div class="jos-jd-stack jos-je-form is-inline">' +
-          '<div class="jos-je-grid">' +
-          jobEditField('jos-je-service', 'Service', j.service || '', { kind: 'select', options: jobServiceOptions(j), full: true }) +
-          jobEditField('jos-je-amount', 'Amount', j.amount != null ? j.amount : '', { type: 'number', placeholder: '0' }) +
-          jobEditField('jos-je-duration', 'Duration (min)', j.durationMin || 120, { type: 'number' }) +
-          '</div>' +
-          '<div class="jos-btn-row jos-mt">' +
-          btn('jobs-edit-save', 'Save changes', 'jos-btn-brand jos-btn-sm') +
-          btn('jobs-invoice-create', 'Add Service / Invoice', 'jos-btn jos-btn-sm') +
-          '</div></div>'
-        : '<div class="jos-muted">No services on this block.</div>';
     } else if (workspaceTab === 'photos') {
       body = '<div class="jos-jd-stack"><div class="jos-kicker">Before</div><div class="jos-photo-grid">' +
         ((j.photos && j.photos.before && j.photos.before.length ? j.photos.before : []).map(function (p, i) {
@@ -16725,9 +16724,6 @@
           return '<label class="jos-check-row"><input type="checkbox" data-jos-job="' + esc(j.id) + '" data-jos-check="' + esc(c.id) + '"' + (c.done ? ' checked' : '') + '> ' + esc(c.label) + '</label>';
         }).join('') + '</div>' +
         '<div class="jos-chat-input jos-mt"><input id="jos-jobs-check-new" type="text" placeholder="Custom checklist item…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-check-add">Add</button></div></div>';
-    } else if (workspaceTab === 'messages') {
-      body = '<div class="jos-jd-stack"><p class="jos-muted">SMS · Email · Internal notes for ' + esc(j.customer) + '</p>' +
-        '<div class="jos-btn-row">' + btn('go-chats', 'Open Inbox', 'jos-btn-brand jos-btn-sm') + btn('jobs-message', 'Send reminder', 'jos-btn jos-btn-sm') + btn('ask', 'AI Draft Reply', 'jos-btn jos-btn-sm') + '</div></div>';
     } else if (workspaceTab === 'invoice') {
       body = '<div class="jos-jd-stack">' +
         (j.invoice ? '<div class="jos-note"><strong>Invoice ' + esc(j.invoice.id) + '</strong><div class="jos-muted">' + esc(money(j.invoice.amount)) + ' · ' + esc(j.invoice.status) + '</div></div>' : '<div class="jos-muted">No invoice yet · line items, tips, taxes</div>') +
@@ -16737,31 +16733,71 @@
         btn('jobs-invoice-paid', 'Collect Payment', 'jos-btn jos-btn-sm') +
         btn('go-money', 'Refund', 'jos-btn jos-btn-sm') +
         '</div></div>';
-    } else if (workspaceTab === 'timeline' || workspaceTab === 'activity') {
-      body = '<div class="jos-jd-stack">' + (j.timeline || []).map(function (t) {
-        return '<button type="button" class="jos-jd-tl" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '"><i></i><span><strong>' + esc(t.label) + '</strong><span class="jos-muted">' + esc(t.at || '') + '</span></span></button>';
-      }).join('') + '</div>';
     } else {
       body = '<div class="jos-muted">Select a tab</div>';
     }
 
-    // Header name is the drawer's equivalent of Leads' panel identity —
-    // same click-to-edit-in-place pattern, same CSS (.jos-ld-ws-name-btn /
-    // .jos-ld-name-input), no Save button. The Customer tab's full form
-    // still exists for phone/email/address/vehicle (Job-specific richness
-    // Leads has no equivalent of), but the record's *name* — like Leads —
-    // should be renameable right from where it's displayed.
+    // Header leads with the service (what work this job is) rather than
+    // the customer name — for a job, "what + when + for whom" reads
+    // better in that order than it would for a lead, where the person
+    // *is* the subject. Both service and status are click-to-edit here
+    // too, same mechanism as every other field — status keeps its real
+    // toned pill styling (rendererRegistry already knows how to render
+    // that) instead of the plain form-field look. Customer's click-to-
+    // rename (existing, from an earlier pass) still lives right below,
+    // demoted from the H2 to a supporting line.
     var jobNameEditing = !!root._josJobNameEditing;
     var jobNameField = jobNameEditing
       ? '<input id="jos-jd-name" class="jos-ld-name-input" type="text" value="' + esc(j.customer || '') + '" aria-label="Customer name" autofocus>'
       : '<button type="button" class="jos-ld-ws-name-btn" data-jos-act="jobs-name-edit-open" title="Click to rename">' + esc(j.customer || 'Customer') + '</button>';
+    var editingField = root._josJobsDrawerEditField && root._josJobsDrawerEditField.field;
+    var jobKey = String(j.id);
+    var serviceCol = findJobsColumnDef('service');
+    var titleHtml = canEdit
+      ? (editingField === 'service'
+        ? rendererRegistry.select.edit(j.service || '', serviceCol, jobKey).replace('class="jos-ld-cell-inline jos-ld-editing"', 'class="jos-jd-title-input jos-ld-cell-inline jos-ld-editing"')
+        : '<h2 data-jos-field="service" data-jos-record-id="' + esc(jobKey) + '" title="Click to edit">' + esc(j.service || 'Job') + '</h2>')
+      : '<h2>' + esc(j.service || 'Job') + '</h2>';
+    var statusCol = findJobsColumnDef('status');
+    var statusHtml = canEdit
+      ? (editingField === 'status'
+        ? rendererRegistry.select.edit(j.status || 'scheduled', statusCol, jobKey).replace('class="jos-ld-cell-inline jos-ld-editing"', 'class="jos-jd-status-input jos-ld-cell-inline jos-ld-editing"')
+        : rendererRegistry.select.display(j.status || 'scheduled', statusCol, jobKey))
+      : '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status || '') + '</span>';
+    var whenHtml = j.date ? (esc(jobRelativeDateLabel(j.date)) + (j.time ? ' · ' + esc(j.time) : '')) : 'Not scheduled';
+
     return '<aside class="jos-jobs-drawer open" id="jos-jobs-drawer">' +
-      '<div class="jos-jd-head"><div><div class="jos-kicker">Job Details</div><h2>' + jobNameField + '</h2><div class="jos-muted">' + esc(j.service || '') + ' · ' + esc(jobNumber(j)) + '</div></div>' +
-      '<div class="jos-jd-head-acts">' +
+      '<div class="jos-jd-head">' +
+      '<div class="jos-jd-head-top">' +
+      '<div class="jos-jd-head-icon" aria-hidden="true">' + (j.isGoogle ? '📅' : '🔧') + '</div>' +
+      '<div class="jos-jd-head-title">' + titleHtml + '</div>' +
       '<button type="button" class="jos-icon-btn" data-jos-act="jobs-drawer-close" aria-label="Close">✕</button>' +
-      '</div></div>' +
+      '</div>' +
+      '<div class="jos-jd-head-meta">' + statusHtml + '<span class="jos-muted">' + whenHtml + '</span></div>' +
+      '<div class="jos-jd-head-customer">' + jobNameField + '<span class="jos-muted">' + esc(jobNumber(j)) + '</span></div>' +
+      '</div>' +
       tabBar +
-      '<div class="jos-jd-body">' + body + '</div></aside>';
+      '<div class="jos-jd-body">' + body + '</div>' +
+      (workspaceTab === 'overview' && canEdit ? renderJobDrawerFooter(j) : '') +
+      '</aside>';
+  }
+
+  // Start/Complete are shown only when they'd be a legitimate transition
+  // from the job's current status — showing "Start Job" on an already-
+  // completed job would let a misclick silently reopen it. "All changes
+  // saved" replaces the old "Save changes" button: every field in
+  // Overview commits on blur/change now (see renderJobEditForm), so
+  // there's nothing left to batch-save.
+  function renderJobDrawerFooter(j) {
+    var canStart = ['scheduled', 'pending'].indexOf(j.status) > -1;
+    var canComplete = ['completed', 'cancelled'].indexOf(j.status) < 0;
+    return '<div class="jos-jd-foot">' +
+      '<span class="jos-jd-saved">All changes saved <i>✓</i></span>' +
+      '<div class="jos-jd-foot-acts">' +
+      (canStart ? btn('jobs-start', 'Start Job', 'jos-btn jos-btn-sm') : '') +
+      (canComplete ? btn('jobs-complete', 'Complete Job', 'jos-btn-brand jos-btn-sm') : '') +
+      '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" data-jos-drawer-menu="1" aria-label="More actions">⋯</button>' +
+      '</div></div>';
   }
 
   // Schema-driven, same shape as renderLeadsTable — headers from the
@@ -17268,55 +17304,6 @@
         e.stopPropagation();
       }
     });
-    function saveInlineListField(input, opts) {
-      opts = opts || {};
-      var result = applyJobListField(input);
-      if (!result.ok) {
-        if (result.error && !opts.quiet) toast(result.error);
-        return;
-      }
-      if (result.patch && Object.keys(result.patch).length) persistJobPatch(result.job, result.patch);
-      if (opts.rerender) {
-        root._josJobsSkipLoading = true;
-        root._josJobId = result.job.id;
-        rerenderJobsOsFrom(root);
-      } else if (input.getAttribute('data-jos-job-field') === 'customer') {
-        var head = el('jos-jobs-drawer');
-        if (head) {
-          var h2 = head.querySelector('.jos-jd-head h2');
-          var nameBtn = h2 && h2.querySelector('.jos-ld-ws-name-btn');
-          if (nameBtn) nameBtn.textContent = result.job.customer || 'Customer';
-          else if (h2 && !root._josJobNameEditing) h2.textContent = result.job.customer || 'Customer';
-        }
-      }
-    }
-    function saveDrawerForm(opts) {
-      opts = opts || {};
-      var job = findJob(root._josJobId);
-      if (!job || job.isBlock || job.isGoogle) return;
-      var result = applyJobEditFormToJob(job);
-      if (!result.ok) {
-        if (!opts.quiet) toast(result.error || 'Could not save');
-        return false;
-      }
-      if (result.patch && Object.keys(result.patch).length) persistJobPatch(job, result.patch);
-      if (!opts.quiet) toast('Saved');
-      if (opts.rerender) {
-        root._josJobsSkipLoading = true;
-        rerenderJobsOsFrom(root);
-      } else {
-        var drawer = el('jos-jobs-drawer');
-        if (drawer) {
-          var h2 = drawer.querySelector('.jos-jd-head h2');
-          var sub = drawer.querySelector('.jos-jd-head .jos-muted');
-          var nameBtn2 = h2 && h2.querySelector('.jos-ld-ws-name-btn');
-          if (nameBtn2) nameBtn2.textContent = job.customer || 'Customer';
-          else if (h2 && !root._josJobNameEditing) h2.textContent = job.customer || 'Customer';
-          if (sub) sub.textContent = (job.service || '') + ' · ' + jobNumber(job);
-        }
-      }
-      return true;
-    }
     root.addEventListener('change', function (e) {
       if (e.target && e.target.id === 'jos-jd-name') {
         var newCustName = String(e.target.value || '').trim();
@@ -17329,43 +17316,11 @@
         rerenderJobsOsFrom(root);
         return;
       }
-      var listField = e.target.closest('[data-jos-job-field]');
-      if (listField) {
-        saveInlineListField(listField, { quiet: true, rerender: listField.getAttribute('data-jos-job-field') === 'status' });
-        e.stopPropagation();
-        return;
-      }
-      if (e.target.closest('.jos-je-form') && e.target.matches('select, input[type="date"], input[type="number"]')) {
-        saveDrawerForm({ quiet: true, rerender: false });
-      }
     });
     root.addEventListener('focusout', function (e) {
       if (e.target && e.target.id === 'jos-jd-name' && root._josJobNameEditing) {
         setTimeout(function () { if (root._josJobNameEditing) { root._josJobNameEditing = false; rerenderJobsOsFrom(root); } }, 0);
         return;
-      }
-      var listField = e.target.closest('[data-jos-job-field]');
-      if (listField && e.target.matches('input')) {
-        saveInlineListField(listField, { quiet: true, rerender: false });
-        return;
-      }
-      if (e.target.closest('.jos-je-form') && e.target.matches('input, textarea')) {
-        var next = e.relatedTarget;
-        if (next && next.closest && next.closest('.jos-je-form')) return;
-        saveDrawerForm({ quiet: true, rerender: false });
-      }
-    });
-    root.addEventListener('keydown', function (e) {
-      if (e.key !== 'Enter') return;
-      var listField = e.target.closest('[data-jos-job-field]');
-      if (listField && e.target.matches('input') && e.target.type !== 'date') {
-        e.preventDefault();
-        e.target.blur();
-        return;
-      }
-      if (e.target.closest('.jos-je-form') && e.target.matches('input') && e.target.type !== 'date') {
-        e.preventDefault();
-        e.target.blur();
       }
     });
     root.addEventListener('dragstart', function (e) {
@@ -17625,7 +17580,7 @@
         rerenderJobsOsFrom(root);
       }
       var field = e.target.closest('[data-jos-field]');
-      if (field) {
+      if (field && !field.closest('#jos-jobs-drawer')) {
         var fJobId = field.getAttribute('data-jos-record-id');
         var fKey = field.getAttribute('data-jos-field');
         var fCol = findJobsColumnDef(fKey);
@@ -17638,16 +17593,32 @@
           rerenderJobsOsFrom(root);
         }
       }
+      var dField = e.target.closest('#jos-jobs-drawer [data-jos-field]');
+      if (dField) {
+        var dKey = dField.getAttribute('data-jos-field');
+        var dCol = findJobsColumnDef(dKey);
+        if (dCol) {
+          var dRenderer = rendererRegistry[dCol.type] || rendererRegistry.text;
+          var dVal = dRenderer.readValue ? dRenderer.readValue(e.target) : e.target.value;
+          root._josJobsDrawerEditField = null;
+          var dLabel = mutateJobField(root._josJobId, dCol, dVal);
+          toast(dLabel || (dCol.label + ' updated'));
+          rerenderJobsOsFrom(root);
+        }
+      }
     });
 
     // Same interaction model as Leads: click a cell to edit it; click the
     // record's name (openOnClick) opens the detail drawer immediately —
     // no double-click anywhere on this table opens a record. Renaming
     // the customer happens in the drawer itself, not via a double-click
-    // on the table cell.
+    // on the table cell. Drawer fields are excluded here and handled by
+    // their own listener below — see openJobsDrawerFieldEdit's comment
+    // for why they don't share edit state with the table even though
+    // several field keys exist on both.
     root.addEventListener('click', function (e) {
       var editField = e.target.closest('[data-jos-field]');
-      if (!editField || editField.classList.contains('jos-ld-editing')) return;
+      if (!editField || editField.classList.contains('jos-ld-editing') || editField.closest('#jos-jobs-drawer')) return;
       var jobId = editField.getAttribute('data-jos-record-id');
       var key = editField.getAttribute('data-jos-field');
       if (!jobId || !key) return;
@@ -17663,6 +17634,16 @@
       openJobsCellEdit(root, jobId, key);
       e.stopPropagation();
     });
+    root.addEventListener('click', function (e) {
+      var editField = e.target.closest('#jos-jobs-drawer [data-jos-field]');
+      if (!editField || editField.classList.contains('jos-ld-editing')) return;
+      var key = editField.getAttribute('data-jos-field');
+      if (!key) return;
+      var col = findJobsColumnDef(key);
+      if (!col || col.editable === false) return;
+      openJobsDrawerFieldEdit(root, key);
+      e.stopPropagation();
+    });
 
     // Blur without a value change never fires 'change' — this is what
     // still closes the editor in that case, deferred a tick so a click
@@ -17670,6 +17651,17 @@
     // first (identical reasoning to the equivalent Leads blur handler).
     root.addEventListener('blur', function (e) {
       if (!(e.target && e.target.classList && e.target.classList.contains('jos-ld-editing'))) return;
+      if (e.target.closest('#jos-jobs-drawer')) {
+        var closingDrawerField = root._josJobsDrawerEditField;
+        if (!closingDrawerField) return;
+        setTimeout(function () {
+          if (root._josJobsDrawerEditField === closingDrawerField) {
+            root._josJobsDrawerEditField = null;
+            rerenderJobsOsFrom(root);
+          }
+        }, 0);
+        return;
+      }
       var closingCell = root._josJobsEditCell;
       if (!closingCell) return;
       setTimeout(function () {
@@ -17681,6 +17673,10 @@
     }, true);
 
     root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && root._josJobsDrawerEditField) {
+        cancelJobsDrawerFieldEdit(root);
+        return;
+      }
       if (e.key === 'Escape' && root._josJobsEditCell) {
         cancelJobsCellEdit(root);
         return;
@@ -18770,6 +18766,54 @@
     rerenderJobsOsFrom(root);
   }
 
+  // Same shape as openJobsCellEdit/cancelJobsCellEdit — deliberately a
+  // separate state variable (root._josJobsDrawerEditField, not
+  // root._josJobsEditCell) rather than reusing the table's, even though
+  // several field keys exist on both (service, assignedTo, date, amount,
+  // status): the table row and the drawer for that same job can both be
+  // on screen at once, and sharing one "what's being edited" variable
+  // between two independently-rendered live inputs for the same field
+  // would make focus/commit/cancel ambiguous. Every actual persistence
+  // call still goes through the same findJobsColumnDef/mutateJobField —
+  // only the "which field is the user currently editing" bookkeeping is
+  // kept separate.
+  function openJobsDrawerFieldEdit(root, key) {
+    var jobId = root._josJobId;
+    var job = findJob(jobId);
+    if (!job) return;
+    var col = findJobsColumnDef(key);
+    if (!col || col.editable === false) return;
+    root._josJobsDrawerEditField = { field: key, originalValue: tableColFieldGet(col, job) };
+    rerenderJobsOsFrom(root);
+    var sel = root.querySelector('#jos-jobs-drawer [data-jos-field="' + key + '"][data-jos-record-id="' + CSS.escape(jobId) + '"].jos-ld-editing');
+    if (sel) {
+      sel.focus({ preventScroll: true });
+      if (sel.tagName === 'SELECT') { try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
+      else if (sel.tagName === 'INPUT' || sel.tagName === 'TEXTAREA') { try { sel.select(); } catch (eSelText) {} }
+    }
+  }
+  function cancelJobsDrawerFieldEdit(root) {
+    var editing = root._josJobsDrawerEditField;
+    if (!editing) return;
+    var job = findJob(root._josJobId);
+    if (job) {
+      var col = findJobsColumnDef(editing.field);
+      if (col && col.type === 'select') {
+        var currentValue = tableColFieldGet(col, job);
+        if (currentValue !== editing.originalValue) mutateJobField(root._josJobId, col, editing.originalValue);
+      } else if (col) {
+        var renderer = rendererRegistry[col.type] || rendererRegistry.text;
+        var liveEl = root.querySelector('#jos-jobs-drawer [data-jos-field="' + editing.field + '"][data-jos-record-id="' + CSS.escape(root._josJobId) + '"].jos-ld-editing');
+        if (liveEl) {
+          if (renderer.writeValue) renderer.writeValue(liveEl, editing.originalValue);
+          else liveEl.value = editing.originalValue == null ? '' : editing.originalValue;
+        }
+      }
+    }
+    root._josJobsDrawerEditField = null;
+    rerenderJobsOsFrom(root);
+  }
+
   function handleJobsAct(act, t) {
     var root = jobsOsRoot();
     if (!root) return;
@@ -18956,9 +19000,26 @@
         var other = el(otherId);
         if (other) other.hidden = true;
         if (!pop) return;
-        var items = act === 'jobs-status-menu'
-          ? [['jobs-start', 'In Progress'], ['jobs-complete', 'Completed'], ['jobs-reschedule', 'Reschedule'], ['jobs-assign', 'Assign Tech'], ['jobs-cancel', 'Cancel'], ['jobs-duplicate', 'Duplicate']]
-          : [['jobs-open', 'View Job'], ['jobs-edit', 'Edit'], ['jobs-duplicate', 'Duplicate'], ['jobs-invoice-create', 'Invoice'], ['jobs-invoice-paid', 'Collect Payment'], ['jobs-assign', 'Assign Employee'], ['jobs-message', 'Send Reminder'], ['jobs-message', 'Message Customer'], ['jobs-photo-before', 'Photos'], ['jobs-check-add', 'Checklist'], ['jobs-delete', 'Delete']];
+        var items;
+        if (t && t.getAttribute('data-jos-drawer-menu')) {
+          // Curated for the drawer footer's "⋯" — Pause/Resume/Cancel/
+          // Duplicate/Delete only, filtered to transitions that actually
+          // make sense from the job's current status (no "Resume" on a
+          // job that was never paused, no "Cancel" on one already done).
+          var menuJob = jobId ? findJob(jobId) : job;
+          var st = menuJob ? menuJob.status : '';
+          items = [];
+          if (st === 'in_progress') items.push(['jobs-pause', 'Pause']);
+          if (st === 'paused') items.push(['jobs-resume', 'Resume']);
+          if (['completed', 'cancelled'].indexOf(st) < 0) items.push(['jobs-cancel', 'Cancel']);
+          items.push(['jobs-duplicate', 'Duplicate']);
+          items.push(['jobs-message', 'Message Customer']);
+          if (!menuJob || !menuJob.isGoogle) items.push(['jobs-delete', 'Delete']);
+        } else {
+          items = act === 'jobs-status-menu'
+            ? [['jobs-start', 'In Progress'], ['jobs-complete', 'Completed'], ['jobs-reschedule', 'Reschedule'], ['jobs-assign', 'Assign Tech'], ['jobs-cancel', 'Cancel'], ['jobs-duplicate', 'Duplicate']]
+            : [['jobs-open', 'View Job'], ['jobs-edit', 'Edit'], ['jobs-duplicate', 'Duplicate'], ['jobs-invoice-create', 'Invoice'], ['jobs-invoice-paid', 'Collect Payment'], ['jobs-assign', 'Assign Employee'], ['jobs-message', 'Send Reminder'], ['jobs-message', 'Message Customer'], ['jobs-photo-before', 'Photos'], ['jobs-check-add', 'Checklist'], ['jobs-delete', 'Delete']];
+        }
         pop.innerHTML = items.map(function (x) {
           return '<button type="button" data-jos-act="' + esc(x[0]) + '" data-jos-job-id="' + esc(jobId || '') + '">' + esc(x[1]) + '</button>';
         }).join('');
@@ -19126,20 +19187,6 @@
         root._josDrawerOpen = true;
         root._josJobWorkspace = 'overview';
         root._josJobEditOpen = false;
-        return rerender();
-      }
-      if (act === 'jobs-edit-cancel') {
-        root._josJobEditOpen = false;
-        return rerender();
-      }
-      if (act === 'jobs-edit-save') {
-        if (!job) return toast('Select a job');
-        var saveResult = applyJobEditFormToJob(job);
-        if (!saveResult.ok) return toast(saveResult.error || 'Could not save');
-        pushJobTimeline(job, 'note', 'Job details updated');
-        root._josJobEditOpen = false;
-        toast('Job updated');
-        if (saveResult.patch && Object.keys(saveResult.patch).length) persistJobPatch(job, saveResult.patch);
         return rerender();
       }
       if (act === 'jobs-resize') {
