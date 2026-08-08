@@ -29,8 +29,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <link rel="stylesheet" href="/journey-os/journey.css">
-<link rel="stylesheet" href="/journey-os/operate-pixel.css?v=store-1">
-<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=store-6">
+<link rel="stylesheet" href="/journey-os/operate-pixel.css?v=20260808025356">
+<link rel="stylesheet" href="/journey-os/hubly-layout.css?v=20260808025356">
 <link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
 <link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-15">
 <link rel="stylesheet" href="/journey-os/photography-projects.css?v=projects-16">
@@ -13083,7 +13083,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/ai/product-coach.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/ai/merchandising.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/index.js?v=commerce-1"></script>
-<script defer src="/journey-os/journey.js?v=weather-1"></script>
+<script defer src="/journey-os/journey.js?v=20260808025356"></script>
 <script defer src="/journey-os/store-commerce.js?v=store-3"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
 <script defer src="/journey-os/media-studio-bridge.js?v=studio-15"></script>
@@ -15528,7 +15528,11 @@ async function loadJobs(){
     customer: j.customer_name,
     service: j.service_name,
     date: normalizeJobDate(j.scheduled_date),
-    time: j.scheduled_time,
+    // scheduled_time comes back from Postgres as "HH:MM:SS" (24h + seconds)
+    // — every display surface (table, drawer header, jobCardHtml) expects
+    // job.time as a 12h "10:00 AM" string. Loading the raw column straight
+    // through was showing "10:00:00" for every real job.
+    time: fmtTime12(j.scheduled_time),
     address: (typeof resolveJobDisplayAddress==='function'?resolveJobDisplayAddress({address:rawAddr,notes}):rawAddr)||rawAddr||'',
     amount: j.amount,
     notes,
