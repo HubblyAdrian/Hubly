@@ -17041,6 +17041,12 @@
     return '<div class="jos-jd-foot">' +
       '<span class="jos-jd-saved">All changes saved <i>✓</i></span>' +
       '<div class="jos-jd-foot-acts">' +
+      // Start/Complete are both status transitions — a user who isn't
+      // ready to make either one shouldn't have to pick one just to
+      // leave. Everything already auto-saves on blur/change (that's what
+      // the "All changes saved" indicator to the left already means),
+      // so Done is just a close — no separate save step exists to run.
+      btn('jobs-drawer-close', 'Done', 'jos-btn jos-btn-sm') +
       (canStart ? btn('jobs-start', 'Start Job', 'jos-btn jos-btn-sm') : '') +
       (canComplete ? btn('jobs-complete', 'Complete Job', 'jos-btn-brand jos-btn-sm') : '') +
       '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" data-jos-drawer-menu="1" aria-label="More actions">⋯</button>' +
