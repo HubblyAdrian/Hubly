@@ -17770,7 +17770,7 @@ function slimBizPayload(payload){
     meta,
     logo_url:cleanUrl(payload.logo_url),
     banner_url:cleanUrl(payload.banner_url)||(Array.isArray(meta.portfolioUrls)?meta.portfolioUrls[0]:null)||null,
-    business_type:normalizeBlueprintId(payload.business_type)||payload.business_type||'detailing',
+    business_type:normalizeBlueprintId(payload.business_type)||payload.business_type||null,
   };
 }
 function ownerHasNamedPackages(){
@@ -40458,7 +40458,7 @@ async function submitBooking(){
       depositAmt:m.depositAmt,
       remaining:m.remaining,
       pay:m.pay,
-      biz:S.biz||'Detailing',
+      biz:S.biz||'',
       durHrs:Number(S.bkSvcObj?.dur)||2,
     };
     const confirmedOverlay=document.getElementById('booking-confirmed-overlay');
@@ -40520,7 +40520,7 @@ function addBookingToCalendar(){
   if(!bk?.date){toast('No booking date to add');return;}
   const times=bookingToCalendarTimes(bk);
   if(!times){toast('Could not build calendar event');return;}
-  const title=`${bk.service||'Detail'}. ${bk.biz||'Hubly'}`;
+  const title=`${bk.service||'Service'}. ${bk.biz||'Hubly'}`;
   const details=[
     `Service: ${bk.service||''}`,
     bk.addr?`Address: ${bk.addr}`:'',

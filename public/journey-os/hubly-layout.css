@@ -354,28 +354,30 @@
   box-shadow: var(--hub-shadow);
 }
 
-/* Job summary sidebar (list tab) */
+/* Job summary sidebar (list tab) — a tight grid of small stat tiles, not
+   six 84px-tall cards stacked three rows deep next to the table. */
 .jos-jobs-sum-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--hub-space-12);
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
   margin-top: var(--hub-space-12);
 }
 
 .jos-jobs-sum-kpi {
-  min-height: 84px;
-  padding: var(--hub-space-16);
+  min-height: 0;
+  padding: 8px 6px;
   border: 1px solid var(--hub-border);
-  border-radius: var(--hub-radius);
+  border-radius: 10px;
   background: #F8F9FB;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
   appearance: none;
   cursor: pointer;
   font: inherit;
   text-align: left;
   color: inherit;
+  min-width: 0;
 }
 
 .jos-jobs-sum-kpi:hover {
@@ -384,19 +386,22 @@
 }
 
 .jos-jobs-sum-kpi .lbl {
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 750;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--jos-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .jos-jobs-sum-kpi strong {
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   color: var(--jos-navy);
-  line-height: 1;
+  line-height: 1.15;
 }
 
 .jos-jobs-donut-wrap {

@@ -1514,7 +1514,7 @@
     }
     if (type === 'update_website') {
       if (!st.website || typeof st.website !== 'object') st.website = {};
-      st.website.aiDraft = { field: payload.field || 'heroHeadline', value: payload.value || 'Book a detail that feels effortless', at: ahNow(), source: 'ask_hubly' };
+      st.website.aiDraft = { field: payload.field || 'heroHeadline', value: payload.value || 'Book online in minutes', at: ahNow(), source: 'ask_hubly' };
       result.label = 'Website copy suggestion saved in Storefront';
       toast(result.label);
       return result;
@@ -8393,7 +8393,7 @@
       display: function (value, col, leadKey) {
         var v = value || '';
         var title = col.openOnClick ? 'Click to open' : 'Click to edit';
-        return '<span class="jos-ld-name-cell' + (col.openOnClick ? ' jos-ld-name-link' : '') + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="' + esc(title) + '">' + (v ? esc(v) : 'Click to add') + '</span>';
+        return '<span class="jos-ld-name-cell' + (col.openOnClick ? ' jos-ld-name-link' : '') + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="' + esc(title) + '">' + (v ? esc(v) : '—') + '</span>';
       },
       edit: function (value, col, leadKey) {
         return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
@@ -8403,7 +8403,7 @@
       display: function (value, col, leadKey) {
         var v = value || '';
         var preview = v.length > 80 ? v.slice(0, 80) + '…' : v;
-        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(preview) : 'Click to add') + '</span>';
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(preview) : '—') + '</span>';
       },
       edit: function (value, col, leadKey) {
         return '<textarea class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" rows="3" onclick="event.stopPropagation()">' + esc(value || '') + '</textarea>';
@@ -8459,7 +8459,7 @@
       display: function (value, col, leadKey) {
         var v = (value === '' || value == null) ? '' : String(value);
         var shown = v && col.format ? col.format(value) : v;
-        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(shown) : 'Click to add') + '</span>';
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(shown) : '—') + '</span>';
       },
       edit: function (value, col, leadKey) {
         return '<input type="number" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value === '' || value == null ? '' : value) + '" onclick="event.stopPropagation()">';
@@ -8469,7 +8469,7 @@
     date: {
       display: function (value, col, leadKey) {
         var v = value || '';
-        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Click to add') + '</span>';
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : '—') + '</span>';
       },
       edit: function (value, col, leadKey) {
         return '<input type="date" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
@@ -8481,7 +8481,7 @@
     time: {
       display: function (value, col, leadKey) {
         var v = value || '';
-        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Click to add') + '</span>';
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : '—') + '</span>';
       },
       edit: function (value, col, leadKey) {
         return '<input type="time" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(timeTo24h(value)) + '" onclick="event.stopPropagation()">';
@@ -10809,13 +10809,43 @@
         mutateLead(function (l) {
           var st = S();
           st.jobs = st.jobs || [];
-          st.jobs.unshift({
+          var convertedJob = {
             id: 'job_from_' + (l.id || Date.now()),
-            customer: l.name, phone: l.phone, service: l.service || 'Detail',
-            vehicle: vehicleOf(l), address: l.address || (S().city || 'San Diego, CA'),
+            // No invented service or city — 'Detail'/'San Diego, CA' were
+            // leftovers from the single-industry detailing app; a lead
+            // with no service or address set stays genuinely blank here,
+            // same as a fresh +New Job draft.
+            customer: l.name, phone: l.phone, service: l.service || '',
+            vehicle: vehicleOf(l), address: l.address || (S().city || ''),
             date: todayStr(), time: '10:00 AM', status: 'scheduled',
             amount: l.estimatedValue || l.amount || 0, assignedTo: l.assignedTo
-          });
+          };
+          st.jobs.unshift(convertedJob);
+          // This never actually saved to Supabase — same class of bug as
+          // the old jobs-create handler (see its comment above): a job
+          // "booked" this way only lived in local state and silently
+          // reverted on refresh. Insert for real, then reconcile the
+          // local id the same way jobs-create does.
+          try {
+            var convertDb = jobsDb();
+            var convertBizId = global.currentBusiness && global.currentBusiness.id;
+            if (convertDb && convertBizId) {
+              var convertPlaceholderId = convertedJob.id;
+              convertDb.from('jobs').insert({
+                business_id: convertBizId, customer_name: convertedJob.customer || '', service_name: convertedJob.service || '',
+                scheduled_date: convertedJob.date || null, scheduled_time: convertedJob.time ? timeTo24h(convertedJob.time) : null,
+                address: convertedJob.address || null, amount: convertedJob.amount || 0, status: convertedJob.status,
+                phone: convertedJob.phone || null, vehicle: convertedJob.vehicle || null, assigned_to: convertedJob.assignedTo || null
+              }).select().single().then(function (res) {
+                if (res && res.error) { console.warn('leads-convert-job insert', res.error); toast('Couldn’t save the booked job — check your connection and try again'); return; }
+                if (res && res.data && res.data.id) {
+                  convertedJob.dbId = res.data.id;
+                  convertedJob.id = res.data.id;
+                  if (root._josJobId === convertPlaceholderId) root._josJobId = res.data.id;
+                }
+              });
+            }
+          } catch (eConvertInsert) {}
           /* Lead → Jobs (not a Won tab). Customer comes after the job is done. */
           l.crmStatus = 'qualified';
           l.stage = 'archived';
@@ -12538,7 +12568,7 @@
       if (c.notes && /text|sms|call|email/i.test(c.notes)) prefs.push('Noted communication preference');
       if (c.customerType === 'recurring') prefs.push('Values recurring convenience');
       if (!prefs.length) prefs = ['Prefers clear scheduling', 'Responds to short texts'];
-      var learned = [c.name + ' books ' + (c.preferredService || 'detailing') + ' services.', (c.vehicle ? 'Vehicle on file: ' + c.vehicle + '.' : 'Vehicle details still light.'), completed.length ? completed.length + ' completed visits on record.' : 'Still early in the relationship.'];
+      var learned = [c.name + ' books ' + (c.preferredService || 'their preferred') + ' services.', (c.vehicle ? 'Vehicle on file: ' + c.vehicle + '.' : ''), completed.length ? completed.length + ' completed visits on record.' : 'Still early in the relationship.'].filter(Boolean);
       var noteRows = (c.notesList && c.notesList.length) ? c.notesList : (c.notes ? [c.notes] : []);
       html = '<div class="jos-ai-notes"><h3>Notes</h3>' +
         '<div class="jos-stack jos-mt">' + (noteRows.length ? noteRows.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') : '<div class="jos-muted">No notes yet.</div>') + '</div>' +
@@ -13072,7 +13102,7 @@
 
   function renderStorefrontBookingTab() {
     var st = S();
-    var style = st.bookingWizard && st.bookingWizard.style ? st.bookingWizard.style : (st.website && st.website.bookingStyle) || 'Guided steps · vehicle → service → time';
+    var style = st.bookingWizard && st.bookingWizard.style ? st.bookingWizard.style : (st.website && st.website.bookingStyle) || 'Guided steps · service → time';
     return '<div class="jos-card"><div class="jos-kicker">Booking experience</div>' +
       '<p style="font-size:13px;margin-top:8px">' + esc(style) + '</p>' +
       '<p class="jos-muted" style="font-size:12px;margin-top:8px">Visitors book from your catalog services marked Live on the website.</p>' +
@@ -15293,14 +15323,18 @@
     var listCards = filtered.length ? filtered.map(function (c) {
       var on = sel && String(sel.id) === String(c.id);
       var temp = leadTemp(c.leadScore);
-      var vehicle = c.vehicle || (matchCustomer(c) && (matchCustomer(c).vehicle || matchCustomer(c).vehicles)) || 'Vehicle TBD';
+      // A vehicle-less customer isn't "Vehicle TBD" — that assumed every
+      // business collects vehicle info, a detailing-era leftover. Plenty
+      // of Hubly businesses (photographers, cleaners, HVAC) never do, so
+      // this pill just doesn't render when there's nothing to show.
+      var vehicle = c.vehicle || (matchCustomer(c) && (matchCustomer(c).vehicle || matchCustomer(c).vehicles)) || '';
       return '<article class="jos-ibx-card ' + cardBorderClass(c) + (on ? ' on' : '') + '" data-jos-inbox-id="' + esc(String(c.id)) + '" tabindex="0">' +
         '<div class="jos-ibx-card-ava" aria-hidden="true">' + esc(inboxInitials(c.customer_name)) + '</div>' +
         '<div class="jos-ibx-card-main">' +
         '<div class="jos-ibx-card-top"><strong>' + esc(c.customer_name) + '</strong><span class="jos-ibx-time">' + esc(inboxTime(c.updated_at)) + '</span></div>' +
         '<div class="jos-ibx-preview">' + esc(c.last_message || 'No messages yet') + '</div>' +
         '<div class="jos-ibx-card-meta">' +
-        '<span class="jos-ibx-vehicle">' + esc(String(vehicle).slice(0, 28)) + '</span>' +
+        (vehicle ? '<span class="jos-ibx-vehicle">' + esc(String(vehicle).slice(0, 28)) + '</span>' : '') +
         (c.isLead ? '<span class="jos-ibx-pill lead">' + esc(temp) + '</span>' : '') +
         (c.booked ? '<span class="jos-ibx-pill booked">Booked</span>' : '') +
         '<span class="jos-ch-ico" title="' + esc(channelLabel(c.channel)) + '">' + esc(channelIco(c.channel)) + '</span>' +
@@ -15910,7 +15944,7 @@
       var body = tpl.body
         .replace(/\{\{name\}\}/g, (sel && sel.customer_name) || 'there')
         .replace(/\{\{biz\}\}/g, S().biz || 'Hubly')
-        .replace(/\{\{service\}\}/g, (sel && sel.service) || 'detail')
+        .replace(/\{\{service\}\}/g, (sel && sel.service) || 'service')
         .replace(/\{\{link\}\}/g, location.origin + '/' + (S().slug || ''));
       if (draftEl) draftEl.value = body;
       if (root) root._josInboxDraft = body;
@@ -16055,7 +16089,12 @@
     st.jobs.forEach(function (j, idx) {
       if (!j.id) j.id = 'job_auto_' + idx;
       if (!j.status) j.status = 'scheduled';
-      if (!j.address) j.address = (j.location || (S().city ? S().city : 'San Diego, CA'));
+      // No business-specific city fallback — this runs on every job on
+      // every render, for every business, so 'San Diego, CA' would get
+      // silently stamped onto any address-less job anywhere, not just in
+      // the demo. An address-less job just stays blank ("Click to add"),
+      // same as every other empty field.
+      if (!j.address) j.address = j.location || '';
       // Round-robin auto-assignment removed (2026-08-06) — same bug as
       // Leads/Customers. Every real display site already falls back to
       // "Unassigned" (esc(j.assignedTo || 'Unassigned')), so this needed no
@@ -16314,9 +16353,14 @@
     return { clean: s, quote: quote };
   }
   function jobServiceOptions(j) {
+    // Hubly Core provides the engine, the business provides the data — no
+    // universal "default service" exists across photographers, lawn care,
+    // HVAC, cleaners, etc., so an empty Service Catalog means an empty
+    // list here, not an invented one (this used to fall back to
+    // ['Detail','Interior','Exterior'], a leftover from the single-
+    // industry detailing app Hubly no longer is).
     var services = ((S().services || []).map(function (s) { return s && s.name; }).filter(Boolean));
-    if (!services.length) services = [j.service || 'Detail', 'Detail', 'Interior', 'Exterior'];
-    if (j.service && services.indexOf(j.service) < 0) services.unshift(j.service);
+    if (j && j.service && services.indexOf(j.service) < 0) services.unshift(j.service);
     return services;
   }
 
@@ -16548,7 +16592,7 @@
       return editHtml.replace('class="jos-ld-cell-inline jos-ld-editing"', 'class="jos-je-field-input jos-ld-cell-inline jos-ld-editing"');
     }
     var display = (value == null || value === '') ? '' : String(col.type === 'phone' ? rendererRegistry.phone.format(value) : (col.format ? col.format(value) : value));
-    return '<span class="jos-je-field-value' + (display ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(jobKey) + '" title="Click to edit">' + (display ? esc(display) : 'Click to add') + '</span>';
+    return '<span class="jos-je-field-value' + (display ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(jobKey) + '" title="Click to edit">' + (display ? esc(display) : '—') + '</span>';
   }
   function jobDrawerField(label, colKey, job, jobKey, editingKey, opts) {
     opts = opts || {};
@@ -18432,7 +18476,14 @@
       if (!window.confirm((bookCheck.reason || 'Outside hours') + '\n\nCreate anyway?')) return null;
     }
     var person = opts.person || null;
-    var name = String(title || '').trim() || (person && person.name) || (opts.isTask ? 'Task' : 'New Customer');
+    // No invented customer name, service, price, or city — same reasoning
+    // as jobs-create's blank draft: a name/service/amount typed in only
+    // because this form always has one used to make a slot-click look
+    // like a real, already-filled-in booking ('New Customer' / 'Detail'
+    // / $180 / 'San Diego, CA' were all leftovers from the single-
+    // industry detailing app). Every one of these renders as "Click to
+    // add" downstream, same as the table's +New Job flow.
+    var name = String(title || '').trim() || (person && person.name) || (opts.isTask ? 'Task' : '');
     var nj = {
       id: 'JOB-' + String(1000 + jobsAll().length + 1) + '_' + Math.random().toString(36).slice(2, 5),
       customer: name,
@@ -18441,13 +18492,15 @@
       email: (person && person.email) || '',
       phone: (person && person.phone) || '',
       vehicle: '',
-      service: opts.isTask ? (String(title || '').trim() || 'Task') : ((S().services && S().services[0] && S().services[0].name) || 'Detail'),
-      amount: opts.isTask ? 0 : 180,
+      service: opts.isTask ? (String(title || '').trim() || 'Task') : ((S().services && S().services[0] && S().services[0].name) || ''),
+      amount: opts.isTask ? 0 : null,
       date: date,
       time: time,
       status: 'scheduled',
-      address: S().city || 'San Diego, CA',
-      assignedTo: (jobsTeam()[0] && jobsTeam()[0].name) || 'Unassigned',
+      address: S().city || '',
+      // No auto-assignment — same "an unmade decision shouldn't display as
+      // if someone made it" reasoning as jobs-create and ensureJobsOsState.
+      assignedTo: '',
       depositStatus: 'none',
       deposit: 0,
       durationMin: durationMin,
@@ -18468,6 +18521,31 @@
       if (cust && cust.address) nj.address = cust.address;
     }
     S().jobs.unshift(nj);
+    // This calendar "quick create" path never called jobsDb() at all —
+    // same silent-revert-on-refresh bug already fixed for jobs-create and
+    // leads-convert-job. Insert for real, then reconcile the local
+    // placeholder id to the real one exactly as those two do.
+    try {
+      var rangeDb = jobsDb();
+      var rangeBizId = global.currentBusiness && global.currentBusiness.id;
+      if (rangeDb && rangeBizId) {
+        var rangePlaceholderId = nj.id;
+        rangeDb.from('jobs').insert({
+          business_id: rangeBizId, customer_name: nj.customer || '', service_name: nj.service || '',
+          scheduled_date: nj.date || null, scheduled_time: nj.time ? timeTo24h(nj.time) : null, address: nj.address || null,
+          amount: nj.amount || 0, status: nj.status, phone: nj.phone || null, email: nj.email || null,
+          vehicle: nj.vehicle || null, assigned_to: nj.assignedTo || null, deposit_status: nj.depositStatus || 'none',
+          duration_hours: (nj.durationMin || 60) / 60
+        }).select().single().then(function (res) {
+          if (res && res.error) { console.warn('createJobAtRange insert', res.error); toast('Couldn’t save — check your connection and try again'); return; }
+          if (res && res.data && res.data.id) {
+            nj.dbId = res.data.id;
+            nj.id = res.data.id;
+            if (root._josJobId === rangePlaceholderId) { root._josJobId = res.data.id; rerenderJobsOsFrom(root); }
+          }
+        });
+      }
+    } catch (eRangeInsert) {}
     if (!opts.quiet) {
       root._josJobId = nj.id;
       root._josDrawerOpen = !opts.isTask;
@@ -19386,13 +19464,14 @@
           var bizId = global.currentBusiness && global.currentBusiness.id;
           if (createDb && bizId) {
             createDb.from('jobs').insert({
-              // customer_name/service_name fall back to a placeholder only
-              // for the insert itself (in case either column can't be
-              // null) — nj.customer/nj.service stay '' locally, so the
-              // drawer still shows "Click to add", not this fallback text.
-              // The moment the user types a real value, mutateJobField's
-              // normal patch overwrites it.
-              business_id: bizId, customer_name: nj.customer || 'New Customer', service_name: nj.service || 'Detail',
+              // Both columns are nullable text — no reason to invent a
+              // customer name or a service ("Detail" was a leftover from
+              // when this was a single-industry detailing app; Hubly now
+              // spans photographers, lawn care, HVAC, cleaners, and more,
+              // none of which share a "default service"). Send '' and let
+              // the drawer's real Service dropdown (sourced from the
+              // business's own Service Catalog) fill it in.
+              business_id: bizId, customer_name: nj.customer || '', service_name: nj.service || '',
               scheduled_date: nj.date || null, scheduled_time: nj.time ? timeTo24h(nj.time) : null, address: nj.address || null,
               amount: nj.amount || 0, status: nj.status, phone: nj.phone || null, email: nj.email || null,
               vehicle: nj.vehicle || null, assigned_to: nj.assignedTo || null, deposit_status: nj.depositStatus,
@@ -19548,7 +19627,10 @@
           time: '1:00 PM',
           status: 'scheduled',
           address: S().city || '',
-          assignedTo: (jobsTeam()[0] && jobsTeam()[0].name) || 'Unassigned',
+          // No auto-assignment — same reasoning as jobs-create/
+          // createJobAtRange: an unmade decision shouldn't display as if
+          // someone made it.
+          assignedTo: '',
           depositStatus: 'due',
           deposit: Math.round((q.amount || 0) * 0.25),
           tags: ['from-quote'],
@@ -19566,6 +19648,28 @@
         root._josJobId = cj.id;
         root._josJobsTab = 'jobs';
         toast('Quote converted to job');
+        // Same silent-revert-on-refresh bug as jobs-create/createJobAtRange/
+        // leads-convert-job — this only ever mutated local state.
+        try {
+          var quoteDb = jobsDb();
+          var quoteBizId = global.currentBusiness && global.currentBusiness.id;
+          if (quoteDb && quoteBizId) {
+            var quotePlaceholderId = cj.id;
+            quoteDb.from('jobs').insert({
+              business_id: quoteBizId, customer_name: cj.customer || '', service_name: cj.service || '',
+              scheduled_date: cj.date || null, scheduled_time: cj.time ? timeTo24h(cj.time) : null, address: cj.address || null,
+              amount: cj.amount || 0, status: cj.status, phone: cj.phone || null, assigned_to: cj.assignedTo || null,
+              deposit_status: cj.depositStatus, duration_hours: (cj.durationMin || 120) / 60
+            }).select().single().then(function (res) {
+              if (res && res.error) { console.warn('jobs-convert-quote insert', res.error); toast('Couldn’t save the converted job — check your connection and try again'); return; }
+              if (res && res.data && res.data.id) {
+                cj.dbId = res.data.id;
+                cj.id = res.data.id;
+                if (root._josJobId === quotePlaceholderId) { root._josJobId = res.data.id; rerenderJobsOsFrom(root); }
+              }
+            });
+          }
+        } catch (eQuoteInsert) {}
         return rerender();
       }
       if (act === 'jobs-check-add') {

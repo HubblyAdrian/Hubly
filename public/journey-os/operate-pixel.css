@@ -5112,6 +5112,15 @@ textarea.jos-je-field-input.jos-ld-cell-inline{height:auto!important;min-height:
 }
 .jos-ld-name-cell,.jos-ld-contact-cell,.jos-ld-url-cell{cursor:text;display:inline-block;max-width:100%}
 .jos-ld-name-cell.is-empty,.jos-ld-contact-cell.is-empty,.jos-ld-url-cell.is-empty{color:#9CA3AF;font-weight:500}
+/* Empty cells sit quiet as "—" until hovered — "Click to add" repeated
+   down every empty cell in a column reads as noise, not information. */
+.jos-ld-name-cell.is-empty::after,.jos-ld-contact-cell.is-empty::after,.jos-ld-url-cell.is-empty::after,
+.jos-je-field-value.is-empty::after{
+  content:"+ Add";margin-left:6px;color:var(--jos-brand);font-weight:650;font-size:12px;
+  opacity:0;transition:opacity .1s ease;
+}
+.jos-ld-name-cell.is-empty:hover::after,.jos-ld-contact-cell.is-empty:hover::after,.jos-ld-url-cell.is-empty:hover::after,
+.jos-je-field-value.is-empty:hover::after{opacity:1}
 /* The name is the record — reads like a link, opens the panel on click. */
 .jos-ld-name-link{cursor:pointer;font-weight:650;color:var(--jos-navy);transition:color .12s ease}
 .jos-ld-name-link:hover{color:var(--jos-brand);text-decoration:underline;text-underline-offset:2px}
