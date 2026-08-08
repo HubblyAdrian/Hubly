@@ -5133,6 +5133,15 @@ input.jos-ld-cell-inline:focus{
 .jos-ld-ws-identity{display:flex;gap:10px;align-items:center}
 .jos-ld-ws-name{display:flex;align-items:center;gap:8px}
 .jos-ld-ws-name strong{font-size:16px;font-weight:800;color:var(--jos-navy);letter-spacing:-.02em}
+/* Renaming lives here now, not the table — same click-to-edit feel as
+   the Status/Assigned To fields just below it. */
+.jos-ld-ws-name-btn{appearance:none;border:0;background:transparent;padding:2px 4px;margin:-2px -4px;border-radius:7px;cursor:pointer;transition:background-color .12s ease}
+.jos-ld-ws-name-btn:hover{background:#F5F6F7}
+.jos-ld-name-input{
+  height:28px;font-size:16px;font-weight:800;letter-spacing:-.02em;color:var(--jos-navy);
+  border:1px solid var(--jos-border);border-radius:7px;padding:0 8px;font-family:inherit;background:#fff;
+}
+.jos-ld-name-input:focus{outline:0;border-color:var(--jos-brand);box-shadow:0 0 0 3px rgba(217,99,45,.14)}
 .jos-ld-status-badge{appearance:none;border:0;cursor:pointer;transition:filter .12s ease}
 .jos-ld-status-badge:hover{filter:brightness(.96)}
 .jos-ld-select-inline{height:24px;font-size:11px;padding:0 8px;border-radius:999px}

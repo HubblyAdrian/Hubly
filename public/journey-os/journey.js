@@ -159,7 +159,12 @@
   }
   var SRC_LABEL = { google: 'Google', facebook: 'Facebook', instagram: 'Instagram', hubly: 'Hubly', website: 'Website', chat: 'Chat', quote: 'Quote', abandoned: 'Abandoned', membership: 'Membership', manual: 'Manual', referral: 'Referral' };
   var SRC_LETTER = { google: 'G', facebook: 'f', instagram: 'Ig', hubly: 'h', website: 'W', chat: 'C', quote: 'Q', abandoned: '…', membership: 'M', manual: '+', referral: 'R' };
-  function srcLabel(k) { return SRC_LABEL[k] || 'Manual'; }
+  // Unknown key falls back to echoing it back (a custom source someone
+  // added, e.g. "Yelp"), not silently rebranding it "Manual" — that
+  // fallback used to be safe when every possible key came from srcKind()
+  // itself (which already defaults unmatched cases to 'manual'), but a
+  // custom lead.sourceOverride can now be any string.
+  function srcLabel(k) { return SRC_LABEL[k] || (k ? String(k) : 'Manual'); }
   function srcIco(k) { return '<span class="jos-src-ico ' + esc(k) + '" title="' + esc(srcLabel(k)) + '">' + (SRC_LETTER[k] || '+') + '</span>'; }
   function vehicleOf(o) { return o?.vehicle || o?.vehicleLabel || o?.car || (o?.answers && (o.answers.vehicle || o.answers.vehicle_type)) || ''; }
   function collectLeads() { try { return typeof global.collectPipelineLeads === 'function' ? (global.collectPipelineLeads() || []) : []; } catch (e) { return []; } }
@@ -7406,14 +7411,35 @@
       set: function (lead, value) { lead.email = value || ''; return 'Email → ' + (lead.email || '—'); }
     },
     {
-      key: 'source', label: 'Source', type: 'text', width: 110,
-      editable: false, searchable: true, filterable: true, sortable: true,
-      get: function (lead) { return srcLabel(srcKind(lead.source, lead)); },
-      // The Source filter dropdown compares against the raw kind (e.g.
-      // 'google'), not the human label ('Google') get() returns for
-      // display — a genuine case where filtering needs a different value
-      // than rendering does, not just a formatted version of the same one.
-      filterValue: function (lead) { return srcKind(lead.source, lead); }
+      // Editable dropdown, same as Status/Service — with a real "add a
+      // new source" option, since the built-in kinds (Google, Facebook,
+      // Referral, ...) won't cover every business's channels (Yelp,
+      // Nextdoor, a trade show). A custom pick is stored in
+      // lead.sourceOverride and displayed verbatim from then on, bypassing
+      // the srcKind() auto-classifier entirely for that lead — leads
+      // nobody has touched keep working exactly as before (auto-detected
+      // from the raw source/notes), only an explicit human choice
+      // overrides it. Once one lead has a given custom source, it shows
+      // up as a real option for every other lead too — self-discovering
+      // from options(), no separate "manage sources" list to maintain.
+      key: 'source', label: 'Source', type: 'select', width: 130,
+      editable: true, searchable: true, filterable: true, sortable: true,
+      options: function () {
+        var base = Object.keys(SRC_LABEL).map(function (k) { return { value: k, label: SRC_LABEL[k] }; });
+        var customSeen = {};
+        leadsOsList().forEach(function (l) {
+          var ov = l.sourceOverride;
+          if (ov && !SRC_LABEL[ov] && !customSeen[ov]) { customSeen[ov] = true; base.push({ value: ov, label: ov }); }
+        });
+        base.push({ value: '__add_new_source__', label: '+ Add new source…' });
+        return base;
+      },
+      // Returns the raw key ('google'), not the label ('Google') — the
+      // select renderer matches this against options() by value and
+      // derives the display label itself, same as Status/Assigned.
+      get: function (lead) { return lead.sourceOverride || srcKind(lead.source, lead); },
+      filterValue: function (lead) { return lead.sourceOverride || srcKind(lead.source, lead); },
+      set: function (lead, value) { lead.sourceOverride = String(value || '').trim(); return 'Source → ' + (lead.sourceOverride || '—'); }
     },
     {
       // A dropdown, not free text — same pattern as Assigned: the real
@@ -8212,7 +8238,7 @@
   function uniqueLeadValues(field) {
     var set = {};
     leadsOsList().forEach(function (l) {
-      var v = field === 'source' ? srcKind(l.source, l) : (field === 'vehicle' ? vehicleOf(l) : l[field]);
+      var v = field === 'source' ? (l.sourceOverride || srcKind(l.source, l)) : (field === 'vehicle' ? vehicleOf(l) : l[field]);
       if (v) set[String(v)] = true;
     });
     return Object.keys(set).sort();
@@ -8366,7 +8392,7 @@
     text: {
       display: function (value, col, leadKey) {
         var v = value || '';
-        var title = col.openOnClick ? 'Click to open · Double-click to edit' : 'Click to edit';
+        var title = col.openOnClick ? 'Click to open' : 'Click to edit';
         return '<span class="jos-ld-name-cell' + (col.openOnClick ? ' jos-ld-name-link' : '') + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="' + esc(title) + '">' + (v ? esc(v) : 'Click to add') + '</span>';
       },
       edit: function (value, col, leadKey) {
@@ -8569,8 +8595,14 @@
           if (!def) return '<td class="jos-ld-tcell-' + esc(c.key) + '" role="gridcell" tabindex="-1" data-jos-col-key="' + esc(c.key) + '">—</td>';
           var isEditingThis = !!(editing && editing.leadId === leadKey && editing.field === c.key);
           var isActive = active.leadId === leadKey && active.colKey === c.key;
+          // "+ Add new source" swaps the column's normal renderer (a
+          // <select> for type:'select') for a plain text box, just for
+          // this one cell, so they can type the new source's name.
+          var cellHtml = (isEditingThis && editing.addingSource)
+            ? rendererRegistry.text.edit('', def, leadKey)
+            : tableCellHtml(lead, def, leadKey, isEditingThis);
           return '<td class="jos-ld-tcell-' + esc(c.key) + '" role="gridcell" tabindex="' + (isActive ? '0' : '-1') + '" data-jos-col-key="' + esc(c.key) + '">' +
-            tableCellHtml(lead, def, leadKey, isEditingThis) + '</td>';
+            cellHtml + '</td>';
         }).join('') +
         '</tr>';
     }).join('');
@@ -8693,6 +8725,7 @@
     var recover = isRecoveryLead(lead);
     var statusEditing = !!root._josLeadStatusEditing;
     var assignedEditing = !!root._josLeadAssignedEditing;
+    var nameEditing = !!root._josLeadNameEditing;
 
     var shortDesc = recover
       ? ('Incomplete booking · Left at ' + leadDropStep(lead))
@@ -8705,10 +8738,17 @@
         }).join('') + '</select>'
       : '<button type="button" class="jos-pill ' + leadStatusTone(crm) + ' jos-ld-status-badge" data-jos-act="leads-status-edit-open" title="Click to change status">' + esc(leadCrmLabel(lead)) + '</button>';
 
+    // Renaming lives here now, not in the table — the name is the
+    // record's identity, so it opens on a single table click same as
+    // every other record; changing it is a panel action, matching the
+    // Status/Assigned To click-to-edit pattern right below it.
+    var nameField = nameEditing
+      ? '<input id="jos-ld-name" class="jos-ld-name-input" type="text" value="' + esc(lead.name || '') + '" aria-label="Name" autofocus>'
+      : '<button type="button" class="jos-ld-ws-name-btn" data-jos-act="leads-name-edit-open" title="Click to rename"><strong>' + esc(lead.name || 'Lead') + '</strong></button>';
     var head = '<div class="jos-ld-ws-head">' +
       '<div class="jos-ld-ws-identity">' +
       '<span class="jos-ld-ava' + (recover ? ' recover' : '') + '">' + esc(initials(lead.name)) + '</span>' +
-      '<div><div class="jos-ld-ws-name"><strong>' + esc(lead.name || 'Lead') + '</strong>' + statusBadge + '</div>' +
+      '<div><div class="jos-ld-ws-name">' + nameField + statusBadge + '</div>' +
       '<div class="jos-muted">' + esc(shortDesc) + '</div></div></div>' +
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-detail-close" title="Close" aria-label="Close">✕</button>' +
       '</div>';
@@ -9575,40 +9615,25 @@
       }
     });
 
+    // Double-click's only remaining job on this table is renaming a
+    // column header. Opening a record used to also happen here (a
+    // double-click anywhere on the row, plus a special double-click-to-
+    // edit case just for the name cell) — removed: the name is the
+    // record's identity, clicking it is the one obvious, discoverable
+    // way to open it, and every other cell is already single-click-to-
+    // edit. That's what let the deferred/debounced open-on-click logic
+    // go too (see the click listener below) — with no double-click left
+    // to disambiguate against, a single click can open the panel
+    // immediately. Renaming a lead now happens in the panel itself, not
+    // via a hidden double-click gesture on the table cell.
     root.addEventListener('dblclick', function (e) {
-      // Direct manipulation: double-click a column header label to rename
-      // it in place — no "Rename Column" menu round-trip.
       var thLabel = e.target.closest('.jos-ld-th-label');
-      if (thLabel) {
-        root._josLeadsColRenaming = thLabel.getAttribute('data-jos-col-key');
-        root._josLeadsColMenuKey = null;
-        renderLeads();
-        var rin = el('jos-ld-th-rename-input');
-        if (rin) { rin.focus({ preventScroll: true }); rin.select(); }
-        e.preventDefault();
-        return;
-      }
-      var dblField = e.target.closest('[data-jos-field]');
-      if (dblField) {
-        // Name cells swapped their single-click meaning to "open the
-        // panel" (openOnClick, above) — double-click is how they're still
-        // edited inline, matching the header-rename pattern. Every other
-        // editable cell already edits on a single click, so a second
-        // click here isn't "edit," it's just noise — skip it.
-        var dblCol = findLeadsColumnDef(root, dblField.getAttribute('data-jos-field'));
-        if (dblCol && dblCol.openOnClick) {
-          clearTimeout(root._josLeadNameClickT);
-          openLeadsCellEdit(root, dblField.getAttribute('data-jos-record-id'), dblField.getAttribute('data-jos-field'));
-          e.preventDefault();
-        }
-        return;
-      }
-      // Double-click anywhere else on the row — the power-user shortcut
-      // to open the record without having to land the click precisely on
-      // the name cell.
-      var card = e.target.closest('[data-jos-record-id]');
-      if (!card) return;
-      openLeadDetailPanel(root, card.getAttribute('data-jos-record-id'));
+      if (!thLabel) return;
+      root._josLeadsColRenaming = thLabel.getAttribute('data-jos-col-key');
+      root._josLeadsColMenuKey = null;
+      renderLeads();
+      var rin = el('jos-ld-th-rename-input');
+      if (rin) { rin.focus({ preventScroll: true }); rin.select(); }
       e.preventDefault();
     });
 
@@ -9696,6 +9721,17 @@
         toast(name ? ('Assigned to ' + name) : 'Unassigned');
         return;
       }
+      if (id === 'jos-ld-name') {
+        var newName = String(e.target.value || '').trim();
+        root._josLeadNameEditing = false;
+        if (!newName) { renderLeads(); return; } // empty name isn't a valid rename — just close, don't blank the record
+        mutateLead(function (l) {
+          l.name = newName;
+          pushLeadActivity(l, 'edit', 'Name → ' + newName);
+        });
+        toast('Name updated');
+        return;
+      }
       if (id === 'jos-ld-bulk-status-select') {
         var bulkStatusVal = e.target.value;
         if (!bulkStatusVal) return;
@@ -9717,6 +9753,26 @@
         var fieldKey = e.target.getAttribute('data-jos-field');
         var fieldLeadId = e.target.getAttribute('data-jos-record-id');
         var fieldCol = findLeadsColumnDef(root, fieldKey);
+        // "+ Add new source" doesn't commit as a value — it swaps this one
+        // cell's <select> for a plain text input so they can type the new
+        // source's name. Once they save it (as lead.sourceOverride), it
+        // becomes a real option in every Source dropdown from then on —
+        // self-discovering from what leads actually use, no separate
+        // "manage sources" list to maintain.
+        if (fieldKey === 'source' && e.target.value === '__add_new_source__') {
+          root._josLeadsEditCell = { leadId: fieldLeadId, field: fieldKey, addingSource: true, originalValue: tableColFieldGet(fieldCol, findLead(fieldLeadId)) };
+          // renderLeads() below swaps this <select> for a plain <input>, and
+          // removing a focused element from the document fires a synchronous
+          // blur on it — which the generic blur-close listener would
+          // otherwise read as "user navigated away" and use to immediately
+          // null the edit state right back out. Suppress that one
+          // self-inflicted blur; it isn't a real navigation.
+          root._josLeadsSuppressNextBlurClose = true;
+          renderLeads();
+          var addSrcInput = root.querySelector('[data-jos-field="source"][data-jos-record-id="' + CSS.escape(fieldLeadId) + '"].jos-ld-editing');
+          if (addSrcInput) addSrcInput.focus({ preventScroll: true });
+          return;
+        }
         var fieldRenderer = fieldCol ? (rendererRegistry[fieldCol.type] || rendererRegistry.text) : rendererRegistry.text;
         var fieldVal = fieldRenderer.readValue ? fieldRenderer.readValue(e.target) : e.target.value;
         root._josLeadsEditCell = null;
@@ -9896,19 +9952,11 @@
         return;
       }
       // openOnClick (First/Last name): the name is the record — a single
-      // click opens the detail panel instead of editing inline. Renaming
-      // still happens, just via double-click (see the dblclick listener).
-      // A real double-click still fires two native 'click' events before
-      // the 'dblclick' event lands, so opening synchronously here would
-      // open the panel from the first click of every double-click too —
-      // deferred, and the dblclick handler below cancels the pending
-      // open before it fires, the same disambiguation every OS text
-      // editor uses for single- vs double-click on the same target.
+      // click opens the detail panel. No debounce needed now that
+      // double-click no longer does anything different on this cell —
+      // renaming happens in the panel, not the table.
       if (col.openOnClick) {
-        clearTimeout(root._josLeadNameClickT);
-        root._josLeadNameClickT = setTimeout(function () {
-          openLeadDetailPanel(root, leadId);
-        }, 220);
+        openLeadDetailPanel(root, leadId);
         e.stopPropagation();
         return;
       }
@@ -9925,6 +9973,7 @@
     // close.
     root.addEventListener('blur', function (e) {
       if (!(e.target && e.target.classList && e.target.classList.contains('jos-ld-editing'))) return;
+      if (root._josLeadsSuppressNextBlurClose) { root._josLeadsSuppressNextBlurClose = false; return; }
       var closingCell = root._josLeadsEditCell;
       if (!closingCell) return;
       setTimeout(function () {
@@ -9951,6 +10000,8 @@
       } else if (t2.id === 'jos-ld-th-rename-input' && root._josLeadsColRenaming) {
         var renamingAtBlur = root._josLeadsColRenaming;
         setTimeout(function () { if (root._josLeadsColRenaming === renamingAtBlur) commitLeadsColRename(root); }, 0);
+      } else if (t2.id === 'jos-ld-name' && root._josLeadNameEditing) {
+        setTimeout(function () { if (root._josLeadNameEditing) { root._josLeadNameEditing = false; renderLeads(); } }, 0);
       }
     }, true);
     root.addEventListener('keydown', function (e) {
@@ -10216,6 +10267,13 @@
         renderLeads();
         var assignedSel = el('jos-ld-assigned');
         if (assignedSel) assignedSel.focus();
+        return;
+      }
+      if (act === 'leads-name-edit-open') {
+        root._josLeadNameEditing = true;
+        renderLeads();
+        var nameInput = el('jos-ld-name');
+        if (nameInput) { nameInput.focus(); nameInput.select(); }
         return;
       }
       if (act === 'leads-recover-sms') {
@@ -16228,8 +16286,8 @@
   var JOBS_DEFAULT_COLUMNS = [
     {
       // openOnClick: the customer is the record, exactly like Leads' name
-      // column — single click opens the job drawer, double-click edits
-      // inline.
+      // column — single click opens the job drawer. Renaming happens in
+      // the drawer header (click-to-edit), not the table.
       key: 'customer', label: 'Customer', type: 'text', width: 170,
       editable: true, openOnClick: true, searchable: true, sortable: true, dbColumn: 'customer_name',
       set: function (job, value) { job.customer = String(value || '').trim(); return 'Customer → ' + (job.customer || '—'); }
@@ -16617,8 +16675,18 @@
       body = '<div class="jos-muted">Select a tab</div>';
     }
 
+    // Header name is the drawer's equivalent of Leads' panel identity —
+    // same click-to-edit-in-place pattern, same CSS (.jos-ld-ws-name-btn /
+    // .jos-ld-name-input), no Save button. The Customer tab's full form
+    // still exists for phone/email/address/vehicle (Job-specific richness
+    // Leads has no equivalent of), but the record's *name* — like Leads —
+    // should be renameable right from where it's displayed.
+    var jobNameEditing = !!root._josJobNameEditing;
+    var jobNameField = jobNameEditing
+      ? '<input id="jos-jd-name" class="jos-ld-name-input" type="text" value="' + esc(j.customer || '') + '" aria-label="Customer name" autofocus>'
+      : '<button type="button" class="jos-ld-ws-name-btn" data-jos-act="jobs-name-edit-open" title="Click to rename">' + esc(j.customer || 'Customer') + '</button>';
     return '<aside class="jos-jobs-drawer open" id="jos-jobs-drawer">' +
-      '<div class="jos-jd-head"><div><div class="jos-kicker">Job Details</div><h2>' + esc(j.customer || 'Customer') + '</h2><div class="jos-muted">' + esc(j.service || '') + ' · ' + esc(jobNumber(j)) + '</div></div>' +
+      '<div class="jos-jd-head"><div><div class="jos-kicker">Job Details</div><h2>' + jobNameField + '</h2><div class="jos-muted">' + esc(j.service || '') + ' · ' + esc(jobNumber(j)) + '</div></div>' +
       '<div class="jos-jd-head-acts">' +
       '<button type="button" class="jos-icon-btn" data-jos-act="jobs-drawer-close" aria-label="Close">✕</button>' +
       '</div></div>' +
@@ -17136,7 +17204,9 @@
         var head = el('jos-jobs-drawer');
         if (head) {
           var h2 = head.querySelector('.jos-jd-head h2');
-          if (h2) h2.textContent = result.job.customer || 'Customer';
+          var nameBtn = h2 && h2.querySelector('.jos-ld-ws-name-btn');
+          if (nameBtn) nameBtn.textContent = result.job.customer || 'Customer';
+          else if (h2 && !root._josJobNameEditing) h2.textContent = result.job.customer || 'Customer';
         }
       }
     }
@@ -17159,13 +17229,26 @@
         if (drawer) {
           var h2 = drawer.querySelector('.jos-jd-head h2');
           var sub = drawer.querySelector('.jos-jd-head .jos-muted');
-          if (h2) h2.textContent = job.customer || 'Customer';
+          var nameBtn2 = h2 && h2.querySelector('.jos-ld-ws-name-btn');
+          if (nameBtn2) nameBtn2.textContent = job.customer || 'Customer';
+          else if (h2 && !root._josJobNameEditing) h2.textContent = job.customer || 'Customer';
           if (sub) sub.textContent = (job.service || '') + ' · ' + jobNumber(job);
         }
       }
       return true;
     }
     root.addEventListener('change', function (e) {
+      if (e.target && e.target.id === 'jos-jd-name') {
+        var newCustName = String(e.target.value || '').trim();
+        root._josJobNameEditing = false;
+        var editingJob = findJob(root._josJobId);
+        if (!editingJob) return;
+        if (!newCustName) { rerenderJobsOsFrom(root); return; } // empty name isn't a valid rename — just close, don't blank the record
+        mutateJobField(editingJob.id, findJobsColumnDef('customer'), newCustName);
+        toast('Customer name updated');
+        rerenderJobsOsFrom(root);
+        return;
+      }
       var listField = e.target.closest('[data-jos-job-field]');
       if (listField) {
         saveInlineListField(listField, { quiet: true, rerender: listField.getAttribute('data-jos-job-field') === 'status' });
@@ -17177,6 +17260,10 @@
       }
     });
     root.addEventListener('focusout', function (e) {
+      if (e.target && e.target.id === 'jos-jd-name' && root._josJobNameEditing) {
+        setTimeout(function () { if (root._josJobNameEditing) { root._josJobNameEditing = false; rerenderJobsOsFrom(root); } }, 0);
+        return;
+      }
       var listField = e.target.closest('[data-jos-job-field]');
       if (listField && e.target.matches('input')) {
         saveInlineListField(listField, { quiet: true, rerender: false });
@@ -17474,12 +17561,10 @@
     });
 
     // Same interaction model as Leads: click a cell to edit it; click the
-    // record's name (openOnClick) to open the detail panel — deferred
-    // 220ms so a real double-click's first constituent click doesn't
-    // open the drawer out from under the dblclick-to-edit path below.
-    // Click anywhere else on the row does nothing (Jobs never had the
-    // "any click opens it" problem Leads had, so there's nothing to
-    // restrict here beyond not adding it).
+    // record's name (openOnClick) opens the detail drawer immediately —
+    // no double-click anywhere on this table opens a record. Renaming
+    // the customer happens in the drawer itself, not via a double-click
+    // on the table cell.
     root.addEventListener('click', function (e) {
       var editField = e.target.closest('[data-jos-field]');
       if (!editField || editField.classList.contains('jos-ld-editing')) return;
@@ -17489,40 +17574,14 @@
       var col = findJobsColumnDef(key);
       if (!col || col.editable === false) return;
       if (col.openOnClick) {
-        clearTimeout(root._josJobNameClickT);
-        root._josJobNameClickT = setTimeout(function () {
-          root._josJobId = jobId;
-          root._josDrawerOpen = true;
-          rerenderJobsOsFrom(root);
-        }, 220);
+        root._josJobId = jobId;
+        root._josDrawerOpen = true;
+        rerenderJobsOsFrom(root);
         e.stopPropagation();
         return;
       }
       openJobsCellEdit(root, jobId, key);
       e.stopPropagation();
-    });
-
-    // Double-click the name cell edits it inline (cancelling the pending
-    // deferred drawer-open above); double-click anywhere else on the row
-    // is the power-user shortcut to open the drawer, same as Leads.
-    root.addEventListener('dblclick', function (e) {
-      var dblField = e.target.closest('[data-jos-field]');
-      if (dblField) {
-        var dblCol = findJobsColumnDef(dblField.getAttribute('data-jos-field'));
-        if (dblCol && dblCol.openOnClick) {
-          clearTimeout(root._josJobNameClickT);
-          openJobsCellEdit(root, dblField.getAttribute('data-jos-record-id'), dblField.getAttribute('data-jos-field'));
-          e.preventDefault();
-        }
-        return;
-      }
-      if (e.target.closest('[data-jos-act]')) return;
-      var row = e.target.closest('[data-jos-record-id]');
-      if (!row) return;
-      root._josJobId = row.getAttribute('data-jos-record-id');
-      root._josDrawerOpen = true;
-      rerenderJobsOsFrom(root);
-      e.preventDefault();
     });
 
     // Blur without a value change never fires 'change' — this is what
@@ -18785,6 +18844,13 @@
         root._josJobEditOpen = false;
         root._josJobWorkspace = 'overview';
         return rerender();
+      }
+      if (act === 'jobs-name-edit-open') {
+        root._josJobNameEditing = true;
+        rerender();
+        var jobNameInput = el('jos-jd-name');
+        if (jobNameInput) { jobNameInput.focus(); jobNameInput.select(); }
+        return;
       }
       if (act === 'jobs-open-customer') {
         if (!job) return toast('Select a job');
