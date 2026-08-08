@@ -15808,19 +15808,34 @@ function realtimeRefreshSafeToRun(){
 // listener can't tell "a change I already know about" from "a change
 // from somewhere else" — every local write (this tab, this session)
 // paid the full refetch-everything cost of a change that could have
-// come from another tab or another user, for no reason. markLocalWrite
-// records when this tab wrote to a table; onRealtimeBizChange skips
-// scheduling a refresh for that table's own echo within a short
-// window, while still catching genuinely external changes normally.
+// come from another tab or another user, for no reason.
+//
+// Keyed on table+recordId, not just table: an earlier version of this
+// suppressed by table alone, which meant deleting job A could also
+// swallow a legitimate realtime UPDATE for job B if it arrived within
+// the same window — wrong in any multi-user/multi-tab scenario. Now
+// markLocalWrite(table, id) only marks the specific row(s) this tab
+// just wrote; onRealtimeBizChange only suppresses when the incoming
+// event's own row id matches a row THIS tab just wrote. If a payload's
+// row id can't be determined, we never suppress — a redundant refresh
+// is always safe, a wrongly-skipped one is not.
 var _lastLocalWriteAt={};
-function markLocalWrite(table){_lastLocalWriteAt[table]=Date.now();}
+function markLocalWrite(table,id){
+  if(!table||id==null)return;
+  var ids=Array.isArray(id)?id:[id];
+  ids.forEach(function(oneId){ if(oneId!=null)_lastLocalWriteAt[table+':'+oneId]=Date.now(); });
+}
 window.markLocalWrite=markLocalWrite;
 function onRealtimeBizChange(payload){
   try{performance.mark('jos-realtime-event-received');}catch(ePerf){}
   var table=payload&&payload.table;
-  if(table&&_lastLocalWriteAt[table]&&(Date.now()-_lastLocalWriteAt[table])<3000){
-    try{performance.mark('jos-realtime-event-suppressed-own-write');}catch(ePerf){}
-    return;
+  var recId=payload&&((payload.new&&payload.new.id)||(payload.old&&payload.old.id));
+  if(table&&recId!=null){
+    var key=table+':'+recId;
+    if(_lastLocalWriteAt[key]&&(Date.now()-_lastLocalWriteAt[key])<3000){
+      try{performance.mark('jos-realtime-event-suppressed-own-write');}catch(ePerf){}
+      return;
+    }
   }
   clearTimeout(_realtimeRefreshTimer);
   _realtimeRefreshTimer=setTimeout(function runRealtimeRefresh(){
@@ -31019,6 +31034,7 @@ async function cancelHublyJob(){
   j.status='cancelled';
   try{
     if(currentBusiness&&db&&jobId&&!String(jobId).startsWith('req_')&&!String(jobId).startsWith('gcal_')){
+      if(typeof markLocalWrite==='function')markLocalWrite('jobs',jobId);
       await db.from('jobs').update({status:'cancelled'}).eq('id',jobId);
     }
   }catch(e){
@@ -31043,6 +31059,7 @@ async function deleteHublyJob(){
   try{await deleteJobOnGoogleCalendar(jobId,gcalId);}catch(e){}
   try{
     if(currentBusiness&&db&&jobId&&!String(jobId).startsWith('req_')&&!String(jobId).startsWith('gcal_')){
+      if(typeof markLocalWrite==='function')markLocalWrite('jobs',jobId);
       const {error}=await db.from('jobs').delete().eq('id',jobId);
       if(error)throw error;
     }
@@ -41477,6 +41494,7 @@ async function saveJobReschedule(){
     try{
       const payload={scheduled_date:date,scheduled_time:time};
       if(durationHours>0)payload.duration_hours=durationHours;
+      if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId||j.id);
       await db.from('jobs').update(payload).eq('id',j.dbId||j.id);
       try{await updateJobOnGoogleCalendar(j.dbId||j.id);}catch(e){}
     }catch(e){toast('Couldn’t reschedule');return;}
@@ -41514,6 +41532,7 @@ async function saveJobDetailEdits(){
         address:address||null,notes:notes||null,amount:amount,
       };
       if(durationHours>0)payload.duration_hours=durationHours;
+      if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId||j.id);
       await db.from('jobs').update(payload).eq('id',j.dbId||j.id);
       try{await updateJobOnGoogleCalendar(j.dbId||j.id);}catch(e){}
     }catch(e){toast('Couldn’t save');return;}
@@ -41588,6 +41607,7 @@ async function _acceptBookingRequestInner(reqId,opts={}){
       recurringPlan:plan,
       notes:noteBits,
     });
+    if(typeof markLocalWrite==='function')markLocalWrite('booking_requests',reqId);
     await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
     try{
       const pipe=ensurePipelineState();
@@ -41658,7 +41678,9 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   };
   const {data,error}=await db.from('jobs').insert(payload).select().single();
   if(error){if(!silent)toast('❌ '+error.message);return;}
+  if(typeof markLocalWrite==='function')markLocalWrite('jobs',data.id);
   try{await pushJobToGoogleCalendar(data.id);}catch(e){}
+  if(typeof markLocalWrite==='function')markLocalWrite('booking_requests',reqId);
   await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
   // Leave Leads — accepted work lives on Jobs until complete → Customers.
   try{
@@ -41763,6 +41785,7 @@ async function completeJob(){
     if(j.dbId){
       const updatePayload={status:'completed'};
       if(newAmt!=null&&!isNaN(newAmt))updatePayload.amount=newAmt;
+      if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId);
       await db.from('jobs').update(updatePayload).eq('id',j.dbId);
     }
     await promoteJobLeadToCustomer(j);
@@ -41783,6 +41806,7 @@ async function saveJobAmount(){
   if(newAmt==null||isNaN(newAmt)){toast('Enter a valid amount');return;}
   j.amount=newAmt;
   if(j.dbId){
+    if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId);
     await db.from('jobs').update({amount:newAmt}).eq('id',j.dbId);
   }
   closeM('m-job-detail');renderJobsPanel();renderDashToday();renderMoneyView();updateKPIs();toast('Amount updated ✓');
@@ -41817,7 +41841,7 @@ async function submitBlockTime(){
       duration_hours: duration,
     };
     const {data}=await db.from('jobs').insert(payload).select().single();
-    if(data){job.dbId=data.id;job.id=data.id;try{await pushJobToGoogleCalendar(data.id);}catch(e){}}
+    if(data){if(typeof markLocalWrite==='function')markLocalWrite('jobs',data.id);job.dbId=data.id;job.id=data.id;try{await pushJobToGoogleCalendar(data.id);}catch(e){}}
   }
   S.selectedDay=date;
   S.jobsRange='week';
@@ -41925,6 +41949,7 @@ async function addJob(opts={}){
     };
     const {data} = await db.from('jobs').insert(payload).select().single();
     if(data){
+      if(typeof markLocalWrite==='function')markLocalWrite('jobs',data.id);
       job.dbId=data.id;
       job.id=data.id;
       try{await pushJobToGoogleCalendar(data.id);}catch(e){}
@@ -42339,6 +42364,7 @@ async function upsertCustomer(data,opts){
   }
   try{
     if(c&&c._persisted){
+      if(typeof markLocalWrite==='function')markLocalWrite('customers',c.id);
       const {data:updated,error}=await db.from('customers').update(payload).eq('id',c.id).select().single();
       if(error)throw error;
       Object.assign(c,mapCustRow(updated));
@@ -42346,6 +42372,7 @@ async function upsertCustomer(data,opts){
     }else if(currentUser){
       const {data:inserted,error}=await db.from('customers').insert({...payload,business_id:currentBusiness.id}).select().single();
       if(error)throw error;
+      if(typeof markLocalWrite==='function')markLocalWrite('customers',inserted.id);
       const row=mapCustRow(inserted);
       if(c){Object.assign(c,row)}else{c=row;S.customers.push(c);updateCustDL()}
       return c;
@@ -42686,6 +42713,7 @@ async function saveCustomerJobInline(jobId){
   j.status=status;j.amount=amount;j.date=date;j.service=service;
   if(currentBusiness&&db){
     try{
+      if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId||j.id);
       await db.from('jobs').update({
         status,amount,scheduled_date:date||null,service_name:service||null,
       }).eq('id',j.dbId||j.id);
@@ -44270,7 +44298,9 @@ async function acceptAbandonedLead(lead){
   };
   const {data,error}=await db.from('jobs').insert(payload).select().single();
   if(error){toast('❌ '+error.message);return;}
+  if(typeof markLocalWrite==='function')markLocalWrite('jobs',data.id);
   try{await pushJobToGoogleCalendar(data.id);}catch(e){}
+  if(typeof markLocalWrite==='function')markLocalWrite('booking_requests',lead.reqId);
   await db.from('booking_requests').update({status:'accepted'}).eq('id',lead.reqId);
   removeLeadFromBoard(lead.key);
   await loadJobs();
@@ -44398,6 +44428,7 @@ async function saveLeadDetail(){
       if(fields.amount!=null)j.amount=fields.amount;
       if(currentBusiness&&db&&j.dbId||j.id){
         try{
+          if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId||j.id);
           await db.from('jobs').update({
             customer_name:fields.name,phone:fields.phone||null,email:fields.email||null,
             service_name:fields.service||null,address:fields.address||null,
@@ -44410,6 +44441,7 @@ async function saveLeadDetail(){
   }
   if(lead?.jobStatus==='abandoned'&&lead.reqId&&db){
     try{
+      if(typeof markLocalWrite==='function')markLocalWrite('booking_requests',lead.reqId);
       await db.from('booking_requests').update({
         customer_name:fields.name,customer_phone:fields.phone||null,customer_email:fields.email||null,
         service_name:fields.service||null,address:fields.address||null,notes:fields.notes||null,
@@ -44867,7 +44899,7 @@ async function createInvoice(){
     try{
       const {data,error}=await db.from('jobs').insert(payload).select().single();
       if(error)throw error;
-      if(data?.id){job.id=data.id;job.dbId=data.id;}
+      if(data?.id){if(typeof markLocalWrite==='function')markLocalWrite('jobs',data.id);job.id=data.id;job.dbId=data.id;}
     }catch(e){
       console.warn('createInvoice',e);
       toast('Could not save invoice');
@@ -45058,6 +45090,7 @@ async function confirmMarkPaid(){
   const amt=parseFloat(document.getElementById('markpaid-amount')?.value||j.amount||0);
   j.amount=amt.toFixed(2);
   if(j.dbId){
+    if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId);
     await db.from('jobs').update({paid:true,status:'completed',pay_method:j.payMethod,pay_notes:j.payNotes,paid_at:new Date().toISOString(),amount:amt}).eq('id',j.dbId);
   }
   await promoteJobLeadToCustomer(j);
@@ -46884,6 +46917,7 @@ async function markReviewRequested(jobId){
   j.reviewRequestedAt=now;
   if(j.dbId||j.id){
     try{
+      if(typeof markLocalWrite==='function')markLocalWrite('jobs',j.dbId||j.id);
       await db.from('jobs').update({review_requested_at:now}).eq('id',j.dbId||j.id);
     }catch(e){
       console.error('markReviewRequested',e);

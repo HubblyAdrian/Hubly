@@ -10970,7 +10970,6 @@
             var convertBizId = global.currentBusiness && global.currentBusiness.id;
             if (convertDb && convertBizId) {
               var convertPlaceholderId = convertedJob.id;
-              if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
               convertDb.from('jobs').insert({
                 business_id: convertBizId, customer_name: convertedJob.customer || '', service_name: convertedJob.service || '',
                 scheduled_date: convertedJob.date || null, scheduled_time: convertedJob.time ? timeTo24h(convertedJob.time) : null,
@@ -10979,6 +10978,11 @@
               }).select().single().then(function (res) {
                 if (res && res.error) { console.warn('leads-convert-job insert', res.error); toast('Couldn’t save the booked job — check your connection and try again'); return; }
                 if (res && res.data && res.data.id) {
+                  // Mark on success, not before — the row's real id isn't
+                  // known until the insert resolves. Our own REST response
+                  // still lands well before Realtime's WAL-replicated echo
+                  // arrives, so this comfortably beats the race in practice.
+                  if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs', res.data.id);
                   convertedJob.dbId = res.data.id;
                   convertedJob.id = res.data.id;
                   if (root._josJobId === convertPlaceholderId) root._josJobId = res.data.id;
@@ -19045,7 +19049,6 @@
       var rangeBizId = global.currentBusiness && global.currentBusiness.id;
       if (rangeDb && rangeBizId) {
         var rangePlaceholderId = nj.id;
-        if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
         rangeDb.from('jobs').insert({
           business_id: rangeBizId, customer_name: nj.customer || '', service_name: nj.service || '',
           scheduled_date: nj.date || null, scheduled_time: nj.time ? timeTo24h(nj.time) : null, address: nj.address || null,
@@ -19055,6 +19058,7 @@
         }).select().single().then(function (res) {
           if (res && res.error) { console.warn('createJobAtRange insert', res.error); toast('Couldn’t save — check your connection and try again'); return; }
           if (res && res.data && res.data.id) {
+            if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs', res.data.id);
             nj.dbId = res.data.id;
             nj.id = res.data.id;
             if (root._josJobId === rangePlaceholderId) { root._josJobId = res.data.id; rerenderJobsOsFrom(root); }
@@ -19430,7 +19434,7 @@
     try {
       var d = jobsDb();
       if (!d || !job || !job.dbId) return;
-      if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
+      if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs', job.dbId);
       d.from('jobs').update(patch).eq('id', job.dbId).then(function (res) {
         if (res && res.error) { console.warn('persistJobPatch', res.error); toast('Couldn’t save — check your connection and try again'); }
       });
@@ -19440,7 +19444,7 @@
     try {
       var d = jobsDb();
       if (!d || !job || !job.dbId) return;
-      if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
+      if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs', job.dbId);
       try { performance.mark('jos-jobs-delete-supabase-start'); } catch (ePerfD0) {}
       d.from('jobs').delete().eq('id', job.dbId).then(function (res) {
         try {
@@ -19461,7 +19465,7 @@
       var d = jobsDb();
       var dbIds = (jobs || []).map(function (j) { return j && j.dbId; }).filter(Boolean);
       if (!d || !dbIds.length) return;
-      if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
+      if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs', dbIds);
       d.from('jobs').delete().in('id', dbIds).then(function (res) {
         if (res && res.error) { console.warn('persistJobsDeleteBatch', res.error); toast('Couldn’t delete — check your connection and try again'); }
       });
@@ -20141,7 +20145,6 @@
           var createDb = jobsDb();
           var bizId = global.currentBusiness && global.currentBusiness.id;
           if (createDb && bizId) {
-            if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
             createDb.from('jobs').insert({
               // Both columns are nullable text — no reason to invent a
               // customer name or a service ("Detail" was a leftover from
@@ -20158,6 +20161,7 @@
             }).select().single().then(function (res) {
               if (res && res.error) { console.warn('jobs-create insert', res.error); toast('Couldn’t save the new job — check your connection and try again'); return; }
               if (res && res.data && res.data.id) {
+                if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs', res.data.id);
                 nj.dbId = res.data.id;
                 nj.id = res.data.id;
                 if (root._josJobId === placeholderJobId) {
@@ -20196,7 +20200,10 @@
         toast('Deposit marked collected');
         try {
           var depDb = jobsDb();
-          if (depDb && job.dbId) depDb.from('jobs').update({ deposit_status: 'collected' }).eq('id', job.dbId);
+          if (depDb && job.dbId) {
+            if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs', job.dbId);
+            depDb.from('jobs').update({ deposit_status: 'collected' }).eq('id', job.dbId);
+          }
         } catch (eDep) {}
         return rerender();
       }
@@ -20339,7 +20346,6 @@
           var quoteBizId = global.currentBusiness && global.currentBusiness.id;
           if (quoteDb && quoteBizId) {
             var quotePlaceholderId = cj.id;
-            if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs');
             quoteDb.from('jobs').insert({
               business_id: quoteBizId, customer_name: cj.customer || '', service_name: cj.service || '',
               scheduled_date: cj.date || null, scheduled_time: cj.time ? timeTo24h(cj.time) : null, address: cj.address || null,
@@ -20348,6 +20354,7 @@
             }).select().single().then(function (res) {
               if (res && res.error) { console.warn('jobs-convert-quote insert', res.error); toast('Couldn’t save the converted job — check your connection and try again'); return; }
               if (res && res.data && res.data.id) {
+                if (typeof global.markLocalWrite === 'function') global.markLocalWrite('jobs', res.data.id);
                 cj.dbId = res.data.id;
                 cj.id = res.data.id;
                 if (root._josJobId === quotePlaceholderId) { root._josJobId = res.data.id; rerenderJobsOsFrom(root); }
