@@ -4590,6 +4590,8 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-jd-tabs.is-disabled{opacity:.55;pointer-events:none}
 .jos-je-form{padding-bottom:12px}
 .jos-je-form.is-inline .jos-muted{margin:0}
+.jos-je-section + .jos-je-section{margin-top:20px}
+.jos-je-section > .jos-kicker{margin-bottom:10px}
 .jos-je-grid{
   display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;width:100%;
 }

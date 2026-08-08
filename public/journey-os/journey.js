@@ -16517,26 +16517,39 @@
         (notesMeta.quote.status ? (notesMeta.quote.amount ? ' · ' : '') + esc(notesMeta.quote.status) : '') +
         '</div></div>'
       : '';
+    // Grouped into named sections (same .jos-kicker label style used
+    // everywhere else in Jobs — Job Summary, Insights, etc.) instead of
+    // one long flat grid. Field set is unchanged from before this pass —
+    // this is a reorganization, not a decision about which fields to
+    // keep; that's the audit's call, not this pass's.
+    function section(title, fieldsHtml) {
+      return '<div class="jos-je-section"><div class="jos-kicker">' + esc(title) + '</div><div class="jos-je-grid">' + fieldsHtml + '</div></div>';
+    }
     return '<div class="jos-jd-stack jos-je-form' + (inline ? ' is-inline' : '') + '">' +
       (inline ? '' : '<p class="jos-muted" style="margin:0 0 8px">Edit the job details Hubly will use for scheduling, CRM, and invoices.</p>') +
-      '<div class="jos-je-grid">' +
-      jobEditField('jos-je-number', 'Job #', jobNumber(j), { placeholder: 'JOB-1001' }) +
-      jobEditField('jos-je-status', 'Status', j.status || 'scheduled', { kind: 'select', options: jobStatusOptions() }) +
-      jobEditField('jos-je-customer-first', 'First name', custName.first, { placeholder: 'First name', autofocus: !inline }) +
-      jobEditField('jos-je-customer-last', 'Last name', custName.last, { placeholder: 'Last name' }) +
-      jobEditField('jos-je-phone', 'Phone', j.phone || '', { placeholder: '(555) 000-0000' }) +
-      jobEditField('jos-je-email', 'Email', j.email || '', { type: 'email', placeholder: 'name@email.com' }) +
-      jobEditField('jos-je-address', 'Address', j.address || '', { full: true, placeholder: 'Service address' }) +
-      jobEditField('jos-je-vehicle', 'Vehicle / property', j.vehicle || '', { placeholder: 'Optional' }) +
-      jobEditField('jos-je-service', 'Service', j.service || '', { kind: 'select', options: jobServiceOptions(j) }) +
-      jobEditField('jos-je-amount', 'Amount', j.amount != null ? j.amount : '', { type: 'number', placeholder: '0' }) +
-      jobEditField('jos-je-date', 'Date', j.date || '', { type: 'date' }) +
-      jobEditField('jos-je-time', 'Time', j.time || '', { placeholder: '10:00 AM' }) +
-      jobEditField('jos-je-duration', 'Duration (min)', j.durationMin || 120, { type: 'number' }) +
-      jobEditField('jos-je-assigned', 'Assigned to', j.assignedTo || 'Unassigned', { kind: 'select', options: jobTeamOptions(j) }) +
-      quoteLine +
-      jobEditField('jos-je-notes', 'Notes', notesMeta.clean, { kind: 'textarea', full: true, placeholder: 'Internal notes…', rows: 3 }) +
-      '</div>' +
+      section('Customer',
+        jobEditField('jos-je-customer-first', 'First name', custName.first, { placeholder: 'First name', autofocus: !inline }) +
+        jobEditField('jos-je-customer-last', 'Last name', custName.last, { placeholder: 'Last name' }) +
+        jobEditField('jos-je-phone', 'Phone', j.phone || '', { placeholder: '(555) 000-0000' }) +
+        jobEditField('jos-je-email', 'Email', j.email || '', { type: 'email', placeholder: 'name@email.com' }) +
+        jobEditField('jos-je-address', 'Address', j.address || '', { full: true, placeholder: 'Service address' })
+      ) +
+      section('Job',
+        jobEditField('jos-je-number', 'Job #', jobNumber(j), { placeholder: 'JOB-1001' }) +
+        jobEditField('jos-je-status', 'Status', j.status || 'scheduled', { kind: 'select', options: jobStatusOptions() }) +
+        jobEditField('jos-je-service', 'Service', j.service || '', { kind: 'select', options: jobServiceOptions(j) }) +
+        jobEditField('jos-je-vehicle', 'Vehicle / property', j.vehicle || '', { placeholder: 'Optional' }) +
+        jobEditField('jos-je-date', 'Date', j.date || '', { type: 'date' }) +
+        jobEditField('jos-je-time', 'Time', j.time || '', { placeholder: '10:00 AM' }) +
+        jobEditField('jos-je-duration', 'Duration (min)', j.durationMin || 120, { type: 'number' })
+      ) +
+      section('Assignment',
+        jobEditField('jos-je-assigned', 'Assigned to', j.assignedTo || 'Unassigned', { kind: 'select', options: jobTeamOptions(j) })
+      ) +
+      section('Financial',
+        jobEditField('jos-je-amount', 'Amount', j.amount != null ? j.amount : '', { type: 'number', placeholder: '0' })
+      ) +
+      section('Notes', quoteLine + jobEditField('jos-je-notes', 'Notes', notesMeta.clean, { kind: 'textarea', full: true, placeholder: 'Internal notes…', rows: 3 })) +
       '<div class="jos-btn-row jos-mt">' +
       btn('jobs-edit-save', inline ? 'Save changes' : 'Save job', 'jos-btn-brand jos-btn-sm') +
       (inline
