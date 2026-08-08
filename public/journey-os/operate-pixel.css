@@ -5014,7 +5014,7 @@ textarea.jos-je-field-input.jos-ld-cell-inline{height:auto!important;min-height:
 .jos-ld-view-btn:hover{background:#F5F6F7}
 .jos-ld-view-btn.on{background:var(--jos-brand-soft);color:var(--jos-brand)}
 .jos-ld-view-btn.on:hover{background:var(--jos-brand-soft)}
-.jos-ld-table-wrap{flex:1;overflow:auto;position:relative}
+.jos-ld-table-wrap{flex:1;overflow:auto;position:relative;max-width:100%}
 .jos-ld-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;table-layout:fixed}
 .jos-ld-table thead th{
   position:sticky;top:0;z-index:2;text-align:left;padding:0 16px;height:32px;

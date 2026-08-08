@@ -16511,10 +16511,67 @@
     }
   ];
 
-  function jobsColumnSchema() { return JOBS_DEFAULT_COLUMNS; }
+  // Custom fields for Jobs — same shape as Leads' (business_table_config,
+  // scope 'business', shared by every employee): a pressure-washing
+  // business might want Gate Code or Water Source on every job; a
+  // photographer might want Shoot Type. One generic get/set on
+  // job.customFields[fieldId] covers every type, same as Leads; per-type
+  // rendering/parsing lives entirely in rendererRegistry.
+  var JOBS_CUSTOM_FIELD_TYPES = [
+    ['text', 'Text'], ['number', 'Number'], ['date', 'Date'],
+    ['checkbox', 'Checkbox'], ['select', 'Select'],
+    ['phone', 'Phone'], ['email', 'Email'], ['url', 'URL']
+  ];
+  function normalizeJobsCustomFields(saved) {
+    return Array.isArray(saved) ? saved.filter(function (f) { return f && f.id && f.label; }) : [];
+  }
+  function loadJobsCustomFields(root) {
+    var cached = tablePreferences.load('business', 'jobs', function (remote) {
+      var remoteFields = normalizeJobsCustomFields(remote && remote.customFields);
+      if (!root) return;
+      if (JSON.stringify(remoteFields) !== JSON.stringify(root._josJobsCustomFields)) {
+        root._josJobsCustomFields = remoteFields;
+        root._josJobsColumns = tablePreferences.normalize(jobsColumnSchema(), root._josJobsColumns);
+        rerenderJobsOsFrom(root);
+      }
+    });
+    return normalizeJobsCustomFields(cached && cached.customFields);
+  }
+  function saveJobsCustomFields(fields) {
+    tablePreferences.save('business', 'jobs', { customFields: fields });
+  }
+  function jobsCustomFieldKey() {
+    return 'cf_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+  function isJobsCustomFieldKey(key) {
+    return typeof key === 'string' && key.indexOf('cf_') === 0;
+  }
+  function customFieldColumnDefForJob(f) {
+    return {
+      key: f.id, label: f.label, hidden: false, custom: true,
+      type: f.type || 'text', options: f.options,
+      editable: true, searchable: true, filterable: false, sortable: false,
+      get: function (job) { return job.customFields ? job.customFields[f.id] : undefined; },
+      set: function (job, value) {
+        job.customFields = job.customFields || {};
+        job.customFields[f.id] = value;
+        return f.label + ' updated';
+      }
+    };
+  }
+  // jobsOsRoot() rather than threading a param through every one of
+  // jobsSchemaMap's ~15 call sites (some of which — mutateJobField,
+  // handleJobsAct — don't have a `root` in scope at all) — same data
+  // (root._josJobsCustomFields), cheaper change than Leads' explicit-
+  // threading pattern.
+  function jobsColumnSchema() {
+    var root = jobsOsRoot();
+    var customFields = (root && root._josJobsCustomFields) || [];
+    return JOBS_DEFAULT_COLUMNS.concat(customFields.map(customFieldColumnDefForJob));
+  }
   function jobsSchemaMap() {
     var map = {};
-    JOBS_DEFAULT_COLUMNS.forEach(function (c) { map[c.key] = c; });
+    jobsColumnSchema().forEach(function (c) { map[c.key] = c; });
     return map;
   }
   // Fields the drawer edits that aren't worth exposing as table columns
@@ -16990,6 +17047,58 @@
       '</div></div>';
   }
 
+  // Same shape as renderLeadsColumnAddMenu/renderLeadsAddFieldForm.
+  function renderJobsColumnAddMenu(visibleCols, allColumns, root) {
+    if (root && root._josJobsAddFieldOpen) return renderJobsAddFieldForm(root);
+    var hidden = (allColumns || []).filter(function (c) { return c.hidden; });
+    return '<div class="jos-ld-col-menu jos-ld-col-add-menu">' +
+      (hidden.length
+        ? hidden.map(function (c) {
+          return '<button type="button" data-jos-act="jobs-col-show" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</button>';
+        }).join('')
+        : '<div class="jos-muted" style="padding:8px 10px;white-space:nowrap">All columns are visible</div>') +
+      '<div class="jos-ld-col-menu-sep"></div>' +
+      '<button type="button" data-jos-act="jobs-col-add-field-open">+ Add custom field</button>' +
+      '</div>';
+  }
+  function renderJobsAddFieldForm(root) {
+    var d = root._josJobsAddFieldDraft || {};
+    var type = d.type || 'text';
+    var typeOptions = JOBS_CUSTOM_FIELD_TYPES.map(function (t) {
+      return '<option value="' + esc(t[0]) + '"' + (type === t[0] ? ' selected' : '') + '>' + esc(t[1]) + '</option>';
+    }).join('');
+    return '<div class="jos-ld-col-menu jos-ld-addfield-menu">' +
+      '<div class="jos-ld-addfield-title">Add custom field</div>' +
+      '<input type="text" id="jos-jobs-addfield-label" class="jos-ld-addfield-input" placeholder="Field name" value="' + esc(d.label || '') + '" autocomplete="off">' +
+      '<select id="jos-jobs-addfield-type" class="jos-ld-addfield-input">' + typeOptions + '</select>' +
+      (type === 'select'
+        ? '<input type="text" id="jos-jobs-addfield-options" class="jos-ld-addfield-input" placeholder="Options, comma-separated" value="' + esc(d.optionsText || '') + '" autocomplete="off">'
+        : '') +
+      '<div class="jos-ld-addfield-actions">' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-col-add-field-cancel">Cancel</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-btn-brand" data-jos-act="jobs-col-add-field-save">Add field</button>' +
+      '</div>' +
+      '</div>';
+  }
+  // Fixed-position, same reasoning as positionLeadsColMenu — a menu near
+  // the table's right edge shouldn't get clipped by an ancestor's
+  // overflow:hidden.
+  function positionJobsColMenu(root) {
+    var menu = root.querySelector('.jos-ld-col-menu');
+    if (!menu) return;
+    var trigger = root._josJobsColMenuKey
+      ? root.querySelector('.jos-ld-th-menu-btn[data-jos-col-key="' + root._josJobsColMenuKey + '"]')
+      : root.querySelector('[data-jos-act="jobs-col-add-menu"]');
+    if (!trigger) return;
+    var tr = trigger.getBoundingClientRect();
+    var mw = menu.offsetWidth || 180;
+    var left = Math.min(tr.left, window.innerWidth - mw - 12);
+    left = Math.max(12, left);
+    menu.style.top = (tr.bottom + 4) + 'px';
+    menu.style.left = left + 'px';
+    menu.classList.add('jos-positioned');
+  }
+
   // Schema-driven, same shape as renderLeadsTable — headers from the
   // schema (sentence case, no drag/resize/rename yet — see the Jobs
   // migration notes), cells through the exact same tableCellHtml/
@@ -17005,10 +17114,36 @@
       var def = schemaMap[c.key];
       return '<col style="width:' + (c.width || (def && def.width) || 140) + 'px">';
     }).join('') + '<col style="width:70px"></colgroup>';
+    var jobsColOpenKey = root._josJobsColMenuKey || null;
     var headCells = (bulkOpen ? '<th class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-job-bulk-all aria-label="Select all jobs"' + (allSelected ? ' checked' : '') + '></th>' : '') +
       cols.map(function (c) {
-        return '<th class="jos-ld-th" data-jos-col-key="' + esc(c.key) + '"><span class="jos-ld-th-label" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</span></th>';
-      }).join('') + '<th></th>';
+        // Deliberately no drag-reorder/resize/rename yet — those are a
+        // separate, larger "unify column header interactions across
+        // Jobs/Leads" pass (docs/JOBS_LEADS_CONSISTENCY_AUDIT.md). This is
+        // scoped to what was actually asked for: custom columns, which
+        // need the ▾ menu (Hide, Delete for custom fields) and the "+"
+        // add-column affordance to exist at all.
+        return '<th class="jos-ld-th' + (jobsColOpenKey === c.key ? ' menu-open' : '') + '" data-jos-col-key="' + esc(c.key) + '">' +
+          '<span class="jos-ld-th-label" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</span>' +
+          '<button type="button" class="jos-ld-th-menu-btn" data-jos-act="jobs-col-menu" data-jos-col-key="' + esc(c.key) + '" aria-label="Column options for ' + esc(c.label) + '">▾</button>' +
+          (jobsColOpenKey === c.key
+            ? '<div class="jos-ld-col-menu">' +
+              '<button type="button" data-jos-act="jobs-col-hide" data-jos-col-key="' + esc(c.key) + '">Hide column</button>' +
+              (c.custom ? '<button type="button" class="jos-ld-col-menu-danger" data-jos-act="jobs-col-delete-field" data-jos-col-key="' + esc(c.key) + '">Delete field</button>' : '') +
+              '</div>'
+            : '') +
+          '</th>';
+      }).join('') +
+      // Shares the same trailing header cell the row-action column
+      // (arrow/menu) already had — a separate th-add column (matching
+      // Leads' layout exactly) needed its own <col>/<td> down every row,
+      // which pushed this already-wide table's real content past its
+      // wrap's clipped edge and under the sidebar. One shared cell avoids
+      // that without losing the affordance.
+      '<th class="jos-ld-th-add">' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="jobs-col-add-menu" title="Show hidden columns" aria-label="Show hidden columns">+</button>' +
+      (root._josJobsColAddOpen ? renderJobsColumnAddMenu(cols, root._josJobsColumns, root) : '') +
+      '</th>';
     var rows = !list.length
       ? '<tr class="jos-ld-empty-row"><td colspan="' + (cols.length + (bulkOpen ? 1 : 0) + 1) + '"><div class="jos-ld-empty-table">' +
         '<strong>No jobs yet</strong><p>Create your first job or import bookings to get started.</p>' +
@@ -17067,6 +17202,10 @@
   function renderJobsPage(root) {
     seedDemoJobsIfEmpty();
     ensureJobsOsState();
+    // Custom fields must load before columns — jobsColumnSchema() (which
+    // loadJobsColumns normalizes against) reads root._josJobsCustomFields,
+    // same load-order requirement Leads has.
+    if (!root._josJobsCustomFields) root._josJobsCustomFields = loadJobsCustomFields(root);
     if (!root._josJobsColumns) root._josJobsColumns = loadJobsColumns(root);
     var selectedId = root._josJobId || null;
     var workspaceTab = root._josJobWorkspace || 'overview';
@@ -17391,6 +17530,7 @@
 
     bindRoot(root);
     wireJobsRoot(root);
+    positionJobsColMenu(root);
   }
 
   function wireJobsRoot(root) {
@@ -17412,6 +17552,22 @@
       }
     });
     wireTimeClockPicker(root);
+    // Same outside-click-close pattern as Leads' column menu/add-field
+    // popovers.
+    root.addEventListener('click', function (e) {
+      if (!e.target.closest('.jos-ld-th') && root._josJobsColMenuKey) {
+        root._josJobsColMenuKey = null;
+        rerenderJobsOsFrom(root);
+        return;
+      }
+      if (!e.target.closest('.jos-ld-th-add') && root._josJobsColAddOpen) {
+        root._josJobsColAddOpen = false;
+        root._josJobsAddFieldOpen = false;
+        root._josJobsAddFieldDraft = null;
+        rerenderJobsOsFrom(root);
+        return;
+      }
+    });
     root.addEventListener('click', function (e) {
       var slotAdd = e.target.closest('.jos-gcal-slot-add, [data-jos-act="jobs-gcal-new"]');
       if (slotAdd) {
@@ -17764,6 +17920,11 @@
         closeGcalCreatePop();
         closeGcalCreateMenu();
       }
+      if (e.key === 'Enter' && e.target && (e.target.id === 'jos-jobs-addfield-label' || e.target.id === 'jos-jobs-addfield-options')) {
+        e.preventDefault();
+        var jobsSaveBtn = root.querySelector('[data-jos-act="jobs-col-add-field-save"]');
+        if (jobsSaveBtn) jobsSaveBtn.click();
+      }
     });
 
     if (!document._josGcalPopDismiss) {
@@ -17785,9 +17946,29 @@
         clearTimeout(root._josJobsSearchT);
         root._josJobsSearchT = setTimeout(function () { rerenderJobsOsFrom(root); }, 140);
       }
+      // Silent state sync — the type <select>'s own 'change' handler is
+      // what actually re-renders (to show/hide the options input); these
+      // just keep the draft caught up so that re-render carries forward
+      // whatever's mid-typing instead of reverting it.
+      if (e.target && e.target.id === 'jos-jobs-addfield-label') {
+        root._josJobsAddFieldDraft = root._josJobsAddFieldDraft || {};
+        root._josJobsAddFieldDraft.label = e.target.value;
+      }
+      if (e.target && e.target.id === 'jos-jobs-addfield-options') {
+        root._josJobsAddFieldDraft = root._josJobsAddFieldDraft || {};
+        root._josJobsAddFieldDraft.optionsText = e.target.value;
+      }
     });
     root.addEventListener('change', function (e) {
       var id = e.target && e.target.id;
+      if (id === 'jos-jobs-addfield-type') {
+        root._josJobsAddFieldDraft = root._josJobsAddFieldDraft || {};
+        root._josJobsAddFieldDraft.type = e.target.value;
+        rerenderJobsOsFrom(root);
+        var jobsOptInput = el('jos-jobs-addfield-options');
+        if (jobsOptInput) jobsOptInput.focus({ preventScroll: true });
+        return;
+      }
       if (e.target && e.target.hasAttribute('data-jos-check')) {
         var jid = e.target.getAttribute('data-jos-job');
         var cid = e.target.getAttribute('data-jos-check');
@@ -19240,6 +19421,95 @@
       }
       if (act === 'jobs-bulk-clear') {
         root._josBulk = {};
+        return rerender();
+      }
+      if (act === 'jobs-col-menu') {
+        var jobsClickedKey = t.getAttribute('data-jos-col-key');
+        root._josJobsColMenuKey = root._josJobsColMenuKey === jobsClickedKey ? null : jobsClickedKey;
+        root._josJobsColAddOpen = false;
+        return rerender();
+      }
+      if (act === 'jobs-col-add-menu') {
+        root._josJobsColAddOpen = !root._josJobsColAddOpen;
+        root._josJobsColMenuKey = null;
+        return rerender();
+      }
+      if (act === 'jobs-col-hide') {
+        var jobsHideKey = t.getAttribute('data-jos-col-key');
+        if (!root._josJobsColumns) root._josJobsColumns = loadJobsColumns(root);
+        var jobsVisibleN = root._josJobsColumns.filter(function (c) { return !c.hidden; }).length;
+        if (jobsVisibleN <= 1) { toast('At least one column must stay visible'); root._josJobsColMenuKey = null; return rerender(); }
+        var jobsHideCol = root._josJobsColumns.find(function (c) { return c.key === jobsHideKey; });
+        if (jobsHideCol) jobsHideCol.hidden = true;
+        saveJobsColumns(root._josJobsColumns);
+        root._josJobsColMenuKey = null;
+        return rerender();
+      }
+      if (act === 'jobs-col-show') {
+        var jobsShowKey = t.getAttribute('data-jos-col-key');
+        if (!root._josJobsColumns) root._josJobsColumns = loadJobsColumns(root);
+        var jobsShowCol = root._josJobsColumns.find(function (c) { return c.key === jobsShowKey; });
+        if (jobsShowCol) jobsShowCol.hidden = false;
+        saveJobsColumns(root._josJobsColumns);
+        return rerender();
+      }
+      if (act === 'jobs-col-add-field-open') {
+        root._josJobsAddFieldOpen = true;
+        root._josJobsAddFieldDraft = { type: 'text' };
+        // Deferred for the same reason as Leads' leads-col-add-field-open
+        // — the button this click landed on lives inside the popover about
+        // to be swapped for the form; rendering synchronously would detach
+        // it before the outside-click-close listener (same event, also
+        // bound to root) checks it, which would read the detached node as
+        // "clicked outside" and close everything right back up.
+        setTimeout(function () {
+          rerender();
+          var jobsLabelInput = el('jos-jobs-addfield-label');
+          if (jobsLabelInput) jobsLabelInput.focus({ preventScroll: true });
+        }, 0);
+        return;
+      }
+      if (act === 'jobs-col-add-field-cancel') {
+        root._josJobsColAddOpen = false;
+        root._josJobsAddFieldOpen = false;
+        root._josJobsAddFieldDraft = null;
+        return rerender();
+      }
+      if (act === 'jobs-col-add-field-save') {
+        var jobsNewFieldLabel = String((el('jos-jobs-addfield-label') || {}).value || '').trim();
+        if (!jobsNewFieldLabel) { toast('Field needs a name'); return; }
+        var jobsTypeNames = JOBS_CUSTOM_FIELD_TYPES.map(function (x) { return x[0]; });
+        var jobsTypeKey = String((el('jos-jobs-addfield-type') || {}).value || 'text').trim().toLowerCase();
+        if (jobsTypeNames.indexOf(jobsTypeKey) < 0) jobsTypeKey = 'text';
+        var jobsNewField = { id: jobsCustomFieldKey(), label: jobsNewFieldLabel, type: jobsTypeKey };
+        if (jobsTypeKey === 'select') {
+          var jobsOptionsRaw = String((el('jos-jobs-addfield-options') || {}).value || '');
+          var jobsOptionValues = jobsOptionsRaw.split(',').map(function (o) { return o.trim(); }).filter(Boolean);
+          if (!jobsOptionValues.length) { toast('Select fields need at least one option'); return; }
+          jobsNewField.options = jobsOptionValues.map(function (o) { return { value: o, label: o }; });
+        }
+        root._josJobsCustomFields = (root._josJobsCustomFields || []).concat([jobsNewField]);
+        saveJobsCustomFields(root._josJobsCustomFields);
+        if (!root._josJobsColumns) root._josJobsColumns = loadJobsColumns(root);
+        root._josJobsColumns = root._josJobsColumns.concat([{ key: jobsNewField.id, label: jobsNewFieldLabel, hidden: false, custom: true }]);
+        saveJobsColumns(root._josJobsColumns);
+        root._josJobsColAddOpen = false;
+        root._josJobsAddFieldOpen = false;
+        root._josJobsAddFieldDraft = null;
+        toast('Added field "' + jobsNewFieldLabel + '"');
+        return rerender();
+      }
+      if (act === 'jobs-col-delete-field') {
+        var jobsDelFieldKey = t.getAttribute('data-jos-col-key');
+        if (!isJobsCustomFieldKey(jobsDelFieldKey)) return;
+        var jobsDelFieldCol = (root._josJobsColumns || []).find(function (c) { return c.key === jobsDelFieldKey; });
+        if (!window.confirm('Delete the field "' + (jobsDelFieldCol ? jobsDelFieldCol.label : jobsDelFieldKey) + '"? This removes it for everyone at this business. This cannot be undone.')) return;
+        root._josJobsCustomFields = (root._josJobsCustomFields || []).filter(function (f) { return f.id !== jobsDelFieldKey; });
+        saveJobsCustomFields(root._josJobsCustomFields);
+        root._josJobsColumns = (root._josJobsColumns || []).filter(function (c) { return c.key !== jobsDelFieldKey; });
+        saveJobsColumns(root._josJobsColumns);
+        root._josJobsColMenuKey = null;
+        toast('Field deleted');
         return rerender();
       }
       if (act === 'jobs-clear-filters') {
