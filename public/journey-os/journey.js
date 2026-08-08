@@ -7447,7 +7447,7 @@
       // website (getBookingServices()), not whatever a rep happened to
       // type. Falls back to no options only if the business hasn't set
       // up a service catalog yet.
-      key: 'service', label: 'Service', type: 'select', width: 150, allowEmpty: 'No service',
+      key: 'service', label: 'Service', type: 'select', width: 150, allowEmpty: 'Select service', hideEmptyOption: true,
       editable: true, searchable: true, filterable: true, sortable: true,
       options: function () {
         var svcs = (typeof global.getBookingServices === 'function') ? global.getBookingServices() : [];
@@ -8539,15 +8539,45 @@
         var isEmpty = !value;
         return '<span class="jos-ld-name-cell jos-ld-select-cell' + (isEmpty ? ' is-empty' : '') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to change">' + esc(label || col.allowEmpty || 'Unassigned') + '</span>';
       },
+      // Kept as a fallback only — real interaction now opens the shared
+      // custom dropdown (openJobsComboPicker/openLeadsComboPicker),
+      // intercepted before this ever runs (see the click-to-edit
+      // dispatch in wireJobsRoot/wireLeadsRoot). No native <select>
+      // renders in normal use; left intact so a select-type column still
+      // degrades to something functional if ever invoked directly.
       edit: function (value, col, leadKey) {
         var opts = rendererRegistry.select.resolveOptions(col);
         return '<select class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" onclick="event.stopPropagation()">' +
-          (col.allowEmpty ? '<option value=""' + (!value ? ' selected' : '') + '>' + esc(col.allowEmpty) + '</option>' : '') +
+          (col.allowEmpty && !col.hideEmptyOption ? '<option value=""' + (!value ? ' selected' : '') + '>' + esc(col.allowEmpty) + '</option>' : '') +
           opts.map(function (o) { return '<option value="' + esc(o.value) + '"' + (value === o.value ? ' selected' : '') + '>' + esc(o.label) + '</option>'; }).join('') +
           '</select>';
       }
     }
   };
+
+  // Shared markup for the custom dropdown that replaces every native
+  // <select> across both tables (and the drawer field variant) — one
+  // component, one visual language, per "no native browser dropdowns
+  // anywhere in Hubly." Jobs' and Leads' own open/position/wire glue
+  // differ (different root element, different mutate/rerender
+  // functions), so this only builds the list-with-search-and-optional-
+  // empty-option content; each table's renderXComboPop() wraps it in
+  // its own positioned .jos-combo-pop.
+  function renderComboPopContent(col, currentValue, search, createAct) {
+    var opts = rendererRegistry.select.resolveOptions(col);
+    var q = String(search || '').trim().toLowerCase();
+    var filtered = q ? opts.filter(function (o) { return String(o.label || '').toLowerCase().indexOf(q) > -1; }) : opts;
+    var showSearch = opts.length > 7;
+    return (showSearch ? '<input type="text" class="jos-combo-search" data-jos-combo-search="1" placeholder="Search ' + esc((col.label || '').toLowerCase()) + '…" value="' + esc(search || '') + '" autocomplete="off" onclick="event.stopPropagation()">' : '') +
+      '<div class="jos-combo-list">' +
+      (col.allowEmpty && !col.hideEmptyOption ? '<button type="button" class="jos-combo-opt' + (!currentValue ? ' on' : '') + '" data-jos-combo-pick="">' + esc(col.allowEmpty) + '</button>' : '') +
+      filtered.map(function (o) {
+        return '<button type="button" class="jos-combo-opt' + (currentValue === o.value ? ' on' : '') + '" data-jos-combo-pick="' + esc(o.value) + '">' + esc(o.label) + '</button>';
+      }).join('') +
+      (!filtered.length ? '<div class="jos-combo-empty">No matches</div>' : '') +
+      '</div>' +
+      (createAct ? '<div class="jos-combo-create"><button type="button" data-jos-act="' + esc(createAct) + '">+ Create ' + esc(col.label) + '</button></div>' : '');
+  }
 
   // Real spreadsheet-style view, same underlying filtered/sorted list as
   // the card list. `col` is a full schema entry (type/get/set/options/...),
@@ -8754,6 +8784,55 @@
       '<button type="button" class="jos-ld-bulk-bar-danger" data-jos-act="leads-bulk-delete">Delete</button>' +
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-bulk-clear" title="Clear selection" aria-label="Clear selection">✕</button>' +
       '</div>';
+  }
+
+  // Leads' half of the shared custom dropdown — same renderComboPopContent
+  // as Jobs, own open/position/wire glue since Leads has its own root,
+  // mutateLeadById-equivalent, and renderLeads(). No "+ Create" action
+  // yet for any Leads select field (Source/Owner/Status don't have an
+  // equivalent "go create one" flow the way Service does) — scoped down
+  // deliberately rather than half-building one.
+  function renderLeadsComboPop(root) {
+    var combo = root._josLeadCombo;
+    if (!combo) return '<div class="jos-combo-pop" id="jos-ld-combo-pop" hidden></div>';
+    var lead = findLead(combo.recordId);
+    var col = findLeadsColumnDef(root, combo.key);
+    if (!lead || !col) return '<div class="jos-combo-pop" id="jos-ld-combo-pop" hidden></div>';
+    var currentValue = col.get ? col.get(lead) : lead[combo.key];
+    return '<div class="jos-combo-pop" id="jos-ld-combo-pop">' + renderComboPopContent(col, currentValue, combo.search, null) + '</div>';
+  }
+  function positionLeadsComboPop(root) {
+    var combo = root._josLeadCombo;
+    var pop = el('jos-ld-combo-pop');
+    if (!combo || !pop) return;
+    var scope = combo.inPanel ? root.querySelector('.jos-ld-main, .jos-ld-workspace') : root;
+    var trigger = scope && scope.querySelector('[data-jos-field="' + combo.key + '"][data-jos-record-id="' + CSS.escape(combo.recordId) + '"]');
+    if (!trigger) return;
+    var tr = trigger.getBoundingClientRect();
+    var pw = Math.max(200, tr.width);
+    pop.style.width = pw + 'px';
+    var ph = pop.offsetHeight || 300;
+    var top = tr.bottom + 4;
+    if (top + ph > window.innerHeight - 12) top = Math.max(12, tr.top - ph - 4);
+    var left = Math.min(tr.left, window.innerWidth - pw - 12);
+    pop.style.top = top + 'px';
+    pop.style.left = Math.max(12, left) + 'px';
+    pop.classList.add('jos-positioned');
+  }
+  function openLeadsComboPicker(root, recordId, key, inPanel) {
+    var col = findLeadsColumnDef(root, key);
+    if (!col || col.editable === false) return;
+    root._josLeadCombo = { recordId: recordId, key: key, search: '', inPanel: !!inPanel };
+    renderLeads();
+    positionLeadsComboPop(root);
+    var pop = el('jos-ld-combo-pop');
+    var s = pop && pop.querySelector('[data-jos-combo-search]');
+    if (s) s.focus({ preventScroll: true });
+  }
+  function closeLeadsComboPicker(root) {
+    if (!root._josLeadCombo) return;
+    root._josLeadCombo = null;
+    renderLeads();
   }
 
   // A customer profile, not a settings form: header (identity + status +
@@ -9290,6 +9369,7 @@
       (wsOpen ? '<section class="jos-ld-main' + (panelJustOpened ? '' : ' is-open') + '">' + renderLeadWorkspace(root, sel, ws) + '</section>' : '') +
       '</div>' +
       renderLeadsBulkBar(root, bulkOpen) +
+      renderLeadsComboPop(root) +
       '</div>' +
 
       renderLeadsFilterDrawer(root) +
@@ -9302,6 +9382,7 @@
     bindRoot(root);
     wireLeadsRoot(root);
     positionLeadsColMenu(root);
+    positionLeadsComboPop(root);
     restoreLeadsGridFocus(root);
     if (panelJustOpened) animateLeadsPanelOpen(root);
     try {
@@ -9620,6 +9701,28 @@
         renderLeads();
         return;
       }
+      // The shared custom dropdown (replaces every native <select>) —
+      // pick an option or click outside to close. Opening itself is
+      // handled by the click-to-edit dispatch above (col.type === 'select').
+      var comboPick = e.target.closest('[data-jos-combo-pick]');
+      if (comboPick) {
+        e.stopPropagation();
+        var leadCombo = root._josLeadCombo;
+        if (leadCombo) {
+          var comboCol = findLeadsColumnDef(root, leadCombo.key);
+          if (comboCol) {
+            mutateLeadById(leadCombo.recordId, function (l) {
+              tableColFieldSet(comboCol, l, comboPick.getAttribute('data-jos-combo-pick'));
+            });
+          }
+          closeLeadsComboPicker(root);
+        }
+        return;
+      }
+      if (root._josLeadCombo && !e.target.closest('.jos-combo-pop') && !e.target.closest('[data-jos-field]')) {
+        closeLeadsComboPicker(root);
+        return;
+      }
       var tabBtn = e.target.closest('[data-jos-leads-tab]');
       if (tabBtn) {
         root._josLeadsTab = tabBtn.getAttribute('data-jos-leads-tab');
@@ -9716,7 +9819,19 @@
         root._josLeadsAddFieldDraft = root._josLeadsAddFieldDraft || {};
         root._josLeadsAddFieldDraft.optionsText = e.target.value;
       }
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-combo-search') && root._josLeadCombo) {
+        root._josLeadCombo.search = e.target.value;
+        renderLeads();
+        positionLeadsComboPop(root);
+        var leadComboPop = el('jos-ld-combo-pop');
+        var leadComboSearchEl = leadComboPop && leadComboPop.querySelector('[data-jos-combo-search]');
+        if (leadComboSearchEl) { leadComboSearchEl.focus({ preventScroll: true }); var lv = leadComboSearchEl.value; leadComboSearchEl.value = ''; leadComboSearchEl.value = lv; }
+      }
     });
+
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && root._josLeadCombo) { closeLeadsComboPicker(root); }
+    }, true);
 
     root.addEventListener('change', function (e) {
       var id = e.target && e.target.id;
@@ -10010,6 +10125,16 @@
       // renaming happens in the panel, not the table.
       if (col.openOnClick) {
         openLeadDetailPanel(root, leadId);
+        e.stopPropagation();
+        return;
+      }
+      // Select-type fields open the shared custom dropdown directly —
+      // never the inline "editing" state a native <select> used to
+      // render into (see rendererRegistry.select's comment). Works from
+      // either the table or the detail panel — both render fields with
+      // the same data-jos-field/data-jos-record-id contract.
+      if (col.type === 'select') {
+        openLeadsComboPicker(root, leadId, key, !!field.closest('.jos-ld-main, .jos-ld-workspace'));
         e.stopPropagation();
         return;
       }
@@ -16453,7 +16578,11 @@
       // for "JOB-5767" before "Fertilizer Boost"; the id still needs to be
       // findable, so renderJobsTable prints it as small muted text under
       // this cell instead of giving it its own column.
-      key: 'service', label: 'Service', type: 'select', width: 170, allowEmpty: 'No service',
+      // A job should almost always have a real service — "No service"
+      // showing as a pickable option (rather than just the empty state
+      // before anything's chosen) read like a legitimate choice rather
+      // than "nothing selected yet."
+      key: 'service', label: 'Service', type: 'select', width: 170, allowEmpty: 'Select service', hideEmptyOption: true,
       editable: true, searchable: true, filterable: true, sortable: true, dbColumn: 'service_name',
       options: function (job) { return jobServiceOptions(job || {}).map(function (s) { return { value: s, label: s }; }); },
       set: function (job, value) { job.service = String(value || '').trim(); return 'Service → ' + (job.service || '—'); }
@@ -17205,6 +17334,69 @@
       '</div>';
   }
 
+  // The custom dropdown that replaces the native <select> for every
+  // select-type Jobs field (Status, Service, Technician, Deposit — table
+  // cells and drawer fields alike, since both go through the same
+  // findJobsColumnDef/jobDrawerFieldHtml). One shared instance per page,
+  // matching statusMenu/rowMenu's existing "one popover, moved to
+  // whichever field opened it" pattern, rather than one per cell.
+  function renderJobsComboPop(root) {
+    var combo = root._josCombo;
+    if (!combo) return '<div class="jos-combo-pop" id="jos-jobs-combo-pop" hidden></div>';
+    var job = findJob(combo.recordId);
+    var col = findJobsColumnDef(combo.key);
+    if (!job || !col) return '<div class="jos-combo-pop" id="jos-jobs-combo-pop" hidden></div>';
+    if (combo.creating) {
+      return '<div class="jos-combo-pop" id="jos-jobs-combo-pop">' +
+        '<input type="text" class="jos-combo-search" id="jos-jobs-combo-create-input" placeholder="New service name" value="' + esc(combo.createDraft || '') + '" autocomplete="off" onclick="event.stopPropagation()">' +
+        '<div class="jos-ld-addfield-actions">' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-combo-create-cancel">Cancel</button>' +
+        '<button type="button" class="jos-btn jos-btn-sm jos-btn-brand" data-jos-act="jobs-combo-create-save">Create</button>' +
+        '</div></div>';
+    }
+    var currentValue = col.get ? col.get(job) : job[combo.key];
+    var createAct = combo.key === 'service' ? 'jobs-combo-create-service' : null;
+    return '<div class="jos-combo-pop" id="jos-jobs-combo-pop">' + renderComboPopContent(col, currentValue, combo.search, createAct) + '</div>';
+  }
+  function positionJobsComboPop(root) {
+    var combo = root._josCombo;
+    var pop = el('jos-jobs-combo-pop');
+    if (!combo || !pop) return;
+    // Scoped to the drawer or the table specifically — the same job can
+    // be open in the drawer *and* visible as a table row at once, and
+    // both render a field with the same data-jos-field/data-jos-record-id,
+    // so an unscoped query could resolve to the wrong one and position
+    // the popover over the wrong element entirely.
+    var scope = combo.inDrawer ? root.querySelector('#jos-jobs-drawer') : root;
+    var trigger = scope && scope.querySelector('[data-jos-field="' + combo.key + '"][data-jos-record-id="' + CSS.escape(combo.recordId) + '"]');
+    if (!trigger) return;
+    var tr = trigger.getBoundingClientRect();
+    var pw = Math.max(200, tr.width);
+    pop.style.width = pw + 'px';
+    var ph = pop.offsetHeight || 300;
+    var top = tr.bottom + 4;
+    if (top + ph > window.innerHeight - 12) top = Math.max(12, tr.top - ph - 4);
+    var left = Math.min(tr.left, window.innerWidth - pw - 12);
+    pop.style.top = top + 'px';
+    pop.style.left = Math.max(12, left) + 'px';
+    pop.classList.add('jos-positioned');
+  }
+  function openJobsComboPicker(root, recordId, key, inDrawer) {
+    var col = findJobsColumnDef(key);
+    if (!col || col.editable === false) return;
+    root._josCombo = { recordId: recordId, key: key, search: '', inDrawer: !!inDrawer };
+    rerenderJobsOsFrom(root);
+    positionJobsComboPop(root);
+    var pop = el('jos-jobs-combo-pop');
+    var s = pop && pop.querySelector('[data-jos-combo-search]');
+    if (s) s.focus({ preventScroll: true });
+  }
+  function closeJobsComboPicker(root) {
+    if (!root._josCombo) return;
+    root._josCombo = null;
+    rerenderJobsOsFrom(root);
+  }
+
   function renderJobsPage(root) {
     seedDemoJobsIfEmpty();
     ensureJobsOsState();
@@ -17520,6 +17712,7 @@
       '</div>' +
       '<div class="jos-jobs-drawer-backdrop' + (drawerOpen ? ' open' : '') + '" data-jos-act="jobs-drawer-close"></div>' +
       renderJobsBulkBar(root) +
+      renderJobsComboPop(root) +
       drawer + statusMenu + rowMenu + gcalCreatePop +
       '<button type="button" class="jos-jobs-fab" data-jos-act="' + (mainView === 'calendar' ? 'jobs-gcal-create-menu' : 'jobs-create') + '" aria-label="' + (mainView === 'calendar' ? 'Create' : 'New Job') + '">+</button>' +
       '</div>';
@@ -17537,6 +17730,7 @@
     bindRoot(root);
     wireJobsRoot(root);
     positionJobsColMenu(root);
+    positionJobsComboPop(root);
   }
 
   function wireJobsRoot(root) {
@@ -17573,6 +17767,38 @@
         rerenderJobsOsFrom(root);
         return;
       }
+    });
+    // The shared custom dropdown (replaces every native <select>) — pick
+    // an option, search, or click outside to close. Opening itself is
+    // handled by the click-to-edit dispatch above (col.type === 'select').
+    root.addEventListener('click', function (e) {
+      var pick = e.target.closest('[data-jos-combo-pick]');
+      if (pick) {
+        e.stopPropagation();
+        var combo = root._josCombo;
+        if (!combo) return;
+        var pickCol = findJobsColumnDef(combo.key);
+        if (!pickCol) return;
+        mutateJobField(combo.recordId, pickCol, pick.getAttribute('data-jos-combo-pick'));
+        closeJobsComboPicker(root);
+        return;
+      }
+      if (root._josCombo && !e.target.closest('.jos-combo-pop') && !e.target.closest('[data-jos-field]')) {
+        closeJobsComboPicker(root);
+      }
+    });
+    root.addEventListener('input', function (e) {
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-combo-search') && root._josCombo) {
+        root._josCombo.search = e.target.value;
+        rerenderJobsOsFrom(root);
+        positionJobsComboPop(root);
+        var reFocus = el('jos-jobs-combo-pop');
+        var s = reFocus && reFocus.querySelector('[data-jos-combo-search]');
+        if (s) { s.focus({ preventScroll: true }); var v = s.value; s.value = ''; s.value = v; }
+      }
+    });
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && root._josCombo) { closeJobsComboPicker(root); }
     });
     root.addEventListener('click', function (e) {
       var slotAdd = e.target.closest('.jos-gcal-slot-add, [data-jos-act="jobs-gcal-new"]');
@@ -18085,6 +18311,14 @@
         e.stopPropagation();
         return;
       }
+      // Select-type fields open the shared custom dropdown directly —
+      // never the inline "editing" state a native <select> used to render
+      // into (see rendererRegistry.select's comment).
+      if (col.type === 'select') {
+        openJobsComboPicker(root, jobId, key);
+        e.stopPropagation();
+        return;
+      }
       openJobsCellEdit(root, jobId, key);
       e.stopPropagation();
     });
@@ -18095,6 +18329,11 @@
       if (!key) return;
       var col = findJobsColumnDef(key);
       if (!col || col.editable === false) return;
+      if (col.type === 'select') {
+        openJobsComboPicker(root, root._josJobId, key, true);
+        e.stopPropagation();
+        return;
+      }
       openJobsDrawerFieldEdit(root, key);
       e.stopPropagation();
     });
@@ -19532,6 +19771,55 @@
         root._josJobsColMenuKey = null;
         toast('Field deleted');
         return rerender();
+      }
+      if (act === 'jobs-combo-create-service') {
+        if (!root._josCombo) return;
+        root._josCombo.creating = true;
+        root._josCombo.createDraft = '';
+        // Deferred for the same reason as leads-col-add-field-open: this
+        // button lives inside the same popover about to be re-rendered
+        // into the create-input form. Rendering synchronously here
+        // detaches the clicked button from the DOM before the "click
+        // outside the combo closes it" listener (also bound to root, and
+        // still due to run against this same click event) gets to check
+        // it — closest() on an already-detached node can't find any
+        // ancestor, including .jos-combo-pop, so that listener read it as
+        // "clicked outside" and closed the combo right back up,
+        // discarding the creating:true just set. Letting every same-
+        // event listener finish first (against the still-attached
+        // original DOM) before rendering avoids that.
+        setTimeout(function () {
+          rerender();
+          var svcCreateInput = el('jos-jobs-combo-create-input');
+          if (svcCreateInput) svcCreateInput.focus({ preventScroll: true });
+        }, 0);
+        return;
+      }
+      if (act === 'jobs-combo-create-cancel') {
+        if (!root._josCombo) return;
+        root._josCombo.creating = false;
+        root._josCombo.createDraft = '';
+        rerender();
+        positionJobsComboPop(root);
+        return;
+      }
+      if (act === 'jobs-combo-create-save') {
+        if (!root._josCombo) return;
+        var svcName = String((el('jos-jobs-combo-create-input') || {}).value || '').trim();
+        if (!svcName) { toast('Service needs a name'); return; }
+        // Same path the Storefront's own "Add Service" flow uses
+        // (sf-svc-save) — real catalog entries, not a Jobs-only list,
+        // since this feeds getBookingServices()/S().services everywhere
+        // else too, not just this dropdown.
+        var svcCat = storefrontCatalog();
+        svcCat.push(normalizeStorefrontSvc({ id: 'sf_svc_' + Date.now(), name: svcName, status: 'active' }, svcCat.length));
+        S().editorSvcs = svcCat;
+        syncStorefrontCatalogToServices();
+        var comboCol = findJobsColumnDef(root._josCombo.key);
+        if (comboCol) mutateJobField(root._josCombo.recordId, comboCol, svcName);
+        toast('Service "' + svcName + '" created');
+        closeJobsComboPicker(root);
+        return;
       }
       if (act === 'jobs-clear-filters') {
         root._josJobsQ = '';

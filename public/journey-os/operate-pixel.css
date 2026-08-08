@@ -5097,6 +5097,40 @@ textarea.jos-je-field-input.jos-ld-cell-inline{height:auto!important;min-height:
 .jos-ld-addfield-input:focus{outline:0;border-color:#9CA8BD;box-shadow:0 0 0 3px rgba(100,116,139,.14)}
 .jos-ld-addfield-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:2px}
 
+/* Shared custom dropdown — replaces the native <select> everywhere a
+   select-type column is edited (Status, Service, Technician, Deposit,
+   Leads' Source/Owner/etc.). One component, one visual language,
+   instead of the OS's own dropdown breaking the app's design language
+   mid-flow. Same fixed-position/jos-positioned pattern as
+   .jos-ld-col-menu so it never gets clipped by a scrolling ancestor. */
+.jos-combo-pop{
+  position:fixed;z-index:520;background:#fff;border:1px solid #ECEDEF;border-radius:12px;
+  box-shadow:0 12px 32px rgba(15,23,42,.12);padding:6px;display:flex;flex-direction:column;
+  visibility:hidden;overflow:hidden;
+}
+.jos-combo-pop.jos-positioned{visibility:visible}
+.jos-combo-search{
+  width:100%;height:34px;border:1px solid var(--jos-border);border-radius:8px;background:#F8F9FA;
+  padding:0 10px;font:inherit;font-size:13px;color:var(--jos-navy);box-sizing:border-box;margin-bottom:6px;flex-shrink:0;
+}
+.jos-combo-search:focus{outline:0;border-color:#9CA8BD;background:#fff;box-shadow:0 0 0 3px rgba(100,116,139,.14)}
+.jos-combo-list{overflow-y:auto;max-height:250px;display:flex;flex-direction:column;gap:1px}
+.jos-combo-opt{
+  appearance:none;border:0;background:transparent;text-align:left;padding:0 10px;min-height:40px;border-radius:8px;
+  font:inherit;font-size:13.5px;font-weight:600;color:var(--jos-navy);cursor:pointer;display:flex;align-items:center;
+  justify-content:space-between;gap:8px;flex-shrink:0;
+}
+.jos-combo-opt:hover{background:#F5F6F7}
+.jos-combo-opt.on{background:#FFF6EF;color:var(--jos-brand)}
+.jos-combo-opt.on::after{content:"✓";font-size:12px;color:var(--jos-brand)}
+.jos-combo-empty{padding:10px;font-size:12.5px;color:var(--jos-ink-3);text-align:center}
+.jos-combo-create{border-top:1px solid #EDEEF1;margin-top:4px;padding-top:4px;flex-shrink:0}
+.jos-combo-create > button{
+  width:100%;appearance:none;border:0;background:transparent;text-align:left;padding:8px 10px;border-radius:8px;
+  font:inherit;font-size:13px;font-weight:650;color:var(--jos-brand);cursor:pointer;
+}
+.jos-combo-create > button:hover{background:#FFF6EF}
+
 /* Status pill — click opens the dropdown, same as every other select
    column. Cursor states across every cell type match what a click
    actually does: pointer for "opens a picker," text for "starts typing." */
