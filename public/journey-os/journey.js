@@ -19223,9 +19223,21 @@
         // persistJobPatch) silently no-ops without a real dbId — a job
         // "created" this way could never actually be saved, ever, which is
         // why repeated "+ New Job" clicks piled up as junk rows that
-        // vanished on refresh. Insert for real and backfill dbId on the
-        // same object already sitting in S().jobs — findJob() keeps
-        // resolving it by nj.id, no other state needs to change.
+        // vanished on refresh. Insert for real, then reconcile the LOCAL
+        // id to the REAL one: hubly.html has a Postgres realtime
+        // subscription on the jobs table (onRealtimeBizChange ->
+        // refreshOpenAppViews -> loadJobs(), ~400ms debounce) that fires
+        // on this exact insert and does a full S.jobs replace from a fresh
+        // fetch — which returns this job under its real database id, not
+        // the local placeholder. If nj.id/root._josJobId still held the
+        // placeholder when that replace lands, findJob(root._josJobId)
+        // would come up empty and the just-created job would appear to
+        // vanish a couple seconds after creation — not a caching issue,
+        // a genuine id mismatch between optimistic-local and realtime-
+        // refetched state. jobNumber(job) reads job.jobNumber first, so
+        // the friendly "JOB-1009"-style label doesn't change even though
+        // the real id underneath now does.
+        var placeholderJobId = nj.id;
         try {
           var createDb = jobsDb();
           var bizId = global.currentBusiness && global.currentBusiness.id;
@@ -19238,7 +19250,14 @@
               duration_hours: (nj.durationMin || 120) / 60
             }).select().single().then(function (res) {
               if (res && res.error) { console.warn('jobs-create insert', res.error); toast('Couldn’t save the new job — check your connection and try again'); return; }
-              if (res && res.data && res.data.id) nj.dbId = res.data.id;
+              if (res && res.data && res.data.id) {
+                nj.dbId = res.data.id;
+                nj.id = res.data.id;
+                if (root._josJobId === placeholderJobId) {
+                  root._josJobId = res.data.id;
+                  rerenderJobsOsFrom(root);
+                }
+              }
             });
           } else {
             toast('Couldn’t save the new job — not connected');
