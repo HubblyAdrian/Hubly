@@ -10978,29 +10978,27 @@
           // the old jobs-create handler (see its comment above): a job
           // "booked" this way only lived in local state and silently
           // reverted on refresh. Insert for real, then reconcile the
-          // local id the same way jobs-create does.
+          // local id the same way jobs-create does. Customer + job
+          // creation now go through the shared creation engine
+          // (findOrCreateCustomer + createJob) — this path previously
+          // never created/matched a customer at all, and never sent the
+          // lead's email; both now happen for free as part of routing
+          // through the canonical implementation instead of a bespoke one.
           try {
-            var convertDb = jobsDb();
             var convertBizId = global.currentBusiness && global.currentBusiness.id;
-            if (convertDb && convertBizId) {
+            if (convertBizId && typeof global.createJob === 'function') {
               var convertPlaceholderId = convertedJob.id;
-              realtimeWrite({
-                table: 'jobs',
-                id: function (res) { return res && res.data && res.data.id; },
-                write: function () {
-                  return convertDb.from('jobs').insert({
-                    business_id: convertBizId, customer_name: convertedJob.customer || '', service_name: convertedJob.service || '',
-                    scheduled_date: convertedJob.date || null, scheduled_time: convertedJob.time ? timeTo24h(convertedJob.time) : null,
-                    address: convertedJob.address || null, amount: convertedJob.amount || 0, status: convertedJob.status,
-                    phone: convertedJob.phone || null, vehicle: convertedJob.vehicle || null, assigned_to: convertedJob.assignedTo || null
-                  }).select().single();
-                }
-              }).then(function (res) {
-                if (res && res.error) { console.warn('leads-convert-job insert', res.error); toast('Couldn’t save the booked job — check your connection and try again'); return; }
-                if (res && res.data && res.data.id) {
-                  convertedJob.dbId = res.data.id;
-                  convertedJob.id = res.data.id;
-                  if (root._josJobId === convertPlaceholderId) root._josJobId = res.data.id;
+              global.createJob({
+                name: convertedJob.customer || '', phone: convertedJob.phone || '', email: l.email || '',
+                service: convertedJob.service || '', date: convertedJob.date || null, time: convertedJob.time || null,
+                address: convertedJob.address || null, amount: convertedJob.amount || 0, status: convertedJob.status,
+                vehicle: convertedJob.vehicle || null, assignedTo: convertedJob.assignedTo || null
+              }).then(function (result) {
+                if (result && result.error) { console.warn('leads-convert-job insert', result.error); toast('Couldn’t save the booked job — check your connection and try again'); return; }
+                if (result && result.jobId) {
+                  convertedJob.dbId = result.jobId;
+                  convertedJob.id = result.jobId;
+                  if (root._josJobId === convertPlaceholderId) root._josJobId = result.jobId;
                 }
               });
             }
@@ -19083,30 +19081,32 @@
     // This calendar "quick create" path never called jobsDb() at all —
     // same silent-revert-on-refresh bug already fixed for jobs-create and
     // leads-convert-job. Insert for real, then reconcile the local
-    // placeholder id to the real one exactly as those two do.
+    // placeholder id to the real one exactly as those two do. Customer +
+    // job creation now go through the shared creation engine
+    // (findOrCreateCustomer + createJob, in hubly.html) instead of a
+    // bespoke insert built just for this path — see the Phase 1
+    // creation-engine consolidation. createJob() skips customer
+    // resolution entirely when nj.customer/phone/email are all blank
+    // (the deliberate "no invented customer" case above), matching this
+    // path's existing behavior of never creating a customer row.
     try {
-      var rangeDb = jobsDb();
       var rangeBizId = global.currentBusiness && global.currentBusiness.id;
-      if (rangeDb && rangeBizId) {
+      if (rangeBizId && typeof global.createJob === 'function') {
         var rangePlaceholderId = nj.id;
-        realtimeWrite({
-          table: 'jobs',
-          id: function (res) { return res && res.data && res.data.id; },
-          write: function () {
-            return rangeDb.from('jobs').insert({
-              business_id: rangeBizId, customer_name: nj.customer || '', service_name: nj.service || '',
-              scheduled_date: nj.date || null, scheduled_time: nj.time ? timeTo24h(nj.time) : null, address: nj.address || null,
-              amount: nj.amount || 0, status: nj.status, phone: nj.phone || null, email: nj.email || null,
-              vehicle: nj.vehicle || null, assigned_to: nj.assignedTo || null, deposit_status: nj.depositStatus || 'none',
-              duration_hours: (nj.durationMin || 60) / 60
-            }).select().single();
-          }
-        }).then(function (res) {
-          if (res && res.error) { console.warn('createJobAtRange insert', res.error); toast('Couldn’t save — check your connection and try again'); return; }
-          if (res && res.data && res.data.id) {
-            nj.dbId = res.data.id;
-            nj.id = res.data.id;
-            if (root._josJobId === rangePlaceholderId) { root._josJobId = res.data.id; rerenderJobsOsFrom(root); }
+        global.createJob({
+          customerId: nj.customerId || undefined,
+          name: nj.customer || '', phone: nj.phone || '', email: nj.email || '',
+          service: nj.service || '', date: nj.date || null, time: nj.time || null,
+          address: nj.address || null, amount: nj.amount || 0, status: nj.status,
+          assignedTo: nj.assignedTo || null, depositStatus: nj.depositStatus || 'none',
+          durationHours: (nj.durationMin || 60) / 60
+        }).then(function (result) {
+          if (result && result.error) { console.warn('createJobAtRange insert', result.error); toast('Couldn’t save — check your connection and try again'); return; }
+          if (result && result.jobId) {
+            nj.dbId = result.jobId;
+            nj.id = result.jobId;
+            if (!nj.customerId && result.customerId) nj.customerId = result.customerId;
+            if (root._josJobId === rangePlaceholderId) { root._josJobId = result.jobId; rerenderJobsOsFrom(root); }
           }
         });
       }
@@ -20184,36 +20184,31 @@
         // the friendly "JOB-1009"-style label doesn't change even though
         // the real id underneath now does.
         var placeholderJobId = nj.id;
+        // Customer + job creation go through the shared creation engine
+        // (findOrCreateCustomer + createJob, hubly.html) instead of a
+        // bespoke insert — see the Phase 1 creation-engine consolidation.
+        // customer_name/service_name are still sent '' not invented (no
+        // reason to fabricate a name/service the drawer's own fields will
+        // fill in for real), and createJob() skips customer resolution
+        // entirely when nothing identifying is given, matching this
+        // path's existing "never creates a customer for a blank draft"
+        // behavior.
         try {
-          var createDb = jobsDb();
           var bizId = global.currentBusiness && global.currentBusiness.id;
-          if (createDb && bizId) {
-            realtimeWrite({
-              table: 'jobs',
-              id: function (res) { return res && res.data && res.data.id; },
-              write: function () {
-                return createDb.from('jobs').insert({
-                  // Both columns are nullable text — no reason to invent a
-                  // customer name or a service ("Detail" was a leftover from
-                  // when this was a single-industry detailing app; Hubly now
-                  // spans photographers, lawn care, HVAC, cleaners, and more,
-                  // none of which share a "default service"). Send '' and let
-                  // the drawer's real Service dropdown (sourced from the
-                  // business's own Service Catalog) fill it in.
-                  business_id: bizId, customer_name: nj.customer || '', service_name: nj.service || '',
-                  scheduled_date: nj.date || null, scheduled_time: nj.time ? timeTo24h(nj.time) : null, address: nj.address || null,
-                  amount: nj.amount || 0, status: nj.status, phone: nj.phone || null, email: nj.email || null,
-                  vehicle: nj.vehicle || null, assigned_to: nj.assignedTo || null, deposit_status: nj.depositStatus,
-                  duration_hours: (nj.durationMin || 120) / 60
-                }).select().single();
-              }
-            }).then(function (res) {
-              if (res && res.error) { console.warn('jobs-create insert', res.error); toast('Couldn’t save the new job — check your connection and try again'); return; }
-              if (res && res.data && res.data.id) {
-                nj.dbId = res.data.id;
-                nj.id = res.data.id;
+          if (bizId && typeof global.createJob === 'function') {
+            global.createJob({
+              name: nj.customer || '', phone: nj.phone || '', email: nj.email || '',
+              service: nj.service || '', date: nj.date || null, time: nj.time || null,
+              address: nj.address || null, amount: nj.amount || 0, status: nj.status,
+              assignedTo: nj.assignedTo || null, depositStatus: nj.depositStatus,
+              durationHours: (nj.durationMin || 120) / 60
+            }).then(function (result) {
+              if (result && result.error) { console.warn('jobs-create insert', result.error); toast('Couldn’t save the new job — check your connection and try again'); return; }
+              if (result && result.jobId) {
+                nj.dbId = result.jobId;
+                nj.id = result.jobId;
                 if (root._josJobId === placeholderJobId) {
-                  root._josJobId = res.data.id;
+                  root._josJobId = result.jobId;
                   rerenderJobsOsFrom(root);
                 }
               }
@@ -20382,29 +20377,25 @@
         root._josJobsTab = 'jobs';
         toast('Quote converted to job');
         // Same silent-revert-on-refresh bug as jobs-create/createJobAtRange/
-        // leads-convert-job — this only ever mutated local state.
+        // leads-convert-job — this only ever mutated local state. Customer
+        // + job creation now go through the shared creation engine
+        // (findOrCreateCustomer + createJob) instead of a bespoke insert.
         try {
-          var quoteDb = jobsDb();
           var quoteBizId = global.currentBusiness && global.currentBusiness.id;
-          if (quoteDb && quoteBizId) {
+          if (quoteBizId && typeof global.createJob === 'function') {
             var quotePlaceholderId = cj.id;
-            realtimeWrite({
-              table: 'jobs',
-              id: function (res) { return res && res.data && res.data.id; },
-              write: function () {
-                return quoteDb.from('jobs').insert({
-                  business_id: quoteBizId, customer_name: cj.customer || '', service_name: cj.service || '',
-                  scheduled_date: cj.date || null, scheduled_time: cj.time ? timeTo24h(cj.time) : null, address: cj.address || null,
-                  amount: cj.amount || 0, status: cj.status, phone: cj.phone || null, assigned_to: cj.assignedTo || null,
-                  deposit_status: cj.depositStatus, duration_hours: (cj.durationMin || 120) / 60
-                }).select().single();
-              }
-            }).then(function (res) {
-              if (res && res.error) { console.warn('jobs-convert-quote insert', res.error); toast('Couldn’t save the converted job — check your connection and try again'); return; }
-              if (res && res.data && res.data.id) {
-                cj.dbId = res.data.id;
-                cj.id = res.data.id;
-                if (root._josJobId === quotePlaceholderId) { root._josJobId = res.data.id; rerenderJobsOsFrom(root); }
+            global.createJob({
+              name: cj.customer || '', phone: cj.phone || '',
+              service: cj.service || '', date: cj.date || null, time: cj.time || null,
+              address: cj.address || null, amount: cj.amount || 0, status: cj.status,
+              assignedTo: cj.assignedTo || null, depositStatus: cj.depositStatus,
+              durationHours: (cj.durationMin || 120) / 60
+            }).then(function (result) {
+              if (result && result.error) { console.warn('jobs-convert-quote insert', result.error); toast('Couldn’t save the converted job — check your connection and try again'); return; }
+              if (result && result.jobId) {
+                cj.dbId = result.jobId;
+                cj.id = result.jobId;
+                if (root._josJobId === quotePlaceholderId) { root._josJobId = result.jobId; rerenderJobsOsFrom(root); }
               }
             });
           }

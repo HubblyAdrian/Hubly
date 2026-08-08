@@ -41658,27 +41658,22 @@ async function _acceptBookingRequestInner(reqId,opts={}){
       }
     }
   }catch(e){}
-  const payload={
-    business_id: currentBusiness.id,
-    customer_name: j.customer,
-    service_name: j.service,
-    scheduled_date: j.date||null,
-    scheduled_time: j.time||null,
-    address: acceptAddr,
-    amount: acceptAmount!=null&&Number.isFinite(acceptAmount)?acceptAmount:null,
-    notes: acceptNotes||null,
-    status: 'scheduled',
-    from_booking: true,
-    phone: j.phone||null,
-    email: j.email||null,
-    vehicle: vehicleLabel,
-    vehicle_color: j.vehicleColor||null,
-    deposit_cents: depositCents,
-    deposit_status: depositStatus,
-    duration_hours: durationHours,
-  };
-  const {data,error}=await realtimeAwareWrite({table:'jobs',id:(res)=>res&&res.data&&res.data.id,write:()=>db.from('jobs').insert(payload).select().single()});
-  if(error){if(!silent)toast('❌ '+error.message);return;}
+  // Customer + job creation go through the shared creation engine
+  // (findOrCreateCustomer + createJob) instead of a direct insert — see
+  // the Phase 1 creation-engine consolidation. This path previously
+  // never looked up/created a customer at all (deferred to job-completion
+  // time via promoteJobLeadToCustomer); it now resolves one immediately,
+  // same as every other real (non-blank-draft) job-creation path.
+  const result=await createJob({
+    name:j.customer,phone:j.phone||'',email:j.email||'',
+    service:j.service,date:j.date||null,time:j.time||null,
+    address:acceptAddr,amount:acceptAmount!=null&&Number.isFinite(acceptAmount)?acceptAmount:null,
+    notes:acceptNotes||null,status:'scheduled',fromBooking:true,
+    vehicle:vehicleLabel,vehicleColor:j.vehicleColor||null,
+    depositCents,depositStatus,durationHours,
+  });
+  if(result.error){if(!silent)toast('❌ '+result.error.message);return;}
+  const data=result.job;
   try{await pushJobToGoogleCalendar(data.id);}catch(e){}
   await realtimeAwareWrite({table:'booking_requests',id:reqId,write:()=>db.from('booking_requests').update({status:'accepted'}).eq('id',reqId)});
   // Leave Leads — accepted work lives on Jobs until complete → Customers.
@@ -41913,46 +41908,35 @@ async function addJob(opts={}){
     status:'scheduled',fromBooking:opts.fromBooking||false,
     phone,email,vehicle,vehicleColor:vColor,isRecurring:recurringFlag,recurringPlanId,recurringPlanName};
   S.jobs.push(job);
-  await upsertCustomer({
-    name:customer,
-    phone,
-    email,
-    vehicle,
-    vehicleType:vType,
-    vehicleYear:vYear,
-    vehicleMake:vMake,
-    vehicleModel:vModel,
-    vehicleColor:vColor,
-    ...(notesHaveSmsConsent(taggedNotes)||notesHaveSmsConsent(notes)?{smsConsent:true}:{}),
-  });
+  const smsConsentOpt=(notesHaveSmsConsent(taggedNotes)||notesHaveSmsConsent(notes))?{smsConsent:true}:{};
 
-  // Save to Supabase if logged in
+  // Customer + job creation go through the shared creation engine
+  // (findOrCreateCustomer + createJob) instead of a separate upsertCustomer
+  // call plus this function's own insert — see the Phase 1 creation-engine
+  // consolidation. createJob() requires a business (a job has no offline
+  // fallback in any path), so the pre-existing offline/no-business
+  // behavior — upsert a local-only customer, no job row — is kept as its
+  // own branch rather than forced through createJob().
   if(currentBusiness){
-    const payload={
-      business_id: currentBusiness.id,
-      customer_name: customer,
-      service_name: service,
-      scheduled_date: date||null,
-      scheduled_time: time||null,
-      address: addr||null,
-      amount: parseFloat(amt)||null,
-      notes: taggedNotes||null,
-      status: 'scheduled',
-      from_booking: opts.fromBooking||false,
-      phone: phone||null,
-      email: email||null,
-      vehicle: vehicle||null,
-      vehicle_color: vColor||null,
-    };
-    const {data} = await realtimeAwareWrite({table:'jobs',id:(res)=>res&&res.data&&res.data.id,write:()=>db.from('jobs').insert(payload).select().single()});
-    if(data){
-      job.dbId=data.id;
-      job.id=data.id;
-      try{await pushJobToGoogleCalendar(data.id);}catch(e){}
+    const result=await createJob({
+      name:customer,phone,email,vehicle,
+      vehicleType:vType,vehicleYear:vYear,vehicleMake:vMake,vehicleModel:vModel,vehicleColor:vColor,
+      service,date,time,address:addr,amount:parseFloat(amt)||null,notes:taggedNotes,
+      status:'scheduled',fromBooking:opts.fromBooking||false,
+    },smsConsentOpt);
+    if(result.job){
+      job.dbId=result.job.id;
+      job.id=result.job.id;
+      try{await pushJobToGoogleCalendar(result.job.id);}catch(e){}
     }
     if(promoEntry?.code)markPromoUsedLocal(promoEntry.code,phone,email);
-  }else if(promoEntry?.code){
-    markPromoUsedLocal(promoEntry.code,phone,email);
+  }else{
+    await upsertCustomer({
+      name:customer,phone,email,vehicle,
+      vehicleType:vType,vehicleYear:vYear,vehicleMake:vMake,vehicleModel:vModel,vehicleColor:vColor,
+      ...smsConsentOpt,
+    });
+    if(promoEntry?.code)markPromoUsedLocal(promoEntry.code,phone,email);
   }
 
   if(date){const d=new Date(date+'T00:00:00');if(d.getMonth()===S.calMonth&&d.getFullYear()===S.calYear)renderCal()}
@@ -42327,8 +42311,13 @@ function mapCustRow(row){
 }
 async function upsertCustomer(data,opts){
   opts=opts||{};
-  let c=data.id!=null?S.customers.find(x=>String(x.id)===String(data.id)):null;
-  if(!c&&data.name)c=S.customers.find(x=>x.name.toLowerCase()===String(data.name).toLowerCase());
+  // forceCreate: skip both match checks below and always insert fresh —
+  // used by createCustomer(), whose only caller (findOrCreateCustomer)
+  // has already confirmed no existing customer/lead matches, so a second,
+  // independent name-match pass here could only cause a false-positive
+  // collision (e.g. two different real people sharing a first+last name).
+  let c=(opts.forceCreate||data.id==null)?null:S.customers.find(x=>String(x.id)===String(data.id));
+  if(!c&&!opts.forceCreate&&data.name)c=S.customers.find(x=>x.name.toLowerCase()===String(data.name).toLowerCase());
   const recurringPlan=data.recurringPlan!==undefined?data.recurringPlan:(c?.recurringPlan||null);
   const statusOverride=data.statusOverride!=null?data.statusOverride:(c?.statusOverride||'auto');
   const smsConsent=data.smsConsent===true?true:(data.smsConsent===false?false:!!(c?.smsConsent));
@@ -42396,6 +42385,17 @@ async function upsertCustomer(data,opts){
     c.smsConsent=smsConsent||c.smsConsent||false;
     return c;
   }
+}
+// The one canonical "create a brand-new customer" entry point — everything
+// that used to build its own insert into `customers` (job creation, lead
+// promotion, etc.) should call this, not `.from('customers').insert(...)`
+// directly. Deliberately thin: upsertCustomer already owns the real
+// persistence logic (offline-local fallback, anon-RLS id generation,
+// recurring-plan/status-override/sms-consent notes encoding) and that
+// logic isn't duplicated anywhere else, so this doesn't reimplement it —
+// it just forces the "definitely create, don't match-and-update" path.
+function createCustomer(input,opts){
+  return upsertCustomer(input||{},Object.assign({},opts,{forceCreate:true}));
 }
 function updateCustDL(){const dl=document.getElementById('cust-dl');if(dl)dl.innerHTML=S.customers.map(c=>`<option value="${c.name}">`).join('')}
 const CUST_COLORS=['#1a3a6e','#1a6e3a','#E8A020','#5c3a8e','#0a5e6e','#6e1a1a'];
@@ -43384,6 +43384,149 @@ function findExistingCustomerMatch({name,phone,email}={}){
   if(priorJob)return {name:priorJob.customer||name,phone:priorJob.phone||phone,email:priorJob.email||email,customerType:priorJob.isRecurring?'recurring':'one_off',_fromJobs:true};
   return null;
 }
+// Leads live in one of two places depending on where they came from (see
+// createLead()'s own comment) — a real booking/quote lands as a 'pending'
+// or 'abandoned' row in S.jobs (sourced from booking_requests), a manual
+// or CSV-imported one lands in S.pipeline.manual (sourced from
+// businesses.meta). findOrCreateCustomer needs to search both without its
+// caller ever knowing which one a match came from — same "hide the
+// storage" principle as createLead().
+function findExistingLeadMatch({name,phone,email}={}){
+  const dig=typeof phoneDigits==='function'?phoneDigits(phone):String(phone||'').replace(/\D/g,'').slice(-10);
+  const em=String(email||'').trim().toLowerCase();
+  const nm=String(name||'').trim().toLowerCase();
+  if(!dig&&!em&&!nm)return null;
+  const matches=(cName,cPhone,cEmail)=>{
+    const cDig=typeof phoneDigits==='function'?phoneDigits(cPhone):String(cPhone||'').replace(/\D/g,'').slice(-10);
+    if(dig&&dig.length>=7&&cDig===dig)return true;
+    if(em&&String(cEmail||'').trim().toLowerCase()===em)return true;
+    if(nm&&String(cName||'').trim().toLowerCase()===nm)return true;
+    return false;
+  };
+  const jobLead=(S.jobs||[]).find(j=>(j.status==='pending'||j.status==='abandoned')&&matches(j.customer,j.phone,j.email));
+  if(jobLead)return{name:jobLead.customer,phone:jobLead.phone,email:jobLead.email,vehicle:jobLead.vehicle,address:jobLead.address};
+  const manual=(ensurePipelineState().manual)||[];
+  const manualLead=manual.find(l=>matches(l.name,l.phone,l.email));
+  if(manualLead)return{name:manualLead.name,phone:manualLead.phone,email:manualLead.email,vehicle:manualLead.vehicle,address:manualLead.address};
+  return null;
+}
+// The one canonical customer-identity resolver — every path that needs
+// "the customer for this job/booking" (job creation, lead conversion,
+// invoice creation, etc.) should call this instead of writing its own
+// match-then-create logic. Behavior, per spec: search Customers, then
+// search Leads (storage hidden), promote a matched lead to a real
+// customer, or create fresh if nothing matches. Always returns a
+// _persisted customer with a real .id (except the pre-existing offline/
+// no-business fallback already built into upsertCustomer, which this
+// inherits unchanged).
+async function findOrCreateCustomer(input,opts){
+  input=input||{};
+  const name=input.name||input.customer||'';
+  const phone=input.phone||'';
+  const email=input.email||'';
+  const customerMatch=findExistingCustomerMatch({name,phone,email});
+  if(customerMatch&&customerMatch.id!=null&&!customerMatch._fromJobs)return customerMatch;
+  const leadMatch=findExistingLeadMatch({name,phone,email});
+  const seed=leadMatch||( (customerMatch&&customerMatch._fromJobs)?customerMatch:null );
+  return createCustomer(Object.assign({},input,{
+    name:(seed&&seed.name)||name,
+    phone:(seed&&seed.phone)||phone,
+    email:(seed&&seed.email)||email,
+    vehicle:input.vehicle!=null?input.vehicle:(seed&&seed.vehicle)||undefined,
+  }),opts);
+}
+window.createCustomer=createCustomer;
+window.findOrCreateCustomer=findOrCreateCustomer;
+// Accepts either 24h ("14:30") or 12h ("2:30 PM") input — callers on both
+// sides of the app pass either shape today (native <input type="time">
+// legacy modals send 24h already; Journey OS's free-text time field sends
+// 12h) — and normalizes to the "HH:MM" 24h format Supabase's
+// scheduled_time column expects. Deliberately not the full free-typing
+// parser Journey OS's own timeTo24h/parseJobMinutes has (that handles
+// partial input like "10" or "1030" while the user is still typing) —
+// createJob() only ever receives an already-committed time value.
+function normalizeJobTime24h(raw){
+  var s=String(raw||'').trim();
+  if(!s)return null;
+  var ampm=s.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
+  if(ampm){
+    var h=parseInt(ampm[1],10)%12;
+    if(/[Pp]/.test(ampm[3]))h+=12;
+    return String(h).padStart(2,'0')+':'+ampm[2];
+  }
+  var h24=s.match(/^(\d{1,2}):(\d{2})/);
+  if(h24)return String(parseInt(h24[1],10)).padStart(2,'0')+':'+h24[2];
+  return null;
+}
+// The one canonical "create a job" entry point. Every manual job-creation
+// path in the app should call this instead of building its own payload
+// and Supabase insert — see the Phase 1 creation-engine audit for the
+// ~8 near-duplicate implementations this replaces (each copy-pasted from
+// the last, each with small unexplained divergences: only some sent
+// email, one hardcoded a 25%-of-amount deposit, times defaulted to
+// different hardcoded values, etc).
+//
+// Pipeline: findOrCreateCustomer() resolves the customer — skipped
+// entirely when nothing identifying is given at all, since some flows
+// (the blank-draft "+New Job" button) intentionally create a job with no
+// customer yet and fill it in later; forcing a customer into existence
+// for those would be a real behavior change, not just consolidation, and
+// this phase is explicitly architecture-only. Never invents placeholder
+// values — a field that isn't provided is sent null/empty, not a fake
+// default. Exactly one Supabase insert. Rendering (opening a drawer,
+// closing a modal, navigating) is explicitly NOT this function's job —
+// callers keep doing whatever they already did after their own insert
+// used to resolve; this only returns ids.
+async function createJob(input,opts){
+  opts=opts||{};
+  input=input||{};
+  if(!currentBusiness)return{error:new Error('Not connected')};
+  var customer=null;
+  if(input.customerId)customer=S.customers.find(c=>String(c.id)===String(input.customerId))||null;
+  var hasIdentity=!!(input.name||input.customer||input.phone||input.email);
+  if(!customer&&hasIdentity){
+    customer=await findOrCreateCustomer({
+      name:input.name||input.customer||'',phone:input.phone||'',email:input.email||'',
+      vehicle:input.vehicle,vehicleType:input.vehicleType,vehicleYear:input.vehicleYear,
+      vehicleMake:input.vehicleMake,vehicleModel:input.vehicleModel,vehicleColor:input.vehicleColor,
+    },opts);
+  }
+  var payload={
+    business_id:currentBusiness.id,
+    customer_name:(customer&&customer.name)||input.customer||input.name||'',
+    service_name:input.service||'',
+    scheduled_date:input.date||null,
+    scheduled_time:input.time?normalizeJobTime24h(input.time):null,
+    address:input.address||null,
+    amount:input.amount!=null?input.amount:null,
+    notes:input.notes||null,
+    status:input.status||'scheduled',
+    from_booking:!!input.fromBooking,
+    phone:(customer&&customer.phone)||input.phone||null,
+    email:(customer&&customer.email)||input.email||null,
+    vehicle:input.vehicle||null,
+    vehicle_color:input.vehicleColor||null,
+    assigned_to:input.assignedTo||null,
+    deposit_cents:input.depositCents!=null?input.depositCents:null,
+    deposit_status:input.depositStatus||'none',
+    duration_hours:input.durationHours!=null?input.durationHours:null,
+  };
+  if(input.paid!=null)payload.paid=!!input.paid;
+  var result=await persistJob(payload);
+  if(result.error)return{error:result.error};
+  return{jobId:result.data.id,customerId:customer?customer.id:null,job:result.data,customer:customer};
+}
+async function persistJob(payload){
+  var d=typeof getDb==='function'?getDb():null;
+  if(!d)return{error:new Error('Not connected')};
+  return realtimeAwareWrite({
+    table:'jobs',
+    id:function(res){return res&&res.data&&res.data.id;},
+    write:function(){return d.from('jobs').insert(payload).select().single();}
+  });
+}
+window.createJob=createJob;
+window.persistJob=persistJob;
 function leadReturningMeta(lead){
   const notes=String(lead?.notes||'');
   const fromNotesRecurring=/\[RPJOB:/i.test(notes)||/\[CUST:recurring\]/i.test(notes);
@@ -44275,22 +44418,18 @@ async function acceptAbandonedLead(lead){
   if(!lead?.reqId||!currentBusiness)return;
   const date=lead.date||dateStr(new Date());
   const time=lead.time||'09:00';
-  const payload={
-    business_id:currentBusiness.id,
-    customer_name:lead.name,
-    service_name:lead.service||'Service',
-    scheduled_date:date,
-    scheduled_time:time,
-    address:lead.address||null,
-    amount:null,
+  // Customer + job creation go through the shared creation engine
+  // (findOrCreateCustomer + createJob) instead of a direct insert — see
+  // the Phase 1 creation-engine consolidation.
+  const result=await createJob({
+    name:lead.name,phone:lead.phone||'',email:lead.email||'',
+    service:lead.service||'Service',date,time,
+    address:lead.address||null,amount:null,
     notes:(lead.notes||'')||'From abandoned booking',
-    status:'scheduled',
-    from_booking:true,
-    phone:lead.phone||null,
-    email:lead.email||null,
-  };
-  const {data,error}=await realtimeAwareWrite({table:'jobs',id:(res)=>res&&res.data&&res.data.id,write:()=>db.from('jobs').insert(payload).select().single()});
-  if(error){toast('❌ '+error.message);return;}
+    status:'scheduled',fromBooking:true,
+  });
+  if(result.error){toast('❌ '+result.error.message);return;}
+  const data=result.job;
   try{await pushJobToGoogleCalendar(data.id);}catch(e){}
   await realtimeAwareWrite({table:'booking_requests',id:lead.reqId,write:()=>db.from('booking_requests').update({status:'accepted'}).eq('id',lead.reqId)});
   removeLeadFromBoard(lead.key);
@@ -44858,37 +44997,34 @@ async function createInvoice(){
   const phone=(document.getElementById('ni-phone')?.value||'').trim();
   if(!customer){toast('Enter a customer name');return;}
   if(!(amount>0)){toast('Enter an amount');return;}
-  const match=(S.customers||[]).find(c=>String(c.name||'').toLowerCase()===customer.toLowerCase());
-  const email=match?.email||'';
   const job={
     id:Date.now(),
     customer,service,date,time:'',address:'',
     amount:amount.toFixed(2),notes:'[INVOICE]',
     status:'completed',paid:false,fromBooking:false,
-    phone:phone||match?.phone||'',email,
+    phone,email:'',
     vehicle:'',isRecurring:false
   };
   S.jobs.push(job);
+  // Customer + job creation go through the shared creation engine
+  // (findOrCreateCustomer + createJob) — this used to do its own
+  // independent name-only customer match (a third divergent
+  // implementation of logic upsertCustomer/findExistingCustomerMatch
+  // already had) and call upsertCustomer separately, after the job
+  // insert. findOrCreateCustomer's phone/email/name matching also means
+  // a customer typed with a slightly different name than an existing
+  // phone/email match no longer creates a duplicate row here.
   if(currentBusiness){
-    const payload={
-      business_id:currentBusiness.id,
-      customer_name:customer,
-      service_name:service,
-      scheduled_date:date||null,
-      scheduled_time:null,
-      address:null,
-      amount,
-      notes:'[INVOICE]',
-      status:'completed',
-      paid:false,
-      from_booking:false,
-      phone:job.phone||null,
-      email:email||null,
-    };
     try{
-      const {data,error}=await realtimeAwareWrite({table:'jobs',id:(res)=>res&&res.data&&res.data.id,write:()=>db.from('jobs').insert(payload).select().single()});
-      if(error)throw error;
-      if(data?.id){job.id=data.id;job.dbId=data.id;}
+      const result=await createJob({
+        name:customer,phone,service,date,amount,
+        notes:'[INVOICE]',status:'completed',fromBooking:false,paid:false,
+      });
+      if(result.error)throw result.error;
+      if(result.job){
+        job.id=result.job.id;job.dbId=result.job.id;
+        job.phone=result.job.phone||job.phone;job.email=result.job.email||job.email;
+      }
     }catch(e){
       console.warn('createInvoice',e);
       toast('Could not save invoice');
@@ -44896,7 +45032,6 @@ async function createInvoice(){
       return;
     }
   }
-  try{await upsertCustomer({name:customer,phone:job.phone,email});}catch(e){}
   closeM('m-new-invoice');
   S.moneyFilter='unpaid';
   updateKPIs();renderMoneyView();
