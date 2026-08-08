@@ -7367,8 +7367,12 @@
   // needs CRM normalization) define one explicitly.
   var LEADS_DEFAULT_COLUMNS = [
     {
+      // openOnClick: the name is the record, not just another editable
+      // cell — single click opens the detail panel (like clicking a
+      // record's primary field in Attio/Linear); double-click still edits
+      // it inline, same as every other cell.
       key: 'firstName', label: 'First name', type: 'text', width: 130,
-      editable: true, searchable: true, filterable: false, sortable: true,
+      editable: true, openOnClick: true, searchable: true, filterable: false, sortable: true,
       get: function (lead) { return splitLeadName(lead.name).first; },
       set: function (lead, value) {
         var parts = splitLeadName(lead.name);
@@ -7378,7 +7382,7 @@
     },
     {
       key: 'lastName', label: 'Last name', type: 'text', width: 130,
-      editable: true, searchable: true, filterable: false, sortable: true,
+      editable: true, openOnClick: true, searchable: true, filterable: false, sortable: true,
       get: function (lead) { return splitLeadName(lead.name).last; },
       set: function (lead, value) {
         var parts = splitLeadName(lead.name);
@@ -7412,8 +7416,17 @@
       filterValue: function (lead) { return srcKind(lead.source, lead); }
     },
     {
-      key: 'service', label: 'Service', type: 'text', width: 150,
+      // A dropdown, not free text — same pattern as Assigned: the real
+      // services/packages this business actually offers on their own
+      // website (getBookingServices()), not whatever a rep happened to
+      // type. Falls back to no options only if the business hasn't set
+      // up a service catalog yet.
+      key: 'service', label: 'Service', type: 'select', width: 150, allowEmpty: 'No service',
       editable: true, searchable: true, filterable: true, sortable: true,
+      options: function () {
+        var svcs = (typeof global.getBookingServices === 'function') ? global.getBookingServices() : [];
+        return svcs.filter(function (s) { return s && s.name; }).map(function (s) { return { value: s.name, label: s.name }; });
+      },
       set: function (lead, value) { lead.service = String(value || '').trim(); return 'Service → ' + (lead.service || '—'); }
     },
     {
@@ -8353,7 +8366,8 @@
     text: {
       display: function (value, col, leadKey) {
         var v = value || '';
-        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Click to add') + '</span>';
+        var title = col.openOnClick ? 'Click to open · Double-click to edit' : 'Click to edit';
+        return '<span class="jos-ld-name-cell' + (col.openOnClick ? ' jos-ld-name-link' : '') + (v ? '' : ' is-empty') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="' + esc(title) + '">' + (v ? esc(v) : 'Click to add') + '</span>';
       },
       edit: function (value, col, leadKey) {
         return '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
@@ -8985,6 +8999,30 @@
     setTimeout(settle, 260); // fallback in case transitionend never fires
   }
 
+  // Single, shared "open the record" path — used by clicking a lead's
+  // name and by double-clicking anywhere else on its row. Deliberately
+  // does NOT call the legacy global.viewLead(key): that function looks
+  // leads up in collectPipelineLeads(), which re-derives its own
+  // "manual:<id>"-prefixed key for any lead whose stored key doesn't
+  // already carry that prefix — which is every lead this table creates.
+  // Calling it with the table's own lead.key/lead.id reliably missed,
+  // surfacing as "Lead not found." The native panel needs no lookup by
+  // string key at all — it already has the lead object.
+  function openLeadDetailPanel(root, leadId) {
+    root._josLeadId = leadId;
+    root._josLeadPanelOpen = true;
+    root._josLeadWorkspace = 'timeline';
+    root._josLeadCtx = null;
+    var lead = findLead(leadId);
+    if (lead) {
+      lead.unread = 0;
+      try { if (typeof global.markLeadSeen === 'function') global.markLeadSeen(lead); } catch (eSeen) {}
+    }
+    var shell = root.querySelector('.jos-ld-shell');
+    if (shell) shell.classList.add('ws-open');
+    renderLeads();
+  }
+
   function renderLeadsPage(root) {
     seedDemoLeadsIfEmpty();
     syncAbandonedLeadsIntoPipeline();
@@ -9495,20 +9533,17 @@
         e.stopPropagation();
         return;
       }
+      // Single click on a row that isn't a button or an editable cell
+      // just selects the row — the name cell and a double-click are the
+      // only two things that open the panel (see openOnClick handling in
+      // the click-to-edit listener, and the dblclick listener below).
+      // Opening the panel from an arbitrary click anywhere on the row was
+      // exactly the "random clicks open it" complaint — the table is the
+      // primary workspace, opening the record should be a deliberate act.
       var card = e.target.closest('[data-jos-lead-id]');
       if (card && !e.target.closest('[data-jos-act]') && !e.target.closest('[data-jos-lead-field]')) {
         root._josLeadId = card.getAttribute('data-jos-lead-id');
-        root._josLeadPanelOpen = true;
-        root._josLeadWorkspace = 'timeline';
         root._josLeadCtx = null;
-        var lead = findLead(root._josLeadId);
-        if (lead) {
-          lead.unread = 0;
-          try {
-            if (typeof global.markLeadSeen === 'function') global.markLeadSeen(lead);
-          } catch (eSeen) {}
-        }
-        root.querySelector('.jos-ld-shell') && root.querySelector('.jos-ld-shell').classList.add('ws-open');
         if (clickedGridCell) root._josLeadsGridFocusPending = true; // this same click already focused a gridcell above; the renderLeads() below would otherwise silently drop that focus
         renderLeads();
         e.stopPropagation();
@@ -9528,16 +9563,27 @@
         e.preventDefault();
         return;
       }
-      if (e.target.closest('[data-jos-lead-field]')) return; /* table cell edit, not "open profile" */
+      var dblField = e.target.closest('[data-jos-lead-field]');
+      if (dblField) {
+        // Name cells swapped their single-click meaning to "open the
+        // panel" (openOnClick, above) — double-click is how they're still
+        // edited inline, matching the header-rename pattern. Every other
+        // editable cell already edits on a single click, so a second
+        // click here isn't "edit," it's just noise — skip it.
+        var dblCol = findLeadsColumnDef(root, dblField.getAttribute('data-jos-lead-field'));
+        if (dblCol && dblCol.openOnClick) {
+          clearTimeout(root._josLeadNameClickT);
+          openLeadsCellEdit(root, dblField.getAttribute('data-jos-lead-id'), dblField.getAttribute('data-jos-lead-field'));
+          e.preventDefault();
+        }
+        return;
+      }
+      // Double-click anywhere else on the row — the power-user shortcut
+      // to open the record without having to land the click precisely on
+      // the name cell.
       var card = e.target.closest('[data-jos-lead-id]');
       if (!card) return;
-      var id = card.getAttribute('data-jos-lead-id');
-      root._josLeadId = id;
-      var lead = findLead(id);
-      if (lead && typeof global.viewLead === 'function') {
-        try { global.viewLead(lead.key || lead.id); }
-        catch (err) { toast('Open profile · ' + (lead.name || 'Lead')); }
-      } else toast('Lead profile · ' + ((lead && lead.name) || 'Lead'));
+      openLeadDetailPanel(root, card.getAttribute('data-jos-lead-id'));
       e.preventDefault();
     });
 
@@ -9824,6 +9870,23 @@
         e.stopPropagation();
         return;
       }
+      // openOnClick (First/Last name): the name is the record — a single
+      // click opens the detail panel instead of editing inline. Renaming
+      // still happens, just via double-click (see the dblclick listener).
+      // A real double-click still fires two native 'click' events before
+      // the 'dblclick' event lands, so opening synchronously here would
+      // open the panel from the first click of every double-click too —
+      // deferred, and the dblclick handler below cancels the pending
+      // open before it fires, the same disambiguation every OS text
+      // editor uses for single- vs double-click on the same target.
+      if (col.openOnClick) {
+        clearTimeout(root._josLeadNameClickT);
+        root._josLeadNameClickT = setTimeout(function () {
+          openLeadDetailPanel(root, leadId);
+        }, 220);
+        e.stopPropagation();
+        return;
+      }
       openLeadsCellEdit(root, leadId, key);
       e.stopPropagation();
     });
@@ -9951,12 +10014,23 @@
     return findLead(root._josLeadId);
   }
 
+  // Every lead mutation goes through one of these two functions — so the
+  // Supabase persist call belongs here, once, rather than at each of the
+  // ~30 call sites. It used to be scattered per-call-site (some handlers
+  // remembered to call persistPipelineSoon() after mutating, some didn't)
+  // which is exactly how inline cell edits and the checkbox toggle ended
+  // up silently never saving: the edit worked, the UI updated, and the
+  // very next refresh reverted it because nothing had actually persisted.
+  function persistLeadsSoon() {
+    try { if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon(); } catch (e) {}
+  }
   function mutateLead(mutator) {
     var root = el('jos-leads-root');
     var lead = selectedLead();
     if (!lead) return null;
     ensureLeadsOsState();
     mutator(lead);
+    persistLeadsSoon();
     if (root) renderLeads();
     return lead;
   }
@@ -9966,6 +10040,7 @@
     if (!lead) return null;
     ensureLeadsOsState();
     mutator(lead);
+    persistLeadsSoon();
     if (!(opts && opts.quiet)) renderLeads();
     return lead;
   }
@@ -18322,6 +18397,20 @@
     return [];
   }
 
+  // Jobs live in their own Supabase `jobs` table (unlike Leads, which ride
+  // along in the businesses.meta blob via persistPipelineSoon) — a direct
+  // row update/delete keyed by job.dbId, matching the pattern already used
+  // for deposit-collected above. Status changes and deletes previously
+  // mutated local state and re-rendered without ever calling this: the UI
+  // updated, but nothing was saved, so a refresh silently reverted every
+  // status change and brought back every "deleted" job.
+  function persistJobPatch(job, patch) {
+    try { if (db && job && job.dbId) db.from('jobs').update(patch).eq('id', job.dbId); } catch (e) {}
+  }
+  function persistJobDelete(job) {
+    try { if (db && job && job.dbId) db.from('jobs').delete().eq('id', job.dbId); } catch (e) {}
+  }
+
   function handleJobsAct(act, t) {
     var root = jobsOsRoot();
     if (!root) return;
@@ -18710,6 +18799,7 @@
         job.status = 'in_progress';
         pushJobTimeline(job, 'started', 'Started');
         pushJobNotif('upcoming', job.customer + ' job started');
+        persistJobPatch(job, { status: 'in_progress' });
         toast('Job started');
         return rerender();
       }
@@ -18717,6 +18807,7 @@
         if (!job) return toast('Select a job');
         job.status = 'paused';
         pushJobTimeline(job, 'note', 'Paused');
+        persistJobPatch(job, { status: 'paused' });
         toast('Job paused');
         return rerender();
       }
@@ -18724,6 +18815,7 @@
         if (!job) return toast('Select a job');
         job.status = 'in_progress';
         pushJobTimeline(job, 'started', 'Resumed');
+        persistJobPatch(job, { status: 'in_progress' });
         toast('Job resumed');
         return rerender();
       }
@@ -18733,6 +18825,7 @@
         (job.checklist || []).forEach(function (c) { c.done = true; });
         pushJobTimeline(job, 'completed', 'Completed');
         pushJobNotif('completed', job.customer + ' completed');
+        persistJobPatch(job, { status: 'completed' });
         var promoted = null;
         try { promoted = promoteCompletedJobToCustomer(job); } catch (ePromo) { console.warn(ePromo); }
         try {
@@ -18748,6 +18841,7 @@
         job.status = 'cancelled';
         pushJobTimeline(job, 'note', 'Cancelled');
         pushJobNotif('cancelled', job.customer + ' cancelled');
+        persistJobPatch(job, { status: 'cancelled' });
         toast('Job cancelled');
         return rerender();
       }
@@ -18764,6 +18858,7 @@
             return;
           }
         } catch (eConfirm) {}
+        persistJobDelete(delJob);
         S().jobs = (S().jobs || []).filter(function (j) { return String(j.id) !== String(delJob.id); });
         if (String(root._josJobId) === String(delJob.id)) {
           root._josJobId = null;

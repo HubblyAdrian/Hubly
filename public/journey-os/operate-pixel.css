@@ -5020,6 +5020,9 @@ html[data-theme="night"] .jos-mem-form select{
 }
 .jos-ld-name-cell,.jos-ld-contact-cell,.jos-ld-service-cell,.jos-ld-url-cell{cursor:default;display:inline-block;max-width:100%}
 .jos-ld-name-cell.is-empty,.jos-ld-contact-cell.is-empty,.jos-ld-service-cell.is-empty,.jos-ld-url-cell.is-empty{color:#9CA3AF;font-weight:500}
+/* The name is the record — reads like a link, opens the panel on click. */
+.jos-ld-name-link{cursor:pointer;font-weight:650;color:var(--jos-navy);transition:color .12s ease}
+.jos-ld-name-link:hover{color:var(--jos-brand);text-decoration:underline;text-underline-offset:2px}
 .jos-ld-url-cell{color:#2563EB;text-decoration:underline;text-underline-offset:2px}
 .jos-ld-checkbox-cell{cursor:default;display:inline-block;font-size:16px;line-height:1;color:#9CA3AF}
 .jos-ld-checkbox-cell.is-checked{color:var(--jos-brand)}
