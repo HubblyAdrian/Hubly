@@ -8476,18 +8476,31 @@
       }
     },
     // Storage stays a 12h "10:00 AM" string (see timeTo24h/timeFrom24h) —
-    // only the native <input type="time"> (which requires 24h HH:MM) and
-    // the outgoing Supabase patch convert.
+    // only the outgoing Supabase patch converts. The edit widget is a
+    // free-text input (type freely — "2:30pm", "14:30", whatever reads
+    // naturally — parsed through the same parseJobMinutes every other
+    // time-parsing in this file already uses) plus a clock button that
+    // flips the same input to a native type="time" just long enough to
+    // show its picker, then flips it back once a value's chosen —
+    // one field, two ways in, same as "type a date or click the
+    // calendar" already works for date columns.
     time: {
       display: function (value, col, leadKey) {
         var v = value || '';
         return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : '—') + '</span>';
       },
       edit: function (value, col, leadKey) {
-        return '<input type="time" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(timeTo24h(value)) + '" onclick="event.stopPropagation()">';
+        return '<span class="jos-ld-time-edit-wrap">' +
+          '<input type="text" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" placeholder="e.g. 2:30 PM" value="' + esc(value || '') + '" onclick="event.stopPropagation()">' +
+          '<button type="button" class="jos-ld-time-clock-btn" data-jos-time-clock="1" aria-label="Open time picker">' + jobUiIcon('clock') + '</button>' +
+          '</span>';
       },
-      readValue: function (el) { return timeFrom24h(el.value); },
-      writeValue: function (el, value) { el.value = timeTo24h(value); }
+      readValue: function (el) {
+        var raw = String(el.value || '').trim();
+        if (!raw) return '';
+        return formatJobMinutes(parseJobMinutes(raw));
+      },
+      writeValue: function (el, value) { el.value = value || ''; }
     },
     checkbox: {
       // No edit() — a checkbox is its own commit, no separate open-edit-
@@ -16218,6 +16231,35 @@
     if (!m) return '';
     return formatJobMinutes(parseInt(m[1], 10) * 60 + parseInt(m[2], 10));
   }
+  // Backs the clock button next to every free-text time field: flips the
+  // same input to type="time" just long enough to show the native picker,
+  // then flips it back to text with whatever got picked (or the original
+  // value, if the picker was dismissed without one) — one field, two ways
+  // to set it, same as typing a date vs. clicking its calendar icon.
+  function wireTimeClockPicker(root) {
+    if (root._josTimeClockBound) return;
+    root._josTimeClockBound = true;
+    root.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-jos-time-clock]');
+      if (!btn) return;
+      e.preventDefault();
+      var input = btn.previousElementSibling;
+      if (!input || input.tagName !== 'INPUT') return;
+      input.type = 'time';
+      input.value = timeTo24h(input.value);
+      var finish = function () {
+        input.removeEventListener('change', finish);
+        input.removeEventListener('blur', finish);
+        var picked = timeFrom24h(input.value);
+        input.type = 'text';
+        input.value = picked;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+      input.addEventListener('change', finish);
+      input.addEventListener('blur', finish);
+      try { input.showPicker && input.showPicker(); } catch (eShow) {}
+    });
+  }
   function addDaysStr(ds, n) {
     var d = new Date(String(ds).slice(0, 10) + 'T12:00:00');
     d.setDate(d.getDate() + n);
@@ -17334,6 +17376,22 @@
   function wireJobsRoot(root) {
     if (root._josJobsBoundV2) return;
     root._josJobsBoundV2 = true;
+    // The drawer's slide-in keyframe animation resolves to transform:none
+    // at rest, but Chrome still treats an element with an *active*
+    // animation as its own containing block while that animation is
+    // running — a native <select>'s dropdown opened mid-slide (or via
+    // showPicker() right after) renders positioned against that
+    // containing block instead of the viewport, which is what "the
+    // dropdown appears at the top of the page" actually was. Clearing the
+    // animation once it finishes removes any ambiguity for every field
+    // opened after the drawer has settled, which is effectively all of
+    // them.
+    root.addEventListener('animationend', function (e) {
+      if (e.target && e.target.classList && e.target.classList.contains('jos-jobs-drawer')) {
+        e.target.style.animation = 'none';
+      }
+    });
+    wireTimeClockPicker(root);
     root.addEventListener('click', function (e) {
       var slotAdd = e.target.closest('.jos-gcal-slot-add, [data-jos-act="jobs-gcal-new"]');
       if (slotAdd) {
