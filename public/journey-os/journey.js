@@ -16229,6 +16229,28 @@
     return 'JOB-' + n;
   }
 
+  // Internal bookkeeping tags (recurring-plan linkage, discount math, quote
+  // source/status/amount) get written into a notes string by several
+  // different flows (recurring booking, promo codes, lead-to-job/quote
+  // conversion) and were never stripped back out before landing in a
+  // user-facing Notes field — e.g. a job converted from a quote could show
+  // "[source:smart_quote][QUOTE_STATUS:sent][QUOTE:$175.00] id:q-..." verbatim.
+  // This is the display/edit boundary for that: strip every known tag
+  // convention (not just the one that happened to get reported) so the
+  // Notes field only ever shows what a human actually typed, and surface
+  // quote tags specifically as a small read-only line instead of losing
+  // that information outright.
+  function parseJobNotesMeta(raw) {
+    var s = String(raw || '');
+    var meta = {};
+    s = s.replace(/\[([a-zA-Z_]+):([^\]]*)\]/g, function (m, k, v) { meta[k.toLowerCase()] = v; return ''; });
+    s = s.replace(/\bid:[a-z0-9-]+\b/gi, '');
+    s = s.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    var quote = (meta.source === 'smart_quote' || meta.quote_status || meta.quote)
+      ? { status: meta.quote_status || '', amount: meta.quote || '' }
+      : null;
+    return { clean: s, quote: quote };
+  }
   function jobEditField(id, label, value, opts) {
     opts = opts || {};
     var type = opts.type || 'text';
@@ -16377,13 +16399,30 @@
   }
   function saveJobsColumns(cols) { tablePreferences.save('user', 'jobs', { columns: cols }); }
 
+  // Builds a real Supabase patch alongside the in-memory mutation — this
+  // form used to only mutate `job` and rely on persistJobSoon(), which
+  // called persistPipelineSoon() (the LEADS pipeline saver) and never
+  // touched the jobs table at all. Every edit made through this form —
+  // including Status — updated local state only and silently reverted on
+  // the next reload. `time` is deliberately excluded from the patch, same
+  // as the table's Time column: the free-text input here ("10:00 AM")
+  // isn't guaranteed to parse into Postgres's `time` column format
+  // (HH:MM, 24h), and writing it anyway would trade a "changes don't
+  // save" bug for a "changes fail or corrupt" bug. Revisit once there's a
+  // real time picker. Customer is edited as separate First/Last inputs
+  // (matching Leads) but the jobs table only has one customer_name column
+  // — same client-side split/join as Leads' firstName/lastName columns
+  // (splitLeadName), rejoined into one string here.
   function applyJobEditFormToJob(job) {
     if (!job) return { ok: false, error: 'Select a job' };
-    var custEl = el('jos-je-customer');
-    if (custEl) {
-      var custName = String(custEl.value || '').trim();
+    var patch = {};
+    var custFirstEl = el('jos-je-customer-first');
+    var custLastEl = el('jos-je-customer-last');
+    if (custFirstEl || custLastEl) {
+      var custName = (String((custFirstEl && custFirstEl.value) || '').trim() + ' ' + String((custLastEl && custLastEl.value) || '').trim()).trim();
       if (!custName) return { ok: false, error: 'Customer name is required' };
       job.customer = custName;
+      patch.customer_name = job.customer;
     }
     var numEl = el('jos-je-number');
     if (numEl) {
@@ -16391,24 +16430,24 @@
       if (numVal) job.jobNumber = numVal;
     }
     var phoneEl = el('jos-je-phone');
-    if (phoneEl) job.phone = String(phoneEl.value || '').trim();
+    if (phoneEl) { job.phone = String(phoneEl.value || '').trim(); patch.phone = job.phone; }
     var emailEl = el('jos-je-email');
-    if (emailEl) job.email = String(emailEl.value || '').trim();
+    if (emailEl) { job.email = String(emailEl.value || '').trim(); patch.email = job.email; }
     var addrEl = el('jos-je-address');
-    if (addrEl) job.address = String(addrEl.value || '').trim();
+    if (addrEl) { job.address = String(addrEl.value || '').trim(); patch.address = job.address; }
     var vehEl = el('jos-je-vehicle');
-    if (vehEl) job.vehicle = String(vehEl.value || '').trim();
+    if (vehEl) { job.vehicle = String(vehEl.value || '').trim(); patch.vehicle = job.vehicle; }
     var svcEl = el('jos-je-service');
-    if (svcEl) job.service = String(svcEl.value || job.service || '').trim();
+    if (svcEl) { job.service = String(svcEl.value || job.service || '').trim(); patch.service_name = job.service; }
     var amtEl = el('jos-je-amount');
     if (amtEl) {
       var amtRaw = String(amtEl.value || '').trim();
-      if (amtRaw !== '') job.amount = parseFloat(amtRaw) || 0;
+      if (amtRaw !== '') { job.amount = parseFloat(amtRaw) || 0; patch.amount = job.amount; }
     }
     var dateEl = el('jos-je-date');
     if (dateEl) {
       var dateVal = String(dateEl.value || '').trim();
-      if (dateVal) job.date = dateVal;
+      if (dateVal) { job.date = dateVal; patch.scheduled_date = job.date; }
     }
     var timeEl = el('jos-je-time');
     if (timeEl) {
@@ -16418,12 +16457,12 @@
     var durEl = el('jos-je-duration');
     if (durEl) {
       var durRaw = parseInt(String(durEl.value || ''), 10);
-      if (Number.isFinite(durRaw) && durRaw > 0) job.durationMin = durRaw;
+      if (Number.isFinite(durRaw) && durRaw > 0) { job.durationMin = durRaw; patch.duration_hours = durRaw / 60; }
     }
     var asgEl = el('jos-je-assigned');
-    if (asgEl) job.assignedTo = String(asgEl.value || job.assignedTo || 'Unassigned').trim();
+    if (asgEl) { job.assignedTo = String(asgEl.value || job.assignedTo || 'Unassigned').trim(); patch.assigned_to = job.assignedTo; }
     var statusEl = el('jos-je-status');
-    if (statusEl && statusEl.value) job.status = String(statusEl.value);
+    if (statusEl && statusEl.value) { job.status = String(statusEl.value); patch.status = job.status; }
     var notesEl = el('jos-je-notes');
     if (notesEl) {
       var notesVal = String(notesEl.value || '').trim();
@@ -16434,9 +16473,14 @@
         job.internalNotes = job.internalNotes.slice(1);
       }
     }
-    return { ok: true };
+    return { ok: true, patch: patch };
   }
 
+  // Same dbColumn mapping as applyJobEditFormToJob, same reason: this used
+  // to only mutate `job` in memory and rely on the (broken) persistJobSoon.
+  // `time` stays excluded from the patch for the same free-text/Postgres-
+  // `time`-column risk noted there.
+  var JOBS_LIST_FIELD_DB_COLUMN = { customer: 'customer_name', phone: 'phone', service: 'service_name', date: 'scheduled_date', amount: 'amount', status: 'status' };
   function applyJobListField(input) {
     if (!input) return { ok: false };
     var jobId = input.getAttribute('data-jos-job-id');
@@ -16454,25 +16498,32 @@
     else if (field === 'amount') job.amount = val === '' ? (job.amount || 0) : (parseFloat(val) || 0);
     else if (field === 'status') { if (val) job.status = val; }
     else return { ok: false };
-    return { ok: true, job: job };
+    var patch = {};
+    var dbCol = JOBS_LIST_FIELD_DB_COLUMN[field];
+    if (dbCol) patch[dbCol] = job[field];
+    return { ok: true, job: job, patch: patch };
   }
 
-  function persistJobSoon() {
-    try {
-      if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon();
-    } catch (ePersistJob) {}
-  }
 
   function renderJobEditForm(j, opts) {
     opts = opts || {};
     var inline = !!opts.inline;
-    var note = (j.internalNotes && j.internalNotes[0]) ? String(j.internalNotes[0]) : '';
+    var rawNote = (j.internalNotes && j.internalNotes[0]) ? String(j.internalNotes[0]) : '';
+    var notesMeta = parseJobNotesMeta(rawNote);
+    var custName = splitLeadName(j.customer);
+    var quoteLine = notesMeta.quote
+      ? '<div class="jos-je-field full jos-je-quote-meta"><span>Quote</span><div class="jos-muted">' +
+        (notesMeta.quote.amount ? esc(notesMeta.quote.amount) : '') +
+        (notesMeta.quote.status ? (notesMeta.quote.amount ? ' · ' : '') + esc(notesMeta.quote.status) : '') +
+        '</div></div>'
+      : '';
     return '<div class="jos-jd-stack jos-je-form' + (inline ? ' is-inline' : '') + '">' +
       (inline ? '' : '<p class="jos-muted" style="margin:0 0 8px">Edit the job details Hubly will use for scheduling, CRM, and invoices.</p>') +
       '<div class="jos-je-grid">' +
       jobEditField('jos-je-number', 'Job #', jobNumber(j), { placeholder: 'JOB-1001' }) +
       jobEditField('jos-je-status', 'Status', j.status || 'scheduled', { kind: 'select', options: jobStatusOptions() }) +
-      jobEditField('jos-je-customer', 'Customer', j.customer || '', { placeholder: 'Customer name', autofocus: !inline }) +
+      jobEditField('jos-je-customer-first', 'First name', custName.first, { placeholder: 'First name', autofocus: !inline }) +
+      jobEditField('jos-je-customer-last', 'Last name', custName.last, { placeholder: 'Last name' }) +
       jobEditField('jos-je-phone', 'Phone', j.phone || '', { placeholder: '(555) 000-0000' }) +
       jobEditField('jos-je-email', 'Email', j.email || '', { type: 'email', placeholder: 'name@email.com' }) +
       jobEditField('jos-je-address', 'Address', j.address || '', { full: true, placeholder: 'Service address' }) +
@@ -16483,7 +16534,8 @@
       jobEditField('jos-je-time', 'Time', j.time || '', { placeholder: '10:00 AM' }) +
       jobEditField('jos-je-duration', 'Duration (min)', j.durationMin || 120, { type: 'number' }) +
       jobEditField('jos-je-assigned', 'Assigned to', j.assignedTo || 'Unassigned', { kind: 'select', options: jobTeamOptions(j) }) +
-      jobEditField('jos-je-notes', 'Notes', note, { kind: 'textarea', full: true, placeholder: 'Internal notes…', rows: 3 }) +
+      quoteLine +
+      jobEditField('jos-je-notes', 'Notes', notesMeta.clean, { kind: 'textarea', full: true, placeholder: 'Internal notes…', rows: 3 }) +
       '</div>' +
       '<div class="jos-btn-row jos-mt">' +
       btn('jobs-edit-save', inline ? 'Save changes' : 'Save job', 'jos-btn-brand jos-btn-sm') +
@@ -17210,7 +17262,7 @@
         if (result.error && !opts.quiet) toast(result.error);
         return;
       }
-      persistJobSoon();
+      if (result.patch && Object.keys(result.patch).length) persistJobPatch(result.job, result.patch);
       if (opts.rerender) {
         root._josJobsSkipLoading = true;
         root._josJobId = result.job.id;
@@ -17234,7 +17286,7 @@
         if (!opts.quiet) toast(result.error || 'Could not save');
         return false;
       }
-      persistJobSoon();
+      if (result.patch && Object.keys(result.patch).length) persistJobPatch(job, result.patch);
       if (!opts.quiet) toast('Saved');
       if (opts.rerender) {
         root._josJobsSkipLoading = true;
@@ -19170,7 +19222,7 @@
         pushJobTimeline(job, 'note', 'Job details updated');
         root._josJobEditOpen = false;
         toast('Job updated');
-        persistJobSoon();
+        if (saveResult.patch && Object.keys(saveResult.patch).length) persistJobPatch(job, saveResult.patch);
         return rerender();
       }
       if (act === 'jobs-resize') {

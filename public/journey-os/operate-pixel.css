@@ -4608,6 +4608,8 @@ html[data-theme="night"] .jos-mem-form select{
 @media(max-width:720px){
   .jos-je-grid{grid-template-columns:1fr}
 }
+.jos-je-quote-meta{gap:4px}
+.jos-je-quote-meta > div{height:auto;border:1px dashed var(--jos-border);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:600}
 .jos-jobs-inline-cust{
   display:flex;align-items:center;gap:10px;min-width:0;
 }
