@@ -15513,16 +15513,17 @@ function normalizeJobDate(d){
   const m=s.match(/^(\d{4}-\d{2}-\d{2})/);
   return m?m[1]:'';
 }
-async function loadJobs(){
-  if(!currentBusiness)return;
-  const {data} = await db.from('jobs')
-    .select('*')
-    .eq('business_id',currentBusiness.id)
-    .order('scheduled_date',{ascending:true});
-  const jobs=(data||[]).map(j=>{
-    const notes=String(j.notes||'').replace(/\n?\[RPJOB:[^\]]+\]\s*$/,'').trim();
-    const rawAddr=j.address||'';
-    return {
+// The one canonical "raw jobs-table row -> in-memory job shape" mapper —
+// mirrors mapCustRow() for customers. Was inline inside loadJobs() only;
+// extracted so any other code that gets a raw row back from a job insert
+// (e.g. the createJob()-based "who is this for" picker, which needs to
+// push its freshly-created job into S.jobs immediately to open the
+// drawer without waiting on a full reload) can build the identical shape
+// instead of writing a second, inevitably-drifting copy of this mapping.
+function mapJobRow(j){
+  const notes=String(j.notes||'').replace(/\n?\[RPJOB:[^\]]+\]\s*$/,'').trim();
+  const rawAddr=j.address||'';
+  return {
     id: j.id,
     dbId: j.id,
     customer: j.customer_name,
@@ -15559,7 +15560,16 @@ async function loadJobs(){
     syncStatus: j.sync_status||null,
     isRecurring:/\[RPJOB:([^\]]+)\]/.test(j.notes||''),
     recurringPlanId:((String(j.notes||'').match(/\[RPJOB:([^\]]+)\]/)||[])[1]||''),
-  };});
+  };
+}
+window.mapJobRow=mapJobRow;
+async function loadJobs(){
+  if(!currentBusiness)return;
+  const {data} = await db.from('jobs')
+    .select('*')
+    .eq('business_id',currentBusiness.id)
+    .order('scheduled_date',{ascending:true});
+  const jobs=(data||[]).map(mapJobRow);
   const {data:reqs} = await db.from('booking_requests')
     .select('*')
     .eq('business_id',currentBusiness.id)

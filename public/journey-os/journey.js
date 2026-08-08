@@ -15211,7 +15211,176 @@
     pop.classList.toggle('open');
   }
 
+  // "Who is this for?" — the lightweight job-creation picker. Replaces the
+  // old m-new-job modal (which re-asked Customer/Phone/Email/Service/Date/
+  // Time/Address/Amount, duplicating almost every field the Jobs drawer
+  // already edits) for the global +New -> Job flow. This popup answers
+  // exactly one question — which customer/lead the job is for — then hands
+  // off to the same createJob() pipeline every other creation path already
+  // uses, and immediately opens the real Jobs drawer as the one editor for
+  // everything else (service, date, time, technician, financials, notes...).
+  function jobPickerState(pop) {
+    if (!pop._josJp) pop._josJp = { q: '', mode: 'search', busy: false };
+    return pop._josJp;
+  }
 
+  function ensureJobPickerPop() {
+    var pop = el('jos-job-picker');
+    if (pop) return pop;
+    pop = document.createElement('div');
+    pop.id = 'jos-job-picker';
+    pop.className = 'jos-jp-backdrop';
+    document.body.appendChild(pop);
+    bindRoot(pop);
+    pop.addEventListener('mousedown', function (e) {
+      if (e.target === pop) closeJobCustomerPicker();
+    });
+    pop.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeJobCustomerPicker();
+    });
+    // Mirrors the Jobs combo-search input pattern (positionJobsComboPop's
+    // caller): re-render on every keystroke to refresh the matched list,
+    // then restore focus + force a value reassignment so the caret doesn't
+    // jump to the start of the field after innerHTML is replaced.
+    pop.addEventListener('input', function (e) {
+      if (!(e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-jp-search'))) return;
+      var st = jobPickerState(pop);
+      st.q = e.target.value;
+      renderJobPicker(pop);
+      var reFocus = pop.querySelector('.jos-jp-search-input');
+      if (reFocus) { reFocus.focus({ preventScroll: true }); var v = reFocus.value; reFocus.value = ''; reFocus.value = v; }
+    });
+    return pop;
+  }
+
+  function openJobCustomerPicker() {
+    el('jos-quick-pop')?.classList.remove('open');
+    var pop = ensureJobPickerPop();
+    pop._josJp = { q: '', mode: 'search', busy: false };
+    renderJobPicker(pop);
+    pop.classList.add('open');
+    setTimeout(function () {
+      var inp = pop.querySelector('.jos-jp-search-input');
+      if (inp) inp.focus();
+    }, 0);
+  }
+
+  function closeJobCustomerPicker() {
+    var pop = el('jos-job-picker');
+    if (pop) pop.classList.remove('open');
+  }
+
+  function jobPickerRowHtml(person, kind, busy) {
+    var name = person.name || 'Unnamed';
+    var meta = [person.phone, person.email].filter(Boolean).join(' · ');
+    var act = kind === 'lead' ? 'jobs-picker-pick-lead' : 'jobs-picker-pick-customer';
+    var idAttr = kind === 'lead'
+      ? 'data-jos-lead-id="' + esc(String(person.id || person.key)) + '"'
+      : 'data-jos-cust-id="' + esc(String(person.id)) + '"';
+    return '<button type="button" class="jos-jp-row" data-jos-act="' + act + '" ' + idAttr + (busy ? ' disabled' : '') + '>' +
+      '<span class="jos-jp-row-avatar">' + esc(initials(name)) + '</span>' +
+      '<span class="jos-jp-row-main"><strong>' + esc(name) + '</strong>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span>' +
+      (kind === 'lead' ? '<span class="jos-jp-row-tag">Lead</span>' : '') +
+      '</button>';
+  }
+
+  function renderJobPicker(pop) {
+    var st = jobPickerState(pop);
+    var q = String(st.q || '').trim().toLowerCase();
+    var body;
+    if (st.mode === 'create') {
+      body =
+        '<div class="jos-jp-create">' +
+        '<label class="jos-jp-field"><span>Name</span><input type="text" class="jos-jp-create-name" placeholder="Full name" value="' + esc(st.newName || '') + '" autocomplete="off"></label>' +
+        '<label class="jos-jp-field"><span>Phone</span><input type="tel" class="jos-jp-create-phone" placeholder="(555) 555-5555" value="' + esc(st.newPhone || '') + '" autocomplete="off"></label>' +
+        '<label class="jos-jp-field"><span>Email</span><input type="email" class="jos-jp-create-email" placeholder="name@email.com" value="' + esc(st.newEmail || '') + '" autocomplete="off"></label>' +
+        '<div class="jos-jp-create-acts">' +
+        '<button type="button" class="jos-btn" data-jos-act="jobs-picker-back"' + (st.busy ? ' disabled' : '') + '>Back</button>' +
+        '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="jobs-picker-create-save"' + (st.busy ? ' disabled' : '') + '>' + (st.busy ? 'Creating…' : 'Create & Continue') + '</button>' +
+        '</div></div>';
+    } else {
+      var custs = customers().filter(function (c) {
+        if (!q) return true;
+        return String(c.name || '').toLowerCase().indexOf(q) >= 0 ||
+          String(c.phone || '').toLowerCase().indexOf(q) >= 0 ||
+          String(c.email || '').toLowerCase().indexOf(q) >= 0;
+      }).slice().sort(function (a, b) {
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      }).slice(0, q ? 8 : 5);
+      var leads = leadsOsList().filter(function (l) {
+        if (!q) return true;
+        return String(l.name || '').toLowerCase().indexOf(q) >= 0 ||
+          String(l.phone || '').toLowerCase().indexOf(q) >= 0 ||
+          String(l.email || '').toLowerCase().indexOf(q) >= 0;
+      }).slice().sort(function (a, b) {
+        return new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0);
+      }).slice(0, q ? 8 : 5);
+      var sections = '';
+      if (custs.length) {
+        sections += '<div class="jos-jp-section"><h4>' + (q ? 'Customers' : 'Recent customers') + '</h4>' + custs.map(function (c) { return jobPickerRowHtml(c, 'customer', st.busy); }).join('') + '</div>';
+      }
+      if (leads.length) {
+        sections += '<div class="jos-jp-section"><h4>' + (q ? 'Leads' : 'Recent leads') + '</h4>' + leads.map(function (l) { return jobPickerRowHtml(l, 'lead', st.busy); }).join('') + '</div>';
+      }
+      if (!custs.length && !leads.length) {
+        sections = '<div class="jos-jp-empty">No matches' + (q ? ' for "' + esc(st.q) + '"' : '') + '.</div>';
+      }
+      body =
+        '<div class="jos-jp-search"><input type="text" class="jos-jp-search-input" data-jos-jp-search placeholder="Search customers and leads..." value="' + esc(st.q || '') + '" autocomplete="off"' + (st.busy ? ' disabled' : '') + '></div>' +
+        '<div class="jos-jp-list">' + sections + '</div>' +
+        '<button type="button" class="jos-jp-create-btn" data-jos-act="jobs-picker-create-new"' + (st.busy ? ' disabled' : '') + '>+ Create New Customer</button>';
+    }
+    pop.innerHTML =
+      '<div class="jos-jp-card">' +
+      '<div class="jos-jp-head"><h3>Who is this for?</h3><button type="button" class="jos-jp-close" data-jos-act="jobs-picker-close" aria-label="Close">×</button></div>' +
+      body +
+      '</div>';
+  }
+
+  // Shared tail of every picker path (existing customer, existing lead,
+  // brand-new customer) — one call into the same createJob() every other
+  // creation path uses, then map+push the raw row locally (jobs-create's
+  // own "insert for real, reconcile the placeholder id" reasoning applies
+  // here too, minus the placeholder since we wait for the real id before
+  // ever touching S().jobs) and open the drawer as the one remaining editor.
+  function startJobFromPicker(input) {
+    var pop = el('jos-job-picker');
+    var st = pop ? jobPickerState(pop) : null;
+    if (st) { st.busy = true; renderJobPicker(pop); }
+    if (typeof global.createJob !== 'function') {
+      toast('Not connected');
+      if (st) { st.busy = false; renderJobPicker(pop); }
+      return;
+    }
+    global.createJob(Object.assign({ status: 'scheduled' }, input)).then(function (result) {
+      if (!result || result.error) {
+        console.warn('jobs-picker createJob', result && result.error);
+        toast('Couldn’t create the job — check your connection and try again');
+        if (st) { st.busy = false; renderJobPicker(pop); }
+        return;
+      }
+      closeJobCustomerPicker();
+      var mapped = (typeof global.mapJobRow === 'function' && result.job) ? global.mapJobRow(result.job) : null;
+      if (mapped) {
+        S().jobs = Array.isArray(S().jobs) ? S().jobs : [];
+        S().jobs.unshift(mapped);
+      }
+      switchNav('jobs');
+      setTimeout(function () {
+        var root = jobsOsRoot();
+        if (!root) return;
+        root._josJobId = (mapped && mapped.id) || result.jobId;
+        root._josDrawerOpen = true;
+        root._josJobWorkspace = 'overview';
+        root._josJobEditOpen = false;
+        rerenderJobsOsFrom(root);
+      }, 0);
+    }).catch(function (e) {
+      console.warn('jobs-picker createJob', e);
+      toast('Couldn’t create the job — check your connection and try again');
+      if (st) { st.busy = false; renderJobPicker(pop); }
+    });
+  }
 
   var INBOX_TABS = [
     ['all', 'All'],
@@ -19724,6 +19893,54 @@
         root._josJobWorkspace = 'overview';
         return rerender();
       }
+      if (act === 'jobs-picker-close') {
+        closeJobCustomerPicker();
+        return;
+      }
+      if (act === 'jobs-picker-create-new') {
+        var jpPopNew = el('jos-job-picker');
+        if (!jpPopNew) return;
+        var jpStNew = jobPickerState(jpPopNew);
+        jpStNew.mode = 'create';
+        jpStNew.newName = jpStNew.q || '';
+        renderJobPicker(jpPopNew);
+        setTimeout(function () {
+          var jpNameInput = jpPopNew.querySelector('.jos-jp-create-name');
+          if (jpNameInput) jpNameInput.focus();
+        }, 0);
+        return;
+      }
+      if (act === 'jobs-picker-back') {
+        var jpPopBack = el('jos-job-picker');
+        if (!jpPopBack) return;
+        var jpStBack = jobPickerState(jpPopBack);
+        jpStBack.mode = 'search';
+        renderJobPicker(jpPopBack);
+        var jpSearchInput = jpPopBack.querySelector('.jos-jp-search-input');
+        if (jpSearchInput) jpSearchInput.focus();
+        return;
+      }
+      if (act === 'jobs-picker-pick-customer') {
+        var jpCustId = t.getAttribute('data-jos-cust-id');
+        if (!jpCustId) return;
+        return startJobFromPicker({ customerId: jpCustId });
+      }
+      if (act === 'jobs-picker-pick-lead') {
+        var jpLeadId = t.getAttribute('data-jos-lead-id');
+        var jpLead = jpLeadId ? findLead(jpLeadId) : null;
+        if (!jpLead) { toast('Lead not found'); return; }
+        return startJobFromPicker({ name: jpLead.name || '', phone: jpLead.phone || '', email: jpLead.email || '' });
+      }
+      if (act === 'jobs-picker-create-save') {
+        var jpPopSave = el('jos-job-picker');
+        if (!jpPopSave) return;
+        var jpNameEl = jpPopSave.querySelector('.jos-jp-create-name');
+        var jpPhoneEl = jpPopSave.querySelector('.jos-jp-create-phone');
+        var jpEmailEl = jpPopSave.querySelector('.jos-jp-create-email');
+        var jpName = String((jpNameEl && jpNameEl.value) || '').trim();
+        if (!jpName) { toast('This customer needs a name'); return; }
+        return startJobFromPicker({ name: jpName, phone: String((jpPhoneEl && jpPhoneEl.value) || '').trim(), email: String((jpEmailEl && jpEmailEl.value) || '').trim() });
+      }
       if (act === 'jobs-name-edit-open') {
         root._josJobNameEditing = true;
         rerender();
@@ -20862,7 +21079,7 @@
       if (act === 'new-job-cust') {
         var cid = S().activeCustId || el('jos-customer-profile')?._josCustId || el('jos-customers-root')?._josCustId;
         if (cid && typeof global.openNewJobForCustomer === 'function') return global.openNewJobForCustomer(cid);
-        return typeof global.openM === 'function' ? global.openM('m-new-job') : toast('New job');
+        return openJobCustomerPicker();
       }
       if (act === 'photo-quick') {
         el('jos-quick-pop')?.classList.remove('open');
