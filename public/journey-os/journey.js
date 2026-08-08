@@ -8417,9 +8417,13 @@
       }
     },
     number: {
+      // Optional col.format(value) for display only (e.g. money() for a
+      // currency column) — editing and storage always stay the raw
+      // number, only the read-only rendering changes.
       display: function (value, col, leadKey) {
         var v = (value === '' || value == null) ? '' : String(value);
-        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Click to add') + '</span>';
+        var shown = v && col.format ? col.format(value) : v;
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(shown) : 'Click to add') + '</span>';
       },
       edit: function (value, col, leadKey) {
         return '<input type="number" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value === '' || value == null ? '' : value) + '" onclick="event.stopPropagation()">';
@@ -16211,6 +16215,110 @@
     ];
   }
 
+  // ---- Jobs: the second table wired onto the shared engine ---------------
+  // Same schema shape as LEADS_DEFAULT_COLUMNS, same rendererRegistry, same
+  // tableCellHtml dispatch. dbColumn (or the dbPatch() override, for a
+  // column whose write needs more than a rename) tells mutateJobField what
+  // to send Supabase — Jobs persists via targeted per-row column patches
+  // (persistJobPatch) rather than Leads' one-blob-saves-everything model,
+  // so the column needs to know its real column name.  Verified against
+  // the live jobs table (information_schema), not guessed — see the
+  // 20260808010000 migration for assigned_to, which didn't exist until
+  // this pass.
+  var JOBS_DEFAULT_COLUMNS = [
+    {
+      // openOnClick: the customer is the record, exactly like Leads' name
+      // column — single click opens the job drawer, double-click edits
+      // inline.
+      key: 'customer', label: 'Customer', type: 'text', width: 170,
+      editable: true, openOnClick: true, searchable: true, sortable: true, dbColumn: 'customer_name',
+      set: function (job, value) { job.customer = String(value || '').trim(); return 'Customer → ' + (job.customer || '—'); }
+    },
+    {
+      key: 'phone', label: 'Phone', type: 'phone', width: 150,
+      editable: true, searchable: true, sortable: false, dbColumn: 'phone',
+      set: function (job, value) { job.phone = value || ''; return 'Phone → ' + (rendererRegistry.phone.format(job.phone) || '—'); }
+    },
+    {
+      key: 'jobNumber', label: 'Job #', type: 'text', width: 90,
+      editable: false, searchable: true, sortable: false,
+      get: function (job) { return jobNumber(job); }
+    },
+    {
+      key: 'service', label: 'Service', type: 'text', width: 160,
+      editable: true, searchable: true, filterable: true, sortable: true, dbColumn: 'service_name',
+      set: function (job, value) { job.service = String(value || '').trim(); return 'Service → ' + (job.service || '—'); }
+    },
+    {
+      key: 'assignedTo', label: 'Technician', type: 'select', width: 150, allowEmpty: 'Unassigned',
+      editable: true, searchable: true, filterable: true, sortable: true, dbColumn: 'assigned_to',
+      options: function (job) { return jobTeamOptions(job || {}).filter(function (n) { return n !== 'Unassigned'; }).map(function (n) { return { value: n, label: n }; }); },
+      get: function (job) { return job.assignedTo || ''; },
+      set: function (job, value) { job.assignedTo = value || ''; return job.assignedTo ? ('Assigned to ' + job.assignedTo) : 'Unassigned'; }
+    },
+    {
+      key: 'date', label: 'Date', type: 'date', width: 130,
+      editable: true, sortable: true, dbColumn: 'scheduled_date',
+      set: function (job, value) { job.date = value || ''; return 'Date → ' + (job.date || '—'); }
+    },
+    {
+      // Time stays display-only for now — the table's old free-text time
+      // input ("9:00 AM") isn't guaranteed to parse into the Postgres
+      // `time` column scheduled_time expects (HH:MM, 24h, no AM/PM), and
+      // getting that conversion wrong would silently reintroduce exactly
+      // the write-fails-or-corrupts-silently class of bug this whole pass
+      // exists to remove. Revisit once there's a real time picker
+      // (type:'date'-style native input) feeding it a guaranteed-clean
+      // value instead of free text.
+      key: 'time', label: 'Time', type: 'text', width: 100,
+      editable: false, sortable: false,
+      get: function (job) { return job.time || ''; }
+    },
+    {
+      key: 'status', label: 'Status', type: 'select', width: 130,
+      editable: true, filterable: true, sortable: true, dbColumn: 'status',
+      options: function () { return jobStatusOptions().map(function (s) { return { value: s.value, label: s.label, tone: jobStatusTone(s.value) }; }); },
+      get: function (job) { return job.status || ''; },
+      set: function (job, value) { job.status = value; return 'Status → ' + (jobStatusOptions().filter(function (s) { return s.value === value; })[0] || {}).label; }
+    },
+    {
+      key: 'amount', label: 'Amount', type: 'number', width: 110,
+      editable: true, sortable: true, dbColumn: 'amount', format: money,
+      get: function (job) { return job.amount == null ? '' : job.amount; },
+      set: function (job, value) { job.amount = value === '' ? null : Number(value); return 'Amount → ' + (job.amount != null ? money(job.amount) : '—'); }
+    },
+    {
+      key: 'balance', label: 'Balance', type: 'text', width: 100,
+      editable: false, sortable: false,
+      get: function (job) {
+        if (job.invoice && job.invoice.status === 'paid') return 'Paid';
+        var due = Math.max(0, (parseFloat(job.amount) || 0) - (((job.depositStatus === 'collected' || job.depositStatus === 'paid_online') ? (parseFloat(job.deposit) || 0) : 0)));
+        return due > 0 ? money(due) : 'Paid';
+      }
+    }
+  ];
+
+  function jobsColumnSchema() { return JOBS_DEFAULT_COLUMNS; }
+  function jobsSchemaMap() {
+    var map = {};
+    JOBS_DEFAULT_COLUMNS.forEach(function (c) { map[c.key] = c; });
+    return map;
+  }
+  function findJobsColumnDef(key) { return jobsSchemaMap()[key] || null; }
+
+  function loadJobsColumns(root) {
+    var cached = tablePreferences.load('user', 'jobs', function (remote) {
+      var remoteCols = tablePreferences.normalize(jobsColumnSchema(), remote && remote.columns);
+      if (!root) return;
+      if (JSON.stringify(remoteCols) !== JSON.stringify(root._josJobsColumns)) {
+        root._josJobsColumns = remoteCols;
+        rerenderJobsOsFrom(root);
+      }
+    });
+    return tablePreferences.normalize(jobsColumnSchema(), cached && cached.columns);
+  }
+  function saveJobsColumns(cols) { tablePreferences.save('user', 'jobs', { columns: cols }); }
+
   function applyJobEditFormToJob(job) {
     if (!job) return { ok: false, error: 'Select a job' };
     var custEl = el('jos-je-customer');
@@ -16518,9 +16626,59 @@
       '<div class="jos-jd-body">' + body + '</div></aside>';
   }
 
+  // Schema-driven, same shape as renderLeadsTable — headers from the
+  // schema (sentence case, no drag/resize/rename yet — see the Jobs
+  // migration notes), cells through the exact same tableCellHtml/
+  // rendererRegistry dispatch Leads uses. Column preferences (hide,
+  // width) come from root._josJobsColumns, loaded via tablePreferences
+  // under the 'jobs' table key.
+  function renderJobsTable(root, list, selectedId) {
+    var cols = (root._josJobsColumns || JOBS_DEFAULT_COLUMNS).filter(function (c) { return !c.hidden; });
+    var schemaMap = jobsSchemaMap();
+    var editing = root._josJobsEditCell || null;
+    var colGroup = '<colgroup>' + cols.map(function (c) {
+      var def = schemaMap[c.key];
+      return '<col style="width:' + (c.width || (def && def.width) || 140) + 'px">';
+    }).join('') + '<col style="width:70px"></colgroup>';
+    var headCells = cols.map(function (c) {
+      return '<th class="jos-ld-th" data-jos-col-key="' + esc(c.key) + '"><span class="jos-ld-th-label" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</span></th>';
+    }).join('') + '<th></th>';
+    var rows = !list.length
+      ? '<tr class="jos-ld-empty-row"><td colspan="' + (cols.length + 1) + '"><div class="jos-ld-empty-table">' +
+        '<strong>No jobs yet</strong><p>Create your first job or import bookings to get started.</p>' +
+        btn('jobs-create', 'New Job', 'jos-btn-brand jos-btn-sm') + '</div></td></tr>'
+      : list.map(function (j) {
+        var jobKey = String(j.id);
+        var on = selectedId && jobKey === String(selectedId);
+        var tone = jobRowTone(j.status);
+        // A synced Google Calendar event isn't a real Hubly job — it's a
+        // mirror of something that lives elsewhere, so every cell renders
+        // as plain text regardless of what the column schema says,
+        // matching how it always behaved before this migration.
+        var locked = !!j.isGoogle;
+        return '<tr class="jos-ld-trow tone-' + tone + (on ? ' on' : '') + '" role="row" data-jos-record-id="' + esc(jobKey) + '">' +
+          cols.map(function (c) {
+            var def = schemaMap[c.key];
+            if (!def) return '<td data-jos-col-key="' + esc(c.key) + '">—</td>';
+            if (locked) {
+              var lockedVal = tableColFieldGet(def, j);
+              return '<td data-jos-col-key="' + esc(c.key) + '">' + esc(lockedVal == null || lockedVal === '' ? '—' : String(lockedVal)) + '</td>';
+            }
+            var isEditingThis = !!(editing && editing.recordId === jobKey && editing.field === c.key);
+            return '<td data-jos-col-key="' + esc(c.key) + '">' + tableCellHtml(j, def, jobKey, isEditingThis) + '</td>';
+          }).join('') +
+          '<td class="col-act"><div class="jos-jobs-more-wrap">' +
+          '<button type="button" class="jos-icon-btn" data-jos-act="jobs-open" data-jos-job-id="' + esc(jobKey) + '" title="Open details" aria-label="Open details">↗</button>' +
+          (locked ? '' : '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(jobKey) + '" aria-label="Actions">⋯</button>') +
+          '</div></td></tr>';
+      }).join('');
+    return '<div class="jos-ld-table-wrap"><table class="jos-ld-table" role="grid" aria-label="Jobs">' + colGroup + '<thead><tr>' + headCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
   function renderJobsPage(root) {
     seedDemoJobsIfEmpty();
     ensureJobsOsState();
+    if (!root._josJobsColumns) root._josJobsColumns = loadJobsColumns(root);
     var selectedId = root._josJobId || null;
     var workspaceTab = root._josJobWorkspace || 'overview';
     var all = jobsAll();
@@ -16566,54 +16724,6 @@
     var tabsHtml = '<div class="jos-jobs-table-tabs">' + tableTabs.map(function (t) {
       return '<button type="button" class="jos-jobs-ttab' + (listView === t[0] ? ' on' : '') + '" data-jos-jobs-list="' + t[0] + '">' + esc(t[1]) + ' (' + t[2] + ')</button>';
     }).join('') + '</div>';
-
-    var rowsHtml = pageRows.length ? pageRows.map(function (j) {
-      var tone = jobRowTone(j.status);
-      var created = (j.timeline && j.timeline[0] && j.timeline[0].at) || j.date || '';
-      var locked = !!(j.isBlock || j.isGoogle);
-      if (locked) {
-        return '<tr class="jos-jobs-row tone-' + tone + '" data-jos-job-id="' + esc(j.id) + '">' +
-          '<td class="col-cust"><button type="button" class="jos-jobs-cust" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '">' +
-          '<span class="jos-jobs-ava">' + esc(jobInitials(j.customer)) + '</span><span><strong class="jos-jobs-name">' + esc(j.customer || 'Block') + '</strong><span class="jos-muted">' + esc(j.phone || j.email || '') + '</span></span></button></td>' +
-          '<td class="col-jobnum"></td>' +
-          '<td class="col-svc"><strong class="jos-jobs-name">' + esc(j.service || 'Block') + '</strong></td>' +
-          '<td class="col-tech"></td>' +
-          '<td class="col-date"><strong class="jos-jobs-name">' + esc(j.date || '—') + '</strong><span class="jos-muted">' + esc(j.time || '') + '</span></td>' +
-          '<td class="col-status"><span class="jos-pill jos-jobs-status ' + jobStatusTone(j.status) + '">' + esc(String(j.status || '').replace(/_/g, ' ')) + '</span></td>' +
-          '<td class="col-amt"><strong class="jos-jobs-name">' + esc(money(j.amount) || '—') + '</strong></td>' +
-          '<td class="col-bal"></td>' +
-          '<td class="col-act"></td></tr>';
-      }
-      var jobBalance = (j.invoice && j.invoice.status === 'paid') ? 0 :
-        Math.max(0, (parseFloat(j.amount) || 0) - (((j.depositStatus === 'collected' || j.depositStatus === 'paid_online') ? (parseFloat(j.deposit) || 0) : 0)));
-      return '<tr class="jos-jobs-row tone-' + tone + '" data-jos-job-id="' + esc(j.id) + '">' +
-        '<td class="col-cust"><div class="jos-jobs-inline-cust">' +
-        '<button type="button" class="jos-jobs-ava" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '" title="Open details">' + esc(jobInitials(j.customer)) + '</button>' +
-        '<div class="jos-jobs-inline-stack">' +
-        '<input class="jos-jobs-inline" type="text" data-jos-job-field="customer" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.customer || '') + '" placeholder="Customer" aria-label="Customer">' +
-        '<input class="jos-jobs-inline muted" type="text" data-jos-job-field="phone" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.phone || '') + '" placeholder="Phone" aria-label="Phone">' +
-        '</div></div></td>' +
-        '<td class="col-jobnum"><span class="jos-muted">' + esc(jobNumber(j)) + '</span></td>' +
-        '<td class="col-svc"><div class="jos-jobs-inline-stack">' +
-        '<input class="jos-jobs-inline" type="text" data-jos-job-field="service" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.service || '') + '" placeholder="Service" aria-label="Service">' +
-        '<span class="jos-muted">' + esc(j.vehicle || '') + (j.durationMin ? (' · ' + j.durationMin + 'm') : '') + '</span>' +
-        '</div></td>' +
-        '<td class="col-tech"><span class="jos-jobs-name">' + esc(j.assignedTo || 'Unassigned') + '</span></td>' +
-        '<td class="col-date"><div class="jos-jobs-inline-stack">' +
-        '<input class="jos-jobs-inline" type="date" data-jos-job-field="date" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.date || '') + '" aria-label="Date">' +
-        '<input class="jos-jobs-inline muted" type="text" data-jos-job-field="time" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.time || '') + '" placeholder="Time" aria-label="Time">' +
-        '</div></td>' +
-        '<td class="col-status"><select class="jos-jobs-inline jos-jobs-inline-status ' + jobStatusTone(j.status) + '" data-jos-job-field="status" data-jos-job-id="' + esc(j.id) + '" aria-label="Status">' +
-        jobStatusOptions().map(function (s) {
-          return '<option value="' + esc(s.value) + '"' + ((j.status || '') === s.value ? ' selected' : '') + '>' + esc(s.label) + '</option>';
-        }).join('') + '</select></td>' +
-        '<td class="col-amt"><input class="jos-jobs-inline jos-jobs-inline-amt" type="number" step="0.01" data-jos-job-field="amount" data-jos-job-id="' + esc(j.id) + '" value="' + esc(j.amount != null ? j.amount : '') + '" placeholder="0" aria-label="Amount"></td>' +
-        '<td class="col-bal"><span class="jos-jobs-name' + (jobBalance > 0 ? ' jos-jobs-bal-due' : '') + '">' + esc(jobBalance > 0 ? money(jobBalance) : 'Paid') + '</span></td>' +
-        '<td class="col-act"><div class="jos-jobs-more-wrap">' +
-        '<button type="button" class="jos-icon-btn" data-jos-act="jobs-open" data-jos-job-id="' + esc(j.id) + '" title="Open details" aria-label="Open details">↗</button>' +
-        '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" aria-label="Actions">⋯</button>' +
-        '</div></td></tr>';
-    }).join('') : '';
 
     var mobileCards = pageRows.length ? '<div class="jos-jobs-cards">' + pageRows.map(function (j) {
       var tone = jobRowTone(j.status);
@@ -16754,11 +16864,7 @@
 
       '<section class="jos-jobs-table-card jos-jobs-first">' +
       '<div class="jos-jobs-table-head">' + tabsHtml + '</div>' +
-      (pageRows.length
-        ? '<div class="jos-jobs-table-wrap"><table class="jos-jobs-table"><thead><tr>' +
-          '<th>Customer</th><th>Job #</th><th>Service</th><th>Technician</th><th>When</th><th>Status</th><th>Amount</th><th>Balance</th><th></th>' +
-          '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' + mobileCards + pager
-        : emptyTable) +
+      renderJobsTable(root, pageRows, selectedId) + mobileCards + (pageRows.length ? pager : '') +
       '</section>';
     }
 
@@ -17350,6 +17456,101 @@
       if (id && (id.indexOf('jos-jobs-filter') === 0 || id === 'jos-jobs-page-size')) {
         root._josJobsPage = 1;
         rerenderJobsOsFrom(root);
+      }
+      var field = e.target.closest('[data-jos-field]');
+      if (field) {
+        var fJobId = field.getAttribute('data-jos-record-id');
+        var fKey = field.getAttribute('data-jos-field');
+        var fCol = findJobsColumnDef(fKey);
+        if (fCol) {
+          var fRenderer = rendererRegistry[fCol.type] || rendererRegistry.text;
+          var fVal = fRenderer.readValue ? fRenderer.readValue(e.target) : e.target.value;
+          root._josJobsEditCell = null;
+          var fLabel = mutateJobField(fJobId, fCol, fVal);
+          toast(fLabel || (fCol.label + ' updated'));
+          rerenderJobsOsFrom(root);
+        }
+      }
+    });
+
+    // Same interaction model as Leads: click a cell to edit it; click the
+    // record's name (openOnClick) to open the detail panel — deferred
+    // 220ms so a real double-click's first constituent click doesn't
+    // open the drawer out from under the dblclick-to-edit path below.
+    // Click anywhere else on the row does nothing (Jobs never had the
+    // "any click opens it" problem Leads had, so there's nothing to
+    // restrict here beyond not adding it).
+    root.addEventListener('click', function (e) {
+      var editField = e.target.closest('[data-jos-field]');
+      if (!editField || editField.classList.contains('jos-ld-editing')) return;
+      var jobId = editField.getAttribute('data-jos-record-id');
+      var key = editField.getAttribute('data-jos-field');
+      if (!jobId || !key) return;
+      var col = findJobsColumnDef(key);
+      if (!col || col.editable === false) return;
+      if (col.openOnClick) {
+        clearTimeout(root._josJobNameClickT);
+        root._josJobNameClickT = setTimeout(function () {
+          root._josJobId = jobId;
+          root._josDrawerOpen = true;
+          rerenderJobsOsFrom(root);
+        }, 220);
+        e.stopPropagation();
+        return;
+      }
+      openJobsCellEdit(root, jobId, key);
+      e.stopPropagation();
+    });
+
+    // Double-click the name cell edits it inline (cancelling the pending
+    // deferred drawer-open above); double-click anywhere else on the row
+    // is the power-user shortcut to open the drawer, same as Leads.
+    root.addEventListener('dblclick', function (e) {
+      var dblField = e.target.closest('[data-jos-field]');
+      if (dblField) {
+        var dblCol = findJobsColumnDef(dblField.getAttribute('data-jos-field'));
+        if (dblCol && dblCol.openOnClick) {
+          clearTimeout(root._josJobNameClickT);
+          openJobsCellEdit(root, dblField.getAttribute('data-jos-record-id'), dblField.getAttribute('data-jos-field'));
+          e.preventDefault();
+        }
+        return;
+      }
+      if (e.target.closest('[data-jos-act]')) return;
+      var row = e.target.closest('[data-jos-record-id]');
+      if (!row) return;
+      root._josJobId = row.getAttribute('data-jos-record-id');
+      root._josDrawerOpen = true;
+      rerenderJobsOsFrom(root);
+      e.preventDefault();
+    });
+
+    // Blur without a value change never fires 'change' — this is what
+    // still closes the editor in that case, deferred a tick so a click
+    // landing on a *different* editable cell can claim the edit state
+    // first (identical reasoning to the equivalent Leads blur handler).
+    root.addEventListener('blur', function (e) {
+      if (!(e.target && e.target.classList && e.target.classList.contains('jos-ld-editing'))) return;
+      var closingCell = root._josJobsEditCell;
+      if (!closingCell) return;
+      setTimeout(function () {
+        if (root._josJobsEditCell === closingCell) {
+          root._josJobsEditCell = null;
+          rerenderJobsOsFrom(root);
+        }
+      }, 0);
+    }, true);
+
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && root._josJobsEditCell) {
+        cancelJobsCellEdit(root);
+        return;
+      }
+      // Enter commits a text/number/date cell the same way blur does —
+      // native <select>s already commit on their own 'change'.
+      if (e.key === 'Enter' && e.target && e.target.classList && e.target.classList.contains('jos-ld-editing') && e.target.tagName !== 'SELECT') {
+        e.preventDefault();
+        e.target.blur();
       }
     });
   }
@@ -18420,16 +18621,88 @@
 
   // Jobs live in their own Supabase `jobs` table (unlike Leads, which ride
   // along in the businesses.meta blob via persistPipelineSoon) — a direct
-  // row update/delete keyed by job.dbId, matching the pattern already used
-  // for deposit-collected above. Status changes and deletes previously
-  // mutated local state and re-rendered without ever calling this: the UI
-  // updated, but nothing was saved, so a refresh silently reverted every
-  // status change and brought back every "deleted" job.
+  // row update/delete keyed by job.dbId. Status changes and deletes
+  // previously mutated local state and re-rendered without ever calling
+  // this: the UI updated, but nothing was saved, so a refresh silently
+  // reverted every status change and brought back every "deleted" job.
+  //
+  // getDb(), not a bare `db` — there is no global `db` anywhere in this
+  // codebase (confirmed by grep: every real, working usage is a *local*
+  // `const db = getDb()` inside its own function). The deposit-collected
+  // handler this was originally copied from also referenced bare `db`
+  // and was very likely equally broken; tablePreferences' own DB access
+  // (tablePrefsDb(), verified working this session) is the pattern that
+  // actually works: global.getDb(). A live test with a mocked db client
+  // is what caught this — node --check and reading the code both passed
+  // silently, since the ReferenceError was swallowed by the try/catch.
+  function jobsDb() {
+    try { return (typeof global.getDb === 'function' ? global.getDb() : global.db) || null; } catch (e) { return null; }
+  }
   function persistJobPatch(job, patch) {
-    try { if (db && job && job.dbId) db.from('jobs').update(patch).eq('id', job.dbId); } catch (e) {}
+    try { var d = jobsDb(); if (d && job && job.dbId) d.from('jobs').update(patch).eq('id', job.dbId); } catch (e) {}
   }
   function persistJobDelete(job) {
-    try { if (db && job && job.dbId) db.from('jobs').delete().eq('id', job.dbId); } catch (e) {}
+    try { var d = jobsDb(); if (d && job && job.dbId) d.from('jobs').delete().eq('id', job.dbId); } catch (e) {}
+  }
+
+  // The one place a schema-driven Jobs cell edit commits — same shape as
+  // mutateLeadById, persistence lives here once rather than trusting every
+  // call site to remember it, same lesson as the Leads fix earlier this
+  // session. The difference is Jobs writes a targeted column patch, not a
+  // whole-blob save, so the column's dbColumn (or dbPatch(), for a column
+  // whose write needs more than a plain rename) says what to send.
+  function mutateJobField(jobId, col, value) {
+    var job = findJob(jobId);
+    if (!job) return '';
+    var label = col.set ? col.set(job, value) : (job[col.key] = value, col.label + ' updated');
+    var patch = col.dbPatch ? col.dbPatch(job) : (col.dbColumn ? (function () { var p = {}; p[col.dbColumn] = tableColFieldGet(col, job); return p; })() : null);
+    if (patch) persistJobPatch(job, patch);
+    return label;
+  }
+
+  // Same shape as openLeadsCellEdit/cancelLeadsCellEdit — the click
+  // handler in wireJobsRoot calls these, not the other way around, so
+  // this is genuinely the Jobs-specific half of an otherwise identical
+  // interaction (findJob/rerenderJobsOsFrom are the only Jobs-specific
+  // pieces; everything else — the field lookup, the editing-cell state
+  // shape, the focus/select-text/showPicker sequence — mirrors Leads
+  // exactly).
+  function openJobsCellEdit(root, jobId, key) {
+    var job = findJob(jobId);
+    if (!job) return;
+    var col = findJobsColumnDef(key);
+    if (!col || col.editable === false) return;
+    var originalValue = tableColFieldGet(col, job);
+    root._josJobsEditCell = { recordId: jobId, field: key, originalValue: originalValue };
+    rerenderJobsOsFrom(root);
+    var sel = root.querySelector('[data-jos-field="' + key + '"][data-jos-record-id="' + CSS.escape(jobId) + '"].jos-ld-editing');
+    if (sel) {
+      sel.focus({ preventScroll: true });
+      if (sel.tagName === 'SELECT') { try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
+      else if (sel.tagName === 'INPUT') { try { sel.select(); } catch (eSelText) {} }
+    }
+  }
+
+  function cancelJobsCellEdit(root) {
+    var editing = root._josJobsEditCell;
+    if (!editing) return;
+    var job = findJob(editing.recordId);
+    if (job) {
+      var col = findJobsColumnDef(editing.field);
+      if (col && col.type === 'select') {
+        var currentValue = tableColFieldGet(col, job);
+        if (currentValue !== editing.originalValue) mutateJobField(editing.recordId, col, editing.originalValue);
+      } else if (col) {
+        var renderer = rendererRegistry[col.type] || rendererRegistry.text;
+        var liveEl = root.querySelector('[data-jos-field="' + editing.field + '"][data-jos-record-id="' + CSS.escape(editing.recordId) + '"].jos-ld-editing');
+        if (liveEl) {
+          if (renderer.writeValue) renderer.writeValue(liveEl, editing.originalValue);
+          else liveEl.value = editing.originalValue == null ? '' : editing.originalValue;
+        }
+      }
+    }
+    root._josJobsEditCell = null;
+    rerenderJobsOsFrom(root);
   }
 
   function handleJobsAct(act, t) {
@@ -18811,7 +19084,8 @@
         pushJobTimeline(job, 'paid', 'Deposit collected');
         toast('Deposit marked collected');
         try {
-          if (db && job.dbId) db.from('jobs').update({ deposit_status: 'collected' }).eq('id', job.dbId);
+          var depDb = jobsDb();
+          if (depDb && job.dbId) depDb.from('jobs').update({ deposit_status: 'collected' }).eq('id', job.dbId);
         } catch (eDep) {}
         return rerender();
       }
