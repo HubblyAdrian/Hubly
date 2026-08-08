@@ -17,10 +17,16 @@
   --hub-space-64: 64px;
 
   /* Typography */
-  --hub-title: 32px;
-  --hub-title-weight: 700;
-  --hub-title-lh: 1.15;
-  --hub-title-tracking: -0.03em;
+  /* Matched to .jos-ld-title (Leads' page title) — the explicit,
+     confirmed-live reference size for every page header app-wide, not
+     just Jobs. Was 32px/700/-0.03em, visibly bigger than Leads' 19px/
+     800/-0.02em; every page sharing this token (Marketing, Revenue,
+     Memberships, Pipeline, Customers, Settings, Ask Hubly, Storefront,
+     Public Profile) inherits the fix from here in one place. */
+  --hub-title: 19px;
+  --hub-title-weight: 800;
+  --hub-title-lh: 1.2;
+  --hub-title-tracking: -0.02em;
   --hub-section: 22px;
   --hub-card-title: 16px;
   --hub-body: 15px;
@@ -87,6 +93,7 @@
   line-height: var(--hub-title-lh);
   letter-spacing: var(--hub-title-tracking);
   color: var(--jos-navy, #141B2B);
+  font-family: 'Plus Jakarta Sans', 'DM Sans', sans-serif;
 }
 
 .hub-page-header p,
@@ -740,11 +747,6 @@ body.ed-editor-open .ed-shell.ed-canvas-mode .ed-prev {
 }
 
 @media (max-width: 900px) {
-  :root,
-  #p-app.jos-pixel {
-    --hub-title: 28px;
-  }
-
   .jos-jobs-sum-grid {
     grid-template-columns: 1fr;
   }
