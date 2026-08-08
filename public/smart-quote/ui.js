@@ -796,11 +796,7 @@
     const rec = buildQuoteRecord('draft');
     if (!name) rec.customerName = hasContact ? 'Customer' : 'Unfinished quote';
     st.draftId = rec.id;
-    if (!Array.isArray(S.quotes)) S.quotes = [];
-    const idx = S.quotes.findIndex((q) => q.id === rec.id);
-    if (idx >= 0) S.quotes[idx] = rec;
-    else S.quotes.unshift(rec);
-    persistQuotes();
+    createQuickQuote(rec, { hasContact });
     renderList();
     const finish = (msg) => {
       if (!opts.silent && typeof toast === 'function') toast(msg);
@@ -817,6 +813,26 @@
     }
     return true;
   }
+
+  // The one canonical "persist a quote record" step — every place that
+  // saves a quote (draft here, and the finalize/send path further down)
+  // should call this instead of its own S.quotes.unshift/persistQuotes
+  // pair. Deliberately takes an already-built record rather than reading
+  // wizard state itself: buildQuoteRecord() (above) is what actually
+  // reads the live wizard/step state, and that stays wizard-specific for
+  // the same reason addJob() reads its own form fields before calling
+  // the shared createJob() — gathering input is a UI concern, persisting
+  // it is not.
+  function createQuickQuote(rec, opts) {
+    opts = opts || {};
+    if (!Array.isArray(S.quotes)) S.quotes = [];
+    const idx = S.quotes.findIndex((q) => q.id === rec.id);
+    if (idx >= 0) S.quotes[idx] = rec;
+    else S.quotes.unshift(rec);
+    persistQuotes();
+    return rec;
+  }
+  window.createQuickQuote = createQuickQuote;
 
   async function createQuoteLead(rec, leadOpts) {
     try {
@@ -946,10 +962,7 @@ ${biz}`,
       rec.emailSentAt = new Date().toISOString();
       rec.emailSubject = mail.subject;
       st.draftId = rec.id;
-      const idx = S.quotes.findIndex((q) => q.id === rec.id);
-      if (idx >= 0) S.quotes[idx] = rec;
-      else S.quotes.unshift(rec);
-      persistQuotes();
+      createQuickQuote(rec);
       try {
         await createQuoteLead(rec, { quoteStatus: 'sent' });
       } catch (e) {}
@@ -1101,11 +1114,7 @@ ${biz}`,
     if (!rec) return;
     const st = ensureState();
     if (st) st.draftId = rec.id;
-    if (!Array.isArray(S.quotes)) S.quotes = [];
-    const idx = S.quotes.findIndex((q) => q.id === rec.id);
-    if (idx >= 0) S.quotes[idx] = rec;
-    else S.quotes.unshift(rec);
-    persistQuotes();
+    createQuickQuote(rec);
     renderList();
   }
 
