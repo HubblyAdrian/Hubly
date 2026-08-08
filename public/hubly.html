@@ -15515,7 +15515,6 @@ function normalizeJobDate(d){
 }
 async function loadJobs(){
   if(!currentBusiness)return;
-  try{performance.mark('jos-loadjobs-start');}catch(ePerf){}
   const {data} = await db.from('jobs')
     .select('*')
     .eq('business_id',currentBusiness.id)
@@ -15603,14 +15602,8 @@ async function loadJobs(){
       return d>0?(d>24?d/60:d):null;
     })(),
   };});
-  try{performance.mark('jos-loadjobs-core-select-done');}catch(ePerf){}
   let gcalJobs=[];
   try{gcalJobs=await loadGoogleCalendarEventsAsJobs();}catch(e){console.warn('load Google events',e);}
-  try{
-    performance.mark('jos-loadjobs-gcal-done');
-    performance.measure('jos-loadjobs:core-select','jos-loadjobs-start','jos-loadjobs-core-select-done');
-    performance.measure('jos-loadjobs:gcal-fetch','jos-loadjobs-core-select-done','jos-loadjobs-gcal-done');
-  }catch(ePerf){}
   S.jobs=[...pending,...jobs,...gcalJobs];
   try{await autoAcceptSkipLeadBookings();}catch(e){console.warn('auto-accept rebooks',e);}
   try{
@@ -15726,7 +15719,6 @@ function unsubscribeRealtimeUpdates(){
 }
 async function refreshOpenAppViews(){
   if(!currentBusiness)return;
-  try{performance.mark('jos-refresh-cascade-start');}catch(ePerf){}
   // These three don't depend on each other's results — used to run
   // strictly one after another, so every realtime-triggered refresh
   // (any insert/update/delete on jobs/booking_requests/customers) paid
@@ -15737,10 +15729,6 @@ async function refreshOpenAppViews(){
     refreshLeadsSources().catch(()=>{}),
     loadCustomers().catch(()=>{})
   ]);
-  try{
-    performance.mark('jos-refresh-fetches-done');
-    performance.measure('jos-refresh:fetches','jos-refresh-cascade-start','jos-refresh-fetches-done');
-  }catch(ePerf){}
   try{
     if(viewIsOpen('v-jobs')){
       if(typeof renderCal==='function')renderCal();
@@ -15778,11 +15766,6 @@ async function refreshOpenAppViews(){
       }
     }
   }catch(e){}
-  try{
-    performance.mark('jos-refresh-cascade-done');
-    performance.measure('jos-refresh:view-rerenders','jos-refresh-fetches-done','jos-refresh-cascade-done');
-    performance.measure('jos-refresh:total','jos-refresh-cascade-start','jos-refresh-cascade-done');
-  }catch(ePerf){}
 }
 // loadJobs()/loadCustomers() fully REPLACE S.jobs/S.customers from
 // whatever's currently in Supabase — which doesn't yet include whatever
@@ -15852,13 +15835,11 @@ async function realtimeAwareWrite(opts){
 }
 window.realtimeAwareWrite=realtimeAwareWrite;
 function onRealtimeBizChange(payload){
-  try{performance.mark('jos-realtime-event-received');}catch(ePerf){}
   var table=payload&&payload.table;
   var recId=payload&&((payload.new&&payload.new.id)||(payload.old&&payload.old.id));
   if(table&&recId!=null){
     var key=table+':'+recId;
     if(_lastLocalWriteAt[key]&&(Date.now()-_lastLocalWriteAt[key])<3000){
-      try{performance.mark('jos-realtime-event-suppressed-own-write');}catch(ePerf){}
       return;
     }
   }

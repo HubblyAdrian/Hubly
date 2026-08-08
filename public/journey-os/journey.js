@@ -17404,7 +17404,6 @@
   }
 
   function renderJobsPage(root) {
-    try { performance.mark('jos-jobs-render-start'); } catch (ePerf0) {}
     seedDemoJobsIfEmpty();
     ensureJobsOsState();
     // Custom fields must load before columns — jobsColumnSchema() (which
@@ -17442,7 +17441,6 @@
     var unassigned = all.filter(function (j) { return !j.isBlock && !j.isGoogle && j.status !== 'cancelled' && !j.assignedTo; }).length;
     var revenue = all.filter(function (j) { return j.status === 'completed'; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
     if (!revenue) revenue = all.reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    try { performance.mark('jos-jobs-kpis-done'); } catch (ePerf1) {}
 
     var services = Array.from(new Set(all.map(function (j) { return j.service; }).filter(Boolean)));
     var locations = Array.from(new Set(all.map(function (j) { return (j.address || '').split(',')[0]; }).filter(Boolean)));
@@ -17732,16 +17730,8 @@
     // directly and hasn't been checked against a mid-drag morph, so this
     // stays scoped to the table (the thing actually being compared to
     // Leads) rather than risking the scheduler.
-    try { performance.mark('jos-jobs-html-built'); } catch (ePerf2) {}
     if (mainView === 'calendar') root.innerHTML = jobsPageHtml;
     else morphTableInto(root, jobsPageHtml);
-    try {
-      performance.mark('jos-jobs-morph-done');
-      performance.measure('jos-jobs:kpis', 'jos-jobs-render-start', 'jos-jobs-kpis-done');
-      performance.measure('jos-jobs:html-build', 'jos-jobs-kpis-done', 'jos-jobs-html-built');
-      performance.measure('jos-jobs:dom-morph', 'jos-jobs-html-built', 'jos-jobs-morph-done');
-      performance.measure('jos-jobs:render-total', 'jos-jobs-render-start', 'jos-jobs-morph-done');
-    } catch (ePerf3) {}
 
     bindRoot(root);
     wireJobsRoot(root);
@@ -19456,12 +19446,7 @@
     try {
       var d = jobsDb();
       if (!d || !job || !job.dbId) return;
-      try { performance.mark('jos-jobs-delete-supabase-start'); } catch (ePerfD0) {}
       realtimeWrite({ table: 'jobs', id: job.dbId, write: function () { return d.from('jobs').delete().eq('id', job.dbId); } }).then(function (res) {
-        try {
-          performance.mark('jos-jobs-delete-supabase-done');
-          performance.measure('jos-jobs:delete-supabase-call', 'jos-jobs-delete-supabase-start', 'jos-jobs-delete-supabase-done');
-        } catch (ePerfD1) {}
         if (res && res.error) { console.warn('persistJobDelete', res.error); toast('Couldn’t delete — check your connection and try again'); }
       });
     } catch (e) {}
@@ -20273,7 +20258,6 @@
         return rerender();
       }
       if (act === 'jobs-delete') {
-        try { performance.mark('jos-jobs-delete-click'); } catch (ePerfC0) {}
         var delId = jobId || (job && job.id);
         var delJob = delId ? findJob(delId) : job;
         if (!delJob) return toast('Select a job');
@@ -20288,10 +20272,6 @@
         } catch (eConfirm) {}
         persistJobDelete(delJob);
         S().jobs = (S().jobs || []).filter(function (j) { return String(j.id) !== String(delJob.id); });
-        try {
-          performance.mark('jos-jobs-delete-local-state-done');
-          performance.measure('jos-jobs:delete-local-state', 'jos-jobs-delete-click', 'jos-jobs-delete-local-state-done');
-        } catch (ePerfC1) {}
         if (String(root._josJobId) === String(delJob.id)) {
           root._josJobId = null;
           root._josDrawerOpen = false;
