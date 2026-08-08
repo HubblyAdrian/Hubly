@@ -4651,6 +4651,11 @@ textarea.jos-je-field-input.jos-ld-cell-inline{height:auto!important;min-height:
 }
 .jos-je-fin-card span{font-size:11px;font-weight:700;color:var(--jos-ink-3);text-transform:uppercase;letter-spacing:.04em}
 .jos-je-fin-card strong{font-size:16px;font-weight:800;color:var(--jos-navy)}
+.jos-je-fin-editable{display:block}
+.jos-je-fin-editable .jos-je-field-value{font-size:16px;font-weight:800;color:var(--jos-navy);cursor:pointer}
+.jos-je-fin-editable input.jos-ld-cell-inline,.jos-je-fin-editable select.jos-ld-cell-inline{
+  height:30px;font-size:15px;font-weight:800;padding:0 8px;width:100%;
+}
 /* Assignment — real computed stat under the picker, never a fabricated
    rating/availability indicator. The dot is a plain neutral accent (not
    green/red) — it's a role marker, not a live-availability signal we

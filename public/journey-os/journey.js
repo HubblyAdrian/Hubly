@@ -16583,6 +16583,19 @@
         job.internalNotes = clean ? [clean] : [];
         return 'Notes updated';
       }
+    },
+    {
+      key: 'depositStatus', label: 'Deposit', type: 'select', allowEmpty: 'Not requested',
+      editable: true, dbColumn: 'deposit_status', format: depositStatusLabel,
+      options: function () {
+        return [
+          { value: 'due', label: 'Deposit due' },
+          { value: 'collected', label: 'Deposit collected' },
+          { value: 'paid_online', label: 'Deposit paid online' }
+        ];
+      },
+      get: function (job) { return (job.depositStatus && job.depositStatus !== 'none') ? job.depositStatus : ''; },
+      set: function (job, value) { job.depositStatus = value || 'none'; return 'Deposit → ' + (depositStatusLabel(job.depositStatus) || 'Not requested'); }
     }
   ];
   function jobsDrawerSchemaMap() {
@@ -16660,10 +16673,12 @@
   // the table uses (jobDrawerField -> jobDrawerFieldHtml -> rendererRegistry
   // -> mutateJobField -> persistJobPatch) — no Save button, no per-field
   // "editing" toggle to manage by hand. Status and Job # moved to the
-  // header (shown once, not duplicated here); Time stays read-only (see
-  // the Postgres-format note on jobDrawerFieldHtml's `time` column).
-  // Assignment/Financial/Activity show only values computed from real
-  // data — no fabricated availability, ratings, or confirmation state.
+  // header (shown once, not duplicated here). Assignment/Activity show
+  // only values computed from real data — no fabricated availability,
+  // ratings, or confirmation state. Financial's Total/Deposit are real
+  // editable fields, same as everywhere else; Invoice/Quote stay
+  // computed/read-only — an invoice's status changes through the actual
+  // invoice actions, and Quote is parsed metadata, not a stored field.
   function renderJobEditForm(root, j) {
     var editingField = root._josJobsDrawerEditField && root._josJobsDrawerEditField.field;
     var jobKey = String(j.id);
@@ -16672,21 +16687,18 @@
       return '<div class="jos-je-section"><div class="jos-kicker">' + esc(title) + '</div>' + innerHtml + '</div>';
     }
     function grid(fieldsHtml) { return '<div class="jos-je-grid">' + fieldsHtml + '</div>'; }
+    function finCard(label, innerHtml) { return '<div class="jos-je-fin-card"><span>' + esc(label) + '</span>' + innerHtml + '</div>'; }
 
     var notesMeta = parseJobNotesMeta((j.internalNotes && j.internalNotes[0]) || j.notes || '');
-    var depositLabel = depositStatusLabel(j.depositStatus);
     var invoiceStatus = j.invoice ? j.invoice.status : 'None yet';
-    var finCards = [
-      { label: 'Total', value: money(j.amount) || '$0' },
-      { label: 'Invoice', value: invoiceStatus },
-      { label: 'Deposit', value: depositLabel || 'Not requested' }
-    ];
+    var finCardsInner =
+      finCard('Total', '<strong class="jos-je-fin-editable">' + jobDrawerFieldHtml(j, jobKey, 'amount', editingField === 'amount') + '</strong>') +
+      finCard('Invoice', '<strong>' + esc(invoiceStatus) + '</strong>') +
+      finCard('Deposit', '<strong class="jos-je-fin-editable">' + jobDrawerFieldHtml(j, jobKey, 'depositStatus', editingField === 'depositStatus') + '</strong>');
     if (notesMeta.quote) {
-      finCards.push({ label: 'Quote', value: (notesMeta.quote.amount ? esc(notesMeta.quote.amount) : '') + (notesMeta.quote.status ? (notesMeta.quote.amount ? ' · ' : '') + esc(notesMeta.quote.status) : '') });
+      finCardsInner += finCard('Quote', '<strong>' + (notesMeta.quote.amount ? esc(notesMeta.quote.amount) : '') + (notesMeta.quote.status ? (notesMeta.quote.amount ? ' · ' : '') + esc(notesMeta.quote.status) : '') + '</strong>');
     }
-    var financialCardsHtml = '<div class="jos-je-fin-cards">' + finCards.map(function (c) {
-      return '<div class="jos-je-fin-card"><span>' + esc(c.label) + '</span><strong>' + c.value + '</strong></div>';
-    }).join('') + '</div>';
+    var financialCardsHtml = '<div class="jos-je-fin-cards">' + finCardsInner + '</div>';
 
     // Guards against the literal string 'Unassigned' being treated as a
     // real technician name — a previous jobs-create default stored it as
@@ -16745,7 +16757,15 @@
       section('Assignment', grid(F('Assigned to', 'assignedTo')) + assignmentStat) +
       section('Financial', financialCardsHtml) +
       section('Activity', activityHtml) +
-      section('Notes', grid(F('Notes', 'notes', { full: true }))) +
+      // Always a live textarea, not click-to-reveal — freeform notes are
+      // exactly the field where "click to add, then click again to see
+      // what you typed" adds a step for no reason. jos-ld-editing marks
+      // it as already-open so the generic click-to-edit listener (which
+      // would otherwise treat any un-marked [data-jos-field] click as
+      // "open edit mode" and blow away the live textarea on first click)
+      // leaves it alone; the existing change-on-blur commit handler picks
+      // up edits the same way it does for every other field.
+      section('Notes', '<textarea class="jos-je-field-input jos-ld-cell-inline jos-ld-editing jos-je-notes-free" data-jos-field="notes" data-jos-record-id="' + esc(jobKey) + '" placeholder="Add notes…" rows="4">' + esc((jobsDrawerSchemaMap().notes.get(j)) || '') + '</textarea>') +
       '</div>';
   }
 
