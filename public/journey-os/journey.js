@@ -7367,7 +7367,7 @@
   // needs CRM normalization) define one explicitly.
   var LEADS_DEFAULT_COLUMNS = [
     {
-      key: 'firstName', label: 'First Name', type: 'text', width: 130,
+      key: 'firstName', label: 'First name', type: 'text', width: 130,
       editable: true, searchable: true, filterable: false, sortable: true,
       get: function (lead) { return splitLeadName(lead.name).first; },
       set: function (lead, value) {
@@ -7377,7 +7377,7 @@
       }
     },
     {
-      key: 'lastName', label: 'Last Name', type: 'text', width: 130,
+      key: 'lastName', label: 'Last name', type: 'text', width: 130,
       editable: true, searchable: true, filterable: false, sortable: true,
       get: function (lead) { return splitLeadName(lead.name).last; },
       set: function (lead, value) {
@@ -9047,8 +9047,9 @@
     var lostCount = all.filter(function (l) { return leadMatchesTab(l, 'lost'); }).length;
     var wonCount = all.filter(function (l) { return normalizeCrmStatus(l) === 'won'; }).length;
     var totalCount = all.length;
-    // Compact single-line chip row, not full-height cards — Total/New/
-    // Qualified/Lost/Recovery/Converted, real counts only.
+    // One light, bullet-separated line — Total/New/Qualified/Lost/
+    // Recovery/Converted, real counts only. Not a row of bordered cards;
+    // these are ambient context, not something to look at on their own.
     var kpiRow = '<div class="jos-ld-kpis">' + [
       ['Total', totalCount],
       ['New', newCount],
@@ -9057,8 +9058,8 @@
       ['Recovery', recoveryCount],
       ['Converted', wonCount],
     ].map(function (k) {
-      return '<span class="jos-ld-kpi-chip"><span class="lbl">' + esc(k[0]) + '</span><strong>' + esc(String(k[1])) + '</strong></span>';
-    }).join('') + '</div>';
+      return '<span class="jos-ld-kpi-chip">' + esc(k[0]) + ' <strong>' + esc(String(k[1])) + '</strong></span>';
+    }).join('<span class="jos-ld-kpi-sep">•</span>') + '</div>';
 
     var statusTabs = '<div class="jos-ld-status-tabs">' + LEADS_TABS.map(function (t) {
       var count = all.filter(function (l) { return leadMatchesTab(l, t[0]); }).length;
@@ -9076,14 +9077,14 @@
       '<div class="jos-ld-shell' + (wsOpen ? ' ws-open' : '') + '">' +
       '<div class="jos-ld-page">' +
 
-      // Compact "LEADS" label top-left (not the old giant standalone page
-      // header) with the search bar directly underneath it; the rest of
-      // the toolbar (source/service/owner filters, + New Lead, overflow)
-      // sits on the label's row so the whole thing stays two lines, not a
-      // separate header block pushing the table down.
+      // "Leads" label top-left, then the search bar as its own full-width,
+      // dominant row — it's the primary way anyone finds a lead, so it
+      // gets the visual weight. Source/service/owner filters, Filters,
+      // +New Lead, and overflow are secondary — a smaller row underneath,
+      // right-aligned.
       '<section class="jos-ld-toolbar">' +
-      '<div class="jos-ld-toolbar-top">' +
       '<h1 class="jos-ld-title">Leads</h1>' +
+      '<label class="jos-ld-filter-search jos-ld-filter-search-main"><input id="jos-leads-search" type="search" placeholder="Search leads, customers, phone, email…" value="' + esc(root._josLeadsQ || '') + '"></label>' +
       '<div class="jos-ld-toolbar-actions">' +
       '<select id="jos-ld-filter-source" class="jos-ld-dd" aria-label="Sources"><option value="all">All Sources</option>' +
       uniqueLeadValues('source').map(function (s) {
@@ -9112,8 +9113,6 @@
         : '') +
       '</div>' +
       '</div>' +
-      '</div>' +
-      '<label class="jos-ld-filter-search"><input id="jos-leads-search" type="search" placeholder="Search leads, phone, or email…" value="' + esc(root._josLeadsQ || '') + '"></label>' +
       '</section>' +
 
       kpiRow +
@@ -9138,7 +9137,7 @@
         : '<div class="jos-ld-list">' + listHtml + '</div>') +
       (filtered.length > visible.length
         ? '<button type="button" class="jos-btn jos-ld-loadmore" data-jos-act="leads-load-more">Load More Leads</button>'
-        : (filtered.length ? '<div class="jos-muted jos-ld-end">End of list</div>' : '')) +
+        : '') +
       '</section>' +
       (wsOpen ? '<section class="jos-ld-main' + (panelJustOpened ? '' : ' is-open') + '">' + renderLeadWorkspace(root, sel, ws) + '</section>' : '') +
       '</div>' +

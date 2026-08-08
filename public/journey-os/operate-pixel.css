@@ -283,6 +283,14 @@ body.ed-editor-open #jos-ask-fab,
 #p-app.jos-pixel.jos-storefront-mode #jos-ask-fab{display:none!important}
 /* Sit above setup-help coach when that bubble is visible */
 body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
+/* Leads-scoped only: the table is the page's focus, so the assistant
+   bubble should read as an assistant, not compete with it as the
+   brightest thing on screen. */
+#p-app.jos-pixel.jos-leads-mode #jos-ask-fab{
+  min-height:38px;padding:5px 12px 5px 5px;font-size:12px;box-shadow:0 8px 20px rgba(15,23,42,.22);
+}
+#p-app.jos-pixel.jos-leads-mode #jos-ask-fab .jos-ask-fab-ico{width:26px;height:26px;font-size:9px}
+#p-app.jos-pixel.jos-leads-mode #jos-ask-fab:hover{box-shadow:0 12px 24px rgba(15,23,42,.28)}
 @media(max-width:800px){
   #jos-ask-fab{right:14px;bottom:calc(18px + env(safe-area-inset-bottom));padding:7px 12px 7px 7px;font-size:12px}
   body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:calc(86px + env(safe-area-inset-bottom))}
@@ -4780,43 +4788,44 @@ html[data-theme="night"] .jos-mem-form select{
 @media(max-width:1023px){.jos-ld-bulk-bar{left:50%}}
 
 .jos-ld-toolbar{
-  display:flex;flex-direction:column;gap:10px;margin-bottom:8px;flex-shrink:0;padding:0;
-}
-.jos-ld-toolbar-top{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  display:flex;flex-direction:column;gap:8px;margin-bottom:10px;flex-shrink:0;padding:0;
 }
 .jos-ld-title{
-  margin:0;font-size:20px;font-weight:800;letter-spacing:-.02em;color:var(--jos-navy);
-  font-family:'Plus Jakarta Sans','DM Sans',sans-serif;flex-shrink:0;
+  margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--jos-navy);
+  font-family:'Plus Jakarta Sans','DM Sans',sans-serif;
 }
-.jos-ld-toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.jos-ld-toolbar .jos-ld-filter-search{
-  width:320px;max-width:100%;height:34px;display:flex;align-items:center;
-  border:1px solid var(--jos-border);border-radius:10px;background:#fff;padding:0 12px;
+/* Search is the dominant control on the page — full width, taller, and
+   visually first, not one input tucked among a row of dropdowns. */
+.jos-ld-toolbar .jos-ld-filter-search-main{
+  width:100%;height:44px;display:flex;align-items:center;
+  border:1px solid var(--jos-border);border-radius:12px;background:#fff;padding:0 16px;
+  transition:border-color .15s ease,box-shadow .15s ease;
 }
-.jos-ld-toolbar .jos-ld-filter-search input{border:0;outline:0;width:100%;background:transparent;font:inherit;font-size:13px}
+.jos-ld-toolbar .jos-ld-filter-search-main:focus-within{
+  border-color:var(--jos-brand);box-shadow:0 0 0 3px rgba(217,99,45,.12);
+}
+.jos-ld-toolbar .jos-ld-filter-search-main input{border:0;outline:0;width:100%;background:transparent;font:inherit;font-size:14.5px}
+.jos-ld-toolbar .jos-ld-filter-search-main input::placeholder{color:#A6ACB6}
+/* Everything else — filters, +New Lead, overflow — is secondary: a
+   smaller row under the search bar, right-aligned. */
+.jos-ld-toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .jos-ld-toolbar .jos-ld-dd{
-  width:auto;min-width:110px;max-width:160px;height:34px;border:1px solid var(--jos-border);border-radius:10px;background:#fff;
+  width:auto;min-width:110px;max-width:160px;height:32px;border:1px solid var(--jos-border);border-radius:9px;background:#fff;
   padding:0 10px;font:inherit;font-size:12px;font-weight:650;color:var(--jos-navy);
 }
-/* Search leads the row now (title/subtitle removed), so every control in
-   it — including the primary action — matches the same 34px height rather
-   than the taller buttons a standalone page header used to allow. */
-.jos-ld-toolbar .jos-ld-new{min-width:0;height:34px;padding:0 14px;border-radius:10px;font-size:13px}
-.jos-ld-toolbar > .jos-btn-sm{height:34px;border-radius:10px}
-.jos-ld-toolbar .jos-ld-overflow-wrap .jos-icon-btn{width:34px;height:34px;border:1px solid var(--jos-border);border-radius:10px;background:#fff}
+.jos-ld-toolbar .jos-ld-new{min-width:0;height:32px;padding:0 14px;border-radius:9px;font-size:12.5px}
+.jos-ld-toolbar-actions > .jos-btn-sm{height:32px;border-radius:9px}
+.jos-ld-toolbar .jos-ld-overflow-wrap .jos-icon-btn{width:32px;height:32px;border:1px solid var(--jos-border);border-radius:9px;background:#fff}
 
+/* One light line, not a row of cards — Attio-style ambient context:
+   "Total 2 • New 2 • Qualified 0 ..." rather than boxed KPI tiles. */
 .jos-ld-kpis{
-  display:flex;align-items:baseline;gap:18px;margin:0 0 10px;flex-shrink:0;flex-wrap:wrap;
+  display:flex;align-items:center;gap:6px;margin:0 0 10px;flex-shrink:0;flex-wrap:wrap;
+  font-size:12px;color:#9CA3AF;
 }
-.jos-ld-kpi-chip{
-  display:inline-flex;align-items:baseline;gap:5px;font-size:12.5px;position:relative;
-}
-.jos-ld-kpi-chip:not(:first-child)::before{
-  content:'';position:absolute;left:-10px;top:2px;bottom:2px;width:1px;background:rgba(15,23,42,.09);
-}
-.jos-ld-kpi-chip .lbl{color:#9CA3AF;font-weight:650}
-.jos-ld-kpi-chip strong{color:var(--jos-navy);font-weight:800;font-size:13px}
+.jos-ld-kpi-chip{font-weight:500;color:#9CA3AF}
+.jos-ld-kpi-chip strong{color:var(--jos-ink-2);font-weight:700;margin-left:3px}
+.jos-ld-kpi-sep{color:#D8DBE0;font-size:9px}
 .jos-ld-status-tabs{
   display:flex;gap:4px;padding:0;margin:0 0 8px;flex-shrink:0;overflow:auto;scrollbar-width:thin;
   border-bottom:1px solid var(--jos-border);height:36px;align-items:stretch;
@@ -4872,36 +4881,52 @@ html[data-theme="night"] .jos-mem-form select{
    single ~400px pane, not two stacked side panels.  */
 .jos-ld-layout{
   flex:1;min-height:0;display:flex;gap:10px;
-  padding:0 0 10px;overflow:hidden;width:100%;max-width:100%;box-sizing:border-box;
+  padding:0;overflow:hidden;width:100%;max-width:100%;box-sizing:border-box;
 }
 .jos-ld-inbox,.jos-ld-main{min-height:0}
 .jos-ld-inbox{flex:1;min-width:0}
+/* No card chrome — no border, shadow, or rounded corners. With as few as
+   one or two leads, a bordered box just draws a frame around a mostly-
+   empty rectangle and makes the page read as unfinished. Letting the
+   table sit directly on the page background, filling the full height,
+   is what makes it feel like the application instead of a widget on top
+   of one. */
 .jos-ld-inbox{
-  background:#fff;border:1px solid #ECECEC;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.04);
-  display:flex;flex-direction:column;overflow:hidden;
+  background:transparent;display:flex;flex-direction:column;overflow:hidden;
 }
 .jos-ld-inbox-head{
-  display:flex;justify-content:space-between;align-items:center;padding:10px 12px 8px;flex-shrink:0;
+  display:flex;justify-content:space-between;align-items:center;padding:0 0 8px;flex-shrink:0;
+  border-bottom:1px solid rgba(15,23,42,.06);margin-bottom:2px;
 }
-.jos-ld-inbox-head strong{font-size:13px;color:var(--jos-navy)}
+.jos-ld-inbox-head strong{font-size:12.5px;font-weight:650;color:var(--jos-ink-2)}
+/* Compact and borderless — reads as "Table ▾  Sort ▾" next to the row
+   count, part of the table's own header rather than a separate toolbar. */
 .jos-ld-sort{
-  height:32px;border:1px solid var(--jos-border);border-radius:8px;background:#fff;
-  font:inherit;font-size:12px;font-weight:650;padding:0 8px;
+  height:28px;border:0;background:transparent;border-radius:7px;
+  font:inherit;font-size:12px;font-weight:650;color:var(--jos-ink-2);padding:0 6px;cursor:pointer;
+  transition:background-color .12s ease;
 }
+.jos-ld-sort:hover{background:#F5F6F7}
 .jos-ld-list{flex:1;overflow:auto;padding:0 10px 10px;display:grid;gap:8px;align-content:start}
-.jos-ld-view-toggle{display:inline-flex;border:1px solid var(--jos-border);border-radius:10px;overflow:hidden;margin-left:auto}
-.jos-ld-view-btn{appearance:none;border:0;background:#fff;padding:6px 12px;font:inherit;font-size:12px;font-weight:700;color:var(--jos-ink-3);cursor:pointer}
+.jos-ld-view-toggle{display:inline-flex;border:0;border-radius:7px;overflow:hidden;margin-left:auto;gap:2px}
+.jos-ld-view-btn{
+  appearance:none;border:0;background:transparent;border-radius:7px;padding:5px 10px;
+  font:inherit;font-size:12px;font-weight:650;color:var(--jos-ink-3);cursor:pointer;
+  transition:background-color .12s ease,color .12s ease;
+}
+.jos-ld-view-btn:hover{background:#F5F6F7}
 .jos-ld-view-btn.on{background:var(--jos-brand-soft);color:var(--jos-brand)}
+.jos-ld-view-btn.on:hover{background:var(--jos-brand-soft)}
 .jos-ld-table-wrap{flex:1;overflow:auto;position:relative}
 .jos-ld-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;table-layout:fixed}
 .jos-ld-table thead th{
-  position:sticky;top:0;z-index:2;text-align:left;padding:0 16px;height:34px;
-  font-size:10.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:#9CA3AF;
+  position:sticky;top:0;z-index:2;text-align:left;padding:0 16px;height:32px;
+  font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;color:#9CA3AF;
   background:#fff;border-bottom:1px solid rgba(15,23,42,.07);white-space:nowrap;
   transition:box-shadow .15s ease;
 }
 .jos-ld-table-wrap.is-scrolled thead th{box-shadow:0 1px 0 rgba(15,23,42,.07),0 6px 12px -6px rgba(15,23,42,.06)}
-.jos-ld-table td{height:54px;padding:0 16px;border-bottom:1px solid rgba(15,23,42,.04);vertical-align:middle;line-height:1.4;overflow:hidden;color:#3D4451}
+.jos-ld-table td{height:44px;padding:0 16px;border-bottom:1px solid rgba(15,23,42,.04);vertical-align:middle;line-height:1.4;overflow:hidden;color:#3D4451}
 .jos-ld-table td strong{color:#141B2B;font-weight:650}
 .jos-ld-table td[role="gridcell"]{outline:none}
 .jos-ld-table td[role="gridcell"]:focus-visible{
@@ -4909,23 +4934,25 @@ html[data-theme="night"] .jos-mem-form select{
 }
 .jos-ld-trow{cursor:pointer;transition:background-color .12s ease;position:relative}
 .jos-ld-trow:hover{background:rgba(15,23,42,.018)}
-/* Selection is a neutral system state, not a branded action — a restrained
-   blue (matching Attio) instead of the orange brand tint keeps it legible
-   as "selected" without reading as a call-to-action. Thin 1px accent, not
-   the heavier 2-3px bars used for CTAs elsewhere. */
-.jos-ld-trow.on{background:#F0F6FF;box-shadow:inset 1px 0 0 #2563EB}
-.jos-ld-trow.on:hover{background:#EAF2FE}
+/* Selected = Hubly's own accent, not a generic system blue: a soft warm
+   tint plus a real 3px rail on the left, not a hairline. Reads as "this
+   row" without shouting like a call-to-action pill would. */
+.jos-ld-trow.on{background:#FFF6EF;box-shadow:inset 3px 0 0 var(--jos-brand)}
+.jos-ld-trow.on:hover{background:#FFEFE2}
 .jos-ld-tcheck{width:32px}
 
-/* Column headers — drag to reorder, double-click label to rename, ▾ to hide */
+/* Column headers — drag to reorder, double-click label to rename, ▾ to hide.
+   A faint hover tint on the whole cell (not just the resize handle/menu
+   button) is what makes the row feel alive before anything is clicked. */
 .jos-ld-th{position:relative;cursor:grab;user-select:none;transition:background-color .16s ease,opacity .18s ease,transform .18s ease,box-shadow .18s ease}
+.jos-ld-th:hover{background:#FAFAFB}
 .jos-ld-th.is-dragging{opacity:.55;transform:scale(.98);box-shadow:0 6px 16px rgba(15,23,42,.14);background:#fff}
 .jos-ld-th.drop-target{background:#F5F6F7}
 .jos-ld-th.drop-target::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:#7C8291}
 .jos-ld-th-label{overflow:hidden;text-overflow:ellipsis;display:inline-block;max-width:calc(100% - 14px);vertical-align:middle;cursor:text}
 .jos-ld-th-rename-input{
   height:22px;max-width:calc(100% - 14px);border:1px solid #9CA8BD;border-radius:6px;padding:0 6px;
-  font:inherit;font-size:10.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--jos-navy);
+  font:inherit;font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--jos-navy);
   background:#fff;box-shadow:0 0 0 3px rgba(100,116,139,.14);vertical-align:middle;
 }
 .jos-ld-th-menu-btn{
@@ -4997,22 +5024,37 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-checkbox-cell{cursor:default;display:inline-block;font-size:16px;line-height:1;color:#9CA3AF}
 .jos-ld-checkbox-cell.is-checked{color:var(--jos-brand)}
 
-/* Inline-editable cells (status / assigned) — only shown mid-edit */
+/* Inline-editable cells — only shown mid-edit. <select> (status/assigned)
+   keeps the tone-colored pill shape; plain <input> (text/phone/email/
+   url/number/date) gets a soft rounded field instead — a filled grey
+   pill read as "old HTML form" for free text, not a picker. */
 .jos-ld-cell-inline{
-  appearance:none;height:26px;border-radius:999px;padding:0 10px;font:inherit;font-size:11px;font-weight:650;
-  cursor:pointer;border:1px solid #E5E7EB;background:#F1F2F4;color:#5B6270;max-width:100%;
+  appearance:none;font:inherit;cursor:pointer;max-width:100%;
+  transition:box-shadow .15s ease,border-color .15s ease,background-color .15s ease;
 }
-.jos-ld-cell-inline:hover{border-color:#D5D8DD}
-.jos-ld-cell-inline:focus{outline:none;border-color:#9CA8BD;box-shadow:0 0 0 3px rgba(100,116,139,.14)}
-.jos-ld-cell-inline.ok{background:#EFFAF3;color:#1E8A4C;border-color:#CFEFDB}
-.jos-ld-cell-inline.brand{background:#EEF1F5;color:#4B5565;border-color:#E1E4E9}
-.jos-ld-cell-inline.info{background:#EFF4FC;color:#3465C4;border-color:#D6E3F8}
-.jos-ld-cell-inline.warn{background:#FBF3EC;color:#B4692D;border-color:#F1DEC8}
-.jos-ld-cell-inline.mute{background:#F1F2F4;color:#8B909A;border-color:#E5E7EB}
-.jos-ld-cell-inline[data-jos-lead-field="assignedTo"]{
+select.jos-ld-cell-inline{
+  height:26px;border-radius:999px;padding:0 10px;font-size:11px;font-weight:650;
+  border:1px solid #E5E7EB;background:#F1F2F4;color:#5B6270;
+}
+select.jos-ld-cell-inline:hover{border-color:#D5D8DD}
+select.jos-ld-cell-inline:focus{outline:none;border-color:#F0A87A;box-shadow:0 0 0 3px rgba(217,99,45,.14)}
+select.jos-ld-cell-inline.ok{background:#EFFAF3;color:#1E8A4C;border-color:#CFEFDB}
+select.jos-ld-cell-inline.brand{background:#EEF1F5;color:#4B5565;border-color:#E1E4E9}
+select.jos-ld-cell-inline.info{background:#EFF4FC;color:#3465C4;border-color:#D6E3F8}
+select.jos-ld-cell-inline.warn{background:#FBF3EC;color:#B4692D;border-color:#F1DEC8}
+select.jos-ld-cell-inline.mute{background:#F1F2F4;color:#8B909A;border-color:#E5E7EB}
+select.jos-ld-cell-inline[data-jos-lead-field="assignedTo"]{
   background:transparent;border-color:transparent;font-weight:550;color:var(--jos-navy);padding:0 6px 0 0;
 }
-.jos-ld-cell-inline[data-jos-lead-field="assignedTo"]:hover{background:#F5F6F7;border-color:#EEF0F2}
+select.jos-ld-cell-inline[data-jos-lead-field="assignedTo"]:hover{background:#F5F6F7;border-color:#EEF0F2}
+input.jos-ld-cell-inline{
+  height:32px;border-radius:8px;padding:0 10px;font-size:13.5px;font-weight:500;cursor:text;
+  border:1px solid var(--jos-border);background:#fff;color:var(--jos-navy);width:100%;box-sizing:border-box;
+}
+input.jos-ld-cell-inline:hover{border-color:#D5D8DD}
+input.jos-ld-cell-inline:focus{
+  outline:none;border-color:var(--jos-brand);box-shadow:0 0 0 3px rgba(217,99,45,.14);
+}
 .jos-ld-card-wrap{display:flex;align-items:center;gap:8px}
 .jos-ld-card-wrap.bulk-open .jos-ld-card{flex:1}
 .jos-ld-card-check{display:flex;align-items:center;padding:0 2px;cursor:pointer;flex-shrink:0}
