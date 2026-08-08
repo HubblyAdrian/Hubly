@@ -4962,6 +4962,17 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-col-menu-danger{color:#B42318!important}
 .jos-ld-col-menu-danger:hover{background:#FEF3F2!important}
 
+/* Inline "Add custom field" form — lives inside the same popover the "+"
+   button opens, no window.prompt() chain and no separate settings page. */
+.jos-ld-addfield-menu{min-width:240px;padding:10px}
+.jos-ld-addfield-title{font-size:12.5px;font-weight:750;color:var(--jos-navy);padding:0 2px 2px}
+.jos-ld-addfield-input{
+  width:100%;height:32px;border:1px solid var(--jos-border);border-radius:8px;background:#fff;
+  padding:0 10px;font:inherit;font-size:13px;color:var(--jos-navy);box-sizing:border-box;
+}
+.jos-ld-addfield-input:focus{outline:0;border-color:#9CA8BD;box-shadow:0 0 0 3px rgba(100,116,139,.14)}
+.jos-ld-addfield-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:2px}
+
 /* Status pill — static by default, double-click to edit */
 .jos-ld-status-pill{
   display:inline-flex;align-items:center;height:24px;border-radius:999px;padding:0 10px;font-size:11px;font-weight:650;

@@ -8572,12 +8572,13 @@
       }).join('') +
       '<th class="jos-ld-th-add">' +
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-col-add-menu" title="Show hidden columns" aria-label="Show hidden columns">+</button>' +
-      (root._josLeadsColAddOpen ? renderLeadsColumnAddMenu(cols, columns) : '') +
+      (root._josLeadsColAddOpen ? renderLeadsColumnAddMenu(cols, columns, root) : '') +
       '</th>';
     return '<div class="jos-ld-table-wrap"><table class="jos-ld-table" role="grid" aria-label="Leads">' + colGroup + '<thead><tr>' + headCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
-  function renderLeadsColumnAddMenu(visibleCols, allColumns) {
+  function renderLeadsColumnAddMenu(visibleCols, allColumns, root) {
+    if (root && root._josLeadsAddFieldOpen) return renderLeadsAddFieldForm(root);
     var hidden = (allColumns || []).filter(function (c) { return c.hidden; });
     return '<div class="jos-ld-col-menu jos-ld-col-add-menu">' +
       (hidden.length
@@ -8586,7 +8587,41 @@
         }).join('')
         : '<div class="jos-muted" style="padding:8px 10px;white-space:nowrap">All columns are visible</div>') +
       '<div class="jos-ld-col-menu-sep"></div>' +
-      '<button type="button" data-jos-act="leads-col-add-custom-field">+ Add custom field</button>' +
+      '<button type="button" data-jos-act="leads-col-add-field-open">+ Add custom field</button>' +
+      '</div>';
+  }
+
+  // Inline field-creation form, right inside the same popover the "+"
+  // button opens — no window.prompt() chain, no separate settings screen.
+  // Field name, type, and (for Select) options all live in one small form;
+  // picking a different type re-renders just this popover to show/hide
+  // the options input, same morph-in-place path every other Leads render
+  // uses, so the popover never flickers or loses focus mid-edit.
+  function renderLeadsAddFieldForm(root) {
+    var d = root._josLeadsAddFieldDraft || {};
+    var type = d.type || 'text';
+    var typeOptions = LEADS_CUSTOM_FIELD_TYPES.map(function (t) {
+      return '<option value="' + esc(t[0]) + '"' + (type === t[0] ? ' selected' : '') + '>' + esc(t[1]) + '</option>';
+    }).join('');
+    // No onclick="event.stopPropagation()" wrapper here — this form is
+    // nested inside .jos-ld-th-add just like the rest of the popover, so
+    // the outside-click-close check (which tests e.target.closest('.jos-
+    // ld-th-add')) already treats any click inside it as "inside" without
+    // needing propagation stopped. Stopping it here would also swallow
+    // clicks on the Save/Cancel buttons before bindRoot's root-level
+    // click listener — where the data-jos-act dispatch lives — ever sees
+    // them.
+    return '<div class="jos-ld-col-menu jos-ld-addfield-menu">' +
+      '<div class="jos-ld-addfield-title">Add custom field</div>' +
+      '<input type="text" id="jos-ld-addfield-label" class="jos-ld-addfield-input" placeholder="Field name" value="' + esc(d.label || '') + '" autocomplete="off">' +
+      '<select id="jos-ld-addfield-type" class="jos-ld-addfield-input">' + typeOptions + '</select>' +
+      (type === 'select'
+        ? '<input type="text" id="jos-ld-addfield-options" class="jos-ld-addfield-input" placeholder="Options, comma-separated" value="' + esc(d.optionsText || '') + '" autocomplete="off">'
+        : '') +
+      '<div class="jos-ld-addfield-actions">' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="leads-col-add-field-cancel">Cancel</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-btn-brand" data-jos-act="leads-col-add-field-save">Add field</button>' +
+      '</div>' +
       '</div>';
   }
 
@@ -9433,6 +9468,8 @@
       }
       if (!e.target.closest('.jos-ld-th-add') && root._josLeadsColAddOpen) {
         root._josLeadsColAddOpen = false;
+        root._josLeadsAddFieldOpen = false;
+        root._josLeadsAddFieldDraft = null;
         renderLeads();
         return;
       }
@@ -9526,6 +9563,19 @@
       if (e.target && (e.target.id === 'jos-la-phone' || e.target.id === 'jos-ca-phone')) {
         e.target.value = formatPhoneValue(e.target.value);
       }
+      // Silent state sync, no render — the type <select>'s 'change' handler
+      // is what actually re-renders this form (to show/hide the options
+      // field); these just keep the draft caught up so that re-render
+      // carries the in-progress label/options text forward instead of
+      // reverting to whatever was last rendered.
+      if (e.target && e.target.id === 'jos-ld-addfield-label') {
+        root._josLeadsAddFieldDraft = root._josLeadsAddFieldDraft || {};
+        root._josLeadsAddFieldDraft.label = e.target.value;
+      }
+      if (e.target && e.target.id === 'jos-ld-addfield-options') {
+        root._josLeadsAddFieldDraft = root._josLeadsAddFieldDraft || {};
+        root._josLeadsAddFieldDraft.optionsText = e.target.value;
+      }
     });
 
     root.addEventListener('change', function (e) {
@@ -9541,6 +9591,14 @@
       if (id === 'jos-ld-sort') {
         root._josLeadsSort = e.target.value;
         return renderLeads();
+      }
+      if (id === 'jos-ld-addfield-type') {
+        root._josLeadsAddFieldDraft = root._josLeadsAddFieldDraft || {};
+        root._josLeadsAddFieldDraft.type = e.target.value;
+        renderLeads();
+        var optInput = el('jos-ld-addfield-options');
+        if (optInput) optInput.focus({ preventScroll: true });
+        return;
       }
       if (id === 'jos-ld-status') {
         var leadSt = selectedLead();
@@ -9642,12 +9700,18 @@
         if (root._josLeadsColMenuKey) { root._josLeadsColMenuKey = null; renderLeads(); return; }
         if (root._josLeadsColRenaming) { root._josLeadsColRenaming = null; renderLeads(); return; }
         if (root._josLeadsEditCell) { cancelLeadsCellEdit(root); return; }
-        if (root._josLeadsColAddOpen) { root._josLeadsColAddOpen = false; renderLeads(); return; }
+        if (root._josLeadsColAddOpen) { root._josLeadsColAddOpen = false; root._josLeadsAddFieldOpen = false; root._josLeadsAddFieldDraft = null; renderLeads(); return; }
         if (root._josLeadCtx && root._josLeadCtx.open) { root._josLeadCtx = null; renderLeads(); return; }
         if (root._josLeadsQ) {
           root._josLeadsQ = '';
           renderLeads();
         }
+      }
+      if (e.key === 'Enter' && e.target && (e.target.id === 'jos-ld-addfield-label' || e.target.id === 'jos-ld-addfield-options')) {
+        e.preventDefault();
+        var saveBtn = root.querySelector('[data-jos-act="leads-col-add-field-save"]');
+        if (saveBtn) saveBtn.click();
+        return;
       }
       if ((e.key === 'n' || e.key === 'N') && !e.metaKey && !e.ctrlKey && !/input|textarea|select/i.test((e.target || {}).tagName || '')) {
         e.preventDefault();
@@ -10293,19 +10357,44 @@
         saveLeadsColumns(root._josLeadsColumns);
         return renderLeads();
       }
-      if (act === 'leads-col-add-custom-field') {
-        var newFieldLabel = window.prompt('Field name (e.g. "HOA", "Gate Code", "Venue")');
-        newFieldLabel = newFieldLabel ? String(newFieldLabel).trim() : '';
-        if (!newFieldLabel) return;
+      if (act === 'leads-col-add-field-open') {
+        root._josLeadsAddFieldOpen = true;
+        root._josLeadsAddFieldDraft = { type: 'text' };
+        // Deferred: the "+ Add custom field" button this click landed on
+        // lives inside the same popover that gets swapped from the hidden-
+        // columns list to the inline form. Rendering synchronously here
+        // would detach that button from the DOM before the separate
+        // outside-click-close listener (also bound to root's 'click' and
+        // still due to run against this same event) gets to check it —
+        // e.target.closest() on an already-detached node returns null,
+        // which that listener reads as "clicked outside the menu" and
+        // closes everything right back up. Deferring the render lets every
+        // same-event listener finish first, against the still-attached
+        // original DOM.
+        setTimeout(function () {
+          renderLeads();
+          var labelInput = el('jos-ld-addfield-label');
+          if (labelInput) labelInput.focus({ preventScroll: true });
+        }, 0);
+        return;
+      }
+      if (act === 'leads-col-add-field-cancel') {
+        root._josLeadsColAddOpen = false;
+        root._josLeadsAddFieldOpen = false;
+        root._josLeadsAddFieldDraft = null;
+        return renderLeads();
+      }
+      if (act === 'leads-col-add-field-save') {
+        var newFieldLabel = String((el('jos-ld-addfield-label') || {}).value || '').trim();
+        if (!newFieldLabel) { toast('Field needs a name'); return; }
         var typeNames = LEADS_CUSTOM_FIELD_TYPES.map(function (t) { return t[0]; });
-        var typeRaw = window.prompt('Field type: ' + typeNames.join(', ') + ' (blank = text)', 'text');
-        var typeKey = String(typeRaw || 'text').trim().toLowerCase();
+        var typeKey = String((el('jos-ld-addfield-type') || {}).value || 'text').trim().toLowerCase();
         if (typeNames.indexOf(typeKey) < 0) typeKey = 'text';
         var newField = { id: leadsCustomFieldKey(), label: newFieldLabel, type: typeKey };
         if (typeKey === 'select') {
-          var optionsRaw = window.prompt('Options, comma-separated (e.g. "Sedan, SUV, Truck")');
-          var optionValues = String(optionsRaw || '').split(',').map(function (o) { return o.trim(); }).filter(Boolean);
-          if (!optionValues.length) { toast('Select fields need at least one option — field not created'); return; }
+          var optionsRaw = String((el('jos-ld-addfield-options') || {}).value || '');
+          var optionValues = optionsRaw.split(',').map(function (o) { return o.trim(); }).filter(Boolean);
+          if (!optionValues.length) { toast('Select fields need at least one option'); return; }
           newField.options = optionValues.map(function (o) { return { value: o, label: o }; });
         }
         root._josLeadsCustomFields = (root._josLeadsCustomFields || []).concat([newField]);
@@ -10317,6 +10406,8 @@
         root._josLeadsColumns = root._josLeadsColumns.concat([{ key: newField.id, label: newFieldLabel, hidden: false, custom: true }]);
         saveLeadsColumns(root._josLeadsColumns);
         root._josLeadsColAddOpen = false;
+        root._josLeadsAddFieldOpen = false;
+        root._josLeadsAddFieldDraft = null;
         toast('Added field "' + newFieldLabel + '"');
         return renderLeads();
       }
