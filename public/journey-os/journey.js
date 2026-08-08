@@ -18574,6 +18574,10 @@
     return html;
   }
 
+  // Still live — used by the Calendar's Agenda view (calView === 'agenda').
+  // Restored after an over-eager deletion pass removed it along with the
+  // genuinely-dead renderJobWorkspace/renderJobsListPanel it used to sit
+  // next to; those two never had any caller, this one does.
   function jobCardHtml(j, selectedId, withBulk) {
     var on = selectedId && String(selectedId) === String(j.id);
     var title = j.isBlock || j.isGoogle
@@ -18600,106 +18604,6 @@
         '</div>'
       )) +
       '</div>';
-  }
-
-  function renderJobsListPanel(root, selectedId) {
-    var listView = root._josJobsListView || 'upcoming';
-    var filters = '<div class="jos-btn-row">' + JOBS_LIST_VIEWS.map(function (v) {
-      return '<button type="button" class="jos-btn jos-btn-sm' + (listView === v[0] ? ' jos-btn-brand' : '') + '" data-jos-jobs-list="' + v[0] + '">' + v[1] + '</button>';
-    }).join('') + '</div>';
-    var list = filterJobsList(root);
-    if (root._josJobsLoading) return '<div class="jos-card"><div class="jos-home-loading">Loading jobs…</div></div>';
-    return '<div class="jos-card"><div class="jos-between"><div class="jos-kicker">Jobs</div>' + filters + '</div>' +
-      (list.length ? '<div class="jos-stack jos-mt">' + list.map(function (j) { return jobCardHtml(j, selectedId, true); }).join('') + '</div>' : '<div class="jos-empty jos-mt">No jobs in this view.</div>') +
-      '</div>';
-  }
-
-  function renderJobWorkspace(root, j, workspaceTab) {
-    var tabs = [['overview', 'Overview'], ['checklist', 'Checklist'], ['photos', 'Photos'], ['notes', 'Notes'], ['products', 'Products'], ['invoice', 'Invoice'], ['timeline', 'Timeline']];
-    var tabBar = '<div class="jos-btn-row">' + tabs.map(function (t) {
-      return '<button type="button" class="jos-btn jos-btn-sm' + (workspaceTab === t[0] ? ' jos-btn-brand' : '') + '" data-jos-job-ws="' + t[0] + '">' + t[1] + '</button>';
-    }).join('') + '</div>';
-    var actions = '<div class="jos-btn-row jos-mt">' +
-      btn('jobs-start', 'Start', 'jos-btn-brand jos-btn-sm') +
-      btn('jobs-pause', 'Pause', 'jos-btn jos-btn-sm') +
-      btn('jobs-resume', 'Resume', 'jos-btn jos-btn-sm') +
-      btn('jobs-complete', 'Complete', 'jos-btn jos-btn-sm') +
-      btn('jobs-cancel', 'Cancel', 'jos-btn jos-btn-sm') +
-      btn('jobs-delete', 'Delete', 'jos-btn-sm jos-btn-danger') +
-      btn('jobs-duplicate', 'Duplicate', 'jos-btn jos-btn-sm') +
-      btn('jobs-reschedule', 'Reschedule', 'jos-btn jos-btn-sm') +
-      btn('jobs-resize', 'Resize +30m', 'jos-btn jos-btn-sm') +
-      '</div>';
-    var body = '';
-    if (workspaceTab === 'overview') {
-      body = '<div class="jos-stack jos-mt">' +
-        '<div><div class="jos-kicker">Customer</div><strong>' + esc(j.customer) + '</strong><div class="jos-muted">' + esc(j.phone || '') + '</div></div>' +
-        '<div><div class="jos-kicker">Address</div>' + esc(j.address || '—') + ' ' + (j.address ? '<a class="jos-btn jos-btn-sm" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(j.address) + '" target="_blank" rel="noopener">Open</a>' : '') + '</div>' +
-        '<div><div class="jos-kicker">Service</div>' + esc(j.service || '') + '</div>' +
-        '<div><div class="jos-kicker">Technician</div>' + esc(j.assignedTo || 'Unassigned') + '</div>' +
-        '<div class="jos-between"><div><div class="jos-kicker">Price</div>' + esc(money(j.amount)) + '</div>' +
-        (j.depositStatus && j.depositStatus !== 'none'
-          ? '<div><div class="jos-kicker">Deposit</div>' + esc(money(j.deposit)) + ' · ' + esc(depositStatusLabel(j.depositStatus)) +
-            (j.depositStatus === 'due' ? ' <button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-mark-deposit-collected">Mark collected</button>' : '') +
-            '</div>'
-          : '') + '</div>' +
-        '<div><div class="jos-kicker">Status</div><span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></div>' +
-        '<div><div class="jos-kicker">Tags</div>' + (j.tags || []).map(function (t) { return '<span class="jos-pill info">' + esc(t) + '</span>'; }).join(' ') +
-        ' <button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-add-tag">Add tag</button></div>' +
-        '</div>';
-    } else if (workspaceTab === 'checklist') {
-      var pct = checklistProgress(j);
-      body = '<div class="jos-mt"><div class="jos-between"><div class="jos-kicker">Service Checklist</div><strong>' + pct + '%</strong></div>' +
-        '<div class="jos-progress"><i style="width:' + pct + '%"></i></div>' +
-        '<div class="jos-stack jos-mt">' + (j.checklist || []).map(function (c) {
-          return '<label class="jos-check-row"><input type="checkbox" data-jos-job="' + esc(j.id) + '" data-jos-check="' + esc(c.id) + '"' + (c.done ? ' checked' : '') + '> ' + esc(c.label) + '</label>';
-        }).join('') + '</div>' +
-        '<div class="jos-chat-input jos-mt"><input id="jos-jobs-check-new" type="text" placeholder="Custom checklist item…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-check-add">Add</button></div>' +
-        '<div class="jos-mt"><div class="jos-kicker">Checklist notes</div><textarea id="jos-jobs-check-notes" class="jos-textarea" placeholder="Notes…">' + esc(j.checklistNotes || '') + '</textarea>' +
-        '<div class="jos-mt">' + btn('jobs-check-notes-save', 'Save notes', 'jos-btn jos-btn-sm') + '</div></div></div>';
-    } else if (workspaceTab === 'photos') {
-      if (root._josPhotosLoading) body = '<div class="jos-home-loading">Loading photos…</div>';
-      else body = '<div class="jos-mt"><div class="jos-kicker">Before</div><div class="jos-photo-grid">' +
-        ((j.photos.before.length ? j.photos.before : []).map(function (p, i) {
-          return '<div class="jos-photo">Before ' + (i + 1) + '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-photo-del" data-jos-photo-kind="before" data-jos-photo-i="' + i + '">Delete</button></div>';
-        }).join('') || '<div class="jos-muted">No before photos</div>') +
-        '</div><div class="jos-btn-row jos-mt">' + btn('jobs-photo-before', 'Upload Before', 'jos-btn jos-btn-sm') + '</div>' +
-        '<div class="jos-kicker jos-mt">After</div><div class="jos-photo-grid">' +
-        ((j.photos.after.length ? j.photos.after : []).map(function (p, i) {
-          return '<div class="jos-photo">After ' + (i + 1) + '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-photo-del" data-jos-photo-kind="after" data-jos-photo-i="' + i + '">Delete</button></div>';
-        }).join('') || '<div class="jos-muted">No after photos</div>') +
-        '</div><div class="jos-btn-row jos-mt">' + btn('jobs-photo-after', 'Upload After', 'jos-btn jos-btn-sm') + btn('jobs-photo-organize', 'Organize', 'jos-btn jos-btn-sm') + '</div></div>';
-    } else if (workspaceTab === 'notes') {
-      body = '<div class="jos-stack jos-mt">' +
-        '<div><div class="jos-kicker">Internal Notes</div>' + (j.internalNotes.length ? j.internalNotes.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') : '<div class="jos-muted">None</div>') +
-        '<div class="jos-chat-input jos-mt"><input id="jos-jobs-note-internal" placeholder="Internal note…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-note-internal">Add</button></div></div>' +
-        '<div><div class="jos-kicker">Customer Notes</div>' + (j.customerNotes.length ? j.customerNotes.map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') : '<div class="jos-muted">None</div>') +
-        '<div class="jos-chat-input jos-mt"><input id="jos-jobs-note-customer" placeholder="Customer note…"><button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-note-customer">Add</button></div></div>' +
-        '<div><div class="jos-kicker">Voice Notes</div>' + (j.voiceNotes.length ? j.voiceNotes.map(function (n) { return '<div class="jos-note">🎤 ' + esc(n) + '</div>'; }).join('') : '<div class="jos-muted">None</div>') +
-        '<div class="jos-mt">' + btn('jobs-note-voice', 'Add Voice Note', 'jos-btn jos-btn-sm') + '</div></div></div>';
-    } else if (workspaceTab === 'products') {
-      body = '<div class="jos-stack jos-mt">' + (j.products.length ? j.products.map(function (p, i) {
-        return '<div class="jos-between jos-note"><div><strong>' + esc(p.name) + '</strong><div class="jos-muted">Qty ' + esc(String(p.qty)) + ' · ' + esc(money(p.cost)) + (p.notes ? ' · ' + esc(p.notes) : '') + '</div></div>' +
-          '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-product-del" data-jos-product-i="' + i + '">Remove</button></div>';
-      }).join('') : '<div class="jos-empty">No products logged</div>') +
-        '<div class="jos-mt">' + btn('jobs-product-add', 'Add Product', 'jos-btn-brand jos-btn-sm') + '</div></div>';
-    } else if (workspaceTab === 'invoice') {
-      body = '<div class="jos-stack jos-mt">' +
-        (j.invoice ? '<div class="jos-note"><strong>Invoice ' + esc(j.invoice.id) + '</strong><div class="jos-muted">' + esc(money(j.invoice.amount)) + ' · ' + esc(j.invoice.status) + '</div></div>' : '<div class="jos-muted">No invoice yet</div>') +
-        '<div class="jos-btn-row">' +
-          btn('jobs-invoice-create', 'Create Invoice', 'jos-btn-brand jos-btn-sm') +
-          btn('jobs-invoice-view', 'View Invoice', 'jos-btn jos-btn-sm') +
-          btn('jobs-invoice-paid', 'Mark Paid', 'jos-btn jos-btn-sm') +
-          btn('jobs-invoice-print', 'Print', 'jos-btn jos-btn-sm') +
-          btn('jobs-invoice-email', 'Email (placeholder)', 'jos-btn jos-btn-sm') +
-        '</div></div>';
-    } else {
-      if (root._josTimelineLoading) body = '<div class="jos-home-loading">Loading timeline…</div>';
-      else body = '<div class="jos-stack jos-mt">' + (j.timeline || []).map(function (t) {
-        return '<div class="jos-sched-row"><div class="time">' + esc(String(t.type || '').slice(0, 4)) + '</div><div><div class="who">' + esc(t.label) + '</div><div class="svc">' + esc(t.at || '') + '</div></div></div>';
-      }).join('') + '</div>';
-    }
-    return '<div class="jos-card jos-jobs-details" data-jos-job-id="' + esc(j.id) + '"><div class="jos-between"><div><div class="jos-kicker">Job Workspace</div><h3 style="margin:4px 0 0">' + esc(j.customer) + '</h3></div><span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status) + '</span></div>' + tabBar + actions + body + '</div>';
   }
 
   function renderJobsRoute(root) {
@@ -19392,13 +19296,6 @@
         toast('Checklist item added');
         return rerender();
       }
-      if (act === 'jobs-check-notes-save') {
-        if (!job) return;
-        var ta = el('jos-jobs-check-notes');
-        job.checklistNotes = ta ? ta.value : '';
-        toast('Checklist notes saved');
-        return rerender();
-      }
       if (act === 'jobs-photo-before' || act === 'jobs-photo-after') {
         if (!job) return;
         root._josPhotosLoading = true; renderJobs();
@@ -19424,42 +19321,6 @@
         job.photos.before = (job.photos.before || []).slice().reverse();
         job.photos.after = (job.photos.after || []).slice().reverse();
         toast('Photos organized');
-        return rerender();
-      }
-      if (act === 'jobs-note-internal') {
-        if (!job) return;
-        var ni = el('jos-jobs-note-internal');
-        if (!ni || !String(ni.value || '').trim()) return toast('Enter a note');
-        job.internalNotes.push(String(ni.value).trim());
-        pushJobTimeline(job, 'note', 'Internal note added');
-        toast('Internal note saved');
-        return rerender();
-      }
-      if (act === 'jobs-note-customer') {
-        if (!job) return;
-        var nc = el('jos-jobs-note-customer');
-        if (!nc || !String(nc.value || '').trim()) return toast('Enter a note');
-        job.customerNotes.push(String(nc.value).trim());
-        toast('Customer note saved');
-        return rerender();
-      }
-      if (act === 'jobs-note-voice') {
-        if (!job) return;
-        job.voiceNotes.push('Voice note ' + (job.voiceNotes.length + 1) + ' (0:08)');
-        toast('Voice note added');
-        return rerender();
-      }
-      if (act === 'jobs-product-add') {
-        if (!job) return;
-        job.products.push({ name: 'Detailing clay', qty: 1, cost: 8, notes: 'Used on paint' });
-        toast('Product added');
-        return rerender();
-      }
-      if (act === 'jobs-product-del') {
-        if (!job) return;
-        var pi = parseInt(t.getAttribute('data-jos-product-i'), 10);
-        job.products.splice(pi, 1);
-        toast('Product removed');
         return rerender();
       }
       if (act === 'jobs-invoice-create') {
