@@ -16732,6 +16732,15 @@
   // machinery the table cells already use — one interaction model, not two.
   var JOBS_DRAWER_ONLY_COLUMNS = [
     {
+      // dbPatch, not just dbColumn — mutateJobField's generic fallback
+      // patches with tableColFieldGet(col, job), which for this column is
+      // col.get(job): the split-off first name ALONE, not the full name
+      // set() just recombined. That sent {customer_name: "John"} (or
+      // just "Smith" editing Last) to Supabase, silently truncating the
+      // name in the DB immediately — it looked saved locally, then came
+      // back missing the other half on the next real reload. Same
+      // dbPatch-override pattern as time/duration below, for the same
+      // reason: the persisted value isn't the same thing get() returns.
       key: 'customerFirst', label: 'First name', type: 'text',
       editable: true, dbColumn: 'customer_name',
       get: function (job) { return splitLeadName(job.customer).first; },
@@ -16739,7 +16748,8 @@
         var parts = splitLeadName(job.customer);
         job.customer = (String(value || '').trim() + ' ' + parts.last).trim();
         return 'Customer → ' + (job.customer || '—');
-      }
+      },
+      dbPatch: function (job) { return { customer_name: job.customer }; }
     },
     {
       key: 'customerLast', label: 'Last name', type: 'text',
@@ -16749,7 +16759,8 @@
         var parts = splitLeadName(job.customer);
         job.customer = (parts.first + ' ' + String(value || '').trim()).trim();
         return 'Customer → ' + (job.customer || '—');
-      }
+      },
+      dbPatch: function (job) { return { customer_name: job.customer }; }
     },
     {
       key: 'email', label: 'Email', type: 'email', editable: true, dbColumn: 'email',
