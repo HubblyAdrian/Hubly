@@ -4971,7 +4971,7 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-table col{transition:width .12s ease}
 .jos-ld-table col.jos-no-resize-anim{transition:none}
 .jos-ld-col-menu{
-  position:fixed;z-index:60;min-width:180px;
+  position:fixed;z-index:500;min-width:180px;
   background:#fff;border:1px solid #ECEDEF;border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.1);
   padding:8px;display:flex;flex-direction:column;gap:6px;text-transform:none;letter-spacing:normal;
   visibility:hidden;
