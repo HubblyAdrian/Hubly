@@ -15154,7 +15154,6 @@
         if (!e.target.closest('.jos-jobs-pop') && !e.target.closest('[data-jos-act="jobs-row-menu"]') && !e.target.closest('[data-jos-act="jobs-status-menu"]')) {
           var rp = el('jos-jobs-row-pop'); var sp = el('jos-jobs-status-pop');
           if (rp) rp.hidden = true; if (sp) sp.hidden = true;
-          document.body.classList.remove('jos-jobs-menu-open');
         }
       });
     }
@@ -17345,10 +17344,13 @@
             }
             return '<td data-jos-col-key="' + esc(c.key) + '">' + cellInner + '</td>';
           }).join('') +
-          '<td class="col-act"><div class="jos-jobs-more-wrap">' +
-          '<button type="button" class="jos-icon-btn" data-jos-act="jobs-open" data-jos-job-id="' + esc(jobKey) + '" title="Open details" aria-label="Open details">↗</button>' +
-          (locked ? '' : '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(jobKey) + '" aria-label="Actions">⋯</button>') +
-          '</div></td></tr>';
+          // No per-row arrow/⋯ here — Customer and Service cells already
+          // open the drawer on click (see the click dispatch in
+          // wireJobsRoot), and every action that lived in this row menu is
+          // also on the drawer's own "..." menu once it's open. Keeping an
+          // empty cell, not removing the column, so header alignment with
+          // the "+" add-column button (same shared trailing <th>) holds.
+          '<td class="col-act"></td></tr>';
       }).join('');
     return '<div class="jos-ld-table-wrap"><table class="jos-ld-table" role="grid" aria-label="Jobs">' + colGroup + '<thead><tr>' + headCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
@@ -20001,7 +20003,6 @@
         var left = Math.min(Math.max(12, r.right - popW), window.innerWidth - popW - 12);
         pop.style.top = top + 'px';
         pop.style.left = left + 'px';
-        document.body.classList.add('jos-jobs-menu-open');
         return;
       }
       if (act === 'jobs-gcal-new') {

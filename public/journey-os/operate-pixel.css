@@ -6081,10 +6081,18 @@ input.jos-ld-cell-inline:focus{
 .jos-cal-event.block .jos-muted{color:rgba(255,255,255,.75)!important}
 .jos-gcal-event strong,.jos-gcal-event span{color:#fff!important}
 
-/* Actions menu: keep above content but clear of Ask Hubly FAB */
+/* Actions menu: keep above content but clear of Ask Hubly FAB.
+   :has() reflects the popups' own [hidden] state live, instead of a
+   manually toggled body class — that class was only ever cleared by one
+   specific "click outside the popup" listener, so any other way the
+   popup closed (an action inside it firing, a re-render regenerating it
+   already-hidden, Escape) left the class stuck and the FAB permanently
+   dimmed to near-invisible — this is what "the Jobs AI button is a
+   shadow" was. :has() can't get stuck; it's re-evaluated on every DOM
+   change, same pattern already used for .hubly-coach/.jos-pk-ws below. */
 .jos-jobs-pop{z-index:14000;min-width:200px;box-shadow:0 12px 32px rgba(15,23,42,.18)}
-body.jos-jobs-menu-open #jos-ask-fab,
-#p-app.jos-jobs-mode.jos-jobs-menu-open #jos-ask-fab{opacity:.15;pointer-events:none}
+body:has(#jos-jobs-row-pop:not([hidden])) #jos-ask-fab,
+body:has(#jos-jobs-status-pop:not([hidden])) #jos-ask-fab{opacity:.15;pointer-events:none}
 #p-app.jos-jobs-mode #jos-ask-fab{bottom:24px;right:24px}
 
 /* Pipeline side panel — light inputs, drawer feel, no auto-black */
