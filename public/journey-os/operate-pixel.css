@@ -4719,6 +4719,8 @@ textarea.jos-je-field-input.jos-ld-cell-inline{height:auto!important;min-height:
 .jos-jobs-inline-status.hot{background:#FEF2F2;color:#B91C1C;border-color:#FECACA}
 .jos-jobs-inline-status.mute{background:#F3F4F6;color:#6B7280;border-color:#E5E7EB}
 .jos-jobs-more-wrap{display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.jos-jobs-service-cell{display:flex;flex-direction:column;gap:1px;min-width:0}
+.jos-jobs-id-sub{font-size:11px}
 .jos-jd-profile{display:flex;gap:12px;align-items:flex-start}
 .jos-jd-svc{padding:12px;border:1px solid var(--jos-border);border-radius:12px;background:var(--jos-surface-2)}
 .jos-jd-tl{

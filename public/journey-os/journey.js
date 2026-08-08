@@ -8630,7 +8630,14 @@
         }).join('') +
         '</tr>';
     }).join('');
-    var headCells = (bulkOpen ? '<th class="jos-ld-tcheck"></th>' : '') +
+    var allLeadsSelected = bulkOpen && list.length && list.every(function (l) { return bulkSelected && bulkSelected[String(l.id || l.key)]; });
+    // onclick=stopPropagation matches the row checkbox <td> just below —
+    // without it, the "click outside the bulk bar closes empty-selection
+    // bulk mode" listener (bindRoot, root.addEventListener('click', ...))
+    // sees this click during the bubble phase, before the 'change' handler
+    // below has populated bulkSelected, and — on the very first click,
+    // while selection is still empty — tears bulk mode down mid-click.
+    var headCells = (bulkOpen ? '<th class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-lead-bulk-all aria-label="Select all leads"' + (allLeadsSelected ? ' checked' : '') + '></th>' : '') +
       cols.map(function (c, i) {
         // Direct manipulation, not menus: drag the header to reorder, drag
         // the right-edge handle to resize, double-click the label to
@@ -9230,6 +9237,7 @@
       '<button type="button" class="jos-btn jos-btn-sm' + (moreFiltersOpen || activeFilterCount ? ' jos-btn-brand' : '') + '" data-jos-act="leads-filter-open" aria-expanded="' + (moreFiltersOpen ? 'true' : 'false') + '">' +
       (activeFilterCount ? ('Filters · ' + activeFilterCount) : 'Filters') +
       '</button>' +
+      '<button type="button" class="jos-btn jos-btn-sm' + (bulkOpen ? ' jos-btn-brand' : '') + '" data-jos-act="leads-bulk-toggle">' + (bulkOpen ? 'Done Selecting' : 'Select') + '</button>' +
       '<button type="button" class="jos-btn jos-btn-brand jos-ld-new" data-jos-act="leads-add-open">+ New Lead</button>' +
       '<div class="jos-ld-overflow-wrap">' +
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-overflow-toggle" aria-label="More actions" aria-expanded="' + (root._josLeadOverflowOpen ? 'true' : 'false') + '">⋯</button>' +
@@ -9237,7 +9245,6 @@
         ? '<div class="jos-ld-overflow-menu">' +
           '<button type="button" data-jos-act="leads-export">' + jobUiIcon('download') + ' Export</button>' +
           '<button type="button" data-jos-act="leads-import-open">Import</button>' +
-          '<button type="button" data-jos-act="leads-bulk-toggle">' + (bulkOpen ? 'Exit Bulk Select' : 'Bulk Select') + '</button>' +
           '</div>'
         : '') +
       '</div>' +
@@ -9809,6 +9816,14 @@
         toast(fieldActivityLabel ? (fieldCol.label + ' updated') : 'Updated');
         return;
       }
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-bulk-all')) {
+        root._josLeadBulkSelected = root._josLeadBulkSelected || {};
+        var allLeadKeys = Array.prototype.map.call(root.querySelectorAll('[data-jos-lead-bulk]'), function (el) { return el.getAttribute('data-jos-lead-bulk'); });
+        if (e.target.checked) allLeadKeys.forEach(function (k) { root._josLeadBulkSelected[k] = true; });
+        else allLeadKeys.forEach(function (k) { delete root._josLeadBulkSelected[k]; });
+        renderLeads();
+        return;
+      }
       if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-bulk')) {
         root._josLeadBulkSelected = root._josLeadBulkSelected || {};
         var bulkKey = e.target.getAttribute('data-jos-lead-bulk');
@@ -10166,7 +10181,12 @@
     var sel = root.querySelector('[data-jos-field="' + key + '"][data-jos-record-id="' + CSS.escape(leadId) + '"].jos-ld-editing');
     if (sel) {
       sel.focus({ preventScroll: true });
+      // select() is a no-op affordance-wise on date/time inputs — no
+      // calendar/clock popup, no visible cue anything happened — so a
+      // click-to-edit on those two types reads as "won't let me enter a
+      // date". showPicker() is what actually opens the native picker.
       if (sel.tagName === 'SELECT') { try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
+      else if (sel.tagName === 'INPUT' && (sel.type === 'date' || sel.type === 'time')) { try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
       else if (sel.tagName === 'INPUT') { try { sel.select(); } catch (eSelText) {} }
     }
   }
@@ -16338,31 +16358,25 @@
       set: function (job, value) { job.customer = String(value || '').trim(); return 'Customer → ' + (job.customer || '—'); }
     },
     {
-      key: 'phone', label: 'Phone', type: 'phone', width: 150,
-      editable: true, searchable: true, sortable: false, dbColumn: 'phone',
-      set: function (job, value) { job.phone = value || ''; return 'Phone → ' + (rendererRegistry.phone.format(job.phone) || '—'); }
-    },
-    {
-      key: 'jobNumber', label: 'Job #', type: 'text', width: 90,
-      editable: false, searchable: true, sortable: false,
-      get: function (job) { return jobNumber(job); }
-    },
-    {
       // Real dropdown, matching Leads' Service column — was free text
       // here even though the (pre-redesign) drawer form already faked a
       // select using the same jobServiceOptions() list; now both the
       // table cell and the drawer field are the same real dropdown.
-      key: 'service', label: 'Service', type: 'select', width: 160, allowEmpty: 'No service',
+      // No standalone Job # column anymore — nobody scans a table looking
+      // for "JOB-5767" before "Fertilizer Boost"; the id still needs to be
+      // findable, so renderJobsTable prints it as small muted text under
+      // this cell instead of giving it its own column.
+      key: 'service', label: 'Service', type: 'select', width: 170, allowEmpty: 'No service',
       editable: true, searchable: true, filterable: true, sortable: true, dbColumn: 'service_name',
       options: function (job) { return jobServiceOptions(job || {}).map(function (s) { return { value: s, label: s }; }); },
       set: function (job, value) { job.service = String(value || '').trim(); return 'Service → ' + (job.service || '—'); }
     },
     {
-      key: 'assignedTo', label: 'Technician', type: 'select', width: 150, allowEmpty: 'Unassigned',
-      editable: true, searchable: true, filterable: true, sortable: true, dbColumn: 'assigned_to',
-      options: function (job) { return jobTeamOptions(job || {}).filter(function (n) { return n !== 'Unassigned'; }).map(function (n) { return { value: n, label: n }; }); },
-      get: function (job) { return job.assignedTo || ''; },
-      set: function (job, value) { job.assignedTo = value || ''; return job.assignedTo ? ('Assigned to ' + job.assignedTo) : 'Unassigned'; }
+      key: 'status', label: 'Status', type: 'select', width: 130,
+      editable: true, filterable: true, sortable: true, dbColumn: 'status',
+      options: function () { return jobStatusOptions().map(function (s) { return { value: s.value, label: s.label, tone: jobStatusTone(s.value) }; }); },
+      get: function (job) { return job.status || ''; },
+      set: function (job, value) { job.status = value; return 'Status → ' + (jobStatusOptions().filter(function (s) { return s.value === value; })[0] || {}).label; }
     },
     {
       key: 'date', label: 'Date', type: 'date', width: 130,
@@ -16382,17 +16396,22 @@
       dbPatch: function (job) { return { scheduled_time: timeTo24h(job.time) }; }
     },
     {
-      key: 'status', label: 'Status', type: 'select', width: 130,
-      editable: true, filterable: true, sortable: true, dbColumn: 'status',
-      options: function () { return jobStatusOptions().map(function (s) { return { value: s.value, label: s.label, tone: jobStatusTone(s.value) }; }); },
-      get: function (job) { return job.status || ''; },
-      set: function (job, value) { job.status = value; return 'Status → ' + (jobStatusOptions().filter(function (s) { return s.value === value; })[0] || {}).label; }
+      key: 'assignedTo', label: 'Technician', type: 'select', width: 150, allowEmpty: 'Unassigned',
+      editable: true, searchable: true, filterable: true, sortable: true, dbColumn: 'assigned_to',
+      options: function (job) { return jobTeamOptions(job || {}).filter(function (n) { return n !== 'Unassigned'; }).map(function (n) { return { value: n, label: n }; }); },
+      get: function (job) { return job.assignedTo || ''; },
+      set: function (job, value) { job.assignedTo = value || ''; return job.assignedTo ? ('Assigned to ' + job.assignedTo) : 'Unassigned'; }
     },
     {
       key: 'amount', label: 'Amount', type: 'number', width: 110,
       editable: true, sortable: true, dbColumn: 'amount', format: money,
       get: function (job) { return job.amount == null ? '' : job.amount; },
       set: function (job, value) { job.amount = value === '' ? null : Number(value); return 'Amount → ' + (job.amount != null ? money(job.amount) : '—'); }
+    },
+    {
+      key: 'phone', label: 'Phone', type: 'phone', width: 150,
+      editable: true, searchable: true, sortable: false, dbColumn: 'phone',
+      set: function (job, value) { job.phone = value || ''; return 'Phone → ' + (rendererRegistry.phone.format(job.phone) || '—'); }
     },
     {
       key: 'balance', label: 'Balance', type: 'text', width: 100,
@@ -16870,31 +16889,35 @@
   // rendererRegistry dispatch Leads uses. Column preferences (hide,
   // width) come from root._josJobsColumns, loaded via tablePreferences
   // under the 'jobs' table key.
-  function renderJobsTable(root, list, selectedId) {
+  function renderJobsTable(root, list, selectedId, bulkOpen, bulkSelected) {
     var cols = (root._josJobsColumns || JOBS_DEFAULT_COLUMNS).filter(function (c) { return !c.hidden; });
     var schemaMap = jobsSchemaMap();
     var editing = root._josJobsEditCell || null;
-    var colGroup = '<colgroup>' + cols.map(function (c) {
+    var allSelected = bulkOpen && list.length && list.every(function (j) { return bulkSelected && bulkSelected[String(j.id)]; });
+    var colGroup = '<colgroup>' + (bulkOpen ? '<col style="width:32px">' : '') + cols.map(function (c) {
       var def = schemaMap[c.key];
       return '<col style="width:' + (c.width || (def && def.width) || 140) + 'px">';
     }).join('') + '<col style="width:70px"></colgroup>';
-    var headCells = cols.map(function (c) {
-      return '<th class="jos-ld-th" data-jos-col-key="' + esc(c.key) + '"><span class="jos-ld-th-label" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</span></th>';
-    }).join('') + '<th></th>';
+    var headCells = (bulkOpen ? '<th class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-job-bulk-all aria-label="Select all jobs"' + (allSelected ? ' checked' : '') + '></th>' : '') +
+      cols.map(function (c) {
+        return '<th class="jos-ld-th" data-jos-col-key="' + esc(c.key) + '"><span class="jos-ld-th-label" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</span></th>';
+      }).join('') + '<th></th>';
     var rows = !list.length
-      ? '<tr class="jos-ld-empty-row"><td colspan="' + (cols.length + 1) + '"><div class="jos-ld-empty-table">' +
+      ? '<tr class="jos-ld-empty-row"><td colspan="' + (cols.length + (bulkOpen ? 1 : 0) + 1) + '"><div class="jos-ld-empty-table">' +
         '<strong>No jobs yet</strong><p>Create your first job or import bookings to get started.</p>' +
         btn('jobs-create', 'New Job', 'jos-btn-brand jos-btn-sm') + '</div></td></tr>'
       : list.map(function (j) {
         var jobKey = String(j.id);
         var on = selectedId && jobKey === String(selectedId);
         var tone = jobRowTone(j.status);
+        var checked = !!(bulkSelected && bulkSelected[jobKey]);
         // A synced Google Calendar event isn't a real Hubly job — it's a
         // mirror of something that lives elsewhere, so every cell renders
         // as plain text regardless of what the column schema says,
         // matching how it always behaved before this migration.
         var locked = !!j.isGoogle;
         return '<tr class="jos-ld-trow tone-' + tone + (on ? ' on' : '') + '" role="row" data-jos-record-id="' + esc(jobKey) + '">' +
+          (bulkOpen ? '<td class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-job-bulk="' + esc(jobKey) + '" aria-label="Select ' + esc(j.customer || 'job') + '"' + (checked ? ' checked' : '') + '></td>' : '') +
           cols.map(function (c) {
             var def = schemaMap[c.key];
             if (!def) return '<td data-jos-col-key="' + esc(c.key) + '">—</td>';
@@ -16903,7 +16926,13 @@
               return '<td data-jos-col-key="' + esc(c.key) + '">' + esc(lockedVal == null || lockedVal === '' ? '—' : String(lockedVal)) + '</td>';
             }
             var isEditingThis = !!(editing && editing.recordId === jobKey && editing.field === c.key);
-            return '<td data-jos-col-key="' + esc(c.key) + '">' + tableCellHtml(j, def, jobKey, isEditingThis) + '</td>';
+            var cellInner = tableCellHtml(j, def, jobKey, isEditingThis);
+            // No dedicated Job # column — the id rides as small muted text
+            // under Service instead, findable without leading the row.
+            if (c.key === 'service' && !isEditingThis) {
+              cellInner = '<div class="jos-jobs-service-cell">' + cellInner + '<span class="jos-muted jos-jobs-id-sub">' + esc(jobNumber(j)) + '</span></div>';
+            }
+            return '<td data-jos-col-key="' + esc(c.key) + '">' + cellInner + '</td>';
           }).join('') +
           '<td class="col-act"><div class="jos-jobs-more-wrap">' +
           '<button type="button" class="jos-icon-btn" data-jos-act="jobs-open" data-jos-job-id="' + esc(jobKey) + '" title="Open details" aria-label="Open details">↗</button>' +
@@ -16911,6 +16940,21 @@
           '</div></td></tr>';
       }).join('');
     return '<div class="jos-ld-table-wrap"><table class="jos-ld-table" role="grid" aria-label="Jobs">' + colGroup + '<thead><tr>' + headCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  // Same shape as renderLeadsBulkBar — floats above the table once at
+  // least one row is checked. Reuses the .jos-ld-bulk-bar/-danger CSS
+  // Leads already defined rather than styling a second bar from scratch.
+  function renderJobsBulkBar(root) {
+    var selected = root._josBulk || {};
+    var ids = Object.keys(selected).filter(function (k) { return selected[k]; });
+    if (!root._josJobsBulkOpen || !ids.length) return '';
+    return '<div class="jos-ld-bulk-bar" role="toolbar" aria-label="Bulk actions">' +
+      '<span class="jos-ld-bulk-bar-count">' + ids.length + ' selected</span>' +
+      '<span class="jos-ld-bulk-bar-sep"></span>' +
+      '<button type="button" class="jos-ld-bulk-bar-danger" data-jos-act="jobs-bulk-delete">Delete</button>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="jobs-bulk-clear" title="Clear selection" aria-label="Clear selection">✕</button>' +
+      '</div>';
   }
 
   function renderJobsPage(root) {
@@ -17102,7 +17146,7 @@
 
       '<section class="jos-jobs-table-card jos-jobs-first">' +
       '<div class="jos-jobs-table-head">' + tabsHtml + '</div>' +
-      renderJobsTable(root, pageRows, selectedId) + mobileCards + (pageRows.length ? pager : '') +
+      renderJobsTable(root, pageRows, selectedId, !!root._josJobsBulkOpen, root._josBulk) + mobileCards + (pageRows.length ? pager : '') +
       '</section>';
     }
 
@@ -17216,6 +17260,7 @@
             }).join('') + '</div>' : '') +
           '</div>' +
           '<button type="button" class="jos-btn jos-btn-sm' + (root._josJobsFiltersOpen ? ' jos-btn-brand' : '') + '" data-jos-act="jobs-filters-toggle">Filters</button>' +
+          '<button type="button" class="jos-btn jos-btn-sm' + (root._josJobsBulkOpen ? ' jos-btn-brand' : '') + '" data-jos-act="jobs-bulk-toggle">' + (root._josJobsBulkOpen ? 'Done Selecting' : 'Select') + '</button>' +
           '<button type="button" class="jos-btn jos-btn-brand jos-jobs-new" data-jos-act="jobs-create">+ New Job</button>')) +
       '</div></header>' +
       mainBody +
@@ -17223,6 +17268,7 @@
       (mainView === 'calendar' ? calRail : listRail) +
       '</div>' +
       '<div class="jos-jobs-drawer-backdrop' + (drawerOpen ? ' open' : '') + '" data-jos-act="jobs-drawer-close"></div>' +
+      renderJobsBulkBar(root) +
       drawer + statusMenu + rowMenu + gcalCreatePop +
       '<button type="button" class="jos-jobs-fab" data-jos-act="' + (mainView === 'calendar' ? 'jobs-gcal-create-menu' : 'jobs-create') + '" aria-label="' + (mainView === 'calendar' ? 'Create' : 'New Job') + '">+</button>' +
       '</div>';
@@ -17631,6 +17677,22 @@
         }
         return;
       }
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-job-bulk-all')) {
+        root._josBulk = root._josBulk || {};
+        var allKey = Array.prototype.map.call(root.querySelectorAll('[data-jos-job-bulk]'), function (el) { return el.getAttribute('data-jos-job-bulk'); });
+        if (e.target.checked) allKey.forEach(function (k) { root._josBulk[k] = true; });
+        else allKey.forEach(function (k) { delete root._josBulk[k]; });
+        rerenderJobsOsFrom(root);
+        return;
+      }
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-job-bulk')) {
+        root._josBulk = root._josBulk || {};
+        var bulkJobKey = e.target.getAttribute('data-jos-job-bulk');
+        if (e.target.checked) root._josBulk[bulkJobKey] = true;
+        else delete root._josBulk[bulkJobKey];
+        rerenderJobsOsFrom(root);
+        return;
+      }
       if (id === 'jos-jobs-filter-status') root._josJobsStatus = e.target.value;
       if (id === 'jos-jobs-filter-employee') root._josJobsEmployee = e.target.value;
       if (id === 'jos-jobs-filter-service') root._josJobsService = e.target.value;
@@ -17680,6 +17742,25 @@
     // their own listener below — see openJobsDrawerFieldEdit's comment
     // for why they don't share edit state with the table even though
     // several field keys exist on both.
+    // Same capture-phase reasoning as Leads' shift-click range select — the
+    // bulk-select <td> stops propagation so a checkbox click doesn't also
+    // open the job, which would otherwise also swallow this before it runs.
+    root.addEventListener('click', function (e) {
+      if (!(e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-job-bulk'))) return;
+      var clickedBulkJobKey = e.target.getAttribute('data-jos-job-bulk');
+      if (e.shiftKey && root._josJobsBulkLastClicked) {
+        var allBulkBoxes = Array.prototype.slice.call(root.querySelectorAll('[data-jos-job-bulk]'));
+        var bulkKeys = allBulkBoxes.map(function (b) { return b.getAttribute('data-jos-job-bulk'); });
+        var fromI = bulkKeys.indexOf(root._josJobsBulkLastClicked);
+        var toI = bulkKeys.indexOf(clickedBulkJobKey);
+        if (fromI > -1 && toI > -1) {
+          var lo = Math.min(fromI, toI), hi = Math.max(fromI, toI);
+          root._josBulk = root._josBulk || {};
+          for (var ri = lo; ri <= hi; ri++) { root._josBulk[bulkKeys[ri]] = true; allBulkBoxes[ri].checked = true; }
+        }
+      }
+      root._josJobsBulkLastClicked = clickedBulkJobKey;
+    }, true);
     root.addEventListener('click', function (e) {
       var editField = e.target.closest('[data-jos-field]');
       if (!editField || editField.classList.contains('jos-ld-editing') || editField.closest('#jos-jobs-drawer')) return;
@@ -18803,7 +18884,10 @@
     var sel = root.querySelector('[data-jos-field="' + key + '"][data-jos-record-id="' + CSS.escape(jobId) + '"].jos-ld-editing');
     if (sel) {
       sel.focus({ preventScroll: true });
+      // See openLeadsCellEdit's comment — select() does nothing visible on
+      // date/time inputs; showPicker() is what actually opens them.
       if (sel.tagName === 'SELECT') { try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
+      else if (sel.tagName === 'INPUT' && (sel.type === 'date' || sel.type === 'time')) { try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
       else if (sel.tagName === 'INPUT') { try { sel.select(); } catch (eSelText) {} }
     }
   }
@@ -18852,7 +18936,10 @@
     var sel = root.querySelector('#jos-jobs-drawer [data-jos-field="' + key + '"][data-jos-record-id="' + CSS.escape(jobId) + '"].jos-ld-editing');
     if (sel) {
       sel.focus({ preventScroll: true });
+      // See openLeadsCellEdit's comment — select() does nothing visible on
+      // date/time inputs; showPicker() is what actually opens them.
       if (sel.tagName === 'SELECT') { try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
+      else if (sel.tagName === 'INPUT' && (sel.type === 'date' || sel.type === 'time')) { try { sel.showPicker && sel.showPicker(); } catch (eShow) {} }
       else if (sel.tagName === 'INPUT' || sel.tagName === 'TEXTAREA') { try { sel.select(); } catch (eSelText) {} }
     }
   }
@@ -18995,6 +19082,14 @@
         root._josJobsFiltersOpen = !root._josJobsFiltersOpen;
         return rerender();
       }
+      if (act === 'jobs-bulk-toggle') {
+        root._josJobsBulkOpen = !root._josJobsBulkOpen;
+        return rerender();
+      }
+      if (act === 'jobs-bulk-clear') {
+        root._josBulk = {};
+        return rerender();
+      }
       if (act === 'jobs-clear-filters') {
         root._josJobsQ = '';
         root._josJobsStatus = 'all';
@@ -19080,9 +19175,16 @@
           items.push(['jobs-message', 'Message Customer']);
           if (!menuJob || !menuJob.isGoogle) items.push(['jobs-delete', 'Delete']);
         } else {
+          // Kept intentionally small — this is the row's overflow menu, not
+          // a second way into the drawer. Opening the job (View/Edit) and
+          // operational actions (Assign, Message, Photos, Checklist,
+          // Collect Payment) all already live one click away via the ↗
+          // arrow or the drawer itself; duplicating them here is what made
+          // this menu balloon to near-page-height. True secondary actions
+          // only.
           items = act === 'jobs-status-menu'
             ? [['jobs-start', 'In Progress'], ['jobs-complete', 'Completed'], ['jobs-reschedule', 'Reschedule'], ['jobs-assign', 'Assign Tech'], ['jobs-cancel', 'Cancel'], ['jobs-duplicate', 'Duplicate']]
-            : [['jobs-open', 'View Job'], ['jobs-edit', 'Edit'], ['jobs-duplicate', 'Duplicate'], ['jobs-invoice-create', 'Invoice'], ['jobs-invoice-paid', 'Collect Payment'], ['jobs-assign', 'Assign Employee'], ['jobs-message', 'Send Reminder'], ['jobs-message', 'Message Customer'], ['jobs-photo-before', 'Photos'], ['jobs-check-add', 'Checklist'], ['jobs-delete', 'Delete']];
+            : [['jobs-duplicate', 'Duplicate'], ['jobs-invoice-create', 'Invoice'], ['jobs-delete', 'Delete']];
         }
         pop.innerHTML = items.map(function (x) {
           return '<button type="button" data-jos-act="' + esc(x[0]) + '" data-jos-job-id="' + esc(jobId || '') + '">' + esc(x[1]) + '</button>';
@@ -19601,9 +19703,18 @@
       if (act === 'jobs-bulk-delete') {
         var ids3 = selectedJobIds(root);
         if (!ids3.length) return toast('Select job(s) first');
+        if (typeof global.confirm === 'function' && !global.confirm('Delete ' + ids3.length + ' job' + (ids3.length === 1 ? '' : 's') + '? This cannot be undone.')) return;
+        // Same lesson as jobs-delete/persistJobDelete earlier this session —
+        // this used to only mutate S().jobs and never touched Supabase, so
+        // a refresh silently brought every "deleted" job back.
+        ids3.forEach(function (id) {
+          var delJ = findJob(id);
+          if (delJ && !delJ.isGoogle) persistJobDelete(delJ);
+        });
         S().jobs = S().jobs.filter(function (j) { return ids3.indexOf(String(j.id)) === -1; });
         root._josBulk = {};
-        root._josJobId = null;
+        root._josJobsBulkOpen = false;
+        if (ids3.indexOf(String(root._josJobId)) > -1) { root._josJobId = null; root._josDrawerOpen = false; }
         toast('Deleted ' + ids3.length + ' job(s)');
         return rerender();
       }
