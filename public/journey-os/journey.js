@@ -8815,6 +8815,10 @@
     var top = tr.bottom + 4;
     if (top + ph > window.innerHeight - 12) top = Math.max(12, tr.top - ph - 4);
     var left = Math.min(tr.left, window.innerWidth - pw - 12);
+    // Same reparent-out-of-the-table fix as positionJobsColMenu — a
+    // position:fixed popover nested inside the table's sticky/scrolled
+    // cells measures wrong for the first ~250ms after opening.
+    if (pop.parentElement !== root) root.appendChild(pop);
     pop.style.top = top + 'px';
     pop.style.left = Math.max(12, left) + 'px';
     pop.classList.add('jos-positioned');
@@ -9136,6 +9140,10 @@
     var mw = menu.offsetWidth || 180;
     var left = Math.min(tr.left, window.innerWidth - mw - 12);
     left = Math.max(12, left);
+    // Same reparent-out-of-the-table fix as positionJobsColMenu — a
+    // position:fixed popover nested inside the table's sticky/scrolled
+    // cells measures wrong for the first ~250ms after opening.
+    if (menu.parentElement !== root) root.appendChild(menu);
     menu.style.top = (tr.bottom + 4) + 'px';
     menu.style.left = left + 'px';
     menu.classList.add('jos-positioned');
@@ -9689,12 +9697,18 @@
         renderLeads();
         return;
       }
-      if (!e.target.closest('.jos-ld-th') && root._josLeadsColMenuKey) {
+      // .jos-ld-col-menu itself is checked alongside the header cell — see
+      // positionJobsColMenu's comment (same fix, mirrored here): the
+      // popover is reparented out of .jos-ld-th/.jos-ld-th-add to dodge a
+      // Chromium position:fixed quirk, so a click still inside the
+      // (relocated) popover must not read as "outside" just because it's
+      // no longer a DOM descendant of the header cell.
+      if (!e.target.closest('.jos-ld-th') && !e.target.closest('.jos-ld-col-menu') && root._josLeadsColMenuKey) {
         root._josLeadsColMenuKey = null;
         renderLeads();
         return;
       }
-      if (!e.target.closest('.jos-ld-th-add') && root._josLeadsColAddOpen) {
+      if (!e.target.closest('.jos-ld-th-add') && !e.target.closest('.jos-ld-col-menu') && root._josLeadsColAddOpen) {
         root._josLeadsColAddOpen = false;
         root._josLeadsAddFieldOpen = false;
         root._josLeadsAddFieldDraft = null;
@@ -17224,6 +17238,19 @@
   // Fixed-position, same reasoning as positionLeadsColMenu — a menu near
   // the table's right edge shouldn't get clipped by an ancestor's
   // overflow:hidden.
+  //
+  // Reparented to root instead of left as a child of the <th> it renders
+  // inside: a position:fixed popover nested inside a position:sticky
+  // table header cell, itself inside a horizontally-scrolled overflow:auto
+  // wrap, measured correctly (matching the inline left/top just set) for
+  // one frame, then drifted ~80px off for the next ~250ms before snapping
+  // back — a real, reproducible Chromium quirk in that specific nesting,
+  // confirmed by moving the same element to a plain, unscrolled parent and
+  // watching the drift disappear entirely. Moving it out of the table
+  // (position:fixed doesn't care where it lives in the DOM, only about
+  // transformed ancestors, which none of root's are) is the actual fix —
+  // this is what "the add-field popover opens off in the middle of the
+  // page" was.
   function positionJobsColMenu(root) {
     var menu = root.querySelector('.jos-ld-col-menu');
     if (!menu) return;
@@ -17235,6 +17262,7 @@
     var mw = menu.offsetWidth || 180;
     var left = Math.min(tr.left, window.innerWidth - mw - 12);
     left = Math.max(12, left);
+    if (menu.parentElement !== root) root.appendChild(menu);
     menu.style.top = (tr.bottom + 4) + 'px';
     menu.style.left = left + 'px';
     menu.classList.add('jos-positioned');
@@ -17383,6 +17411,10 @@
     var top = tr.bottom + 4;
     if (top + ph > window.innerHeight - 12) top = Math.max(12, tr.top - ph - 4);
     var left = Math.min(tr.left, window.innerWidth - pw - 12);
+    // Same reparent-out-of-the-table fix as positionJobsColMenu — a
+    // position:fixed popover nested inside the table's sticky/scrolled
+    // cells measures wrong for the first ~250ms after opening.
+    if (pop.parentElement !== root) root.appendChild(pop);
     pop.style.top = top + 'px';
     pop.style.left = Math.max(12, left) + 'px';
     pop.classList.add('jos-positioned');
@@ -17752,21 +17784,36 @@
     // animation once it finishes removes any ambiguity for every field
     // opened after the drawer has settled, which is effectively all of
     // them.
+    // Same fix, applied generally instead of only to the drawer: ANY
+    // element with animation-fill-mode:both keeps establishing a
+    // position:fixed containing block in Chrome even after the animation
+    // visually settles (the animation instance is still "in effect" per
+    // Web Animations semantics, regardless of the held keyframe's actual
+    // transform value). .jos-jobs-layout has this (josHomeIn, the page's
+    // own enter animation) and was never cleared, which is why the column
+    // add-field popover — positioned via getBoundingClientRect(), correct
+    // relative to the viewport — rendered shifted to wherever
+    // .jos-jobs-layout's box happened to sit instead.
     root.addEventListener('animationend', function (e) {
-      if (e.target && e.target.classList && e.target.classList.contains('jos-jobs-drawer')) {
-        e.target.style.animation = 'none';
-      }
+      if (e.target && e.target.style) e.target.style.animation = 'none';
     });
     wireTimeClockPicker(root);
     // Same outside-click-close pattern as Leads' column menu/add-field
     // popovers.
     root.addEventListener('click', function (e) {
-      if (!e.target.closest('.jos-ld-th') && root._josJobsColMenuKey) {
+      // .jos-ld-col-menu itself is checked alongside the header cell —
+      // positionJobsColMenu reparents the popover out of .jos-ld-th/
+      // .jos-ld-th-add (see its comment) to dodge a Chromium position:fixed
+      // quirk in that nesting, so a click on anything still inside the
+      // (now-relocated) popover — like "+ Add custom field" — must not
+      // read as "outside" just because it's no longer a DOM descendant of
+      // the header cell.
+      if (!e.target.closest('.jos-ld-th') && !e.target.closest('.jos-ld-col-menu') && root._josJobsColMenuKey) {
         root._josJobsColMenuKey = null;
         rerenderJobsOsFrom(root);
         return;
       }
-      if (!e.target.closest('.jos-ld-th-add') && root._josJobsColAddOpen) {
+      if (!e.target.closest('.jos-ld-th-add') && !e.target.closest('.jos-ld-col-menu') && root._josJobsColAddOpen) {
         root._josJobsColAddOpen = false;
         root._josJobsAddFieldOpen = false;
         root._josJobsAddFieldDraft = null;
