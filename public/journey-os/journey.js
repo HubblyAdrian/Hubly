@@ -16537,19 +16537,39 @@
     function grid(fieldsHtml) { return '<div class="jos-je-grid">' + fieldsHtml + '</div>'; }
 
     var notesMeta = parseJobNotesMeta((j.internalNotes && j.internalNotes[0]) || j.notes || '');
-    var quoteRow = notesMeta.quote
-      ? '<div class="jos-je-scan-row"><span>Quote</span><strong>' + (notesMeta.quote.amount ? esc(notesMeta.quote.amount) : '') + (notesMeta.quote.status ? (notesMeta.quote.amount ? ' · ' : '') + esc(notesMeta.quote.status) : '') + '</strong></div>'
-      : '';
     var depositLabel = depositStatusLabel(j.depositStatus);
-    var depositRow = '<div class="jos-je-scan-row"><span>Deposit</span><strong>' + esc(depositLabel || 'Not requested') + '</strong></div>';
-    var invoiceRow = '<div class="jos-je-scan-row"><span>Invoice</span><strong>' + (j.invoice ? esc(j.invoice.status) : 'None yet') + '</strong></div>';
-    var priceRow = '<div class="jos-je-scan-row"><span>Price</span><strong>' + esc(money(j.amount) || '$0') + '</strong></div>';
+    var invoiceStatus = j.invoice ? j.invoice.status : 'None yet';
+    var finCards = [
+      { label: 'Total', value: money(j.amount) || '$0' },
+      { label: 'Invoice', value: invoiceStatus },
+      { label: 'Deposit', value: depositLabel || 'Not requested' }
+    ];
+    if (notesMeta.quote) {
+      finCards.push({ label: 'Quote', value: (notesMeta.quote.amount ? esc(notesMeta.quote.amount) : '') + (notesMeta.quote.status ? (notesMeta.quote.amount ? ' · ' : '') + esc(notesMeta.quote.status) : '') });
+    }
+    var financialCardsHtml = '<div class="jos-je-fin-cards">' + finCards.map(function (c) {
+      return '<div class="jos-je-fin-card"><span>' + esc(c.label) + '</span><strong>' + c.value + '</strong></div>';
+    }).join('') + '</div>';
 
-    var assignedName = j.assignedTo || '';
+    // Guards against the literal string 'Unassigned' being treated as a
+    // real technician name — a previous jobs-create default stored it as
+    // assignedTo directly (fixed below), and any job created under that
+    // bug would otherwise match itself as its own "active job" here.
+    var assignedName = (j.assignedTo && j.assignedTo !== 'Unassigned') ? j.assignedTo : '';
     var assignedTech = assignedName ? (jobsTeam() || []).find(function (t) { return t.name === assignedName; }) : null;
+    var activeCount = assignedName ? jobActiveJobsCountForTech(assignedName, j.id) : 0;
     var assignmentStat = assignedName
-      ? '<div class="jos-je-substat">' + (assignedTech && assignedTech.role ? esc(assignedTech.role) + ' · ' : '') + jobActiveJobsCountForTech(assignedName, j.id) + ' active job' + (jobActiveJobsCountForTech(assignedName, j.id) === 1 ? '' : 's') + '</div>'
+      ? '<div class="jos-je-substat"><i class="jos-je-role-dot"></i>' + (assignedTech && assignedTech.role ? esc(assignedTech.role) : 'Assigned') + ' · ' + activeCount + ' active job' + (activeCount === 1 ? '' : 's') + '</div>'
       : '<div class="jos-je-substat is-empty">Unassigned</div>';
+
+    // Quick actions reuse the exact same jobs-call/jobs-email/jobs-message
+    // handlers the drawer footer and table row-menu already use — no new
+    // action logic, just surfaced where they're used constantly instead of
+    // requiring a scroll + tab switch. Call/Email only render when there's
+    // a real number/address to act on — no dead buttons.
+    var quickActs = (j.phone ? btn('jobs-call', '☎ Call', 'jos-btn jos-btn-sm') : '') +
+      (j.email ? btn('jobs-email', '✉ Email', 'jos-btn jos-btn-sm') : '') +
+      btn('jobs-message', '💬 Message', 'jos-btn jos-btn-sm');
 
     var activityItems = (j.timeline || []).slice().reverse();
     var activityHtml = activityItems.length
@@ -16558,14 +16578,26 @@
         }).join('') + '</div>'
       : '<div class="jos-muted">No activity yet.</div>';
 
+    // Summary strip — the drawer should open onto "what's happening,"
+    // not a form: assignment + billing state at a glance, read-only,
+    // before any editable section. Same values as the Assignment/
+    // Financial sections below, not new data — this is a second,
+    // faster-to-scan view of the same facts, the way a Stripe/Linear/
+    // Apple Health detail view leads with a summary card before detail.
+    var summaryHtml = '<div class="jos-je-summary">' +
+      '<div class="jos-je-summary-row"><span>Assigned</span><strong>' + esc(assignedName || 'Unassigned') + '</strong></div>' +
+      '<div class="jos-je-summary-row"><span>' + esc(money(j.amount) || '$0') + '</span><span class="jos-muted">Invoice ' + esc(invoiceStatus) + '</span></div>' +
+      '</div>';
+
     return '<div class="jos-jd-stack jos-je-form is-inline">' +
+      summaryHtml +
       section('Customer', grid(
         F('First name', 'customerFirst') +
         F('Last name', 'customerLast') +
         F('Phone', 'phone') +
         F('Email', 'email') +
         F('Address', 'address', { full: true })
-      )) +
+      ) + (quickActs ? '<div class="jos-je-quick-acts">' + quickActs + '</div>' : '')) +
       section('Job', grid(
         F('Service', 'service') +
         F('Vehicle / property', 'vehicle') +
@@ -16574,7 +16606,7 @@
         F('Duration (min)', 'durationMin')
       )) +
       section('Assignment', grid(F('Assigned to', 'assignedTo')) + assignmentStat) +
-      section('Financial', '<div class="jos-je-scan">' + priceRow + depositRow + invoiceRow + quoteRow + '</div>') +
+      section('Financial', financialCardsHtml) +
       section('Activity', activityHtml) +
       section('Notes', grid(F('Notes', 'notes', { full: true }))) +
       '</div>';
@@ -16768,6 +16800,7 @@
 
     return '<aside class="jos-jobs-drawer open" id="jos-jobs-drawer">' +
       '<div class="jos-jd-head">' +
+      '<div class="jos-jd-breadcrumb">Jobs <i>›</i> ' + esc(j.service || 'Job') + '</div>' +
       '<div class="jos-jd-head-top">' +
       '<div class="jos-jd-head-icon" aria-hidden="true">' + (j.isGoogle ? '📅' : '🔧') + '</div>' +
       '<div class="jos-jd-head-title">' + titleHtml + '</div>' +
@@ -19140,9 +19173,10 @@
           /* Still allow owner override with confirm */
           if (!window.confirm((bookCheck.reason || 'Outside hours') + '\n\nCreate job anyway?')) return;
         }
+        var placeholderId = 'JOB-' + String(1000 + jobsAll().length + 1);
         var nj = {
-          id: 'JOB-' + String(1000 + jobsAll().length + 1),
-          jobNumber: 'JOB-' + String(1000 + jobsAll().length + 1),
+          id: placeholderId,
+          jobNumber: placeholderId,
           customer: 'New Customer',
           email: '',
           phone: '',
@@ -19153,7 +19187,12 @@
           time: createTime,
           status: 'scheduled',
           address: '',
-          assignedTo: (jobsTeam()[0] && jobsTeam()[0].name) || 'Unassigned',
+          // No auto-assignment — an unmade decision shouldn't display as if
+          // someone made it (same reasoning ensureJobsOsState already
+          // applies elsewhere: round-robin auto-assign was removed for
+          // exactly this — a job stays genuinely Unassigned until a human
+          // assigns it).
+          assignedTo: '',
           depositStatus: 'none',
           deposit: 0,
           durationMin: 120,
@@ -19178,6 +19217,33 @@
         try {
           if (typeof global.maybeDelightLargestJob === 'function') global.maybeDelightLargestJob(nj.amount);
         } catch (eDelight2) {}
+        // This job existed only in memory until now — nj.id above is a
+        // local placeholder, never a real Supabase row, so nj.dbId was
+        // never set. Every edit made through the drawer (mutateJobField ->
+        // persistJobPatch) silently no-ops without a real dbId — a job
+        // "created" this way could never actually be saved, ever, which is
+        // why repeated "+ New Job" clicks piled up as junk rows that
+        // vanished on refresh. Insert for real and backfill dbId on the
+        // same object already sitting in S().jobs — findJob() keeps
+        // resolving it by nj.id, no other state needs to change.
+        try {
+          var createDb = jobsDb();
+          var bizId = global.currentBusiness && global.currentBusiness.id;
+          if (createDb && bizId) {
+            createDb.from('jobs').insert({
+              business_id: bizId, customer_name: nj.customer, service_name: nj.service,
+              scheduled_date: nj.date || null, scheduled_time: nj.time || null, address: nj.address || null,
+              amount: nj.amount, status: nj.status, phone: nj.phone || null, email: nj.email || null,
+              vehicle: nj.vehicle || null, assigned_to: nj.assignedTo || null, deposit_status: nj.depositStatus,
+              duration_hours: (nj.durationMin || 120) / 60
+            }).select().single().then(function (res) {
+              if (res && res.error) { console.warn('jobs-create insert', res.error); toast('Couldn’t save the new job — check your connection and try again'); return; }
+              if (res && res.data && res.data.id) nj.dbId = res.data.id;
+            });
+          } else {
+            toast('Couldn’t save the new job — not connected');
+          }
+        } catch (eCreateInsert) { console.warn('jobs-create insert', eCreateInsert); }
         return rerender();
       }
       if (act === 'jobs-edit') {

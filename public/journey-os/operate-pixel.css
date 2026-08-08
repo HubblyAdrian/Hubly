@@ -4641,19 +4641,37 @@ html[data-theme="night"] .jos-mem-form select{
   box-shadow:0 0 0 3px rgba(217,99,45,.12);width:100%;
 }
 textarea.jos-je-field-input.jos-ld-cell-inline{height:auto!important;min-height:72px;padding:10px 12px!important;resize:vertical;line-height:1.4}
-/* Financial — scannable label/value rows instead of another input grid;
-   nothing here is directly editable (Amount is edited via the Financial
-   section's Price row reusing the click-to-edit Amount field instead —
-   see jobDrawerField('Amount'...) if that changes later). */
-.jos-je-scan{display:flex;flex-direction:column;gap:2px}
-.jos-je-scan-row{display:flex;justify-content:space-between;align-items:center;padding:8px 4px;font-size:13px;border-bottom:1px solid var(--jos-border)}
-.jos-je-scan-row:last-child{border-bottom:0}
-.jos-je-scan-row span{color:var(--jos-ink-3);font-weight:700}
-.jos-je-scan-row strong{font-weight:700;color:var(--jos-navy)}
+/* Financial — small scannable cards (Total/Invoice/Deposit, +Quote when
+   real quote metadata exists) instead of a label/value list. Nothing
+   here is directly editable — Amount is still edited via the Financial
+   value shown; these cards are the "glance" view, not a form. */
+.jos-je-fin-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px}
+.jos-je-fin-card{
+  border:1px solid var(--jos-border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px;background:#FAFBFC;
+}
+.jos-je-fin-card span{font-size:11px;font-weight:700;color:var(--jos-ink-3);text-transform:uppercase;letter-spacing:.04em}
+.jos-je-fin-card strong{font-size:16px;font-weight:800;color:var(--jos-navy)}
 /* Assignment — real computed stat under the picker, never a fabricated
-   rating/availability indicator. */
-.jos-je-substat{margin-top:6px;font-size:12px;color:var(--jos-ink-3);font-weight:600;padding:0 4px}
+   rating/availability indicator. The dot is a plain neutral accent (not
+   green/red) — it's a role marker, not a live-availability signal we
+   don't have data for. */
+.jos-je-substat{margin-top:8px;font-size:12px;color:var(--jos-ink-3);font-weight:600;padding:0 4px;display:flex;align-items:center;gap:6px}
 .jos-je-substat.is-empty{color:var(--jos-ink-3)}
+.jos-je-role-dot{flex-shrink:0;width:7px;height:7px;border-radius:50%;background:var(--jos-brand)}
+/* Customer quick actions — the same jobs-call/jobs-email/jobs-message
+   handlers already used elsewhere, surfaced right under the person
+   they act on instead of requiring a scroll. */
+.jos-je-quick-acts{display:flex;gap:8px;margin-top:12px}
+/* Summary strip — the drawer opens onto this before any section, a
+   read-only recap of the same Assignment/Financial facts shown in
+   full further down. */
+.jos-je-summary{
+  display:flex;flex-direction:column;gap:6px;background:#FAFBFC;border:1px solid var(--jos-border);border-radius:14px;padding:14px 16px;margin-bottom:4px;
+}
+.jos-je-summary-row{display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.jos-je-summary-row span{color:var(--jos-ink-3);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.jos-je-summary-row strong{font-weight:800;color:var(--jos-navy);font-size:15px}
+.jos-je-summary-row:last-child span:first-child{font-size:18px;font-weight:800;color:var(--jos-navy);text-transform:none;letter-spacing:normal}
 /* Activity — job.timeline, real events only (Started/Completed/Deposit
    collected/etc, whatever pushJobTimeline actually recorded). */
 .jos-je-activity{display:flex;flex-direction:column;gap:0}
