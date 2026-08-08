@@ -8470,7 +8470,7 @@
           return '<span class="jos-ld-status-pill ' + match.tone + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + esc(label) + '</span>';
         }
         var isEmpty = !value;
-        return '<span class="jos-ld-name-cell' + (isEmpty ? ' is-empty' : '') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + esc(label || col.allowEmpty || 'Unassigned') + '</span>';
+        return '<span class="jos-ld-name-cell jos-ld-select-cell' + (isEmpty ? ' is-empty' : '') + '" data-jos-lead-field="' + esc(col.key) + '" data-jos-lead-id="' + esc(leadKey) + '" title="Click to change">' + esc(label || col.allowEmpty || 'Unassigned') + '</span>';
       },
       edit: function (value, col, leadKey) {
         var opts = rendererRegistry.select.resolveOptions(col);
@@ -8525,27 +8525,36 @@
     });
   }
 
-  function renderLeadsTable(root, list, selectedId, bulkOpen, bulkSelected, columns) {
-    if (!list.length) return '';
+  function renderLeadsTable(root, list, selectedId, bulkOpen, bulkSelected, columns, emptyStateInner) {
     var cols = (columns || LEADS_DEFAULT_COLUMNS).filter(function (c) { return !c.hidden; });
     var schemaMap = leadsSchemaMap(root._josLeadsCustomFields);
     var openKey = root._josLeadsColMenuKey || null;
     var editing = root._josLeadsEditCell || null;
     var renamingKey = root._josLeadsColRenaming || null;
+    var active = null;
 
     // Roving tabindex (standard ARIA grid pattern, same as Attio/Sheets):
     // exactly one cell in the whole table is a Tab stop; arrow keys move
     // which one that is. Keeps Tab a single stop into/out of the grid
     // instead of stair-stepping through every cell.
-    if (!root._josLeadsActiveCell || !list.some(function (l) { return String(l.id || l.key) === root._josLeadsActiveCell.leadId; })) {
-      root._josLeadsActiveCell = { leadId: String(list[0].id || list[0].key), colKey: cols[0].key };
+    if (list.length) {
+      if (!root._josLeadsActiveCell || !list.some(function (l) { return String(l.id || l.key) === root._josLeadsActiveCell.leadId; })) {
+        root._josLeadsActiveCell = { leadId: String(list[0].id || list[0].key), colKey: cols[0].key };
+      }
+      active = root._josLeadsActiveCell;
     }
-    var active = root._josLeadsActiveCell;
 
     var colGroup = '<colgroup>' + (bulkOpen ? '<col style="width:32px">' : '') +
       cols.map(function (c) { var def = schemaMap[c.key]; return '<col data-jos-col-key="' + esc(c.key) + '" style="width:' + (c.width || (def && def.width) || 140) + 'px">'; }).join('') +
       '<col style="width:36px"></colgroup>';
-    var rows = list.map(function (lead) {
+    // Empty result stays a real table — headers, column drag/resize/+add
+    // all still work — instead of collapsing into an unrelated-looking
+    // "No leads yet" screen the moment the last row is filtered out or
+    // deleted. One wide row spans every column instead of a per-lead row.
+    var rows = !list.length
+      ? '<tr class="jos-ld-empty-row"><td colspan="' + (cols.length + (bulkOpen ? 1 : 0) + 1) + '">' +
+        '<div class="jos-ld-empty-table">' + (emptyStateInner || '<strong>No leads yet</strong><p>Create your first lead or connect a form.</p>' + btn('leads-add-open', 'New Lead', 'jos-btn-brand jos-btn-sm')) + '</div></td></tr>'
+      : list.map(function (lead) {
       var leadKey = String(lead.id || lead.key);
       var on = selectedId && leadKey === String(selectedId);
       var checked = !!(bulkSelected && bulkSelected[leadKey]);
@@ -9105,11 +9114,25 @@
         esc(t[1]) + ' (' + count + ')</button>';
     }).join('') + '</div>';
 
+    // Four genuinely different reasons a list can be empty get four
+    // different messages — "create your first lead" reads as wrong (and
+    // faintly condescending) when the real story is "your search didn't
+    // match anything" and the account has leads sitting right there.
+    var hasActiveSearchOrFilter = !!String(root._josLeadsQ || '').trim() ||
+      Object.keys(root._josLeadFilters || {}).some(function (k) {
+        var v = (root._josLeadFilters || {})[k];
+        return v != null && v !== '' && v !== 'all';
+      });
+    var emptyStateInner = !all.length
+      ? '<strong>No leads yet</strong><p>Create your first lead or connect a form.</p>' + btn('leads-add-open', 'New Lead', 'jos-btn-brand jos-btn-sm')
+      : (tab === 'recovery'
+        ? '<strong>No unfinished bookings</strong><p>When someone starts booking and leaves, they show up here for follow-up.</p>'
+        : (hasActiveSearchOrFilter
+          ? '<strong>No matches</strong><p>Try a different search or clear your filters.</p>'
+          : '<strong>No leads in this view</strong><p>Try a different tab.</p>'));
     var listHtml = visible.length
       ? visible.map(function (l) { return renderLeadCard(l, selectedId, bulkOpen, root._josLeadBulkSelected); }).join('')
-      : (tab === 'recovery'
-        ? '<div class="jos-ld-empty-list"><strong>No unfinished bookings</strong><p>When someone starts booking and leaves, they show up here for follow-up.</p></div>'
-        : '<div class="jos-ld-empty-list"><strong>No leads yet</strong><p>Create your first lead or connect a form.</p>' + btn('leads-add-open', 'New Lead', 'jos-btn-brand jos-btn-sm') + '</div>');
+      : '<div class="jos-ld-empty-list">' + emptyStateInner + '</div>';
 
     morphLeadsInto(root,
       '<div class="jos-ld-shell' + (wsOpen ? ' ws-open' : '') + '">' +
@@ -9169,9 +9192,7 @@
         return '<option value="' + s[0] + '"' + ((root._josLeadsSort || 'newest') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
       }).join('') + '</select></div>' +
       (viewMode === 'table'
-        ? (visible.length
-          ? renderLeadsTable(root, visible, selectedId, bulkOpen, root._josLeadBulkSelected, leadsColumns)
-          : '<div class="jos-ld-list">' + listHtml + '</div>')
+        ? renderLeadsTable(root, visible, selectedId, bulkOpen, root._josLeadBulkSelected, leadsColumns, emptyStateInner)
         : '<div class="jos-ld-list">' + listHtml + '</div>') +
       (filtered.length > visible.length
         ? '<button type="button" class="jos-btn jos-ld-loadmore" data-jos-act="leads-load-more">Load More Leads</button>'

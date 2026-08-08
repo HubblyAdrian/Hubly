@@ -398,7 +398,10 @@ body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
 @keyframes josHomeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .jos-home-loading{
   padding:48px 20px;text-align:center;color:var(--jos-ink-3);font-size:13px;font-weight:650;
+  animation:josLoadingPulse 1.1s ease-in-out infinite;
 }
+@keyframes josLoadingPulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.jos-home-loading{animation:none}}
 .jos-error-state{padding:36px 20px}
 .jos-weather-alert{
   margin-top:10px;padding:8px 10px;border-radius:10px;font-size:12px;font-weight:700;
@@ -5006,31 +5009,35 @@ html[data-theme="night"] .jos-mem-form select{
 .jos-ld-addfield-input:focus{outline:0;border-color:#9CA8BD;box-shadow:0 0 0 3px rgba(100,116,139,.14)}
 .jos-ld-addfield-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:2px}
 
-/* Status pill — static by default, double-click to edit */
+/* Status pill — click opens the dropdown, same as every other select
+   column. Cursor states across every cell type match what a click
+   actually does: pointer for "opens a picker," text for "starts typing." */
 .jos-ld-status-pill{
   display:inline-flex;align-items:center;height:24px;border-radius:999px;padding:0 10px;font-size:11px;font-weight:650;
-  cursor:default;background:#F1F2F4;color:#5B6270;
+  cursor:pointer;background:#F1F2F4;color:#5B6270;
 }
 .jos-ld-status-pill.ok{background:#EFFAF3;color:#1E8A4C}
 .jos-ld-status-pill.brand{background:#EEF1F5;color:#4B5565}
 .jos-ld-status-pill.info{background:#EFF4FC;color:#3465C4}
 .jos-ld-status-pill.warn{background:#FBF3EC;color:#B4692D}
 .jos-ld-status-pill.mute{background:#F1F2F4;color:#8B909A}
-.jos-ld-assigned-text{color:var(--jos-navy);font-weight:550;cursor:default}
-.jos-ld-assigned-text.is-empty{color:#9CA3AF;font-weight:500}
-.jos-ld-tags-cell{display:inline-flex;flex-wrap:wrap;gap:4px;cursor:default;max-width:100%}
+.jos-ld-tags-cell{display:inline-flex;flex-wrap:wrap;gap:4px;cursor:text;max-width:100%}
 .jos-ld-tags-cell.is-empty{color:#9CA3AF;font-weight:500}
 .jos-ld-tag-chip{
   display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;
   background:#F1F2F4;color:#5B6270;font-size:11px;font-weight:650;white-space:nowrap;
 }
-.jos-ld-name-cell,.jos-ld-contact-cell,.jos-ld-service-cell,.jos-ld-url-cell{cursor:default;display:inline-block;max-width:100%}
-.jos-ld-name-cell.is-empty,.jos-ld-contact-cell.is-empty,.jos-ld-service-cell.is-empty,.jos-ld-url-cell.is-empty{color:#9CA3AF;font-weight:500}
+.jos-ld-name-cell,.jos-ld-contact-cell,.jos-ld-url-cell{cursor:text;display:inline-block;max-width:100%}
+.jos-ld-name-cell.is-empty,.jos-ld-contact-cell.is-empty,.jos-ld-url-cell.is-empty{color:#9CA3AF;font-weight:500}
 /* The name is the record — reads like a link, opens the panel on click. */
 .jos-ld-name-link{cursor:pointer;font-weight:650;color:var(--jos-navy);transition:color .12s ease}
 .jos-ld-name-link:hover{color:var(--jos-brand);text-decoration:underline;text-underline-offset:2px}
+/* Select-type fallback (Service, Assigned without a tone) opens a
+   dropdown, not a text field — pointer, not text, overriding the shared
+   .jos-ld-name-cell rule above via source order. */
+.jos-ld-select-cell{cursor:pointer}
 .jos-ld-url-cell{color:#2563EB;text-decoration:underline;text-underline-offset:2px}
-.jos-ld-checkbox-cell{cursor:default;display:inline-block;font-size:16px;line-height:1;color:#9CA3AF}
+.jos-ld-checkbox-cell{cursor:pointer;display:inline-block;font-size:16px;line-height:1;color:#9CA3AF}
 .jos-ld-checkbox-cell.is-checked{color:var(--jos-brand)}
 
 /* Inline-editable cells — only shown mid-edit. <select> (status/assigned)
@@ -5099,6 +5106,13 @@ input.jos-ld-cell-inline:focus{
 .jos-ld-loadmore,.jos-ld-end{margin:8px 12px 14px}
 .jos-ld-empty-list{padding:32px 16px;text-align:center;color:var(--jos-ink-2)}
 .jos-ld-empty-list strong{display:block;color:var(--jos-navy);margin-bottom:6px}
+/* Table view, zero rows — the header/columns stay real (still draggable,
+   resizable, the +column button still works) instead of the whole table
+   disappearing behind an unrelated-looking placeholder screen. */
+.jos-ld-empty-row td{border-bottom:0;padding:0;height:auto}
+.jos-ld-empty-table{padding:56px 16px;text-align:center;color:var(--jos-ink-2)}
+.jos-ld-empty-table strong{display:block;color:var(--jos-navy);margin-bottom:6px;font-size:14px}
+.jos-ld-empty-table p{margin:0 0 14px;font-size:13px}
 
 /* Starts at width:0 (collapsed, invisible, not interactable) and is
    flipped to .is-open one frame after insertion — see
