@@ -15767,9 +15767,30 @@ async function refreshOpenAppViews(){
     }
   }catch(e){}
 }
+// loadJobs()/loadCustomers() fully REPLACE S.jobs/S.customers from
+// whatever's currently in Supabase — which doesn't yet include whatever
+// a user is mid-typing into an uncommitted field (nothing commits until
+// blur/change). A refresh landing mid-keystroke silently reverted the
+// field to the server's stale value — exactly what "typed a last name,
+// it got wiped a moment later" was: the ~400ms debounce is roughly the
+// gap between typing and the realtime-triggered refresh landing.
+function realtimeRefreshSafeToRun(){
+  var ae=document.activeElement;
+  if(!ae)return true;
+  var tag=ae.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return false;
+  if(ae.isContentEditable)return false;
+  return true;
+}
 function onRealtimeBizChange(){
   clearTimeout(_realtimeRefreshTimer);
-  _realtimeRefreshTimer=setTimeout(()=>{
+  _realtimeRefreshTimer=setTimeout(function runRealtimeRefresh(){
+    if(!realtimeRefreshSafeToRun()){
+      // Still typing — check back shortly instead of clobbering the
+      // in-progress edit or dropping the refresh entirely.
+      _realtimeRefreshTimer=setTimeout(runRealtimeRefresh,400);
+      return;
+    }
     refreshOpenAppViews().catch(e=>console.warn('realtime refresh',e));
   },400);
 }
