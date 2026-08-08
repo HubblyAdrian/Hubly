@@ -19187,6 +19187,21 @@
       });
     } catch (e) {}
   }
+  // One request instead of N — a multi-select delete used to fire a
+  // separate .delete().eq() per row (measured: all fired concurrently,
+  // not sequentially, but still N full round-trips + N realtime DELETE
+  // events instead of one). in('id', [...]) is a single DELETE ... WHERE
+  // id IN (...) statement.
+  function persistJobsDeleteBatch(jobs) {
+    try {
+      var d = jobsDb();
+      var dbIds = (jobs || []).map(function (j) { return j && j.dbId; }).filter(Boolean);
+      if (!d || !dbIds.length) return;
+      d.from('jobs').delete().in('id', dbIds).then(function (res) {
+        if (res && res.error) { console.warn('persistJobsDeleteBatch', res.error); toast('Couldn’t delete — check your connection and try again'); }
+      });
+    } catch (e) {}
+  }
 
   // The one place a schema-driven Jobs cell edit commits — same shape as
   // mutateLeadById, persistence lives here once rather than trusting every
@@ -20159,11 +20174,13 @@
         if (typeof global.confirm === 'function' && !global.confirm('Delete ' + ids3.length + ' job' + (ids3.length === 1 ? '' : 's') + '? This cannot be undone.')) return;
         // Same lesson as jobs-delete/persistJobDelete earlier this session —
         // this used to only mutate S().jobs and never touched Supabase, so
-        // a refresh silently brought every "deleted" job back.
-        ids3.forEach(function (id) {
-          var delJ = findJob(id);
-          if (delJ && !delJ.isGoogle) persistJobDelete(delJ);
-        });
+        // a refresh silently brought every "deleted" job back. Batched into
+        // one request (persistJobsDeleteBatch) instead of one per row —
+        // profiled: N separate .delete().eq() calls fire concurrently, not
+        // sequentially, but still cost N round-trips and N realtime DELETE
+        // events feeding into the (also unconditional, also sequential —
+        // see refreshOpenAppViews) post-change refresh cascade.
+        persistJobsDeleteBatch(ids3.map(findJob).filter(function (j) { return j && !j.isGoogle; }));
         S().jobs = S().jobs.filter(function (j) { return ids3.indexOf(String(j.id)) === -1; });
         root._josBulk = {};
         if (ids3.indexOf(String(root._josJobId)) > -1) { root._josJobId = null; root._josDrawerOpen = false; }

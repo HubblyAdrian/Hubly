@@ -15719,9 +15719,16 @@ function unsubscribeRealtimeUpdates(){
 }
 async function refreshOpenAppViews(){
   if(!currentBusiness)return;
-  await loadJobs();
-  try{await refreshLeadsSources();}catch(e){}
-  try{await loadCustomers();}catch(e){}
+  // These three don't depend on each other's results — used to run
+  // strictly one after another, so every realtime-triggered refresh
+  // (any insert/update/delete on jobs/booking_requests/customers) paid
+  // the sum of all three round-trips instead of the slowest one, no
+  // matter which single view was actually open and needed refreshing.
+  await Promise.all([
+    loadJobs(),
+    refreshLeadsSources().catch(()=>{}),
+    loadCustomers().catch(()=>{})
+  ]);
   try{
     if(viewIsOpen('v-jobs')){
       if(typeof renderCal==='function')renderCal();
@@ -43538,17 +43545,26 @@ function collectPipelineLeads(){
 }
 async function refreshLeadsSources(){
   if(!currentBusiness?.id||!db)return;
-  try{
-    const {data}=await db.from('booking_requests')
-      .select('id,customer_name,customer_phone,customer_email,service_name,address,notes,requested_date,requested_time,created_at,status')
-      .eq('business_id',currentBusiness.id).eq('status','abandoned')
-      .order('created_at',{ascending:false}).limit(40);
-    S.abandonedLeads=data||[];
-  }catch(e){S.abandonedLeads=S.abandonedLeads||[];}
-  try{
-    const {data}=await db.rpc('get_chatbot_conversations_for_business',{p_business_id:currentBusiness.id});
-    if(data)S.chatConversations=data;
-  }catch(e){}
+  // Independent queries — used to run one after the other for no reason,
+  // doubling this function's wall-clock cost inside every realtime
+  // refresh cascade (see refreshOpenAppViews).
+  await Promise.all([
+    (async()=>{
+      try{
+        const {data}=await db.from('booking_requests')
+          .select('id,customer_name,customer_phone,customer_email,service_name,address,notes,requested_date,requested_time,created_at,status')
+          .eq('business_id',currentBusiness.id).eq('status','abandoned')
+          .order('created_at',{ascending:false}).limit(40);
+        S.abandonedLeads=data||[];
+      }catch(e){S.abandonedLeads=S.abandonedLeads||[];}
+    })(),
+    (async()=>{
+      try{
+        const {data}=await db.rpc('get_chatbot_conversations_for_business',{p_business_id:currentBusiness.id});
+        if(data)S.chatConversations=data;
+      }catch(e){}
+    })()
+  ]);
 }
 function updateLeadsNavBadge(leads){
   const badge=document.getElementById('nav-leads-badge');
