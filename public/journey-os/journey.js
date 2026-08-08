@@ -8475,6 +8475,20 @@
         return '<input type="date" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
       }
     },
+    // Storage stays a 12h "10:00 AM" string (see timeTo24h/timeFrom24h) —
+    // only the native <input type="time"> (which requires 24h HH:MM) and
+    // the outgoing Supabase patch convert.
+    time: {
+      display: function (value, col, leadKey) {
+        var v = value || '';
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : 'Click to add') + '</span>';
+      },
+      edit: function (value, col, leadKey) {
+        return '<input type="time" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(timeTo24h(value)) + '" onclick="event.stopPropagation()">';
+      },
+      readValue: function (el) { return timeFrom24h(el.value); },
+      writeValue: function (el, value) { el.value = timeTo24h(value); }
+    },
     checkbox: {
       // No edit() — a checkbox is its own commit, no separate open-edit-
       // mode step makes sense for a binary value. The click handler
@@ -16126,6 +16140,24 @@
     var hh = h % 12; if (!hh) hh = 12;
     return hh + ':' + String(m).padStart(2, '0') + ' ' + ap;
   }
+  // <input type="time"> requires/produces 24h "HH:MM" — Postgres's `time`
+  // column expects the same format, which is exactly why this is now safe
+  // to make editable (the old free-text "10:00 AM" input couldn't
+  // guarantee a clean value; a native time picker can). job.time itself
+  // stays a 12h "10:00 AM" string in memory — every other place that
+  // reads it (table display, headers, jobCardHtml) already expects that
+  // format — only the edit widget and the outgoing Supabase patch convert,
+  // reusing the existing parseJobMinutes/formatJobMinutes pair.
+  function timeTo24h(raw) {
+    if (!raw) return '';
+    var mins = parseJobMinutes(raw);
+    return String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(mins % 60).padStart(2, '0');
+  }
+  function timeFrom24h(hhmm) {
+    var m = String(hhmm || '').match(/^(\d{1,2}):(\d{2})/);
+    if (!m) return '';
+    return formatJobMinutes(parseInt(m[1], 10) * 60 + parseInt(m[2], 10));
+  }
   function addDaysStr(ds, n) {
     var d = new Date(String(ds).slice(0, 10) + 'T12:00:00');
     d.setDate(d.getDate() + n);
@@ -16338,17 +16370,16 @@
       set: function (job, value) { job.date = value || ''; return 'Date → ' + (job.date || '—'); }
     },
     {
-      // Time stays display-only for now — the table's old free-text time
-      // input ("9:00 AM") isn't guaranteed to parse into the Postgres
-      // `time` column scheduled_time expects (HH:MM, 24h, no AM/PM), and
-      // getting that conversion wrong would silently reintroduce exactly
-      // the write-fails-or-corrupts-silently class of bug this whole pass
-      // exists to remove. Revisit once there's a real time picker
-      // (type:'date'-style native input) feeding it a guaranteed-clean
-      // value instead of free text.
-      key: 'time', label: 'Time', type: 'text', width: 100,
-      editable: false, sortable: false,
-      get: function (job) { return job.time || ''; }
+      // Real native time picker now (type:'time' -> <input type="time">,
+      // guaranteed-clean 24h HH:MM) instead of the old free-text input —
+      // that's what let this become editable at all. dbPatch converts to
+      // the DB's 24h format; job.time itself stays the 12h display string
+      // every other surface (table, headers, jobCardHtml) already expects.
+      key: 'time', label: 'Time', type: 'time', width: 100,
+      editable: true, sortable: false,
+      get: function (job) { return job.time || ''; },
+      set: function (job, value) { job.time = value || ''; return 'Time → ' + (job.time || '—'); },
+      dbPatch: function (job) { return { scheduled_time: timeTo24h(job.time) }; }
     },
     {
       key: 'status', label: 'Status', type: 'select', width: 130,
@@ -16602,7 +16633,7 @@
         F('Service', 'service') +
         F('Vehicle / property', 'vehicle') +
         F('Date', 'date') +
-        '<div class="jos-je-field"><span>Time</span><span class="jos-je-field-value is-readonly">' + (j.time ? esc(j.time) : 'Not set') + '</span></div>' +
+        F('Time', 'time') +
         F('Duration (min)', 'durationMin')
       )) +
       section('Assignment', grid(F('Assigned to', 'assignedTo')) + assignmentStat) +
@@ -19174,15 +19205,25 @@
           if (!window.confirm((bookCheck.reason || 'Outside hours') + '\n\nCreate job anyway?')) return;
         }
         var placeholderId = 'JOB-' + String(1000 + jobsAll().length + 1);
+        // Genuinely blank — "New Customer" / a pre-picked service / $180
+        // used to make a freshly-created draft look like a real, already-
+        // filled-in job (that's what "it just gives you a scheduled one,
+        // not a way to add a new job" was reporting). Every one of these
+        // now renders as "Click to add" in the drawer instead of looking
+        // like real data. The Supabase insert below still sends safe
+        // non-empty defaults for columns that plausibly can't be null
+        // (customer_name, service_name) — the moment the user types a real
+        // value into any of these fields, that overwrites the placeholder
+        // for real.
         var nj = {
           id: placeholderId,
           jobNumber: placeholderId,
-          customer: 'New Customer',
+          customer: '',
           email: '',
           phone: '',
           vehicle: '',
-          service: (S().services && S().services[0] && S().services[0].name) || 'Detail',
-          amount: 180,
+          service: '',
+          amount: null,
           date: createDate,
           time: createTime,
           status: 'scheduled',
@@ -19243,9 +19284,15 @@
           var bizId = global.currentBusiness && global.currentBusiness.id;
           if (createDb && bizId) {
             createDb.from('jobs').insert({
-              business_id: bizId, customer_name: nj.customer, service_name: nj.service,
-              scheduled_date: nj.date || null, scheduled_time: nj.time || null, address: nj.address || null,
-              amount: nj.amount, status: nj.status, phone: nj.phone || null, email: nj.email || null,
+              // customer_name/service_name fall back to a placeholder only
+              // for the insert itself (in case either column can't be
+              // null) — nj.customer/nj.service stay '' locally, so the
+              // drawer still shows "Click to add", not this fallback text.
+              // The moment the user types a real value, mutateJobField's
+              // normal patch overwrites it.
+              business_id: bizId, customer_name: nj.customer || 'New Customer', service_name: nj.service || 'Detail',
+              scheduled_date: nj.date || null, scheduled_time: nj.time ? timeTo24h(nj.time) : null, address: nj.address || null,
+              amount: nj.amount || 0, status: nj.status, phone: nj.phone || null, email: nj.email || null,
               vehicle: nj.vehicle || null, assigned_to: nj.assignedTo || null, deposit_status: nj.depositStatus,
               duration_hours: (nj.durationMin || 120) / 60
             }).select().single().then(function (res) {
