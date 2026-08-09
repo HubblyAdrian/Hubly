@@ -43128,7 +43128,9 @@ let _pipelineSaveTimer=null;
 function persistPipelineSoon(){
   ensurePipelineState();
   clearTimeout(_pipelineSaveTimer);
+  console.log('[HUBLY_TRACE] LEADS persistPipelineSoon SCHEDULED (fires in 450ms) t='+Date.now());
   _pipelineSaveTimer=setTimeout(async()=>{
+    console.log('[HUBLY_TRACE] LEADS persistPipelineSoon FIRING (actual businesses-table write) t='+Date.now());
     if(!currentBusiness?.id||!db)return;
     try{
       const {error}=await db.from('businesses').update({meta:buildBizMeta()}).eq('id',currentBusiness.id);

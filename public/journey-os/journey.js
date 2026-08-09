@@ -8824,6 +8824,7 @@
     pop.classList.add('jos-positioned');
   }
   function openLeadsComboPicker(root, recordId, key, inPanel) {
+    try { console.log('[HUBLY_TRACE] LEADS openLeadsComboPicker (interaction-triggered) t=' + Date.now()); } catch (eTrc) {}
     var col = findLeadsColumnDef(root, key);
     if (!col || col.editable === false) return;
     root._josLeadCombo = { recordId: recordId, key: key, search: '', inPanel: !!inPanel };
@@ -8834,6 +8835,7 @@
     if (s) s.focus({ preventScroll: true });
   }
   function closeLeadsComboPicker(root) {
+    try { console.log('[HUBLY_TRACE] LEADS closeLeadsComboPicker (interaction-triggered) t=' + Date.now()); } catch (eTrc) {}
     if (!root._josLeadCombo) return;
     root._josLeadCombo = null;
     renderLeads();
@@ -8979,6 +8981,7 @@
   }
 
   function renderLeads() {
+    try { console.log('[HUBLY_TRACE] LEADS renderLeads (render entry) t=' + Date.now()); } catch (eTrc) {}
     var root = ownPixelView('v-leads', 'jos-leads-root');
     if (!root) return;
     setLeadsMode(true);
@@ -10292,6 +10295,7 @@
   // up silently never saving: the edit worked, the UI updated, and the
   // very next refresh reverted it because nothing had actually persisted.
   function persistLeadsSoon() {
+    try { console.log('[HUBLY_TRACE] LEADS persistLeadsSoon CALLED -> persistPipelineSoon (450ms debounce, writes businesses table, not realtime-subscribed) t=' + Date.now()); } catch (eTrc) {}
     try { if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon(); } catch (e) {}
   }
   function mutateLead(mutator) {
