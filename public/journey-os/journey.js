@@ -17266,6 +17266,7 @@
   }
 
   function rerenderJobsOsFrom(root) {
+    try { console.log('[HUBLY_TRACE] rerenderJobsOsFrom (interaction-triggered) t=' + Date.now()); } catch (eTrc) {}
     root = root || jobsOsRoot();
     if (root && (root.id === 'jos-calendar-root' || root._josForcedView === 'calendar' || root._josJobsMainView === 'calendar')) {
       return renderCalendar();
@@ -19791,6 +19792,7 @@
   // (the whole point of optimistic UI), so this doesn't change that — it
   // only makes an actual failure loud instead of invisible.
   function persistJobPatch(job, patch) {
+    try { console.log('[HUBLY_TRACE] persistJobPatch CALLED job.dbId=' + (job && job.dbId) + ' patch=' + JSON.stringify(patch) + ' t=' + Date.now()); } catch (eTrc) {}
     try {
       var d = jobsDb();
       if (!d || !job || !job.dbId) return;

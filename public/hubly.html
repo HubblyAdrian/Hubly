@@ -15672,6 +15672,7 @@ function viewIsOpen(id){
 // what caused loadWeatherForecast() to rebuild the entire Jobs page just
 // because a weather fetch finished, regardless of what page was open).
 function refreshJobsIfOpen(){
+  console.log('[HUBLY_TRACE] refreshJobsIfOpen (background/realtime refresh) t='+Date.now()+' v-jobs open='+viewIsOpen('v-jobs'));
   if(!viewIsOpen('v-jobs'))return;
   try{HublyJourneyOS.renderJobs()}catch(e2){if(typeof renderCal==='function')renderCal();if(typeof renderJobsPanel==='function')renderJobsPanel();}
 }
@@ -15784,7 +15785,7 @@ var _lastLocalWriteAt={};
 function markLocalWrite(table,id){
   if(!table||id==null)return;
   var ids=Array.isArray(id)?id:[id];
-  ids.forEach(function(oneId){ if(oneId!=null)_lastLocalWriteAt[table+':'+oneId]=Date.now(); });
+  ids.forEach(function(oneId){ if(oneId!=null){_lastLocalWriteAt[table+':'+oneId]=Date.now(); console.log('[HUBLY_TRACE] markLocalWrite '+table+':'+oneId+' t='+Date.now());} });
 }
 window.markLocalWrite=markLocalWrite;
 // The single place a write should go through, rather than trusting every
@@ -15815,20 +15816,25 @@ window.realtimeAwareWrite=realtimeAwareWrite;
 function onRealtimeBizChange(payload){
   var table=payload&&payload.table;
   var recId=payload&&((payload.new&&payload.new.id)||(payload.old&&payload.old.id));
+  console.log('[HUBLY_TRACE] onRealtimeBizChange RECEIVED table='+table+' recId='+recId+' t='+Date.now());
   if(table&&recId!=null){
     var key=table+':'+recId;
     if(_lastLocalWriteAt[key]&&(Date.now()-_lastLocalWriteAt[key])<3000){
+      console.log('[HUBLY_TRACE] onRealtimeBizChange SUPPRESSED (own write, key='+key+') t='+Date.now());
       return;
     }
   }
+  console.log('[HUBLY_TRACE] onRealtimeBizChange NOT suppressed - scheduling refresh in 400ms, t='+Date.now());
   clearTimeout(_realtimeRefreshTimer);
   _realtimeRefreshTimer=setTimeout(function runRealtimeRefresh(){
     if(!realtimeRefreshSafeToRun()){
       // Still typing — check back shortly instead of clobbering the
       // in-progress edit or dropping the refresh entirely.
+      console.log('[HUBLY_TRACE] runRealtimeRefresh: not safe to run yet, retrying in 400ms, t='+Date.now());
       _realtimeRefreshTimer=setTimeout(runRealtimeRefresh,400);
       return;
     }
+    console.log('[HUBLY_TRACE] runRealtimeRefresh FIRING refreshOpenAppViews() t='+Date.now());
     refreshOpenAppViews().catch(e=>console.warn('realtime refresh',e));
   },400);
 }
