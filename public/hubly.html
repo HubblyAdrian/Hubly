@@ -15663,6 +15663,30 @@ function viewIsOpen(id){
   const el=document.getElementById(id);
   return !!(el&&!el.classList.contains('hidden'));
 }
+// The one place any background/async completion (realtime, Google Calendar
+// sync, auto-accepted bookings, weather, review approval, ...) goes to
+// repaint Jobs/Calendar/Dashboard - centralized so every caller gets the
+// same "only repaint the page the user is actually looking at" guard
+// instead of each async function hand-rolling its own unconditional
+// renderJobsPanel()/renderCal()/enhanceDashboard() calls (that pattern is
+// what caused loadWeatherForecast() to rebuild the entire Jobs page just
+// because a weather fetch finished, regardless of what page was open).
+function refreshJobsIfOpen(){
+  if(!viewIsOpen('v-jobs'))return;
+  try{HublyJourneyOS.renderJobs()}catch(e2){if(typeof renderCal==='function')renderCal();if(typeof renderJobsPanel==='function')renderJobsPanel();}
+}
+function refreshCalendarIfOpen(){
+  if(!viewIsOpen('v-calendar'))return;
+  try{HublyJourneyOS?.renderCalendar?.();}catch(e2){}
+}
+function refreshDashboardIfOpen(){
+  if(!viewIsOpen('v-dashboard'))return;
+  try{HublyJourneyOS?.enhanceDashboard?.();}catch(e2){
+    if(typeof renderDashToday==='function')renderDashToday();
+    if(typeof renderDashNewBookings==='function')renderDashNewBookings();
+    if(typeof updateKPIs==='function')updateKPIs();
+  }
+}
 function subscribeRealtimeUpdates(){
   if(_realtimeChannel||!currentBusiness)return;
   _realtimeChannel=db.channel('biz-updates-'+currentBusiness.id)
@@ -15695,25 +15719,8 @@ async function refreshOpenAppViews(){
     refreshLeadsSources().catch(()=>{}),
     loadCustomers().catch(()=>{})
   ]);
-  try{
-    // Was calling the legacy renderCal()/renderJobsPanel() unconditionally -
-    // #v-jobs is the same container id the V4 Jobs list (HublyJourneyOS.renderJobs,
-    // jos-jobs-root) renders into, so a realtime change was refreshing DOM the
-    // user wasn't actually looking at (split-brain: real page is V4, refresh
-    // target was legacy). HublyJourneyOS.renderJobs() first, matching the
-    // v-customers branch below; legacy stays only as a fallback.
-    if(viewIsOpen('v-jobs')){
-      try{HublyJourneyOS.renderJobs()}catch(e2){if(typeof renderCal==='function')renderCal();if(typeof renderJobsPanel==='function')renderJobsPanel();}
-    }
-  }catch(e){}
-  try{
-    // v-calendar had no branch here at all — a realtime jobs/booking_requests
-    // change never reached the open Calendar page, only the (identically-named
-    // but separate) Jobs list page above.
-    if(viewIsOpen('v-calendar')){
-      try{HublyJourneyOS?.renderCalendar?.();}catch(e2){}
-    }
-  }catch(e){}
+  try{ refreshJobsIfOpen(); }catch(e){}
+  try{ refreshCalendarIfOpen(); }catch(e){}
   try{
     if(viewIsOpen('v-leads')){
       try{HublyJourneyOS?.renderLeadsList?.();}catch(e2){}
@@ -15736,15 +15743,7 @@ async function refreshOpenAppViews(){
       HublySmartQuoteUI.renderQuotesView();
     }
   }catch(e){}
-  try{
-    if(viewIsOpen('v-dashboard')){
-      try{HublyJourneyOS?.enhanceDashboard?.();}catch(e2){
-        if(typeof renderDashToday==='function')renderDashToday();
-        if(typeof renderDashNewBookings==='function')renderDashNewBookings();
-        if(typeof updateKPIs==='function')updateKPIs();
-      }
-    }
-  }catch(e){}
+  try{ refreshDashboardIfOpen(); }catch(e){}
 }
 // loadJobs()/loadCustomers() fully REPLACE S.jobs/S.customers from
 // whatever's currently in Supabase — which doesn't yet include whatever
@@ -30868,7 +30867,7 @@ async function disconnectGoogleCalendar(){
     if(data?.error)throw new Error(data.error);
     renderGoogleCalendarStatus(data);
     toast('Google Calendar disconnected');
-    try{await loadJobs();if(typeof renderJobsPanel==='function')renderJobsPanel();if(typeof renderCal==='function')renderCal();}catch(e){}
+    try{await loadJobs();refreshJobsIfOpen();refreshCalendarIfOpen();}catch(e){}
   }catch(e){
     console.warn('disconnectGoogleCalendar',e);
     toast(e?.message||'Could not disconnect');
@@ -31029,7 +31028,7 @@ async function cancelHublyJob(){
   try{await deleteJobOnGoogleCalendar(jobId,gcalId);}catch(e){}
   closeM('m-job-detail');
   try{await loadJobs();}catch(e){}
-  try{renderJobsPanel();renderCal();renderDashToday();updateKPIs();}catch(e){}
+  try{refreshJobsIfOpen();refreshCalendarIfOpen();renderDashToday();updateKPIs();}catch(e){}
   toast('Job cancelled');
 }
 async function deleteHublyJob(){
@@ -31053,7 +31052,7 @@ async function deleteHublyJob(){
   }
   S.jobs=(S.jobs||[]).filter(x=>String(x.id)!==String(j.id)&&String(x.dbId||'')!==String(jobId));
   closeM('m-job-detail');
-  try{renderJobsPanel();renderCal();renderDashToday();updateKPIs();}catch(e){}
+  try{refreshJobsIfOpen();refreshCalendarIfOpen();renderDashToday();updateKPIs();}catch(e){}
   toast(j.isBlock?'Block deleted':'Job deleted');
 }
 
@@ -31117,8 +31116,8 @@ async function syncGoogleCalendar(opts={}){
       });
     }catch(inErr){console.warn('inbound sync',inErr);}
     await loadJobs();
-    try{if(typeof renderJobsPanel==='function')renderJobsPanel();}catch(e){}
-    try{if(typeof renderCal==='function')renderCal();}catch(e){}
+    try{ refreshJobsIfOpen(); }catch(e){}
+    try{ refreshCalendarIfOpen(); }catch(e){}
     try{await refreshGoogleCalendarStatus();}catch(e){}
     if(!quiet){
       const n=payload?.upserted??payload?.imported??0;
@@ -41491,7 +41490,7 @@ async function saveJobReschedule(){
   S.selectedDay=date;
   try{alignJobsWeekToDate(date);}catch(e){}
   closeM('m-job-reschedule');
-  updateKPIs();renderDashToday();renderJobsPanel();renderCal();
+  updateKPIs();renderDashToday();refreshJobsIfOpen();refreshCalendarIfOpen();
   viewJob(j.id);
   toast('Rescheduled ✓');
 }
@@ -41527,7 +41526,7 @@ async function saveJobDetailEdits(){
   }
   try{await upsertCustomer({name,phone,email,notes:''});}catch(e){}
   S._jobDetailDirty=false;
-  updateKPIs();renderDashToday();renderJobsPanel();renderCal();
+  updateKPIs();renderDashToday();refreshJobsIfOpen();refreshCalendarIfOpen();
   viewJob(j.id);
   toast('Saved ✓');
 }
@@ -41609,7 +41608,7 @@ async function _acceptBookingRequestInner(reqId,opts={}){
       await loadJobs();
       await loadCustomers();
       renderDashNewBookings();
-      renderJobsPanel();
+      refreshJobsIfOpen();
       updateKPIs();
     }else{
       S.jobs=(S.jobs||[]).filter(x=>x.reqId!==reqId);
@@ -41690,7 +41689,7 @@ async function _acceptBookingRequestInner(reqId,opts={}){
     S.jobs=(S.jobs||[]).filter(x=>x.reqId!==reqId);
     if(!skipReload){
       await loadJobs();
-      renderDashToday();renderDashNewBookings();updateKPIs();renderJobsPanel();
+      renderDashToday();renderDashNewBookings();updateKPIs();refreshJobsIfOpen();
       try{if(typeof renderLeadsBoard==='function')renderLeadsBoard({refresh:true});}catch(e){}
     }
     return;
@@ -41769,7 +41768,7 @@ async function completeJob(){
     await promoteJobLeadToCustomer(j);
     await loadCustomers();
   }
-  closeM('m-job-detail');renderJobsPanel();renderDashToday();updateKPIs();
+  closeM('m-job-detail');refreshJobsIfOpen();renderDashToday();updateKPIs();
   try{if(viewIsOpen('v-customers')&&typeof renderCustomersView==='function')renderCustomersView();}catch(e){}
   try{if(viewIsOpen('v-money')){if(typeof renderMoneyView==='function')renderMoneyView();if(typeof renderReports==='function')renderReports();}}catch(e){}
   try{if(typeof renderLeadsBoard==='function'&&viewIsOpen('v-leads'))renderLeadsBoard({refresh:true});else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());}catch(e){}
@@ -41786,7 +41785,7 @@ async function saveJobAmount(){
   if(j.dbId){
     await realtimeAwareWrite({table:'jobs',id:j.dbId,write:()=>db.from('jobs').update({amount:newAmt}).eq('id',j.dbId)});
   }
-  closeM('m-job-detail');renderJobsPanel();renderDashToday();renderMoneyView();updateKPIs();toast('Amount updated ✓');
+  closeM('m-job-detail');refreshJobsIfOpen();renderDashToday();renderMoneyView();updateKPIs();toast('Amount updated ✓');
 }
 
 // JOBS (manual)
@@ -41831,8 +41830,8 @@ async function submitBlockTime(){
   const d=new Date(date+'T00:00:00');
   if(!isNaN(d.getTime())){S.calMonth=d.getMonth();S.calYear=d.getFullYear();}
   syncJobsViewToggles();
-  renderCal();
-  updateKPIs();renderDashToday();renderJobsPanel();
+  refreshCalendarIfOpen();
+  updateKPIs();renderDashToday();refreshJobsIfOpen();
   closeM('m-block-time');
   document.getElementById('bt-date').value='';document.getElementById('bt-reason').value='';
   toast('Time blocked. offline for bookings ✓');
@@ -43454,7 +43453,7 @@ async function autoAcceptSkipLeadBookings(){
     }
     if(n){
       await loadJobs();
-      try{renderDashToday();renderDashNewBookings();updateKPIs();renderJobsPanel();}catch(e){}
+      try{renderDashToday();renderDashNewBookings();updateKPIs();refreshJobsIfOpen();}catch(e){}
       try{
         if(typeof renderLeadsBoard==='function'&&document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard({refresh:true});
         else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
@@ -45320,8 +45319,14 @@ async function loadWeatherForecast(opts){
     renderDashNewBookings();
     renderDashWeatherAlert();
     renderWeatherBanner();
-    if(typeof renderJobsPanel==='function')renderJobsPanel();
-    try{if(typeof HublyJourneyOS?.enhanceDashboard==='function')HublyJourneyOS.enhanceDashboard();}catch(e){}
+    // Weather has no live UI on Jobs at all today (the day-detail weather
+    // chip that used it lived in the legacy Jobs panel, which now redirects
+    // straight to HublyJourneyOS before ever reaching that markup) - a
+    // weather fetch finishing used to rebuild the entire Jobs page for
+    // nobody's benefit, on every page, regardless of what the user was
+    // doing. The only real consumer is the Home dashboard's weather widget,
+    // and only when Home is actually the open view.
+    try{ refreshDashboardIfOpen(); }catch(e){}
   }catch(e){
     S.weatherError=e?.message||'fetch_failed';
     console.warn('Weather forecast unavailable:',e.message);
@@ -45489,7 +45494,7 @@ function applyRecommendedTravelBuffers(){
   toast(sug.before||sug.after
     ?`Recommended: ${sug.before} min before · ${sug.after} min after — Save Website to apply`
     :'Studio / shop trade — no travel buffer needed');
-  try{if(typeof renderJobsPanel==='function')renderJobsPanel();}catch(e){}
+  try{ refreshJobsIfOpen(); }catch(e){}
 }
 function onTravelBufferChange(){
   if(currentBusiness){
@@ -45497,7 +45502,7 @@ function onTravelBufferChange(){
     currentBusiness.buffer_after_min=parseInt(document.getElementById('ed-buf-after')?.value,10)||0;
   }
   updateTravelBufferHint();
-  try{if(typeof renderJobsPanel==='function')renderJobsPanel();}catch(e){}
+  try{ refreshJobsIfOpen(); }catch(e){}
 }
 function updateTravelBufferHint(){
   const el=document.getElementById('ed-buf-hint');
@@ -47003,7 +47008,11 @@ async function approvePendingReview(id){
     if(!S.approvedReviewJobIds)S.approvedReviewJobIds=new Set();
     S.approvedReviewJobIds.add(String(r.job_id));
     renderPendingReviewsList();
-    if(typeof renderJobsPanel==='function')renderJobsPanel();
+    // Approving marks this review's job as review-approved (S.approvedReviewJobIds) -
+    // a real Jobs-row badge change, but only worth repainting if Jobs is the
+    // page actually open; this is triggered from the Dashboard's pending-reviews
+    // widget, so it usually isn't.
+    refreshJobsIfOpen();
     if(typeof renderWebsiteReviews==='function')renderWebsiteReviews('ws-reviews');
     toast(t('reviewApproved'));
   }catch(e){

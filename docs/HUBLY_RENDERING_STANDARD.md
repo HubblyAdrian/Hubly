@@ -1316,3 +1316,83 @@ direct-call sites* (the only remaining call is `onSwitchView`'s internal one) an
 the legacy fallback functions; all three pages still render real content after the nav sequence;
 `refreshOpenAppViews()` on an open Jobs page calls `HublyJourneyOS.renderJobs()` exactly once and
 neither legacy `renderCal()` nor `renderJobsPanel()`; zero console errors.
+
+### Post-close finding: Jobs visibly rerenders in normal use, Leads doesn't — empirically traced
+
+Reported after the above was already "done on paper": Jobs visibly flickers during ordinary use;
+Leads never does. Instrumented both pages' Status-edit pipeline directly (temporary
+`performance.now()` + stack-capturing trace points at every render/mutate/persist function on
+both pages, plus a `MutationObserver` on each root) rather than reasoning from source — the
+architecture said the two pipelines should be identical, so the only way to find a real
+difference was to measure, not read.
+
+**Result: the interaction pipelines are not the problem.** For the identical action (open the
+Status combo, pick a value, close) on both pages: Leads does 3 renders (open/commit/close) at
+26 total DOM mutation records; Jobs does 2 (open, commit+close combined) at 23 — both morph, both
+diffs are 2–5 nodes, both sub-10ms per render. Symmetric, comparably cheap, not the divergence.
+
+**The actual divergence**: roughly 150ms after the Jobs interaction finishes — with *zero*
+further interaction, confirmed by reproducing it with no click at all — `HublyJourneyOS.renderJobs()`
+fires again, full page, unprompted. Captured call stack:
+```
+renderJobs (journey.js:17299)
+  at renderJobsPanel (hubly.html:41078)
+  at loadWeatherForecast (hubly.html:45254)
+```
+`loadWeatherForecast()` runs once per session at boot (`hubly.html:14390`) and awaits a real
+network fetch — anywhere from a few hundred ms to a few seconds depending on latency — so its
+completion lands at an essentially random moment relative to whatever the user is doing. Its
+completion handler called `renderJobsPanel()` (→ `HublyJourneyOS.renderJobs()`, a full rebuild)
+and `HublyJourneyOS.enhanceDashboard()` (a full Dashboard rebuild), **unconditionally, regardless
+of which page was open**. Leads has no equivalent call anywhere — confirmed by grep. That's the
+entire explanation: not a flaw in the rendering architecture, a leftover dependency from a
+feature (a Jobs-page weather chip) that was never ported to JourneyOS and today has zero live UI,
+still wired to trigger a full-page rebuild on completion.
+
+**Fix — the dependency graph.** Checked where weather is actually displayed today: nowhere on
+Jobs (the legacy day-detail weather chip that used it is unreachable — `renderJobsPanel()`
+redirects to JourneyOS before ever reaching that markup); only on Home, via `.jos-home-weather`
+inside `renderHomeDashboard`, driven by `homeWeatherSummary()`. Correct graph is `Weather API →
+Home's weather widget`, not `Weather API → Jobs page`. Removed the `renderJobsPanel()` call from
+`loadWeatherForecast()` entirely (no live consumer) and gated the Dashboard repaint behind
+visibility.
+
+**Broader audit, as requested**: before committing, searched every other async completion path
+(Google Calendar sync/disconnect, auto-accepted bookings, review approval, job-detail-modal
+actions, block-time submit, travel-buffer settings — geocoding/AI/photos/Quick Quote/analytics
+were checked and were already correctly widget-scoped) for the same shape of bug — an async
+completion, or a click handler reachable from a page other than Jobs, unconditionally calling a
+full-page Jobs/Calendar/Dashboard renderer instead of checking whether that page was even open.
+
+| Async/cross-page task | Trigger | Old render target | Correct target |
+|---|---|---|---|
+| `loadWeatherForecast()` | App boot; Editor city field | `renderJobsPanel()` (full Jobs) + `enhanceDashboard()` (unconditional) | Home weather widget only, gated on `viewIsOpen('v-dashboard')` |
+| `syncGoogleCalendar()` | "Sync Now" (Editor or Jobs card); post-OAuth-return | `renderJobsPanel()` + `renderCal()` (unconditional) | Jobs/Calendar, each gated |
+| `disconnectGoogleCalendar()` | "Disconnect" (Editor card) | same | same, gated |
+| `autoAcceptSkipLeadBookings()` (×2 branches) | Runs inside every `loadJobs()` call — boot, realtime cascade, GCal sync, booking flows | `renderJobsPanel()` (unconditional); dashboard/nav-badge calls left as-is (self-guarding, some own a nav badge) | Jobs gated; dashboard calls unchanged (already safe) |
+| `_acceptBookingRequestInner()` (silent branches) | Auto-accept, and direct Accept click | same | same, gated |
+| `approvePendingReview()` | "Approve" on Dashboard's pending-reviews widget | `renderJobsPanel()` (unconditional) — updates a job-row review badge | Jobs, gated |
+| Job-detail modal: `completeJob`, `saveJobAmount`, `cancelHublyJob`, `deleteHublyJob`, `rescheduleJob`, `saveJobDetailEdits` | `viewJob()` opens this modal from *any* page (Dashboard bookings widget, Customers job history, etc.), not just Jobs | `renderJobsPanel()`/`renderCal()` (unconditional) | Jobs/Calendar, gated |
+| `submitBlockTime()` | Block-time modal, openable from Jobs *and* Dashboard's quick-action | same | same, gated |
+| Travel buffer settings (`applyRecommendedTravelBuffers`, `onTravelBufferChange`) | Editor settings, not async but same cross-page shape — explicitly affects the Jobs calendar's travel blocks | `renderJobsPanel()` (unconditional) | Jobs, gated |
+
+Fix shape, applied consistently everywhere in the table: three new shared helpers next to
+`viewIsOpen` — `refreshJobsIfOpen()`, `refreshCalendarIfOpen()`, `refreshDashboardIfOpen()` — each
+exactly matching `refreshOpenAppViews()`'s own already-correct per-branch logic (JourneyOS render
+first, legacy fallback only if unavailable, no-op if the page isn't open). `refreshOpenAppViews()`
+itself now calls these too, removing the duplication rather than leaving three copies of the same
+logic. Every call site above now calls the helper instead of hand-rolling its own unconditional
+render list — one canonical "refresh this page only if it's open" implementation, not eleven
+slightly-different ones.
+
+**Known, accepted residual**: `loadWeatherForecast()` can still call `enhanceDashboard()` twice
+when it's invoked from Home's own `ensureHomeWeatherLoaded()` (which independently re-renders
+Home after awaiting the same fetch) — both calls are cheap morphs now, so this is wasted work, not
+a visible bug, matching the same lower-priority class as the `switchV` residuals already accepted
+in the section above. Not fixed here.
+
+Verified live via Playwright: weather resolving while Jobs (not Dashboard) is open now calls
+`HublyJourneyOS.renderJobs()` zero times; weather resolving while Dashboard is open still updates
+the `.jos-home-weather` widget correctly (no regression); the three new helpers independently
+confirmed to fire exactly the right renderer (or none) in both visibility states; zero console
+errors.
