@@ -1087,6 +1087,102 @@ keyed diffing only ever applies to `TR`/`TH`/`TD` on Leads too; Home's widgets, 
 detail panel and filter drawer, correctly use the same non-keyed positional path. This is
 compliance, not a gap.
 
-### Customers — pending P1
+### Customers (`renderCustomers`/`renderCustomersPageInner`, `journey.js:~11860-11960`, plus the
+Full Profile surface below) — **Compliant**
+
+Customers turned out to be three distinct rendering surfaces, not one. The original P1 scope
+(the two table-like surfaces reached from the Customers nav) is now migrated; the audit also
+found a third surface — Full Profile — that is the app's actual customer-editing experience, and
+brought that surface's compliance question to a real answer instead of assuming it out of scope.
+
+**Level 1 ("Completed Customers" table) and Level 2 ("Command Center" single-customer view),
+both inside `#jos-customers-root`:**
+
+- Loading-stub `innerHTML` gated behind `if (!root.firstChild)` (was unconditional on every
+  render, same double-full-replace symptom as Home).
+- Both levels' final DOM write routed through `morphTableInto(root, …Html)` instead of a raw
+  `root.innerHTML =` replace. Level 1's `<tr>` now also carries `data-jos-record-id` alongside
+  its existing `data-jos-cust-row`, so the morph engine's row-keying actually engages.
+- Removed a duplicate `data-jos-cust-row` / `data-jos-cust-tab` click-dispatch branch that lived
+  directly in `bindRoot`'s generic delegated listener — near-identical logic already existed in
+  `wireCustomersRoot`'s own listener, so every relevant click fired both, double-calling
+  `renderCustomers()` per interaction. `wireCustomersRoot` is now the single owner of these
+  clicks, matching the pattern already established for Leads/Inbox in this document.
+- **Persistence bugs found and fixed** — three call sites mutated `S.customers` in place and
+  called `renderCustomers()` without ever persisting: `cust-status-menu` (turned out to be dead —
+  see below), `cust-favorite`, and `cust-archive` (both live, reachable from the more-menu). All
+  mutation now funnels through one new centralized function, `mutateCustomerById(id, mutator,
+  opts)` (mirroring Leads' `mutateLead`/`mutateLeadById`), which mutates, calls
+  `upsertCustomer(...)` with only the fields that have a real `customers` table column
+  (name/phone/email/vehicle/preferredService/customerType/statusOverride/recurringPlan/
+  recurringAmount — confirmed against `mapCustRow`), syncs `S.jobs` + the Supabase `jobs` table
+  when a rename happens, then renders. `favorite`/`status`/`archived` have no backing DB column
+  at all (confirmed — `customers` table has none), so routing them through `mutateCustomerById`
+  doesn't newly persist those specific fields to Supabase; what it fixes is the standard's actual
+  requirement — one funnel, not scattered mutate-then-render call sites — and means any future
+  field that does get a column is covered automatically.
+- **Dead code removed**: `cust-edit`/`cust-edit-cancel`/`cust-edit-save` and `cust-status-menu`
+  were all fully unreachable — no markup anywhere in Level 1 or Level 2 ever rendered
+  `data-jos-act="cust-edit"` or `data-jos-act="cust-status-menu"`, and the `jos-ce-*` field ids
+  the save handler read were never rendered either. This wasn't a working feature with a
+  persistence bug, as the earlier read of the code suggested — it was an orphaned form that never
+  existed in the live UI. Removed entirely rather than fixed in place, per this phase's rule
+  against inventing new patterns to justify dead code.
+
+Verified live via Playwright: single row click opens Level 2 cleanly with no double-dispatch
+revert; `cust-edit`/`cust-status-menu` confirmed absent from the DOM and the handler now no-ops
+safely if called; `cust-favorite`/`cust-archive` confirmed to call `upsertCustomer` exactly once
+each; an unrelated re-render leaves an untouched node's identity intact; a focused, typed-into
+search input keeps focus, value, node identity, and page scroll position across an unrelated
+re-render; the realtime refresh entry point (`renderCustomersPage`) is callable without throwing;
+zero console errors.
+
+**Full Profile (`openFullCustomerProfile`/`renderProfileTab`/`profileTabHtml`, `journey.js:
+~12586-12900`) — a separate, `document.body`-appended shell (`#jos-customer-profile`, created
+once via `ensureProfileShell()` and reused for the app's lifetime), not part of
+`#jos-customers-root`:**
+
+This is the real, reachable customer-editing surface — the thing users actually open (via "Open
+Full Profile" from Level 1/2's row menu) when they want more than the table view. Per this
+phase's direction, it was audited against the standard on its own terms rather than ported to
+`morphTableInto` by default:
+
+- **Render boundary**: targeted DOM writes to named sub-elements (`#jos-cp-av`, `#jos-cp-name`,
+  `#jos-cp-pill`, `#jos-cp-meta`, `#jos-cp-stats`, `#jos-cp-tabs`, `#jos-cp-body`), not a single
+  full-shell replace and not the morph engine either. Switching tabs toggles `.on` directly on the
+  tab buttons (no re-render of the tab bar) and calls `renderProfileTab(c, tab)`, which does
+  `body.innerHTML = profileTabHtml(...)` — replacing only the body region's contents, leaving the
+  avatar/name/pill/meta/stats/tabs regions completely untouched.
+- **Verdict: should not be ported to `morphTableInto`.** The standard's underlying goal — cheap,
+  targeted updates that don't destroy unrelated state — is already met by this surface's existing
+  pattern. Porting it to the morph engine would add machinery (keyed diffing keyed on
+  `data-jos-record-id`/`data-jos-col-key`) built for reorderable table rows, which this surface
+  has none of. "Everything follows the Rendering Standard" is satisfied here by the existing
+  implementation, not by making it use the same function name as Leads.
+- **Intentionally different, and why**: clicking a job card inside the Jobs tab re-renders the
+  *entire* tab body (`renderProfileTab`) just to update which card shows as selected, rather than
+  patching one card's class. This is a full-region replace on a tab-relevant interaction — the
+  same accepted pattern as Leads' own workspace-panel tab switching (§ referenced above). It's
+  acceptable here for the same reason it's acceptable there: no keyed-row reordering or bulk
+  selection is at stake, and nothing inside a job card is focusable or editable, so there's no
+  focus-loss risk from the full-body replace.
+- **Known gaps, documented rather than silently fixed (out of scope for a rendering-compliance
+  pass, per Rule #1 — not something to build new UI for here)**:
+  - Full Profile is not wired into `refreshOpenAppViews`'s realtime refresh path at all — if a
+    customer's data changes elsewhere while their profile is open, it will not update live. Real
+    gap, not fixed this phase.
+  - **No inline editing of a customer's core profile fields exists anywhere in the live product
+    today** — not Level 1, not Level 2, and not Full Profile's Overview tab either (it renders
+    Name/Phone/Email/Address/City/etc. as plain read-only `<span>`/`<strong>` pairs, no
+    `data-jos-field`, no click-to-edit). This was the real reason the original `cust-edit` form
+    looked like a feature worth fixing — it was reaching for a gap that's real, just not reachable
+    through the code that appeared to implement it. Building that editing UI is a product decision
+    for a future phase, not something this compliance pass invents on its own.
+
+Verified live via Playwright: shell created once and appended to `document.body`; header/avatar/
+name/pill/meta/stats/tabs region node identities all survive a tab switch untouched; the tab
+body's content genuinely changes between tabs; the correct tab is marked active; Overview
+confirmed to contain zero inputs/`contenteditable` (matching the documented read-only gap above);
+zero console errors.
 
 ### Jobs Calendar — pending P2

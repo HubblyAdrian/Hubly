@@ -11638,7 +11638,7 @@
         var last = lastJob(c);
         var tags = (c.tags || []).slice(0, 3);
         var checked = !!(bulkSelected && bulkSelected[String(c.id)]);
-        return '<tr class="jos-cc1-row" data-jos-cust-row="' + esc(String(c.id)) + '" tabindex="0">' +
+        return '<tr class="jos-cc1-row" data-jos-cust-row="' + esc(String(c.id)) + '" data-jos-record-id="' + esc(String(c.id)) + '" tabindex="0">' +
           (bulkOpen ? '<td class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-cust-bulk="' + esc(String(c.id)) + '"' + (checked ? ' checked' : '') + '></td>' : '') +
           '<td><span class="jos-cm-ava">' + esc(initials(c.name)) + '</span></td>' +
           '<td><strong>' + esc(c.name || 'Customer') + '</strong>' +
@@ -11862,7 +11862,10 @@
     if (!root) return;
     setCustomersMode(true);
     updateChrome('customers');
-    root.innerHTML = '<div class="jos-cm-shell"><div class="jos-home-loading">Loading Customers…</div></div>';
+    // Same rule as Home/Jobs/Leads: only stamp the loading stub on true
+    // first paint. renderCustomersPageInner() morphs into root's existing
+    // children now, so wiping root here on every call would defeat that.
+    if (!root.firstChild) root.innerHTML = '<div class="jos-cm-shell"><div class="jos-home-loading">Loading Customers…</div></div>';
     try { renderCustomersPageInner(root); }
     catch (err) {
       console.warn('HublyJourneyOS Customers', err);
@@ -11907,11 +11910,12 @@
 
     /* LEVEL 2 — Command Center (full page, not a CRM split view) */
     if (level === 'command' && sel) {
-      root.innerHTML =
+      var commandHtml =
         '<div class="jos-cm-shell jos-cc-level-2">' +
         renderCustomerCommandCenter(root, sel) +
         renderCustomersContextMenu(root) +
         '</div>';
+      morphTableInto(root, commandHtml);
       bindRoot(root);
       wireCustomersRoot(root);
       return;
@@ -11939,7 +11943,7 @@
         '<span class="jos-muted jos-cc1-count">' + filtered.length + ' customer' + (filtered.length === 1 ? '' : 's') + '</span></div>';
     }
 
-    root.innerHTML =
+    var listHtml =
       '<div class="jos-cm-shell jos-cc-level-1">' +
       '<header class="jos-cm-header jos-cc1-header">' +
       '<div class="jos-cm-header-left"><h1>Customers</h1><p>People you\'ve successfully serviced.</p></div>' +
@@ -11972,6 +11976,12 @@
       renderCustomersContextMenu(root) +
       '</div>';
 
+    // Same engine Leads/Jobs-list/Home use (morphTableInto, journey.js:9018)
+    // instead of a raw innerHTML replace. Rows now carry data-jos-record-id
+    // (added alongside the existing data-jos-cust-row, which every click/
+    // keyboard/context-menu handler still reads unchanged) so the morph's
+    // keyed path reconciles rows by identity, same as Leads/Jobs tables.
+    morphTableInto(root, listHtml);
     bindRoot(root);
     wireCustomersRoot(root);
   }
@@ -12120,7 +12130,6 @@
     root.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
         if (root._josCustLevel === 'command') { root._josCustLevel = 'list'; renderCustomers(); return; }
-        if (root._josCustEditOpen) { root._josCustEditOpen = false; renderCustomers(); return; }
         if (root._josCustAddOpen) { root._josCustAddOpen = false; renderCustomers(); return; }
         if (root._josCustFilterOpen) { root._josCustFilterOpen = false; renderCustomers(); return; }
         if (root._josCustCtx && root._josCustCtx.open) { root._josCustCtx = null; renderCustomers(); return; }
@@ -12152,6 +12161,52 @@
     c.activity = c.activity || [];
     c.activity.unshift({ type: type, label: label, at: new Date().toLocaleString() });
     c.activity = c.activity.slice(0, 40);
+  }
+
+  // Persistence, centralized — same discipline as Leads' mutateLead/
+  // mutateLeadById (HUBLY_TABLE_STANDARD.md's "Persistence" section):
+  // individual act handlers used to mutate the in-memory customer directly
+  // and either call the wrong persist function (global.saveCustomerDetail()
+  // reads legacy DOM ids like #cd-name that don't exist on this page, so it
+  // silently no-ops here — a real shipped bug) or call nothing at all. Every
+  // customer mutation now goes through this one function instead.
+  //
+  // Only the fields hubly.html's upsertCustomer() actually has a database
+  // column for are sent — id/name/phone/email/vehicle/preferredService/
+  // customerType/statusOverride/recurringPlan/recurringAmount. Address,
+  // preferredDay, preferredTime, city, tags, notesList, tasks, and documents
+  // are real fields on the in-memory customer object and this Command
+  // Center's edit form, but have no backing database column at all (
+  // mapCustRow(), hubly.html, never reads any of them back from a row) —
+  // that's a separate, pre-existing data-model gap, not something this
+  // persistence fix invents a new table/column to solve. Flagged in
+  // HUBLY_RENDERING_STANDARD.md's migration-status section, not silently
+  // fixed here.
+  function mutateCustomerById(id, mutator, opts) {
+    opts = opts || {};
+    var c = findCustomer(id);
+    if (!c) return null;
+    var oldName = c.name;
+    mutator(c);
+    try {
+      if (typeof global.upsertCustomer === 'function') {
+        global.upsertCustomer({
+          id: c.id, name: c.name, phone: c.phone, email: c.email, vehicle: c.vehicle,
+          preferredService: c.preferredService, customerType: c.customerType,
+          statusOverride: c.statusOverride, recurringPlan: c.recurringPlan,
+          recurringAmount: c.recurringAmount,
+        });
+        // Renaming a customer keeps their historical jobs' customer_name in
+        // sync — the one piece of the old, broken saveCustomerDetail() worth
+        // carrying forward as-is (it already did this correctly).
+        if (oldName !== c.name && typeof global.currentBusiness !== 'undefined' && global.currentBusiness && typeof global.db !== 'undefined' && global.db) {
+          (global.S && global.S.jobs || []).forEach(function (j) { if (j.customer === oldName) j.customer = c.name; });
+          try { global.db.from('jobs').update({ customer_name: c.name }).eq('business_id', global.currentBusiness.id).eq('customer_name', oldName); } catch (eSync) {}
+        }
+      }
+    } catch (eSave) {}
+    if (!opts.quiet) renderCustomers();
+    return c;
   }
 
   function handleCustomersAct(act, t) {
@@ -12315,51 +12370,22 @@
         root._josCustCtx = { open: true, x: Math.max(8, rect.left - rrect.left - 40), y: Math.max(8, rect.bottom - rrect.top + 4), id: c.id };
         return renderCustomers();
       }
-      if (act === 'cust-status-menu') {
-        if (!c) return toast('Select a customer');
-        var nextSt = c.status === 'active' ? 'inactive' : (c.status === 'inactive' ? 'lost' : (c.status === 'lost' ? 'active' : 'active'));
-        if (nextSt === 'active') { c.status = 'active'; c.archived = false; if (!custIsVip(c)) c.statusOverride = ''; }
-        else if (nextSt === 'inactive') { c.status = 'inactive'; c.archived = true; }
-        else { c.status = 'lost'; }
-        pushCustActivity(c, 'status', 'Status → ' + nextSt);
-        toast('Status updated');
-        return renderCustomers();
-      }
-      if (act === 'cust-edit') {
-        if (!c) return toast('Select a customer');
-        root._josCustEditOpen = true;
-        root._josCustProfileTab = 'overview';
-        return renderCustomers();
-      }
-      if (act === 'cust-edit-cancel') {
-        root._josCustEditOpen = false;
-        return renderCustomers();
-      }
-      if (act === 'cust-edit-save') {
-        if (!c) return toast('Select a customer');
-        var nameVal = String((el('jos-ce-name') || {}).value || '').trim();
-        if (!nameVal) return toast('Name is required');
-        c.name = nameVal;
-        c.phone = formatPhoneValue((el('jos-ce-phone') || {}).value || '');
-        c.email = String((el('jos-ce-email') || {}).value || '').trim();
-        c.address = String((el('jos-ce-address') || {}).value || '').trim();
-        c.preferredService = String((el('jos-ce-service') || {}).value || '').trim();
-        c.preferredDay = String((el('jos-ce-day') || {}).value || '').trim();
-        c.preferredTime = String((el('jos-ce-time') || {}).value || '').trim();
-        c.vehicle = String((el('jos-ce-vehicle') || {}).value || '').trim();
-        if (c.address) {
-          var cityMatch = c.address.match(/,\s*([^,]+),\s*[A-Z]{2}\b/);
-          if (cityMatch) c.city = cityMatch[1].trim();
-        }
-        pushCustActivity(c, 'edit', 'Profile updated');
-        root._josCustEditOpen = false;
-        toast('Customer updated');
-        try {
-          if (typeof global.saveCustomerDetail === 'function') global.saveCustomerDetail(c);
-          else if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon();
-        } catch (eSave) {}
-        return renderCustomers();
-      }
+      // cust-status-menu used to live here — removed (Phase 3 P1). Never
+      // reachable: no markup anywhere ever rendered
+      // data-jos-act="cust-status-menu". The real, reachable status-change
+      // action is cust-archive below, which now persists via
+      // mutateCustomerById.
+      // cust-edit/cust-edit-cancel/cust-edit-save used to live here — removed
+      // (Phase 3 P1). Never reachable: no button anywhere ever rendered
+      // data-jos-act="cust-edit", and the jos-ce-* fields the save handler
+      // read (name/phone/email/address/service/day/time/vehicle) were never
+      // rendered either — a fully orphaned form-that-never-existed, not a
+      // working feature with a persistence bug. The real, reachable customer
+      // editing surface is Full Profile (openFullCustomerProfile);
+      // core-profile-field editing doesn't exist there either today (its
+      // Overview tab is read-only display) — a genuine, separate product
+      // gap, documented in HUBLY_RENDERING_STANDARD.md's migration-status
+      // section rather than silently built here as a new feature.
       if (act === 'cust-add-note' || act === 'cust-quick-note') {
         var noteVal = ((el('jos-cm-note-new') || el('jos-cm-quick-note') || {}).value) || '';
         if (!String(noteVal).trim()) return toast('Type a note');
@@ -12386,10 +12412,11 @@
         if (!isNaN(ti) && ti >= 0 && ti < c.tags.length) {
           var removed = c.tags.splice(ti, 1)[0];
           pushCustActivity(c, 'tag', 'Removed tag ' + (removed || ''));
-          try {
-            if (typeof global.saveCustomerDetail === 'function') global.saveCustomerDetail(c);
-            else if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon();
-          } catch (eSave) {}
+          // No persist call: tags have no backing database column
+          // (upsertCustomer/mapCustRow, hubly.html, neither writes nor reads
+          // one) — same as cust-add-tag above, which never attempted one
+          // either. The removed call here used to invoke the broken
+          // global.saveCustomerDetail(), which would have no-op'd anyway.
         }
         return renderCustomers();
       }
@@ -12465,18 +12492,23 @@
       }
       if (act === 'cust-favorite') {
         if (!c) return toast('Select a customer');
-        c.favorite = !c.favorite;
-        pushCustActivity(c, 'fav', c.favorite ? 'Marked favorite' : 'Removed favorite');
-        toast(c.favorite ? 'Favorited' : 'Removed from favorites');
-        return renderCustomers();
+        var nextFav = !c.favorite;
+        mutateCustomerById(c.id, function (mc) {
+          mc.favorite = nextFav;
+          pushCustActivity(mc, 'fav', nextFav ? 'Marked favorite' : 'Removed favorite');
+        });
+        toast(nextFav ? 'Favorited' : 'Removed from favorites');
+        return;
       }
       if (act === 'cust-archive') {
         if (!c) return toast('Select a customer');
-        c.status = 'inactive';
-        c.archived = true;
-        pushCustActivity(c, 'archive', 'Archived customer');
+        mutateCustomerById(c.id, function (mc) {
+          mc.status = 'inactive';
+          mc.archived = true;
+          pushCustActivity(mc, 'archive', 'Archived customer');
+        });
         toast('Customer archived');
-        return renderCustomers();
+        return;
       }
       if (act === 'cust-pay-refund') return toast('Refund · Stage 2 placeholder (not connected)');
       if (act === 'cust-review-sync') return toast('Review sync · Stage 2 placeholder (not connected)');
@@ -21055,7 +21087,7 @@
       // detection (the browser won't pair two clicks into a dblclick once
       // the target element gets replaced by a re-render in between).
       if (e.target.closest('[data-jos-field]')) return;
-      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-record-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust-row],[data-jos-cust-tab],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-rve-tab],[data-jos-rpt-tab],[data-jos-ah-tab],[data-jos-set-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
+      var t = e.target.closest('[data-jos-act],[data-jos-ask],[data-jos-card],[data-jos-pipe-card],[data-jos-opp],[data-jos-lead],[data-jos-lead-row],[data-jos-record-id],[data-jos-lead-filter],[data-jos-leads-tab],[data-jos-lead-ws],[data-jos-cust],[data-jos-sf-tab],[data-jos-mkt-tab],[data-jos-rev-tab],[data-jos-rev-source],[data-jos-mem-tab],[data-jos-rve-tab],[data-jos-rpt-tab],[data-jos-ah-tab],[data-jos-set-tab],[data-jos-tab],[data-jos-job],[data-jos-inbox-tab],[data-jos-inbox-id]'); if (!t) return;
       if (t.hasAttribute('data-jos-inbox-tab')) {
         var irTab = el('jos-inbox-root'); if (irTab) { irTab._josInboxTab = t.getAttribute('data-jos-inbox-tab'); renderInbox(); }
         return;
@@ -21097,10 +21129,6 @@
         return;
       }
       if (t.hasAttribute('data-jos-lead')) { var key = t.getAttribute('data-jos-lead'); if (key && typeof global.viewLead === 'function') global.viewLead(key); return; }
-      if (t.hasAttribute('data-jos-cust-tab')) {
-        var cr = el('jos-customers-root'); if (cr) { cr._josCustTab = t.getAttribute('data-jos-cust-tab'); renderCustomers(); }
-        return;
-      }
       if (t.hasAttribute('data-jos-sf-tab')) {
         var sfr = el('jos-storefront-root'); if (sfr) { sfr._josSfTab = t.getAttribute('data-jos-sf-tab'); renderStorefront(); }
         return;
@@ -21135,16 +21163,6 @@
       }
       if (t.hasAttribute('data-jos-set-tab')) {
         var setr = el('jos-settings-root'); if (setr) { setr._josSetTab = t.getAttribute('data-jos-set-tab'); ensureSettingsOsState().tab = setr._josSetTab; renderSettings(); }
-        return;
-      }
-      if (t.hasAttribute('data-jos-cust-row')) {
-        var crow = el('jos-customers-root');
-        if (crow) {
-          crow._josCustId = t.getAttribute('data-jos-cust-row');
-          crow._josCustLevel = 'command'; /* Level 1 → Level 2 only — never skip to Full Profile */
-          S().activeCustId = crow._josCustId;
-          renderCustomers();
-        }
         return;
       }
       if (t.hasAttribute('data-jos-job')) {
