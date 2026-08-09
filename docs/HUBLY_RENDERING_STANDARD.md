@@ -1061,3 +1061,32 @@ engages, and (e) all mutation funneled through one or two centralized mutate fun
 themselves call persist-then-render, so no call site can forget either step. Everything else in
 this document — state preservation, focus/scroll survival, cheap re-renders — falls out of those
 five structural decisions for free; none of it is bespoke per-page code on Leads today.
+
+## 10. Phase 3 migration status
+
+Tracks each page's compliance with this standard as Phase 3 brings the rest of the app into
+line. Updated as each page is migrated and verified, not written in advance.
+
+### Home (`enhanceDashboard`/`renderHomeDashboard`, `journey.js:14009-14808`) — **Compliant**
+
+Migrated: loading-stub `innerHTML` gated behind `if (!root.firstChild)` (was unconditional on
+every render — the direct cause of the double-render symptom); final DOM write routed through
+`morphTableInto(root, homeHtml)` instead of a raw `root.innerHTML =` replace (safe — verified
+every Home listener is delegated to `root`, none per-widget, before making the change); the 30s
+`setInterval` forcing a full rebuild every 60s removed entirely (traced what it repainted — every
+value either already comes through the app's realtime pipeline via `refreshOpenAppViews`, or is
+static state nothing else refetches on a timer either, so it bought no real freshness).
+
+Verified live via Playwright: no leftover loading stub after first real paint; a widget-menu
+action leaves every other widget's DOM node identity untouched; a focused input's focus, typed
+value, and node identity, plus page scroll position, all survive an unrelated full re-render
+byte-for-byte; no poll timer registered after boot; zero console errors.
+
+**No remaining deviations.** Home does not use keyed (`data-jos-record-id`) diffing — but per §4,
+keyed diffing only ever applies to `TR`/`TH`/`TD` on Leads too; Home's widgets, like Leads' own
+detail panel and filter drawer, correctly use the same non-keyed positional path. This is
+compliance, not a gap.
+
+### Customers — pending P1
+
+### Jobs Calendar — pending P2
