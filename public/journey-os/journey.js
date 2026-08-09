@@ -14213,7 +14213,13 @@
   }
 
   function renderHomeDashboard(root) {
-    root.innerHTML = '<div class="jos-page jos-home-page jos-home-v2"><div class="jos-home-loading" aria-live="polite">Loading Home…</div></div>';
+    // Same rule as Jobs/Leads: only stamp the loading stub on true first
+    // paint. Every render below morphs into root's existing children now
+    // (see morphTableInto below), so wiping root here on every call would
+    // defeat that — the morph would just be diffing against an empty stub
+    // each time, i.e. a full rebuild again, and it was the direct cause of
+    // Home's "double render on every tick" symptom.
+    if (!root.firstChild) root.innerHTML = '<div class="jos-page jos-home-page jos-home-v2"><div class="jos-home-loading" aria-live="polite">Loading Home…</div></div>';
     var today = todayStr();
     var allJobs = jobs().filter(function (j) { return !j.isBlock && j.status !== 'cancelled'; });
     var todayJobs = allJobs.filter(function (j) { return j.date === today; });
@@ -14622,7 +14628,7 @@
       if (todayJobs.length) notifs.push({ act: 'go-jobs', t: 'Jobs today', s: todayJobs.length + ' job' + (todayJobs.length === 1 ? '' : 's') + ' on the calendar', ago: 'now' });
     }
 
-    root.innerHTML =
+    var homeHtml =
       '<div class="jos-page jos-home-page jos-home-v2">' +
       customizeHtml +
       hero +
@@ -14642,6 +14648,18 @@
       quickRow +
       fab +
       '</div>';
+    // Same engine Leads/Jobs-list use (morphTableInto, journey.js:9018) instead
+    // of a raw innerHTML replace — patches existing widget nodes in place
+    // (positional diff; Home has no TR/TH/TD rows to key on, so this is the
+    // same non-keyed path the Leads detail panel/filter drawer already use
+    // for their own non-table sections) rather than tearing down and
+    // rebuilding every widget on every render, which was the direct cause
+    // of every widget-menu click (and the old poll timer) visibly flashing
+    // the whole dashboard. Safe here specifically because every listener on
+    // this page is delegated to root (bindRoot + the click/keydown/dragstart/
+    // dragend block below, all root.addEventListener, none per-widget) — the
+    // same precondition the morph engine relies on for Leads/Jobs.
+    morphTableInto(root, homeHtml);
 
     bindRoot(root);
     if (!root._josHomeBound) {
@@ -14784,26 +14802,18 @@
       });
     }
 
-    // Soft realtime refresh markers
-    if (!root._josLiveTimer) {
-      root._josLiveTimer = setInterval(function () {
-        if (!document.body.contains(root)) {
-          clearInterval(root._josLiveTimer);
-          root._josLiveTimer = null;
-          return;
-        }
-        if (document.hidden) return;
-        if (root.classList.contains('jos-customize-on')) return;
-        if (root.querySelector('.jos-wmenu-pop:not([hidden])')) return;
-        if (el('jos-home-cc-input') && document.activeElement === el('jos-home-cc-input')) return;
-        if (!isHomeViewActive()) return;
-        // Lightweight pulse: re-render on a gentle cadence for live feel
-        if (!root._josLiveTick) root._josLiveTick = 0;
-        root._josLiveTick += 1;
-        if (root._josLiveTick % 2 === 0) enhanceDashboard();
-      }, 30000);
-    }
-
+    // No poll timer here (Rendering Standard compliance — Leads/Jobs don't
+    // poll either). There used to be a 30s setInterval forcing a full
+    // enhanceDashboard() every other tick "for live feel" — removed because
+    // it bought nothing real: every number it repainted either already comes
+    // from the app's realtime pipeline (jobs/customers/booking writes already
+    // trigger enhanceDashboard() via refreshOpenAppViews, hubly.html) or is
+    // read from state nothing else ever refetches on a timer either
+    // (S().website.manualReviews for reviewsNew, S().conversations for
+    // msgsWaiting) — so the "pulse" was re-painting the same values it just
+    // painted, not showing anything fresher. If Home ever gets a real
+    // periodic data source with no other trigger, add a timer back scoped to
+    // that specific need, not a blanket full-dashboard re-render.
     wireGlobalChrome(notifs);
     wireHomeProfileMenu();
   }
