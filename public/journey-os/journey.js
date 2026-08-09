@@ -18042,16 +18042,20 @@
       drawer + statusMenu + rowMenu + gcalCreatePop +
       '<button type="button" class="jos-jobs-fab" data-jos-act="' + (mainView === 'calendar' ? 'jobs-gcal-create-menu' : 'jobs-create') + '" aria-label="' + (mainView === 'calendar' ? 'Create' : 'New Job') + '">+</button>' +
       '</div>';
-    // List view morphs in place (same engine Leads uses — see
-    // morphTableInto above) instead of destroying and rebuilding the
-    // whole page on every click: that's what was causing the "every
-    // click renders" flash. Calendar view keeps a full replace for now —
-    // its drag-and-drop reschedule logic manipulates specific DOM nodes
-    // directly and hasn't been checked against a mid-drag morph, so this
-    // stays scoped to the table (the thing actually being compared to
-    // Leads) rather than risking the scheduler.
-    if (mainView === 'calendar') root.innerHTML = jobsPageHtml;
-    else morphTableInto(root, jobsPageHtml);
+    // Both views morph in place (same engine Leads uses — see
+    // morphTableInto above) instead of destroying and rebuilding the whole
+    // page on every click. Calendar was originally kept on a full replace
+    // out of caution about the drag-to-reschedule/resize logic, which
+    // manipulates DOM nodes directly during a live pointer drag — but
+    // tracing every actual render() call site shows none of them ever fire
+    // while a drag is in progress: pointermove (the only handler that runs
+    // *during* a drag) only ever touches inline styles/a temp draftEl
+    // directly, never calls render; render only ever runs on pointerup/drop,
+    // by which point the temp DOM is already removed and the drag is over.
+    // A full teardown on every ordinary click (opening the drawer, editing
+    // Status/Date/Time inside it) was real, visible, and unnecessary — this
+    // was the actual cause of "Jobs still rerenders" surviving the P2 pass.
+    morphTableInto(root, jobsPageHtml);
 
     bindRoot(root);
     wireJobsRoot(root);

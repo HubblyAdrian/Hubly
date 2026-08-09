@@ -1188,27 +1188,36 @@ zero console errors.
 ### Jobs Calendar (`renderCalendar`/`renderJobsPage`'s calendar branch, `journey.js:~17301-18055,
 18286-18420`) — **Compliant**
 
-**Render boundary — morph adoption evaluated, deliberately kept as full-replace:** Jobs' list
-view already morphs (`morphTableInto`) — the exact standard used everywhere else. Calendar view
-does not, and an existing in-code comment already explained why before this phase started: the
-grid's drag-to-reschedule and drag-to-resize interactions manipulate specific DOM nodes directly,
-frame-by-frame, during a live pointer drag (a `draftEl` created and repositioned continuously
-between `pointerdown` and `pointerup`, entirely outside any render/mutate/persist cycle). Reading
-that code this phase confirmed the reasoning holds: this is raw, continuous DOM manipulation
-tracked via closure state, not a click-then-rerender interaction — a morph pass landing mid-drag
-would destroy `draftEl` and the in-progress drag state outright. **Verdict: keep the full
-`root.innerHTML =` replace for Calendar.** This is the standard's own principle (don't let a
-render pass destroy live interaction state) correctly overriding its default mechanism, not a
-page that's "wrong" per Rule #1 — a scheduling grid with continuous multi-frame drag is a
-different interaction category than a reorderable table row, and forcing it onto keyed diffing
-built for the latter would risk the scheduler to satisfy a function-name uniformity that isn't
-the actual goal.
+**Render boundary — CORRECTED after this was shipped and the user reported Jobs still visibly
+rerendering.** This section originally concluded "keep the full `root.innerHTML =` replace for
+Calendar" based on reasoning that was never actually tested against the code's real call timing —
+that was the mistake, not the conclusion. What actually happened: opening the drawer from a
+calendar job pill, and every Status/Date/Time edit made inside that drawer while on Calendar, hit
+`renderJobsPage`'s `mainView === 'calendar'` branch and did a full `root.innerHTML =` replace of
+the *entire grid* — a much larger, much more visible teardown than List view's morph — for
+completely ordinary clicks that have nothing to do with dragging. That was the actual, still-live
+cause of "Jobs rerenders, Leads doesn't" surviving the whole P0–P2 pass and the post-close audit
+above; both of those investigations looked at the List view's edit pipeline (correctly cheap) and
+never separately tested the Calendar view's.
+
+Re-traced every place `render()`/`rerenderJobsOsFrom()` actually gets called relative to the drag
+state, rather than reasoning about the drag code in isolation: `pointermove` — the *only* handler
+that runs while a drag is actually in progress — touches inline styles and a temporary `draftEl`
+directly and **never calls render**. Every render call (`pointerup`, `pointercancel`, HTML5
+`drop`) fires *after* the drag has ended, by which point the temporary DOM is already removed
+(`draftEl.remove()`) and the mutation is already committed. There is no code path where a render
+lands mid-drag — the danger the full-replace was protecting against doesn't occur in this
+codebase's actual control flow. **Corrected verdict: Calendar now morphs via `morphTableInto`,
+same as List view and everywhere else.** Verified live: opening the drawer from a calendar pill
+and editing Status inside it now preserve the toolbar/grid's node identity (morph, not teardown);
+drag-to-reschedule, resize, and List view all independently reverified still work and still
+persist correctly after the switch. Rule #1 holds either way — the standard wasn't wrong, the
+verification of the exception was incomplete.
 
 **Fixed to match precedent everywhere else in this phase:**
 - Loading-stub `innerHTML` gated behind `if (!root.firstChild)` (`renderCalendar()`), matching
   Home/Customers/Jobs-list — was unconditional on every call, so every reschedule/resize/nav
-  re-render flashed "Loading Calendar…" before the real (still full-replace, see above) content
-  landed immediately after.
+  re-render flashed "Loading Calendar…" before the real content landed immediately after.
 - **Realtime gap fixed**: `refreshOpenAppViews()` (`hubly.html:~15686`) checked `v-jobs` (via the
   legacy `renderCal`/`renderJobsPanel`), `v-leads`, `v-customers`, `v-money`, `v-quotes`,
   `v-dashboard` — no `v-calendar` branch existed at all. A realtime jobs/booking_requests change
@@ -1254,6 +1263,12 @@ onto a bookable slot updates both in-memory state and calls `persistJobPatch` ex
 the correct `scheduled_date`/`scheduled_time` patch; resizing a job updates `durationMin` and
 calls `persistJobPatch` exactly once with the correct `duration_hours` patch; the realtime refresh
 path's new `v-calendar` branch runs without throwing; zero console errors.
+
+*(This verification pass — like the "Post-P2 cleanup" and "visibly rerenders" sections below —
+tested the List view's edit pipeline and the drag/resize mechanics; none of these passes tested
+opening the drawer or editing a field from the Calendar view itself, which is what still full-
+replaced. See "Calendar drawer/field-edit still full-replaced" further below for the fix and its
+own live verification.)*
 
 ### Post-P2 cleanup: the two remaining split-brain/duplicate-render items
 
@@ -1396,3 +1411,43 @@ Verified live via Playwright: weather resolving while Jobs (not Dashboard) is op
 the `.jos-home-weather` widget correctly (no regression); the three new helpers independently
 confirmed to fire exactly the right renderer (or none) in both visibility states; zero console
 errors.
+
+### Calendar drawer/field-edit still full-replaced — the weather fix wasn't the whole story
+
+Reported after the weather fix above shipped and was live in production: clicking Status/Date/
+Time (or anything) inside Jobs still visibly rerendered. It did — the weather fix was correct and
+necessary but addressed a *different* render trigger (a background fetch) than what the user was
+actually seeing on every click. The real, still-live cause: `renderJobsPage`'s calendar branch
+(`journey.js:~18053`, see the corrected "Render boundary" note under Jobs Calendar above) did a
+full `root.innerHTML = jobsPageHtml` on *every* render while on Calendar — not just drag/resize,
+but opening the drawer from a job pill and every single field edit made inside it. That's the
+common path for "touch anything in Jobs": open a job, click Status, click Date — three full grid
+teardowns for three ordinary clicks, none of them a drag.
+
+The original P2 pass (and the "visibly rerenders" investigation before the weather fix) both
+specifically instrumented and measured the List view's Status-edit pipeline, confirmed it was
+cheap and symmetric with Leads, and treated that as representative of "Jobs." It wasn't — Calendar
+is a separate render path with its own write branch, and nothing in either prior pass opened a
+job or edited a field while *on* Calendar specifically. That gap is why the bug outlived two
+rounds of fixes: each one was correctly verified against the thing it tested, and neither one
+tested this.
+
+**Fix**: traced the actual call timing (not just read the drag code, which is what led to the
+original "keep it full-replace" call) — `pointermove`, the only handler active *during* a live
+drag, never calls render; it only touches inline styles and a temporary `draftEl` directly. Every
+render call happens on `pointerup`/`pointercancel`/`drop`, strictly *after* the drag has ended and
+that temp DOM is already removed. There is no code path where render and an in-progress drag
+overlap, so the risk the full-replace existed to prevent doesn't occur. Switched Calendar to
+`morphTableInto`, same as every other page.
+
+Verified live via Playwright: opening the drawer from a Calendar job pill now preserves the
+toolbar/grid's node identity (a targeted morph, not a teardown) instead of destroying it; editing
+Status inside that drawer while on Calendar does the same and still calls `persistJobPatch`
+exactly once; drag-to-reschedule and resize were independently re-run end-to-end after the switch
+and still update state and persist correctly; List view re-checked and unaffected; zero console
+errors.
+
+**Lesson for next time a page is deliberately kept off the standard**: verify the exception
+against every render trigger the page actually has (here: open-record, field-edit, drag, resize,
+create — five triggers, only two of which were ever tested), not just the one the exception was
+originally written to protect.
