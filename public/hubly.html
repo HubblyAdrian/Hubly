@@ -15702,6 +15702,14 @@ async function refreshOpenAppViews(){
     }
   }catch(e){}
   try{
+    // v-calendar had no branch here at all — a realtime jobs/booking_requests
+    // change never reached the open Calendar page, only the (identically-named
+    // but separate) Jobs list page above.
+    if(viewIsOpen('v-calendar')){
+      try{HublyJourneyOS?.renderCalendar?.();}catch(e2){}
+    }
+  }catch(e){}
+  try{
     if(viewIsOpen('v-leads')){
       try{HublyJourneyOS?.renderLeadsList?.();}catch(e2){}
       if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
@@ -38574,7 +38582,10 @@ function switchV(el,opts){
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
   if(v==='dashboard'){try{HublyJourneyOS?.enhanceDashboard?.();}catch(e){try{renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();syncDashSiteLink();}catch(e2){}}}
   if(v==='jobs'){try{HublyJourneyOS?.renderJobs?.();}catch(e){try{renderCal();renderJobsPanel();}catch(e2){}}}
-  if(v==='calendar'){try{HublyJourneyOS?.renderCalendar?.();}catch(e){try{HublyJourneyOS?.renderJobs?.();}catch(e2){}}}
+  // No direct HublyJourneyOS.renderCalendar() call here (removed) - the
+  // onSwitchView(v) call below already renders it once via its own
+  // calendar:renderCalendar map entry; calling both meant every nav click
+  // into Calendar rendered the whole page twice.
   if(v==='photo-projects'){try{HublyJourneyOS?.renderPhotoProjects?.()||HublyPhotographyProjects?.render?.();}catch(e){console.warn(e);}}
   if(v==='apps'){try{HublyAppMarketplace?.render?.();}catch(e){console.warn(e);}}
   if(v==='store'){try{HublyStoreCommerce?.render?.()||HublyJourneyOS?.renderStore?.();}catch(e){console.warn(e);}}

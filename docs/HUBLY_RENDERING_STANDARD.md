@@ -1185,4 +1185,72 @@ body's content genuinely changes between tabs; the correct tab is marked active;
 confirmed to contain zero inputs/`contenteditable` (matching the documented read-only gap above);
 zero console errors.
 
-### Jobs Calendar — pending P2
+### Jobs Calendar (`renderCalendar`/`renderJobsPage`'s calendar branch, `journey.js:~17301-18055,
+18286-18420`) — **Compliant**
+
+**Render boundary — morph adoption evaluated, deliberately kept as full-replace:** Jobs' list
+view already morphs (`morphTableInto`) — the exact standard used everywhere else. Calendar view
+does not, and an existing in-code comment already explained why before this phase started: the
+grid's drag-to-reschedule and drag-to-resize interactions manipulate specific DOM nodes directly,
+frame-by-frame, during a live pointer drag (a `draftEl` created and repositioned continuously
+between `pointerdown` and `pointerup`, entirely outside any render/mutate/persist cycle). Reading
+that code this phase confirmed the reasoning holds: this is raw, continuous DOM manipulation
+tracked via closure state, not a click-then-rerender interaction — a morph pass landing mid-drag
+would destroy `draftEl` and the in-progress drag state outright. **Verdict: keep the full
+`root.innerHTML =` replace for Calendar.** This is the standard's own principle (don't let a
+render pass destroy live interaction state) correctly overriding its default mechanism, not a
+page that's "wrong" per Rule #1 — a scheduling grid with continuous multi-frame drag is a
+different interaction category than a reorderable table row, and forcing it onto keyed diffing
+built for the latter would risk the scheduler to satisfy a function-name uniformity that isn't
+the actual goal.
+
+**Fixed to match precedent everywhere else in this phase:**
+- Loading-stub `innerHTML` gated behind `if (!root.firstChild)` (`renderCalendar()`), matching
+  Home/Customers/Jobs-list — was unconditional on every call, so every reschedule/resize/nav
+  re-render flashed "Loading Calendar…" before the real (still full-replace, see above) content
+  landed immediately after.
+- **Realtime gap fixed**: `refreshOpenAppViews()` (`hubly.html:~15686`) checked `v-jobs` (via the
+  legacy `renderCal`/`renderJobsPanel`), `v-leads`, `v-customers`, `v-money`, `v-quotes`,
+  `v-dashboard` — no `v-calendar` branch existed at all. A realtime jobs/booking_requests change
+  never reached an open Calendar page. Added a `viewIsOpen('v-calendar')` branch calling
+  `HublyJourneyOS.renderCalendar()`, matching the `v-customers` branch's pattern.
+- **Double-render-on-nav-switch fixed**: `switchV()` (`hubly.html`) had a direct
+  `HublyJourneyOS.renderCalendar()` call in its own `if(v==='calendar')` block, and then
+  unconditionally called `HublyJourneyOS.onSwitchView('calendar')` a few lines later — which
+  *also* renders Calendar via its own `calendar: renderCalendar` map entry. Every nav click into
+  Calendar rendered the whole page twice. Removed the redundant direct call; `onSwitchView`'s map
+  entry is the single remaining path. (The same direct-call-plus-map-entry duplication exists for
+  `dashboard`/`jobs`/`leads`/`customers` in `switchV` too — not fixed here, out of scope for a
+  Calendar-specific pass, and lower-severity there since those pages' render functions are already
+  gated/idempotent, so the second call is wasted work rather than a visible flicker the way
+  Calendar's was before its own stub-gating fix above. Worth a dedicated cleanup pass if the team
+  wants to eliminate the redundant work project-wide.)
+
+**Persistence bugs found and fixed — the most significant finding of this pass**: dragging a job
+to a new day/time, and resizing a job's duration, are the Calendar page's headline interactions
+(the UI literally advertises "Drag & drop to reschedule"). Neither call ever persisted. Both
+mutated `job.date`/`job.time`/`job.durationMin` in memory and re-rendered, with no call to
+`persistJobPatch` anywhere in either path — a reschedule or resize looked real, then silently
+reverted on refresh. Fixed by adding the missing `persistJobPatch` calls to both the drop handler
+and the resize-commit branch of `endGcalPointer`, reusing the existing `date`/`time`/`durationMin`
+column definitions' own `dbColumn`/`dbPatch` (`JOBS_DEFAULT_COLUMNS`) rather than hardcoding
+`scheduled_date`/`scheduled_time`/`duration_hours` a second time. This is the same bug class (and
+the same fix shape — funnel every mutation through the one function that persists) as Customers'
+`cust-favorite`/`cust-archive` fixes and Leads' original `mutateLead` fix; it just hadn't been
+found yet because drag interactions don't go through `mutateJobField`, the single place Jobs' own
+schema-driven cell edits already commit through.
+
+**Known gap, documented rather than fixed here (adjacent finding, not this phase's assigned
+scope)**: `refreshOpenAppViews`'s `v-jobs` branch calls the *legacy* `renderCal()`/
+`renderJobsPanel()` functions, not `HublyJourneyOS.renderJobs()` — meaning a realtime update while
+a user is on the V4 Jobs *list* page may be refreshing DOM the user isn't actually looking at.
+Same shape of bug as the Calendar gap just fixed, but on Jobs List, which was outside this P2's
+scope (P2 was named "Jobs Calendar," not "Jobs List"). Flagged for the team to decide whether it's
+real and worth a follow-up pass, not fixed unilaterally here.
+
+Verified live via Playwright: no loading stub left after first real paint; a dashboard-then-back-
+to-calendar nav round-trip leaves clean real content with no stale/duplicated stub; dragging a job
+onto a bookable slot updates both in-memory state and calls `persistJobPatch` exactly once with
+the correct `scheduled_date`/`scheduled_time` patch; resizing a job updates `durationMin` and
+calls `persistJobPatch` exactly once with the correct `duration_hours` patch; the realtime refresh
+path's new `v-calendar` branch runs without throwing; zero console errors.

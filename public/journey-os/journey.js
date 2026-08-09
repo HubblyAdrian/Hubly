@@ -17311,7 +17311,12 @@
       root._josJobsSkipLoading = false;
       try { renderJobsPage(root); return; } catch (errSkip) { console.warn(errSkip); }
     }
-    root.innerHTML = '<div class="jos-jobs-shell is-calendar"><div class="jos-home-loading">Loading Calendar…</div></div>';
+    // Same rule as renderJobs()/Home: stamp the loading stub only on true first
+    // paint. renderJobsPage's calendar branch always does a full root.innerHTML
+    // replace with real content right after (see its own comment on why it
+    // can't morph), so painting the stub unconditionally here just meant every
+    // reschedule/resize/nav-switch flashed "Loading Calendar…" for nothing.
+    if (!root.firstChild) root.innerHTML = '<div class="jos-jobs-shell is-calendar"><div class="jos-home-loading">Loading Calendar…</div></div>';
     try { renderJobsPage(root); }
     catch (err) {
       console.warn('HublyJourneyOS Calendar', err);
@@ -18328,6 +18333,15 @@
       job.date = newDate;
       job.time = newTime;
       pushJobTimeline(job, 'scheduled', 'Moved to ' + newDate + ' ' + newTime);
+      // Drag-to-reschedule used to only mutate in-memory state, never call
+      // persistJobPatch — the move looked real, then reverted on refresh.
+      // Same bug class the Rendering Standard's Persistence rule targets;
+      // reuses the date/time columns' own dbPatch/dbColumn (JOBS_DEFAULT_COLUMNS)
+      // rather than hardcoding scheduled_date/scheduled_time here too.
+      var dateCol = findJobsColumnDef('date'), timeCol = findJobsColumnDef('time'), rescheduleP = {};
+      if (dateCol) Object.assign(rescheduleP, dateCol.dbPatch ? dateCol.dbPatch(job) : (dateCol.dbColumn ? (function () { var p = {}; p[dateCol.dbColumn] = tableColFieldGet(dateCol, job); return p; })() : {}));
+      if (timeCol) Object.assign(rescheduleP, timeCol.dbPatch ? timeCol.dbPatch(job) : (timeCol.dbColumn ? (function () { var p = {}; p[timeCol.dbColumn] = tableColFieldGet(timeCol, job); return p; })() : {}));
+      persistJobPatch(job, rescheduleP);
       toast('Rescheduled to ' + newDate + ' · ' + newTime);
       rerenderJobsOsFrom(root);
     });
@@ -18351,6 +18365,9 @@
           if (newDur !== (rj.durationMin || 0)) {
             rj.durationMin = newDur;
             pushJobTimeline(rj, 'note', 'Duration resized to ' + newDur + 'm');
+            // Same missing-persistence bug as the reschedule drop handler above.
+            var durCol = findJobsColumnDef('durationMin');
+            if (durCol && durCol.dbPatch) persistJobPatch(rj, durCol.dbPatch(rj));
             toast('Resized to ' + Math.round(newDur / 60 * 10) / 10 + 'h');
             root._josGcalSuppressClick = true;
             rerenderJobsOsFrom(root);
