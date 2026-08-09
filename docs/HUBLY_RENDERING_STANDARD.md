@@ -1254,3 +1254,65 @@ onto a bookable slot updates both in-memory state and calls `persistJobPatch` ex
 the correct `scheduled_date`/`scheduled_time` patch; resizing a job updates `durationMin` and
 calls `persistJobPatch` exactly once with the correct `duration_hours` patch; the realtime refresh
 path's new `v-calendar` branch runs without throwing; zero console errors.
+
+### Post-P2 cleanup: the two remaining split-brain/duplicate-render items
+
+Two architectural inconsistencies were named explicitly during the Phase 3 P2 write-up rather
+than fixed on the spot (the Calendar-specific instances of each were already fixed as part of
+P2 itself). Both are now closed, plus the final "no legacy path still drives an active JourneyOS
+page" audit requested alongside them.
+
+**1. `refreshOpenAppViews()`'s `v-jobs` branch called the legacy renderer, not JourneyOS
+(`hubly.html:~15699`).** `#v-jobs` is the same container the V4 Jobs list renders into
+(`HublyJourneyOS.renderJobs`, mounted at `#jos-jobs-root`) — but the realtime refresh path was
+still calling the legacy `renderCal()`/`renderJobsPanel()` unconditionally whenever `v-jobs` was
+open. Concretely: realtime event → `refreshOpenAppViews()` → legacy renderer → user is looking at
+JourneyOS. The two pages happen to share a container id, which is what let this go unnoticed —
+the legacy calls weren't throwing, they just weren't reaching the DOM the user was actually
+looking at. Fixed to call `HublyJourneyOS.renderJobs()` first (matching the `v-customers` branch's
+existing pattern), with the legacy calls kept only as a fallback if JourneyOS isn't available.
+
+**2. `switchV()` double-rendered on every nav switch into Dashboard/Jobs/Leads/Customers
+(`hubly.html:~38588`).** Same root cause as the Calendar-specific case fixed in P2: each of these
+views had a direct `HublyJourneyOS?.X?.()` call in `switchV()` itself, and then got rendered
+*again* a few lines later by the unconditional `onSwitchView(v)` call, which renders the same page
+via its own internal map (`dashboard: enhanceDashboard`, `jobs: renderJobs`,
+`leads: renderLeads` — reached through `renderLeadsList()`'s one-line wrapper —
+`customers: renderCustomers` — reached through the `renderCustomersPage` export alias). Every nav
+click rendered the whole page twice. Fixed by gating the direct calls on function *availability*
+rather than try-render-and-catch-fallback: `if(v==='dashboard'&&typeof
+HublyJourneyOS?.enhanceDashboard!=='function'){ /* legacy fallback */ }`, same shape for
+`jobs`/`customers`. This preserves the one behavior worth preserving — a legacy fallback if
+JourneyOS genuinely isn't loaded — while eliminating the double-render in the normal (JourneyOS
+loaded) case, where the page now renders exactly once, through `onSwitchView`'s map. `leads` had
+no meaningful fallback to preserve (its original catch block was empty), so the direct call was
+removed outright.
+
+**Final audit — are any other legacy paths still driving an active JourneyOS page?** Traced every
+remaining un-migrated legacy render call reachable from the two job-completion flows that still
+call them (`completeJob()` and the mark-paid modal handler, `hubly.html:~41757` and `~45083`,
+which each call `renderJobsPanel()`/`renderDashToday()`/`renderCustomersView()`/`renderLeadsBoard()`
+after mutating a job) against the current static HTML for every JourneyOS-owned view container:
+
+| Legacy function | Target DOM it needs | Exists in current HTML? | Result |
+|---|---|---|---|
+| `renderCal()` | `#cal-mon-lbl`/`#cal-days` | No — `#v-calendar` only contains `#jos-calendar-root` | Already self-redirects to `HublyJourneyOS.renderJobs()` via a `.jos-pixel-owned` check at its own top; the legacy body below is unreachable dead code, not a live conflict |
+| `renderJobsPanel()` | (delegates before touching legacy DOM) | — | Same `.jos-pixel-owned` redirect shim as `renderCal()` |
+| `renderDashToday()` | `#today-jobs` | No — `#v-dashboard` only contains `#jos-dash-root` | Self-guards (`if(!el)return`) — clean no-op |
+| `renderCustomersView()` | `#cust-srch` and other legacy customers DOM | No — `#v-customers` only contains `#jos-customers-root` | Every DOM read is `?.`-chained — silently does nothing, clean no-op |
+| `renderLeadsBoard()` | — | Function doesn't exist at all anymore | The `typeof renderLeadsBoard==='function'` guard around every call site already short-circuits it |
+
+**Conclusion: no legacy rendering path is currently driving an active JourneyOS page.** Every
+remaining legacy call site either already redirects to JourneyOS (`renderCal`/`renderJobsPanel`'s
+`.jos-pixel-owned` shim, the same pattern this pass's `refreshOpenAppViews` fix now also uses) or
+is inert today because its target DOM was already fully removed when JourneyOS took over that
+view's static markup. These inert call sites (in the two job-completion flows above) were left in
+place rather than deleted — they're dead, not dangerous, and removing them is a separate, smaller
+hygiene pass than what was asked for here, not a rendering-correctness fix.
+
+Verified live via Playwright: with JourneyOS loaded, navigating dashboard → jobs → customers →
+back to dashboard calls the JourneyOS export functions zero times *through `switchV`'s own
+direct-call sites* (the only remaining call is `onSwitchView`'s internal one) and calls none of
+the legacy fallback functions; all three pages still render real content after the nav sequence;
+`refreshOpenAppViews()` on an open Jobs page calls `HublyJourneyOS.renderJobs()` exactly once and
+neither legacy `renderCal()` nor `renderJobsPanel()`; zero console errors.

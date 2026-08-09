@@ -15696,9 +15696,14 @@ async function refreshOpenAppViews(){
     loadCustomers().catch(()=>{})
   ]);
   try{
+    // Was calling the legacy renderCal()/renderJobsPanel() unconditionally -
+    // #v-jobs is the same container id the V4 Jobs list (HublyJourneyOS.renderJobs,
+    // jos-jobs-root) renders into, so a realtime change was refreshing DOM the
+    // user wasn't actually looking at (split-brain: real page is V4, refresh
+    // target was legacy). HublyJourneyOS.renderJobs() first, matching the
+    // v-customers branch below; legacy stays only as a fallback.
     if(viewIsOpen('v-jobs')){
-      if(typeof renderCal==='function')renderCal();
-      if(typeof renderJobsPanel==='function')renderJobsPanel();
+      try{HublyJourneyOS.renderJobs()}catch(e2){if(typeof renderCal==='function')renderCal();if(typeof renderJobsPanel==='function')renderJobsPanel();}
     }
   }catch(e){}
   try{
@@ -38580,17 +38585,21 @@ function switchV(el,opts){
   setHublyDocTitle(tabLabel);
   // Already on Quick Quote — page has “New Quick Quote”; hide the duplicate app-bar shortcut.
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
-  if(v==='dashboard'){try{HublyJourneyOS?.enhanceDashboard?.();}catch(e){try{renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();syncDashSiteLink();}catch(e2){}}}
-  if(v==='jobs'){try{HublyJourneyOS?.renderJobs?.();}catch(e){try{renderCal();renderJobsPanel();}catch(e2){}}}
-  // No direct HublyJourneyOS.renderCalendar() call here (removed) - the
-  // onSwitchView(v) call below already renders it once via its own
-  // calendar:renderCalendar map entry; calling both meant every nav click
-  // into Calendar rendered the whole page twice.
+  // dashboard/jobs/leads/customers/calendar all used to call their JourneyOS
+  // renderer directly here AND get rendered again a few lines down by
+  // onSwitchView(v)'s own map (dashboard:enhanceDashboard, jobs:renderJobs,
+  // leads:renderLeads via renderLeadsList's thin wrapper, customers:renderCustomers
+  // via the renderCustomersPage alias) - every nav click rendered the whole
+  // page twice. Gate on whether JourneyOS/the function is even available
+  // instead of try-render-catch-fallback, so the legacy fallback still fires
+  // when JourneyOS genuinely isn't loaded, but the normal (loaded) case
+  // renders exactly once, via onSwitchView's map below.
+  if(v==='dashboard'&&typeof HublyJourneyOS?.enhanceDashboard!=='function'){try{renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();syncDashSiteLink();}catch(e2){}}
+  if(v==='jobs'&&typeof HublyJourneyOS?.renderJobs!=='function'){try{renderCal();renderJobsPanel();}catch(e2){}}
   if(v==='photo-projects'){try{HublyJourneyOS?.renderPhotoProjects?.()||HublyPhotographyProjects?.render?.();}catch(e){console.warn(e);}}
   if(v==='apps'){try{HublyAppMarketplace?.render?.();}catch(e){console.warn(e);}}
   if(v==='store'){try{HublyStoreCommerce?.render?.()||HublyJourneyOS?.renderStore?.();}catch(e){console.warn(e);}}
-  if(v==='leads'){try{HublyJourneyOS?.renderLeadsList?.();}catch(e){}}
-  if(v==='customers'){try{HublyJourneyOS.renderCustomersPage()}catch(e){renderCustomersView()}}
+  if(v==='customers'&&typeof HublyJourneyOS?.renderCustomersPage!=='function'){try{renderCustomersView()}catch(e){}}
   if(v==='quotes'){try{HublyJourneyOS?.updateChrome?.('quotes')}catch(e0){};try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}
   if(v==='money'){renderReports();renderMoneyView();try{syncMoneyPayPrefs();}catch(e){}try{refreshStripeConnectStatus({quiet:true});}catch(e){}}
   if(v==='chats'){try{HublyJourneyOS?.onSwitchView?.('chats');}catch(e){renderChatsPanel();}}
