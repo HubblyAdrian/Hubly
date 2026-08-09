@@ -1,0 +1,1063 @@
+# Hubly Rendering Standard v1
+
+**Status: Frozen, same as `HUBLY_TABLE_STANDARD.md`.** The Leads page (`public/journey-os/journey.js` —
+`renderLeads`/`renderLeadsPage` and everything they call, plus the morph engine at
+`journey.js:9012-9127`) is the reference implementation of the rendering behavior documented
+below. This is the companion document to `HUBLY_TABLE_STANDARD.md` — that one governs *what
+the table looks like and how you interact with it*; this one governs *exactly when and how
+much of the DOM changes in response*. Every other page's rendering is judged against this
+document, not against its own precedent.
+
+This is not a checklist like `HUBLY_TABLE_STANDARD.md` — it's an exhaustive reverse-engineering
+trace. Every claim below is a direct file:line citation into the live code, verified by reading
+the actual functions, not inferred from behavior or assumed from naming. Where something could
+not be verified from static reading alone (mostly: exact browser-native popup behavior), that is
+stated explicitly rather than guessed.
+
+## Known drift from the existing docs — corrected in place
+
+Three things this reverse-engineering pass found that contradicted `HUBLY_TABLE_STANDARD.md`/
+`JOBS_LEADS_CONSISTENCY_AUDIT.md` at the time this document was written. **Both of those docs
+have since been corrected in place** (their own text now notes the correction and points back
+here) — kept below as the historical record of what was wrong and why, not as an outstanding
+to-do:
+
+1. **`HUBLY_TABLE_STANDARD.md:86` names the morph functions `morphLeadsInto`/`morphLeadsChildren`.
+   Those identifiers don't exist.** The real, current names — used identically by both Leads and
+   Jobs — are `morphTableInto`, `morphTableAttrsAndProps`, `morphTableNode`,
+   `morphTableKeyedChildren`, `morphTableChildren` (all `journey.js:9012-9127`). This document
+   uses the real names throughout.
+2. **`HUBLY_TABLE_STANDARD.md:19-20` says "double-click anywhere else on the row is the
+   power-user shortcut to [open the detail panel]." This is no longer true.** Commit `2f5b73b`
+   ("Remove double-click everywhere...") removed it after the table standard doc was frozen.
+   Today `dblclick` does exactly one thing on Leads: rename a column header
+   (`journey.js:9782-9802`). Opening the detail panel is **click-the-name-cell only** — see
+   §1.6.
+3. **`docs/JOBS_LEADS_CONSISTENCY_AUDIT.md:64` says the Leads workspace panel has "no tabs."**
+   It has four: Timeline / Notes / Tasks / Appointments (`LEADS_WS_TABS`, `journey.js:7604-7609`).
+   That audit's line-number citations for the resize handler (`10088-10116`) and the
+   roving-tabindex handler (`10062-10083`) have also drifted from the code's current line
+   numbers — corrected citations are used throughout this document.
+
+---
+
+## 0. Architecture at a glance
+
+- **One root, acquired once, reused forever.** `ownPixelView('v-leads', 'jos-leads-root')`
+  (`journey.js:13748-13755`) creates `#jos-leads-root` on first call and returns the same DOM
+  node on every subsequent call. It is never destroyed for the lifetime of the session.
+- **One render function.** `renderLeads()` (`journey.js:8981-8997`) → `renderLeadsPage(root)`
+  (`9210` onward, builds the entire page as one HTML string) → `morphTableInto(root, html)`
+  (`9314`). There is no narrower "just re-render this cell/row/section" function anywhere in the
+  Leads code — every single interaction, from a keystroke to a bulk delete to opening the
+  detail panel, calls this exact same full-page render function. The appearance of narrow,
+  targeted updates is produced entirely by the morph engine (§4) sitting underneath it, not by
+  the app calling smaller render functions.
+- **State lives on the root DOM node itself**, as plain JS properties (`root._josLeadsQ`,
+  `root._josLeadId`, `root._josLeadsEditCell`, `root._josLeadBulkSelected`, etc.) — not in a
+  separate store, not in React-style component state. It survives across renders for the
+  mundane reason that `root` is a real, persistent DOM node that render calls mutate the
+  children of, never replace.
+- **Two listener-binding functions, both idempotent, both bound once.** `bindRoot(root)`
+  (`journey.js:21039-21040`, app-wide, dispatches any `data-jos-act` prefixed `leads-` to
+  `handleLeadsAct`) and `wireLeadsRoot(root)` (`9604-9606`, Leads-specific — click/change/
+  keydown/input/mousedown/dragstart/dragover/drop/dblclick/scroll/blur, all delegated to
+  `root`). Both guard themselves (`root._josBound`, `root._josLeadsBoundV3`) and are called on
+  every render (`renderLeadsPage`), but their setup bodies run exactly once per root, ever —
+  every subsequent call is an O(1) flag check.
+- **No realtime subscription exists for Leads at all.** Confirmed independently twice (once in
+  the prior rendering-architecture audit, once by this pass's agents): the app's one Supabase
+  realtime channel (`hubly.html:15668-15671`) subscribes to `jobs`, `booking_requests`,
+  `customers` — never `businesses`, which is where Leads data (`S().pipeline.manual`) actually
+  lives. See §5.
+- **Persistence is centralized, not scattered.** `mutateLead(mutator)` (`journey.js:10297-10306`)
+  and `mutateLeadById(id, mutator, opts)` (`10308-10316`) are the only two functions that mutate
+  a lead — both call `persistLeadsSoon()` (`10294-10296`, wraps `hubly.html`'s
+  `persistPipelineSoon()`, a 450ms-debounced write of the whole `businesses.meta` blob) and then
+  `renderLeads()` internally. No call site is trusted to remember persistence itself — this is
+  the exact discipline `HUBLY_TABLE_STANDARD.md`'s "Persistence" section already documents,
+  restated here because it's equally a rendering-pipeline fact: every mutation's render call is
+  guaranteed to happen (inside these two functions), not something each of the ~40 call sites
+  has to remember to trigger.
+
+---
+
+## 1. Rendering — exactly when it rerenders
+
+Format per the brief: **User action → Functions called → Render boundary → DOM changes → State
+preserved.** All eleven requested interactions.
+
+### 1.1 Inline edit
+
+```
+User clicks a text/phone/email/tags cell
+  ↓
+click listener (journey.js:10121-10159) finds [data-jos-field], resolves col via
+findLeadsColumnDef, falls through checkbox/openOnClick/select special cases
+  ↓
+openLeadsCellEdit(root, leadId, key)  (journey.js:8607-8619)
+  → sets root._josLeadsEditCell = {leadId, field: key, originalValue}
+  → sets root._josLeadsActiveCell = {leadId, colKey: key}
+  → renderLeads()
+  ↓
+renderLeadsPage(root) → morphTableInto(root, html)
+  → the cell's <span data-jos-field> is replaced with an <input data-jos-field
+    class="jos-ld-editing"> (tag changed → morphTableNode does a real
+    replaceChild, journey.js:9059-9063)
+  ↓
+openLeadsCellEdit's own post-render code explicitly re-finds and focuses the new
+node (journey.js:8614-8619) — necessary specifically because the replaceChild
+above destroyed the old node, so nothing focuses itself automatically
+  ↓
+User types, then blurs (click away / Tab / Enter→blur — see §6)
+  ↓
+native 'change' fires if dirty → the change listener's data-jos-field branch
+(journey.js:9928-9962) → fieldRenderer.readValue → mutateLeadById → tableColFieldSet
+→ pushLeadActivity → persistLeadsSoon() (450ms debounce) → renderLeads()
+  ↓ (in parallel, same tick)
+deferred (setTimeout 0) blur-close listener (journey.js:10168-10180) →
+root._josLeadsEditCell = null → renderLeads()
+  ↓
+Render boundary: row + cell — the edited lead's <tr> (matched by
+data-jos-record-id) and the specific <td> (matched by data-jos-col-key) are the
+only nodes that receive DOM writes; every other row is diffed and no-ops (see §3, §4)
+  ↓
+State preserved: scroll position, every other row's data/selection/edit state,
+bulk-checkbox selection, search/filter/sort state, column widths/order — all
+untouched, none of them live inside the field being edited
+```
+
+Select-type cells (Status/Source/Service/Assigned) diverge at step 1: the click
+handler special-cases `col.type === 'select'` *before* `openLeadsCellEdit` ever
+runs, calling `openLeadsComboPicker(root, leadId, key, inPanel)`
+(`journey.js:10152-10156`) instead — a custom `.jos-combo-pop` popover, not a
+native `<select>`. See §6 for the full divergence, including a confirmed bug
+where the roving-keyboard-grid's Enter key opens a *different*, semi-deprecated
+native-`<select>` editor than the mouse click does.
+
+Checkbox-type custom fields diverge even further: there is no edit-mode step at
+all. Click toggles and commits in the same synchronous handler
+(`journey.js:8505-8512`, `10129-10137`) — `mutateLeadById` runs immediately on
+click, no `openLeadsCellEdit`, no `_josLeadsEditCell` ever gets set.
+
+### 1.2 Search
+
+```
+User types in #jos-leads-search
+  ↓
+input listener (journey.js:9814-9820):
+  root._josLeadsQ = e.target.value        ← written synchronously, every keystroke
+  root._josLeadsLimit = 25                ← pagination reset, every keystroke
+  clearTimeout(root._josLeadsSearchT)
+  root._josLeadsSearchT = setTimeout(renderLeads, 140)   ← only the render is debounced
+  ↓
+after 140ms of no further typing: renderLeads() → renderLeadsPage(root) →
+filterLeadsList(root) re-derives the filtered set from the now-current
+root._josLeadsQ → morphTableInto(root, html)
+  ↓
+Render boundary: whole table body (the set of visible rows can change
+completely), but every row that's still in both the old and new filtered set is
+matched by data-jos-record-id and only attribute/text-diffed, not replaced
+  ↓
+State preserved: the search input itself never loses focus or caret position —
+morphTableAttrsAndProps (journey.js:9023-9058) explicitly skips syncing .value
+on document.activeElement (9048), and since #jos-leads-search's parent structure
+is static across renders, the same live <input> DOM node is matched and reused
+every time (non-keyed positional path, but tag-stable so never replaced)
+```
+
+Filtering itself is entirely client-side, every time, against an already-resident
+array — no fetch anywhere in this path (`filterLeadsList`, `journey.js:8210-8224`
+→ `leadsOsList()` → `allLeadsRaw()` → `S().pipeline.manual` directly, the live
+in-memory array).
+
+### 1.3 Filter
+
+```
+Inline dropdown (Source/Service/Assigned):
+User picks an option
+  ↓
+change listener (journey.js:9852-9861) — native select 'change' fires on commit,
+no debounce needed
+  ↓
+root._josLeadFilters.{source|service|assigned} = e.target.value
+root._josLeadsLimit = 25
+  ↓
+renderLeads()  (immediate, synchronous, same tick)
+  ↓
+Render boundary: whole table body, same mechanism as search
+  ↓
+State preserved: same as search — scroll, other filters, sort, selection all untouched
+
+Filter drawer (renderLeadsFilterDrawer, journey.js:8247-8279):
+Open/close via leads-filter-open toggling root._josLeadFilterOpen → renderLeads()
+(the drawer itself is inserted/removed by the non-keyed positional morph, same
+mechanism as the detail panel — see §1.6)
+Apply/Reset/Save Filter buttons — NOT commit-on-every-change like the inline
+dropdowns; requires an explicit Apply
+```
+
+### 1.4 Sort
+
+```
+User picks Newest/Oldest in #jos-ld-sort
+  ↓
+change listener (journey.js:9862-9865): root._josLeadsSort = e.target.value → renderLeads()
+  ↓
+filterLeadsList (journey.js:8222) re-sorts via tableSortBy(list, createdCol, dir)
+— always sorts by the 'created' column's sortValue (lastContacted||createdAt),
+never a display-truncated date; tableSortBy never mutates in place, returns a
+fresh sorted copy every time
+  ↓
+Render boundary: table body — but the DOM effect is row MOVES, not
+replace-and-recreate. morphTableKeyedChildren (journey.js:9072-9099) matches
+each new <tr> to its existing DOM node by data-jos-record-id and calls
+parent.insertBefore(match, ref) only when a row's position actually changed —
+insertBefore on an already-attached node MOVES it (per DOM spec), it does not
+detach/reattach with side effects
+  ↓
+State preserved: every row's own DOM node identity, including any independently
+mid-edit cell in a row that just changed position, plus scroll position on the
+now-differently-ordered table
+```
+
+There is no column-header-click-to-sort anywhere in the Leads code — the
+`#jos-ld-sort` `<select>` is the only sort control that exists.
+
+### 1.5 Column changes (resize, drag-reorder, rename, hide/show, add field)
+
+Five distinct interactions, each with its own trigger and — critically — very
+different render behavior. **Resize is the one exception to "everything renders
+through `renderLeads()`" in this entire document.**
+
+```
+RESIZE — journey.js:10243-10271
+mousedown on [data-jos-col-resize] → delegated root listener → attaches
+document-level mousemove/mouseup for the drag's duration
+  ↓
+mousemove: onMove(ev) directly sets col.style.width on the live <col> element —
+pure DOM style write, ZERO render calls, every tick
+  ↓
+mouseup: onUp() reads col.offsetWidth, writes it into root._josLeadsColumns,
+calls saveLeadsColumns — persistence only, STILL no renderLeads() call
+  ↓
+Render boundary: none at all for this interaction — the live <col>'s style is
+the only thing that changes, directly
+  ↓
+CONFIRMED BUG: LEADS_COL_MIN_WIDTH (referenced journey.js:10256, inside onMove)
+is never declared anywhere else in the file. Reading it throws ReferenceError on
+the very first mousemove of every resize drag — onMove's col.style.width write
+never executes. mouseup still fires (separate listener) and persists whatever
+col.offsetWidth already was, i.e. the pre-drag width, unchanged. Net effect:
+dragging the resize handle currently does nothing visible and saves nothing new.
+```
+
+```
+DRAG-TO-REORDER — journey.js:10048-10111
+dragstart: captures root._josLeadsColDragKey, snapshots
+root._josLeadsColDragOriginalOrder (for abandon-drag revert), sets is-dragging class
+  ↓
+dragover (fires continuously while hovering the same cell — deduped via
+overKey === root._josLeadsColDragOverKey so this only re-fires once per NEW
+column boundary crossed): splices root._josLeadsColumns in place →
+renderLeads() — a FULL renderLeads() call on every crossed boundary, by
+deliberate design (comment at 10039-10044: morphTableInto makes this cheap
+enough to call live, not just on drop)
+  ↓
+drop: root._josLeadsColDropCommitted = true → saveLeadsColumns (persist — only
+here, not on every dragover) → renderLeads()
+  ↓
+dragend (if no drop happened): reverts root._josLeadsColumns to the dragstart
+snapshot → renderLeads() — so an abandoned drag never leaves an unsaved reorder
+visible
+  ↓
+Render boundary: table headers + body — morphTableKeyedChildren moves the real
+<th>/<td> DOM nodes to their new positions (same insertBefore-is-a-move
+mechanism as sort), which is what makes the reorder look animated rather than jumpy
+  ↓
+State preserved: same as sort — node identity, any mid-edit cell, scroll
+```
+
+```
+DOUBLE-CLICK RENAME — journey.js:9793-9802 (open), 10386-10399 (commit),
+10011 (cancel)
+dblclick on .jos-ld-th-label → root._josLeadsColRenaming = colKey → renderLeads()
+(swaps <span> for <input id="jos-ld-th-rename-input">, tag change → real replace,
+same as edit-mode open) → focus+select the new input
+  ↓
+Enter → e.target.blur() (routes through the shared "Enter blurs the .jos-ld-editing
+control" handler, journey.js:10201-10215)
+  ↓
+blur (deferred setTimeout 0) → commitLeadsColRename(root) (journey.js:10386-10399)
+— only writes+persists if the trimmed new label is non-empty AND differs from
+the current label; always clears root._josLeadsColRenaming and renderLeads()
+  ↓
+Escape → journey.js:10011 → root._josLeadsColRenaming = null; renderLeads() —
+does NOT call commitLeadsColRename, so typed text is discarded, original label
+reverts because it was never mutated
+  ↓
+Render boundary: one <th>'s child node (span↔input)
+```
+
+```
+HIDE / SHOW / ADD CUSTOM FIELD — journey.js:10670-10768 (all via handleLeadsAct,
+the leads-col-menu/leads-col-hide/leads-col-show/leads-col-add-menu/
+leads-col-add-field-open/-save/-cancel acts)
+Every one: mutate root._josLeadsColumns or root._josLeadsCustomFields → save via
+tablePreferences (§ persistence below) → renderLeads() (full call every time,
+including opening/closing the popover itself and switching the add-field
+type dropdown — there is no narrower "just the popover" render path; the
+morph makes each of these cheap by only patching the one affected <th
+class="jos-ld-th-add"> subtree in practice)
+  ↓
+Render boundary: one <th> subtree (the "+" column's popover)
+```
+
+**Persistence timing for all column changes**: `tablePreferences.save(scope, tableKey, data)`
+(`journey.js:7321-7267` area) → `queueTablePrefsSync` — the **in-memory cache updates
+synchronously** on every call, but the **network write is debounced 450ms** per
+`scope_tableKey` timer key, so rapid column edits (resize-then-hide-then-rename) coalesce into
+one network write, not one per action. Failed writes retry up to 3× with backoff, then give up
+and toast rather than looping forever.
+
+### 1.6 Drawer open
+
+```
+User clicks a name cell (First name / Last name — the only two columns with
+openOnClick: true)
+  ↓
+click listener (journey.js:10121-10159), col.openOnClick branch →
+openLeadDetailPanel(root, leadId)  (journey.js:9195-9208)
+  → root._josLeadId = leadId
+  → root._josLeadPanelOpen = true
+  → root._josLeadWorkspace = 'timeline'   ← ALWAYS resets to Timeline tab, even
+    if a previous session left a different lead open on Notes/Tasks/Appointments
+  → clears root._josLeadCtx (any open context menu)
+  → marks the lead read (lead.unread = 0, markLeadSeen)
+  → eagerly adds .ws-open to the EXISTING .jos-ld-shell node (belt-and-suspenders
+    against a flash before the morph lands)
+  → renderLeads()
+  ↓
+renderLeadsPage computes wsOpen = true, panelJustOpened = true (this lead's
+panel wasn't already open) → emits <section class="jos-ld-main"> (no is-open
+class yet) as a new sibling of <section class="jos-ld-inbox">
+  ↓
+morphTableInto → morphTableChildren on .jos-ld-layout's children: SECTION tags
+aren't TR/TH/TD, so this is the non-keyed positional path — old had 1 child,
+new has 2 → the second (.jos-ld-main) is genuinely APPENDED as a brand-new node
+(journey.js:9121-9123), not patched into anything existing
+  ↓
+renderLeads() calls animateLeadsPanelOpen(root) (journey.js:9395, since
+panelJustOpened) → forces a layout read (void panel.offsetWidth) then adds
+.is-open one tick later, so the browser has a 0→open state to transition from
+  ↓
+CSS: width .2s ease, opacity .16s ease, transform .2s ease (operate-pixel.css,
+.jos-ld-main / .jos-ld-main.is-open) — respects prefers-reduced-motion via a
+media query that nulls the transition
+  ↓
+Render boundary: whole page HTML rebuilt (as always), but DOM-wise this is
+"append one new top-level section"; everything else (table, toolbar, KPIs) is
+matched by key/tag and diffed as normal, unaffected
+  ↓
+State preserved: table scroll position (untouched node), bulk selection
+(untouched state), any mid-edit cell elsewhere in the table (its blur commits
+normally as part of the click that opened the panel — not silently discarded)
+```
+
+Opening the panel is **Table-view only**. List view's cards (`renderLeadCard`,
+`journey.js:8363`) carry `data-jos-record-id` but no `data-jos-field`
+(`openOnClick`), and the generic row-click handler for `[data-jos-record-id]`
+(`9772-9779`) only sets `root._josLeadId` for row-highlight purposes — never
+`root._josLeadPanelOpen`. There is no click, dblclick, or context-menu path that
+opens the panel from List view. Switching to List view makes the detail panel
+unreachable by click. (A dead, unreachable `data-jos-lead-row` handler exists in
+`bindRoot`, `journey.js:21085-21088`, that *would* open the panel — but the only
+markup that ever emitted that attribute lives in `design-system.js`'s
+`leadCard()` helper, which has zero callers anywhere in the live render path.)
+
+### 1.7 Drawer close
+
+```
+X button (the only real close trigger) — data-jos-act="leads-detail-close"
+  ↓
+handleLeadsAct → closeLeadsDetailPanel(root)  (journey.js:9167-9184)
+  ↓
+if prefersReducedMotion(): finish() immediately (skip animation entirely)
+else:
+  panel.classList.remove('is-open')
+  panel.addEventListener('transitionend', settle, {once:true})
+  setTimeout(settle, 260)   ← fallback in case transitionend never fires
+  ↓
+finish(): root._josLeadPanelOpen = false; root._josLeadPanelWasOpen = false;
+renderLeads()
+  ↓
+wsOpen recomputes false → <section class="jos-ld-main"> is omitted from the new
+HTML → morphTableChildren's positional trim (oldParent.childNodes.length >
+newKids.length → removeChild the excess) removes it
+  ↓
+Render boundary: one top-level section removed; row stays highlighted (see §2)
+```
+
+**Escape does NOT close the drawer.** The single Leads Escape handler
+(`journey.js:10004-10019`) is an explicit priority chain — Add-Lead modal → filter
+drawer → bulk bar → overflow menu → column `▾` menu → column-rename input →
+in-progress cell edit → add-column popover → context menu → (fallback) clear
+search — **the workspace panel is not in this chain at all.** Escape has zero
+effect on it. This is a deliberate ordering (most-transient-first, innermost UI
+state wins), not an oversight in the sense that each *listed* item is handled
+correctly — but the drawer's total absence from the list means there's no
+keyboard way to close it.
+
+Clicking a *different* lead's name re-runs `openLeadDetailPanel` with the new id.
+Since `wsOpen` was already `true`, `panelJustOpened` computes `false` — no
+animation replays; the same `.jos-ld-main` section's content is just re-rendered
+in place (positional morph patches its children to the new lead's data), an
+instant content swap, not a close-then-reopen.
+
+There is no backdrop/scrim element and no outside-click-closes-the-panel
+listener anywhere (confirmed — `.jos-ld-main` is a flex sibling of the table in
+desktop layout, `position:fixed` overlay only under `max-width:1023px`, with no
+scrim either way).
+
+### 1.8 Realtime update
+
+See §5 in full. Summary for this table: **nothing renders, because nothing ever
+fires.** There is no realtime subscription for the `businesses` table (where
+Leads data lives), so an edit made to a lead in another tab/browser/user session
+produces zero signal in this tab — no render call happens as a result, ever,
+short of a full page reload.
+
+### 1.9 Background save
+
+```
+Any mutateLead/mutateLeadById call
+  ↓
+persistLeadsSoon()  (journey.js:10294-10296)
+  ↓
+global.persistPipelineSoon()  (hubly.html:43103-43112)
+  clearTimeout(_pipelineSaveTimer)
+  _pipelineSaveTimer = setTimeout(async () => {
+    db.from('businesses').update({meta: buildBizMeta()}).eq('id', currentBusiness.id)
+  }, 450)
+  ↓
+Render boundary: NONE — this is a pure background network write, it never
+triggers or is triggered by a render. renderLeads() already happened
+synchronously inside mutateLead/mutateLeadById, before this timer even starts.
+```
+
+This write does **not** go through `markLocalWrite`/`realtimeAwareWrite` at all
+— not a suppression gap, but moot: there is no realtime subscription on
+`businesses` for it to echo into in the first place (§5).
+
+### 1.10 Delete (single)
+
+```
+User right-clicks a List-view card (Table view has no equivalent — see below)
+  OR clicks a name cell to open the panel, then clicks "⋯" → Delete
+  ↓
+contextmenu listener (journey.js:9804-9812, .jos-ld-card only) sets
+root._josLeadId + root._josLeadCtx = {open:true,x,y}
+  OR leads-more-menu handler (journey.js:10809-10815, only exists once the panel
+  is open) sets root._josLeadCtx
+  ↓
+renderLeadsContextMenu(root) (journey.js:8954-8969) — 'leads-delete' entry
+  ↓
+click "Delete" → handleLeadsAct('leads-delete')  (journey.js:11096-11111)
+  window.confirm('Delete this lead?')             ← plain, no "cannot be undone"
+  mutateLead(l => {
+    l.deleted = true                               ← effectively dead-code flag,
+                                                       see note below
+    st.pipeline.manual = st.pipeline.manual.filter(x => x.id !== l.id)  ← the
+                                                       real removal
+    st.pipeline.deleted.push(l.id)                 ← tombstone, only consulted
+                                                       by abandoned-lead resync,
+                                                       inert for manual leads
+  })
+  root._josLeadId = null; root._josLeadPanelOpen = false
+  renderLeads()          ← handleLeadsAct's own explicit call
+  ↓
+CONFIRMED: mutateLead ALREADY calls renderLeads() internally (10304) — the
+leads-delete branch's own extra renderLeads() call (11110) makes this a genuine
+double-render on every single delete. Harmless (morph makes the second call
+idempotent/cheap) but real, and inconsistent with bulk-delete/new-lead below,
+neither of which double-renders.
+  ↓
+Render boundary: one <tr>/.jos-ld-card removed (morphTableKeyedChildren's
+removal pass, journey.js:9093-9098 — the old key is simply absent from usedKeys)
+  ↓
+No exit animation — .jos-ld-trow's only transition is a .12s background-color
+hover effect (operate-pixel.css), not an exit transition; the row disappears
+synchronously on the next render's removeChild, no fade/slide
+  ↓
+State preserved: every other row untouched (matched by key, no-op if unchanged)
+```
+
+**Confirmed: right-click delete only works in List view.** The `contextmenu`
+listener's selector is `.jos-ld-card[data-jos-record-id]` — Table-view rows are
+`<tr class="jos-ld-trow">`, which never matches. In Table view, right-clicking a
+row does nothing (no `preventDefault`, the browser's native context menu shows).
+**The only way to delete a lead while staying in Table view is: click the name
+(opens the panel) → click "⋯" → Delete.** There is no direct row-level delete
+affordance in Table view at all.
+
+**No undo mechanism exists anywhere** for delete (single or bulk) — one grep hit
+for "undo" in the whole file, and it's just the word "undone" inside the
+bulk-delete confirm string.
+
+### 1.11 Bulk delete
+
+```
+Bulk-select checkboxes are ALWAYS visible (var bulkOpen = true, hardcoded,
+journey.js:9239-9241 — "a checkbox next to each row is the fast, primary way to
+delete one or many, not a 'Select' mode a user has to opt into first")
+  ↓
+User checks boxes (individually, or shift-click for range, or header
+select-all) → root._josLeadBulkSelected[key] = true (or delete) →
+renderLeads() per click
+  ↓
+Bulk bar (.jos-ld-bulk-bar) becomes visible once Object.keys(selected).length > 0
+(renderLeadsBulkBar, journey.js:8766-8769) — matches HUBLY_TABLE_STANDARD.md's
+"appears only once rows are actually selected" rule exactly
+  ↓
+Click "Delete" (jos-ld-bulk-bar-danger) → handleLeadsAct('leads-bulk-delete')
+  (journey.js:10870-10893)
+  window.confirm('Delete N leads? This cannot be undone.')   ← stronger wording
+    than single-delete's, same actual irreversibility
+  ONE Array.filter() pass over pipeline.manual drops every selected id at once
+    (NOT N individual mutateLead calls)
+  if the open panel's lead was among those deleted: close it too
+  root._josLeadBulkOpen = false; root._josLeadBulkSelected = {}
+  ONE persistPipelineSoon() call (direct, not through the mutateLead wrapper)
+  ONE renderLeads() call            ← no double-render here, unlike single delete
+  ↓
+Render boundary: N <tr>/.jos-ld-card nodes removed in one morph pass — same
+mechanism as single delete, just N unmatched keys instead of 1, still one
+morphTableInto call
+  ↓
+State preserved: every non-deleted row's DOM node untouched
+```
+
+**Selection survives unrelated renders.** `root._josLeadBulkSelected` lives on the
+persistent `root` node, is never touched by unrelated code paths (e.g. editing a
+different cell elsewhere just calls `mutateLeadById`+`renderLeads`, which never
+reads/writes the bulk-selection map), and since each checkbox is inside a keyed
+`<tr>`/`<td>`, `morphTableAttrsAndProps` re-syncs `.checked` from the freshly-generated
+markup (which itself reads the still-intact selection map) — checked boxes stay
+checked across an unrelated edit. **Escape does not clear the selection** — the
+Escape chain only ever touches `root._josLeadBulkOpen` (a now-vestigial flag,
+since checkbox visibility no longer depends on it), never `_josLeadBulkSelected`.
+
+There is dead code here worth flagging: a `leads-bulk-toggle` handler exists
+(`journey.js:10661-10665`) to flip `root._josLeadBulkOpen`, and several other
+branches still check/reset it — but no button anywhere in the rendered markup
+emits `data-jos-act="leads-bulk-toggle"`. It's vestigial from an earlier
+opt-in-bulk-mode design that was superseded by "always show checkboxes" without
+the toggle machinery being removed.
+
+### 1.12 New record ("+ New Lead")
+
+```
+Click any of 3 entry points (toolbar button / empty-state CTA / mobile FAB —
+all data-jos-act="leads-add-open")
+  ↓
+handleLeadsAct: root._josLeadAddOpen = true; root._josLeadDraft = {} → renderLeads()
+  ↓
+renderLeadsAddModal(root) (journey.js:8281-8320) — a .jos-leads-modal-backdrop,
+scoped inside #jos-leads-root (not a separate top-level app modal) — inserted
+via the same non-keyed positional morph mechanism as the detail panel/filter drawer
+  ↓
+User fills Name (required)/Phone/Email/Address/Vehicle/Service/Source/Assigned/
+Notes/Tags (or uses "Fill from paste" to auto-populate from pasted text), clicks
+"Save Lead" or "Save & Quote"
+  ↓
+saveNewLead(andQuote)  (journey.js:9427-9469)
+  validates only Name is required
+  global.createLead({...}, {origin:'manual'})   ← always resolves to
+    createLeadManual (hubly.html:43305-43311, 43354-43386), never the
+    booking_requests-writing path, since origin is always 'manual' here
+  ↓
+createLeadManual (hubly.html) — SYNCHRONOUS body, but wrapped in an async
+function (createLead), so saveNewLead's .then() resolves on next microtask, not
+after a real network round-trip
+  S.pipeline.manual.unshift(lead)     ← prepended to array index 0
+  persistPipelineSoon()               ← creation persists itself, INSIDE
+    createLeadManual — saveNewLead does not separately call persistLeadsSoon
+  ↓
+.then(): root._josLeadAddOpen=false; root._josLeadId=newId;
+root._josLeadPanelOpen=true; root._josLeadsTab='all' (reset, so the new lead
+isn't hidden by whatever tab filter was active) → renderLeads()  ← ONE call, no
+double-render
+  ↓
+leadsOsList()/allLeadsRaw() return S.pipeline.manual by reference — the new
+lead is visible on the very next call, no extra sync step
+  ↓
+filterLeadsList sorts by createdAt — under default "Newest" sort, the new
+lead's just-set createdAt puts it first regardless of the unshift's array
+position (same visual result, driven by the explicit sort, not array-order luck)
+  ↓
+morphTableKeyedChildren: new lead's data-jos-record-id has never appeared in any
+prior render → oldByKey[key] is undefined → falls to the "no match" branch →
+parent.insertBefore(newNode, ref) — a genuine fresh insert; under default sort,
+this lands at index 0 (tbody.firstChild), and every existing row is
+key-matched and left alone (not disturbed by the insert)
+  ↓
+Panel auto-opens for the new lead: panelJustOpened computes true (this is a
+fresh open) → the same slide-in animation as §1.6 plays
+  ↓
+Row highlight (.on class) applies to the new row via selectedId === leadKey
+  ↓
+NO scrollIntoView anywhere in the file for this. If sort were "Oldest," or the
+user were several "Load More" pages deep, the new row could land outside the
+visible viewport with nothing scrolling it there — the detail panel opening is
+the only guaranteed visual confirmation the lead was created.
+```
+
+---
+
+## 2. State preservation — verified, not assumed
+
+Every item from the brief, checked directly against the code (not inferred from behavior):
+
+| State | Preserved? | Mechanism (verified) |
+|---|---|---|
+| **Scroll position** | Yes | No dedicated save/restore code exists anywhere (grepped `scrollTop` — the only Leads hit, `journey.js:10277`, only toggles a sticky-header shadow class, doesn't persist/restore). Survives because `.jos-ld-table-wrap` is a real DOM node whose tag never changes across renders — `morphTableNode` never replaces it, so the browser's own internal scroll offset for that node is never reset. |
+| **Focused cell** (roving-tabindex "active cell") | Yes, for the tabindex/visual state; separately, focus itself can be lost when leaving edit mode | `root._josLeadsActiveCell` is JS state on `root`, survives trivially. Arrow-key movement (`moveLeadsGridFocus`, `journey.js:10416-10441`) is pure DOM/focus manipulation with **zero render calls** — flips `tabindex` on old/new cell directly, calls `.focus()`. When a render *does* happen for an unrelated reason, `restoreLeadsGridFocus(root)` (`10406-10414`) explicitly re-focuses the previously-active cell — but only when `root._josLeadsGridFocusPending` is set (an opt-in flag, set only on edit-commit/cancel/click events, deliberately **not** set for routine renders like search-as-you-type or a filter change, "so routine re-renders... never yank focus into the table"). |
+| **Active edit** (mid-typed value in an open cell editor) | Yes, but by two different mechanisms depending on trigger | If the render is caused by something unrelated (e.g. a different row's edit committing): the cell's edit markup regenerates identically, tag doesn't change, `morphTableAttrsAndProps`'s `isActive` guard skips `.value` sync — node reused, caret/typed-value untouched, no code specifically "protects" this, it's emergent from unchanged-tag reuse. If the render is the edit *opening or closing itself*: this is a genuine tag change (span↔input) → real `replaceChild` → explicit `.focus()`/`select()` calls in `openLeadsCellEdit`/`restoreLeadsGridFocus` recover focus after the fact — not preservation, deliberate re-establishment. |
+| **Selected rows** (bulk checkboxes) | Yes | `root._josLeadBulkSelected`, JS state on `root`, never touched by unrelated code paths; checkbox `.checked` re-synced from that same state on every render via `morphTableAttrsAndProps`. Only cleared by explicit bulk-action completion — **not** by Escape (confirmed the Escape chain never touches it). |
+| **Open dropdown** (the custom `.jos-combo-pop` picker) | Yes, driven by state, not DOM focus | `root._josLeadCombo` (an object, not a boolean) drives whether the popover renders at all — persists across an unrelated re-render exactly like any other root-level state. For the rarer native `<select>` fallback (Status only, reached via the keyboard-Enter path — see §6), the morph's `SELECT` branch skips `.value` sync while it's `document.activeElement`, but whether that specifically preserves an *open OS-level popup* (vs. just the focused value) couldn't be verified from static code — browser-implementation-defined behavior, not something the source determines. |
+| **Hover state** | N/A — nothing to preserve | 100% CSS (`.jos-ld-trow:hover`), zero JS state tracked for hover anywhere in the file. |
+| **Expanded rows** | N/A | Leads' table has no row-expansion concept — not found anywhere in the code. |
+| **Column visibility** | Yes | `root._josLeadsColumns[i].hidden`, persisted via `tablePreferences` (`scope: 'user'`), re-read via `loadLeadsColumns` on the next `renderLeadsTable` call — `cols.filter(c => !c.hidden)` is what excludes them from the next render. |
+| **Column order** | Yes | Same `root._josLeadsColumns` array, order-preserving; drag-reorder physically moves DOM nodes to match (§1.5, §4). |
+| **Filters** | Yes | `root._josLeadFilters` object, plain root state, re-applied by `filterLeadsList` on every render regardless of what triggered it. |
+| **Search** | Yes | `root._josLeadsQ`, same mechanism; the input box itself also keeps literal focus/caret (see the "Active edit" row's `isActive` mechanism — applies identically to the search box). |
+| **Sorting** | Yes | `root._josLeadsSort`, plain root state. |
+| **Pagination** | Yes, but resets on most other actions | `root._josLeadsLimit` — survives across an edit/realtime/etc, but is explicitly reset to 25 on every search keystroke, every filter change, and every tab switch (by design — a filter/search change invalidates "how far you'd scrolled," so re-starting at the top of the new result set is intentional, not a bug). |
+| **Drawer state** | Partially — open/closed and which tab, not always which lead | `root._josLeadPanelOpen` and `root._josLeadWorkspace` both persist as root state — but `openLeadDetailPanel` **always resets** `_josLeadWorkspace` to `'timeline'` on open, even if a previous session had a different lead's panel parked on Notes/Tasks/Appointments. Selection (`root._josLeadId`) is explicitly decoupled from panel-open (`journey.js:9249-9252`, "closing the panel keeps the row highlighted... it just hides the panel") — confirmed: `closeLeadsDetailPanel` never touches `root._josLeadId`. |
+
+---
+
+## 3. Render boundary — classification per interaction
+
+| Interaction | Boundary | Why |
+|---|---|---|
+| Inline edit commit | Row + cell | `morphTableKeyedChildren` matches every other row by key and no-ops; only the edited `<tr>`/`<td>` receives writes |
+| Search / filter / sort | Table body (rows may be added/removed/reordered) | Same render function as everything else, but the *set* of matched rows genuinely changes; unaffected rows still no-op individually |
+| Column resize | **Nothing** — direct DOM style write, no render call at all (and currently broken — see §1.5) | Deliberately bypasses the render pipeline entirely for drag-smoothness (when it works) |
+| Column drag-reorder | Table headers + body (node moves) | Full `renderLeads()` per boundary crossed, cheap because of the keyed morph |
+| Column rename / hide / show / add field | One `<th>` subtree | Full `renderLeads()`, but only the affected header's markup actually changed |
+| Drawer open / close | One top-level `<section>` inserted/removed | Non-keyed positional morph — new/removed section is appended/trimmed, everything else untouched |
+| Realtime update | **Nothing, ever** | No subscription exists (§5) |
+| Background save | **Nothing** | Pure network write, no DOM involvement |
+| Delete (single) | One `<tr>`/card removed | Keyed removal pass; also a confirmed double-`renderLeads()` call (§1.10) |
+| Bulk delete | N `<tr>`/cards removed, one render | Same keyed removal pass, N unmatched keys in one pass |
+| New record | One `<tr>`/card inserted + one section inserted (the panel) | Keyed insert (new key) + non-keyed section append, same render |
+
+No interaction on Leads is ever "entire app" or "entire page" **at the DOM-write level** — every
+one of them is scoped down by the morph engine to some subset of nodes, even though the
+JS-string-building step underneath always recomputes the whole page (see §7).
+
+---
+
+## 4. The morph engine — exactly what `morphTableInto()` guarantees
+
+Five functions, `journey.js:9012-9127`. `TABLE_MORPH_KEY_ATTR = { TR: 'data-jos-record-id', TH:
+'data-jos-col-key', TD: 'data-jos-col-key' }` (`9012`) — **only these three tags are ever
+keyed.** Everything else (`SPAN`, `INPUT`, `SELECT`, `DIV`, `SECTION`...) is diffed positionally.
+
+### 4.1 Node identity — preserved for keyed matches, destroyed on tag change
+
+`morphTableKeyedChildren` (`9072-9099`) never `replaceChild`s a matched node — it calls
+`morphTableAttrsAndProps(match, newNode)` (patches attrs/props onto the *old*, real node) and
+`morphTableChildren(match, newNode)` (recurses), then repositions with `insertBefore` only if
+order changed. The freshly-parsed `newNode` is discarded once its data has been copied onto
+`match`. Node identity is destroyed only two ways: (a) the key disappears from the new tree
+entirely (row/column removed — real `removeChild`), or (b) `morphTableNode`'s tag-mismatch
+check fires (`9060-9063`) on the **unkeyed** path — this is how edit-mode transitions (span↔
+input) genuinely destroy and recreate a node even though their parent `<td>` survives untouched.
+
+### 4.2 Focus preservation — a side effect, not a feature
+
+No explicit `document.activeElement` save/restore exists anywhere in the morph engine. The only
+reference to `activeElement` is the `isActive` guard inside `morphTableAttrsAndProps` (`9043`),
+and it exists to protect *values*, not focus itself. Focus survives when the focused element's
+row/cell keeps its key (node never removed, browser never blurs it — nobody made this happen on
+purpose, it's a consequence of the node staying in the document). Focus is genuinely lost when
+the row is removed (deletion) — nothing refocuses anything after that. There's a **separate,
+unrelated, opt-in mechanism**, `restoreLeadsGridFocus` (`10406-10414`), gated by
+`root._josLeadsGridFocusPending` — it exists specifically for the edit-mode-tag-change case
+(§4.1b), not for row removal, and is deliberately *not* triggered by routine renders.
+
+### 4.3 Selection preservation (caret position) — same story as focus
+
+No explicit caret save/restore exists. Relies entirely on the input node never being replaced
+while its tag stays the same — native browser behavior for an untouched, still-attached
+`<input>` keeps its own selection state automatically. The `isActive` guard reinforces this by
+never overwriting `.value` on the focused element even if the freshly-built markup disagrees,
+but that's a defensive backstop, not the actual preservation mechanism (which is "the node was
+never touched").
+
+### 4.4 Event listener preservation — there was never anything to lose
+
+All 20 `addEventListener` calls in the Leads code region are on `root` itself (delegation, via
+`wireLeadsRoot`/`bindRoot`), guarded to bind exactly once. Nothing in `renderLeadsTable`,
+`tableCellHtml`, or `rendererRegistry` — the functions that actually build row/cell markup —
+ever calls `addEventListener` on a row/cell node. So "the morph preserves listeners" is true, but
+for a boring reason: replacing or reusing a `<tr>`/`<td>` is a non-event for the app's event
+handling either way, since every interaction is handled at the root via delegation, not on
+individual nodes.
+
+### 4.5 Edit-mode preservation — two mechanisms, easy to conflate, kept distinct here
+
+**Opening/closing an edit** for a given cell is a real tag change (span↔input) → genuine
+`replaceChild` → explicit `.focus()` calls needed afterward (§4.2). **An unrelated render while
+already mid-edit** regenerates *identical* edit-mode markup for that cell (same
+`root._josLeadsEditCell`, same tag) → `morphTableNode`'s mismatch check doesn't fire → patched in
+place, not replaced, and the `isActive` guard stops the regenerated `value` attribute from
+overwriting what's currently typed. There is no code anywhere that says "this cell is mid-edit,
+don't touch it" — the survival is an emergent property of (a) the HTML string always reflecting
+current edit state and (b) the morph never replacing a same-tag node.
+
+### 4.6 Scroll preservation — same mechanism as node identity, no dedicated code
+
+Confirmed via grep — no Leads-specific `scrollTop` save/restore exists. `.jos-ld-table-wrap` is a
+plain, unkeyed, but tag-stable `<div>` — never replaced, so the browser's internally-tracked
+scroll offset for that specific node object is never reset.
+
+---
+
+## 5. Realtime — what happens when another browser changes a Lead
+
+**Nothing renders. Confirmed, not assumed, and confirmed independently three separate times
+across this and the prior rendering-architecture audit.**
+
+The app's one Supabase realtime channel (`hubly.html:15668-15671`) subscribes to exactly three
+tables: `jobs`, `booking_requests`, `customers`. It never subscribes to `businesses` — and
+`S().pipeline.manual`, the array every manually-created or CSV-imported lead lives in, is a JSON
+blob inside `businesses.meta`, loaded once at initial business boot (`hubly.html:15039-15048`)
+and never refetched on any timer or trigger afterward.
+
+So: if a teammate in another browser edits a manually-created lead, that write goes through
+`persistPipelineSoon()` → a plain `businesses.meta` UPDATE. This tab receives **zero signal** —
+no realtime event fires (nothing subscribed), no polling exists, nothing refetches
+`businesses.meta` outside of the very first page load. The change is invisible in this tab until
+a full page reload.
+
+**One partial exception**, worth stating precisely rather than rounding it off: if the *other*
+browser's action touches a **booking-request-derived, abandoned-status lead**
+(`S().abandonedLeads`, a genuinely different storage mechanism from `pipeline.manual`), the
+`booking_requests` table *is* subscribed — `onRealtimeBizChange` fires, `refreshOpenAppViews()`
+runs, which calls `refreshLeadsSources()` (`hubly.html:43627-43649`) — but that function only
+refetches `booking_requests` rows with `status='abandoned'` into `S.abandonedLeads`, plus a
+separate chatbot-conversations RPC. **It never touches `S().pipeline.manual`.** So even this path
+only refreshes one specific, narrow slice of "leads" (abandoned bookings) — the majority of
+records a user actually sees on the Leads page (manually-created, CRM-sourced, CSV-imported) are
+never realtime-synced under any circumstance.
+
+Practical consequence for anyone reasoning about multi-tab/multi-user correctness on this page:
+**assume Leads data is only as fresh as the last full reload in each open tab.** This is not a
+suppression bug (there's nothing to suppress) — it's an absence of the realtime plumbing that
+Jobs/Customers have, on the table where you'd most expect a fast-moving sales team to be editing
+concurrently.
+
+---
+
+## 6. Editing — every field type × every event
+
+### 6.1 Field types actually present on Leads
+
+`rendererRegistry` (`journey.js:8391-8556`) defines 11 types. Only these are reachable on Leads:
+
+| Type | Built-in column? | Offered as custom field? |
+|---|---|---|
+| Text | Yes — First name, Last name | Yes |
+| Phone | Yes — Phone | Yes |
+| Email | Yes — Email | Yes |
+| URL | No | Yes (custom-field only) |
+| Number | No | Yes (custom-field only) |
+| Date | No | Yes (custom-field only) |
+| Checkbox | No | Yes (custom-field only) |
+| Select | Yes — Source, Service, Status, Assigned | Yes |
+| Tags | Yes — Tags (`hidden: true` by default) | **Not offered** at creation |
+| Textarea | **Not used anywhere on Leads** (Jobs only) | Not offered |
+| Time | **Not used anywhere on Leads** (Jobs only) | Not offered |
+| Currency/Amount | **Does not exist as a distinct type.** `rendererRegistry.number` has an unused `col.format` hook explicitly reserved for this (e.g. a future `money()` formatter); no Leads column, built-in or custom, ever sets it. Leads has an "Estimated value" concept, but it's filter-only (min/max inputs), never a renderable/editable column. | — |
+
+### 6.2 The matrix
+
+For every applicable type: **Click → Blur → Escape → Enter → Realtime-during-edit.**
+
+**Text (First/Last name), Phone, Email, URL*, Number*, Date*, Tags** (*custom-field only)
+all share one shape, with only the parse/format step differing per type:
+
+- **Click**: generic dispatch (`journey.js:10121-10159`) → `openLeadsCellEdit(root, leadId, key)`
+  (`8607-8619`). Date additionally calls `sel.showPicker()` after focusing (`10344`), since
+  `.select()` is a no-op on a date input with no visible affordance.
+- **Blur**: native `change` fires first if dirty (browser default), committing via the shared
+  pipeline (§6.3). A separate, deferred (`setTimeout 0`) blur-close listener
+  (`10168-10180`) then always closes the edit state regardless of whether `change` fired.
+- **Escape**: `cancelLeadsCellEdit(root)` (`10349-10380`) — full behavior in §6.4.
+- **Enter**: the shared "Enter blurs the `.jos-ld-editing` control" handler
+  (`10201-10215`) — since these are all `<input>` tags, Enter just calls `e.target.blur()`. It
+  does **not** commit directly; it delegates to native blur → native `change` → the commit
+  pipeline.
+- **Realtime-during-edit**: `morphTableAttrsAndProps`'s `INPUT`/non-checkbox branch
+  (`9044-9050`) — `.value` sync is skipped whenever `document.activeElement === oldEl`. Scoped
+  correctly by construction: a different lead's row is a different `<tr>`, independently keyed
+  and matched, so it patches freely with zero interaction with whatever's being edited elsewhere.
+
+Per-type formatting divergence, all inside the shared shape above:
+- **Phone**: `readValue` normalizes typed input to canonical digits (`phoneDigits`) before
+  writing to `lead.phone`; on Escape, `writeValue` re-formats the reverted value back to display
+  form (`8430`).
+- **Email**: `readValue` is `trim().toLowerCase()` only; no `writeValue` defined, Escape falls
+  back to a raw, unformatted revert.
+- **URL / Number / Date**: no `readValue` defined (Number is the exception — `parseFloat`,
+  non-numeric silently becomes `''`, not rejected), no `writeValue` — Escape reverts raw.
+- **Tags**: `readValue` comma-splits/trims/drops-empty into an array; `writeValue` re-joins the
+  reverted array with `', '` for Escape. Minor copy nit found: the display span's tooltip says
+  "Click to change" (dropdown wording) even though the editor is free text, not a picker — cursor
+  is correctly `text`, only the tooltip copy is borrowed from the select convention.
+
+**Checkbox** (custom-field only) — no edit-mode step exists at all:
+- **Click**: toggles and commits in one synchronous step
+  (`8505-8512`, `10129-10137`) — `mutateLeadById` runs immediately, `_josLeadsEditCell` is never
+  set.
+- **Blur / Escape / Enter**: not applicable — there's no live focusable input to receive any of
+  these; the display element is a `<span>`, not a real `<input type="checkbox">`.
+- **Realtime-during-edit**: not applicable in the "active element" sense, but worth flagging as a
+  latent trap: `morphTableAttrsAndProps`'s checkbox/radio branch (`9046-9047`) syncs `.checked`
+  **unconditionally, with no `isActive` guard** — unlike every other input type. Currently inert
+  for Leads' checkbox column (which never renders a real `<input>`), but would misbehave for any
+  future Leads checkbox that *does* render as a genuine `<input type="checkbox">` mid-interaction.
+
+**Select** (Source, Service, Status, Assigned, and any custom select field) — the type with real,
+confirmed behavioral divergence:
+
+- **Click**: **not** the fallback `rendererRegistry.select.edit()` native `<select>` — the click
+  handler special-cases `col.type === 'select'` before `openLeadsCellEdit` is ever reached,
+  opening `openLeadsComboPicker(root, leadId, key, inPanel)` (`10152-10156`), a custom
+  `.jos-combo-pop` popover (shared markup-builder with Jobs' equivalent picker, but each page has
+  its own separate open/position/close glue functions).
+- **Option pick**: a delegated click on `[data-jos-combo-pick]` calls `mutateLeadById` directly
+  (`9723-9737`) — no native `change` event involved at all for the normal mouse path.
+- **Blur** (closing without picking): an explicit outside-click check (not a native blur event,
+  since the popover isn't a focusable form control) — `closeLeadsComboPicker` just nulls
+  `root._josLeadCombo` and re-renders; no value rollback needed because nothing was mutated until
+  a pick actually happened.
+- **Escape**: a dedicated, separate capturing keydown listener (`9848-9850`) closes the combo —
+  distinct from the main Escape chain (§1.7), because opening a select cell sets
+  `_josLeadCombo`, not `_josLeadsEditCell`.
+- **Enter**: the combo's search input has no dedicated Enter handler at all — pressing Enter
+  inside it does nothing beyond whatever native button-focus behavior the browser gives.
+- **CONFIRMED BUG — roving-grid Enter opens a different editor than click does, and is broken for
+  Assigned specifically.** The keyboard grid's Enter handler (`10223-10238`) hardcodes only two
+  column keys: `field = colKey === 'status' ? 'status' : (colKey === 'assigned' ? 'assignedTo' :
+  null)`, then calls `openLeadsCellEdit` **directly** — bypassing the combo picker entirely, opening
+  the semi-deprecated native-`<select>` fallback instead. For Status, this works (the mapped
+  field name `'status'` matches the real schema key). **For Assigned, it doesn't** — the schema's
+  real key is `'assigned'` (`7474`), but the handler maps it to the string `'assignedTo'`, which
+  `findLeadsColumnDef` can't resolve (returns `undefined`) — `openLeadsCellEdit` immediately
+  early-returns (`10331`). **Pressing Enter on a keyboard-focused Assigned cell silently does
+  nothing** — no editor, no error. And since custom select fields' generated `cf_...` keys never
+  match either hardcoded string, **Enter never opens any select-type custom field's editor at
+  all** — click is the only working entry point for every select type except Status.
+- **Realtime-during-edit**: for the rare native-`<select>` fallback path (Status via Enter only),
+  same `isActive`-guarded `.value` sync as any other form control (`9053-9057`); the `<option>`
+  sync branch itself has no `isActive` guard, but is low-risk since the parent `SELECT`'s guarded
+  value assignment is what actually drives selection in practice. For the real click path (the
+  combo popover), the `isActive` mechanism doesn't apply at all — it's a `<div>`/`<button>` tree,
+  not a focused form control; the popover's open state survives a realtime-triggered re-render
+  purely because it's driven by `root._josLeadCombo` state, not DOM focus.
+
+### 6.3 The shared commit pipeline (every field type, once `change` fires)
+
+```
+change event on [data-jos-field]  (journey.js:9928-9962)
+  ↓
+fieldRenderer.readValue(e.target)   ← per-type parse (phone→digits, email→trim+
+  lowercase, number→parseFloat, tags→split, else raw e.target.value)
+  ↓
+root._josLeadsEditCell = null
+root._josLeadsGridFocusPending = true      ← so the next render restores
+                                              keyboard focus to the grid, not
+                                              stranding it
+  ↓
+mutateLeadById(fieldLeadId, mutator)  (journey.js:10308-10316)
+  → mutator: tableColFieldSet(fieldCol, l, fieldVal)   ← writes via the column's
+    own set() (e.g. Status's set() also derives osStage/stage as a side effect)
+  → mutator: pushLeadActivity(l, 'edit', label)         ← unshifts an activity
+    entry, capped at 40
+  → persistLeadsSoon()     ← the 450ms-debounced Supabase write
+  → renderLeads()          ← unless opts.quiet, which this call site never passes
+  ↓
+toast(fieldActivityLabel + ' updated')
+  ↓
+Render boundary — confirmed definitively via the keyed-diff chain: rows keyed
+by data-jos-record-id, cells within a row keyed by data-jos-col-key, diffing
+recurses independently at each level. A commit on Lead A's firstName cell
+results in DOM writes to (at minimum) Lead A's <tr> and its firstName <td>.
+Every other lead's <tr> is matched by its own unchanged key, recursed into,
+and produces ZERO DOM writes if its own markup is byte-identical (which it
+will be, since no other lead's data changed) — morphTableAttrsAndProps's
+attribute loop and morphTableNode's text-diff both explicitly no-op on
+unchanged values. This is what makes "only that one cell visibly repaints"
+true, with no code anywhere written specifically to target "just this cell."
+```
+
+### 6.4 `cancelLeadsCellEdit` — exact behavior, not paraphrased
+
+```js
+function cancelLeadsCellEdit(root) {
+  var editing = root._josLeadsEditCell;
+  if (!editing) return;
+  var lead = findLead(editing.leadId);
+  if (lead) {
+    var col = findLeadsColumnDef(root, editing.field);
+    if (col && col.type === 'select') {
+      // A live <select> commits the instant an option is picked (native
+      // 'change'), so by the time Escape is pressed the lead may already
+      // hold the new value — roll it back for real.
+      var currentValue = tableColFieldGet(col, lead);
+      if (currentValue !== editing.originalValue) tableColFieldSet(col, lead, editing.originalValue);
+    } else if (col) {
+      // Every other type only commits on blur/'change', never per
+      // keystroke — nothing has been written to the lead yet. But
+      // removing this still-focused <input> below (via the renderLeads()
+      // call) can itself synthesize a native 'change' event carrying
+      // whatever was typed, which would silently save the just-cancelled
+      // edit. Reset the live input back to its original value first so
+      // that stray commit is a no-op.
+      var renderer = rendererRegistry[col.type] || rendererRegistry.text;
+      var liveEl = root.querySelector('[data-jos-field="' + editing.field + '"][data-jos-record-id="' + CSS.escape(editing.leadId) + '"].jos-ld-editing');
+      if (liveEl) {
+        if (renderer.writeValue) renderer.writeValue(liveEl, editing.originalValue);
+        else liveEl.value = editing.originalValue == null ? '' : editing.originalValue;
+      }
+    }
+  }
+  root._josLeadsEditCell = null;
+  root._josLeadsGridFocusPending = true;
+  renderLeads();
+}
+```
+`journey.js:10349-10380`.
+
+**Exact answer to "DOM-only revert, or does it also revert already-mutated in-memory state?":
+both, conditionally, for exactly one reason.** For every type except `select`, nothing has
+actually been written to the lead object yet — commit only happens on `change`, which hasn't
+fired — so there's no in-memory state to revert; the DOM-value reset exists purely to make sure
+*removing the focused, still-dirty `<input>`* (which the trailing `renderLeads()` does) can't
+itself synthesize a stray `change` carrying stale typed data. For `select`-type columns
+specifically (reachable only via the keyboard-Enter-on-Status path — mouse-click select editing
+never sets `_josLeadsEditCell` at all, it sets `_josLeadCombo`), the in-memory lead object **can
+already be mutated** by the time Escape is pressed, because a native `<select>`'s `change` fires
+the instant an option is picked, not on blur — so this branch does a real, explicit
+`tableColFieldSet` rollback of the already-committed value.
+
+### 6.5 Custom fields — verified identical to their built-in type counterpart
+
+`customFieldColumnDef(f)` (`7548-7560`) builds a column-definition object with **the exact same
+shape** (`type`, `get`, `set`, `options`, `editable`) as every built-in column.
+`leadsColumnSchema` simply concatenates built-ins with mapped custom fields into one flat array
+— no branch anywhere downstream (`tableCellHtml`, `findLeadsColumnDef`, the click dispatcher,
+the commit listener, `cancelLeadsCellEdit`, the morph functions) distinguishes `col.custom ===
+true` for rendering/editing purposes. The only place `custom` is checked at all is the column
+menu's "Delete field" button. **Confirmed: a custom `text` field behaves identically to
+First/Last name's row in this matrix; a custom `select` field behaves identically to Source's row
+— including inheriting the same Enter-key bug, made even more total, since a custom field's
+generated `cf_...` key never matches either hardcoded `'status'`/`'assigned'` string, so Enter
+never opens any custom select field's editor at all, ever — click is the only path.**
+
+Storage: every custom field, regardless of type, lives at `lead.customFields[f.id]` — one
+generic `get`/`set` pair covers all 8 offered types (text/number/date/checkbox/select/phone/
+email/url — notably `tags` and `textarea` exist in `rendererRegistry` but are not offered as a
+creatable custom-field type).
+
+---
+
+## 7. Performance — skipped, always, deferred
+
+**What work is skipped**: only at the DOM-write layer, never at the JS/string-building layer.
+`renderLeadsPage` unconditionally does, on *every single call regardless of trigger*:
+`leadsOsList()` (O(all leads in the account)) → `filterLeadsList()` (O(all leads)) →
+`visible.map(...)` building full row+cell HTML for every visible row × column (O(visible rows ×
+columns), default page size 25). A single-field edit to one row still rebuilds the complete HTML
+string for all ~25 visible rows and every visible column, exactly as if every row had changed.
+The *only* place work is actually skipped is inside the morph functions discarding rebuilt
+markup for every node whose key matched and whose attributes/text turned out identical, rather
+than writing it to the real DOM.
+
+**What always happens**: the full string rebuild above, on every render, no exceptions. A full
+attribute-diff pass over *every matched node in the tree*, not just changed ones —
+`morphTableAttrsAndProps` runs unconditionally for every keyed match and every positionally-
+matched pair, with no "is this node actually different" upstream short-circuit and no
+memoization/byte-comparison fast path anywhere in the engine. `bindRoot`/`wireLeadsRoot`'s guard
+checks (one property read each) run every render too, but their setup bodies execute exactly
+once per root, by explicit design.
+
+**What's deferred**, every `setTimeout`/debounce reachable from the Leads render/persist path:
+
+| Location | Delay | Defers |
+|---|---|---|
+| `journey.js:9819` (search `input` listener) | 140ms | Search-as-you-type `renderLeads()` — only the last keystroke in a burst actually renders |
+| `hubly.html:43106-43112` (`persistPipelineSoon`) | 450ms | The actual Supabase `businesses.meta` write, coalescing rapid successive edits into one network call |
+| `journey.js:10172-10177` and 5 similar blur handlers | 0ms (next tick) | Deferred edit-close so a click on a *different* editable cell can claim the new edit state first, avoiding a focus-race with the just-closing one |
+| `journey.js:10719-10729` (`leads-col-add-field-open`) | 0ms (next tick) | Avoids a same-click DOM-detachment race with the outside-click-closes-the-menu listener |
+
+No other timer touches the Leads render or persistence path.
+
+---
+
+## 8. Consolidated bug/drift list found during this pass
+
+Not fixed here — no code changes in this phase, per the brief. Listed together so nothing gets
+lost between the sections above:
+
+1. **Column resize is currently non-functional.** `LEADS_COL_MIN_WIDTH` (`journey.js:10256`) is
+   referenced but never declared anywhere in the file — the drag handler throws on the first
+   `mousemove` of every resize gesture, so live resize never visually updates and mouseup persists
+   the unchanged pre-drag width.
+2. **Single-lead delete double-renders** — `mutateLead` already calls `renderLeads()` internally;
+   the `leads-delete` branch calls it again. Harmless (morph makes the second call cheap), but
+   inconsistent with bulk-delete and new-lead, neither of which double-renders.
+3. **Right-click-to-delete only works in List view.** Table-view rows don't match the
+   `contextmenu` listener's `.jos-ld-card` selector — the only Table-view delete path is
+   open-the-panel → "⋯" → Delete.
+4. **The bulk-select "mode toggle" is dead code.** `leads-bulk-toggle` and
+   `root._josLeadBulkOpen` still exist and are checked in several places, but no rendered button
+   ever emits that act — checkboxes are hardcoded always-visible (`var bulkOpen = true`).
+5. **Escape never closes the detail/workspace panel.** It's absent from the Escape priority
+   chain entirely — the X button (or opening a different lead) are the only ways to close it via
+   keyboard-adjacent interaction.
+6. **New leads get no `scrollIntoView`.** Positive confirmation relies entirely on default
+   "Newest" sort + the auto-opened detail panel; under a different sort or several "Load More"
+   pages deep, a newly-created lead could render outside the viewport with nothing scrolling it
+   into view.
+7. **Keyboard Enter-to-edit is broken for Assigned and silently no-op for every select-type
+   custom field.** The roving-grid's Enter handler hardcodes a `'assigned' → 'assignedTo'`
+   mapping that doesn't match the real schema key (`'assigned'`) — `findLeadsColumnDef` fails,
+   `openLeadsCellEdit` early-returns, nothing happens, no error surfaced. Status is the only
+   select-type column where keyboard Enter works at all.
+8. **Mouse-click and keyboard-Enter open two different editors for the same Status cell.** Click
+   opens the modern custom combo popover (`openLeadsComboPicker`); Enter opens the older,
+   explicitly-commented "fallback only... kept intact so a select-type column still degrades to
+   something functional" native `<select>` editor.
+9. **No realtime subscription exists for Leads data at all** (§5) — manually-created/CSV-imported
+   lead edits from another tab/user are invisible until a full reload; only abandoned-booking-
+   derived leads get any realtime refresh, and only that narrow slice.
+10. **Leads' own writes never go through `markLocalWrite`/realtime-echo suppression** — not a
+    suppression bug, moot: there's no subscription for a write to echo into in the first place.
+
+## 9. What this means for other pages
+
+Per the brief, no migration decision is made here — this is the trace, not the plan. But stated
+plainly, since it's the direct output of this exercise: any page adopting this standard needs
+(a) one root acquired once via `ownPixelView`, (b) exactly one render function that always
+rebuilds the full HTML string, (c) that render function's final DOM write routed through
+`morphTableInto`/the generic morph functions rather than a raw `innerHTML =`, (d) row/cell
+elements carrying stable `data-jos-record-id`/`data-jos-col-key` attributes so the keyed path
+engages, and (e) all mutation funneled through one or two centralized mutate functions that
+themselves call persist-then-render, so no call site can forget either step. Everything else in
+this document — state preservation, focus/scroll survival, cheap re-renders — falls out of those
+five structural decisions for free; none of it is bespoke per-page code on Leads today.

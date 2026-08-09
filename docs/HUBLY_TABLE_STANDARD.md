@@ -10,17 +10,33 @@ checklist, not against its own taste.
 Reference the live implementation, not this document, for exact CSS values and code —
 this file is the checklist and the reasoning, not a spec to re-derive the numbers from.
 
+**Correction pass (post-freeze):** a full reverse-engineering audit of Leads' rendering
+behavior (`docs/HUBLY_RENDERING_STANDARD.md`) found two places below had drifted from the
+live code since this doc was frozen — the double-click behavior described in the checklist
+was removed in a later commit, and the morph-engine function names were never what this doc
+said. Both are corrected below, with a note at each spot. "Frozen" still means no further
+redesign without a new rule — it doesn't mean this file gets to describe behavior that no
+longer exists. See `HUBLY_RENDERING_STANDARD.md` for the exhaustive, line-cited trace behind
+every correction.
+
 ## The checklist
 
 - Sentence-case headers ("First name", not "FIRST NAME")
 - Dense row spacing (44px rows, 32px header — not padded like a marketing page)
 - Inline editing: click a cell, it edits, no separate "edit mode" for the row
 - Dropdowns save immediately on selection — no Save/Cancel/Apply for a single field
-- The record's name opens the detail panel; double-click anywhere else on the row is
-  the power-user shortcut to the same panel; a plain click elsewhere only selects the row
+- The record's name opens the detail panel. **(Corrected.)** A plain click elsewhere on the
+  row only selects/highlights it. Double-click used to also open the panel as a power-user
+  shortcut — that was removed (commit `2f5b73b`, "Remove double-click everywhere..."); on
+  Leads today double-click has exactly one job, renaming a column header, and only the name
+  cell opens the panel. Table view is currently the only view this works from at all — List
+  view's cards have no click path to the panel (`HUBLY_RENDERING_STANDARD.md` §1.6)
 - Side panel for full record details, not a separate page navigation
 - Drag to reorder columns
-- Drag the column edge to resize
+- Drag the column edge to resize — **(known regression, not a design change)**: the resize
+  handler currently references an undeclared variable and throws on the first drag tick, so
+  live resize is non-functional right now (`HUBLY_RENDERING_STANDARD.md` §1.5, bug #1). The
+  rule stands — this is a bug to fix, not a rule to drop.
 - Per-user table preferences (column order/width/hidden state), synced via
   `tablePreferences.load/save/normalize` — never localStorage-only
 - Business-wide custom fields, typed (text/number/date/checkbox/select/phone/email/url),
@@ -83,9 +99,15 @@ refresh, confirm it's still gone.
   checkbox/tags/select), each with `display()`/`edit()`/optional `readValue()`/
   `writeValue()`. A new table's schema columns reference these by `type`; the renderer
   itself is shared.
-- The DOM-morphing render path (`morphLeadsInto`/`morphLeadsChildren` on Leads) — keyed
-  diffing by `data-jos-lead-id`/`data-jos-col-key` so re-renders patch in place instead of
-  replacing the whole table (this is what makes edits, drag, and resize flicker-free).
+- The DOM-morphing render path — **(corrected: the function names above were never real)**.
+  The actual functions are `morphTableInto`/`morphTableAttrsAndProps`/`morphTableNode`/
+  `morphTableKeyedChildren`/`morphTableChildren` (`journey.js:9012-9127`), keyed by
+  `data-jos-record-id` (rows) / `data-jos-col-key` (cells/headers) — generic names because
+  they're not Leads-exclusive: Jobs' list view (not its Calendar view) morphs through this
+  exact same engine. This is what makes edits and drag-reorder flicker-free; it does *not*
+  currently make resize flicker-free, since resize doesn't call it at all — see the resize
+  bug above. Full guarantees (node identity, focus, selection, edit-mode, scroll — what's
+  preserved and why) are in `HUBLY_RENDERING_STANDARD.md` §4, not re-derived here.
 
 ## What "compare against the standard" means in practice
 
