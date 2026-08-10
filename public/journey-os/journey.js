@@ -15276,20 +15276,37 @@
     bindRoot(pop);
     document.addEventListener('click', function (e) {
       if (!pop.classList.contains('open')) return;
-      if (!pop.contains(e.target) && e.target.id !== 'jos-bar-new' && !e.target.closest('#jos-bar-new')) pop.classList.remove('open');
+      if (!pop.contains(e.target) && e.target.id !== 'jos-bar-new' && !e.target.closest('#jos-bar-new')) closeQuickNew();
     });
+    window.addEventListener('resize', function () { if (pop.classList.contains('open')) positionQuickPop(); });
     return pop;
+  }
+
+  // Anchored under #jos-bar-new the same way positionJobsComboPop anchors a
+  // combo popover to its trigger cell — getBoundingClientRect + a
+  // .jos-positioned visibility flip so it never flashes at (0,0) on the
+  // first open. Replaces the old hardcoded right:24px;top:72px, which had
+  // no real relationship to the button it opened from.
+  function positionQuickPop() {
+    var pop = el('jos-quick-pop');
+    var trigger = el('jos-bar-new');
+    if (!pop || !trigger) return;
+    var tr = trigger.getBoundingClientRect();
+    var pw = pop.offsetWidth || 272;
+    var left = Math.min(tr.right - pw, window.innerWidth - pw - 12);
+    pop.style.top = (tr.bottom + 8) + 'px';
+    pop.style.left = Math.max(12, left) + 'px';
+    pop.classList.add('jos-positioned');
   }
 
   function refreshQuickPopItems(pop) {
     if (!pop) return;
-    var items = [
-      ['new-job-cust', 'New Job'],
-      ['manual-lead', 'New Lead'],
-      ['add-cust', 'New Customer'],
-      ['smart-quote', 'New Quote'],
-      ['new-invoice', 'New Invoice'],
-      ['go-editor', 'New Service']
+    var secondary = [
+      ['manual-lead', 'plus-circle', 'New Lead'],
+      ['add-cust', 'user', 'New Customer'],
+      ['smart-quote', 'dollar', 'New Quote'],
+      ['new-invoice', 'doc', 'New Invoice'],
+      ['go-editor', 'diamond', 'New Service']
     ];
     var hasProjects = true;
     try {
@@ -15298,20 +15315,37 @@
         hasProjects = !!global.HublyPhotographyProjects.hasCapability();
       }
     } catch (e) { hasProjects = true; }
-    if (hasProjects) {
-      items.push(['sep-photo', '──────────']);
-      items.push(['photo-quick', 'Quick add']);
-      items.push(['photo-new', 'New media job']);
-    }
-    pop.innerHTML = items.map(function (x) {
-      if (x[0] === 'sep-photo') return '<div class="jos-quick-sep" aria-hidden="true">' + esc(x[1]) + '</div>';
-      return '<button type="button" data-jos-act="' + esc(x[0]) + '">' + esc(x[1]) + '</button>';
-    }).join('');
+    pop.innerHTML =
+      '<div class="jos-quick-eyebrow">Create</div>' +
+      '<button type="button" class="jos-quick-hero" data-jos-act="new-job-cust">' +
+      '<span class="jos-quick-hero-ico">' + jobUiIcon('sparkle') + '</span>' +
+      '<span class="jos-quick-hero-main"><strong>New Job</strong><small>Schedule work</small></span>' +
+      '<span class="jos-quick-hero-arrow">' + jobUiIcon('chevron-right') + '</span>' +
+      '</button>' +
+      '<hr class="jos-quick-sep">' +
+      '<div class="jos-quick-group">' + secondary.map(function (x) {
+        return '<button type="button" class="jos-quick-item" data-jos-act="' + esc(x[0]) + '">' +
+          '<span class="jos-quick-item-ico">' + jobUiIcon(x[1]) + '</span>' + esc(x[2]) + '</button>';
+      }).join('') + '</div>' +
+      (hasProjects ?
+        '<hr class="jos-quick-sep">' +
+        '<div class="jos-quick-group jos-quick-group-tertiary">' +
+        '<button type="button" class="jos-quick-item" data-jos-act="photo-quick"><span class="jos-quick-item-ico">' + jobUiIcon('bolt') + '</span>Quick Add</button>' +
+        '<button type="button" class="jos-quick-item" data-jos-act="photo-new"><span class="jos-quick-item-ico">' + jobUiIcon('camera') + '</span>New Media Job</button>' +
+        '</div>' : '');
   }
 
   function openQuickNew() {
     var pop = ensureQuickPop();
-    pop.classList.toggle('open');
+    if (pop.classList.contains('open')) { closeQuickNew(); return; }
+    pop.classList.remove('jos-positioned');
+    pop.classList.add('open');
+    positionQuickPop();
+  }
+
+  function closeQuickNew() {
+    var pop = el('jos-quick-pop');
+    if (pop) { pop.classList.remove('open'); pop.classList.remove('jos-positioned'); }
   }
 
   // "Who is this for?" — the lightweight job-creation picker. Replaces the
@@ -15322,9 +15356,22 @@
   // off to the same createJob() pipeline every other creation path already
   // uses, and immediately opens the real Jobs drawer as the one editor for
   // everything else (service, date, time, technician, financials, notes...).
+  var JOB_PICKER_STEPS = [['who', 'Who'], ['what', 'What'], ['when', 'When'], ['review', 'Review']];
+
   function jobPickerState(pop) {
-    if (!pop._josJp) pop._josJp = { q: '', mode: 'search', busy: false };
+    if (!pop._josJp) pop._josJp = { step: 'who', q: '', mode: 'search', busy: false };
     return pop._josJp;
+  }
+
+  function jobPickerStepIndicatorHtml(st) {
+    var curIdx = JOB_PICKER_STEPS.map(function (s) { return s[0]; }).indexOf(st.step);
+    return '<div class="jos-jp-steps">' + JOB_PICKER_STEPS.map(function (s, i) {
+      var cls = i === curIdx ? ' on' : (i < curIdx ? ' done' : '');
+      return '<div class="jos-jp-step' + cls + '">' +
+        '<i>' + (i < curIdx ? jobUiIcon('check-circle') : (i + 1)) + '</i>' +
+        '<span>' + s[1] + '</span></div>' +
+        (i < JOB_PICKER_STEPS.length - 1 ? '<div class="jos-jp-step-line' + (i < curIdx ? ' done' : '') + '"></div>' : '');
+    }).join('') + '</div>';
   }
 
   function ensureJobPickerPop() {
@@ -15346,20 +15393,70 @@
     // then restore focus + force a value reassignment so the caret doesn't
     // jump to the start of the field after innerHTML is replaced.
     pop.addEventListener('input', function (e) {
-      if (!(e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-jp-search'))) return;
+      var t = e.target;
+      if (!t || !t.hasAttribute) return;
       var st = jobPickerState(pop);
-      st.q = e.target.value;
-      renderJobPicker(pop);
-      var reFocus = pop.querySelector('.jos-jp-search-input');
-      if (reFocus) { reFocus.focus({ preventScroll: true }); var v = reFocus.value; reFocus.value = ''; reFocus.value = v; }
+      if (t.hasAttribute('data-jos-jp-search')) {
+        st.q = t.value;
+        renderJobPicker(pop);
+        var reFocus = pop.querySelector('.jos-jp-search-input');
+        if (reFocus) { reFocus.focus({ preventScroll: true }); var v = reFocus.value; reFocus.value = ''; reFocus.value = v; }
+        return;
+      }
+      if (t.hasAttribute('data-jos-jp-svc-search')) {
+        st.serviceQ = t.value;
+        renderJobPicker(pop);
+        var reFocus2 = pop.querySelector('[data-jos-jp-svc-search]');
+        if (reFocus2) { reFocus2.focus({ preventScroll: true }); var v2 = reFocus2.value; reFocus2.value = ''; reFocus2.value = v2; }
+        return;
+      }
+      // Address/price/extra-field values are only otherwise read at the
+      // moment their step advances — synced live too so a re-render
+      // triggered by an unrelated pick (a time slot, a technician chip)
+      // never silently drops what was already typed.
+      if (t.hasAttribute('data-jos-jp-address')) { st.address = t.value; return; }
+      if (t.hasAttribute('data-jos-jp-price')) { st.price = parseFloat(t.value) || 0; return; }
+      if (t.hasAttribute('data-jos-jp-extra')) {
+        st.extraFields = st.extraFields || {};
+        st.extraFields[t.getAttribute('data-jos-jp-extra')] = t.value;
+        return;
+      }
+      if (t.hasAttribute('data-jos-jp-date')) {
+        st.date = t.value;
+        st.time = '';
+        renderJobPicker(pop);
+        jobPickerLoadAvailability(pop, t.value);
+      }
     });
     return pop;
+  }
+
+  // Fetches real busy windows for the chosen date (same fetchBusyWindows()
+  // the public booking wizard uses) and re-renders once they land, marking
+  // conflicting slots — the slot GRID itself already rendered synchronously
+  // from real business hours (hoursForBookingDate), so this only refines it.
+  function jobPickerLoadAvailability(pop, dateVal) {
+    if (typeof global.fetchBusyWindows !== 'function') return;
+    var st = jobPickerState(pop);
+    st.slotsLoading = true;
+    global.fetchBusyWindows(dateVal).then(function (windows) {
+      var st2 = jobPickerState(pop);
+      if (st2.date !== dateVal) return; // date changed again while this was in flight
+      st2.busyWindows = windows || [];
+      st2.busyWindowsDate = dateVal;
+      st2.slotsLoading = false;
+      if (pop.classList.contains('open')) renderJobPicker(pop);
+    }).catch(function () {
+      var st3 = jobPickerState(pop);
+      st3.slotsLoading = false;
+      if (pop.classList.contains('open')) renderJobPicker(pop);
+    });
   }
 
   function openJobCustomerPicker() {
     el('jos-quick-pop')?.classList.remove('open');
     var pop = ensureJobPickerPop();
-    pop._josJp = { q: '', mode: 'search', busy: false };
+    pop._josJp = { step: 'who', q: '', mode: 'search', busy: false };
     renderJobPicker(pop);
     pop.classList.add('open');
     setTimeout(function () {
@@ -15387,56 +15484,215 @@
       '</button>';
   }
 
-  function renderJobPicker(pop) {
-    var st = jobPickerState(pop);
+  function jobPickerBodyWho(pop, st) {
     var q = String(st.q || '').trim().toLowerCase();
-    var body;
     if (st.mode === 'create') {
-      body =
-        '<div class="jos-jp-create">' +
+      return '<div class="jos-jp-create">' +
         '<label class="jos-jp-field"><span>Name</span><input type="text" class="jos-jp-create-name" placeholder="Full name" value="' + esc(st.newName || '') + '" autocomplete="off"></label>' +
         '<label class="jos-jp-field"><span>Phone</span><input type="tel" class="jos-jp-create-phone" placeholder="(555) 555-5555" value="' + esc(st.newPhone || '') + '" autocomplete="off"></label>' +
         '<label class="jos-jp-field"><span>Email</span><input type="email" class="jos-jp-create-email" placeholder="name@email.com" value="' + esc(st.newEmail || '') + '" autocomplete="off"></label>' +
         '<div class="jos-jp-create-acts">' +
         '<button type="button" class="jos-btn" data-jos-act="jobs-picker-back"' + (st.busy ? ' disabled' : '') + '>Back</button>' +
-        '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="jobs-picker-create-save"' + (st.busy ? ' disabled' : '') + '>' + (st.busy ? 'Creating…' : 'Create & Continue') + '</button>' +
+        '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="jobs-picker-create-save"' + (st.busy ? ' disabled' : '') + '>' + (st.busy ? 'Creating…' : 'Continue') + '</button>' +
         '</div></div>';
-    } else {
-      var custs = customers().filter(function (c) {
-        if (!q) return true;
-        return String(c.name || '').toLowerCase().indexOf(q) >= 0 ||
-          String(c.phone || '').toLowerCase().indexOf(q) >= 0 ||
-          String(c.email || '').toLowerCase().indexOf(q) >= 0;
-      }).slice().sort(function (a, b) {
-        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-      }).slice(0, q ? 8 : 5);
-      var leads = leadsOsList().filter(function (l) {
-        if (!q) return true;
-        return String(l.name || '').toLowerCase().indexOf(q) >= 0 ||
-          String(l.phone || '').toLowerCase().indexOf(q) >= 0 ||
-          String(l.email || '').toLowerCase().indexOf(q) >= 0;
-      }).slice().sort(function (a, b) {
-        return new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0);
-      }).slice(0, q ? 8 : 5);
-      var sections = '';
-      if (custs.length) {
-        sections += '<div class="jos-jp-section"><h4>' + (q ? 'Customers' : 'Recent customers') + '</h4>' + custs.map(function (c) { return jobPickerRowHtml(c, 'customer', st.busy); }).join('') + '</div>';
-      }
-      if (leads.length) {
-        sections += '<div class="jos-jp-section"><h4>' + (q ? 'Leads' : 'Recent leads') + '</h4>' + leads.map(function (l) { return jobPickerRowHtml(l, 'lead', st.busy); }).join('') + '</div>';
-      }
-      if (!custs.length && !leads.length) {
-        sections = '<div class="jos-jp-empty">No matches' + (q ? ' for "' + esc(st.q) + '"' : '') + '.</div>';
-      }
-      body =
-        '<div class="jos-jp-search"><input type="text" class="jos-jp-search-input" data-jos-jp-search placeholder="Search customers and leads..." value="' + esc(st.q || '') + '" autocomplete="off"' + (st.busy ? ' disabled' : '') + '></div>' +
-        '<div class="jos-jp-list">' + sections + '</div>' +
-        '<button type="button" class="jos-jp-create-btn" data-jos-act="jobs-picker-create-new"' + (st.busy ? ' disabled' : '') + '>+ Create New Customer</button>';
     }
+    var custs = customers().filter(function (c) {
+      if (!q) return true;
+      return String(c.name || '').toLowerCase().indexOf(q) >= 0 ||
+        String(c.phone || '').toLowerCase().indexOf(q) >= 0 ||
+        String(c.email || '').toLowerCase().indexOf(q) >= 0;
+    }).slice().sort(function (a, b) {
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    }).slice(0, q ? 8 : 5);
+    var leads = leadsOsList().filter(function (l) {
+      if (!q) return true;
+      return String(l.name || '').toLowerCase().indexOf(q) >= 0 ||
+        String(l.phone || '').toLowerCase().indexOf(q) >= 0 ||
+        String(l.email || '').toLowerCase().indexOf(q) >= 0;
+    }).slice().sort(function (a, b) {
+      return new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0);
+    }).slice(0, q ? 8 : 5);
+    var sections = '';
+    if (custs.length) {
+      sections += '<div class="jos-jp-section"><h4>' + (q ? 'Customers' : 'Recent customers') + '</h4>' + custs.map(function (c) { return jobPickerRowHtml(c, 'customer', st.busy); }).join('') + '</div>';
+    }
+    if (leads.length) {
+      sections += '<div class="jos-jp-section"><h4>' + (q ? 'Leads' : 'Recent leads') + '</h4>' + leads.map(function (l) { return jobPickerRowHtml(l, 'lead', st.busy); }).join('') + '</div>';
+    }
+    if (!custs.length && !leads.length) {
+      sections = '<div class="jos-jp-empty">No matches' + (q ? ' for "' + esc(st.q) + '"' : '') + '.</div>';
+    }
+    return '<div class="jos-jp-search"><input type="text" class="jos-jp-search-input" data-jos-jp-search placeholder="Search customers and leads..." value="' + esc(st.q || '') + '" autocomplete="off"' + (st.busy ? ' disabled' : '') + '></div>' +
+      '<div class="jos-jp-list">' + sections + '</div>' +
+      '<button type="button" class="jos-jp-create-btn" data-jos-act="jobs-picker-create-new"' + (st.busy ? ' disabled' : '') + '>+ Create New Customer</button>';
+  }
+
+  // WHAT — real business services only (jobServiceOptions/S().services),
+  // same inline search-a-list pattern as WHO instead of a floating combo-pop
+  // (a popover-over-a-popover would break the "one continuous surface"
+  // feel) — reuses the Service Engine data, not the table-cell-positioned
+  // combo component, which is the wrong container for a modal step.
+  function jobPickerBodyWhat(pop, st) {
+    var svcQ = String(st.serviceQ || '').trim().toLowerCase();
+    var all = (S().services || []).filter(function (s) { return s && s.name && (!s.status || s.status === 'active'); });
+    var filtered = svcQ ? all.filter(function (s) { return String(s.name).toLowerCase().indexOf(svcQ) > -1; }) : all;
+    var rows = filtered.length
+      ? filtered.map(function (s) {
+          var on = st.service && st.service.name === s.name;
+          return '<button type="button" class="jos-jp-svc-row' + (on ? ' on' : '') + '" data-jos-act="jobs-picker-pick-service" data-jos-svc="' + esc(s.name) + '">' +
+            '<span class="jos-jp-svc-main"><strong>' + esc(s.name) + '</strong>' + (s.dur ? '<small>' + esc(String(s.dur)) + ' hr</small>' : '') + '</span>' +
+            (s.price ? '<span class="jos-jp-svc-price">' + esc(money(s.price)) + '</span>' : '') +
+            '</button>';
+        }).join('')
+      : '<div class="jos-jp-empty">' + (all.length ? 'No services match "' + esc(st.serviceQ) + '".' : 'No services set up yet — add one in Settings → Services.') + '</div>';
+    // Adaptive extra fields: driven by the business's Blueprint type, the
+    // same real config the public booking wizard already uses to decide
+    // "detailing asks for a vehicle, lawn care asks for a property" — never
+    // per-individual-service, since no such metadata exists.
+    var extra = '';
+    if (st.service) {
+      var bpFields = jobPickerBlueprintFields();
+      if (bpFields.length) {
+        extra = '<div class="jos-jp-extra">' + bpFields.map(function (f) {
+          var label = (typeof global.bkIntakeFieldLabel === 'function') ? global.bkIntakeFieldLabel(f) : f;
+          var val = (st.extraFields && st.extraFields[f]) || '';
+          return '<label class="jos-jp-field"><span>' + esc(label) + '</span><input type="text" data-jos-jp-extra="' + esc(f) + '" value="' + esc(val) + '" placeholder="' + esc(label) + '"></label>';
+        }).join('') + '</div>';
+      }
+    }
+    return '<div class="jos-jp-search"><input type="text" class="jos-jp-search-input" data-jos-jp-svc-search placeholder="Search services..." value="' + esc(st.serviceQ || '') + '" autocomplete="off"></div>' +
+      '<div class="jos-jp-list jos-jp-svc-list">' + rows + '</div>' +
+      extra +
+      '<div class="jos-jp-foot">' +
+      '<button type="button" class="jos-btn" data-jos-act="jobs-picker-back-to-who">Back</button>' +
+      '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="jobs-picker-what-continue"' + (st.service ? '' : ' disabled') + '>Continue</button>' +
+      '</div>';
+  }
+
+  // Vehicle/property-style extra fields for the currently selected service,
+  // sourced from the business's active Blueprint booking.steps[0].fields —
+  // same source and same skip-list the public booking wizard's
+  // configureBookingIntakeFromBlueprint uses, so this never invents a field
+  // a business's own configuration doesn't call for.
+  function jobPickerBlueprintFields() {
+    try {
+      if (typeof global.HublyBlueprints === 'undefined' || !global.HublyBlueprints.isReady || !global.HublyBlueprints.isReady()) return [];
+      var bp = global.HublyBlueprints.bookingBlueprint(S().businessType || (global.HublyBlueprints.getDefaultId ? global.HublyBlueprints.getDefaultId() : null));
+      var step = (bp && Array.isArray(bp.steps) && bp.steps[0]) ? bp.steps[0] : { fields: [] };
+      var skip = { address: 1, date: 1, time: 1, name: 1, phone: 1, email: 1, notes: 1, addons: 1, payment: 1, confirm: 1 };
+      return (step.fields || []).filter(function (f) { return !skip[f]; });
+    } catch (e) { return []; }
+  }
+
+  // Routes the adaptive Blueprint fields into createJob()'s real params
+  // where one already exists (vehicle/vehicleColor), falling back to Notes
+  // for anything else (property/session/etc. fields with no dedicated
+  // column) — and skips anything the user left blank instead of writing a
+  // note full of empty "Label: " lines.
+  function jobPickerExtraFieldsToJobInput(extraFields) {
+    var out = {};
+    if (!extraFields) return out;
+    var filled = {};
+    Object.keys(extraFields).forEach(function (k) { if (String(extraFields[k] || '').trim()) filled[k] = String(extraFields[k]).trim(); });
+    if (!Object.keys(filled).length) return out;
+    var vehicleParts = [filled.year, filled.make, filled.model, filled.vehicleType].filter(Boolean);
+    if (vehicleParts.length) out.vehicle = vehicleParts.join(' ');
+    if (filled.color) out.vehicleColor = filled.color;
+    var noteKeys = Object.keys(filled).filter(function (k) { return ['year', 'make', 'model', 'vehicleType', 'color'].indexOf(k) < 0; });
+    if (noteKeys.length) {
+      out.notes = noteKeys.map(function (k) {
+        var label = (typeof global.bkIntakeFieldLabel === 'function') ? global.bkIntakeFieldLabel(k) : k;
+        return label + ': ' + filled[k];
+      }).join('\n');
+    }
+    return out;
+  }
+
+  // WHEN/WHERE — address defaults from the picked/created customer, real
+  // business-hours + busy-window availability (hoursForBookingDate/
+  // fetchBusyWindows, same functions the public booking wizard uses) drives
+  // a visual slot grid instead of raw date/time text inputs.
+  function jobPickerBodyWhen(pop, st) {
+    var addr = st.address != null ? st.address : ((st.who && st.who.address) || '');
+    var dateVal = st.date || '';
+    var hours = dateVal && typeof global.hoursForBookingDate === 'function' ? global.hoursForBookingDate(dateVal) : null;
+    var slotsHtml = '';
+    if (!dateVal) {
+      slotsHtml = '<div class="jos-jp-empty">Pick a date to see open times.</div>';
+    } else if (hours && hours.closed) {
+      slotsHtml = '<div class="jos-jp-empty">Closed this day.</div>';
+    } else if (hours) {
+      var slots = [];
+      for (var m = hours.open; m < hours.close; m += 60) {
+        var hh = String(Math.floor(m / 60)).padStart(2, '0'), mm = String(m % 60).padStart(2, '0');
+        slots.push(hh + ':' + mm);
+      }
+      var busy = (st.busyWindowsDate === dateVal && st.busyWindows) || null;
+      slotsHtml = '<div class="jos-jp-slot-grid">' + slots.map(function (val) {
+        var mins = parseInt(val.slice(0, 2), 10) * 60 + parseInt(val.slice(3), 10);
+        var isBusy = busy && busy.some(function (w) { return mins >= w.start && mins < w.end; });
+        var on = st.time === val;
+        return '<button type="button" class="jos-jp-slot' + (on ? ' on' : '') + (isBusy ? ' is-busy' : '') + '" data-jos-act="jobs-picker-pick-time" data-jos-time="' + esc(val) + '"' + (isBusy ? ' disabled title="Already booked"' : '') + '>' +
+          esc(formatJobMinutes(mins)) + '</button>';
+      }).join('') + '</div>' + (st.slotsLoading ? '<div class="jos-jp-slot-hint">Checking availability…</div>' : '');
+    }
+    var team = jobsTeam();
+    var techRows = team.length ? team.map(function (t) {
+      var on = st.assignedTo === t.name;
+      return '<button type="button" class="jos-jp-tech-chip' + (on ? ' on' : '') + '" data-jos-act="jobs-picker-pick-tech" data-jos-tech="' + esc(t.name) + '">' + esc(t.name) + '</button>';
+    }).join('') : '';
+    return '<label class="jos-jp-field"><span>Location</span><input type="text" data-jos-jp-address value="' + esc(addr) + '" placeholder="Service address"></label>' +
+      '<label class="jos-jp-field"><span>Date</span><input type="date" data-jos-jp-date value="' + esc(dateVal) + '"></label>' +
+      '<div class="jos-jp-field"><span>Time</span>' + slotsHtml + '</div>' +
+      (team.length ? '<div class="jos-jp-field"><span>Assigned to <em>(optional)</em></span><div class="jos-jp-tech-row">' + techRows + '</div></div>' : '') +
+      '<div class="jos-jp-foot">' +
+      '<button type="button" class="jos-btn" data-jos-act="jobs-picker-back-to-what">Back</button>' +
+      '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="jobs-picker-when-continue"' + (st.date && st.time ? '' : ' disabled') + '>Continue</button>' +
+      '</div>';
+  }
+
+  function jobPickerBodyReview(pop, st) {
+    var price = st.price != null ? st.price : ((st.service && st.service.price) || 0);
+    var rows = [
+      ['Customer', (st.who && st.who.name) || '—'],
+      ['Service', (st.service && st.service.name) || '—'],
+      ['Location', st.address || '—'],
+      ['Date / Time', (st.date ? dateLong(st.date) : '—') + (st.time ? ' · ' + formatJobMinutes(parseInt(st.time.slice(0, 2), 10) * 60 + parseInt(st.time.slice(3), 10)) : '')],
+      ['Assigned technician', st.assignedTo || 'Unassigned'],
+    ];
+    if (st.extraFields) {
+      Object.keys(st.extraFields).forEach(function (k) {
+        var val = String(st.extraFields[k] || '').trim();
+        if (!val) return;
+        var label = (typeof global.bkIntakeFieldLabel === 'function') ? global.bkIntakeFieldLabel(k) : k;
+        rows.push([label, val]);
+      });
+    }
+    return '<div class="jos-jp-review">' + rows.map(function (r) {
+      return '<div class="jos-jp-review-row"><span>' + esc(r[0]) + '</span><strong>' + esc(r[1]) + '</strong></div>';
+    }).join('') +
+      '<div class="jos-jp-review-row jos-jp-review-price"><span>Price</span><span class="jos-jp-price-edit"><input type="number" min="0" step="1" data-jos-jp-price value="' + esc(String(price)) + '"></span></div>' +
+      '</div>' +
+      '<div class="jos-jp-foot">' +
+      '<button type="button" class="jos-btn" data-jos-act="jobs-picker-back-to-when"' + (st.busy ? ' disabled' : '') + '>Back</button>' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-jp-create-job-btn" data-jos-act="jobs-picker-review-create"' + (st.busy ? ' disabled' : '') + '>' + (st.busy ? 'Creating…' : 'Create Job') + '</button>' +
+      '</div>';
+  }
+
+  var JOB_PICKER_TITLES = { who: 'Who is this for?', what: 'What are we doing?', when: 'When & where?', review: 'Review & create' };
+
+  function renderJobPicker(pop) {
+    var st = jobPickerState(pop);
+    if (!st.step) st.step = 'who';
+    var body = st.step === 'what' ? jobPickerBodyWhat(pop, st)
+      : st.step === 'when' ? jobPickerBodyWhen(pop, st)
+      : st.step === 'review' ? jobPickerBodyReview(pop, st)
+      : jobPickerBodyWho(pop, st);
     pop.innerHTML =
       '<div class="jos-jp-card">' +
-      '<div class="jos-jp-head"><h3>Who is this for?</h3><button type="button" class="jos-jp-close" data-jos-act="jobs-picker-close" aria-label="Close">×</button></div>' +
-      body +
+      '<div class="jos-jp-head"><h3>' + esc(JOB_PICKER_TITLES[st.step] || 'New Job') + '</h3><button type="button" class="jos-jp-close" data-jos-act="jobs-picker-close" aria-label="Close">×</button></div>' +
+      jobPickerStepIndicatorHtml(st) +
+      '<div class="jos-jp-body" key="' + st.step + '">' + body + '</div>' +
       '</div>';
   }
 
@@ -16629,6 +16885,17 @@
     if (kind === 'bell') return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>';
     if (kind === 'cal') return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>';
     if (kind === 'clock') return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    if (kind === 'sparkle') return '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.6L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.4L12 2z"/><path d="M19 15l.9 2.3L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.7L19 15z"/></svg>';
+    if (kind === 'plus-circle') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>';
+    if (kind === 'user') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.6-3.4 4.4-5 7.5-5s5.9 1.6 7.5 5"/></svg>';
+    if (kind === 'dollar') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20"/><path d="M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.6 5 3 5 1.1 5 3-2.2 3-5 3-5-1.1-5-3"/></svg>';
+    if (kind === 'doc') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2.5h9l3 3V21a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 21V2.5z"/><path d="M14.5 2.5V6h3.5M9 12h6M9 16h6"/></svg>';
+    if (kind === 'diamond') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9l4-6.5h8L20 9l-8 12.5L4 9z"/><path d="M4 9h16M9.5 2.5 8 9l4 12.5M14.5 2.5 16 9l-4 12.5"/></svg>';
+    if (kind === 'bolt') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>';
+    if (kind === 'camera') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5a1.5 1.5 0 0 1 1.5-1.5H8l1.2-2h5.6L16 7h2.5A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+    if (kind === 'check-circle') return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.3 2.3L16 10"/></svg>';
+    if (kind === 'chevron-right') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>';
+    if (kind === 'pin') return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.3"/></svg>';
     return '';
   }
   function parseJobMinutes(time) {
@@ -20154,16 +20421,32 @@
         if (jpSearchInput) jpSearchInput.focus();
         return;
       }
+      // These three used to call startJobFromPicker() (create the job)
+      // immediately on picking a customer. Now they only resolve WHO and
+      // advance to WHAT — the job isn't created until Review → Create Job,
+      // so the rest of the flow (service, schedule, price) can be collected
+      // first instead of landing in a blank drawer.
       if (act === 'jobs-picker-pick-customer') {
         var jpCustId = t.getAttribute('data-jos-cust-id');
-        if (!jpCustId) return;
-        return startJobFromPicker({ customerId: jpCustId });
+        var jpCust = jpCustId ? findCustomer(jpCustId) : null;
+        if (!jpCust) return;
+        var jpPopWho1 = el('jos-job-picker');
+        var jpStWho1 = jobPickerState(jpPopWho1);
+        jpStWho1.who = { kind: 'customer', customerId: jpCustId, name: jpCust.name || '', phone: jpCust.phone || '', email: jpCust.email || '', address: jpCust.address || '' };
+        jpStWho1.step = 'what';
+        renderJobPicker(jpPopWho1);
+        return;
       }
       if (act === 'jobs-picker-pick-lead') {
         var jpLeadId = t.getAttribute('data-jos-lead-id');
         var jpLead = jpLeadId ? findLead(jpLeadId) : null;
         if (!jpLead) { toast('Lead not found'); return; }
-        return startJobFromPicker({ name: jpLead.name || '', phone: jpLead.phone || '', email: jpLead.email || '' }, { archiveLeadId: jpLead.id || jpLead.key });
+        var jpPopWho2 = el('jos-job-picker');
+        var jpStWho2 = jobPickerState(jpPopWho2);
+        jpStWho2.who = { kind: 'lead', archiveLeadId: jpLead.id || jpLead.key, name: jpLead.name || '', phone: jpLead.phone || '', email: jpLead.email || '', address: jpLead.address || '' };
+        jpStWho2.step = 'what';
+        renderJobPicker(jpPopWho2);
+        return;
       }
       if (act === 'jobs-picker-create-save') {
         var jpPopSave = el('jos-job-picker');
@@ -20173,7 +20456,79 @@
         var jpEmailEl = jpPopSave.querySelector('.jos-jp-create-email');
         var jpName = String((jpNameEl && jpNameEl.value) || '').trim();
         if (!jpName) { toast('This customer needs a name'); return; }
-        return startJobFromPicker({ name: jpName, phone: String((jpPhoneEl && jpPhoneEl.value) || '').trim(), email: String((jpEmailEl && jpEmailEl.value) || '').trim() });
+        var jpStSave = jobPickerState(jpPopSave);
+        jpStSave.who = { kind: 'new', name: jpName, phone: String((jpPhoneEl && jpPhoneEl.value) || '').trim(), email: String((jpEmailEl && jpEmailEl.value) || '').trim(), address: '' };
+        jpStSave.step = 'what';
+        renderJobPicker(jpPopSave);
+        return;
+      }
+      if (act === 'jobs-picker-back-to-who') {
+        var jpPopBW = el('jos-job-picker'); var jpStBW = jobPickerState(jpPopBW); jpStBW.step = 'who'; renderJobPicker(jpPopBW); return;
+      }
+      if (act === 'jobs-picker-back-to-what') {
+        var jpPopBWh = el('jos-job-picker'); var jpStBWh = jobPickerState(jpPopBWh); jpStBWh.step = 'what'; renderJobPicker(jpPopBWh); return;
+      }
+      if (act === 'jobs-picker-back-to-when') {
+        var jpPopBWn = el('jos-job-picker'); var jpStBWn = jobPickerState(jpPopBWn); jpStBWn.step = 'when'; renderJobPicker(jpPopBWn); return;
+      }
+      if (act === 'jobs-picker-pick-service') {
+        var jpPopSvc = el('jos-job-picker'); var jpStSvc = jobPickerState(jpPopSvc);
+        var svcName = t.getAttribute('data-jos-svc');
+        var svcObj = (S().services || []).find(function (s) { return s.name === svcName; }) || { name: svcName };
+        jpStSvc.service = svcObj;
+        if (jpStSvc.price == null) jpStSvc.price = svcObj.price || 0;
+        renderJobPicker(jpPopSvc);
+        return;
+      }
+      if (act === 'jobs-picker-what-continue') {
+        var jpPopWC = el('jos-job-picker'); var jpStWC = jobPickerState(jpPopWC);
+        if (!jpStWC.service) return;
+        jpPopWC.querySelectorAll('[data-jos-jp-extra]').forEach(function (inp) {
+          jpStWC.extraFields = jpStWC.extraFields || {};
+          jpStWC.extraFields[inp.getAttribute('data-jos-jp-extra')] = inp.value;
+        });
+        jpStWC.step = 'when';
+        renderJobPicker(jpPopWC);
+        return;
+      }
+      if (act === 'jobs-picker-pick-time') {
+        var jpPopTm = el('jos-job-picker'); var jpStTm = jobPickerState(jpPopTm);
+        jpStTm.time = t.getAttribute('data-jos-time');
+        renderJobPicker(jpPopTm);
+        return;
+      }
+      if (act === 'jobs-picker-pick-tech') {
+        var jpPopTc = el('jos-job-picker'); var jpStTc = jobPickerState(jpPopTc);
+        var tcName = t.getAttribute('data-jos-tech');
+        jpStTc.assignedTo = jpStTc.assignedTo === tcName ? '' : tcName;
+        renderJobPicker(jpPopTc);
+        return;
+      }
+      if (act === 'jobs-picker-when-continue') {
+        var jpPopWnC = el('jos-job-picker'); var jpStWnC = jobPickerState(jpPopWnC);
+        var addrInput = jpPopWnC.querySelector('[data-jos-jp-address]');
+        if (addrInput) jpStWnC.address = addrInput.value;
+        if (!jpStWnC.date || !jpStWnC.time) return;
+        jpStWnC.step = 'review';
+        renderJobPicker(jpPopWnC);
+        return;
+      }
+      if (act === 'jobs-picker-review-create') {
+        var jpPopRv = el('jos-job-picker'); var jpStRv = jobPickerState(jpPopRv);
+        if (jpStRv.busy) return;
+        var priceInput = jpPopRv.querySelector('[data-jos-jp-price]');
+        var finalPrice = priceInput ? parseFloat(priceInput.value) || 0 : (jpStRv.price || 0);
+        var who = jpStRv.who || {};
+        var svc = jpStRv.service || {};
+        var reviewInput = {
+          name: who.name || '', phone: who.phone || '', email: who.email || '',
+          service: svc.name || '', date: jpStRv.date || '', time: jpStRv.time ? formatJobMinutes(parseInt(jpStRv.time.slice(0, 2), 10) * 60 + parseInt(jpStRv.time.slice(3), 10)) : '',
+          address: jpStRv.address || '', amount: finalPrice, assignedTo: jpStRv.assignedTo || '',
+          durationHours: svc.dur || undefined
+        };
+        if (who.kind === 'customer' && who.customerId) reviewInput.customerId = who.customerId;
+        Object.assign(reviewInput, jobPickerExtraFieldsToJobInput(jpStRv.extraFields));
+        return startJobFromPicker(reviewInput, who.kind === 'lead' ? { archiveLeadId: who.archiveLeadId } : {});
       }
       if (act === 'jobs-discount-open') {
         var discJobId = t.getAttribute('data-jos-job-id') || jobId;

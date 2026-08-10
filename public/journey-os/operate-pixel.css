@@ -604,21 +604,50 @@ body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
 .jos-svc,.svc{font-size:12px;color:var(--jos-ink-3)}
 .jos-amt,.amt{font-size:12px;font-weight:750;color:var(--jos-navy);margin-left:auto}
 
+/* Light popover, anchored to #jos-bar-new via positionQuickPop (same
+   getBoundingClientRect + reparent technique as positionJobsComboPop) —
+   borrows the Command Center's hierarchy/icons/badges/spacing without
+   its dark gradient, which belongs to a dashboard card, not a menu. */
 .jos-quick-pop{
-  position:fixed;right:24px;top:72px;z-index:12000;width:240px;
-  background:#fff;border:1px solid var(--jos-border);border-radius:14px;
-  box-shadow:0 18px 50px rgba(15,23,42,.18);padding:8px;display:none;
+  position:fixed;z-index:12000;width:272px;visibility:hidden;
+  background:#fff;border:1px solid var(--jos-border);border-radius:16px;
+  box-shadow:0 18px 50px rgba(15,23,42,.16);padding:10px;display:none;
 }
 .jos-quick-pop.open{display:block}
-.jos-quick-pop button{
-  width:100%;text-align:left;appearance:none;border:0;background:transparent;
-  padding:10px 12px;border-radius:10px;font:inherit;font-size:13px;font-weight:650;cursor:pointer;color:var(--jos-navy);
-}
-.jos-quick-pop button:hover{background:var(--jos-brand-soft);color:var(--jos-brand-dark)}
-.jos-quick-sep{
-  padding:8px 12px 4px;font-size:11px;font-weight:700;letter-spacing:.08em;
+.jos-quick-pop.jos-positioned{visibility:visible;animation:josQuickPopIn .14s ease both}
+@keyframes josQuickPopIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.jos-quick-eyebrow{
+  padding:4px 8px 8px;font-size:11px;font-weight:800;letter-spacing:.08em;
   color:var(--jos-ink-3);user-select:none;
 }
+.jos-quick-hero{
+  width:100%;display:flex;align-items:center;gap:12px;text-align:left;appearance:none;
+  border:0;border-radius:12px;cursor:pointer;font:inherit;padding:10px 10px;
+  background:linear-gradient(180deg,var(--jos-brand-soft) 0%,#FFF9F5 100%);
+}
+.jos-quick-hero:hover{background:linear-gradient(180deg,#FDE6D6 0%,var(--jos-brand-soft) 100%)}
+.jos-quick-hero-ico{
+  flex:none;width:36px;height:36px;border-radius:10px;background:var(--jos-brand);color:#fff;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(217,99,45,.35);
+}
+.jos-quick-hero-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.jos-quick-hero-main strong{font-size:14px;font-weight:800;color:var(--jos-navy)}
+.jos-quick-hero-main small{font-size:11.5px;font-weight:600;color:var(--jos-ink-2)}
+.jos-quick-hero-arrow{flex:none;color:var(--jos-brand-dark);display:flex;align-items:center}
+.jos-quick-sep{height:1px;background:var(--jos-border);margin:8px 4px;border:0}
+.jos-quick-group{display:flex;flex-direction:column;gap:1px}
+.jos-quick-pop button.jos-quick-item{
+  width:100%;display:flex;align-items:center;gap:10px;text-align:left;appearance:none;border:0;background:transparent;
+  padding:9px 10px;border-radius:10px;font:inherit;font-size:13px;font-weight:650;cursor:pointer;color:var(--jos-navy);
+}
+.jos-quick-pop button.jos-quick-item:hover{background:var(--jos-surface-2);color:var(--jos-brand-dark)}
+.jos-quick-item-ico{
+  flex:none;width:26px;height:26px;border-radius:8px;background:var(--jos-surface-2);color:var(--jos-ink-2);
+  display:flex;align-items:center;justify-content:center;
+}
+.jos-quick-pop button.jos-quick-item:hover .jos-quick-item-ico{background:var(--jos-brand-soft);color:var(--jos-brand-dark)}
+.jos-quick-group.jos-quick-group-tertiary button.jos-quick-item{font-size:12.5px;color:var(--jos-ink-2)}
+.jos-quick-group.jos-quick-group-tertiary .jos-quick-item-ico{width:22px;height:22px}
 
 /* "Who is this for?" job-creation picker — same visual language as
    .jos-leads-modal/.jos-cust-modal, but display:none-toggled via .open
@@ -681,6 +710,74 @@ body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
 }
 .jos-jp-create-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
 .jos-jp-create-acts .jos-btn-brand{color:#fff!important}
+
+/* One continuous card — the header/step-dots never change size or move;
+   only .jos-jp-body's content swaps per step, with a quick fade+lift so
+   advancing feels like one surface reacting, not four separate pages. */
+.jos-jp-steps{display:flex;align-items:center;margin-bottom:16px}
+.jos-jp-step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none;width:56px}
+.jos-jp-step i{
+  width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-style:normal;font-size:11px;font-weight:800;background:var(--jos-surface-2);color:var(--jos-ink-3);
+  border:1px solid var(--jos-border);transition:background-color .15s ease,border-color .15s ease,color .15s ease;
+}
+.jos-jp-step span{font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--jos-ink-3)}
+.jos-jp-step.on i{background:var(--jos-brand);border-color:var(--jos-brand);color:#fff}
+.jos-jp-step.on span{color:var(--jos-brand-dark)}
+.jos-jp-step.done i{background:var(--jos-brand-soft);border-color:var(--jos-brand);color:var(--jos-brand-dark)}
+.jos-jp-step-line{flex:1;height:1px;background:var(--jos-border);margin:0 -14px;position:relative;top:-10px}
+.jos-jp-step-line.done{background:var(--jos-brand)}
+.jos-jp-body{animation:josJpBodyIn .16s ease both}
+@keyframes josJpBodyIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.jos-jp-foot{display:flex;justify-content:space-between;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--jos-border)}
+
+/* WHAT — service list, same row language as .jos-jp-row */
+.jos-jp-svc-list{display:flex;flex-direction:column;gap:2px}
+.jos-jp-svc-row{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;
+  appearance:none;border:1px solid transparent;background:transparent;padding:10px;border-radius:10px;cursor:pointer;font:inherit;
+}
+.jos-jp-svc-row:hover{background:var(--jos-brand-soft)}
+.jos-jp-svc-row.on{background:var(--jos-brand-soft);border-color:var(--jos-brand)}
+.jos-jp-svc-main{display:flex;flex-direction:column;gap:1px;min-width:0}
+.jos-jp-svc-main strong{font-size:13px;font-weight:700;color:var(--jos-navy)}
+.jos-jp-svc-main small{font-size:11.5px;color:var(--jos-ink-3)}
+.jos-jp-svc-price{flex:none;font-size:13px;font-weight:800;color:var(--jos-navy)}
+.jos-jp-extra{display:flex;flex-direction:column;gap:10px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--jos-border)}
+
+/* WHEN/WHERE — real availability slot grid + technician chips */
+.jos-jp-field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#374151;margin-bottom:12px}
+.jos-jp-field em{font-style:normal;font-weight:600;color:var(--jos-ink-3);text-transform:none;letter-spacing:0}
+.jos-jp-field input[type="text"],.jos-jp-field input[type="date"],.jos-jp-field input[type="number"]{
+  height:38px;border:1px solid var(--jos-border);border-radius:10px;padding:0 10px;
+  font:inherit;font-size:13px;font-weight:600;color:var(--jos-navy);background:#fff;
+}
+.jos-jp-slot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-height:180px;overflow:auto;padding:2px}
+.jos-jp-slot{
+  appearance:none;border:1px solid var(--jos-border);background:#fff;border-radius:9px;padding:8px 4px;
+  font:inherit;font-size:12.5px;font-weight:700;color:var(--jos-navy);cursor:pointer;text-align:center;
+}
+.jos-jp-slot:hover:not(:disabled){border-color:var(--jos-brand);background:var(--jos-brand-soft)}
+.jos-jp-slot.on{background:var(--jos-brand);border-color:var(--jos-brand);color:#fff}
+.jos-jp-slot.is-busy{opacity:.4;cursor:not-allowed;text-decoration:line-through}
+.jos-jp-slot-hint{grid-column:1/-1;font-size:11.5px;color:var(--jos-ink-3);padding:4px 2px}
+.jos-jp-tech-row{display:flex;flex-wrap:wrap;gap:6px}
+.jos-jp-tech-chip{
+  appearance:none;border:1px solid var(--jos-border);background:#fff;border-radius:999px;padding:6px 12px;
+  font:inherit;font-size:12.5px;font-weight:700;color:var(--jos-navy);cursor:pointer;
+}
+.jos-jp-tech-chip:hover{border-color:var(--jos-brand)}
+.jos-jp-tech-chip.on{background:var(--jos-brand);border-color:var(--jos-brand);color:#fff}
+
+/* REVIEW — clean summary + editable price */
+.jos-jp-review{display:flex;flex-direction:column;gap:2px}
+.jos-jp-review-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 2px;border-bottom:1px solid var(--jos-border)}
+.jos-jp-review-row span{font-size:12px;font-weight:700;color:var(--jos-ink-3)}
+.jos-jp-review-row strong{font-size:13px;font-weight:700;color:var(--jos-navy);text-align:right}
+.jos-jp-review-price{border-bottom:0;margin-top:6px;padding-top:12px}
+.jos-jp-review-price span{font-size:13px;font-weight:800;color:var(--jos-navy)}
+.jos-jp-price-edit input{width:110px;height:34px;text-align:right;font-weight:800;border:1px solid var(--jos-border);border-radius:9px;padding:0 8px;font:inherit;font-size:14px;color:var(--jos-navy)}
+.jos-jp-create-job-btn{font-weight:800}
 
 @media(max-width:900px){
   #p-app.jos-pixel .app-main{margin-left:0}
