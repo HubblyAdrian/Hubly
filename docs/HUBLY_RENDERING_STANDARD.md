@@ -724,6 +724,54 @@ Confirmed via grep — no Leads-specific `scrollTop` save/restore exists. `.jos-
 plain, unkeyed, but tag-stable `<div>` — never replaced, so the browser's internally-tracked
 scroll offset for that specific node object is never reset.
 
+### 4.7 Debugging pattern: "something flashes/rebuilds on X but not Y" — reparented elements vs.
+non-keyed sibling order
+
+**Read this section first if a bug report says a page visibly flashes, pops, or rebuilds on some
+interaction, especially if a comparable page/interaction doesn't.** This is the methodology that
+actually found the Jobs-drawer-flash bug (full incident write-up: §10, "The actual root cause of
+'Jobs still renders on every click'"), after three earlier investigation angles — render-count
+tracing, realtime-echo tracing with live production `console.log` instrumentation, and a
+side-by-side Jobs-vs-Leads JS-level trace — all came back clean and were red herrings.
+
+**The bug class**: this codebase renders by diffing a freshly-built HTML string against the live
+DOM (`morphTableInto`, §4 above). Positioned popovers/combo-pops get *reparented* out of their
+rendered position after each render, for CSS reasons (`position:fixed` measures wrong for its
+first ~250ms when nested under a scrolled/sticky ancestor — see `positionJobsComboPop`/
+`positionLeadsComboPop`). If a reparented element is not the *last* sibling in its rendered
+container, the next render's diff sees a real length mismatch there (live DOM: element missing
+from its expected slot; fresh HTML: element still described as present) — and the non-keyed
+fallback (`morphTableChildren`, used for anything that isn't `TR`/`TH`/`TD`) does not reconcile a
+mismatch like that with a targeted patch. It does `parent.replaceChild()`, which cascades through
+*every* sibling positioned after the mismatch, destroying and rebuilding all of them from scratch
+— even ones with no relationship to whatever actually changed. If one of those incidentally-
+destroyed siblings has a CSS `animation` (not `transition` — an `animation` auto-plays on any
+freshly-composited element; a `transition` only fires on an explicit property change on a
+persisting node), that animation replays, and *that* is what a user sees as an unexplained flash.
+
+**Why call-count and timing traces don't catch this**: the render count, call sequence, and timing
+are all completely normal in this bug class — the JS logic did exactly what it was supposed to do.
+The defect is purely structural (sibling order in a concatenated HTML string) and only manifests
+as extra `childList` mutations you wouldn't expect for the interaction that triggered them. No
+amount of counting `renderX()` calls or tracing realtime-echo suppression will surface it, because
+neither tool looks at *what got mutated*, only *when* and *how often* something ran.
+
+**The actual diagnostic technique, in order**:
+1. Attach a real `MutationObserver` (`childList: true, attributes: true, subtree: true`) to the
+   page's root element *before* the suspect interaction, and log every record with its target,
+   added/removed node list — not aggregated, not sampled. Compare the record list for the same
+   interaction on the page that doesn't exhibit the symptom (if one exists) — a structural
+   difference in *what* gets added/removed, not how many renders fired, is the signal.
+2. Tag the specific DOM node you suspect is being destroyed with a throwaway identity marker
+   (e.g. `node.__tag = 'X'`) immediately before the interaction, then check whether that exact
+   marker survives after — `undefined` means the node was destroyed and replaced, not patched.
+   This is unambiguous in a way call counts and mutation summaries alone aren't, and it's what
+   actually proved the fix worked (three repeated edits in a row, `.jos-jobs-drawer` tag survives
+   every one, where before it was destroyed on the second edit specifically — see §10).
+3. Reproduce at production-realistic data volume before ruling a render "cheap" — a handful of
+   seeded records can hide costs/mismatches that only appear once a table/list has its real
+   row count.
+
 ---
 
 ## 5. Realtime — what happens when another browser changes a Lead
@@ -1513,7 +1561,9 @@ and still sits before the drawer/statusMenu/rowMenu/gcalCreatePop/FAB. Toggling 
 selection while the drawer is simultaneously open could in principle trigger the same cascade via
 a different element than the one just fixed. Real, same bug class, much rarer combination of
 state in practice (bulk-selecting rows and having a single job's drawer open are usually
-mutually exclusive user flows) — worth a follow-up pass, not folded into this fix.
+mutually exclusive user flows) — worth a follow-up pass, not folded into this fix. Tracked with
+full reproduction/confirmation/fix steps in `/KNOWN_ISSUES.md` (repo root) rather than left as a
+sentence here only.
 
 Verified live via Playwright: the exact same drawer-identity-tagging test that caught the bug now
 shows the drawer node survives a Status edit from inside it, repeated three times in a row (the
