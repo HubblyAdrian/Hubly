@@ -5037,7 +5037,7 @@
       '<div class="jos-mem-mc-drawer-head"><div><strong>' + esc(c.name || 'Customer') + '</strong><div class="jos-muted">' + esc(p.name || 'Plan') + '</div></div>' +
       '<button type="button" class="jos-mem-mc-close" data-jos-act="mem-drawer-close">×</button></div>' +
       '<div class="jos-mem-mc-drawer-body">' +
-        '<section class="jos-mem-mc-dsec"><h4>Customer</h4><div class="jos-mem-mc-drow">' + memAvatar(c.name) + '<div><strong>' + esc(c.name || 'Customer') + '</strong><div class="jos-muted">' + esc(c.email || 'No email') + '</div><div class="jos-muted">' + esc(c.phone || '') + '</div></div></div>' +
+        '<section class="jos-mem-mc-dsec"><h4>Customer</h4><div class="jos-mem-mc-drow">' + memAvatar(c.name) + '<div><strong>' + esc(c.name || 'Customer') + '</strong><div class="jos-muted">' + esc(c.email || 'No email') + '</div><div class="jos-muted">' + esc(c.phone ? formatPhoneValue(c.phone) : '') + '</div></div></div>' +
         '<button type="button" class="jos-btn jos-btn-sm jos-mt" data-jos-act="mem-open-customer" data-jos-mem-cust="' + esc(s.customerId) + '">Open Customer</button></section>' +
         '<section class="jos-mem-mc-dsec"><h4>Membership</h4><div class="jos-mem-mc-meta-grid">' +
           '<div><span>Plan</span><strong>' + esc(p.name || '—') + '</strong></div>' +
@@ -5089,7 +5089,7 @@
     var menuOpen = root._josMemMenuId === s.id;
     return '<tr class="jos-mem-mc-tr" data-jos-mem-sub="' + esc(s.id) + '">' +
       '<td><button type="button" class="jos-mem-mc-cust" data-jos-act="mem-open-customer" data-jos-mem-cust="' + esc(s.customerId) + '">' + memAvatar(c.name) +
-        '<span><strong>' + esc(c.name || 'Customer') + '</strong><span class="jos-muted">' + esc(c.email || c.phone || '—') + '</span></span></button></td>' +
+        '<span><strong>' + esc(c.name || 'Customer') + '</strong><span class="jos-muted">' + esc(c.email || (c.phone ? formatPhoneValue(c.phone) : '') || '—') + '</span></span></button></td>' +
       '<td><strong>' + esc(p.name || 'Plan') + '</strong><div class="jos-muted">' + esc(memCadenceLabel(p.cadence)) + '</div></td>' +
       '<td>' + memStatusPill(s.status) + '</td>' +
       '<td><strong class="' + (overdue ? 'danger' : '') + '">' + esc(memFmtDate(s.nextRenewalAt)) + '</strong><div class="jos-muted ' + (overdue ? 'danger' : '') + '">' + esc(memRelDate(s.nextRenewalAt)) + '</div></td>' +
@@ -15393,24 +15393,32 @@
       var t = e.target;
       if (!t || !t.hasAttribute) return;
       var st = jobPickerState(pop);
+      // Both search-as-you-type fields update only their own result list's
+      // innerHTML, not the whole drawer via renderJobPicker() — the flat
+      // drawer holds every section (Customer/Job Details/Assignment/Notes)
+      // in one node, so a full rebuild on every keystroke was destroying
+      // and recreating .jos-jp-card itself each time, replaying its
+      // slide-in animation and visibly flashing the entire popup on every
+      // character typed or erased. Scoping the update to just the list
+      // also means the search input itself is never touched, so focus and
+      // cursor position survive on their own — no refocus hack needed.
       if (t.hasAttribute('data-jos-jp-search')) {
         st.q = t.value;
-        renderJobPicker(pop);
-        var reFocus = pop.querySelector('.jos-jp-search-input');
-        if (reFocus) { reFocus.focus({ preventScroll: true }); var v = reFocus.value; reFocus.value = ''; reFocus.value = v; }
+        var custListEl = pop.querySelector('#jos-jp-cust-list');
+        if (custListEl) custListEl.innerHTML = jobPickerCustomerListHtml(st);
         return;
       }
       if (t.hasAttribute('data-jos-jp-svc-search')) {
         st.serviceQ = t.value;
-        renderJobPicker(pop);
-        var reFocus2 = pop.querySelector('[data-jos-jp-svc-search]');
-        if (reFocus2) { reFocus2.focus({ preventScroll: true }); var v2 = reFocus2.value; reFocus2.value = ''; reFocus2.value = v2; }
+        var svcListEl = pop.querySelector('#jos-jp-svc-list');
+        if (svcListEl) svcListEl.innerHTML = jobPickerServiceListHtml(st);
         return;
       }
       // Address/price/extra-field values are only otherwise read at the
       // moment their step advances — synced live too so a re-render
       // triggered by an unrelated pick (a time slot, a technician chip)
       // never silently drops what was already typed.
+      if (t.classList && t.classList.contains('jos-jp-create-phone')) { t.value = formatPhoneValue(t.value); return; }
       if (t.hasAttribute('data-jos-jp-address')) { st.address = t.value; return; }
       if (t.hasAttribute('data-jos-jp-price')) { st.price = parseFloat(t.value) || 0; return; }
       if (t.hasAttribute('data-jos-jp-extra')) {
@@ -15470,7 +15478,7 @@
 
   function jobPickerRowHtml(person, kind, busy) {
     var name = person.name || 'Unnamed';
-    var meta = [person.phone, person.email].filter(Boolean).join(' · ');
+    var meta = [person.phone ? formatPhoneValue(person.phone) : '', person.email].filter(Boolean).join(' · ');
     var act = kind === 'lead' ? 'jobs-picker-pick-lead' : 'jobs-picker-pick-customer';
     var idAttr = kind === 'lead'
       ? 'data-jos-lead-id="' + esc(String(person.id || person.key)) + '"'
@@ -15496,45 +15504,55 @@
     } else if (st.mode === 'create') {
       inner = '<div class="jos-jp-create">' +
         '<label class="jos-jp-field"><span>Name</span><input type="text" class="jos-jp-create-name" placeholder="Full name" value="' + esc(st.newName || '') + '" autocomplete="off"></label>' +
-        '<label class="jos-jp-field"><span>Phone</span><input type="tel" class="jos-jp-create-phone" placeholder="(555) 555-5555" value="' + esc(st.newPhone || '') + '" autocomplete="off"></label>' +
+        '<label class="jos-jp-field"><span>Phone</span><input type="tel" class="jos-jp-create-phone" placeholder="555-555-5555" value="' + esc(st.newPhone || '') + '" autocomplete="off"></label>' +
         '<label class="jos-jp-field"><span>Email</span><input type="email" class="jos-jp-create-email" placeholder="name@email.com" value="' + esc(st.newEmail || '') + '" autocomplete="off"></label>' +
         '<div class="jos-jp-create-acts">' +
         '<button type="button" class="jos-btn" data-jos-act="jobs-picker-back"' + (st.busy ? ' disabled' : '') + '>Back</button>' +
         '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="jobs-picker-create-save"' + (st.busy ? ' disabled' : '') + '>' + (st.busy ? 'Creating…' : 'Use This Customer') + '</button>' +
         '</div></div>';
     } else {
-      var q = String(st.q || '').trim().toLowerCase();
-      var custs = customers().filter(function (c) {
-        if (!q) return true;
-        return String(c.name || '').toLowerCase().indexOf(q) >= 0 ||
-          String(c.phone || '').toLowerCase().indexOf(q) >= 0 ||
-          String(c.email || '').toLowerCase().indexOf(q) >= 0;
-      }).slice().sort(function (a, b) {
-        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-      }).slice(0, q ? 8 : 5);
-      var leads = leadsOsList().filter(function (l) {
-        if (!q) return true;
-        return String(l.name || '').toLowerCase().indexOf(q) >= 0 ||
-          String(l.phone || '').toLowerCase().indexOf(q) >= 0 ||
-          String(l.email || '').toLowerCase().indexOf(q) >= 0;
-      }).slice().sort(function (a, b) {
-        return new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0);
-      }).slice(0, q ? 8 : 5);
-      var sections = '';
-      if (custs.length) {
-        sections += '<div class="jos-jp-group"><h5>' + (q ? 'Customers' : 'Recent customers') + '</h5>' + custs.map(function (c) { return jobPickerRowHtml(c, 'customer', st.busy); }).join('') + '</div>';
-      }
-      if (leads.length) {
-        sections += '<div class="jos-jp-group"><h5>' + (q ? 'Leads' : 'Recent leads') + '</h5>' + leads.map(function (l) { return jobPickerRowHtml(l, 'lead', st.busy); }).join('') + '</div>';
-      }
-      if (!custs.length && !leads.length) {
-        sections = '<div class="jos-jp-empty">No matches' + (q ? ' for "' + esc(st.q) + '"' : '') + '.</div>';
-      }
       inner = '<div class="jos-jp-search"><input type="text" class="jos-jp-search-input" data-jos-jp-search placeholder="Search customers and leads..." value="' + esc(st.q || '') + '" autocomplete="off"' + (st.busy ? ' disabled' : '') + '></div>' +
-        '<div class="jos-jp-list">' + sections + '</div>' +
+        '<div class="jos-jp-list" id="jos-jp-cust-list">' + jobPickerCustomerListHtml(st) + '</div>' +
         '<button type="button" class="jos-jp-create-btn" data-jos-act="jobs-picker-create-new"' + (st.busy ? ' disabled' : '') + '>+ New Customer</button>';
     }
     return '<div class="jos-jp-section"><h4>Customer</h4>' + inner + '</div>';
+  }
+
+  // Split out of jobPickerCustomerSection so the search-as-you-type input
+  // handler (ensureJobPickerPop) can refresh just this list's innerHTML on
+  // every keystroke instead of calling renderJobPicker() and rebuilding the
+  // entire drawer (header/footer/every other section) each time — that
+  // full-drawer rebuild was retriggering .jos-jp-card's slide-in animation
+  // and visibly flashing the whole popup on every character typed/erased.
+  function jobPickerCustomerListHtml(st) {
+    var q = String(st.q || '').trim().toLowerCase();
+    var custs = customers().filter(function (c) {
+      if (!q) return true;
+      return String(c.name || '').toLowerCase().indexOf(q) >= 0 ||
+        String(c.phone || '').toLowerCase().indexOf(q) >= 0 ||
+        String(c.email || '').toLowerCase().indexOf(q) >= 0;
+    }).slice().sort(function (a, b) {
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    }).slice(0, q ? 8 : 5);
+    var leads = leadsOsList().filter(function (l) {
+      if (!q) return true;
+      return String(l.name || '').toLowerCase().indexOf(q) >= 0 ||
+        String(l.phone || '').toLowerCase().indexOf(q) >= 0 ||
+        String(l.email || '').toLowerCase().indexOf(q) >= 0;
+    }).slice().sort(function (a, b) {
+      return new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0);
+    }).slice(0, q ? 8 : 5);
+    var sections = '';
+    if (custs.length) {
+      sections += '<div class="jos-jp-group"><h5>' + (q ? 'Customers' : 'Recent customers') + '</h5>' + custs.map(function (c) { return jobPickerRowHtml(c, 'customer', st.busy); }).join('') + '</div>';
+    }
+    if (leads.length) {
+      sections += '<div class="jos-jp-group"><h5>' + (q ? 'Leads' : 'Recent leads') + '</h5>' + leads.map(function (l) { return jobPickerRowHtml(l, 'lead', st.busy); }).join('') + '</div>';
+    }
+    if (!custs.length && !leads.length) {
+      sections = '<div class="jos-jp-empty">No matches' + (q ? ' for "' + esc(st.q) + '"' : '') + '.</div>';
+    }
+    return sections;
   }
 
   // JOB DETAILS — Service (real Service Engine data, jobServiceOptions/
@@ -15550,19 +15568,8 @@
         '<span class="jos-jp-picked-main"><strong>' + esc(svc.name) + '</strong>' + (svcMeta ? '<small>' + esc(svcMeta) + '</small>' : '') + '</span>' +
         '<button type="button" class="jos-jp-picked-change" data-jos-act="jobs-picker-change-service">Change</button></div>';
     } else {
-      var svcQ = String(st.serviceQ || '').trim().toLowerCase();
-      var all = (S().services || []).filter(function (s) { return s && s.name && (!s.status || s.status === 'active'); });
-      var filtered = svcQ ? all.filter(function (s) { return String(s.name).toLowerCase().indexOf(svcQ) > -1; }) : all;
-      var rows = filtered.length
-        ? filtered.map(function (s) {
-            return '<button type="button" class="jos-jp-svc-row" data-jos-act="jobs-picker-pick-service" data-jos-svc="' + esc(s.name) + '">' +
-              '<span class="jos-jp-svc-main"><strong>' + esc(s.name) + '</strong>' + (s.dur ? '<small>' + esc(String(s.dur)) + ' hr</small>' : '') + '</span>' +
-              (s.price ? '<span class="jos-jp-svc-price">' + esc(money(s.price)) + '</span>' : '') +
-              '</button>';
-          }).join('')
-        : '<div class="jos-jp-empty">' + (all.length ? 'No services match "' + esc(st.serviceQ) + '".' : 'No services set up yet — add one in Settings → Services.') + '</div>';
       svcInner = '<div class="jos-jp-search"><input type="text" class="jos-jp-search-input" data-jos-jp-svc-search placeholder="Search services..." value="' + esc(st.serviceQ || '') + '" autocomplete="off"></div>' +
-        '<div class="jos-jp-list jos-jp-svc-list">' + rows + '</div>';
+        '<div class="jos-jp-list jos-jp-svc-list" id="jos-jp-svc-list">' + jobPickerServiceListHtml(st) + '</div>';
     }
     var addr = st.address != null ? st.address : ((st.who && st.who.address) || '');
     var dateVal = st.date || '';
@@ -15594,6 +15601,23 @@
       '<div class="jos-jp-field"><span>Time</span>' + slotsHtml + '</div>' +
       '<label class="jos-jp-field"><span>Location</span><input type="text" data-jos-jp-address value="' + esc(addr) + '" placeholder="Service address"></label>' +
       '</div></div>';
+  }
+
+  // Split out of jobPickerJobDetailsSection for the same reason as
+  // jobPickerCustomerListHtml above — lets the service search input refresh
+  // only its own result list on each keystroke instead of the whole drawer.
+  function jobPickerServiceListHtml(st) {
+    var svcQ = String(st.serviceQ || '').trim().toLowerCase();
+    var all = (S().services || []).filter(function (s) { return s && s.name && (!s.status || s.status === 'active'); });
+    var filtered = svcQ ? all.filter(function (s) { return String(s.name).toLowerCase().indexOf(svcQ) > -1; }) : all;
+    return filtered.length
+      ? filtered.map(function (s) {
+          return '<button type="button" class="jos-jp-svc-row" data-jos-act="jobs-picker-pick-service" data-jos-svc="' + esc(s.name) + '">' +
+            '<span class="jos-jp-svc-main"><strong>' + esc(s.name) + '</strong>' + (s.dur ? '<small>' + esc(String(s.dur)) + ' hr</small>' : '') + '</span>' +
+            (s.price ? '<span class="jos-jp-svc-price">' + esc(money(s.price)) + '</span>' : '') +
+            '</button>';
+        }).join('')
+      : '<div class="jos-jp-empty">' + (all.length ? 'No services match "' + esc(st.serviceQ) + '".' : 'No services set up yet — add one in Settings → Services.') + '</div>';
   }
 
   // ASSIGNMENT — Technician (jobsTeam roster) + adaptive Vehicle/Property
@@ -16084,7 +16108,7 @@
       chatCol = '<section class="jos-ibx-chatcol"><div class="jos-empty-action jos-ibx-empty-chat"><strong>Select a conversation</strong><p>Reply, book, quote, and collect payment without leaving Inbox.</p></div></section>';
     } else {
       var vehicle = sel.vehicle || (cust && (cust.vehicle || cust.vehicles)) || 'Tesla Model 3';
-      var phone = sel.phone || sel.customer_phone || (cust && cust.phone) || '(619) 555-0100';
+      var phone = formatPhoneValue(sel.phone || sel.customer_phone || (cust && cust.phone) || '') || '619-555-0100';
       var email = sel.email || sel.customer_email || (cust && cust.email) || 'alex@email.com';
       var msgs = sel.messages.length ? sel.messages : [{ dir: 'in', text: sel.last_message || '…', at: inboxTime(sel.updated_at) }];
       var timeline = '<div class="jos-ibx-date-sep">Today</div>' + msgs.map(function (m) {
@@ -16171,7 +16195,7 @@
     var hubBackdrop = '';
     if (sel) {
       var vehicle = sel.vehicle || (cust && (cust.vehicle || cust.vehicles)) || 'Tesla Model 3';
-      var phone = sel.phone || sel.customer_phone || (cust && cust.phone) || '(619) 555-0100';
+      var phone = formatPhoneValue(sel.phone || sel.customer_phone || (cust && cust.phone) || '') || '619-555-0100';
       var email = sel.email || sel.customer_email || (cust && cust.email) || 'alex@email.com';
       var address = (cust && (cust.address || cust.city)) || 'La Jolla, CA';
       var spent = 0, paid = 0, jobCount = 0, avgTicket = 0;

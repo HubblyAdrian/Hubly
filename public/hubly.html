@@ -42390,7 +42390,7 @@ function renderCustomersView(){
     topEl.innerHTML=top.length?top.map((x,idx)=>{
       const color=CUST_COLORS[x.i%CUST_COLORS.length];
       const init=x.c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      return `<div class="cust-top-row" onclick="viewCustomer('${x.c.id}')"><span class="cust-top-rank">${idx+1}</span><div class="cust-top-av" style="background:${color}22;color:${color}">${init}</div><div style="min-width:0"><div class="cust-top-name">${escapeHtml(x.c.name)}</div><div class="cust-top-meta">${escapeHtml(x.c.email||x.c.phone||'')}</div></div><div class="cust-top-val">$${x.stats.lifetime.toFixed(0)}</div></div>`;
+      return `<div class="cust-top-row" onclick="viewCustomer('${x.c.id}')"><span class="cust-top-rank">${idx+1}</span><div class="cust-top-av" style="background:${color}22;color:${color}">${init}</div><div style="min-width:0"><div class="cust-top-name">${escapeHtml(x.c.name)}</div><div class="cust-top-meta">${escapeHtml(x.c.email||(x.c.phone?formatPhoneValue(x.c.phone):'')||'')}</div></div><div class="cust-top-val">$${x.stats.lifetime.toFixed(0)}</div></div>`;
     }).join(''):`<div style="font-size:12px;color:var(--ink-3)">No customers ${range==='all'?'yet':'in '+rangeLbl.toLowerCase()}</div>`;
   }
 
@@ -42425,7 +42425,7 @@ function renderCustomersView(){
         const nameBadges=x.vip?`<span class="cust-pill cust-pill-vip">👑 VIP</span>`:(x.c.customerType==='recurring'?`<span class="cust-pill cust-pill-recurring">Recurring</span>`:'');
         const spent=range==='all'?(x.stats.allLifetime||x.stats.lifetime):x.stats.lifetime;
         return `<tr data-cid="${x.c.id}" onclick="viewCustomer('${x.c.id}')">
-          <td><div class="cust-cell-person"><div class="cust-top-av" style="background:${color}22;color:${color}">${init}</div><div><div style="font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${escapeHtml(x.c.name)} ${nameBadges}</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px">${escapeHtml(x.c.email||x.c.phone||'')}</div></div></div></td>
+          <td><div class="cust-cell-person"><div class="cust-top-av" style="background:${color}22;color:${color}">${init}</div><div><div style="font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${escapeHtml(x.c.name)} ${nameBadges}</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px">${escapeHtml(x.c.email||(x.c.phone?formatPhoneValue(x.c.phone):'')||'')}</div></div></div></td>
           <td>${escapeHtml(last)}</td>
           <td style="font-weight:750">$${Number(spent||0).toFixed(0)}</td>
           <td>${(range==='all'?(x.stats.allCompleted||x.stats.completed):x.stats.completed).length}</td>
@@ -42489,7 +42489,7 @@ function viewCustomer(id){
       <div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div>
       <div style="min-width:0;flex:1;">
         <div class="cust-detail-name">${escapeHtml(c.name)}</div>
-        <div class="cust-detail-meta">${escapeHtml([c.phone,c.email].filter(Boolean).join(' · ')||'No contact info')}</div>
+        <div class="cust-detail-meta">${escapeHtml([c.phone?formatPhoneValue(c.phone):'',c.email].filter(Boolean).join(' · ')||'No contact info')}</div>
         <div style="margin-top:6px;">${ctypeBadge}</div>
         ${recurringTools}
       </div>
@@ -44367,7 +44367,7 @@ function viewLead(key,quiet){
       <div class="cust-detail-av" style="background:color-mix(in srgb,var(--brand) 16%,#fff);color:var(--brand-dark);">${escapeHtml(initials)}</div>
       <div style="min-width:0;flex:1;">
         <div class="cust-detail-name">${escapeHtml(lead.name)}${returnMeta}</div>
-        <div class="cust-detail-meta">${escapeHtml([lead.phone,lead.email].filter(Boolean).join(' · ')||'No contact yet')} · ${escapeHtml(leadSourceLabel(lead.source,lead))}</div>
+        <div class="cust-detail-meta">${escapeHtml([lead.phone?formatPhoneValue(lead.phone):'',lead.email].filter(Boolean).join(' · ')||'No contact yet')} · ${escapeHtml(leadSourceLabel(lead.source,lead))}</div>
       </div>
       <button type="button" class="btn btn-out btn-sm" onclick="closeLeadDetail()">Close</button>
     </div>
@@ -45937,7 +45937,7 @@ function openReportMetricDrill(metric){
       <div class="kpi-drill-right">${j.amount?'$'+j.amount:''}</div>
     </div>`;
   const custRow=(c)=>`<div class="kpi-drill-row" onclick="closeM('m-kpi-drill');switchV(document.querySelector('[data-v=customers]'));viewCustomer('${c.id}')" style="cursor:pointer;">
-      <div><div class="kpi-drill-name">${c.name}${c.customerType==='recurring'?' 🔁':''}</div><div class="kpi-drill-meta">${c.phone||c.email||'No contact info'}</div></div>
+      <div><div class="kpi-drill-name">${escapeHtml(c.name||'')}${c.customerType==='recurring'?' 🔁':''}</div><div class="kpi-drill-meta">${escapeHtml((c.phone?formatPhoneValue(c.phone):'')||c.email||'No contact info')}</div></div>
       <div class="kpi-drill-right"></div>
     </div>`;
   if(metric==='revenue'){
