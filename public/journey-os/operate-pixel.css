@@ -653,32 +653,45 @@ body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
    .jos-leads-modal/.jos-cust-modal, but display:none-toggled via .open
    like .jos-quick-pop since it's a single persistent body-appended node
    instead of something a page's own render function conditionally emits. */
+/* New Job drawer — same slide-in-from-the-right mechanics as the existing
+   Job Detail drawer (.jos-jobs-drawer/-backdrop) so the two feel like one
+   family, while staying a fully separate element/id/state — this is a
+   creation surface, not a reskinned version of the editing one. One flat
+   scrollable form (Customer/Job Details/Assignment/Notes), not a wizard:
+   fixed header, scrollable body, fixed action bar always in view. */
 .jos-jp-backdrop{
-  position:fixed;inset:0;background:rgba(20,27,43,.45);z-index:12050;
-  display:none;align-items:center;justify-content:center;padding:16px;
+  display:none;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:12700;
 }
-.jos-jp-backdrop.open{display:flex}
+.jos-jp-backdrop.open{display:block}
 .jos-jp-card{
-  width:min(420px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;
-  border:1px solid var(--jos-border);padding:18px;box-shadow:0 18px 50px rgba(20,27,43,.18);
-  color:#141B2B;
+  position:fixed;top:0;right:0;bottom:0;width:min(480px,96vw);z-index:12750;background:#fff;
+  box-shadow:-16px 0 50px rgba(0,0,0,.18);display:flex;flex-direction:column;
+  animation:josJpSlideIn .22s ease both;color:#141B2B;
 }
-.jos-jp-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
-.jos-jp-head h3{margin:0;font-size:18px;font-weight:800;letter-spacing:-.02em;color:#141B2B}
+@keyframes josJpSlideIn{from{transform:translateX(24px);opacity:.6}to{transform:none;opacity:1}}
+.jos-jp-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-shrink:0;
+  padding:18px 20px;border-bottom:1px solid var(--jos-border);
+}
+.jos-jp-head-text h3{margin:0;font-size:18px;font-weight:800;letter-spacing:-.02em;color:#141B2B}
+.jos-jp-head-text p{margin:2px 0 0;font-size:12.5px;color:var(--jos-ink-3)}
 .jos-jp-close{
-  appearance:none;width:32px;height:32px;border-radius:10px;border:1px solid #E5E7EB;background:#F9FAFB;
+  appearance:none;width:32px;height:32px;border-radius:10px;border:1px solid #E5E7EB;background:#F9FAFB;flex-shrink:0;
   color:#141B2B;font-size:18px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
 }
 .jos-jp-close:hover{background:#F3F4F6;border-color:#D1D5DB}
+.jos-jp-body{flex:1;overflow:auto;padding:18px 20px}
+.jos-jp-section+.jos-jp-section{margin-top:20px;padding-top:20px;border-top:1px solid var(--jos-border)}
+.jos-jp-section h4{
+  margin:0 0 10px;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--jos-ink-3);
+}
 .jos-jp-search input{
   width:100%;height:40px;border:1px solid var(--jos-border);border-radius:10px;padding:0 12px;
   font:inherit;font-size:13px;font-weight:600;color:var(--jos-navy);background:#fff;
 }
-.jos-jp-list{max-height:340px;overflow:auto;margin-top:12px}
-.jos-jp-section+.jos-jp-section{margin-top:14px}
-.jos-jp-section h4{
-  margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--jos-ink-3);
-}
+.jos-jp-list{max-height:260px;overflow:auto;margin-top:10px}
+.jos-jp-group+.jos-jp-group{margin-top:10px}
+.jos-jp-group h5{margin:0 0 4px;padding:0 8px;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--jos-ink-3)}
 .jos-jp-row{
   width:100%;display:flex;align-items:center;gap:10px;text-align:left;appearance:none;border:0;background:transparent;
   padding:8px;border-radius:10px;cursor:pointer;font:inherit;
@@ -696,43 +709,42 @@ body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
   flex:none;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--jos-brand-dark);
   background:var(--jos-brand-soft);border-radius:6px;padding:3px 6px;
 }
-.jos-jp-empty{padding:20px 8px;text-align:center;font-size:13px;color:var(--jos-ink-3)}
+.jos-jp-empty{padding:14px 8px;text-align:center;font-size:13px;color:var(--jos-ink-3)}
 .jos-jp-create-btn{
-  width:100%;margin-top:12px;height:40px;border-radius:10px;border:1px dashed var(--jos-border);background:transparent;
+  width:100%;margin-top:10px;height:40px;border-radius:10px;border:1px dashed var(--jos-border);background:transparent;
   font:inherit;font-size:13px;font-weight:700;color:var(--jos-brand-dark);cursor:pointer;
 }
 .jos-jp-create-btn:hover{background:var(--jos-brand-soft)}
 .jos-jp-create{display:flex;flex-direction:column;gap:10px}
-.jos-jp-field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#374151}
-.jos-jp-field input{
-  height:36px;border:1px solid var(--jos-border);border-radius:10px;padding:0 10px;
+.jos-jp-field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#374151;margin-bottom:12px}
+.jos-jp-field:last-child{margin-bottom:0}
+.jos-jp-field em{font-style:normal;font-weight:600;color:var(--jos-ink-3);text-transform:none;letter-spacing:0}
+.jos-jp-field input,.jos-jp-field textarea{
+  height:38px;border:1px solid var(--jos-border);border-radius:10px;padding:0 10px;
   font:inherit;font-size:13px;font-weight:600;color:var(--jos-navy);background:#fff;
 }
+.jos-jp-field textarea{height:auto;min-height:80px;padding:10px;resize:vertical;font-weight:500}
 .jos-jp-create-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
 .jos-jp-create-acts .jos-btn-brand{color:#fff!important}
 
-/* One continuous card — the header/step-dots never change size or move;
-   only .jos-jp-body's content swaps per step, with a quick fade+lift so
-   advancing feels like one surface reacting, not four separate pages. */
-.jos-jp-steps{display:flex;align-items:center;margin-bottom:16px}
-.jos-jp-step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none;width:56px}
-.jos-jp-step i{
-  width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-style:normal;font-size:11px;font-weight:800;background:var(--jos-surface-2);color:var(--jos-ink-3);
-  border:1px solid var(--jos-border);transition:background-color .15s ease,border-color .15s ease,color .15s ease;
+/* A picked customer/service collapses its search list into one compact,
+   scannable summary row with a "Change" link — the fast path for an owner
+   who already knows who/what this job is for, no forced re-navigation. */
+.jos-jp-picked{
+  display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--jos-border);
+  border-radius:10px;background:var(--jos-surface-2);
 }
-.jos-jp-step span{font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--jos-ink-3)}
-.jos-jp-step.on i{background:var(--jos-brand);border-color:var(--jos-brand);color:#fff}
-.jos-jp-step.on span{color:var(--jos-brand-dark)}
-.jos-jp-step.done i{background:var(--jos-brand-soft);border-color:var(--jos-brand);color:var(--jos-brand-dark)}
-.jos-jp-step-line{flex:1;height:1px;background:var(--jos-border);margin:0 -14px;position:relative;top:-10px}
-.jos-jp-step-line.done{background:var(--jos-brand)}
-.jos-jp-body{animation:josJpBodyIn .16s ease both}
-@keyframes josJpBodyIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-.jos-jp-foot{display:flex;justify-content:space-between;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--jos-border)}
+.jos-jp-picked-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.jos-jp-picked-main strong{font-size:13px;font-weight:700;color:var(--jos-navy)}
+.jos-jp-picked-main small{font-size:12px;color:var(--jos-ink-3)}
+.jos-jp-picked-change{
+  flex:none;appearance:none;border:0;background:transparent;font:inherit;font-size:12px;font-weight:700;
+  color:var(--jos-brand-dark);cursor:pointer;padding:4px 6px;
+}
+.jos-jp-picked-change:hover{text-decoration:underline}
 
-/* WHAT — service list, same row language as .jos-jp-row */
-.jos-jp-svc-list{display:flex;flex-direction:column;gap:2px}
+/* Service list — same row language as .jos-jp-row */
+.jos-jp-svc-list{display:flex;flex-direction:column;gap:2px;max-height:220px;overflow:auto}
 .jos-jp-svc-row{
   width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;
   appearance:none;border:1px solid transparent;background:transparent;padding:10px;border-radius:10px;cursor:pointer;font:inherit;
@@ -743,19 +755,13 @@ body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
 .jos-jp-svc-main strong{font-size:13px;font-weight:700;color:var(--jos-navy)}
 .jos-jp-svc-main small{font-size:11.5px;color:var(--jos-ink-3)}
 .jos-jp-svc-price{flex:none;font-size:13px;font-weight:800;color:var(--jos-navy)}
-.jos-jp-extra{display:flex;flex-direction:column;gap:10px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--jos-border)}
+.jos-jp-extra{display:flex;flex-direction:column;gap:10px;margin-top:14px}
 
-/* WHEN/WHERE — real availability slot grid + technician chips */
-.jos-jp-field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#374151;margin-bottom:12px}
-.jos-jp-field em{font-style:normal;font-weight:600;color:var(--jos-ink-3);text-transform:none;letter-spacing:0}
-.jos-jp-field input[type="text"],.jos-jp-field input[type="date"],.jos-jp-field input[type="number"]{
-  height:38px;border:1px solid var(--jos-border);border-radius:10px;padding:0 10px;
-  font:inherit;font-size:13px;font-weight:600;color:var(--jos-navy);background:#fff;
-}
-.jos-jp-slot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-height:180px;overflow:auto;padding:2px}
+/* Real availability — compact slot row + technician chips */
+.jos-jp-slot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-height:150px;overflow:auto;padding:2px}
 .jos-jp-slot{
   appearance:none;border:1px solid var(--jos-border);background:#fff;border-radius:9px;padding:8px 4px;
-  font:inherit;font-size:12.5px;font-weight:700;color:var(--jos-navy);cursor:pointer;text-align:center;
+  font:inherit;font-size:12px;font-weight:700;color:var(--jos-navy);cursor:pointer;text-align:center;
 }
 .jos-jp-slot:hover:not(:disabled){border-color:var(--jos-brand);background:var(--jos-brand-soft)}
 .jos-jp-slot.on{background:var(--jos-brand);border-color:var(--jos-brand);color:#fff}
@@ -769,14 +775,12 @@ body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
 .jos-jp-tech-chip:hover{border-color:var(--jos-brand)}
 .jos-jp-tech-chip.on{background:var(--jos-brand);border-color:var(--jos-brand);color:#fff}
 
-/* REVIEW — clean summary + editable price */
-.jos-jp-review{display:flex;flex-direction:column;gap:2px}
-.jos-jp-review-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 2px;border-bottom:1px solid var(--jos-border)}
-.jos-jp-review-row span{font-size:12px;font-weight:700;color:var(--jos-ink-3)}
-.jos-jp-review-row strong{font-size:13px;font-weight:700;color:var(--jos-navy);text-align:right}
-.jos-jp-review-price{border-bottom:0;margin-top:6px;padding-top:12px}
-.jos-jp-review-price span{font-size:13px;font-weight:800;color:var(--jos-navy)}
-.jos-jp-price-edit input{width:110px;height:34px;text-align:right;font-weight:800;border:1px solid var(--jos-border);border-radius:9px;padding:0 8px;font:inherit;font-size:14px;color:var(--jos-navy)}
+/* Fixed bottom action bar — Create Job never scrolls out of reach */
+.jos-jp-foot{
+  flex-shrink:0;display:flex;justify-content:space-between;gap:8px;padding:14px 20px;
+  border-top:1px solid var(--jos-border);background:#fff;
+}
+.jos-jp-foot-right{display:flex;gap:8px}
 .jos-jp-create-job-btn{font-weight:800}
 
 @media(max-width:900px){
@@ -4587,11 +4591,13 @@ html[data-theme="night"] .jos-mem-form select{
 }
 .jos-jobs-table-tabs{display:flex;gap:4px;border-bottom:1px solid var(--jos-border);margin-bottom:12px;height:50px;align-items:stretch}
 .jos-jobs-ttab{
-  appearance:none;border:0;background:transparent;padding:0 12px;font:inherit;font-size:13px;font-weight:750;
+  appearance:none;border:0;background:transparent;padding:0 12px;font:inherit;font-size:13px;font-weight:700;
   color:var(--jos-ink-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
-  transition:color .2s,border-color .2s;white-space:nowrap;
+  transition:color .15s,border-color .15s;white-space:nowrap;
 }
-.jos-jobs-ttab.on{color:var(--jos-brand);border-bottom-color:var(--jos-brand)}
+.jos-jobs-ttab:hover{color:var(--jos-navy)}
+.jos-jobs-ttab.on{color:var(--jos-brand);border-bottom-color:var(--jos-brand);font-weight:800}
+.jos-jobs-ttab.on:hover{color:var(--jos-brand)}
 .jos-jobs-table-wrap{overflow:auto;max-height:none}
 .jos-jobs-cards{display:none;gap:12px}
 .jos-jobs-table{width:100%;border-collapse:collapse;min-width:960px;table-layout:fixed}
