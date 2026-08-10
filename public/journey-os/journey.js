@@ -18261,19 +18261,17 @@
         root._josJobWorkspace = ws.getAttribute('data-jos-job-ws');
         root._josDrawerOpen = true;
         root._josJobsSkipLoading = true;
-        /* Prefer in-place drawer update to avoid page flash */
-        var job = findJob(root._josJobId);
-        var drawer = el('jos-jobs-drawer');
-        if (job && drawer) {
-          var next = renderJobDrawer(root, job, root._josJobWorkspace);
-          var wrap = document.createElement('div');
-          wrap.innerHTML = next;
-          var fresh = wrap.firstChild;
-          if (fresh) drawer.replaceWith(fresh);
-          bindRoot(el('jos-jobs-drawer') || root);
-        } else {
-          rerenderJobsOsFrom(root);
-        }
+        // Used to hand-build the new tab's HTML and drawer.replaceWith(fresh)
+        // it in "to avoid page flash" - that comment described the intent,
+        // not what the code did. replaceWith() destroys the old drawer node
+        // and inserts a brand-new one every tab click, which is exactly what
+        // retriggers .jos-jobs-drawer's josSlideIn entrance animation - a
+        // real, visible flash on every tab switch. rerenderJobsOsFrom already
+        // reads root._josJobWorkspace (set above) and morphs the drawer in
+        // place via the general render path (see the Jobs Calendar/List
+        // comment where this is fixed), which is what actually avoids the
+        // flash - keeping this special case around only kept the bug alive.
+        rerenderJobsOsFrom(root);
         e.stopPropagation();
         return;
       }

@@ -1574,3 +1574,71 @@ resize on Calendar re-run end-to-end and still update state and persist correctl
 drawer-identity check re-run on Calendar's own drawer (opened via a job pill, not a table cell)
 also now survives; List view filtering and row visibility re-checked and unaffected; zero console
 errors across every test.
+
+### Second, unrelated drawer-flash trigger, found after the above shipped: hand-written `replaceWith()` on tab switch
+
+Reported after commit `bebc95e` (the combo-pop fix above) was confirmed live and correct in
+production. Before assuming regression or a bad fix, re-verified against the exact live-served
+bytes first: fetched `journey.js` directly from production, confirmed via response headers it was
+freshly served (not a stale cache hit), diffed it byte-for-byte against the repo's committed
+code — identical. Re-ran the exact drawer-identity-tagging test from the fix above against that
+confirmed-live code: 5 consecutive Status edits, drawer survives every one. **The combo-pop fix
+was not the problem and had not regressed.**
+
+Per the same principle as §4.7 ("verify the exception against every render trigger, not just the
+one it was written for"), treated this as a genuinely separate investigation rather than assuming
+the same root cause. Tagged the drawer's DOM identity through a realistic sequence — switch tabs,
+edit Service, edit Amount, edit Technician, edit Notes, toggle bulk-select — and every single one
+showed the drawer destroyed. Isolating each interaction in a *fresh* session (no prior interaction
+to contaminate the result) narrowed it to exactly one real trigger: **switching drawer tabs**
+(Overview → Photos → Checklist → Invoice) destroyed the drawer on the very first click, with no
+prior comboPop use needed. Service/Amount/Technician/Notes edits were all clean in isolation — the
+earlier sequential test's later rounds showing them as "destroyed" were downstream of the drawer
+already having been replaced by an *earlier* tab switch in that same sequence, not four more
+separate bugs.
+
+**Root cause — completely different from the comboPop bug, not a variant of it**: the
+`data-jos-job-ws` (tab switch) click handler, `journey.js:~18259-18276` (pre-fix), had its own
+hand-written DOM update, explicitly *not* going through `morphTableInto`/`rerenderJobsOsFrom` at
+all:
+```js
+var next = renderJobDrawer(root, job, root._josJobWorkspace);
+var wrap = document.createElement('div');
+wrap.innerHTML = next;
+var fresh = wrap.firstChild;
+if (fresh) drawer.replaceWith(fresh);   // <- destroys and replaces the node
+bindRoot(el('jos-jobs-drawer') || root);
+```
+The comment above it read *"Prefer in-place drawer update to avoid page flash"* — describing the
+intended behavior, not what the code actually did. `replaceWith()` unconditionally destroys the
+old `.jos-jobs-drawer` node and inserts a brand-new one on every tab click, which is exactly what
+retriggers its `josSlideIn` entrance animation. The comboPop-reparenting bug required a *prior*
+reparent to have happened before it manifested (clean on the first edit, broken on the second);
+this one broke on the *very first* tab click, unconditionally, every time — a categorically
+different failure, just producing the identical visible symptom.
+
+**Fix**: deleted the special case entirely rather than patching it. `renderJobsPage` already reads
+`root._josJobWorkspace` (set earlier in the same handler) to pick the active tab, and the general
+render path morphs safely now that the comboPop fix landed — so the hand-rolled update was not
+just buggy, it was unnecessary. The handler now just calls `rerenderJobsOsFrom(root)`, the same
+call every other Jobs interaction already uses. The extra `bindRoot(el('jos-jobs-drawer'))` call
+was removed too — confirmed live that the drawer's own click handling (including its close button)
+was already covered by the outer root's existing delegated listener the whole time, so this was
+attaching a second, redundant listener to a node that no longer gets destroyed and needs it.
+
+**Third-bug check, done before calling this closed**: grepped the entire codebase for
+`.replaceWith(` — exactly one other hit, in `hubly.html`, an `<img onerror>` broken-image
+fallback, unrelated pattern (swapping a failed image for a placeholder icon, not a render-path
+bug). Grepped for the same "avoid ... flash" comment language — one other hit, `hubly.html:~30293`,
+a completely different and legitimate technique (rendering cached data immediately while a refresh
+is in flight, not a node-destroying update). This was a genuinely isolated, one-off instance, not
+a systemic pattern repeated elsewhere.
+
+Verified live via Playwright: tagged the drawer's DOM identity through 6 consecutive tab switches
+(Overview → Photos → Checklist → Invoice → Overview → Photos → Overview) — survived every one,
+zero FAB-button churn on any of them (compare to the ~19-mutation cascade the original comboPop
+bug produced); mixed a Status edit in between tab switches — drawer still survives, both mechanisms
+confirmed safe in combination; confirmed the active tab's content is actually correct after each
+switch, not just that the node survived; confirmed the drawer's close button and other click
+handling still work correctly after several tab switches (validates removing the redundant
+`bindRoot` call didn't break anything); zero console errors.
