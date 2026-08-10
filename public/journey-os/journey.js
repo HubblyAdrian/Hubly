@@ -15274,6 +15274,16 @@
     refreshQuickPopItems(pop);
     document.body.appendChild(pop);
     bindRoot(pop);
+    // Every item here navigates away or opens something else - close the
+    // menu the moment any of them is clicked, same as a native menu would.
+    // (New Job already closes it explicitly inside openJobCustomerPicker;
+    // this covers the other 7, which previously left the menu sitting open
+    // on top of whatever they opened.) Runs alongside bindRoot's own
+    // delegated dispatch, not instead of it - closing is just a class
+    // removal, it doesn't stop the actual action from firing.
+    pop.addEventListener('click', function (e) {
+      if (e.target.closest('[data-jos-act]')) closeQuickNew();
+    });
     document.addEventListener('click', function (e) {
       if (!pop.classList.contains('open')) return;
       if (!pop.contains(e.target) && e.target.id !== 'jos-bar-new' && !e.target.closest('#jos-bar-new')) closeQuickNew();
