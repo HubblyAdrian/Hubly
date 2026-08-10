@@ -772,6 +772,30 @@ neither tool looks at *what got mutated*, only *when* and *how often* something 
    seeded records can hide costs/mismatches that only appear once a table/list has its real
    row count.
 
+**Companion note — one symptom, two unrelated causes.** The Jobs-drawer flash actually had two
+distinct root causes: the comboPop-reparenting bug above, and a completely separate hand-written
+`drawer.replaceWith(fresh)` in the tab-switch handler (§10 has both write-ups in full). They share
+no code path — one is a structural side effect of the morph engine, the other bypasses the morph
+engine entirely.
+
+The lesson: confirming a fix holds for the mechanism you *found* only proves you closed *that*
+cause. It doesn't prove the symptom is gone, because a visible symptom like "this page flashes" is
+just an observation — it's not evidence of a single mechanism, and nothing rules out a second,
+unrelated trigger producing the identical visible result. That's exactly what happened here: after
+the comboPop fix shipped, the flash was reported again. The instinct to reach for was either "the
+fix regressed" or "the fix was incomplete, extend it" — both wrong, and both would have wasted time
+patching a mechanism that was never broken.
+
+The right move, in order: **(1) re-verify the original fix first**, against the actual live-served
+code, using the same test that proved it worked the first time (production-file diff to rule out a
+stale deploy, then the DOM-identity-tag test to rule out regression) — not against the code in the
+editor, not against a mental model of it, against what's actually running. Only once that comes
+back clean does the second symptom become **(2) a fresh investigation**, run with the same rigor
+as the first — new MutationObserver capture, new DOM-identity tagging, no inherited assumption
+about where in the code the cause lives. Treating "still broken" as automatic proof the first fix
+was wrong would have sent the second investigation looking inside the comboPop code, where there
+was nothing left to find.
+
 ---
 
 ## 5. Realtime — what happens when another browser changes a Lead
