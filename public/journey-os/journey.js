@@ -9016,6 +9016,20 @@
     return attr ? node.getAttribute(attr) : null;
   }
   function morphTableInto(root, html) {
+    // The generic "Loading X..." stub (root.innerHTML = '...jos-home-loading...'
+    // on true first paint — Home/Jobs/Calendar/Leads/Customers all use this
+    // exact marker class, nowhere else) has nothing worth preserving: no
+    // focus, no scroll position, no in-progress edit. Diffing it against the
+    // real first render only ever produces a coincidental tag match one level
+    // in (both happen to be a bare <div>), which the destructive-replace
+    // diagnostic then flags as a false positive every single first page load
+    // — confirmed via DOM-identity tagging that this never recurs after boot
+    // (see KNOWN_ISSUES.md). A plain replace is both cheaper and skips that
+    // noise at its one shared root cause instead of patching each page.
+    if (root.querySelector && root.querySelector('.jos-home-loading')) {
+      root.innerHTML = html;
+      return;
+    }
     var tmp = document.createElement('div');
     tmp.innerHTML = html;
     morphTableChildren(root, tmp);

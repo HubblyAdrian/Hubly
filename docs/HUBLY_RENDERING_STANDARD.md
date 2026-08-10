@@ -824,6 +824,23 @@ still flash" investigation. One legitimate case is exempted: a table cell's disp
 for its edit-input/select/textarea on the same field (`rendererRegistry`'s normal display/edit
 toggle) — that's an intentional, expected tag change, not this bug class.
 
+**A related but distinct trigger the guardrail also catches: the loading stub coincidentally
+matching real content.** Home/Jobs/Calendar/Leads/Customers all stamp the same generic stub
+(`<div class="jos-home-loading">Loading X…</div>`) on true first paint, then morph the real content
+in over it. Because the stub's outer wrapper and the real content's first element both happen to be
+a bare `<div>`, `morphTableChildren` matches them by tag and recurses a level deeper before finding
+the real mismatch (a lone text node vs. the real content's actual first element) — same low-level
+mechanism, but not the same shape as the bulk-bar/drawer case, and `stableSlot()` isn't the right
+tool for it (there's no maybe-empty block within a single render here; it's two different renders,
+stub vs. real, colliding once). The fix is at the one shared root cause instead of per-page:
+`morphTableInto()` checks whether `root`'s current content is still the generic stub
+(`root.querySelector('.jos-home-loading')`) and does a plain `root.innerHTML = html` instead of
+diffing, since a loading stub has no focus/scroll/edit-state worth preserving anyway. Verified via
+DOM-identity tagging that this transition was already one-time-only before the fix (tagged
+`#jos-home-customize` at Home's first paint, navigated through five other pages, tag never
+changed) — the fix removes the false-positive warning, it doesn't change any user-visible
+behavior. Full trace: `KNOWN_ISSUES.md`.
+
 ---
 
 ## 5. Realtime — what happens when another browser changes a Lead

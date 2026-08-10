@@ -176,3 +176,62 @@ the whole subtree is intentionally different between the two levels. Not fixed, 
 nothing here to fix by the same mechanism — recorded as a real, understood, low-cost pattern in
 case it's ever worth revisiting as its own architectural question (e.g. keyed/incremental morphing
 between the two levels instead of a full swap), not because it was missed.
+
+---
+
+## FOLLOW-UP — `jos-home-customize` traced to its real cause, fixed at the shared root instead of per-page
+
+New evidence (screenshots) showed the `jos-home-customize` warning firing on sign-in and on a Jobs
+page load, which raised a real question worth re-checking rather than trusting the prior "one-time,
+harmless" conclusion at face value: was Home actually re-rendering on every navigation, not just once
+at boot?
+
+**Traced with code + DOM-identity tagging, not assumption**: `jos-home-customize` is produced by
+`renderHomeDashboard(root)`, called from exactly one place, `enhanceDashboard()` — which itself
+starts with `if (!isHomeViewActive()) return;`, and every one of its own call sites (a delayed
+weather-load callback, six Home-only widget click handlers, and `refreshDashboardIfOpen()` in
+`hubly.html`, which separately gates on `viewIsOpen('v-dashboard')` before ever calling it) is
+already guarded to never fire while another page is active. Not a shared/global component — Home-
+specific, single call site, double-guarded.
+
+Confirmed live: tagged `#jos-home-customize`'s DOM identity right after Home's first paint, then
+navigated to Jobs, Leads, Customers, Calendar, and Pipeline in sequence (no return to Home). The
+tag survived unchanged after every single navigation — the element was never destroyed or rebuilt.
+The warning itself fired exactly once, during boot, and did not reappear on any of the five
+subsequent navigations. **The screenshots' Jobs-page console showing this warning was stale,
+preserved console history from the boot-time Home render** ("Preserve log" was on in that
+DevTools panel) — not a live re-fire triggered by viewing or clicking within Jobs. This directly
+refutes the "flash after every click is Home re-rendering on navigation" hypothesis: it provably
+does not re-render on navigation at all.
+
+**What was actually conditionally present ahead of it**: nothing, in the `stableSlot()` sense.
+This isn't the bulk-bar/drawer shape (two blocks in the *same* render competing for position) —
+it's the *generic loading stub* (`<div class="jos-home-loading">Loading Home…</div>`, the same
+exact marker Jobs/Calendar/Leads/Customers all use) colliding with the real first-paint content
+one time, because the stub's wrapper and the real content's first element happen to both be a bare
+`<div>` — `morphTableChildren` matches them by tag, recurses a level deeper, and finds the real
+mismatch there (a lone text node vs. the real content's first real element).
+
+**Fix**: not `stableSlot()` — that tool is for a block that's sometimes empty *within one render*,
+which isn't what this is. Instead, `morphTableInto()` now checks whether `root`'s *current* content
+is still the generic loading stub (`root.querySelector('.jos-home-loading')`) and does a plain
+`root.innerHTML = html` instead of diffing, since a loading stub has no focus/scroll/edit-state
+worth preserving. This is a single, shared fix at the one root cause — it silences the identical
+coincidental-match warning that was also firing (once, at boot) for Jobs, Calendar, Leads, and
+Customers' list view, not just Home, instead of patching each page's render function individually.
+
+**Verified**: re-ran the full boot+5-page-navigation trace after the fix — zero `[hubly-morph]`
+warnings anywhere, `jos-home-customize`'s identity still confirmed stable across every navigation.
+Confirmed each page still renders its real content correctly (Home's customize grid, Jobs/Leads/
+Customers' real rows) rather than getting stuck on the stub. Re-ran the full regression set for
+all three earlier Jobs fixes (comboPop, tab-switch, bulk-bar/drawer) through this same shared
+`morphTableInto()` — all still hold, zero destruction, zero new warnings from any of them.
+
+**Found, not yet investigated, while re-running that regression**: three warnings unrelated to the
+loading-stub pattern (`jos-kicker: DIV -> #text`, `jos-btn-row: DIV -> BUTTON`, `jos-kicker jos-mt:
+DIV -> #text`) — present before this session's changes, not introduced by anything above. Traced
+`jos-kicker jos-mt`'s markup to the Completed/Cancelled/Recurring job-list sections inside the
+customer command-center/profile panel (`journey.js` ~12755-12757), which is plausibly connected to
+the still-open #90 ("clicking customer on a job should open the sidebar"). Not confirmed live,
+not fixed — flagged here rather than silently dropped or silently patched without checking, same
+standard as everything else in this file.
