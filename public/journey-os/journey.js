@@ -17424,15 +17424,67 @@
       }
     };
   }
+  // The Jobs runtime never asks "what industry is this business" — it only
+  // ever asks a blueprint "what does jobMode say," and falls back to the
+  // fixed generic order below when there's no blueprint/jobMode for this
+  // business (unknown business type, blueprints not loaded yet, etc). A
+  // blueprint's jobMode can only select/reorder/label from the one fixed
+  // field vocabulary (JOBS_DEFAULT_COLUMNS + JOBS_DRAWER_ONLY_COLUMNS) —
+  // it can never introduce a field the generic renderer doesn't already
+  // know how to draw. See jobMode's shape in business-blueprints/validator.js.
+  function jobModeForBusiness() {
+    try {
+      if (typeof global.HublyBlueprints === 'undefined' || !global.HublyBlueprints.isReady || !global.HublyBlueprints.isReady()) return null;
+      var bp = global.HublyBlueprints.get(S().businessType);
+      return (bp && bp.jobMode) || null;
+    } catch (e) { return null; }
+  }
   // jobsOsRoot() rather than threading a param through every one of
   // jobsSchemaMap's ~15 call sites (some of which — mutateJobField,
   // handleJobsAct — don't have a `root` in scope at all) — same data
   // (root._josJobsCustomFields), cheaper change than Leads' explicit-
   // threading pattern.
+  //
+  // JOBS_DRAWER_ONLY_COLUMNS used to be left out of this pool entirely so
+  // Address/Vehicle/Email/Duration/Notes/Deposit/First+Last name could
+  // never show up as real table columns, even though every one of them is
+  // already real, editable, DB-backed data — the "+ Add column" menu could
+  // only ever offer a brand-new freeform custom field, never one of these.
+  // They're merged in now, hidden by default, so they're addable like any
+  // other column; jobMode.defaultColumns (below) can also promote any of
+  // them straight to visible-by-default for a matching business type.
   function jobsColumnSchema() {
     var root = jobsOsRoot();
     var customFields = (root && root._josJobsCustomFields) || [];
-    return JOBS_DEFAULT_COLUMNS.concat(customFields.map(customFieldColumnDefForJob));
+    var basePool = JOBS_DEFAULT_COLUMNS.concat(JOBS_DRAWER_ONLY_COLUMNS);
+    var customCols = customFields.map(customFieldColumnDefForJob);
+    var jobMode = jobModeForBusiness();
+    var defaultCols = jobMode && Array.isArray(jobMode.defaultColumns) ? jobMode.defaultColumns : null;
+    if (!defaultCols || !defaultCols.length) return basePool.concat(customCols);
+    var byKey = {};
+    basePool.forEach(function (c) { byKey[c.key] = c; });
+    var ordered = [];
+    var seen = {};
+    // jobMode.defaultColumns is the authoritative starting visible set for
+    // this business type — anything it lists comes first, visible; anything
+    // it leaves out starts hidden (even fields that are visible-by-default
+    // for every OTHER business type), same as JOBS_DEFAULT_COLUMNS' own
+    // hidden flags do for businesses with no jobMode at all. This only ever
+    // affects a column's STARTING state: tablePreferences.normalize() only
+    // reads hidden off the schema for a column this user has never seen
+    // before, so an already-customized column is never silently reset.
+    defaultCols.forEach(function (key) {
+      var c = byKey[key];
+      if (!c || seen[key]) return;
+      ordered.push(Object.assign({}, c, { hidden: false }));
+      seen[key] = true;
+    });
+    basePool.forEach(function (c) {
+      if (seen[c.key]) return;
+      ordered.push(Object.assign({}, c, { hidden: true }));
+      seen[c.key] = true;
+    });
+    return ordered.concat(customCols);
   }
   function jobsSchemaMap() {
     var map = {};
@@ -17458,7 +17510,7 @@
       // back missing the other half on the next real reload. Same
       // dbPatch-override pattern as time/duration below, for the same
       // reason: the persisted value isn't the same thing get() returns.
-      key: 'customerFirst', label: 'First name', type: 'text',
+      key: 'customerFirst', label: 'First name', type: 'text', hidden: true,
       editable: true, dbColumn: 'customer_name',
       get: function (job) { return splitLeadName(job.customer).first; },
       set: function (job, value) {
@@ -17469,7 +17521,7 @@
       dbPatch: function (job) { return { customer_name: job.customer }; }
     },
     {
-      key: 'customerLast', label: 'Last name', type: 'text',
+      key: 'customerLast', label: 'Last name', type: 'text', hidden: true,
       editable: true, dbColumn: 'customer_name',
       get: function (job) { return splitLeadName(job.customer).last; },
       set: function (job, value) {
@@ -17480,22 +17532,22 @@
       dbPatch: function (job) { return { customer_name: job.customer }; }
     },
     {
-      key: 'email', label: 'Email', type: 'email', editable: true, dbColumn: 'email',
+      key: 'email', label: 'Email', type: 'email', hidden: true, editable: true, dbColumn: 'email',
       set: function (job, value) { job.email = String(value || '').trim(); return 'Email → ' + (job.email || '—'); }
     },
     {
-      key: 'address', label: 'Address', type: 'text', editable: true, dbColumn: 'address',
+      key: 'address', label: 'Address', type: 'text', hidden: true, editable: true, dbColumn: 'address',
       set: function (job, value) { job.address = String(value || '').trim(); return 'Address → ' + (job.address || '—'); }
     },
     {
-      key: 'vehicle', label: 'Vehicle / property', type: 'text', editable: true, dbColumn: 'vehicle',
+      key: 'vehicle', label: 'Vehicle / property', type: 'text', hidden: true, editable: true, dbColumn: 'vehicle',
       set: function (job, value) { job.vehicle = String(value || '').trim(); return 'Vehicle → ' + (job.vehicle || '—'); }
     },
     {
       // Stored in minutes client-side (matches the pre-existing durationMin
       // field), converted to hours on write since that's what the real
       // duration_hours column expects.
-      key: 'durationMin', label: 'Duration (min)', type: 'number', editable: true,
+      key: 'durationMin', label: 'Duration (min)', type: 'number', hidden: true, editable: true,
       get: function (job) { return job.durationMin || 120; },
       set: function (job, value) { job.durationMin = parseInt(value, 10) || 120; return 'Duration → ' + job.durationMin + ' min'; },
       dbPatch: function (job) { return { duration_hours: (job.durationMin || 120) / 60 }; }
@@ -17508,7 +17560,7 @@
       // docs/JOBS_DRAWER_AUDIT.md); until then, a field that looks
       // editable but silently doesn't save is worse than one that saves
       // the clean text and lets the tags go.
-      key: 'notes', label: 'Notes', type: 'textarea', editable: true, dbColumn: 'notes',
+      key: 'notes', label: 'Notes', type: 'textarea', hidden: true, editable: true, dbColumn: 'notes',
       get: function (job) { return parseJobNotesMeta((job.internalNotes && job.internalNotes[0]) || job.notes || '').clean; },
       set: function (job, value) {
         var clean = String(value || '').trim();
@@ -17518,7 +17570,7 @@
       }
     },
     {
-      key: 'depositStatus', label: 'Deposit', type: 'select', allowEmpty: 'Not requested',
+      key: 'depositStatus', label: 'Deposit', type: 'select', hidden: true, allowEmpty: 'Not requested',
       editable: true, dbColumn: 'deposit_status', format: depositStatusLabel,
       options: function () {
         return [
@@ -17698,25 +17750,27 @@
       '<div class="jos-je-summary-row"><span>' + esc(money(j.amount) || '$0') + '</span><span class="jos-muted">Invoice ' + esc(invoiceStatus) + '</span></div>' +
       '</div>';
 
-    return '<div class="jos-jd-stack jos-je-form is-inline">' +
-      summaryHtml +
-      section('Customer', grid(
+    // Section content is still 100% fixed/generic — jobMode only reorders
+    // these six named blocks (see jobsDetailSectionOrder), it never changes
+    // which fields live in which section or invents a new one.
+    var sectionsByKey = {
+      customer: section('Customer', grid(
         F('First name', 'customerFirst') +
         F('Last name', 'customerLast') +
         F('Phone', 'phone') +
         F('Email', 'email') +
         F('Address', 'address', { full: true })
-      ) + (quickActs ? '<div class="jos-je-quick-acts">' + quickActs + '</div>' : '')) +
-      section('Job', grid(
+      ) + (quickActs ? '<div class="jos-je-quick-acts">' + quickActs + '</div>' : '')),
+      job: section('Job', grid(
         F('Service', 'service') +
         F('Vehicle / property', 'vehicle') +
         F('Date', 'date') +
         F('Time', 'time') +
         F('Duration (min)', 'durationMin')
-      )) +
-      section('Assignment', grid(F('Assigned to', 'assignedTo')) + assignmentStat) +
-      section('Financial', financialCardsHtml) +
-      section('Activity', activityHtml) +
+      )),
+      assignment: section('Assignment', grid(F('Assigned to', 'assignedTo')) + assignmentStat),
+      financial: section('Financial', financialCardsHtml),
+      activity: section('Activity', activityHtml),
       // Always a live textarea, not click-to-reveal — freeform notes are
       // exactly the field where "click to add, then click again to see
       // what you typed" adds a step for no reason. jos-ld-editing marks
@@ -17725,8 +17779,29 @@
       // "open edit mode" and blow away the live textarea on first click)
       // leaves it alone; the existing change-on-blur commit handler picks
       // up edits the same way it does for every other field.
-      section('Notes', '<textarea class="jos-je-field-input jos-ld-cell-inline jos-ld-editing jos-je-notes-free" data-jos-field="notes" data-jos-record-id="' + esc(jobKey) + '" placeholder="Add notes…" rows="4">' + esc((jobsDrawerSchemaMap().notes.get(j)) || '') + '</textarea>') +
-      '</div>';
+      notes: section('Notes', '<textarea class="jos-je-field-input jos-ld-cell-inline jos-ld-editing jos-je-notes-free" data-jos-field="notes" data-jos-record-id="' + esc(jobKey) + '" placeholder="Add notes…" rows="4">' + esc((jobsDrawerSchemaMap().notes.get(j)) || '') + '</textarea>')
+    };
+    var orderedSections = jobsDetailSectionOrder().map(function (key) { return sectionsByKey[key] || ''; }).join('');
+    return '<div class="jos-jd-stack jos-je-form is-inline">' + summaryHtml + orderedSections + '</div>';
+  }
+  var JOBS_DETAIL_SECTION_DEFAULT_ORDER = ['customer', 'job', 'assignment', 'financial', 'activity', 'notes'];
+  // jobMode.detailSections may only reorder these six fixed section keys —
+  // an unrecognized key is dropped (typo-safe), and any section it leaves
+  // out still renders, appended in its normal relative position, so a
+  // business's drawer never loses a section just because a blueprint's
+  // list is incomplete.
+  function jobsDetailSectionOrder() {
+    var jobMode = jobModeForBusiness();
+    var configured = jobMode && Array.isArray(jobMode.detailSections) ? jobMode.detailSections : null;
+    if (!configured || !configured.length) return JOBS_DETAIL_SECTION_DEFAULT_ORDER;
+    var seen = {};
+    var order = configured.filter(function (k) {
+      if (seen[k] || JOBS_DETAIL_SECTION_DEFAULT_ORDER.indexOf(k) < 0) return false;
+      seen[k] = true;
+      return true;
+    });
+    JOBS_DETAIL_SECTION_DEFAULT_ORDER.forEach(function (k) { if (!seen[k]) order.push(k); });
+    return order;
   }
 
   function jobsPageSize(root) { return root._josJobsPageSize || 25; }
@@ -17961,16 +18036,34 @@
       '</div></div>';
   }
 
-  // Same shape as renderLeadsColumnAddMenu/renderLeadsAddFieldForm.
+  // Same shape as renderLeadsColumnAddMenu/renderLeadsAddFieldForm, plus a
+  // business-type-aware split: jobMode.recommendedFields (still hidden by
+  // default, same as every other addable column — "recommended" only
+  // changes where it sits in this menu, never its starting visibility)
+  // surfaces first under its own label so a detailer sees "Vehicle" ahead
+  // of a dozen fields that don't apply to them. Derived fresh from
+  // jobModeForBusiness() here rather than baked into allColumns, since
+  // allColumns is tablePreferences' generic, persisted column-prefs shape
+  // and has no reason to know what "recommended" means.
   function renderJobsColumnAddMenu(visibleCols, allColumns, root) {
     if (root && root._josJobsAddFieldOpen) return renderJobsAddFieldForm(root);
     var hidden = (allColumns || []).filter(function (c) { return c.hidden; });
-    return '<div class="jos-ld-col-menu jos-ld-col-add-menu">' +
-      (hidden.length
-        ? hidden.map(function (c) {
-          return '<button type="button" data-jos-act="jobs-col-show" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</button>';
-        }).join('')
-        : '<div class="jos-muted" style="padding:8px 10px;white-space:nowrap">All columns are visible</div>') +
+    var jobMode = jobModeForBusiness();
+    var recSet = {};
+    (jobMode && Array.isArray(jobMode.recommendedFields) ? jobMode.recommendedFields : []).forEach(function (k) { recSet[k] = true; });
+    var recommended = hidden.filter(function (c) { return recSet[c.key]; });
+    var more = hidden.filter(function (c) { return !recSet[c.key]; });
+    function colBtn(c) { return '<button type="button" data-jos-act="jobs-col-show" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</button>'; }
+    var body;
+    if (!hidden.length) {
+      body = '<div class="jos-muted" style="padding:8px 10px;white-space:nowrap">All columns are visible</div>';
+    } else if (!recommended.length) {
+      body = hidden.map(colBtn).join('');
+    } else {
+      body = '<div class="jos-ld-col-menu-label">Recommended for your business</div>' + recommended.map(colBtn).join('') +
+        (more.length ? '<div class="jos-ld-col-menu-sep"></div><div class="jos-ld-col-menu-label">More Hubly fields</div>' + more.map(colBtn).join('') : '');
+    }
+    return '<div class="jos-ld-col-menu jos-ld-col-add-menu">' + body +
       '<div class="jos-ld-col-menu-sep"></div>' +
       '<button type="button" data-jos-act="jobs-col-add-field-open">+ Add custom field</button>' +
       '</div>';

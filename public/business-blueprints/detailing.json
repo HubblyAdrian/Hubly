@@ -617,5 +617,30 @@
         "mapsTo": "customer"
       }
     ]
+  },
+  "jobMode": {
+    "defaultColumns": [
+      "customer",
+      "vehicle",
+      "service",
+      "date",
+      "time",
+      "assignedTo",
+      "amount",
+      "status"
+    ],
+    "recommendedFields": [
+      "vehicle",
+      "durationMin",
+      "depositStatus"
+    ],
+    "detailSections": [
+      "customer",
+      "job",
+      "assignment",
+      "financial",
+      "activity",
+      "notes"
+    ]
   }
 }

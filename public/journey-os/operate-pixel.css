@@ -5288,6 +5288,7 @@ input[type="checkbox"]:disabled{opacity:.5;cursor:not-allowed}
 .jos-ld-col-menu > button:disabled{color:#C7CCD3;cursor:default}
 .jos-ld-col-menu > button:disabled:hover{background:transparent}
 .jos-ld-col-menu-sep{height:1px;background:#EDEEF1;margin:2px 0}
+.jos-ld-col-menu-label{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--jos-ink-3);padding:6px 8px 2px}
 .jos-ld-col-menu-danger{color:#B42318!important}
 .jos-ld-col-menu-danger:hover{background:#FEF3F2!important}
 

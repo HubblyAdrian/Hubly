@@ -173,6 +173,25 @@
     }
     if (!bp.performance || typeof bp.performance !== 'object') errors.push('performance required');
 
+    // jobMode is optional — a blueprint with none just means that business
+    // type gets the Jobs runtime's fixed generic default (see jobsColumn
+    // Schema/jobsDetailSectionOrder in journey.js). When present, it may
+    // only select/reorder the Jobs engine's fixed field vocabulary — no
+    // free-form values here, just string arrays of keys the engine already
+    // knows, so a typo'd or industry-specific-sounding key fails validation
+    // instead of silently becoming a new field type.
+    if (bp.jobMode != null) {
+      if (typeof bp.jobMode !== 'object' || Array.isArray(bp.jobMode)) {
+        errors.push('jobMode must be an object when present');
+      } else {
+        ['defaultColumns', 'recommendedFields', 'detailSections'].forEach((k) => {
+          if (bp.jobMode[k] != null && !isStringArray(bp.jobMode[k])) {
+            errors.push(`jobMode.${k} must be a string array when present`);
+          }
+        });
+      }
+    }
+
     return { ok: errors.length === 0, errors };
   }
 

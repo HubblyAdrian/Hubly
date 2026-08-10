@@ -570,5 +570,28 @@
         "mapsTo": "customer"
       }
     ]
+  },
+  "jobMode": {
+    "defaultColumns": [
+      "customer",
+      "service",
+      "date",
+      "time",
+      "assignedTo",
+      "amount",
+      "status"
+    ],
+    "recommendedFields": [
+      "notes",
+      "depositStatus"
+    ],
+    "detailSections": [
+      "customer",
+      "job",
+      "assignment",
+      "financial",
+      "activity",
+      "notes"
+    ]
   }
 }
