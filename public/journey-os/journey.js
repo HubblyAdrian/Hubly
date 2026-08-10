@@ -15545,7 +15545,7 @@
         '<div class="jos-jp-list" id="jos-jp-cust-list">' + jobPickerCustomerListHtml(st) + '</div>' +
         '<button type="button" class="jos-jp-create-btn" data-jos-act="jobs-picker-create-new"' + (st.busy ? ' disabled' : '') + '>+ New Customer</button>';
     }
-    return '<div class="jos-jp-section"><h4>Customer</h4>' + inner + '</div>';
+    return '<div class="jos-jp-section" id="jos-jp-customer-section"><h4>Customer</h4>' + inner + '</div>';
   }
 
   // Split out of jobPickerCustomerSection so the search-as-you-type input
@@ -15641,10 +15641,25 @@
   // .jos-jp-body's scroll position to the top, so picking a date bounced
   // the user back up to the Customer section instead of leaving Time/
   // Location in view right where they were working.
+  // A section swap can shrink the replaced element a lot (e.g. a service's
+  // multi-row search list collapsing into one picked-summary line) — enough
+  // that .jos-jp-body's content briefly falls shorter than its scrolled
+  // position, and the browser clamps scrollTop to 0 right then. Nothing
+  // restores it afterward once the section grows back, so any scoped
+  // section refresh needs to explicitly save/restore .jos-jp-body's scroll
+  // position around itself, not just avoid touching the rest of the card.
+  function jobPickerPreserveScroll(pop, fn) {
+    var body = pop.querySelector('.jos-jp-body');
+    var top = body ? body.scrollTop : 0;
+    fn();
+    if (body) body.scrollTop = top;
+  }
   function jobPickerRefreshJobDetails(pop) {
-    var st = jobPickerState(pop);
-    var section = pop.querySelector('#jos-jp-jobdetails-section');
-    if (section) section.outerHTML = jobPickerJobDetailsSection(pop, st);
+    jobPickerPreserveScroll(pop, function () {
+      var st = jobPickerState(pop);
+      var section = pop.querySelector('#jos-jp-jobdetails-section');
+      if (section) section.outerHTML = jobPickerJobDetailsSection(pop, st);
+    });
   }
 
   // Split out of jobPickerJobDetailsSection for the same reason as
@@ -15687,7 +15702,7 @@
       }).join('') + '</div>';
     }
     if (!techHtml && !extraHtml) return '';
-    return '<div class="jos-jp-section"><h4>Assignment</h4>' + techHtml + extraHtml + '</div>';
+    return '<div class="jos-jp-section" id="jos-jp-assignment-section"><h4>Assignment</h4>' + techHtml + extraHtml + '</div>';
   }
 
   // NOTES — freeform, synced live via the delegated input listener below.
@@ -15762,9 +15777,22 @@
     return input;
   }
 
+  // Split out so jobPickerRefreshFooter can rebuild just the footer (its
+  // disabled state depends on st.who/st.service, so any handler that
+  // changes either needs this refreshed too) without touching the rest of
+  // the card — same reasoning as jobPickerRefreshJobDetails below.
+  function jobPickerFooterHtml(st) {
+    var canCreate = !!(st.who && st.service);
+    return '<div class="jos-jp-foot" id="jos-jp-foot">' +
+      '<button type="button" class="jos-btn" data-jos-act="jobs-picker-close"' + (st.busy ? ' disabled' : '') + '>Cancel</button>' +
+      '<div class="jos-jp-foot-right">' +
+      '<button type="button" class="jos-btn" data-jos-act="jobs-picker-save-draft"' + (st.busy || !st.who ? ' disabled' : '') + '>' + (st.busy ? 'Saving…' : 'Save as Draft') + '</button>' +
+      '<button type="button" class="jos-btn jos-btn-brand jos-jp-create-job-btn" data-jos-act="jobs-picker-create"' + (st.busy || !canCreate ? ' disabled' : '') + '>' + (st.busy ? 'Creating…' : 'Create Job') + '</button>' +
+      '</div></div>';
+  }
+
   function renderJobPicker(pop) {
     var st = jobPickerState(pop);
-    var canCreate = !!(st.who && st.service);
     pop.innerHTML =
       '<div class="jos-jp-card">' +
       '<div class="jos-jp-head"><div class="jos-jp-head-text"><h3>New Job</h3><p>Create a new job and assign the details.</p></div>' +
@@ -15775,13 +15803,43 @@
       jobPickerAssignmentSection(pop, st) +
       jobPickerNotesSection(pop, st) +
       '</div>' +
-      '<div class="jos-jp-foot">' +
-      '<button type="button" class="jos-btn" data-jos-act="jobs-picker-close"' + (st.busy ? ' disabled' : '') + '>Cancel</button>' +
-      '<div class="jos-jp-foot-right">' +
-      '<button type="button" class="jos-btn" data-jos-act="jobs-picker-save-draft"' + (st.busy || !st.who ? ' disabled' : '') + '>' + (st.busy ? 'Saving…' : 'Save as Draft') + '</button>' +
-      '<button type="button" class="jos-btn jos-btn-brand jos-jp-create-job-btn" data-jos-act="jobs-picker-create"' + (st.busy || !canCreate ? ' disabled' : '') + '>' + (st.busy ? 'Creating…' : 'Create Job') + '</button>' +
-      '</div></div>' +
+      jobPickerFooterHtml(st) +
       '</div>';
+  }
+
+  // Targeted refreshes for every action that used to call the full
+  // renderJobPicker() rebuild (destroying/recreating .jos-jp-card itself,
+  // replaying its slide-in animation and resetting .jos-jp-body's scroll
+  // position — see jobPickerRefreshJobDetails' comment for the original
+  // report). Each one swaps only the section(s) that action can actually
+  // change, so the rest of the flat form — and the user's scroll
+  // position — stays put while they work through it.
+  function jobPickerRefreshCustomerSection(pop) {
+    jobPickerPreserveScroll(pop, function () {
+      var section = pop.querySelector('#jos-jp-customer-section');
+      if (section) section.outerHTML = jobPickerCustomerSection(pop, jobPickerState(pop));
+    });
+  }
+  function jobPickerRefreshAssignmentSection(pop) {
+    jobPickerPreserveScroll(pop, function () {
+      var st = jobPickerState(pop);
+      var section = pop.querySelector('#jos-jp-assignment-section');
+      var html = jobPickerAssignmentSection(pop, st);
+      if (section) {
+        if (html) section.outerHTML = html;
+        else section.remove();
+      } else if (html) {
+        // First technician/extra field to become available this render —
+        // no existing node to swap, so drop it in after Job Details, which
+        // is always present, instead of falling back to a full rebuild.
+        var jobDetails = pop.querySelector('#jos-jp-jobdetails-section');
+        if (jobDetails) jobDetails.insertAdjacentHTML('afterend', html);
+      }
+    });
+  }
+  function jobPickerRefreshFooter(pop) {
+    var footEl = pop.querySelector('#jos-jp-foot');
+    if (footEl) footEl.outerHTML = jobPickerFooterHtml(jobPickerState(pop));
   }
 
   // Shared tail of every picker path (existing customer, existing lead,
@@ -20496,7 +20554,7 @@
         var jpStNew = jobPickerState(jpPopNew);
         jpStNew.mode = 'create';
         jpStNew.newName = jpStNew.q || '';
-        renderJobPicker(jpPopNew);
+        jobPickerRefreshCustomerSection(jpPopNew);
         setTimeout(function () {
           var jpNameInput = jpPopNew.querySelector('.jos-jp-create-name');
           if (jpNameInput) jpNameInput.focus();
@@ -20508,7 +20566,7 @@
         if (!jpPopBack) return;
         var jpStBack = jobPickerState(jpPopBack);
         jpStBack.mode = 'search';
-        renderJobPicker(jpPopBack);
+        jobPickerRefreshCustomerSection(jpPopBack);
         var jpSearchInput = jpPopBack.querySelector('.jos-jp-search-input');
         if (jpSearchInput) jpSearchInput.focus();
         return;
@@ -20516,7 +20574,11 @@
       // These resolve WHO and settle into the flat drawer's Customer section
       // as a compact picked summary — the job itself isn't created until
       // Create Job / Save as Draft is pressed, so the rest of the form
-      // (service, schedule, notes) can be filled in first or later.
+      // (service, schedule, notes) can be filled in first or later. Only the
+      // Customer section + footer (Save as Draft's disabled state depends on
+      // st.who) need to refresh — not the whole card, which was both
+      // flashing and bouncing .jos-jp-body's scroll back to the top on
+      // every pick, exactly like the Date field bug.
       if (act === 'jobs-picker-pick-customer') {
         var jpCustId = t.getAttribute('data-jos-cust-id');
         var jpCust = jpCustId ? findCustomer(jpCustId) : null;
@@ -20524,7 +20586,8 @@
         var jpPopWho1 = el('jos-job-picker');
         var jpStWho1 = jobPickerState(jpPopWho1);
         jpStWho1.who = { kind: 'customer', customerId: jpCustId, name: jpCust.name || '', phone: jpCust.phone || '', email: jpCust.email || '', address: jpCust.address || '' };
-        renderJobPicker(jpPopWho1);
+        jobPickerRefreshCustomerSection(jpPopWho1);
+        jobPickerRefreshFooter(jpPopWho1);
         return;
       }
       if (act === 'jobs-picker-pick-lead') {
@@ -20534,7 +20597,8 @@
         var jpPopWho2 = el('jos-job-picker');
         var jpStWho2 = jobPickerState(jpPopWho2);
         jpStWho2.who = { kind: 'lead', archiveLeadId: jpLead.id || jpLead.key, name: jpLead.name || '', phone: jpLead.phone || '', email: jpLead.email || '', address: jpLead.address || '' };
-        renderJobPicker(jpPopWho2);
+        jobPickerRefreshCustomerSection(jpPopWho2);
+        jobPickerRefreshFooter(jpPopWho2);
         return;
       }
       if (act === 'jobs-picker-create-save') {
@@ -20547,7 +20611,8 @@
         if (!jpName) { toast('This customer needs a name'); return; }
         var jpStSave = jobPickerState(jpPopSave);
         jpStSave.who = { kind: 'new', name: jpName, phone: String((jpPhoneEl && jpPhoneEl.value) || '').trim(), email: String((jpEmailEl && jpEmailEl.value) || '').trim(), address: '' };
-        renderJobPicker(jpPopSave);
+        jobPickerRefreshCustomerSection(jpPopSave);
+        jobPickerRefreshFooter(jpPopSave);
         return;
       }
       if (act === 'jobs-picker-change-customer') {
@@ -20556,7 +20621,8 @@
         var jpStCc = jobPickerState(jpPopCc);
         jpStCc.who = null;
         jpStCc.mode = 'search';
-        renderJobPicker(jpPopCc);
+        jobPickerRefreshCustomerSection(jpPopCc);
+        jobPickerRefreshFooter(jpPopCc);
         setTimeout(function () {
           var i = jpPopCc.querySelector('.jos-jp-search-input');
           if (i) i.focus();
@@ -20568,7 +20634,8 @@
         var svcName = t.getAttribute('data-jos-svc');
         var svcObj = (S().services || []).find(function (s) { return s.name === svcName; }) || { name: svcName };
         jpStSvc.service = svcObj;
-        renderJobPicker(jpPopSvc);
+        jobPickerRefreshJobDetails(jpPopSvc);
+        jobPickerRefreshFooter(jpPopSvc);
         return;
       }
       if (act === 'jobs-picker-change-service') {
@@ -20576,7 +20643,8 @@
         if (!jpPopCs) return;
         var jpStCs = jobPickerState(jpPopCs);
         jpStCs.service = null;
-        renderJobPicker(jpPopCs);
+        jobPickerRefreshJobDetails(jpPopCs);
+        jobPickerRefreshFooter(jpPopCs);
         setTimeout(function () {
           var i = jpPopCs.querySelector('[data-jos-jp-svc-search]');
           if (i) i.focus();
@@ -20593,7 +20661,7 @@
         var jpPopTc = el('jos-job-picker'); var jpStTc = jobPickerState(jpPopTc);
         var tcName = t.getAttribute('data-jos-tech');
         jpStTc.assignedTo = jpStTc.assignedTo === tcName ? '' : tcName;
-        renderJobPicker(jpPopTc);
+        jobPickerRefreshAssignmentSection(jpPopTc);
         return;
       }
       if (act === 'jobs-picker-create') {
