@@ -796,6 +796,34 @@ about where in the code the cause lives. Treating "still broken" as automatic pr
 was wrong would have sent the second investigation looking inside the comboPop code, where there
 was nothing left to find.
 
+### 4.8 The bug class itself: conditionally-present blocks ahead of stable siblings
+
+Three separate real bugs in Jobs (§10's combo-pop, the tab-switch `replaceWith()`, and the
+drawer/bulk-bar cascade below) all reduce to the same structural cause: `morphTableChildren`'s
+non-keyed path compares children **by index**, not by identity. Anything that can legitimately be
+`''` on one render and real markup on the next — a popover that gets reparented out from under its
+expected slot, a bulk-action bar that only exists once something's selected, a drawer that only
+exists while open — shifts every later sibling's index the moment its own presence changes.
+`morphTableNode`'s tag-mismatch fallback (`parent.replaceChild`) then destroys and rebuilds
+everything from that point on, including elements with no relationship to whatever actually
+changed.
+
+**The fix, generalized**: never concatenate a maybe-empty render block directly into a non-keyed
+morph target. Wrap it with `stableSlot(className, html)` (next to `morphTableInto`) instead — an
+always-present `<div>` whose own tag never changes, so only its *contents* are diffed, never its
+siblings' positions. This also covers a subtler case two conditional blocks sitting next to each
+other can hit: if block A is a `<div>` and block B is an `<aside>`, and only one of the two is
+present on a given render, they mismatch *each other's* tag at that shared index — reordering
+alone doesn't fix that, only giving each its own stable wrapper does.
+
+**The permanent guardrail**: `warnDestructiveMorph()` fires a `console.warn` (deduped per parent +
+old-tag/new-tag pair, per session) the first time `morphTableNode`'s destructive fallback actually
+runs on a non-keyed parent. Always on, not a dev-mode flag — this is what turns the next instance
+of this bug class into an immediate console line instead of another multi-day "why does this
+still flash" investigation. One legitimate case is exempted: a table cell's display-span swapping
+for its edit-input/select/textarea on the same field (`rendererRegistry`'s normal display/edit
+toggle) — that's an intentional, expected tag change, not this bug class.
+
 ---
 
 ## 5. Realtime — what happens when another browser changes a Lead

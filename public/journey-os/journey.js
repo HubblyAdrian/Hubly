@@ -9020,6 +9020,42 @@
     tmp.innerHTML = html;
     morphTableChildren(root, tmp);
   }
+  // Wrap a render block whose HTML can legitimately be '' on one render and
+  // real markup on the next (a conditionally-open drawer, a bulk-action bar
+  // that only appears once something's selected, etc.) in an always-present
+  // container. Anywhere this sits inside a non-keyed morph target (see
+  // morphTableChildren below), skipping this wrapper and concatenating the
+  // maybe-empty string directly is what caused three separate real bugs:
+  // the block's presence toggling shifts every later sibling's index, and
+  // morphTableNode's tag-mismatch fallback destroys and rebuilds all of them
+  // — see HUBLY_RENDERING_STANDARD.md §4.8. The wrapper's own tag/class never
+  // changes, so only its contents are ever diffed; nothing after it moves.
+  function stableSlot(className, innerHtml) {
+    return '<div class="jos-slot ' + className + '">' + (innerHtml || '') + '</div>';
+  }
+  // Session-deduped diagnostic for the same bug class: fires the first time
+  // morphTableNode's destructive fallback (tag mismatch -> replaceChild, which
+  // destroys and rebuilds the old node and everything morphTableChildren
+  // hasn't visited yet under the same parent) hits a given parent+tag-pair.
+  // Always on (not a dev-mode flag) — a flag only helps if someone remembers
+  // to flip it before the bug reappears, and the whole point is not needing
+  // that. Cheap: a Set lookup plus, at most once per unique (parent, old tag,
+  // new tag) combo per session, a console.warn — never affects behavior.
+  var __morphDestructiveWarned = {};
+  function warnDestructiveMorph(parent, oldNode, newNode) {
+    var parentKey = (parent && parent.id) || (parent && parent.className) || (parent && parent.tagName) || '?';
+    var oldTag = oldNode && oldNode.nodeType === 1 ? oldNode.tagName : ('#' + (oldNode && oldNode.nodeType));
+    var newTag = newNode && newNode.nodeType === 1 ? newNode.tagName : ('#' + (newNode && newNode.nodeType));
+    var key = parentKey + '|' + oldTag + '->' + newTag;
+    if (__morphDestructiveWarned[key]) return;
+    __morphDestructiveWarned[key] = true;
+    console.warn(
+      '[hubly-morph] destructive replace inside <' + parentKey + '>: <' + oldTag + '> -> <' + newTag + '>. ' +
+      'A conditionally-present block ahead of this position likely changed presence between renders, shifting ' +
+      'every later sibling\'s index (see HUBLY_RENDERING_STANDARD.md §4.8). If this is a maybe-empty render ' +
+      'block, wrap it with stableSlot() instead of concatenating it directly.'
+    );
+  }
   function morphTableAttrsAndProps(oldEl, newEl) {
     var i, name;
     var oldAttrs = oldEl.attributes;
@@ -9058,6 +9094,17 @@
   }
   function morphTableNode(parent, oldNode, newNode) {
     if (oldNode.nodeType !== newNode.nodeType || (oldNode.nodeType === 1 && oldNode.tagName !== newNode.tagName)) {
+      // One tag-mismatch shape is deliberate, not a bug: a table cell
+      // switching between its display() span and its edit() input/select/
+      // textarea for the SAME field (rendererRegistry, see tableCellHtml) —
+      // both variants stamp the same data-jos-field, which is how the two
+      // are told apart from an unrelated structural cascade below.
+      var sameFieldEditToggle = oldNode.nodeType === 1 && newNode.nodeType === 1 &&
+        oldNode.getAttribute && newNode.getAttribute &&
+        oldNode.getAttribute('data-jos-field') && oldNode.getAttribute('data-jos-record-id') &&
+        oldNode.getAttribute('data-jos-field') === newNode.getAttribute('data-jos-field') &&
+        oldNode.getAttribute('data-jos-record-id') === newNode.getAttribute('data-jos-record-id');
+      if (!sameFieldEditToggle) warnDestructiveMorph(parent, oldNode, newNode);
       parent.replaceChild(newNode, oldNode);
       return;
     }
@@ -18037,9 +18084,24 @@
       (mainView === 'calendar' ? calRail : listRail) +
       '</div>' +
       '<div class="jos-jobs-drawer-backdrop' + (drawerOpen ? ' open' : '') + '" data-jos-act="jobs-drawer-close"></div>' +
-      renderJobsBulkBar(root) +
-      drawer + statusMenu + rowMenu + gcalCreatePop +
+      // statusMenu/rowMenu/gcalCreatePop/FAB are unconditional (always render
+      // real markup, even when visually hidden) — safe wherever they sit.
+      // renderJobsBulkBar(root) and drawer are NOT: both can be '' on one
+      // render and real markup on the next (bulk-select count crossing 0<->1+,
+      // drawer opening/closing), which used to sit ahead of these unconditional
+      // elements and destroy/rebuild all of them — including the drawer itself
+      // when only the bulk bar's presence changed, since a <div> (bulk bar) and
+      // an <aside> (drawer) sitting adjacent in a non-keyed diff mismatch each
+      // other's tag the moment only one of the two is present. Putting the
+      // unconditional elements first and wrapping each conditional block in
+      // stableSlot() (see its own comment) fixes both problems at once: the
+      // unconditional elements never move, and the two conditional blocks can
+      // no longer perturb each other or anything else. See
+      // HUBLY_RENDERING_STANDARD.md §4.8.
+      statusMenu + rowMenu + gcalCreatePop +
       '<button type="button" class="jos-jobs-fab" data-jos-act="' + (mainView === 'calendar' ? 'jobs-gcal-create-menu' : 'jobs-create') + '" aria-label="' + (mainView === 'calendar' ? 'Create' : 'New Job') + '">+</button>' +
+      stableSlot('jos-jobs-bulkbar-slot', renderJobsBulkBar(root)) +
+      stableSlot('jos-jobs-drawer-slot', drawer) +
       // Last sibling, deliberately — positionJobsComboPop() reparents this node
       // straight to root (document position doesn't matter for position:fixed,
       // only for how the *next* render's diff sees it) for the same reason
