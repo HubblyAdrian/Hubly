@@ -2392,9 +2392,24 @@
       '</div>' +
     '</div>';
   }
+  // The greeting on Home ("Good afternoon, {name}") falls back through
+  // S._is.ownerName -> auth user_metadata.full_name -> the email's local
+  // part when neither is set (see updateDashGreeting in hubly.html) — which
+  // is exactly why a plain "adriansmithee" was showing up instead of a real
+  // name. This field is real (writes to Supabase Auth's user_metadata via
+  // updateUser, not the rest of this tab's local-only mock state) so it's
+  // the one place on this page that actually needs its own save action.
+  function ownerDisplayNameCurrent() {
+    var u = global.currentUser;
+    return (u && u.user_metadata && u.user_metadata.full_name) || (S()._is && S()._is.ownerName) || '';
+  }
   function renderSetBusiness() {
     var b = ensureSettingsOsState().business;
-    return '<div class="jos-card"><div class="jos-kicker">Business</div><p class="jos-muted">Owns name, address, time zone, currency, tax defaults, logo URL, and contact info.</p>' +
+    return '<div class="jos-card"><div class="jos-kicker">Your profile</div><p class="jos-muted">The name Hubly uses to greet you on Home.</p>' +
+      '<div class="jos-set-form jos-mt">' +
+      '<label>Your name<input id="jos-set-owner-name" type="text" value="' + esc(ownerDisplayNameCurrent()) + '" placeholder="Full name"></label>' +
+      '</div><div class="jos-btn-row jos-mt">' + dsBtn('set-owner-name-save', 'Save name', 'jos-btn-brand jos-btn-sm') + '</div></div>' +
+      '<div class="jos-card jos-mt"><div class="jos-kicker">Business</div><p class="jos-muted">Owns name, address, time zone, currency, tax defaults, logo URL, and contact info.</p>' +
       '<div class="jos-set-form jos-mt">' +
       '<label>Business name<input id="jos-set-biz-name" type="text" value="' + esc(b.name || '') + '"></label>' +
       '<label>Address<input id="jos-set-biz-address" type="text" value="' + esc(b.address || '') + '"></label>' +
@@ -2694,6 +2709,21 @@
         }
         if (target && root) root._josSetTab = target;
         return renderSettings();
+      }
+      if (act === 'set-owner-name-save') {
+        var ownerNameVal = setVal('jos-set-owner-name');
+        if (!ownerNameVal) { toast('Enter your name'); return; }
+        var authDb = jobsDb();
+        if (!authDb || !authDb.auth || typeof authDb.auth.updateUser !== 'function') { toast('Not connected'); return; }
+        authDb.auth.updateUser({ data: { full_name: ownerNameVal } }).then(function (res) {
+          if (res && res.error) { toast('Couldn’t save — check your connection and try again'); return; }
+          if (res && res.data && res.data.user) global.currentUser = res.data.user;
+          if (S()._is) S()._is.ownerName = ownerNameVal;
+          toast('Name updated');
+          if (typeof global.updateDashGreeting === 'function') global.updateDashGreeting();
+          renderSettings();
+        }).catch(function () { toast('Couldn’t save — check your connection and try again'); });
+        return;
       }
       if (act === 'set-business-save') {
         var os = ensureSettingsOsState();
@@ -15430,7 +15460,7 @@
       if (t.hasAttribute('data-jos-jp-date')) {
         st.date = t.value;
         st.time = '';
-        renderJobPicker(pop);
+        jobPickerRefreshJobDetails(pop);
         jobPickerLoadAvailability(pop, t.value);
       }
     });
@@ -15451,11 +15481,11 @@
       st2.busyWindows = windows || [];
       st2.busyWindowsDate = dateVal;
       st2.slotsLoading = false;
-      if (pop.classList.contains('open')) renderJobPicker(pop);
+      if (pop.classList.contains('open')) jobPickerRefreshJobDetails(pop);
     }).catch(function () {
       var st3 = jobPickerState(pop);
       st3.slotsLoading = false;
-      if (pop.classList.contains('open')) renderJobPicker(pop);
+      if (pop.classList.contains('open')) jobPickerRefreshJobDetails(pop);
     });
   }
 
@@ -15594,13 +15624,27 @@
           esc(formatJobMinutes(mins)) + '</button>';
       }).join('') + '</div>' + (st.slotsLoading ? '<div class="jos-jp-slot-hint">Checking availability…</div>' : '');
     }
-    return '<div class="jos-jp-section"><h4>Job Details</h4>' +
+    return '<div class="jos-jp-section" id="jos-jp-jobdetails-section"><h4>Job Details</h4>' +
       svcInner +
       '<div class="jos-jp-extra">' +
       '<label class="jos-jp-field"><span>Date</span><input type="date" data-jos-jp-date value="' + esc(dateVal) + '"></label>' +
       '<div class="jos-jp-field"><span>Time</span>' + slotsHtml + '</div>' +
       '<label class="jos-jp-field"><span>Location</span><input type="text" data-jos-jp-address value="' + esc(addr) + '" placeholder="Service address"></label>' +
       '</div></div>';
+  }
+
+  // Date/time-slot changes never affect the footer's Create Job/Save as
+  // Draft disabled state (canCreate only depends on st.who/st.service), so
+  // they can safely swap just this one section instead of the whole card
+  // via renderJobPicker() — which, applied to the Date field specifically,
+  // was doing more than just flashing: replacing pop.innerHTML resets
+  // .jos-jp-body's scroll position to the top, so picking a date bounced
+  // the user back up to the Customer section instead of leaving Time/
+  // Location in view right where they were working.
+  function jobPickerRefreshJobDetails(pop) {
+    var st = jobPickerState(pop);
+    var section = pop.querySelector('#jos-jp-jobdetails-section');
+    if (section) section.outerHTML = jobPickerJobDetailsSection(pop, st);
   }
 
   // Split out of jobPickerJobDetailsSection for the same reason as
@@ -20542,7 +20586,7 @@
       if (act === 'jobs-picker-pick-time') {
         var jpPopTm = el('jos-job-picker'); var jpStTm = jobPickerState(jpPopTm);
         jpStTm.time = t.getAttribute('data-jos-time');
-        renderJobPicker(jpPopTm);
+        jobPickerRefreshJobDetails(jpPopTm);
         return;
       }
       if (act === 'jobs-picker-pick-tech') {
