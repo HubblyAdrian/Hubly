@@ -1451,3 +1451,76 @@ errors.
 against every render trigger the page actually has (here: open-record, field-edit, drag, resize,
 create — five triggers, only two of which were ever tested), not just the one the exception was
 originally written to protect.
+
+### The actual root cause of "Jobs still renders on every click" — found after three investigations that each came back clean, for a real reason
+
+The two fixes above (weather callback, Calendar's full-replace) were both real, both correctly
+verified, and neither one was it. The user kept seeing a flash on ordinary Status/Date/Time edits
+after both shipped. Three separate investigation passes — render-count tracing, realtime-echo
+tracing with live `console.log` instrumentation deployed to production, and a side-by-side
+Jobs-vs-Leads trace — all came back clean, because all three were instrumenting the JS layer, and
+the bug was one layer below it, in a structural HTML-ordering issue that only a live DOM mutation
+diff (not a call-count or timing trace) could surface.
+
+**Root cause**: `positionJobsComboPop()` reparents the Status/Service/etc. combo-pop out of its
+rendered position — `if (pop.parentElement !== root) root.appendChild(pop);` — straight to
+`#jos-jobs-root`, for the same reason `positionLeadsComboPop()` does the identical thing on Leads:
+a `position:fixed` popover nested under a scrolled/sticky table cell measures wrong for its first
+~250ms. Both pages do this. The difference is where the popover sits relative to its siblings in
+the *generated HTML*, not in the reparenting trick itself:
+
+- **Leads**: `renderLeadsBulkBar() + renderLeadsComboPop() + '</div>'` — combo-pop is the *last*
+  child of its container. Reparenting it out just shortens that container by one, at the end.
+  Nothing downstream to disturb.
+- **Jobs (before this fix)**: `renderJobsComboPop() + drawer + statusMenu + rowMenu +
+  gcalCreatePop + FAB button` — combo-pop sat *before* five other elements in the same container
+  (`.jos-jobs-shell`), including the drawer. Once reparented out, the *next* render's diff
+  compares the live DOM (pop missing from its expected slot) against the fresh HTML (which always
+  describes the pop as present there) — a real length mismatch.
+  `morphTableChildren`'s non-keyed fallback (§4, everything that isn't `TR`/`TH`/`TD`) doesn't
+  reconcile a mismatch like that with a targeted patch — it does `parent.replaceChild()`, and that
+  cascades through every sibling positioned after the pop's expected slot: the drawer, both
+  popover-menu placeholders, and the FAB button all got destroyed and rebuilt from scratch, not
+  patched.
+
+**Why it was invisible almost everywhere**: the FAB button and the two popover placeholders are
+`display:none`/`hidden` when inactive — destroying and rebuilding an invisible element produces
+no visible change, which is exactly why the granular MutationObserver traces from the two earlier
+fixes' verification passes didn't flag it as a problem. But the drawer is not hidden when it's
+open, and `.jos-jobs-drawer` has `animation: josSlideIn .22s ease both` — a keyframe animation
+that auto-plays whenever the browser sees the element freshly composited, which is exactly what
+happens to a `replaceChild`'d node. Leads' equivalent panel (`.jos-ld-main`) uses a `transition`
+on a node that persists across renders, not an `animation` on a node that gets recreated — a
+second, independent reason it wouldn't have shown the same symptom even in the hypothetical case
+where it *was* subject to the same cascade (confirmed live it isn't: a granular mutation trace on
+a real Leads Status edit at 200+ leads touches nothing but the combo-pop node itself).
+
+**Confirmed end-to-end with live DOM node identity, not inferred from the structural diff alone**:
+tagged the live drawer DOM node, opened it, edited Status from inside it once (no effect — the
+combo-pop hadn't been reparented yet this session), then edited a second time — the tag was gone;
+a brand-new node had replaced it, replaying the slide-in animation. That's the flash. A parallel
+edit on a plain inline-edited field (Date, which never touches the combo-pop system) left the
+tagged node untouched, confirming the bug was specific to `type: 'select'` fields.
+
+**Fix**: moved `renderJobsComboPop(root)` to be the last element in the concatenated HTML string,
+after the FAB button — matching Leads' structure exactly, so there's nothing after it to disturb
+when it gets reparented. Confirmed no CSS selector or JS code depends on its prior sibling
+position.
+
+**Also true, and flagged as a known but out-of-scope adjacent risk, not fixed here**:
+`renderJobsBulkBar()` is *also* conditionally empty vs. present (`if (!ids.length) return '';`)
+and still sits before the drawer/statusMenu/rowMenu/gcalCreatePop/FAB. Toggling bulk-select
+selection while the drawer is simultaneously open could in principle trigger the same cascade via
+a different element than the one just fixed. Real, same bug class, much rarer combination of
+state in practice (bulk-selecting rows and having a single job's drawer open are usually
+mutually exclusive user flows) — worth a follow-up pass, not folded into this fix.
+
+Verified live via Playwright: the exact same drawer-identity-tagging test that caught the bug now
+shows the drawer node survives a Status edit from inside it, repeated three times in a row (the
+second edit was the one that always broke before — comboPop already reparented from the first);
+the granular mutation trace for a repeat Status edit on the List view dropped from 19 mutation
+records including FAB-button churn to 2, with zero FAB/popover churn; drag-to-reschedule and
+resize on Calendar re-run end-to-end and still update state and persist correctly; the same
+drawer-identity check re-run on Calendar's own drawer (opened via a job pill, not a table cell)
+also now survives; List view filtering and row visibility re-checked and unaffected; zero console
+errors across every test.

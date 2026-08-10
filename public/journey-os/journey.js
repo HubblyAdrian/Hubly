@@ -8824,7 +8824,6 @@
     pop.classList.add('jos-positioned');
   }
   function openLeadsComboPicker(root, recordId, key, inPanel) {
-    try { console.log('[HUBLY_TRACE] LEADS openLeadsComboPicker (interaction-triggered) t=' + Date.now()); } catch (eTrc) {}
     var col = findLeadsColumnDef(root, key);
     if (!col || col.editable === false) return;
     root._josLeadCombo = { recordId: recordId, key: key, search: '', inPanel: !!inPanel };
@@ -8835,7 +8834,6 @@
     if (s) s.focus({ preventScroll: true });
   }
   function closeLeadsComboPicker(root) {
-    try { console.log('[HUBLY_TRACE] LEADS closeLeadsComboPicker (interaction-triggered) t=' + Date.now()); } catch (eTrc) {}
     if (!root._josLeadCombo) return;
     root._josLeadCombo = null;
     renderLeads();
@@ -8981,7 +8979,6 @@
   }
 
   function renderLeads() {
-    try { console.log('[HUBLY_TRACE] LEADS renderLeads (render entry) t=' + Date.now()); } catch (eTrc) {}
     var root = ownPixelView('v-leads', 'jos-leads-root');
     if (!root) return;
     setLeadsMode(true);
@@ -10295,7 +10292,6 @@
   // up silently never saving: the edit worked, the UI updated, and the
   // very next refresh reverted it because nothing had actually persisted.
   function persistLeadsSoon() {
-    try { console.log('[HUBLY_TRACE] LEADS persistLeadsSoon CALLED -> persistPipelineSoon (450ms debounce, writes businesses table, not realtime-subscribed) t=' + Date.now()); } catch (eTrc) {}
     try { if (typeof global.persistPipelineSoon === 'function') global.persistPipelineSoon(); } catch (e) {}
   }
   function mutateLead(mutator) {
@@ -17270,7 +17266,6 @@
   }
 
   function rerenderJobsOsFrom(root) {
-    try { console.log('[HUBLY_TRACE] rerenderJobsOsFrom (interaction-triggered) t=' + Date.now()); } catch (eTrc) {}
     root = root || jobsOsRoot();
     if (root && (root.id === 'jos-calendar-root' || root._josForcedView === 'calendar' || root._josJobsMainView === 'calendar')) {
       return renderCalendar();
@@ -18043,9 +18038,23 @@
       '</div>' +
       '<div class="jos-jobs-drawer-backdrop' + (drawerOpen ? ' open' : '') + '" data-jos-act="jobs-drawer-close"></div>' +
       renderJobsBulkBar(root) +
-      renderJobsComboPop(root) +
       drawer + statusMenu + rowMenu + gcalCreatePop +
       '<button type="button" class="jos-jobs-fab" data-jos-act="' + (mainView === 'calendar' ? 'jobs-gcal-create-menu' : 'jobs-create') + '" aria-label="' + (mainView === 'calendar' ? 'Create' : 'New Job') + '">+</button>' +
+      // Last sibling, deliberately — positionJobsComboPop() reparents this node
+      // straight to root (document position doesn't matter for position:fixed,
+      // only for how the *next* render's diff sees it) for the same reason
+      // positionLeadsComboPop() does on Leads: a position:fixed popover nested
+      // under a scrolled/sticky table cell measures wrong for its first ~250ms.
+      // Once reparented, the live DOM no longer has this node here, but the
+      // fresh HTML on every subsequent render still describes it as being here
+      // - morphTableChildren's non-keyed diff sees that as a real length
+      // mismatch and replaceChild()s every sibling positioned after it. This
+      // used to sit BEFORE the drawer/statusMenu/rowMenu/FAB, so every edit
+      // after the first time the picker opened destroyed and rebuilt the open
+      // drawer (retriggering its josSlideIn animation - the visible flash).
+      // Leads' equivalent combo-pop was already last with nothing after it to
+      // disturb; matching that here is the actual fix, not a CSS patch over it.
+      renderJobsComboPop(root) +
       '</div>';
     // Both views morph in place (same engine Leads uses — see
     // morphTableInto above) instead of destroying and rebuilding the whole
@@ -19796,7 +19805,6 @@
   // (the whole point of optimistic UI), so this doesn't change that — it
   // only makes an actual failure loud instead of invisible.
   function persistJobPatch(job, patch) {
-    try { console.log('[HUBLY_TRACE] persistJobPatch CALLED job.dbId=' + (job && job.dbId) + ' patch=' + JSON.stringify(patch) + ' t=' + Date.now()); } catch (eTrc) {}
     try {
       var d = jobsDb();
       if (!d || !job || !job.dbId) return;
