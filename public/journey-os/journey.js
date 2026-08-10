@@ -18074,7 +18074,19 @@
 
     var jobsPageHtml =
       '<div class="jos-jobs-shell' + (mainView === 'calendar' ? ' is-calendar' : '') + '">' +
-      '<div class="jos-jobs-layout">' +
+      // Once the entrance animation has genuinely finished once (flag set by
+      // the animationend handler in wireJobsRoot, alongside the direct
+      // el.style.animation='none' that actually freezes it for Chrome's
+      // position:fixed-containing-block purposes), the template declares
+      // that frozen style itself instead of leaving it as a side channel
+      // morphTableAttrsAndProps doesn't know about. Every render's fresh
+      // HTML then already matches the live DOM's style attribute, so the
+      // attrs-sync's normal "remove what the template doesn't have" pass
+      // has nothing to remove - it never has to choose between clearing a
+      // stale style (its real job, still fully intact for every other
+      // element) and preserving this one. Un-set (animation plays normally)
+      // until the first real animationend, exactly once per page load.
+      '<div class="jos-jobs-layout"' + (root._josJobsLayoutAnimDone ? ' style="animation:none"' : '') + '>' +
       '<main class="jos-jobs-main">' +
       '<header class="jos-jobs-header">' +
       (mainView === 'calendar'
@@ -18178,6 +18190,14 @@
     // .jos-jobs-layout's box happened to sit instead.
     root.addEventListener('animationend', function (e) {
       if (e.target && e.target.style) e.target.style.animation = 'none';
+      // .jos-jobs-layout specifically also needs the *next render's own
+      // template* to already carry this frozen style (see jobsPageHtml's
+      // comment) - otherwise morphTableAttrsAndProps correctly does its
+      // normal job of clearing an inline style the template doesn't
+      // mention, undoing the freeze above and restarting the animation.
+      if (e.target && e.target.classList && e.target.classList.contains('jos-jobs-layout')) {
+        root._josJobsLayoutAnimDone = true;
+      }
     });
     wireTimeClockPicker(root);
     // Same outside-click-close pattern as Leads' column menu/add-field

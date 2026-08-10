@@ -235,3 +235,98 @@ customer command-center/profile panel (`journey.js` ~12755-12757), which is plau
 the still-open #90 ("clicking customer on a job should open the sidebar"). Not confirmed live,
 not fixed — flagged here rather than silently dropped or silently patched without checking, same
 standard as everything else in this file.
+
+---
+
+## CONFIRMED AND FIXED — the actual root cause of "Jobs flashes after every click" (found on the fifth pass)
+
+**File**: `public/journey-os/journey.js`
+**Elements**: `.jos-jobs-layout`'s render template (~line 18077), the `animationend` listener in
+`wireJobsRoot` (~line 18191)
+
+This is the real explanation the first three Jobs fixes (comboPop reparenting, tab-switch
+`replaceWith()`, bulk-bar/drawer destroy-rebuild) never fully accounted for — the symptom kept
+being reported after all three shipped because this is a **completely different mechanism**, one
+`warnDestructiveMorph()` (see the rendering standard's §4.8) is structurally unable to catch: it
+watches for node destruction, and here nothing is ever destroyed. A node stays alive the whole
+time; only one of its attributes gets silently toggled.
+
+### What was actually happening
+
+`.jos-jobs-layout` (the wrapper around the *entire* Jobs page content — header, search, table, KPI
+panel; everything except the sidebar) has a one-time CSS entrance animation
+(`animation: josHomeIn .28s ease both`). A real, separate fix exists for a genuine Chrome bug — an
+element with an active `fill-mode:both` animation keeps acting as a `position:fixed` containing
+block even after it visually settles, breaking popover positioning — by freezing the animation via
+an inline `style="animation:none"` the moment it ends (`animationend` listener in `wireJobsRoot`).
+
+The render template for `.jos-jobs-layout` never included a `style=` attribute of its own. So on
+the *next* re-render, `morphTableAttrsAndProps` (the morph engine's attribute-sync — doing exactly
+its real job of keeping the live DOM honest against the fresh template) saw the live node had a
+`style` attribute the fresh template didn't, and removed it. Removing that override let the CSS
+rule re-apply, which restarts the animation from `opacity:0` per spec. ~280ms later it finishes,
+`animationend` fires again, the handler re-freezes it — priming the identical trap for the next
+render. Any Jobs re-render landing more than ~280ms after the previous one retriggered it: a search
+keystroke's debounced re-render, a field edit, opening or closing the drawer — which is why it
+explained "flashes after every click" far better than any of the three fixes that came before it,
+and visibly affected the *whole page*, not one element.
+
+### Found on a fifth, evidence-driven pass
+
+The first four rounds (comboPop, tab-switch, bulk-bar/drawer, plus re-confirming `warnDestructiveMorph()`
+came back clean) all closed real bugs but didn't explain a persisting symptom. This one was found
+from real video evidence — paused frames from a screen recording showing the entire Jobs content
+pane visibly faded mid-search-typing — traced by extracting dense frame sequences (ffmpeg) around
+the exact moment, then confirmed with a live `MutationObserver` scoped broadly to `document.body`
+(not just the table, which is why three earlier live-tracing passes missed it — they were scoped
+too narrowly to catch a change on an ancestor of the observed root).
+
+### The fix
+
+The template for `.jos-jobs-layout` now tracks whether the animation has genuinely finished once,
+in the same `root`-scoped state bag every other stateful Jobs concern already uses:
+```js
+'<div class="jos-jobs-layout"' + (root._josJobsLayoutAnimDone ? ' style="animation:none"' : '') + '>'
+```
+and the `animationend` handler — its original unconditional freeze completely untouched, still
+firing for any animated element exactly as before — additionally sets that flag specifically when
+the target is `.jos-jobs-layout`. Once set, every subsequent render's fresh HTML already carries
+`style="animation:none"`, so the attrs-sync has nothing to remove. Neither of the two things this
+sits between gets reopened: the Chrome containing-block workaround is byte-for-byte unchanged: the
+morph engine's attrs-sync isn't special-cased or weakened anywhere — it's just correctly syncing a
+template that's now accurate.
+
+### Verified
+
+- `requestAnimationFrame` opacity poll on `.jos-jobs-layout` across a real search-triggered
+  re-render: **post-fix, 51 samples, zero dips below `opacity:1`**.
+- Negative control (identical probe, code reverted via `git stash`): opacity drops to **`0` at
+  19ms**, climbs a textbook ease curve — 0.04, 0.14, 0.26, 0.40, 0.52, 0.63, 0.71, 0.78, 0.84,
+  0.89, 0.92, 0.95, 0.97, 0.98, 0.999 — and reaches **`1` at ~298ms**, matching the declared
+  `.28s` duration almost exactly. That confirms both the mechanism and that the probe is sensitive
+  enough to have caught it if the fix hadn't worked.
+- `.jos-jobs-layout`'s frozen style confirmed stable (unchanged) across three consecutive real
+  re-renders.
+- Attrs-sync's normal behavior confirmed untouched elsewhere: set an arbitrary stale inline style
+  on an unrelated Jobs element, triggered a real re-render — still correctly cleared, element
+  identity preserved (patched, not destroyed).
+- Checked for the same `animationend` + inline-style-freeze pattern anywhere else in the app: exists
+  in exactly one place (this listener). Within Jobs, `.jos-jobs-drawer` is separately immune (its
+  own static `.open{animation:none}` CSS rule, baked into every render's template already, never
+  touched by attrs-sync); `.jos-jobs-page` (same CSS animation pattern) is dead CSS, never applied
+  to any current markup.
+
+### One thing tested but not cleanly resolved either way
+
+Tried to directly reproduce the original popover-mispositioning symptom the `animationend` handler
+exists to prevent, in both the fixed and unfixed state, using the column add-field popover
+(`.jos-ld-col-menu`) as the test case. Neither state showed a measurable positioning difference —
+tracing why, that popover is synchronously reparented out of `.jos-jobs-layout`'s subtree
+(`root.appendChild(menu)`) before its position is ever set or painted, which may make it
+structurally immune to this specific concern for reasons unrelated to the fix. This doesn't
+threaten the fix's safety — the imperative freeze this handler performs is byte-for-byte unchanged,
+and the fix can only shrink the total time any animated element in Jobs is "live" (never grow it) —
+but it's a reasoned guarantee, not a reproduced one, and is recorded as such rather than glossed
+over. If the original Chrome positioning bug is ever suspected to have regressed, this is the place
+to start: find a popover that is *not* reparented before paint (a native `<select>` inside the
+Jobs drawer is the most likely candidate) and test that instead.
