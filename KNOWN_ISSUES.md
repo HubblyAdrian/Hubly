@@ -124,3 +124,55 @@ recurring per-click bug, and confirming which requires the same live,
 DOM-identity-tagged reproduction used for every fix in this file, not
 inference from a console line. Flagged here for whoever picks it up next;
 out of scope for this fix.
+
+---
+
+## RESOLVED — the three `warnDestructiveMorph()` warnings flagged above (Home, Customers, Leads)
+
+Investigated with the same rigor as every fix in this file: code-traced each warning's parent to
+its render function, then confirmed live (DOM-identity tagging + repeated real interaction, not
+inference from the console line alone). None of the three original warnings is the Jobs bug class.
+One additional, different warning turned up during the investigation and is documented here too.
+
+**Home (`jos-home-customize`, `<#3> -> <DIV>`) and Leads (`jos-ld-page`, `<#3> -> <SECTION>`) and
+Customers list (`jos-cc-level-1`, `<DIV> -> <HEADER>`) — all three are the identical, one-time,
+benign case**: each page's loading stub (e.g. `<div class="jos-home-loading">Loading Home…</div>`)
+happens to share its outer `<div>` tag with that page's real first-paint content, so the morph
+engine matches them by position and recurses one level deeper before finding the real mismatch (a
+lone text node vs. the real content's first element) — which is exactly the loading-stub-into-
+real-content swap that render is supposed to do on first paint, just resolved one level down the
+tree instead of at the top. Structurally guaranteed to fire at most once per page load, since
+`if (!root.firstChild)` gates the loading stub to true first paint only.
+
+Confirmed live, not just reasoned about: DOM-identity-tagged a broad set of elements on each page
+(Home's KPI cards/quick-action buttons/customize panel/FAB, Customers' header/toolbar/sort control,
+Leads' title/toolbar) and drove heavy real interaction on each — toggling dashboard-customization
+checkboxes, switching layout presets, opening the FAB sheet, searching and sorting Customers and
+opening a profile, searching and changing a Leads filter. Zero destruction on any of it, and none
+of the three warnings fired again post-boot. Confirmed one-time, not recurring — not the Jobs bug
+class. No fix needed.
+
+**New, different finding — Customers level-1 ↔ level-2 (list ↔ customer profile) switch**: this
+one was *not* one of the three originally reported; it surfaced during the investigation above
+when opening a customer's profile as part of testing Customers interaction. `renderCustomers()`
+morphs two genuinely different top-level layouts (`renderCustomersPageInner`'s "list" branch vs.
+its "command center" / profile branch) into the *same* `#jos-customers-root`, and they share
+enough outer tag structure that the morph engine partially matches them before hitting a real
+mismatch — same low-level mechanism as the other three, but a different trigger.
+
+Unlike the Jobs bug, this **is** confirmed to recur — every list→profile and profile→list toggle
+hits it, not just once on first paint (repeated the toggle three times: open a profile, back to
+list, open a different profile; the same low, flat 8-mutation cost every time, no escalation).
+But it is **not** the same bug class as the Jobs fix, for a concrete, checked reason: the Jobs bug
+was a conditionally-present block destroying *unrelated* stable siblings that had nothing to do
+with the interaction (editing Status destroying the FAB). Here, tagged elements *outside*
+`#jos-customers-root` (the sidebar nav item, the topbar title) survived the entire sequence
+untouched — the blast radius is fully contained to the one subtree that's genuinely supposed to
+change when the user navigates from the customer list to a specific customer's profile, at a
+small, flat, non-escalating cost. That's the same shape as the already-accepted Jobs Calendar
+full-replace pattern (§10), not the anti-pattern `stableSlot()` exists to fix — `stableSlot()`
+wraps a block that's sometimes empty among otherwise-stable siblings; there's no such block here,
+the whole subtree is intentionally different between the two levels. Not fixed, because there's
+nothing here to fix by the same mechanism — recorded as a real, understood, low-cost pattern in
+case it's ever worth revisiting as its own architectural question (e.g. keyed/incremental morphing
+between the two levels instead of a full swap), not because it was missed.
