@@ -16541,8 +16541,11 @@
     var baseInput = Object.assign({}, input);
     delete baseInput.frequency; delete baseInput.occurrences; delete baseInput.customDays;
     var dates = (freq && freq !== 'none') ? recurringJobDates(baseInput.date, freq, occurrences, customDays) : [baseInput.date];
-    var groupId = dates.length > 1 ? ('rjob_' + Date.now()) : '';
+    var isSeries = dates.length > 1;
+    var groupId = isSeries ? ('rjob_' + Date.now()) : '';
     var recurTag = groupId ? buildRecurTag(groupId, freq, customDays) : '';
+    var scheduleId = null;
+    var legacyFallback = false; // only used if the real schedule row fails to create
 
     // One createJob() call per occurrence, sequential (not Promise.all) so
     // a mid-series failure stops cleanly instead of leaving partial,
@@ -16550,14 +16553,57 @@
     // rare (same createJob() every other path already trusts), but a
     // 12-occurrence series is exactly the case where "some succeeded, some
     // silently didn't" would be hardest to notice.
+    //
+    // Section 12/Phase 2: the first occurrence is created before the
+    // recurring_schedules row exists, because the real customer (and
+    // therefore the schedule's real customer_id — no name-matching, per
+    // spec) is only known once createJob()'s own findOrCreateCustomer has
+    // resolved it. Every occurrence after the first is created with
+    // recurringScheduleId already set from the start; occurrence 0 gets a
+    // one-time patch once the schedule id is known.
     var created = [];
     function createNext(i) {
       if (i >= dates.length) return Promise.resolve();
       var occInput = Object.assign({ status: 'scheduled' }, baseInput, { date: dates[i] });
-      if (recurTag) occInput.notes = [occInput.notes, recurTag].filter(Boolean).join('\n');
+      if (scheduleId) occInput.recurringScheduleId = scheduleId;
+      else if (legacyFallback && recurTag) occInput.notes = [occInput.notes, recurTag].filter(Boolean).join('\n');
       return global.createJob(occInput).then(function (result) {
         if (!result || result.error) return Promise.reject((result && result.error) || new Error('createJob failed'));
         created.push(result);
+        if (isSeries && !scheduleId && i === 0) {
+          return createRecurringScheduleRow({
+            customerId: (result.customer && result.customer.id) || null,
+            customerName: baseInput.name || (result.customer && result.customer.name) || '',
+            serviceName: baseInput.service || '', frequency: freq, customIntervalDays: customDays,
+            startDate: dates[0], nextOccurrenceDate: dates[0], preferredTime: baseInput.time || '',
+            amount: baseInput.amount || null, address: baseInput.address || '', assignedTo: baseInput.assignedTo || ''
+          }).then(function (schedule) {
+            if (schedule && schedule.id) {
+              scheduleId = schedule.id;
+              baseInput.customerId = (result.customer && result.customer.id) || baseInput.customerId;
+              // Mutate the raw row already sitting in created[0] (same
+              // object reference) so the mapping pass below picks up the
+              // real relationship — a DB patch alone wouldn't reach the
+              // in-memory copy already captured before the schedule
+              // existed, and occurrence 0 would stay ungrouped in the
+              // table until the next full reload.
+              if (result.job) result.job.recurring_schedule_id = scheduleId;
+              var mapped0 = (typeof global.mapJobRow === 'function' && result.job) ? global.mapJobRow(result.job) : null;
+              if (mapped0) persistJobPatch(mapped0, { recurring_schedule_id: scheduleId });
+            } else {
+              // DB write failed (offline, RLS, etc.) — degrade to the
+              // pre-Phase-1 notes tag rather than silently losing the
+              // relationship; occurrence 0 itself is patched directly
+              // since its own createJob() call already happened.
+              legacyFallback = true;
+              if (recurTag) {
+                var mapped0b = (typeof global.mapJobRow === 'function' && result.job) ? global.mapJobRow(result.job) : null;
+                if (mapped0b) persistJobPatch(mapped0b, { notes: [mapped0b.notes, recurTag].filter(Boolean).join('\n') });
+              }
+            }
+            return createNext(i + 1);
+          });
+        }
         return createNext(i + 1);
       });
     }
@@ -17889,6 +17935,68 @@
     }).sort(function (a, b) { return String(a.date).localeCompare(String(b.date)) || parseJobMinutes(a.time) - parseJobMinutes(b.time); });
   }
 
+  // Only the unfiltered "All Jobs" view groups recurring occurrences under
+  // one parent row — any active status/search/filter narrows the list down
+  // to specific jobs the user is explicitly looking for, where flattening
+  // back to real per-occurrence rows (today's behavior, unchanged) is more
+  // useful than a relationship overview. Keeps the grouping logic from
+  // having to reconcile "the schedule has occurrences that don't match
+  // this filter" against "collapse to one row" at all.
+  function jobsGroupingEligible(root) {
+    return (root._josJobsListView || 'all') === 'all' &&
+      (root._josJobsStatus || 'all') === 'all' &&
+      (root._josJobsEmployee || 'all') === 'all' &&
+      (root._josJobsService || 'all') === 'all' &&
+      (root._josJobsRoute || 'all') === 'all' &&
+      (root._josJobsDateFilter || 'all') === 'all' &&
+      (root._josJobsLocation || 'all') === 'all' &&
+      (root._josJobsSource || 'all') === 'all' &&
+      (root._josJobsTag || 'all') === 'all' &&
+      !String(root._josJobsQ || '').trim();
+  }
+  // One parent row per recurring_schedule_id, occurrences hidden by
+  // default (section 1's "not acceptable as the primary experience" —
+  // a monthly job no longer floods the table with N rows). Expand looks
+  // at the FULL job list (jobsAll()), not just `list`, so it always shows
+  // every real occurrence regardless of what page/filter produced `list`.
+  // The underlying job rows are never altered or removed — this only
+  // changes what renderJobsTable is asked to draw.
+  function buildJobsDisplayRows(list, root) {
+    var expanded = root._josExpandedSchedules || {};
+    var seenSchedule = {};
+    var today = todayStr();
+    var out = [];
+    list.forEach(function (j) {
+      var sid = j.recurringScheduleId;
+      if (!sid) { out.push(j); return; }
+      if (seenSchedule[sid]) return;
+      seenSchedule[sid] = true;
+      var allOcc = jobsAll().filter(function (x) { return x.recurringScheduleId === sid; })
+        .sort(function (a, b) { return String(a.date).localeCompare(String(b.date)) || parseJobMinutes(a.time) - parseJobMinutes(b.time); });
+      var upcoming = allOcc.filter(function (x) { return x.status !== 'cancelled' && x.status !== 'completed' && String(x.date || '') >= today; });
+      var nextOcc = upcoming[0] || allOcc[allOcc.length - 1] || j;
+      var sched = findRecurringSchedule(sid);
+      out.push({
+        id: 'sched_' + sid, dbId: null, __scheduleParent: true, scheduleId: sid,
+        customer: (sched && sched.customerName) || nextOcc.customer || j.customer,
+        service: (sched && sched.serviceName) || nextOcc.service || j.service,
+        frequency: (sched && sched.frequency) || j.recurringFreq || '',
+        date: nextOcc.date, time: nextOcc.time, status: nextOcc.status,
+        assignedTo: (sched && sched.assignedTo) || nextOcc.assignedTo || '',
+        amount: (sched && sched.amount != null) ? sched.amount : nextOcc.amount,
+        scheduleStatus: sched ? sched.status : 'active',
+        occurrenceCount: allOcc.length,
+        expanded: !!expanded[sid]
+      });
+      if (expanded[sid]) {
+        allOcc.forEach(function (occ) {
+          out.push(Object.assign({}, occ, { __scheduleChild: true, scheduleId: sid }));
+        });
+      }
+    });
+    return out;
+  }
+
   function seedDemoJobsIfEmpty() {
     if (!allowDemoSeed()) return;
     ensureJobsOsState();
@@ -18791,6 +18899,18 @@
       : '<span class="jos-pill ' + jobStatusTone(j.status) + '">' + esc(j.status || '') + '</span>';
     var whenHtml = j.date ? (esc(jobRelativeDateLabel(j.date)) + (j.time ? ' · ' + esc(j.time) : '')) : 'Not scheduled';
 
+    // Section 8: a recurring occurrence's own drawer is exactly the
+    // ordinary job drawer (every field here already edits THIS job row
+    // only, nothing cascades) — the one thing worth adding is making that
+    // explicit, since "editing a date on a recurring job" could otherwise
+    // read as ambiguous about scope. The link back to the schedule is the
+    // only way in from here to the series-wide actions (pause/resume/
+    // cancel schedule), which deliberately do NOT live on this drawer.
+    var recurringNotice = (canEdit && j.recurringScheduleId)
+      ? '<div class="jos-jd-recur-notice"><span class="jos-pill info">This visit</span><span class="jos-muted">Part of a recurring schedule — editing here only affects this visit.</span>' +
+        '<button type="button" class="jos-linkish" data-jos-act="jobs-schedule-open" data-jos-schedule-id="' + esc(j.recurringScheduleId) + '">View recurring schedule</button></div>'
+      : '';
+
     return '<aside class="jos-jobs-drawer open" id="jos-jobs-drawer">' +
       '<div class="jos-jd-head">' +
       '<div class="jos-jd-breadcrumb">Jobs <i>›</i> ' + esc(j.service || 'Job') + '</div>' +
@@ -18801,6 +18921,7 @@
       '</div>' +
       '<div class="jos-jd-head-meta">' + statusHtml + '<span class="jos-muted">' + whenHtml + '</span></div>' +
       '<div class="jos-jd-head-customer">' + jobNameField + '<span class="jos-muted">' + esc(jobNumber(j)) + '</span></div>' +
+      recurringNotice +
       '</div>' +
       tabBar +
       '<div class="jos-jd-body">' + body + '</div>' +
@@ -18830,6 +18951,102 @@
       (canComplete ? btn('jobs-complete', 'Complete Job', 'jos-btn-brand jos-btn-sm') : '') +
       '<button type="button" class="jos-icon-btn" data-jos-act="jobs-row-menu" data-jos-job-id="' + esc(j.id) + '" data-jos-drawer-menu="1" aria-label="More actions">⋯</button>' +
       '</div></div>';
+  }
+
+  // Section 6/7/8/10 — the schedule-level view. Mounts into the SAME
+  // #jos-jobs-drawer slot as renderJobDrawer (never both at once — see
+  // renderJobsPage's `drawer` assignment), reusing its .jos-jd-* CSS
+  // wholesale, so a recurring schedule and a single job feel like one
+  // family of drawer instead of two different components. `schedule` can
+  // be null (cache not populated yet, or the DB row failed to load) —
+  // every field falls back to the nearest occurrence's own data so the
+  // drawer still renders something real rather than a blank/broken state.
+  function renderRecurringScheduleDrawer(root, scheduleId, schedule) {
+    var occ = jobsAll().filter(function (x) { return x.recurringScheduleId === scheduleId; })
+      .sort(function (a, b) { return String(a.date).localeCompare(String(b.date)) || parseJobMinutes(a.time) - parseJobMinutes(b.time); });
+    var today = todayStr();
+    var upcoming = occ.filter(function (x) { return x.status !== 'cancelled' && x.status !== 'completed' && String(x.date || '') >= today; });
+    var nextOcc = upcoming[0] || occ[occ.length - 1] || null;
+    var customerName = (schedule && schedule.customerName) || (nextOcc && nextOcc.customer) || 'Customer';
+    var serviceName = (schedule && schedule.serviceName) || (nextOcc && nextOcc.service) || 'Service';
+    var freq = (schedule && schedule.frequency) || (nextOcc && nextOcc.recurringFreq) || '';
+    var amount = schedule && schedule.amount != null ? schedule.amount : (nextOcc && nextOcc.amount);
+    var scheduleStatus = (schedule && schedule.status) || 'active';
+    var statusTone = scheduleStatus === 'active' ? 'ok' : (scheduleStatus === 'paused' ? 'warn' : 'mute');
+    var editOpen = !!root._josScheduleEditOpen;
+
+    var header = '<div class="jos-jd-head">' +
+      '<div class="jos-jd-breadcrumb">Jobs <i>›</i> Recurring Schedule</div>' +
+      '<div class="jos-jd-head-top">' +
+      '<div class="jos-jd-head-icon" aria-hidden="true">↻</div>' +
+      '<div class="jos-jd-head-title"><h2>' + esc(customerName) + '</h2></div>' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="jobs-schedule-close" aria-label="Close">✕</button>' +
+      '</div>' +
+      '<div class="jos-jd-head-meta"><span class="jos-pill ' + statusTone + '">' + esc(scheduleStatus.charAt(0).toUpperCase() + scheduleStatus.slice(1)) + '</span>' +
+      '<span class="jos-muted">' + esc(serviceName) + ' · ↻ ' + esc(jobFrequencyLabel(freq) || 'Recurring') + (amount != null ? ' · ' + esc(money(amount)) + ' / visit' : '') + '</span></div>' +
+      '</div>';
+
+    var summary = '<div class="jos-jd-stack">' +
+      '<div class="jos-jd-kv"><span>Next visit</span><strong>' + (nextOcc ? esc((nextOcc.date || '—') + (nextOcc.time ? ' · ' + nextOcc.time : '')) : '—') + '</strong></div>' +
+      '<div class="jos-jd-kv"><span>Frequency</span><strong>' + esc(jobFrequencyLabel(freq) || '—') + '</strong></div>' +
+      '<div class="jos-jd-kv"><span>Price</span><strong>' + esc(amount != null ? money(amount) : '—') + '</strong></div>' +
+      (schedule && schedule.assignedTo ? '<div class="jos-jd-kv"><span>Technician</span><strong>' + esc(schedule.assignedTo) + '</strong></div>' : '') +
+      (schedule && schedule.address ? '<div class="jos-jd-kv"><span>Address</span><strong>' + esc(schedule.address) + '</strong></div>' : '') +
+      '<div class="jos-jd-kv"><span>Schedule status</span><strong>' + esc(scheduleStatus.charAt(0).toUpperCase() + scheduleStatus.slice(1)) + '</strong></div>' +
+      '</div>';
+
+    var editForm = editOpen ? renderRecurringScheduleEditForm(schedule, scheduleId) : '';
+
+    var occList = '<div class="jos-kicker jos-mt">Occurrences (' + occ.length + ')</div>' +
+      '<div class="jos-stack jos-mt">' + (occ.length ? occ.map(function (o) {
+        return '<button type="button" class="jos-list-card" data-jos-act="jobs-schedule-open-occurrence" data-jos-job-id="' + esc(o.id) + '">' +
+          '<div class="t">' + esc(o.date || '—') + (o.time ? ' · ' + esc(o.time) : '') + '</div>' +
+          '<div class="s"><span class="jos-pill ' + jobStatusTone(o.status) + '">' + esc(String(o.status || '').replace(/_/g, ' ')) + '</span></div>' +
+          '</button>';
+      }).join('') : '<div class="jos-muted">No occurrences yet</div>') + '</div>';
+
+    var body = '<div class="jos-jd-body">' + summary + editForm + occList + '</div>';
+
+    var canPause = scheduleStatus === 'active';
+    var canResume = scheduleStatus === 'paused';
+    var canCancel = scheduleStatus !== 'cancelled';
+    var footer = '<div class="jos-jd-foot"><span class="jos-jd-saved"></span><div class="jos-jd-foot-acts">' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-schedule-close">Done</button>' +
+      (schedule ? '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-schedule-edit-toggle" data-jos-schedule-id="' + esc(scheduleId) + '">' + (editOpen ? 'Close editing' : 'Edit schedule') + '</button>' : '') +
+      (canPause ? '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-schedule-pause" data-jos-schedule-id="' + esc(scheduleId) + '">Pause</button>' : '') +
+      (canResume ? '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="jobs-schedule-resume" data-jos-schedule-id="' + esc(scheduleId) + '">Resume</button>' : '') +
+      (canCancel ? '<button type="button" class="jos-btn jos-btn-sm jos-btn-danger" data-jos-act="jobs-schedule-cancel" data-jos-schedule-id="' + esc(scheduleId) + '">Cancel schedule</button>' : '') +
+      '</div></div>';
+
+    return '<aside class="jos-jobs-drawer open" id="jos-jobs-drawer">' + header + body + footer + '</aside>';
+  }
+
+  // Deliberately explicit Save-per-field rather than the rest of the
+  // app's auto-save-on-blur convention — a schedule edit is rarer and
+  // lower-frequency than a job-table cell edit, and an explicit action
+  // reads more honestly here given the section 7/13 caveat below: editing
+  // Frequency relabels the schedule only, it does not regenerate or move
+  // already-created future occurrence dates (that would need a real
+  // reschedule/regeneration design, flagged separately, not faked here).
+  function renderRecurringScheduleEditForm(schedule, scheduleId) {
+    var s = schedule || {};
+    function field(key, label, type, value, options) {
+      var inputHtml = type === 'select'
+        ? '<select data-jos-schedule-field-input="' + key + '">' + (options || []).map(function (o) {
+          return '<option value="' + esc(o[0]) + '"' + (String(value || '') === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>';
+        }).join('') + '</select>'
+        : '<input type="' + type + '" data-jos-schedule-field-input="' + key + '" value="' + esc(value == null ? '' : value) + '">';
+      return '<div class="jos-jd-kv jos-jd-kv-edit"><span>' + esc(label) + '</span>' + inputHtml +
+        '<button type="button" class="jos-icon-btn" data-jos-act="jobs-schedule-field-save" data-jos-schedule-id="' + esc(scheduleId) + '" data-jos-schedule-field="' + key + '" aria-label="Save ' + esc(label) + '" title="Save">✓</button></div>';
+    }
+    return '<div class="jos-jd-stack jos-jd-schedule-edit jos-mt">' +
+      field('frequency', 'Frequency', 'select', s.frequency, JOB_FREQUENCY_OPTIONS.filter(function (o) { return o[0] !== 'none'; })) +
+      '<div class="jos-muted jos-jd-schedule-edit-note">Relabels the schedule only — does not move already-created future visits.</div>' +
+      field('amount', 'Price', 'number', s.amount) +
+      field('assignedTo', 'Technician', 'text', s.assignedTo) +
+      field('address', 'Address', 'text', s.address) +
+      field('preferredTime', 'Preferred time', 'text', s.preferredTime) +
+      '</div>';
   }
 
   // Same shape as renderLeadsColumnAddMenu/renderLeadsAddFieldForm, plus a
@@ -18970,19 +19187,38 @@
         var on = selectedId && jobKey === String(selectedId);
         var tone = jobRowTone(j.status);
         var checked = !!(bulkSelected && bulkSelected[jobKey]);
+        var isParent = !!j.__scheduleParent;
+        var isChild = !!j.__scheduleChild;
         // A synced Google Calendar event isn't a real Hubly job — it's a
         // mirror of something that lives elsewhere, so every cell renders
         // as plain text regardless of what the column schema says,
-        // matching how it always behaved before this migration.
-        var locked = !!j.isGoogle;
-        return '<tr class="jos-ld-trow tone-' + tone + (on ? ' on' : '') + '" role="row" data-jos-record-id="' + esc(jobKey) + '">' +
-          (bulkOpen ? '<td class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-job-bulk="' + esc(jobKey) + '" aria-label="Select ' + esc(j.customer || 'job') + '"' + (checked ? ' checked' : '') + '></td>' : '') +
+        // matching how it always behaved before this migration. A
+        // recurring-schedule parent row is the same story for a different
+        // reason: it isn't a real job row at all (id is 'sched_' + the
+        // schedule's real id), so it has no dbId to patch — clicking into
+        // it opens the schedule drawer instead of inline-editing.
+        var locked = !!j.isGoogle || isParent;
+        var trAttrs = 'data-jos-record-id="' + esc(jobKey) + '"' +
+          (isParent ? ' data-jos-act="jobs-schedule-open" data-jos-schedule-id="' + esc(j.scheduleId) + '"' : '');
+        return '<tr class="jos-ld-trow tone-' + tone + (on ? ' on' : '') + (isParent ? ' jos-jobs-schedule-row' : '') + (isChild ? ' jos-jobs-occurrence-row' : '') + '" role="row" ' + trAttrs + '>' +
+          (bulkOpen ? '<td class="jos-ld-tcheck" onclick="event.stopPropagation()">' + (isParent ? '' : '<input type="checkbox" data-jos-job-bulk="' + esc(jobKey) + '" aria-label="Select ' + esc(j.customer || 'job') + '"' + (checked ? ' checked' : '') + '>') + '</td>' : '') +
           cols.map(function (c) {
             var def = schemaMap[c.key];
             if (!def) return '<td data-jos-col-key="' + esc(c.key) + '">—</td>';
             if (locked) {
               var lockedVal = tableColFieldGet(def, j);
-              return '<td data-jos-col-key="' + esc(c.key) + '">' + esc(lockedVal == null || lockedVal === '' ? '—' : String(lockedVal)) + '</td>';
+              var lockedInner = esc(lockedVal == null || lockedVal === '' ? '—' : String(lockedVal));
+              // Parent rows carry the two pieces of context a bare column
+              // value can't: which service repeats on what cadence (under
+              // Service), and that the date shown is the *next* visit, not
+              // a fixed one (under Date) — mirrors jobCardHtml's existing
+              // ↻ marker instead of inventing a new convention.
+              if (isParent && c.key === 'service') {
+                lockedInner = esc(lockedVal || '—') + '<div class="jos-muted jos-jobs-recur-badge">↻ ' + esc(jobFrequencyLabel(j.frequency) || 'Recurring') + '</div>';
+              } else if (isParent && c.key === 'date') {
+                lockedInner = '<span class="jos-jobs-next-label">Next:</span> ' + esc(lockedVal || '—');
+              }
+              return '<td data-jos-col-key="' + esc(c.key) + '">' + lockedInner + '</td>';
             }
             var isEditingThis = !!(editing && editing.recordId === jobKey && editing.field === c.key);
             var cellInner = tableCellHtml(j, def, jobKey, isEditingThis);
@@ -18999,7 +19235,10 @@
           // also on the drawer's own "..." menu once it's open. Keeping an
           // empty cell, not removing the column, so header alignment with
           // the "+" add-column button (same shared trailing <th>) holds.
-          '<td class="col-act"></td></tr>';
+          // Parent rows use it for the expand/collapse toggle instead.
+          '<td class="col-act">' + (isParent
+            ? '<button type="button" class="jos-icon-btn jos-jobs-schedule-toggle" data-jos-act="jobs-schedule-toggle" data-jos-schedule-id="' + esc(j.scheduleId) + '" aria-label="' + (j.expanded ? 'Collapse' : 'Expand') + ' occurrences" title="' + j.occurrenceCount + ' occurrences">' + (j.expanded ? '▾' : '▸') + '</button>'
+            : '') + '</td></tr>';
       }).join('');
     return '<div class="jos-ld-table-wrap"><table class="jos-ld-table" role="grid" aria-label="Jobs">' + colGroup + '<thead><tr>' + headCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
@@ -19094,6 +19333,7 @@
     // same load-order requirement Leads has.
     if (!root._josJobsCustomFields) root._josJobsCustomFields = loadJobsCustomFields(root);
     if (!root._josJobsColumns) root._josJobsColumns = loadJobsColumns(root);
+    ensureRecurringSchedulesLoaded(root);
     var selectedId = root._josJobId || null;
     var workspaceTab = root._josJobWorkspace || 'overview';
     var all = jobsAll();
@@ -19109,11 +19349,12 @@
     if (!root._josJobsListView) root._josJobsListView = 'all';
 
     var filtered = filterJobsList(root);
+    var displayRows = jobsGroupingEligible(root) ? buildJobsDisplayRows(filtered, root) : filtered;
     var pageSize = jobsPageSize(root);
     var page = jobsPage(root);
-    var pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    var pages = Math.max(1, Math.ceil(displayRows.length / pageSize));
     if (page > pages) { page = pages; root._josJobsPage = page; }
-    var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+    var pageRows = displayRows.slice((page - 1) * pageSize, page * pageSize);
 
     var total = all.filter(function (j) { return j.status !== 'cancelled'; }).length;
     var completed = all.filter(function (j) { return j.status === 'completed'; }).length;
@@ -19182,7 +19423,9 @@
         '</select></div>';
     }
 
-    var drawer = drawerOpen && selected ? renderJobDrawer(root, selected, workspaceTab) : '';
+    var openSchedule = root._josScheduleId ? findRecurringSchedule(root._josScheduleId) : null;
+    var drawer = openSchedule ? renderRecurringScheduleDrawer(root, root._josScheduleId, openSchedule)
+      : (drawerOpen && selected ? renderJobDrawer(root, selected, workspaceTab) : '');
     var statusMenu = '<div class="jos-jobs-pop" id="jos-jobs-status-pop" hidden></div>';
     var rowMenu = '<div class="jos-jobs-pop" id="jos-jobs-row-pop" hidden></div>';
     /* Create pop lives on document.body (ensureGcalCreatePop) — not inside Jobs/Calendar
@@ -19411,7 +19654,7 @@
       '</main>' +
       (mainView === 'calendar' ? calRail : listRail) +
       '</div>' +
-      '<div class="jos-jobs-drawer-backdrop' + (drawerOpen ? ' open' : '') + '" data-jos-act="jobs-drawer-close"></div>' +
+      '<div class="jos-jobs-drawer-backdrop' + ((drawerOpen || root._josScheduleId) ? ' open' : '') + '" data-jos-act="jobs-drawer-close"></div>' +
       // statusMenu/rowMenu/gcalCreatePop/FAB are unconditional (always render
       // real markup, even when visually hidden) — safe wherever they sit.
       // renderJobsBulkBar(root) and drawer are NOT: both can be '' on one
@@ -21253,6 +21496,87 @@
   function jobsDb() {
     try { return (typeof global.getDb === 'function' ? global.getDb() : global.db) || null; } catch (e) { return null; }
   }
+
+  // recurring_schedules is the operational-repetition parent added in the
+  // Phase 1 DB migration (supabase/migrations/20260811040500_...). It has
+  // no createJob()-style canonical function in hubly.html yet — everything
+  // here talks to the table directly via jobsDb(), same pattern jobsDb()
+  // itself already established for job status/delete writes, kept
+  // Jobs-scoped rather than threading a new entity through hubly.html's
+  // boot/load sequence (15+ existing loadJobs() call sites).
+  function recurringSchedulesCache() {
+    var s = S();
+    if (!s._recurSchedules) s._recurSchedules = {};
+    return s._recurSchedules;
+  }
+  function findRecurringSchedule(id) {
+    return id ? (recurringSchedulesCache()[String(id)] || null) : null;
+  }
+  function mapRecurringScheduleRow(row) {
+    return {
+      id: row.id, customerId: row.customer_id, customerName: row.customer_name || '',
+      serviceName: row.service_name || '', frequency: row.frequency,
+      customIntervalDays: row.custom_interval_days, status: row.status,
+      startDate: row.start_date, endDate: row.end_date,
+      nextOccurrenceDate: row.next_occurrence_date, preferredTime: row.preferred_time || '',
+      amount: row.amount, address: row.address || '', assignedTo: row.assigned_to || '',
+      notes: row.notes || ''
+    };
+  }
+  // Lazy, once-per-root fetch (same shape as loadJobsCustomFields/
+  // loadJobsColumns) — one query for every schedule this business has,
+  // cached in S() so the Jobs table's grouping can look schedules up
+  // synchronously while rendering.
+  function ensureRecurringSchedulesLoaded(root) {
+    if (root._josRecurLoaded) return;
+    root._josRecurLoaded = true;
+    var d = jobsDb();
+    var bizId = global.currentBusiness && global.currentBusiness.id;
+    if (!d || !bizId) return;
+    d.from('recurring_schedules').select('*').eq('business_id', bizId).then(function (res) {
+      if (!res || res.error || !res.data) return;
+      var cache = recurringSchedulesCache();
+      res.data.forEach(function (row) { cache[String(row.id)] = mapRecurringScheduleRow(row); });
+      rerenderJobsOsFrom(root);
+    }).catch(function () {});
+  }
+  function createRecurringScheduleRow(input) {
+    var d = jobsDb();
+    var bizId = global.currentBusiness && global.currentBusiness.id;
+    if (!d || !bizId) return Promise.resolve(null);
+    var payload = {
+      business_id: bizId, customer_id: input.customerId || null, customer_name: input.customerName || '',
+      service_name: input.serviceName || '', frequency: input.frequency,
+      custom_interval_days: input.customIntervalDays || null, status: 'active',
+      start_date: input.startDate, next_occurrence_date: input.nextOccurrenceDate || input.startDate,
+      preferred_time: input.preferredTime || null, amount: input.amount != null ? input.amount : null,
+      address: input.address || null, assigned_to: input.assignedTo || null
+    };
+    return d.from('recurring_schedules').insert(payload).select().single().then(function (res) {
+      if (!res || res.error || !res.data) return null;
+      var mapped = mapRecurringScheduleRow(res.data);
+      recurringSchedulesCache()[String(mapped.id)] = mapped;
+      return mapped;
+    }).catch(function () { return null; });
+  }
+  // root is optional — pass it when the caller wants a rerender once the
+  // write lands (schedule-drawer actions); omitted for the creation-flow
+  // caller, which is already about to rerender for its own reasons.
+  function updateRecurringScheduleRow(id, patch, root) {
+    var d = jobsDb();
+    if (!d || !id) return Promise.resolve(null);
+    return realtimeWrite({
+      table: 'recurring_schedules', id: id,
+      write: function () { return d.from('recurring_schedules').update(patch).eq('id', id).select().single(); }
+    }).then(function (res) {
+      if (!res || res.error) { toast('Couldn’t save — check your connection and try again'); return null; }
+      var mapped = res.data ? mapRecurringScheduleRow(res.data) : null;
+      if (mapped) recurringSchedulesCache()[String(id)] = mapped;
+      if (root) rerenderJobsOsFrom(root);
+      return mapped;
+    });
+  }
+
   // Routes every write through hubly.html's shared own-write-suppression
   // tracker (see markLocalWrite/onRealtimeBizChange there) instead of
   // each call site remembering to mark itself — falls back to a plain
@@ -21509,6 +21833,8 @@
         root._josDrawerOpen = false;
         root._josJobId = null;
         root._josJobEditOpen = false;
+        root._josScheduleId = null;
+        root._josScheduleEditOpen = false;
         return rerender();
       }
       if (act === 'jobs-open') {
@@ -21516,6 +21842,7 @@
         root._josDrawerOpen = true;
         root._josJobEditOpen = false;
         root._josJobWorkspace = 'overview';
+        root._josScheduleId = null;
         return rerender();
       }
       if (act === 'jobs-new-drawer') {
@@ -22336,6 +22663,107 @@
         toast('Cancelled ' + seriesJobs.length + ' job' + (seriesJobs.length === 1 ? '' : 's') + ' in this series');
         return rerender();
       }
+      if (act === 'jobs-schedule-toggle') {
+        var toggleSid = t.getAttribute('data-jos-schedule-id');
+        root._josExpandedSchedules = root._josExpandedSchedules || {};
+        root._josExpandedSchedules[toggleSid] = !root._josExpandedSchedules[toggleSid];
+        return rerender();
+      }
+      if (act === 'jobs-schedule-open') {
+        var openSid = t.getAttribute('data-jos-schedule-id');
+        if (!openSid) return;
+        root._josScheduleId = openSid;
+        root._josJobId = null;
+        root._josDrawerOpen = false;
+        return rerender();
+      }
+      if (act === 'jobs-schedule-close') {
+        root._josScheduleId = null;
+        root._josScheduleEditOpen = false;
+        return rerender();
+      }
+      // Section 8: opening one occurrence from inside the schedule drawer
+      // hands off to the normal, fully-real job drawer — same surface
+      // every other job uses, so "THIS VISIT" gets every existing
+      // per-field edit (date, time, status, technician, price...) with no
+      // new editing surface to build.
+      if (act === 'jobs-schedule-open-occurrence') {
+        root._josScheduleId = null;
+        root._josScheduleEditOpen = false;
+        root._josJobId = jobId;
+        root._josDrawerOpen = true;
+        root._josJobWorkspace = 'overview';
+        return rerender();
+      }
+      if (act === 'jobs-schedule-edit-toggle') {
+        root._josScheduleEditOpen = !root._josScheduleEditOpen;
+        return rerender();
+      }
+      if (act === 'jobs-schedule-field-save') {
+        var fSid = t.getAttribute('data-jos-schedule-id');
+        var fKey = t.getAttribute('data-jos-schedule-field');
+        if (!fSid || !fKey) return;
+        var fInput = root.querySelector('[data-jos-schedule-field-input="' + fKey + '"]');
+        if (!fInput) return;
+        var fVal = fInput.value;
+        var fPatch = {};
+        if (fKey === 'amount') fPatch.amount = fVal === '' ? null : Number(fVal);
+        else if (fKey === 'assignedTo') fPatch.assigned_to = fVal || null;
+        else if (fKey === 'address') fPatch.address = fVal || null;
+        else if (fKey === 'preferredTime') fPatch.preferred_time = fVal || null;
+        else if (fKey === 'frequency') fPatch.frequency = fVal;
+        else return;
+        updateRecurringScheduleRow(fSid, fPatch, root).then(function (mapped) {
+          toast(mapped ? 'Schedule updated' : 'Couldn’t save — check your connection and try again');
+        });
+        return;
+      }
+      // Pause/Resume only ever touch the recurring_schedules record —
+      // never a job row. Section 7/10's whole point: the schedule's own
+      // lifecycle state is independent of any occurrence's status, and
+      // touching completed/past jobs here would corrupt real history.
+      if (act === 'jobs-schedule-pause') {
+        var pauseSid = t.getAttribute('data-jos-schedule-id') || root._josScheduleId;
+        if (!pauseSid) return;
+        updateRecurringScheduleRow(pauseSid, { status: 'paused' }, root).then(function (mapped) {
+          toast(mapped ? 'Schedule paused' : 'Couldn’t pause schedule');
+        });
+        return;
+      }
+      if (act === 'jobs-schedule-resume') {
+        var resumeSid = t.getAttribute('data-jos-schedule-id') || root._josScheduleId;
+        if (!resumeSid) return;
+        updateRecurringScheduleRow(resumeSid, { status: 'active' }, root).then(function (mapped) {
+          toast(mapped ? 'Schedule resumed' : 'Couldn’t resume schedule');
+        });
+        return;
+      }
+      // Cancelling the schedule also cancels its future, not-yet-happened
+      // occurrences (same "future respects the schedule status" rule as
+      // jobs-cancel-series above, now keyed on the real relationship
+      // instead of the legacy notes tag) — completed/past jobs are never
+      // touched, matching section 10's example exactly (August stays
+      // Completed when the schedule itself is later cancelled).
+      if (act === 'jobs-schedule-cancel') {
+        var cancelSid = t.getAttribute('data-jos-schedule-id') || root._josScheduleId;
+        if (!cancelSid) return;
+        if (typeof global.confirm === 'function' && !global.confirm('Cancel this recurring schedule? Upcoming visits will be cancelled — completed and past jobs are kept.')) return;
+        var today0 = todayStr();
+        var futureOcc = jobsAll().filter(function (x) {
+          return x.recurringScheduleId === cancelSid && x.status !== 'completed' && x.status !== 'cancelled' && String(x.date || '') >= today0;
+        });
+        updateRecurringScheduleRow(cancelSid, { status: 'cancelled' }, root).then(function (mapped) {
+          if (!mapped) { toast('Couldn’t cancel schedule'); return; }
+          futureOcc.forEach(function (x) {
+            x.status = 'cancelled';
+            pushJobTimeline(x, 'note', 'Cancelled (schedule cancelled)');
+            persistJobPatch(x, { status: 'cancelled' });
+          });
+          toast('Schedule cancelled' + (futureOcc.length ? ' — ' + futureOcc.length + ' upcoming job' + (futureOcc.length === 1 ? '' : 's') + ' cancelled' : ''));
+          rerender();
+        });
+        return;
+      }
       if (act === 'jobs-delete') {
         var delId = jobId || (job && job.id);
         var delJob = delId ? findJob(delId) : job;
@@ -22972,6 +23400,7 @@
     renderJobs: renderJobs,
     renderCalendar: renderCalendar,
     handleJobsAct: handleJobsAct,
+    jobsCalendarEvents: jobsCalendarEvents,
     renderPhotoProjects: function () {
       if (typeof global.HublyPhotographyProjects?.render === 'function') {
         return global.HublyPhotographyProjects.render();

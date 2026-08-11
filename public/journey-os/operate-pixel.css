@@ -4910,6 +4910,20 @@ textarea.jos-je-field-input.jos-ld-cell-inline{height:auto!important;min-height:
 .jos-jobs-more-wrap{display:flex;align-items:center;gap:4px;justify-content:flex-end}
 .jos-jobs-service-cell{display:flex;flex-direction:column;gap:1px;min-width:0}
 .jos-jobs-id-sub{font-size:11px}
+/* Recurring schedule parent/occurrence rows (Phase 2) */
+.jos-jobs-schedule-row{background:var(--jos-surface-2);cursor:pointer}
+.jos-jobs-schedule-row:hover{background:#F0F1F3}
+.jos-jobs-occurrence-row td:first-child{position:relative;padding-left:22px}
+.jos-jobs-occurrence-row td:first-child::before{content:"";position:absolute;left:10px;top:0;bottom:0;width:1px;background:var(--jos-border)}
+.jos-jobs-recur-badge{font-size:11px;font-weight:600;color:var(--jos-brand)}
+.jos-jobs-next-label{color:var(--jos-muted-2,#8A8F98);font-weight:600;margin-right:3px}
+.jos-jobs-schedule-toggle{font-size:13px}
+.jos-jd-kv-edit{display:grid;grid-template-columns:110px 1fr 28px;align-items:center;gap:8px}
+.jos-jd-kv-edit input,.jos-jd-kv-edit select{font:inherit;padding:6px 8px;border:1px solid var(--jos-border);border-radius:8px;background:var(--jos-surface)}
+.jos-jd-schedule-edit{padding:10px;border:1px solid var(--jos-border);border-radius:12px;background:var(--jos-surface-2)}
+.jos-jd-schedule-edit-note{font-size:12px;margin:2px 0 8px}
+.jos-jd-recur-notice{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;padding:8px 10px;border:1px solid var(--jos-border);border-radius:10px;background:var(--jos-surface-2);font-size:12.5px}
+.jos-jd-recur-notice .jos-linkish{margin-left:auto}
 .jos-jd-profile{display:flex;gap:12px;align-items:flex-start}
 .jos-jd-svc{padding:12px;border:1px solid var(--jos-border);border-radius:12px;background:var(--jos-surface-2)}
 .jos-jd-tl{

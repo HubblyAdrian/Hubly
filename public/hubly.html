@@ -15523,6 +15523,10 @@ function mapJobRow(j){
     // notes-tag convention, parsed here the same way recurringPlanId is.
     recurringGroupId:((String(j.notes||'').match(/\[RECUR:([^|\]]+)\|/)||[])[1]||''),
     recurringFreq:((String(j.notes||'').match(/\[RECUR:[^|]+\|([^|\]]*)/)||[])[1]||''),
+    // Real DB relationship (recurring_schedules foundation) — the source
+    // of truth for new recurring jobs going forward. recurringGroupId
+    // above stays only for jobs created before this column existed.
+    recurringScheduleId: j.recurring_schedule_id||null,
   };
 }
 window.mapJobRow=mapJobRow;
@@ -43294,6 +43298,7 @@ async function createJob(input,opts){
     deposit_cents:input.depositCents!=null?input.depositCents:null,
     deposit_status:input.depositStatus||'none',
     duration_hours:input.durationHours!=null?input.durationHours:null,
+    recurring_schedule_id:input.recurringScheduleId||null,
   };
   if(input.paid!=null)payload.paid=!!input.paid;
   var result=await persistJob(payload);
