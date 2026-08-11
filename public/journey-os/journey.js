@@ -60,23 +60,20 @@
     if (global.HublySmartQuote && HublySmartQuote.formatMoney) return HublySmartQuote.formatMoney(n);
     var x = Number(n); return Number.isFinite(x) ? ('$' + x.toFixed(x % 1 ? 2 : 0)) : '';
   }
-  // "Aug 11, 2026" — easier to scan than either the raw ISO string
-  // (2026-08-11) or the old "Wed, Aug 12" format, which also silently
-  // dropped the year (real ambiguity once a table spans more than one
-  // year). Shared by every date-type column and every explicit dateLong()
-  // call across Jobs/Leads/Customers — one format, one place it's defined.
+  // "07/30/2026" — strict numeric MM/DD/YYYY, not a spelled-out month
+  // ("Jul 30, 2026" reads as an inconsistent format next to a numeric one
+  // and was explicitly rejected). Shared by every date-type column and
+  // every explicit dateLong() call across Jobs/Leads/Customers — one
+  // format, one place it's defined.
   function dateLong(ds) {
     if (!ds) return '';
     if (typeof global.fmtDateLong === 'function') { try { return global.fmtDateLong(String(ds).slice(0, 10)); } catch (e) {} }
-    try { return new Date(String(ds).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+    try { return new Date(String(ds).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }); }
     catch (e) { return String(ds).slice(0, 10); }
   }
-  // "Aug 11, 2026 · 2:30 PM" — the timeline/activity-log equivalent of
+  // "07/30/2026 · 2:30 PM" — the timeline/activity-log equivalent of
   // dateLong(), for the ~13 places across Jobs/Leads/Customers that stamp
-  // "right now" onto a new activity/timeline entry. Replaces plain
-  // nowTimelineStamp() (locale-default, reads like "8/11/2026,
-  // 2:30:00 PM" — the exact raw/inconsistent format this pass is fixing
-  // everywhere else) with the same one house format. These stamps are
+  // "right now" onto a new activity/timeline entry. These stamps are
   // captured once at creation time and shown as-is afterward (not re-
   // parsed later — see the jobRelativeDateLabel comment on why re-parsing
   // a toLocaleString() output isn't reliable across browsers), so
@@ -84,7 +81,7 @@
   // display-time reformat.
   function nowTimelineStamp() {
     var d = new Date();
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+    return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) +
       ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   }
   function toast(msg) { if (typeof global.toast === 'function') global.toast(msg); }
@@ -11831,36 +11828,24 @@
   // column dbPatch model — no dbColumn/dbPatch needed on any column def
   // here, a column's set() just mutates the in-memory customer and
   // mutateCustField (below) sends the whole record.
+  // Customer / Since / Completed Jobs / Lifetime Value / Last Service —
+  // one combined "Customer" column (avatar + full name), not split First/
+  // Last like Jobs/Leads. Typography and date formatting still come from
+  // the exact same shared tokens/dateLong() Jobs and Leads use; only the
+  // column set itself differs, matching what this module's own table
+  // actually needs to answer "who is this and how much do they matter,"
+  // not because Customers has its own typography system.
   var CUST_DEFAULT_COLUMNS = [
     {
-      key: 'customerFirst', label: 'First name', type: 'text', width: 130,
+      key: 'customer', label: 'Customer', type: 'text', width: 200,
       editable: true, openOnClick: true, searchable: true, sortable: true,
-      get: function (c) { return splitLeadName(c.name).first; },
-      set: function (c, value) {
-        var parts = splitLeadName(c.name);
-        c.name = (String(value || '').trim() + ' ' + parts.last).trim();
-        return 'Name → ' + (c.name || '—');
-      }
+      get: function (c) { return c.name || ''; },
+      set: function (c, value) { c.name = String(value || '').trim(); return 'Name → ' + (c.name || '—'); }
     },
     {
-      key: 'customerLast', label: 'Last name', type: 'text', width: 130,
-      editable: true, openOnClick: true, searchable: true, sortable: true,
-      get: function (c) { return splitLeadName(c.name).last; },
-      set: function (c, value) {
-        var parts = splitLeadName(c.name);
-        c.name = (parts.first + ' ' + String(value || '').trim()).trim();
-        return 'Name → ' + (c.name || '—');
-      }
-    },
-    {
-      key: 'lastJob', label: 'Last Service', type: 'text', width: 140,
+      key: 'since', label: 'Since', type: 'text', width: 120,
       editable: false, sortable: true,
-      get: function (c) { var j = lastJob(c); return j && j.date ? dateLong(j.date) : ''; }
-    },
-    {
-      key: 'totalSpent', label: 'Lifetime Value', type: 'number', width: 130,
-      editable: false, sortable: true, format: money,
-      get: function (c) { return custLifetime(c); }
+      get: function (c) { return c.customerSince ? dateLong(String(c.customerSince).slice(0, 10)) : ''; }
     },
     {
       key: 'jobsCount', label: 'Completed Jobs', type: 'number', width: 130,
@@ -11868,9 +11853,14 @@
       get: function (c) { return custCompletedCount(c); }
     },
     {
-      key: 'custStatus', label: 'Status', type: 'text', width: 110,
-      editable: false, sortable: false,
-      get: function (c) { return custStatusLabel(c); }
+      key: 'totalSpent', label: 'Lifetime Value', type: 'number', width: 130,
+      editable: false, sortable: true, format: money,
+      get: function (c) { return custLifetime(c); }
+    },
+    {
+      key: 'lastJob', label: 'Last Service', type: 'text', width: 140,
+      editable: false, sortable: true,
+      get: function (c) { var j = lastJob(c); return j && j.date ? dateLong(j.date) : ''; }
     }
   ];
   // Addable via "+ Add column" — real Hubly data (phone/email/vehicle/
@@ -11882,6 +11872,31 @@
   // and a table cell for it would risk colliding with the packed meta
   // tags that already live inside the same notes string.
   var CUST_DRAWER_ONLY_COLUMNS = [
+    {
+      key: 'customerFirst', label: 'First name', type: 'text', width: 130, hidden: true,
+      editable: true, searchable: true,
+      get: function (c) { return splitLeadName(c.name).first; },
+      set: function (c, value) {
+        var parts = splitLeadName(c.name);
+        c.name = (String(value || '').trim() + ' ' + parts.last).trim();
+        return 'Name → ' + (c.name || '—');
+      }
+    },
+    {
+      key: 'customerLast', label: 'Last name', type: 'text', width: 130, hidden: true,
+      editable: true, searchable: true,
+      get: function (c) { return splitLeadName(c.name).last; },
+      set: function (c, value) {
+        var parts = splitLeadName(c.name);
+        c.name = (parts.first + ' ' + String(value || '').trim()).trim();
+        return 'Name → ' + (c.name || '—');
+      }
+    },
+    {
+      key: 'custStatus', label: 'Status', type: 'text', width: 110, hidden: true,
+      editable: false,
+      get: function (c) { return custStatusLabel(c); }
+    },
     {
       key: 'phone', label: 'Phone', type: 'phone', width: 150, hidden: true,
       editable: true, searchable: true,
@@ -11918,11 +11933,6 @@
         return 'Tags → ' + (arr.length ? arr.join(', ') : '—');
       }
     },
-    {
-      key: 'created', label: 'Customer Since', type: 'text', width: 130, hidden: true,
-      editable: false,
-      get: function (c) { return c.customerSince ? dateLong(String(c.customerSince).slice(0, 10)) : ''; }
-    }
   ];
   function custColumnSchema() { return CUST_DEFAULT_COLUMNS.concat(CUST_DRAWER_ONLY_COLUMNS); }
   function custSchemaMap() {
@@ -12011,7 +12021,7 @@
           if (!def) return '<td data-jos-col-key="' + esc(col.key) + '">—</td>';
           var isEditingThis = !!(editing && editing.recordId === custKey && editing.field === col.key);
           var cellInner = tableCellHtml(c, def, custKey, isEditingThis);
-          if (col.key === 'customerFirst' && !isEditingThis) {
+          if (col.key === 'customer' && !isEditingThis) {
             cellInner = '<span class="jos-cm-ava" style="margin-right:8px;vertical-align:middle">' + esc(initials(c.name)) + '</span>' + cellInner + (custIsVip(c) ? '<span class="jos-cm-vip">VIP</span>' : '');
           }
           return '<td data-jos-col-key="' + esc(col.key) + '">' + cellInner + '</td>';
@@ -12095,6 +12105,25 @@
   }
 
   /* ─── LEVEL 2: Customer Command Center ──────────────────────────── */
+  // Button copy for the Next Best Action's primary CTA — one real action
+  // per nba.act (custNextBestAction, below), not a generic "Do it" for
+  // every case. "Not now" never persists a dismissal (no fabricated
+  // "snoozed until" state) — it just closes the drawer, same as the ×.
+  var CUST_NBA_CTA_LABEL = {
+    'go-jobs': 'View Appointment →', 'cust-invoice': 'Collect Payment →',
+    'cust-winback': 'Send Win Back →', 'ask-review': 'Ask for Review →',
+    'go-mem': 'View Membership →', 'cust-quote': 'Send Quote →',
+    'new-job-cust': 'Schedule Job →'
+  };
+  // Focused quick-view drawer — answers "what do I need to know right now"
+  // and "what should I do next," not a dump of the full record (that's
+  // Full Profile, one click away). Rebuilt from the old dashboard-style
+  // Command Center (NBA + 6-card dash + AI summary + full timeline + 6
+  // modules + a preferences rail) per the mockup: header, one dominant
+  // NBA card, a 6-field snapshot, 3-5 recent activity items, compact
+  // quick actions, Open Full Profile. Every field here is real data
+  // (custNextBestAction/custAiInsights/c.activity/c.commPref/etc, already
+  // used elsewhere) — nothing new is fabricated for this layout.
   function renderCustomerCommandCenter(root, c) {
     if (!c) return '<div class="jos-cc2-empty">Select a completed customer.</div>';
     var ai = custAiInsights(c);
@@ -12102,97 +12131,69 @@
     var last = lastJob(c);
     var doneN = custCompletedCount(c);
     var ltv = custLifetime(c);
-    var jobsAll = custJobsFor(c);
-    var recentJobs = jobsAll.filter(function (j) { return j.status === 'completed'; }).slice().sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); }).slice(0, 4);
-    var msgs = (c.notesList || []).slice(0, 3);
-    var pays = (c.payments || []).slice(0, 3);
-    var photos = (c.photos || []).slice(0, 6);
-    var invoices = (c.invoices || []).slice(0, 3);
-    if (!invoices.length && pays.length) invoices = pays.map(function (p) { return { amount: p.amount, status: p.status || 'paid', at: p.at }; });
 
     var head = '<header class="jos-cc2-head">' +
-      '<button type="button" class="jos-linkish jos-cc2-back" data-jos-act="cust-back-list">← Completed Customers</button>' +
+      '<button type="button" class="jos-profile-close jos-cc2-drawer-close" data-jos-act="cust-back-list" aria-label="Close">×</button>' +
       '<div class="jos-cc2-id">' +
       '<span class="jos-cm-ava xl">' + esc(initials(c.name)) + '</span>' +
       '<div><div class="jos-cc2-name"><strong>' + esc(c.name || 'Customer') + '</strong>' +
       (custIsMember(c) ? '<span class="jos-pill ok">' + esc(c.membership || 'Member') + '</span>' : '') +
       (custIsVip(c) ? '<span class="jos-cm-vip dark">VIP</span>' : '') +
       '</div>' +
-      '<div class="jos-cc2-meta">' +
-      '<span><b>' + esc(money(ltv) || '$0') + '</b> Lifetime</span>' +
-      '<span><b>' + doneN + '</b> Completed Jobs</span>' +
-      (next ? '<span class="next"><b>Next</b> ' + esc(dateLong(next.date) + (next.time ? ' · ' + next.time : '')) + '</span>' : '') +
-      (next && String(next.date) === todayStr() ? '<span class="jos-pill warn">Today\'s Job</span>' : '') +
-      '</div></div></div>' +
-      '<div class="jos-cc2-acts">' +
-      btn('go-chats', 'Send Message', 'jos-btn jos-btn-sm') +
-      btn('new-job-cust', 'Schedule Job', 'jos-btn-brand jos-btn-sm') +
-      btn('cust-invoice', 'Create Invoice', 'jos-btn jos-btn-sm') +
-      '<button type="button" class="jos-icon-btn" data-jos-act="cust-more-menu" aria-label="More">⋯</button>' +
-      '<button type="button" class="jos-btn jos-btn-sm jos-cc2-full" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(c.id)) + '">Open Full Profile →</button>' +
-      '</div></header>';
+      '<div class="jos-muted" style="font-size:12px;margin-top:2px">Customer since ' + esc(c.customerSince ? dateLong(String(c.customerSince).slice(0, 10)) : '—') + '</div>' +
+      '<div class="jos-cc2-meta"><span><b>' + esc(money(ltv) || '$0') + '</b> lifetime value</span>' +
+      '<span><b>' + doneN + '</b> completed job' + (doneN === 1 ? '' : 's') + '</span></div>' +
+      '</div></div></header>';
 
+    var nbaCta = CUST_NBA_CTA_LABEL[ai.nbaAct] || 'View →';
     var nba = '<section class="jos-cc2-nba">' +
-      '<div class="jos-kicker">Next Best Action</div>' +
-      '<div class="jos-cc2-nba-row">' +
-      '<div><strong>' + esc(ai.nba) + '</strong><p class="jos-muted">' + esc(ai.nbaDetail || ai.tip) + '</p></div>' +
-      '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="' + esc(ai.nbaAct || 'new-job-cust') + '">Do it</button>' +
+      '<div class="jos-kicker">★ Next Best Action</div>' +
+      '<strong class="jos-cc2-nba-title">' + esc(ai.nba) + '</strong>' +
+      '<p class="jos-muted">' + esc(ai.nbaDetail || ai.tip || '') + '</p>' +
+      '<div class="jos-btn-row jos-mt">' +
+      '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="' + esc(ai.nbaAct || 'new-job-cust') + '">' + esc(nbaCta) + '</button>' +
+      '<button type="button" class="jos-btn" data-jos-act="cust-back-list">Not now</button>' +
       '</div></section>';
 
-    var dash = '<div class="jos-cc2-dash">' +
-      '<div class="jos-cc2-card"><div class="jos-kicker">Today\'s Appointment</div>' +
-      (next && String(next.date) === todayStr()
-        ? '<strong>' + esc(next.service || 'Job') + '</strong><div class="jos-muted">' + esc(next.time || '') + '</div>'
-        : '<span class="jos-muted">None today</span>') + '</div>' +
-      '<div class="jos-cc2-card"><div class="jos-kicker">Open Invoice</div>' +
-      (Number(c.outstandingBalance) > 0
-        ? '<strong>' + esc(money(c.outstandingBalance)) + '</strong><div class="jos-muted">Outstanding</div>'
-        : '<span class="jos-muted">All clear</span>') + '</div>' +
-      '<div class="jos-cc2-card"><div class="jos-kicker">Membership</div><strong>' + esc(custIsMember(c) ? (c.membership || 'Active') : 'None') + '</strong></div>' +
-      '<div class="jos-cc2-card"><div class="jos-kicker">Current Vehicle</div><strong>' + esc(c.vehicle || vehicleOf(c) || '—') + '</strong></div>' +
-      '<div class="jos-cc2-card"><div class="jos-kicker">Outstanding Balance</div><strong>' + esc(money(c.outstandingBalance || 0) || '$0') + '</strong></div>' +
-      '<div class="jos-cc2-card"><div class="jos-kicker">Recent Messages</div>' +
-      (msgs.length ? msgs.slice(0, 2).map(function (m) { return '<div class="jos-muted">' + esc(String(m).slice(0, 60)) + '</div>'; }).join('') : '<span class="jos-muted">No messages</span>') + '</div>' +
-      '<div class="jos-cc2-card"><div class="jos-kicker">Recent Jobs</div>' +
-      (recentJobs.length ? recentJobs.slice(0, 2).map(function (j) { return '<div class="jos-muted">' + esc((j.service || 'Job') + ' · ' + (j.date || '')) + '</div>'; }).join('') : '<span class="jos-muted">None</span>') + '</div>' +
-      '</div>';
-
-    var summary = '<section class="jos-cc2-ai"><div class="jos-kicker">AI Summary</div><p>' + esc(ai.summary) + '</p>' +
-      '<div class="jos-tag-row">' + (ai.tags || []).map(function (t) { return '<span class="jos-tag">' + esc(t) + '</span>'; }).join('') + '</div></section>';
-
-    var timeline = '<section class="jos-cc2-tl"><div class="jos-kicker">Timeline</div><div class="jos-cc2-tl-list">' +
-      ((c.activity || []).slice(0, 8).map(function (a) {
-        return '<div class="jos-cc2-tl-item"><span class="when">' + esc(a.at || '') + '</span><strong>' + esc(a.label || a.type || 'Activity') + '</strong></div>';
-      }).join('') || '<div class="jos-muted">No activity yet</div>') +
+    var snapRow = function (icoTone, ico, label, value) {
+      return '<div class="jos-cc2-snap-item"><span class="jos-cc2-snap-ico tone-' + esc(icoTone) + '">' + ico + '</span>' +
+        '<div><div class="jos-cc2-snap-label">' + esc(label) + '</div><div class="jos-cc2-snap-val">' + value + '</div></div></div>';
+    };
+    var snapshot = '<section class="jos-cc2-snap"><div class="jos-kicker">Customer Snapshot</div><div class="jos-cc2-snap-grid">' +
+      snapRow('brand', '◷', 'Last service', last && last.date ? esc(last.service || 'Service') + '<div class="jos-muted" style="font-size:12px">' + esc(dateLong(last.date)) + '</div>' : '<span class="jos-muted">—</span>') +
+      snapRow('info', '✓', 'Next appointment', next ? esc(dateLong(next.date) + (next.time ? ' · ' + next.time : '')) : '<span class="jos-muted">None scheduled</span>') +
+      snapRow('ok', '◈', 'Preferred contact', esc(c.commPref || 'Text')) +
+      snapRow('brand', '♦', 'Membership', custIsMember(c) ? esc(c.membership || 'Member') : '<span class="jos-muted">None</span>') +
+      snapRow((Number(c.outstandingBalance) > 0 ? 'warn' : 'ok'), '$', 'Outstanding balance', esc(money(c.outstandingBalance || 0) || '$0')) +
+      snapRow('info', '⚙', 'Preferred service', esc(c.preferredService || '—')) +
       '</div></section>';
 
-    function mod(title, items, empty, viewAct) {
-      return '<section class="jos-cc2-mod"><div class="jos-between"><div class="jos-kicker">' + esc(title) + '</div>' +
-        '<button type="button" class="jos-linkish" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(c.id)) + '" data-jos-tab="' + esc(viewAct) + '">View All</button></div>' +
-        (items || empty) + '</section>';
-    }
-    var modules = '<div class="jos-cc2-mods">' +
-      mod('Messages', msgs.length ? msgs.map(function (m) { return '<div class="jos-note">' + esc(String(m).slice(0, 100)) + '</div>'; }).join('') : '', '<div class="jos-muted">No messages</div>', 'Messages') +
-      mod('Photos', photos.length ? '<div class="jos-cc2-photos">' + photos.map(function (p) { return '<div class="jos-photo">' + esc(p.name || p.label || 'Photo') + '</div>'; }).join('') + '</div>' : '', '<div class="jos-muted">No photos</div>', 'Photos') +
-      mod('Invoices', invoices.length ? invoices.map(function (inv) { return '<div class="jos-between jos-note"><span>' + esc(money(inv.amount) || '$0') + '</span><span class="jos-muted">' + esc(inv.status || '') + '</span></div>'; }).join('') : '', '<div class="jos-muted">No invoices</div>', 'Invoices') +
-      mod('Payments', pays.length ? pays.map(function (p) { return '<div class="jos-between jos-note"><span>' + esc(money(p.amount) || '$0') + '</span><span class="jos-muted">' + esc(String(p.at || '').slice(0, 10)) + '</span></div>'; }).join('') : '', '<div class="jos-muted">No payments</div>', 'Payments') +
-      mod('Notes', (c.notesList || []).slice(0, 3).map(function (n) { return '<div class="jos-note">' + esc(n) + '</div>'; }).join('') || '', '<div class="jos-muted">No notes</div>', 'Notes') +
-      mod('Files', (c.documents || []).slice(0, 3).map(function (d) { return '<div class="jos-note">' + esc(d.name || d) + '</div>'; }).join('') || '', '<div class="jos-muted">No files</div>', 'Files') +
-      '</div>';
+    var activityItems = (c.activity || []).slice(0, 5);
+    var activity = '<section class="jos-cc2-activity"><div class="jos-between">' +
+      '<div class="jos-kicker">Recent Activity</div>' +
+      '<button type="button" class="jos-linkish" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(c.id)) + '" data-jos-tab="Activity">View all activity →</button>' +
+      '</div>' +
+      (activityItems.length
+        ? '<div class="jos-cc2-activity-list">' + activityItems.map(function (a) {
+            return '<div class="jos-cc2-activity-item"><strong>' + esc(a.label || a.type || 'Activity') + '</strong><span class="jos-muted">' + esc(a.at || '') + '</span></div>';
+          }).join('') + '</div>'
+        : '<div class="jos-muted">No activity yet</div>') +
+      '</section>';
 
-    var rail = '<aside class="jos-cc2-rail">' +
-      '<section class="jos-cc2-rail-card"><div class="jos-kicker">Next Best Action</div><strong>' + esc(ai.nba) + '</strong><p class="jos-muted">' + esc(ai.nbaDetail || '') + '</p>' +
-      '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm jos-mt" data-jos-act="' + esc(ai.nbaAct || 'new-job-cust') + '" style="width:100%">Do it</button></section>' +
-      '<section class="jos-cc2-rail-card"><div class="jos-kicker">Preferences</div>' +
-      '<div class="jos-cc2-pref"><span>Likes</span><strong>' + esc((c.likes || []).join(', ') || c.preferredService || '—') + '</strong></div>' +
-      '<div class="jos-cc2-pref"><span>Dislikes</span><strong>' + esc((c.dislikes || []).join(', ') || '—') + '</strong></div>' +
-      '<div class="jos-cc2-pref"><span>Communication</span><strong>' + esc(c.commPref || 'Text') + '</strong></div></section>' +
-      '<section class="jos-cc2-rail-card"><div class="jos-kicker">Membership Status</div><strong>' + esc(custIsMember(c) ? (c.membership || 'Active') : 'Not enrolled') + '</strong></section>' +
-      '</aside>';
+    var quickActions = '<section class="jos-cc2-quick"><div class="jos-kicker">Quick Actions</div>' +
+      '<div class="jos-cc2-quick-grid">' +
+      '<button type="button" class="jos-cc2-quick-btn" data-jos-act="go-chats">💬<span>Message</span></button>' +
+      '<button type="button" class="jos-cc2-quick-btn" data-jos-act="new-job-cust">📅<span>Schedule Job</span></button>' +
+      '<button type="button" class="jos-cc2-quick-btn" data-jos-act="cust-invoice">🧾<span>Create Invoice</span></button>' +
+      '<button type="button" class="jos-cc2-quick-btn" data-jos-act="cust-more-menu">⋯<span>More</span></button>' +
+      '</div></section>';
+
+    var fullProfileBtn = '<button type="button" class="jos-btn jos-btn-brand jos-cc2-full" data-jos-act="cust-full-profile" data-jos-cust="' + esc(String(c.id)) + '" style="width:100%">Open Full Customer Profile →</button>';
 
     return '<div class="jos-cc2-shell" data-jos-cust-id="' + esc(String(c.id)) + '">' +
-      '<div class="jos-cc2-main">' + head + nba + dash + summary + timeline + modules + '</div>' + rail +
-      '</div>';  }
+      head + nba + snapshot + activity + quickActions + fullProfileBtn +
+      '</div>';
+  }
 
   /* Keep name used by older codepaths — maps to Command Center */
   function renderCustomerWorkspace(root, c) {
@@ -16006,7 +16007,35 @@
       // moment their step advances — synced live too so a re-render
       // triggered by an unrelated pick (a time slot, a technician chip)
       // never silently drops what was already typed.
-      if (t.classList && t.classList.contains('jos-jp-create-phone')) { t.value = formatPhoneValue(t.value); return; }
+      //
+      // The new-customer fields sync into st.who directly (not a separate
+      // st.newFirst/etc staging area) — there's no "confirm" step anymore,
+      // so as far as canCreate/jobPickerBuildInput are concerned, typing a
+      // name here IS picking a customer. A first-or-last name typed alone
+      // is enough to keep going; the combined name only shows once at
+      // least one half is present, matching how splitLeadName-style
+      // First/Last fields behave everywhere else.
+      if (t.classList && t.classList.contains('jos-jp-create-first')) {
+        st.newFirst = t.value;
+        st.who = (st.newFirst || st.newLast) ? { kind: 'new', name: (st.newFirst + ' ' + (st.newLast || '')).trim(), phone: st.newPhone || '', email: st.newEmail || '', address: '' } : null;
+        return;
+      }
+      if (t.classList && t.classList.contains('jos-jp-create-last')) {
+        st.newLast = t.value;
+        st.who = (st.newFirst || st.newLast) ? { kind: 'new', name: (st.newFirst + ' ' + (st.newLast || '')).trim(), phone: st.newPhone || '', email: st.newEmail || '', address: '' } : null;
+        return;
+      }
+      if (t.classList && t.classList.contains('jos-jp-create-phone')) {
+        t.value = formatPhoneValue(t.value);
+        st.newPhone = t.value;
+        if (st.who) st.who.phone = st.newPhone;
+        return;
+      }
+      if (t.classList && t.classList.contains('jos-jp-create-email')) {
+        st.newEmail = t.value;
+        if (st.who) st.who.email = st.newEmail;
+        return;
+      }
       if (t.hasAttribute('data-jos-jp-address')) { st.address = t.value; return; }
       if (t.hasAttribute('data-jos-jp-price')) { st.price = parseFloat(t.value) || 0; return; }
       if (t.hasAttribute('data-jos-jp-extra')) {
@@ -16055,10 +16084,26 @@
     });
   }
 
-  function openJobCustomerPicker() {
+  // customerId (optional) — pre-fills WHO with a real, already-known
+  // customer (Schedule Job from a Customer's drawer/profile) so the picker
+  // opens straight to Service/Date instead of making the user search for
+  // someone they already have open. Used to route through
+  // global.openNewJobForCustomer (hubly.html's openBookingForCustomer) —
+  // a customer-facing booking-preview flow meant for recurring-plan
+  // rebooking (bookNextRecurringVisit has its own dedicated button for
+  // that), not a generic "create a job" action — which is why "Schedule
+  // Job" from Customers looked like it did nothing: it was opening the
+  // wrong surface, not failing silently.
+  function openJobCustomerPicker(customerId) {
     el('jos-quick-pop')?.classList.remove('open');
     var pop = ensureJobPickerPop();
     pop._josJp = { q: '', mode: 'search', busy: false };
+    if (customerId) {
+      var preCust = findCustomer(customerId);
+      if (preCust) {
+        pop._josJp.who = { kind: 'customer', name: preCust.name, phone: preCust.phone || '', email: preCust.email || '', address: preCust.address || '', customerId: preCust.id };
+      }
+    }
     renderJobPicker(pop);
     pop.classList.add('open');
     setTimeout(function () {
@@ -16098,13 +16143,23 @@
         '<span class="jos-jp-picked-main"><strong>' + esc(who.name || 'Unnamed') + '</strong>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span>' +
         '<button type="button" class="jos-jp-picked-change" data-jos-act="jobs-picker-change-customer">Change</button></div>';
     } else if (st.mode === 'create') {
+      // No separate "confirm this customer" step — every field here syncs
+      // st.newFirst/newLast/newPhone/newEmail live on every keystroke (same
+      // pattern the Location/Notes fields already use), so typing a name
+      // and scrolling straight down to Service/Date without clicking
+      // anything still works. The old "Use This Customer" button gated
+      // st.who, which nothing set until that button was clicked — filling
+      // the rest of the form and hitting Create Job without ever clicking
+      // it left st.who empty and Create Job silently going nowhere. First/
+      // Last (not one "Full name" field) matches Leads/Customers and
+      // pastes cleanly from a name copied elsewhere.
       inner = '<div class="jos-jp-create">' +
-        '<label class="jos-jp-field"><span>Name</span><input type="text" class="jos-jp-create-name" placeholder="Full name" value="' + esc(st.newName || '') + '" autocomplete="off"></label>' +
+        '<label class="jos-jp-field"><span>First name</span><input type="text" class="jos-jp-create-first" placeholder="First name" value="' + esc(st.newFirst || '') + '" autocomplete="off"></label>' +
+        '<label class="jos-jp-field"><span>Last name</span><input type="text" class="jos-jp-create-last" placeholder="Last name" value="' + esc(st.newLast || '') + '" autocomplete="off"></label>' +
         '<label class="jos-jp-field"><span>Phone</span><input type="tel" class="jos-jp-create-phone" placeholder="555-555-5555" value="' + esc(st.newPhone || '') + '" autocomplete="off"></label>' +
         '<label class="jos-jp-field"><span>Email</span><input type="email" class="jos-jp-create-email" placeholder="name@email.com" value="' + esc(st.newEmail || '') + '" autocomplete="off"></label>' +
         '<div class="jos-jp-create-acts">' +
-        '<button type="button" class="jos-btn" data-jos-act="jobs-picker-back"' + (st.busy ? ' disabled' : '') + '>Back</button>' +
-        '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="jobs-picker-create-save"' + (st.busy ? ' disabled' : '') + '>' + (st.busy ? 'Creating…' : 'Use This Customer') + '</button>' +
+        '<button type="button" class="jos-btn" data-jos-act="jobs-picker-back">Search instead</button>' +
         '</div></div>';
     } else {
       inner = '<div class="jos-jp-search"><input type="text" class="jos-jp-search-input" data-jos-jp-search placeholder="Search customers and leads..." value="' + esc(st.q || '') + '" autocomplete="off"' + (st.busy ? ' disabled' : '') + '></div>' +
@@ -16282,6 +16337,13 @@
       extraHtml = '<div class="jos-jp-extra">' + bpFields.map(function (f) {
         var label = (typeof global.bkIntakeFieldLabel === 'function') ? global.bkIntakeFieldLabel(f) : f;
         var val = (st.extraFields && st.extraFields[f]) || '';
+        var opts = JOB_EXTRA_FIELD_OPTIONS[f];
+        if (opts) {
+          return '<label class="jos-jp-field"><span>' + esc(label) + '</span><select data-jos-jp-extra="' + esc(f) + '">' +
+            '<option value="">Select ' + esc(label.toLowerCase()) + '…</option>' +
+            opts.map(function (o) { return '<option value="' + esc(o) + '"' + (val === o ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') +
+            '</select></label>';
+        }
         return '<label class="jos-jp-field"><span>' + esc(label) + '</span><input type="text" data-jos-jp-extra="' + esc(f) + '" value="' + esc(val) + '" placeholder="' + esc(label) + '"></label>';
       }).join('') + '</div>';
     }
@@ -16301,15 +16363,32 @@
   // same source and same skip-list the public booking wizard's
   // configureBookingIntakeFromBlueprint uses, so this never invents a field
   // a business's own configuration doesn't call for.
+  //
+  // 'frequency' is explicitly skipped here (on top of the usual date/time/
+  // contact fields every caller of this list skips) even though a lawn-
+  // care-style Blueprint lists it as a real adaptive field — the public
+  // booking wizard still shows it as free text there, but inside the Jobs
+  // picker specifically it would sit right next to the real Frequency
+  // dropdown (JOB_FREQUENCY_OPTIONS) as a second, purely descriptive
+  // "Frequency" text box with no actual effect on scheduling — confusing,
+  // and redundant now that a real one exists here.
   function jobPickerBlueprintFields() {
     try {
       if (typeof global.HublyBlueprints === 'undefined' || !global.HublyBlueprints.isReady || !global.HublyBlueprints.isReady()) return [];
       var bp = global.HublyBlueprints.bookingBlueprint(S().businessType || (global.HublyBlueprints.getDefaultId ? global.HublyBlueprints.getDefaultId() : null));
       var step = (bp && Array.isArray(bp.steps) && bp.steps[0]) ? bp.steps[0] : { fields: [] };
-      var skip = { address: 1, date: 1, time: 1, name: 1, phone: 1, email: 1, notes: 1, addons: 1, payment: 1, confirm: 1 };
+      var skip = { address: 1, date: 1, time: 1, name: 1, phone: 1, email: 1, notes: 1, addons: 1, payment: 1, confirm: 1, frequency: 1 };
       return (step.fields || []).filter(function (f) { return !skip[f]; });
     } catch (e) { return []; }
   }
+  // Reasonable fixed buckets for Blueprint fields that are really a choice,
+  // not free text — same "one canonical field, not an invented one per
+  // business" reasoning as JOB_FREQUENCY_OPTIONS. Only lotSize has one
+  // today; any Blueprint field not listed here still renders as plain text,
+  // same as before.
+  var JOB_EXTRA_FIELD_OPTIONS = {
+    lotSize: ['Small (under 5,000 sq ft)', 'Medium (5,000–10,000 sq ft)', 'Large (10,000–20,000 sq ft)', 'Extra large (20,000+ sq ft)', 'Not sure']
+  };
 
   // Routes the adaptive Blueprint fields into createJob()'s real params
   // where one already exists (vehicle/vehicleColor), falling back to Notes
@@ -16522,9 +16601,15 @@
       }, 0);
     }).catch(function (e) {
       console.warn('jobs-picker createJob', e);
+      // Surface the real reason, not just a generic "check your connection"
+      // — a genuine validation failure (a required field the server
+      // rejects, an RLS policy, etc.) used to look identical to an actual
+      // network drop, which made "it just doesn't work" impossible to
+      // diagnose without opening devtools.
+      var reason = (e && (e.message || e.error_description || e.details)) ? String(e.message || e.error_description || e.details) : '';
       toast(created.length
-        ? ('Created ' + created.length + ' of ' + dates.length + ' jobs before hitting an error — check your connection')
-        : 'Couldn’t create the job — check your connection and try again');
+        ? ('Created ' + created.length + ' of ' + dates.length + ' jobs before hitting an error' + (reason ? ': ' + reason : ' — check your connection'))
+        : ('Couldn’t create the job' + (reason ? ': ' + reason : ' — check your connection and try again')));
       if (st) { st.busy = false; renderJobPicker(pop); }
     });
   }
@@ -21446,10 +21531,14 @@
         if (!jpPopNew) return;
         var jpStNew = jobPickerState(jpPopNew);
         jpStNew.mode = 'create';
-        jpStNew.newName = jpStNew.q || '';
+        var jpSplitName = splitLeadName(jpStNew.q || '');
+        jpStNew.newFirst = jpSplitName.first;
+        jpStNew.newLast = jpSplitName.last;
+        jpStNew.who = (jpStNew.newFirst || jpStNew.newLast) ? { kind: 'new', name: (jpStNew.q || '').trim(), phone: '', email: '', address: '' } : null;
         jobPickerRefreshCustomerSection(jpPopNew);
+        jobPickerRefreshFooter(jpPopNew);
         setTimeout(function () {
-          var jpNameInput = jpPopNew.querySelector('.jos-jp-create-name');
+          var jpNameInput = jpPopNew.querySelector('.jos-jp-create-first');
           if (jpNameInput) jpNameInput.focus();
         }, 0);
         return;
@@ -21459,7 +21548,10 @@
         if (!jpPopBack) return;
         var jpStBack = jobPickerState(jpPopBack);
         jpStBack.mode = 'search';
+        jpStBack.who = null;
+        jpStBack.newFirst = ''; jpStBack.newLast = ''; jpStBack.newPhone = ''; jpStBack.newEmail = '';
         jobPickerRefreshCustomerSection(jpPopBack);
+        jobPickerRefreshFooter(jpPopBack);
         var jpSearchInput = jpPopBack.querySelector('.jos-jp-search-input');
         if (jpSearchInput) jpSearchInput.focus();
         return;
@@ -21492,20 +21584,6 @@
         jpStWho2.who = { kind: 'lead', archiveLeadId: jpLead.id || jpLead.key, name: jpLead.name || '', phone: jpLead.phone || '', email: jpLead.email || '', address: jpLead.address || '' };
         jobPickerRefreshCustomerSection(jpPopWho2);
         jobPickerRefreshFooter(jpPopWho2);
-        return;
-      }
-      if (act === 'jobs-picker-create-save') {
-        var jpPopSave = el('jos-job-picker');
-        if (!jpPopSave) return;
-        var jpNameEl = jpPopSave.querySelector('.jos-jp-create-name');
-        var jpPhoneEl = jpPopSave.querySelector('.jos-jp-create-phone');
-        var jpEmailEl = jpPopSave.querySelector('.jos-jp-create-email');
-        var jpName = String((jpNameEl && jpNameEl.value) || '').trim();
-        if (!jpName) { toast('This customer needs a name'); return; }
-        var jpStSave = jobPickerState(jpPopSave);
-        jpStSave.who = { kind: 'new', name: jpName, phone: String((jpPhoneEl && jpPhoneEl.value) || '').trim(), email: String((jpEmailEl && jpEmailEl.value) || '').trim(), address: '' };
-        jobPickerRefreshCustomerSection(jpPopSave);
-        jobPickerRefreshFooter(jpPopSave);
         return;
       }
       if (act === 'jobs-picker-change-customer') {
@@ -22792,8 +22870,7 @@
       if (act === 'ask') return ask('Plan a simple marketing campaign for this week');
       if (act === 'new-job-cust') {
         var cid = S().activeCustId || el('jos-customer-profile')?._josCustId || el('jos-customers-root')?._josCustId;
-        if (cid && typeof global.openNewJobForCustomer === 'function') return global.openNewJobForCustomer(cid);
-        return openJobCustomerPicker();
+        return openJobCustomerPicker(cid || null);
       }
       if (act === 'photo-quick') {
         el('jos-quick-pop')?.classList.remove('open');

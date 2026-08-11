@@ -47423,11 +47423,11 @@ async function validateEdSlug(slug){
 }
 function dateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fmt12(t24){if(!t24)return'';const[h,m]=t24.split(':').map(Number);const ap=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ap}`}
-function fmtDateLong(ds){if(!ds)return'';const d=new Date(ds+'T00:00:00');return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+function fmtDateLong(ds){if(!ds)return'';const d=new Date(ds+'T00:00:00');return d.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'})}
 // "Aug 11, 2026 · 2:30 PM" — same house format as journey.js's
 // nowTimelineStamp(), for the one activity-log stamp built here rather
 // than in journey.js (createLead's initial activity entry).
-function nowTimelineStamp(){const d=new Date();return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' · '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
+function nowTimelineStamp(){const d=new Date();return d.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'})+' · '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
 let toastT;
 function toast(msg,opts){
   const el=document.getElementById('toast');
