@@ -534,6 +534,14 @@ Deno.serve(async (req) => {
   // turn, in order — the client can render these as a natural pacing beat
   // ahead of the final message.
   const interimMessages: string[] = [];
+  // #188: the customer-safe confirmation payload from a successful
+  // booking.create this turn (WebsiteBookingConfirmation, see
+  // hubly_booking_execution.ts) — the ONLY piece of a capability result's
+  // `raw` that ever leaves this function. The rest of `raw` (job/customer
+  // internal ids, the membership object, etc.) stays server-side; the
+  // browser renders its confirmation card from this alone, never from the
+  // model's own reply text.
+  let bookingConfirmation: unknown = null;
 
   // Logo upload is client-triggered, not model-decided — see uploadDraftLogo's
   // own comment for why. Dispatched directly here, then folded into history
@@ -788,6 +796,16 @@ Deno.serve(async (req) => {
           real: !!result.real,
         });
 
+        // #188: pluck ONLY the confirmation payload out of a successful
+        // website booking — never the whole raw result.
+        if (
+          capabilityName === "booking" && actionName === "create" &&
+          result.ok && result.real && result.raw &&
+          typeof result.raw === "object" && "confirmation" in (result.raw as Record<string, unknown>)
+        ) {
+          bookingConfirmation = (result.raw as Record<string, unknown>).confirmation;
+        }
+
         history.push({
           role: "system",
           content: `CAPABILITY RESULT for ${capabilityName}.${actionName}: ${JSON.stringify(result)}\nOnly report what "summary" and "raw" actually show. Do not claim anything beyond this.`,
@@ -819,6 +837,7 @@ Deno.serve(async (req) => {
         ...(decision?.askLogo === true ? { askLogo: true } : {}),
         ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
         ...(draftBusiness ? { draftBusiness } : {}),
+        ...(bookingConfirmation ? { bookingConfirmation } : {}),
       });
     }
 
@@ -832,6 +851,7 @@ Deno.serve(async (req) => {
       interimMessages,
       ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
       ...(draftBusiness ? { draftBusiness } : {}),
+      ...(bookingConfirmation ? { bookingConfirmation } : {}),
     });
   } catch (err) {
     console.error("hubly-conversation error:", err);

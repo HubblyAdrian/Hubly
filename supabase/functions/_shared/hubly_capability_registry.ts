@@ -851,7 +851,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
       {
         name: "create",
         description:
-          "Creates a real booking — writes a real record and triggers real calendar sync. No confirmation email, SMS, or link is sent by this action — never tell the customer one was sent or will be sent; if asked how they'll be reminded, say the booking is confirmed here in this conversation. Only call this once the customer has chosen a real time from getAvailability and given their contact details. Only set frequency when the customer explicitly said they want this to repeat (e.g. \"every month\") — never infer or default it; omitting it creates a normal one-time booking. If the result includes real membership facts (plan name, price, cadence, status), you may state them if relevant — never invent membership benefits, discounts, or coverage that aren't given, and never proactively pitch a membership to a customer who doesn't have one.",
+          "Creates a real booking — writes a real record and triggers real calendar sync. A structured confirmation card (business, service, date/time, address, price, recurring info if real) is shown to the customer automatically — you do not need to restate those details yourself, and must never invent or reformat them differently than the result shows. No SMS or booking-management link is sent by this action. An email is attempted, best-effort — only say an email was sent if the result's confirmation.emailSent is true; if it's false, do not mention email at all (never say one was sent, and never say one failed, just don't bring it up) — the booking is confirmed either way. If asked how they'll be reminded and no email was sent, say the booking is confirmed here in this conversation. Only call this once the customer has chosen a real time from getAvailability and given their contact details. Only set frequency when the customer explicitly said they want this to repeat (e.g. \"every month\") — never infer or default it; omitting it creates a normal one-time booking. If the result includes real membership facts (plan name, price, cadence, status), you may state them if relevant — never invent membership benefits, discounts, or coverage that aren't given, and never proactively pitch a membership to a customer who doesn't have one.",
         argsSchema: bookingArgSchema(
           {
             serviceId: { type: "string", description: "Which service is being booked." },
@@ -925,6 +925,15 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
                 `${m.includes && m.includes.length ? `. Includes: ${m.includes.join(", ")}` : ""}. ` +
                 `This is real membership data you may reference if relevant — it does not by itself mean this specific booking is covered or discounted; only say that if the price already reflects it.`;
             }
+            // #188: a structured confirmation card is already shown to the
+            // customer automatically — don't restate service/date/price/
+            // address in prose, that's the card's job. Only state whether
+            // an email genuinely went out; never mention it at all when it
+            // didn't (no "no email was sent" — just silence on the topic).
+            summary += r.confirmation.emailSent
+              ? " A confirmation email was sent."
+              : "";
+            summary += " A confirmation card with the booking details is already shown to the customer — do not repeat service/date/time/price/address in your reply.";
             return {
               ok: true,
               real: true,

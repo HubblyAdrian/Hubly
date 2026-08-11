@@ -22,6 +22,7 @@ import { getCatalog, getService } from "./service_engine.ts";
 import { syncEnginePushCreate } from "./google_calendar_sync_engine.ts";
 import { computeNextOccurrenceDate, VALID_FREQUENCIES, type RecurringFrequency } from "./recurring_schedule_engine.ts";
 import { getCustomerMembership, type CustomerMembership } from "./customer_membership.ts";
+import { notifyBookingCreated } from "./booking_notifications.ts";
 
 type DayHours = { open: string; close: string; closed: boolean };
 
@@ -51,9 +52,13 @@ function minToTime(min: number): string {
 }
 
 export async function loadBusinessForBooking(admin: SupabaseClient, businessId: string) {
+  // #188: name/phone/email added for real confirmation-email content
+  // (booking_notifications.ts's business.name/email/phone fields) —
+  // getWebsiteAvailability/other existing callers only ever read
+  // .meta, so widening this select doesn't change their behavior.
   const { data } = await admin
     .from("businesses")
-    .select("id, meta")
+    .select("id, meta, name, phone, email")
     .eq("id", businessId)
     .maybeSingle();
   return data || null;
@@ -133,6 +138,28 @@ export type CreateWebsiteBookingInput = {
  *  lives in a JSON meta blob impractical to query server-side — not needed
  *  for "don't create a duplicate customer", which is the real requirement
  *  a second createJob() implementation would otherwise risk). */
+
+// #188: the ONLY booking data that crosses into the browser — deliberately
+// narrow. No internal ids, no membership object, no server implementation
+// details. This is the single source of truth the confirmation card
+// renders from; the AI never composes or reformats these facts.
+export type WebsiteBookingConfirmation = {
+  serviceName: string;
+  scheduledDate: string;
+  scheduledTime: string | null;
+  address: string | null;
+  amount: number | null;
+  customerName: string;
+  // Non-null only when a real recurring_schedules row backs this booking
+  // (new or reused) — never implies future job rows exist, only that the
+  // schedule itself does.
+  recurring: { frequency: string; nextOccurrenceDate: string | null } | null;
+  // True only if the confirmation email genuinely sent via Resend — never
+  // set true speculatively, and a false value never blocks or reflects on
+  // the booking itself having succeeded.
+  emailSent: boolean;
+};
+
 export async function createWebsiteBookingJob(
   admin: SupabaseClient,
   input: CreateWebsiteBookingInput,
@@ -145,6 +172,7 @@ export async function createWebsiteBookingJob(
     recurringScheduleId: string | null;
     existingScheduleConflict: Record<string, unknown> | null;
     membership: CustomerMembership | null;
+    confirmation: WebsiteBookingConfirmation;
   }
   | { ok: false; error: string }
 > {
@@ -313,6 +341,11 @@ export async function createWebsiteBookingJob(
   // attaching this visit to the existing schedule or replacing it is a
   // real decision, not something guessed here.
   let existingScheduleConflict: Record<string, unknown> | null = null;
+  // #188: whichever schedule this booking actually ends up tied to (new or
+  // reused) — its real frequency/next_occurrence_date, captured once here
+  // so the customer-safe confirmation payload below never has to
+  // re-derive or guess it. Null when no schedule is involved at all.
+  let confirmedSchedule: { frequency: string; nextOccurrenceDate: string | null } | null = null;
   const frequency = String(input.frequency || "").trim().toLowerCase();
   if (VALID_FREQUENCIES.includes(frequency as RecurringFrequency)) {
     let existingQuery = admin
@@ -328,7 +361,16 @@ export async function createWebsiteBookingJob(
 
     if (existing) {
       existingScheduleConflict = existing as Record<string, unknown>;
+      confirmedSchedule = {
+        frequency: String(existing.frequency || frequency),
+        nextOccurrenceDate: existing.next_occurrence_date ? String(existing.next_occurrence_date) : null,
+      };
     } else {
+      // The FIRST occurrence is this job itself (created below, right
+      // now) — next_occurrence_date must be the date AFTER it, or
+      // hubly-recurring-maintain would immediately try to generate a
+      // second job for the same date as occurrence #1.
+      const newScheduleNextOccurrenceDate = computeNextOccurrenceDate(input.date, frequency, undefined);
       const { data: schedule, error: schedErr } = await admin
         .from("recurring_schedules")
         .insert({
@@ -340,18 +382,17 @@ export async function createWebsiteBookingJob(
           frequency,
           status: "active",
           start_date: input.date,
-          // The FIRST occurrence is this job itself (created below, right
-          // now) — next_occurrence_date must be the date AFTER it, or
-          // hubly-recurring-maintain would immediately try to generate a
-          // second job for the same date as occurrence #1.
-          next_occurrence_date: computeNextOccurrenceDate(input.date, frequency, undefined),
+          next_occurrence_date: newScheduleNextOccurrenceDate,
           preferred_time: input.time || null,
           amount,
           address: input.address || null,
         })
         .select()
         .single();
-      if (!schedErr && schedule) recurringScheduleId = String(schedule.id);
+      if (!schedErr && schedule) {
+        recurringScheduleId = String(schedule.id);
+        confirmedSchedule = { frequency, nextOccurrenceDate: newScheduleNextOccurrenceDate };
+      }
     }
   }
 
@@ -381,6 +422,51 @@ export async function createWebsiteBookingJob(
     await syncEnginePushCreate(admin, { businessId: input.businessId, jobId: String(job.id) });
   } catch (_e) { /* no-op */ }
 
+  // #188: the customer-safe confirmation payload the browser actually
+  // renders — deliberately narrow (no internal ids, no membership object,
+  // no server implementation details), built once here from the real job/
+  // schedule rows, never left for the model to compose or reformat. See
+  // hubly_capability_registry.ts for how this crosses into the AI
+  // response, and hubly-conversation/index.ts for how it reaches the
+  // browser.
+  const confirmation: WebsiteBookingConfirmation = {
+    serviceName,
+    scheduledDate: String(job.scheduled_date || input.date),
+    scheduledTime: job.scheduled_time ? String(job.scheduled_time) : null,
+    address: job.address ? String(job.address) : null,
+    amount: job.amount != null ? Number(job.amount) : null,
+    customerName: (resolvedCustomer.name as string) || name,
+    recurring: confirmedSchedule,
+    emailSent: false,
+  };
+
+  // Real, best-effort confirmation email via the existing Resend
+  // infrastructure (booking_notifications.ts) — the same mechanism the
+  // Marketplace booking engine already uses in production, not a second
+  // email system. Website Concierge bookings are always instant/confirmed
+  // (no accept/decline step), so status is always "confirmed" here.
+  // Never blocks or fails the booking itself; confirmation.emailSent only
+  // becomes true if the send genuinely succeeded, so the AI/card can never
+  // claim an email went out that didn't.
+  try {
+    const emailResult = await notifyBookingCreated({
+      status: "confirmed",
+      customer_name: confirmation.customerName,
+      customer_email: (resolvedCustomer.email as string) || email || null,
+      customer_phone: (resolvedCustomer.phone as string) || phone || null,
+      service_name: serviceName,
+      starts_at: `${confirmation.scheduledDate}T${confirmation.scheduledTime || "00:00"}`,
+      address: confirmation.address,
+      price_cents: confirmation.amount != null ? Math.round(confirmation.amount * 100) : null,
+      business: {
+        name: (business as Record<string, unknown>).name ? String((business as Record<string, unknown>).name) : null,
+        email: (business as Record<string, unknown>).email ? String((business as Record<string, unknown>).email) : null,
+        phone: (business as Record<string, unknown>).phone ? String((business as Record<string, unknown>).phone) : null,
+      },
+    });
+    confirmation.emailSent = !!emailResult.customer;
+  } catch (_e) { /* no-op — email is best-effort, never blocks the real booking */ }
+
   return {
     ok: true,
     jobId: String(job.id),
@@ -389,5 +475,6 @@ export async function createWebsiteBookingJob(
     recurringScheduleId,
     existingScheduleConflict,
     membership,
+    confirmation,
   };
 }

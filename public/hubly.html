@@ -8349,6 +8349,18 @@ body.mkt-chat-open .mkt-back-top{display:none!important;}
 .ws-chat-msg.assistant .ws-chat-bubble-text{background:var(--ws-bg,#f1f5f9);color:var(--ws-text,#0f172a);border:1px solid var(--ws-border,#e2e8f0);border-bottom-left-radius:4px;}
 .ws-chat-msg.ws-chat-typing .ws-chat-bubble-text{font-style:italic;color:var(--ws-muted,#64748b);}
 .ws-chat-error{color:#b00;font-size:12px;padding:0 16px 10px;}
+.ws-chat-booking-card{margin:6px 0 10px;padding:14px 16px;background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.06);max-width:92%;}
+.ws-chat-card-head{font-weight:800;font-size:14px;color:var(--ws-text,#0f172a);margin-bottom:2px;}
+.ws-chat-card-biz{font-size:12px;color:var(--ws-muted,#64748b);margin-bottom:10px;}
+.ws-chat-card-rows{display:flex;flex-direction:column;gap:4px;}
+.ws-chat-card-row{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ws-text,#0f172a);}
+.ws-chat-card-row span{color:var(--ws-muted,#64748b);}
+.ws-chat-card-recurring{margin-top:10px;padding-top:10px;border-top:1px dashed var(--ws-border,#e2e8f0);}
+.ws-chat-card-recurring-badge{display:inline-block;font-size:12px;font-weight:700;color:var(--ws-accent,#1a3a6e);}
+.ws-chat-card-recurring-next{font-size:12px;color:var(--ws-muted,#64748b);margin-top:2px;}
+.ws-chat-card-email{margin-top:8px;font-size:12px;color:var(--ws-muted,#64748b);}
+.ws-chat-card-btn{margin-top:12px;width:100%;padding:9px 12px;border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-btn-radius,999px);background:var(--ws-bg,#f8fafc);color:var(--ws-text,#0f172a);font:inherit;font-size:12px;font-weight:600;cursor:pointer;}
+.ws-chat-card-btn:hover{background:var(--ws-border,#e2e8f0);}
 .ws-chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--ws-border,#e2e8f0);}
 .ws-chat-input{flex:1;padding:10px 12px;border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-btn-radius,999px);font:inherit;font-size:13px;background:var(--ws-bg,#fff);color:var(--ws-text,#0f172a);min-width:0;}
 .ws-chat-input:disabled{opacity:.6;}
@@ -16379,20 +16391,100 @@ async function ccCall(userText,entryIntent){
     if(data.understanding&&data.understanding.patch&&typeof data.understanding.patch==='object'){
       st.understanding=Object.assign({},st.understanding,data.understanding.patch);
     }
+    // #188: the deterministic booking confirmation card is driven ONLY by
+    // this real, server-computed payload (WebsiteBookingConfirmation) --
+    // never by data.reply's prose. Keyed to the assistant message this
+    // turn just appended (the last entry in the now-replaced st.messages),
+    // so ccRenderLog() can place the card right after the right bubble on
+    // every re-render, including after a page reload from localStorage.
+    if(data.bookingConfirmation&&typeof data.bookingConfirmation==='object'){
+      if(!Array.isArray(st.bookingConfirmations))st.bookingConfirmations=[];
+      st.bookingConfirmations.push({afterMessageIndex:st.messages.length-1,data:data.bookingConfirmation});
+    }
     ccPersist();
-    return {ok:true,reply:data.reply,actions:data.actions||[]};
+    return {ok:true,reply:data.reply,actions:data.actions||[],bookingConfirmation:data.bookingConfirmation||null};
   }catch(e){
     st.error='Sorry, something went wrong. Please try again or contact us directly.';
     ccPersist();
     return {ok:false,error:st.error};
   }
 }
+// #188: friendly date/time for the confirmation card only -- deliberately
+// not fmtDateLong() (that's the owner app's numeric MM/DD/YYYY convention,
+// public/hubly.html:47770); this mirrors booking_notifications.ts's own
+// whenLabel() so the card and the confirmation email (when one is sent)
+// read the same way. ds is "YYYY-MM-DD", hm is "HH:MM" or "HH:MM:SS".
+function ccFormatDateFriendly(ds){
+  if(!ds)return'';
+  try{
+    const [y,mo,d]=String(ds).slice(0,10).split('-').map(Number);
+    return new Date(y,(mo||1)-1,d||1).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  }catch(e){return String(ds);}
+}
+function ccFormatTimeFriendly(hm){
+  if(!hm)return'';
+  const parts=String(hm).slice(0,5).split(':');
+  const hh=Number(parts[0]),mm=Number(parts[1]);
+  if(!Number.isFinite(hh)||!Number.isFinite(mm))return'';
+  const h12=(hh%12)||12,ap=hh>=12?'PM':'AM';
+  return h12+':'+String(mm).padStart(2,'0')+' '+ap;
+}
+// #188: the deterministic confirmation card -- built ONLY from the real,
+// server-computed WebsiteBookingConfirmation payload (customer-safe:
+// service/date/time/address/amount/recurring/emailSent, nothing else --
+// see hubly_booking_execution.ts). Never touches AI-generated text.
+// Business name comes from S.biz, same as everywhere else this widget
+// already reads it (the widget is embedded on that business's own site,
+// so it never needed to travel through the booking result).
+function ccBookingConfirmationCardHtml(data){
+  data=data||{};
+  const biz=escapeHtml(S.biz||'');
+  const rows=[];
+  if(data.serviceName)rows.push(['Service',escapeHtml(data.serviceName)]);
+  const dateLabel=ccFormatDateFriendly(data.scheduledDate);
+  if(dateLabel)rows.push(['Date',escapeHtml(dateLabel)]);
+  const timeLabel=ccFormatTimeFriendly(data.scheduledTime);
+  if(timeLabel)rows.push(['Time',escapeHtml(timeLabel)]);
+  if(data.address)rows.push(['Location',escapeHtml(data.address)]);
+  if(data.amount!=null&&Number.isFinite(Number(data.amount))){
+    rows.push(['Price',escapeHtml('$'+Number(data.amount).toFixed(2))]);
+  }
+  const recurringHtml=(data.recurring&&data.recurring.frequency)
+    ?(()=>{
+      const freqLabel=String(data.recurring.frequency).charAt(0).toUpperCase()+String(data.recurring.frequency).slice(1);
+      const nextLabel=ccFormatDateFriendly(data.recurring.nextOccurrenceDate);
+      return '<div class="ws-chat-card-recurring">'+
+        '<span class="ws-chat-card-recurring-badge">&#8635; Recurring &mdash; '+escapeHtml(freqLabel)+'</span>'+
+        (nextLabel?('<div class="ws-chat-card-recurring-next">Next visit: '+escapeHtml(nextLabel)+'</div>'):'')+
+        '</div>';
+    })()
+    :'';
+  const emailLine=data.emailSent
+    ?'<div class="ws-chat-card-email">A confirmation email was sent to you.</div>'
+    :'';
+  return '<div class="ws-chat-booking-card">'+
+    '<div class="ws-chat-card-head">&#10003; You&rsquo;re booked</div>'+
+    (biz?('<div class="ws-chat-card-biz">'+biz+'</div>'):'')+
+    '<div class="ws-chat-card-rows">'+rows.map(function(r){
+      return '<div class="ws-chat-card-row"><span>'+r[0]+'</span><strong>'+r[1]+'</strong></div>';
+    }).join('')+'</div>'+
+    recurringHtml+
+    emailLine+
+    '<button type="button" class="ws-chat-card-btn" onclick="document.getElementById(\'ws-chat-input\')?.focus()">Contact '+(biz||'us')+'</button>'+
+    '</div>';
+}
 function ccRenderLog(){
   const log=document.getElementById('ws-chat-log');
   if(!log)return;
   const st=ccState();
-  log.innerHTML=st.messages.map(m=>
-    `<div class="ws-chat-msg ${m.role==='user'?'customer':'assistant'}"><span class="ws-chat-bubble-text">${escapeHtml(m.content)}</span></div>`
+  const cardsByIdx={};
+  (Array.isArray(st.bookingConfirmations)?st.bookingConfirmations:[]).forEach(function(c){
+    if(!cardsByIdx[c.afterMessageIndex])cardsByIdx[c.afterMessageIndex]=[];
+    cardsByIdx[c.afterMessageIndex].push(c.data);
+  });
+  log.innerHTML=st.messages.map((m,i)=>
+    `<div class="ws-chat-msg ${m.role==='user'?'customer':'assistant'}"><span class="ws-chat-bubble-text">${escapeHtml(m.content)}</span></div>`+
+    (cardsByIdx[i]||[]).map(ccBookingConfirmationCardHtml).join('')
   ).join('')+(st.error?`<div class="ws-chat-error">${escapeHtml(st.error)}</div>`:'');
   log.scrollTop=log.scrollHeight;
 }
