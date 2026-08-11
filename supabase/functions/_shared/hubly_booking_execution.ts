@@ -21,6 +21,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCatalog, getService } from "./service_engine.ts";
 import { syncEnginePushCreate } from "./google_calendar_sync_engine.ts";
 import { computeNextOccurrenceDate, VALID_FREQUENCIES, type RecurringFrequency } from "./recurring_schedule_engine.ts";
+import { getCustomerMembership, type CustomerMembership } from "./customer_membership.ts";
 
 type DayHours = { open: string; close: string; closed: boolean };
 
@@ -143,6 +144,7 @@ export async function createWebsiteBookingJob(
     customerId: string;
     recurringScheduleId: string | null;
     existingScheduleConflict: Record<string, unknown> | null;
+    membership: CustomerMembership | null;
   }
   | { ok: false; error: string }
 > {
@@ -150,6 +152,14 @@ export async function createWebsiteBookingJob(
   if (!business) return { ok: false, error: "business_not_found" };
 
   let serviceName = String(input.serviceName || "").trim();
+  // #187: this is the normal Service Engine/catalog price, unconditionally
+  // — no membership-price branch here. The `memberships` table has no
+  // structured field stating "this plan covers/discounts service X at
+  // price Y" (service_name is a freeform label, not a safe coverage
+  // signal — matching it against the booked service by name was
+  // explicitly rejected as unreliable evidence). If/when an explicit,
+  // owner-authored coverage rule exists, it belongs here; until then this
+  // must not guess one from a name match.
   let amount = input.amount != null ? Number(input.amount) : null;
   let durationHours: number | null = null;
   // resolvedServiceId is only ever set when the lookup actually succeeds —
@@ -275,6 +285,17 @@ export async function createWebsiteBookingJob(
     }
   } catch (_e) { /* no-op — reconciliation is best-effort, never blocks the real booking */ }
 
+  // #187: real membership state, read from the structured `memberships`
+  // table (never by parsing customers.notes here) — independent of
+  // whether this particular booking is itself recurring. Membership and
+  // Recurring Schedule relate only through resolvedCustomer.id, never a
+  // foreign key between the two tables. This does NOT affect pricing
+  // below — see the amount-resolution comment further down for why.
+  let membership: CustomerMembership | null = null;
+  try {
+    membership = await getCustomerMembership(admin, input.businessId, String(resolvedCustomer.id));
+  } catch (_e) { /* no-op — membership visibility is best-effort, never blocks the real booking */ }
+
   // Recurring: only when the customer explicitly asked for repetition (the
   // model is instructed to only set this when genuinely stated — see the
   // create action's description in hubly_capability_registry.ts). Creates
@@ -367,5 +388,6 @@ export async function createWebsiteBookingJob(
     customerId: String(resolvedCustomer.id),
     recurringScheduleId,
     existingScheduleConflict,
+    membership,
   };
 }

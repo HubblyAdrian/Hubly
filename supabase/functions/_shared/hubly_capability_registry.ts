@@ -851,7 +851,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
       {
         name: "create",
         description:
-          "Creates a real booking — writes a real record and triggers real calendar sync. No confirmation email, SMS, or link is sent by this action — never tell the customer one was sent or will be sent; if asked how they'll be reminded, say the booking is confirmed here in this conversation. Only call this once the customer has chosen a real time from getAvailability and given their contact details. Only set frequency when the customer explicitly said they want this to repeat (e.g. \"every month\") — never infer or default it; omitting it creates a normal one-time booking.",
+          "Creates a real booking — writes a real record and triggers real calendar sync. No confirmation email, SMS, or link is sent by this action — never tell the customer one was sent or will be sent; if asked how they'll be reminded, say the booking is confirmed here in this conversation. Only call this once the customer has chosen a real time from getAvailability and given their contact details. Only set frequency when the customer explicitly said they want this to repeat (e.g. \"every month\") — never infer or default it; omitting it creates a normal one-time booking. If the result includes real membership facts (plan name, price, cadence, status), you may state them if relevant — never invent membership benefits, discounts, or coverage that aren't given, and never proactively pitch a membership to a customer who doesn't have one.",
         argsSchema: bookingArgSchema(
           {
             serviceId: { type: "string", description: "Which service is being booked." },
@@ -906,6 +906,24 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
               summary = `Real job booked for ${startsAt}. This customer already has an active ${c.frequency || "recurring"} schedule` +
                 `${c.service_name ? ` for ${c.service_name}` : ""}${c.next_occurrence_date ? ` (next visit ${c.next_occurrence_date})` : ""} — ` +
                 `no second schedule was created. Tell the customer their existing recurring visits are unaffected; if they want to change the cadence or service on that existing schedule, that needs to be handled separately, not by booking again.`;
+            }
+            // #187: membership is a fact independent of the schedule outcome
+            // above — a customer can have both, either, or neither. Only
+            // real, present fields are ever stated; nothing here implies
+            // this specific booking is covered or discounted by the
+            // membership unless the amount already reflects that (it
+            // doesn't today — see hubly_booking_execution.ts). Do not
+            // pitch a membership when one is absent — that's out of scope.
+            if (r.membership) {
+              const m = r.membership as {
+                planName?: string; status?: string; price?: number | null;
+                cadence?: string | null; serviceName?: string | null; includes?: string[] | null;
+              };
+              const priceBit = m.price != null ? `$${m.price}${m.cadence ? "/" + m.cadence : ""}` : "";
+              summary += ` This customer has a ${m.status || "active"} membership: ${m.planName || "Membership"}` +
+                `${priceBit ? ` (${priceBit})` : ""}${m.serviceName ? `, service: ${m.serviceName}` : ""}` +
+                `${m.includes && m.includes.length ? `. Includes: ${m.includes.join(", ")}` : ""}. ` +
+                `This is real membership data you may reference if relevant — it does not by itself mean this specific booking is covered or discounted; only say that if the price already reflects it.`;
             }
             return {
               ok: true,

@@ -42422,6 +42422,35 @@ function mapCustRow(row){
     createdAt: row.created_at||null,
   };
 }
+// #187: best-effort sync of the browser's [RP] membership tag into the
+// structured `memberships` table — the AI/edge functions read real
+// membership state from that table (never by parsing notes-tags
+// server-side). upsertCustomer() is the only place customer.recurringPlan
+// is ever set (verified: saveManagedRecurringPlan and
+// _acceptBookingRequestInner's membership-signup branch are the only two
+// callers, both funnel through here), so this is the single
+// synchronization point — a failure here must never block the actual
+// customer save.
+async function syncMembershipToTable(dbc,businessId,customerId,plan){
+  if(!dbc||!businessId||!customerId||!plan)return;
+  try{
+    const row={
+      business_id:businessId,
+      customer_id:customerId,
+      plan_name:plan.planName||'Membership',
+      service_name:plan.serviceName||null,
+      cadence:plan.cadence||null,
+      price:plan.defaultPrice!=null?Number(plan.defaultPrice):null,
+      default_duration:plan.defaultDuration!=null?Number(plan.defaultDuration):null,
+      status:plan.status||'active',
+      next_due_date:plan.nextDueDate||null,
+      includes:Array.isArray(plan.includes)?plan.includes:null,
+      source_plan_ref:plan.membershipPlanId||null,
+      updated_at:new Date().toISOString(),
+    };
+    await dbc.from('memberships').upsert(row,{onConflict:'customer_id'});
+  }catch(e){console.warn('syncMembershipToTable failed (non-blocking)',e?.message||e);}
+}
 async function upsertCustomer(data,opts){
   opts=opts||{};
   // forceCreate: skip both match checks below and always insert fresh —
@@ -42472,12 +42501,14 @@ async function upsertCustomer(data,opts){
       const {data:updated,error}=await realtimeAwareWrite({table:'customers',id:c.id,write:()=>dbc.from('customers').update(payload).eq('id',c.id).select().single()});
       if(error)throw error;
       Object.assign(c,mapCustRow(updated));
+      await syncMembershipToTable(dbc,currentBusiness.id,c.id,recurringPlan);
       return c;
     }else if(currentUser){
       const {data:inserted,error}=await realtimeAwareWrite({table:'customers',id:(res)=>res&&res.data&&res.data.id,write:()=>dbc.from('customers').insert({...payload,business_id:currentBusiness.id}).select().single()});
       if(error)throw error;
       const row=mapCustRow(inserted);
       if(c){Object.assign(c,row)}else{c=row;S.customers.push(c);updateCustDL()}
+      await syncMembershipToTable(dbc,currentBusiness.id,row.id,recurringPlan);
       return c;
     }else{
       // Anonymous caller (e.g. the public booking flow) — customers has no
