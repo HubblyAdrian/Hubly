@@ -60,11 +60,32 @@
     if (global.HublySmartQuote && HublySmartQuote.formatMoney) return HublySmartQuote.formatMoney(n);
     var x = Number(n); return Number.isFinite(x) ? ('$' + x.toFixed(x % 1 ? 2 : 0)) : '';
   }
+  // "Aug 11, 2026" — easier to scan than either the raw ISO string
+  // (2026-08-11) or the old "Wed, Aug 12" format, which also silently
+  // dropped the year (real ambiguity once a table spans more than one
+  // year). Shared by every date-type column and every explicit dateLong()
+  // call across Jobs/Leads/Customers — one format, one place it's defined.
   function dateLong(ds) {
     if (!ds) return '';
     if (typeof global.fmtDateLong === 'function') { try { return global.fmtDateLong(String(ds).slice(0, 10)); } catch (e) {} }
-    try { return new Date(String(ds).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); }
+    try { return new Date(String(ds).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
     catch (e) { return String(ds).slice(0, 10); }
+  }
+  // "Aug 11, 2026 · 2:30 PM" — the timeline/activity-log equivalent of
+  // dateLong(), for the ~13 places across Jobs/Leads/Customers that stamp
+  // "right now" onto a new activity/timeline entry. Replaces plain
+  // nowTimelineStamp() (locale-default, reads like "8/11/2026,
+  // 2:30:00 PM" — the exact raw/inconsistent format this pass is fixing
+  // everywhere else) with the same one house format. These stamps are
+  // captured once at creation time and shown as-is afterward (not re-
+  // parsed later — see the jobRelativeDateLabel comment on why re-parsing
+  // a toLocaleString() output isn't reliable across browsers), so
+  // standardizing the format at capture time is the correct fix, not a
+  // display-time reformat.
+  function nowTimelineStamp() {
+    var d = new Date();
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+      ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   }
   function toast(msg) { if (typeof global.toast === 'function') global.toast(msg); }
   function el(id) { return document.getElementById(id); }
@@ -1468,7 +1489,7 @@
           amount: Number(payload.amount) || 0,
           createdAt: ahNow(),
           internalNotes: ['Created by Ask Hubly after confirmation'],
-          timeline: [{ type: 'created', label: 'Created by Ask Hubly', at: new Date().toLocaleString() }]
+          timeline: [{ type: 'created', label: 'Created by Ask Hubly', at: nowTimelineStamp() }]
         };
         st.jobs.push(job);
         result.jobId = job.id;
@@ -7533,7 +7554,7 @@
     {
       key: 'created', label: 'Created', type: 'text', width: 110,
       editable: false, searchable: false, filterable: false, sortable: true,
-      get: function (lead) { return String(lead.createdAt || '').slice(0, 10) || '—'; },
+      get: function (lead) { return lead.createdAt ? dateLong(String(lead.createdAt).slice(0, 10)) : ''; },
       // Sorting needs the full, real-precision timestamp (and falls back to
       // lastContacted, matching the existing "most recently active" sort
       // intent) — get() truncates to a YYYY-MM-DD display string, which
@@ -8049,7 +8070,7 @@
 
   function pushLeadActivity(lead, type, label) {
     lead.activity = lead.activity || [];
-    lead.activity.unshift({ type: type, label: label, at: new Date().toLocaleString() });
+    lead.activity.unshift({ type: type, label: label, at: nowTimelineStamp() });
     lead.activity = lead.activity.slice(0, 40);
   }
 
@@ -8511,9 +8532,14 @@
       readValue: function (el) { var n = parseFloat(el.value); return isNaN(n) ? '' : n; }
     },
     date: {
+      // Stored/edited value stays raw ISO (YYYY-MM-DD) — that's what a
+      // native <input type="date"> requires — only the read-only display
+      // runs it through dateLong() for a scannable MM/DD/YYYY instead of
+      // the raw ISO string every date-type column used to show as-is.
       display: function (value, col, leadKey) {
         var v = value || '';
-        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (v ? esc(v) : '—') + '</span>';
+        var shown = v ? dateLong(v) : '';
+        return '<span class="jos-ld-name-cell' + (v ? '' : ' is-empty') + '" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" title="Click to edit">' + (shown ? esc(shown) : '—') + '</span>';
       },
       edit: function (value, col, leadKey) {
         return '<input type="date" class="jos-ld-cell-inline jos-ld-editing" data-jos-field="' + esc(col.key) + '" data-jos-record-id="' + esc(leadKey) + '" aria-label="' + esc(col.label) + '" value="' + esc(value || '') + '" onclick="event.stopPropagation()">';
@@ -11225,7 +11251,7 @@
           osStage: 'new',
           status: 'new',
           createdAt: new Date().toISOString(),
-          activity: [{ type: 'created', label: 'Duplicated lead', at: new Date().toLocaleString() }]
+          activity: [{ type: 'created', label: 'Duplicated lead', at: nowTimelineStamp() }]
         });
         copy.key = copy.id;
         st2.pipeline.manual.unshift(copy);
@@ -11538,12 +11564,33 @@
       existing.preferredService = existing.preferredService || job.service || '';
       if (job.vehicle) existing.vehicle = existing.vehicle || job.vehicle;
       existing.activity = existing.activity || [];
-      existing.activity.unshift({ type: 'job', label: 'Job completed · ' + (job.service || 'Service'), at: new Date().toLocaleString() });
+      existing.activity.unshift({ type: 'job', label: 'Job completed · ' + (job.service || 'Service'), at: nowTimelineStamp() });
       if (amt) {
         existing.payments = existing.payments || [];
         existing.payments.unshift({ amount: amt, status: 'paid', at: job.date || todayStr(), label: job.service || 'Job' });
       }
       syncCustomerStatsFromJobs(existing);
+      // This function used to only ever mutate the in-memory S().customers
+      // array — it never called upsertCustomer, so a job completed through
+      // any path that reached here (the drawer's "Mark Complete" button,
+      // and now the table/combo Status edit too, see mutateJobField) built
+      // a customer that looked real for the rest of the browser session and
+      // then silently vanished on the next reload/refetch, since it was
+      // never actually written to the customers table. This was the real
+      // "2 of 8 completed jobs made it to Customers" bug — not a Customers-
+      // page rendering issue. Routing through the same global.upsertCustomer
+      // mutateCustomerById already uses persists it for real; upsertCustomer
+      // finds this exact object by id/name (S.customers is the same shared
+      // array journey.js and hubly.html both read/write) and mutates it in
+      // place with the real DB row once the write resolves.
+      try {
+        if (typeof global.upsertCustomer === 'function') {
+          global.upsertCustomer({
+            id: existing.id, name: existing.name, phone: existing.phone, email: existing.email,
+            vehicle: existing.vehicle, preferredService: existing.preferredService,
+          });
+        }
+      } catch (eSave) {}
       return existing;
     }
     var id = 'cust_' + Date.now();
@@ -11557,11 +11604,25 @@
       notesList: [], documents: [], photos: [],
       payments: amt ? [{ amount: amt, status: 'paid', at: job.date || todayStr(), label: job.service || 'Job' }] : [],
       invoices: [], outstandingBalance: 0, likes: [], dislikes: [], commPref: 'Text',
-      activity: [{ type: 'created', label: 'Became a customer after first completed job', at: new Date().toLocaleString() }],
+      activity: [{ type: 'created', label: 'Became a customer after first completed job', at: nowTimelineStamp() }],
       assignedTo: job.assignedTo || '', aiScore: 62
     };
     job.customerId = id;
     st.customers.unshift(cust);
+    // Same reasoning as the existing-customer branch above — this is the
+    // brand-new-customer half of the same missing-persistence bug.
+    // upsertCustomer's own name match (S.customers.find by name) resolves
+    // to this exact `cust` object and Object.assign()s the real DB row
+    // (real id, _persisted:true) onto it in place once the insert
+    // resolves — no separate "swap the temp id" step needed here.
+    try {
+      if (typeof global.upsertCustomer === 'function') {
+        global.upsertCustomer({
+          name: cust.name, phone: cust.phone, email: cust.email, vehicle: cust.vehicle,
+          preferredService: cust.preferredService, customerType: cust.customerType,
+        });
+      }
+    } catch (eSave2) {}
     return cust;
   }
 
@@ -12214,20 +12275,9 @@
       level = 'list'; root._josCustLevel = 'list';
     }
 
-    /* LEVEL 2 — Command Center (full page, not a CRM split view) */
-    if (level === 'command' && sel) {
-      var commandHtml =
-        '<div class="jos-cm-shell jos-cc-level-2">' +
-        renderCustomerCommandCenter(root, sel) +
-        renderCustomersContextMenu(root) +
-        '</div>';
-      morphTableInto(root, commandHtml);
-      bindRoot(root);
-      wireCustomersRoot(root);
-      return;
-    }
-
-    /* LEVEL 1 — Completed Customers browse */
+    /* LEVEL 1 — Completed Customers browse (always the base content now —
+       Level 2 renders as a right-side drawer over it, see
+       renderCustCommandDrawer below, instead of replacing it). */
     var bulkOpen = !!root._josCustBulkOpen;
     var smartFilters = '<div class="jos-cc1-filters">' + CUST_SMART_FILTERS.map(function (t) {
       var count = allCompleted.filter(function (c) { return custMatchesSmartFilter(c, t[0]); }).length;
@@ -12291,6 +12341,50 @@
     bindRoot(root);
     wireCustomersRoot(root);
     positionCustColMenu(root);
+    renderCustCommandDrawer(root, level === 'command' && sel ? sel : null);
+  }
+
+  // Level 2 (Command Center — quick view: NBA, stats, AI summary, timeline,
+  // membership/preferences rail) as a right-side drawer over the still-
+  // visible customer list, instead of replacing the whole page. It used to
+  // morph over Level 1 entirely — a full-page swap that read as "a huge
+  // view," with the one thing actually built as a proper slide-in drawer
+  // (ensureProfileShell/openFullCustomerProfile, Level 3 "Full Profile")
+  // only reachable as a second click *inside* that full page. Reusing the
+  // exact same body-appended-overlay pattern and .jos-profile/.jos-profile-
+  // panel drawer CSS Level 3 already has (journey.css) — narrowed via
+  // .jos-cc2-panel — rather than inventing a second drawer mechanism.
+  // renderCustomerCommandCenter(root, c)'s own HTML/logic is untouched;
+  // only where it mounts changes.
+  function ensureCustCommandShell() {
+    var shell = el('jos-cust-command-drawer');
+    if (shell) return shell;
+    shell = document.createElement('div');
+    shell.id = 'jos-cust-command-drawer';
+    shell.className = 'jos-profile jos-cc2-drawer';
+    shell.innerHTML = '<div class="jos-profile-panel jos-cc2-panel" role="dialog" aria-modal="true" id="jos-cust-command-panel"></div>';
+    document.body.appendChild(shell);
+    shell.addEventListener('click', function (e) { if (e.target === shell) closeCustCommandDrawer(); });
+    bindRoot(shell);
+    wireCustomersRoot(shell);
+    return shell;
+  }
+  function closeCustCommandDrawer() {
+    var root = el('jos-customers-root');
+    if (!root || root._josCustLevel !== 'command') return;
+    root._josCustLevel = 'list';
+    renderCustomers();
+  }
+  function renderCustCommandDrawer(root, c) {
+    var shell = el('jos-cust-command-drawer');
+    if (!c) { if (shell) shell.classList.remove('open'); return; }
+    shell = ensureCustCommandShell();
+    var panel = el('jos-cust-command-panel');
+    panel.innerHTML =
+      '<button type="button" class="jos-profile-close jos-cc2-drawer-close" data-jos-act="cust-back-list" aria-label="Close">×</button>' +
+      renderCustomerCommandCenter(root, c) +
+      renderCustomersContextMenu(root);
+    shell.classList.add('open');
   }
 
   function readCustAddDraft() {
@@ -12626,7 +12720,7 @@
 
   function pushCustActivity(c, type, label) {
     c.activity = c.activity || [];
-    c.activity.unshift({ type: type, label: label, at: new Date().toLocaleString() });
+    c.activity.unshift({ type: type, label: label, at: nowTimelineStamp() });
     c.activity = c.activity.slice(0, 40);
   }
 
@@ -15927,6 +16021,14 @@
         jobPickerRefreshJobDetails(pop);
         jobPickerLoadAvailability(pop, t.value);
       }
+      if (t.hasAttribute('data-jos-jp-frequency')) {
+        st.frequency = t.value;
+        if (!st.occurrences) st.occurrences = 12;
+        jobPickerRefreshJobDetails(pop);
+        return;
+      }
+      if (t.hasAttribute('data-jos-jp-occurrences')) { st.occurrences = parseInt(t.value, 10) || 12; jobPickerRefreshJobDetails(pop); return; }
+      if (t.hasAttribute('data-jos-jp-custom-days')) { st.customDays = parseInt(t.value, 10) || 7; return; }
     });
     return pop;
   }
@@ -16088,12 +16190,30 @@
           esc(formatJobMinutes(mins)) + '</button>';
       }).join('') + '</div>' + (st.slotsLoading ? '<div class="jos-jp-slot-hint">Checking availability…</div>' : '');
     }
+    var freq = st.frequency || 'none';
+    var freqOptionsHtml = JOB_FREQUENCY_OPTIONS.map(function (o) {
+      return '<option value="' + esc(o[0]) + '"' + (freq === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>';
+    }).join('');
+    var recurringFieldsHtml = '';
+    if (freq !== 'none') {
+      recurringFieldsHtml =
+        (freq === 'custom'
+          ? '<label class="jos-jp-field"><span>Repeat every (days)</span><input type="number" min="1" max="365" data-jos-jp-custom-days value="' + esc(st.customDays || 7) + '"></label>'
+          : '') +
+        '<label class="jos-jp-field"><span>Ends</span>' +
+        '<select data-jos-jp-occurrences>' + [4, 6, 8, 12, 24, 52].map(function (n) {
+          return '<option value="' + n + '"' + ((st.occurrences || 12) === n ? ' selected' : '') + '>After ' + n + ' occurrences</option>';
+        }).join('') + '</select></label>' +
+        '<div class="jos-jp-hint">Creates ' + (st.occurrences || 12) + ' jobs on the calendar, one per occurrence. Canceling one offers canceling the rest of the series too.</div>';
+    }
     return '<div class="jos-jp-section" id="jos-jp-jobdetails-section"><h4>Job Details</h4>' +
       svcInner +
       '<div class="jos-jp-extra">' +
       '<label class="jos-jp-field"><span>Date</span><input type="date" data-jos-jp-date value="' + esc(dateVal) + '"></label>' +
       '<div class="jos-jp-field"><span>Time</span>' + slotsHtml + '</div>' +
       '<label class="jos-jp-field"><span>Location</span><input type="text" data-jos-jp-address value="' + esc(addr) + '" placeholder="Service address"></label>' +
+      '<label class="jos-jp-field"><span>Frequency</span><select data-jos-jp-frequency>' + freqOptionsHtml + '</select></label>' +
+      recurringFieldsHtml +
       '</div></div>';
   }
 
@@ -16238,6 +16358,14 @@
       delete extra.notes;
     }
     Object.assign(input, extra);
+    // Not part of createJob()'s own payload — startJobFromPicker reads
+    // these to decide whether to create one job or a whole series, then
+    // strips them back out before each individual createJob() call.
+    if (st.frequency && st.frequency !== 'none') {
+      input.frequency = st.frequency;
+      input.occurrences = st.occurrences || 12;
+      input.customDays = st.customDays || 7;
+    }
     return input;
   }
 
@@ -16316,25 +16444,56 @@
     opts = opts || {};
     var pop = el('jos-job-picker');
     var st = pop ? jobPickerState(pop) : null;
+    // Double-submit guard — st.busy flips true immediately below and every
+    // dispatch handler that could re-invoke this checks it first (same
+    // pattern already covering the single-job path; a recurring series
+    // makes an accidental double-click far more expensive, since it would
+    // create two whole series instead of two jobs).
+    if (st && st.busy) return;
     if (st) { st.busy = true; renderJobPicker(pop); }
     if (typeof global.createJob !== 'function') {
       toast('Not connected');
       if (st) { st.busy = false; renderJobPicker(pop); }
       return;
     }
-    global.createJob(Object.assign({ status: 'scheduled' }, input)).then(function (result) {
-      if (!result || result.error) {
-        console.warn('jobs-picker createJob', result && result.error);
-        toast('Couldn’t create the job — check your connection and try again');
-        if (st) { st.busy = false; renderJobPicker(pop); }
-        return;
-      }
+    var freq = input.frequency;
+    var occurrences = input.occurrences;
+    var customDays = input.customDays;
+    var baseInput = Object.assign({}, input);
+    delete baseInput.frequency; delete baseInput.occurrences; delete baseInput.customDays;
+    var dates = (freq && freq !== 'none') ? recurringJobDates(baseInput.date, freq, occurrences, customDays) : [baseInput.date];
+    var groupId = dates.length > 1 ? ('rjob_' + Date.now()) : '';
+    var recurTag = groupId ? buildRecurTag(groupId, freq, customDays) : '';
+
+    // One createJob() call per occurrence, sequential (not Promise.all) so
+    // a mid-series failure stops cleanly instead of leaving partial,
+    // out-of-order results — a real job-creation failure here should be
+    // rare (same createJob() every other path already trusts), but a
+    // 12-occurrence series is exactly the case where "some succeeded, some
+    // silently didn't" would be hardest to notice.
+    var created = [];
+    function createNext(i) {
+      if (i >= dates.length) return Promise.resolve();
+      var occInput = Object.assign({ status: 'scheduled' }, baseInput, { date: dates[i] });
+      if (recurTag) occInput.notes = [occInput.notes, recurTag].filter(Boolean).join('\n');
+      return global.createJob(occInput).then(function (result) {
+        if (!result || result.error) return Promise.reject((result && result.error) || new Error('createJob failed'));
+        created.push(result);
+        return createNext(i + 1);
+      });
+    }
+
+    createNext(0).then(function () {
+      if (!created.length) return;
+      var result = created[0];
       closeJobCustomerPicker();
-      var mapped = (typeof global.mapJobRow === 'function' && result.job) ? global.mapJobRow(result.job) : null;
-      if (mapped) {
-        S().jobs = Array.isArray(S().jobs) ? S().jobs : [];
-        S().jobs.unshift(mapped);
-      }
+      created.forEach(function (r) {
+        var mapped = (typeof global.mapJobRow === 'function' && r.job) ? global.mapJobRow(r.job) : null;
+        if (mapped) {
+          S().jobs = Array.isArray(S().jobs) ? S().jobs : [];
+          S().jobs.unshift(mapped);
+        }
+      });
       // Same archive-not-delete outcome leads-convert-job already applies
       // when a lead becomes a job — the lead leaves the active pipeline
       // (booked:true, stage 'archived') instead of a job existing while
@@ -16349,11 +16508,13 @@
           pushLeadActivity(l, 'convert', 'Booked as job');
         }, { quiet: true });
       }
+      if (created.length > 1) toast('Created ' + created.length + ' jobs · ' + jobFrequencyLabel(freq));
       switchNav('jobs');
       setTimeout(function () {
         var root = jobsOsRoot();
         if (!root) return;
-        root._josJobId = (mapped && mapped.id) || result.jobId;
+        var mapped0 = (typeof global.mapJobRow === 'function' && result.job) ? global.mapJobRow(result.job) : null;
+        root._josJobId = (mapped0 && mapped0.id) || result.jobId;
         root._josDrawerOpen = true;
         root._josJobWorkspace = 'overview';
         root._josJobEditOpen = false;
@@ -16361,7 +16522,9 @@
       }, 0);
     }).catch(function (e) {
       console.warn('jobs-picker createJob', e);
-      toast('Couldn’t create the job — check your connection and try again');
+      toast(created.length
+        ? ('Created ' + created.length + ' of ' + dates.length + ' jobs before hitting an error — check your connection')
+        : 'Couldn’t create the job — check your connection and try again');
       if (st) { st.busy = false; renderJobPicker(pop); }
     });
   }
@@ -17587,7 +17750,7 @@
   }
   function pushJobTimeline(j, type, label) {
     j.timeline = j.timeline || [];
-    j.timeline.push({ type: type, label: label, at: new Date().toLocaleString() });
+    j.timeline.push({ type: type, label: label, at: nowTimelineStamp() });
   }
   function pushJobNotif(type, text) {
     var st = S();
@@ -17719,6 +17882,65 @@
       };
     }
     return { clean: s, quote: quote, discount: discount };
+  }
+  // Recurring job series — a job's Frequency dropdown (One time/Weekly/
+  // Every 2 weeks/Monthly/Every 3 months/Custom). Distinct from [RPJOB:id]
+  // (a paid Memberships subscription, journey.js's custIsMember/recurring
+  // Plan machinery) — this is a plain "repeat this job on a schedule"
+  // concept with no billing attached, so it gets its own packed-notes tag
+  // rather than overloading RPJOB. Same convention as every other packed
+  // tag in this codebase (STATUS/SMS/RP/TAGS): parsed out for display,
+  // stripped+rebuilt on save, coexists with the others in the same notes
+  // string. mapJobRow (hubly.html) parses this into job.recurringGroupId/
+  // job.recurringFreq on load, the same way it already parses recurringPlanId.
+  var JOB_FREQUENCY_OPTIONS = [
+    ['none', 'One time'],
+    ['weekly', 'Weekly'],
+    ['biweekly', 'Every 2 weeks'],
+    ['monthly', 'Monthly'],
+    ['quarterly', 'Every 3 months'],
+    ['custom', 'Custom']
+  ];
+  function jobFrequencyLabel(freq) {
+    var m = JOB_FREQUENCY_OPTIONS.find(function (o) { return o[0] === freq; });
+    return m ? m[1] : 'One time';
+  }
+  function buildRecurTag(groupId, freq, customDays) {
+    if (!groupId || !freq || freq === 'none') return '';
+    return '[RECUR:' + groupId + '|' + freq + '|' + (customDays || '') + ']';
+  }
+  // Generates every occurrence date for a series, starting with the job's
+  // own date — count is the real, user-chosen "Ends: After N occurrences"
+  // value (mockup), capped at 52 so a mistyped huge number can't create
+  // hundreds of jobs in one submit.
+  function recurringJobDates(startDate, freq, count, customDays) {
+    var start = String(startDate || todayStr()).slice(0, 10);
+    if (!freq || freq === 'none') return [start];
+    var n = Math.max(1, Math.min(52, parseInt(count, 10) || 1));
+    var base = new Date(start + 'T12:00:00');
+    var out = [start];
+    for (var i = 1; i < n; i++) {
+      var d = new Date(base.getTime());
+      if (freq === 'weekly') d.setDate(d.getDate() + 7 * i);
+      else if (freq === 'biweekly') d.setDate(d.getDate() + 14 * i);
+      else if (freq === 'custom') d.setDate(d.getDate() + Math.max(1, parseInt(customDays, 10) || 7) * i);
+      else if (freq === 'monthly' || freq === 'quarterly') {
+        var monthStep = freq === 'monthly' ? i : 3 * i;
+        var targetMonth = base.getMonth() + monthStep;
+        // Date(year, month, 0) constructor resolves to the last day of the
+        // month before `month` — handles year rollover from a large
+        // monthStep on its own. Clamping to it avoids the classic
+        // Date.setMonth() overflow bug: Jan 31 + 1 month naively becomes
+        // "Feb 31," which JS silently rolls forward into March 3rd instead
+        // of landing on Feb 28 — a real, common case (a service booked for
+        // "the 31st of every month") that would otherwise drift a series'
+        // dates by days, compounding every occurrence.
+        var lastDayOfTargetMonth = new Date(base.getFullYear(), targetMonth + 1, 0).getDate();
+        d = new Date(base.getFullYear(), targetMonth, Math.min(base.getDate(), lastDayOfTargetMonth), 12);
+      } else break;
+      out.push(d.toISOString().slice(0, 10));
+    }
+    return out;
   }
   function jobServiceOptions(j) {
     // Hubly Core provides the engine, the business provides the data — no
@@ -18036,19 +18258,22 @@
       dbPatch: function (job) { return { duration_hours: (job.durationMin || 120) / 60 }; }
     },
     {
-      // Persists the human-authored text only — embedded quote/discount/
-      // recurring tags are parsed out for display (see parseJobNotesMeta)
-      // and are not re-appended on save. The permanent fix is real
-      // source/quoteStatus/quoteAmount columns (tracked in
-      // docs/JOBS_DRAWER_AUDIT.md); until then, a field that looks
-      // editable but silently doesn't save is worse than one that saves
-      // the clean text and lets the tags go.
+      // Displays the human-authored text only (embedded quote/discount/
+      // recurring tags are parsed out for display, see parseJobNotesMeta),
+      // but on save re-attaches whatever packed tags were already in
+      // job.notes rather than discarding them. This used to blindly
+      // overwrite job.notes with just the typed text — harmless when the
+      // only thing that could be silently dropped was a quote/discount
+      // display hint, but the recurring-job-series tag ([RECUR:...], see
+      // JOB_FREQUENCY_OPTIONS) needs to actually survive a Notes edit for
+      // "cancel this and all future occurrences" to keep working.
       key: 'notes', label: 'Notes', type: 'textarea', hidden: true, editable: true, dbColumn: 'notes',
       get: function (job) { return parseJobNotesMeta((job.internalNotes && job.internalNotes[0]) || job.notes || '').clean; },
       set: function (job, value) {
         var clean = String(value || '').trim();
-        job.notes = clean;
-        job.internalNotes = clean ? [clean] : [];
+        var tags = String(job.notes || '').match(/\[[a-zA-Z_]+:[^\]]*\]/g) || [];
+        job.notes = (clean + (tags.length ? ('\n' + tags.join('\n')) : '')).trim();
+        job.internalNotes = job.notes ? [job.notes] : [];
         return 'Notes updated';
       }
     },
@@ -20042,7 +20267,7 @@
         customerNotes: [],
         voiceNotes: [],
         products: [],
-        timeline: [{ type: 'created', label: title, at: new Date().toLocaleString() }]
+        timeline: [{ type: 'created', label: title, at: nowTimelineStamp() }]
       });
       created.push(bid);
       if (forever) break; /* day list + forever flag is enough */
@@ -20548,7 +20773,7 @@
       customerNotes: [],
       voiceNotes: [],
       products: [],
-      timeline: [{ type: 'created', label: opts.isTask ? 'Task created' : 'Job Created', at: new Date().toLocaleString() }, { type: 'scheduled', label: 'Scheduled ' + time + ' · ' + durationMin + 'm', at: new Date().toLocaleString() }],
+      timeline: [{ type: 'created', label: opts.isTask ? 'Task created' : 'Job Created', at: nowTimelineStamp() }, { type: 'scheduled', label: 'Scheduled ' + time + ' · ' + durationMin + 'm', at: nowTimelineStamp() }],
       routeOrder: jobsAll().length + 1
     };
     if (person && person.kind === 'customer') {
@@ -20850,7 +21075,7 @@
       : ((j.service || '') + ' · ' + (j.date || '') + ' · ' + (j.time || ''));
     return '<div class="jos-card jos-job-card' + (on ? ' on' : '') + (j.isBlock || j.isGoogle ? ' is-block' : '') + '" data-jos-job-id="' + esc(j.id) + '" draggable="true">' +
       (withBulk && !(j.isBlock || j.isGoogle) ? '<label class="jos-bulk-check"><input type="checkbox" class="jos-job-bulk" data-jos-job-id="' + esc(j.id) + '"></label>' : '') +
-      '<div class="jos-between"><strong class="jos-job-card-title">' + esc(title) + '</strong><span class="jos-pill ' + (j.isBlock || j.isGoogle ? 'block' : jobStatusTone(j.status)) + '">' + esc(j.isGoogle ? 'Google' : (j.isBlock ? 'Blocked' : j.status)) + '</span></div>' +
+      '<div class="jos-between"><strong class="jos-job-card-title">' + (j.recurringGroupId ? '<span title="Part of a recurring series" aria-label="Recurring">↻ </span>' : '') + esc(title) + '</strong><span class="jos-pill ' + (j.isBlock || j.isGoogle ? 'block' : jobStatusTone(j.status)) + '">' + esc(j.isGoogle ? 'Google' : (j.isBlock ? 'Blocked' : j.status)) + '</span></div>' +
       '<div class="jos-job-card-sub jos-mt">' + esc(sub) + '</div>' +
       (j.isBlock || j.isGoogle ? '' : (
         '<div class="jos-job-card-sub">' + esc(j.assignedTo || 'Unassigned') + ' · ' + esc(j.address || '') + '</div>' +
@@ -21003,9 +21228,28 @@
   function mutateJobField(jobId, col, value) {
     var job = findJob(jobId);
     if (!job) return '';
+    var wasCompleted = job.status === 'completed';
     var label = col.set ? col.set(job, value) : (job[col.key] = value, col.label + ' updated');
     var patch = col.dbPatch ? col.dbPatch(job) : (col.dbColumn ? (function () { var p = {}; p[col.dbColumn] = tableColFieldGet(col, job); return p; })() : null);
     if (patch) persistJobPatch(job, patch);
+    // Completing a job through the table's Status cell or the drawer's
+    // Status field used to silently skip everything the dedicated
+    // "jobs-complete" drawer action does — checklist auto-check, timeline/
+    // notification entries, and (the actual bug report) promoting the job
+    // to a real Completed Customer. Any status-column edit that lands on
+    // 'completed' now does the same thing, from whichever surface it came
+    // from, instead of only the one drawer button.
+    if (col.key === 'status' && !wasCompleted && job.status === 'completed') {
+      (job.checklist || []).forEach(function (c) { c.done = true; });
+      pushJobTimeline(job, 'completed', 'Completed');
+      pushJobNotif('completed', job.customer + ' completed');
+      try { promoteCompletedJobToCustomer(job); } catch (ePromo) { console.warn(ePromo); }
+      try {
+        if (typeof global.promoteJobLeadToCustomer === 'function') {
+          Promise.resolve(global.promoteJobLeadToCustomer(job)).catch(function () {});
+        }
+      } catch (ePromo2) {}
+    }
     return label;
   }
 
@@ -21652,7 +21896,15 @@
           items = [];
           if (st === 'in_progress') items.push(['jobs-pause', 'Pause']);
           if (st === 'paused') items.push(['jobs-resume', 'Resume']);
-          if (['completed', 'cancelled'].indexOf(st) < 0) items.push(['jobs-cancel', 'Cancel']);
+          if (['completed', 'cancelled'].indexOf(st) < 0) {
+            // A job created by the Frequency dropdown carries a
+            // recurringGroupId shared with every other occurrence in its
+            // series — offer both scopes instead of silently cancelling
+            // just the one row a user might expect to take the whole
+            // series with it.
+            items.push(['jobs-cancel', menuJob && menuJob.recurringGroupId ? 'Cancel this job only' : 'Cancel']);
+            if (menuJob && menuJob.recurringGroupId) items.push(['jobs-cancel-series', 'Cancel this + future occurrences']);
+          }
           items.push(['jobs-duplicate', 'Duplicate']);
           items.push(['jobs-message', 'Message Customer']);
           if (!menuJob || !menuJob.isGoogle) items.push(['jobs-delete', 'Delete']);
@@ -21832,7 +22084,7 @@
           customerNotes: [],
           voiceNotes: [],
           products: [],
-          timeline: [{ type: 'created', label: 'Job Created', at: new Date().toLocaleString() }, { type: 'scheduled', label: 'Scheduled', at: new Date().toLocaleString() }],
+          timeline: [{ type: 'created', label: 'Job Created', at: nowTimelineStamp() }, { type: 'scheduled', label: 'Scheduled', at: nowTimelineStamp() }],
           routeOrder: jobsAll().length + 1
         };
         S().jobs.unshift(nj);
@@ -21983,6 +22235,29 @@
         toast('Job cancelled');
         return rerender();
       }
+      if (act === 'jobs-cancel-series') {
+        if (!job || !job.recurringGroupId) return toast('Select a job');
+        // Cancelling removes every occurrence from this date forward from
+        // the active calendar with zero calendar-rendering changes needed —
+        // jobsCalendarEvents() already filters out status:'cancelled' jobs,
+        // same as a single cancel does today. Past occurrences (already
+        // happened) are left alone on purpose, matching "future
+        // occurrences" — completed/cancelled history shouldn't retroactively
+        // change.
+        var seriesJobs = jobsAll().filter(function (j) {
+          return j.recurringGroupId === job.recurringGroupId && String(j.date || '') >= String(job.date || '') &&
+            j.status !== 'completed' && j.status !== 'cancelled';
+        });
+        if (!seriesJobs.length) return toast('Nothing left to cancel in this series');
+        seriesJobs.forEach(function (j) {
+          j.status = 'cancelled';
+          pushJobTimeline(j, 'note', 'Cancelled (recurring series)');
+          persistJobPatch(j, { status: 'cancelled' });
+        });
+        pushJobNotif('cancelled', job.customer + ' — ' + seriesJobs.length + ' recurring job' + (seriesJobs.length === 1 ? '' : 's') + ' cancelled');
+        toast('Cancelled ' + seriesJobs.length + ' job' + (seriesJobs.length === 1 ? '' : 's') + ' in this series');
+        return rerender();
+      }
       if (act === 'jobs-delete') {
         var delId = jobId || (job && job.id);
         var delJob = delId ? findJob(delId) : job;
@@ -22012,7 +22287,7 @@
         dup.id = 'job_' + Date.now();
         dup.status = 'scheduled';
         dup.date = addDaysStr(job.date || todayStr(), 7);
-        dup.timeline = [{ type: 'created', label: 'Duplicated', at: new Date().toLocaleString() }];
+        dup.timeline = [{ type: 'created', label: 'Duplicated', at: nowTimelineStamp() }];
         S().jobs.unshift(dup);
         root._josJobId = dup.id;
         toast('Job duplicated');
@@ -22051,7 +22326,7 @@
           customerNotes: [],
           voiceNotes: [],
           products: [],
-          timeline: [{ type: 'created', label: 'Converted from quote', at: new Date().toLocaleString() }],
+          timeline: [{ type: 'created', label: 'Converted from quote', at: nowTimelineStamp() }],
           durationMin: 120,
           routeOrder: jobsAll().length + 1
         };

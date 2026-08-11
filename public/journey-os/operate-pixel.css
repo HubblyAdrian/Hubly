@@ -5703,11 +5703,15 @@ input.jos-ld-cell-inline:focus{
   background:transparent;position:sticky;top:0;z-index:20;
 }
 .jos-cm-header-left{min-width:200px}
+/* Matched to .jos-ld-title/.jos-jobs-header h1 exactly — Customers' own
+   34px/#111827 rule read as a different typeface scale from Jobs/Leads
+   even though all three use the same font stack, which is what was
+   actually reported as inconsistent. */
 .jos-cm-header h1{
-  margin:0;font-size:34px;font-weight:800;letter-spacing:-.04em;color:#111827;
+  margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--jos-navy);
   font-family:'Plus Jakarta Sans','DM Sans',sans-serif;
 }
-.jos-cm-header p{margin:4px 0 0;font-size:13px;color:#6B7280}
+.jos-cm-header p{margin:6px 0 0;font-size:13px;color:var(--jos-ink-2)}
 .jos-cm-global-search{
   flex:0 1 420px;width:420px;height:44px;margin:0 auto;display:flex;align-items:center;gap:8px;
   border:1px solid #E5E7EB;border-radius:12px;background:#fff;padding:0 14px;
@@ -6081,7 +6085,13 @@ input.jos-ld-cell-inline:focus{
 
 /* Level 1 — Completed Customers (Airtable / Mail speed) */
 .jos-cc-level-1{max-width:1600px}
-.jos-cc1-header h1{font-size:28px!important;letter-spacing:-.03em}
+/* This !important 28px override (Level 1's own header, .jos-cm-header
+   jos-cc1-header together on the same <header>) is the rule that was
+   actually winning over the .jos-cm-header h1 fix above — same
+   specificity, later in the file, and !important besides. Matched to
+   .jos-ld-title/.jos-jobs-header h1 for the same reason that fix exists:
+   this is the header users actually see. */
+.jos-cc1-header h1{font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--jos-navy)}
 .jos-cc1-kpis{
   display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;
   margin:0 0 16px;flex-shrink:0;
@@ -6143,7 +6153,23 @@ input.jos-ld-cell-inline:focus{
   .jos-cc1-summary-grid{grid-template-columns:1fr}
 }
 
-/* Level 2 — Customer Command Center (ops workspace) */
+/* Level 2 — Customer Command Center (quick-view drawer). Reuses the exact
+   .jos-profile/.jos-profile-panel slide-in overlay Level 3 (Full Profile,
+   journey.css) already has — .jos-cc2-panel only narrows it and forces the
+   two-column dashboard grid below (built for a 1600px full-page layout,
+   see .jos-cc2-shell/.jos-cc2-dash) down to one column, since a drawer's
+   width doesn't move with the viewport the way @media queries assume. */
+.jos-cc2-panel{width:min(560px,100%);padding:20px;overflow-y:auto;background:#F7F8FA}
+.jos-cc2-drawer-close{
+  position:absolute;top:16px;right:16px;z-index:6;margin-left:0;
+  background:#fff;border:1px solid #E5E7EB;color:#4B5563;box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.jos-cc2-drawer-close:hover{background:#F5F6F7;color:#141B2B}
+.jos-cc2-panel .jos-cc2-shell{grid-template-columns:1fr}
+.jos-cc2-panel .jos-cc2-dash{grid-template-columns:1fr 1fr}
+.jos-cc2-panel .jos-cc2-rail{position:static;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.jos-cc2-panel .jos-cc2-mods{grid-template-columns:1fr}
+.jos-cc2-panel .jos-cc2-head{padding-top:44px}
 .jos-cc-level-2{max-width:1600px;padding-bottom:40px!important;overflow:auto}
 .jos-cc2-shell{
   display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start;

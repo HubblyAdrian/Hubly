@@ -15517,6 +15517,12 @@ function mapJobRow(j){
     syncStatus: j.sync_status||null,
     isRecurring:/\[RPJOB:([^\]]+)\]/.test(j.notes||''),
     recurringPlanId:((String(j.notes||'').match(/\[RPJOB:([^\]]+)\]/)||[])[1]||''),
+    // Frequency-based recurring job series (Jobs' "Frequency" dropdown —
+    // weekly/biweekly/monthly/quarterly/custom, distinct from RPJOB above,
+    // which is specifically a paid Memberships subscription). Same packed-
+    // notes-tag convention, parsed here the same way recurringPlanId is.
+    recurringGroupId:((String(j.notes||'').match(/\[RECUR:([^|\]]+)\|/)||[])[1]||''),
+    recurringFreq:((String(j.notes||'').match(/\[RECUR:[^|]+\|([^|\]]*)/)||[])[1]||''),
   };
 }
 window.mapJobRow=mapJobRow;
@@ -43387,7 +43393,7 @@ function createLeadManual(input,opts){
     unread:input.unread!=null?input.unread:1,quoteStatus:'none',estimatedValue:input.estimatedValue||0,
     industry:input.industry||'Residential',budget:input.budget||'',bestTime:input.bestTime||'',
     messages:[],tasks:[],files:[],appointments:[],
-    activity:[{type:'created',label:input.activityLabel||'Manual lead created',at:new Date().toLocaleString()}],
+    activity:[{type:'created',label:input.activityLabel||'Manual lead created',at:nowTimelineStamp()}],
     estimate:{labor:0,materials:0,total:0,notes:''},
   };
   S.pipeline.manual.unshift(lead);
@@ -47417,7 +47423,11 @@ async function validateEdSlug(slug){
 }
 function dateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fmt12(t24){if(!t24)return'';const[h,m]=t24.split(':').map(Number);const ap=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ap}`}
-function fmtDateLong(ds){if(!ds)return'';const d=new Date(ds+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
+function fmtDateLong(ds){if(!ds)return'';const d=new Date(ds+'T00:00:00');return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+// "Aug 11, 2026 · 2:30 PM" — same house format as journey.js's
+// nowTimelineStamp(), for the one activity-log stamp built here rather
+// than in journey.js (createLead's initial activity entry).
+function nowTimelineStamp(){const d=new Date();return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' · '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
 let toastT;
 function toast(msg,opts){
   const el=document.getElementById('toast');
