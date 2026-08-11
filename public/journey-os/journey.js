@@ -11425,7 +11425,10 @@
       if (!c.id) c.id = 'cust_auto_' + idx;
       if (!c.status) c.status = c.archived ? 'inactive' : 'active';
       if (c.favorite == null) c.favorite = !!(c.statusOverride === 'vip' || c.isVip);
-      if (!Array.isArray(c.tags)) c.tags = c.tags ? String(c.tags).split(/[,\s]+/).filter(Boolean) : [];
+      if (!Array.isArray(c.tags)) {
+        var packedTags = custTagsFromNotes(c.notes);
+        c.tags = packedTags.length ? packedTags : (c.tags ? String(c.tags).split(/[,\s]+/).filter(Boolean) : []);
+      }
       if (c.statusOverride === 'vip' && c.tags.indexOf('VIP') < 0) c.tags.push('VIP');
       if (!c.membership) c.membership = c.customerType === 'recurring' ? (c.preferredService ? c.preferredService + ' Plan' : 'Monthly Plan') : '';
       if (!Array.isArray(c.vehicles)) c.vehicles = c.vehicle ? [{ label: String(c.vehicle), type: '' }] : [];
@@ -11584,6 +11587,32 @@
       return Math.round((Date.now() - d.getTime()) / 86400000);
     } catch (e) { return 999; }
   }
+  // Tags has no DB column — same situation Status/SMS-consent/Recurring-
+  // Plan already solved via a bracket tag packed into the notes column
+  // (see parseStatusOverrideFromNotes/buildCustomerNotes, hubly.html).
+  // [TAGS:...] follows the exact same convention: parsed out on load,
+  // stripped+rebuilt on save, coexisting with the other packed tags in
+  // the same notes string without touching them (buildCustomerNotes only
+  // strips/rebuilds STATUS/SMS/RP, never touches an unrelated TAGS tag).
+  function custTagsFromNotes(notes) {
+    var m = String(notes || '').match(/\[TAGS:([^\]]*)\]/i);
+    if (!m) return [];
+    return m[1].split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+  }
+  function stripCustTagsFromNotes(notes) {
+    return String(notes || '').replace(/\n?\[TAGS:[^\]]*\]/gi, '').trim();
+  }
+  function buildNotesWithCustTags(baseNotes, tags) {
+    var clean = stripCustTagsFromNotes(baseNotes);
+    if (!tags || !tags.length) return clean;
+    return clean + (clean ? '\n' : '') + '[TAGS:' + tags.join(',') + ']';
+  }
+  function custStatusLabel(c) {
+    if (custIsVip(c)) return 'VIP';
+    if (custIsMember(c)) return 'Member';
+    if (c.status === 'inactive' || c.archived) return 'Inactive';
+    return 'Active';
+  }
   function custMatchesSmartFilter(c, tab) {
     if (!tab || tab === 'all') return true;
     var doneN = custCompletedCount(c);
@@ -11732,34 +11761,205 @@
       }).join('') + '</div>';
   }
 
-  function renderCompletedCustomersTable(pageRows, bulkOpen, bulkSelected) {
+  // Same schema-driven engine Jobs/Leads use — First name/Last name are
+  // the shared baseline across all three modules (per direction: "jobs and
+  // leads have to go first name last name phone email those are the
+  // columns even customer view will share"), everything else addable via
+  // "+ Add column". Customers uses the whole-record persistence model
+  // (mutateCustomerById -> upsertCustomer), same as Leads, not Jobs' per-
+  // column dbPatch model — no dbColumn/dbPatch needed on any column def
+  // here, a column's set() just mutates the in-memory customer and
+  // mutateCustField (below) sends the whole record.
+  var CUST_DEFAULT_COLUMNS = [
+    {
+      key: 'customerFirst', label: 'First name', type: 'text', width: 130,
+      editable: true, openOnClick: true, searchable: true, sortable: true,
+      get: function (c) { return splitLeadName(c.name).first; },
+      set: function (c, value) {
+        var parts = splitLeadName(c.name);
+        c.name = (String(value || '').trim() + ' ' + parts.last).trim();
+        return 'Name → ' + (c.name || '—');
+      }
+    },
+    {
+      key: 'customerLast', label: 'Last name', type: 'text', width: 130,
+      editable: true, openOnClick: true, searchable: true, sortable: true,
+      get: function (c) { return splitLeadName(c.name).last; },
+      set: function (c, value) {
+        var parts = splitLeadName(c.name);
+        c.name = (parts.first + ' ' + String(value || '').trim()).trim();
+        return 'Name → ' + (c.name || '—');
+      }
+    },
+    {
+      key: 'lastJob', label: 'Last Service', type: 'text', width: 140,
+      editable: false, sortable: true,
+      get: function (c) { var j = lastJob(c); return j && j.date ? dateLong(j.date) : ''; }
+    },
+    {
+      key: 'totalSpent', label: 'Lifetime Value', type: 'number', width: 130,
+      editable: false, sortable: true, format: money,
+      get: function (c) { return custLifetime(c); }
+    },
+    {
+      key: 'jobsCount', label: 'Completed Jobs', type: 'number', width: 130,
+      editable: false, sortable: true,
+      get: function (c) { return custCompletedCount(c); }
+    },
+    {
+      key: 'custStatus', label: 'Status', type: 'text', width: 110,
+      editable: false, sortable: false,
+      get: function (c) { return custStatusLabel(c); }
+    }
+  ];
+  // Addable via "+ Add column" — real Hubly data (phone/email/vehicle/
+  // preferred service are real customer fields; membership is computed
+  // from the same recurring-plan data the Memberships module already
+  // uses; tags round-trips through the notes-packing convention above).
+  // No "Notes" column here on purpose — the full note stays in the
+  // Command Center/Full Profile detail view (matches the screenshot),
+  // and a table cell for it would risk colliding with the packed meta
+  // tags that already live inside the same notes string.
+  var CUST_DRAWER_ONLY_COLUMNS = [
+    {
+      key: 'phone', label: 'Phone', type: 'phone', width: 150, hidden: true,
+      editable: true, searchable: true,
+      set: function (c, value) { c.phone = value || ''; return 'Phone → ' + (rendererRegistry.phone.format(c.phone) || '—'); }
+    },
+    {
+      key: 'email', label: 'Email', type: 'email', width: 190, hidden: true,
+      editable: true, searchable: true,
+      set: function (c, value) { c.email = String(value || '').trim(); return 'Email → ' + (c.email || '—'); }
+    },
+    {
+      key: 'vehicle', label: 'Vehicle / property', type: 'text', width: 160, hidden: true,
+      editable: true,
+      set: function (c, value) { c.vehicle = String(value || '').trim(); return 'Vehicle → ' + (c.vehicle || '—'); }
+    },
+    {
+      key: 'preferredService', label: 'Preferred Service', type: 'text', width: 160, hidden: true,
+      editable: true,
+      set: function (c, value) { c.preferredService = String(value || '').trim(); return 'Preferred service → ' + (c.preferredService || '—'); }
+    },
+    {
+      key: 'membership', label: 'Membership', type: 'text', width: 140, hidden: true,
+      editable: false,
+      get: function (c) { return custIsMember(c) ? (c.membership || 'Member') : 'One-time'; }
+    },
+    {
+      key: 'tags', label: 'Tags', type: 'tags', width: 180, hidden: true,
+      editable: true,
+      get: function (c) { return Array.isArray(c.tags) ? c.tags : []; },
+      set: function (c, value) {
+        var arr = Array.isArray(value) ? value : String(value || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+        c.tags = arr;
+        c.notes = buildNotesWithCustTags(c.notes, arr);
+        return 'Tags → ' + (arr.length ? arr.join(', ') : '—');
+      }
+    },
+    {
+      key: 'created', label: 'Customer Since', type: 'text', width: 130, hidden: true,
+      editable: false,
+      get: function (c) { return c.customerSince ? dateLong(String(c.customerSince).slice(0, 10)) : ''; }
+    }
+  ];
+  function custColumnSchema() { return CUST_DEFAULT_COLUMNS.concat(CUST_DRAWER_ONLY_COLUMNS); }
+  function custSchemaMap() {
+    var map = {};
+    custColumnSchema().forEach(function (c) { map[c.key] = c; });
+    return map;
+  }
+  function findCustColumnDef(key) { return custSchemaMap()[key] || null; }
+  function loadCustColumns(root) {
+    var cached = tablePreferences.load('user', 'customers', function (remote) {
+      var remoteCols = tablePreferences.normalize(custColumnSchema(), remote && remote.columns);
+      if (!root) return;
+      if (JSON.stringify(remoteCols) !== JSON.stringify(root._josCustColumns)) {
+        root._josCustColumns = remoteCols;
+        renderCustomers();
+      }
+    });
+    return tablePreferences.normalize(custColumnSchema(), cached && cached.columns);
+  }
+  function saveCustColumns(cols) { tablePreferences.save('user', 'customers', { columns: cols }); }
+  function custColOpenKey(root) { return root._josCustColMenuKey || null; }
+  function renderCustColumnAddMenu(allColumns) {
+    var hidden = (allColumns || []).filter(function (c) { return c.hidden; });
+    if (!hidden.length) {
+      return '<div class="jos-ld-col-menu jos-ld-col-add-menu"><div class="jos-muted" style="padding:8px 10px;white-space:nowrap">All columns are visible</div></div>';
+    }
+    return '<div class="jos-ld-col-menu jos-ld-col-add-menu">' + hidden.map(function (c) {
+      return '<button type="button" data-jos-act="cust-col-show" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</button>';
+    }).join('') + '</div>';
+  }
+  // Same fixed-position/reparent-to-root pattern as positionJobsColMenu —
+  // see its comment for why (a position:fixed popover nested inside a
+  // scrolled table wrap measures wrong for the first render frame).
+  function positionCustColMenu(root) {
+    var menu = root.querySelector('.jos-ld-col-menu');
+    if (!menu) return;
+    var trigger = root._josCustColMenuKey
+      ? root.querySelector('.jos-ld-th-menu-btn[data-jos-col-key="' + root._josCustColMenuKey + '"]')
+      : root.querySelector('[data-jos-act="cust-col-add-menu"]');
+    if (!trigger) return;
+    var tr = trigger.getBoundingClientRect();
+    var mw = menu.offsetWidth || 180;
+    var left = Math.min(tr.left, window.innerWidth - mw - 12);
+    left = Math.max(12, left);
+    if (menu.parentElement !== root) root.appendChild(menu);
+    menu.style.top = (tr.bottom + 4) + 'px';
+    menu.style.left = left + 'px';
+    menu.classList.add('jos-positioned');
+  }
+
+  function renderCompletedCustomersTable(root, pageRows, bulkOpen, bulkSelected) {
     if (!pageRows.length) {
       return '<div class="jos-cc1-empty"><strong>No completed customers yet</strong><p>People appear here only after their first completed job. Finish a job in Jobs to create a customer.</p>' + btn('go-jobs', 'Open Jobs', 'jos-btn-brand jos-btn-sm') + '</div>';
     }
-    return '<div class="jos-cc1-table-wrap"><table class="jos-cc1-table"><thead><tr>' +
-      (bulkOpen ? '<th></th>' : '') + '<th></th><th>Customer</th><th>Completed Jobs</th><th>Membership</th><th>Lifetime Value</th><th>Upcoming Appointment</th><th>Last Service</th><th>Tags</th><th>Actions</th>' +
-      '</tr></thead><tbody>' + pageRows.map(function (c) {
-        var next = nextJob(c);
-        var last = lastJob(c);
-        var tags = (c.tags || []).slice(0, 3);
-        var checked = !!(bulkSelected && bulkSelected[String(c.id)]);
-        return '<tr class="jos-cc1-row" data-jos-cust-row="' + esc(String(c.id)) + '" data-jos-record-id="' + esc(String(c.id)) + '" tabindex="0">' +
-          (bulkOpen ? '<td class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-cust-bulk="' + esc(String(c.id)) + '"' + (checked ? ' checked' : '') + '></td>' : '') +
-          '<td><span class="jos-cm-ava">' + esc(initials(c.name)) + '</span></td>' +
-          '<td><strong>' + esc(c.name || 'Customer') + '</strong>' +
-          (custIsVip(c) ? '<span class="jos-cm-vip">VIP</span>' : '') +
-          '<div class="jos-muted">' + esc(c.phone ? displayPhone(c.phone) : (c.email || '')) + '</div></td>' +
-          '<td>' + custCompletedCount(c) + '</td>' +
-          '<td>' + (custIsMember(c) ? esc(c.membership || 'Member') : '<span class="jos-muted">One-time</span>') + '</td>' +
-          '<td><strong>' + esc(money(custLifetime(c)) || '$0') + '</strong></td>' +
-          '<td>' + (next ? esc(dateLong(next.date) + (next.time ? ' · ' + next.time : '')) : '<span class="jos-muted">—</span>') + '</td>' +
-          '<td>' + (last && last.date ? esc(dateLong(last.date)) : '—') + '</td>' +
-          '<td class="jos-cc1-tags">' + (tags.length ? tags.map(function (t) { return '<span class="jos-tag">' + esc(t) + '</span>'; }).join('') : '<span class="jos-muted">—</span>') + '</td>' +
-          '<td class="jos-cc1-acts" onclick="event.stopPropagation()">' +
-          '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="cust-open-command" data-jos-cust="' + esc(String(c.id)) + '">Open</button>' +
-          '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="new-job-cust" data-jos-cust="' + esc(String(c.id)) + '">Schedule</button>' +
-          '</td></tr>';
-      }).join('') + '</tbody></table></div>';
+    var cols = (root._josCustColumns || CUST_DEFAULT_COLUMNS).filter(function (c) { return !c.hidden; });
+    var schemaMap = custSchemaMap();
+    var editing = root._josCustEditCell || null;
+    var openKey = custColOpenKey(root);
+    var allSelected = bulkOpen && pageRows.length && pageRows.every(function (c) { return bulkSelected && bulkSelected[String(c.id)]; });
+    var colGroup = '<colgroup>' + (bulkOpen ? '<col style="width:32px">' : '') +
+      cols.map(function (c) {
+        var def = schemaMap[c.key];
+        return '<col style="width:' + (c.width || (def && def.width) || 140) + 'px">';
+      }).join('') + '<col style="width:70px"></colgroup>';
+    var headCells = (bulkOpen ? '<th class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-cust-bulk-all aria-label="Select all customers"' + (allSelected ? ' checked' : '') + '></th>' : '') +
+      cols.map(function (c) {
+        return '<th class="jos-ld-th' + (openKey === c.key ? ' menu-open' : '') + '" data-jos-col-key="' + esc(c.key) + '" draggable="true">' +
+          '<span class="jos-ld-th-label" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</span>' +
+          '<button type="button" class="jos-ld-th-menu-btn" data-jos-act="cust-col-menu" data-jos-col-key="' + esc(c.key) + '" aria-label="Column options for ' + esc(c.label) + '">▾</button>' +
+          (openKey === c.key
+            ? '<div class="jos-ld-col-menu"><button type="button" data-jos-act="cust-col-hide" data-jos-col-key="' + esc(c.key) + '">Hide column</button></div>'
+            : '') +
+          '</th>';
+      }).join('') +
+      '<th class="jos-ld-th-add">' +
+      '<button type="button" class="jos-icon-btn" data-jos-act="cust-col-add-menu" title="Show hidden columns" aria-label="Show hidden columns">+</button>' +
+      (root._josCustColAddOpen ? renderCustColumnAddMenu(root._josCustColumns || CUST_DEFAULT_COLUMNS) : '') +
+      '</th>';
+    var rows = pageRows.map(function (c) {
+      var custKey = String(c.id);
+      var checked = !!(bulkSelected && bulkSelected[custKey]);
+      return '<tr class="jos-ld-trow" role="row" data-jos-cust-row="' + esc(custKey) + '" data-jos-record-id="' + esc(custKey) + '" tabindex="0">' +
+        (bulkOpen ? '<td class="jos-ld-tcheck" onclick="event.stopPropagation()"><input type="checkbox" data-jos-cust-bulk="' + esc(custKey) + '" aria-label="Select ' + esc(c.name || 'customer') + '"' + (checked ? ' checked' : '') + '></td>' : '') +
+        cols.map(function (col) {
+          var def = schemaMap[col.key];
+          if (!def) return '<td data-jos-col-key="' + esc(col.key) + '">—</td>';
+          var isEditingThis = !!(editing && editing.recordId === custKey && editing.field === col.key);
+          var cellInner = tableCellHtml(c, def, custKey, isEditingThis);
+          if (col.key === 'customerFirst' && !isEditingThis) {
+            cellInner = '<span class="jos-cm-ava" style="margin-right:8px;vertical-align:middle">' + esc(initials(c.name)) + '</span>' + cellInner + (custIsVip(c) ? '<span class="jos-cm-vip">VIP</span>' : '');
+          }
+          return '<td data-jos-col-key="' + esc(col.key) + '">' + cellInner + '</td>';
+        }).join('') +
+        '<td class="jos-cc1-acts" onclick="event.stopPropagation()">' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="new-job-cust" data-jos-cust="' + esc(custKey) + '">Schedule</button>' +
+        '</td></tr>';
+    }).join('');
+    return '<div class="jos-cc1-table-wrap"><table class="jos-ld-table" role="grid" aria-label="Customers">' + colGroup + '<thead><tr>' + headCells + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   function renderCustomersSummaryCards(allCompleted) {
@@ -11984,6 +12184,7 @@
 
   function renderCustomersPageInner(root) {
     ensureCustomersOsState();
+    if (!root._josCustColumns) root._josCustColumns = loadCustColumns(root);
     if (!root._josCustTab) root._josCustTab = 'all';
     if (S()._josPendingCustCommand) {
       root._josCustId = S()._josPendingCustCommand;
@@ -12074,7 +12275,7 @@
       [['recent', 'Sort: Recent'], ['name', 'Sort: Name'], ['ltv', 'Sort: Lifetime'], ['jobs', 'Sort: Jobs']].map(function (s) {
         return '<option value="' + s[0] + '"' + ((root._josCustSort || 'recent') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
       }).join('') + '</select></div>' +
-      renderCompletedCustomersTable(pageRows, bulkOpen, root._josCustBulkSelected) +
+      renderCompletedCustomersTable(root, pageRows, bulkOpen, root._josCustBulkSelected) +
       pager +
       renderCustomersSummaryCards(allCompleted) +
       renderCustomersFilterDrawer(root) +
@@ -12089,6 +12290,7 @@
     morphTableInto(root, listHtml);
     bindRoot(root);
     wireCustomersRoot(root);
+    positionCustColMenu(root);
   }
 
   function readCustAddDraft() {
@@ -12156,7 +12358,11 @@
         return;
       }
       var card = e.target.closest('[data-jos-cust-row]');
-      if (card && !e.target.closest('[data-jos-act]')) {
+      // [data-jos-field] cells now handle their own click (edit, or open
+      // for openOnClick columns like First/Last name) via the dedicated
+      // listener below — excluded here so an inline-edit click on Phone/
+      // Tags/etc. doesn't also fire this generic row-open behavior.
+      if (card && !e.target.closest('[data-jos-act]') && !e.target.closest('[data-jos-field]')) {
         var id = card.getAttribute('data-jos-cust-row');
         root._josCustId = id;
         root._josCustLevel = 'command'; /* Level 1 → Level 2 Command Center */
@@ -12168,6 +12374,153 @@
         renderCustomers();
         e.stopPropagation();
       }
+    });
+
+    // Column ▾ menu / "+ Add column" — same shape as jobs-col-menu/
+    // jobs-col-add-menu (act-based, handled in handleCustomersAct below),
+    // this listener only closes them on an outside click, mirroring
+    // wireJobsRoot's equivalent block.
+    root.addEventListener('click', function (e) {
+      if (!e.target.closest('.jos-ld-th') && !e.target.closest('.jos-ld-col-menu') && root._josCustColMenuKey) {
+        root._josCustColMenuKey = null;
+        renderCustomers();
+      }
+      if (!e.target.closest('.jos-ld-th-add') && !e.target.closest('.jos-ld-col-menu') && root._josCustColAddOpen) {
+        root._josCustColAddOpen = false;
+        renderCustomers();
+      }
+    });
+
+    // Same interaction model as Jobs/Leads: click a cell to edit it; click
+    // the customer's name (openOnClick) opens the Command Center instead —
+    // no double-click anywhere on this table opens a record.
+    root.addEventListener('click', function (e) {
+      var editField = e.target.closest('[data-jos-field]');
+      if (!editField || editField.classList.contains('jos-ld-editing')) return;
+      var custId = editField.getAttribute('data-jos-record-id');
+      var key = editField.getAttribute('data-jos-field');
+      if (!custId || !key) return;
+      var col = findCustColumnDef(key);
+      if (!col || col.editable === false) return;
+      if (col.openOnClick) {
+        root._josCustId = custId;
+        root._josCustLevel = 'command';
+        root._josCustCtx = null;
+        root._josCustProfileTab = 'overview';
+        S().activeCustId = custId;
+        var openedCust = findCustomer(custId);
+        if (openedCust) openedCust.unread = 0;
+        renderCustomers();
+        e.stopPropagation();
+        return;
+      }
+      openCustCellEdit(root, custId, key);
+      e.stopPropagation();
+    });
+
+    root.addEventListener('change', function (e) {
+      var field = e.target.closest('[data-jos-field]');
+      if (!field) return;
+      var fCustId = field.getAttribute('data-jos-record-id');
+      var fKey = field.getAttribute('data-jos-field');
+      var fCol = findCustColumnDef(fKey);
+      if (!fCol) return;
+      var fRenderer = rendererRegistry[fCol.type] || rendererRegistry.text;
+      var fVal = fRenderer.readValue ? fRenderer.readValue(e.target) : e.target.value;
+      root._josCustEditCell = null;
+      var fLabel = mutateCustField(fCustId, fCol, fVal);
+      toast(fLabel || (fCol.label + ' updated'));
+      renderCustomers();
+    });
+
+    // Blur without a value change never fires 'change' — closes the editor
+    // in that case (identical reasoning to Jobs'/Leads' equivalent).
+    root.addEventListener('blur', function (e) {
+      if (!(e.target && e.target.classList && e.target.classList.contains('jos-ld-editing'))) return;
+      var closingCell = root._josCustEditCell;
+      if (!closingCell) return;
+      setTimeout(function () {
+        if (root._josCustEditCell === closingCell) {
+          root._josCustEditCell = null;
+          renderCustomers();
+        }
+      }, 0);
+    }, true);
+
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && root._josCustEditCell) {
+        cancelCustCellEdit(root);
+        e.stopPropagation();
+        return;
+      }
+      if (e.key === 'Enter' && e.target && e.target.classList && e.target.classList.contains('jos-ld-editing') && e.target.tagName !== 'SELECT') {
+        e.preventDefault();
+        e.target.blur();
+      }
+    });
+
+    // Column drag-reorder — same mechanism as Jobs' (ported from Leads):
+    // the <th> itself is draggable, dragover live-reorders
+    // root._josCustColumns and re-renders on every boundary crossed, drop
+    // just persists whatever order dragover already landed on.
+    root.addEventListener('dragstart', function (e) {
+      var colTh = e.target.closest('[data-jos-col-key]');
+      if (!colTh) return;
+      if (!root._josCustColumns) root._josCustColumns = loadCustColumns(root);
+      root._josCustColDragKey = colTh.getAttribute('data-jos-col-key');
+      root._josCustColDragOverKey = root._josCustColDragKey;
+      root._josCustColDragOriginalOrder = root._josCustColumns.slice();
+      root._josCustColDropCommitted = false;
+      colTh.classList.add('is-dragging');
+      try { e.dataTransfer.setData('text/plain', root._josCustColDragKey); e.dataTransfer.effectAllowed = 'move'; } catch (errColDrag) {}
+    });
+    root.addEventListener('dragend', function () {
+      if (!root._josCustColDragKey) return;
+      root.querySelectorAll('.jos-ld-th.is-dragging,.jos-ld-th.drop-target').forEach(function (n) { n.classList.remove('is-dragging', 'drop-target'); });
+      if (!root._josCustColDropCommitted && root._josCustColDragOriginalOrder) {
+        root._josCustColumns = root._josCustColDragOriginalOrder;
+        renderCustomers();
+      }
+      root._josCustColDragKey = null;
+      root._josCustColDragOverKey = null;
+      root._josCustColDragOriginalOrder = null;
+    });
+    root.addEventListener('dragover', function (e) {
+      var colTh = e.target.closest('[data-jos-col-key]');
+      if (!colTh || !root._josCustColDragKey) return;
+      e.preventDefault();
+      root.querySelectorAll('.jos-ld-th.drop-target').forEach(function (n) { if (n !== colTh) n.classList.remove('drop-target'); });
+      colTh.classList.add('drop-target');
+      var dragKey = root._josCustColDragKey;
+      var overKey = colTh.getAttribute('data-jos-col-key');
+      if (!dragKey || dragKey === overKey || overKey === root._josCustColDragOverKey) return;
+      root._josCustColDragOverKey = overKey;
+      if (!root._josCustColumns) root._josCustColumns = loadCustColumns(root);
+      var liveCols = root._josCustColumns;
+      var liveFromI = liveCols.findIndex(function (c) { return c.key === dragKey; });
+      var liveToI = liveCols.findIndex(function (c) { return c.key === overKey; });
+      if (liveFromI < 0 || liveToI < 0) return;
+      var liveMoved = liveCols.splice(liveFromI, 1)[0];
+      liveCols.splice(liveToI, 0, liveMoved);
+      renderCustomers();
+      var freshDragTh = root.querySelector('.jos-ld-th[data-jos-col-key="' + CSS.escape(dragKey) + '"]');
+      if (freshDragTh) freshDragTh.classList.add('is-dragging');
+      var freshTh = root.querySelector('.jos-ld-th[data-jos-col-key="' + CSS.escape(overKey) + '"]');
+      if (freshTh) freshTh.classList.add('drop-target');
+    });
+    root.addEventListener('dragleave', function (e) {
+      var colTh = e.target.closest('[data-jos-col-key]');
+      if (colTh && !colTh.contains(e.relatedTarget)) colTh.classList.remove('drop-target');
+    });
+    root.addEventListener('drop', function (e) {
+      var colTh = e.target.closest('[data-jos-col-key]');
+      if (!colTh || !root._josCustColDragKey) return;
+      root.querySelectorAll('.jos-ld-th.drop-target').forEach(function (n) { n.classList.remove('drop-target'); });
+      e.preventDefault();
+      root._josCustColDropCommitted = true;
+      if (!root._josCustColumns) root._josCustColumns = loadCustColumns(root);
+      saveCustColumns(root._josCustColumns);
+      renderCustomers();
     });
 
     root.addEventListener('contextmenu', function (e) {
@@ -12230,10 +12583,19 @@
         var custCountEl = el('jos-cm-bulk-count');
         if (custCountEl) custCountEl.textContent = Object.keys(root._josCustBulkSelected).length + ' selected';
       }
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-cust-bulk-all')) {
+        root._josCustBulkSelected = root._josCustBulkSelected || {};
+        var allCustKeys = Array.prototype.map.call(root.querySelectorAll('[data-jos-cust-bulk]'), function (bx) { return bx.getAttribute('data-jos-cust-bulk'); });
+        if (e.target.checked) allCustKeys.forEach(function (k) { root._josCustBulkSelected[k] = true; });
+        else allCustKeys.forEach(function (k) { delete root._josCustBulkSelected[k]; });
+        renderCustomers();
+      }
     });
 
     root.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
+        if (root._josCustColMenuKey) { root._josCustColMenuKey = null; renderCustomers(); return; }
+        if (root._josCustColAddOpen) { root._josCustColAddOpen = false; renderCustomers(); return; }
         if (root._josCustLevel === 'command') { root._josCustLevel = 'list'; renderCustomers(); return; }
         if (root._josCustAddOpen) { root._josCustAddOpen = false; renderCustomers(); return; }
         if (root._josCustFilterOpen) { root._josCustFilterOpen = false; renderCustomers(); return; }
@@ -12278,15 +12640,18 @@
   //
   // Only the fields hubly.html's upsertCustomer() actually has a database
   // column for are sent — id/name/phone/email/vehicle/preferredService/
-  // customerType/statusOverride/recurringPlan/recurringAmount. Address,
-  // preferredDay, preferredTime, city, tags, notesList, tasks, and documents
-  // are real fields on the in-memory customer object and this Command
-  // Center's edit form, but have no backing database column at all (
-  // mapCustRow(), hubly.html, never reads any of them back from a row) —
-  // that's a separate, pre-existing data-model gap, not something this
-  // persistence fix invents a new table/column to solve. Flagged in
-  // HUBLY_RENDERING_STANDARD.md's migration-status section, not silently
-  // fixed here.
+  // customerType/statusOverride/recurringPlan/recurringAmount/notes. Tags
+  // rides inside notes as a packed [TAGS:...] tag (same convention as
+  // Status/SMS-consent/Recurring-Plan, see custTagsFromNotes) so it does
+  // persist despite having no column of its own. Address, preferredDay,
+  // preferredTime, city, notesList, tasks, and documents are real fields
+  // on the in-memory customer object and this Command Center's edit form,
+  // but have no backing database column and no notes-packing convention
+  // covering them yet (mapCustRow(), hubly.html, never reads any of them
+  // back from a row) — that's a separate, pre-existing data-model gap, not
+  // something this persistence fix invents a new table/column to solve.
+  // Flagged in HUBLY_RENDERING_STANDARD.md's migration-status section, not
+  // silently fixed here.
   function mutateCustomerById(id, mutator, opts) {
     opts = opts || {};
     var c = findCustomer(id);
@@ -12299,7 +12664,7 @@
           id: c.id, name: c.name, phone: c.phone, email: c.email, vehicle: c.vehicle,
           preferredService: c.preferredService, customerType: c.customerType,
           statusOverride: c.statusOverride, recurringPlan: c.recurringPlan,
-          recurringAmount: c.recurringAmount,
+          recurringAmount: c.recurringAmount, notes: c.notes,
         });
         // Renaming a customer keeps their historical jobs' customer_name in
         // sync — the one piece of the old, broken saveCustomerDetail() worth
@@ -12314,6 +12679,52 @@
     return c;
   }
 
+  // The one place a schema-driven Customers cell edit commits — same shape
+  // as mutateJobField, but routed through mutateCustomerById since
+  // Customers persists the whole record (like Leads' mutateLeadById), not
+  // a per-column dbPatch (like Jobs).
+  function mutateCustField(custId, col, value) {
+    var label = '';
+    mutateCustomerById(custId, function (c) {
+      label = col.set ? col.set(c, value) : (c[col.key] = value, col.label + ' updated');
+    }, { quiet: true });
+    return label;
+  }
+
+  // Same shape as openJobsCellEdit/openLeadsCellEdit.
+  function openCustCellEdit(root, custId, key) {
+    var editingCust = findCustomer(custId);
+    if (!editingCust) return;
+    var col = findCustColumnDef(key);
+    if (!col || col.editable === false) return;
+    var originalValue = tableColFieldGet(col, editingCust);
+    root._josCustEditCell = { recordId: custId, field: key, originalValue: originalValue };
+    renderCustomers();
+    var sel = root.querySelector('[data-jos-field="' + key + '"][data-jos-record-id="' + CSS.escape(custId) + '"].jos-ld-editing');
+    if (sel) {
+      sel.focus({ preventScroll: true });
+      if (sel.tagName === 'INPUT') { try { sel.select(); } catch (eSelText) {} }
+    }
+  }
+  function cancelCustCellEdit(root) {
+    var editing = root._josCustEditCell;
+    if (!editing) return;
+    var c = findCustomer(editing.recordId);
+    if (c) {
+      var col = findCustColumnDef(editing.field);
+      if (col) {
+        var renderer = rendererRegistry[col.type] || rendererRegistry.text;
+        var liveEl = root.querySelector('[data-jos-field="' + editing.field + '"][data-jos-record-id="' + CSS.escape(editing.recordId) + '"].jos-ld-editing');
+        if (liveEl) {
+          if (renderer.writeValue) renderer.writeValue(liveEl, editing.originalValue);
+          else liveEl.value = editing.originalValue == null ? '' : editing.originalValue;
+        }
+      }
+    }
+    root._josCustEditCell = null;
+    renderCustomers();
+  }
+
   function handleCustomersAct(act, t) {
     var root = el('jos-customers-root');
     if (!root) return;
@@ -12322,6 +12733,39 @@
     root._josCustCtx = null;
 
     try {
+      if (act === 'cust-col-menu') {
+        var custClickedKey = t.getAttribute('data-jos-col-key');
+        root._josCustColMenuKey = root._josCustColMenuKey === custClickedKey ? null : custClickedKey;
+        root._josCustColAddOpen = false;
+        return renderCustomers();
+      }
+      if (act === 'cust-col-add-menu') {
+        root._josCustColAddOpen = !root._josCustColAddOpen;
+        root._josCustColMenuKey = null;
+        return renderCustomers();
+      }
+      if (act === 'cust-col-hide') {
+        var hideKey = t.getAttribute('data-jos-col-key');
+        if (!root._josCustColumns) root._josCustColumns = loadCustColumns(root);
+        var custVisibleN = root._josCustColumns.filter(function (cc) { return !cc.hidden; }).length;
+        var hideCol = root._josCustColumns.find(function (cc) { return cc.key === hideKey; });
+        if (!hideCol) return;
+        if (custVisibleN <= 1) { toast('At least one column must stay visible'); root._josCustColMenuKey = null; return renderCustomers(); }
+        hideCol.hidden = true;
+        root._josCustColMenuKey = null;
+        saveCustColumns(root._josCustColumns);
+        return renderCustomers();
+      }
+      if (act === 'cust-col-show') {
+        var showKey = t.getAttribute('data-jos-col-key');
+        if (!root._josCustColumns) root._josCustColumns = loadCustColumns(root);
+        var showCol = root._josCustColumns.find(function (cc) { return cc.key === showKey; });
+        if (!showCol) return;
+        showCol.hidden = false;
+        root._josCustColAddOpen = false;
+        saveCustColumns(root._josCustColumns);
+        return renderCustomers();
+      }
       if (act === 'cust-open-command') {
         var openId = (t && t.getAttribute && t.getAttribute('data-jos-cust')) || root._josCustId;
         if (!openId) return toast('Select a customer');
@@ -12504,10 +12948,13 @@
         if (!c) return toast('Select a customer');
         var tag = window.prompt('Tag name', 'VIP');
         if (!tag) return;
-        c.tags = c.tags || [];
-        c.tags.push(String(tag).trim());
-        if (/vip/i.test(tag)) { c.statusOverride = 'vip'; c.favorite = true; }
-        pushCustActivity(c, 'tag', 'Tagged ' + tag);
+        mutateCustomerById(c.id, function (cust) {
+          cust.tags = cust.tags || [];
+          cust.tags.push(String(tag).trim());
+          cust.notes = buildNotesWithCustTags(cust.notes, cust.tags);
+          if (/vip/i.test(tag)) { cust.statusOverride = 'vip'; cust.favorite = true; }
+          pushCustActivity(cust, 'tag', 'Tagged ' + tag);
+        }, { quiet: true });
         return renderCustomers();
       }
       if (act === 'cust-tag-remove') {
@@ -12515,13 +12962,16 @@
         var ti = parseInt(t && t.getAttribute('data-jos-tag-i'), 10);
         if (!Array.isArray(c.tags)) c.tags = [];
         if (!isNaN(ti) && ti >= 0 && ti < c.tags.length) {
-          var removed = c.tags.splice(ti, 1)[0];
-          pushCustActivity(c, 'tag', 'Removed tag ' + (removed || ''));
-          // No persist call: tags have no backing database column
-          // (upsertCustomer/mapCustRow, hubly.html, neither writes nor reads
-          // one) — same as cust-add-tag above, which never attempted one
-          // either. The removed call here used to invoke the broken
-          // global.saveCustomerDetail(), which would have no-op'd anyway.
+          // Tags now round-trip through a packed [TAGS:...] notes tag (see
+          // custTagsFromNotes/buildNotesWithCustTags) — the old comment here
+          // ("tags have no backing database column, no persist call") is why
+          // add/remove used to silently not save; both now route through
+          // mutateCustomerById like every other real customer edit.
+          mutateCustomerById(c.id, function (cust) {
+            var removed = cust.tags.splice(ti, 1)[0];
+            cust.notes = buildNotesWithCustTags(cust.notes, cust.tags);
+            pushCustActivity(cust, 'tag', 'Removed tag ' + (removed || ''));
+          }, { quiet: true });
         }
         return renderCustomers();
       }
