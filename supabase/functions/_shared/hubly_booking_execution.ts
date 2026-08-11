@@ -221,6 +221,55 @@ export async function createWebsiteBookingJob(
   // reassignments above, hence the explicit assertion).
   const resolvedCustomer: Record<string, unknown> = customer!;
 
+  // Lead reconciliation: a website visitor may already exist as an open
+  // (pending/abandoned) booking_requests row from the old public wizard,
+  // a quote, or an abandoned cart — same real table and same
+  // phone->email->name precedence as the customer match just above, not a
+  // second matching algorithm. Marks it accepted (mirrors exactly what
+  // acceptBookingRequest/acceptAbandonedLead already do client-side) so it
+  // stops appearing as an open lead once this Concierge booking has
+  // superseded it. Best-effort: never blocks or fails the real booking.
+  // Manual/CSV leads (businesses.meta.pipeline.manual, a JSON blob) are a
+  // known, narrower gap this doesn't cover — reconciling those needs an
+  // atomic server-side JSON patch mechanism that doesn't exist yet.
+  try {
+    let openRequest: Record<string, unknown> | null = null;
+    if (digits.length >= 7) {
+      const { data } = await admin
+        .from("booking_requests")
+        .select("id, customer_phone")
+        .eq("business_id", input.businessId)
+        .in("status", ["pending", "abandoned"]);
+      openRequest =
+        (data || []).find(
+          (r: Record<string, unknown>) => String(r.customer_phone || "").replace(/\D/g, "").slice(-10) === digits,
+        ) || null;
+    }
+    if (!openRequest && email) {
+      const { data } = await admin
+        .from("booking_requests")
+        .select("id")
+        .eq("business_id", input.businessId)
+        .in("status", ["pending", "abandoned"])
+        .ilike("customer_email", email)
+        .maybeSingle();
+      openRequest = data || null;
+    }
+    if (!openRequest && name) {
+      const { data } = await admin
+        .from("booking_requests")
+        .select("id")
+        .eq("business_id", input.businessId)
+        .in("status", ["pending", "abandoned"])
+        .ilike("customer_name", name)
+        .maybeSingle();
+      openRequest = data || null;
+    }
+    if (openRequest) {
+      await admin.from("booking_requests").update({ status: "accepted" }).eq("id", openRequest.id as string);
+    }
+  } catch (_e) { /* no-op — reconciliation is best-effort, never blocks the real booking */ }
+
   // Recurring: only when the customer explicitly asked for repetition (the
   // model is instructed to only set this when genuinely stated — see the
   // create action's description in hubly_capability_registry.ts). Creates

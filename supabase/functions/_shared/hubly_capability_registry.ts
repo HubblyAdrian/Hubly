@@ -851,7 +851,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
       {
         name: "create",
         description:
-          "Creates a real booking — writes a real record, triggers real calendar sync and a real confirmation email. Only call this once the customer has chosen a real time from getAvailability and given their contact details. Only set frequency when the customer explicitly said they want this to repeat (e.g. \"every month\") — never infer or default it; omitting it creates a normal one-time booking.",
+          "Creates a real booking — writes a real record and triggers real calendar sync. No confirmation email, SMS, or link is sent by this action — never tell the customer one was sent or will be sent; if asked how they'll be reminded, say the booking is confirmed here in this conversation. Only call this once the customer has chosen a real time from getAvailability and given their contact details. Only set frequency when the customer explicitly said they want this to repeat (e.g. \"every month\") — never infer or default it; omitting it creates a normal one-time booking.",
         argsSchema: bookingArgSchema(
           {
             serviceId: { type: "string", description: "Which service is being booked." },
