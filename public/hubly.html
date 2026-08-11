@@ -41892,7 +41892,13 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   // same as every other real (non-blank-draft) job-creation path.
   const result=await createJob({
     name:j.customer,phone:j.phone||'',email:j.email||'',
-    service:j.service,date:j.date||null,time:j.time||null,
+    // The public booking wizard's service cards ARE the real Service
+    // Engine catalog (bookingServiceCardHtml/getBookingServices) even
+    // though booking_requests only stored the picked service's NAME, not
+    // its id -- an exact match here is a real catalog reference, not a
+    // guess, so this is one of the few paths that opts into name-based
+    // resolution (see resolveServiceForJob's own comment).
+    service:j.service,resolveServiceByName:true,date:j.date||null,time:j.time||null,
     address:acceptAddr,amount:acceptAmount!=null&&Number.isFinite(acceptAmount)?acceptAmount:null,
     notes:acceptNotes||null,status:'scheduled',fromBooking:true,
     vehicle:vehicleLabel,vehicleColor:j.vehicleColor||null,
@@ -43503,6 +43509,40 @@ function normalizeJobTime24h(raw){
 // closing a modal, navigating) is explicitly NOT this function's job —
 // callers keep doing whatever they already did after their own insert
 // used to resolve; this only returns ids.
+// Looks a service up against the REAL Service Engine catalog for this
+// business — every status/channel, not just active/website-visible ones
+// (unlike getBookingServices(), which is a customer-facing selection
+// filter, not a resolver). Used by createJob()'s own service_id+
+// service_name pairing rule: never let a caller construct those two
+// fields independently — always derive both from one resolved object.
+//
+// byName is an explicit opt-in fallback, only exact (case-insensitive)
+// matches — no fuzzy/partial matching, same "match exact names, never
+// guess ambiguous ones" discipline the approved backfill plan uses. It
+// exists for the small set of paths where the freeform name genuinely
+// did originate from this business's own real catalog (the public
+// booking wizard's service cards, which pass service NAME but not id
+// into booking_requests) — never applied automatically to every
+// createJob() caller, since most freeform text (CSV import, a typed
+// invoice line item) has no relationship to the catalog at all and a
+// coincidental name match there would be a real, if rare, mistake.
+function resolveServiceForJob(serviceId,serviceName,opts){
+  var pool=(S.editorSvcs&&S.editorSvcs.length)?S.editorSvcs:(S.services||[]);
+  var toResult=function(match){return match?{id:String(match.id),name:match.name||'',price:match.price,dur:match.dur}:null;};
+  var needleId=String(serviceId||'').trim();
+  if(needleId){
+    var byId=pool.find(s=>s&&String(s.id)===needleId);
+    if(byId)return toResult(byId);
+  }
+  if(opts&&opts.byName){
+    var needleName=String(serviceName||'').trim().toLowerCase();
+    if(needleName){
+      var nameMatches=pool.filter(s=>s&&String(s.name||'').trim().toLowerCase()===needleName);
+      if(nameMatches.length===1)return toResult(nameMatches[0]);
+    }
+  }
+  return null;
+}
 async function createJob(input,opts){
   opts=opts||{};
   input=input||{};
@@ -43517,10 +43557,28 @@ async function createJob(input,opts){
       vehicleMake:input.vehicleMake,vehicleModel:input.vehicleModel,vehicleColor:input.vehicleColor,
     },opts);
   }
+  // service_id/service_name are ALWAYS derived from the same resolved
+  // Service Engine object when a serviceId is given — never independently
+  // constructed. A serviceId that no longer resolves (deleted/archived/
+  // wrong business) never crashes and never fabricates a name: it's
+  // treated as unresolved (service_id left null on the job) and whatever
+  // freeform input.service text the caller passed is preserved as-is —
+  // same honesty rule the booking/extraction paths already follow.
+  // input.resolveServiceByName is an explicit per-call opt-in (see
+  // resolveServiceForJob's own comment) for the few paths whose service
+  // NAME is already known to come from this business's real catalog
+  // (the public booking wizard's service cards) even though no id was
+  // ever stored — never applied unless the caller asks for it.
+  var resolvedService=(input.serviceId||input.resolveServiceByName)
+    ?resolveServiceForJob(input.serviceId,input.service,{byName:!!input.resolveServiceByName})
+    :null;
+  var jobServiceId=resolvedService?resolvedService.id:null;
+  var jobServiceName=resolvedService?resolvedService.name:(input.service||'');
   var payload={
     business_id:currentBusiness.id,
     customer_name:(customer&&customer.name)||input.customer||input.name||'',
-    service_name:input.service||'',
+    service_name:jobServiceName,
+    service_id:jobServiceId,
     scheduled_date:input.date||null,
     scheduled_time:input.time?normalizeJobTime24h(input.time):null,
     address:input.address||null,
@@ -43559,6 +43617,7 @@ async function persistJob(payload){
 }
 window.createJob=createJob;
 window.persistJob=persistJob;
+window.resolveServiceForJob=resolveServiceForJob;
 // The one canonical "create a lead" entry point. Storage is an
 // implementation detail hidden from every caller — same principle as
 // findOrCreateCustomer() hiding whether a match came from Customers or
@@ -44551,7 +44610,10 @@ async function acceptAbandonedLead(lead){
   // the Phase 1 creation-engine consolidation.
   const result=await createJob({
     name:lead.name,phone:lead.phone||'',email:lead.email||'',
-    service:lead.service||'Service',date,time,
+    // Abandoned bookings come from the same real-catalog service cards as
+    // acceptBookingRequest — no stored id, but the name is a genuine
+    // catalog reference, so this opts into exact name-based resolution.
+    service:lead.service||'Service',resolveServiceByName:true,date,time,
     address:lead.address||null,amount:null,
     notes:(lead.notes||'')||'From abandoned booking',
     status:'scheduled',fromBooking:true,
@@ -44576,7 +44638,13 @@ async function scheduleLeadOnBoard(key){
   // path, instead of re-collecting fields the drawer already edits.
   const result=await createJob({
     name:lead.name,phone:lead.phone||'',email:lead.email||'',
-    service:lead.service||'',date,time,
+    // Covers both real lead sources this board mixes together: a
+    // manually-created lead already carries a real serviceId (Task #178's
+    // Add Lead form); a booking_requests-derived lead only has a name,
+    // but that name is a genuine catalog reference (see
+    // acceptBookingRequest's own comment), so resolveServiceByName covers
+    // it too. createJob() tries id first, name only if id didn't resolve.
+    service:lead.service||'',serviceId:lead.serviceId||null,resolveServiceByName:true,date,time,
     address:resolveJobDisplayAddress(lead)||lead.address||null,
     amount:lead.amount!=null?lead.amount:null,
     notes:lead.notes||'',status:'scheduled',

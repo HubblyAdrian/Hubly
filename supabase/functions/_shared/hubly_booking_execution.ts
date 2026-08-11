@@ -147,10 +147,17 @@ export async function createWebsiteBookingJob(
   let serviceName = String(input.serviceName || "").trim();
   let amount = input.amount != null ? Number(input.amount) : null;
   let durationHours: number | null = null;
+  // resolvedServiceId is only ever set when the lookup actually succeeds —
+  // an input.serviceId that doesn't resolve (deleted/archived/wrong
+  // business) never gets written to the job; service_name falls back to
+  // whatever the caller already had, same "don't invent, don't crash"
+  // rule as createJob()'s own resolution (public/hubly.html).
+  let resolvedServiceId: string | null = null;
   if (input.serviceId) {
     getCatalog(business as Record<string, unknown>); // ensures catalog normalization before lookup
     const svc = getService(business as Record<string, unknown>, input.serviceId);
     if (svc) {
+      resolvedServiceId = svc.id;
       serviceName = svc.name;
       if (amount == null && svc.pricing.price_cents != null) amount = svc.pricing.price_cents / 100;
       if (svc.duration_minutes) durationHours = svc.duration_minutes / 60;
@@ -233,6 +240,7 @@ export async function createWebsiteBookingJob(
         customer_id: resolvedCustomer.id,
         customer_name: (resolvedCustomer.name as string) || name,
         service_name: serviceName || null,
+        service_id: resolvedServiceId,
         frequency,
         status: "active",
         start_date: input.date,
@@ -250,6 +258,7 @@ export async function createWebsiteBookingJob(
     business_id: input.businessId,
     customer_name: (resolvedCustomer.name as string) || name,
     service_name: serviceName,
+    service_id: resolvedServiceId,
     scheduled_date: input.date || null,
     scheduled_time: input.time || null,
     address: input.address || null,

@@ -11312,7 +11312,13 @@
               var convertPlaceholderId = convertedJob.id;
               global.createJob({
                 name: convertedJob.customer || '', phone: convertedJob.phone || '', email: l.email || '',
-                service: convertedJob.service || '', date: convertedJob.date || null, time: convertedJob.time || null,
+                // l.serviceId exists when this lead was created through the
+                // Add Lead form's real Service Interest picker (see Task
+                // #178) -- undefined for leads from other sources, which
+                // correctly stays freeform-only (createJob() falls back to
+                // the plain service name when serviceId doesn't resolve).
+                service: convertedJob.service || '', serviceId: l.serviceId || null,
+                date: convertedJob.date || null, time: convertedJob.time || null,
                 address: convertedJob.address || null, amount: convertedJob.amount || 0, status: convertedJob.status,
                 vehicle: convertedJob.vehicle || null, assignedTo: convertedJob.assignedTo || null
               }).then(function (result) {
@@ -16651,7 +16657,13 @@
     var svc = st.service || {};
     var input = {
       name: who.name || '', phone: who.phone || '', email: who.email || '',
-      service: svc.name || '', date: st.date || '',
+      // svc is the real Service Engine object picked in jobs-picker-pick-service
+      // (S().services entry, has .id) -- carried through so createJob() can
+      // resolve service_id + service_name together from the same object,
+      // instead of only ever getting the name. A freeform/no-catalog-match
+      // pick (jobs-picker-pick-service's own fallback: {name: svcName}) has
+      // no .id, so serviceId stays null -- exactly the freeform case.
+      service: svc.name || '', serviceId: svc.id || null, date: st.date || '',
       time: st.time ? formatJobMinutes(parseInt(st.time.slice(0, 2), 10) * 60 + parseInt(st.time.slice(3), 10)) : '',
       address: st.address != null ? st.address : (who.address || ''),
       amount: svc.price || 0, assignedTo: st.assignedTo || '',
@@ -16802,7 +16814,15 @@
           return createRecurringScheduleRow({
             customerId: (result.customer && result.customer.id) || null,
             customerName: baseInput.name || (result.customer && result.customer.name) || '',
-            serviceName: baseInput.service || '', frequency: freq, customIntervalDays: customDays,
+            // Read from the just-created job's OWN persisted row, not
+            // baseInput -- createJob() is what actually resolves
+            // service_id/service_name together (and can fall back to null/
+            // freeform if the id didn't resolve), so this guarantees the
+            // schedule always matches occurrence 0 exactly, never a second,
+            // independently-derived pair of values.
+            serviceName: (result.job && result.job.service_name) || baseInput.service || '',
+            serviceId: (result.job && result.job.service_id) || null,
+            frequency: freq, customIntervalDays: customDays,
             startDate: dates[0], nextOccurrenceDate: dates[0], preferredTime: baseInput.time || '',
             amount: baseInput.amount || null, address: baseInput.address || '', assignedTo: baseInput.assignedTo || ''
           }).then(function (schedule) {
@@ -21864,7 +21884,7 @@
     if (!d || !bizId) return Promise.resolve(null);
     var payload = {
       business_id: bizId, customer_id: input.customerId || null, customer_name: input.customerName || '',
-      service_name: input.serviceName || '', frequency: input.frequency,
+      service_name: input.serviceName || '', service_id: input.serviceId || null, frequency: input.frequency,
       custom_interval_days: input.customIntervalDays || null, status: 'active',
       start_date: input.startDate, next_occurrence_date: input.nextOccurrenceDate || input.startDate,
       preferred_time: input.preferredTime || null, amount: input.amount != null ? input.amount : null,
@@ -22228,7 +22248,20 @@
         var jpPopWho2 = el('jos-job-picker');
         var jpStWho2 = jobPickerState(jpPopWho2);
         jpStWho2.who = { kind: 'lead', archiveLeadId: jpLead.id || jpLead.key, name: jpLead.name || '', phone: jpLead.phone || '', email: jpLead.email || '', address: jpLead.address || '' };
+        // Preserve the lead's own Service Interest (Task #178) as the WHAT
+        // step's starting point -- but ONLY as a default: never override a
+        // service the person already picked in this same session (WHAT
+        // step visited before WHO, or picked WHO for a different lead
+        // already). Whatever WHAT ends up showing when Create Job is
+        // pressed is the source of truth either way, since this and
+        // jobs-picker-pick-service both just set the same st.service.
+        var jpSvcRefreshNeeded = false;
+        if (!jpStWho2.service && jpLead.serviceId && typeof global.resolveServiceForJob === 'function') {
+          var jpLeadSvc = global.resolveServiceForJob(jpLead.serviceId);
+          if (jpLeadSvc) { jpStWho2.service = jpLeadSvc; jpSvcRefreshNeeded = true; }
+        }
         jobPickerRefreshCustomerSection(jpPopWho2);
+        if (jpSvcRefreshNeeded) jobPickerRefreshJobDetails(jpPopWho2);
         jobPickerRefreshFooter(jpPopWho2);
         return;
       }
@@ -23180,6 +23213,13 @@
           customer: q.customerName || q.customer || 'Customer',
           phone: q.customerPhone || '',
           service: (q.packageNames && q.packageNames[0]) || 'Quoted service',
+          // Real Smart Quote packages ARE Service Engine services
+          // (smart-quote/ui.js builds its package list from
+          // getBookingServices()) — packageIds[0] is a genuine catalog id
+          // when this quote came from that wizard. The simpler pipeline-
+          // card quick-edit path (a plain text input, no catalog) never
+          // sets packageIds, so this correctly stays null there.
+          serviceId: (q.packageIds && q.packageIds[0]) || null,
           amount: q.amount || 0,
           date: todayStr(),
           time: '1:00 PM',
@@ -23216,7 +23256,8 @@
             var quotePlaceholderId = cj.id;
             global.createJob({
               name: cj.customer || '', phone: cj.phone || '',
-              service: cj.service || '', date: cj.date || null, time: cj.time || null,
+              service: cj.service || '', serviceId: cj.serviceId || null,
+              date: cj.date || null, time: cj.time || null,
               address: cj.address || null, amount: cj.amount || 0, status: cj.status,
               assignedTo: cj.assignedTo || null, depositStatus: cj.depositStatus,
               durationHours: (cj.durationMin || 120) / 60
@@ -23807,6 +23848,14 @@
     enhanceDashboard: enhanceDashboard,
     openQuickNew: openQuickNew,
     openJobCustomerPicker: openJobCustomerPicker,
+    // Exposed alongside openJobCustomerPicker as the picker's other real
+    // entry points (assemble the createJob() input from picker state /
+    // run the actual create-one-or-a-series pipeline), same reasoning as
+    // every other HublyJourneyOS export -- lets anything outside this
+    // module (verification, future callers) drive the real canonical
+    // path instead of reimplementing it.
+    jobPickerBuildInput: jobPickerBuildInput,
+    startJobFromPicker: startJobFromPicker,
     askForCurrentPage: askForCurrentPage,
     openBusinessPulse: openBusinessPulse,
     refreshBusinessPulse: refreshBusinessPulse,
