@@ -12246,6 +12246,10 @@
 
   function renderCustomersPageInner(root) {
     ensureCustomersOsState();
+    // Recurring Services (Overview tab, Phase 3) needs the same cache
+    // Jobs already loads — Customers may be the first page visited this
+    // session, so it can't assume Jobs got there first.
+    ensureRecurringSchedulesLoaded(function () { renderCustomers(); });
     if (!root._josCustColumns) root._josCustColumns = loadCustColumns(root);
     if (!root._josCustTab) root._josCustTab = 'all';
     if (S()._josPendingCustCommand) {
@@ -13260,6 +13264,31 @@
       return '<div class="jos-card jos-card-tight jos-card-hover' + (selectedId != null && String(selectedId) === String(id) ? ' on' : '') + '" data-jos-job="' + esc(String(id)) + '" role="button" tabindex="0"><div class="jos-between"><strong>' + esc(j.service || 'Booking') + '</strong><span class="jos-pill ' + pill + '">' + st + '</span></div><div class="jos-muted jos-mt">' + esc(j.date ? dateLong(j.date) : '—') + '</div></div>';
     }).join('') + '</div>';
   }
+  // Phase 3 section 6 — separate cards, not a merged "Recurring" section.
+  // Reads the shared recurring_schedules cache (schedulesForCustomer) —
+  // callers are responsible for kicking off ensureRecurringSchedulesLoaded
+  // (see renderCustomers()) so this doesn't have to be async itself.
+  function renderCustRecurringServicesCard(c) {
+    var schedules = schedulesForCustomer(c.id);
+    return '<div class="jos-card jos-cc3-info"><div class="jos-kicker">Recurring Services</div><div class="jos-stack jos-mt">' +
+      (schedules.length ? schedules.map(function (s) {
+        var tone = s.status === 'active' ? 'won' : (s.status === 'paused' ? 'quote' : 'lost');
+        return '<div class="jos-card jos-card-tight"><div class="jos-between"><strong>' + esc(s.serviceName || 'Service') + '</strong>' +
+          '<span class="jos-pill ' + tone + '">' + esc(s.status.charAt(0).toUpperCase() + s.status.slice(1)) + '</span></div>' +
+          '<div class="jos-muted jos-mt">↻ ' + esc(jobFrequencyLabel(s.frequency) || 'Recurring') + (s.nextOccurrenceDate ? ' · Next: ' + esc(s.nextOccurrenceDate) : '') + '</div></div>';
+      }).join('') : '<div class="jos-empty">No recurring service scheduled</div>') +
+      '</div></div>';
+  }
+  function renderCustMembershipCard(c) {
+    var mem = customerMembershipInfo(c);
+    return '<div class="jos-card jos-cc3-info"><div class="jos-kicker">Memberships</div><div class="jos-stack jos-mt">' +
+      (mem.active
+        ? '<div class="jos-card jos-card-tight"><div class="jos-between"><strong>' + esc(mem.planName) + '</strong>' +
+          '<span class="jos-pill won">' + esc(mem.status.charAt(0).toUpperCase() + mem.status.slice(1)) + '</span></div>' +
+          '<div class="jos-muted jos-mt">' + esc(mem.price != null ? money(mem.price) + '/' + (mem.cadence || 'month') : mem.cadence || '') + '</div></div>'
+        : '<div class="jos-empty">No membership</div>') +
+      '</div></div>';
+  }
   function profileTabHtml(c, tab, opts) {
     opts = opts || {};
     var shell = opts.shell || el('jos-customer-profile');
@@ -13306,7 +13335,14 @@
         '<div class="jos-card"><div class="jos-kicker">Snapshot</div><div class="jos-ov-kpi jos-mt" style="grid-template-columns:repeat(3,minmax(0,1fr))">' +
         [['Completed Jobs', String(completed.length || custCompletedCount(c))], ['Last Visit', last && last.date ? dateLong(last.date) : '—'], ['Next Appointment', next && next.date ? dateLong(next.date) : '—']].map(function (x) {
           return '<div class="jos-kpi"><div class="jos-kpi-lbl">' + esc(x[0]) + '</div><div class="jos-kpi-v" style="font-size:15px">' + esc(x[1]) + '</div></div>';
-        }).join('') + '</div></div></div>';
+        }).join('') + '</div></div>' +
+        // Phase 3 section 6: kept as two separate cards on purpose —
+        // Recurring Service (operational: work that repeats,
+        // recurring_schedules) and Membership (commercial: customer.
+        // recurringPlan, the pre-existing [RP] system) are different
+        // concepts and a customer can have either, both, or neither.
+        renderCustRecurringServicesCard(c) + renderCustMembershipCard(c) +
+        '</div>';
     } else if (tab === 'Timeline' || tab === 'History') {
       var nodes = [];
       quotes().filter(function (q) { return q.customerName === c.name; }).forEach(function (q) {
@@ -18986,6 +19022,20 @@
       '<span class="jos-muted">' + esc(serviceName) + ' · ↻ ' + esc(jobFrequencyLabel(freq) || 'Recurring') + (amount != null ? ' · ' + esc(money(amount)) + ' / visit' : '') + '</span></div>' +
       '</div>';
 
+    // Section 1/5 (Phase 3): Membership and Recurring Schedule are
+    // deliberately separate concepts — this reads the customer's own
+    // membership state (customer.recurringPlan, the pre-existing [RP]
+    // system) via the schedule's real customer_id, never assumed or
+    // inferred from the schedule itself. No customerId means this
+    // schedule predates a resolvable customer link (shouldn't happen for
+    // anything created after Phase 2, but read-only lookups stay
+    // defensive) — membership state and the opportunity nudge both no-op.
+    var custId = schedule && schedule.customerId;
+    var scheduleCustomer = custId ? findCustomer(custId) : null;
+    var memInfo = scheduleCustomer ? customerMembershipInfo(scheduleCustomer) : null;
+    var membershipLine = !scheduleCustomer ? '—'
+      : (memInfo.active ? esc(memInfo.planName) + ' — ' + esc(memInfo.status.charAt(0).toUpperCase() + memInfo.status.slice(1)) : 'None');
+
     var summary = '<div class="jos-jd-stack">' +
       '<div class="jos-jd-kv"><span>Next visit</span><strong>' + (nextOcc ? esc((nextOcc.date || '—') + (nextOcc.time ? ' · ' + nextOcc.time : '')) : '—') + '</strong></div>' +
       '<div class="jos-jd-kv"><span>Frequency</span><strong>' + esc(jobFrequencyLabel(freq) || '—') + '</strong></div>' +
@@ -18993,7 +19043,23 @@
       (schedule && schedule.assignedTo ? '<div class="jos-jd-kv"><span>Technician</span><strong>' + esc(schedule.assignedTo) + '</strong></div>' : '') +
       (schedule && schedule.address ? '<div class="jos-jd-kv"><span>Address</span><strong>' + esc(schedule.address) + '</strong></div>' : '') +
       '<div class="jos-jd-kv"><span>Schedule status</span><strong>' + esc(scheduleStatus.charAt(0).toUpperCase() + scheduleStatus.slice(1)) + '</strong></div>' +
+      '<div class="jos-jd-kv"><span>Membership</span><strong>' + membershipLine + '</strong></div>' +
       '</div>';
+
+    // Section 2/3: a nudge, not a conversion — only shown for a resolvable
+    // customer with no active membership, and creating one always goes
+    // through an explicit review/edit step (renderMembershipOpportunityForm),
+    // never straight from a click.
+    var membershipFormOpen = !!root._josScheduleMembershipFormOpen;
+    var opportunity = (scheduleCustomer && !memInfo.active)
+      ? (membershipFormOpen
+        ? renderMembershipOpportunityForm(scheduleCustomer, schedule, freq, amount)
+        : '<div class="jos-jd-opportunity jos-mt">' +
+          '<strong>' + esc((scheduleCustomer.name || 'This customer').split(' ')[0]) + ' is scheduled for recurring service.</strong>' +
+          '<p class="jos-muted">Would you like to offer a membership?</p>' +
+          '<button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="jobs-schedule-membership-open">Create Membership</button>' +
+          '</div>')
+      : '';
 
     var editForm = editOpen ? renderRecurringScheduleEditForm(schedule, scheduleId) : '';
 
@@ -19005,7 +19071,7 @@
           '</button>';
       }).join('') : '<div class="jos-muted">No occurrences yet</div>') + '</div>';
 
-    var body = '<div class="jos-jd-body">' + summary + editForm + occList + '</div>';
+    var body = '<div class="jos-jd-body">' + summary + opportunity + editForm + occList + '</div>';
 
     var canPause = scheduleStatus === 'active';
     var canResume = scheduleStatus === 'paused';
@@ -19047,6 +19113,34 @@
       field('address', 'Address', 'text', s.address) +
       field('preferredTime', 'Preferred time', 'text', s.preferredTime) +
       '</div>';
+  }
+
+  // Section 3: reuses what the schedule already knows (service, cadence,
+  // price) as a *starting point*, never assumed — every field is a real,
+  // editable input the owner reviews before Create Membership actually
+  // commits anything. Confirming calls the existing, unmodified
+  // upsertCustomer() the exact same way saveManagedRecurringPlan() does
+  // (hubly.html) — this is a fourth caller of that one mechanism, not a
+  // new membership-creation path.
+  function renderMembershipOpportunityForm(customer, schedule, freq, amount) {
+    var cadenceOptions = [['weekly', 'Weekly'], ['biweekly', 'Every 2 weeks'], ['monthly', 'Monthly']];
+    var cadenceDefault = ['weekly', 'biweekly', 'monthly'].indexOf(freq) > -1 ? freq : 'monthly';
+    var serviceName = (schedule && schedule.serviceName) || '';
+    var planNameDefault = (serviceName ? serviceName + ' Membership' : 'Membership');
+    var nextDueDefault = (schedule && schedule.nextOccurrenceDate) || todayStr();
+    return '<div class="jos-jd-stack jos-jd-schedule-edit jos-mt">' +
+      '<div class="jos-kicker">New membership — review before creating</div>' +
+      '<div class="jos-jd-kv jos-jd-kv-edit"><span>Plan name</span><input type="text" data-jos-mem-field="planName" value="' + esc(planNameDefault) + '"><span></span></div>' +
+      '<div class="jos-jd-kv jos-jd-kv-edit"><span>Service</span><input type="text" data-jos-mem-field="serviceName" value="' + esc(serviceName) + '"><span></span></div>' +
+      '<div class="jos-jd-kv jos-jd-kv-edit"><span>Cadence</span><select data-jos-mem-field="cadence">' + cadenceOptions.map(function (o) {
+        return '<option value="' + esc(o[0]) + '"' + (o[0] === cadenceDefault ? ' selected' : '') + '>' + esc(o[1]) + '</option>';
+      }).join('') + '</select><span></span></div>' +
+      '<div class="jos-jd-kv jos-jd-kv-edit"><span>Price</span><input type="number" min="0" step="0.01" data-jos-mem-field="price" value="' + esc(amount != null ? amount : '') + '"><span></span></div>' +
+      '<div class="jos-jd-kv jos-jd-kv-edit"><span>Next due date</span><input type="date" data-jos-mem-field="nextDue" value="' + esc(nextDueDefault) + '"><span></span></div>' +
+      '<div class="jos-btn-row jos-mt">' +
+      '<button type="button" class="jos-btn" data-jos-act="jobs-schedule-membership-cancel">Cancel</button>' +
+      '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="jobs-schedule-membership-save" data-jos-cust-id="' + esc(String(customer.id)) + '">Create Membership</button>' +
+      '</div></div>';
   }
 
   // Same shape as renderLeadsColumnAddMenu/renderLeadsAddFieldForm, plus a
@@ -19333,7 +19427,7 @@
     // same load-order requirement Leads has.
     if (!root._josJobsCustomFields) root._josJobsCustomFields = loadJobsCustomFields(root);
     if (!root._josJobsColumns) root._josJobsColumns = loadJobsColumns(root);
-    ensureRecurringSchedulesLoaded(root);
+    ensureRecurringSchedulesLoaded(function () { rerenderJobsOsFrom(root); });
     var selectedId = root._josJobId || null;
     var workspaceTab = root._josJobWorkspace || 'overview';
     var all = jobsAll();
@@ -21523,22 +21617,54 @@
       notes: row.notes || ''
     };
   }
-  // Lazy, once-per-root fetch (same shape as loadJobsCustomFields/
+  // Lazy, once-per-business fetch (same shape as loadJobsCustomFields/
   // loadJobsColumns) — one query for every schedule this business has,
-  // cached in S() so the Jobs table's grouping can look schedules up
-  // synchronously while rendering.
-  function ensureRecurringSchedulesLoaded(root) {
-    if (root._josRecurLoaded) return;
-    root._josRecurLoaded = true;
+  // cached in S() so both Jobs (table grouping) and Customers (Recurring
+  // Services vs Memberships, Phase 3) can look schedules up synchronously
+  // while rendering. Tracked on S() rather than per-root now that a
+  // second page needs it too — a root-scoped flag would make Customers
+  // re-fetch every time regardless of whether Jobs already loaded it.
+  function ensureRecurringSchedulesLoaded(onLoaded) {
+    var s = S();
+    if (s._recurSchedulesLoaded || s._recurSchedulesLoading) return;
     var d = jobsDb();
     var bizId = global.currentBusiness && global.currentBusiness.id;
     if (!d || !bizId) return;
+    s._recurSchedulesLoading = true;
     d.from('recurring_schedules').select('*').eq('business_id', bizId).then(function (res) {
+      s._recurSchedulesLoading = false;
       if (!res || res.error || !res.data) return;
       var cache = recurringSchedulesCache();
       res.data.forEach(function (row) { cache[String(row.id)] = mapRecurringScheduleRow(row); });
-      rerenderJobsOsFrom(root);
-    }).catch(function () {});
+      s._recurSchedulesLoaded = true;
+      if (typeof onLoaded === 'function') onLoaded();
+    }).catch(function () { s._recurSchedulesLoading = false; });
+  }
+  // Every schedule for a given customer (Recurring Services list, Phase 3
+  // Customer profile) — reads the shared cache above, no extra query.
+  function schedulesForCustomer(customerId) {
+    if (!customerId) return [];
+    var cache = recurringSchedulesCache();
+    return Object.keys(cache).map(function (k) { return cache[k]; })
+      .filter(function (s) { return String(s.customerId) === String(customerId); });
+  }
+  // Membership state, read straight off the customer record — Membership
+  // and Recurring Schedule are deliberately separate concepts (Phase 3
+  // spec): a membership is customer.recurringPlan (the pre-existing [RP]
+  // notes-tag system, untouched here), not anything stored on
+  // recurring_schedules. Mirrors hubly.html's recurringMetaFromCustomer()
+  // shape without needing that function exposed on window.
+  function customerMembershipInfo(c) {
+    var active = !!(c && (c.customerType === 'recurring' || (c.membership && String(c.membership).trim())));
+    var plan = (c && c.recurringPlan) || {};
+    return {
+      active: active,
+      planName: plan.planName || c && c.membership || 'Membership',
+      serviceName: plan.serviceName || (c && c.preferredService) || '',
+      cadence: plan.cadence || 'monthly',
+      price: plan.defaultPrice != null ? Number(plan.defaultPrice) : (c && c.recurringAmount != null ? Number(c.recurringAmount) : null),
+      status: plan.status || (active ? 'active' : 'none')
+    };
   }
   function createRecurringScheduleRow(input) {
     var d = jobsDb();
@@ -21835,6 +21961,7 @@
         root._josJobEditOpen = false;
         root._josScheduleId = null;
         root._josScheduleEditOpen = false;
+        root._josScheduleMembershipFormOpen = false;
         return rerender();
       }
       if (act === 'jobs-open') {
@@ -22675,11 +22802,14 @@
         root._josScheduleId = openSid;
         root._josJobId = null;
         root._josDrawerOpen = false;
+        root._josScheduleEditOpen = false;
+        root._josScheduleMembershipFormOpen = false;
         return rerender();
       }
       if (act === 'jobs-schedule-close') {
         root._josScheduleId = null;
         root._josScheduleEditOpen = false;
+        root._josScheduleMembershipFormOpen = false;
         return rerender();
       }
       // Section 8: opening one occurrence from inside the schedule drawer
@@ -22690,6 +22820,7 @@
       if (act === 'jobs-schedule-open-occurrence') {
         root._josScheduleId = null;
         root._josScheduleEditOpen = false;
+        root._josScheduleMembershipFormOpen = false;
         root._josJobId = jobId;
         root._josDrawerOpen = true;
         root._josJobWorkspace = 'overview';
@@ -22716,6 +22847,49 @@
         updateRecurringScheduleRow(fSid, fPatch, root).then(function (mapped) {
           toast(mapped ? 'Schedule updated' : 'Couldn’t save — check your connection and try again');
         });
+        return;
+      }
+      // Section 2/3 (Phase 3) — opening the review form is just a UI
+      // toggle; nothing is created until the explicit Save below.
+      if (act === 'jobs-schedule-membership-open') {
+        root._josScheduleMembershipFormOpen = true;
+        return rerender();
+      }
+      if (act === 'jobs-schedule-membership-cancel') {
+        root._josScheduleMembershipFormOpen = false;
+        return rerender();
+      }
+      if (act === 'jobs-schedule-membership-save') {
+        var memCustId = t.getAttribute('data-jos-cust-id');
+        var memCustomer = memCustId ? findCustomer(memCustId) : null;
+        if (!memCustomer) { toast('Customer not found'); return; }
+        if (typeof global.upsertCustomer !== 'function') { toast('Not connected'); return; }
+        function memVal(key) { var el2 = root.querySelector('[data-jos-mem-field="' + key + '"]'); return el2 ? el2.value : ''; }
+        var memPlanName = (memVal('planName') || '').trim() || 'Membership';
+        var memServiceName = (memVal('serviceName') || '').trim();
+        var memCadence = memVal('cadence') || 'monthly';
+        var memPriceRaw = memVal('price');
+        var memPrice = memPriceRaw !== '' && memPriceRaw != null ? parseFloat(memPriceRaw) : null;
+        var memNextDue = memVal('nextDue') || '';
+        var newPlan = {
+          id: 'rp_' + Date.now().toString(36),
+          planName: memPlanName, serviceName: memServiceName, cadence: memCadence,
+          defaultPrice: memPrice, defaultDuration: null, nextDueDate: memNextDue, status: 'active'
+        };
+        // Same call shape saveManagedRecurringPlan() (hubly.html) already
+        // uses — this is a fourth caller of upsertCustomer, not a new
+        // membership mechanism. Vehicle/phone/email/notes are deliberately
+        // omitted so upsertCustomer's own c?.field fallback keeps whatever
+        // the customer already has instead of this form silently blanking it.
+        global.upsertCustomer({
+          id: memCustomer.id, name: memCustomer.name,
+          customerType: 'recurring', preferredService: memServiceName || memCustomer.preferredService || '',
+          recurringAmount: memPrice, recurringPlan: newPlan
+        }).then(function () {
+          root._josScheduleMembershipFormOpen = false;
+          toast(memCustomer.name + ' is now on ' + memPlanName + ' ✓');
+          rerender();
+        }).catch(function () { toast('Couldn’t create membership — check your connection and try again'); });
         return;
       }
       // Pause/Resume only ever touch the recurring_schedules record —

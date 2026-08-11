@@ -42225,13 +42225,20 @@ async function upsertCustomer(data,opts){
     return c;
   }
   try{
+    // getDb(), not a bare `db` — there is no top-level `db` anywhere in
+    // this file (grepped: never declared/assigned); these three calls
+    // threw a ReferenceError on every real write, silently caught below,
+    // so upsertCustomer never actually persisted to Supabase — only the
+    // in-memory fallback ever ran. Found while wiring Phase 3's Create
+    // Membership flow through this exact function.
+    const dbc=getDb();
     if(c&&c._persisted){
-      const {data:updated,error}=await realtimeAwareWrite({table:'customers',id:c.id,write:()=>db.from('customers').update(payload).eq('id',c.id).select().single()});
+      const {data:updated,error}=await realtimeAwareWrite({table:'customers',id:c.id,write:()=>dbc.from('customers').update(payload).eq('id',c.id).select().single()});
       if(error)throw error;
       Object.assign(c,mapCustRow(updated));
       return c;
     }else if(currentUser){
-      const {data:inserted,error}=await realtimeAwareWrite({table:'customers',id:(res)=>res&&res.data&&res.data.id,write:()=>db.from('customers').insert({...payload,business_id:currentBusiness.id}).select().single()});
+      const {data:inserted,error}=await realtimeAwareWrite({table:'customers',id:(res)=>res&&res.data&&res.data.id,write:()=>dbc.from('customers').insert({...payload,business_id:currentBusiness.id}).select().single()});
       if(error)throw error;
       const row=mapCustRow(inserted);
       if(c){Object.assign(c,row)}else{c=row;S.customers.push(c);updateCustDL()}
@@ -42246,7 +42253,7 @@ async function upsertCustomer(data,opts){
       // writeAbandonedBookingRequest's booking_requests pattern.
       const newId=crypto.randomUUID();
       const insertPayload={...payload,id:newId,business_id:currentBusiness.id};
-      const {error}=await db.from('customers').insert(insertPayload);
+      const {error}=await dbc.from('customers').insert(insertPayload);
       if(error)throw error;
       const row=mapCustRow({...insertPayload,created_at:new Date().toISOString()});
       if(c){Object.assign(c,row)}else{c=row;S.customers.push(c);updateCustDL()}
@@ -42258,6 +42265,7 @@ async function upsertCustomer(data,opts){
     if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
     c.notes=stripCustomerMetaNotes(c.notes);
     c.recurringPlan=recurringPlan||c.recurringPlan||null;
+    c.customerType=payload.customer_type||c.customerType||'one_off';
     c.statusOverride=statusOverride||c.statusOverride||'auto';
     c.smsConsent=smsConsent||c.smsConsent||false;
     return c;

@@ -4924,6 +4924,9 @@ textarea.jos-je-field-input.jos-ld-cell-inline{height:auto!important;min-height:
 .jos-jd-schedule-edit-note{font-size:12px;margin:2px 0 8px}
 .jos-jd-recur-notice{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;padding:8px 10px;border:1px solid var(--jos-border);border-radius:10px;background:var(--jos-surface-2);font-size:12.5px}
 .jos-jd-recur-notice .jos-linkish{margin-left:auto}
+.jos-jd-opportunity{padding:12px;border:1px solid #FBD9BA;border-radius:12px;background:#FFF7ED}
+.jos-jd-opportunity strong{display:block;font-size:13.5px;color:var(--jos-navy)}
+.jos-jd-opportunity p{margin:4px 0 8px}
 .jos-jd-profile{display:flex;gap:12px;align-items:flex-start}
 .jos-jd-svc{padding:12px;border:1px solid var(--jos-border);border-radius:12px;background:var(--jos-surface-2)}
 .jos-jd-tl{
