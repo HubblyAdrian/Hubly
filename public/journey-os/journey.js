@@ -7410,6 +7410,46 @@
     }
   };
 
+  // Service Engine is the single source of truth for services — Leads,
+  // Jobs, Booking, Website, Customers, and Quotes all read the same real
+  // catalog (getBookingServices(), exposed globally by hubly.html) rather
+  // than each keeping its own list. No lead-specific service schema here.
+  function leadServiceCatalog() {
+    var svcs = (typeof global.getBookingServices === 'function') ? global.getBookingServices() : [];
+    return svcs.filter(function (s) { return s && s.id != null && s.name; }).map(function (s) { return { id: String(s.id), name: s.name }; });
+  }
+  function leadServiceComboOptions() {
+    var opts = leadServiceCatalog().map(function (s) { return { value: s.id, label: s.name }; });
+    opts.push({ value: '__other__', label: 'Not sure / Other' });
+    return opts;
+  }
+  // Universal Lead fields already cover these keys (contact/schedule) —
+  // never re-offered as an "industry-specific" field regardless of what a
+  // blueprint's intake step lists. Everything else in that step (vehicle
+  // fields included — Leads treats them like any other intake field, no
+  // separate rich vehicle UI the way the booking wizard has) is real,
+  // business-type-relevant intake data.
+  var LEAD_INTAKE_SKIP_FIELDS = { address: 1, date: 1, time: 1, name: 1, phone: 1, email: 1, notes: 1, addons: 1, payment: 1, confirm: 1 };
+  // The ONLY place that decides which extra fields a lead needs — the
+  // active Business Type's Blueprint (booking.steps[0].fields, the same
+  // vocabulary the public booking wizard's first step already uses — see
+  // bookingFirstStep()/configureBookingIntakeFromBlueprint() in
+  // hubly.html). No "if industry === X" here or anywhere downstream: an
+  // unknown/not-yet-loaded business type just gets an empty list, same
+  // fail-safe posture bookingNeedsVehicle() already uses ("safer empty
+  // than wrong trade").
+  function leadIndustryFieldSpecs() {
+    try {
+      if (typeof global.HublyBlueprints === 'undefined' || !global.HublyBlueprints.isReady || !global.HublyBlueprints.isReady()) return [];
+      if (typeof global.bookingFirstStep !== 'function') return [];
+      var step = global.bookingFirstStep();
+      var labels = global.BK_FIELD_LABELS || {};
+      return (step && Array.isArray(step.fields) ? step.fields : [])
+        .filter(function (f) { return !LEAD_INTAKE_SKIP_FIELDS[f]; })
+        .map(function (f) { return { key: f, label: labels[f] || f }; });
+    } catch (e) { return []; }
+  }
+
   // ---- Leads: the first table wired onto the engine above ---------------
   // Schema, not switch statements: every column fully describes its own
   // type, capabilities, and how to read/write its value — tableCellHtml,
@@ -7491,17 +7531,39 @@
     },
     {
       // A dropdown, not free text — same pattern as Assigned: the real
-      // services/packages this business actually offers on their own
-      // website (getBookingServices()), not whatever a rep happened to
-      // type. Falls back to no options only if the business hasn't set
-      // up a service catalog yet.
+      // services/packages this business actually offers (Service Engine,
+      // via getBookingServices()), not whatever a rep happened to type.
+      // Keyed by the canonical service id (not the name) — lead.serviceId
+      // is the source of truth, lead.service is kept as the resolved
+      // display name so every other reader of lead.service (search,
+      // filters, Kanban cards, CSV export, quote packageName, ...) keeps
+      // working unchanged. '__other__' is the escape hatch for a service
+      // this business doesn't have in its catalog (or no catalog at all);
+      // its freeform detail lives in lead.serviceOther, never invented.
       key: 'service', label: 'Service', type: 'select', width: 150, allowEmpty: 'Select service', hideEmptyOption: true,
       editable: true, searchable: true, filterable: true, sortable: true,
-      options: function () {
-        var svcs = (typeof global.getBookingServices === 'function') ? global.getBookingServices() : [];
-        return svcs.filter(function (s) { return s && s.name; }).map(function (s) { return { value: s.name, label: s.name }; });
+      // Falls back to the raw lead.service string when there's no
+      // serviceId — a lead created before this change (freeform service,
+      // no id) won't match any option's value, so the select renderer's
+      // own fallback (label: match ? match.label : (value||'')) just
+      // shows that raw string verbatim instead of going blank. New leads
+      // always get a real serviceId from here on.
+      get: function (lead) { return lead.serviceId || lead.service || ''; },
+      options: leadServiceComboOptions,
+      set: function (lead, value) {
+        if (value === '__other__') {
+          lead.serviceId = '__other__';
+          lead.service = lead.serviceOther || '';
+          return 'Service → Not sure / Other';
+        }
+        var match = leadServiceCatalog().filter(function (s) { return s.id === String(value); })[0];
+        lead.serviceId = match ? match.id : null;
+        lead.service = match ? match.name : '';
+        return 'Service → ' + (lead.service || '—');
       },
-      set: function (lead, value) { lead.service = String(value || '').trim(); return 'Service → ' + (lead.service || '—'); }
+      searchValue: function (lead) { return lead.service || ''; },
+      filterValue: function (lead) { return lead.service || ''; },
+      sortValue: function (lead) { return lead.service || ''; }
     },
     {
       key: 'status', label: 'Status', type: 'select', width: 130,
@@ -8354,12 +8416,15 @@
       '<p class="jos-muted jos-leads-paste-hint">Tip: copy a text message, or describe a screenshot (name, phone, what they want).</p>' +
       '</div>' +
       '<div class="jos-leads-form">' +
+      '<div class="jos-leads-span2 jos-leads-kicker jos-kicker">Customer</div>' +
       '<label>Name<input id="jos-la-name" value="' + esc(d.name || '') + '" placeholder="Full name" autocomplete="name"></label>' +
       '<label>Phone<span class="jos-phone-dial">' + esc(dial) + '</span><input id="jos-la-phone" type="tel" inputmode="tel" value="' + esc(formatPhoneValue(d.phone || '')) + '" placeholder="888-888-8888" autocomplete="tel"></label>' +
       '<label>Email<input id="jos-la-email" value="' + esc(d.email || '') + '" placeholder="name@email.com" autocomplete="email"></label>' +
       '<label>Address<input id="jos-la-address" value="' + esc(d.address || '') + '" placeholder="Service address"></label>' +
-      '<label>Vehicle / Property<input id="jos-la-vehicle" value="' + esc(d.vehicle || '') + '" placeholder="Vehicle or property"></label>' +
-      '<label>Service<input id="jos-la-service" value="' + esc(d.service || '') + '" placeholder="Service interest"></label>' +
+      '<div class="jos-leads-span2 jos-leads-kicker jos-kicker">What they need</div>' +
+      leadDraftServiceFieldHtml(root, d) +
+      leadDraftIndustryFieldsHtml(d) +
+      '<div class="jos-leads-span2 jos-leads-kicker jos-kicker">Lead management</div>' +
       '<label>Source<select id="jos-la-source">' +
         [['manual', 'Manual'], ['text', 'Text / screenshot'], ['google', 'Google'], ['facebook', 'Facebook'], ['instagram', 'Instagram'], ['hubly', 'Hubly'], ['website', 'Website']].map(function (s) {
           return '<option value="' + s[0] + '"' + ((d.source || 'manual') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
@@ -8379,6 +8444,39 @@
       btn('leads-add-save', 'Save Lead', 'jos-btn-brand jos-btn-sm') +
       btn('leads-add-quote', 'Save & Quote', 'jos-btn jos-btn-sm') +
       '</div></div></div>';
+  }
+  // Service Interest — a real dropdown/searchable select over this
+  // business's actual Service Engine catalog (leadServiceCatalog()), never
+  // free text. Stores the canonical id (d.serviceId); "Not sure / Other"
+  // reveals a small freeform field (d.serviceOther) instead of forcing a
+  // guess. Reuses the same shared combo-pop component
+  // (renderComboPopContent/#jos-ld-combo-pop) every select-type column
+  // already opens through — see the '__draft__' branches in
+  // renderLeadsComboPop and the comboPick handler in wireLeadsRoot.
+  function leadDraftServiceFieldHtml(root, d) {
+    var opts = leadServiceComboOptions();
+    var selected = null;
+    for (var i = 0; i < opts.length; i++) { if (opts[i].value === (d.serviceId || '')) { selected = opts[i]; break; } }
+    var triggerLabel = selected ? selected.label : 'Select a service…';
+    var otherRow = d.serviceId === '__other__'
+      ? '<label class="jos-leads-span2">Service detail<input id="jos-la-service-other" value="' + esc(d.serviceOther || '') + '" placeholder="What do they need? (not in your service list)"></label>'
+      : '';
+    return '<label class="jos-leads-span2">Service Interest' +
+      '<div class="jos-leads-combo-wrap"><button type="button" id="jos-la-service-trigger" class="jos-leads-combo-trigger' + (selected ? '' : ' is-empty') + '" data-jos-act="leads-draft-service-open" data-jos-field="service" data-jos-record-id="__draft__">' +
+      '<span>' + esc(triggerLabel) + '</span><span class="jos-leads-combo-chev">▾</span></button></div></label>' +
+      otherRow;
+  }
+  // Only ever rendered when the active Business Type's Blueprint actually
+  // lists relevant fields (leadIndustryFieldSpecs()) — an empty section
+  // never shows, and nothing here is hard-coded per industry.
+  function leadDraftIndustryFieldsHtml(d) {
+    var specs = leadIndustryFieldSpecs();
+    if (!specs.length) return '';
+    var fields = d.industryFields || {};
+    return '<div class="jos-leads-span2 jos-leads-kicker jos-kicker">Industry-specific details</div>' +
+      specs.map(function (spec) {
+        return '<label>' + esc(spec.label) + '<input data-jos-lead-industry-field="' + esc(spec.key) + '" value="' + esc(fields[spec.key] || '') + '" placeholder="' + esc(spec.label) + '"></label>';
+      }).join('');
   }
 
   function parseLeadPasteText(raw) {
@@ -8862,10 +8960,19 @@
   function renderLeadsComboPop(root) {
     var combo = root._josLeadCombo;
     if (!combo) return '<div class="jos-combo-pop" id="jos-ld-combo-pop" hidden></div>';
-    var lead = findLead(combo.recordId);
     var col = findLeadsColumnDef(root, combo.key);
-    if (!lead || !col) return '<div class="jos-combo-pop" id="jos-ld-combo-pop" hidden></div>';
-    var currentValue = col.get ? col.get(lead) : lead[combo.key];
+    if (!col) return '<div class="jos-combo-pop" id="jos-ld-combo-pop" hidden></div>';
+    var currentValue;
+    // '__draft__' is the not-yet-saved Add Lead modal (root._josLeadDraft)
+    // rather than a real lead — same shared combo-pop, no separate
+    // component for "picking a service before the lead exists yet."
+    if (combo.recordId === '__draft__') {
+      currentValue = (root._josLeadDraft || {}).serviceId || '';
+    } else {
+      var lead = findLead(combo.recordId);
+      if (!lead) return '<div class="jos-combo-pop" id="jos-ld-combo-pop" hidden></div>';
+      currentValue = col.get ? col.get(lead) : lead[combo.key];
+    }
     return '<div class="jos-combo-pop" id="jos-ld-combo-pop">' + renderComboPopContent(col, currentValue, combo.search, null) + '</div>';
   }
   function positionLeadsComboPop(root) {
@@ -8995,6 +9102,16 @@
       ['Service', lead.service || '—', ''],
       ['Source', srcLabel(srcKind(lead.source, lead)), '']
     ];
+    // Blueprint-driven industry fields captured at creation (see
+    // leadIndustryFieldSpecs()) — surfaced here read-only so they're not
+    // invisible after the lead is saved. Only real, filled-in values show;
+    // an unset field is simply omitted, not a "—" placeholder row.
+    var industryLabels = leadIndustryFieldSpecs();
+    var industryValues = lead.industryFields || {};
+    industryLabels.forEach(function (spec) {
+      var v = industryValues[spec.key];
+      if (v) infoFields.push([spec.label, v, '']);
+    });
     var team = (S().team && S().team.length ? S().team : LEADS_TEAM);
     var assignedRow = assignedEditing
       ? '<div class="jos-ld-field"><span>Assigned To</span><select id="jos-ld-assigned" class="jos-ld-select jos-ld-select-inline" autofocus>' +
@@ -9537,14 +9654,25 @@
     } catch (e) {}
   }
 
-  function readLeadAddDraft() {
+  function readLeadAddDraft(root) {
+    // Service Interest and Industry-specific details are combo-picked /
+    // written straight into root._josLeadDraft as they change (see the
+    // comboPick and input handlers in wireLeadsRoot) rather than read from
+    // a DOM element here, the same way root._josLeadDraft.paste already
+    // works for the AI extraction result.
+    var stored = (root && root._josLeadDraft) || {};
+    var serviceId = stored.serviceId || null;
+    var resolved = serviceId && serviceId !== '__other__'
+      ? leadServiceCatalog().filter(function (s) { return s.id === serviceId; })[0]
+      : null;
     return {
       name: (el('jos-la-name') || {}).value || '',
       phone: (el('jos-la-phone') || {}).value || '',
       email: (el('jos-la-email') || {}).value || '',
       address: (el('jos-la-address') || {}).value || '',
-      vehicle: (el('jos-la-vehicle') || {}).value || '',
-      service: (el('jos-la-service') || {}).value || '',
+      serviceId: serviceId,
+      service: resolved ? resolved.name : (serviceId === '__other__' ? (stored.serviceOther || '') : ''),
+      industryFields: stored.industryFields || {},
       source: (el('jos-la-source') || {}).value || 'manual',
       assignedTo: (el('jos-la-assigned') || {}).value || '',
       notes: (el('jos-la-notes') || {}).value || '',
@@ -9555,7 +9683,7 @@
   function saveNewLead(andQuote) {
     var root = el('jos-leads-root');
     if (!root) return;
-    var d = readLeadAddDraft();
+    var d = readLeadAddDraft(root);
     if (!String(d.name || '').trim()) { toast('Name is required'); return; }
     ensureLeadsOsState();
     var phone = formatPhoneValue(d.phone || '');
@@ -9570,7 +9698,8 @@
     // even though the manual-storage path itself resolves synchronously.
     global.createLead({
       name: d.name.trim(), phone: phone, email: d.email, address: d.address,
-      vehicle: d.vehicle, service: d.service, source: d.source || 'manual',
+      serviceId: d.serviceId, service: d.service, industryFields: d.industryFields,
+      source: d.source || 'manual',
       assignedTo: d.assignedTo, notes: d.notes,
       tags: String(d.tags || '').split(/[,\s]+/).filter(Boolean),
     }, { origin: 'manual' }).then(function (result) {
@@ -9855,9 +9984,15 @@
         if (leadCombo) {
           var comboCol = findLeadsColumnDef(root, leadCombo.key);
           if (comboCol) {
-            mutateLeadById(leadCombo.recordId, function (l) {
-              tableColFieldSet(comboCol, l, comboPick.getAttribute('data-jos-combo-pick'));
-            });
+            var pickedVal = comboPick.getAttribute('data-jos-combo-pick');
+            if (leadCombo.recordId === '__draft__') {
+              root._josLeadDraft = root._josLeadDraft || {};
+              tableColFieldSet(comboCol, root._josLeadDraft, pickedVal);
+            } else {
+              mutateLeadById(leadCombo.recordId, function (l) {
+                tableColFieldSet(comboCol, l, pickedVal);
+              });
+            }
           }
           closeLeadsComboPicker(root);
         }
@@ -9949,6 +10084,18 @@
       if (e.target && e.target.id === 'jos-leads-reply') root._josLeadDraftMsg = e.target.value;
       if (e.target && (e.target.id === 'jos-la-phone' || e.target.id === 'jos-ca-phone')) {
         e.target.value = formatPhoneValue(e.target.value);
+      }
+      // Written straight into the draft on every keystroke, no re-render —
+      // same reasoning as setBkIntake() in hubly.html: a full renderLeads()
+      // on every keystroke would blow away cursor position/focus.
+      if (e.target && e.target.id === 'jos-la-service-other') {
+        root._josLeadDraft = root._josLeadDraft || {};
+        root._josLeadDraft.serviceOther = e.target.value;
+      }
+      if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-jos-lead-industry-field')) {
+        root._josLeadDraft = root._josLeadDraft || {};
+        root._josLeadDraft.industryFields = root._josLeadDraft.industryFields || {};
+        root._josLeadDraft.industryFields[e.target.getAttribute('data-jos-lead-industry-field')] = e.target.value;
       }
       // Silent state sync, no render — the type <select>'s 'change' handler
       // is what actually re-renders this form (to show/hide the options
@@ -10716,6 +10863,7 @@
         return;
       }
       if (act === 'leads-add-open') { root._josLeadAddOpen = true; root._josLeadDraft = {}; return renderLeads(); }
+      if (act === 'leads-draft-service-open') { return openLeadsComboPicker(root, '__draft__', 'service', false); }
       if (act === 'leads-add-cancel') { root._josLeadAddOpen = false; return renderLeads(); }
       if (act === 'leads-import-open') {
         root._josLeadImportOpen = true;
@@ -10750,21 +10898,49 @@
           try {
             var dbClient = typeof db !== 'undefined' ? db : (window.db || null);
             if (dbClient) {
+              // Real catalog + real industry-field vocabulary go WITH the
+              // paste text, so the server can only ever match a service
+              // that actually exists and only ever fill fields this
+              // business type actually has — never invent either. See
+              // hubly_lead_extract.ts's SYSTEM_PROMPT for the matching
+              // discipline and the post-hoc "is this id/key really in the
+              // list we sent" verification.
+              var extractServices = leadServiceCatalog();
+              var extractIndustryFields = leadIndustryFieldSpecs();
+              // 20s, above the server's own 16s internal timeout
+              // (hubly_lead_extract.ts's EXTRACT_TIMEOUT_MS) -- the server
+              // should always be the one to give up first and respond
+              // honestly, not get raced out by an impatient client.
               var invokeResult = await Promise.race([
-                dbClient.functions.invoke('lead-extract', { body: { text: pasteText } }).then(function (r) { return r && r.data; }),
-                new Promise(function (_, rej) { setTimeout(function () { rej(new Error('client_timeout')); }, 10000); }),
+                dbClient.functions.invoke('lead-extract', { body: { text: pasteText, services: extractServices, industryFields: extractIndustryFields } }).then(function (r) { return r && r.data; }),
+                new Promise(function (_, rej) { setTimeout(function () { rej(new Error('client_timeout')); }, 20000); }),
               ]);
               if (invokeResult && invokeResult.ok && invokeResult.fields) {
                 handled = true;
                 var f = invokeResult.fields;
-                root._josLeadDraft = Object.assign({}, root._josLeadDraft || {}, {
-                  name: f.name || (root._josLeadDraft || {}).name || '',
-                  phone: f.phone || (root._josLeadDraft || {}).phone || '',
-                  email: f.email || (root._josLeadDraft || {}).email || '',
-                  service: f.service || (root._josLeadDraft || {}).service || '',
-                  notes: f.notes || (root._josLeadDraft || {}).notes || '',
+                var priorDraft = root._josLeadDraft || {};
+                var matchedSvc = f.serviceId ? extractServices.filter(function (s) { return s.id === f.serviceId; })[0] : null;
+                var nextDraft = Object.assign({}, priorDraft, {
+                  name: f.name || priorDraft.name || '',
+                  phone: f.phone || priorDraft.phone || '',
+                  email: f.email || priorDraft.email || '',
+                  notes: f.notes || priorDraft.notes || '',
                   paste: pasteText,
                 });
+                // Only ever set when the model confidently matched a REAL
+                // catalog entry — otherwise Service Interest stays exactly
+                // as it was (unselected, or whatever the person already
+                // picked), never a guessed value.
+                if (matchedSvc) { nextDraft.serviceId = matchedSvc.id; nextDraft.serviceName = matchedSvc.name; }
+                if (f.industryFields && typeof f.industryFields === 'object') {
+                  var mergedIndustry = Object.assign({}, priorDraft.industryFields || {});
+                  extractIndustryFields.forEach(function (spec) {
+                    var v = f.industryFields[spec.key];
+                    if (v) mergedIndustry[spec.key] = v;
+                  });
+                  nextDraft.industryFields = mergedIndustry;
+                }
+                root._josLeadDraft = nextDraft;
                 if (invokeResult.looksLikeLead === false) {
                   toast('This doesn’t look like a lead inquiry — check the fields before saving');
                 } else {
@@ -10774,8 +10950,24 @@
             }
           } catch (eExtract) { /* falls through to regex below */ }
           if (!handled) {
+            // Offline fallback has no catalog to match against — its
+            // "service" guess becomes the freeform Other detail, never a
+            // fabricated serviceId.
             var parsed = parseLeadPasteText(pasteText);
-            root._josLeadDraft = Object.assign({}, root._josLeadDraft || {}, parsed, { paste: pasteText });
+            var fallbackPrior = root._josLeadDraft || {};
+            var fallbackNext = Object.assign({}, fallbackPrior, {
+              name: parsed.name || fallbackPrior.name || '',
+              phone: parsed.phone || fallbackPrior.phone || '',
+              email: parsed.email || fallbackPrior.email || '',
+              address: parsed.address || fallbackPrior.address || '',
+              notes: parsed.notes || fallbackPrior.notes || '',
+              paste: pasteText,
+            });
+            if (parsed.service && !fallbackPrior.serviceId) {
+              fallbackNext.serviceId = '__other__';
+              fallbackNext.serviceOther = parsed.service;
+            }
+            root._josLeadDraft = fallbackNext;
             toast(parsed.name || parsed.phone || parsed.email
               ? 'Quick extract unavailable, pulled what we could — check the fields'
               : 'Couldn’t find name/phone yet — edit fields manually');

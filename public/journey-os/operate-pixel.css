@@ -1226,10 +1226,18 @@ body:has(.hubly-coach:not(.hidden)) #jos-ask-fab{bottom:88px}
   display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--jos-ink-3);
 }
 .jos-leads-filter-grid select,.jos-leads-filter-grid input,
-.jos-leads-form select,.jos-leads-form input{
+.jos-leads-form select,.jos-leads-form input,.jos-leads-form .jos-leads-combo-trigger{
   height:36px;border:1px solid var(--jos-border);border-radius:10px;padding:0 10px;
   font:inherit;font-size:13px;font-weight:600;color:var(--jos-navy);background:#fff;
 }
+.jos-leads-form .jos-leads-combo-trigger{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  text-align:left;cursor:pointer;box-sizing:border-box;
+}
+.jos-leads-form .jos-leads-combo-trigger.is-empty{color:var(--jos-ink-3);font-weight:500}
+.jos-leads-form .jos-leads-combo-trigger .jos-leads-combo-chev{color:var(--jos-ink-3);font-size:11px}
+.jos-leads-form .jos-leads-combo-wrap{position:relative}
+.jos-leads-form .jos-leads-kicker{grid-column:1/-1;margin:8px 0 -2px}
 .jos-leads-modal-backdrop{
   position:fixed;inset:0;background:rgba(20,27,43,.45);z-index:12040;
   display:flex;align-items:center;justify-content:center;padding:16px;

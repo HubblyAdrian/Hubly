@@ -39000,6 +39000,10 @@ const BK_FIELD_LABELS={
   hours:'Coverage hours',travelMiles:'Travel',secondShooter:'Second shooter',
   address:'Address',date:'Date',time:'Time',name:'Name',phone:'Phone',email:'Email',notes:'Notes',addons:'Add-ons',
 };
+// const, not a function declaration -- doesn't become window.BK_FIELD_LABELS
+// automatically the way top-level functions in this script do. journey.js
+// (Leads' industry-field vocabulary) reads it via global.BK_FIELD_LABELS.
+window.BK_FIELD_LABELS=BK_FIELD_LABELS;
 function bkIntakeFieldLabel(key){
   if(BK_FIELD_LABELS[key])return BK_FIELD_LABELS[key];
   return String(key||'')
@@ -43622,7 +43626,9 @@ function createLeadManual(input,opts){
   const lead={
     id,key:id,name:input.name||'',phone:input.phone||'',email:input.email||'',
     address:input.address||'',vehicle:input.vehicle||'',property:input.address||'',
-    service:input.service||'',source:input.source||'manual',
+    service:input.service||'',serviceId:input.serviceId||null,
+    industryFields:(input.industryFields&&typeof input.industryFields==='object')?input.industryFields:{},
+    source:input.source||'manual',
     assignedTo:input.assignedTo||'',notes:input.notes||'',
     notesList:input.notes?[input.notes]:[],
     tags:input.tags||[],
