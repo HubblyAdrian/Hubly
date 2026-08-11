@@ -898,12 +898,19 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             if (!r.ok) {
               return { ok: true, real: false, summary: r.error || "The booking could not be created.", raw: r };
             }
+            let summary = `Real job booked for ${startsAt}.`;
+            if (r.recurringScheduleId) {
+              summary = `Real job booked for ${startsAt} and a recurring schedule was set up for future visits.`;
+            } else if (r.existingScheduleConflict) {
+              const c = r.existingScheduleConflict as { frequency?: string; service_name?: string; next_occurrence_date?: string };
+              summary = `Real job booked for ${startsAt}. This customer already has an active ${c.frequency || "recurring"} schedule` +
+                `${c.service_name ? ` for ${c.service_name}` : ""}${c.next_occurrence_date ? ` (next visit ${c.next_occurrence_date})` : ""} — ` +
+                `no second schedule was created. Tell the customer their existing recurring visits are unaffected; if they want to change the cadence or service on that existing schedule, that needs to be handled separately, not by booking again.`;
+            }
             return {
               ok: true,
               real: true,
-              summary: r.recurringScheduleId
-                ? `Real job booked for ${startsAt} and a recurring schedule was set up for future visits.`
-                : `Real job booked for ${startsAt}.`,
+              summary,
               raw: r,
             };
           }

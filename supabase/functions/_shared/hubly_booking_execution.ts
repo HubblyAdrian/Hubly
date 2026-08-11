@@ -136,7 +136,14 @@ export async function createWebsiteBookingJob(
   admin: SupabaseClient,
   input: CreateWebsiteBookingInput,
 ): Promise<
-  | { ok: true; jobId: string; job: Record<string, unknown>; customerId: string; recurringScheduleId: string | null }
+  | {
+    ok: true;
+    jobId: string;
+    job: Record<string, unknown>;
+    customerId: string;
+    recurringScheduleId: string | null;
+    existingScheduleConflict: Record<string, unknown> | null;
+  }
   | { ok: false; error: string }
 > {
   const business = await loadBusinessForBooking(admin, input.businessId);
@@ -278,31 +285,53 @@ export async function createWebsiteBookingJob(
   // one at a time, as it actually becomes due — never a batch of future
   // jobs created up front.
   let recurringScheduleId: string | null = null;
+  // Surfaced to the caller (never silently swallowed) when this customer
+  // already has an active schedule for the same service — the AI/customer
+  // gets told about it instead of a second, competing schedule getting
+  // created underneath them. v1: just surfaces the fact; actually
+  // attaching this visit to the existing schedule or replacing it is a
+  // real decision, not something guessed here.
+  let existingScheduleConflict: Record<string, unknown> | null = null;
   const frequency = String(input.frequency || "").trim().toLowerCase();
   if (VALID_FREQUENCIES.includes(frequency as RecurringFrequency)) {
-    const { data: schedule, error: schedErr } = await admin
+    let existingQuery = admin
       .from("recurring_schedules")
-      .insert({
-        business_id: input.businessId,
-        customer_id: resolvedCustomer.id,
-        customer_name: (resolvedCustomer.name as string) || name,
-        service_name: serviceName || null,
-        service_id: resolvedServiceId,
-        frequency,
-        status: "active",
-        start_date: input.date,
-        // The FIRST occurrence is this job itself (created below, right
-        // now) — next_occurrence_date must be the date AFTER it, or
-        // hubly-recurring-maintain would immediately try to generate a
-        // second job for the same date as occurrence #1.
-        next_occurrence_date: computeNextOccurrenceDate(input.date, frequency, undefined),
-        preferred_time: input.time || null,
-        amount,
-        address: input.address || null,
-      })
-      .select()
-      .single();
-    if (!schedErr && schedule) recurringScheduleId = String(schedule.id);
+      .select("id, frequency, service_name, next_occurrence_date")
+      .eq("business_id", input.businessId)
+      .eq("customer_id", resolvedCustomer.id)
+      .eq("status", "active");
+    existingQuery = resolvedServiceId
+      ? existingQuery.eq("service_id", resolvedServiceId)
+      : existingQuery.ilike("service_name", serviceName || "");
+    const { data: existing } = await existingQuery.maybeSingle();
+
+    if (existing) {
+      existingScheduleConflict = existing as Record<string, unknown>;
+    } else {
+      const { data: schedule, error: schedErr } = await admin
+        .from("recurring_schedules")
+        .insert({
+          business_id: input.businessId,
+          customer_id: resolvedCustomer.id,
+          customer_name: (resolvedCustomer.name as string) || name,
+          service_name: serviceName || null,
+          service_id: resolvedServiceId,
+          frequency,
+          status: "active",
+          start_date: input.date,
+          // The FIRST occurrence is this job itself (created below, right
+          // now) — next_occurrence_date must be the date AFTER it, or
+          // hubly-recurring-maintain would immediately try to generate a
+          // second job for the same date as occurrence #1.
+          next_occurrence_date: computeNextOccurrenceDate(input.date, frequency, undefined),
+          preferred_time: input.time || null,
+          amount,
+          address: input.address || null,
+        })
+        .select()
+        .single();
+      if (!schedErr && schedule) recurringScheduleId = String(schedule.id);
+    }
   }
 
   const payload = {
@@ -337,5 +366,6 @@ export async function createWebsiteBookingJob(
     job: job as Record<string, unknown>,
     customerId: String(resolvedCustomer.id),
     recurringScheduleId,
+    existingScheduleConflict,
   };
 }
