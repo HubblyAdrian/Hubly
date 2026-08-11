@@ -7511,6 +7511,20 @@
       set: function (lead, value) { lead.assignedTo = value; return value ? ('Assigned to ' + value) : 'Unassigned'; }
     },
     {
+      // Real data (lead.address, or lead.property for a lead that came in
+      // through a property-based intake) has been shown read-only in the
+      // workspace's Information panel this whole time — never addable as a
+      // column, and never actually editable anywhere, since nothing ever
+      // called set() on it. No dbColumn/dbPatch needed: unlike Jobs, every
+      // Leads column already persists through the same generic mutateLead
+      // ById -> persistLeadsSoon() whole-record save (see its comment) —
+      // set() just needs to write the field, same as every column above.
+      key: 'address', label: 'Address', type: 'text', width: 180, hidden: true,
+      editable: true, searchable: true, filterable: false, sortable: false,
+      get: function (lead) { return lead.address || lead.property || ''; },
+      set: function (lead, value) { lead.address = String(value || '').trim(); return 'Address → ' + (lead.address || '—'); }
+    },
+    {
       key: 'tags', label: 'Tags', type: 'tags', width: 180, hidden: true,
       editable: true, searchable: true, filterable: false, sortable: false,
       get: function (lead) { return Array.isArray(lead.tags) ? lead.tags : []; },
@@ -17298,12 +17312,38 @@
   // this pass.
   var JOBS_DEFAULT_COLUMNS = [
     {
-      // openOnClick: the customer is the record, exactly like Leads' name
-      // column — single click opens the job drawer. Renaming happens in
-      // the drawer header (click-to-edit), not the table.
-      key: 'customer', label: 'Customer', type: 'text', width: 170,
+      // openOnClick, on both name halves — exactly like Leads' firstName/
+      // lastName columns — single click opens the job drawer. Renaming
+      // happens in the drawer header (click-to-edit), not the table.
+      // Replaces the old single combined "Customer" column: once First
+      // name/Last name became real addable columns (see JOBS_DRAWER_ONLY_
+      // COLUMNS below, pre-merge), a business could end up with Customer
+      // AND First+Last all visible at once showing the exact same data
+      // three times. "Customer" is no longer offered as a column at all —
+      // splitJobsCustomerColumn (see findJobsColumnDef) keeps its set()
+      // reachable for the one place that still needs it directly (the
+      // drawer header's own click-to-rename), without it ever showing up
+      // in the table or the "+ Add column" menu again.
+      key: 'customerFirst', label: 'First name', type: 'text', width: 130,
       editable: true, openOnClick: true, searchable: true, sortable: true, dbColumn: 'customer_name',
-      set: function (job, value) { job.customer = String(value || '').trim(); return 'Customer → ' + (job.customer || '—'); }
+      get: function (job) { return splitLeadName(job.customer).first; },
+      set: function (job, value) {
+        var parts = splitLeadName(job.customer);
+        job.customer = (String(value || '').trim() + ' ' + parts.last).trim();
+        return 'Customer → ' + (job.customer || '—');
+      },
+      dbPatch: function (job) { return { customer_name: job.customer }; }
+    },
+    {
+      key: 'customerLast', label: 'Last name', type: 'text', width: 130,
+      editable: true, openOnClick: true, searchable: true, sortable: true, dbColumn: 'customer_name',
+      get: function (job) { return splitLeadName(job.customer).last; },
+      set: function (job, value) {
+        var parts = splitLeadName(job.customer);
+        job.customer = (parts.first + ' ' + String(value || '').trim()).trim();
+        return 'Customer → ' + (job.customer || '—');
+      },
+      dbPatch: function (job) { return { customer_name: job.customer }; }
     },
     {
       // Real dropdown, matching Leads' Service column — was free text
@@ -17499,38 +17539,20 @@
   // resolvable through findJobsColumnDef so the drawer can drive them
   // through the exact same click-to-edit/mutateJobField/persistJobPatch
   // machinery the table cells already use — one interaction model, not two.
+  // The old combined "Customer" column's set() is still needed by exactly
+  // one caller — the drawer header's own click-to-rename input (search
+  // findJobsColumnDef('customer')) — which edits the full name as one
+  // string, not split First/Last halves. Deliberately NOT part of
+  // JOBS_DRAWER_ONLY_COLUMNS (which feeds the "+ Add column" menu, see
+  // jobsColumnSchema): resolvable by direct key lookup only, so "Customer"
+  // can never come back as a pickable column now that First/Last cover the
+  // same data without the redundancy.
+  var JOBS_CUSTOMER_NAME_COLUMN = {
+    key: 'customer', label: 'Customer', type: 'text',
+    editable: true, dbColumn: 'customer_name',
+    set: function (job, value) { job.customer = String(value || '').trim(); return 'Customer → ' + (job.customer || '—'); }
+  };
   var JOBS_DRAWER_ONLY_COLUMNS = [
-    {
-      // dbPatch, not just dbColumn — mutateJobField's generic fallback
-      // patches with tableColFieldGet(col, job), which for this column is
-      // col.get(job): the split-off first name ALONE, not the full name
-      // set() just recombined. That sent {customer_name: "John"} (or
-      // just "Smith" editing Last) to Supabase, silently truncating the
-      // name in the DB immediately — it looked saved locally, then came
-      // back missing the other half on the next real reload. Same
-      // dbPatch-override pattern as time/duration below, for the same
-      // reason: the persisted value isn't the same thing get() returns.
-      key: 'customerFirst', label: 'First name', type: 'text', hidden: true,
-      editable: true, dbColumn: 'customer_name',
-      get: function (job) { return splitLeadName(job.customer).first; },
-      set: function (job, value) {
-        var parts = splitLeadName(job.customer);
-        job.customer = (String(value || '').trim() + ' ' + parts.last).trim();
-        return 'Customer → ' + (job.customer || '—');
-      },
-      dbPatch: function (job) { return { customer_name: job.customer }; }
-    },
-    {
-      key: 'customerLast', label: 'Last name', type: 'text', hidden: true,
-      editable: true, dbColumn: 'customer_name',
-      get: function (job) { return splitLeadName(job.customer).last; },
-      set: function (job, value) {
-        var parts = splitLeadName(job.customer);
-        job.customer = (parts.first + ' ' + String(value || '').trim()).trim();
-        return 'Customer → ' + (job.customer || '—');
-      },
-      dbPatch: function (job) { return { customer_name: job.customer }; }
-    },
     {
       key: 'email', label: 'Email', type: 'email', hidden: true, editable: true, dbColumn: 'email',
       set: function (job, value) { job.email = String(value || '').trim(); return 'Email → ' + (job.email || '—'); }
@@ -17588,7 +17610,10 @@
     JOBS_DRAWER_ONLY_COLUMNS.forEach(function (c) { map[c.key] = c; });
     return map;
   }
-  function findJobsColumnDef(key) { return jobsSchemaMap()[key] || jobsDrawerSchemaMap()[key] || null; }
+  function findJobsColumnDef(key) {
+    if (key === 'customer') return JOBS_CUSTOMER_NAME_COLUMN;
+    return jobsSchemaMap()[key] || jobsDrawerSchemaMap()[key] || null;
+  }
 
   // Real, computed relative-day labels — string comparison against
   // todayStr()/addDaysStr(), never touches the timeline's toLocaleString()
@@ -18144,7 +18169,7 @@
         // scoped to what was actually asked for: custom columns, which
         // need the ▾ menu (Hide, Delete for custom fields) and the "+"
         // add-column affordance to exist at all.
-        return '<th class="jos-ld-th' + (jobsColOpenKey === c.key ? ' menu-open' : '') + '" data-jos-col-key="' + esc(c.key) + '">' +
+        return '<th class="jos-ld-th' + (jobsColOpenKey === c.key ? ' menu-open' : '') + '" data-jos-col-key="' + esc(c.key) + '" draggable="true">' +
           '<span class="jos-ld-th-label" data-jos-col-key="' + esc(c.key) + '">' + esc(c.label) + '</span>' +
           '<button type="button" class="jos-ld-th-menu-btn" data-jos-act="jobs-col-menu" data-jos-col-key="' + esc(c.key) + '" aria-label="Column options for ' + esc(c.label) + '">▾</button>' +
           (jobsColOpenKey === c.key
@@ -18906,7 +18931,26 @@
         return;
       }
     });
+    // Column drag-reorder — same mechanism as Leads' (renderLeadsTable
+    // header wiring): the <th> itself is draggable, dragover live-reorders
+    // root._josJobsColumns and re-renders on every boundary crossed (cheap
+    // enough since the table morphs, not tears down), drop just persists
+    // whatever order dragover already landed on. Ported now because Jobs'
+    // column-add menu (Step 1) went in without ever building this half of
+    // the header feature set — "+ Add column" worked, drag never did
+    // anything, since Jobs' <th> was never actually draggable="true".
     root.addEventListener('dragstart', function (e) {
+      var colTh = e.target.closest('[data-jos-col-key]');
+      if (colTh) {
+        if (!root._josJobsColumns) root._josJobsColumns = loadJobsColumns(root);
+        root._josJobsColDragKey = colTh.getAttribute('data-jos-col-key');
+        root._josJobsColDragOverKey = root._josJobsColDragKey;
+        root._josJobsColDragOriginalOrder = root._josJobsColumns.slice();
+        root._josJobsColDropCommitted = false;
+        colTh.classList.add('is-dragging');
+        try { e.dataTransfer.setData('text/plain', root._josJobsColDragKey); e.dataTransfer.effectAllowed = 'move'; } catch (errColDrag) {}
+        return;
+      }
       if (root._josGcalDrag) {
         e.preventDefault();
         return;
@@ -18920,17 +18964,68 @@
       root._josDragJobId = pill.getAttribute('data-jos-job-id');
       try { e.dataTransfer.setData('text/plain', root._josDragJobId); e.dataTransfer.effectAllowed = 'move'; } catch (err) {}
     });
+    root.addEventListener('dragend', function (e) {
+      if (!root._josJobsColDragKey) return;
+      root.querySelectorAll('.jos-ld-th.is-dragging,.jos-ld-th.drop-target').forEach(function (n) { n.classList.remove('is-dragging', 'drop-target'); });
+      if (!root._josJobsColDropCommitted && root._josJobsColDragOriginalOrder) {
+        root._josJobsColumns = root._josJobsColDragOriginalOrder;
+        rerenderJobsOsFrom(root);
+      }
+      root._josJobsColDragKey = null;
+      root._josJobsColDragOverKey = null;
+      root._josJobsColDragOriginalOrder = null;
+    });
     root.addEventListener('dragover', function (e) {
+      var colTh = e.target.closest('[data-jos-col-key]');
+      if (colTh && root._josJobsColDragKey) {
+        e.preventDefault();
+        root.querySelectorAll('.jos-ld-th.drop-target').forEach(function (n) { if (n !== colTh) n.classList.remove('drop-target'); });
+        colTh.classList.add('drop-target');
+        var dragKey = root._josJobsColDragKey;
+        var overKey = colTh.getAttribute('data-jos-col-key');
+        if (!dragKey || dragKey === overKey || overKey === root._josJobsColDragOverKey) return;
+        root._josJobsColDragOverKey = overKey;
+        if (!root._josJobsColumns) root._josJobsColumns = loadJobsColumns(root);
+        var liveCols = root._josJobsColumns;
+        var liveFromI = liveCols.findIndex(function (c) { return c.key === dragKey; });
+        var liveToI = liveCols.findIndex(function (c) { return c.key === overKey; });
+        if (liveFromI < 0 || liveToI < 0) return;
+        var liveMoved = liveCols.splice(liveFromI, 1)[0];
+        liveCols.splice(liveToI, 0, liveMoved);
+        rerenderJobsOsFrom(root);
+        // Re-render morphs the header row's class attribute back to its
+        // plain rendered value, dropping the JS-applied is-dragging/
+        // drop-target classes — reapply to the (keyed, same-instance) <th>.
+        var freshDragTh = root.querySelector('.jos-ld-th[data-jos-col-key="' + CSS.escape(dragKey) + '"]');
+        if (freshDragTh) freshDragTh.classList.add('is-dragging');
+        var freshTh = root.querySelector('.jos-ld-th[data-jos-col-key="' + CSS.escape(overKey) + '"]');
+        if (freshTh) freshTh.classList.add('drop-target');
+        return;
+      }
       var slot = e.target.closest('[data-jos-drop-slot]');
       if (!slot || !root._josDragJobId) return;
       e.preventDefault();
       slot.classList.add('drop-target');
     });
     root.addEventListener('dragleave', function (e) {
+      var colTh = e.target.closest('[data-jos-col-key]');
+      if (colTh && !colTh.contains(e.relatedTarget)) colTh.classList.remove('drop-target');
       var slot = e.target.closest('[data-jos-drop-slot]');
       if (slot) slot.classList.remove('drop-target');
     });
     root.addEventListener('drop', function (e) {
+      var colTh = e.target.closest('[data-jos-col-key]');
+      if (colTh && root._josJobsColDragKey) {
+        root.querySelectorAll('.jos-ld-th.drop-target').forEach(function (n) { n.classList.remove('drop-target'); });
+        e.preventDefault();
+        // The array is already in its final order from the live dragover
+        // reorder above — drop just commits it to storage.
+        root._josJobsColDropCommitted = true;
+        if (!root._josJobsColumns) root._josJobsColumns = loadJobsColumns(root);
+        saveJobsColumns(root._josJobsColumns);
+        rerenderJobsOsFrom(root);
+        return;
+      }
       var slot = e.target.closest('[data-jos-drop-slot]');
       if (!slot) return;
       e.preventDefault();

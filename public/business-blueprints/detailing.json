@@ -620,7 +620,8 @@
   },
   "jobMode": {
     "defaultColumns": [
-      "customer",
+      "customerFirst",
+      "customerLast",
       "vehicle",
       "service",
       "date",

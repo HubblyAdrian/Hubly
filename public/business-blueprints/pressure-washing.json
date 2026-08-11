@@ -487,7 +487,8 @@
   },
   "jobMode": {
     "defaultColumns": [
-      "customer",
+      "customerFirst",
+      "customerLast",
       "address",
       "service",
       "date",

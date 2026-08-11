@@ -674,7 +674,8 @@
   },
   "jobMode": {
     "defaultColumns": [
-      "customer",
+      "customerFirst",
+      "customerLast",
       "service",
       "date",
       "time",
