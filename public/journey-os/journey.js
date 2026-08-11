@@ -16776,31 +16776,27 @@
       return;
     }
     var freq = input.frequency;
-    var occurrences = input.occurrences;
     var customDays = input.customDays;
     var baseInput = Object.assign({}, input);
     delete baseInput.frequency; delete baseInput.occurrences; delete baseInput.customDays;
-    var dates = (freq && freq !== 'none') ? recurringJobDates(baseInput.date, freq, occurrences, customDays) : [baseInput.date];
-    var isSeries = dates.length > 1;
+    var isSeries = !!(freq && freq !== 'none');
+    // Schedule-as-source-of-truth: this ever creates ONE real job (the
+    // occurrence happening now) — never a batch of future jobs up front.
+    // The recurring_schedules row owns cadence/next_occurrence_date/status
+    // from here on; hubly-recurring-maintain (a scheduled worker) is what
+    // generates each future visit as its own real job, one at a time, only
+    // once it's actually due.
+    var dates = [baseInput.date];
     var groupId = isSeries ? ('rjob_' + Date.now()) : '';
     var recurTag = groupId ? buildRecurTag(groupId, freq, customDays) : '';
     var scheduleId = null;
     var legacyFallback = false; // only used if the real schedule row fails to create
 
-    // One createJob() call per occurrence, sequential (not Promise.all) so
-    // a mid-series failure stops cleanly instead of leaving partial,
-    // out-of-order results — a real job-creation failure here should be
-    // rare (same createJob() every other path already trusts), but a
-    // 12-occurrence series is exactly the case where "some succeeded, some
-    // silently didn't" would be hardest to notice.
-    //
     // Section 12/Phase 2: the first occurrence is created before the
     // recurring_schedules row exists, because the real customer (and
     // therefore the schedule's real customer_id — no name-matching, per
     // spec) is only known once createJob()'s own findOrCreateCustomer has
-    // resolved it. Every occurrence after the first is created with
-    // recurringScheduleId already set from the start; occurrence 0 gets a
-    // one-time patch once the schedule id is known.
+    // resolved it.
     var created = [];
     function createNext(i) {
       if (i >= dates.length) return Promise.resolve();
@@ -16823,7 +16819,16 @@
             serviceName: (result.job && result.job.service_name) || baseInput.service || '',
             serviceId: (result.job && result.job.service_id) || null,
             frequency: freq, customIntervalDays: customDays,
-            startDate: dates[0], nextOccurrenceDate: dates[0], preferredTime: baseInput.time || '',
+            startDate: dates[0],
+            // The day AFTER this first occurrence, not this occurrence's
+            // own date — occurrence 0 already exists as the real job just
+            // created above; hubly-recurring-maintain would otherwise try
+            // to generate a duplicate for the same date. recurringJobDates
+            // already has this exact interval math (weekly/monthly-with-
+            // clamping/etc) — asking it for 2 dates and taking the second
+            // reuses it rather than re-deriving the same rule.
+            nextOccurrenceDate: recurringJobDates(dates[0], freq, 2, customDays)[1] || dates[0],
+            preferredTime: baseInput.time || '',
             amount: baseInput.amount || null, address: baseInput.address || '', assignedTo: baseInput.assignedTo || ''
           }).then(function (schedule) {
             if (schedule && schedule.id) {

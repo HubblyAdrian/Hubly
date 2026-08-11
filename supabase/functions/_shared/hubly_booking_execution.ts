@@ -20,6 +20,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCatalog, getService } from "./service_engine.ts";
 import { syncEnginePushCreate } from "./google_calendar_sync_engine.ts";
+import { computeNextOccurrenceDate, VALID_FREQUENCIES, type RecurringFrequency } from "./recurring_schedule_engine.ts";
 
 type DayHours = { open: string; close: string; closed: boolean };
 
@@ -101,9 +102,6 @@ export async function getWebsiteAvailability(
   }
   return { ok: true, closed: false, slots };
 }
-
-type RecurringFrequency = "weekly" | "biweekly" | "monthly" | "quarterly" | "custom";
-const VALID_FREQUENCIES: RecurringFrequency[] = ["weekly", "biweekly", "monthly", "quarterly", "custom"];
 
 export type CreateWebsiteBookingInput = {
   businessId: string;
@@ -273,12 +271,12 @@ export async function createWebsiteBookingJob(
   // Recurring: only when the customer explicitly asked for repetition (the
   // model is instructed to only set this when genuinely stated — see the
   // create action's description in hubly_capability_registry.ts). Creates
-  // the schedule record and links this first occurrence to it — the same
-  // recurring_schedules table and jobs.recurring_schedule_id relationship
-  // Phase 2 already built, not a second recurrence engine. Bulk-generating
-  // future occurrences from a conversational booking is deliberately left
-  // for later — this establishes the relationship, it doesn't yet decide
-  // how many future visits to pre-create.
+  // the schedule record and links this first occurrence to it — the
+  // schedule owns cadence/next_occurrence_date/status going forward;
+  // hubly-recurring-maintain (a scheduled worker, same pattern as
+  // google-calendar-maintain) generates each future visit as one real job,
+  // one at a time, as it actually becomes due — never a batch of future
+  // jobs created up front.
   let recurringScheduleId: string | null = null;
   const frequency = String(input.frequency || "").trim().toLowerCase();
   if (VALID_FREQUENCIES.includes(frequency as RecurringFrequency)) {
@@ -293,7 +291,11 @@ export async function createWebsiteBookingJob(
         frequency,
         status: "active",
         start_date: input.date,
-        next_occurrence_date: input.date,
+        // The FIRST occurrence is this job itself (created below, right
+        // now) — next_occurrence_date must be the date AFTER it, or
+        // hubly-recurring-maintain would immediately try to generate a
+        // second job for the same date as occurrence #1.
+        next_occurrence_date: computeNextOccurrenceDate(input.date, frequency, undefined),
         preferred_time: input.time || null,
         amount,
         address: input.address || null,

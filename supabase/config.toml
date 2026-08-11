@@ -16,6 +16,12 @@ verify_jwt = false
 [functions.google-calendar-maintain]
 verify_jwt = false
 
+# Recurring Schedule → next occurrence — same cron/maintain pattern as
+# google-calendar-maintain above, same auth (HUBLY_CRON_SECRET or
+# service-role bearer, checked in-function)
+[functions.hubly-recurring-maintain]
+verify_jwt = false
+
 # Stripe webhooks have no Hubly JWT — verified via Stripe-Signature in-function
 [functions.stripe-webhook]
 verify_jwt = false
