@@ -698,6 +698,14 @@ Deno.serve(async (req) => {
         const dispatchArgs: Record<string, unknown> = { ...(decision.args || {}) };
         if (capabilityName === "booking" && businessId) {
           dispatchArgs.businessId = businessId;
+          // Structural, engine-decided execution target — never something
+          // the model sees or controls (same treatment as businessId just
+          // above). "customer" is the Website Concierge context today; the
+          // only other context able to reach "booking" at all is a future
+          // Marketplace context, not yet defined (see
+          // CONTEXT_CAPABILITY_ALLOWLIST) — until one exists, "customer"
+          // unambiguously means a business's own website.
+          dispatchArgs.bookingChannel = context === "customer" ? "website" : "marketplace";
         }
         // Same treatment as booking's businessId above: the model never sees
         // the real draftId/draftToken, so it can never be trusted to

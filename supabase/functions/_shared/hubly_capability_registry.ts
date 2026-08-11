@@ -46,6 +46,8 @@ import {
   applyPatchOps,
   type HublyDocument,
 } from "./hubly_document.ts";
+import { adminClient } from "./marketplace_provider.ts";
+import { getWebsiteAvailability, createWebsiteBookingJob } from "./hubly_booking_execution.ts";
 
 const APP_ORIGIN = (Deno.env.get("HUBLY_APP_ORIGIN") || "").trim() || "https://myhubly.app";
 
@@ -770,7 +772,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
   {
     name: "booking",
     description:
-      "Real availability and real booking creation, reused as-is from the production Marketplace booking engine — no calendar or provider logic lives here, this only wraps what already exists.",
+      "Real availability and real booking creation. Execution target depends on channel: a Marketplace consumer booking a matched provider reuses the production Marketplace booking engine as-is (marketplace_bookings); a business's own website visitor becomes a real Hubly Job (jobs/customers, Calendar, Google Calendar) through the same operations createJob() already performs. No calendar or provider logic is duplicated here either way — this only wraps what already exists, per channel.",
     actions: [
       {
         name: "getAvailability",
@@ -787,6 +789,32 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const businessId = String(args?.businessId || "").trim();
           if (!businessId) {
             return { ok: false, real: false, summary: "No business was specified.", error: "missing_business_id" };
+          }
+          // Structural, engine-injected context (see hubly-conversation/
+          // index.ts) — never something the model supplies or controls,
+          // same treatment as businessId itself just above.
+          if (String(args?.bookingChannel || "") === "website") {
+            const date = String(args?.date || "").trim() || new Date().toISOString().slice(0, 10);
+            let admin;
+            try { admin = adminClient(); } catch {
+              return { ok: false, real: false, summary: "Availability could not be checked right now.", error: "server_not_configured" };
+            }
+            const r = await getWebsiteAvailability(admin, { businessId, date });
+            if (!r.ok) {
+              return { ok: true, real: false, summary: "This business isn't set up for real-time booking yet.", raw: r };
+            }
+            if (r.closed) {
+              return { ok: true, real: true, summary: `Closed on ${date} — no bookings that day.`, raw: r };
+            }
+            const slots = r.slots || [];
+            return {
+              ok: true,
+              real: true,
+              summary: slots.length
+                ? `Found ${slots.length} real available time${slots.length === 1 ? "" : "s"} on ${date}.`
+                : `No real availability found on ${date}.`,
+              raw: r,
+            };
           }
           const r = await callMarketplace("booking_slots", {
             business_id: businessId,
@@ -823,7 +851,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
       {
         name: "create",
         description:
-          "Creates a real booking — writes a real record, triggers real calendar sync and a real confirmation email. Only call this once the customer has chosen a real time from getAvailability and given their contact details.",
+          "Creates a real booking — writes a real record, triggers real calendar sync and a real confirmation email. Only call this once the customer has chosen a real time from getAvailability and given their contact details. Only set frequency when the customer explicitly said they want this to repeat (e.g. \"every month\") — never infer or default it; omitting it creates a normal one-time booking.",
         argsSchema: bookingArgSchema(
           {
             serviceId: { type: "string", description: "Which service is being booked." },
@@ -833,6 +861,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             customerPhone: { type: "string", description: "The customer's phone, if given." },
             address: { type: "string", description: "Service address, if relevant/given." },
             notes: { type: "string", description: "Any special requests or notes the customer mentioned." },
+            frequency: { type: "string", description: "Only if the customer explicitly asked for this to repeat: one of weekly, biweekly, monthly, quarterly. Omit entirely for a one-time booking." },
           },
           ["serviceId", "startsAt", "customerName"],
         ),
@@ -843,6 +872,40 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const customerName = String(args?.customerName || "").trim();
           if (!businessId || !serviceId || !startsAt || !customerName) {
             return { ok: false, real: false, summary: "Missing required booking details.", error: "missing_required_args" };
+          }
+          if (String(args?.bookingChannel || "") === "website") {
+            let admin;
+            try { admin = adminClient(); } catch {
+              return { ok: false, real: false, summary: "The booking could not be created right now.", error: "server_not_configured" };
+            }
+            // startsAt arrives as an ISO-ish "YYYY-MM-DDTHH:MM" or
+            // "YYYY-MM-DD HH:MM" from getAvailability's own slot values
+            // combined with the date — split rather than re-deriving.
+            const [datePart, timePartRaw] = startsAt.split(/[T ]/);
+            const timePart = (timePartRaw || "").slice(0, 5);
+            const r = await createWebsiteBookingJob(admin, {
+              businessId,
+              serviceId,
+              date: datePart || startsAt.slice(0, 10),
+              time: timePart || undefined,
+              customerName,
+              customerEmail: String(args?.customerEmail || "").trim() || undefined,
+              customerPhone: String(args?.customerPhone || "").trim() || undefined,
+              address: String(args?.address || "").trim() || undefined,
+              notes: String(args?.notes || "").trim() || undefined,
+              frequency: String(args?.frequency || "").trim() || undefined,
+            });
+            if (!r.ok) {
+              return { ok: true, real: false, summary: r.error || "The booking could not be created.", raw: r };
+            }
+            return {
+              ok: true,
+              real: true,
+              summary: r.recurringScheduleId
+                ? `Real job booked for ${startsAt} and a recurring schedule was set up for future visits.`
+                : `Real job booked for ${startsAt}.`,
+              raw: r,
+            };
           }
           const r = await callMarketplace("booking_create", {
             business_id: businessId,
