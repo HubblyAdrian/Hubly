@@ -17364,13 +17364,6 @@
       set: function (job, value) { job.service = String(value || '').trim(); return 'Service → ' + (job.service || '—'); }
     },
     {
-      key: 'status', label: 'Status', type: 'select', width: 130,
-      editable: true, filterable: true, sortable: true, dbColumn: 'status',
-      options: function () { return jobStatusOptions().map(function (s) { return { value: s.value, label: s.label, tone: jobStatusTone(s.value) }; }); },
-      get: function (job) { return job.status || ''; },
-      set: function (job, value) { job.status = value; return 'Status → ' + (jobStatusOptions().filter(function (s) { return s.value === value; })[0] || {}).label; }
-    },
-    {
       key: 'date', label: 'Date', type: 'date', width: 130,
       editable: true, sortable: true, dbColumn: 'scheduled_date',
       set: function (job, value) { job.date = value || ''; return 'Date → ' + (job.date || '—'); }
@@ -17388,25 +17381,43 @@
       dbPatch: function (job) { return { scheduled_time: timeTo24h(job.time) }; }
     },
     {
-      key: 'assignedTo', label: 'Technician', type: 'select', width: 150, allowEmpty: 'Unassigned',
+      key: 'status', label: 'Status', type: 'select', width: 130,
+      editable: true, filterable: true, sortable: true, dbColumn: 'status',
+      options: function () { return jobStatusOptions().map(function (s) { return { value: s.value, label: s.label, tone: jobStatusTone(s.value) }; }); },
+      get: function (job) { return job.status || ''; },
+      set: function (job, value) { job.status = value; return 'Status → ' + (jobStatusOptions().filter(function (s) { return s.value === value; })[0] || {}).label; }
+    },
+    // Everything below is real, DB-backed data — same as the six columns
+    // above — just not part of the default visible set anymore. The
+    // baseline is First name/Last name/Service/Date/Time/Status for every
+    // business, full stop; Technician, Amount, Phone, and Balance are one
+    // click away via "+ Add column" instead of being forced onto every
+    // table whether a given business cares about them or not. A blueprint
+    // can still promote any of these to visible-by-default for its
+    // industry via jobMode.defaultColumns (see jobsColumnSchema) — none
+    // currently do, since this baseline is already what every vertical
+    // asked for; jobMode.recommendedFields is what actually differs today
+    // (Vehicle for detailing, Address for lawn/cleaning/hvac, etc).
+    {
+      key: 'assignedTo', label: 'Technician', type: 'select', width: 150, hidden: true, allowEmpty: 'Unassigned',
       editable: true, searchable: true, filterable: true, sortable: true, dbColumn: 'assigned_to',
       options: function (job) { return jobTeamOptions(job || {}).filter(function (n) { return n !== 'Unassigned'; }).map(function (n) { return { value: n, label: n }; }); },
       get: function (job) { return job.assignedTo || ''; },
       set: function (job, value) { job.assignedTo = value || ''; return job.assignedTo ? ('Assigned to ' + job.assignedTo) : 'Unassigned'; }
     },
     {
-      key: 'amount', label: 'Amount', type: 'number', width: 110,
+      key: 'amount', label: 'Amount', type: 'number', width: 110, hidden: true,
       editable: true, sortable: true, dbColumn: 'amount', format: money,
       get: function (job) { return job.amount == null ? '' : job.amount; },
       set: function (job, value) { job.amount = value === '' ? null : Number(value); return 'Amount → ' + (job.amount != null ? money(job.amount) : '—'); }
     },
     {
-      key: 'phone', label: 'Phone', type: 'phone', width: 150,
+      key: 'phone', label: 'Phone', type: 'phone', width: 150, hidden: true,
       editable: true, searchable: true, sortable: false, dbColumn: 'phone',
       set: function (job, value) { job.phone = value || ''; return 'Phone → ' + (rendererRegistry.phone.format(job.phone) || '—'); }
     },
     {
-      key: 'balance', label: 'Balance', type: 'text', width: 100,
+      key: 'balance', label: 'Balance', type: 'text', width: 100, hidden: true,
       editable: false, sortable: false,
       get: function (job) {
         if (job.invoice && job.invoice.status === 'paid') return 'Paid';

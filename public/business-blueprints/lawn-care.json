@@ -487,17 +487,6 @@
     ]
   },
   "jobMode": {
-    "defaultColumns": [
-      "customerFirst",
-      "customerLast",
-      "address",
-      "service",
-      "date",
-      "time",
-      "assignedTo",
-      "amount",
-      "status"
-    ],
     "recommendedFields": [
       "address",
       "durationMin"

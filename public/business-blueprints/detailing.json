@@ -619,17 +619,6 @@
     ]
   },
   "jobMode": {
-    "defaultColumns": [
-      "customerFirst",
-      "customerLast",
-      "vehicle",
-      "service",
-      "date",
-      "time",
-      "assignedTo",
-      "amount",
-      "status"
-    ],
     "recommendedFields": [
       "vehicle",
       "durationMin",
