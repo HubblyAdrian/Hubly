@@ -523,7 +523,13 @@ Deno.serve(async (req) => {
   // Patches emitted across internal capability rounds within this one request
   // accumulate into a single consolidated patch for the response — the client
   // only sees one round-trip per call, so it should only see one patch too.
-  let turnPatch: Record<string, unknown> = {};
+  // Seeded with entryIntent itself (Patch Zero) — entryIntent already floors
+  // currentUnderstanding for THIS turn's prompt/dispatch, but a client only
+  // ever sends it once (its first turn); if it weren't also included in the
+  // returned patch, the client would never persist it into its own
+  // accumulated understanding, and it would silently vanish on turn two even
+  // though the model correctly acted on it here.
+  let turnPatch: Record<string, unknown> = entryIntent ? adapter.merge({}, entryIntent) : {};
   // "Let me take a look..."-style lines said before the final reply this
   // turn, in order — the client can render these as a natural pacing beat
   // ahead of the final message.
