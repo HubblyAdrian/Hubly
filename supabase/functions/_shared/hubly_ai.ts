@@ -1533,6 +1533,8 @@ export const HublyAI = {
       customerMemory?: HublyCustomerMemoryInput | null;
       customerProfile?: HublyCustomerProfileInput | null;
       city?: string | null;
+      /** Marketplace Local Discovery — customer's ZIP, resolved to real coordinates downstream by the marketplace edge function. */
+      zip?: string | null;
       supabase?: SupabaseClient | null;
       onProgress?: HublyProgressListener;
     },
@@ -1586,6 +1588,7 @@ export const HublyAI = {
       service: customerMemory.job?.service || null,
       category: customerMemory.job?.category || null,
       city: customerMemory.city || opts?.city || null,
+      zip: opts?.zip || null,
       when: customerMemory.job?.when || null,
       notes: customerMemory.job?.description || prompt,
       preferences: prefs,

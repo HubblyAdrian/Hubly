@@ -44,6 +44,7 @@ Deno.serve(async (req) => {
     const progress: Array<{ state: string; message: string }> = [];
     const result = await Hubly.findPro(prompt, {
       city: body?.city ? String(body.city) : null,
+      zip: body?.zip ? String(body.zip) : null,
       customerMemory: body?.customer_memory || body?.customerMemory || null,
       customerProfile: body?.customer_profile || body?.customerProfile || null,
       supabase: dryRun ? null : supabase,

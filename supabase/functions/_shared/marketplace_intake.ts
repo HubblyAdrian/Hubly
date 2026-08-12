@@ -30,6 +30,8 @@ export type IntakeNeed = {
   category: string | null;
   service_text: string | null;
   city: string | null;
+  /** Marketplace Local Discovery — resolved to real coordinates downstream via zip_centroids, never guessed. */
+  zip: string | null;
   when: string | null;
   residential: boolean | null;
   scope: string | null;
@@ -72,7 +74,7 @@ Why? Smoke usually settles into the seats, carpet, and headliner.
 
 A couple quick questions...
 • Need it this week?
-• What city?
+• What ZIP code should we look near?
 
 Rules:
 1. UNDERSTAND the job automatically. Never say "we detected".
@@ -81,10 +83,20 @@ Rules:
 4. NEVER ask what you already know:
    - "my driveway" / "my house" → residential (don't ask)
    - "truck" → don't ask SUV or truck
-   - city/zip already given → don't ask location
+   - ZIP or city already given → don't ask location again
 5. Infer soft preferences silently (budget, ASAP, premium, eco, mobile, weekend).
 6. When enough is known → ready_to_confirm=true (Your Booking confirmation before match).
 7. Booking language only. Same framework every industry.
+8. Location: ask for a 5-digit ZIP code, not a city name — it's what actually
+   powers real provider search. If the customer gives a city instead, accept
+   it, but a ZIP is preferred. Put a bare 5-digit ZIP in need.zip (never in
+   need.city). We search Hubly's own provider network using this — never
+   suggest Google Maps, Yelp, or any other outside service, under any
+   circumstance, even if no real matches are found. If there are truly no
+   Hubly providers for that area/service, say that plainly and honestly
+   (e.g. "We don't have Hubly providers serving that area yet for this
+   service.") — never invent a provider, a distance, or an availability to
+   fill the gap.
 
 Return ONLY valid JSON:
 {
@@ -119,12 +131,13 @@ Return ONLY valid JSON:
     "category": "detailing",
     "service_text": "Interior Detail + Odor Removal (truck)",
     "city": null,
+    "zip": null,
     "when": null,
     "residential": null,
     "scope": "interior",
     "notes": "smoke odor"
   },
-  "follow_ups": ["Need it this week?", "What city?"]
+  "follow_ups": ["Need it this week?", "What ZIP code should we look near?"]
 }`;
 
 function jobFromParsed(raw: unknown): Partial<JobUnderstanding> | null {
@@ -175,6 +188,11 @@ function jobFromParsed(raw: unknown): Partial<JobUnderstanding> | null {
   };
 }
 
+/** A bare 5-digit token anywhere in the message — good enough to detect a customer typed a ZIP without over-matching (e.g. years, prices). */
+function hasZipInText(text: string): boolean {
+  return /(?:^|\s)\d{5}(?:\s|$|[.,!?])/.test(text);
+}
+
 function finalizeJob(job: JobUnderstanding, allUser: string, cityHint?: string | null): JobUnderstanding {
   const prefs = mergePreferences(detectPreferences(allUser), job.preferences);
   const advisor_reason = job.advisor_reason || reasonForService(job.category, job.service);
@@ -187,7 +205,8 @@ function finalizeJob(job: JobUnderstanding, allUser: string, cityHint?: string |
   }
   const duration_estimate = job.duration_estimate ||
     durationForService(job.category, job.service);
-  const hasCity = !!(cityHint || /\bin\s+[A-Z][a-z]+/.test(allUser));
+  const hasZip = hasZipInText(allUser);
+  const hasCity = !!(cityHint || hasZip || /\bin\s+[A-Z][a-z]+/.test(allUser));
   const hasWhen = !!timingLabel(null, allUser);
   const missing = filterSmartFollowUps(job.missing, {
     hasCity,
@@ -196,7 +215,7 @@ function finalizeJob(job: JobUnderstanding, allUser: string, cityHint?: string |
     rawText: allUser,
     propertyType: job.property_type,
     vehicleType: job.vehicle_type,
-    hasLocationPermission: !!cityHint,
+    hasLocationPermission: !!cityHint || hasZip,
   });
   const withPrefs = {
     ...job,
@@ -253,10 +272,12 @@ function needFromJob(
   if (residential == null && job.property_type === "residential") residential = true;
   if (residential == null && job.property_type === "commercial") residential = false;
 
+  const zipRaw = needIn.zip ? String(needIn.zip).trim().match(/^\d{5}/) : null;
   return {
     category,
     service_text,
     city: needIn.city ? String(needIn.city) : (cityHint || null),
+    zip: zipRaw ? zipRaw[0] : null,
     when: needIn.when ? String(needIn.when) : null,
     residential,
     scope: needIn.scope
@@ -365,13 +386,13 @@ function normalizeIntakeResult(
         ? parsed.follow_ups.map((q) => String(q)).filter(Boolean)
         : job.missing,
       {
-        hasCity: !!need.city,
+        hasCity: !!need.city || !!need.zip,
         hasWhen: !!need.when || !!timingLabel(null, allUser),
         hasServiceClarity: !!job.service,
         rawText: allUser,
         propertyType: job.property_type,
         vehicleType: job.vehicle_type || need.vehicle_type,
-        hasLocationPermission: !!need.city || !!cityHint,
+        hasLocationPermission: !!need.city || !!need.zip || !!cityHint,
       },
     );
   job.missing = follow_ups;

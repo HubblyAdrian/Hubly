@@ -168,6 +168,13 @@ export function assembleProviderPublic(
       logo_url: business.logo_url || meta.logoUrl || null,
       banner_url: business.banner_url || meta.bannerUrl || null,
       city: business.city,
+      state: business.state || null,
+      zip: business.zip || null,
+      address: business.address || null,
+      /** Marketplace Local Discovery — null means location not verified yet, never guessed. */
+      latitude: business.latitude != null ? Number(business.latitude) : null,
+      longitude: business.longitude != null ? Number(business.longitude) : null,
+      location_source: business.location_source || null,
       phone: business.phone,
       email: business.email || null,
       business_type: business.business_type,

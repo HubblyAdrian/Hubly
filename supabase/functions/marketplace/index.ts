@@ -25,6 +25,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getBusinessMeta } from "../_shared/hubly_business_meta.ts";
+import { resolveZipCentroid } from "../_shared/zip_geo.ts";
 import {
   buildPaymentSummary,
   createBooking,
@@ -198,7 +199,7 @@ async function loadBusinessBundle(admin: ReturnType<typeof adminClient>, busines
   const { data: business } = await admin
     .from("businesses")
     .select(
-      "id,owner_id,name,slug,tagline,logo_url,banner_url,city,phone,email,meta,travel_radius_miles,business_type,service_area_cities,timezone",
+      "id,owner_id,name,slug,tagline,logo_url,banner_url,city,state,zip,address,latitude,longitude,location_source,phone,email,meta,travel_radius_miles,business_type,service_area_cities,timezone",
     )
     .eq("id", businessId)
     .maybeSingle();
@@ -231,7 +232,7 @@ async function handleListProviders(admin: ReturnType<typeof adminClient>, search
   const { data: businesses } = await admin
     .from("businesses")
     .select(
-      "id,name,slug,tagline,logo_url,banner_url,city,phone,meta,travel_radius_miles,business_type,service_area_cities",
+      "id,name,slug,tagline,logo_url,banner_url,city,state,zip,address,latitude,longitude,location_source,phone,meta,travel_radius_miles,business_type,service_area_cities",
     )
     .in("id", ids);
 
@@ -991,6 +992,7 @@ async function handleMatch(
       ? String(needIn.service_text)
       : (needIn.prompt ? String(needIn.prompt) : null),
     city: needIn.city ? String(needIn.city) : null,
+    zip: needIn.zip ? String(needIn.zip) : null,
     when: needIn.when ? String(needIn.when) : null,
     residential: typeof needIn.residential === "boolean" ? needIn.residential : null,
     scope: needIn.scope ? String(needIn.scope) : null,
@@ -1051,9 +1053,19 @@ async function handleMatch(
   const { data: businesses } = await admin
     .from("businesses")
     .select(
-      "id,name,slug,tagline,logo_url,banner_url,city,phone,email,meta,travel_radius_miles,business_type,service_area_cities",
+      "id,name,slug,tagline,logo_url,banner_url,city,state,zip,address,latitude,longitude,location_source,phone,email,meta,travel_radius_miles,business_type,service_area_cities",
     )
     .in("id", ids);
+
+  // Marketplace Local Discovery: resolve the customer's ZIP once, real
+  // coordinates only — never guessed. When it doesn't resolve (unknown/
+  // missing ZIP), customer_coord stays null and matching falls back to
+  // existing city-text behavior unchanged (see resolveGeoEligibility).
+  const customerCentroid = need.zip ? await resolveZipCentroid(admin, need.zip) : null;
+  if (customerCentroid && !need.city) need.city = customerCentroid.city;
+  const customerCoord = customerCentroid
+    ? { lat: customerCentroid.latitude, lng: customerCentroid.longitude }
+    : null;
   const byId = new Map((businesses || []).map((b) => [b.id, b]));
 
   const { data: dnaRows } = await admin
@@ -1117,6 +1129,7 @@ async function handleMatch(
     providers: rows,
     customerProfile,
     customerMemory,
+    customer_coord: customerCoord,
     primary_limit: 3,
     total_limit: 6,
   });
@@ -1879,13 +1892,45 @@ async function handleLiteProfileSave(req: Request, body: Record<string, unknown>
   if (!business) return jsonRes({ error: "Business not found" }, 404);
 
   const meta = { ...getBusinessMeta(business) };
-  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  // businesses has no updated_at column (unlike marketplace_providers) --
+  // this was silently 500ing the entire profile save (name/tagline/city/
+  // etc, not just the new geo fields) before this fix; found live while
+  // testing Marketplace Local Discovery's real save path.
+  const patch: Record<string, unknown> = {};
   if (body.name != null) patch.name = String(body.name).trim() || business.name;
   if (body.tagline != null) patch.tagline = String(body.tagline).trim() || null;
   if (body.city != null) patch.city = String(body.city).trim() || null;
   if (body.phone != null) patch.phone = String(body.phone).trim() || null;
   if (body.email != null) patch.email = String(body.email).trim() || null;
   if (body.logo_url != null) patch.logo_url = String(body.logo_url).trim() || null;
+  // Marketplace Local Discovery: the provider only ever enters
+  // address/ZIP/state + a travel radius — lat/lng are derived here from
+  // the same zip_centroids lookup customers' ZIPs use, never typed in
+  // directly. An unrecognized ZIP leaves lat/lng null rather than
+  // guessed, which correctly keeps this provider out of geo-verified
+  // results until they enter a real, resolvable ZIP.
+  if (body.address != null) patch.address = String(body.address).trim() || null;
+  if (body.state != null) patch.state = String(body.state).trim().slice(0, 2).toUpperCase() || null;
+  if (body.travel_radius_miles != null) {
+    const r = Number(body.travel_radius_miles);
+    patch.travel_radius_miles = Number.isFinite(r) && r > 0 ? Math.round(r) : null;
+  }
+  if (body.zip != null) {
+    const zip = String(body.zip).trim();
+    patch.zip = zip || null;
+    const centroid = zip ? await resolveZipCentroid(admin, zip) : null;
+    if (centroid) {
+      patch.latitude = centroid.latitude;
+      patch.longitude = centroid.longitude;
+      patch.location_source = "zip_centroid";
+      if (body.city == null && !business.city) patch.city = centroid.city;
+      if (body.state == null && !business.state) patch.state = centroid.state;
+    } else {
+      patch.latitude = null;
+      patch.longitude = null;
+      patch.location_source = null;
+    }
+  }
   if (body.about != null) {
     meta.about = String(body.about);
   }

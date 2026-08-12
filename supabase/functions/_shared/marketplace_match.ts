@@ -7,6 +7,7 @@
  */
 
 import { getAvailability } from "./marketplace_availability.ts";
+import { haversineMiles } from "./zip_geo.ts";
 import {
   EMPTY_PREFERENCES,
   type CustomerPreferences,
@@ -24,6 +25,8 @@ export type MatchNeed = {
   category?: string | null;
   service_text?: string | null;
   city?: string | null;
+  /** Marketplace Local Discovery — customer's ZIP, resolved to coordinates by the caller (see zip_geo.ts) and passed in via RankInput.customer_coord, not here. Kept on need for display/logging only. */
+  zip?: string | null;
   when?: string | null; // ISO date or "asap" | "flexible"
   residential?: boolean | null;
   scope?: string | null;
@@ -65,6 +68,8 @@ export type MatchCard = {
   starting_at: number | null;
   available_label: string;
   distance_label: string | null;
+  /** True only when both customer and provider had real coordinates and a real radius check was performed. False (with distance_label saying so) for the transition-period city-fallback case. */
+  geo_verified: boolean;
   instant_book: boolean;
   years_in_business: number | null;
   /** Job-specific display label, e.g. "Best for Odor Removal" */
@@ -99,6 +104,7 @@ type ScoredRow = {
   price: number | null;
   specialization: number;
   local: boolean;
+  geoVerified: boolean;
   packText: string;
   responseReliability: number;
   residentialFit: boolean;
@@ -323,6 +329,73 @@ function cityMatch(
   return cities.some((c) => normalize(c).includes(n) || n.includes(normalize(c)));
 }
 
+export type GeoEligibility = {
+  /** True only when both the customer and provider have real coordinates and the provider is within their real travel radius. */
+  verified: boolean;
+  /** Real haversine miles — only ever set when verified is true. Never fabricated for an unverified provider. */
+  distance_miles: number | null;
+  /** Whether this provider should be shown at all for this search — see resolveGeoEligibility for the exact rule. */
+  eligible: boolean;
+  /** Old, non-geographic city-string match — kept only as the transition-period fallback signal. */
+  city_fallback: boolean;
+};
+
+/**
+ * Marketplace Local Discovery — the one real geographic filter.
+ * - Provider has real lat/lng + a real travel radius + we have a real
+ *   customer coordinate: compute real distance, eligible iff within radius.
+ *   This is the ONLY case that ever produces verified:true / a real mileage.
+ * - Provider has no real lat/lng: never verified, never given a distance.
+ *   Falls back to the old free-text city match ONLY as a transition-period
+ *   signal, clearly distinguishable via `verified:false`.
+ * - Customer gave no location signal at all (no zip, no city): geography
+ *   is not filtered — preserves existing behavior for callers that never
+ *   supply location (e.g. Hubly.findPro with no city).
+ */
+function resolveGeoEligibility(
+  customerCoord: { lat: number; lng: number } | null | undefined,
+  needCity: string | null | undefined,
+  profile: {
+    city?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    travel_radius_miles?: number | null;
+    service_area?: { cities?: string[]; radius_miles?: number | null };
+  },
+  effectiveRadiusMiles: number | null,
+): GeoEligibility {
+  const hasLocationIntent = !!customerCoord || !!needCity;
+  const providerHasCoords = profile.latitude != null && profile.longitude != null;
+
+  if (customerCoord && providerHasCoords) {
+    const distance = haversineMiles(
+      customerCoord.lat,
+      customerCoord.lng,
+      Number(profile.latitude),
+      Number(profile.longitude),
+    );
+    const radius = effectiveRadiusMiles != null && Number.isFinite(effectiveRadiusMiles)
+      ? effectiveRadiusMiles
+      : null;
+    // No radius on file: treat as not eligible for a verified geo match
+    // rather than guessing an unlimited service area.
+    const eligible = radius != null && distance <= radius;
+    return { verified: eligible, distance_miles: eligible ? Math.round(distance * 10) / 10 : null, eligible, city_fallback: false };
+  }
+
+  // cityMatch() has a latent bug when a provider's city is empty: normalize('')
+  // is '', and needCity.includes('') is always true in JS, so an unset city
+  // would otherwise "match" every search. Never let a provider with no real
+  // location data fall back into eligibility this way -- require an actual
+  // non-empty city on file first, matching "excluded, not guessed."
+  const fallback = !!profile.city && cityMatch(needCity, profile);
+  if (!hasLocationIntent) {
+    // No location given at all — don't filter, preserve pre-geo behavior.
+    return { verified: false, distance_miles: null, eligible: true, city_fallback: fallback };
+  }
+  return { verified: false, distance_miles: null, eligible: fallback, city_fallback: fallback };
+}
+
 function startingPriceCents(
   services: Array<{ price_cents: number | null; quote_required: boolean }>,
 ): number | null {
@@ -398,16 +471,22 @@ function confidenceLabel(score: number): MatchCard["confidence_label"] {
 function distanceLabel(
   needCity: string | null | undefined,
   profile: { city?: string | null; service_area?: { cities?: string[]; radius_miles?: number | null } },
-  local: boolean,
+  geo: GeoEligibility,
 ): string | null {
-  if (local && profile.city) return `Serves ${profile.city}`;
-  if (local) return "Serves your neighborhood";
+  // Real, computed distance — the only case allowed to state a mileage.
+  if (geo.verified && geo.distance_miles != null) {
+    return `${geo.distance_miles} mile${geo.distance_miles === 1 ? "" : "s"} away`;
+  }
+  // Transition-period fallback — explicitly never claims a distance or
+  // a verified service area.
+  if (geo.city_fallback && profile.city) return `Serves ${profile.city} (location not verified)`;
+  if (geo.city_fallback) return "Location not verified";
   const radius = profile.service_area?.radius_miles;
   if (radius != null && Number.isFinite(Number(radius))) {
-    return `Within about ${Math.round(Number(radius))} miles`;
+    return `Travels up to ${Math.round(Number(radius))} miles (location not verified)`;
   }
-  if (needCity && profile.city) return `${profile.city} area`;
-  if (profile.city) return profile.city;
+  if (needCity && profile.city) return `${profile.city} area (location not verified)`;
+  if (profile.city) return `${profile.city} (location not verified)`;
   return null;
 }
 
@@ -707,6 +786,11 @@ function assignRolesAndOrder(
 
   const order: RoleKey[] = ["best_match", "fastest", "best_value", "specialist", "local"];
   return [...rows].sort((a, b) => {
+    // Geo-verified providers always rank above transition-period
+    // city-fallback providers, regardless of role/score — a hard rule,
+    // not just a score bonus (a fallback match must never outrank a
+    // verified one just by scoring well on other signals).
+    if (a.geoVerified !== b.geoVerified) return a.geoVerified ? -1 : 1;
     const ai = order.indexOf(a.card.role_key || "local");
     const bi = order.indexOf(b.card.role_key || "local");
     if (ai !== bi) return ai - bi;
@@ -727,6 +811,8 @@ export type RankInput = {
   customerProfile?: HublyCustomerProfileInput | null;
   /** Customer Memory facts — service / city / job */
   customerMemory?: HublyCustomerMemoryInput | null;
+  /** Marketplace Local Discovery — customer's ZIP resolved to coordinates by the caller (zip_geo.ts). Null when no ZIP was given or it didn't resolve. */
+  customer_coord?: { lat: number; lng: number } | null;
   /** Primary recommendations shown first (default 3) */
   primary_limit?: number;
   /** Total pool before browse-more split (default 6) */
@@ -821,8 +907,18 @@ export function rankMarketplaceMatches(input: RankInput): {
       score += 6;
     }
 
-    const local = cityMatch(need.city, profile);
-    if (local) score += 14;
+    const effectiveRadius = row.provider.travel_radius_miles != null
+      ? Number(row.provider.travel_radius_miles)
+      : (row.business.travel_radius_miles != null ? Number(row.business.travel_radius_miles) : null);
+    const geo = resolveGeoEligibility(input.customer_coord, need.city, profile, effectiveRadius);
+    // Hard filter, not a score penalty: a provider outside its real travel
+    // radius (or with no location data and no city-fallback match) is
+    // excluded outright — it can never appear by outscoring on other
+    // signals. See resolveGeoEligibility for the exact rule, including
+    // the "no location given at all" backward-compat case.
+    if (!geo.eligible) continue;
+    if (geo.verified) score += 20;
+    else if (geo.city_fallback) score += 8; // transition fallback ranks below verified, never above
 
     const avail = row.availability || null;
     const aRank = availRank(avail);
@@ -932,7 +1028,8 @@ export function rankMarketplaceMatches(input: RankInput): {
       review_count: reviewCount,
       starting_at: start,
       available_label: availLabel,
-      distance_label: distanceLabel(need.city, profile, local),
+      distance_label: distanceLabel(need.city, profile, geo),
+      geo_verified: geo.verified,
       instant_book: instant,
       years_in_business: years,
       role: null,
@@ -967,7 +1064,8 @@ export function rankMarketplaceMatches(input: RankInput): {
       availRank: aRank,
       price: start,
       specialization,
-      local,
+      local: geo.verified || geo.city_fallback,
+      geoVerified: geo.verified,
       packText,
       responseReliability: reliability,
       residentialFit,
@@ -986,7 +1084,13 @@ export function rankMarketplaceMatches(input: RankInput): {
     }
   }
 
-  scored.sort((a, b) => b.score - a.score || a.availRank - b.availRank);
+  // Geo-verified providers always sort above transition-period city-fallback
+  // providers first, before score/availability — an absolute rule, not a
+  // score nudge (see the matching hard rule in assignRolesAndOrder's sort).
+  scored.sort((a, b) =>
+    (a.geoVerified === b.geoVerified ? 0 : (a.geoVerified ? -1 : 1)) ||
+    b.score - a.score || a.availRank - b.availRank
+  );
   const pool = scored.slice(0, totalLimit);
 
   const priced = pool.filter((r) => r.price != null);
@@ -1042,12 +1146,20 @@ export function rankMarketplaceMatches(input: RankInput): {
   if (more_providers.length) ladderLabels.push("Browse More");
 
   const explanation = buildMatchExplanation(need, signals);
+  // A real ZIP search that genuinely found zero eligible providers gets an
+  // honest, geography-specific message — never the generic "add more
+  // detail" copy, and never a suggestion to search elsewhere.
+  const noGeoMatch = !recommendations.length && !!(input.customer_coord || need.zip);
   const headline = recommendations.length
     ? explanation.intro
-    : "We couldn’t find a strong match yet — try a bit more detail.";
+    : (noGeoMatch
+      ? "We don’t have Hubly providers serving that area yet for this service."
+      : "We couldn’t find a strong match yet — try a bit more detail.");
   const subhead = recommendations.length
     ? explanation.outro
-    : "Add a city, timing, or a bit more detail and I’ll try again.";
+    : (noGeoMatch
+      ? "We only recommend real Hubly providers, so we won’t point you elsewhere — check back as more providers join your area."
+      : "Add a city, timing, or a bit more detail and I’ll try again.");
 
   return {
     headline,
