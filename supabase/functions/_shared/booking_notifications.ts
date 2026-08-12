@@ -64,6 +64,10 @@ export type BookingNotifyInput = {
   address?: string | null;
   price_cents?: number | null;
   what_happens_next?: string | null;
+  // #189: real Customer Portal magic link, only ever set when one was
+  // actually issued (see hubly_booking_execution.ts) — never fabricated
+  // here. Only rendered into the customer email, never the provider one.
+  portal_url?: string | null;
   business: {
     name?: string | null;
     email?: string | null;
@@ -165,6 +169,9 @@ export async function notifyBookingCreated(input: BookingNotifyInput): Promise<{
       `</table>` +
       (input.what_happens_next
         ? `<p style="color:#555;margin:16px 0 0;font-size:13px;">${esc(input.what_happens_next)}</p>`
+        : "") +
+      (input.portal_url
+        ? `<div style="margin-top:20px;"><a href="${esc(input.portal_url)}" style="background:#D9632D;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;">View My Appointments</a></div>`
         : "") +
       `<div style="margin-top:16px;padding:14px;background:#f5f5f3;border-radius:8px;">` +
       `<div style="font-weight:700;">${esc(bizName)}</div>` +

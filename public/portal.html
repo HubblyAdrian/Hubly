@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Appointments</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#D9632D;
+  --navy:#141B2B;
+  --ink:#1a1f2e;
+  --ink-2:#4a5163;
+  --ink-3:#7a8294;
+  --line:#e6e8ec;
+  --surface:#fff;
+  --bg:#f4f5f7;
+  --font:'DM Sans',system-ui,sans-serif;
+  --display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;min-height:100vh;}
+.wrap{max-width:520px;margin:0 auto;padding:24px 16px 64px;}
+.header{padding:8px 4px 24px;}
+.header .biz{font-family:var(--display);font-weight:800;font-size:14px;color:var(--brand);letter-spacing:.02em;text-transform:uppercase;}
+.header h1{font-family:var(--display);font-weight:800;font-size:24px;margin-top:4px;color:var(--navy);}
+.next-card{background:var(--navy);color:#fff;border-radius:var(--radius);padding:22px;margin-bottom:22px;}
+.next-card .eyebrow{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.65;margin-bottom:8px;}
+.next-card .service{font-family:var(--display);font-weight:800;font-size:20px;}
+.next-card .when{font-size:15px;margin-top:6px;opacity:.9;}
+.next-card .meta{display:flex;gap:14px;margin-top:14px;font-size:13px;opacity:.8;flex-wrap:wrap;}
+.next-card .empty{font-size:14px;opacity:.75;}
+section{margin-bottom:26px;}
+section h2{font-family:var(--display);font-weight:700;font-size:15px;color:var(--navy);margin-bottom:10px;}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:8px;}
+.card-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;}
+.card-row .svc{font-weight:700;font-size:14px;color:var(--ink);}
+.card-row .status{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:3px 8px;border-radius:999px;background:#eef1f5;color:var(--ink-2);}
+.status.completed{background:#e6f4ea;color:#1e7a3c;}
+.status.scheduled{background:#fdeee5;color:var(--brand);}
+.card .detail{font-size:13px;color:var(--ink-2);margin-top:4px;}
+.card .price{font-size:13px;color:var(--ink-3);margin-top:2px;}
+.recurring-badge{display:inline-block;font-size:12px;font-weight:700;color:var(--brand);}
+.recurring-next{font-size:12px;color:var(--ink-3);margin-top:2px;}
+.empty-msg{font-size:13px;color:var(--ink-3);padding:4px 2px;}
+.contact-btn{display:block;text-align:center;width:100%;padding:13px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;font-weight:700;font-size:14px;text-decoration:none;cursor:pointer;}
+.state-msg{padding:60px 20px;text-align:center;color:var(--ink-2);font-size:14px;}
+.state-msg strong{display:block;font-family:var(--display);font-size:17px;color:var(--navy);margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div class="wrap" id="portal-root">
+  <div class="state-msg"><strong>Loading your appointments…</strong></div>
+</div>
+<script>
+(function(){
+  'use strict';
+  var SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
+  var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
+
+  function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+  function sessionKey(){
+    var slug = location.hostname.split('.')[0] || 'site';
+    return 'hublyPortalSession:' + slug;
+  }
+
+  function friendlyDate(ds){
+    if(!ds)return'';
+    try{
+      var parts = String(ds).slice(0,10).split('-').map(Number);
+      var d = new Date(parts[0], (parts[1]||1)-1, parts[2]||1);
+      return d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+    }catch(e){return String(ds);}
+  }
+  function friendlyTime(hm){
+    if(!hm)return'';
+    var parts = String(hm).slice(0,5).split(':');
+    var hh = Number(parts[0]), mm = Number(parts[1]);
+    if(!isFinite(hh)||!isFinite(mm))return'';
+    var h12 = (hh%12)||12, ap = hh>=12?'PM':'AM';
+    return h12+':'+String(mm).padStart(2,'0')+' '+ap;
+  }
+  function money(n){ return n!=null ? ('$'+Number(n).toFixed(2)) : ''; }
+
+  async function callGateway(action, extra){
+    var res = await fetch(SUPA_URL + '/functions/v1/customer-portal', {
+      method: 'POST',
+      headers: { 'content-type':'application/json', apikey: SUPA_KEY, authorization: 'Bearer ' + SUPA_KEY },
+      body: JSON.stringify(Object.assign({ action: action }, extra||{})),
+    });
+    var data = null;
+    try { data = await res.json(); } catch(e){}
+    return data || { ok:false, error:'network_error' };
+  }
+
+  function render(state){
+    var root = document.getElementById('portal-root');
+    if(state === 'no_token'){
+      root.innerHTML = '<div class="state-msg"><strong>This link isn\'t available</strong>Please open your confirmation email and tap "View My Appointments" to get here.</div>';
+      return;
+    }
+    if(state === 'invalid'){
+      root.innerHTML = '<div class="state-msg"><strong>This link has expired</strong>Please open your confirmation email again — or contact the business directly.</div>';
+      return;
+    }
+    if(state === 'session_expired'){
+      root.innerHTML = '<div class="state-msg"><strong>Your session has ended</strong>Please open your confirmation email again to continue.</div>';
+      return;
+    }
+  }
+
+  function renderData(data){
+    var root = document.getElementById('portal-root');
+    var upcoming = data.upcomingAppointments || [];
+    var past = data.pastAppointments || [];
+    var recurring = data.recurringServices || [];
+    var memberships = data.memberships || [];
+    var next = upcoming[0] || null;
+
+    var nextHtml;
+    if(next){
+      var metaBits = [];
+      if(next.address) metaBits.push(esc(next.address));
+      if(next.amount!=null) metaBits.push(esc(money(next.amount)));
+      nextHtml = '<div class="eyebrow">Your next appointment</div>' +
+        '<div class="service">'+esc(next.serviceName)+'</div>' +
+        '<div class="when">'+esc(friendlyDate(next.date))+(next.time?' &middot; '+esc(friendlyTime(next.time)):'')+'</div>' +
+        (metaBits.length ? '<div class="meta">'+metaBits.map(function(b){return '<span>'+b+'</span>';}).join('')+'</div>' : '');
+    } else {
+      nextHtml = '<div class="eyebrow">Your next appointment</div><div class="empty">No upcoming appointments right now.</div>';
+    }
+
+    function apptCard(a){
+      var statusClass = a.status==='completed' ? 'completed' : 'scheduled';
+      var bits = [];
+      if(a.address) bits.push(esc(a.address));
+      return '<div class="card"><div class="card-row"><span class="svc">'+esc(a.serviceName)+'</span>' +
+        '<span class="status '+statusClass+'">'+esc(a.status)+'</span></div>' +
+        '<div class="detail">'+esc(friendlyDate(a.date))+(a.time?' &middot; '+esc(friendlyTime(a.time)):'')+'</div>' +
+        (bits.length ? '<div class="detail">'+bits.join(' &middot; ')+'</div>' : '') +
+        (a.amount!=null ? '<div class="price">'+esc(money(a.amount))+'</div>' : '') +
+        '</div>';
+    }
+
+    var upcomingRest = upcoming.slice(1);
+    var upcomingHtml = upcomingRest.length
+      ? upcomingRest.map(apptCard).join('')
+      : (upcoming.length ? '' : '<div class="empty-msg">Nothing else scheduled.</div>');
+
+    var pastHtml = past.length ? past.map(apptCard).join('') : '<div class="empty-msg">No past appointments yet.</div>';
+
+    var recurringHtml = recurring.length
+      ? recurring.map(function(r){
+          var freq = r.frequency ? (r.frequency.charAt(0).toUpperCase()+r.frequency.slice(1)) : 'Recurring';
+          var next = friendlyDate(r.nextVisitDate);
+          return '<div class="card">' +
+            '<div class="card-row"><span class="svc">'+esc(r.serviceName||'Recurring service')+'</span>' +
+            '<span class="status scheduled">'+esc(r.status)+'</span></div>' +
+            '<div class="recurring-badge">&#8635; '+esc(freq)+'</div>' +
+            (next ? '<div class="recurring-next">Next visit: '+esc(next)+'</div>' : '') +
+            '</div>';
+        }).join('')
+      : '<div class="empty-msg">No recurring services.</div>';
+
+    var membershipsHtml = memberships.length
+      ? memberships.map(function(m){
+          var priceBit = m.price!=null ? (esc(money(m.price))+(m.cadence?('/'+esc(m.cadence)):'')) : '';
+          return '<div class="card"><div class="card-row"><span class="svc">'+esc(m.planName)+'</span>' +
+            '<span class="status completed">'+esc(m.status)+'</span></div>' +
+            (priceBit ? '<div class="detail">'+priceBit+'</div>' : '') +
+            '</div>';
+        }).join('')
+      : '';
+    var membershipsSection = memberships.length
+      ? '<section><h2>Memberships</h2>'+membershipsHtml+'</section>'
+      : '';
+
+    root.innerHTML =
+      '<div class="header"><div class="biz">'+esc(data.businessName)+'</div><h1>Hi '+esc((data.customerName||'').split(' ')[0]||'there')+'</h1></div>' +
+      '<div class="next-card">'+nextHtml+'</div>' +
+      (upcomingRest.length ? '<section><h2>Also Upcoming</h2>'+upcomingHtml+'</section>' : '') +
+      '<section><h2>Past Appointments</h2>'+pastHtml+'</section>' +
+      '<section><h2>Recurring Services</h2>' +
+      '<div class="empty-msg" style="margin-bottom:10px;">Your next visit is scheduled automatically as it comes up &mdash; this shows your plan, not a list of future appointments.</div>' +
+      recurringHtml+'</section>' +
+      membershipsSection +
+      '<a class="contact-btn" href="/">Contact '+esc(data.businessName||'us')+'</a>';
+  }
+
+  async function boot(){
+    var params = new URLSearchParams(location.search);
+    var t = params.get('t');
+    var stored = null;
+    try { stored = localStorage.getItem(sessionKey()); } catch(e){}
+
+    var sessionToken = null;
+    if(t){
+      var v = await callGateway('verify', { token: t });
+      if(!v.ok){ render('invalid'); return; }
+      sessionToken = v.sessionToken;
+      try { localStorage.setItem(sessionKey(), sessionToken); } catch(e){}
+    } else if(stored){
+      sessionToken = stored;
+    } else {
+      render('no_token');
+      return;
+    }
+
+    var d = await callGateway('getPortalData', { sessionToken: sessionToken });
+    if(!d.ok){
+      try { localStorage.removeItem(sessionKey()); } catch(e){}
+      render('session_expired');
+      return;
+    }
+    renderData(d);
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

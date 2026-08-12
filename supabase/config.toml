@@ -65,3 +65,8 @@ verify_jwt = false
 # Hubly Studio API — JWT checked in-function (owner_id)
 [functions.studio-api]
 verify_jwt = false
+
+# Customer Portal gateway — identity verified via the magic-link token /
+# signed portal session (checked in-function), not a Supabase JWT
+[functions.customer-portal]
+verify_jwt = false

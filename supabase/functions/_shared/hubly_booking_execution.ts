@@ -23,6 +23,7 @@ import { syncEnginePushCreate } from "./google_calendar_sync_engine.ts";
 import { computeNextOccurrenceDate, VALID_FREQUENCIES, type RecurringFrequency } from "./recurring_schedule_engine.ts";
 import { getCustomerMembership, type CustomerMembership } from "./customer_membership.ts";
 import { notifyBookingCreated } from "./booking_notifications.ts";
+import { buildPortalUrl, issuePortalAccessToken } from "./portal_access.ts";
 
 type DayHours = { open: string; close: string; closed: boolean };
 
@@ -53,12 +54,13 @@ function minToTime(min: number): string {
 
 export async function loadBusinessForBooking(admin: SupabaseClient, businessId: string) {
   // #188: name/phone/email added for real confirmation-email content
-  // (booking_notifications.ts's business.name/email/phone fields) —
-  // getWebsiteAvailability/other existing callers only ever read
-  // .meta, so widening this select doesn't change their behavior.
+  // (booking_notifications.ts's business.name/email/phone fields).
+  // #189: slug added to build the real portal URL. Other existing
+  // callers only ever read .meta, so widening this select doesn't
+  // change their behavior.
   const { data } = await admin
     .from("businesses")
-    .select("id, meta, name, phone, email")
+    .select("id, meta, name, phone, email, slug")
     .eq("id", businessId)
     .maybeSingle();
   return data || null;
@@ -398,6 +400,14 @@ export async function createWebsiteBookingJob(
 
   const payload = {
     business_id: input.businessId,
+    // #189: previously omitted — every job this function created was
+    // unreachable by customer_id, only by name/phone/email string match.
+    // The Customer Portal (and anything else that needs to reliably find
+    // "this customer's jobs") needs the real link. Historical jobs
+    // created before this fix, and jobs from the separate owner-side
+    // createJob() (public/hubly.html), still lack it — tracked
+    // separately, not fixed here (see #200).
+    customer_id: resolvedCustomer.id,
     customer_name: (resolvedCustomer.name as string) || name,
     service_name: serviceName,
     service_id: resolvedServiceId,
@@ -440,6 +450,24 @@ export async function createWebsiteBookingJob(
     emailSent: false,
   };
 
+  // #189: a portal access link, only when there's a real email to send it
+  // to — no email means no token, no link, no error. Best-effort and
+  // fully isolated from the email send below: a failure here must never
+  // prevent the confirmation email (or the booking) from succeeding.
+  const customerEmail = (resolvedCustomer.email as string) || email || null;
+  let portalUrl: string | null = null;
+  if (customerEmail) {
+    try {
+      const bizSlug = (business as Record<string, unknown>).slug
+        ? String((business as Record<string, unknown>).slug)
+        : null;
+      if (bizSlug) {
+        const rawToken = await issuePortalAccessToken(admin, input.businessId, String(resolvedCustomer.id));
+        if (rawToken) portalUrl = buildPortalUrl(bizSlug, rawToken);
+      }
+    } catch (_e) { /* no-op — portal link is best-effort, never blocks the booking or the email */ }
+  }
+
   // Real, best-effort confirmation email via the existing Resend
   // infrastructure (booking_notifications.ts) — the same mechanism the
   // Marketplace booking engine already uses in production, not a second
@@ -452,12 +480,13 @@ export async function createWebsiteBookingJob(
     const emailResult = await notifyBookingCreated({
       status: "confirmed",
       customer_name: confirmation.customerName,
-      customer_email: (resolvedCustomer.email as string) || email || null,
+      customer_email: customerEmail,
       customer_phone: (resolvedCustomer.phone as string) || phone || null,
       service_name: serviceName,
       starts_at: `${confirmation.scheduledDate}T${confirmation.scheduledTime || "00:00"}`,
       address: confirmation.address,
       price_cents: confirmation.amount != null ? Math.round(confirmation.amount * 100) : null,
+      portal_url: portalUrl,
       business: {
         name: (business as Record<string, unknown>).name ? String((business as Record<string, unknown>).name) : null,
         email: (business as Record<string, unknown>).email ? String((business as Record<string, unknown>).email) : null,

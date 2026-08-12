@@ -314,6 +314,16 @@ module.exports = async (req, res) => {
       }
     }
 
+    // #189 Customer Portal — read-only, magic-link-gated customer view
+    if (urlPath === '/portal' || urlPath === '/portal.html') {
+      const portal = path.join(__dirname, '../public/portal.html');
+      if (fs.existsSync(portal)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        return res.status(200).send(fs.readFileSync(portal, 'utf8'));
+      }
+    }
+
     // Hubly Marketplace provider app (public URLs — never expose "Lite")
     // Internal capability / eng packaging may still be marketplace_lite.
     if (
