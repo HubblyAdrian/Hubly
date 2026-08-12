@@ -15513,6 +15513,12 @@ function mapJobRow(j){
   return {
     id: j.id,
     dbId: j.id,
+    // #201: the real, canonical relationship (#200 is what actually
+    // writes this column) — was never mapped through to the client at
+    // all before, so custJobsFor()'s existing customerId branch had
+    // nothing to check against. Name/phone matching stays as the
+    // fallback for jobs where this is null.
+    customerId: j.customer_id||null,
     customer: j.customer_name,
     service: j.service_name,
     date: normalizeJobDate(j.scheduled_date),

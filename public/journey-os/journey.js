@@ -13376,9 +13376,16 @@
     if (!c) return [];
     return jobs().filter(function (j) {
       if (!j || j.isBlock) return false;
+      // #201: customer_id is the canonical relationship once a job has one
+      // (mapJobRow()/createJob(), #200) — exclusive, never also name/phone
+      // matched, so a job that really belongs to Customer A can never be
+      // miscounted under Customer B just because they share a name.
+      // Name/phone stays as the fallback ONLY for jobs where customerId is
+      // genuinely null (created before #200, or unmatchable).
+      var jobCustomerId = j.customerId || j.custId || null;
+      if (jobCustomerId) return c.id != null && String(jobCustomerId) === String(c.id);
       if (c.name && j.customer === c.name) return true;
       if (c.phone && j.phone && String(c.phone).replace(/\D/g, '') === String(j.phone).replace(/\D/g, '')) return true;
-      if (c.id && (j.customerId === c.id || j.custId === c.id)) return true;
       return false;
     });
   }
