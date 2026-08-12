@@ -43699,6 +43699,13 @@ async function createJob(input,opts){
   var jobServiceName=resolvedService?resolvedService.name:(input.service||'');
   var payload={
     business_id:currentBusiness.id,
+    // #200: customer was already resolved above (findOrCreateCustomer/
+    // input.customerId lookup) and already returned to the caller as
+    // result.customerId — it was just never persisted on the row itself,
+    // making a job's own customer relationship unreachable except by
+    // re-deriving it from name/phone every time. No new resolution logic;
+    // this just writes what was already computed.
+    customer_id:customer?customer.id:null,
     customer_name:(customer&&customer.name)||input.customer||input.name||'',
     service_name:jobServiceName,
     service_id:jobServiceId,
