@@ -22,18 +22,44 @@
 
   function ProductCard(p, opts) {
     opts = opts || {};
-    var price = p.price != null ? p.price : 0;
+    var variants = p.variants || [];
+    var basePrice = p.price != null ? p.price : 0;
+    // Price label — "from $X" when variants have differing prices (real Commerce variant prices).
+    var priceLabel;
+    if (variants.length) {
+      var vprices = variants.map(function (v) { return v.price != null ? v.price : basePrice; });
+      var minP = Math.min.apply(null, vprices);
+      var maxP = Math.max.apply(null, vprices);
+      priceLabel = minP !== maxP ? ('from ' + money(minP)) : money(minP);
+    } else {
+      priceLabel = money(basePrice);
+    }
+    // Availability — from Commerce inventory (product or summed variant stock).
+    var soldOut = false, availLabel = '';
+    if (p.type === 'gift_card' || p.type === 'digital') {
+      availLabel = 'Digital';
+    } else if (variants.length) {
+      var totalV = variants.reduce(function (s, v) { return s + (v.stock != null ? Number(v.stock) : 0); }, 0);
+      var anyUntracked = variants.some(function (v) { return v.stock == null; });
+      if (!anyUntracked && totalV <= 0) { soldOut = true; availLabel = 'Sold out'; }
+    } else if (p.stock != null && Number(p.stock) <= 0) {
+      soldOut = true; availLabel = 'Sold out';
+    }
+    var media = (p.images && p.images.length && p.images[0].url)
+      ? '<div class="hub-commerce-product-card__media"><img src="' + esc(p.images[0].url) + '" alt="' + esc(p.images[0].alt || p.name || '') + '" loading="lazy"></div>'
+      : '<div class="hub-commerce-product-card__media" aria-hidden="true">' + esc((p.name || 'P').slice(0, 1)) + '</div>';
     return '<article class="hub-commerce-product-card" data-product-id="' + esc(p.id) + '">' +
-      '<div class="hub-commerce-product-card__media" aria-hidden="true">' + esc((p.name || 'P').slice(0, 1)) + '</div>' +
+      media +
       '<div class="hub-commerce-product-card__body">' +
       '<strong>' + esc(p.name) + '</strong>' +
       (p.shortDescription || p.description
         ? '<p>' + esc((p.shortDescription || p.description || '').slice(0, 90)) + '</p>' : '') +
+      (availLabel ? '<span class="hub-commerce-inv' + (soldOut ? ' low' : '') + '">' + esc(availLabel) + '</span>' : '') +
       '<div class="hub-commerce-product-card__row">' +
-      '<span class="hub-commerce-price">' + esc(money(price)) + '</span>' +
+      '<span class="hub-commerce-price">' + esc(priceLabel) + '</span>' +
       (opts.addLabel !== false
-        ? '<button type="button" class="hub-commerce-btn" data-commerce-act="cart-add" data-product-id="' + esc(p.id) + '">' +
-          esc(opts.addLabel || 'Add') + '</button>'
+        ? '<button type="button" class="hub-commerce-btn" data-commerce-act="cart-add" data-product-id="' + esc(p.id) + '"' + (soldOut ? ' disabled' : '') + '>' +
+          esc(soldOut ? 'Sold out' : (opts.addLabel || 'Add')) + '</button>'
         : '') +
       '</div></div></article>';
   }

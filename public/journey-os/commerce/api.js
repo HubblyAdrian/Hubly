@@ -75,6 +75,11 @@
       var b = biz || businessId();
       return call('/products/by-slug/' + encodeURIComponent(slug) + '?business_id=' + encodeURIComponent(b), { method: 'GET' });
     },
+    /** Public curated storefront catalog for a business (anon-safe). Pass the business id explicitly. */
+    getPublicStorefront: function (biz) {
+      var b = biz || businessId();
+      return call('/public/storefront?business_id=' + encodeURIComponent(b), { method: 'GET' });
+    },
     duplicateProduct: function (productId) {
       return call('/products/duplicate', { method: 'POST', body: withBiz({ product_id: productId }) });
     },

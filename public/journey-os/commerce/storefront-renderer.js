@@ -141,6 +141,76 @@
     return body;
   }
 
+  // Map the commerce-api /public/storefront payload → the `os` shape render() consumes.
+  // Commerce DB is the single source of truth; this is a read-through projection only.
+  function payloadToOs(d) {
+    d = d || {};
+    var products = (d.products || []).map(function (p) {
+      var giftCard = p.product_type === 'gift_card';
+      return {
+        id: p.id, name: p.name, slug: p.slug, sku: p.sku || '',
+        status: 'active',
+        price: (Number(p.price_cents) || 0) / 100,
+        compareAt: p.compare_at_cents != null ? Number(p.compare_at_cents) / 100 : 0,
+        type: p.product_type || 'physical',
+        stock: giftCard ? null : (p.inventory != null ? Number(p.inventory) : null),
+        description: p.description || '',
+        shortDescription: p.short_description || '',
+        featured: !!p.featured,
+        category: (p.metadata && p.metadata.category) || '',
+        visibility: { website: true },
+        images: (p.images || []).map(function (im) { return { url: im.url, alt: im.alt || '' }; }),
+        variants: (p.variants || []).map(function (v) {
+          return {
+            id: v.id, name: v.name, sku: v.sku || '',
+            price: v.price_cents != null ? Number(v.price_cents) / 100 : null,
+            stock: v.inventory != null ? Number(v.inventory) : null
+          };
+        })
+      };
+    });
+    var collections = (d.collections || []).map(function (c) {
+      return { id: c.id, name: c.name, description: c.description || '', published: true, productIds: [] };
+    });
+    var bundles = (d.bundles || []).map(function (b) {
+      return {
+        id: b.id, title: b.title, description: b.description || '',
+        price: (Number(b.price_cents) || 0) / 100, status: 'active', productIds: []
+      };
+    });
+    var s = d.settings || {};
+    return {
+      products: products, collections: collections, bundles: bundles,
+      settings: {
+        enabled: s.enabled !== false,
+        showOnWebsite: s.showOnWebsite !== false,
+        storePath: s.store_path || '/store',
+        heroTitle: s.hero_title || '',
+        heroSubtitle: s.hero_subtitle || '',
+        currency: s.currency || 'usd'
+      }
+    };
+  }
+
+  /**
+   * Load the public catalog for a business from the Commerce DB (via commerce-api
+   * /public/storefront). Returns an `os`-shaped object for render(). Never touches S.storeOs.
+   */
+  function loadPublic(businessId) {
+    var api = global.HublyCommerceApi;
+    if (!api || typeof api.getPublicStorefront !== 'function' || !businessId) {
+      return Promise.resolve({ error: 'not_ready', settings: {}, products: [], collections: [], bundles: [] });
+    }
+    return api.getPublicStorefront(businessId).then(function (res) {
+      if (!res || !res.ok || !res.data) {
+        return { error: (res && res.error) || 'load_failed', settings: {}, products: [], collections: [], bundles: [] };
+      }
+      return payloadToOs(res.data);
+    }).catch(function (e) {
+      return { error: String((e && e.message) || e), settings: {}, products: [], collections: [], bundles: [] };
+    });
+  }
+
   /** Match Instant Site path — default /store */
   function matchesPath(pathname, os) {
     var settings = settingsFromOs(os || (global.S && global.S.storeOs), global.S);
@@ -151,6 +221,8 @@
 
   global.HublyCommerceStorefront = {
     render: render,
+    loadPublic: loadPublic,
+    payloadToOs: payloadToOs,
     matchesPath: matchesPath,
     settingsFromOs: settingsFromOs
   };

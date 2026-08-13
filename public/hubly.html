@@ -38370,7 +38370,10 @@ function isStoreEnabledOnWebsite(){
     return hasProducts||(typeof isEditorViewOpen==='function'&&isEditorViewOpen());
   }catch(e){return false;}
 }
-/** Embed Commerce storefront into the Instant Site — styled like website sections. */
+/** Embed Commerce storefront into the Instant Site — styled like website sections.
+ *  Storefront Phase 2: reads the public catalog from the Commerce DB (commerce-api
+ *  /public/storefront) — commerce_products is the single source of truth. Never reads
+ *  or writes the legacy S.storeOs blob. */
 function renderWsStoreSection(prefix){
   if(prefix)return;
   const sec=wsPageEl('ws-sec-store');
@@ -38379,35 +38382,31 @@ function renderWsStoreSection(prefix){
   const subEl=wsPageEl('ws-store-sub');
   const nav=wsPageEl('ws-header-nav');
   if(!sec||!mount)return;
-  try{
-    if(window.HublyStoreCommerce&&typeof window.HublyStoreCommerce.ensureState==='function'){
-      window.HublyStoreCommerce.ensureState();
-    }
-  }catch(e){}
   ensureWebsiteCopy();
-  const storeSec=S.website.storeSection||{};
-  const os=S.storeOs||{};
-  const settings=(os.settings&&typeof os.settings==='object')?os.settings:{};
-  const hasProducts=Array.isArray(os.products)&&os.products.some(p=>p&&p.status==='active'&&(!p.visibility||p.visibility.website!==false));
+  const bizId=(currentBusiness&&currentBusiness.id)||S.businessId||null;
+  const sf=window.HublyCommerceStorefront;
   const inEditor=typeof isEditorViewOpen==='function'&&isEditorViewOpen();
-  const enabled=settings.enabled!==false&&settings.showOnWebsite!==false&&(hasProducts||inEditor);
-  let storeNav=nav&&nav.querySelector('a[href="#ws-sec-store"]');
-  if(enabled){
+  const hideSection=function(){
+    sec.hidden=true;sec.style.display='none';mount.innerHTML='';
+    const n=nav&&nav.querySelector('a[href="#ws-sec-store"]');
+    if(n)n.style.display='none';
+  };
+  if(!bizId||!sf||typeof sf.loadPublic!=='function'){hideSection();return;}
+  const token=(renderWsStoreSection._token=(renderWsStoreSection._token||0)+1);
+  sf.loadPublic(bizId).then(function(os){
+    if(token!==renderWsStoreSection._token)return; // superseded by a newer render
+    os=os||{};
+    const settings=(os.settings&&typeof os.settings==='object')?os.settings:{};
+    const hasProducts=Array.isArray(os.products)&&os.products.some(p=>p&&p.status==='active');
+    const enabled=settings.enabled!==false&&settings.showOnWebsite!==false&&(hasProducts||inEditor);
+    if(!enabled){hideSection();return;}
+    const storeSec=S.website.storeSection||{};
     sec.hidden=false;
     sec.style.display='';
     if(titleEl)titleEl.textContent=storeSec.title||settings.heroTitle||'Store';
     if(subEl)subEl.textContent=storeSec.sub!=null&&storeSec.sub!==''?storeSec.sub:(settings.heroSubtitle||'Products and kits from the same team.');
-    const sf=window.HublyCommerceStorefront;
-    if(sf&&typeof sf.render==='function'){
-      mount.innerHTML=sf.render({
-        storeOs:os,
-        state:S,
-        websiteEmbed:true,
-        preview:isEditorViewOpen()
-      });
-    }else{
-      mount.innerHTML='<p class="ws-muted">Add products in Store to show them here.</p>';
-    }
+    mount.innerHTML=sf.render({storeOs:os,state:S,websiteEmbed:true,preview:inEditor});
+    let storeNav=nav&&nav.querySelector('a[href="#ws-sec-store"]');
     if(nav&&!storeNav){
       storeNav=document.createElement('a');
       storeNav.href='#ws-sec-store';
@@ -38417,12 +38416,7 @@ function renderWsStoreSection(prefix){
       else nav.appendChild(storeNav);
     }
     if(storeNav)storeNav.style.display='';
-  }else{
-    sec.hidden=true;
-    sec.style.display='none';
-    mount.innerHTML='';
-    if(storeNav)storeNav.style.display='none';
-  }
+  }).catch(function(){hideSection();});
 }
 function applyGenerateSitePayload(g){
   if(!g)return false;

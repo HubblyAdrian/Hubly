@@ -6,6 +6,7 @@
  * GET/POST   /products
  * PATCH/DELETE /products/:id
  * GET        /products/by-slug/:slug
+ * GET        /public/storefront?business_id=  (anon — curated public catalog)
  * POST       /products/import
  * POST       /products/duplicate
  * GET/POST   /collections
@@ -96,6 +97,64 @@ Deno.serve(async (req: Request) => {
     if (error) return json({ error: error.message }, 400);
     if (!data) return json({ error: "not_found" }, 404);
     return json({ product: data });
+  }
+
+  // Public storefront read (anon ok) — curated public catalog for one business.
+  // Uses service role but returns only public-safe rows/fields: active + website-visible
+  // products (never cost_cents), their images + variants, published collections, active
+  // bundles, and the public subset of store settings. This is the Phase 2 public read path
+  // so the customer storefront and the owner Store admin share commerce_products as SSOT.
+  if (req.method === "GET" && resource === "public" && id === "storefront") {
+    const businessId = new URL(req.url).searchParams.get("business_id") || "";
+    if (!businessId) return json({ error: "business_id required" }, 400);
+    const { data: settingsRow } = await admin
+      .from("commerce_store_settings").select("*").eq("business_id", businessId).maybeSingle();
+    const theme = (settingsRow?.theme as Record<string, unknown>) || {};
+    const settings = {
+      enabled: settingsRow ? settingsRow.enabled !== false : true,
+      showOnWebsite: theme.showOnWebsite !== false,
+      store_path: settingsRow?.store_path || "/store",
+      hero_title: settingsRow?.hero_title || null,
+      hero_subtitle: settingsRow?.hero_subtitle || null,
+      currency: settingsRow?.currency || "usd",
+    };
+    if (!settings.enabled || !settings.showOnWebsite) {
+      return json({ settings, products: [], collections: [], bundles: [] });
+    }
+    const { data: prods } = await admin.from("commerce_products").select("*")
+      .eq("business_id", businessId).eq("status", "active");
+    const visible = (prods || []).filter((p: Record<string, unknown>) => {
+      const v = (p.visibility as Record<string, unknown>) || {};
+      return v.website !== false;
+    });
+    const pids = visible.map((p: Record<string, unknown>) => p.id as string);
+    const imagesByProduct: Record<string, Record<string, unknown>[]> = {};
+    const variantsByProduct: Record<string, Record<string, unknown>[]> = {};
+    if (pids.length) {
+      const { data: imgs } = await admin.from("commerce_product_images").select("*").in("product_id", pids);
+      const { data: vars } = await admin.from("commerce_product_variants").select("*").in("product_id", pids);
+      for (const im of (imgs || [])) (imagesByProduct[im.product_id] ||= []).push(im);
+      for (const vr of (vars || [])) (variantsByProduct[vr.product_id] ||= []).push(vr);
+    }
+    const products = visible.map((p: Record<string, unknown>) => ({
+      id: p.id, name: p.name, slug: p.slug, description: p.description, short_description: p.short_description,
+      price_cents: p.price_cents, compare_at_cents: p.compare_at_cents, product_type: p.product_type,
+      inventory: p.track_inventory === false ? null : p.inventory, track_inventory: p.track_inventory,
+      featured: p.featured, brand: p.brand, sku: p.sku, seo: p.seo,
+      metadata: { category: ((p.metadata as Record<string, unknown>) || {}).category ?? null },
+      images: (imagesByProduct[p.id as string] || [])
+        .sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0))
+        .map((im) => ({ url: im.url, alt: im.alt, sort_order: im.sort_order })),
+      variants: (variantsByProduct[p.id as string] || [])
+        .map((v) => ({ id: v.id, name: v.name, sku: v.sku, price_cents: v.price_cents, inventory: v.inventory, options: v.options })),
+    }));
+    const { data: colls } = await admin.from("commerce_collections")
+      .select("id,name,slug,description,published,sort_order")
+      .eq("business_id", businessId).eq("published", true).order("sort_order");
+    const { data: bundles } = await admin.from("commerce_bundles")
+      .select("id,title,slug,description,price_cents,discount_cents,featured,status")
+      .eq("business_id", businessId).eq("status", "active");
+    return json({ settings, products, collections: colls || [], bundles: bundles || [] });
   }
 
   // Owner auth for everything else
