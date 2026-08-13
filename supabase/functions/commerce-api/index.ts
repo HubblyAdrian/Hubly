@@ -18,6 +18,10 @@
  * POST       /orders/:id/refund  (marks refunded — Stripe refund via Payments Stage 2)
  * GET/POST   /cart  (+ add/item via body.action)
  * GET/POST   /shipping/quote
+ * GET        /products/:id/images
+ * POST       /products/:id/images
+ * PATCH/DELETE /images/:imageId
+ * GET/PATCH  /settings  (commerce_store_settings; auto-creates default row on first GET)
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -114,6 +118,28 @@ Deno.serve(async (req: Request) => {
   try {
     // ── Products ──────────────────────────────────────────────────────────
     if (resource === "products") {
+      // Product images: GET/POST /products/:id/images
+      if (id && sub === "images") {
+        if (req.method === "GET") {
+          const { data, error } = await admin.from("commerce_product_images").select("*")
+            .eq("product_id", id).eq("business_id", businessId).order("sort_order");
+          if (error) return json({ error: error.message }, 400);
+          return json({ images: data || [] });
+        }
+        if (req.method === "POST") {
+          const url = String(body.url || "").trim();
+          if (!url) return json({ error: "url required" }, 400);
+          const { data, error } = await admin.from("commerce_product_images").insert({
+            business_id: businessId,
+            product_id: id,
+            url,
+            alt: String(body.alt || ""),
+            sort_order: Number(body.sort_order) || 0,
+          }).select("*").single();
+          if (error) return json({ error: error.message }, 400);
+          return json({ image: data }, 201);
+        }
+      }
       if (req.method === "GET" && !id) {
         const { data, error } = await admin
           .from("commerce_products")
@@ -462,6 +488,70 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // ── Product images: PATCH/DELETE /images/:imageId ─────────────────────
+    if (resource === "images" && id) {
+      if (req.method === "DELETE") {
+        const { error } = await admin.from("commerce_product_images").delete()
+          .eq("id", id).eq("business_id", businessId);
+        if (error) return json({ error: error.message }, 400);
+        return json({ ok: true });
+      }
+      if (req.method === "PATCH") {
+        const patch: Record<string, unknown> = {};
+        for (const k of ["alt", "sort_order", "url"]) {
+          if (body[k] !== undefined) patch[k] = body[k];
+        }
+        const { data, error } = await admin.from("commerce_product_images").update(patch)
+          .eq("id", id).eq("business_id", businessId).select("*").single();
+        if (error) return json({ error: error.message }, 400);
+        return json({ image: data });
+      }
+    }
+
+    // ── Store settings ────────────────────────────────────────────────────
+    // commerce_store_settings is the canonical per-business Store config
+    // (independent of the Website service catalog). PK is business_id.
+    if (resource === "settings" && !id) {
+      if (req.method === "GET") {
+        let { data, error } = await admin.from("commerce_store_settings").select("*")
+          .eq("business_id", businessId).maybeSingle();
+        if (error) return json({ error: error.message }, 400);
+        if (!data) {
+          const ins = await admin.from("commerce_store_settings")
+            .insert({ business_id: businessId }).select("*").single();
+          if (ins.error) return json({ error: ins.error.message }, 400);
+          data = ins.data;
+        }
+        return json({ settings: data });
+      }
+      if (req.method === "PATCH") {
+        const patch: Record<string, unknown> = {
+          business_id: businessId,
+          updated_at: new Date().toISOString(),
+        };
+        const map: Record<string, string> = {
+          enabled: "enabled",
+          currency: "currency",
+          store_path: "store_path",
+          storePath: "store_path",
+          hero_title: "hero_title",
+          heroTitle: "hero_title",
+          hero_subtitle: "hero_subtitle",
+          heroSubtitle: "hero_subtitle",
+          theme: "theme",
+          shipping_defaults: "shipping_defaults",
+          shippingDefaults: "shipping_defaults",
+        };
+        for (const [k, col] of Object.entries(map)) {
+          if (body[k] !== undefined) patch[col] = body[k];
+        }
+        const { data, error } = await admin.from("commerce_store_settings")
+          .upsert(patch, { onConflict: "business_id" }).select("*").single();
+        if (error) return json({ error: error.message }, 400);
+        return json({ settings: data });
+      }
+    }
+
     // ── Shipping quote ────────────────────────────────────────────────────
     if (resource === "shipping" && id === "quote" && req.method === "POST") {
       const provider = resolveShippingProvider(String(body.provider || "hubly_builtin"));
@@ -472,7 +562,8 @@ Deno.serve(async (req: Request) => {
         destination: body.destination || {},
         profile: { rateCents: Number(body.rate_cents) || 0, config: body.config || {} },
       });
-      return json(result, result.ok ? 200 : (result.code === "NOT_CONFIGURED" ? 503 : 400));
+      const shipCode = (result as { code?: string }).code;
+      return json(result, result.ok ? 200 : (shipCode === "NOT_CONFIGURED" ? 503 : 400));
     }
 
     // Internal: apply inventory (also used from webhook)

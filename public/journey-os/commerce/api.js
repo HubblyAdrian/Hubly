@@ -147,6 +147,26 @@
     quoteShipping: function (opts) {
       return call('/shipping/quote', { method: 'POST', body: withBiz(opts || {}) });
     },
+    // Product images
+    listProductImages: function (productId) {
+      return call('/products/' + encodeURIComponent(productId) + '/images?business_id=' + encodeURIComponent(businessId()), { method: 'GET' });
+    },
+    addProductImage: function (productId, image) {
+      return call('/products/' + encodeURIComponent(productId) + '/images', { method: 'POST', body: withBiz(image || {}) });
+    },
+    updateProductImage: function (imageId, patch) {
+      return call('/images/' + encodeURIComponent(imageId), { method: 'PATCH', body: withBiz(patch || {}) });
+    },
+    removeProductImage: function (imageId) {
+      return call('/images/' + encodeURIComponent(imageId), { method: 'DELETE', body: withBiz() });
+    },
+    // Store settings (commerce_store_settings — canonical Store config, PK business_id)
+    getStoreSettings: function () {
+      return call('/settings?business_id=' + encodeURIComponent(businessId()), { method: 'GET' });
+    },
+    updateStoreSettings: function (patch) {
+      return call('/settings', { method: 'PATCH', body: withBiz(patch || {}) });
+    },
     /** Stripe Checkout Session — fails honestly when Connect not ready. */
     createCheckout: async function (opts) {
       var base = supabaseUrl();
