@@ -11581,12 +11581,20 @@
     var st = S();
     var name = String(job.customer || '').trim();
     if (!name || /^new customer$/i.test(name) || /^blocked$/i.test(name)) return null;
-    var existing = st.customers.find(function (c) {
-      if (job.customerId && String(c.id) === String(job.customerId)) return true;
-      if (c.name && name && c.name.toLowerCase() === name.toLowerCase()) return true;
-      if (c.phone && job.phone && String(c.phone).replace(/\D/g, '') === String(job.phone).replace(/\D/g, '')) return true;
-      return false;
-    });
+    // #185 canonical identity policy: id, then exact phone (authoritative);
+    // name only when the job has NO phone AND exactly one same-name customer
+    // exists. Never merge two same-name people when phones differ.
+    var jobDigits = String(job.phone || '').replace(/\D/g, '').slice(-10);
+    var jobEmail = String(job.email || '').trim().toLowerCase();
+    var hasStrongId = jobDigits.length >= 7 || !!jobEmail;
+    var existing = null;
+    if (job.customerId) existing = st.customers.find(function (c) { return String(c.id) === String(job.customerId); }) || null;
+    if (!existing && jobDigits.length >= 7) existing = st.customers.find(function (c) { return String(c.phone || '').replace(/\D/g, '').slice(-10) === jobDigits; }) || null;
+    if (!existing && jobEmail) existing = st.customers.find(function (c) { return String(c.email || '').trim().toLowerCase() === jobEmail; }) || null;
+    if (!existing && !hasStrongId && name) {
+      var sameName = st.customers.filter(function (c) { return String(c.name || '').trim().toLowerCase() === name.toLowerCase(); });
+      if (sameName.length === 1) existing = sameName[0];
+    }
     var amt = parseFloat(job.amount) || 0;
     if (existing) {
       job.customerId = existing.id;
@@ -11640,16 +11648,14 @@
     };
     job.customerId = id;
     st.customers.unshift(cust);
-    // Same reasoning as the existing-customer branch above — this is the
-    // brand-new-customer half of the same missing-persistence bug.
-    // upsertCustomer's own name match (S.customers.find by name) resolves
-    // to this exact `cust` object and Object.assign()s the real DB row
-    // (real id, _persisted:true) onto it in place once the insert
-    // resolves — no separate "swap the temp id" step needed here.
+    // Brand-new customer: pass the temp id explicitly so upsertCustomer
+    // persists THIS exact object (Object.assign's the real DB row onto it in
+    // place). #185: it can no longer rely on a name match to find this row,
+    // and passing the id is anyway the canonical known-customer contract.
     try {
       if (typeof global.upsertCustomer === 'function') {
         global.upsertCustomer({
-          name: cust.name, phone: cust.phone, email: cust.email, vehicle: cust.vehicle,
+          id: cust.id, name: cust.name, phone: cust.phone, email: cust.email, vehicle: cust.vehicle,
           preferredService: cust.preferredService, customerType: cust.customerType,
         });
       }

@@ -33,12 +33,19 @@ export async function resolveOrCreateCrmCustomer(
   const name = String(contact.name || "").trim();
   if (!name) return { customer: null, error: "customer_name_required" };
 
+  // #185 canonical identity policy. A supplied-but-non-matching phone or
+  // email is positive evidence this is a DIFFERENT person, so we must
+  // never fall through to a name match in that case — otherwise two
+  // people who share a name but have different phones get merged.
   let customer: Record<string, unknown> | null = null;
-
-  // Phone match: real customers vary in stored format, so fetch this
-  // business's customers and compare on last-10 digits (mirrors
-  // findExistingCustomerMatch()).
   const digits = phone.replace(/\D/g, "").slice(-10);
+  // A phone (>=7 digits, same threshold findExistingCustomerMatch uses) or
+  // an email counts as a strong identifier. Its presence suppresses the
+  // name fallthrough below even if it doesn't match anyone.
+  const hasStrongId = digits.length >= 7 || !!email;
+
+  // 1. Phone: exact last-10 match (authoritative). Real customers vary in
+  // stored format, so fetch this business's customers and compare digits.
   if (digits.length >= 7) {
     const { data } = await admin
       .from("customers")
@@ -50,6 +57,7 @@ export async function resolveOrCreateCrmCustomer(
           String(c.phone || "").replace(/\D/g, "").slice(-10) === digits,
       ) || null;
   }
+  // 2. Email: exact case-insensitive match (authoritative).
   if (!customer && email) {
     const { data } = await admin
       .from("customers")
@@ -59,15 +67,18 @@ export async function resolveOrCreateCrmCustomer(
       .maybeSingle();
     customer = data || null;
   }
-  if (!customer && name) {
+  // 3. Name-only match ONLY when no phone/email was supplied at all, AND
+  // exactly one candidate exists (never guess between same-name people).
+  if (!customer && !hasStrongId && name) {
     const { data } = await admin
       .from("customers")
       .select("*")
       .eq("business_id", businessId)
       .ilike("name", name)
-      .maybeSingle();
-    customer = data || null;
+      .limit(2);
+    if ((data || []).length === 1) customer = data![0];
   }
+  // 4. Otherwise (incl. supplied-but-unmatched phone/email) -> create new.
   if (!customer) {
     const { data: inserted, error: custErr } = await admin
       .from("customers")

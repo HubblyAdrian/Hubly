@@ -39926,12 +39926,12 @@ function persistBookingSmsConsent(name,phone,email){
     // booking is booking_requests (handled, awaited, with its own honest
     // error state in submitBooking) — this is a best-effort denormalized
     // sync, logged on failure, never customer-facing.
-    upsertCustomer({
-      name:name||phone||'Customer',
-      phone:phone||'',
-      email:email||'',
-      smsConsent:true,
-    },{silent:true});
+    // #185: resolve the customer by the identity policy (reuse by phone/email,
+    // never name-merge a different person), then record consent on that exact
+    // customer by id. Best-effort/silent — never customer-facing.
+    findOrCreateCustomer({name:name||phone||'Customer',phone:phone||'',email:email||''},{silent:true})
+      .then(c=>{ if(c&&c.id)return upsertCustomer({id:c.id,smsConsent:true},{silent:true}); })
+      .catch(()=>{});
   }catch(e){}
 }
 function bkHasSmsConsent(){
@@ -41863,7 +41863,13 @@ async function saveJobDetailEdits(){
       try{await updateJobOnGoogleCalendar(j.dbId||j.id);}catch(e){}
     }catch(e){toast('Couldn’t save');return;}
   }
-  try{await upsertCustomer({name,phone,email,notes:''});}catch(e){}
+  // #185: sync the job's edited contact onto ITS customer by id when the job
+  // already has one (no name matching). A historical job with no customer_id
+  // resolves through the canonical precedence instead of name-merging.
+  try{
+    if(j.customerId){await upsertCustomer({id:j.customerId,name,phone,email});}
+    else{await findOrCreateCustomer({name,phone,email});}
+  }catch(e){}
   S._jobDetailDirty=false;
   updateKPIs();renderDashToday();refreshJobsIfOpen();refreshCalendarIfOpen();
   viewJob(j.id);
@@ -41917,22 +41923,29 @@ async function _acceptBookingRequestInner(reqId,opts={}){
       includes:snap.includes||[],
     };
     const noteBits=[j.notes||'',addr?`Service address: ${addr}`:''].filter(Boolean).join('\n');
-    await upsertCustomer({
-      name:j.customer,
-      phone:j.phone||'',
-      email:j.email||'',
-      vehicle:j.vehicle||'',
-      vehicleType:j.vehicleType||'',
-      vehicleYear:j.vehicleYear||'',
-      vehicleMake:j.vehicleMake||'',
-      vehicleModel:j.vehicleModel||'',
-      vehicleColor:j.vehicleColor||'',
-      customerType:'recurring',
-      preferredService:snap.serviceName||'',
-      recurringAmount:plan.defaultPrice,
-      recurringPlan:plan,
-      notes:noteBits,
-    });
+    // #185: resolve the member's canonical customer by the identity policy
+    // (reuse by phone/email, never name-merge a different person), then write
+    // the recurring plan onto that exact customer by id.
+    const memberCust=await findOrCreateCustomer({name:j.customer,phone:j.phone||'',email:j.email||''});
+    if(memberCust&&memberCust.id){
+      await upsertCustomer({
+        id:memberCust.id,
+        name:j.customer,
+        phone:j.phone||'',
+        email:j.email||'',
+        vehicle:j.vehicle||'',
+        vehicleType:j.vehicleType||'',
+        vehicleYear:j.vehicleYear||'',
+        vehicleMake:j.vehicleMake||'',
+        vehicleModel:j.vehicleModel||'',
+        vehicleColor:j.vehicleColor||'',
+        customerType:'recurring',
+        preferredService:snap.serviceName||'',
+        recurringAmount:plan.defaultPrice,
+        recurringPlan:plan,
+        notes:noteBits,
+      });
+    }
     await realtimeAwareWrite({table:'booking_requests',id:reqId,write:()=>db.from('booking_requests').update({status:'accepted'}).eq('id',reqId)});
     try{
       const pipe=ensurePipelineState();
@@ -42556,8 +42569,15 @@ async function upsertCustomer(data,opts){
   // has already confirmed no existing customer/lead matches, so a second,
   // independent name-match pass here could only cause a false-positive
   // collision (e.g. two different real people sharing a first+last name).
+  // #185 canonical identity policy: an explicit id updates that exact
+  // customer and runs NO identity matching. The legacy name-only fallback
+  // (match any customer sharing this name) is removed — it silently merged
+  // two different people with the same name. Callers that intend to update a
+  // known customer must pass its id; callers that intend to create/resolve
+  // go through findOrCreateCustomer (which applies the full precedence) and
+  // reach here with forceCreate. A bare upsertCustomer({name,...}) with no
+  // id therefore now always creates, never name-merges.
   let c=(opts.forceCreate||data.id==null)?null:S.customers.find(x=>String(x.id)===String(data.id));
-  if(!c&&!opts.forceCreate&&data.name)c=S.customers.find(x=>x.name.toLowerCase()===String(data.name).toLowerCase());
   const recurringPlan=data.recurringPlan!==undefined?data.recurringPlan:(c?.recurringPlan||null);
   const statusOverride=data.statusOverride!=null?data.statusOverride:(c?.statusOverride||'auto');
   const smsConsent=data.smsConsent===true?true:(data.smsConsent===false?false:!!(c?.smsConsent));
@@ -43323,6 +43343,7 @@ async function saveManagedRecurringPlan(id){
   const ymm=[vYear,vMake,vModel].filter(Boolean).join(' ');
   const vehicle=ymm?(vType?`${ymm} (${vType})`:ymm):vType;
   await upsertCustomer({
+    id:c.id,
     name:c.name,
     phone:document.getElementById('rp-phone')?.value||'',
     email:document.getElementById('rp-email')?.value||'',
@@ -43519,11 +43540,17 @@ function leadSourceLabel(src,lead){
   if(lead?.isReturning)return 'Returning customer';
   return ({booking:'Hubly booking',membership:'Membership',quote:'Quick Quote',abandoned:'Started booking',chat:'Chatbot',manual:'Manual',paste:'From text'})[src]||'Lead';
 }
+// #185 canonical identity policy: id/phone/email are authoritative; a
+// supplied-but-unmatched phone/email is evidence of a DIFFERENT person, so
+// we must never fall through to name matching in that case. Name-only
+// matching is allowed only when NO phone/email was supplied AND exactly one
+// candidate has that name (never guess between same-name people).
 function findExistingCustomerMatch({name,phone,email}={}){
   const dig=typeof phoneDigits==='function'?phoneDigits(phone):String(phone||'').replace(/\D/g,'').slice(-10);
   const em=String(email||'').trim().toLowerCase();
   const nm=String(name||'').trim().toLowerCase();
   const list=S.customers||[];
+  const hasStrongId=(dig&&dig.length>=7)||!!em;
   if(dig&&dig.length>=7){
     const byPhone=list.find(c=>(typeof phoneDigits==='function'?phoneDigits(c.phone):String(c.phone||'').replace(/\D/g,'').slice(-10))===dig);
     if(byPhone)return byPhone;
@@ -43532,14 +43559,20 @@ function findExistingCustomerMatch({name,phone,email}={}){
     const byEmail=list.find(c=>String(c.email||'').trim().toLowerCase()===em);
     if(byEmail)return byEmail;
   }
-  if(nm){
-    const byName=list.find(c=>String(c.name||'').trim().toLowerCase()===nm);
-    if(byName)return byName;
+  // Name-only match ONLY when no phone/email was supplied, and exactly one
+  // candidate matches. Zero or multiple -> don't guess (create new upstream).
+  if(!hasStrongId&&nm){
+    const byName=list.filter(c=>String(c.name||'').trim().toLowerCase()===nm);
+    if(byName.length===1)return byName[0];
   }
+  // Prior-job seed (no existing customer matched): an exact PHONE match on a
+  // prior job is authoritative same-person evidence and always seeds; a NAME
+  // match on a prior job seeds only when no strong id was supplied (never
+  // pull a same-named stranger's contact info into a new customer).
   const priorJob=(S.jobs||[]).find(j=>{
     if(j.isBlock||j.status==='pending')return false;
     if(dig&&dig.length>=7&&(typeof phoneDigits==='function'?phoneDigits(j.phone):String(j.phone||'').replace(/\D/g,'').slice(-10))===dig)return true;
-    if(nm&&String(j.customer||'').trim().toLowerCase()===nm)return true;
+    if(!hasStrongId&&nm&&String(j.customer||'').trim().toLowerCase()===nm)return true;
     return false;
   });
   if(priorJob)return {name:priorJob.customer||name,phone:priorJob.phone||phone,email:priorJob.email||email,customerType:priorJob.isRecurring?'recurring':'one_off',_fromJobs:true};
@@ -43557,11 +43590,15 @@ function findExistingLeadMatch({name,phone,email}={}){
   const em=String(email||'').trim().toLowerCase();
   const nm=String(name||'').trim().toLowerCase();
   if(!dig&&!em&&!nm)return null;
+  // #185 canonical identity policy: a phone or email match is authoritative;
+  // a name match seeds only when NO phone/email was supplied — otherwise a
+  // same-named stranger's lead could seed the new customer's contact info.
+  const hasStrongId=(dig&&dig.length>=7)||!!em;
   const matches=(cName,cPhone,cEmail)=>{
     const cDig=typeof phoneDigits==='function'?phoneDigits(cPhone):String(cPhone||'').replace(/\D/g,'').slice(-10);
     if(dig&&dig.length>=7&&cDig===dig)return true;
     if(em&&String(cEmail||'').trim().toLowerCase()===em)return true;
-    if(nm&&String(cName||'').trim().toLowerCase()===nm)return true;
+    if(!hasStrongId&&nm&&String(cName||'').trim().toLowerCase()===nm)return true;
     return false;
   };
   const jobLead=(S.jobs||[]).find(j=>(j.status==='pending'||j.status==='abandoned')&&matches(j.customer,j.phone,j.email));
