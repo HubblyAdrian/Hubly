@@ -13070,6 +13070,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/ai/product-coach.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/ai/merchandising.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/index.js?v=commerce-1"></script>
+<script defer src="/journey-os/commerce/storefront-cart.js?v=commerce-3"></script>
 <script defer src="/journey-os/journey.js?v=20260808025356"></script>
 <script defer src="/journey-os/store-commerce.js?v=store-3"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
@@ -38406,6 +38407,10 @@ function renderWsStoreSection(prefix){
     if(titleEl)titleEl.textContent=storeSec.title||settings.heroTitle||'Store';
     if(subEl)subEl.textContent=storeSec.sub!=null&&storeSec.sub!==''?storeSec.sub:(settings.heroSubtitle||'Products and kits from the same team.');
     mount.innerHTML=sf.render({storeOs:os,state:S,websiteEmbed:true,preview:inEditor});
+    // Guest cart: only wire real shopping on the live public site, never in the editor preview.
+    if(!inEditor&&window.HublyStorefrontCart&&typeof window.HublyStorefrontCart.mount==='function'){
+      try{window.HublyStorefrontCart.mount(bizId,mount);}catch(e){}
+    }
     let storeNav=nav&&nav.querySelector('a[href="#ws-sec-store"]');
     if(nav&&!storeNav){
       storeNav=document.createElement('a');

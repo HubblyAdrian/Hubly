@@ -48,13 +48,24 @@
     var media = (p.images && p.images.length && p.images[0].url)
       ? '<div class="hub-commerce-product-card__media"><img src="' + esc(p.images[0].url) + '" alt="' + esc(p.images[0].alt || p.name || '') + '" loading="lazy"></div>'
       : '<div class="hub-commerce-product-card__media" aria-hidden="true">' + esc((p.name || 'P').slice(0, 1)) + '</div>';
-    return '<article class="hub-commerce-product-card" data-product-id="' + esc(p.id) + '">' +
+    // Variant selector — the guest cart reads the chosen variant id; the server re-prices.
+    var variantSelect = variants.length
+      ? '<select class="hub-commerce-variant-select" data-variant-select aria-label="Choose option">' +
+        variants.map(function (v) {
+          var vp = v.price != null ? v.price : basePrice;
+          var vsold = (v.stock != null && Number(v.stock) <= 0);
+          return '<option value="' + esc(v.id) + '" data-price="' + esc(vp) + '"' + (vsold ? ' disabled' : '') + '>' +
+            esc(v.name) + ' · ' + esc(money(vp)) + (vsold ? ' (sold out)' : '') + '</option>';
+        }).join('') + '</select>'
+      : '';
+    return '<article class="hub-commerce-product-card" data-product-id="' + esc(p.id) + '" data-product-name="' + esc(p.name || '') + '" data-base-price="' + esc(basePrice) + '">' +
       media +
       '<div class="hub-commerce-product-card__body">' +
       '<strong>' + esc(p.name) + '</strong>' +
       (p.shortDescription || p.description
         ? '<p>' + esc((p.shortDescription || p.description || '').slice(0, 90)) + '</p>' : '') +
       (availLabel ? '<span class="hub-commerce-inv' + (soldOut ? ' low' : '') + '">' + esc(availLabel) + '</span>' : '') +
+      variantSelect +
       '<div class="hub-commerce-product-card__row">' +
       '<span class="hub-commerce-price">' + esc(priceLabel) + '</span>' +
       (opts.addLabel !== false

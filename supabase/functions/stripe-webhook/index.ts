@@ -93,7 +93,7 @@ Deno.serve(async (req: Request) => {
         }).eq("stripe_checkout_session_id", sessionId);
       }
 
-      // Commerce Engine — mark store order paid + deduct inventory
+      // Commerce Engine — finalize the paid store order (paid → CRM #185 → inventory).
       const commerceOrderId = String(
         meta.hubly_commerce_order_id || meta.commerce_order_id || "",
       ).trim();
@@ -101,53 +101,27 @@ Deno.serve(async (req: Request) => {
         commerceOrderId &&
         (paymentStatus === "paid" || paymentStatus === "no_payment_required")
       ) {
-        const { data: orderRow, error: ordErr } = await admin
-          .from("commerce_orders")
-          .update({
-            status: "paid",
-            stripe_checkout_session_id: sessionId || null,
-            stripe_payment_intent_id: pi,
-            paid_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", commerceOrderId)
-          .select("id,business_id")
-          .maybeSingle();
-        if (ordErr) {
-          console.error("stripe-webhook commerce_orders", ordErr);
+        try {
+          const { finalizePaidCommerceOrder } = await import("../_shared/commerce_checkout.ts");
+          const fin = await finalizePaidCommerceOrder(admin, {
+            orderId: commerceOrderId,
+            paymentIntentId: pi,
+            sessionId: sessionId || null,
+            cartId: String(meta.hubly_cart_id || "").trim() || null,
+          });
+          if (!fin.ok) {
+            console.error("stripe-webhook finalize commerce order", fin.error);
+            return new Response(JSON.stringify({ error: "commerce order update failed" }), {
+              status: 500,
+              headers: { "content-type": "application/json" },
+            });
+          }
+        } catch (finErr) {
+          console.error("stripe-webhook finalize commerce order", finErr);
           return new Response(JSON.stringify({ error: "commerce order update failed" }), {
             status: 500,
             headers: { "content-type": "application/json" },
           });
-        }
-        if (orderRow?.business_id) {
-          const { data: items } = await admin
-            .from("commerce_order_items")
-            .select("product_id,qty,title")
-            .eq("order_id", commerceOrderId);
-          try {
-            const { applyOrderInventoryDeduction } = await import(
-              "../_shared/hubly_commerce_inventory.ts"
-            );
-            await applyOrderInventoryDeduction(admin, {
-              businessId: orderRow.business_id,
-              orderId: commerceOrderId,
-              items: (items || []).map((i: { product_id?: string; qty: number; title?: string }) => ({
-                product_id: i.product_id,
-                qty: i.qty,
-                title: i.title,
-              })),
-            });
-          } catch (invErr) {
-            console.error("stripe-webhook commerce inventory", invErr);
-          }
-          const cartId = String(meta.hubly_cart_id || "").trim();
-          if (cartId) {
-            await admin.from("commerce_carts").update({
-              status: "converted",
-              updated_at: new Date().toISOString(),
-            }).eq("id", cartId);
-          }
         }
       }
 
@@ -180,39 +154,12 @@ Deno.serve(async (req: Request) => {
       ).trim();
       const piId = String(piObj.id || "");
       if (commerceOrderId) {
-        const { data: orderRow } = await admin
-          .from("commerce_orders")
-          .update({
-            status: "paid",
-            stripe_payment_intent_id: piId,
-            paid_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", commerceOrderId)
-          .neq("status", "paid")
-          .select("id,business_id")
-          .maybeSingle();
-        if (orderRow?.business_id) {
-          const { data: items } = await admin
-            .from("commerce_order_items")
-            .select("product_id,qty,title")
-            .eq("order_id", commerceOrderId);
-          try {
-            const { applyOrderInventoryDeduction } = await import(
-              "../_shared/hubly_commerce_inventory.ts"
-            );
-            await applyOrderInventoryDeduction(admin, {
-              businessId: orderRow.business_id,
-              orderId: commerceOrderId,
-              items: (items || []).map((i: { product_id?: string; qty: number; title?: string }) => ({
-                product_id: i.product_id,
-                qty: i.qty,
-                title: i.title,
-              })),
-            });
-          } catch (invErr) {
-            console.error("stripe-webhook pi commerce inventory", invErr);
-          }
+        // Backup finalize path — idempotent (finalize no-ops if the order is already paid).
+        try {
+          const { finalizePaidCommerceOrder } = await import("../_shared/commerce_checkout.ts");
+          await finalizePaidCommerceOrder(admin, { orderId: commerceOrderId, paymentIntentId: piId });
+        } catch (finErr) {
+          console.error("stripe-webhook pi finalize commerce order", finErr);
         }
       }
     }
