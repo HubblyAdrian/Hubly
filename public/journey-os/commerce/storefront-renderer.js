@@ -170,7 +170,7 @@
       };
     });
     var collections = (d.collections || []).map(function (c) {
-      return { id: c.id, name: c.name, description: c.description || '', published: true, productIds: [] };
+      return { id: c.id, name: c.name, slug: c.slug, description: c.description || '', published: true, productIds: c.product_ids || [] };
     });
     var bundles = (d.bundles || []).map(function (b) {
       return {
@@ -196,12 +196,12 @@
    * Load the public catalog for a business from the Commerce DB (via commerce-api
    * /public/storefront). Returns an `os`-shaped object for render(). Never touches S.storeOs.
    */
-  function loadPublic(businessId) {
+  function loadPublic(businessId, surface) {
     var api = global.HublyCommerceApi;
     if (!api || typeof api.getPublicStorefront !== 'function' || !businessId) {
       return Promise.resolve({ error: 'not_ready', settings: {}, products: [], collections: [], bundles: [] });
     }
-    return api.getPublicStorefront(businessId).then(function (res) {
+    return api.getPublicStorefront(businessId, surface).then(function (res) {
       if (!res || !res.ok || !res.data) {
         return { error: (res && res.error) || 'load_failed', settings: {}, products: [], collections: [], bundles: [] };
       }

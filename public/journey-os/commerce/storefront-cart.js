@@ -224,8 +224,10 @@
     showConfirmation();
   }
 
+  function openDrawer() { ensureUi(); state.drawerOpen = true; refresh(); }
+
   global.HublyStorefrontCart = {
-    mount: mount,
+    mount: mount, openDrawer: openDrawer,
     add: add, items: items, count: count, subtotal: subtotal,
     setQty: setQty, remove: removeLine, clear: clear,
     buildLineItems: buildLineItems, checkout: checkout

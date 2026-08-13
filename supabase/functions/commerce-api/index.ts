@@ -105,8 +105,12 @@ Deno.serve(async (req: Request) => {
   // bundles, and the public subset of store settings. This is the Phase 2 public read path
   // so the customer storefront and the owner Store admin share commerce_products as SSOT.
   if (req.method === "GET" && resource === "public" && id === "storefront") {
-    const businessId = new URL(req.url).searchParams.get("business_id") || "";
+    const reqUrl = new URL(req.url);
+    const businessId = reqUrl.searchParams.get("business_id") || "";
     if (!businessId) return json({ error: "business_id required" }, 400);
+    // surface=store → the dedicated /store route (gated on the store being enabled).
+    // Otherwise the website embed, additionally gated on showOnWebsite.
+    const surface = reqUrl.searchParams.get("surface") || "website";
     const { data: settingsRow } = await admin
       .from("commerce_store_settings").select("*").eq("business_id", businessId).maybeSingle();
     const theme = (settingsRow?.theme as Record<string, unknown>) || {};
@@ -118,7 +122,10 @@ Deno.serve(async (req: Request) => {
       hero_subtitle: settingsRow?.hero_subtitle || null,
       currency: settingsRow?.currency || "usd",
     };
-    if (!settings.enabled || !settings.showOnWebsite) {
+    const visibleOnSurface = surface === "store"
+      ? settings.enabled
+      : (settings.enabled && settings.showOnWebsite);
+    if (!visibleOnSurface) {
       return json({ settings, products: [], collections: [], bundles: [] });
     }
     const { data: prods } = await admin.from("commerce_products").select("*")
@@ -151,10 +158,27 @@ Deno.serve(async (req: Request) => {
     const { data: colls } = await admin.from("commerce_collections")
       .select("id,name,slug,description,published,sort_order")
       .eq("business_id", businessId).eq("published", true).order("sort_order");
+    // Collection membership, filtered to the public product set only.
+    const publicIds = new Set(pids);
+    const membershipByCollection: Record<string, string[]> = {};
+    if ((colls || []).length) {
+      const { data: cps } = await admin.from("commerce_collection_products")
+        .select("collection_id,product_id,sort_order")
+        .eq("business_id", businessId)
+        .order("sort_order");
+      for (const cp of (cps || [])) {
+        if (!publicIds.has(cp.product_id)) continue;
+        (membershipByCollection[cp.collection_id] ||= []).push(cp.product_id);
+      }
+    }
+    const collections = (colls || []).map((c: Record<string, unknown>) => ({
+      id: c.id, name: c.name, slug: c.slug, description: c.description,
+      product_ids: membershipByCollection[c.id as string] || [],
+    }));
     const { data: bundles } = await admin.from("commerce_bundles")
       .select("id,title,slug,description,price_cents,discount_cents,featured,status")
       .eq("business_id", businessId).eq("status", "active");
-    return json({ settings, products, collections: colls || [], bundles: bundles || [] });
+    return json({ settings, products, collections, bundles: bundles || [] });
   }
 
   // Owner auth for everything else
