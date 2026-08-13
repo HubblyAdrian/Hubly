@@ -362,6 +362,7 @@ export type HublyAITask =
   | "planner"
   | "document_generate"
   | "document_patch"
+  | "storefront_build"
   | "lead_extract";
 
 export type HublyTextPart = { type: "text"; text: string };
@@ -501,6 +502,9 @@ const TASK_ROUTES: Record<HublyAITask, TaskRoute> = {
   // logical reasoning, so a lower effort level should cost little in
   // quality while cutting the dominant cost (hidden reasoning tokens).
   document_generate: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 20000, jsonMode: true, reasoningEffort: "low" },
+  // Storefront Builder AST generate/patch — reasoningEffort "low" so the reasoning model
+  // spends its budget on the JSON output, not hidden reasoning (same lesson as document_generate).
+  storefront_build: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 9000, jsonMode: true, reasoningEffort: "low" },
   document_patch: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 4000, jsonMode: true },
   // Small structured-extraction task (paste a text/DM, pull out name/phone/
   // email/service) — deliberately the lightweight tier, not the reasoning

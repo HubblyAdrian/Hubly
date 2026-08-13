@@ -527,6 +527,11 @@ Deno.serve(async (req) => {
     ownerToken = token;
   }
 
+  // Storefront Builder inputs (operate/storefront surface): the current storefront layout the
+  // owner is editing + brand context, threaded to generate/patchStorefront. Never persisted here.
+  const storefrontState = body?.storefrontState;
+  const storeContext = body?.storeContext;
+
   // Business in Progress — the real, unclaimed businesses row this
   // conversation may have already created via business.startDraft (see
   // 20260803120000_business_in_progress.sql). Stateless like everything
@@ -588,6 +593,9 @@ Deno.serve(async (req) => {
   // browser renders its confirmation card from this alone, never from the
   // model's own reply text.
   let bookingConfirmation: unknown = null;
+  // Storefront Builder — the layout produced by generate/patchStorefront, surfaced to the
+  // editor so it can apply it to the live preview and publish it. Presentation only.
+  let storefrontAstOut: unknown = undefined;
 
   // Logo upload is client-triggered, not model-decided — see uploadDraftLogo's
   // own comment for why. Dispatched directly here, then folded into history
@@ -773,6 +781,14 @@ Deno.serve(async (req) => {
         if (capabilityName === "storefront" && businessId) {
           dispatchArgs.businessId = businessId;
           if (ownerToken) dispatchArgs._ownerToken = ownerToken;
+          // Storefront Builder: the current storefront layout the owner is editing + brand
+          // context, injected so generate/patchStorefront work on the live config. Never
+          // shown to the model; omitted from the actions log below.
+          if (storefrontState !== undefined) dispatchArgs._storefrontAst = storefrontState;
+          if (storeContext && typeof storeContext === "object") {
+            dispatchArgs._businessName = (storeContext as Record<string, unknown>).businessName;
+            dispatchArgs._accent = (storeContext as Record<string, unknown>).accent;
+          }
         }
         // Same treatment as booking's businessId above: the model never sees
         // the real draftId/draftToken, so it can never be trusted to
@@ -845,10 +861,11 @@ Deno.serve(async (req) => {
           // it back inside the actions log even though the client already
           // has it (draftBusiness below is the one legitimate place it travels).
           args: (() => {
-            if (!dispatchArgs.draftToken && !dispatchArgs._ownerToken) return dispatchArgs;
+            if (!dispatchArgs.draftToken && !dispatchArgs._ownerToken && dispatchArgs._storefrontAst === undefined) return dispatchArgs;
             const a: Record<string, unknown> = { ...dispatchArgs };
             if (a.draftToken) a.draftToken = "[redacted]";
             if (a._ownerToken) a._ownerToken = "[redacted]";
+            if (a._storefrontAst !== undefined) a._storefrontAst = "[omitted]";
             return a;
           })(),
           ok: !!result.ok,
@@ -863,6 +880,16 @@ Deno.serve(async (req) => {
           typeof result.raw === "object" && "confirmation" in (result.raw as Record<string, unknown>)
         ) {
           bookingConfirmation = (result.raw as Record<string, unknown>).confirmation;
+        }
+
+        // Storefront Builder — surface the generated/patched layout to the editor.
+        if (
+          capabilityName === "storefront" &&
+          (actionName === "generateStorefront" || actionName === "patchStorefront") &&
+          result.ok && result.raw && typeof result.raw === "object" &&
+          "storefrontAst" in (result.raw as Record<string, unknown>)
+        ) {
+          storefrontAstOut = (result.raw as Record<string, unknown>).storefrontAst;
         }
 
         history.push({
@@ -897,6 +924,7 @@ Deno.serve(async (req) => {
         ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
         ...(draftBusiness ? { draftBusiness } : {}),
         ...(bookingConfirmation ? { bookingConfirmation } : {}),
+        ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),
       });
     }
 
@@ -911,6 +939,7 @@ Deno.serve(async (req) => {
       ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
       ...(draftBusiness ? { draftBusiness } : {}),
       ...(bookingConfirmation ? { bookingConfirmation } : {}),
+        ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),
     });
   } catch (err) {
     console.error("hubly-conversation error:", err);

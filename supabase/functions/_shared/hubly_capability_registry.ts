@@ -39,6 +39,12 @@
 
 import { HublyAI, extractJson } from "./hubly_ai.ts";
 import {
+  validateStorefrontAst,
+  storefrontCatalogPromptBlock,
+  buildDefaultStorefront,
+  type StorefrontAst,
+} from "./storefront_ast.ts";
+import {
   validateHublyDocument,
   renderHublyDocument,
   buildDocumentSchemaPromptBlock,
@@ -228,6 +234,54 @@ const SF_NO_CTX: CapabilityActionResult = {
   error: "no_owner_context",
 };
 function sfDollars(n: unknown): number { return Number(n) || 0; }
+
+/** Generate or patch a Storefront AST with the model, constrained to the block catalog and
+ *  the business's REAL Commerce catalog. Falls back to a deterministic default when the AI
+ *  is unavailable or returns nothing usable. Never copies product data into the AST — only
+ *  references ids, and drops any id the model invented that isn't real (SSOT enforcement). */
+async function sfBuildStorefrontAst(
+  ownerToken: string,
+  businessId: string,
+  opts: { brief?: string; instruction?: string; currentAst?: unknown; businessName?: string; accent?: string | null },
+): Promise<{ ast: StorefrontAst; real: boolean }> {
+  const [products, collections] = await Promise.all([
+    sfFetchProducts(ownerToken, businessId),
+    sfFetchCollections(ownerToken, businessId),
+  ]);
+  const pFacts = products.map((p) => ({ id: p.id, name: p.name, price: (Number(p.price_cents) || 0) / 100, status: p.status, featured: !!p.featured }));
+  const cFacts = collections.map((c) => ({ id: c.id, name: c.name }));
+  const fallback = (): StorefrontAst => buildDefaultStorefront({ businessName: opts.businessName, accent: opts.accent ?? null, products: pFacts, collections: cFacts });
+
+  if (!HublyAI.isConfigured("openai")) return { ast: fallback(), real: false };
+
+  const isPatch = !!opts.currentAst && !!opts.instruction;
+  const system =
+    `You design a business's standalone online Store presentation as a Storefront AST (JSON). ${storefrontCatalogPromptBlock()}\n` +
+    `theme.style is one of: clean, premium, bold, minimal, warm. theme.accent is a hex color or null.\n` +
+    `Design for SELLING PRODUCTS — a real store, not a business homepage. Order blocks to merchandise well, reference only real product/collection ids from the catalog, and never place product names or prices in the AST. Return ONLY: {"theme":{"style":...,"accent":...},"blocks":[{"type":...,"variant":...,"visible":true,"config":{...}}]}`;
+  const catalogText = `THIS BUSINESS'S REAL COMMERCE CATALOG:\nProducts: ${JSON.stringify(pFacts)}\nCollections: ${JSON.stringify(cFacts)}`;
+  const userText = isPatch
+    ? `Current Storefront AST:\n${JSON.stringify(opts.currentAst)}\n\n${catalogText}\n\n` +
+      `Apply the owner's change as the SMALLEST edit — keep every other block, its order, and its config exactly as-is unless the change requires otherwise. Map plain language to blocks/variants: "bigger/larger product cards" → set the product block's variant to "large"; "smaller cards" → "compact"; "add a best sellers section" → add a bestSellers block; "put X first" → move/feature that product's id to the front of a product block; "more premium" → theme.style="premium" and refine hero copy. Return the COMPLETE updated AST. The change: "${opts.instruction}"`
+    : `${catalogText}\n\nBuild a storefront.${opts.brief ? ` The owner's guidance: "${opts.brief}".` : ""}`;
+  try {
+    const ai = await HublyAI.complete({ feature: "storefront-build", task: "storefront_build", system, messages: [{ role: "user", content: userText }], jsonMode: true });
+    // extractJson returns a STRING; validateStorefrontAst needs a parsed object.
+    let parsed: unknown = null;
+    try { parsed = JSON.parse(extractJson(String(ai?.text || ""))); } catch { parsed = null; }
+    const { ast, ok } = validateStorefrontAst(parsed);
+    if (!ok) return { ast: fallback(), real: false };
+    const validPids = new Set(products.map((p) => String(p.id)));
+    const validCids = new Set(collections.map((c) => String(c.id)));
+    for (const b of ast.blocks) {
+      if (Array.isArray(b.config.productIds)) b.config.productIds = (b.config.productIds as string[]).filter((id) => validPids.has(id));
+      if (b.config.collectionId && !validCids.has(String(b.config.collectionId))) b.config.collectionId = null;
+    }
+    return { ast, real: true };
+  } catch (_e) {
+    return { ast: fallback(), real: false };
+  }
+}
 
 type UsageTotal = { promptTokens: number; completionTokens: number; reasoningTokens: number; calls: number };
 /** firstAttemptOk/firstAttemptErrors expose whether a retry was actually
@@ -1587,6 +1641,63 @@ HUBLY_CAPABILITY_REGISTRY.push({
           return { ok: true, real: true, summary: args.enabled !== undefined ? (on ? "Your store is on." : "Your store is turned off.") : "Updated your store settings.", raw: {} };
         }
         return { ok: false, real: false, summary: "I couldn't update the store settings just now.", error: r.json?.error || `http_${r.status}` };
+      },
+    },
+    {
+      name: "generateStorefront",
+      description:
+        "Design (or completely redesign) the standalone Store's PRESENTATION — its layout, theme, hero, and which products/collections are featured — from the business's real Commerce catalog. Use when the owner says things like \"build me a premium store\" or \"design my storefront\". This changes only the Store's look, never the products/prices/inventory themselves. Returns a Storefront layout the editor applies + previews.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: sfBusinessIdArg,
+          brief: { type: "string", description: "The owner's guidance in their own words, e.g. \"premium detailing supply store\", \"clean and minimal\". Optional — omit for a sensible default." },
+        },
+        required: [],
+      },
+      handler: async (args) => {
+        const ctx = sfOwnerCtx(args);
+        if (!ctx) return SF_NO_CTX;
+        const res = await sfBuildStorefrontAst(ctx.ownerToken, ctx.businessId, {
+          brief: args.brief ? String(args.brief) : undefined,
+          businessName: args._businessName ? String(args._businessName) : undefined,
+          accent: args._accent ? String(args._accent) : null,
+        });
+        return {
+          ok: true, real: res.real,
+          summary: "Designed your store — take a look at the preview.",
+          raw: { storefrontAst: res.ast },
+        };
+      },
+    },
+    {
+      name: "patchStorefront",
+      description:
+        "Refine the Store's PRESENTATION with a plain-language instruction — e.g. \"make it more premium\", \"put ceramic coating first\", \"make the product cards bigger\", \"add a best sellers section\", \"use my brand colors\". Only changes the Store's look/merchandising (order, featured products, block sizes, theme), never the Commerce products/prices themselves. Returns the updated Storefront layout the editor applies + previews.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: sfBusinessIdArg,
+          instruction: { type: "string", description: "The owner's change request, in their own words." },
+        },
+        required: ["instruction"],
+      },
+      handler: async (args) => {
+        const ctx = sfOwnerCtx(args);
+        if (!ctx) return SF_NO_CTX;
+        const instruction = String(args.instruction || "").trim();
+        if (!instruction) return { ok: false, real: false, summary: "What would you like to change about the store's look?", error: "missing_instruction" };
+        const res = await sfBuildStorefrontAst(ctx.ownerToken, ctx.businessId, {
+          instruction,
+          currentAst: args._storefrontAst || { version: 1, theme: { style: "clean", accent: null }, blocks: [] },
+          businessName: args._businessName ? String(args._businessName) : undefined,
+          accent: args._accent ? String(args._accent) : null,
+        });
+        return {
+          ok: true, real: res.real,
+          summary: "Updated your store — take a look.",
+          raw: { storefrontAst: res.ast },
+        };
       },
     },
   ],
