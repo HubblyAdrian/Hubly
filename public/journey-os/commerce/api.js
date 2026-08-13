@@ -160,6 +160,19 @@
     removeProductImage: function (imageId) {
       return call('/images/' + encodeURIComponent(imageId), { method: 'DELETE', body: withBiz() });
     },
+    // Product variants
+    listProductVariants: function (productId) {
+      return call('/products/' + encodeURIComponent(productId) + '/variants?business_id=' + encodeURIComponent(businessId()), { method: 'GET' });
+    },
+    addProductVariant: function (productId, variant) {
+      return call('/products/' + encodeURIComponent(productId) + '/variants', { method: 'POST', body: withBiz(variant || {}) });
+    },
+    updateProductVariant: function (variantId, patch) {
+      return call('/variants/' + encodeURIComponent(variantId), { method: 'PATCH', body: withBiz(patch || {}) });
+    },
+    removeProductVariant: function (variantId) {
+      return call('/variants/' + encodeURIComponent(variantId), { method: 'DELETE', body: withBiz() });
+    },
     // Store settings (commerce_store_settings — canonical Store config, PK business_id)
     getStoreSettings: function () {
       return call('/settings?business_id=' + encodeURIComponent(businessId()), { method: 'GET' });

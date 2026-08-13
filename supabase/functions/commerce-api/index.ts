@@ -21,6 +21,9 @@
  * GET        /products/:id/images
  * POST       /products/:id/images
  * PATCH/DELETE /images/:imageId
+ * GET        /products/:id/variants
+ * POST       /products/:id/variants
+ * PATCH/DELETE /variants/:variantId
  * GET/PATCH  /settings  (commerce_store_settings; auto-creates default row on first GET)
  */
 
@@ -138,6 +141,35 @@ Deno.serve(async (req: Request) => {
           }).select("*").single();
           if (error) return json({ error: error.message }, 400);
           return json({ image: data }, 201);
+        }
+      }
+      // Product variants: GET/POST /products/:id/variants
+      if (id && sub === "variants") {
+        if (req.method === "GET") {
+          const { data, error } = await admin.from("commerce_product_variants").select("*")
+            .eq("product_id", id).eq("business_id", businessId).order("created_at");
+          if (error) return json({ error: error.message }, 400);
+          return json({ variants: data || [] });
+        }
+        if (req.method === "POST") {
+          const name = String(body.name || "").trim();
+          if (!name) return json({ error: "name required" }, 400);
+          const row = {
+            business_id: businessId,
+            product_id: id,
+            name,
+            sku: body.sku || null,
+            price_cents: body.price_cents != null
+              ? Math.round(Number(body.price_cents))
+              : (body.price != null ? Math.round(Number(body.price) * 100) : null),
+            inventory: body.inventory != null
+              ? Number(body.inventory)
+              : (body.stock != null ? Number(body.stock) : null),
+            options: body.options || {},
+          };
+          const { data, error } = await admin.from("commerce_product_variants").insert(row).select("*").single();
+          if (error) return json({ error: error.message }, 400);
+          return json({ variant: data }, 201);
         }
       }
       if (req.method === "GET" && !id) {
@@ -505,6 +537,30 @@ Deno.serve(async (req: Request) => {
           .eq("id", id).eq("business_id", businessId).select("*").single();
         if (error) return json({ error: error.message }, 400);
         return json({ image: data });
+      }
+    }
+
+    // ── Product variants: PATCH/DELETE /variants/:variantId ───────────────
+    if (resource === "variants" && id) {
+      if (req.method === "DELETE") {
+        const { error } = await admin.from("commerce_product_variants").delete()
+          .eq("id", id).eq("business_id", businessId);
+        if (error) return json({ error: error.message }, 400);
+        return json({ ok: true });
+      }
+      if (req.method === "PATCH") {
+        const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        for (const k of ["name", "sku", "options"]) {
+          if (body[k] !== undefined) patch[k] = body[k];
+        }
+        if (body.price != null) patch.price_cents = Math.round(Number(body.price) * 100);
+        if (body.price_cents != null) patch.price_cents = Math.round(Number(body.price_cents));
+        if (body.inventory != null) patch.inventory = Number(body.inventory);
+        if (body.stock != null) patch.inventory = Number(body.stock);
+        const { data, error } = await admin.from("commerce_product_variants").update(patch)
+          .eq("id", id).eq("business_id", businessId).select("*").single();
+        if (error) return json({ error: error.message }, 400);
+        return json({ variant: data });
       }
     }
 

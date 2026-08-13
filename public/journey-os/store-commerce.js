@@ -1,7 +1,14 @@
 /**
  * Hubly Store — owner Commerce Engine (Operate).
- * UI label: Store. Internally: commerce (products, collections, orders, inventory, discounts).
+ * UI label: Store. Internally: commerce (products, collections, bundles, orders, inventory).
  * Distinct from Website Storefront (services) and Apps Marketplace (integrations).
+ *
+ * SSOT (Storefront Phase 1): commerce_products / commerce_collections / commerce_bundles /
+ * commerce_orders / commerce_store_settings via HublyCommerceApi (Edge Function commerce-api).
+ * The owner admin reads and writes the Commerce DB ONLY. It no longer reads or writes the
+ * legacy S.storeOs blob (businesses.meta) — that blob is fenced off and left solely for the
+ * public website Store embed until Phase 2 repoints it. `view` below is a read-through
+ * projection of the DB; it is never persisted to businesses.meta.
  */
 (function (global) {
   'use strict';
@@ -30,22 +37,6 @@
     if (typeof global.toast === 'function') return global.toast(msg);
     try { console.log('[Hubly Store]', msg); } catch (e) {}
   }
-  function persistStoreOs() {
-    try {
-      if (typeof global.saveStorefront === 'function') {
-        clearTimeout(persistStoreOs._t);
-        persistStoreOs._t = setTimeout(function () {
-          try { global.saveStorefront().catch(function () {}); } catch (e) {}
-        }, 400);
-        return;
-      }
-    } catch (e) {}
-    try {
-      if (typeof global.buildBizMeta === 'function' && global.currentBusiness) {
-        global.currentBusiness.meta = global.buildBizMeta();
-      }
-    } catch (e2) {}
-  }
   function money(n) {
     var v = Number(n) || 0;
     try {
@@ -54,59 +45,149 @@
       return '$' + Math.round(v);
     }
   }
-  function id(prefix) {
-    return (prefix || 'sto') + '_' + Math.random().toString(36).slice(2, 9);
-  }
   function todayStr() {
     return new Date().toISOString().slice(0, 10);
   }
-
-  function ensureStoreOsState() {
-    var st = S();
-    if (!st.storeOs || typeof st.storeOs !== 'object') st.storeOs = {};
-    var os = st.storeOs;
-    if (!Array.isArray(os.products)) os.products = [];
-    if (!Array.isArray(os.collections)) os.collections = [];
-    if (!Array.isArray(os.bundles)) os.bundles = [];
-    if (!Array.isArray(os.orders)) os.orders = [];
-    if (!Array.isArray(os.discounts)) os.discounts = [];
-    if (!Array.isArray(os.documents)) os.documents = [];
-    if (!Array.isArray(os.activity)) os.activity = [];
-    if (!os.settings || typeof os.settings !== 'object') {
-      os.settings = {
-        enabled: true,
-        showOnWebsite: true,
-        storePath: '/store',
-        heroTitle: '',
-        heroSubtitle: '',
-        widgets: { aiCoach: true, learningCenter: true }
-      };
-    }
-    if (os.settings.showOnWebsite == null) os.settings.showOnWebsite = true;
-    // Do not invent demo catalog — empty until the owner adds products.
-    if (!os.seeded) os.seeded = true;
-    return os;
+  function defaultVisibility() {
+    var T = global.HublyCommerceTypes;
+    return T && T.DEFAULT_VISIBILITY
+      ? Object.assign({}, T.DEFAULT_VISIBILITY)
+      : { website: true, booking: true, customerPortal: true, quoteBuilder: true, email: true, memberships: false };
   }
 
-  function seedDemoStore(os, st) {
-    // Kept for optional manual seeding — not called automatically.
-    if (os.products.length) {
-      os.seeded = true;
-      return;
-    }
-    var biz = st.biz || st.businessName || 'Your business';
-    os.products = [
-      {
-        id: 'prod_starter', sku: 'STARTER-01', name: biz + ' Starter Kit',
-        type: 'physical', status: 'active', price: 49, compareAt: 0, cost: 0,
-        stock: 12, lowStock: 3, collectionIds: [], category: 'Retail',
-        vendor: biz, description: 'A starter product you can edit or replace.',
-        imageTone: 'orange', featured: true,
-        visibility: { website: true, booking: true, customerPortal: true, quoteBuilder: true, email: true, memberships: false },
-        createdAt: todayStr()
-      }
-    ];
-    os.seeded = true;
+  // ── DB-backed view cache (a projection of the Commerce DB — never persisted) ──
+  var view = {
+    products: [], collections: [], bundles: [], orders: [],
+    discounts: [], documents: [], activity: [],
+    settings: {
+      enabled: true, showOnWebsite: true, storePath: '/store',
+      heroTitle: '', heroSubtitle: '', currency: 'usd',
+      widgets: { aiCoach: true, learningCenter: true }
+    },
+    imagesByProduct: {}, variantsByProduct: {},
+    loaded: false, loading: false, error: null
+  };
+
+  function ensureStoreOsState() { return view; }
+
+  function commerce() { return global.HublyCommerceApi || null; }
+
+  // ── DB row → view shape mappers ─────────────────────────────────────────────
+  function productToView(row) {
+    var meta = row.metadata || {};
+    var giftCard = row.product_type === 'gift_card';
+    return {
+      id: row.id,
+      sku: row.sku || '',
+      name: row.name || '',
+      type: row.product_type || 'physical',
+      status: row.status || 'draft',
+      price: (Number(row.price_cents) || 0) / 100,
+      compareAt: row.compare_at_cents != null ? Number(row.compare_at_cents) / 100 : 0,
+      cost: row.cost_cents != null ? Number(row.cost_cents) / 100 : 0,
+      stock: giftCard ? null : (row.inventory != null ? Number(row.inventory) : null),
+      lowStock: row.low_stock_at != null ? Number(row.low_stock_at) : 5,
+      category: meta.category || row.brand || 'Product',
+      description: row.description || '',
+      imageTone: meta.imageTone || 'orange',
+      featured: !!row.featured,
+      visibility: row.visibility || defaultVisibility(),
+      collectionIds: [],
+      createdAt: String(row.created_at || '').slice(0, 10)
+    };
+  }
+  function orderToView(row) {
+    return {
+      id: row.id,
+      number: row.order_number || String(row.id).slice(0, 8),
+      status: row.status || 'pending',
+      channel: row.channel || 'website',
+      customer: row.customer_name || '—',
+      email: row.customer_email || '',
+      total: (Number(row.total_cents) || 0) / 100,
+      items: (row.commerce_order_items || []).map(function (it) {
+        return { productId: it.product_id, qty: Number(it.qty) || 1, price: (Number(it.unit_price_cents) || 0) / 100 };
+      }),
+      createdAt: String(row.created_at || '').slice(0, 10),
+      fulfillment: row.fulfillment || 'unfulfilled'
+    };
+  }
+  function collectionToView(row) {
+    return { id: row.id, name: row.name || '', description: row.description || '', productIds: [], published: !!row.published, slug: row.slug };
+  }
+  function bundleToView(row) {
+    return {
+      id: row.id, title: row.title || '', description: row.description || '',
+      price: (Number(row.price_cents) || 0) / 100,
+      discount: (Number(row.discount_cents) || 0) / 100,
+      featured: !!row.featured, status: row.status || 'draft', productIds: []
+    };
+  }
+  function settingsToView(row) {
+    row = row || {};
+    var theme = row.theme || {};
+    return {
+      enabled: row.enabled !== false,
+      showOnWebsite: !(theme.showOnWebsite === false),
+      storePath: row.store_path || '/store',
+      heroTitle: row.hero_title || '',
+      heroSubtitle: row.hero_subtitle || '',
+      currency: row.currency || 'usd',
+      widgets: { aiCoach: true, learningCenter: true }
+    };
+  }
+
+  // draft (modal inputs) → commerce-api body
+  function productToApiBody(d, isCreate) {
+    var body = {
+      name: String(d.name || '').trim(),
+      sku: d.sku || undefined,
+      price: Number(d.price) || 0,
+      status: d.status || 'active',
+      type: d.type || 'physical',
+      description: d.description || '',
+      metadata: { category: d.category || '' }
+    };
+    if (d.type !== 'gift_card') body.stock = d.stock != null ? Number(d.stock) : 0;
+    if (isCreate) body.visibility = defaultVisibility();
+    return body;
+  }
+
+  // ── DB loads ────────────────────────────────────────────────────────────────
+  function loadStore(force) {
+    var api = commerce();
+    if (!api || !S().businessId) { view.error = 'not_ready'; return Promise.resolve(); }
+    if (view.loading) return Promise.resolve();
+    if (view.loaded && !force) return Promise.resolve();
+    view.loading = true;
+    return Promise.all([
+      api.listProducts(), api.listCollections(), api.listBundles(), api.listOrders(), api.getStoreSettings()
+    ]).then(function (res) {
+      var pr = res[0], co = res[1], bu = res[2], or = res[3], se = res[4];
+      view.products = (pr.ok && pr.data.products ? pr.data.products : []).map(productToView);
+      view.collections = (co.ok && co.data.collections ? co.data.collections : []).map(collectionToView);
+      view.bundles = (bu.ok && bu.data.bundles ? bu.data.bundles : []).map(bundleToView);
+      view.orders = (or.ok && or.data.orders ? or.data.orders : []).map(orderToView);
+      if (se.ok && se.data.settings) view.settings = settingsToView(se.data.settings);
+      view.error = pr.ok ? null : (pr.error || 'load_failed');
+      view.loaded = true;
+    }).catch(function (e) {
+      view.error = String((e && e.message) || e);
+    }).then(function () {
+      view.loading = false;
+    });
+  }
+
+  function loadProductDetail(pid) {
+    var api = commerce();
+    if (!api || !pid) return Promise.resolve();
+    return Promise.all([api.listProductImages(pid), api.listProductVariants(pid)]).then(function (res) {
+      view.imagesByProduct[pid] = res[0].ok && res[0].data.images ? res[0].data.images : [];
+      view.variantsByProduct[pid] = res[1].ok && res[1].data.variants ? res[1].data.variants : [];
+    }).catch(function () {
+      view.imagesByProduct[pid] = view.imagesByProduct[pid] || [];
+      view.variantsByProduct[pid] = view.variantsByProduct[pid] || [];
+    });
   }
 
   function publishCommerce(fnName, payload) {
@@ -127,25 +208,25 @@
   }
 
   function ownRoot() {
-    var view = el('v-store');
-    if (!view) return null;
-    view.classList.add('jos-pixel-owned');
-    view.classList.remove('hidden');
-    view.hidden = false;
+    var vw = el('v-store');
+    if (!vw) return null;
+    vw.classList.add('jos-pixel-owned');
+    vw.classList.remove('hidden');
+    vw.hidden = false;
     var root = el('jos-store-root');
     if (!root) {
       root = document.createElement('div');
       root.id = 'jos-store-root';
-      view.appendChild(root);
+      vw.appendChild(root);
     }
-    Array.prototype.slice.call(view.children).forEach(function (ch) {
+    Array.prototype.slice.call(vw.children).forEach(function (ch) {
       if (ch.id !== 'jos-store-root') ch.remove();
     });
     return root;
   }
 
   function productById(idVal) {
-    return ensureStoreOsState().products.find(function (p) { return p.id === idVal; }) || null;
+    return view.products.find(function (p) { return p.id === idVal; }) || null;
   }
 
   function storeStats(os) {
@@ -204,14 +285,9 @@
     var previewHtml = sf ? sf.render({ storeOs: os, state: S(), device: device, preview: true }) : '<p class="jos-muted">Storefront renderer loading…</p>';
     var recs = Merch ? Merch.analyzeLocal(os) : [];
     var analytics = C ? C.StoreAnalytics({
-      revenue: money(stats.revenue),
-      orders: stats.orders,
-      aov: money(stats.aov),
-      conversion: stats.conversion,
-      topProduct: stats.topProduct,
-      lowStock: stats.low,
-      repeat: stats.repeat,
-      abandoned: stats.abandoned
+      revenue: money(stats.revenue), orders: stats.orders, aov: money(stats.aov),
+      conversion: stats.conversion, topProduct: stats.topProduct, lowStock: stats.low,
+      repeat: stats.repeat, abandoned: stats.abandoned
     }) : '';
     return '<div class="jos-store-overview">' +
       '<section class="jos-store-overview-kpis">' +
@@ -265,14 +341,9 @@
       '<strong>Store analytics</strong>' +
       '<p class="jos-muted">Product revenue from Store orders — payment ledger stays in Revenue.</p>' +
       (C ? C.StoreAnalytics({
-        revenue: money(stats.revenue),
-        orders: stats.orders,
-        aov: money(stats.aov),
-        conversion: stats.conversion,
-        topProduct: stats.topProduct,
-        lowStock: stats.low,
-        repeat: stats.repeat,
-        abandoned: stats.abandoned
+        revenue: money(stats.revenue), orders: stats.orders, aov: money(stats.aov),
+        conversion: stats.conversion, topProduct: stats.topProduct, lowStock: stats.low,
+        repeat: stats.repeat, abandoned: stats.abandoned
       }) : '') +
       '</section>';
   }
@@ -295,7 +366,7 @@
       '<label>URL path<input id="jos-store-s-path" type="text" value="' + esc(s.storePath || '/store') + '"></label>' +
       '<label class="full">Hero title<input id="jos-store-s-hero" type="text" value="' + esc(s.heroTitle || '') + '"></label>' +
       '<label class="full">Hero subtitle<textarea id="jos-store-s-sub" rows="2">' + esc(s.heroSubtitle || '') + '</textarea></label>' +
-      '<p class="jos-muted full">When enabled, active products appear in a Store section on your Instant Site — same look as the Website editor.</p>' +
+      '<p class="jos-muted full">Store settings are saved to your Commerce database. When enabled, active products appear in a Store section on your Instant Site.</p>' +
       '<div class="jos-btn-row full"><button type="button" class="jos-btn jos-btn-brand" data-jos-act="store-settings-save">Save settings</button></div>' +
       '</div></section>';
   }
@@ -319,7 +390,7 @@
           '<td>' + statusPill(p.status) + '</td>' +
           '<td><span class="' + (low ? 'jos-store-low' : '') + '">' + esc(stockLabel) + (low ? ' · Low' : '') + '</span></td>' +
           '<td><strong>' + esc(money(p.price)) + '</strong>' + (p.compareAt ? '<span class="jos-muted jos-store-compare">' + esc(money(p.compareAt)) + '</span>' : '') + '</td>' +
-          '<td><button type="button" class="jos-icon-btn" data-jos-act="store-product-menu" data-jos-id="' + esc(p.id) + '" aria-label="Actions">⋯</button></td></tr>';
+          '<td><button type="button" class="jos-icon-btn" data-jos-act="store-product-edit" data-jos-id="' + esc(p.id) + '" aria-label="Edit">⋯</button></td></tr>';
       }).join('') + '</tbody></table></div>'
       : '<div class="jos-store-empty"><h3>No products yet</h3><p>Add gear, retail, gift cards, or digital products your customers can buy.</p>' +
         '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="store-product-new">+ New Product</button></div>';
@@ -363,8 +434,8 @@
           '<td>' + statusPill(o.status) + '</td>' +
           '<td><strong>' + esc(money(o.total)) + '</strong></td></tr>';
       }).join('') + '</tbody></table></div>'
-      : '<div class="jos-store-empty"><h3>No orders yet</h3><p>Create a manual order or wait for website checkout.</p>' +
-        '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="store-order-new">+ New Order</button></div>';
+      : '<div class="jos-store-empty"><h3>No orders yet</h3><p>Orders arrive here from Storefront checkout once a customer buys.</p>' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="store-refresh">Refresh</button></div>';
     return '<section class="jos-store-card">' + table + '</section>';
   }
 
@@ -392,21 +463,47 @@
   }
 
   function renderDiscounts(root, os) {
-    var table = os.discounts.length ? '<div class="jos-store-table-wrap"><table class="jos-store-table"><thead><tr>' +
-      '<th>Code</th><th>Type</th><th>Value</th><th>Uses</th><th>Status</th><th></th></tr></thead><tbody>' +
-      os.discounts.map(function (d) {
-        var val = d.type === 'percent' ? (d.value + '%') : money(d.value);
-        return '<tr>' +
-          '<td><strong>' + esc(d.code) + '</strong></td>' +
-          '<td>' + esc(d.type) + '</td>' +
-          '<td>' + esc(val) + '</td>' +
-          '<td>' + esc(d.uses) + (d.limit ? ' / ' + esc(d.limit) : '') + '</td>' +
-          '<td>' + statusPill(d.status) + '</td>' +
-          '<td><button type="button" class="jos-linkish" data-jos-act="store-discount-edit" data-jos-id="' + esc(d.id) + '">Edit</button></td></tr>';
-      }).join('') + '</tbody></table></div>'
-      : '<div class="jos-store-empty"><h3>No discounts</h3><p>Create codes for kits, seasonal gear, or first-time buyers.</p>' +
-        '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="store-discount-new">+ New Discount</button></div>';
-    return '<section class="jos-store-card">' + table + '</section>';
+    // Discount codes are a later Storefront phase (no commerce endpoint yet). Placeholder
+    // only — no writes, so the Store admin never persists a parallel/blob discount store.
+    return '<section class="jos-store-card"><div class="jos-store-empty">' +
+      '<h3>Discount codes</h3><p>Percentage and fixed discounts arrive in a later Storefront phase, applied at checkout against your Commerce database.</p>' +
+      '</div></section>';
+  }
+
+  function renderImagesSection(pid) {
+    var images = view.imagesByProduct[pid] || [];
+    var list = images.length
+      ? '<div class="jos-store-img-grid">' + images.map(function (im) {
+        return '<div class="jos-store-img-chip"><img src="' + esc(im.url) + '" alt="' + esc(im.alt || '') + '" loading="lazy">' +
+          '<button type="button" class="jos-icon-btn" data-jos-act="store-image-remove" data-jos-id="' + esc(im.id) + '" aria-label="Remove image">✕</button></div>';
+      }).join('') + '</div>'
+      : '<p class="jos-muted">No images yet.</p>';
+    return '<div class="jos-store-subsection"><strong>Images</strong>' + list +
+      '<div class="jos-store-inline-add"><input id="jos-store-img-url" type="url" placeholder="https://image-url.jpg">' +
+      '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="store-image-add">Add image</button></div></div>';
+  }
+
+  function renderVariantsSection(pid) {
+    var variants = view.variantsByProduct[pid] || [];
+    var rowsHtml = variants.map(function (v) {
+      var price = v.price_cents != null ? (Number(v.price_cents) / 100) : '';
+      var inv = v.inventory != null ? Number(v.inventory) : '';
+      return '<div class="jos-store-variant-row">' +
+        '<input id="jos-store-v-name-' + esc(v.id) + '" type="text" value="' + esc(v.name || '') + '" placeholder="Variant">' +
+        '<input id="jos-store-v-price-' + esc(v.id) + '" type="number" step="0.01" value="' + esc(price) + '" placeholder="Price">' +
+        '<input id="jos-store-v-stock-' + esc(v.id) + '" type="number" value="' + esc(inv) + '" placeholder="Stock">' +
+        '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="store-variant-save" data-jos-id="' + esc(v.id) + '">Save</button>' +
+        '<button type="button" class="jos-icon-btn" data-jos-act="store-variant-delete" data-jos-id="' + esc(v.id) + '" aria-label="Delete variant">✕</button>' +
+        '</div>';
+    }).join('');
+    return '<div class="jos-store-subsection"><strong>Variants</strong>' +
+      (variants.length ? rowsHtml : '<p class="jos-muted">No variants. Add sizes, colors, or options with their own price and stock.</p>') +
+      '<div class="jos-store-variant-row is-new">' +
+      '<input id="jos-store-v-new-name" type="text" placeholder="e.g. Large / Blue">' +
+      '<input id="jos-store-v-new-price" type="number" step="0.01" placeholder="Price">' +
+      '<input id="jos-store-v-new-stock" type="number" placeholder="Stock">' +
+      '<button type="button" class="jos-btn jos-btn-sm jos-btn-brand" data-jos-act="store-variant-add">Add variant</button>' +
+      '</div></div>';
   }
 
   function renderProductModal(root, os) {
@@ -430,8 +527,11 @@
         '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="store-product-ai-generate">Generate draft</button></div>'
       : '';
     var formHidden = !p && mode !== 'manual' && mode !== 'ai';
+    var detailSections = p
+      ? '<div class="jos-store-detail-sections">' + renderImagesSection(editId) + renderVariantsSection(editId) + '</div>'
+      : '<p class="jos-muted jos-store-detail-hint">Save the product to add images and variants.</p>';
     return '<div class="jos-store-modal-backdrop" data-jos-act="store-product-close">' +
-      '<div class="jos-store-modal" role="dialog" aria-label="Product" onclick="event.stopPropagation()">' +
+      '<div class="jos-store-modal" role="dialog" aria-label="Product">' +
       '<div class="jos-between"><div><div class="jos-kicker">Store</div><h2>' + (p ? 'Edit product' : 'New product') + '</h2></div>' +
       '<button type="button" class="jos-icon-btn" data-jos-act="store-product-close" aria-label="Close">✕</button></div>' +
       createChooser + aiPane +
@@ -448,41 +548,46 @@
       '<label class="full">Category<input id="jos-store-p-cat" type="text" value="' + esc(d.category || '') + '" placeholder="Detailing gear"></label>' +
       '<label class="full">Description<textarea id="jos-store-p-desc" rows="3" placeholder="What customers get…">' + esc(d.description || '') + '</textarea></label>' +
       '</div>' +
+      detailSections +
       '<div class="jos-btn-row jos-mt">' +
       '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="store-product-save">Save product</button>' +
+      (p ? '<button type="button" class="jos-btn jos-btn-danger" data-jos-act="store-product-delete" data-jos-id="' + esc(editId) + '">Delete</button>' : '') +
       '<button type="button" class="jos-btn" data-jos-act="store-product-close">Cancel</button>' +
       '</div></div></div>';
   }
 
   function renderPage(root) {
-    var os = ensureStoreOsState();
+    var os = view;
     var tab = root._josStoreTab || 'overview';
     var stats = storeStats(os);
-    var body = tab === 'overview' ? renderOverview(root, os)
-      : tab === 'products' ? renderProducts(root, os)
-        : tab === 'collections' ? renderCollections(root, os)
-          : tab === 'bundles' ? renderBundles(root, os)
-            : tab === 'orders' ? renderOrders(root, os)
-              : tab === 'inventory' ? renderInventory(root, os)
-                : tab === 'discounts' ? renderDiscounts(root, os)
-                  : tab === 'analytics' ? renderAnalytics(root, os)
-                    : tab === 'ai' ? renderAiTab(root, os)
-                      : renderSettings(root, os);
+    var body;
+    if (!view.loaded) {
+      body = '<section class="jos-store-card"><p class="jos-muted">' + (view.error && view.error !== 'not_ready' ? 'Store failed to load — retry.' : 'Loading your store…') + '</p></section>';
+    } else {
+      body = tab === 'overview' ? renderOverview(root, os)
+        : tab === 'products' ? renderProducts(root, os)
+          : tab === 'collections' ? renderCollections(root, os)
+            : tab === 'bundles' ? renderBundles(root, os)
+              : tab === 'orders' ? renderOrders(root, os)
+                : tab === 'inventory' ? renderInventory(root, os)
+                  : tab === 'discounts' ? renderDiscounts(root, os)
+                    : tab === 'analytics' ? renderAnalytics(root, os)
+                      : tab === 'ai' ? renderAiTab(root, os)
+                        : renderSettings(root, os);
+    }
 
     var primaryAct = tab === 'collections' ? 'store-collection-new'
       : tab === 'bundles' ? 'store-bundle-new'
-        : tab === 'discounts' ? 'store-discount-new'
-          : tab === 'orders' ? 'store-order-new'
-            : tab === 'inventory' ? 'store-export'
-              : tab === 'settings' || tab === 'overview' || tab === 'analytics' || tab === 'ai' ? 'store-tab-products'
-                : 'store-product-new';
+        : tab === 'orders' ? 'store-refresh'
+          : tab === 'inventory' ? 'store-export'
+            : tab === 'settings' || tab === 'overview' || tab === 'analytics' || tab === 'ai' || tab === 'discounts' ? 'store-tab-products'
+              : 'store-product-new';
     var primaryLabel = tab === 'collections' ? '+ New Collection'
       : tab === 'bundles' ? '+ New Bundle'
-        : tab === 'discounts' ? '+ New Discount'
-          : tab === 'orders' ? '+ New Order'
-            : tab === 'inventory' ? 'Export inventory'
-              : tab === 'settings' || tab === 'overview' || tab === 'analytics' || tab === 'ai' ? 'Manage products'
-                : '+ New Product';
+        : tab === 'orders' ? 'Refresh orders'
+          : tab === 'inventory' ? 'Export inventory'
+            : tab === 'settings' || tab === 'overview' || tab === 'analytics' || tab === 'ai' || tab === 'discounts' ? 'Manage products'
+              : '+ New Product';
 
     root.innerHTML =
       '<div class="jos-store-shell">' +
@@ -503,35 +608,8 @@
       body +
       '</div>' +
       renderProductModal(root, os) +
-      renderOrderModal(root, os) +
       '<button type="button" class="jos-store-fab" data-jos-act="store-product-new" aria-label="New Product">+</button>' +
       '</div>';
-  }
-
-  function renderOrderModal(root, os) {
-    if (!root._josStoreOrderModal) return '';
-    var products = (os.products || []).filter(function (p) { return p.status === 'active'; });
-    var opts = products.length
-      ? products.map(function (p) {
-        return '<option value="' + esc(p.id) + '">' + esc(p.name) + ' · ' + esc(money(p.price)) + '</option>';
-      }).join('')
-      : '<option value="">Add a product first</option>';
-    return '<div class="jos-store-modal-backdrop" data-jos-act="store-order-close">' +
-      '<div class="jos-store-modal" role="dialog" aria-label="New order" onclick="event.stopPropagation()">' +
-      '<div class="jos-between"><div><div class="jos-kicker">Store</div><h2>New order</h2></div>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="store-order-close" aria-label="Close">✕</button></div>' +
-      '<div class="jos-store-form">' +
-      '<label class="full">Customer name<input id="jos-store-o-name" type="text" placeholder="Jordan Lee" required></label>' +
-      '<label class="full">Email<input id="jos-store-o-email" type="email" placeholder="jordan@email.com"></label>' +
-      '<label>Product<select id="jos-store-o-product">' + opts + '</select></label>' +
-      '<label>Qty<input id="jos-store-o-qty" type="number" min="1" value="1"></label>' +
-      '<label>Channel<select id="jos-store-o-channel"><option>In person</option><option>Website</option><option>Phone</option></select></label>' +
-      '<label>Status<select id="jos-store-o-status"><option value="paid">Paid</option><option value="pending">Pending</option></select></label>' +
-      '</div>' +
-      '<div class="jos-btn-row jos-mt">' +
-      '<button type="button" class="jos-btn jos-btn-brand" data-jos-act="store-order-save">Save order</button>' +
-      '<button type="button" class="jos-btn" data-jos-act="store-order-close">Cancel</button>' +
-      '</div></div></div>';
   }
 
   function readProductDraft() {
@@ -549,67 +627,60 @@
 
   function saveProduct(root) {
     var perms = global.HublyCommercePermissions;
-    if (perms && !perms.can('edit_products')) {
-      toast('Your role cannot edit products');
-      return;
-    }
-    if (perms && !perms.can('edit_pricing') && root._josStoreProductEditId) {
-      toast('Your role cannot edit pricing');
-      return;
-    }
-    var os = ensureStoreOsState();
+    if (perms && !perms.can('edit_products')) { toast('Your role cannot edit products'); return; }
+    if (perms && !perms.can('edit_pricing') && root._josStoreProductEditId) { toast('Your role cannot edit pricing'); return; }
+    var api = commerce();
+    if (!api) { toast('Commerce API not available'); return; }
     var d = readProductDraft();
     if (!String(d.name || '').trim()) { toast('Product name is required'); return; }
     var editId = root._josStoreProductEditId;
-    if (editId) {
-      var existing = productById(editId);
-      if (existing) {
-        Object.assign(existing, d, {
-          stock: d.type === 'gift_card' ? null : d.stock,
-          lowStock: existing.lowStock != null ? existing.lowStock : 5,
-          visibility: existing.visibility || (global.HublyCommerceTypes && global.HublyCommerceTypes.DEFAULT_VISIBILITY)
-        });
-        publishCommerce('emitProductUpdated', existing);
+    var req = editId
+      ? api.updateProduct(editId, productToApiBody(d, false))
+      : api.createProduct(productToApiBody(d, true));
+    req.then(function (res) {
+      if (!res.ok || !res.data || !res.data.product) { toast((res && res.message) || 'Save failed'); return; }
+      var row = res.data.product;
+      if (editId) {
+        var i = view.products.findIndex(function (x) { return x.id === editId; });
+        if (i >= 0) view.products[i] = productToView(row);
+        publishCommerce('emitProductUpdated', row);
+        toast('Product updated');
+        root._josStoreProductModal = false;
+        root._josStoreProductEditId = null;
+        root._josStoreProductDraft = null;
+        root._josStoreProductCreateMode = 'manual';
+        render();
+      } else {
+        view.products.unshift(productToView(row));
+        publishCommerce('emitProductCreated', row);
+        toast('Product saved');
+        // Keep the modal open in edit mode so images/variants can be added.
+        root._josStoreProductEditId = row.id;
+        root._josStoreProductDraft = null;
+        root._josStoreProductCreateMode = 'manual';
+        root._josStoreTab = 'products';
+        loadProductDetail(row.id).then(render);
       }
-      toast('Product updated');
-    } else {
-      var created = {
-        id: id('prod'),
-        sku: d.sku || ('SKU-' + Math.floor(Math.random() * 9000 + 1000)),
-        name: d.name.trim(),
-        type: d.type,
-        status: d.status,
-        price: d.price,
-        compareAt: 0,
-        cost: 0,
-        stock: d.type === 'gift_card' ? null : (d.stock != null ? d.stock : 0),
-        lowStock: d.type === 'gift_card' ? null : 5,
-        collectionIds: [],
-        category: d.category || 'Product',
-        vendor: S().biz || 'Hubly',
-        description: d.description,
-        imageTone: 'orange',
-        featured: false,
-        visibility: global.HublyCommerceTypes
-          ? Object.assign({}, global.HublyCommerceTypes.DEFAULT_VISIBILITY)
-          : { website: true, booking: true, customerPortal: true, quoteBuilder: true, email: true, memberships: false },
-        createdAt: todayStr()
-      };
-      os.products.unshift(created);
-      publishCommerce('emitProductCreated', created);
-      toast('Product saved');
-    }
-    root._josStoreProductModal = false;
-    root._josStoreProductEditId = null;
-    root._josStoreProductDraft = null;
-    root._josStoreProductCreateMode = 'manual';
-    root._josStoreTab = 'products';
-    persistStoreOs();
-    render();
+    });
+  }
+
+  function deleteProduct(root, pid) {
+    var api = commerce();
+    if (!api || !pid) return;
+    if (typeof window.confirm === 'function' && !window.confirm('Delete this product? This cannot be undone.')) return;
+    api.deleteProduct(pid).then(function (res) {
+      if (!res.ok) { toast((res && res.message) || 'Delete failed'); return; }
+      view.products = view.products.filter(function (p) { return p.id !== pid; });
+      delete view.imagesByProduct[pid];
+      delete view.variantsByProduct[pid];
+      root._josStoreProductModal = false;
+      root._josStoreProductEditId = null;
+      toast('Product deleted');
+      render();
+    });
   }
 
   function handleAct(act, t, root) {
-    var os = ensureStoreOsState();
     if (act === 'store-tab-overview') { root._josStoreTab = 'overview'; return render(); }
     if (act === 'store-tab-products') { root._josStoreTab = 'products'; return render(); }
     if (act === 'store-tab-collections') { root._josStoreTab = 'collections'; return render(); }
@@ -620,6 +691,7 @@
     if (act === 'store-tab-analytics') { root._josStoreTab = 'analytics'; return render(); }
     if (act === 'store-tab-ai') { root._josStoreTab = 'ai'; return render(); }
     if (act === 'store-tab-settings') { root._josStoreTab = 'settings'; return render(); }
+    if (act === 'store-refresh') { loadStore(true).then(render); return; }
     if (act === 'store-preview-device') {
       root._josStorePreviewDevice = t.getAttribute('data-device') || 'desktop';
       return render();
@@ -652,6 +724,7 @@
       root._josStoreProductModal = true;
       root._josStoreProductEditId = t.getAttribute('data-jos-id');
       root._josStoreProductDraft = null;
+      loadProductDetail(root._josStoreProductEditId).then(render);
       return render();
     }
     if (act === 'store-product-close') {
@@ -660,163 +733,197 @@
       return render();
     }
     if (act === 'store-product-save') return saveProduct(root);
-    if (act === 'store-product-menu') {
-      var menuId = t.getAttribute('data-jos-id');
-      if (menuId && global.HublyCommerceApi) {
-        toast('Duplicate · Archive · Share link — connect Commerce API to publish live');
+    if (act === 'store-product-delete') return deleteProduct(root, t.getAttribute('data-jos-id'));
+
+    if (act === 'store-image-add') {
+      var pid = root._josStoreProductEditId;
+      var url = String((el('jos-store-img-url') || {}).value || '').trim();
+      if (!pid || !url) { toast('Enter an image URL'); return; }
+      commerce().addProductImage(pid, { url: url }).then(function (res) {
+        if (!res.ok) { toast((res && res.message) || 'Add image failed'); return; }
+        (view.imagesByProduct[pid] = view.imagesByProduct[pid] || []).push(res.data.image);
+        toast('Image added');
+        render();
+      });
+      return;
+    }
+    if (act === 'store-image-remove') {
+      var imgId = t.getAttribute('data-jos-id');
+      var ppid = root._josStoreProductEditId;
+      commerce().removeProductImage(imgId).then(function (res) {
+        if (!res.ok) { toast((res && res.message) || 'Remove failed'); return; }
+        if (ppid) view.imagesByProduct[ppid] = (view.imagesByProduct[ppid] || []).filter(function (im) { return im.id !== imgId; });
+        render();
+      });
+      return;
+    }
+    if (act === 'store-variant-add') {
+      var vpid = root._josStoreProductEditId;
+      var vname = String((el('jos-store-v-new-name') || {}).value || '').trim();
+      if (!vpid || !vname) { toast('Variant needs a name'); return; }
+      var vprice = (el('jos-store-v-new-price') || {}).value;
+      var vstock = (el('jos-store-v-new-stock') || {}).value;
+      commerce().addProductVariant(vpid, {
+        name: vname,
+        price: vprice === '' ? undefined : Number(vprice),
+        stock: vstock === '' ? undefined : Number(vstock)
+      }).then(function (res) {
+        if (!res.ok) { toast((res && res.message) || 'Add variant failed'); return; }
+        (view.variantsByProduct[vpid] = view.variantsByProduct[vpid] || []).push(res.data.variant);
+        toast('Variant added');
+        render();
+      });
+      return;
+    }
+    if (act === 'store-variant-save') {
+      var svid = t.getAttribute('data-jos-id');
+      var spid = root._josStoreProductEditId;
+      var nm = String((el('jos-store-v-name-' + svid) || {}).value || '').trim();
+      var pr = (el('jos-store-v-price-' + svid) || {}).value;
+      var stk = (el('jos-store-v-stock-' + svid) || {}).value;
+      commerce().updateProductVariant(svid, {
+        name: nm || undefined,
+        price: pr === '' ? undefined : Number(pr),
+        stock: stk === '' ? undefined : Number(stk)
+      }).then(function (res) {
+        if (!res.ok) { toast((res && res.message) || 'Save variant failed'); return; }
+        if (spid) {
+          var arr = view.variantsByProduct[spid] || [];
+          var idx = arr.findIndex(function (v) { return v.id === svid; });
+          if (idx >= 0) arr[idx] = res.data.variant;
+        }
+        toast('Variant saved');
+        render();
+      });
+      return;
+    }
+    if (act === 'store-variant-delete') {
+      var dvid = t.getAttribute('data-jos-id');
+      var dpid = root._josStoreProductEditId;
+      commerce().removeProductVariant(dvid).then(function (res) {
+        if (!res.ok) { toast((res && res.message) || 'Delete variant failed'); return; }
+        if (dpid) view.variantsByProduct[dpid] = (view.variantsByProduct[dpid] || []).filter(function (v) { return v.id !== dvid; });
+        render();
+      });
+      return;
+    }
+
+    if (act === 'store-collection-new' || act === 'store-collection-edit') {
+      var api = commerce();
+      if (!api) { toast('Commerce API not available'); return; }
+      if (act === 'store-collection-new') {
+        var colName = window.prompt('Collection name', 'New collection');
+        if (!colName || !String(colName).trim()) return;
+        api.createCollection({ name: String(colName).trim(), published: true }).then(function (res) {
+          if (!res.ok || !res.data.collection) { toast((res && res.message) || 'Save failed'); return; }
+          view.collections.push(collectionToView(res.data.collection));
+          toast('Collection saved');
+          render();
+        });
       } else {
-        toast('Duplicate · Archive · Share link — coming with live publish');
+        var cid = t.getAttribute('data-jos-id');
+        var existing = view.collections.find(function (c) { return c.id === cid; });
+        var newName = window.prompt('Rename collection', existing ? existing.name : '');
+        if (!newName || !String(newName).trim()) return;
+        api.updateCollection(cid, { name: String(newName).trim() }).then(function (res) {
+          if (!res.ok || !res.data.collection) { toast((res && res.message) || 'Update failed'); return; }
+          var i = view.collections.findIndex(function (c) { return c.id === cid; });
+          if (i >= 0) view.collections[i] = collectionToView(res.data.collection);
+          toast('Collection updated');
+          render();
+        });
       }
       return;
     }
-    if (act === 'store-collection-new' || act === 'store-collection-edit') {
-      var colName = window.prompt(act === 'store-collection-new' ? 'Collection name' : 'Rename collection', 'New collection');
-      if (!colName || !String(colName).trim()) return;
-      if (act === 'store-collection-new') {
-        os.collections.push({
-          id: id('col'),
-          name: String(colName).trim(),
-          description: '',
-          productIds: [],
-          published: true
-        });
-        toast('Collection saved');
-      } else {
-        var col = os.collections.find(function (c) { return c.id === t.getAttribute('data-jos-id'); });
-        if (col) { col.name = String(colName).trim(); toast('Collection updated'); }
-      }
-      persistStoreOs();
-      return render();
-    }
     if (act === 'store-bundle-new' || act === 'store-bundle-edit') {
-      var bunTitle = window.prompt(act === 'store-bundle-new' ? 'Bundle title' : 'Rename bundle', 'New bundle');
-      if (!bunTitle || !String(bunTitle).trim()) return;
+      var bapi = commerce();
+      if (!bapi) { toast('Commerce API not available'); return; }
       if (act === 'store-bundle-new') {
-        os.bundles.push({
-          id: id('bun'),
-          title: String(bunTitle).trim(),
-          description: '',
-          price: 0,
-          discount: 0,
-          featured: false,
-          status: 'active',
-          productIds: []
+        var bunTitle = window.prompt('Bundle title', 'New bundle');
+        if (!bunTitle || !String(bunTitle).trim()) return;
+        bapi.createBundle({ title: String(bunTitle).trim(), price: 0, status: 'active' }).then(function (res) {
+          if (!res.ok || !res.data.bundle) { toast((res && res.message) || 'Save failed'); return; }
+          view.bundles.unshift(bundleToView(res.data.bundle));
+          toast('Bundle saved');
+          render();
         });
-        toast('Bundle saved');
       } else {
-        var bun = os.bundles.find(function (b) { return b.id === t.getAttribute('data-jos-id'); });
-        if (bun) { bun.title = String(bunTitle).trim(); toast('Bundle updated'); }
+        var bid = t.getAttribute('data-jos-id');
+        var bex = view.bundles.find(function (b) { return b.id === bid; });
+        var bTitle = window.prompt('Rename bundle', bex ? bex.title : '');
+        if (!bTitle || !String(bTitle).trim()) return;
+        bapi.updateBundle(bid, { title: String(bTitle).trim() }).then(function (res) {
+          if (!res.ok || !res.data.bundle) { toast((res && res.message) || 'Update failed'); return; }
+          var bi = view.bundles.findIndex(function (b) { return b.id === bid; });
+          if (bi >= 0) view.bundles[bi] = bundleToView(res.data.bundle);
+          toast('Bundle updated');
+          render();
+        });
       }
-      persistStoreOs();
-      return render();
+      return;
     }
     if (act === 'store-discount-new' || act === 'store-discount-edit') {
-      var code = window.prompt(act === 'store-discount-new' ? 'Discount code' : 'Update code', 'SAVE10');
-      if (!code || !String(code).trim()) return;
-      if (act === 'store-discount-new') {
-        os.discounts.push({
-          id: id('disc'),
-          code: String(code).trim().toUpperCase(),
-          type: 'percent',
-          value: 10,
-          status: 'active',
-          uses: 0,
-          limit: 100,
-          appliesTo: 'all',
-          endsAt: ''
-        });
-        toast('Discount saved');
-      } else {
-        var disc = os.discounts.find(function (d) { return d.id === t.getAttribute('data-jos-id'); });
-        if (disc) { disc.code = String(code).trim().toUpperCase(); toast('Discount updated'); }
-      }
-      persistStoreOs();
-      return render();
-    }
-    if (act === 'store-order-new') {
-      root._josStoreOrderModal = true;
-      root._josStoreTab = 'orders';
-      return render();
-    }
-    if (act === 'store-order-close') {
-      root._josStoreOrderModal = false;
-      return render();
-    }
-    if (act === 'store-order-save') {
-      var oName = String((el('jos-store-o-name') || {}).value || '').trim();
-      var oEmail = String((el('jos-store-o-email') || {}).value || '').trim();
-      var oPid = (el('jos-store-o-product') || {}).value || '';
-      var oQty = Math.max(1, Number((el('jos-store-o-qty') || {}).value) || 1);
-      var oChannel = (el('jos-store-o-channel') || {}).value || 'In person';
-      var oStatus = (el('jos-store-o-status') || {}).value || 'paid';
-      if (!oName) { toast('Customer name is required'); return; }
-      var prod = productById(oPid);
-      if (!prod) { toast('Add an active product before creating an order'); return; }
-      var total = (Number(prod.price) || 0) * oQty;
-      var nextNum = 1000 + os.orders.length + 1;
-      var order = {
-        id: id('ord'),
-        number: '#' + nextNum,
-        status: oStatus,
-        channel: oChannel,
-        customer: oName,
-        email: oEmail,
-        total: total,
-        items: [{ productId: prod.id, qty: oQty, price: Number(prod.price) || 0 }],
-        createdAt: todayStr(),
-        fulfillment: prod.type === 'gift_card' || prod.type === 'digital' ? 'digital' : 'unfulfilled'
-      };
-      os.orders.unshift(order);
-      if (prod.stock != null && prod.type !== 'gift_card') {
-        prod.stock = Math.max(0, (Number(prod.stock) || 0) - oQty);
-      }
-      publishCommerce('emitOrderCreated', order);
-      root._josStoreOrderModal = false;
-      toast('Order ' + order.number + ' saved');
-      persistStoreOs();
-      return render();
+      toast('Discount codes arrive in a later Storefront phase.');
+      return;
     }
     if (act === 'store-settings-save') {
-      os.settings.enabled = ((el('jos-store-s-enabled') || {}).value || '1') === '1';
-      os.settings.showOnWebsite = ((el('jos-store-s-website') || {}).value || '1') === '1';
-      os.settings.storePath = (el('jos-store-s-path') || {}).value || '/store';
-      os.settings.heroTitle = (el('jos-store-s-hero') || {}).value || '';
-      os.settings.heroSubtitle = (el('jos-store-s-sub') || {}).value || '';
-      toast('Store settings saved');
-      persistStoreOs();
-      try {
-        if (typeof global.renderWebsite === 'function') global.renderWebsite();
-        if (typeof global.renderWebsitePreview === 'function') global.renderWebsitePreview();
-      } catch (eWs) {}
-      root._josStoreTab = 'overview';
-      return render();
+      var sapi = commerce();
+      if (!sapi) { toast('Commerce API not available'); return; }
+      var enabled = ((el('jos-store-s-enabled') || {}).value || '1') === '1';
+      var showWeb = ((el('jos-store-s-website') || {}).value || '1') === '1';
+      var patch = {
+        enabled: enabled,
+        storePath: (el('jos-store-s-path') || {}).value || '/store',
+        heroTitle: (el('jos-store-s-hero') || {}).value || '',
+        heroSubtitle: (el('jos-store-s-sub') || {}).value || '',
+        theme: { showOnWebsite: showWeb }
+      };
+      sapi.updateStoreSettings(patch).then(function (res) {
+        if (!res.ok || !res.data.settings) { toast((res && res.message) || 'Save failed'); return; }
+        view.settings = settingsToView(res.data.settings);
+        toast('Store settings saved');
+        root._josStoreTab = 'overview';
+        render();
+      });
+      return;
     }
     if (act === 'store-stock-inc' || act === 'store-stock-dec') {
-      var pid = t.getAttribute('data-jos-id');
-      var prod = productById(pid);
-      if (!prod || prod.stock == null) return;
+      var iapi = commerce();
+      var stockPid = t.getAttribute('data-jos-id');
+      var prod = productById(stockPid);
+      if (!iapi || !prod || prod.stock == null) return;
       var before = Number(prod.stock) || 0;
-      prod.stock = Math.max(0, before + (act === 'store-stock-inc' ? 1 : -1));
-      publishCommerce('emitInventoryChanged', {
-        productId: prod.id, before: before, after: prod.stock, reason: 'manual.adjust'
+      var after = Math.max(0, before + (act === 'store-stock-inc' ? 1 : -1));
+      if (after === before) return;
+      prod.stock = after; // optimistic
+      render();
+      iapi.updateProduct(stockPid, { inventory: after }).then(function (res) {
+        if (!res.ok || !res.data.product) {
+          prod.stock = before; // revert
+          toast((res && res.message) || 'Stock update failed');
+          render();
+          return;
+        }
+        var i = view.products.findIndex(function (p) { return p.id === stockPid; });
+        if (i >= 0) view.products[i] = productToView(res.data.product);
+        publishCommerce('emitInventoryChanged', { productId: stockPid, before: before, after: after, reason: 'manual.adjust' });
+        render();
       });
-      toast(prod.name + ' · ' + prod.stock + ' in stock');
-      persistStoreOs();
-      return render();
+      return;
     }
     if (act === 'store-import') {
-      toast('CSV import — POST /products/import when Commerce API is connected');
+      toast('CSV import — POST /products/import (owner UI coming in a later phase)');
       return;
     }
     if (act === 'store-export') {
       var lines = ['sku,name,status,price,stock'];
-      os.products.forEach(function (p) {
+      view.products.forEach(function (p) {
         lines.push([p.sku, p.name, p.status, p.price, p.stock == null ? '' : p.stock].join(','));
       });
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(lines.join('\n'));
       } catch (e) {}
-      toast('Exported ' + os.products.length + ' products');
+      toast('Exported ' + view.products.length + ' products');
     }
   }
 
@@ -835,6 +942,9 @@
       if (!actEl) return;
       var act = actEl.getAttribute('data-jos-act') || '';
       if (act.indexOf('store-') !== 0) return;
+      // The modal backdrop carries the close action; only close on a DIRECT backdrop
+      // click, never when the click bubbled up from a control inside the modal.
+      if (act === 'store-product-close' && actEl.classList.contains('jos-store-modal-backdrop') && e.target !== actEl) return;
       e.preventDefault();
       handleAct(act, actEl, root);
     });
@@ -862,12 +972,6 @@
         clearTimeout(root._josStoreSearchT);
         root._josStoreSearchT = setTimeout(function () { render(); }, 140);
       }
-      if (e.target && (e.target.id === 'jos-store-s-hero' || e.target.id === 'jos-store-s-sub' || e.target.id === 'jos-store-s-path')) {
-        var osLive = ensureStoreOsState();
-        if (e.target.id === 'jos-store-s-hero') osLive.settings.heroTitle = e.target.value;
-        if (e.target.id === 'jos-store-s-sub') osLive.settings.heroSubtitle = e.target.value;
-        if (e.target.id === 'jos-store-s-path') osLive.settings.storePath = e.target.value;
-      }
     });
     root.addEventListener('change', function (e) {
       if (e.target && e.target.id === 'jos-store-status') {
@@ -876,9 +980,8 @@
       }
     });
     root.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && (root._josStoreProductModal || root._josStoreOrderModal)) {
+      if (e.key === 'Escape' && root._josStoreProductModal) {
         root._josStoreProductModal = false;
-        root._josStoreOrderModal = false;
         render();
       }
     });
@@ -899,12 +1002,18 @@
       root.innerHTML = '<div class="jos-store-shell"><div class="jos-empty jos-error-state"><strong>Store could not load</strong><p class="jos-muted">Refresh and try again.</p><button type="button" class="jos-btn jos-btn-brand jos-btn-sm" data-jos-act="store-tab-products">Retry</button></div></div>';
       wireRoot(root);
     }
+    if (!view.loaded && !view.loading) {
+      loadStore().then(function () {
+        try { renderPage(root); wireRoot(root); } catch (e) {}
+      });
+    }
   }
 
   var api = {
     render: render,
     setMode: setStoreMode,
     ensureState: ensureStoreOsState,
+    reload: function () { return loadStore(true).then(render); },
     handleAct: function (act, elNode) {
       var root = el('jos-store-root');
       if (root) handleAct(act, elNode || document.body, root);
