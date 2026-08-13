@@ -161,7 +161,7 @@ const LEGACY_LAYOUT_DIRECTIONS = `- premium-dark ("Premium Dark") — upscale, m
 - garage-industrial ("Workshop Industrial") — rugged, industrial
 (Plus a few vertical-specific ones — estate-green for landscaping, crystal-pane for windows, rinse-force for pressure washing — offer these only when the business is actually that vertical.)`;
 
-type ConversationContextName = "dashboard" | "customer";
+type ConversationContextName = "dashboard" | "customer" | "operate";
 
 // Per docs/HUBLY_CONVERSATION_CONTEXT_MODEL.md Section 6: two enforcement
 // points, not one. This list is the prompt-level advertisement (used below
@@ -172,6 +172,9 @@ type ConversationContextName = "dashboard" | "customer";
 const CONTEXT_CAPABILITY_ALLOWLIST: Record<ConversationContextName, string[]> = {
   dashboard: ["website", "online_presence", "business"],
   customer: ["booking"],
+  // The authenticated owner operating their live business. First capability: storefront.
+  // Booking-config / marketplace / services will join this same context later.
+  operate: ["storefront"],
 };
 
 
@@ -292,6 +295,8 @@ function buildSystemPrompt(
       ? `You are Hubly — the AI concierge helping this business's customer, not the business owner. Your job is to understand what this customer needs, answer their questions honestly, and move them toward booking when they're ready. Never talk to them as if they were the business owner.
 
 If you don't have specific information about this business's services, pricing, hours, or policies, say so honestly instead of guessing — never invent details about the business you don't actually know.`
+      : context === "operate"
+      ? `You are Hubly, operating this business owner's live online Store for them. They talk to you in plain language — you make the real change to their catalog. Never require technical words like "SKU", "variant", or "publish status"; translate what they say into the right action. You are the same Hubly that also handles their website, booking, and business — but in this conversation your job is their Store, and only their Store.`
       : `You are Hubly — a conversational business partner, not a piece of software someone has to learn. You are the primary interface to the Hubly platform: every capability Hubly has should feel reachable by simply telling you what's needed, in plain conversation.
 
 You are general-purpose. You are not an onboarding wizard and you must not behave like one. People may open a conversation with you for many different reasons — "I need help with my business", "help me build a website", "I want more customers", "I need a storefront", "help me price my services", or anything else. Respond to what the person actually asked for. Never force a scripted sequence of questions.
@@ -304,6 +309,15 @@ YOU ARE IN A CREATIVE SESSION, NOT CONFIGURING SOFTWARE. "capability", "action",
     context === "customer"
       ? `LEARNING ABOUT THIS CUSTOMER
 The conversation may already know something before you say anything — a click on a specific service or package, or details from a returning customer. Only ask for what's still unknown; never re-ask something already established. If nothing is known yet, ask naturally what they're looking for.`
+      : context === "operate"
+      ? `OPERATING THE STORE
+You can: list what they're selling, create products, edit a product's name/price/description/stock, add and change variants (options like a "12-pack" or a "5 Gallon" size, each with its own price and stock), publish or hide products, organize products into collections, and turn the store on or set its headline.
+
+SAFE BY DEFAULT — never assume "sell it" means "publish it". A product you create starts as a hidden DRAFT that customers cannot see. Only publish it (create it live, or setProductVisibility) when the owner EXPLICITLY says to put it on their store / make it available / start selling it. If they just say "add a soap for $49.99", create the draft and tell them it's saved but hidden, and that you'll publish it whenever they're ready. If they say "add a $49.99 soap and put it on my store", create it live.
+
+NEVER GUESS WHICH ITEM. Before editing, publishing, hiding, or adding/changing a variant, know the exact catalog (listCatalog). If the name the owner used matches more than one product/collection/variant — or none — do NOT change anything: ask which one they mean, or say it doesn't exist and show what does. (The actions enforce this too, but ask naturally rather than letting an action bounce back.)
+
+When they ask what they're selling, list the catalog plainly. Keep replies short — the owner sees the result on screen, so a few words is usually enough; don't narrate machinery. Only the Store is yours to operate in this conversation — if they ask about their website, booking, customers, or anything else, say that lives in another part of Hubly and you'll help with it there; never pretend to change it here.`
       : `LEARNING ABOUT A BUSINESS
 Don't introduce Hubly capabilities, features, or a list of things you can help with until the person has described a real problem or goal in their own words — never infer one from their industry alone ("plumbing companies often need more calls" is not evidence; the person actually saying business is slow is).
 
@@ -349,7 +363,7 @@ NATURAL NEXT STEP — never a feature offer ("Would you like Booking? CRM? Revie
   // schema's fields) — skipped honestly for "customer" rather than run
   // against a schema it wasn't built for. See _shared/hubly_capability_knowledge_loader.ts.
   const capabilityKnowledgeBlock =
-    context === "customer"
+    context === "customer" || context === "operate"
       ? "(Not loaded for this context yet — Capability Knowledge selection is currently built against Business Understanding only.)"
       : buildCapabilityKnowledgePromptBlock(
           selectRelevantCapabilityKnowledge({
@@ -452,7 +466,8 @@ Deno.serve(async (req) => {
   // Which Understanding schema is active — the one thing that changes per
   // context. Defaults to "dashboard" so every existing caller (nothing sends
   // "context" yet) behaves exactly as before.
-  const context: ConversationContextName = body?.context === "customer" ? "customer" : "dashboard";
+  const context: ConversationContextName =
+    body?.context === "customer" ? "customer" : body?.context === "operate" ? "operate" : "dashboard";
   const adapter = getUnderstandingAdapter(context);
 
   // The deterministic opening needs no model call at all, so it must never
@@ -480,6 +495,37 @@ Deno.serve(async (req) => {
   // through, unused today. Adding it later means passing it into
   // HublyAI.chat({ memory, dna, ... }) below, not changing this contract.
   const businessId = body?.businessId ? String(body.businessId) : null;
+
+  // Operate context: the authenticated owner operating their own claimed business. Verify
+  // the owner's token AND that they own businessId before any storefront action can run.
+  // The token becomes the write credential the storefront handlers use against the
+  // owner-gated commerce-api — structural context, never shown to the model (same
+  // treatment as booking's businessId / business's draftToken).
+  let ownerToken: string | null = null;
+  if (context === "operate") {
+    const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+    const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+    const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+    if (!token || !businessId || !supabaseUrl || !serviceKey) {
+      return jsonRes({ ok: false, error: "This action needs you to be signed in to your business." }, 401);
+    }
+    const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { authorization: `Bearer ${token}`, apikey: serviceKey },
+    });
+    const userJson = await userRes.json().catch(() => null);
+    const userId = userRes.ok && userJson?.id ? String(userJson.id) : null;
+    if (!userId) return jsonRes({ ok: false, error: "You're not signed in." }, 401);
+    const bizRes = await fetch(
+      `${supabaseUrl}/rest/v1/businesses?id=eq.${encodeURIComponent(businessId)}&select=owner_id&limit=1`,
+      { headers: { authorization: `Bearer ${serviceKey}`, apikey: serviceKey } },
+    );
+    const bizRows = await bizRes.json().catch(() => null);
+    const ownerId = Array.isArray(bizRows) && bizRows[0] ? String(bizRows[0].owner_id || "") : "";
+    if (!ownerId || ownerId !== userId) {
+      return jsonRes({ ok: false, error: "You don't have access to this business's store." }, 403);
+    }
+    ownerToken = token;
+  }
 
   // Business in Progress — the real, unclaimed businesses row this
   // conversation may have already created via business.startDraft (see
@@ -721,6 +767,13 @@ Deno.serve(async (req) => {
           // unambiguously means a business's own website.
           dispatchArgs.bookingChannel = context === "customer" ? "website" : "marketplace";
         }
+        // Storefront actions run as the authenticated owner: inject the verified businessId
+        // and the owner's token (the write credential for commerce-api). Neither is ever
+        // shown to the model; _ownerToken is redacted from the actions log below.
+        if (capabilityName === "storefront" && businessId) {
+          dispatchArgs.businessId = businessId;
+          if (ownerToken) dispatchArgs._ownerToken = ownerToken;
+        }
         // Same treatment as booking's businessId above: the model never sees
         // the real draftId/draftToken, so it can never be trusted to
         // transcribe them — the engine injects the real ones whenever a
@@ -791,7 +844,13 @@ Deno.serve(async (req) => {
           // draftToken is a write credential, not display data — never echo
           // it back inside the actions log even though the client already
           // has it (draftBusiness below is the one legitimate place it travels).
-          args: dispatchArgs.draftToken ? { ...dispatchArgs, draftToken: "[redacted]" } : dispatchArgs,
+          args: (() => {
+            if (!dispatchArgs.draftToken && !dispatchArgs._ownerToken) return dispatchArgs;
+            const a: Record<string, unknown> = { ...dispatchArgs };
+            if (a.draftToken) a.draftToken = "[redacted]";
+            if (a._ownerToken) a._ownerToken = "[redacted]";
+            return a;
+          })(),
           ok: !!result.ok,
           real: !!result.real,
         });

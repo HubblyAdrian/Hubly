@@ -153,6 +153,82 @@ async function selectLatestBusinessDocument(businessId: string, tag: string): Pr
   return { version: rows[0].version, document: rows[0].document as HublyDocument };
 }
 
+// ── Storefront capability helpers ──────────────────────────────────────────
+// The owner operates their real Store through the AI. Every write goes through the
+// owner-gated Commerce API (commerce-api) authenticated AS THE OWNER — the exact same
+// endpoints the Store admin UI uses. Nothing here writes commerce tables directly, and
+// there is no second catalog/cart/checkout. The owner's access token + businessId are
+// injected by the engine (never seen or transcribed by the model), same discipline as
+// booking's businessId and business's draftToken.
+async function callCommerceApi(
+  ownerToken: string,
+  method: string,
+  path: string,
+  body?: Record<string, unknown>,
+): Promise<{ status: number; json: any }> {
+  const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+  const anon = (Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "").trim();
+  const headers: Record<string, string> = { "content-type": "application/json", authorization: `Bearer ${ownerToken}` };
+  if (anon) headers.apikey = anon;
+  const res = await fetch(`${supabaseUrl}/functions/v1/commerce-api${path}`, {
+    method,
+    headers,
+    body: body != null ? JSON.stringify(body) : undefined,
+  });
+  return { status: res.status, json: await res.json().catch(() => ({})) };
+}
+
+function sfNorm(s: unknown): string {
+  return String(s == null ? "" : s).trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/** Resolve a human name to exactly one item, or report ambiguity/absence — never guess.
+ *  An exact match still counts as ambiguous when a superset name exists (e.g. "Premium
+ *  Soap" when "Premium Soap 5 Gallon" also exists), so the model is forced to ask. */
+function sfResolveByName<T extends Record<string, unknown>>(
+  list: T[],
+  query: string,
+  nameKey = "name",
+): { item: T } | { ambiguous: string[] } | { none: true } {
+  const q = sfNorm(query);
+  if (!q) return { none: true };
+  const exact = list.filter((p) => sfNorm(p[nameKey]) === q);
+  const supersets = list.filter((p) => sfNorm(p[nameKey]) !== q && sfNorm(p[nameKey]).startsWith(q + " "));
+  if (exact.length === 1 && supersets.length === 0) return { item: exact[0] };
+  const contains = list.filter((p) => sfNorm(p[nameKey]).includes(q));
+  if (contains.length === 1) return { item: contains[0] };
+  const candidates = (contains.length ? contains : exact).map((p) => String(p[nameKey]));
+  if (!candidates.length) return { none: true };
+  return { ambiguous: candidates };
+}
+
+async function sfFetchProducts(ownerToken: string, businessId: string): Promise<any[]> {
+  const r = await callCommerceApi(ownerToken, "GET", `/products?business_id=${encodeURIComponent(businessId)}`);
+  return Array.isArray(r.json?.products) ? r.json.products : [];
+}
+async function sfFetchCollections(ownerToken: string, businessId: string): Promise<any[]> {
+  const r = await callCommerceApi(ownerToken, "GET", `/collections?business_id=${encodeURIComponent(businessId)}`);
+  return Array.isArray(r.json?.collections) ? r.json.collections : [];
+}
+async function sfFetchVariants(ownerToken: string, businessId: string, productId: string): Promise<any[]> {
+  const r = await callCommerceApi(ownerToken, "GET", `/products/${encodeURIComponent(productId)}/variants?business_id=${encodeURIComponent(businessId)}`);
+  return Array.isArray(r.json?.variants) ? r.json.variants : [];
+}
+
+/** Standard "owner context missing" guard for every storefront handler. */
+function sfOwnerCtx(args: Record<string, unknown>): { ownerToken: string; businessId: string } | null {
+  const ownerToken = String(args._ownerToken || "").trim();
+  const businessId = String(args.businessId || "").trim();
+  if (!ownerToken || !businessId) return null;
+  return { ownerToken, businessId };
+}
+const SF_NO_CTX: CapabilityActionResult = {
+  ok: false, real: false,
+  summary: "The Store isn't available in this conversation yet.",
+  error: "no_owner_context",
+};
+function sfDollars(n: unknown): number { return Number(n) || 0; }
+
 type UsageTotal = { promptTokens: number; completionTokens: number; reasoningTokens: number; calls: number };
 /** firstAttemptOk/firstAttemptErrors expose whether a retry was actually
  *  needed and, if so, the real validator errors that triggered it — the
@@ -1194,3 +1270,324 @@ export function buildCapabilitiesPromptBlock(registry: Capability[] = HUBLY_CAPA
     })
     .join("\n\n");
 }
+
+// Shared arg every storefront action carries: the engine injects the real businessId
+// (and, separately, the owner's token) before the handler runs — the model never sees or
+// needs the real value, same as booking's businessId / business's draftId.
+const sfBusinessIdArg = {
+  type: "string",
+  description: "Automatically supplied by the system before this runs — you do not know the real value and never need to. Put any placeholder here; do not decline to invoke just because you don't have a real id.",
+};
+
+// The Storefront capability — appended to the registry via push so the big literal above
+// stays readable. Every handler wraps the owner-gated Commerce API; none writes tables.
+HUBLY_CAPABILITY_REGISTRY.push({
+  name: "storefront",
+  description:
+    "Operate the business's real online Store — the products/supplies they sell to customers (distinct from their services/booking). List the catalog, create and edit products, add and edit variants (sizes/options with their own price and stock), publish or hide products, organize products into collections, and turn the store on or configure it. Everything here changes their real, live Commerce catalog through the same system the owner's Store screen uses.",
+  actions: [
+    {
+      name: "listCatalog",
+      description:
+        "Read the current Store: every product (with whether it's published/live or a draft, and its price) and every collection. Call this whenever the owner asks what they're selling, and BEFORE editing/publishing/hiding anything so you know the exact product/collection names and can tell if a name they used is ambiguous.",
+      argsSchema: { type: "object", properties: { businessId: sfBusinessIdArg }, required: [] },
+      handler: async (args) => {
+        const ctx = sfOwnerCtx(args);
+        if (!ctx) return SF_NO_CTX;
+        const [products, collections] = await Promise.all([
+          sfFetchProducts(ctx.ownerToken, ctx.businessId),
+          sfFetchCollections(ctx.ownerToken, ctx.businessId),
+        ]);
+        const lines = products.map((p) => {
+          const price = ((Number(p.price_cents) || 0) / 100).toFixed(2);
+          const live = p.status === "active" && (!(p.visibility) || p.visibility.website !== false);
+          return `${p.name} — $${price} — ${live ? "live on store" : "draft (hidden)"}`;
+        });
+        const summary = products.length
+          ? `Current products: ${lines.join("; ")}.` + (collections.length ? ` Collections: ${collections.map((c) => c.name).join(", ")}.` : "")
+          : "The store has no products yet.";
+        return { ok: true, real: true, summary, raw: { products, collections } };
+      },
+    },
+    {
+      name: "createProduct",
+      description:
+        "Create a new product in the Store. IMPORTANT: new products are created as a DRAFT that is NOT visible to customers, so an accidental product never appears on the store. Only pass makeAvailable:true when the owner EXPLICITLY says to publish/sell/make it available now (e.g. \"add a $49.99 soap and put it on my store\"); otherwise leave it a draft and tell them you can publish it when they're ready. Write a short real description yourself when it helps.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: sfBusinessIdArg,
+          name: { type: "string", description: "The product's real name, e.g. \"5-Gallon Car Wash Soap\"." },
+          price: { type: "number", description: "Price in dollars, e.g. 49.99." },
+          description: { type: "string", description: "A short real product description, if useful." },
+          type: { type: "string", description: "\"physical\" (default), \"digital\", or \"gift_card\". Omit for physical." },
+          inventory: { type: "number", description: "Starting stock quantity, if the owner gave one." },
+          category: { type: "string", description: "A category/label like \"Detailing supplies\", if natural." },
+          makeAvailable: { type: "boolean", description: "TRUE only when the owner explicitly wants it published/live now. Default/omit = create as a hidden draft." },
+        },
+        required: ["name"],
+      },
+      handler: async (args) => {
+        const ctx = sfOwnerCtx(args);
+        if (!ctx) return SF_NO_CTX;
+        const name = String(args.name || "").trim();
+        if (!name) return { ok: false, real: false, summary: "I need a name for the product.", error: "missing_name" };
+        const makeAvailable = args.makeAvailable === true;
+        const body: Record<string, unknown> = {
+          business_id: ctx.businessId,
+          name,
+          price: sfDollars(args.price),
+          type: args.type ? String(args.type) : "physical",
+          status: makeAvailable ? "active" : "draft",
+          visibility: { website: makeAvailable, booking: true, customerPortal: true, quoteBuilder: true, email: true, memberships: false },
+        };
+        if (args.description) body.description = String(args.description);
+        if (args.category) body.metadata = { category: String(args.category) };
+        if (args.inventory != null) body.inventory = Number(args.inventory);
+        const r = await callCommerceApi(ctx.ownerToken, "POST", "/products", body);
+        if (r.status === 201 && r.json?.product) {
+          return {
+            ok: true, real: true,
+            summary: makeAvailable
+              ? `Created "${name}" and published it — it's live on the store now.`
+              : `Created "${name}" as a hidden draft — it's not visible to customers yet. Tell me when you want it on your store and I'll publish it.`,
+            raw: { id: r.json.product.id, status: r.json.product.status },
+          };
+        }
+        return { ok: false, real: false, summary: "I couldn't create that product just now.", error: r.json?.error || `http_${r.status}` };
+      },
+    },
+    {
+      name: "updateProduct",
+      description:
+        "Change an existing product's details (name, price, description, stock, category). Identify it by the owner's words in productName. If that name matches more than one product, or none, this returns without changing anything and tells you — ask the owner which one; never guess.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: sfBusinessIdArg,
+          productName: { type: "string", description: "The product to change, in the owner's words." },
+          name: { type: "string", description: "New name, if renaming." },
+          price: { type: "number", description: "New price in dollars." },
+          description: { type: "string", description: "New description." },
+          inventory: { type: "number", description: "New stock quantity." },
+          category: { type: "string", description: "New category/label." },
+        },
+        required: ["productName"],
+      },
+      handler: async (args) => {
+        const ctx = sfOwnerCtx(args);
+        if (!ctx) return SF_NO_CTX;
+        const products = await sfFetchProducts(ctx.ownerToken, ctx.businessId);
+        const found = sfResolveByName(products, String(args.productName || ""));
+        if ("none" in found) return { ok: false, real: false, summary: `I couldn't find a product called "${args.productName}". You have: ${products.map((p) => p.name).join(", ") || "(none)"}.`, error: "not_found" };
+        if ("ambiguous" in found) return { ok: false, real: false, summary: `More than one product matches "${args.productName}": ${found.ambiguous.join(" and ")}. Which one?`, error: "ambiguous" };
+        const patch: Record<string, unknown> = { business_id: ctx.businessId };
+        if (args.name) patch.name = String(args.name);
+        if (args.price != null) patch.price = sfDollars(args.price);
+        if (args.description != null) patch.description = String(args.description);
+        if (args.inventory != null) patch.inventory = Number(args.inventory);
+        if (args.category != null) patch.metadata = { category: String(args.category) };
+        const r = await callCommerceApi(ctx.ownerToken, "PATCH", `/products/${found.item.id}`, patch);
+        if (r.status === 200 && r.json?.product) return { ok: true, real: true, summary: `Updated "${found.item.name}".`, raw: { id: found.item.id } };
+        return { ok: false, real: false, summary: "I couldn't update that product just now.", error: r.json?.error || `http_${r.status}` };
+      },
+    },
+    {
+      name: "setProductVisibility",
+      description:
+        "Publish or hide a product, and/or control whether it shows on the website/store. Use visible:true to publish (\"put it on my store\", \"start selling it\") and visible:false to hide (\"hide the old soap\", \"take it down\"). onWebsite specifically controls the website/store surface (\"put the towels on my website\"). Identify the product by productName; ambiguous/none returns without changing anything and asks.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: sfBusinessIdArg,
+          productName: { type: "string", description: "The product to publish or hide, in the owner's words." },
+          visible: { type: "boolean", description: "TRUE = publish/make live; FALSE = hide from customers." },
+          onWebsite: { type: "boolean", description: "Optional: specifically show (true) or hide (false) on the website/store surface. Defaults to match `visible`." },
+        },
+        required: ["productName", "visible"],
+      },
+      handler: async (args) => {
+        const ctx = sfOwnerCtx(args);
+        if (!ctx) return SF_NO_CTX;
+        const products = await sfFetchProducts(ctx.ownerToken, ctx.businessId);
+        const found = sfResolveByName(products, String(args.productName || ""));
+        if ("none" in found) return { ok: false, real: false, summary: `I couldn't find a product called "${args.productName}". You have: ${products.map((p) => p.name).join(", ") || "(none)"}.`, error: "not_found" };
+        if ("ambiguous" in found) return { ok: false, real: false, summary: `More than one product matches "${args.productName}": ${found.ambiguous.join(" and ")}. Which one?`, error: "ambiguous" };
+        const visible = args.visible === true;
+        const onWebsite = args.onWebsite === undefined ? visible : args.onWebsite === true;
+        const currentVis = (found.item.visibility && typeof found.item.visibility === "object") ? found.item.visibility : {};
+        const patch = {
+          business_id: ctx.businessId,
+          status: visible ? "active" : "draft",
+          visibility: { ...currentVis, website: onWebsite },
+        };
+        const r = await callCommerceApi(ctx.ownerToken, "PATCH", `/products/${found.item.id}`, patch);
+        if (r.status === 200 && r.json?.product) {
+          return { ok: true, real: true, summary: visible ? `"${found.item.name}" is now live on the store.` : `"${found.item.name}" is now hidden from customers.`, raw: { id: found.item.id } };
+        }
+        return { ok: false, real: false, summary: "I couldn't change that just now.", error: r.json?.error || `http_${r.status}` };
+      },
+    },
+    {
+      name: "addVariant",
+      description:
+        "Add a variant (a size/option with its own price and stock) to an existing product — e.g. a \"12-pack\" option, or a \"5 Gallon\" size. Identify the parent product by productName; ambiguous/none returns without changing anything and asks.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: sfBusinessIdArg,
+          productName: { type: "string", description: "The parent product, in the owner's words." },
+          variantName: { type: "string", description: "The variant/option name, e.g. \"12-pack\" or \"5 Gallon\"." },
+          price: { type: "number", description: "Variant price in dollars." },
+          inventory: { type: "number", description: "Variant stock quantity, if given." },
+        },
+        required: ["productName", "variantName"],
+      },
+      handler: async (args) => {
+        const ctx = sfOwnerCtx(args);
+        if (!ctx) return SF_NO_CTX;
+        const products = await sfFetchProducts(ctx.ownerToken, ctx.businessId);
+        const found = sfResolveByName(products, String(args.productName || ""));
+        if ("none" in found) return { ok: false, real: false, summary: `I couldn't find a product called "${args.productName}". You have: ${products.map((p) => p.name).join(", ") || "(none)"}.`, error: "not_found" };
+        if ("ambiguous" in found) return { ok: false, real: false, summary: `More than one product matches "${args.productName}": ${found.ambiguous.join(" and ")}. Which one?`, error: "ambiguous" };
+        const variantName = String(args.variantName || "").trim();
+        if (!variantName) return { ok: false, real: false, summary: "I need a name for the variant.", error: "missing_variant_name" };
+        const body: Record<string, unknown> = { business_id: ctx.businessId, name: variantName };
+        if (args.price != null) body.price = sfDollars(args.price);
+        if (args.inventory != null) body.inventory = Number(args.inventory);
+        const r = await callCommerceApi(ctx.ownerToken, "POST", `/products/${found.item.id}/variants`, body);
+        if (r.status === 201 && r.json?.variant) return { ok: true, real: true, summary: `Added the "${variantName}" option to "${found.item.name}".`, raw: { id: r.json.variant.id } };
+        return { ok: false, real: false, summary: "I couldn't add that variant just now.", error: r.json?.error || `http_${r.status}` };
+      },
+    },
+    {
+      name: "updateVariant",
+      description:
+        "Change an existing variant's price, stock, or name — e.g. \"change the 12-pack to $24.99\" — without recreating it. Identify the parent product by productName and the variant by variantName; ambiguity at either level returns without changing anything and asks.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: sfBusinessIdArg,
+          productName: { type: "string", description: "The parent product, in the owner's words." },
+          variantName: { type: "string", description: "The variant/option to change, e.g. \"12-pack\"." },
+          price: { type: "number", description: "New variant price in dollars." },
+          inventory: { type: "number", description: "New variant stock quantity." },
+          newName: { type: "string", description: "New variant name, if renaming." },
+        },
+        required: ["productName", "variantName"],
+      },
+      handler: async (args) => {
+        const ctx = sfOwnerCtx(args);
+        if (!ctx) return SF_NO_CTX;
+        const products = await sfFetchProducts(ctx.ownerToken, ctx.businessId);
+        const pf = sfResolveByName(products, String(args.productName || ""));
+        if ("none" in pf) return { ok: false, real: false, summary: `I couldn't find a product called "${args.productName}". You have: ${products.map((p) => p.name).join(", ") || "(none)"}.`, error: "not_found" };
+        if ("ambiguous" in pf) return { ok: false, real: false, summary: `More than one product matches "${args.productName}": ${pf.ambiguous.join(" and ")}. Which one?`, error: "ambiguous" };
+        const variants = await sfFetchVariants(ctx.ownerToken, ctx.businessId, pf.item.id);
+        const vf = sfResolveByName(variants, String(args.variantName || ""));
+        if ("none" in vf) return { ok: false, real: false, summary: `"${pf.item.name}" has no option called "${args.variantName}". Its options: ${variants.map((v) => v.name).join(", ") || "(none)"}.`, error: "variant_not_found" };
+        if ("ambiguous" in vf) return { ok: false, real: false, summary: `More than one option matches "${args.variantName}": ${vf.ambiguous.join(" and ")}. Which one?`, error: "ambiguous" };
+        const patch: Record<string, unknown> = { business_id: ctx.businessId };
+        if (args.price != null) patch.price = sfDollars(args.price);
+        if (args.inventory != null) patch.inventory = Number(args.inventory);
+        if (args.newName) patch.name = String(args.newName);
+        const r = await callCommerceApi(ctx.ownerToken, "PATCH", `/variants/${vf.item.id}`, patch);
+        if (r.status === 200 && r.json?.variant) return { ok: true, real: true, summary: `Updated the "${vf.item.name}" option on "${pf.item.name}".`, raw: { id: vf.item.id } };
+        return { ok: false, real: false, summary: "I couldn't update that variant just now.", error: r.json?.error || `http_${r.status}` };
+      },
+    },
+    {
+      name: "createCollection",
+      description:
+        "Create a collection to group products (e.g. \"Detailing Supplies\"). Use this before or alongside addProductsToCollection when the owner wants products organized under a named group.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: sfBusinessIdArg,
+          name: { type: "string", description: "The collection name, e.g. \"Detailing Supplies\"." },
+        },
+        required: ["name"],
+      },
+      handler: async (args) => {
+        const ctx = sfOwnerCtx(args);
+        if (!ctx) return SF_NO_CTX;
+        const name = String(args.name || "").trim();
+        if (!name) return { ok: false, real: false, summary: "I need a name for the collection.", error: "missing_name" };
+        const r = await callCommerceApi(ctx.ownerToken, "POST", "/collections", { business_id: ctx.businessId, name, published: true });
+        if (r.status === 201 && r.json?.collection) return { ok: true, real: true, summary: `Created the "${name}" collection.`, raw: { id: r.json.collection.id } };
+        return { ok: false, real: false, summary: "I couldn't create that collection just now.", error: r.json?.error || `http_${r.status}` };
+      },
+    },
+    {
+      name: "addProductsToCollection",
+      description:
+        "Put products into a collection. Identify the collection by collectionName. Either pass productNames (the specific products, in the owner's words) or allProducts:true for \"put all of them in\". Any product name that's ambiguous or missing stops the whole action and asks — never guess.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: sfBusinessIdArg,
+          collectionName: { type: "string", description: "The target collection, in the owner's words." },
+          productNames: { type: "string", description: "A comma-separated list of product names to add (in the owner's words). Omit if using allProducts." },
+          allProducts: { type: "boolean", description: "TRUE to add every product in the store to the collection." },
+        },
+        required: ["collectionName"],
+      },
+      handler: async (args) => {
+        const ctx = sfOwnerCtx(args);
+        if (!ctx) return SF_NO_CTX;
+        const collections = await sfFetchCollections(ctx.ownerToken, ctx.businessId);
+        const cf = sfResolveByName(collections, String(args.collectionName || ""));
+        if ("none" in cf) return { ok: false, real: false, summary: `I couldn't find a collection called "${args.collectionName}". You have: ${collections.map((c) => c.name).join(", ") || "(none)"}.`, error: "not_found" };
+        if ("ambiguous" in cf) return { ok: false, real: false, summary: `More than one collection matches "${args.collectionName}": ${cf.ambiguous.join(" and ")}. Which one?`, error: "ambiguous" };
+        const products = await sfFetchProducts(ctx.ownerToken, ctx.businessId);
+        let ids: string[] = [];
+        if (args.allProducts === true) {
+          ids = products.map((p) => p.id);
+        } else {
+          const names = String(args.productNames || "").split(",").map((s) => s.trim()).filter(Boolean);
+          if (!names.length) return { ok: false, real: false, summary: "Which products should go in the collection?", error: "no_products" };
+          for (const nm of names) {
+            const pf = sfResolveByName(products, nm);
+            if ("none" in pf) return { ok: false, real: false, summary: `I couldn't find a product called "${nm}". Nothing was changed. You have: ${products.map((p) => p.name).join(", ") || "(none)"}.`, error: "not_found" };
+            if ("ambiguous" in pf) return { ok: false, real: false, summary: `"${nm}" matches more than one product: ${pf.ambiguous.join(" and ")}. Which one? Nothing was changed.`, error: "ambiguous" };
+            ids.push(pf.item.id);
+          }
+        }
+        if (!ids.length) return { ok: false, real: false, summary: "There are no products to add yet.", error: "no_products" };
+        const r = await callCommerceApi(ctx.ownerToken, "POST", `/collections/${cf.item.id}/products`, { business_id: ctx.businessId, product_ids: ids });
+        if (r.status === 200) return { ok: true, real: true, summary: `Added ${ids.length} product${ids.length === 1 ? "" : "s"} to "${cf.item.name}".`, raw: { collectionId: cf.item.id, count: ids.length } };
+        return { ok: false, real: false, summary: "I couldn't update that collection just now.", error: r.json?.error || `http_${r.status}` };
+      },
+    },
+    {
+      name: "configureStore",
+      description:
+        "Turn the store on/off or set its headline text. Use enabled:true when the owner wants to start selling (\"I want to start selling supplies\", \"turn on my store\"). heroTitle/heroSubtitle set the store's headline copy.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: sfBusinessIdArg,
+          enabled: { type: "boolean", description: "TRUE to turn the store on, FALSE to turn it off." },
+          heroTitle: { type: "string", description: "Store headline, e.g. \"Detailing Supplies\"." },
+          heroSubtitle: { type: "string", description: "Store subheadline." },
+        },
+        required: [],
+      },
+      handler: async (args) => {
+        const ctx = sfOwnerCtx(args);
+        if (!ctx) return SF_NO_CTX;
+        const patch: Record<string, unknown> = { business_id: ctx.businessId };
+        if (args.enabled !== undefined) patch.enabled = args.enabled === true;
+        if (args.heroTitle != null) patch.heroTitle = String(args.heroTitle);
+        if (args.heroSubtitle != null) patch.heroSubtitle = String(args.heroSubtitle);
+        if (Object.keys(patch).length === 1) return { ok: false, real: false, summary: "What would you like to change about the store?", error: "no_change" };
+        const r = await callCommerceApi(ctx.ownerToken, "PATCH", "/settings", patch);
+        if (r.status === 200 && r.json?.settings) {
+          const on = r.json.settings.enabled !== false;
+          return { ok: true, real: true, summary: args.enabled !== undefined ? (on ? "Your store is on." : "Your store is turned off.") : "Updated your store settings.", raw: {} };
+        }
+        return { ok: false, real: false, summary: "I couldn't update the store settings just now.", error: r.json?.error || `http_${r.status}` };
+      },
+    },
+  ],
+});
