@@ -12,6 +12,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getBusinessMeta } from "./hubly_business_meta.ts";
 import { notifyBookingCreated } from "./booking_notifications.ts";
 import { syncEnginePushCreate } from "./google_calendar_sync_engine.ts";
+import { resolveOrCreateCrmCustomer } from "./crm_customer.ts";
 import {
   getAvailability,
   listAppointmentSlots,
@@ -195,14 +196,20 @@ function confirmationCode(): string {
 function whatHappensNext(status: BookingStatus, instant: boolean, payment: PaymentSummary): string {
   if (status === "confirmed") {
     if (payment.requires_checkout && payment.charge_now_cents > 0) {
-      return "Your appointment is confirmed. Complete payment to lock it in — you’ll get a receipt by email.";
+      // Stripe genuinely emails a receipt on a completed checkout, so this
+      // claim is real; everything else here states only what actually happens.
+      return "Your appointment is confirmed. Complete payment to lock it in — Stripe will email your receipt.";
     }
-    return "You’re all set. The provider has your appointment on their calendar. We’ll remind you before it starts.";
+    // Honesty: Hubly has no reminder scheduler today, so don't promise one.
+    return "You’re all set. The provider has your appointment on their calendar.";
   }
   if (instant) {
     return "Your booking is confirmed. The provider will see it immediately.";
   }
-  return "Your booking request was sent. The provider will accept or decline shortly — you’ll be notified either way.";
+  // Honesty: there's no guaranteed notification channel for the customer on
+  // accept/decline (email is best-effort and only when provided), so state
+  // only that the provider will review it.
+  return "Your booking request was sent. The provider will review it and confirm the appointment.";
 }
 
 function parseHmFromIso(iso: string): { date: string; time: string } {
@@ -368,23 +375,47 @@ async function reserveCalendarJob(
     customerEmail: string | null;
     customerPhone: string | null;
     serviceName: string;
+    // Marketplace -> CRM convergence: the real Service Engine service id
+    // (the same id the marketplace_bookings row already carries), so the
+    // canonical job carries service_id, not just a service_name string.
+    serviceId?: string | null;
     startsAt: string;
     durationMinutes: number;
     address: string | null;
     notes: string | null;
     status: "scheduled" | "pending";
   },
-): Promise<string | null> {
+): Promise<{ jobId: string; crmCustomerId: string | null } | null> {
   const { date, time } = parseHmFromIso(opts.startsAt);
+  // Resolve/create the canonical CRM customer through the one shared
+  // resolver (phone -> email -> name -> create), so the Marketplace job
+  // carries a real customer_id and the customer joins the CRM graph. A
+  // resolution failure is non-fatal: the job is still created (name/phone/
+  // email preserved), it just won't have the CRM link — never blocks a
+  // real booking on a customer-resolution hiccup.
+  let crmCustomerId: string | null = null;
+  try {
+    const { customer } = await resolveOrCreateCrmCustomer(admin, opts.businessId, {
+      name: opts.customerName,
+      phone: opts.customerPhone,
+      email: opts.customerEmail,
+      address: opts.address,
+    });
+    if (customer?.id) crmCustomerId = String(customer.id);
+  } catch (e) {
+    console.warn("booking_engine resolve crm customer", e);
+  }
   try {
     const { data, error } = await admin
       .from("jobs")
       .insert({
         business_id: opts.businessId,
+        customer_id: crmCustomerId,
         customer_name: opts.customerName,
         email: opts.customerEmail,
         phone: opts.customerPhone,
         service_name: opts.serviceName,
+        service_id: opts.serviceId || null,
         scheduled_date: date,
         scheduled_time: time,
         duration_hours: opts.durationMinutes / 60,
@@ -399,7 +430,7 @@ async function reserveCalendarJob(
       console.warn("booking_engine reserve job", error.message);
       return null;
     }
-    return data?.id ? String(data.id) : null;
+    return data?.id ? { jobId: String(data.id), crmCustomerId } : null;
   } catch (e) {
     console.warn("booking_engine reserve job", e);
     return null;
@@ -608,24 +639,38 @@ export async function createBooking(
   // on marketplace_bookings directly (status in requested/confirmed/
   // in_progress), independent of whether a jobs row exists yet.
   if (instant) {
-    const jobId = await reserveCalendarJob(admin, {
+    const reserved = await reserveCalendarJob(admin, {
       businessId,
       customerName,
       customerEmail: row.customer_email,
       customerPhone: row.customer_phone,
       serviceName: service.name,
+      serviceId: service.id,
       startsAt,
       durationMinutes: service.duration_minutes,
       address: row.address,
       notes: row.notes,
       status: "scheduled",
     });
+    const jobId = reserved?.jobId || null;
     if (jobId) {
       await admin.from("marketplace_bookings").update({
         job_id: jobId,
         updated_at: new Date().toISOString(),
       }).eq("id", booking.id);
       booking.job_id = jobId;
+
+      // Convergence: persist the CRM customer this booking resolved to onto
+      // the lightweight marketplace_customers row, so it points at the
+      // canonical identity instead of being a parallel silo. Best-effort.
+      if (reserved?.crmCustomerId && customerId) {
+        try {
+          await admin.from("marketplace_customers").update({
+            crm_customer_id: reserved.crmCustomerId,
+            updated_at: new Date().toISOString(),
+          }).eq("id", customerId);
+        } catch (_e) { /* no-op — bridge is best-effort, never blocks the booking */ }
+      }
 
       // Push to Google Calendar when Instant Book confirms (best-effort)
       try {
@@ -805,21 +850,36 @@ export async function transitionBooking(
       }
     }
   } else if (opts.to === "confirmed" && booking.starts_at) {
-    const jobId = await reserveCalendarJob(admin, {
+    // Request-mode acceptance: the canonical CRM customer + job are created
+    // now, at accept time (request-mode intentionally has no job before
+    // this). Same canonical linkage (customer_id + service_id) as Instant
+    // Book — booking.service_id is the real Service Engine id already stored
+    // on the marketplace_bookings row.
+    const reserved = await reserveCalendarJob(admin, {
       businessId: opts.business_id,
       customerName: String(booking.customer_name || "Customer"),
       customerEmail: booking.customer_email ? String(booking.customer_email) : null,
       customerPhone: booking.customer_phone ? String(booking.customer_phone) : null,
       serviceName: String(booking.service_name || "Service"),
+      serviceId: booking.service_id ? String(booking.service_id) : null,
       startsAt: String(booking.starts_at),
       durationMinutes: Number(booking.duration_minutes) || 120,
       address: booking.address ? String(booking.address) : null,
       notes: booking.notes ? String(booking.notes) : null,
       status: "scheduled",
     });
+    const jobId = reserved?.jobId || null;
     if (jobId) {
       await admin.from("marketplace_bookings").update({ job_id: jobId }).eq("id", booking.id);
       updated.job_id = jobId;
+      if (reserved?.crmCustomerId && booking.customer_id) {
+        try {
+          await admin.from("marketplace_customers").update({
+            crm_customer_id: reserved.crmCustomerId,
+            updated_at: new Date().toISOString(),
+          }).eq("id", String(booking.customer_id));
+        } catch (_e) { /* no-op — bridge is best-effort */ }
+      }
       try {
         await syncEnginePushCreate(admin, { businessId: opts.business_id, jobId });
       } catch (_) { /* best-effort */ }

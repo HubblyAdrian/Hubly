@@ -24,6 +24,7 @@ import { computeNextOccurrenceDate, VALID_FREQUENCIES, type RecurringFrequency }
 import { getCustomerMembership, type CustomerMembership } from "./customer_membership.ts";
 import { notifyBookingCreated } from "./booking_notifications.ts";
 import { buildPortalUrl, issuePortalAccessToken } from "./portal_access.ts";
+import { resolveOrCreateCrmCustomer } from "./crm_customer.ts";
 
 type DayHours = { open: string; close: string; closed: boolean };
 
@@ -216,51 +217,17 @@ export async function createWebsiteBookingJob(
 
   // Match precedence mirrors findExistingCustomerMatch(): phone, then
   // email, then name — scoped to this business, real customers table only.
-  let customer: Record<string, unknown> | null = null;
+  // Extracted into the shared resolveOrCreateCrmCustomer() so the Marketplace
+  // booking path uses the exact same one implementation (behavior-identical
+  // to the previous inline block — same precedence, same insert shape).
   const digits = phone.replace(/\D/g, "").slice(-10);
-  if (digits.length >= 7) {
-    const { data } = await admin
-      .from("customers")
-      .select("*")
-      .eq("business_id", input.businessId);
-    customer =
-      (data || []).find(
-        (c: Record<string, unknown>) => String(c.phone || "").replace(/\D/g, "").slice(-10) === digits,
-      ) || null;
-  }
-  if (!customer && email) {
-    const { data } = await admin
-      .from("customers")
-      .select("*")
-      .eq("business_id", input.businessId)
-      .ilike("email", email)
-      .maybeSingle();
-    customer = data || null;
-  }
-  if (!customer && name) {
-    const { data } = await admin
-      .from("customers")
-      .select("*")
-      .eq("business_id", input.businessId)
-      .ilike("name", name)
-      .maybeSingle();
-    customer = data || null;
-  }
-  if (!customer) {
-    const { data: inserted, error: custErr } = await admin
-      .from("customers")
-      .insert({
-        business_id: input.businessId,
-        name,
-        phone: phone || null,
-        email: email || null,
-        customer_type: "one_off",
-      })
-      .select()
-      .single();
-    if (custErr || !inserted) return { ok: false, error: custErr?.message || "customer_create_failed" };
-    customer = inserted;
-  }
+  const { customer, error: custErr } = await resolveOrCreateCrmCustomer(admin, input.businessId, {
+    name,
+    phone,
+    email,
+    address: input.address,
+  });
+  if (custErr || !customer) return { ok: false, error: custErr || "customer_create_failed" };
   // Every branch above either returns early or assigns a real row —
   // customer is never null past this point (TS can't see that across the
   // reassignments above, hence the explicit assertion).
