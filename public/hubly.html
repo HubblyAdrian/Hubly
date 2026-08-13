@@ -11616,10 +11616,15 @@ document.addEventListener('DOMContentLoaded', function() {
           <!-- Left Settings: Business · Website · Booking · Integrations -->
           <aside class="ed-settings-rail" id="ed-settings-rail" aria-label="Website editor menu">
             <div class="ed-settings-rail-head">
-              <strong>Website</strong>
-              <button type="button" class="ed-settings-rail-close" onclick="closeEdSettingsRail()" aria-label="Collapse website menu" title="Collapse menu">‹</button>
+              <strong>Builder</strong>
+              <button type="button" class="ed-settings-rail-close" onclick="closeEdSettingsRail()" aria-label="Collapse builder menu" title="Collapse menu">‹</button>
             </div>
             <nav class="ed-settings-rail-nav" id="ed-settings-rail-nav">
+              <div class="ed-settings-group" id="ed-settings-group-build">
+                <div class="ed-settings-group-label">Build</div>
+                <button type="button" class="ed-settings-item" data-ed-nav="site" onclick="goEdSettingsNav('site')">🌐 Website</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="store" data-ed-kind="storefront" onclick="goEdSettingsNav('store')">🛍️ Store</button>
+              </div>
               <div class="ed-settings-group">
                 <div class="ed-settings-group-label">Business</div>
                 <button type="button" class="ed-settings-item" data-ed-nav="packages" onclick="goEdSettingsNav('packages')">Packages</button>
@@ -13085,7 +13090,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/ai/merchandising.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/index.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/storefront-cart.js?v=commerce-3"></script>
-<script defer src="/journey-os/commerce/store-page.js?v=commerce-3"></script>
+<script defer src="/journey-os/commerce/storefront-ast.js?v=commerce-1"></script>
+<script defer src="/journey-os/commerce/store-page.js?v=commerce-4"></script>
 <script defer src="/journey-os/journey.js?v=20260808025356"></script>
 <script defer src="/journey-os/store-commerce.js?v=store-3"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
@@ -15001,6 +15007,9 @@ function buildBizMeta(){
     servicesDraft:!!(S._servicesDraft||(S._is&&S._is.servicesMode&&S._is.servicesMode!=='now')),
     pipeline:ensurePipelineState(),
     storeOs:S.storeOs&&typeof S.storeOs==='object'?S.storeOs:null,
+    // Storefront presentation AST — independent from meta.website. Holds only layout/theme/copy
+    // and Commerce id references, never product data. Powers /store and the Builder store preview.
+    storefront:S.storefront&&typeof S.storefront==='object'?S.storefront:null,
     studioOs:S.studioOs&&typeof S.studioOs==='object'?S.studioOs:null,
   };
 }
@@ -15061,6 +15070,7 @@ function applyBizMeta(meta){
   if(meta.headerMode)S.headerMode=meta.headerMode;
   if(meta.website)S.website=meta.website;
   if(meta.storeOs&&typeof meta.storeOs==='object')S.storeOs=meta.storeOs;
+  if(meta.storefront&&typeof meta.storefront==='object')S.storefront=meta.storefront;
   if(meta.studioOs&&typeof meta.studioOs==='object')S.studioOs=meta.studioOs;
   if(meta.galleryPairs)S.galleryPairs=meta.galleryPairs;
   if(meta.ownerUploadedMedia!=null)S._ownerUploadedMedia=!!meta.ownerUploadedMedia;
@@ -17181,15 +17191,22 @@ async function loadPublicProfile(slug){
   }
   currentBusiness=data;
   // Dedicated shareable Storefront route: <slug>.myhubly.app/store — render the standalone
-  // store (Commerce public API) instead of the website, and stop. Same products/availability
-  // as the website Store embed; never touches S.storeOs.
-  if(isStoreRoutePath()){
+  // store (Commerce public API) from the saved Storefront AST (meta.storefront), instead of the
+  // website, and stop. Same products/availability as the website Store embed; never touches S.storeOs.
+  // Storefront-only businesses (capabilities.storefront, no website) also render the store at "/",
+  // making the Store their entire public web presence — no traditional website required.
+  const pubCaps=(data.capabilities&&typeof data.capabilities==='object')?data.capabilities:{};
+  const storefrontOnly=pubCaps.storefront===true&&pubCaps.website!==true;
+  if(isStoreRoutePath()||storefrontOnly){
     try{document.documentElement.classList.remove('hubly-public-boot');document.documentElement.classList.add('hubly-public-site');document.documentElement.setAttribute('data-theme','day');}catch(e){}
     showP('p-store');
+    let storefrontAst=null;
+    try{const m=parseBizMeta(data.meta);storefrontAst=(m&&m.storefront)||null;}catch(e){}
     if(window.HublyStorePage&&typeof window.HublyStorePage.open==='function'){
       window.HublyStorePage.open({
         businessId:data.id,
         business:{name:data.name||'',logoUrl:data.logo_url||null,brandColor:data.brand_color||'#D9632D',slug:data.slug||slug},
+        ast:storefrontAst,
         container:document.getElementById('hub-store-page-root')
       });
     }
@@ -17947,6 +17964,23 @@ async function ensureProjectsCapabilityOnBusiness(){
     syncPhotographyProjectsNav();
     try{window.dispatchEvent(new CustomEvent('hubly:business-loaded'));}catch(e){}
   }catch(e){console.warn('ensureProjectsCapabilityOnBusiness',e);}
+}
+/** Mark this business as having a Storefront (capabilities.storefront) the first time the owner
+ *  builds one. Merges — never clobbers marketplace/projects/etc. Also asserts website=true unless
+ *  the owner is explicitly storefront-only, so existing businesses keep their Website. */
+async function ensureStorefrontCapabilityOnBusiness(){
+  try{
+    if(!currentBusiness?.id)return;
+    const caps=Object.assign({},currentBusiness.capabilities||S.capabilities||{});
+    let dirty=false;
+    if(caps.storefront!==true){caps.storefront=true;dirty=true;}
+    if(caps.website!==true&&caps.storefrontOnly!==true){caps.website=true;dirty=true;}
+    if(!dirty)return;
+    S.capabilities=caps;
+    currentBusiness.capabilities=caps;
+    const db=typeof getDb==='function'?getDb():null;
+    if(db)await db.from('businesses').update({capabilities:caps}).eq('id',currentBusiness.id);
+  }catch(e){console.warn('ensureStorefrontCapabilityOnBusiness',e);}
 }
 function getObServiceCatalog(){
   if(typeof HublyBlueprints!=='undefined'){
@@ -29196,6 +29230,15 @@ function goEdSettingsNav(nav){
     syncEdSettingsRail('');
     return;
   }
+  if(id==='store'){
+    try{S._edHubKeepTab=true;S._edHubTab='store';S._edPendingSheet='';}catch(e){}
+    try{closeEdSheet();}catch(e){}
+    if(typeof isEditorViewOpen==='function'&&isEditorViewOpen()){
+      switchWebsiteHubTab('store');
+    }else openWebsiteEditorHub('store');
+    syncEdSettingsRail('store');
+    return;
+  }
   if(id==='styles'||id==='design'){openFocused('layout');return;}
   if(id==='brand'){openFocused('layout');return;}
   if(id==='ai'){openFocused('ai');return;}
@@ -29339,7 +29382,7 @@ function openWebsiteEditorHub(tab){
 }
 
 function switchWebsiteHubTab(tab){
-  const t=tab==='packages'||tab==='book'||tab==='quote'?tab:'site';
+  const t=['packages','book','quote','store'].includes(tab)?tab:'site';
   try{if(window.S)S._edHubTab=t;}catch(e){}
   // Always clear the Styles overlay first so hub tabs never look "dead".
   try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
@@ -29355,6 +29398,7 @@ function switchWebsiteHubTab(tab){
       if(t==='book')bar.textContent='Website editor · Book Now';
       else if(t==='quote')bar.textContent='Website editor · Questions';
       else if(t==='packages')bar.textContent='Website editor · Packages';
+      else if(t==='store')bar.textContent='Hubly Builder · Store';
       else bar.textContent=(typeof window.t==='function'?window.t('myStorefront'):'Website editor');
     }
     if(sub)sub.textContent='Edit your site, packages, and Book Now.';
@@ -29391,6 +29435,11 @@ function switchWebsiteHubTab(tab){
   if(t==='site'){
     try{forceEdSiteCanvasVisible();}catch(e){}
     try{renderWebsitePreview();}catch(e){console.warn('Site hub preview',e);}
+  }else if(t==='store'){
+    // Store surface: same canvas + device toggle as the Website, but the preview is the
+    // standalone Storefront rendered from S.storefront (the exact /store renderer).
+    try{forceEdSiteCanvasVisible();}catch(e){}
+    try{renderEdStorefrontPreview();}catch(e){console.warn('Store hub preview',e);}
   }else if(t==='packages'){
     try{ensureTradeEditorChrome();}catch(e){}
     try{
@@ -36564,6 +36613,65 @@ function edAiChip(text){
   if(inp)inp.value=text;
   edAiSend();
 }
+/** Drop the transient "Working on your store…" line from the visible log. */
+function edStorePopThinking(){
+  try{
+    const m=S._edAi&&S._edAi.messages;
+    if(m&&m.length&&m[m.length-1].text==='Working on your store…'){m.pop();edAiRenderLog();}
+  }catch(e){}
+}
+/**
+ * Store-surface AI send. Reuses the editor's AI panel + chat log, but routes to the proven
+ * hubly-conversation (operate) engine: it generates/patches the Storefront AST, we apply it to
+ * S.storefront, re-render the SAME preview /store uses, and autosave. Commerce stays the SSOT —
+ * the AST only ever holds ids/refs, never product data.
+ */
+async function edStoreAiSend(text){
+  const sendBtn=document.getElementById('ed-ai-send');
+  if(S._edStoreAiSending)return;
+  S._edStoreAiSending=true;
+  edAiPush('owner',text);
+  if(sendBtn){sendBtn.disabled=true;sendBtn.textContent='…';}
+  edAiPush('hubly','Working on your store…');
+  try{
+    const cb=(typeof currentBusiness!=='undefined'&&currentBusiness)?currentBusiness:{};
+    if(!cb.id){edStorePopThinking();edAiPush('hubly','Save your business first, then I can build the store.');return;}
+    const dbClient=await waitForDb();
+    const hist=(S._edStoreAi&&Array.isArray(S._edStoreAi.messages))?S._edStoreAi.messages.slice(-16):[];
+    hist.push({role:'user',content:text});
+    const accent=(S.storefront&&S.storefront.theme&&S.storefront.theme.accent)||cb.brand_color||'';
+    const body={
+      context:'operate',
+      businessId:cb.id,
+      messages:hist,
+      understanding:{},
+      storeContext:{businessName:cb.name||'',accent:accent}
+    };
+    if(S&&S.storefront)body.storefrontState=S.storefront;
+    const {data,error}=await dbClient.functions.invoke('hubly-conversation',{body});
+    edStorePopThinking();
+    if(error||!data||data.ok===false){
+      console.warn('edStoreAiSend',error||data);
+      edAiPush('hubly','Couldn’t reach the Store AI just now — try again in a moment.');
+      return;
+    }
+    S._edStoreAi={messages:Array.isArray(data.messages)?data.messages:hist};
+    if(data.storefrontAst){
+      S.storefront=data.storefrontAst;
+      try{renderEdStorefrontPreview();}catch(e){}
+      try{ensureStorefrontCapabilityOnBusiness();}catch(e){}
+      try{scheduleWebsitePersist({reason:'storefront-ai'});}catch(e){}
+    }
+    edAiPush('hubly',String(data.reply||'').trim()||'Updated your store — take a look at the preview.');
+  }catch(e){
+    edStorePopThinking();
+    console.warn('edStoreAiSend failed',e);
+    edAiPush('hubly','Something went wrong updating the store — try again.');
+  }finally{
+    S._edStoreAiSending=false;
+    if(sendBtn){sendBtn.disabled=false;sendBtn.textContent='Ask AI';}
+  }
+}
 async function edAiInvokeClaude(text,opts={}){
   try{
     const dbClient=await waitForDb();
@@ -36631,6 +36739,9 @@ async function edAiSend(){
   const sendBtn=document.getElementById('ed-ai-send');
   const text=(inp?.value||'').trim();
   if(!text){toast('Type what you want changed');return;}
+  // Store surface: the SAME AI panel drives the Storefront via hubly-conversation (operate),
+  // not creative-director. One conversation model, different capabilities per surface.
+  if(window.S&&S._edHubTab==='store'){if(inp)inp.value='';return edStoreAiSend(text);}
   if(S._edAiSending)return;
   S._edAiSending=true;
   if(inp)inp.value='';
@@ -38428,6 +38539,27 @@ function renderWsStoreSection(prefix){
     const n=nav&&nav.querySelector('a[href="#ws-sec-store"]');
     if(n)n.style.display='none';
   };
+  // Product rule: the Storefront is NOT embedded in the Website by default. When a business uses
+  // the Storefront Builder (capabilities.storefront), the Website instead gets a "Store" nav item
+  // that links OUT to the standalone /store — the store keeps its own design/URL/publishing.
+  const caps=(currentBusiness&&currentBusiness.capabilities&&typeof currentBusiness.capabilities==='object')?currentBusiness.capabilities:{};
+  if(caps.storefront===true){
+    hideSection(); // never embed the storefront as a website section
+    if(nav){
+      let storeLink=nav.querySelector('a[data-ws-store-link="1"]');
+      if(!storeLink){
+        storeLink=document.createElement('a');
+        storeLink.setAttribute('data-ws-store-link','1');
+        storeLink.href='/store';
+        storeLink.textContent='Store';
+        const after=nav.querySelector('a[href="#ws-sec-services"]');
+        if(after&&after.nextSibling)nav.insertBefore(storeLink,after.nextSibling);
+        else nav.appendChild(storeLink);
+      }
+      storeLink.style.display='';
+    }
+    return;
+  }
   if(!bizId||!sf||typeof sf.loadPublic!=='function'){hideSection();return;}
   const token=(renderWsStoreSection._token=(renderWsStoreSection._token||0)+1);
   sf.loadPublic(bizId).then(function(os){
@@ -38647,8 +38779,33 @@ function onWebsiteFieldChange(){
   renderWebsitePreview();
   try{scheduleWebsitePersist({delay:1100});}catch(e){}
 }
+/** Store surface preview — renders S.storefront with the SAME renderer /store uses, into the
+ *  same #ed-ws-preview canvas as the Website. This is the "preview == published /store" guarantee. */
+function renderEdStorefrontPreview(){
+  try{applyEdPreviewDeviceShowOnly();}catch(e){}
+  const dest=document.getElementById('ed-ws-preview');
+  if(!dest)return;
+  const SP=window.HublyStorePage;
+  if(!SP||typeof SP.renderInto!=='function'){
+    dest.innerHTML='<div style="padding:44px 24px;text-align:center;color:#64748b;">Store preview is still loading — try again in a second.</div>';
+    return;
+  }
+  const cb=(typeof currentBusiness!=='undefined'&&currentBusiness)?currentBusiness:{};
+  const brand={
+    name:cb.name||S.bizName||'',
+    logoUrl:cb.logo_url||S.logoUrl||'',
+    brandColor:cb.brand_color||S.brandColor||'#D9632D',
+    slug:cb.slug||''
+  };
+  try{
+    SP.renderInto(dest,{ast:(S&&S.storefront)||null,businessId:cb.id||S.businessId,brand:brand});
+  }catch(e){console.warn('renderEdStorefrontPreview',e);}
+}
+
 function renderWebsitePreview(){
   try{applyEdPreviewDeviceShowOnly();}catch(e){}
+  // Leaving the Store surface: drop the store class so its scoped CSS never bleeds into the site.
+  try{document.getElementById('ed-ws-preview')?.classList.remove('hub-store-page');}catch(e){}
   try{
     renderWebsite();
     updateEdSiteUrlBar();
