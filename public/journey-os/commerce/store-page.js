@@ -63,6 +63,27 @@
       '.sp-cta .sp-cta-btn{background:var(--sp-brand);color:#fff;border:0;border-radius:999px;padding:11px 24px;font-weight:700;font-size:15px;cursor:pointer;}' +
       '.sp-foot{padding:28px 20px;border-top:1px solid #E6E8EC;color:#8a9099;font-size:14px;margin-top:24px;}' +
       '.sp-empty-mini{color:#8a9099;font-size:14px;padding:8px 0;}' +
+      // productSpotlight — one hero product; "split" = image beside copy+card.
+      '.sp-spotlight{padding:26px 20px;}' +
+      '.sp-spotlight-wrap{display:grid;grid-template-columns:1fr;gap:20px;align-items:center;}' +
+      '.sp-spotlight--split .sp-spotlight-wrap{grid-template-columns:1fr 1fr;}' +
+      '.sp-spotlight-media{aspect-ratio:4/3;background:#f4f5f7;border-radius:16px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:56px;color:#c2c7cf;}' +
+      '.sp-spotlight-media img{width:100%;height:100%;object-fit:cover;}' +
+      '.sp-spotlight-blurb{margin:0 0 12px;color:#4b5563;line-height:1.6;font-size:16px;}' +
+      '.sp-spotlight-body .hub-commerce-product-card{max-width:320px;}' +
+      '@media(max-width:640px){.sp-spotlight--split .sp-spotlight-wrap{grid-template-columns:1fr;}}' +
+      // Typography (theme.font) — real font stacks applied to the whole store surface.
+      '.hub-store-page.sp-font-serif{font-family:Georgia,"Times New Roman",serif;}' +
+      '.hub-store-page.sp-font-modern{font-family:"Helvetica Neue",Arial,sans-serif;letter-spacing:-.01em;}' +
+      '.hub-store-page.sp-font-rounded{font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;}' +
+      '.hub-store-page.sp-font-mono{font-family:"SFMono-Regular",Menlo,Consolas,monospace;}' +
+      // Density (theme.density) — spacing scale via a multiplier on section padding + grid gaps.
+      '.hub-store-page.sp-density-compact .sp-hero{padding-top:24px;padding-bottom:8px;}' +
+      '.hub-store-page.sp-density-compact .sp-sec,.hub-store-page.sp-density-compact .sp-spotlight{padding-top:14px;padding-bottom:6px;}' +
+      '.hub-store-page.sp-density-compact .sp-prod-grid{gap:12px;}' +
+      '.hub-store-page.sp-density-roomy .sp-hero{padding-top:56px;padding-bottom:24px;}' +
+      '.hub-store-page.sp-density-roomy .sp-sec,.hub-store-page.sp-density-roomy .sp-spotlight{padding-top:34px;padding-bottom:16px;}' +
+      '.hub-store-page.sp-density-roomy .sp-prod-grid{gap:24px;}' +
       // Theme treatments (theme.style) — light-touch differentiation, accent still leads.
       '.hub-store-page.sp-theme-premium{background:#0E1116;color:#F3F4F6;}' +
       '.hub-store-page.sp-theme-premium .hub-store-head{background:#0E1116;border-bottom-color:#232833;}' +
@@ -186,6 +207,20 @@
         }).join('');
         return sectionHtml(cfg.title || 'Shop by category', '<div class="sp-col-grid">' + cards + '</div>');
       }
+      case 'productSpotlight': {
+        var sp = cfg.productId ? productById(cfg.productId) : null;
+        if (!sp) return sectionHtml(cfg.title || 'Spotlight', '<div class="sp-empty-mini">Pick a product to spotlight.</div>');
+        var spImg = (sp.images && sp.images.length && sp.images[0].url)
+          ? '<img src="' + esc(sp.images[0].url) + '" alt="' + esc(sp.name) + '">'
+          : esc((sp.name || 'P').slice(0, 1));
+        var spCard = C() ? C().ProductCard(sp) : '';
+        return '<section class="sp-block sp-spotlight sp-spotlight--' + esc(b.variant) + '">' +
+          (cfg.title ? '<h2 class="sp-sec-title">' + esc(cfg.title) + '</h2>' : '') +
+          '<div class="sp-spotlight-wrap">' +
+          '<div class="sp-spotlight-media">' + spImg + '</div>' +
+          '<div class="sp-spotlight-body">' + (cfg.blurb ? '<p class="sp-spotlight-blurb">' + esc(cfg.blurb) + '</p>' : '') + spCard + '</div>' +
+          '</div></section>';
+      }
       case 'promoBanner':
         return '<div class="sp-block sp-promo sp-promo--' + esc(b.variant) + '"><span>' + esc(cfg.text || '') + '</span>' +
           (cfg.ctaText ? '<span class="sp-promo-cta">' + esc(cfg.ctaText) + '</span>' : '') + '</div>';
@@ -209,13 +244,29 @@
     return (ast.blocks || []).map(blockHtml).join('');
   }
 
-  // theme.style → container class; theme.accent (or brand color) → --sp-brand.
+  // Deterministic readiness signal for the preview/store: set AFTER a real block render (not the
+  // loading frame). Lets the editor + tests wait on actual content instead of arbitrary timeouts.
+  function signalRendered() {
+    if (!state.container) return;
+    try {
+      var n = state.container.querySelectorAll('.sp-block').length;
+      state.container.setAttribute('data-sp-rendered', n > 0 ? '1' : '0');
+      state.container.setAttribute('data-sp-block-count', String(n));
+      global.dispatchEvent(new global.CustomEvent('hubly:store-rendered', { detail: { blockCount: n } }));
+    } catch (e) {}
+  }
+
+  // theme.style/font/density → container classes; theme.accent (or brand color) → --sp-brand.
   function applyTheme(theme) {
     theme = theme || {};
     if (!state.container) return;
     var el = state.container;
     ['clean', 'premium', 'bold', 'minimal', 'warm'].forEach(function (s) { el.classList.remove('sp-theme-' + s); });
     el.classList.add('sp-theme-' + (theme.style || 'clean'));
+    ['sans', 'serif', 'modern', 'rounded', 'mono'].forEach(function (f) { el.classList.remove('sp-font-' + f); });
+    el.classList.add('sp-font-' + (theme.font || 'sans'));
+    ['compact', 'cozy', 'roomy'].forEach(function (d) { el.classList.remove('sp-density-' + d); });
+    el.classList.add('sp-density-' + (theme.density || 'cozy'));
     var accent = theme.accent || state.brand.brandColor || '#D9632D';
     el.style.setProperty('--sp-brand', accent);
   }
@@ -275,6 +326,7 @@
       return;
     }
     state.container.innerHTML = headerHtml() + (state.view === 'detail' ? detailHtml() : renderHome());
+    signalRendered();
   }
 
   function wire(container) {
@@ -361,7 +413,7 @@
     state.view = 'grid'; state.collectionId = null; state.productId = null; state.selectedVariant = null;
     injectStyle(state.brand.brandColor);
     el.classList.add('hub-store-page');
-    var paint = function () { el.innerHTML = headerHtml() + renderHome(); };
+    var paint = function () { el.innerHTML = headerHtml() + renderHome(); signalRendered(); };
     if (opts.os) { state.os = opts.os; paint(); return Promise.resolve(state.os); }
     var sf = global.HublyCommerceStorefront;
     if (!sf || typeof sf.loadPublic !== 'function' || !state.businessId) { state.os = state.os || { settings: { enabled: true }, products: [], collections: [] }; paint(); return Promise.resolve(state.os); }

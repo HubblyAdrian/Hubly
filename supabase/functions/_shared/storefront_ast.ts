@@ -19,12 +19,13 @@ export type StorefrontBlockType =
   | "collectionGrid"
   | "featuredCollection"
   | "bestSellers"
+  | "productSpotlight"
   | "promoBanner"
   | "brandStory"
   | "cta"
   | "footer";
 
-type FieldSpec = { kind: "string" | "number" | "boolean" | "productIds" | "collectionId"; default?: unknown };
+type FieldSpec = { kind: "string" | "number" | "boolean" | "productIds" | "productId" | "collectionId"; default?: unknown };
 
 type BlockSpec = {
   variants: string[];
@@ -58,6 +59,10 @@ export const STOREFRONT_BLOCK_CATALOG: Record<StorefrontBlockType, BlockSpec> = 
     variants: ["standard", "large"],
     config: { title: { kind: "string", default: "Best sellers" }, productIds: { kind: "productIds" } },
   },
+  productSpotlight: {
+    variants: ["standard", "split"],
+    config: { productId: { kind: "productId" }, title: { kind: "string" }, blurb: { kind: "string" } },
+  },
   promoBanner: {
     variants: ["standard", "bold"],
     config: { text: { kind: "string" }, ctaText: { kind: "string" } },
@@ -78,6 +83,13 @@ export const STOREFRONT_BLOCK_CATALOG: Record<StorefrontBlockType, BlockSpec> = 
 
 const THEME_STYLES = ["clean", "premium", "bold", "minimal", "warm"] as const;
 export type StorefrontThemeStyle = (typeof THEME_STYLES)[number];
+// Curated storefront typeface options (mapped to real font stacks in the renderer). Kept small
+// on purpose — the manual editor and AI both pick from exactly this list.
+const THEME_FONTS = ["sans", "serif", "modern", "rounded", "mono"] as const;
+export type StorefrontThemeFont = (typeof THEME_FONTS)[number];
+// Spacing density — how roomy the layout feels. Drives padding/gaps in the renderer.
+const THEME_DENSITIES = ["compact", "cozy", "roomy"] as const;
+export type StorefrontThemeDensity = (typeof THEME_DENSITIES)[number];
 
 export type StorefrontBlock = {
   id: string;
@@ -88,9 +100,16 @@ export type StorefrontBlock = {
   config: Record<string, unknown>;
 };
 
+export type StorefrontTheme = {
+  style: StorefrontThemeStyle;
+  accent: string | null;
+  font: StorefrontThemeFont;
+  density: StorefrontThemeDensity;
+};
+
 export type StorefrontAst = {
   version: 1;
-  theme: { style: StorefrontThemeStyle; accent: string | null };
+  theme: StorefrontTheme;
   blocks: StorefrontBlock[];
 };
 
@@ -105,6 +124,8 @@ export function validateStorefrontAst(raw: unknown): { ok: boolean; ast: Storefr
   const themeRaw = (obj.theme && typeof obj.theme === "object") ? obj.theme as Record<string, unknown> : {};
   const style = THEME_STYLES.includes(themeRaw.style as StorefrontThemeStyle) ? themeRaw.style as StorefrontThemeStyle : "clean";
   const accent = typeof themeRaw.accent === "string" && HEX.test(themeRaw.accent) ? themeRaw.accent : null;
+  const font = THEME_FONTS.includes(themeRaw.font as StorefrontThemeFont) ? themeRaw.font as StorefrontThemeFont : "sans";
+  const density = THEME_DENSITIES.includes(themeRaw.density as StorefrontThemeDensity) ? themeRaw.density as StorefrontThemeDensity : "cozy";
 
   const rawBlocks = Array.isArray(obj.blocks) ? obj.blocks : [];
   const blocks: StorefrontBlock[] = [];
@@ -123,6 +144,7 @@ export function validateStorefrontAst(raw: unknown): { ok: boolean; ast: Storefr
       else if (fs.kind === "number") config[key] = v != null && isFinite(Number(v)) ? Number(v) : (fs.default ?? 0);
       else if (fs.kind === "boolean") config[key] = v === true || v === "true" || (v == null ? (fs.default ?? false) : false);
       else if (fs.kind === "productIds") config[key] = Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean).slice(0, 24) : [];
+      else if (fs.kind === "productId") config[key] = v != null && String(v).trim() ? String(v).trim() : null;
       else if (fs.kind === "collectionId") config[key] = v != null && String(v).trim() ? String(v).trim() : null;
     }
     blocks.push({
@@ -136,7 +158,7 @@ export function validateStorefrontAst(raw: unknown): { ok: boolean; ast: Storefr
   });
   blocks.sort((a, b) => a.order - b.order).forEach((b, i) => { b.order = 10 + i; });
 
-  return { ok: blocks.length > 0, ast: { version: 1, theme: { style, accent }, blocks }, warnings };
+  return { ok: blocks.length > 0, ast: { version: 1, theme: { style, accent, font, density }, blocks }, warnings };
 }
 
 /** A concise catalog description for the AI generation/patch prompt — derived from the SAME
@@ -148,6 +170,7 @@ const BLOCK_PURPOSE: Record<StorefrontBlockType, string> = {
   collectionGrid: "cards linking to each collection/category",
   featuredCollection: "spotlight one collection",
   bestSellers: "a row of the store's best/top products",
+  productSpotlight: "spotlight ONE hero product large (productId)",
   promoBanner: "a promotional message strip",
   brandStory: "an about / why-buy-from-us narrative",
   cta: "a call-to-action band",
@@ -160,8 +183,9 @@ export function storefrontCatalogPromptBlock(): string {
     return `- ${type} — ${BLOCK_PURPOSE[type]}. variants: [${spec.variants.join(", ")}]; config: {${cfg}}`;
   });
   return `STOREFRONT BLOCKS (the ONLY blocks that exist — never invent another type, variant, or config field):\n${lines.join("\n")}\n` +
-    `Variant meaning: for product blocks (featuredProducts, productGrid, bestSellers) "large" = bigger cards, "compact" = smaller cards, "standard" = default; for storeHero "tall" = bigger, "compact" = shorter.\n` +
-    `productIds and collectionId MUST be real ids from the provided catalog; never invent ids and never put product names or prices anywhere — the renderer resolves ids against live Commerce.`;
+    `Variant meaning: for product blocks (featuredProducts, productGrid, bestSellers) "large" = bigger cards, "compact" = smaller cards, "standard" = default; for storeHero "tall" = bigger, "compact" = shorter; productSpotlight "split" = image beside copy.\n` +
+    `theme = {style: one of [${THEME_STYLES.join(", ")}], accent: hex or null, font: one of [${THEME_FONTS.join(", ")}], density: one of [${THEME_DENSITIES.join(", ")}]}.\n` +
+    `productId (single) and productIds/collectionId MUST be real ids from the provided catalog; never invent ids and never put product names or prices anywhere — the renderer resolves ids against live Commerce.`;
 }
 
 /** Deterministic default storefront from the real catalog — the graceful fallback used when
@@ -184,5 +208,5 @@ export function buildDefaultStorefront(
   if (ctx.collections.length) add("collectionGrid", { title: "Shop by category" });
   add("productGrid", { title: "Shop all", collectionId: null, columns: 4 });
   add("footer", { text: ctx.businessName || "" });
-  return { version: 1, theme: { style: "clean", accent: ctx.accent || null }, blocks };
+  return { version: 1, theme: { style: "clean", accent: ctx.accent || null, font: "sans", density: "cozy" }, blocks };
 }

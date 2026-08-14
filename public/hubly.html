@@ -13090,8 +13090,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/ai/merchandising.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/index.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/storefront-cart.js?v=commerce-3"></script>
-<script defer src="/journey-os/commerce/storefront-ast.js?v=commerce-1"></script>
-<script defer src="/journey-os/commerce/store-page.js?v=commerce-4"></script>
+<script defer src="/journey-os/commerce/storefront-ast.js?v=commerce-2"></script>
+<script defer src="/journey-os/commerce/store-page.js?v=commerce-5"></script>
 <script defer src="/journey-os/journey.js?v=20260808025356"></script>
 <script defer src="/journey-os/store-commerce.js?v=store-3"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
@@ -15008,8 +15008,10 @@ function buildBizMeta(){
     pipeline:ensurePipelineState(),
     storeOs:S.storeOs&&typeof S.storeOs==='object'?S.storeOs:null,
     // Storefront presentation AST — independent from meta.website. Holds only layout/theme/copy
-    // and Commerce id references, never product data. Powers /store and the Builder store preview.
+    // and Commerce id references, never product data. `storefront` = PUBLISHED (served at /store);
+    // `storefrontDraft` = the Builder's working copy (autosaved). Customers never see the draft.
     storefront:S.storefront&&typeof S.storefront==='object'?S.storefront:null,
+    storefrontDraft:S.storefrontDraft&&typeof S.storefrontDraft==='object'?S.storefrontDraft:null,
     studioOs:S.studioOs&&typeof S.studioOs==='object'?S.studioOs:null,
   };
 }
@@ -15071,6 +15073,10 @@ function applyBizMeta(meta){
   if(meta.website)S.website=meta.website;
   if(meta.storeOs&&typeof meta.storeOs==='object')S.storeOs=meta.storeOs;
   if(meta.storefront&&typeof meta.storefront==='object')S.storefront=meta.storefront;
+  // Draft = the Builder working copy. Migrate Phase-1 businesses (published only, no draft yet) by
+  // seeding the draft from the published storefront so no existing design is lost.
+  if(meta.storefrontDraft&&typeof meta.storefrontDraft==='object')S.storefrontDraft=meta.storefrontDraft;
+  else if(meta.storefront&&typeof meta.storefront==='object'){try{S.storefrontDraft=JSON.parse(JSON.stringify(meta.storefront));}catch(e){S.storefrontDraft=meta.storefront;}}
   if(meta.studioOs&&typeof meta.studioOs==='object')S.studioOs=meta.studioOs;
   if(meta.galleryPairs)S.galleryPairs=meta.galleryPairs;
   if(meta.ownerUploadedMedia!=null)S._ownerUploadedMedia=!!meta.ownerUploadedMedia;
@@ -16870,7 +16876,9 @@ async function saveStorefront(opts){
     const depValEl=document.getElementById('dep-val');
     if(depValEl&&depValEl.value!=='')S.depositVal=depValEl.value;
     const rawSlug=document.getElementById('ed-slug')?.value||S.slug||'';
-    const newSlug=slugify(rawSlug)||S.slug;
+    // Saving from the Store surface must NEVER rename the public site — the storefront autosave
+    // shares this transport with the website editor, but the slug (the live URL) is a website concern.
+    const newSlug=((S&&S._edHubTab==='store')&&currentBusiness&&currentBusiness.slug)?currentBusiness.slug:(slugify(rawSlug)||S.slug);
     if(newSlug!==currentBusiness.slug){
       const dbCheck=await waitForDb(12000);
       const {data:conflict}=await dbCheck.from('businesses').select('id').eq('slug',newSlug).maybeSingle();
@@ -16955,7 +16963,11 @@ async function saveStorefront(opts){
     try{if(window.HublyBrain&&typeof HublyBrain.syncBusinessMemory==='function')HublyBrain.syncBusinessMemory('client');}catch(e){}
     const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='';}
     syncStorefront();
-    if(isEditorViewOpen())renderWebsitePreview();
+    // Refresh the ACTIVE surface's preview — never flip a Store autosave back to the Website canvas.
+    if(isEditorViewOpen()){
+      if((S&&S._edHubTab)==='store'){try{renderEdStorefrontPreview();}catch(e){}}
+      else renderWebsitePreview();
+    }
     const g=ensureEditorGuide();
     g.completed=true;g.active=false;
     renderEditorGuide();
@@ -29384,6 +29396,8 @@ function openWebsiteEditorHub(tab){
 function switchWebsiteHubTab(tab){
   const t=['packages','book','quote','store'].includes(tab)?tab:'site';
   try{if(window.S)S._edHubTab=t;}catch(e){}
+  // Leaving the Store surface: hide its toolbar + close its editor panel so nothing lingers.
+  try{if(t!=='store'){const _tb=document.getElementById('sf-store-toolbar');if(_tb)_tb.style.display='none';if(typeof closeSfPanel==='function')closeSfPanel();}}catch(e){}
   // Always clear the Styles overlay first so hub tabs never look "dead".
   try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
   document.querySelectorAll('#ed-hub-tabs [data-hub]').forEach(b=>{
@@ -29437,9 +29451,11 @@ function switchWebsiteHubTab(tab){
     try{renderWebsitePreview();}catch(e){console.warn('Site hub preview',e);}
   }else if(t==='store'){
     // Store surface: same canvas + device toggle as the Website, but the preview is the
-    // standalone Storefront rendered from S.storefront (the exact /store renderer).
+    // standalone Storefront rendered from S.storefrontDraft (the exact /store renderer).
     try{forceEdSiteCanvasVisible();}catch(e){}
     try{renderEdStorefrontPreview();}catch(e){console.warn('Store hub preview',e);}
+    try{renderStorefrontToolbar();}catch(e){console.warn('Store toolbar',e);}
+    try{sfLoadOwnerCatalog();}catch(e){}
   }else if(t==='packages'){
     try{ensureTradeEditorChrome();}catch(e){}
     try{
@@ -36639,7 +36655,9 @@ async function edStoreAiSend(text){
     const dbClient=await waitForDb();
     const hist=(S._edStoreAi&&Array.isArray(S._edStoreAi.messages))?S._edStoreAi.messages.slice(-16):[];
     hist.push({role:'user',content:text});
-    const accent=(S.storefront&&S.storefront.theme&&S.storefront.theme.accent)||cb.brand_color||'';
+    // The AI edits the DRAFT, never the published store. Thread the current draft as state.
+    const draftAst=storefrontDraftAst();
+    const accent=(draftAst&&draftAst.theme&&draftAst.theme.accent)||cb.brand_color||'';
     const body={
       context:'operate',
       businessId:cb.id,
@@ -36647,7 +36665,7 @@ async function edStoreAiSend(text){
       understanding:{},
       storeContext:{businessName:cb.name||'',accent:accent}
     };
-    if(S&&S.storefront)body.storefrontState=S.storefront;
+    if(draftAst)body.storefrontState=draftAst;
     const {data,error}=await dbClient.functions.invoke('hubly-conversation',{body});
     edStorePopThinking();
     if(error||!data||data.ok===false){
@@ -36657,8 +36675,11 @@ async function edStoreAiSend(text){
     }
     S._edStoreAi={messages:Array.isArray(data.messages)?data.messages:hist};
     if(data.storefrontAst){
-      S.storefront=data.storefrontAst;
+      // AI writes to the DRAFT; the live store only changes on Publish.
+      S.storefrontDraft=data.storefrontAst;
+      try{storefrontHistoryPush&&storefrontHistoryPush();}catch(e){}
       try{renderEdStorefrontPreview();}catch(e){}
+      try{updateStorefrontPublishUi&&updateStorefrontPublishUi();}catch(e){}
       try{ensureStorefrontCapabilityOnBusiness();}catch(e){}
       try{scheduleWebsitePersist({reason:'storefront-ai'});}catch(e){}
     }
@@ -38798,8 +38819,399 @@ function renderEdStorefrontPreview(){
     slug:cb.slug||''
   };
   try{
-    SP.renderInto(dest,{ast:(S&&S.storefront)||null,businessId:cb.id||S.businessId,brand:brand});
+    // Reuse the already-loaded catalog after the first render so manual edits repaint synchronously
+    // (no refetch per keystroke). The first render (no cached os) fetches once.
+    var cachedOs=(SP.currentOs&&SP.currentOs())||undefined;
+    SP.renderInto(dest,{ast:storefrontDraftAst(),businessId:cb.id||S.businessId,brand:brand,os:cachedOs});
   }catch(e){console.warn('renderEdStorefrontPreview',e);}
+}
+/** The Builder's working AST: the draft, seeded from the published storefront the first time. */
+function storefrontDraftAst(){
+  if(S&&S.storefrontDraft&&typeof S.storefrontDraft==='object')return S.storefrontDraft;
+  if(S&&S.storefront&&typeof S.storefront==='object'){
+    try{S.storefrontDraft=JSON.parse(JSON.stringify(S.storefront));}catch(e){S.storefrontDraft=S.storefront;}
+    return S.storefrontDraft;
+  }
+  return null;
+}
+/** Publish: promote the draft to the live storefront customers see at /store, then persist. */
+async function publishStorefront(){
+  const draft=storefrontDraftAst();
+  if(!draft){toast('Nothing to publish yet — design your store first');return;}
+  try{S.storefront=JSON.parse(JSON.stringify(draft));}catch(e){S.storefront=draft;}
+  try{ensureStorefrontCapabilityOnBusiness();}catch(e){}
+  try{if(typeof updateStorefrontPublishUi==='function')updateStorefrontPublishUi();}catch(e){}
+  try{await saveStorefront();toast('🛍️ Store published — live at /store');}catch(e){toast('Couldn’t publish — try again');}
+}
+/** Revert: discard the working draft and restore the published storefront. */
+function revertStorefrontDraft(){
+  if(!(S&&S.storefront&&typeof S.storefront==='object')){toast('No published version to revert to yet');return;}
+  try{S.storefrontDraft=JSON.parse(JSON.stringify(S.storefront));}catch(e){S.storefrontDraft=S.storefront;}
+  try{storefrontHistoryReset&&storefrontHistoryReset();}catch(e){}
+  try{renderEdStorefrontPreview();}catch(e){}
+  try{updateStorefrontPublishUi&&updateStorefrontPublishUi();}catch(e){}
+  try{scheduleWebsitePersist({reason:'storefront-revert'});}catch(e){}
+  toast('Reverted to the published store');
+}
+
+/* ============================================================================
+ * STOREFRONT MANUAL EDITOR — catalog-driven controls over the SAME AST the AI
+ * writes and the renderer draws. Everything here mutates S.storefrontDraft only;
+ * the live /store changes on Publish. Closed loop: controls are generated from
+ * HublyStorefrontAst.CATALOG, so manual == AI == renderer by construction.
+ * ==========================================================================*/
+function sfEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function sfCat(){return (window.HublyStorefrontAst&&window.HublyStorefrontAst.CATALOG)||{};}
+function sfOs(){return (window.HublyStorePage&&window.HublyStorePage.currentOs&&window.HublyStorePage.currentOs())||{};}
+// The owner's FULL Commerce catalog for the pickers (includes draft/hidden products the public
+// storefront projection omits) — the owner presents any product, publishing controls visibility.
+// Loaded once from the owner commerce-api; falls back to the public projection until it lands.
+async function sfLoadOwnerCatalog(){
+  try{
+    const api=window.HublyCommerceApi,cb=(typeof currentBusiness!=='undefined'&&currentBusiness)?currentBusiness:{};
+    if(!api||!cb.id)return null;
+    try{if(window.S)S.businessId=S.businessId||cb.id;}catch(e){}
+    const [pr,cr]=await Promise.all([api.listProducts(),api.listCollections()]);
+    // api.js call() wraps responses as {ok,data,status}; the server returns {products}/{collections}.
+    const pbody=(pr&&pr.data!==undefined)?pr.data:pr, cbody=(cr&&cr.data!==undefined)?cr.data:cr;
+    const praw=(pbody&&pbody.products)||(Array.isArray(pbody)?pbody:[])||[];
+    const craw=(cbody&&cbody.collections)||(Array.isArray(cbody)?cbody:[])||[];
+    S._sfCatalog={
+      products:(Array.isArray(praw)?praw:[]).map(p=>({id:p.id,name:p.name,price:(Number(p.price_cents)||0)/100,status:p.status,featured:!!p.featured})),
+      collections:(Array.isArray(craw)?craw:[]).map(c=>({id:c.id,name:c.name}))
+    };
+    try{if((S&&S._sfPick)&&document.getElementById('sf-pick-pop').classList.contains('on'))renderSfPickList();}catch(e){}
+    return S._sfCatalog;
+  }catch(e){console.warn('sfLoadOwnerCatalog',e);return null;}
+}
+// Picker data source: the owner catalog if loaded, else the public projection as a fallback.
+function sfPickerData(){
+  if(S&&S._sfCatalog&&(S._sfCatalog.products||S._sfCatalog.collections))return S._sfCatalog;
+  const os=sfOs();return {products:os.products||[],collections:os.collections||[]};
+}
+const SF_BLOCK_LABEL={storeHero:'Hero',featuredProducts:'Featured products',productGrid:'Product grid',collectionGrid:'Collections',featuredCollection:'Featured collection',bestSellers:'Best sellers',productSpotlight:'Product spotlight',promoBanner:'Promo banner',brandStory:'Brand story',cta:'Call to action',footer:'Footer'};
+const SF_FIELD_LABEL={headline:'Headline',sub:'Subheadline',showSearch:'Show search',title:'Title',productIds:'Products',collectionId:'Collection',columns:'Columns',text:'Text',ctaText:'Button text',body:'Body',buttonText:'Button text',blurb:'Blurb',productId:'Product'};
+
+// Materialize a concrete working draft (from the live catalog) so there is always something to edit.
+// Returns the CANONICAL S.storefrontDraft object (not a copy) so mutations by callers persist.
+function sfEnsureDraft(){
+  const cur=storefrontDraftAst();
+  if(cur&&Array.isArray(cur.blocks)&&cur.blocks.length)return cur; // cur IS S.storefrontDraft
+  const A=window.HublyStorefrontAst;if(!A)return cur;
+  const os=sfOs(),cb=currentBusiness||{};
+  S.storefrontDraft=A.buildDefault({businessName:cb.name,accent:cb.brand_color,products:(os.products||[]).map(p=>({id:p.id,status:'active',featured:!!p.featured})),collections:(os.collections||[]).map(c=>({id:c.id}))});
+  return S.storefrontDraft;
+}
+// Commit a mutation: validate → history → re-render preview + panel → update publish UI → autosave.
+function sfCommit(opts){
+  const A=window.HublyStorefrontAst;
+  if(A&&S.storefrontDraft)S.storefrontDraft=A.validate(S.storefrontDraft).ast;
+  if(!(opts&&opts.noHistory))storefrontHistoryPush();
+  try{renderEdStorefrontPreview();}catch(e){}
+  if(!(opts&&opts.noPanel)){try{renderSfPanel();}catch(e){}}
+  try{updateStorefrontPublishUi();}catch(e){}
+  try{scheduleWebsitePersist({reason:'storefront-edit'});}catch(e){}
+}
+
+// ---- Undo/redo history (snapshots of the draft AST) ----
+function storefrontHistoryReset(){S._sfHist={stack:[],ptr:-1};const d=storefrontDraftAst();if(d)storefrontHistoryPush();}
+function storefrontHistoryPush(){
+  if(!S._sfHist)S._sfHist={stack:[],ptr:-1};
+  const h=S._sfHist,snap=JSON.stringify(storefrontDraftAst()||null);
+  if(h.ptr>=0&&h.stack[h.ptr]===snap)return; // no-op change
+  h.stack=h.stack.slice(0,h.ptr+1);h.stack.push(snap);
+  if(h.stack.length>50)h.stack.shift();
+  h.ptr=h.stack.length-1;
+}
+function sfUndo(){const h=S._sfHist;if(!h||h.ptr<=0)return;h.ptr--;try{S.storefrontDraft=JSON.parse(h.stack[h.ptr]);}catch(e){return;}sfCommit({noHistory:true});}
+function sfRedo(){const h=S._sfHist;if(!h||h.ptr>=h.stack.length-1)return;h.ptr++;try{S.storefrontDraft=JSON.parse(h.stack[h.ptr]);}catch(e){return;}sfCommit({noHistory:true});}
+function sfDraftDiffersFromPublished(){try{return JSON.stringify(S.storefrontDraft||null)!==JSON.stringify(S.storefront||null);}catch(e){return true;}}
+
+// ---- Toolbar + status ----
+function updateStorefrontPublishUi(){
+  const tb=document.getElementById('sf-store-toolbar');if(!tb)return;
+  const dirty=sfDraftDiffersFromPublished();
+  const pill=tb.querySelector('[data-sf-status]');
+  if(pill){pill.textContent=dirty?'Draft — unpublished changes':(S.storefront?'Published':'Not published');pill.setAttribute('data-dirty',dirty?'1':'0');}
+  const pub=tb.querySelector('[data-sf-act="publish"]');if(pub)pub.disabled=!dirty&&!!S.storefront;
+  const h=S._sfHist||{stack:[],ptr:-1};
+  const u=tb.querySelector('[data-sf-act="undo"]');if(u)u.disabled=h.ptr<=0;
+  const r=tb.querySelector('[data-sf-act="redo"]');if(r)r.disabled=h.ptr>=h.stack.length-1;
+}
+
+// ---- One-time chrome: toolbar over the preview + slide-in editor panel + picker modal ----
+function sfEnsureChrome(){
+  if(document.getElementById('sf-ed-style'))return;
+  const css=document.createElement('style');css.id='sf-ed-style';css.textContent=
+    '#sf-store-toolbar{position:absolute;top:10px;right:10px;z-index:40;display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border:1px solid #E6E8EC;border-radius:999px;padding:5px 8px;box-shadow:0 6px 20px rgba(0,0,0,.08);}'+
+    '#sf-store-toolbar button{border:0;background:#F1F3F5;color:#141B2B;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;}'+
+    '#sf-store-toolbar button:disabled{opacity:.4;cursor:default;}'+
+    '#sf-store-toolbar .sf-tb-icon{padding:6px 9px;}'+
+    '#sf-store-toolbar .sf-tb-pub{background:#141B2B;color:#fff;}'+
+    '#sf-store-toolbar [data-sf-status]{font-size:12px;color:#8a9099;padding:0 6px;}'+
+    '#sf-store-toolbar [data-sf-status][data-dirty="1"]{color:#D9632D;}'+
+    '#sf-ed-panel{position:fixed;top:0;right:0;height:100vh;width:340px;max-width:92vw;background:#fff;border-left:1px solid #E6E8EC;box-shadow:-8px 0 30px rgba(0,0,0,.08);z-index:60;transform:translateX(100%);transition:transform .18s ease;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}'+
+    '#sf-ed-panel.on{transform:translateX(0);}'+
+    '.sf-ed-head{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid #EEF0F2;}'+
+    '.sf-ed-head strong{flex:1;font-size:15px;}'+
+    '.sf-ed-head button{border:0;background:none;font-size:18px;cursor:pointer;color:#8a9099;}'+
+    '.sf-ed-body{flex:1;overflow:auto;padding:14px 16px;}'+
+    '.sf-grp{margin-bottom:20px;}'+
+    '.sf-grp-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a9099;margin-bottom:8px;}'+
+    '.sf-seg{display:flex;flex-wrap:wrap;gap:6px;}'+
+    '.sf-seg button{border:1px solid #E6E8EC;background:#fff;border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;text-transform:capitalize;}'+
+    '.sf-seg button.on{background:#141B2B;color:#fff;border-color:#141B2B;}'+
+    '.sf-row{display:flex;align-items:center;gap:8px;border:1px solid #EEF0F2;border-radius:10px;padding:9px 10px;margin-bottom:7px;background:#fff;}'+
+    '.sf-row .sf-row-name{flex:1;font-size:14px;font-weight:600;cursor:pointer;text-transform:capitalize;}'+
+    '.sf-row.hidden-blk .sf-row-name{color:#b4b9c0;}'+
+    '.sf-row button{border:0;background:#F1F3F5;border-radius:7px;width:28px;height:28px;font-size:13px;cursor:pointer;color:#5b6472;}'+
+    '.sf-row button:disabled{opacity:.35;cursor:default;}'+
+    '.sf-field{margin-bottom:14px;}'+
+    '.sf-field label{display:block;font-size:12px;color:#5b6472;margin-bottom:5px;font-weight:600;}'+
+    '.sf-field input[type=text],.sf-field textarea,.sf-field input[type=number]{width:100%;padding:9px 10px;border:1px solid #E6E8EC;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box;}'+
+    '.sf-field textarea{min-height:64px;resize:vertical;}'+
+    '.sf-pickbtn{width:100%;text-align:left;padding:10px;border:1px dashed #cbd0d6;border-radius:8px;background:#fafbfc;cursor:pointer;font-size:13px;color:#5b6472;}'+
+    '.sf-addmenu{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}'+
+    '.sf-addmenu button{border:1px solid #E6E8EC;background:#fff;border-radius:8px;padding:8px 10px;font-size:12.5px;cursor:pointer;}'+
+    '.sf-add-cta{width:100%;margin-top:8px;border:1px solid #141B2B;background:#141B2B;color:#fff;border-radius:8px;padding:10px;font-weight:600;cursor:pointer;}'+
+    '#sf-pick-pop{position:fixed;inset:0;background:rgba(20,27,43,.4);z-index:70;display:none;align-items:center;justify-content:center;}'+
+    '#sf-pick-pop.on{display:flex;}'+
+    '#sf-pick-card{background:#fff;border-radius:16px;width:460px;max-width:94vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;}'+
+    '#sf-pick-card .sf-pick-head{padding:14px 16px;border-bottom:1px solid #EEF0F2;display:flex;align-items:center;gap:8px;}'+
+    '#sf-pick-card .sf-pick-head strong{flex:1;}'+
+    '#sf-pick-list{overflow:auto;padding:8px;}'+
+    '.sf-pick-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;cursor:pointer;}'+
+    '.sf-pick-item:hover{background:#F6F7F9;}'+
+    '.sf-pick-item .sf-pick-check{width:20px;height:20px;border:2px solid #cbd0d6;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;}'+
+    '.sf-pick-item.on .sf-pick-check{background:var(--jos-brand,#D9632D);border-color:var(--jos-brand,#D9632D);}'+
+    '.sf-pick-item .sf-pick-name{flex:1;font-size:14px;}'+
+    '.sf-pick-foot{padding:12px 16px;border-top:1px solid #EEF0F2;text-align:right;}'+
+    '.sf-pick-foot button{border:0;background:#141B2B;color:#fff;border-radius:8px;padding:9px 18px;font-weight:600;cursor:pointer;}';
+  document.head.appendChild(css);
+
+  const panel=document.createElement('div');panel.id='sf-ed-panel';
+  panel.innerHTML='<div class="sf-ed-head"><button data-sf-act="panel-back" title="Back" style="display:none;">‹</button><strong id="sf-ed-title">Design your store</strong><button data-sf-act="panel-close" title="Close">✕</button></div><div class="sf-ed-body" id="sf-ed-body"></div>';
+  document.body.appendChild(panel);
+
+  const pick=document.createElement('div');pick.id='sf-pick-pop';
+  pick.innerHTML='<div id="sf-pick-card"><div class="sf-pick-head"><strong id="sf-pick-title">Select</strong><button data-sf-act="pick-close" style="border:0;background:none;font-size:18px;cursor:pointer;color:#8a9099;">✕</button></div><div id="sf-pick-list"></div><div class="sf-pick-foot"><button data-sf-act="pick-done">Done</button></div></div>';
+  document.body.appendChild(pick);
+
+  // Delegated events for the panel + picker.
+  panel.addEventListener('click',onSfPanelClick);
+  panel.addEventListener('input',onSfPanelInput);
+  panel.addEventListener('change',onSfPanelInput);
+  pick.addEventListener('click',onSfPickClick);
+
+  // On-canvas click-to-edit: clicking a rendered block opens its inspector.
+  const prev=document.getElementById('ed-ws-preview');
+  if(prev&&!prev._sfCanvasWired){prev._sfCanvasWired=true;prev.addEventListener('click',function(e){
+    if((S&&S._edHubTab)!=='store')return;
+    const el=e.target.closest('[data-sp-edit]');if(!el)return;
+    e.preventDefault();sfSelectBlock(el.getAttribute('data-sp-edit'));
+  });}
+  // Re-tag canvas blocks whenever the store preview re-renders (deterministic readiness event).
+  if(!window._sfRenderedListener){window._sfRenderedListener=true;window.addEventListener('hubly:store-rendered',function(){if((S&&S._edHubTab)==='store')sfTagCanvas();});}
+}
+
+// Tag each rendered .sp-block with its AST block id (visible blocks map 1:1 in order).
+function sfTagCanvas(){
+  const prev=document.getElementById('ed-ws-preview');if(!prev)return;
+  const draft=storefrontDraftAst();if(!draft)return;
+  const visible=(draft.blocks||[]).filter(b=>b.visible!==false);
+  const nodes=prev.querySelectorAll('.sp-block');
+  nodes.forEach((n,i)=>{if(visible[i]){n.setAttribute('data-sp-edit',visible[i].id);n.style.cursor='pointer';}});
+}
+
+// ---- Store toolbar (rendered into the preview area when the Store surface opens) ----
+function renderStorefrontToolbar(){
+  const area=document.getElementById('ed-preview-area');if(!area)return;
+  sfEnsureChrome();
+  let tb=document.getElementById('sf-store-toolbar');
+  if(!tb){tb=document.createElement('div');tb.id='sf-store-toolbar';tb.addEventListener('click',onSfToolbarClick);area.appendChild(tb);}
+  tb.style.display='';
+  tb.innerHTML='<button class="sf-tb-icon" data-sf-act="undo" title="Undo">↶</button>'+
+    '<button class="sf-tb-icon" data-sf-act="redo" title="Redo">↷</button>'+
+    '<button data-sf-act="design">Design</button>'+
+    '<span data-sf-status></span>'+
+    '<button data-sf-act="revert" title="Discard draft">Revert</button>'+
+    '<button class="sf-tb-pub" data-sf-act="publish">Publish</button>';
+  if(!S._sfHist)storefrontHistoryReset();
+  updateStorefrontPublishUi();
+}
+function onSfToolbarClick(e){
+  const b=e.target.closest('[data-sf-act]');if(!b)return;const a=b.getAttribute('data-sf-act');
+  if(a==='undo')sfUndo();else if(a==='redo')sfRedo();
+  else if(a==='design'){sfEnsureDraft();S._sfSelBlock=null;openSfPanel();}
+  else if(a==='publish')publishStorefront();
+  else if(a==='revert')revertStorefrontDraft();
+}
+function openSfPanel(){sfEnsureChrome();renderSfPanel();document.getElementById('sf-ed-panel').classList.add('on');}
+function closeSfPanel(){const p=document.getElementById('sf-ed-panel');if(p)p.classList.remove('on');S._sfSelBlock=null;}
+function sfSelectBlock(id){sfEnsureDraft();S._sfSelBlock=id;openSfPanel();}
+
+// ---- Panel rendering (home = theme + blocks; or a block inspector) ----
+function renderSfPanel(){
+  const body=document.getElementById('sf-ed-body');if(!body)return;
+  const back=document.querySelector('#sf-ed-panel [data-sf-act="panel-back"]');
+  const title=document.getElementById('sf-ed-title');
+  const draft=sfEnsureDraft();
+  if(S._sfSelBlock){
+    const blk=(draft.blocks||[]).filter(b=>b.id===S._sfSelBlock)[0];
+    if(!blk){S._sfSelBlock=null;return renderSfPanel();}
+    if(back)back.style.display='';
+    if(title)title.textContent=SF_BLOCK_LABEL[blk.type]||blk.type;
+    body.innerHTML=sfInspectorHtml(blk);
+  }else{
+    if(back)back.style.display='none';
+    if(title)title.textContent='Design your store';
+    body.innerHTML=sfThemeHtml(draft.theme||{})+sfBlocksHtml(draft.blocks||[]);
+  }
+}
+function sfSeg(act,options,current,extra){
+  return '<div class="sf-seg">'+options.map(o=>'<button data-sf-act="'+act+'" data-val="'+sfEsc(o)+'"'+(o===current?' class="on"':'')+'>'+sfEsc(o)+'</button>').join('')+(extra||'')+'</div>';
+}
+function sfThemeHtml(theme){
+  const A=window.HublyStorefrontAst||{};
+  return '<div class="sf-grp"><div class="sf-grp-lbl">Style</div>'+sfSeg('theme-style',A.THEME_STYLES||[],theme.style||'clean')+'</div>'+
+    '<div class="sf-grp"><div class="sf-grp-lbl">Accent</div><input type="color" data-sf-act="theme-accent" value="'+sfEsc(theme.accent||'#0F172A')+'" style="width:52px;height:34px;border:1px solid #E6E8EC;border-radius:8px;background:#fff;cursor:pointer;"></div>'+
+    '<div class="sf-grp"><div class="sf-grp-lbl">Font</div>'+sfSeg('theme-font',A.THEME_FONTS||[],theme.font||'sans')+'</div>'+
+    '<div class="sf-grp"><div class="sf-grp-lbl">Spacing</div>'+sfSeg('theme-density',A.THEME_DENSITIES||[],theme.density||'cozy')+'</div>';
+}
+function sfBlocksHtml(blocks){
+  const rows=blocks.map((b,i)=>{
+    const hidden=b.visible===false;
+    return '<div class="sf-row'+(hidden?' hidden-blk':'')+'" data-blk="'+sfEsc(b.id)+'">'+
+      '<span class="sf-row-name" data-sf-act="block-inspect" data-id="'+sfEsc(b.id)+'">'+sfEsc(SF_BLOCK_LABEL[b.type]||b.type)+'</span>'+
+      '<button data-sf-act="block-up" data-id="'+sfEsc(b.id)+'"'+(i===0?' disabled':'')+' title="Move up">↑</button>'+
+      '<button data-sf-act="block-down" data-id="'+sfEsc(b.id)+'"'+(i===blocks.length-1?' disabled':'')+' title="Move down">↓</button>'+
+      '<button data-sf-act="block-hide" data-id="'+sfEsc(b.id)+'" title="'+(hidden?'Show':'Hide')+'">'+(hidden?'◌':'●')+'</button>'+
+      '<button data-sf-act="block-remove" data-id="'+sfEsc(b.id)+'" title="Remove">✕</button>'+
+      '</div>';
+  }).join('');
+  const cat=sfCat();
+  const menu=Object.keys(cat).map(t=>'<button data-sf-act="block-add-pick" data-val="'+t+'">'+sfEsc(SF_BLOCK_LABEL[t]||t)+'</button>').join('');
+  return '<div class="sf-grp"><div class="sf-grp-lbl">Sections</div>'+rows+
+    '<button class="sf-add-cta" data-sf-act="block-add">+ Add section</button>'+
+    '<div class="sf-addmenu" id="sf-add-menu" style="display:none;">'+menu+'</div></div>';
+}
+function sfInspectorHtml(blk){
+  const spec=sfCat()[blk.type]||{variants:[],config:{}};
+  let html='<div class="sf-grp"><div class="sf-grp-lbl">Style</div>'+sfSeg('variant',spec.variants,blk.variant)+'</div>';
+  html+='<div class="sf-grp"><div class="sf-grp-lbl">Content</div>';
+  Object.keys(spec.config).forEach(key=>{
+    const fs=spec.config[key],val=blk.config[key],lbl=SF_FIELD_LABEL[key]||key;
+    html+='<div class="sf-field"><label>'+sfEsc(lbl)+'</label>';
+    if(fs.kind==='string'){
+      const long=(key==='body'||key==='blurb'||key==='sub');
+      html+=long?'<textarea data-sf-field="'+key+'">'+sfEsc(val||'')+'</textarea>':'<input type="text" data-sf-field="'+key+'" value="'+sfEsc(val||'')+'">';
+    }else if(fs.kind==='number'){
+      html+='<input type="number" data-sf-field="'+key+'" value="'+sfEsc(val==null?'':val)+'" min="1" max="6">';
+    }else if(fs.kind==='boolean'){
+      html+='<div class="sf-seg"><button data-sf-act="set-bool" data-field="'+key+'" data-val="1"'+(val?' class="on"':'')+'>On</button><button data-sf-act="set-bool" data-field="'+key+'" data-val="0"'+(!val?' class="on"':'')+'>Off</button></div>';
+    }else if(fs.kind==='productIds'){
+      const n=(Array.isArray(val)?val:[]).length;
+      html+='<button class="sf-pickbtn" data-sf-act="pick-products" data-field="'+key+'">'+(n?(n+' product'+(n===1?'':'s')+' selected — change'):'Choose products')+'</button>';
+    }else if(fs.kind==='productId'){
+      const nm=val?sfProductName(val):'';
+      html+='<button class="sf-pickbtn" data-sf-act="pick-product-single" data-field="'+key+'">'+(nm?sfEsc(nm)+' — change':'Choose a product')+'</button>';
+    }else if(fs.kind==='collectionId'){
+      const nm=val?sfCollectionName(val):'';
+      html+='<button class="sf-pickbtn" data-sf-act="pick-collection" data-field="'+key+'">'+(nm?sfEsc(nm)+' — change':'Choose a collection')+'</button>';
+    }
+    html+='</div>';
+  });
+  html+='</div>';
+  return html;
+}
+function sfProductName(id){const p=(sfPickerData().products||[]).filter(x=>x.id===id)[0];return p?p.name:'(product)';}
+function sfCollectionName(id){const c=(sfPickerData().collections||[]).filter(x=>x.id===id)[0];return c?c.name:'(collection)';}
+function sfSelBlock(){const d=storefrontDraftAst();return d?(d.blocks||[]).filter(b=>b.id===S._sfSelBlock)[0]:null;}
+
+// ---- Panel event handlers ----
+function onSfPanelClick(e){
+  const b=e.target.closest('[data-sf-act]');if(!b)return;const a=b.getAttribute('data-sf-act');
+  const draft=sfEnsureDraft();
+  if(a==='panel-close'){closeSfPanel();return;}
+  if(a==='panel-back'){S._sfSelBlock=null;renderSfPanel();return;}
+  if(a==='theme-style'){draft.theme.style=b.getAttribute('data-val');sfCommit();return;}
+  if(a==='theme-font'){draft.theme.font=b.getAttribute('data-val');sfCommit();return;}
+  if(a==='theme-density'){draft.theme.density=b.getAttribute('data-val');sfCommit();return;}
+  if(a==='block-add'){const m=document.getElementById('sf-add-menu');if(m)m.style.display=m.style.display==='none'?'flex':'none';return;}
+  if(a==='block-add-pick'){sfAddBlock(b.getAttribute('data-val'));return;}
+  if(a==='block-inspect'){sfSelectBlock(b.getAttribute('data-id'));return;}
+  if(a==='block-up'||a==='block-down'){sfMoveBlock(b.getAttribute('data-id'),a==='block-up'?-1:1);return;}
+  if(a==='block-hide'){sfToggleBlock(b.getAttribute('data-id'));return;}
+  if(a==='block-remove'){sfRemoveBlock(b.getAttribute('data-id'));return;}
+  if(a==='variant'){const blk=sfSelBlock();if(blk){blk.variant=b.getAttribute('data-val');sfCommit();}return;}
+  if(a==='set-bool'){const blk=sfSelBlock();const f=b.getAttribute('data-field');if(blk){blk.config[f]=b.getAttribute('data-val')==='1';sfCommit();}return;}
+  if(a==='pick-products'){sfOpenPicker('products',b.getAttribute('data-field'));return;}
+  if(a==='pick-product-single'){sfOpenPicker('product',b.getAttribute('data-field'));return;}
+  if(a==='pick-collection'){sfOpenPicker('collection',b.getAttribute('data-field'));return;}
+}
+function onSfPanelInput(e){
+  const el=e.target.closest('[data-sf-field]');
+  if(el){const blk=sfSelBlock();if(!blk)return;const f=el.getAttribute('data-sf-field');
+    blk.config[f]=(el.type==='number')?Number(el.value):el.value;
+    sfCommit({noPanel:true});return;}
+  const ac=e.target.closest('[data-sf-act="theme-accent"]');
+  if(ac){const draft=sfEnsureDraft();draft.theme.accent=ac.value;sfCommit({noPanel:true});return;}
+}
+
+// ---- Block mutations ----
+function sfAddBlock(type){
+  const draft=sfEnsureDraft(),spec=sfCat()[type];if(!spec)return;
+  const cfg={};Object.keys(spec.config).forEach(k=>{const fs=spec.config[k];cfg[k]=fs.kind==='productIds'?[]:(fs.kind==='productId'||fs.kind==='collectionId'?null:(fs.default!=null?fs.default:(fs.kind==='number'?0:(fs.kind==='boolean'?false:''))));});
+  const maxOrder=(draft.blocks||[]).reduce((m,b)=>Math.max(m,b.order||0),0);
+  draft.blocks.push({id:'b_'+Math.random().toString(36).slice(2,9),type,order:maxOrder+1,visible:true,variant:spec.variants[0],config:cfg});
+  const m=document.getElementById('sf-add-menu');if(m)m.style.display='none';
+  sfCommit();toast('Added '+(SF_BLOCK_LABEL[type]||type));
+}
+function sfMoveBlock(id,dir){
+  const draft=sfEnsureDraft(),bs=draft.blocks,i=bs.findIndex(b=>b.id===id);if(i<0)return;
+  const j=i+dir;if(j<0||j>=bs.length)return;const t=bs[i];bs[i]=bs[j];bs[j]=t;
+  bs.forEach((b,k)=>b.order=10+k);sfCommit();
+}
+function sfToggleBlock(id){const draft=sfEnsureDraft(),b=draft.blocks.filter(x=>x.id===id)[0];if(!b)return;b.visible=b.visible===false;sfCommit();}
+function sfRemoveBlock(id){const draft=sfEnsureDraft();draft.blocks=draft.blocks.filter(b=>b.id!==id);if(S._sfSelBlock===id)S._sfSelBlock=null;sfCommit();}
+
+// ---- Product / collection picker (reads LIVE Commerce; stores ids only) ----
+function sfOpenPicker(mode,field){
+  sfEnsureChrome();
+  S._sfPick={mode,field,blockId:S._sfSelBlock};
+  const blk=sfSelBlock();const cur=blk?blk.config[field]:null;
+  S._sfPickSel=mode==='products'?(Array.isArray(cur)?cur.slice():[]):(cur?[cur]:[]);
+  document.getElementById('sf-pick-title').textContent=(mode==='collection')?'Choose a collection':(mode==='product'?'Choose a product':'Choose products');
+  renderSfPickList();
+  document.getElementById('sf-pick-pop').classList.add('on');
+}
+function renderSfPickList(){
+  const p=S._sfPick,list=document.getElementById('sf-pick-list');if(!p||!list)return;
+  const cat=sfPickerData();
+  const items=(p.mode==='collection')?(cat.collections||[]).map(c=>({id:c.id,name:c.name})):(cat.products||[]).map(pr=>({id:pr.id,name:pr.name+(pr.price!=null?'  ·  $'+Math.round(pr.price):'')}));
+  if(!items.length){
+    if(!S._sfCatalog){list.innerHTML='<div style="padding:24px;text-align:center;color:#8a9099;">Loading your catalog…</div>';try{sfLoadOwnerCatalog();}catch(e){}return;}
+    list.innerHTML='<div style="padding:24px;text-align:center;color:#8a9099;">No '+(p.mode==='collection'?'collections':'products')+' in your catalog yet. Add them in Store Admin.</div>';return;
+  }
+  list.innerHTML=items.map(it=>{const on=S._sfPickSel.indexOf(it.id)>-1;return '<div class="sf-pick-item'+(on?' on':'')+'" data-id="'+sfEsc(it.id)+'"><span class="sf-pick-check">'+(on?'✓':'')+'</span><span class="sf-pick-name">'+sfEsc(it.name)+'</span></div>';}).join('');
+}
+function onSfPickClick(e){
+  const b=e.target.closest('[data-sf-act]');
+  if(b&&b.getAttribute('data-sf-act')==='pick-close'){document.getElementById('sf-pick-pop').classList.remove('on');return;}
+  if(b&&b.getAttribute('data-sf-act')==='pick-done'){sfApplyPick();return;}
+  const it=e.target.closest('.sf-pick-item');if(!it)return;
+  const id=it.getAttribute('data-id'),p=S._sfPick;
+  if(p.mode==='products'){const k=S._sfPickSel.indexOf(id);if(k>-1)S._sfPickSel.splice(k,1);else S._sfPickSel.push(id);}
+  else{S._sfPickSel=[id];}
+  renderSfPickList();
+  if(p.mode!=='products')sfApplyPick();
+}
+function sfApplyPick(){
+  const p=S._sfPick;if(!p)return;const draft=sfEnsureDraft();
+  const blk=(draft.blocks||[]).filter(b=>b.id===p.blockId)[0];
+  if(blk){blk.config[p.field]=(p.mode==='products')?S._sfPickSel.slice():(S._sfPickSel[0]||null);}
+  document.getElementById('sf-pick-pop').classList.remove('on');
+  sfCommit();
 }
 
 function renderWebsitePreview(){

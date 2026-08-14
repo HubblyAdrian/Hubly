@@ -25,6 +25,7 @@
     collectionGrid: { variants: ['standard'], config: { title: { kind: 'string', def: 'Shop by category' } } },
     featuredCollection: { variants: ['standard', 'banner'], config: { title: { kind: 'string' }, collectionId: { kind: 'collectionId' } } },
     bestSellers: { variants: ['standard', 'large'], config: { title: { kind: 'string', def: 'Best sellers' }, productIds: { kind: 'productIds' } } },
+    productSpotlight: { variants: ['standard', 'split'], config: { productId: { kind: 'productId' }, title: { kind: 'string' }, blurb: { kind: 'string' } } },
     promoBanner: { variants: ['standard', 'bold'], config: { text: { kind: 'string' }, ctaText: { kind: 'string' } } },
     brandStory: { variants: ['standard'], config: { title: { kind: 'string' }, body: { kind: 'string' } } },
     cta: { variants: ['standard'], config: { title: { kind: 'string' }, buttonText: { kind: 'string', def: 'Shop now' } } },
@@ -32,6 +33,8 @@
   };
   var BLOCK_TYPES = Object.keys(CATALOG);
   var THEME_STYLES = ['clean', 'premium', 'bold', 'minimal', 'warm'];
+  var THEME_FONTS = ['sans', 'serif', 'modern', 'rounded', 'mono'];
+  var THEME_DENSITIES = ['compact', 'cozy', 'roomy'];
   var HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
   function rid() { return 'b_' + Math.random().toString(36).slice(2, 9); }
@@ -45,6 +48,8 @@
     var themeRaw = (obj.theme && typeof obj.theme === 'object') ? obj.theme : {};
     var style = THEME_STYLES.indexOf(themeRaw.style) > -1 ? themeRaw.style : 'clean';
     var accent = (typeof themeRaw.accent === 'string' && HEX.test(themeRaw.accent)) ? themeRaw.accent : null;
+    var font = THEME_FONTS.indexOf(themeRaw.font) > -1 ? themeRaw.font : 'sans';
+    var density = THEME_DENSITIES.indexOf(themeRaw.density) > -1 ? themeRaw.density : 'cozy';
 
     var rawBlocks = Array.isArray(obj.blocks) ? obj.blocks : [];
     var blocks = [];
@@ -63,6 +68,7 @@
         else if (fs.kind === 'number') config[key] = (v != null && isFinite(Number(v))) ? Number(v) : (fs.def != null ? fs.def : 0);
         else if (fs.kind === 'boolean') config[key] = (v === true || v === 'true') || (v == null ? (fs.def != null ? fs.def : false) : false);
         else if (fs.kind === 'productIds') config[key] = Array.isArray(v) ? v.map(function (x) { return String(x); }).filter(Boolean).slice(0, 24) : [];
+        else if (fs.kind === 'productId') config[key] = (v != null && String(v).trim()) ? String(v).trim() : null;
         else if (fs.kind === 'collectionId') config[key] = (v != null && String(v).trim()) ? String(v).trim() : null;
       });
       blocks.push({
@@ -76,7 +82,7 @@
     });
     blocks.sort(function (a, b) { return a.order - b.order; }).forEach(function (b, i) { b.order = 10 + i; });
 
-    return { ok: blocks.length > 0, ast: { version: 1, theme: { style: style, accent: accent }, blocks: blocks }, warnings: warnings };
+    return { ok: blocks.length > 0, ast: { version: 1, theme: { style: style, accent: accent, font: font, density: density }, blocks: blocks }, warnings: warnings };
   }
 
   /** Deterministic default storefront from the real catalog — the graceful fallback used when a
@@ -100,7 +106,7 @@
     if (colls.length) add('collectionGrid', { title: 'Shop by category' });
     add('productGrid', { title: 'Shop all', collectionId: null, columns: 4 });
     add('footer', { text: ctx.businessName || '' });
-    return { version: 1, theme: { style: 'clean', accent: ctx.accent || null }, blocks: blocks };
+    return { version: 1, theme: { style: 'clean', accent: ctx.accent || null, font: 'sans', density: 'cozy' }, blocks: blocks };
   }
 
   /** True if `raw` is a usable saved AST (has at least one valid catalog block). */
@@ -110,6 +116,8 @@
     CATALOG: CATALOG,
     BLOCK_TYPES: BLOCK_TYPES,
     THEME_STYLES: THEME_STYLES,
+    THEME_FONTS: THEME_FONTS,
+    THEME_DENSITIES: THEME_DENSITIES,
     validate: validate,
     buildDefault: buildDefault,
     isUsable: isUsable
