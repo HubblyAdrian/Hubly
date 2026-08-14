@@ -11689,7 +11689,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <button type="button" class="ed-ai-inspire-clear" onclick="edAiClearInspiration()">Clear</button>
         </div>
       </div>
-      <div class="ed-ai-chips">
+      <div class="ed-ai-chips" id="ed-ai-chips">
         <button type="button" class="ed-ai-chip" onclick="edAiChip('Make it a dark premium booking site like Square Appointments — services list first, big Book button')">Dark booking layout</button>
         <button type="button" class="ed-ai-chip" onclick="edAiMatchInspiration()">Match my screenshot</button>
         <button type="button" class="ed-ai-chip" onclick="edAiChip('Put the picture on the right')">Picture on the right</button>
@@ -17943,6 +17943,29 @@ function hasBusinessCapability(key){
   if(key==='lightroom'&&typeof isPhotoLedTrade==='function'&&isPhotoLedTrade())return true;
   return false;
 }
+// ---- Build-surface model: Website and Store are PEER surfaces, each an independent capability.
+//      A business can be Website-only, Store-only, or Website+Store. Store-only businesses must be
+//      able to exist with NO website and enter the Store Builder directly. ----
+function businessCaps(){
+  return Object.assign({}, (S&&S.capabilities)||{}, (typeof currentBusiness!=='undefined'&&currentBusiness&&currentBusiness.capabilities)||{});
+}
+function hasStorefrontSurface(){const c=businessCaps();return c.storefront===true;}
+function hasWebsiteSurface(){const c=businessCaps();
+  // Website is the historical default: treat a business as website-capable when the flag is true OR
+  // when NO surface flags exist at all (legacy) — but a store WITHOUT the website flag is store-only.
+  if(c.website===true)return true;
+  if(c.storefront===true)return false; // storefront set + no website flag => store-only
+  return true; // legacy business with no flags => website
+}
+function isStorefrontOnlyBusiness(){return hasStorefrontSurface()&&!hasWebsiteSurface();}
+/** Which build surface the Hubly Builder should open by default for this business. */
+function builderDefaultSurface(){return isStorefrontOnlyBusiness()?'store':'site';}
+/** The single "open the Hubly Builder" entry — routes to the right peer surface for this business. */
+function openHublyBuilder(surface){
+  const s=surface||builderDefaultSurface();
+  try{if(window.S){S._edHubTab=s;S._edHubKeepTab=true;}}catch(e){}
+  openWebsiteEditorHub(s);
+}
 function syncPhotographyProjectsNav(){
   try{
     if(window.HublyPhotographyProjects?.syncNav)return HublyPhotographyProjects.syncNav();
@@ -17978,21 +18001,33 @@ async function ensureProjectsCapabilityOnBusiness(){
   }catch(e){console.warn('ensureProjectsCapabilityOnBusiness',e);}
 }
 /** Mark this business as having a Storefront (capabilities.storefront) the first time the owner
- *  builds one. Merges — never clobbers marketplace/projects/etc. Also asserts website=true unless
- *  the owner is explicitly storefront-only, so existing businesses keep their Website. */
+ *  builds one. Merges — never clobbers marketplace/projects/website/etc. Website and Store are PEER
+ *  surfaces: building a store must NOT flip the business to website-capable. A business that had no
+ *  website flag stays store-only; one that already had a website becomes website+store. */
 async function ensureStorefrontCapabilityOnBusiness(){
   try{
     if(!currentBusiness?.id)return;
     const caps=Object.assign({},currentBusiness.capabilities||S.capabilities||{});
-    let dirty=false;
-    if(caps.storefront!==true){caps.storefront=true;dirty=true;}
-    if(caps.website!==true&&caps.storefrontOnly!==true){caps.website=true;dirty=true;}
-    if(!dirty)return;
+    if(caps.storefront===true)return;
+    caps.storefront=true;
     S.capabilities=caps;
     currentBusiness.capabilities=caps;
     const db=typeof getDb==='function'?getDb():null;
     if(db)await db.from('businesses').update({capabilities:caps}).eq('id',currentBusiness.id);
   }catch(e){console.warn('ensureStorefrontCapabilityOnBusiness',e);}
+}
+/** Set a business's build surfaces explicitly (used by the "what are you building?" chooser).
+ *  {website, storefront} booleans → merged into capabilities and persisted. Peers, independent. */
+async function setBusinessSurfaces(opts){
+  try{
+    if(!currentBusiness?.id)return;
+    const caps=Object.assign({},currentBusiness.capabilities||S.capabilities||{});
+    if(opts&&typeof opts.website==='boolean')caps.website=opts.website;
+    if(opts&&typeof opts.storefront==='boolean')caps.storefront=opts.storefront;
+    S.capabilities=caps;currentBusiness.capabilities=caps;
+    const db=typeof getDb==='function'?getDb():null;
+    if(db)await db.from('businesses').update({capabilities:caps}).eq('id',currentBusiness.id);
+  }catch(e){console.warn('setBusinessSurfaces',e);}
 }
 function getObServiceCatalog(){
   if(typeof HublyBlueprints!=='undefined'){
@@ -29389,13 +29424,37 @@ function openWebsiteEditorHub(tab){
   else{
     document.querySelectorAll('.body').forEach(el=>el.classList.add('hidden'));
     document.getElementById('v-editor')?.classList.remove('hidden');
-    setTimeout(()=>{try{switchWebsiteHubTab(tab||'site');}catch(e){}},80);
+    setTimeout(()=>{try{switchWebsiteHubTab(tab||builderDefaultSurface());}catch(e){}},80);
   }
 }
 
+/** A Store-only business is designing its ENTIRE web presence in the Store Builder — it must not
+ *  see website-only navigation. Hide the Website/Booking/Business rail groups + the Website peer
+ *  item + website hub tabs; a Website (or Website+Store) business keeps everything as peers. */
+function applyStorefrontOnlyChrome(){
+  const storeOnly=(typeof isStorefrontOnlyBusiness==='function')&&isStorefrontOnlyBusiness();
+  const rail=document.getElementById('ed-settings-rail-nav');
+  if(rail){
+    rail.querySelectorAll('.ed-settings-group').forEach(g=>{
+      const lbl=(g.querySelector('.ed-settings-group-label')?.textContent||'').toLowerCase();
+      const isBuild=g.id==='ed-settings-group-build';
+      const websiteish=/website|booking|business/.test(lbl);
+      if(storeOnly&&websiteish&&!isBuild)g.style.display='none';else g.style.removeProperty('display');
+    });
+    const siteItem=rail.querySelector('[data-ed-nav="site"]');
+    if(siteItem){if(storeOnly)siteItem.style.display='none';else siteItem.style.removeProperty('display');}
+  }
+  const head=document.querySelector('#ed-settings-rail .ed-settings-rail-head strong');
+  if(head)head.textContent=storeOnly?'Store':'Builder';
+  ['site','packages','book','quote'].forEach(h=>{const b=document.querySelector('#ed-hub-tabs [data-hub="'+h+'"]');if(b)b.style.display=storeOnly?'none':'';});
+}
+
 function switchWebsiteHubTab(tab){
-  const t=['packages','book','quote','store'].includes(tab)?tab:'site';
+  // Default surface respects the business's build config: a Store-only business opens on Store.
+  const t=['packages','book','quote','store'].includes(tab)?tab:(typeof builderDefaultSurface==='function'?builderDefaultSurface():'site');
   try{if(window.S)S._edHubTab=t;}catch(e){}
+  // Store-only businesses never see website-only chrome; website+store see both as peers.
+  try{applyStorefrontOnlyChrome();}catch(e){}
   // Leaving the Store surface: hide its toolbar + close its editor panel so nothing lingers.
   try{if(t!=='store'){const _tb=document.getElementById('sf-store-toolbar');if(_tb)_tb.style.display='none';if(typeof closeSfPanel==='function')closeSfPanel();}}catch(e){}
   // Always clear the Styles overlay first so hub tabs never look "dead".
@@ -29447,6 +29506,7 @@ function switchWebsiteHubTab(tab){
     else quote.style.removeProperty('display');
   }
   if(t==='site'){
+    try{restoreWebsiteAiChips();}catch(e){}
     try{forceEdSiteCanvasVisible();}catch(e){}
     try{renderWebsitePreview();}catch(e){console.warn('Site hub preview',e);}
   }else if(t==='store'){
@@ -29456,6 +29516,7 @@ function switchWebsiteHubTab(tab){
     try{renderEdStorefrontPreview();}catch(e){console.warn('Store hub preview',e);}
     try{renderStorefrontToolbar();}catch(e){console.warn('Store toolbar',e);}
     try{sfLoadOwnerCatalog();}catch(e){}
+    try{renderStoreAiIntro();}catch(e){}
   }else if(t==='packages'){
     try{ensureTradeEditorChrome();}catch(e){}
     try{
@@ -36692,6 +36753,48 @@ async function edStoreAiSend(text){
     S._edStoreAiSending=false;
     if(sendBtn){sendBtn.disabled=false;sendBtn.textContent='Ask AI';}
   }
+}
+/**
+ * Store-surface AI intro: swaps the shared AI panel's chips to store-specific, catalog-aware
+ * suggestions and seeds a one-time welcome line. The Website chips are captured on first entry
+ * and restored by restoreWebsiteAiChips() when the owner returns to the Site surface, so the two
+ * peer surfaces each get their own vocabulary in the same panel.
+ */
+function storeAiChip(t){return '<button type="button" class="ed-ai-chip" onclick="edAiChip('+JSON.stringify(t).replace(/"/g,'&quot;')+')">'+escHtml(t)+'</button>';}
+function renderStoreAiIntro(){
+  const wrap=document.getElementById('ed-ai-chips');
+  if(wrap){
+    if(S._edAiSiteChipsHtml==null)S._edAiSiteChipsHtml=wrap.innerHTML;
+    // Catalog-aware: reference the real product count when we already have it loaded.
+    let n=0; try{n=((S._sfCatalog&&S._sfCatalog.products||[]).length)||0;}catch(e){}
+    const hasProducts=n>0;
+    const chips=[
+      hasProducts?'Design my store around my best products':'Build me a clean store to start selling',
+      'Feature my best sellers up top',
+      'Add a bold promo banner',
+      'Tell my brand story',
+      'Make the product cards bigger',
+      'Try a premium look',
+      'Try a warm, friendly look',
+      'Add a call-to-action to shop now'
+    ];
+    wrap.innerHTML=chips.map(storeAiChip).join('');
+  }
+  // One welcome line per business, so re-entering the Store surface doesn't spam the log.
+  try{
+    const cb=(typeof currentBusiness!=='undefined'&&currentBusiness)?currentBusiness:{};
+    const key=cb.id||'anon';
+    if(S._edStoreWelcomeFor!==key){
+      S._edStoreWelcomeFor=key;
+      const has=(S._edAi&&S._edAi.messages||[]).some(m=>m.side==='hubly'&&/build|store/i.test(m.text));
+      if(!has)edAiPush('hubly','I can build and restyle your whole store from your catalog. Tell me the vibe, or tap a suggestion below.');
+    }
+  }catch(e){}
+}
+/** Restore the Website Builder's own chips when leaving the Store surface. */
+function restoreWebsiteAiChips(){
+  const wrap=document.getElementById('ed-ai-chips');
+  if(wrap&&S._edAiSiteChipsHtml!=null)wrap.innerHTML=S._edAiSiteChipsHtml;
 }
 async function edAiInvokeClaude(text,opts={}){
   try{
