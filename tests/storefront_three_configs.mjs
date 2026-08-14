@@ -115,6 +115,26 @@ async function bootOwner(browser, biz, session) {
     await pCs.route(`https://${slugC}.myhubly.app/**`, serve(`${slugC}.myhubly.app`));
     ck('C6 both: "/store" serves the independent store', await bootStore(pCs, `https://${slugC}.myhubly.app/store`));
     await ctxCs.close();
+
+    // ===================== D) BUILD-SURFACE MODEL (intended configuration) =====================
+    // The top-of-funnel "What should we build for you?" answer maps to capabilities and is derivable
+    // from a business's live capabilities — proving Website / Store / Website+Store as intended config.
+    { const { page, ctx } = await bootOwner(browser, IDS.store, oB.session);
+      const d = await page.evaluate(() => ({
+        wc: surfaceToCaps('website'), sc: surfaceToCaps('store'), bc: surfaceToCaps('both'),
+        rtWebsite: capsToSurface({ website: true }), rtStore: capsToSurface({ storefront: true }), rtBoth: capsToSurface({ website: true, storefront: true }),
+        live: getBuildSurface(), storeOnly: buildSurfaceIsStoreOnly(),
+        setThenStore: (() => { try { localStorage.removeItem('hubly_build_surface'); setBuildSurface('both'); return localStorage.getItem('hubly_build_surface'); } catch (e) { return 'err'; } })(),
+      }));
+      ck('D1 surfaceToCaps maps each config to peer capabilities',
+        d.wc.website === true && d.wc.storefront === false &&
+        d.sc.website === false && d.sc.storefront === true &&
+        d.bc.website === true && d.bc.storefront === true, JSON.stringify(d.sc));
+      ck('D2 capsToSurface derives the config back from live capabilities',
+        d.rtWebsite === 'website' && d.rtStore === 'store' && d.rtBoth === 'both');
+      ck('D3 store-only business reports intended config = store', d.live === 'store' && d.storeOnly === true, JSON.stringify({ live: d.live, storeOnly: d.storeOnly }));
+      ck('D4 chosen build config persists durably (localStorage)', d.setThenStore === 'both', d.setThenStore);
+      await ctx.close(); }
   } catch (e) { console.error('HARNESS ERROR', e); }
   finally { await browser.close(); }
   const del = await cleanup();

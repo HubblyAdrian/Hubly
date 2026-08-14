@@ -18029,6 +18029,42 @@ async function setBusinessSurfaces(opts){
     if(db)await db.from('businesses').update({capabilities:caps}).eq('id',currentBusiness.id);
   }catch(e){console.warn('setBusinessSurfaces',e);}
 }
+// ---- Intended build configuration (the top-of-funnel "What should we build for you?" answer) ----
+//      Values: 'website' | 'store' | 'both'. Persisted durably so a refresh / re-entry mid-onboarding
+//      never loses whether the owner is building a Website, a Store, or both. Once a business row
+//      exists, its capabilities are the source of truth and we derive the surface from them.
+const BUILD_SURFACE_KEY='hubly_build_surface';
+function surfaceToCaps(surface){
+  if(surface==='store')return {website:false,storefront:true};
+  if(surface==='both')return {website:true,storefront:true};
+  return {website:true,storefront:false}; // 'website' (default)
+}
+function capsToSurface(caps){
+  const c=caps||{};
+  const store=c.storefront===true, site=c.website===true;
+  if(store&&!site)return 'store';
+  if(store&&site)return 'both';
+  return 'website';
+}
+/** Record the chosen build configuration (in memory + durable localStorage). */
+function setBuildSurface(surface){
+  const s=(['website','store','both'].includes(surface))?surface:'website';
+  try{if(window.S){S._is=S._is||{};S._is.buildSurface=s;}}catch(e){}
+  try{localStorage.setItem(BUILD_SURFACE_KEY,s);}catch(e){}
+  return s;
+}
+/** The intended build configuration: live business caps win; else onboarding state; else stored; else null. */
+function getBuildSurface(){
+  try{
+    const caps=(typeof currentBusiness!=='undefined'&&currentBusiness&&currentBusiness.capabilities)?currentBusiness.capabilities:null;
+    if(caps&&(caps.storefront===true||caps.website===true))return capsToSurface(caps);
+  }catch(e){}
+  try{if(window.S&&S._is&&S._is.buildSurface)return S._is.buildSurface;}catch(e){}
+  try{const v=localStorage.getItem(BUILD_SURFACE_KEY);if(v&&['website','store','both'].includes(v))return v;}catch(e){}
+  return null;
+}
+function clearBuildSurface(){try{localStorage.removeItem(BUILD_SURFACE_KEY);}catch(e){}}
+function buildSurfaceIsStoreOnly(){return getBuildSurface()==='store';}
 function getObServiceCatalog(){
   if(typeof HublyBlueprints!=='undefined'){
     const names=HublyBlueprints.serviceNames(S.businessType||HublyBlueprints.getDefaultId());
@@ -20219,6 +20255,71 @@ async function isCreativeBuildInterruptSend(){
   isCreativeRenderPreview(S._is.creativeBuild);
   isArchitectToast('Theme updated successfully.','ok');
 }
+/**
+ * FIRST top-of-funnel decision: "What should we build for you?" — Website / Online Store /
+ * Website + Store. Storefront is a first-class build surface, not a Website feature. Grow and
+ * hire-a-pro (get_done) paths keep their own intent gate — the surface question is only for builders.
+ * The answer is persisted durably (setBuildSurface) so a refresh mid-onboarding never loses it, and
+ * becomes the business's capabilities at completeOnboard. Returns 'website' | 'store' | 'both' | null.
+ */
+async function isArchitectEnsureBuildSurface(experience,seed){
+  const inferred=HUBLY_CREATIVE_BUILD.inferIntent(seed||'');
+  if(inferred==='grow'||inferred==='get_done'){experience.intent=inferred;return null;}
+  let surface=(typeof getBuildSurface==='function')?getBuildSurface():null;
+  if(!surface){
+    isArchitectSetMilestone('What are you building?');
+    isCreativePush('hubly','First — what should we build for you? A website for your services, an online store to sell products, or both. You can always add the other later.');
+    const html=`<div class="cq">What should we build for you?</div><div class="opts">`+
+      `<button type="button" data-choice="website"><strong>Website</strong><span>A booking-ready site for your services.</span></button>`+
+      `<button type="button" data-choice="store"><strong>Online Store</strong><span>Sell products with a storefront and checkout.</span></button>`+
+      `<button type="button" data-choice="both"><strong>Website + Store</strong><span>Both — independent surfaces under one brand.</span></button>`+
+      `</div>`;
+    const picked=await isArchitectAwaitChoice(html,{defaultId:'website',defaultLabel:'Website',timeoutMs:30000});
+    surface=(['website','store','both'].includes(picked.id))?picked.id:'website';
+    isCreativePush('owner',picked.label||surface);
+  }
+  if(typeof setBuildSurface==='function')setBuildSurface(surface);
+  experience.buildSurface=surface;
+  experience.intent='build';
+  try{S._is.architectIntent='build';}catch(e){}
+  return surface;
+}
+/**
+ * Lightweight Instant Store creation (Store-only path). Skips the website-centric cinematic entirely
+ * and runs a short reveal (Reading catalog → Designing → Almost ready → ready), then hands off to the
+ * SHARED reveal / account / launch chain. Because getBuildSurface()==='store', the business is
+ * provisioned store-only (no website capability) and the owner lands directly in the Store Builder.
+ */
+async function isRunInstantStoreExperience(seed,experience){
+  experience.intent='build';
+  experience.buildSurface='store';
+  experience.live=experience.live||{};
+  experience.live.mode='site';
+  experience.live.heroTitle=(S.biz||experience.industryLabel||'Your store');
+  experience.live.heroSub='Building your storefront from your catalog…';
+  experience.live.cta='Shop now';
+  isCreativeRenderPreview(experience);
+  const beats=[
+    {m:'Reading your catalog',t:'Reading your catalog…'},
+    {m:'Designing your store',t:'Designing your store around your products…'},
+    {m:'Almost ready',t:'Almost ready — arranging your storefront…'},
+  ];
+  for(const b of beats){
+    isArchitectSetMilestone(b.m);
+    isCreativePush('hubly',b.t);
+    isArchitectToast(b.t,'busy');
+    await isArchitectSleep(700);
+  }
+  isArchitectSetMilestone('Your store is ready');
+  isArchitectToast('Your store is ready.','ok');
+  isCreativePush('hubly','Your store is ready. Next we’ll open the Store Builder so you can add products and publish — no website required.');
+  await isCreativeFrame();
+  S._is.readyForReveal=true;
+  document.querySelector('#is-shell .is-wrap')?.classList.remove('is-creative-wide');
+  document.getElementById('is-shell')?.classList.remove('is-architect-mode');
+  await isRunBusinessRevealExperience(seed,experience);
+  return experience;
+}
 async function isRunCreativeBuildExperience(seed){
   document.querySelector('#is-shell .is-wrap')?.classList.add('is-creative-wide');
   document.getElementById('is-shell')?.classList.add('is-architect-mode');
@@ -20256,6 +20357,13 @@ async function isRunCreativeBuildExperience(seed){
   const seedText=String(seed||S._is?.seed||'').trim();
   if(seedText){
     isCreativePush('owner',seedText);
+  }
+  // FIRST DECISION (top-of-funnel): "What should we build for you?" — Website / Online Store /
+  // Website + Store. Storefront is a first-class build surface, not a Website feature. A Store-only
+  // choice routes into a lightweight store creation experience and never runs the website cinematic.
+  const buildSurface=await isArchitectEnsureBuildSurface(experience,seedText);
+  if(buildSurface==='store'){
+    return await isRunInstantStoreExperience(seed,experience);
   }
   await isArchitectEnsureIntent(experience,seedText);
   S._is.architectIntent=experience.intent;
@@ -20669,8 +20777,11 @@ async function isRunBusinessRevealExperience(seed, creativeExperience){
   const hero=document.getElementById('is-reveal-hero');
   const welcome=document.getElementById('is-reveal-welcome');
   const forward=document.getElementById('is-reveal-forward');
-  if(hero)hero.textContent='Your business is ready.';
-  if(welcome)welcome.textContent='Website, booking, CRM, packages, and calendar — built while we talked.';
+  const _storeOnly=(typeof buildSurfaceIsStoreOnly==='function')&&buildSurfaceIsStoreOnly();
+  if(hero)hero.textContent=_storeOnly?'Your store is ready.':'Your business is ready.';
+  if(welcome)welcome.textContent=_storeOnly
+    ?'Your storefront, catalog, orders, and CRM — built while we talked.'
+    :'Website, booking, CRM, packages, and calendar — built while we talked.';
   if(forward){forward.hidden=true;forward.innerHTML='';}
 
   // Hubly v3 — visual ready cards only (no report chrome)
@@ -27984,6 +28095,10 @@ async function completeOnboard(){
     meta: buildBizMeta(),
     section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
     ...(()=>{const b=suggestedTravelBuffers();return{buffer_before_min:b.before,buffer_after_min:b.after};})(),
+    // Persist the intended build configuration (Website / Store / Website+Store) as capabilities so
+    // Website and Store are provisioned as independent peer surfaces from day one. Merges with any
+    // existing caps in upsertOwnBusiness → never clobbers other flags.
+    ...(()=>{const surf=(typeof getBuildSurface==='function')?getBuildSurface():null;return surf?{capabilities:surfaceToCaps(surf)}:{};})(),
   });
   if(Number.isNaN(bizPayload.travel_radius_miles))bizPayload.travel_radius_miles=null;
 
@@ -28445,6 +28560,19 @@ async function finishOnboardingLaunch(){
     populateEditorFromState();
     S.website.editorGuide={active:true,step:0,completed:false,dismissed:false};
   }catch(e){console.warn('finishOnboardingLaunch chrome',e);}
+  // Store-only businesses have no website/booking surface — land them directly in the Store Builder
+  // (their peer build surface), never the website Booking Wizard.
+  if(typeof buildSurfaceIsStoreOnly==='function'&&buildSurfaceIsStoreOnly()){
+    setTimeout(()=>{
+      try{
+        document.getElementById('obs-suc')?.classList.add('hidden');
+        document.getElementById('p-onboard')?.classList.remove('active');
+        ensureTradeEditorChrome();
+        openHublyBuilder('store');
+      }catch(e){console.warn('store builder launch',e);goDash();}
+    },450);
+    return;
+  }
   // First publish → Booking Wizard (skip soft-gates to dashboard later).
   if(shouldLaunchBookingWizard()){
     setTimeout(()=>{
