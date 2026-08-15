@@ -61,6 +61,12 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
+import {
+  buildBusinessIdentityBlock,
+  resolveBusinessDna,
+  tradeSellsProducts,
+  type BusinessDna,
+} from "../_shared/hubly_business_dna.ts";
 import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, uploadDraftLogo, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
@@ -286,6 +292,11 @@ function buildSystemPrompt(
   currentUnderstanding: BusinessUnderstandingPatch | CustomerUnderstandingPatch,
   latestUserMessage: string | null,
   draftBusiness: { id: string; slug: string; url: string } | null,
+  /** Verified server-side identity for the operate surface. Null elsewhere. */
+  operate?: {
+    business: { name: string | null; businessType: string | null; accent: string | null } | null;
+    dna: BusinessDna | null;
+  } | null,
 ): string {
   const adapter = getUnderstandingAdapter(context);
   const knownSoFar = adapter.isEmpty(currentUnderstanding as any)
@@ -313,13 +324,29 @@ YOU ARE IN A CREATIVE SESSION, NOT CONFIGURING SOFTWARE. "capability", "action",
 The conversation may already know something before you say anything — a click on a specific service or package, or details from a returning customer. Only ask for what's still unknown; never re-ask something already established. If nothing is known yet, ask naturally what they're looking for.`
       : context === "operate"
       ? `OPERATING THE STORE
-You can: list what they're selling, create products, edit a product's name/price/description/stock, add and change variants (options like a "12-pack" or a "5 Gallon" size, each with its own price and stock), publish or hide products, organize products into collections, and turn the store on or set its headline.
 
-SAFE BY DEFAULT — never assume "sell it" means "publish it". A product you create starts as a hidden DRAFT that customers cannot see. Only publish it (create it live, or setProductVisibility) when the owner EXPLICITLY says to put it on their store / make it available / start selling it. If they just say "add a soap for $49.99", create the draft and tell them it's saved but hidden, and that you'll publish it whenever they're ready. If they say "add a $49.99 soap and put it on my store", create it live.
+${operate?.business
+  ? buildBusinessIdentityBlock(operate.business, operate.dna, {})
+  : "THIS BUSINESS — identity was not loaded this turn. Do not guess an industry, and do not adopt one from any example below."}
+
+WHAT THIS SURFACE IS. Hubly has two different public surfaces and they are not interchangeable:
+- The PRODUCT STORE (this one, /store) merchandises physical or digital products the business actually sells — stock, variants, categories, shipping.
+- Their BUSINESS STOREFRONT (their website) is where their services, pricing, gallery, reviews and booking live.
+You operate the Product Store only. If what they want belongs to the Business Storefront, say so plainly and point them there — never rebuild it here, and never run product questions at a business whose public presence is really a service page.
+
+YOU ALREADY KNOW WHO THEY ARE. Their name, trade and brand colour are above, and listCatalog gives you exactly what they sell. Never ask what industry they are, never ask "do you sell physical products, digital products, or a mix", and never ask them to describe their business back to you — asking for something Hubly already stored is the single fastest way to lose their trust. Ask ONLY when the answer genuinely cannot be known from the business record or the catalog, and then ask one plain question.
+
+WHEN THE STORE ISN'T THE RIGHT SURFACE. If their trade doesn't sell products and their catalog is empty, don't interview them about categories, shipping or best sellers — there is nothing to merchandise. Say what you can see, tell them their services/gallery/reviews/booking live on their website, and offer to take them there instead.
+
+You can: list what they're selling, create products, edit a product's name/price/description/stock, add and change variants (options like a "12-pack" or a larger size, each with its own price and stock), publish or hide products, organize products into collections, turn the store on or set its headline, and DESIGN the store's presentation (generateStorefront to lay it out, patchStorefront to refine it).
+
+SAFE BY DEFAULT — never assume "sell it" means "publish it". A product you create starts as a hidden DRAFT that customers cannot see. Only publish it (create it live, or setProductVisibility) when the owner EXPLICITLY says to put it on their store / make it available / start selling it. If they just say "add a candle for $49.99", create the draft and tell them it's saved but hidden, and that you'll publish it whenever they're ready. If they say "add a $49.99 candle and put it on my store", create it live.
 
 NEVER GUESS WHICH ITEM. Before editing, publishing, hiding, or adding/changing a variant, know the exact catalog (listCatalog). If the name the owner used matches more than one product/collection/variant — or none — do NOT change anything: ask which one they mean, or say it doesn't exist and show what does. (The actions enforce this too, but ask naturally rather than letting an action bounce back.)
 
-When they ask what they're selling, list the catalog plainly. Keep replies short — the owner sees the result on screen, so a few words is usually enough; don't narrate machinery. Only the Store is yours to operate in this conversation — if they ask about their website, booking, customers, or anything else, say that lives in another part of Hubly and you'll help with it there; never pretend to change it here.`
+DESIGN IN THEIR TRADE'S VOICE, NOT AN EXAMPLE'S. Any product names, categories or industries used as examples in these instructions are illustrative only — they are never this business. If the owner points at another brand they admire, take the feel and leave that brand's products, categories and trade language behind.
+
+When they ask what they're selling, list the catalog plainly. Keep replies short — the owner sees the result on screen, so a few words is usually enough; don't narrate machinery. Only the Store is yours to operate in this conversation — if they ask about booking, customers, or anything else, say that lives in another part of Hubly and you'll help with it there; never pretend to change it here.`
       : `LEARNING ABOUT A BUSINESS
 Don't introduce Hubly capabilities, features, or a list of things you can help with until the person has described a real problem or goal in their own words — never infer one from their industry alone ("plumbing companies often need more calls" is not evidence; the person actually saying business is slow is).
 
@@ -504,6 +531,8 @@ Deno.serve(async (req) => {
   // owner-gated commerce-api — structural context, never shown to the model (same
   // treatment as booking's businessId / business's draftToken).
   let ownerToken: string | null = null;
+  let operateBusiness: { name: string | null; businessType: string | null; accent: string | null } | null = null;
+  let operateDna: BusinessDna | null = null;
   if (context === "operate") {
     const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
     const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
@@ -518,15 +547,26 @@ Deno.serve(async (req) => {
     const userId = userRes.ok && userJson?.id ? String(userJson.id) : null;
     if (!userId) return jsonRes({ ok: false, error: "You're not signed in." }, 401);
     const bizRes = await fetch(
-      `${supabaseUrl}/rest/v1/businesses?id=eq.${encodeURIComponent(businessId)}&select=owner_id&limit=1`,
+      `${supabaseUrl}/rest/v1/businesses?id=eq.${encodeURIComponent(businessId)}&select=owner_id,name,business_type,brand_color&limit=1`,
       { headers: { authorization: `Bearer ${serviceKey}`, apikey: serviceKey } },
     );
     const bizRows = await bizRes.json().catch(() => null);
-    const ownerId = Array.isArray(bizRows) && bizRows[0] ? String(bizRows[0].owner_id || "") : "";
+    const bizRow = Array.isArray(bizRows) && bizRows[0] ? bizRows[0] : null;
+    const ownerId = bizRow ? String(bizRow.owner_id || "") : "";
     if (!ownerId || ownerId !== userId) {
       return jsonRes({ ok: false, error: "You don't have access to this business's store." }, 403);
     }
     ownerToken = token;
+    // The verified row is the AUTHORITY on who this business is. Previously only
+    // owner_id was read, so the operate AI knew nothing about the business it was
+    // operating — no name, no trade — and had to interview the owner for facts
+    // Hubly already stored.
+    operateBusiness = {
+      name: bizRow.name ? String(bizRow.name) : null,
+      businessType: bizRow.business_type ? String(bizRow.business_type) : null,
+      accent: bizRow.brand_color ? String(bizRow.brand_color) : null,
+    };
+    operateDna = resolveBusinessDna(operateBusiness.businessType);
   }
 
   // Storefront Builder inputs (operate/storefront surface): the current storefront layout the
@@ -717,7 +757,7 @@ Deno.serve(async (req) => {
     for (let round = 0; round < MAX_CAPABILITY_ROUNDS; round++) {
       const ai = await HublyAI.chat({
         feature: "hubly-conversation",
-        system: buildSystemPrompt(context, adapter.merge(currentUnderstanding, turnPatch), latestUserMessage, draftBusiness),
+        system: buildSystemPrompt(context, adapter.merge(currentUnderstanding, turnPatch), latestUserMessage, draftBusiness, { business: operateBusiness, dna: operateDna }),
         messages: history,
         jsonMode: true,
         maxTokens: 900,
@@ -783,6 +823,8 @@ Deno.serve(async (req) => {
         if (capabilityName === "storefront" && businessId) {
           dispatchArgs.businessId = businessId;
           if (ownerToken) dispatchArgs._ownerToken = ownerToken;
+          // Verified server-side identity wins over anything the client sent.
+          if (operateBusiness?.businessType) dispatchArgs._businessType = operateBusiness.businessType;
           // Storefront Builder: the current storefront layout the owner is editing + brand
           // context, injected so generate/patchStorefront work on the live config. Never
           // shown to the model; omitted from the actions log below.
@@ -791,6 +833,8 @@ Deno.serve(async (req) => {
             dispatchArgs._businessName = (storeContext as Record<string, unknown>).businessName;
             dispatchArgs._accent = (storeContext as Record<string, unknown>).accent;
           }
+          if (operateBusiness?.name) dispatchArgs._businessName = operateBusiness.name;
+          if (operateBusiness?.accent && !dispatchArgs._accent) dispatchArgs._accent = operateBusiness.accent;
         }
         // One-Off Session actions run as the authenticated owner, exactly like
         // storefront above: the verified businessId and the owner's token are

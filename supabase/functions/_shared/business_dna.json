@@ -1,0 +1,606 @@
+{
+  "generated_from": "public/business-blueprints/*.json",
+  "generator": "scripts/generate-business-dna.mjs",
+  "blueprints": {
+    "detailing": {
+      "id": "detailing",
+      "name": "Auto Detailing",
+      "slug": "detailing",
+      "description": "Mobile and shop auto detailing",
+      "synonyms": [
+        "detailer",
+        "auto detail",
+        "car wash",
+        "mobile detail",
+        "ceramic coating"
+      ],
+      "brandVoice": "Confident, warm, plain-spoken — like a craftsman talking to a neighbor. Short sentences. No agency fluff.",
+      "customerPsychology": "Buyers want to trust that their car is in careful hands. Photos of real results beat adjectives. Convenience (mobile) and clear packages reduce booking anxiety.",
+      "buyingBehavior": "Compares packages and photos first, then books or texts. Reviews tip the decision.",
+      "homepageGoals": [
+        "Show transformative before/after",
+        "Make booking feel easy",
+        "Prove local trust"
+      ],
+      "trustSignals": [
+        "Licensed & insured",
+        "Mobile service",
+        "Satisfaction guarantee"
+      ],
+      "copyRules": [
+        "Never invent awards or fake customer counts",
+        "Lead with results not jargon"
+      ],
+      "decisionFactors": [
+        "Quality",
+        "Photos",
+        "Reviews",
+        "Convenience"
+      ],
+      "customerExpectations": [
+        "Clear packages",
+        "Strong before/after photos",
+        "Easy booking",
+        "Show-up reliability"
+      ],
+      "homepagePriority": [
+        "hero",
+        "services",
+        "gallery",
+        "reviews",
+        "about",
+        "booking",
+        "contact"
+      ],
+      "capabilities": {
+        "appointments": true,
+        "estimates": true,
+        "memberships": true,
+        "inventory": false,
+        "portfolio": true,
+        "vehicleDetails": true,
+        "dirtySurcharge": true,
+        "clientGalleries": false,
+        "contracts": false,
+        "printStore": false,
+        "staffScheduling": false,
+        "giftCards": false,
+        "emergencyBanner": false,
+        "stickyPhone": false
+      },
+      "exampleServices": [
+        "Interior Detail",
+        "Exterior Detail",
+        "Full Detail",
+        "Ceramic Coating",
+        "Paint Correction",
+        "Wash & Wax"
+      ]
+    },
+    "cleaning": {
+      "id": "cleaning",
+      "name": "Maid & House Cleaning",
+      "slug": "house-cleaning",
+      "description": "Recurring cleans and deep cleans",
+      "synonyms": [
+        "house cleaning",
+        "maid",
+        "cleaner",
+        "cleaning service",
+        "home cleaning",
+        "deep clean"
+      ],
+      "brandVoice": "Warm, tidy, reassuring. Emphasize trust in the home and consistent recurring cleans.",
+      "customerPsychology": "Trust and consistency beat novelty. Background-checked language and clear checklists matter.",
+      "buyingBehavior": "Chooses recurring after one deep clean or first standard visit.",
+      "homepageGoals": [
+        "Build trust fast",
+        "Sell recurring weekly/biweekly",
+        "Clear deep-clean option"
+      ],
+      "trustSignals": [
+        "Background-checked",
+        "Bonded & insured",
+        "Same cleaner preferred"
+      ],
+      "copyRules": [
+        "Never invent certifications",
+        "Lead with trust and checklist clarity"
+      ],
+      "decisionFactors": [
+        "Trust",
+        "Price",
+        "Consistency",
+        "Reviews"
+      ],
+      "customerExpectations": [
+        "Trusted cleaners",
+        "Clear checklist",
+        "Easy recurring booking",
+        "Respectful of home"
+      ],
+      "homepagePriority": [
+        "hero",
+        "services",
+        "reviews",
+        "about",
+        "booking",
+        "contact"
+      ],
+      "capabilities": {
+        "appointments": true,
+        "estimates": true,
+        "memberships": true,
+        "inventory": false,
+        "portfolio": true,
+        "vehicleDetails": false,
+        "dirtySurcharge": false,
+        "clientGalleries": false,
+        "contracts": false,
+        "printStore": false,
+        "staffScheduling": true,
+        "giftCards": false,
+        "emergencyBanner": false,
+        "stickyPhone": false
+      },
+      "exampleServices": [
+        "Standard House Cleaning",
+        "Deep Cleaning",
+        "Move-in / Move-out Clean",
+        "Kitchen Deep Clean",
+        "Bathroom Refresh",
+        "Recurring Weekly Clean"
+      ]
+    },
+    "hvac": {
+      "id": "hvac",
+      "name": "HVAC",
+      "slug": "hvac",
+      "description": "Heating, cooling, repair, and maintenance",
+      "synonyms": [
+        "hvac",
+        "ac repair",
+        "furnace",
+        "heating",
+        "cooling",
+        "air conditioning"
+      ],
+      "brandVoice": "Calm, licensed, ready. Emergency clarity without scare tactics. Phone-first CTAs.",
+      "customerPsychology": "In crisis they need a phone number and trust signals. Off-season they need maintenance plans.",
+      "buyingBehavior": "Emergency call first; maintenance plans sold off-season.",
+      "homepageGoals": [
+        "Emergency CTA + phone visible",
+        "List core services",
+        "Show licensing trust"
+      ],
+      "trustSignals": [
+        "Licensed",
+        "Insured",
+        "Emergency response",
+        "Financing available"
+      ],
+      "copyRules": [
+        "Lead with availability and trust",
+        "Never invent license numbers"
+      ],
+      "decisionFactors": [
+        "Availability",
+        "Trust",
+        "Licensing",
+        "Emergency Response"
+      ],
+      "customerExpectations": [
+        "Emergency response",
+        "Phone number",
+        "Trust",
+        "Financing"
+      ],
+      "homepagePriority": [
+        "emergency",
+        "phone",
+        "services",
+        "reviews",
+        "about",
+        "contact"
+      ],
+      "capabilities": {
+        "appointments": true,
+        "estimates": true,
+        "memberships": true,
+        "inventory": false,
+        "portfolio": false,
+        "vehicleDetails": false,
+        "dirtySurcharge": false,
+        "clientGalleries": false,
+        "contracts": false,
+        "printStore": false,
+        "staffScheduling": true,
+        "giftCards": false,
+        "emergencyBanner": true,
+        "stickyPhone": true
+      },
+      "exampleServices": [
+        "AC Repair",
+        "Furnace Repair",
+        "Maintenance Tune-up",
+        "System Installation",
+        "Emergency Service"
+      ]
+    },
+    "landscaping": {
+      "id": "landscaping",
+      "name": "Landscaping",
+      "slug": "lawn-care",
+      "description": "Lawn care and outdoor services",
+      "synonyms": [
+        "lawn",
+        "lawn care",
+        "yard care",
+        "landscaper",
+        "mowing",
+        "turf"
+      ],
+      "brandVoice": "Neighborly, seasonal, proud of curb appeal. Practical and friendly.",
+      "customerPsychology": "Recurring lawn plans feel safer than one-offs. Seasonal cleanups create urgency.",
+      "buyingBehavior": "Prefers weekly/biweekly plans; books seasonals as add-ons.",
+      "homepageGoals": [
+        "Show outdoor transformations",
+        "Sell recurring mowing",
+        "Seasonal clarity"
+      ],
+      "trustSignals": [
+        "Local crew",
+        "Reliable schedule",
+        "Property respect"
+      ],
+      "copyRules": [
+        "Mention seasons and frequency",
+        "Avoid vague “beautify”"
+      ],
+      "decisionFactors": [
+        "Reliability",
+        "Price",
+        "Curb appeal photos",
+        "Frequency options"
+      ],
+      "customerExpectations": [
+        "On-time crew",
+        "Neat finish",
+        "Easy recurring billing",
+        "Seasonal tips"
+      ],
+      "homepagePriority": [
+        "hero",
+        "services",
+        "gallery",
+        "reviews",
+        "booking",
+        "contact"
+      ],
+      "capabilities": {
+        "appointments": true,
+        "estimates": true,
+        "memberships": true,
+        "inventory": false,
+        "portfolio": true,
+        "vehicleDetails": false,
+        "dirtySurcharge": false,
+        "clientGalleries": false,
+        "contracts": false,
+        "printStore": false,
+        "staffScheduling": true,
+        "giftCards": false,
+        "emergencyBanner": false,
+        "stickyPhone": false
+      },
+      "exampleServices": [
+        "Lawn Mowing",
+        "Garden Maintenance",
+        "Mulching",
+        "Tree Trimming",
+        "Seasonal Cleanup"
+      ]
+    },
+    "photography": {
+      "id": "photography",
+      "name": "Photography",
+      "slug": "photography",
+      "description": "Sessions, events, and portraits",
+      "synonyms": [
+        "photographer",
+        "photo",
+        "photoshoot",
+        "photography",
+        "wedding photographer",
+        "portrait photographer",
+        "studio photographer"
+      ],
+      "brandVoice": "Editorial, warm, confident. Let the portfolio do the heavy lifting. Sparse, elegant copy.",
+      "customerPsychology": "Clients buy style and trust. Portfolio freshness and inquiry ease matter more than long bios.",
+      "buyingBehavior": "Browses portfolio deeply, then inquires or books a consult.",
+      "homepageGoals": [
+        "Put the studio name first",
+        "Make inquiry easy",
+        "Show personality lightly"
+      ],
+      "trustSignals": [
+        "Published work",
+        "Clear process",
+        "Client love"
+      ],
+      "copyRules": [
+        "Never oversell with corporate fluff",
+        "Short headlines; portfolio first",
+        "Never use auto, car, detailing, or wash language"
+      ],
+      "decisionFactors": [
+        "Style fit",
+        "Portfolio quality",
+        "Reviews",
+        "Process clarity"
+      ],
+      "customerExpectations": [
+        "Fast galleries",
+        "Beautiful portfolio",
+        "Contracts",
+        "Print ordering"
+      ],
+      "homepagePriority": [
+        "portfolio",
+        "hero",
+        "about",
+        "services",
+        "reviews",
+        "booking",
+        "contact"
+      ],
+      "capabilities": {
+        "appointments": true,
+        "estimates": false,
+        "memberships": false,
+        "inventory": false,
+        "portfolio": true,
+        "vehicleDetails": false,
+        "dirtySurcharge": false,
+        "clientGalleries": true,
+        "contracts": true,
+        "printStore": true,
+        "staffScheduling": false,
+        "giftCards": false,
+        "emergencyBanner": false,
+        "stickyPhone": false,
+        "projects": true,
+        "lightroom": true
+      },
+      "exampleServices": [
+        "Portrait Session",
+        "Family Session",
+        "Event Coverage",
+        "Headshots",
+        "Product Photography",
+        "Engagement Photos",
+        "Wedding Day Coverage"
+      ]
+    },
+    "pressure_washing": {
+      "id": "pressure_washing",
+      "name": "Pressure Washing",
+      "slug": "pressure-washing",
+      "description": "Homes, driveways, decks, soft wash",
+      "synonyms": [
+        "pressure washing",
+        "power washing",
+        "soft wash",
+        "driveway cleaning",
+        "house wash"
+      ],
+      "brandVoice": "Capable, straightforward, power-with-care. Emphasize safe soft wash when needed.",
+      "customerPsychology": "Dramatic before/after of driveways and siding sells. Price clarity and property size matter.",
+      "buyingBehavior": "Photo-driven; often requests estimate after seeing curb appeal results.",
+      "homepageGoals": [
+        "Show transformation photos",
+        "Clarify soft wash vs pressure",
+        "Easy estimate"
+      ],
+      "trustSignals": [
+        "Soft wash specialists",
+        "Insured",
+        "Surface-safe methods"
+      ],
+      "copyRules": [
+        "Distinguish soft wash vs high pressure",
+        "Show surfaces clearly"
+      ],
+      "decisionFactors": [
+        "Results photos",
+        "Price",
+        "Surface safety",
+        "Availability"
+      ],
+      "customerExpectations": [
+        "Dramatic curb appeal",
+        "No surface damage",
+        "Clear estimate",
+        "On-time crew"
+      ],
+      "homepagePriority": [
+        "hero",
+        "gallery",
+        "services",
+        "reviews",
+        "booking",
+        "contact"
+      ],
+      "capabilities": {
+        "appointments": true,
+        "estimates": true,
+        "memberships": false,
+        "inventory": false,
+        "portfolio": true,
+        "vehicleDetails": false,
+        "dirtySurcharge": false,
+        "clientGalleries": false,
+        "contracts": false,
+        "printStore": false,
+        "staffScheduling": false,
+        "giftCards": false,
+        "emergencyBanner": false,
+        "stickyPhone": true
+      },
+      "exampleServices": [
+        "House Wash",
+        "Driveway Cleaning",
+        "Deck Soft Wash",
+        "Concrete Cleaning",
+        "Roof Soft Wash"
+      ]
+    },
+    "spa": {
+      "id": "spa",
+      "name": "Spa & Wellness",
+      "slug": "spa",
+      "description": "Spa, wellness, and beauty services",
+      "synonyms": [
+        "day spa",
+        "massage",
+        "facial",
+        "wellness spa",
+        "beauty spa",
+        "med spa"
+      ],
+      "brandVoice": "Calm, inviting, sensory without purple prose. Atmosphere and practitioners matter.",
+      "customerPsychology": "Books experiences; memberships and packages reduce friction. Empty slots hurt — promos fill them.",
+      "buyingBehavior": "Browses services, checks reviews, books spa menu items online.",
+      "homepageGoals": [
+        "Sell atmosphere",
+        "Easy online booking",
+        "Memberships and gift cards"
+      ],
+      "trustSignals": [
+        "Licensed practitioners",
+        "Clean space",
+        "Client reviews"
+      ],
+      "copyRules": [
+        "Sensory but not vague",
+        "Never invent medical claims"
+      ],
+      "decisionFactors": [
+        "Atmosphere",
+        "Reviews",
+        "Practitioner",
+        "Convenience"
+      ],
+      "customerExpectations": [
+        "Atmosphere",
+        "Online booking",
+        "Memberships",
+        "Gift cards"
+      ],
+      "homepagePriority": [
+        "hero",
+        "services",
+        "reviews",
+        "about",
+        "booking",
+        "contact"
+      ],
+      "capabilities": {
+        "appointments": true,
+        "estimates": false,
+        "memberships": true,
+        "inventory": false,
+        "portfolio": true,
+        "vehicleDetails": false,
+        "dirtySurcharge": false,
+        "clientGalleries": false,
+        "contracts": false,
+        "printStore": false,
+        "staffScheduling": true,
+        "giftCards": true,
+        "emergencyBanner": false,
+        "stickyPhone": false
+      },
+      "exampleServices": [
+        "Signature Facial",
+        "Deep Tissue Massage",
+        "Swedish Massage",
+        "Couples Massage",
+        "Wellness Membership"
+      ]
+    },
+    "windows": {
+      "id": "windows",
+      "name": "Window Cleaning",
+      "slug": "window-cleaning",
+      "description": "Residential and commercial glass cleaning",
+      "synonyms": [
+        "windows",
+        "window cleaner",
+        "glass cleaning",
+        "window wash",
+        "exterior glass"
+      ],
+      "brandVoice": "Friendly, clear, trustworthy. Emphasize streak-free results and reliable scheduling.",
+      "customerPsychology": "Homeowners want crystal-clear glass and no mess. Seasonal reminders (spring, pollen) convert well.",
+      "buyingBehavior": "Often starts with a quote, then converts to quarterly plans.",
+      "homepageGoals": [
+        "Show sparkling results",
+        "Make quotes easy",
+        "Offer recurring plans"
+      ],
+      "trustSignals": [
+        "Bonded",
+        "Fully insured",
+        "Scratches-free guarantee"
+      ],
+      "copyRules": [
+        "Lead with clarity and care",
+        "Avoid vague “sparkling” without proof photos"
+      ],
+      "decisionFactors": [
+        "Price clarity",
+        "Reliability",
+        "Reviews",
+        "Recurring convenience"
+      ],
+      "customerExpectations": [
+        "Streak-free glass",
+        "Respectful of home",
+        "Easy quote",
+        "Seasonal reminders"
+      ],
+      "homepagePriority": [
+        "hero",
+        "services",
+        "reviews",
+        "about",
+        "booking",
+        "contact"
+      ],
+      "capabilities": {
+        "appointments": true,
+        "estimates": true,
+        "memberships": true,
+        "inventory": false,
+        "portfolio": true,
+        "vehicleDetails": false,
+        "dirtySurcharge": false,
+        "clientGalleries": false,
+        "contracts": false,
+        "printStore": false,
+        "staffScheduling": false,
+        "giftCards": false,
+        "emergencyBanner": false,
+        "stickyPhone": true
+      },
+      "exampleServices": [
+        "Interior Window Cleaning",
+        "Exterior Window Cleaning",
+        "Screen Cleaning",
+        "Hard Water Spot Removal",
+        "Skylight Cleaning"
+      ]
+    }
+  }
+}

@@ -53,6 +53,10 @@ import {
   type HublyDocument,
 } from "./hubly_document.ts";
 import { adminClient } from "./marketplace_provider.ts";
+import {
+  buildBusinessIdentityBlock,
+  resolveBusinessDna,
+} from "./hubly_business_dna.ts";
 import { getWebsiteAvailability, createWebsiteBookingJob } from "./hubly_booking_execution.ts";
 
 const APP_ORIGIN = (Deno.env.get("HUBLY_APP_ORIGIN") || "").trim() || "https://myhubly.app";
@@ -242,7 +246,14 @@ function sfDollars(n: unknown): number { return Number(n) || 0; }
 async function sfBuildStorefrontAst(
   ownerToken: string,
   businessId: string,
-  opts: { brief?: string; instruction?: string; currentAst?: unknown; businessName?: string; accent?: string | null },
+  opts: {
+    brief?: string;
+    instruction?: string;
+    currentAst?: unknown;
+    businessName?: string;
+    accent?: string | null;
+    businessType?: string | null;
+  },
 ): Promise<{ ast: StorefrontAst; real: boolean }> {
   const [products, collections] = await Promise.all([
     sfFetchProducts(ownerToken, businessId),
@@ -255,15 +266,26 @@ async function sfBuildStorefrontAst(
   if (!HublyAI.isConfigured("openai")) return { ast: fallback(), real: false };
 
   const isPatch = !!opts.currentAst && !!opts.instruction;
+  // Identity FIRST, then the catalog, then whatever the owner referenced. Without
+  // this block the model received no business name, no industry and no brand
+  // colour — leaving the industry examples elsewhere in these instructions as the
+  // only concrete signal in the entire prompt.
+  const dna = resolveBusinessDna(opts.businessType);
+  const identityBlock = buildBusinessIdentityBlock(
+    { name: opts.businessName, businessType: opts.businessType, accent: opts.accent },
+    dna,
+    { productCount: pFacts.length, surface: "storefront" },
+  );
   const system =
     `You design a business's standalone online Store presentation as a Storefront AST (JSON). ${storefrontCatalogPromptBlock()}\n` +
     `theme.style is one of: clean, premium, bold, minimal, warm. theme.accent is a hex color or null.\n` +
-    `Design for SELLING PRODUCTS — a real store, not a business homepage. Order blocks to merchandise well, reference only real product/collection ids from the catalog, and never place product names or prices in the AST. Return ONLY: {"theme":{"style":...,"accent":...},"blocks":[{"type":...,"variant":...,"visible":true,"config":{...}}]}`;
-  const catalogText = `THIS BUSINESS'S REAL COMMERCE CATALOG:\nProducts: ${JSON.stringify(pFacts)}\nCollections: ${JSON.stringify(cFacts)}`;
+    `This surface is the PRODUCT STORE — it merchandises physical/digital products the business actually sells. It is NOT their business homepage, and it is NOT their service catalog, gallery, reviews or booking page (those live on their Website/Storefront and are not yours to build here).\n` +
+    `Order blocks to merchandise well, reference only real product/collection ids from the catalog, and never place product names or prices in the AST. Write hero and section copy in THIS business's voice and trade — never in the voice of any example industry mentioned anywhere in these instructions, and never in the voice of a reference the owner merely admired. Return ONLY: {"theme":{"style":...,"accent":...},"blocks":[{"type":...,"variant":...,"visible":true,"config":{...}}]}`;
+  const catalogText = `${identityBlock}\n\nTHIS BUSINESS'S REAL COMMERCE CATALOG:\nProducts: ${JSON.stringify(pFacts)}\nCollections: ${JSON.stringify(cFacts)}`;
   const userText = isPatch
     ? `Current Storefront AST:\n${JSON.stringify(opts.currentAst)}\n\n${catalogText}\n\n` +
       `Apply the owner's change as the SMALLEST edit — keep every other block, its order, and its config exactly as-is unless the change requires otherwise. Map plain language to blocks/variants: "bigger/larger product cards" → set the product block's variant to "large"; "smaller cards" → "compact"; "add a best sellers section" → add a bestSellers block; "put X first" → move/feature that product's id to the front of a product block; "more premium" → theme.style="premium" and refine hero copy. Return the COMPLETE updated AST. The change: "${opts.instruction}"`
-    : `${catalogText}\n\nBuild a storefront.${opts.brief ? ` The owner's guidance: "${opts.brief}".` : ""}`;
+    : `${catalogText}\n\nBuild a storefront for THIS business.${opts.brief ? ` The owner's guidance: "${opts.brief}". Treat that as a stylistic preference only — if it names another brand or industry, take the FEEL and ignore its products, categories and trade language.` : ""}`;
   try {
     const ai = await HublyAI.complete({ feature: "storefront-build", task: "storefront_build", system, messages: [{ role: "user", content: userText }], jsonMode: true });
     // extractJson returns a STRING; validateStorefrontAst needs a parsed object.
@@ -1366,17 +1388,17 @@ HUBLY_CAPABILITY_REGISTRY.push({
     {
       name: "createProduct",
       description:
-        "Create a new product in the Store. IMPORTANT: new products are created as a DRAFT that is NOT visible to customers, so an accidental product never appears on the store. Only pass makeAvailable:true when the owner EXPLICITLY says to publish/sell/make it available now (e.g. \"add a $49.99 soap and put it on my store\"); otherwise leave it a draft and tell them you can publish it when they're ready. Write a short real description yourself when it helps.",
+        "Create a new product in the Store. IMPORTANT: new products are created as a DRAFT that is NOT visible to customers, so an accidental product never appears on the store. Only pass makeAvailable:true when the owner EXPLICITLY says to publish/sell/make it available now (e.g. \"add a $49.99 candle and put it on my store\"); otherwise leave it a draft and tell them you can publish it when they're ready. Write a short real description yourself when it helps.",
       argsSchema: {
         type: "object",
         properties: {
           businessId: sfBusinessIdArg,
-          name: { type: "string", description: "The product's real name, e.g. \"5-Gallon Car Wash Soap\"." },
+          name: { type: "string", description: "The product's real name, e.g. \"Gift Card\" or \"Starter Kit\"." },
           price: { type: "number", description: "Price in dollars, e.g. 49.99." },
           description: { type: "string", description: "A short real product description, if useful." },
           type: { type: "string", description: "\"physical\" (default), \"digital\", or \"gift_card\". Omit for physical." },
           inventory: { type: "number", description: "Starting stock quantity, if the owner gave one." },
-          category: { type: "string", description: "A category/label like \"Detailing supplies\", if natural." },
+          category: { type: "string", description: "A category/label like \"Supplies\" or \"Gift cards\", if natural." },
           makeAvailable: { type: "boolean", description: "TRUE only when the owner explicitly wants it published/live now. Default/omit = create as a hidden draft." },
         },
         required: ["name"],
@@ -1449,7 +1471,7 @@ HUBLY_CAPABILITY_REGISTRY.push({
     {
       name: "setProductVisibility",
       description:
-        "Publish or hide a product, and/or control whether it shows on the website/store. Use visible:true to publish (\"put it on my store\", \"start selling it\") and visible:false to hide (\"hide the old soap\", \"take it down\"). onWebsite specifically controls the website/store surface (\"put the towels on my website\"). Identify the product by productName; ambiguous/none returns without changing anything and asks.",
+        "Publish or hide a product, and/or control whether it shows on the website/store. Use visible:true to publish (\"put it on my store\", \"start selling it\") and visible:false to hide (\"hide the last one\", \"take it down\"). onWebsite specifically controls the website/store surface (\"put the gift cards on my website\"). Identify the product by productName; ambiguous/none returns without changing anything and asks.",
       argsSchema: {
         type: "object",
         properties: {
@@ -1553,12 +1575,12 @@ HUBLY_CAPABILITY_REGISTRY.push({
     {
       name: "createCollection",
       description:
-        "Create a collection to group products (e.g. \"Detailing Supplies\"). Use this before or alongside addProductsToCollection when the owner wants products organized under a named group.",
+        "Create a collection to group products (e.g. \"Best Sellers\" or \"Gift Cards\"). Use this before or alongside addProductsToCollection when the owner wants products organized under a named group.",
       argsSchema: {
         type: "object",
         properties: {
           businessId: sfBusinessIdArg,
-          name: { type: "string", description: "The collection name, e.g. \"Detailing Supplies\"." },
+          name: { type: "string", description: "The collection name, e.g. \"Best Sellers\"." },
         },
         required: ["name"],
       },
@@ -1622,7 +1644,7 @@ HUBLY_CAPABILITY_REGISTRY.push({
         properties: {
           businessId: sfBusinessIdArg,
           enabled: { type: "boolean", description: "TRUE to turn the store on, FALSE to turn it off." },
-          heroTitle: { type: "string", description: "Store headline, e.g. \"Detailing Supplies\"." },
+          heroTitle: { type: "string", description: "Store headline, e.g. \"Shop our essentials\"." },
           heroSubtitle: { type: "string", description: "Store subheadline." },
         },
         required: [],
@@ -1651,7 +1673,7 @@ HUBLY_CAPABILITY_REGISTRY.push({
         type: "object",
         properties: {
           businessId: sfBusinessIdArg,
-          brief: { type: "string", description: "The owner's guidance in their own words, e.g. \"premium detailing supply store\", \"clean and minimal\". Optional — omit for a sensible default." },
+          brief: { type: "string", description: "The owner's guidance in their own words, a STYLE, never an industry — e.g. \"premium and minimal\", \"warm and friendly\". Optional — omit for a sensible default." },
         },
         required: [],
       },
@@ -1662,6 +1684,7 @@ HUBLY_CAPABILITY_REGISTRY.push({
           brief: args.brief ? String(args.brief) : undefined,
           businessName: args._businessName ? String(args._businessName) : undefined,
           accent: args._accent ? String(args._accent) : null,
+          businessType: args._businessType ? String(args._businessType) : null,
         });
         return {
           ok: true, real: res.real,
@@ -1673,7 +1696,7 @@ HUBLY_CAPABILITY_REGISTRY.push({
     {
       name: "patchStorefront",
       description:
-        "Refine the Store's PRESENTATION with a plain-language instruction — e.g. \"make it more premium\", \"put ceramic coating first\", \"make the product cards bigger\", \"add a best sellers section\", \"use my brand colors\". Only changes the Store's look/merchandising (order, featured products, block sizes, theme), never the Commerce products/prices themselves. Returns the updated Storefront layout the editor applies + previews.",
+        "Refine the Store's PRESENTATION with a plain-language instruction — e.g. \"make it more premium\", \"put my best seller first\", \"make the product cards bigger\", \"add a best sellers section\", \"use my brand colors\". Only changes the Store's look/merchandising (order, featured products, block sizes, theme), never the Commerce products/prices themselves. Returns the updated Storefront layout the editor applies + previews.",
       argsSchema: {
         type: "object",
         properties: {
@@ -1692,6 +1715,7 @@ HUBLY_CAPABILITY_REGISTRY.push({
           currentAst: args._storefrontAst || { version: 1, theme: { style: "clean", accent: null }, blocks: [] },
           businessName: args._businessName ? String(args._businessName) : undefined,
           accent: args._accent ? String(args._accent) : null,
+          businessType: args._businessType ? String(args._businessType) : null,
         });
         return {
           ok: true, real: res.real,
