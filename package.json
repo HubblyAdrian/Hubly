@@ -66,7 +66,8 @@
     "check:sessions-deploy": "node scripts/check-one-off-sessions-deploy.mjs",
     "staging:build": "./scripts/staging/apply_all_migrations.sh",
     "staging:verify-db": "psql \"${STAGING_DB_URL:-postgresql://postgres@127.0.0.1:55432/hubly_staging}\" -v ON_ERROR_STOP=1 -f scripts/staging/verify_one_off_sessions_db.sql",
-    "test:sessions:realdb": "deno run --allow-env --allow-net --allow-read --no-check tests/one_off_sessions_realdb.integration.ts"
+    "test:sessions:realdb": "deno run --allow-env --allow-net --allow-read --no-check tests/one_off_sessions_realdb.integration.ts",
+    "test:sessions:stripe": "deno run --allow-env --allow-net --allow-read --no-check tests/one_off_sessions_stripe.contract.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

@@ -267,3 +267,81 @@ covered by any automated check:
 2. **Google Calendar** — one block event, no duplicate on republish, event updates when the window moves, no orphan after cancel. *(Requires a connected test calendar.)*
 3. **Live AI** — the natural-language phases (13–17). Structurally verified: the capability is registered, allow-listed for `operate`, the runtime injects the verified `businessId` (the model's is always overwritten), and website promotion is one action. Model *behavior* is unverified.
 4. **Normal booking blocked in the live app** — the block is an ordinary `jobs` row, which `get_busy_windows` and `jobBlocks()` already read; proven in the engine harness, not yet on a live calendar.
+
+---
+
+# Production release plan (PREPARED — DO NOT EXECUTE)
+
+Authorization required. Nothing below has been run.
+
+## Order and impact
+
+| # | Artifact | What it changes | Row impact |
+|---|---|---|---|
+| 1 | `20260813000000_backfill_website_capability` | `businesses.capabilities` gains `website:true` where absent | **0 rows** of 17 anon-visible (measured). Merge-preserving, idempotent. |
+| 2 | `20260815120000_one_off_sessions` | 2 new tables + `jobs.one_off_session_id` (nullable) + RLS | **0 existing rows modified.** Purely additive. |
+
+Order matters only in that 1 predates 2 by filename; they are independent.
+
+## Pre-flight
+
+```bash
+git rev-parse HEAD                      # must be the approved commit
+shasum -a 256 supabase/migrations/20260815120000_one_off_sessions.sql
+#   expect bf868c3090d29db4619c13b315f3f564580f8c3276aefe1b18a97c318ab377dc
+node scripts/check-one-off-sessions-deploy.mjs --pre
+supabase migration list                 # confirm exactly these two are local-only
+```
+
+Confirm a recent PITR/backup point exists for the project before step 1.
+
+## Execute
+
+```bash
+# 1 · database
+supabase db push                        # applies both migrations above
+
+# 2 · Edge Functions — ALL FOUR, or payments and AI silently do nothing
+supabase functions deploy one-off-sessions
+supabase functions deploy create-booking-checkout
+supabase functions deploy stripe-webhook
+supabase functions deploy hubly-conversation
+
+# 3 · confirm the versions moved (baseline: cbc v24, webhook v24, conversation v69)
+supabase functions list | grep -E "one-off-sessions|create-booking-checkout|stripe-webhook|hubly-conversation"
+
+# 4 · Stripe: add checkout.session.expired to the LIVE webhook endpoint
+#     (without it an abandoned checkout holds its seat for 60 minutes instead of 30)
+
+# 5 · frontend
+git push origin one-off-sessions        # then merge / promote per Vercel
+```
+
+**Do NOT set `HUBLY_STRIPE_REQUIRE_TEST_MODE` on production** — it would block
+all real checkouts, including the existing store and booking flows.
+
+## Verify
+
+```bash
+node scripts/check-one-off-sessions-deploy.mjs --post
+psql "$PROD_DB_URL" -f scripts/staging/verify_one_off_sessions_db.sql   # optional, read-mostly
+```
+
+Then, on an internal test business only, and only once Stripe mode is understood:
+
+```bash
+OWNER_JWT=… OWNER_BUSINESS_ID=… FOREIGN_BUSINESS_ID=… \
+  node scripts/check-one-off-sessions-deploy.mjs --post --smoke
+```
+
+`--smoke` never takes a payment.
+
+## Rollback
+
+* **Feature off, instantly:** `supabase functions delete one-off-sessions` — the
+  tables become unreachable; nothing else references them.
+* **Schema rollback** (only if no session was ever created):
+  `drop table public.one_off_session_bookings; drop table public.one_off_sessions;
+   alter table public.jobs drop column one_off_session_id;`
+* The frontend is inert without the function: the Sessions screen shows an error
+  and `/session/<token>` shows "this link isn't available".

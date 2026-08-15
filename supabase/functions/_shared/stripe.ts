@@ -118,6 +118,29 @@ export async function createConnectLoginLink(accountId: string): Promise<{ url: 
   );
 }
 
+/**
+ * Staging safety rail.
+ *
+ * Set HUBLY_STRIPE_REQUIRE_TEST_MODE=true on a staging/test project and any
+ * attempt to open a Checkout Session with a LIVE key is refused before a single
+ * byte reaches Stripe. Production never sets it, so production behaviour is
+ * byte-for-byte unchanged.
+ *
+ * This exists because "don't test against the live key" was otherwise only a
+ * procedure, and the cost of getting it wrong is a real charge on a real card.
+ * A misconfigured staging project now fails loudly instead of quietly billing
+ * somebody.
+ */
+export function assertStripeTestModeIfRequired(): void {
+  const required = (Deno.env.get("HUBLY_STRIPE_REQUIRE_TEST_MODE") || "").trim().toLowerCase();
+  if (required !== "true" && required !== "1") return;
+  if (stripeLivemode() === false) return;
+  throw new Error(
+    "Refusing to create a Stripe Checkout Session: HUBLY_STRIPE_REQUIRE_TEST_MODE is set " +
+      "but STRIPE_SECRET_KEY is not a test key. This environment must never charge a real card.",
+  );
+}
+
 export async function createDestinationCheckout(opts: {
   connectedAccountId: string;
   amountCents: number;
@@ -137,6 +160,7 @@ export async function createDestinationCheckout(opts: {
   expiresAt?: number;
   metadata: Record<string, string>;
 }): Promise<StripeCheckoutSession> {
+  assertStripeTestModeIfRequired();
   const currency = (opts.currency || "usd").toLowerCase();
   const form: Record<string, string | number | boolean> = {
     mode: "payment",

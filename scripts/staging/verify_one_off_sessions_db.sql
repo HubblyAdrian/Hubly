@@ -30,6 +30,15 @@ delete from public.one_off_sessions where business_id in (:SCRATCH_BIZ);
 delete from public.jobs where business_id in (:SCRATCH_BIZ);
 delete from public.businesses where id in (:SCRATCH_BIZ);
 
+-- The full migration chain brings the real marketplace_providers trigger, whose
+-- owner_id FKs auth.users — so the scratch owners must genuinely exist, exactly
+-- as they would in production.
+insert into auth.users(id, email) values
+  ('99999999-9999-4999-8999-999999999999', 'scratch-owner@example.test'),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'scratch-a@example.test'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'scratch-b@example.test')
+on conflict (id) do nothing;
+
 -- ═════════════════ Phase 3 — schema ═════════════════
 
 do $$
