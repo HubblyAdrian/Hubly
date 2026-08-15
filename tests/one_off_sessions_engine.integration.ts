@@ -614,6 +614,49 @@ async function makePublished(db: FakeDb, overrides: Record<string, unknown> = {}
   eq("edge · pay-in-full leaves no balance", fullBook.ok ? fullBook.data.payment.balance_due_cents : -1, 0);
 }
 
+/* ══════════════════ expired-checkout self-healing ══════════════════ */
+{
+  const db = freshDb(); // Stripe connected → bookings start pending_payment
+  const { admin, session } = await makePublished(db);
+
+  const held = await bookSessionSlot(admin, session, {
+    slot_time: "10:20", customer: { name: "Wanderer", email: "w@example.com" },
+  });
+  ck("reclaim · a checkout-pending booking holds its seat", held.ok, held.ok ? "" : held);
+  if (!held.ok) throw new Error("setup");
+  const fresh = await getSessionAvailability(admin, session);
+  eq("reclaim · while fresh, the seat stays held",
+    fresh.slots.find((s) => s.time === "10:20")!.available, false);
+
+  // Age it past Stripe's own 30-minute checkout expiry (we use 60 for safety).
+  const row = db.rows("one_off_session_bookings").find((r) => r.id === String(held.data.booking.id))!;
+  row.created_at = new Date(Date.now() - 61 * 60_000).toISOString();
+
+  const healed = await getSessionAvailability(admin, session);
+  eq("reclaim · a seat held by an unpayable checkout is released",
+    healed.slots.find((s) => s.time === "10:20")!.available, true);
+  eq("reclaim · the dead booking is cancelled, not deleted", row.status, "cancelled");
+  eq("reclaim · and marked failed rather than paid", row.payment_status, "failed");
+  eq("reclaim · the freed seat is genuinely bookable", healed.remaining, 18);
+
+  const rebooked = await bookSessionSlot(admin, session, {
+    slot_time: "10:20", customer: { name: "Second Chance", email: "sc@example.com" },
+  });
+  ck("reclaim · somebody else can now take that time", rebooked.ok, rebooked.ok ? "" : rebooked);
+
+  // A PAID booking must never be reclaimed, however old it is.
+  const paid = await bookSessionSlot(admin, session, {
+    slot_time: "11:00", customer: { name: "Paid Up", email: "p@example.com" },
+  });
+  if (!paid.ok) throw new Error("setup");
+  await finalizeSessionBookingPayment(admin, { bookingId: String(paid.data.booking.id), amountPaidCents: 5000 });
+  const paidRow = db.rows("one_off_session_bookings").find((r) => r.id === String(paid.data.booking.id))!;
+  paidRow.created_at = new Date(Date.now() - 400 * 60_000).toISOString();
+  const afterPaid = await getSessionAvailability(admin, session);
+  eq("reclaim · an old PAID booking is never reclaimed", paidRow.status, "confirmed");
+  eq("reclaim · its seat stays held", afterPaid.slots.find((s) => s.time === "11:00")!.available, false);
+}
+
 /* ══════════════════ summary shape used by the UI + AI ══════════════════ */
 {
   const db = freshDb({ stripe: false });

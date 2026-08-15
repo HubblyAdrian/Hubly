@@ -23,6 +23,9 @@ const read = (p) => readFileSync(join(root, p), 'utf8');
 const core = await import(join(root, 'supabase/functions/_shared/one_off_session_core.mjs'));
 
 const migration = read('supabase/migrations/20260815120000_one_off_sessions.sql');
+/** The migration with `--` comments stripped. Static analysis of what the file
+ *  DOES must never be fooled by prose that happens to mention SQL keywords. */
+const migrationSql = migration.replace(/^\s*--.*$/gm, '');
 const engine = read('supabase/functions/_shared/one_off_session_engine.ts');
 const api = read('supabase/functions/one-off-sessions/index.ts');
 const checkout = read('supabase/functions/create-booking-checkout/index.ts');
@@ -374,6 +377,68 @@ describe('Database schema and RLS', () => {
 
   it('never deletes historical sessions on close or cancel', () => {
     assert.doesNotMatch(engine, /from\("one_off_sessions"\)\s*\.delete\(\)/);
+  });
+
+  // Deployment gate: this migration ships to a live database with real
+  // businesses on it. It must only ever ADD, and it must survive being run
+  // twice (a retried `supabase db push` is a normal thing to happen).
+  it('is additive — it drops or rewrites nothing that belongs to another feature', () => {
+    const destructive = [
+      /drop\s+table/i,
+      /drop\s+column/i,
+      /drop\s+schema/i,
+      /truncate/i,
+      /\bdelete\s+from\b/i,
+      /alter\s+column[\s\S]{0,60}type/i,
+      /drop\s+constraint/i,
+    ];
+    for (const re of destructive) {
+      assert.doesNotMatch(migrationSql, re, `migration must not contain ${re}`);
+    }
+    // The only UPDATE it may do is none at all — it backfills no existing rows.
+    assert.doesNotMatch(migrationSql, /^\s*update\s+public\./im);
+  });
+
+  it('is idempotent — every object is created defensively', () => {
+    const creates = migrationSql.match(/create\s+(table|index|unique index|trigger|policy|or replace function)/gi) || [];
+    assert.ok(creates.length >= 8, `expected several create statements, saw ${creates.length}`);
+    // Tables / indexes / columns guard with IF NOT EXISTS.
+    for (const m of migrationSql.match(/create\s+table[^\n]*/gi) || []) {
+      assert.match(m, /if not exists/i, m);
+    }
+    for (const m of migrationSql.match(/create\s+(unique\s+)?index[^\n]*/gi) || []) {
+      assert.match(m, /if not exists/i, m);
+    }
+    for (const m of migrationSql.match(/add\s+column[^\n]*/gi) || []) {
+      assert.match(m, /if not exists/i, m);
+    }
+    // Policies and triggers can't use IF NOT EXISTS, so each must be preceded
+    // by its own DROP ... IF EXISTS.
+    const policies = migrationSql.match(/create\s+policy\s+"([^"]+)"/gi) || [];
+    for (const p of policies) {
+      const name = p.match(/"([^"]+)"/)[1];
+      assert.match(migrationSql, new RegExp(`drop policy if exists "${name}"`, 'i'), `policy "${name}" needs a drop-if-exists`);
+    }
+    const triggers = migrationSql.match(/create\s+trigger\s+(\w+)/gi) || [];
+    for (const t of triggers) {
+      const name = t.split(/\s+/).pop();
+      assert.match(migrationSql, new RegExp(`drop trigger if exists ${name}`, 'i'), `trigger ${name} needs a drop-if-exists`);
+    }
+    assert.match(migrationSql, /create or replace function/i);
+  });
+
+  it('only touches its own tables plus one additive column on jobs', () => {
+    // Every table this migration writes DDL against.
+    const touched = new Set(
+      [...migrationSql.matchAll(/(?:create table if not exists|alter table)\s+public\.(\w+)/gi)].map((m) => m[1]),
+    );
+    assert.deepEqual(
+      [...touched].sort(),
+      ['jobs', 'one_off_session_bookings', 'one_off_sessions'],
+    );
+    // …and on jobs, additively only.
+    const jobsBlock = migrationSql.slice(migrationSql.indexOf('alter table public.jobs'));
+    assert.match(jobsBlock.slice(0, 200), /add column if not exists one_off_session_id uuid/);
   });
 });
 

@@ -319,6 +319,31 @@ async function loadSessionDayConflicts(
   return out;
 }
 
+/**
+ * A seat held by a checkout that can no longer be paid.
+ *
+ * create-booking-checkout gives session checkouts a 30-minute Stripe
+ * `expires_at`, so after that window Stripe itself refuses the payment — an
+ * unpaid pending booking older than this is provably dead, not merely slow.
+ * Reclaiming it is therefore safe: there is no race where the customer pays
+ * afterwards.
+ *
+ * This exists so the feature does not depend on the `checkout.session.expired`
+ * webhook being configured. If that event is enabled, seats free up in ~30
+ * minutes; if somebody forgot to enable it, they free up here instead of being
+ * held forever. Double the Stripe window, so a clock skew can never reclaim a
+ * seat somebody could still pay for.
+ */
+const STALE_PENDING_MINUTES = 60;
+
+function isStalePendingBooking(b: SessionBookingRow, nowMs: number): boolean {
+  if (String(b.status) !== "pending_payment") return false;
+  if (String(b.payment_status) === "paid") return false;
+  const created = Date.parse(String(b.created_at || ""));
+  if (!Number.isFinite(created)) return false;
+  return nowMs - created > STALE_PENDING_MINUTES * 60_000;
+}
+
 /** Live availability for one session — the derived grid folded over real
  *  bookings AND real calendar conflicts. */
 export async function getSessionAvailability(
@@ -326,10 +351,31 @@ export async function getSessionAvailability(
   session: SessionRow,
   opts?: { forCustomer?: boolean },
 ) {
-  const [bookings, busyWindows] = await Promise.all([
+  const [loaded, busyWindows] = await Promise.all([
     loadSessionBookings(admin, String(session.id)),
     loadSessionDayConflicts(admin, session),
   ]);
+
+  // Self-heal, and only when there is genuinely something to heal — the common
+  // case does no extra work and writes nothing.
+  const nowMs = Date.now();
+  const stale = loaded.filter((b) => isStalePendingBooking(b, nowMs));
+  let bookings = loaded;
+  if (stale.length) {
+    const ids = stale.map((b) => String(b.id));
+    await admin.from("one_off_session_bookings").update({
+      status: "cancelled",
+      payment_status: "failed",
+      cancelled_at: new Date().toISOString(),
+    }).in("id", ids);
+    const dead = new Set(ids);
+    bookings = loaded.map((b) => dead.has(String(b.id)) ? { ...b, status: "cancelled" } : b);
+    console.warn(
+      "one_off_session reclaimed expired unpaid seats",
+      { sessionId: String(session.id), count: ids.length },
+    );
+  }
+
   return computeSessionAvailability(session, bookings, {
     ...(opts || {}),
     busyWindows,

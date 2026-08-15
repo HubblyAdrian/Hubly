@@ -62,7 +62,8 @@
     "test:sessions": "node --test tests/one-off-sessions.test.mjs",
     "test:sessions:engine": "deno run --allow-env --allow-net --no-check tests/one_off_sessions_engine.integration.ts",
     "test:sessions:fixtures": "deno run --allow-env --allow-net --allow-write --no-check tests/support/emit_fixtures.ts",
-    "test:sessions:ui": "npm run test:sessions:fixtures && node tests/one_off_sessions_ui.mjs"
+    "test:sessions:ui": "npm run test:sessions:fixtures && node tests/one_off_sessions_ui.mjs",
+    "check:sessions-deploy": "node scripts/check-one-off-sessions-deploy.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
