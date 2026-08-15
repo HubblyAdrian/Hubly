@@ -1820,6 +1820,19 @@ function osPatchStorefrontBanner(
   return validateStorefrontAst({ ...ast, blocks: next }).ast;
 }
 
+/** A stored session date, however the client handed it back. Mirrors toDateOnly()
+ *  in one_off_session_core.mjs — a `date` column is not always a string. */
+function osDate(value: unknown): string {
+  if (value == null) return "";
+  const raw = String(value);
+  const m = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (m) return m[1];
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 function osMoney(cents: unknown): string {
   const n = Math.round(Number(cents) || 0) / 100;
   return `$${n.toFixed(2).replace(/\.00$/, "")}`;
@@ -1831,7 +1844,7 @@ function osDescribe(s: any): string {
   if (!s) return "";
   const bits = [
     `"${s.name}"`,
-    s.session_date,
+    osDate(s.session_date),
     `${String(s.start_time || "").slice(0, 5)}–${String(s.end_time || "").slice(0, 5)}`,
     `${s.appointment_duration_minutes}-minute appointments`,
   ];
@@ -2306,7 +2319,7 @@ HUBLY_CAPABILITY_REGISTRY.push({
         const nextAst = osPatchStorefrontBanner((args as Record<string, unknown>)._storefrontAst, {
           sessionId: String(s.id),
           sessionName: String(s.name || "Session"),
-          date: String(s.session_date || "").slice(0, 10),
+          date: osDate(s.session_date),
           remove: false,
         });
         if (!nextAst) {
@@ -2354,7 +2367,7 @@ HUBLY_CAPABILITY_REGISTRY.push({
         const nextAst = osPatchStorefrontBanner((args as Record<string, unknown>)._storefrontAst, {
           sessionId: String(s.id),
           sessionName: String(s.name || "Session"),
-          date: String(s.session_date || "").slice(0, 10),
+          date: osDate(s.session_date),
           remove: true,
         });
         return {

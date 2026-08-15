@@ -1,7 +1,8 @@
 # One-Off Sessions — Deployment Runbook
 
-**Release candidate:** `d5ad2b4282dba080ffd1c7c3da480a9011e208e5` (branch `one-off-sessions`)
 **Production status:** ⛔ **NOT DEPLOYED — blocked on the gates below.**
+**Database layer:** ✅ verified against a real PostgreSQL 17 staging database
+(see `scripts/staging/README.md`).
 
 Everything in this file was measured against the real Hubly project
 (`rtwxxkxpkqdrhclkozma`) on 2026-08-15 using read-only commands. Nothing has
@@ -9,7 +10,26 @@ been written to production.
 
 ---
 
-## ⛔ Blocker 1 — there is no staging environment
+## ⛔ Blocker 1 — staging cannot be built from this repository alone
+
+`supabase db push` **cannot create a Hubly database.** `businesses`, `jobs`,
+`customers`, `booking_requests` and `owns_business()` were created outside
+version control, and the first migration (`20260710010000`) opens with
+`alter table booking_requests`. A blank Supabase project fails on statement one —
+so "just make a staging project" would not have worked.
+
+`scripts/staging/bootstrap_hubly_core.sql` closes that gap and gets **119 of 125**
+migrations applying. It is a reconstruction, not production: building it already
+exposed two production columns absent from the whole repo
+(`customers.customer_type`, plus the `jobs` columns later migrations add).
+The authoritative route remains `pg_dump --schema-only` of production into a
+fresh project — which needs the production DB password.
+
+**What this bought us:** the entire database layer is now genuinely verified —
+52/52 schema/constraint/RLS checks and 71/71 engine-against-real-Postgres checks.
+See `scripts/staging/README.md`.
+
+## ⛔ Blocker 2 — there is no *cloud* staging environment
 
 ```
 $ supabase projects list
@@ -42,7 +62,7 @@ session is created (see "Blast radius" below).
 
 ---
 
-## ⛔ Blocker 2 — Stripe mode is unknown, and it gates all payment testing
+## ⛔ Blocker 3 — Stripe mode is unknown, and it gates all payment testing
 
 `STRIPE_SECRET_KEY` exists but is a single project-wide secret; I can't read it,
 and the endpoint that reports its mode (`stripe-connect-connection`) needs an
@@ -57,27 +77,40 @@ owner JWT.
 
 ---
 
-## ⚠️ Blocker 3 — an unrelated migration would ship with yours
+## ✅ Resolved — the "unrelated" migration, investigated (Phase 17)
 
 ```
 $ supabase migration list        # local-only, i.e. NOT yet applied
-20260813000000   <- backfill_website_capability   (NOT mine — commit 7680b73)
-20260815120000   <- one_off_sessions              (this release)
+20260813000000   backfill_website_capability   (commit 7680b73, Storefront Builder Phase 1)
+20260815120000   one_off_sessions              (this release)
 ```
 
-`supabase db push` applies **both**. `20260813000000` is not additive DDL — it's
-an `UPDATE public.businesses` that sets `capabilities.website = true` on every
-row missing the flag. It's from Storefront Builder Phase 1 and was never applied.
+**It is not cruft — it is a safety backfill**, and here is why it matters. The
+public site reads:
 
-Decide deliberately:
+```js
+const storefrontOnly = pubCaps.storefront === true && pubCaps.website !== true;
+if (isStoreRoutePath() || storefrontOnly) { /* render the STORE as the whole site */ }
+```
 
-* Ship both (it is `||`-merge safe and scoped by `where capabilities->>'website' = ''`), **or**
-* Push only this release:
-  `supabase db push --include-all=false` then apply the single file, or temporarily move the other migration aside.
+A business that gains `storefront: true` (the client sets it automatically via
+`ensureStorefrontCapabilityOnBusiness`) but never had `website: true` would have
+its **public website replaced by its store**. The backfill prevents that.
 
-Do not let it ride along unnoticed.
+**Measured impact on production** (counts only, `limit=0`, no rows read):
 
----
+| | count |
+|---|---|
+| businesses visible to anon | 17 |
+| missing `capabilities.website` | **0** |
+| `storefront=true` AND `website` missing (the at-risk case) | **0** |
+
+**Verdict: safe, and currently a no-op.** Verified on staging that it merges
+rather than overwrites (`{"marketplace":true}` → `{"marketplace":true,"website":true}`),
+handles `NULL` capabilities, and is idempotent (`where capabilities->>'website' = ''`).
+
+**Recommendation: apply it.** It changes nothing today and closes the gap for any
+business RLS hides from an anon count.
 
 ## Blast radius (why this is a low-risk migration)
 

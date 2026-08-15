@@ -76,6 +76,30 @@ function pad2(n) {
   return String(n).padStart(2, "0");
 }
 
+/**
+ * A calendar date as "YYYY-MM-DD", whatever shape it arrived in.
+ *
+ * A `date` column does NOT always come back as a string: PostgREST renders one,
+ * but a direct Postgres driver hands back a JS Date. Reading that with
+ * `.toISOString().slice(0,10)` is a real bug east of UTC — midnight local
+ * becomes the PREVIOUS day in UTC, silently moving the whole session. So a Date
+ * is read from its LOCAL parts, which is what a wall-clock calendar date means
+ * everywhere else in Hubly.
+ */
+export function toDateOnly(value) {
+  if (value == null) return "";
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return "";
+    return `${value.getFullYear()}-${pad2(value.getMonth() + 1)}-${pad2(value.getDate())}`;
+  }
+  const raw = String(value).trim();
+  // ISO-shaped only. Deliberately NOT `new Date(raw)` as a fallback: JS happily
+  // parses "August 20" as the CURRENT year, which would let an ambiguous date
+  // through validation and silently schedule the session in the wrong year.
+  const m = raw.match(/^(\d{4}-\d{2}-\d{2})(?:[T ]|$)/);
+  return m ? m[1] : "";
+}
+
 /** minutes past midnight → "HH:MM" (24h, the storage format). */
 export function minutesToTime(minutes) {
   const m = Math.max(0, Math.round(Number(minutes) || 0));
@@ -207,7 +231,7 @@ export function validateSessionDraft(input) {
   if (!name) errors.push("A session name is required.");
   if (name.length > 120) errors.push("Session name is too long (120 characters max).");
 
-  const date = String(s.session_date || "").trim();
+  const date = toDateOnly(s.session_date);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     errors.push("A session date (YYYY-MM-DD) is required.");
   } else if (Number.isNaN(Date.parse(`${date}T12:00:00Z`))) {
@@ -341,7 +365,7 @@ export function sessionBookingBlockReason(session, now) {
 /** True when the session's whole window is behind us in its own local time. */
 export function sessionHasPassed(session, now) {
   if (!now || !now.date) return false;
-  const date = String((session && session.session_date) || "").slice(0, 10);
+  const date = toDateOnly(session && session.session_date);
   if (!date) return false;
   if (date < String(now.date)) return true;
   if (date > String(now.date)) return false;
@@ -410,7 +434,7 @@ export function computeSessionAvailability(session, bookings, opts) {
     .map((w) => ({ start: Number(w && w.start_minutes), end: Number(w && w.end_minutes) }))
     .filter((w) => Number.isFinite(w.start) && Number.isFinite(w.end) && w.end > w.start);
 
-  const sameDay = !!(now && now.date && String((session && session.session_date) || "").slice(0, 10) === String(now.date));
+  const sameDay = !!(now && now.date && toDateOnly(session && session.session_date) === String(now.date));
   const nowMinutes = sameDay ? Number(now.minutes) : null;
 
   let totalSeats = 0;
@@ -517,7 +541,7 @@ export function assessSessionChange(session, patch, bookings) {
   // 4. Moving the date is not a reschedule — the appointments would not follow.
   if (changed("session_date")) {
     blocked.push(
-      `${live.length} booking${live.length === 1 ? " is" : "s are"} already on ${String(session.session_date).slice(0, 10)}. ` +
+      `${live.length} booking${live.length === 1 ? " is" : "s are"} already on ${toDateOnly(session.session_date)}. ` +
       `Changing the date would strand ${live.length === 1 ? "it" : "them"} — cancel and recreate the session instead.`,
     );
   }

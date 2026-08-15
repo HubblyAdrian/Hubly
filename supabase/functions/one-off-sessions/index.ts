@@ -43,7 +43,7 @@ import {
   updateSession,
   type SessionRow,
 } from "../_shared/one_off_session_engine.ts";
-import { sessionPromotionState } from "../_shared/one_off_session_core.mjs";
+import { sessionPromotionState, toDateOnly } from "../_shared/one_off_session_core.mjs";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -232,7 +232,7 @@ Deno.serve(async (req: Request) => {
         sessions.push({
           id: String(s.id),
           name: String(s.name || ""),
-          date: String(s.session_date).slice(0, 10),
+          date: toDateOnly(s.session_date),
           state: state.state,
           cta: state.cta,
           linkable: state.linkable,

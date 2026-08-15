@@ -96,6 +96,26 @@ describe('Slot generation', () => {
     }).length, 0);
   });
 
+  // Found by running the engine against real PostgreSQL: a `date` column comes
+  // back as a JS Date from a direct driver, and reading it via toISOString()
+  // moves the session to the previous day anywhere east of UTC.
+  it('reads a calendar date correctly whatever shape it arrives in', () => {
+    assert.equal(core.toDateOnly('2099-08-20'), '2099-08-20');
+    assert.equal(core.toDateOnly('2099-08-20T00:00:00.000Z'), '2099-08-20');
+    // A Date at LOCAL midnight is that local day, in every timezone.
+    assert.equal(core.toDateOnly(new Date(2099, 7, 20, 0, 0, 0)), '2099-08-20');
+    assert.equal(core.toDateOnly(new Date(2099, 7, 20, 23, 59, 0)), '2099-08-20');
+    assert.equal(core.toDateOnly(null), '');
+    assert.equal(core.toDateOnly('not a date'), '');
+    assert.equal(core.toDateOnly(new Date('nonsense')), '');
+  });
+
+  it('validates a session whose date arrived as a Date object', () => {
+    const fromDb = { ...MINI_SESSIONS, session_date: new Date(2026, 7, 20, 0, 0, 0) };
+    // This is what publishSession does: re-validate the STORED row.
+    assert.deepEqual(core.validateSessionDraft(fromDb), []);
+  });
+
   it('parses 12-hour times the way an owner or the AI might send them', () => {
     assert.equal(core.parseTimeToMinutes('8:00 AM'), 480);
     assert.equal(core.parseTimeToMinutes('2:00 PM'), 840);

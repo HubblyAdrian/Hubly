@@ -44,6 +44,7 @@ import {
   sessionHasPassed,
   sessionPromotionState,
   sessionTerminology,
+  toDateOnly,
   validateSessionDraft,
 } from "./one_off_session_core.mjs";
 
@@ -304,7 +305,7 @@ async function loadSessionDayConflicts(
     .from("jobs")
     .select("scheduled_time,duration_hours,status,one_off_session_id")
     .eq("business_id", String(session.business_id))
-    .eq("scheduled_date", String(session.session_date).slice(0, 10));
+    .eq("scheduled_date", toDateOnly(session.session_date));
   const out: Array<{ start_minutes: number; end_minutes: number }> = [];
   for (const j of data || []) {
     if (String(j.one_off_session_id || "") === String(session.id)) continue;
@@ -512,7 +513,7 @@ export async function syncCalendarBlock(admin: Admin, session: SessionRow): Prom
     business_id: businessId,
     customer_name: BLOCK_CUSTOMER_NAME,
     service_name: label,
-    scheduled_date: String(session.session_date).slice(0, 10),
+    scheduled_date: toDateOnly(session.session_date),
     scheduled_time: String(session.start_time).slice(0, 5),
     duration_hours: blockDurationHours(session),
     status: "scheduled",
@@ -846,7 +847,7 @@ export async function bookSessionSlot(
       .insert({
         session_id: sessionId,
         business_id: businessId,
-        slot_date: String(session.session_date).slice(0, 10),
+        slot_date: toDateOnly(session.session_date),
         slot_time: `${slotTime}:00`,
         duration_minutes: Number(session.appointment_duration_minutes) || 30,
         seat_no: seat,
@@ -942,7 +943,7 @@ export async function materializeConfirmedBooking(
       phone: booking.customer_phone,
       service_name: String(session.name || "Session"),
       service_id: session.service_id || null,
-      scheduled_date: String(booking.slot_date).slice(0, 10),
+      scheduled_date: toDateOnly(booking.slot_date),
       scheduled_time: String(booking.slot_time).slice(0, 5),
       duration_hours: (Number(booking.duration_minutes) || 30) / 60,
       address: session.location || null,
@@ -998,7 +999,7 @@ async function buildConfirmationPayload(
 
   const confirmation: BookSessionOutput["confirmation"] = {
     session_name: String(session.name || "Session"),
-    date: String(booking.slot_date).slice(0, 10),
+    date: toDateOnly(booking.slot_date),
     time_label: timeLabel,
     location: session.location ? String(session.location) : null,
     confirmation_code: String(booking.confirmation_code || ""),
@@ -1264,7 +1265,7 @@ export async function publicSessionPayload(admin: Admin, session: SessionRow) {
       name: String(session.name || ""),
       description: session.description ? String(session.description) : null,
       status: String(session.status),
-      date: String(session.session_date).slice(0, 10),
+      date: toDateOnly(session.session_date),
       start_time: String(session.start_time).slice(0, 5),
       end_time: String(session.end_time).slice(0, 5),
       timezone: session.timezone ? String(session.timezone) : null,
