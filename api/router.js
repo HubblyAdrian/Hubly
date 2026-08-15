@@ -314,6 +314,22 @@ module.exports = async (req, res) => {
       }
     }
 
+    // One-Off Session — the private, link-only booking page. A focused landing
+    // page on purpose (§4): a customer with the link books a time here without
+    // ever being routed through the full business website. The opaque token is
+    // read client-side from /session/<token>; it is never resolved here, so no
+    // session data is exposed by the route itself.
+    if (urlPath === '/session' || urlPath === '/session.html' || urlPath.startsWith('/session/')) {
+      const sessionPage = path.join(__dirname, '../public/session.html');
+      if (fs.existsSync(sessionPage)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        // Private link: never let a CDN or a crawler hold on to it.
+        res.setHeader('Cache-Control', 'private, no-store');
+        res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+        return res.status(200).send(fs.readFileSync(sessionPage, 'utf8'));
+      }
+    }
+
     // #189 Customer Portal — read-only, magic-link-gated customer view
     if (urlPath === '/portal' || urlPath === '/portal.html') {
       const portal = path.join(__dirname, '../public/portal.html');

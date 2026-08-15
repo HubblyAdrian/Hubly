@@ -172,9 +172,11 @@ type ConversationContextName = "dashboard" | "customer" | "operate";
 const CONTEXT_CAPABILITY_ALLOWLIST: Record<ConversationContextName, string[]> = {
   dashboard: ["website", "online_presence", "business"],
   customer: ["booking"],
-  // The authenticated owner operating their live business. First capability: storefront.
-  // Booking-config / marketplace / services will join this same context later.
-  operate: ["storefront"],
+  // The authenticated owner operating their live business. Storefront (their
+  // Store) and sessions (One-Off Sessions — temporary, date-specific booking
+  // events). Booking-config / marketplace / services will join this same
+  // context later.
+  operate: ["storefront", "sessions"],
 };
 
 
@@ -790,6 +792,21 @@ Deno.serve(async (req) => {
             dispatchArgs._accent = (storeContext as Record<string, unknown>).accent;
           }
         }
+        // One-Off Session actions run as the authenticated owner, exactly like
+        // storefront above: the verified businessId and the owner's token are
+        // injected here and never shown to the model (_ownerToken is redacted
+        // from the actions log below). Every one of these actions writes real
+        // customer-facing state, so the ownership check must be the engine's,
+        // never something the model asserts.
+        if (capabilityName === "sessions" && businessId) {
+          dispatchArgs.businessId = businessId;
+          if (ownerToken) dispatchArgs._ownerToken = ownerToken;
+          // "Put it on my website" places a real promotional banner, so the
+          // session actions need the same live storefront layout the storefront
+          // capability edits — and hand their patch back through the same
+          // storefrontAstOut channel below. One owner-visible action, one writer.
+          if (storefrontState !== undefined) dispatchArgs._storefrontAst = storefrontState;
+        }
         // Same treatment as booking's businessId above: the model never sees
         // the real draftId/draftToken, so it can never be trusted to
         // transcribe them — the engine injects the real ones whenever a
@@ -883,9 +900,14 @@ Deno.serve(async (req) => {
         }
 
         // Storefront Builder — surface the generated/patched layout to the editor.
+        // Sessions' website-promotion actions ride the same channel: they place
+        // or remove a real promoBanner, and the browser persists it exactly as
+        // it does for a storefront edit (no second write path for the layout).
         if (
-          capabilityName === "storefront" &&
-          (actionName === "generateStorefront" || actionName === "patchStorefront") &&
+          ((capabilityName === "storefront" &&
+            (actionName === "generateStorefront" || actionName === "patchStorefront")) ||
+            (capabilityName === "sessions" &&
+              (actionName === "addWebsitePromotion" || actionName === "removeWebsitePromotion"))) &&
           result.ok && result.raw && typeof result.raw === "object" &&
           "storefrontAst" in (result.raw as Record<string, unknown>)
         ) {

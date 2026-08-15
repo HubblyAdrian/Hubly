@@ -15,7 +15,11 @@
   var STYLE_ID = 'hub-store-page-style';
   // state.ast = the saved Storefront AST (presentation config). null → render the deterministic
   // default (HublyStorefrontAst.buildDefault) so /store and the Builder preview always agree.
-  var state = { businessId: null, brand: {}, os: null, ast: null, view: 'grid', collectionId: null, productId: null, container: null };
+  var state = { businessId: null, brand: {}, os: null, ast: null, view: 'grid', collectionId: null, productId: null, container: null,
+    // One-Off Session promo banners hold ONLY a session id. This is where the live
+    // session state gets resolved (name/date/CTA/url) so the banner can never show a
+    // stale "Book Now" for a closed or sold-out session. Never persisted into the AST.
+    sessionPromos: null, sessionPromosLoading: false };
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -55,6 +59,9 @@
       '.sp-promo{margin:16px 20px;border-radius:14px;padding:16px 20px;background:#F4F5F7;display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;}' +
       '.sp-promo--bold{background:var(--sp-brand);color:#fff;}' +
       '.sp-promo .sp-promo-cta{font-weight:700;text-decoration:underline;}' +
+      'a.sp-promo{text-decoration:none;color:inherit;cursor:pointer;}' +
+      'a.sp-promo:hover{filter:brightness(.97);}' +
+      '.sp-promo--flat{cursor:default;}' +
       '.sp-story{padding:28px 20px;max-width:760px;}' +
       '.sp-story h2{margin:0 0 8px;font-size:22px;}' +
       '.sp-story p{margin:0;color:#4b5563;line-height:1.6;}' +
@@ -221,9 +228,18 @@
           '<div class="sp-spotlight-body">' + (cfg.blurb ? '<p class="sp-spotlight-blurb">' + esc(cfg.blurb) + '</p>' : '') + spCard + '</div>' +
           '</div></section>';
       }
-      case 'promoBanner':
-        return '<div class="sp-block sp-promo sp-promo--' + esc(b.variant) + '"><span>' + esc(cfg.text || '') + '</span>' +
-          (cfg.ctaText ? '<span class="sp-promo-cta">' + esc(cfg.ctaText) + '</span>' : '') + '</div>';
+      case 'promoBanner': {
+        var promo = resolvePromoLink(cfg);
+        var inner = '<span>' + esc(cfg.text || '') + '</span>' +
+          (promo.cta ? '<span class="sp-promo-cta">' + esc(promo.cta) + '</span>' : '');
+        var cls = 'sp-block sp-promo sp-promo--' + esc(b.variant) + (promo.href ? '' : ' sp-promo--flat');
+        // A resolved, still-open target becomes a real link; anything else stays a plain
+        // banner with an honest label (Sold Out / No longer available) rather than a
+        // clickable CTA pointing at something a customer can't actually book.
+        return promo.href
+          ? '<a class="' + cls + '" href="' + esc(promo.href) + '">' + inner + '</a>'
+          : '<div class="' + cls + '">' + inner + '</div>';
+      }
       case 'brandStory':
         return '<section class="sp-block sp-story">' + (cfg.title ? '<h2>' + esc(cfg.title) + '</h2>' : '') +
           (cfg.body ? '<p>' + esc(cfg.body) + '</p>' : '') + '</section>';
@@ -237,10 +253,99 @@
     }
   }
 
+  /**
+   * Turn a promoBanner's linkType/linkTarget into a real href + CTA label.
+   *
+   * The banner stores a REFERENCE, never a copy: for 'oneOffSession' the only thing in
+   * the AST is the session id, and everything shown here comes from the live session
+   * state fetched by loadSessionPromos(). That is what makes an expired promotion
+   * self-correct instead of pointing customers at a session that closed.
+   */
+  function resolvePromoLink(cfg) {
+    var fallbackCta = cfg.ctaText || '';
+    var type = cfg.linkType || 'none';
+    var target = String(cfg.linkTarget || '').trim();
+    if (type === 'oneOffSession') {
+      if (!target) return { href: null, cta: fallbackCta };
+      var map = state.sessionPromos || {};
+      var asked = Object.prototype.hasOwnProperty.call(map, target);
+      // Not looked up yet — show no CTA rather than a guess. loadSessionPromos()
+      // repaints the moment the real state arrives. Looked up but null means the
+      // session isn't promotable (not promoted, or gone): a plain strip, never a
+      // Book button pointing at something a customer can't reach.
+      if (!asked) return { href: null, cta: '' };
+      var known = map[target];
+      if (!known) return { href: null, cta: fallbackCta };
+      return { href: known.linkable ? known.url : null, cta: known.cta || fallbackCta };
+    }
+    if (type === 'url') return { href: /^https?:\/\//i.test(target) ? target : null, cta: fallbackCta };
+    if (type === 'booking') return { href: '/#book', cta: fallbackCta };
+    if (type === 'service') return { href: target ? '/#service-' + encodeURIComponent(target) : '/#book', cta: fallbackCta };
+    if (type === 'page') return { href: target || null, cta: fallbackCta };
+    return { href: null, cta: fallbackCta };
+  }
+
+  /** Session ids referenced by promo banners in the AST currently being rendered. */
+  function promotedSessionIds(ast) {
+    var ids = [];
+    ((ast && ast.blocks) || []).forEach(function (b) {
+      if (b.type !== 'promoBanner') return;
+      var c = b.config || {};
+      if (c.linkType === 'oneOffSession' && c.linkTarget) ids.push(String(c.linkTarget));
+    });
+    return ids.filter(function (v, i, a) { return a.indexOf(v) === i; });
+  }
+
+  /**
+   * Resolve promoted One-Off Sessions once per render pass, through the public
+   * one-off-sessions action. It returns only sessions the owner actually chose to
+   * promote — so this can never be used to enumerate a business's private sessions.
+   */
+  function loadSessionPromos(ast, onDone) {
+    var all = promotedSessionIds(ast);
+    // Only fetch ids we don't already hold. The Builder repoints a banner at a
+    // different session mid-edit, so a one-shot "loaded once" guard would leave
+    // the new target permanently unresolved.
+    var known = state.sessionPromos || {};
+    var ids = all.filter(function (id) { return !Object.prototype.hasOwnProperty.call(known, id); });
+    if (!ids.length || state.sessionPromosLoading) return;
+    var base = '';
+    try {
+      if (global.HublySupabase && global.HublySupabase.url) base = String(global.HublySupabase.url).replace(/\/$/, '');
+    } catch (e) {}
+    if (!base || !state.businessId) return;
+    state.sessionPromosLoading = true;
+    var headers = { 'content-type': 'application/json' };
+    try {
+      var anon = global.HublySupabase && (global.HublySupabase.anonKey || global.HublySupabase.key);
+      if (anon) { headers.apikey = anon; headers.Authorization = 'Bearer ' + anon; }
+    } catch (e2) {}
+    fetch(base + '/functions/v1/one-off-sessions', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ action: 'public_promotions', business_id: state.businessId, session_ids: ids })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      var map = state.sessionPromos || {};
+      // Record every id we asked about, resolved or not — an unresolved id
+      // (unpromoted, deleted, wrong business) must stay unresolved rather than
+      // triggering an endless refetch on every repaint.
+      ids.forEach(function (id) { if (!map[id]) map[id] = null; });
+      ((d && d.sessions) || []).forEach(function (s) { map[s.id] = s; });
+      state.sessionPromos = map;
+      state.sessionPromosLoading = false;
+      if (typeof onDone === 'function') onDone();
+    }).catch(function () {
+      // Leave sessionPromos null: the banner stays a plain, non-clickable strip
+      // rather than linking somewhere unverified.
+      state.sessionPromosLoading = false;
+    });
+  }
+
   // The store home = the AST blocks in order. Detail view is shared/unchanged below.
   function renderHome() {
     var ast = effectiveAst();
     applyTheme(ast.theme);
+    loadSessionPromos(ast, function () { try { renderView(); } catch (e) {} });
     return (ast.blocks || []).map(blockHtml).join('');
   }
 
@@ -381,6 +486,7 @@
     // Presentation config (from businesses.meta.storefront). null → deterministic default.
     state.ast = opts.ast || null;
     state.view = 'grid'; state.collectionId = null; state.productId = null; state.selectedVariant = null;
+    state.sessionPromos = null; state.sessionPromosLoading = false;
     injectStyle(state.brand.brandColor);
     if (state.container) state.container.classList.add('hub-store-page');
     if (state.brand.name) { try { global.document.title = state.brand.name + ' · Store'; } catch (e) {} }
@@ -408,6 +514,11 @@
     opts = opts || {};
     state.container = el;
     state.brand = opts.brand || {};
+    // Preview repaints constantly, so the promo cache is kept across them —
+    // but never across a different business.
+    if (opts.businessId && opts.businessId !== state.businessId) {
+      state.sessionPromos = null; state.sessionPromosLoading = false;
+    }
     state.businessId = opts.businessId || state.businessId;
     state.ast = opts.ast || null;
     state.view = 'grid'; state.collectionId = null; state.productId = null; state.selectedVariant = null;

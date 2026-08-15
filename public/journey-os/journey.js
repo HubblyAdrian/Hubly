@@ -23352,6 +23352,12 @@
       var appStore = el('p-app');
       if (appStore) appStore.classList.toggle('jos-store-mode', v === 'store');
     }
+    if (typeof global.HublyOneOffSessions?.setMode === 'function') {
+      global.HublyOneOffSessions.setMode(v === 'sessions');
+    } else {
+      var appSessions = el('p-app');
+      if (appSessions) appSessions.classList.toggle('jos-sessions-mode', v === 'sessions');
+    }
     setStorefrontMode(false);
     var map = {
       pipeline: renderPipeline,
@@ -23376,6 +23382,14 @@
       store: function () {
         if (typeof global.HublyStoreCommerce?.render === 'function') {
           return global.HublyStoreCommerce.render();
+        }
+      },
+      // One-Off Sessions — temporary, date-specific booking events. Separate
+      // surface on purpose: they are never part of the permanent Service
+      // catalog or the normal booking page (see one-off-sessions.js).
+      sessions: function () {
+        if (typeof global.HublyOneOffSessions?.render === 'function') {
+          return global.HublyOneOffSessions.render();
         }
       },
       money: renderRevenue,

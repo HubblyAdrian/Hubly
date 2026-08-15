@@ -70,3 +70,9 @@ verify_jwt = false
 # signed portal session (checked in-function), not a Supabase JWT
 [functions.customer-portal]
 verify_jwt = false
+
+# One-Off Sessions — public actions are resolved by the opaque booking_token
+# (no JWT exists for a stranger with a link); every owner action re-checks the
+# Supabase JWT against businesses.owner_id in-function.
+[functions.one-off-sessions]
+verify_jwt = false

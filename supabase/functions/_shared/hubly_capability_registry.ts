@@ -1702,3 +1702,670 @@ HUBLY_CAPABILITY_REGISTRY.push({
     },
   ],
 });
+
+/* ────────────────────────── One-Off Sessions capability ──────────────────────────
+ *
+ * A temporary, event-based booking campaign ("mini sessions on August 20",
+ * "wash day Saturday", "neighborhood service day") — deliberately NOT a
+ * permanent Service, and never added to the normal catalog or booking page.
+ *
+ * Every handler here is a thin wrapper over the one-off-sessions Edge Function,
+ * run as the authenticated owner (same discipline as the storefront capability:
+ * the engine injects the verified businessId and the owner's token; the model
+ * never sees either). No session logic lives in this file, and none of the
+ * business rules in §17 are enforced by the model — the backend rejects bad
+ * configuration and the model only ever relays the resulting message.
+ */
+
+/** Owner-scoped call into the one-off-sessions function. Mirrors callCommerceApi. */
+async function callSessionsApi(
+  ownerToken: string,
+  payload: Record<string, unknown>,
+): Promise<{ status: number; json: any }> {
+  const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+  const anon = (Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "").trim();
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    authorization: `Bearer ${ownerToken}`,
+  };
+  if (anon) headers.apikey = anon;
+  const res = await fetch(`${supabaseUrl}/functions/v1/one-off-sessions`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  return { status: res.status, json: await res.json().catch(() => ({})) };
+}
+
+const OS_NO_CTX: CapabilityActionResult = {
+  ok: false,
+  real: false,
+  summary: "Sessions aren't available in this conversation yet.",
+  error: "no_owner_context",
+};
+
+const osBusinessIdArg = {
+  type: "string",
+  description:
+    "Automatically supplied by the system before this runs — you do not know the real value and never need to. Put any placeholder here; do not decline to invoke just because you don't have a real id.",
+};
+
+const osSessionIdArg = {
+  type: "string",
+  description:
+    "The real session id, from a prior list/create/get result this turn or earlier in the conversation. Call list first if you aren't certain which session the person means — never guess an id, and never guess WHICH session when they have more than one and were ambiguous.",
+};
+
+function osCtx(args: Record<string, unknown>): { ownerToken: string; businessId: string } | null {
+  const ownerToken = String(args._ownerToken || "").trim();
+  const businessId = String(args.businessId || "").trim();
+  if (!ownerToken || !businessId) return null;
+  return { ownerToken, businessId };
+}
+
+/**
+ * Put a promotional banner for this session into the storefront layout — or take
+ * it out — and hand the result back through the SAME channel the storefront
+ * capability already uses (raw.storefrontAst), which hubly-conversation surfaces
+ * to the editor and the browser persists.
+ *
+ * That is what makes "put it on my website" one action for the owner without
+ * introducing a second writer for businesses.meta.storefront. The banner stores
+ * ONLY the session id, so its CTA follows the live session (Book Your Session /
+ * Sold Out / No longer available) with nothing copied in to go stale.
+ *
+ * Returns null when there is no layout to patch (nothing is invented, and the
+ * caller says so honestly instead of claiming a banner exists).
+ */
+function osPatchStorefrontBanner(
+  currentAst: unknown,
+  opts: { sessionId: string; sessionName: string; date: string; remove?: boolean },
+): unknown | null {
+  const validated = validateStorefrontAst(currentAst);
+  if (!validated.ok) return null;
+  const ast = validated.ast;
+  const blocks = ast.blocks.filter((b) => {
+    const cfg = b.config || {};
+    const targetsThis = b.type === "promoBanner" &&
+      cfg.linkType === "oneOffSession" && String(cfg.linkTarget || "") === opts.sessionId;
+    return !targetsThis;
+  });
+
+  if (opts.remove) {
+    if (blocks.length === ast.blocks.length) return null; // there was nothing to remove
+    blocks.forEach((b, i) => { b.order = 10 + i; });
+    return { ...ast, blocks };
+  }
+
+  // A banner belongs at the top, right under the hero — it's a promotion, not a
+  // footnote. Date is written into the banner TEXT only as human copy; the link
+  // and the CTA come from the live session, never from this string.
+  const heroAt = blocks.findIndex((b) => b.type === "storeHero");
+  const banner = {
+    id: "b_sess_" + opts.sessionId.slice(0, 8),
+    type: "promoBanner" as const,
+    order: 0,
+    visible: true,
+    variant: "bold",
+    config: {
+      text: `${opts.sessionName.toUpperCase()} — ${opts.date}`,
+      ctaText: "Book Your Session",
+      linkType: "oneOffSession",
+      linkTarget: opts.sessionId,
+    },
+  };
+  const next = [...blocks];
+  next.splice(heroAt >= 0 ? heroAt + 1 : 0, 0, banner);
+  next.forEach((b, i) => { b.order = 10 + i; });
+  return validateStorefrontAst({ ...ast, blocks: next }).ast;
+}
+
+function osMoney(cents: unknown): string {
+  const n = Math.round(Number(cents) || 0) / 100;
+  return `$${n.toFixed(2).replace(/\.00$/, "")}`;
+}
+
+/** One consistent, honest sentence about a session — used by every handler so
+ *  the model never has to assemble (or invent) these facts itself. */
+function osDescribe(s: any): string {
+  if (!s) return "";
+  const bits = [
+    `"${s.name}"`,
+    s.session_date,
+    `${String(s.start_time || "").slice(0, 5)}–${String(s.end_time || "").slice(0, 5)}`,
+    `${s.appointment_duration_minutes}-minute appointments`,
+  ];
+  if (s.location) bits.push(`at ${s.location}`);
+  if (s.price_cents) bits.push(osMoney(s.price_cents));
+  if (s.payment_line) bits.push(s.payment_line);
+  bits.push(`${s.slot_count} slot${s.slot_count === 1 ? "" : "s"}`);
+  bits.push(`${s.booked} booked, ${s.remaining} left`);
+  bits.push(s.status);
+  return bits.filter(Boolean).join(" · ");
+}
+
+HUBLY_CAPABILITY_REGISTRY.push({
+  name: "sessions",
+  description:
+    "Create and run One-Off Sessions — a temporary, date-specific booking event the business opens up for a single day or window (a photographer's mini sessions, a detailer's wash day, a lawn crew's neighborhood service day, a spa's express day). A session is NOT a normal service: it never appears on their normal booking page or services list, it holds their calendar for the whole window so normal booking can't double-book them, and customers reach it only through a private link the owner shares. Use this whenever someone describes doing something on a specific date for a limited window with short back-to-back appointments.",
+  actions: [
+    {
+      name: "create",
+      description:
+        "Create a One-Off Session as a DRAFT — nothing is public and no calendar time is held until publish is called separately. Extract everything the person already told you (date, times, appointment length, price, deposit, location, name) and pass it all in one call; only ask about what is genuinely missing and genuinely required. Required: name, date, start, end, and appointment length. If they described the event but never named it, write a natural name yourself from what they said rather than asking. After creating, summarize what you've got and ask if they're ready to publish — never publish in the same breath.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: osBusinessIdArg,
+          name: { type: "string", description: "What this event is called, e.g. \"Fall Mini Sessions\" or \"Saturday Wash Day\"." },
+          description: { type: "string", description: "A short real description for the booking page, if they gave you something to say." },
+          date: { type: "string", description: "The session date as YYYY-MM-DD. Resolve relative dates (\"next Saturday\") against today's date before calling." },
+          startTime: { type: "string", description: "Start of the window, 24h HH:MM, e.g. \"08:00\"." },
+          endTime: { type: "string", description: "End of the window, 24h HH:MM, e.g. \"14:00\"." },
+          durationMinutes: { type: "number", description: "Length of each individual appointment in minutes, e.g. 20." },
+          bufferMinutes: { type: "number", description: "Gap between appointments in minutes. Omit when they didn't mention one." },
+          price: { type: "number", description: "Price per appointment in dollars, e.g. 150." },
+          depositAmount: { type: "number", description: "Flat deposit due at booking, in dollars, e.g. 50. Only when they actually asked for a deposit." },
+          depositPercent: { type: "number", description: "Deposit as a percentage of the price, e.g. 25. Use instead of depositAmount when they said a percentage." },
+          payInFull: { type: "boolean", description: "TRUE only when they said customers pay the full amount up front." },
+          location: { type: "string", description: "Where it happens, e.g. \"Thanksgiving Point\"." },
+          capacityPerSlot: { type: "number", description: "How many customers can take the same time slot. Omit unless they said more than one." },
+        },
+        required: ["name", "date", "startTime", "endTime", "durationMinutes"],
+      },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const session: Record<string, unknown> = {
+          name: String(args.name || ""),
+          description: args.description ? String(args.description) : null,
+          session_date: String(args.date || ""),
+          start_time: String(args.startTime || ""),
+          end_time: String(args.endTime || ""),
+          appointment_duration_minutes: Number(args.durationMinutes) || null,
+          buffer_minutes: args.bufferMinutes != null ? Number(args.bufferMinutes) : 0,
+          location: args.location ? String(args.location) : null,
+          capacity_per_slot: args.capacityPerSlot != null ? Number(args.capacityPerSlot) : 1,
+        };
+        if (args.price != null) session.price_cents = Math.round(Number(args.price) * 100);
+        if (args.payInFull === true) session.payment_mode = "full";
+        else if (args.depositAmount != null) {
+          session.payment_mode = "deposit";
+          session.deposit_type = "flat";
+          session.deposit_cents = Math.round(Number(args.depositAmount) * 100);
+        } else if (args.depositPercent != null) {
+          session.payment_mode = "deposit";
+          session.deposit_type = "percentage";
+          session.deposit_percentage = Number(args.depositPercent);
+        } else {
+          session.payment_mode = "none";
+        }
+
+        const r = await callSessionsApi(ctx.ownerToken, {
+          action: "create",
+          business_id: ctx.businessId,
+          session,
+        });
+        if (!r.json?.ok) {
+          return {
+            ok: false,
+            real: false,
+            summary: r.json?.error || "The session couldn't be created.",
+            error: r.json?.code || "create_failed",
+          };
+        }
+        const s = r.json.session;
+        return {
+          ok: true,
+          real: true,
+          summary:
+            `Created as a DRAFT (nothing is live and no calendar time is held yet): ${osDescribe(s)}. ` +
+            `Publishing will create ${s.slot_count} bookable slot${s.slot_count === 1 ? "" : "s"} and block the calendar ` +
+            `${String(s.start_time).slice(0, 5)}–${String(s.end_time).slice(0, 5)} on ${s.session_date}.`,
+          raw: s,
+        };
+      },
+    },
+    {
+      name: "list",
+      description:
+        "Read the business's real One-Off Sessions with live counts (slots, booked, remaining), status, and each private booking link. Call this whenever they ask what sessions they have, how many spots are left, or before editing/publishing/closing anything so you know the real id and can tell if what they said is ambiguous.",
+      argsSchema: { type: "object", properties: { businessId: osBusinessIdArg }, required: [] },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const r = await callSessionsApi(ctx.ownerToken, { action: "list", business_id: ctx.businessId });
+        if (!r.json?.ok) {
+          return { ok: false, real: false, summary: r.json?.error || "Couldn't read sessions.", error: "list_failed" };
+        }
+        const sessions = r.json.sessions || [];
+        return {
+          ok: true,
+          real: true,
+          summary: sessions.length
+            ? `Real sessions: ${sessions.map(osDescribe).join(" | ")}.`
+            : "This business has no One-Off Sessions yet.",
+          raw: { sessions },
+        };
+      },
+    },
+    {
+      name: "get",
+      description:
+        "Read one real session in full, including live availability (how many spots are booked and remaining) and its private booking link. Use this to answer \"how many spots are left?\" for a specific session.",
+      argsSchema: {
+        type: "object",
+        properties: { businessId: osBusinessIdArg, sessionId: osSessionIdArg },
+        required: ["sessionId"],
+      },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const r = await callSessionsApi(ctx.ownerToken, {
+          action: "get",
+          business_id: ctx.businessId,
+          session_id: String(args.sessionId || ""),
+        });
+        if (!r.json?.ok) {
+          return { ok: false, real: false, summary: r.json?.error || "Session not found.", error: "not_found" };
+        }
+        const s = r.json.session;
+        return {
+          ok: true,
+          real: true,
+          summary: `${osDescribe(s)}. Booking link: ${s.booking_url || "not available"}.`,
+          raw: s,
+        };
+      },
+    },
+    {
+      name: "update",
+      description:
+        "Change a real session — price, appointment length, the window, the date, the location, the name, capacity. Pass ONLY the fields that are actually changing. Changing the length or window regenerates the slot grid, and changing the window moves the calendar block, so say what changed concretely afterwards (\"that's 12 slots now instead of 18\") rather than just \"done\". The backend refuses a change that would strand an existing booking outside the session's times — relay that message as-is if it comes back.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: osBusinessIdArg,
+          sessionId: osSessionIdArg,
+          name: { type: "string", description: "New name." },
+          description: { type: "string", description: "New description." },
+          date: { type: "string", description: "New date, YYYY-MM-DD." },
+          startTime: { type: "string", description: "New window start, 24h HH:MM." },
+          endTime: { type: "string", description: "New window end, 24h HH:MM." },
+          durationMinutes: { type: "number", description: "New appointment length in minutes." },
+          bufferMinutes: { type: "number", description: "New gap between appointments in minutes." },
+          price: { type: "number", description: "New price per appointment, in dollars." },
+          location: { type: "string", description: "New location." },
+          capacityPerSlot: { type: "number", description: "New number of customers per time slot." },
+        },
+        required: ["sessionId"],
+      },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const patch: Record<string, unknown> = {};
+        if (args.name != null) patch.name = String(args.name);
+        if (args.description != null) patch.description = String(args.description);
+        if (args.date != null) patch.session_date = String(args.date);
+        if (args.startTime != null) patch.start_time = String(args.startTime);
+        if (args.endTime != null) patch.end_time = String(args.endTime);
+        if (args.durationMinutes != null) patch.appointment_duration_minutes = Number(args.durationMinutes);
+        if (args.bufferMinutes != null) patch.buffer_minutes = Number(args.bufferMinutes);
+        if (args.price != null) patch.price_cents = Math.round(Number(args.price) * 100);
+        if (args.location != null) patch.location = String(args.location);
+        if (args.capacityPerSlot != null) patch.capacity_per_slot = Number(args.capacityPerSlot);
+        if (!Object.keys(patch).length) {
+          return { ok: false, real: false, summary: "Nothing was specified to change.", error: "empty_patch" };
+        }
+        const r = await callSessionsApi(ctx.ownerToken, {
+          action: "update",
+          business_id: ctx.businessId,
+          session_id: String(args.sessionId || ""),
+          session: patch,
+        });
+        if (!r.json?.ok) {
+          // The backend refuses anything that would strand an existing
+          // appointment. Its message explains exactly what and why — relay it,
+          // never soften it or retry with different numbers.
+          return { ok: false, real: false, summary: r.json?.error || "That change wasn't applied.", error: r.json?.code || "update_failed" };
+        }
+        const warnings: string[] = Array.isArray(r.json.warnings) ? r.json.warnings : [];
+        return {
+          ok: true,
+          real: true,
+          summary: `Updated — now: ${osDescribe(r.json.session)}.` +
+            (warnings.length ? ` IMPORTANT, tell them this: ${warnings.join(" ")}` : ""),
+          raw: { ...r.json.session, warnings },
+        };
+      },
+    },
+    {
+      name: "configurePayment",
+      description:
+        "Set how a real session collects money: nothing up front, a flat deposit, a percentage deposit, or payment in full. Use this for \"make the deposit $75\" or \"have them pay the whole thing when they book\". The backend rejects a deposit larger than the price — relay that plainly rather than adjusting the number yourself.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: osBusinessIdArg,
+          sessionId: osSessionIdArg,
+          mode: { type: "string", description: "\"none\", \"deposit\", or \"full\"." },
+          price: { type: "number", description: "Price per appointment in dollars, when it's changing too." },
+          depositAmount: { type: "number", description: "Flat deposit in dollars, e.g. 75." },
+          depositPercent: { type: "number", description: "Deposit percentage, e.g. 25." },
+        },
+        required: ["sessionId"],
+      },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const payload: Record<string, unknown> = {
+          action: "configure_payment",
+          business_id: ctx.businessId,
+          session_id: String(args.sessionId || ""),
+        };
+        if (args.mode != null) payload.payment_mode = String(args.mode);
+        if (args.price != null) payload.price = Number(args.price);
+        if (args.depositAmount != null) {
+          payload.deposit = Number(args.depositAmount);
+          if (args.mode == null) payload.payment_mode = "deposit";
+        }
+        if (args.depositPercent != null) {
+          payload.deposit_percentage = Number(args.depositPercent);
+          if (args.mode == null) payload.payment_mode = "deposit";
+        }
+        const r = await callSessionsApi(ctx.ownerToken, payload);
+        if (!r.json?.ok) {
+          return { ok: false, real: false, summary: r.json?.error || "The payment settings weren't changed.", error: r.json?.code || "payment_failed" };
+        }
+        const payWarnings: string[] = Array.isArray(r.json.warnings) ? r.json.warnings : [];
+        return {
+          ok: true,
+          real: true,
+          summary: `Payment updated — ${r.json.session.payment_line}` +
+            (payWarnings.length ? ` IMPORTANT, tell them this: ${payWarnings.join(" ")}` : ""),
+          raw: { ...r.json.session, warnings: payWarnings },
+        };
+      },
+    },
+    {
+      name: "publish",
+      description:
+        "Make a real session live: it becomes bookable through its private link and its whole window is blocked on the calendar so normal booking can't double-book them. Consequential — only call this when the person has explicitly confirmed after seeing what you've got. It does NOT put anything on their website; that's a separate, deliberate step (addWebsitePromotion).",
+      argsSchema: {
+        type: "object",
+        properties: { businessId: osBusinessIdArg, sessionId: osSessionIdArg },
+        required: ["sessionId"],
+      },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const r = await callSessionsApi(ctx.ownerToken, {
+          action: "publish",
+          business_id: ctx.businessId,
+          session_id: String(args.sessionId || ""),
+        });
+        if (!r.json?.ok) {
+          return { ok: false, real: false, summary: r.json?.error || "The session wasn't published.", error: r.json?.code || "publish_failed" };
+        }
+        const s = r.json.session;
+        const gcal = s.google_synced
+          ? " It's on their Google Calendar too."
+          : " Google Calendar isn't connected, so it's held in Hubly only.";
+        return {
+          ok: true,
+          real: true,
+          summary:
+            `Published. ${s.slot_count} bookable slot${s.slot_count === 1 ? "" : "s"}, and ` +
+            `${s.session_date} ${String(s.start_time).slice(0, 5)}–${String(s.end_time).slice(0, 5)} is now blocked from normal booking.${gcal} ` +
+            `Private booking link: ${s.booking_url}`,
+          raw: s,
+        };
+      },
+    },
+    {
+      name: "close",
+      description:
+        "Stop a real session taking new bookings and hand the unsold time back to normal booking. Existing confirmed appointments are kept exactly as they are — this is \"we're full / we're done taking these\", not a cancellation. Any website promotion for it automatically stops showing a Book button.",
+      argsSchema: {
+        type: "object",
+        properties: { businessId: osBusinessIdArg, sessionId: osSessionIdArg },
+        required: ["sessionId"],
+      },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const r = await callSessionsApi(ctx.ownerToken, {
+          action: "close",
+          business_id: ctx.businessId,
+          session_id: String(args.sessionId || ""),
+        });
+        if (!r.json?.ok) {
+          return { ok: false, real: false, summary: r.json?.error || "The session wasn't closed.", error: r.json?.code || "close_failed" };
+        }
+        const s = r.json.session;
+        return {
+          ok: true,
+          real: true,
+          summary:
+            `Closed. No new bookings, ${s.booked} existing appointment${s.booked === 1 ? "" : "s"} kept, ` +
+            `and the unsold part of that window is open for normal booking again.`,
+          raw: s,
+        };
+      },
+    },
+    {
+      name: "cancel",
+      description:
+        "Cancel a real session outright: every booking on it is cancelled, the appointments are marked cancelled on the calendar, and the whole window is released. Destructive and affects real customers — only call this when the person has clearly said to cancel the event itself, never as a way to \"stop bookings\" (that's close). Hubly does NOT refund anyone automatically; say so plainly if money was collected.",
+      argsSchema: {
+        type: "object",
+        properties: { businessId: osBusinessIdArg, sessionId: osSessionIdArg },
+        required: ["sessionId"],
+      },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const r = await callSessionsApi(ctx.ownerToken, {
+          action: "cancel",
+          business_id: ctx.businessId,
+          session_id: String(args.sessionId || ""),
+        });
+        if (!r.json?.ok) {
+          return { ok: false, real: false, summary: r.json?.error || "The session wasn't cancelled.", error: r.json?.code || "cancel_failed" };
+        }
+        const n = Number(r.json.cancelled_bookings) || 0;
+        return {
+          ok: true,
+          real: true,
+          summary:
+            `Cancelled the session and ${n} booking${n === 1 ? "" : "s"}, and released the calendar. ` +
+            `No refunds were issued — Hubly can't refund automatically, so any money already collected has to be refunded in Stripe.`,
+          raw: r.json.session,
+        };
+      },
+    },
+    {
+      name: "getBookingLink",
+      description:
+        "Get the real private booking link for a session — the link the owner shares with customers. Always give them the actual URL in your reply.",
+      argsSchema: {
+        type: "object",
+        properties: { businessId: osBusinessIdArg, sessionId: osSessionIdArg },
+        required: ["sessionId"],
+      },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const r = await callSessionsApi(ctx.ownerToken, {
+          action: "booking_link",
+          business_id: ctx.businessId,
+          session_id: String(args.sessionId || ""),
+        });
+        if (!r.json?.ok || !r.json.url) {
+          return { ok: false, real: false, summary: r.json?.error || "No booking link is available.", error: "no_link" };
+        }
+        return { ok: true, real: true, summary: `Private booking link: ${r.json.url}`, raw: { url: r.json.url } };
+      },
+    },
+    {
+      name: "listBookings",
+      description:
+        "Read who has actually booked a session and at what time. Use this when they ask who's coming or want to see the schedule for the day.",
+      argsSchema: {
+        type: "object",
+        properties: { businessId: osBusinessIdArg, sessionId: osSessionIdArg },
+        required: ["sessionId"],
+      },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const r = await callSessionsApi(ctx.ownerToken, {
+          action: "bookings",
+          business_id: ctx.businessId,
+          session_id: String(args.sessionId || ""),
+        });
+        if (!r.json?.ok) {
+          return { ok: false, real: false, summary: r.json?.error || "Couldn't read the bookings.", error: "bookings_failed" };
+        }
+        const rows = (r.json.bookings || []).filter((b: any) => b.status !== "cancelled");
+        return {
+          ok: true,
+          real: true,
+          summary: rows.length
+            ? `Real bookings: ${rows.map((b: any) => `${String(b.slot_time).slice(0, 5)} ${b.customer_name}${b.payment_status === "paid" ? " (paid)" : ""}`).join("; ")}.`
+            : "Nobody has booked this session yet.",
+          raw: { bookings: rows },
+        };
+      },
+    },
+    {
+      name: "cancelBooking",
+      description:
+        "Cancel ONE customer's booking inside a session (not the whole session). The time goes back on sale and their appointment is marked cancelled. Call listBookings first so you're certain which booking they mean — never guess between two customers, and never act on a name you only partly matched. If money was collected, say plainly that Hubly can't refund it automatically and it has to be refunded in Stripe.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: osBusinessIdArg,
+          sessionId: osSessionIdArg,
+          bookingId: {
+            type: "string",
+            description: "The real booking id from a listBookings result. Never invent or guess one.",
+          },
+        },
+        required: ["sessionId", "bookingId"],
+      },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const r = await callSessionsApi(ctx.ownerToken, {
+          action: "cancel_booking",
+          business_id: ctx.businessId,
+          session_id: String(args.sessionId || ""),
+          booking_id: String(args.bookingId || ""),
+        });
+        if (!r.json?.ok) {
+          return { ok: false, real: false, summary: r.json?.error || "That booking wasn't cancelled.", error: r.json?.code || "cancel_booking_failed" };
+        }
+        const refund = Number(r.json.refund_due_cents) || 0;
+        return {
+          ok: true,
+          real: true,
+          summary:
+            `Cancelled ${r.json.booking?.customer_name || "that booking"} and put the time back on sale. ` +
+            (refund > 0
+              ? `${osMoney(refund)} was already paid — Hubly did NOT refund it and cannot; that has to be done in Stripe.`
+              : "No money had been collected for it."),
+          raw: r.json,
+        };
+      },
+    },
+    {
+      name: "addWebsitePromotion",
+      description:
+        "Put a real session on the business's website. Use this for \"put it on my website\" / \"promote it\". ONE call does the whole job: it authorizes the promotion AND places a \"Book Your Session\" banner at the top of their storefront pointing at this session's private booking page. Do NOT also call storefront.patchStorefront for this — that would fight with the banner this already placed. The banner follows the session on its own (Sold Out, No longer available), so never promise to update it later by hand.",
+      argsSchema: {
+        type: "object",
+        properties: { businessId: osBusinessIdArg, sessionId: osSessionIdArg },
+        required: ["sessionId"],
+      },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const r = await callSessionsApi(ctx.ownerToken, {
+          action: "promotion_set",
+          business_id: ctx.businessId,
+          session_id: String(args.sessionId || ""),
+        });
+        if (!r.json?.ok) {
+          return { ok: false, real: false, summary: r.json?.error || "The promotion wasn't turned on.", error: "promotion_failed" };
+        }
+        const s = r.json.session;
+        // Second half of the same single action: place the actual banner in the
+        // storefront layout the engine injected, and return it through the same
+        // channel the storefront capability uses so the editor persists it.
+        const nextAst = osPatchStorefrontBanner((args as Record<string, unknown>)._storefrontAst, {
+          sessionId: String(s.id),
+          sessionName: String(s.name || "Session"),
+          date: String(s.session_date || "").slice(0, 10),
+          remove: false,
+        });
+        if (!nextAst) {
+          return {
+            ok: true,
+            real: true,
+            summary:
+              `The session is authorized to be promoted, but there's no storefront layout to put a banner into yet — ` +
+              `so no banner was created. Its private link still works: ${s.booking_url}`,
+            raw: s,
+          };
+        }
+        return {
+          ok: true,
+          real: true,
+          summary:
+            `Added a "Book Your Session" banner to the top of their storefront, linked straight to this session's ` +
+            `private booking page (${s.booking_url}) rather than normal booking. It shows Sold Out or No longer ` +
+            `available on its own as the session changes — nothing to update by hand.`,
+          raw: { ...s, storefrontAst: nextAst },
+        };
+      },
+    },
+    {
+      name: "removeWebsitePromotion",
+      description:
+        "Stop promoting a real session on the storefront. The session itself stays exactly as it is and its private link keeps working — this only takes it off the website.",
+      argsSchema: {
+        type: "object",
+        properties: { businessId: osBusinessIdArg, sessionId: osSessionIdArg },
+        required: ["sessionId"],
+      },
+      handler: async (args) => {
+        const ctx = osCtx(args);
+        if (!ctx) return OS_NO_CTX;
+        const r = await callSessionsApi(ctx.ownerToken, {
+          action: "promotion_remove",
+          business_id: ctx.businessId,
+          session_id: String(args.sessionId || ""),
+        });
+        if (!r.json?.ok) {
+          return { ok: false, real: false, summary: r.json?.error || "The promotion wasn't removed.", error: "promotion_failed" };
+        }
+        const s = r.json.session;
+        const nextAst = osPatchStorefrontBanner((args as Record<string, unknown>)._storefrontAst, {
+          sessionId: String(s.id),
+          sessionName: String(s.name || "Session"),
+          date: String(s.session_date || "").slice(0, 10),
+          remove: true,
+        });
+        return {
+          ok: true,
+          real: true,
+          summary: nextAst
+            ? "Removed the banner from their storefront. The session and its private booking link are unchanged."
+            : "Promotion turned off. There was no banner on the storefront to remove.",
+          raw: nextAst ? { ...s, storefrontAst: nextAst } : s,
+        };
+      },
+    },
+  ],
+});

@@ -1,0 +1,474 @@
+{
+  "publicPayload": {
+    "ok": true,
+    "business": {
+      "name": "Adrian Smith Photography",
+      "logo_url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='34'%3E%3Crect width='120' height='34' rx='6' fill='%23141B2B'/%3E%3Ctext x='60' y='23' text-anchor='middle' fill='%23fff' font-family='sans-serif' font-size='14'%3EASP%3C/text%3E%3C/svg%3E",
+      "brand_color": "#D9632D",
+      "phone": "(801) 555-0100"
+    },
+    "session": {
+      "name": "Fall Mini Sessions",
+      "description": "20-minute photography sessions in the gardens — bring the whole family.",
+      "status": "published",
+      "date": "2099-08-20",
+      "start_time": "08:00",
+      "end_time": "14:00",
+      "timezone": "America/Denver",
+      "duration_minutes": 20,
+      "location": "Thanksgiving Point",
+      "location_type": "in_person",
+      "booking_questions": [
+        {
+          "id": "party",
+          "label": "How many people in your group?",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "notes",
+          "label": "Anything we should know?",
+          "type": "textarea",
+          "required": false
+        }
+      ],
+      "cta": "Book Your Session",
+      "bookable": true,
+      "block_reason": null,
+      "term_verb": "Book a session"
+    },
+    "payment": {
+      "price_cents": 15000,
+      "currency": "usd",
+      "mode": "deposit",
+      "charge_now_cents": 5000,
+      "balance_due_cents": 10000,
+      "deposit_cents": 5000,
+      "requires_checkout": true,
+      "line": "$50 deposit due today · $100 at your session.",
+      "stripe_ready": true
+    },
+    "policy": "Deposits are non-refundable within 48 hours of your session.",
+    "availability": {
+      "remaining": 16,
+      "total": 18,
+      "slots": [
+        {
+          "time": "08:00",
+          "label": "8:00 AM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "08:20",
+          "label": "8:20 AM",
+          "available": false,
+          "seats_open": 0
+        },
+        {
+          "time": "08:40",
+          "label": "8:40 AM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "09:00",
+          "label": "9:00 AM",
+          "available": false,
+          "seats_open": 0
+        },
+        {
+          "time": "09:20",
+          "label": "9:20 AM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "09:40",
+          "label": "9:40 AM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "10:00",
+          "label": "10:00 AM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "10:20",
+          "label": "10:20 AM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "10:40",
+          "label": "10:40 AM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "11:00",
+          "label": "11:00 AM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "11:20",
+          "label": "11:20 AM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "11:40",
+          "label": "11:40 AM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "12:00",
+          "label": "12:00 PM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "12:20",
+          "label": "12:20 PM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "12:40",
+          "label": "12:40 PM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "13:00",
+          "label": "1:00 PM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "13:20",
+          "label": "1:20 PM",
+          "available": true,
+          "seats_open": 1
+        },
+        {
+          "time": "13:40",
+          "label": "1:40 PM",
+          "available": true,
+          "seats_open": 1
+        }
+      ]
+    }
+  },
+  "ownerList": {
+    "ok": true,
+    "sessions": [
+      {
+        "id": "sess-000001",
+        "status": "published",
+        "visibility": "link_only",
+        "appointment_duration_minutes": 20,
+        "buffer_minutes": 0,
+        "location_type": "in_person",
+        "capacity_per_slot": 1,
+        "total_capacity": null,
+        "currency": "usd",
+        "payment_mode": "deposit",
+        "booking_questions": [
+          {
+            "id": "party",
+            "label": "How many people in your group?",
+            "type": "text",
+            "required": true
+          },
+          {
+            "id": "notes",
+            "label": "Anything we should know?",
+            "type": "textarea",
+            "required": false
+          }
+        ],
+        "website_promotion": {},
+        "meta": {},
+        "calendar_block_job_id": "job-000002",
+        "google_event_id": null,
+        "published_at": "2026-08-15T21:04:57.106Z",
+        "closed_at": null,
+        "created_at": "2026-08-15T21:04:57.105Z",
+        "updated_at": "2026-08-15T21:04:57.106Z",
+        "name": "Fall Mini Sessions",
+        "description": "20-minute photography sessions in the gardens — bring the whole family.",
+        "session_date": "2099-08-20",
+        "start_time": "08:00:00",
+        "end_time": "14:00:00",
+        "timezone": "America/Denver",
+        "location": "Thanksgiving Point",
+        "price_cents": 15000,
+        "deposit_type": "flat",
+        "deposit_cents": 5000,
+        "business_id": "biz-photographer",
+        "booking_token": "gH11yiFm5BaSbwZ67SXe46aIgk7RMWRH",
+        "booking_url": "https://adrian-photo.myhubly.app/session/gH11yiFm5BaSbwZ67SXe46aIgk7RMWRH",
+        "slot_count": 18,
+        "total_spots": 18,
+        "booked": 2,
+        "remaining": 16,
+        "payment_summary": {
+          "mode": "deposit",
+          "currency": "usd",
+          "price_cents": 15000,
+          "deposit_cents": 5000,
+          "charge_now_cents": 5000,
+          "balance_due_cents": 10000,
+          "requires_checkout": true,
+          "below_stripe_minimum": false
+        },
+        "payment_line": "$50 deposit due today · $100 at your session.",
+        "promotion": {
+          "state": "active",
+          "cta": "Book Your Session",
+          "linkable": true
+        },
+        "calendar_blocked": true,
+        "google_synced": false
+      },
+      {
+        "id": "sess-000008",
+        "status": "draft",
+        "visibility": "link_only",
+        "appointment_duration_minutes": 30,
+        "buffer_minutes": 0,
+        "location_type": "in_person",
+        "capacity_per_slot": 1,
+        "total_capacity": null,
+        "currency": "usd",
+        "payment_mode": "none",
+        "booking_questions": [],
+        "website_promotion": {},
+        "meta": {},
+        "calendar_block_job_id": null,
+        "google_event_id": null,
+        "published_at": null,
+        "closed_at": null,
+        "created_at": "2026-08-15T21:04:57.115Z",
+        "updated_at": "2026-08-15T21:04:57.115Z",
+        "name": "Holiday Mini Sessions",
+        "session_date": "2099-12-05",
+        "start_time": "10:00:00",
+        "end_time": "13:00:00",
+        "timezone": "America/Denver",
+        "location": "Studio",
+        "price_cents": 20000,
+        "business_id": "biz-photographer",
+        "booking_token": "5lQfjgbjQ_GtZKQ5QrdOx_438H5kklmh",
+        "booking_url": "https://adrian-photo.myhubly.app/session/5lQfjgbjQ_GtZKQ5QrdOx_438H5kklmh",
+        "slot_count": 6,
+        "total_spots": 6,
+        "booked": 0,
+        "remaining": 6,
+        "payment_summary": {
+          "mode": "none",
+          "currency": "usd",
+          "price_cents": 20000,
+          "deposit_cents": null,
+          "charge_now_cents": 0,
+          "balance_due_cents": 20000,
+          "requires_checkout": false,
+          "below_stripe_minimum": false
+        },
+        "payment_line": "$200 — paid at your session.",
+        "promotion": {
+          "state": "draft",
+          "cta": "Not published yet",
+          "linkable": false
+        },
+        "calendar_blocked": false,
+        "google_synced": false
+      }
+    ]
+  },
+  "ownerGet": {
+    "ok": true,
+    "session": {
+      "id": "sess-000001",
+      "status": "published",
+      "visibility": "link_only",
+      "appointment_duration_minutes": 20,
+      "buffer_minutes": 0,
+      "location_type": "in_person",
+      "capacity_per_slot": 1,
+      "total_capacity": null,
+      "currency": "usd",
+      "payment_mode": "deposit",
+      "booking_questions": [
+        {
+          "id": "party",
+          "label": "How many people in your group?",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "notes",
+          "label": "Anything we should know?",
+          "type": "textarea",
+          "required": false
+        }
+      ],
+      "website_promotion": {},
+      "meta": {},
+      "calendar_block_job_id": "job-000002",
+      "google_event_id": null,
+      "published_at": "2026-08-15T21:04:57.106Z",
+      "closed_at": null,
+      "created_at": "2026-08-15T21:04:57.105Z",
+      "updated_at": "2026-08-15T21:04:57.106Z",
+      "name": "Fall Mini Sessions",
+      "description": "20-minute photography sessions in the gardens — bring the whole family.",
+      "session_date": "2099-08-20",
+      "start_time": "08:00:00",
+      "end_time": "14:00:00",
+      "timezone": "America/Denver",
+      "location": "Thanksgiving Point",
+      "price_cents": 15000,
+      "deposit_type": "flat",
+      "deposit_cents": 5000,
+      "business_id": "biz-photographer",
+      "booking_token": "gH11yiFm5BaSbwZ67SXe46aIgk7RMWRH",
+      "booking_url": "https://adrian-photo.myhubly.app/session/gH11yiFm5BaSbwZ67SXe46aIgk7RMWRH",
+      "slot_count": 18,
+      "total_spots": 18,
+      "booked": 2,
+      "remaining": 16,
+      "payment_summary": {
+        "mode": "deposit",
+        "currency": "usd",
+        "price_cents": 15000,
+        "deposit_cents": 5000,
+        "charge_now_cents": 5000,
+        "balance_due_cents": 10000,
+        "requires_checkout": true,
+        "below_stripe_minimum": false
+      },
+      "payment_line": "$50 deposit due today · $100 at your session.",
+      "promotion": {
+        "state": "active",
+        "cta": "Book Your Session",
+        "linkable": true
+      },
+      "calendar_blocked": true,
+      "google_synced": false
+    }
+  },
+  "ownerBookings": {
+    "ok": true,
+    "bookings": [
+      {
+        "id": "bk-000003",
+        "seat_no": 0,
+        "answers": {},
+        "status": "pending_payment",
+        "payment_status": "pending",
+        "amount_paid_cents": 0,
+        "currency": "usd",
+        "job_id": null,
+        "customer_id": null,
+        "paid_at": null,
+        "confirmed_at": null,
+        "cancelled_at": null,
+        "created_at": "2026-08-15T21:04:57.113Z",
+        "updated_at": "2026-08-15T21:04:57.113Z",
+        "session_id": "sess-000001",
+        "business_id": "biz-photographer",
+        "slot_date": "2099-08-20",
+        "slot_time": "08:20:00",
+        "duration_minutes": 20,
+        "customer_name": "Sarah Chen",
+        "customer_email": "sarah@example.com",
+        "customer_phone": "801-555-0199",
+        "price_cents": 15000,
+        "deposit_cents": 5000,
+        "confirmation_code": "SCTHU5Q4"
+      },
+      {
+        "id": "bk-000004",
+        "seat_no": 0,
+        "answers": {},
+        "status": "confirmed",
+        "payment_status": "paid",
+        "amount_paid_cents": 5000,
+        "currency": "usd",
+        "job_id": "job-000006",
+        "customer_id": "cust-000005",
+        "paid_at": "2026-08-15T21:04:57.114Z",
+        "confirmed_at": "2026-08-15T21:04:57.114Z",
+        "cancelled_at": null,
+        "created_at": "2026-08-15T21:04:57.114Z",
+        "updated_at": "2026-08-15T21:04:57.114Z",
+        "session_id": "sess-000001",
+        "business_id": "biz-photographer",
+        "slot_date": "2099-08-20",
+        "slot_time": "09:00:00",
+        "duration_minutes": 20,
+        "customer_name": "Marcus Webb",
+        "customer_email": "marcus@example.com",
+        "customer_phone": null,
+        "price_cents": 15000,
+        "deposit_cents": 5000,
+        "confirmation_code": "S4JTGQQ5",
+        "stripe_payment_intent_id": "pi_fixture",
+        "stripe_checkout_session_id": "cs_fixture"
+      }
+    ]
+  },
+  "promotions": {
+    "active": {
+      "ok": true,
+      "sessions": [
+        {
+          "id": "sess-000001",
+          "name": "Fall Mini Sessions",
+          "date": "2099-08-20",
+          "state": "active",
+          "cta": "Book Your Session",
+          "linkable": true,
+          "url": "https://adrian-photo.myhubly.app/session/gH11yiFm5BaSbwZ67SXe46aIgk7RMWRH"
+        }
+      ]
+    },
+    "sold_out": {
+      "ok": true,
+      "sessions": [
+        {
+          "id": "sess-000001",
+          "name": "Fall Mini Sessions",
+          "date": "2099-08-20",
+          "state": "sold_out",
+          "cta": "Sold Out",
+          "linkable": false,
+          "url": null
+        }
+      ]
+    },
+    "closed": {
+      "ok": true,
+      "sessions": [
+        {
+          "id": "sess-000001",
+          "name": "Fall Mini Sessions",
+          "date": "2099-08-20",
+          "state": "closed",
+          "cta": "No longer available",
+          "linkable": false,
+          "url": null
+        }
+      ]
+    }
+  },
+  "sessionId": "sess-000001",
+  "bookingToken": "gH11yiFm5BaSbwZ67SXe46aIgk7RMWRH",
+  "bookingUrl": "https://adrian-photo.myhubly.app/session/gH11yiFm5BaSbwZ67SXe46aIgk7RMWRH"
+}

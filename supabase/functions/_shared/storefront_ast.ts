@@ -25,7 +25,27 @@ export type StorefrontBlockType =
   | "cta"
   | "footer";
 
-type FieldSpec = { kind: "string" | "number" | "boolean" | "productIds" | "productId" | "collectionId"; default?: unknown };
+/**
+ * Where a promotional banner's CTA points. Closed list on purpose: a banner may
+ * only ever target something Hubly can resolve and keep honest. "oneOffSession"
+ * stores a One-Off Session id and NOTHING else — never a copied date, price, or
+ * URL — so the session stays the single source of truth and a closed/sold-out
+ * session can never leave a stale "Book Now" behind (§12).
+ */
+export const PROMO_LINK_TYPES = [
+  "none",
+  "page",
+  "booking",
+  "service",
+  "oneOffSession",
+  "url",
+] as const;
+export type PromoLinkType = (typeof PROMO_LINK_TYPES)[number];
+
+type FieldSpec = {
+  kind: "string" | "number" | "boolean" | "productIds" | "productId" | "collectionId" | "linkType";
+  default?: unknown;
+};
 
 type BlockSpec = {
   variants: string[];
@@ -65,7 +85,14 @@ export const STOREFRONT_BLOCK_CATALOG: Record<StorefrontBlockType, BlockSpec> = 
   },
   promoBanner: {
     variants: ["standard", "bold"],
-    config: { text: { kind: "string" }, ctaText: { kind: "string" } },
+    config: {
+      text: { kind: "string" },
+      ctaText: { kind: "string" },
+      linkType: { kind: "linkType", default: "none" },
+      // Meaning depends on linkType: a page path, a service id, a One-Off
+      // Session id, or an external URL. Empty for "none"/"booking".
+      linkTarget: { kind: "string" },
+    },
   },
   brandStory: {
     variants: ["standard"],
@@ -146,6 +173,11 @@ export function validateStorefrontAst(raw: unknown): { ok: boolean; ast: Storefr
       else if (fs.kind === "productIds") config[key] = Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean).slice(0, 24) : [];
       else if (fs.kind === "productId") config[key] = v != null && String(v).trim() ? String(v).trim() : null;
       else if (fs.kind === "collectionId") config[key] = v != null && String(v).trim() ? String(v).trim() : null;
+      else if (fs.kind === "linkType") {
+        config[key] = PROMO_LINK_TYPES.includes(String(v) as PromoLinkType)
+          ? String(v)
+          : (fs.default ?? "none");
+      }
     }
     blocks.push({
       id: typeof rb.id === "string" && rb.id ? String(rb.id) : rid(),
@@ -183,6 +215,7 @@ export function storefrontCatalogPromptBlock(): string {
     return `- ${type} — ${BLOCK_PURPOSE[type]}. variants: [${spec.variants.join(", ")}]; config: {${cfg}}`;
   });
   return `STOREFRONT BLOCKS (the ONLY blocks that exist — never invent another type, variant, or config field):\n${lines.join("\n")}\n` +
+    `promoBanner.linkType must be one of [${PROMO_LINK_TYPES.join(", ")}]. Use "oneOffSession" with linkTarget set to a real One-Off Session id to promote a temporary session — never copy the session's date, price, or URL into the banner text as fact; the renderer resolves the live session and shows the right CTA (Book Your Session / Sold Out / No longer available) on its own.\n` +
     `Variant meaning: for product blocks (featuredProducts, productGrid, bestSellers) "large" = bigger cards, "compact" = smaller cards, "standard" = default; for storeHero "tall" = bigger, "compact" = shorter; productSpotlight "split" = image beside copy.\n` +
     `theme = {style: one of [${THEME_STYLES.join(", ")}], accent: hex or null, font: one of [${THEME_FONTS.join(", ")}], density: one of [${THEME_DENSITIES.join(", ")}]}.\n` +
     `productId (single) and productIds/collectionId MUST be real ids from the provided catalog; never invent ids and never put product names or prices anywhere — the renderer resolves ids against live Commerce.`;

@@ -11163,6 +11163,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="memberships" onclick="switchV(this,{push:true})" title="Memberships">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16l3-8 4 4 4-6 3 10"/><path d="M3 20h18"/></svg><span class="ni-lbl">Memberships</span>
       </div>
+      <div class="ni" data-v="sessions" onclick="switchV(this,{push:true})" title="Sessions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8 14h3M8 17.5h6"/></svg><span class="ni-lbl">Sessions</span>
+      </div>
       <div class="ni" data-v="store" onclick="switchV(this,{push:true})" title="Store">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16l-1 12H5L4 7z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/><path d="M9 11v2M15 11v2"/></svg><span class="ni-lbl">Store</span>
       </div>
@@ -11315,6 +11318,12 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- MEMBERSHIPS -->
       <div id="v-memberships" class="body hidden">
         <div id="jos-memberships-root"></div>
+      </div>
+
+      <!-- SESSIONS (One-Off Sessions — temporary, date-specific booking events.
+           Never the permanent Service catalog, never the normal booking page.) -->
+      <div id="v-sessions" class="body hidden">
+        <div id="jos-sessions-root"></div>
       </div>
 
       <!-- STORE (Commerce Engine — products / orders / inventory; not Website Storefront) -->
@@ -13094,6 +13103,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/store-page.js?v=commerce-5"></script>
 <script defer src="/journey-os/journey.js?v=20260808025356"></script>
 <script defer src="/journey-os/store-commerce.js?v=store-3"></script>
+<script defer src="/journey-os/one-off-sessions.js?v=sessions-1"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
 <script defer src="/journey-os/media-studio-bridge.js?v=studio-15"></script>
 <script defer src="/journey-os/hubly-studio.js?v=studio-15"></script>
@@ -13685,7 +13695,7 @@ function openOperateHome(opts){
 
 const HUBLY_OWNER_APP_VIEWS=new Set([
   'dashboard','jobs','calendar','photo-projects','leads','customers','pipeline','chats','studio',
-  'reviews','memberships','store','money','reports','quotes','editor','ask','apps','settings',
+  'reviews','memberships','sessions','store','money','reports','quotes','editor','ask','apps','settings',
   'opportunities','activity','growth','marketplace'
 ]);
 function ownerAppViewHash(view,extra){
@@ -39121,7 +39131,12 @@ function sfPickerData(){
   const os=sfOs();return {products:os.products||[],collections:os.collections||[]};
 }
 const SF_BLOCK_LABEL={storeHero:'Hero',featuredProducts:'Featured products',productGrid:'Product grid',collectionGrid:'Collections',featuredCollection:'Featured collection',bestSellers:'Best sellers',productSpotlight:'Product spotlight',promoBanner:'Promo banner',brandStory:'Brand story',cta:'Call to action',footer:'Footer'};
-const SF_FIELD_LABEL={headline:'Headline',sub:'Subheadline',showSearch:'Show search',title:'Title',productIds:'Products',collectionId:'Collection',columns:'Columns',text:'Text',ctaText:'Button text',body:'Body',buttonText:'Button text',blurb:'Blurb',productId:'Product'};
+const SF_FIELD_LABEL={headline:'Headline',sub:'Subheadline',showSearch:'Show search',title:'Title',productIds:'Products',collectionId:'Collection',columns:'Columns',text:'Text',ctaText:'Button text',body:'Body',buttonText:'Button text',blurb:'Blurb',productId:'Product',linkType:'Link to',linkTarget:'Destination'};
+// A promo banner's "Link to" options. One-Off Session is the reason this exists: a
+// banner can promote a private, link-only session without the session ever joining
+// normal booking — it stores the session id only, so the CTA follows the live session
+// state (Book Your Session / Sold Out / No longer available) instead of going stale.
+const SF_LINK_TYPE_LABEL={none:'Nothing',page:'Website page',booking:'Normal booking',service:'Service',oneOffSession:'One-Off Session',url:'External URL'};
 
 // Materialize a concrete working draft (from the live catalog) so there is always something to edit.
 // Returns the CANONICAL S.storefrontDraft object (not a copy) so mutations by callers persist.
@@ -39198,6 +39213,7 @@ function sfEnsureChrome(){
     '.sf-row button{border:0;background:#F1F3F5;border-radius:7px;width:28px;height:28px;font-size:13px;cursor:pointer;color:#5b6472;}'+
     '.sf-row button:disabled{opacity:.35;cursor:default;}'+
     '.sf-field{margin-bottom:14px;}'+
+    '.sf-hint{font-size:12px;color:#8a9099;line-height:1.45;margin-top:5px;}'+
     '.sf-field label{display:block;font-size:12px;color:#5b6472;margin-bottom:5px;font-weight:600;}'+
     '.sf-field input[type=text],.sf-field textarea,.sf-field input[type=number]{width:100%;padding:9px 10px;border:1px solid #E6E8EC;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box;}'+
     '.sf-field textarea{min-height:64px;resize:vertical;}'+
@@ -39333,7 +39349,28 @@ function sfInspectorHtml(blk){
   Object.keys(spec.config).forEach(key=>{
     const fs=spec.config[key],val=blk.config[key],lbl=SF_FIELD_LABEL[key]||key;
     html+='<div class="sf-field"><label>'+sfEsc(lbl)+'</label>';
-    if(fs.kind==='string'){
+    if(key==='linkTarget'){
+      // The destination field follows the chosen link type. For a One-Off Session
+      // it is a picker over the business's real sessions, so the banner can only
+      // ever hold a session id that actually exists (never a typed URL or a copied
+      // date) — that reference is what keeps the CTA honest as the session changes.
+      const lt=blk.config.linkType||'none';
+      if(lt==='none'||lt==='booking'){
+        html+='<div class="sf-hint">Nothing to set for this link type.</div>';
+      }else if(lt==='oneOffSession'){
+        const list=(S&&S._sfSessions)||null;
+        if(!list){sfLoadSessionsForPicker();html+='<div class="sf-hint">Loading your sessions…</div>';}
+        else if(!list.length){html+='<div class="sf-hint">No sessions to link to yet — create one in Sessions first.</div>';}
+        else{
+          html+='<select data-sf-field="'+key+'"><option value="">Choose a session…</option>'+
+            list.map(x=>'<option value="'+sfEsc(x.id)+'"'+(val===x.id?' selected':'')+'>'+sfEsc(x.name)+' — '+sfEsc(String(x.session_date||'').slice(0,10))+' ('+sfEsc(x.status)+')</option>').join('')+'</select>';
+          const chosen=list.filter(x=>x.id===val)[0];
+          if(chosen)html+='<div class="sf-hint">Links to '+sfEsc(chosen.booking_url||'its private booking page')+'. The button text follows the session\'s state on its own.</div>';
+        }
+      }else{
+        html+='<input type="text" data-sf-field="'+key+'" value="'+sfEsc(val||'')+'" placeholder="'+(lt==='url'?'https://…':(lt==='page'?'/about':'service id'))+'">';
+      }
+    }else if(fs.kind==='string'){
       const long=(key==='body'||key==='blurb'||key==='sub');
       html+=long?'<textarea data-sf-field="'+key+'">'+sfEsc(val||'')+'</textarea>':'<input type="text" data-sf-field="'+key+'" value="'+sfEsc(val||'')+'">';
     }else if(fs.kind==='number'){
@@ -39349,11 +39386,40 @@ function sfInspectorHtml(blk){
     }else if(fs.kind==='collectionId'){
       const nm=val?sfCollectionName(val):'';
       html+='<button class="sf-pickbtn" data-sf-act="pick-collection" data-field="'+key+'">'+(nm?sfEsc(nm)+' — change':'Choose a collection')+'</button>';
+    }else if(fs.kind==='linkType'){
+      // Where the banner's CTA points. One-Off Session is the option that lets a
+      // private, link-only session be promoted here without ever joining normal
+      // booking — see SF_LINK_TYPE_LABEL.
+      const types=(window.HublyStorefrontAst&&window.HublyStorefrontAst.PROMO_LINK_TYPES)||['none'];
+      html+='<select data-sf-field="'+key+'">'+types.map(t=>'<option value="'+sfEsc(t)+'"'+((val||'none')===t?' selected':'')+'>'+sfEsc(SF_LINK_TYPE_LABEL[t]||t)+'</option>').join('')+'</select>';
     }
     html+='</div>';
   });
   html+='</div>';
   return html;
+}
+// The owner's real One-Off Sessions, for the promo banner's "Link to" picker. Read
+// once through the same owner-gated API the Sessions screen uses — the editor never
+// queries one_off_sessions directly, and never caches session copy into the AST.
+async function sfLoadSessionsForPicker(){
+  if(S._sfSessionsLoading||S._sfSessions)return;
+  S._sfSessionsLoading=true;
+  try{
+    const base=String((window.HublySupabase&&window.HublySupabase.url)||'').replace(/\/$/,'');
+    const bizId=(currentBusiness&&currentBusiness.id)||'';
+    if(!base||!bizId){S._sfSessions=[];S._sfSessionsLoading=false;return;}
+    const headers={'content-type':'application/json'};
+    const anon=window.HublySupabase&&(window.HublySupabase.anonKey||window.HublySupabase.key);
+    if(anon)headers.apikey=anon;
+    const sess=window.HublySupabase&&window.HublySupabase.session;
+    const tok=sess&&(sess.access_token||sess.accessToken);
+    if(tok)headers.Authorization='Bearer '+tok;
+    const res=await fetch(base+'/functions/v1/one-off-sessions',{method:'POST',headers,body:JSON.stringify({action:'list',business_id:bizId})});
+    const data=await res.json().catch(()=>null);
+    S._sfSessions=(data&&data.ok&&data.sessions)?data.sessions:[];
+  }catch(e){S._sfSessions=[];}
+  S._sfSessionsLoading=false;
+  try{renderSfPanel();}catch(e){}
 }
 function sfProductName(id){const p=(sfPickerData().products||[]).filter(x=>x.id===id)[0];return p?p.name:'(product)';}
 function sfCollectionName(id){const c=(sfPickerData().collections||[]).filter(x=>x.id===id)[0];return c?c.name:'(collection)';}
@@ -39384,6 +39450,9 @@ function onSfPanelInput(e){
   const el=e.target.closest('[data-sf-field]');
   if(el){const blk=sfSelBlock();if(!blk)return;const f=el.getAttribute('data-sf-field');
     blk.config[f]=(el.type==='number')?Number(el.value):el.value;
+    // Changing the link type changes what the destination field even IS, so this
+    // one field repaints the panel instead of the usual quiet commit.
+    if(f==='linkType'){blk.config.linkTarget='';sfCommit();return;}
     sfCommit({noPanel:true});return;}
   const ac=e.target.closest('[data-sf-act="theme-accent"]');
   if(ac){const draft=sfEnsureDraft();draft.theme.accent=ac.value;sfCommit({noPanel:true});return;}
@@ -39392,7 +39461,7 @@ function onSfPanelInput(e){
 // ---- Block mutations ----
 function sfAddBlock(type){
   const draft=sfEnsureDraft(),spec=sfCat()[type];if(!spec)return;
-  const cfg={};Object.keys(spec.config).forEach(k=>{const fs=spec.config[k];cfg[k]=fs.kind==='productIds'?[]:(fs.kind==='productId'||fs.kind==='collectionId'?null:(fs.default!=null?fs.default:(fs.kind==='number'?0:(fs.kind==='boolean'?false:''))));});
+  const cfg={};Object.keys(spec.config).forEach(k=>{const fs=spec.config[k];const dflt=(fs.default!=null?fs.default:fs.def);cfg[k]=fs.kind==='productIds'?[]:(fs.kind==='productId'||fs.kind==='collectionId'?null:(fs.kind==='linkType'?(dflt!=null?dflt:'none'):(dflt!=null?dflt:(fs.kind==='number'?0:(fs.kind==='boolean'?false:'')))));});
   const maxOrder=(draft.blocks||[]).reduce((m,b)=>Math.max(m,b.order||0),0);
   draft.blocks.push({id:'b_'+Math.random().toString(36).slice(2,9),type,order:maxOrder+1,visible:true,variant:spec.variants[0],config:cfg});
   const m=document.getElementById('sf-add-menu');if(m)m.style.display='none';

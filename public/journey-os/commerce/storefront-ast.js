@@ -26,12 +26,16 @@
     featuredCollection: { variants: ['standard', 'banner'], config: { title: { kind: 'string' }, collectionId: { kind: 'collectionId' } } },
     bestSellers: { variants: ['standard', 'large'], config: { title: { kind: 'string', def: 'Best sellers' }, productIds: { kind: 'productIds' } } },
     productSpotlight: { variants: ['standard', 'split'], config: { productId: { kind: 'productId' }, title: { kind: 'string' }, blurb: { kind: 'string' } } },
-    promoBanner: { variants: ['standard', 'bold'], config: { text: { kind: 'string' }, ctaText: { kind: 'string' } } },
+    promoBanner: { variants: ['standard', 'bold'], config: { text: { kind: 'string' }, ctaText: { kind: 'string' }, linkType: { kind: 'linkType', def: 'none' }, linkTarget: { kind: 'string' } } },
     brandStory: { variants: ['standard'], config: { title: { kind: 'string' }, body: { kind: 'string' } } },
     cta: { variants: ['standard'], config: { title: { kind: 'string' }, buttonText: { kind: 'string', def: 'Shop now' } } },
     footer: { variants: ['standard'], config: { text: { kind: 'string' } } }
   };
   var BLOCK_TYPES = Object.keys(CATALOG);
+  // Where a promo banner's CTA points — mirrors PROMO_LINK_TYPES in storefront_ast.ts.
+  // 'oneOffSession' stores a One-Off Session id and nothing else: the session stays the
+  // source of truth, so a closed/sold-out session can never leave a stale "Book Now".
+  var PROMO_LINK_TYPES = ['none', 'page', 'booking', 'service', 'oneOffSession', 'url'];
   var THEME_STYLES = ['clean', 'premium', 'bold', 'minimal', 'warm'];
   var THEME_FONTS = ['sans', 'serif', 'modern', 'rounded', 'mono'];
   var THEME_DENSITIES = ['compact', 'cozy', 'roomy'];
@@ -70,6 +74,7 @@
         else if (fs.kind === 'productIds') config[key] = Array.isArray(v) ? v.map(function (x) { return String(x); }).filter(Boolean).slice(0, 24) : [];
         else if (fs.kind === 'productId') config[key] = (v != null && String(v).trim()) ? String(v).trim() : null;
         else if (fs.kind === 'collectionId') config[key] = (v != null && String(v).trim()) ? String(v).trim() : null;
+        else if (fs.kind === 'linkType') config[key] = PROMO_LINK_TYPES.indexOf(String(v)) > -1 ? String(v) : (fs.def != null ? fs.def : 'none');
       });
       blocks.push({
         id: (typeof b.id === 'string' && b.id) ? String(b.id) : rid(),
@@ -115,6 +120,7 @@
   global.HublyStorefrontAst = {
     CATALOG: CATALOG,
     BLOCK_TYPES: BLOCK_TYPES,
+    PROMO_LINK_TYPES: PROMO_LINK_TYPES,
     THEME_STYLES: THEME_STYLES,
     THEME_FONTS: THEME_FONTS,
     THEME_DENSITIES: THEME_DENSITIES,

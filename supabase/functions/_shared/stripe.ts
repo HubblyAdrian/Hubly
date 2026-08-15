@@ -13,9 +13,12 @@ export type StripeCheckoutSession = {
   url?: string | null;
   payment_intent?: string | null;
   payment_status?: string | null;
+  /** "open" | "complete" | "expired" — used to safely reuse an unpaid session. */
+  status?: string | null;
   metadata?: Record<string, string>;
   amount_total?: number | null;
   currency?: string | null;
+  expires_at?: number | null;
 };
 
 function stripeKey() {
@@ -124,6 +127,14 @@ export async function createDestinationCheckout(opts: {
   cancelUrl: string;
   customerEmail?: string;
   applicationFeeCents?: number;
+  /**
+   * Unix seconds. Stripe's own minimum is 30 minutes out and the default is 24
+   * hours. Callers that HOLD something scarce while the customer pays (a
+   * One-Off Session seat) pass a short expiry so an abandoned checkout releases
+   * the hold promptly via checkout.session.expired, instead of parking it for a
+   * day.
+   */
+  expiresAt?: number;
   metadata: Record<string, string>;
 }): Promise<StripeCheckoutSession> {
   const currency = (opts.currency || "usd").toLowerCase();
@@ -141,6 +152,7 @@ export async function createDestinationCheckout(opts: {
     form["payment_intent_data[application_fee_amount]"] = opts.applicationFeeCents;
   }
   if (opts.customerEmail) form.customer_email = opts.customerEmail;
+  if (opts.expiresAt) form.expires_at = Math.floor(opts.expiresAt);
   let i = 0;
   for (const [k, v] of Object.entries(opts.metadata || {})) {
     if (!v) continue;
@@ -227,7 +239,14 @@ export function sanitizeAppReturnUrl(raw: unknown): string {
       "127.0.0.1",
     ]);
     const host = u.hostname.toLowerCase();
-    if (!allowed.has(host) && !host.endsWith(".vercel.app")) return fallback;
+    // Business sites live on {slug}.myhubly.app / {slug}.hubly.app (see
+    // isBusinessSubdomain in api/router.js). A checkout started from a
+    // business's own site — a One-Off Session link, or its booking page —
+    // has to be able to return there; the exact-host list above would have
+    // dumped every one of those customers on the Hubly app instead. Still
+    // restricted to Hubly-controlled domains, so this is not an open redirect.
+    const isHublySubdomain = host.endsWith(".myhubly.app") || host.endsWith(".hubly.app");
+    if (!allowed.has(host) && !isHublySubdomain && !host.endsWith(".vercel.app")) return fallback;
     if (u.protocol !== "https:" && u.protocol !== "http:") return fallback;
     return u.toString();
   } catch {

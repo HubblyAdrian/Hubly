@@ -125,6 +125,44 @@ Deno.serve(async (req: Request) => {
         }
       }
 
+      // One-Off Session — the ONLY place a session booking becomes paid +
+      // confirmed. The customer's success screen never confirms anything (§9);
+      // finalize is idempotent, so a replayed webhook cannot double-create the
+      // job. A failure here returns 500 so Stripe retries rather than silently
+      // leaving a paid customer without an appointment.
+      const oneOffSessionBookingId = String(
+        meta.hubly_one_off_session_booking_id || meta.one_off_session_booking_id || "",
+      ).trim();
+      if (
+        oneOffSessionBookingId &&
+        (paymentStatus === "paid" || paymentStatus === "no_payment_required")
+      ) {
+        try {
+          const { finalizeSessionBookingPayment } = await import(
+            "../_shared/one_off_session_engine.ts"
+          );
+          const fin = await finalizeSessionBookingPayment(admin, {
+            bookingId: oneOffSessionBookingId,
+            amountPaidCents: amountTotal || 0,
+            paymentIntentId: pi,
+            checkoutSessionId: sessionId || null,
+          });
+          if (!fin.ok) {
+            console.error("stripe-webhook finalize one-off session booking", fin.error);
+            return new Response(JSON.stringify({ error: "session booking update failed" }), {
+              status: 500,
+              headers: { "content-type": "application/json" },
+            });
+          }
+        } catch (sessErr) {
+          console.error("stripe-webhook finalize one-off session booking", sessErr);
+          return new Response(JSON.stringify({ error: "session booking update failed" }), {
+            status: 500,
+            headers: { "content-type": "application/json" },
+          });
+        }
+      }
+
       // Phase 4 — mark marketplace Booking Engine payment paid
       if (
         marketplaceBookingId &&
@@ -141,6 +179,29 @@ Deno.serve(async (req: Request) => {
             status: 500,
             headers: { "content-type": "application/json" },
           });
+        }
+      }
+    }
+
+    // Abandoned One-Off Session checkout (§9) — Stripe expires an unpaid
+    // Checkout Session after 24h. The held seat goes back to the grid so a
+    // customer who never paid can't sit on someone else's time. Only ever
+    // applied to a still-unpaid booking, so a late-arriving completed event
+    // that already confirmed it is unaffected.
+    if (event.type === "checkout.session.expired") {
+      const expired = event.data.object;
+      const meta = (expired.metadata || {}) as Record<string, string>;
+      const sessionBookingId = String(
+        meta.hubly_one_off_session_booking_id || meta.one_off_session_booking_id || "",
+      ).trim();
+      if (sessionBookingId) {
+        try {
+          const { releaseAbandonedSessionBooking } = await import(
+            "../_shared/one_off_session_engine.ts"
+          );
+          await releaseAbandonedSessionBooking(admin, sessionBookingId);
+        } catch (relErr) {
+          console.error("stripe-webhook release one-off session booking", relErr);
         }
       }
     }
