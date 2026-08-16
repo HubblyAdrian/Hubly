@@ -32,15 +32,37 @@ exactly this shape:
   "reviews_sub": string
 }`;
 
+/** Mirrors NEUTRAL_BLUEPRINT_ID in public/business-blueprints/registry.js. The
+ *  client builds `blueprint`, so this id is part of that cross-file contract. */
+const NEUTRAL_BLUEPRINT_ID = "generic";
+
 function buildSystemPrompt(blueprint: any) {
-  if (!blueprint || typeof blueprint !== "object") {
-    return `You write website copy for a local service business. You are given
-basic facts about a real business and must generate premium, conversion-focused
-one-page website content.
+  // "Industry not known" arrives two ways: no blueprint at all, or the neutral
+  // blueprint. Both must land here. Routing the neutral one through the branch
+  // below would render "You write copy for a Business business" and "Stay inside
+  // the Business category" — an industry claim made out of a placeholder name.
+  //
+  // This is the LEAST grounded case, so it needs the MOST protection. It used to
+  // have the least: the "stay inside the category" guardrail existed only in the
+  // blueprint branch, leaving the unknown-industry path with nothing to stop it
+  // drifting into whatever trade the model felt like, auto detailing included.
+  const isNeutral = !blueprint ||
+    typeof blueprint !== "object" ||
+    blueprint.id === NEUTRAL_BLUEPRINT_ID;
+  if (isNeutral) {
+    return `You write website copy for a local business. You are given basic facts
+about a real business and must generate premium, conversion-focused one-page
+website content.
 
 Voice: confident, warm, plain-spoken — like a business owner talking to a
-neighbor, not a marketing agency. Short sentences. No filler. Never invent
-awards, years-in-business, or fake customer counts.
+neighbor, not a marketing agency. Short sentences. No filler.
+
+CRITICAL: The industry is NOT KNOWN. Do not guess one, and do not adopt one from
+any example anywhere in these instructions — in particular never use auto
+detailing, car wash, vehicle, driveway, lawn, or any other specific trade's
+language, services or imagery. Write only from the facts given below. Where a
+fact is missing, write around it: never invent awards, years-in-business,
+customer counts, services, prices, or a description of what this business does.
 
 ${JSON_SHAPE}`;
   }
@@ -69,7 +91,8 @@ Service catalog context: ${JSON.stringify(blueprint.serviceCatalog || [])}
 CRITICAL: Stay inside the ${name} category. Never use auto detailing, car wash,
 vehicle, driveway, or unrelated trade language unless this Blueprint is Auto Detailing.
 Never invent awards, years-in-business, or fake customer counts — if you need a
-specific number and none was given, describe it qualitatively.
+specific number and none was given, describe it qualitatively. A fact given as
+null below was not provided: write around it, do not fill it in.
 
 ${JSON_SHAPE}`;
 }
@@ -97,11 +120,14 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const industryLabel = blueprint?.name || business_type || "local service";
     const facts = {
       business_name,
       business_type: business_type || null,
-      description: description || `(not provided — infer a plausible, modest description of a ${industryLabel} business)`,
+      // Was: `(not provided — infer a plausible, modest description of a ${industryLabel} business)`.
+      // An instruction to invent, sitting inside a block the model is told is
+      // BUSINESS FACTS. A description we were not given is null, and the system
+      // prompt tells the model to write around a missing fact rather than fill it.
+      description: description || null,
       service_area_cities: service_area_cities || [],
       social_links: social_links || {},
       owner_first_name: owner_first_name || null,

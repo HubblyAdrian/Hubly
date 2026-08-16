@@ -261,72 +261,85 @@
     return merged;
   }
 
+  /**
+   * NOTE on the `typeId && typeof typeId === 'object'` test used below.
+   *
+   * These accessors take either a blueprint object or a type id. The guard used
+   * to be a bare `typeof typeId === 'object'` — and `typeof null === 'object'`,
+   * so a null type id was treated as a blueprint object that happened to be
+   * null. The resolver never ran, and the caller got null instead of the
+   * neutral blueprint. `null` is exactly what production sends for a business
+   * with no trade on record (hubly.html sets `S.businessType = data.business_type || null`),
+   * so the generic blueprint was bypassed for the one case it exists to serve:
+   * aiGuidance(null) returned null, and generate-site fell through to its
+   * no-blueprint branch.
+   */
   function hasCapability(typeId, key) {
-    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    const bp = typeId && typeof typeId === 'object' ? typeId : get(typeId);
     if (!bp || !bp.capabilities) return false;
     return !!bp.capabilities[key];
   }
 
   function serviceNames(typeId) {
-    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    const bp = typeId && typeof typeId === 'object' ? typeId : get(typeId);
     const catalog = (bp && bp.services && bp.services.catalog) || [];
     return catalog.map((s) => s.name).filter(Boolean);
   }
 
   function catalog(typeId, specialtyId) {
     const bp =
-      typeof typeId === 'object' ? typeId : resolve(typeId, specialtyId != null ? specialtyId : null);
+      typeId && typeof typeId === 'object' ? typeId : resolve(typeId, specialtyId != null ? specialtyId : null);
     return ((bp && bp.services && bp.services.catalog) || []).slice();
   }
 
   function defaultAddons(typeId, specialtyId) {
     const bp =
-      typeof typeId === 'object' ? typeId : resolve(typeId, specialtyId != null ? specialtyId : null);
+      typeId && typeof typeId === 'object' ? typeId : resolve(typeId, specialtyId != null ? specialtyId : null);
     return ((bp && bp.booking && bp.booking.defaultAddons) || []).slice();
   }
 
   function sectionCopy(typeId) {
-    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    const bp = typeId && typeof typeId === 'object' ? typeId : get(typeId);
     return (bp && bp.website && bp.website.sectionCopy) || {};
   }
 
   function emptyIcon(typeId) {
-    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    const bp = typeId && typeof typeId === 'object' ? typeId : get(typeId);
     return (bp && bp.website && bp.website.emptyIcon) || '◆';
   }
 
   function seedImages(typeId) {
-    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    const bp = typeId && typeof typeId === 'object' ? typeId : get(typeId);
     return ((bp && bp.gallery && bp.gallery.seedImages) || []).slice();
   }
 
   function synonyms(typeId) {
-    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    const bp = typeId && typeof typeId === 'object' ? typeId : get(typeId);
     return ((bp && bp.identity && bp.identity.synonyms) || []).slice();
   }
 
   function defaultLayout(typeId) {
-    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    const bp = typeId && typeof typeId === 'object' ? typeId : get(typeId);
     return (bp && bp.website && bp.website.defaultLayout) || 'clean-modern';
   }
 
   function homepagePriority(typeId) {
-    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    const bp = typeId && typeof typeId === 'object' ? typeId : get(typeId);
     return (bp && bp.homepage && bp.homepage.priority) || [];
   }
 
   function bookingBlueprint(typeId) {
-    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    const bp = typeId && typeof typeId === 'object' ? typeId : get(typeId);
     return (bp && bp.booking) || { mode: 'appointments', steps: [] };
   }
 
   function performanceFlags(typeId) {
-    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    const bp = typeId && typeof typeId === 'object' ? typeId : get(typeId);
     return (bp && bp.performance && bp.performance.flags) || {};
   }
 
   function aiGuidance(typeId) {
-    const bp = typeof typeId === 'object' ? typeId : resolve(typeId);
+    const bp = typeId && typeof typeId === 'object' ? typeId : resolve(typeId);
     if (!bp) return null;
     return {
       id: bp.id,
