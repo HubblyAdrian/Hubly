@@ -2309,6 +2309,10 @@
     // of them said "Not connected" — including Stripe on an account with
     // charges_enabled:true and a live acct_ id. An integration we cannot check
     // must be visibly distinct from one that is genuinely off.
+    // In flight. Asserting either way here is a lie with a short half-life.
+    if (status === 'checking') {
+      return setStatusBadge('Checking…', 'info');
+    }
     if (status === 'unknown') {
       return setStatusBadge('Status unavailable', 'warn');
     }
@@ -2361,10 +2365,22 @@
     });
   }
 
-  /** Map a facade answer onto this renderer's status vocabulary. */
+  /**
+   * Map a facade answer onto this renderer's status vocabulary.
+   *
+   * 'checking' and 'unknown' are DIFFERENT and must not be collapsed:
+   *   checking — a facade exists and the answer is in flight. Say nothing yet.
+   *   unknown  — no facade, or the call failed. We cannot know.
+   * Collapsing them is what made the cards render "Connect Stripe" for a
+   * second on an account that was already connected — an invitation to
+   * re-connect something the owner already has.
+   */
   function integStatusFor(appId) {
     var res = _integStatus[appId];
-    if (!res) return 'unknown';                       // not asked yet, or failed
+    if (!res) {
+      // No answer yet. If a facade exists it WILL answer, so this is transient.
+      return facadeFor(appId) ? 'checking' : 'unknown';
+    }
     var h = (res.data && res.data.health) || null;
     if (h === 'unknown') return 'unknown';
     if (res.status === 'connected') return h === 'degraded' ? 'pending' : 'connected';
@@ -2581,6 +2597,33 @@
       '<div class="jos-btn-row jos-mt">' + dsBtn('set-pay-msg-save', 'Save deposit message', 'jos-btn-brand jos-btn-sm') + '</div>' +
       '</div>';
   }
+  /**
+   * Move the payment-mode selection without redrawing anything else.
+   *
+   * Mirrors the class logic in the payment-mode renderer above: `.on` on the
+   * chosen option, and the deposit sub-panel visible only for 'deposit'.
+   * Kept next to that renderer on purpose — if one changes, the other must.
+   */
+  function applyPayModeSelection(mode) {
+    try {
+      var opts = document.querySelectorAll('#jos-set-pay-mode .jos-set-pay-opt');
+      Array.prototype.forEach.call(opts, function (b) {
+        b.classList.toggle('on', b.getAttribute('data-jos-pay') === mode);
+      });
+      var dep = document.getElementById('jos-set-pay-deposit');
+      if (dep) dep.classList.toggle('on', mode === 'deposit');
+    } catch (e) { /* not on this view */ }
+  }
+
+  function applyDepositTypeSelection(depType) {
+    try {
+      var chips = document.querySelectorAll('#jos-set-pay-deposit .jos-set-pay-chip');
+      Array.prototype.forEach.call(chips, function (b) {
+        b.classList.toggle('on', b.getAttribute('data-jos-dep-type') === depType);
+      });
+    } catch (e) { /* not on this view */ }
+  }
+
   function renderSetIntegrations() {
     var root = el('jos-settings-root');
     var setupKey = root && root._josIntegSetup;
@@ -2593,10 +2636,16 @@
       { key: 'resend', blurb: 'Email receipts · confirmations' }
     ];
     var cards = catalog.map(function (c) {
-      var item = integ[c.key] || { label: c.key, status: 'not_connected', note: '' };
+      var item = integ[c.key] || { label: c.key, status: 'checking', note: '' };
       var connected = item.status === 'connected' || item.status === 'os_ready';
+      // While a real answer is in flight, offer NO action. A "Connect Stripe"
+      // button on an account that is already connected is worse than a blank
+      // space — it invites the owner to redo work they have already done.
+      var checking = item.status === 'checking';
       var actions = '';
-      if (c.key === 'stripe') {
+      if (checking) {
+        actions = '<span class="jos-set-integ-checking" aria-live="polite">Checking…</span>';
+      } else if (c.key === 'stripe') {
         actions = connected
           ? dsBtn('set-integ-stripe-dash', 'Dashboard', 'jos-btn jos-btn-sm') + dsBtn('set-integ-stripe-disconnect', 'Disconnect', 'jos-btn jos-btn-sm')
           : dsBtn('set-integ-stripe-connect', 'Connect Stripe', 'jos-btn-brand jos-btn-sm');
@@ -2880,19 +2929,43 @@
       }
       if (act === 'set-pay-mode') {
         var mode = (t && t.getAttribute('data-jos-pay')) || '';
-        if (typeof window.setMoneyPaySetting === 'function') {
-          return Promise.resolve(window.setMoneyPaySetting(mode)).then(function () { renderSettings(); });
-        }
+        // Update ONLY what changed. This used to call renderSettings(), which
+        // redraws the entire settings view — every tab, every card, including
+        // the integration cards that had nothing to do with the click. And it
+        // ran AFTER the save resolved, so the owner clicked, saw nothing, then
+        // watched the whole section flash.
+        //
+        // Now the selection moves immediately (it is the owner's own input, and
+        // the only honest instant feedback), the save follows, and a failure
+        // puts the selection back rather than leaving a lie on screen.
+        var prevMode = S().paymentSetting;
+        applyPayModeSelection(mode);
         S().paymentSetting = mode;
-        return renderSettings();
+        if (typeof window.setMoneyPaySetting === 'function') {
+          return Promise.resolve(window.setMoneyPaySetting(mode)).catch(function (e) {
+            S().paymentSetting = prevMode;
+            applyPayModeSelection(prevMode);
+            try { toast('Could not save payment mode'); } catch (_) {}
+            console.warn('[settings] setMoneyPaySetting failed', e && e.message);
+          });
+        }
+        return;
       }
       if (act === 'set-pay-dep-type') {
         var depType = (t && t.getAttribute('data-jos-dep-type')) || 'pct';
+        depType = depType === 'flat' ? 'flat' : 'pct';
+        var prevType = S().depositType;
+        applyDepositTypeSelection(depType);
+        S().depositType = depType;
         if (typeof window.setMoneyDepositType === 'function') {
-          return Promise.resolve(window.setMoneyDepositType(depType)).then(function () { renderSettings(); });
+          return Promise.resolve(window.setMoneyDepositType(depType)).catch(function (e) {
+            S().depositType = prevType;
+            applyDepositTypeSelection(prevType);
+            try { toast('Could not save deposit type'); } catch (_) {}
+            console.warn('[settings] setMoneyDepositType failed', e && e.message);
+          });
         }
-        S().depositType = depType === 'flat' ? 'flat' : 'pct';
-        return renderSettings();
+        return;
       }
       if (act === 'set-pay-dep-val') {
         var depVal = Number(setVal('jos-set-dep-val'));
