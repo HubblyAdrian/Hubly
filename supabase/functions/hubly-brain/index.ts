@@ -20,6 +20,63 @@ function jsonRes(body: unknown, status = 200) {
   });
 }
 
+/**
+ * Authorize a business-scoped Brain call.
+ *
+ * persistBrainRun below writes with the service-role key, which bypasses RLS,
+ * and one of those writes is
+ *   .upsert({ business_id, ... }, { onConflict: "business_id" })
+ * against workspace_memories — the memory that then feeds the AI's answers.
+ * `business_id` arrived from the request body and was never checked against
+ * the caller, and this function is verify_jwt = false, so there was nothing
+ * upstream either: any unauthenticated caller could overwrite any business's
+ * memory, and seed reads by that id came back to them in the response.
+ *
+ * Scoped deliberately: only calls that name a business_id need authorization.
+ * Reasoning with no business_id touches no business data and stays open — that
+ * is the Brain Console (public/brain-console.html), which authenticates with
+ * the anon key alone.
+ */
+async function authorizeBusiness(
+  req: Request,
+  businessId: string,
+): Promise<{ ok: true } | { ok: false; response: Response }> {
+  const url = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEYS");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
+  if (!url || !serviceKey || !anonKey) {
+    console.error("hubly-brain misconfigured: missing Supabase env");
+    return { ok: false, response: jsonRes({ error: "Server misconfigured" }, 500) };
+  }
+
+  const authHeader = req.headers.get("Authorization") || "";
+  if (!authHeader.toLowerCase().startsWith("bearer ")) {
+    return { ok: false, response: jsonRes({ error: "Sign in to use Hubly for a business." }, 401) };
+  }
+
+  const userClient = createClient(url, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: userData, error: userErr } = await userClient.auth.getUser();
+  if (userErr || !userData?.user) {
+    // The anon key is a valid project JWT but resolves to no user — lands here.
+    return { ok: false, response: jsonRes({ error: "Your session expired — refresh and try again." }, 401) };
+  }
+
+  const admin = createClient(url, serviceKey);
+  const { data: biz, error: bizErr } = await admin
+    .from("businesses")
+    .select("id,owner_id")
+    .eq("id", businessId)
+    .maybeSingle();
+  // Same answer for "no such business" and "not yours" — never confirm that a
+  // given id belongs to a real business.
+  if (bizErr || !biz || biz.owner_id !== userData.user.id) {
+    return { ok: false, response: jsonRes({ error: "Business not found" }, 404) };
+  }
+  return { ok: true };
+}
+
 async function persistBrainRun(opts: {
   businessId: string;
   result: Awaited<ReturnType<typeof Hubly.think>>;
@@ -127,6 +184,13 @@ Deno.serve(async (req) => {
     if (!request) return jsonRes({ error: "request required" }, 400);
 
     const businessId = body.business_id || body.businessId || null;
+    // Naming a business means reading its seeded memory and writing back to it.
+    // Both require ownership. Reject before Hubly.think so an unauthorized
+    // caller cannot spend a model call either.
+    if (businessId) {
+      const authz = await authorizeBusiness(req, String(businessId));
+      if (!authz.ok) return authz.response;
+    }
     const result = await Hubly.think({
       request,
       intent: body.intent || null,
