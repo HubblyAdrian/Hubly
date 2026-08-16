@@ -37398,19 +37398,26 @@ function wsServiceCardHtml(s,idx){
     ?`<h3 class="ws-pe-target" data-pe="svc-name" data-pe-label="Edit name" data-svc-id="${s.id??idx}">${s.name||''}</h3>`
     :`<h3>${s.name||''}</h3>`;
   const emptyIco=blueprintEmptyIcon();
-  // Phase 4B: the CTA click now opens the shared Hubly Conversation with
-  // this real service as Patch Zero (ccServiceClick), not the old wizard
-  // directly -- openBookingPage() itself is untouched and still reachable
-  // elsewhere (e.g. the booking-landing page inside the wizard), this only
-  // changes what the main site's own service cards open. S.ctaText is the
-  // same owner-editable field bookingServiceCardHtml already used (Edit
-  // Website -> click-to-edit on the CTA button), so "Book Now"/"Schedule
-  // This Service"/etc. was already real and just needed reusing here too.
+  // Tapping a specific package books THAT package. It routes to
+  // openBookingPage(name), which resolves the service out of
+  // getBookingServices(), sets S.bkService/S.bkSvcObj/S.bkBasePrice, and —
+  // because this is a real card tap rather than an auto-pick — sets
+  // S._bkPackageLocked so the customer is not asked to choose again.
+  //
+  // This previously called ccServiceClick(), which opened the customer chat
+  // with the service as Patch Zero (Phase 4B). That reversed the customer's
+  // intent: they had already chosen, and were handed a conversation instead of
+  // a booking. ccServiceClick/ccStartGeneric remain for the chat entry points
+  // that have no package context. S.ctaText is still the owner-editable label,
+  // unchanged.
+  //
+  // In the editor the same button renders for layout, but must not start a
+  // real customer booking inside a preview — there it is inert.
   const ctaLabel=S.ctaText||t('wsBookThisService');
   const ctaSafe=typeof escPeHtml==='function'?escPeHtml(ctaLabel):String(ctaLabel||'').replace(/</g,'&lt;');
   const bookAttrs=editing
     ?''
-    :` role="button" tabindex="0" onclick="ccServiceClick('${esc}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();ccServiceClick('${esc}')}"`;
+    :` role="button" tabindex="0" onclick="openBookingPage('${esc}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openBookingPage('${esc}')}"`;
   return `<div class="ws-svc-card ws-pe-target${img?' has-photo':''}${editing?'':' ws-svc-card-bookable'}" id="ws-svc-${idx}" data-pe="service" data-pe-label="Edit service" data-svc-id="${s.id??idx}"${bookAttrs}>
     ${editing?`<div class="ws-re-btns">
       <button type="button" class="ws-re-btn" title="Move up" ${idx===0?'disabled':''} onclick="event.stopPropagation();moveEditorService(${idx},-1)">↑</button>
@@ -37424,7 +37431,7 @@ function wsServiceCardHtml(s,idx){
       ${s.desc?`<p class="ws-svc-desc">${s.desc}</p>`:''}
       ${inc?`<div class="ws-svc-more">${inc}</div>`:''}
       ${inc?`<button type="button" class="ws-svc-toggle" onclick="event.stopPropagation();toggleWsSvcCard(this)">${t('wsViewDetails')}</button>`:''}
-      <button type="button" class="ws-svc-book" onclick="event.stopPropagation();ccServiceClick('${esc}')">${ctaSafe}</button>
+      <button type="button" class="ws-svc-book" onclick="event.stopPropagation();${editing?'':`openBookingPage('${esc}')`}">${ctaSafe}</button>
     </div>
   </div>`;
 }
