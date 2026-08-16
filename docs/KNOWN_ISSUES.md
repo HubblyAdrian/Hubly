@@ -194,3 +194,58 @@ Guard against it:
 - Prefer a loop over one file at a time to a single command over a joined list.
 - If a check reports "clean" for something known to be broken, distrust the
   check before trusting the result.
+
+---
+
+## What browser automation in this setup can and cannot prove
+
+**Status:** standing note, written 2026-08-16 after two rounds of false verification
+
+The MCP-driven Chrome tab is **not** the developer's browser window. Verifying
+mobile behaviour through it has hard limits, and both of them produced
+confident-looking results that were worthless.
+
+**`resize_window` only works in a FRESH window.** Called on a tab in an existing
+window it returns "Successfully resized" while `window.innerWidth` does not
+change. The first mobile check this session reported success and measured
+`innerWidth: 1710` — a desktop viewport — so the `≤900px` and `≤860px` rules
+never engaged and the measurements said nothing about mobile. Always assert the
+viewport after resizing:
+
+```js
+JSON.stringify({innerWidth, innerHeight, mq: matchMedia('(max-width:900px)').matches})
+```
+
+If `innerWidth` is not what you asked for, every measurement that follows is
+about the wrong layout. The window can also collapse between calls — one
+screenshot in this session came back 150px wide mid-sequence.
+
+**Device emulation toggled in the developer's own DevTools does not reach it.**
+The automation window is separate. Measured from inside it, after the developer
+turned phone mode on:
+
+```
+userAgent : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36…"
+touch     : false
+```
+
+Desktop UA, no touch events, no device pixel ratio emulation, and no mobile
+browser chrome.
+
+**So a browser check here CAN prove:**
+- computed styles and geometry at a given CSS width (`getBoundingClientRect`,
+  `getComputedStyle`), which is enough for media-query-driven rules
+- whether an element is present, visible, or overlapping another
+- DOM state, class toggles, and script-set values
+
+**It CANNOT prove:**
+- anything involving iOS/Android browser chrome — `dvh` vs `svh` vs `lvh`
+  behaviour, toolbar show/hide, address-bar collapse
+- `env(safe-area-inset-*)` values, which are 0 outside a notched device
+- touch-only behaviour, momentum scrolling, or `:hover` absence
+- real device pixel ratio rendering
+
+Anything in the second list needs a real device. Say so explicitly in the
+commit rather than implying the browser check covered it — a fix verified at a
+narrow desktop width and described as "verified on mobile" is the same false
+assurance as a check that silently checks nothing (see the entry above).

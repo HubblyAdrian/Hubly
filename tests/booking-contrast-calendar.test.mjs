@@ -31,11 +31,17 @@ test('booking calendar parses YYYY-MM-DD as local (no UTC month slip)', () => {
   assert.match(html, /S\._bkCalMonth=null;/);
 });
 
-test('mobile booking summary is compact and chat clears Continue', () => {
+test('mobile booking summary is compact and nothing floats over the action bar', () => {
   assert.match(html, /\.bk-sq-mode \.bk-sq-mobile-est[\s\S]*?display:none!important/);
+  // This used to assert the chat bubble was NUDGED clear of the action bar
+  // (bottom:calc(84px…)) and that .bk-step-foot reserved padding-right:68px for
+  // it. Both are gone. Nudging only relocates the collision to a different
+  // screen height — on a real iPhone the bubble still landed on
+  // "Confirm & book" — so the widget is hidden outright while booking is open,
+  // and the reserved 68px (which visibly narrowed the button) went with it.
   assert.match(
     html,
-    /body\.ws-booking-open \.ws-chat-widget\{[\s\S]*?bottom:calc\(84px/
+    /body\.ws-booking-open \.ws-chat-widget,[\s\S]{0,200}?display:none!important/
   );
-  assert.match(html, /padding-right:68px/);
+  assert.doesNotMatch(html, /padding-right:68px/);
 });

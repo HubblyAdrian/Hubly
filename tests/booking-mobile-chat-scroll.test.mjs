@@ -15,13 +15,30 @@ test('booking sidebar does not emit mid-flow Chat with us help card', () => {
   assert.match(booking, /Chat lives on the floating #ws-chat-bubble/);
 });
 
-test('booking keeps floating chat bubble visible', () => {
-  assert.doesNotMatch(
-    html,
-    /body\.ws-booking-open #ws-chat-bubble[\s\S]{0,80}display:none/
-  );
+test('booking hides the floating chat bubble and the site sticky bar', () => {
+  // Renamed and inverted. This test was called "keeps floating chat bubble
+  // visible" and kept passing after the bubble was hidden, because it asserted
+  // on #ws-chat-bubble — an id that is not the widget — while the widget is
+  // .ws-chat-widget. A test whose name and subject disagree proves nothing.
+  //
+  // The requirement is now the opposite: at the payment step nothing may float
+  // over the primary action, and the business site's own sticky Book Now bar
+  // must not show through beneath the booking overlay (it produced two stacked
+  // sticky bars on a real iPhone).
   assert.match(html, /body\.ws-booking-open #ws-chat-teaser\{display:none!important\}/);
-  assert.match(html, /body\.ws-booking-open \.ws-chat-widget\{/);
+  assert.match(
+    html,
+    /body\.ws-booking-open \.ws-chat-widget,[\s\S]{0,200}?display:none!important/
+  );
+  assert.match(
+    html,
+    /body\.ws-booking-open \.ws-sticky-cta,[\s\S]{0,200}?display:none!important/
+  );
+  // The overlay must fill the inset box rather than being shortened by dvh.
+  assert.match(
+    html,
+    /body\.ws-booking-open #p-booking\.active\{[\s\S]*?height:100%;max-height:100%/
+  );
 });
 
 test('booking steps use a single scroller (no nested overflow on step-inner)', () => {
