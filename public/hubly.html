@@ -13123,6 +13123,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/adobe-lightroom-service.js?v=projects-16"></script>
 <script defer src="/journey-os/connected-apps-catalog.generated.js?v=projects-7"></script>
 <script defer src="/journey-os/connected-apps.js?v=projects-7"></script>
+<!-- Status facades for the integrations Hubly can actually check (Stripe,
+     Google Calendar). Order-independent: connected-apps.js re-checks on
+     DOMContentLoaded/load and lazily on getFacade(), so this may load before
+     or after it. -->
+<script defer src="/journey-os/connected-apps-facades.js?v=facades-1"></script>
 <script defer src="/journey-os/hubly-action-engine.js?v=projects-7"></script>
 <script defer src="/journey-os/hubly-intent-engine.js?v=projects-7"></script>
 <script defer src="/journey-os/canva-connected-app.js?v=projects-7"></script>

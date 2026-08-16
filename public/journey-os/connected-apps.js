@@ -32,6 +32,11 @@
   }
 
   function getFacade(id) {
+    // Lazy retry: a provider script may have executed after registration ran.
+    // Without this, load ORDER decides whether a card can ever report status.
+    if (!_facades[id] && typeof registerKnownFacades === 'function') {
+      try { registerKnownFacades(); } catch (e) { /* no-op */ }
+    }
     return id ? (_facades[id] || null) : null;
   }
 
@@ -243,6 +248,47 @@
     DEFAULT_INSTALLED: DEFAULT_INSTALLED
   };
 
-  if (global.CanvaConnectedApp) registerFacade('canva', global.CanvaConnectedApp);
-  if (global.AdobeLightroomService) registerFacade('adobe_lightroom', global.AdobeLightroomService);
+  /**
+   * Facade registration must not depend on SCRIPT ORDER.
+   *
+   * This used to be two bare `if (global.X) registerFacade(...)` lines running
+   * once at load. If a provider's script had not executed yet — deferred,
+   * slow, or simply ordered after this file — the facade was never registered
+   * and its card silently reported the fallback state forever. Same silent
+   * failure as the missing facades, just rarer and harder to notice.
+   *
+   * Now: register whatever is present now, and re-check on the events that
+   * mark "more scripts have run". getFacade() is also lazy — it retries the
+   * known globals on miss — so a late arrival is picked up on first use even
+   * if no event fires.
+   */
+  var KNOWN_FACADE_GLOBALS = {
+    canva: 'CanvaConnectedApp',
+    adobe_lightroom: 'AdobeLightroomService',
+    stripe: 'HublyStripeConnectedApp',
+    google: 'HublyGoogleCalendarConnectedApp',
+  };
+
+  function registerKnownFacades() {
+    var added = 0;
+    Object.keys(KNOWN_FACADE_GLOBALS).forEach(function (appId) {
+      if (_facades[appId]) return;
+      var impl = global[KNOWN_FACADE_GLOBALS[appId]];
+      if (impl) { registerFacade(appId, impl); added += 1; }
+    });
+    return added;
+  }
+
+  global.HublyConnectedApps.registerKnownFacades = registerKnownFacades;
+  registerKnownFacades();
+
+  // Late-loading provider scripts.
+  try {
+    if (global.document) {
+      if (global.document.readyState === 'loading') {
+        global.document.addEventListener('DOMContentLoaded', registerKnownFacades, { once: true });
+      }
+      global.addEventListener('load', registerKnownFacades, { once: true });
+    }
+  } catch (e) { /* non-browser host — the direct call above is enough */ }
 })(typeof window !== 'undefined' ? window : globalThis);

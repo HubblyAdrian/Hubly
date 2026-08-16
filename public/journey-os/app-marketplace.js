@@ -101,7 +101,20 @@
       lastSyncAt: meta.lastSyncAt || null,
       message: 'Not connected',
     };
-    if (!facade) return base;
+    // NO FACADE = WE DID NOT ASK. This used to fall through to `base` and render
+    // "Not connected", so an integration with no status check looked exactly
+    // like one the owner had genuinely disconnected. Stripe reported "Not
+    // connected" for an account with charges_enabled:true and a live
+    // acct_… id, because nothing here ever called stripe-connect-connection.
+    //
+    // An unimplemented integration must be visibly distinct from a
+    // disconnected one, or the next gap hides the same way this one did.
+    if (!facade) {
+      return Object.assign({}, base, {
+        health: 'unknown',
+        message: 'Status unavailable',
+      });
+    }
     try {
       if (typeof facade.status === 'function') {
         var res = await facade.status({ businessId: businessId() });
@@ -126,6 +139,18 @@
     if (soon) return '<span class="am-pill">Soon</span>';
     if (st.health === 'not_configured') {
       return '<span class="am-pill am-pill-warn">Needs setup</span>';
+    }
+    // "Status unavailable" is NOT "Available". Hubly did not check, and saying
+    // anything definite here is the bug this replaces.
+    if (st.health === 'unknown') {
+      return '<span class="am-pill am-pill-warn" title="Hubly cannot check this integration\u2019s status yet">Status unavailable</span>';
+    }
+    // Connected but not yet able to do the job — Stripe onboarding unfinished,
+    // for instance. A green "Connected" here tells an owner they can take
+    // payments when they cannot, which is the same overstatement in the
+    // opposite direction to the bug this file fixes.
+    if (st.connected && st.health === 'degraded') {
+      return '<span class="am-pill am-pill-warn">Finish setup</span>';
     }
     if (st.connected) return '<span class="am-pill am-pill-ok">Connected</span>';
     return '<span class="am-pill">Available</span>';
