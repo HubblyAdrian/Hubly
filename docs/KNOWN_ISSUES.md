@@ -6,6 +6,41 @@ what would settle it.
 
 ---
 
+## The booking wizard's current step has two sources of truth
+
+**Status:** open, latent — no product code desyncs them today
+**Found:** 2026-08-16, by desyncing them from the console during verification
+
+Which step the customer is *on* is stored twice, and the two are only ever
+written together by `goToStep()`:
+
+1. **`S.bkStep`** — a number. Drives the progress stepper: `applyShellChrome()`
+   in `smart-quote/booking.js:748` renders the pills from `currentBkStep()`
+   (`:820`), which reads `S.bkStep` and falls back to `1`.
+2. **The `.active` class on `#bk-step-N`** — drives which panel is visible.
+
+Nothing reconciles them. Write one without the other and the wizard shows one
+step while the stepper, and anything else reading `S.bkStep`, believes another.
+
+Forcing `.active` onto `#bk-step-3` without touching `S.bkStep` produced exactly
+that: the stepper highlighted "1 · Package — Choose a package" while the footer
+read "Step 3 of 4" and the form was "Your info". It looked like a stepper bug. It
+was two variables disagreeing, and the stepper was the one telling the truth.
+
+No shipping code does this — every transition goes through `goToStep()`. It is
+recorded because the failure is *silent and plausible*: the UI stays fully
+functional and simply lies about where the customer is, which is the kind of
+thing that gets reported as a rendering glitch and chased in the wrong file. Note
+also that `S.bkStep` is what `submitBooking` and the abandoned-lead capture reason
+about, so a desync is not merely cosmetic.
+
+**What would settle it:** derive one from the other rather than storing both —
+read the active step from `S.bkStep` at render time, or drop `S.bkStep` and query
+the `.active` element. Failing that, make `goToStep()` the only thing permitted
+to touch either, and have `applyShellChrome()` assert they agree.
+
+---
+
 ## Saving a package re-lays out the canvas under the owner's cursor
 
 **Status:** open, not fixed
@@ -220,9 +255,9 @@ recurred three more times the same day and now has its own entry — see
 
 ---
 
-## Checks that silently check nothing
+## Checks that silently check nothing — or quietly check the wrong thing
 
-**Status:** standing practice, adopted 2026-08-16 after FOUR occurrences in one
+**Status:** standing practice, adopted 2026-08-16 after FIVE occurrences in one
 day
 
 The most dangerous verification result is not a failure. It is a success
@@ -230,19 +265,61 @@ produced by a command that examined nothing, because it converts an unknown into
 a false assurance — and every later decision is then made on the strength of a
 check that never ran.
 
-Four instances, one day, four different mechanisms:
+Five instances, one day, five different mechanisms:
 
-| # | The check | Why it matched nothing | What it reported |
+| # | The check | What went wrong | What it reported |
 |---|---|---|---|
 | 1 | `deno check $FILES` over sixteen Edge Functions | a **trailing space** made Deno read all sixteen paths as ONE module specifier | "1 error, unchanged" — clean |
 | 2 | grep for `renderSettings()` to confirm a call site was gone | the surviving match was **inside a comment**, not code | "still present" — wrong both ways |
 | 3 | grep of `app-marketplace.js` for the Integrations fix | right string, **wrong file** — the page is drawn by `journey.js` | "fix is present" |
 | 4 | `grep "^not ok"` to diff test-failure identity before/after | node's runner emits `✖`, **not TAP `not ok`** — 0 lines both sides | "IDENTICAL — no new failures" |
+| 5 | `className.includes('on')` to find the active stepper pill | **`'done'.includes('on')` is true** — a substring match on a class name | "two pills active" — a bug that did not exist |
 
-They look unrelated. They are the same error: **the check's own scope was never
-verified, so an empty result was read as a clean result.** In every case a
-zero/unchanged count was accepted as evidence, when zero was actually the
-signature of the check not running.
+The first four are the same error: **the check's own scope was never verified,
+so an empty result was read as a clean result.** A zero/unchanged count was
+accepted as evidence, when zero was actually the signature of the check not
+running.
+
+Number 4 is the clearest form of that. Diffing two empty files always succeeds.
+The comparison was real, the diff was real, and it proved nothing — and it was
+covering the *error-identity* practice adopted specifically to stop this class of
+mistake, which is how thin the protection is when the tool itself isn't checked.
+
+### Number 5 is the other direction: a FALSE POSITIVE
+
+The first four produced false *clean*. Number 5 produced a false *alarm*, and it
+was one step away from being reported to the user as a defect in the stepper —
+inventing work to fix code that was correct.
+
+`p.classList.contains('on')` and `p.className.includes('on')` look equivalent and
+are not. Class names are a *set of tokens*; `includes()` is a *substring search*
+over the joined string. Every one of these is a true substring match and a wrong
+answer:
+
+    'done'.includes('on')        // true  — the exact case that fired
+    'button'.includes('on')      // true
+    'disabled'.includes('able')  // true
+    'icon-off'.includes('on')    // true
+
+So a false positive is just as available as a false negative, and it is *worse*
+in one respect: an empty result at least looks suspicious, while a plausible
+non-empty result reads as a finding and gets acted on.
+
+**Rules that follow:**
+
+- **Match tokens with token APIs.** `classList.contains(x)` for classes,
+  `=== x` or a word-boundary regex (`\bon\b`) for identifiers. Reserve
+  `includes()` for genuine substring questions.
+- **Watch for short needles.** Two- and three-character terms (`on`, `id`,
+  `ok`, `all`) are substrings of ordinary words. The shorter the needle, the more
+  a substring match is the wrong tool.
+- **Sanity-check a positive as hard as a negative.** Before reporting a finding,
+  re-derive it a second way. Here, re-running with `classList.contains` turned
+  "two pills active" into the correct "one `done`, one `on`" immediately.
+- **A result that contradicts the code you just read is a claim about your
+  check.** The renderer assigns `on` to exactly one pill
+  (`n === step ? ' on' : n < step ? ' done' : ''`). Two actives was impossible by
+  construction — which was the tell, and it is always the tell.
 
 Number 4 is the clearest form. Diffing two empty files always succeeds. The
 comparison was real, the diff was real, and it proved nothing — and it was
@@ -259,6 +336,7 @@ mistake, which is how thin the protection is when the tool itself isn't checked.
   grep is wrong, not the file.
 - **Read one full result, not just the count.** Numbers 1 and 2 were caught by
   looking at the actual text; the counts alone looked fine in both.
+- **Match tokens with token APIs, not substring search** — see number 5 above.
 - **Match the tool's real output format**, confirmed by eye — not the format it
   ought to have. (`✖` vs `not ok`.)
 - **Grep code, not comments** — check the match's context before concluding.
