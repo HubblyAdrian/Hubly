@@ -249,3 +249,53 @@ Anything in the second list needs a real device. Say so explicitly in the
 commit rather than implying the browser check covered it — a fix verified at a
 narrow desktop width and described as "verified on mobile" is the same false
 assurance as a check that silently checks nothing (see the entry above).
+
+---
+
+## Tests that assert implementation details, not behaviour
+
+**Status:** standing note, written 2026-08-16 after two examples in one commit
+
+Commit c209dbf broke one test and was silently blessed by another. Both were
+written against HOW the page was built rather than WHAT it must do.
+
+**The one that failed (correctly, but for the wrong reason).**
+`booking-contrast-calendar.test.mjs` asserted `/padding-right:68px/`. The 68px
+existed only to hold the action bar clear of a floating chat bubble. When the
+fix hid the bubble instead, the reservation became actively harmful — it
+narrowed "Confirm & book" for something no longer there — yet the test demanded
+it stay. The requirement was never "68px"; it was "nothing floats over the
+primary action". A test pinned to the number blocks every fix that does not use
+that number.
+
+**The one that passed while asserting nothing — worse.**
+`booking-mobile-chat-scroll.test.mjs` had `test('booking keeps floating chat
+bubble visible')` which kept PASSING after the bubble was hidden:
+
+  * it asserted on `#ws-chat-bubble`, an id that is not the widget — the widget
+    is `.ws-chat-widget`, so the "is it hidden?" check could never fire
+  * its other assertion, `/body\.ws-booking-open \.ws-chat-widget\{/`, was
+    satisfied by an unrelated rule elsewhere in the file
+
+Its name claimed a behaviour, its assertions examined something else, and it
+reported green either way. A failing test costs an hour; a test that passes
+while checking the wrong subject costs the confidence you place in the whole
+suite.
+
+**What to prefer.** Assert the behaviour and let the implementation move:
+
+```js
+// brittle — pinned to a value and an id
+assert.match(html, /padding-right:68px/);
+assert.doesNotMatch(html, /#ws-chat-bubble[\s\S]{0,80}display:none/);
+
+// durable — pinned to the requirement
+assert.match(html, /body\.ws-booking-open \.ws-chat-widget,[\s\S]{0,200}?display:none!important/);
+assert.doesNotMatch(html, /padding-right:68px/);
+```
+
+**Smell test before trusting any assertion:** does the string it matches still
+exist in the source? A regex over an id, class or literal that has been renamed
+away matches nothing and asserts nothing, and `assert.doesNotMatch` on a stale
+selector passes forever. When touching a test, grep its subject in the source
+first — if the count is 0, the test is decorative.
