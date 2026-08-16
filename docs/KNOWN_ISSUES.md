@@ -91,7 +91,9 @@ order by 2 desc;
 
 ## Flat deposits guess dollars-vs-cents by magnitude
 
-**Status:** open, deliberately not fixed
+**Status:** FIXED 2026-08-16 — `meta.depositUnit` + migration `20260816120000_deposit_unit.sql`.
+Kept here as the record of what the defect was and how the migration preserved
+existing behaviour. The magnitude test is gone from `booking_engine.ts`.
 **Found:** 2026-08-16, while adding per-package payment overrides
 
 `booking_engine.ts` converts a flat deposit to cents with:

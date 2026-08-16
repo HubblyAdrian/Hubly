@@ -14995,6 +14995,11 @@ function buildBizMeta(){
     businessStage:(S._is&&S._is.businessStage)||null,
     workLove:(S._is&&S._is.workLove)||null,
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
+    // The deposit editor asks for a number behind a $ or % prefix (#dep-sym),
+    // so a flat amount is always DOLLARS as typed. Recorded explicitly because
+    // the server must never infer the unit from the number's size again — a
+    // $1,000 deposit used to be read as 1000 cents and charge $10.
+    depositUnit:S.depositUnit==='cents'?'cents':'dollars',
     depositType:S.depositType||'pct',depositVal:S.depositVal||25,depositCollect:S.depositCollect||'stripe',
     dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
     promoCodes:ensurePromoCodes(),
@@ -15060,6 +15065,7 @@ function applyBizMeta(meta){
   if(meta.paymentSetting)S.paymentSetting=meta.paymentSetting;
   if(meta.depositMessage)S.depositMessage=meta.depositMessage;
   if(meta.depositType)S.depositType=meta.depositType;
+  if(meta.depositUnit)S.depositUnit=meta.depositUnit;
   if(meta.depositCollect)S.depositCollect=meta.depositCollect;
   if(meta.depositVal!=null)S.depositVal=meta.depositVal;
   if(meta.depositVal!=null&&meta.depositVal!=='')S.depositVal=meta.depositVal;
@@ -32111,9 +32117,13 @@ function svcDepositHint(svc){
   if(!ownType){
     return 'Type follows your default ('+(acctFlat?'flat amount':'percent')+')';
   }
-  // Type chosen here, amount blank: the account's NUMBER is reused, read under
-  // this package's type — so a default of 25 becomes $25 on a flat package.
-  return 'Amount follows your default ('+acctVal+') — '+(svc.depositType==='flat'?('$'+acctVal):(acctVal+'%'))+' on this package';
+  // Type chosen here, amount blank. Same unit as the account: the amount
+  // inherits. Different unit: carrying the bare number across units would be a
+  // unit error, so the server falls back to the account's own pair entirely
+  // (resolveBookingPayment) — say so rather than imply a number will be reused.
+  const sameUnit=(svc.depositType==='flat')===acctFlat;
+  if(sameUnit)return 'Amount follows your default ('+(acctFlat?('$'+acctVal):(acctVal+'%'))+')';
+  return 'Add an amount — otherwise this package uses your default ('+(acctFlat?('$'+acctVal):(acctVal+'%'))+')';
 }
 function renderSvcEditorList(){
   const el=document.getElementById('svc-editor-list');

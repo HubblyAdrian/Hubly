@@ -116,6 +116,7 @@ export function resolvePaymentRule(business: Record<string, unknown>): {
   rule: PaymentRule;
   deposit_type: "pct" | "flat";
   deposit_val: number;
+  deposit_unit: "dollars" | "cents";
   message: string | null;
 } {
   const meta = getBusinessMeta(business);
@@ -132,8 +133,14 @@ export function resolvePaymentRule(business: Record<string, unknown>): {
   }
   const deposit_type = normalize(meta.depositType) === "flat" ? "flat" : "pct";
   const deposit_val = Number(meta.depositVal ?? 25) || 25;
+  // The unit is STORED, never inferred. It used to be guessed from the
+  // magnitude of deposit_val (< 1000 => dollars), which charged $10 to a
+  // business that meant a $1,000 deposit. Absent means dollars: that is what
+  // the owner types, and migration 20260816120000 backfilled every existing row
+  // with the reading the old guess produced, so nothing changed on migration.
+  const deposit_unit = normalize(meta.depositUnit) === "cents" ? "cents" : "dollars";
   const message = meta.depositMessage ? String(meta.depositMessage) : null;
-  return { rule, deposit_type, deposit_val, message };
+  return { rule, deposit_type, deposit_val, deposit_unit, message };
 }
 
 /**
@@ -160,7 +167,13 @@ export function resolvePaymentRule(business: Record<string, unknown>): {
 export function resolveBookingPayment(
   business: Record<string, unknown>,
   service?: { payment?: ServicePaymentOverride } | null,
-): { rule: PaymentRule; deposit_type: "pct" | "flat"; deposit_val: number; message: string | null } {
+): {
+  rule: PaymentRule;
+  deposit_type: "pct" | "flat";
+  deposit_val: number;
+  deposit_unit: "dollars" | "cents";
+  message: string | null;
+} {
   const account = resolvePaymentRule(business);
   const override = (service && service.payment && typeof service.payment === "object")
     ? service.payment
@@ -171,13 +184,32 @@ export function resolveBookingPayment(
   const wanted = String(override.rule || "") as PaymentRule;
   if (!EXECUTABLE.includes(wanted)) return account;
 
-  const depType = override.deposit_type === "flat" || override.deposit_type === "pct"
+  const ownType = override.deposit_type === "flat" || override.deposit_type === "pct"
     ? override.deposit_type
-    : account.deposit_type;
+    : null;
   const rawVal = Number(override.deposit_val);
-  const depVal = Number.isFinite(rawVal) && rawVal > 0 ? rawVal : account.deposit_val;
+  const ownVal = Number.isFinite(rawVal) && rawVal > 0 ? rawVal : null;
 
-  return { rule: wanted, deposit_type: depType, deposit_val: depVal, message: account.message };
+  // A package may change the deposit UNIT without giving a number, and then the
+  // account's number would cross units: a 25% default read as $25 on a flat
+  // package, or — far worse in the other direction — a $200 default read as
+  // 200% on a percentage package. Inheriting a bare number across a unit change
+  // is not inheritance, it is a unit error, so the whole deposit config falls
+  // back to the account's own coherent pair instead.
+  //
+  // Same-unit inheritance is untouched: a flat package under a flat account
+  // still inherits the account's amount, because the unit agrees.
+  if (ownType && ownType !== account.deposit_type && ownVal == null) return account;
+
+  return {
+    rule: wanted,
+    deposit_type: ownType ?? account.deposit_type,
+    deposit_val: ownVal ?? account.deposit_val,
+    // A package amount is entered in the owner-facing editor, which is dollars.
+    // An inherited amount keeps the account's unit, since it IS that number.
+    deposit_unit: ownVal != null ? "dollars" : account.deposit_unit,
+    message: account.message,
+  };
 }
 
 export function buildPaymentSummary(
@@ -203,11 +235,11 @@ export function buildPaymentSummary(
   if (priceCents != null && priceCents > 0) {
     if (cfg.rule === "pay_in_full") charge_now = priceCents;
     else if (cfg.rule === "deposit") {
-      // The dollars-or-cents heuristic on a flat deposit is pre-existing and
-      // deliberately preserved — owners' stored deposit_val is ambiguous, and
-      // reinterpreting it here would silently change live amounts.
+      // Flat deposits use the STORED unit. No magnitude guessing: a $1,000 flat
+      // deposit is 1000 dollars, not 1000 cents, and only the owner knows which
+      // they meant — so it is recorded rather than inferred.
       const raw = cfg.deposit_type === "flat"
-        ? Math.round(cfg.deposit_val * (cfg.deposit_val < 1000 ? 100 : 1))
+        ? Math.round(cfg.deposit_val * (cfg.deposit_unit === "cents" ? 1 : 100))
         : percentDepositCents(priceCents, cfg.deposit_val);
       // floorCents 50 = Stripe's minimum charge. Sessions pass a floor of 0,
       // which is why the floor belongs to the caller and not the helper.
