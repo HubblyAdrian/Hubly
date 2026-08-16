@@ -180,10 +180,14 @@ function resolveKey(ctx = {}) {
 export function assessLaunchDeployment(ctx = {}) {
   const stripeConnected = !!ctx.stripeConnected;
   const googleCalendarConnected = !!ctx.googleCalendarConnected;
-  const websiteLive = ctx.websiteLive !== false;
-  const bookingLive = ctx.bookingLive !== false && (stripeConnected || ctx.bookingWithoutPayments === true);
-  const memoryActive = ctx.memoryActive !== false;
-  const versionProtected = ctx.versionProtected !== false;
+  // These four were `!== false`, so an absent field asserted that the website was
+  // live, booking was live, memory was active and versions were protected — for a
+  // business nobody had checked. Now consistent with stripeConnected /
+  // googleCalendarConnected two lines up: unknown is not launched.
+  const websiteLive = !!ctx.websiteLive;
+  const bookingLive = !!ctx.bookingLive && (stripeConnected || ctx.bookingWithoutPayments === true);
+  const memoryActive = !!ctx.memoryActive;
+  const versionProtected = !!ctx.versionProtected;
 
   const summary = [
     { id: "website", label: "Website Live", ok: websiteLive, required: true },

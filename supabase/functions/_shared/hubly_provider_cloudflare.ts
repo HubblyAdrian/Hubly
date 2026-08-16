@@ -42,11 +42,18 @@ async function cfFetch<T>(
     },
     body: init?.body != null ? JSON.stringify(init.body) : undefined,
   });
-  const json = await res.json().catch(() => ({})) as T & {
+  let parsed = true;
+  const json = await res.json().catch(() => {
+    parsed = false;
+    return {};
+  }) as T & {
     success?: boolean;
     errors?: Array<{ message?: string }>;
   };
-  return { ok: res.ok && json.success !== false, status: res.status, json };
+  // `ok` used to be `res.ok && json.success !== false`. An unreadable body became
+  // `{}`, leaving `success` undefined, which `!== false` then read as an
+  // affirmative. A response we could not parse is not a response that said yes.
+  return { ok: res.ok && parsed && json.success !== false, status: res.status, json };
 }
 
 export class CloudflareDomainProvider implements DomainProvider {

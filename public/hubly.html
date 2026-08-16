@@ -23533,7 +23533,7 @@ function isTalkTradeChips(){
 function isTalkAcceptCustomBusiness(desc,opts={}){
   const text=String(desc||'').trim();
   if(!text)return false;
-  const fallback=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'detailing';
+  const fallback=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'generic';
   S.businessType=fallback;
   S.businessSpecialty=null;
   S.businessSpecialties=[];
@@ -25387,7 +25387,7 @@ async function isRunBuild(seed){
       S._cd.inferredType=match.id;
     }
     if(!S._blueprintConfirmed||!S.businessType){
-      const fallback=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing');
+      const fallback=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'generic');
       applyCdBlueprint(match.id||fallback,{forceMedia:true,source:'who',seedServices:!keepOwnerPkgs});
     }
   }
@@ -25718,7 +25718,7 @@ function isBuildVibeOptions(){
   try{
     if(S.businessType)primary=computeStyleRecommendation();
     if(!primary&&typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault){
-      primary=HublyLayouts.getTypeDefault(S.businessType||'detailing');
+      primary=HublyLayouts.getTypeDefault(S.businessType||'generic');
     }
   }catch(e){}
   primary=primary||'clean-modern';
@@ -26587,7 +26587,7 @@ async function isFinishSetup(){
     }
     if(!S._blueprintConfirmed||!S.businessType){
       const m=inferBlueprintMatch([S.biz,S._is?.prompt,S._cd?.whoText].filter(Boolean).join(' '));
-      applyCdBlueprint(m.id||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing'),{forceMedia:!S._ownerUploadedMedia,source:'finish'});
+      applyCdBlueprint(m.id||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'generic'),{forceMedia:!S._ownerUploadedMedia,source:'finish'});
     }
     if(!(S.services||[]).some(s=>s.name))seedOnboardServicesFromType(true);
     if(!S._ownerUploadedMedia){
@@ -26799,7 +26799,7 @@ function inferBlueprintMatch(text){
 function inferBlueprintFromText(text){
   const m=inferBlueprintMatch(text);
   if(m.score>=28&&m.id)return m.id;
-  return S.businessType||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing');
+  return S.businessType||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'generic');
 }
 function looksLikeOwnerQuestion(text){
   const t=String(text||'').trim();
@@ -27296,7 +27296,7 @@ async function cdFinish(){
   if(!S.biz){S.biz='My Business';const el=document.getElementById('ob-biz');if(el)el.value=S.biz;}
   if(!S._blueprintConfirmed||!S.businessType){
     const m=inferBlueprintMatch([S.biz,S._cd?.whoText].filter(Boolean).join(' '));
-    applyCdBlueprint(m.id||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing'),{forceMedia:!S._ownerUploadedMedia,source:'finish'});
+    applyCdBlueprint(m.id||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'generic'),{forceMedia:!S._ownerUploadedMedia,source:'finish'});
   }
   if(!(S.services||[]).some(s=>s.name))seedOnboardServicesFromType(true);
   ensureWebsiteCopy();
@@ -28079,7 +28079,7 @@ async function completeOnboard(){
     name: S.biz,
     tagline: S.tag||null,
     slug: S.slug,
-    business_type: S.businessType||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing'),
+    business_type: S.businessType||null,
     phone: S.phone||null,
     email: S.email||null,
     city: S.city||null,
@@ -28292,7 +28292,7 @@ async function showObReveal(){
   leaveOnboardBuilding();
   document.getElementById('p-onboard')?.classList.remove('cd-active','is-active','cd-building');
   const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
-  let recommendedId=getWebsiteLayoutId()||(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault?HublyLayouts.getTypeDefault(S.businessType||'detailing'):'clean-modern');
+  let recommendedId=getWebsiteLayoutId()||(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault?HublyLayouts.getTypeDefault(S.businessType||'generic'):'clean-modern');
   try{
     if(S._instantSite){
       isApplyPersonalCopy({force:false});
@@ -37149,7 +37149,7 @@ const STYLE_RECOMMEND_KEYWORDS={
 const STYLE_RECOMMEND_MIN_MATCHES=2;
 function getLayoutRecommendPool(){
   if(typeof HublyLayouts==='undefined')return [];
-  const type=S.businessType||'detailing';
+  const type=S.businessType||'generic';
   return typeof HublyLayouts.getCatalogForType==='function'
     ? HublyLayouts.getCatalogForType(type)
     : HublyLayouts.getCatalog();
@@ -37169,7 +37169,7 @@ function computeStyleRecommendation(){
   }
   if(bestScore>=STYLE_RECOMMEND_MIN_MATCHES)return bestId;
   if(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault){
-    return HublyLayouts.getTypeDefault(S.businessType||'detailing');
+    return HublyLayouts.getTypeDefault(S.businessType||'generic');
   }
   return pool[0]?.id||null;
 }
@@ -40145,10 +40145,12 @@ function getDefaultBookingService(){
   if(!svcs.length)return null;
   return svcs.find(s=>s.popular)||svcs[0];
 }
-/** If type was stuck as detailing (DB default) but packages clearly aren’t cars, heal before booking. */
+/** If type was never set, or was stuck as detailing (the old DB default) but packages
+ *  clearly aren’t cars, heal before booking. 'generic' is the neutral blueprint —
+ *  it means "trade not known yet", so it must stay healable too. */
 function maybeHealBusinessTypeFromServices(){
   const type=(S.businessType||'').toLowerCase();
-  if(type&&type!=='detailing')return false;
+  if(type&&type!=='detailing'&&type!=='generic')return false;
   const blob=[
     S.biz||'',S.tag||'',S.about||'',
     ...(S.services||[]).map(s=>s.name||''),
@@ -41172,7 +41174,7 @@ async function submitSuggestIndustry(){
   if(!industry){toast('Tell us what you do');return;}
   if(!email){toast('Add an email so we can follow up');return;}
   // Safe scaffold so they are never blocked — curated blueprint if known later.
-  const fallback=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'detailing';
+  const fallback=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'generic';
   S.businessType=S.businessType||fallback;
   if(!S._blueprintConfirmed){
     S.businessType=fallback;

@@ -113,7 +113,13 @@ function scoreFromContext(
 ): { priority: number; reason: string } | null {
   const season = MONTH_SEASON[ctx.season_month] || "any";
   let priority = pb.priority;
-  let reason = "Proven playbook for your business";
+  // Not "Proven playbook for your business" — that asserted a track record with
+  // this business that no owned data supports. This says what is actually true:
+  // it is a standard playbook, offered without evidence from their account.
+  let reason = "Standard playbook for this goal";
+  // Did any owned-data signal actually fire? Activity-gated goals are suppressed
+  // entirely when nothing did, rather than surfacing on a fabricated trigger.
+  let hasOwnedEvidence = false;
 
   const industryMatch =
     pb.industry_id === ctx.industry || pb.industry_id === "home_services";
@@ -137,18 +143,28 @@ function scoreFromContext(
   ) {
     priority += 50;
     reason = "New 5-star review ready to spotlight";
+    hasOwnedEvidence = true;
   }
   if (pb.goal_id === "book_more_jobs" && ctx.has_before_after) {
     priority += 40;
     reason = "Before/after job photos available";
+    hasOwnedEvidence = true;
   }
-  if (pb.goal_id === "book_more_jobs" && ctx.completed_jobs_week >= 3) {
+  // An activity claim may only be rendered from a number we actually measured.
+  // With completed_jobs_week defaulting to a fabricated 4, this line told owners
+  // "4 jobs completed this week — share the proof" when they had done none. The
+  // count is now honest (0 when unmeasured), so guard on a real positive value
+  // and never let a 0 or null reach the string.
+  const jobsThisWeek = Number(ctx.completed_jobs_week) || 0;
+  if (pb.goal_id === "book_more_jobs" && jobsThisWeek >= 3) {
     priority += 20;
-    reason = `${ctx.completed_jobs_week} jobs completed this week — share the proof`;
+    reason = `${jobsThisWeek} jobs completed this week — share the proof`;
+    hasOwnedEvidence = true;
   }
   if (pb.goal_id === "fill_tomorrow_schedule" && ctx.open_slots_tomorrow >= 1) {
     priority += 45;
     reason = "Open capacity tomorrow";
+    hasOwnedEvidence = true;
   }
   if (
     pb.goal_id === "fill_tomorrow_schedule" &&
@@ -157,10 +173,12 @@ function scoreFromContext(
   ) {
     priority += 30;
     reason = "No Studio publish in 7+ days";
+    hasOwnedEvidence = true;
   }
   if (pb.goal_id === "promote_service" && ctx.service_focus) {
     priority += 35;
     reason = `Promote ${ctx.service_focus}`;
+    hasOwnedEvidence = true;
   }
   if (
     pb.goal_id === "promote_service" &&
@@ -168,15 +186,24 @@ function scoreFromContext(
   ) {
     priority += 25;
     reason = "Ceramic / coating service in your catalog";
+    hasOwnedEvidence = true;
   }
   if (pb.goal_id === "win_back_customers" && ctx.active_promotions.length) {
     priority += 15;
     reason = "Active promotion ready for win-back";
+    hasOwnedEvidence = true;
   }
   if (pb.goal_id === "seasonal_promotion" && ctx.active_promotions.length) {
     priority += 10;
     reason = "Existing promotion + seasonal window";
+    hasOwnedEvidence = true;
   }
+
+  // Goals whose whole pitch is "you did X, so post about it". Without a real
+  // signal there is nothing to say, and the only thing left to show would be a
+  // zero dressed up as a reason. Suppress the recommendation instead.
+  const ACTIVITY_GATED = new Set(["book_more_jobs", "fill_tomorrow_schedule", "get_more_reviews"]);
+  if (ACTIVITY_GATED.has(String(pb.goal_id)) && !hasOwnedEvidence) return null;
 
   return { priority, reason };
 }

@@ -22,6 +22,100 @@
     'spa.json',
   ];
 
+  /**
+   * The NEUTRAL blueprint — what Hubly is when it does not know the trade.
+   *
+   * Before this existed, every unknown/absent business_type resolved to
+   * `detailing`, which is how a photographer ended up being sold ceramic
+   * coatings. "We don't know yet" is a real state and it needs its own answer.
+   *
+   * Rules for anything added here:
+   *   - No trade nouns. Not one. No vehicles, homes, lawns, shoots, sessions.
+   *   - No service catalog. An empty catalog is correct; a borrowed one is a lie.
+   *   - No seed imagery. Stock photos of somebody else's trade are the same bug.
+   *   - Capabilities: only the ones every blueprint shares. Trade-specific flags
+   *     are explicitly false so `blueprintHasCapability` cannot leak a trade.
+   *
+   * Deliberately NOT in `byId` and NOT in the file manifest: it must never
+   * appear in `list()`, `listForPicker()`, or any callback given the loaded set.
+   * It is reachable only through `get('generic')` / `getDefaultId()`.
+   */
+  const NEUTRAL_BLUEPRINT_ID = 'generic';
+  const NEUTRAL_BLUEPRINT = Object.freeze({
+    id: NEUTRAL_BLUEPRINT_ID,
+    neutral: true,
+    version: '1.0',
+    runtimeMinVersion: '1.0',
+    identity: {
+      name: 'Business',
+      slug: NEUTRAL_BLUEPRINT_ID,
+      description: 'Industry not known yet.',
+      hint: '',
+      synonyms: [],
+      specialties: [],
+    },
+    knowledge: {
+      brandVoice: 'Plain and direct. No jargon, because we do not know the field yet.',
+      customerPsychology: 'Not known. Do not assume what this customer cares about.',
+      buyingBehavior: 'Not known.',
+      copyRules: [
+        'The industry is NOT known. Do not guess one and do not adopt one from any example.',
+        'Use no nouns, services, or imagery belonging to any specific trade.',
+        'Write only from facts the owner has actually given.',
+      ],
+      galleryRules: ['Show only media the owner uploaded. Never seed stock imagery.'],
+    },
+    // Only what every blueprint shares. Everything trade-specific is false on purpose.
+    capabilities: {
+      appointments: true,
+      estimates: true,
+      memberships: true,
+      portfolio: true,
+      staffScheduling: false,
+      clientGalleries: false,
+      contracts: false,
+      dirtySurcharge: false,
+      emergencyBanner: false,
+      giftCards: false,
+      inventory: false,
+      lightroom: false,
+      printStore: false,
+      projects: false,
+      stickyPhone: false,
+      vehicleDetails: false,
+    },
+    customerJourney: ['Finds the business', 'Asks about the work', 'Books', 'Pays', 'Comes back'],
+    decisionFactors: ['Clear pricing', 'Easy to reach', 'Does what was promised'],
+    customerExpectations: ['A straight answer', 'A time that holds', 'No surprises on the bill'],
+    successMetrics: ['Booked jobs', 'Repeat customers', 'Reviews'],
+    businessLifecycle: [{ id: 'setup', label: 'Getting set up' }],
+    homepage: { priority: ['hero', 'services', 'about', 'reviews', 'contact'] },
+    website: {
+      defaultLayout: 'clean-modern',
+      recommendedStyles: [],
+      trustSignals: [],
+      sections: { required: ['hero', 'contact'], recommended: ['services', 'about'], optional: ['gallery', 'reviews'] },
+      sectionCopy: {
+        servicesTitle: 'What we offer',
+        servicesSub: 'Add what you do and we will lay it out.',
+        galleryTitle: 'Our work',
+        gallerySub: 'Add photos of real work you have done.',
+        reviewsTitle: 'What customers say',
+        reviewsSub: 'Reviews from people you have worked with.',
+      },
+      emptyIcon: '◆',
+    },
+    booking: { mode: 'appointments', steps: ['service', 'time', 'details', 'confirm'], defaultAddons: [] },
+    services: { catalog: [] },
+    gallery: { mode: 'showcase', seedImages: [] },
+    growth: { weeklyGoals: [] },
+    decisionRules: {},
+    playbooks: [],
+    automation: {},
+    dashboard: {},
+    performance: { flags: {} },
+  });
+
   const byId = {};
   let ready = false;
   let loadPromise = null;
@@ -95,6 +189,7 @@
 
   function get(id) {
     if (!id) return null;
+    if (id === NEUTRAL_BLUEPRINT_ID) return NEUTRAL_BLUEPRINT;
     if (byId[id]) return byId[id];
     const aliases = {
       'window-cleaning': 'windows',
@@ -123,8 +218,23 @@
     });
   }
 
+  /**
+   * What to use when the trade is not known.
+   *
+   * This used to return 'detailing'. It was the single most damaging line in the
+   * Industry Engine: every unresolved business_type — including one that had
+   * simply not been asked yet — silently became an auto-detailing business, and
+   * the whole runtime (catalog, copy, capabilities, AI prompt) followed.
+   * The answer to "which trade?" when nobody has said is not a trade.
+   */
   function getDefaultId() {
-    return byId.detailing ? 'detailing' : Object.keys(byId)[0] || 'detailing';
+    return NEUTRAL_BLUEPRINT_ID;
+  }
+
+  /** True when the blueprint in hand is the "we don't know the trade" one. */
+  function isNeutral(typeIdOrBp) {
+    const bp = typeof typeIdOrBp === 'object' ? typeIdOrBp : get(typeIdOrBp);
+    return !!(bp && bp.id === NEUTRAL_BLUEPRINT_ID);
   }
 
   function getSpecialty(bp, specialtyId) {
@@ -253,6 +363,20 @@
     const g = aiGuidance(typeId);
     if (!g) return 'You write website copy for a local service business.';
     const k = g.knowledge;
+    // Neutral blueprint: say we don't know the trade. Never name one, and never
+    // emit the "stay inside the X category" line with a placeholder name in it.
+    if (g.id === NEUTRAL_BLUEPRINT_ID) {
+      return [
+        'You write website copy for a local business.',
+        'The industry is NOT KNOWN. Do not guess one, and do not adopt an industry from any',
+        'example anywhere in these instructions — especially not auto detailing or car wash.',
+        `Copy rules: ${(k.copyRules || []).join('; ')}`,
+        'Write only from facts the owner has actually supplied. If the trade genuinely matters',
+        'for what you are about to write, ask once, plainly.',
+        'Never invent awards, years-in-business, or fake customer counts.',
+        'Short sentences. No agency filler.',
+      ].join('\n');
+    }
     return [
       `You write website copy for a ${g.name} business.`,
       `Brand voice: ${k.brandVoice || ''}`,
@@ -273,6 +397,7 @@
   global.HublyBlueprints = {
     HUBLY_RUNTIME_VERSION,
     BLUEPRINT_FILES,
+    NEUTRAL_BLUEPRINT_ID,
     loadAll,
     whenReady,
     isReady: () => ready,
@@ -280,6 +405,7 @@
     list,
     listForPicker,
     getDefaultId,
+    isNeutral,
     getSpecialty,
     resolve,
     hasCapability,

@@ -224,7 +224,7 @@ const identitySamples = [];
 
   assert(sc, typeof result.response === "string" && result.response.length > 20, "Unified Hubly response", ["thinking", "identity"]);
   const idCheck = applyHublyIdentity(result.response);
-  assert(sc, idCheck.constitution?.ok !== false, "Response passes Identity/Constitution gate", ["identity"]);
+  assert(sc, idCheck.constitution?.ok === true, "Response passes Identity/Constitution gate", ["identity"]);
 
   scenarios.push(sc);
 }
@@ -392,7 +392,7 @@ const identitySamples = [];
   );
   assert(sc, typeof result.response === "string" && result.response.length > 20, "Produces coaching response", ["thinking"]);
   const idCheck = evaluateAgainstConstitution(applyHublyIdentity(result.response).text || result.response);
-  assert(sc, idCheck.ok !== false && idCheck.score >= 70, "Coaching voice complies with Constitution", ["identity"]);
+  assert(sc, idCheck.ok === true && idCheck.score >= 70, "Coaching voice complies with Constitution", ["identity"]);
   assert(
     sc,
     /pressure|salt lake|booking|business|grow|next/i.test(result.response || ""),
@@ -488,7 +488,9 @@ const identitySamples = [];
   for (const sample of identitySamples) {
     const applied = applyHublyIdentity(sample);
     const constitution = evaluateAgainstConstitution(applied.text || sample);
-    const ok = constitution.ok !== false && constitution.score >= 70;
+    // evaluateAgainstConstitution always sets `ok`, so this is behaviour-identical —
+    // but it no longer reads as "success unless explicitly denied".
+    const ok = constitution.ok === true && constitution.score >= 70;
     if (!ok) allOk = false;
     assert(
       sc,
@@ -560,7 +562,7 @@ hit("businessKnowledge", docsOk);
 const founderScenarios = scenarios.filter((s) => s.id.startsWith("s"));
 const scenariosPassed = founderScenarios.filter((s) => s.passed).length;
 const scenariosTotal = founderScenarios.length;
-const wiringOk = scenarios.find((s) => s.id === "wiring")?.passed !== false;
+const wiringOk = scenarios.find((s) => s.id === "wiring")?.passed === true;
 
 const dimensions = {};
 for (const id of Object.keys(dimHits)) {

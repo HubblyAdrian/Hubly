@@ -1582,7 +1582,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     businessId,
     startedAt: new Date(started).toISOString(),
     latencyMs: Date.now() - started,
-    ok: critic ? critic.ok !== false : true,
+    ok: critic ? critic.ok === true : true,
     memoriesLoaded: [
       "business_memory",
       "business_dna",
@@ -1897,7 +1897,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   }
 
   return {
-    ok: critic ? critic.ok !== false : true,
+    ok: critic ? critic.ok === true : true,
     intent,
     response,
     questions,

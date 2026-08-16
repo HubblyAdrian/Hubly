@@ -1815,7 +1815,11 @@ async function handleLiteJoin(req: Request, body: Record<string, unknown>) {
   const city = String(body.city || "").trim() || null;
   const phone = String(body.phone || "").trim() || null;
   const email = String(body.email || user.email || "").trim() || null;
-  const category = String(body.category || body.business_type || "").trim() || "detailing";
+  // Was `|| "detailing"`. A lite signup that never named a trade is not a detailer,
+  // and this value was written straight into businesses.business_type, where the
+  // whole Blueprint/DNA/AI chain reads it as a stated fact. Unknown stays NULL —
+  // marketplace_providers.category is nullable and its index is partial on NOT NULL.
+  const category = String(body.category || body.business_type || "").trim() || null;
   const tagline = String(body.tagline || "").trim() || null;
   const slug = await allocateLiteSlug(admin, name);
 

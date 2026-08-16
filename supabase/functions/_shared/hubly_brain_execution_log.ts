@@ -52,7 +52,9 @@ export function logBrainExecution(
     mergedResponse: !!partial.mergedResponse,
     memoryUpdated: !!partial.memoryUpdated,
     confidence: partial.confidence ?? null,
-    ok: partial.ok !== false,
+    // Was `!== false`: an execution that never set `ok` was logged as a SUCCESS,
+    // so diagnostics could not tell "it worked" from "nobody said". Assert, never assume.
+    ok: partial.ok === true,
     latencyMs: Math.max(0, Math.round(partial.latencyMs || 0)),
     provider: partial.provider ?? null,
     model: partial.model ?? null,
