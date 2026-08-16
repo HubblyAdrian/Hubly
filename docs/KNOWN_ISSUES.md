@@ -250,6 +250,37 @@ commit rather than implying the browser check covered it — a fix verified at a
 narrow desktop width and described as "verified on mobile" is the same false
 assurance as a check that silently checks nothing (see the entry above).
 
+### Never click stale coordinates on a surface that re-renders
+
+**Added 2026-08-16**, after verifying the canvas package-payment control on the
+live Everlasting business and, in the process, writing three things nobody asked
+for: a payment rule on Family Session, a whole new "Package 5", and a stray
+override on Portrait Session.
+
+`applyWsPeService()` ends with `renderSvcEditorList()` + `renderWebsitePreview()`.
+The canvas re-lays out immediately, so the popover, the package cards and the
+"+ Add service" tile all move under the cursor the moment a save lands. A
+coordinate read off a screenshot is valid only until the next state change.
+Clicking `(907, 650)` twice does not mean clicking the same button twice — the
+second click hit "Add service" and then a second popover's Save.
+
+**The rule:** on any surface that re-renders after an action, take a fresh
+screenshot before every click, and never reuse a coordinate across a state
+change. When the target is a specific element rather than a pixel, resolve it by
+id/ref and act on that instead of guessing at a position.
+
+**And:** verification that writes to a real business is not read-only. Before
+touching one, record the exact prior state of everything the flow can reach — not
+just the field under test — so the damage is repairable. Here the original state
+(4 packages, all `payment: null`) happened to be recoverable from an early
+readback; it easily might not have been.
+
+Native `<select>` popups on macOS are a separate limitation: a CDP click opens
+the OS-level menu, but synthesised key events do not reach it, and the menu does
+not appear in screenshots. Dispatching `change` on the element exercises the same
+handler a real pick fires, but say which one was used rather than implying the
+option was clicked.
+
 ---
 
 ## Tests that assert implementation details, not behaviour
