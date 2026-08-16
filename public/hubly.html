@@ -12279,7 +12279,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <a href="#ws-sec-owner" data-i18n="wsNavAbout">About</a>
           </nav>
           <div class="ws-header-actions">
-            <button type="button" class="ws-header-cta" id="ws-header-cta" onclick="ccStartGeneric()">Book Now</button>
+            <button type="button" class="ws-header-cta" id="ws-header-cta" onclick="wsBookNowClick()">Book Now</button>
             <button type="button" class="ws-header-lang lang-has-tip" id="ws-header-lang" onclick="event.stopPropagation();toggleLang();" title="Language / Idioma" aria-label="Language / Idioma" data-lang-tip="Language / Idioma — tap to switch">🌐 <span id="ws-lang-label">ES</span></button>
           </div>
         </div>
@@ -12298,7 +12298,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="ws-hero-socials" id="ws-hero-socials"></div>
             <div class="ws-promo" id="ws-promo"></div>
             <div class="ws-hero-actions">
-              <button type="button" class="ws-hero-cta" id="ws-hero-cta" onclick="ccStartGeneric()">Book Now</button>
+              <button type="button" class="ws-hero-cta" id="ws-hero-cta" onclick="wsBookNowClick()">Book Now</button>
               <button type="button" class="ws-hero-cta--ghost" id="ws-hero-cta-secondary" onclick="wsScrollToSection('ws-sec-services')">View Packages</button>
             </div>
             <!-- Hero AI bar (Phase 4B) — same Hubly Conversation customer
@@ -12381,7 +12381,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <span class="ws-footer-cta-kicker" data-i18n="wsReadyToBook">Ready to book?</span>
           <span class="ws-footer-cta-title" id="ws-footer-cta-title">Book with us today</span>
         </div>
-        <button type="button" class="ws-footer-cta-btn" id="ws-footer-cta-btn" onclick="ccStartGeneric()">Book Now</button>
+        <button type="button" class="ws-footer-cta-btn" id="ws-footer-cta-btn" onclick="wsBookNowClick()">Book Now</button>
       </div>
     </div>
     <footer class="ws-footer" id="ws-footer">
@@ -12400,7 +12400,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </footer>
   </main>
   <div class="ws-sticky-cta" id="ws-sticky-cta">
-    <button type="button" class="ws-sticky-btn" id="ws-sticky-book" onclick="ccStartGeneric()">Book Now</button>
+    <button type="button" class="ws-sticky-btn" id="ws-sticky-book" onclick="wsBookNowClick()">Book Now</button>
   </div>
   <button type="button" class="ws-back-top" id="ws-back-top" onclick="scrollWebsiteToTop()" aria-label="Back to top" title="Back to top">↑</button>
   <div class="ws-chat-widget" id="ws-chat-widget" onclick="if(event.target===this&&document.body.classList.contains('ws-chat-open'))wsChatToggle(false)">
@@ -16662,6 +16662,30 @@ function ccStartGeneric(){
   const seed='I’d like to book something.';
   ccAppendCustomerAndTyping(seed);
   ccCall(seed).then(()=>ccRenderLog());
+}
+/**
+ * The generic "Book Now" — header, hero, footer and the mobile sticky bar.
+ *
+ * Unlike a service card, this carries no chosen package, so it goes to the
+ * booking flow and lets openBookingPage() decide: on the public site with a
+ * real catalog it sends the customer to pick a package (or auto-picks when
+ * there is an obvious default) rather than re-asking inside booking.
+ *
+ * The exception is a business with NO bookable services. openBookingPage()
+ * would scroll to an empty Services section, or fall through to an empty
+ * booking landing — both dead ends. There is nothing to pick and nothing to
+ * book, so hand off to the chat, which can still take the enquiry and capture
+ * the lead. Checked here rather than inside openBookingPage() so the booking
+ * flow keeps one job and this entry point owns its own fallback.
+ */
+function wsBookNowClick(){
+  let svcs=[];
+  try{svcs=(typeof getBookingServices==='function'?getBookingServices():[])||[];}catch(e){}
+  const bookable=svcs.filter(s=>s&&String(s.name||'').trim());
+  if(!bookable.length)return (typeof ccStartGeneric==='function')?ccStartGeneric():undefined;
+  if(typeof openBookingPage==='function')return openBookingPage();
+  // openBookingPage missing entirely — never leave the button dead.
+  return (typeof ccStartGeneric==='function')?ccStartGeneric():undefined;
 }
 // Real customer-facing widget (chatbot step 4, piece 1). Own ids/functions,
 // separate from the chatbot-test-* ones above -- both DOM subtrees coexist
