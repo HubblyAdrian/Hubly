@@ -13,7 +13,9 @@ export type StudioReviewSnippet = {
 
 export type StudioBusinessContext = {
   business_id: string;
-  business_name: string;
+  /** NULL when the owner has not named the business. Never a placeholder — a
+   *  fake name reaches real output (avatar initials, subdomain, model prompts). */
+  business_name: string | null;
   industry: string;
   city: string | null;
   phone: string | null;
@@ -65,9 +67,18 @@ export type BuildBusinessContextInput = {
   now?: Date;
 };
 
-/** Normalize industry aliases toward V1 detailing-first catalog. */
+/**
+ * Normalize industry aliases onto the Studio catalog's industry keys.
+ *
+ * Unknown resolves to `home_services`, NOT to a real trade. `home_services` is
+ * this catalog's universal bucket — hubly_studio_recommendations.ts matches a
+ * playbook when `pb.industry_id === ctx.industry || pb.industry_id === "home_services"`
+ * — so an unknown business gets the trade-agnostic playbooks and none of the
+ * detailing ones. This used to return "detailing", which is how a business that
+ * had never named its trade got pitched ceramic-coating campaigns.
+ */
 export function normalizeStudioIndustry(raw?: string | null): string {
-  if (!raw) return "detailing";
+  if (!raw) return "home_services";
   const key = String(raw).trim().toLowerCase();
   if (/detail|mobile.?detail|car.?wash|auto.?detail/.test(key)) return "detailing";
   if (/pressure|power.?wash|soft.?wash/.test(key)) return "pressure_washing";
@@ -77,7 +88,7 @@ export function normalizeStudioIndustry(raw?: string | null): string {
   if (/lawn|landscape/.test(key)) return "landscaping";
   if (/clean|maid/.test(key)) return "cleaning";
   if (/home.?service/.test(key)) return "home_services";
-  return key.replace(/\s+/g, "_") || "detailing";
+  return key.replace(/\s+/g, "_") || "home_services";
 }
 
 export function buildStudioBusinessContext(
@@ -86,7 +97,11 @@ export function buildStudioBusinessContext(
   const now = input.now || new Date();
   return {
     business_id: input.business_id,
-    business_name: String(input.business_name || "Your business").trim() || "Your business",
+    // Was `|| "Your business"`. That placeholder escaped into production: it
+    // rendered as the "YB" avatar, as "What can Your Business help you with?",
+    // and as the subdomain your-business-a9ce5.myhubly.app. A name we do not
+    // have is null, so every consumer has to decide what to do about it.
+    business_name: String(input.business_name || "").trim() || null,
     industry: normalizeStudioIndustry(input.industry),
     city: input.city || null,
     phone: input.phone || null,
@@ -101,7 +116,9 @@ export function buildStudioBusinessContext(
     latest_review: input.latest_review || null,
     job_photos_count: Number(input.job_photos_count) || 0,
     has_before_after: !!input.has_before_after,
-    has_logo: input.has_logo !== false,
+    // Was `!== false`, i.e. true whenever the caller simply did not pass it.
+    // A logo we have not seen is a logo we do not have.
+    has_logo: input.has_logo === true,
     has_membership: !!input.has_membership,
     days_since_last_studio_publish:
       input.days_since_last_studio_publish == null

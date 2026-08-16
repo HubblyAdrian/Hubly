@@ -140,7 +140,8 @@ function pickDayPack(industryKey, idx) {
 }
 
 export function buildOvernightReview(ctx = {}) {
-  const stripeConnected = ctx.stripeConnected !== false;
+  // Was `!== false` — an unchecked business was reported as Stripe-connected.
+  const stripeConnected = !!ctx.stripeConnected;
   const systems = OVERNIGHT_SYSTEMS.map((name) => ({
     name,
     status: !stripeConnected && (name === "Revenue" || name === "Bookings") ? "limited" : "reviewed",
@@ -209,7 +210,8 @@ export function orchestrateHublyDaily(ctx = {}) {
   const idx = dayIndex(ctx);
   const pack = pickDayPack(industryKey, idx);
   const name = firstNameOf(ctx);
-  const stripeConnected = ctx.stripeConnected !== false;
+  // Was `!== false` — an unchecked business was reported as Stripe-connected.
+  const stripeConnected = !!ctx.stripeConnected;
   const stage = STAGE_CADENCE[stageKey];
   const overnight = buildOvernightReview(ctx);
   const returnSummary = buildReturnSummary(ctx);

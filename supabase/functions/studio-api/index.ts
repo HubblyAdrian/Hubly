@@ -494,9 +494,9 @@ Deno.serve(async (req: Request) => {
         },
         brief: plan
           ? planToCampaignBrief({
-              playbook_id: String(plan.playbook_id || "dt_review_spotlight"),
+              playbook_id: String(plan.playbook_id || "hs_review_spotlight"),
               goal_id: String(plan.goal_id || "get_more_reviews"),
-              industry_id: String(plan.industry_id || "detailing"),
+              industry_id: String(plan.industry_id || "home_services"),
               title: String(plan.title || project.title),
               objective: String(plan.objective || ""),
               channels: Array.isArray(plan.channels) ? plan.channels : ["email"],
@@ -577,7 +577,7 @@ Deno.serve(async (req: Request) => {
     if (resource === "context" && method === "GET") {
       const { data: biz } = await admin
         .from("businesses")
-        .select("id,name,meta")
+        .select("id,name,meta,logo_url")
         .eq("id", businessId)
         .maybeSingle();
       const meta = getBusinessMeta(biz);
@@ -599,14 +599,15 @@ Deno.serve(async (req: Request) => {
       const ctx = buildStudioBusinessContext({
         business_id: businessId!,
         business_name: (biz?.name as string) || null,
-        industry: (memory.industry as string) || (meta.industry as string) || "detailing",
+        industry: (memory.industry as string) || (meta.industry as string) || null,
         city: (memory.city as string) || null,
         phone: (memory.phone as string) || null,
         services: Array.isArray(memory.services) ? (memory.services as string[]) : [],
         tone: (dna.tone as string) || null,
         brand_personality: (dna.personality as string) || null,
         days_since_last_studio_publish: daysSince,
-        has_logo: true,
+        logo_url: (biz?.logo_url as string) || null,
+        has_logo: !!biz?.logo_url,
       });
       return json({ context: ctx, v1_channel: V1_PUBLISH_CHANNEL });
     }
@@ -614,7 +615,7 @@ Deno.serve(async (req: Request) => {
     if (resource === "recommend" && method === "GET") {
       const { data: biz } = await admin
         .from("businesses")
-        .select("id,name,meta")
+        .select("id,name,meta,logo_url")
         .eq("id", businessId)
         .maybeSingle();
       const meta = getBusinessMeta(biz);
@@ -624,26 +625,27 @@ Deno.serve(async (req: Request) => {
       const ctx = buildStudioBusinessContext({
         business_id: businessId!,
         business_name: (biz?.name as string) || null,
-        industry: (bodyHints.industry as string) || (memory.industry as string) || "detailing",
+        industry: (bodyHints.industry as string) || (memory.industry as string) || null,
         city: (memory.city as string) || null,
         services: Array.isArray(bodyHints.services)
           ? (bodyHints.services as string[])
-          : Array.isArray(memory.services) ? (memory.services as string[]) : ["Ceramic Coating", "Mobile Detail"],
-        tone: (dna.tone as string) || "Premium",
-        completed_jobs_week: Number(bodyHints.completed_jobs_week) || 4,
+          : Array.isArray(memory.services) ? (memory.services as string[]) : [],
+        tone: (dna.tone as string) || null,
+        completed_jobs_week: Number(bodyHints.completed_jobs_week) || 0,
         open_slots_tomorrow: Number(bodyHints.open_slots_tomorrow) || 0,
         latest_review: (bodyHints.latest_review as {
           stars: number;
           quote: string;
           author?: string;
-        }) || { stars: 5, quote: "Best mobile detail I've ever booked.", author: "Alex" },
-        job_photos_count: Number(bodyHints.job_photos_count) || 2,
-        has_before_after: bodyHints.has_before_after !== false,
-        service_focus: (bodyHints.service_focus as string) || "Ceramic Coatings",
+        }) || null,
+        job_photos_count: Number(bodyHints.job_photos_count) || 0,
+        has_before_after: bodyHints.has_before_after === true,
+        service_focus: (bodyHints.service_focus as string) || null,
         days_since_last_studio_publish:
           bodyHints.days_since_last_studio_publish != null
             ? Number(bodyHints.days_since_last_studio_publish)
-            : 10,
+            : null,
+        logo_url: (biz?.logo_url as string) || null,
       });
       return json({
         context: ctx,
@@ -655,7 +657,7 @@ Deno.serve(async (req: Request) => {
     if (resource === "campaign" && id === "suggest" && method === "GET") {
       const { data: biz } = await admin
         .from("businesses")
-        .select("id,name,meta")
+        .select("id,name,meta,logo_url")
         .eq("id", businessId)
         .maybeSingle();
       const meta = getBusinessMeta(biz);
@@ -664,16 +666,17 @@ Deno.serve(async (req: Request) => {
       const studioCtx = buildStudioBusinessContext({
         business_id: businessId!,
         business_name: (biz?.name as string) || null,
-        industry: (memory.industry as string) || (meta.industry as string) || "detailing",
+        industry: (memory.industry as string) || (meta.industry as string) || null,
         city: (memory.city as string) || null,
         tone: (dna.tone as string) || null,
         brand_personality: (dna.personality as string) || null,
-        completed_jobs_week: 4,
-        has_before_after: true,
-        latest_review: { stars: 5, quote: "Best mobile detail I've ever booked.", author: "Alex" },
-        days_since_last_studio_publish: 10,
-        service_focus: "Ceramic Coatings",
-        services: ["Mobile Detail", "Ceramic Coating"],
+        completed_jobs_week: 0,
+        has_before_after: false,
+        latest_review: null,
+        days_since_last_studio_publish: null,
+        service_focus: null,
+        services: [],
+        logo_url: (biz?.logo_url as string) || null,
       });
       return json({
         suggestions: recommendCampaigns(studioCtx),
@@ -687,7 +690,7 @@ Deno.serve(async (req: Request) => {
       const b = body as Record<string, unknown>;
       const { data: biz } = await admin
         .from("businesses")
-        .select("id,name,meta")
+        .select("id,name,meta,logo_url")
         .eq("id", businessId)
         .maybeSingle();
       const meta = getBusinessMeta(biz);
@@ -716,7 +719,7 @@ Deno.serve(async (req: Request) => {
         latest_review: (b.latest_review as BusinessCampaignContext["latest_review"]) || null,
         job_photos_count: Number(b.job_photos_count) || 0,
         has_before_after: !!b.has_before_after,
-        has_logo: b.has_logo !== false,
+        has_logo: b.has_logo === true,
         has_membership: !!b.has_membership,
         goal_id: (b.goal_id as string) || null,
         playbook_id: (b.playbook_id as string) || null,

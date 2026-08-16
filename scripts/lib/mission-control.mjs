@@ -232,7 +232,8 @@ function recordFlightRecorder(opts) {
     startedAt,
     finishedAt,
     latencyMs: Math.max(0, Math.round(opts.latencyMs || 0)),
-    ok: opts.ok !== false,
+    // Was `!== false` — an unset result was recorded as a successful flight.
+    ok: opts.ok === true,
     memoriesLoaded: [...opts.memoriesLoaded || []],
     dnaFactsUsed: [...opts.dnaFactsUsed || []],
     expertsExecuted: experts.map((e) => ({ ...e })),

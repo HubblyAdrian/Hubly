@@ -591,7 +591,10 @@ export function listCampaignGoals() {
 }
 
 export function normalizeIndustry(raw?: string | null): IndustryId {
-  if (!raw) return "detailing"; // V1 success metric: mobile detailer
+  // Unknown lands in the generic bucket, not in a real trade. This is the same
+  // answer the function already gives for an unrecognized string (see the return
+  // below); an absent one deserves no more confidence than an unmatched one.
+  if (!raw) return "home_services";
   const key = String(raw).trim().toLowerCase();
   if ((Object.values(INDUSTRY_ALIASES) as string[]).includes(key)) return key as IndustryId;
   for (const [alias, id] of Object.entries(INDUSTRY_ALIASES)) {
@@ -671,7 +674,9 @@ function evaluateTriggers(ctx: BusinessCampaignContext): TriggerSeed | null {
 function buildPackage(plan: {
   title: string;
   cta: string;
-  biz: string;
+  /** NULL when the business has no name on record. Copy drops the name rather
+   *  than printing a placeholder — this text is publishable as-is. */
+  biz: string | null;
   city: string;
   offer: string;
   review?: { quote?: string; author?: string } | null;
@@ -679,16 +684,22 @@ function buildPackage(plan: {
   channels: CampaignChannel[];
   phone?: string | null;
 }): CampaignPackage {
-  const service = plan.service || "our services";
+  // Was `|| "our services"`. It rendered as a literal headline for any business
+  // whose catalog we had not read. A service we cannot name is one we omit.
+  const service = (plan.service || "").trim();
   const loc = plan.city ? ` in ${plan.city}` : "";
   const offerBit = plan.offer ? ` ${plan.offer}` : "";
   const reviewLine = plan.review?.quote
     ? `"${plan.review.quote}"${plan.review.author ? ` — ${plan.review.author}` : ""}`
     : "";
+  // This copy is publishable as written. With no name on record we omit it
+  // entirely — a placeholder here becomes a real SMS reading "Your business: ..."
+  // or, worse, "null: ...". Every string below has a name-free form.
+  const biz = (plan.biz || "").trim();
 
   const captionBase = reviewLine
-    ? `${reviewLine}\n\nThank you for trusting ${plan.biz}${loc}. ${plan.cta}!`
-    : `${plan.biz}${loc}: ${plan.title}.${offerBit} ${plan.cta}.`;
+    ? `${reviewLine}\n\n${biz ? `Thank you for trusting ${biz}${loc}. ` : `Thank you for your trust${loc}. `}${plan.cta}!`
+    : `${biz ? `${biz}${loc}: ` : loc ? `${loc.trim()}: ` : ""}${plan.title}.${offerBit} ${plan.cta}.`;
 
   const captions = plan.channels
     .filter((c) => c === "instagram" || c === "facebook")
@@ -698,7 +709,7 @@ function buildPackage(plan: {
     captions,
     headlines: [
       plan.title,
-      `${plan.biz} — ${service}`,
+      biz && service ? `${biz} — ${service}` : (biz || service || ""),
       offerBit.trim() ? `${offerBit.trim()} · ${plan.cta}` : plan.cta,
     ].filter(Boolean),
     hashtags: [
@@ -708,10 +719,10 @@ function buildPackage(plan: {
       plan.city ? `#${plan.city.replace(/\s+/g, "")}` : "#YourCity",
     ],
     email: {
-      subject: `${plan.title} from ${plan.biz}`,
-      body: `Hi there,\n\n${captionBase}\n\n${plan.phone ? `Call or text ${plan.phone}.\n\n` : ""}— ${plan.biz}`,
+      subject: biz ? `${plan.title} from ${biz}` : plan.title,
+      body: `Hi there,\n\n${captionBase}\n\n${plan.phone ? `Call or text ${plan.phone}.\n\n` : ""}${biz ? `— ${biz}` : ""}`.trimEnd(),
     },
-    sms: `${plan.biz}: ${plan.title}.${offerBit} ${plan.cta}${plan.phone ? ` ${plan.phone}` : ""}`.slice(
+    sms: `${biz ? `${biz}: ` : ""}${plan.title}.${offerBit} ${plan.cta}${plan.phone ? ` ${plan.phone}` : ""}`.slice(
       0,
       160,
     ),
@@ -757,7 +768,9 @@ export function buildCampaignPlan(
     season,
   });
 
-  const biz = ctx.business_name || "Your business";
+  // No placeholder name. `null` propagates so the brief layer can mark the
+  // slot as unknown instead of handing the writer a brand that does not exist.
+  const biz = ctx.business_name || null;
   const city = ctx.city || "";
   const offer = ctx.offer_summary || "";
   const title =
@@ -776,7 +789,7 @@ export function buildCampaignPlan(
     open_slots_tomorrow: ctx.open_slots_tomorrow ?? 0,
     job_photos_count: ctx.job_photos_count ?? 0,
     has_before_after: !!ctx.has_before_after,
-    has_logo: ctx.has_logo !== false,
+    has_logo: ctx.has_logo === true,
     has_membership: !!ctx.has_membership,
     latest_review: ctx.latest_review || null,
     service_focus: ctx.service_focus || null,
@@ -914,9 +927,9 @@ export function planToCampaignBrief(
   return buildCampaignBrief({
     campaign: plan.title,
     goal: goalLabel,
-    tone: (plan.dna_inputs.tone as string) || "Professional",
+    tone: (plan.dna_inputs.tone as string) || null,
     offer: plan.offer.summary || null,
-    business_name: String(plan.business_inputs.business_name || "Your business"),
+    business_name: (plan.business_inputs.business_name as string) || null,
     service_name: (plan.business_inputs.service_focus as string) ||
       (Array.isArray(plan.business_inputs.services) && (plan.business_inputs.services as string[])[0]) ||
       null,

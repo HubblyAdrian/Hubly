@@ -990,7 +990,7 @@ export async function think(req) {
     businessId,
     startedAt: new Date(started).toISOString(),
     latencyMs: Date.now() - started,
-    ok: critic ? critic.ok !== false : true,
+    ok: critic ? critic.ok === true : true,
     memoriesLoaded: [
       'business_memory',
       'business_dna',
@@ -1294,7 +1294,7 @@ export async function think(req) {
   }
 
   return {
-    ok: critic ? critic.ok !== false : true,
+    ok: critic ? critic.ok === true : true,
     intent,
     response,
     questions,

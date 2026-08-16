@@ -268,7 +268,8 @@ async function runExpertValidation() {
       });
       const reasoning = Array.isArray(out.reasoning) && out.reasoning.length > 0;
       const confidence = typeof out.confidence === "number";
-      const graceful = out.ok !== false || !!out.summary;
+      // Was `out.ok !== false` — an expert that set no `ok` counted as graceful.
+      const graceful = out.ok === true || !!out.summary;
       const noBypass = !/openai\.com|anthropic\.com|api\.openai/i.test(JSON.stringify(out));
       cases.push(caseResult("experts", `${id}_executes`, !!out.summary, String(out.summary || "").slice(0, 80), t0));
       cases.push(caseResult("experts", `${id}_reasoning`, reasoning, "reasoning", t0));

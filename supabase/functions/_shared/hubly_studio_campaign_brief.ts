@@ -24,9 +24,12 @@ export type CampaignBrief = {
   campaign: string;
   goal: string;
   channel: typeof V1_PUBLISH_CHANNEL;
-  tone: string;
+  /** NULL when Business DNA has no tone. Never invent one — it silently sets
+   *  the brand voice of everything generated downstream. */
+  tone: string | null;
   offer: string | null;
-  business_name: string;
+  /** NULL when the business has no name on record. Never a placeholder. */
+  business_name: string | null;
   service_name: string | null;
   review_text: string | null;
   cta: string;
@@ -90,6 +93,10 @@ export function validatePromptTemplate(template: string): {
   return { ok: errors.length === 0, errors };
 }
 
+/** Rendered into a prompt slot we genuinely cannot fill. Deliberately not a
+ *  plausible value: a writer must never mistake it for a real business fact. */
+export const UNKNOWN_SLOT = "(not provided — do not invent one)";
+
 export function fillPromptTemplate(
   template: string,
   brief: Omit<CampaignBrief, "prompt_template">,
@@ -98,9 +105,12 @@ export function fillPromptTemplate(
     campaign: brief.campaign,
     goal: brief.goal,
     channel: brief.channel,
-    tone: brief.tone,
+    // An unknown slot renders as an explicit marker, not as a fake value and
+    // not as an empty string that reads like a typo. The writer is told the
+    // fact is missing so it can work around it instead of inventing one.
+    tone: brief.tone || UNKNOWN_SLOT,
     offer: brief.offer || "",
-    business_name: brief.business_name,
+    business_name: brief.business_name || UNKNOWN_SLOT,
     service_name: brief.service_name || "",
     review_text: brief.review_text || brief.assets.review || "",
     cta: brief.cta,
@@ -120,7 +130,7 @@ export function buildCampaignBrief(input: {
   goal: string;
   tone?: string | null;
   offer?: string | null;
-  business_name: string;
+  business_name: string | null;
   service_name?: string | null;
   cta: string;
   playbook_id: string;
@@ -137,7 +147,7 @@ export function buildCampaignBrief(input: {
     campaign: input.campaign,
     goal: input.goal,
     channel: V1_PUBLISH_CHANNEL,
-    tone: input.tone || "Professional",
+    tone: input.tone || null,
     offer: input.offer ?? null,
     business_name: input.business_name,
     service_name: input.service_name ?? null,
