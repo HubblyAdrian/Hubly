@@ -14429,7 +14429,7 @@ async function loadBusiness(opts={}){
         }else{
           invokeGenerateSiteCopy().then(ok=>{
             if(ok){syncWebsiteEditorFields();renderWebsite();updateEdPrev();saveStorefront().catch(()=>{});}
-          }).catch(e=>console.warn('choke-point generate-site failed:',e.message));
+          }).catch(e=>reportGenerateSiteFailure('network','choke-point threw: '+(e&&e.message)));
         }
       }
       await loadJobs();
@@ -28163,7 +28163,7 @@ async function completeOnboard(){
         try{renderWebsite();}catch(e){}
       }
     })
-    .catch(e=>console.warn('AI generation skipped',e?.message||e));
+    .catch(e=>reportGenerateSiteFailure('network','onboarding threw: '+(e?.message||e)));
   setObBuildingStage(2,'done');setObBuildingStage(3,'active');
 
   try{renderWebsitePreview();}catch(e){console.warn(e);}
@@ -34602,7 +34602,7 @@ function applyWsPeBizName(thenLayout){
     // Best-effort AI copy once a real business name exists (editor-first onboarding)
     invokeGenerateSiteCopy().then(ok=>{
       if(ok){syncWebsiteEditorFields();renderWebsitePreview();saveStorefront().catch(()=>{});}
-    }).catch(()=>{});
+    }).catch(e=>reportGenerateSiteFailure('network','editor-first threw: '+(e&&e.message)));
   });
 }
 function liveWsPeHeadline(val){
@@ -38890,8 +38890,49 @@ function applyGenerateSitePayload(g){
   if(g.reviews_sub&&!(S.website.reviewsSub||'').trim()){S.website.reviewsSub=g.reviews_sub;applied=true;}
   return applied;
 }
-async function invokeGenerateSiteCopy(){
-  if(!currentBusiness?.id)return false;
+/**
+ * Records a generate-site failure loudly enough that we learn about it the day
+ * it happens instead of months later.
+ *
+ * This used to be a single console.warn, so a rejected or broken generation was
+ * invisible: every caller falls back to local copy, the page fills in and looks
+ * like it worked. That is the worst shape a failure can take — no user report,
+ * no signal, and a silent quality regression on every new site.
+ *
+ * Deliberately does NOT toast on its own. Callers decide: the onboarding path
+ * runs in the background where a scary toast mid-"building your site" is worse
+ * than useless, while an explicit button press should say something.
+ */
+function reportGenerateSiteFailure(reason, detail){
+  const info={
+    reason,                                  // auth | server | ai | empty | network
+    detail:String(detail||''),
+    business_id:currentBusiness?.id||null,
+    at:new Date().toISOString(),
+  };
+  // console.error, not warn — warns are filtered out of most dashboards.
+  console.error('[generate-site] FAILED —',reason+':',info.detail,info);
+  try{
+    S._generateSiteLastError=info;
+    (S._generateSiteErrors=S._generateSiteErrors||[]).push(info);
+    if(S._generateSiteErrors.length>20)S._generateSiteErrors.shift();
+  }catch(e){}
+  // Give any error reporter / e2e test a real event to hook, without requiring one.
+  try{window.dispatchEvent(new CustomEvent('hubly:generate-site-failed',{detail:info}));}catch(e){}
+  return info;
+}
+/**
+ * @param {{notify?:boolean}} [opts] notify:true surfaces a toast — use it when
+ *        the user pressed a button and is waiting on an answer.
+ * @returns {Promise<boolean>} true only when real AI copy was applied.
+ */
+async function invokeGenerateSiteCopy(opts){
+  const notify=!!(opts&&opts.notify);
+  if(!currentBusiness?.id){
+    reportGenerateSiteFailure('no_business','currentBusiness.id missing');
+    if(notify)toast('Save your business first');
+    return false;
+  }
   const dbClient=await waitForDb();
   const guidance=(typeof HublyBlueprints!=='undefined')?HublyBlueprints.aiGuidance(S.businessType):null;
   const {data:genData,error:genError}=await dbClient.functions.invoke('generate-site',{body:{
@@ -38905,10 +38946,28 @@ async function invokeGenerateSiteCopy(){
     blueprint: guidance,
   }});
   if(genError||genData?.error){
-    console.warn('AI generation unavailable, using local fallback:',genError?.message||genData?.error);
+    // Separate "you were rejected" from "the AI is down". They need different
+    // responses and, historically, both were logged identically and ignored.
+    const status=genError?.context?.status||genError?.status||0;
+    const msg=String(genError?.message||genData?.error||'unknown');
+    const isAuth=status===401||status===403||status===404||
+      /session expired|sign in|not found|unauthor/i.test(msg);
+    reportGenerateSiteFailure(isAuth?'auth':(status>=500?'server':'ai'),
+      (status?status+' ':'')+msg);
+    if(notify){
+      toast(isAuth
+        ?'Could not generate — sign out and back in, then try again'
+        :'AI copy is unavailable right now — using a starter layout');
+    }
     return false;
   }
-  if(genData?.generated)return applyGenerateSitePayload(genData.generated);
+  if(genData?.generated){
+    const applied=applyGenerateSitePayload(genData.generated);
+    // A 200 that changed nothing is still a failure of the feature.
+    if(!applied)reportGenerateSiteFailure('empty','200 OK but no fields applied');
+    return applied;
+  }
+  reportGenerateSiteFailure('empty','200 OK with no `generated` payload');
   return false;
 }
 async function generateWebsiteWithAI(btn){
@@ -38920,7 +38979,7 @@ async function generateWebsiteWithAI(btn){
   const bpName=(getActiveBlueprint()?.identity?.name)||'local service';
   const prompt=`Return ONLY valid JSON (no markdown fences) with keys: heroHeadline (string), heroSub (string), ownerBio (string, 2-3 sentences), servicesSub (string), seoTitle (string), seoDescription (string under 160 chars), faq (array of exactly 4 objects with q and a strings), whyChooseUs (array of 5 objects with icon emoji string, title string, desc string under 80 chars). Business: ${S.biz}. Tagline: ${S.tag}. City: ${S.city}. About: ${S.about}. Services: ${svcs}. Audience: ${bpName} customers. Tone: premium, trustworthy, conversion-focused.`;
   try{
-    if(await invokeGenerateSiteCopy()){
+    if(await invokeGenerateSiteCopy({notify:true})){
       syncWebsiteEditorFields();
       renderWebsite();
       updateEdPrev();
