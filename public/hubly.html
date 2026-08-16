@@ -9346,12 +9346,21 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .booking-shell .btn-ink{background:var(--bk-ui-accent);border-color:var(--bk-ui-accent);border-radius:12px;padding:12px 20px;font-weight:700}
 .booking-shell .btn-out{border-radius:12px;padding:12px 16px;font-weight:600}
 .booking-shell .btn-green{border-radius:12px;padding:12px 20px;font-weight:700}
-/* Step 3/4 — fill the main card (sidebar already holds the summary) */
+/* Step 3/4 — "Your info" and "Review".
+   These two steps hold cards, not a short form, and were being squeezed into
+   the 560px .bk-step-inner meant for the earlier steps. The old override
+   widened .bk-step-body — the CHILD — while its parent stayed capped, so the
+   two-column grids below overflowed: a horizontal scrollbar (a container with
+   overflow-y:auto computes overflow-x to auto, so the bar appears on its own)
+   and cards clipped mid-content, e.g. "You won't be charged yet".
+   Widen the container itself and stack in one column. */
+#bk-step-3 .bk-step-inner,
+#bk-step-4 .bk-step-inner{max-width:720px}
 #bk-step-3 .bk-step-body,
 #bk-step-4 .bk-step-body{max-width:none;width:100%}
 #bk-step-3 .bk-info-compose{
-  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px 28px;align-items:start;
-  max-width:760px;
+  display:grid;grid-template-columns:1fr;gap:18px;align-items:start;
+  max-width:none;
 }
 #bk-step-3 .bk-info-primary,#bk-step-3 .bk-info-side{min-width:0;display:flex;flex-direction:column;gap:14px}
 #bk-step-3 .bk-info-side .bk-info-card{margin:0}
@@ -9359,16 +9368,12 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 #bk-step-3 .bk-info-notes textarea{min-height:110px;resize:vertical}
 #bk-step-3 .bk-notes-count{font-size:11px;color:var(--ink-3);text-align:right;margin-top:4px}
 #bk-step-3 .bk-phone-hint{font-size:11px;color:var(--ink-3);margin-top:5px}
-@media(max-width:980px){
-  #bk-step-3 .bk-info-compose{grid-template-columns:1fr;max-width:none}
-}
+/* (the old max-width:980px single-column override is gone — one column is now
+   the only layout, at every width) */
 #bk-step-4 #bk-details-summary{display:flex;flex-direction:column;gap:8px;max-width:none}
 #bk-step-4 .order-summary,#bk-step-4 .bk-guarantee{max-width:none}
 #bk-step-4 .bk-review-grid{
-  display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:18px 24px;align-items:start;
-}
-@media(max-width:980px){
-  #bk-step-4 .bk-review-grid{grid-template-columns:1fr}
+  display:grid;grid-template-columns:1fr;gap:18px;align-items:start;
 }
 
 .bk-info-card{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;background:#eef5ff;border:1px solid #c7dbf7;margin:14px 0 4px}
