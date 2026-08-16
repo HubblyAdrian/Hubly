@@ -360,6 +360,9 @@ Deno.serve(async (req: Request) => {
       cancelUrl: cancelWithParams,
       customerEmail: customerEmail || undefined,
       applicationFeeCents: applicationFeeCents || undefined,
+      // OFF unless STRIPE_ON_BEHALF_OF=1. Trial only — see createDestinationCheckout.
+      // Flip the secret, open one session, compare the Checkout header, flip it back.
+      onBehalfOf: Deno.env.get("STRIPE_ON_BEHALF_OF") === "1" ? conn.stripe_account_id : null,
       metadata: {
         hubly_business_id: businessId,
         hubly_booking_request_id: reqId!,

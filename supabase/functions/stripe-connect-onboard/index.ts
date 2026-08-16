@@ -3,9 +3,11 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
+  accountBrandingForm,
   appBaseUrl,
   createAccountLink,
   createExpressAccount,
+  fillMissingAccountBranding,
   retrieveAccount,
   sanitizeAppReturnUrl,
   stripeConfigured,
@@ -89,9 +91,11 @@ Deno.serve(async (req: Request) => {
     } catch {
       return jsonRes({ error: "Auth isn’t configured on the server yet." }, 500);
     }
+    // name/slug/colours/contact are read for Stripe account branding — without
+    // them an Express account is anonymous everywhere Stripe shows it.
     const { data: biz, error: bizErr } = await admin
       .from("businesses")
-      .select("id,owner_id")
+      .select("id,owner_id,name,slug,brand_color,bg_color,email,phone")
       .eq("id", businessId)
       .maybeSingle();
     if (bizErr || !biz || biz.owner_id !== user.id) {
@@ -104,12 +108,18 @@ Deno.serve(async (req: Request) => {
       .eq("business_id", businessId)
       .maybeSingle();
 
+    const branding = accountBrandingForm(biz as Record<string, string | null>);
+
     let stripeAccountId = existing?.stripe_account_id as string | undefined;
     if (!stripeAccountId) {
       const acct = await createExpressAccount({
         email: user.email || undefined,
         businessId,
         ownerId: user.id,
+        // Set at creation so Stripe's own onboarding screens already carry the
+        // business name and colours, rather than the owner being walked through
+        // a flow branded as someone else's product.
+        branding,
       });
       stripeAccountId = acct.id;
       const { error: insErr } = await admin.from("stripe_connect_accounts").insert({
@@ -129,6 +139,17 @@ Deno.serve(async (req: Request) => {
     } else {
       try {
         const acct = await retrieveAccount(stripeAccountId);
+        // Backfill branding for accounts created before this existed — but only
+        // fields Stripe currently holds nothing for, so an owner who set their
+        // own name or colours in the Express dashboard is never overwritten.
+        try {
+          const wrote = await fillMissingAccountBranding(stripeAccountId, branding, acct);
+          if (wrote.length) console.info("stripe branding backfilled", businessId, wrote.join(","));
+        } catch (e) {
+          // Branding is cosmetic. It must never block the owner from reaching
+          // Stripe onboarding, which is what actually lets them take money.
+          console.warn("stripe branding backfill failed", (e as Error)?.message);
+        }
         await admin.from("stripe_connect_accounts").update({
           charges_enabled: !!acct.charges_enabled,
           payouts_enabled: !!acct.payouts_enabled,

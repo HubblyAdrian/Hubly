@@ -6,6 +6,20 @@ export type StripeAccount = {
   payouts_enabled?: boolean;
   details_submitted?: boolean;
   email?: string | null;
+  business_profile?: {
+    name?: string | null;
+    url?: string | null;
+    support_email?: string | null;
+    support_phone?: string | null;
+  } | null;
+  settings?: {
+    branding?: {
+      icon?: string | null;
+      logo?: string | null;
+      primary_color?: string | null;
+      secondary_color?: string | null;
+    } | null;
+  } | null;
 };
 
 export type StripeCheckoutSession = {
@@ -70,10 +84,68 @@ export async function stripeRequest<T>(
   return json as T;
 }
 
+/** A business, as far as Stripe branding is concerned. */
+export type BrandingSource = {
+  name?: string | null;
+  slug?: string | null;
+  brand_color?: string | null;
+  bg_color?: string | null;
+  email?: string | null;
+  phone?: string | null;
+};
+
+/** Stripe rejects anything that is not exactly #RRGGBB. */
+function hexColor(v: unknown): string | undefined {
+  const s = String(v || "").trim();
+  return /^#[0-9a-fA-F]{6}$/.test(s) ? s.toLowerCase() : undefined;
+}
+
+/**
+ * Branding to push onto a connected account.
+ *
+ * Without this an Express account is anonymous: the Express dashboard, Stripe's
+ * onboarding screens and every Stripe-sent email show platform defaults, so a
+ * photographer's customer and the photographer themselves both see "Hubly"
+ * where the business name belongs.
+ *
+ * NOT SET HERE: `settings[branding][logo]` and `[icon]`. Those take a Stripe
+ * FILE ID, not a URL — the image has to be uploaded to the Files API first
+ * (multipart, purpose=business_logo/business_icon), in the connected account's
+ * context, and `stripeRequest` sends no Stripe-Account header at all. Passing
+ * `logo_url` straight through would simply be rejected. Colours and names carry
+ * most of the benefit and need no upload, so they ship now and the logo is a
+ * separate job. (Only 5 of 19 production businesses have a logo_url today.)
+ */
+export function accountBrandingForm(
+  biz: BrandingSource,
+  opts?: { siteBase?: string },
+): Record<string, string> {
+  const form: Record<string, string> = {};
+  const name = String(biz.name || "").trim();
+  if (name) form["business_profile[name]"] = name.slice(0, 250);
+
+  const slug = String(biz.slug || "").trim();
+  const base = opts?.siteBase || "myhubly.app";
+  if (slug) form["business_profile[url]"] = `https://${slug}.${base}`;
+
+  const email = String(biz.email || "").trim();
+  if (email) form["business_profile[support_email]"] = email;
+  const phone = String(biz.phone || "").trim();
+  if (phone) form["business_profile[support_phone]"] = phone;
+
+  const primary = hexColor(biz.brand_color);
+  if (primary) form["settings[branding][primary_color]"] = primary;
+  const secondary = hexColor(biz.bg_color);
+  if (secondary) form["settings[branding][secondary_color]"] = secondary;
+
+  return form;
+}
+
 export async function createExpressAccount(opts: {
   email?: string;
   businessId: string;
   ownerId: string;
+  branding?: Record<string, string>;
 }): Promise<StripeAccount> {
   return stripeRequest<StripeAccount>("/accounts", {
     method: "POST",
@@ -84,8 +156,49 @@ export async function createExpressAccount(opts: {
       "capabilities[transfers][requested]": true,
       "metadata[hubly_business_id]": opts.businessId,
       "metadata[hubly_owner_id]": opts.ownerId,
+      ...(opts.branding || {}),
     },
   });
+}
+
+/**
+ * Fill in branding the account does not already have.
+ *
+ * Deliberately NEVER overwrites. Once an owner has been through Express
+ * onboarding, `business_profile[name]` is a name THEY confirmed, and the colours
+ * may have been set in their own dashboard. Re-pushing our values on every
+ * "connect Stripe" click would silently stomp the owner's choices — so each
+ * field is sent only when Stripe currently holds nothing for it.
+ *
+ * Returns the fields actually written, so the caller can log a no-op honestly.
+ */
+export async function fillMissingAccountBranding(
+  accountId: string,
+  desired: Record<string, string>,
+  current: StripeAccount,
+): Promise<string[]> {
+  const has: Record<string, unknown> = {
+    "business_profile[name]": current.business_profile?.name,
+    "business_profile[url]": current.business_profile?.url,
+    "business_profile[support_email]": current.business_profile?.support_email,
+    "business_profile[support_phone]": current.business_profile?.support_phone,
+    "settings[branding][primary_color]": current.settings?.branding?.primary_color,
+    "settings[branding][secondary_color]": current.settings?.branding?.secondary_color,
+  };
+  const form: Record<string, string> = {};
+  for (const [k, v] of Object.entries(desired)) {
+    const existing = has[k];
+    if (existing === undefined || existing === null || String(existing).trim() === "") {
+      form[k] = v;
+    }
+  }
+  const keys = Object.keys(form);
+  if (!keys.length) return [];
+  await stripeRequest<StripeAccount>(`/accounts/${encodeURIComponent(accountId)}`, {
+    method: "POST",
+    form,
+  });
+  return keys;
 }
 
 export async function retrieveAccount(accountId: string): Promise<StripeAccount> {
@@ -124,6 +237,7 @@ export async function createDestinationCheckout(opts: {
   cancelUrl: string;
   customerEmail?: string;
   applicationFeeCents?: number;
+  onBehalfOf?: string | null;
   metadata: Record<string, string>;
 }): Promise<StripeCheckoutSession> {
   const currency = (opts.currency || "usd").toLowerCase();
@@ -156,6 +270,16 @@ export async function createDestinationCheckout(opts: {
   };
   if (opts.applicationFeeCents && opts.applicationFeeCents > 0) {
     form["payment_intent_data[application_fee_amount]"] = opts.applicationFeeCents;
+  }
+  // `on_behalf_of` makes the connected account the merchant of record for the
+  // charge while the money still flows as a destination charge. It is being
+  // trialled to see whether it also moves the Checkout header off the platform
+  // name — an OPEN QUESTION, not a known behaviour. It is opt-in precisely
+  // because f13c751 shipped an unverified parameter on this exact call and
+  // killed every card payment: this one must not ride along with a fix that has
+  // not yet been confirmed working in production.
+  if (opts.onBehalfOf) {
+    form["payment_intent_data[on_behalf_of]"] = opts.onBehalfOf;
   }
   if (opts.customerEmail) form.customer_email = opts.customerEmail;
   let i = 0;
