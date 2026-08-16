@@ -11,6 +11,13 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+function jsonRes(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS, "content-type": "application/json" },
+  });
+}
+
 const JSON_SHAPE = `Respond with ONLY valid JSON, no markdown fences, no preamble, matching
 exactly this shape:
 {
@@ -120,6 +127,56 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // ── AUTHORIZATION ──────────────────────────────────────────────────────
+    // This function writes with the service-role key, which bypasses RLS, so it
+    // has to authorize for itself. It previously did not: `business_id` came
+    // from the request body and was never checked against the caller.
+    //
+    // verify_jwt does NOT cover this. It only proves the caller holds *some*
+    // JWT signed by this project — and the anon key is exactly that, published
+    // in the page source and valid until 2036. So the effective control before
+    // this block was "possess a public string", while the write reached any
+    // business's live site copy: hero headline, about, FAQ, SEO title and
+    // description. Cross-tenant write, unauthenticated in practice.
+    //
+    // Runs BEFORE the model call on purpose — an unauthorized caller must not
+    // be able to spend an OpenAI request either.
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey =
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
+    if (!supabaseUrl || !serviceKey || !anonKey) {
+      console.error("generate-site misconfigured: missing Supabase env");
+      return jsonRes({ error: "Server misconfigured" }, 500);
+    }
+
+    const authHeader = req.headers.get("Authorization") || "";
+    if (!authHeader.toLowerCase().startsWith("bearer ")) {
+      return jsonRes({ error: "Sign in to generate website copy." }, 401);
+    }
+
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      // The anon key parses as a JWT but resolves to no user, so it lands here.
+      return jsonRes({ error: "Your session expired — refresh and try again." }, 401);
+    }
+
+    const supabase = createClient(supabaseUrl, serviceKey);
+    const { data: ownedBiz, error: bizErr } = await supabase
+      .from("businesses")
+      .select("id,owner_id")
+      .eq("id", business_id)
+      .maybeSingle();
+    // Same response for "no such business" and "not yours" — do not confirm the
+    // existence of another owner's business id.
+    if (bizErr || !ownedBiz || ownedBiz.owner_id !== userData.user.id) {
+      return jsonRes({ error: "Business not found" }, 404);
+    }
+    // ── end authorization ──────────────────────────────────────────────────
+
     const facts = {
       business_name,
       business_type: business_type || null,
@@ -165,11 +222,9 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS")!;
-    const supabase = createClient(supabaseUrl, serviceKey);
-
+    // `supabase` (service role) and the ownership check both happen above, before
+    // the model call. Do not re-create the client here: the write below must only
+    // ever be reachable through the authorization block.
     const headlineOptions: string[] = Array.isArray(generated.hero_headline_options)
       ? generated.hero_headline_options
       : [];
