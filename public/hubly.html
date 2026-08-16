@@ -41812,10 +41812,31 @@ async function submitBooking(){
           const dbClient=await waitForDb();
           if(btn)btn.textContent='Opening secure payment…';
           const returnBase=location.href.split('#')[0];
+          // The server prices this booking. We send WHAT was chosen — service id,
+          // add-on ids, the Smart Quote answers, the vehicle tier — never a
+          // price. amount_dollars is still included for one deploy so the
+          // server can log client-vs-server drift; it is ignored, and it is
+          // removed the deploy after.
+          const sqAnswers=(S._bkSq&&S._bkSq.answers)?S._bkSq.answers:{};
+          // S.bkAddons carries {name,price} only — toggleAddon never had an id to
+          // record (hubly.html:40765). Send both: ids when a future client has
+          // them, names as the resolvable key today. The server matches either
+          // against the stored catalog and takes the PRICE from there, so a
+          // tampered name simply fails to match rather than setting a price.
+          const addonIds=(S.bkAddons||[]).map(a=>a&&a.id).filter(Boolean);
+          const addonNames=(S.bkAddons||[]).map(a=>a&&a.name).filter(Boolean);
+          const vehicleTier=(S.bkSvcObj&&S.bkSvcObj.pricingType==='variable')
+            ?(sqAnswers.vehicleType||S.bkVType||null):null;
           const {data:payData,error:payErr}=await dbClient.functions.invoke('create-booking-checkout',{
             body:{
               business_id:currentBusiness.id,
               charge_kind:chargeKind,
+              service_id:(S.bkSvcObj&&S.bkSvcObj.id)?String(S.bkSvcObj.id):'',
+              addon_ids:addonIds,
+              addon_names:addonNames,
+              answers:sqAnswers,
+              vehicle_tier:vehicleTier,
+              discount_percent:Number(S.bkDiscountPercent)||0,
               amount_dollars:amountDollars,
               booking:payload,
               success_url:returnBase,
@@ -41829,6 +41850,20 @@ async function submitBooking(){
           if(payPayload?.url){
             if(S.bkDiscountCode)markPromoUsedLocal(S.bkDiscountCode,phone,email);
             location.href=payPayload.url;
+            return;
+          }
+          // Server computed that nothing is owed (or less than Stripe's 50c
+          // minimum). Do not open a checkout and do not round up — fall through
+          // and complete the booking as pay-in-person.
+          if(payPayload?.no_payment_required){
+            console.info('[price-channel] no payment required:',payPayload.reason,payPayload.computed_cents);
+          }
+          // The page was loaded before the server-pricing deploy, so it did not
+          // send a service_id. Give the customer the action, not the failure —
+          // the booking form is state-backed, so a refresh keeps their details.
+          if(payPayload?.code==='stale_client'){
+            if(btn){btn.textContent=btnLabel;btn.disabled=false;}
+            toast(payPayload.error||'This page is out of date. Refresh and your details will still be here.');
             return;
           }
           if(payPayload?.code!=='not_ready'&&payPayload?.code!=='not_configured'){

@@ -145,3 +145,52 @@ where meta ? 'depositVal'
 group by 1, 2
 order by 3 desc;
 ```
+
+---
+
+## Verification practice: diff error IDENTITY, never counts
+
+**Status:** standing practice, adopted 2026-08-16 after it hid two real bugs
+
+Two defects shipped this session behind a verification step that looked green.
+
+**1 · Counting errors instead of diffing them.** Every Edge Function change was
+checked as "N errors, N at baseline — unchanged". `deno check` on this codebase
+has a stable set of pre-existing errors, so a NEW error of a different class can
+appear while the total stays put. Commit e494e91 introduced `TS2559` at two
+sites (`booking_engine.ts` createBooking and `marketplace/index.ts:596`) and
+both hid behind an unchanged count. The consequence was not cosmetic: the
+per-package payment override it added silently did nothing, because
+`BookingServiceDto` has no `payment` field and the override always resolved to
+the account default.
+
+Do this instead — per file, signature not total:
+
+```bash
+git diff --name-only <base>..HEAD -- 'supabase/functions/**/*.ts' > /tmp/files.txt
+while read -r f; do
+  sig=$(deno check "$f" 2>&1 | grep -oE 'TS[0-9]+' | sort | uniq -c | tr '\n' ' ')
+  printf "%-58s %s\n" "$f" "${sig:-clean}"
+done < /tmp/files.txt
+```
+
+Run it at the baseline commit and at HEAD, then `diff` the two outputs. A new
+`TS####` on any line is a regression even when the total is identical.
+
+**2 · A check that silently checks nothing.** The first attempt at the audit
+above built a space-joined file list and ran `deno check $FILES`. A trailing
+space made Deno treat all sixteen paths as ONE module specifier; it emitted a
+single `TS2307 Cannot find module 'file:///…%20…%20…'` and the script reported
+"1 error, unchanged" — a clean bill of health from a command that had checked
+nothing. It was caught only because the error TEXT looked wrong, not because
+the count did.
+
+A verification command that silently checks nothing and reports success is
+worse than no check, because it converts an unknown into a false assurance.
+Guard against it:
+
+- Assert the checker saw what you think it saw — file count in, results out.
+- Read at least one error message in full; never pattern-match on counts alone.
+- Prefer a loop over one file at a time to a single command over a joined list.
+- If a check reports "clean" for something known to be broken, distrust the
+  check before trusting the result.

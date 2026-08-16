@@ -47,6 +47,7 @@ import {
 } from "../_shared/marketplace_ops.ts";
 import { notifyCustomerMessage } from "../_shared/booking_notifications.ts";
 import {
+  getService,
   buildCatalogWritePayload,
   catalogFromOwnerServicesPayload,
   emptyCatalog,
@@ -593,7 +594,12 @@ async function handleBookingSlots(
       slots: byDate[date],
     })),
     sources: ctx.result.sources,
-    payment: buildPaymentSummary(business, service.price_cents, { service }),
+    // `service` here is a BookingServiceDto, which does not carry `payment` —
+    // passing it directly made the per-package override a silent no-op. Read
+    // the full catalog record for the override, same as createBooking does.
+    payment: buildPaymentSummary(business, service.price_cents, {
+      service: { payment: getService(business, String(service.id))?.payment ?? null },
+    }),
   });
 }
 

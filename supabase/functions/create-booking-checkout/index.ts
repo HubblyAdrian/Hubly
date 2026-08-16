@@ -3,6 +3,10 @@
 // Public clients may call this without an owner JWT.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { priceBooking, applyPercentDiscountCents } from "../_shared/booking_price.ts";
+import { buildPaymentSummary } from "../_shared/booking_engine.ts";
+import { getService } from "../_shared/service_engine.ts";
+import { getBusinessMeta } from "../_shared/hubly_business_meta.ts";
 import {
   createDestinationCheckout,
   sanitizeAppReturnUrl,
@@ -64,10 +68,20 @@ Deno.serve(async (req: Request) => {
       return jsonRes({ error: "charge_kind must be deposit or full" }, 400);
     }
 
-    // Client-supplied amounts are only trusted for legacy booking_requests.
-    // Marketplace Booking Engine amounts are always derived server-side.
-    let amountCents = dollarsToCents(body?.amount_dollars) ||
+    // ── PRICE CHANNEL ───────────────────────────────────────────────────────
+    // The server prices the booking. The client sends ids and answers; it does
+    // not send money. Until this block existed, `amount_dollars` from the
+    // request body WAS the charge, so any booking could be completed for $1
+    // from dev tools — with or without a discount code.
+    //
+    // ACCEPT-AND-IGNORE WINDOW: this deploy still reads the client figure, but
+    // only to log it against the computed one. A browser cached from before
+    // this ships still sends it, and hard-rejecting would fail live checkouts
+    // mid-flow. The field is removed the deploy after — see the console.warn
+    // below for how to tell a stale client from an exploit.
+    const clientAmountCents = dollarsToCents(body?.amount_dollars) ||
       Math.round(Number(body?.amount_cents) || 0);
+    let amountCents = 0;
 
     const successUrl = sanitizeAppReturnUrl(body?.success_url);
     const cancelUrl = sanitizeAppReturnUrl(body?.cancel_url || body?.success_url);
@@ -99,6 +113,91 @@ Deno.serve(async (req: Request) => {
       null;
     let serviceName = String(booking.service_name || body?.service_name || "Booking").trim() ||
       "Booking";
+
+    // ── Website booking: price it here, from stored config ──────────────────
+    // The marketplace path below already derives its own amount from
+    // marketplace_bookings (written server-side by createBooking), so it is
+    // untouched. This branch is the one that used to trust the browser.
+    if (!marketplaceBookingId) {
+      const { data: bizRow } = await admin
+        .from("businesses")
+        .select("id,business_type,meta,brand_color,name")
+        .eq("id", businessId)
+        .maybeSingle();
+      if (!bizRow) return jsonRes({ error: "Business not found" }, 404);
+      const bizMeta = getBusinessMeta(bizRow);
+
+      const priced = priceBooking(bizRow as Record<string, unknown>, bizMeta, {
+        service_id: String(body?.service_id || (booking as Record<string, unknown>).service_id || ""),
+        addon_ids: Array.isArray(body?.addon_ids) ? body.addon_ids.map(String) : [],
+        addon_names: Array.isArray(body?.addon_names) ? body.addon_names.map(String) : [],
+        answers: (body?.answers && typeof body.answers === "object") ? body.answers : {},
+        vehicle_tier: body?.vehicle_tier ? String(body.vehicle_tier) : null,
+      });
+      if (!priced.ok) {
+        // A page loaded BEFORE this deploy still posts amount_dollars and no
+        // service_id. It must not be charged the browser's figure (that is the
+        // hole this closes), but a customer standing at the payment step needs
+        // a next step rather than a dead error — so say what happened and that
+        // their details survive a refresh.
+        const stale = priced.error === "service_id required";
+        return jsonRes({
+          error: stale
+            ? "This page is out of date. Refresh and your details will still be here."
+            : "Could not price this booking",
+          code: stale ? "stale_client" : priced.error,
+        }, 400);
+      }
+
+      // Discounts are still resolved client-side today (Phases 2-5). The
+      // percentage is accepted, the ARITHMETIC is not: it is applied here, in
+      // cents, rounded exactly as the client rounds it so Review and receipt
+      // agree to the penny. Server-side code lookup lands with the discount work.
+      const discPct = Number(body?.discount_percent) || 0;
+      const totalCents = applyPercentDiscountCents(priced.subtotal_cents, discPct);
+
+      // The package's own payment override, if it set one. toBookingDto does not
+      // carry `payment`, so read the full service record for it — this is what
+      // makes per-package terms (e494e91) apply to a real website booking.
+      const fullSvc = getService(bizRow as Record<string, unknown>, priced.service_id);
+      const summary = buildPaymentSummary(bizRow as Record<string, unknown>, totalCents, {
+        service: fullSvc ? { payment: fullSvc.payment ?? null } : null,
+      });
+      amountCents = chargeKind === "full" ? totalCents : summary.charge_now_cents;
+
+      // Nothing owed, or below Stripe's minimum: do not open a checkout and do
+      // not round up. The caller completes the booking as pay-in-person.
+      if (!summary.requires_checkout || amountCents < 50) {
+        return jsonRes({
+          ok: true,
+          no_payment_required: true,
+          reason: amountCents <= 0 ? "zero_total" : "below_minimum",
+          computed_cents: amountCents,
+          service_name: priced.service_name,
+        });
+      }
+      serviceName = priced.service_name || serviceName;
+
+      // One-deploy accept-and-ignore window. Logged with enough to tell a stale
+      // client (small, explainable drift — a rounding penny, an old price) from
+      // an exploit (a figure far below the computed one, often a round number).
+      if (clientAmountCents > 0 && clientAmountCents !== amountCents) {
+        console.warn("[price-channel] client/server amount mismatch", JSON.stringify({
+          at: new Date().toISOString(),
+          business_id: businessId,
+          service_id: priced.service_id,
+          service_name: priced.service_name,
+          charge_kind: chargeKind,
+          client_cents: clientAmountCents,
+          server_cents: amountCents,
+          delta_cents: clientAmountCents - amountCents,
+          ratio: amountCents > 0 ? Number((clientAmountCents / amountCents).toFixed(4)) : null,
+          subtotal_cents: priced.subtotal_cents,
+          discount_percent: discPct,
+          line_items: priced.line_items,
+        }));
+      }
+    }
 
     // Phase 4/5 — derive checkout from marketplace Booking Engine when present
     if (marketplaceBookingId) {

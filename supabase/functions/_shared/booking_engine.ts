@@ -23,6 +23,7 @@ import {
 } from "./marketplace_availability.ts";
 import { buildLifecycleSnapshot } from "./marketplace_lifecycle.ts";
 import {
+  getService,
   listBookingServices,
   snapshotService,
   toBookingDto,
@@ -241,9 +242,12 @@ export function buildPaymentSummary(
       const raw = cfg.deposit_type === "flat"
         ? Math.round(cfg.deposit_val * (cfg.deposit_unit === "cents" ? 1 : 100))
         : percentDepositCents(priceCents, cfg.deposit_val);
-      // floorCents 50 = Stripe's minimum charge. Sessions pass a floor of 0,
-      // which is why the floor belongs to the caller and not the helper.
-      deposit_cents = clampDepositCents(raw, priceCents, { floorCents: 50 });
+      // No floor. Flooring a tiny deposit UP to Stripe's 50c minimum charged
+      // more than the customer was shown — a $1 service with a 25% deposit was
+      // quoted 25c and charged 50c. A deposit below the minimum is not a
+      // cheaper charge, it is NO charge: requires_checkout below refuses it and
+      // the booking proceeds as pay-in-person.
+      deposit_cents = clampDepositCents(raw, priceCents, { floorCents: 0 });
       charge_now = deposit_cents;
     }
   }
@@ -253,6 +257,8 @@ export function buildPaymentSummary(
     card_on_file: "Card on file",
     pay_after_service: "Pay after service",
   };
+  // Zero total, or a positive amount below Stripe's 50c minimum, means no
+  // online checkout at all — never a rounded-up charge the customer never saw.
   const requires_checkout = (cfg.rule === "pay_in_full" || cfg.rule === "deposit") &&
     charge_now >= 50;
   return {
@@ -626,10 +632,14 @@ export async function createBooking(
   }
 
   // The booked package's own terms where it has an override, else the account
-  // default. `service` is the snapshot this booking is actually for.
+  // default. NOTE: `service` here is a BookingServiceDto, which deliberately
+  // does not carry `payment` — toBookingDto is the customer-facing projection.
+  // Read the full catalog record for the override, or this silently does
+  // nothing and every package falls back to the account default.
+  const svcPayment = getService(input.business, String(input.service_id || ""))?.payment ?? null;
   const payment = buildPaymentSummary(input.business, priceCents, {
     quote_required: quoteRequired,
-    service,
+    service: { payment: svcPayment },
   });
   // Quote-required jobs are always requests (provider reviews before confirming price)
   const status: BookingStatus = (instant && !quoteRequired) ? "confirmed" : "requested";
