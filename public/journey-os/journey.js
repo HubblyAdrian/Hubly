@@ -2304,6 +2304,14 @@
     if (status === 'connected') return setStatusBadge('Connected', 'ok');
     if (status === 'os_ready') return setStatusBadge('Ready', 'ok');
     if (status === 'pending') return setStatusBadge('Finish setup', 'warn');
+    // "Hubly did not check" is not "the owner has not connected it". These
+    // cards used to read local S() flags that nothing populated, so every one
+    // of them said "Not connected" — including Stripe on an account with
+    // charges_enabled:true and a live acct_ id. An integration we cannot check
+    // must be visibly distinct from one that is genuinely off.
+    if (status === 'unknown') {
+      return setStatusBadge('Status unavailable', 'warn');
+    }
     return setStatusBadge('Not connected', 'warn');
   }
   function integrationLogo(key) {
@@ -2316,39 +2324,109 @@
     };
     return '<span class="jos-set-integ-logo" data-brand="' + esc(key) + '">' + (logos[key] || '') + '</span>';
   }
+  /**
+   * Live integration status, from the SAME facades the Apps Marketplace uses.
+   *
+   * These five cards used to read local S() flags — st.stripeConnected,
+   * st.twilioConnected and friends — that no code path ever set. Every card
+   * therefore reported "Not connected" permanently, including Stripe for an
+   * account returning connected:true, charges_enabled:true and
+   * ready_to_charge:true from stripe-connect-connection. The renderer never
+   * asked anyone; it read a flag that was always undefined.
+   *
+   * One source of truth (connected-apps-facades.js), two renderers. Deliberately
+   * NOT merged with the Apps Marketplace surface — that is a separate decision.
+   */
+  var _integStatus = Object.create(null);   // appId -> {status, data, message}
+  var _integFetchAt = 0;
+
+  function facadeFor(appId) {
+    var A = global.HublyConnectedApps;
+    return A && typeof A.getFacade === 'function' ? A.getFacade(appId) : null;
+  }
+
+  function refreshIntegrationStatus(force) {
+    var now = Date.now();
+    if (!force && now - _integFetchAt < 15000) return;
+    _integFetchAt = now;
+    ['stripe', 'google'].forEach(function (appId) {
+      var f = facadeFor(appId);
+      if (!f || typeof f.status !== 'function') return;
+      Promise.resolve(f.status({}))
+        .then(function (res) {
+          _integStatus[appId] = res || null;
+          try { renderSettings(); } catch (e) { /* not on the settings view */ }
+        })
+        .catch(function () { _integStatus[appId] = { status: 'unknown' }; });
+    });
+  }
+
+  /** Map a facade answer onto this renderer's status vocabulary. */
+  function integStatusFor(appId) {
+    var res = _integStatus[appId];
+    if (!res) return 'unknown';                       // not asked yet, or failed
+    var h = (res.data && res.data.health) || null;
+    if (h === 'unknown') return 'unknown';
+    if (res.status === 'connected') return h === 'degraded' ? 'pending' : 'connected';
+    if (h === 'not_configured') return 'pending';
+    return 'not_connected';
+  }
+
   function syncLiveIntegrations() {
-    var st = S();
     var os = ensureSettingsOsState();
     var integ = os.integrations;
-    var stripeOn = !!(st._stripeConnected || st.stripeConnectAccountId || st.stripeConnected);
-    var googleOn = !!(st._googleCalendarConnected || st.googleCalendarConnected);
-    var metaOn = !!(st.metaConnected || st.facebookConnected || st.instagramConnected || (st.integrations && st.integrations.meta));
-    var twilioOn = !!(st.twilioConnected || st.smsProvider === 'twilio' || (st.integrations && st.integrations.twilio));
-    var resendOn = !!(st.resendConnected || st.emailProvider === 'resend' || (st.integrations && st.integrations.resend));
+    refreshIntegrationStatus(false);
+    var stripeStatus = integStatusFor('stripe');
+    var googleStatus = integStatusFor('google');
+    // Meta, Twilio and Resend have no status check that means anything for a
+    // single business — see the note above each card below. They report
+    // unknown rather than claiming the owner has not connected them.
+    var metaStatus = 'unknown';
+    var twilioStatus = 'unknown';
+    var resendStatus = 'unknown';
+    var stripeRes = _integStatus.stripe || null;
     integ.stripe = Object.assign({}, integ.stripe, {
       label: 'Stripe',
-      status: stripeOn ? 'connected' : 'not_connected',
-      note: stripeOn ? 'Card checkout for bookings and invoices.' : 'Connect so customers can pay by card when they book.'
+      status: stripeStatus,
+      note: (stripeRes && stripeRes.message) ||
+        (stripeStatus === 'unknown'
+          ? 'Checking with Stripe…'
+          : 'Connect so customers can pay by card when they book.')
     });
+    var googleRes = _integStatus.google || null;
     integ.google = Object.assign({}, integ.google, {
       label: 'Google Calendar',
-      status: googleOn ? 'connected' : 'not_connected',
-      note: googleOn ? 'Jobs stay in sync with Google Calendar.' : 'Sync jobs and blocks to Google Calendar.'
+      status: googleStatus,
+      note: (googleRes && googleRes.message) ||
+        (googleStatus === 'unknown'
+          ? 'Checking with Google…'
+          : 'Sync jobs and blocks to Google Calendar.')
     });
+    // Meta: no status endpoint exists. Saying "Not connected" would assert
+    // something Hubly has not checked.
     integ.meta = Object.assign({}, integ.meta, {
       label: 'Meta',
-      status: metaOn ? 'connected' : 'not_connected',
-      note: metaOn ? 'Facebook / Instagram messaging linked.' : 'Connect Facebook & Instagram for inbox and ads.'
+      status: metaStatus,
+      note: 'Hubly cannot check this yet — Facebook / Instagram linking is not wired up.'
     });
+    // Twilio: the setup form collects an Account SID and auth token, but NOTHING
+    // server-side uses them — there is no Twilio code in supabase/functions at
+    // all, only a catalog entry. The credentials are also held in client state
+    // only, so they do not survive a reload. Reporting "connected" from that
+    // form would be reporting a form submission, not an integration.
     integ.twilio = Object.assign({}, integ.twilio, {
       label: 'Twilio',
-      status: twilioOn ? 'connected' : 'not_connected',
-      note: twilioOn ? 'SMS sending is configured.' : 'Add Twilio so Hubly can text customers.'
+      status: twilioStatus,
+      note: 'Hubly cannot check this yet — SMS sending is not wired up server-side.'
     });
+    // Resend: genuinely works, but PLATFORM-wide. Booking email uses
+    // Deno.env.get("RESEND_API_KEY") (booking-confirmed/index.ts:248), not a
+    // per-business credential — so "is Resend connected?" has the same answer
+    // for every business and is not this card's question to answer.
     integ.resend = Object.assign({}, integ.resend, {
       label: 'Resend',
-      status: resendOn ? 'connected' : 'not_connected',
-      note: resendOn ? 'Transactional email is configured.' : 'Add Resend to send booking and invoice emails.'
+      status: resendStatus,
+      note: 'Email is sent by Hubly for all businesses — no per-business setup to check.'
     });
     return integ;
   }

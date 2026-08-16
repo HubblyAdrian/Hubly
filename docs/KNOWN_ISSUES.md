@@ -299,3 +299,53 @@ exist in the source? A regex over an id, class or literal that has been renamed
 away matches nothing and asserts nothing, and `assert.doesNotMatch` on a stale
 selector passes forever. When touching a test, grep its subject in the source
 first — if the count is 0, the test is decorative.
+
+---
+
+## Verification rule: grep the DEPLOYED artefact the user is actually looking at
+
+**Status:** standing practice, adopted 2026-08-16 after it would have caught two
+same-day failures in seconds
+
+Before claiming a fix works, grep a string that exists **only** in the new code,
+in the artefact the user's page actually loads, fetched from production. If the
+count is 0, it did not ship — or it shipped to a file that page does not use.
+
+```bash
+curl -s https://myhubly.app/app                       | grep -c "uniqueNewString"
+curl -s https://myhubly.app/journey-os/<file>.js      | grep -c "uniqueNewString"
+```
+
+Note the second line. The string must be grepped in the file that RENDERS the
+thing, which is often not `hubly.html` — most of this app's surfaces live in
+`public/journey-os/*.js`, each fetched separately.
+
+**Two failures the same day that this catches instantly.**
+
+*Integrations status.* A missing-facade fallback was changed in
+`app-marketplace.js` and reported as fixed. The page the owner was looking at is
+drawn by `journey.js`. The grep is unambiguous:
+
+| string | deployed hubly.html | deployed app-marketplace.js |
+|---|---|---|
+| `Status unavailable` | 0 | 3 |
+| `Resend` | 0 | 0 |
+| `am-pill` | 0 | present |
+
+`Resend` = 0 in the file supposedly rendering a Resend card proves it is the
+wrong renderer, before any DOM inspection. The tell was in the bug report — the
+user listed FIVE cards including Resend, against a four-app list — and was read
+past.
+
+*Booking totals.* A 114-combination comparison validated `calcBookingMoney`'s
+classic branch. Production always takes the Smart Quote branch, because
+`openBookingPage` calls `initForBooking` unconditionally and `resolveConfig`
+never returns null. The comparison was rigorous and measured the wrong path.
+
+**The common error in both:** establishing that *a* renderer/path exists and
+stopping, instead of proving *this* one serves *these* users. Rigour downstream
+of a wrong assumption produces confident wrong answers, which are worse than no
+answer.
+
+**Ask before verifying:** which file does the user's page load, and does my
+change exist in the deployed copy of that file?
