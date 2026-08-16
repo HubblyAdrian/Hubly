@@ -10,6 +10,7 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getBusinessMeta } from "./hubly_business_meta.ts";
+import { clampDepositCents, percentDepositCents } from "./payment_math.mjs";
 import { notifyBookingCreated } from "./booking_notifications.ts";
 import { syncEnginePushCreate } from "./google_calendar_sync_engine.ts";
 import { resolveOrCreateCrmCustomer } from "./crm_customer.ts";
@@ -26,6 +27,7 @@ import {
   snapshotService,
   toBookingDto,
   type BookingServiceDto,
+  type ServicePaymentOverride,
 } from "./service_engine.ts";
 
 export type BookingStatus =
@@ -134,10 +136,54 @@ export function resolvePaymentRule(business: Record<string, unknown>): {
   return { rule, deposit_type, deposit_val, message };
 }
 
+/**
+ * The payment terms for ONE booking: the package's own override where it has
+ * one, the account default everywhere else.
+ *
+ * A $225 session and a $2,500 wedding should not be forced onto the same
+ * terms, so a service may carry `payment` (ServicePaymentOverride, already
+ * modelled and persisted by service_engine.ts — until now nothing read it).
+ *
+ * Sub-fields inherit INDEPENDENTLY. A package that says only `rule:"deposit"`
+ * keeps the account's deposit_type and deposit_val, so an owner can say "this
+ * one takes a deposit" without also restating their percentage. Only the
+ * fields actually set on the override win.
+ *
+ * `message` is deliberately NOT overridable: meta.depositMessage is the
+ * business's own wording about how it takes payment, and it stays account-level.
+ *
+ * An override naming a rule this engine cannot execute — `customer_choice` is
+ * in the service type but not in PaymentRule, and has no charge behaviour here
+ * — falls back to the account rule rather than silently becoming
+ * "pay_after_service". Guessing wrong in either direction is a money decision.
+ */
+export function resolveBookingPayment(
+  business: Record<string, unknown>,
+  service?: { payment?: ServicePaymentOverride } | null,
+): { rule: PaymentRule; deposit_type: "pct" | "flat"; deposit_val: number; message: string | null } {
+  const account = resolvePaymentRule(business);
+  const override = (service && service.payment && typeof service.payment === "object")
+    ? service.payment
+    : null;
+  if (!override) return account;
+
+  const EXECUTABLE: PaymentRule[] = ["pay_in_full", "deposit", "card_on_file", "pay_after_service"];
+  const wanted = String(override.rule || "") as PaymentRule;
+  if (!EXECUTABLE.includes(wanted)) return account;
+
+  const depType = override.deposit_type === "flat" || override.deposit_type === "pct"
+    ? override.deposit_type
+    : account.deposit_type;
+  const rawVal = Number(override.deposit_val);
+  const depVal = Number.isFinite(rawVal) && rawVal > 0 ? rawVal : account.deposit_val;
+
+  return { rule: wanted, deposit_type: depType, deposit_val: depVal, message: account.message };
+}
+
 export function buildPaymentSummary(
   business: Record<string, unknown>,
   priceCents: number | null,
-  opts?: { quote_required?: boolean },
+  opts?: { quote_required?: boolean; service?: { payment?: ServicePaymentOverride } | null },
 ): PaymentSummary {
   if (opts?.quote_required) {
     return {
@@ -151,16 +197,21 @@ export function buildPaymentSummary(
       message: "Final price is set by the provider after reviewing your details.",
     };
   }
-  const cfg = resolvePaymentRule(business);
+  const cfg = resolveBookingPayment(business, opts?.service);
   let deposit_cents: number | null = null;
   let charge_now = 0;
   if (priceCents != null && priceCents > 0) {
     if (cfg.rule === "pay_in_full") charge_now = priceCents;
     else if (cfg.rule === "deposit") {
-      deposit_cents = cfg.deposit_type === "flat"
+      // The dollars-or-cents heuristic on a flat deposit is pre-existing and
+      // deliberately preserved — owners' stored deposit_val is ambiguous, and
+      // reinterpreting it here would silently change live amounts.
+      const raw = cfg.deposit_type === "flat"
         ? Math.round(cfg.deposit_val * (cfg.deposit_val < 1000 ? 100 : 1))
-        : Math.round(priceCents * (cfg.deposit_val / 100));
-      deposit_cents = Math.max(50, Math.min(priceCents, deposit_cents));
+        : percentDepositCents(priceCents, cfg.deposit_val);
+      // floorCents 50 = Stripe's minimum charge. Sessions pass a floor of 0,
+      // which is why the floor belongs to the caller and not the helper.
+      deposit_cents = clampDepositCents(raw, priceCents, { floorCents: 50 });
       charge_now = deposit_cents;
     }
   }
@@ -542,8 +593,11 @@ export async function createBooking(
     }
   }
 
+  // The booked package's own terms where it has an override, else the account
+  // default. `service` is the snapshot this booking is actually for.
   const payment = buildPaymentSummary(input.business, priceCents, {
     quote_required: quoteRequired,
+    service,
   });
   // Quote-required jobs are always requests (provider reviews before confirming price)
   const status: BookingStatus = (instant && !quoteRequired) ? "confirmed" : "requested";
@@ -758,6 +812,13 @@ export async function createBooking(
 
 export function publicCatalogPayload(business: Record<string, unknown>) {
   const services = listCatalogServices(business);
+  // No `service` passed on purpose. This block is named payment_defaults and is
+  // the ACCOUNT default — services[0] is only here to give the summary a price
+  // to work with. Threading it would make the stated default reflect whatever
+  // override happens to sit on the first package, which is the opposite of
+  // what a caller reading "defaults" expects. Per-package terms travel on each
+  // entry of `services` (CatalogService carries `payment`) and are resolved
+  // per booking by buildPaymentSummary.
   const payment = buildPaymentSummary(
     business,
     services[0]?.price_cents ?? null,

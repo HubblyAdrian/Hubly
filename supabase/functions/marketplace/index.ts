@@ -593,7 +593,7 @@ async function handleBookingSlots(
       slots: byDate[date],
     })),
     sources: ctx.result.sources,
-    payment: buildPaymentSummary(business, service.price_cents),
+    payment: buildPaymentSummary(business, service.price_cents, { service }),
   });
 }
 

@@ -41,3 +41,105 @@ a provider-less business should reach this code path at all.
 `booking_engine.ts:305-320`. Most likely the caller should not be computing
 availability for a business with no provider, in which case the fix is a guard at
 the call site rather than a different boolean default.
+
+---
+
+## `payment_setting` has two sources of truth, and the server reads only one
+
+**Status:** open, deliberately not fixed
+**Found:** 2026-08-16, while adding per-package payment overrides
+
+The account-level payment mode is stored in two places that can disagree:
+
+| Where | Written / read by | Authoritative? |
+|---|---|---|
+| `businesses.meta.paymentSetting` (+ `depositType`, `depositVal`, `depositMessage`) | `booking_engine.ts:120` `resolvePaymentRule()` | **YES — this is what decides charges** |
+| `businesses.payment_setting` (real column) | client only: `hubly.html:14398`, `:16994`, `:17321`, `:17822` | no — no server code reads it |
+
+`resolvePaymentRule()` is the only server-side resolver of payment terms, and it
+reads `getBusinessMeta(business)` exclusively. The `payment_setting` column is a
+parallel copy the booking path never consults. The client reads it on load
+(`:14398`, `:17321`) and writes it on save (`:16994`, `:17822`), so an owner can
+end up looking at a UI driven by one field while their customers are charged
+according to the other.
+
+Note the mismatch is wider than the one field: the server needs four values
+(`paymentSetting`, `depositType`, `depositVal`, `depositMessage`) and only the
+first has a column equivalent, so the column could never be authoritative
+without also adding the other three.
+
+**Why not fixed now:** collapsing them is a data decision, not a code one. Any
+row where the two disagree has to resolve one way, and picking wrong changes
+what a real business charges real customers. It needs a read of production
+first — how many rows disagree, and in which direction.
+
+**What would settle it:** compare the two across production, then either drop
+the column and have the client read/write `meta` (smallest change, matches the
+server), or promote the column to authoritative and migrate the other three
+values into columns alongside it. Do not leave both writable.
+
+```sql
+select count(*)                                                          as businesses,
+       count(*) filter (where payment_setting is distinct from meta->>'paymentSetting') as disagree,
+       payment_setting, meta->>'paymentSetting' as meta_payment_setting
+from public.businesses
+group by payment_setting, meta->>'paymentSetting'
+order by 2 desc;
+```
+
+---
+
+## Flat deposits guess dollars-vs-cents by magnitude
+
+**Status:** open, deliberately not fixed
+**Found:** 2026-08-16, while adding per-package payment overrides
+
+`booking_engine.ts` converts a flat deposit to cents with:
+
+```ts
+Math.round(cfg.deposit_val * (cfg.deposit_val < 1000 ? 100 : 1))
+```
+
+There is no stored unit for `meta.depositVal`, so the magnitude is used as a
+proxy: under 1000 it is treated as dollars and multiplied by 100; at 1000 or
+above it is treated as already being cents and passed through.
+
+That breaks at exactly the point an owner is most likely to mean dollars. A
+business setting a **$1,000 flat deposit** enters `1000`, the heuristic reads it
+as 1000 cents, and the customer is charged **$10**. The same input at `999`
+correctly charges $999. The cliff is invisible in the UI, which asks for a
+number with no unit attached.
+
+**Production exposure (checked 2026-08-16, 19 businesses visible):**
+
+| | count |
+|---|---|
+| businesses with any deposit config | 10 |
+| `depositType = 'flat'` | **1** (`depositVal = 20`) |
+| `depositType = 'flat'` AND `depositVal >= 1000` | **0** |
+| `depositType = 'pct'` | 9 (all `depositVal = 25`) |
+
+So nobody is currently mischarged: the single flat-deposit business is at $20,
+well under the cliff. The exposure is entirely prospective — the first owner to
+type a four-figure flat deposit hits it.
+
+**Why not fixed now:** any change reinterprets stored values, and for a row at
+or above 1000 the two readings differ by 100x in what a real customer is
+charged. It cannot be corrected without knowing what each owner meant.
+
+**What would settle it:** store the unit. Add `meta.depositUnit` ('cents' |
+'dollars') written by the UI, default existing rows to the heuristic's current
+interpretation so nothing changes on migration, then drop the magnitude test
+once every row carries a unit. Doing it while only one business has a flat
+deposit — and it is nowhere near the cliff — is as cheap as this will ever get.
+
+```sql
+-- re-check exposure before changing anything
+select meta->>'depositType' as deposit_type,
+       meta->>'depositVal'  as deposit_val,
+       count(*)             as businesses
+from public.businesses
+where meta ? 'depositVal'
+group by 1, 2
+order by 3 desc;
+```
