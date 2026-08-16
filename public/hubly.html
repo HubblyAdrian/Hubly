@@ -16386,11 +16386,39 @@ function ccState(){
   try{const raw=localStorage.getItem(ccStorageKey());if(raw)restored=JSON.parse(raw);}catch(e){}
   S.cc=(restored&&typeof restored==='object')?restored:{messages:[],understanding:{},started:false,ended:false,error:null};
   if(!Array.isArray(S.cc.messages))S.cc.messages=[];
+  // Purge internal turns restored from a previous visit. Browsers that chatted
+  // before the render fix have CAPABILITY RESULT payloads — including raw
+  // booking.getAvailability output — sitting in localStorage; this clears them
+  // on the next page load rather than leaving them there indefinitely.
+  const beforeRestore=S.cc.messages.length;
+  S.cc.messages=S.cc.messages.filter(ccIsCustomerVisibleMessage);
+  if(S.cc.messages.length!==beforeRestore){
+    try{localStorage.setItem(ccStorageKey(),JSON.stringify(S.cc));}catch(e){}
+  }
   if(!S.cc.understanding||typeof S.cc.understanding!=='object')S.cc.understanding={};
   return S.cc;
 }
+/**
+ * A turn a customer is allowed to see, and therefore the only kind we keep.
+ *
+ * hubly-conversation's history also carries role:"system" entries — tool
+ * results and the instructions attached to them. They are model context, never
+ * customer content, and they must not be written to a visitor's browser.
+ */
+function ccIsCustomerVisibleMessage(m){
+  const role=String((m&&m.role)||'');
+  return role==='user'||role==='assistant';
+}
 function ccPersist(){
-  try{localStorage.setItem(ccStorageKey(),JSON.stringify(S.cc));}catch(e){}
+  try{
+    // Persist only the visible transcript. The in-memory S.cc.messages keeps the
+    // full history for the current turn's model context; what survives a reload
+    // is what the customer actually said and was told.
+    const safe=Object.assign({},S.cc,{
+      messages:(Array.isArray(S.cc.messages)?S.cc.messages:[]).filter(ccIsCustomerVisibleMessage),
+    });
+    localStorage.setItem(ccStorageKey(),JSON.stringify(safe));
+  }catch(e){}
 }
 // The real, single orchestration call. entryIntent is Patch Zero -- only
 // ever meaningful/sent on this browser's first real turn (st.started
